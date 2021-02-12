@@ -1,0 +1,26 @@
+.button {
+  font-family: "Nunito Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: 700;
+  border: 0;
+  border-radius: 3em;
+  cursor: pointer;
+  display: inline-block;
+  line-height: 1;
+  color: white;
+  background-color: #1ea7fd;
+  font-size: 14px;
+  padding: 11px 20px;
+}
+
+.button:hover {
+  text-decoration: underline;
+}
+
+.button:focus {
+  box-shadow: inset 0 0 0 2px #0006;
+  outline: 0;
+}
+
+.button:active {
+  background-color: #077fc9;
+}

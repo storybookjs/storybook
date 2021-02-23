@@ -1,0 +1,93 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Storyshots Button Button No Args 1`] = `
+<section
+  class="storybook-snapshot-container"
+>
+   
+  
+   
+  
+   
+  
+   
+  <button
+    class="button svelte-n2tx93 rounded"
+  >
+    <strong>
+      Round
+       corners
+    </strong>
+     
+    <br />
+     
+    
+     
+    Label
+  </button>
+  
+  
+</section>
+`;
+
+exports[`Storyshots Button Rounded 1`] = `
+<section
+  class="storybook-snapshot-container"
+>
+   
+  <button
+    class="button svelte-n2tx93 rounded"
+  >
+    <strong>
+      Round
+       corners
+    </strong>
+     
+    <br />
+     
+    
+     
+    You clicked: 
+    0
+  </button>
+  
+   
+  
+   
+  
+   
+  
+  
+</section>
+`;
+
+exports[`Storyshots Button Square 1`] = `
+<section
+  class="storybook-snapshot-container"
+>
+   
+  <button
+    class="button svelte-n2tx93"
+  >
+    <strong>
+      Square
+       corners
+    </strong>
+     
+    <br />
+     
+    
+     
+    You clicked: 
+    0
+  </button>
+  
+   
+  
+   
+  
+   
+  
+  
+</section>
+`;

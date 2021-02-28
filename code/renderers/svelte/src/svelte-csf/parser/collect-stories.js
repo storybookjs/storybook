@@ -77,10 +77,10 @@ export default (StoriesComponent, stories) => {
           return all;
         }
 
-        const unknowTemplate = template != null && templatesId.indexOf(template) < 0;
+        const unknownTemplate = template != null && templatesId.indexOf(template) < 0;
 
         const storyFn = (args) => {
-          if (unknowTemplate) {
+          if (unknownTemplate) {
             throw new Error(`Story ${name} is referencing an unknown template ${template}`);
           }
 

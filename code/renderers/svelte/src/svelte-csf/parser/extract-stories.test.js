@@ -142,4 +142,28 @@ describe('extractSource', () => {
       }
     `);
   });
+  test('Renamed Import', () => {
+    expect(
+      extractStories(`
+        <script>
+          import { Story as SBStory, Meta as SBMeta } from '@storybook/addon-svelte-csf';
+        </script>
+
+        <SBMeta title='test'/>
+
+        <SBStory name="Story1">
+          <div>story 1</div>
+        </SBStory>
+        `)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "Story1": Object {
+          "hasArgs": false,
+          "name": "Story1",
+          "source": "<div>story 1</div>",
+          "template": false,
+        },
+      }
+    `);
+  });
 });

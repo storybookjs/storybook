@@ -37,10 +37,34 @@ export function extractStories(component: string): Record<string, StoryDef> {
   // compile
   const { ast } = svelte.compile(component);
 
+  const localNames = {
+    Story: 'Story',
+    Template: 'Template',
+  };
+
+  svelte.walk(ast.instance, {
+    enter(node: any) {
+      if (node.type === 'ImportDeclaration') {
+        if (node.source.value === '@storybook/addon-svelte-csf') {
+          node.specifiers
+            .filter((n: any) => n.type === 'ImportSpecifier')
+            .forEach((n: any) => {
+              localNames[n.imported.name] = n.local.name;
+            });
+        }
+
+        this.skip();
+      }
+    },
+  });
+
   const stories: Record<string, StoryDef> = {};
   svelte.walk(ast.html, {
     enter(node: any) {
-      if (node.type === 'InlineComponent' && (node.name === 'Story' || node.name === 'Template')) {
+      if (
+        node.type === 'InlineComponent' &&
+        (node.name === localNames.Story || node.name === localNames.Template)
+      ) {
         this.skip();
 
         const isTemplate = node.name === 'Template';

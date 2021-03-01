@@ -4,5 +4,5 @@ export function extractId({ id, name }: { id?: string; name?: string }): string 
     return id;
   }
 
-  return name.replaceAll(/[^a-zA-Z0-9_]/g, '_');
+  return name.replace(/\W+(.)/g, (_, chr) => chr.toUpperCase());
 }

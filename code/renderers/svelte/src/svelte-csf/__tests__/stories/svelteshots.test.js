@@ -1,9 +1,13 @@
 import path from 'path';
-import initStoryshots, { multiSnapshotWithOptions } from '@storybook/addon-storyshots';
+import initStoryshots, {
+  multiSnapshotWithOptions,
+  Stories2SnapsConverter,
+} from '@storybook/addon-storyshots';
 
 initStoryshots({
   framework: 'svelte',
   configPath: path.join(__dirname, '../.storybook'),
-  integrityOptions: { cwd: path.join(__dirname) },
+  integrityOptions: { cwd: __dirname },
+  stories2snapsConverter: new Stories2SnapsConverter({ storiesExtensions: ['.js', '.svelte'] }),
   test: multiSnapshotWithOptions(),
 });

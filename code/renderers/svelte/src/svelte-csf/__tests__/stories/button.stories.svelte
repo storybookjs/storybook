@@ -17,6 +17,8 @@
   </Button>
 </Template>
 
+<Story name="Button"/>
+
 <Story name="Rounded" args={{rounded: true}}/>
 
 <Story name="Square" source args={{rounded: false}}/>

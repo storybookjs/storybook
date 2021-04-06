@@ -44,7 +44,8 @@ function transformSvelteStories(code: string) {
 
   const source = readFileSync(resource).toString();
 
-  const stories = extractStories(source);
+  const storiesDef = extractStories(source);
+  const { stories } = storiesDef;
 
   const storyDef = Object.entries(stories)
     .filter(([, def]) => !def.template)
@@ -55,7 +56,7 @@ function transformSvelteStories(code: string) {
 
   return dedent`${codeWithoutDefaultExport}
     const { default: parser } = require('${parser}');
-    const __storiesMetaData = parser(${componentName}, ${JSON.stringify(stories)});
+    const __storiesMetaData = parser(${componentName}, ${JSON.stringify(storiesDef)});
     export default __storiesMetaData.meta;
     ${storyDef};
   `;

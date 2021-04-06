@@ -14,11 +14,17 @@ describe('extractSource', () => {
         `)
     ).toMatchInlineSnapshot(`
       Object {
-        "MyStory": Object {
-          "hasArgs": false,
-          "name": "MyStory",
-          "source": "<div>a story</div>",
-          "template": false,
+        "allocatedIds": Array [
+          "default",
+          "Story",
+        ],
+        "stories": Object {
+          "MyStory": Object {
+            "hasArgs": false,
+            "name": "MyStory",
+            "source": "<div>a story</div>",
+            "template": false,
+          },
         },
       }
     `);
@@ -36,11 +42,17 @@ describe('extractSource', () => {
         `)
     ).toMatchInlineSnapshot(`
       Object {
-        "myId": Object {
-          "hasArgs": false,
-          "name": "MyStory",
-          "source": "<div>a story</div>",
-          "template": false,
+        "allocatedIds": Array [
+          "default",
+          "Story",
+        ],
+        "stories": Object {
+          "myId": Object {
+            "hasArgs": false,
+            "name": "MyStory",
+            "source": "<div>a story</div>",
+            "template": false,
+          },
         },
       }
     `);
@@ -58,11 +70,17 @@ describe('extractSource', () => {
         `)
     ).toMatchInlineSnapshot(`
       Object {
-        "MyStory": Object {
-          "hasArgs": true,
-          "name": "MyStory",
-          "source": "<div>a story</div>",
-          "template": false,
+        "allocatedIds": Array [
+          "default",
+          "Story",
+        ],
+        "stories": Object {
+          "MyStory": Object {
+            "hasArgs": true,
+            "name": "MyStory",
+            "source": "<div>a story</div>",
+            "template": false,
+          },
         },
       }
     `);
@@ -80,11 +98,17 @@ describe('extractSource', () => {
         `)
     ).toMatchInlineSnapshot(`
       Object {
-        "tpl:MyTemplate": Object {
-          "hasArgs": false,
-          "name": "MyTemplate",
-          "source": "<div>a template</div>",
-          "template": true,
+        "allocatedIds": Array [
+          "default",
+          "Template",
+        ],
+        "stories": Object {
+          "tpl:MyTemplate": Object {
+            "hasArgs": false,
+            "name": "MyTemplate",
+            "source": "<div>a template</div>",
+            "template": true,
+          },
         },
       }
     `);
@@ -102,11 +126,17 @@ describe('extractSource', () => {
         `)
     ).toMatchInlineSnapshot(`
       Object {
-        "tpl:default": Object {
-          "hasArgs": false,
-          "name": "default",
-          "source": "<div>a template</div>",
-          "template": true,
+        "allocatedIds": Array [
+          "default",
+          "Template",
+        ],
+        "stories": Object {
+          "tpl:default": Object {
+            "hasArgs": false,
+            "name": "default",
+            "source": "<div>a template</div>",
+            "template": true,
+          },
         },
       }
     `);
@@ -127,17 +157,23 @@ describe('extractSource', () => {
         `)
     ).toMatchInlineSnapshot(`
       Object {
-        "Story1": Object {
-          "hasArgs": false,
-          "name": "Story1",
-          "source": "<div>story 1</div>",
-          "template": false,
-        },
-        "Story2": Object {
-          "hasArgs": false,
-          "name": "Story2",
-          "source": "<div>story 2</div>",
-          "template": false,
+        "allocatedIds": Array [
+          "default",
+          "Template",
+        ],
+        "stories": Object {
+          "Story1": Object {
+            "hasArgs": false,
+            "name": "Story1",
+            "source": "<div>story 1</div>",
+            "template": false,
+          },
+          "Story2": Object {
+            "hasArgs": false,
+            "name": "Story2",
+            "source": "<div>story 2</div>",
+            "template": false,
+          },
         },
       }
     `);
@@ -157,11 +193,48 @@ describe('extractSource', () => {
         `)
     ).toMatchInlineSnapshot(`
       Object {
-        "Story1": Object {
-          "hasArgs": false,
-          "name": "Story1",
-          "source": "<div>story 1</div>",
-          "template": false,
+        "allocatedIds": Array [
+          "default",
+          "SBStory",
+          "SBMeta",
+        ],
+        "stories": Object {
+          "Story1": Object {
+            "hasArgs": false,
+            "name": "Story1",
+            "source": "<div>story 1</div>",
+            "template": false,
+          },
+        },
+      }
+    `);
+  });
+  test('Duplicate Id', () => {
+    expect(
+      extractStories(`
+        <script>
+          import { Story } from '@storybook/svelte';
+          import Button from './Button.svelte';
+        </script>
+
+        <Story name="Button">
+          <div>a story</div>
+        </Story>
+        `)
+    ).toMatchInlineSnapshot(`
+      Object {
+        "allocatedIds": Array [
+          "default",
+          "Story",
+          "Button",
+        ],
+        "stories": Object {
+          "Button77471352": Object {
+            "hasArgs": false,
+            "name": "Button",
+            "source": "<div>a story</div>",
+            "template": false,
+          },
         },
       }
     `);

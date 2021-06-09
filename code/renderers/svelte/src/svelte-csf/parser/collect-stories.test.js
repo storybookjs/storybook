@@ -3,7 +3,7 @@ import TestStories from '../components/__tests__/TestStories.svelte';
 
 describe('parse-stories', () => {
   test('Extract Stories', () => {
-    const data = collectStories(TestStories, { 'tpl:tpl2': 'tpl2src' });
+    const data = collectStories(TestStories, { stories: { 'tpl:tpl2': 'tpl2src' } });
     const { stories, meta } = data;
     expect(meta).toMatchInlineSnapshot(`
       Object {

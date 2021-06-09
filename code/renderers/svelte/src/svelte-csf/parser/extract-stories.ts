@@ -9,6 +9,11 @@ interface StoryDef {
   hasArgs: boolean;
 }
 
+interface StoriesDef {
+  stories: Record<string, StoryDef>;
+  allocatedIds: string[];
+}
+
 function getStaticAttribute(name: string, node: any): string {
   // extract the attribute
   const attribute = node.attributes.find(
@@ -33,9 +38,11 @@ function getStaticAttribute(name: string, node: any): string {
  * @param component Component Source
  * @returns Map of storyName -> source
  */
-export function extractStories(component: string): Record<string, StoryDef> {
+export function extractStories(component: string): StoriesDef {
   // compile
   const { ast } = svelte.compile(component);
+
+  const allocatedIds: string[] = ['default'];
 
   const localNames = {
     Story: 'Story',
@@ -53,6 +60,18 @@ export function extractStories(component: string): Record<string, StoryDef> {
             });
         }
 
+        this.skip();
+      }
+    },
+  });
+
+  // extracts allocated Ids
+  svelte.walk(ast.instance, {
+    enter(node: any) {
+      if (node.type === 'ImportDeclaration') {
+        node.specifiers
+          .map((n: any) => n.local.name)
+          .forEach((name: string) => allocatedIds.push(name));
         this.skip();
       }
     },
@@ -77,10 +96,13 @@ export function extractStories(component: string): Record<string, StoryDef> {
           name = 'default';
         }
 
-        const id = extractId({
-          id: getStaticAttribute('id', node),
-          name,
-        });
+        const id = extractId(
+          {
+            id: getStaticAttribute('id', node),
+            name,
+          },
+          isTemplate ? undefined : allocatedIds
+        );
 
         if (name && id) {
           // ignore stories without children
@@ -103,5 +125,8 @@ export function extractStories(component: string): Record<string, StoryDef> {
     },
   });
 
-  return stories;
+  return {
+    stories,
+    allocatedIds,
+  };
 }

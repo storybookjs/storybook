@@ -21,7 +21,7 @@ const createFragment = document.createDocumentFragment
   ? () => document.createDocumentFragment()
   : () => document.createElement('div');
 
-export default (StoriesComponent, stories) => {
+export default (StoriesComponent, { stories = {}, allocatedIds }) => {
   const repositories = {
     meta: null,
     stories: [],
@@ -72,7 +72,7 @@ export default (StoriesComponent, stories) => {
       .reduce((all, story) => {
         const { id, name, template, component, source = false, ...props } = story;
 
-        const storyId = extractId(story);
+        const storyId = extractId(story, allocatedIds);
         if (!storyId) {
           return all;
         }

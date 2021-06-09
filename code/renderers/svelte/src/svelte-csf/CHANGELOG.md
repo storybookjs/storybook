@@ -1,3 +1,27 @@
+# v1.0.1 (Wed Jun 09 2021)
+
+#### 🐛 Bug Fix
+
+- Fix main and browser field in package.json [#7](https://github.com/storybookjs/addon-svelte-csf/pull/7) ([@j3rem1e](https://github.com/j3rem1e))
+- Add Types definition [#20](https://github.com/storybookjs/addon-svelte-csf/pull/20) ([@j3rem1e](https://github.com/j3rem1e))
+- Fix duplicated exported id [#21](https://github.com/storybookjs/addon-svelte-csf/pull/21) ([@j3rem1e](https://github.com/j3rem1e))
+- Upgrade dependencies (Storybook v6.2.1) [#19](https://github.com/storybookjs/addon-svelte-csf/pull/19) ([@j3rem1e](https://github.com/j3rem1e))
+- Update README.md [#13](https://github.com/storybookjs/addon-svelte-csf/pull/13) ([@frederikhors](https://github.com/frederikhors))
+- updates readme [#9](https://github.com/storybookjs/addon-svelte-csf/pull/9) ([@shedali](https://github.com/shedali))
+
+#### ⚠️ Pushed to `main`
+
+- Update yarn.lock ([@shilman](https://github.com/shilman))
+
+#### Authors: 4
+
+- [@frederikhors](https://github.com/frederikhors)
+- Jérémie ([@j3rem1e](https://github.com/j3rem1e))
+- Michael Shilman ([@shilman](https://github.com/shilman))
+- shedali ([@shedali](https://github.com/shedali))
+
+---
+
 # v1.0.0 (Sat Mar 06 2021)
 
 #### 💥 Breaking Change

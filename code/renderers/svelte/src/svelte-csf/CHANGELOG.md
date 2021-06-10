@@ -1,3 +1,16 @@
+# v1.1.0 (Thu Jun 10 2021)
+
+#### 🚀 Enhancement
+
+- Add ESM support [#30](https://github.com/storybookjs/addon-svelte-csf/pull/30) ([@TheComputerM](https://github.com/TheComputerM) [@shilman](https://github.com/shilman))
+
+#### Authors: 2
+
+- Michael Shilman ([@shilman](https://github.com/shilman))
+- TheComputerM ([@TheComputerM](https://github.com/TheComputerM))
+
+---
+
 # v1.0.1 (Wed Jun 09 2021)
 
 #### 🐛 Bug Fix

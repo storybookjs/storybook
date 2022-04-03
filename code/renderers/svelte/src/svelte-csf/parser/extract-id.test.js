@@ -7,4 +7,7 @@ describe('extract-id', () => {
   test('duplicates id', () => {
     expect(extractId({ name: 'Button' }, ['Button'])).toBe('Button77471352');
   });
+  test('No negative hash', () => {
+    expect(extractId({ name: 'Navbar' }, ['Navbar'])).toBe('Navbar7557f7d0');
+  });
 });

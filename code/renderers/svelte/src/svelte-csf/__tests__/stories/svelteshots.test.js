@@ -8,6 +8,8 @@ initStoryshots({
   framework: 'svelte',
   configPath: path.join(__dirname, '../.storybook'),
   integrityOptions: { cwd: __dirname },
-  stories2snapsConverter: new Stories2SnapsConverter({ storiesExtensions: ['.js', '.svelte'] }),
+  stories2snapsConverter: new Stories2SnapsConverter({ 
+    storiesExtensions: ['.js', '.svelte'], 
+    snapshotsDirName: '../__snapshots__' }),
   test: multiSnapshotWithOptions(),
 });

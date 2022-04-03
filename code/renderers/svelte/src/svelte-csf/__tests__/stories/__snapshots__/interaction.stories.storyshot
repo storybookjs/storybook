@@ -1,0 +1,36 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Storyshots Interactions Play 1`] = `
+<section
+  class="storybook-snapshot-container"
+>
+   
+  <div>
+    <h1>
+      Counter
+    </h1>
+     
+    <h2
+      data-testid="count"
+    >
+      You clicked 
+      0
+       times
+    </h2>
+     
+    <button
+      type="button"
+    >
+      Decrement
+    </button>
+     
+    <button
+      type="button"
+    >
+      Increment
+    </button>
+  </div>
+  
+  
+</section>
+`;

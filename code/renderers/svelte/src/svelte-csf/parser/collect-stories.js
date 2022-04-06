@@ -79,7 +79,7 @@ export default (StoriesComponent, { stories = {}, allocatedIds }) => {
 
         const unknownTemplate = template != null && templatesId.indexOf(template) < 0;
 
-        const storyFn = (args) => {
+        const storyFn = (args, storyContext) => {
           if (unknownTemplate) {
             throw new Error(`Story ${name} is referencing an unknown template ${template}`);
           }
@@ -91,6 +91,7 @@ export default (StoriesComponent, { stories = {}, allocatedIds }) => {
               storyName: name,
               templateId: template,
               args,
+              storyContext,
               sourceComponent: component || globalComponent,
             },
           };

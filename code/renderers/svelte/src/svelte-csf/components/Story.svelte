@@ -17,8 +17,9 @@
   });
 
   $: render = context.render && !context.templateName && context.storyName == name;
+
 </script>
 
 {#if render}
-  <slot args={context.args} {...context.args}/>
+  <slot {...context.args} context={context.storyContext} args={context.args}/>
 {/if}

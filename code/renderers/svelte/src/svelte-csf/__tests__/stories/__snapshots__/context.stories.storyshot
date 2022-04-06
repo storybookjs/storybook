@@ -1,0 +1,20 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Storyshots StoryContext StoryContext 1`] = `
+<section
+  class="storybook-snapshot-container"
+>
+   
+  <div>
+    StoryContext.name = 
+    StoryContext
+  </div>
+   
+  <div>
+    StoryContext.id = 
+    storycontext--story-context
+  </div>
+  
+  
+</section>
+`;

@@ -1,3 +1,15 @@
+# v1.1.2 (Fri Apr 08 2022)
+
+#### 🐛 Bug Fix
+
+- Allow a Story to access its context [#47](https://github.com/storybookjs/addon-svelte-csf/pull/47) ([@j3rem1e](https://github.com/j3rem1e))
+
+#### Authors: 1
+
+- Jérémie ([@j3rem1e](https://github.com/j3rem1e))
+
+---
+
 # v1.1.1 (Fri Apr 08 2022)
 
 #### 🐛 Bug Fix

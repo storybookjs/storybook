@@ -1,3 +1,18 @@
+# v1.1.1 (Fri Apr 08 2022)
+
+#### 🐛 Bug Fix
+
+- Fix generated id [#43](https://github.com/storybookjs/addon-svelte-csf/pull/43) ([@j3rem1e](https://github.com/j3rem1e))
+- Update yarn.lock [#48](https://github.com/storybookjs/addon-svelte-csf/pull/48) ([@shilman](https://github.com/shilman))
+- Add auto release workflow [#48](https://github.com/storybookjs/addon-svelte-csf/pull/48) ([@shilman](https://github.com/shilman))
+
+#### Authors: 2
+
+- Jérémie ([@j3rem1e](https://github.com/j3rem1e))
+- Michael Shilman ([@shilman](https://github.com/shilman))
+
+---
+
 # v1.1.0 (Thu Jun 10 2021)
 
 #### 🚀 Enhancement

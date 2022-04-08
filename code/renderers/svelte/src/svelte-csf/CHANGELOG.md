@@ -1,3 +1,15 @@
+# v2.0.1 (Fri Apr 08 2022)
+
+#### 🐛 Bug Fix
+
+- Remove knobs references [#49](https://github.com/storybookjs/addon-svelte-csf/pull/49) ([@j3rem1e](https://github.com/j3rem1e))
+
+#### Authors: 1
+
+- Jérémie ([@j3rem1e](https://github.com/j3rem1e))
+
+---
+
 # v2.0.0 (Fri Apr 08 2022)
 
 #### 💥 Breaking Change

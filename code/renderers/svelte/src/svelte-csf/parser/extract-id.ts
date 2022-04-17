@@ -24,7 +24,7 @@ export function extractId(
     return id;
   }
 
-  let generated = name.replace(/\W+(.)/g, (_, chr) => chr.toUpperCase());
+  let generated = name.replace(/\W+(.|$)/g, (_, chr) => chr.toUpperCase());
   if (allocatedIds.indexOf(generated) >= 0) {
     logger.warn(`Story name conflict with exports - Please add an explicit id for story ${name}`);
     generated += hashCode(name);

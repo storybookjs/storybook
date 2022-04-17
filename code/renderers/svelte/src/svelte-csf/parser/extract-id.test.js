@@ -4,6 +4,9 @@ describe('extract-id', () => {
   test('name with spaces', () => {
     expect(extractId({ name: 'Name with spaces' })).toBe('NameWithSpaces');
   });
+  test('name with parenthesis', () => {
+    expect(extractId({ name: 'Name with (parenthesis)' })).toBe('NameWithParenthesis');
+  });
   test('duplicates id', () => {
     expect(extractId({ name: 'Button' }, ['Button'])).toBe('Button77471352');
   });

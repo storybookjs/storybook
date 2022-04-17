@@ -1,3 +1,15 @@
+# v2.0.2 (Sun Apr 17 2022)
+
+#### 🐛 Bug Fix
+
+- Fix names with special char at end [#55](https://github.com/storybookjs/addon-svelte-csf/pull/55) ([@j3rem1e](https://github.com/j3rem1e))
+
+#### Authors: 1
+
+- Jérémie ([@j3rem1e](https://github.com/j3rem1e))
+
+---
+
 # v2.0.1 (Fri Apr 08 2022)
 
 #### 🐛 Bug Fix

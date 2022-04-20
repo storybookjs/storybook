@@ -1,3 +1,15 @@
+# v2.0.3 (Wed Apr 20 2022)
+
+#### 🐛 Bug Fix
+
+- Update peerdependencies to work with sb@next [#56](https://github.com/storybookjs/addon-svelte-csf/pull/56) ([@francoisromain](https://github.com/francoisromain))
+
+#### Authors: 1
+
+- François Romain ([@francoisromain](https://github.com/francoisromain))
+
+---
+
 # v2.0.2 (Sun Apr 17 2022)
 
 #### 🐛 Bug Fix

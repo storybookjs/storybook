@@ -1,3 +1,15 @@
+# v2.0.4 (Thu May 19 2022)
+
+#### 🐛 Bug Fix
+
+- Remove React from peerDependencies [#58](https://github.com/storybookjs/addon-svelte-csf/pull/58) ([@j3rem1e](https://github.com/j3rem1e))
+
+#### Authors: 1
+
+- Jérémie ([@j3rem1e](https://github.com/j3rem1e))
+
+---
+
 # v2.0.3 (Wed Apr 20 2022)
 
 #### 🐛 Bug Fix

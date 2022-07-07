@@ -1,3 +1,15 @@
+# v2.0.5 (Thu Jul 07 2022)
+
+#### 🐛 Bug Fix
+
+- Make `svelte-loader` optional [#62](https://github.com/storybookjs/addon-svelte-csf/pull/62) ([@benmccann](https://github.com/benmccann))
+
+#### Authors: 1
+
+- Ben McCann ([@benmccann](https://github.com/benmccann))
+
+---
+
 # v2.0.4 (Thu May 19 2022)
 
 #### 🐛 Bug Fix

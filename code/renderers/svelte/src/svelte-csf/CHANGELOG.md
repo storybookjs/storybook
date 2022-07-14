@@ -1,3 +1,16 @@
+# v2.0.6 (Thu Jul 14 2022)
+
+#### 🐛 Bug Fix
+
+- remove transitive dependencies from peerDependencies [#63](https://github.com/storybookjs/addon-svelte-csf/pull/63) ([@benmccann](https://github.com/benmccann))
+- Add a link to native format example [#61](https://github.com/storybookjs/addon-svelte-csf/pull/61) ([@benmccann](https://github.com/benmccann))
+
+#### Authors: 1
+
+- Ben McCann ([@benmccann](https://github.com/benmccann))
+
+---
+
 # v2.0.5 (Thu Jul 07 2022)
 
 #### 🐛 Bug Fix

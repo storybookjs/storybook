@@ -1,3 +1,15 @@
+# v2.0.7 (Fri Aug 12 2022)
+
+#### 🐛 Bug Fix
+
+- update description [#66](https://github.com/storybookjs/addon-svelte-csf/pull/66) ([@benmccann](https://github.com/benmccann))
+
+#### Authors: 1
+
+- Ben McCann ([@benmccann](https://github.com/benmccann))
+
+---
+
 # v2.0.6 (Thu Jul 14 2022)
 
 #### 🐛 Bug Fix

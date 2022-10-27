@@ -18,13 +18,11 @@ describe('extractSource', () => {
           "default",
           "Story",
         ],
-        "meta": Object {},
         "stories": Object {
           "MyStory": Object {
             "hasArgs": false,
             "name": "MyStory",
             "source": "<div>a story</div>",
-            "storyId": "mystory--my-story",
             "template": false,
           },
         },
@@ -48,13 +46,11 @@ describe('extractSource', () => {
           "default",
           "Story",
         ],
-        "meta": Object {},
         "stories": Object {
           "myId": Object {
             "hasArgs": false,
             "name": "MyStory",
             "source": "<div>a story</div>",
-            "storyId": "myid--my-id",
             "template": false,
           },
         },
@@ -78,13 +74,11 @@ describe('extractSource', () => {
           "default",
           "Story",
         ],
-        "meta": Object {},
         "stories": Object {
           "MyStory": Object {
             "hasArgs": true,
             "name": "MyStory",
             "source": "<div>a story</div>",
-            "storyId": "mystory--my-story",
             "template": false,
           },
         },
@@ -108,13 +102,11 @@ describe('extractSource', () => {
           "default",
           "Template",
         ],
-        "meta": Object {},
         "stories": Object {
           "tpl:MyTemplate": Object {
             "hasArgs": false,
             "name": "MyTemplate",
             "source": "<div>a template</div>",
-            "storyId": "mytemplate--my-template",
             "template": true,
           },
         },
@@ -138,13 +130,11 @@ describe('extractSource', () => {
           "default",
           "Template",
         ],
-        "meta": Object {},
         "stories": Object {
           "tpl:default": Object {
             "hasArgs": false,
             "name": "default",
             "source": "<div>a template</div>",
-            "storyId": "default--default",
             "template": true,
           },
         },
@@ -171,20 +161,17 @@ describe('extractSource', () => {
           "default",
           "Template",
         ],
-        "meta": Object {},
         "stories": Object {
           "Story1": Object {
             "hasArgs": false,
             "name": "Story1",
             "source": "<div>story 1</div>",
-            "storyId": "story1--story-1",
             "template": false,
           },
           "Story2": Object {
             "hasArgs": false,
             "name": "Story2",
             "source": "<div>story 2</div>",
-            "storyId": "story2--story-2",
             "template": false,
           },
         },
@@ -211,16 +198,11 @@ describe('extractSource', () => {
           "SBStory",
           "SBMeta",
         ],
-        "meta": Object {
-          "id": undefined,
-          "title": "test",
-        },
         "stories": Object {
           "Story1": Object {
             "hasArgs": false,
             "name": "Story1",
             "source": "<div>story 1</div>",
-            "storyId": "test--story-1",
             "template": false,
           },
         },
@@ -246,13 +228,11 @@ describe('extractSource', () => {
           "Story",
           "Button",
         ],
-        "meta": Object {},
         "stories": Object {
           "Button77471352": Object {
             "hasArgs": false,
             "name": "Button",
             "source": "<div>a story</div>",
-            "storyId": "button77471352--button-77471352",
             "template": false,
           },
         },

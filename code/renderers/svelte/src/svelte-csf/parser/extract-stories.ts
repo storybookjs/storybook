@@ -1,34 +1,27 @@
 import dedent from 'ts-dedent';
 import * as svelte from 'svelte/compiler';
 import { extractId } from './extract-id';
-import { toId, storyNameFromExport } from "@storybook/csf";
+
 interface StoryDef {
-  storyId: string;
   name: string;
   template: boolean;
   source: string;
   hasArgs: boolean;
 }
 
-interface MetaDef {
-  title?: string;
-  id?: string;
-}
-
 interface StoriesDef {
-  meta: MetaDef;
   stories: Record<string, StoryDef>;
   allocatedIds: string[];
 }
 
-function getStaticAttribute(name: string, node: any): string|undefined {
+function getStaticAttribute(name: string, node: any): string {
   // extract the attribute
   const attribute = node.attributes.find(
     (att: any) => att.type === 'Attribute' && att.name === name
   );
 
   if (!attribute) {
-    return undefined;
+    return null;
   }
 
   const { value } = attribute;
@@ -54,41 +47,37 @@ export function extractStories(component: string): StoriesDef {
   const localNames = {
     Story: 'Story',
     Template: 'Template',
-    Meta: 'Meta',
   };
 
-  if (ast.instance) {
-    svelte.walk(ast.instance, {
-      enter(node: any) {
-        if (node.type === 'ImportDeclaration') {
-          if (node.source.value === '@storybook/addon-svelte-csf') {
-            node.specifiers
-              .filter((n: any) => n.type === 'ImportSpecifier')
-              .forEach((n: any) => {
-                localNames[n.imported.name] = n.local.name;
-              });
-          }
-
-          this.skip();
-        }
-      },
-    });
-
-    // extracts allocated Ids
-    svelte.walk(ast.instance, {
-      enter(node: any) {
-        if (node.type === 'ImportDeclaration') {
+  svelte.walk(ast.instance, {
+    enter(node: any) {
+      if (node.type === 'ImportDeclaration') {
+        if (node.source.value === '@storybook/addon-svelte-csf') {
           node.specifiers
-            .map((n: any) => n.local.name)
-            .forEach((name: string) => allocatedIds.push(name));
-          this.skip();
+            .filter((n: any) => n.type === 'ImportSpecifier')
+            .forEach((n: any) => {
+              localNames[n.imported.name] = n.local.name;
+            });
         }
-      },
-    });
-  }
+
+        this.skip();
+      }
+    },
+  });
+
+  // extracts allocated Ids
+  svelte.walk(ast.instance, {
+    enter(node: any) {
+      if (node.type === 'ImportDeclaration') {
+        node.specifiers
+          .map((n: any) => n.local.name)
+          .forEach((name: string) => allocatedIds.push(name));
+        this.skip();
+      }
+    },
+  });
 
   const stories: Record<string, StoryDef> = {};
-  const meta: MetaDef = {};
   svelte.walk(ast.html, {
     enter(node: any) {
       if (
@@ -124,28 +113,19 @@ export function extractStories(component: string): StoriesDef {
 
             source = dedent(component.substr(start, end - start));
           }
+
           stories[isTemplate ? `tpl:${id}` : id] = {
-            storyId: toId(meta.id || meta.title || id, storyNameFromExport(id)),
             name,
             template: isTemplate,
             source,
             hasArgs: node.attributes.find((att: any) => att.type === 'Let') != null,
           };
         }
-      } else if (
-        node.type === 'InlineComponent' &&
-        (node.name === localNames.Meta)
-      ) {
-        this.skip();
-
-        meta.title = getStaticAttribute("title", node);
-        meta.id = getStaticAttribute("id", node);
       }
     },
   });
 
   return {
-    meta,
     stories,
     allocatedIds,
   };

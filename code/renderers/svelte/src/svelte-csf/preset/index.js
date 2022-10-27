@@ -1,3 +1,5 @@
+import { svelteIndexer } from "./indexer.js";
+
 export function managerEntries(entry = []) {
   return [...entry, require.resolve('./manager')];
 }
@@ -21,4 +23,15 @@ export function webpack(config) {
       ],
     },
   };
+}
+
+export const storyIndexers = async (indexers) => {
+
+  return [
+    {
+      test: /\.stories\.svelte$/,
+      indexer: svelteIndexer,
+    },
+    ...(indexers || []),
+  ];
 }

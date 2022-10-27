@@ -1,16 +1,18 @@
-import { extractStories } from "../parser/extract-stories";
+import { extractStories } from '../parser/extract-stories';
 import fs from 'fs-extra';
 
-export async function svelteIndexer (fileName, { makeTitle }) {
-    let code = (await fs.readFile(fileName, 'utf-8')).toString();
+export async function svelteIndexer(fileName, { makeTitle }) {
+  let code = (await fs.readFile(fileName, 'utf-8')).toString();
 
-    const defs = extractStories(code);
+  const defs = extractStories(code);
 
-    return {
-        meta: { title: makeTitle(defs.meta.title) },
-        stories: Object.entries(defs.stories).filter(e => !e[1].template).map( ([id, story])=> ({
-            id: story.storyId,
-            name: story.name
-        }))
-    }
+  return {
+    meta: { title: makeTitle(defs.meta.title) },
+    stories: Object.entries(defs.stories)
+      .filter(([id, story]) => !story.template)
+      .map(([id, story]) => ({
+        id: story.storyId,
+        name: story.name,
+      })),
+  };
 }

@@ -1,3 +1,28 @@
+# v2.0.10 (Thu Oct 27 2022)
+
+#### 🐛 Bug Fix
+
+- Revert "Implement a Svelte StoryIndexer" #76 [#76](https://github.com/storybookjs/addon-svelte-csf/pull/76) ([@JReinhold](https://github.com/JReinhold))
+
+#### Authors: 1
+
+- Jeppe Reinhold ([@JReinhold](https://github.com/JReinhold))
+
+---
+
+# v2.0.9 (Thu Oct 27 2022)
+
+#### 🐛 Bug Fix
+
+- Implement a Svelte StoryIndexer [#69](https://github.com/storybookjs/addon-svelte-csf/pull/69) ([@j3rem1e](https://github.com/j3rem1e) [@JReinhold](https://github.com/JReinhold))
+
+#### Authors: 2
+
+- Jeppe Reinhold ([@JReinhold](https://github.com/JReinhold))
+- Jérémie ([@j3rem1e](https://github.com/j3rem1e))
+
+---
+
 # v2.0.8 (Mon Oct 03 2022)
 
 #### 🐛 Bug Fix

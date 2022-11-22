@@ -1,3 +1,5 @@
+import { svelteIndexer } from './indexer.js';
+
 export function managerEntries(entry = []) {
   return [...entry, require.resolve('./manager')];
 }
@@ -47,3 +49,13 @@ export async function viteFinal(config, options) {
     plugins,
   };
 }
+
+export const storyIndexers = async (indexers) => {
+  return [
+    {
+      test: /\.stories\.svelte$/,
+      indexer: svelteIndexer,
+    },
+    ...(indexers || []),
+  ];
+};

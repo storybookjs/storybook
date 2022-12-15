@@ -41,7 +41,7 @@ export async function viteFinal(config, options) {
     }
   }
 
-  const { default: svelteCsfPlugin } = await import('../plugins/vite-svelte-csf');
+  const svelteCsfPlugin = (await import('../plugins/vite-svelte-csf.js')).default.default;
   plugins.push(svelteCsfPlugin(svelteConfig));
 
   return {

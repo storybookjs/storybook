@@ -1,3 +1,15 @@
+# v2.0.11 (Tue Jan 17 2023)
+
+#### 🐛 Bug Fix
+
+- Make types compatible with TypeScript `strict` mode [#74](https://github.com/storybookjs/addon-svelte-csf/pull/74) ([@RSWilli](https://github.com/RSWilli))
+
+#### Authors: 1
+
+- Wilhelm Bartel ([@RSWilli](https://github.com/RSWilli))
+
+---
+
 # v2.0.10 (Thu Oct 27 2022)
 
 #### 🐛 Bug Fix

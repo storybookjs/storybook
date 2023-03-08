@@ -33,7 +33,7 @@ async function findUp(name) {
   const chunks = path.dirname(importPath).split(path.sep);
 
   while (chunks.length) {
-    const filePath = path.resolve(chunks.join(path.posix), `../${name}`);
+    const filePath = path.resolve(chunks.join(path.posix.sep), `../${name}`);
     // eslint-disable-next-line no-await-in-loop
     const pathExist = await fs.pathExists(filePath);
 

@@ -34,7 +34,8 @@ async function findUp(name) {
 
   while (chunks.length) {
     const filePath = path.resolve(chunks.join(path.posix), `../${name}`);
-    const pathExist = fs.pathExists(filePath, name);
+    // eslint-disable-next-line no-await-in-loop
+    const pathExist = await fs.pathExists(filePath);
 
     if (pathExist) {
       return filePath;

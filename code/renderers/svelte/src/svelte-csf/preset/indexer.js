@@ -1,5 +1,6 @@
 import * as svelte from 'svelte/compiler';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import fs from 'fs-extra';
 import { extractStories } from '../parser/extract-stories';
 
@@ -28,7 +29,8 @@ export async function svelteIndexer(fileName, { makeTitle }) {
 }
 
 async function findUp(name) {
-  const chunks = __dirname.split(path.sep);
+  const importPath = fileURLToPath(import.meta.url);
+  const chunks = path.dirname(importPath).split(path.sep);
 
   while (chunks.length) {
     const filePath = path.resolve(chunks.join(path.posix), `../${name}`);

@@ -1,6 +1,6 @@
 import * as svelte from 'svelte/compiler';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import fs from 'fs-extra';
 import { extractStories } from '../parser/extract-stories';
 
@@ -9,7 +9,7 @@ export async function svelteIndexer(fileName, { makeTitle }) {
   const optionsPath = await findUp('svelte.config.js');
 
   if (optionsPath) {
-    const { default: svelteOptions } = await import(`file:///${optionsPath}`);
+    const { default: svelteOptions } = await import(pathToFileURL(optionsPath));
     if (svelteOptions && svelteOptions.preprocess) {
       code = (await svelte.preprocess(code, svelteOptions.preprocess, { filename: fileName })).code;
     }

@@ -1,8 +1,18 @@
-import { extractStories } from '../parser/extract-stories';
+import * as svelte from 'svelte/compiler';
+import path from 'path';
 import fs from 'fs-extra';
+import { extractStories } from '../parser/extract-stories';
 
 export async function svelteIndexer(fileName, { makeTitle }) {
   let code = (await fs.readFile(fileName, 'utf-8')).toString();
+  const optionsPath = await findUp('svelte.config.js');
+
+  if (optionsPath) {
+    const { default: svelteOptions } = await import(`file:///${optionsPath}`);
+    if (svelteOptions && svelteOptions.preprocess) {
+      code = (await svelte.preprocess(code, svelteOptions.preprocess, { filename: fileName })).code;
+    }
+  }
 
   const defs = extractStories(code);
 
@@ -15,4 +25,21 @@ export async function svelteIndexer(fileName, { makeTitle }) {
         name: story.name,
       })),
   };
+}
+
+async function findUp(name) {
+  const chunks = __dirname.split(path.sep);
+
+  while (chunks.length) {
+    const filePath = path.resolve(chunks.join(path.posix), `../${name}`);
+    const pathExist = fs.pathExists(filePath, name);
+
+    if (pathExist) {
+      return filePath;
+    }
+
+    chunks.pop();
+  }
+
+  return '';
 }

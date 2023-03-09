@@ -136,7 +136,7 @@ function findSvelteConfig() {
  * @returns {string[]}
  * Returns an array containing all available config files.
  */
-async function getConfigFilesUp() {
+function getConfigFilesUp() {
   const importPath = fileURLToPath(import.meta.url);
   const pathChunks = path.dirname(importPath).split(path.sep);
 

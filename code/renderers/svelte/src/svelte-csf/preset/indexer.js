@@ -1,18 +1,14 @@
-import * as svelte from 'svelte/compiler';
-import path from 'path';
-import { fileURLToPath, pathToFileURL } from 'url';
 import fs from 'fs-extra';
+import * as svelte from 'svelte/compiler';
 import { extractStories } from '../parser/extract-stories';
+import { loadSvelteConfig } from '../config-loader';
 
 export async function svelteIndexer(fileName, { makeTitle }) {
   let code = (await fs.readFile(fileName, 'utf-8')).toString();
-  const optionsPath = await findUp('svelte.config.js');
+  const svelteOptions = loadSvelteConfig();
 
-  if (optionsPath) {
-    const { default: svelteOptions } = await import(pathToFileURL(optionsPath));
-    if (svelteOptions && svelteOptions.preprocess) {
-      code = (await svelte.preprocess(code, svelteOptions.preprocess, { filename: fileName })).code;
-    }
+  if (svelteOptions && svelteOptions.preprocess) {
+    code = (await svelte.preprocess(code, svelteOptions.preprocess, { filename: fileName })).code;
   }
 
   const defs = extractStories(code);
@@ -26,23 +22,4 @@ export async function svelteIndexer(fileName, { makeTitle }) {
         name: story.name,
       })),
   };
-}
-
-async function findUp(name) {
-  const importPath = fileURLToPath(import.meta.url);
-  const chunks = path.dirname(importPath).split(path.sep);
-
-  while (chunks.length) {
-    const filePath = path.resolve(chunks.join(path.posix.sep), `../${name}`);
-    // eslint-disable-next-line no-await-in-loop
-    const pathExist = await fs.pathExists(filePath);
-
-    if (pathExist) {
-      return filePath;
-    }
-
-    chunks.pop();
-  }
-
-  return '';
 }

@@ -4,16 +4,23 @@ import { logger } from '@storybook/client-logger';
 import { createRequire } from 'module';
 import path from 'path';
 import fs from 'fs';
+import { pathExists } from "fs-extra";
 import { pathToFileURL, fileURLToPath } from 'url';
 
 /**
  * Try find svelte config and then load it.
  *
- * @returns {import('@sveltejs/kit').Config}
+ * @returns {import('@sveltejs/kit').Config | undefined}
  * Returns the svelte configuration object.
  */
 export async function loadSvelteConfig() {
-  const configFile = findSvelteConfig();
+  const configFile = await findSvelteConfig();
+
+  // no need to throw error since we handle projects without config files
+  if (configFile !== undefined) {
+    return undefined;
+  }
+
   let err;
 
   // try to use dynamic import for svelte.config.js first
@@ -104,24 +111,24 @@ const requireSvelteOptions = (() => {
 
 /**
  * Try find svelte config. First in current working dir otherwise try to
- * founding it by climbing up the directory tree.
+ * find it by climbing up the directory tree.
  *
- * @returns {string}
- * Returns an array containing all available config files.
+ * @returns {Promise<string | undefined>}
+ * Returns the absolute path of the config file.
  */
-function findSvelteConfig() {
+async function findSvelteConfig() {
   const lookupDir = process.cwd();
-  let configFiles = getConfigFiles(lookupDir);
+  let configFiles = await getConfigFiles(lookupDir);
 
   if (configFiles.length === 0) {
-    configFiles = getConfigFilesUp();
+    configFiles = await getConfigFilesUp();
   }
   if (configFiles.length === 0) {
-    throw new Error('no svelte config found');
-  } else if (configFiles.length > 1) {
+    return undefined;
+  }
+  if (configFiles.length > 1) {
     logger.warn(
-      `found more than one svelte config file, using ${configFiles[0]}. ` +
-        'you should only have one!',
+      'Multiple svelte configuration files were found, which is unexpected. The first one will be used.',
       configFiles
     );
   }
@@ -133,10 +140,10 @@ function findSvelteConfig() {
  * Returning the first found. Should solves most of monorepos with
  * only one config at workspace root.
  *
- * @returns {string[]}
+ * @returns {Promise<string[]>}
  * Returns an array containing all available config files.
  */
-function getConfigFilesUp() {
+async function getConfigFilesUp() {
   const importPath = fileURLToPath(import.meta.url);
   const pathChunks = path.dirname(importPath).split(path.sep);
 
@@ -144,7 +151,8 @@ function getConfigFilesUp() {
     pathChunks.pop();
 
     const parentDir = pathChunks.join(path.posix.sep);
-    const configFiles = getConfigFiles(parentDir);
+    // eslint-disable-next-line no-await-in-loop
+    const configFiles = await getConfigFiles(parentDir);
 
     if (configFiles.length !== 0) {
       return configFiles;
@@ -159,13 +167,22 @@ function getConfigFilesUp() {
  * @param {string} lookupDir
  * Directory in which to look for svelte files.
  *
- * @returns {string[]}
+ * @returns {Promise<string[]>}
  * Returns an array containing all available config files.
  */
-function getConfigFiles(lookupDir) {
-  return knownConfigFiles
-    .map((candidate) => path.resolve(lookupDir, candidate))
-    .filter((file) => fs.existsSync(file));
+async function getConfigFiles(lookupDir) {
+  /** @type {[string, boolean][]} */
+  const fileChecks = await Promise.all(
+    knownConfigFiles.map(async (candidate) => {
+      const filePath = path.resolve(lookupDir, candidate);
+      return [filePath, await pathExists(filePath)];
+    })
+  );
+
+  return fileChecks.reduce((files, [file, exists]) => {
+    if (exists) files.push(file);
+    return files;
+  }, []);
 }
 
 const knownConfigFiles = ['js', 'cjs', 'mjs'].map((ext) => `svelte.config.${ext}`);

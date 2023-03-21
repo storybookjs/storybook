@@ -17,7 +17,7 @@ export async function loadSvelteConfig() {
   const configFile = await findSvelteConfig();
 
   // no need to throw error since we handle projects without config files
-  if (configFile !== undefined) {
+  if (configFile === undefined) {
     return undefined;
   }
 

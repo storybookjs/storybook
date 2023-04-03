@@ -1,3 +1,25 @@
+# v3.0.0 (Mon Apr 03 2023)
+
+#### 💥 Breaking Change
+
+- Expand Storybook version range [#95](https://github.com/storybookjs/addon-svelte-csf/pull/95) ([@JReinhold](https://github.com/JReinhold))
+- Require Storybook v7 in v3 [#81](https://github.com/storybookjs/addon-svelte-csf/pull/81) ([@JReinhold](https://github.com/JReinhold))
+- Story Indexer [#77](https://github.com/storybookjs/addon-svelte-csf/pull/77) ([@JReinhold](https://github.com/JReinhold))
+
+#### 🐛 Bug Fix
+
+- fix: preprocess svelte file during indexing [#94](https://github.com/storybookjs/addon-svelte-csf/pull/94) ([@ysaskia](https://github.com/ysaskia))
+- Support newest ESM-only `@sveltejs/vite-plugin` [#84](https://github.com/storybookjs/addon-svelte-csf/pull/84) ([@JReinhold](https://github.com/JReinhold))
+- Add vite support [#72](https://github.com/storybookjs/addon-svelte-csf/pull/72) ([@IanVS](https://github.com/IanVS))
+
+#### Authors: 3
+
+- Ian VanSchooten ([@IanVS](https://github.com/IanVS))
+- Jeppe Reinhold ([@JReinhold](https://github.com/JReinhold))
+- Yoann ([@ysaskia](https://github.com/ysaskia))
+
+---
+
 # v2.0.11 (Tue Jan 17 2023)
 
 #### 🐛 Bug Fix

@@ -24,6 +24,10 @@ export function extractId(
     return id;
   }
 
+  if (!name) {
+    throw new Error("Id or Name should be specified");
+  }
+
   let generated = name.replace(/\W+(.|$)/g, (_, chr) => chr.toUpperCase());
   if (allocatedIds.indexOf(generated) >= 0) {
     logger.warn(`Story name conflict with exports - Please add an explicit id for story ${name}`);

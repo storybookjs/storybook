@@ -1,3 +1,5 @@
+import { svelteIndexer } from './indexer.js';
+
 export function managerEntries(entry = []) {
   return [...entry, require.resolve('./manager')];
 }
@@ -22,3 +24,38 @@ export function webpack(config) {
     },
   };
 }
+
+export async function viteFinal(config, options) {
+  const { plugins = [] } = config;
+  const svelteOptions = await options.presets.apply('svelteOptions', {}, options);
+  let svelteConfig = svelteOptions;
+  try {
+    const { loadSvelteConfig } = await import('@sveltejs/vite-plugin-svelte');
+    svelteConfig = { ...(await loadSvelteConfig()), ...svelteOptions };
+  } catch (err) {
+    const { log } = console;
+    if (err.code === 'MODULE_NOT_FOUND') {
+      log('@sveltejs/vite-plugin-svelte not found.  Unable to load config from svelte.config file');
+    } else {
+      throw err;
+    }
+  }
+
+  const svelteCsfPlugin = (await import('../plugins/vite-svelte-csf.js')).default.default;
+  plugins.push(svelteCsfPlugin(svelteConfig));
+
+  return {
+    ...config,
+    plugins,
+  };
+}
+
+export const storyIndexers = async (indexers) => {
+  return [
+    {
+      test: /\.stories\.svelte$/,
+      indexer: svelteIndexer,
+    },
+    ...(indexers || []),
+  ];
+};

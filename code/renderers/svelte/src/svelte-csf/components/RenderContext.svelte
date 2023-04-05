@@ -3,17 +3,15 @@
    * @component
    * @wrapper
    */
-  import { createRenderContext } from './context';
-  import { tick } from 'svelte';
+  import { createRenderContext, setStoryRenderContext } from './context';
 
   export let Stories;
-  let exporttime = 0;
+  export let args = {};
+  export let storyContext = {};
 
-  $: {
-    createRenderContext($$props);
-  }
+  createRenderContext($$props);
+
+  $: setStoryRenderContext(args, storyContext);
 </script>
 
-{#key $$props.args}
-  <svelte:component this={Stories} />
-{/key}
+<svelte:component this={Stories} />

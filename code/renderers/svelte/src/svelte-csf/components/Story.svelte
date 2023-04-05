@@ -1,5 +1,5 @@
 <script>
-  import { useContext } from './context';
+  import { getStoryRenderContext, useContext } from './context';
 
   const context = useContext();
 
@@ -12,14 +12,16 @@
 
   context.register({
     name,
-    ...$$restProps, 
+    ...$$restProps,
     template: template != null ? template : !$$slots.default ? 'default' : null,
   });
 
   $: render = context.render && !context.templateName && context.storyName == name;
-
+  const ctx = getStoryRenderContext();
+  const args = ctx.argsStore;
+  const storyContext = ctx.storyContextStore;
 </script>
 
 {#if render}
-  <slot {...context.args} context={context.storyContext} args={context.args}/>
+  <slot {...$args} context={$storyContext} args={$args} />
 {/if}

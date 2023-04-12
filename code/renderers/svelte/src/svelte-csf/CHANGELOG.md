@@ -1,3 +1,15 @@
+# v3.0.1 (Wed Apr 12 2023)
+
+#### 🐛 Bug Fix
+
+- fix: imports on index.d.ts file [#100](https://github.com/storybookjs/addon-svelte-csf/pull/100) ([@andrescera](https://github.com/andrescera))
+
+#### Authors: 1
+
+- [@andrescera](https://github.com/andrescera)
+
+---
+
 # v3.0.0 (Mon Apr 03 2023)
 
 #### 💥 Breaking Change

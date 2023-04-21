@@ -1,6 +1,8 @@
-import { getContext, hasContext, setContext } from "svelte";
+import { getContext, hasContext, setContext } from 'svelte';
+import { writable, Writable } from 'svelte/store';
 
-const CONTEXT_KEY = "storybook-registration-context";
+const CONTEXT_KEY = 'storybook-registration-context';
+const CONTEXT_KEY_COMPONENT = 'storybook-registration-context-component';
 
 export function createRenderContext(props: any = {}) {
   setContext(CONTEXT_KEY, {
@@ -31,4 +33,19 @@ export function useContext() {
     createRenderContext();
   }
   return getContext(CONTEXT_KEY);
+}
+export function getStoryRenderContext(): {
+  argsStore: Writable<Record<string, unknown>>;
+  storyContextStore: Writable<Record<string, unknown>>;
+} {
+  if (!hasContext(CONTEXT_KEY_COMPONENT)) {
+    setContext(CONTEXT_KEY_COMPONENT, { argsStore: writable({}), storyContextStore: writable({}) });
+  }
+  return getContext(CONTEXT_KEY_COMPONENT);
+}
+
+export function setStoryRenderContext(args, storyContext) {
+  const ctx = getStoryRenderContext();
+  ctx.argsStore.set(args);
+  ctx.storyContextStore.set(storyContext);
 }

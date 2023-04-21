@@ -1,3 +1,15 @@
+# v3.0.2 (Fri Apr 21 2023)
+
+#### 🐛 Bug Fix
+
+- Fix stories not re-rendering when args change in Controls [#99](https://github.com/storybookjs/addon-svelte-csf/pull/99) ([@leika](https://github.com/leika))
+
+#### Authors: 1
+
+- Stefan Marx ([@leika](https://github.com/leika))
+
+---
+
 # v3.0.1 (Wed Apr 12 2023)
 
 #### 🐛 Bug Fix

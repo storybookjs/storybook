@@ -1,3 +1,15 @@
+# v3.0.3 (Fri Jun 09 2023)
+
+#### 🐛 Bug Fix
+
+- types: use `WebRenderer` type as new `Addon_BaseAnnotations` template variable [#106](https://github.com/storybookjs/addon-svelte-csf/pull/106) ([@specialdoom](https://github.com/specialdoom))
+
+#### Authors: 1
+
+- specialdoom ([@specialdoom](https://github.com/specialdoom))
+
+---
+
 # v3.0.2 (Fri Apr 21 2023)
 
 #### 🐛 Bug Fix

@@ -1,7 +1,11 @@
-import dedent from 'ts-dedent';
 import * as svelte from 'svelte/compiler';
-import { extractId } from './extract-id';
-import { toId, storyNameFromExport } from "@storybook/csf";
+import type { Node } from 'estree';
+
+import { storyNameFromExport, toId } from '@storybook/csf';
+
+import dedent from 'dedent';
+import { extractId } from './extract-id.js';
+
 interface StoryDef {
   storyId: string;
   name: string;
@@ -21,7 +25,7 @@ interface StoriesDef {
   allocatedIds: string[];
 }
 
-function getStaticAttribute(name: string, node: any): string|undefined {
+function getStaticAttribute(name: string, node: any): string | undefined {
   // extract the attribute
   const attribute = node.attributes.find(
     (att: any) => att.type === 'Attribute' && att.name === name
@@ -58,7 +62,7 @@ export function extractStories(component: string): StoriesDef {
   };
 
   if (ast.instance) {
-    svelte.walk(ast.instance, {
+    svelte.walk(<Node><unknown>ast.instance, {
       enter(node: any) {
         if (node.type === 'ImportDeclaration') {
           if (node.source.value === '@storybook/addon-svelte-csf') {
@@ -75,7 +79,7 @@ export function extractStories(component: string): StoriesDef {
     });
 
     // extracts allocated Ids
-    svelte.walk(ast.instance, {
+    svelte.walk(<Node><unknown>ast.instance, {
       enter(node: any) {
         if (node.type === 'ImportDeclaration') {
           node.specifiers
@@ -89,7 +93,7 @@ export function extractStories(component: string): StoriesDef {
 
   const stories: Record<string, StoryDef> = {};
   const meta: MetaDef = {};
-  svelte.walk(ast.html, {
+  svelte.walk(<Node>ast.html, {
     enter(node: any) {
       if (
         node.type === 'InlineComponent' &&
@@ -122,7 +126,7 @@ export function extractStories(component: string): StoriesDef {
             const { start } = node.children[0];
             const { end } = node.children[node.children.length - 1];
 
-            source = dedent(component.substr(start, end - start));
+            source = dedent`${component.substr(start, end - start)}`;
           }
           stories[isTemplate ? `tpl:${id}` : id] = {
             storyId: toId(meta.id || meta.title || id, storyNameFromExport(id)),
@@ -132,14 +136,11 @@ export function extractStories(component: string): StoriesDef {
             hasArgs: node.attributes.find((att: any) => att.type === 'Let') != null,
           };
         }
-      } else if (
-        node.type === 'InlineComponent' &&
-        (node.name === localNames.Meta)
-      ) {
+      } else if (node.type === 'InlineComponent' && node.name === localNames.Meta) {
         this.skip();
 
-        meta.title = getStaticAttribute("title", node);
-        meta.id = getStaticAttribute("id", node);
+        meta.title = getStaticAttribute('title', node);
+        meta.id = getStaticAttribute('id', node);
       }
     },
   });

@@ -1,7 +1,8 @@
-import fs from 'fs-extra';
 import * as svelte from 'svelte/compiler';
-import { extractStories } from '../parser/extract-stories';
-import { loadSvelteConfig } from '../config-loader';
+
+import { extractStories } from '../parser/extract-stories.js';
+import fs from 'fs-extra';
+import { loadSvelteConfig } from '../config-loader.js';
 
 export async function svelteIndexer(fileName, { makeTitle }) {
   let code = (await fs.readFile(fileName, 'utf-8')).toString();

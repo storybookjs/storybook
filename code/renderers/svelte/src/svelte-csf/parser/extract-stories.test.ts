@@ -1,4 +1,4 @@
-import { extractStories } from './extract-stories';
+import { extractStories } from './extract-stories.js';
 
 describe('extractSource', () => {
   test('Simple Story', () => {

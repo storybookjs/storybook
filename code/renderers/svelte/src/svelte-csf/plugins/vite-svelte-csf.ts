@@ -1,11 +1,13 @@
-import { readFileSync } from 'fs';
 import * as svelte from 'svelte/compiler';
+
 import MagicString from 'magic-string';
 import { createFilter } from 'vite';
-import { getNameFromFilename } from '../parser/svelte-stories-loader';
-import { extractStories } from '../parser/extract-stories';
+import { extractStories } from '../parser/extract-stories.js';
+import { fileURLToPath } from 'url';
+import { getNameFromFilename } from '../parser/svelte-stories-loader.js';
+import { readFileSync } from 'fs';
 
-const parser = require.resolve('../../esm/parser/collect-stories').replace(/[/\\]/g, '/');
+const parser = fileURLToPath(new URL('../parser/collect-stories.js', import.meta.url));
 
 export default function csfPlugin(svelteOptions) {
   const include = /\.stories\.svelte$/;

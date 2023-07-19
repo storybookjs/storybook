@@ -1,4 +1,4 @@
-import { extractId } from './extract-id';
+import { extractId } from './extract-id.js';
 
 describe('extract-id', () => {
   test('name with spaces', () => {

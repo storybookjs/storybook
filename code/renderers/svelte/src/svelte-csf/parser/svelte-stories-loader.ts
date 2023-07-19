@@ -1,9 +1,9 @@
-import dedent from 'ts-dedent';
+import dedent from 'dedent';
+import { extractStories } from './extract-stories.js';
+import { fileURLToPath } from 'url';
 import { readFileSync } from 'fs';
 
-import { extractStories } from './extract-stories';
-
-const parser = require.resolve('./collect-stories').replace(/[/\\]/g, '/');
+const parser = fileURLToPath(new URL('./collect-stories.js', import.meta.url));
 
 // From https://github.com/sveltejs/svelte/blob/8db3e8d0297e052556f0b6dde310ef6e197b8d18/src/compiler/compile/utils/get_name_from_filename.ts
 // Copied because it is not exported from the compiler
@@ -13,16 +13,18 @@ export function getNameFromFilename(filename: string) {
   const parts = filename.split(/[/\\]/).map(encodeURI);
 
   if (parts.length > 1) {
-    const index_match = parts[parts.length - 1].match(/^index(\.\w+)/);
-    if (index_match) {
+    const indexMatch = parts[parts.length - 1].match(/^index(\.\w+)/);
+    if (indexMatch) {
       parts.pop();
-      parts[parts.length - 1] += index_match[1];
+      parts[parts.length - 1] += indexMatch[1];
     }
   }
 
+  if (!parts) return null;
+
   const base = parts
     .pop()
-    .replace(/%/g, 'u')
+    ?.replace(/%/g, 'u')
     .replace(/\.[^.]+$/, '')
     .replace(/[^a-zA-Z_$0-9]+/g, '_')
     .replace(/^_/, '')

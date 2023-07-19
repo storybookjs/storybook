@@ -1,6 +1,6 @@
 const svelte = require('svelte/compiler');
 
-const parser = require.resolve('./parser/collect-stories').replace(/[/\\]/g, '/');
+const parser = require.resolve('./parser/collect-stories.js').replace(/[/\\]/g, '/');
 
 function process(src, filename) {
   const result = svelte.compile(src, {

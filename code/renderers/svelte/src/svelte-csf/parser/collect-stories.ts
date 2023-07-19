@@ -1,10 +1,10 @@
 /* eslint-env browser */
-import { logger } from '@storybook/client-logger';
-import { combineParameters } from '@storybook/client-api';
-import { extractId } from './extract-id';
 
 import RegisterContext from '../components/RegisterContext.svelte';
 import RenderContext from '../components/RenderContext.svelte';
+import { combineParameters } from '@storybook/client-api';
+import { extractId } from './extract-id.js';
+import { logger } from '@storybook/client-logger';
 
 /* Called from a webpack loader and a jest transformation.
  *
@@ -30,7 +30,7 @@ export default (StoriesComponent, { stories = {}, allocatedIds }) => {
   // extract all stories
   try {
     const context = new RegisterContext({
-      target: createFragment(),
+      target: createFragment() as Document | Element,
       props: {
         Stories: StoriesComponent,
         repositories,

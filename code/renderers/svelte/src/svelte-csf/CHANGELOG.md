@@ -1,3 +1,15 @@
+# v3.0.4 (Wed Jul 19 2023)
+
+#### 🐛 Bug Fix
+
+- Update dependencies to support svelte@4 [#112](https://github.com/storybookjs/addon-svelte-csf/pull/112) ([@RSWilli](https://github.com/RSWilli))
+
+#### Authors: 1
+
+- Wilhelm Bartel ([@RSWilli](https://github.com/RSWilli))
+
+---
+
 # v3.0.3 (Fri Jun 09 2023)
 
 #### 🐛 Bug Fix

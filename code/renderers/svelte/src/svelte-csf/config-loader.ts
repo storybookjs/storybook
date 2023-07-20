@@ -4,7 +4,7 @@ import { fileURLToPath, pathToFileURL } from 'url';
 
 import { createRequire } from 'module';
 import fs from 'fs';
-import { logger } from '@storybook/client-logger'; // eslint-disable-line import/no-extraneous-dependencies
+import { logger } from '@storybook/client-logger';
 import path from 'path';
 import { pathExists } from 'fs-extra';
 

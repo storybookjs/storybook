@@ -21,7 +21,7 @@ const createFragment = document.createDocumentFragment
   ? () => document.createDocumentFragment()
   : () => document.createElement('div');
 
-export default (StoriesComponent, { stories = {}, allocatedIds }) => {
+export default (StoriesComponent, { stories = {}, allocatedIds = [] }) => {
   const repositories = {
     meta: null,
     stories: [],

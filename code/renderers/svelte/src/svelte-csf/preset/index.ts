@@ -31,7 +31,7 @@ export async function viteFinal(config, options) {
   const svelteOptions = await options.presets.apply('svelteOptions', {}, options);
   let svelteConfig = svelteOptions;
   try {
-    const { loadSvelteConfig } = await import('@sveltejs/vite-plugin-svelte'); // eslint-disable-line import/no-unresolved
+    const { loadSvelteConfig } = await import('@sveltejs/vite-plugin-svelte');
     svelteConfig = { ...(await loadSvelteConfig()), ...svelteOptions };
   } catch (err) {
     const { log } = console;

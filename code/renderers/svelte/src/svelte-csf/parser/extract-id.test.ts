@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest';
+
 import { extractId } from './extract-id.js';
 
 describe('extract-id', () => {

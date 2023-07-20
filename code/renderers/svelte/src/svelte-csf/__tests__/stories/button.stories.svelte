@@ -17,7 +17,7 @@
   </Button>
 </Template>
 
-<Story name="Button"/>
+<Story name="Default"/>
 
 <Story name="Rounded" args={{rounded: true}}/>
 

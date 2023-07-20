@@ -1,4 +1,4 @@
-import type { SvelteComponent, SvelteComponent } from 'svelte';
+import type { SvelteComponent } from 'svelte'
 import type { Addon_BaseMeta as BaseMeta, Addon_BaseAnnotations as BaseAnnotations, StoryContext, WebRenderer } from '@storybook/types';
 
 

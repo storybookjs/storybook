@@ -2,7 +2,11 @@ import { fileURLToPath } from 'url';
 import { svelteIndexer } from './indexer.js';
 
 export function managerEntries(entry = []) {
-  return [...entry, fileURLToPath(new URL('./manager.js', import.meta.url))];
+  return [
+    ...entry,
+    fileURLToPath(new URL('./manager.js', import.meta.url))
+      .replace(/\\/g, "\\\\"), // For Windows paths
+  ];
 }
 
 export function webpack(config) {
@@ -17,7 +21,8 @@ export function webpack(config) {
           enforce: 'post',
           use: [
             {
-              loader: fileURLToPath(new URL('../parser/svelte-stories-loader.js', import.meta.url)),
+              loader: fileURLToPath(new URL('../parser/svelte-stories-loader.js', import.meta.url))
+                .replace(/\\/g, "\\\\"), // For Windows paths
             },
           ],
         },

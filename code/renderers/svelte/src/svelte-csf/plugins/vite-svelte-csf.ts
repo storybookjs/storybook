@@ -7,7 +7,8 @@ import { fileURLToPath } from 'url';
 import { getNameFromFilename } from '../parser/svelte-stories-loader.js';
 import { readFileSync } from 'fs';
 
-const parser = fileURLToPath(new URL('../parser/collect-stories.js', import.meta.url)).replace(/\\/g, "\\\\");
+const parser = fileURLToPath(new URL('../parser/collect-stories.js', import.meta.url))
+  .replace(/\\/g, "\\\\"); // For Windows paths
 
 export default function csfPlugin(svelteOptions) {
   const include = /\.stories\.svelte$/;

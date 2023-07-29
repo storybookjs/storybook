@@ -29,7 +29,7 @@ export async function loadSvelteConfig() {
     try {
       return importSvelteOptions(configFile);
     } catch (e) {
-      logger.error(`failed to import config ${configFile}`, e);
+      logger.error(`failed to import config ${configFile} ${e}`);
       err = e;
     }
   }
@@ -38,7 +38,7 @@ export async function loadSvelteConfig() {
     try {
       return requireSvelteOptions(configFile);
     } catch (e) {
-      logger.error(`failed to require config ${configFile}`, e);
+      logger.error(`failed to require config ${configFile} ${e}`);
       if (!err) {
         err = e;
       }
@@ -129,8 +129,7 @@ async function findSvelteConfig() {
   }
   if (configFiles.length > 1) {
     logger.warn(
-      'Multiple svelte configuration files were found, which is unexpected. The first one will be used.',
-      configFiles
+      `Multiple svelte configuration files were found, which is unexpected. The first one will be used. ${configFiles}`
     );
   }
   return configFiles[0];

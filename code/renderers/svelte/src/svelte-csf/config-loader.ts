@@ -4,7 +4,7 @@ import { fileURLToPath, pathToFileURL } from 'url';
 
 import { createRequire } from 'module';
 import fs from 'fs';
-import { logger } from '@storybook/client-logger';
+import { logger } from '@storybook/node-logger';
 import path from 'path';
 import { pathExists } from 'fs-extra';
 

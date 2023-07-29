@@ -17,14 +17,28 @@ import { logger } from '@storybook/client-logger';
  * the one selected is disabled.
  */
 
+interface Story {
+  id: string;
+  name: string;
+  template: string;
+  component: any;
+  isTemplate: boolean;
+  source: boolean;
+}
+
+interface Meta {
+  name: string;
+  component: any;
+}
+
 const createFragment = document.createDocumentFragment
   ? () => document.createDocumentFragment()
   : () => document.createElement('div');
 
 export default (StoriesComponent, { stories = {}, allocatedIds = [] }) => {
   const repositories = {
-    meta: null,
-    stories: [],
+    meta: null as Meta | null,
+    stories: [] as Story[],
   };
 
   // extract all stories
@@ -37,7 +51,7 @@ export default (StoriesComponent, { stories = {}, allocatedIds = [] }) => {
       },
     });
     context.$destroy();
-  } catch (e) {
+  } catch (e: any) {
     logger.error(`Error extracting stories ${e.toString()}`, e);
   }
 
@@ -134,6 +148,6 @@ export default (StoriesComponent, { stories = {}, allocatedIds = [] }) => {
         // eslint-disable-next-line no-param-reassign
         all[storyId] = storyFn;
         return all;
-      }, {}),
+      }, {}) as { [key: string]: { storyName: string; parameters: string; } },
   };
 };

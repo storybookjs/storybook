@@ -121,11 +121,13 @@ export function extractStories(component: string): StoriesDef {
 
         if (name && id) {
           // ignore stories without children
-          let source;
+          let source: string = '';
           if (node.children.length > 0) {
             const { start } = node.children[0];
             const { end } = node.children[node.children.length - 1];
 
+            // throws dedent expression is not callable.
+            // @ts-ignore
             source = dedent`${component.substr(start, end - start)}`;
           }
           stories[isTemplate ? `tpl:${id}` : id] = {

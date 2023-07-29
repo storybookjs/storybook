@@ -40,7 +40,7 @@ export function getNameFromFilename(filename: string) {
 }
 
 function transformSvelteStories(code: string) {
-  // eslint-disable-next-line no-underscore-dangle
+  // @ts-ignore eslint-disable-next-line no-underscore-dangle
   const { resource } = this._module;
 
   const componentName = getNameFromFilename(resource);
@@ -57,12 +57,14 @@ function transformSvelteStories(code: string) {
 
   const codeWithoutDefaultExport = code.replace('export default ', '//export default');
 
+  // throws dedent expression is not callable.
+  // @ts-ignore
   return dedent`${codeWithoutDefaultExport}
     const { default: parser } = require('${parser}');
     const __storiesMetaData = parser(${componentName}, ${JSON.stringify(storiesDef)});
     export default __storiesMetaData.meta;
     ${storyDef};
-  `;
+  ` as string;
 }
 
 export default transformSvelteStories;

@@ -38,7 +38,7 @@ export async function viteFinal(config, options) {
   try {
     const { loadSvelteConfig } = await import('@sveltejs/vite-plugin-svelte');
     svelteConfig = { ...(await loadSvelteConfig()), ...svelteOptions };
-  } catch (err) {
+  } catch (err: any) {
     const { log } = console;
     if (err.code === 'MODULE_NOT_FOUND') {
       log('@sveltejs/vite-plugin-svelte not found.  Unable to load config from svelte.config file');

@@ -6,7 +6,8 @@ import collectStories from './collect-stories.js';
 describe('parse-stories', () => {
   test('Extract Stories', () => {
     const data = collectStories(TestStories, { stories: { 'tpl:tpl2': 'tpl2src' } });
-    const { stories, meta } = data;
+    const { meta, stories } = data;
+    // const stories = data.stories as Stories;
 
     expect(meta).toMatchInlineSnapshot(`
       {
@@ -21,12 +22,12 @@ describe('parse-stories', () => {
       }
     `);
 
-    expect(stories.Story1.storyName).toBe('Story1');
-    expect(stories.Story1.parameters).toMatchInlineSnapshot(`undefined`);
-    expect(stories.Story2.storyName).toBe('Story2');
-    expect(stories.Story2.parameters).toMatchInlineSnapshot(`undefined`);
-    expect(stories.Story3.storyName).toBe('Story3');
-    expect(stories.Story3.parameters).toMatchInlineSnapshot(`
+    expect(stories?.Story1.storyName).toBe('Story1');
+    expect(stories?.Story1.parameters).toMatchInlineSnapshot(`undefined`);
+    expect(stories?.Story2.storyName).toBe('Story2');
+    expect(stories?.Story2.parameters).toMatchInlineSnapshot(`undefined`);
+    expect(stories?.Story3.storyName).toBe('Story3');
+    expect(stories?.Story3.parameters).toMatchInlineSnapshot(`
       {
         "docs": {
           "source": {

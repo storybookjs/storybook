@@ -1,7 +1,12 @@
+import { fileURLToPath } from 'url';
 import { svelteIndexer } from './indexer.js';
 
 export function managerEntries(entry = []) {
-  return [...entry, require.resolve('./manager')];
+  return [
+    ...entry,
+    fileURLToPath(new URL('./manager.js', import.meta.url))
+      .replace(/\\/g, "\\\\"), // For Windows paths
+  ];
 }
 
 export function webpack(config) {
@@ -16,7 +21,8 @@ export function webpack(config) {
           enforce: 'post',
           use: [
             {
-              loader: require.resolve('../parser/svelte-stories-loader'),
+              loader: fileURLToPath(new URL('../parser/svelte-stories-loader.js', import.meta.url))
+                .replace(/\\/g, "\\\\"), // For Windows paths
             },
           ],
         },
@@ -32,7 +38,7 @@ export async function viteFinal(config, options) {
   try {
     const { loadSvelteConfig } = await import('@sveltejs/vite-plugin-svelte');
     svelteConfig = { ...(await loadSvelteConfig()), ...svelteOptions };
-  } catch (err) {
+  } catch (err: any) {
     const { log } = console;
     if (err.code === 'MODULE_NOT_FOUND') {
       log('@sveltejs/vite-plugin-svelte not found.  Unable to load config from svelte.config file');
@@ -41,7 +47,7 @@ export async function viteFinal(config, options) {
     }
   }
 
-  const svelteCsfPlugin = (await import('../plugins/vite-svelte-csf.js')).default.default;
+  const svelteCsfPlugin = (await import('../plugins/vite-svelte-csf.js')).default;
   plugins.push(svelteCsfPlugin(svelteConfig));
 
   return {

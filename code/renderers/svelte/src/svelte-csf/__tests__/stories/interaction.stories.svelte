@@ -5,9 +5,9 @@
 
   import Counter from './Counter.svelte';
 
-  async function play({canvasElement}) {
+  async function play({ canvasElement }) {
     const canvas = within(canvasElement);
-    userEvent.click(await canvas.findByText('Increment'));
+    await userEvent.click(await canvas.findByText('Increment'));
 
     const count = await canvas.findByTestId('count');
     expect(count.textContent).toEqual('You clicked 1 times');

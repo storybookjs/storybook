@@ -1,4 +1,6 @@
-import { extractStories } from './extract-stories';
+import { describe, expect, test } from 'vitest';
+
+import { extractStories } from './extract-stories.js';
 
 describe('extractSource', () => {
   test('Simple Story', () => {
@@ -13,14 +15,14 @@ describe('extractSource', () => {
         </Story>
         `)
     ).toMatchInlineSnapshot(`
-      Object {
-        "allocatedIds": Array [
+      {
+        "allocatedIds": [
           "default",
           "Story",
         ],
-        "meta": Object {},
-        "stories": Object {
-          "MyStory": Object {
+        "meta": {},
+        "stories": {
+          "MyStory": {
             "hasArgs": false,
             "name": "MyStory",
             "source": "<div>a story</div>",
@@ -43,14 +45,14 @@ describe('extractSource', () => {
         </Story>
         `)
     ).toMatchInlineSnapshot(`
-      Object {
-        "allocatedIds": Array [
+      {
+        "allocatedIds": [
           "default",
           "Story",
         ],
-        "meta": Object {},
-        "stories": Object {
-          "myId": Object {
+        "meta": {},
+        "stories": {
+          "myId": {
             "hasArgs": false,
             "name": "MyStory",
             "source": "<div>a story</div>",
@@ -73,14 +75,14 @@ describe('extractSource', () => {
         </Story>
         `)
     ).toMatchInlineSnapshot(`
-      Object {
-        "allocatedIds": Array [
+      {
+        "allocatedIds": [
           "default",
           "Story",
         ],
-        "meta": Object {},
-        "stories": Object {
-          "MyStory": Object {
+        "meta": {},
+        "stories": {
+          "MyStory": {
             "hasArgs": true,
             "name": "MyStory",
             "source": "<div>a story</div>",
@@ -103,14 +105,14 @@ describe('extractSource', () => {
         </Template>
         `)
     ).toMatchInlineSnapshot(`
-      Object {
-        "allocatedIds": Array [
+      {
+        "allocatedIds": [
           "default",
           "Template",
         ],
-        "meta": Object {},
-        "stories": Object {
-          "tpl:MyTemplate": Object {
+        "meta": {},
+        "stories": {
+          "tpl:MyTemplate": {
             "hasArgs": false,
             "name": "MyTemplate",
             "source": "<div>a template</div>",
@@ -133,14 +135,14 @@ describe('extractSource', () => {
         </Template>
         `)
     ).toMatchInlineSnapshot(`
-      Object {
-        "allocatedIds": Array [
+      {
+        "allocatedIds": [
           "default",
           "Template",
         ],
-        "meta": Object {},
-        "stories": Object {
-          "tpl:default": Object {
+        "meta": {},
+        "stories": {
+          "tpl:default": {
             "hasArgs": false,
             "name": "default",
             "source": "<div>a template</div>",
@@ -166,21 +168,21 @@ describe('extractSource', () => {
         </Story>
         `)
     ).toMatchInlineSnapshot(`
-      Object {
-        "allocatedIds": Array [
+      {
+        "allocatedIds": [
           "default",
           "Template",
         ],
-        "meta": Object {},
-        "stories": Object {
-          "Story1": Object {
+        "meta": {},
+        "stories": {
+          "Story1": {
             "hasArgs": false,
             "name": "Story1",
             "source": "<div>story 1</div>",
             "storyId": "story1--story-1",
             "template": false,
           },
-          "Story2": Object {
+          "Story2": {
             "hasArgs": false,
             "name": "Story2",
             "source": "<div>story 2</div>",
@@ -205,18 +207,18 @@ describe('extractSource', () => {
         </SBStory>
         `)
     ).toMatchInlineSnapshot(`
-      Object {
-        "allocatedIds": Array [
+      {
+        "allocatedIds": [
           "default",
           "SBStory",
           "SBMeta",
         ],
-        "meta": Object {
+        "meta": {
           "id": undefined,
           "title": "test",
         },
-        "stories": Object {
-          "Story1": Object {
+        "stories": {
+          "Story1": {
             "hasArgs": false,
             "name": "Story1",
             "source": "<div>story 1</div>",
@@ -240,15 +242,15 @@ describe('extractSource', () => {
         </Story>
         `)
     ).toMatchInlineSnapshot(`
-      Object {
-        "allocatedIds": Array [
+      {
+        "allocatedIds": [
           "default",
           "Story",
           "Button",
         ],
-        "meta": Object {},
-        "stories": Object {
-          "Button77471352": Object {
+        "meta": {},
+        "stories": {
+          "Button77471352": {
             "hasArgs": false,
             "name": "Button",
             "source": "<div>a story</div>",

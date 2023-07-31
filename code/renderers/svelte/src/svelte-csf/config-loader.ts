@@ -1,11 +1,12 @@
 // This file is a rewrite of `@sveltejs/vite-plugin-svelte` without the `Vite`
 // parts: https://github.com/sveltejs/vite-plugin-svelte/blob/e8e52deef93948da735c4ab69c54aced914926cf/packages/vite-plugin-svelte/src/utils/load-svelte-config.ts
-import { logger } from '@storybook/client-logger';
+import { fileURLToPath, pathToFileURL } from 'url';
+
 import { createRequire } from 'module';
-import path from 'path';
 import fs from 'fs';
-import { pathExists } from "fs-extra";
-import { pathToFileURL, fileURLToPath } from 'url';
+import { logger } from '@storybook/node-logger';
+import path from 'path';
+import { pathExists } from 'fs-extra';
 
 /**
  * Try find svelte config and then load it.
@@ -28,7 +29,7 @@ export async function loadSvelteConfig() {
     try {
       return importSvelteOptions(configFile);
     } catch (e) {
-      logger.error(`failed to import config ${configFile}`, e);
+      logger.error(`failed to import config ${configFile} ${e}`);
       err = e;
     }
   }
@@ -37,7 +38,7 @@ export async function loadSvelteConfig() {
     try {
       return requireSvelteOptions(configFile);
     } catch (e) {
-      logger.error(`failed to require config ${configFile}`, e);
+      logger.error(`failed to require config ${configFile} ${e}`);
       if (!err) {
         err = e;
       }
@@ -128,8 +129,7 @@ async function findSvelteConfig() {
   }
   if (configFiles.length > 1) {
     logger.warn(
-      'Multiple svelte configuration files were found, which is unexpected. The first one will be used.',
-      configFiles
+      `Multiple svelte configuration files were found, which is unexpected. The first one will be used. ${configFiles}`
     );
   }
   return configFiles[0];

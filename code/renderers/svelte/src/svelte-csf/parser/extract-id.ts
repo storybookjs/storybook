@@ -25,7 +25,7 @@ export function extractId(
   }
 
   if (!name) {
-    throw new Error("Id or Name should be specified");
+    throw new Error('Id or Name should be specified');
   }
 
   let generated = name.replace(/\W+(.|$)/g, (_, chr) => chr.toUpperCase());
@@ -35,5 +35,3 @@ export function extractId(
   }
   return generated;
 }
-
-

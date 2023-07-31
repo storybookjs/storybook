@@ -1,5 +1,7 @@
 import { getContext, hasContext, setContext } from 'svelte';
-import { writable, Writable } from 'svelte/store';
+
+import type { Writable } from 'svelte/store';
+import { writable } from 'svelte/store';
 
 const CONTEXT_KEY = 'storybook-registration-context';
 const CONTEXT_KEY_COMPONENT = 'storybook-registration-context-component';

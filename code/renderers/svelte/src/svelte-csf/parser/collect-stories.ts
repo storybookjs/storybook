@@ -1,10 +1,10 @@
 /* eslint-env browser */
-import { logger } from '@storybook/client-logger';
-import { combineParameters } from '@storybook/client-api';
-import { extractId } from './extract-id';
 
 import RegisterContext from '../components/RegisterContext.svelte';
 import RenderContext from '../components/RenderContext.svelte';
+import { combineParameters } from '@storybook/client-api';
+import { extractId } from './extract-id.js';
+import { logger } from '@storybook/client-logger';
 
 /* Called from a webpack loader and a jest transformation.
  *
@@ -17,27 +17,41 @@ import RenderContext from '../components/RenderContext.svelte';
  * the one selected is disabled.
  */
 
+interface Story {
+  id: string;
+  name: string;
+  template: string;
+  component: any;
+  isTemplate: boolean;
+  source: boolean;
+}
+
+interface Meta {
+  name: string;
+  component: any;
+}
+
 const createFragment = document.createDocumentFragment
   ? () => document.createDocumentFragment()
   : () => document.createElement('div');
 
-export default (StoriesComponent, { stories = {}, allocatedIds }) => {
+export default (StoriesComponent, { stories = {}, allocatedIds = [] }) => {
   const repositories = {
-    meta: null,
-    stories: [],
+    meta: null as Meta | null,
+    stories: [] as Story[],
   };
 
   // extract all stories
   try {
     const context = new RegisterContext({
-      target: createFragment(),
+      target: createFragment() as Document | Element,
       props: {
         Stories: StoriesComponent,
         repositories,
       },
     });
     context.$destroy();
-  } catch (e) {
+  } catch (e: any) {
     logger.error(`Error extracting stories ${e.toString()}`, e);
   }
 
@@ -134,6 +148,6 @@ export default (StoriesComponent, { stories = {}, allocatedIds }) => {
         // eslint-disable-next-line no-param-reassign
         all[storyId] = storyFn;
         return all;
-      }, {}),
+      }, {}) as { [key: string]: { storyName: string; parameters: string; } },
   };
 };

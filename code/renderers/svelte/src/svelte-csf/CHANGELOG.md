@@ -1,3 +1,15 @@
+# v3.0.5 (Mon Jul 31 2023)
+
+#### 🐛 Bug Fix
+
+- Fix generated ESM, revamp build system [#113](https://github.com/storybookjs/addon-svelte-csf/pull/113) ([@hobbes7878](https://github.com/hobbes7878))
+
+#### Authors: 1
+
+- Jon McClure ([@hobbes7878](https://github.com/hobbes7878))
+
+---
+
 # v3.0.4 (Wed Jul 19 2023)
 
 #### 🐛 Bug Fix

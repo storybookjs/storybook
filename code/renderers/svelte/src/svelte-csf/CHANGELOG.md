@@ -1,3 +1,15 @@
+# v3.0.6 (Tue Aug 01 2023)
+
+#### 🐛 Bug Fix
+
+- fix: swap order of types to avoid module not found [#115](https://github.com/storybookjs/addon-svelte-csf/pull/115) ([@paoloricciuti](https://github.com/paoloricciuti))
+
+#### Authors: 1
+
+- Paolo Ricciuti ([@paoloricciuti](https://github.com/paoloricciuti))
+
+---
+
 # v3.0.5 (Mon Jul 31 2023)
 
 #### 🐛 Bug Fix

@@ -1,3 +1,15 @@
+# v3.0.7 (Tue Aug 01 2023)
+
+#### 🐛 Bug Fix
+
+- Fix missing types by adding back `main` and `types` fields [#118](https://github.com/storybookjs/addon-svelte-csf/pull/118) ([@hobbes7878](https://github.com/hobbes7878))
+
+#### Authors: 1
+
+- Jon McClure ([@hobbes7878](https://github.com/hobbes7878))
+
+---
+
 # v3.0.6 (Tue Aug 01 2023)
 
 #### 🐛 Bug Fix

@@ -1,3 +1,15 @@
+# v3.0.9 (Wed Aug 23 2023)
+
+#### 🐛 Bug Fix
+
+- Fix export condition [#125](https://github.com/storybookjs/addon-svelte-csf/pull/125) ([@benmccann](https://github.com/benmccann))
+
+#### Authors: 1
+
+- Ben McCann ([@benmccann](https://github.com/benmccann))
+
+---
+
 # v3.0.8 (Wed Aug 23 2023)
 
 #### 🐛 Bug Fix

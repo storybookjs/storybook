@@ -1,3 +1,15 @@
+# v3.0.8 (Wed Aug 23 2023)
+
+#### 🐛 Bug Fix
+
+- docs: remove broken link [#126](https://github.com/storybookjs/addon-svelte-csf/pull/126) ([@benmccann](https://github.com/benmccann))
+
+#### Authors: 1
+
+- Ben McCann ([@benmccann](https://github.com/benmccann))
+
+---
+
 # v3.0.7 (Tue Aug 01 2023)
 
 #### 🐛 Bug Fix

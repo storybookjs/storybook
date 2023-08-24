@@ -1,4 +1,4 @@
-import type { SvelteComponent } from 'svelte'
+import type { SvelteComponentTyped, SvelteComponent } from 'svelte';
 import type { Addon_BaseMeta as BaseMeta, Addon_BaseAnnotations as BaseAnnotations, StoryContext, WebRenderer } from '@storybook/types';
 
 
@@ -54,14 +54,14 @@ interface Slots {
 /**
  * Meta.
  */
-export class Meta extends SvelteComponent<BaseMeta<any> & BaseAnnotations<any, DecoratorReturnType>> { }
+export class Meta extends SvelteComponentTyped<BaseMeta<any> & BaseAnnotations<any, DecoratorReturnType>> { }
 /**
  * Story.
  */
-export class Story extends SvelteComponent<StoryProps, any, Slots> { }
+export class Story extends SvelteComponentTyped<StoryProps, any, Slots> { }
 /**
  * Template.
  * 
  * Allow to reuse definition between stories.
  */
-export class Template extends SvelteComponent<TemplateProps, any, Slots> { }
+export class Template extends SvelteComponentTyped<TemplateProps, any, Slots> { }

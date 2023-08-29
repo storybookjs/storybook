@@ -1,3 +1,15 @@
+# v4.0.0 (Tue Aug 29 2023)
+
+#### 💥 Breaking Change
+
+- Require Svelte v4, vite-plugin-svelte v2, Vite v4 [#128](https://github.com/storybookjs/addon-svelte-csf/pull/128) ([@JReinhold](https://github.com/JReinhold))
+
+#### Authors: 1
+
+- Jeppe Reinhold ([@JReinhold](https://github.com/JReinhold))
+
+---
+
 # v3.0.10 (Tue Aug 29 2023)
 
 #### 🐛 Bug Fix

@@ -1,3 +1,15 @@
+# v3.0.10 (Tue Aug 29 2023)
+
+#### 🐛 Bug Fix
+
+- Fix: `typeof Meta` in Svelte v3 (Pin Svelte peer dependency to v3) [#127](https://github.com/storybookjs/addon-svelte-csf/pull/127) ([@JReinhold](https://github.com/JReinhold))
+
+#### Authors: 1
+
+- Jeppe Reinhold ([@JReinhold](https://github.com/JReinhold))
+
+---
+
 # v3.0.9 (Wed Aug 23 2023)
 
 #### 🐛 Bug Fix

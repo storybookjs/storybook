@@ -44,7 +44,7 @@ export default (StoriesComponent, { stories = {}, allocatedIds = [] }) => {
   // extract all stories
   try {
     const context = new RegisterContext({
-      target: createFragment() as Document | Element,
+      target: createFragment() as Element,
       props: {
         Stories: StoriesComponent,
         repositories,

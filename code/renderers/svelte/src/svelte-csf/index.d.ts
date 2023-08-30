@@ -44,7 +44,23 @@ interface TemplateProps extends BaseAnnotations<any, DecoratorReturnType> {
     id?: string;
 }
 
-interface MetaProps extends BaseMeta<any>, BaseAnnotations<any, DecoratorReturnType> { }
+interface MetaProps extends BaseMeta<any>, BaseAnnotations<any, DecoratorReturnType> {
+    /**
+     * Enable the tag 'autodocs'.
+     * 
+     * @see [Automatic documentation](https://storybook.js.org/docs/svelte/writing-docs/autodocs)
+     */
+    autodocs?: boolean;
+    /**
+     * List of tags to add to the stories.
+     * 
+     * It should be a static array of strings.
+     * 
+     * @example
+     *   tags={['autodocs']}
+     */
+    tags?: string[];
+}
 
 interface Slots {
     default: {
@@ -55,6 +71,8 @@ interface Slots {
 }
 /**
  * Meta.
+ * 
+ * @deprecated See https://github.com/storybookjs/addon-svelte-csf/issues/135
  */
 export class Meta extends SvelteComponent<MetaProps> { }
 /**

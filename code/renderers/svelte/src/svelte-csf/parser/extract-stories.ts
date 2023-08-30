@@ -14,6 +14,7 @@ interface StoryDef {
 interface MetaDef {
   title?: string;
   id?: string;
+  tags?: string[];
 }
 
 interface StoriesDef {
@@ -39,6 +40,57 @@ function getStaticAttribute(name: string, node: any): string | undefined {
   }
 
   throw new Error(`Attribute ${name} is not static`);
+}
+
+function getStaticBooleanAttribute(name: string, node: any): boolean | undefined {
+  // extract the attribute
+  const attribute = node.attributes.find(
+    (att: any) => att.type === 'Attribute' && att.name === name
+  );
+
+  if (!attribute) {
+    return undefined;
+  }
+
+  const { value } = attribute;
+
+  // expect the attribute to be static and a boolean
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  throw new Error(`Attribute ${name} is not a static boolean`);
+}
+
+function getMetaTags(node: any): string[] {
+
+  const finalTags = getStaticBooleanAttribute('autodocs', node) ? ["autodocs"] : [];
+
+  const tags = node.attributes.find((att: any) => att.type === 'Attribute' && att.name === 'tags');
+  if (tags) {
+    let valid = false;
+
+    const { value } = tags;
+    if (value && value.length === 1 ) {
+      const { type, expression, data } = value[0];
+      if (type === 'Text') {
+        // tags="autodocs"
+        finalTags.push(data);
+        valid = true;
+      } else if (type === 'MustacheTag' && expression.type === 'ArrayExpression') {
+        // tags={["autodocs"]}
+        const { elements } = expression;
+        elements.forEach((e : any) => finalTags.push(e.value));
+        valid = true;
+      }
+    }
+
+    if (!valid) {
+      throw new Error('Attribute tags should be a static string array or a string');
+    }
+  }
+
+  return finalTags;
 }
 
 /**
@@ -139,6 +191,10 @@ export function extractStories(component: string): StoriesDef {
 
         meta.title = getStaticAttribute('title', node);
         meta.id = getStaticAttribute('id', node);
+        const tags = getMetaTags(node);
+        if (tags.length > 0) {
+          meta.tags = tags;
+        }
       }
     },
   });

@@ -221,6 +221,124 @@ describe('extractSource', () => {
       }
     `);
   });
+  test('Add tags autodocs', () => {
+    expect(
+      extractStories(`
+        <script>
+          import { Story, Meta } from '@storybook/addon-svelte-csf';
+        </script>
+
+        <Meta title='test' autodocs/>
+
+        <Story name="Story1">
+          <div>story 1</div>
+        </Story>
+        `)
+    ).toMatchInlineSnapshot(`
+      {
+        "allocatedIds": [
+          "default",
+          "Story",
+          "Meta",
+        ],
+        "meta": {
+          "id": undefined,
+          "tags": [
+            "autodocs",
+          ],
+          "title": "test",
+        },
+        "stories": {
+          "Story1": {
+            "hasArgs": false,
+            "name": "Story1",
+            "source": "<div>story 1</div>",
+            "storyId": "test--story-1",
+            "template": false,
+          },
+        },
+      }
+    `);
+  });
+  test('Add tags', () => {
+    expect(
+      extractStories(`
+        <script>
+          import { Story, Meta } from '@storybook/addon-svelte-csf';
+        </script>
+
+        <Meta title='test' tags={['a','b']}/>
+
+        <Story name="Story1">
+          <div>story 1</div>
+        </Story>
+        `)
+    ).toMatchInlineSnapshot(`
+      {
+        "allocatedIds": [
+          "default",
+          "Story",
+          "Meta",
+        ],
+        "meta": {
+          "id": undefined,
+          "tags": [
+            "a",
+            "b",
+          ],
+          "title": "test",
+        },
+        "stories": {
+          "Story1": {
+            "hasArgs": false,
+            "name": "Story1",
+            "source": "<div>story 1</div>",
+            "storyId": "test--story-1",
+            "template": false,
+          },
+        },
+      }
+    `);
+  });
+  test('Add Only one tag', () => {
+    expect(
+      extractStories(`
+        <script>
+          import { Story, Meta } from '@storybook/addon-svelte-csf';
+        </script>
+
+        <Meta title='test' tags='a'/>
+
+        <Story name="Story1">
+          <div>story 1</div>
+        </Story>
+        `)
+    ).toMatchInlineSnapshot(`
+      {
+        "allocatedIds": [
+          "default",
+          "Story",
+          "Meta",
+        ],
+        "meta": {
+          "id": undefined,
+          "tags": [
+            "a",
+          ],
+          "title": "test",
+        },
+        "stories": {
+          "Story1": {
+            "hasArgs": false,
+            "name": "Story1",
+            "source": "<div>story 1</div>",
+            "storyId": "test--story-1",
+            "template": false,
+          },
+        },
+      }
+    `);
+  });
   test('Duplicate Id', () => {
     expect(
       extractStories(`

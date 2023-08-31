@@ -339,6 +339,32 @@ describe('extractSource', () => {
       }
     `);
   });
+  test('Meta as exported module object', () => {
+    expect(
+      extractStories(`
+        <script context='module'>
+          export const meta = {
+            title: 'MyStory',
+            tags: ['a']
+          };
+        </script>
+        `)
+    ).toMatchInlineSnapshot(`
+      {
+        "allocatedIds": [
+          "default",
+        ],
+        "meta": {
+          "id": undefined,
+          "tags": [
+            "a",
+          ],
+          "title": "MyStory",
+        },
+        "stories": {},
+      }
+    `);
+  });
   test('Duplicate Id', () => {
     expect(
       extractStories(`

@@ -42,10 +42,12 @@ export default function csfPlugin(svelteOptions) {
         .filter(([, def]) => !def.template)
         .map(([storyId]) => storyId);
 
+      const metaExported = code.includes('export { meta }');
+      s.replace('export { meta };', '// export { meta };');
       const output = [
         '',
         `import parser from '${parser}';`,
-        `const __storiesMetaData = parser(${component}, ${JSON.stringify(all)});`,
+        `const __storiesMetaData = parser(${component}, ${JSON.stringify(all)}${metaExported ? ', meta' : ''});`,
         'export default __storiesMetaData.meta;',
         `export const __namedExportsOrder = ${JSON.stringify(namedExportsOrder)};`,
         storyDef,

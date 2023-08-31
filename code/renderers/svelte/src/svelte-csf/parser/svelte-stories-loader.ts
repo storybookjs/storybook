@@ -54,11 +54,12 @@ function transformSvelteStories(code: string) {
     .map(([id]) => `export const ${id} = __storiesMetaData.stories[${JSON.stringify(id)}]`)
     .join('\n');
 
-  const codeWithoutDefaultExport = code.replace('export default ', '//export default');
-
+  const metaExported = code.includes('export { meta }');
+  const codeWithoutDefaultExport = code.replace('export default ', '//export default').replace('export { meta };', '// export { meta };');
+  
   return `${codeWithoutDefaultExport}
     const { default: parser } = require('${parser}');
-    const __storiesMetaData = parser(${componentName}, ${JSON.stringify(storiesDef)});
+    const __storiesMetaData = parser(${componentName}, ${JSON.stringify(storiesDef)}${metaExported ? ', meta' : ''});
     export default __storiesMetaData.meta;
     ${storyDef};
   ` as string;

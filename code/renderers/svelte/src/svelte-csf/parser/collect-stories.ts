@@ -35,7 +35,7 @@ const createFragment = document.createDocumentFragment
   ? () => document.createDocumentFragment()
   : () => document.createElement('div');
 
-export default (StoriesComponent, { stories = {}, allocatedIds = [] }) => {
+export default (StoriesComponent, { stories = {}, allocatedIds = [] }, exportedMeta = undefined) => {
   const repositories = {
     meta: null as Meta | null,
     stories: [] as Story[],
@@ -55,7 +55,7 @@ export default (StoriesComponent, { stories = {}, allocatedIds = [] }) => {
     logger.error(`Error extracting stories ${e.toString()}`, e);
   }
 
-  const { meta } = repositories;
+  const meta = exportedMeta || repositories.meta;
   if (!meta) {
     logger.error('Missing <Meta/> tag');
     return {};

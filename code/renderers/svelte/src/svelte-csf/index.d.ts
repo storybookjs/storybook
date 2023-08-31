@@ -56,8 +56,7 @@ interface MetaProps extends BaseMeta<any>, BaseAnnotations<any, DecoratorReturnT
      * 
      * It should be a static array of strings.
      * 
-     * @example
-     *   tags={['autodocs']}
+     * @example tags={['autodocs']}
      */
     tags?: string[];
 }
@@ -72,7 +71,7 @@ interface Slots {
 /**
  * Meta.
  * 
- * @deprecated See https://github.com/storybookjs/addon-svelte-csf/issues/135
+ * @deprecated Use `export const meta`. See https://github.com/storybookjs/addon-svelte-csf for an example
  */
 export class Meta extends SvelteComponent<MetaProps> { }
 /**

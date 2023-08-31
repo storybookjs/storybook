@@ -1,3 +1,15 @@
+# v4.0.1 (Thu Aug 31 2023)
+
+#### 🐛 Bug Fix
+
+- Fix svelte-stories-loader in Windows [#133](https://github.com/storybookjs/addon-svelte-csf/pull/133) ([@j3rem1e](https://github.com/j3rem1e))
+
+#### Authors: 1
+
+- Jérémie ([@j3rem1e](https://github.com/j3rem1e))
+
+---
+
 # v4.0.0 (Tue Aug 29 2023)
 
 #### 💥 Breaking Change

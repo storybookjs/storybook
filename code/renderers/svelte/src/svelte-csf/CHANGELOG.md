@@ -1,3 +1,15 @@
+# v4.0.2 (Sat Sep 02 2023)
+
+#### 🐛 Bug Fix
+
+- [Bug] titlePrefix in advanced story specifiers causes the story to crash with "Didn't find 'xyz' in CSF file" [#136](https://github.com/storybookjs/addon-svelte-csf/pull/136) ([@j3rem1e](https://github.com/j3rem1e))
+
+#### Authors: 1
+
+- Jérémie ([@j3rem1e](https://github.com/j3rem1e))
+
+---
+
 # v4.0.1 (Thu Aug 31 2023)
 
 #### 🐛 Bug Fix

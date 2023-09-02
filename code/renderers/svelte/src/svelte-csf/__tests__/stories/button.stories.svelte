@@ -9,7 +9,7 @@
   }
 </script>
 
-<Meta title="Button" component={Button}/>
+<Meta component={Button}/>
 
 <Template let:args>
   <Button {...args} on:click={handleClick}>

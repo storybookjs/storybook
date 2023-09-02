@@ -3,6 +3,7 @@ import * as svelte from 'svelte/compiler';
 import { extractStories } from '../parser/extract-stories.js';
 import fs from 'fs-extra';
 import { loadSvelteConfig } from '../config-loader.js';
+import { storyNameFromExport, toId } from '@storybook/csf';
 
 export async function svelteIndexer(fileName, { makeTitle }) {
   let code = (await fs.readFile(fileName, 'utf-8')).toString();
@@ -13,13 +14,13 @@ export async function svelteIndexer(fileName, { makeTitle }) {
   }
 
   const defs = extractStories(code);
-
+  const meta = { ...defs.meta, title: makeTitle(defs.meta.title) };
   return {
-    meta: { title: makeTitle(defs.meta.title) },
+    meta,
     stories: Object.entries(defs.stories)
       .filter(([id, story]) => !story.template)
       .map(([id, story]) => ({
-        id: story.storyId,
+        id: toId(meta.id || meta.title || id, storyNameFromExport(id)),
         name: story.name,
       })),
   };

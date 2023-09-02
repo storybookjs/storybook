@@ -1,13 +1,10 @@
 import * as svelte from 'svelte/compiler';
 import type { Node } from 'estree';
 
-import { storyNameFromExport, toId } from '@storybook/csf';
-
 import dedent from 'dedent';
 import { extractId } from './extract-id.js';
 
 interface StoryDef {
-  storyId: string;
   name: string;
   template: boolean;
   source: string;
@@ -131,7 +128,6 @@ export function extractStories(component: string): StoriesDef {
             source = dedent`${component.substr(start, end - start)}`;
           }
           stories[isTemplate ? `tpl:${id}` : id] = {
-            storyId: toId(meta.id || meta.title || id, storyNameFromExport(id)),
             name,
             template: isTemplate,
             source,

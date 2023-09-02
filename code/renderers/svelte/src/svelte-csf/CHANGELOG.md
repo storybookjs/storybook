@@ -1,3 +1,15 @@
+# v4.0.3 (Sat Sep 02 2023)
+
+#### 🐛 Bug Fix
+
+- Fix test snapshots [#137](https://github.com/storybookjs/addon-svelte-csf/pull/137) ([@j3rem1e](https://github.com/j3rem1e))
+
+#### Authors: 1
+
+- Jérémie ([@j3rem1e](https://github.com/j3rem1e))
+
+---
+
 # v4.0.2 (Sat Sep 02 2023)
 
 #### 🐛 Bug Fix

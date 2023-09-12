@@ -44,6 +44,8 @@ interface TemplateProps extends BaseAnnotations<any, DecoratorReturnType> {
     id?: string;
 }
 
+interface MetaProps extends BaseMeta<any> extends BaseAnnotations<any, DecoratorReturnType> { }
+
 interface Slots {
     default: {
         args: any;
@@ -54,7 +56,7 @@ interface Slots {
 /**
  * Meta.
  */
-export class Meta extends SvelteComponent<BaseMeta<any> & BaseAnnotations<any, DecoratorReturnType>> { }
+export class Meta extends SvelteComponent<MetaProps> { }
 /**
  * Story.
  */

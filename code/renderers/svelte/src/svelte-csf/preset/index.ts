@@ -59,7 +59,7 @@ export async function viteFinal(config, options) {
 export const storyIndexers = async (indexers) => {
   return [
     {
-      test: /\.stories\.svelte$/,
+      test: /\.svelte$/,
       indexer: svelteIndexer,
     },
     ...(indexers || []),

@@ -1,3 +1,15 @@
+# v4.0.5 (Wed Sep 13 2023)
+
+#### 🐛 Bug Fix
+
+- fix: MetaProps typing [#139](https://github.com/storybookjs/addon-svelte-csf/pull/139) ([@paoloricciuti](https://github.com/paoloricciuti))
+
+#### Authors: 1
+
+- Paolo Ricciuti ([@paoloricciuti](https://github.com/paoloricciuti))
+
+---
+
 # v4.0.4 (Wed Sep 13 2023)
 
 #### 🐛 Bug Fix

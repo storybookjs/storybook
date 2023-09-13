@@ -44,7 +44,7 @@ interface TemplateProps extends BaseAnnotations<any, DecoratorReturnType> {
     id?: string;
 }
 
-interface MetaProps extends BaseMeta<any> extends BaseAnnotations<any, DecoratorReturnType> { }
+interface MetaProps extends (BaseMeta<any> & BaseAnnotations<any, DecoratorReturnType>) { }
 
 interface Slots {
     default: {

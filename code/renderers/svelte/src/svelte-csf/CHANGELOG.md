@@ -1,3 +1,15 @@
+# v4.0.4 (Wed Sep 13 2023)
+
+#### 🐛 Bug Fix
+
+- fix: move MetaProps to its own declaration to allow for overrides [#138](https://github.com/storybookjs/addon-svelte-csf/pull/138) ([@paoloricciuti](https://github.com/paoloricciuti))
+
+#### Authors: 1
+
+- Paolo Ricciuti ([@paoloricciuti](https://github.com/paoloricciuti))
+
+---
+
 # v4.0.3 (Sat Sep 02 2023)
 
 #### 🐛 Bug Fix

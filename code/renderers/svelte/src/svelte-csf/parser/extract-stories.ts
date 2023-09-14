@@ -238,7 +238,6 @@ export function extractStories(component: string): StoriesDef {
       }
     },
   });
-  
   return {
     meta,
     stories,

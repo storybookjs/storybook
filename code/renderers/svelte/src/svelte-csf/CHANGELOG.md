@@ -1,3 +1,15 @@
+# v4.0.6 (Fri Sep 15 2023)
+
+#### 🐛 Bug Fix
+
+- Allow configuration of filename patterns besides *.stories.svelte [#140](https://github.com/storybookjs/addon-svelte-csf/pull/140) ([@j3rem1e](https://github.com/j3rem1e))
+
+#### Authors: 1
+
+- Jérémie ([@j3rem1e](https://github.com/j3rem1e))
+
+---
+
 # v4.0.5 (Wed Sep 13 2023)
 
 #### 🐛 Bug Fix

@@ -1,3 +1,18 @@
+# v4.0.7 (Sat Sep 16 2023)
+
+#### 🐛 Bug Fix
+
+- Update src/parser/extract-stories.ts [#134](https://github.com/storybookjs/addon-svelte-csf/pull/134) ([@benmccann](https://github.com/benmccann))
+- Allow 'meta' to be exported as const from module script [#134](https://github.com/storybookjs/addon-svelte-csf/pull/134) ([@j3rem1e](https://github.com/j3rem1e))
+- Supports for tags in <Meta/> [#134](https://github.com/storybookjs/addon-svelte-csf/pull/134) ([@j3rem1e](https://github.com/j3rem1e))
+
+#### Authors: 2
+
+- Ben McCann ([@benmccann](https://github.com/benmccann))
+- Jérémie ([@j3rem1e](https://github.com/j3rem1e))
+
+---
+
 # v4.0.6 (Fri Sep 15 2023)
 
 #### 🐛 Bug Fix

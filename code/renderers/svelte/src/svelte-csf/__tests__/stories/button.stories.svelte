@@ -12,7 +12,7 @@
 <Meta component={Button}/>
 
 <Template let:args>
-  <Button {...args} on:click={handleClick}>
+  <Button {...args} on:click={handleClick} on:click>
     You clicked: {count}
   </Button>
 </Template>

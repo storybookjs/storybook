@@ -1,3 +1,15 @@
+# v4.0.8 (Thu Sep 21 2023)
+
+#### 🐛 Bug Fix
+
+- Fix forwarding of actions handlers [#142](https://github.com/storybookjs/addon-svelte-csf/pull/142) ([@j3rem1e](https://github.com/j3rem1e))
+
+#### Authors: 1
+
+- Jérémie ([@j3rem1e](https://github.com/j3rem1e))
+
+---
+
 # v4.0.7 (Sat Sep 16 2023)
 
 #### 🐛 Bug Fix

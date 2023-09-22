@@ -14,6 +14,9 @@ export function createRenderContext(props: any = {}) {
     args: {},
     ...props,
   });
+
+  // reset the component context
+  resetStoryRenderContext();
 }
 
 export function createRegistrationContext(repositories: any) {
@@ -36,12 +39,17 @@ export function useContext() {
   }
   return getContext(CONTEXT_KEY);
 }
+
+function resetStoryRenderContext() {
+  setContext(CONTEXT_KEY_COMPONENT, { argsStore: writable({}), storyContextStore: writable({}) });
+}
+
 export function getStoryRenderContext(): {
   argsStore: Writable<Record<string, unknown>>;
   storyContextStore: Writable<Record<string, unknown>>;
 } {
   if (!hasContext(CONTEXT_KEY_COMPONENT)) {
-    setContext(CONTEXT_KEY_COMPONENT, { argsStore: writable({}), storyContextStore: writable({}) });
+    resetStoryRenderContext();
   }
   return getContext(CONTEXT_KEY_COMPONENT);
 }

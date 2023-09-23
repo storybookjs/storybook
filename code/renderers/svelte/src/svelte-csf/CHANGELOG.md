@@ -1,3 +1,15 @@
+# v4.0.9 (Sat Sep 23 2023)
+
+#### 🐛 Bug Fix
+
+- Fix reactivity of args when HMR remount the RenderContext [#144](https://github.com/storybookjs/addon-svelte-csf/pull/144) ([@j3rem1e](https://github.com/j3rem1e))
+
+#### Authors: 1
+
+- Jérémie ([@j3rem1e](https://github.com/j3rem1e))
+
+---
+
 # v4.0.8 (Thu Sep 21 2023)
 
 #### 🐛 Bug Fix

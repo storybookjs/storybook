@@ -324,13 +324,12 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
 
     const isReadOnly = readOnly(name, data, keyPath, deep, dataType);
 
-    const removeItemButton =
-      minusMenuElement &&
-      cloneElement(minusMenuElement, {
-        onClick: handleRemove,
-        className: 'rejt-minus-menu',
-        style: minus,
-      });
+    const removeItemButton = minusMenuElement && cloneElement(minusMenuElement, {
+      onClick: handleRemove,
+      className: 'rejt-minus-menu',
+      style: minus,
+      'aria-label': `remove the array '${name}'`,
+    });
 
     return (
       <span className="rejt-collapsed">
@@ -368,19 +367,21 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
 
     const isReadOnly = readOnly(name, data, keyPath, deep, dataType);
 
-    const addItemButton =
+    const addItemButton = 
       plusMenuElement &&
       cloneElement(plusMenuElement, {
         onClick: this.handleAddMode,
         className: 'rejt-plus-menu',
         style: plus,
+        'aria-label': `add a new item to the '${name}' array`,
       });
-    const removeItemButton =
+    const removeItemButton = 
       minusMenuElement &&
       cloneElement(minusMenuElement, {
         onClick: handleRemove,
         className: 'rejt-minus-menu',
         style: minus,
+        'aria-label': `remove the array '${name}'`,
       });
 
     const onlyValue = true;
@@ -669,12 +670,18 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
           {value}
         </span>
       );
-      const minusMenuLayout =
+
+      const parentPropertyName = comeFromKeyPath.at(-1);
+
+      const minusMenuLayout = 
         minusMenuElement &&
         cloneElement(minusMenuElement, {
           onClick: handleRemove,
           className: 'rejt-minus-menu',
           style: style.minus,
+          'aria-label': `remove the function '${name}'${
+            parentPropertyName ? ` from '${parentPropertyName}'` : ''
+          }`,
         });
       minusElement = resultOnlyResult ? null : minusMenuLayout;
     }
@@ -1233,12 +1240,13 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
 
     const isReadOnly = readOnly(name, data, keyPath, deep, dataType);
 
-    const removeItemButton =
+    const removeItemButton = 
       minusMenuElement &&
       cloneElement(minusMenuElement, {
         onClick: handleRemove,
         className: 'rejt-minus-menu',
         style: minus,
+        'aria-label': `remove the object '${name}'`,
       });
 
     return (
@@ -1279,12 +1287,13 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
 
     const isReadOnly = readOnly(name, data, keyPath, deep, dataType);
 
-    const addItemButton =
+    const addItemButton = 
       plusMenuElement &&
       cloneElement(plusMenuElement, {
         onClick: this.handleAddMode,
         className: 'rejt-plus-menu',
         style: plus,
+        'aria-label': `add a new property to the object '${name}'`,
       });
     const removeItemButton =
       minusMenuElement &&
@@ -1292,6 +1301,7 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
         onClick: handleRemove,
         className: 'rejt-minus-menu',
         style: minus,
+        'aria-label': `remove the object '${name}'`,
       });
 
     const list = keyList.map((key) => (
@@ -1560,12 +1570,17 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
       ref: this.refInput,
       defaultValue: JSON.stringify(originalValue),
     });
-    const minusMenuLayout =
-      minusMenuElement &&
-      cloneElement(minusMenuElement, {
+
+    const parentPropertyName = keyPath.at(-2);
+
+    const minusMenuLayout = 
+      minusMenuElement && cloneElement(minusMenuElement, {
         onClick: handleRemove,
         className: 'rejt-minus-menu',
         style: style.minus,
+        'aria-label': `remove the property '${name}' with value '${originalValue}'${
+          parentPropertyName ? ` from '${parentPropertyName}'` : ''
+        }`,
       });
 
     return (

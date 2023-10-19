@@ -28,16 +28,9 @@ const Wrapper = styled.div(({ theme }) => ({
     marginLeft: '1rem',
     fontSize: '13px',
   },
-  '.rejt-value-node, .rejt-object-node > .rejt-collapsed, .rejt-array-node > .rejt-collapsed, .rejt-object-node > .rejt-not-collapsed, .rejt-array-node > .rejt-not-collapsed':
-    {
-      '& > svg': {
-        opacity: 0,
-        transition: 'opacity 0.2s',
-      },
-    },
   '.rejt-value-node:hover, .rejt-object-node:hover > .rejt-collapsed, .rejt-array-node:hover > .rejt-collapsed, .rejt-object-node:hover > .rejt-not-collapsed, .rejt-array-node:hover > .rejt-not-collapsed':
     {
-      '& > svg': {
+      '.rejt-plus-menu, .rejt-minus-menu': {
         opacity: 1,
       },
     },
@@ -56,13 +49,6 @@ const Wrapper = styled.div(({ theme }) => ({
   },
   '.rejt-not-collapsed-delimiter': {
     lineHeight: '22px',
-  },
-  '.rejt-plus-menu': {
-    marginLeft: 5,
-  },
-  '.rejt-object-node > span > *, .rejt-array-node > span > *': {
-    position: 'relative',
-    zIndex: 2,
   },
   '.rejt-object-node, .rejt-array-node': {
     position: 'relative',
@@ -140,33 +126,35 @@ const ButtonInline = styled.button<{ primary?: boolean }>(({ theme, primary }) =
   order: primary ? 'initial' : 9,
 }));
 
-const ActionAddIcon = styled(AddIcon)<{ disabled?: boolean }>(({ theme, disabled }) => ({
-  display: 'inline-block',
+const ActionButton = styled.button(({ theme }) => ({
+  background: 'none',
+  border: 0,
+  display: 'inline-flex',
   verticalAlign: 'middle',
-  width: 15,
-  height: 15,
   padding: 3,
   marginLeft: 5,
-  cursor: disabled ? 'not-allowed' : 'pointer',
   color: theme.textMutedColor,
-  '&:hover': disabled ? {} : { color: theme.color.ancillary },
-  'svg + &': {
-    marginLeft: 0,
+  opacity: 0,
+  transition: 'opacity 0.2s',
+  cursor: 'pointer',
+  position: 'relative',
+  svg: {
+    width: 9,
+    height: 9,
   },
-}));
-
-const ActionSubstractIcon = styled(SubtractIcon)<{ disabled?: boolean }>(({ theme, disabled }) => ({
-  display: 'inline-block',
-  verticalAlign: 'middle',
-  width: 15,
-  height: 15,
-  padding: 3,
-  marginLeft: 5,
-  cursor: disabled ? 'not-allowed' : 'pointer',
-  color: theme.textMutedColor,
-  '&:hover': disabled ? {} : { color: theme.color.negative },
-  'svg + &': {
-    marginLeft: 0,
+  ':disabled': {
+    cursor: 'not-allowed',
+  },
+  ':focus-visible': {
+    opacity: 1,
+  },
+  '&:hover:not(:disabled), &:focus-visible:not(:disabled)': {
+    '&.rejt-plus-menu': {
+      color: theme.color.ancillary,
+    },
+    '&.rejt-minus-menu': {
+      color: theme.color.negative,
+    },
   },
 }));
 
@@ -220,7 +208,13 @@ const RawInput = styled(Form.Textarea)(({ theme }) => ({
   },
 }));
 
-const ENTER_EVENT = { bubbles: true, cancelable: true, key: 'Enter', code: 'Enter', keyCode: 13 };
+const ENTER_EVENT = {
+  bubbles: true,
+  cancelable: true,
+  key: 'Enter',
+  code: 'Enter',
+  keyCode: 13,
+};
 const dispatchEnterKey = (event: SyntheticEvent<HTMLInputElement>) => {
   event.currentTarget.dispatchEvent(new globalWindow.KeyboardEvent('keydown', ENTER_EVENT));
 };
@@ -335,8 +329,16 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
               Save
             </ButtonInline>
           }
-          plusMenuElement={<ActionAddIcon />}
-          minusMenuElement={<ActionSubstractIcon />}
+          plusMenuElement={
+            <ActionButton type="button">
+              <AddIcon />
+            </ActionButton>
+          }
+          minusMenuElement={
+            <ActionButton type="button">
+              <SubtractIcon />
+            </ActionButton>
+          }
           inputElement={(_: any, __: any, ___: any, key: string) =>
             key ? <Input onFocus={selectValue} onBlur={dispatchEnterKey} /> : <Input />
           }

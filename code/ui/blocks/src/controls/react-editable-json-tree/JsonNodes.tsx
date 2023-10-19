@@ -1,6 +1,5 @@
 /* eslint-disable react/no-direct-mutation-state */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
-/* eslint-disable react/sort-comp */
 /* eslint-disable react/no-array-index-key */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable react/button-has-type */
@@ -43,22 +42,20 @@ export class JsonAddValue extends Component<JsonAddValueProps, JsonAddValueState
     if (onlyValue && inputRefValue && typeof inputRefValue.focus === 'function') {
       inputRefValue.focus();
     }
-
-    document.addEventListener('keydown', this.onKeydown);
-  }
-
-  componentWillUnmount() {
-    document.removeEventListener('keydown', this.onKeydown);
   }
 
   onKeydown(event: KeyboardEvent) {
-    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) return;
     if (event.code === 'Enter' || event.key === 'Enter') {
       event.preventDefault();
+
       this.onSubmit();
+
+      return;
     }
+
     if (event.code === 'Escape' || event.key === 'Escape') {
       event.preventDefault();
+
       this.props.handleCancel();
     }
   }
@@ -111,6 +108,7 @@ export class JsonAddValue extends Component<JsonAddValueProps, JsonAddValueState
     const inputElementValueLayout = cloneElement(inputElementValue, {
       placeholder: 'Value',
       ref: this.refInputValue,
+      onKeyDown: this.onKeydown,
     });
     let inputElementKeyLayout = null;
 
@@ -119,6 +117,7 @@ export class JsonAddValue extends Component<JsonAddValueProps, JsonAddValueState
       inputElementKeyLayout = cloneElement(inputElementKey, {
         placeholder: 'Key',
         ref: this.refInputKey,
+        onKeyDown: this.onKeydown,
       });
     }
 
@@ -540,22 +539,18 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
     }
   }
 
-  componentDidMount() {
-    document.addEventListener('keydown', this.onKeydown);
-  }
-
-  componentWillUnmount() {
-    document.removeEventListener('keydown', this.onKeydown);
-  }
-
   onKeydown(event: KeyboardEvent) {
-    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) return;
     if (event.code === 'Enter' || event.key === 'Enter') {
       event.preventDefault();
+
       this.handleEdit();
+
+      return;
     }
+
     if (event.code === 'Escape' || event.key === 'Escape') {
       event.preventDefault();
+
       this.handleCancelEdit();
     }
   }
@@ -638,7 +633,8 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
       });
       const textareaElementLayout = cloneElement(textareaElement, {
         ref: this.refInput,
-        defaultValue: originalValue,
+        defaultValue: value,
+        onKeyDown: this.onKeydown,
       });
 
       result = (
@@ -1444,22 +1440,16 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
     }
   }
 
-  componentDidMount() {
-    document.addEventListener('keydown', this.onKeydown);
-  }
-
-  componentWillUnmount() {
-    document.removeEventListener('keydown', this.onKeydown);
-  }
-
   onKeydown(event: KeyboardEvent) {
-    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) return;
     if (event.code === 'Enter' || event.key === 'Enter') {
       event.preventDefault();
+
       this.handleEdit();
     }
+
     if (event.code === 'Escape' || event.key === 'Escape') {
       event.preventDefault();
+
       this.handleCancelEdit();
     }
   }
@@ -1540,6 +1530,7 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
     const inputElementLayout = cloneElement(inputElement, {
       ref: this.refInput,
       defaultValue: JSON.stringify(originalValue),
+      onKeyDown: this.onKeydown,
     });
 
     const parentPropertyName = keyPath.at(-2);

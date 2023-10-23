@@ -1,5 +1,4 @@
 /* eslint-disable react/no-direct-mutation-state */
-/* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable react/no-array-index-key */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable react/button-has-type */
@@ -11,6 +10,7 @@ import * as inputUsageTypes from './types/inputUsageTypes';
 import * as dataTypes from './types/dataTypes';
 import * as deltaTypes from './types/deltaTypes';
 import { getObjectType, isComponentWillChange } from './utils/objectTypes';
+import { JsonNodeAccordion } from './JsonNodeAccordion';
 
 interface JsonAddValueState {
   inputRefKey: any;
@@ -332,12 +332,12 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
     });
 
     return (
-      <span className="rejt-collapsed">
-        <span className="rejt-collapsed-text" style={collapsed} onClick={this.handleCollapseMode}>
+      <>
+        <span style={collapsed}>
           [...] {data.length} {data.length === 1 ? 'item' : 'items'}
         </span>
         {!isReadOnly && removeItemButton}
-      </span>
+      </>
     );
   }
 
@@ -384,7 +384,7 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
     const startObject = '[';
     const endObject = ']';
     return (
-      <span className="rejt-not-collapsed">
+      <>
         <span className="rejt-not-collapsed-delimiter" style={delimiter}>
           {startObject}
         </span>
@@ -438,25 +438,24 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
           {endObject}
         </span>
         {!isReadOnly && removeItemButton}
-      </span>
+      </>
     );
   }
 
   render() {
-    const { name, collapsed, data, keyPath, deep } = this.state;
-    const { dataType, getStyle } = this.props;
+    const { name, collapsed, keyPath, deep } = this.state;
     const value = collapsed ? this.renderCollapsed() : this.renderNotCollapsed();
-    const style = getStyle(name, data, keyPath, deep, dataType);
 
     return (
-      <div className="rejt-array-node">
-        <span onClick={this.handleCollapseMode}>
-          <span className="rejt-name" style={style.name}>
-            {name} :{' '}
-          </span>
-        </span>
+      <JsonNodeAccordion
+        name={name}
+        collapsed={collapsed}
+        deep={deep}
+        keyPath={keyPath}
+        onClick={this.handleCollapseMode}
+      >
         {value}
-      </div>
+      </JsonNodeAccordion>
     );
   }
 }
@@ -669,7 +668,7 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
     }
 
     return (
-      <li className="rejt-function-value-node" style={style.li}>
+      <li className="rejt-value-node" style={style.li}>
         <span className="rejt-name" style={style.name}>
           {name} :{' '}
         </span>
@@ -1230,12 +1229,12 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
     });
 
     return (
-      <span className="rejt-collapsed">
-        <span className="rejt-collapsed-text" style={collapsed} onClick={this.handleCollapseMode}>
+      <>
+        <span style={collapsed}>
           {'{...}'} {keyList.length} {keyList.length === 1 ? 'key' : 'keys'}
         </span>
         {!isReadOnly && removeItemButton}
-      </span>
+      </>
     );
   }
 
@@ -1313,7 +1312,7 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
     const endObject = '}';
 
     return (
-      <span className="rejt-not-collapsed">
+      <>
         <span className="rejt-not-collapsed-delimiter" style={delimiter}>
           {startObject}
         </span>
@@ -1339,25 +1338,24 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
           {endObject}
         </span>
         {!isReadOnly && removeItemButton}
-      </span>
+      </>
     );
   }
 
   render() {
-    const { name, collapsed, data, keyPath, deep } = this.state;
-    const { getStyle, dataType } = this.props;
+    const { name, collapsed, keyPath, deep } = this.state;
     const value = collapsed ? this.renderCollapsed() : this.renderNotCollapsed();
-    const style = getStyle(name, data, keyPath, deep, dataType);
 
     return (
-      <div className="rejt-object-node">
-        <span onClick={this.handleCollapseMode}>
-          <span className="rejt-name" style={style.name}>
-            {name} :{' '}
-          </span>
-        </span>
+      <JsonNodeAccordion
+        name={name}
+        collapsed={collapsed}
+        deep={deep}
+        keyPath={keyPath}
+        onClick={this.handleCollapseMode}
+      >
         {value}
-      </div>
+      </JsonNodeAccordion>
     );
   }
 }

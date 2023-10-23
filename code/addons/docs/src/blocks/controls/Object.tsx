@@ -27,13 +27,13 @@ const Wrapper = styled.div(({ theme }) => ({
   '.rejt-tree': {
     marginLeft: '1rem',
     fontSize: '13px',
+    listStyleType: 'none',
   },
-  '.rejt-value-node:hover, .rejt-object-node:hover > .rejt-collapsed, .rejt-array-node:hover > .rejt-collapsed, .rejt-object-node:hover > .rejt-not-collapsed, .rejt-array-node:hover > .rejt-not-collapsed':
-    {
-      '.rejt-plus-menu, .rejt-minus-menu': {
-        opacity: 1,
-      },
+  '.rejt-value-node:hover': {
+    '& > button': {
+      opacity: 1,
     },
+  },
   '.rejt-edit-form button': {
     display: 'none',
   },
@@ -49,55 +49,6 @@ const Wrapper = styled.div(({ theme }) => ({
   },
   '.rejt-not-collapsed-delimiter': {
     lineHeight: '22px',
-  },
-  '.rejt-object-node, .rejt-array-node': {
-    position: 'relative',
-  },
-  '.rejt-object-node > span:first-of-type::after, .rejt-array-node > span:first-of-type::after, .rejt-collapsed::before, .rejt-not-collapsed::before':
-    {
-      content: '""',
-      position: 'absolute',
-      top: 0,
-      display: 'block',
-      width: '100%',
-      marginLeft: '-1rem',
-      padding: '0 4px 0 1rem',
-      height: 22,
-    },
-  '.rejt-collapsed::before, .rejt-not-collapsed::before': {
-    zIndex: 1,
-    background: 'transparent',
-    borderRadius: 4,
-    transition: 'background 0.2s',
-    pointerEvents: 'none',
-    opacity: 0.1,
-  },
-  '.rejt-object-node:hover, .rejt-array-node:hover': {
-    '& > .rejt-collapsed::before, & > .rejt-not-collapsed::before': {
-      background: theme.color.secondary,
-    },
-  },
-  '.rejt-collapsed::after, .rejt-not-collapsed::after': {
-    content: '""',
-    position: 'absolute',
-    display: 'inline-block',
-    pointerEvents: 'none',
-    width: 0,
-    height: 0,
-  },
-  '.rejt-collapsed::after': {
-    left: -8,
-    top: 8,
-    borderTop: '3px solid transparent',
-    borderBottom: '3px solid transparent',
-    borderLeft: '3px solid rgba(153,153,153,0.6)',
-  },
-  '.rejt-not-collapsed::after': {
-    left: -10,
-    top: 10,
-    borderTop: '3px solid rgba(153,153,153,0.6)',
-    borderLeft: '3px solid transparent',
-    borderRight: '3px solid transparent',
   },
   '.rejt-value': {
     display: 'inline-block',
@@ -145,7 +96,7 @@ const ActionButton = styled.button(({ theme }) => ({
   ':disabled': {
     cursor: 'not-allowed',
   },
-  ':focus-visible': {
+  ':hover, :focus-visible': {
     opacity: 1,
   },
   '&:hover:not(:disabled), &:focus-visible:not(:disabled)': {

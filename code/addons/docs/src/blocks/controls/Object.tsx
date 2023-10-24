@@ -256,9 +256,12 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
     <Wrapper aria-readonly={readonly}>
       {isObjectOrArray && (
         <RawButton
+          role="switch"
+          aria-checked={showRaw}
+          aria-label={`Edit the ${name} properties in text format`}
           onClick={(e: SyntheticEvent) => {
             e.preventDefault();
-            setShowRaw((v) => !v);
+            setShowRaw((isRaw) => !isRaw);
           }}
         >
           {showRaw ? <EyeCloseIcon /> : <EyeIcon />}

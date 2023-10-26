@@ -74,7 +74,6 @@ const ButtonInline = styled.button<{ primary?: boolean }>(({ theme, primary }) =
   color: primary ? theme.color.lightest : theme.color.dark,
   fontWeight: primary ? 'bold' : 'normal',
   cursor: 'pointer',
-  order: primary ? 'initial' : 9,
 }));
 
 const ActionButton = styled.button(({ theme }) => ({

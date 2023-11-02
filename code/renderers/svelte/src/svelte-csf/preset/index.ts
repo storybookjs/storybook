@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'url';
-import { svelteIndexer } from './indexer.js';
+import { svelteIndexer, createIndex } from './indexer.js';
+import { create } from '@storybook/theming';
 
 export function managerEntries(entry = []) {
   return [
@@ -56,6 +57,9 @@ export async function viteFinal(config, options) {
   };
 }
 
+/**
+ * Storybook < 7.4
+ */
 export const storyIndexers = async (indexers) => {
   return [
     {
@@ -65,3 +69,17 @@ export const storyIndexers = async (indexers) => {
     ...(indexers || []),
   ];
 };
+
+/**
+ * Storybook >= 7.4
+ */
+export const experimental_indexers = (indexers) => {
+
+  return [
+    {
+      test: /\.svelte$/,
+      createIndex,
+    },
+    ...(indexers || []),
+  ];
+}

@@ -5,6 +5,7 @@ import RenderContext from '../components/RenderContext.svelte';
 import { combineParameters } from '@storybook/client-api';
 import { extractId } from './extract-id.js';
 import { logger } from '@storybook/client-logger';
+import type { StoryDef } from './extract-stories.ts';
 
 /* Called from a webpack loader and a jest transformation.
  *
@@ -35,7 +36,14 @@ const createFragment = document.createDocumentFragment
   ? () => document.createDocumentFragment()
   : () => document.createElement('div');
 
-export default (StoriesComponent, { stories = {}, allocatedIds = [] }, exportedMeta = undefined) => {
+export default (
+  StoriesComponent,
+  {
+    stories = {},
+    allocatedIds = [],
+  }: { stories: Record<string, StoryDef>; allocatedIds: string[] },
+  exportedMeta = undefined
+) => {
   const repositories = {
     meta: null as Meta | null,
     stories: [] as Story[],
@@ -145,9 +153,20 @@ export default (StoriesComponent, { stories = {}, allocatedIds = [] }, exportedM
           });
         }
 
+        const relStory = stories[storyId];
+        if (relStory?.description) {
+          storyFn.parameters = combineParameters(storyFn.parameters || {}, {
+            docs: {
+              description: {
+                story: relStory.description,
+              },
+            },
+          });
+        }
+
         // eslint-disable-next-line no-param-reassign
         all[storyId] = storyFn;
         return all;
-      }, {}) as { [key: string]: { storyName: string; parameters: string; } },
+      }, {}) as { [key: string]: { storyName: string; parameters: string } },
   };
 };

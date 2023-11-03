@@ -25,6 +25,7 @@
 
 <Story name="Default"/>
 
+<!-- Story about the Rounded State -->
 <Story name="Rounded" args={{rounded: true}}/>
 
 <Story name="Square" source args={{rounded: false}}/>

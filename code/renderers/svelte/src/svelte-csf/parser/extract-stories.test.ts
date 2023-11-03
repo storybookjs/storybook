@@ -253,7 +253,6 @@ describe('extractSource', () => {
             "hasArgs": false,
             "name": "Story1",
             "source": "<div>story 1</div>",
-            "storyId": "test--story-1",
             "template": false,
           },
         },
@@ -293,7 +292,6 @@ describe('extractSource', () => {
             "hasArgs": false,
             "name": "Story1",
             "source": "<div>story 1</div>",
-            "storyId": "test--story-1",
             "template": false,
           },
         },
@@ -332,7 +330,6 @@ describe('extractSource', () => {
             "hasArgs": false,
             "name": "Story1",
             "source": "<div>story 1</div>",
-            "storyId": "test--story-1",
             "template": false,
           },
         },
@@ -395,5 +392,146 @@ describe('extractSource', () => {
         },
       }
     `);
+  });
+  test('With description', () => {
+    expect(
+      extractStories(`
+        <script>
+          import { Story } from '@storybook/svelte';
+          import Button from './Button.svelte';
+        </script>
+
+        <!-- Story Description -->
+
+        <Story name="Desc">
+          <div>a story</div>
+        </Story>
+        `)
+    ).toMatchInlineSnapshot(`
+      {
+        "allocatedIds": [
+          "default",
+          "Story",
+          "Button",
+        ],
+        "meta": {},
+        "stories": {
+          "Desc": {
+            "description": "Story Description",
+            "hasArgs": false,
+            "name": "Desc",
+            "source": "<div>a story</div>",
+            "template": false,
+          },
+        },
+      }
+    `);
+  });
+  test('With multiline description', () => {
+    expect(
+      extractStories(`
+        <script>
+          import { Story } from '@storybook/svelte';
+          import Button from './Button.svelte';
+        </script>
+
+        <!-- 
+        Story Description 
+
+        another line.
+        -->
+        
+        <Story name="Desc">
+          <div>a story</div>
+        </Story>
+        `)
+    ).toMatchInlineSnapshot(`
+      {
+        "allocatedIds": [
+          "default",
+          "Story",
+          "Button",
+        ],
+        "meta": {},
+        "stories": {
+          "Desc": {
+            "description": "Story Description 
+
+      another line.",
+            "hasArgs": false,
+            "name": "Desc",
+            "source": "<div>a story</div>",
+            "template": false,
+          },
+        },
+      }
+    `);
+  });
+  test('With unrelated nested description', () => {
+    expect(
+      extractStories(`
+          <script>
+            import { Story } from '@storybook/svelte';
+            import Button from './Button.svelte';
+          </script>
+  
+          <div>
+            <!-- unrelated desc -->
+          </div>
+          <Story name="Desc">
+            <div>a story</div>
+          </Story>
+          `)
+    ).toMatchInlineSnapshot(`
+        {
+          "allocatedIds": [
+            "default",
+            "Story",
+            "Button",
+          ],
+          "meta": {},
+          "stories": {
+            "Desc": {
+              "hasArgs": false,
+              "name": "Desc",
+              "source": "<div>a story</div>",
+              "template": false,
+            },
+          },
+        }
+      `);
+  });
+  test('With unrelated description', () => {
+    expect(
+      extractStories(`
+          <script>
+            import { Story } from '@storybook/svelte';
+            import Button from './Button.svelte';
+          </script>
+  
+          <!-- unrelated desc -->
+          <div></div>
+          <Story name="Desc">
+            <div>a story</div>
+          </Story>
+          `)
+    ).toMatchInlineSnapshot(`
+        {
+          "allocatedIds": [
+            "default",
+            "Story",
+            "Button",
+          ],
+          "meta": {},
+          "stories": {
+            "Desc": {
+              "hasArgs": false,
+              "name": "Desc",
+              "source": "<div>a story</div>",
+              "template": false,
+            },
+          },
+        }
+      `);
   });
 });

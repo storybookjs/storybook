@@ -4,10 +4,11 @@ import type { Node } from 'estree';
 import dedent from 'dedent';
 import { extractId } from './extract-id.js';
 
-interface StoryDef {
+export interface StoryDef {
   name: string;
   template: boolean;
   source: string;
+  description?: string;
   hasArgs: boolean;
 }
 
@@ -187,6 +188,7 @@ export function extractStories(component: string): StoriesDef {
       }
     });
   }
+  let latestComment: string|undefined;
   svelte.walk(<Node>ast.html, {
     enter(node: any) {
       if (
@@ -224,19 +226,37 @@ export function extractStories(component: string): StoriesDef {
             // @ts-ignore
             source = dedent`${component.substr(start, end - start)}`;
           }
-          stories[isTemplate ? `tpl:${id}` : id] = {
+          const story = {
             name,
             template: isTemplate,
             source,
             hasArgs: node.attributes.find((att: any) => att.type === 'Let') != null,
           };
+          if (!isTemplate && latestComment) {
+            // throws dedent expression is not callable.
+            // @ts-ignore
+            story.description = dedent`${latestComment}`;
+          }
+          stories[isTemplate ? `tpl:${id}` : id] = story;
+          latestComment = undefined;
         }
       } else if (node.type === 'InlineComponent' && node.name === localNames.Meta) {
         this.skip();
 
         fillMetaFromAttributes(meta, node.attributes);
+        latestComment = undefined;
+      } else if (node.type === 'Comment') {
+        this.skip();
+
+        latestComment = node.data?.trim();
+        return;
       }
     },
+    leave(node: any) {
+      if (node.type !== "Comment" && node.type !== "Text") {
+        latestComment = undefined;
+      }
+    }
   });
   return {
     meta,

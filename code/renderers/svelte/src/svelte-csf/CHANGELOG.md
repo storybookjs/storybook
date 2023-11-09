@@ -1,3 +1,23 @@
+# v4.0.10 (Thu Nov 09 2023)
+
+#### 🐛 Bug Fix
+
+- Update src/preset/indexer.ts [#153](https://github.com/storybookjs/addon-svelte-csf/pull/153) ([@benmccann](https://github.com/benmccann))
+- Add support for experimental_indexers [#153](https://github.com/storybookjs/addon-svelte-csf/pull/153) ([@j3rem1e](https://github.com/j3rem1e))
+- Upgrade dev dependencies to Storybook v7.5.2 and Svelte 4.2.2 [#153](https://github.com/storybookjs/addon-svelte-csf/pull/153) ([@j3rem1e](https://github.com/j3rem1e))
+
+#### 📝 Documentation
+
+- Updated Readme to include component [#150](https://github.com/storybookjs/addon-svelte-csf/pull/150) ([@brittneypostma](https://github.com/brittneypostma))
+
+#### Authors: 3
+
+- Ben McCann ([@benmccann](https://github.com/benmccann))
+- Brittney Postma ([@brittneypostma](https://github.com/brittneypostma))
+- Jérémie ([@j3rem1e](https://github.com/j3rem1e))
+
+---
+
 # v4.0.9 (Sat Sep 23 2023)
 
 #### 🐛 Bug Fix

@@ -1,3 +1,15 @@
+# v4.0.11 (Fri Nov 10 2023)
+
+#### 🐛 Bug Fix
+
+- Parse comments as Story description [#154](https://github.com/storybookjs/addon-svelte-csf/pull/154) ([@j3rem1e](https://github.com/j3rem1e))
+
+#### Authors: 1
+
+- Jérémie ([@j3rem1e](https://github.com/j3rem1e))
+
+---
+
 # v4.0.10 (Thu Nov 09 2023)
 
 #### 🐛 Bug Fix

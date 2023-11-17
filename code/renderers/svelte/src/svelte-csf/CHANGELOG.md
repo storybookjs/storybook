@@ -1,3 +1,15 @@
+# v4.0.12 (Fri Nov 17 2023)
+
+#### 🐛 Bug Fix
+
+- Exports package.json [#157](https://github.com/storybookjs/addon-svelte-csf/pull/157) ([@tylergaw](https://github.com/tylergaw))
+
+#### Authors: 1
+
+- Tyler Gaw ([@tylergaw](https://github.com/tylergaw))
+
+---
+
 # v4.0.11 (Fri Nov 10 2023)
 
 #### 🐛 Bug Fix

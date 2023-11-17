@@ -2,14 +2,19 @@
   import Button from './Button.svelte';
 
   /**
-   * Stories about a Button.
-   * 
-   * This description is set as a commentary on the meta export.
+   * This commentary should be ignored.
    */
   export const meta = {
-    title: 'MetaExport/MetaExport',
+    title: 'MetaExport/Override',
     component: Button,
-    tags: ['autodocs']
+    tags: ['autodocs'],
+    parameters: {
+      docs: {
+        description: {
+          component: "Description set explicitly in the meta export"
+        }
+      }
+    }
   }
 </script>
 

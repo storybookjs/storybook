@@ -362,6 +362,36 @@ describe('extractSource', () => {
       }
     `);
   });
+  test('Meta Description', () => {
+    expect(
+      extractStories(`
+        <script context='module'>
+          /**
+           * A description of meta
+           */ 
+          export const meta = {
+            title: 'MyStory',
+            tags: ['a']
+          };
+        </script>
+        `)
+    ).toMatchInlineSnapshot(`
+      {
+        "allocatedIds": [
+          "default",
+        ],
+        "meta": {
+          "description": "A description of meta",
+          "id": undefined,
+          "tags": [
+            "a",
+          ],
+          "title": "MyStory",
+        },
+        "stories": {},
+      }
+    `);
+  });
   test('Duplicate Id', () => {
     expect(
       extractStories(`
@@ -390,6 +420,33 @@ describe('extractSource', () => {
             "template": false,
           },
         },
+      }
+    `);
+  });
+  test('Meta tag description', () => {
+    expect(
+      extractStories(`
+        <script>
+          import { Story } from '@storybook/svelte';
+          import Button from './Button.svelte';
+        </script>
+
+        <!-- Meta Description -->
+        <Meta title="a title"/>
+        `)
+    ).toMatchInlineSnapshot(`
+      {
+        "allocatedIds": [
+          "default",
+          "Story",
+          "Button",
+        ],
+        "meta": {
+          "description": "Meta Description",
+          "id": undefined,
+          "title": "a title",
+        },
+        "stories": {},
       }
     `);
   });

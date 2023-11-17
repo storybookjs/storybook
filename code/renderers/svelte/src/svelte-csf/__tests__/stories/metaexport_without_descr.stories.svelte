@@ -1,13 +1,8 @@
 <script context='module'>
   import Button from './Button.svelte';
 
-  /**
-   * Stories about a Button.
-   * 
-   * This description is set as a commentary on the meta export.
-   */
   export const meta = {
-    title: 'MetaExport/MetaExport',
+    title: 'MetaExport/WithoutDescr',
     component: Button,
     tags: ['autodocs']
   }

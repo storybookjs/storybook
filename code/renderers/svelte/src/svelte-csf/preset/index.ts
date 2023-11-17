@@ -1,6 +1,5 @@
 import { fileURLToPath } from 'url';
 import { svelteIndexer, createIndex } from './indexer.js';
-import { create } from '@storybook/theming';
 
 export function managerEntries(entry = []) {
   return [

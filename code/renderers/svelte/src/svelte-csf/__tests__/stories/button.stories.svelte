@@ -9,7 +9,8 @@
   }
 </script>
 
-<Meta component={Button}/>
+<!-- Stories about a Button -->
+<Meta component={Button} autodocs/>
 
 <Template let:args>
   <Button {...args} on:click={handleClick} on:click>

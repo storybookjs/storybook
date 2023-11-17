@@ -5,7 +5,8 @@ import RenderContext from '../components/RenderContext.svelte';
 import { combineParameters } from '@storybook/client-api';
 import { extractId } from './extract-id.js';
 import { logger } from '@storybook/client-logger';
-import type { StoryDef } from './extract-stories.ts';
+import type { Meta, StoriesDef, Story } from './types.js';
+import type { SvelteComponent } from 'svelte';
 
 /* Called from a webpack loader and a jest transformation.
  *
@@ -18,30 +19,19 @@ import type { StoryDef } from './extract-stories.ts';
  * the one selected is disabled.
  */
 
-interface Story {
-  id: string;
-  name: string;
-  template: string;
-  component: any;
-  isTemplate: boolean;
-  source: boolean;
-}
 
-interface Meta {
-  name: string;
-  component: any;
-}
 
 const createFragment = document.createDocumentFragment
   ? () => document.createDocumentFragment()
   : () => document.createElement('div');
 
 export default (
-  StoriesComponent,
+  StoriesComponent: SvelteComponent,
   {
     stories = {},
+    meta: parsedMeta = {},
     allocatedIds = [],
-  }: { stories: Record<string, StoryDef>; allocatedIds: string[] },
+  }: StoriesDef,
   exportedMeta = undefined
 ) => {
   const repositories = {
@@ -65,8 +55,19 @@ export default (
 
   const meta = exportedMeta || repositories.meta;
   if (!meta) {
-    logger.error('Missing <Meta/> tag');
+    logger.error('Missing module meta export or <Meta/> tag');
     return {};
+  }
+
+  // Inject description extracted from static analysis.
+  if (parsedMeta.description && !meta.parameters?.docs?.description?.component) {
+    meta.parameters = combineParameters(meta.parameters, {
+      docs: {
+        description: {
+          component: parsedMeta.description
+        }
+      }
+    });
   }
 
   const { component: globalComponent } = meta;
@@ -139,7 +140,7 @@ export default (
           });
         }
 
-        let snippet;
+        let snippet: string|null|undefined;
 
         if (source === true || (source === false && !hasArgs)) {
           snippet = rawSource;

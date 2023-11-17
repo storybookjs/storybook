@@ -3,26 +3,7 @@ import type { Node } from 'estree';
 
 import dedent from 'dedent';
 import { extractId } from './extract-id.js';
-
-export interface StoryDef {
-  name: string;
-  template: boolean;
-  source: string;
-  description?: string;
-  hasArgs: boolean;
-}
-
-interface MetaDef {
-  title?: string;
-  id?: string;
-  tags?: string[];
-}
-
-interface StoriesDef {
-  meta: MetaDef;
-  stories: Record<string, StoryDef>;
-  allocatedIds: string[];
-}
+import type { MetaDef, StoriesDef, StoryDef } from './types.js';
 
 function lookupAttribute(name: string, attributes: any[]) {
   return attributes.find((att: any) => 
@@ -184,6 +165,11 @@ export function extractStories(component: string): StoriesDef {
             }
 
             fillMetaFromAttributes(meta, init.properties);
+            if (node.leadingComments?.length > 0) {
+              // throws dedent expression is not callable.
+              // @ts-ignore
+              meta.description = dedent(node.leadingComments[0].value.replaceAll(/^ *\*/mg, ""));
+            }
         }
       }
     });
@@ -244,6 +230,9 @@ export function extractStories(component: string): StoriesDef {
         this.skip();
 
         fillMetaFromAttributes(meta, node.attributes);
+        if (latestComment) {
+          meta.description = latestComment;
+        }
         latestComment = undefined;
       } else if (node.type === 'Comment') {
         this.skip();

@@ -1,3 +1,15 @@
+# v4.0.13 (Tue Nov 21 2023)
+
+#### 🐛 Bug Fix
+
+- Add component description from jsdoc on meta export [#158](https://github.com/storybookjs/addon-svelte-csf/pull/158) ([@j3rem1e](https://github.com/j3rem1e))
+
+#### Authors: 1
+
+- Jérémie ([@j3rem1e](https://github.com/j3rem1e))
+
+---
+
 # v4.0.12 (Fri Nov 17 2023)
 
 #### 🐛 Bug Fix

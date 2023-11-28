@@ -1,6 +1,4 @@
 /* eslint-disable react/no-direct-mutation-state */
-/* eslint-disable jsx-a11y/no-static-element-interactions */
-/* eslint-disable react/sort-comp */
 /* eslint-disable react/no-array-index-key */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable react/button-has-type */
@@ -12,6 +10,7 @@ import * as inputUsageTypes from './types/inputUsageTypes';
 import * as dataTypes from './types/dataTypes';
 import * as deltaTypes from './types/deltaTypes';
 import { getObjectType, isComponentWillChange } from './utils/objectTypes';
+import { JsonNodeAccordion } from './JsonNodeAccordion';
 
 interface JsonAddValueState {
   inputRefKey: any;
@@ -43,22 +42,20 @@ export class JsonAddValue extends Component<JsonAddValueProps, JsonAddValueState
     if (onlyValue && inputRefValue && typeof inputRefValue.focus === 'function') {
       inputRefValue.focus();
     }
-
-    document.addEventListener('keydown', this.onKeydown);
-  }
-
-  componentWillUnmount() {
-    document.removeEventListener('keydown', this.onKeydown);
   }
 
   onKeydown(event: KeyboardEvent) {
-    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) return;
     if (event.code === 'Enter' || event.key === 'Enter') {
       event.preventDefault();
+
       this.onSubmit();
+
+      return;
     }
+
     if (event.code === 'Escape' || event.key === 'Escape') {
       event.preventDefault();
+
       this.props.handleCancel();
     }
   }
@@ -111,6 +108,7 @@ export class JsonAddValue extends Component<JsonAddValueProps, JsonAddValueState
     const inputElementValueLayout = cloneElement(inputElementValue, {
       placeholder: 'Value',
       ref: this.refInputValue,
+      onKeyDown: this.onKeydown,
     });
     let inputElementKeyLayout = null;
 
@@ -119,6 +117,7 @@ export class JsonAddValue extends Component<JsonAddValueProps, JsonAddValueState
       inputElementKeyLayout = cloneElement(inputElementKey, {
         placeholder: 'Key',
         ref: this.refInputKey,
+        onKeyDown: this.onKeydown,
       });
     }
 
@@ -126,8 +125,8 @@ export class JsonAddValue extends Component<JsonAddValueProps, JsonAddValueState
       <span className="rejt-add-value-node">
         {inputElementKeyLayout}
         {inputElementValueLayout}
-        {cancelButtonElementLayout}
         {addButtonElementLayout}
+        {cancelButtonElementLayout}
       </span>
     );
   }
@@ -329,15 +328,16 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
       onClick: handleRemove,
       className: 'rejt-minus-menu',
       style: minus,
+      'aria-label': `remove the array '${name}'`,
     });
 
     return (
-      <span className="rejt-collapsed">
-        <span className="rejt-collapsed-text" style={collapsed} onClick={this.handleCollapseMode}>
+      <>
+        <span style={collapsed}>
           [...] {data.length} {data.length === 1 ? 'item' : 'items'}
         </span>
         {!isReadOnly && removeItemButton}
-      </span>
+      </>
     );
   }
 
@@ -371,18 +371,20 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
       onClick: this.handleAddMode,
       className: 'rejt-plus-menu',
       style: plus,
+      'aria-label': `add a new item to the '${name}' array`,
     });
     const removeItemButton = cloneElement(minusMenuElement, {
       onClick: handleRemove,
       className: 'rejt-minus-menu',
       style: minus,
+      'aria-label': `remove the array '${name}'`,
     });
 
     const onlyValue = true;
     const startObject = '[';
     const endObject = ']';
     return (
-      <span className="rejt-not-collapsed">
+      <>
         <span className="rejt-not-collapsed-delimiter" style={delimiter}>
           {startObject}
         </span>
@@ -436,25 +438,24 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
           {endObject}
         </span>
         {!isReadOnly && removeItemButton}
-      </span>
+      </>
     );
   }
 
   render() {
-    const { name, collapsed, data, keyPath, deep } = this.state;
-    const { dataType, getStyle } = this.props;
+    const { name, collapsed, keyPath, deep } = this.state;
     const value = collapsed ? this.renderCollapsed() : this.renderNotCollapsed();
-    const style = getStyle(name, data, keyPath, deep, dataType);
 
     return (
-      <div className="rejt-array-node">
-        <span onClick={this.handleCollapseMode}>
-          <span className="rejt-name" style={style.name}>
-            {name} :{' '}
-          </span>
-        </span>
+      <JsonNodeAccordion
+        name={name}
+        collapsed={collapsed}
+        deep={deep}
+        keyPath={keyPath}
+        onClick={this.handleCollapseMode}
+      >
         {value}
-      </div>
+      </JsonNodeAccordion>
     );
   }
 }
@@ -537,22 +538,18 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
     }
   }
 
-  componentDidMount() {
-    document.addEventListener('keydown', this.onKeydown);
-  }
-
-  componentWillUnmount() {
-    document.removeEventListener('keydown', this.onKeydown);
-  }
-
   onKeydown(event: KeyboardEvent) {
-    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) return;
     if (event.code === 'Enter' || event.key === 'Enter') {
       event.preventDefault();
+
       this.handleEdit();
+
+      return;
     }
+
     if (event.code === 'Escape' || event.key === 'Escape') {
       event.preventDefault();
+
       this.handleCancelEdit();
     }
   }
@@ -635,7 +632,8 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
       });
       const textareaElementLayout = cloneElement(textareaElement, {
         ref: this.refInput,
-        defaultValue: originalValue,
+        defaultValue: value,
+        onKeyDown: this.onKeydown,
       });
 
       result = (
@@ -655,16 +653,22 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
           {value}
         </span>
       );
+
+      const parentPropertyName = comeFromKeyPath.at(-1);
+
       const minusMenuLayout = cloneElement(minusMenuElement, {
         onClick: handleRemove,
         className: 'rejt-minus-menu',
         style: style.minus,
+        'aria-label': `remove the function '${name}'${
+          parentPropertyName ? ` from '${parentPropertyName}'` : ''
+        }`,
       });
       minusElement = resultOnlyResult ? null : minusMenuLayout;
     }
 
     return (
-      <li className="rejt-function-value-node" style={style.li}>
+      <li className="rejt-value-node" style={style.li}>
         <span className="rejt-name" style={style.name}>
           {name} :{' '}
         </span>
@@ -1221,15 +1225,16 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
       onClick: handleRemove,
       className: 'rejt-minus-menu',
       style: minus,
+      'aria-label': `remove the object '${name}'`,
     });
 
     return (
-      <span className="rejt-collapsed">
-        <span className="rejt-collapsed-text" style={collapsed} onClick={this.handleCollapseMode}>
+      <>
+        <span style={collapsed}>
           {'{...}'} {keyList.length} {keyList.length === 1 ? 'key' : 'keys'}
         </span>
         {!isReadOnly && removeItemButton}
-      </span>
+      </>
     );
   }
 
@@ -1265,11 +1270,13 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
       onClick: this.handleAddMode,
       className: 'rejt-plus-menu',
       style: plus,
+      'aria-label': `add a new property to the object '${name}'`,
     });
     const removeItemButton = cloneElement(minusMenuElement, {
       onClick: handleRemove,
       className: 'rejt-minus-menu',
       style: minus,
+      'aria-label': `remove the object '${name}'`,
     });
 
     const list = keyList.map((key) => (
@@ -1305,7 +1312,7 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
     const endObject = '}';
 
     return (
-      <span className="rejt-not-collapsed">
+      <>
         <span className="rejt-not-collapsed-delimiter" style={delimiter}>
           {startObject}
         </span>
@@ -1331,25 +1338,24 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
           {endObject}
         </span>
         {!isReadOnly && removeItemButton}
-      </span>
+      </>
     );
   }
 
   render() {
-    const { name, collapsed, data, keyPath, deep } = this.state;
-    const { getStyle, dataType } = this.props;
+    const { name, collapsed, keyPath, deep } = this.state;
     const value = collapsed ? this.renderCollapsed() : this.renderNotCollapsed();
-    const style = getStyle(name, data, keyPath, deep, dataType);
 
     return (
-      <div className="rejt-object-node">
-        <span onClick={this.handleCollapseMode}>
-          <span className="rejt-name" style={style.name}>
-            {name} :{' '}
-          </span>
-        </span>
+      <JsonNodeAccordion
+        name={name}
+        collapsed={collapsed}
+        deep={deep}
+        keyPath={keyPath}
+        onClick={this.handleCollapseMode}
+      >
         {value}
-      </div>
+      </JsonNodeAccordion>
     );
   }
 }
@@ -1432,22 +1438,16 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
     }
   }
 
-  componentDidMount() {
-    document.addEventListener('keydown', this.onKeydown);
-  }
-
-  componentWillUnmount() {
-    document.removeEventListener('keydown', this.onKeydown);
-  }
-
   onKeydown(event: KeyboardEvent) {
-    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) return;
     if (event.code === 'Enter' || event.key === 'Enter') {
       event.preventDefault();
+
       this.handleEdit();
     }
+
     if (event.code === 'Escape' || event.key === 'Escape') {
       event.preventDefault();
+
       this.handleCancelEdit();
     }
   }
@@ -1528,11 +1528,18 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
     const inputElementLayout = cloneElement(inputElement, {
       ref: this.refInput,
       defaultValue: JSON.stringify(originalValue),
+      onKeyDown: this.onKeydown,
     });
+
+    const parentPropertyName = keyPath.at(-2);
+
     const minusMenuLayout = cloneElement(minusMenuElement, {
       onClick: handleRemove,
       className: 'rejt-minus-menu',
       style: style.minus,
+      'aria-label': `remove the property '${name}' with value '${originalValue}'${
+        parentPropertyName ? ` from '${parentPropertyName}'` : ''
+      }`,
     });
 
     return (
@@ -1543,8 +1550,8 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
         </span>
         {isEditing ? (
           <span className="rejt-edit-form" style={style.editForm}>
-            {inputElementLayout} {cancelButtonElementLayout}
-            {editButtonElementLayout}
+            {inputElementLayout} {editButtonElementLayout}
+            {cancelButtonElementLayout}
           </span>
         ) : (
           <span

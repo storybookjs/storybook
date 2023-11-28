@@ -3,7 +3,7 @@ import cloneDeep from 'lodash/cloneDeep.js';
 import type { ComponentProps, SyntheticEvent, FC, FocusEvent } from 'react';
 import React, { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import { styled, useTheme, type Theme } from '@storybook/theming';
-import { Form, Icons, type IconsProps, IconButton } from '@storybook/components';
+import { Form, Icons, IconButton } from '@storybook/components';
 import { JsonTree, getObjectType } from './react-editable-json-tree';
 import { getControlId, getControlSetterButtonId } from './helpers';
 import type { ControlProps, ObjectValue, ObjectConfig } from './types';
@@ -20,19 +20,11 @@ const Wrapper = styled.div(({ theme }) => ({
     marginLeft: '1rem',
     fontSize: '13px',
   },
-  '.rejt-value-node, .rejt-object-node > .rejt-collapsed, .rejt-array-node > .rejt-collapsed, .rejt-object-node > .rejt-not-collapsed, .rejt-array-node > .rejt-not-collapsed':
-    {
-      '& > svg': {
-        opacity: 0,
-        transition: 'opacity 0.2s',
-      },
+  '.rejt-value-node:hover': {
+    '& > button': {
+      opacity: 1,
     },
-  '.rejt-value-node:hover, .rejt-object-node:hover > .rejt-collapsed, .rejt-array-node:hover > .rejt-collapsed, .rejt-object-node:hover > .rejt-not-collapsed, .rejt-array-node:hover > .rejt-not-collapsed':
-    {
-      '& > svg': {
-        opacity: 1,
-      },
-    },
+  },
   '.rejt-edit-form button': {
     display: 'none',
   },
@@ -48,62 +40,6 @@ const Wrapper = styled.div(({ theme }) => ({
   },
   '.rejt-not-collapsed-delimiter': {
     lineHeight: '22px',
-  },
-  '.rejt-plus-menu': {
-    marginLeft: 5,
-  },
-  '.rejt-object-node > span > *, .rejt-array-node > span > *': {
-    position: 'relative',
-    zIndex: 2,
-  },
-  '.rejt-object-node, .rejt-array-node': {
-    position: 'relative',
-  },
-  '.rejt-object-node > span:first-of-type::after, .rejt-array-node > span:first-of-type::after, .rejt-collapsed::before, .rejt-not-collapsed::before':
-    {
-      content: '""',
-      position: 'absolute',
-      top: 0,
-      display: 'block',
-      width: '100%',
-      marginLeft: '-1rem',
-      padding: '0 4px 0 1rem',
-      height: 22,
-    },
-  '.rejt-collapsed::before, .rejt-not-collapsed::before': {
-    zIndex: 1,
-    background: 'transparent',
-    borderRadius: 4,
-    transition: 'background 0.2s',
-    pointerEvents: 'none',
-    opacity: 0.1,
-  },
-  '.rejt-object-node:hover, .rejt-array-node:hover': {
-    '& > .rejt-collapsed::before, & > .rejt-not-collapsed::before': {
-      background: theme.color.secondary,
-    },
-  },
-  '.rejt-collapsed::after, .rejt-not-collapsed::after': {
-    content: '""',
-    position: 'absolute',
-    display: 'inline-block',
-    pointerEvents: 'none',
-    width: 0,
-    height: 0,
-  },
-  '.rejt-collapsed::after': {
-    left: -8,
-    top: 8,
-    borderTop: '3px solid transparent',
-    borderBottom: '3px solid transparent',
-    borderLeft: '3px solid rgba(153,153,153,0.6)',
-  },
-  '.rejt-not-collapsed::after': {
-    left: -10,
-    top: 10,
-    borderTop: '3px solid rgba(153,153,153,0.6)',
-    borderLeft: '3px solid transparent',
-    borderRight: '3px solid transparent',
   },
   '.rejt-value': {
     display: 'inline-block',
@@ -129,27 +65,37 @@ const Button = styled.button<{ primary?: boolean }>(({ theme, primary }) => ({
   color: primary ? theme.color.lightest : theme.color.dark,
   fontWeight: primary ? 'bold' : 'normal',
   cursor: 'pointer',
-  order: primary ? 'initial' : 9,
 }));
 
-type ActionIconProps = IconsProps & { disabled?: boolean };
-
-const ActionIcon = styled(Icons)(({ theme, icon, disabled }: ActionIconProps) => ({
-  display: 'inline-block',
+const ActionButton = styled.button(({ theme }) => ({
+  background: 'none',
+  border: 0,
+  display: 'inline-flex',
   verticalAlign: 'middle',
-  width: 15,
-  height: 15,
   padding: 3,
   marginLeft: 5,
-  cursor: disabled ? 'not-allowed' : 'pointer',
   color: theme.textMutedColor,
-  '&:hover': disabled
-    ? {}
-    : {
-        color: icon === 'subtract' ? theme.color.negative : theme.color.ancillary,
-      },
-  'svg + &': {
-    marginLeft: 0,
+  opacity: 0,
+  transition: 'opacity 0.2s',
+  cursor: 'pointer',
+  position: 'relative',
+  svg: {
+    width: 9,
+    height: 9,
+  },
+  ':disabled': {
+    cursor: 'not-allowed',
+  },
+  ':hover, :focus-visible': {
+    opacity: 1,
+  },
+  '&:hover:not(:disabled), &:focus-visible:not(:disabled)': {
+    '&.rejt-plus-menu': {
+      color: theme.color.ancillary,
+    },
+    '&.rejt-minus-menu': {
+      color: theme.color.negative,
+    },
   },
 }));
 
@@ -288,10 +234,11 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange }) => {
     <Wrapper>
       {['Object', 'Array'].includes(getObjectType(data)) && (
         <RawButton
-          href="#"
-          onClick={(e: SyntheticEvent) => {
-            e.preventDefault();
-            setShowRaw((v) => !v);
+          role="switch"
+          aria-checked={showRaw}
+          aria-label={`Edit the ${name} properties in text format`}
+          onClick={() => {
+            setShowRaw((isRaw) => !isRaw);
           }}
         >
           <Icons icon={showRaw ? 'eyeclose' : 'eye'} />
@@ -311,8 +258,16 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange }) => {
               Save
             </Button>
           }
-          plusMenuElement={<ActionIcon icon="add" />}
-          minusMenuElement={<ActionIcon icon="subtract" />}
+          plusMenuElement={
+            <ActionButton type="button">
+              <Icons icon="add" />
+            </ActionButton>
+          }
+          minusMenuElement={
+            <ActionButton type="button">
+              <Icons icon="subtract" />
+            </ActionButton>
+          }
           inputElement={(_: any, __: any, ___: any, key: string) =>
             key ? <Input onFocus={selectValue} onBlur={dispatchEnterKey} /> : <Input />
           }

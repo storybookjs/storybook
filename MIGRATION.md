@@ -19,6 +19,7 @@
     - [Using implicit actions during rendering is deprecated](#using-implicit-actions-during-rendering-is-deprecated)
     - [typescript.skipBabel deprecated](#typescriptskipbabel-deprecated)
     - [Primary doc block accepts of prop](#primary-doc-block-accepts-of-prop)
+      - [Subtitle block and `parameters.componentSubtitle`](#subtitle-block-and-parameterscomponentsubtitle)
     - [Addons no longer need a peer dependency on React](#addons-no-longer-need-a-peer-dependency-on-react)
 - [From version 7.4.0 to 7.5.0](#from-version-740-to-750)
     - [`storyStoreV6` and `storiesOf` is deprecated](#storystorev6-and-storiesof-is-deprecated)
@@ -542,6 +543,12 @@ We will remove the `typescript.skipBabel` option in Storybook 8.0.0. Please use 
 #### Primary doc block accepts of prop
 
 The `Primary` doc block now also accepts an `of` prop as described in the [Doc Blocks](#doc-blocks) section. It still accepts being passed `name` or no props at all.
+
+##### Subtitle block and `parameters.componentSubtitle`
+
+The `Subtitle` block now accepts an `of` prop, which can be a reference to a CSF file or a default export (meta).
+
+`parameters.componentSubtitle` has been deprecated to be consistent with other parameters related to autodocs, instead use `parameters.docs.subtitle`.
 
 #### Addons no longer need a peer dependency on React
 

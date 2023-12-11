@@ -30,6 +30,12 @@ import { Subtitle } from '@storybook/blocks';
 
 Type: `JSX.Element | string`
 
-Default: `parameters.componentSubtitle`
+Default: `parameters.docs.subtitle`
 
 Provides the content.
+
+### `of`
+
+Type: CSF file exports
+
+Specifies which meta's subtitle is displayed.

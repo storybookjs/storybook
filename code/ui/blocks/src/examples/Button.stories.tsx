@@ -18,6 +18,9 @@ const meta = {
     notes: 'These are notes for the Button stories',
     info: 'This is info for the Button stories',
     jsx: { useBooleanShorthandSyntax: false },
+    docs: {
+      subtitle: 'This is the subtitle for the Button stories',
+    },
   },
 } satisfies Meta<typeof Button>;
 

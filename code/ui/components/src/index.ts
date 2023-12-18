@@ -72,11 +72,15 @@ export { Bar, FlexBar } from './components/bar/bar';
 export { AddonPanel } from './components/addon-panel/addon-panel';
 
 // Graphics
-export type { IconsProps } from './components/icon/icon';
+export type { IconsProps, IconType } from './components/icon/icon';
 export { Icons, Symbols } from './components/icon/icon';
 export { icons } from './components/icon/icon';
 export { StorybookLogo } from './components/brand/StorybookLogo';
 export { StorybookIcon } from './components/brand/StorybookIcon';
+export { DropdownMenu } from './components/DropdownMenu/DropdownMenu';
+export { DropdownMenuItemList } from './components/DropdownMenu/DropdownMenuItemList';
+export type { DropdownMenuItemProps } from './components/DropdownMenu/DropdownMenu';
+export type { DropdownMenuItemListProps } from './components/DropdownMenu/DropdownMenuItemList';
 
 // Loader
 export { Loader } from './components/Loader/Loader';

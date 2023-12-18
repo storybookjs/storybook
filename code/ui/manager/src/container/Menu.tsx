@@ -5,6 +5,8 @@ import { Badge } from '@storybook/components';
 import type { API, State } from '@storybook/manager-api';
 import { shortcutToHumanString } from '@storybook/manager-api';
 import { styled, useTheme } from '@storybook/theming';
+import type { DropdownMenuItemProps } from '@storybook/components';
+import { STORIES_COLLAPSE_ALL } from '@storybook/core-events';
 import { CheckIcon } from '@storybook/icons';
 
 const focusableUIElements = {
@@ -48,6 +50,9 @@ export const Shortcut: FC<{ keys: string[] }> = ({ keys }) => (
   </>
 );
 
+/**
+ * @deprecated Use useDropdownMenu instead
+ */
 export const useMenu = (
   state: State,
   api: API,
@@ -226,6 +231,238 @@ export const useMenu = (
         onClick: () => action(),
         right: enableShortcuts ? <Shortcut keys={keys[actionName]} /> : null,
       }));
+  }, [api, enableShortcuts, shortcutKeys]);
+
+  return useMemo(
+    () => [
+      about,
+      ...(state.whatsNewData?.status === 'SUCCESS' ? [whatsNew] : []),
+      shortcuts,
+      sidebarToggle,
+      toolbarToogle,
+      addonsToggle,
+      addonsOrientationToggle,
+      fullscreenToggle,
+      searchToggle,
+      up,
+      down,
+      prev,
+      next,
+      collapse,
+      ...getAddonsShortcuts(),
+    ],
+    [
+      about,
+      state,
+      whatsNew,
+      shortcuts,
+      sidebarToggle,
+      toolbarToogle,
+      addonsToggle,
+      addonsOrientationToggle,
+      fullscreenToggle,
+      searchToggle,
+      up,
+      down,
+      prev,
+      next,
+      collapse,
+      getAddonsShortcuts,
+    ]
+  );
+};
+
+function parseKeyShortcuts(keyboardShortcut: string[]): DropdownMenuItemProps['keyboardShortcut'] {
+  return {
+    label: keyboardShortcut.map((key) => shortcutToHumanString([key])).join(' '),
+    ariaKeyshortcuts: keyboardShortcut.join('+'),
+  };
+}
+
+export const useDropdownMenu = (
+  state: State,
+  api: API,
+  showToolbar: boolean,
+  isFullscreen: boolean,
+  isPanelShown: boolean,
+  isNavShown: boolean,
+  enableShortcuts: boolean
+) => {
+  const shortcutKeys = api.getShortcutKeys();
+
+  const about: DropdownMenuItemProps = useMemo(
+    () => ({
+      id: 'about',
+      label: 'About your Storybook',
+      onClick: () => api.changeSettingsTab('/settings/about'),
+      startInlineIndent: true,
+    }),
+    [api]
+  );
+
+  const whatsNewNotificationsEnabled =
+    state.whatsNewData?.status === 'SUCCESS' && !state.disableWhatsNewNotifications;
+
+  const isWhatsNewUnread = api.isWhatsNewUnread();
+
+  const whatsNew: DropdownMenuItemProps = useMemo(
+    () => ({
+      id: 'whats-new',
+      label: "What's new?",
+      onClick: () => api.changeSettingsTab('/settings/whats-new'),
+      badgeLabel: whatsNewNotificationsEnabled && isWhatsNewUnread ? 'Check it out' : undefined,
+      startInlineIndent: true,
+    }),
+    [api, whatsNewNotificationsEnabled, isWhatsNewUnread]
+  );
+
+  const shortcuts: DropdownMenuItemProps = useMemo(
+    () => ({
+      id: 'shortcuts',
+      label: 'Keyboard shortcuts',
+      onClick: () => api.changeSettingsTab('/settings/shortcuts'),
+      keyboardShortcut: enableShortcuts ? parseKeyShortcuts(shortcutKeys.shortcutsPage) : undefined,
+      withBottomSeparator: true,
+    }),
+    [api, enableShortcuts, shortcutKeys.shortcutsPage]
+  );
+
+  const sidebarToggle: DropdownMenuItemProps = useMemo(
+    () => ({
+      id: 'S',
+      label: 'Show sidebar',
+      onClick: () => api.toggleNav(),
+      active: isNavShown,
+      keyboardShortcut: enableShortcuts ? parseKeyShortcuts(shortcutKeys.toggleNav) : undefined,
+      icon: isNavShown ? 'check' : undefined,
+    }),
+    [api, enableShortcuts, shortcutKeys, isNavShown]
+  );
+
+  const toolbarToogle: DropdownMenuItemProps = useMemo(
+    () => ({
+      id: 'T',
+      label: 'Show toolbar',
+      onClick: () => api.toggleToolbar(),
+      active: showToolbar,
+      keyboardShortcut: enableShortcuts ? parseKeyShortcuts(shortcutKeys.toolbar) : undefined,
+      icon: showToolbar ? 'check' : undefined,
+    }),
+    [api, enableShortcuts, shortcutKeys, showToolbar]
+  );
+
+  const addonsToggle: DropdownMenuItemProps = useMemo(
+    () => ({
+      id: 'A',
+      label: 'Show addons',
+      onClick: () => api.togglePanel(),
+      active: isPanelShown,
+      keyboardShortcut: enableShortcuts ? parseKeyShortcuts(shortcutKeys.togglePanel) : undefined,
+      icon: isPanelShown ? 'check' : undefined,
+    }),
+    [api, enableShortcuts, shortcutKeys, isPanelShown]
+  );
+
+  const addonsOrientationToggle: DropdownMenuItemProps = useMemo(
+    () => ({
+      id: 'D',
+      label: 'Change addons orientation',
+      onClick: () => api.togglePanelPosition(),
+      keyboardShortcut: enableShortcuts ? parseKeyShortcuts(shortcutKeys.panelPosition) : undefined,
+    }),
+    [api, enableShortcuts, shortcutKeys]
+  );
+
+  const fullscreenToggle: DropdownMenuItemProps = useMemo(
+    () => ({
+      id: 'F',
+      label: 'Go full screen',
+      onClick: () => api.toggleFullscreen(),
+      active: isFullscreen,
+      keyboardShortcut: enableShortcuts ? parseKeyShortcuts(shortcutKeys.fullScreen) : undefined,
+      icon: isFullscreen ? 'check' : undefined,
+    }),
+    [api, enableShortcuts, shortcutKeys, isFullscreen]
+  );
+
+  const searchToggle: DropdownMenuItemProps = useMemo(
+    () => ({
+      id: '/',
+      label: 'Search',
+      onClick: () => {
+        api.focusOnUIElement(focusableUIElements.storySearchField);
+      },
+      keyboardShortcut: enableShortcuts ? parseKeyShortcuts(shortcutKeys.search) : undefined,
+    }),
+    [api, enableShortcuts, shortcutKeys]
+  );
+
+  const up: DropdownMenuItemProps = useMemo(
+    () => ({
+      id: 'up',
+      label: 'Previous component',
+      onClick: () => api.jumpToComponent(-1),
+      keyboardShortcut: enableShortcuts ? parseKeyShortcuts(shortcutKeys.prevComponent) : undefined,
+    }),
+    [api, enableShortcuts, shortcutKeys]
+  );
+
+  const down: DropdownMenuItemProps = useMemo(
+    () => ({
+      id: 'down',
+      label: 'Next component',
+      onClick: () => api.jumpToComponent(1),
+      keyboardShortcut: enableShortcuts ? parseKeyShortcuts(shortcutKeys.nextComponent) : undefined,
+    }),
+    [api, enableShortcuts, shortcutKeys]
+  );
+
+  const prev: DropdownMenuItemProps = useMemo(
+    () => ({
+      id: 'prev',
+      label: 'Previous story',
+      onClick: () => api.jumpToStory(-1),
+      keyboardShortcut: enableShortcuts ? parseKeyShortcuts(shortcutKeys.prevStory) : undefined,
+    }),
+    [api, enableShortcuts, shortcutKeys]
+  );
+
+  const next: DropdownMenuItemProps = useMemo(
+    () => ({
+      id: 'next',
+      label: 'Next story',
+      onClick: () => api.jumpToStory(1),
+      keyboardShortcut: enableShortcuts ? parseKeyShortcuts(shortcutKeys.nextStory) : undefined,
+    }),
+    [api, enableShortcuts, shortcutKeys]
+  );
+
+  const collapse: DropdownMenuItemProps = useMemo(
+    () => ({
+      id: 'collapse',
+      label: 'Collapse all',
+      onClick: () => api.emit(STORIES_COLLAPSE_ALL),
+      keyboardShortcut: enableShortcuts ? parseKeyShortcuts(shortcutKeys.collapseAll) : undefined,
+    }),
+    [api, enableShortcuts, shortcutKeys]
+  );
+
+  const getAddonsShortcuts = useCallback(() => {
+    const addonsShortcuts = api.getAddonsShortcuts();
+    const keys = shortcutKeys;
+
+    const builtAddonsShortcuts: DropdownMenuItemProps[] = Object.entries(addonsShortcuts)
+      .filter(([_, { showInMenu }]) => showInMenu)
+      .map(([actionName, { label, action }]) => ({
+        id: actionName,
+        label,
+        onClick: () => action(),
+        keyboardShortcut: enableShortcuts
+          ? parseKeyShortcuts(keys[actionName as keyof typeof keys])
+          : undefined,
+      }));
+
+    return builtAddonsShortcuts;
   }, [api, enableShortcuts, shortcutKeys]);
 
   return useMemo(

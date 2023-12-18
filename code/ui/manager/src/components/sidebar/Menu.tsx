@@ -1,13 +1,23 @@
 import type { ComponentProps, FC } from 'react';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 
 import { styled } from '@storybook/theming';
 import { transparentize } from 'polished';
-import type { Button, TooltipLinkListLink } from '@storybook/components';
-import { WithTooltip, TooltipLinkList, Icons, IconButton } from '@storybook/components';
+import type { Button, TooltipLinkListLink, DropdownMenuItemListProps } from '@storybook/components';
+import {
+  WithTooltip,
+  TooltipLinkList,
+  Icons,
+  IconButton,
+  DropdownMenu,
+  DropdownMenuItemList,
+} from '@storybook/components';
 import { CloseIcon, CogIcon, MenuIcon } from '@storybook/icons';
 import { useLayout } from '../layout/LayoutProvider';
 
+/**
+ * @deprecated Use DropdownMenuItemListProps['items'] instead
+ */
 export type MenuList = ComponentProps<typeof TooltipLinkList>['links'];
 
 const sharedStyles = {
@@ -94,6 +104,9 @@ export const MenuItemIcon = ({ icon, imgSrc }: ListItemIconProps) => {
 
 type ClickHandler = TooltipLinkListLink['onClick'];
 
+/**
+ * @deprecated Use DropdownMenuItemList instead
+ */
 const SidebarMenuList: FC<{
   menu: MenuList;
   onHide: () => void;
@@ -113,13 +126,12 @@ const SidebarMenuList: FC<{
 };
 
 export interface SidebarMenuProps {
-  menu: MenuList;
+  menu: DropdownMenuItemListProps['items'];
   isHighlighted?: boolean;
   onClick?: React.MouseEventHandler<HTMLButtonElement>;
 }
 
 export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted, onClick }) => {
-  const [isTooltipVisible, setIsTooltipVisible] = useState(false);
   const { isMobile, setMobileMenuOpen } = useLayout();
 
   if (isMobile) {
@@ -146,21 +158,16 @@ export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted, onClick
   }
 
   return (
-    <WithTooltip
-      placement="top"
-      closeOnOutsideClick
-      tooltip={({ onHide }) => <SidebarMenuList onHide={onHide} menu={menu} />}
-      onVisibleChange={setIsTooltipVisible}
-    >
-      <SidebarIconButton
-        title="Shortcuts"
-        aria-label="Shortcuts"
-        highlighted={isHighlighted}
-        active={isTooltipVisible}
-      >
-        <CogIcon />
-      </SidebarIconButton>
-    </WithTooltip>
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger asChild>
+        <IconButton variant="ghost" aria-label="Shortcuts" title="Shortcuts">
+          <Icons icon="cog" />
+        </IconButton>
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Portal>
+        <DropdownMenuItemList items={menu} />
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
   );
 };
 

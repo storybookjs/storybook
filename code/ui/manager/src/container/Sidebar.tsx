@@ -5,7 +5,7 @@ import { types, Consumer } from '@storybook/manager-api';
 
 import type { SidebarProps as SidebarComponentProps } from '../components/sidebar/Sidebar';
 import { Sidebar as SidebarComponent } from '../components/sidebar/Sidebar';
-import { useMenu } from './Menu';
+import { useDropdownMenu } from './Menu';
 
 export type Item = StoriesHash[keyof StoriesHash];
 
@@ -28,7 +28,7 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
       refs,
     } = state;
 
-    const menu = useMenu(
+    const menu = useDropdownMenu(
       state,
       api,
       showToolbar,

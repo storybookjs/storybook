@@ -1,3 +1,15 @@
+# v4.1.0 (Fri Dec 29 2023)
+
+#### 🚀 Enhancement
+
+- Update versions of peer dependencies to allow latest Vite and Vite Svelte plugin [#159](https://github.com/storybookjs/addon-svelte-csf/pull/159) ([@joekrump](https://github.com/joekrump))
+
+#### Authors: 1
+
+- Joe Krump ([@joekrump](https://github.com/joekrump))
+
+---
+
 # v4.0.13 (Tue Nov 21 2023)
 
 #### 🐛 Bug Fix

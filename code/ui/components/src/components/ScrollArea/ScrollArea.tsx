@@ -54,15 +54,14 @@ const ScrollAreaScrollbar = styled(ScrollAreaPrimitive.Scrollbar)<{
   },
 }));
 
-const ScrollAreaThumb = styled(ScrollAreaPrimitive.Thumb)(({ theme }) => ({
+const ScrollAreaThumb = styled(ScrollAreaPrimitive.Thumb)({
   flex: 1,
-  background: theme.textMutedColor,
-  opacity: 0.5,
+  background: 'var(--sb-scrollbar-background)',
   borderRadius: `var(--scrollbar-size)`,
   position: 'relative',
-  transition: 'opacity 0.2s ease-out',
+  transition: 'all 0.2s ease-out',
 
-  '&:hover': { opacity: 0.8 },
+  '&:hover': { background: 'var(--sb-scrollbar-hoverBackground)' },
 
   /* increase target size for touch devices https://www.w3.org/WAI/WCAG21/Understanding/target-size.html */
   '::before': {
@@ -74,7 +73,7 @@ const ScrollAreaThumb = styled(ScrollAreaPrimitive.Thumb)(({ theme }) => ({
     width: '100%',
     height: '100%',
   },
-}));
+});
 
 export const ScrollArea: FC<ScrollAreaProps> = ({
   children,

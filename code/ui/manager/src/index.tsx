@@ -74,6 +74,7 @@ const Main: FC<{ provider: Provider }> = ({ provider }) => {
                     pages={pages}
                     managerLayoutState={{ ...state.layout, viewMode: state.viewMode }}
                     setManagerLayoutState={setManagerLayoutState}
+                    theme={state.theme}
                   />
                 </LayoutProvider>
               </ThemeProvider>

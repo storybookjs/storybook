@@ -203,43 +203,41 @@ const LayoutContainer = styled.div<LayoutState>(
   }
 );
 
-const SidebarContainer = styled.div(({ theme }) => ({
-  backgroundColor: theme.background.app,
+const SidebarContainer = styled.div({
+  backgroundColor: 'var(--sb-sidebar-background)',
   gridArea: 'sidebar',
   position: 'relative',
-  borderRight: `1px solid ${theme.color.border}`,
-}));
+  borderRight: `1px solid var(--sb-sidebar-borderRight)`,
+});
 
-const ContentContainer = styled.div(({ theme }) => ({
+const ContentContainer = styled.div({
   flex: 1,
   position: 'relative',
-  backgroundColor: theme.background.content,
+  backgroundColor: 'var(--sb-canvas-background)',
   display: 'grid', // This is needed to make the content container fill the available space
 
   [MEDIA_DESKTOP_BREAKPOINT]: {
     flex: 'auto',
     gridArea: 'content',
   },
-}));
+});
 
-const PagesContainer = styled.div(({ theme }) => ({
+const PagesContainer = styled.div({
   gridRowStart: 'sidebar-start',
   gridRowEnd: '-1',
   gridColumnStart: 'sidebar-end',
   gridColumnEnd: '-1',
-  backgroundColor: theme.background.content,
+  backgroundColor: 'var(--sb-canvas-background)',
   zIndex: 1,
-}));
+});
 
-const PanelContainer = styled.div<{ position: LayoutState['panelPosition'] }>(
-  ({ theme, position }) => ({
-    gridArea: 'panel',
-    position: 'relative',
-    backgroundColor: theme.background.content,
-    borderTop: position === 'bottom' ? `1px solid ${theme.color.border}` : null,
-    borderLeft: position === 'right' ? `1px solid ${theme.color.border}` : null,
-  })
-);
+const PanelContainer = styled.div<{ position: LayoutState['panelPosition'] }>(({ position }) => ({
+  gridArea: 'panel',
+  position: 'relative',
+  backgroundColor: 'var(--sb-addonsPanel-background)',
+  borderTop: position === 'bottom' ? `1px solid var(--sb-addonsPanel-border)` : null,
+  borderLeft: position === 'right' ? `1px solid var(--sb-addonsPanel-border)` : null,
+}));
 
 const Drag = styled.div<{ orientation?: 'horizontal' | 'vertical'; position?: 'left' | 'right' }>(
   ({ theme }) => ({

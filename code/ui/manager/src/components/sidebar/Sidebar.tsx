@@ -19,11 +19,10 @@ import { Search } from './Search';
 import { SearchResults } from './SearchResults';
 import type { Refs, CombinedDataset, Selection } from './types';
 import { useLastViewed } from './useLastViewed';
-import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
 
 export const DEFAULT_REF_ID = 'storybook_internal';
 
-const Container = styled.nav(({ theme }) => ({
+const Container = styled.nav({
   position: 'absolute',
   zIndex: 1,
   left: 0,
@@ -34,12 +33,8 @@ const Container = styled.nav(({ theme }) => ({
   height: '100%',
   display: 'flex',
   flexDirection: 'column',
-  background: theme.background.content,
-
-  [MEDIA_DESKTOP_BREAKPOINT]: {
-    background: theme.background.app,
-  },
-}));
+  background: 'var(--sb-sidebar-background)',
+});
 
 const Top = styled(Spaced)({
   paddingLeft: 12,

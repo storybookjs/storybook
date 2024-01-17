@@ -26,6 +26,7 @@
       crossorigin
     />
     <link rel="stylesheet" href="./sb-common-assets/fonts.css" />
+    <link rel="stylesheet" href="./sb-common-assets/default-theme.css" />
 
     <link href="./sb-manager/runtime.js" rel="modulepreload" />
 
@@ -58,11 +59,11 @@
 
     <script type="module">
       import './sb-manager/globals-runtime.js';
-      
+
       <% files.js.forEach(file => { %>
         import '<%= file %>';
       <% }); %>
-      
+
       import './sb-manager/runtime.js';
     </script>
 

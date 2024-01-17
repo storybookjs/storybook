@@ -1,0 +1,128 @@
+@layer sb {
+  @media (prefers-color-scheme: light) {
+    :root {
+      /* Sidebar */
+      --sb-sidebar-background: #f6f9fc;
+      --sb-sidebar-borderRight: #d7e0e7;
+      --sb-sidebar-arrow: #73828c;
+      --sb-sidebar-sectionText: #73828c;
+      --sb-sidebar-itemText: #2e3438;
+      --sb-sidebar-itemIconDocument: #ffae00;
+      --sb-sidebar-itemIconGroup: #6f2cac;
+      --sb-sidebar-itemIconComponent: #029cfd;
+      --sb-sidebar-itemIconStory: #37d5d3;
+
+      --sb-sidebar-itemHoverBackground: #e5f2fc;
+
+      --sb-sidebar-itemActiveBackground: #029cfd;
+      --sb-sidebar-itemActiveText: #fff;
+      --sb-sidebar-itemActiveIcon: #fff;
+
+      --sb-sidebar-searchBackground: #f6f9fc;
+      --sb-sidebar-searchBorder: #d7e0e7;
+      --sb-sidebar-searchPlaceholder: #73828c;
+      --sb-sidebar-searchText: #2e3438;
+      --sb-sidebar-searchIcon: #73828c;
+      --sb-sidebar-searchKey: #73828c;
+
+      --sb-sidebar-searchFocusBackground: #fff;
+      --sb-sidebar-searchFocusBorder: #029cfd;
+
+      /* Canvas */
+      --sb-canvas-background: #fff;
+
+      /* Addons toolbar */
+      --sb-addonsToolbar-background: #fff;
+      --sb-addonsToolbar-borderBottom: #d7e0e7;
+
+      /* Addons panel */
+      --sb-addonsPanel-headerBackground: #ffffff;
+      --sb-addonsPanel-headerBorderTop: #d7e0e7;
+      --sb-addonsPanel-headerBorderBottom: #d7e0e7;
+      --sb-addonsPanel-headerActive: #029cfd;
+      --sb-addonsPanel-headerText: #2e3438;
+      --sb-addonsPanel-background: #ffffff;
+      --sb-addonsPanel-border: #d7e0e7;
+
+      /* Button + IconButton */
+      --sb-button-solidBackground: #029cfd;
+      --sb-button-solidText: #fff;
+      --sb-button-solidBorder: transparent;
+      --sb-button-solidHoverBackground: #0379c9;
+      --sb-button-solidHoverText: #fff;
+      --sb-button-solidHoverBorder: transparent;
+      --sb-button-solidActiveBackground: #0379c9;
+      --sb-button-solidActiveText: #fff;
+      --sb-button-solidActiveBorder: transparent;
+      --sb-button-outlineBackground: #f6f9fc;
+      --sb-button-outlineText: #2e3438;
+      --sb-button-outlineBorder: #d9e8f2;
+      --sb-button-outlineHoverBackground: #e5f2fc;
+      --sb-button-outlineHoverText: #2e3438;
+      --sb-button-outlineHoverBorder: #d9e8f2;
+      --sb-button-outlineActiveBackground: #e5f2fc;
+      --sb-button-outlineActiveText: #2e3438;
+      --sb-button-outlineActiveBorder: #d9e8f2;
+      --sb-button-ghostBackground: transparent;
+      --sb-button-ghostText: #73828c;
+      --sb-button-ghostBorder: transparent;
+      --sb-button-ghostHoverBackground: #e5f2fc;
+      --sb-button-ghostHoverText: #2e3438;
+      --sb-button-ghostHoverBorder: transparent;
+      --sb-button-ghostActiveBackground: #e5f2fc;
+      --sb-button-ghostActiveText: #2e3438;
+      --sb-button-ghostActiveBorder: transparent;
+      --sb-button-focusBorder: #029cfd;
+
+      /* ScrollArea */
+      --sb-scrollbar-background: #5c68707a;
+      --sb-scrollbar-hoverBackground: #5c6870ba;
+
+      /* Tabs */
+      --sb-tabs-background: #fff;
+      --sb-tabs-barBorderTop: #d7e0e7;
+      --sb-tabs-barBorderBottom: #d7e0e7;
+    }
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      /* Sidebar */
+      --sb-sidebar-background: #222425;
+      --sb-sidebar-borderRight: #323638;
+      --sb-sidebar-sectionText: #73828c;
+      --sb-sidebar-sectionArrow: #4b5359;
+      --sb-sidebar-sectionToggle: #4b5359;
+      --sb-sidebar-itemArrow: #4b5359;
+      --sb-sidebar-itemText: #ffffff;
+      --sb-sidebar-itemIconDoc: #ffae00;
+      --sb-sidebar-itemIconFolder: #6f2cac;
+      --sb-sidebar-itemIconComponent: #029cfd;
+      --sb-sidebar-itemIconStory: #37d5d3;
+      --sb-sidebar-itemHoverBg: #222c34;
+      --sb-sidebar-itemActiveBg: #029cfd;
+      --sb-sidebar-itemActiveText: #fff;
+      --sb-sidebar-itemActiveIcon: #fff;
+      --sb-sidebar-itemActiveArrow: #fff;
+      --sb-sidebar-searchBarBackground: #1b1c1d;
+      --sb-sidebar-searchBarBorder: #323638;
+      --sb-sidebar-searchPlaceholder: #73828c;
+      --sb-sidebar-searchIcon: #73828c;
+
+      /* Canvas */
+      --sb-canvas-background: #1b1c1d;
+
+      /* Addons toolbar */
+      --sb-addonsToolbar-background: #222425;
+      --sb-addonsToolbar-borderBottom: #323638;
+
+      /* Addons panel */
+      --sb-addonsPanel-headerBackground: #222425;
+      --sb-addonsPanel-headerBorderTop: #323638;
+      --sb-addonsPanel-headerBorderBottom: #323638;
+      --sb-addonsPanel-headerActive: #029cfd;
+      --sb-addonsPanel-headerText: #798186;
+      --sb-addonsPanel-background: #222425;
+      --sb-addonsPanel-border: #323638;
+    }
+  }
+}

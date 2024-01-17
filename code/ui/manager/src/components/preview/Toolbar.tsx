@@ -250,17 +250,16 @@ export function filterTools(
   return { left, right };
 }
 
-const Toolbar = styled.div<{ shown: boolean }>(({ theme, shown }) => ({
+const Toolbar = styled.div<{ shown: boolean }>(({ shown }) => ({
   position: 'relative',
-  color: theme.barTextColor,
   width: '100%',
   height: 40,
   flexShrink: 0,
   overflowX: 'auto',
   overflowY: 'hidden',
   marginTop: shown ? 0 : -40,
-  boxShadow: `${theme.appBorderColor}  0 -1px 0 0 inset`,
-  background: theme.barBg,
+  boxShadow: 'var(--sb-addonsToolbar-borderBottom) 0 -1px 0 0 inset',
+  background: 'var(--sb-addonsToolbar-background)',
   zIndex: 4,
 }));
 

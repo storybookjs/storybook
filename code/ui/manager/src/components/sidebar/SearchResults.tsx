@@ -7,7 +7,6 @@ import type { ControllerStateAndHelpers } from 'downshift';
 
 import { useStorybookApi } from '@storybook/manager-api';
 import { PRELOAD_ENTRIES } from '@storybook/core-events';
-import { transparentize } from 'polished';
 import { TrashIcon } from '@storybook/icons';
 import { TypeIcon } from './TreeNode';
 import type { Match, DownshiftItem, SearchResult } from './types';
@@ -25,7 +24,7 @@ const ResultsList = styled.ol({
   padding: 0,
 });
 
-const ResultRow = styled.li<{ isHighlighted: boolean }>(({ theme, isHighlighted }) => ({
+const ResultRow = styled.li<{ isHighlighted: boolean }>(({ isHighlighted }) => ({
   width: '100%',
   border: 'none',
   cursor: 'pointer',
@@ -33,8 +32,8 @@ const ResultRow = styled.li<{ isHighlighted: boolean }>(({ theme, isHighlighted 
   alignItems: 'start',
   textAlign: 'left',
   color: 'inherit',
-  fontSize: `${theme.typography.size.s2}px`,
-  background: isHighlighted ? theme.background.hoverable : 'transparent',
+  fontSize: '14px',
+  background: isHighlighted ? 'var(--sb-sidebar-itemHoverBackground)' : 'transparent',
   minHeight: 28,
   borderRadius: 4,
   gap: 6,
@@ -44,7 +43,7 @@ const ResultRow = styled.li<{ isHighlighted: boolean }>(({ theme, isHighlighted 
   paddingRight: 8,
 
   '&:hover, &:focus': {
-    background: transparentize(0.93, theme.color.secondary),
+    background: 'var(--sb-sidebar-itemHoverBackground)',
     outline: 'none',
   },
 }));
@@ -123,12 +122,12 @@ const Highlight: FC<PropsWithChildren<{ match?: Match }>> = React.memo(function 
   return <span>{result}</span>;
 });
 
-const Title = styled.div(({ theme }) => ({
+const Title = styled.div({
   display: 'grid',
   justifyContent: 'start',
   gridAutoColumns: 'auto',
   gridAutoFlow: 'column',
-  color: theme.textMutedColor,
+  color: 'var(--sb-sidebar-itemText)',
 
   '& > span': {
     display: 'block',
@@ -136,15 +135,15 @@ const Title = styled.div(({ theme }) => ({
     overflow: 'hidden',
     textOverflow: 'ellipsis',
   },
-}));
+});
 
-const Path = styled.div(({ theme }) => ({
+const Path = styled.div({
   display: 'grid',
   justifyContent: 'start',
   gridAutoColumns: 'auto',
   gridAutoFlow: 'column',
-  color: theme.textMutedColor,
-  fontSize: `${theme.typography.size.s1 - 1}px`,
+  color: 'var(--sb-sidebar-itemText)',
+  fontSize: '13px',
 
   '& > span': {
     display: 'block',
@@ -158,7 +157,7 @@ const Path = styled.div(({ theme }) => ({
       content: "' / '",
     },
   },
-}));
+});
 
 const Result: FC<
   SearchResult & {

@@ -1,21 +1,19 @@
 import { styled } from '@storybook/theming';
-import { transparentize } from 'polished';
 import type { FC, ComponentProps } from 'react';
 import React from 'react';
 import { UseSymbol } from './IconSymbols';
 import { CollapseIcon } from './components/CollapseIcon';
 
 export const TypeIcon = styled.svg<{ type: 'component' | 'story' | 'group' | 'document' }>(
-  ({ theme, type }) => ({
+  ({ type }) => ({
     width: 14,
     height: 14,
     flex: '0 0 auto',
     color: (() => {
-      if (type === 'group')
-        return theme.base === 'dark' ? theme.color.primary : theme.color.ultraviolet;
-      if (type === 'component') return theme.color.secondary;
-      if (type === 'document') return theme.base === 'dark' ? theme.color.gold : '#ff8300';
-      if (type === 'story') return theme.color.seafoam;
+      if (type === 'group') return 'var(--sb-sidebar-itemIconGroup)';
+      if (type === 'component') return 'var(--sb-sidebar-itemIconComponent)';
+      if (type === 'document') return 'var(--sb-sidebar-itemIconDocument)';
+      if (type === 'story') return 'var(--sb-sidebar-itemIconStory)';
       return 'currentColor';
     })(),
   })
@@ -35,7 +33,7 @@ const BranchNode = styled.button<{
   alignItems: 'start',
   textAlign: 'left',
   paddingLeft: `${(isExpandable ? 8 : 22) + depth * 18}px`,
-  color: 'inherit',
+  color: 'var(--sb-sidebar-itemText)',
   fontSize: `${theme.typography.size.s2}px`,
   background: 'transparent',
   minHeight: 28,
@@ -45,8 +43,8 @@ const BranchNode = styled.button<{
   paddingBottom: 4,
 
   '&:hover, &:focus': {
-    background: transparentize(0.93, theme.color.secondary),
     outline: 'none',
+    background: 'var(--sb-sidebar-itemHoverBackground)',
   },
 }));
 
@@ -79,7 +77,7 @@ export const RootNode = styled.div(({ theme }) => ({
   minHeight: 28,
   letterSpacing: '0.16em',
   textTransform: 'uppercase',
-  color: theme.textMutedColor,
+  color: 'var(--sb-sidebar-sectionText)',
 }));
 
 const Wrapper = styled.div({

@@ -51,17 +51,17 @@ const ScreenReaderLabel = styled.label({
   overflow: 'hidden',
 });
 
-const SearchIconWrapper = styled.div(({ theme }) => ({
+const SearchIconWrapper = styled.div({
   position: 'absolute',
   top: 0,
   left: 8,
   zIndex: 1,
   pointerEvents: 'none',
-  color: theme.textMutedColor,
+  color: 'var(--sb-sidebar-searchIcon)',
   display: 'flex',
   alignItems: 'center',
   height: '100%',
-}));
+});
 
 const SearchField = styled.div({
   display: 'flex',
@@ -69,27 +69,27 @@ const SearchField = styled.div({
   position: 'relative',
 });
 
-const Input = styled.input(({ theme }) => ({
+const Input = styled.input({
   appearance: 'none',
   height: 32,
   paddingLeft: 28,
   paddingRight: 28,
-  border: `1px solid ${theme.appBorderColor}`,
-  background: 'transparent',
+  border: '1px solid var(--sb-sidebar-searchBorder)',
+  background: 'var(--sb-sidebar-searchBackground)',
   borderRadius: 4,
-  fontSize: `${theme.typography.size.s1 + 1}px`,
+  fontSize: '13px',
   fontFamily: 'inherit',
   transition: 'all 150ms',
-  color: theme.color.defaultText,
+  color: 'var(--sb-sidebar-searchText)',
   width: '100%',
 
   '&:focus, &:active': {
     outline: 0,
-    borderColor: theme.color.secondary,
-    background: theme.background.app,
+    borderColor: 'var(--sb-sidebar-searchFocusBorder)',
+    background: 'var(--sb-sidebar-searchFocusBackground)',
   },
   '&::placeholder': {
-    color: theme.textMutedColor,
+    color: 'var(--sb-sidebar-searchPlaceholder)',
     opacity: 1,
   },
   '&:valid ~ code, &:focus ~ code': {
@@ -108,9 +108,9 @@ const Input = styled.input(({ theme }) => ({
     {
       display: 'none',
     },
-}));
+});
 
-const FocusKey = styled.code(({ theme }) => ({
+const FocusKey = styled.code({
   position: 'absolute',
   top: 8,
   right: 9,
@@ -119,22 +119,22 @@ const FocusKey = styled.code(({ theme }) => ({
   lineHeight: '16px',
   textAlign: 'center',
   fontSize: '11px',
-  color: theme.base === 'light' ? theme.color.dark : theme.textMutedColor,
+  color: 'var(--sb-sidebar-searchKey)',
   userSelect: 'none',
   pointerEvents: 'none',
-}));
+});
 
-const ClearIcon = styled.div(({ theme }) => ({
+const ClearIcon = styled.div({
   position: 'absolute',
   top: 0,
   right: 8,
   zIndex: 1,
-  color: theme.textMutedColor,
+  color: 'var(--sb-sidebar-searchKey)',
   cursor: 'pointer',
   display: 'flex',
   alignItems: 'center',
   height: '100%',
-}));
+});
 
 const FocusContainer = styled.div({ outline: 0 });
 

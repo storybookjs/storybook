@@ -1,3 +1,206 @@
+# v4.1.0 (Fri Dec 29 2023)
+
+#### 🚀 Enhancement
+
+- Update versions of peer dependencies to allow latest Vite and Vite Svelte plugin [#159](https://github.com/storybookjs/addon-svelte-csf/pull/159) ([@joekrump](https://github.com/joekrump))
+
+#### Authors: 1
+
+- Joe Krump ([@joekrump](https://github.com/joekrump))
+
+---
+
+# v4.0.13 (Tue Nov 21 2023)
+
+#### 🐛 Bug Fix
+
+- Add component description from jsdoc on meta export [#158](https://github.com/storybookjs/addon-svelte-csf/pull/158) ([@j3rem1e](https://github.com/j3rem1e))
+
+#### Authors: 1
+
+- Jérémie ([@j3rem1e](https://github.com/j3rem1e))
+
+---
+
+# v4.0.12 (Fri Nov 17 2023)
+
+#### 🐛 Bug Fix
+
+- Exports package.json [#157](https://github.com/storybookjs/addon-svelte-csf/pull/157) ([@tylergaw](https://github.com/tylergaw))
+
+#### Authors: 1
+
+- Tyler Gaw ([@tylergaw](https://github.com/tylergaw))
+
+---
+
+# v4.0.11 (Fri Nov 10 2023)
+
+#### 🐛 Bug Fix
+
+- Parse comments as Story description [#154](https://github.com/storybookjs/addon-svelte-csf/pull/154) ([@j3rem1e](https://github.com/j3rem1e))
+
+#### Authors: 1
+
+- Jérémie ([@j3rem1e](https://github.com/j3rem1e))
+
+---
+
+# v4.0.10 (Thu Nov 09 2023)
+
+#### 🐛 Bug Fix
+
+- Update src/preset/indexer.ts [#153](https://github.com/storybookjs/addon-svelte-csf/pull/153) ([@benmccann](https://github.com/benmccann))
+- Add support for experimental_indexers [#153](https://github.com/storybookjs/addon-svelte-csf/pull/153) ([@j3rem1e](https://github.com/j3rem1e))
+- Upgrade dev dependencies to Storybook v7.5.2 and Svelte 4.2.2 [#153](https://github.com/storybookjs/addon-svelte-csf/pull/153) ([@j3rem1e](https://github.com/j3rem1e))
+
+#### 📝 Documentation
+
+- Updated Readme to include component [#150](https://github.com/storybookjs/addon-svelte-csf/pull/150) ([@brittneypostma](https://github.com/brittneypostma))
+
+#### Authors: 3
+
+- Ben McCann ([@benmccann](https://github.com/benmccann))
+- Brittney Postma ([@brittneypostma](https://github.com/brittneypostma))
+- Jérémie ([@j3rem1e](https://github.com/j3rem1e))
+
+---
+
+# v4.0.9 (Sat Sep 23 2023)
+
+#### 🐛 Bug Fix
+
+- Fix reactivity of args when HMR remount the RenderContext [#144](https://github.com/storybookjs/addon-svelte-csf/pull/144) ([@j3rem1e](https://github.com/j3rem1e))
+
+#### Authors: 1
+
+- Jérémie ([@j3rem1e](https://github.com/j3rem1e))
+
+---
+
+# v4.0.8 (Thu Sep 21 2023)
+
+#### 🐛 Bug Fix
+
+- Fix forwarding of actions handlers [#142](https://github.com/storybookjs/addon-svelte-csf/pull/142) ([@j3rem1e](https://github.com/j3rem1e))
+
+#### Authors: 1
+
+- Jérémie ([@j3rem1e](https://github.com/j3rem1e))
+
+---
+
+# v4.0.7 (Sat Sep 16 2023)
+
+#### 🐛 Bug Fix
+
+- Update src/parser/extract-stories.ts [#134](https://github.com/storybookjs/addon-svelte-csf/pull/134) ([@benmccann](https://github.com/benmccann))
+- Allow 'meta' to be exported as const from module script [#134](https://github.com/storybookjs/addon-svelte-csf/pull/134) ([@j3rem1e](https://github.com/j3rem1e))
+- Supports for tags in <Meta/> [#134](https://github.com/storybookjs/addon-svelte-csf/pull/134) ([@j3rem1e](https://github.com/j3rem1e))
+
+#### Authors: 2
+
+- Ben McCann ([@benmccann](https://github.com/benmccann))
+- Jérémie ([@j3rem1e](https://github.com/j3rem1e))
+
+---
+
+# v4.0.6 (Fri Sep 15 2023)
+
+#### 🐛 Bug Fix
+
+- Allow configuration of filename patterns besides *.stories.svelte [#140](https://github.com/storybookjs/addon-svelte-csf/pull/140) ([@j3rem1e](https://github.com/j3rem1e))
+
+#### Authors: 1
+
+- Jérémie ([@j3rem1e](https://github.com/j3rem1e))
+
+---
+
+# v4.0.5 (Wed Sep 13 2023)
+
+#### 🐛 Bug Fix
+
+- fix: MetaProps typing [#139](https://github.com/storybookjs/addon-svelte-csf/pull/139) ([@paoloricciuti](https://github.com/paoloricciuti))
+
+#### Authors: 1
+
+- Paolo Ricciuti ([@paoloricciuti](https://github.com/paoloricciuti))
+
+---
+
+# v4.0.4 (Wed Sep 13 2023)
+
+#### 🐛 Bug Fix
+
+- fix: move MetaProps to its own declaration to allow for overrides [#138](https://github.com/storybookjs/addon-svelte-csf/pull/138) ([@paoloricciuti](https://github.com/paoloricciuti))
+
+#### Authors: 1
+
+- Paolo Ricciuti ([@paoloricciuti](https://github.com/paoloricciuti))
+
+---
+
+# v4.0.3 (Sat Sep 02 2023)
+
+#### 🐛 Bug Fix
+
+- Fix test snapshots [#137](https://github.com/storybookjs/addon-svelte-csf/pull/137) ([@j3rem1e](https://github.com/j3rem1e))
+
+#### Authors: 1
+
+- Jérémie ([@j3rem1e](https://github.com/j3rem1e))
+
+---
+
+# v4.0.2 (Sat Sep 02 2023)
+
+#### 🐛 Bug Fix
+
+- [Bug] titlePrefix in advanced story specifiers causes the story to crash with "Didn't find 'xyz' in CSF file" [#136](https://github.com/storybookjs/addon-svelte-csf/pull/136) ([@j3rem1e](https://github.com/j3rem1e))
+
+#### Authors: 1
+
+- Jérémie ([@j3rem1e](https://github.com/j3rem1e))
+
+---
+
+# v4.0.1 (Thu Aug 31 2023)
+
+#### 🐛 Bug Fix
+
+- Fix svelte-stories-loader in Windows [#133](https://github.com/storybookjs/addon-svelte-csf/pull/133) ([@j3rem1e](https://github.com/j3rem1e))
+
+#### Authors: 1
+
+- Jérémie ([@j3rem1e](https://github.com/j3rem1e))
+
+---
+
+# v4.0.0 (Tue Aug 29 2023)
+
+#### 💥 Breaking Change
+
+- Require Svelte v4, vite-plugin-svelte v2, Vite v4 [#128](https://github.com/storybookjs/addon-svelte-csf/pull/128) ([@JReinhold](https://github.com/JReinhold))
+
+#### Authors: 1
+
+- Jeppe Reinhold ([@JReinhold](https://github.com/JReinhold))
+
+---
+
+# v3.0.10 (Tue Aug 29 2023)
+
+#### 🐛 Bug Fix
+
+- Fix: `typeof Meta` in Svelte v3 (Pin Svelte peer dependency to v3) [#127](https://github.com/storybookjs/addon-svelte-csf/pull/127) ([@JReinhold](https://github.com/JReinhold))
+
+#### Authors: 1
+
+- Jeppe Reinhold ([@JReinhold](https://github.com/JReinhold))
+
+---
+
 # v3.0.9 (Wed Aug 23 2023)
 
 #### 🐛 Bug Fix

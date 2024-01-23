@@ -1,42 +1,30 @@
 import * as svelte from 'svelte/compiler';
 import type { Node } from 'estree';
 
-import { storyNameFromExport, toId } from '@storybook/csf';
-
 import dedent from 'dedent';
 import { extractId } from './extract-id.js';
+import type { MetaDef, StoriesDef, StoryDef } from './types.js';
 
-interface StoryDef {
-  storyId: string;
-  name: string;
-  template: boolean;
-  source: string;
-  hasArgs: boolean;
-}
-
-interface MetaDef {
-  title?: string;
-  id?: string;
-}
-
-interface StoriesDef {
-  meta: MetaDef;
-  stories: Record<string, StoryDef>;
-  allocatedIds: string[];
+function lookupAttribute(name: string, attributes: any[]) {
+  return attributes.find((att: any) => 
+    (att.type === 'Attribute' && att.name === name) || 
+    (att.type === 'Property' && att.key.name === name));
 }
 
 function getStaticAttribute(name: string, node: any): string | undefined {
   // extract the attribute
-  const attribute = node.attributes.find(
-    (att: any) => att.type === 'Attribute' && att.name === name
-  );
+  const attribute = lookupAttribute(name, node);
 
   if (!attribute) {
     return undefined;
   }
 
   const { value } = attribute;
-  // expect the attribute to be static, ie only one Text node
+  // expect the attribute to be static, ie only one Text node or Literal
+  if (value?.type === 'Literal') {
+    return value.value;
+  }
+
   if (value && value.length === 1 && value[0].type === 'Text') {
     return value[0].data;
   }
@@ -44,6 +32,72 @@ function getStaticAttribute(name: string, node: any): string | undefined {
   throw new Error(`Attribute ${name} is not static`);
 }
 
+function getStaticBooleanAttribute(name: string, attributes: any[]): boolean | undefined {
+  // extract the attribute
+  const attribute = lookupAttribute(name, attributes);
+
+
+  if (!attribute) {
+    return undefined;
+  }
+
+  const { value } = attribute;
+
+  // expect the attribute to be static and a boolean
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  throw new Error(`Attribute ${name} is not a static boolean`);
+}
+
+function getMetaTags(attributes: any[]): string[] {
+
+  const finalTags = getStaticBooleanAttribute('autodocs', attributes) ? ["autodocs"] : [];
+
+  const tags = lookupAttribute('tags', attributes);
+
+  if (tags) {
+    let valid = false;
+
+    let { value } = tags;
+    if (value && value.length === 1) {
+      value = value[0];
+    }
+
+    const { type, expression, data } = value;
+    if (type === 'Text') {
+      // tags="autodocs"
+      finalTags.push(data);
+      valid = true;
+    } else if (type === 'ArrayExpression') {
+      // tags={["autodocs"]} in object
+      const { elements } = value;
+      elements.forEach((e : any) => finalTags.push(e.value));
+      valid = true;
+    } else if (type === 'MustacheTag' && expression.type === 'ArrayExpression') {
+      // tags={["autodocs"]} in template
+      const { elements } = expression;
+      elements.forEach((e : any) => finalTags.push(e.value));
+      valid = true;
+    }
+
+    if (!valid) {
+      throw new Error('Attribute tags should be a static string array or a string');
+    }
+  }
+
+  return finalTags;
+}
+
+function fillMetaFromAttributes(meta: MetaDef, attributes: any[]) {
+  meta.title = getStaticAttribute('title', attributes);
+  meta.id = getStaticAttribute('id', attributes);
+  const tags = getMetaTags(attributes);
+  if (tags.length > 0) {
+    meta.tags = tags;
+  }
+}
 /**
  * Parse a Svelte component and extract stories.
  * @param component Component Source
@@ -93,6 +147,34 @@ export function extractStories(component: string): StoriesDef {
 
   const stories: Record<string, StoryDef> = {};
   const meta: MetaDef = {};
+  if (ast.module) {
+    svelte.walk(<Node>ast.module.content, {
+      enter(node: any) {
+        if (node.type === 'ExportNamedDeclaration' && 
+          node.declaration?.type === 'VariableDeclaration' && 
+          node.declaration?.declarations.length === 1 &&
+          node.declaration?.declarations[0]?.id?.name === 'meta') {
+
+            if (node.declaration?.kind !== 'const') {
+              throw new Error('meta should be exported as const');
+            }
+
+            const init = node.declaration?.declarations[0]?.init;
+            if (init?.type !== 'ObjectExpression') {
+              throw new Error('meta should export on object');
+            }
+
+            fillMetaFromAttributes(meta, init.properties);
+            if (node.leadingComments?.length > 0) {
+              // throws dedent expression is not callable.
+              // @ts-ignore
+              meta.description = dedent(node.leadingComments[0].value.replaceAll(/^ *\*/mg, ""));
+            }
+        }
+      }
+    });
+  }
+  let latestComment: string|undefined;
   svelte.walk(<Node>ast.html, {
     enter(node: any) {
       if (
@@ -104,7 +186,7 @@ export function extractStories(component: string): StoriesDef {
         const isTemplate = node.name === 'Template';
 
         // extract the 'name' attribute
-        let name = getStaticAttribute('name', node);
+        let name = getStaticAttribute('name', node.attributes);
 
         // templates has a default name
         if (!name && isTemplate) {
@@ -113,7 +195,7 @@ export function extractStories(component: string): StoriesDef {
 
         const id = extractId(
           {
-            id: getStaticAttribute('id', node),
+            id: getStaticAttribute('id', node.attributes),
             name,
           },
           isTemplate ? undefined : allocatedIds
@@ -130,23 +212,41 @@ export function extractStories(component: string): StoriesDef {
             // @ts-ignore
             source = dedent`${component.substr(start, end - start)}`;
           }
-          stories[isTemplate ? `tpl:${id}` : id] = {
-            storyId: toId(meta.id || meta.title || id, storyNameFromExport(id)),
+          const story = {
             name,
             template: isTemplate,
             source,
             hasArgs: node.attributes.find((att: any) => att.type === 'Let') != null,
           };
+          if (!isTemplate && latestComment) {
+            // throws dedent expression is not callable.
+            // @ts-ignore
+            story.description = dedent`${latestComment}`;
+          }
+          stories[isTemplate ? `tpl:${id}` : id] = story;
+          latestComment = undefined;
         }
       } else if (node.type === 'InlineComponent' && node.name === localNames.Meta) {
         this.skip();
 
-        meta.title = getStaticAttribute('title', node);
-        meta.id = getStaticAttribute('id', node);
+        fillMetaFromAttributes(meta, node.attributes);
+        if (latestComment) {
+          meta.description = latestComment;
+        }
+        latestComment = undefined;
+      } else if (node.type === 'Comment') {
+        this.skip();
+
+        latestComment = node.data?.trim();
+        return;
       }
     },
+    leave(node: any) {
+      if (node.type !== "Comment" && node.type !== "Text") {
+        latestComment = undefined;
+      }
+    }
   });
-
   return {
     meta,
     stories,

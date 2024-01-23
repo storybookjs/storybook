@@ -1,10 +1,9 @@
-import dedent from 'dedent';
 import { extractStories } from './extract-stories.js';
 import { fileURLToPath } from 'url';
 import { readFileSync } from 'fs';
 
 const parser = fileURLToPath(new URL('./collect-stories.js', import.meta.url))
-  .replace(/\\/g, "\\\\"); // For Windows paths;
+  .replace(/\\/g, '/'); // For Windows paths;
 
 // From https://github.com/sveltejs/svelte/blob/8db3e8d0297e052556f0b6dde310ef6e197b8d18/src/compiler/compile/utils/get_name_from_filename.ts
 // Copied because it is not exported from the compiler
@@ -55,13 +54,12 @@ function transformSvelteStories(code: string) {
     .map(([id]) => `export const ${id} = __storiesMetaData.stories[${JSON.stringify(id)}]`)
     .join('\n');
 
-  const codeWithoutDefaultExport = code.replace('export default ', '//export default');
-
-  // throws dedent expression is not callable.
-  // @ts-ignore
-  return dedent`${codeWithoutDefaultExport}
+  const metaExported = code.includes('export { meta }');
+  const codeWithoutDefaultExport = code.replace('export default ', '//export default').replace('export { meta };', '// export { meta };');
+  
+  return `${codeWithoutDefaultExport}
     const { default: parser } = require('${parser}');
-    const __storiesMetaData = parser(${componentName}, ${JSON.stringify(storiesDef)});
+    const __storiesMetaData = parser(${componentName}, ${JSON.stringify(storiesDef)}${metaExported ? ', meta' : ''});
     export default __storiesMetaData.meta;
     ${storyDef};
   ` as string;

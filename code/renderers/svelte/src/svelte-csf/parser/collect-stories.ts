@@ -5,6 +5,8 @@ import RenderContext from '../components/RenderContext.svelte';
 import { combineParameters } from '@storybook/preview-api';
 import { extractId } from './extract-id.js';
 import { logger } from '@storybook/client-logger';
+import type { Meta, StoriesDef, Story } from './types.js';
+import type { SvelteComponent } from 'svelte';
 
 /* Called from a webpack loader and a jest transformation.
  *
@@ -17,25 +19,21 @@ import { logger } from '@storybook/client-logger';
  * the one selected is disabled.
  */
 
-interface Story {
-  id: string;
-  name: string;
-  template: string;
-  component: any;
-  isTemplate: boolean;
-  source: boolean;
-}
 
-interface Meta {
-  name: string;
-  component: any;
-}
 
 const createFragment = document.createDocumentFragment
   ? () => document.createDocumentFragment()
   : () => document.createElement('div');
 
-export default (StoriesComponent, { stories = {}, allocatedIds = [] }) => {
+export default (
+  StoriesComponent: SvelteComponent,
+  {
+    stories = {},
+    meta: parsedMeta = {},
+    allocatedIds = [],
+  }: StoriesDef,
+  exportedMeta = undefined
+) => {
   const repositories = {
     meta: null as Meta | null,
     stories: [] as Story[],
@@ -44,7 +42,7 @@ export default (StoriesComponent, { stories = {}, allocatedIds = [] }) => {
   // extract all stories
   try {
     const context = new RegisterContext({
-      target: createFragment() as Document | Element,
+      target: createFragment() as Element,
       props: {
         Stories: StoriesComponent,
         repositories,
@@ -55,10 +53,21 @@ export default (StoriesComponent, { stories = {}, allocatedIds = [] }) => {
     logger.error(`Error extracting stories ${e.toString()}`, e);
   }
 
-  const { meta } = repositories;
+  const meta = exportedMeta || repositories.meta;
   if (!meta) {
-    logger.error('Missing <Meta/> tag');
+    logger.error('Missing module meta export or <Meta/> tag');
     return {};
+  }
+
+  // Inject description extracted from static analysis.
+  if (parsedMeta.description && !meta.parameters?.docs?.description?.component) {
+    meta.parameters = combineParameters(meta.parameters, {
+      docs: {
+        description: {
+          component: parsedMeta.description
+        }
+      }
+    });
   }
 
   const { component: globalComponent } = meta;
@@ -131,7 +140,7 @@ export default (StoriesComponent, { stories = {}, allocatedIds = [] }) => {
           });
         }
 
-        let snippet;
+        let snippet: string|null|undefined;
 
         if (source === true || (source === false && !hasArgs)) {
           snippet = rawSource;
@@ -145,9 +154,20 @@ export default (StoriesComponent, { stories = {}, allocatedIds = [] }) => {
           });
         }
 
+        const relStory = stories[storyId];
+        if (relStory?.description) {
+          storyFn.parameters = combineParameters(storyFn.parameters || {}, {
+            docs: {
+              description: {
+                story: relStory.description,
+              },
+            },
+          });
+        }
+
         // eslint-disable-next-line no-param-reassign
         all[storyId] = storyFn;
         return all;
-      }, {}) as { [key: string]: { storyName: string; parameters: string; } },
+      }, {}) as { [key: string]: { storyName: string; parameters: string } },
   };
 };

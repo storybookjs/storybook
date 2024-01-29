@@ -41,6 +41,7 @@ export interface Story {
   component: any;
   isTemplate: boolean;
   source: boolean;
+  play?: (playStoryContext:object)=>any;
 }
 
 /**

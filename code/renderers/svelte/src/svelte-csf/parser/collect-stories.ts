@@ -93,7 +93,7 @@ export default (
     stories: repositories.stories
       .filter((story) => !story.isTemplate)
       .reduce((all, story) => {
-        const { id, name, template, component, source = false, ...props } = story;
+        const { id, name, template, component, source = false, play, ...props } = story;
 
         const storyId = extractId(story, allocatedIds);
         if (!storyId) {
@@ -124,6 +124,22 @@ export default (
         Object.entries(props).forEach(([k, v]) => {
           storyFn[k] = v;
         });
+
+        // play ?
+        if (play) {
+          /*
+           * The 'play' function should be delegated to the real play Story function
+           * in order to be run into the component scope.
+           */
+          storyFn.play = (storyContext) => {
+            const delegate = storyContext?.playFunction?.__play;
+            if (delegate) {
+              return delegate(storyContext);
+            }
+
+            return play(storyContext);
+          }
+        }
 
         // inject story sources
         const storyDef = stories[template ? `tpl:${template}` : storyId];

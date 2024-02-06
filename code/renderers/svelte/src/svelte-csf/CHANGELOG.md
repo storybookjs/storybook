@@ -1,3 +1,20 @@
+# v4.1.1 (Wed Jan 31 2024)
+
+#### 🐛 Bug Fix
+
+- Fix play function not running in the component scope [#169](https://github.com/storybookjs/addon-svelte-csf/pull/169) ([@j3rem1e](https://github.com/j3rem1e))
+
+#### ⚠️ Pushed to `main`
+
+- Set git user in release action ([@JReinhold](https://github.com/JReinhold))
+
+#### Authors: 2
+
+- Jeppe Reinhold ([@JReinhold](https://github.com/JReinhold))
+- Jérémie ([@j3rem1e](https://github.com/j3rem1e))
+
+---
+
 # v4.1.0 (Fri Dec 29 2023)
 
 #### 🚀 Enhancement

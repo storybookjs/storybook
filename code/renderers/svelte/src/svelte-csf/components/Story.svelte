@@ -5,6 +5,7 @@
 
   export let name;
   export let template = null;
+  export let play = null;
 
   if (!name) {
     throw new Error('Missing Story name');
@@ -13,6 +14,7 @@
   context.register({
     name,
     ...$$restProps,
+    play,
     template: template != null ? template : !$$slots.default ? 'default' : null,
   });
 
@@ -20,6 +22,16 @@
   const ctx = getStoryRenderContext();
   const args = ctx.argsStore;
   const storyContext = ctx.storyContextStore;
+
+  function injectIntoPlayFunction(ctxt, play) {
+    if (play && ctxt.playFunction) {
+      ctxt.playFunction.__play = play;
+    }
+  }
+
+  $: if (render) {
+    injectIntoPlayFunction($storyContext, play);
+  }
 </script>
 
 {#if render}

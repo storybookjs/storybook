@@ -4,7 +4,7 @@ import { extractStories } from '../parser/extract-stories.js';
 import fs from 'fs-extra';
 import { loadSvelteConfig } from '../config-loader.js';
 import { storyNameFromExport, toId } from '@storybook/csf';
-import { IndexInput, IndexedCSFFile, IndexerOptions } from '@storybook/types';
+import type { IndexInput, IndexedCSFFile, IndexerOptions } from '@storybook/types';
 
 export async function readStories(fileName: string) {
   let code = (await fs.readFile(fileName, 'utf-8')).toString();
@@ -57,5 +57,6 @@ export async function createIndex(
       name: story.name,
       title: makeTitle(defs.meta.title),
       tags: defs.meta.tags,
+      metaTags: defs.meta.tags,
     }));
 }

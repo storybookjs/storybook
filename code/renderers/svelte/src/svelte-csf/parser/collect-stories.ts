@@ -2,7 +2,7 @@
 
 import RegisterContext from '../components/RegisterContext.svelte';
 import RenderContext from '../components/RenderContext.svelte';
-import { combineParameters } from '@storybook/client-api';
+import { combineParameters } from '@storybook/preview-api';
 import { extractId } from './extract-id.js';
 import { logger } from '@storybook/client-logger';
 import type { Meta, StoriesDef, Story } from './types.js';

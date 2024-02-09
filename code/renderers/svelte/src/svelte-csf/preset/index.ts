@@ -1,14 +1,6 @@
 import { fileURLToPath } from 'url';
 import { svelteIndexer, createIndex } from './indexer.js';
 
-export function managerEntries(entry = []) {
-  return [
-    ...entry,
-    fileURLToPath(new URL('./manager.js', import.meta.url))
-      .replace(/\\/g, "\\\\"), // For Windows paths
-  ];
-}
-
 export function webpack(config) {
   return {
     ...config,

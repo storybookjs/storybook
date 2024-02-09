@@ -1,7 +1,7 @@
 <script>
   import { Meta, Story } from '../src/index';
-  import { expect } from '@storybook/jest';
-  import { userEvent, within } from '@storybook/testing-library';
+  import { expect } from '@storybook/test';
+  import { userEvent, within } from '@storybook/test';
   import { tick } from 'svelte';
   import Counter from './Counter.svelte';
 

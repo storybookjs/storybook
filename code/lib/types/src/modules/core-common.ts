@@ -64,22 +64,22 @@ interface DirectoryMapping {
   to: string;
 }
 
+interface AllSupportedPresets extends StorybookConfig {
+  entries: unknown;
+  managerEntries: string[];
+}
+
+type ExtractPresetType<TKey extends keyof AllSupportedPresets> =
+  AllSupportedPresets[TKey] extends PresetValue<infer U>
+    ? Exclude<U, ((...args: any[]) => any) | undefined>
+    : Exclude<AllSupportedPresets[TKey], ((...args: any[]) => any) | undefined>;
+
 export interface Presets {
-  apply(
-    extension: 'typescript',
-    config: Partial<TypescriptOptions>,
-    args?: Options
-  ): Promise<Partial<TypescriptOptions>>;
-  apply(extension: 'framework', config?: {}, args?: any): Promise<Preset>;
-  apply(extension: 'babel', config?: {}, args?: any): Promise<BabelOptions>;
-  apply(extension: 'swc', config?: {}, args?: any): Promise<SWCOptions>;
-  apply(extension: 'entries', config?: [], args?: any): Promise<unknown>;
-  apply(extension: 'stories', config?: [], args?: any): Promise<StoriesEntry[]>;
-  apply(extension: 'managerEntries', config: [], args?: any): Promise<string[]>;
-  apply(extension: 'refs', config?: [], args?: any): Promise<unknown>;
-  apply(extension: 'core', config?: {}, args?: any): Promise<CoreConfig>;
-  apply(extension: 'build', config?: {}, args?: any): Promise<StorybookConfig['build']>;
-  apply<T>(extension: string, config?: T, args?: unknown): Promise<T>;
+  apply<TKey extends keyof AllSupportedPresets>(
+    extension: TKey,
+    config?: Partial<ExtractPresetType<TKey>>,
+    args?: any
+  ): Promise<ExtractPresetType<TKey>>;
 }
 
 export interface LoadedPreset {

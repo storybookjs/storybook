@@ -67,12 +67,19 @@ interface DirectoryMapping {
 interface AllSupportedPresets extends StorybookConfig {
   entries: unknown;
   managerEntries: string[];
+  docs: DocsOptions;
+  favicon: string;
+  title: string;
 }
 
+type ConfigFunction<T> = (config: T, options: Options) => T | Promise<T>;
+
 type ExtractPresetType<TKey extends keyof AllSupportedPresets> =
-  AllSupportedPresets[TKey] extends PresetValue<infer U>
-    ? Exclude<U, ((...args: any[]) => any) | undefined>
-    : Exclude<AllSupportedPresets[TKey], ((...args: any[]) => any) | undefined>;
+  AllSupportedPresets[TKey] extends ConfigFunction<infer T>
+    ? T
+    : AllSupportedPresets[TKey] extends PresetValue<infer U>
+    ? Exclude<U, ConfigFunction<any> | undefined>
+    : Exclude<AllSupportedPresets[TKey], ConfigFunction<any> | undefined>;
 
 export interface Presets {
   apply<TKey extends keyof AllSupportedPresets>(
@@ -80,6 +87,12 @@ export interface Presets {
     config?: Partial<ExtractPresetType<TKey>>,
     args?: any
   ): Promise<ExtractPresetType<TKey>>;
+
+  apply<TReturn = never>(
+    extension: string,
+    config?: Partial<TReturn>,
+    args?: any
+  ): Promise<TReturn>;
 }
 
 export interface LoadedPreset {

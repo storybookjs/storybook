@@ -13,9 +13,8 @@ import { dedent } from 'ts-dedent';
 import { defaultStaticDirs } from './constants';
 
 export async function useStatics(router: Router, options: Options) {
-  const staticDirs =
-    (await options.presets.apply<StorybookConfig['staticDirs']>('staticDirs')) ?? [];
-  const faviconPath = await options.presets.apply<string>('favicon');
+  const staticDirs = (await options.presets.apply('staticDirs')) ?? [];
+  const faviconPath = await options.presets.apply('favicon');
 
   if (options.staticDir && !isEqual(staticDirs, defaultStaticDirs)) {
     throw new ConflictingStaticDirConfigError();

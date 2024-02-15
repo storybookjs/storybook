@@ -33,7 +33,7 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
     options.presets.apply('managerEntries', []),
     safeResolve(join(options.configDir, 'manager')),
     getTemplatePath('addon.tsconfig.json'),
-    options.presets.apply<Record<string, string>>('env'),
+    options.presets.apply('env'),
   ]);
 
   const entryPoints = customManagerEntryPoint

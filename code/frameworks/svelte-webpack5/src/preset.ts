@@ -10,7 +10,7 @@ export const addons: PresetProperty<'addons', StorybookConfig> = [
 ];
 
 export const core: PresetProperty<'core', StorybookConfig> = async (config, options) => {
-  const framework = await options.presets.apply<StorybookConfig['framework']>('framework');
+  const framework = await options.presets.apply('framework');
 
   return {
     ...config,

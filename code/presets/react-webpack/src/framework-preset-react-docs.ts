@@ -10,10 +10,7 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (
 ): Promise<Configuration> => {
   if (!hasDocsOrControls(options)) return config;
 
-  const typescriptOptions = await options.presets.apply<StorybookConfig['typescript']>(
-    'typescript',
-    {} as any
-  );
+  const typescriptOptions = await options.presets.apply('typescript', {} as any);
   const debug = options.loglevel === 'debug';
 
   const { reactDocgen, reactDocgenTypescriptOptions } = typescriptOptions || {};

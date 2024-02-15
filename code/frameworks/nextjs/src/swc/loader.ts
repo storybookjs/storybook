@@ -10,7 +10,7 @@ import { getNextjsVersion } from '../utils';
 
 const applyFastRefresh = async (options: Options) => {
   const isDevelopment = options.configType === 'DEVELOPMENT';
-  const framework = await options.presets.apply<Preset>('framework');
+  const framework = await options.presets.apply('framework');
   const reactOptions = typeof framework === 'object' ? framework.options : {};
   return isDevelopment && (reactOptions.fastRefresh || process.env.FAST_REFRESH === 'true');
 };

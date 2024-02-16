@@ -40,7 +40,10 @@ async function toImportFn(stories: string[], indexersMatchers: RegExp[]) {
       );
     }
 
-    return `  '${toImportPath(relativePath)}': async () => import('/@fs/${file}')`;
+    return [
+      `  '${toImportPath(relativePath)}': async () => import('/@fs/${file}'),`,
+      `  '${file}': async () => import('/@fs/${file}')`,
+    ].join('\n');
   });
 
   return `
@@ -54,11 +57,12 @@ async function toImportFn(stories: string[], indexersMatchers: RegExp[]) {
       }
 
       if (!(path in importers)) {
-        throw new Error(\`No importer defined for "\${path}"\`)
+        throw new Error(\`No importer defined for "\${path}". Existing importers: \${Object.keys(importers)}\`);
       }
+
       return importers[path]();
     }
-  `;
+`;
 }
 
 export async function generateImportFnScriptCode(options: Options) {

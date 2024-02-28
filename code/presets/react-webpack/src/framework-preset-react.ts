@@ -3,7 +3,7 @@ import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';
 
 import { logger } from '@storybook/node-logger';
 
-import type { Options, Preset } from '@storybook/core-webpack';
+import type { Options } from '@storybook/core-webpack';
 import type { StorybookConfig, ReactOptions } from './types';
 
 const getAbsolutePath = <I extends string>(input: I): I =>

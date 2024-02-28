@@ -8,6 +8,7 @@ import type { Server } from 'http';
 import type { PackageJson as PackageJsonFromTypeFest } from 'type-fest';
 
 import type { StoriesEntry, Indexer, StoryIndexer } from './indexer';
+import { args } from '../../../codemod/src/transforms/__tests__/mdx-to-csf.test';
 
 /**
  * ⚠️ This file contains internal WIP types they MUST NOT be exported outside this package for now!
@@ -72,25 +73,30 @@ interface AllSupportedPresets extends StorybookConfig {
   title: string;
 }
 
-type ConfigFunction<T> = (config: T, options: Options) => T | Promise<T>;
+type UnwrapFunctionReturnType<T> = T extends (
+  config: infer R,
+  options: Options
+) => infer R | Promise<infer R>
+  ? R
+  : T;
 
-type ExtractPresetType<TKey extends keyof AllSupportedPresets> =
-  AllSupportedPresets[TKey] extends ConfigFunction<infer T>
-    ? T
-    : AllSupportedPresets[TKey] extends PresetValue<infer U>
-    ? Exclude<U, ConfigFunction<any> | undefined>
-    : Exclude<AllSupportedPresets[TKey], ConfigFunction<any> | undefined>;
+type UnwrapPromise<T> = T extends Promise<infer P> ? P : T;
+
+type UnwrapPresetType<K extends keyof AllSupportedPresets> =
+  AllSupportedPresets[K] extends undefined
+    ? undefined
+    : UnwrapPromise<UnwrapFunctionReturnType<NonNullable<AllSupportedPresets[K]>>>;
 
 export interface Presets {
   apply<TKey extends keyof AllSupportedPresets>(
     extension: TKey,
-    config?: Partial<ExtractPresetType<TKey>>,
+    config?: Partial<UnwrapPresetType<TKey>> | null,
     args?: any
-  ): Promise<ExtractPresetType<TKey>>;
+  ): Promise<UnwrapPresetType<TKey>>;
 
   apply<TReturn = never>(
     extension: string,
-    config?: Partial<TReturn>,
+    config?: Partial<TReturn> | null,
     args?: any
   ): Promise<TReturn>;
 }
@@ -115,6 +121,7 @@ export interface Ref {
   version: string;
   type?: string;
   disable?: boolean;
+  expanded?: boolean;
 }
 
 export interface VersionCheck {
@@ -261,10 +268,7 @@ export type Preset =
  */
 export type Entry = string;
 
-type CoreCommon_StorybookRefs = Record<
-  string,
-  { title: string; url: string } | { disable: boolean; expanded?: boolean }
->;
+type CoreCommon_StorybookRefs = Record<string, Ref>;
 
 export type DocsOptions = {
   /**

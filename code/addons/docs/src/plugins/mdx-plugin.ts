@@ -4,6 +4,7 @@ import remarkSlug from 'remark-slug';
 import remarkExternalLinks from 'remark-external-links';
 import { createFilter } from '@rollup/pluginutils';
 import { dirname, join } from 'path';
+import type { CompileOptions } from '@storybook/mdx2-csf';
 
 const isStorybookMdx = (id: string) => id.endsWith('stories.mdx') || id.endsWith('story.mdx');
 
@@ -31,7 +32,7 @@ export async function mdxPlugin(options: Options): Promise<Plugin> {
         ? await import('@storybook/mdx1-csf')
         : await import('@storybook/mdx2-csf');
 
-      const mdxLoaderOptions = await options.presets.apply('mdxLoaderOptions', {
+      const mdxLoaderOptions = await options.presets.apply<CompileOptions>('mdxLoaderOptions', {
         ...mdxPluginOptions,
         mdxCompileOptions: {
           providerImportSource: join(

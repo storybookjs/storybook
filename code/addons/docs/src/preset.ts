@@ -47,7 +47,7 @@ async function webpack(
     mdxPluginOptions = {},
   } = options;
 
-  const mdxLoaderOptions: CompileOptions = await options.presets.apply('mdxLoaderOptions', {
+  const mdxLoaderOptions = await options.presets.apply<CompileOptions>('mdxLoaderOptions', {
     skipCsf: true,
     ...mdxPluginOptions,
     mdxCompileOptions: {

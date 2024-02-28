@@ -1,5 +1,5 @@
 import { logger } from '@storybook/node-logger';
-import type { Options, StorybookConfig } from '@storybook/types';
+import type { Options } from '@storybook/types';
 import { getDirectoryFromWorkingDir } from '@storybook/core-common';
 import { ConflictingStaticDirConfigError } from '@storybook/core-events/server-errors';
 import chalk from 'chalk';

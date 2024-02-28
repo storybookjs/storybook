@@ -1,5 +1,5 @@
 import { basename } from 'path';
-import type { DocsOptions, Options } from '@storybook/types';
+import type { Options } from '@storybook/types';
 import { getRefs } from '@storybook/core-common';
 
 import { readTemplate } from './template';

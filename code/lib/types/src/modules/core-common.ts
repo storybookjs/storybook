@@ -8,7 +8,6 @@ import type { Server } from 'http';
 import type { PackageJson as PackageJsonFromTypeFest } from 'type-fest';
 
 import type { StoriesEntry, Indexer, StoryIndexer } from './indexer';
-import { args } from '../../../codemod/src/transforms/__tests__/mdx-to-csf.test';
 
 /**
  * ⚠️ This file contains internal WIP types they MUST NOT be exported outside this package for now!

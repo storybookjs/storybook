@@ -60,9 +60,8 @@ describe('framework-preset-react-docgen', () => {
         plugins: [],
       };
 
-      const config = await preset.webpackFinal?.(webpackConfig, {
+      const config = await preset.webpackFinal?.(webpackConfig, <any>{
         presets: {
-          // @ts-expect-error (not strict)
           apply: async (name: string) => {
             if (name === 'typescript') {
               return {
@@ -106,9 +105,8 @@ describe('framework-preset-react-docgen', () => {
         plugins: [],
       };
 
-      const outputWebpackconfig = await preset.webpackFinal?.(webpackConfig, {
+      const outputWebpackconfig = await preset.webpackFinal?.(webpackConfig, <any>{
         presets: {
-          // @ts-expect-error (Converted from ts-ignore)
           apply: async () =>
             ({
               check: false,
@@ -128,9 +126,8 @@ describe('framework-preset-react-docgen', () => {
         plugins: [],
       };
 
-      const outputWebpackconfig = await preset.webpackFinal?.(webpackConfig, {
+      const outputWebpackconfig = await preset.webpackFinal?.(webpackConfig, <any>{
         presets: {
-          // @ts-expect-error (Converted from ts-ignore)
           apply: async () =>
             ({
               check: false,

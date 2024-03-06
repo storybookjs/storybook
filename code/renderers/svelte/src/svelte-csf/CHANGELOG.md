@@ -1,3 +1,26 @@
+# v4.1.2 (Wed Mar 06 2024)
+
+#### 🐛 Bug Fix
+
+- Support Storybook 8 [#165](https://github.com/storybookjs/addon-svelte-csf/pull/165) ([@JReinhold](https://github.com/JReinhold))
+
+#### ⚠️ Pushed to `main`
+
+- Upgrade auto ([@JReinhold](https://github.com/JReinhold))
+- Support Storybook 8 ([@JReinhold](https://github.com/JReinhold))
+- Merge branch 'next' ([@JReinhold](https://github.com/JReinhold))
+
+#### 📝 Documentation
+
+- Update README.md [#173](https://github.com/storybookjs/addon-svelte-csf/pull/173) ([@LuisEGR](https://github.com/LuisEGR))
+
+#### Authors: 2
+
+- Jeppe Reinhold ([@JReinhold](https://github.com/JReinhold))
+- Luis E. González ([@LuisEGR](https://github.com/LuisEGR))
+
+---
+
 # v4.1.1 (Wed Jan 31 2024)
 
 #### 🐛 Bug Fix

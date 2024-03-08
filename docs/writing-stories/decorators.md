@@ -172,6 +172,6 @@ Like parameters, decorators can be defined globally, at the component level, and
 
 All decorators relevant to a story will run in the following order once the story renders:
 
-- Global decorators, in the order they are defined
-- Component decorators, in the order they are defined
 - Story decorators, in the order they are defined
+- Component decorators, in the order they are defined
+- Global decorators, in the order they are defined

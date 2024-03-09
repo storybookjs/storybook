@@ -51,6 +51,8 @@ This is a brief overview of directories and files most relevant to contributors 
 ├── Issue.md
 ├── MIGRATION.md
 ├── README.md
+├── repros                        # Hidden folder: Reproductions for issues    
+├── sandbox                       # Hidden folder: Sandbox for testing Storybook
 └── code                          # Storybook packages
     ├── __mocks__                 # Mocks for jest tests
     ├── addons                    # Storybook addon packages
@@ -131,12 +133,60 @@ pnpm env use --global 18
 
 ## Running the local development environment
 
-- Ensure if you are using Windows to use the Windows Subsystem for Linux (WSL).
+- Ensure if you are using Windows to use the [Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/install) (WSL).
 - Run `yarn start` in the root directory to run a basic test Storybook "sandbox".
 
 The `yarn start` script will by default generate a React Vite TypeScript sandbox with a set of test stories inside it, as well as taking all steps required to get it running (building the various packages we need etc). There is no need to run `yarn` or `yarn install` as `yarn start` will do this for you.
 
-### Issues
+#### Forked repos
+
+Unless you're editing docs, you'll have to fork the Storybook repo to make code changes.
+
+After forking the repository, you should [disable Github Actions for your repo](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository) as many of them (e.g. pushing to sandbox) will fail without proper authorization. In your Github repo, go to Settings > Actions > General > set the Actions Permissions to **Disable actions**.
+
+After forking the repository, adding our codebase as upstream ensures you can rebase against the latest changes in the main repository. To do this, run the following commands:
+
+```sh
+git remote add upstream git@github.com:storybookjs/storybook.git
+```
+
+Now, when you want to update your fork with the latest changes from the main repository, you can run the following commands:
+
+```sh
+git fetch upstream # updates your local copy of the main repository with changes from the official repository
+
+git rebase upstream/main # rebases your current branch against upstream/main
+```
+
+## Running against different sandbox templates
+
+You can pick a specific template to use as your sandbox by running `yarn task`, which will prompt you to make further choices about which template you want and which task you want to run.
+
+## Making code changes
+
+If you want to make code changes to Storybook packages while running a sandbox, you'll need to do the following:
+
+1. In a second terminal run `yarn build --watch <package-1> <package-2>` in the `code/` directory. 
+The package name can be found after `@storybook/` in the published package. 
+
+For instance, to build the `@storybook/react @storybook/core-server @storybook/api @storybook/addon-docs` packages at the same time in watch mode:
+
+```bash
+cd code
+yarn build --watch react core-server api addon-docs
+```
+
+2. If you are running the sandbox in ["linked"](https://yarnpkg.com/cli/link) mode (the default), you should see the changes reflected on a refresh (you may need to restart it if changing server packages)
+
+3. If you are running the sandbox in "unlinked" mode you'll need to re-run the sandbox from the `publish` step to see the changes:
+
+```sh
+yarn task --task dev --template <your template> --start-from=publish
+```
+
+4. If you have made any changes inside `/code` or other packages, remember to run `yarn test` from inside the package to ensure that your changes do not break any tests.
+    
+### Troubleshooting
 
 If you run `yarn start` and encounter the following error, try rerunning `yarn start` a second time:
 
@@ -152,32 +202,6 @@ git clean -dx --dry-run
 
 By executing this command, you will be able to see which untracked or ignored files and directories will be removed from your working directory if you run it with the `--force` flag. Before running the command with the `--force` flag, please commit any local changes that you want to keep. Otherwise they will be lost.
 
-## Forked repos
-
-If you have forked the repository, you should [disable Github Actions for your repo](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository) as many of them (e.g. pushing to sandbox) will fail without proper authorization. In your Github repo, go to Settings > Actions > General > set the Actions Permissions to **Disable actions**.
-
-## Running against different sandbox templates
-
-You can also pick a specific template to use as your sandbox by running `yarn task`, which will prompt you to make further choices about which template you want and which task you want to run.
-
-## Making code changes
-
-If you want to make code changes to Storybook packages while running a sandbox, you'll need to do the following:
-
-1. In a second terminal run `yarn build --watch <package-1> <package-2>` in the `code/` directory. The package names is the bit after the `@storybook/` in the published package. For instance, to build the `@storybook/react @storybook/core-server @storybook/api @storybook/addon-docs` packages at the same time in watch mode:
-
-```bash
-cd code
-yarn build --watch react core-server api addon-docs
-```
-
-2. If you are running the sandbox in "linked" mode (the default), you should see the changes reflected on a refresh (you may need to restart it if changing server packages)
-
-3. If you are running the sandbox in "unlinked" mode you'll need to re-run the sandbox from the `publish` step to see the changes:
-
-```sh
-yarn task --task dev --template <your template> --start-from=publish
-```
 
 ## Contributing to Storybook
 

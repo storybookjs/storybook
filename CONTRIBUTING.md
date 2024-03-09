@@ -24,7 +24,7 @@ You will need to have the following installed:
 - All commands should be run in a terminal with administrator privileges in Windows environments.
 - Run `yarn start` in the root directory to run a basic test Storybook "sandbox".
 
-The `yarn start` script will generate a React Vite TypeScript sandbox with a set of test stories inside it, as well as taking all steps required to get it running (building the various packages we need etc). There is no need to run `yarn` or `yarn install` as `yarn start` will do this for you.
+The `yarn start` script will by default generate a React Vite TypeScript sandbox with a set of test stories inside it, as well as taking all steps required to get it running (building the various packages we need etc). There is no need to run `yarn` or `yarn install` as `yarn start` will do this for you.
 
 ### Issues
 
@@ -84,4 +84,4 @@ yarn build --prod --watch angular core addon-docs
 
 ## Contributing to Storybook
 
-For further advice on how to contribute, please refer to our [NEW contributing guide on the Storybook website](https://storybook.js.org/docs/contribute).
+For further advice on how to contribute, please refer to our :new: [NEW contributing guide on the Storybook website](https://storybook.js.org/docs/contribute).

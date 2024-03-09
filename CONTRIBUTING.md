@@ -2,6 +2,13 @@
 
 Storybook is developed against a specific node version which is defined in an `.nvmrc` file. You can use any Node version manager that uses the `.nvmrc` configuration file (we recommend [fnm](https://fnm.vercel.app/)).
 
+## Table of Contents
+
+- [Contributing](#contributing)
+  - [How to contribute](#how-to-contribute)
+  - [Easy Ways to Contribute](#easy-ways-to-contribue)
+- [What's Inside?](#whats-inside)
+
 # Contributing
 
 Check out setup instructions for [Code Contributions](./docs/contribute/code.md)
@@ -15,7 +22,7 @@ Check out setup instructions for [Code Contributions](./docs/contribute/code.md)
 - [Write a preset](https://storybook.js.org/docs/presets/introduction)
 - [Write an addon](https://storybook.js.org/docs/addons/introduction)
 
-#### Light and Easy :sparkle:
+#### Easy Ways to Contribute :sparkle:
 
 - Report a bug by [creating a reproduction](https://storybook.js.org/docs/contribute/bug-report) of the problem
 

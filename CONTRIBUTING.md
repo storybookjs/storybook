@@ -2,6 +2,117 @@
 
 Storybook is developed against a specific node version which is defined in an `.nvmrc` file. You can use any Node version manager that uses the `.nvmrc` configuration file (we recommend [fnm](https://fnm.vercel.app/)).
 
+# Contributing
+
+Check out setup instructions for [Code Contributions](./docs/contribute/code.md)
+
+## How to contribute
+
+- [Create an RFC](./docs/contribute/rfc.md) for feature requests
+- [Integrate Storybook with a JS framework](./docs/contribute/framework.md) or improve support of existing frameworks
+- Update [Documentation](./docs/contribute/documentation-updates.md) for documentation improvements, typos, and clarifications
+- Add [new examples](./docs/contribute/new-snippets.md) of code snippets for using Storybook with a JS framework
+- [Write a preset](https://storybook.js.org/docs/presets/introduction)
+- [Write an addon](https://storybook.js.org/docs/addons/introduction)
+
+#### Light and Easy :sparkle:
+
+- Report a bug by [creating a reproduction](https://storybook.js.org/docs/contribute/bug-report) of the problem
+
+- [Update Documentation](https://storybook.js.org/docs/contribute/documentation-updates), including [code snippets](https://storybook.js.org/docs/contribute/new-snippets) for using Storybook with different frameworks
+- [Create a new feature](https://storybook.js.org/docs/contribute/feature)
+
+Don't know where to start?
+
+- Ask [`#contributing`](https://discord.com/channels/486522875931656193/839297503446695956) on Discord
+
+- Answer [Help](https://github.com/storybookjs/storybook/discussions/categories/help?discussions_q=is%3Aopen+category%3AHelp) questions on Storybook Github
+
+- [Browse `Good First Issue`s to fix](https://github.com/storybookjs/storybook/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22)
+
+
+## What's Inside?
+
+This is a brief overview of directories and files most relevant to contributors in this repo.
+
+```bash
+.
+├── CHANGELOG.md                  # Changelog of current version of Storybook
+├── CODEOWNERS
+├── CODE_OF_CONDUCT.md
+├── CONTRIBUTING <---------------- You are here!
+├── Issue.md
+├── MIGRATION.md
+├── README.md
+└── code                          # Storybook packages
+    ├── __mocks__                 # Mocks for jest tests
+    ├── addons                    # Storybook addon packages
+    ├── builders                  # Storybook builder packages
+    ├── deprecated
+    ├── e2e-tests
+    └── frameworks                # Storybook meta-framework packages for spinning up new Storybook instances
+        ├── angular
+        ├── ember
+        ├── html-vite
+        ├── html-webpack5
+        ├── nextjs
+        ├── preact-vite
+        ├── preact-webpack5
+        ├── react-vite
+        ├── react-webpack5
+        ├── server-webpack5
+        ├── svelte-vite
+        ├── svelte-webpack5
+        ├── sveltekit
+        ├── vue-vite
+        ├── vue-webpack5
+        ├── vue3-vite
+        ├── vue3-webpack5
+        ├── web-components-vite
+        └── web-components-webpack5
+│   ├── lib                       # Storybook core features
+│   ├── migrations.json
+│   ├── node_modules
+│   ├── nx.json
+│   ├── package.json
+│   ├── playwright-report
+│   ├── playwright-results
+│   ├── playwright.config.ts
+│   ├── presets                   # Storybook preset packages
+│   ├── prettier.config.js
+│   ├── renderers                 # Storybook renderer for integrating JS framework components in stories
+│   ├── tsconfig.json
+│   ├── ui
+│   └── yarn.lock
+├── codecov.yml
+├── docs                          # Storybook documentation - the easiest place to start!
+├── node_modules
+├── package.json
+├── repros
+│   ├── cra
+│   ├── html-vite
+│   ├── nextjs
+│   └── react-vite
+├── sandbox
+├── scripts
+├── test-storybooks
+└── yarn.lock
+
+```
+
+## Ensure you're using Node 18
+
+```bash
+# Check which version you're using
+node --version
+
+# node version manager 
+nvm use 18
+
+# pnpm
+pnpm env use --global 18
+```
+
 ## Using fnm as a Node version manager
 
 - Install fnm [as per instructions](https://github.com/Schniz/fnm/tree/master#installation)
@@ -16,7 +127,7 @@ Storybook is developed against a specific node version which is defined in an `.
 - Ensure if you are using Windows to use the Windows Subsystem for Linux (WSL).
 - Run `yarn start` in the root directory to run a basic test Storybook "sandbox".
 
-The `yarn start` script will generate a React Vite TypeScript sandbox with a set of test stories inside it, as well as taking all steps required to get it running (building the various packages we need etc). There is no need to run `yarn` or `yarn install` as `yarn start` will do this for you.
+The `yarn start` script will by default generate a React Vite TypeScript sandbox with a set of test stories inside it, as well as taking all steps required to get it running (building the various packages we need etc). There is no need to run `yarn` or `yarn install` as `yarn start` will do this for you.
 
 ### Issues
 
@@ -63,4 +174,4 @@ yarn task --task dev --template <your template> --start-from=publish
 
 ## Contributing to Storybook
 
-For further advice on how to contribute, please refer to our [NEW contributing guide on the Storybook website](https://storybook.js.org/docs/contribute).
+For further advice on how to contribute, please refer to our :new: [NEW contributing guide on the Storybook website](https://storybook.js.org/docs/contribute).

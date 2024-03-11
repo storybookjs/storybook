@@ -52,5 +52,7 @@
   },
   "prettier.ignorePath": "./code/.prettierignore",
   "typescript.tsdk": "./code/node_modules/typescript/lib",
-  "storyExplorer.storybookConfigDir": "./code/ui/.storybook"
+  "storyExplorer.storybookConfigDir": "./code/ui/.storybook",
+  "compile-hero.disable-compile-files-on-did-save-code": true,
+  "editor.inlineSuggest.showToolbar": "always"
 }

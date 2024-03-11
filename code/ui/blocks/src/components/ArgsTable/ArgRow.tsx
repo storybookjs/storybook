@@ -126,7 +126,7 @@ export const ArgRow: FC<ArgRowProps> = (props) => {
       )}
       {updateArgs ? (
         <td>
-          <ArgControl {...(props as ArgControlProps)} isHovered={isHovered} />
+          <ArgControl {...(props as ArgControlProps)} ariaLabel={name} isHovered={isHovered} />
         </td>
       ) : null}
     </tr>

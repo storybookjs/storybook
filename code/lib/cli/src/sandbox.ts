@@ -6,31 +6,78 @@ import { dedent } from 'ts-dedent';
 import { downloadTemplate } from 'giget';
 
 import { existsSync, readdir } from 'fs-extra';
+import { lt, prerelease } from 'semver';
 import type { Template, TemplateKey } from './sandbox-templates';
 import { allTemplates as TEMPLATES } from './sandbox-templates';
+
+import type { PackageJson, PackageManagerName } from './js-package-manager';
+import { JsPackageManagerFactory } from './js-package-manager';
+import versions from './versions';
+import { doInitiate } from './initiate';
 
 const logger = console;
 
 interface SandboxOptions {
   filterValue?: string;
   output?: string;
-  branch?: string;
   init?: boolean;
+  packageManager: PackageManagerName;
 }
 type Choice = keyof typeof TEMPLATES;
 
 const toChoices = (c: Choice): prompts.Choice => ({ title: TEMPLATES[c].name, value: c });
 
-export const sandbox = async ({
-  output: outputDirectory,
-  filterValue,
-  branch,
-  init,
-}: SandboxOptions) => {
+export const sandbox = async (
+  { output: outputDirectory, filterValue, init, ...options }: SandboxOptions,
+  pkg: PackageJson
+) => {
   // Either get a direct match when users pass a template id, or filter through all templates
   let selectedConfig: Template | undefined = TEMPLATES[filterValue as TemplateKey];
-  let selectedTemplate: Choice | null = selectedConfig ? (filterValue as TemplateKey) : null;
+  let templateId: Choice | null = selectedConfig ? (filterValue as TemplateKey) : null;
 
+  const { packageManager: pkgMgr } = options;
+
+  const packageManager = JsPackageManagerFactory.getPackageManager({
+    force: pkgMgr,
+  });
+  const latestVersion = await packageManager.latestVersion('@storybook/cli');
+  // In verdaccio we often only have the latest tag, so this will fail.
+  const nextVersion = await packageManager
+    .latestVersion('@storybook/cli@next')
+    .catch((e) => '0.0.0');
+  const currentVersion = versions['@storybook/cli'];
+  const isPrerelease = prerelease(currentVersion);
+  const isOutdated = lt(currentVersion, isPrerelease ? nextVersion : latestVersion);
+  const borderColor = isOutdated ? '#FC521F' : '#F1618C';
+
+  const downloadType = !isOutdated && init ? 'after-storybook' : 'before-storybook';
+  const branch = isPrerelease ? 'next' : 'main';
+
+  const messages = {
+    welcome: `Creating a Storybook ${chalk.bold(currentVersion)} sandbox..`,
+    notLatest: chalk.red(dedent`
+      This version is behind the latest release, which is: ${chalk.bold(latestVersion)}!
+      You likely ran the init command through npx, which can use a locally cached version, to get the latest please run:
+      ${chalk.bold('npx storybook@latest sandbox')}
+      
+      You may want to CTRL+C to stop, and run with the latest version instead.
+    `),
+    longInitTime: chalk.yellow(
+      'The creation of the sandbox will take longer, because we will need to run init.'
+    ),
+    prerelease: chalk.yellow('This is a pre-release version.'),
+  };
+
+  logger.log(
+    boxen(
+      [messages.welcome]
+        .concat(isOutdated && !isPrerelease ? [messages.notLatest] : [])
+        .concat(init && (isOutdated || isPrerelease) ? [messages.longInitTime] : [])
+        .concat(isPrerelease ? [messages.prerelease] : [])
+        .join('\n'),
+      { borderStyle: 'round', padding: 1, borderColor }
+    )
+  );
   if (!selectedConfig) {
     const filterRegex = new RegExp(`^${filterValue || ''}`, 'i');
 
@@ -78,7 +125,7 @@ export const sandbox = async ({
     }
 
     if (choices.length === 1) {
-      [selectedTemplate] = choices;
+      [templateId] = choices;
     } else {
       logger.info(
         boxen(
@@ -96,16 +143,16 @@ export const sandbox = async ({
         )
       );
 
-      selectedTemplate = await promptSelectedTemplate(choices);
+      templateId = await promptSelectedTemplate(choices);
     }
 
-    const hasSelectedTemplate = !!(selectedTemplate ?? null);
+    const hasSelectedTemplate = !!(templateId ?? null);
     if (!hasSelectedTemplate) {
       logger.error('Somehow we got no templates. Please rerun this command!');
       return;
     }
 
-    selectedConfig = TEMPLATES[selectedTemplate];
+    selectedConfig = TEMPLATES[templateId];
 
     if (!selectedConfig) {
       throw new Error('🚨 Sandbox: please specify a valid template type');
@@ -113,7 +160,7 @@ export const sandbox = async ({
   }
 
   let selectedDirectory = outputDirectory;
-  const outputDirectoryName = outputDirectory || selectedTemplate;
+  const outputDirectoryName = outputDirectory || templateId;
   if (selectedDirectory && existsSync(`${selectedDirectory}`)) {
     logger.info(`⚠️  ${selectedDirectory} already exists! Overwriting...`);
   }
@@ -146,24 +193,40 @@ export const sandbox = async ({
       : path.join(process.cwd(), selectedDirectory);
 
     logger.info(`🏃 Adding ${selectedConfig.name} into ${templateDestination}`);
+    logger.log(`📦 Downloading sandbox template (${chalk.bold(downloadType)})...`);
 
-    logger.log('📦 Downloading sandbox template...');
     try {
-      const templateType = init ? 'after-storybook' : 'before-storybook';
       // Download the sandbox based on subfolder "after-storybook" and selected branch
-      const gitPath = `github:storybookjs/sandboxes/${selectedTemplate}/${templateType}#${branch}`;
+      const gitPath = `github:storybookjs/sandboxes/${templateId}/${downloadType}#${branch}`;
       await downloadTemplate(gitPath, {
         force: true,
         dir: templateDestination,
       });
       // throw an error if templateDestination is an empty directory using fs-extra
       if ((await readdir(templateDestination)).length === 0) {
-        throw new Error(
-          dedent`Template downloaded from ${chalk.blue(gitPath)} is empty.
-          Are you use it exists? Or did you want to set ${chalk.yellow(
-            selectedTemplate
-          )} to inDevelopment first?`
+        const selected = chalk.yellow(templateId);
+        throw new Error(dedent`
+          Template downloaded from ${chalk.blue(gitPath)} is empty.
+          Are you use it exists? Or did you want to set ${selected} to inDevelopment first?
+        `);
+      }
+
+      // when user wanted an sandbox that has been initiated, but force-downloaded the before-storybook directory
+      // then we need to initiate the sandbox
+      // this is to ensure we DO get the latest version of the template (output of the generator), but we initialize using the version of storybook that the CLI is.
+      // we warned the user about the fact they are running an old version of storybook
+      // we warned the user the sandbox step would take longer
+      if (downloadType === 'before-storybook' && init) {
+        // we run doInitiate, instead of initiate, to avoid sending this init event to telemetry, because it's not a real world project
+        const before = process.cwd();
+        process.chdir(templateDestination);
+        await doInitiate(
+          {
+            ...options,
+          },
+          pkg
         );
+        process.chdir(before);
       }
     } catch (err) {
       logger.error(`🚨 Failed to download sandbox template: ${err.message}`);
@@ -171,7 +234,10 @@ export const sandbox = async ({
     }
 
     const initMessage = init
-      ? chalk.yellow(`yarn install\nyarn storybook`)
+      ? chalk.yellow(dedent`
+          yarn install
+          yarn storybook
+        `)
       : `Recreate your setup, then ${chalk.yellow(`npx storybook@latest init`)}`;
 
     logger.info(

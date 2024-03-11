@@ -22,7 +22,7 @@ npx storybook@latest init
 This framework is designed to work with Storybook 7. If you’re not already using v7, upgrade with this command:
 
 ```bash
-npx storybook@latest upgrade --prerelease
+npx storybook@latest upgrade
 ```
 
 #### Manual migration

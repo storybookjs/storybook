@@ -328,8 +328,6 @@ export async function baseGenerator(
   const versionedPackages = await packageManager.getVersionedPackages(packages);
   versionedPackagesSpinner.succeed();
 
-  const depsToInstall = [...versionedPackages];
-
   // Add basic babel config for a select few frameworks that need it, if they do not have a babel config file already
   if (builder !== CoreBuilder.Vite && !skipBabel) {
     const frameworksThatNeedBabelConfig = [
@@ -349,7 +347,7 @@ export async function baseGenerator(
     if (hasNoBabelFile && needsBabelConfig) {
       const isTypescript = language !== SupportedLanguage.JAVASCRIPT;
       const isReact = rendererId === 'react';
-      depsToInstall.push(
+      versionedPackages.push(
         ...getBabelPresets({
           typescript: isTypescript,
           jsx: isReact,
@@ -370,7 +368,7 @@ export async function baseGenerator(
 
       if (hasEslint && !isStorybookPluginInstalled) {
         if (skipPrompts || (await suggestESLintPlugin())) {
-          depsToInstall.push('eslint-plugin-storybook');
+          versionedPackages.push('eslint-plugin-storybook');
           await configureEslintPlugin(eslintConfigFile, packageManager);
         }
       }
@@ -379,12 +377,13 @@ export async function baseGenerator(
     // any failure regarding configuring the eslint plugin should not fail the whole generator
   }
 
-  if (depsToInstall.length > 0) {
+  if (versionedPackages.length > 0) {
     const addDependenciesSpinner = ora({
       indent: 2,
       text: 'Installing Storybook dependencies',
     }).start();
-    await packageManager.addDependencies({ ...npmOptions, packageJson }, depsToInstall);
+
+    await packageManager.addDependencies({ ...npmOptions, packageJson }, versionedPackages);
     addDependenciesSpinner.succeed();
   }
 

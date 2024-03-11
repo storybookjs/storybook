@@ -1,5 +1,5 @@
 import { basename } from 'path';
-import type { DocsOptions, Options } from '@storybook/types';
+import type { Options } from '@storybook/types';
 import { getRefs } from '@storybook/core-common';
 
 import { readTemplate } from './template';
@@ -8,14 +8,14 @@ import { executor, getConfig } from '../index';
 
 export const getData = async (options: Options) => {
   const refs = getRefs(options);
-  const favicon = options.presets.apply<string>('favicon').then((p) => basename(p));
+  const favicon = options.presets.apply('favicon').then((p) => basename(p));
 
-  const features = options.presets.apply<Record<string, string | boolean>>('features');
-  const logLevel = options.presets.apply<string>('logLevel');
-  const title = options.presets.apply<string>('title');
-  const docsOptions = options.presets.apply<DocsOptions>('docs', {});
+  const features = options.presets.apply('features');
+  const logLevel = options.presets.apply('logLevel');
+  const title = options.presets.apply('title');
+  const docsOptions = options.presets.apply('docs', {});
   const template = readTemplate('template.ejs');
-  const customHead = options.presets.apply<string>('managerHead');
+  const customHead = options.presets.apply('managerHead');
 
   // we await these, because crucially if these fail, we want to bail out asap
   const [instance, config] = await Promise.all([

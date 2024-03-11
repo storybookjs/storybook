@@ -5,6 +5,7 @@ import { sync as findUpSync } from 'find-up';
 import { existsSync, readFileSync } from 'fs';
 import path from 'path';
 import semver from 'semver';
+import { logger } from '@storybook/node-logger';
 import { JsPackageManager } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
 import type { InstallationMetadata, PackageMetadata } from './types';
@@ -136,22 +137,34 @@ export class NPMProxy extends JsPackageManager {
   }
 
   public async findInstallations() {
-    const pipeToNull = platform() === 'win32' ? '2>NUL' : '2>/dev/null';
-    const commandResult = await this.executeCommand({
-      command: 'npm',
-      args: ['ls', '--json', '--depth=99', pipeToNull],
-      // ignore errors, because npm ls will exit with code 1 if there are e.g. unmet peer dependencies
-      ignoreError: true,
-      env: {
-        FORCE_COLOR: 'false',
-      },
-    });
+    const exec = async ({ depth }: { depth: number }) => {
+      const pipeToNull = platform() === 'win32' ? '2>NUL' : '2>/dev/null';
+      return this.executeCommand({
+        command: 'npm',
+        args: ['ls', '--json', `--depth=${depth}`, pipeToNull],
+        env: {
+          FORCE_COLOR: 'false',
+        },
+      });
+    };
 
     try {
+      const commandResult = await exec({ depth: 99 });
       const parsedOutput = JSON.parse(commandResult);
+
       return this.mapDependencies(parsedOutput);
     } catch (e) {
-      return undefined;
+      // when --depth is higher than 0, npm can return a non-zero exit code
+      // in case the user's project has peer dependency issues. So we try again with no depth
+      try {
+        const commandResult = await exec({ depth: 0 });
+        const parsedOutput = JSON.parse(commandResult);
+
+        return this.mapDependencies(parsedOutput);
+      } catch (err) {
+        logger.warn(`An issue occurred while trying to find dependencies metadata using npm.`);
+        return undefined;
+      }
     }
   }
 

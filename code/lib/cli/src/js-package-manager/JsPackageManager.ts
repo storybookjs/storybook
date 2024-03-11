@@ -133,6 +133,8 @@ export abstract class JsPackageManager {
 
     done = commandLog('Installing dependencies');
 
+    logger.log();
+
     try {
       await this.runInstall();
       done();
@@ -325,13 +327,29 @@ export abstract class JsPackageManager {
   /**
    * Return an array of strings matching following format: `<package_name>@<package_latest_version>`
    *
+   * For packages in the storybook monorepo, when the latest version is equal to the version of the current CLI
+   * the version is not added to the string.
+   *
+   * When a package is in the monorepo, and the version is not equal to the CLI version, the version is taken from the versions.ts file and added to the string.
+   *
    * @param packages
    */
   public getVersionedPackages(packages: string[]): Promise<string[]> {
     return Promise.all(
       packages.map(async (pkg) => {
         const [packageName, packageVersion] = getPackageDetails(pkg);
-        return `${packageName}@${await this.getVersion(packageName, packageVersion)}`;
+        const latestInRange = await this.latestVersion(packageName, packageVersion);
+
+        const k = packageName as keyof typeof storybookPackagesVersions;
+        const currentVersion = storybookPackagesVersions[k];
+
+        if (currentVersion === latestInRange) {
+          return `${packageName}`;
+        }
+        if (currentVersion) {
+          return `${packageName}@${currentVersion}`;
+        }
+        return `${packageName}@^${latestInRange}`;
       })
     );
   }

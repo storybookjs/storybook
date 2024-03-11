@@ -25,16 +25,25 @@ function toImportPath(relativePath: string) {
  * function and this is called by Storybook to fetch a story dynamically when needed.
  * @param stories An array of absolute story paths.
  */
-async function toImportFn(stories: string[]) {
+async function toImportFn(stories: string[], indexersMatchers: RegExp[]) {
   const { normalizePath } = await import('vite');
   const objectEntries = stories.map((file) => {
     const ext = path.extname(file);
     const relativePath = normalizePath(path.relative(process.cwd(), file));
-    if (!['.js', '.jsx', '.ts', '.tsx', '.mdx', '.svelte', '.vue'].includes(ext)) {
-      logger.warn(`Cannot process ${ext} file with storyStoreV7: ${relativePath}`);
+
+    if (
+      !['.js', '.jsx', '.ts', '.tsx', '.mdx', '.svelte', '.vue'].includes(ext) &&
+      !indexersMatchers.some((m) => m.test(file))
+    ) {
+      logger.warn(
+        `Cannot process ${ext} file with storyStoreV7: ${relativePath}. No indexer found that can handle this file type.`
+      );
     }
 
-    return `  '${toImportPath(relativePath)}': async () => import('/@fs/${file}')`;
+    return [
+      `  '${toImportPath(relativePath)}': async () => import('/@fs/${file}'),`,
+      `  '${file}': async () => import('/@fs/${file}')`,
+    ].join('\n');
   });
 
   return `
@@ -43,15 +52,26 @@ async function toImportFn(stories: string[]) {
     };
 
     export async function importFn(path) {
-        return importers[path]();
+      if (/^\0?virtual:/.test(path)) {
+        return import(/* @vite-ignore */ '/' + path);
+      }
+
+      if (!(path in importers)) {
+        throw new Error(\`No importer defined for "\${path}". Existing importers: \${Object.keys(importers)}\`);
+      }
+
+      return importers[path]();
     }
-  `;
+`;
 }
 
 export async function generateImportFnScriptCode(options: Options) {
   // First we need to get an array of stories and their absolute paths.
   const stories = await listStories(options);
 
+  const indexers = await options.presets.apply('experimental_indexers', []);
+  const matchers = indexers?.map((i) => i.test);
+
   // We can then call toImportFn to create a function that can be used to load each story dynamically.
-  return (await toImportFn(stories)).trim();
+  return (await toImportFn(stories, matchers)).trim();
 }

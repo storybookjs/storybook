@@ -79,6 +79,12 @@ An overview of all available API references for Storybook.
         about args that are not explicitly set.
       </td>
     </tr>
+    <tr>
+      <td><a href="../api/parameters">Parameters</a></td>
+      <td>
+        Parameters are static metadata used to configure your <a href="../get-started/whats-a-story.md">stories</a> <a href="../addons/introduction.md">addons</a> in Storybook. They are specified at the story, meta (component), project (global) levels.
+      </td>
+    </tr>
   </tbody>
 </table>
 

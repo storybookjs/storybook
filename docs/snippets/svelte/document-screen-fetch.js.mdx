@@ -7,6 +7,7 @@
   import PageLayout from './PageLayout.svelte';
   import DocumentHeader from './DocumentHeader.svelte';
   import DocumentList from './DocumentList.svelte';
+
   export let user = {};
   export let document = {};
   export let subdocuments = [];
@@ -35,7 +36,7 @@
 
 {#if status === "error"}
 <p>There was an error fetching the data!</p>
-{/if} {#if status === "loading"}
+{:else if status === "loading"}
 <p>Loading...</p>
 {:else}
 <PageLayout {user}>

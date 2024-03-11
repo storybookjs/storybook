@@ -8,6 +8,7 @@ Storybook 7 is our first major release in over 2 years. A lot has changed during
 
 The rest of this guide will help you upgrade successfully, either automatically or manually. But first, we’ve accumulated a lot of [breaking changes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#70-breaking-changes) in Storybook 7. Here are the most impactful changes you should know about before you go further:
 
+- [`framework` field is now mandatory](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#new-framework-api)
 - [Webpack4 support discontinued](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#webpack4-support-discontinued)
 - [IE11 support discontinued](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#modern-browser-support)
 - [Minimum supported version of node is 16](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropped-support-for-node-15-and-below)
@@ -15,7 +16,9 @@ The rest of this guide will help you upgrade successfully, either automatically 
 - [Start and build CLI binaries removed](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#start-storybook--build-storybook-binaries-removed)
 - [Some community addons might not work yet](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#specific-instructions-for-addon-users)
 
-If any of these apply to your project, please read through the [full migration notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#from-version-65x-to-700) before continuing. If any of these new requirements or changes do not fit your project, you should probably stick with Storybook 6.x.
+If any of these apply to your project, please read through the linked migration notes before continuing. If any of these new requirements or changes do not fit your project, you should probably continue using Storybook 6.x.
+
+You may wish to read the [full migration notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#from-version-65x-to-700) before migrating. Or you can follow the instructions below and we’ll try to take care of everything for you!
 
 ## Automatic upgrade
 
@@ -145,7 +148,6 @@ The automatic upgrade should get your Storybook into a working state. If you enc
 2. Check [the full migration notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#from-version-65x-to-700), which contains an exhaustive list of noteworthy changes in Storybook 7. Many of these are already handled by automigrations when you upgrade, but not all are. It’s also possible that you’re experiencing a corner case that we’re not aware of.
 3. Search [Storybook issues on GitHub](https://github.com/storybookjs/storybook/issues). If you’re seeing a problem, there’s a good chance other people are too. If so, upvote the issue, try out any workarounds described in the comments, and comment back if you have useful info to contribute.
 4. If there’s no existing issue, you can [file one](https://github.com/storybookjs/storybook/issues/new/choose), ideally with a reproduction attached. We’ll be on top of Storybook 7 issues as we’re stabilizing the release.
-5. If you prefer a more interactive medium, try out the `#prerelease` forum in the [Storybook Discord](https://discord.gg/storybook). We have Storybook maintainers and a large community of users who should be able to give you a hand.
 
 If you prefer to debug yourself, here are a few useful things you can do to help narrow down the problem:
 

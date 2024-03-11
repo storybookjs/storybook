@@ -3,6 +3,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 
 @Component({
   selector: 'storybook-button',
+  standalone: true,
   imports: [CommonModule],
   template: ` <button
     type="button"
@@ -14,7 +15,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
   </button>`,
   styleUrls: ['./button.css'],
 })
-export default class ButtonComponent {
+export class ButtonComponent {
   /**
    * Is this the principal call to action on the page?
    */

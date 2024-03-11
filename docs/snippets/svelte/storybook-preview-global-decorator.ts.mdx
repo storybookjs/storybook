@@ -1,0 +1,13 @@
+```ts
+// .storybook/preview.ts
+
+import type { Preview } from '@storybook/svelte';
+
+import MarginDecorator from './MarginDecorator.svelte';
+
+const preview: Preview = {
+  decorators: [() => MarginDecorator],
+};
+
+export default preview;
+```

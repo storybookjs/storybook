@@ -44,6 +44,7 @@ When you are building screens in this way, it is typical that the inputs of a co
     'web-components/simple-page-implementation.js.mdx',
     'web-components/simple-page-implementation.ts.mdx',
     'svelte/simple-page-implementation.js.mdx',
+    'svelte/simple-page-implementation.ts.mdx',
     'solid/simple-page-implementation.js.mdx',
     'solid/simple-page-implementation.ts.mdx',
   ]}
@@ -146,6 +147,7 @@ If you're working with pure presentational screens, adding stories through [args
     'vue/document-screen-fetch.3.ts.mdx',
     'angular/document-screen-fetch.ts.mdx',
     'svelte/document-screen-fetch.js.mdx',
+    'svelte/document-screen-fetch.ts.mdx',
     'web-components/document-screen-fetch.js.mdx',
     'solid/document-screen-fetch.js.mdx',
   ]}
@@ -193,6 +195,7 @@ In addition to mocking RESTful requests, the other noteworthy feature of the [MS
     'vue/document-screen-with-graphql.3.ts.mdx',
     'angular/document-screen-with-graphql.ts.mdx',
     'svelte/document-screen-with-grapqhl.js.mdx',
+    'svelte/document-screen-with-grapqhl.ts.mdx',
   ]}
 />
 
@@ -212,7 +215,9 @@ To test your screen with the GraphQL mocked data, you could write the following 
     'angular/apollo-module.mock-apollo-module.ts.mdx',
     'angular/documentscreen-story-msw-graphql-query.ts.mdx',
     'svelte/documentscreen-story-msw-graphql-query.js.mdx',
+    'svelte/documentscreen-story-msw-graphql-query.ts.mdx',
     'svelte/apollo-wrapper-component.with-mock-implementation.js.mdx',
+    'svelte/apollo-wrapper-component.with-mock-implementation.ts.mdx',
   ]}
   usesCsf3
   csf2Path="writing-stories/build-pages-with-storybook#snippet-documentscreen-story-msw-graphql-query"

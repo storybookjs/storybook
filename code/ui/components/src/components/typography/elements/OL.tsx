@@ -12,4 +12,4 @@ const listCommon: CSSObject = {
   },
 };
 
-export const OL = styled.ol(withReset, withMargin, { ...listCommon, listStyle: 'decimal' });
+export const OL = styled.ol(withReset, withMargin, listCommon, { listStyle: 'decimal' });

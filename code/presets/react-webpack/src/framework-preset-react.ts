@@ -3,7 +3,7 @@ import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';
 
 import { logger } from '@storybook/node-logger';
 
-import type { Options, Preset } from '@storybook/core-webpack';
+import type { Options } from '@storybook/core-webpack';
 import type { StorybookConfig, ReactOptions } from './types';
 
 const getAbsolutePath = <I extends string>(input: I): I =>
@@ -11,7 +11,7 @@ const getAbsolutePath = <I extends string>(input: I): I =>
 
 const applyFastRefresh = async (options: Options) => {
   const isDevelopment = options.configType === 'DEVELOPMENT';
-  const framework = await options.presets.apply<Preset>('framework');
+  const framework = await options.presets.apply('framework');
   const reactOptions = (typeof framework === 'object' ? framework.options : {}) as ReactOptions;
   return isDevelopment && (reactOptions.fastRefresh || process.env.FAST_REFRESH === 'true');
 };

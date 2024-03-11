@@ -53,7 +53,7 @@ export const webpack = async (webpackConfig: Configuration, options: PresetOptio
   const packageJsonPath = require.resolve('@angular/core/package.json');
   const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
   const VERSION = packageJson.version;
-  const framework = await options.presets.apply<Preset>('framework');
+  const framework = await options.presets.apply('framework');
   const angularOptions = (typeof framework === 'object' ? framework.options : {}) as AngularOptions;
   const angularMajorVersion = VERSION.split('.')[0];
   const isAngular16OrNewer = parseInt(angularMajorVersion, 10) >= 16;

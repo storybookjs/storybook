@@ -96,6 +96,12 @@ Default: `parameters.docs.story.inline` or `true` (for [supported frameworks](..
 
 Determines whether the story is rendered `inline` (in the same browser frame as the other docs content) or in an iframe.
 
+<Callout variant="info">
+
+Setting the `inline` option to false will prevent the associated [controls](./doc-block-controls.md) from updating the story within the documentation page. This is a known limitation of the current implementation and will be addressed in a future release.
+
+</Callout>
+
 ### `meta`
 
 Type: CSF file exports

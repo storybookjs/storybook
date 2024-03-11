@@ -78,10 +78,12 @@ const _getPathProperties = (path: string[], node: t.Node): t.ObjectProperty[] | 
   }
   return undefined;
 };
-
 // eslint-disable-next-line @typescript-eslint/naming-convention
-const _findVarInitialization = (identifier: string, program: t.Program) => {
-  let init: t.Expression | null | undefined = null;
+const _findVarDeclarator = (
+  identifier: string,
+  program: t.Program
+): t.VariableDeclarator | null | undefined => {
+  let declarator: t.VariableDeclarator | null | undefined = null;
   let declarations: t.VariableDeclarator[] | null = null;
   program.body.find((node: t.Node) => {
     if (t.isVariableDeclaration(node)) {
@@ -92,20 +94,26 @@ const _findVarInitialization = (identifier: string, program: t.Program) => {
 
     return (
       declarations &&
-      declarations.find((decl: t.Node) => {
+      declarations.find((decl: t.VariableDeclarator) => {
         if (
           t.isVariableDeclarator(decl) &&
           t.isIdentifier(decl.id) &&
           decl.id.name === identifier
         ) {
-          init = decl.init;
+          declarator = decl;
           return true; // stop looking
         }
         return false;
       })
     );
   });
-  return init;
+  return declarator;
+};
+
+// eslint-disable-next-line @typescript-eslint/naming-convention
+const _findVarInitialization = (identifier: string, program: t.Program) => {
+  const declarator = _findVarDeclarator(identifier, program);
+  return declarator?.init;
 };
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -210,6 +218,16 @@ export class ConfigFile {
                   exportVal = _findVarInitialization(exportVal.name, parent as t.Program) as any;
                 }
                 self._exports[exportName] = exportVal;
+                self._exportDecls[exportName] = decl;
+              }
+            });
+          } else if (node.specifiers) {
+            // export { X };
+            node.specifiers.forEach((spec) => {
+              if (t.isExportSpecifier(spec) && t.isIdentifier(spec.exported)) {
+                const { name: exportName } = spec.exported;
+                const decl = _findVarDeclarator(exportName, parent as t.Program) as any;
+                self._exports[exportName] = decl.init;
                 self._exportDecls[exportName] = decl;
               }
             });

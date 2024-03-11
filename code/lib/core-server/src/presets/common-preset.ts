@@ -51,7 +51,7 @@ export const favicon = async (
   if (value) {
     return value;
   }
-  const staticDirsValue = await options.presets.apply<StorybookConfig['staticDirs']>('staticDirs');
+  const staticDirsValue = await options.presets.apply('staticDirs');
 
   const statics = staticDirsValue
     ? staticDirsValue.map((dir) => (typeof dir === 'string' ? dir : `${dir.from}:${dir.to}`))
@@ -95,7 +95,7 @@ export const favicon = async (
     if (flatlist.length > 1) {
       logger.warn(dedent`
         Looks like multiple favicons were detected. Using the first one.
-        
+
         ${flatlist.join(', ')}
         `);
     }
@@ -210,7 +210,7 @@ export const frameworkOptions = async (
   _: never,
   options: Options
 ): Promise<Record<string, any> | null> => {
-  const config = await options.presets.apply<StorybookConfig['framework']>('framework');
+  const config = await options.presets.apply('framework');
 
   if (typeof config === 'string') {
     return {};
@@ -238,7 +238,7 @@ export const managerHead = async (_: any, options: Options) => {
   const location = join(options.configDir, 'manager-head.html');
   if (await pathExists(location)) {
     const contents = readFile(location, 'utf-8');
-    const interpolations = options.presets.apply<Record<string, string>>('env');
+    const interpolations = options.presets.apply('env');
 
     return interpolate(await contents, await interpolations);
   }

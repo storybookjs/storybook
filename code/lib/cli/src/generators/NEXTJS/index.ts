@@ -9,7 +9,7 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
     { ...options, builder: CoreBuilder.Webpack5 },
     'react',
     {
-      extraAddons: ['@storybook/addon-onboarding'],
+      extraAddons: ['@storybook/addon-onboarding@^1.0.0'],
     },
     'nextjs'
   );

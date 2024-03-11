@@ -38,8 +38,7 @@ export function createUpdateMessage(updateInfo: VersionCheck, version: string): 
 
   try {
     const isPrerelease = semver.prerelease(updateInfo.data.latest.version);
-    const suffix = isPrerelease ? '@next upgrade --prerelease' : '@latest upgrade';
-    const upgradeCommand = `npx storybook${suffix}`;
+    const upgradeCommand = `npx storybook@${isPrerelease ? 'next' : 'latest'} upgrade`;
     updateMessage =
       updateInfo.success && semver.lt(version, updateInfo.data.latest.version)
         ? dedent`

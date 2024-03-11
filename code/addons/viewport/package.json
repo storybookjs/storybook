@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-viewport",
-  "version": "7.6.0",
+  "version": "7.6.17",
   "description": "Build responsive components by adjusting Storybook’s viewport size and orientation",
   "keywords": [
     "addon",
@@ -30,8 +30,6 @@
       "import": "./dist/index.mjs"
     },
     "./manager": "./dist/manager.js",
-    "./preview": "./dist/preview.ts",
-    "./register": "./dist/manager.js",
     "./package.json": "./package.json"
   },
   "main": "dist/index.js",
@@ -73,9 +71,6 @@
     ],
     "managerEntries": [
       "./src/manager.tsx"
-    ],
-    "previewEntries": [
-      "./src/preview.ts"
     ]
   },
   "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae17",

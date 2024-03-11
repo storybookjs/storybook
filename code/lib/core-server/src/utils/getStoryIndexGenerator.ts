@@ -1,4 +1,4 @@
-import type { DocsOptions, Options } from '@storybook/types';
+import type { Options } from '@storybook/types';
 import { normalizeStories } from '@storybook/core-common';
 import { useStoriesJson } from './stories-json';
 import type { ServerChannel } from './get-server-channel';
@@ -26,7 +26,7 @@ export async function getStoryIndexGenerator(
   const stories = options.presets.apply('stories');
   const deprecatedStoryIndexers = options.presets.apply('storyIndexers', []);
   const indexers = options.presets.apply('experimental_indexers', []);
-  const docsOptions = options.presets.apply<DocsOptions>('docs', {});
+  const docsOptions = options.presets.apply('docs', {});
   const normalizedStories = normalizeStories(await stories, directories);
 
   const generator = new StoryIndexGenerator(normalizedStories, {

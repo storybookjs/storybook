@@ -1,6 +1,6 @@
 {
   "name": "@storybook/cli",
-  "version": "7.6.0",
+  "version": "7.6.17",
   "description": "Storybook's CLI - easiest method of adding storybook to your projects",
   "keywords": [
     "cli",
@@ -91,7 +91,6 @@
     "puppeteer-core": "^2.1.1",
     "read-pkg-up": "^7.0.1",
     "semver": "^7.3.7",
-    "simple-update-notifier": "^2.0.0",
     "strip-json-comments": "^3.0.1",
     "tempy": "^1.0.1",
     "ts-dedent": "^2.0.0",
@@ -102,7 +101,6 @@
     "@types/cross-spawn": "^6.0.2",
     "@types/prompts": "^2.0.9",
     "@types/puppeteer-core": "^2.1.0",
-    "@types/semver": "^7.3.4",
     "@types/util-deprecate": "^1.0.0",
     "boxen": "^5.1.2",
     "slash": "^5.0.0",

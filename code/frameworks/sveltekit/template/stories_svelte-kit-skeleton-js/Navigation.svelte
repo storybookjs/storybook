@@ -1,5 +1,5 @@
 <script>
-	import { goto, invalidate, invalidateAll, afterNavigate } from '$app/navigation';
+	import { goto, invalidate, invalidateAll, afterNavigate, pushState, replaceState } from '$app/navigation';
 
 	export let afterNavigateFn;
 	if(afterNavigateFn){
@@ -23,4 +23,16 @@
 	on:click={() => {
 		invalidateAll();
 	}}>invalidateAll</button
+>
+
+<button
+	on:click={() => {
+		pushState('/storybook-push-state', {});
+	}}>pushState</button
+>
+
+<button
+	on:click={() => {
+		replaceState('/storybook-replace-state', {});
+	}}>replaceState</button
 >

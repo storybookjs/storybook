@@ -1,8 +1,7 @@
 import { styled } from '@storybook/theming';
 import { withReset, withMargin } from '../lib/common';
 
-export const DL = styled.dl(withReset, {
-  ...withMargin,
+export const DL = styled.dl(withReset, withMargin, {
   padding: 0,
   '& dt': {
     fontSize: '14px',

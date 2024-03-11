@@ -55,7 +55,7 @@ For more information, please refer to [this discussion](https://github.com/story
 
 If you are using TypeScript 4.9+, you can take advantage of the new [`satisfies`](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html) operator to get stricter type checking. Now you will receive type errors for missing required args, not just invalid ones.
 
-Using `satisfies` to apply a story's type helps maintain type safety when sharing a `play` function across stories. Without it, TypeScript will throw an error that the `play` function may be undefined. The `satisfies` operator enables TypeScript to infer whether the play function is defined or not.
+Using `satisfies` to apply a story's type helps maintain type safety when sharing a [play function](./play-function.md) across stories. Without it, TypeScript will throw an error that the `play` function may be undefined. The `satisfies` operator enables TypeScript to infer whether the play function is defined or not.
 
 Finally, use of `satisfies` allows you to pass `typeof meta` to the `StoryObj` generic. This informs TypeScript of the connection between the `meta` and `StoryObj` types, which allows it to infer the `args` type from the `meta` type. In other words, TypeScript will understand that args can be defined both at the story and meta level and won't throw an error when a required arg is defined at the meta level, but not at the story level.
 

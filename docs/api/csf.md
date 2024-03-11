@@ -51,6 +51,7 @@ With CSF, every named export in the file represents a story object by default.
     'vue/my-component-story-basic-and-props.js.mdx',
     'vue/my-component-story-basic-and-props.ts.mdx',
     'svelte/my-component-story-basic-and-props.js.mdx',
+    'svelte/my-component-story-basic-and-props.ts.mdx',
     'angular/my-component-story-basic-and-props.ts.mdx',
     'web-components/my-component-story-basic-and-props.js.mdx',
     'web-components/my-component-story-basic-and-props.ts.mdx',
@@ -112,6 +113,7 @@ Consider Storybook’s ["Button" example](../writing-stories/index.md#defining-s
     'vue/button-story-click-handler.3.js.mdx',
     'vue/button-story-click-handler.3.ts.mdx',
     'svelte/button-story-click-handler.js.mdx',
+    'svelte/button-story-click-handler.ts.mdx',
     'angular/button-story-click-handler.ts.mdx',
     'web-components/button-story-click-handler.js.mdx',
     'web-components/button-story-click-handler.ts.mdx',
@@ -138,6 +140,7 @@ Now consider the same example, re-written with args:
     'vue/button-story-click-handler-args.3.ts.mdx',
     'angular/button-story-click-handler-args.ts.mdx',
     'svelte/button-story-click-handler-args.js.mdx',
+    'svelte/button-story-click-handler-args.ts.mdx',
     'web-components/button-story-click-handler-args.js.mdx',
     'web-components/button-story-click-handler-args.ts.mdx',
     'solid/button-story-click-handler-args.js.mdx',
@@ -162,6 +165,8 @@ Or even more simply:
     'vue/button-story-click-handler-simplificated.ts.mdx',
     'web-components/button-story-click-handler-simplificated.js.mdx',
     'web-components/button-story-click-handler-simplificated.ts.mdx',
+    'svelte/button-story-click-handler-simplificated.js.mdx',
+    'svelte/button-story-click-handler-simplificated.ts.mdx',
     'solid/button-story-click-handler-simplificated.js.mdx',
     'solid/button-story-click-handler-simplificated.ts.mdx',
   ]}
@@ -193,6 +198,7 @@ A good use case for the `play` function is a form component. With previous Story
     'web-components/login-form-with-play-function.js.mdx',
     'web-components/login-form-with-play-function.ts.mdx',
     'svelte/login-form-with-play-function.js.mdx',
+    'svelte/login-form-with-play-function.ts.mdx',
     'solid/login-form-with-play-function.js.mdx',
     'solid/login-form-with-play-function.ts.mdx',
   ]}
@@ -203,6 +209,8 @@ A good use case for the `play` function is a form component. With previous Story
 <!-- prettier-ignore-end -->
 
 When the story renders in the UI, Storybook executes each step defined in the `play` function and runs the assertions without the need for user interaction.
+
+<IfRenderer renderer={['angular', 'vue', 'web-components', 'ember', 'html', 'preact', 'qwik', 'solid' ]}>
 
 ## Custom render functions
 
@@ -229,6 +237,8 @@ Starting in Storybook 6.4, you can write your stories as JavaScript objects, red
 <!-- prettier-ignore-end -->
 
 When Storybook loads this story, it will detect the existence of a `render` function and adjust the component rendering accordingly based on what's defined.
+
+</IfRenderer>
 
 ## Storybook export vs. name handling
 
@@ -271,10 +281,11 @@ Consider the following story file:
     'react/my-component-story-with-nonstory.ts.mdx',
     'vue/my-component-story-with-nonstory.js.mdx',
     'vue/my-component-story-with-nonstory.ts.mdx',
-    'svelte/my-component-story-with-nonstory.js.mdx',
     'angular/my-component-story-with-nonstory.ts.mdx',
     'web-components/my-component-story-with-nonstory.js.mdx',
     'web-components/my-component-story-with-nonstory.ts.mdx',
+    'svelte/my-component-story-with-nonstory.js.mdx',
+    'svelte/my-component-story-with-nonstory.ts.mdx',
     'solid/my-component-story-with-nonstory.js.mdx',
     'solid/my-component-story-with-nonstory.ts.mdx',
   ]}
@@ -316,6 +327,8 @@ In CSF 2, the named exports are always functions that instantiate a component, a
     'web-components/csf-2-example-starter.ts.mdx',
     'solid/csf-2-example-starter.js.mdx',
     'solid/csf-2-example-starter.ts.mdx',
+    'svelte/csf-2-example-starter.js.mdx',
+    'svelte/csf-2-example-starter.ts.mdx',
   ]}
 />
 
@@ -336,6 +349,7 @@ Here's the CSF 3 equivalent:
     'web-components/csf-3-example-starter.js.mdx',
     'web-components/csf-3-example-starter.ts.mdx',
     'solid/csf-3-example-starter.ts.mdx',
+    'svelte/csf-3-example-starter.ts.mdx',
   ]}
 />
 
@@ -399,6 +413,8 @@ Let's start with a simple CSF 2 story function:
     'web-components/csf-2-example-story.ts.mdx',
     'solid/csf-2-example-story.js.mdx',
     'solid/csf-2-example-story.ts.mdx',
+    'svelte/csf-2-example-story.js.mdx',
+    'svelte/csf-2-example-story.ts.mdx',
   ]}
 />
 
@@ -421,10 +437,16 @@ Now, let's rewrite it as a story object in CSF 3 with an explicit `render` funct
     'web-components/csf-3-example-render.ts.mdx',
     'solid/csf-3-example-render.js.mdx',
     'solid/csf-3-example-render.ts.mdx',
+    'svelte/csf-3-example-render.js.mdx',
+    'svelte/csf-3-example-render.ts.mdx',
   ]}
 />
 
+<IfRenderer renderer={['angular', 'vue', 'web-components', 'ember', 'html', 'preact', 'qwik', 'solid' ]}>
+
 Learn more about [render functions](#custom-render-functions).
+
+</IfRenderer>
 
 <!-- prettier-ignore-end -->
 
@@ -442,7 +464,11 @@ CSF 3 provides default render functions for each renderer. If all you're doing i
 
 <!-- prettier-ignore-end -->
 
+<IfRenderer renderer={['angular', 'vue', 'web-components', 'ember', 'html', 'preact', 'qwik', 'solid' ]}>
+
 For more information, see the section on [custom render functions](#custom-render-functions).
+
+</IfRenderer>
 
 ### Generate titles automatically
 

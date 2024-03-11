@@ -93,7 +93,7 @@ Use the `makeDecorator` API to create decorators in the style of the official ad
 
 <Callout variant="info">
 
- If the story's parameters include `{ exampleParameter: { disable: true } }` (where `exampleParameter` is the `parameterName` of your addon), your decorator will not be called.
+If the story's parameters include `{ exampleParameter: { disable: true } }` (where `exampleParameter` is the `parameterName` of your addon), your decorator will not be called.
 
 </Callout>
 
@@ -124,6 +124,7 @@ The `selectStory` API method allows you to select a single story. It accepts the
     'vue/button-story-with-addon-example.ts.mdx',
     'angular/button-story-with-addon-example.ts.mdx',
     'svelte/button-story-with-addon-example.js.mdx',
+    'svelte/button-story-with-addon-example.ts.mdx',
     'web-components/button-story-with-addon-example.js.mdx',
     'web-components/button-story-with-addon-example.ts.mdx',
   ]}

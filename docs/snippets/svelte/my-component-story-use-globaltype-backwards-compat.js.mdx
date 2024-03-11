@@ -4,7 +4,7 @@
 export const StoryWithLocale = ({ globals: { locale } }) => {
   const caption = getCaptionForLocale(locale);
   return {
-    component: MyComponent,
+    Component: MyComponent,
     props: {
       locale: caption,
     },

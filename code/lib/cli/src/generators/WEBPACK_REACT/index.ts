@@ -4,7 +4,7 @@ import type { Generator } from '../types';
 
 const generator: Generator = async (packageManager, npmOptions, options) => {
   await baseGenerator(packageManager, npmOptions, options, 'react', {
-    extraAddons: ['@storybook/addon-onboarding'],
+    extraAddons: ['@storybook/addon-onboarding@^1.0.0'],
     useSWC: ({ builder }) => builder === CoreBuilder.Webpack5,
   });
 };

@@ -48,6 +48,7 @@ export async function runCodemod(codemod: any, { glob, logger, dryRun, rename, p
   // jscodeshift/prettier know how to handle .ts/.tsx extensions,
   // so if the user uses one of those globs, we can auto-infer
   let inferredParser = parser;
+
   if (!parser) {
     const extension = path.extname(glob).slice(1);
     const knownParser = jscodeshiftToPrettierParser(extension);
@@ -55,7 +56,11 @@ export async function runCodemod(codemod: any, { glob, logger, dryRun, rename, p
   }
 
   const files = await globby([glob, '!**/node_modules', '!**/dist']);
+  const extensions = new Set(files.map((file) => path.extname(file).slice(1)));
+  const commaSeparatedExtensions = Array.from(extensions).join(',');
+
   logger.log(`=> Applying ${codemod}: ${files.length} files`);
+
   if (files.length === 0) {
     logger.log(`=> No matching files for glob: ${glob}`);
     return;
@@ -71,6 +76,7 @@ export async function runCodemod(codemod: any, { glob, logger, dryRun, rename, p
         // which is faster, and also makes sure the user won't see babel messages such as:
         // [BABEL] Note: The code generator has deoptimised the styling of repo/node_modules/prettier/index.js as it exceeds the max of 500KB.
         '--no-babel',
+        `--extensions=${commaSeparatedExtensions}`,
         '--fail-on-error',
         '-t',
         `${TRANSFORM_DIR}/${codemod}.js`,

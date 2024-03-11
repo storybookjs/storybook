@@ -117,7 +117,7 @@ export const decorators: Decorator[] = [
 
       const removeNavigationListeners = createListeners(
         'navigation',
-        ['goto', 'invalidate', 'invalidateAll'],
+        ['goto', 'invalidate', 'invalidateAll', 'pushState', 'replaceState'],
         true
       );
       const removeFormsListeners = createListeners('forms', ['enhance']);

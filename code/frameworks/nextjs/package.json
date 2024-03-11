@@ -1,6 +1,6 @@
 {
   "name": "@storybook/nextjs",
-  "version": "7.6.0",
+  "version": "7.6.17",
   "description": "Storybook for Next.js",
   "keywords": [
     "storybook",
@@ -31,6 +31,16 @@
       "types": "./dist/image-context.d.ts",
       "require": "./dist/image-context.js",
       "import": "./dist/image-context.mjs"
+    },
+    "./dist/routing/app-router-provider": {
+      "types": "./dist/routing/app-router-provider.d.ts",
+      "require": "./dist/routing/app-router-provider.js",
+      "import": "./dist/routing/app-router-provider.mjs"
+    },
+    "./dist/routing/app-router-provider-mock": {
+      "types": "./dist/routing/app-router-provider-mock.d.ts",
+      "require": "./dist/routing/app-router-provider-mock.js",
+      "import": "./dist/routing/app-router-provider-mock.mjs"
     },
     "./preset": {
       "types": "./dist/preset.d.ts",
@@ -97,6 +107,7 @@
     "@storybook/preview-api": "workspace:*",
     "@storybook/react": "workspace:*",
     "@types/node": "^18.0.0",
+    "@types/semver": "^7.3.4",
     "css-loader": "^6.7.3",
     "find-up": "^5.0.0",
     "fs-extra": "^11.1.0",
@@ -161,6 +172,8 @@
       "./src/images/next-future-image.tsx",
       "./src/images/next-legacy-image.tsx",
       "./src/images/next-image.tsx",
+      "./src/routing/app-router-provider.tsx",
+      "./src/routing/app-router-provider-mock.tsx",
       "./src/font/webpack/loader/storybook-nextjs-font-loader.ts",
       "./src/swc/next-swc-loader-patch.ts"
     ],

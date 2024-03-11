@@ -2,19 +2,19 @@ import express from 'express';
 import compression from 'compression';
 import invariant from 'tiny-invariant';
 
-import type { CoreConfig, Options, StorybookConfig } from '@storybook/types';
+import type { Options } from '@storybook/types';
 
 import { logConfig } from '@storybook/core-common';
 import { deprecate, logger } from '@storybook/node-logger';
 
 import dedent from 'ts-dedent';
 import { MissingBuilderError } from '@storybook/core-events/server-errors';
+import type { ServerChannel } from './utils/get-server-channel';
 import { getMiddleware } from './utils/middleware';
 import { getServerAddresses } from './utils/server-address';
 import { getServer } from './utils/server-init';
 import { useStatics } from './utils/server-statics';
 import { getServerChannel } from './utils/get-server-channel';
-
 import { openInBrowser } from './utils/open-in-browser';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator';
@@ -29,11 +29,11 @@ export async function storybookDevServer(options: Options) {
 
   const [server, features, core] = await Promise.all([
     getServer(app, options),
-    options.presets.apply<StorybookConfig['features']>('features'),
-    options.presets.apply<CoreConfig>('core'),
+    options.presets.apply('features'),
+    options.presets.apply('core'),
   ]);
 
-  const serverChannel = await options.presets.apply(
+  const serverChannel = await options.presets.apply<ServerChannel>(
     'experimental_serverChannel',
     getServerChannel(server)
   );

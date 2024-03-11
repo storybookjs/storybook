@@ -1,3 +1,2 @@
-export * from './constants';
 export * from './defaults';
-export * from './shortcuts';
+export type * from './models';

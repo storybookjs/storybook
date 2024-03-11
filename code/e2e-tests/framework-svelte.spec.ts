@@ -122,5 +122,21 @@ test.describe('SvelteKit', () => {
       hasText: `"invalidateAll"`,
     });
     await expect(invalidateAllLogItem).toBeVisible();
+
+    const replaceState = root.getByRole('button', { name: 'replaceState' });
+    await replaceState.click();
+
+    const replaceStateLogItem = page.locator('#storybook-panel-root #panel-tab-content', {
+      hasText: `/storybook-replace-state`,
+    });
+    await expect(replaceStateLogItem).toBeVisible();
+
+    const pushState = root.getByRole('button', { name: 'pushState' });
+    await pushState.click();
+
+    const pushStateLogItem = page.locator('#storybook-panel-root #panel-tab-content', {
+      hasText: `/storybook-push-state`,
+    });
+    await expect(pushStateLogItem).toBeVisible();
   });
 });

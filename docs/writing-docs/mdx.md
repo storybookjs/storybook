@@ -208,7 +208,7 @@ The [`remark-gfm`](https://github.com/remarkjs/remark-gfm) package isn't provide
 
 ### Automigration
 
-To help you transition to the new version, we've created a migration helper in our CLI. We recommend using it and reaching out to the maintainers using the default communication channels (e.g., [Discord server](https://discord.com/channels/486522875931656193/570426522528382976), [GitHub issues](https://github.com/storybookjs/storybook/issues)) for problems you encounter.
+To help you transition to the new version, we've created a migration helper in our CLI. We recommend using it and reaching out using the default communication channels (e.g., [GitHub discussions](https://github.com/storybookjs/storybook/discussions/new?category=help)) for problems you encounter.
 
 ```shell
 npx storybook@latest automigrate mdx1to2
@@ -453,7 +453,11 @@ Additionally, if you're working with VSCode, you can add the [MDX extension](htt
 }
 ```
 
-If you're still encountering issues, we recommend reaching out to the maintainers using the default communication channels (e.g., [Discord server](https://discord.com/channels/486522875931656193/570426522528382976), [GitHub issues](https://github.com/storybookjs/storybook/issues)).
+If you're still encountering issues, we recommend reaching out to the community using the default communication channels (e.g., [GitHub discussions](https://github.com/storybookjs/storybook/discussions/new?category=help)).
+
+### The controls are not updating the story within the MDX documentation page
+
+If you turned off inline rendering for your stories via the [`inline`](../api/doc-block-story.md#inline) configuration option, you would run into a situation where the associated controls are not updating the story within the documentation page. This is a known limitation of the current implementation and will be addressed in a future release.
 
 #### Learn more about Storybook documentation
 

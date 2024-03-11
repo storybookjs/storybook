@@ -9,8 +9,7 @@ interface SubtitleProps {
 
 export const Subtitle: FunctionComponent<SubtitleProps> = ({ children }) => {
   const docsContext = useContext(DocsContext);
-  const { parameters } = docsContext.storyById();
-  const content = children || parameters?.componentSubtitle;
+  const content = children || docsContext.storyById().parameters?.componentSubtitle;
 
   return content ? (
     <PureSubtitle className="sbdocs-subtitle sb-unstyled">{content}</PureSubtitle>

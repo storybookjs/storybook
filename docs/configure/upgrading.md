@@ -22,10 +22,16 @@ To help ease the pain of keeping Storybook up-to-date, we provide a command-line
 
 <!-- prettier-ignore-end -->
 
-After running the command the script will:
+The `upgrade` command will use whichever version you specify. For example:
 
-- Upgrade all Storybook packages in your project to the latest stable version
-- Run the relevant [automigrations](../migration-guide.md#automatic-upgrade) factoring in the [breaking changes](../migration-guide.md#major-breaking-changes) between your current version and the latest stable version
+- `storybook@latest upgrade` will upgrade to the latest version
+- `storybook@7.6.10 upgrade` will upgrade to `7.6.10`
+- `storybook@7 upgrade` will upgrade to the newest `7.x.x` version
+
+After running the command, the script will:
+
+- Upgrade all Storybook packages in your project to the specified version
+- Run the relevant [automigrations](../migration-guide.md#automatic-upgrade) factoring in the [breaking changes](../migration-guide.md#major-breaking-changes) between your current version and the specified version
 
 <Callout variant="info">
 
@@ -68,6 +74,12 @@ To upgrade to the latest pre-release:
 />
 
 <!-- prettier-ignore-end -->
+
+The `upgrade` command will use whichever version you specify. For example:
+
+- `storybook@next upgrade` will upgrade to the newest pre-release version
+- `storybook@8.0.0-beta.1 upgrade` will upgrade to `8.0.0-beta.1`
+- `storybook@8 upgrade` will upgrade to the newest `8.x` version
 
 If you'd like to downgrade to a stable version, manually edit the package version numbers in your `package.json` and re-install.
 

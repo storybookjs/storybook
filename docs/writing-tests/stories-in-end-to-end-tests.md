@@ -22,6 +22,7 @@ An example of an end-to-end test with Cypress and Storybook is testing a login c
     'web-components/login-form-with-play-function.js.mdx',
     'web-components/login-form-with-play-function.ts.mdx',
     'svelte/login-form-with-play-function.js.mdx',
+    'svelte/login-form-with-play-function.ts.mdx',
   ]}
   usesCsf3
   csf2Path="writing-tests/importing-stories-in-tests#snippet-login-form-with-play-function"
@@ -69,6 +70,7 @@ A real-life scenario of user flow testing with Playwright would be how to test a
     'web-components/login-form-with-play-function.js.mdx',
     'web-components/login-form-with-play-function.ts.mdx',
     'svelte/login-form-with-play-function.js.mdx',
+    'svelte/login-form-with-play-function.ts.mdx',
   ]}
   usesCsf3
   csf2Path="writing-tests/importing-stories-in-tests#snippet-login-form-with-play-function"

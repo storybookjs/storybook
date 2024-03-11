@@ -67,8 +67,9 @@ describe('mapArgsToTypes', () => {
   });
 
   it('maps booleans', () => {
+    expect(mapArgsToTypes({ a: true }, { a: { type: booleanType } })).toStrictEqual({ a: true });
     expect(mapArgsToTypes({ a: 'true' }, { a: { type: booleanType } })).toStrictEqual({ a: true });
-    expect(mapArgsToTypes({ a: 'false' }, { a: { type: booleanType } })).toStrictEqual({
+    expect(mapArgsToTypes({ a: false }, { a: { type: booleanType } })).toStrictEqual({
       a: false,
     });
     expect(mapArgsToTypes({ a: 'yes' }, { a: { type: booleanType } })).toStrictEqual({ a: false });
@@ -129,7 +130,7 @@ describe('mapArgsToTypes', () => {
         {
           key: {
             arr: ['1', '2'],
-            obj: { bool: 'true' },
+            obj: { bool: true },
           },
         },
         {
@@ -159,7 +160,7 @@ describe('mapArgsToTypes', () => {
           key: [
             {
               arr: ['1', '2'],
-              obj: { bool: 'true' },
+              obj: { bool: true },
             },
           ],
         },

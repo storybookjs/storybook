@@ -1,1 +1,1 @@
-import './dist/preset';
+require('./dist/preset');

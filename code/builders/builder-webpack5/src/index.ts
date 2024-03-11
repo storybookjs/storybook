@@ -63,7 +63,7 @@ export const getConfig: WebpackBuilder['getConfig'] = async (options) => {
   const typescriptOptions = await presets.apply('typescript', {}, options);
   const frameworkOptions = await presets.apply<any>('frameworkOptions');
 
-  return presets.apply(
+  return presets.apply<WebpackBuilder['getConfig']>(
     'webpack',
     {},
     {

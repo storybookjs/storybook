@@ -17,7 +17,6 @@ Check out our [Frameworks API](https://storybook.js.org/blog/framework-api/) ann
   - [Mocking links](#mocking-links)
 - [Troubleshooting](#troubleshooting)
   - [Error: `ERR! SyntaxError: Identifier '__esbuild_register_import_meta_url__' has already been declared` when starting Storybook](#error-err-syntaxerror-identifier-__esbuild_register_import_meta_url__-has-already-been-declared-when-starting-storybook)
-  - [Error: `Cannot read properties of undefined (reading 'disable_scroll_handling')` in preview](#error-cannot-read-properties-of-undefined-reading-disable_scroll_handling-in-preview)
 - [Acknowledgements](#acknowledgements)
 
 ## Supported features
@@ -64,7 +63,7 @@ npx storybook@latest init
 This framework is designed to work with Storybook 7. If you’re not already using v7, upgrade with this command:
 
 ```bash
-npx storybook@latest upgrade --prerelease
+npx storybook@latest upgrade
 ```
 
 #### Automatic migration
@@ -136,6 +135,8 @@ You can add the name of the module you want to mock to `parameters.sveltekit_exp
 | `import { navigating } from "$app/stores"`        | `parameters.sveltekit_experimental.stores.navigating`        | A Partial of the navigating store                                                                                                         |
 | `import { updated } from "$app/stores"`           | `parameters.sveltekit_experimental.stores.updated`           | A boolean representing the value of updated (you can also access `check()` which will be a noop)                                          |
 | `import { goto } from "$app/navigation"`          | `parameters.sveltekit_experimental.navigation.goto`          | A callback that will be called whenever goto is called, in no function is provided an action will be logged to the Actions panel          |
+| `import { pushState } from "$app/navigation"`     | `parameters.sveltekit_experimental.navigation.pushState`     | A callback that will be called whenever pushState is called, in no function is provided an action will be logged to the Actions panel     |
+| `import { replaceState } from "$app/navigation"`  | `parameters.sveltekit_experimental.navigation.replaceState`  | A callback that will be called whenever replaceState is called, in no function is provided an action will be logged to the Actions panel  |
 | `import { invalidate } from "$app/navigation"`    | `parameters.sveltekit_experimental.navigation.invalidate`    | A callback that will be called whenever invalidate is called, in no function is provided an action will be logged to the Actions panel    |
 | `import { invalidateAll } from "$app/navigation"` | `parameters.sveltekit_experimental.navigation.invalidateAll` | A callback that will be called whenever invalidateAll is called, in no function is provided an action will be logged to the Actions panel |
 | `import { afterNavigate } from "$app/navigation"` | `parameters.sveltekit_experimental.navigation.afterNavigate` | An object that will be passed to the afterNavigate function (which will be invoked onMount) called                                        |

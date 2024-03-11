@@ -6,6 +6,7 @@ import { writeConfig } from '@storybook/csf-tools';
 import type { Fix } from '../types';
 import type { PackageJson } from '../../js-package-manager';
 import { updateMainConfig } from '../helpers/mainConfigFile';
+import { getStorybookVersionSpecifier } from '../../helpers';
 
 const logger = console;
 
@@ -68,8 +69,11 @@ export const builderVite: Fix<BuilderViteOptions> = {
 
     logger.info(`✅ Adding '@storybook/builder-vite' as dev dependency`);
     if (!dryRun) {
+      const versionToInstall = getStorybookVersionSpecifier(
+        await packageManager.retrievePackageJson()
+      );
       await packageManager.addDependencies({ installAsDevDependencies: true }, [
-        '@storybook/builder-vite',
+        `@storybook/builder-vite@${versionToInstall}`,
       ]);
     }
 

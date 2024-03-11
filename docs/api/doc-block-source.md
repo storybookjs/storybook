@@ -98,6 +98,18 @@ Light mode is only supported when the `Source` block is rendered independently. 
 
 </Callout>
 
+<IfRenderer renderer={['angular', 'react', 'html', 'web-components' ]}>
+
+### `excludeDecorators`
+
+Type: `boolean`
+
+Default: `parameters.docs.source.excludeDecorators`
+
+Determines if [decorators](../writing-stories/decorators.md) are rendered in the source code snippet.
+
+</IfRenderer>
+
 ### `format`
 
 Type: `boolean | 'dedent' | BuiltInParserName`

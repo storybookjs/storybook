@@ -29,11 +29,7 @@ export const createSWCLoader = async (excludes: string[] = [], options: Options)
   logger.info(dedent`Using SWC compiler`);
 
   const swc = await options.presets.apply('swc', {}, options);
-  const typescriptOptions = await options.presets.apply<{ skipCompiler?: boolean }>(
-    'typescript',
-    {},
-    options
-  );
+  const typescriptOptions = await options.presets.apply('typescript', {}, options);
 
   const config: SwcOptions = {
     ...swc,

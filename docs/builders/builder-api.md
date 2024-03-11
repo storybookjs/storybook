@@ -155,7 +155,7 @@ While running in development mode, the builder's development server must be able
 
 ### More information
 
-This area is under rapid development, so the documented is still in progress and subject to change. If you are interested in writing your builder, we encourage you to check [webpack](https://github.com/storybookjs/storybook/tree/next/code/builders/builder-webpack5), [Vite](https://github.com/storybookjs/storybook/tree/next/code/builders/builder-vite), and Modern Web's [dev-server-storybook](https://github.com/modernweb-dev/web/blob/master/packages/dev-server-storybook/src/serve/storybookPlugin.ts) source code. In addition, we have a wonderful contributor community on [Storybook Discord](https://discord.gg/storybook) if you have questions. Ping us in the [#contributing](https://discord.com/channels/486522875931656193/839297503446695956) channel.
+This area is under rapid development, and the associated documentation is still in progress and subject to change. If you are interested in creating a builder, you can learn more about implementing a builder in Storybook by checking the source code for [Vite](https://github.com/storybookjs/storybook/tree/next/code/builders/builder-vite), [Webpack](https://github.com/storybookjs/storybook/tree/next/code/builders/builder-webpack5), or Modern Web's [dev-server-storybook](https://github.com/modernweb-dev/web/blob/master/packages/dev-server-storybook/src/serve/storybookPlugin.ts). When you're ready, open an [RFC](../contribute/RFC.md) to discuss your proposal with the Storybook community and maintainers.
 
 #### Learn more about builders
 

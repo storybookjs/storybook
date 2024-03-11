@@ -1,6 +1,6 @@
 import { getProjectRoot } from '@storybook/core-common';
 import { getVirtualModules } from '@storybook/builder-webpack5';
-import type { Options, Preset } from '@storybook/types';
+import type { Options } from '@storybook/types';
 import type { NextConfig } from 'next';
 import path from 'path';
 import type { RuleSetRule } from 'webpack';
@@ -10,7 +10,7 @@ import { getNextjsVersion } from '../utils';
 
 const applyFastRefresh = async (options: Options) => {
   const isDevelopment = options.configType === 'DEVELOPMENT';
-  const framework = await options.presets.apply<Preset>('framework');
+  const framework = await options.presets.apply('framework');
   const reactOptions = typeof framework === 'object' ? framework.options : {};
   return isDevelopment && (reactOptions.fastRefresh || process.env.FAST_REFRESH === 'true');
 };

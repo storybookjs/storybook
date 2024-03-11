@@ -1,0 +1,16 @@
+```js
+// Button.stories.js
+
+import Button from './Button.svelte';
+
+export default {
+  title: 'Button',
+  component: Button,
+};
+
+export const Primary = (args) => ({
+  Component: Button,
+  props: args,
+});
+Primary.args = { primary: true };
+```

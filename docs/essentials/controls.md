@@ -19,7 +19,7 @@ Controls do not require any modification to your components. Stories for control
 - Portable. Reuse your interactive stories in documentation, tests, and even in designs.
 - Rich. Customize the controls and interactive data to suit your exact needs.
 
-To use the Controls addon, you need to write your stories using [args](../writing-stories/args.md). Storybook will automatically generate UI controls based on your args and what it can infer about your component. Still, you can configure the controls further using [argTypes](../api/argtypes.md), see below.
+To use the Controls addon, you need to write your stories using [args](../writing-stories/args.md). Storybook will automatically generate UI controls based on your args and what it can infer about your component. Still, you can configure the controls further using [argTypes](../api/arg-types.md), see below.
 
 <Callout variant="info" icon="💡">
 
@@ -29,22 +29,82 @@ If you have stories in the older pre-Storybook 6 style, check the [args & contro
 
 ## Choosing the control type
 
-By default, Storybook will choose a control for each arg based on the initial value of the arg. It works well with certain types of args, such as boolean values or free-text strings, but in other cases, you want a more restricted control.
+<IfRenderer renderer='angular'>
+
+By default, Storybook will choose a control for each arg based on its initial value. This will work well with specific arg types (e.g., `boolean` or `string`). To enable them, add the `component` annotation to the default export of your story file, and it will be used to infer the controls and auto-generate the matching [`argTypes`](../api/arg-types.md) for your component using [Compodoc](https://compodoc.app/) if you opt-in to use it, including first-class support for Angular's `inputs`, `outputs`, `properties`, `methods` and `view/content child/children`.
 
 <!-- prettier-ignore-start -->
 
-<FeatureSnippets
+<CodeSnippets
   paths={[
-    'essentials/auto-generated-controls/react.mdx',
-    'essentials/auto-generated-controls/vue.mdx',
-    'essentials/auto-generated-controls/angular.mdx',
-    'essentials/auto-generated-controls/web-components.mdx',
-    'essentials/auto-generated-controls/ember.mdx',
-    'essentials/auto-generated-controls/fallback.mdx',
+    'angular/button-story-default-export-with-component.ts.mdx',
   ]}
 />
 
 <!-- prettier-ignore-end -->
+
+</IfRenderer>
+
+<IfRenderer renderer='react'>
+
+By default, Storybook will choose a control for each arg based on its initial value. This will work well with specific arg types (e.g., `boolean` or `string`). To enable them, add the `component` annotation to the default export of your story file and it will be used to infer the controls and auto-generate the matching [`argTypes`](../api/arg-types.md) for your component using [`react-docgen`](https://github.com/reactjs/react-docgen) or [`react-docgen-typescript`](https://github.com/styleguidist/react-docgen-typescript) for TypeScript.
+
+<!-- prettier-ignore-start -->
+
+<CodeSnippets
+  paths={[
+    'react/button-story-default-export-with-component.js.mdx',
+    'react/button-story-default-export-with-component.ts.mdx',
+  ]}
+/>
+
+<!-- prettier-ignore-end -->
+
+</IfRenderer>
+
+<IfRenderer renderer='vue'>
+
+By default, Storybook will choose a control for each arg based on its initial value. This will work well with specific arg types (e.g., `boolean` or `string`). To enable them, add the `component` annotation to the default export of your story file, and it will be used to infer the controls and auto-generate the matching [`argTypes`](../api/arg-types.md) for your component using [`vue-docgen-api`](https://github.com/vue-styleguidist/vue-styleguidist/tree/dev/packages/vue-docgen-api), including first-class support for Vue's `props`, `events`, and `slots`.
+
+<!-- prettier-ignore-start -->
+
+<CodeSnippets
+  paths={[
+    'vue/button-story-default-export-with-component.js.mdx',
+    'vue/button-story-default-export-with-component.ts.mdx',
+  ]}
+/>
+
+<!-- prettier-ignore-end -->
+
+</IfRenderer>
+
+<IfRenderer renderer={['ember', 'html', 'svelte', 'preact', 'qwik', 'solid', 'web-components' ]}>
+
+By default, Storybook will choose a control for each arg based on its initial value. This will work well with specific arg types (e.g., `boolean` or `string`). To enable them, add the `component` annotation to the default export of your story file, and it will be used to infer the controls and auto-generate the matching [`argTypes`](../api/arg-types.md) for your component provided by the framework you've chosen to use.
+
+<!-- prettier-ignore-start -->
+
+<CodeSnippets
+  paths={[
+    'ember/button-story-default-export-with-component.js.mdx',
+    'preact/button-story-default-export-with-component.js.mdx',
+    'svelte/button-story-default-export-with-component.js.mdx',
+    'svelte/button-story-default-export-with-component.ts.mdx',
+    'solid/button-story-default-export-with-component.js.mdx',
+    'solid/button-story-default-export-with-component.ts.mdx',
+    'web-components/button-story-default-export-with-component.js.mdx',
+    'web-components/button-story-default-export-with-component.ts.mdx',
+  ]}
+/>
+
+<Callout variant="info">
+
+If you're using a framework that doesn't support this feature, you'll need to define the `argTypes` for your component [manually](#fully-custom-args).
+
+</Callout>
+
+</IfRenderer>
 
 For instance, suppose you have a `variant` arg on your story that should be `primary` or `secondary`:
 
@@ -70,7 +130,7 @@ By default, Storybook will render a free text input for the `variant` arg:
 
 It works as long as you type a valid string into the auto-generated text control. Still, it's not the best UI for our scenario, given that the component only accepts `primary` or `secondary` as variants. Let’s replace it with Storybook’s radio component.
 
-We can specify which controls get used by declaring a custom [argType](../api/argtypes.md) for the `variant` property. ArgTypes encode basic metadata for args, such as name, description, defaultValue for an arg. These get automatically filled in by Storybook Docs.
+We can specify which controls get used by declaring a custom [argType](../api/arg-types.md) for the `variant` property. ArgTypes encode basic metadata for args, such as name, description, and defaultValue for an arg. These get automatically filled in by Storybook Docs.
 
 `ArgTypes` can also contain arbitrary annotations, which the user can override. Since `variant` is a property of the component, let's put that annotation on the default export.
 
@@ -91,7 +151,7 @@ We can specify which controls get used by declaring a custom [argType](../api/ar
 
 <Callout variant="info" icon="💡">
 
-ArgTypes are a powerful feature that can be used to customize the controls for your stories. See the documentation about [customizing controls](#annotation) with `argTypes` annotation for more information.
+ArgTypes are a powerful feature that can be used to customize the controls for your stories. For more information, see the documentation about [customizing controls](#annotation) with `argTypes` annotation.
 
 </Callout>
 
@@ -101,14 +161,14 @@ This replaces the input with a radio group for a more intuitive experience.
 
 ## Custom control type matchers
 
-Controls can automatically be inferred from arg's name with [regex](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/RegExp), but currently only for the color picker and date picker controls. If you've used the Storybook CLI to setup your project it should have automatically created the following defaults in `.storybook/preview.js`:
+Controls can automatically be inferred from arg's name with [regex](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/RegExp), but currently only for the color picker and date picker controls. If you've used the Storybook CLI to setup your project, it should have automatically created the following defaults in `.storybook/preview.js`:
 
 |  Control  |              Default regex               |                        Description                        |
 | :-------: | :--------------------------------------: | :-------------------------------------------------------: |
 | **color** | <code>/(background&#124;color)$/i</code> | Will display a color picker UI for the args that match it |
 | **date**  |                `/Date$/`                 | Will display a date picker UI for the args that match it  |
 
-If you haven't used the CLI to setup the configuration, or if you want to define your own patterns, use the `matchers` property in the `controls` parameter:
+If you haven't used the CLI to set the configuration, or if you want to define your patterns, use the `matchers` property in the `controls` parameter:
 
 <!-- prettier-ignore-start -->
 
@@ -121,9 +181,13 @@ If you haven't used the CLI to setup the configuration, or if you want to define
 
 <!-- prettier-ignore-end -->
 
+<IfRenderer renderer={['angular', 'ember', 'html', 'preact', 'qwik', 'react', 'solid', 'vue', 'web-components' ]}>
+
+<!-- Uncomment once frameworks that support custom templates are enabled to prevent misinformation about the example -->
+
 ## Fully custom args
 
-Until now, we only used auto-generated controls based on the component we're writing stories for. If we are writing [complex stories](../writing-stories/stories-for-multiple-components.md), we may want to add controls for args that aren’t part of the component. For example, here's how you could use a `footer` arg to populate a child component:
+Until now, we only used auto-generated controls based on the component for which we're writing stories. If we are writing [complex stories](../writing-stories/stories-for-multiple-components.md), we may want to add controls for args that aren’t part of the component. For example, here's how you could use a `footer` arg to populate a child component:
 
 <!-- prettier-ignore-start -->
 
@@ -155,6 +219,8 @@ By default, Storybook will add controls for all args that:
 
 Using `argTypes`, you can change the display and behavior of each control.
 
+</IfRenderer>
+
 ### Dealing with complex values
 
 When dealing with non-primitive values, you'll notice that you'll run into some limitations. The most obvious issue is that not every value can be represented as part of the `args` param in the URL, losing the ability to share and deeplink to such a state. Beyond that, complex values such as JSX cannot be synchronized between the manager (e.g., Controls addon) and the preview (your story).
@@ -171,6 +237,7 @@ One way to deal with this is to use primitive values (e.g., strings) as arg valu
     'vue/component-story-custom-args-complex.ts.mdx',
     'angular/component-story-custom-args-complex.ts.mdx',
     'svelte/component-story-custom-args-complex.js.mdx',
+    'svelte/component-story-custom-args-complex.ts.mdx',
     'web-components/component-story-custom-args-complex.js.mdx',
     'web-components/component-story-custom-args-complex.ts.mdx',
     'solid/component-story-custom-args-complex.js.mdx',
@@ -182,7 +249,7 @@ One way to deal with this is to use primitive values (e.g., strings) as arg valu
 
 <!-- prettier-ignore-end -->
 
-Unless you need the flexibility of a function, an easier way to map primitives to complex values before rendering is to define a `mapping`, additionally, you can specify `control.labels` to configure custom labels for your checkbox, radio, or select input.
+Unless you need the flexibility of a function, an easier way to map primitives to complex values before rendering is to define a `mapping`; additionally, you can specify `control.labels` to configure custom labels for your checkbox, radio, or select input.
 
 <!-- prettier-ignore-start -->
 
@@ -209,7 +276,7 @@ The Controls addon can be configured in two ways:
 
 ### Annotation
 
-As shown above, you can configure individual controls with the “control" annotation in the [argTypes](../api/argtypes.md) field of either a component or story. Below is a condensed example and table featuring all available controls.
+As shown above, you can configure individual controls with the “control" annotation in the [argTypes](../api/arg-types.md) field of either a component or story. Below is a condensed example and table featuring all available controls.
 
 | Data Type   | Control        | Description                                                                                                                                                                                                               |
 | ----------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -260,9 +327,9 @@ Numeric data types will default to a `number` control unless additional configur
 
 Controls supports the following configuration [parameters](../writing-stories/parameters.md), either globally or on a per-story basis:
 
-## Show full documentation for each property
+#### Show full documentation for each property
 
-Since Controls is built on the same engine as Storybook Docs, it can also show property documentation alongside your controls using the expanded parameter (defaults to false). This means you embed a complete [`Controls`](../api/doc-block-controls.md) doc block in the controls panel. The description and default value rendering can be [customized](#fully-custom-args) in the same way as the doc block.
+Since Controls is built on the same engine as Storybook Docs, it can also show property documentation alongside your controls using the expanded parameter (defaults to false). This means you embed a complete [`Controls`](../api/doc-block-controls.md) doc block in the controls panel. The description and default value rendering can be [customized](#fully-custom-args) like the doc block.
 
 To enable expanded mode globally, add the following to [`.storybook/preview.js`](../configure/index.md#configure-story-rendering):
 
@@ -277,11 +344,11 @@ To enable expanded mode globally, add the following to [`.storybook/preview.js`]
 
 <!-- prettier-ignore-end -->
 
-And here's what the resulting UI looks like:
+Here's what the resulting UI looks like:
 
 ![Controls addon expanded](./addon-controls-expanded.png)
 
-### Specify initial preset color swatches
+#### Specify initial preset color swatches
 
 For `color` controls, you can specify an array of `presetColors`, either on the `control` in `argTypes`, or as a parameter under the `controls` namespace:
 
@@ -298,11 +365,75 @@ For `color` controls, you can specify an array of `presetColors`, either on the 
 
 Color presets can be defined as an object with `color` and `title` or a simple CSS color string. These will then be available as swatches in the color picker. When you hover over the color swatch, you'll be able to see its title. It will default to the nearest CSS color name if none is specified.
 
+#### Filtering controls
+
+In specific cases, you may be required to display only a limited number of controls in the controls panel or all except a particular set.
+
+To make this possible, you can use optional `include` and `exclude` configuration fields in the `controls` parameter, which you can define as an array of strings or a regular expression.
+
+Consider the following story snippets:
+
+<!-- prettier-ignore-start -->
+
+<CodeSnippets
+  paths={[
+    'angular/component-story-disable-controls-regex.ts.mdx',
+    'web-components/component-story-disable-controls-regex.js.mdx',
+    'web-components/component-story-disable-controls-regex.ts.mdx',
+    'common/component-story-disable-controls-regex.js.mdx',
+    'common/component-story-disable-controls-regex.ts.mdx',
+  ]}
+  usesCsf3
+  csf2Path="essentials/controls#snippet-component-story-disable-controls-regex"
+/>
+
+<!-- prettier-ignore-end -->
+
+#### Sorting controls
+
+By default, controls are unsorted and use whatever order the args data is processed in (`none`). Additionally, you can sort them alphabetically by the arg's name (`alpha`) or with the required args first (`requiredFirst`).
+
+Consider the following snippet to force required args first:
+
+<!-- prettier-ignore-start -->
+
+<CodeSnippets
+  paths={[
+    'angular/component-story-sort-controls.ts.mdx',
+    'web-components/component-story-sort-controls.js.mdx',
+    'web-components/component-story-sort-controls.ts.mdx',
+    'common/component-story-sort-controls.js.mdx',
+    'common/component-story-sort-controls.ts.mdx',
+  ]}
+/>
+
+<!-- prettier-ignore-end -->
+
+#### Hide NoControls warning
+
+If you don't plan to handle the control args inside your story, you can remove the warning with:
+
+<!-- prettier-ignore-start -->
+
+<CodeSnippets
+  paths={[
+   'angular/button-story-hide-nocontrols-warning.ts.mdx',
+   'web-components/button-story-hide-nocontrols-warning.js.mdx',
+   'web-components/button-story-hide-nocontrols-warning.ts.mdx',
+   'common/button-story-hide-nocontrols-warning.js.mdx',
+   'common/button-story-hide-nocontrols-warning.ts.mdx',
+  ]}
+  usesCsf3
+  csf2Path="essentials/controls#snippet-button-story-hide-nocontrols-warning"
+/>
+
+<!-- prettier-ignore-end -->
+
 ### Disable controls for specific properties
 
 Aside from the features already documented here, Controls can also be disabled for individual properties.
 
-Suppose you want to disable Controls for a property called `foo` in a component's story. The following example illustrates how:
+Suppose you want to turn off Controls for a property called `foo` in a component's story. The following example illustrates how:
 
 <!-- prettier-ignore-start -->
 
@@ -327,7 +458,7 @@ Resulting in the following change in Storybook UI:
   />
 </video>
 
-The previous example also removed the prop documentation from the table. In some cases, this is fine. However, sometimes you might want to render the prop documentation, but without a control. The following example illustrates how:
+The previous example also removed the prop documentation from the table. In some cases, this is fine. However, sometimes you might want to render the prop documentation without a control. The following example illustrates how:
 
 <!-- prettier-ignore-start -->
 
@@ -345,7 +476,7 @@ The previous example also removed the prop documentation from the table. In some
 
 <Callout variant="info" icon="💡">
 
-💡 As with other Storybook properties, such as [decorators](../writing-stories/decorators.md), you can apply the same pattern at a story level for more granular cases.
+As with other Storybook properties, such as [decorators](../writing-stories/decorators.md), you can apply the same pattern at a story level for more granular cases.
 
 </Callout>
 
@@ -353,7 +484,7 @@ The previous example also removed the prop documentation from the table. In some
 
 In some cases, it's useful to be able to conditionally exclude a control based on the value of another control. Controls supports basic versions of these use cases with the `if`, which can take a simple query object to determine whether to include the control.
 
-Consider a collection of "advanced" settings that are only visible when the user toggles an "advanced" toggle.
+Consider a collection of "advanced" settings only visible when the user toggles an "advanced" toggle.
 
 <!-- prettier-ignore-start -->
 
@@ -403,66 +534,172 @@ It may also contain at most one of the following operators:
 
 If no operator is provided, that is equivalent to `{ truthy: true }`.
 
-## Hide NoControls warning
+<IfRenderer renderer='angular'>
 
-If you don't plan to handle the control args inside your Story, you can remove the warning with:
+## Troubleshooting
 
-<!-- prettier-ignore-start -->
+### Controls are not automatically generated for my component
 
-<CodeSnippets
-  paths={[
-   'angular/button-story-hide-nocontrols-warning.ts.mdx',
-   'web-components/button-story-hide-nocontrols-warning.js.mdx',
-   'web-components/button-story-hide-nocontrols-warning.ts.mdx',
-   'common/button-story-hide-nocontrols-warning.js.mdx',
-   'common/button-story-hide-nocontrols-warning.ts.mdx',
-  ]}
-  usesCsf3
-  csf2Path="essentials/controls#snippet-button-story-hide-nocontrols-warning"
-/>
+Out of the box, Storybook will try to infer the required argTypes and associated controls for your stories based on the component's definition and the initial value of the args. However, in some cases, this may not be enough, and you may need to provide additional information to Storybook. To solve this, you can opt-in to use [Compodoc](https://compodoc.app/), a documentation generator for Angular applications that can extract the metadata of your components and generate the required argTypes and controls for your stories.
 
-<!-- prettier-ignore-end -->
-
-## Filtering controls
-
-In specific cases, you may require to display only a limited number of controls in the controls panel, or all of them except a particular set.
-
-To make this possible, you can use optional `include` and `exclude` configuration fields in the `controls` parameter, which you can define as an array of strings, or as a regular expression.
-
-Consider the following story snippets:
+Run the following command to install the tooling.
 
 <!-- prettier-ignore-start -->
 
 <CodeSnippets
   paths={[
-    'angular/component-story-disable-controls-regex.ts.mdx',
-    'web-components/component-story-disable-controls-regex.js.mdx',
-    'web-components/component-story-disable-controls-regex.ts.mdx',
-    'common/component-story-disable-controls-regex.js.mdx',
-    'common/component-story-disable-controls-regex.ts.mdx',
+   'angular/compodoc-install.yarn.js.mdx',
+   'angular/compodoc-install.npm.js.mdx',
+   'angular/compodoc-install.pnpm.js.mdx',
   ]}
-  usesCsf3
-  csf2Path="essentials/controls#snippet-component-story-disable-controls-regex"
 />
 
 <!-- prettier-ignore-end -->
 
-## Sorting controls
-
-By default, controls are unsorted and use whatever order the args data is processed in (`none`). Additionally, you can sort them alphabetically by the arg's name (`alpha`) or with the required args first (`requiredFirst`).
-
-Consider the following snippet to force required args first:
+Update your `angular.json` file to include the following configuration to include it in the Storybook's inbuilt builder configuration.
 
 <!-- prettier-ignore-start -->
 
 <CodeSnippets
   paths={[
-    'angular/component-story-sort-controls.ts.mdx',
-    'web-components/component-story-sort-controls.js.mdx',
-    'web-components/component-story-sort-controls.ts.mdx',
-    'common/component-story-sort-controls.js.mdx',
-    'common/component-story-sort-controls.ts.mdx',
+   'angular/angular-project-compodoc-config.json.mdx',
   ]}
 />
 
+
 <!-- prettier-ignore-end -->
+
+Finally, update your `.storybook/preview.ts` file to include the following configuration to import the metadata generated by Compodoc and use it to generate the controls and argTypes for your stories.
+
+<!-- prettier-ignore-start -->
+
+<CodeSnippets
+  paths={[
+   'angular/storybook-preview-compodoc-config.ts.mdx',
+  ]}
+/>
+
+
+<!-- prettier-ignore-end -->
+
+</IfRenderer>
+
+<IfRenderer renderer='web-components'>
+
+## Troubleshooting
+
+### Controls are not automatically generated for my component
+
+Out of the box, Storybook will try to infer the required argTypes and associated controls for your stories based on the component's definition and the initial value of the args. However, in some cases, this may not be enough, and you may need to provide additional information to Storybook. To solve this, you can generate a [`custom-elements.json`](https://github.com/webcomponents/custom-elements-json) file with [`@custom-elements-manifest/analyzer`](https://github.com/open-wc/custom-elements-manifest) if you're using the `pre-v1.0.0` version of the elements file or [`@custom-elements-manifest/analyzer`](https://github.com/open-wc/custom-elements-manifest) for newer versions and configure it in your Storybook UI configuration file (i.e., `.storybook/preview.js|ts`) to enable it.
+
+<!-- prettier-ignore-start -->
+
+<CodeSnippets
+  paths={[
+   'web-components/storybook-preview-custom-elements-config.js.mdx',
+   'web-components/storybook-preview-custom-elements-config.ts.mdx',
+  ]}
+/>
+
+
+<!-- prettier-ignore-end -->
+
+</IfRenderer>
+
+<IfRenderer renderer='ember'>
+
+## Troubleshooting
+
+### Controls are not automatically generated for my component
+
+Out of the box, Storybook will try to infer the required argTypes and associated controls for your stories based on the metadata provided by the [`@storybook/ember-cli-storybook`](https://github.com/storybookjs/ember-cli-storybook) addon. However, in some cases, this may not be enough, and you may need to customize your project configuration to provide additional information to Storybook to generate the required argTypes and controls for your stories.
+
+Update your `ember-cli-build.js` configuration file to include the addon.
+
+<!-- prettier-ignore-start -->
+
+<CodeSnippets
+  paths={[
+   'ember/storybook-ember-cli-build.js.mdx',
+  ]}
+/>
+
+
+<!-- prettier-ignore-end -->
+
+Restart your application to generate the metadata file (i.e., `storybook-docgen/index.json`) and update your `.storybook/preview.js` file to include it, which will be used to create the controls and argTypes for your stories.
+
+<!-- prettier-ignore-start -->
+
+<CodeSnippets
+  paths={[
+   'ember/storybook-preview-custom-metadata.js.mdx',
+  ]}
+/>
+
+
+<!-- prettier-ignore-end -->
+
+<Callout variant="info">
+
+Enabling this feature will generate a `storybook-docgen/index.json` automatically with each build. For more information on how the metadata is generated, refer to [documentation](https://github.com/storybookjs/storybook/tree/next/code/frameworks/ember) for the Ember framework.
+
+</Callout>
+
+</IfRenderer>
+
+## API
+
+### Parameters
+
+This addon contributes the following [parameters](../writing-stories/parameters.md) to Storybook, under the `controls` namespace:
+
+#### `disable`
+
+Type: `boolean`
+
+Disable this addon's behavior. If you wish to disable this addon for the entire Storybook, you should do so when registering `addon-essentials`. See the [essential addon's docs](../essentials/index.md#disabling-addons) for more information.
+
+This parameter is most useful to allow overriding at more specific levels. For example, if this parameter is set to `true` at the project level, it could then be re-enabled by setting it to `false` at the meta (component) or story level.
+
+#### `exclude`
+
+Type: `string[] | RegExp`
+
+Specifies which properties to exclude from the Controls addon panel. Any properties whose names match the regex or are part of the array will be left out. See [usage example](#filtering-controls), above.
+
+#### `expanded`
+
+Type: `boolean`
+
+Show the full documentation, including description and default value, for each property in the Controls addon panel. See [usage example](#show-full-documentation-for-each-property), above.
+
+#### `hideNoControlsWarning`
+
+Type: `boolean`
+
+Hide the warning that appears when no controls are defined for a story. See [usage example](#hide-nocontrols-warning), above.
+
+#### `include`
+
+Type: `string[] | RegExp`
+
+Specifies which properties to include in the Controls addon panel. Any properties whose names don't match the regex or are not part of the array will be left out. See [usage example](#filtering-controls), above.
+
+#### `presetColors`
+
+Type: `(string | { color: string; title?: string })[]`
+
+Specify preset color swatches for the color picker control. Color value many be any valid CSS color. See [usage example](#specify-initial-preset-color-swatches), above.
+
+#### `sort`
+
+Type: `'none' | 'alpha' | 'requiredFirst'`
+
+Default: `'none'`
+
+Specifies how the controls are sorted.
+
+- **none**: Unsorted, displayed in the same order the arg types are processed in
+- **alpha**: Sorted alphabetically, by the arg type's name
+- **requiredFirst**: Same as `alpha`, with any required arg types displayed first

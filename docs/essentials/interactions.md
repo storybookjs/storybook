@@ -88,3 +88,17 @@ Any `args` that have been marked as an Action, either using the [argTypes annota
 To mock functions in your Storybook stories for reliable and isolated component testing, use the `jest` import from `@storybook/jest`. This allows you to avoid configuring Jest globally in your project.
 
 </Callout>
+
+## API
+
+### Parameters
+
+This addon contributes the following [parameters](../writing-stories/parameters.md) to Storybook, under the `interactions` namespace:
+
+#### `disable`
+
+Type: `boolean`
+
+Disable this addon's behavior. If you wish to disable this addon for the entire Storybook, you should do so when registering `addon-essentials`. See the [essential addon's docs](../essentials/index.md#disabling-addons) for more information.
+
+This parameter is most useful to allow overriding at more specific levels. For example, if this parameter is set to `true` at the project level, it could then be re-enabled by setting it to `false` at the meta (component) or story level.

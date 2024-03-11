@@ -1,2 +1,2 @@
-export * from './Viewport';
-export * from './ViewportAddonParameter';
+export type * from './Viewport';
+export type * from './ViewportAddonParameter';

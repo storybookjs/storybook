@@ -341,8 +341,8 @@ describe('storybook-metadata', () => {
         mainConfig: {
           ...mainJsMock,
           refs: {
-            a: { title: '', url: '' },
-            b: { title: '', url: '' },
+            a: { id: '', version: '', title: '', url: '' },
+            b: { id: '', version: '', title: '', url: '' },
           },
         },
       });

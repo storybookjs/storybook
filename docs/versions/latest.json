@@ -1,6 +1,1 @@
-{
-  "version": "7.6.0",
-  "info": {
-    "plain": "- 🔥 Improved SWC support\n- 🧪New test utilities and fast build mode\n- 🔼NextJS SWC + avif support & fixes\n- 🤡 SvelteKit page and navigation mocking\n- ⚛️React-docgen upgrade\n- 🎨Controls a11y, background theming, and viewports\n- 🩺CLI: The doctor is in!\n- 🚫Addons: Remove React as a peer dependency\n- 🪦Storyshots and Vue2 deprecated"
-  }
-}
+{"version":"7.6.17","info":{"plain":"- Addon-docs: Fix Table of Contents heading leak - [#23677](https://github.com/storybookjs/storybook/pull/23677), thanks [@vmizg](https://github.com/vmizg)!\n- Core: Update ip version to fix CVE-2023-42282 - [#26086](https://github.com/storybookjs/storybook/pull/26086), thanks [@drik98](https://github.com/drik98)!"}}

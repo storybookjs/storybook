@@ -1,6 +1,6 @@
 // https://storybook.js.org/docs/react/addons/writing-presets
 import { dirname, join } from 'path';
-import type { Options, PresetProperty } from '@storybook/types';
+import type { PresetProperty } from '@storybook/types';
 import type { ConfigItem, PluginItem, TransformOptions } from '@babel/core';
 import { loadPartialConfig } from '@babel/core';
 import { getProjectRoot } from '@storybook/core-common';
@@ -23,38 +23,8 @@ export const addons: PresetProperty<'addons', StorybookConfig> = [
   dirname(require.resolve(join('@storybook/preset-react-webpack', 'package.json'))),
 ];
 
-const defaultFrameworkOptions: FrameworkOptions = {};
-
-export const frameworkOptions = async (
-  _: never,
-  options: Options
-): Promise<StorybookConfig['framework']> => {
-  const config = await options.presets.apply<StorybookConfig['framework']>('framework');
-
-  if (typeof config === 'string') {
-    return {
-      name: config,
-      options: defaultFrameworkOptions,
-    };
-  }
-  if (typeof config === 'undefined') {
-    return {
-      name: require.resolve('@storybook/nextjs') as '@storybook/nextjs',
-      options: defaultFrameworkOptions,
-    };
-  }
-
-  return {
-    name: config.name,
-    options: {
-      ...defaultFrameworkOptions,
-      ...config.options,
-    },
-  };
-};
-
-export const core: PresetProperty<'core', StorybookConfig> = async (config, options) => {
-  const framework = await options.presets.apply<StorybookConfig['framework']>('framework');
+export const core: PresetProperty<'core'> = async (config, options) => {
+  const framework = await options.presets.apply('framework');
 
   return {
     ...config,
@@ -134,11 +104,10 @@ export const babel = async (baseConfig: TransformOptions): Promise<TransformOpti
 };
 
 export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, options) => {
-  // eslint-disable-next-line @typescript-eslint/no-shadow
-  const frameworkOptions = await options.presets.apply<{ options: FrameworkOptions }>(
+  const { builder, nextConfigPath } = await options.presets.apply<FrameworkOptions>(
     'frameworkOptions'
   );
-  const { options: { nextConfigPath, builder } = {} } = frameworkOptions;
+
   const nextConfig = await configureConfig({
     baseConfig,
     nextConfigPath,

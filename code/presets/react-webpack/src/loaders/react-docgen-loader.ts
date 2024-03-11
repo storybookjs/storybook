@@ -9,6 +9,8 @@ import {
 import MagicString from 'magic-string';
 import type { LoaderContext } from 'webpack';
 import type { Handler, NodePath, babelTypes as t, Documentation } from 'react-docgen';
+import { logger } from '@storybook/node-logger';
+import type { TransformOptions } from '@babel/core';
 
 const { getNameOrValue, isReactForwardRefCall } = utils;
 
@@ -56,11 +58,14 @@ const defaultResolver = new docgenResolver.FindExportedDefinitionsResolver();
 const defaultImporter = docgenImporters.fsImporter;
 const handlers = [...defaultHandlers, actualNameHandler];
 
-export default async function reactDocgenLoader(this: LoaderContext<any>, source: string) {
+export default async function reactDocgenLoader(
+  this: LoaderContext<{ babelOptions: TransformOptions; debug: boolean }>,
+  source: string
+) {
   const callback = this.async();
   // get options
   const options = this.getOptions() || {};
-  const { babelOptions = {} } = options;
+  const { babelOptions = {}, debug = false } = options;
 
   const { plugins, presets } = babelOptions;
 
@@ -94,7 +99,18 @@ export default async function reactDocgenLoader(this: LoaderContext<any>, source
     if (error.code === ERROR_CODES.MISSING_DEFINITION) {
       callback(null, source);
     } else {
-      callback(error);
+      if (!debug) {
+        logger.warn(
+          `Failed to parse ${this.resourcePath} with react-docgen. Rerun Storybook with --loglevel=debug to get more info.`
+        );
+      } else {
+        logger.warn(
+          `Failed to parse ${this.resourcePath} with react-docgen. Please use the below error message and the content of the file which causes the error to report the issue to the maintainers of react-docgen. https://github.com/reactjs/react-docgen`
+        );
+        logger.error(error);
+      }
+
+      callback(null, source);
     }
   }
 }

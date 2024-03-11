@@ -217,6 +217,17 @@ describe('ConfigFile', () => {
           )
         ).toEqual([{ directory: '../src', titlePrefix: 'Demo' }]);
       });
+      it('export specfier', () => {
+        expect(
+          getField(
+            ['foo'],
+            dedent`
+              const foo = 'bar';
+              export { foo };
+            `
+          )
+        ).toEqual('bar');
+      });
     });
   });
 
@@ -433,6 +444,24 @@ describe('ConfigFile', () => {
           export const foo = {
             bar: "baz"
           };
+        `);
+      });
+    });
+
+    describe('export specifiers', () => {
+      it('found object', () => {
+        expect(
+          setField(
+            ['core', 'builder'],
+            'webpack5',
+            dedent`
+              const core = { builder: 'webpack4' };
+              export { core };
+            `
+          )
+        ).toMatchInlineSnapshot(`
+          const core = { builder: 'webpack5' };
+          export { core };
         `);
       });
     });

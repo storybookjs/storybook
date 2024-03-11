@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-interactions",
-  "version": "7.6.0",
+  "version": "7.6.17",
   "description": "Automate, test and debug user interactions",
   "keywords": [
     "storybook-addons",

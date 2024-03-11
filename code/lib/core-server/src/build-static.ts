@@ -73,7 +73,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   const frameworkName = typeof framework === 'string' ? framework : framework?.name;
   if (frameworkName) {
     corePresets.push(join(frameworkName, 'preset'));
-  } else {
+  } else if (!options.ignorePreview) {
     logger.warn(`you have not specified a framework in your ${options.configDir}/main.js`);
   }
 

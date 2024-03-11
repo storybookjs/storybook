@@ -90,7 +90,7 @@ Now, when you define a story or update an existing one, you'll automatically get
 
 ### The `satisfies` operator is not working as expected
 
-Out of the box, Storybook supports the `satisfies` operator for almost every framework already using TypeScript version 4.9 or higher. However, due to the constraints of the Angular and Web Components framework, you might run into issues when applying this operator for additional type safety. This is primarily due to how both frameworks are currently implemented, making it almost impossible for Storybook to determine if the component property is required. If you encounter this issue, we recommend reaching out to the maintainers using the default communication channels (e.g., [Discord server](https://discord.com/channels/486522875931656193/570426522528382976), [GitHub discussion](https://github.com/storybookjs/storybook/discussions/20988)).
+Out of the box, Storybook supports the `satisfies` operator for almost every framework already using TypeScript version 4.9 or higher. However, due to the constraints of the Angular and Web Components framework, you might run into issues when applying this operator for additional type safety. This is primarily due to how both frameworks are currently implemented, making it almost impossible for Storybook to determine if the component property is required. If you encounter this issue, please open up a support request on [GitHub Discussions](https://github.com/storybookjs/storybook/discussions/new?category=help).
 
 ### The TypeScript auto-completion is not working on my editor
 

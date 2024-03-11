@@ -22,7 +22,7 @@ const styleResets: CSSObject = {
 };
 
 const styles = ({ theme }: { theme: Theme }): CSSObject => ({
-  ...styleResets,
+  ...(styleResets as any),
 
   transition: 'box-shadow 200ms ease-out, opacity 200ms ease-out',
   color: theme.input.color || 'inherit',

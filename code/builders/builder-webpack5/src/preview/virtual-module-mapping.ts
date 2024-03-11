@@ -27,6 +27,7 @@ export const getVirtualModules = async (options: Options) => {
   });
 
   const previewAnnotations = [
+    // FIXME: The type of the previewAnnotations property should probably be changed in StorybookConfig type of @storybook/types
     ...(await options.presets.apply<PreviewAnnotation[]>('previewAnnotations', [], options)).map(
       (entry) => {
         // If entry is an object, use the absolute import specifier.

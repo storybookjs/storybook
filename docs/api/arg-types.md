@@ -82,7 +82,7 @@ Type:
 ```ts
 {
   [key: string]: {
-    control?: ControlType | { type: ControlType; /* See below for more */ };
+    control?: ControlType | { type: ControlType; /* See below for more */ } | false;
     description?: string;
     if?: Conditional;
     mapping?: { [key: string]: { [option: string]: any } };
@@ -91,6 +91,7 @@ Type:
     table?: {
       category?: string;
       defaultValue?: { summary: string; detail?: string };
+      disable?: boolean;
       subcategory?: string;
       type?: { summary?: string; detail?: string };
     },
@@ -116,6 +117,7 @@ Type:
     presetColors?: string[];
     step?: number;
   }
+| false
 ```
 
 Default:
@@ -124,7 +126,7 @@ Default:
 2. Else, inferred from [`type`](#type)
 3. Else, `'object'`
 
-Specify the behavior of the [controls addon](../essentials/controls.md) for the arg. If you specify a string, it's used as the [`type`](#controltype) of the control. If you specify an object, you can provide additional configuration.
+Specify the behavior of the [controls addon](../essentials/controls.md) for the arg. If you specify a string, it's used as the [`type`](#controltype) of the control. If you specify an object, you can provide additional configuration. Specifying `false` will prevent the control from rendering.
 
 <!-- prettier-ignore-start -->
 
@@ -345,6 +347,7 @@ Type:
     detail?: string;
     summary: string;
   };
+  disable?: boolean;
   subcategory?: string;
   type?: {
     detail?: string;
@@ -386,6 +389,12 @@ Type: `{ detail?: string; summary: string }`
 Default: [Inferred](#automatic-argtype-inference)
 
 The documented default value of the argType. `summary` is typically used for the value itself, while `detail` is used for additional information.
+
+#### `table.disable`
+
+Type: `boolean`
+
+Set to `true` to remove the argType's row from the table.
 
 #### `table.subcategory`
 

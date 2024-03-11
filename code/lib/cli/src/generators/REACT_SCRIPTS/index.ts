@@ -6,7 +6,6 @@ import dedent from 'ts-dedent';
 import { baseGenerator } from '../baseGenerator';
 import type { Generator } from '../types';
 import { CoreBuilder } from '../../project_types';
-import versions from '../../versions';
 
 const generator: Generator = async (packageManager, npmOptions, options) => {
   const monorepoRootPath = path.join(__dirname, '..', '..', '..', '..', '..', '..');
@@ -47,11 +46,7 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
   // Miscellaneous dependency to add to be sure Storybook + CRA is working fine with Yarn PnP mode
   extraPackages.push('prop-types');
 
-  const version = versions['@storybook/preset-create-react-app'];
-  const extraAddons = [
-    `@storybook/preset-create-react-app@${version}`,
-    '@storybook/addon-onboarding',
-  ];
+  const extraAddons = [`@storybook/preset-create-react-app`, '@storybook/addon-onboarding@^1.0.0'];
 
   await baseGenerator(
     packageManager,

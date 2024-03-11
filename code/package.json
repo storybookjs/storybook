@@ -1,6 +1,6 @@
 {
   "name": "@storybook/root",
-  "version": "7.6.0",
+  "version": "7.6.17",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -86,6 +86,7 @@
     "esbuild": "^0.18.0",
     "eslint": "^8.28.0",
     "playwright": "1.36.0",
+    "@storybook/theming": "workspace:*",
     "playwright-core": "1.36.0",
     "serialize-javascript": "^3.1.0",
     "type-fest": "~2.19"

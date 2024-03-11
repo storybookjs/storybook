@@ -410,3 +410,50 @@ export class NoMatchingExportError extends StorybookError {
     `;
   }
 }
+
+export class UpgradeStorybookToLowerVersionError extends StorybookError {
+  readonly category = Category.CLI_UPGRADE;
+
+  readonly code = 3;
+
+  constructor(public data: { beforeVersion: string; currentVersion: string }) {
+    super();
+  }
+
+  template() {
+    return dedent`
+      You are trying to upgrade Storybook to a lower version than the version currently installed. This is not supported.
+      Storybook version ${this.data.beforeVersion} was detected in your project, but you are trying to "upgrade" to version ${this.data.currentVersion}.
+      
+      This usually happens when running the upgrade command without a version specifier, e.g. "npx storybook upgrade".
+      This will cause npm to run the globally cached storybook binary, which might be an older version.
+      Instead you should always run the Storybook CLI with a version specifier to force npm to download the latest version:
+      
+      "npx storybook@latest upgrade"
+    `;
+  }
+}
+
+export class UpgradeStorybookToSameVersionError extends StorybookError {
+  readonly category = Category.CLI_UPGRADE;
+
+  readonly code = 4;
+
+  constructor(public data: { beforeVersion: string }) {
+    super();
+  }
+
+  template() {
+    return dedent`
+      You are trying to upgrade Storybook to the same version that is currently installed in the project, version ${this.data.beforeVersion}. This is not supported.
+      
+      This usually happens when running the upgrade command without a version specifier, e.g. "npx storybook upgrade".
+      This will cause npm to run the globally cached storybook binary, which might be the same version that you already have.
+      This also happens if you're running the Storybook CLI that is locally installed in your project.
+      If you intended to upgrade to the latest version, you should always run the Storybook CLI with a version specifier to force npm to download the latest version:
+      "npx storybook@latest upgrade"
+      If you intended to re-run automigrations, you should run the "automigrate" command directly instead:
+      "npx storybook@${this.data.beforeVersion} automigrate"
+    `;
+  }
+}

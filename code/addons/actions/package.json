@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-actions",
-  "version": "7.6.0",
+  "version": "7.6.17",
   "description": "Get UI feedback when an action is performed on an interactive element",
   "keywords": [
     "storybook",
@@ -40,6 +40,7 @@
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
+  "react-native": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "typesVersions": {
     "*": {

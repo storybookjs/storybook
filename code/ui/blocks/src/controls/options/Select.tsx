@@ -23,9 +23,7 @@ const styleResets: CSSObject = {
   position: 'relative',
 };
 
-const OptionsSelect = styled.select(({ theme }) => ({
-  ...styleResets,
-
+const OptionsSelect = styled.select(styleResets, ({ theme }) => ({
   boxSizing: 'border-box',
   position: 'relative',
   padding: '6px 10px',

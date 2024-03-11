@@ -142,14 +142,13 @@ export const TableOfContents = ({
       tocSelector: '.toc-wrapper',
       contentSelector: contentsSelector ?? '.sbdocs-content',
       headingSelector: headingSelector ?? 'h3',
-      ignoreSelector: ignoreSelector ?? '.skip-toc',
-      headingsOffset: 40,
-      scrollSmoothOffset: -40,
       /**
        * Ignore headings that did not
        * come from the main markdown code.
        */
-      // ignoreSelector: ':not(.sbdocs), .hide-from-toc',
+      ignoreSelector: ignoreSelector ?? '.docs-story *, .skip-toc',
+      headingsOffset: 40,
+      scrollSmoothOffset: -40,
       orderedList: false,
       /**
        * Prevent default linking behavior,

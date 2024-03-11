@@ -1,6 +1,5 @@
-/* eslint-disable no-param-reassign,no-underscore-dangle */
+/* eslint-disable no-param-reassign, no-underscore-dangle */
 /// <reference types="node" />
-
 import { addons } from '@storybook/preview-api';
 import { global } from '@storybook/global';
 import { FORCE_REMOUNT, STORY_RENDER_PHASE_CHANGED } from '@storybook/core-events';
@@ -21,6 +20,7 @@ const fn = JestMock.fn.bind(JestMock);
 // Aliasing `fn` to `action` here, so we get a more descriptive label in the UI.
 const { action } = instrument({ action: fn }, { retain: true });
 const channel = addons.getChannel();
+const seen = new Set<any>();
 const spies: any[] = [];
 
 channel.on(FORCE_REMOUNT, () => spies.forEach((mock) => mock?.mockClear?.()));
@@ -29,6 +29,8 @@ channel.on(STORY_RENDER_PHASE_CHANGED, ({ newPhase }) => {
 });
 
 const addSpies = (id: string, val: any, key?: string): any => {
+  if (seen.has(val)) return val;
+  seen.add(val);
   try {
     if (Object.prototype.toString.call(val) === '[object Object]') {
       // We have to mutate the original object for this to survive HMR.

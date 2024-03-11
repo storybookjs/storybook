@@ -105,8 +105,11 @@ export type IndexEntry = StoryIndexEntry | DocsIndexEntry;
  * The base input for indexing a story or docs entry.
  */
 export type BaseIndexInput = {
-  /** The file to import from e.g. the story file. */
-  importPath: Path;
+  /**
+   * The file to import to render this story.
+   * If it's not defined, the path to file that was passed to the indexer will be used.
+   */
+  importPath?: Path;
   /** The name of the export to import. */
   exportName: ExportName;
   /** The name of the entry, auto-generated from {@link exportName} if unspecified. */

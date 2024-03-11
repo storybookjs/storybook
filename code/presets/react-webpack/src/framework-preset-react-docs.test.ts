@@ -43,9 +43,9 @@ describe('framework-preset-react-docgen', () => {
         module: {
           rules: [
             {
-              exclude: /node_modules\/.*/,
+              exclude: /(\.(stories|story)\.(js|jsx|ts|tsx))|(node_modules)/,
               loader: '@storybook/preset-react-webpack/dist/loaders/react-docgen-loader',
-              options: { babelOptions: { plugins: [], presets: [] } },
+              options: { babelOptions: { plugins: [], presets: [] }, debug: false },
               test: /\.(cjs|mjs|tsx?|jsx?)$/,
             },
           ],
@@ -60,9 +60,8 @@ describe('framework-preset-react-docgen', () => {
         plugins: [],
       };
 
-      const config = await preset.webpackFinal?.(webpackConfig, {
+      const config = await preset.webpackFinal?.(webpackConfig, <any>{
         presets: {
-          // @ts-expect-error (not strict)
           apply: async (name: string) => {
             if (name === 'typescript') {
               return {
@@ -88,9 +87,9 @@ describe('framework-preset-react-docgen', () => {
         module: {
           rules: [
             {
-              exclude: /node_modules\/.*/,
+              exclude: /(\.(stories|story)\.(js|jsx|ts|tsx))|(node_modules)/,
               loader: '@storybook/preset-react-webpack/dist/loaders/react-docgen-loader',
-              options: { babelOptions: { plugins: [], presets: [] } },
+              options: { babelOptions: { plugins: [], presets: [] }, debug: false },
               test: /\.(cjs|mjs|jsx?)$/,
             },
           ],
@@ -106,9 +105,8 @@ describe('framework-preset-react-docgen', () => {
         plugins: [],
       };
 
-      const outputWebpackconfig = await preset.webpackFinal?.(webpackConfig, {
+      const outputWebpackconfig = await preset.webpackFinal?.(webpackConfig, <any>{
         presets: {
-          // @ts-expect-error (Converted from ts-ignore)
           apply: async () =>
             ({
               check: false,
@@ -128,9 +126,8 @@ describe('framework-preset-react-docgen', () => {
         plugins: [],
       };
 
-      const outputWebpackconfig = await preset.webpackFinal?.(webpackConfig, {
+      const outputWebpackconfig = await preset.webpackFinal?.(webpackConfig, <any>{
         presets: {
-          // @ts-expect-error (Converted from ts-ignore)
           apply: async () =>
             ({
               check: false,

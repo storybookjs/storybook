@@ -145,6 +145,21 @@ If you intend on running coverage tests in frameworks with special files like Vu
 
 <!-- prettier-ignore-end -->
 
+### The coverage addon doesn't support optimized builds
+
+If you generated a production build optimized for performance with the [`--test`](../sharing/publish-storybook.md#customizing-the-build-for-performance) flag, and you're using the coverage addon to run tests against your Storybook, you may run into a situation where the coverage addon doesn't instrument your code. This is due to how the flag works, as it removes addons that have an impact on performance (e.g., [`Docs`](../writing-docs/index.md), [coverage addon](https://storybook.js.org/addons/@storybook/addon-coverage)). To resolve this issue, you'll need to adjust your Storybook configuration file (i.e., `.storybook/main.js|ts`) and include the [`disabledAddons`](../api/main-config-build.md#testdisabledaddons) option to allow the addon to run tests at the expense of a slower build.
+
+<!-- prettier-ignore-start -->
+
+<CodeSnippets
+  paths={[
+    'common/storybook-coverage-addon-optimized-config.js.mdx',
+    'common/storybook-coverage-addon-optimized-config.ts.mdx',
+  ]}
+/>
+
+<!-- prettier-ignore-end -->
+
 ### The coverage addon doesn't support instrumented code
 
 As the [coverage addon](https://storybook.js.org/addons/@storybook/addon-coverage) is based on Babel and Vite plugins for code instrumentation, frameworks that don't rely upon these libraries (e.g., Angular configured with Webpack), will require additional configuration to enable code instrumentation. In that case, you can refer to the following [repository](https://github.com/yannbf/storybook-coverage-recipes) for more information.

@@ -77,3 +77,37 @@ By default, the addon applies a standard style to the highlighted elements you'v
 />
 
 <!-- prettier-ignore-end -->
+
+## API
+
+### Parameters
+
+This addon contributes the following [parameters](../writing-stories/parameters.md) to Storybook, under the `highlight` namespace:
+
+#### `disable`
+
+Type: `boolean`
+
+Disable this addon's behavior. If you wish to disable this addon for the entire Storybook, you should do so when registering `addon-essentials`. See the [essential addon's docs](../essentials/index.md#disabling-addons) for more information.
+
+This parameter is most useful to allow overriding at more specific levels. For example, if this parameter is set to `true` at the project level, it could then be re-enabled by setting it to `false` at the meta (component) or story level.
+
+### Exports
+
+This addon contributes the following exports to Storybook:
+
+```js
+import { HIGHLIGHT, RESET_HIGHLIGHT } from '@storybook/addon-highlight';
+```
+
+#### `HIGHLIGHT`
+
+Type: `string`
+
+An event that highlights DOM elements. The event payload must contain an `elements` property assigned to an array of selectors matching the elements you want to highlight. See the [usage example](#highlighting-dom-elements), above.
+
+#### `RESET_HIGHLIGHT`
+
+Type: `string`
+
+An event to clear all highlights from highlighted elements. See the [usage example](#reset-highlighted-elements), above.

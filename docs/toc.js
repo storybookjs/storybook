@@ -578,13 +578,18 @@ module.exports = {
           ],
         },
         {
+          pathSegment: 'csf',
+          title: 'Component Story Format (CSF)',
+          type: 'link',
+        },
+        {
           pathSegment: 'arg-types',
           title: 'ArgTypes',
           type: 'link',
         },
         {
-          pathSegment: 'csf',
-          title: 'Component Story Format (CSF)',
+          pathSegment: 'parameters',
+          title: 'Parameters',
           type: 'link',
         },
         {

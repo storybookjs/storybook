@@ -31,3 +31,17 @@ With Storybook's Outline addon, you can toggle the outlines associated with all 
 <video autoPlay muted playsInline loop>
   <source src="addon-outline-optimized.mp4" type="video/mp4"/>
 </video>
+
+## API
+
+### Parameters
+
+This addon contributes the following [parameters](../writing-stories/parameters.md) to Storybook, under the `measure` or `outline` namespace:
+
+#### `disable`
+
+Type: `boolean`
+
+Disable this addon's behavior. If you wish to disable this addon for the entire Storybook, you should do so when registering `addon-essentials`. See the [essential addon's docs](../essentials/index.md#disabling-addons) for more information.
+
+This parameter is most useful to allow overriding at more specific levels. For example, if this parameter is set to `true` at the project level, it could then be re-enabled by setting it to `false` at the meta (component) or story level.

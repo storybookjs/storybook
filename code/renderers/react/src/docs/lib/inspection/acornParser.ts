@@ -206,7 +206,7 @@ function parseExpression(expression: any): ParsingResult<InspectionInferedType> 
 }
 
 export function parse(value: string): ParsingResult<InspectionInferedType> {
-  const ast = acornParser.parse(`(${value})`) as unknown as estree.Program;
+  const ast = acornParser.parse(`(${value})`, { ecmaVersion: 2020 }) as unknown as estree.Program;
 
   let parsingResult: ParsingResult<InspectionUnknown> = {
     inferredType: { type: InspectionType.UNKNOWN },

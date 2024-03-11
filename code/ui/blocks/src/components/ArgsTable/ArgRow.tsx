@@ -2,6 +2,7 @@ import type { FC } from 'react';
 import React, { useState } from 'react';
 import Markdown from 'markdown-to-jsx';
 import { transparentize } from 'polished';
+import type { CSSObject } from '@storybook/theming';
 import { styled } from '@storybook/theming';
 import { codeCommon } from '@storybook/components';
 import type { ArgType, Args, TableAnnotation } from './types';
@@ -39,10 +40,10 @@ const Description = styled.div(({ theme }) => ({
   },
 
   code: {
-    ...codeCommon({ theme }),
+    ...(codeCommon({ theme }) as CSSObject),
     fontSize: 12,
     fontFamily: theme.typography.fonts.mono,
-  },
+  } as CSSObject,
 
   '& code': {
     margin: 0,

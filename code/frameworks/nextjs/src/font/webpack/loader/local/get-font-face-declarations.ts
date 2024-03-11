@@ -8,13 +8,17 @@ import type { LoaderOptions } from '../types';
 
 type LocalFontSrc = string | Array<{ path: string; weight?: string; style?: string }>;
 
-export async function getFontFaceDeclarations(options: LoaderOptions, rootContext: string) {
+export async function getFontFaceDeclarations(
+  options: LoaderOptions,
+  rootContext: string,
+  swcMode: boolean
+) {
   const localFontSrc = options.props.src as LocalFontSrc;
 
   // Parent folder relative to the root context
-  const parentFolder = path
-    .dirname(path.join(getProjectRoot(), options.filename))
-    .replace(rootContext, '');
+  const parentFolder = swcMode
+    ? path.dirname(path.join(getProjectRoot(), options.filename)).replace(rootContext, '')
+    : path.dirname(options.filename).replace(rootContext, '');
 
   const { validateData } = require('../utils/local-font-utils');
   const { weight, style, variable } = validateData('', options.props);

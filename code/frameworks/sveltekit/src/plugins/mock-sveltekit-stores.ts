@@ -1,17 +1,17 @@
 import { resolve } from 'node:path';
-import { mergeConfig, type Plugin } from 'vite';
+import type { Plugin } from 'vite';
 
 export function mockSveltekitStores() {
   return {
     name: 'storybook:sveltekit-mock-stores',
-    enforce: 'post',
-    config: (config) =>
-      mergeConfig(config, {
-        resolve: {
-          alias: {
-            $app: resolve(__dirname, '../src/mocks/app/'),
-          },
+    config: () => ({
+      resolve: {
+        alias: {
+          '$app/forms': resolve(__dirname, '../src/mocks/app/forms.ts'),
+          '$app/navigation': resolve(__dirname, '../src/mocks/app/navigation.ts'),
+          '$app/stores': resolve(__dirname, '../src/mocks/app/stores.ts'),
         },
-      }),
+      },
+    }),
   } satisfies Plugin;
 }

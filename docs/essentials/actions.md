@@ -41,7 +41,7 @@ When Storybook sees this argType, it will create an arg set to a special “acti
 
 ### Automatically matching args
 
-Another option is to use a global parameter to match all [argTypes](../api/argtypes.md) that match a certain pattern. The following configuration automatically creates actions for each `on` argType (which you can either specify manually or can be [inferred automatically](../api/argtypes.md#automatic-argtype-inference)).
+Another option is to use a global parameter to match all [argTypes](../api/arg-types.md) that match a certain pattern. The following configuration automatically creates actions for each `on` argType (which you can either specify manually or can be [inferred automatically](../api/arg-types.md#automatic-argtype-inference)).
 
 <!-- prettier-ignore-start -->
 
@@ -96,6 +96,62 @@ It is also possible to detect if your component is emitting the correct HTML eve
 <!-- prettier-ignore-end -->
 
 This will bind a standard HTML event handler to the outermost HTML element rendered by your component and trigger an action when the event is called for a given selector. The format is `<eventname> <selector>`. The selector is optional; it defaults to all elements.
+
+## API
+
+### Parameters
+
+This addon contributes the following [parameters](../writing-stories/parameters.md) to Storybook, under the `actions` namespace:
+
+#### `argTypesRegex`
+
+Type: `string`
+
+Create actions for each arg that matches the regex. Please note the significant [limitations of this approach](#automatically-matching-args), as described above.
+
+#### `disable`
+
+Type: `boolean`
+
+Disable this addon's behavior. If you wish to disable this addon for the entire Storybook, you should do so when registering `addon-essentials`. See the [essential addon's docs](../essentials/index.md#disabling-addons) for more information.
+
+This parameter is most useful to allow overriding at more specific levels. For example, if this parameter is set to `true` at the project level, it could then be re-enabled by setting it to `false` at the meta (component) or story level.
+
+#### `handles`
+
+Type: `string[]`
+
+Binds a standard HTML event handler to the outermost HTML element rendered by your component and triggers an action when the event is called for a given selector. The format is `<eventname> <selector>`. The selector is optional; it defaults to all elements.
+
+See the [action event handlers](#action-event-handlers) section, above, for more information.
+
+### Exports
+
+This addon contributes the following exports to Storybook:
+
+```js
+import { action } from '@storybook/addon-actions';
+```
+
+#### `action`
+
+Type: `(name?: string) => void`
+
+Allows you to create an action that appears in the actions panel of the Storybook UI when clicked. The action function takes an optional name parameter, which is used to identify the action in the UI.
+
+<!-- prettier-ignore-start -->
+
+<CodeSnippets
+  paths={[
+    'angular/addon-actions-action-function.ts.mdx',
+    'web-components/addon-actions-action-function.js.mdx',
+    'web-components/addon-actions-action-function.ts.mdx',
+    'common/addon-actions-action-function.js.mdx',
+    'common/addon-actions-action-function.ts.mdx',
+  ]}
+/>
+
+<!-- prettier-ignore-end -->
 
 ## Advanced / legacy usage
 

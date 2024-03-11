@@ -44,6 +44,7 @@ export function getDuplicatedDepsWarnings(
 ): string[] | undefined {
   try {
     if (
+      !installationMetadata ||
       !installationMetadata?.duplicatedDependencies ||
       Object.keys(installationMetadata.duplicatedDependencies).length === 0
     ) {

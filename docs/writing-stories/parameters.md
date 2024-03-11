@@ -6,6 +6,12 @@ title: 'Parameters'
 
 Parameters are a set of static, named metadata about a story, typically used to control the behavior of Storybook features and addons.
 
+<Callout variant="info">
+
+Available parameters are listed in the [parameters API reference](../api/parameters.md#available-parameters).
+
+</Callout>
+
 For example, let’s customize the backgrounds addon via a parameter. We’ll use `parameters.backgrounds` to define which backgrounds appear in the backgrounds toolbar when a story is selected.
 
 ## Story parameters
@@ -16,11 +22,11 @@ We can set a parameter for a single story with the `parameters` key on a CSF exp
 
 <CodeSnippets
   paths={[
-   'angular/component-story-custom-params.ts.mdx',
-   'web-components/component-story-custom-params.js.mdx',
-   'web-components/component-story-custom-params.ts.mdx',
-   'common/component-story-custom-params.js.mdx',
-   'common/component-story-custom-params.ts.mdx',   
+    'angular/parameters-in-story.ts.mdx',
+    'web-components/parameters-in-story.js.mdx',
+    'web-components/parameters-in-story.ts.mdx',
+    'common/parameters-in-story.js.mdx',
+    'common/parameters-in-story.ts.mdx',
   ]}
   usesCsf3
   csf2Path="writing-stories/parameters#snippet-component-story-custom-params"
@@ -36,16 +42,11 @@ We can set the parameters for all stories of a component using the `parameters` 
 
 <CodeSnippets
   paths={[
-    'react/button-story-with-blue-args.js.mdx',
-    'react/button-story-with-blue-args.ts.mdx',
-    'vue/button-story-with-blue-args.js.mdx',
-    'vue/button-story-with-blue-args.ts.mdx',
-    'angular/button-story-with-blue-args.ts.mdx',
-    'web-components/button-story-with-blue-args.js.mdx',
-    'web-components/button-story-with-blue-args.ts.mdx',
-    'svelte/button-story-with-blue-args.js.mdx',
-    'solid/button-story-with-blue-args.js.mdx',
-    'solid/button-story-with-blue-args.ts.mdx',
+    'angular/parameters-in-meta.ts.mdx',
+    'web-components/parameters-in-meta.js.mdx',
+    'web-components/parameters-in-meta.ts.mdx',
+    'common/parameters-in-meta.js.mdx',
+    'common/parameters-in-meta.ts.mdx',
   ]}
 />
 
@@ -59,8 +60,8 @@ We can also set the parameters for **all stories** via the `parameters` export o
 
 <CodeSnippets
   paths={[
-   'common/preview-story-custom-params.js.mdx',
-   'common/preview-story-custom-params.ts.mdx',
+   'common/parameters-in-preview.js.mdx',
+   'common/parameters-in-preview.ts.mdx',
   ]}
 />
 

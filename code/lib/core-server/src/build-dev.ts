@@ -74,10 +74,15 @@ export async function buildDevStandalone(
   const { framework } = config;
   const corePresets = [];
 
-  const frameworkName = typeof framework === 'string' ? framework : framework?.name;
-  validateFrameworkName(frameworkName);
+  let frameworkName = typeof framework === 'string' ? framework : framework?.name;
+  if (!options.ignorePreview) {
+    validateFrameworkName(frameworkName);
+  }
+  if (frameworkName) {
+    corePresets.push(join(frameworkName, 'preset'));
+  }
 
-  corePresets.push(join(frameworkName, 'preset'));
+  frameworkName = frameworkName || 'custom';
 
   try {
     await warnOnIncompatibleAddons(config);

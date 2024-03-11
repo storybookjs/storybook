@@ -44,7 +44,7 @@ Addon-knobs is one of Storybook's most popular addons with over 1M weekly downlo
 
 Therefore, rather than deprecating addon-knobs immediately, we will continue to release knobs with the Storybook core distribution until 7.0. This will give us time to improve Controls based on user feedback, and also give knobs users ample time to migrate.
 
-If you are somehow tied to knobs or prefer the knobs interface, we are happy to take on maintainers for the knobs project. If this interests you, hop on our [Discord](https://discord.gg/storybook).
+If you are somehow tied to knobs or prefer the knobs interface, we are happy to take on maintainers for the knobs project. If this interests you, please get in touch with us in the [`#contributing`](https://discord.com/channels/486522875931656193/839297503446695956) Discord channel.
 
 ### How do I migrate from addon-knobs?
 

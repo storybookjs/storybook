@@ -26,6 +26,9 @@ Some components require a “harness” to render in a useful way. For instance,
     'web-components/your-component-with-decorator.js.mdx',
     'web-components/your-component-with-decorator.ts.mdx',
     'svelte/your-component-with-decorator.js.mdx',
+    'svelte/your-component-with-decorator.ts.mdx',
+    'svelte/margindecorator.with-margin-component.js.mdx',
+    'svelte/margindecorator.with-margin-component.ts.mdx',
     'solid/your-component-with-decorator.js.mdx',
     'solid/your-component-with-decorator.ts.mdx'
   ]}
@@ -71,7 +74,7 @@ In the example above, the values provided are hardcoded. Still, you may want to 
 The second argument to a decorator function is the **story context** which in particular contains the keys:
 
 - `args` - the story arguments. You can use some [`args`](./args.md) in your decorators and drop them in the story implementation itself.
-- `argTypes`- Storybook's [argTypes](../api/argtypes.md) allow you to customize and fine-tune your stories [`args`](./args.md).
+- `argTypes`- Storybook's [argTypes](../api/arg-types.md) allow you to customize and fine-tune your stories [`args`](./args.md).
 - `globals` - Storybook-wide [globals](../essentials/toolbars-and-globals.md#globals). In particular you can use the [toolbars feature](../essentials/toolbars-and-globals.md#global-types-toolbar-annotations) to allow you to change these values using Storybook’s UI.
 - `hooks` - Storybook's API hooks (e.g., useArgs).
 - `parameters`- the story's static metadata, most commonly used to control Storybook's behavior of features and addons.
@@ -103,6 +106,9 @@ To define a decorator for a single story, use the `decorators` key on a named ex
     'web-components/button-story-decorator.js.mdx',
     'web-components/button-story-decorator.ts.mdx',
     'svelte/button-story-decorator.js.mdx',
+    'svelte/button-story-decorator.ts.mdx',
+    'svelte/margindecorator.with-margin-component.js.mdx',
+    'svelte/margindecorator.with-margin-component.ts.mdx',
     'solid/button-story-decorator.js.mdx',
     'solid/button-story-decorator.ts.mdx',
   ]}
@@ -131,6 +137,9 @@ To define a decorator for all stories of a component, use the `decorators` key o
     'web-components/button-story-component-decorator.js.mdx',
     'web-components/button-story-component-decorator.ts.mdx',
     'svelte/button-story-component-decorator.js.mdx',
+    'svelte/button-story-component-decorator.ts.mdx',
+    'svelte/margindecorator.with-margin-component.js.mdx',
+    'svelte/margindecorator.with-margin-component.ts.mdx',
     'solid/button-story-component-decorator.js.mdx',
     'solid/button-story-component-decorator.ts.mdx',
   ]}
@@ -153,6 +162,9 @@ We can also set a decorator for **all stories** via the `decorators` export of y
     'angular/storybook-preview-global-decorator.ts.mdx',
     'web-components/storybook-preview-global-decorator.js.mdx',
     'svelte/storybook-preview-global-decorator.js.mdx',
+    'svelte/storybook-preview-global-decorator.ts.mdx',
+    'svelte/margindecorator.with-margin-component.js.mdx',
+    'svelte/margindecorator.with-margin-component.ts.mdx',
     'solid/storybook-preview-global-decorator.js.mdx',
     'solid/storybook-preview-global-decorator.ts.mdx',
   ]}

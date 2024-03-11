@@ -110,6 +110,7 @@ In Storybook, add a new [parameter](../writing-stories/parameters.md) named `des
     'vue/component-story-figma-integration.ts.mdx',
     'angular/component-story-figma-integration.ts.mdx',
     'svelte/component-story-figma-integration.js.mdx',
+    'svelte/component-story-figma-integration.ts.mdx',
     'web-components/component-story-figma-integration.js.mdx',
     'web-components/component-story-figma-integration.ts.mdx',
     'solid/component-story-figma-integration.js.mdx',

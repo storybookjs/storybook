@@ -2,7 +2,6 @@
 // LoginForm.stories.js
 
 import { userEvent, within } from '@storybook/testing-library';
-
 import { expect } from '@storybook/jest';
 
 import LoginForm from './LoginForm.svelte';
@@ -11,27 +10,13 @@ export default {
   component: LoginForm,
 };
 
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const EmptyForm = {
-  render: (args) => ({
-    Component: LoginForm,
-    props: args,
-  }),
-};
+export const EmptyForm = {};
 
 /*
  * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const FilledForm = {
-  render: (args) => ({
-    Component: LoginForm,
-    props: args,
-  }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 

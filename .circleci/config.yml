@@ -504,19 +504,19 @@ workflows:
           requires:
             - unit-tests
       - create-sandboxes:
-          parallelism: 14
+          parallelism: 13
           requires:
             - build
       - build-sandboxes:
-          parallelism: 14
+          parallelism: 13
           requires:
             - create-sandboxes
       - chromatic-sandboxes:
-          parallelism: 11
+          parallelism: 10
           requires:
             - build-sandboxes
       - e2e-production:
-          parallelism: 9
+          parallelism: 8
           requires:
             - build-sandboxes
       - e2e-dev:
@@ -524,7 +524,7 @@ workflows:
           requires:
             - create-sandboxes
       - test-runner-production:
-          parallelism: 9
+          parallelism: 8
           requires:
             - build-sandboxes
       - bench:
@@ -560,27 +560,27 @@ workflows:
           requires:
             - unit-tests
       - create-sandboxes:
-          parallelism: 23
+          parallelism: 19
           requires:
             - build
       - build-sandboxes:
-          parallelism: 23
+          parallelism: 19
           requires:
             - create-sandboxes
       - chromatic-sandboxes:
-          parallelism: 20
+          parallelism: 16
           requires:
             - build-sandboxes
       - e2e-production:
-          parallelism: 18
+          parallelism: 14
           requires:
             - build-sandboxes
       - e2e-dev:
-          parallelism: 4
+          parallelism: 2
           requires:
             - create-sandboxes
       - test-runner-production:
-          parallelism: 18
+          parallelism: 14
           requires:
             - build-sandboxes
       - bench:
@@ -614,30 +614,30 @@ workflows:
           requires:
             - build
       - create-sandboxes:
-          parallelism: 38
+          parallelism: 33
           requires:
             - build
       # - smoke-test-sandboxes: # disabled for now
       #     requires:
       #       - create-sandboxes
       - build-sandboxes:
-          parallelism: 38
+          parallelism: 33
           requires:
             - create-sandboxes
       - chromatic-sandboxes:
-          parallelism: 35
+          parallelism: 30
           requires:
             - build-sandboxes
       - e2e-production:
-          parallelism: 33
+          parallelism: 28
           requires:
             - build-sandboxes
       - e2e-dev:
-          parallelism: 4
+          parallelism: 2
           requires:
             - create-sandboxes
       - test-runner-production:
-          parallelism: 33
+          parallelism: 28
           requires:
             - build-sandboxes
       # TODO: reenable once we find out the source of flakyness

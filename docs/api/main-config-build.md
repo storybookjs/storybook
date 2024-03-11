@@ -25,11 +25,11 @@ Type: `TestBuildFlags`
 }
 ```
 
-Configures Storybook's production builds for performance testing purposes by disabling certain features from the build. When running ' build-storybook ', this feature is enabled by setting the `--test` [flag](./cli-options.md#build).
+Configures Storybook's production builds for performance testing purposes by disabling certain features from the build. When running `build-storybook`, this feature is enabled by setting the `--test` [flag](./cli-options.md#build).
 
 <Callout variant="info" icon="💡">
 
-Enabling these features can cause build or runtime errors with Storybook. We recommend enabling only the features you need for your project.
+The options documented on this page are automatically enabled when the `--test` flag is provided to the `build-storybook` command. We encourage you to override these options only if you need to disable a specific feature for your project or if you are debugging a build issue.
 
 </Callout>
 

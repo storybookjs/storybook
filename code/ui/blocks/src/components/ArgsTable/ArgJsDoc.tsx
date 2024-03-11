@@ -1,5 +1,6 @@
 import type { FC } from 'react';
 import React from 'react';
+import type { CSSObject } from '@storybook/theming';
 import { styled } from '@storybook/theming';
 import { codeCommon } from '@storybook/components';
 import type { JsDocTags } from './types';
@@ -53,7 +54,7 @@ export const Table = styled.table(({ theme }) => ({
       border: 'none',
     },
 
-    code: codeCommon({ theme }),
+    code: codeCommon({ theme }) as CSSObject,
 
     div: {
       span: {

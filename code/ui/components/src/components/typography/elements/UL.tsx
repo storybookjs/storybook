@@ -12,4 +12,4 @@ const listCommon: CSSObject = {
   },
 };
 
-export const UL = styled.ul(withReset, withMargin, { ...listCommon, listStyle: 'disc' });
+export const UL = styled.ul(withReset, withMargin, listCommon, { listStyle: 'disc' });

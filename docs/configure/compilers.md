@@ -21,7 +21,7 @@ SWC is a fast, highly extensible tool for compiling and bundling modern JavaScri
 
 <Callout variant="info">
 
-Support for the SWC builder is currently experimental for Next.js projects, and it's not enabled by default. It requires you to opt in to use it.
+Support for the SWC builder is currently experimental for Next.js projects, and it's not enabled by default. It requires you to opt in to use it. For more information on configuring SWC with the supported frameworks, see the [SWC API](../api/main-config-swc.md) documentation.
 
 </Callout>
 

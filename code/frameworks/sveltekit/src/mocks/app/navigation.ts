@@ -41,3 +41,17 @@ export async function invalidateAll() {
 export function preloadCode() {}
 
 export function preloadData() {}
+
+export async function pushState(...args: any[]) {
+  const event = new CustomEvent('storybook:pushState', {
+    detail: args,
+  });
+  window.dispatchEvent(event);
+}
+
+export async function replaceState(...args: any[]) {
+  const event = new CustomEvent('storybook:replaceState', {
+    detail: args,
+  });
+  window.dispatchEvent(event);
+}

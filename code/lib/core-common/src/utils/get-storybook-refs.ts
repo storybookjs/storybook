@@ -93,7 +93,7 @@ export async function getRefs(options: Options) {
     return {};
   }
 
-  const refs = await options.presets.apply<Record<string, Ref>>('refs', await getAutoRefs(options));
+  const refs = await options.presets.apply('refs', await getAutoRefs(options));
 
   Object.entries(refs).forEach(([key, value]: [string, Ref]) => {
     if (value.disable) {

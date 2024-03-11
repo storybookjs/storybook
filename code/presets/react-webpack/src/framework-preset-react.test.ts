@@ -23,7 +23,6 @@ describe('framework-preset-react', () => {
   const storybookOptions: Partial<Options> = {
     configType: 'DEVELOPMENT',
     presets: {
-      // @ts-expect-error (Converted from ts-ignore)
       apply: async () => ({
         name: '@storybook/react',
         options: {
@@ -37,7 +36,6 @@ describe('framework-preset-react', () => {
   const storybookOptionsDisabledRefresh: Partial<Options> = {
     configType: 'DEVELOPMENT',
     presets: {
-      // @ts-expect-error (Converted from ts-ignore)
       apply: async () => ({
         name: '@storybook/react',
         options: {

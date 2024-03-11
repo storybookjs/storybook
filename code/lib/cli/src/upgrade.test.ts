@@ -1,4 +1,33 @@
-import { addExtraFlags, addNxPackagesToReject, getStorybookVersion } from './upgrade';
+import {
+  UpgradeStorybookToLowerVersionError,
+  UpgradeStorybookToSameVersionError,
+} from '@storybook/core-events/server-errors';
+import { doUpgrade, getStorybookVersion } from './upgrade';
+
+jest.mock('@storybook/telemetry');
+jest.mock('./versions', () => {
+  const originalVersions = jest.requireActual('./versions').default;
+  return {
+    ...Object.keys(originalVersions).reduce((acc, key) => {
+      acc[key] = '8.0.0';
+      return acc;
+    }, {} as Record<string, string>),
+  };
+});
+
+const findInstallationsMock = jest.fn();
+
+jest.mock('./js-package-manager', () => {
+  const originalModule = jest.requireActual('./js-package-manager');
+  return {
+    ...originalModule,
+    JsPackageManagerFactory: {
+      getPackageManager: () => ({
+        findInstallations: findInstallationsMock,
+      }),
+    },
+  };
+});
 
 describe.each([
   ['│ │ │ ├── @babel/code-frame@7.10.3 deduped', null],
@@ -21,68 +50,39 @@ describe.each([
   });
 });
 
-describe('extra flags', () => {
-  const extraFlags = {
-    'react-scripts@<5': ['--foo'],
-  };
-  const devDependencies = {};
-  it('package matches constraints', () => {
-    expect(
-      addExtraFlags(extraFlags, [], { dependencies: { 'react-scripts': '4' }, devDependencies })
-    ).toEqual(['--foo']);
-  });
-  it('package prerelease matches constraints', () => {
-    expect(
-      addExtraFlags(extraFlags, [], {
-        dependencies: { 'react-scripts': '4.0.0-alpha.0' },
-        devDependencies,
-      })
-    ).toEqual(['--foo']);
-  });
-  it('package not matches constraints', () => {
-    expect(
-      addExtraFlags(extraFlags, [], {
-        dependencies: { 'react-scripts': '5.0.0-alpha.0' },
-        devDependencies,
-      })
-    ).toEqual([]);
-  });
-  it('no package not matches constraints', () => {
-    expect(
-      addExtraFlags(extraFlags, [], {
-        dependencies: {},
-        devDependencies,
-      })
-    ).toEqual([]);
-  });
-});
+describe('Upgrade errors', () => {
+  it('should throw an error when upgrading to a lower version number', async () => {
+    findInstallationsMock.mockResolvedValue({
+      dependencies: {
+        '@storybook/cli': [
+          {
+            version: '8.1.0',
+          },
+        ],
+      },
+      duplicatedDependencies: {},
+      infoCommand: '',
+      dedupeCommand: '',
+    });
 
-describe('addNxPackagesToReject', () => {
-  it('reject exists and is in regex pattern', () => {
-    const flags = ['--reject', '/preset-create-react-app/', '--some-flag', 'hello'];
-    expect(addNxPackagesToReject(flags)).toMatchObject([
-      '--reject',
-      '/(preset-create-react-app|@nrwl/storybook|@nx/storybook)/',
-      '--some-flag',
-      'hello',
-    ]);
+    await expect(doUpgrade({} as any)).rejects.toThrowError(UpgradeStorybookToLowerVersionError);
+    expect(findInstallationsMock).toHaveBeenCalledWith(['storybook', '@storybook/cli']);
   });
-  it('reject exists and is in unknown pattern', () => {
-    const flags = ['--some-flag', 'hello', '--reject', '@storybook/preset-create-react-app'];
-    expect(addNxPackagesToReject(flags)).toMatchObject([
-      '--some-flag',
-      'hello',
-      '--reject',
-      '@storybook/preset-create-react-app,@nrwl/storybook,@nx/storybook',
-    ]);
-  });
-  it('reject does not exist', () => {
-    const flags = ['--some-flag', 'hello'];
-    expect(addNxPackagesToReject(flags)).toMatchObject([
-      '--some-flag',
-      'hello',
-      '--reject',
-      '@nrwl/storybook,@nx/storybook',
-    ]);
+  it('should throw an error when upgrading to the same version number', async () => {
+    findInstallationsMock.mockResolvedValue({
+      dependencies: {
+        '@storybook/cli': [
+          {
+            version: '8.0.0',
+          },
+        ],
+      },
+      duplicatedDependencies: {},
+      infoCommand: '',
+      dedupeCommand: '',
+    });
+
+    await expect(doUpgrade({} as any)).rejects.toThrowError(UpgradeStorybookToSameVersionError);
+    expect(findInstallationsMock).toHaveBeenCalledWith(['storybook', '@storybook/cli']);
   });
 });

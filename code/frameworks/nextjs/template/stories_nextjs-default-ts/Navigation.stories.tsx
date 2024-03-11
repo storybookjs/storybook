@@ -24,7 +24,7 @@ function Component() {
       name: 'Prefetch',
     },
     {
-      // @ts-expect-error (old-api)
+      // @ts-expect-error (a legacy nextjs api?)
       cb: () => router.push('/push-html', { forceOptimisticNavigation: true }),
       name: 'Push HTML',
     },
@@ -33,7 +33,7 @@ function Component() {
       name: 'Refresh',
     },
     {
-      // @ts-expect-error (old-api)
+      // @ts-expect-error (a legacy nextjs api?)
       cb: () => router.replace('/replaced-html', { forceOptimisticNavigation: true }),
       name: 'Replace',
     },

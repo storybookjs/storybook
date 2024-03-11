@@ -102,7 +102,7 @@ Not finding the recipe that you want? If it's popular in the community, our docs
 
 ### Request a recipe
 
-If you'd like to request a recipe, head over to the [#maintenance channel](https://discord.com/channels/486522875931656193/490070912448724992) of our community Discord and ask.
+If you'd like to request a recipe, open a [new discussion](https://github.com/storybookjs/storybook/discussions/new?category=ideas) in our GitHub repo. We'll review your request, and if it's popular, we'll add it to our backlog and prioritize it.
 
 ## Learn more about the Storybook addon ecosystem
 

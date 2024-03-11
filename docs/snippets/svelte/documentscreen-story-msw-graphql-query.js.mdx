@@ -8,7 +8,7 @@ import MockApolloWrapperClient from './MockApolloWrapperClient.svelte';
 
 export default {
   component: DocumentScreen,
-  decorators: [() => MockGraphqlProvider],
+  decorators: [() => MockApolloWrapperClient],
 };
 
 //👇The mocked data that will be used in the story

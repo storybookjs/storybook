@@ -13,6 +13,10 @@ const mapping: Record<string, Record<string, string>> = {
     'next/dist/shared/lib/hooks-client-context.shared-runtime':
       'next/dist/shared/lib/hooks-client-context',
   },
+  '<13.0.0': {
+    '@storybook/nextjs/dist/routing/app-router-provider':
+      '@storybook/nextjs/dist/routing/app-router-provider-mock',
+  },
   '<13.5.0': {
     'next/dist/shared/lib/router-context.shared-runtime': 'next/dist/shared/lib/router-context',
     'next/dist/shared/lib/head-manager-context.shared-runtime':

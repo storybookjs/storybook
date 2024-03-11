@@ -91,7 +91,7 @@ Storybook comes with a lot of [addons](https://storybook.js.org/docs/react/confi
 
 ### Community
 
-For additional help, join us in the [Storybook Discord](https://discord.gg/storybook).
+For additional help, share your issue in [the repo's GitHub Discussions](https://github.com/storybookjs/storybook/discussions/new?category=help).
 
 ## Projects
 

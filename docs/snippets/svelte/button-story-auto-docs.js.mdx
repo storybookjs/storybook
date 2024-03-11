@@ -13,10 +13,6 @@ export default {
 };
 
 export const Primary = {
-  render: (args) => ({
-    Component: Button,
-    props: args,
-  }),
   args: {
     primary: true,
     label: 'Button',
@@ -24,10 +20,6 @@ export const Primary = {
 };
 
 export const Secondary = {
-  render: (args) => ({
-    Component: Button,
-    props: args,
-  }),
   args: {
     ...Primary.args,
     primary: false,

@@ -11,6 +11,8 @@ export async function createViteServer(options: Options, devServer: Server) {
 
   const config = {
     ...commonCfg,
+    // Needed in Vite 5: https://github.com/storybookjs/storybook/issues/25256
+    assetsInclude: ['/sb-preview/**'],
     // Set up dev server
     server: {
       middlewareMode: true,

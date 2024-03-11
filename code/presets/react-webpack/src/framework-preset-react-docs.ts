@@ -1,7 +1,7 @@
 import { hasDocsOrControls } from '@storybook/docs-tools';
 
 import type { Configuration } from 'webpack';
-import type { StorybookConfig } from './types';
+import type { StorybookConfig, TypescriptOptions } from './types';
 import { requirer } from './requirer';
 
 export const webpackFinal: StorybookConfig['webpackFinal'] = async (
@@ -10,10 +10,8 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (
 ): Promise<Configuration> => {
   if (!hasDocsOrControls(options)) return config;
 
-  const typescriptOptions = await options.presets.apply<StorybookConfig['typescript']>(
-    'typescript',
-    {} as any
-  );
+  const typescriptOptions = await options.presets.apply<TypescriptOptions>('typescript', {});
+  const debug = options.loglevel === 'debug';
 
   const { reactDocgen, reactDocgenTypescriptOptions } = typescriptOptions || {};
 
@@ -37,8 +35,9 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (
             ),
             options: {
               babelOptions,
+              debug,
             },
-            exclude: /node_modules\/.*/,
+            exclude: /(\.(stories|story)\.(js|jsx|ts|tsx))|(node_modules)/,
           },
         ],
       },
@@ -63,8 +62,9 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (
           ),
           options: {
             babelOptions,
+            debug,
           },
-          exclude: /node_modules\/.*/,
+          exclude: /(\.(stories|story)\.(js|jsx|ts|tsx))|(node_modules)/,
         },
       ],
     },

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/core-server",
-  "version": "7.6.0",
+  "version": "7.6.17",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -87,7 +87,7 @@
     "express": "^4.17.3",
     "fs-extra": "^11.1.0",
     "globby": "^11.0.2",
-    "ip": "^2.0.0",
+    "ip": "^2.0.1",
     "lodash": "^4.17.21",
     "open": "^8.4.0",
     "pretty-hrtime": "^1.0.3",

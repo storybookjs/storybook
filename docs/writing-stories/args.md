@@ -32,6 +32,7 @@ To define the args of a single story, use the `args` CSF story key:
     'web-components/button-story-with-args.js.mdx',
     'web-components/button-story-with-args.ts.mdx',
     'svelte/button-story-with-args.js.mdx',
+    'svelte/button-story-with-args.ts.mdx',
     'html/button-story-with-args.ts.mdx',
     'html/button-story-with-args.js.mdx',
     'solid/button-story-with-args.js.mdx',
@@ -80,6 +81,7 @@ You can also define args at the component level; they will apply to all the comp
     'web-components/button-story-component-args-primary.js.mdx',
     'web-components/button-story-component-args-primary.ts.mdx',
     'svelte/button-story-component-args-primary.js.mdx',
+    'svelte/button-story-component-args-primary.ts.mdx',
     'solid/button-story-component-args-primary.js.mdx',
     'solid/button-story-component-args-primary.ts.mdx',
   ]}
@@ -152,6 +154,7 @@ Args are useful when writing stories for composite components that are assembled
     'web-components/page-story.js.mdx',
     'web-components/page-story.ts.mdx',
     'svelte/page-story.js.mdx',
+    'svelte/page-story.ts.mdx',
     'solid/page-story.js.mdx',
     'solid/page-story.ts.mdx',
   ]}
@@ -160,6 +163,10 @@ Args are useful when writing stories for composite components that are assembled
 />
 
 <!-- prettier-ignore-end -->
+
+<IfRenderer renderer={['angular', 'vue', 'web-components', 'ember', 'html', 'preact', 'qwik', 'solid' ]}>
+
+<!-- Uncomment once frameworks that support custom templates are enabled to prevent misinformation about the example -->
 
 ## Args can modify any aspect of your component
 
@@ -186,6 +193,8 @@ You can use args in your stories to configure the component's appearance, simila
 />
 
 <!-- prettier-ignore-end -->
+
+</IfRenderer>
 
 ## Setting args through the URL
 

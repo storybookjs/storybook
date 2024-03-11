@@ -19,7 +19,7 @@ const map = (arg: unknown, argType: InputType): any => {
     case 'number':
       return Number(arg);
     case 'boolean':
-      return arg === 'true';
+      return String(arg) === 'true';
     case 'array':
       if (!type.value || !Array.isArray(arg)) return INCOMPATIBLE;
       return arg.reduce((acc, item, index) => {

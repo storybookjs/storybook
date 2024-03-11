@@ -64,22 +64,40 @@ interface DirectoryMapping {
   to: string;
 }
 
+interface AllSupportedPresets extends StorybookConfig {
+  entries: unknown;
+  managerEntries: string[];
+  docs: DocsOptions;
+  favicon: string;
+  title: string;
+}
+
+type UnwrapFunctionReturnType<T> = T extends (
+  config: infer R,
+  options: Options
+) => infer R | Promise<infer R>
+  ? R
+  : T;
+
+type UnwrapPromise<T> = T extends Promise<infer P> ? P : T;
+
+type UnwrapPresetType<K extends keyof AllSupportedPresets> =
+  AllSupportedPresets[K] extends undefined
+    ? undefined
+    : UnwrapPromise<UnwrapFunctionReturnType<NonNullable<AllSupportedPresets[K]>>>;
+
 export interface Presets {
-  apply(
-    extension: 'typescript',
-    config: TypescriptOptions,
-    args?: Options
-  ): Promise<TypescriptOptions>;
-  apply(extension: 'framework', config?: {}, args?: any): Promise<Preset>;
-  apply(extension: 'babel', config?: {}, args?: any): Promise<BabelOptions>;
-  apply(extension: 'swc', config?: {}, args?: any): Promise<SWCOptions>;
-  apply(extension: 'entries', config?: [], args?: any): Promise<unknown>;
-  apply(extension: 'stories', config?: [], args?: any): Promise<StoriesEntry[]>;
-  apply(extension: 'managerEntries', config: [], args?: any): Promise<string[]>;
-  apply(extension: 'refs', config?: [], args?: any): Promise<unknown>;
-  apply(extension: 'core', config?: {}, args?: any): Promise<CoreConfig>;
-  apply(extension: 'build', config?: {}, args?: any): Promise<StorybookConfig['build']>;
-  apply<T>(extension: string, config?: T, args?: unknown): Promise<T>;
+  apply<TKey extends keyof AllSupportedPresets>(
+    extension: TKey,
+    config?: Partial<UnwrapPresetType<TKey>> | null,
+    args?: any
+  ): Promise<UnwrapPresetType<TKey>>;
+
+  apply<TReturn = never>(
+    extension: string,
+    config?: Partial<TReturn> | null,
+    args?: any
+  ): Promise<TReturn>;
 }
 
 export interface LoadedPreset {
@@ -102,6 +120,7 @@ export interface Ref {
   version: string;
   type?: string;
   disable?: boolean;
+  expanded?: boolean;
 }
 
 export interface VersionCheck {
@@ -248,10 +267,7 @@ export type Preset =
  */
 export type Entry = string;
 
-type CoreCommon_StorybookRefs = Record<
-  string,
-  { title: string; url: string } | { disable: boolean; expanded?: boolean }
->;
+type CoreCommon_StorybookRefs = Record<string, Ref>;
 
 export type DocsOptions = {
   /**

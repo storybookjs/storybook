@@ -63,7 +63,7 @@ export const RadioControl: FC<RadioProps> = ({ name, options, value, onChange, i
             <input
               type="radio"
               id={id}
-              name={id}
+              name={controlId}
               value={key}
               onChange={(e) => onChange(options[e.currentTarget.value])}
               checked={key === selection}

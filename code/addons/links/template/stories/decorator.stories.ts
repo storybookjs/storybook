@@ -9,29 +9,35 @@ export default {
   decorators: [withLinks],
 };
 
-export const Basic = {
+export const Target = {
+  render: () => 'This is just a story to target with the links',
+};
+
+export const KindAndStory = {
   args: {
     content: `
       <div>
-        <a class="link" href="#" data-sb-story="other">go to other</a>
+        <a class="link" href="#" data-sb-kind="addons-links-decorator" data-sb-story="story-only">go to story only</a>
       </div>
     `,
   },
 };
-export const Other = {
+
+export const StoryOnly = {
   args: {
     content: `
       <div>
-        <a class="link" href="#" data-sb-story="third">go to third</a>
+        <a class="link" href="#" data-sb-story="target">go to target</a>
       </div>
     `,
   },
 };
-export const Third = {
+
+export const KindOnly = {
   args: {
     content: `
       <div>
-        <a class="link" href="#" data-sb-story="basic">go to basic</a>
+        <a class="link" href="#" data-sb-kind="addons-links-decorator">go to target</a>
       </div>
     `,
   },

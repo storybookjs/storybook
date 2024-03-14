@@ -16,11 +16,13 @@ const { document, window: globalWindow } = global;
 export interface DocsContainerProps<TFramework extends Renderer = Renderer> {
   context: DocsContextProps<TFramework>;
   theme?: ThemeVars;
+  DocsPage?: typeof DocsPageWrapper;
 }
 
 export const DocsContainer: FC<PropsWithChildren<DocsContainerProps>> = ({
   context,
   theme,
+  DocsPage = DocsPageWrapper,
   children,
 }) => {
   let toc;
@@ -55,11 +57,11 @@ export const DocsContainer: FC<PropsWithChildren<DocsContainerProps>> = ({
     <DocsContext.Provider value={context}>
       <SourceContainer channel={context.channel}>
         <ThemeProvider theme={ensureTheme(theme)}>
-          <DocsPageWrapper
+          <DocsPage
             toc={toc ? <TableOfContents className="sbdocs sbdocs-toc--custom" {...toc} /> : null}
           >
             {children}
-          </DocsPageWrapper>
+          </DocsPage>
         </ThemeProvider>
       </SourceContainer>
     </DocsContext.Provider>

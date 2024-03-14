@@ -1,0 +1,37 @@
+```js
+// .storybook/preview.js
+
+import * as React from 'react';
+
+import { DocsContainer } from '@storybook/blocks';
+
+const ExampleContainer = ({ children, ...props }) => {
+  return (
+    <DocsContainer
+      {...props}
+      DocsPage={({ toc, children }) => (
+        <div className="container">
+          <main>{children}</main>
+          <aside>{toc}</aside>
+        </div>
+      )}
+    >
+      {children}
+    </DocsContainer>
+  );
+};
+
+export default {
+  parameters: {
+    controls: {
+      matchers: {
+        color: /(background|color)$/i,
+        date: /Date$/,
+      },
+    },
+    docs: {
+      container: ExampleContainer,
+    },
+  },
+};
+```

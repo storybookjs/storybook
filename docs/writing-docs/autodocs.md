@@ -134,7 +134,7 @@ Storybook's auto-generated documentation pages can be quite long and difficult t
 By default, the table of contents on the documentation page will only show the `h3` headings that are automatically generated. However, if you want to customize the table of contents, you can add more parameters to the `toc` property. The following options and examples of how to use them are available.
 
 | Option                | Description                                                                                                                                                                                                     |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `contentsSelector`    | Defines the container's CSS selector for search for the headings <br/> `toc: { contentsSelector: '.sbdocs-content' }`                                                                                           |
 | `disable`             | Hides the table of contents for the documentation pages <br/> `toc: { disable: true }`                                                                                                                          |
 | `headingSelector`     | Defines the list of headings to feature in the table of contents <br/> `toc: { headingSelector: 'h1, h2, h3' }`                                                                                                 |
@@ -223,6 +223,25 @@ The Docs Container is the component that wraps up the documentation page. It's r
   paths={[
     'common/storybook-preview-auto-docs-custom-docs-container.js.mdx',
     'common/storybook-preview-auto-docs-custom-docs-container.ts.mdx',
+  ]}
+/>
+
+<!-- prettier-ignore-end -->
+
+#### Custom Docs Page
+
+The Docs Container accepts `DocsPage` render prop, where you can pass a custom component to render your page.
+Your custom page will no longer have the storybook's theme styles.
+Use this prop, when you want to style your docs pages globally with custom css.
+
+Your custom `DocsPage` component will receive `toc` and `children` props, containing the table of contents (if enabled) and page contents respectivelly.
+
+<!-- prettier-ignore-start -->
+
+<CodeSnippets
+  paths={[
+    'common/storybook-preview-auto-docs-custom-docs-container-with-custom-page.js.mdx',
+    'common/storybook-preview-auto-docs-custom-docs-container-with-custom-page.ts.mdx',
   ]}
 />
 

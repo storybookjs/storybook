@@ -144,7 +144,6 @@ describe('summarizeIndex', () => {
         "onboardingStoryCount": 0,
         "pageStoryCount": 0,
         "playStoryCount": 0,
-        "storiesMdxCount": 0,
         "storyCount": 0,
         "version": 4,
       }
@@ -202,7 +201,6 @@ describe('summarizeIndex', () => {
         "onboardingStoryCount": 1,
         "pageStoryCount": 0,
         "playStoryCount": 0,
-        "storiesMdxCount": 0,
         "storyCount": 0,
         "version": 4,
       }
@@ -258,7 +256,6 @@ describe('summarizeIndex', () => {
         "onboardingStoryCount": 0,
         "pageStoryCount": 0,
         "playStoryCount": 0,
-        "storiesMdxCount": 0,
         "storyCount": 4,
         "version": 4,
       }
@@ -315,65 +312,7 @@ describe('summarizeIndex', () => {
         "onboardingStoryCount": 0,
         "pageStoryCount": 1,
         "playStoryCount": 1,
-        "storiesMdxCount": 0,
         "storyCount": 1,
-        "version": 4,
-      }
-    `);
-  });
-  it('storiesMdx', () => {
-    expect(
-      summarizeIndex({
-        v: 4,
-        entries: {
-          'stories-renderers-react-react-mdx--docs': {
-            id: 'stories-renderers-react-react-mdx--docs',
-            title: 'stories/renderers/react/react-mdx',
-            name: 'Docs',
-            importPath: './src/stories/renderers/react/react-mdx.stories.mdx',
-            type: 'docs',
-            tags: ['stories-mdx', 'docs'],
-            storiesImports: [],
-          },
-          'stories-renderers-react-react-mdx--primary': {
-            id: 'stories-renderers-react-react-mdx--primary',
-            title: 'stories/renderers/react/react-mdx',
-            name: 'Primary',
-            importPath: './src/stories/renderers/react/react-mdx.stories.mdx',
-            tags: ['stories-mdx', 'story'],
-            type: 'story',
-          },
-          'stories-renderers-react-react-mdx--secondary': {
-            id: 'stories-renderers-react-react-mdx--secondary',
-            title: 'stories/renderers/react/react-mdx',
-            name: 'Secondary',
-            importPath: './src/stories/renderers/react/react-mdx.stories.mdx',
-            tags: ['stories-mdx', 'story'],
-            type: 'story',
-          },
-          'stories-renderers-react-react-mdx--from-template': {
-            id: 'stories-renderers-react-react-mdx--from-template',
-            title: 'stories/renderers/react/react-mdx',
-            name: 'From Template',
-            importPath: './src/stories/renderers/react/react-mdx.stories.mdx',
-            tags: ['stories-mdx', 'story'],
-            type: 'story',
-          },
-        },
-      })
-    ).toMatchInlineSnapshot(`
-      {
-        "autodocsCount": 0,
-        "componentCount": 1,
-        "exampleDocsCount": 0,
-        "exampleStoryCount": 0,
-        "mdxCount": 0,
-        "onboardingDocsCount": 0,
-        "onboardingStoryCount": 0,
-        "pageStoryCount": 0,
-        "playStoryCount": 0,
-        "storiesMdxCount": 1,
-        "storyCount": 3,
         "version": 4,
       }
     `);
@@ -430,7 +369,6 @@ describe('summarizeIndex', () => {
         "onboardingStoryCount": 0,
         "pageStoryCount": 0,
         "playStoryCount": 0,
-        "storiesMdxCount": 0,
         "storyCount": 0,
         "version": 4,
       }
@@ -481,7 +419,6 @@ describe('summarizeIndex', () => {
         "onboardingStoryCount": 0,
         "pageStoryCount": 0,
         "playStoryCount": 0,
-        "storiesMdxCount": 0,
         "storyCount": 0,
         "version": 4,
       }

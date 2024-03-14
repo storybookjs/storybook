@@ -115,9 +115,6 @@ describe('transformStoryIndexV3toV4', () => {
               "docsOnly": true,
             },
             "storiesImports": [],
-            "tags": [
-              "stories-mdx",
-            ],
             "title": "Story 1",
             "type": "docs",
           },

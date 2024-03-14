@@ -8,7 +8,7 @@ import { normalizeStoriesEntry } from '@storybook/core-common';
 import type { NormalizedStoriesSpecifier } from '@storybook/types';
 
 import type { StoryIndexGeneratorOptions } from '../StoryIndexGenerator';
-import { AUTODOCS_TAG, STORIES_MDX_TAG, StoryIndexGenerator } from '../StoryIndexGenerator';
+import { AUTODOCS_TAG, StoryIndexGenerator } from '../StoryIndexGenerator';
 
 vi.mock('@storybook/node-logger');
 
@@ -526,66 +526,6 @@ describe('docs entries from story extraction', () => {
             "name": "Story One",
             "tags": [
               "autodocs",
-              "story-tag-from-indexer",
-              "story",
-            ],
-            "title": "A",
-            "type": "story",
-          },
-        ],
-        "type": "stories",
-      }
-    `);
-  });
-  it(`adds docs entry when an entry has the "${STORIES_MDX_TAG}" tag`, async () => {
-    const relativePath = './src/A.stories.js';
-    const absolutePath = path.join(options.workingDir, relativePath);
-    const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(relativePath, options);
-
-    const generator = new StoryIndexGenerator([specifier], {
-      ...options,
-      docs: { defaultName: 'docs', autodocs: false },
-      indexers: [
-        {
-          test: /\.stories\.(m?js|ts)x?$/,
-          createIndex: async (fileName) => [
-            {
-              exportName: 'StoryOne',
-              __id: 'a--story-one',
-              name: 'Story One',
-              title: 'A',
-              tags: [STORIES_MDX_TAG, 'story-tag-from-indexer'],
-              importPath: fileName,
-              type: 'story',
-            },
-          ],
-        },
-      ],
-    });
-    const result = await generator.extractStories(specifier, absolutePath);
-
-    expect(result).toMatchInlineSnapshot(`
-      {
-        "dependents": [],
-        "entries": [
-          {
-            "id": "a--docs",
-            "importPath": "./src/A.stories.js",
-            "name": "docs",
-            "storiesImports": [],
-            "tags": [
-              "docs",
-            ],
-            "title": "A",
-            "type": "docs",
-          },
-          {
-            "id": "a--story-one",
-            "importPath": "./src/A.stories.js",
-            "metaId": undefined,
-            "name": "Story One",
-            "tags": [
-              "stories-mdx",
               "story-tag-from-indexer",
               "story",
             ],

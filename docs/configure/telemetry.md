@@ -70,7 +70,6 @@ Will generate the following output:
       "pageStoryCount": 0,
       "playStoryCount": 0,
       "autodocsCount": 0,
-      "storiesMdxCount": 0,
       "mdxCount": 0,
       "exampleStoryCount": 8,
       "exampleDocsCount": 3,

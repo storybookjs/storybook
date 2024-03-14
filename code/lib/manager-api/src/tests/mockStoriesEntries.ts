@@ -53,7 +53,6 @@ export const docsEntries: StoryIndex['entries'] = {
     name: 'Docs',
     importPath: './path/to/component-b.ts',
     storiesImports: [],
-    tags: ['stories-mdx'],
   },
   'component-c--story-4': {
     type: 'story',

@@ -119,7 +119,7 @@ const getSource = (
   setExpanded: Function
 ): SourceItem => {
   switch (true) {
-    case !!(withSource && withSource.error): {
+    case !!(withSource && (withSource.error || withSource.code === null)): {
       return {
         source: null,
         actionItem: {

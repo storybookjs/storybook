@@ -149,7 +149,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   } = {}) {
     const { canvasElement } = this;
     if (!this.story) throw new Error('cannot render when not prepared');
-    if (!canvasElement) throw new Error('cannot render when canvasElement is unset');
+    // if (!canvasElement) throw new Error('cannot render when canvasElement is unset');
 
     const { id, componentId, title, name, tags, applyLoaders, unboundStoryFn, playFunction } =
       this.story;
@@ -184,8 +184,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         // and we need to ensure we render it with the new values
         ...this.storyContext(),
         abortSignal,
-        // We should consider parameterizing the story types with TRenderer['canvasElement'] in the future
-        canvasElement: canvasElement as any,
+        canvasElement,
       };
       const renderContext: RenderContext<TRenderer> = {
         componentId,

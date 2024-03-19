@@ -9,7 +9,6 @@ const Container = styled.div(({ theme }) => ({
   right: 0,
   maxWidth: '100%',
   display: 'flex',
-  background: theme.background.content,
   zIndex: 1,
 }));
 

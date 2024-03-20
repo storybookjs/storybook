@@ -2,6 +2,11 @@ import React from 'react';
 import { LocationProvider } from '@storybook/router';
 import type { Meta, StoryObj } from '@storybook/react';
 import NotificationItem from './NotificationItem';
+import {
+  AccessibilityIcon as AccessibilityIconIcon,
+  BookIcon as BookIconIcon,
+  FaceHappyIcon,
+} from '@storybook/icons';
 
 const meta = {
   component: NotificationItem,
@@ -78,10 +83,7 @@ export const LinkIconWithColor: Story = {
       content: {
         headline: 'Storybook with a smile!',
       },
-      icon: {
-        name: 'facehappy',
-        color: 'hotpink',
-      },
+      icon: <FaceHappyIcon color="hotpink" />,
       link: '/some/path',
     },
   },
@@ -97,10 +99,7 @@ export const LinkIconWithColorSubHeadline: Story = {
         headline: 'Storybook X.X is available with a smile! Download now »',
         subHeadline: 'This link also has a sub headline',
       },
-      icon: {
-        name: 'facehappy',
-        color: 'tomato',
-      },
+      icon: <FaceHappyIcon color="tomato" />,
       link: '/some/path',
     },
   },
@@ -115,9 +114,7 @@ export const BookIcon: Story = {
       content: {
         headline: 'Storybook has a book icon!',
       },
-      icon: {
-        name: 'book',
-      },
+      icon: <BookIconIcon />,
       link: '/some/path',
     },
   },
@@ -133,9 +130,7 @@ export const StrongSubHeadline: Story = {
         headline: 'Storybook has a book icon!',
         subHeadline: <strong>Strong subHeadline</strong>,
       },
-      icon: {
-        name: 'book',
-      },
+      icon: <BookIconIcon />,
       link: '/some/path',
     },
   },
@@ -155,9 +150,7 @@ export const StrongEmphasizedSubHeadline: Story = {
           </span>
         ),
       },
-      icon: {
-        name: 'book',
-      },
+      icon: <BookIconIcon />,
       link: '/some/path',
     },
   },
@@ -173,9 +166,7 @@ export const BookIconSubHeadline: Story = {
         headline: 'Storybook has a book icon!',
         subHeadline: 'Find out more!',
       },
-      icon: {
-        name: 'book',
-      },
+      icon: <BookIconIcon />,
       link: '/some/path',
     },
   },
@@ -192,9 +183,7 @@ export const BookIconLongSubHeadline: Story = {
         subHeadline:
           'Find out more! by clicking on on buttons and downloading some applications. Find out more! by clicking on buttons and downloading some applications',
       },
-      icon: {
-        name: 'book',
-      },
+      icon: <BookIconIcon />,
       link: '/some/path',
     },
   },
@@ -210,9 +199,7 @@ export const AccessibilityIcon: Story = {
         headline: 'Storybook has a accessibility icon!',
         subHeadline: 'It is here!',
       },
-      icon: {
-        name: 'accessibility',
-      },
+      icon: <AccessibilityIconIcon />,
       link: '/some/path',
     },
   },
@@ -228,16 +215,28 @@ export const AccessibilityGoldIcon: Story = {
         headline: 'Accessibility icon!',
         subHeadline: 'It is gold!',
       },
-      icon: {
-        name: 'accessibility',
-        color: 'gold',
-      },
+      icon: <AccessibilityIconIcon color="gold" />,
       link: '/some/path',
     },
   },
 };
 
 export const AccessibilityGoldIconLongHeadLineNoSubHeadline: Story = {
+  args: {
+    ...Simple.args,
+    notification: {
+      id: '13',
+      onClear,
+      content: {
+        headline: 'Storybook notifications has a accessibility icon it can be any color!',
+      },
+      icon: <AccessibilityIconIcon color="gold" />,
+      link: '/some/path',
+    },
+  },
+};
+
+export const WithOldIconFormat: Story = {
   args: {
     ...Simple.args,
     notification: {

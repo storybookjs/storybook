@@ -1,3 +1,4 @@
+import React from 'react';
 import { global } from '@storybook/global';
 import type { WhatsNewCache, WhatsNewData } from '@storybook/core-events';
 import {
@@ -7,6 +8,7 @@ import {
   TOGGLE_WHATS_NEW_NOTIFICATIONS,
 } from '@storybook/core-events';
 import type { ModuleFn } from '../lib/types';
+import { StorybookIcon } from '@storybook/icons';
 
 export type SubState = {
   whatsNewData?: WhatsNewData;
@@ -95,7 +97,7 @@ export const init: ModuleFn = ({ fullAPI, store, provider }) => {
           headline: whatsNewData.title,
           subHeadline: "Learn what's new in Storybook",
         },
-        icon: { name: 'storybook' },
+        icon: <StorybookIcon />,
         onClear({ dismissed }: any) {
           if (dismissed) {
             setWhatsNewCache({ lastDismissedPost: whatsNewData.url });

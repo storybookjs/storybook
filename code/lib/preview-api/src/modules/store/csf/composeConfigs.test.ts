@@ -176,6 +176,34 @@ describe('composeConfigs', () => {
     });
   });
 
+  it('allows single array to be written without array', () => {
+    expect(
+      composeConfigs([
+        {
+          argsEnhancers: ['1', '2'],
+          argTypesEnhancers: ['1', '2'],
+          loaders: '1',
+        },
+        {
+          argsEnhancers: '3',
+          argTypesEnhancers: '3',
+          loaders: ['2', '3'],
+        },
+      ])
+    ).toEqual({
+      parameters: {},
+      decorators: [],
+      args: {},
+      argsEnhancers: ['1', '2', '3'],
+      argTypes: {},
+      argTypesEnhancers: ['1', '2', '3'],
+      globals: {},
+      globalTypes: {},
+      loaders: ['1', '2', '3'],
+      runStep: expect.any(Function),
+    });
+  });
+
   it('combines decorators in reverse file order', () => {
     expect(
       composeConfigs([

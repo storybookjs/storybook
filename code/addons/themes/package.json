@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-themes",
-  "version": "8.1.0-alpha.2",
+  "version": "8.1.0-alpha.3",
   "description": "Switch between multiple themes for you components in Storybook",
   "keywords": [
     "css",
@@ -33,8 +33,12 @@
       "require": "./dist/index.js",
       "import": "./dist/index.mjs"
     },
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "require": "./dist/preview.js",
+      "import": "./dist/preview.mjs"
+    },
     "./manager": "./dist/manager.js",
-    "./preview": "./dist/preview.js",
     "./package.json": "./package.json",
     "./postinstall": "./postinstall.js"
   },

@@ -11,11 +11,8 @@ import { createSvelte5Props } from '@storybook/svelte/internal/createSvelte5Prop
 
 import { addons } from '@storybook/preview-api';
 import * as svelte from 'svelte';
-import { VERSION as SVELTE_VERSION } from 'svelte/compiler';
-
 import type { SvelteRenderer } from './types';
-
-const IS_SVELTE_V4 = Number(SVELTE_VERSION[0]) <= 4;
+import { IS_SVELTE_V4 } from './utils';
 
 export function renderToCanvas(
   renderContext: RenderContext<SvelteRenderer>,

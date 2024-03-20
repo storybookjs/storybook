@@ -12,7 +12,7 @@ import type {
   ProjectAnnotations,
 } from '@storybook/types';
 
-import * as defaultProjectAnnotations from './entry-preview';
+import * as reactProjectAnnotations from './entry-preview';
 import type { Meta } from './public-types';
 import type { ReactRenderer } from './types';
 
@@ -38,6 +38,10 @@ export function setProjectAnnotations(
 ) {
   originalSetProjectAnnotations<ReactRenderer>(projectAnnotations);
 }
+
+// This will not be necessary once we have auto preset loading
+export const INTERNAL_DEFAULT_PROJECT_ANNOTATIONS: ProjectAnnotations<ReactRenderer> =
+  reactProjectAnnotations;
 
 /**
  * Function that will receive a story along with meta (e.g. a default export from a .stories file)
@@ -76,7 +80,7 @@ export function composeStory<TArgs extends Args = Args>(
     story as StoryAnnotationsOrFn<ReactRenderer, Args>,
     componentAnnotations,
     projectAnnotations,
-    defaultProjectAnnotations,
+    INTERNAL_DEFAULT_PROJECT_ANNOTATIONS,
     exportsName
   );
 }

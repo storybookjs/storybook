@@ -66,6 +66,7 @@ describe('projectAnnotations', () => {
     const { getByText } = render(WithEnglishText);
     const buttonElement = getByText('Hello!');
     expect(buttonElement).toBeInTheDocument();
+    expect(WithEnglishText.parameters?.injected).toBe(true);
   });
 
   it('renders with custom projectAnnotations via composeStory params', () => {
@@ -75,12 +76,6 @@ describe('projectAnnotations', () => {
     const { getByText } = render(WithPortugueseText);
     const buttonElement = getByText('Olá!');
     expect(buttonElement).toBeInTheDocument();
-  });
-
-  it('renders with custom projectAnnotations via setProjectAnnotations', () => {
-    setProjectAnnotations([{ parameters: { injected: true } }]);
-    const Story = composeStory(stories.CSF2StoryWithLocale, stories.default);
-    expect(Story.parameters?.injected).toBe(true);
   });
 });
 

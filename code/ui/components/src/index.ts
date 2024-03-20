@@ -66,6 +66,7 @@ export { default as ListItem } from './components/tooltip/ListItem';
 
 // Toolbar and subcomponents
 export { Tabs, TabsState, TabBar, TabWrapper } from './components/tabs/tabs';
+export { EmptyTabContent } from './components/tabs/EmptyTabContent';
 export { IconButtonSkeleton, TabButton } from './components/bar/button';
 export { Separator, interleaveSeparators } from './components/bar/separator';
 export { Bar, FlexBar } from './components/bar/bar';

@@ -1,0 +1,20 @@
+// auto-generated from scripts/create-nx-sandbox-projects.ts
+{
+  "name": "qwik-vite/default-ts",
+  "projectType": "application",
+  "implicitDependencies": [
+    "cli",
+    "test",
+    "essentials",
+    "interactions",
+    "links",
+    "onboarding",
+    "blocks"
+  ],
+  "targets": {
+    "sandbox": {},
+    "sb:dev": {},
+    "sb:build": {}
+  },
+  "tags": ["ci:daily"]
+}

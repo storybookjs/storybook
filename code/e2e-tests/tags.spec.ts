@@ -9,7 +9,9 @@ test.describe('tags', () => {
     await new SbPage(page).waitUntilLoaded();
   });
 
-  test('should correctly filter dev-only, docs-only, test-only stories', async ({ page }) => {
+  test('@flaky: should correctly filter dev-only, docs-only, test-only stories', async ({
+    page,
+  }) => {
     const sbPage = new SbPage(page);
 
     await sbPage.navigateToStory('lib/preview-api/tags', 'docs');

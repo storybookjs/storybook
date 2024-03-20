@@ -130,11 +130,22 @@ describe('renderJsx', () => {
       }
     );
 
-    expect(renderJsx(createElement(MyExoticComponentRef, {}, 'I am forwardRef!'), {}))
+    expect(renderJsx(<MyExoticComponentRef>I am forwardRef!</MyExoticComponentRef>))
       .toMatchInlineSnapshot(`
-        <MyExoticComponent>
+        <React.ForwardRef>
           I am forwardRef!
-        </MyExoticComponent>
+        </React.ForwardRef>
+      `);
+
+    // if docgenInfo is present, it should use the displayName from there
+    (MyExoticComponentRef as any).__docgenInfo = {
+      displayName: 'ExoticComponent',
+    };
+    expect(renderJsx(<MyExoticComponentRef>I am forwardRef!</MyExoticComponentRef>))
+      .toMatchInlineSnapshot(`
+        <ExoticComponent>
+          I am forwardRef!
+        </ExoticComponent>
       `);
   });
 
@@ -143,11 +154,20 @@ describe('renderJsx', () => {
       return <div>{props.children}</div>;
     });
 
-    expect(renderJsx(createElement(MyMemoComponentRef, {}, 'I am memo!'), {}))
-      .toMatchInlineSnapshot(`
-      <MyMemoComponent>
+    expect(renderJsx(<MyMemoComponentRef>I am memo!</MyMemoComponentRef>)).toMatchInlineSnapshot(`
+      <React.Memo>
         I am memo!
-      </MyMemoComponent>
+      </React.Memo>
+    `);
+
+    // if docgenInfo is present, it should use the displayName from there
+    (MyMemoComponentRef as any).__docgenInfo = {
+      displayName: 'MyMemoComponentRef',
+    };
+    expect(renderJsx(<MyMemoComponentRef>I am memo!</MyMemoComponentRef>)).toMatchInlineSnapshot(`
+      <MyMemoComponentRef>
+        I am memo!
+      </MyMemoComponentRef>
     `);
   });
 

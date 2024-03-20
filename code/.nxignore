@@ -1,0 +1,7 @@
+# Seems like NX get confused as our gitignore directory is not in the NX root
+dist
+node_modules
+storybook-static
+tsconfig.tsbuildinfo
+coverage
+fixtures

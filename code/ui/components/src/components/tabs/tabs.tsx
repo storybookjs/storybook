@@ -1,14 +1,14 @@
 import type { FC, PropsWithChildren, ReactElement, ReactNode, SyntheticEvent } from 'react';
-import React, { useMemo, Component, Fragment, memo } from 'react';
+import React, { useMemo, Component, memo } from 'react';
 import { styled } from '@storybook/theming';
 import { sanitize } from '@storybook/csf';
 
 import type { Addon_RenderOptions } from '@storybook/types';
-import { Placeholder } from '../placeholder/placeholder';
 import { TabButton } from '../bar/button';
 import { FlexBar } from '../bar/bar';
 import { childrenToList, VisuallyHidden } from './tabs.helpers';
 import { useList } from './tabs.hooks';
+import { EmptyTabContent } from './EmptyTabContent';
 
 const ignoreSsrWarning =
   '/* emotion-disable-server-rendering-unsafe-selector-warning-please-do-not-use-this-the-warning-exists-for-a-reason */';
@@ -119,6 +119,8 @@ export interface TabsProps {
   }>[];
   id?: string;
   tools?: ReactNode;
+  showToolsWhenEmpty?: boolean;
+  emptyState?: ReactNode;
   selected?: string;
   actions?: {
     onSelect: (id: string) => void;
@@ -140,6 +142,8 @@ export const Tabs: FC<TabsProps> = memo(
     backgroundColor,
     id: htmlId,
     menuName,
+    emptyState,
+    showToolsWhenEmpty,
   }) => {
     const idList = childrenToList(children)
       .map((i) => i.id)
@@ -157,7 +161,13 @@ export const Tabs: FC<TabsProps> = memo(
 
     const { visibleList, tabBarRef, tabRefs, AddonTab } = useList(list);
 
-    return list.length ? (
+    const EmptyContent = emptyState ?? <EmptyTabContent title="Nothing found" />;
+
+    if (!showToolsWhenEmpty && list.length === 0) {
+      return EmptyContent;
+    }
+
+    return (
       <Wrapper absolute={absolute} bordered={bordered} id={htmlId}>
         <FlexBar scrollable={false} border backgroundColor={backgroundColor}>
           <TabBar style={{ whiteSpace: 'normal' }} ref={tabBarRef} role="tablist">
@@ -190,15 +200,13 @@ export const Tabs: FC<TabsProps> = memo(
           {tools}
         </FlexBar>
         <Content id="panel-tab-content" bordered={bordered} absolute={absolute}>
-          {list.map(({ id, active, render }) => {
-            return React.createElement(render, { key: id, active }, null);
-          })}
+          {list.length
+            ? list.map(({ id, active, render }) => {
+                return React.createElement(render, { key: id, active }, null);
+              })
+            : EmptyContent}
         </Content>
       </Wrapper>
-    ) : (
-      <Placeholder>
-        <Fragment key="title">Nothing found</Fragment>
-      </Placeholder>
     );
   }
 );

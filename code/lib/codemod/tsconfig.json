@@ -3,8 +3,7 @@
   "compilerOptions": {
     "skipLibCheck": true,
     "allowJs": true,
-    "strict": true,
-    "lib": ["ES2021.String"]
+    "strict": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "__testfixtures__", "__tests__"]

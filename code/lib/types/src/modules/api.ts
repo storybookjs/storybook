@@ -120,6 +120,14 @@ interface OnClearOptions {
   dismissed: boolean;
 }
 
+/**
+ * @deprecated Use ReactNode for the icon instead.
+ * @see https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#icons-is-deprecated
+ */
+interface DeprecatedIconType {
+  name: string;
+  color?: string;
+}
 export interface API_Notification {
   id: string;
   link: string;
@@ -127,10 +135,8 @@ export interface API_Notification {
     headline: string;
     subHeadline?: string | any;
   };
-  icon?: {
-    name: string;
-    color?: string;
-  };
+  // TODO: Remove DeprecatedIconType in 9.0
+  icon?: React.ReactNode | DeprecatedIconType;
   onClear?: (options: OnClearOptions) => void;
 }
 

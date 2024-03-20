@@ -1,9 +1,9 @@
 import { expect } from '@storybook/test';
-import React, { Fragment } from 'react';
+import React from 'react';
 import { action } from '@storybook/addon-actions';
 import type { Meta, StoryObj } from '@storybook/react';
 import { within, fireEvent, waitFor, screen, userEvent, findByText } from '@storybook/test';
-import { CPUIcon, MemoryIcon } from '@storybook/icons';
+import { BottomBarIcon, CloseIcon } from '@storybook/icons';
 import { Tabs, TabsState, TabWrapper } from './tabs';
 import type { ChildrenList } from './tabs.helpers';
 import { IconButton } from '../IconButton/IconButton';
@@ -260,7 +260,27 @@ export const StatelessBordered = {
   ),
 } satisfies Story;
 
+const AddonTools = () => (
+  <div
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 6,
+    }}
+  >
+    <IconButton title="Tool 1">
+      <BottomBarIcon />
+    </IconButton>
+    <IconButton title="Tool 2">
+      <CloseIcon />
+    </IconButton>
+  </div>
+);
+
 export const StatelessWithTools = {
+  args: {
+    tools: <AddonTools />,
+  },
   render: (args) => (
     <Tabs
       bordered
@@ -269,22 +289,12 @@ export const StatelessWithTools = {
       actions={{
         onSelect,
       }}
-      tools={
-        <Fragment>
-          <IconButton title="Tool 1">
-            <MemoryIcon />
-          </IconButton>
-          <IconButton title="Tool 2">
-            <CPUIcon />
-          </IconButton>
-        </Fragment>
-      }
       {...args}
     >
       {content}
     </Tabs>
   ),
-} satisfies Story;
+} satisfies StoryObj<typeof Tabs>;
 
 export const StatelessAbsolute = {
   parameters: {
@@ -303,7 +313,7 @@ export const StatelessAbsolute = {
       {content}
     </Tabs>
   ),
-} satisfies Story;
+} satisfies StoryObj<typeof Tabs>;
 
 export const StatelessAbsoluteBordered = {
   parameters: {
@@ -323,9 +333,13 @@ export const StatelessAbsoluteBordered = {
       {content}
     </Tabs>
   ),
-} satisfies Story;
+} satisfies StoryObj<typeof Tabs>;
 
-export const StatelessEmpty = {
+export const StatelessEmptyWithTools = {
+  args: {
+    ...StatelessWithTools.args,
+    showToolsWhenEmpty: true,
+  },
   parameters: {
     layout: 'fullscreen',
   },
@@ -340,4 +354,25 @@ export const StatelessEmpty = {
       {...args}
     />
   ),
-} satisfies Story;
+} satisfies StoryObj<typeof Tabs>;
+
+export const StatelessWithCustomEmpty = {
+  args: {
+    ...StatelessEmptyWithTools.args,
+    emptyState: <div>I am custom!</div>,
+  },
+  parameters: {
+    layout: 'fullscreen',
+  },
+  render: (args) => (
+    <Tabs
+      actions={{
+        onSelect,
+      }}
+      bordered
+      menuName="Addons"
+      absolute
+      {...args}
+    />
+  ),
+} satisfies StoryObj<typeof Tabs>;

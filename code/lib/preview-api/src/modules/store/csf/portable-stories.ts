@@ -1,5 +1,7 @@
+/* eslint-disable no-underscore-dangle */
 /* eslint-disable @typescript-eslint/naming-convention */
 import { isExportStory } from '@storybook/csf';
+import dedent from 'ts-dedent';
 import type {
   Renderer,
   Args,
@@ -160,4 +162,69 @@ export function composeStories<TModule extends Store_CSFExports>(
   }, {});
 
   return composedStories;
+}
+
+type WrappedStoryRef = { __pw_type: 'jsx' | 'importRef' };
+type UnwrappedJSXStoryRef = {
+  __pw_type: 'jsx';
+  type: ComposedStoryFn;
+};
+type UnwrappedImportStoryRef = ComposedStoryFn;
+
+declare global {
+  function __pwUnwrapObject(
+    storyRef: WrappedStoryRef
+  ): Promise<UnwrappedJSXStoryRef | UnwrappedImportStoryRef>;
+}
+
+export function createPlaywrightTest<TFixture extends { extend: any }>(
+  baseTest: TFixture
+): TFixture {
+  return baseTest.extend({
+    mount: async ({ mount, page }: any, use: any) => {
+      await use(async (storyRef: WrappedStoryRef, ...restArgs: any) => {
+        // Playwright CT deals with JSX import references differently than normal imports
+        // and we can currently only handle JSX import references
+        if (
+          !('__pw_type' in storyRef) ||
+          ('__pw_type' in storyRef && storyRef.__pw_type !== 'jsx')
+        ) {
+          // eslint-disable-next-line local-rules/no-uncategorized-errors
+          throw new Error(dedent`
+              Portable stories in Playwright CT only work when referencing JSX elements.
+              Please use JSX format for your components such as:
+              
+              instead of:
+              await mount(MyComponent, { props: { foo: 'bar' } })
+              
+              do:
+              await mount(<MyComponent foo="bar"/>)
+
+              More info: https://storybook.js.org/docs/api/portable-stories-playwright
+            `);
+        }
+
+        await page.evaluate(async (wrappedStoryRef: WrappedStoryRef) => {
+          const unwrappedStoryRef = await globalThis.__pwUnwrapObject?.(wrappedStoryRef);
+          const story =
+            '__pw_type' in unwrappedStoryRef ? unwrappedStoryRef.type : unwrappedStoryRef;
+          return story?.load?.();
+        }, storyRef);
+
+        // mount the story
+        const mountResult = await mount(storyRef, ...restArgs);
+
+        // play the story in the browser
+        await page.evaluate(async (wrappedStoryRef: WrappedStoryRef) => {
+          const unwrappedStoryRef = await globalThis.__pwUnwrapObject?.(wrappedStoryRef);
+          const story =
+            '__pw_type' in unwrappedStoryRef ? unwrappedStoryRef.type : unwrappedStoryRef;
+          const canvasElement = document.querySelector('#root');
+          return story?.play?.({ canvasElement });
+        }, storyRef);
+
+        return mountResult;
+      });
+    },
+  });
 }

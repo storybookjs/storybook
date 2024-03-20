@@ -67,6 +67,7 @@ export default {
     'DL',
     'Div',
     'DocumentWrapper',
+    'EmptyTabContent',
     'ErrorFormatter',
     'FlexBar',
     'Form',

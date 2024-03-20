@@ -65,8 +65,8 @@ export const ArgControl: FC<ArgControlProps> = ({ row, arg, updateArgs, isHovere
   const onBlur = useCallback(() => setFocused(false), []);
   const onFocus = useCallback(() => setFocused(true), []);
 
-  if (!control || control.disabled) {
-    const canBeSetup = control?.disabled !== true && row?.type?.name !== 'function';
+  if (!control || control.disable) {
+    const canBeSetup = control?.disable !== true && row?.type?.name !== 'function';
     return isHovered && canBeSetup ? (
       <Link
         href="https://storybook.js.org/docs/react/essentials/controls"

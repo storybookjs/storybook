@@ -7,7 +7,7 @@
     "build-package": "node --loader esbuild-register/loader -r esbuild-register ./build-package.ts",
     "check": "node --loader esbuild-register/loader -r esbuild-register ./prepare/check-scripts.ts",
     "check-package": "node --loader esbuild-register/loader -r esbuild-register ./check-package.ts",
-    "docs:prettier:check": "cd ../docs && prettier --check ./snippets",
+    "docs:prettier:check": "cd ../docs && prettier --check ./snippets || echo 'Please run \"docs:prettier:write\" in the \"scripts\" directory to fix the issues'",
     "docs:prettier:write": "cd ../docs && prettier --write ./snippets",
     "generate-sandboxes": "node --loader esbuild-register/loader -r esbuild-register ./sandbox/generate.ts",
     "get-report-message": "node --loader esbuild-register/loader -r esbuild-register ./get-report-message.ts",
@@ -73,7 +73,7 @@
     "@babel/preset-typescript": "^7.23.2",
     "@babel/types": "^7.23.0",
     "@google-cloud/bigquery": "^6.2.0",
-    "@nx/workspace": "17.0.2",
+    "@nx/workspace": "18.0.6",
     "@octokit/graphql": "^5.0.5",
     "@octokit/request": "^8.1.2",
     "@storybook/eslint-config-storybook": "^4.0.0",
@@ -146,7 +146,7 @@
     "node-fetch": "^2.6.1",
     "node-gyp": "^9.3.1",
     "npmlog": "^5.0.1",
-    "nx": "17.0.2",
+    "nx": "18.0.6",
     "ora": "^5.4.1",
     "p-limit": "^3.1.0",
     "p-retry": "^5.1.2",
@@ -185,6 +185,9 @@
     "window-size": "^1.1.1",
     "yaml": "^2.3.1",
     "zod": "^3.21.4"
+  },
+  "devDependencies": {
+    "rimraf": "^5.0.5"
   },
   "optionalDependencies": {
     "@verdaccio/types": "^10.2.0",

@@ -2,6 +2,7 @@
   "name": "@storybook/root",
   "type": "module",
   "scripts": {
+    "i": "yarn --cwd scripts && yarn --cwd code",
     "ci-tests": "cd code; yarn ci-tests",
     "get-report-message": "cd scripts; yarn get-report-message",
     "get-template": "cd scripts; yarn get-template",
@@ -13,5 +14,5 @@
     "test": "cd code; yarn test",
     "upload-bench": "cd scripts; yarn upload-bench"
   },
-  "packageManager": "yarn@4.0.2"
+  "packageManager": "yarn@4.1.1"
 }

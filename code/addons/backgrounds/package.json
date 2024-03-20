@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-backgrounds",
-  "version": "8.1.0-alpha.2",
+  "version": "8.1.0-alpha.3",
   "description": "Switch backgrounds to view components in different settings",
   "keywords": [
     "addon",
@@ -32,8 +32,12 @@
       "require": "./dist/index.js",
       "import": "./dist/index.mjs"
     },
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "require": "./dist/preview.js",
+      "import": "./dist/preview.mjs"
+    },
     "./manager": "./dist/manager.js",
-    "./preview": "./dist/preview.js",
     "./register": "./dist/manager.js",
     "./package.json": "./package.json"
   },

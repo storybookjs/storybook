@@ -3,7 +3,8 @@ import React from 'react';
 import { type State } from '@storybook/manager-api';
 import { Link } from '@storybook/router';
 import { styled, useTheme } from '@storybook/theming';
-import { Icons, IconButton, type IconsProps } from '@storybook/components';
+import type { IconsProps } from '@storybook/components';
+import { IconButton, Icons } from '@storybook/components';
 import { transparentize } from 'polished';
 import { CloseAltIcon } from '@storybook/icons';
 
@@ -45,12 +46,18 @@ const NotificationIconWrapper = styled.div(() => ({
   display: 'flex',
   marginRight: 10,
   alignItems: 'center',
+
+  svg: {
+    width: 16,
+    height: 16,
+  },
 }));
 
-const NotificationTextWrapper = styled.div(() => ({
+const NotificationTextWrapper = styled.div(({ theme }) => ({
   width: '100%',
   display: 'flex',
   flexDirection: 'column',
+  color: theme.base === 'dark' ? theme.color.mediumdark : theme.color.mediumlight,
 }));
 
 const Headline = styled.div<{ hasIcon: boolean }>(({ theme, hasIcon }) => ({
@@ -78,16 +85,17 @@ const ItemContent: FC<Pick<State['notifications'][0], 'icon' | 'content'>> = ({
 }) => {
   const theme = useTheme();
   const defaultColor = theme.base === 'dark' ? theme.color.mediumdark : theme.color.mediumlight;
+
   return (
     <>
       {!icon || (
         <NotificationIconWrapper>
-          <Icons
-            icon={icon.name as IconsProps['icon']}
-            width={16}
-            height={16}
-            color={icon.color || defaultColor}
-          />
+          {React.isValidElement(icon)
+            ? icon
+            : typeof icon === 'object' &&
+              'name' in icon && (
+                <Icons icon={icon.name as IconsProps['icon']} color={icon.color || defaultColor} />
+              )}
         </NotificationIconWrapper>
       )}
       <NotificationTextWrapper>

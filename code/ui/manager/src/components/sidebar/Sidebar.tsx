@@ -183,7 +183,7 @@ export const Sidebar = React.memo(function Sidebar({
         </Top>
       </ScrollArea>
       {isLoading ? null : (
-        <Bottom>
+        <Bottom className="sb-bar">
           {bottom.map(({ id, render: Render }) => (
             <Render key={id} />
           ))}

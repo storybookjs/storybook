@@ -77,7 +77,7 @@ export class MissingFrameworkFieldError extends StorybookError {
     return dedent`
       Could not find a 'framework' field in Storybook config.
 
-      Please run 'npx storybook@next automigrate' to automatically fix your config.
+      Please run 'npx storybook automigrate' to automatically fix your config.
     `;
   }
 }
@@ -98,7 +98,7 @@ export class InvalidFrameworkNameError extends StorybookError {
     return dedent`
       Invalid value of '${this.data.frameworkName}' in the 'framework' field of Storybook config.
 
-      Please run 'npx storybook@next automigrate' to automatically fix your config.
+      Please run 'npx storybook automigrate' to automatically fix your config.
     `;
   }
 }
@@ -276,7 +276,7 @@ export class AngularLegacyBuildOptionsError extends StorybookError {
       Your Storybook startup script uses a solution that is not supported anymore.
       You must use Angular builder to have an explicit configuration on the project used in angular.json.
 
-      Please run 'npx storybook@next automigrate' to automatically fix your config.
+      Please run 'npx storybook automigrate' to automatically fix your config.
     `;
   }
 }
@@ -390,7 +390,7 @@ export class NoMatchingExportError extends StorybookError {
       Correct example:
       { "@storybook/react": "7.5.3", "@storybook/react-vite": "7.5.3", "storybook": "7.5.3" }
 
-      Please run \`npx storybook@latest doctor\` for guidance on how to fix this issue.
+      Please run \`npx storybook doctor\` for guidance on how to fix this issue.
     `;
   }
 }
@@ -557,7 +557,7 @@ export class UpgradeStorybookToSameVersionError extends StorybookError {
 
       If you intended to re-run automigrations, you should run the "automigrate" command directly instead:
 
-      "npx storybook@${this.data.beforeVersion} automigrate"
+      "npx storybook automigrate"
     `;
   }
 }

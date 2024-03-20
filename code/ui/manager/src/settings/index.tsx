@@ -80,7 +80,7 @@ const Pages: FC<{
 
   return (
     <Fragment>
-      <Header>
+      <Header className="sb-bar">
         <TabBar role="tablist">
           <TabBarButton id="about" title="About" changeTab={changeTab} />
           {enableWhatsNew && (

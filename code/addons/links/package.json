@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-links",
-  "version": "8.1.0-alpha.2",
+  "version": "8.1.0-alpha.3",
   "description": "Link stories together to build demos and prototypes with your UI components",
   "keywords": [
     "addon",
@@ -33,8 +33,12 @@
       "require": "./dist/react/index.js",
       "import": "./dist/react/index.mjs"
     },
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "require": "./dist/preview.js",
+      "import": "./dist/preview.mjs"
+    },
     "./manager": "./dist/manager.js",
-    "./preview": "./dist/preview.js",
     "./register": "./dist/manager.js",
     "./package.json": "./package.json"
   },

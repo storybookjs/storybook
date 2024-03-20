@@ -478,14 +478,6 @@ export class CsfFile {
       throw new NoMetaError('missing default export', self._ast, self._fileName);
     }
 
-    if (!self._meta.title && !self._meta.component) {
-      throw new Error(dedent`
-        CSF: missing title/component ${formatLocation(self._ast, self._fileName)}
-
-        More info: https://storybook.js.org/docs/react/writing-stories#default-export
-      `);
-    }
-
     // default export can come at any point in the file, so we do this post processing last
     const entries = Object.entries(self._stories);
     self._meta.title = this._makeTitle(self._meta?.title as string);

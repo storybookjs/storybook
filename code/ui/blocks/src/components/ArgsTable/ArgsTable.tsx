@@ -166,7 +166,6 @@ export const TableWrapper = styled.table<{
 }));
 
 const StyledIconButton = styled(IconButton as any)(({ theme }) => ({
-  color: theme.barTextColor,
   margin: '-4px -12px -4px 0',
 }));
 

@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { join, relative } from 'path';
 import type { Options as ExecaOptions } from 'execa';
 import pLimit from 'p-limit';
@@ -15,7 +14,6 @@ import { allTemplates as sandboxTemplates } from '../../code/lib/cli/src/sandbox
 import storybookVersions from '../../code/lib/core-common/src/versions';
 import { JsPackageManagerFactory } from '../../code/lib/core-common/src/js-package-manager/JsPackageManagerFactory';
 
-// eslint-disable-next-line import/no-cycle
 import { localizeYarnConfigFiles, setupYarn } from './utils/yarn';
 import type { GeneratorConfig } from './utils/types';
 import { getStackblitzUrl, renderTemplate } from './utils/template';
@@ -62,7 +60,6 @@ const withLocalRegistry = async (packageManager: JsPackageManager, action: () =>
     await packageManager.setRegistryURL(prevUrl);
 
     if (error) {
-      // eslint-disable-next-line no-unsafe-finally
       throw error;
     }
   }

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-interactions",
-  "version": "8.1.0-alpha.2",
+  "version": "8.1.0-alpha.3",
   "description": "Automate, test and debug user interactions",
   "keywords": [
     "storybook-addons",
@@ -28,8 +28,12 @@
       "require": "./dist/index.js",
       "import": "./dist/index.mjs"
     },
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "require": "./dist/preview.js",
+      "import": "./dist/preview.mjs"
+    },
     "./manager": "./dist/manager.js",
-    "./preview": "./dist/preview.js",
     "./preset": "./dist/preset.js",
     "./register.js": "./dist/manager.js",
     "./package.json": "./package.json"

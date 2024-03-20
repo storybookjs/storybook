@@ -510,8 +510,8 @@ For migrating to CSF, see: [`storyStoreV6` and `storiesOf` is deprecated](#story
 In Storybook 7, these packages existed for backwards compatibility, but were marked as deprecated:
 
 - `@storybook/addons` - this package has been split into 2 packages: `@storybook/preview-api` and `@storybook/manager-api`, see more here: [New Addons API](#new-addons-api).
-- `@storybook/channel-postmessage` - this package has been merged into `@storybook/channel`.
-- `@storybook/channel-websocket` - this package has been merged into `@storybook/channel`.
+- `@storybook/channel-postmessage` - this package has been merged into `@storybook/channels`.
+- `@storybook/channel-websocket` - this package has been merged into `@storybook/channels`.
 - `@storybook/client-api` - this package has been merged into `@storybook/preview-api`.
 - `@storybook/core-client` - this package has been merged into `@storybook/preview-api`.
 - `@storybook/preview-web` - this package has been merged into `@storybook/preview-api`.
@@ -554,7 +554,7 @@ export default defineConfig({
 
 ```ts
 import { defineConfig } from "vite";
-import svelte from "@sveltejs/vite-plugin-svelte";
+import { svelte } from "@sveltejs/vite-plugin-svelte";
 
 export default defineConfig({
   plugins: [svelte()],

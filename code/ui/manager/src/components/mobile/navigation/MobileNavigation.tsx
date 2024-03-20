@@ -45,7 +45,7 @@ export const MobileNavigation: FC<MobileNavigationProps> = ({ menu, panel, showP
       {isMobilePanelOpen ? (
         <MobileAddonsDrawer>{panel}</MobileAddonsDrawer>
       ) : (
-        <Nav>
+        <Nav className="sb-bar">
           <Button onClick={() => setMobileMenuOpen(!isMobileMenuOpen)} title="Open navigation menu">
             <MenuIcon />
             <Text>{fullStoryName}</Text>
@@ -84,7 +84,7 @@ const Button = styled.button(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   gap: 10,
-  color: theme.color.mediumdark,
+  color: theme.barTextColor,
   fontSize: `${theme.typography.size.s2 - 1}px`,
   padding: '0 7px',
   fontWeight: theme.typography.weight.bold,

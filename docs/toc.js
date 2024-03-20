@@ -741,6 +741,29 @@ module.exports = {
           ],
         },
         {
+          title: 'Portable stories',
+          pathSegment: '',
+          type: 'menu',
+          children: [
+            {
+              pathSegment: 'portable-stories-jest',
+              title: 'Jest',
+              type: 'link',
+            },
+            {
+              pathSegment: 'portable-stories-playwright',
+              title: 'Playwright',
+              type: 'link',
+            },
+            {
+              pathSegment: 'portable-stories-vitest',
+              title: 'Vitest',
+              type: 'link',
+            },
+          ],
+        },
+        
+        {
           pathSegment: 'new-frameworks',
           title: 'Frameworks',
           type: 'link',

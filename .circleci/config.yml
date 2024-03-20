@@ -47,6 +47,19 @@ executors:
         environment:
           NODE_OPTIONS: --max_old_space_size=6144
     resource_class: <<parameters.class>>
+  sb_playwright_component_testing:
+    parameters:
+      class:
+        description: The Resource class
+        type: enum
+        enum: ["small", "medium", "medium+", "large", "xlarge"]
+        default: "small"
+    working_directory: /tmp/storybook
+    docker:
+      - image: mcr.microsoft.com/playwright:v1.42.1-jammy
+        environment:
+          NODE_OPTIONS: --max_old_space_size=6144
+    resource_class: <<parameters.class>>
 
 orbs:
   git-shallow-clone: guitarrapc/git-shallow-clone@2.5.0
@@ -565,7 +578,39 @@ jobs:
                   STORYBOOK_INIT_EMPTY_TYPE: << parameters.template >>
                   STORYBOOK_DISABLE_TELEMETRY: true
       - report-workflow-on-failure
-
+  test-portable-stories:
+    parameters:
+      directory:
+        type: string
+    executor:
+      name: sb_playwright_component_testing
+      class: medium
+    steps:
+      - git-shallow-clone/checkout_advanced:
+          clone_options: "--depth 1 --verbose"
+      - attach_workspace:
+          at: .
+      - run:
+          name: Install dependencies
+          command: yarn install
+          working_directory: test-storybooks/portable-stories-kitchen-sink/<< parameters.directory >>
+      - run:
+          name: Run Jest tests
+          command: yarn jest
+          working_directory: test-storybooks/portable-stories-kitchen-sink/<< parameters.directory >>
+      - run:
+          name: Run Vitest tests
+          command: yarn vitest
+          working_directory: test-storybooks/portable-stories-kitchen-sink/<< parameters.directory >>
+      - run:
+          name: Run Playwright CT tests
+          command: yarn playwright
+          working_directory: test-storybooks/portable-stories-kitchen-sink/<< parameters.directory >>
+      - run:
+          name: Run Cypress CT tests
+          command: yarn cypress
+          working_directory: test-storybooks/portable-stories-kitchen-sink/<< parameters.directory >>
+      - report-workflow-on-failure
 workflows:
   docs:
     when:
@@ -624,6 +669,12 @@ workflows:
           parallelism: 5
           requires:
             - build-sandboxes
+      - test-portable-stories:
+          requires:
+            - build
+          matrix:
+            parameters:
+              directory: ["react", "vue3", "nextjs", "svelte"]
       # TODO: reenable once we find out the source of flakyness
       # - test-runner-dev:
       #     requires:
@@ -676,6 +727,12 @@ workflows:
           parallelism: 14
           requires:
             - build-sandboxes
+      - test-portable-stories:
+          requires:
+            - build
+          matrix:
+            parameters:
+              directory: ["react", "vue3", "nextjs", "svelte"]
       - bench:
           parallelism: 5
           requires:
@@ -733,7 +790,12 @@ workflows:
           parallelism: 30
           requires:
             - build-sandboxes
-
+      - test-portable-stories:
+          requires:
+            - build
+          matrix:
+            parameters:
+              directory: ["react", "vue3", "nextjs", "svelte"]
       - test-empty-init:
           requires:
             - build

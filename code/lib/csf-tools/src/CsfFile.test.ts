@@ -619,7 +619,7 @@ describe('CsfFile', () => {
     });
 
     it('no metadata', () => {
-      expect(() =>
+      expect(
         parse(
           dedent`
           export default { foo: '5' };
@@ -627,7 +627,15 @@ describe('CsfFile', () => {
           export const B = () => {};
       `
         )
-      ).toThrow('CSF: missing title/component');
+      ).toMatchInlineSnapshot(`
+        meta:
+          title: Default Title
+        stories:
+          - id: default-title--a
+            name: A
+          - id: default-title--b
+            name: B
+      `);
     });
 
     it('dynamic titles', () => {

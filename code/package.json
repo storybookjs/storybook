@@ -1,6 +1,6 @@
 {
   "name": "@storybook/root",
-  "version": "8.1.0-alpha.2",
+  "version": "8.1.0-alpha.3",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -25,6 +25,7 @@
     ]
   },
   "scripts": {
+    "affected:test": "nx show projects --affected -t test | xargs -I # echo --project # | xargs yarn test:watch",
     "await-serve-storybooks": "wait-on http://localhost:8001",
     "build": "NODE_ENV=production yarn --cwd ../scripts build-package",
     "changelog": "pr-log --sloppy --cherry-pick",
@@ -34,6 +35,7 @@
     "danger": "danger",
     "generate-sandboxes": "yarn --cwd ../scripts generate-sandboxes",
     "github-release": "github-release-from-changelog",
+    "i": "yarn --cwd .. i",
     "lint": "yarn lint:js && yarn lint:md",
     "lint:ejs": "ejslint **/*.ejs",
     "lint:js": "yarn lint:js:cmd .  --quiet",
@@ -89,7 +91,9 @@
   },
   "dependencies": {
     "@chromatic-com/storybook": "^1.2.18",
-    "@nx/workspace": "17.0.2",
+    "@nx/eslint": "18.0.6",
+    "@nx/vite": "18.0.6",
+    "@nx/workspace": "18.0.6",
     "@playwright/test": "1.36.0",
     "@storybook/addon-a11y": "workspace:*",
     "@storybook/addon-actions": "workspace:*",
@@ -207,7 +211,7 @@
     "lodash": "^4.17.21",
     "mock-require": "^3.0.3",
     "node-gyp": "^9.3.1",
-    "nx": "17.0.2",
+    "nx": "18.0.6",
     "prettier": "^3.1.1",
     "process": "^0.11.10",
     "raf": "^3.4.1",
@@ -249,13 +253,17 @@
       "built": false
     }
   },
-  "packageManager": "yarn@4.0.2",
+  "packageManager": "yarn@4.1.1",
   "engines": {
     "node": ">=18.0.0"
   },
   "collective": {
     "type": "opencollective",
     "url": "https://opencollective.com/storybook"
+  },
+  "nx": {
+    "name": "root",
+    "includedScripts": []
   },
   "pr-log": {
     "skipLabels": [

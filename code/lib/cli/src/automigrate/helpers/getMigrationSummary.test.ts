@@ -104,7 +104,7 @@ describe('getMigrationSummary', () => {
 
       ─────────────────────────────────────────────────
 
-      If you'd like to run the migrations again, you can do so by running 'npx storybook@next automigrate'
+      If you'd like to run the migrations again, you can do so by running 'npx storybook automigrate'
 
       The automigrations try to migrate common patterns in your project, but might not contain everything needed to migrate to the latest version of Storybook.
 
@@ -124,7 +124,7 @@ describe('getMigrationSummary', () => {
     expect(summary).toMatchInlineSnapshot(`
       "No migrations were applicable to your project
 
-      If you'd like to run the migrations again, you can do so by running 'npx storybook@next automigrate'
+      If you'd like to run the migrations again, you can do so by running 'npx storybook automigrate'
 
       The automigrations try to migrate common patterns in your project, but might not contain everything needed to migrate to the latest version of Storybook.
 
@@ -144,7 +144,7 @@ describe('getMigrationSummary', () => {
     expect(summary).toMatchInlineSnapshot(`
       "No migrations were applicable to your project
 
-      If you'd like to run the migrations again, you can do so by running 'npx storybook@next automigrate'
+      If you'd like to run the migrations again, you can do so by running 'npx storybook automigrate'
 
       The automigrations try to migrate common patterns in your project, but might not contain everything needed to migrate to the latest version of Storybook.
 

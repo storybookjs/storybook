@@ -252,17 +252,17 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   }
 
   async onPreloadStories({ ids }: { ids: string[] }) {
-    const { storyStoreValue } = this;
-    if (!storyStoreValue)
-      throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'onPreloadStories' });
+    await this.storeInitializationPromise;
 
-    /**
-     * It's possible that we're trying to preload a story in a ref we haven't loaded the iframe for yet.
-     * Because of the way the targeting works, if we can't find the targeted iframe,
-     * we'll use the currently active iframe which can cause the event to be targeted
-     * to the wrong iframe, causing an error if the storyId does not exists there.
-     */
-    await Promise.allSettled(ids.map((id) => storyStoreValue.loadEntry(id)));
+    if (this.storyStoreValue) {
+      /**
+       * It's possible that we're trying to preload a story in a ref we haven't loaded the iframe for yet.
+       * Because of the way the targeting works, if we can't find the targeted iframe,
+       * we'll use the currently active iframe which can cause the event to be targeted
+       * to the wrong iframe, causing an error if the storyId does not exists there.
+       */
+      await Promise.allSettled(ids.map((id) => this.storyStoreValue?.loadEntry(id)));
+    }
   }
 
   // RENDERING

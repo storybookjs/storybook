@@ -6,7 +6,7 @@ import { copy, emptyDir, remove, writeFile } from 'fs-extra';
 import { execaCommand } from 'execa';
 
 import { getTemplatesData, renderTemplate } from './utils/template';
-// eslint-disable-next-line import/no-cycle
+
 import { commitAllToGit } from './utils/git';
 import { REPROS_DIRECTORY } from '../utils/constants';
 import { glob } from 'glob';

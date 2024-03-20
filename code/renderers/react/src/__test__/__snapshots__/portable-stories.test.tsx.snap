@@ -100,3 +100,21 @@ exports[`Renders LoaderStory story 1`] = `
   </div>
 </body>
 `;
+
+exports[`Renders WithActionArg story 1`] = `
+<body>
+  <div>
+    <button />
+  </div>
+</body>
+`;
+
+exports[`Renders WithActionArgType story 1`] = `
+<body>
+  <div>
+    <div>
+      nothing
+    </div>
+  </div>
+</body>
+`;

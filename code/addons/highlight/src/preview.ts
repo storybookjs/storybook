@@ -8,17 +8,11 @@ const { document } = global;
 
 type OutlineStyle = 'dotted' | 'dashed' | 'solid' | 'double';
 
-export const highlightStyle = (color = '#FF4785', style: OutlineStyle = 'dashed') => `
+const highlightStyle = (color = '#FF4785', style: OutlineStyle = 'dashed') => `
   outline: 2px ${style} ${color};
   outline-offset: 2px;
   box-shadow: 0 0 0 6px rgba(255,255,255,0.6);
 `;
-
-export const highlightObject = (color: string) => ({
-  outline: `2px dashed ${color}`,
-  outlineOffset: 2,
-  boxShadow: '0 0 0 6px rgba(255,255,255,0.6)',
-});
 
 interface HighlightInfo {
   /** html selector of the element */

@@ -130,6 +130,8 @@ export const renderJsx = (code: React.ReactElement, options?: JSXOptions) => {
           return el.type.displayName;
         } else if (getDocgenSection(el.type, 'displayName')) {
           return getDocgenSection(el.type, 'displayName');
+        } else if (el.type.render?.displayName) {
+          return el.type.render.displayName;
         } else if (
           typeof el.type === 'symbol' ||
           (el.type.$$typeof && typeof el.type.$$typeof === 'symbol')

@@ -123,30 +123,55 @@ describe('renderJsx', () => {
     `);
   });
 
-  it('forwardRef component', () => {
-    const MyExoticComponentRef = React.forwardRef<FC, PropsWithChildren>(
-      function MyExoticComponent(props, _ref) {
-        return <div>{props.children}</div>;
-      }
-    );
+  describe('forwardRef component', () => {
+    it('with no displayName', () => {
+      const MyExoticComponentRef = React.forwardRef<FC, PropsWithChildren>(
+        function MyExoticComponent(props, _ref) {
+          return <div>{props.children}</div>;
+        }
+      );
 
-    expect(renderJsx(<MyExoticComponentRef>I am forwardRef!</MyExoticComponentRef>))
-      .toMatchInlineSnapshot(`
-        <React.ForwardRef>
-          I am forwardRef!
-        </React.ForwardRef>
-      `);
+      expect(renderJsx(<MyExoticComponentRef>I am forwardRef!</MyExoticComponentRef>))
+        .toMatchInlineSnapshot(`
+          <React.ForwardRef>
+            I am forwardRef!
+          </React.ForwardRef>
+        `);
+    });
 
-    // if docgenInfo is present, it should use the displayName from there
-    (MyExoticComponentRef as any).__docgenInfo = {
-      displayName: 'ExoticComponent',
-    };
-    expect(renderJsx(<MyExoticComponentRef>I am forwardRef!</MyExoticComponentRef>))
-      .toMatchInlineSnapshot(`
+    it('with displayName coming from docgen', () => {
+      const MyExoticComponentRef = React.forwardRef<FC, PropsWithChildren>(
+        function MyExoticComponent(props, _ref) {
+          return <div>{props.children}</div>;
+        }
+      );
+      (MyExoticComponentRef as any).__docgenInfo = {
+        displayName: 'ExoticComponent',
+      };
+      expect(renderJsx(<MyExoticComponentRef>I am forwardRef!</MyExoticComponentRef>))
+        .toMatchInlineSnapshot(`
+          <ExoticComponent>
+            I am forwardRef!
+          </ExoticComponent>
+        `);
+    });
+
+    it('with displayName coming from forwarded render function', () => {
+      const MyExoticComponentRef = React.forwardRef<FC, PropsWithChildren>(
+        Object.assign(
+          function MyExoticComponent(props: any, _ref: any) {
+            return <div>{props.children}</div>;
+          },
+          { displayName: 'ExoticComponent' }
+        )
+      );
+      expect(renderJsx(<MyExoticComponentRef>I am forwardRef!</MyExoticComponentRef>))
+        .toMatchInlineSnapshot(`
         <ExoticComponent>
           I am forwardRef!
         </ExoticComponent>
       `);
+    });
   });
 
   it('memo component', () => {

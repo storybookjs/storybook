@@ -210,4 +210,20 @@ describe('Helpers', () => {
       }).toThrowError(`Could not coerce ${invalidSemverString} into a semver.`);
     });
   });
+
+  describe('hasStorybookDependencies', () => {
+    it(`should return true when any storybook dependency exists`, async () => {
+      const result = await helpers.hasStorybookDependencies({
+        getAllDependencies: async () => ({ storybook: 'x.y.z' }),
+      } as unknown as JsPackageManager);
+      expect(result).toEqual(true);
+    });
+
+    it(`should return false when no storybook dependency exists`, async () => {
+      const result = await helpers.hasStorybookDependencies({
+        getAllDependencies: async () => ({ axios: 'x.y.z' }),
+      } as unknown as JsPackageManager);
+      expect(result).toEqual(false);
+    });
+  });
 });

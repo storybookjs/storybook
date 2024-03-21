@@ -577,6 +577,20 @@ export class UpgradeStorybookUnknownCurrentVersionError extends StorybookError {
   }
 }
 
+export class UpgradeStorybookInWrongWorkingDirectory extends StorybookError {
+  readonly category = Category.CLI_UPGRADE;
+
+  readonly code = 6;
+
+  template() {
+    return dedent`
+      You are running the upgrade command in a CWD that does not contain Storybook dependencies.
+
+      Did you mean to run it in a different directory? Make sure the directory you run this command in contains a package.json with your Storybook dependencies.
+    `;
+  }
+}
+
 export class NoStatsForViteDevError extends StorybookError {
   readonly category = Category.BUILDER_VITE;
 

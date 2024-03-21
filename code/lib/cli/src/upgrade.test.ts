@@ -16,6 +16,7 @@ vi.mock('@storybook/core-common', async (importOriginal) => {
     JsPackageManagerFactory: {
       getPackageManager: () => ({
         findInstallations: findInstallationsMock,
+        getAllDependencies: async () => ({ storybook: '8.0.0' }),
       }),
     },
     versions: Object.keys(originalModule.versions).reduce(

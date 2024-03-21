@@ -1,3 +1,14 @@
+## 8.1.0-alpha.4
+
+- Addon Docs: Support Stencil based display names in source snippets - [#26592](https://github.com/storybookjs/storybook/pull/26592), thanks @yannbf!
+- Angular: Add type support for Angular's input signals - [#26413](https://github.com/storybookjs/storybook/pull/26413), thanks @valentinpalkovic!
+- Angular: Add type support for Angular's output signals - [#26546](https://github.com/storybookjs/storybook/pull/26546), thanks @valentinpalkovic!
+- CLI: Instruct the correct auto-migration command - [#26515](https://github.com/storybookjs/storybook/pull/26515), thanks @ndelangen!
+- CLI: Throw an error when running upgrade command in incorrect cwd - [#26585](https://github.com/storybookjs/storybook/pull/26585), thanks @yannbf!
+- CSF: Allow default export without title or component attributes - [#26516](https://github.com/storybookjs/storybook/pull/26516), thanks @kasperpeulen!
+- Core: Fix preloading too early - [#26442](https://github.com/storybookjs/storybook/pull/26442), thanks @ndelangen!
+- UI: Replace the icon prop in the Manager API - [#26477](https://github.com/storybookjs/storybook/pull/26477), thanks @cdedreuille!
+
 ## 8.1.0-alpha.3
 
 - Addon Docs: Fix [Object object] displayName in some JSX components - [#26566](https://github.com/storybookjs/storybook/pull/26566), thanks @yannbf!

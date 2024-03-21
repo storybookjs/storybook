@@ -296,3 +296,9 @@ export function coerceSemver(version: string) {
   invariant(coercedSemver != null, `Could not coerce ${version} into a semver.`);
   return coercedSemver;
 }
+
+export async function hasStorybookDependencies(packageManager: JsPackageManager) {
+  const currentPackageDeps = await packageManager.getAllDependencies();
+
+  return Object.keys(currentPackageDeps).some((dep) => dep.includes('storybook'));
+}

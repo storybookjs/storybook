@@ -1,3 +1,8 @@
+## 8.0.3
+
+- Bug: Remove redundant component check, as we auto-generate titles from the file system - [#26516](https://github.com/storybookjs/storybook/pull/26516), thanks @kasperpeulen!
+- UI: Replace the icon prop in the Manager API - [#26477](https://github.com/storybookjs/storybook/pull/26477), thanks @cdedreuille!
+
 ## 8.0.2
 
 - Addon Docs: Fix [Object object] displayName in some JSX components - [#26566](https://github.com/storybookjs/storybook/pull/26566), thanks @yannbf!

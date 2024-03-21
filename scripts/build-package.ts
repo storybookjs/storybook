@@ -6,6 +6,7 @@ import chalk from 'chalk';
 import windowSize from 'window-size';
 import { execaCommand } from 'execa';
 import { getWorkspaces } from './utils/workspace';
+import { findMostMatchText } from './utils/diff';
 
 async function run() {
   const packages = await getWorkspaces();
@@ -18,10 +19,16 @@ async function run() {
         helpText: `build only the ${pkg.name} package`,
       };
     })
-    .reduce((acc, next) => {
-      acc[next.name] = next;
-      return acc;
-    }, {} as Record<string, { name: string; defaultValue: boolean; suffix: string; helpText: string }>);
+    .reduce(
+      (acc, next) => {
+        acc[next.name] = next;
+        return acc;
+      },
+      {} as Record<
+        string,
+        { name: string; defaultValue: boolean; suffix: string; helpText: string }
+      >
+    );
 
   const tasks: Record<
     string,
@@ -140,6 +147,25 @@ async function run() {
       process.stderr.write(`${chalk.red(v.name)}:\n${data}`);
     });
   });
+
+  if (!selection.length && (watchMode || prodMode)) {
+    const args = program.rawArgs.slice(3);
+    const suffixList = Object.values(tasks)
+      .filter((t) => t.name.includes('@storybook'))
+      .map((t) => t.suffix);
+
+    for (const arg of args) {
+      const matchText = findMostMatchText(suffixList, arg);
+
+      if (matchText) {
+        console.log(
+          `\n${chalk.red('Error')}: ${chalk.cyan(
+            arg
+          )} is not a valid package name, Did you mean ${chalk.cyan(matchText)}?`
+        );
+      }
+    }
+  }
 }
 
 run().catch((e) => {

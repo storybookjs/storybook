@@ -2769,6 +2769,7 @@ __metadata:
     danger: "npm:^11.2.6"
     dataloader: "npm:^2.2.2"
     detect-port: "npm:^1.3.0"
+    diff-match-patch-es: "npm:^0.1.0"
     ejs: "npm:^3.1.8"
     ejs-lint: "npm:^2.0.0"
     esbuild: "npm:^0.20.1"
@@ -6102,6 +6103,13 @@ __metadata:
   dependencies:
     dequal: "npm:^2.0.0"
   checksum: 10c0/e0928ab8f94c59417a2b8389c45c55ce0a02d9ac7fd74ef62d01ba48060129e1d594501b77de01f3eeafc7cb00773819b0df74d96251cf20b31c5b3071f45c0e
+  languageName: node
+  linkType: hard
+
+"diff-match-patch-es@npm:^0.1.0":
+  version: 0.1.0
+  resolution: "diff-match-patch-es@npm:0.1.0"
+  checksum: c456d10662506f676489c1572af2a48ad52d015a856b74bf16594d39f11c9a352cd763fd66b5a5952c86a18818f4b7de28d55876e7ffd47f5d71282e3a5056a2
   languageName: node
   linkType: hard
 

@@ -25,21 +25,27 @@ export const TextControl: FC<TextProps> = ({
   onFocus,
   onBlur,
   maxLength,
+  argType,
 }) => {
   const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     onChange(event.target.value);
   };
 
+  const readonly = !!argType?.table?.readonly;
+
   const [forceVisible, setForceVisible] = useState(false);
+
   const onForceVisible = useCallback(() => {
     onChange('');
     setForceVisible(true);
   }, [setForceVisible]);
+
   if (value === undefined) {
     return (
       <Button
         variant="outline"
         size="medium"
+        disabled={readonly}
         id={getControlSetterButtonId(name)}
         onClick={onForceVisible}
       >
@@ -49,12 +55,14 @@ export const TextControl: FC<TextProps> = ({
   }
 
   const isValid = typeof value === 'string';
+
   return (
     <Wrapper>
       <Form.Textarea
         id={getControlId(name)}
         maxLength={maxLength}
         onChange={handleChange}
+        disabled={readonly}
         size="flex"
         placeholder="Edit string..."
         autoFocus={forceVisible}

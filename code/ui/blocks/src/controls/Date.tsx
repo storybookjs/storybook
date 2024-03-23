@@ -36,6 +36,10 @@ export const formatTime = (value: Date | number) => {
   return `${hours}:${minutes}`;
 };
 
+const FormInput = styled(Form.Input)(({ readOnly }) => ({
+  opacity: readOnly ? 0.5 : 1,
+}));
+
 const FlexSpaced = styled.div(({ theme }) => ({
   flex: 1,
   display: 'flex',
@@ -61,10 +65,12 @@ const FlexSpaced = styled.div(({ theme }) => ({
 }));
 
 export type DateProps = ControlProps<DateValue> & DateConfig;
-export const DateControl: FC<DateProps> = ({ name, value, onChange, onFocus, onBlur }) => {
+export const DateControl: FC<DateProps> = ({ name, value, onChange, onFocus, onBlur, argType }) => {
   const [valid, setValid] = useState(true);
   const dateRef = useRef<HTMLInputElement>();
   const timeRef = useRef<HTMLInputElement>();
+  const readonly = !!argType?.table?.readonly;
+
   useEffect(() => {
     if (valid !== false) {
       if (dateRef && dateRef.current) {
@@ -99,21 +105,23 @@ export const DateControl: FC<DateProps> = ({ name, value, onChange, onFocus, onB
 
   return (
     <FlexSpaced>
-      <Form.Input
+      <FormInput
         type="date"
         max="9999-12-31" // I do this because of a rendering bug in chrome
         ref={dateRef as RefObject<HTMLInputElement>}
         id={`${controlId}-date`}
         name={`${controlId}-date`}
+        readOnly={readonly}
         onChange={onDateChange}
         {...{ onFocus, onBlur }}
       />
-      <Form.Input
+      <FormInput
         type="time"
         id={`${controlId}-time`}
         name={`${controlId}-time`}
         ref={timeRef as RefObject<HTMLInputElement>}
         onChange={onTimeChange}
+        readOnly={readonly}
         {...{ onFocus, onBlur }}
       />
       {!valid ? <div>invalid</div> : null}

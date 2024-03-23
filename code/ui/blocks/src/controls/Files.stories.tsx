@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { fn } from '@storybook/test';
 import { FilesControl } from './Files';
 
-export default {
+const meta = {
   component: FilesControl,
   tags: ['autodocs'],
   parameters: { withRawArg: 'value', controls: { include: ['value', 'accept'] } },
@@ -11,19 +12,33 @@ export default {
       control: { type: 'file' },
     },
   },
-  args: { name: 'files' },
-} as Meta<typeof FilesControl>;
+  args: {
+    name: 'files',
+    onChange: fn(),
+  },
+} satisfies Meta<typeof FilesControl>;
 
-export const Undefined: StoryObj<typeof FilesControl> = {
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+export const Undefined: Story = {
   args: { value: undefined },
 };
 // for security reasons a file input field cannot have an initial value, so it doesn't make sense to have stories for it
 
-export const AcceptAnything: StoryObj<typeof FilesControl> = {
+export const AcceptAnything: Story = {
   args: { accept: '*/*' },
 };
 
-export const AcceptPDFs: StoryObj<typeof FilesControl> = {
+export const AcceptPDFs: Story = {
   name: 'Accept PDFs',
   args: { accept: '.pdf' },
+};
+
+export const Disabled: Story = {
+  args: {
+    accept: '*/*',
+    argType: { control: { readOnly: true } },
+  },
 };

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { fn } from '@storybook/test';
 import { OptionsControl } from './Options';
 
 const arrayOptions = ['Bat', 'Cat', 'Rat'];
@@ -25,6 +26,7 @@ const meta = {
     name: 'check',
     type: 'check',
     argType: { options: arrayOptions },
+    onChange: fn(),
   },
   argTypes: {
     value: {
@@ -32,31 +34,33 @@ const meta = {
       options: arrayOptions,
     },
   },
-} as Meta<typeof OptionsControl>;
+} satisfies Meta<typeof OptionsControl>;
 
 export default meta;
 
-export const Array: StoryObj<typeof OptionsControl> = {
+type Story = StoryObj<typeof meta>;
+
+export const Array: Story = {
   args: {
     value: [arrayOptions[0]],
   },
 };
 
-export const ArrayInline: StoryObj<typeof OptionsControl> = {
+export const ArrayInline: Story = {
   args: {
     type: 'inline-check',
     value: [arrayOptions[1], arrayOptions[2]],
   },
 };
 
-export const ArrayLabels: StoryObj<typeof OptionsControl> = {
+export const ArrayLabels: Story = {
   args: {
     value: [arrayOptions[0]],
     labels,
   },
 };
 
-export const ArrayInlineLabels: StoryObj<typeof OptionsControl> = {
+export const ArrayInlineLabels: Story = {
   args: {
     type: 'inline-check',
     value: [arrayOptions[1], arrayOptions[2]],
@@ -64,13 +68,13 @@ export const ArrayInlineLabels: StoryObj<typeof OptionsControl> = {
   },
 };
 
-export const ArrayUndefined: StoryObj<typeof OptionsControl> = {
+export const ArrayUndefined: Story = {
   args: {
     value: undefined,
   },
 };
 
-export const Object: StoryObj<typeof OptionsControl> = {
+export const Object: Story = {
   name: 'DEPRECATED: Object',
   args: {
     value: [objectOptions.B],
@@ -79,7 +83,7 @@ export const Object: StoryObj<typeof OptionsControl> = {
   argTypes: { value: { control: { type: 'object' } } },
 };
 
-export const ObjectInline: StoryObj<typeof OptionsControl> = {
+export const ObjectInline: Story = {
   name: 'DEPRECATED: Object Inline',
   args: {
     type: 'inline-check',
@@ -89,11 +93,23 @@ export const ObjectInline: StoryObj<typeof OptionsControl> = {
   argTypes: { value: { control: { type: 'object' } } },
 };
 
-export const ObjectUndefined: StoryObj<typeof OptionsControl> = {
+export const ObjectUndefined: Story = {
   name: 'DEPRECATED: Object Undefined',
   args: {
     value: undefined,
     argType: { options: objectOptions },
   },
   argTypes: { value: { control: { type: 'object' } } },
+};
+
+export const ArrayReadonly: Story = {
+  args: {
+    value: [arrayOptions[0]],
+    argType: {
+      options: arrayOptions,
+      table: {
+        readonly: true,
+      },
+    },
+  },
 };

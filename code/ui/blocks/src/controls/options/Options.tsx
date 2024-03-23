@@ -44,14 +44,17 @@ export const OptionsControl: FC<OptionsProps> = (props) => {
   const { type = 'select', labels, argType } = props;
   const normalized = {
     ...props,
+    argType,
     options: argType ? normalizeOptions(argType.options, labels) : {},
     isInline: type.includes('inline'),
     isMulti: type.includes('multi'),
   };
 
   const Control = Controls[type];
+
   if (Control) {
     return <Control {...normalized} />;
   }
+
   throw new Error(`Unknown options type: ${type}`);
 };

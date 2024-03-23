@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { fn } from '@storybook/test';
 import { ColorControl } from './Color';
 
-export default {
+const meta = {
   component: ColorControl,
   parameters: { withRawArg: 'value', controls: { include: ['value', 'startOpen'] } },
   tags: ['autodocs'],
@@ -12,22 +13,26 @@ export default {
       },
     },
   },
-  args: { name: 'color' },
-} as Meta<typeof ColorControl>;
+  args: { name: 'color', onChange: fn() },
+} satisfies Meta<typeof ColorControl>;
 
-export const Basic: StoryObj<typeof ColorControl> = {
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+export const Basic: Story = {
   args: {
     value: '#ff00ff',
   },
 };
 
-export const Undefined: StoryObj<typeof ColorControl> = {
+export const Undefined: Story = {
   args: {
     value: undefined,
   },
 };
 
-export const WithPresetColors: StoryObj<typeof ColorControl> = {
+export const WithPresetColors: Story = {
   args: {
     value: '#00ffff',
     presetColors: [
@@ -58,8 +63,15 @@ export const WithPresetColors: StoryObj<typeof ColorControl> = {
   },
 };
 
-export const StartOpen: StoryObj<typeof ColorControl> = {
+export const StartOpen: Story = {
   args: {
     startOpen: true,
+  },
+};
+
+export const Readonly: Story = {
+  args: {
+    value: '#ff00ff',
+    argType: { table: { readonly: true } },
   },
 };

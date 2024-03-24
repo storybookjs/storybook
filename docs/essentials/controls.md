@@ -385,6 +385,12 @@ Unless you need the flexibility of a function, an easier way to map primitives t
 
 Note that both `mapping` and `control.labels` don't have to be exhaustive. If the currently selected option is not listed, it's used verbatim.
 
+<Callout variant="warning">
+
+Controls do not currently work for iframe Stories in Docs mode. Please use inline Stories instead.
+
+</Callout>
+
 ## Configuration
 
 The Controls addon can be configured in two ways:

@@ -104,7 +104,8 @@ export const validateOptions = (args: Args, argTypes: ArgTypes): Args => {
     }
 
     const isArray = Array.isArray(args[key]);
-    const invalidIndex = isArray && args[key].findIndex((val: any) => !options.includes(val));
+    const invalidIndex =
+      isArray && args[key].findIndex((val: any) => !options.includes(val) && val !== undefined);
     const isValidArray = isArray && invalidIndex === -1;
 
     if (args[key] === undefined || options.includes(args[key]) || isValidArray) {

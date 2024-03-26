@@ -259,14 +259,27 @@ describe('validateOptions', () => {
     expect(once.warn).not.toHaveBeenCalled();
   });
 
-  it('supports arrays', () => {
-    expect(validateOptions({ a: [1, 2] }, { a: { options: [1, 2, 3] } })).toStrictEqual({
-      a: [1, 2],
+  describe('when options is an array', () => {
+    it('should work when all arg values are in options', () => {
+      expect(validateOptions({ a: [1, 2] }, { a: { options: [1, 2, 3] } })).toStrictEqual({
+        a: [1, 2],
+      });
     });
-    expect(validateOptions({ a: [1, 2, 4] }, { a: { options: [2, 3] } })).toStrictEqual({});
-    expect(once.warn).toHaveBeenCalledWith(
-      "Received illegal value for 'a[0]'. Supported options: 2, 3"
-    );
+
+    it('should work when some values are disabled with undefined', () => {
+      expect(
+        validateOptions({ a: [1, undefined, 3] }, { a: { options: [1, 2, 3] } })
+      ).toStrictEqual({
+        a: [1, undefined, 3],
+      });
+    });
+
+    it('should display a warning when there are illegal values', () => {
+      expect(validateOptions({ a: [1, 2, 4] }, { a: { options: [2, 3] } })).toStrictEqual({});
+      expect(once.warn).toHaveBeenCalledWith(
+        "Received illegal value for 'a[0]'. Supported options: 2, 3"
+      );
+    });
   });
 });
 

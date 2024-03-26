@@ -27,21 +27,18 @@ const Key = styled.span(({ theme }) => ({
   padding: '0 6px',
 }));
 
-const KeyChild = styled.code(
-  ({ theme }) => `
-  padding: 0;
-  vertical-align: middle;
+const KeyChild = styled.code({
+  padding: 0,
 
-  & + & {
-    margin-left: 6px;
-  }
-`
-);
+  '& + &': {
+    marginLeft: 6,
+  },
+});
 
 export const Shortcut: FC<{ keys: string[] }> = ({ keys }) => (
   <>
     <Key>
-      {keys.map((key, index) => (
+      {keys.map((key) => (
         <KeyChild key={key}>{shortcutToHumanString([key])}</KeyChild>
       ))}
     </Key>

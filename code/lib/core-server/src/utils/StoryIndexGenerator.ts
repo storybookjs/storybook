@@ -350,14 +350,7 @@ export class StoryIndexGenerator {
 
       const content = await fs.readFile(absolutePath, 'utf8');
 
-      const result: {
-        title?: ComponentTitle;
-        of?: Path;
-        name?: StoryName;
-        isTemplate?: boolean;
-        imports?: Path[];
-        tags?: Tag[];
-      } = analyze(content);
+      const result = analyze(content);
 
       // Templates are not indexed
       if (result.isTemplate) return false;
@@ -433,7 +426,7 @@ export class StoryIndexGenerator {
         storiesImports: sortedDependencies.map((dep) => dep.entries[0].importPath),
         type: 'docs',
         // FIXME: update this to use the index entry's metaTags once we update this to run on `IndexInputs`
-        tags: [...(result.tags || []), csfEntry ? 'attached-mdx' : 'unattached-mdx', 'docs'],
+        tags: [...(result.metaTags || []), csfEntry ? 'attached-mdx' : 'unattached-mdx', 'docs'],
       };
       return docsEntry;
     } catch (err) {

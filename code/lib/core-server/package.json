@@ -64,7 +64,7 @@
     "@storybook/core-events": "workspace:*",
     "@storybook/csf": "^0.1.2",
     "@storybook/csf-tools": "workspace:*",
-    "@storybook/docs-mdx": "3.0.0",
+    "@storybook/docs-mdx": "^3.1.0",
     "@storybook/global": "^5.0.0",
     "@storybook/manager": "workspace:*",
     "@storybook/manager-api": "workspace:*",

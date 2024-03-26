@@ -2,7 +2,7 @@ import type { FC, ChangeEvent, FocusEvent } from 'react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { HexColorPicker, HslaStringColorPicker, RgbaStringColorPicker } from 'react-colorful';
 import convert from 'color-convert';
-import throttle from 'lodash/throttle.js';
+import debounce from 'lodash/debounce.js';
 import { styled } from '@storybook/theming';
 import { TooltipNote, WithTooltip, Form } from '@storybook/components';
 
@@ -317,10 +317,10 @@ export const ColorControl: FC<ColorControlProps> = ({
   startOpen = false,
   argType,
 }) => {
-  const throttledOnChange = useCallback(throttle(onChange, 200), [onChange]);
+  const debouncedOnChange = useCallback(debounce(onChange, 200), [onChange]);
   const { value, realValue, updateValue, color, colorSpace, cycleColorSpace } = useColorInput(
     initialValue,
-    throttledOnChange
+    debouncedOnChange
   );
   const { presets, addPreset } = usePresets(presetColors, color, colorSpace);
   const Picker = ColorPicker[colorSpace];

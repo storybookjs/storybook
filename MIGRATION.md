@@ -2646,6 +2646,10 @@ Additionally to changing the docs information architecture, we've updated the AP
 
 The primary change of the `Meta` block is the ability to attach to CSF files with `<Meta of={}>` as described above.
 
+##### Title block
+
+The `Title` block now also accepts an `of` prop as described above. It still accepts being passed `children`.
+
 ##### Description block, `parameters.notes` and `parameters.info`
 
 In 6.5 the Description doc block accepted a range of different props, `markdown`, `type` and `children` as a way to customize the content.

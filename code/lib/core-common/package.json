@@ -76,12 +76,10 @@
   "devDependencies": {
     "@types/find-cache-dir": "^3.2.1",
     "@types/fs-extra": "^11.0.1",
-    "@types/mock-fs": "^4.13.1",
     "@types/node": "^18.0.0",
     "@types/node-fetch": "^2.6.4",
     "@types/picomatch": "^2.3.0",
     "@types/pretty-hrtime": "^1.0.0",
-    "mock-fs": "^5.2.0",
     "slash": "^5.0.0",
     "type-fest": "~2.19",
     "typescript": "^5.3.2"

@@ -1,5 +1,5 @@
+import mock from '../../mock';
 import { describe, beforeEach, afterEach, it, expect } from 'vitest';
-import mock from 'mock-fs';
 import { getPreviewHeadTemplate, getPreviewBodyTemplate } from '../template';
 
 const HEAD_HTML_CONTENTS = '<script>console.log("custom script!");</script>';

@@ -3,6 +3,7 @@ import { dedent } from 'ts-dedent';
 
 import { logger } from '@storybook/client-logger';
 
+import type { ViewMode } from '@storybook/csf';
 import type { Background } from '../types';
 
 const { document, window } = global;
@@ -53,6 +54,38 @@ const clearStyle = (selector: string) => {
   const element = document.getElementById(selector) as HTMLElement;
   if (element) {
     element.parentElement?.removeChild(element);
+  }
+};
+
+export const getParentElement = (viewMode: ViewMode, contextId: string) => {
+  if (viewMode === 'docs') {
+    const rootElement = document.getElementById(`anchor--${contextId}`);
+    return rootElement.getElementsByClassName('docs-story').item(0) as HTMLElement;
+  }
+  return document.getElementsByTagName('body').item(0);
+};
+
+export const addGridElement = (selector: string, css: string, parentElement: HTMLElement) => {
+  const existingStyle = document.getElementById(selector) as HTMLElement;
+  if (existingStyle) {
+    if (existingStyle.innerHTML !== css) {
+      existingStyle.innerHTML = css;
+    }
+  } else {
+    const style = document.createElement('style') as HTMLElement;
+    style.setAttribute('id', selector);
+    style.innerHTML = css;
+    document.head.appendChild(style);
+  }
+
+  const gridElementId = `${selector}-component`;
+  const existingGridElement = document.getElementById(gridElementId);
+  if (!existingGridElement) {
+    const div = document.createElement('div');
+    div.setAttribute('id', gridElementId);
+    div.classList.add('grid');
+
+    parentElement.appendChild(div);
   }
 };
 

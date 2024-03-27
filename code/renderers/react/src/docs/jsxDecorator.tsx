@@ -208,17 +208,15 @@ export const skipJsxRender = (context: StoryContext<ReactRenderer>) => {
   return !isArgsStory || sourceParams?.code || sourceParams?.type === SourceType.CODE;
 };
 
-const isMdx = (node: any) => node.type?.displayName === 'MDXCreateElement' && !!node.props?.mdxType;
-
 const mdxToJsx = (node: any) => {
-  if (!isMdx(node)) return node;
+  if (!node || !node.props) return node;
   const { mdxType, originalType, children, ...rest } = node.props;
   let jsxChildren = [] as ReactElement[];
   if (children) {
-    const array = Array.isArray(children) ? children : [children];
+    const array = Array.isArray(children) ? children.flat() : [children];
     jsxChildren = array.map(mdxToJsx);
   }
-  return createElement(originalType, rest, ...jsxChildren);
+  return createElement(mdxType ? originalType : node.type, rest, ...jsxChildren);
 };
 
 export const jsxDecorator = (

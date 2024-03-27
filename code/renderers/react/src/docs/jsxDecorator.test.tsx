@@ -379,6 +379,35 @@ describe('jsxDecorator', () => {
     });
   });
 
+  it('renders nested MDX properly', async () => {
+    const Container: React.FunctionComponent = ({ children }) => <div>{children}</div>;
+    Container.displayName = 'Container';
+    // FIXME: generate this from actual MDX
+    const MDXCreateElement: React.FunctionComponent<{ mdxType: string; originalType: string }> = ({
+      mdxType,
+      originalType,
+    }) => <div>mdx element</div>;
+    MDXCreateElement.displayName = 'MDXCreateElement';
+
+    jsxDecorator(
+      () => (
+        <Container>
+          <MDXCreateElement mdxType="div" originalType="div" />
+        </Container>
+      ),
+      makeContext('mdx-args', { __isArgsStory: true }, {})
+    );
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(mockChannel.emit).toHaveBeenCalledWith(SNIPPET_RENDERED, {
+      id: 'jsx-test--mdx-args',
+      args: {},
+      source: `<Container>
+  <div />
+</Container>`,
+    });
+  });
+
   it('handles stories that trigger Suspense', async () => {
     // if a story function uses a hook or other library that triggers suspense, it will throw a Promise until it is resolved
     // and then it will return the story content after the promise is resolved

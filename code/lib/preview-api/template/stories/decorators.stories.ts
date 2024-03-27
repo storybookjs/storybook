@@ -14,14 +14,14 @@ export default {
   parameters: { useProjectDecorator: true },
   decorators: [
     (storyFn: PartialStoryFn, context: StoryContext) =>
-      storyFn({ args: { ...context.args, text: `component ${context.args['text']}` } }),
+      storyFn({ args: { ...context.args, text: `component ${context.args.text}` } }),
   ],
 };
 
 export const Inheritance = {
   decorators: [
     (storyFn: PartialStoryFn, context: StoryContext) =>
-      storyFn({ args: { ...context.args, text: `story ${context.args['text']}` } }),
+      storyFn({ args: { ...context.args, text: `story ${context.args.text}` } }),
   ],
   args: {
     text: 'starting',
@@ -39,7 +39,7 @@ export const Hooks = {
     // decorator that uses hooks
     (storyFn: PartialStoryFn, context: StoryContext) => {
       useEffect(() => {});
-      return storyFn({ args: { ...context.args, text: `story ${context.args['text']}` } });
+      return storyFn({ args: { ...context.args, text: `story ${context.args.text}` } });
     },
     // conditional decorator, runs before the above
     (storyFn: PartialStoryFn, context: StoryContext) =>

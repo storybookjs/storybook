@@ -1,6 +1,6 @@
-/* eslint-disable import/no-extraneous-dependencies */
 import { join, relative, dirname } from 'path';
 import type { Configuration, RuleSetRule, WebpackPluginInstance } from 'webpack';
+// eslint-disable-next-line import/no-extraneous-dependencies
 import { logger } from '@storybook/node-logger';
 import PnpWebpackPlugin from 'pnp-webpack-plugin';
 import { mergePlugins } from './helpers/mergePlugins';

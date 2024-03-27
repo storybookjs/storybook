@@ -26,6 +26,27 @@ const { document } = global;
 
 const DEFAULT_MAX_SEARCH_RESULTS = 50;
 
+export const FILTER_KEY = 'filter';
+
+let searchParams: URLSearchParams;
+/**
+ * Used if we want to sync user input in the address bar.
+ */
+const syncUrlToFilter = (value: string) => {
+  if (!searchParams) searchParams = new URLSearchParams(global.window.location.search);
+  if (global.window.history.replaceState) {
+    if (value !== '' && value !== null) searchParams.set(FILTER_KEY, value);
+    else searchParams.delete(FILTER_KEY);
+    global.window.history.replaceState(
+      {},
+      '',
+      `${global.window.location.origin}${
+        searchParams.toString() !== '' ? '?' : ''
+      }${searchParams.toString()}`
+    );
+  }
+};
+
 const options = {
   shouldSort: true,
   tokenize: true,
@@ -295,6 +316,7 @@ export const Search = React.memo<{
     <Downshift<DownshiftItem>
       initialInputValue={initialQuery}
       stateReducer={stateReducer}
+      initialIsOpen={initialQuery !== ''}
       // @ts-expect-error (Converted from ts-ignore)
       itemToString={(result) => result?.item?.name || ''}
       scrollIntoView={(e) => scrollIntoView(e)}
@@ -314,6 +336,10 @@ export const Search = React.memo<{
       }) => {
         const input = inputValue ? inputValue.trim() : '';
         let results: DownshiftItem[] = input ? getResults(input) : [];
+
+        const isBrowsing = !isOpen && document.activeElement !== inputRef.current;
+        syncUrlToFilter(isBrowsing ? null : input);
+        api.setQueryParams({ filter: isBrowsing ? null : input });
 
         const lastViewed = !input && getLastViewed();
         if (lastViewed && lastViewed.length) {
@@ -360,7 +386,14 @@ export const Search = React.memo<{
                 <SearchIcon />
               </SearchIconWrapper>
               {/* @ts-expect-error (TODO) */}
-              <Input {...inputProps} />
+              <Input
+                {...inputProps}
+                onInput={(e) => {
+                  api.setQueryParams({
+                    filter: isBrowsing ? null : (e.target as any).value,
+                  });
+                }}
+              />
               {!isMobile && enableShortcuts && !isOpen && (
                 <FocusKey>
                   {searchShortcut === '⌘ K' ? (
@@ -382,7 +415,7 @@ export const Search = React.memo<{
               {children({
                 query: input,
                 results,
-                isBrowsing: !isOpen && document.activeElement !== inputRef.current,
+                isBrowsing,
                 closeMenu,
                 getMenuProps,
                 getItemProps,

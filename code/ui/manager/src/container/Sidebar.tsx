@@ -65,6 +65,7 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
       enableShortcuts,
       bottom,
       extra: top,
+      initialQuery: api.getQueryParam('filter'),
     };
   };
 

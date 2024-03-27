@@ -9,6 +9,12 @@ of arguments.
 
 Storybook uses the generic term arguments (args for short) when talking about React’s `props`, Vue’s `props`, Angular’s `@Input`, and other similar concepts.
 
+<Callout variant="warning" >
+
+If you are using svelte's feature **\<slot\>**, this tutorial will not work for you since slots are not supported with this syntax, to write your stories you will need to use [addon-svelte-csf](https://github.com/storybookjs/addon-svelte-csf)  which lets you write your stories in .svelte syntax and it does supports slots. 
+
+</Callout>
+
 ## Where to put stories
 
 A component’s stories are defined in a story file that lives alongside the component file. The story file is for development-only, and it won't be included in your production bundle.

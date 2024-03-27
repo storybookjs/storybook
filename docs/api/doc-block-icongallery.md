@@ -8,11 +8,12 @@ The `IconGallery` block enables you to easily document React icon components ass
 
 ![Screenshot of IconGallery and IconItem blocks](./doc-block-icongallery.png)
 
+## Simple usage
 <!-- prettier-ignore-start -->
 ```md
 {/* Iconography.mdx */}
 
-import { Meta, Title, IconGallery, IconItem } from '@storybook/blocks';
+import { Meta, IconGallery, IconItem } from '@storybook/blocks';
 
 import { Icon as IconExample } from './Icon';
 
@@ -51,6 +52,28 @@ import { Icon as IconExample } from './Icon';
   <IconItem name="graphline">
     <IconExample name="graphline" />
   </IconItem>
+</IconGallery>
+```
+
+## All icons
+This example is useful if you have many icon components exported from a single index file, and want to import them en-masse.
+```md
+{/* Iconography.mdx */}
+
+import { Meta, IconGallery, IconItem } from '@storybook/addon-docs';
+
+import * as Icons from '../icons'
+
+<Meta title="Iconography" />
+
+# Iconography
+
+<IconGallery>
+  {Object.entries(Icons).map(([name, Icon]) => (
+    <IconItem name={name}>
+      <Icon />
+    </IconItem>
+  ))}
 </IconGallery>
 ```
 <!-- prettier-ignore-end -->

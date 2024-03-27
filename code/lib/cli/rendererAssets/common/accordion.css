@@ -1,0 +1,28 @@
+.accordion {
+  font-family: 'Nunito Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.accordion__panel {
+  block-size: 0;
+  overflow: hidden;
+  transition: block-size 0.25s ease;
+}
+
+.accordion__panel-content {
+  padding: 30px;
+  font-size: 16px;
+}
+
+.accordion__trigger {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  border-block-end: 1px solid #1ea7fd;
+  cursor: pointer;
+  font-size: 20px;
+  font-weight: 700;
+  padding-block: 20px;
+  padding-inline: 30px;
+  inline-size: 100%;
+  text-align: left;
+}

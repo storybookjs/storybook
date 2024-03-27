@@ -404,13 +404,6 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
         argTypes,
         args: unmappedArgs,
       });
-
-      // For v6 mode / compatibility
-      // If the implementation changed, or args were persisted, the args may have changed,
-      // and the STORY_PREPARED event above may not be respected.
-      if (implementationChanged || persistedArgs) {
-        this.channel.emit(STORY_ARGS_UPDATED, { storyId, args: unmappedArgs });
-      }
     } else {
       // Default to the project parameters for MDX docs
       let { parameters } = this.storyStoreValue.projectAnnotations;

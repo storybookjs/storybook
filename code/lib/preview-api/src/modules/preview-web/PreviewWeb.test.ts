@@ -208,15 +208,19 @@ describe('PreviewWeb', () => {
         one: 1,
       });
     });
-    it('updates args from the URL', async () => {
+
+    it('prepares story with args from the URL', async () => {
       document.location.search = '?id=component-one--a&args=foo:url';
 
       await createAndRenderPreview();
 
-      expect(mockChannel.emit).toHaveBeenCalledWith(STORY_ARGS_UPDATED, {
-        storyId: 'component-one--a',
-        args: { foo: 'url', one: 1 },
-      });
+      expect(mockChannel.emit).toHaveBeenCalledWith(
+        STORY_PREPARED,
+        expect.objectContaining({
+          id: 'component-one--a',
+          args: { foo: 'url', one: 1 },
+        })
+      );
     });
 
     it('allows async getProjectAnnotations', async () => {
@@ -2798,20 +2802,6 @@ describe('PreviewWeb', () => {
         });
       });
 
-      it('emits STORY_ARGS_UPDATED with new args', async () => {
-        document.location.search = '?id=component-one--a';
-        const preview = await createAndRenderPreview();
-        mockChannel.emit.mockClear();
-
-        preview.onStoriesChanged({ importFn: newImportFn });
-        await waitForRender();
-
-        expect(mockChannel.emit).toHaveBeenCalledWith(STORY_ARGS_UPDATED, {
-          storyId: 'component-one--a',
-          args: { foo: 'edited', one: 1 },
-        });
-      });
-
       it('applies loaders with story context', async () => {
         document.location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
@@ -3402,7 +3392,7 @@ describe('PreviewWeb', () => {
       });
     });
 
-    it('emits SET_STORY_ARGS with new values', async () => {
+    it('emits SET_PREPARED with new args', async () => {
       document.location.search = '?id=component-one--a';
       const preview = await createAndRenderPreview();
 
@@ -3410,10 +3400,13 @@ describe('PreviewWeb', () => {
       preview.onGetProjectAnnotationsChanged({ getProjectAnnotations: newGetProjectAnnotations });
       await waitForRender();
 
-      expect(mockChannel.emit).toHaveBeenCalledWith(STORY_ARGS_UPDATED, {
-        storyId: 'component-one--a',
-        args: { foo: 'a', one: 1, global: 'added' },
-      });
+      expect(mockChannel.emit).toHaveBeenCalledWith(
+        STORY_PREPARED,
+        expect.objectContaining({
+          id: 'component-one--a',
+          args: { foo: 'a', one: 1, global: 'added' },
+        })
+      );
     });
 
     it('calls renderToCanvas teardown', async () => {

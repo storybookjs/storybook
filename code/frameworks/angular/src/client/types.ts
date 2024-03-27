@@ -1,5 +1,5 @@
 import { Provider, importProvidersFrom } from '@angular/core';
-import { ApplicationConfig } from '@angular/platform-browser';
+import { ApplicationConfig } from '@angular/core'
 import {
   Parameters as DefaultParameters,
   StoryContext as DefaultStoryContext,

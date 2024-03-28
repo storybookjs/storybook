@@ -176,6 +176,11 @@ export const ViewportTool: FC = memo(
 
     useEffect(() => {
       ref.current = styles;
+      const iframe = document.querySelector<HTMLIFrameElement>('iframe[data-is-storybook="true"]');
+      const body = iframe?.contentDocument?.querySelector<HTMLBodyElement>('body');
+      if (iframe && body) {
+        body.dataset.storybookViewportId = item.id;
+      }
     }, [item]);
 
     if (disable || Object.entries(viewports).length === 0) {

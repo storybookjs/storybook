@@ -174,6 +174,27 @@ Update your story through [parameters](../writing-stories/parameters.md) to incl
 
 <!-- prettier-ignore-end -->
 
+## Applying viewport specific styles
+
+If you need to define viewport specific styles (such as global styles that are defined outside of your component) you can target individual viewports in CSS with the following selector (placed in your preview template):
+
+```css
+/* default applied to all viewports*/
+#storybook-root {
+  padding: 12px;
+}
+/* apply only when the 'Small mobile' viewport is selected */
+body[data-storybook-viewport-id="mobile1"] #storybook-root {
+  padding: 8px;
+}
+/* apply only when the 'Large mobile' viewport is selected */
+body[data-storybook-viewport-id="mobile2"] #storybook-root {
+  padding: 16px;
+}
+```
+
+The `Reset viewport` viewport id is called `reset`.
+
 ### Keyboard shortcuts
 
 - Previous viewport: <kbd>alt</kbd> + <kbd>shift</kbd> + <kbd>v</kbd>

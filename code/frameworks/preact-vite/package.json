@@ -29,6 +29,11 @@
       "types": "./dist/preset.d.ts",
       "require": "./dist/preset.js"
     },
+    "./worker": {
+      "require": "./dist/type-annotation/worker.js",
+      "import": "./dist/type-annotation/worker.mjs",
+      "types": "./dist/type-annotation/worker.d.ts"
+    },
     "./package.json": "./package.json"
   },
   "main": "dist/index.js",
@@ -47,8 +52,13 @@
     "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
+    "@previewjs/core": "^19.0.2",
+    "@previewjs/plugin-preact": "^3.1.4",
+    "@previewjs/type-analyzer": "^6.0.6",
+    "@previewjs/vfs": "^2.0.2",
     "@storybook/builder-vite": "workspace:*",
-    "@storybook/preact": "workspace:*"
+    "@storybook/preact": "workspace:*",
+    "unplugin": "^1.1.0"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",
@@ -68,7 +78,8 @@
   "bundler": {
     "entries": [
       "./src/index.ts",
-      "./src/preset.ts"
+      "./src/preset.ts",
+      "./src/type-annotation/worker.ts"
     ],
     "platform": "node"
   },

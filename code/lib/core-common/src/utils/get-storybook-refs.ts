@@ -67,7 +67,7 @@ const checkRef = (url: string) =>
           headers: { Accept: 'application/json' },
         });
         // we might receive non-JSON as a response, because the service ignored our request for JSON response type.
-        if (data.ok && (await data.json().catch((e) => ({}))).loginUrl) {
+        if (data.ok && ((await data.json().catch((e) => ({}))) as any).loginUrl) {
           return false;
         }
       }

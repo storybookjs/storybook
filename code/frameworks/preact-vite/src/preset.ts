@@ -1,6 +1,7 @@
 import type { PresetProperty } from '@storybook/types';
 import { dirname, join } from 'path';
 import type { StorybookConfig } from './types';
+import { vite } from './type-annotation';
 
 const getAbsolutePath = <I extends string>(input: I): I =>
   dirname(require.resolve(join(input, 'package.json'))) as any;
@@ -11,6 +12,13 @@ export const core: PresetProperty<'core'> = {
 };
 
 export const viteFinal: StorybookConfig['viteFinal'] = async (config) => {
-  // TODO: Add docgen plugin per issue https://github.com/storybookjs/storybook/issues/19739
+  const { plugins = [] } = config;
+
+  plugins.push(
+    vite({
+      rootDir: config.root ?? process.cwd(),
+    })
+  );
+
   return config;
 };

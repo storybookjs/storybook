@@ -1,31 +1,29 @@
 import { getInterpretedFileWithExt } from './interpret-files';
 
-let registered = false;
-
 export function interopRequireDefault(filePath: string) {
-  // eslint-disable-next-line no-underscore-dangle
-  const hasEsbuildBeenRegistered = !!require('module')._extensions['.ts'];
-
-  if (registered === false && !hasEsbuildBeenRegistered) {
-    const { register } = require('esbuild-register/dist/node');
-    registered = true;
-    register({
-      target: `node${process.version.slice(1)}`,
-      format: 'cjs',
-      hookIgnoreNodeModules: true,
-      // Some frameworks, like Stylus, rely on the 'name' property of classes or functions
-      // https://github.com/storybookjs/storybook/issues/19049
-      keepNames: true,
-      tsconfigRaw: `{
+  const { register } = require('esbuild-register/dist/node');
+  const { unregister } = register({
+    target: `node${process.version.slice(1)}`,
+    format: 'cjs',
+    hookIgnoreNodeModules: true,
+    // Some frameworks, like Stylus, rely on the 'name' property of classes or functions
+    // https://github.com/storybookjs/storybook/issues/19049
+    keepNames: true,
+    tsconfigRaw: `{
       "compilerOptions": {
         "strict": false,
         "skipLibCheck": true,
       },
     }`,
-    });
-  }
+  });
+
+  console.log({ filePath });
 
   const result = require(filePath);
+
+  console.log({ result });
+
+  unregister();
 
   const isES6DefaultExported =
     typeof result === 'object' && result !== null && typeof result.default !== 'undefined';

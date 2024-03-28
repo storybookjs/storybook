@@ -94,7 +94,7 @@
     "util": "^0.12.4",
     "util-deprecate": "^1.0.2",
     "webpack": "5",
-    "webpack-dev-middleware": "^6.1.1",
+    "webpack-dev-middleware": "^6.1.2",
     "webpack-hot-middleware": "^2.25.1",
     "webpack-virtual-modules": "^0.5.0"
   },

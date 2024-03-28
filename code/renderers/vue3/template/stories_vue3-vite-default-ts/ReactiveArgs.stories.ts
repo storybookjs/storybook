@@ -11,11 +11,11 @@ const meta = {
     // To show that other props are passed through
     backgroundColor: { control: 'color' },
   },
-} satisfies Meta<typeof ReactiveArgs>;
+} satisfies Meta;
 
 export default meta;
 
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj;
 
 export const ReactiveTest: Story = {
   args: {

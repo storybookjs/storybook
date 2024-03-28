@@ -65,8 +65,13 @@ describe('StoryObj', () => {
       args: { label: 'good' },
     });
 
-    type Actual = StoryObj<typeof meta>;
-    type Expected = StoryAnnotations<VueRenderer, ButtonProps, SetOptional<ButtonProps, 'label'>>;
+    type Actual = StoryObj<typeof meta>['args'];
+    type Expected = StoryAnnotations<
+      VueRenderer,
+      ButtonProps,
+      SetOptional<ButtonProps, 'label'>
+    >['args'];
+
     expectTypeOf<Actual>().toEqualTypeOf<Expected>();
   });
 
@@ -75,7 +80,8 @@ describe('StoryObj', () => {
       const meta = satisfies<Meta<typeof Button>>()({ component: Button });
 
       type Expected = StoryAnnotations<VueRenderer, ButtonProps, ButtonProps>;
-      expectTypeOf<StoryObj<typeof meta>>().toEqualTypeOf<Expected>();
+
+      expectTypeOf<StoryObj<typeof meta>['args']>().toEqualTypeOf<Expected['args']>();
     }
     {
       const meta = satisfies<Meta<typeof Button>>()({
@@ -86,7 +92,7 @@ describe('StoryObj', () => {
       const Basic: StoryObj<typeof meta> = {};
 
       type Expected = StoryAnnotations<VueRenderer, ButtonProps, SetOptional<ButtonProps, 'label'>>;
-      expectTypeOf(Basic).toEqualTypeOf<Expected>();
+      expectTypeOf(Basic.args).toEqualTypeOf<Expected['args']>();
     }
     {
       const meta = satisfies<Meta<{ label: string; disabled: boolean }>>()({ component: Button });
@@ -96,18 +102,20 @@ describe('StoryObj', () => {
       };
 
       type Expected = StoryAnnotations<VueRenderer, ButtonProps, ButtonProps>;
-      expectTypeOf(Basic).toEqualTypeOf<Expected>();
+      expectTypeOf(Basic.args).toEqualTypeOf<Expected['args']>();
     }
   });
 
   it('Component can be used as generic parameter for StoryObj', () => {
-    expectTypeOf<StoryObj<typeof Button>>().toEqualTypeOf<
-      StoryAnnotations<VueRenderer, ButtonProps>
+    expectTypeOf<StoryObj<typeof Button>['args']>().toEqualTypeOf<
+      StoryAnnotations<VueRenderer, ButtonProps>['args']
     >();
   });
 });
 
 type ThemeData = 'light' | 'dark';
+
+const use = (...args: unknown[]) => { };
 
 describe('Story args can be inferred', () => {
   it('Correct args are inferred when type is widened for render function', () => {
@@ -124,7 +132,10 @@ describe('Story args can be inferred', () => {
     const Basic: StoryObj<typeof meta> = { args: { theme: 'light', label: 'good' } };
 
     type Expected = StoryAnnotations<VueRenderer, Props, SetOptional<Props, 'disabled'>>;
-    expectTypeOf(Basic).toEqualTypeOf<Expected>();
+    const expected: Expected = Basic;
+    const basic: typeof Basic = expected;
+
+    use(expected, basic);
   });
 
   const withDecorator: Decorator<{ decoratorArg: string }> = (
@@ -144,7 +155,7 @@ describe('Story args can be inferred', () => {
     const Basic: StoryObj<typeof meta> = { args: { decoratorArg: 'title', label: 'good' } };
 
     type Expected = StoryAnnotations<VueRenderer, Props, SetOptional<Props, 'disabled'>>;
-    expectTypeOf(Basic).toEqualTypeOf<Expected>();
+    expectTypeOf(Basic.args).toEqualTypeOf<Expected['args']>();
   });
 
   it('Correct args are inferred when type is widened for multiple decorators', () => {
@@ -169,7 +180,7 @@ describe('Story args can be inferred', () => {
     };
 
     type Expected = StoryAnnotations<VueRenderer, Props, SetOptional<Props, 'disabled'>>;
-    expectTypeOf(Basic).toEqualTypeOf<Expected>();
+    expectTypeOf(Basic.args).toEqualTypeOf<Expected['args']>();
   });
 });
 
@@ -181,18 +192,20 @@ it('Infer type of slots', () => {
   const Basic: StoryObj<typeof meta> = {
     args: {
       otherProp: true,
-      header: ({ title }) =>
-        h({
-          components: { Button },
-          template: `<Button :primary='true' label='${title}'></Button>`,
-        }),
-      default: 'default slot',
-      footer: h(Button, { disabled: true, label: 'footer' }),
+      $slots: {
+        header: ({ title }) =>
+          h({
+            components: { Button },
+            template: `<Button :primary='true' label='${title}'></Button>`,
+          }),
+        default: 'default slot',
+        footer: h(Button, { disabled: true, label: 'footer' }),
+      },
     },
   };
 
   type Props = ComponentPropsAndSlots<typeof BaseLayout>;
 
   type Expected = StoryAnnotations<VueRenderer, Props, Props>;
-  expectTypeOf(Basic).toEqualTypeOf<Expected>();
+  expectTypeOf(Basic.args).toEqualTypeOf<Expected['args']>();
 });

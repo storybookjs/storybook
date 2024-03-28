@@ -7,11 +7,12 @@ const meta = {
   ...ReactiveDecorators.default,
   component: Reactivity,
   // storybook render function is not a functional component. it returns a functional component or a component options
-  render: (args) => {
+  render: (args, context) => {
     // create the slot contents as a functional components
-    const header = ({ title }: { title: string }) => h('h3', `${args.header} - Title: ${title}`);
-    const defaultSlot = () => h('p', `${args.default}`);
-    const footer = () => h('p', `${args.footer}`);
+    const header = ({ title }: { title: string }) =>
+      h('h3', `${context.args.$slots?.header} - Title: ${title}`);
+    const defaultSlot = () => h('p', `${context.args.$slots?.default}`);
+    const footer = () => h('p', `${context.args.$slots?.footer}`);
     // vue render function is a functional components
     return () =>
       h('div', [

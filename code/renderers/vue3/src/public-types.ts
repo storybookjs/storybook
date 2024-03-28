@@ -50,7 +50,7 @@ export type StoryObj<TMetaOrCmpOrArgs = Args> = TMetaOrCmpOrArgs extends {
   args?: infer DefaultArgs;
 }
   ? Simplify<
-      ComponentPropsAndSlots<Component> & ArgsFromMeta<VueRenderer, TMetaOrCmpOrArgs>
+      ComponentPropsOrProps<Component> & ArgsFromMeta<VueRenderer, TMetaOrCmpOrArgs>
     > extends infer TArgs
     ? StoryAnnotations<
         VueRenderer,
@@ -66,13 +66,15 @@ type AllowNonFunctionSlots<Slots> = {
   [K in keyof Slots]: Slots[K] | VNodeChild;
 };
 
-export type ComponentPropsAndSlots<C> = ComponentProps<C> & ExtractSlots<C>;
+export type ComponentPropsAndSlots<C> = ComponentProps<C> & { $slots?: ExtractSlots<C> };
 
-type ComponentPropsOrProps<TCmpOrArgs> = TCmpOrArgs extends Constructor<any>
+export type ComponentPropsOrProps<TCmpOrArgs> = TCmpOrArgs extends Constructor<any>
   ? ComponentPropsAndSlots<TCmpOrArgs>
   : TCmpOrArgs extends FunctionalComponent<any>
     ? ComponentPropsAndSlots<TCmpOrArgs>
-    : TCmpOrArgs;
+    : TCmpOrArgs extends VueRenderer['component']
+      ? Record<string, any>
+      : TCmpOrArgs;
 
 export type Decorator<TArgs = StrictArgs> = DecoratorFunction<VueRenderer, TArgs>;
 export type Loader<TArgs = StrictArgs> = LoaderFunction<VueRenderer, TArgs>;

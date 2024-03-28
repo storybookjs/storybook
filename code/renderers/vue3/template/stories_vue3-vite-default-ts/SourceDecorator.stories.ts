@@ -10,7 +10,7 @@ const meta: Meta = {
 } satisfies Meta<typeof GlobalUsage>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj;
 
 export const MultiComponents: Story = {
   args: {

@@ -16,7 +16,9 @@ const meta = {
   args: {
     label: 'Storybook Day',
     year: 2022,
-    default: ({ text, year }) => `${text}, ${year}`,
+    $slots: {
+      default: ({ text, year }) => `${text}, ${year}`,
+    },
   },
   tags: ['autodocs'],
 } satisfies Meta<typeof MySlotComponent>;
@@ -67,13 +69,13 @@ export const CustomRender: Story = {
 };
 
 export const CustomRenderUsingFunctionSlot: Story = {
-  render: (args: any) => ({
+  render: (args: any, context) => ({
     components: { MySlotComponent },
     setup() {
-      return { args };
+      return { args: args, slots: context.args.$slots };
     },
     template: `<MySlotComponent v-bind="args" v-slot="slotProps">
-  	            {{args.default(slotProps)}}
+  	            {{slots.default(slotProps)}}
               </MySlotComponent>`,
   }),
   play: Basic.play,

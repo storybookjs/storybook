@@ -14,9 +14,9 @@ const meta = {
   ...ReactiveDecorators.default,
   component: Reactivity,
   render: (args, { argTypes }) => {
-    state.header = args.header;
-    state.default = args.default;
-    state.footer = args.footer;
+    state.header = args.$slots?.header;
+    state.default = args.$slots?.default;
+    state.footer = args.$slots?.footer;
     // return a component options
     return defineComponent({
       data: () => ({ args, header: state.header, default: state.default, footer: state.footer }),

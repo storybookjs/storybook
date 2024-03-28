@@ -7,16 +7,13 @@ import Reactivity from './Reactivity.vue';
 
 const meta = {
   component: Reactivity,
-  argTypes: {
-    header: { control: { type: 'text' } },
-    footer: { control: { type: 'text' } },
-    default: { control: { type: 'text' } },
-  },
   args: {
     label: 'If you see this then the label arg was not reactive.',
-    default: 'If you see this then the default slot was not reactive.',
-    header: 'If you see this, the header slot was not reactive.', // this can be useless if you have custom render function that overrides the slot
-    footer: 'If you see this, the footer slot was not reactive.',
+    $slots: {
+      default: 'If you see this then the default slot was not reactive.',
+      header: 'If you see this, the header slot was not reactive.', // this can be useless if you have custom render function that overrides the slot
+      footer: 'If you see this, the footer slot was not reactive.',
+    },
   },
   play: async ({ canvasElement, id, args }) => {
     const channel = (globalThis as any).__STORYBOOK_ADDONS_CHANNEL__;
@@ -33,9 +30,11 @@ const meta = {
       storyId: id,
       updatedArgs: {
         label: 'updated label',
-        header: 'updated header slot', // this can be useless if you have custom render function that overrides the slot which the case here
-        footer: 'updated footer slot',
-        default: 'updated default slot',
+        $slots: {
+          header: 'updated header slot', // this can be useless if you have custom render function that overrides the slot which the case here
+          footer: 'updated footer slot',
+          default: 'updated default slot',
+        },
       },
     });
     await new Promise((resolve) => channel.once(STORY_ARGS_UPDATED, resolve));

@@ -11,8 +11,10 @@ export default meta;
 
 export const Default: Story = {
   args: {
-    default: ({ num }) => `Default slot { num=${num} }`,
-    named: ({ str }) => `Named slot { str=${str} }`,
-    vbind: ({ num, str }) => `Named v-bind slot { num=${num}, str=${str} }`,
+    $slots: {
+      default: ({ num }) => `Default slot { num=${num} }`,
+      named: ({ str }) => `Named slot { str=${str} }`,
+      vbind: ({ num, str }) => `Named v-bind slot { num=${num}, str=${str} }`,
+    },
   },
 };

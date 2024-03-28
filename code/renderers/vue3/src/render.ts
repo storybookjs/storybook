@@ -8,6 +8,7 @@ import type { PreviewWeb } from '@storybook/preview-api';
 import type { StoryFnVueReturnType, StoryID, VueRenderer } from './types';
 
 export const render: ArgsStoryFn<VueRenderer> = (props, context) => {
+  debugger;
   const { id, component: Component } = context;
   if (!Component) {
     throw new Error(
@@ -15,7 +16,8 @@ export const render: ArgsStoryFn<VueRenderer> = (props, context) => {
     );
   }
 
-  return () => h(Component, props, getSlots(props, context));
+  const { $slots } = context.args;
+  return () => h(Component, props, $slots ? getSlots($slots) : undefined);
 };
 
 export const setup = (fn: (app: App, storyContext?: StoryContext<VueRenderer>) => unknown) => {
@@ -64,6 +66,7 @@ export async function renderToCanvas(
   const vueApp = createApp({
     setup() {
       storyContext.args = reactive(storyContext.args);
+      storyContext.args.$slots = reactive(storyContext.args.$slots ?? {});
       const rootElement = storyFn(); // call the story function to get the root element with all the decorators
       const args = getArgs(rootElement, storyContext); // get args in case they are altered by decorators otherwise use the args from the context
       const appState = {
@@ -108,13 +111,13 @@ export async function renderToCanvas(
 /**
  * generate slots for default story without render function template
  */
-function getSlots(props: Args, context: StoryContext<VueRenderer, Args>) {
-  const { argTypes } = context;
-  const slots = Object.entries(props)
-    .filter(([key]) => argTypes[key]?.table?.category === 'slots')
-    .map(([key, value]) => [key, typeof value === 'function' ? value : () => value]);
-
-  return Object.fromEntries(slots);
+function getSlots(slots: Args) {
+  return Object.fromEntries(
+    Object.entries(slots).map(([key, value]) => [
+      key,
+      typeof value === 'function' ? value : () => value,
+    ])
+  );
 }
 
 /**

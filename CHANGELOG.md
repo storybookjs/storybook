@@ -1,3 +1,11 @@
+## 8.0.5
+
+- Addon-docs: Fix `react-dom/server` imports breaking stories and docs - [#26557](https://github.com/storybookjs/storybook/pull/26557), thanks @JReinhold!
+- Automigrations: Fix missing support for mts vite config - [#26441](https://github.com/storybookjs/storybook/pull/26441), thanks @drik98!
+- CLI: Improve Yarn berry error parsing - [#26616](https://github.com/storybookjs/storybook/pull/26616), thanks @yannbf!
+- React-Docgen: Make sure to be able to handle empty unions - [#26639](https://github.com/storybookjs/storybook/pull/26639), thanks @kasperpeulen!
+- Viewport: Fix missing style - [#26530](https://github.com/storybookjs/storybook/pull/26530), thanks @jpzwarte!
+
 ## 8.0.4
 
 - Addon Docs: Support Stencil based display names in source snippets - [#26592](https://github.com/storybookjs/storybook/pull/26592), thanks @yannbf!

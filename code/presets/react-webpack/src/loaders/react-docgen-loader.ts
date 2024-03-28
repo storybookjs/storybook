@@ -114,7 +114,10 @@ export default async function reactDocgenLoader(
       }
     });
 
-    const map = magicString.generateMap({ hires: true });
+    const map = magicString.generateMap({
+      includeContent: true,
+      source: this.resourcePath,
+    });
     callback(null, magicString.toString(), map);
   } catch (error: any) {
     if (error.code === ERROR_CODES.MISSING_DEFINITION) {

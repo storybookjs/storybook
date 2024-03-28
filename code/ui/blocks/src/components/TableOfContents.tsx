@@ -30,6 +30,10 @@ export interface TocParameters {
   unsafeTocbotOptions?: tocbot.IStaticOptions;
 }
 
+const Spacer = styled.div(({ theme }) => ({
+  height: '125rem',
+}));
+
 const Wrapper = styled.div(({ theme }) => ({
   width: '10rem',
 
@@ -178,6 +182,7 @@ export const TableOfContents = ({
           </Content>
         ) : null}
       </Wrapper>
+      <Spacer></Spacer>
     </>
   );
 };

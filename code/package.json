@@ -179,7 +179,7 @@
     "@testing-library/jest-dom": "6.1.4",
     "@testing-library/react": "^14.0.0",
     "@testing-library/user-event": "^14.4.3",
-    "@types/express": "^4.17.11",
+    "@types/express": "^4.17.21",
     "@types/fs-extra": "^11.0.1",
     "@types/lodash": "^4.14.167",
     "@types/mock-require": "^2.0.3",

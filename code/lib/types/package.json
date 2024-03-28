@@ -45,7 +45,7 @@
   },
   "dependencies": {
     "@storybook/channels": "workspace:*",
-    "@types/express": "^4.7.0",
+    "@types/express": "^4.17.21",
     "file-system-cache": "2.3.0"
   },
   "devDependencies": {

@@ -79,7 +79,7 @@
     "constants-browserify": "^1.0.0",
     "css-loader": "^6.7.1",
     "es-module-lexer": "^1.4.1",
-    "express": "^4.17.3",
+    "express": "^4.19.2",
     "fork-ts-checker-webpack-plugin": "^8.0.0",
     "fs-extra": "^11.1.0",
     "html-webpack-plugin": "^5.5.0",

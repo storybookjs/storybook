@@ -299,5 +299,6 @@
         "Dependency Upgrades"
       ]
     ]
-  }
+  },
+  "deferredNextVersion": "8.1.0-alpha.6"
 }

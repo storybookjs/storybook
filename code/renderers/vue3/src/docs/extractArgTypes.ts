@@ -44,10 +44,11 @@ export const extractArgTypes: ArgTypesExtractor = (component) => {
       // skip duplicate and global props
       if (!argType || argTypes[argType.name]) return;
 
-      argTypes[argType.name] = {
-        ...argType,
-        control: { disabled: !['props', 'slots'].includes(section) },
-      };
+      if (section !== 'props') {
+        argType.control = { disable: true };
+      }
+
+      argTypes[argType.name] = argType;
     });
   });
 

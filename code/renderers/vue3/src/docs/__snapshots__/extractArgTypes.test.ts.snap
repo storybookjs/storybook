@@ -4,7 +4,7 @@ exports[`extractArgTypes (vue-docgen-api) > should extract events for Vue compon
 {
   "bar": {
     "control": {
-      "disabled": true,
+      "disable": true,
     },
     "description": "",
     "name": "bar",
@@ -21,7 +21,7 @@ exports[`extractArgTypes (vue-docgen-api) > should extract events for Vue compon
   },
   "baz": {
     "control": {
-      "disabled": true,
+      "disable": true,
     },
     "description": "",
     "name": "baz",
@@ -38,7 +38,7 @@ exports[`extractArgTypes (vue-docgen-api) > should extract events for Vue compon
   },
   "foo": {
     "control": {
-      "disabled": true,
+      "disable": true,
     },
     "description": "",
     "name": "foo",
@@ -60,7 +60,7 @@ exports[`extractArgTypes (vue-docgen-api) > should extract events for component 
 {
   "bar": {
     "control": {
-      "disabled": true,
+      "disable": true,
     },
     "description": "Test description bar",
     "name": "bar",
@@ -80,7 +80,7 @@ exports[`extractArgTypes (vue-docgen-api) > should extract events for component 
   },
   "baz": {
     "control": {
-      "disabled": true,
+      "disable": true,
     },
     "description": "Test description baz",
     "name": "baz",
@@ -103,7 +103,7 @@ exports[`extractArgTypes (vue-docgen-api) > should extract expose for component 
 {
   "count": {
     "control": {
-      "disabled": true,
+      "disable": true,
     },
     "description": "a count number",
     "name": "count",
@@ -120,7 +120,7 @@ exports[`extractArgTypes (vue-docgen-api) > should extract expose for component 
   },
   "label": {
     "control": {
-      "disabled": true,
+      "disable": true,
     },
     "description": "a label string",
     "name": "label",
@@ -141,9 +141,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract expose for component 
 exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1`] = `
 {
   "array": {
-    "control": {
-      "disabled": false,
-    },
     "defaultValue": undefined,
     "description": "description required array object",
     "name": "array",
@@ -170,9 +167,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1
     },
   },
   "arrayOptional": {
-    "control": {
-      "disabled": false,
-    },
     "defaultValue": undefined,
     "description": "description optional array object",
     "name": "arrayOptional",
@@ -199,9 +193,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1
     },
   },
   "bar": {
-    "control": {
-      "disabled": false,
-    },
     "defaultValue": {
       "summary": "1",
     },
@@ -222,9 +213,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1
     },
   },
   "baz": {
-    "control": {
-      "disabled": false,
-    },
     "defaultValue": undefined,
     "description": "description baz is required boolean",
     "name": "baz",
@@ -241,9 +229,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1
     },
   },
   "enumValue": {
-    "control": {
-      "disabled": false,
-    },
     "defaultValue": undefined,
     "description": "description enum value",
     "name": "enumValue",
@@ -265,9 +250,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1
     },
   },
   "foo": {
-    "control": {
-      "disabled": false,
-    },
     "defaultValue": undefined,
     "description": "@default: "rounded"<br>@since: v1.0.0<br>@see: https://vuejs.org/<br>@deprecated: v1.1.0<br><br>string foo",
     "name": "foo",
@@ -284,9 +266,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1
     },
   },
   "inlined": {
-    "control": {
-      "disabled": false,
-    },
     "defaultValue": undefined,
     "description": "",
     "name": "inlined",
@@ -309,9 +288,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1
     },
   },
   "literalFromContext": {
-    "control": {
-      "disabled": false,
-    },
     "defaultValue": undefined,
     "description": "description literal type alias that require context",
     "name": "literalFromContext",
@@ -336,9 +312,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1
     },
   },
   "nested": {
-    "control": {
-      "disabled": false,
-    },
     "defaultValue": undefined,
     "description": "description nested is required nested object",
     "name": "nested",
@@ -361,9 +334,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1
     },
   },
   "nestedIntersection": {
-    "control": {
-      "disabled": false,
-    },
     "defaultValue": undefined,
     "description": "description required nested object with intersection",
     "name": "nestedIntersection",
@@ -390,9 +360,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1
     },
   },
   "nestedOptional": {
-    "control": {
-      "disabled": false,
-    },
     "defaultValue": undefined,
     "description": "description optional nested object",
     "name": "nestedOptional",
@@ -431,9 +398,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1
     },
   },
   "recursive": {
-    "control": {
-      "disabled": false,
-    },
     "defaultValue": undefined,
     "description": "",
     "name": "recursive",
@@ -457,9 +421,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1
     },
   },
   "stringArray": {
-    "control": {
-      "disabled": false,
-    },
     "defaultValue": {
       "summary": "["foo", "bar"]",
     },
@@ -484,9 +445,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1
     },
   },
   "union": {
-    "control": {
-      "disabled": false,
-    },
     "defaultValue": undefined,
     "description": "description union is required union type",
     "name": "union",
@@ -513,9 +471,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1
     },
   },
   "unionOptional": {
-    "control": {
-      "disabled": false,
-    },
     "defaultValue": undefined,
     "description": "description unionOptional is optional union type",
     "name": "unionOptional",
@@ -551,9 +506,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 1
 exports[`extractArgTypes (vue-docgen-api) > should extract props for component 2`] = `
 {
   "array": {
-    "control": {
-      "disabled": false,
-    },
     "description": "description required array object",
     "name": "array",
     "table": {
@@ -571,9 +523,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 2
     },
   },
   "arrayOptional": {
-    "control": {
-      "disabled": false,
-    },
     "description": "description optional array object",
     "name": "arrayOptional",
     "table": {
@@ -591,9 +540,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 2
     },
   },
   "bar": {
-    "control": {
-      "disabled": false,
-    },
     "description": "description bar is optional number",
     "name": "bar",
     "table": {
@@ -612,9 +558,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 2
     },
   },
   "baz": {
-    "control": {
-      "disabled": false,
-    },
     "description": "description baz is required boolean",
     "name": "baz",
     "table": {
@@ -631,9 +574,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 2
     },
   },
   "enumValue": {
-    "control": {
-      "disabled": false,
-    },
     "description": "description enum value",
     "name": "enumValue",
     "table": {
@@ -651,9 +591,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 2
     },
   },
   "foo": {
-    "control": {
-      "disabled": false,
-    },
     "description": "string foo",
     "name": "foo",
     "table": {
@@ -670,9 +607,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 2
     },
   },
   "inlined": {
-    "control": {
-      "disabled": false,
-    },
     "description": undefined,
     "name": "inlined",
     "table": {
@@ -690,9 +624,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 2
     },
   },
   "literalFromContext": {
-    "control": {
-      "disabled": false,
-    },
     "description": "description literal type alias that require context",
     "name": "literalFromContext",
     "table": {
@@ -710,9 +641,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 2
     },
   },
   "nested": {
-    "control": {
-      "disabled": false,
-    },
     "description": "description nested is required nested object",
     "name": "nested",
     "table": {
@@ -730,9 +658,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 2
     },
   },
   "nestedIntersection": {
-    "control": {
-      "disabled": false,
-    },
     "description": "description required nested object with intersection",
     "name": "nestedIntersection",
     "table": {
@@ -755,9 +680,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 2
     },
   },
   "nestedOptional": {
-    "control": {
-      "disabled": false,
-    },
     "description": "description optional nested object",
     "name": "nestedOptional",
     "table": {
@@ -784,9 +706,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 2
     },
   },
   "recursive": {
-    "control": {
-      "disabled": false,
-    },
     "description": undefined,
     "name": "recursive",
     "table": {
@@ -804,9 +723,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 2
     },
   },
   "stringArray": {
-    "control": {
-      "disabled": false,
-    },
     "description": "description stringArray is string array",
     "name": "stringArray",
     "table": {
@@ -826,9 +742,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 2
     },
   },
   "union": {
-    "control": {
-      "disabled": false,
-    },
     "description": "description union is required union type",
     "name": "union",
     "table": {
@@ -853,9 +766,6 @@ exports[`extractArgTypes (vue-docgen-api) > should extract props for component 2
     },
   },
   "unionOptional": {
-    "control": {
-      "disabled": false,
-    },
     "description": "description unionOptional is optional union type",
     "name": "unionOptional",
     "table": {
@@ -889,7 +799,7 @@ exports[`extractArgTypes (vue-docgen-api) > should extract slots for component 1
 {
   "default": {
     "control": {
-      "disabled": false,
+      "disable": true,
     },
     "description": undefined,
     "name": "default",
@@ -909,7 +819,7 @@ exports[`extractArgTypes (vue-docgen-api) > should extract slots for component 1
   },
   "named": {
     "control": {
-      "disabled": false,
+      "disable": true,
     },
     "description": undefined,
     "name": "named",
@@ -929,7 +839,7 @@ exports[`extractArgTypes (vue-docgen-api) > should extract slots for component 1
   },
   "no-bind": {
     "control": {
-      "disabled": false,
+      "disable": true,
     },
     "description": undefined,
     "name": "no-bind",
@@ -947,7 +857,7 @@ exports[`extractArgTypes (vue-docgen-api) > should extract slots for component 1
   },
   "vbind": {
     "control": {
-      "disabled": false,
+      "disable": true,
     },
     "description": undefined,
     "name": "vbind",
@@ -972,7 +882,7 @@ exports[`extractArgTypes (vue-docgen-api) > should extract slots type for Vue co
 {
   "default": {
     "control": {
-      "disabled": false,
+      "disable": true,
     },
     "description": "",
     "name": "default",
@@ -989,7 +899,7 @@ exports[`extractArgTypes (vue-docgen-api) > should extract slots type for Vue co
   },
   "named": {
     "control": {
-      "disabled": false,
+      "disable": true,
     },
     "description": "",
     "name": "named",
@@ -1006,7 +916,7 @@ exports[`extractArgTypes (vue-docgen-api) > should extract slots type for Vue co
   },
   "no-bind": {
     "control": {
-      "disabled": false,
+      "disable": true,
     },
     "description": "",
     "name": "no-bind",
@@ -1023,7 +933,7 @@ exports[`extractArgTypes (vue-docgen-api) > should extract slots type for Vue co
   },
   "vbind": {
     "control": {
-      "disabled": false,
+      "disable": true,
     },
     "description": "",
     "name": "vbind",

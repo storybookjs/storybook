@@ -357,7 +357,7 @@ Decorators [can be more complex](./decorators.md#context-for-mocking) and are of
 
 ## Stories for two or more components
 
-When building design systems or component libraries, you may have two or more components created to work together. For instance, if you have a parent `List` component, it may require child `ListItem` components.
+Sometimes, you may have two or more components created to work together. For instance, if you have a parent `List` component, it may require child `ListItem` components.
 
 <!-- prettier-ignore-start -->
 
@@ -405,7 +405,7 @@ In such cases, it makes sense to render a different function for each story:
 
 <!-- prettier-ignore-end -->
 
-You can also reuse stories from the child `ListItem` in your `List` component. That’s easier to maintain because you don’t have to keep the identical story definitions updated in multiple places.
+You can also reuse story definitions from the child `ListItem` in your `List` component. That’s easier to maintain because you don’t have to keep the identical details updated in multiple places.
 
 <!-- prettier-ignore-start -->
 

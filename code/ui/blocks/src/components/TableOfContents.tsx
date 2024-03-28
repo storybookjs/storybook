@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import type { FC, ReactElement } from 'react';
 import { styled } from '@storybook/theming';
 import * as tocbot from 'tocbot';
+import { global } from '@storybook/global';
 
 export interface TocParameters {
   /** CSS selector for the container to search for headings. */
@@ -137,6 +138,21 @@ export const TableOfContents = ({
   ignoreSelector,
   unsafeTocbotOptions,
 }: TableOfContentsProps) => {
+  const { window: globalWindow } = global;
+
+  const handleItemClick = (e: MouseEvent) => {
+    e.preventDefault();
+    if (!(e.target instanceof HTMLAnchorElement && e.target.href)) return;
+
+    try {
+      const { origin, pathname, search } = new URL(globalWindow.parent.location.href);
+      const hash = new URL(e.target.href)?.hash;
+      globalWindow.parent.history.pushState(null, '', `${origin}${pathname}${search}${hash}`);
+    } catch (error) {
+      console.warn('URL processing error:.', error);
+    }
+  };
+
   useEffect(() => {
     const configuration = {
       tocSelector: '.toc-wrapper',
@@ -154,10 +170,9 @@ export const TableOfContents = ({
        * Prevent default linking behavior,
        * leaving only the smooth scrolling.
        */
-      onClick: () => false,
+      onClick: handleItemClick,
       ...unsafeTocbotOptions,
     };
-
     /**
      * Wait for the DOM to be ready.
      */

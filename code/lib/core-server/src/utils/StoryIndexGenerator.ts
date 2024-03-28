@@ -23,7 +23,7 @@ import { userOrAutoTitleFromSpecifier, sortStoriesV7 } from '@storybook/preview-
 import { commonGlobOptions, normalizeStoryPath } from '@storybook/core-common';
 import { logger, once } from '@storybook/node-logger';
 import { getStorySortParameter } from '@storybook/csf-tools';
-import { storyNameFromExport, toId } from '@storybook/csf';
+import { storyNameFromExport, toId, combineTags } from '@storybook/csf';
 import { analyze } from '@storybook/docs-mdx';
 import dedent from 'ts-dedent';
 import { autoName } from './autoName';
@@ -55,6 +55,7 @@ export type StoryIndexGeneratorOptions = {
 };
 
 export const AUTODOCS_TAG = 'autodocs';
+export const NO_AUTODOCS_TAG = `!${AUTODOCS_TAG}`;
 export const STORIES_MDX_TAG = 'stories-mdx';
 export const PLAY_FN_TAG = 'play-fn';
 
@@ -291,7 +292,7 @@ export class StoryIndexGenerator {
         const title = input.title ?? defaultMakeTitle();
         // eslint-disable-next-line no-underscore-dangle
         const id = input.__id ?? toId(input.metaId ?? title, storyNameFromExport(input.exportName));
-        const tags = (input.tags || []).concat('story');
+        const tags = combineTags(...(input.tags ?? []), ...(input.metaTags ?? []), 'story');
 
         return {
           type: 'story',
@@ -300,6 +301,7 @@ export class StoryIndexGenerator {
           name,
           title,
           importPath,
+          metaTags: input.metaTags ?? [],
           tags,
         };
       });
@@ -312,7 +314,9 @@ export class StoryIndexGenerator {
     const hasAutodocsTag = entries.some((entry) => entry.tags.includes(AUTODOCS_TAG));
     const isStoriesMdx = entries.some((entry) => entry.tags.includes(STORIES_MDX_TAG));
     const createDocEntry =
-      autodocs === true || (autodocs === 'tag' && hasAutodocsTag) || isStoriesMdx;
+      (autodocs === true && !entries.some((entry) => entry.tags.includes(NO_AUTODOCS_TAG))) ||
+      (autodocs === 'tag' && hasAutodocsTag) ||
+      isStoriesMdx;
 
     if (createDocEntry && this.options.build?.test?.disableAutoDocs !== true) {
       const name = this.options.docs.defaultName ?? 'Docs';
@@ -326,7 +330,12 @@ export class StoryIndexGenerator {
         name,
         importPath,
         type: 'docs',
-        tags: [...metaTags, 'docs', ...(!hasAutodocsTag && !isStoriesMdx ? [AUTODOCS_TAG] : [])],
+        metaTags,
+        tags: combineTags(
+          ...metaTags,
+          'docs',
+          ...(!hasAutodocsTag && !isStoriesMdx ? [AUTODOCS_TAG] : [])
+        ),
         storiesImports: [],
       });
     }
@@ -433,7 +442,11 @@ export class StoryIndexGenerator {
         storiesImports: sortedDependencies.map((dep) => dep.entries[0].importPath),
         type: 'docs',
         // FIXME: update this to use the index entry's metaTags once we update this to run on `IndexInputs`
-        tags: [...(result.tags || []), csfEntry ? 'attached-mdx' : 'unattached-mdx', 'docs'],
+        tags: combineTags(
+          ...(result.tags || []),
+          csfEntry ? 'attached-mdx' : 'unattached-mdx',
+          'docs'
+        ),
       };
       return docsEntry;
     } catch (err) {

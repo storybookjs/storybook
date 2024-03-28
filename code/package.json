@@ -127,7 +127,7 @@
     "@storybook/core-events": "workspace:*",
     "@storybook/core-server": "workspace:*",
     "@storybook/core-webpack": "workspace:*",
-    "@storybook/csf": "^0.1.2",
+    "@storybook/csf": "0.1.4--canary.80.aedde7f.0",
     "@storybook/csf-plugin": "workspace:*",
     "@storybook/csf-tools": "workspace:*",
     "@storybook/docs-tools": "workspace:*",

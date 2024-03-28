@@ -57,7 +57,7 @@
     "@babel/core": "^7.23.2",
     "@babel/preset-env": "^7.23.2",
     "@babel/types": "^7.23.0",
-    "@storybook/csf": "^0.1.2",
+    "@storybook/csf": "0.1.4--canary.80.aedde7f.0",
     "@storybook/csf-tools": "workspace:*",
     "@storybook/node-logger": "workspace:*",
     "@storybook/types": "workspace:*",

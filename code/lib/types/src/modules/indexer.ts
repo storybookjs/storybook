@@ -73,6 +73,7 @@ export interface BaseIndexEntry {
   id: StoryId;
   name: StoryName;
   title: ComponentTitle;
+  metaTags?: Tag[];
   tags?: Tag[];
   importPath: Path;
 }

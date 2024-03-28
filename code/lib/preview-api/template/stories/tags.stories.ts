@@ -37,3 +37,7 @@ export const TestOnly = {
 export const DevOnly = {
   tags: ['dev-only'],
 };
+
+export const TagRemoval = {
+  tags: ['!component-two'],
+};

@@ -61,7 +61,7 @@
   "dependencies": {
     "@radix-ui/react-slot": "^1.0.2",
     "@storybook/client-logger": "workspace:*",
-    "@storybook/csf": "^0.1.2",
+    "@storybook/csf": "0.1.4--canary.80.aedde7f.0",
     "@storybook/global": "^5.0.0",
     "@storybook/icons": "^1.2.5",
     "@storybook/theming": "workspace:*",

@@ -129,6 +129,26 @@ const OptionalTitle: FC<{ title: TableOfContentsProps['title'] }> = ({ title }) 
   return title;
 };
 
+const handleClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+  const tag = event.currentTarget.href.split('#')[1];
+
+  try {
+    /** We're in an iframe, try to get the parent's URL */
+    if (window.self !== window.top) {
+      const newUrl = `${window.parent.location.href.split('#')[0]}#${tag}`;
+      window.parent.history.pushState(null, '', newUrl);
+    }
+    else {
+      const newUrl = `${window.location.href.split('#')[0]}#${tag}`;
+      window.history.pushState(null, '', newUrl);
+    }
+  }
+  catch (error) {
+    console.warn("Couldn't access parent URL due to cross-origin restrictions.", error);
+  }
+  return false;
+};
+
 export const TableOfContents = ({
   title,
   disable,
@@ -154,7 +174,7 @@ export const TableOfContents = ({
        * Prevent default linking behavior,
        * leaving only the smooth scrolling.
        */
-      onClick: () => false,
+      onClick: (event: React.MouseEvent<HTMLAnchorElement>) => handleClick(event),
       ...unsafeTocbotOptions,
     };
 

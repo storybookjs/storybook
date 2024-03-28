@@ -47,9 +47,8 @@
     "@storybook/core-common": "workspace:*",
     "@storybook/preview-api": "workspace:*",
     "@storybook/types": "workspace:*",
-    "@types/doctrine": "^0.0.3",
-    "assert": "^2.1.0",
-    "doctrine": "^3.0.0",
+    "comment-parser": "^1.4.1",
+    "jsdoc-type-pratt-parser": "^4.0.0",
     "lodash": "^4.17.21"
   },
   "devDependencies": {

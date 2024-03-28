@@ -598,6 +598,8 @@ jobs:
           name: Install dependencies
           command: yarn install
           working_directory: test-storybooks/portable-stories-kitchen-sink/<< parameters.directory >>
+          environment:
+            YARN_ENABLE_IMMUTABLE_INSTALLS: false
       - run:
           name: Run Jest tests
           command: yarn jest

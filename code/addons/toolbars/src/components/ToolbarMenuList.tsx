@@ -16,13 +16,14 @@ export const ToolbarMenuList: FC<ToolbarMenuListProps> = withKeyboardCycle(
     id,
     name,
     description,
+    defaultValue,
     toolbar: { icon: _icon, items, title: _title, preventDynamicIcon, dynamicTitle },
   }) => {
     const [globals, updateGlobals] = useGlobals();
     const [isTooltipVisible, setIsTooltipVisible] = useState(false);
 
     const currentValue = globals[id];
-    const hasGlobalValue = !!currentValue;
+    const hasGlobalValue = !!currentValue && defaultValue !== currentValue;
     let icon = _icon;
     let title = _title;
 

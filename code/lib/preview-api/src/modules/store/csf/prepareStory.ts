@@ -41,7 +41,7 @@ export function prepareStory<TRenderer extends Renderer>(
   // NOTE: in the current implementation we are doing everything once, up front, rather than doing
   // anything at render time. The assumption is that as we don't load all the stories at once, this
   // will have a limited cost. If this proves misguided, we can refactor it.
-  const { moduleExport, id, name } = storyAnnotations || {};
+  const { moduleExport, id, name, globalOverrides } = storyAnnotations || {};
 
   const partialAnnotations = preparePartialAnnotations(
     storyAnnotations,
@@ -118,6 +118,7 @@ export function prepareStory<TRenderer extends Renderer>(
     unboundStoryFn,
     applyLoaders,
     playFunction,
+    globalOverrides,
   };
 }
 export function prepareMeta<TRenderer extends Renderer>(

@@ -2,6 +2,7 @@ import type { FC } from 'react';
 import React, { useState, useCallback } from 'react';
 import { useGlobals } from '@storybook/manager-api';
 import { WithTooltip, TooltipLinkList } from '@storybook/components';
+import { dequal as deepEqual } from 'dequal';
 import { ToolbarMenuButton } from './ToolbarMenuButton';
 import type { WithKeyboardCycleProps } from '../hoc/withKeyboardCycle';
 import { withKeyboardCycle } from '../hoc/withKeyboardCycle';
@@ -18,11 +19,12 @@ export const ToolbarMenuList: FC<ToolbarMenuListProps> = withKeyboardCycle(
     description,
     toolbar: { icon: _icon, items, title: _title, preventDynamicIcon, dynamicTitle },
   }) => {
-    const [globals, updateGlobals] = useGlobals();
+    const [globals, updateGlobals, userGlobals] = useGlobals();
     const [isTooltipVisible, setIsTooltipVisible] = useState(false);
 
     const currentValue = globals[id];
     const hasGlobalValue = !!currentValue;
+    const isOverridden = !deepEqual(currentValue, userGlobals[id]);
     let icon = _icon;
     let title = _title;
 
@@ -42,7 +44,7 @@ export const ToolbarMenuList: FC<ToolbarMenuListProps> = withKeyboardCycle(
       (value: string | undefined) => {
         updateGlobals({ [id]: value });
       },
-      [currentValue, updateGlobals]
+      [id, updateGlobals]
     );
 
     return (
@@ -79,6 +81,7 @@ export const ToolbarMenuList: FC<ToolbarMenuListProps> = withKeyboardCycle(
       >
         <ToolbarMenuButton
           active={isTooltipVisible || hasGlobalValue}
+          disabled={isOverridden}
           description={description || ''}
           icon={icon}
           title={title || ''}

@@ -86,6 +86,10 @@ export type NormalizedStoryAnnotations<TRenderer extends Renderer = Renderer> = 
   userStoryFn?: StoryFn<TRenderer>;
   decorators?: DecoratorFunction<TRenderer>[];
   loaders?: LoaderFunction<TRenderer>[];
+  // Proof of concept
+  globalOverrides?: {
+    [name: string]: any;
+  };
 };
 
 export type CSFFile<TRenderer extends Renderer = Renderer> = {
@@ -104,6 +108,9 @@ export type PreparedStory<TRenderer extends Renderer = Renderer> =
       context: StoryContextForLoaders<TRenderer>
     ) => Promise<StoryContextForLoaders<TRenderer> & { loaded: StoryContext<TRenderer>['loaded'] }>;
     playFunction?: (context: StoryContext<TRenderer>) => Promise<void> | void;
+
+    // Proof of concept
+    globalOverrides?: NormalizedStoryAnnotations<TRenderer>['globalOverrides'];
   };
 
 export type PreparedMeta<TRenderer extends Renderer = Renderer> = Omit<

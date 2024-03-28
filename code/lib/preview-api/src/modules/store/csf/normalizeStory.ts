@@ -7,6 +7,7 @@ import type {
   StoryAnnotations,
   StoryFn,
   StoryId,
+  PreparedStory,
 } from '@storybook/types';
 import { storyNameFromExport, toId } from '@storybook/csf';
 import { dedent } from 'ts-dedent';
@@ -29,7 +30,9 @@ export function normalizeStory<TRenderer extends Renderer>(
   storyAnnotations: LegacyStoryAnnotationsOrFn<TRenderer>,
   meta: NormalizedComponentAnnotations<TRenderer>
 ): NormalizedStoryAnnotations<TRenderer> {
-  const storyObject: StoryAnnotations<TRenderer> = storyAnnotations;
+  const storyObject: StoryAnnotations<TRenderer> & {
+    globalOverrides?: PreparedStory['globalOverrides'];
+  } = storyAnnotations;
   const userStoryFn: StoryFn<TRenderer> | null =
     typeof storyAnnotations === 'function' ? storyAnnotations : null;
 
@@ -54,7 +57,7 @@ export function normalizeStory<TRenderer extends Renderer>(
   const args = { ...story?.args, ...storyObject.args };
   const argTypes = { ...(story?.argTypes as ArgTypes), ...(storyObject.argTypes as ArgTypes) };
   const loaders = [...normalizeArrays(storyObject.loaders), ...normalizeArrays(story?.loaders)];
-  const { render, play, tags = [] } = storyObject;
+  const { render, play, tags = [], globalOverrides } = storyObject;
 
   // eslint-disable-next-line no-underscore-dangle
   const id = parameters.__id || toId(meta.id, exportName);
@@ -71,5 +74,6 @@ export function normalizeStory<TRenderer extends Renderer>(
     ...(render && { render }),
     ...(userStoryFn && { userStoryFn }),
     ...(play && { play }),
+    globalOverrides,
   };
 }

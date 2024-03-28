@@ -5079,6 +5079,7 @@ __metadata:
     "@storybook/manager-api": "workspace:*"
     "@storybook/preview-api": "workspace:*"
     "@storybook/theming": "workspace:*"
+    dequal: "npm:^2.0.2"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
     typescript: "npm:^5.3.2"

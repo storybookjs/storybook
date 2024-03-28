@@ -367,7 +367,7 @@ describe('StoryStore', () => {
       const story = await store.loadStory({ storyId: 'component-one--a' });
 
       store.args.update(story.id, { foo: 'bar' });
-      store.globals!.update({ a: 'c' });
+      store.userGlobals!.update({ a: 'c' });
 
       expect(store.getStoryContext(story)).toMatchObject({
         args: { foo: 'bar' },

@@ -31,3 +31,9 @@ export default {
 };
 
 export const Basic = {};
+
+export const Override = {
+  globalOverrides: {
+    locale: 'kr',
+  },
+};

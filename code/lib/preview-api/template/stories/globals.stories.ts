@@ -4,6 +4,7 @@ import { within, expect } from '@storybook/test';
 
 export default {
   component: globalThis.Components.Pre,
+  tags: ['autodocs'],
 };
 
 export const Inheritance = {
@@ -38,5 +39,41 @@ export const Events = {
     // Reset it back to the original value just to avoid polluting the URL
     await channel.emit('updateGlobals', { globals: { foo: 'fooValue' } });
     await within(canvasElement).findByText('fooValue');
+  },
+};
+
+export const Overrides1 = {
+  // Compose all the globals into `object`, so the pre component only needs a single prop
+  decorators: [
+    (storyFn: PartialStoryFn, context: StoryContext) =>
+      storyFn({ args: { object: context.globals } }),
+  ],
+  globalOverrides: {
+    foo: 'fooOverridden1',
+    bar: 'barOverridden1',
+  },
+  play: async ({ canvasElement }: PlayFunctionContext<any>) => {
+    await expect(JSON.parse(within(canvasElement).getByTestId('pre').innerText)).toMatchObject({
+      foo: 'fooOverridden1',
+      bar: 'barOverridden1',
+    });
+  },
+};
+
+export const Overrides2 = {
+  // Compose all the globals into `object`, so the pre component only needs a single prop
+  decorators: [
+    (storyFn: PartialStoryFn, context: StoryContext) =>
+      storyFn({ args: { object: context.globals } }),
+  ],
+  globalOverrides: {
+    foo: 'fooOverridden2',
+    bar: 'barOverridden2',
+  },
+  play: async ({ canvasElement }: PlayFunctionContext<any>) => {
+    await expect(JSON.parse(within(canvasElement).getByTestId('pre').innerText)).toMatchObject({
+      foo: 'fooOverridden2',
+      bar: 'barOverridden2',
+    });
   },
 };

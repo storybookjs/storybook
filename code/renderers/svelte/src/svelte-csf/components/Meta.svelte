@@ -1,6 +1,6 @@
 <script>
   import { useContext } from './context';
 
-  useContext().meta = $$props;
+  let context = useContext();
+  context.meta = $$props;
 </script>
-

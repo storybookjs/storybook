@@ -1,14 +1,16 @@
-import * as svelte from 'svelte/compiler';
-import type { Node } from 'estree';
+import { compile, type BaseNode, type LegacySvelteNode } from 'svelte/compiler';
 
 import dedent from 'dedent';
 import { extractId } from './extract-id.js';
 import type { MetaDef, StoriesDef, StoryDef } from './types.js';
+import { walk, type Node } from 'estree-walker';
 
 function lookupAttribute(name: string, attributes: any[]) {
-  return attributes.find((att: any) => 
-    (att.type === 'Attribute' && att.name === name) || 
-    (att.type === 'Property' && att.key.name === name));
+  return attributes.find(
+    (att: any) =>
+      (att.type === 'Attribute' && att.name === name) ||
+      (att.type === 'Property' && att.key.name === name)
+  );
 }
 
 function getStaticAttribute(name: string, node: any): string | undefined {
@@ -36,7 +38,6 @@ function getStaticBooleanAttribute(name: string, attributes: any[]): boolean | u
   // extract the attribute
   const attribute = lookupAttribute(name, attributes);
 
-
   if (!attribute) {
     return undefined;
   }
@@ -52,8 +53,7 @@ function getStaticBooleanAttribute(name: string, attributes: any[]): boolean | u
 }
 
 function getMetaTags(attributes: any[]): string[] {
-
-  const finalTags = getStaticBooleanAttribute('autodocs', attributes) ? ["autodocs"] : [];
+  const finalTags = getStaticBooleanAttribute('autodocs', attributes) ? ['autodocs'] : [];
 
   const tags = lookupAttribute('tags', attributes);
 
@@ -73,12 +73,12 @@ function getMetaTags(attributes: any[]): string[] {
     } else if (type === 'ArrayExpression') {
       // tags={["autodocs"]} in object
       const { elements } = value;
-      elements.forEach((e : any) => finalTags.push(e.value));
+      elements.forEach((e: any) => finalTags.push(e.value));
       valid = true;
     } else if (type === 'MustacheTag' && expression.type === 'ArrayExpression') {
       // tags={["autodocs"]} in template
       const { elements } = expression;
-      elements.forEach((e : any) => finalTags.push(e.value));
+      elements.forEach((e: any) => finalTags.push(e.value));
       valid = true;
     }
 
@@ -105,7 +105,7 @@ function fillMetaFromAttributes(meta: MetaDef, attributes: any[]) {
  */
 export function extractStories(component: string): StoriesDef {
   // compile
-  const { ast } = svelte.compile(component);
+  const { ast } = compile(component, {});
 
   const allocatedIds: string[] = ['default'];
 
@@ -116,8 +116,8 @@ export function extractStories(component: string): StoriesDef {
   };
 
   if (ast.instance) {
-    svelte.walk(<Node><unknown>ast.instance, {
-      enter(node: any) {
+    walk(ast.instance, {
+      enter(node) {
         if (node.type === 'ImportDeclaration') {
           if (node.source.value === '@storybook/addon-svelte-csf') {
             node.specifiers
@@ -133,8 +133,8 @@ export function extractStories(component: string): StoriesDef {
     });
 
     // extracts allocated Ids
-    svelte.walk(<Node><unknown>ast.instance, {
-      enter(node: any) {
+    walk(ast.instance, {
+      enter(node) {
         if (node.type === 'ImportDeclaration') {
           node.specifiers
             .map((n: any) => n.local.name)
@@ -148,35 +148,38 @@ export function extractStories(component: string): StoriesDef {
   const stories: Record<string, StoryDef> = {};
   const meta: MetaDef = {};
   if (ast.module) {
-    svelte.walk(<Node>ast.module.content, {
-      enter(node: any) {
-        if (node.type === 'ExportNamedDeclaration' && 
-          node.declaration?.type === 'VariableDeclaration' && 
+    walk(ast.module.content, {
+      enter(node) {
+        if (
+          node.type === 'ExportNamedDeclaration' &&
+          node.declaration?.type === 'VariableDeclaration' &&
           node.declaration?.declarations.length === 1 &&
-          node.declaration?.declarations[0]?.id?.name === 'meta') {
+          (node.declaration?.declarations[0]?.id as { name?: string })?.name === 'meta'
+        ) {
+          if (node.declaration?.kind !== 'const') {
+            throw new Error('meta should be exported as const');
+          }
 
-            if (node.declaration?.kind !== 'const') {
-              throw new Error('meta should be exported as const');
-            }
+          const init = node.declaration?.declarations[0]?.init;
+          if (init?.type !== 'ObjectExpression') {
+            throw new Error('meta should export on object');
+          }
 
-            const init = node.declaration?.declarations[0]?.init;
-            if (init?.type !== 'ObjectExpression') {
-              throw new Error('meta should export on object');
-            }
-
-            fillMetaFromAttributes(meta, init.properties);
-            if (node.leadingComments?.length > 0) {
-              // throws dedent expression is not callable.
-              // @ts-ignore
-              meta.description = dedent(node.leadingComments[0].value.replaceAll(/^ *\*/mg, ""));
-            }
+          fillMetaFromAttributes(meta, init.properties);
+          if ((node.leadingComments?.length ?? 0) > 0) {
+            // throws dedent expression is not callable.
+            // @ts-ignore
+            meta.description = dedent(node.leadingComments[0].value.replaceAll(/^ *\*/gm, ''));
+          }
         }
-      }
+      },
     });
   }
-  let latestComment: string|undefined;
-  svelte.walk(<Node>ast.html, {
-    enter(node: any) {
+  let latestComment: string | undefined;
+  walk(ast.html, {
+    enter(node1) {
+      // Use correct type for svelte nodes, not sure why walk isn't generic over anything that extends Node
+      const node = node1 as unknown as LegacySvelteNode;
       if (
         node.type === 'InlineComponent' &&
         (node.name === localNames.Story || node.name === localNames.Template)
@@ -205,8 +208,8 @@ export function extractStories(component: string): StoriesDef {
           // ignore stories without children
           let source: string = '';
           if (node.children.length > 0) {
-            const { start } = node.children[0];
-            const { end } = node.children[node.children.length - 1];
+            const { start } = node.children[0] as BaseNode;
+            const { end } = node.children[node.children.length - 1] as BaseNode;
 
             // throws dedent expression is not callable.
             // @ts-ignore
@@ -242,10 +245,10 @@ export function extractStories(component: string): StoriesDef {
       }
     },
     leave(node: any) {
-      if (node.type !== "Comment" && node.type !== "Text") {
+      if (node.type !== 'Comment' && node.type !== 'Text') {
         latestComment = undefined;
       }
-    }
+    },
   });
   return {
     meta,

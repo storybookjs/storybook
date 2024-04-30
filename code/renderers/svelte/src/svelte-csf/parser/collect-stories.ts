@@ -1,12 +1,13 @@
 /* eslint-env browser */
 
-import RegisterContext from '../components/RegisterContext.svelte';
 import RenderContext from '../components/RenderContext.svelte';
 import { combineParameters } from '@storybook/preview-api';
 import { extractId } from './extract-id.js';
 import { logger } from '@storybook/client-logger';
 import type { Meta, StoriesDef, Story } from './types.js';
-import type { SvelteComponent } from 'svelte';
+import { type SvelteComponent } from 'svelte';
+import RegisterContext from '../components/RegisterContext.svelte';
+import { asClassComponent, createClassComponent } from 'svelte/legacy';
 
 /* Called from a webpack loader and a jest transformation.
  *
@@ -19,19 +20,13 @@ import type { SvelteComponent } from 'svelte';
  * the one selected is disabled.
  */
 
-
-
 const createFragment = document.createDocumentFragment
   ? () => document.createDocumentFragment()
   : () => document.createElement('div');
 
 export default (
   StoriesComponent: SvelteComponent,
-  {
-    stories = {},
-    meta: parsedMeta = {},
-    allocatedIds = [],
-  }: StoriesDef,
+  { stories = {}, meta: parsedMeta = {}, allocatedIds = [] }: StoriesDef,
   exportedMeta = undefined
 ) => {
   const repositories = {
@@ -41,11 +36,11 @@ export default (
 
   // extract all stories
   try {
-    const context = new RegisterContext({
+    const context = new (asClassComponent(RegisterContext))({
       target: createFragment() as Element,
       props: {
         Stories: StoriesComponent,
-        repositories,
+        repositories: () => repositories,
       },
     });
     context.$destroy();
@@ -61,12 +56,13 @@ export default (
 
   // Inject description extracted from static analysis.
   if (parsedMeta.description && !meta.parameters?.docs?.description?.component) {
+    console.log('meta:', meta);
     meta.parameters = combineParameters(meta.parameters, {
       docs: {
         description: {
-          component: parsedMeta.description
-        }
-      }
+          component: parsedMeta.description,
+        },
+      },
     });
   }
 
@@ -88,6 +84,7 @@ export default (
     );
   }
 
+  console.log('Got Stories:', repositories);
   return {
     meta,
     stories: repositories.stories
@@ -107,6 +104,7 @@ export default (
             throw new Error(`Story ${name} is referencing an unknown template ${template}`);
           }
 
+          console.log(storyContext);
           return {
             Component: RenderContext,
             props: {
@@ -138,7 +136,7 @@ export default (
             }
 
             return play(storyContext);
-          }
+          };
         }
 
         // inject story sources
@@ -156,7 +154,7 @@ export default (
           });
         }
 
-        let snippet: string|null|undefined;
+        let snippet: string | null | undefined;
 
         if (source === true || (source === false && !hasArgs)) {
           snippet = rawSource;

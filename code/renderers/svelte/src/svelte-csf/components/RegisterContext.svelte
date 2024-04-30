@@ -1,11 +1,10 @@
 <script>
   import { createRegistrationContext } from './context';
 
-  export let Stories;
-  export let repositories;
+  const { Stories, repositories } = $props();
 
-  createRegistrationContext(repositories);
-
+  console.log({ Stories, repositories });
+  createRegistrationContext(repositories());
 </script>
 
 <svelte:component this={Stories} />

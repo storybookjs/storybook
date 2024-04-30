@@ -44,6 +44,7 @@ export default function csfPlugin(svelteOptions) {
 
       const metaExported = code.includes('export { meta }');
       s.replace('export { meta };', '// export { meta };');
+      console.log({ storyDef, component });
       const output = [
         '',
         `import parser from '${parser}';`,

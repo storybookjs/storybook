@@ -219,7 +219,7 @@ export function extractStories(component: string): StoriesDef {
             name,
             template: isTemplate,
             source,
-            hasArgs: node.attributes.find((att: any) => att.type === 'Let') != null,
+            hasArgs: node.attributes.find((att) => att.type === 'Let') != null,
           };
           if (!isTemplate && latestComment) {
             // throws dedent expression is not callable.

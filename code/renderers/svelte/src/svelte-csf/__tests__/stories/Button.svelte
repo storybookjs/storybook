@@ -1,18 +1,13 @@
 <script>
-  import { createEventDispatcher, afterUpdate } from 'svelte';
-  export let text = '';
-  export let rounded = true;
-
-  const dispatch = createEventDispatcher();
+  let { children, text = '', rounded = true, onclick, onafterupdate } = $props();
 
   function onClick(event) {
     rounded = !rounded;
-
-    dispatch('click', event);
+    onclick?.(event);
   }
 
-  afterUpdate(() => {
-    dispatch('afterUpdate');
+  $effect(() => {
+    onafterupdate?.();
   });
 </script>
 
@@ -29,9 +24,9 @@
   }
 </style>
 
-<button class="button" class:rounded on:click={onClick}>
+<button class="button" class:rounded onclick={onClick}>
   <strong>{rounded ? 'Round' : 'Square'} corners</strong>
   <br />
   {text}
-  <slot />
+  {@render children?.()}
 </button>

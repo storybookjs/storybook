@@ -1,44 +1,45 @@
 <script>
-    import { createEventDispatcher } from 'svelte';
+    /** @typedef {object} TypeA */
+    /** @typedef {number} TypeB */
+    /**
+     * @type {{ string: string; number: number; fun: (string) => string; unionstr: 'a' | 'b'; unionnumeric: 0 | 1; union: TypeA | TypeB; required: string }}
+     */
+    let {
+      string = 'string',
+      number = 0,
+      fun = (key) => '',
+      unionstr = 'a',
+      unionnumeric = 1,
+      union = null,
+      required = '',
+      unknown = undefined,
+      onchange,
+      onclose,
+    } = $props();
 
-    const dispatch = createEventDispatcher();
-
-    export let string = 'string';
-    export let number = 0;
     /**
      * @type {(string) => string}
      */
-    export let fun = (key) => '';
+
     /**
      * @type {'a'|'b'}
      */
-    export let unionstr = 'a';
 
      /**
      * @type {0|1}
      */
-     export let unionnumeric = 1;
 
-    /** @typedef {object} TypeA */
-    /** @typedef {number} TypeB */
+    
     /** @type {TypeA|TypeB}*/
-    export let union = null;
-
-    /**
-     * @required
-     */
-    export let required = '';
-
-    export let unknown = undefined;
 
     function onClick() {
         /**
          * Event description 
          */
-        dispatch('change', "some value");
+        onchange?.("some value");
     }
 
-    $: preview = {
+    let preview = $derived({
         string,
         number,
         fun,
@@ -47,18 +48,18 @@
         union,
         required,
         unknown,
-    }
+    });
     
 </script>
 
-<pre on:click={onClick}>{JSON.stringify(preview, null, '  ')}</pre>
+<pre onclick={onClick}>{JSON.stringify(preview, null, '  ')}</pre>
 
 <!-- 
     User has clicked this element
 -->
-<div on:click/>
+<div />
 
-<div on:click={() => /** Close description */ dispatch('close')}/>
+<div onclick={() => /** Close description */ onclose?.()}/>
 
 <!-- Default Slot -->
 <slot/>

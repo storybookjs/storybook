@@ -3,7 +3,7 @@
 
   import Button from './Button.svelte';
 
-  let count = 0;
+  let count = $state(0);
   function handleClick() {
     count += 1;
   }
@@ -13,7 +13,7 @@
 <Meta component={Button} autodocs/>
 
 <Template let:args>
-  <Button {...args} on:click={handleClick} on:click>
+  <Button {...args} onclick={handleClick}>
     You clicked: {count}
   </Button>
 </Template>

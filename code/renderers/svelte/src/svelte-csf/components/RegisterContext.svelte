@@ -3,7 +3,6 @@
 
   const { Stories, repositories } = $props();
 
-  console.log({ Stories, repositories });
   createRegistrationContext(repositories());
 </script>
 

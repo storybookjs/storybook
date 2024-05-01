@@ -7,7 +7,7 @@ import { logger } from '@storybook/client-logger';
 import type { Meta, StoriesDef, Story } from './types.js';
 import { type SvelteComponent } from 'svelte';
 import RegisterContext from '../components/RegisterContext.svelte';
-import { asClassComponent, createClassComponent } from 'svelte/legacy';
+import { asClassComponent } from 'svelte/legacy';
 
 /* Called from a webpack loader and a jest transformation.
  *
@@ -56,7 +56,6 @@ export default (
 
   // Inject description extracted from static analysis.
   if (parsedMeta.description && !meta.parameters?.docs?.description?.component) {
-    console.log('meta:', meta);
     meta.parameters = combineParameters(meta.parameters, {
       docs: {
         description: {
@@ -84,7 +83,6 @@ export default (
     );
   }
 
-  console.log('Got Stories:', repositories);
   return {
     meta,
     stories: repositories.stories
@@ -104,7 +102,6 @@ export default (
             throw new Error(`Story ${name} is referencing an unknown template ${template}`);
           }
 
-          console.log(storyContext);
           return {
             Component: RenderContext,
             props: {

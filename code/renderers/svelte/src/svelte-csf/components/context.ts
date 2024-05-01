@@ -27,8 +27,6 @@ export function createRegistrationContext(repositories: any) {
     },
     set meta(value: any) {
       // eslint-disable-next-line no-param-reassign
-      console.log('set meta:', value);
-      console.log(repositories);
       repositories.meta = value;
     },
     args: {},

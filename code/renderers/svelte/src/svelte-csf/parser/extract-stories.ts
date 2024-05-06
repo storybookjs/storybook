@@ -232,13 +232,7 @@ export function extractStories(component: string): StoriesDef {
       } else if (node.type === 'InlineComponent' && node.name === localNames.Meta) {
         this.skip();
 
-        fillMetaFromAttributes(meta, node.attributes);
-        if (latestComment) {
-          meta.description = latestComment;
-        }
-        latestComment = undefined;
-      } else if (node.type === 'Comment') {
-        this.skip();
+					meta.parameters?.description = latestComment;
 
         latestComment = node.data?.trim();
         return;

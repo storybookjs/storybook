@@ -1,3 +1,5 @@
+import type { Meta } from '@storybook/svelte';
+
 /**
  * Story extracted from static analysis.
  */
@@ -10,20 +12,10 @@ export interface StoryDef {
 }
 
 /**
- * Meta extracted from static analysis.
- */
-export interface MetaDef {
-  title?: string;
-  id?: string;
-  tags?: string[];
-  description?: string;
-}
-
-/**
  * Informations extracted from static analysis.
  */
 export interface StoriesDef {
-  meta: MetaDef;
+  meta: Meta;
   stories: Record<string, StoryDef>;
   /**
    * All allocated ids in the svelte script section.
@@ -41,14 +33,5 @@ export interface Story {
   component: any;
   isTemplate: boolean;
   source: boolean;
-  play?: (playStoryContext:object)=>any;
-}
-
-/**
- * Meta extracted from executing the Stories component.
- */
-export interface Meta {
-  name: string;
-  component: any;
-  parameters: any;
+  play?: (playStoryContext: object) => any;
 }

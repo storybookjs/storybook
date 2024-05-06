@@ -1,14 +1,21 @@
-<script>
-  let { children, text = '', rounded = true, onclick, onafterupdate } = $props();
+<script lang="ts">
+  let { children, rounded = true, onclick, onafterupdate, text = "" }: {
+    children?: () => any,
+    rounded?: boolean,
+    onclick: (event: Event) => void,
+    onafterupdate?: () => void,
+    text: string,
+  } = $props();
+
 
   function onClick(event) {
-    rounded = !rounded;
     onclick?.(event);
   }
 
   $effect(() => {
     onafterupdate?.();
   });
+
 </script>
 
 <style>
@@ -24,7 +31,7 @@
   }
 </style>
 
-<button class="button" class:rounded onclick={onClick}>
+<button class="button" class:rounded={rounded} onclick={onClick}>
   <strong>{rounded ? 'Round' : 'Square'} corners</strong>
   <br />
   {text}

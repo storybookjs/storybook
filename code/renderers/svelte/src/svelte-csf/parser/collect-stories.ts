@@ -1,13 +1,14 @@
 /* eslint-env browser */
+import { logger } from '@storybook/client-logger';
+import { combineParameters } from '@storybook/preview-api';
+import type { Meta } from '@storybook/svelte';
+import { mount, unmount } from 'svelte';
+
+import type { StoriesDef, Story } from './types.js';
+import { extractId } from './extract-id.js';
 
 import RenderContext from '../components/RenderContext.svelte';
-import { combineParameters } from '@storybook/preview-api';
-import { extractId } from './extract-id.js';
-import { logger } from '@storybook/client-logger';
-import type { Meta, StoriesDef, Story } from './types.js';
-import { type SvelteComponent } from 'svelte';
 import RegisterContext from '../components/RegisterContext.svelte';
-import { asClassComponent } from 'svelte/legacy';
 
 /* Called from a webpack loader and a jest transformation.
  *
@@ -24,45 +25,27 @@ const createFragment = document.createDocumentFragment
   ? () => document.createDocumentFragment()
   : () => document.createElement('div');
 
-export default (
-  StoriesComponent: SvelteComponent,
-  { stories = {}, meta: parsedMeta = {}, allocatedIds = [] }: StoriesDef,
-  exportedMeta = undefined
+export default <Component extends Parameters<typeof mount>[0]>(
+  StoriesComponent: Component,
+  { stories = {}, meta = {}, allocatedIds = [] }: StoriesDef
 ) => {
   const repositories = {
-    meta: null as Meta | null,
+    meta: null as Meta<Component> | null,
     stories: [] as Story[],
   };
 
   // extract all stories
   try {
-    const context = new (asClassComponent(RegisterContext))({
+    const context = mount(RegisterContext, {
       target: createFragment() as Element,
       props: {
         Stories: StoriesComponent,
         repositories: () => repositories,
       },
     });
-    context.$destroy();
+    unmount(context);
   } catch (e: any) {
     logger.error(`Error extracting stories ${e.toString()}`, e);
-  }
-
-  const meta = exportedMeta || repositories.meta;
-  if (!meta) {
-    logger.error('Missing module meta export or <Meta/> tag');
-    return {};
-  }
-
-  // Inject description extracted from static analysis.
-  if (parsedMeta.description && !meta.parameters?.docs?.description?.component) {
-    meta.parameters = combineParameters(meta.parameters, {
-      docs: {
-        description: {
-          component: parsedMeta.description,
-        },
-      },
-    });
   }
 
   const { component: globalComponent } = meta;
@@ -79,7 +62,7 @@ export default (
 
   if (duplicateTemplatesId.length > 0) {
     logger.warn(
-      `Found duplicates templates id for stories '${meta.name}': ${duplicateTemplatesId}`
+      `Found duplicates templates id for stories '${meta.component?.name}': ${duplicateTemplatesId}`
     );
   }
 

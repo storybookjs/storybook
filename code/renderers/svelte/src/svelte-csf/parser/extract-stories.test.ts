@@ -423,33 +423,6 @@ describe('extractSource', () => {
       }
     `);
   });
-  test('Meta tag description', () => {
-    expect(
-      extractStories(`
-        <script>
-          import { Story } from '@storybook/svelte';
-          import Button from './Button.svelte';
-        </script>
-
-        <!-- Meta Description -->
-        <Meta title="a title"/>
-        `)
-    ).toMatchInlineSnapshot(`
-      {
-        "allocatedIds": [
-          "default",
-          "Story",
-          "Button",
-        ],
-        "meta": {
-          "description": "Meta Description",
-          "id": undefined,
-          "title": "a title",
-        },
-        "stories": {},
-      }
-    `);
-  });
   test('With description', () => {
     expect(
       extractStories(`

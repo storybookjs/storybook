@@ -1,9 +1,10 @@
 import { compile, type BaseNode, type LegacySvelteNode } from 'svelte/compiler';
-
+import type { Meta } from '@storybook/svelte';
 import dedent from 'dedent';
-import { extractId } from './extract-id.js';
-import type { MetaDef, StoriesDef, StoryDef } from './types.js';
 import { walk, type Node } from 'estree-walker';
+
+import { extractId } from './extract-id.js';
+import type { StoriesDef, StoryDef } from './types.js';
 
 function lookupAttribute(name: string, attributes: any[]) {
   return attributes.find(
@@ -90,7 +91,7 @@ function getMetaTags(attributes: any[]): string[] {
   return finalTags;
 }
 
-function fillMetaFromAttributes(meta: MetaDef, attributes: any[]) {
+function fillMetaFromAttributes(meta: Meta, attributes: any[]) {
   meta.title = getStaticAttribute('title', attributes);
   meta.id = getStaticAttribute('id', attributes);
   const tags = getMetaTags(attributes);
@@ -146,7 +147,7 @@ export function extractStories(component: string): StoriesDef {
   }
 
   const stories: Record<string, StoryDef> = {};
-  const meta: MetaDef = {};
+  const meta: Meta = {};
   if (ast.module) {
     walk(ast.module.content, {
       enter(node) {
@@ -231,9 +232,15 @@ export function extractStories(component: string): StoriesDef {
         }
       } else if (node.type === 'InlineComponent' && node.name === localNames.Meta) {
         this.skip();
-
-					meta.parameters?.description = latestComment;
-
+        fillMetaFromAttributes(meta, node.attributes);
+        if (latestComment) {
+          if ('parameters' in meta && meta.parameters) {
+            meta.parameters.docs.description = latestComment;
+          }
+        }
+        latestComment = undefined;
+      } else if (node.type === 'Comment') {
+        this.skip();
         latestComment = node.data?.trim();
         return;
       }

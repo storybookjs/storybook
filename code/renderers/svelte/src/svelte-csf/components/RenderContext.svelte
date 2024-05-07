@@ -16,10 +16,9 @@
       .map(([k, v]) => [v.action, args[k]])
   );
 
-  $inspect(events, args, storyContext);
+  $inspect(events, args, storyContext).with(console.trace);
 
-  $effect(() => setStoryRenderContext(args, storyContext))
-
+  $effect(() => setStoryRenderContext(args, storyContext));
 </script>
 
 <svelte:component this={Stories} {...events} />

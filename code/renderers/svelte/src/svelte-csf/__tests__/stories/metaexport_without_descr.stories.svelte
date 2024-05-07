@@ -17,10 +17,12 @@
   }
 </script>
 
-<Template let:args>
-  <Button {...args} onclick={handleClick}>
-    You clicked: {count}
-  </Button>
+<Template>
+  {#snippet children(args)}
+    <Button {...args} onclick={handleClick}>
+      You clicked: {count}
+    </Button>
+  {/snippet}
 </Template>
 
 <Story name="Default" />

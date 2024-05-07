@@ -13,7 +13,9 @@
   import { Story } from '../src/index.js';
 </script>
 
-<Story name="StoryContext" let:context>
-  <div>StoryContext.name = {context.name}</div>
-  <div>StoryContext.id = {context.id}</div>
+<Story name="StoryContext">
+  {#snippet children({ context })}
+    <div>StoryContext.name = {context.name}</div>
+    <div>StoryContext.id = {context.id}</div>
+  {/snippet}
 </Story>

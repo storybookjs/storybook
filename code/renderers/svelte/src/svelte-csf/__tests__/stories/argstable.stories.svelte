@@ -16,7 +16,13 @@
   import { Story } from '../src/index.js';
 </script>
 
-<Story name="ArgsTable" source={srcArgsTableView} let:args>
-  <ArgsTableView {...args} />
+<Story name="ArgsTable" source={srcArgsTableView} args={{ required: true, value: "test" }}>
+  {#snippet children(args)}
+      <ArgsTableView {...args}>
+        {#snippet actions({ required, value })}
+        <!-- FIXME: I don't understand what resulets were tried to be achieved there -->
+        {/snippet}
+      </ArgsTableView>
+  {/snippet}
 </Story>
 

@@ -1,7 +1,7 @@
 import { compile, type BaseNode, type LegacySvelteNode } from 'svelte/compiler';
 import type { Meta } from '@storybook/svelte';
 import dedent from 'dedent';
-import { walk, type Node } from 'estree-walker';
+import { walk } from 'estree-walker';
 
 import { extractId } from './extract-id.js';
 import type { StoriesDef, StoryDef } from './types.js';

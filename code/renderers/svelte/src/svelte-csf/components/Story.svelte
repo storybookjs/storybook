@@ -3,9 +3,7 @@
 
   const context = useContext();
 
-  export let name;
-  export let template = null;
-  export let play = null;
+  const { children, name, template = null, play = null, ...restProps } = $props();
 
   if (!name) {
     throw new Error('Missing Story name');
@@ -13,12 +11,13 @@
 
   context.register({
     name,
-    ...$$restProps,
+    ...restProps,
     play,
-    template: template != null ? template : !$$slots.default ? 'default' : null,
+    template: template != null ? template : !children ? 'default' : null,
   });
 
-  $: render = context.render && !context.templateName && context.storyName == name;
+  const render = $derived(context.render && !context.templateName && context.storyName === name);
+
   const ctx = getStoryRenderContext();
   const args = ctx.argsStore;
   const storyContext = ctx.storyContextStore;
@@ -29,11 +28,13 @@
     }
   }
 
-  $: if (render) {
-    injectIntoPlayFunction($storyContext, play);
-  }
+  $effect(() => {
+    if (render) {
+      injectIntoPlayFunction($storyContext, play);
+    }
+  });
 </script>
 
 {#if render}
-  <slot {...$args} context={$storyContext} args={$args} />
+  {@render children({ ...$args, context: $storyContext })}
 {/if}

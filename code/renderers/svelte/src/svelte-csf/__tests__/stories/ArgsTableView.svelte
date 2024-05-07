@@ -2,9 +2,11 @@
   /** @typedef {object} TypeA */
   /** @typedef {number} TypeB */
   /**
-   * @type {{ string: string; number: number; fun: (string) => string; unionstr: 'a' | 'b'; unionnumeric: 0 | 1; union: TypeA | TypeB; required: string }}
+   * @type {{ actions: import("svelte").Snippet, string: string; number: number; fun: (string) => string; unionstr: 'a' | 'b'; unionnumeric: 0 | 1; union: TypeA | TypeB; required: string }}
    */
   let {
+    children,
+    actions,
     string = 'string',
     number = 0,
     fun = (key) => '',
@@ -59,8 +61,6 @@
 
 <div onclick={() => /** Close description */ onclose?.()}></div>
 
-<!-- Default Slot -->
-<!-- <slot /> -->
+{@render children()}
 
-<!-- Slot for actions -->
-<!-- <slot name="actions" {required} value={string} /> -->
+{@render actions({ required, value: string })}

@@ -2,9 +2,9 @@
   let { children, rounded = true, onclick, onafterupdate, text = "" }: {
     children?: () => any,
     rounded?: boolean,
-    onclick: (event: Event) => void,
+    onclick?: (event: Event) => void,
     onafterupdate?: () => void,
-    text: string,
+    text?: string,
   } = $props();
 
 
@@ -15,7 +15,6 @@
   $effect(() => {
     onafterupdate?.();
   });
-
 </script>
 
 <style>

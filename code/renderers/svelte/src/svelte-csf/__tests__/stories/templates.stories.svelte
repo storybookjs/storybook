@@ -1,6 +1,4 @@
 <script context="module">
-  import Button from './Button.svelte';
-
   export const meta = {
     title: 'Templates',
   };
@@ -10,12 +8,16 @@
   import { Story, Template } from '../src/index.js';
 </script>
 
-<Template id="myTemplate" let:text>
-  <div>Template 1 {text}</div>
+<Template id="myTemplate" args={{ text: 'story1' }}>
+  {#snippet children({ text })}
+    <div>Template 1 {text}</div>
+  {/snippet}
 </Template>
 
-<Template id="anotherTemplate" let:text>
-  <div>Template 2 {text}</div>
+<Template id="anotherTemplate">
+  {#snippet children({ text })}
+    <div>Template 2 {text}</div>
+  {/snippet}
 </Template>
 
 <Story id="s1" template="myTemplate" name="Story with myTemplate" args={{ text: 'story1' }} />

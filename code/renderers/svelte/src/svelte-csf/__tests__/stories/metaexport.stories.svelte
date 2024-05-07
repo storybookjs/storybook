@@ -1,6 +1,9 @@
-<script context="module">
+<script context="module" lang="ts">
+  import type {Meta} from '@storybook/svelte';
+
   import Button from './Button.svelte';
 
+  // FIXME: Doesn't work
   /**
    * Stories about a Button.
    *
@@ -10,10 +13,10 @@
     title: 'MetaExport/MetaExport',
     component: Button,
     tags: ['autodocs'],
-  };
+  } satisfies Meta<Button>;
 </script>
 
-<script>
+<script lang="ts">
   import { Story, Template } from '../src/index.js';
 
   let count = $state(0);
@@ -23,10 +26,12 @@
   }
 </script>
 
-<Template let:args>
-  <Button {...args} onclick={handleClick}>
-    You clicked: {count}
-  </Button>
+<Template>
+  {#snippet children(args)}
+    <Button {...args} onclick={handleClick}>
+      You clicked: {count}
+    </Button>
+  {/snippet}
 </Template>
 
 <Story name="Default" />

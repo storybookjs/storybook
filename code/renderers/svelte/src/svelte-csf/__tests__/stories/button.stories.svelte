@@ -27,10 +27,12 @@
   }
 </script>
 
-<Template let:args>
-  <Button {...args} onclick={handleClick}>
-    You clicked: {count}
-  </Button>
+<Template>
+  {#snippet children(args)}
+    <Button {...args} onclick={handleClick}>
+      You clicked: {count}
+    </Button>
+  {/snippet}
 </Template>
 
 <Story name="Default" />
@@ -40,6 +42,6 @@
 <Story name="Square" source args={{ rounded: false }} />
 
 <!-- Dynamic snippet should be disabled for this story -->
-<Story name="Button No Args" let:args>
-  <Button {...args}>Label</Button>
+<Story name="Button No Args">
+  <Button>Label</Button>
 </Story>

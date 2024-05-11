@@ -1,10 +1,11 @@
+import fs from 'node:fs/promises';
+
+import { storyNameFromExport, toId } from '@storybook/csf';
+import type { IndexInput, IndexedCSFFile, IndexerOptions } from '@storybook/types';
 import * as svelte from 'svelte/compiler';
 
 import { extractStories } from '../parser/extract-stories.js';
-import fs from 'fs-extra';
 import { loadSvelteConfig } from '../config-loader.js';
-import { storyNameFromExport, toId } from '@storybook/csf';
-import type { IndexInput, IndexedCSFFile, IndexerOptions } from '@storybook/types';
 
 export async function readStories(fileName: string) {
   let code = (await fs.readFile(fileName, 'utf-8')).toString();

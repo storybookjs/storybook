@@ -3,7 +3,6 @@
 
   import Button from './Button.svelte';
 
-  // FIXME: Doesn't work
   /**
    * Stories about a Button.
    *

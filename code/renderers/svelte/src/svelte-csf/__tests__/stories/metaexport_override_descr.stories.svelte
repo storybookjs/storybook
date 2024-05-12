@@ -11,7 +11,6 @@
     parameters: {
       docs: {
         description: {
-          // FIXME: Doesn't work
           component: 'Description set explicitly in the meta export',
         },
       },

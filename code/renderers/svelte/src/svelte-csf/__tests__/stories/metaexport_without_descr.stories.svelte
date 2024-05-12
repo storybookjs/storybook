@@ -8,7 +8,7 @@
 </script>
 
 <script>
-  import { Story, Template } from '../src/index.js';
+  import { Story, Template } from '../src/index';
 
   let count = $state(0);
 

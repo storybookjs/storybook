@@ -10,7 +10,7 @@
 </script>
 
 <script>
-  import { Story } from '../src/index.js';
+  import { Story } from '../src/index';
   import { expect } from '@storybook/test';
   import { userEvent, within } from '@storybook/test';
   import { tick } from 'svelte';
@@ -23,15 +23,15 @@
     expect(count.textContent).toEqual('You clicked 1 times');
   }
 
-  let i = 0;
+  let i = $state(0);
 </script>
 
-<Story name="Play" {play}>
+<Story {play}>
   <Counter />
 </Story>
 
 <Story
-  name="Play (capturing scope)"
+  name="Play capturing scope"
   play={async (storyContext) => {
     const { canvasElement } = storyContext;
     const canvas = within(canvasElement);

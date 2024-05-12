@@ -5,7 +5,7 @@
 </script>
 
 <script>
-  import { Story, Template } from '../src/index.js';
+  import { Template, Story } from '../src/index';
 </script>
 
 <Template id="myTemplate" args={{ text: 'story1' }}>

@@ -1,40 +1,70 @@
-<script>
-  import { getStoryRenderContext, useContext } from './context';
+<script lang="ts" generics="Component extends SvelteComponent">
+  import type {  StoryContext } from '@storybook/svelte';
+  import type { ComponentProps, Snippet, SvelteComponent } from 'svelte';
 
-  const context = useContext();
+  import {type AddonStoryObj, useContext, getRenderContext } from './context.js';
 
-  const { children, name, template = null, play = null, ...restProps } = $props();
-
-  if (!name) {
-    throw new Error('Missing Story name');
+  type Props = Omit<AddonStoryObj<Component>, "name"> & {
+    children?: Snippet<[ComponentProps<Component> & { context: StoryContext<ComponentProps<Component>> }]>;
+    /**
+    * Id of the story.
+    *
+    * Optional, auto-generated from name if not specified.
+    */
+    id?: string;
+    /**
+    * Name of the story.
+    * @default "Default"
+    */
+    name?: string;
+    /**
+    * Id of the template used by this story.
+    *
+    * Optional. Used if the story has no body.
+    * If not specified, use the 'default' template.
+    */
+    template?: string;
+    /**
+    * TODO: Figure out if this feature is still needed.
+    *
+    * Specify which sources should be shown.
+    *
+    * By default, sources for an args story are auto-generated.
+    * If source is true, then the source of the story will be used instead.
+    * If source is a string, it replaces the source of the story.
+    */
+    // source?: boolean | string;
   }
 
-  context.register({
-    name,
-    ...restProps,
-    play,
-    template: template != null ? template : !children ? 'default' : null,
-  });
+  const { children, name = "Default", play, template, ...restProps }:Props = $props();
 
-  const render = $derived(context.render && !context.templateName && context.storyName === name);
+  const context = useContext<Component>();
 
-  const ctx = getStoryRenderContext();
-  const args = ctx.argsStore;
-  const storyContext = ctx.storyContextStore;
+  const templateId = !children ? template ? template : 'default' : undefined;
 
-  function injectIntoPlayFunction(ctxt, play) {
-    if (play && ctxt.playFunction) {
-      ctxt.playFunction.__play = play;
+  // FIXME: This is challenging, not sure why TypeScript is not happy.
+  context.registerStory({ ...restProps, name, play, templateId });
+
+  const { argsStore, storyContextStore, currentStoryName } = getRenderContext<Component>();
+
+  const render = $derived(context.render && $currentStoryName === name);
+
+
+  // FIXME: Come on TypeScript :(
+  function injectIntoPlayFunction(storyRenderContextStore: typeof $storyContextStore, play: Props["play"]) {
+    console.log({ play, storyRenderContextStore });
+    if (play && storyRenderContextStore.playFunction) {
+      storyRenderContextStore.playFunction.__play = play;
     }
   }
 
   $effect(() => {
     if (render) {
-      injectIntoPlayFunction($storyContext, play);
+      injectIntoPlayFunction($storyContextStore, play);
     }
   });
 </script>
 
-{#if render}
-  {@render children({ ...$args, context: $storyContext })}
+{#if render && children}
+  {@render children({ ...$argsStore, context: $storyContextStore })}
 {/if}

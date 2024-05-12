@@ -1,62 +1,17 @@
-import type { SvelteComponent } from 'svelte';
-import type {
-  Addon_BaseAnnotations as BaseAnnotations,
-  StoryContext,
-  WebRenderer,
-} from '@storybook/types';
-
-type DecoratorReturnType =
-  | void
-  | SvelteComponent
-  | {
-      Component: any;
-      props?: any;
-    };
-
-interface StoryProps extends BaseAnnotations<any, DecoratorReturnType, WebRenderer> {
-  /**
-   * Id of the story.
-   *
-   * Optional, auto-generated from name if not specified.
-   */
-  id?: string;
-  /**
-   * Name of the story.
-   */
-  name: string;
-  /**
-   * Id of the template used by this story.
-   *
-   * Optional. Used if the story has no body.
-   * If not specified, use the 'default' template.
-   */
-  template?: string;
-  /**
-   * Specify which sources should be shown.
-   *
-   * By default, sources for an args story are auto-generated.
-   * If source is true, then the source of the story will be used instead.
-   * If source is a string, it replaces the source of the story.
-   */
-  source?: boolean | string;
-}
-
-interface TemplateProps extends BaseAnnotations<any, DecoratorReturnType> {
-  /**
-   * Id of the template.
-   *
-   * Optional. Use 'default' if not specified.
-   */
-  id?: string;
-}
+/**
+ * @deprecated Use `export const meta` inside the module tag `<script context="module">`.
+ * @See {@link https://github.com/storybookjs/addon-svelte-csf} for an example
+ */
+export const Meta: never;
 
 /**
- * Story.
+ * @deprecated Use `const { Template } = typed(meta)` inside the instance tag `<script>`.
+ * @See {@link https://github.com/storybookjs/addon-svelte-csf} for an example
  */
-export class Story extends SvelteComponent<StoryProps, any, Slots> {}
+export const Template: never;
+
 /**
- * Template.
- *
- * Allow to reuse definition between stories.
+ * @deprecated Use `const { Story } = typed(meta)` inside the instance tag `<script>`.
+ * @See {@link https://github.com/storybookjs/addon-svelte-csf} for an example
  */
-export class Template extends SvelteComponent<TemplateProps, any, Slots> {}
+export const Story: never;

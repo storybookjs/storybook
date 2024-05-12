@@ -1,19 +1,31 @@
-<script>
-  import { useContext, getStoryRenderContext } from './context';
+<script lang="ts" generics="Component extends SvelteComponent">
+  import type { StoryContext } from '@storybook/svelte';
+  import type { ComponentProps, Snippet, SvelteComponent } from 'svelte';
 
-  const context = useContext();
+  import { type AddonTemplateObj, useContext, getRenderContext } from './context.js';
 
-  const { children, id = 'default' } = $props();
+  type Props = Omit<AddonTemplateObj<Component>, "id"> & {
+    children: Snippet<[ComponentProps<Component> & { context: StoryContext<ComponentProps<Component>> }]>;
+    /**
+    * Id of the template.
+    *
+    * Optional. Uses 'default' if not specified.
+    */
+    id?: string;
+  }
 
-  context.register({ id, isTemplate: true });
+  const { children, id = 'default', ...restProps }: Props = $props();
 
-  const render = $derived(context.render && context.templateId === id);
+  const context = useContext<Component>();
 
-  const ctx = getStoryRenderContext();
-  const args = ctx.argsStore;
-  const storyContext = ctx.storyContextStore;
+  // FIXME: This is challenging, not sure why TypeScript is not happy.
+  context.registerTemplate({ ...restProps, id });
+
+  const { argsStore, storyContextStore, currentTemplateId } = getRenderContext<Component>();
+
+  const render = $derived(context.render && $currentTemplateId === id);
 </script>
 
 {#if render}
-  {@render children({ ...$args, context: $storyContext })}
+  {@render children({ ...$argsStore,  context: $storyContextStore })}
 {/if}

@@ -1,17 +1,18 @@
 <script lang="ts">
-  let { children, rounded = true, onclick, onafterupdate, text = "" }: {
-    children?: () => any,
+  import type { Snippet } from "svelte";
+  import type { HTMLAttributes } from "svelte/elements";
+
+interface Props extends HTMLAttributes<HTMLButtonElement> {
+    children?: Snippet,
     rounded?: boolean,
-    onclick?: (event: Event) => void,
+    // FIXME: What's that for again?
     onafterupdate?: () => void,
     text?: string,
-  } = $props();
+}
 
+  let { children, rounded = true, onafterupdate, text = "", ...restProps }: Props = $props();
 
-  function onClick(event) {
-    onclick?.(event);
-  }
-
+  // FIXME: What's that for again?
   $effect(() => {
     onafterupdate?.();
   });
@@ -30,9 +31,11 @@
   }
 </style>
 
-<button class="button" class:rounded={rounded} onclick={onClick}>
+<button class="button" class:rounded={rounded} {...restProps}>
   <strong>{rounded ? 'Round' : 'Square'} corners</strong>
   <br />
   {text}
-  {@render children?.()}
+  {#if children}
+    {@render children()}
+  {/if}
 </button>

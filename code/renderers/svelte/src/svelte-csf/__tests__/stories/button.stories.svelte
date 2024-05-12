@@ -1,24 +1,31 @@
 <script context="module" lang="ts">
+  import { action } from '@storybook/addon-actions';
   import type { Meta } from '@storybook/svelte';
 
-  export const meta = {
+  import Button from './Button.svelte';
+
+  // Description set explicitly in the comment above meta export
+  export const meta: Meta<Button> = {
     title: 'Button',
     component: Button,
     tags: ['autodocs'],
-    parameters: {
-      docs: {
-        description: {
-          component: 'Description set explicitly in the meta export',
-        },
-      },
+    args: {
+      rounded: false,
+      text: "Text from export meta",
+      onclick: action("onclick"),
+      onmouseenter: action("onmouseenter"),
+      onmouseleave: action("onmouseleave"),
     },
-  } satisfies Meta<Button>;
+    argTypes: {
+      text: { control: "text" },
+    },
+  };
 </script>
 
-<script>
-  import { Story, Template } from '../src/index.js';
+<script lang="ts">
+  import { typed } from '../src/index.js';
 
-  import Button from './Button.svelte';
+  const { Template, Story } = typed(meta);
 
   let count = $state(0);
 
@@ -27,7 +34,15 @@
   }
 </script>
 
-<Template>
+<Template
+  argTypes={{ rounded: { control: "select", options: ["no", "yes"] }}}
+>
+  {#snippet children({ context, ...args })}
+    <Button {...args} />
+  {/snippet}
+</Template>
+
+<Template id="1" args={{ text: "Text from template 1 args | " }}>
   {#snippet children(args)}
     <Button {...args} onclick={handleClick}>
       You clicked: {count}
@@ -35,11 +50,17 @@
   {/snippet}
 </Template>
 
-<Story name="Default" />
+<!-- Description for the default story -->
+<Story args={{ rounded: true }} argTypes={{ text: { control: "radio", options: ["Yes", "No"] } }} />
 
+<!-- Description for the rounded story -->
 <Story name="Rounded" args={{ rounded: true }} />
 
-<Story name="Square" source args={{ rounded: false }} />
+<!-- Description for the squared story -->
+<Story name="Square" args={{ rounded: false, text: "Text overriden in story args" }} />
+
+<!-- Description for the other story -->
+<Story name="Other" template="1" args={{ rounded: true }} />
 
 <!-- Dynamic snippet should be disabled for this story -->
 <Story name="Button No Args">

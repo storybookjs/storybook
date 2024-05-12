@@ -1,4 +1,5 @@
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from 'node:url';
+
 import { svelteIndexer, createIndex } from './indexer.js';
 
 export function webpack(config) {
@@ -13,8 +14,9 @@ export function webpack(config) {
           enforce: 'post',
           use: [
             {
-              loader: fileURLToPath(new URL('../parser/svelte-stories-loader.js', import.meta.url))
-                .replace(/\\/g, "\\\\"), // For Windows paths
+              loader: fileURLToPath(
+                new URL('../parser/svelte-stories-loader.js', import.meta.url)
+              ).replace(/\\/g, '\\\\'), // For Windows paths
             },
           ],
         },
@@ -33,7 +35,7 @@ export async function viteFinal(config, options) {
   } catch (err: any) {
     const { log } = console;
     if (err.code === 'MODULE_NOT_FOUND') {
-      log('@sveltejs/vite-plugin-svelte not found.  Unable to load config from svelte.config file');
+      log('@sveltejs/vite-plugin-svelte not found. Unable to load config from svelte.config file');
     } else {
       throw err;
     }
@@ -65,7 +67,6 @@ export const storyIndexers = async (indexers) => {
  * Storybook >= 7.4
  */
 export const experimental_indexers = (indexers) => {
-
   return [
     {
       test: /\.svelte$/,
@@ -73,4 +74,4 @@ export const experimental_indexers = (indexers) => {
     },
     ...(indexers || []),
   ];
-}
+};

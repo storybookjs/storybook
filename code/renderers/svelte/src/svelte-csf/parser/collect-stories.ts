@@ -1,16 +1,23 @@
 /* eslint-env browser */
 import { logger } from '@storybook/client-logger';
 import { combineParameters } from '@storybook/preview-api';
-import type { Meta } from '@storybook/svelte';
-import { mount, unmount } from 'svelte';
+import type { Meta, StoryFn } from '@storybook/svelte';
+import { deepmerge } from 'deepmerge-ts';
+import { type ComponentProps, type SvelteComponent, mount, unmount } from 'svelte';
 
-import type { StoriesDef, Story } from './types.js';
-import { extractId } from './extract-id.js';
+import type { StoriesFileMeta } from './types.js';
+import type { Repositories } from '../components/context.js';
 
 import RenderContext from '../components/RenderContext.svelte';
 import RegisterContext from '../components/RegisterContext.svelte';
 
-/* Called from a webpack loader and a jest transformation.
+const createFragment = document.createDocumentFragment
+  ? () => document.createDocumentFragment()
+  : () => document.createElement('div');
+
+/**
+ * @module
+ * Called from a webpack loader and a jest transformation.
  *
  * It mounts a Stories component in a context which disables
  * the rendering of every <Story/> and <Template/> but instead
@@ -20,18 +27,25 @@ import RegisterContext from '../components/RegisterContext.svelte';
  * instantiate the main Stories component: Every Story but
  * the one selected is disabled.
  */
-
-const createFragment = document.createDocumentFragment
-  ? () => document.createDocumentFragment()
-  : () => document.createElement('div');
-
-export default <Component extends Parameters<typeof mount>[0]>(
-  StoriesComponent: Component,
-  { stories = {}, meta = {}, allocatedIds = [] }: StoriesDef
+export default <Component extends SvelteComponent>(
+  Stories: Component,
+  storiesFileMeta: StoriesFileMeta,
+  meta: Meta<Component>
 ) => {
-  const repositories = {
-    meta: null as Meta<Component> | null,
-    stories: [] as Story[],
+  if (!meta.parameters?.docs?.description?.component) {
+    meta.parameters = combineParameters(meta.parameters, {
+      docs: {
+        description: {
+          component: storiesFileMeta.description,
+        },
+      },
+    });
+  }
+
+  const repositories: Repositories<Component> = {
+    meta,
+    templates: new Map(),
+    stories: new Map(),
   };
 
   // extract all stories
@@ -39,129 +53,79 @@ export default <Component extends Parameters<typeof mount>[0]>(
     const context = mount(RegisterContext, {
       target: createFragment() as Element,
       props: {
-        Stories: StoriesComponent,
+        Stories,
         repositories: () => repositories,
-      },
+      } satisfies ComponentProps<RegisterContext>,
     });
+
     unmount(context);
   } catch (e: any) {
-    logger.error(`Error extracting stories ${e.toString()}`, e);
+    logger.error(`Error in mounting stories ${e.toString()}`, e);
   }
 
-  const { component: globalComponent } = meta;
+  const stories: Record<string, StoryFn<Component>> = {};
 
-  // collect templates id
-  const templatesId = repositories.stories
-    .filter((story) => story.isTemplate)
-    .map((story) => story.id);
+  for (const [name, story] of repositories.stories) {
+    const { templateId } = story;
+    const template = templateId && repositories.templates.get(templateId);
+    const templateMeta = templateId && storiesFileMeta.templates[templateId];
+    const storyMeta = storiesFileMeta.stories[name];
 
-  // check for duplicate templates
-  const duplicateTemplatesId = templatesId.filter(
-    (item, index) => templatesId.indexOf(item) !== index
-  );
+    // NOTE: It cannot be moved to `StoryObj`, because of `@storybook/svelte` and `PreviewRenderer` - it accepts fn's
+    const storyFn: StoryFn = (args, storyContext) => {
+      const props: ComponentProps<RenderContext> = {
+        // FIXME: Is this the right direction?
+        ...deepmerge(meta, template, story),
+        Stories,
+        name,
+        args,
+        sourceComponent: meta.component,
+        storyContext,
+        templateId,
+      };
 
-  if (duplicateTemplatesId.length > 0) {
-    logger.warn(
-      `Found duplicates templates id for stories '${meta.component?.name}': ${duplicateTemplatesId}`
-    );
+      return {
+        Component: RenderContext,
+        props,
+      };
+    };
+    storyFn.storyName = name;
+    storyFn.args = deepmerge({}, meta.args, template?.args, story.args);
+    storyFn.parameters = deepmerge(template?.parameters, story.parameters, {
+      docs: {
+        description: {
+          story: storyMeta.description,
+        },
+        source: {
+          code: storyMeta.rawSource ?? templateMeta?.rawSource,
+        },
+      },
+      storySource: {
+        source: storyMeta.rawSource ?? templateMeta?.rawSource,
+      },
+    });
+
+    const play = deepmerge(meta.play, template?.play, story.play);
+
+    if (play) {
+      /*
+       * The 'play' function should be delegated to the real play Story function
+       * in order to be run into the component scope.
+       */
+      storyFn.play = (storyContext) => {
+        const delegate = storyContext?.playFunction?.__play;
+        if (delegate) {
+          return delegate(storyContext);
+        }
+
+        return play(storyContext);
+      };
+    }
+
+    Object.assign(stories, { [name]: storyFn });
   }
 
-  return {
-    meta,
-    stories: repositories.stories
-      .filter((story) => !story.isTemplate)
-      .reduce((all, story) => {
-        const { id, name, template, component, source = false, play, ...props } = story;
+  console.log('PARSER', { storiesFileMeta, repositories, meta, stories });
 
-        const storyId = extractId(story, allocatedIds);
-        if (!storyId) {
-          return all;
-        }
-
-        const unknownTemplate = template != null && templatesId.indexOf(template) < 0;
-
-        const storyFn = (args, storyContext) => {
-          if (unknownTemplate) {
-            throw new Error(`Story ${name} is referencing an unknown template ${template}`);
-          }
-
-          return {
-            Component: RenderContext,
-            props: {
-              Stories: StoriesComponent,
-              storyName: name,
-              templateId: template,
-              args,
-              storyContext,
-              sourceComponent: component || globalComponent,
-            },
-          };
-        };
-
-        storyFn.storyName = name;
-        Object.entries(props).forEach(([k, v]) => {
-          storyFn[k] = v;
-        });
-
-        // play ?
-        if (play) {
-          /*
-           * The 'play' function should be delegated to the real play Story function
-           * in order to be run into the component scope.
-           */
-          storyFn.play = (storyContext) => {
-            const delegate = storyContext?.playFunction?.__play;
-            if (delegate) {
-              return delegate(storyContext);
-            }
-
-            return play(storyContext);
-          };
-        }
-
-        // inject story sources
-        const storyDef = stories[template ? `tpl:${template}` : storyId];
-
-        const hasArgs = storyDef ? storyDef.hasArgs : true;
-
-        // inject source snippet
-        const rawSource = storyDef ? storyDef.source : null;
-        if (rawSource) {
-          storyFn.parameters = combineParameters(storyFn.parameters || {}, {
-            storySource: {
-              source: rawSource,
-            },
-          });
-        }
-
-        let snippet: string | null | undefined;
-
-        if (source === true || (source === false && !hasArgs)) {
-          snippet = rawSource;
-        } else if (typeof source === 'string') {
-          snippet = source;
-        }
-
-        if (snippet) {
-          storyFn.parameters = combineParameters(storyFn.parameters || {}, {
-            docs: { source: { code: snippet } },
-          });
-        }
-
-        const relStory = stories[storyId];
-        if (relStory?.description) {
-          storyFn.parameters = combineParameters(storyFn.parameters || {}, {
-            docs: {
-              description: {
-                story: relStory.description,
-              },
-            },
-          });
-        }
-
-        // eslint-disable-next-line no-param-reassign
-        all[storyId] = storyFn;
-        return all;
-      }, {}) as { [key: string]: { storyName: string; parameters: string } },
-  };
+  return { meta, stories };
 };

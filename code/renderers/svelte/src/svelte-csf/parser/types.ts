@@ -1,22 +1,22 @@
-import type { Meta, StoryObj } from "@storybook/svelte";
+import type { Meta, StoryObj } from '@storybook/svelte';
 
-export const ADDON_COMPONENT_NAMES = ["Story", "Template"] as const;
+export const ADDON_COMPONENT_NAMES = ['Story', 'Template'] as const;
 export type AddonComponentName = (typeof ADDON_COMPONENT_NAMES)[number];
 
 /**
  * Data extracted from the static analytic of a single stories file - `*.stories.svelte`.
  */
 export interface StoriesFileMeta {
-	module: ModuleMeta;
-	fragment: FragmentMeta;
+  module: ModuleMeta;
+  fragment: FragmentMeta;
 }
 
 /**
  * Meta extracted from static analysis of the module tag _(`<script context="module">`)_
  * from the single stories file - `*.stories.svelte`.
  */
-export interface ModuleMeta extends Pick<Meta, "id" | "title" | "tags"> {
-	description?: string;
+export interface ModuleMeta extends Pick<Meta, 'id' | 'title' | 'tags'> {
+  description?: string;
 }
 
 /**
@@ -24,8 +24,8 @@ export interface ModuleMeta extends Pick<Meta, "id" | "title" | "tags"> {
  * from the single stories file - `*.stories.svelte`.
  */
 export interface FragmentMeta {
-	templates: Record<TemplateMeta["id"], TemplateMeta>;
-	stories: Record<StoryMeta["id"], StoryMeta>;
+  templates: Record<TemplateMeta['id'], TemplateMeta>;
+  stories: Record<StoryMeta['id'], StoryMeta>;
 }
 
 /**
@@ -33,38 +33,38 @@ export interface FragmentMeta {
  * in the stories file - `*.stories.svelte`.
  */
 export interface TemplateMeta {
-	/**
-	 * Template id, which is used by `<Story>` - addon component
-	 * @default "default"
-	 */
-	id: string;
-	/** Raw source for children _(what is inside the <Template>...</Template> tags)_ */
-	rawSource?: string;
+  /**
+   * Template id, which is used by `<Story>` - addon component
+   * @default "default"
+   */
+  id: string;
+  /** Raw source for children _(what is inside the <Template>...</Template> tags)_ */
+  rawSource?: string;
 }
 
 /**
  * Meta extracted from static analysis of the single <Story /> component
  * in the stories file - `*.stories.svelte`.
  */
-export interface StoryMeta extends Omit<StoryObj, "render"> {
-	/**
-	 * Id of the story. By default is hashed, otherwise can be overriden.
-	 */
-	id: string;
-	/**
-	 * Name of the story.
-	 * @default "Default"
-	 */
-	name: string;
-	/**
-	 * Template id to use.
-	 * @default "default"
-	 */
-	templateId?: string;
-	/**
-	 * Description of the story, will display above the sample in docs mode.
-	 */
-	description?: string;
-	/** Raw source for children _(what is inside the <Story>...</Story> tags)_ */
-	rawSource?: string;
+export interface StoryMeta extends Omit<StoryObj, 'render'> {
+  /**
+   * Id of the story. By default is hashed, otherwise can be overriden.
+   */
+  id: string;
+  /**
+   * Name of the story.
+   * @default "Default"
+   */
+  name: string;
+  /**
+   * Template id to use.
+   * @default "default"
+   */
+  templateId?: string;
+  /**
+   * Description of the story, will display above the sample in docs mode.
+   */
+  description?: string;
+  /** Raw source for children _(what is inside the <Story>...</Story> tags)_ */
+  rawSource?: string;
 }

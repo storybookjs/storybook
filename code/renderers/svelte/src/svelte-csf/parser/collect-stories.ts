@@ -36,7 +36,7 @@ export default <Component extends SvelteComponent>(
     meta.parameters = combineParameters(meta.parameters, {
       docs: {
         description: {
-          component: storiesFileMeta.description,
+          component: storiesFileMeta.module.description,
         },
       },
     });
@@ -68,8 +68,8 @@ export default <Component extends SvelteComponent>(
   for (const [name, story] of repositories.stories) {
     const { templateId } = story;
     const template = templateId && repositories.templates.get(templateId);
-    const templateMeta = templateId && storiesFileMeta.templates[templateId];
-    const storyMeta = storiesFileMeta.stories[name];
+    const templateMeta = templateId && storiesFileMeta.fragment.templates[templateId];
+    const storyMeta = storiesFileMeta.fragment.stories[name];
 
     // NOTE: It cannot be moved to `StoryObj`, because of `@storybook/svelte` and `PreviewRenderer` - it accepts fn's
     const storyFn: StoryFn = (args, storyContext) => {
@@ -124,8 +124,6 @@ export default <Component extends SvelteComponent>(
 
     Object.assign(stories, { [name]: storyFn });
   }
-
-  console.log('PARSER', { storiesFileMeta, repositories, meta, stories });
 
   return { meta, stories };
 };

@@ -1,20 +1,20 @@
 // This file is a rewrite of `@sveltejs/vite-plugin-svelte` without the `Vite`
 // parts: https://github.com/sveltejs/vite-plugin-svelte/blob/e8e52deef93948da735c4ab69c54aced914926cf/packages/vite-plugin-svelte/src/utils/load-svelte-config.ts
-import { fileURLToPath, pathToFileURL } from 'url';
+import fs from 'node:fs';
+import { createRequire } from 'node:module';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { createRequire } from 'module';
-import fs from 'fs';
 import { logger } from '@storybook/node-logger';
-import path from 'path';
-import { pathExists } from 'fs-extra';
+import type { Config } from '@sveltejs/kit';
 
 /**
  * Try find svelte config and then load it.
  *
- * @returns {import('@sveltejs/kit').Config | undefined}
+ * @returns
  * Returns the svelte configuration object.
  */
-export async function loadSvelteConfig() {
+export async function loadSvelteConfig(): Promise<Config | undefined> {
   const configFile = await findSvelteConfig();
 
   // no need to throw error since we handle projects without config files
@@ -22,7 +22,7 @@ export async function loadSvelteConfig() {
     return undefined;
   }
 
-  let err;
+  let err: unknown;
 
   // try to use dynamic import for svelte.config.js first
   if (configFile.endsWith('.js') || configFile.endsWith('.mjs')) {
@@ -61,13 +61,13 @@ const importSvelteOptions = (() => {
   /**
    * Try import specified svelte configuration.
    *
-   * @param {string} configFile
+   * @param configFile
    * Absolute path of the svelte config file to import.
    *
-   * @returns {import('@sveltejs/kit').Config}
+   * @returns
    * Returns the svelte configuration object.
    */
-  return async (configFile) => {
+  return async (configFile: string): Promise<Config> => {
     const result = await dynamicImportDefault(
       pathToFileURL(configFile).href,
       fs.statSync(configFile).mtimeMs
@@ -81,19 +81,18 @@ const importSvelteOptions = (() => {
 })();
 
 const requireSvelteOptions = (() => {
-  /** @type {NodeRequire} */
-  let esmRequire;
+  let esmRequire: NodeRequire;
 
   /**
    * Try import specified svelte configuration.
    *
-   * @param {string} configFile
+   * @param configFile
    * Absolute path of the svelte config file to require.
    *
-   * @returns {import('@sveltejs/kit').Config}
+   * @returns
    * Returns the svelte configuration object.
    */
-  return (configFile) => {
+  return (configFile: string): Config => {
     // identify which require function to use (esm and cjs mode)
     const requireFn = import.meta.url
       ? (esmRequire = esmRequire ?? createRequire(import.meta.url))
@@ -114,10 +113,10 @@ const requireSvelteOptions = (() => {
  * Try find svelte config. First in current working dir otherwise try to
  * find it by climbing up the directory tree.
  *
- * @returns {Promise<string | undefined>}
+ * @returns
  * Returns the absolute path of the config file.
  */
-async function findSvelteConfig() {
+async function findSvelteConfig(): Promise<string | undefined> {
   const lookupDir = process.cwd();
   let configFiles = await getConfigFiles(lookupDir);
 
@@ -140,10 +139,10 @@ async function findSvelteConfig() {
  * Returning the first found. Should solves most of monorepos with
  * only one config at workspace root.
  *
- * @returns {Promise<string[]>}
+ * @returns
  * Returns an array containing all available config files.
  */
-async function getConfigFilesUp() {
+async function getConfigFilesUp(): Promise<string[]> {
   const importPath = fileURLToPath(import.meta.url);
   const pathChunks = path.dirname(importPath).split(path.sep);
 
@@ -164,22 +163,21 @@ async function getConfigFilesUp() {
 /**
  * Gets all svelte config from a specified `lookupDir`.
  *
- * @param {string} lookupDir
+ * @param lookupDir
  * Directory in which to look for svelte files.
  *
- * @returns {Promise<string[]>}
+ * @returns
  * Returns an array containing all available config files.
  */
-async function getConfigFiles(lookupDir) {
-  /** @type {[string, boolean][]} */
-  const fileChecks = await Promise.all(
+async function getConfigFiles(lookupDir: string): Promise<string[]> {
+  const fileChecks: Array<[string, boolean]> = await Promise.all(
     knownConfigFiles.map(async (candidate) => {
       const filePath = path.resolve(lookupDir, candidate);
-      return [filePath, await pathExists(filePath)];
+      return [filePath, fs.existsSync(filePath)];
     })
   );
 
-  return fileChecks.reduce((files, [file, exists]) => {
+  return fileChecks.reduce((files: string[], [file, exists]) => {
     if (exists) files.push(file);
     return files;
   }, []);

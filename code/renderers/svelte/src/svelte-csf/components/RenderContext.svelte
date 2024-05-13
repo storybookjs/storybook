@@ -6,37 +6,38 @@
   import type { StoryContext } from '@storybook/svelte';
   import type { ComponentProps, SvelteComponent, ComponentType } from 'svelte';
 
-  import { createRenderContext, setRenderContext, type AddonStoryObj } from './context.js';
+  import { type AddonStoryObj, useStoryRenderContext } from './context.svelte.js';
 
   type Props = AddonStoryObj<Component> & {
     Stories: ComponentType<SvelteComponent<ComponentProps<Component>>>;
     storyContext: StoryContext<ComponentProps<Component>>;
   };
 
-  let { Stories, args, name, templateId, storyContext, ...restProps }: Props = $props();
+  let { Stories, args, name, templateId, storyContext }: Props = $props();
 
-  $inspect({ Stories, storyContext, rest: Object.entries(restProps) }).with(console.trace);
+  $inspect({ Stories, storyContext, args, name, templateId }).with(console.trace);
 
-  createRenderContext<Component>({ render: true });
+  const context = useStoryRenderContext<Component>();
 
+  // TODO: Figure the purpose of this one
   // events are static and don't need to be reactive
-  // const events = storyContext?.argTypes
-  //   ? Object.fromEntries(
-  //       Object.entries(storyContext?.argTypes)
-  //         .filter(([k, v]) => v.action && args?.[k] != null)
-  //         .map(([k, v]) => [v.action, args?.[k]])
-  //     )
-  //   : {};
+  const events = storyContext?.argTypes
+    ? Object.fromEntries(
+        Object.entries(storyContext?.argTypes)
+          .filter(([k, v]) => v.action && args?.[k] != null)
+          .map(([k, v]) => [v.action, args?.[k]])
+      )
+    : {};
 
   $effect(() => {
-    console.log('RenderContext', { Stories, args, templateId, name, storyContext });
-    setRenderContext<Component>({
+    context.set({
+      // FIXME: Figure this one out
       args,
       storyContext,
-      currentTemplateId: templateId,
-      currentStoryName: name,
+      templateId,
+      storyName: name,
     });
   });
 </script>
 
-<svelte:component this={Stories} />
+<svelte:component this={Stories} {...events} />

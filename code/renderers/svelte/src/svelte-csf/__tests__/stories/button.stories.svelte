@@ -1,11 +1,11 @@
-<script context="module" lang="ts">
+<script context="module">
   import { action } from '@storybook/addon-actions';
-  import type { Meta } from '@storybook/svelte';
 
   import Button from './Button.svelte';
 
   // Description set explicitly in the comment above meta export
-  export const meta: Meta<Button> = {
+  /** @type {import("@storybook/svelte").Meta<Button>} */
+  export const meta = {
     title: 'Button',
     component: Button,
     tags: ['autodocs'],
@@ -22,10 +22,11 @@
   };
 </script>
 
-<script lang="ts">
-  import { typed } from '../src/index.js';
+<script>
+  import { typed } from '../src/index';
+  import Story from "../src/components/Story.svelte";
 
-  const { Template, Story } = typed(meta);
+  const { Template } = typed(meta);
 
   let count = $state(0);
 
@@ -51,7 +52,7 @@
 </Template>
 
 <!-- Description for the default story -->
-<Story args={{ rounded: true }} argTypes={{ text: { control: "radio", options: ["Yes", "No"] } }} />
+<Story {meta} args={{ rounded: true,text: "hello" }} argTypes={{ text: { control: "radio", options: ["Yes", "No"] } }} />
 
 <!-- Description for the rounded story -->
 <Story name="Rounded" args={{ rounded: true }} />

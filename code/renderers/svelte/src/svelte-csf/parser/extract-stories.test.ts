@@ -186,6 +186,7 @@ describe('extractSource', () => {
       }
     `);
   });
+  // TODO: We don't use imports anymore
   test('Renamed Import', () => {
     expect(
       extractStories(`

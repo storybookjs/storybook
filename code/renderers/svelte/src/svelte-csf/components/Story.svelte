@@ -1,11 +1,10 @@
 <script lang="ts" generics="Component extends SvelteComponent">
-  import type {  Meta, StoryContext } from '@storybook/svelte';
+  import type {  StoryContext } from '@storybook/svelte';
   import type { ComponentProps, Snippet, SvelteComponent } from 'svelte';
 
-  import {type AddonStoryObj, useStoryRenderContext, useStoriesRegistrationContext } from './context.svelte.js';
+  import {type AddonStoryObj, useContext, getRenderContext } from './context.js';
 
   type Props = Omit<AddonStoryObj<Component>, "name"> & {
-    meta?: Meta<Component>;
     children?: Snippet<[ComponentProps<Component> & { context: StoryContext<ComponentProps<Component>> }]>;
     /**
     * Id of the story.
@@ -39,33 +38,33 @@
 
   const { children, name = "Default", play, template, ...restProps }:Props = $props();
 
-  const storiesRegistrationContext = useStoriesRegistrationContext<Component>();
-  const storyRenderContext = useStoryRenderContext<Component>();
+  const context = useContext<Component>();
 
-  $inspect({ storiesRegistrationContext, storyRenderContext }).with(console.trace);
-
-  const { args, storyContext, storyName } = storyRenderContext;
-
-  const render = $derived(storiesRegistrationContext.render && storyName === name);
-
-  const templateId = !children ? (template ?? 'default') : undefined;
+  const templateId = !children ? template ? template : 'default' : undefined;
 
   // FIXME: This is challenging, not sure why TypeScript is not happy.
-  storiesRegistrationContext.register.story({ ...restProps, name, play, templateId });
+  context.registerStory({ ...restProps, name, play, templateId });
 
-  function injectIntoPlayFunction(storyContext_: typeof storyContext, play_: typeof play) {
-    if (play_ && storyContext_.playFunction) {
-      storyContext_.playFunction.__play = play_;
+  const { argsStore, storyContextStore, currentStoryName } = getRenderContext<Component>();
+
+  const render = $derived(context.render && $currentStoryName === name);
+
+
+  // FIXME: Come on TypeScript :(
+  function injectIntoPlayFunction(storyRenderContextStore: typeof $storyContextStore, play: Props["play"]) {
+    console.log({ play, storyRenderContextStore });
+    if (play && storyRenderContextStore.playFunction) {
+      storyRenderContextStore.playFunction.__play = play;
     }
   }
 
   $effect(() => {
     if (render) {
-      injectIntoPlayFunction(storyContext, play);
+      injectIntoPlayFunction($storyContextStore, play);
     }
   });
 </script>
 
 {#if render && children}
-  {@render children({ ...args, context: storyContext })}
+  {@render children({ ...$argsStore, context: $storyContextStore })}
 {/if}

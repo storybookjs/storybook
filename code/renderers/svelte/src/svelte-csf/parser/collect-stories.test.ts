@@ -5,9 +5,7 @@ import collectStories from './collect-stories.js';
 
 describe('parse-stories', () => {
   test('Extract Stories', () => {
-    const data = collectStories(TestStories, {
-      addonComponents: { 'tpl:tpl2': 'tpl2src' },
-    });
+    const data = collectStories(TestStories, { stories: { 'tpl:tpl2': 'tpl2src' } });
     const { stories, meta } = data;
 
     expect(meta).toMatchInlineSnapshot(`

@@ -6,38 +6,37 @@
   import type { StoryContext } from '@storybook/svelte';
   import type { ComponentProps, SvelteComponent, ComponentType } from 'svelte';
 
-  import { type AddonStoryObj, useStoryRenderContext } from './context.svelte.js';
+  import { createRenderContext, setRenderContext, type AddonStoryObj } from './context.js';
 
   type Props = AddonStoryObj<Component> & {
     Stories: ComponentType<SvelteComponent<ComponentProps<Component>>>;
     storyContext: StoryContext<ComponentProps<Component>>;
   };
 
-  let { Stories, args, name, templateId, storyContext }: Props = $props();
+  let { Stories, args, name, templateId, storyContext, ...restProps }: Props = $props();
 
-  $inspect({ Stories, storyContext, args, name, templateId }).with(console.trace);
+  $inspect({ Stories, storyContext, rest: Object.entries(restProps) }).with(console.trace);
 
-  const context = useStoryRenderContext<Component>();
+  createRenderContext<Component>({ render: true });
 
-  // TODO: Figure the purpose of this one
   // events are static and don't need to be reactive
-  const events = storyContext?.argTypes
-    ? Object.fromEntries(
-        Object.entries(storyContext?.argTypes)
-          .filter(([k, v]) => v.action && args?.[k] != null)
-          .map(([k, v]) => [v.action, args?.[k]])
-      )
-    : {};
+  // const events = storyContext?.argTypes
+  //   ? Object.fromEntries(
+  //       Object.entries(storyContext?.argTypes)
+  //         .filter(([k, v]) => v.action && args?.[k] != null)
+  //         .map(([k, v]) => [v.action, args?.[k]])
+  //     )
+  //   : {};
 
   $effect(() => {
-    context.set({
-      // FIXME: Figure this one out
+    console.log('RenderContext', { Stories, args, templateId, name, storyContext });
+    setRenderContext<Component>({
       args,
       storyContext,
-      templateId,
-      storyName: name,
+      currentTemplateId: templateId,
+      currentStoryName: name,
     });
   });
 </script>
 
-<svelte:component this={Stories} {...events} />
+<svelte:component this={Stories} />

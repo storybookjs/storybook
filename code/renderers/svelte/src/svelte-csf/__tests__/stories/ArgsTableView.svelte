@@ -2,7 +2,17 @@
   /** @typedef {object} TypeA */
   /** @typedef {number} TypeB */
   /**
-   * @type {{ actions: import("svelte").Snippet, string: string; number: number; fun: (string) => string; unionstr: 'a' | 'b'; unionnumeric: 0 | 1; union: TypeA | TypeB; required: string }}
+   * @type {{
+   *   children?: import("svelte").Snippet;
+   *   actions?: import("svelte").Snippet<[{ required: boolean; value: string }]>;
+   *   string?: string;
+   *   number?: number;
+   *   fun?: (string) => string;
+   *   unionstr?: 'a' | 'b';
+   *   unionnumeric?: 0 | 1;
+   *   union?: TypeA | TypeB;
+   *   required?: string
+   * }}
    */
   let {
     children,

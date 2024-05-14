@@ -113,31 +113,23 @@ interface StoryRendererContextProps<Component extends SvelteComponent> {
 		SvelteRenderer<SvelteComponent<Component>>
 	>;
 	storyContext: StoryContext<ComponentProps<Component>>;
-	templateId: string | undefined;
-	storyName: string | undefined;
+	currentTemplateId: string | undefined;
+	currentStoryName: StoryName | undefined;
 }
 
 function buildStoryRendererContext<Component extends SvelteComponent>(
 	props: StoryRendererContextProps<Component>,
 ) {
-	let componentAnnotations = $state(props.componentAnnotations ?? {});
-	let storyContext = $state(props.storyContext ?? {});
-	let templateId = $state(props.templateId);
-	let storyName = $state(props.storyName);
+	let currentStoryName = $state(props.currentStoryName);
+	let currentTemplateId = $state(props.currentTemplateId);
+	let storyContext = $state(props.storyContext);
+	let componentAnnotations = $state(props.componentAnnotations);
 
 	function set(props: StoryRendererContextProps<Component>) {
+		currentStoryName = props.currentStoryName;
+		currentTemplateId = props.currentTemplateId;
 		componentAnnotations = props.componentAnnotations;
 		storyContext = props.storyContext;
-		templateId = props.templateId;
-		storyName = props.storyName;
-	}
-
-	// FIXME: Why we needed to reset at all?
-	function reset() {
-		componentAnnotations = {} as ComponentProps<Component>;
-		storyContext = {} as StoryContext<ComponentProps<Component>>;
-		templateId = undefined;
-		storyName = undefined;
 	}
 
 	return {
@@ -147,14 +139,13 @@ function buildStoryRendererContext<Component extends SvelteComponent>(
 		get storyContext() {
 			return storyContext;
 		},
-		get templateId() {
-			return templateId;
+		get currentTemplateId() {
+			return currentTemplateId;
 		},
-		get storyName() {
-			return storyName;
+		get currentStoryName() {
+			return currentStoryName;
 		},
 		set,
-		reset,
 	};
 }
 
@@ -163,14 +154,14 @@ export type StoryRendererContext<Component extends SvelteComponent> =
 
 function createStoryRendererContext<Component extends SvelteComponent>(): void {
 	const ctx = buildStoryRendererContext<Component>({
+		currentStoryName: undefined,
+		currentTemplateId: undefined,
 		componentAnnotations: {},
-		// FIXME: What needs to be added to make it default and satisfy TypeScript?
+		// FIXME: What is missing to be done to satisfy the default?
 		storyContext: {},
 	});
 
 	setContext(KEYS.renderer, ctx);
-	// FIXME: Figure out why we needed to do it?
-	// ctx.reset();
 }
 
 export function useStoryRendererContext<Component extends SvelteComponent>() {

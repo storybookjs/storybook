@@ -23,10 +23,9 @@
 </script>
 
 <script>
-  import { typed } from '../src/index';
   import Story from "../src/components/Story.svelte";
+  import Template from "../src/components/Template.svelte";
 
-  const { Template } = typed(meta);
 
   let count = $state(0);
 
@@ -36,15 +35,16 @@
 </script>
 
 <Template
+  {meta}
   argTypes={{ rounded: { control: "select", options: ["no", "yes"] }}}
 >
-  {#snippet children({ context, ...args })}
+  {#snippet children({ args })}
     <Button {...args} />
   {/snippet}
 </Template>
 
-<Template id="1" args={{ text: "Text from template 1 args | " }}>
-  {#snippet children(args)}
+<Template id="1" {meta} args={{ text: "Text from template 1 args | " }}>
+  {#snippet children({ args })}
     <Button {...args} onclick={handleClick}>
       You clicked: {count}
     </Button>
@@ -55,15 +55,15 @@
 <Story {meta} args={{ rounded: true,text: "hello" }} argTypes={{ text: { control: "radio", options: ["Yes", "No"] } }} />
 
 <!-- Description for the rounded story -->
-<Story name="Rounded" args={{ rounded: true }} />
+<Story {meta} name="Rounded" args={{ rounded: true }} />
 
 <!-- Description for the squared story -->
-<Story name="Square" args={{ rounded: false, text: "Text overriden in story args" }} />
+<Story {meta} name="Square" args={{ rounded: false, text: "Text overriden in story args" }} />
 
 <!-- Description for the other story -->
-<Story name="Other" template="1" args={{ rounded: true }} />
+<Story {meta} name="Other" template="1" args={{ rounded: true }} />
 
 <!-- Dynamic snippet should be disabled for this story -->
-<Story name="Button No Args">
+<Story {meta} name="Button No Args">
   <Button>Label</Button>
 </Story>

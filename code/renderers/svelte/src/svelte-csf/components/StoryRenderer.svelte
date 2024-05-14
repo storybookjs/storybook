@@ -4,23 +4,22 @@
    * @wrapper
    */
   import type { Args, StoryContext } from '@storybook/svelte';
-  import type { ComponentProps, SvelteComponent } from 'svelte';
+  import type { StoryName } from '@storybook/types';
+  import type { ComponentProps, ComponentType, SvelteComponent } from 'svelte';
 
   import { useStoryRendererContext } from './context.svelte.js';
 
   type Props = {
+    Stories: Component extends SvelteComponent ? ComponentType<SvelteComponent> : never;
+    storyName: StoryName;
     templateId: string | undefined;
-    name: string;
-    Stories: Component;
     args: Args;
     storyContext: StoryContext<ComponentProps<Component>>;
   };
 
-  let { name, Stories, storyContext, templateId, args }: Props = $props();
+  let { Stories, storyName, templateId, storyContext, args }: Props = $props();
 
-  $inspect({ name, Stories, storyContext, templateId, args }).with(console.error);
-
-  const contextRenderer = useStoryRendererContext<Component>();
+  const context = useStoryRendererContext<Component>();
 
   // FIXME: Figure the purpose of this one
   // events are static and don't need to be reactive
@@ -32,21 +31,14 @@
   //     )
   //   : {};
 
-  $effect.pre(() => {
-    contextRenderer.set({
+  $effect(() => {
+    context.set({
+      currentStoryName: storyName,
+      currentTemplateId: templateId,
       componentAnnotations: { args },
       storyContext,
-      templateId,
-      storyName: name,
     });
   });
-
-  // FIXME:
-  // This is a temporary workaround,
-  // `<svelte:component>` requires to pass the props,
-  // but we're passing the props via Svelte's context
-  const p = {} as ComponentProps<typeof Stories>;
 </script>
 
-<!-- FIXME: Possibly upstream issue (`svelte`), needs inspection -->
-<svelte:component this={Stories} {...p} />
+<svelte:component this={Stories} />

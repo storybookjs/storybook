@@ -16,13 +16,14 @@
   import { Story } from '../src/index.js';
 </script>
 
-<Story name="ArgsTable" source={srcArgsTableView} args={{ required: true, value: "test" }}>
-  {#snippet children(args)}
-      <ArgsTableView {...args}>
-        {#snippet actions({ required, value })}
-        <!-- FIXME: I don't understand what resulets were tried to be achieved there -->
-        {/snippet}
-      </ArgsTableView>
+{#snippet actions({ required, value })}
+  <span>{required}</span><br>
+  <span>{value}</span>
+{/snippet}
+
+<Story {meta} name="ArgsTable" source={srcArgsTableView} args={{ required: true, value: "test" }}>
+  {#snippet children({ args })}
+      <ArgsTableView {...args} {actions} />
   {/snippet}
 </Story>
 

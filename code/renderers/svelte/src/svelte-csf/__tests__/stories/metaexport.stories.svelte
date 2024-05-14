@@ -25,22 +25,22 @@
   }
 </script>
 
-<Template>
-  {#snippet children(args)}
+<Template {meta} args={{ rounded: true }}>
+  {#snippet children({ args })}
     <Button {...args} onclick={handleClick}>
       You clicked: {count}
     </Button>
   {/snippet}
 </Template>
 
-<Story name="Default" />
+<Story {meta} name="Default" />
 
 <!-- Story about the Rounded State -->
-<Story name="Rounded" args={{ rounded: true }} />
+<Story {meta} name="Rounded" args={{ rounded: true }} />
 
-<Story name="Square" source args={{ rounded: false }} />
+<Story {meta} name="Square" source args={{ rounded: false }} />
 
 <!-- Dynamic snippet should be disabled for this story -->
-<Story name="Button No Args">
+<Story {meta} name="Button No Args">
   <Button>Label</Button>
 </Story>

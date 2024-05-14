@@ -2,13 +2,13 @@
   import type { Snippet } from "svelte";
   import type { HTMLAttributes } from "svelte/elements";
 
-interface Props extends HTMLAttributes<HTMLButtonElement> {
-    children?: Snippet,
-    rounded?: boolean,
-    // FIXME: What's that for again?
-    onafterupdate?: () => void,
-    text?: string,
-}
+  interface Props extends HTMLAttributes<HTMLButtonElement> {
+      children?: Snippet,
+      rounded?: boolean,
+      // FIXME: What's that for again?
+      onafterupdate?: () => void,
+      text?: string,
+  }
 
   let { children, rounded = true, onafterupdate, text = "", ...restProps }: Props = $props();
 

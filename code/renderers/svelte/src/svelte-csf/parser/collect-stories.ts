@@ -114,17 +114,15 @@ export default <Component extends SvelteComponent>(
 				Component: StoryRenderer,
 				props: {
 					...meta,
-					name: story.name,
+					storyName: story.name,
 					templateId,
 					Stories,
-					// FIXME: Was this one needed?
-					sourceComponent: meta.component,
 					storyContext,
 					args,
 				} satisfies ComponentProps<StoryRenderer>,
 			};
 		};
-		storyFn.storyName = name;
+		storyFn.storyName = story.name;
 		storyFn.args = combineArgs(meta.args, { ...template?.args, ...story.args });
 		storyFn.parameters = combineParameters(
 			meta.parameters,
@@ -160,7 +158,7 @@ export default <Component extends SvelteComponent>(
 			 * in order to be run into the component scope.
 			 */
 			storyFn.play = (storyContext) => {
-				const delegate = storyContext?.playFunction?.__play;
+				const delegate = storyContext.playFunction?.__play;
 
 				if (delegate) {
 					return delegate(storyContext);
@@ -172,8 +170,6 @@ export default <Component extends SvelteComponent>(
 
 		Object.assign(stories, { [name]: storyFn });
 	}
-
-	console.log("PARSER", { meta, stories, repository });
 
 	return { meta, stories };
 };

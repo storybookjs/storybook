@@ -3,7 +3,7 @@
   import type {  Meta, StoryContext, SvelteRenderer } from '@storybook/svelte';
   import type { ComponentProps, Snippet, SvelteComponent } from 'svelte';
 
-  import {type AddonStoryObj, useStoriesExtractorContext, useStoryRendererContext } from './context.svelte.js';
+  import { type AddonStoryObj, useStoriesExtractorContext, useStoryRendererContext } from './context.svelte.js';
 
   type Props = Omit<AddonStoryObj<Component>, "name"> & {
     meta?: Meta<Component>;
@@ -43,16 +43,15 @@
 
   const extractorContext = useStoriesExtractorContext<Component>();
   const rendererContext = useStoryRendererContext<Component>();
-  const { componentAnnotations, storyContext, storyName } = rendererContext;
 
-  const render = $derived(!extractorContext.isExtracting && storyName === name);
+  const render = $derived(!extractorContext.isExtracting && rendererContext.currentStoryName === name);
 
   if (extractorContext.isExtracting) {
     // FIXME: This is challenging, not sure why TypeScript is not happy?
     extractorContext.register.story({ ...restProps, name, play, templateId });
   }
 
-  function injectIntoPlayFunction(storyContext_: typeof storyContext, play_: typeof play) {
+  function injectIntoPlayFunction(storyContext_: typeof rendererContext.storyContext, play_: typeof play) {
     if (play_ && storyContext_.playFunction) {
       storyContext_.playFunction.__play = play_;
     }
@@ -60,11 +59,12 @@
 
   $effect(() => {
     if (render) {
-      injectIntoPlayFunction(storyContext, play);
+      console.log({ play });
+      injectIntoPlayFunction(rendererContext.storyContext, play);
     }
   });
 </script>
 
 {#if render && children}
-  {@render children({ ...componentAnnotations, context: storyContext })}
+  {@render children({ ...rendererContext.componentAnnotations, context: rendererContext.storyContext })}
 {/if}

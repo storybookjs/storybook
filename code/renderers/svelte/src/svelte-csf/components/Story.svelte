@@ -1,11 +1,13 @@
 <script lang="ts" generics="Component extends SvelteComponent">
-  import type {  StoryContext } from '@storybook/svelte';
+  import type { ComponentAnnotations } from '@storybook/types';
+  import type {  Meta, StoryContext, SvelteRenderer } from '@storybook/svelte';
   import type { ComponentProps, Snippet, SvelteComponent } from 'svelte';
 
-  import {type AddonStoryObj, useContext, getRenderContext } from './context.js';
+  import {type AddonStoryObj, useStoriesExtractorContext, useStoryRendererContext } from './context.svelte.js';
 
   type Props = Omit<AddonStoryObj<Component>, "name"> & {
-    children?: Snippet<[ComponentProps<Component> & { context: StoryContext<ComponentProps<Component>> }]>;
+    meta?: Meta<Component>;
+    children?: Snippet<[ComponentAnnotations<SvelteRenderer<Component>> & { context: StoryContext<ComponentProps<Component>> }]>;
     /**
     * Id of the story.
     *
@@ -37,34 +39,32 @@
   }
 
   const { children, name = "Default", play, template, ...restProps }:Props = $props();
+  const templateId = !children ? (template ?? 'default') : undefined;
 
-  const context = useContext<Component>();
+  const extractorContext = useStoriesExtractorContext<Component>();
+  const rendererContext = useStoryRendererContext<Component>();
+  const { componentAnnotations, storyContext, storyName } = rendererContext;
 
-  const templateId = !children ? template ? template : 'default' : undefined;
+  const render = $derived(!extractorContext.isExtracting && storyName === name);
 
-  // FIXME: This is challenging, not sure why TypeScript is not happy.
-  context.registerStory({ ...restProps, name, play, templateId });
+  if (extractorContext.isExtracting) {
+    // FIXME: This is challenging, not sure why TypeScript is not happy?
+    extractorContext.register.story({ ...restProps, name, play, templateId });
+  }
 
-  const { argsStore, storyContextStore, currentStoryName } = getRenderContext<Component>();
-
-  const render = $derived(context.render && $currentStoryName === name);
-
-
-  // FIXME: Come on TypeScript :(
-  function injectIntoPlayFunction(storyRenderContextStore: typeof $storyContextStore, play: Props["play"]) {
-    console.log({ play, storyRenderContextStore });
-    if (play && storyRenderContextStore.playFunction) {
-      storyRenderContextStore.playFunction.__play = play;
+  function injectIntoPlayFunction(storyContext_: typeof storyContext, play_: typeof play) {
+    if (play_ && storyContext_.playFunction) {
+      storyContext_.playFunction.__play = play_;
     }
   }
 
   $effect(() => {
     if (render) {
-      injectIntoPlayFunction($storyContextStore, play);
+      injectIntoPlayFunction(storyContext, play);
     }
   });
 </script>
 
 {#if render && children}
-  {@render children({ ...$argsStore, context: $storyContextStore })}
+  {@render children({ ...componentAnnotations, context: storyContext })}
 {/if}

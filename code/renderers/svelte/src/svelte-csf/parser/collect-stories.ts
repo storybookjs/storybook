@@ -1,19 +1,24 @@
 /* eslint-env browser */
-import { logger } from '@storybook/client-logger';
-import { combineParameters } from '@storybook/preview-api';
-import type { Meta, StoryFn } from '@storybook/svelte';
-import { deepmerge } from 'deepmerge-ts';
-import { type ComponentProps, type SvelteComponent, mount, unmount } from 'svelte';
+import { logger } from "@storybook/client-logger";
+import { combineArgs, combineParameters } from "@storybook/preview-api";
+import type { Meta, StoryFn, StoryObj } from "@storybook/svelte";
+import {
+	type ComponentProps,
+	type SvelteComponent,
+	mount,
+	unmount,
+} from "svelte";
 
-import type { StoriesFileMeta } from './types.js';
-import type { Repositories } from '../components/context.js';
+import type { StoriesFileMeta } from "./types.js";
+import type { StoriesRepository } from "../components/context.svelte.js";
 
-import RenderContext from '../components/RenderContext.svelte';
-import RegisterContext from '../components/RegisterContext.svelte';
+import StoriesExtractor from "../components/StoriesExtractor.svelte";
+import StoryRenderer from "../components/StoryRenderer.svelte";
+import { combineTags } from "@storybook/csf";
 
 const createFragment = document.createDocumentFragment
-  ? () => document.createDocumentFragment()
-  : () => document.createElement('div');
+	? () => document.createDocumentFragment()
+	: () => document.createElement("div");
 
 /**
  * @module
@@ -28,102 +33,147 @@ const createFragment = document.createDocumentFragment
  * the one selected is disabled.
  */
 export default <Component extends SvelteComponent>(
-  Stories: Component,
-  storiesFileMeta: StoriesFileMeta,
-  meta: Meta<Component>
+	Stories: Component,
+	storiesFileMeta: StoriesFileMeta,
+	meta: Meta<Component>,
 ) => {
-  if (!meta.parameters?.docs?.description?.component) {
-    meta.parameters = combineParameters(meta.parameters, {
-      docs: {
-        description: {
-          component: storiesFileMeta.module.description,
-        },
-      },
-    });
-  }
+	if (!meta.parameters?.docs?.description?.component) {
+		meta.parameters = combineParameters(meta.parameters, {
+			docs: {
+				description: {
+					component: storiesFileMeta.module.description,
+				},
+			},
+		});
+	}
 
-  const repositories: Repositories<Component> = {
-    meta,
-    templates: new Map(),
-    stories: new Map(),
-  };
+	const repository: StoriesRepository<Component> = {
+		meta,
+		templates: new Map(),
+		stories: new Map(),
+	};
 
-  // extract all stories
-  try {
-    const context = mount(RegisterContext, {
-      target: createFragment() as Element,
-      props: {
-        Stories,
-        repositories: () => repositories,
-      } satisfies ComponentProps<RegisterContext>,
-    });
+	// extract all stories
+	try {
+		const context = mount(StoriesExtractor, {
+			target: createFragment() as Element,
+			props: {
+				Stories,
+				repository: () => repository,
+			} satisfies ComponentProps<StoriesExtractor>,
+		});
 
-    unmount(context);
-  } catch (e: any) {
-    logger.error(`Error in mounting stories ${e.toString()}`, e);
-  }
+		unmount(context);
+	} catch (e: any) {
+		logger.error(`Error in mounting stories ${e.toString()}`, e);
+	}
 
-  const stories: Record<string, StoryFn<Component>> = {};
+	// FIXME: This won't work, because `@storybook/addon-svelte` components expects `StoryFn`
+	// const stories: Record<string, StoryObj<Component>> = {};
+	const stories: Record<string, StoryFn<Component>> = {};
 
-  for (const [name, story] of repositories.stories) {
-    const { templateId } = story;
-    const template = templateId && repositories.templates.get(templateId);
-    const templateMeta = templateId && storiesFileMeta.fragment.templates[templateId];
-    const storyMeta = storiesFileMeta.fragment.stories[name];
+	for (const [name, story] of repository.stories) {
+		const { templateId } = story;
+		const template = templateId && repository.templates.get(templateId);
+		const templateMeta =
+			templateId && storiesFileMeta.fragment.templates[templateId];
+		const storyMeta = storiesFileMeta.fragment.stories[name];
 
-    // NOTE: It cannot be moved to `StoryObj`, because of `@storybook/svelte` and `PreviewRenderer` - it accepts fn's
-    const storyFn: StoryFn = (args, storyContext) => {
-      const props: ComponentProps<RenderContext> = {
-        // FIXME: Is this the right direction?
-        ...deepmerge(meta, template, story),
-        Stories,
-        name,
-        args,
-        sourceComponent: meta.component,
-        storyContext,
-        templateId,
-      };
+		// FIXME: This won't work, because `@storybook/addon-svelte` components expects `StoryFn`
+		// const storyObj: StoryObj<Meta> = {
+		// 	name,
+		// 	args: deepmerge({}, meta.args, template?.args, story.args),
+		// 	parameters: deepmerge(template?.parameters, story.parameters, {
+		// 		docs: {
+		// 			description: {
+		// 				story: storyMeta.description,
+		// 			},
+		// 			source: {
+		// 				code: storyMeta.rawSource ?? templateMeta?.rawSource,
+		// 			},
+		// 		},
+		// 		storySource: {
+		// 			source: storyMeta.rawSource ?? templateMeta?.rawSource,
+		// 		},
+		// 	}),
+		// 	render: (componentAnnotations, storyContext) => ({
+		// 		Component: StoryRenderer,
+		// 		props: {
+		// 			...componentAnnotations,
+		// 			name,
+		// 			Stories,
+		// 			storyContext,
+		// 			templateId,
+		// 		} satisfies ComponentProps<StoryRenderer>,
+		// 	}),
+		// };
 
-      return {
-        Component: RenderContext,
-        props,
-      };
-    };
-    storyFn.storyName = name;
-    storyFn.args = deepmerge({}, meta.args, template?.args, story.args);
-    storyFn.parameters = deepmerge(template?.parameters, story.parameters, {
-      docs: {
-        description: {
-          story: storyMeta.description,
-        },
-        source: {
-          code: storyMeta.rawSource ?? templateMeta?.rawSource,
-        },
-      },
-      storySource: {
-        source: storyMeta.rawSource ?? templateMeta?.rawSource,
-      },
-    });
+		// FIXME: What exactly is missing?
+		const storyFn: StoryFn<Component> = (args, storyContext) => {
+			return {
+				Component: StoryRenderer,
+				props: {
+					...meta,
+					name: story.name,
+					templateId,
+					Stories,
+					// FIXME: Was this one needed?
+					sourceComponent: meta.component,
+					storyContext,
+					args,
+				} satisfies ComponentProps<StoryRenderer>,
+			};
+		};
+		storyFn.storyName = name;
+		storyFn.args = combineArgs(meta.args, { ...template?.args, ...story.args });
+		storyFn.parameters = combineParameters(
+			meta.parameters,
+			template?.parameters,
+			story.parameters,
+			{
+				docs: {
+					description: {
+						story: storyMeta.description,
+					},
+					source: {
+						code: storyMeta.rawSource ?? templateMeta?.rawSource,
+					},
+				},
+				storySource: {
+					source: storyMeta.rawSource ?? templateMeta?.rawSource,
+				},
+			},
+		);
+		storyFn.tags = combineTags(
+			...(meta.tags ?? []),
+			...(template?.tags ?? []),
+			...(story.tags ?? []),
+		);
 
-    const play = deepmerge(meta.play, template?.play, story.play);
+		const play = meta.play ?? template?.play ?? story.play;
 
-    if (play) {
-      /*
-       * The 'play' function should be delegated to the real play Story function
-       * in order to be run into the component scope.
-       */
-      storyFn.play = (storyContext) => {
-        const delegate = storyContext?.playFunction?.__play;
-        if (delegate) {
-          return delegate(storyContext);
-        }
+		if (play) {
+			// FIXME: This won't work, because `@storybook/addon-svelte` components expects `StoryFn`
+			// storyObj.play = (storyContext) => {
+			/*
+			 * The 'play' function should be delegated to the real play Story function
+			 * in order to be run into the component scope.
+			 */
+			storyFn.play = (storyContext) => {
+				const delegate = storyContext?.playFunction?.__play;
 
-        return play(storyContext);
-      };
-    }
+				if (delegate) {
+					return delegate(storyContext);
+				}
 
-    Object.assign(stories, { [name]: storyFn });
-  }
+				return play(storyContext);
+			};
+		}
 
-  return { meta, stories };
+		Object.assign(stories, { [name]: storyFn });
+	}
+
+	console.log("PARSER", { meta, stories, repository });
+
+	return { meta, stories };
 };

@@ -1,11 +1,12 @@
 <script lang="ts" generics="Component extends SvelteComponent">
-  import type { StoryContext } from '@storybook/svelte';
+  import type { ComponentAnnotations } from '@storybook/types';
+  import type { StoryContext, SvelteRenderer } from '@storybook/svelte';
   import type { ComponentProps, Snippet, SvelteComponent } from 'svelte';
 
-  import { type AddonTemplateObj, useContext, getRenderContext } from './context.js';
+  import { type AddonTemplateObj, useStoriesExtractorContext, useStoryRendererContext } from './context.svelte.js';
 
   type Props = Omit<AddonTemplateObj<Component>, "id"> & {
-    children: Snippet<[ComponentProps<Component> & { context: StoryContext<ComponentProps<Component>> }]>;
+    children: Snippet<[ComponentAnnotations<SvelteRenderer<Component>> & { context: StoryContext<ComponentProps<Component>> }]>;
     /**
     * Id of the template.
     *
@@ -16,16 +17,18 @@
 
   const { children, id = 'default', ...restProps }: Props = $props();
 
-  const context = useContext<Component>();
+  const extractorContext = useStoriesExtractorContext<Component>();
+  const rendererContext = useStoryRendererContext<Component>();
 
-  // FIXME: This is challenging, not sure why TypeScript is not happy.
-  context.registerTemplate({ ...restProps, id });
+  if (extractorContext.isExtracting) {
+    // FIXME: This is challenging, not sure why TypeScript is not happy.
+    extractorContext.register.template({ ...restProps, id });
+  }
+  const { componentAnnotations, storyContext, templateId } = rendererContext;
 
-  const { argsStore, storyContextStore, currentTemplateId } = getRenderContext<Component>();
-
-  const render = $derived(context.render && $currentTemplateId === id);
+  const render = $derived(!extractorContext.isExtracting && templateId === id);
 </script>
 
 {#if render}
-  {@render children({ ...$argsStore,  context: $storyContextStore })}
+  {@render children({ ...componentAnnotations,  context: storyContext })}
 {/if}

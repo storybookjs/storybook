@@ -1,6 +1,7 @@
 <script context="module">
   export const meta = {
     title: 'Templates',
+    tags: ['autodocs'],
   };
 </script>
 
@@ -9,13 +10,13 @@
 </script>
 
 <Template id="myTemplate" args={{ text: 'story1' }}>
-  {#snippet children({ text })}
+  {#snippet children({ args: { text } })}
     <div>Template 1 {text}</div>
   {/snippet}
 </Template>
 
 <Template id="anotherTemplate">
-  {#snippet children({ text })}
+  {#snippet children({ args: { text } })}
     <div>Template 2 {text}</div>
   {/snippet}
 </Template>

@@ -1,20 +1,20 @@
-<script context='module'>
+<script lang="ts" context="module">
   import Button from './Button.svelte';
 
   /**
    * Stories about a Button.
-   * 
+   *
    * This description is set as a commentary on the meta export.
    */
   export const meta = {
     title: 'MetaExport/MetaExport',
     component: Button,
-    tags: ['autodocs']
-  }
+    tags: ['autodocs'],
+  };
 </script>
 
 <script>
-  import { Story, Template } from '../src/index';
+  import { Story, Template } from '../src/index.js';
 
   let count = 0;
   function handleClick() {
@@ -28,14 +28,15 @@
   </Button>
 </Template>
 
-<Story name="Default"/>
+<Story name="Default" />
 
 <!-- Story about the Rounded State -->
-<Story name="Rounded" args={{rounded: true}}/>
+<Story name="Rounded" args={{ rounded: true }} />
 
-<Story name="Square" source args={{rounded: false}}/>
+<Story name="Square" source args={{ rounded: false }} />
 
 <!-- Dynamic snippet should be disabled for this story -->
 <Story name="Button No Args">
   <Button>Label</Button>
 </Story>
+

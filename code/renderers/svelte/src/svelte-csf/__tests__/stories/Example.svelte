@@ -5,17 +5,9 @@
   interface Props extends HTMLAttributes<HTMLButtonElement> {
       children?: Snippet,
       rounded?: boolean,
-      // FIXME: What's that for again?
-      onafterupdate?: () => void,
-      text?: string,
   }
 
-  let { children, rounded = true, onafterupdate, text = "", ...restProps }: Props = $props();
-
-  // FIXME: What's that for again?
-  $effect(() => {
-    onafterupdate?.();
-  });
+  let { children, rounded = true, ...restProps }: Props = $props();
 </script>
 
 <style>
@@ -33,8 +25,7 @@
 
 <button class="button" class:rounded={rounded} {...restProps}>
   <strong>{rounded ? 'Round' : 'Square'} corners</strong>
-  <br />
-  {text}
+  <hr>
   {#if children}
     {@render children()}
   {/if}

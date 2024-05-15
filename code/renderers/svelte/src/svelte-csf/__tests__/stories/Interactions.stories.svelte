@@ -1,12 +1,14 @@
-<script lang="ts" context="module">
-  import type { Meta } from '@storybook/svelte';
-
-  import Counter from './Counter.svelte';
+<script context="module">
+  import Interactions from './Interactions.svelte';
 
   export const meta = {
-    title: 'Interactions',
-    component: Counter,
-  } satisfies Meta<Counter>;
+    title: 'Addon/Interactions',
+    component: Interactions,
+    parameters: {
+      actions: { disable: true },
+      controls: { disable: true },
+    },
+  };
 </script>
 
 <script>
@@ -17,9 +19,11 @@
 
   async function play({ canvasElement }) {
     const canvas = within(canvasElement);
+
     await userEvent.click(await canvas.findByText('Increment'));
 
     const count = await canvas.findByTestId('count');
+
     expect(count.textContent).toEqual('You clicked 1 times');
   }
 
@@ -27,18 +31,21 @@
 </script>
 
 <Story {play}>
-  <Counter />
+  <Interactions />
 </Story>
 
 <Story
-  name="Play capturing scope"
+  name="Capturing scope"
   play={async (storyContext) => {
     const { canvasElement } = storyContext;
     const canvas = within(canvasElement);
     const p = canvas.getByTestId('count');
+
     expect(p.textContent).toEqual('0');
+
     i++;
     await tick();
+
     expect(p.textContent).toEqual('1');
   }}
 >

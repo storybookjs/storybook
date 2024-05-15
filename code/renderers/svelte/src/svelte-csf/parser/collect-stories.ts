@@ -1,7 +1,7 @@
 /* eslint-env browser */
 import { logger } from '@storybook/client-logger';
 import { combineArgs, combineParameters } from '@storybook/preview-api';
-import type { Meta, StoryFn, StoryObj } from '@storybook/svelte';
+import type { Meta, StoryFn } from '@storybook/svelte';
 import { type ComponentProps, type SvelteComponent, mount, unmount } from 'svelte';
 
 import type { StoriesFileMeta } from './types.js';
@@ -48,7 +48,6 @@ export default <Component extends SvelteComponent>(
     stories: new Map(),
   };
 
-  // extract all stories
   try {
     const context = mount(StoriesExtractor, {
       target: createFragment() as Element,
@@ -63,8 +62,6 @@ export default <Component extends SvelteComponent>(
     logger.error(`Error in mounting stories ${e.toString()}`, e);
   }
 
-  // FIXME: This won't work, because `@storybook/addon-svelte` components expects `StoryFn`
-  // const stories: Record<string, StoryObj<Component>> = {};
   const stories: Record<string, StoryFn<Component>> = {};
 
   for (const [name, story] of repository.stories) {
@@ -73,36 +70,8 @@ export default <Component extends SvelteComponent>(
     const templateMeta = templateId && storiesFileMeta.fragment.templates[templateId];
     const storyMeta = storiesFileMeta.fragment.stories[name];
 
-    // FIXME: This won't work, because `@storybook/addon-svelte` components expects `StoryFn`
-    // const storyObj: StoryObj<Meta> = {
-    // 	name,
-    // 	args: deepmerge({}, meta.args, template?.args, story.args),
-    // 	parameters: deepmerge(template?.parameters, story.parameters, {
-    // 		docs: {
-    // 			description: {
-    // 				story: storyMeta.description,
-    // 			},
-    // 			source: {
-    // 				code: storyMeta.rawSource ?? templateMeta?.rawSource,
-    // 			},
-    // 		},
-    // 		storySource: {
-    // 			source: storyMeta.rawSource ?? templateMeta?.rawSource,
-    // 		},
-    // 	}),
-    // 	render: (componentAnnotations, storyContext) => ({
-    // 		Component: StoryRenderer,
-    // 		props: {
-    // 			...componentAnnotations,
-    // 			name,
-    // 			Stories,
-    // 			storyContext,
-    // 			templateId,
-    // 		} satisfies ComponentProps<StoryRenderer>,
-    // 	}),
-    // };
-
     // FIXME: What exactly is missing?
+    // NOTE: We can't use StoryObj, because `@storybook/svelte` accepts `StoryFn` for now
     const storyFn: StoryFn<Component> = (args, storyContext) => {
       return {
         Component: StoryRenderer,
@@ -122,19 +91,27 @@ export default <Component extends SvelteComponent>(
       meta.parameters,
       template?.parameters,
       story.parameters,
-      {
-        docs: {
-          description: {
-            story: storyMeta.description,
-          },
-          source: {
-            code: storyMeta.rawSource ?? templateMeta?.rawSource,
-          },
-        },
-        storySource: {
-          source: storyMeta.rawSource ?? templateMeta?.rawSource,
-        },
-      }
+      templateMeta?.description || storyMeta.description
+        ? {
+            docs: {
+              description: {
+                story: storyMeta.description ?? templateMeta?.description,
+              },
+            },
+          }
+        : undefined,
+      templateMeta?.rawSource || storyMeta.rawSource
+        ? {
+            docs: {
+              source: {
+                code: storyMeta.rawSource ?? templateMeta?.rawSource,
+              },
+            },
+            storySource: {
+              source: storyMeta.rawSource ?? templateMeta?.rawSource,
+            },
+          }
+        : undefined
     );
     storyFn.tags = combineTags(
       ...(meta.tags ?? []),
@@ -145,8 +122,6 @@ export default <Component extends SvelteComponent>(
     const play = meta.play ?? template?.play ?? story.play;
 
     if (play) {
-      // FIXME: This won't work, because `@storybook/addon-svelte` components expects `StoryFn`
-      // storyObj.play = (storyContext) => {
       /*
        * The 'play' function should be delegated to the real play Story function
        * in order to be run into the component scope.
@@ -162,7 +137,7 @@ export default <Component extends SvelteComponent>(
       };
     }
 
-    Object.assign(stories, { [name]: storyFn });
+    stories[name] = storyFn;
   }
 
   return { meta, stories };

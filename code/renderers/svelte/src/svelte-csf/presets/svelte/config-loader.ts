@@ -6,7 +6,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { logger } from '@storybook/node-logger';
-import type { Config } from '@sveltejs/kit';
+import type { SvelteConfig } from '@sveltejs/vite-plugin-svelte';
 
 /**
  * Try find svelte config and then load it.
@@ -14,7 +14,7 @@ import type { Config } from '@sveltejs/kit';
  * @returns
  * Returns the svelte configuration object.
  */
-export async function loadSvelteConfig(): Promise<Config | undefined> {
+export async function loadSvelteConfig(): Promise<SvelteConfig | undefined> {
   const configFile = await findSvelteConfig();
 
   // no need to throw error since we handle projects without config files
@@ -67,7 +67,7 @@ const importSvelteOptions = (() => {
    * @returns
    * Returns the svelte configuration object.
    */
-  return async (configFile: string): Promise<Config> => {
+  return async (configFile: string): Promise<SvelteConfig> => {
     const result = await dynamicImportDefault(
       pathToFileURL(configFile).href,
       fs.statSync(configFile).mtimeMs
@@ -92,7 +92,7 @@ const requireSvelteOptions = (() => {
    * @returns
    * Returns the svelte configuration object.
    */
-  return (configFile: string): Config => {
+  return (configFile: string): SvelteConfig => {
     // identify which require function to use (esm and cjs mode)
     const requireFn = import.meta.url
       ? (esmRequire = esmRequire ?? createRequire(import.meta.url))

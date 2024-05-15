@@ -11,24 +11,20 @@ import { walkOnFragment } from './walkers/fragment.js';
  * @returns Map of storyName -> source
  */
 export function extractStories(rawSource: string): StoriesFileMeta {
-  // compile
-  const { ast }: { ast: Root } = compile(rawSource, {
-    // TODO: Will need migrate to modernAst
-    // modernAst: true,
-  });
-  // FIXME: Upstream typing issue from `svelte/compiler`
-  const { module, instance, html } = ast;
+  const { ast }: { ast: Root } = compile(rawSource, { modernAst: true });
+  const { module, instance, fragment } = ast;
 
   const moduleMeta = walkOnModule(module);
-  const { addonComponents } = walkOnInstance(instance);
+  const instanceMeta = walkOnInstance(instance);
   const fragmentMeta = walkOnFragment({
-    fragment: html,
+    fragment,
     rawSource,
-    addonComponents,
+    addonComponents: instanceMeta.addonComponents,
   });
 
   return {
     module: moduleMeta,
+    instance: instanceMeta,
     fragment: fragmentMeta,
   };
 }

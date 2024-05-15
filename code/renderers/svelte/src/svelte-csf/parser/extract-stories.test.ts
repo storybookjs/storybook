@@ -7,7 +7,7 @@ describe('extractSource', () => {
     expect(
       extractStories(`
         <script>
-          import { Story } from '@storybook/svelte';
+          i}mport { Story } from '@storybook/svelte';
         </script>
 
         <Story name="MyStory">

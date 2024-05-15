@@ -1,39 +1,32 @@
-import { walk } from 'estree-walker';
-import type { Root, SvelteNode } from 'svelte/compiler';
 import '@total-typescript/ts-reset/array-includes';
+import { type Visitors, walk } from 'zimmerframe';
+import type { Root, SvelteNode } from 'svelte/compiler';
 
 import pkg from '../../../package.json' with { type: 'json' };
 
 import { ADDON_COMPONENT_NAMES, type AddonComponentName, type InstanceMeta } from '../types.js';
-import type { Program } from 'estree';
 
 export function walkOnInstance(instance: Root['instance']): InstanceMeta {
-  let addonComponents = {
-    Story: 'Story',
-    Template: 'Template',
-  };
-
-  if (instance) {
-    walk(instance.content, {
-      enter(node: SvelteNode) {
-        if (node.type === 'Program') {
-          const { components } = walkOnProgramBody(node.body, addonComponents);
-
-          addonComponents = components;
-        }
-
-        this.skip();
-      },
-    });
+  if (!instance) {
+    throw new Error(
+      "This stories file doesn't have any instance tag <script>...</script> with any logic."
+    );
   }
 
-  return { addonComponents };
-}
+  const state: InstanceMeta = {
+    addonComponents: Object.fromEntries(ADDON_COMPONENT_NAMES.map((n) => [n, n])) as Record<
+      AddonComponentName,
+      AddonComponentName
+    >,
+  };
 
-function walkOnProgramBody(body: Program['body'], components: Record<AddonComponentName, string>) {
-  for (const node of body) {
-    if (node.type === 'ImportDeclaration') {
-      const { specifiers, source } = node;
+  const visitors: Visitors<SvelteNode, typeof state> = {
+    // FIXME: Is this still needed?
+    Program(node, { state, visit, stop }) {
+      stop();
+    },
+    ImportDeclaration(node, { state, visit, stop }) {
+      const { source, specifiers } = node;
 
       if (
         source.value === pkg.name ||
@@ -43,16 +36,25 @@ function walkOnProgramBody(body: Program['body'], components: Record<AddonCompon
         (typeof source.value === 'string' && source.value.includes('src/index'))
       ) {
         for (const specifier of specifiers) {
-          if (
-            specifier.type === 'ImportSpecifier' &&
-            ADDON_COMPONENT_NAMES.includes(specifier.imported.name)
-          ) {
-            components[specifier.imported.name] = specifier.local.name;
+          if (specifier.type === 'ImportSpecifier') {
+            visit(specifier, state);
           }
         }
       }
-    }
-  }
+      stop();
+    },
+    ImportSpecifier(node, { state, stop }) {
+      if (ADDON_COMPONENT_NAMES.includes(node.imported.name)) {
+        const { imported, local } = node;
 
-  return { components };
+        state[imported.name] = local.name;
+      }
+
+      stop();
+    },
+  };
+
+  walk(instance.content, state, visitors);
+
+  return state;
 }

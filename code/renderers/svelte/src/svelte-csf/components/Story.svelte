@@ -27,15 +27,19 @@
     */
     template?: string;
     /**
-    * TODO: Figure out if this feature is still needed.
-    *
-    * Specify which sources should be shown.
-    *
-    * By default, sources for an args story are auto-generated.
-    * If source is true, then the source of the story will be used instead.
-    * If source is a string, it replaces the source of the story.
-    */
-    // source?: boolean | string;
+     * @deprecrated
+     * Use `tags={['autodocs']}` instead.
+     */
+    autodocs?: never;
+    /**
+     *
+     * Specify which sources should be shown.
+     *
+     * By default, sources for an args story are auto-generated.
+     * If source is true, then the source of the story will be used instead.
+     * If source is a string, it replaces the source of the story.
+     */
+    source?: boolean | string;
   }
 
   const { children, name = "Default", play, template, ...restProps }:Props = $props();
@@ -59,7 +63,6 @@
 
   $effect(() => {
     if (render) {
-      console.log({ play });
       injectIntoPlayFunction(rendererContext.storyContext, play);
     }
   });

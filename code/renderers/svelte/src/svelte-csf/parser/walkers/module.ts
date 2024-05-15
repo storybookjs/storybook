@@ -1,70 +1,85 @@
 import { logger } from '@storybook/client-logger';
 import dedent from 'dedent';
 import type { ObjectExpression, Property } from 'estree';
-import { walk } from 'estree-walker';
 import type { Root, SvelteNode } from 'svelte/compiler';
+import { type Visitors, walk } from 'zimmerframe';
 
 import type { ModuleMeta } from '../types.js';
 
 export function walkOnModule(module: Root['module']): ModuleMeta {
-  const moduleMeta: ModuleMeta = {};
-
   if (!module) {
     throw new Error(
       `The story file must have a module tag ('<script context="module">') with 'export const meta'.`
     );
   }
 
-  walk(module.content, {
-    enter(node: SvelteNode) {
-      if (node.type === 'ExportNamedDeclaration') {
-        const { declaration, leadingComments } = node;
+  const state: ModuleMeta = {};
+  const visitors: Visitors<SvelteNode, typeof state> = {
+    ExportNamedDeclaration(node, { state, stop, visit }) {
+      const { declaration, leadingComments } = node;
 
-        if (declaration?.type !== 'VariableDeclaration' || declaration.kind !== 'const') {
-          throw new Error(
-            `The 'export' inside the module tag ('<script context="module">') is not a 'const meta'`
-          );
-        }
-
-        const { declarations } = declaration;
-
-        if (declarations.length !== 1) {
-          throw new Error(
-            `'<script context="module">' should have only one export - 'export const meta'`
-          );
-        }
-
-        const { id, init } = declarations[0];
-
-        if (id.type !== 'Identifier' || id.name !== 'meta') {
-          throw new Error(
-            `The 'export const' in '<script context="module">' should be called 'meta'`
-          );
-        }
-
-        if (init?.type !== 'ObjectExpression') {
-          throw new Error(
-            `'export const meta' should be an object which matches the interface "'import('@storybook/svelte').Meta'"`
-          );
-        }
-
-        const { properties } = init;
-
-        moduleMeta.id = getStringFromExportMeta('id', properties);
-        moduleMeta.title = getStringFromExportMeta('title', properties);
-        moduleMeta.tags = getTagsFromExportMeta(properties);
-
-        if (leadingComments) {
-          moduleMeta.description = dedent(leadingComments[0].value.replaceAll(/^ *\*/gm, ''));
-        }
+      if (leadingComments) {
+        state.description = dedent(leadingComments[0].value.replaceAll(/^ *\*/gm, ''));
       }
-    },
-    leave(node: SvelteNode) {
-      //
-    },
-  });
 
-  return moduleMeta;
+      if (!declaration) {
+        throw new Error(
+          `The 'export' inside the module tag ('<script context="module">') should be a 'const meta'`
+        );
+      }
+
+      visit(declaration, state);
+      stop();
+    },
+    VariableDeclaration(node, { state, stop, visit }) {
+      if (node.kind !== 'const') {
+        throw new Error(`The type of variable export should be a 'const' - 'export const meta'.`);
+      }
+      const { declarations } = node;
+
+      if (declarations.length !== 1) {
+        throw new Error(
+          `'<script context="module">' should have only one export - 'export const meta'`
+        );
+      }
+
+      visit(declarations[0], state);
+      stop();
+    },
+    // Walk on `expost const meta` `
+    VariableDeclarator(node, { state, visit, stop }) {
+      const { id, init } = node;
+
+      if (id.type !== 'Identifier' || id.name !== 'meta') {
+        throw new Error(
+          `The 'export const' in '<script context="module">' should be called 'meta'`
+        );
+      }
+
+      if (init?.type !== 'ObjectExpression') {
+        throw new Error(
+          `'export const meta' should be an object which matches the interface "'import('@storybook/svelte').Meta'"`
+        );
+      }
+
+      visit(init, state);
+      stop();
+    },
+    // Walk on `expost const meta` properties
+    ObjectExpression(node, { state, stop }) {
+      const { properties } = node;
+
+      state.id = getStringFromExportMeta('id', properties);
+      state.title = getStringFromExportMeta('title', properties);
+      state.tags = getTagsFromExportMeta(properties);
+
+      stop();
+    },
+  };
+
+  walk(module.content, state, visitors);
+
+  return state;
 }
 
 function getStringFromExportMeta(propertyName: string, properties: ObjectExpression['properties']) {
@@ -82,31 +97,9 @@ function getStringFromExportMeta(propertyName: string, properties: ObjectExpress
   }
 }
 
-function getTagsFromExportMeta(properties: ObjectExpression['properties']) {
-  const tags = lookupMetaProperty('tags', properties);
-
-  if (tags) {
-    let { value } = tags;
-
-    // NOTE: I think it would be more convienient with `zod`
-    if (value.type === 'ArrayExpression' && value.elements.length === 1) {
-      return value.elements.map((el) => {
-        if (el?.type === 'Literal') {
-          if (typeof el.value !== 'string') {
-            throw Error(`meta.tags should be an array of strings.`);
-          }
-          return el.value;
-        } else {
-          throw Error(`'meta.tags' should be an array of strings.`);
-        }
-      });
-    }
-  }
-}
-
 /**
  * WARN: Potential issue, some of the properites might be extended by `SpreadElement`.
- * I couldn't think of the case how it could be reached, if the code was already compiled.
+ * I couldn't think of the case how it could be ever reached, if the code was already "compiled"(?).
  * I'll leave a warning, to avoid confusion during usage, and in case it actually happens.
  */
 function lookupMetaProperty(name: string, properties: ObjectExpression['properties']) {
@@ -117,6 +110,28 @@ function lookupMetaProperty(name: string, properties: ObjectExpression['properti
       );
     }
 
-    p.type === 'Property' && p.key.type === 'Identifier' && p.key.name === name;
+    return p.type === 'Property' && p.key.type === 'Identifier' && p.key.name === name;
   }) as Property | undefined;
+}
+
+function getTagsFromExportMeta(properties: ObjectExpression['properties']) {
+  const tags = lookupMetaProperty('tags', properties);
+
+  if (tags) {
+    const { value } = tags;
+
+    if (value.type === 'ArrayExpression') {
+      return value.elements.map((item) => {
+        if (item?.type === 'Literal') {
+          if (typeof item.value !== 'string') {
+            throw Error(`meta.tags should be an array of strings.`);
+          }
+
+          return item.value;
+        } else {
+          throw Error(`'meta.tags' should be an array of strings.`);
+        }
+      });
+    }
+  }
 }

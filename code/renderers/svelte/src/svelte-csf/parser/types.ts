@@ -8,6 +8,7 @@ export type AddonComponentName = (typeof ADDON_COMPONENT_NAMES)[number];
  */
 export interface StoriesFileMeta {
   module: ModuleMeta;
+  instance: InstanceMeta;
   fragment: FragmentMeta;
 }
 
@@ -46,6 +47,7 @@ export interface TemplateMeta {
    * @default "default"
    */
   id: string;
+  description?: StoryMeta['description'];
   /** Raw source for children _(what is inside the <Template>...</Template> tags)_ */
   rawSource?: string;
 }
@@ -54,7 +56,7 @@ export interface TemplateMeta {
  * Meta extracted from static analysis of the single <Story /> component
  * in the stories file - `*.stories.svelte`.
  */
-export interface StoryMeta extends Omit<StoryObj, 'render'> {
+export interface StoryMeta {
   /**
    * Id of the story. By default is hashed, otherwise can be overriden.
    */

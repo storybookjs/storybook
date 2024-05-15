@@ -12,6 +12,14 @@ export interface StoriesFileMeta {
 }
 
 /**
+ * Meta extracted from static analysis of the instance tag _(`<script>`)_
+ * from the single stories file - `*.stories.svelte`.
+ */
+export interface InstanceMeta extends Pick<Meta, 'id' | 'title' | 'tags'> {
+  addonComponents: Record<AddonComponentName, string>;
+}
+
+/**
  * Meta extracted from static analysis of the module tag _(`<script context="module">`)_
  * from the single stories file - `*.stories.svelte`.
  */

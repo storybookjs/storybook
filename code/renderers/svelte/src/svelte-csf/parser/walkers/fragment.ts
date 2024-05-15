@@ -4,23 +4,28 @@ import type { Node } from 'estree';
 import { walk } from 'estree-walker';
 import {
   type Attribute,
-  type Component,
-  type Fragment,
   type LegacyInlineComponent,
   type LegacySvelteNode,
   type Root,
   type SvelteNode,
 } from 'svelte/compiler';
 
-import { type FragmentMeta, type StoryMeta, type TemplateMeta } from '../types.js';
+import {
+  type FragmentMeta,
+  type InstanceMeta,
+  type StoryMeta,
+  type TemplateMeta,
+} from '../types.js';
 
 /** NOTE: Fragment is the 'html' code - not the one innside `<script>` nor `<style>` */
 export function walkOnFragment({
   fragment,
   rawSource,
+  addonComponents,
 }: {
   fragment: Root['fragment'];
   rawSource: string;
+  addonComponents: InstanceMeta['addonComponents'];
 }): FragmentMeta {
   const fragmentMeta: FragmentMeta = {
     templates: {},
@@ -42,7 +47,7 @@ export function walkOnFragment({
       if (node.type === 'InlineComponent') {
         this.skip();
 
-        if (node.name === 'Story') {
+        if (node.name === addonComponents['Story']) {
           const storyMeta = walkOnStoryComponent({
             node,
             rawSource,
@@ -72,7 +77,7 @@ export function walkOnFragment({
           Object.assign(fragmentMeta.stories, { [storyMeta.name]: storyMeta });
         }
 
-        if (node.name === 'Template') {
+        if (node.name === addonComponents['Template']) {
           const templateMeta = walkOnTemplateComponent({
             node,
             rawSource,
@@ -235,13 +240,6 @@ function getChildrenRawSource({
 
     return dedent`${rawSource.slice(start, end)}`;
   }
-}
-
-function createDefaultTemplateMeta(): TemplateMeta {
-  return {
-    id: 'default',
-    rawSource: '',
-  };
 }
 
 function extractStoryId({

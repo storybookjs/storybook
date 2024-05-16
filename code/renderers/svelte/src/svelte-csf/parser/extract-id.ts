@@ -1,5 +1,3 @@
-import { logger } from '@storybook/client-logger';
-
 function hashCode(str: string): string {
   const h = str
     .split('')
@@ -30,7 +28,7 @@ export function extractId(
 
   let generated = name.replace(/\W+(.|$)/g, (_, chr) => chr.toUpperCase());
   if (allocatedIds.indexOf(generated) >= 0) {
-    logger.warn(`Story name conflict with exports - Please add an explicit id for story ${name}`);
+    console.warn(`Story name conflict with exports - Please add an explicit id for story ${name}`);
     generated += hashCode(name);
   }
   return generated;

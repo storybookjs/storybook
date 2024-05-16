@@ -1,3 +1,21 @@
+# v4.1.3 (Thu May 16 2024)
+
+#### 🐛 Bug Fix
+
+- Fix dependency on `@storybook/node-logger` and `@storybook/client-logger` [#182](https://github.com/storybookjs/addon-svelte-csf/pull/182) ([@ndelangen](https://github.com/ndelangen))
+
+#### 🔩 Dependency Updates
+
+- chore: Remove `fs-extra` in favor of `node:fs` [#179](https://github.com/storybookjs/addon-svelte-csf/pull/179) ([@xeho91](https://github.com/xeho91))
+- Update `pnpm` to `v9` & improve CI [#180](https://github.com/storybookjs/addon-svelte-csf/pull/180) ([@xeho91](https://github.com/xeho91))
+
+#### Authors: 2
+
+- Mateusz Kadlubowski ([@xeho91](https://github.com/xeho91))
+- Norbert de Langen ([@ndelangen](https://github.com/ndelangen))
+
+---
+
 # v4.1.2 (Wed Mar 06 2024)
 
 #### 🐛 Bug Fix

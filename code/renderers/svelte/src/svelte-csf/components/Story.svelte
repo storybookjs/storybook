@@ -1,11 +1,11 @@
 <script lang="ts" generics="Component extends SvelteComponent">
   import type { ComponentAnnotations } from '@storybook/types';
-  import type {  Meta, StoryContext, SvelteRenderer } from '@storybook/svelte';
+  import type {  Meta, StoryContext, StoryObj, SvelteRenderer } from '@storybook/svelte';
   import type { ComponentProps, Snippet, SvelteComponent } from 'svelte';
 
-  import { type AddonStoryObj, useStoriesExtractorContext, useStoryRendererContext } from './context.svelte.js';
+  import {useStoriesExtractor, useStoryRenderer, useStoryChildrenTemplate } from './context.svelte.js';
 
-  type Props = Omit<AddonStoryObj<Component>, "name"> & {
+  type Props = StoryObj<Component> & {
     meta?: Meta<Component>;
     children?: Snippet<[ComponentAnnotations<SvelteRenderer<Component>> & { context: StoryContext<ComponentProps<Component>> }]>;
     /**
@@ -19,13 +19,6 @@
     * @default "Default"
     */
     name?: string;
-    /**
-    * Id of the template used by this story.
-    *
-    * Optional. Used if the story has no body.
-    * If not specified, use the 'default' template.
-    */
-    template?: string;
     /**
      * @deprecrated
      * Use `tags={['autodocs']}` instead.
@@ -42,32 +35,37 @@
     source?: boolean | string;
   }
 
-  const { children, name = "Default", play, template, ...restProps }:Props = $props();
-  const templateId = !children ? (template ?? 'default') : undefined;
+  const { children, name = "Default",  id,  play, ...restProps }:Props = $props();
 
-  const extractorContext = useStoriesExtractorContext<Component>();
-  const rendererContext = useStoryRendererContext<Component>();
+  const extractor = useStoriesExtractor<Component>();
+  const renderer = useStoryRenderer<Component>();
+  const childrenTemplate = useStoryChildrenTemplate<Component>();
 
-  const render = $derived(!extractorContext.isExtracting && rendererContext.currentStoryName === name);
+  const isCurrentlyViewed = $derived(!extractor.isExtracting && renderer.currentStoryName === name);
 
-  if (extractorContext.isExtracting) {
-    // FIXME: This is challenging, not sure why TypeScript is not happy?
-    extractorContext.register.story({ ...restProps, name, play, templateId });
+  if (extractor.isExtracting) {
+    extractor.register({ ...restProps, name, play } as StoryObj<Component>);
   }
 
-  function injectIntoPlayFunction(storyContext_: typeof rendererContext.storyContext, play_: typeof play) {
+  function injectIntoPlayFunction(storyContext_: typeof renderer.storyContext, play_: typeof play) {
     if (play_ && storyContext_.playFunction) {
       storyContext_.playFunction.__play = play_;
     }
   }
 
   $effect(() => {
-    if (render) {
-      injectIntoPlayFunction(rendererContext.storyContext, play);
+    if (isCurrentlyViewed) {
+      injectIntoPlayFunction(renderer.storyContext, play);
     }
   });
+
+  const childrenProps = $derived({...renderer.componentAnnotations, context: renderer.storyContext});
 </script>
 
-{#if render && children}
-  {@render children({ ...rendererContext.componentAnnotations, context: rendererContext.storyContext })}
+{#if isCurrentlyViewed}
+  {#if children}
+    {@render children(childrenProps)}
+  {:else if childrenTemplate}
+    {@render childrenTemplate(childrenProps)}
+  {/if}
 {/if}

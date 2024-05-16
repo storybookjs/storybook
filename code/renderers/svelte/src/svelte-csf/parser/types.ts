@@ -1,7 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/svelte';
+import type { Meta } from '@storybook/svelte';
 
-export const ADDON_COMPONENT_NAMES = ['Story', 'Template'] as const;
-export type AddonComponentName = (typeof ADDON_COMPONENT_NAMES)[number];
+export const ADDON_COMPONENT_NAME = 'Story';
 
 /**
  * Data extracted from the static analytic of a single stories file - `*.stories.svelte`.
@@ -17,7 +16,8 @@ export interface StoriesFileMeta {
  * from the single stories file - `*.stories.svelte`.
  */
 export interface InstanceMeta extends Pick<Meta, 'id' | 'title' | 'tags'> {
-  addonComponents: Record<AddonComponentName, string>;
+  // Can be overriden with `import { Story as S } ...`
+  addonComponentName: typeof ADDON_COMPONENT_NAME | (string & {});
 }
 
 /**
@@ -33,23 +33,7 @@ export interface ModuleMeta extends Pick<Meta, 'id' | 'title' | 'tags'> {
  * from the single stories file - `*.stories.svelte`.
  */
 export interface FragmentMeta {
-  templates: Record<TemplateMeta['id'], TemplateMeta>;
   stories: Record<StoryMeta['id'], StoryMeta>;
-}
-
-/**
- * Meta extracted from static analysis of the single <Template /> component
- * in the stories file - `*.stories.svelte`.
- */
-export interface TemplateMeta {
-  /**
-   * Template id, which is used by `<Story>` - addon component
-   * @default "default"
-   */
-  id: string;
-  description?: StoryMeta['description'];
-  /** Raw source for children _(what is inside the <Template>...</Template> tags)_ */
-  rawSource?: string;
 }
 
 /**
@@ -66,11 +50,6 @@ export interface StoryMeta {
    * @default "Default"
    */
   name: string;
-  /**
-   * Template id to use.
-   * @default "default"
-   */
-  templateId?: string;
   /**
    * Description of the story, will display above the sample in docs mode.
    */

@@ -1,16 +1,16 @@
+import fs from 'node:fs/promises';
+
 import type { StorybookConfig } from '@storybook/svelte-vite';
 import type { IndexInput, IndexerOptions } from '@storybook/types';
+import { preprocess } from 'svelte/compiler';
 
-import { vite } from './presets/vite.js';
-import { webpack } from './presets/webpack.js';
-import { readStories } from './presets/indexer.js';
+import type { StoriesFileMeta } from './parser/types.js';
+import { extractStories } from './parser/extract-stories.js';
+import { loadSvelteConfig } from './presets/svelte/config-loader.js';
 
-export const viteFinal = vite;
-export const webpackFinal = webpack;
+export { viteFinal } from './presets/vite.js';
+export { webpackFinal } from './presets/webpack.js';
 
-/**
- * Storybook >= 7.4
- */
 export const experimental_indexers: StorybookConfig['experimental_indexers'] = (indexers) => {
   return [
     {
@@ -21,9 +21,6 @@ export const experimental_indexers: StorybookConfig['experimental_indexers'] = (
   ];
 };
 
-/**
- * Indexer for Storybook >= 7.4
- */
 async function createIndex(fileName: string, { makeTitle }: IndexerOptions): Promise<IndexInput[]> {
   const storiesFileMeta = await readStories(fileName);
   const { fragment, module } = storiesFileMeta;
@@ -40,4 +37,20 @@ async function createIndex(fileName: string, { makeTitle }: IndexerOptions): Pro
       metaTags: module.tags,
     };
   });
+}
+
+export async function readStories(fileName: string): Promise<StoriesFileMeta> {
+  let code = (await fs.readFile(fileName, { encoding: 'utf8' })).toString();
+
+  const svelteOptions = await loadSvelteConfig();
+
+  if (svelteOptions && svelteOptions.preprocess) {
+    code = (
+      await preprocess(code, svelteOptions.preprocess, {
+        filename: fileName,
+      })
+    ).code;
+  }
+
+  return extractStories(code);
 }

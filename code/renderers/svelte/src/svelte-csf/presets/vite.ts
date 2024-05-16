@@ -1,11 +1,11 @@
 import type { StorybookConfig } from '@storybook/svelte-vite';
-import type { Config } from '@sveltejs/kit';
+import type { SvelteConfig } from '@sveltejs/vite-plugin-svelte';
 
-export const vite: StorybookConfig['viteFinal'] = async (config, options) => {
+export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) => {
   const { plugins = [] } = config;
   const { presets } = options;
 
-  let addonPluginConfig: Config = {};
+  let addonPluginConfig: SvelteConfig = {};
 
   try {
     const { loadSvelteConfig } = await import('@sveltejs/vite-plugin-svelte');

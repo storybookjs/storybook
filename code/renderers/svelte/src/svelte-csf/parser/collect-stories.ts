@@ -17,13 +17,13 @@ const createFragment = document.createDocumentFragment
 
 /**
  * @module
- * Called from a webpack loader and a jest transformation.
+ * Called from a bundler.
  *
- * It mounts a Stories component in a context which disables
- * the rendering of every <Story/> and <Template/> but instead
- * collects names and properties.
+ * It mounts the Stories components in a context which disables
+ * the rendering of every `<Story />`,
+ * but instead collects names and properties.
  *
- * For every discovered <Story/>, it creates a storyFn which
+ * For every discovered `<Story />`, it creates a `StoryFn` which
  * instantiate the main Stories component: Every Story but
  * the one selected is disabled.
  */
@@ -44,7 +44,6 @@ export default <Component extends SvelteComponent>(
 
   const repository: StoriesRepository<Component> = {
     meta,
-    templates: new Map(),
     stories: new Map(),
   };
 
@@ -62,23 +61,17 @@ export default <Component extends SvelteComponent>(
     logger.error(`Error in mounting stories ${e.toString()}`, e);
   }
 
-  const stories: Record<string, StoryFn<Component>> = {};
+  const stories: Record<string, StoryFn<StoryRenderer>> = {};
 
   for (const [name, story] of repository.stories) {
-    const { templateId } = story;
-    const template = templateId && repository.templates.get(templateId);
-    const templateMeta = templateId && storiesFileMeta.fragment.templates[templateId];
     const storyMeta = storiesFileMeta.fragment.stories[name];
 
-    // FIXME: What exactly is missing?
     // NOTE: We can't use StoryObj, because `@storybook/svelte` accepts `StoryFn` for now
-    const storyFn: StoryFn<Component> = (args, storyContext) => {
+    const storyFn: StoryFn<StoryRenderer> = (args, storyContext) => {
       return {
         Component: StoryRenderer,
         props: {
-          ...meta,
           storyName: story.name,
-          templateId,
           Stories,
           storyContext,
           args,
@@ -86,40 +79,35 @@ export default <Component extends SvelteComponent>(
       };
     };
     storyFn.storyName = story.name;
-    storyFn.args = combineArgs(meta.args, { ...template?.args, ...story.args });
+    storyFn.args = combineArgs(meta.args, story.args);
     storyFn.parameters = combineParameters(
       meta.parameters,
-      template?.parameters,
       story.parameters,
-      templateMeta?.description || storyMeta.description
+      storyMeta.description
         ? {
             docs: {
               description: {
-                story: storyMeta.description ?? templateMeta?.description,
+                story: storyMeta.description,
               },
-            },
-          }
-        : undefined,
-      templateMeta?.rawSource || storyMeta.rawSource
-        ? {
-            docs: {
-              source: {
-                code: storyMeta.rawSource ?? templateMeta?.rawSource,
-              },
-            },
-            storySource: {
-              source: storyMeta.rawSource ?? templateMeta?.rawSource,
             },
           }
         : undefined
+      // storyMeta.rawSource
+      // 	? {
+      // 			docs: {
+      // 				source: {
+      // 					code: storyMeta.rawSource,
+      // 				},
+      // 			},
+      // 			storySource: {
+      // 				source: storyMeta.rawSource,
+      // 			},
+      // 		}
+      // 	: undefined,
     );
-    storyFn.tags = combineTags(
-      ...(meta.tags ?? []),
-      ...(template?.tags ?? []),
-      ...(story.tags ?? [])
-    );
+    storyFn.tags = combineTags(...(meta.tags ?? []), ...(story.tags ?? []));
 
-    const play = meta.play ?? template?.play ?? story.play;
+    const play = meta.play ?? story.play;
 
     if (play) {
       /*

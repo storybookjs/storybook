@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url';
 
 // FIXME: `StorybookConfig` doesn't have a prop field for `webpack`, should we deprecate?
-export const webpack = async (config: any) => {
+export const webpackFinal = async (config: any) => {
   return {
     ...config,
     module: {

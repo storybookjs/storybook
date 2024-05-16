@@ -4,7 +4,7 @@ import type { Root, SvelteNode } from 'svelte/compiler';
 
 import pkg from '../../../package.json' with { type: 'json' };
 
-import { ADDON_COMPONENT_NAMES, type AddonComponentName, type InstanceMeta } from '../types.js';
+import { ADDON_COMPONENT_NAME, type InstanceMeta } from '../types.js';
 
 export function walkOnInstance(instance: Root['instance']): InstanceMeta {
   if (!instance) {
@@ -14,17 +14,10 @@ export function walkOnInstance(instance: Root['instance']): InstanceMeta {
   }
 
   const state: InstanceMeta = {
-    addonComponents: Object.fromEntries(ADDON_COMPONENT_NAMES.map((n) => [n, n])) as Record<
-      AddonComponentName,
-      AddonComponentName
-    >,
+    addonComponentName: ADDON_COMPONENT_NAME,
   };
 
   const visitors: Visitors<SvelteNode, typeof state> = {
-    // FIXME: Is this still needed?
-    Program(node, { state, visit, stop }) {
-      stop();
-    },
     ImportDeclaration(node, { state, visit, stop }) {
       const { source, specifiers } = node;
 
@@ -44,7 +37,7 @@ export function walkOnInstance(instance: Root['instance']): InstanceMeta {
       stop();
     },
     ImportSpecifier(node, { state, stop }) {
-      if (ADDON_COMPONENT_NAMES.includes(node.imported.name)) {
+      if (ADDON_COMPONENT_NAME.includes(node.imported.name)) {
         const { imported, local } = node;
 
         state[imported.name] = local.name;

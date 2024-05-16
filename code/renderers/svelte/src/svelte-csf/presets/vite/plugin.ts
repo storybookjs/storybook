@@ -48,8 +48,11 @@ export default function plugin(svelteOptions: SvelteConfig): Plugin {
         )
         .join('\n');
 
-      // FIXME: Still needed?
-      // s.replace("export default", "// export default");
+      // NOTE:
+      // The `meta` will be modified while extracting stories.
+      // For reasons such as adding the `description`
+      // from the leading comment above `export const meta`, and so on.
+      s.replace('export default', '// export default');
 
       const namedExportsOrder = Object.entries(stories).map(([id, _]) => id);
 
@@ -57,6 +60,10 @@ export default function plugin(svelteOptions: SvelteConfig): Plugin {
         '',
         `import parser from '${parser}';`,
         `const __storiesMetaData = parser(${component}, ${JSON.stringify(storiesFileMeta)}, meta);`,
+        // NOTE:
+        // Export default "modified" meta,
+        // after combining with data extracted from the static analytics.
+        'export default __storiesMetaData.meta;',
         `export const __namedExportsOrder = ${JSON.stringify(namedExportsOrder)};`,
         storiesExports,
       ].join('\n');

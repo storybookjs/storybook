@@ -12,19 +12,25 @@
 </script>
 
 <script>
-  import { Story } from '../src/index';
   import { expect } from '@storybook/test';
   import { userEvent, within } from '@storybook/test';
   import { tick } from 'svelte';
 
+  import { defineComponent } from '../src/index';
+
+  const { Story } = defineComponent(meta);
+
   async function play({ canvasElement }) {
     const canvas = within(canvasElement);
+    const count = await canvas.findByTestId('count');
 
     await userEvent.click(await canvas.findByText('Increment'));
 
-    const count = await canvas.findByTestId('count');
-
     expect(count.textContent).toEqual('You clicked 1 times');
+
+    await userEvent.click(await canvas.findByText('Decrement'));
+
+    expect(count.textContent).toEqual('You clicked 0 times');
   }
 
   let i = $state(0);
@@ -47,6 +53,11 @@
     await tick();
 
     expect(p.textContent).toEqual('1');
+
+    i--;
+    await tick();
+
+    expect(p.textContent).toEqual('0');
   }}
 >
   <p data-testid="count">{i}</p>

@@ -19,13 +19,15 @@
 </script>
 
 <script lang="ts">
-  import { Story, setTemplate } from "../src/index.js";
+  import { defineComponent, setTemplate } from "../src/index.js";
 
   let count = $state(0);
 
   function handleClick() {
     count += 1;
   }
+
+  const { Story } = defineComponent(meta);
 
   setTemplate(render);
 </script>
@@ -38,14 +40,14 @@
 {/snippet}
 
 <!-- Description for the default story -->
-<Story {meta} />
+<Story />
 
 <!-- Description for the rounded story -->
-<Story {meta} name="Rounded" args={{ rounded: true }} />
+<Story name="Rounded" args={{ rounded: true }} />
 
 <!-- Description for the squared story -->
-<Story {meta} name="Square" args={{ rounded: false }} />
+<Story name="Square" args={{ rounded: false }} />
 
-<Story {meta} name="Without template">
+<Story name="Without template">
   <Example>Label</Example>
 </Story>

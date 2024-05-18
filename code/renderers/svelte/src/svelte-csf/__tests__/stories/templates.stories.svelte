@@ -14,7 +14,9 @@
 </script>
 
 <script lang="ts">
-  import { Story, type Template } from '../src/index.js';
+  import { defineComponent, type Template } from '../src/index.js';
+
+  const { Story } = defineComponent(meta);
 </script>
 
 

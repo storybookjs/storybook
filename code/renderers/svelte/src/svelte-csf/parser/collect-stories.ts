@@ -43,7 +43,6 @@ export default <Component extends SvelteComponent>(
   }
 
   const repository: StoriesRepository<Component> = {
-    meta,
     stories: new Map(),
   };
 

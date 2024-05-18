@@ -1,11 +1,11 @@
 /// <reference types="webpack-env" />
 
-import type { StoryContext } from '@storybook/svelte';
+import type { Meta, StoryContext } from '@storybook/svelte';
 import type { ComponentProps, SvelteComponent } from 'svelte';
 
 import Story from './components/Story.svelte';
 
-import { setTemplate } from './components/context.svelte.js';
+export { setTemplate } from './components/context.svelte.js';
 
 // FIXME: We don't use webpack anymore(?)
 if (module?.hot?.decline) {
@@ -20,4 +20,8 @@ export type Template<
   context: StoryContext<Props>;
 };
 
-export { Story, setTemplate };
+export function defineComponent<Component extends SvelteComponent>(meta: Meta<Component>) {
+  return {
+    Story: Story as typeof Story<Component>,
+  };
+}

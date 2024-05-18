@@ -1,12 +1,11 @@
 <script lang="ts" generics="Component extends SvelteComponent">
-  import type { Meta,  StoryObj, } from '@storybook/svelte';
+  import type { StoryObj } from '@storybook/svelte';
   import type { Snippet, SvelteComponent } from 'svelte';
 
   import type { Template } from '../index.js';
   import {useStoriesExtractor, useStoryRenderer, useStoriesTemplate } from './context.svelte.js';
 
   type Props = StoryObj<Component> & {
-    meta?: Meta<Component>;
     children?: Snippet<[Template<Component>]>;
     /**
     * Id of the story.

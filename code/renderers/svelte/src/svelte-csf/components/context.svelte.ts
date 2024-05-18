@@ -1,4 +1,4 @@
-import type { Meta, StoryContext, StoryObj } from '@storybook/svelte';
+import type { StoryContext, StoryObj } from '@storybook/svelte';
 import type { StoryName } from '@storybook/types';
 import {
   getContext,
@@ -43,7 +43,6 @@ export type RegistrationContext<Component extends SvelteComponent> = ReturnType<
 >;
 
 export type StoriesRepository<Component extends SvelteComponent> = {
-  meta: Meta<Component>;
   stories: Map<StoryName, StoryObj<Component>>;
 };
 

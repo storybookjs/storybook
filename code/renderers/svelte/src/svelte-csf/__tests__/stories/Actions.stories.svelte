@@ -11,7 +11,9 @@
 </script>
 
 <script>
-  import { Story } from '../src/index';
+  import { defineComponent } from '../src/index';
+
+  const { Story } = defineComponent(meta);
 </script>
 
 <Story>

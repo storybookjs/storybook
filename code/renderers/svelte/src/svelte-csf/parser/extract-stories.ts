@@ -6,7 +6,9 @@ import { walkOnInstance } from './walkers/instance.js';
 import { walkOnFragment } from './walkers/fragment.js';
 
 /**
- * Parse raw stories file component in Svelte format and extract stories.
+ * Parse raw stories file component in Svelte format,
+ * and extract the most stories file meta,
+ * which are required to generate `StoryFn's` for `@storybook/svelte` components.
  */
 export function extractStories(rawSource: string): StoriesFileMeta {
   const { ast }: { ast: Root } = compile(rawSource, { modernAst: true });

@@ -1,6 +1,4 @@
 <script context="module">
-  import { Story } from '@storybook/addon-svelte-csf';
-
   import Controls from './Controls.svelte';
 
   /**
@@ -16,6 +14,10 @@
     },
     tags: ['autodocs'],
   };
+</script>
+
+<script>
+  import { Story } from '../src/index';
 </script>
 
 <Story

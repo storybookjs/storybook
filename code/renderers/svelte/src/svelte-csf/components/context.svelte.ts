@@ -1,13 +1,15 @@
-import type { Meta, StoryContext, StoryObj, SvelteRenderer } from '@storybook/svelte';
-import type { ComponentAnnotations, StoryName } from '@storybook/types';
+import type { Meta, StoryContext, StoryObj } from '@storybook/svelte';
+import type { StoryName } from '@storybook/types';
 import {
   getContext,
   hasContext,
   setContext,
   type ComponentProps,
-  type SvelteComponent,
   type Snippet,
+  type SvelteComponent,
 } from 'svelte';
+
+import type { Template } from '../index.js';
 
 const KEYS = {
   extractor: 'storybook-stories-extractor-context',
@@ -75,27 +77,27 @@ export function useStoriesExtractor<Component extends SvelteComponent>() {
 }
 
 interface StoryRendererContextProps<Component extends SvelteComponent> {
-  componentAnnotations: ComponentAnnotations<SvelteRenderer<SvelteComponent<Component>>>;
-  storyContext: StoryContext<ComponentProps<Component>>;
   currentStoryName: StoryName | undefined;
+  args: NonNullable<Partial<ComponentProps<Component>>>;
+  storyContext: StoryContext<ComponentProps<Component>>;
 }
 
 function buildStoryRendererContext<Component extends SvelteComponent>(
   props: StoryRendererContextProps<Component>
 ) {
   let currentStoryName = $state(props.currentStoryName);
+  let args = $state(props.args);
   let storyContext = $state(props.storyContext);
-  let componentAnnotations = $state(props.componentAnnotations);
 
   function set(props: StoryRendererContextProps<Component>) {
     currentStoryName = props.currentStoryName;
-    componentAnnotations = props.componentAnnotations;
+    args = props.args;
     storyContext = props.storyContext;
   }
 
   return {
-    get componentAnnotations() {
-      return componentAnnotations;
+    get args() {
+      return args;
     },
     get storyContext() {
       return storyContext;
@@ -114,7 +116,7 @@ export type StoryRendererContext<Component extends SvelteComponent> = ReturnType
 function createStoryRendererContext<Component extends SvelteComponent>(): void {
   const ctx = buildStoryRendererContext<Component>({
     currentStoryName: undefined,
-    componentAnnotations: {},
+    args: {},
     // @ts-expect-error FIXME: I don't know how to satisfy this one
     storyContext: {},
   });
@@ -130,17 +132,10 @@ export function useStoryRenderer<Component extends SvelteComponent>() {
   return getContext<StoryRendererContext<Component>>(KEYS.renderer);
 }
 
-type StoryChildrenTemplate<Component extends SvelteComponent> = Snippet<
-  [
-    ComponentAnnotations<SvelteRenderer<Component>> & {
-      context: StoryContext<ComponentProps<Component>>;
-    },
-  ]
->;
-function createStoryChildrenTemplateContext<Component extends SvelteComponent>() {
-  let template = $state<StoryChildrenTemplate<Component>>();
+function createStoriesTemplateContext<Component extends SvelteComponent>() {
+  let template = $state<Snippet<[Template<Component>]> | undefined>();
 
-  function set(snippet?: StoryChildrenTemplate<Component>) {
+  function set(snippet?: typeof template) {
     template = snippet;
   }
 
@@ -152,26 +147,26 @@ function createStoryChildrenTemplateContext<Component extends SvelteComponent>()
   };
 }
 
-type StoryChildrenTemplateContext<Component extends SvelteComponent> = ReturnType<
-  typeof createStoryChildrenTemplateContext<Component>
+type StoriesTemplateContext<Component extends SvelteComponent> = ReturnType<
+  typeof createStoriesTemplateContext<Component>
 >;
 
-export function useStoryChildrenTemplate<Component extends SvelteComponent>() {
+export function useStoriesTemplate<Component extends SvelteComponent>() {
   if (!hasContext(KEYS.renderSnippet)) {
-    setContext(KEYS.renderSnippet, createStoryChildrenTemplateContext<Component>());
+    setContext(KEYS.renderSnippet, createStoriesTemplateContext<Component>());
   }
 
-  return getContext<StoryChildrenTemplateContext<Component>>(KEYS.renderSnippet).template;
+  return getContext<StoriesTemplateContext<Component>>(KEYS.renderSnippet).template;
 }
 
 export function setTemplate<Component extends SvelteComponent>(
-  snippet?: StoryChildrenTemplate<Component>
+  snippet?: StoriesTemplateContext<Component>['template']
 ): void {
   if (!hasContext(KEYS.renderSnippet)) {
-    setContext(KEYS.renderSnippet, createStoryChildrenTemplateContext<Component>());
+    setContext(KEYS.renderSnippet, createStoriesTemplateContext<Component>());
   }
 
-  const ctx = getContext<StoryChildrenTemplateContext<Component>>(KEYS.renderSnippet);
+  const ctx = getContext<StoriesTemplateContext<Component>>(KEYS.renderSnippet);
 
   ctx.set(snippet);
 }

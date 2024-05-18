@@ -1,5 +1,5 @@
 <script lang="ts" generics="Component extends SvelteComponent">
-  import type { Args, StoryContext } from '@storybook/svelte';
+  import type { StoryContext } from '@storybook/svelte';
   import type { StoryName } from '@storybook/types';
   import type { ComponentProps, ComponentType, SvelteComponent } from 'svelte';
 
@@ -8,18 +8,17 @@
   type Props = {
     Stories: Component extends SvelteComponent ? ComponentType<SvelteComponent> : never;
     storyName: StoryName;
-    args: Args;
+    args: ComponentProps<Component>;
     storyContext: StoryContext<ComponentProps<Component>>;
   };
 
-  let { Stories, storyName, storyContext, args }: Props = $props();
-
+  let { Stories, storyName, args, storyContext }: Props = $props();
   const context = useStoryRenderer<Component>();
 
   $effect(() => {
     context.set({
       currentStoryName: storyName,
-      componentAnnotations: { args },
+      args,
       storyContext,
     });
   });

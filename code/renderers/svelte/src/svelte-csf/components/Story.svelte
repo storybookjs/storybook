@@ -1,13 +1,13 @@
 <script lang="ts" generics="Component extends SvelteComponent">
-  import type { ComponentAnnotations } from '@storybook/types';
-  import type {  Meta, StoryContext, StoryObj, SvelteRenderer } from '@storybook/svelte';
-  import type { ComponentProps, Snippet, SvelteComponent } from 'svelte';
+  import type { Meta,  StoryObj, } from '@storybook/svelte';
+  import type { Snippet, SvelteComponent } from 'svelte';
 
-  import {useStoriesExtractor, useStoryRenderer, useStoryChildrenTemplate } from './context.svelte.js';
+  import type { Template } from '../index.js';
+  import {useStoriesExtractor, useStoryRenderer, useStoriesTemplate } from './context.svelte.js';
 
   type Props = StoryObj<Component> & {
     meta?: Meta<Component>;
-    children?: Snippet<[ComponentAnnotations<SvelteRenderer<Component>> & { context: StoryContext<ComponentProps<Component>> }]>;
+    children?: Snippet<[Template<Component>]>;
     /**
     * Id of the story.
     *
@@ -35,11 +35,11 @@
     source?: boolean | string;
   }
 
-  const { children, name = "Default",  id,  play, ...restProps }:Props = $props();
+  const { children, name = "Default",  id, play, ...restProps }:Props = $props();
 
   const extractor = useStoriesExtractor<Component>();
   const renderer = useStoryRenderer<Component>();
-  const childrenTemplate = useStoryChildrenTemplate<Component>();
+  const storiesTemplate = useStoriesTemplate<Component>();
 
   const isCurrentlyViewed = $derived(!extractor.isExtracting && renderer.currentStoryName === name);
 
@@ -59,13 +59,13 @@
     }
   });
 
-  const childrenProps = $derived({...renderer.componentAnnotations, context: renderer.storyContext});
+  const template = $derived({ args: renderer.args, context: renderer.storyContext });
 </script>
 
 {#if isCurrentlyViewed}
   {#if children}
-    {@render children(childrenProps)}
-  {:else if childrenTemplate}
-    {@render childrenTemplate(childrenProps)}
+    {@render children(template)}
+  {:else if storiesTemplate}
+    {@render storiesTemplate(template)}
   {/if}
 {/if}

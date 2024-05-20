@@ -1,12 +1,12 @@
-<script lang="ts" generics="Component extends SvelteComponent">
-  import type { StoryObj } from '@storybook/svelte';
-  import type { Snippet, SvelteComponent } from 'svelte';
+<script lang="ts" generics="M extends Meta">
+  import type { Meta, StoryObj } from '@storybook/svelte';
+  import type { Snippet } from 'svelte';
 
   import type { Template } from '../index.js';
   import {useStoriesExtractor, useStoryRenderer, useStoriesTemplate } from './context.svelte.js';
 
-  type Props = StoryObj<Component> & {
-    children?: Snippet<[Template<Component>]>;
+  type Props = {
+    children?: Snippet<[Template<M>]>;
     /**
     * Id of the story.
     *
@@ -23,6 +23,7 @@
      * Use `tags={['autodocs']}` instead.
      */
     autodocs?: never;
+    // TODO: Discuss if this is still neeeded
     /**
      *
      * Specify which sources should be shown.
@@ -34,16 +35,17 @@
     source?: boolean | string;
   }
 
-  const { children, name = "Default",  id, play, ...restProps }:Props = $props();
+  const { children, name = "Default",  id, play, ...restProps }:Props & StoryObj<M> = $props();
 
-  const extractor = useStoriesExtractor<Component>();
-  const renderer = useStoryRenderer<Component>();
-  const storiesTemplate = useStoriesTemplate<Component>();
+  const extractor = useStoriesExtractor<M>();
+  const renderer = useStoryRenderer<M>();
+  const storiesTemplate = useStoriesTemplate<M>();
 
   const isCurrentlyViewed = $derived(!extractor.isExtracting && renderer.currentStoryName === name);
 
   if (extractor.isExtracting) {
-    extractor.register({ ...restProps, name, play } as StoryObj<Component>);
+    // @ts-expect-error FIXME: No idea how to satisfy this one, I could've missed something
+    extractor.register({ ...restProps, name, play });
   }
 
   function injectIntoPlayFunction(storyContext_: typeof renderer.storyContext, play_: typeof play) {
@@ -58,13 +60,13 @@
     }
   });
 
-  const template = $derived({ args: renderer.args, context: renderer.storyContext });
+  const templateProps = $derived({ args: renderer.args, context: renderer.storyContext });
 </script>
 
 {#if isCurrentlyViewed}
   {#if children}
-    {@render children(template)}
+    {@render children(templateProps)}
   {:else if storiesTemplate}
-    {@render storiesTemplate(template)}
+    {@render storiesTemplate(templateProps)}
   {/if}
 {/if}

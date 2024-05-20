@@ -1,7 +1,6 @@
 /// <reference types="webpack-env" />
 
-import type { Meta, StoryContext } from '@storybook/svelte';
-import type { ComponentProps, SvelteComponent } from 'svelte';
+import type { Meta, StoryContext, StoryObj } from '@storybook/svelte';
 
 import Story from './components/Story.svelte';
 
@@ -12,16 +11,13 @@ if (module?.hot?.decline) {
   module.hot.decline();
 }
 
-export type Template<
-  Component extends SvelteComponent,
-  Props = NonNullable<Partial<ComponentProps<Component>>>,
-> = {
-  args: Props;
-  context: StoryContext<Props>;
+export type Template<M extends Meta> = {
+  args: StoryObj<M>['args'];
+  context: StoryContext<M['args']>;
 };
 
-export function defineComponent<Component extends SvelteComponent>(meta: Meta<Component>) {
+export function defineComponent<const M extends Meta>(meta: M) {
   return {
-    Story: Story as typeof Story<Component>,
+    Story: Story as typeof Story<M>,
   };
 }

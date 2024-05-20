@@ -5,17 +5,16 @@
   import Example from './Example.svelte';
 
   // Description set explicitly in the comment above `export const meta`
-  export const meta: Meta<Example> = {
+  export const meta = {
     title: 'Example',
     component: Example,
     tags: ['autodocs'],
     args: {
-      rounded: false,
       onclick: action("onclick"),
       onmouseenter: action("onmouseenter"),
       onmouseleave: action("onmouseleave"),
     },
-  };
+  } satisfies Meta<Example>;
 </script>
 
 <script lang="ts">

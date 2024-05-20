@@ -1,20 +1,16 @@
 <script context="module">
-  export const meta = {
+  import { defineMeta } from '../src/index';
+
+  const { Story, meta } = defineMeta({
     title: 'StoryContext',
     parameters: {
       controls: { disable: true },
       interactions: { disable: true },
     },
-  };
+  });
 </script>
 
-<script>
-  import { defineComponent } from '../src/index';
-
-  const { Story } = defineComponent(meta);
-</script>
-
-<Story name="Example">
+<Story>
   {#snippet children({ context })}
     {#each Object.entries(context) as [key, value]}
       {#if typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' || typeof value === "function"}

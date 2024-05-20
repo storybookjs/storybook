@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-  import type { Meta } from '@storybook/svelte';
+  import { defineMeta, type Template } from '../src/index.js';
 
   import Text from './Text.svelte';
 
@@ -7,25 +7,23 @@
    * Demonstration on how to use multiple templates in one stories file,
    * powered by Svelte's **snippets**.
    */
-  export const meta: Meta<Text> = {
+  const { Story, meta } = defineMeta({
     title: 'Templates',
+    component: Text,
     tags: ['autodocs'],
-  };
+    args: { text: "" },
+    argsTypes: {
+      text: { control: "text" },
+    },
+  });
 </script>
 
-<script lang="ts">
-  import { defineComponent, type Template } from '../src/index.js';
-
-  const { Story } = defineComponent(meta);
-</script>
-
-
-{#snippet template1({ args }: Template<Text>)}
+{#snippet template1({ args }: Template<typeof meta>)}
   <h2 style="color: lightgreen">Template 1</h2>
   <p>{args.text}</p>
 {/snippet}
 
-{#snippet template2({ args }: Template<Text>)}
+{#snippet template2({ args }: Template<typeof meta>)}
   <h2 style="color: fuchsia">Template 2</h2>
   <hr>
   <p>{args.text}</p>

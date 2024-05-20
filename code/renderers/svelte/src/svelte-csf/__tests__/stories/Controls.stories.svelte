@@ -1,11 +1,13 @@
 <script context="module">
   import Controls from './Controls.svelte';
 
+  import { defineMeta } from '../src/index';
+
   /**
    * This is an visual example for using/testing the args table
    * @type {import("@storybook/svelte").Meta<Controls>}
    */
-  export const meta = {
+  const { Story, meta } = defineMeta({
     title: 'Addon/Controls',
     component: Controls,
     parameters: {
@@ -13,13 +15,7 @@
       interactions: { disable: true },
     },
     tags: ['autodocs'],
-  };
-</script>
-
-<script>
-  import { defineComponent } from '../src/index';
-
-  const { Story } = defineComponent(meta);
+  });
 </script>
 
 <Story

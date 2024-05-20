@@ -1,12 +1,13 @@
 <script context="module" lang="ts">
   import { action } from '@storybook/addon-actions';
-  import type { Meta } from "@storybook/svelte";
+
+  import { defineMeta, setTemplate } from "../src/index.js";
 
   import Example from './Example.svelte';
 
-  // Description set explicitly in the comment above `export const meta`
-  export const meta = {
-    title: 'Example',
+  // Description set explicitly in the comment above `defineMeta`
+  const { Story, meta: m } = defineMeta({
+  ...({ title: 'Example damn'}),
     component: Example,
     tags: ['autodocs'],
     args: {
@@ -14,19 +15,16 @@
       onmouseenter: action("onmouseenter"),
       onmouseleave: action("onmouseleave"),
     },
-  } satisfies Meta<Example>;
+  });
 </script>
 
 <script lang="ts">
-  import { defineComponent, setTemplate } from "../src/index.js";
 
   let count = $state(0);
 
   function handleClick() {
     count += 1;
   }
-
-  const { Story } = defineComponent(meta);
 
   setTemplate(render);
 </script>

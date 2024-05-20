@@ -1,19 +1,15 @@
 <script context="module">
   import { action } from '@storybook/addon-actions';
 
-  export const meta = {
+  import { defineMeta } from '../src/index';
+
+  const { Story, meta } = defineMeta({
     title: 'Addon/Actions',
     parameters: {
       controls: { disable: true },
       interactions: { disable: true },
     },
-  };
-</script>
-
-<script>
-  import { defineComponent } from '../src/index';
-
-  const { Story } = defineComponent(meta);
+  });
 </script>
 
 <Story>

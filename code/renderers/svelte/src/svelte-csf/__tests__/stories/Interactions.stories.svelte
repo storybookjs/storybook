@@ -1,38 +1,33 @@
 <script context="module">
   import Interactions from './Interactions.svelte';
+  import { expect } from '@storybook/test';
+  import { userEvent, within } from '@storybook/test';
+  import { tick } from 'svelte';
 
-  export const meta = {
+  import { defineMeta } from '../src/index';
+
+  const { Story, meta } = defineMeta({
     title: 'Addon/Interactions',
     component: Interactions,
     parameters: {
       actions: { disable: true },
       controls: { disable: true },
     },
-  };
-</script>
-
-<script>
-  import { expect } from '@storybook/test';
-  import { userEvent, within } from '@storybook/test';
-  import { tick } from 'svelte';
-
-  import { defineComponent } from '../src/index';
-
-  const { Story } = defineComponent(meta);
+  });
 
   async function play({ canvasElement }) {
     const canvas = within(canvasElement);
     const count = await canvas.findByTestId('count');
 
     await userEvent.click(await canvas.findByText('Increment'));
-
     expect(count.textContent).toEqual('You clicked 1 times');
 
     await userEvent.click(await canvas.findByText('Decrement'));
-
     expect(count.textContent).toEqual('You clicked 0 times');
   }
+</script>
 
+<script>
   let i = $state(0);
 </script>
 
@@ -51,12 +46,10 @@
 
     i++;
     await tick();
-
     expect(p.textContent).toEqual('1');
 
     i--;
     await tick();
-
     expect(p.textContent).toEqual('0');
   }}
 >

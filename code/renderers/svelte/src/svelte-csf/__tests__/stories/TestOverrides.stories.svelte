@@ -1,19 +1,15 @@
 <script context="module">
-  export const meta = {
-    title: 'Import Story As',
+  import { defineMeta as d } from '../src/index';
+
+  const { Story: S, meta: m } = d({
+    title: 'Test overrides',
     args: {
       message: "Hello from Storybook for Svelte using CSF!",
     },
     argTypes: {
       text: { control: "text" },
     },
-  };
-</script>
-
-<script>
-  import { defineComponent } from '../src/index';
-
-  const { Story: S } = defineComponent(meta);
+  });
 </script>
 
 <S>

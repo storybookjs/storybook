@@ -1,5 +1,5 @@
-import { fileURLToPath } from 'node:url';
-import { readFileSync } from 'node:fs';
+import url from 'node:url';
+import fs from 'node:fs';
 
 import type { SvelteConfig } from '@sveltejs/vite-plugin-svelte';
 import MagicString from 'magic-string';
@@ -9,10 +9,9 @@ import { preprocess } from 'svelte/compiler';
 import { getNameFromFilename } from '../svelte/stories-loader.js';
 import { extractStories } from '../../parser/extract-stories.js';
 
-const parser = fileURLToPath(new URL('../../parser/collect-stories.js', import.meta.url)).replace(
-  /\\/g,
-  '\\\\'
-); // For Windows paths
+const parser = url
+  .fileURLToPath(new URL('../../parser/collect-stories.js', import.meta.url))
+  .replace(/\\/g, '\\\\'); // For Windows paths
 
 export default function plugin(svelteOptions: SvelteConfig): Plugin {
   const include = /\.stories\.svelte$/;
@@ -25,9 +24,15 @@ export default function plugin(svelteOptions: SvelteConfig): Plugin {
       if (!filter(id)) return undefined;
 
       const s = new MagicString(code);
-      const component = getNameFromFilename(id);
 
-      let source = readFileSync(id).toString();
+      // NOTE:
+      // The `meta` will be modified while extracting stories.
+      // For reasons such as adding the `description`
+      // from the leading comment above `export const meta`, and so on.
+      s.replace('export default', '// export default');
+
+      const component = getNameFromFilename(id);
+      let source = fs.readFileSync(id).toString();
 
       if (svelteOptions && svelteOptions.preprocess) {
         source = (
@@ -38,35 +43,33 @@ export default function plugin(svelteOptions: SvelteConfig): Plugin {
       }
 
       const storiesFileMeta = extractStories(source);
-      const { fragment } = storiesFileMeta;
+      const { module, fragment } = storiesFileMeta;
       const { stories } = fragment;
-      // biome-ignore format: Stop
+      const parsedStoriesVariable = '__parsed';
+      const exportsOrderVariable = '__exports';
+      const exportsOrder = Object.entries(stories).map(([id, _]) => id);
       const storiesExports = Object.entries(stories)
         .map(
           ([id]) =>
-            `export const ${sanitizeStoryId(id)} = __storiesMetaData.stories[${JSON.stringify(id)}];`
+            `export const ${sanitizeStoryId(
+              id
+            )} = ${parsedStoriesVariable}.stories[${JSON.stringify(id)}];`
         )
         .join('\n');
 
-      // NOTE:
-      // The `meta` will be modified while extracting stories.
-      // For reasons such as adding the `description`
-      // from the leading comment above `export const meta`, and so on.
-      s.replace('export default', '// export default');
-
-      const namedExportsOrder = Object.entries(stories).map(([id, _]) => id);
-
+      // biome-ignore format: Stop
+      // prettier-ignore
       const output = [
-        '',
-        `import parser from '${parser}';`,
-        `const __storiesMetaData = parser(${component}, ${JSON.stringify(storiesFileMeta)}, meta);`,
-        // NOTE:
-        // Export default "modified" meta,
-        // after combining with data extracted from the static analytics.
-        'export default __storiesMetaData.meta;',
-        `export const __namedExportsOrder = ${JSON.stringify(namedExportsOrder)};`,
-        storiesExports,
-      ].join('\n');
+				"",
+				`import parser from '${parser}';`,
+				`const ${parsedStoriesVariable} = parser(${component}, ${JSON.stringify(storiesFileMeta)}, ${module.addonMetaVarName});`,
+				// NOTE:
+				// Export default "modified" meta,
+				// after combining with data extracted from the static analytics.
+				`export default ${parsedStoriesVariable}.meta;`,
+				`export const ${exportsOrderVariable} = ${JSON.stringify(exportsOrder)};`,
+				storiesExports,
+			].join("\n");
 
       s.append(output);
 

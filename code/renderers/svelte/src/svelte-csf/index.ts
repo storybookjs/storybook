@@ -11,13 +11,15 @@ if (module?.hot?.decline) {
   module.hot.decline();
 }
 
+// TODO: Consult if these are correct types
 export type Template<M extends Meta> = {
-  args: StoryObj<M>['args'];
+  args: M['args'] & StoryObj<M>['args'];
   context: StoryContext<M['args']>;
 };
 
-export function defineComponent<const M extends Meta>(meta: M) {
+export function defineMeta<const M extends Meta>(meta: M) {
   return {
     Story: Story as typeof Story<M>,
+    meta,
   };
 }

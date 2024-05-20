@@ -1,15 +1,15 @@
 /* eslint-env browser */
+import { combineTags } from '@storybook/csf';
 import { logger } from '@storybook/client-logger';
 import { combineArgs, combineParameters } from '@storybook/preview-api';
 import type { Meta, StoryFn } from '@storybook/svelte';
-import { type ComponentProps, type SvelteComponent, mount, unmount } from 'svelte';
+import { type SvelteComponent, mount, unmount } from 'svelte';
 
 import type { StoriesFileMeta } from './types.js';
 import type { StoriesRepository } from '../components/context.svelte.js';
 
 import StoriesExtractor from '../components/StoriesExtractor.svelte';
 import StoryRenderer from '../components/StoryRenderer.svelte';
-import { combineTags } from '@storybook/csf';
 
 const createFragment = document.createDocumentFragment
   ? () => document.createDocumentFragment()
@@ -27,12 +27,12 @@ const createFragment = document.createDocumentFragment
  * instantiate the main Stories component: Every Story but
  * the one selected is disabled.
  */
-export default <Component extends SvelteComponent>(
-  Stories: Component,
+export default <M extends Meta>(
+  Stories: SvelteComponent,
   storiesFileMeta: StoriesFileMeta,
-  meta: Meta<Component>
+  meta: M
 ) => {
-  if (!meta.parameters?.docs?.description?.component) {
+  if (!meta.parameters?.docs?.description?.component && storiesFileMeta.module.description) {
     meta.parameters = combineParameters(meta.parameters, {
       docs: {
         description: {
@@ -42,7 +42,7 @@ export default <Component extends SvelteComponent>(
     });
   }
 
-  const repository: StoriesRepository<Component> = {
+  const repository: StoriesRepository<M> = {
     stories: new Map(),
   };
 
@@ -52,7 +52,7 @@ export default <Component extends SvelteComponent>(
       props: {
         Stories,
         repository: () => repository,
-      } satisfies ComponentProps<StoriesExtractor>,
+      },
     });
 
     unmount(context);
@@ -74,7 +74,7 @@ export default <Component extends SvelteComponent>(
           Stories,
           storyContext,
           args,
-        } satisfies ComponentProps<StoryRenderer>,
+        },
       };
     };
     storyFn.storyName = story.name;
@@ -91,6 +91,7 @@ export default <Component extends SvelteComponent>(
             },
           }
         : undefined
+      // TODO: Wait for the response on this case
       // storyMeta.rawSource
       // 	? {
       // 			docs: {

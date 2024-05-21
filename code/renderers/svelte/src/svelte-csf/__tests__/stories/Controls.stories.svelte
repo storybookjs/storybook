@@ -1,11 +1,10 @@
 <script context="module">
-  import Controls from './Controls.svelte';
-
   import { defineMeta } from '../src/index';
+
+  import Controls from './Controls.svelte';
 
   /**
    * This is an visual example for using/testing the args table
-   * @type {import("@storybook/svelte").Meta<Controls>}
    */
   const { Story, meta } = defineMeta({
     title: 'Addon/Controls',
@@ -29,7 +28,7 @@
     sampleRequiredObject: { tool: 'storybook', rating: 10 },
   }}
 >
-  {#snippet children({ args })}
+  {#snippet children(args)}
     <Controls {...args} />
   {/snippet}
 </Story>

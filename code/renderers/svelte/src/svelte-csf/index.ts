@@ -12,10 +12,8 @@ if (module?.hot?.decline) {
 }
 
 // TODO: Consult if these are correct types
-export type Template<M extends Meta> = {
-  args: M['args'] & StoryObj<M>['args'];
-  context: StoryContext<M['args']>;
-};
+export type TArgs<M extends Meta> = StoryObj<M>['args'];
+export type TContext<M extends Meta> = StoryContext<M['args']>;
 
 export function defineMeta<const M extends Meta>(meta: M) {
   return {

@@ -2,7 +2,7 @@ import type { Meta, StoryContext, StoryObj } from '@storybook/svelte';
 import type { StoryName } from '@storybook/types';
 import { getContext, hasContext, setContext, type Snippet } from 'svelte';
 
-import type { Template } from '../index.js';
+import type { TArgs, TContext } from '../index.js';
 
 const KEYS = {
   extractor: 'storybook-stories-extractor-context',
@@ -121,7 +121,7 @@ export function useStoryRenderer<M extends Meta>() {
 }
 
 function createStoriesTemplateContext<M extends Meta>() {
-  let template = $state<Snippet<[Template<M>]> | undefined>();
+  let template = $state<Snippet<[TArgs<M>, TContext<M>]> | undefined>();
 
   function set(snippet?: typeof template) {
     template = snippet;

@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-  import { defineMeta, type Template } from '../src/index.js';
+  import { defineMeta, type TArgs } from '../src/index.js';
 
   import Text from './Text.svelte';
 
@@ -18,15 +18,15 @@
   });
 </script>
 
-{#snippet template1({ args }: Template<typeof meta>)}
+{#snippet template1(args: TArgs<typeof meta>)}
   <h2 style="color: lightgreen">Template 1</h2>
-  <p>{args.text}</p>
+  <p>{args?.text}</p>
 {/snippet}
 
-{#snippet template2({ args }: Template<typeof meta>)}
+{#snippet template2(args: TArgs<typeof meta>)}
   <h2 style="color: fuchsia">Template 2</h2>
   <hr>
-  <p>{args.text}</p>
+  <p>{args?.text}</p>
 {/snippet}
 
 <Story
@@ -41,14 +41,20 @@
   args={{ text: 'This story uses second template' }}
 />
 
+<Story name="Static template">
+  <h2 style="color: aqua">Static template</h2>
+  <hr>
+  <p>{"Static template."}</p>
+</Story>
+
 <Story
   name="Custom template"
   args={{ text: 'This story uses custom template passed as children' }}
 >
-  {#snippet children({ args })}
+  {#snippet children(args)}
     <h2 style="color: orange;font-weight: 700;">Custom template</h2>
     <hr style="border-style: dashed">
-    <p>{args.text}</p>
+    <p>{args?.text}</p>
     <hr>
   {/snippet}
 </Story>

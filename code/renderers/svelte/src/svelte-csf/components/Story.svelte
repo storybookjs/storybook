@@ -2,11 +2,11 @@
   import type { Meta, StoryObj } from '@storybook/svelte';
   import type { Snippet } from 'svelte';
 
-  import type { Template } from '../index.js';
+  import type { TArgs, TContext } from '../index.js';
   import {useStoriesExtractor, useStoryRenderer, useStoriesTemplate } from './context.svelte.js';
 
-  type Props = {
-    children?: Snippet<[Template<M>]>;
+  type Props = StoryObj<M> & {
+    children?: Snippet<[TArgs<M>, TContext<M>]>;
     /**
     * Id of the story.
     *
@@ -35,7 +35,7 @@
     source?: boolean | string;
   }
 
-  const { children, name = "Default",  id, play, ...restProps }:Props & StoryObj<M> = $props();
+  const { children, name = "Default",  id, play, ...restProps }: Props = $props();
 
   const extractor = useStoriesExtractor<M>();
   const renderer = useStoryRenderer<M>();
@@ -59,14 +59,12 @@
       injectIntoPlayFunction(renderer.storyContext, play);
     }
   });
-
-  const templateProps = $derived({ args: renderer.args, context: renderer.storyContext });
 </script>
 
 {#if isCurrentlyViewed}
   {#if children}
-    {@render children(templateProps)}
+    {@render children(renderer.args, renderer.storyContext)}
   {:else if storiesTemplate}
-    {@render storiesTemplate(templateProps)}
+    {@render storiesTemplate(renderer.args, renderer.storyContext)}
   {/if}
 {/if}

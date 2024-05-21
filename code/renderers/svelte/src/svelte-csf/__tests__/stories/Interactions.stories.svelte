@@ -37,8 +37,8 @@
 
 <Story
   name="Capturing scope"
-  play={async (storyContext) => {
-    const { canvasElement } = storyContext;
+  play={async (context) => {
+    const { canvasElement } = context;
     const canvas = within(canvasElement);
     const p = canvas.getByTestId('count');
 

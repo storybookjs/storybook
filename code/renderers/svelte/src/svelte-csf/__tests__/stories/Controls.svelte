@@ -1,109 +1,113 @@
-<script>
-  /**
-   * Description for `sampleBoolean` component prop.
-   * NOTE: The type is automatically infered.
-   */
-  export let sampleDefaultBoolean = false;
-  /**
-   * Description for `sampleOptionalBoolean` component prop.
-   * @type {boolean | undefined}
-   */
-  export let sampleOptionalBoolean;
-  /**
-   * Description for `sampleRequiredBoolean` component prop.
-   * @type {boolean}
-   */
-  export let sampleRequiredBoolean;
+<script lang="ts">
+  type Tool = 'svelte' | 'storybook';
 
-  /**
-   * Description for `sampleDefaultString` component prop.
-   * NOTE: The type is automatically infered.
-   */
-  export let sampleDefaultString = 'Storybook 🤝 Svelte';
-  /**
-   * Description for `sampleOptionalString` component prop.
-   * @type {string | undefined}
-   */
-  export let sampleOptionalString;
-  /**
-   * Description for `sampleRequiredString` component prop.
-   * @type {string}
-   */
-  export let sampleRequiredString;
+  interface Props {
+    /**
+     * Description for `sampleBoolean` component prop.
+     */
+    sampleDefaultBoolean: boolean;
+    /**
+     * Description for `sampleOptionalBoolean` component prop.
+     */
+    sampleOptionalBoolean: boolean | undefined;
+    /**
+     * Description for `sampleRequiredBoolean` component prop.
+     */
+    sampleRequiredBoolean: boolean;
 
-  /**
-   * Description for `sampleDefaultNumber` component prop.
-   * NOTE: The type is automatically infered.
-   */
-  export let sampleDefaultNumber = 9000;
-  /**
-   * Description for `sampleOptionalNumber` component prop.
-   * @type {number | number}
-   */
-  export let sampleOptionalNumber;
-  /**
-   * Description for `sampleRequiredNumber` component prop.
-   * @type {number}
-   */
-  export let sampleRequiredNumber;
+    /**
+     * Description for `sampleDefaultString` component prop.
+     */
+    sampleDefaultString: string;
+    /**
+     * Description for `sampleOptionalString` component prop.
+     */
+    sampleOptionalString: string | undefined;
+    /**
+     * Description for `sampleRequiredString` component prop.
+     */
+    sampleRequiredString: string;
 
-  /**
-   * Description for `sampleDefaultArray` component prop.
-   * NOTE: The type is automatically infered.
-   */
-  export let sampleDefaultArray = ['Storybook', 'loves', 'Svelte'];
-  /**
-   * Description for `sampleOptionalArray` component prop.
-   * @type {string[] | undefined}
-   */
-  export let sampleOptionalArray;
-  /**
-   * Description for `sampleRequiredArray` component prop.
-   * @type {string[]}
-   */
-  export let sampleRequiredArray;
+    /**
+     * Description for `sampleDefaultNumber` component prop.
+     */
+    sampleDefaultNumber: number;
+    /**
+     * Description for `sampleOptionalNumber` component prop.
+     */
+    sampleOptionalNumber: number | undefined;
+    /**
+     * Description for `sampleRequiredNumber` component prop.
+     */
+    sampleRequiredNumber: number;
 
-  /**
-   * @typedef Tool
-   * @type {'svelte' | 'storybook'}
-   */
+    /**
+     * Description for `sampleDefaultArray` component prop.
+     */
+    sampleDefaultArray: string[];
+    /**
+     * Description for `sampleOptionalArray` component prop.
+     */
+    sampleOptionalArray: string[] | undefined;
+    /**
+     * Description for `sampleRequiredArray` component prop.
+     */
+    sampleRequiredArray: string[];
 
-  /**
-   * Description for `sampleDefaultEnum` component prop.
-   * @type {Tool}
-   */
-  export let sampleDefaultEnum = 'svelte';
-  /**
-   * Description for `sampleOptionalEnum` component prop.
-   * @type {Tool | undefined}
-   */
-  export let sampleOptionalEnum;
-  /**
-   * Description for `sampleRequiredEnum` component prop.
-   * @type {Tool}
-   */
-  export let sampleRequiredEnum;
+    /**
+     * Description for `sampleDefaultEnum` component prop.
+     */
+    sampleDefaultEnum: Tool;
+    /**
+     * Description for `sampleOptionalEnum` component prop.
+     */
+    sampleOptionalEnum: Tool | undefined;
+    /**
+     * Description for `sampleRequiredEnum` component prop.
+     */
+    sampleRequiredEnum: Tool;
 
-  /**
-   * Description for `sampleDefaultObject` component prop.
-   * NOTE: The type is automatically infered.
-   */
-  export let sampleDefaultObject = {
-    tool: 'svelte',
-    rating: 9000,
-  };
-  /**
-   * Description for `sampleOptionalObject` component prop.
-   * @type {typeof sampleDefaultObject | undefined}
-   */
-  export let sampleOptionalObject;
-  /**
-   * Description for `sampleRequiredObject` component prop.
-   * @type {typeof sampleDefaultObject}
-   */
-  export let sampleRequiredObject;
+    /**
+     * Description for `sampleDefaultObject` component prop.
+     */
+    sampleDefaultObject: { tool: string; rating: number };
+    /**
+     * Description for `sampleOptionalObject` component prop.
+     */
+    sampleOptionalObject: { tool: string; rating: number } | undefined;
+    /**
+     * Description for `sampleRequiredObject` component prop.
+     */
+    sampleRequiredObject: { tool: string; rating: number };
+  }
 
-  $: props = {
+  let {
+    sampleDefaultBoolean = false,
+    sampleOptionalBoolean,
+    sampleRequiredBoolean,
+
+    sampleDefaultString = 'Storybook 🤝 Svelte',
+    sampleOptionalString,
+    sampleRequiredString,
+
+    sampleDefaultNumber = 9000,
+    sampleOptionalNumber,
+    sampleRequiredNumber,
+
+    sampleDefaultArray = ['Storybook', 'loves', 'Svelte'],
+    sampleOptionalArray,
+    sampleRequiredArray,
+
+    sampleDefaultEnum = 'svelte',
+    sampleOptionalEnum,
+    sampleRequiredEnum,
+
+    sampleDefaultObject = { tool: 'storybook', rating: 9000 },
+    sampleOptionalObject,
+    sampleRequiredObject,
+  }: Props = $props();
+
+  let properties = $derived({
     sampleDefaultBoolean,
     sampleOptionalBoolean,
     sampleRequiredBoolean,
@@ -127,11 +131,11 @@
     sampleDefaultObject,
     sampleOptionalObject,
     sampleRequiredObject,
-  };
+  });
 </script>
 
 <code>
-  {#each Object.entries(props) as [name, value]}
+  {#each Object.entries(properties) as [name, value]}
     <strong>{name}</strong>: {JSON.stringify(value)}<br />
   {/each}
 </code>

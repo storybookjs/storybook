@@ -1,7 +1,7 @@
 <script context="module" lang="ts">
   import { action } from '@storybook/addon-actions';
 
-  import { defineMeta, setTemplate } from "../src/index.js";
+  import { defineMeta, setTemplate, type TArgs, type TContext } from "../src/index.js";
 
   import Example from './Example.svelte';
 
@@ -29,7 +29,7 @@
   setTemplate(render);
 </script>
 
-{#snippet render({ args, context })}
+{#snippet render(args: TArgs<typeof m>, context: TContext<typeof m>)}
     <Example {...args} onclick={handleClick}>
       <p>{context.name}</p>
       You clicked: {count}<br>

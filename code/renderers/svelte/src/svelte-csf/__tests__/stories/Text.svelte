@@ -1,6 +1,6 @@
 <script>
-  /** @type {string} */
-  export let text;
+  /** @type {{ text: string }} */
+  let { text } = $props();
 </script>
 
 <p>{text}</p>

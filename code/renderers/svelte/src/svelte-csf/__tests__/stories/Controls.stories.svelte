@@ -6,7 +6,7 @@
   /**
    * This is an visual example for using/testing the args table
    */
-  const { Story, meta } = defineMeta({
+  const { Story } = defineMeta({
     title: 'Addon/Controls',
     component: Controls,
     parameters: {

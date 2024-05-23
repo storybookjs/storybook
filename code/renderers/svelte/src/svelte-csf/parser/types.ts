@@ -1,4 +1,5 @@
 import type { Meta } from '@storybook/svelte';
+import type { VariableDeclarator } from 'estree';
 
 import type { defineMeta } from '../index.js';
 
@@ -24,8 +25,9 @@ export interface ModuleMeta extends Pick<Meta, 'tags'> {
   addonFnName: typeof defineMeta.name | (string & {});
   // NOTE: Why? It could be overriden with `const { Story: S } ...`
   addonComponentName: typeof ADDON_COMPONENT_NAME | (string & {});
-  // NOTE: Why? It could be overriden with `const { meta: m } ...`
-  addonMetaVarName: typeof ADDON_META_VAR_NAME | (string & {});
+  // NOTE: Why? It could be optionally used, and overriden with `const { meta: m } ...`
+  addonMetaVarName?: typeof ADDON_META_VAR_NAME | (string & {}) | undefined;
+  defineMetaVariableDeclarator: VariableDeclarator;
 }
 
 /**

@@ -1,7 +1,7 @@
 <script context="module">
   import { defineMeta } from '../src/index';
 
-  const { Story, meta } = defineMeta({
+  const { Story } = defineMeta({
     title: 'StoryContext',
     parameters: {
       controls: { disable: true },

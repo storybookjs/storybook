@@ -44,38 +44,6 @@ export function walkOnModule(module: Root['module']): ModuleMeta {
       }
     },
 
-    // ExportNamedDeclaration(node, { state }) {
-    // 	const { declaration, leadingComments } = node;
-    //
-    // 	if (leadingComments) {
-    // 		state.description = dedent(
-    // 			leadingComments[0].value.replaceAll(/^ *\*/gm, ""),
-    // 		);
-    // 	}
-    //
-    // 	if (
-    // 		declaration &&
-    // 		declaration.type === "VariableDeclaration" &&
-    // 		declaration.kind === "const" &&
-    // 		declaration.declarations[0].id.type === "Identifier" &&
-    // 		declaration.declarations[0].id.name === "meta" &&
-    // 		declaration.declarations[0].init?.type === "ObjectExpression"
-    // 	) {
-    // 		const { init, leadingComments } = declaration.declarations[0];
-    // 		const { properties } = init;
-    //
-    // 		if (leadingComments) {
-    // 			state.description = dedent(
-    // 				leadingComments[0].value.replaceAll(/^ *\*/gm, ""),
-    // 			);
-    // 		}
-    //
-    // 		state.id = getStringFromMeta("id", properties);
-    // 		state.title = getStringFromMeta("title", properties);
-    // 		state.tags = getTagsFromMeta(properties);
-    // 	}
-    // },
-
     VariableDeclaration(node, { state, visit }) {
       const { declarations, leadingComments } = node;
       const declaration = declarations[0];
@@ -87,6 +55,7 @@ export function walkOnModule(module: Root['module']): ModuleMeta {
         init.callee.type === 'Identifier' &&
         init.callee.name === state.addonFnName
       ) {
+        state.defineMetaVariableDeclarator = declaration;
         visit(init, state);
 
         if (leadingComments) {
@@ -152,9 +121,9 @@ export function walkOnModule(module: Root['module']): ModuleMeta {
     );
   }
 
-  if (!state.addonMetaVarName) {
+  if (!state.defineMetaVariableDeclarator) {
     throw new Error(
-      `Could not find the destructured 'meta' component from ${state.addonFnName}({ ... })')`
+      `Could not find the 'defineMeta({ ... }) call in the module tag ('<script context="module">)`
     );
   }
 
@@ -163,6 +132,7 @@ export function walkOnModule(module: Root['module']): ModuleMeta {
     addonFnName: state.addonFnName,
     addonComponentName: state.addonComponentName,
     addonMetaVarName: state.addonMetaVarName,
+    defineMetaVariableDeclarator: state.defineMetaVariableDeclarator,
   };
 }
 

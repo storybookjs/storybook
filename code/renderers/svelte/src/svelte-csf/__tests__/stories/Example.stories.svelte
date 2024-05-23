@@ -7,7 +7,7 @@
 
   // Description set explicitly in the comment above `defineMeta`
   const { Story, meta: m } = defineMeta({
-  ...({ title: 'Example damn'}),
+    title: 'Example',
     component: Example,
     tags: ['autodocs'],
     args: {

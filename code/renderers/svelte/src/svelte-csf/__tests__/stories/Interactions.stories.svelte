@@ -6,7 +6,7 @@
 
   import { defineMeta } from '../src/index';
 
-  const { Story, meta } = defineMeta({
+  const { Story } = defineMeta({
     title: 'Addon/Interactions',
     component: Interactions,
     parameters: {

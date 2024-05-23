@@ -29,9 +29,11 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
     }
   }
 
-  const addonPlugin = (await import('./vite/plugin.js')).default;
+  const addonPluginPre = (await import('./vite/pre-transform.js')).default;
+  const addonPluginPost = (await import('./vite/post-transform.js')).default;
 
-  plugins.push(addonPlugin(addonPluginConfig));
+  plugins.unshift(addonPluginPre(addonPluginConfig));
+  plugins.push(addonPluginPost(addonPluginConfig));
 
   return {
     ...config,

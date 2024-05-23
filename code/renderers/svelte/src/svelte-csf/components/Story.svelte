@@ -1,12 +1,11 @@
 <script lang="ts" generics="M extends Meta">
-  import type { Meta, StoryObj } from '@storybook/svelte';
+  import type { Meta, StoryObj, StoryContext } from '@storybook/svelte';
   import type { Snippet } from 'svelte';
 
-  import type { TArgs, TContext } from '../index.js';
-  import {useStoriesExtractor, useStoryRenderer, useStoriesTemplate } from './context.svelte.js';
+  import { useStoriesExtractor, useStoryRenderer, useStoriesTemplate } from './context.svelte.js';
 
-  type Props = StoryObj<M> & {
-    children?: Snippet<[TArgs<M>, TContext<M>]>;
+  type Props = {
+    children?: Snippet<[StoryObj<M>["args"], StoryContext<M["args"]>]>;
     /**
     * Id of the story.
     *
@@ -33,13 +32,13 @@
      * If source is a string, it replaces the source of the story.
      */
     source?: boolean | string;
-  }
+  } & StoryObj<M>;
 
-  const { children, name = "Default",  id, play, ...restProps }: Props = $props();
+  const { children, name = "Default", id, play, ...restProps }: Props = $props();
 
   const extractor = useStoriesExtractor<M>();
   const renderer = useStoryRenderer<M>();
-  const storiesTemplate = useStoriesTemplate<M>();
+  const template = useStoriesTemplate<M>();
 
   const isCurrentlyViewed = $derived(!extractor.isExtracting && renderer.currentStoryName === name);
 
@@ -64,7 +63,7 @@
 {#if isCurrentlyViewed}
   {#if children}
     {@render children(renderer.args, renderer.storyContext)}
-  {:else if storiesTemplate}
-    {@render storiesTemplate(renderer.args, renderer.storyContext)}
+  {:else if template}
+    {@render template(renderer.args, renderer.storyContext)}
   {/if}
 {/if}

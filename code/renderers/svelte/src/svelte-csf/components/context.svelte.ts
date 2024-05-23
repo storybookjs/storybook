@@ -1,8 +1,8 @@
-import type { Meta, StoryContext, StoryObj } from '@storybook/svelte';
+import type { Meta, StoryObj, StoryContext } from '@storybook/svelte';
 import type { StoryName } from '@storybook/types';
 import { getContext, hasContext, setContext, type Snippet } from 'svelte';
 
-import type { TArgs, TContext } from '../index.js';
+import type { Args, Story } from '../index.js';
 
 const KEYS = {
   extractor: 'storybook-stories-extractor-context',
@@ -121,7 +121,7 @@ export function useStoryRenderer<M extends Meta>() {
 }
 
 function createStoriesTemplateContext<M extends Meta>() {
-  let template = $state<Snippet<[TArgs<M>, TContext<M>]> | undefined>();
+  let template = $state<Snippet<[StoryObj<M>['args'], StoryContext<M['args']>]> | undefined>();
 
   function set(snippet?: typeof template) {
     template = snippet;
@@ -145,12 +145,16 @@ export function useStoriesTemplate<M extends Meta>() {
   return getContext<StoriesTemplateContext<M>>(KEYS.renderSnippet).template;
 }
 
-export function setTemplate<M extends Meta>(snippet?: StoriesTemplateContext<M>['template']): void {
+type InferMeta<S extends Story> = S extends Story<infer M extends Meta> ? M : never;
+
+export function setTemplate<S extends Story>(
+  snippet?: StoriesTemplateContext<InferMeta<S>>['template']
+): void {
   if (!hasContext(KEYS.renderSnippet)) {
-    setContext(KEYS.renderSnippet, createStoriesTemplateContext<M>());
+    setContext(KEYS.renderSnippet, createStoriesTemplateContext<InferMeta<S>>());
   }
 
-  const ctx = getContext<StoriesTemplateContext<M>>(KEYS.renderSnippet);
+  const ctx = getContext<StoriesTemplateContext<InferMeta<S>>>(KEYS.renderSnippet);
 
   ctx.set(snippet);
 }

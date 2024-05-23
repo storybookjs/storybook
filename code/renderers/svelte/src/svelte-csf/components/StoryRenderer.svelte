@@ -1,19 +1,19 @@
-<script lang="ts" generics="Component extends SvelteComponent">
-  import type { StoryContext } from '@storybook/svelte';
+<script lang="ts" generics="M extends Meta">
+  import type { Meta, StoryContext, StoryObj } from '@storybook/svelte';
   import type { StoryName } from '@storybook/types';
-  import type { ComponentProps, ComponentType, SvelteComponent } from 'svelte';
+  import type { ComponentType } from 'svelte';
 
   import { useStoryRenderer } from './context.svelte.js';
 
   type Props = {
-    Stories: Component extends SvelteComponent ? ComponentType<SvelteComponent> : never;
+    Stories: ComponentType;
     storyName: StoryName;
-    args: ComponentProps<Component>;
-    storyContext: StoryContext<ComponentProps<Component>>;
+    args: StoryObj<M>['args'];
+    storyContext: StoryContext<M['args']>;
   };
 
   let { Stories, storyName, args, storyContext }: Props = $props();
-  const context = useStoryRenderer<Component>();
+  const context = useStoryRenderer<M>();
 
   $effect(() => {
     context.set({

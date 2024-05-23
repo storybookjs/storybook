@@ -1,12 +1,12 @@
 <script context="module" lang="ts">
   import { action } from '@storybook/addon-actions';
 
-  import { defineMeta, setTemplate, type TArgs, type TContext } from "../src/index.js";
+  import { defineMeta, setTemplate, type Args, type StoryContext } from "../src/index.js";
 
   import Example from './Example.svelte';
 
   // Description set explicitly in the comment above `defineMeta`
-  const { Story, meta: m } = defineMeta({
+  const { Story } = defineMeta({
     title: 'Example',
     component: Example,
     tags: ['autodocs'],
@@ -29,7 +29,7 @@
   setTemplate(render);
 </script>
 
-{#snippet render(args: TArgs<typeof m>, context: TContext<typeof m>)}
+{#snippet render(args: Args<typeof Story>, context: StoryContext<typeof Story>)}
     <Example {...args} onclick={handleClick}>
       <p>{context.name}</p>
       You clicked: {count}<br>

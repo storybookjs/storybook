@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import type { SvelteConfig } from '@sveltejs/vite-plugin-svelte';
 import MagicString from 'magic-string';
 import { preprocess } from 'svelte/compiler';
-import { createFilter, type Plugin } from 'vite';
+import type { Plugin } from 'vite';
 
 import { getNameFromFilename } from '../svelte/component-name.js';
 import { getAST } from '../../parser/ast.js';
@@ -11,7 +11,9 @@ import { extractStories } from '../../parser/extract-stories.js';
 import { extractASTNodes } from '../../parser/extract-ast-nodes.js';
 import { createAppendix } from '../../transformer/create-appendix.js';
 
-export default function plugin(svelteOptions: SvelteConfig): Plugin {
+export default async function plugin(svelteOptions: SvelteConfig): Promise<Plugin> {
+  const { createFilter } = await import('vite');
+  
   const include = /\.stories\.svelte$/;
   const filter = createFilter(include);
 

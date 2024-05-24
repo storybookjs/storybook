@@ -1,12 +1,14 @@
 import type { SvelteConfig } from '@sveltejs/vite-plugin-svelte';
 import MagicString from 'magic-string';
-import { createFilter, type Plugin } from 'vite';
+import type { Plugin } from 'vite';
 
 import { extractASTNodes } from '../../parser/extract-ast-nodes.js';
 import { getAST } from '../../parser/ast.js';
 import { transformDefineMeta } from '../../transformer/define-meta.js';
 
-export default function plugin(_svelteOptions: SvelteConfig): Plugin {
+export default async function plugin(_svelteOptions: SvelteConfig): Promise<Plugin> {
+  const { createFilter } = await import('vite');
+  
   const include = /\.stories\.svelte$/;
   const filter = createFilter(include);
 

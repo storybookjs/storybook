@@ -17,7 +17,7 @@ export default function plugin(_svelteOptions: SvelteConfig): Plugin {
       if (!filter(id)) return;
 
       const { module } = getAST(code_);
-      const nodes = extractASTNodes(module);
+      const nodes = await extractASTNodes(module);
       const code = new MagicString(code_);
 
       transformDefineMeta({ code, nodes });

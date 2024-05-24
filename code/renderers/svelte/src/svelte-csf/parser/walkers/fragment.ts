@@ -1,6 +1,6 @@
 import dedent from 'dedent';
 import { type Comment, type Root, type SvelteNode } from 'svelte/compiler';
-import { walk, type Visitors } from 'zimmerframe';
+import type { Visitors } from 'zimmerframe';
 
 import { getChildrenRawSource, getStoryId, getStoryName } from './component.js';
 import { type AddonASTNodes, type FragmentMeta, type StoryMeta } from '../types.js';
@@ -8,7 +8,7 @@ import { type AddonASTNodes, type FragmentMeta, type StoryMeta } from '../types.
 /**
  * NOTE: Fragment is the 'html' code - not the one innside `<script>` nor `<style>`
  */
-export function walkOnFragment({
+export async function walkOnFragment({
   fragment,
   source,
   nodes,
@@ -16,7 +16,9 @@ export function walkOnFragment({
   fragment: Root['fragment'];
   source: string;
   nodes: AddonASTNodes;
-}): FragmentMeta {
+}): Promise<FragmentMeta> {
+  const { walk } = await import('zimmerframe');
+  
   const state: FragmentMeta = {
     stories: {},
   };

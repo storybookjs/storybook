@@ -6,7 +6,7 @@ import { walkOnModule } from './walkers/module.js';
 /**
  * Pick only required AST nodes for further usage in this addon.
  */
-export function extractASTNodes(module: Script | null): AddonASTNodes {
+export async function extractASTNodes(module: Script | null): Promise<AddonASTNodes> {
   if (!module) {
     throw new Error(`The stories file must have a module tag ('<script context="module">').`);
   }

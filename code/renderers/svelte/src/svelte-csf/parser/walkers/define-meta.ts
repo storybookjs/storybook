@@ -2,11 +2,13 @@ import { logger } from '@storybook/client-logger';
 import dedent from 'dedent';
 import type { SvelteNode } from 'svelte/compiler';
 import type { ObjectExpression, Property } from 'estree';
-import { walk, type Visitors } from 'zimmerframe';
+import type { Visitors } from 'zimmerframe';
 
 import type { AddonASTNodes, DefineMeta } from '../types.js';
 
-export function walkOnDefineMeta(nodes: AddonASTNodes): DefineMeta {
+export async function walkOnDefineMeta(nodes: AddonASTNodes): Promise<DefineMeta> {
+  const { walk } = await import('zimmerframe');
+  
   const state: Partial<DefineMeta> = {};
   const visitors: Visitors<SvelteNode, typeof state> = {
     // Walk on `const { ... } = defineMeta()`

@@ -40,8 +40,8 @@ export default function plugin(svelteOptions: SvelteConfig): Plugin {
       }
 
       const { module, fragment } = getAST(source);
-      const nodes = extractASTNodes(module);
-      const storiesFileMeta = extractStories({
+      const nodes = await extractASTNodes(module);
+      const storiesFileMeta = await extractStories({
         nodes,
         source,
         fragment,

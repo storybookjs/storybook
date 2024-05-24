@@ -1,11 +1,13 @@
 import type { Script, SvelteNode } from 'svelte/compiler';
-import { type Visitors, walk } from 'zimmerframe';
+import type { Visitors } from 'zimmerframe';
 
 import pkg from '../../../package.json' with { type: 'json' };
 
 import { ADDON_AST_NODES, type AddonASTNodes } from '../types.js';
 
-export function walkOnModule(module: Script): AddonASTNodes {
+export async function walkOnModule(module: Script): Promise<AddonASTNodes> {
+  const { walk } = await import('zimmerframe');
+  
   const state: Partial<AddonASTNodes> = {};
   const visitors: Visitors<SvelteNode, typeof state> = {
     ImportDeclaration(node, { state }) {

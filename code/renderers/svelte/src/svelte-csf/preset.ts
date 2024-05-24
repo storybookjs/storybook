@@ -53,7 +53,7 @@ export async function readStories(fileName: string): Promise<StoriesFileMeta> {
   }
 
   const { module, fragment } = getAST(source);
-  const nodes = extractASTNodes(module);
+  const nodes = await extractASTNodes(module);
 
   return extractStories({ nodes, fragment, source });
 }

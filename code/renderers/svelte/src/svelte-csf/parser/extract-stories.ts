@@ -9,7 +9,7 @@ import { walkOnDefineMeta } from './walkers/define-meta.js';
  * and extract the most stories file meta,
  * which are required to generate `StoryFn's` for `@storybook/svelte` components.
  */
-export function extractStories({
+export async function extractStories({
   nodes,
   fragment,
   source,
@@ -17,15 +17,18 @@ export function extractStories({
   nodes: AddonASTNodes;
   fragment: Fragment;
   source: string;
-}): StoriesFileMeta {
-  const { stories } = walkOnFragment({
-    fragment,
-    source: source,
-    nodes,
-  });
+}): Promise<StoriesFileMeta> {
+  const [defineMeta, { stories }] = await Promise.all([
+    walkOnDefineMeta(nodes),
+    walkOnFragment({
+      fragment,
+      source: source,
+      nodes,
+    }),
+  ]);
 
   return {
-    defineMeta: walkOnDefineMeta(nodes),
+    defineMeta,
     stories,
   };
 }

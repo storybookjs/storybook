@@ -13,6 +13,7 @@
   };
 
   let { Stories, storyName, args, storyContext }: Props = $props();
+
   const context = useStoryRenderer<M>();
 
   $effect(() => {

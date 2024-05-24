@@ -5,7 +5,9 @@ import type { IndexInput, IndexerOptions } from '@storybook/types';
 import { preprocess } from 'svelte/compiler';
 
 import type { StoriesFileMeta } from './parser/types.js';
+import { getAST } from './parser/ast.js';
 import { extractStories } from './parser/extract-stories.js';
+import { extractASTNodes } from './parser/extract-ast-nodes.js';
 import { loadSvelteConfig } from './presets/svelte/config-loader.js';
 
 export { viteFinal } from './presets/vite.js';
@@ -23,8 +25,7 @@ export const experimental_indexers: StorybookConfig['experimental_indexers'] = (
 
 async function createIndex(fileName: string, { makeTitle }: IndexerOptions): Promise<IndexInput[]> {
   const storiesFileMeta = await readStories(fileName);
-  const { fragment, module } = storiesFileMeta;
-  const { stories } = fragment;
+  const { defineMeta, stories } = storiesFileMeta;
 
   return Object.entries(stories).map(([storyId, storyMeta]) => {
     return {
@@ -32,25 +33,27 @@ async function createIndex(fileName: string, { makeTitle }: IndexerOptions): Pro
       importPath: fileName,
       exportName: storyId,
       name: storyMeta.name,
-      title: makeTitle(module.title),
-      tags: module.tags,
-      metaTags: module.tags,
-    };
+      title: makeTitle(defineMeta.title),
+      tags: defineMeta.tags,
+    } satisfies IndexInput;
   });
 }
 
 export async function readStories(fileName: string): Promise<StoriesFileMeta> {
-  let code = (await fs.readFile(fileName, { encoding: 'utf8' })).toString();
+  let source = (await fs.readFile(fileName, { encoding: 'utf8' })).toString();
 
   const svelteOptions = await loadSvelteConfig();
 
   if (svelteOptions && svelteOptions.preprocess) {
-    code = (
-      await preprocess(code, svelteOptions.preprocess, {
+    source = (
+      await preprocess(source, svelteOptions.preprocess, {
         filename: fileName,
       })
     ).code;
   }
 
-  return extractStories(code);
+  const { module, fragment } = getAST(source);
+  const nodes = extractASTNodes(module);
+
+  return extractStories({ nodes, fragment, source });
 }

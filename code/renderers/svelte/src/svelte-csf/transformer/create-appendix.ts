@@ -2,23 +2,25 @@ import url from 'node:url';
 
 import MagicString from 'magic-string';
 
-import type { StoriesFileMeta } from 'src/parser/types.js';
+import type { AddonASTNodes, StoriesFileMeta } from 'src/parser/types.js';
 
 const parserModulePath = url
   .fileURLToPath(new URL('../../dist/parser/collect-stories.js', import.meta.url))
   .replace(/\\/g, '\\\\'); // For Windows paths
 
 export function createAppendix({
-  code,
   componentName,
+  code,
   storiesFileMeta,
+  nodes,
 }: {
-  code: MagicString;
   componentName: string;
+  code: MagicString;
   storiesFileMeta: StoriesFileMeta;
+  nodes: AddonASTNodes;
 }) {
-  const { module, fragment } = storiesFileMeta;
-  const { stories } = fragment;
+  const { stories } = storiesFileMeta;
+  const { defineMetaVar } = nodes;
   const parsedStoriesVariable = '__parsed';
   const exportsOrderVariable = '__exports';
 
@@ -41,7 +43,7 @@ export function createAppendix({
   const appendix = [
     "", // NOTE: Adds a new line at the end of the code
     `import parser from '${parserModulePath}';`,
-    `const ${parsedStoriesVariable} = parser(${componentName}, ${JSON.stringify(storiesFileMeta)}, ${module.addonMetaVarName ?? "meta"});`,
+    `const ${parsedStoriesVariable} = parser(${componentName}, ${JSON.stringify(storiesFileMeta)}, ${findMetaPropertyName(defineMetaVar) ?? "meta"});`,
     `export default ${parsedStoriesVariable}.meta;`,
     `export const ${exportsOrderVariable} = ${JSON.stringify(exportsOrder)};`,
     storiesExports,
@@ -55,4 +57,21 @@ export function createAppendix({
 // FIXME: There's probably some interal function inside the Storybook to handle it
 function sanitizeStoryId(id: string) {
   return id.replace(/\s|-/g, '_');
+}
+
+function findMetaPropertyName(defineMetaVar: AddonASTNodes['defineMetaVar']) {
+  const { declarations } = defineMetaVar;
+  const { id } = declarations[0];
+
+  if (id.type === 'ObjectPattern') {
+    const { properties } = id;
+
+    const property = properties.find(
+      (p) => p.type === 'Property' && p.key.type === 'Identifier' && p.key.name === 'meta'
+    );
+
+    if (property && property.type === 'Property' && property.value.type === 'Identifier') {
+      return property.value.name;
+    }
+  }
 }

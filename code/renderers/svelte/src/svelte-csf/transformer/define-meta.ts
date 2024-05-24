@@ -1,20 +1,14 @@
-import type MagicString from 'magic-string';
 import type { AssignmentProperty, Program } from 'estree';
 import { toJs } from 'estree-util-to-js';
-
-import { type StoriesFileMeta } from '../parser/types.js';
+import type MagicString from 'magic-string';
 import type { BaseNode } from 'svelte/compiler';
 
-export function transformDefineMeta({
-  code,
-  storiesFileMeta,
-}: {
-  code: MagicString;
-  storiesFileMeta: StoriesFileMeta;
-}) {
-  const { module } = storiesFileMeta;
-  const { defineMetaVariableDeclarator } = module;
-  const { id } = defineMetaVariableDeclarator;
+import { type AddonASTNodes } from '../parser/types.js';
+
+export function transformDefineMeta({ code, nodes }: { code: MagicString; nodes: AddonASTNodes }) {
+  const { defineMetaVar } = nodes;
+  const { declarations } = defineMetaVar;
+  const { id } = declarations[0];
 
   if (id.type !== 'ObjectPattern') {
     throw new Error(
@@ -45,9 +39,9 @@ export function transformDefineMeta({
 
     id.properties.push(metaProperty);
 
-    const { start, end } = defineMetaVariableDeclarator as unknown as BaseNode;
+    const { start, end } = defineMetaVar as unknown as BaseNode;
 
-    code.update(start, end, toJs(defineMetaVariableDeclarator as unknown as Program).value);
+    code.update(start, end, toJs(defineMetaVar as unknown as Program).value);
   }
 
   return code;

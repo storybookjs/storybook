@@ -1,14 +1,12 @@
-import fs from 'node:fs';
-
 import type { SvelteConfig } from '@sveltejs/vite-plugin-svelte';
 import MagicString from 'magic-string';
 import { createFilter, type Plugin } from 'vite';
 
-import { extractStories } from '../../parser/extract-stories.js';
+import { extractASTNodes } from '../../parser/extract-ast-nodes.js';
+import { getAST } from '../../parser/ast.js';
 import { transformDefineMeta } from '../../transformer/define-meta.js';
-import { preprocess } from 'svelte/compiler';
 
-export default function plugin(svelteOptions: SvelteConfig): Plugin {
+export default function plugin(_svelteOptions: SvelteConfig): Plugin {
   const include = /\.stories\.svelte$/;
   const filter = createFilter(include);
 
@@ -16,22 +14,13 @@ export default function plugin(svelteOptions: SvelteConfig): Plugin {
     name: 'storybook:addon-svelte-csf-plugin-pre',
     enforce: 'pre',
     async transform(code_, id) {
-      if (!filter(id)) return undefined;
+      if (!filter(id)) return;
 
-      let source = fs.readFileSync(id).toString();
-
-      // FIXME: Do we have to do it twice?
-      if (svelteOptions && svelteOptions.preprocess) {
-        const processed = await preprocess(source.toString(), svelteOptions.preprocess, {
-          filename: id,
-        });
-
-        source = processed.code;
-      }
-      const storiesFileMeta = extractStories(source);
+      const { module } = getAST(code_);
+      const nodes = extractASTNodes(module);
       const code = new MagicString(code_);
 
-      transformDefineMeta({ code, storiesFileMeta });
+      transformDefineMeta({ code, nodes });
 
       return {
         code: code.toString(),

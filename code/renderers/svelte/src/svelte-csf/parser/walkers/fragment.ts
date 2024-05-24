@@ -3,17 +3,19 @@ import { type Comment, type Root, type SvelteNode } from 'svelte/compiler';
 import { walk, type Visitors } from 'zimmerframe';
 
 import { getChildrenRawSource, getStoryId, getStoryName } from './component.js';
-import { type FragmentMeta, type InstanceMeta, type StoryMeta } from '../types.js';
+import { type AddonASTNodes, type FragmentMeta, type StoryMeta } from '../types.js';
 
-/** NOTE: Fragment is the 'html' code - not the one innside `<script>` nor `<style>` */
+/**
+ * NOTE: Fragment is the 'html' code - not the one innside `<script>` nor `<style>`
+ */
 export function walkOnFragment({
   fragment,
-  rawSource,
-  addonComponentName,
+  source,
+  nodes,
 }: {
   fragment: Root['fragment'];
-  rawSource: string;
-  addonComponentName: InstanceMeta['addonComponentName'];
+  source: string;
+  nodes: AddonASTNodes;
 }): FragmentMeta {
   const state: FragmentMeta = {
     stories: {},
@@ -26,13 +28,14 @@ export function walkOnFragment({
       latestComment = node;
       next();
     },
-    Component(node, { state, next }) {
-      if (node.name === addonComponentName) {
+
+    Component(node, { state }) {
+      if (node.name === nodes.Story.name) {
         const { attributes } = node;
         const name = getStoryName(attributes);
         const childrenRawSource = getChildrenRawSource({
           node,
-          rawSource,
+          rawSource: source,
         });
         const id = getStoryId({ attributes, name, storiesIds: storiesIds });
         const description =
@@ -51,7 +54,6 @@ export function walkOnFragment({
       }
 
       latestComment = undefined;
-      next();
     },
   };
 

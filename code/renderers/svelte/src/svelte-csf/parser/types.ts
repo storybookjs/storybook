@@ -1,18 +1,37 @@
 import type { Meta } from '@storybook/svelte';
-import type { VariableDeclarator } from 'estree';
-
-import type { defineMeta } from '../index.js';
-
-export const ADDON_FN_NAME = 'defineMeta';
-export const ADDON_COMPONENT_NAME = 'Story';
-export const ADDON_META_VAR_NAME = 'meta';
+import type { Identifier, ImportSpecifier, VariableDeclaration } from 'estree';
 
 /**
  * Data extracted from the static analytic of a single stories file - `*.stories.svelte`.
  */
 export interface StoriesFileMeta {
-  module: ModuleMeta;
-  fragment: FragmentMeta;
+  defineMeta: DefineMeta;
+  stories: Record<StoryMeta['id'], StoryMeta>;
+}
+
+export const ADDON_AST_NODES = {
+  defineMeta: 'defineMeta',
+  Story: 'Story',
+} as const;
+
+/**
+ * AST nodes extracted from the AST compile `(svelte.compile)` needed for further code transformation.
+ */
+export interface AddonASTNodes {
+  /**
+   * Import specifier for `defineMeta` imported from this addon package.
+   * Could be renamed - e.g. `import { defineMeta } from "@storybook/addon-svelte-csf"`
+   */
+  defineMetaImport: ImportSpecifier;
+  /**
+   * Variable declarator called by `defineMeta({})` function call.
+   * Could be destructured with rename - e.g. `const { Story: S} = defineMeta({ ... })`
+   */
+  defineMetaVar: VariableDeclaration;
+  /**
+   * A `<Story />` component, could be destructured with rename - e.g. `const { Story: S} = defineMeta({ ... })`
+   */
+  Story: Identifier;
 }
 
 /**
@@ -20,14 +39,10 @@ export interface StoriesFileMeta {
  * from the single stories file - `*.stories.svelte`.
  */
 export interface ModuleMeta extends Pick<Meta, 'tags'> {
+  /**
+   * Description for the stories file, extracted from above `defineMeta` function call.
+   */
   description?: string;
-  // NOTE: Why? It could be overriden with `import { defineMeta as d } ...`
-  addonFnName: typeof defineMeta.name | (string & {});
-  // NOTE: Why? It could be overriden with `const { Story: S } ...`
-  addonComponentName: typeof ADDON_COMPONENT_NAME | (string & {});
-  // NOTE: Why? It could be optionally used, and overriden with `const { meta: m } ...`
-  addonMetaVarName?: typeof ADDON_META_VAR_NAME | (string & {}) | undefined;
-  defineMetaVariableDeclarator: VariableDeclarator;
 }
 
 /**
@@ -39,7 +54,20 @@ export interface FragmentMeta {
 }
 
 /**
- * Meta extracted from static analysis of the single <Story /> component
+ * Meta extracted from static analysis of the `defineMeta` function call
+ * inside the module tag _(`script context="module">`)_ in the stories file - `*.stories.svelte`.
+ * NOTE: Properties from Meta are needed for `StoriesIndexer`
+ */
+export interface DefineMeta extends Pick<Meta, 'id' | 'title' | 'tags'> {
+  /**
+   * Description for the stories file.
+   * Extracted from the leading comment above `defineMeta` function call.
+   */
+  description?: string;
+}
+
+/**
+ * Meta extracted from static analysis of the single `<Story />` component
  * in the stories file - `*.stories.svelte`.
  */
 export interface StoryMeta {
@@ -56,6 +84,6 @@ export interface StoryMeta {
    * Description of the story, will display above the sample in docs mode.
    */
   description?: string;
-  /** Raw source for children _(what is inside the <Story>...</Story> tags)_ */
+  /** Raw source for children _(what is inside the `<Story>...</Story>` tags)_ */
   rawSource?: string;
 }

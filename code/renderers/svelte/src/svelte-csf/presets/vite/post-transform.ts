@@ -6,7 +6,9 @@ import { preprocess } from 'svelte/compiler';
 import { createFilter, type Plugin } from 'vite';
 
 import { getNameFromFilename } from '../svelte/component-name.js';
+import { getAST } from '../../parser/ast.js';
 import { extractStories } from '../../parser/extract-stories.js';
+import { extractASTNodes } from '../../parser/extract-ast-nodes.js';
 import { createAppendix } from '../../transformer/create-appendix.js';
 
 export default function plugin(svelteOptions: SvelteConfig): Plugin {
@@ -29,7 +31,6 @@ export default function plugin(svelteOptions: SvelteConfig): Plugin {
 
       let source = fs.readFileSync(id).toString();
 
-      // FIXME: Do we have to do it twice?
       if (svelteOptions && svelteOptions.preprocess) {
         const processed = await preprocess(source.toString(), svelteOptions.preprocess, {
           filename: id,
@@ -38,9 +39,15 @@ export default function plugin(svelteOptions: SvelteConfig): Plugin {
         source = processed.code;
       }
 
-      const storiesFileMeta = extractStories(source.toString());
+      const { module, fragment } = getAST(source);
+      const nodes = extractASTNodes(module);
+      const storiesFileMeta = extractStories({
+        nodes,
+        source,
+        fragment,
+      });
 
-      createAppendix({ code, storiesFileMeta, componentName });
+      createAppendix({ componentName, code, storiesFileMeta, nodes });
 
       return {
         code: code.toString(),

@@ -2,7 +2,7 @@ import type { Meta, StoryObj, StoryContext } from '@storybook/svelte';
 import type { StoryName } from '@storybook/types';
 import { getContext, hasContext, setContext, type Snippet } from 'svelte';
 
-import type { Args, Story } from '../index.js';
+import type { Story } from '../index.js';
 
 const KEYS = {
   extractor: 'storybook-stories-extractor-context',
@@ -145,9 +145,9 @@ export function useStoriesTemplate<M extends Meta>() {
   return getContext<StoriesTemplateContext<M>>(KEYS.renderSnippet).template;
 }
 
-type InferMeta<S extends Story> = S extends Story<infer M extends Meta> ? M : never;
+type InferMeta<S extends Story<Meta>> = S extends Story<infer M extends Meta> ? M : never;
 
-export function setTemplate<S extends Story>(
+export function setTemplate<S extends Story<Meta>>(
   snippet?: StoriesTemplateContext<InferMeta<S>>['template']
 ): void {
   if (!hasContext(KEYS.renderSnippet)) {

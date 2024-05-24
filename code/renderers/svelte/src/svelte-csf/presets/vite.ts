@@ -1,6 +1,9 @@
 import type { StorybookConfig } from '@storybook/svelte-vite';
 import type { SvelteConfig } from '@sveltejs/vite-plugin-svelte';
 
+import preTransform from './vite/pre-transform.js';
+import postTransform from './vite/post-transform.js';
+
 export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) => {
   const { plugins = [] } = config;
   const { presets } = options;
@@ -29,11 +32,8 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
     }
   }
 
-  const addonPluginPre = (await import('./vite/pre-transform.js')).default;
-  const addonPluginPost = (await import('./vite/post-transform.js')).default;
-
-  plugins.unshift(addonPluginPre(addonPluginConfig));
-  plugins.push(addonPluginPost(addonPluginConfig));
+  plugins.unshift(preTransform(addonPluginConfig));
+  plugins.push(postTransform(addonPluginConfig));
 
   return {
     ...config,

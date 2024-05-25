@@ -1,11 +1,18 @@
-<script lang="ts" generics="M extends Meta">
+<script lang="ts" generics="TMeta extends Meta">
   import type { Meta, StoryObj, StoryContext } from '@storybook/svelte';
   import type { Snippet } from 'svelte';
 
   import { useStoriesExtractor, useStoryRenderer, useStoriesTemplate } from './context.svelte.js';
 
   type Props = {
-    children?: Snippet<[StoryObj<M>["args"], StoryContext<M["args"]>]>;
+    /**
+     * The content to render in the story, either as:
+     * 1. A snippet taking args and storyContext as parameters
+     * 2. Static markup
+     * Can be omitted if a default template is set with setTemplate() 
+     * 
+     */
+    children?: Snippet<[StoryObj<TMeta>["args"], StoryContext<TMeta["args"]>]>;
     /**
     * Id of the story.
     *
@@ -32,24 +39,23 @@
      * If source is a string, it replaces the source of the story.
      */
     source?: boolean | string;
-  } & StoryObj<M>;
+  } & StoryObj<TMeta>;
 
   const { children, name = "Default", id, play, ...restProps }: Props = $props();
 
-  const extractor = useStoriesExtractor<M>();
-  const renderer = useStoryRenderer<M>();
-  const template = useStoriesTemplate<M>();
+  const extractor = useStoriesExtractor<TMeta>();
+  const renderer = useStoryRenderer<TMeta>();
+  const template = useStoriesTemplate<TMeta>();
 
   const isCurrentlyViewed = $derived(!extractor.isExtracting && renderer.currentStoryName === name);
 
   if (extractor.isExtracting) {
-    // @ts-expect-error FIXME: No idea how to satisfy this one, I could've missed something
-    extractor.register({ ...restProps, name, play });
+    extractor.register({ ...restProps, name, play } as StoryObj<TMeta>);
   }
 
-  function injectIntoPlayFunction(storyContext_: typeof renderer.storyContext, play_: typeof play) {
-    if (play_ && storyContext_.playFunction) {
-      storyContext_.playFunction.__play = play_;
+  function injectIntoPlayFunction(storyContext: typeof renderer.storyContext, playToInject: typeof play) {
+    if (playToInject && storyContext.playFunction) {
+      storyContext.playFunction.__play = playToInject;
     }
   }
 

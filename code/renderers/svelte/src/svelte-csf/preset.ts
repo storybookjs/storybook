@@ -11,7 +11,6 @@ import { extractASTNodes } from './parser/extract-ast-nodes.js';
 import { loadSvelteConfig } from './presets/svelte/config-loader.js';
 
 export { viteFinal } from './presets/vite.js';
-export { webpackFinal } from './presets/webpack.js';
 
 export const experimental_indexers: StorybookConfig['experimental_indexers'] = (indexers) => {
   return [

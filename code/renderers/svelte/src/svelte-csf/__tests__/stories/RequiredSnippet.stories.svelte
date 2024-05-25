@@ -21,8 +21,8 @@
 <Story name="Case 2" args={{ children }} />
 
 <!-- Works, as expected, but TypeScript is not happy -->
-<Story name="Case 3">
 <!-- Current workaround: add `args: { children: "" }` to `defineMeta`, but this is invalid, Svelte snippets cannot be literal, they're functions --> 
+<Story name="Case 3">
   {#snippet children()}
     <p>This works</p>
   {/snippet}

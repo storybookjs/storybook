@@ -22,12 +22,12 @@ export function createAppendix({
   const { stories } = storiesFileMeta;
   const { defineMetaVar } = nodes;
   const parsedStoriesVariable = '__parsed';
-  const exportsOrderVariable = '__exports';
+  const exportsOrderVariable = '__namedExportsOrder';
 
   // NOTE:
   // We need to remove the default export from the code,
   // because Storybook internally expects export default `meta`
-  code.replace(/export default .*\n/, '');
+  code.replace(/export default/, '');
 
   const exportsOrder = Object.entries(stories).map(([id, _]) => id);
   // biome-ignore format: Stop

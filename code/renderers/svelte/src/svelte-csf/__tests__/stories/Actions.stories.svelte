@@ -1,7 +1,6 @@
 <script context="module">
   import { action } from '@storybook/addon-actions';
-
-  import { defineMeta } from '../src/index';
+  import { defineMeta } from '@storybook/addon-svelte-csf';
 
   const { Story } = defineMeta({
     title: 'Addon/Actions',

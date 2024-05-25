@@ -1,7 +1,6 @@
 <script context="module" lang="ts">
   import { action } from '@storybook/addon-actions';
-
-  import { defineMeta, setTemplate, type Args, type StoryContext } from "../src/index.js";
+  import { defineMeta, setTemplate, type Args, type StoryContext } from '@storybook/addon-svelte-csf';
 
   import Example from './Example.svelte';
 

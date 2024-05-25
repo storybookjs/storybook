@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-  import { defineMeta, type Args } from '../src/index.js';
+  import { defineMeta, type Args } from '@storybook/addon-svelte-csf';
 
   import Text from './Text.svelte';
 

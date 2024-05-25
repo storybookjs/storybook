@@ -1,5 +1,5 @@
 <script context="module">
-  import { defineMeta } from '../src/index';
+  import { defineMeta } from '@storybook/addon-svelte-csf';
 
   import Controls from './Controls.svelte';
 

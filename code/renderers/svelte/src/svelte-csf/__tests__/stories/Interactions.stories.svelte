@@ -1,10 +1,9 @@
 <script context="module">
-  import Interactions from './Interactions.svelte';
-  import { expect } from '@storybook/test';
-  import { userEvent, within } from '@storybook/test';
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { expect, userEvent, within } from '@storybook/test';
   import { tick } from 'svelte';
 
-  import { defineMeta } from '../src/index';
+  import Interactions from './Interactions.svelte';
 
   const { Story } = defineMeta({
     title: 'Addon/Interactions',

@@ -1,5 +1,5 @@
 <script context="module">
-  import { defineMeta as d } from '../src/index';
+  import { defineMeta as d } from '@storybook/addon-svelte-csf';
 
   const { Story: S, meta: m } = d({
     title: 'Test overrides',

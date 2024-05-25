@@ -13,13 +13,7 @@ export async function walkOnModule(module: Script): Promise<AddonASTNodes> {
     ImportDeclaration(node, { state }) {
       const { source, specifiers } = node;
 
-      if (
-        source.value === pkg.name ||
-        // FIXME:
-        // This should be for this package testing purpose only.
-        // Need a condition to prevent it running outside this package
-        (typeof source.value === 'string' && source.value.includes('src/index'))
-      ) {
+      if (source.value === pkg.name) {
         for (const specifier of specifiers) {
           if (specifier.type !== 'ImportSpecifier') {
             throw new Error(`Don't use the default/namespace import from "${pkg.name}"`);

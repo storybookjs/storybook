@@ -7,7 +7,7 @@ import type { Story } from '../index.js';
 const KEYS = {
   extractor: 'storybook-stories-extractor-context',
   renderer: 'storybook-story-renderer-context',
-  renderSnippet: 'storybook-stories-render-snippet-context',
+  templateSnippet: 'storybook-stories-template-snippet-context',
 } as const;
 
 export interface StoriesExtractorContextProps<M extends Meta> {
@@ -15,7 +15,7 @@ export interface StoriesExtractorContextProps<M extends Meta> {
   register: (story: StoryObj<M>) => void;
 }
 
-export function buildStoriesExtractorContext<M extends Meta>(
+function buildStoriesExtractorContext<M extends Meta>(
   props: StoriesExtractorContextProps<M>
 ) {
   let isExtracting = $state(props.isExtracting);
@@ -138,11 +138,11 @@ function createStoriesTemplateContext<M extends Meta>() {
 type StoriesTemplateContext<M extends Meta> = ReturnType<typeof createStoriesTemplateContext<M>>;
 
 export function useStoriesTemplate<M extends Meta>() {
-  if (!hasContext(KEYS.renderSnippet)) {
-    setContext(KEYS.renderSnippet, createStoriesTemplateContext<M>());
+  if (!hasContext(KEYS.templateSnippet)) {
+    setContext(KEYS.templateSnippet, createStoriesTemplateContext<M>());
   }
 
-  return getContext<StoriesTemplateContext<M>>(KEYS.renderSnippet).template;
+  return getContext<StoriesTemplateContext<M>>(KEYS.templateSnippet).template;
 }
 
 type InferMeta<S extends Story<Meta>> = S extends Story<infer M extends Meta> ? M : never;
@@ -150,11 +150,11 @@ type InferMeta<S extends Story<Meta>> = S extends Story<infer M extends Meta> ? 
 export function setTemplate<S extends Story<Meta>>(
   snippet?: StoriesTemplateContext<InferMeta<S>>['template']
 ): void {
-  if (!hasContext(KEYS.renderSnippet)) {
-    setContext(KEYS.renderSnippet, createStoriesTemplateContext<InferMeta<S>>());
+  if (!hasContext(KEYS.templateSnippet)) {
+    setContext(KEYS.templateSnippet, createStoriesTemplateContext<InferMeta<S>>());
   }
 
-  const ctx = getContext<StoriesTemplateContext<InferMeta<S>>>(KEYS.renderSnippet);
+  const ctx = getContext<StoriesTemplateContext<InferMeta<S>>>(KEYS.templateSnippet);
 
   ctx.set(snippet);
 }

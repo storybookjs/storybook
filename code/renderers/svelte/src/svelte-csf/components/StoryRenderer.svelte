@@ -3,7 +3,7 @@
   import type { StoryName } from '@storybook/types';
   import type { ComponentType } from 'svelte';
 
-  import { useStoryRenderer } from './context.svelte.js';
+  import { useStoryRenderer } from './contexts.svelte.js';
 
   type Props = {
     Stories: ComponentType;

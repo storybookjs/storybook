@@ -7,7 +7,7 @@ import { type SvelteComponent, mount, unmount, type ComponentType } from 'svelte
 
 import type { StoriesFileMeta } from './types.js';
 
-import type { StoriesRepository } from '../components/context.svelte.js';
+import type { StoriesRepository } from '../components/contexts.svelte.js';
 import StoriesExtractor from '../components/StoriesExtractor.svelte';
 import StoryRenderer from '../components/StoryRenderer.svelte';
 

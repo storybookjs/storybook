@@ -8,7 +8,7 @@ import { transformDefineMeta } from '../../transformer/define-meta.js';
 
 export default async function plugin(_svelteOptions: SvelteConfig): Promise<Plugin> {
   const { createFilter } = await import('vite');
-  
+
   const include = /\.stories\.svelte$/;
   const filter = createFilter(include);
 

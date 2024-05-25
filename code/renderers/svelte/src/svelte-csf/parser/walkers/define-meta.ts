@@ -8,7 +8,7 @@ import type { AddonASTNodes, DefineMeta } from '../types.js';
 
 export async function walkOnDefineMeta(nodes: AddonASTNodes): Promise<DefineMeta> {
   const { walk } = await import('zimmerframe');
-  
+
   const state: Partial<DefineMeta> = {};
   const visitors: Visitors<SvelteNode, typeof state> = {
     // Walk on `const { ... } = defineMeta()`

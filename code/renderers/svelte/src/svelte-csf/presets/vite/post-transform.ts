@@ -13,7 +13,7 @@ import { createAppendix } from '../../transformer/create-appendix.js';
 
 export default async function plugin(svelteOptions: SvelteConfig): Promise<Plugin> {
   const { createFilter } = await import('vite');
-  
+
   const include = /\.stories\.svelte$/;
   const filter = createFilter(include);
 

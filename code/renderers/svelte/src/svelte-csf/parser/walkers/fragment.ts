@@ -18,7 +18,7 @@ export async function walkOnFragment({
   nodes: AddonASTNodes;
 }): Promise<FragmentMeta> {
   const { walk } = await import('zimmerframe');
-  
+
   const state: FragmentMeta = {
     stories: {},
   };

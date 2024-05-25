@@ -7,7 +7,7 @@ import { ADDON_AST_NODES, type AddonASTNodes } from '../types.js';
 
 export async function walkOnModule(module: Script): Promise<AddonASTNodes> {
   const { walk } = await import('zimmerframe');
-  
+
   const state: Partial<AddonASTNodes> = {};
   const visitors: Visitors<SvelteNode, typeof state> = {
     ImportDeclaration(node, { state }) {
@@ -67,12 +67,6 @@ export async function walkOnModule(module: Script): Promise<AddonASTNodes> {
             `Component 'Story' was not destructured from the '${state.defineMetaImport.local.name}({ ... })' function call`
           );
         }
-      }
-
-      if (!state.defineMetaVar) {
-        throw new Error(
-          `Couldn't find the variable declarator with function call of '${state.defineMetaImport?.local.name}({ ... })' inside the module tag ('<script context="module">')`
-        );
       }
     },
   };

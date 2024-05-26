@@ -8,7 +8,6 @@ import type { StoriesFileMeta } from './parser/types.js';
 import { getAST } from './parser/ast.js';
 import { extractStories } from './parser/extract-stories.js';
 import { extractASTNodes } from './parser/extract-ast-nodes.js';
-import { loadSvelteConfig } from './presets/svelte/config-loader.js';
 
 export { viteFinal } from './presets/vite.js';
 
@@ -39,8 +38,10 @@ async function createIndex(fileName: string, { makeTitle }: IndexerOptions): Pro
 }
 
 export async function readStories(fileName: string): Promise<StoriesFileMeta> {
-  let source = (await fs.readFile(fileName, { encoding: 'utf8' })).toString();
-
+  let [source, { loadSvelteConfig }] = await Promise.all([
+    fs.readFile(fileName, { encoding: 'utf8' }),
+    import('@sveltejs/vite-plugin-svelte'),
+  ]);
   const svelteOptions = await loadSvelteConfig();
 
   if (svelteOptions && svelteOptions.preprocess) {

@@ -7,7 +7,7 @@ describe('extractSource', () => {
     expect(
       extractStories(`
         <script>
-          i}mport { Story } from '@storybook/svelte';
+          import { Story } from '@storybook/svelte';
         </script>
 
         <Story name="MyStory">
@@ -186,7 +186,6 @@ describe('extractSource', () => {
       }
     `);
   });
-  // TODO: We don't use imports anymore
   test('Renamed Import', () => {
     expect(
       extractStories(`
@@ -421,6 +420,33 @@ describe('extractSource', () => {
             "template": false,
           },
         },
+      }
+    `);
+  });
+  test('Meta tag description', () => {
+    expect(
+      extractStories(`
+        <script>
+          import { Story } from '@storybook/svelte';
+          import Button from './Button.svelte';
+        </script>
+
+        <!-- Meta Description -->
+        <Meta title="a title"/>
+        `)
+    ).toMatchInlineSnapshot(`
+      {
+        "allocatedIds": [
+          "default",
+          "Story",
+          "Button",
+        ],
+        "meta": {
+          "description": "Meta Description",
+          "id": undefined,
+          "title": "a title",
+        },
+        "stories": {},
       }
     `);
   });

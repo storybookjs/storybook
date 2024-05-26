@@ -29,8 +29,9 @@
      * Use `tags={['autodocs']}` instead.
      */
     autodocs?: never;
-    // TODO: Discuss if this is still neeeded
     /**
+     * WARNING: This is under consideration to be revamped.
+     * Ref: https://github.com/storybookjs/addon-svelte-csf/pull/181#issuecomment-2130744977
      *
      * Specify which sources should be shown.
      *

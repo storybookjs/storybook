@@ -1,8 +1,14 @@
 import dedent from 'dedent';
-import { type Comment, type Root, type SvelteNode } from 'svelte/compiler';
+import { type Comment, type Component, type Root, type SvelteNode } from 'svelte/compiler';
 import type { Visitors } from 'zimmerframe';
 
-import { getChildrenRawSource, getStoryId, getStoryName } from './component.js';
+import {
+  getBooleanFromAttribute,
+  getChildrenRawSource,
+  getStoryId,
+  getStoryName,
+  getStringFromAttribute,
+} from './component.js';
 import { type AddonASTNodes, type FragmentMeta, type StoryMeta } from '../types.js';
 
 /**
@@ -35,6 +41,7 @@ export async function walkOnFragment({
       if (node.name === nodes.Story.name) {
         const { attributes } = node;
         const name = getStoryName(attributes);
+        const sourceAttribute = getSourceAttribute(attributes);
         const childrenRawSource = getChildrenRawSource({
           node,
           rawSource: source,
@@ -49,6 +56,7 @@ export async function walkOnFragment({
           id,
           name,
           description,
+          source: sourceAttribute,
           rawSource: childrenRawSource,
         };
 
@@ -62,4 +70,17 @@ export async function walkOnFragment({
   walk(fragment, state, visitors);
 
   return state;
+}
+
+function getSourceAttribute(attributes: Component['attributes']) {
+  const name = 'source';
+  let value: boolean | string | undefined;
+
+  try {
+    value = getBooleanFromAttribute(name, attributes);
+  } catch {
+    value = getStringFromAttribute(name, attributes);
+  }
+
+  return value;
 }

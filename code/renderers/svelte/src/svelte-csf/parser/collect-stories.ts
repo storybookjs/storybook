@@ -3,7 +3,7 @@ import { combineTags } from '@storybook/csf';
 import { logger } from '@storybook/client-logger';
 import { combineArgs, combineParameters } from '@storybook/preview-api';
 import type { Meta, StoryFn } from '@storybook/svelte';
-import { type SvelteComponent, mount, unmount, type ComponentType } from 'svelte';
+import { mount, unmount, type ComponentType } from 'svelte';
 
 import type { StoriesFileMeta } from './types.js';
 
@@ -27,10 +27,10 @@ const createFragment = document.createDocumentFragment
  * instantiate the main Stories component: Every Story but
  * the one selected is disabled.
  */
-export default <M extends Meta>(
+export default <TMeta extends Meta>(
   Stories: ComponentType,
   storiesFileMeta: StoriesFileMeta,
-  meta: M
+  meta: TMeta
 ) => {
   if (!meta.parameters?.docs?.description?.component && storiesFileMeta.defineMeta.description) {
     meta.parameters = combineParameters(meta.parameters, {
@@ -42,7 +42,7 @@ export default <M extends Meta>(
     });
   }
 
-  const repository: StoriesRepository<M> = {
+  const repository: StoriesRepository<TMeta> = {
     stories: new Map(),
   };
 
@@ -60,15 +60,15 @@ export default <M extends Meta>(
     logger.error(`Error in mounting stories ${e.toString()}`, e);
   }
 
-  const stories: Record<string, StoryFn<StoryRenderer<M>>> = {};
+  const stories: Record<string, StoryFn<StoryRenderer<TMeta>>> = {};
 
   for (const [name, story] of repository.stories) {
     const storyMeta = storiesFileMeta.stories[name];
 
     // NOTE: We can't use StoryObj, because `@storybook/svelte` accepts `StoryFn` for now
-    const storyFn: StoryFn<StoryRenderer<M>> = (args, storyContext) => {
+    const storyFn: StoryFn<StoryRenderer<TMeta>> = (args, storyContext) => {
       return {
-        Component: StoryRenderer<M>,
+        Component: StoryRenderer<TMeta>,
         props: {
           storyName: story.name ?? 'Default',
           Stories,
@@ -79,33 +79,46 @@ export default <M extends Meta>(
     };
     storyFn.storyName = story.name;
     storyFn.args = combineArgs(meta.args, story.args);
-    storyFn.parameters = combineParameters(
-      meta.parameters,
-      story.parameters,
-      storyMeta.description
-        ? {
-            docs: {
-              description: {
-                story: storyMeta.description,
-              },
-            },
-          }
-        : undefined
-      // TODO: Wait for the response on this case
-      // storyMeta.rawSource
-      // 	? {
-      // 			docs: {
-      // 				source: {
-      // 					code: storyMeta.rawSource,
-      // 				},
-      // 			},
-      // 			storySource: {
-      // 				source: storyMeta.rawSource,
-      // 			},
-      // 		}
-      // 	: undefined,
-    );
+    storyFn.parameters = combineParameters(meta.parameters, story.parameters);
     storyFn.tags = combineTags(...(meta.tags ?? []), ...(story.tags ?? []));
+
+    if (storyMeta.description) {
+      storyFn.parameters = combineParameters(storyFn.parameters, {
+        docs: {
+          description: {
+            story: storyMeta.description,
+          },
+        },
+      });
+    }
+
+    if (storyMeta.rawSource) {
+      storyFn.parameters = combineParameters(storyFn.parameters, {
+        storySource: {
+          source: storyMeta.rawSource,
+        },
+      });
+    }
+
+    if (storyMeta.source) {
+      let code: string | undefined;
+
+      if (storyMeta.source === true && storyMeta.rawSource) {
+        code = storyMeta.rawSource;
+      }
+
+      if (typeof storyMeta.source === 'string') {
+        code = storyMeta.source;
+      }
+
+      if (code) {
+        storyFn.parameters = combineParameters(storyFn.parameters, {
+          docs: {
+            source: { code },
+          },
+        });
+      }
+    }
 
     const play = meta.play ?? story.play;
 

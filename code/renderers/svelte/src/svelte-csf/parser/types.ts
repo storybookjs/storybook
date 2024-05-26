@@ -1,5 +1,8 @@
 import type { Meta } from '@storybook/svelte';
 import type { Identifier, ImportSpecifier, VariableDeclaration } from 'estree';
+import type { ComponentProps } from 'svelte';
+
+import type Story from '../components/Story.svelte';
 
 /**
  * Data extracted from the static analytic of a single stories file - `*.stories.svelte`.
@@ -84,6 +87,7 @@ export interface StoryMeta {
    * Description of the story, will display above the sample in docs mode.
    */
   description?: string;
+  source?: ComponentProps<Story<Meta>>['source'];
   /** Raw source for children _(what is inside the `<Story>...</Story>` tags)_ */
   rawSource?: string;
 }

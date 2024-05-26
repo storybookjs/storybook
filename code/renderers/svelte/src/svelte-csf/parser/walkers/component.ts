@@ -37,6 +37,31 @@ function hashCode(str: string) {
   return Math.abs(h).toString(16);
 }
 
+export function getBooleanFromAttribute(name: string, attributes: Component['attributes']) {
+  const attribute = lookupAttribute(name, attributes);
+
+  if (!attribute) {
+    return;
+  }
+
+  const { value } = attribute;
+
+  if (value === true) {
+    return value;
+  }
+
+  if (
+    value.length === 1 &&
+    value[0].type === 'ExpressionTag' &&
+    value[0].expression.type === 'Literal' &&
+    typeof value[0].expression.value === 'boolean'
+  ) {
+    return value[0].expression.value;
+  }
+
+  throw new Error(`Attribute "${name}" is not a static boolean`);
+}
+
 export function getStringFromAttribute(name: string, attributes: Component['attributes']) {
   const attribute = lookupAttribute(name, attributes);
 
@@ -47,14 +72,14 @@ export function getStringFromAttribute(name: string, attributes: Component['attr
   const { value } = attribute;
 
   if (value === true) {
-    throw new Error(`Attribute 'name' is not a string`);
+    throw new Error(`Attribute '${name}' is not a string`);
   }
 
   if (value.length === 1 && value[0].type === 'Text') {
     return value[0].data;
   }
 
-  throw new Error(`Attribute "name" is not static`);
+  throw new Error(`Attribute "${name}" is not a static string`);
 }
 
 export function lookupAttribute(name: string, attributes: Component['attributes']) {

@@ -1,4 +1,4 @@
-import type { Meta, StoryContext as _SB_StoryContext, StoryObj } from '@storybook/svelte';
+import type { Meta, StoryContext as BaseStoryContext, StoryObj } from '@storybook/svelte';
 
 import Story from './components/Story.svelte';
 
@@ -16,5 +16,5 @@ export type Args<TStory extends ReturnType<typeof defineMeta>['Story']> =
 
 export type StoryContext<TStory extends ReturnType<typeof defineMeta>['Story']> =
   TStory extends typeof Story<infer TMeta extends Meta>
-    ? _SB_StoryContext<StoryObj<TMeta>['args']>
+    ? BaseStoryContext<StoryObj<TMeta>['args']>
     : never;

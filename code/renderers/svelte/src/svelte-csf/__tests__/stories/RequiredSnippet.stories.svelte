@@ -17,7 +17,7 @@
 <p>This works</p>
 {/snippet}
 
-<!-- Works, as expected -->
+<!-- Works, as expected TODO: does not actually work, renders nothing-->
 <Story name="Case 2" args={{ children }} />
 
 <!-- Works, as expected, but TypeScript is not happy -->

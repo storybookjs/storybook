@@ -1,9 +1,9 @@
 import type { Meta, StoryContext as BaseStoryContext, StoryObj } from '@storybook/svelte';
 
-import Story from './components/Story.svelte';
+import Story from './renderer/Story.svelte';
 
 export type { Story };
-export { setTemplate } from './components/contexts.svelte.js';
+export { setTemplate } from './renderer/contexts.svelte.js';
 
 export function defineMeta<const TMeta extends Meta = Meta>(meta: TMeta) {
   return {

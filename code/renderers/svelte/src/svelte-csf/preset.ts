@@ -1,59 +1,49 @@
-import fs from 'node:fs/promises';
-
 import type { StorybookConfig } from '@storybook/svelte-vite';
-import type { IndexInput, IndexerOptions } from '@storybook/types';
-import { preprocess } from 'svelte/compiler';
+import type { SvelteConfig } from '@sveltejs/vite-plugin-svelte';
 
-import type { StoriesFileMeta } from './parser/types.js';
-import { getAST } from './parser/ast.js';
-import { extractStories } from './parser/extract-stories.js';
-import { extractASTNodes } from './parser/extract-ast-nodes.js';
+import { preTransformPlugin } from './compiler/pre-transform.js';
+import { postTransformPlugin } from './compiler/post-transform.js';
+import { indexer } from './indexer/index.js';
 
-export { viteFinal } from './presets/vite.js';
+export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) => {
+  const { presets } = options;
 
-export const experimental_indexers: StorybookConfig['experimental_indexers'] = (indexers) => {
-  return [
-    {
-      test: /\.svelte$/,
-      createIndex,
-    },
-    ...(indexers || []),
-  ];
-};
+  let addonPluginConfig: SvelteConfig = {};
 
-async function createIndex(fileName: string, { makeTitle }: IndexerOptions): Promise<IndexInput[]> {
-  const storiesFileMeta = await readStories(fileName);
-  const { defineMeta, stories } = storiesFileMeta;
+  try {
+    const { loadSvelteConfig } = await import('@sveltejs/vite-plugin-svelte');
 
-  return Object.entries(stories).map(([storyId, storyMeta]) => {
-    return {
-      type: 'story',
-      importPath: fileName,
-      exportName: storyId,
-      name: storyMeta.name,
-      title: makeTitle(defineMeta.title),
-      tags: defineMeta.tags,
-    } satisfies IndexInput;
-  });
-}
+    // TODO: remove support for svelteOptions from presets
+    const [svelteConfig, svelteOptions] = await Promise.all([
+      loadSvelteConfig(),
+      presets.apply('svelteOptions', options),
+    ]);
 
-export async function readStories(fileName: string): Promise<StoriesFileMeta> {
-  let [source, { loadSvelteConfig }] = await Promise.all([
-    fs.readFile(fileName, { encoding: 'utf8' }),
-    import('@sveltejs/vite-plugin-svelte'),
-  ]);
-  const svelteOptions = await loadSvelteConfig();
-
-  if (svelteOptions && svelteOptions.preprocess) {
-    source = (
-      await preprocess(source, svelteOptions.preprocess, {
-        filename: fileName,
-      })
-    ).code;
+    addonPluginConfig = {
+      ...svelteConfig,
+      ...svelteOptions,
+    };
+  } catch (err: any) {
+    if (err.code === 'MODULE_NOT_FOUND') {
+      console.log(
+        '@sveltejs/vite-plugin-svelte not found. Unable to load config from svelte.config file'
+      );
+    } else {
+      throw err;
+    }
   }
 
-  const { module, fragment } = getAST(source);
-  const nodes = await extractASTNodes(module);
+  return {
+    ...config,
+    plugins: [
+      preTransformPlugin(),
+      ...(config.plugins ?? []),
+      postTransformPlugin(addonPluginConfig),
+    ],
+  };
+};
 
-  return extractStories({ nodes, fragment, source });
-}
+
+export const experimental_indexers: StorybookConfig['experimental_indexers'] = (indexers) => {
+  return [indexer, ...(indexers || [])];
+};

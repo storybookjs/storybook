@@ -2,11 +2,11 @@ import type { SvelteConfig } from '@sveltejs/vite-plugin-svelte';
 import MagicString from 'magic-string';
 import type { Plugin } from 'vite';
 
-import { extractASTNodes } from '../../parser/extract-ast-nodes.js';
-import { getAST } from '../../parser/ast.js';
-import { transformDefineMeta } from '../../transformer/define-meta.js';
+import { extractASTNodes } from '../utils/parser/extract-ast-nodes.js';
+import { getAST } from '../utils/parser/ast.js';
+import { transformDefineMeta } from '../utils/transformer/define-meta.js';
 
-export default async function plugin(_svelteOptions: SvelteConfig): Promise<Plugin> {
+export async function preTransformPlugin(): Promise<Plugin> {
   const { createFilter } = await import('vite');
 
   const include = /\.stories\.svelte$/;

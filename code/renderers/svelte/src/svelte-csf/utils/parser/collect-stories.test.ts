@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import TestStories from '../components/__tests__/TestStories.svelte';
+import TestStories from '../renderer/__tests__/TestStories.svelte';
 import collectStories from './collect-stories.js';
 
 describe('parse-stories', () => {

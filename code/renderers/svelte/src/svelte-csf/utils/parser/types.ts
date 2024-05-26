@@ -2,7 +2,7 @@ import type { Meta } from '@storybook/svelte';
 import type { Identifier, ImportSpecifier, VariableDeclaration } from 'estree';
 import type { ComponentProps } from 'svelte';
 
-import type Story from '../components/Story.svelte';
+import type Story from '../../renderer/Story.svelte';
 
 /**
  * Data extracted from the static analytic of a single stories file - `*.stories.svelte`.

@@ -1,11 +1,10 @@
 import url from 'node:url';
-
 import MagicString from 'magic-string';
 
-import type { AddonASTNodes, StoriesFileMeta } from 'src/parser/types.js';
+import type { AddonASTNodes, StoriesFileMeta } from '../parser/types.js';
 
 const parserModulePath = url
-  .fileURLToPath(new URL('../../dist/parser/collect-stories.js', import.meta.url))
+  .fileURLToPath(new URL('../../../dist/utils/parser/collect-stories.js', import.meta.url))
   .replace(/\\/g, '\\\\'); // For Windows paths
 
 export function createAppendix({

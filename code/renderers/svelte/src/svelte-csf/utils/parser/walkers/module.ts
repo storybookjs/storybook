@@ -1,7 +1,7 @@
 import type { Script, SvelteNode } from 'svelte/compiler';
 import type { Visitors } from 'zimmerframe';
 
-import pkg from '../../../package.json' with { type: 'json' };
+import pkg from '../../../../package.json' with { type: 'json' };
 
 import { ADDON_AST_NODES, type AddonASTNodes } from '../types.js';
 

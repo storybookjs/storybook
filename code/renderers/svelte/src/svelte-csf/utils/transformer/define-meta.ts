@@ -11,6 +11,8 @@ export function transformDefineMeta({ code, nodes }: { code: MagicString; nodes:
   const { id } = declarations[0];
 
   if (id.type !== 'ObjectPattern') {
+    // TODO: make error message more user friendly
+    // which file, what happened, how to fix
     throw new Error(
       'Internal error during attempt to pre-transform the Stories source code - expected object pattern.'
     );
@@ -20,29 +22,29 @@ export function transformDefineMeta({ code, nodes }: { code: MagicString; nodes:
     return p.type === 'Property' && p.key.type === 'Identifier' && p.key.name === 'meta';
   });
 
-  if (!hasDestructuredMeta) {
-    const metaProperty: AssignmentProperty = {
-      type: 'Property',
-      kind: 'init',
-      key: {
-        type: 'Identifier',
-        name: 'meta',
-      },
-      value: {
-        type: 'Identifier',
-        name: 'meta',
-      },
-      shorthand: true,
-      computed: false,
-      method: false,
-    };
-
-    id.properties.push(metaProperty);
-
-    const { start, end } = defineMetaVar as unknown as BaseNode;
-
-    code.update(start, end, toJs(defineMetaVar as unknown as Program).value);
+  if (hasDestructuredMeta) {
+    return code;
   }
+  
+  const metaProperty: AssignmentProperty = {
+    type: 'Property',
+    kind: 'init',
+    key: {
+      type: 'Identifier',
+      name: 'meta',
+    },
+    value: {
+      type: 'Identifier',
+      name: 'meta',
+    },
+    shorthand: true,
+    computed: false,
+    method: false,
+  };
 
-  return code;
+  id.properties.push(metaProperty);
+
+  const { start, end } = defineMetaVar as unknown as BaseNode;
+
+  code.update(start, end, toJs(defineMetaVar as unknown as Program).value);
 }

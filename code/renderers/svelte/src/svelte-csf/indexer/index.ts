@@ -14,10 +14,10 @@ export const indexer: Indexer = {
       import('@sveltejs/vite-plugin-svelte'),
     ]);
 
-    const svelteOptions = await loadSvelteConfig();
-    if (svelteOptions?.preprocess) {
+    const svelteConfig = await loadSvelteConfig();
+    if (svelteConfig?.preprocess) {
       source = (
-        await preprocess(source, svelteOptions.preprocess, {
+        await preprocess(source, svelteConfig.preprocess, {
           filename: fileName,
         })
       ).code;

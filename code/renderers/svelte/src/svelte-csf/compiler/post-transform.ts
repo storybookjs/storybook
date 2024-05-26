@@ -1,8 +1,7 @@
 import fs from 'node:fs';
 
-import type { SvelteConfig } from '@sveltejs/vite-plugin-svelte';
 import MagicString from 'magic-string';
-import { compile, preprocess } from 'svelte/compiler';
+import { preprocess } from 'svelte/compiler';
 import type { Plugin } from 'vite';
 
 import { getNameFromFilename } from '../utils/get-component-name.js';
@@ -11,8 +10,12 @@ import { extractStories } from '../utils/parser/extract-stories.js';
 import { extractASTNodes } from '../utils/parser/extract-ast-nodes.js';
 import { createAppendix } from '../utils/transformer/create-appendix.js';
 
-export async function postTransformPlugin(svelteConfig: SvelteConfig): Promise<Plugin> {
-  const { createFilter } = await import('vite');
+export async function postTransformPlugin(): Promise<Plugin> {
+  const [{ createFilter }, { loadSvelteConfig }] = await Promise.all([
+    import('vite'),
+    import('@sveltejs/vite-plugin-svelte'),
+  ]);
+  let svelteConfig = await loadSvelteConfig();
 
   const include = /\.stories\.svelte$/;
   const filter = createFilter(include);

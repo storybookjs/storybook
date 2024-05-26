@@ -3,7 +3,7 @@ import type { Meta, StoryContext as _SB_StoryContext, StoryObj } from '@storyboo
 import Story from './components/Story.svelte';
 
 export type { Story };
-export { setTemplate } from './components/context.svelte.js';
+export { setTemplate } from './components/contexts.svelte.js';
 
 export type Args<S extends Story> = S extends typeof Story<infer M extends Meta>
   ? StoryObj<M>['args']

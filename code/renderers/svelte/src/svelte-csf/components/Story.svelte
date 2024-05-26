@@ -21,9 +21,8 @@
     id?: string;
     /**
     * Name of the story.
-    * @default "Default"
     */
-    name?: string;
+    name: string;
     /**
      * @deprecrated
      * Use `tags={['autodocs']}` instead.
@@ -42,7 +41,7 @@
     source?: boolean | string;
   } & StoryObj<TMeta>;
 
-  const { children, name = "Default", id, play, ...restProps }: Props = $props();
+  const { children, name, id, play, ...restProps }: Props = $props();
 
   const extractor = useStoriesExtractor<TMeta>();
   const renderer = useStoryRenderer<TMeta>();

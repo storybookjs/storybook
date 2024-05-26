@@ -31,6 +31,7 @@ export async function walkOnFragment({
   let latestComment: Comment | undefined;
 
   const storiesIds = new Set<string>(Object.keys(state.stories));
+  const storiesNames = new Set<string>();
   const visitors: Visitors<SvelteNode, typeof state> = {
     Comment(node, { next }) {
       latestComment = node;
@@ -40,7 +41,7 @@ export async function walkOnFragment({
     Component(node, { state }) {
       if (node.name === nodes.Story.name) {
         const { attributes } = node;
-        const name = getStoryName(attributes);
+        const name = getStoryName({ attributes, storiesNames });
         const sourceAttribute = getSourceAttribute(attributes);
         const childrenRawSource = getChildrenRawSource({
           node,

@@ -11,7 +11,7 @@
   });
 </script>
 
-<Story>
+<Story name="Default">
   <button onclick={action('I am logging in the actions tab')}>
     Click me to see an a log in the <strong>Actions</strong> tab
   </button>

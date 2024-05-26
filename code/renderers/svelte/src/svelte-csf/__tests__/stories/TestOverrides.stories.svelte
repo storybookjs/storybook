@@ -12,7 +12,7 @@
   });
 </script>
 
-<S>
+<S name="Default">
   {#snippet children(args)}
     <p>You can import <code style="font-weight: bolder;">Story</code> component as whatever name you want to - we've got it covered.</p>
     <p>{args.message}</p>

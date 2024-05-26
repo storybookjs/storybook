@@ -2,8 +2,24 @@ import { logger } from '@storybook/client-logger';
 import dedent from 'dedent';
 import type { Attribute, Component, SnippetBlock } from 'svelte/compiler';
 
-export function getStoryName(attributes: Component['attributes']) {
-  return getStringFromAttribute('name', attributes) ?? 'Default';
+export function getStoryName({
+  attributes,
+  storiesNames,
+}: {
+  attributes: Component['attributes'];
+  storiesNames: Set<string>;
+}) {
+  let name = getStringFromAttribute('name', attributes);
+
+  if (!name) {
+    throw new Error(`Missing prop 'name' in <Story> component.`);
+  }
+
+  if (storiesNames.has(name)) {
+    throw new Error(`Story name - ${name} - conflicts with another story.`);
+  }
+
+  return name;
 }
 
 export function getStoryId({

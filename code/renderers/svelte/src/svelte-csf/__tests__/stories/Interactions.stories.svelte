@@ -30,7 +30,7 @@
   let i = $state(0);
 </script>
 
-<Story {play}>
+<Story name="Default" {play}>
   <Interactions />
 </Story>
 

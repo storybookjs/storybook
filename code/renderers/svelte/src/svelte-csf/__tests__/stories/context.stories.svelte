@@ -10,7 +10,7 @@
   });
 </script>
 
-<Story>
+<Story name="Default">
   {#snippet children(_args, context)}
     {#each Object.entries(context) as [key, value]}
       {#if typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' || typeof value === "function"}

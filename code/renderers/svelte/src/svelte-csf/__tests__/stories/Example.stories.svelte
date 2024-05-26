@@ -30,13 +30,14 @@
 
 {#snippet render(args: Args<typeof Story>, context: StoryContext<typeof Story>)}
     <Example {...args} onclick={handleClick}>
+      <p>{args?.id}</p>
       <p>{context.name}</p>
       You clicked: {count}<br>
     </Example>
 {/snippet}
 
 <!-- Description for the default story -->
-<Story />
+<Story name="Default" />
 
 <!-- Description for the rounded story -->
 <Story name="Rounded" args={{ rounded: true }} />

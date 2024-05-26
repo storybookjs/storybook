@@ -70,7 +70,7 @@ export default <TMeta extends Meta>(
       return {
         Component: StoryRenderer<TMeta>,
         props: {
-          storyName: story.name ?? 'Default',
+          storyName: story.name,
           Stories,
           storyContext,
           args,
@@ -79,7 +79,7 @@ export default <TMeta extends Meta>(
     };
     storyFn.storyName = story.name;
     storyFn.args = combineArgs(meta.args, story.args);
-    storyFn.parameters = combineParameters(meta.parameters, story.parameters);
+    storyFn.parameters = combineParameters({}, meta.parameters, story.parameters);
     storyFn.tags = combineTags(...(meta.tags ?? []), ...(story.tags ?? []));
 
     if (storyMeta.description) {

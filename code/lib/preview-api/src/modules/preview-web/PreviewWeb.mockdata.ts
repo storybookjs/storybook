@@ -76,7 +76,7 @@ export const projectAnnotations = {
 export const getProjectAnnotations = vi.fn(() => projectAnnotations as any);
 
 export const storyIndex: StoryIndex = {
-  v: 4,
+  v: 5,
   entries: {
     'component-one--docs': {
       type: 'docs',

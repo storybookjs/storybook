@@ -24,14 +24,13 @@ export const configureSWCLoader = async (
   );
 
   if (rawRule && typeof rawRule === 'object') {
-    rawRule.test = /^(?!__barrel_optimize__)/;
+    rawRule.exclude = /^__barrel_optimize__/;
   }
 
   baseConfig.module?.rules?.push({
     test: /\.((c|m)?(j|t)sx?)$/,
     include: [getProjectRoot()],
     exclude: [/(node_modules)/, ...Object.keys(virtualModules)],
-    enforce: 'post',
     use: {
       // we use our own patch because we need to remove tracing from the original code
       // which is not possible otherwise

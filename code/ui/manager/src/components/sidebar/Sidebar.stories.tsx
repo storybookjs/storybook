@@ -3,7 +3,7 @@ import React from 'react';
 import type { IndexHash, State } from '@storybook/manager-api';
 import { ManagerContext, types } from '@storybook/manager-api';
 import type { StoryObj, Meta } from '@storybook/react';
-import { within, userEvent, expect } from '@storybook/test';
+import { within, userEvent, expect, fn } from '@storybook/test';
 import type { Addon_SidebarTopType } from '@storybook/types';
 import { Button, IconButton } from '@storybook/components';
 import { FaceHappyIcon } from '@storybook/icons';
@@ -55,10 +55,13 @@ const meta = {
               },
             },
             api: {
-              emit: () => {},
-              on: () => {},
-              off: () => {},
-              getShortcutKeys: () => ({ search: ['control', 'shift', 's'] }),
+              emit: fn().mockName('api::emit'),
+              on: fn().mockName('api::on'),
+              off: fn().mockName('api::off'),
+              getShortcutKeys: fn(() => ({ search: ['control', 'shift', 's'] })).mockName(
+                'api::getShortcutKeys'
+              ),
+              selectStory: fn().mockName('api::selectStory'),
             },
           } as any
         }
@@ -288,7 +291,7 @@ export const Scrolled: Story = {
     const scrollable = await canvasElement.querySelector('[data-radix-scroll-area-viewport]');
     await step('expand component', async () => {
       const componentNode = await canvas.queryAllByText('Child A2')[1];
-      userEvent.click(componentNode);
+      await userEvent.click(componentNode);
     });
     await wait(100);
     await step('scroll to bottom', async () => {
@@ -296,11 +299,11 @@ export const Scrolled: Story = {
     });
     await step('toggle parent state', async () => {
       const button = await canvas.findByRole('button', { name: 'Change state' });
-      button.click();
+      await userEvent.click(button);
     });
     await wait(100);
 
     // expect the scrollable to be scrolled to the bottom
-    expect(scrollable.scrollTop).toBe(scrollable.scrollHeight - scrollable.clientHeight);
+    await expect(scrollable.scrollTop).toBe(scrollable.scrollHeight - scrollable.clientHeight);
   },
 };

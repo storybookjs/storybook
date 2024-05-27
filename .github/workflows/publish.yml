@@ -154,6 +154,14 @@ jobs:
           git merge ${{ github.ref_name }}
           git push origin ${{ steps.target.outputs.target }}
 
+      - name: Force push from 'next' to 'latest-release' and 'main' on minor/major releases
+        if: github.ref_name == 'next-release' && steps.is-prerelease.outputs.prerelease == 'false'
+        run: |
+          git checkout next
+          git pull
+          git push --force origin latest-release
+          git push --force origin main
+
       - name: Sync CHANGELOG.md from `main` to `next`
         if: steps.target.outputs.target == 'main'
         working-directory: .

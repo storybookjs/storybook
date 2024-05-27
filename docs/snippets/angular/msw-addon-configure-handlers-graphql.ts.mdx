@@ -57,7 +57,7 @@ export const MockedSuccess: Story = {
     msw: {
       handlers: [
         graphql.query('AllInfoQuery', () => {
-          return new HttpResponse.json({
+          return HttpResponse.json({
             data: {
               allInfo: {
                 ...TestData,
@@ -76,7 +76,7 @@ export const MockedError: Story = {
       handlers: [
         graphql.query('AllInfoQuery', async () => {
           await delay(800);
-          return new HttpResponse.json({
+          return HttpResponse.json({
             errors: [
               {
                 message: 'Access denied',

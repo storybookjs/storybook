@@ -95,6 +95,16 @@ import { getUserFromSession } from '#lib/session';
 // ... rest of the file
 ```
 
+<Callout variant="info">
+
+Subpath imports will only be correctly resolved and typed when the [`moduleResolution` property](https://www.typescriptlang.org/tsconfig/#moduleResolution) is set to `'Bundler'`, `'NodeNext'`, or `'Node16'` in your TypeScript configuration.
+
+If you are currently using `'node'`, that is intended for projects using a Node.js version older than v10. Projects written with modern code likely do not need to use `'node'`.
+
+Storybook recommends the [TSConfig Cheat Sheet](https://www.totaltypescript.com/tsconfig-cheat-sheet) for guidance on setting up your TypeScript configuration.
+
+</Callout>
+
 ## Builder aliases
 
 If your project is unable to use [subpath imports](#subpath-imports), you can configure your Storybook builder to alias the module to the mock file. This will instruct the builder to replace the module with the mock file when bundling your Storybook stories.

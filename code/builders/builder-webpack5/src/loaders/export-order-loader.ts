@@ -49,9 +49,7 @@ export default async function loader(
       );
     }
 
-    const generatedMap = magicString.generateMap({ hires: true });
-
-    return callback(null, magicString.toString(), generatedMap, meta);
+    return callback(null, magicString.toString(), map, meta);
   } catch (err) {
     return callback(null, source, map, meta);
   }

@@ -43,32 +43,38 @@ export const WithResults: Story = {
     const exportedElement1 = await findByText(canvasElement, 'module-multiple-exports');
     fireEvent.click(exportedElement1);
 
-    expect(args.onNewStory).toHaveBeenCalledWith({
-      selectedItemId: 'src/module-multiple-exports.js_0',
-      componentExportName: 'default',
-      componentFilePath: 'src/module-multiple-exports.js',
-      componentIsDefaultExport: true,
-    });
+    expect(args.onNewStory).toHaveBeenCalledWith(
+      expect.objectContaining({
+        selectedItemId: 'src/module-multiple-exports.js_0',
+        componentExportName: 'default',
+        componentFilePath: 'src/module-multiple-exports.js',
+        componentIsDefaultExport: true,
+      })
+    );
 
     const exportedElement2 = await findByText(canvasElement, 'namedExport');
     fireEvent.click(exportedElement2);
 
-    expect(args.onNewStory).toHaveBeenCalledWith({
-      selectedItemId: 'src/module-multiple-exports.js_1',
-      componentExportName: 'namedExport',
-      componentFilePath: 'src/module-multiple-exports.js',
-      componentIsDefaultExport: false,
-    });
+    expect(args.onNewStory).toHaveBeenCalledWith(
+      expect.objectContaining({
+        selectedItemId: 'src/module-multiple-exports.js_1',
+        componentExportName: 'namedExport',
+        componentFilePath: 'src/module-multiple-exports.js',
+        componentIsDefaultExport: false,
+      })
+    );
 
     const singleExport = await findByText(canvasElement, 'module-single-export.js');
     fireEvent.click(singleExport);
 
-    expect(args.onNewStory).toHaveBeenCalledWith({
-      selectedItemId: 'src/module-single-export.js',
-      componentExportName: 'default',
-      componentFilePath: 'src/module-single-export.js',
-      componentIsDefaultExport: true,
-    });
+    expect(args.onNewStory).toHaveBeenCalledWith(
+      expect.objectContaining({
+        selectedItemId: 'src/module-single-export.js',
+        componentExportName: 'default',
+        componentFilePath: 'src/module-single-export.js',
+        componentIsDefaultExport: true,
+      })
+    );
 
     expect(args.onNewStory).toHaveBeenCalledTimes(3);
 

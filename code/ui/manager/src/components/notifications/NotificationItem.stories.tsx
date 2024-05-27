@@ -99,8 +99,8 @@ export const Clickable: Story = {
   },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
-    const [button] = await canvas.findAllByRole('button');
-    await userEvent.click(button);
+    const notification = await canvas.findByText('Storybook cool!');
+    await userEvent.click(notification);
     await expect(args.notification.onClick).toHaveBeenCalledWith({ onDismiss: expect.anything() });
   },
 };

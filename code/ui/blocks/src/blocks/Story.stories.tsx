@@ -171,6 +171,9 @@ export const WithInteractionsAutoplayInParameters: Story = {
 
 export const ForceInitialArgs: Story = {
   ...StoryComponentStories.ForceInitialArgs,
+  parameters: {
+    chromatic: { disableSnapshot: true },
+  },
   args: {
     of: ButtonStories.Primary,
     storyExport: ButtonStories.Primary,

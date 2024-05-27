@@ -33,9 +33,24 @@ export const loadBench = async (options: SaveBenchOptions): Promise<Partial<Benc
 };
 
 export async function getPreviewPage(page: Page) {
-  await page.waitForFunction(() => {
-    return document.querySelector('iframe')?.contentDocument.readyState === 'complete';
-  });
-  const previewPage = await page.frame({ url: /iframe.html/ }).page();
-  return previewPage;
+  /**
+   * Fix flakiness in preview iframe retrieval
+   * Sometimes the iframe is not yet available when we try to access it,
+   * even after waiting for the readyState to be complete.
+   *
+   * This loop will keep trying to access the iframe until it's available.
+   */
+  for (let i = 0; i < 10; i++) {
+    // eslint-disable-next-line @typescript-eslint/no-loop-func
+    await page.waitForFunction(() => {
+      return document.querySelector('iframe')?.contentDocument.readyState === 'complete';
+    });
+
+    const previewPage = page.frame({ url: /iframe.html/ })?.page();
+    if (previewPage) {
+      return previewPage;
+    }
+  }
+
+  throw new Error('The preview iframe was never found');
 }

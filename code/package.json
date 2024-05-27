@@ -1,6 +1,6 @@
 {
   "name": "@storybook/root",
-  "version": "8.2.0-alpha.1",
+  "version": "8.2.0-alpha.2",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -50,7 +50,7 @@
     "storybook:blocks:chromatic": "STORYBOOK_BLOCKS_ONLY=true yarn storybook:ui:chromatic --project-token=${CHROMATIC_TOKEN_STORYBOOK_BLOCKS:-MISSING_PROJECT_TOKEN}",
     "storybook:ui": "NODE_OPTIONS=\"--preserve-symlinks --preserve-symlinks-main\" ./lib/cli/bin/index.js dev --port 6006 --config-dir ./ui/.storybook",
     "storybook:ui:build": "NODE_OPTIONS=\"--preserve-symlinks --preserve-symlinks-main\" ./lib/cli/bin/index.js build --config-dir ./ui/.storybook --webpack-stats-json",
-    "storybook:ui:chromatic": "../scripts/node_modules/.bin/chromatic --build-script-name storybook:ui:build --storybook-base-dir ./ --project-token=${CHROMATIC_TOKEN_STORYBOOK_UI:-MISSING_PROJECT_TOKEN} --only-changed --exit-zero-on-changes --exit-once-uploaded",
+    "storybook:ui:chromatic": "../scripts/node_modules/.bin/chromatic --build-script-name storybook:ui:build --storybook-base-dir ./ --project-token=${CHROMATIC_TOKEN_STORYBOOK_UI:-MISSING_PROJECT_TOKEN} --exit-zero-on-changes --exit-once-uploaded",
     "task": "yarn --cwd ../scripts task",
     "test": "NODE_OPTIONS=--max_old_space_size=4096 vitest run",
     "test:watch": "NODE_OPTIONS=--max_old_space_size=4096 vitest watch"
@@ -166,7 +166,6 @@
     "@storybook/svelte-webpack5": "workspace:*",
     "@storybook/telemetry": "workspace:*",
     "@storybook/test": "workspace:*",
-    "@storybook/testing-library": "next",
     "@storybook/theming": "workspace:*",
     "@storybook/types": "workspace:*",
     "@storybook/vue3": "workspace:*",

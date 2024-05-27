@@ -5,7 +5,7 @@ export interface ControlProps<T> {
   value?: T;
   defaultValue?: T;
   argType?: ArgType;
-  onChange: (value: T) => T | void;
+  onChange: (value?: T) => T | void;
   onFocus?: (evt: any) => void;
   onBlur?: (evt: any) => void;
 }

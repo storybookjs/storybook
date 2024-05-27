@@ -74,15 +74,16 @@ export const DateControl: FC<DateProps> = ({ name, value, onChange, onFocus, onB
   useEffect(() => {
     if (valid !== false) {
       if (dateRef && dateRef.current) {
-        dateRef.current.value = formatDate(value);
+        dateRef.current.value = value ? formatDate(value) : '';
       }
       if (timeRef && timeRef.current) {
-        timeRef.current.value = formatTime(value);
+        timeRef.current.value = value ? formatTime(value) : '';
       }
     }
   }, [value]);
 
   const onDateChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.value) return onChange();
     const parsed = parseDate(e.target.value);
     const result = new Date(value);
     result.setFullYear(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
@@ -92,6 +93,7 @@ export const DateControl: FC<DateProps> = ({ name, value, onChange, onFocus, onB
   };
 
   const onTimeChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.value) return onChange();
     const parsed = parseTime(e.target.value);
     const result = new Date(value);
     result.setHours(parsed.getHours());

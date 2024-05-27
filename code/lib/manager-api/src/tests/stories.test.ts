@@ -38,7 +38,7 @@ vi.mock('../lib/events', () => ({
 vi.mock('@storybook/global', () => ({
   global: {
     ...globalThis,
-    fetch: vi.fn(() => ({ json: () => ({ v: 4, entries: mockGetEntries() }) })),
+    fetch: vi.fn(() => ({ json: () => ({ v: 5, entries: mockGetEntries() }) })),
     CONFIG_TYPE: 'DEVELOPMENT',
   },
 }));
@@ -97,7 +97,7 @@ describe('stories API', () => {
       const moduleArgs = createMockModuleArgs({});
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
-      api.setIndex({ v: 4, entries: mockEntries });
+      api.setIndex({ v: 5, entries: mockEntries });
       const { index } = store.getState();
       // We need exact key ordering, even if in theory JS doesn't guarantee it
       expect(Object.keys(index!)).toEqual([
@@ -139,7 +139,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
       api.setIndex({
-        v: 4,
+        v: 5,
         entries: {
           'design-system-some-component--my-story': {
             type: 'story',
@@ -176,7 +176,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
       api.setIndex({
-        v: 4,
+        v: 5,
         entries: {
           'root-first--story-1': {
             type: 'story',
@@ -213,7 +213,7 @@ describe('stories API', () => {
       const { store, provider } = moduleArgs;
       provider.getConfig.mockReturnValue({ sidebar: { showRoots: true } });
       api.setIndex({
-        v: 4,
+        v: 5,
         entries: {
           'a-b--1': {
             type: 'story',
@@ -252,7 +252,7 @@ describe('stories API', () => {
       const { store, provider } = moduleArgs;
       provider.getConfig.mockReturnValue({ sidebar: { showRoots: true } });
       api.setIndex({
-        v: 4,
+        v: 5,
         entries: {
           'a--1': {
             type: 'story',
@@ -287,7 +287,7 @@ describe('stories API', () => {
       const { store, provider } = moduleArgs;
       provider.getConfig.mockReturnValue({ sidebar: { showRoots: true } });
       api.setIndex({
-        v: 4,
+        v: 5,
         entries: {
           'a--1': { type: 'story', title: 'a', name: '1', id: 'a--1', importPath: './a.ts' },
           'b--1': { type: 'story', title: 'b', name: '1', id: 'b--1', importPath: './b.ts' },
@@ -314,7 +314,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
       api.setIndex({
-        v: 4,
+        v: 5,
         entries: {
           'prepared--story': {
             type: 'story',
@@ -344,7 +344,7 @@ describe('stories API', () => {
       const moduleArgs = createMockModuleArgs({ fullAPI });
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store, provider } = moduleArgs;
-      api.setIndex({ v: 4, entries: mockEntries });
+      api.setIndex({ v: 5, entries: mockEntries });
       provider.channel.emit(STORY_PREPARED, {
         id: 'component-a--story-1',
         parameters: { a: 'b' },
@@ -357,7 +357,7 @@ describe('stories API', () => {
         parameters: { a: 'b' },
         args: { c: 'd' },
       });
-      api.setIndex({ v: 4, entries: mockEntries });
+      api.setIndex({ v: 5, entries: mockEntries });
       // Let the promise/await chain resolve
       await new Promise((r) => setTimeout(r, 0));
       expect(store.getState().index!['component-a--story-1'] as API_StoryEntry).toMatchObject({
@@ -373,7 +373,7 @@ describe('stories API', () => {
         const { api } = initStories(moduleArgs as unknown as ModuleArgs);
         const { store } = moduleArgs;
 
-        api.setIndex({ v: 4, entries: docsEntries });
+        api.setIndex({ v: 5, entries: docsEntries });
         const { index } = store.getState();
         // We need exact key ordering, even if in theory JS doesn't guarantee it
         expect(Object.keys(index!)).toEqual([
@@ -398,7 +398,7 @@ describe('stories API', () => {
             docsOptions: { docsMode: true },
           });
           const { store } = moduleArgs;
-          api.setIndex({ v: 4, entries: docsEntries });
+          api.setIndex({ v: 5, entries: docsEntries });
           const { index } = store.getState();
           expect(Object.keys(index!)).toEqual(['component-b', 'component-b--docs']);
         });
@@ -413,7 +413,7 @@ describe('stories API', () => {
       initStories(moduleArgs as unknown as ModuleArgs);
       const { store, provider } = moduleArgs;
 
-      provider.channel.emit(SET_INDEX, { v: 4, entries: mockEntries });
+      provider.channel.emit(SET_INDEX, { v: 5, entries: mockEntries });
       expect(store.getState().index).toEqual(
         expect.objectContaining({
           'component-a': expect.any(Object),
@@ -433,7 +433,7 @@ describe('stories API', () => {
         getCurrentParameter: vi.fn().mockReturnValue('options'),
       });
 
-      provider.channel.emit(SET_INDEX, { v: 4, entries: mockEntries });
+      provider.channel.emit(SET_INDEX, { v: 5, entries: mockEntries });
       expect(fullAPI.setOptions).toHaveBeenCalledWith('options');
     });
   });
@@ -461,7 +461,7 @@ describe('stories API', () => {
           status: 200,
           ok: true,
           json: () => ({
-            v: 4,
+            v: 5,
             entries: {
               'component-a--story-1': {
                 type: 'story',
@@ -512,7 +512,7 @@ describe('stories API', () => {
           status: 200,
           ok: true,
           json: () => ({
-            v: 4,
+            v: 5,
             entries: {
               'component-a--story-1': {
                 type: 'story',
@@ -616,7 +616,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { provider, store } = moduleArgs;
 
-      api.setIndex({ v: 4, entries: preparedEntries });
+      api.setIndex({ v: 5, entries: preparedEntries });
       const { index } = store.getState();
       expect((index!['a--1'] as API_StoryEntry).args).toEqual({ a: 'b' });
       expect((index!['b--1'] as API_StoryEntry).args).toEqual({ x: 'y' });
@@ -653,7 +653,7 @@ describe('stories API', () => {
       const listener = vi.fn();
       provider.channel.on(UPDATE_STORY_ARGS, listener);
 
-      api.setIndex({ v: 4, entries: preparedEntries });
+      api.setIndex({ v: 5, entries: preparedEntries });
       api.updateStoryArgs({ id: 'a--1' } as API_StoryEntry, { foo: 'bar' });
 
       expect(listener).toHaveBeenCalledWith({
@@ -677,7 +677,7 @@ describe('stories API', () => {
       const listener = vi.fn();
       provider.channel.on(UPDATE_STORY_ARGS, listener);
 
-      api.setIndex({ v: 4, entries: preparedEntries });
+      api.setIndex({ v: 5, entries: preparedEntries });
       api.updateStoryArgs({ id: 'a--1', refId: 'refId' } as API_StoryEntry, { foo: 'bar' });
       expect(listener).toHaveBeenCalledWith({
         storyId: 'a--1',
@@ -695,7 +695,7 @@ describe('stories API', () => {
       const listener = vi.fn();
       provider.channel.on(RESET_STORY_ARGS, listener);
 
-      api.setIndex({ v: 4, entries: preparedEntries });
+      api.setIndex({ v: 5, entries: preparedEntries });
       api.resetStoryArgs({ id: 'a--1' } as API_StoryEntry, ['foo']);
 
       expect(listener).toHaveBeenCalledWith({
@@ -719,7 +719,7 @@ describe('stories API', () => {
       const listener = vi.fn();
       provider.channel.on(RESET_STORY_ARGS, listener);
 
-      api.setIndex({ v: 4, entries: preparedEntries });
+      api.setIndex({ v: 5, entries: preparedEntries });
       api.resetStoryArgs({ id: 'a--1', refId: 'refId' } as API_StoryEntry, ['foo']);
       expect(listener).toHaveBeenCalledWith({
         storyId: 'a--1',
@@ -738,7 +738,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { navigate } = moduleArgs;
 
-      api.setIndex({ v: 4, entries: navigationEntries });
+      api.setIndex({ v: 5, entries: navigationEntries });
       api.jumpToStory(1);
 
       expect(navigate).toHaveBeenCalledWith('/story/a--2');
@@ -749,7 +749,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { navigate } = moduleArgs;
 
-      api.setIndex({ v: 4, entries: navigationEntries });
+      api.setIndex({ v: 5, entries: navigationEntries });
       api.jumpToStory(-1);
 
       expect(navigate).toHaveBeenCalledWith('/story/a--1');
@@ -764,7 +764,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { navigate } = moduleArgs;
 
-      api.setIndex({ v: 4, entries: navigationEntries });
+      api.setIndex({ v: 5, entries: navigationEntries });
       api.jumpToStory(1);
       expect(navigate).not.toHaveBeenCalled();
     });
@@ -774,7 +774,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { navigate } = moduleArgs;
 
-      api.setIndex({ v: 4, entries: navigationEntries });
+      api.setIndex({ v: 5, entries: navigationEntries });
       api.jumpToStory(-1);
       expect(navigate).not.toHaveBeenCalled();
     });
@@ -784,7 +784,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { navigate } = moduleArgs;
 
-      api.setIndex({ v: 4, entries: navigationEntries });
+      api.setIndex({ v: 5, entries: navigationEntries });
       api.jumpToStory(1);
       expect(navigate).not.toHaveBeenCalled();
     });
@@ -797,7 +797,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
 
-      api.setIndex({ v: 4, entries: navigationEntries });
+      api.setIndex({ v: 5, entries: navigationEntries });
       const result = api.findSiblingStoryId('a--1', store.getState().index!, 1, false);
       expect(result).toBe('a--2');
     });
@@ -807,7 +807,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
 
-      api.setIndex({ v: 4, entries: navigationEntries });
+      api.setIndex({ v: 5, entries: navigationEntries });
       const result = api.findSiblingStoryId('a--1', store.getState().index!, 1, true);
       expect(result).toBe('b-c--1');
     });
@@ -819,7 +819,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { navigate } = moduleArgs;
 
-      api.setIndex({ v: 4, entries: navigationEntries });
+      api.setIndex({ v: 5, entries: navigationEntries });
       api.jumpToComponent(1);
       expect(navigate).toHaveBeenCalledWith('/story/b-c--1');
     });
@@ -833,7 +833,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { navigate } = moduleArgs;
 
-      api.setIndex({ v: 4, entries: navigationEntries });
+      api.setIndex({ v: 5, entries: navigationEntries });
       api.jumpToComponent(-1);
       expect(navigate).toHaveBeenCalledWith('/story/a--1');
     });
@@ -847,7 +847,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { navigate } = moduleArgs;
 
-      api.setIndex({ v: 4, entries: navigationEntries });
+      api.setIndex({ v: 5, entries: navigationEntries });
       api.jumpToComponent(1);
       expect(navigate).not.toHaveBeenCalled();
     });
@@ -857,7 +857,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { navigate } = moduleArgs;
 
-      api.setIndex({ v: 4, entries: navigationEntries });
+      api.setIndex({ v: 5, entries: navigationEntries });
       api.jumpToComponent(-1);
       expect(navigate).not.toHaveBeenCalled();
     });
@@ -869,7 +869,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { navigate } = moduleArgs;
 
-      api.setIndex({ v: 4, entries: navigationEntries });
+      api.setIndex({ v: 5, entries: navigationEntries });
       api.selectStory('a--2');
       expect(navigate).toHaveBeenCalledWith('/story/a--2');
     });
@@ -880,7 +880,7 @@ describe('stories API', () => {
       const { navigate } = moduleArgs;
 
       api.setIndex({
-        v: 4,
+        v: 5,
         entries: {
           ...navigationEntries,
           'intro--docs': {
@@ -902,7 +902,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
 
-      api.setIndex({ v: 4, entries: navigationEntries });
+      api.setIndex({ v: 5, entries: navigationEntries });
       api.selectStory('a--1');
       expect(store.getState().settings.lastTrackedStoryId).toBe('a--1');
     });
@@ -913,7 +913,7 @@ describe('stories API', () => {
         const { api } = initStories(moduleArgs as unknown as ModuleArgs);
         const { navigate } = moduleArgs;
 
-        api.setIndex({ v: 4, entries: navigationEntries });
+        api.setIndex({ v: 5, entries: navigationEntries });
         api.selectStory('a', '2');
         expect(navigate).toHaveBeenCalledWith('/story/a--2');
       });
@@ -923,7 +923,7 @@ describe('stories API', () => {
         const { api } = initStories(moduleArgs as unknown as ModuleArgs);
         const { navigate } = moduleArgs;
 
-        api.setIndex({ v: 4, entries: navigationEntries });
+        api.setIndex({ v: 5, entries: navigationEntries });
         api.selectStory(undefined, '2');
         expect(navigate).toHaveBeenCalledWith('/story/a--2');
       });
@@ -934,7 +934,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { navigate } = moduleArgs;
 
-      api.setIndex({ v: 4, entries: navigationEntries });
+      api.setIndex({ v: 5, entries: navigationEntries });
       api.selectStory('a--2');
       expect(navigate).toHaveBeenCalledWith('/story/a--2');
     });
@@ -944,7 +944,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { navigate } = moduleArgs;
 
-      api.setIndex({ v: 4, entries: navigationEntries });
+      api.setIndex({ v: 5, entries: navigationEntries });
       api.selectStory('a');
       expect(navigate).toHaveBeenCalledWith('/story/a--1');
     });
@@ -954,7 +954,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { navigate } = moduleArgs;
 
-      api.setIndex({ v: 4, entries: navigationEntries });
+      api.setIndex({ v: 5, entries: navigationEntries });
       api.selectStory('b');
       expect(navigate).toHaveBeenCalledWith('/story/b-c--1');
     });
@@ -964,7 +964,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { navigate } = moduleArgs;
 
-      api.setIndex({ v: 4, entries: navigationEntries });
+      api.setIndex({ v: 5, entries: navigationEntries });
       api.selectStory('A');
       expect(navigate).toHaveBeenCalledWith('/story/a--1');
     });
@@ -974,7 +974,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { navigate } = moduleArgs;
 
-      api.setIndex({ v: 4, entries: navigationEntries });
+      api.setIndex({ v: 5, entries: navigationEntries });
       api.selectStory();
       expect(navigate).toHaveBeenCalledWith('/story/a--1');
     });
@@ -985,7 +985,7 @@ describe('stories API', () => {
         const { api } = initStories(moduleArgs as unknown as ModuleArgs);
         const { navigate } = moduleArgs;
 
-        api.setIndex({ v: 4, entries: navigationEntries });
+        api.setIndex({ v: 5, entries: navigationEntries });
         api.selectStory('b/e', '1');
         expect(navigate).toHaveBeenCalledWith('/story/custom-id--1');
       });
@@ -995,7 +995,7 @@ describe('stories API', () => {
         const { api } = initStories(moduleArgs as unknown as ModuleArgs);
         const { navigate } = moduleArgs;
 
-        api.setIndex({ v: 4, entries: navigationEntries });
+        api.setIndex({ v: 5, entries: navigationEntries });
         api.selectStory('custom-id', '1');
         expect(navigate).toHaveBeenCalledWith('/story/custom-id--1');
       });
@@ -1005,7 +1005,7 @@ describe('stories API', () => {
         const { api } = initStories(moduleArgs as unknown as ModuleArgs);
         const { navigate } = moduleArgs;
 
-        api.setIndex({ v: 4, entries: navigationEntries });
+        api.setIndex({ v: 5, entries: navigationEntries });
         api.selectStory('b/e');
         expect(navigate).toHaveBeenCalledWith('/story/custom-id--1');
       });
@@ -1019,7 +1019,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { provider, store } = moduleArgs;
 
-      api.setIndex({ v: 4, entries: mockEntries });
+      api.setIndex({ v: 5, entries: mockEntries });
 
       provider.channel.emit(STORY_PREPARED, {
         id: 'component-a--story-1',
@@ -1045,7 +1045,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { provider } = moduleArgs;
 
-      api.setIndex({ v: 4, entries: mockEntries });
+      api.setIndex({ v: 5, entries: mockEntries });
 
       provider.channel.emit(STORY_PREPARED, {
         id: 'component-a--story-1',
@@ -1068,7 +1068,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { provider, store } = moduleArgs;
 
-      api.setIndex({ v: 4, entries: mockEntries });
+      api.setIndex({ v: 5, entries: mockEntries });
 
       provider.channel.emit(DOCS_PREPARED, {
         id: 'component-a--docs',
@@ -1092,7 +1092,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { provider, store } = moduleArgs;
 
-      api.setIndex({ v: 4, entries: mockEntries });
+      api.setIndex({ v: 5, entries: mockEntries });
 
       provider.channel.emit(CONFIG_ERROR, { message: 'Failed to run configure' });
       const { previewInitialized } = store.getState();
@@ -1104,7 +1104,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { provider } = moduleArgs;
 
-      api.setIndex({ v: 4, entries: mockEntries });
+      api.setIndex({ v: 5, entries: mockEntries });
 
       getEventMetadata.mockReturnValueOnce({
         sourceType: 'external',
@@ -1225,7 +1225,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
 
-      await api.setIndex({ v: 4, entries: mockEntries });
+      await api.setIndex({ v: 5, entries: mockEntries });
 
       await expect(
         api.experimental_updateStatus('a-addon-id', {
@@ -1279,7 +1279,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
 
-      await api.setIndex({ v: 4, entries: mockEntries });
+      await api.setIndex({ v: 5, entries: mockEntries });
 
       await expect(
         api.experimental_updateStatus('a-addon-id', {
@@ -1315,7 +1315,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
 
-      await api.setIndex({ v: 4, entries: mockEntries });
+      await api.setIndex({ v: 5, entries: mockEntries });
 
       await expect(
         api.experimental_updateStatus('a-addon-id', {
@@ -1353,7 +1353,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
 
-      await api.setIndex({ v: 4, entries: mockEntries });
+      await api.setIndex({ v: 5, entries: mockEntries });
 
       // setup initial state
       await expect(
@@ -1403,7 +1403,7 @@ describe('stories API', () => {
       const moduleArgs = createMockModuleArgs({});
       const { state, api } = initStories(moduleArgs as unknown as ModuleArgs);
 
-      await api.setIndex({ v: 4, entries: mockEntries });
+      await api.setIndex({ v: 5, entries: mockEntries });
 
       expect(state).toEqual(
         expect.objectContaining({
@@ -1416,7 +1416,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
 
-      await api.setIndex({ v: 4, entries: mockEntries });
+      await api.setIndex({ v: 5, entries: mockEntries });
 
       api.experimental_setFilter('myCustomFilter', () => true);
 
@@ -1434,7 +1434,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
 
-      await api.setIndex({ v: 4, entries: navigationEntries });
+      await api.setIndex({ v: 5, entries: navigationEntries });
       await api.experimental_setFilter('myCustomFilter', (item: any) => item.id.startsWith('a'));
 
       const { index } = store.getState();
@@ -1484,7 +1484,7 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
 
-      await api.setIndex({ v: 4, entries: navigationEntries });
+      await api.setIndex({ v: 5, entries: navigationEntries });
       await api.experimental_setFilter(
         'myCustomFilter',
         (item: any) =>
@@ -1538,10 +1538,10 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
 
-      await api.setIndex({ v: 4, entries: navigationEntries });
+      await api.setIndex({ v: 5, entries: navigationEntries });
       await api.experimental_setFilter('myCustomFilter', (item: any) => item.id.startsWith('a'));
 
-      await api.setIndex({ v: 4, entries: navigationEntries });
+      await api.setIndex({ v: 5, entries: navigationEntries });
 
       const { index } = store.getState();
 

@@ -263,7 +263,7 @@ describe('useStoriesJson', () => {
               "type": "story",
             },
           },
-          "v": 4,
+          "v": 5,
         }
       `);
     }, 20_000);

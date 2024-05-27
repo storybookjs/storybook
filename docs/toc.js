@@ -846,6 +846,11 @@ module.exports = {
           title: 'Reproduce',
           type: 'link',
         },
+        {
+          pathSegment: 'roadmap',
+          title: 'Roadmap',
+          type: 'link',
+        },
       ],
     },
     {

@@ -31,7 +31,7 @@ export class ExternalPreview<TRenderer extends Renderer = Renderer> extends Prev
 
   private titles = new ConstantMap<MetaExports, ComponentTitle>('title-');
 
-  private storyIndex: StoryIndex = { v: 4, entries: {} };
+  private storyIndex: StoryIndex = { v: 5, entries: {} };
 
   private moduleExportsByImportPath: Record<Path, ModuleExports> = {};
 

@@ -6,7 +6,7 @@ import { StoryIndexStore } from './StoryIndexStore';
 vi.mock('@storybook/channel-websocket', () => () => ({ on: vi.fn() }));
 
 const storyIndex: StoryIndex = {
-  v: 4,
+  v: 5,
   entries: {
     'component-one--a': {
       type: 'story',
@@ -34,7 +34,7 @@ const storyIndex: StoryIndex = {
 
 const makeStoryIndex = (titlesAndNames: any) => {
   return {
-    v: 4,
+    v: 5,
     entries: Object.fromEntries(
       titlesAndNames.map(([title, name]: [any, any]) => {
         const id = `${title}--${name}`.replace('/', '-');

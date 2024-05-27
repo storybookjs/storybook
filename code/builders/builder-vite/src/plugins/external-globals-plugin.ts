@@ -88,7 +88,6 @@ export async function externalGlobalsPlugin(externals: Record<string, string>) {
         code: src.toString(),
         map: src.generateMap({
           source: id,
-          includeContent: true,
           hires: true,
         }),
       };

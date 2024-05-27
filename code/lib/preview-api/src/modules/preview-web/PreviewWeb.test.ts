@@ -314,7 +314,7 @@ describe('PreviewWeb', () => {
         preview.onStoriesChanged({
           importFn: newImportFn,
           storyIndex: {
-            v: 4,
+            v: 5,
             entries: {
               ...storyIndex.entries,
               'component-one--missing': {
@@ -369,7 +369,7 @@ describe('PreviewWeb', () => {
           preview.onStoriesChanged({
             importFn: newImportFn,
             storyIndex: {
-              v: 4,
+              v: 5,
               entries: {
                 ...storyIndex.entries,
                 'component-one--missing': {
@@ -2977,7 +2977,7 @@ describe('PreviewWeb', () => {
       const newImportFn = vi.fn(async (path) => ({ ...componentOneExports }));
 
       const newStoryIndex = {
-        v: 4,
+        v: 5,
         entries: {
           ...storyIndex.entries,
           'component-one--a': {
@@ -3174,7 +3174,7 @@ describe('PreviewWeb', () => {
       });
 
       const newStoryIndex = {
-        v: 4,
+        v: 5,
         entries: {
           'component-one--b': storyIndex.entries['component-one--b'],
         },

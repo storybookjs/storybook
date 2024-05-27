@@ -5,9 +5,9 @@ import { preprocess } from 'svelte/compiler';
 import type { Plugin } from 'vite';
 
 import { getNameFromFilename } from '../utils/get-component-name.js';
-import { getAST } from '../utils/parser/ast.js';
+import { getSvelteAST } from '../utils/parser/ast.js';
 import { extractStories } from '../utils/parser/extract-stories.js';
-import { extractASTNodes } from '../utils/parser/extract-ast-nodes.js';
+import { extractSvelteASTNodes } from '../utils/parser/extract-ast-nodes.js';
 import { createAppendix } from '../utils/transformer/create-appendix.js';
 
 export async function postTransformPlugin(): Promise<Plugin> {
@@ -23,42 +23,43 @@ export async function postTransformPlugin(): Promise<Plugin> {
   return {
     name: 'storybook:addon-svelte-csf-plugin-post',
     enforce: 'post',
-    async transform(code_, id) {
-      if (!filter(id)) return undefined;
+    async transform(code_, filename) {
+      if (!filter(filename)) return undefined;
 
       let code = new MagicString(code_);
 
-      const componentName = getNameFromFilename(id);
+      const componentName = getNameFromFilename(filename);
 
       if (!componentName) {
         // TODO: make error message more user friendly
-        // which file, what happened, how to fix
-        throw new Error(`Failed to extract component name from filename: ${id}`);
+        // what happened, how to fix
+        throw new Error(`Failed to extract component name from filename: ${filename}`);
       }
 
-      let source = fs.readFileSync(id).toString();
+      let source = fs.readFileSync(filename).toString();
 
       if (svelteConfig?.preprocess) {
         const processed = await preprocess(source.toString(), svelteConfig.preprocess, {
-          filename: id,
+          filename: filename,
         });
 
         source = processed.code;
       }
 
-      const { module, fragment } = getAST(source);
-      const nodes = await extractASTNodes(module);
+      const svelteAST = getSvelteAST({ source, filename });
+      const nodes = await extractSvelteASTNodes({ ast: svelteAST, filename });
       const storiesFileMeta = await extractStories({
+        ast: svelteAST,
         nodes,
         source,
-        fragment,
+        filename,
       });
 
-      createAppendix({ componentName, code, storiesFileMeta, nodes });
+      createAppendix({ componentName, code, storiesFileMeta, nodes, filename });
 
       return {
         code: code.toString(),
-        map: code.generateMap({ hires: true, source: id }),
+        map: code.generateMap({ hires: true, source: filename }),
       };
     },
   };

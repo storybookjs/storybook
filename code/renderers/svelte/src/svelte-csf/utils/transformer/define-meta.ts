@@ -1,20 +1,29 @@
-import type { AssignmentProperty, Program } from 'estree';
+// TODO: Refactor - move it to post-transform. And from the ESTree AST, not source Svelte AST.
+
+import type { AssignmentProperty } from 'estree';
 import { toJs } from 'estree-util-to-js';
 import type MagicString from 'magic-string';
 import type { BaseNode } from 'svelte/compiler';
 
-import { type AddonASTNodes } from '../parser/types.js';
+import type { SvelteASTNodes } from '../parser/extract-ast-nodes.js';
 
-export function transformDefineMeta({ code, nodes }: { code: MagicString; nodes: AddonASTNodes }) {
-  const { defineMetaVar } = nodes;
-  const { declarations } = defineMetaVar;
+interface Params {
+  code: MagicString;
+  nodes: SvelteASTNodes;
+  filename: string;
+}
+
+export function transformDefineMeta(params: Params) {
+  const { code, nodes, filename } = params;
+  const { defineMetaVariableDeclaration } = nodes;
+  const { declarations } = defineMetaVariableDeclaration;
   const { id } = declarations[0];
 
   if (id.type !== 'ObjectPattern') {
     // TODO: make error message more user friendly
-    // which file, what happened, how to fix
+    // what happened, how to fix
     throw new Error(
-      'Internal error during attempt to pre-transform the Stories source code - expected object pattern.'
+      `Internal error during attempt to pre-transform the Stories source code - expected object pattern. Stories file: ${filename}`
     );
   }
 
@@ -25,7 +34,7 @@ export function transformDefineMeta({ code, nodes }: { code: MagicString; nodes:
   if (hasDestructuredMeta) {
     return code;
   }
-  
+
   const metaProperty: AssignmentProperty = {
     type: 'Property',
     kind: 'init',
@@ -44,7 +53,15 @@ export function transformDefineMeta({ code, nodes }: { code: MagicString; nodes:
 
   id.properties.push(metaProperty);
 
-  const { start, end } = defineMetaVar as unknown as BaseNode;
+  const { start, end } = defineMetaVariableDeclaration as unknown as BaseNode;
 
-  code.update(start, end, toJs(defineMetaVar as unknown as Program).value);
+  code.update(
+    start,
+    end,
+    toJs({
+      type: 'Program',
+      sourceType: 'module',
+      body: [defineMetaVariableDeclaration],
+    }).value
+  );
 }

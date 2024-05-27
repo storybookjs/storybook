@@ -4,9 +4,10 @@ import type { SvelteNode } from 'svelte/compiler';
 import type { ObjectExpression, Property } from 'estree';
 import type { Visitors } from 'zimmerframe';
 
-import type { AddonASTNodes, DefineMeta } from '../types.js';
+import type { DefineMeta } from '../types.js';
+import type { SvelteASTNodes } from '../extract-ast-nodes.js';
 
-export async function walkOnDefineMeta(nodes: AddonASTNodes): Promise<DefineMeta> {
+export async function walkOnDefineMeta(nodes: SvelteASTNodes): Promise<DefineMeta> {
   const { walk } = await import('zimmerframe');
 
   const state: Partial<DefineMeta> = {};
@@ -55,7 +56,7 @@ export async function walkOnDefineMeta(nodes: AddonASTNodes): Promise<DefineMeta
     },
   };
 
-  walk(nodes.defineMetaVar, state, visitors);
+  walk(nodes.defineMetaVariableDeclaration, state, visitors);
 
   return state;
 }

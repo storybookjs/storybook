@@ -12,6 +12,9 @@ export interface StoriesFileMeta {
   stories: Record<StoryMeta['id'], StoryMeta>;
 }
 
+/**
+ * @deprecated TODO: Remove it
+ */
 export const ADDON_AST_NODES = {
   defineMeta: 'defineMeta',
   Story: 'Story',
@@ -19,6 +22,7 @@ export const ADDON_AST_NODES = {
 
 /**
  * AST nodes extracted from the AST compile `(svelte.compile)` needed for further code transformation.
+ * @deprecated TODO: Remove it
  */
 export interface AddonASTNodes {
   /**

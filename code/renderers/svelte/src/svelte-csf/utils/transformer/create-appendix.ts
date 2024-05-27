@@ -1,25 +1,27 @@
+// TODO: Refactor, use Rollup parser (ESTree AST) to transform the output.
+
 import url from 'node:url';
 import MagicString from 'magic-string';
 
-import type { AddonASTNodes, StoriesFileMeta } from '../parser/types.js';
+import type { StoriesFileMeta } from '../parser/types.js';
+import type { SvelteASTNodes } from '../parser/extract-ast-nodes.js';
 
 const parserModulePath = url
   .fileURLToPath(new URL('../../../dist/utils/parser/collect-stories.js', import.meta.url))
   .replace(/\\/g, '\\\\'); // For Windows paths
 
-export function createAppendix({
-  componentName,
-  code,
-  storiesFileMeta,
-  nodes,
-}: {
+interface Params {
   componentName: string;
   code: MagicString;
   storiesFileMeta: StoriesFileMeta;
-  nodes: AddonASTNodes;
-}) {
+  nodes: SvelteASTNodes;
+  filename: string;
+}
+
+export function createAppendix(params: Params) {
+  const { componentName, code, storiesFileMeta, nodes } = params;
   const { stories } = storiesFileMeta;
-  const { defineMetaVar } = nodes;
+  const { defineMetaVariableDeclaration } = nodes;
   const parsedStoriesVariable = '__parsed';
   const exportsOrderVariable = '__namedExportsOrder';
 
@@ -42,7 +44,7 @@ export function createAppendix({
   const appendix = [
     "", // NOTE: Adds a new line at the end of the code
     `import parser from '${parserModulePath}';`,
-    `const ${parsedStoriesVariable} = parser(${componentName}, ${JSON.stringify(storiesFileMeta)}, ${findMetaPropertyName(defineMetaVar) ?? "meta"});`,
+    `const ${parsedStoriesVariable} = parser(${componentName}, ${JSON.stringify(storiesFileMeta)}, ${findMetaPropertyName(defineMetaVariableDeclaration) ?? "meta"});`,
     `export default ${parsedStoriesVariable}.meta;`,
     `export const ${exportsOrderVariable} = ${JSON.stringify(exportsOrder)};`,
     storiesExports,
@@ -58,8 +60,9 @@ function sanitizeStoryId(id: string) {
   return id.replace(/\s|-/g, '_');
 }
 
-function findMetaPropertyName(defineMetaVar: AddonASTNodes['defineMetaVar']) {
-  const { declarations } = defineMetaVar;
+// FIXME: Remove/Move it away from here, should be in parser analysis
+function findMetaPropertyName(node: SvelteASTNodes['defineMetaVariableDeclaration']) {
+  const { declarations } = node;
   const { id } = declarations[0];
 
   if (id.type === 'ObjectPattern') {

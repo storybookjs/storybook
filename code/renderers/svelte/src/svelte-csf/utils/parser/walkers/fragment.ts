@@ -10,7 +10,8 @@ import type {
 import type { Visitors } from 'zimmerframe';
 import { logger } from '@storybook/client-logger';
 
-import { type AddonASTNodes, type FragmentMeta, type StoryMeta } from '../types.js';
+import { type FragmentMeta, type StoryMeta } from '../types.js';
+import type { SvelteASTNodes } from '../extract-ast-nodes.js';
 
 /**
  * NOTE: Fragment is the 'html' code - not the one innside `<script>` nor `<style>`
@@ -22,7 +23,7 @@ export async function walkOnFragment({
 }: {
   fragment: Root['fragment'];
   source: string;
-  nodes: AddonASTNodes;
+  nodes: SvelteASTNodes;
 }): Promise<FragmentMeta> {
   const { walk } = await import('zimmerframe');
 
@@ -40,7 +41,7 @@ export async function walkOnFragment({
     },
 
     Component(node, { state }) {
-      if (node.name === nodes.Story.name) {
+      if (node.name === nodes.storyIdentifier.name) {
         const { attributes } = node;
         const name = getStoryName({ attributes, storiesNames });
         const sourceAttribute = getSourceAttribute(attributes);

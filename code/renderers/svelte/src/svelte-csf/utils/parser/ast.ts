@@ -1,7 +1,16 @@
-import { compile, type Root } from 'svelte/compiler';
+import { compile, type Root } from "svelte/compiler";
 
-export function getAST(source: string) {
-  const { ast }: { ast: Root } = compile(source, { modernAst: true });
+interface GetSvelteASTOptions {
+	source: string;
+	filename: string;
+}
 
-  return ast;
+export function getSvelteAST(options: GetSvelteASTOptions) {
+	const { filename, source } = options;
+	const { ast }: { ast: Root } = compile(source, {
+		filename,
+		modernAst: true,
+	});
+
+	return ast;
 }

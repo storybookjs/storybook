@@ -1,17 +1,44 @@
-import type { Script } from 'svelte/compiler';
+import type { Root } from "svelte/compiler";
 
-import type { AddonASTNodes } from './types.js';
-import { walkOnModule } from './walkers/module.js';
+import { extractModuleNodes } from "./extract/svelte/module-nodes.js";
+import { extractFragmentNodes } from "./extract/svelte/fragment-nodes.js";
 
 /**
- * Pick only required AST nodes for further usage in this addon.
+ * Selected nodes extracted from the Svelte AST via `svelte.compile`,
+ * needed for further code analysis/transformation.
  */
-export async function extractASTNodes(module: Script | null): Promise<AddonASTNodes> {
-  if (!module) {
-    // TODO: make error message more user friendly
-    // which file, what happened, how to fix
-    throw new Error(`The stories file must have a module tag ('<script context="module">').`);
-  }
+export type SvelteASTNodes = Awaited<ReturnType<typeof extractModuleNodes>> &
+	Awaited<ReturnType<typeof extractFragmentNodes>>;
 
-  return walkOnModule(module);
+interface ExtractSvelteASTNodesOptions {
+	ast: Root;
+	filename: string;
+}
+
+/**
+ * Pick only required Svelte AST nodes for further usage in this addon.
+ */
+export async function extractSvelteASTNodes(
+	options: ExtractSvelteASTNodesOptions,
+): Promise<SvelteASTNodes> {
+	const { ast, filename } = options;
+	const { module, fragment } = ast;
+
+	// TODO: Perhaps we can use some better way to insert error messages?
+	// String interpolations doesn't feel right if we want to provide a whole example (code snippet).
+	if (!module) {
+		throw new Error(
+			`Couldn't find a module tag. Add (<script context="module">) to the stories file: ${filename}`,
+		);
+	}
+
+	const [moduleNodes, fragmentNodes] = await Promise.all([
+		extractModuleNodes({ module, filename }),
+		extractFragmentNodes({ fragment, filename }),
+	]);
+
+	return {
+		...moduleNodes,
+		...fragmentNodes,
+	};
 }

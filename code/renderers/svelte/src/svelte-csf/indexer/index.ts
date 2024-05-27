@@ -1,42 +1,91 @@
-import type { Indexer } from '@storybook/types';
-import { preprocess } from 'svelte/compiler';
-import fs from 'node:fs/promises';
+import fs from "node:fs/promises";
 
-import { getAST } from '../utils/parser/ast.js';
-import { extractStories } from '../utils/parser/extract-stories.js';
-import { extractASTNodes } from '../utils/parser/extract-ast-nodes.js';
+import { combineTags } from "@storybook/csf";
+import type { IndexInput, Indexer } from "@storybook/types";
+import { preprocess } from "svelte/compiler";
+
+import { getSvelteAST } from "../utils/parser/ast.js";
+import { extractSvelteASTNodes } from "../utils/parser/extract-ast-nodes.js";
+import { extractMetaPropertiesNodes } from "../utils/parser/extract/svelte/meta-properties.js";
+import {
+	getMetaIdValue,
+	getMetaTagsValue,
+	getMetaTitleValue,
+} from "../utils/parser/analyse/meta-properties.js";
+import { extractStoryAttributesNodes } from "../utils/parser/extract/svelte/Story-attributes.js";
+import {
+	getNameFromStoryAttribute,
+	getTagsFromStoryAttribute,
+} from "../utils/parser/analyse/Story-attributes.js";
 
 export const indexer: Indexer = {
-  test: /\.svelte$/,
-  createIndex: async (fileName, { makeTitle }) => {
-    let [source, { loadSvelteConfig }] = await Promise.all([
-      fs.readFile(fileName, { encoding: 'utf8' }),
-      import('@sveltejs/vite-plugin-svelte'),
-    ]);
+	test: /\.svelte$/,
+	createIndex: async (filename, { makeTitle }) => {
+		let [source, { loadSvelteConfig }] = await Promise.all([
+			fs.readFile(filename, { encoding: "utf8" }),
+			import("@sveltejs/vite-plugin-svelte"),
+		]);
 
-    const svelteConfig = await loadSvelteConfig();
-    if (svelteConfig?.preprocess) {
-      source = (
-        await preprocess(source, svelteConfig.preprocess, {
-          filename: fileName,
-        })
-      ).code;
-    }
+		const svelteConfig = await loadSvelteConfig();
 
-    const { module, fragment } = getAST(source);
-    const nodes = await extractASTNodes(module);
+		if (svelteConfig?.preprocess) {
+			source = (
+				await preprocess(source, svelteConfig.preprocess, {
+					filename: filename,
+				})
+			).code;
+		}
 
-    const { defineMeta, stories } = await extractStories({ nodes, fragment, source });
+		const svelteAST = getSvelteAST({ source, filename });
+		const nodes = await extractSvelteASTNodes({ ast: svelteAST, filename });
+		const [metaPropertiesNodes, storiesAttributesNodes] = await Promise.all([
+			extractMetaPropertiesNodes({
+				nodes,
+				filename,
+				properties: ["id", "title", "tags"],
+			}),
+			Promise.all(
+				nodes.storyComponents.map(({ component }) => {
+					return extractStoryAttributesNodes({
+						component: component,
+						filename,
+						attributes: ["name", "tags"],
+					});
+				}),
+			),
+		]);
 
-    return Object.entries(stories).map(([storyId, storyMeta]) => ({
-      type: 'story',
-      importPath: fileName,
-      exportName: storyId,
-      name: storyMeta.name,
-      title: makeTitle(defineMeta.title),
-      // TODO: include tags from stories, not just from defineMeta
-      tags: defineMeta.tags,
-      // TODO: add metaId if defineMeta has custom id
-    }));
-  },
+		const metaTitle = metaPropertiesNodes.title
+			? makeTitle(
+					getMetaTitleValue({ node: metaPropertiesNodes.title, filename }),
+				)
+			: undefined;
+		const metaTags = metaPropertiesNodes.tags
+			? getMetaTagsValue({ node: metaPropertiesNodes.tags, filename })
+			: [];
+		const metaId = metaPropertiesNodes.id
+			? getMetaIdValue({ node: metaPropertiesNodes.id, filename })
+			: undefined;
+
+		return storiesAttributesNodes.map((attributeNode) => {
+			const exportName = getNameFromStoryAttribute({
+				node: attributeNode.name,
+				filename,
+			});
+
+			return {
+				type: "story",
+				importPath: filename,
+				exportName,
+				// TODO: Ask if this is important to set. If yes, then from what? Story attribute? That's `exportName`.
+				// name: ...
+				title: metaTitle,
+				tags: combineTags(
+					...metaTags,
+					...getTagsFromStoryAttribute({ node: attributeNode.tags, filename }),
+				),
+				__id: metaId,
+			} satisfies IndexInput;
+		});
+	},
 };

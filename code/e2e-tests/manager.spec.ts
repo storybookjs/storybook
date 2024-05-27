@@ -203,7 +203,7 @@ test.describe('Manager UI', () => {
       const mobileNavigationHeading = await sbPage.page.locator('[title="Open navigation menu"]');
 
       // navigation menu is closed
-      await expect(mobileNavigationHeading).toHaveText('Configure your project/Docs');
+      await expect(mobileNavigationHeading).toHaveText('All UI/Docs');
       await expect(sbPage.page.locator('#storybook-explorer-menu')).not.toBeVisible();
 
       // open navigation menu
@@ -214,7 +214,7 @@ test.describe('Manager UI', () => {
       // navigation menu is still open
       await expect(sbPage.page.locator('#storybook-explorer-menu')).toBeVisible();
       // story has not changed
-      await expect(sbPage.page.url()).toContain('configure-your-project');
+      await expect(sbPage.page.url()).toContain('all-ui');
 
       await sbPage.navigateToStory('Example/Button', 'Secondary');
 

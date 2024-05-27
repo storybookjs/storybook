@@ -1,0 +1,406 @@
+import React, { useState, useEffect } from 'react';
+import ButtonMeta from './Button.stories';
+import HeaderMeta from './Header.stories';
+import PageMeta from './Page.stories';
+import { loadStories } from './loadStories';
+import { IconButton } from '@storybook/components';
+import { 
+  Canvas, 
+  Meta, 
+  Controls, 
+  Title, 
+  Stories 
+} from "@storybook/blocks";
+import { 
+  ExpandAltIcon, 
+  CollapseIcon as CollapseIconSvg 
+} from '@storybook/icons';
+
+import Github from "./assets/github.svg";
+import Discord from "./assets/discord.svg";
+import Youtube from "./assets/youtube.svg";
+import Tutorials from "./assets/tutorials.svg";
+import Styling from "./assets/styling.png";
+import Context from "./assets/context.png";
+import Assets from "./assets/assets.png";
+import Docs from "./assets/docs.png";
+import Share from "./assets/share.png";
+import FigmaPlugin from "./assets/figma-plugin.png";
+import Testing from "./assets/testing.png";
+import Accessibility from "./assets/accessibility.png";
+import Theming from "./assets/theming.png";
+import AddonLibrary from "./assets/addon-library.png";
+
+export const RightArrow = () => (<svg 
+    viewBox="0 0 14 14" 
+    width="8px" 
+    height="14px" 
+    style={{ 
+      marginLeft: '4px',
+      display: 'inline-block',
+      shapeRendering: 'inherit',
+      verticalAlign: 'middle',
+      fill: 'currentColor',
+      'path fill': 'currentColor'
+    }}
+>
+  <path d="m11.1 7.35-5.5 5.5a.5.5 0 0 1-.7-.7L10.04 7 4.9 1.85a.5.5 0 1 1 .7-.7l5.5 5.5c.2.2.2.5 0 .7Z" />
+</svg>);
+
+export const DownArrow = () => (<svg 
+    viewBox="0 0 14 14" 
+    width="14px" 
+    height="8px" 
+    style={{ 
+      marginLeft: '4px',
+      display: 'inline-block',
+      shapeRendering: 'inherit',
+      verticalAlign: 'middle',
+      fill: 'currentColor',
+      'path fill': 'currentColor'
+    }}
+>
+  <path d="m7.35 11.1-5.5-5.5a.5.5 0 0 1 .7-.7l5.5 5.5 5.15-5.15a.5.5 0 1 1 .7.7l-5.5 5.5c-.2.2-.5.2-.7 0Z" />
+</svg>);
+
+{ /* Generate a link to the docs page for a story */ }
+export const generateDocsLink = (title) => `?path=/story/${title.replace(/\//g, '-').toLowerCase()}--docs`;
+
+{ /* Render a story item */ }
+export const StoryItem = ({ 
+  storyKey, 
+  story, 
+  isExpanded 
+}) => {
+
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div key={storyKey}>
+      <h3 
+        onClick={() => {
+          setExpanded(!expanded)
+        }}
+        style={{ cursor: 'pointer' }}
+        className={(expanded || isExpanded) ? 'expanded' : ''}
+      >
+        {storyKey}
+        {expanded ? <DownArrow /> : <RightArrow />}
+      </h3>
+
+      {(expanded || isExpanded) && (
+        <>
+          <Canvas 
+            of={story} 
+            withToolbar={true} 
+          />
+          <Controls of={story} />
+        </>
+      )}
+    </div>
+  );
+};
+
+{ /* Render all stories */ }
+export const AllUI = () => {
+
+  const [allStories, setAllStories] = useState([]);
+
+  // Expand/collapse all stories
+  const [isExpanded, setExpanded] = useState(false);
+
+  // Load dinamically all stories on mount
+  useEffect(() => {
+
+    const fetchStories = async () => {
+      const stories = await loadStories();
+
+      setAllStories(stories);
+    };
+
+    fetchStories();
+  }, []);
+
+  // Extract title from path
+  const getTitle = (title) => title.split('/').pop();
+
+  // Generate class name from title
+  const getClassName = (title) => title.split('/').pop().toLowerCase();
+
+  return (
+    <div className="sb-sub-container">
+      <div className="sb-section-title">
+        Showcase all UI elements available in the Storybook UI. This is a great way to get familiar with the UI and see how different components are rendered.
+      </div>
+
+      <div className="expand-collapse-button-container">
+        <IconButton
+          className="sidebar-subheading-action"
+          aria-label={isExpanded ? 'Expand' : 'Collapse'}
+          data-action="expand-all"
+          data-expanded={isExpanded}
+          onClick={(event) => {
+            event.preventDefault();
+            setExpanded(!isExpanded);
+          }}
+        >
+          {isExpanded ? <CollapseIconSvg /> : <ExpandAltIcon />}
+        </IconButton>
+      </div>
+
+      {allStories.map(({ meta, stories }) => (
+        <div key={meta.title} className={getClassName(meta.title)}>
+          <h1>{getTitle(meta.title)}</h1>
+          <a href={generateDocsLink(meta.title)}>
+            Go to {meta.title} page
+          </a>
+
+          {stories.map(([storyKey, story]) => (
+            <StoryItem 
+              key={storyKey} 
+              storyKey={storyKey} 
+              story={story} 
+              isExpanded={isExpanded} 
+            />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+<Meta title="All UI"/>
+
+# All UI
+<div className="sb-container">
+  <AllUI />
+</div>
+
+<div className='sb-addon'>
+  <div className='sb-addon-text'>
+    <h4>Addons</h4>
+    <p className="sb-section-item-paragraph">Integrate your tools with Storybook to connect workflows.</p>
+    <a
+        href="https://storybook.js.org/integrations/"
+        target="_blank"
+      >Discover all addons<RightArrow /></a>
+  </div>
+  <div className='sb-addon-img'>
+    <img src={AddonLibrary} alt="Integrate your tools with Storybook to connect workflows." />
+  </div>
+</div>
+
+<div className="sb-section sb-socials">
+    <div className="sb-section-item">
+      <img src={Github} alt="Github logo" className="sb-explore-image"/>
+      Join our contributors building the future of UI development.
+
+      <a
+        href="https://github.com/storybookjs/storybook"
+        target="_blank"
+      >Star on GitHub<RightArrow /></a>
+    </div>
+    <div className="sb-section-item">
+      <img src={Discord} alt="Discord logo" className="sb-explore-image"/>
+      <div>
+        Get support and chat with frontend developers.
+
+        <a
+          href="https://discord.gg/storybook"
+          target="_blank"
+        >Join Discord server<RightArrow /></a>
+      </div>
+    </div>
+    <div className="sb-section-item">
+      <img src={Youtube} alt="Youtube logo" className="sb-explore-image"/>
+      <div>
+        Watch tutorials, feature previews and interviews.
+
+        <a
+          href="https://www.youtube.com/@chromaticui"
+          target="_blank"
+        >Watch on YouTube<RightArrow /></a>
+      </div>
+    </div>
+    <div className="sb-section-item">
+      <img src={Tutorials} alt="A book" className="sb-explore-image"/>
+      <p>Follow guided walkthroughs on for key workflows.</p>
+
+      <a
+          href="https://storybook.js.org/tutorials/"
+          target="_blank"
+        >Discover tutorials<RightArrow /></a>
+    </div>
+</div>
+
+<style>
+  {`
+  .sb-container {
+    margin-bottom: 48px;
+  }
+
+  .sb-section {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+  }
+
+  img {
+    object-fit: cover;
+  }
+
+  .sb-section-title {
+    margin-bottom: 32px;
+  }
+
+  .sb-section a:not(h1 a, h2 a, h3 a) {
+    font-size: 14px;
+  }
+
+  .sb-section-item, .sb-grid-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sb-section-item-heading {
+    padding-top: 20px !important;
+    padding-bottom: 5px !important;
+    margin: 0 !important;
+  }
+  .sb-section-item-paragraph {
+    margin: 0;
+    padding-bottom: 10px;
+  }
+
+  .sb-chevron {
+    margin-left: 5px;
+  }
+
+  .sb-features-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-gap: 32px 20px;
+  }
+
+  .sb-socials {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .sb-socials p {
+    margin-bottom: 10px;
+  }
+
+  .sb-explore-image {
+    max-height: 32px;
+    align-self: flex-start;
+  }
+
+  .sb-addon {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    position: relative;
+    background-color: #EEF3F8;
+    border-radius: 5px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    background: #EEF3F8;
+    height: 180px;
+    margin-bottom: 48px;
+    overflow: hidden;
+  }
+
+  .sb-addon-text {
+    padding-left: 48px;
+    max-width: 240px;
+  }
+
+  .sb-addon-text h4 {
+    padding-top: 0px;
+  }
+
+  .sb-addon-img {
+    position: absolute;
+    left: 345px;
+    top: 0;
+    height: 100%;
+    width: 200%;
+    overflow: hidden;
+  }
+
+  .sb-addon-img img {
+    width: 650px;
+    transform: rotate(-15deg);
+    margin-left: 40px;
+    margin-top: -72px;
+    box-shadow: 0 0 1px rgba(255, 255, 255, 0);
+    backface-visibility: hidden;
+  }
+
+  @media screen and (max-width: 800px) {
+    .sb-addon-img {
+      left: 300px;
+    }
+  }
+
+  @media screen and (max-width: 600px) {
+    .sb-section {
+      flex-direction: column;
+    }
+
+    .sb-features-grid {
+      grid-template-columns: repeat(1, 1fr);
+    }
+
+    .sb-socials {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .sb-addon {
+      height: 280px;
+      align-items: flex-start;
+      padding-top: 32px;
+      overflow: hidden;
+    }
+
+    .sb-addon-text {
+      padding-left: 24px;
+    }
+
+    .sb-addon-img {
+      right: 0;
+      left: 0;
+      top: 130px;
+      bottom: 0;
+      overflow: hidden;
+      height: auto;
+      width: 124%;
+    }
+
+    .sb-addon-img img {
+      width: 1200px;
+      transform: rotate(-12deg);
+      margin-left: 0;
+      margin-top: 48px;
+      margin-bottom: -40px;
+      margin-left: -24px;
+    }
+  }
+
+  .expanded {
+    color: #1ea7fd;
+  }
+
+  .expand-collapse-button-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+  }
+
+  .sidebar-subheading-action {
+    display: flex;
+  }
+  `}
+</style>

@@ -2,7 +2,10 @@
   import type { Meta } from '@storybook/svelte';
   import type { ComponentType, SvelteComponent } from 'svelte';
 
-  import { type StoriesRepository, createStoriesExtractorContext } from '../../renderer/contexts.svelte.js';
+  import {
+    type StoriesRepository,
+    createStoriesExtractorContext,
+  } from '../../renderer/contexts/extractor.svelte.js';
 
   interface Props {
     Stories: Component extends SvelteComponent ? ComponentType<Component> : never;

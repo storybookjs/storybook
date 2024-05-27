@@ -7,9 +7,9 @@ import { mount, unmount, type ComponentType } from 'svelte';
 
 import type { StoriesFileMeta } from './types.js';
 
-import type { StoriesRepository } from '../../renderer/contexts.svelte.js';
 import StoriesExtractor from './StoriesExtractor.svelte';
 import StoryRenderer from '../../renderer/StoryRenderer.svelte';
+import type { StoriesRepository } from '../../renderer/contexts/extractor.svelte.js';
 
 const createFragment = document.createDocumentFragment
   ? () => document.createDocumentFragment()

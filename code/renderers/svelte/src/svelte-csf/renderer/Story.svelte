@@ -2,7 +2,9 @@
   import type { Meta, StoryObj, StoryContext } from '@storybook/svelte';
   import type { Snippet } from 'svelte';
 
-  import { useStoriesExtractor, useStoryRenderer, useStoriesTemplate } from './contexts.svelte.js';
+  import { useStoriesExtractor } from './contexts/extractor.svelte.js';
+  import { useStoryRenderer } from './contexts/renderer.svelte.js';
+  import { useStoriesTemplate } from './contexts/template.svelte.js';
 
   type Props = {
     /**

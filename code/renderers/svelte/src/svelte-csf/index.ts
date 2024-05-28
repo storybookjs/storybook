@@ -3,7 +3,7 @@ import type { Meta, StoryContext as BaseStoryContext, StoryObj } from '@storyboo
 import Story from './renderer/Story.svelte';
 
 export type { Story };
-export { setTemplate } from './renderer/contexts/template.svelte.js';
+export { setTemplate } from './runtime/contexts/template.svelte.js';
 
 export function defineMeta<const TMeta extends Meta = Meta>(meta: TMeta) {
   return {

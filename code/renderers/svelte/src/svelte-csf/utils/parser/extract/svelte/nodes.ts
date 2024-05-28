@@ -1,7 +1,7 @@
 import type { Root } from 'svelte/compiler';
 
-import { extractModuleNodes } from './extract/svelte/module-nodes.js';
-import { extractFragmentNodes } from './extract/svelte/fragment-nodes.js';
+import { extractModuleNodes } from './module-nodes.js';
+import { extractFragmentNodes } from './fragment-nodes.js';
 
 /**
  * Selected nodes extracted from the Svelte AST via `svelte.compile`,
@@ -32,10 +32,12 @@ export async function extractSvelteASTNodes(
     );
   }
 
-  const [moduleNodes, fragmentNodes] = await Promise.all([
-    extractModuleNodes({ module, filename }),
-    extractFragmentNodes({ fragment, filename }),
-  ]);
+  const moduleNodes = await extractModuleNodes({ module, filename });
+  const fragmentNodes = await extractFragmentNodes({
+    fragment,
+    filename,
+    moduleNodes,
+  });
 
   return {
     ...moduleNodes,

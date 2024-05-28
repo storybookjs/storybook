@@ -1,45 +1,34 @@
+// TODO: Refactor: Get rid of this file, and use `./extract/fragment-nodes.ts`
+
 import dedent from 'dedent';
-import type {
-  Attribute,
-  Component,
-  SnippetBlock,
-  Comment,
-  Root,
-  SvelteNode,
-} from 'svelte/compiler';
+import type { Attribute, Component, SnippetBlock, Root, SvelteNode } from 'svelte/compiler';
 import type { Visitors } from 'zimmerframe';
 import { logger } from '@storybook/client-logger';
 
 import { type FragmentMeta, type StoryMeta } from '../types.js';
-import type { SvelteASTNodes } from '../extract-ast-nodes.js';
+import type { SvelteASTNodes } from '../extract/svelte/nodes.js';
+
+interface Params {
+  fragment: Root['fragment'];
+  source: string;
+  nodes: SvelteASTNodes;
+}
 
 /**
  * NOTE: Fragment is the 'html' code - not the one innside `<script>` nor `<style>`
  */
-export async function walkOnFragment({
-  fragment,
-  source,
-  nodes,
-}: {
-  fragment: Root['fragment'];
-  source: string;
-  nodes: SvelteASTNodes;
-}): Promise<FragmentMeta> {
+export async function walkOnFragment(params: Params): Promise<FragmentMeta> {
   const { walk } = await import('zimmerframe');
+
+  const { fragment, source, nodes } = params;
 
   const state: FragmentMeta = {
     stories: {},
   };
-  let latestComment: Comment | undefined;
 
   const storiesIds = new Set<string>(Object.keys(state.stories));
   const storiesNames = new Set<string>();
   const visitors: Visitors<SvelteNode, typeof state> = {
-    Comment(node, { next }) {
-      latestComment = node;
-      next();
-    },
-
     Component(node, { state }) {
       if (node.name === nodes.storyIdentifier.name) {
         const { attributes } = node;
@@ -50,23 +39,16 @@ export async function walkOnFragment({
           rawSource: source,
         });
         const id = getStoryId({ attributes, name, storiesIds: storiesIds });
-        const description =
-          latestComment && latestComment.end === node.start - 1
-            ? dedent`${latestComment?.data}`
-            : undefined;
 
         const meta: StoryMeta = {
           id,
           name,
-          description,
           source: sourceAttribute,
           rawSource: childrenRawSource,
         };
 
         state.stories[name] = meta;
       }
-
-      latestComment = undefined;
     },
   };
 

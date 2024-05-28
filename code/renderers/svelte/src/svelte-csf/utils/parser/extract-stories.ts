@@ -1,9 +1,9 @@
 import type { Root } from 'svelte/compiler';
 
 import type { StoriesFileMeta } from './types.js';
+import type { SvelteASTNodes } from './extract/svelte/nodes.js';
 import { walkOnFragment } from './walkers/fragment.js';
 import { walkOnDefineMeta } from './walkers/define-meta.js';
-import type { SvelteASTNodes } from './extract-ast-nodes.js';
 
 interface Params {
   ast: Root;
@@ -22,11 +22,7 @@ export async function extractStories(params: Params): Promise<StoriesFileMeta> {
   const { fragment } = ast;
   const [defineMeta, { stories }] = await Promise.all([
     walkOnDefineMeta(nodes),
-    walkOnFragment({
-      fragment,
-      source: source,
-      nodes,
-    }),
+    walkOnFragment({ fragment, source, nodes }),
   ]);
 
   return {

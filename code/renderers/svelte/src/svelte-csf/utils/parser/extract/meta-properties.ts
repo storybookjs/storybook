@@ -3,10 +3,11 @@ import type { ObjectExpression, Property } from 'estree';
 import type { SvelteNode } from 'svelte/compiler';
 import type { Visitors } from 'zimmerframe';
 
-import type { SvelteASTNodes } from '../../extract-ast-nodes.js';
+import type { SvelteASTNodes } from './svelte/nodes.js';
+import type { CompiledASTNodes } from './compiled/nodes.js';
 
 interface Options<Properties extends Array<keyof Meta>> {
-  nodes: SvelteASTNodes;
+  nodes: SvelteASTNodes | CompiledASTNodes;
   filename: string;
   properties: Properties;
 }

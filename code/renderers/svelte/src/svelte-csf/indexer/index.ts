@@ -5,8 +5,8 @@ import type { IndexInput, Indexer } from '@storybook/types';
 import { preprocess } from 'svelte/compiler';
 
 import { getSvelteAST } from '../utils/parser/ast.js';
-import { extractSvelteASTNodes } from '../utils/parser/extract-ast-nodes.js';
-import { extractMetaPropertiesNodes } from '../utils/parser/extract/svelte/meta-properties.js';
+import { extractSvelteASTNodes } from '../utils/parser/extract/svelte/nodes.js';
+import { extractMetaPropertiesNodes } from '../utils/parser/extract/meta-properties.js';
 import {
   getMetaIdValue,
   getMetaTagsValue,

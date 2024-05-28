@@ -1,3 +1,5 @@
+// TODO: Refactor: Remove in favor of `./extract/meta-properties.ts`
+
 import { logger } from '@storybook/client-logger';
 import dedent from 'dedent';
 import type { SvelteNode } from 'svelte/compiler';
@@ -5,7 +7,7 @@ import type { ObjectExpression, Property } from 'estree';
 import type { Visitors } from 'zimmerframe';
 
 import type { DefineMeta } from '../types.js';
-import type { SvelteASTNodes } from '../extract-ast-nodes.js';
+import type { SvelteASTNodes } from '../extract/svelte/nodes.js';
 
 export async function walkOnDefineMeta(nodes: SvelteASTNodes): Promise<DefineMeta> {
   const { walk } = await import('zimmerframe');

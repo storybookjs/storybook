@@ -3,11 +3,11 @@
 import url from 'node:url';
 import MagicString from 'magic-string';
 
-import type { StoriesFileMeta } from '../parser/types.js';
-import type { SvelteASTNodes } from '../parser/extract-ast-nodes.js';
+import type { SvelteASTNodes } from '../../../utils/parser/extract/svelte/nodes.js';
+import type { StoriesFileMeta } from '../../../utils/parser/types.js';
 
 const parserModulePath = url
-  .fileURLToPath(new URL('../../../dist/utils/parser/collect-stories.js', import.meta.url))
+  .fileURLToPath(new URL('../../../utils/parser/collect-stories.js', import.meta.url))
   .replace(/\\/g, '\\\\'); // For Windows paths
 
 interface Params {
@@ -28,7 +28,7 @@ export function createAppendix(params: Params) {
   // NOTE:
   // We need to remove the default export from the code,
   // because Storybook internally expects export default `meta`
-  code.replace(/export default/, '');
+  code.replace(/export default /, '');
 
   const exportsOrder = Object.entries(stories).map(([id, _]) => id);
   // biome-ignore format: Stop

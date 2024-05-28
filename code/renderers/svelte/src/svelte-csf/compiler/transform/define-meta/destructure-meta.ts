@@ -1,19 +1,16 @@
-// TODO: Refactor - move it to post-transform. And from the ESTree AST, not source Svelte AST.
-
 import type { AssignmentProperty } from 'estree';
 import { toJs } from 'estree-util-to-js';
 import type MagicString from 'magic-string';
-import type { BaseNode } from 'svelte/compiler';
 
-import type { SvelteASTNodes } from '../parser/extract-ast-nodes.js';
+import type { CompiledASTNodes } from '../../../utils/parser/extract/compiled/nodes.js';
 
 interface Params {
   code: MagicString;
-  nodes: SvelteASTNodes;
+  nodes: CompiledASTNodes;
   filename: string;
 }
 
-export function transformDefineMeta(params: Params) {
+export async function destructureMetaFromDefineMeta(params: Params) {
   const { code, nodes, filename } = params;
   const { defineMetaVariableDeclaration } = nodes;
   const { declarations } = defineMetaVariableDeclaration;
@@ -23,7 +20,7 @@ export function transformDefineMeta(params: Params) {
     // TODO: make error message more user friendly
     // what happened, how to fix
     throw new Error(
-      `Internal error during attempt to pre-transform the Stories source code - expected object pattern. Stories file: ${filename}`
+      `Internal error during attempt to destructure 'meta' from 'defineMeta({ ... })' - expected object pattern. Stories file: ${filename}`
     );
   }
 
@@ -32,7 +29,7 @@ export function transformDefineMeta(params: Params) {
   });
 
   if (hasDestructuredMeta) {
-    return code;
+    return;
   }
 
   const metaProperty: AssignmentProperty = {
@@ -53,7 +50,8 @@ export function transformDefineMeta(params: Params) {
 
   id.properties.push(metaProperty);
 
-  const { start, end } = defineMetaVariableDeclaration as unknown as BaseNode;
+  // @ts-expect-error FIXME: No idea which type includes start/end, they exist at runtime
+  const { start, end } = defineMetaVariableDeclaration;
 
   code.update(
     start,

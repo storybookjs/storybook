@@ -1,14 +1,16 @@
 import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
-import type { Identifier, ImportSpecifier, VariableDeclaration } from 'estree';
-import type { Script, SvelteNode } from 'svelte/compiler';
+import type {
+  Comment,
+  FunctionDeclaration,
+  Identifier,
+  ImportSpecifier,
+  Node,
+  Program,
+  VariableDeclaration,
+} from 'estree';
 import type { Visitors } from 'zimmerframe';
 
-const AST_NODES_NAMES = {
-  defineMeta: 'defineMeta',
-  Story: 'Story',
-} as const;
-
-interface SvelteASTNodesModule {
+export interface CompiledASTNodes {
   /**
    * Import specifier for `defineMeta` imported from this addon package.
    * Could be renamed - e.g. `import { defineMeta } from "@storybook/addon-svelte-csf"`
@@ -24,27 +26,32 @@ interface SvelteASTNodesModule {
    * It could be destructured with rename - e.g. `const { Story: S } = defineMeta({ ... })`
    */
   storyIdentifier: Identifier;
+  /**
+   *
+   */
+  storiesFunctionDeclaration: FunctionDeclaration;
 }
 
-interface ExtractModuleNodesOptions {
-  module: Script;
+const AST_NODES_NAMES = {
+  defineMeta: 'defineMeta',
+  Story: 'Story',
+} as const;
+
+interface Params {
+  ast: Program;
   filename: string;
 }
 
 /**
- * Extract Svelte AST nodes via `svelte.compile`,
- * and from the module tag - `<script context=module>`.
- * They are needed for further code analysis/transformation.
+ * Extract compiled AST nodes from Vite _(via `rollup`)_.
+ * Those nodes are required for further code transformation.
  */
-export async function extractModuleNodes(
-  options: ExtractModuleNodesOptions
-): Promise<SvelteASTNodesModule> {
-  const { module, filename } = options;
-
+export async function extractCompiledASTNodes(params: Params): Promise<CompiledASTNodes> {
   const { walk } = await import('zimmerframe');
 
-  const state: Partial<SvelteASTNodesModule> = {};
-  const visitors: Visitors<SvelteNode, typeof state> = {
+  const { ast, filename } = params;
+  const state: Partial<CompiledASTNodes> = {};
+  const visitors: Visitors<Node | Comment, typeof state> = {
     ImportDeclaration(node, { state, visit }) {
       const { source, specifiers } = node;
 
@@ -92,11 +99,42 @@ export async function extractModuleNodes(
         }
       }
     },
+
+    ExportDefaultDeclaration(node, { state }) {
+      // NOTE: This may be confusing.
+      // In the dev mode the export default is different (Identifier to FunctionDeclaration)
+      if (process.env['NODE_ENV'] !== 'development') {
+        if (node.declaration.type !== 'FunctionDeclaration') {
+          throw new Error(
+            `Expected FunctionDeclaration as the default export in the compiled code for stories file: ${filename}`
+          );
+        }
+
+        state.storiesFunctionDeclaration = node.declaration as FunctionDeclaration;
+      }
+    },
+
+    FunctionDeclaration(node, { state, stop }) {
+      if (process.env['NODE_ENV'] === 'development') {
+        if (node.id.name.endsWith('stories')) {
+          // NOTE:
+          // Is an `export default function <Component>_stories` - we want this one.
+          // We will remove the `export default` later
+          state.storiesFunctionDeclaration = node;
+          stop();
+        }
+      }
+    },
   };
 
-  walk(module.content, state, visitors);
+  walk(ast, state, visitors);
 
-  const { defineMetaImport, defineMetaVariableDeclaration, storyIdentifier } = state;
+  const {
+    defineMetaImport,
+    defineMetaVariableDeclaration,
+    storyIdentifier,
+    storiesFunctionDeclaration,
+  } = state;
 
   if (!defineMetaImport) {
     throw new Error(
@@ -111,14 +149,17 @@ export async function extractModuleNodes(
   }
 
   if (!storyIdentifier) {
-    throw new Error(
-      `Component 'Story' was not destructured from the '${defineMetaImport.local.name}({ ... })' function call. Use 'const { Story } = defineMeta({ ... })' in the stories file: ${filename}`
-    );
+    throw new Error(`No story identifier found.`);
+  }
+
+  if (!storiesFunctionDeclaration) {
+    throw new Error(`No stories function declaration found.`);
   }
 
   return {
     defineMetaImport,
     defineMetaVariableDeclaration,
     storyIdentifier,
+    storiesFunctionDeclaration,
   };
 }

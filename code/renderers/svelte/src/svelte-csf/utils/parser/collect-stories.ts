@@ -82,16 +82,6 @@ export default <TMeta extends Meta>(
     storyFn.parameters = combineParameters({}, meta.parameters, story.parameters);
     storyFn.tags = combineTags(...(meta.tags ?? []), ...(story.tags ?? []));
 
-    if (storyMeta.description) {
-      storyFn.parameters = combineParameters(storyFn.parameters, {
-        docs: {
-          description: {
-            story: storyMeta.description,
-          },
-        },
-      });
-    }
-
     if (storyMeta.rawSource) {
       storyFn.parameters = combineParameters(storyFn.parameters, {
         storySource: {

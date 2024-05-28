@@ -1,9 +1,7 @@
 import type { Comment, Component, Fragment, SvelteNode } from 'svelte/compiler';
 import type { Visitors } from 'zimmerframe';
 
-const AST_NODES_NAMES = {
-  Story: 'Story',
-} as const;
+import type { extractModuleNodes } from './module-nodes.js';
 
 interface SvelteASTNodesFragment {
   /**
@@ -14,9 +12,10 @@ interface SvelteASTNodesFragment {
   }>;
 }
 
-interface ExtractModuleNodesOptions {
+interface Params {
   fragment: Fragment;
   filename: string;
+  moduleNodes: Awaited<ReturnType<typeof extractModuleNodes>>;
 }
 
 /**
@@ -24,12 +23,11 @@ interface ExtractModuleNodesOptions {
  * and from the fragment aka HTML code.
  * They are needed for further code analysis/transformation.
  */
-export async function extractFragmentNodes(
-  options: ExtractModuleNodesOptions
-): Promise<SvelteASTNodesFragment> {
-  const { fragment, filename: _ } = options;
-
+export async function extractFragmentNodes(params: Params): Promise<SvelteASTNodesFragment> {
   const { walk } = await import('zimmerframe');
+
+  const { fragment, filename, moduleNodes } = params;
+  const { storyIdentifier } = moduleNodes;
 
   let latestComment: Comment | undefined;
 
@@ -44,7 +42,7 @@ export async function extractFragmentNodes(
     },
 
     Component(node, { state }) {
-      if (node.name === AST_NODES_NAMES.Story) {
+      if (node.name === storyIdentifier.name) {
         state.storyComponents.push({
           comment: latestComment,
           component: node,

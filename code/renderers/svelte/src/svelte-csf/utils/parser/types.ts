@@ -42,17 +42,6 @@ export interface AddonASTNodes {
 }
 
 /**
- * Meta extracted from static analysis of the module tag _(`<script context="module">`)_
- * from the single stories file - `*.stories.svelte`.
- */
-export interface ModuleMeta extends Pick<Meta, 'tags'> {
-  /**
-   * Description for the stories file, extracted from above `defineMeta` function call.
-   */
-  description?: string;
-}
-
-/**
  * Meta extracted from static analysis of the `Fragment` _(html-like code)_
  * from the single stories file - `*.stories.svelte`.
  */
@@ -65,13 +54,7 @@ export interface FragmentMeta {
  * inside the module tag _(`script context="module">`)_ in the stories file - `*.stories.svelte`.
  * NOTE: Properties from Meta are needed for `StoriesIndexer`
  */
-export interface DefineMeta extends Pick<Meta, 'id' | 'title' | 'tags'> {
-  /**
-   * Description for the stories file.
-   * Extracted from the leading comment above `defineMeta` function call.
-   */
-  description?: string;
-}
+export interface DefineMeta extends Pick<Meta, 'id' | 'title' | 'tags'> {}
 
 /**
  * Meta extracted from static analysis of the single `<Story />` component
@@ -87,10 +70,6 @@ export interface StoryMeta {
    * @default "Default"
    */
   name: string;
-  /**
-   * Description of the story, will display above the sample in docs mode.
-   */
-  description?: string;
   source?: ComponentProps<Story<Meta>>['source'];
   /** Raw source for children _(what is inside the `<Story>...</Story>` tags)_ */
   rawSource?: string;

@@ -2,7 +2,7 @@ import { compile, type Root } from 'svelte/compiler';
 
 interface GetSvelteASTOptions {
   source: string;
-  filename: string;
+  filename?: string;
 }
 
 export function getSvelteAST(options: GetSvelteASTOptions) {

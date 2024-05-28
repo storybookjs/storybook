@@ -14,7 +14,7 @@ interface SvelteASTNodesFragment {
 
 interface Params {
   fragment: Fragment;
-  filename: string;
+  filename?: string;
   moduleNodes: Awaited<ReturnType<typeof extractModuleNodes>>;
 }
 

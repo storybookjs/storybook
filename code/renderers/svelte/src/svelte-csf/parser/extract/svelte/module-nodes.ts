@@ -28,7 +28,7 @@ interface SvelteASTNodesModule {
 
 interface ExtractModuleNodesOptions {
   module: Script;
-  filename: string;
+  filename?: string;
 }
 
 /**

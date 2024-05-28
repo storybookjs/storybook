@@ -4,7 +4,7 @@ import type { Visitors } from 'zimmerframe';
 
 interface Options<Attributes extends Array<keyof StoryObj>> {
   component: Component;
-  filename: string;
+  filename?: string;
   attributes: Attributes;
 }
 

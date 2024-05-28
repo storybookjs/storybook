@@ -12,7 +12,7 @@ export type SvelteASTNodes = Awaited<ReturnType<typeof extractModuleNodes>> &
 
 interface ExtractSvelteASTNodesOptions {
   ast: Root;
-  filename: string;
+  filename?: string;
 }
 
 /**

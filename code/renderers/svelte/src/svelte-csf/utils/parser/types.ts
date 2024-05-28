@@ -1,5 +1,4 @@
 import type { Meta } from '@storybook/svelte';
-import type { Identifier, ImportSpecifier, VariableDeclaration } from 'estree';
 import type { ComponentProps } from 'svelte';
 
 import type Story from '../../renderer/Story.svelte';
@@ -10,35 +9,6 @@ import type Story from '../../renderer/Story.svelte';
 export interface StoriesFileMeta {
   defineMeta: DefineMeta;
   stories: Record<StoryMeta['id'], StoryMeta>;
-}
-
-/**
- * @deprecated TODO: Remove it
- */
-export const ADDON_AST_NODES = {
-  defineMeta: 'defineMeta',
-  Story: 'Story',
-} as const;
-
-/**
- * AST nodes extracted from the AST compile `(svelte.compile)` needed for further code transformation.
- * @deprecated TODO: Remove it
- */
-export interface AddonASTNodes {
-  /**
-   * Import specifier for `defineMeta` imported from this addon package.
-   * Could be renamed - e.g. `import { defineMeta } from "@storybook/addon-svelte-csf"`
-   */
-  defineMetaImport: ImportSpecifier;
-  /**
-   * Variable declarator called by `defineMeta({})` function call.
-   * Could be destructured with rename - e.g. `const { Story: S} = defineMeta({ ... })`
-   */
-  defineMetaVar: VariableDeclaration;
-  /**
-   * A `<Story />` component, could be destructured with rename - e.g. `const { Story: S} = defineMeta({ ... })`
-   */
-  Story: Identifier;
 }
 
 /**

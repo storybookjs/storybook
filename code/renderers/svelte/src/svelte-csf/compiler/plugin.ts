@@ -3,6 +3,9 @@
  *
  * 1. Why Svelte AST nodes had to be included?
  *    - During the compilation from Svelte to JS, HTML comments are removed.
+ *    - Rollup' internal `this.parse()` excludes `leadingComments` from parsing.
+ *      I couldn't find an option to override this behavior.
+ *      I wanted to avoid adding another package for parsing _(getting AST)_ - e.g. `acorn`
  */
 
 import fs from 'node:fs';
@@ -29,7 +32,6 @@ export async function plugin(): Promise<Plugin> {
   ]);
 
   const svelteConfig = await loadSvelteConfig();
-
   const include = /\.stories\.svelte$/;
   const filter = createFilter(include);
 
@@ -75,18 +77,18 @@ export async function plugin(): Promise<Plugin> {
         source,
         filename,
       });
-      const extractedStories = await extractStoriesNodesFromExportDefaultFn({
+      const extractedCompiledStoriesNodes = await extractStoriesNodesFromExportDefaultFn({
         nodes: compiledNodes,
         filename,
       });
 
-      // NOTE:
-      // We start updating the compiled ouput code from the bottom.
-      // Because once we start updating nodes in the stringified output,
-      // then other nodes `start` and `end` will not be correct anymore.
-      // Hence the reason why I reverse both arrays with stories _(svelte and compiled)_.
+      // WARN:
+      // IMPORTANT! The plugins starts updating the compiled ouput code from the bottom.
+      // Why? Because once we start updating nodes in the stringified output from the top,
+      // then other nodes `start` and `end` numbers will not be correct anymore.
+      // Hence the reason why reversing both arrays with stories _(svelte and compiled)_.
       const svelteStories = svelteNodes.storyComponents.toReversed();
-      const compiledStories = extractedStories.stories.toReversed();
+      const compiledStories = extractedCompiledStoriesNodes.toReversed();
 
       for (const [index, compiled] of Object.entries(compiledStories)) {
         insertStoryHTMLCommentAsDescription({
@@ -95,8 +97,11 @@ export async function plugin(): Promise<Plugin> {
           filename,
         });
       }
-
-      destructureMetaFromDefineMeta({ code, nodes: compiledNodes, filename });
+      await destructureMetaFromDefineMeta({
+        code,
+        nodes: compiledNodes,
+        filename,
+      });
       insertDefineMetaJSDocCommentAsDescription({
         code,
         nodes: {

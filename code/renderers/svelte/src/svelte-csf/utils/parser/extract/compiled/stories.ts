@@ -8,22 +8,18 @@ interface Params {
   filename: string;
 }
 
-interface Result {
-  stories: CallExpression[];
-}
+type Result = CallExpression[];
 
 export async function extractStoriesNodesFromExportDefaultFn(params: Params) {
   const { walk } = await import('zimmerframe');
 
   const { nodes, filename } = params;
   const { storiesFunctionDeclaration, storyIdentifier } = nodes;
-  const state: Result = {
-    stories: [],
-  };
+  const state: Result = [];
   const visitors: Visitors<Node, typeof state> = {
     CallExpression(node, { state }) {
       if (node.callee.type === 'Identifier' && node.callee.name === storyIdentifier.name) {
-        state.stories.push(node);
+        state.push(node);
       }
     },
   };

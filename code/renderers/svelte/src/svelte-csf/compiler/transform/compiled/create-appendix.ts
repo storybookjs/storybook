@@ -56,7 +56,7 @@ export async function createAppendix(params: Params) {
     '', // NOTE: Adds a new line at the end of the code
     `import parser from '${parserModulePath}';`,
     `const ${parsedStoriesVariable} = parser(${componentName}, ${metaIdentifier});`,
-    `export default meta;`,
+    `export default ${metaIdentifier};`,
     `export const ${exportsOrderVariable} = ${JSON.stringify(exportsOrder)};`,
     storiesExports,
   ].join('\n');

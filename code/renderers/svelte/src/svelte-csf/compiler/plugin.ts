@@ -20,7 +20,6 @@ import { destructureMetaFromDefineMeta } from './transform/define-meta/destructu
 import { insertStoryHTMLCommentAsDescription } from './transform/Story/description.js';
 import { getNameFromFilename } from '../utils/get-component-name.js';
 import { getSvelteAST } from '../utils/parser/ast.js';
-import { extractStories } from '../utils/parser/extract-stories.js';
 import { extractStoriesNodesFromExportDefaultFn } from '../utils/parser/extract/compiled/stories.js';
 import { extractCompiledASTNodes } from '../utils/parser/extract/compiled/nodes.js';
 import { extractSvelteASTNodes } from '../utils/parser/extract/svelte/nodes.js';
@@ -71,12 +70,6 @@ export async function plugin(): Promise<Plugin> {
         ast: compiledAST,
         filename,
       });
-      const storiesFileMeta = await extractStories({
-        ast: svelteAST,
-        nodes: svelteNodes,
-        source,
-        filename,
-      });
       const extractedCompiledStoriesNodes = await extractStoriesNodesFromExportDefaultFn({
         nodes: compiledNodes,
         filename,
@@ -110,11 +103,13 @@ export async function plugin(): Promise<Plugin> {
         },
         filename,
       });
-      createAppendix({
+      await createAppendix({
         componentName,
         code,
-        storiesFileMeta,
-        nodes: svelteNodes,
+        nodes: {
+          compiled: compiledNodes,
+          svelte: svelteNodes,
+        },
         filename,
       });
 

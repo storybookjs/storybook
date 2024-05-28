@@ -3,8 +3,10 @@
 import url from 'node:url';
 import MagicString from 'magic-string';
 
+import { getNameFromStoryAttribute } from '../../../utils/parser/analyse/Story-attributes.js';
 import type { SvelteASTNodes } from '../../../utils/parser/extract/svelte/nodes.js';
-import type { StoriesFileMeta } from '../../../utils/parser/types.js';
+import type { CompiledASTNodes } from '../../../utils/parser/extract/compiled/nodes.js';
+import { extractStoryAttributesNodes } from '../../../utils/parser/extract/svelte/Story-attributes.js';
 
 const parserModulePath = url
   .fileURLToPath(new URL('../../../utils/parser/collect-stories.js', import.meta.url))
@@ -13,67 +15,103 @@ const parserModulePath = url
 interface Params {
   componentName: string;
   code: MagicString;
-  storiesFileMeta: StoriesFileMeta;
-  nodes: SvelteASTNodes;
+  nodes: {
+    compiled: CompiledASTNodes;
+    svelte: SvelteASTNodes;
+  };
   filename: string;
 }
 
-export function createAppendix(params: Params) {
-  const { componentName, code, storiesFileMeta, nodes } = params;
-  const { stories } = storiesFileMeta;
-  const { defineMetaVariableDeclaration } = nodes;
-  const parsedStoriesVariable = '__parsed';
-  const exportsOrderVariable = '__namedExportsOrder';
+export async function createAppendix(params: Params) {
+  const { componentName, code, nodes, filename } = params;
+  const { compiled, svelte } = nodes;
+  const { defineMetaVariableDeclaration } = compiled;
 
   // NOTE:
   // We need to remove the default export from the code,
   // because Storybook internally expects export default `meta`
   code.replace(/export default /, '');
 
-  const exportsOrder = Object.entries(stories).map(([id, _]) => id);
-  // biome-ignore format: Stop
-  // prettier-ignore
-  const storiesExports = Object.entries(stories)
-		.map(([id]) =>
-      `export const ${sanitizeStoryId(id)} = ${parsedStoriesVariable}.stories[${JSON.stringify(id)}];`
-		)
-		.join("\n");
+  const parsedStoriesVariable = '__parsed';
+  const exportsOrderVariable = '__namedExportsOrder';
 
-  // biome-ignore format: Stop
-  // prettier-ignore
+  const exportsOrder = await getStoriesNames({ nodes: svelte, filename });
+
+  const storiesExports = exportsOrder
+    .map((name) => {
+      // TODO: There's probably some internal function in the Storybook to handle this?
+      const variable = name.replace(/\s|\W/g, '');
+      const objectKey = JSON.stringify(name);
+      return `export const ${variable} = ${parsedStoriesVariable}.stories[${objectKey}];`;
+    })
+    .join('\n');
+
+  const metaIdentifier = getMetaIdentifier({
+    node: defineMetaVariableDeclaration,
+    filename,
+  });
+
+  // TODO: Create AST Nodes and stringify it.
   const appendix = [
-    "", // NOTE: Adds a new line at the end of the code
+    '', // NOTE: Adds a new line at the end of the code
     `import parser from '${parserModulePath}';`,
-    `const ${parsedStoriesVariable} = parser(${componentName}, ${JSON.stringify(storiesFileMeta)}, ${findMetaPropertyName(defineMetaVariableDeclaration) ?? "meta"});`,
-    `export default ${parsedStoriesVariable}.meta;`,
+    `const ${parsedStoriesVariable} = parser(${componentName}, ${metaIdentifier});`,
+    `export default meta;`,
     `export const ${exportsOrderVariable} = ${JSON.stringify(exportsOrder)};`,
     storiesExports,
-  ].join("\n");
+  ].join('\n');
 
   code.append(appendix);
-
-  return code;
 }
 
-// FIXME: There's probably some interal function inside the Storybook to handle it
-function sanitizeStoryId(id: string) {
-  return id.replace(/\s|-/g, '_');
-}
-
-// FIXME: Remove/Move it away from here, should be in parser analysis
-function findMetaPropertyName(node: SvelteASTNodes['defineMetaVariableDeclaration']) {
+function getMetaIdentifier({
+  node,
+  filename,
+}: {
+  node: SvelteASTNodes['defineMetaVariableDeclaration'];
+  filename: string;
+}) {
   const { declarations } = node;
   const { id } = declarations[0];
 
-  if (id.type === 'ObjectPattern') {
-    const { properties } = id;
-
-    const property = properties.find(
-      (p) => p.type === 'Property' && p.key.type === 'Identifier' && p.key.name === 'meta'
-    );
-
-    if (property && property.type === 'Property' && property.value.type === 'Identifier') {
-      return property.value.name;
-    }
+  if (id.type !== 'ObjectPattern') {
+    throw new Error();
   }
+
+  const { properties } = id;
+
+  const property = properties.find(
+    (p) => p.type === 'Property' && p.key.type === 'Identifier' && p.key.name === 'meta'
+  );
+
+  if (!property || property.type !== 'Property' || property.value.type !== 'Identifier') {
+    throw new Error(
+      `Could not find the meta identifier in the output code for stories file: ${filename}`
+    );
+  }
+
+  return property.value.name;
+}
+
+async function getStoriesNames({
+  nodes,
+  filename,
+}: {
+  nodes: SvelteASTNodes;
+  filename: string;
+}): Promise<string[]> {
+  const { storyComponents } = nodes;
+  const names: string[] = [];
+
+  for (const story of storyComponents) {
+    const { name } = await extractStoryAttributesNodes({
+      component: story.component,
+      filename,
+      attributes: ['name'],
+    });
+
+    names.push(getNameFromStoryAttribute({ node: name, filename }));
+  }
+
+  return names;
 }

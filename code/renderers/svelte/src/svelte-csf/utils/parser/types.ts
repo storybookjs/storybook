@@ -7,7 +7,6 @@ import type Story from '../../renderer/Story.svelte';
  * Data extracted from the static analytic of a single stories file - `*.stories.svelte`.
  */
 export interface StoriesFileMeta {
-  defineMeta: DefineMeta;
   stories: Record<StoryMeta['id'], StoryMeta>;
 }
 
@@ -18,13 +17,6 @@ export interface StoriesFileMeta {
 export interface FragmentMeta {
   stories: Record<StoryMeta['id'], StoryMeta>;
 }
-
-/**
- * Meta extracted from static analysis of the `defineMeta` function call
- * inside the module tag _(`script context="module">`)_ in the stories file - `*.stories.svelte`.
- * NOTE: Properties from Meta are needed for `StoriesIndexer`
- */
-export interface DefineMeta extends Pick<Meta, 'id' | 'title' | 'tags'> {}
 
 /**
  * Meta extracted from static analysis of the single `<Story />` component

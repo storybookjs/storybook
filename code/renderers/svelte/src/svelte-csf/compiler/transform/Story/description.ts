@@ -12,7 +12,7 @@ interface Params {
   code: MagicString;
   nodes: {
     svelte: SvelteASTNodes['storyComponents'][number];
-    compiled: Awaited<ReturnType<typeof extractStoriesNodesFromExportDefaultFn>>['stories'][number];
+    compiled: Awaited<ReturnType<typeof extractStoriesNodesFromExportDefaultFn>>[number];
   };
   filename: string;
 }

@@ -5,8 +5,6 @@ import { combineArgs, combineParameters } from '@storybook/preview-api';
 import type { Meta, StoryFn } from '@storybook/svelte';
 import { mount, unmount, type ComponentType } from 'svelte';
 
-import type { StoriesFileMeta } from './types.js';
-
 import StoriesExtractor from './StoriesExtractor.svelte';
 import StoryRenderer from '../../renderer/StoryRenderer.svelte';
 import type { StoriesRepository } from '../../renderer/contexts/extractor.svelte.js';
@@ -27,21 +25,7 @@ const createFragment = document.createDocumentFragment
  * instantiate the main Stories component: Every Story but
  * the one selected is disabled.
  */
-export default <TMeta extends Meta>(
-  Stories: ComponentType,
-  storiesFileMeta: StoriesFileMeta,
-  meta: TMeta
-) => {
-  if (!meta.parameters?.docs?.description?.component && storiesFileMeta.defineMeta.description) {
-    meta.parameters = combineParameters(meta.parameters, {
-      docs: {
-        description: {
-          component: storiesFileMeta.defineMeta.description,
-        },
-      },
-    });
-  }
-
+export default <TMeta extends Meta>(Stories: ComponentType, meta: TMeta) => {
   const repository: StoriesRepository<TMeta> = {
     stories: new Map(),
   };
@@ -63,8 +47,6 @@ export default <TMeta extends Meta>(
   const stories: Record<string, StoryFn<StoryRenderer<TMeta>>> = {};
 
   for (const [name, story] of repository.stories) {
-    const storyMeta = storiesFileMeta.stories[name];
-
     // NOTE: We can't use StoryObj, because `@storybook/svelte` accepts `StoryFn` for now
     const storyFn: StoryFn<StoryRenderer<TMeta>> = (args, storyContext) => {
       return {
@@ -82,33 +64,34 @@ export default <TMeta extends Meta>(
     storyFn.parameters = combineParameters({}, meta.parameters, story.parameters);
     storyFn.tags = combineTags(...(meta.tags ?? []), ...(story.tags ?? []));
 
-    if (storyMeta.rawSource) {
-      storyFn.parameters = combineParameters(storyFn.parameters, {
-        storySource: {
-          source: storyMeta.rawSource,
-        },
-      });
-    }
-
-    if (storyMeta.source) {
-      let code: string | undefined;
-
-      if (storyMeta.source === true && storyMeta.rawSource) {
-        code = storyMeta.rawSource;
-      }
-
-      if (typeof storyMeta.source === 'string') {
-        code = storyMeta.source;
-      }
-
-      if (code) {
-        storyFn.parameters = combineParameters(storyFn.parameters, {
-          docs: {
-            source: { code },
-          },
-        });
-      }
-    }
+    // TODO: Restore this feature
+    // if (storyMeta.rawSource) {
+    // 	storyFn.parameters = combineParameters(storyFn.parameters, {
+    // 		storySource: {
+    // 			source: storyMeta.rawSource,
+    // 		},
+    // 	});
+    // }
+    //
+    // if (storyMeta.source) {
+    // 	let code: string | undefined;
+    //
+    // 	if (storyMeta.source === true && storyMeta.rawSource) {
+    // 		code = storyMeta.rawSource;
+    // 	}
+    //
+    // 	if (typeof storyMeta.source === "string") {
+    // 		code = storyMeta.source;
+    // 	}
+    //
+    // 	if (code) {
+    // 		storyFn.parameters = combineParameters(storyFn.parameters, {
+    // 			docs: {
+    // 				source: { code },
+    // 			},
+    // 		});
+    // 	}
+    // }
 
     const play = meta.play ?? story.play;
 

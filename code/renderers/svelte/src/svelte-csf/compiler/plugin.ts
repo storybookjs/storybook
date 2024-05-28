@@ -80,8 +80,8 @@ export async function plugin(): Promise<Plugin> {
       // Why? Because once we start updating nodes in the stringified output from the top,
       // then other nodes `start` and `end` numbers will not be correct anymore.
       // Hence the reason why reversing both arrays with stories _(svelte and compiled)_.
-      const svelteStories = svelteNodes.storyComponents.toReversed();
-      const compiledStories = extractedCompiledStoriesNodes.toReversed();
+      const svelteStories = [...svelteNodes.storyComponents].reverse();
+      const compiledStories = [...extractedCompiledStoriesNodes].reverse();
 
       for (const [index, compiled] of Object.entries(compiledStories)) {
         insertStoryHTMLCommentAsDescription({

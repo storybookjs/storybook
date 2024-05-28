@@ -9,7 +9,7 @@ import type { SvelteASTNodes } from '../../../parser/extract/svelte/nodes.js';
 import { extractStoryAttributesNodes } from '../../../parser/extract/svelte/Story-attributes.js';
 
 const parserModulePath = url
-  .fileURLToPath(new URL('../../../utils/parser/collect-stories.js', import.meta.url))
+  .fileURLToPath(new URL('../../../parser/collect-stories.js', import.meta.url))
   .replace(/\\/g, '\\\\'); // For Windows paths
 
 interface Params {

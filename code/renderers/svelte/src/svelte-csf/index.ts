@@ -1,6 +1,6 @@
 import type { Meta, StoryContext as BaseStoryContext, StoryObj } from '@storybook/svelte';
 
-import Story from './renderer/Story.svelte';
+import Story from './runtime/Story.svelte';
 
 export type { Story };
 export { setTemplate } from './runtime/contexts/template.svelte.js';

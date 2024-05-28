@@ -8,9 +8,8 @@ import type { CompiledASTNodes } from '../../../parser/extract/compiled/nodes.js
 import type { SvelteASTNodes } from '../../../parser/extract/svelte/nodes.js';
 import { extractStoryAttributesNodes } from '../../../parser/extract/svelte/Story-attributes.js';
 
-const parserModulePath = url
-  .fileURLToPath(new URL('../../../parser/collect-stories.js', import.meta.url))
-  .replace(/\\/g, '\\\\'); // For Windows paths
+const STORY_FNS_VARIABLE = '__storyFns';
+const EXPORT_ORDER_VARIABLE = '__namedExportsOrder';
 
 interface Params {
   componentName: string;
@@ -32,8 +31,6 @@ export async function createAppendix(params: Params) {
   // because Storybook internally expects export default `meta`
   code.replace(/export default /, '');
 
-  const parsedStoriesVariable = '__parsed';
-  const exportsOrderVariable = '__namedExportsOrder';
 
   const exportsOrder = await getStoriesNames({ nodes: svelte, filename });
 
@@ -42,7 +39,7 @@ export async function createAppendix(params: Params) {
       // TODO: There's probably some internal function in the Storybook to handle this?
       const variable = name.replace(/\s|\W/g, '');
       const objectKey = JSON.stringify(name);
-      return `export const ${variable} = ${parsedStoriesVariable}.stories[${objectKey}];`;
+      return `export const ${variable} = ${STORY_FNS_VARIABLE}[${objectKey}];`;
     })
     .join('\n');
 
@@ -54,10 +51,11 @@ export async function createAppendix(params: Params) {
   // TODO: Create AST Nodes and stringify it.
   const appendix = [
     '', // NOTE: Adds a new line at the end of the code
-    `import parser from '${parserModulePath}';`,
-    `const ${parsedStoriesVariable} = parser(${componentName}, ${metaIdentifier});`,
+    // the export is defined in the package.json export map
+    `import { createStoryFns } from '@storybook/addon-svelte-csf/internal/create-story-fns';`,
+    `const ${STORY_FNS_VARIABLE} = createStoryFns(${componentName}, ${metaIdentifier});`,
     `export default ${metaIdentifier};`,
-    `export const ${exportsOrderVariable} = ${JSON.stringify(exportsOrder)};`,
+    `export const ${EXPORT_ORDER_VARIABLE} = ${JSON.stringify(exportsOrder)};`,
     storiesExports,
   ].join('\n');
 

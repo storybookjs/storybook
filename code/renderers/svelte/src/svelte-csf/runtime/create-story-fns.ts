@@ -6,8 +6,8 @@ import type { Meta, StoryFn } from '@storybook/svelte';
 import { mount, unmount, type ComponentType } from 'svelte';
 
 import StoriesExtractor from './StoriesExtractor.svelte';
-import StoryRenderer from '../runtime/StoryRenderer.svelte';
-import type { StoriesRepository } from '../runtime/contexts/extractor.svelte.js';
+import StoryRenderer from './StoryRenderer.svelte';
+import type { StoriesRepository } from './contexts/extractor.svelte.js';
 
 const createFragment = document.createDocumentFragment
   ? () => document.createDocumentFragment()
@@ -25,7 +25,8 @@ const createFragment = document.createDocumentFragment
  * instantiate the main Stories component: Every Story but
  * the one selected is disabled.
  */
-export default <TMeta extends Meta>(Stories: ComponentType, meta: TMeta) => {
+// TODO: I'm not sure the 'meta' is necessary here. As long as it's default exported, SB should internally combine it with the stories. Except for the play logic below, that looks funky, need to ask Pablo about that.
+export const createStoryFns = <TMeta extends Meta>(Stories: ComponentType, meta: TMeta) => {
   const repository: StoriesRepository<TMeta> = {
     stories: new Map(),
   };
@@ -114,5 +115,5 @@ export default <TMeta extends Meta>(Stories: ComponentType, meta: TMeta) => {
     stories[name] = storyFn;
   }
 
-  return { meta, stories };
+  return stories;
 };

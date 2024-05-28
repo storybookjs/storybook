@@ -3,10 +3,10 @@
 import url from 'node:url';
 import MagicString from 'magic-string';
 
-import { getNameFromStoryAttribute } from '../../../utils/parser/analyse/Story-attributes.js';
-import type { SvelteASTNodes } from '../../../utils/parser/extract/svelte/nodes.js';
-import type { CompiledASTNodes } from '../../../utils/parser/extract/compiled/nodes.js';
-import { extractStoryAttributesNodes } from '../../../utils/parser/extract/svelte/Story-attributes.js';
+import { getNameFromStoryAttribute } from '../../../parser/analyse/Story-attributes.js';
+import type { CompiledASTNodes } from '../../../parser/extract/compiled/nodes.js';
+import type { SvelteASTNodes } from '../../../parser/extract/svelte/nodes.js';
+import { extractStoryAttributesNodes } from '../../../parser/extract/svelte/Story-attributes.js';
 
 const parserModulePath = url
   .fileURLToPath(new URL('../../../utils/parser/collect-stories.js', import.meta.url))

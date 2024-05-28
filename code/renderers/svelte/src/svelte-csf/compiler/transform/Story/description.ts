@@ -5,8 +5,8 @@ import { toJs } from 'estree-util-to-js';
 import type MagicString from 'magic-string';
 import type { Component } from 'svelte/compiler';
 
-import type { SvelteASTNodes } from '../../../utils/parser/extract/svelte/nodes.js';
-import type { extractStoriesNodesFromExportDefaultFn } from '../../../utils/parser/extract/compiled/stories.js';
+import type { extractStoriesNodesFromExportDefaultFn } from '../../../parser/extract/compiled/stories.js';
+import type { SvelteASTNodes } from '../../../parser/extract/svelte/nodes.js';
 
 interface Params {
   code: MagicString;

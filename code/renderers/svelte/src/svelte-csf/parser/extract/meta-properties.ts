@@ -6,8 +6,8 @@ import type { CompiledASTNodes } from './compiled/nodes.js';
 
 interface Options<Properties extends Array<keyof Meta>> {
   nodes: SvelteASTNodes | CompiledASTNodes;
-  filename: string;
   properties: Properties;
+  filename?: string;
 }
 
 type Result<Properties extends Array<keyof Meta>> = Partial<{

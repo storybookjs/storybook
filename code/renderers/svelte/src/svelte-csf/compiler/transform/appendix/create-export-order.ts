@@ -1,6 +1,6 @@
 import type { ExportNamedDeclaration } from 'estree';
 
-import { getStoriesNames } from '../../../parser/analyse/Story/names.js';
+import { getStoriesNames } from '../../../parser/analyse/Story/attributes/name.js';
 
 const EXPORT_ORDER_VARIABLE = '__namedExportsOrder';
 

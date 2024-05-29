@@ -1,39 +1,16 @@
 import type { Attribute } from 'svelte/compiler';
 
-interface AnalyzeOptions {
+interface Params {
   node: Attribute | undefined;
   filename?: string;
 }
 
-export function getNameFromStoryAttribute(options: AnalyzeOptions) {
-  const { node, filename } = options;
+export function getStringValueFromAttribute(params: Params) {
+  const { node, filename } = params;
 
   if (!node) {
-    throw new Error(
-      `Missing attribute 'name' in one of <Story /> component. Stories file: ${filename}`
-    );
+    return;
   }
-
-  return getStringValue({ node, filename });
-}
-
-export function getTagsFromStoryAttribute(options: AnalyzeOptions) {
-  const { node, filename } = options;
-
-  if (node) {
-    return getArrayOfStringsValue({ node, filename });
-  }
-
-  return [];
-}
-
-interface GetStringValueOptions {
-  node: Attribute;
-  filename?: string;
-}
-
-function getStringValue(options: GetStringValueOptions) {
-  const { node, filename } = options;
 
   const { value, name } = node;
 
@@ -66,8 +43,12 @@ function getStringValue(options: GetStringValueOptions) {
   );
 }
 
-function getArrayOfStringsValue(options: GetStringValueOptions) {
-  const { node, filename } = options;
+export function getArrayOfStringsValue(params: Params) {
+  const { node, filename } = params;
+
+  if (!node) {
+    return [];
+  }
 
   const { value, name } = node;
 

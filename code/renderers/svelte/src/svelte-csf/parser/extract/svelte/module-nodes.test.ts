@@ -69,7 +69,7 @@ describe(extractModuleNodes.name, () => {
     expect(extractModuleNodes({ module })).resolves.not.toThrow();
   });
 
-  it('works on renamed identifiers', ({ expect }) => {
+  it('works on renamed identifiers', async ({ expect }) => {
     const { module } = getSvelteAST({
       source: `
         <script context="module">
@@ -79,6 +79,9 @@ describe(extractModuleNodes.name, () => {
       `,
     });
 
-    expect(extractModuleNodes({ module })).resolves.not.toThrow();
+    const nodes = await extractModuleNodes({ module });
+
+    expect(nodes.defineMetaImport.local.name).toBe('dm');
+    expect(nodes.storyIdentifier.name).toBe('S');
   });
 });

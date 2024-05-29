@@ -13,10 +13,8 @@ import {
   getMetaTagsValue,
   getMetaTitleValue,
 } from '../parser/analyse/meta/properties.js';
-import {
-  getNameFromStoryAttribute,
-  getTagsFromStoryAttribute,
-} from '../parser/analyse/Story/attributes.js';
+import { getNameFromStoryAttribute } from '../parser/analyse/Story/attributes/name.js';
+import { getTagsFromStoryAttribute } from '../parser/analyse/Story/attributes/tags.js';
 
 export const indexer: Indexer = {
   test: /\.svelte$/,

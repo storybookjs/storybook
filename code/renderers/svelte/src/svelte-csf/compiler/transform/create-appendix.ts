@@ -10,7 +10,7 @@ import { createNamedExportStory } from './appendix/create-named-export-story.js'
 import { getMetaIdentifier } from '../../parser/analyse/meta/identifier.js';
 import type { CompiledASTNodes } from '../../parser/extract/compiled/nodes.js';
 import type { SvelteASTNodes } from '../../parser/extract/svelte/nodes.js';
-import { getStoriesNames } from '../../parser/analyse/Story/names.js';
+import { getStoriesNames } from '../../parser/analyse/Story/attributes/name.js';
 
 interface Params {
   componentName: string;

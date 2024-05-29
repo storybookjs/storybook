@@ -6,6 +6,7 @@ import { mount, unmount, type ComponentType } from 'svelte';
 import StoriesExtractor from './StoriesExtractor.svelte';
 import StoryRenderer from './StoryRenderer.svelte';
 import type { StoriesRepository } from './contexts/extractor.svelte.js';
+import { storyNameToId } from '../utils/identifiers.js';
 
 const createFragment = document.createDocumentFragment
   ? () => document.createDocumentFragment()
@@ -107,7 +108,7 @@ export const createRuntimeStories = <TMeta extends Meta>(Stories: ComponentType,
       };
     }
 
-    stories[name] = storyObj;
+    stories[storyNameToId(name)] = storyObj;
   }
 
   return stories;

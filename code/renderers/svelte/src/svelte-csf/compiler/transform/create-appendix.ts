@@ -37,6 +37,7 @@ export async function createAppendix(params: Params) {
     metaIdentifier,
     filename,
   });
+  // TODO: gracefully handle when story export names collide - eg. because of story names "Hello!" and "Hello".
   const storiesExports = await Promise.all(
     names.map((name) =>
       createNamedExportStory({

@@ -1,7 +1,7 @@
 import type { ExportNamedDeclaration, Identifier } from 'estree';
 import type { createVariableFromRuntimeStoriesCall } from './create-variable-from-runtime-stories-call';
 
-import { storyNameToExportName } from '../../../utils/identifiers.js';
+import { storyNameToExportName, storyNameToId } from '../../../utils/identifiers.js';
 
 interface Params {
   name: string;
@@ -10,7 +10,7 @@ interface Params {
 }
 
 export async function createNamedExportStory(params: Params): Promise<ExportNamedDeclaration> {
-  const { name, node, filename } = params;
+  const { name, node } = params;
 
   const exported = {
     type: 'Identifier',
@@ -41,7 +41,7 @@ export async function createNamedExportStory(params: Params): Promise<ExportName
               type: 'Identifier',
               name: getNameFromVariable(node),
             },
-            property: { type: 'Literal', value: name },
+            property: { type: 'Literal', value: storyNameToId(name) },
           },
         },
       ],

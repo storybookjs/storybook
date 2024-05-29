@@ -15,6 +15,7 @@ import {
 } from '../parser/analyse/meta/properties.js';
 import { getNameFromStoryAttribute } from '../parser/analyse/Story/attributes/name.js';
 import { getTagsFromStoryAttribute } from '../parser/analyse/Story/attributes/tags.js';
+import { storyNameToExportName } from '../utils/identifiers.js';
 
 export const indexer: Indexer = {
   test: /\.svelte$/,
@@ -60,7 +61,7 @@ export const indexer: Indexer = {
       : undefined;
 
     return storiesAttributesNodes.map((attributeNode) => {
-      const exportName = getNameFromStoryAttribute({
+      const name = getNameFromStoryAttribute({
         node: attributeNode.name,
         filename,
       });
@@ -68,15 +69,13 @@ export const indexer: Indexer = {
       return {
         type: 'story',
         importPath: filename,
-        exportName,
-        // TODO: Ask if this is important to set. If yes, then from what? Story attribute? That's `exportName`.
-        // name: ...
+        exportName: storyNameToExportName(name),
+        name,
         title: metaTitle,
         tags: combineTags(
           ...metaTags,
           ...getTagsFromStoryAttribute({ node: attributeNode.tags, filename })
         ),
-        __id: metaId,
       } satisfies IndexInput;
     });
   },

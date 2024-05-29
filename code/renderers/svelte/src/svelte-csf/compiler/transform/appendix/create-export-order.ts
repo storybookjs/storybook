@@ -1,6 +1,7 @@
 import type { ExportNamedDeclaration } from 'estree';
 
 import { getStoriesNames } from '../../../parser/analyse/Story/attributes/name.js';
+import { storyNameToExportName } from '../../../utils/identifiers.js';
 
 const EXPORT_ORDER_VARIABLE = '__namedExportsOrder';
 
@@ -10,7 +11,7 @@ interface Params {
 }
 
 export function createExportOrderVariable(params: Params): ExportNamedDeclaration {
-  const { names, filename } = params;
+  const { names } = params;
 
   return {
     type: 'ExportNamedDeclaration',
@@ -43,7 +44,7 @@ export function createExportOrderVariable(params: Params): ExportNamedDeclaratio
               type: 'Literal',
               // TODO: There's probably some internal function in the Storybook to handle the story name?
               // Reference: https://github.com/storybookjs/addon-svelte-csf/pull/181#discussion_r1617937429
-              value: name,
+              value: storyNameToExportName(name),
             })),
           },
         },

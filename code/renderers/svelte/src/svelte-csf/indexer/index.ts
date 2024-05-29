@@ -7,16 +7,16 @@ import { preprocess } from 'svelte/compiler';
 import { getSvelteAST } from '../parser/ast.js';
 import { extractSvelteASTNodes } from '../parser/extract/svelte/nodes.js';
 import { extractMetaPropertiesNodes } from '../parser/extract/meta-properties.js';
+import { extractStoryAttributesNodes } from '../parser/extract/svelte/Story/attributes.js';
 import {
   getMetaIdValue,
   getMetaTagsValue,
   getMetaTitleValue,
-} from '../parser/analyse/meta-properties.js';
-import { extractStoryAttributesNodes } from '../parser/extract/svelte/Story-attributes.js';
+} from '../parser/analyse/meta/properties.js';
 import {
   getNameFromStoryAttribute,
   getTagsFromStoryAttribute,
-} from '../parser/analyse/Story-attributes.js';
+} from '../parser/analyse/Story/attributes.js';
 
 export const indexer: Indexer = {
   test: /\.svelte$/,
@@ -47,7 +47,7 @@ export const indexer: Indexer = {
       Promise.all(
         nodes.storyComponents.map(({ component }) => {
           return extractStoryAttributesNodes({
-            component: component,
+            component,
             filename,
             attributes: ['name', 'tags'],
           });

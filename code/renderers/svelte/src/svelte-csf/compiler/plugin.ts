@@ -14,8 +14,8 @@ import MagicString from 'magic-string';
 import { preprocess } from 'svelte/compiler';
 import type { Plugin } from 'vite';
 
-import { createAppendix } from './transform/compiled/create-appendix.js';
-import { removeExportDefault } from './transform/compiled/remove-export-default.js';
+import { createAppendix } from './transform/create-appendix.js';
+import { removeExportDefault } from './transform/remove-export-default.js';
 import { insertDefineMetaJSDocCommentAsDescription } from './transform/define-meta/description.js';
 import { destructureMetaFromDefineMeta } from './transform/define-meta/destructure-meta.js';
 import { insertStoryHTMLCommentAsDescription } from './transform/Story/description.js';

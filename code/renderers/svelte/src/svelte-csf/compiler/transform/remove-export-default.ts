@@ -1,6 +1,7 @@
 import { toJs } from 'estree-util-to-js';
 import type MagicString from 'magic-string';
-import type { CompiledASTNodes } from 'src/parser/extract/compiled/nodes';
+
+import type { CompiledASTNodes } from '../../parser/extract/compiled/nodes.js';
 
 interface Params {
   code: MagicString;

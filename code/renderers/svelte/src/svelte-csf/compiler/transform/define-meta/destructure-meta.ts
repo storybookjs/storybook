@@ -2,7 +2,7 @@ import type { AssignmentProperty } from 'estree';
 import { toJs } from 'estree-util-to-js';
 import type MagicString from 'magic-string';
 
-import type { CompiledASTNodes } from '../../../utils/parser/extract/compiled/nodes.js';
+import type { CompiledASTNodes } from '../../../parser/extract/compiled/nodes.js';
 
 interface Params {
   code: MagicString;

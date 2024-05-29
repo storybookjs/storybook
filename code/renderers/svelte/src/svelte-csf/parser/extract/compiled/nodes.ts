@@ -106,7 +106,7 @@ export async function extractCompiledASTNodes(params: Params): Promise<CompiledA
       }
     },
 
-    ExportDefaultDeclaration(node, { state, stop }) {
+    ExportDefaultDeclaration(node, { state }) {
       state.exportDefault = node;
 
       // WARN: This may be confusing.
@@ -118,17 +118,15 @@ export async function extractCompiledASTNodes(params: Params): Promise<CompiledA
         isStoriesComponentFn(node.declaration as FunctionDeclaration)
       ) {
         state.storiesFunctionDeclaration = node.declaration as FunctionDeclaration;
-        stop(); // We're done there.
       }
     },
 
-    FunctionDeclaration(node, { state, stop }) {
+    FunctionDeclaration(node, { state }) {
       // WARN: This may be confusing.
       // In the `NODE_ENV="development"` the export default is different.
       // A `FunctionDeclaration`
       if (isStoriesComponentFn(node)) {
         state.storiesFunctionDeclaration = node;
-        stop(); // We're done there.
       }
     },
   };

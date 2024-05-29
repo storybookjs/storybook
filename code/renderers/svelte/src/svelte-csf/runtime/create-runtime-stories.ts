@@ -1,8 +1,6 @@
 /* eslint-env browser */
-import { combineTags } from '@storybook/csf';
 import { logger } from '@storybook/client-logger';
-import { combineArgs, combineParameters } from '@storybook/preview-api';
-import type { Meta, StoryFn } from '@storybook/svelte';
+import type { Meta, StoryObj } from '@storybook/svelte';
 import { mount, unmount, type ComponentType } from 'svelte';
 
 import StoriesExtractor from './StoriesExtractor.svelte';
@@ -26,7 +24,7 @@ const createFragment = document.createDocumentFragment
  * the one selected is disabled.
  */
 // TODO: I'm not sure the 'meta' is necessary here. As long as it's default exported, SB should internally combine it with the stories. Except for the play logic below, that looks funky, need to ask Pablo about that.
-export const createStoryFns = <TMeta extends Meta>(Stories: ComponentType, meta: TMeta) => {
+export const createRuntimeStories = <TMeta extends Meta>(Stories: ComponentType, meta: TMeta) => {
   const repository: StoriesRepository<TMeta> = {
     stories: new Map(),
   };
@@ -45,25 +43,22 @@ export const createStoryFns = <TMeta extends Meta>(Stories: ComponentType, meta:
     logger.error(`Error in mounting stories ${e.toString()}`, e);
   }
 
-  const stories: Record<string, StoryFn<StoryRenderer<TMeta>>> = {};
+  const stories: Record<string, StoryObj<StoryRenderer<TMeta>>> = {};
 
   for (const [name, story] of repository.stories) {
-    // NOTE: We can't use StoryObj, because `@storybook/svelte` accepts `StoryFn` for now
-    const storyFn: StoryFn<StoryRenderer<TMeta>> = (args, storyContext) => {
-      return {
+    const storyObj: StoryObj<StoryRenderer<TMeta>> = {
+      ...story,
+      render: (args, storyContext) => ({
         Component: StoryRenderer<TMeta>,
         props: {
-          storyName: story.name,
+          //TODO: align story.name type with storyName
+          storyName: story.name!,
           Stories,
           storyContext,
           args,
         },
-      };
+      }),
     };
-    storyFn.storyName = story.name;
-    storyFn.args = combineArgs(meta.args, story.args);
-    storyFn.parameters = combineParameters({}, meta.parameters, story.parameters);
-    storyFn.tags = combineTags(...(meta.tags ?? []), ...(story.tags ?? []));
 
     // TODO: Restore this feature
     // if (storyMeta.rawSource) {
@@ -101,7 +96,7 @@ export const createStoryFns = <TMeta extends Meta>(Stories: ComponentType, meta:
        * The 'play' function should be delegated to the real play Story function
        * in order to be run into the component scope.
        */
-      storyFn.play = (storyContext) => {
+      storyObj.play = (storyContext) => {
         const delegate = storyContext.playFunction?.__play;
 
         if (delegate) {
@@ -112,7 +107,7 @@ export const createStoryFns = <TMeta extends Meta>(Stories: ComponentType, meta:
       };
     }
 
-    stories[name] = storyFn;
+    stories[name] = storyObj;
   }
 
   return stories;

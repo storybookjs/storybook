@@ -7,9 +7,9 @@ import type { ImportDeclaration } from 'estree';
 export function createImport(): ImportDeclaration {
   const imported = {
     type: 'Identifier',
-    // WARN: Tempting to use `createStoryFns.name` here.
+    // WARN: Tempting to use `createRuntimeStories.name` here.
     // It will break, because this function imports `*.svelte` files.
-    name: 'createStoryFns',
+    name: 'createRuntimeStories',
   } as const;
 
   return {
@@ -17,7 +17,7 @@ export function createImport(): ImportDeclaration {
     source: {
       type: 'Literal',
       // TODO: Probably possible to achieve picking the whole path from `pkg.exports` with Object.keys or something like that
-      value: `${pkg.name}/internal/create-story-fns`,
+      value: `${pkg.name}/internal/create-runtime-stories`,
     },
     specifiers: [
       {

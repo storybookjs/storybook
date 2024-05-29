@@ -4,7 +4,7 @@ import { toJs } from 'estree-util-to-js';
 import { createExportDefaultMeta } from './appendix/create-export-default.js';
 import { createExportOrderVariable } from './appendix/create-export-order.js';
 import { createImport } from './appendix/create-import.js';
-import { createVariableFromStoryFnsCall } from './appendix/create-variable-from-storyfns-call.js';
+import { createVariableFromRuntimeStoriesCall } from './appendix/create-variable-from-runtime-stories-call.js';
 import { createNamedExportStory } from './appendix/create-named-export-story.js';
 
 import { getMetaIdentifier } from '../../parser/analyse/meta/identifier.js';
@@ -32,7 +32,7 @@ export async function createAppendix(params: Params) {
     node: defineMetaVariableDeclaration,
     filename,
   });
-  const variableWithStoryFnsCall = createVariableFromStoryFnsCall({
+  const variableFromRuntimeStoriesCall = createVariableFromRuntimeStoriesCall({
     componentName,
     metaIdentifier,
     filename,
@@ -42,7 +42,7 @@ export async function createAppendix(params: Params) {
       createNamedExportStory({
         name,
         filename,
-        node: variableWithStoryFnsCall,
+        node: variableFromRuntimeStoriesCall,
       })
     )
   );
@@ -52,7 +52,7 @@ export async function createAppendix(params: Params) {
     sourceType: 'module',
     body: [
       createImport(),
-      variableWithStoryFnsCall,
+      variableFromRuntimeStoriesCall,
       createExportDefaultMeta({ metaIdentifier, filename }),
       createExportOrderVariable({ names, filename }),
       ...storiesExports,

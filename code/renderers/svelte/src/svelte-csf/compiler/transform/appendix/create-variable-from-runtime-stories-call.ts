@@ -2,16 +2,14 @@ import type { VariableDeclaration } from 'estree';
 
 import type { getMetaIdentifier } from '../../../parser/analyse/meta/identifier.js';
 
-const STORY_FNS_VARIABLE = '__storyFns';
-
 interface Params {
   componentName: string;
   metaIdentifier: ReturnType<typeof getMetaIdentifier>;
   filename: string;
 }
 
-export function createVariableFromStoryFnsCall(params: Params): VariableDeclaration {
-  const { componentName, metaIdentifier, filename } = params;
+export function createVariableFromRuntimeStoriesCall(params: Params): VariableDeclaration {
+  const { componentName, metaIdentifier } = params;
 
   return {
     type: 'VariableDeclaration',
@@ -21,15 +19,15 @@ export function createVariableFromStoryFnsCall(params: Params): VariableDeclarat
         type: 'VariableDeclarator',
         id: {
           type: 'Identifier',
-          name: STORY_FNS_VARIABLE,
+          name: '__stories',
         },
         init: {
           type: 'CallExpression',
           callee: {
             type: 'Identifier',
-            // WARN: Tempting to use `createStoryFns.name` here.
+            // WARN: Tempting to use `createRuntimeStories.name` here.
             // It will break, because this function imports `*.svelte` files.
-            name: 'createStoryFns',
+            name: 'createRuntimeStories',
           },
           arguments: [
             {

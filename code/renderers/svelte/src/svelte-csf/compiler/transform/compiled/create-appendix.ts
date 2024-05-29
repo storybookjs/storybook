@@ -1,6 +1,5 @@
 // TODO: Refactor, use Rollup parser (ESTree AST) to transform the output.
 
-import url from 'node:url';
 import MagicString from 'magic-string';
 
 import { getNameFromStoryAttribute } from '../../../parser/analyse/Story-attributes.js';
@@ -25,12 +24,6 @@ export async function createAppendix(params: Params) {
   const { componentName, code, nodes, filename } = params;
   const { compiled, svelte } = nodes;
   const { defineMetaVariableDeclaration } = compiled;
-
-  // NOTE:
-  // We need to remove the default export from the code,
-  // because Storybook internally expects export default `meta`
-  code.replace(/export default /, '');
-
 
   const exportsOrder = await getStoriesNames({ nodes: svelte, filename });
 

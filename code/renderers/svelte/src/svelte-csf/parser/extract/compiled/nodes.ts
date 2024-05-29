@@ -1,6 +1,7 @@
 import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
 import type {
   Comment,
+  ExportDefaultDeclaration,
   FunctionDeclaration,
   Identifier,
   ImportSpecifier,
@@ -22,12 +23,17 @@ export interface CompiledASTNodes {
    */
   defineMetaVariableDeclaration: VariableDeclaration;
   /**
+   * Store the `export default declaration`, we will need to remove it later.
+   * Why? Storybook expects `export default meta`, instead of what `@sveltejs/vite-plugin-svelte` will produce.
+   */
+  exportDefault: ExportDefaultDeclaration;
+  /**
    * An identifier for the addon's component `<Story />`.
    * It could be destructured with rename - e.g. `const { Story: S } = defineMeta({ ... })`
    */
   storyIdentifier: Identifier;
   /**
-   *
+   * A function declaration for the main Svelte component which is the `*.stories.svelte` file.
    */
   storiesFunctionDeclaration: FunctionDeclaration;
 }
@@ -100,29 +106,29 @@ export async function extractCompiledASTNodes(params: Params): Promise<CompiledA
       }
     },
 
-    ExportDefaultDeclaration(node, { state }) {
-      // NOTE: This may be confusing.
-      // In the dev mode the export default is different (Identifier to FunctionDeclaration)
-      if (process.env['NODE_ENV'] !== 'development') {
-        if (node.declaration.type !== 'FunctionDeclaration') {
-          throw new Error(
-            `Expected FunctionDeclaration as the default export in the compiled code for stories file: ${filename}`
-          );
-        }
+    ExportDefaultDeclaration(node, { state, stop }) {
+      state.exportDefault = node;
 
+      // WARN: This may be confusing.
+      // In the `NODE_ENV="production"` the export default is different.
+      // Identifier to a FunctionDeclaration.
+      if (
+        process.env.NODE_ENV === 'production' &&
+        node.declaration.type === 'FunctionDeclaration' &&
+        isStoriesComponentFn(node.declaration as FunctionDeclaration)
+      ) {
         state.storiesFunctionDeclaration = node.declaration as FunctionDeclaration;
+        stop(); // We're done there.
       }
     },
 
     FunctionDeclaration(node, { state, stop }) {
-      if (process.env['NODE_ENV'] === 'development') {
-        if (node.id.name.endsWith('stories')) {
-          // NOTE:
-          // Is an `export default function <Component>_stories` - we want this one.
-          // We will remove the `export default` later
-          state.storiesFunctionDeclaration = node;
-          stop();
-        }
+      // WARN: This may be confusing.
+      // In the `NODE_ENV="development"` the export default is different.
+      // A `FunctionDeclaration`
+      if (isStoriesComponentFn(node)) {
+        state.storiesFunctionDeclaration = node;
+        stop(); // We're done there.
       }
     },
   };
@@ -132,34 +138,53 @@ export async function extractCompiledASTNodes(params: Params): Promise<CompiledA
   const {
     defineMetaImport,
     defineMetaVariableDeclaration,
+    exportDefault,
     storyIdentifier,
     storiesFunctionDeclaration,
   } = state;
 
   if (!defineMetaImport) {
     throw new Error(
-      `Could not find '${AST_NODES_NAMES.defineMeta}' imported from the "${pkg.name}" in the stories file: ${filename}`
+      `Could not find '${AST_NODES_NAMES.defineMeta}' imported from the "${pkg.name}" in the compiled output of stories file: ${filename}`
     );
   }
 
   if (!defineMetaVariableDeclaration) {
     throw new Error(
-      `Could not find '${defineMetaImport.local.name}({ ... })' call in the module tag ('<script context="module">') of the stories file: ${filename}`
+      `Could not find '${defineMetaImport.local.name}({ ... })' in the compiled output of the stories file: ${filename}`
+    );
+  }
+
+  if (!exportDefault) {
+    throw new Error(
+      `Could not find 'export default' in the compiled output of the stories file: ${filename}`
     );
   }
 
   if (!storyIdentifier) {
-    throw new Error(`No story identifier found.`);
+    throw new Error(
+      `Could not find 'Story' identifier in the compiled output of the stories file: ${filename}`
+    );
   }
 
   if (!storiesFunctionDeclaration) {
-    throw new Error(`No stories function declaration found.`);
+    throw new Error(
+      `Could not find the stories component '*.stories.svelte' function in the compiled output of the stories file: ${filename}`
+    );
   }
 
   return {
     defineMetaImport,
     defineMetaVariableDeclaration,
+    exportDefault,
     storyIdentifier,
     storiesFunctionDeclaration,
   };
 }
+
+/**
+ *:The main component function of those stories file _(`*.stories.svelte`)_ will always end up with `_stories`.
+ * @see {@link "file://./../../../utils/get-component-name.ts"}
+ */
+const isStoriesComponentFn = (fnDeclaration: FunctionDeclaration) =>
+  fnDeclaration.id?.name.endsWith('_stories');

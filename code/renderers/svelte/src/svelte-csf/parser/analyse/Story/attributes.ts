@@ -2,7 +2,7 @@ import type { Attribute } from 'svelte/compiler';
 
 interface AnalyzeOptions {
   node: Attribute | undefined;
-  filename: string;
+  filename?: string;
 }
 
 export function getNameFromStoryAttribute(options: AnalyzeOptions) {
@@ -29,7 +29,7 @@ export function getTagsFromStoryAttribute(options: AnalyzeOptions) {
 
 interface GetStringValueOptions {
   node: Attribute;
-  filename: string;
+  filename?: string;
 }
 
 function getStringValue(options: GetStringValueOptions) {
@@ -39,12 +39,26 @@ function getStringValue(options: GetStringValueOptions) {
 
   if (value === true) {
     throw new Error(
-      `One of <Story> component's attribute '${name}' is not a string value. Stories file: ${filename}`
+      `One of '<Story>' component's attribute '${name}' is not a string value. Stories file: ${filename}`
     );
   }
 
-  if (value.length === 1 && value[0].type === 'Text') {
+  if (value.length !== 1) {
+    throw new Error(
+      `Expected a string value from '<Story>' attribute '${name}'. Stories file: ${filename}`
+    );
+  }
+
+  if (value[0].type === 'Text') {
     return value[0].data;
+  }
+
+  if (
+    value[0].type === 'ExpressionTag' &&
+    value[0].expression.type === 'Literal' &&
+    typeof value[0].expression.value === 'string'
+  ) {
+    return value[0].expression.value;
   }
 
   throw new Error(

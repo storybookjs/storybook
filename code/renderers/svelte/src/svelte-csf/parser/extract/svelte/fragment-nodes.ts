@@ -3,9 +3,7 @@ import type { Visitors } from 'zimmerframe';
 
 import type { extractModuleNodes } from './module-nodes.js';
 
-interface SvelteASTNodesFragment {
-  /**
-   */
+interface Result {
   storyComponents: Array<{
     comment?: Comment;
     component: Component;
@@ -23,7 +21,7 @@ interface Params {
  * and from the fragment aka HTML code.
  * They are needed for further code analysis/transformation.
  */
-export async function extractFragmentNodes(params: Params): Promise<SvelteASTNodesFragment> {
+export async function extractFragmentNodes(params: Params): Promise<Result> {
   const { walk } = await import('zimmerframe');
 
   const { fragment, filename, moduleNodes } = params;
@@ -31,7 +29,7 @@ export async function extractFragmentNodes(params: Params): Promise<SvelteASTNod
 
   let latestComment: Comment | undefined;
 
-  const state: SvelteASTNodesFragment = {
+  const state: Result = {
     storyComponents: [],
   };
 

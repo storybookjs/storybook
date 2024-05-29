@@ -1,6 +1,6 @@
 import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
 import type { Identifier, ImportSpecifier, VariableDeclaration } from 'estree';
-import type { Script, SvelteNode } from 'svelte/compiler';
+import type { Root, SvelteNode } from 'svelte/compiler';
 import type { Visitors } from 'zimmerframe';
 
 const AST_NODES_NAMES = {
@@ -8,7 +8,7 @@ const AST_NODES_NAMES = {
   Story: 'Story',
 } as const;
 
-interface SvelteASTNodesModule {
+interface Result {
   /**
    * Import specifier for `defineMeta` imported from this addon package.
    * Could be renamed - e.g. `import { defineMeta } from "@storybook/addon-svelte-csf"`
@@ -26,8 +26,8 @@ interface SvelteASTNodesModule {
   storyIdentifier: Identifier;
 }
 
-interface ExtractModuleNodesOptions {
-  module: Script;
+interface Params {
+  module: Root['module'];
   filename?: string;
 }
 
@@ -36,14 +36,20 @@ interface ExtractModuleNodesOptions {
  * and from the module tag - `<script context=module>`.
  * They are needed for further code analysis/transformation.
  */
-export async function extractModuleNodes(
-  options: ExtractModuleNodesOptions
-): Promise<SvelteASTNodesModule> {
+export async function extractModuleNodes(options: Params): Promise<Result> {
   const { module, filename } = options;
+
+  // TODO: Perhaps we can use some better way to insert error messages?
+  // String interpolations doesn't feel right if we want to provide a whole example (code snippet).
+  if (!module) {
+    throw new Error(
+      `Couldn't find a module tag. Add (<script context="module">) to the stories file: ${filename}`
+    );
+  }
 
   const { walk } = await import('zimmerframe');
 
-  const state: Partial<SvelteASTNodesModule> = {};
+  const state: Partial<Result> = {};
   const visitors: Visitors<SvelteNode, typeof state> = {
     ImportDeclaration(node, { state, visit }) {
       const { source, specifiers } = node;

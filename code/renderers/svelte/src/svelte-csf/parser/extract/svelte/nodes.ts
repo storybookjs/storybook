@@ -10,7 +10,7 @@ import { extractFragmentNodes } from './fragment-nodes.js';
 export type SvelteASTNodes = Awaited<ReturnType<typeof extractModuleNodes>> &
   Awaited<ReturnType<typeof extractFragmentNodes>>;
 
-interface ExtractSvelteASTNodesOptions {
+interface Params {
   ast: Root;
   filename?: string;
 }
@@ -18,19 +18,9 @@ interface ExtractSvelteASTNodesOptions {
 /**
  * Pick only required Svelte AST nodes for further usage in this addon.
  */
-export async function extractSvelteASTNodes(
-  options: ExtractSvelteASTNodesOptions
-): Promise<SvelteASTNodes> {
-  const { ast, filename } = options;
+export async function extractSvelteASTNodes(params: Params): Promise<SvelteASTNodes> {
+  const { ast, filename } = params;
   const { module, fragment } = ast;
-
-  // TODO: Perhaps we can use some better way to insert error messages?
-  // String interpolations doesn't feel right if we want to provide a whole example (code snippet).
-  if (!module) {
-    throw new Error(
-      `Couldn't find a module tag. Add (<script context="module">) to the stories file: ${filename}`
-    );
-  }
 
   const moduleNodes = await extractModuleNodes({ module, filename });
   const fragmentNodes = await extractFragmentNodes({

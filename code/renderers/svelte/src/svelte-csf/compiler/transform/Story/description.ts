@@ -20,10 +20,6 @@ interface Params {
 export function insertStoryHTMLCommentAsDescription(params: Params) {
   const { code, nodes, filename } = params;
   const { svelte, compiled } = nodes;
-
-  if (!svelte) {
-    throw new Error('svelte was undefined!' + filename);
-  }
   const { component, comment } = svelte;
 
   if (!comment) {

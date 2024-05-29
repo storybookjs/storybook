@@ -1,6 +1,5 @@
 import type { StoryObj } from '@storybook/svelte';
-import type { Attribute, Component, SvelteNode } from 'svelte/compiler';
-import type { Visitors } from 'zimmerframe';
+import type { Attribute, Component } from 'svelte/compiler';
 
 interface Options<Attributes extends Array<keyof StoryObj>> {
   component: Component;
@@ -12,23 +11,21 @@ type Result<Attributes extends Array<keyof StoryObj>> = Partial<{
   [Key in Attributes[number]]: Attribute;
 }>;
 
-export async function extractStoryAttributesNodes<const Attributes extends Array<keyof StoryObj>>(
+export function extractStoryAttributesNodes<const Attributes extends Array<keyof StoryObj>>(
   options: Options<Attributes>
-): Promise<Result<Attributes>> {
-  const { walk } = await import('zimmerframe');
-
+): Result<Attributes> {
   const { attributes, component } = options;
 
-  const state: Result<Attributes> = {};
-  const visitors: Visitors<SvelteNode, typeof state> = {
-    Attribute(node, { state }) {
-      if (attributes.includes(node.name as Attributes[number])) {
-        state[node.name] = node;
-      }
-    },
-  };
+  const results: Result<Attributes> = {};
 
-  walk(component, state, visitors);
+  for (const attributeNode of component.attributes) {
+    if (
+      attributeNode.type === 'Attribute' &&
+      attributes.includes(attributeNode.name as Attributes[number])
+    ) {
+      results[attributeNode.name] = attributeNode;
+    }
+  }
 
-  return state;
+  return results;
 }

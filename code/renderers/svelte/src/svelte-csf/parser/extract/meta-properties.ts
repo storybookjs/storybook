@@ -1,7 +1,5 @@
 import type { Meta } from '@storybook/svelte';
 import type { ObjectExpression, Property } from 'estree';
-import type { SvelteNode } from 'svelte/compiler';
-import type { Visitors } from 'zimmerframe';
 
 import type { SvelteASTNodes } from './svelte/nodes.js';
 import type { CompiledASTNodes } from './compiled/nodes.js';
@@ -16,28 +14,24 @@ type Result<Properties extends Array<keyof Meta>> = Partial<{
   [Key in Properties[number]]: Property;
 }>;
 
-export async function extractMetaPropertiesNodes<const Properties extends Array<keyof Meta>>(
+export function extractMetaPropertiesNodes<const Properties extends Array<keyof Meta>>(
   options: Options<Properties>
-): Promise<Result<Properties>> {
-  const { walk } = await import('zimmerframe');
-
+): Result<Properties> {
   const { properties } = options;
   const objectExpression = getFirstArgumentObjectExpression(options);
-  const state: Result<Properties> = {};
-  const visitors: Visitors<SvelteNode, typeof state> = {
-    Property(node, { state }) {
-      if (
-        node.key.type === 'Identifier' &&
-        properties.includes(node.key.name as Properties[number])
-      ) {
-        state[node.key.name] = node;
-      }
-    },
-  };
+  const results: Result<Properties> = {};
 
-  walk(objectExpression, state, visitors);
+  for (const property of objectExpression.properties) {
+    if (
+      property.type === 'Property' &&
+      property.key.type === 'Identifier' &&
+      properties.includes(property.key.name as Properties[number])
+    ) {
+      results[property.key.name] = property;
+    }
+  }
 
-  return state;
+  return results;
 }
 
 function getFirstArgumentObjectExpression(options: Options<Array<keyof Meta>>): ObjectExpression {

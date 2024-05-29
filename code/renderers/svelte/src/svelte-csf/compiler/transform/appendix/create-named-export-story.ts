@@ -1,6 +1,7 @@
 import type { ExportNamedDeclaration, Identifier } from 'estree';
 import type { createVariableFromStoryFnsCall } from './create-variable-from-storyfns-call';
-import { storyNameToExportName } from 'src/utils/identifiers';
+
+import { storyNameToExportName } from '../../../utils/identifiers.js';
 
 interface Params {
   name: string;

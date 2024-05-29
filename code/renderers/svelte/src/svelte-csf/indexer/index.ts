@@ -38,22 +38,18 @@ export const indexer: Indexer = {
 
     const svelteAST = getSvelteAST({ source, filename });
     const nodes = await extractSvelteASTNodes({ ast: svelteAST, filename });
-    const [metaPropertiesNodes, storiesAttributesNodes] = await Promise.all([
-      extractMetaPropertiesNodes({
-        nodes,
+    const metaPropertiesNodes = extractMetaPropertiesNodes({
+      nodes,
+      filename,
+      properties: ['id', 'title', 'tags'],
+    });
+    const storiesAttributesNodes = nodes.storyComponents.map(({ component }) =>
+      extractStoryAttributesNodes({
+        component,
         filename,
-        properties: ['id', 'title', 'tags'],
-      }),
-      Promise.all(
-        nodes.storyComponents.map(({ component }) => {
-          return extractStoryAttributesNodes({
-            component,
-            filename,
-            attributes: ['name', 'tags'],
-          });
-        })
-      ),
-    ]);
+        attributes: ['name', 'tags'],
+      })
+    );
 
     const metaTitle = metaPropertiesNodes.title
       ? makeTitle(getMetaTitleValue({ node: metaPropertiesNodes.title, filename }))

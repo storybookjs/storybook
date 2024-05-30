@@ -45,7 +45,7 @@ const AST_NODES_NAMES = {
 
 interface Params {
   ast: Program;
-  filename: string;
+  filename?: string;
 }
 
 /**

@@ -35,8 +35,9 @@ async function run(cwd: string) {
 
   const docsArray: Record<string, any>[] = await Promise.all(
     dirs.map(async (dir) => {
-      const { temporaryDirectory } = await import('tempy');
-      const outputDir = temporaryDirectory();
+      // @ts-expect-eror - For some reason the type definitions assume "directory" as being only accessible from the default export
+      const { directory } = await import('tempy');
+      const outputDir = directory();
       const resolvedDir = await realpath(dir);
       await execaCommand(
         `yarn compodoc ${resolvedDir} -p ./tsconfig.json -e json -d ${outputDir}`,

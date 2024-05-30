@@ -1,4 +1,6 @@
 <script lang="ts" generics="TMeta extends Meta">
+  import { storyNameToExportName } from '../utils/identifier-utils.js';
+
   import type { Meta, StoryObj, StoryContext } from '@storybook/svelte';
   import type { Snippet } from 'svelte';
 
@@ -16,15 +18,19 @@
      */
     children?: Snippet<[StoryObj<TMeta>["args"], StoryContext<TMeta["args"]>]>;
     /**
-    * Id of the story.
-    *
-    * Optional, auto-generated from name if not specified.
+    * Name of the story. Can be omitted if `exportName` is provided.
     */
-    id?: string;
+    name?: string;
     /**
-    * Name of the story.
+    * exportName of the story.
+    * If not provided, it will be generated from the 'name', by converting it to a valid, PascalCased JS variable name.
+    * eg. 'My story!' -> 'MyStory'
+    * 
+    * Use this prop to explicitly set the export name of the story. This is useful if you have multiple stories with the names
+    * that result in duplicate export names like "My story" and "My story!".
+    * It's also useful for explicitly defining the export that can be imported in MDX docs.
     */
-    name: string;
+    exportName?: string;
     /**
      * @deprecrated
      * Use `tags={['autodocs']}` instead.
@@ -43,16 +49,18 @@
     source?: boolean | string;
   } & StoryObj<TMeta>;
 
-  const { children, name, id, play, ...restProps }: Props = $props();
+  const { children, name, exportName: exportNameProp, id, play, ...restProps }: Props = $props();
+  const exportName = exportNameProp ?? storyNameToExportName(name!)
 
   const extractor = useStoriesExtractor<TMeta>();
   const renderer = useStoryRenderer<TMeta>();
   const template = useStoriesTemplate<TMeta>();
+  
 
-  const isCurrentlyViewed = $derived(!extractor.isExtracting && renderer.currentStoryName === name);
+  const isCurrentlyViewed = $derived(!extractor.isExtracting && renderer.currentStoryExportName === exportName);
 
   if (extractor.isExtracting) {
-    extractor.register({ ...restProps, name, play } as StoryObj<TMeta>);
+    extractor.register({ ...restProps, exportName, play } as unknown as  StoryObj<TMeta> & { exportName: string });
   }
 
   function injectIntoPlayFunction(storyContext: typeof renderer.storyContext, playToInject: typeof play) {

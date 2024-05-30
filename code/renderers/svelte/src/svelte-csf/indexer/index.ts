@@ -13,9 +13,8 @@ import {
   getMetaTagsValue,
   getMetaTitleValue,
 } from '../parser/analyse/meta/properties.js';
-import { getNameFromStoryAttribute } from '../parser/analyse/Story/attributes/name.js';
 import { getTagsFromStoryAttribute } from '../parser/analyse/Story/attributes/tags.js';
-import { storyNameToExportName } from '../utils/identifiers.js';
+import { getStoryIdentifiers } from '../parser/analyse/Story/attributes/identifiers.js';
 
 export const indexer: Indexer = {
   test: /\.svelte$/,
@@ -46,7 +45,7 @@ export const indexer: Indexer = {
       extractStoryAttributesNodes({
         component,
         filename,
-        attributes: ['name', 'tags'],
+        attributes: ['exportName', 'name', 'tags'],
       })
     );
 
@@ -61,15 +60,17 @@ export const indexer: Indexer = {
       : undefined;
 
     return storiesAttributesNodes.map((attributeNode) => {
-      const name = getNameFromStoryAttribute({
-        node: attributeNode.name,
+
+      const { exportName, name } = getStoryIdentifiers({
+        nameNode: attributeNode.name,
+        exportNameNode: attributeNode.exportName,
         filename,
       });
 
       return {
         type: 'story',
         importPath: filename,
-        exportName: storyNameToExportName(name),
+        exportName,
         name,
         title: metaTitle,
         tags: combineTags(

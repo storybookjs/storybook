@@ -4,7 +4,7 @@ import {
   exportNameToStoryId,
   storyNameToId,
   storyNameToExportName,
-} from './identifiers';
+} from './identifier-utils';
 
 it('storyIdToExportName', () => {
   expect(storyIdToExportName('single')).toBe('Single');

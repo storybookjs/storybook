@@ -1,22 +1,21 @@
 import type { Meta, StoryObj, StoryContext } from '@storybook/svelte';
-import type { StoryName } from '@storybook/types';
 import { getContext, hasContext, setContext } from 'svelte';
 
 const CONTEXT_KEY = 'storybook-story-renderer-context';
 
 interface StoryRendererContextProps<TMeta extends Meta> {
-  currentStoryName: StoryName | undefined;
+  currentStoryExportName: string | undefined;
   args: StoryObj<TMeta>['args'];
   storyContext: StoryContext<StoryObj<TMeta>['args']>;
 }
 
 function buildContext<TMeta extends Meta>(props: StoryRendererContextProps<TMeta>) {
-  let currentStoryName = $state(props.currentStoryName);
+  let currentStoryExportName = $state(props.currentStoryExportName);
   let args = $state(props.args);
   let storyContext = $state(props.storyContext);
 
   function set(props: StoryRendererContextProps<TMeta>) {
-    currentStoryName = props.currentStoryName;
+    currentStoryExportName = props.currentStoryExportName;
     args = props.args;
     storyContext = props.storyContext;
   }
@@ -28,8 +27,8 @@ function buildContext<TMeta extends Meta>(props: StoryRendererContextProps<TMeta
     get storyContext() {
       return storyContext;
     },
-    get currentStoryName() {
-      return currentStoryName;
+    get currentStoryExportName() {
+      return currentStoryExportName;
     },
     set,
   };
@@ -39,7 +38,7 @@ export type StoryRendererContext<TMeta extends Meta> = ReturnType<typeof buildCo
 
 function createStoryRendererContext<TMeta extends Meta>(): void {
   const ctx = buildContext<TMeta>({
-    currentStoryName: undefined,
+    currentStoryExportName: undefined,
     args: {},
     // @ts-expect-error FIXME: I don't know how to satisfy this one
     storyContext: {},

@@ -10,7 +10,7 @@ import { createNamedExportStory } from './appendix/create-named-export-story.js'
 import { getMetaIdentifier } from '../../parser/analyse/meta/identifier.js';
 import type { CompiledASTNodes } from '../../parser/extract/compiled/nodes.js';
 import type { SvelteASTNodes } from '../../parser/extract/svelte/nodes.js';
-import { getStoriesNames } from '../../parser/analyse/Story/attributes/name.js';
+import { getStoriesIdentifiers } from '../../parser/analyse/Story/attributes/identifiers.js';
 
 interface Params {
   componentName: string;
@@ -27,7 +27,7 @@ export async function createAppendix(params: Params) {
   const { compiled, svelte } = nodes;
   const { defineMetaVariableDeclaration } = compiled;
 
-  const names = await getStoriesNames({ nodes: svelte, filename });
+  const storyIdentifiers = await getStoriesIdentifiers({ nodes: svelte, filename });
   const metaIdentifier = getMetaIdentifier({
     node: defineMetaVariableDeclaration,
     filename,
@@ -37,11 +37,10 @@ export async function createAppendix(params: Params) {
     metaIdentifier,
     filename,
   });
-  // TODO: gracefully handle when story export names collide - eg. because of story names "Hello!" and "Hello".
   const storiesExports = await Promise.all(
-    names.map((name) =>
+    storyIdentifiers.map(({ exportName }) =>
       createNamedExportStory({
-        name,
+        exportName,
         filename,
         node: variableFromRuntimeStoriesCall,
       })
@@ -55,7 +54,7 @@ export async function createAppendix(params: Params) {
       createImport(),
       variableFromRuntimeStoriesCall,
       createExportDefaultMeta({ metaIdentifier, filename }),
-      createExportOrderVariable({ names, filename }),
+      createExportOrderVariable({ storyIdentifiers, filename }),
       ...storiesExports,
     ],
   });

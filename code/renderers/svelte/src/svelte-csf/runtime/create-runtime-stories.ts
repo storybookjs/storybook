@@ -6,7 +6,6 @@ import { mount, unmount, type ComponentType } from 'svelte';
 import StoriesExtractor from './StoriesExtractor.svelte';
 import StoryRenderer from './StoryRenderer.svelte';
 import type { StoriesRepository } from './contexts/extractor.svelte.js';
-import { storyNameToId } from '../utils/identifiers.js';
 
 const createFragment = document.createDocumentFragment
   ? () => document.createDocumentFragment()
@@ -46,14 +45,13 @@ export const createRuntimeStories = <TMeta extends Meta>(Stories: ComponentType,
 
   const stories: Record<string, StoryObj<StoryRenderer<TMeta>>> = {};
 
-  for (const [name, story] of repository.stories) {
+  for (const [exportName, story] of repository.stories) {
     const storyObj: StoryObj<StoryRenderer<TMeta>> = {
       ...story,
       render: (args, storyContext) => ({
         Component: StoryRenderer<TMeta>,
         props: {
-          //TODO: align story.name type with storyName
-          storyName: story.name!,
+          exportName,
           Stories,
           storyContext,
           args,
@@ -108,7 +106,7 @@ export const createRuntimeStories = <TMeta extends Meta>(Stories: ComponentType,
       };
     }
 
-    stories[storyNameToId(name)] = storyObj;
+    stories[exportName] = storyObj;
   }
 
   return stories;

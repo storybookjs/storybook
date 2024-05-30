@@ -1,17 +1,19 @@
 import type { StoryObj } from '@storybook/svelte';
 import type { Attribute, Component } from 'svelte/compiler';
 
-interface Options<Attributes extends Array<keyof StoryObj>> {
+type StoryAttributes = Array<keyof (StoryObj & { exportName: string })>;
+
+interface Options<Attributes extends StoryAttributes> {
   component: Component;
   filename?: string;
   attributes: Attributes;
 }
 
-type Result<Attributes extends Array<keyof StoryObj>> = Partial<{
+type Result<Attributes extends StoryAttributes> = Partial<{
   [Key in Attributes[number]]: Attribute;
 }>;
 
-export function extractStoryAttributesNodes<const Attributes extends Array<keyof StoryObj>>(
+export function extractStoryAttributesNodes<const Attributes extends StoryAttributes>(
   options: Options<Attributes>
 ): Result<Attributes> {
   const { attributes, component } = options;

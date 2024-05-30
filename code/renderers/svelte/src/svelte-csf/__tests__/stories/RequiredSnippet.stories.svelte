@@ -14,10 +14,10 @@
 <!-- <Story name="Case 1" /> -->
 
 {#snippet children()}
-<p>This works</p>
+  <p>This works</p>
 {/snippet}
 
-<!-- Works, as expected TODO: does not actually work, renders nothing-->
+<!-- Works, as expected -->
 <Story name="Case 2" args={{ children }} />
 
 <!-- Works, as expected, but TypeScript is not happy -->

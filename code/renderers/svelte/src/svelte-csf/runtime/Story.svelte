@@ -49,7 +49,7 @@
     source?: boolean | string;
   } & StoryObj<TMeta>;
 
-  const { children, name, exportName: exportNameProp, id, play, ...restProps }: Props = $props();
+  const { children, name, exportName: exportNameProp, play, ...restProps }: Props = $props();
   const exportName = exportNameProp ?? storyNameToExportName(name!)
 
   const extractor = useStoriesExtractor<TMeta>();

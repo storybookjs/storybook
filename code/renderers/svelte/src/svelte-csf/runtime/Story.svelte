@@ -74,6 +74,7 @@
       injectIntoPlayFunction(renderer.storyContext, play);
     }
   });
+  $inspect(renderer.storyContext).with(console.log)
 </script>
 
 {#if isCurrentlyViewed}
@@ -81,5 +82,10 @@
     {@render children(renderer.args, renderer.storyContext)}
   {:else if template}
     {@render template(renderer.args, renderer.storyContext)}
+  {:else if renderer.storyContext.component}
+    <!-- TODO: there's a risk here that this discards decorators -->
+    <svelte:component this={renderer.storyContext.component} {...renderer.args} />
+  {:else}
+    <p>Warning: no story rendered. improve this message</p>
   {/if}
 {/if}

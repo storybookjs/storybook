@@ -14,21 +14,32 @@
       interactions: { disable: true },
     },
     tags: ['autodocs'],
+    args: {
+      sampleRequiredBoolean: true,
+      sampleRequiredString: 'I agree',
+      sampleRequiredNumber: 10,
+      sampleRequiredArray: ['I', 'like', 'Svelte', 'and', 'Storybook'],
+      sampleRequiredEnum: 'storybook',
+      sampleRequiredObject: { tool: 'storybook', rating: 10 },
+    },
   });
 </script>
+
+<Story name="Default" />
 
 <Story
   name="Playground"
   args={{
-    sampleRequiredBoolean: true,
-    sampleRequiredString: 'I agree',
+    sampleRequiredBoolean: false,
+    sampleRequiredString: 'Different',
     sampleRequiredNumber: 10,
-    sampleRequiredArray: ['I', 'like', 'Svelte', 'and', 'Storybook'],
+    sampleRequiredArray: ['I', 'like', 'Storybook', 'and', 'Svelte'],
     sampleRequiredEnum: 'storybook',
-    sampleRequiredObject: { tool: 'storybook', rating: 10 },
+    sampleRequiredObject: { tool: 'storybook', rating: 11 },
   }}
 >
   {#snippet children(args)}
     <Controls {...args} />
   {/snippet}
 </Story>
+

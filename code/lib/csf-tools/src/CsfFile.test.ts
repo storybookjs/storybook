@@ -30,6 +30,9 @@ describe('CsfFile', () => {
           export default { title: 'foo/bar' };
           export const A = () => {};
           export const B = (args) => {};
+          const C = () => {};
+          const D = (args) => {};
+          export { C, D };
         `,
           true
         )
@@ -47,32 +50,16 @@ describe('CsfFile', () => {
             parameters:
               __isArgsStory: true
               __id: foo-bar--b
-      `);
-    });
-
-    it('exported const stories', () => {
-      expect(
-        parse(
-          dedent`
-          export default { title: 'foo/bar' };
-          const A = () => {};
-          const B = (args) => {};
-          export { A, B };
-        `,
-          true
-        )
-      ).toMatchInlineSnapshot(`
-        meta:
-          title: foo/bar
-        stories:
-          - id: foo-bar--a
-            name: A
+          - id: foo-bar--c
+            name: C
             parameters:
-              __id: foo-bar--a
-          - id: foo-bar--b
-            name: B
+              __isArgsStory: false
+              __id: foo-bar--c
+          - id: foo-bar--d
+            name: D
             parameters:
-              __id: foo-bar--b
+              __isArgsStory: true
+              __id: foo-bar--d
       `);
     });
 
@@ -81,7 +68,9 @@ describe('CsfFile', () => {
         parse(
           dedent`
           export default { title: 'foo/bar' };
-          export const __Basic__ = () => {};
+          export const __Primary__ = () => {};
+          const __Secondary__ = () => {};
+          export { __Secondary__ };
         `,
           true
         )
@@ -89,11 +78,16 @@ describe('CsfFile', () => {
         meta:
           title: foo/bar
         stories:
-          - id: foo-bar--basic
-            name: Basic
+          - id: foo-bar--primary
+            name: Primary
             parameters:
               __isArgsStory: false
-              __id: foo-bar--basic
+              __id: foo-bar--primary
+          - id: foo-bar--secondary
+            name: Secondary
+            parameters:
+              __isArgsStory: false
+              __id: foo-bar--secondary
       `);
     });
 
@@ -101,10 +95,14 @@ describe('CsfFile', () => {
       expect(
         parse(
           dedent`
-          export default { title: 'foo/bar', excludeStories: ['B', 'C'] };
+          export default { title: 'foo/bar', excludeStories: ['B', 'C', 'E', 'F'] };
           export const A = () => {};
           export const B = (args) => {};
           export const C = () => {};
+          const D = () => {};
+          const E = (args) => {};
+          const F = () => {};
+          export { D, E, F };
         `
         )
       ).toMatchInlineSnapshot(`
@@ -113,9 +111,13 @@ describe('CsfFile', () => {
           excludeStories:
             - B
             - C
+            - E
+            - F
         stories:
           - id: foo-bar--a
             name: A
+          - id: foo-bar--d
+            name: D
       `);
     });
 
@@ -126,6 +128,9 @@ describe('CsfFile', () => {
           export default { title: 'foo/bar', includeStories: ['IncludeA'] };
           export const SomeHelper = () => {};
           export const IncludeA = () => {};
+          const AnotherHelper = () => {};
+          const IncludeB = () => {};
+          export { AnotherHelper, IncludeB }
         `
         )
       ).toMatchInlineSnapshot(`
@@ -146,6 +151,9 @@ describe('CsfFile', () => {
           export default { title: 'foo/bar' };
           export const A = () => {};
           A.storyName = 'Some story';
+          const B = () => {};
+          B.storyName = 'Another story';
+          export { B };
       `
         )
       ).toMatchInlineSnapshot(`
@@ -154,6 +162,8 @@ describe('CsfFile', () => {
         stories:
           - id: foo-bar--a
             name: Some story
+          - id: foo-bar--b
+            name: Another story
       `);
     });
 
@@ -184,7 +194,8 @@ describe('CsfFile', () => {
           dedent`
           export default { title: 'foo/bar', id: 'custom-id' };
           export const A = () => {};
-          export const B = () => {};
+          const B = () => {};
+          export { B };
       `
         )
       ).toMatchInlineSnapshot(`
@@ -375,6 +386,9 @@ describe('CsfFile', () => {
           const Template = (args) => { };
           export const A = Template.bind({});
           A.args = { x: 1 };
+          const B =  Template.bind({});
+          B.args = { x: 1 };
+          export { B };
         `,
           true
         )
@@ -387,6 +401,11 @@ describe('CsfFile', () => {
             parameters:
               __isArgsStory: true
               __id: foo-bar--a
+          - id: foo-bar--b
+            name: B
+            parameters:
+              __isArgsStory: true
+              __id: foo-bar--b
       `);
     });
 
@@ -443,8 +462,9 @@ describe('CsfFile', () => {
               children: "Hello"
             });
             export default { title: 'foo/bar', tags: ['stories-mdx'], includeStories: ["__page"] };
-            export const __page = () => {};
+            const __page = () => {};
             __page.parameters = { docsOnly: true };
+            export { __page };
           `,
           true
         )
@@ -671,6 +691,8 @@ describe('CsfFile', () => {
           export default { title: 'foo/bar' };
           export function A() {}
           export function B() {}
+          function C() {}
+          export { C };
       `
         )
       ).toMatchInlineSnapshot(`
@@ -681,6 +703,8 @@ describe('CsfFile', () => {
             name: A
           - id: foo-bar--b
             name: B
+          - id: foo-bar--c
+            name: C
       `);
     });
   });

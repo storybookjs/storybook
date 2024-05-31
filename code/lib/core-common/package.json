@@ -1,6 +1,6 @@
 {
   "name": "@storybook/core-common",
-  "version": "8.2.0-alpha.1",
+  "version": "8.2.0-alpha.4",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -69,7 +69,7 @@
     "pretty-hrtime": "^1.0.3",
     "resolve-from": "^5.0.0",
     "semver": "^7.3.7",
-    "tempy": "^1.0.1",
+    "tempy": "^3.1.0",
     "tiny-invariant": "^1.3.1",
     "ts-dedent": "^2.0.0",
     "util": "^0.12.4"

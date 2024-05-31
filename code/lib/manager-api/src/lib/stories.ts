@@ -86,7 +86,7 @@ export const transformSetStoriesStoryDataToPreparedStoryIndex = (
     {} as API_PreparedStoryIndex['entries']
   );
 
-  return { v: 4, entries };
+  return { v: 5, entries };
 };
 
 export const transformStoryIndexV2toV3 = (index: StoryIndexV2): StoryIndexV3 => {
@@ -139,6 +139,30 @@ export const transformStoryIndexV3toV4 = (index: StoryIndexV3): API_PreparedStor
   };
 };
 
+/**
+ * Storybook 8.0 and below did not automatically tag stories with 'dev'.
+ * Therefore Storybook 8.1 and above would not show composed 8.0 stories by default.
+ * This function adds the 'dev' tag to all stories in the index to workaround this issue.
+ */
+export const transformStoryIndexV4toV5 = (
+  index: API_PreparedStoryIndex
+): API_PreparedStoryIndex => {
+  return {
+    v: 5,
+    entries: Object.values(index.entries).reduce(
+      (acc, entry) => {
+        acc[entry.id] = {
+          ...entry,
+          tags: entry.tags ? ['dev', 'test', ...entry.tags] : ['dev'],
+        };
+
+        return acc;
+      },
+      {} as API_PreparedStoryIndex['entries']
+    ),
+  };
+};
+
 type ToStoriesHashOptions = {
   provider: API_Provider<API>;
   docsOptions: DocsOptions;
@@ -157,6 +181,7 @@ export const transformStoryIndexToStoriesHash = (
   let index = input;
   index = index.v === 2 ? transformStoryIndexV2toV3(index as any) : index;
   index = index.v === 3 ? transformStoryIndexV3toV4(index as any) : index;
+  index = index.v === 4 ? transformStoryIndexV4toV5(index as any) : index;
   index = index as API_PreparedStoryIndex;
 
   const entryValues = Object.values(index.entries).filter((entry: any) => {

@@ -2,7 +2,6 @@ import { dirname, join } from 'path';
 
 import downloadTarball from '@ndelangen/get-tarball';
 import getNpmTarballUrl from 'get-npm-tarball-url';
-import * as tempy from 'tempy';
 
 import invariant from 'tiny-invariant';
 import { externalFrameworks } from './project_types';
@@ -16,7 +15,8 @@ export function getCliDir() {
 }
 
 const resolveUsingBranchInstall = async (packageManager: JsPackageManager, request: string) => {
-  const tempDirectory = tempy.directory();
+  const { temporaryDirectory } = await import('tempy');
+  const tempDirectory = temporaryDirectory();
   const name = request as keyof typeof versions;
 
   // FIXME: this might not be the right version for community packages

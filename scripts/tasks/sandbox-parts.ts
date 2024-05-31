@@ -282,6 +282,23 @@ function addStoriesEntry(mainConfig: ConfigFile, path: string, disableDocs: bool
   mainConfig.setFieldValue(['stories'], [...stories, entry]);
 }
 
+// Add refs to older versions of storybook to test out composition
+function addRefs(mainConfig: ConfigFile) {
+  const refs = mainConfig.getFieldValue(['refs']) as Record<string, string>;
+
+  mainConfig.setFieldValue(['refs'], {
+    ...refs,
+    'storybook@8.0.0': {
+      title: 'Storybook 8.0.0',
+      url: 'https://635781f3500dd2c49e189caf-gckybvsekn.chromatic.com/',
+    },
+    'storybook@7.6.18': {
+      title: 'Storybook 7.6.18',
+      url: 'https://635781f3500dd2c49e189caf-oljwjdrftz.chromatic.com/',
+    },
+  } as Record<string, any>);
+}
+
 function getStoriesFolderWithVariant(variant?: string, folder = 'stories') {
   return variant ? `${folder}_${variant}` : folder;
 }
@@ -352,8 +369,7 @@ export async function addExtraDependencies({
   debug: boolean;
   extraDeps?: string[];
 }) {
-  // web-components doesn't install '@storybook/testing-library' by default
-  const extraDevDeps = ['@storybook/testing-library@next', '@storybook/test-runner@next'];
+  const extraDevDeps = ['@storybook/test-runner@next'];
   if (debug) logger.log('🎁 Adding extra dev deps', extraDevDeps);
   let packageManager: JsPackageManager;
   if (!dryRun) {
@@ -516,9 +532,14 @@ export const addStories: Task['run'] = async (
   await writeConfig(mainConfig);
 };
 
-export const extendMain: Task['run'] = async ({ template, sandboxDir }, { disableDocs }) => {
+export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { disableDocs }) => {
   logger.log('📝 Extending main.js');
   const mainConfig = await readMainConfig({ cwd: sandboxDir });
+
+  if (key === 'react-vite/default-ts') {
+    addRefs(mainConfig);
+  }
+
   const templateConfig = template.modifications?.mainConfig || {};
   const configToAdd = {
     ...templateConfig,

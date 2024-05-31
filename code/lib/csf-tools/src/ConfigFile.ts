@@ -224,9 +224,14 @@ export class ConfigFile {
           } else if (node.specifiers) {
             // export { X };
             node.specifiers.forEach((spec) => {
-              if (t.isExportSpecifier(spec) && t.isIdentifier(spec.exported)) {
+              if (
+                t.isExportSpecifier(spec) &&
+                t.isIdentifier(spec.local) &&
+                t.isIdentifier(spec.exported)
+              ) {
+                const { name: localName } = spec.local;
                 const { name: exportName } = spec.exported;
-                const decl = _findVarDeclarator(exportName, parent as t.Program) as any;
+                const decl = _findVarDeclarator(localName, parent as t.Program) as any;
                 self._exports[exportName] = decl.init;
                 self._exportDecls[exportName] = decl;
               }

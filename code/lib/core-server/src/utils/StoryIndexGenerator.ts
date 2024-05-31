@@ -592,7 +592,7 @@ export class StoryIndexGenerator {
       );
 
       this.lastIndex = {
-        v: 4,
+        v: 5,
         entries: sorted,
       };
 

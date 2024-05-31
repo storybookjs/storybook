@@ -17,9 +17,9 @@ const defaultParameters = { config: {}, options: {} };
  * Handle A11yContext events.
  * Because the event are sent without manual check, we split calls
  */
-const handleRequest = async (storyId: string, input: A11yParameters = defaultParameters) => {
+const handleRequest = async (storyId: string, input: A11yParameters | null) => {
   if (!input?.manual) {
-    await run(storyId, input);
+    await run(storyId, input ?? defaultParameters);
   }
 };
 

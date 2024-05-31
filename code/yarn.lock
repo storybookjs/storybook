@@ -5537,17 +5537,17 @@ __metadata:
     webpack: "npm:5"
     zone.js: "npm:^0.14.2"
   peerDependencies:
-    "@angular-devkit/architect": ">=0.1500.0 < 0.1800.0"
-    "@angular-devkit/build-angular": ">=15.0.0 < 18.0.0"
-    "@angular-devkit/core": ">=15.0.0 < 18.0.0"
-    "@angular/cli": ">=15.0.0 < 18.0.0"
-    "@angular/common": ">=15.0.0 < 18.0.0"
-    "@angular/compiler": ">=15.0.0 < 18.0.0"
-    "@angular/compiler-cli": ">=15.0.0 < 18.0.0"
-    "@angular/core": ">=15.0.0 < 18.0.0"
-    "@angular/forms": ">=15.0.0 < 18.0.0"
-    "@angular/platform-browser": ">=15.0.0 < 18.0.0"
-    "@angular/platform-browser-dynamic": ">=15.0.0 < 18.0.0"
+    "@angular-devkit/architect": ">=0.1500.0 < 0.1900.0"
+    "@angular-devkit/build-angular": ">=15.0.0 < 19.0.0"
+    "@angular-devkit/core": ">=15.0.0 < 19.0.0"
+    "@angular/cli": ">=15.0.0 < 19.0.0"
+    "@angular/common": ">=15.0.0 < 19.0.0"
+    "@angular/compiler": ">=15.0.0 < 19.0.0"
+    "@angular/compiler-cli": ">=15.0.0 < 19.0.0"
+    "@angular/core": ">=15.0.0 < 19.0.0"
+    "@angular/forms": ">=15.0.0 < 19.0.0"
+    "@angular/platform-browser": ">=15.0.0 < 19.0.0"
+    "@angular/platform-browser-dynamic": ">=15.0.0 < 19.0.0"
     rxjs: ^6.0.0 || ^7.4.0
     typescript: ^4.0.0 || ^5.0.0
     zone.js: ">= 0.11.1 < 1.0.0"
@@ -5795,7 +5795,7 @@ __metadata:
     slash: "npm:^5.0.0"
     strip-ansi: "npm:^7.1.0"
     strip-json-comments: "npm:^3.1.1"
-    tempy: "npm:^1.0.1"
+    tempy: "npm:^3.1.0"
     tiny-invariant: "npm:^1.3.1"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.3.2"
@@ -5924,7 +5924,7 @@ __metadata:
     resolve-from: "npm:^5.0.0"
     semver: "npm:^7.3.7"
     slash: "npm:^5.0.0"
-    tempy: "npm:^1.0.1"
+    tempy: "npm:^3.1.0"
     tiny-invariant: "npm:^1.3.1"
     ts-dedent: "npm:^2.0.0"
     type-fest: "npm:~2.19"
@@ -6811,7 +6811,6 @@ __metadata:
     "@storybook/svelte-webpack5": "workspace:*"
     "@storybook/telemetry": "workspace:*"
     "@storybook/test": "workspace:*"
-    "@storybook/testing-library": "npm:next"
     "@storybook/theming": "workspace:*"
     "@storybook/types": "workspace:*"
     "@storybook/vue3": "workspace:*"
@@ -7080,17 +7079,6 @@ __metadata:
     util: "npm:^0.12.4"
   languageName: unknown
   linkType: soft
-
-"@storybook/testing-library@npm:next":
-  version: 0.2.2-next.0
-  resolution: "@storybook/testing-library@npm:0.2.2-next.0"
-  dependencies:
-    "@testing-library/dom": "npm:^9.0.0"
-    "@testing-library/user-event": "npm:^14.4.0"
-    ts-dedent: "npm:^2.2.0"
-  checksum: 10c0/4350e73776cba8ab5037ee9a8b07b957c73540873f64097648ed96b93f086469eab475ad19b917e5e2eee4faec67891fa443d703b9b4aa28efc9a74243970a4e
-  languageName: node
-  linkType: hard
 
 "@storybook/theming@workspace:*, @storybook/theming@workspace:lib/theming":
   version: 0.0.0-use.local
@@ -7483,7 +7471,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@testing-library/user-event@npm:^14.4.0, @testing-library/user-event@npm:^14.4.3, @testing-library/user-event@npm:^14.5.2":
+"@testing-library/user-event@npm:^14.4.3, @testing-library/user-event@npm:^14.5.2":
   version: 14.5.2
   resolution: "@testing-library/user-event@npm:14.5.2"
   peerDependencies:
@@ -12645,10 +12633,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"crypto-random-string@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "crypto-random-string@npm:2.0.0"
-  checksum: 10c0/288589b2484fe787f9e146f56c4be90b940018f17af1b152e4dde12309042ff5a2bf69e949aab8b8ac253948381529cc6f3e5a2427b73643a71ff177fa122b37
+"crypto-random-string@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "crypto-random-string@npm:4.0.0"
+  dependencies:
+    type-fest: "npm:^1.0.1"
+  checksum: 10c0/16e11a3c8140398f5408b7fded35a961b9423c5dac39a60cbbd08bd3f0e07d7de130e87262adea7db03ec1a7a4b7551054e0db07ee5408b012bac5400cfc07a5
   languageName: node
   linkType: hard
 
@@ -13130,22 +13120,6 @@ __metadata:
   version: 6.1.2
   resolution: "defu@npm:6.1.2"
   checksum: 10c0/ceb467f8f30d4000ae5300105904736113826a3d4124640b70e145b243d6c78c868de03634038d870e0855ff4cdfd17324a8caf7386229501a5bb776adb682f4
-  languageName: node
-  linkType: hard
-
-"del@npm:^6.0.0":
-  version: 6.1.1
-  resolution: "del@npm:6.1.1"
-  dependencies:
-    globby: "npm:^11.0.1"
-    graceful-fs: "npm:^4.2.4"
-    is-glob: "npm:^4.0.1"
-    is-path-cwd: "npm:^2.2.0"
-    is-path-inside: "npm:^3.0.2"
-    p-map: "npm:^4.0.0"
-    rimraf: "npm:^3.0.2"
-    slash: "npm:^3.0.0"
-  checksum: 10c0/8a095c5ccade42c867a60252914ae485ec90da243d735d1f63ec1e64c1cfbc2b8810ad69a29ab6326d159d4fddaa2f5bad067808c42072351ec458efff86708f
   languageName: node
   linkType: hard
 
@@ -16378,7 +16352,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"globby@npm:^11.0.1, globby@npm:^11.1.0":
+"globby@npm:^11.1.0":
   version: 11.1.0
   resolution: "globby@npm:11.1.0"
   dependencies:
@@ -17974,13 +17948,6 @@ __metadata:
   version: 7.0.0
   resolution: "is-number@npm:7.0.0"
   checksum: 10c0/b4686d0d3053146095ccd45346461bc8e53b80aeb7671cc52a4de02dbbf7dc0d1d2a986e2fe4ae206984b4d34ef37e8b795ebc4f4295c978373e6575e295d811
-  languageName: node
-  linkType: hard
-
-"is-path-cwd@npm:^2.2.0":
-  version: 2.2.0
-  resolution: "is-path-cwd@npm:2.2.0"
-  checksum: 10c0/afce71533a427a759cd0329301c18950333d7589533c2c90205bd3fdcf7b91eb92d1940493190567a433134d2128ec9325de2fd281e05be1920fbee9edd22e0a
   languageName: node
   linkType: hard
 
@@ -27235,10 +27202,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"temp-dir@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "temp-dir@npm:2.0.0"
-  checksum: 10c0/b1df969e3f3f7903f3426861887ed76ba3b495f63f6d0c8e1ce22588679d9384d336df6064210fda14e640ed422e2a17d5c40d901f60e161c99482d723f4d309
+"temp-dir@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "temp-dir@npm:3.0.0"
+  checksum: 10c0/a86978a400984cd5f315b77ebf3fe53bb58c61f192278cafcb1f3fb32d584a21dc8e08b93171d7874b7cc972234d3455c467306cc1bfc4524b622e5ad3bfd671
   languageName: node
   linkType: hard
 
@@ -27251,16 +27218,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tempy@npm:^1.0.1":
-  version: 1.0.1
-  resolution: "tempy@npm:1.0.1"
+"tempy@npm:^3.1.0":
+  version: 3.1.0
+  resolution: "tempy@npm:3.1.0"
   dependencies:
-    del: "npm:^6.0.0"
-    is-stream: "npm:^2.0.0"
-    temp-dir: "npm:^2.0.0"
-    type-fest: "npm:^0.16.0"
-    unique-string: "npm:^2.0.0"
-  checksum: 10c0/864a1cf1b5536dc21e84ae45dbbc3ba4dd2c7ec1674d895f99c349cf209df959a53d797ca38d0b2cf69c7684d565fde5cfc67faaa63b7208ffb21d454b957472
+    is-stream: "npm:^3.0.0"
+    temp-dir: "npm:^3.0.0"
+    type-fest: "npm:^2.12.2"
+    unique-string: "npm:^3.0.0"
+  checksum: 10c0/b88e70baa8d935ba8f0e0372b59ad1a961121f098da5fb4a6e05bec98ec32a49026b553532fb75c1c102ec782fd4c6a6bde0d46cbe87013fa324451ce476fb76
   languageName: node
   linkType: hard
 
@@ -28226,12 +28192,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"unique-string@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "unique-string@npm:2.0.0"
+"unique-string@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "unique-string@npm:3.0.0"
   dependencies:
-    crypto-random-string: "npm:^2.0.0"
-  checksum: 10c0/11820db0a4ba069d174bedfa96c588fc2c96b083066fafa186851e563951d0de78181ac79c744c1ed28b51f9d82ac5b8196ff3e4560d0178046ef455d8c2244b
+    crypto-random-string: "npm:^4.0.0"
+  checksum: 10c0/b35ea034b161b2a573666ec16c93076b4b6106b8b16c2415808d747ab3a0566b5db0c4be231d4b11cfbc16d7fd915c9d8a45884bff0e2db11b799775b2e1e017
   languageName: node
   linkType: hard
 

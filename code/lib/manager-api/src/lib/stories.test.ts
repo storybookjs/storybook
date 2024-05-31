@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import type { StoryIndexV2, StoryIndexV3 } from '@storybook/types';
-import { transformStoryIndexV2toV3, transformStoryIndexV3toV4 } from './stories';
+import type { StoryIndexV2, StoryIndexV3, API_PreparedStoryIndex } from '@storybook/types';
+import {
+  transformStoryIndexV2toV3,
+  transformStoryIndexV3toV4,
+  transformStoryIndexV4toV5,
+} from './stories';
+import { mockEntries } from '../tests/mockStoriesEntries';
 
 const baseV2: StoryIndexV2['stories'][0] = {
   id: '1',
@@ -147,6 +152,64 @@ describe('transformStoryIndexV3toV4', () => {
           },
         },
         "v": 4,
+      }
+    `);
+  });
+});
+
+describe('transformStoryIndexV4toV5', () => {
+  it('transforms a StoryIndexV4 to an API_PreparedStoryIndex correctly', () => {
+    const indexV4: API_PreparedStoryIndex = {
+      v: 4,
+      entries: mockEntries,
+    };
+
+    expect(transformStoryIndexV4toV5(indexV4)).toMatchInlineSnapshot(`
+      {
+        "entries": {
+          "component-a--docs": {
+            "id": "component-a--docs",
+            "importPath": "./path/to/component-a.ts",
+            "name": "Docs",
+            "storiesImports": [],
+            "tags": [
+              "dev",
+            ],
+            "title": "Component A",
+            "type": "docs",
+          },
+          "component-a--story-1": {
+            "id": "component-a--story-1",
+            "importPath": "./path/to/component-a.ts",
+            "name": "Story 1",
+            "tags": [
+              "dev",
+            ],
+            "title": "Component A",
+            "type": "story",
+          },
+          "component-a--story-2": {
+            "id": "component-a--story-2",
+            "importPath": "./path/to/component-a.ts",
+            "name": "Story 2",
+            "tags": [
+              "dev",
+            ],
+            "title": "Component A",
+            "type": "story",
+          },
+          "component-b--story-3": {
+            "id": "component-b--story-3",
+            "importPath": "./path/to/component-b.ts",
+            "name": "Story 3",
+            "tags": [
+              "dev",
+            ],
+            "title": "Component B",
+            "type": "story",
+          },
+        },
+        "v": 5,
       }
     `);
   });

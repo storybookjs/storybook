@@ -1,6 +1,6 @@
 {
   "name": "@storybook/root",
-  "version": "8.2.0-alpha.1",
+  "version": "8.2.0-alpha.4",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -166,7 +166,6 @@
     "@storybook/svelte-webpack5": "workspace:*",
     "@storybook/telemetry": "workspace:*",
     "@storybook/test": "workspace:*",
-    "@storybook/testing-library": "next",
     "@storybook/theming": "workspace:*",
     "@storybook/types": "workspace:*",
     "@storybook/vue3": "workspace:*",

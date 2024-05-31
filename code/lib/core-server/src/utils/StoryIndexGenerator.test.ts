@@ -88,7 +88,7 @@ describe('StoryIndexGenerator', () => {
                 "type": "story",
               },
             },
-            "v": 4,
+            "v": 5,
           }
         `);
       });
@@ -119,7 +119,7 @@ describe('StoryIndexGenerator', () => {
                 "type": "story",
               },
             },
-            "v": 4,
+            "v": 5,
           }
         `);
       });
@@ -150,7 +150,7 @@ describe('StoryIndexGenerator', () => {
                 "type": "story",
               },
             },
-            "v": 4,
+            "v": 5,
           }
         `);
       });
@@ -192,7 +192,7 @@ describe('StoryIndexGenerator', () => {
                 "type": "story",
               },
             },
-            "v": 4,
+            "v": 5,
           }
         `);
       });
@@ -294,7 +294,7 @@ describe('StoryIndexGenerator', () => {
                 "type": "story",
               },
             },
-            "v": 4,
+            "v": 5,
           }
         `);
       });
@@ -440,7 +440,7 @@ describe('StoryIndexGenerator', () => {
                 "type": "story",
               },
             },
-            "v": 4,
+            "v": 5,
           }
         `);
       });
@@ -593,7 +593,7 @@ describe('StoryIndexGenerator', () => {
                 "type": "story",
               },
             },
-            "v": 4,
+            "v": 5,
           }
         `);
       });
@@ -656,7 +656,7 @@ describe('StoryIndexGenerator', () => {
                 "type": "story",
               },
             },
-            "v": 4,
+            "v": 5,
           }
         `);
       });
@@ -714,7 +714,7 @@ describe('StoryIndexGenerator', () => {
                 "type": "story",
               },
             },
-            "v": 4,
+            "v": 5,
           }
         `);
       });
@@ -771,7 +771,7 @@ describe('StoryIndexGenerator', () => {
                 "type": "story",
               },
             },
-            "v": 4,
+            "v": 5,
           }
         `);
       });
@@ -789,7 +789,7 @@ describe('StoryIndexGenerator', () => {
         expect(await generator.getIndex()).toMatchInlineSnapshot(`
           {
             "entries": {},
-            "v": 4,
+            "v": 5,
           }
         `);
       });
@@ -832,7 +832,7 @@ describe('StoryIndexGenerator', () => {
                 "type": "story",
               },
             },
-            "v": 4,
+            "v": 5,
           }
         `);
       });
@@ -933,7 +933,7 @@ describe('StoryIndexGenerator', () => {
                 "type": "docs",
               },
             },
-            "v": 4,
+            "v": 5,
           }
         `);
       });
@@ -1066,7 +1066,7 @@ describe('StoryIndexGenerator', () => {
                 "type": "docs",
               },
             },
-            "v": 4,
+            "v": 5,
           }
         `);
       });
@@ -1127,7 +1127,7 @@ describe('StoryIndexGenerator', () => {
                 "type": "docs",
               },
             },
-            "v": 4,
+            "v": 5,
           }
         `);
       });
@@ -1176,7 +1176,7 @@ describe('StoryIndexGenerator', () => {
                 "type": "story",
               },
             },
-            "v": 4,
+            "v": 5,
           }
         `);
       });

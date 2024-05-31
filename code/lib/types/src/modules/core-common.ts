@@ -582,4 +582,4 @@ export interface CoreCommon_StorybookInfo {
  * const framework: Framework = '@storybook/nextjs'; // valid and will be autocompleted
  * const framework: Framework = path.dirname(require.resolve(path.join("@storybook/nextjs", "package.json"))) // valid
  */
-export type CompatibleString<T extends string> = T | (string & Record<string, never>);
+export type CompatibleString<T extends string> = T | (string & {});

@@ -38,7 +38,7 @@ describe('summarizeIndex', () => {
   it('example stories', () => {
     expect(
       summarizeIndex({
-        v: 4,
+        v: 5,
         entries: {
           'example-introduction--docs': {
             id: 'example-introduction--docs',
@@ -146,14 +146,14 @@ describe('summarizeIndex', () => {
         "playStoryCount": 0,
         "storiesMdxCount": 0,
         "storyCount": 0,
-        "version": 4,
+        "version": 5,
       }
     `);
   });
   it('onboarding stories', () => {
     expect(
       summarizeIndex({
-        v: 4,
+        v: 5,
         entries: {
           'example-introduction--docs': {
             id: 'example-introduction--docs',
@@ -204,14 +204,14 @@ describe('summarizeIndex', () => {
         "playStoryCount": 0,
         "storiesMdxCount": 0,
         "storyCount": 0,
-        "version": 4,
+        "version": 5,
       }
     `);
   });
   it('user stories', () => {
     expect(
       summarizeIndex({
-        v: 4,
+        v: 5,
         entries: {
           'stories-renderers-react-errors--story-contains-unrenderable': {
             id: 'stories-renderers-react-errors--story-contains-unrenderable',
@@ -260,14 +260,14 @@ describe('summarizeIndex', () => {
         "playStoryCount": 0,
         "storiesMdxCount": 0,
         "storyCount": 4,
-        "version": 4,
+        "version": 5,
       }
     `);
   });
   it('pages', () => {
     expect(
       summarizeIndex({
-        v: 4,
+        v: 5,
         entries: {
           'example-page--logged-out': {
             id: 'example-page--logged-out',
@@ -317,14 +317,14 @@ describe('summarizeIndex', () => {
         "playStoryCount": 1,
         "storiesMdxCount": 0,
         "storyCount": 1,
-        "version": 4,
+        "version": 5,
       }
     `);
   });
   it('storiesMdx', () => {
     expect(
       summarizeIndex({
-        v: 4,
+        v: 5,
         entries: {
           'stories-renderers-react-react-mdx--docs': {
             id: 'stories-renderers-react-react-mdx--docs',
@@ -374,14 +374,14 @@ describe('summarizeIndex', () => {
         "playStoryCount": 0,
         "storiesMdxCount": 1,
         "storyCount": 3,
-        "version": 4,
+        "version": 5,
       }
     `);
   });
   it('autodocs', () => {
     expect(
       summarizeIndex({
-        v: 4,
+        v: 5,
         entries: {
           'example-button--docs': {
             id: 'example-button--docs',
@@ -432,14 +432,14 @@ describe('summarizeIndex', () => {
         "playStoryCount": 0,
         "storiesMdxCount": 0,
         "storyCount": 0,
-        "version": 4,
+        "version": 5,
       }
     `);
   });
   it('mdx', () => {
     expect(
       summarizeIndex({
-        v: 4,
+        v: 5,
         entries: {
           'example-introduction--docs': {
             id: 'example-introduction--docs',
@@ -483,7 +483,7 @@ describe('summarizeIndex', () => {
         "playStoryCount": 0,
         "storiesMdxCount": 0,
         "storyCount": 0,
-        "version": 4,
+        "version": 5,
       }
     `);
   });

@@ -1,7 +1,7 @@
 import program from 'commander';
 import { dirname, join, relative } from 'path';
 import { existsSync } from 'fs';
-import * as tempy from 'tempy';
+import { temporaryDirectory } from 'tempy';
 import { copy, emptyDir, remove, writeFile } from 'fs-extra';
 import { execaCommand } from 'execa';
 
@@ -99,7 +99,7 @@ if (!existsSync(REPROS_DIRECTORY)) {
   throw Error("Couldn't find sandbox directory. Did you forget to run generate-sandboxes?");
 }
 
-const tmpFolder = tempy.directory();
+const tmpFolder = temporaryDirectory();
 logger.log(`⏱ Created tmp folder: ${tmpFolder}`);
 
 const options = program.opts() as PublishOptions;

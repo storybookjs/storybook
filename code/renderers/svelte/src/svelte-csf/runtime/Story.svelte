@@ -37,12 +37,19 @@
      */
     autodocs?: never;
     /**
+     * @deprecated
+     * Is recommended to use `parameters={{ docs: { source: { code: "..." } } }}` instead, to follow Regular CSF.
      * WARNING: This is under consideration to be revamped.
      * Ref: https://github.com/storybookjs/addon-svelte-csf/pull/181#issuecomment-2130744977
      *
      * Specify which sources should be shown.
      *
      * By default, sources for an args story are auto-generated.
+     *
+     * TODO:
+     * I am still confused on what is exactly supposed to happen/output when it's a boolean?
+     * For now this is not implemented, and I've created a warning when it happens.
+     *
      * If source is true, then the source of the story will be used instead.
      * If source is a string, it replaces the source of the story.
      */

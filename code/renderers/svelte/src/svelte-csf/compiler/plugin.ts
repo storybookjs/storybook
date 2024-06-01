@@ -19,6 +19,7 @@ import { removeExportDefault } from './transform/remove-export-default.js';
 import { insertDefineMetaJSDocCommentAsDescription } from './transform/define-meta/description.js';
 import { destructureMetaFromDefineMeta } from './transform/define-meta/destructure-meta.js';
 import { insertStoryHTMLCommentAsDescription } from './transform/Story/description.js';
+import { moveSourceAttributeToParameters } from './transform/Story/source.js';
 import { getSvelteAST } from '../parser/ast.js';
 import { extractStoriesNodesFromExportDefaultFn } from '../parser/extract/compiled/stories.js';
 import { extractCompiledASTNodes } from '../parser/extract/compiled/nodes.js';
@@ -86,6 +87,11 @@ export async function plugin(): Promise<Plugin> {
 
       for (const [index, compiled] of Object.entries(compiledStories)) {
         insertStoryHTMLCommentAsDescription({
+          code,
+          nodes: { svelte: svelteStories[index], compiled },
+          filename,
+        });
+        moveSourceAttributeToParameters({
           code,
           nodes: { svelte: svelteStories[index], compiled },
           filename,

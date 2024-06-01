@@ -32,79 +32,104 @@ export function insertStoryHTMLCommentAsDescription(params: Params) {
     throw new Error(`Invalid`);
   }
 
-  const componentProperty = createProperty('component', {
+  const newStoryProperty = createProperty('story', {
     type: 'Literal',
     value: dedent(comment.data),
   });
-  const descriptionProperty = createProperty(
+  const newDescriptionProperty = createProperty(
     'description',
-    createObjectExpression([componentProperty])
+    createObjectExpression([newStoryProperty])
   );
-  const docsProperty = createProperty('docs', createObjectExpression([descriptionProperty]));
-  const parametersAttribute = createProperty('parameters', createObjectExpression([docsProperty]));
+  const newDocsProperty = createProperty('docs', createObjectExpression([newDescriptionProperty]));
+  const newParametersProperty = createProperty(
+    'parameters',
+    createObjectExpression([newDocsProperty])
+  );
 
-  const parametersIndex = findAttributeIndex('parameters', component);
+  const currentParametersPropertyIndex = findAttributeIndex('parameters', component);
 
-  if (parametersIndex === -1) {
-    compiledPropsObjectExpression.properties.push(parametersAttribute);
+  if (currentParametersPropertyIndex === -1) {
+    compiledPropsObjectExpression.properties.push(newParametersProperty);
     compiled.arguments[1] = compiledPropsObjectExpression;
 
     return updateCompiledNode(code, compiled);
   }
 
-  const parameters = compiledPropsObjectExpression.properties[parametersIndex];
+  const currentParametersProperty =
+    compiledPropsObjectExpression.properties[currentParametersPropertyIndex];
 
-  if (parameters.type !== 'Property' || parameters.value.type !== 'ObjectExpression') {
+  if (
+    currentParametersProperty.type !== 'Property' ||
+    currentParametersProperty.value.type !== 'ObjectExpression'
+  ) {
     throw new Error();
   }
 
-  const docsIndex = findPropertyIndex('docs', parameters.value[0].expression);
+  const currentDocsPropertyIndex = findPropertyIndex(
+    'docs',
+    currentParametersProperty.value[0].expression
+  );
 
-  if (docsIndex === -1) {
-    parameters.value.properties.push(docsProperty);
-    compiledPropsObjectExpression.properties[parametersIndex] = parameters;
+  if (currentDocsPropertyIndex === -1) {
+    currentParametersProperty.value.properties.push(newDocsProperty);
+    compiledPropsObjectExpression.properties[currentParametersPropertyIndex] =
+      currentParametersProperty;
     compiled.arguments[1] = compiledPropsObjectExpression;
 
     return updateCompiledNode(code, compiled);
   }
 
-  const docs = parameters.value[0].expression.properties[docsIndex];
+  const currentDocsProperty =
+    currentParametersProperty.value[0].expression.properties[currentDocsPropertyIndex];
 
-  if (docs.type !== 'Property' || docs.value.type !== 'ObjectExpression') {
+  if (
+    currentDocsProperty.type !== 'Property' ||
+    currentDocsProperty.value.type !== 'ObjectExpression'
+  ) {
     throw new Error();
   }
 
-  const descriptionIndex = findPropertyIndex('description', docs.value);
+  const currentDescriptionPropertyIndex = findPropertyIndex(
+    'description',
+    currentDocsProperty.value
+  );
 
-  if (descriptionIndex === -1) {
-    docs.value.properties.push(descriptionProperty);
-    parameters.value.properties[docsIndex] = docs;
-    compiledPropsObjectExpression.properties[parametersIndex] = parameters;
+  if (currentDescriptionPropertyIndex === -1) {
+    currentDocsProperty.value.properties.push(newDescriptionProperty);
+    currentParametersProperty.value.properties[currentDocsPropertyIndex] = currentDocsProperty;
+    compiledPropsObjectExpression.properties[currentParametersPropertyIndex] =
+      currentParametersProperty;
     compiled.arguments[1] = compiledPropsObjectExpression;
 
     return updateCompiledNode(code, compiled);
   }
 
-  const description = docs.value.properties[descriptionIndex];
+  const currentDescriptionProperty =
+    currentDocsProperty.value.properties[currentDescriptionPropertyIndex];
 
-  if (description.type !== 'Property' || description.value.type !== 'ObjectExpression') {
+  if (
+    currentDescriptionProperty.type !== 'Property' ||
+    currentDescriptionProperty.value.type !== 'ObjectExpression'
+  ) {
     throw new Error();
   }
 
-  const componentIndex = findPropertyIndex('component', description.value);
+  const currentStoryPropertyIndex = findPropertyIndex('story', currentDescriptionProperty.value);
 
-  if (componentIndex !== -1) {
+  if (currentStoryPropertyIndex !== -1) {
     logger.warn(
-      `defineMeta() already has explictly set description. Ignoring the JSDoc comment above. Stories file: ${filename}`
+      `<Story /> already has explictly set description. Ignoring the HTML comment above. Stories file: ${filename}`
     );
 
     return;
   }
 
-  description.value.properties.push(componentProperty);
-  docs.value.properties[descriptionIndex] = description;
-  parameters.value.properties[docsIndex] = docs;
-  compiledPropsObjectExpression.properties[parametersIndex] = parameters;
+  currentDescriptionProperty.value.properties.push(newStoryProperty);
+  currentDocsProperty.value.properties[currentDescriptionPropertyIndex] =
+    currentDescriptionProperty;
+  currentParametersProperty.value.properties[currentDocsPropertyIndex] = currentDocsProperty;
+  compiledPropsObjectExpression.properties[currentParametersPropertyIndex] =
+    currentParametersProperty;
   compiled.arguments[1] = compiledPropsObjectExpression;
 
   return updateCompiledNode(code, compiled);

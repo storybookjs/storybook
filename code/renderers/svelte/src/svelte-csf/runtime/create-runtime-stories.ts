@@ -59,35 +59,6 @@ export const createRuntimeStories = <TMeta extends Meta>(Stories: ComponentType,
       }),
     };
 
-    // TODO: Restore this feature
-    // if (storyMeta.rawSource) {
-    // 	storyFn.parameters = combineParameters(storyFn.parameters, {
-    // 		storySource: {
-    // 			source: storyMeta.rawSource,
-    // 		},
-    // 	});
-    // }
-    //
-    // if (storyMeta.source) {
-    // 	let code: string | undefined;
-    //
-    // 	if (storyMeta.source === true && storyMeta.rawSource) {
-    // 		code = storyMeta.rawSource;
-    // 	}
-    //
-    // 	if (typeof storyMeta.source === "string") {
-    // 		code = storyMeta.source;
-    // 	}
-    //
-    // 	if (code) {
-    // 		storyFn.parameters = combineParameters(storyFn.parameters, {
-    // 			docs: {
-    // 				source: { code },
-    // 			},
-    // 		});
-    // 	}
-    // }
-
     const play = meta.play ?? story.play;
 
     if (play) {

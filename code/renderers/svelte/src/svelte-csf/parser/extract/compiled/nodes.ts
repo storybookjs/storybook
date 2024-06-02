@@ -181,8 +181,8 @@ export async function extractCompiledASTNodes(params: Params): Promise<CompiledA
 }
 
 /**
- *:The main component function of those stories file _(`*.stories.svelte`)_ will always end up with `_stories`.
+ *:The main component function of those stories file _(`*.stories.svelte`)_ will always end up with `.stories`.
  * @see {@link "file://./../../../utils/get-component-name.ts"}
  */
 const isStoriesComponentFn = (fnDeclaration: FunctionDeclaration) =>
-  fnDeclaration.id?.name.endsWith('_stories');
+  fnDeclaration.id?.name.endsWith('.stories');

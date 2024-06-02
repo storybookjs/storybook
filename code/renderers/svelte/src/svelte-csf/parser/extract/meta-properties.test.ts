@@ -8,7 +8,7 @@ import type { ArrayExpression, Literal } from 'estree';
 describe(extractMetaPropertiesNodes.name, () => {
   it('extracts correctly selected properties', async ({ expect }) => {
     const ast = getSvelteAST({
-      source: `
+      code: `
         <script context="module">
           import { defineMeta } from "@storybook/addon-svelte-csf"
 

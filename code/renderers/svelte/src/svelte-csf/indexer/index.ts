@@ -19,22 +19,21 @@ import { getStoryIdentifiers } from '../parser/analyse/Story/attributes/identifi
 export const indexer: Indexer = {
   test: /\.svelte$/,
   createIndex: async (filename, { makeTitle }) => {
-    let [source, { loadSvelteConfig }] = await Promise.all([
+    let [code, { loadSvelteConfig }] = await Promise.all([
       fs.readFile(filename, { encoding: 'utf8' }),
       import('@sveltejs/vite-plugin-svelte'),
     ]);
 
     const svelteConfig = await loadSvelteConfig();
-
     if (svelteConfig?.preprocess) {
-      source = (
-        await preprocess(source, svelteConfig.preprocess, {
+      code = (
+        await preprocess(code, svelteConfig.preprocess, {
           filename: filename,
         })
       ).code;
     }
 
-    const svelteAST = getSvelteAST({ source, filename });
+    const svelteAST = getSvelteAST({ code, filename });
     const nodes = await extractSvelteASTNodes({ ast: svelteAST, filename });
     const metaPropertiesNodes = extractMetaPropertiesNodes({
       nodes,

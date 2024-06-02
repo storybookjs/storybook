@@ -8,7 +8,7 @@ import { extractStoryAttributesNodes } from '../../../extract/svelte/Story/attri
 describe(getTagsFromStoryAttribute.name, () => {
   it("extracts 'tags' attribute when is a correct type - array of strings", async () => {
     const ast = getSvelteAST({
-      source: `
+      code: `
         <script context="module">
           import { defineMeta } from "@storybook/addon-svelte-csf"
           const { Story } = defineMeta();
@@ -30,7 +30,7 @@ describe(getTagsFromStoryAttribute.name, () => {
 
   it("returns empty array when 'tags' attribute is not provided", async () => {
     const ast = getSvelteAST({
-      source: `
+      code: `
         <script context="module">
           import { defineMeta } from "@storybook/addon-svelte-csf"
           const { Story } = defineMeta();

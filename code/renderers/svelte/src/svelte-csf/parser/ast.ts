@@ -1,13 +1,13 @@
 import { compile, type Root } from 'svelte/compiler';
 
 interface GetSvelteASTOptions {
-  source: string;
+  code: string;
   filename?: string;
 }
 
 export function getSvelteAST(options: GetSvelteASTOptions) {
-  const { filename, source } = options;
-  const { ast }: { ast: Root } = compile(source, {
+  const { filename, code } = options;
+  const { ast }: { ast: Root } = compile(code, {
     filename,
     modernAst: true,
   });

@@ -6,7 +6,7 @@ import { getSvelteAST } from '../../../parser/ast.js';
 describe(extractModuleNodes.name, () => {
   it('fails when module tag not found', ({ expect }) => {
     const { module } = getSvelteAST({
-      source: `<script></script>`,
+      code: `<script></script>`,
     });
 
     expect(extractModuleNodes({ module })).rejects.toThrow();
@@ -14,7 +14,7 @@ describe(extractModuleNodes.name, () => {
 
   it("fails when 'defineMeta' not imported", ({ expect }) => {
     const { module } = getSvelteAST({
-      source: `<script context="module"></script>`,
+      code: `<script context="module"></script>`,
     });
 
     expect(extractModuleNodes({ module })).rejects.toThrow();
@@ -22,7 +22,7 @@ describe(extractModuleNodes.name, () => {
 
   it("fails when 'defineMeta' not used", ({ expect }) => {
     const { module } = getSvelteAST({
-      source: `
+      code: `
         <script context="module">
           import { defineMeta } from "@storybook/addon-svelte-csf";
         </script>
@@ -34,7 +34,7 @@ describe(extractModuleNodes.name, () => {
 
   it("fails when 'Story' is not destructured", ({ expect }) => {
     const { module } = getSvelteAST({
-      source: `
+      code: `
         <script context="module">
           import { defineMeta } from "@storybook/addon-svelte-csf"
           defineMeta();
@@ -46,7 +46,7 @@ describe(extractModuleNodes.name, () => {
 
   it('works when it has valid required entry snippet', ({ expect }) => {
     const { module } = getSvelteAST({
-      source: `
+      code: `
         <script context="module">
           import { defineMeta } from "@storybook/addon-svelte-csf"
           const { Story } = defineMeta();
@@ -58,7 +58,7 @@ describe(extractModuleNodes.name, () => {
 
   it('works when meta was destructured too', ({ expect }) => {
     const { module } = getSvelteAST({
-      source: `
+      code: `
         <script context="module">
           import { defineMeta } from "@storybook/addon-svelte-csf"
           const { Story, meta } = defineMeta();
@@ -71,7 +71,7 @@ describe(extractModuleNodes.name, () => {
 
   it('works on renamed identifiers', async ({ expect }) => {
     const { module } = getSvelteAST({
-      source: `
+      code: `
         <script context="module">
           import { defineMeta as dm } from "@storybook/addon-svelte-csf"
           const { Story: S, meta: m } = dm();

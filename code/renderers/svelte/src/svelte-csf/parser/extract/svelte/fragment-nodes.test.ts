@@ -7,7 +7,7 @@ import { getSvelteAST } from '../../../parser/ast.js';
 describe(extractFragmentNodes.name, () => {
   it("extracts '<Story />' AST nodes correctly", async () => {
     const ast = getSvelteAST({
-      source: `
+      code: `
         <script context="module">
           import { defineMeta } from "@storybook/addon-svelte-csf"
           const { Story } = defineMeta();
@@ -32,7 +32,7 @@ describe(extractFragmentNodes.name, () => {
   });
   it("extracts '<Story />' leading HTML comments correctly", async () => {
     const ast = getSvelteAST({
-      source: `
+      code: `
         <script context="module">
           import { defineMeta } from "@storybook/addon-svelte-csf"
           const { Story } = defineMeta();

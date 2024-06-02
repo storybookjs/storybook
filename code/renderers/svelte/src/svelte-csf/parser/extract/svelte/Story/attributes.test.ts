@@ -7,7 +7,7 @@ import { getSvelteAST } from '../../../ast.js';
 describe(extractStoryAttributesNodes.name, () => {
   it("extracts '<Story />' attributes correctly", async () => {
     const ast = getSvelteAST({
-      source: `
+      code: `
         <script context="module">
           import { defineMeta } from "@storybook/addon-svelte-csf"
           const { Story } = defineMeta();
@@ -30,7 +30,7 @@ describe(extractStoryAttributesNodes.name, () => {
 
   it('it ignores the attributes of <Story> children components', async () => {
     const ast = getSvelteAST({
-      source: `
+      code: `
         <script context="module">
           import { defineMeta } from "@storybook/addon-svelte-csf"
           const { Story } = defineMeta();

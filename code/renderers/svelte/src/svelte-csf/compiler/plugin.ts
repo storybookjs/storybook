@@ -24,7 +24,7 @@ import { getSvelteAST } from '../parser/ast.js';
 import { extractStoriesNodesFromExportDefaultFn } from '../parser/extract/compiled/stories.js';
 import { extractCompiledASTNodes } from '../parser/extract/compiled/nodes.js';
 import { extractSvelteASTNodes } from '../parser/extract/svelte/nodes.js';
-import { getNameFromFilename } from '../utils/get-component-name.js';
+import { getComponentName } from '../utils/get-component-name.js';
 
 export async function plugin(): Promise<Plugin> {
   const [{ createFilter }, { loadSvelteConfig }] = await Promise.all([
@@ -39,95 +39,95 @@ export async function plugin(): Promise<Plugin> {
   return {
     name: 'storybook:addon-svelte-csf-plugin-post',
     enforce: 'post',
-    async transform(code_, filename) {
-      if (!filter(filename)) return undefined;
+    async transform(compiledCode, id) {
+      if (!filter(id)) return undefined;
 
-      const compiledAST = this.parse(code_);
-      let code = new MagicString(code_);
+      const compiledAST = this.parse(compiledCode);
+      let magicCompiledCode = new MagicString(compiledCode);
 
-      const componentName = getNameFromFilename(filename);
+      const componentName = getComponentName(id);
 
       if (!componentName) {
         // TODO: make error message more user friendly
         // what happened, how to fix
-        throw new Error(`Failed to extract component name from filename: ${filename}`);
+        throw new Error(`Failed to extract component name from filename: ${id}`);
       }
 
-      let source = fs.readFileSync(filename).toString();
+      let rawCode = fs.readFileSync(id).toString();
 
       if (svelteConfig?.preprocess) {
-        const processed = await preprocess(source.toString(), svelteConfig.preprocess, {
-          filename: filename,
-        });
-
-        source = processed.code;
+        const processed = await preprocess(rawCode, svelteConfig.preprocess, { filename: id });
+        rawCode = processed.code;
       }
 
-      const svelteAST = getSvelteAST({ source, filename });
+      const svelteAST = getSvelteAST({ code: rawCode, filename: id });
       const svelteNodes = await extractSvelteASTNodes({
         ast: svelteAST,
-        filename,
+        filename: id,
       });
       const compiledNodes = await extractCompiledASTNodes({
         ast: compiledAST,
-        filename,
+        filename: id,
       });
       const extractedCompiledStoriesNodes = await extractStoriesNodesFromExportDefaultFn({
         nodes: compiledNodes,
-        filename,
+        filename: id,
       });
 
-      // WARN:
-      // IMPORTANT! The plugins starts updating the compiled ouput code from the bottom.
-      // Why? Because once we start updating nodes in the stringified output from the top,
-      // then other nodes `start` and `end` numbers will not be correct anymore.
-      // Hence the reason why reversing both arrays with stories _(svelte and compiled)_.
+      /*
+       * * WARN:
+       * * IMPORTANT! The plugins starts updating the compiled output code from the bottom.
+       * * Why? Because once we start updating nodes in the stringified output from the top,
+       * * then other nodes' `start` and `end` numbers will not be correct anymore.
+       * * Hence the reason why reversing both arrays with stories _(svelte and compiled)_.
+       */
       const svelteStories = [...svelteNodes.storyComponents].reverse();
       const compiledStories = [...extractedCompiledStoriesNodes].reverse();
 
       for (const [index, compiled] of Object.entries(compiledStories)) {
         insertStoryHTMLCommentAsDescription({
-          code,
+          code: magicCompiledCode,
           nodes: { svelte: svelteStories[index], compiled },
-          filename,
+          filename: id,
         });
         moveSourceAttributeToParameters({
-          code,
+          code: magicCompiledCode,
           nodes: { svelte: svelteStories[index], compiled },
-          filename,
+          filename: id,
         });
       }
+
       await destructureMetaFromDefineMeta({
-        code,
+        code: magicCompiledCode,
         nodes: compiledNodes,
-        filename,
+        filename: id,
       });
       insertDefineMetaJSDocCommentAsDescription({
-        code,
+        code: magicCompiledCode,
         nodes: {
           compiled: compiledNodes,
           svelte: svelteNodes,
         },
-        filename,
+        filename: id,
       });
       removeExportDefault({
-        code,
+        code: magicCompiledCode,
         nodes: compiledNodes,
-        filename,
+        filename: id,
       });
       await createAppendix({
         componentName,
-        code,
+        code: magicCompiledCode,
         nodes: {
           compiled: compiledNodes,
           svelte: svelteNodes,
         },
-        filename,
+        filename: id,
       });
 
       return {
-        code: code.toString(),
-        map: code.generateMap({ hires: true, source: filename }),
+        code: magicCompiledCode.toString(),
+        map: magicCompiledCode.generateMap({ hires: true, source: id }),
       };
     },
   };

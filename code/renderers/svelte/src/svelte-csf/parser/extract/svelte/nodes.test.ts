@@ -6,7 +6,7 @@ import { getSvelteAST } from '../../../parser/ast.js';
 describe(extractSvelteASTNodes.name, () => {
   it('works with a simple example', ({ expect }) => {
     const ast = getSvelteAST({
-      source: `
+      code: `
         <script context="module">
           import { defineMeta } from "@storybook/addon-svelte-csf"
 

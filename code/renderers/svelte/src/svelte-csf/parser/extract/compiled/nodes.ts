@@ -56,7 +56,9 @@ export async function extractCompiledASTNodes(params: Params): Promise<CompiledA
   const { walk } = await import('zimmerframe');
 
   const { ast, filename } = params;
-  const state: Partial<CompiledASTNodes> = {};
+  const state: Partial<CompiledASTNodes> & {
+    potentialStoriesFunctionDeclaration: FunctionDeclaration[];
+  } = { potentialStoriesFunctionDeclaration: [] };
   const visitors: Visitors<Node | Comment, typeof state> = {
     ImportDeclaration(node, { state, visit }) {
       const { source, specifiers } = node;
@@ -106,27 +108,28 @@ export async function extractCompiledASTNodes(params: Params): Promise<CompiledA
       }
     },
 
+    FunctionDeclaration(node, { state }) {
+      state.potentialStoriesFunctionDeclaration.push(node);
+    },
+    
     ExportDefaultDeclaration(node, { state }) {
       state.exportDefault = node;
-
-      // WARN: This may be confusing.
-      // In the `NODE_ENV="production"` the export default is different.
-      // Identifier to a FunctionDeclaration.
-      if (
-        process.env.NODE_ENV === 'production' &&
-        node.declaration.type === 'FunctionDeclaration' &&
-        isStoriesComponentFn(node.declaration as FunctionDeclaration)
-      ) {
+      if (node.declaration.type === 'FunctionDeclaration') {
+        /*
+        In production, Svelte will compile the component to:
+        export default COMPONENT_NAME () {...}
+        */
         state.storiesFunctionDeclaration = node.declaration as FunctionDeclaration;
-      }
-    },
-
-    FunctionDeclaration(node, { state }) {
-      // WARN: This may be confusing.
-      // In the `NODE_ENV="development"` the export default is different.
-      // A `FunctionDeclaration`
-      if (isStoriesComponentFn(node)) {
-        state.storiesFunctionDeclaration = node;
+      } else if (node.declaration.type === 'Identifier') {
+        /*
+        In development, Svelte will compile the component to:
+        function COMPONENT_NAME () {...}
+        export default COMPONENT_NAME;
+        */
+        const { name } = node.declaration as Identifier;
+        state.storiesFunctionDeclaration = state.potentialStoriesFunctionDeclaration?.find(
+          (potential) => potential.id.name === name
+        );
       }
     },
   };
@@ -179,10 +182,3 @@ export async function extractCompiledASTNodes(params: Params): Promise<CompiledA
     storiesFunctionDeclaration,
   };
 }
-
-/**
- *:The main component function of those stories file _(`*.stories.svelte`)_ will always end up with `.stories`.
- * @see {@link "file://./../../../utils/get-component-name.ts"}
- */
-const isStoriesComponentFn = (fnDeclaration: FunctionDeclaration) =>
-  fnDeclaration.id?.name.endsWith('.stories');

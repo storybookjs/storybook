@@ -13,7 +13,6 @@ import type { SvelteASTNodes } from '../../parser/extract/svelte/nodes.js';
 import { getStoriesIdentifiers } from '../../parser/analyse/Story/attributes/identifiers.js';
 
 interface Params {
-  componentName: string;
   code: MagicString;
   nodes: {
     compiled: CompiledASTNodes;
@@ -23,9 +22,9 @@ interface Params {
 }
 
 export async function createAppendix(params: Params) {
-  const { componentName, code, nodes, filename } = params;
+  const { code, nodes, filename } = params;
   const { compiled, svelte } = nodes;
-  const { defineMetaVariableDeclaration } = compiled;
+  const { defineMetaVariableDeclaration, storiesFunctionDeclaration } = compiled;
 
   const storyIdentifiers = await getStoriesIdentifiers({ nodes: svelte, filename });
   const metaIdentifier = getMetaIdentifier({
@@ -33,7 +32,7 @@ export async function createAppendix(params: Params) {
     filename,
   });
   const variableFromRuntimeStoriesCall = createVariableFromRuntimeStoriesCall({
-    componentName,
+    storiesFunctionDeclaration,
     metaIdentifier,
     filename,
   });

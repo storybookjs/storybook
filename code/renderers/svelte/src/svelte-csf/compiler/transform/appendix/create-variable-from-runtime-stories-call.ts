@@ -1,15 +1,15 @@
-import type { VariableDeclaration } from 'estree';
+import type { FunctionDeclaration, VariableDeclaration } from 'estree';
 
 import type { getMetaIdentifier } from '../../../parser/analyse/meta/identifier.js';
 
 interface Params {
-  componentName: string;
+  storiesFunctionDeclaration: FunctionDeclaration;
   metaIdentifier: ReturnType<typeof getMetaIdentifier>;
   filename: string;
 }
 
 export function createVariableFromRuntimeStoriesCall(params: Params): VariableDeclaration {
-  const { componentName, metaIdentifier } = params;
+  const { storiesFunctionDeclaration, metaIdentifier } = params;
 
   return {
     type: 'VariableDeclaration',
@@ -32,7 +32,7 @@ export function createVariableFromRuntimeStoriesCall(params: Params): VariableDe
           arguments: [
             {
               type: 'Identifier',
-              name: componentName,
+              name: storiesFunctionDeclaration.id.name,
             },
             metaIdentifier,
           ],

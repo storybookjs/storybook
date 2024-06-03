@@ -19,12 +19,10 @@ import { removeExportDefault } from './transform/remove-export-default.js';
 import { insertDefineMetaJSDocCommentAsDescription } from './transform/define-meta/description.js';
 import { destructureMetaFromDefineMeta } from './transform/define-meta/destructure-meta.js';
 import { insertStoryHTMLCommentAsDescription } from './transform/Story/description.js';
-import { moveSourceAttributeToParameters } from './transform/Story/source.js';
 import { getSvelteAST } from '../parser/ast.js';
 import { extractStoriesNodesFromExportDefaultFn } from '../parser/extract/compiled/stories.js';
 import { extractCompiledASTNodes } from '../parser/extract/compiled/nodes.js';
 import { extractSvelteASTNodes } from '../parser/extract/svelte/nodes.js';
-import { getComponentName } from '../utils/get-component-name.js';
 
 export async function plugin(): Promise<Plugin> {
   const [{ createFilter }, { loadSvelteConfig }] = await Promise.all([
@@ -44,14 +42,6 @@ export async function plugin(): Promise<Plugin> {
 
       const compiledAST = this.parse(compiledCode);
       let magicCompiledCode = new MagicString(compiledCode);
-
-      const componentName = getComponentName(id);
-
-      if (!componentName) {
-        // TODO: make error message more user friendly
-        // what happened, how to fix
-        throw new Error(`Failed to extract component name from filename: ${id}`);
-      }
 
       let rawCode = fs.readFileSync(id).toString();
 
@@ -116,7 +106,6 @@ export async function plugin(): Promise<Plugin> {
         filename: id,
       });
       await createAppendix({
-        componentName,
         code: magicCompiledCode,
         nodes: {
           compiled: compiledNodes,

@@ -26,11 +26,7 @@ export function insertStoryHTMLCommentAsDescription(params: Params) {
     return;
   }
 
-  const compiledPropsObjectExpression = compiled.arguments[1];
-
-  if (compiledPropsObjectExpression.type !== 'ObjectExpression') {
-    throw new Error(`Invalid`);
-  }
+  const metaObjectExpression = getMetaObjectExpression(compiled);
 
   const newStoryProperty = createProperty('story', {
     type: 'Literal',
@@ -49,19 +45,18 @@ export function insertStoryHTMLCommentAsDescription(params: Params) {
   const currentParametersPropertyIndex = findAttributeIndex('parameters', component);
 
   if (currentParametersPropertyIndex === -1) {
-    compiledPropsObjectExpression.properties.push(newParametersProperty);
-    compiled.arguments[1] = compiledPropsObjectExpression;
+    metaObjectExpression.properties.push(newParametersProperty);
 
-    return updateCompiledNode(code, compiled);
+    return updateCompiledNode({ code, nodes, metaObjectExpression });
   }
 
-  const currentParametersProperty =
-    compiledPropsObjectExpression.properties[currentParametersPropertyIndex];
+  const currentParametersProperty = metaObjectExpression.properties[currentParametersPropertyIndex];
 
   if (
     currentParametersProperty.type !== 'Property' ||
     currentParametersProperty.value.type !== 'ObjectExpression'
   ) {
+    // TODO: Update error message
     throw new Error();
   }
 
@@ -72,11 +67,9 @@ export function insertStoryHTMLCommentAsDescription(params: Params) {
 
   if (currentDocsPropertyIndex === -1) {
     currentParametersProperty.value.properties.push(newDocsProperty);
-    compiledPropsObjectExpression.properties[currentParametersPropertyIndex] =
-      currentParametersProperty;
-    compiled.arguments[1] = compiledPropsObjectExpression;
+    metaObjectExpression.properties[currentParametersPropertyIndex] = currentParametersProperty;
 
-    return updateCompiledNode(code, compiled);
+    return updateCompiledNode({ code, nodes, metaObjectExpression });
   }
 
   const currentDocsProperty =
@@ -86,6 +79,7 @@ export function insertStoryHTMLCommentAsDescription(params: Params) {
     currentDocsProperty.type !== 'Property' ||
     currentDocsProperty.value.type !== 'ObjectExpression'
   ) {
+    // TODO: Update error message
     throw new Error();
   }
 
@@ -97,11 +91,9 @@ export function insertStoryHTMLCommentAsDescription(params: Params) {
   if (currentDescriptionPropertyIndex === -1) {
     currentDocsProperty.value.properties.push(newDescriptionProperty);
     currentParametersProperty.value.properties[currentDocsPropertyIndex] = currentDocsProperty;
-    compiledPropsObjectExpression.properties[currentParametersPropertyIndex] =
-      currentParametersProperty;
-    compiled.arguments[1] = compiledPropsObjectExpression;
+    metaObjectExpression.properties[currentParametersPropertyIndex] = currentParametersProperty;
 
-    return updateCompiledNode(code, compiled);
+    return updateCompiledNode({ code, nodes, metaObjectExpression });
   }
 
   const currentDescriptionProperty =
@@ -128,16 +120,45 @@ export function insertStoryHTMLCommentAsDescription(params: Params) {
   currentDocsProperty.value.properties[currentDescriptionPropertyIndex] =
     currentDescriptionProperty;
   currentParametersProperty.value.properties[currentDocsPropertyIndex] = currentDocsProperty;
-  compiledPropsObjectExpression.properties[currentParametersPropertyIndex] =
-    currentParametersProperty;
-  compiled.arguments[1] = compiledPropsObjectExpression;
+  metaObjectExpression.properties[currentParametersPropertyIndex] = currentParametersProperty;
 
-  return updateCompiledNode(code, compiled);
+  return updateCompiledNode({ code, nodes, metaObjectExpression });
 }
 
-function updateCompiledNode(code: MagicString, node: Params['nodes']['compiled']) {
+function getMetaObjectExpression(node: Params['nodes']['compiled']): ObjectExpression {
+  if (node.type === 'CallExpression' && node.arguments[1].type === 'ObjectExpression') {
+    return node.arguments[1];
+  }
+
+  if (
+    node.type === 'ExpressionStatement' &&
+    node.expression.type === 'CallExpression' &&
+    node.expression.arguments[1].type === 'ObjectExpression'
+  ) {
+    return node.expression.arguments[1];
+  }
+
+  throw new Error('Internal error in attempt to extract meta as object expression.');
+}
+
+interface UpdateCompiledNode extends Pick<Params, 'code' | 'nodes'> {
+  metaObjectExpression: ObjectExpression;
+}
+
+function updateCompiledNode(params: UpdateCompiledNode) {
+  const { code, nodes, metaObjectExpression } = params;
+  const { compiled } = nodes;
+
+  if (compiled.type === 'CallExpression') {
+    compiled.arguments[1] === metaObjectExpression;
+  }
+
+  if (compiled.type === 'ExpressionStatement' && compiled.expression.type === 'CallExpression') {
+    compiled.expression.arguments[1] === metaObjectExpression;
+  }
+
   // @ts-expect-error FIXME: These keys exists at runtime, perhaps I missed some type extension from `estree`?
-  const { start, end } = node;
+  const { start, end } = compiled;
 
   code.update(
     start,
@@ -145,7 +166,7 @@ function updateCompiledNode(code: MagicString, node: Params['nodes']['compiled']
     toJs({
       type: 'Program',
       sourceType: 'module',
-      body: [node as unknown as Statement],
+      body: [compiled as unknown as Statement],
     }).value
   );
 }

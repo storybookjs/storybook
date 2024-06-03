@@ -90,11 +90,11 @@ export async function plugin(): Promise<Plugin> {
           nodes: { svelte: svelteStories[index], compiled },
           filename: id,
         });
-        moveSourceAttributeToParameters({
-          code: magicCompiledCode,
-          nodes: { svelte: svelteStories[index], compiled },
-          filename: id,
-        });
+        // moveSourceAttributeToParameters({
+        //   code,
+        //   nodes: { svelte: svelteStories[index], compiled },
+        //   filename,
+        // });
       }
 
       await destructureMetaFromDefineMeta({

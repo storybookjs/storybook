@@ -1,18 +1,21 @@
-import type { Comment, Component, Fragment, SvelteNode } from 'svelte/compiler';
+import type { Comment, Component, Fragment, SnippetBlock, SvelteNode } from 'svelte/compiler';
 import type { Visitors } from 'zimmerframe';
 
 import type { extractModuleNodes } from './module-nodes.js';
+import type { extractInstanceNodes } from './instance-nodes.js';
 
 interface Result {
   storyComponents: Array<{
     comment?: Comment;
     component: Component;
   }>;
+  setTemplateSnippet: SnippetBlock | undefined;
 }
 
 interface Params {
   fragment: Fragment;
   filename?: string;
+  instanceNodes: Awaited<ReturnType<typeof extractInstanceNodes>>;
   moduleNodes: Awaited<ReturnType<typeof extractModuleNodes>>;
 }
 
@@ -24,13 +27,15 @@ interface Params {
 export async function extractFragmentNodes(params: Params): Promise<Result> {
   const { walk } = await import('zimmerframe');
 
-  const { fragment, filename, moduleNodes } = params;
+  const { fragment, filename, moduleNodes, instanceNodes } = params;
+  const { setTemplateCall } = instanceNodes;
   const { storyIdentifier } = moduleNodes;
 
   let latestComment: Comment | undefined;
 
   const state: Result = {
     storyComponents: [],
+    setTemplateSnippet: undefined,
   };
 
   const visitors: Visitors<SvelteNode, typeof state> = {
@@ -46,6 +51,16 @@ export async function extractFragmentNodes(params: Params): Promise<Result> {
           component: node,
         });
         latestComment = undefined;
+      }
+    },
+
+    SnippetBlock(node, { state }) {
+      if (
+        setTemplateCall &&
+        setTemplateCall.arguments[0].type === 'Identifier' &&
+        setTemplateCall.arguments[0].name === node.expression.name
+      ) {
+        state.setTemplateSnippet = node;
       }
     },
   };

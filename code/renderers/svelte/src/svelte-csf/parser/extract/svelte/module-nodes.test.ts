@@ -69,11 +69,48 @@ describe(extractModuleNodes.name, () => {
     expect(extractModuleNodes({ module })).resolves.not.toThrow();
   });
 
+  it("works when 'setTemplate' is used in stories", async ({ expect }) => {
+    const { module } = getSvelteAST({
+      code: `
+        <script context="module">
+          import { defineMeta, setTemplate } from "@storybook/addon-svelte-csf"
+          const { Story } = defineMeta();
+        </script>
+      `,
+    });
+
+    const nodes = await extractModuleNodes({ module });
+
+    expect(nodes.defineMetaImport).toBeDefined();
+    expect(nodes.setTemplateImport).toBeDefined();
+    expect(nodes.setTemplateImport?.local.name).toBe('setTemplate');
+    expect(nodes.defineMetaVariableDeclaration).toBeDefined();
+    expect(nodes.storyIdentifier).toBeDefined();
+  });
+
+  it("works when 'setTemplate' is NOT used in stories", async ({ expect }) => {
+    const { module } = getSvelteAST({
+      code: `
+        <script context="module">
+          import { defineMeta } from "@storybook/addon-svelte-csf"
+          const { Story } = defineMeta();
+        </script>
+      `,
+    });
+
+    const nodes = await extractModuleNodes({ module });
+
+    expect(nodes.defineMetaImport).toBeDefined();
+    expect(nodes.setTemplateImport).toBeUndefined();
+    expect(nodes.defineMetaVariableDeclaration).toBeDefined();
+    expect(nodes.storyIdentifier).toBeDefined();
+  });
+
   it('works on renamed identifiers', async ({ expect }) => {
     const { module } = getSvelteAST({
       code: `
         <script context="module">
-          import { defineMeta as dm } from "@storybook/addon-svelte-csf"
+          import { defineMeta as dm, setTemplate as st } from "@storybook/addon-svelte-csf"
           const { Story: S, meta: m } = dm();
         </script>
       `,
@@ -82,6 +119,8 @@ describe(extractModuleNodes.name, () => {
     const nodes = await extractModuleNodes({ module });
 
     expect(nodes.defineMetaImport.local.name).toBe('dm');
+    expect(nodes.setTemplateImport?.local.name).toBe('st');
+    expect(nodes.defineMetaVariableDeclaration).toBeDefined();
     expect(nodes.storyIdentifier.name).toBe('S');
   });
 });

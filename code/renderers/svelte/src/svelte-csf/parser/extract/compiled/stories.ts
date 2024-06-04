@@ -34,7 +34,9 @@ export async function extractStoriesNodesFromExportDefaultFn(params: Params) {
         node.expression.callee.type === 'CallExpression' &&
         node.expression.callee.callee.type === 'MemberExpression' &&
         node.expression.callee.callee.object.type === 'Identifier' &&
-        node.expression.callee.callee.object.name === '$'
+        node.expression.callee.callee.object.name === '$' &&
+        node.expression.callee.arguments[0].type === 'Identifier' &&
+        node.expression.callee.arguments[0].name === storyIdentifier.name
       ) {
         state.push(node);
       }

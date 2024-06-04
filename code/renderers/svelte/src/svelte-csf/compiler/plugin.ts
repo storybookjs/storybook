@@ -18,7 +18,8 @@ import { createAppendix } from './transform/create-appendix.js';
 import { removeExportDefault } from './transform/remove-export-default.js';
 import { insertDefineMetaJSDocCommentAsDescription } from './transform/define-meta/description.js';
 import { destructureMetaFromDefineMeta } from './transform/define-meta/destructure-meta.js';
-import { insertStoryHTMLCommentAsDescription } from './transform/Story/description.js';
+import { updateCompiledStoryProps } from './transform/Story/props.js';
+
 import { getSvelteAST } from '../parser/ast.js';
 import { extractStoriesNodesFromExportDefaultFn } from '../parser/extract/compiled/stories.js';
 import { extractCompiledASTNodes } from '../parser/extract/compiled/nodes.js';
@@ -46,7 +47,9 @@ export async function plugin(): Promise<Plugin> {
       let rawCode = fs.readFileSync(id).toString();
 
       if (svelteConfig?.preprocess) {
-        const processed = await preprocess(rawCode, svelteConfig.preprocess, { filename: id });
+        const processed = await preprocess(rawCode, svelteConfig.preprocess, {
+          filename: id,
+        });
         rawCode = processed.code;
       }
 
@@ -74,17 +77,17 @@ export async function plugin(): Promise<Plugin> {
       const svelteStories = [...svelteNodes.storyComponents].reverse();
       const compiledStories = [...extractedCompiledStoriesNodes].reverse();
 
+      // @ts-expect-error FIXME: This exists at runtime.
+      // Need to research if its documented somewhere
+      const originalCode = this.originalCode ?? fs.readFileSync(id).toString();
+
       for (const [index, compiled] of Object.entries(compiledStories)) {
-        insertStoryHTMLCommentAsDescription({
+        updateCompiledStoryProps({
           code: magicCompiledCode,
           nodes: { svelte: svelteStories[index], compiled },
           filename: id,
+          originalCode,
         });
-        // moveSourceAttributeToParameters({
-        //   code,
-        //   nodes: { svelte: svelteStories[index], compiled },
-        //   filename,
-        // });
       }
 
       await destructureMetaFromDefineMeta({

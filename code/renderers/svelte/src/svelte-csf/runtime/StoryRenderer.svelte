@@ -3,15 +3,17 @@
   import type { ComponentType } from 'svelte';
 
   import { useStoryRenderer } from './contexts/renderer.svelte.js';
+  import { emitCode } from './emit-code.js';
 
   type Props = {
     Stories: ComponentType;
     exportName: string;
+    code: string;
     args: StoryObj<TMeta>['args'];
     storyContext: StoryContext<TMeta['args']>;
   };
 
-  let { Stories, exportName, args, storyContext }: Props = $props();
+  let { Stories, exportName, args, storyContext, code }: Props = $props();
 
   const context = useStoryRenderer<TMeta>();
 
@@ -21,6 +23,11 @@
       args,
       storyContext,
     });
+  });
+
+  $effect(() => {
+    // TODO: optimize effect params here, we don't read the whole context in reality
+    emitCode({ code, args, storyContext });
   });
 </script>
 

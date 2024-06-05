@@ -2,6 +2,7 @@ import MagicString from 'magic-string';
 import { toJs } from 'estree-util-to-js';
 
 import { createExportDefaultMeta } from './appendix/create-export-default.js';
+import { createCodeByStoryMap } from './appendix/create-code-by-story-map.js';
 import { createExportOrderVariable } from './appendix/create-export-order.js';
 import { createImport } from './appendix/create-import.js';
 import { createVariableFromRuntimeStoriesCall } from './appendix/create-variable-from-runtime-stories-call.js';
@@ -31,9 +32,11 @@ export async function createAppendix(params: Params) {
     node: defineMetaVariableDeclaration,
     filename,
   });
+  const codeByStoryMapDeclaration = createCodeByStoryMap({ storyIdentifiers });
   const variableFromRuntimeStoriesCall = createVariableFromRuntimeStoriesCall({
     storiesFunctionDeclaration,
     metaIdentifier,
+    codeByStoryMapDeclaration,
     filename,
   });
   const storiesExports = await Promise.all(
@@ -51,6 +54,7 @@ export async function createAppendix(params: Params) {
     sourceType: 'module',
     body: [
       createImport(),
+      createCodeByStoryMap({ storyIdentifiers }),
       variableFromRuntimeStoriesCall,
       createExportDefaultMeta({ metaIdentifier, filename }),
       createExportOrderVariable({ storyIdentifiers, filename }),

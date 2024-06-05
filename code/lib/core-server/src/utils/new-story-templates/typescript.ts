@@ -33,6 +33,6 @@ export async function getTypeScriptTemplateForNewStoryFile(data: TypeScriptTempl
 
   type Story = StoryObj<typeof meta>;
 
-  export const ${data.exportedStoryName}: Story = {};
+  export const ${data.exportedStoryName} = {} satisfies Story;
   `;
 }

@@ -24,7 +24,7 @@ describe('typescript', () => {
 
       type Story = StoryObj<typeof meta>;
 
-      export const Default: Story = {};"
+      export const Default = {} satisfies Story;"
     `);
   });
 
@@ -50,7 +50,7 @@ describe('typescript', () => {
 
       type Story = StoryObj<typeof meta>;
 
-      export const Default: Story = {};"
+      export const Default = {} satisfies Story;"
     `);
   });
 });

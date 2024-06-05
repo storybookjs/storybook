@@ -18,7 +18,7 @@ import { createAppendix } from './transform/create-appendix.js';
 import { removeExportDefault } from './transform/remove-export-default.js';
 import { insertDefineMetaJSDocCommentAsDescription } from './transform/define-meta/description.js';
 import { destructureMetaFromDefineMeta } from './transform/define-meta/destructure-meta.js';
-import { updateCompiledStoryProps } from './transform/Story/props.js';
+import { updateCompiledStoryProps } from './transform/compiled-story-props.js';
 
 import { getSvelteAST } from '../parser/ast.js';
 import { extractStoriesNodesFromExportDefaultFn } from '../parser/extract/compiled/stories.js';
@@ -44,7 +44,9 @@ export async function plugin(): Promise<Plugin> {
       const compiledAST = this.parse(compiledCode);
       let magicCompiledCode = new MagicString(compiledCode);
 
-      let rawCode = fs.readFileSync(id).toString();
+      // @ts-expect-error FIXME: `this.originalCode` exists at runtime.
+      // Need to research if its documented somewhere
+      let rawCode = this.originalCode ?? fs.readFileSync(id).toString();
 
       if (svelteConfig?.preprocess) {
         const processed = await preprocess(rawCode, svelteConfig.preprocess, {
@@ -68,25 +70,22 @@ export async function plugin(): Promise<Plugin> {
       });
 
       /*
-       * * WARN:
-       * * IMPORTANT! The plugins starts updating the compiled output code from the bottom.
-       * * Why? Because once we start updating nodes in the stringified output from the top,
-       * * then other nodes' `start` and `end` numbers will not be correct anymore.
-       * * Hence the reason why reversing both arrays with stories _(svelte and compiled)_.
+       * WARN:
+       * IMPORTANT! The plugins starts updating the compiled output code from the bottom.
+       * Why? Because once we start updating nodes in the stringified output from the top,
+       * then other nodes' `start` and `end` numbers will not be correct anymore.
+       * Hence the reason why reversing both arrays with stories _(svelte and compiled)_.
        */
       const svelteStories = [...svelteNodes.storyComponents].reverse();
       const compiledStories = [...extractedCompiledStoriesNodes].reverse();
-
-      // @ts-expect-error FIXME: This exists at runtime.
-      // Need to research if its documented somewhere
-      const originalCode = this.originalCode ?? fs.readFileSync(id).toString();
 
       for (const [index, compiled] of Object.entries(compiledStories)) {
         updateCompiledStoryProps({
           code: magicCompiledCode,
           nodes: { svelte: svelteStories[index], compiled },
+          setTemplateSnippetBlock: svelteNodes.setTemplateSnippetBlock,
           filename: id,
-          originalCode,
+          originalCode: rawCode,
         });
       }
 

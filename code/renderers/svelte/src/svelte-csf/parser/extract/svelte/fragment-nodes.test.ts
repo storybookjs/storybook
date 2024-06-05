@@ -1,10 +1,10 @@
+import type { Identifier } from 'estree';
 import { describe, expect, it } from 'vitest';
 
 import { extractFragmentNodes } from './fragment-nodes.js';
 import { getSvelteAST } from '../../../parser/ast.js';
 import { extractInstanceNodes } from './instance-nodes.js';
 import { extractModuleNodes } from './module-nodes.js';
-import type { Identifier } from 'estree';
 
 describe(extractFragmentNodes.name, () => {
   it("extracts '<Story />' AST nodes correctly", async () => {
@@ -95,7 +95,7 @@ describe(extractFragmentNodes.name, () => {
       moduleNodes,
     });
 
-    expect(fragmentNodes.setTemplateSnippet).not.toBeDefined();
+    expect(fragmentNodes.setTemplateSnippetBlock).not.toBeDefined();
   });
 
   it("extracts 'setTemplateSnippet' correclty when used with 'args' parameter only", async () => {
@@ -128,10 +128,10 @@ describe(extractFragmentNodes.name, () => {
       moduleNodes,
     });
 
-    expect(fragmentNodes.setTemplateSnippet).toBeDefined();
-    expect(fragmentNodes.setTemplateSnippet?.expression.name).toBe('render');
-    expect(fragmentNodes.setTemplateSnippet?.parameters).toHaveLength(1);
-    expect((fragmentNodes.setTemplateSnippet?.parameters[0] as Identifier).name).toBe('args');
+    expect(fragmentNodes.setTemplateSnippetBlock).toBeDefined();
+    expect(fragmentNodes.setTemplateSnippetBlock?.expression.name).toBe('render');
+    expect(fragmentNodes.setTemplateSnippetBlock?.parameters).toHaveLength(1);
+    expect((fragmentNodes.setTemplateSnippetBlock?.parameters[0] as Identifier).name).toBe('args');
   });
 
   it("extracts 'setTemplateSnippet' correclty when used with both 'args' and 'storyContext' parameters", async () => {
@@ -164,11 +164,11 @@ describe(extractFragmentNodes.name, () => {
       moduleNodes,
     });
 
-    expect(fragmentNodes.setTemplateSnippet).toBeDefined();
-    expect(fragmentNodes.setTemplateSnippet?.expression.name).toBe('myTemplate');
-    expect(fragmentNodes.setTemplateSnippet?.parameters).toHaveLength(2);
-    expect((fragmentNodes.setTemplateSnippet?.parameters[0] as Identifier).name).toBe('args');
-    expect((fragmentNodes.setTemplateSnippet?.parameters[1] as Identifier).name).toBe(
+    expect(fragmentNodes.setTemplateSnippetBlock).toBeDefined();
+    expect(fragmentNodes.setTemplateSnippetBlock?.expression.name).toBe('myTemplate');
+    expect(fragmentNodes.setTemplateSnippetBlock?.parameters).toHaveLength(2);
+    expect((fragmentNodes.setTemplateSnippetBlock?.parameters[0] as Identifier).name).toBe('args');
+    expect((fragmentNodes.setTemplateSnippetBlock?.parameters[1] as Identifier).name).toBe(
       'storyContext'
     );
   });

@@ -9,7 +9,7 @@ interface Result {
     comment?: Comment;
     component: Component;
   }>;
-  setTemplateSnippet: SnippetBlock | undefined;
+  setTemplateSnippetBlock: SnippetBlock | undefined;
 }
 
 interface Params {
@@ -35,7 +35,7 @@ export async function extractFragmentNodes(params: Params): Promise<Result> {
 
   const state: Result = {
     storyComponents: [],
-    setTemplateSnippet: undefined,
+    setTemplateSnippetBlock: undefined,
   };
 
   const visitors: Visitors<SvelteNode, typeof state> = {
@@ -60,7 +60,7 @@ export async function extractFragmentNodes(params: Params): Promise<Result> {
         setTemplateCall.arguments[0].type === 'Identifier' &&
         setTemplateCall.arguments[0].name === node.expression.name
       ) {
-        state.setTemplateSnippet = node;
+        state.setTemplateSnippetBlock = node;
       }
     },
   };

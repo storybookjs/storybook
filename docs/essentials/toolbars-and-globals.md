@@ -108,6 +108,39 @@ Depending on your framework and theming library, you can extend your [`.storyboo
 
 </IfRenderer>
 
+## Setting globals on a story
+
+In the previous example, we created a toolbar to globally control the theme that your stories are rendered in. But what if we wanted to create a story to render a specific theme?
+
+A story's `globals` field can be used to hard-code a globals value for that story:
+
+<!-- prettier-ignore-start -->
+
+<CodeSnippets
+  paths={[
+    'common/component-story-globals.js.mdx',
+    'common/component-story-globals.ts.mdx',
+  ]}
+/>
+
+<!-- prettier-ignore-end -->
+
+When a user navigates to the `Dark` story, Storybook will render the story in the dark theme, no matter what the `theme` global had previously been set to by the user. Furthermore, the theme toolbar dropdown is disabled to let the user know that the theme value is hard-coded by the story.
+
+When the user navigates away from the `Dark` story, the `theme` global will be restored to the previous user setting.
+
+The `globals` field is available at the story and component (meta) level. Setting a global at the component level will set it for all the stories within that component (which can then be overridden at the story level).
+
+<Callout variant="info" icon="💡">
+
+Although it's useful to create stories to capture/highlight different `globals` states, we recommend using this feature in moderation.
+
+Globals that are _not_ hard-coded can be selected interactively in the UI, allowing the user to explore all combinations of globals and [`args`](../writing-stories/args.md). Hard-coding globals prevents this exploration.
+
+Therefore, `globals` should be used only for very targeted appearances/behaviors that depend on a particular global value (e.g. the "dark mode" story for a component). Or in special cases where a component only makes sense in a specific `globals` context.
+
+</Callout>
+
 ## Advanced usage
 
 So far, we've managed to create and consume a global inside Storybook.

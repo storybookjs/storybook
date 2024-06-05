@@ -1,0 +1,21 @@
+```ts
+// MyComponent.stories.ts|tsx
+
+// Replace your-renderer with the name of your renderer, e.g. react, vue3
+import type { Meta, StoryObj } from '@storybook/your-renderer';
+
+import { MyComponent } from './MyComponent';
+
+const meta: Meta<typeof MyComponent> = {
+  component: MyComponent,
+};
+
+
+export default meta;
+type Story = StoryObj<typeof MyComponent>;
+
+export const Dark: Story = {
+  // 👇 Force this story to render in dark theme regardless of current user setting
+  globals: { theme: 'dark' },
+};
+```

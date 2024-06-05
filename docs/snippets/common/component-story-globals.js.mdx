@@ -1,0 +1,13 @@
+```js
+// MyComponent.stories.js
+import { MyComponent } from './MyComponent';
+
+export default {
+  component: MyComponent
+};
+
+export const Dark = {
+  // 👇 Force this story to render in dark theme regardless of current user setting
+  globals: { theme: 'dark' },
+};
+```

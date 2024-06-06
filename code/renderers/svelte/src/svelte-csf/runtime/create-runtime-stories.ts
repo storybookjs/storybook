@@ -53,10 +53,6 @@ export const createRuntimeStories = <TMeta extends Meta>(
   for (const [exportName, story] of repository.stories) {
     const storyObj: StoryObj<StoryRenderer<TMeta>> = {
       ...story,
-      parameters: {
-        ...story.parameters,
-        __svelteCsf: true,
-      },
       render: (args, storyContext) => ({
         Component: StoryRenderer<TMeta>,
         props: {

@@ -31,7 +31,7 @@ describe(getStoryChildrenRawSource.name, () => {
       const svelteASTNodes = await extractSvelteASTNodes({ ast });
       const { storyComponents } = svelteASTNodes;
       const component = storyComponents[0].component;
-      const rawSource = getStoryChildrenRawSource({
+      const rawSource = await getStoryChildrenRawSource({
         component,
         svelteASTNodes,
         originalCode: code,
@@ -66,7 +66,7 @@ describe(getStoryChildrenRawSource.name, () => {
       const svelteASTNodes = await extractSvelteASTNodes({ ast });
       const { storyComponents } = svelteASTNodes;
       const component = storyComponents[0].component;
-      const rawSource = getStoryChildrenRawSource({
+      const rawSource = await getStoryChildrenRawSource({
         component,
         svelteASTNodes,
         originalCode: code,
@@ -107,7 +107,7 @@ describe(getStoryChildrenRawSource.name, () => {
       const svelteASTNodes = await extractSvelteASTNodes({ ast });
       const { storyComponents } = svelteASTNodes;
       const component = storyComponents[0].component;
-      const rawSource = getStoryChildrenRawSource({
+      const rawSource = await getStoryChildrenRawSource({
         component,
         svelteASTNodes,
         originalCode: code,
@@ -134,7 +134,7 @@ describe(getStoryChildrenRawSource.name, () => {
       const svelteASTNodes = await extractSvelteASTNodes({ ast });
       const { storyComponents } = svelteASTNodes;
       const component = storyComponents[0].component;
-      const rawSource = getStoryChildrenRawSource({
+      const rawSource = await getStoryChildrenRawSource({
         component,
         svelteASTNodes,
         originalCode: code,
@@ -165,7 +165,7 @@ describe(getStoryChildrenRawSource.name, () => {
       const svelteASTNodes = await extractSvelteASTNodes({ ast });
       const { storyComponents } = svelteASTNodes;
       const component = storyComponents[0].component;
-      const rawSource = getStoryChildrenRawSource({
+      const rawSource = await getStoryChildrenRawSource({
         component,
         svelteASTNodes,
         originalCode: code,
@@ -196,7 +196,7 @@ describe(getStoryChildrenRawSource.name, () => {
       const svelteASTNodes = await extractSvelteASTNodes({ ast });
       const { storyComponents } = svelteASTNodes;
       const component = storyComponents[0].component;
-      const rawSource = getStoryChildrenRawSource({
+      const rawSource = await getStoryChildrenRawSource({
         component,
         svelteASTNodes,
         originalCode: code,
@@ -237,7 +237,7 @@ describe(getStoryChildrenRawSource.name, () => {
       const svelteASTNodes = await extractSvelteASTNodes({ ast });
       const { storyComponents } = svelteASTNodes;
       const component = storyComponents[0].component;
-      const rawSource = getStoryChildrenRawSource({
+      const rawSource = await getStoryChildrenRawSource({
         component,
         svelteASTNodes,
         originalCode: code,

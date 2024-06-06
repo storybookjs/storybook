@@ -1,5 +1,4 @@
 import type { Component, SnippetBlock } from 'svelte/compiler';
-import { format } from 'prettier';
 
 import { getDefineMetaComponentValue } from '../meta/component-identifier.js';
 
@@ -206,11 +205,19 @@ async function getSnippetBlockBodyRawCode(originalCode: string, node: SnippetBlo
 }
 
 async function prettifyCodeSlice(rawCode: string) {
+  const { format } = await import('prettier');
+
   /**
    * FIXME: Perhaps we don't need to prettify the code at this point, and do it at runtime instead?
    */
-  return await format(rawCode, {
-    plugins: ['prettier-plugin-svelte'],
+  const formatted = await format(rawCode, {
+    plugins: [
+      // @ts-expect-error FIXME: Upstream issue?
+      import('prettier-plugin-svelte'),
+    ],
     parser: 'svelte',
   });
+
+  // NOTE: Remove trailing new line
+  return formatted.replace(/\n$/, '');
 }

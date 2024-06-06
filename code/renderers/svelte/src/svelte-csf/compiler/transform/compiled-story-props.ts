@@ -24,7 +24,7 @@ interface Params {
   originalCode: string;
 }
 
-export function updateCompiledStoryProps(params: Params) {
+export async function updateCompiledStoryProps(params: Params) {
   const { code, svelteASTNodes, componentASTNodes, filename, originalCode } = params;
   const { svelte, compiled } = componentASTNodes;
   const { component, comment } = svelte;
@@ -74,7 +74,7 @@ export function updateCompiledStoryProps(params: Params) {
   if (comment) {
     insertDescriptionStory({ comment, currentDocsProperty });
   }
-  insertSourceCode({
+  await insertSourceCode({
     component,
     svelteASTNodes,
     currentDocsProperty,

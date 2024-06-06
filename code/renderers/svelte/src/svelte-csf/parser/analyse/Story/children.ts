@@ -1,9 +1,11 @@
 import type { Component, SnippetBlock } from 'svelte/compiler';
+import { format } from 'prettier';
+
+import { getDefineMetaComponentValue } from '../meta/component-identifier.js';
 
 import type { extractSvelteASTNodes } from '../../extract/svelte/nodes.js';
 import { extractStoryAttributesNodes } from '../../extract/svelte/Story/attributes.js';
 import { extractStoryChildrenSnippetBlock } from '../../extract/svelte/Story/children.js';
-import { extractMetaPropertiesNodes } from '../../extract/meta-properties.js';
 
 interface Params {
   component: Component;
@@ -16,7 +18,7 @@ interface Params {
  * Determine the `source.code` of the `<Story />` component children.
  * Reference: Step 2 from the comment: https://github.com/storybookjs/addon-svelte-csf/pull/181#issuecomment-2143539873
  */
-export function getStoryChildrenRawSource(params: Params): string {
+export async function getStoryChildrenRawSource(params: Params): Promise<string> {
   const { component, svelteASTNodes, originalCode, filename } = params;
 
   // `<Story />` component is self-closing...
@@ -40,7 +42,7 @@ export function getStoryChildrenRawSource(params: Params): string {
     });
 
     if (storyAttributeChildrenSnippetBlock) {
-      return getSnippetBlockBodyRawCode(originalCode, storyAttributeChildrenSnippetBlock);
+      return await getSnippetBlockBodyRawCode(originalCode, storyAttributeChildrenSnippetBlock);
     }
 
     /**
@@ -60,15 +62,23 @@ export function getStoryChildrenRawSource(params: Params): string {
      * <Story name="Default" />
      * ```
      */
-    const setTemplateSnippetBlock = findSetTemplateSnippetBlock(svelteASTNodes);
+    const setTemplateSnippetBlock = findSetTemplateSnippetBlock({
+      svelteASTNodes,
+      filename,
+    });
 
     if (setTemplateSnippetBlock) {
-      return getSnippetBlockBodyRawCode(originalCode, setTemplateSnippetBlock);
+      return await getSnippetBlockBodyRawCode(originalCode, setTemplateSnippetBlock);
     }
 
     /* Case - No `children` attribute provided, no `setTemplate` used, just a Story */
-    // TODO: How do we fill ComponentName? Extract from defineMeta? - it can be optional
-    return `<${getDefineMetaComponentName(svelteASTNodes)} {...args} />`;
+    const defineMetaComponentValue = getDefineMetaComponentValue({
+      svelteASTNodes,
+      filename,
+    });
+
+    // NOTE: It should never be undefined in this particular case, otherwise Storybook wouldn't know what to render.
+    return `<${defineMetaComponentValue?.name} {...args} />`;
   }
 
   /**
@@ -87,7 +97,7 @@ export function getStoryChildrenRawSource(params: Params): string {
   const storyChildrenSnippetBlock = extractStoryChildrenSnippetBlock(component);
 
   if (storyChildrenSnippetBlock) {
-    return getSnippetBlockBodyRawCode(originalCode, storyChildrenSnippetBlock);
+    return await getSnippetBlockBodyRawCode(originalCode, storyChildrenSnippetBlock);
   }
 
   /**
@@ -107,7 +117,7 @@ export function getStoryChildrenRawSource(params: Params): string {
   const lastNode = nodes[nodes.length - 1];
   const rawCode = originalCode.slice(firstNode.start, lastNode.end);
 
-  return sanitizeCodeSlice(rawCode);
+  return prettifyCodeSlice(rawCode);
 }
 
 function findTemplateSnippetBlock(
@@ -120,8 +130,9 @@ function findTemplateSnippetBlock(
 }
 
 function findSetTemplateSnippetBlock(
-  svelteASTNodes: Params['svelteASTNodes']
+  params: Pick<Params, 'svelteASTNodes' | 'filename'>
 ): SnippetBlock | undefined {
+  const { svelteASTNodes, filename } = params;
   const { setTemplateCall } = svelteASTNodes;
 
   if (!setTemplateCall) {
@@ -184,40 +195,22 @@ function findChildrenPropSnippetBlock(
  * <Component {...args } />
  * ```
  */
-function getSnippetBlockBodyRawCode(originalCode: string, node: SnippetBlock) {
+async function getSnippetBlockBodyRawCode(originalCode: string, node: SnippetBlock) {
   const { body } = node;
   const { nodes } = body;
   const firstNode = nodes[0];
   const lastNode = nodes[nodes.length - 1];
   const rawCode = originalCode.slice(firstNode.start, lastNode.end);
 
-  return sanitizeCodeSlice(rawCode);
+  return await prettifyCodeSlice(rawCode);
 }
 
-/**
- * WARN: The current solution was written very quickly. Expect bugs.
- * TODO:
- * Need to figure a safer way to remove unwanted leading and ending tabs, spaces, new lines and so on.
- */
-function sanitizeCodeSlice(rawCode: string): string {
-  return rawCode.replace(/(\n)/g, '').trim();
-}
-
-function getDefineMetaComponentName(svelteASTNodes: Params['svelteASTNodes']) {
-  const { component } = extractMetaPropertiesNodes({
-    nodes: svelteASTNodes,
-    properties: ['component'],
+async function prettifyCodeSlice(rawCode: string) {
+  /**
+   * FIXME: Perhaps we don't need to prettify the code at this point, and do it at runtime instead?
+   */
+  return await format(rawCode, {
+    plugins: ['prettier-plugin-svelte'],
+    parser: 'svelte',
   });
-
-  if (!component) {
-    return '!unspecified';
-  }
-
-  const { value } = component;
-
-  if (value.type !== 'Identifier') {
-    throw new Error(`Invalid schema`);
-  }
-
-  return value.name;
 }

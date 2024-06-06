@@ -79,16 +79,17 @@ export async function plugin(): Promise<Plugin> {
       const svelteStories = [...svelteASTNodes.storyComponents].reverse();
       const compiledStories = [...extractedCompiledStoriesNodes].reverse();
 
-      for (const [index, compiled] of Object.entries(compiledStories)) {
-        updateCompiledStoryProps({
-          code: magicCompiledCode,
-          componentASTNodes: { svelte: svelteStories[index], compiled },
-          svelteASTNodes,
-          filename: id,
-          originalCode: rawCode,
-        });
-      }
-
+      await Promise.all(
+        compiledStories.map((compiled, index) =>
+          updateCompiledStoryProps({
+            code: magicCompiledCode,
+            componentASTNodes: { svelte: svelteStories[index], compiled },
+            svelteASTNodes,
+            filename: id,
+            originalCode: rawCode,
+          })
+        )
+      );
       await destructureMetaFromDefineMeta({
         code: magicCompiledCode,
         nodes: compiledNodes,

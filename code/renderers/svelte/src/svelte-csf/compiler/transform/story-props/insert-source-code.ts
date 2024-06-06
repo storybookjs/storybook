@@ -19,7 +19,7 @@ interface Params {
  * to see if the user has explicitly set a `source.code`.
  * If he didn't, then it will insert to the existing ObjectExpression.
  */
-export function insertSourceCode(params: Params) {
+export async function insertSourceCode(params: Params) {
   const { component, svelteASTNodes, currentDocsProperty, filename, originalCode } = params;
 
   if (currentDocsProperty.value.type !== 'ObjectExpression') {
@@ -60,7 +60,7 @@ export function insertSourceCode(params: Params) {
     return;
   }
 
-  const value = getStoryChildrenRawSource({
+  const value = await getStoryChildrenRawSource({
     component,
     svelteASTNodes,
     originalCode,

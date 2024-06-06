@@ -1,7 +1,10 @@
-import type { StoryObj } from '@storybook/svelte';
+import type { Meta } from '@storybook/svelte';
+import type { ComponentProps } from 'svelte';
 import type { Attribute, Component } from 'svelte/compiler';
 
-type StoryAttributes = Array<keyof (StoryObj & { exportName: string })>;
+import type Story from '../../../../runtime/Story.svelte';
+
+type StoryAttributes = Array<keyof ComponentProps<Story<Meta>>>;
 
 interface Options<Attributes extends StoryAttributes> {
   component: Component;

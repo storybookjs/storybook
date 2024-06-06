@@ -56,7 +56,7 @@ export async function plugin(): Promise<Plugin> {
       }
 
       const svelteAST = getSvelteAST({ code: rawCode, filename: id });
-      const svelteNodes = await extractSvelteASTNodes({
+      const svelteASTNodes = await extractSvelteASTNodes({
         ast: svelteAST,
         filename: id,
       });
@@ -76,14 +76,14 @@ export async function plugin(): Promise<Plugin> {
        * then other nodes' `start` and `end` numbers will not be correct anymore.
        * Hence the reason why reversing both arrays with stories _(svelte and compiled)_.
        */
-      const svelteStories = [...svelteNodes.storyComponents].reverse();
+      const svelteStories = [...svelteASTNodes.storyComponents].reverse();
       const compiledStories = [...extractedCompiledStoriesNodes].reverse();
 
       for (const [index, compiled] of Object.entries(compiledStories)) {
         updateCompiledStoryProps({
           code: magicCompiledCode,
-          nodes: { svelte: svelteStories[index], compiled },
-          setTemplateSnippetBlock: svelteNodes.setTemplateSnippetBlock,
+          componentASTNodes: { svelte: svelteStories[index], compiled },
+          svelteASTNodes,
           filename: id,
           originalCode: rawCode,
         });
@@ -98,7 +98,7 @@ export async function plugin(): Promise<Plugin> {
         code: magicCompiledCode,
         nodes: {
           compiled: compiledNodes,
-          svelte: svelteNodes,
+          svelte: svelteASTNodes,
         },
         filename: id,
       });
@@ -111,7 +111,7 @@ export async function plugin(): Promise<Plugin> {
         code: magicCompiledCode,
         nodes: {
           compiled: compiledNodes,
-          svelte: svelteNodes,
+          svelte: svelteASTNodes,
         },
         filename: id,
       });

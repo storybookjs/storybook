@@ -6,10 +6,20 @@ import type { extractInstanceNodes } from './instance-nodes.js';
 
 interface Result {
   storyComponents: Array<{
+    /** Leading HTML comment as AST nodes which can be used as description for the story. */
     comment?: Comment;
+    /** '<Story>' component AST node. */
     component: Component;
   }>;
-  setTemplateSnippetBlock: SnippetBlock | undefined;
+  /**
+   * "First level" _(at the root of fragment)_ snippet blocks AST nodes, which can be used for further transformation.
+   *
+   * For example:
+   * Determining the source code of the `<Story />`.
+   * Based on either `setTemplate` call,
+   * or by passing `children` as prop from the outer Svelte snippet block definition - e.g. `Story children={template1} />`.
+   */
+  snippetBlocks: SnippetBlock[];
 }
 
 interface Params {
@@ -27,15 +37,14 @@ interface Params {
 export async function extractFragmentNodes(params: Params): Promise<Result> {
   const { walk } = await import('zimmerframe');
 
-  const { fragment, filename, moduleNodes, instanceNodes } = params;
-  const { setTemplateCall } = instanceNodes;
+  const { fragment, moduleNodes } = params;
   const { storyIdentifier } = moduleNodes;
 
   let latestComment: Comment | undefined;
 
   const state: Result = {
     storyComponents: [],
-    setTemplateSnippetBlock: undefined,
+    snippetBlocks: [],
   };
 
   const visitors: Visitors<SvelteNode, typeof state> = {
@@ -55,13 +64,7 @@ export async function extractFragmentNodes(params: Params): Promise<Result> {
     },
 
     SnippetBlock(node, { state }) {
-      if (
-        setTemplateCall &&
-        setTemplateCall.arguments[0].type === 'Identifier' &&
-        setTemplateCall.arguments[0].name === node.expression.name
-      ) {
-        state.setTemplateSnippetBlock = node;
-      }
+      state.snippetBlocks.push(node);
     },
   };
 

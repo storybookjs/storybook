@@ -9,9 +9,8 @@ import { extractInstanceNodes } from './instance-nodes.js';
  * needed for further code analysis/transformation.
  */
 export type SvelteASTNodes = Awaited<ReturnType<typeof extractModuleNodes>> &
-  Awaited<
-    ReturnType<typeof extractFragmentNodes> & Awaited<ReturnType<typeof extractInstanceNodes>>
-  >;
+  Awaited<ReturnType<typeof extractFragmentNodes>> &
+  Awaited<ReturnType<typeof extractInstanceNodes>>;
 
 interface Params {
   ast: Root;

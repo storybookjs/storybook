@@ -1,63 +1,175 @@
 import type { Component, SnippetBlock } from 'svelte/compiler';
 
-import { extractStoryChildrenSnippetBlock } from '../../../parser/extract/svelte/Story/children.js';
-import type { extractFragmentNodes } from 'src/parser/extract/svelte/fragment-nodes.js';
+import { getDefineMetaComponentValue } from '../meta/component-identifier.js';
+
+import type { extractSvelteASTNodes } from '../../extract/svelte/nodes.js';
+import { extractStoryAttributesNodes } from '../../extract/svelte/Story/attributes.js';
+import { extractStoryChildrenSnippetBlock } from '../../extract/svelte/Story/children.js';
 
 interface Params {
   component: Component;
-  setTemplateSnippetBlock: Awaited<
-    ReturnType<typeof extractFragmentNodes>
-  >['setTemplateSnippetBlock'];
+  svelteASTNodes: Awaited<ReturnType<typeof extractSvelteASTNodes>>;
   originalCode: string;
+  filename?: string;
 }
 
 /**
  * Determine the `source.code` of the `<Story />` component children.
  * Reference: Step 2 from the comment: https://github.com/storybookjs/addon-svelte-csf/pull/181#issuecomment-2143539873
  */
-export function getStoryChildrenRawSource(params: Params): string {
-  const { component, setTemplateSnippetBlock, originalCode } = params;
+export async function getStoryChildrenRawSource(params: Params): Promise<string> {
+  const { component, svelteASTNodes, originalCode, filename } = params;
+
+  // `<Story />` component is self-closing...
+  if (component.fragment.nodes.length === 0) {
+    /**
+     * Case - "explicit template" - `children` attribute references to a snippet block at the root level of fragment.
+     *
+     * Example:
+     *
+     * ```svelte
+     * {#snippet template1(args)}
+     *     <SomeComponent {...args} />
+     * {/snippet}
+     *
+     * <Story name="Default" children={template1} />
+     * ```
+     */
+    const storyAttributeChildrenSnippetBlock = findChildrenPropSnippetBlock(component, {
+      svelteASTNodes,
+      filename,
+    });
+
+    if (storyAttributeChildrenSnippetBlock) {
+      return await getSnippetBlockBodyRawCode(originalCode, storyAttributeChildrenSnippetBlock);
+    }
+
+    /**
+     * Case - `setTemplate was used in the instance tag of `*.stories.svelte` file
+     *
+     * Example:
+     *
+     * ```svelte
+     * <script>
+     *     setTemplate(myCustomTemplate);
+     * </script>
+     *
+     * {#snippet myCustomTemplate(args)}
+     *     <SomeComponent {...args} />
+     * {/snippet}
+     *
+     * <Story name="Default" />
+     * ```
+     */
+    const setTemplateSnippetBlock = findSetTemplateSnippetBlock({
+      svelteASTNodes,
+      filename,
+    });
+
+    if (setTemplateSnippetBlock) {
+      return await getSnippetBlockBodyRawCode(originalCode, setTemplateSnippetBlock);
+    }
+
+    /* Case - No `children` attribute provided, no `setTemplate` used, just a Story */
+    const defineMetaComponentValue = getDefineMetaComponentValue({
+      svelteASTNodes,
+      filename,
+    });
+
+    // NOTE: It should never be undefined in this particular case, otherwise Storybook wouldn't know what to render.
+    return `<${defineMetaComponentValue?.name} {...args} />`;
+  }
+
+  /**
+   * Case - Story with children - and with a snippet block `children` inside
+   *
+   * Example:
+   *
+   * ```svelte
+   * <Story name="Default">
+   *     {#snippet children(args)}
+   *          <SomeComponent {...args} />
+   *     {/snippet}
+   * </Story>
+   * ```
+   */
   const storyChildrenSnippetBlock = extractStoryChildrenSnippetBlock(component);
 
-  /* Case 1 - No template, no children, just Story */
-  if (
-    component.fragment.nodes.length === 0 &&
-    !storyChildrenSnippetBlock &&
-    !setTemplateSnippetBlock
-  ) {
-    // TODO: How do we fill ComponentName? Extract from defineMeta? - it can be optional
-    return `<[ComponentName] {...args} />`;
-  }
-
-  /* Case 2 - No template, just Story with static content */
-  if (
-    component.fragment.nodes.length > 0 &&
-    !storyChildrenSnippetBlock &&
-    !setTemplateSnippetBlock
-  ) {
-    const { fragment } = component;
-    const { nodes } = fragment;
-    const firstNode = nodes[0];
-    const lastNode = nodes[nodes.length - 1];
-
-    return originalCode.slice(firstNode.start, lastNode.end);
-  }
-
-  /* Case 3 - No template, Story with snippet content */
   if (storyChildrenSnippetBlock) {
-    return getSnippetBlockBodyRawCode(originalCode, storyChildrenSnippetBlock);
+    return await getSnippetBlockBodyRawCode(originalCode, storyChildrenSnippetBlock);
   }
 
-  /* Case 4 - Explicit template as children */
-  // TODO: Might need to collect all the existing snippets blocks in the `*.stories.svelte`
+  /**
+   * Case - No inner `children`, just Story with a static content
+   *
+   * Example:
+   *
+   * ```svelte
+   * <Story name="Default">
+   *     <SomeComponent foo="bar" />
+   * </Story>
+   * ```
+   */
+  const { fragment } = component;
+  const { nodes } = fragment;
+  const firstNode = nodes[0];
+  const lastNode = nodes[nodes.length - 1];
+  const rawCode = originalCode.slice(firstNode.start, lastNode.end);
 
-  /* Case 5 - Implicit template via `setTemplate` */
-  if (setTemplateSnippetBlock) {
-    return getSnippetBlockBodyRawCode(originalCode, setTemplateSnippetBlock);
+  return prettifyCodeSlice(rawCode);
+}
+
+function findTemplateSnippetBlock(
+  name: string,
+  svelteASTNodes: Params['svelteASTNodes']
+): SnippetBlock | undefined {
+  const { snippetBlocks } = svelteASTNodes;
+
+  return snippetBlocks.find((snippetBlock) => name === snippetBlock.expression.name);
+}
+
+function findSetTemplateSnippetBlock(
+  params: Pick<Params, 'svelteASTNodes' | 'filename'>
+): SnippetBlock | undefined {
+  const { svelteASTNodes, filename } = params;
+  const { setTemplateCall } = svelteASTNodes;
+
+  if (!setTemplateCall) {
+    return;
   }
 
-  // TODO: To throw or not to throw - when we reach an unhandled case?
-  return '';
+  if (setTemplateCall.arguments[0].type !== 'Identifier') {
+    throw new Error(
+      `Invalid schema - expected 'setTemplate' first argument to be an identifier. Stories file: ${filename}`
+    );
+  }
+
+  return findTemplateSnippetBlock(setTemplateCall.arguments[0].name, svelteASTNodes);
+}
+
+function findChildrenPropSnippetBlock(
+  component: Component,
+  options: Pick<Params, 'svelteASTNodes' | 'filename'>
+) {
+  const { svelteASTNodes, filename } = options;
+  const { children } = extractStoryAttributesNodes({
+    component,
+    attributes: ['children'],
+  });
+
+  if (!children) {
+    return;
+  }
+
+  const { value } = children;
+
+  if (value === true || value[0].type === 'Text' || value[0].expression.type !== 'Identifier') {
+    throw new Error(
+      `Invalid schema. Expected '<Story />'s attribute 'children' to be an expression with identifier to snippet block. Stories file: ${filename}`
+    );
+  }
+
+  return findTemplateSnippetBlock(value[0].expression.name, svelteASTNodes);
 }
 
 /**
@@ -82,11 +194,30 @@ export function getStoryChildrenRawSource(params: Params): string {
  * <Component {...args } />
  * ```
  */
-function getSnippetBlockBodyRawCode(originalCode: string, node: SnippetBlock) {
+async function getSnippetBlockBodyRawCode(originalCode: string, node: SnippetBlock) {
   const { body } = node;
   const { nodes } = body;
   const firstNode = nodes[0];
   const lastNode = nodes[nodes.length - 1];
+  const rawCode = originalCode.slice(firstNode.start, lastNode.end);
 
-  return originalCode.slice(firstNode.start, lastNode.end);
+  return await prettifyCodeSlice(rawCode);
+}
+
+async function prettifyCodeSlice(rawCode: string) {
+  const { format } = await import('prettier');
+
+  /**
+   * FIXME: Perhaps we don't need to prettify the code at this point, and do it at runtime instead?
+   */
+  const formatted = await format(rawCode, {
+    plugins: [
+      // @ts-expect-error FIXME: Upstream issue?
+      import('prettier-plugin-svelte'),
+    ],
+    parser: 'svelte',
+  });
+
+  // NOTE: Remove trailing new line
+  return formatted.replace(/\n$/, '');
 }

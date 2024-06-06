@@ -12,24 +12,21 @@ import { insertSourceCode } from './story-props/insert-source-code.js';
 
 import type { extractStoriesNodesFromExportDefaultFn } from '../../parser/extract/compiled/stories.js';
 import type { SvelteASTNodes } from '../../parser/extract/svelte/nodes.js';
-import type { extractFragmentNodes } from '../../parser/extract/svelte/fragment-nodes.js';
 
 interface Params {
   code: MagicString;
-  nodes: {
+  componentASTNodes: {
     svelte: SvelteASTNodes['storyComponents'][number];
     compiled: Awaited<ReturnType<typeof extractStoriesNodesFromExportDefaultFn>>[number];
   };
-  setTemplateSnippetBlock: Awaited<
-    ReturnType<typeof extractFragmentNodes>
-  >['setTemplateSnippetBlock'];
+  svelteASTNodes: SvelteASTNodes;
   filename: string;
   originalCode: string;
 }
 
-export function updateCompiledStoryProps(params: Params) {
-  const { code, setTemplateSnippetBlock, nodes, filename, originalCode } = params;
-  const { svelte, compiled } = nodes;
+export async function updateCompiledStoryProps(params: Params) {
+  const { code, svelteASTNodes, componentASTNodes, filename, originalCode } = params;
+  const { svelte, compiled } = componentASTNodes;
   const { component, comment } = svelte;
 
   const storyPropsObjectExpression = getStoryPropsObjectExpression(compiled);
@@ -77,9 +74,9 @@ export function updateCompiledStoryProps(params: Params) {
   if (comment) {
     insertDescriptionStory({ comment, currentDocsProperty });
   }
-  insertSourceCode({
+  await insertSourceCode({
     component,
-    setTemplateSnippetBlock,
+    svelteASTNodes,
     currentDocsProperty,
     filename,
     originalCode,
@@ -87,7 +84,7 @@ export function updateCompiledStoryProps(params: Params) {
 
   return updateCompiledNode({
     code,
-    nodes,
+    nodes: componentASTNodes,
     metaObjectExpression: storyPropsObjectExpression,
   });
 }
@@ -137,7 +134,7 @@ function updateCompiledNode({
   metaObjectExpression,
 }: {
   code: Params['code'];
-  nodes: Params['nodes'];
+  nodes: Params['componentASTNodes'];
   metaObjectExpression: ObjectExpression;
 }) {
   const { compiled } = nodes;

@@ -2,14 +2,13 @@ import type { ObjectExpression, Property } from 'estree';
 import type { Component } from 'svelte/compiler';
 
 import { createASTObjectExpression, createASTProperty, findASTPropertyIndex } from './shared.js';
-import type { extractFragmentNodes } from '../../../parser/extract/svelte/fragment-nodes.js';
+
 import { getStoryChildrenRawSource } from '../../../parser/analyse/Story/children.js';
+import type { extractSvelteASTNodes } from '../../../parser/extract/svelte/nodes.js';
 
 interface Params {
   component: Component;
-  setTemplateSnippetBlock: Awaited<
-    ReturnType<typeof extractFragmentNodes>
-  >['setTemplateSnippetBlock'];
+  svelteASTNodes: Awaited<ReturnType<typeof extractSvelteASTNodes>>;
   currentDocsProperty: Property;
   filename?: string;
   originalCode: string;
@@ -20,9 +19,8 @@ interface Params {
  * to see if the user has explicitly set a `source.code`.
  * If he didn't, then it will insert to the existing ObjectExpression.
  */
-export function insertSourceCode(params: Params) {
-  const { component, setTemplateSnippetBlock, currentDocsProperty, filename, originalCode } =
-    params;
+export async function insertSourceCode(params: Params) {
+  const { component, svelteASTNodes, currentDocsProperty, filename, originalCode } = params;
 
   if (currentDocsProperty.value.type !== 'ObjectExpression') {
     throw new Error(
@@ -62,9 +60,9 @@ export function insertSourceCode(params: Params) {
     return;
   }
 
-  const value = getStoryChildrenRawSource({
+  const value = await getStoryChildrenRawSource({
     component,
-    setTemplateSnippetBlock,
+    svelteASTNodes,
     originalCode,
   });
 

@@ -6,6 +6,7 @@ import { mount, unmount, type ComponentType } from 'svelte';
 import StoriesExtractor from './StoriesExtractor.svelte';
 import StoryRenderer from './StoryRenderer.svelte';
 import type { StoriesRepository } from './contexts/extractor.svelte.js';
+import { combineParameters } from '@storybook/preview-api';
 
 const createFragment = document.createDocumentFragment
   ? () => document.createDocumentFragment()
@@ -24,7 +25,11 @@ const createFragment = document.createDocumentFragment
  * the one selected is disabled.
  */
 // TODO: I'm not sure the 'meta' is necessary here. As long as it's default exported, SB should internally combine it with the stories. Except for the play logic below, that looks funky, need to ask Pablo about that.
-export const createRuntimeStories = <TMeta extends Meta>(Stories: ComponentType, meta: TMeta, codeByStoryMap: Record<string, string>) => {
+export const createRuntimeStories = <TMeta extends Meta>(
+  Stories: ComponentType,
+  meta: TMeta,
+  codeByStoryMap: Record<string, string>
+) => {
   const repository: StoriesRepository<TMeta> = {
     stories: new Map(),
   };
@@ -48,6 +53,10 @@ export const createRuntimeStories = <TMeta extends Meta>(Stories: ComponentType,
   for (const [exportName, story] of repository.stories) {
     const storyObj: StoryObj<StoryRenderer<TMeta>> = {
       ...story,
+      parameters: {
+        ...story.parameters,
+        __svelteCsf: true,
+      },
       render: (args, storyContext) => ({
         Component: StoryRenderer<TMeta>,
         props: {

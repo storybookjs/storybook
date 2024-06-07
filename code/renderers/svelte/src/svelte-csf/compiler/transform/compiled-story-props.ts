@@ -24,7 +24,7 @@ interface Params {
   originalCode: string;
 }
 
-export async function updateCompiledStoryProps(params: Params) {
+export function updateCompiledStoryProps(params: Params) {
   const { code, svelteASTNodes, componentASTNodes, filename, originalCode } = params;
   const { svelte, compiled } = componentASTNodes;
   const { component, comment } = svelte;
@@ -32,7 +32,7 @@ export async function updateCompiledStoryProps(params: Params) {
   const storyPropsObjectExpression = getStoryPropsObjectExpression(compiled);
 
   // Will need to check twice, because of scenario:
-  // Index of the AST property was not found - then we create o new AST property.
+  // Index of the AST property was not found - then we create a new AST property.
   // After that, we need to check again to get the index of newly created AST node - property.
   const findPropertyParametersIndex = () =>
     findASTPropertyIndex('parameters', storyPropsObjectExpression);
@@ -82,7 +82,7 @@ export async function updateCompiledStoryProps(params: Params) {
     originalCode,
   });
 
-  return updateCompiledNode({
+  return updateCompiledCode({
     code,
     nodes: componentASTNodes,
     metaObjectExpression: storyPropsObjectExpression,
@@ -128,7 +128,7 @@ function getStoryPropsObjectExpression(
  * Once we finish mutating the {@link ObjectExpression} with props for each compiled `<Story />` svelte component,
  * print updated AST nodes to the existing code.
  */
-function updateCompiledNode({
+function updateCompiledCode({
   code,
   nodes,
   metaObjectExpression,

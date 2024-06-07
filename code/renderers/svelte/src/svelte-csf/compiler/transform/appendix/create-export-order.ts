@@ -2,8 +2,6 @@ import type { ExportNamedDeclaration } from 'estree';
 
 import type { getStoriesIdentifiers } from '../../../parser/analyse/story/svelte/attributes/identifiers.js';
 
-const EXPORT_ORDER_VARIABLE = '__namedExportsOrder';
-
 interface Params {
   storyIdentifiers: ReturnType<typeof getStoriesIdentifiers>;
   filename?: string;
@@ -12,19 +10,18 @@ interface Params {
 export function createExportOrderVariable(params: Params): ExportNamedDeclaration {
   const { storyIdentifiers } = params;
 
+  const exported = {
+    type: 'Identifier',
+    name: '__namedExportsOrder',
+  } as const;
+
   return {
     type: 'ExportNamedDeclaration',
     specifiers: [
       {
         type: 'ExportSpecifier',
-        local: {
-          type: 'Identifier',
-          name: EXPORT_ORDER_VARIABLE,
-        },
-        exported: {
-          type: 'Identifier',
-          name: EXPORT_ORDER_VARIABLE,
-        },
+        local: exported,
+        exported,
       },
     ],
     declaration: {
@@ -33,10 +30,7 @@ export function createExportOrderVariable(params: Params): ExportNamedDeclaratio
       declarations: [
         {
           type: 'VariableDeclarator',
-          id: {
-            type: 'Identifier',
-            name: EXPORT_ORDER_VARIABLE,
-          },
+          id: exported,
           init: {
             type: 'ArrayExpression',
             elements: storyIdentifiers.map(({ exportName }) => ({

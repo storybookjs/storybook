@@ -81,8 +81,8 @@ export const generateCodeToEmit = ({ code, args }: { code: string; args: StoryOb
       const value = get({ args }, argPath);
       return argsToProps(key, value) ?? '';
     });
-    // TODO: also replace direct references, eg. <h1>{args.heading}</h1>
-    // TODO: support optional chaining syntax, eg. <h1>{args.texts?.h1}</h1>
+  // TODO: also replace direct references, eg. <h1>{args.heading}</h1>
+  // TODO: support optional chaining syntax, eg. <h1>{args.texts?.h1}</h1>
 
   return codeToEmit;
 };

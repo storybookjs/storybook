@@ -3,7 +3,7 @@ import { toJs } from 'estree-util-to-js';
 
 import { createExportDefaultMeta } from './appendix/create-export-default.js';
 import { createExportOrderVariable } from './appendix/create-export-order.js';
-import { creatRuntimeStoriesImport } from './appendix/create-import.js';
+import { createRuntimeStoriesImport } from './appendix/create-import.js';
 import { createVariableFromRuntimeStoriesCall } from './appendix/create-variable-from-runtime-stories-call.js';
 import { createNamedExportStory } from './appendix/create-named-export-story.js';
 
@@ -39,21 +39,19 @@ export async function createAppendix(params: Params) {
     metaIdentifier,
     filename,
   });
-  const storiesExports = await Promise.all(
-    storyIdentifiers.map(({ exportName }) =>
-      createNamedExportStory({
-        exportName,
-        filename,
-        node: variableFromRuntimeStoriesCall,
-      })
-    )
+  const storiesExports = storyIdentifiers.map(({ exportName }) =>
+    createNamedExportStory({
+      exportName,
+      filename,
+      node: variableFromRuntimeStoriesCall,
+    })
   );
 
   const appendix = toJs({
     type: 'Program',
     sourceType: 'module',
     body: [
-      creatRuntimeStoriesImport(),
+      createRuntimeStoriesImport(),
       variableFromRuntimeStoriesCall,
       createExportDefaultMeta({ metaIdentifier, filename }),
       createExportOrderVariable({ storyIdentifiers, filename }),

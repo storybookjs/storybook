@@ -14,13 +14,14 @@ interface Params {
  * because Storybook internally expects export default `meta`.
  */
 export function removeExportDefault(params: Params) {
-  const { code, nodes, filename } = params;
+  const { code, nodes } = params;
   const { exportDefault, storiesFunctionDeclaration } = nodes;
 
   if (exportDefault.declaration.type === 'FunctionDeclaration') {
     // @ts-expect-error FIXME: I couldn't find the right type (extension?) in the `estree`, but these exists at runtime
     const { start, end } = exportDefault;
 
+    // NOTE: It updates code by removing `export default` from the stories function declaration.
     code.update(
       start,
       end,

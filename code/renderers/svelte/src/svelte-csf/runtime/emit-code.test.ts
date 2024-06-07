@@ -86,8 +86,7 @@ describe('Emit Code', () => {
         </Child>
       </Top>"
     `);
-
-  })
+  });
 
   it('should replace individually referenced args', () => {
     expect(
@@ -99,6 +98,8 @@ describe('Emit Code', () => {
           someObject: { someBool: true, nested: 'yes', deep: { shouldAlsoBeIgnored: true } },
         },
       })
-    ).toMatchInlineSnapshot(`"<MyComponent firstProp="this is a string" somethingStatic={42} nestedBoolRef nestedStringRef="yes" />"`);
-  })
+    ).toMatchInlineSnapshot(
+      `"<MyComponent firstProp="this is a string" somethingStatic={42} nestedBoolRef nestedStringRef="yes" />"`
+    );
+  });
 });

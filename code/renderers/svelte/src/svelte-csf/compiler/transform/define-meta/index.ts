@@ -2,7 +2,7 @@ import { toJs } from 'estree-util-to-js';
 import type MagicString from 'magic-string';
 
 import { destructureMetaFromDefineMeta } from './destructure-meta.js';
-import { insertDefineMetaJSDocCommentAsDescription } from './insert-description-component.js';
+import { insertDefineMetaJSDocCommentAsDescription } from './insert-description.js';
 
 import type { CompiledASTNodes } from '../../../parser/extract/compiled/nodes.js';
 import type { SvelteASTNodes } from '../../../parser/extract/svelte/nodes.js';

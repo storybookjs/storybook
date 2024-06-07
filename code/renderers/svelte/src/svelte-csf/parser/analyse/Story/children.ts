@@ -4,8 +4,11 @@ import type { Component, SnippetBlock } from 'svelte/compiler';
 import { getDefineMetaComponentValue } from '../meta/component-identifier.js';
 
 import type { extractSvelteASTNodes } from '../../extract/svelte/nodes.js';
-import { extractStoryAttributesNodes } from '../../extract/svelte/Story/attributes.js';
 import { extractStoryChildrenSnippetBlock } from '../../extract/svelte/Story/children.js';
+import {
+  findSetTemplateSnippetBlock,
+  findStoryAttributeChildrenSnippetBlock,
+} from '../../extract/svelte/snippet-block.js';
 
 interface Params {
   component: Component;
@@ -36,7 +39,8 @@ export function getStoryChildrenRawSource(params: Params): string {
      * <Story name="Default" children={template1} />
      * ```
      */
-    const storyAttributeChildrenSnippetBlock = findChildrenPropSnippetBlock(component, {
+    const storyAttributeChildrenSnippetBlock = findStoryAttributeChildrenSnippetBlock({
+      component,
       svelteASTNodes,
       filename,
     });
@@ -77,7 +81,7 @@ export function getStoryChildrenRawSource(params: Params): string {
       filename,
     });
 
-    // NOTE: It should never be undefined in this particular case, otherwise Storybook wouldn't know what to render.
+    // NOTE: It should never be `undefined` in this particular case, otherwise Storybook wouldn't know what to render.
     return `<${defineMetaComponentValue?.name} {...args} />`;
   }
 
@@ -118,59 +122,6 @@ export function getStoryChildrenRawSource(params: Params): string {
   const rawCode = originalCode.slice(firstNode.start, lastNode.end);
 
   return dedent(rawCode);
-}
-
-function findTemplateSnippetBlock(
-  name: string,
-  svelteASTNodes: Params['svelteASTNodes']
-): SnippetBlock | undefined {
-  const { snippetBlocks } = svelteASTNodes;
-
-  return snippetBlocks.find((snippetBlock) => name === snippetBlock.expression.name);
-}
-
-function findSetTemplateSnippetBlock(
-  params: Pick<Params, 'svelteASTNodes' | 'filename'>
-): SnippetBlock | undefined {
-  const { svelteASTNodes, filename } = params;
-  const { setTemplateCall } = svelteASTNodes;
-
-  if (!setTemplateCall) {
-    return;
-  }
-
-  if (setTemplateCall.arguments[0].type !== 'Identifier') {
-    throw new Error(
-      `Invalid schema - expected 'setTemplate' first argument to be an identifier. Stories file: ${filename}`
-    );
-  }
-
-  return findTemplateSnippetBlock(setTemplateCall.arguments[0].name, svelteASTNodes);
-}
-
-function findChildrenPropSnippetBlock(
-  component: Component,
-  options: Pick<Params, 'svelteASTNodes' | 'filename'>
-) {
-  const { svelteASTNodes, filename } = options;
-  const { children } = extractStoryAttributesNodes({
-    component,
-    attributes: ['children'],
-  });
-
-  if (!children) {
-    return;
-  }
-
-  const { value } = children;
-
-  if (value === true || value[0].type === 'Text' || value[0].expression.type !== 'Identifier') {
-    throw new Error(
-      `Invalid schema. Expected '<Story />'s attribute 'children' to be an expression with identifier to snippet block. Stories file: ${filename}`
-    );
-  }
-
-  return findTemplateSnippetBlock(value[0].expression.name, svelteASTNodes);
 }
 
 /**

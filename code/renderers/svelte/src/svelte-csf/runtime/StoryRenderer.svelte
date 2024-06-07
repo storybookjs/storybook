@@ -8,7 +8,6 @@
   type Props = {
     Stories: ComponentType;
     exportName: string;
-    code: string;
     args: StoryObj<TMeta>['args'];
     storyContext: StoryContext<TMeta['args']>;
   };
@@ -27,7 +26,7 @@
 
   $effect(() => {
     // TODO: optimize effect params here, we don't read the whole context in reality
-    emitCode({ code, args, storyContext });
+    emitCode({ args, storyContext });
   });
 </script>
 

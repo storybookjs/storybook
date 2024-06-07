@@ -25,11 +25,7 @@ const createFragment = document.createDocumentFragment
  * the one selected is disabled.
  */
 // TODO: I'm not sure the 'meta' is necessary here. As long as it's default exported, SB should internally combine it with the stories. Except for the play logic below, that looks funky, need to ask Pablo about that.
-export const createRuntimeStories = <TMeta extends Meta>(
-  Stories: ComponentType,
-  meta: TMeta,
-  codeByStoryMap: Record<string, string>
-) => {
+export const createRuntimeStories = <TMeta extends Meta>(Stories: ComponentType, meta: TMeta) => {
   const repository: StoriesRepository<TMeta> = {
     stories: new Map(),
   };
@@ -58,7 +54,6 @@ export const createRuntimeStories = <TMeta extends Meta>(
         props: {
           exportName,
           Stories,
-          code: codeByStoryMap[exportName],
           storyContext,
           args,
         },

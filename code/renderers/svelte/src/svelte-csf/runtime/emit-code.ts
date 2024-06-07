@@ -4,7 +4,6 @@ import { addons } from '@storybook/preview-api';
 import get from 'lodash-es/get';
 
 type Params = {
-  code: string;
   args: StoryObj['args'];
   storyContext: StoryContext;
 };
@@ -26,7 +25,10 @@ export const emitCode = (params: Params) => {
     return;
   }
 
-  const codeToEmit = generateCodeToEmit(params);
+  const codeToEmit = generateCodeToEmit({
+    code: storyContext.parameters.__svelteCsf.rawCode,
+    args: params.args,
+  });
 
   // Using setTimeout here to ensure we're emitting after the base @storybook/svelte emits its version of the code
   // TODO: fix this in @storybook/svelte, don't emit when using stories.svelte files
@@ -43,6 +45,11 @@ export const emitCode = (params: Params) => {
 const skipSourceRender = (context: Params['storyContext']) => {
   const sourceParams = context?.parameters.docs?.source;
   const isArgsStory = context?.parameters.__isArgsStory;
+  const rawCode = context?.parameters.__svelteCsf.rawCode;
+
+  if (!rawCode) {
+    return true;
+  }
 
   // always render if the user forces it
   if (sourceParams?.type === SourceType.DYNAMIC) {
@@ -54,7 +61,7 @@ const skipSourceRender = (context: Params['storyContext']) => {
   return !isArgsStory || sourceParams?.code || sourceParams?.type === SourceType.CODE;
 };
 
-export const generateCodeToEmit = ({ code, args }: Omit<Params, 'storyContext'>) => {
+export const generateCodeToEmit = ({ code, args }: { code: string; args: StoryObj['args'] }) => {
   const allPropsArray = Object.entries(args ?? {})
     .map(([argKey, argValue]) => argsToProps(argKey, argValue))
     .filter((p) => p);
@@ -74,6 +81,8 @@ export const generateCodeToEmit = ({ code, args }: Omit<Params, 'storyContext'>)
       const value = get({ args }, argPath);
       return argsToProps(key, value) ?? '';
     });
+    // TODO: also replace direct references, eg. <h1>{args.heading}</h1>
+    // TODO: support optional chaining syntax, eg. <h1>{args.texts?.h1}</h1>
 
   return codeToEmit;
 };

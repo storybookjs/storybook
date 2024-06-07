@@ -5,12 +5,11 @@ import type { getMetaIdentifier } from '../../../parser/analyse/define-meta/meta
 interface Params {
   storiesFunctionDeclaration: FunctionDeclaration;
   metaIdentifier: ReturnType<typeof getMetaIdentifier>;
-  codeByStoryMapDeclaration: VariableDeclaration;
   filename?: string;
 }
 
 export function createVariableFromRuntimeStoriesCall(params: Params): VariableDeclaration {
-  const { storiesFunctionDeclaration, metaIdentifier, codeByStoryMapDeclaration } = params;
+  const { storiesFunctionDeclaration, metaIdentifier } = params;
 
   return {
     type: 'VariableDeclaration',
@@ -35,11 +34,7 @@ export function createVariableFromRuntimeStoriesCall(params: Params): VariableDe
               type: 'Identifier',
               name: storiesFunctionDeclaration.id.name,
             },
-            metaIdentifier,
-            {
-              type: 'Identifier',
-              name: (codeByStoryMapDeclaration.declarations[0].id as Identifier).name,
-            },
+            metaIdentifier
           ],
           optional: false,
         },

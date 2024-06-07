@@ -74,7 +74,7 @@ export async function updateCompiledStoryProps(params: Params) {
   if (comment) {
     insertDescriptionStory({ comment, currentDocsProperty });
   }
-  await insertSourceCode({
+  insertSourceCode({
     component,
     svelteASTNodes,
     currentDocsProperty,

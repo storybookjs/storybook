@@ -1,3 +1,4 @@
+import dedent from 'dedent';
 import type { Component, SnippetBlock } from 'svelte/compiler';
 
 import { getDefineMetaComponentValue } from '../meta/component-identifier.js';
@@ -17,7 +18,7 @@ interface Params {
  * Determine the `source.code` of the `<Story />` component children.
  * Reference: Step 2 from the comment: https://github.com/storybookjs/addon-svelte-csf/pull/181#issuecomment-2143539873
  */
-export async function getStoryChildrenRawSource(params: Params): Promise<string> {
+export function getStoryChildrenRawSource(params: Params): string {
   const { component, svelteASTNodes, originalCode, filename } = params;
 
   // `<Story />` component is self-closing...
@@ -41,7 +42,7 @@ export async function getStoryChildrenRawSource(params: Params): Promise<string>
     });
 
     if (storyAttributeChildrenSnippetBlock) {
-      return await getSnippetBlockBodyRawCode(originalCode, storyAttributeChildrenSnippetBlock);
+      return getSnippetBlockBodyRawCode(originalCode, storyAttributeChildrenSnippetBlock);
     }
 
     /**
@@ -67,7 +68,7 @@ export async function getStoryChildrenRawSource(params: Params): Promise<string>
     });
 
     if (setTemplateSnippetBlock) {
-      return await getSnippetBlockBodyRawCode(originalCode, setTemplateSnippetBlock);
+      return getSnippetBlockBodyRawCode(originalCode, setTemplateSnippetBlock);
     }
 
     /* Case - No `children` attribute provided, no `setTemplate` used, just a Story */
@@ -96,7 +97,7 @@ export async function getStoryChildrenRawSource(params: Params): Promise<string>
   const storyChildrenSnippetBlock = extractStoryChildrenSnippetBlock(component);
 
   if (storyChildrenSnippetBlock) {
-    return await getSnippetBlockBodyRawCode(originalCode, storyChildrenSnippetBlock);
+    return getSnippetBlockBodyRawCode(originalCode, storyChildrenSnippetBlock);
   }
 
   /**
@@ -116,7 +117,7 @@ export async function getStoryChildrenRawSource(params: Params): Promise<string>
   const lastNode = nodes[nodes.length - 1];
   const rawCode = originalCode.slice(firstNode.start, lastNode.end);
 
-  return prettifyCodeSlice(rawCode);
+  return dedent(rawCode);
 }
 
 function findTemplateSnippetBlock(
@@ -194,30 +195,12 @@ function findChildrenPropSnippetBlock(
  * <Component {...args } />
  * ```
  */
-async function getSnippetBlockBodyRawCode(originalCode: string, node: SnippetBlock) {
+function getSnippetBlockBodyRawCode(originalCode: string, node: SnippetBlock) {
   const { body } = node;
   const { nodes } = body;
   const firstNode = nodes[0];
   const lastNode = nodes[nodes.length - 1];
   const rawCode = originalCode.slice(firstNode.start, lastNode.end);
 
-  return await prettifyCodeSlice(rawCode);
-}
-
-async function prettifyCodeSlice(rawCode: string) {
-  const { format } = await import('prettier');
-
-  /**
-   * FIXME: Perhaps we don't need to prettify the code at this point, and do it at runtime instead?
-   */
-  const formatted = await format(rawCode, {
-    plugins: [
-      // @ts-expect-error FIXME: Upstream issue?
-      import('prettier-plugin-svelte'),
-    ],
-    parser: 'svelte',
-  });
-
-  // NOTE: Remove trailing new line
-  return formatted.replace(/\n$/, '');
+  return dedent(rawCode);
 }

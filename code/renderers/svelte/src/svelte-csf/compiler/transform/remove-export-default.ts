@@ -6,7 +6,7 @@ import type { CompiledASTNodes } from '../../parser/extract/compiled/nodes.js';
 interface Params {
   code: MagicString;
   nodes: CompiledASTNodes;
-  filename: string;
+  filename?: string;
 }
 
 /**

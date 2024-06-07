@@ -1,17 +1,28 @@
-import type { AssignmentProperty } from 'estree';
-import { toJs } from 'estree-util-to-js';
-import type MagicString from 'magic-string';
-
 import type { CompiledASTNodes } from '../../../parser/extract/compiled/nodes.js';
 
 interface Params {
-  code: MagicString;
   nodes: CompiledASTNodes;
-  filename: string;
+  filename?: string;
 }
 
-export async function destructureMetaFromDefineMeta(params: Params) {
-  const { code, nodes, filename } = params;
+/**
+ * Attempt to destructure 'meta' identifier in the object pattern of the variable declaration from call `defineMeta({...})`
+ * if it wasn't done by user manually.
+ *
+ * Before:
+ *
+ * ```js
+ * const { Story } = defineMeta({});
+ * ```
+ *
+ * After:
+ *
+ * ```js
+ * const { Story, meta } = defineMeta({});
+ * ```
+ */
+export function destructureMetaFromDefineMeta(params: Params): void {
+  const { nodes, filename } = params;
   const { defineMetaVariableDeclaration } = nodes;
   const { declarations } = defineMetaVariableDeclaration;
   const { id } = declarations[0];
@@ -32,7 +43,7 @@ export async function destructureMetaFromDefineMeta(params: Params) {
     return;
   }
 
-  const metaProperty: AssignmentProperty = {
+  id.properties.push({
     type: 'Property',
     kind: 'init',
     key: {
@@ -46,20 +57,5 @@ export async function destructureMetaFromDefineMeta(params: Params) {
     shorthand: true,
     computed: false,
     method: false,
-  };
-
-  id.properties.push(metaProperty);
-
-  // @ts-expect-error FIXME: No idea which type includes start/end, they exist at runtime
-  const { start, end } = defineMetaVariableDeclaration;
-
-  code.update(
-    start,
-    end,
-    toJs({
-      type: 'Program',
-      sourceType: 'module',
-      body: [defineMetaVariableDeclaration],
-    }).value
-  );
+  });
 }

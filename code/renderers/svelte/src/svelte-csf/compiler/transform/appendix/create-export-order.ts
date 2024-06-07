@@ -1,12 +1,12 @@
 import type { ExportNamedDeclaration } from 'estree';
 
-import type { getStoriesIdentifiers } from '../../../parser/analyse/Story/attributes/identifiers.js';
+import type { getStoriesIdentifiers } from '../../../parser/analyse/story/svelte/attributes/identifiers.js';
 
 const EXPORT_ORDER_VARIABLE = '__namedExportsOrder';
 
 interface Params {
   storyIdentifiers: ReturnType<typeof getStoriesIdentifiers>;
-  filename: string;
+  filename?: string;
 }
 
 export function createExportOrderVariable(params: Params): ExportNamedDeclaration {

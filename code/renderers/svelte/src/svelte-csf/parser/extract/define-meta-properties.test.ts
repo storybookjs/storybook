@@ -1,11 +1,11 @@
 import { describe, it } from 'vitest';
 
-import { extractMetaPropertiesNodes } from './meta-properties';
+import { extractDefineMetaPropertiesNodes } from './define-meta-properties';
 import { getSvelteAST } from '../ast.js';
 import { extractSvelteASTNodes } from './svelte/nodes.js';
 import type { ArrayExpression, Literal } from 'estree';
 
-describe(extractMetaPropertiesNodes.name, () => {
+describe(extractDefineMetaPropertiesNodes.name, () => {
   it('extracts correctly selected properties', async ({ expect }) => {
     const ast = getSvelteAST({
       code: `
@@ -21,7 +21,7 @@ describe(extractMetaPropertiesNodes.name, () => {
       `,
     });
     const nodes = await extractSvelteASTNodes({ ast });
-    const properties = extractMetaPropertiesNodes({
+    const properties = extractDefineMetaPropertiesNodes({
       nodes,
       properties: ['title', 'id', 'tags', 'args', 'parameters'],
     });

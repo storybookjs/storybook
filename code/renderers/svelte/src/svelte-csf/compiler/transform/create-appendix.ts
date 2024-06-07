@@ -4,14 +4,14 @@ import { toJs } from 'estree-util-to-js';
 import { createExportDefaultMeta } from './appendix/create-export-default.js';
 import { createCodeByStoryMap } from './appendix/create-code-by-story-map.js';
 import { createExportOrderVariable } from './appendix/create-export-order.js';
-import { createImport } from './appendix/create-import.js';
+import { creatRuntimeStoriesImport } from './appendix/create-import.js';
 import { createVariableFromRuntimeStoriesCall } from './appendix/create-variable-from-runtime-stories-call.js';
 import { createNamedExportStory } from './appendix/create-named-export-story.js';
 
-import { getMetaIdentifier } from '../../parser/analyse/meta/identifier.js';
+import { getMetaIdentifier } from '../../parser/analyse/define-meta/meta-identifier.js';
 import type { CompiledASTNodes } from '../../parser/extract/compiled/nodes.js';
 import type { SvelteASTNodes } from '../../parser/extract/svelte/nodes.js';
-import { getStoriesIdentifiers } from '../../parser/analyse/Story/attributes/identifiers.js';
+import { getStoriesIdentifiers } from '../../parser/analyse/story/svelte/attributes/identifiers.js';
 
 interface Params {
   code: MagicString;
@@ -19,7 +19,7 @@ interface Params {
     compiled: CompiledASTNodes;
     svelte: SvelteASTNodes;
   };
-  filename: string;
+  filename?: string;
 }
 
 export async function createAppendix(params: Params) {
@@ -27,7 +27,10 @@ export async function createAppendix(params: Params) {
   const { compiled, svelte } = nodes;
   const { defineMetaVariableDeclaration, storiesFunctionDeclaration } = compiled;
 
-  const storyIdentifiers = await getStoriesIdentifiers({ nodes: svelte, filename });
+  const storyIdentifiers = getStoriesIdentifiers({
+    nodes: svelte,
+    filename,
+  });
   const metaIdentifier = getMetaIdentifier({
     node: defineMetaVariableDeclaration,
     filename,
@@ -53,7 +56,7 @@ export async function createAppendix(params: Params) {
     type: 'Program',
     sourceType: 'module',
     body: [
-      createImport(),
+      creatRuntimeStoriesImport(),
       createCodeByStoryMap({ storyIdentifiers }),
       variableFromRuntimeStoriesCall,
       createExportDefaultMeta({ metaIdentifier, filename }),

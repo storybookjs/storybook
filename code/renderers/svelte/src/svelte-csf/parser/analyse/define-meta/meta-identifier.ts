@@ -4,7 +4,7 @@ import type { SvelteASTNodes } from '../../extract/svelte/nodes.js';
 
 interface Params {
   node: SvelteASTNodes['defineMetaVariableDeclaration'];
-  filename: string;
+  filename?: string;
 }
 
 export function getMetaIdentifier(params: Params): Identifier {
@@ -14,7 +14,7 @@ export function getMetaIdentifier(params: Params): Identifier {
 
   if (id.type !== 'ObjectPattern') {
     throw new Error(
-      `Invalid schema. Expected ObjectPattern when trying to access meta identifier from destructured return of 'defineMeta()' call. Stories filename: ${filename}`
+      `Invalid schema. Expected 'ObjectPattern' while trying to access 'meta' identifier from the variable declaration with destructured return of 'defineMeta()' call. Stories filename: ${filename}`
     );
   }
 

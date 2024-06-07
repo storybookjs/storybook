@@ -1,7 +1,7 @@
 import type { Component, SnippetBlock } from 'svelte/compiler';
 
 import type { SvelteASTNodes } from './nodes.js';
-import { extractStoryAttributesNodes } from './Story/attributes.js';
+import { extractStoryAttributesNodes } from './story/attributes.js';
 
 /**
  * Svelte 5 allows to passing `children` as attribute _(aka prop)_.
@@ -21,10 +21,10 @@ import { extractStoryAttributesNodes } from './Story/attributes.js';
  */
 export function findStoryAttributeChildrenSnippetBlock(options: {
   component: Component;
-  svelteASTNodes: SvelteASTNodes;
+  nodes: SvelteASTNodes;
   filename?: string;
 }) {
-  const { component, svelteASTNodes, filename } = options;
+  const { component, nodes, filename } = options;
   const { children } = extractStoryAttributesNodes({
     component,
     attributes: ['children'],
@@ -44,7 +44,7 @@ export function findStoryAttributeChildrenSnippetBlock(options: {
 
   return findSnippetBlockByName({
     name: value[0].expression.name,
-    svelteASTNodes,
+    nodes: nodes,
   });
 }
 
@@ -64,11 +64,11 @@ export function findStoryAttributeChildrenSnippetBlock(options: {
  * which should exist at the root fragment of `*.svelte` file.
  */
 export function findSetTemplateSnippetBlock(options: {
-  svelteASTNodes: SvelteASTNodes;
+  nodes: SvelteASTNodes;
   filename?: string;
 }): SnippetBlock | undefined {
-  const { svelteASTNodes, filename } = options;
-  const { setTemplateCall } = svelteASTNodes;
+  const { nodes, filename } = options;
+  const { setTemplateCall } = nodes;
 
   if (!setTemplateCall) {
     return;
@@ -82,7 +82,7 @@ export function findSetTemplateSnippetBlock(options: {
 
   return findSnippetBlockByName({
     name: setTemplateCall.arguments[0].name,
-    svelteASTNodes,
+    nodes: nodes,
   });
 }
 
@@ -97,10 +97,10 @@ function findSnippetBlockByName(options: {
    * For example, from the following: `{#snippet children(args)}` - `children`
    */
   name: string;
-  svelteASTNodes: SvelteASTNodes;
+  nodes: SvelteASTNodes;
 }): SnippetBlock | undefined {
-  const { name, svelteASTNodes } = options;
-  const { snippetBlocks } = svelteASTNodes;
+  const { name, nodes } = options;
+  const { snippetBlocks } = nodes;
 
   return snippetBlocks.find((snippetBlock) => snippetBlock.expression.name === name);
 }

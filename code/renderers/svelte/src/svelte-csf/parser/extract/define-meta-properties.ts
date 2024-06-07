@@ -14,7 +14,12 @@ type Result<Properties extends Array<keyof Meta>> = Partial<{
   [Key in Properties[number]]: Property;
 }>;
 
-export function extractMetaPropertiesNodes<const Properties extends Array<keyof Meta>>(
+/**
+ * Extract selected properties from `defineMeta` as AST node {@link Property}.
+ * It works for original svelte code as well as compiled code,
+ * because in both cases, the AST structure is the same _(or should be!)_.
+ */
+export function extractDefineMetaPropertiesNodes<const Properties extends Array<keyof Meta>>(
   options: Options<Properties>
 ): Result<Properties> {
   const { properties } = options;
@@ -34,6 +39,10 @@ export function extractMetaPropertiesNodes<const Properties extends Array<keyof 
   return results;
 }
 
+/**
+ * `defineMeta` accepts only one argument - an {@link ObjectExpression},
+ * which should satisfy `@storybook/svelte`'s interface {@link Meta}.
+ */
 function getFirstArgumentObjectExpression(options: Options<Array<keyof Meta>>): ObjectExpression {
   const { nodes, filename } = options;
   const { defineMetaVariableDeclaration, defineMetaImport } = nodes;

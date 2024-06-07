@@ -1,10 +1,13 @@
+import dedent from 'dedent';
 import type { Attribute } from 'svelte/compiler';
 
 import { getStringValueFromAttribute } from '../attributes.js';
-import type { SvelteASTNodes } from '../../../extract/svelte/nodes.js';
-import { extractStoryAttributesNodes } from '../../../extract/svelte/Story/attributes.js';
-import { isValidVariableName, storyNameToExportName } from '../../../../utils/identifier-utils.js';
-import dedent from 'dedent';
+import type { SvelteASTNodes } from '../../../../extract/svelte/nodes.js';
+import { extractStoryAttributesNodes } from '../../../../extract/svelte/story/attributes.js';
+import {
+  isValidVariableName,
+  storyNameToExportName,
+} from '../../../../../utils/identifier-utils.js';
 
 type StoryIdentifiers = {
   exportName: string;
@@ -20,7 +23,10 @@ interface GetIdentifiersParams {
 export function getStoryIdentifiers(options: GetIdentifiersParams): StoryIdentifiers {
   const { nameNode, exportNameNode, filename } = options;
 
-  let exportName = getStringValueFromAttribute({ node: exportNameNode, filename });
+  let exportName = getStringValueFromAttribute({
+    node: exportNameNode,
+    filename,
+  });
   const name = getStringValueFromAttribute({ node: nameNode, filename });
 
   if (!exportName) {
@@ -32,8 +38,7 @@ export function getStoryIdentifiers(options: GetIdentifiersParams): StoryIdentif
     exportName = storyNameToExportName(name);
   }
 
-
-  if(!isValidVariableName(exportName)) {
+  if (!isValidVariableName(exportName)) {
     throw new Error(dedent`Invalid exportName '${exportName}' found in <Story /> component in '${filename}'.
     exportName must be a valid JavaScript variable name. It must start with a letter, $ or _, followed by letters, numbers, $ or _.
     Reserved words like 'default' are also not allowed (see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#reserved_words)
@@ -73,7 +78,7 @@ export function getStoriesIdentifiers(params: GetStoriesIdentifiersParams): Stor
       (existingIdentifiers) => existingIdentifiers.exportName === identifiers.exportName
     );
 
-    if(duplicateIdentifiers) {
+    if (duplicateIdentifiers) {
       throw new Error(dedent`Duplicate exportNames found between two <Story /> definitions in '${filename}':
       First instance: <Story name=${duplicateIdentifiers.name ? `"${duplicateIdentifiers.name}"` : '{undefined}'} exportName="${duplicateIdentifiers.exportName}" ... />
       Second instance: <Story name=${identifiers.name ? `"${identifiers.name}"` : '{undefined}'} exportName="${identifiers.exportName}" ... />

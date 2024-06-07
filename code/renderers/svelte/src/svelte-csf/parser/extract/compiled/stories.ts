@@ -5,7 +5,7 @@ import type { CompiledASTNodes } from './nodes.js';
 
 interface Params {
   nodes: CompiledASTNodes;
-  filename: string;
+  filename?: string;
 }
 
 type Result = (CallExpression | ExpressionStatement)[];

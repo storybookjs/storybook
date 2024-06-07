@@ -1,17 +1,17 @@
 import type { Identifier } from 'estree';
 
-import { extractMetaPropertiesNodes } from '../../extract/meta-properties.js';
+import { extractDefineMetaPropertiesNodes } from '../../extract/define-meta-properties.js';
 import type { SvelteASTNodes } from '../../extract/svelte/nodes.js';
 
 interface Params {
-  svelteASTNodes: SvelteASTNodes;
+  nodes: SvelteASTNodes;
   filename?: string;
 }
 
 export function getDefineMetaComponentValue(params: Params): Identifier | undefined {
-  const { svelteASTNodes, filename } = params;
-  const { component } = extractMetaPropertiesNodes({
-    nodes: svelteASTNodes,
+  const { nodes, filename } = params;
+  const { component } = extractDefineMetaPropertiesNodes({
+    nodes,
     properties: ['component'],
   });
 

@@ -11,6 +11,11 @@ import type {
 } from 'estree';
 import type { Visitors } from 'zimmerframe';
 
+/**
+ * Important AST nodes from the compiled output of a single `*.stories.svelte` file.
+ * They are needed for further code transformation by this addon.
+ * Powered by `rollup`'s internal [`this.parse()`](https://rollupjs.org/plugin-development/#this-parse)
+ */
 export interface CompiledASTNodes {
   /**
    * Import specifier for `defineMeta` imported from this addon package.
@@ -111,7 +116,7 @@ export async function extractCompiledASTNodes(params: Params): Promise<CompiledA
     FunctionDeclaration(node, { state }) {
       state.potentialStoriesFunctionDeclaration.push(node);
     },
-    
+
     ExportDefaultDeclaration(node, { state }) {
       state.exportDefault = node;
       if (node.declaration.type === 'FunctionDeclaration') {

@@ -14,14 +14,9 @@ import MagicString from 'magic-string';
 import { preprocess } from 'svelte/compiler';
 import type { Plugin } from 'vite';
 
-import { createAppendix } from './transform/create-appendix.js';
-import { removeExportDefault } from './transform/remove-export-default.js';
-import { insertDefineMetaJSDocCommentAsDescription } from './transform/define-meta/description.js';
-import { destructureMetaFromDefineMeta } from './transform/define-meta/destructure-meta.js';
-import { updateCompiledStoryProps } from './transform/compiled-story-props.js';
+import { transformStoriesCode } from './transform/index.js';
 
 import { getSvelteAST } from '../parser/ast.js';
-import { extractStoriesNodesFromExportDefaultFn } from '../parser/extract/compiled/stories.js';
 import { extractCompiledASTNodes } from '../parser/extract/compiled/nodes.js';
 import { extractSvelteASTNodes } from '../parser/extract/svelte/nodes.js';
 
@@ -44,7 +39,7 @@ export async function plugin(): Promise<Plugin> {
       const compiledAST = this.parse(compiledCode);
       let magicCompiledCode = new MagicString(compiledCode);
 
-      // @ts-expect-error FIXME: `this.originalCode` exists at runtime.
+      // @ts-expect-error FIXME: `this.originalCode` exists at runtime in the development mode only.
       // Need to research if its documented somewhere
       let rawCode = this.originalCode ?? fs.readFileSync(id).toString();
 
@@ -60,59 +55,19 @@ export async function plugin(): Promise<Plugin> {
         ast: svelteAST,
         filename: id,
       });
-      const compiledNodes = await extractCompiledASTNodes({
+      const compiledASTNodes = await extractCompiledASTNodes({
         ast: compiledAST,
         filename: id,
       });
-      const extractedCompiledStoriesNodes = await extractStoriesNodesFromExportDefaultFn({
-        nodes: compiledNodes,
-        filename: id,
-      });
 
-      /*
-       * WARN:
-       * IMPORTANT! The plugins starts updating the compiled output code from the bottom.
-       * Why? Because once we start updating nodes in the stringified output from the top,
-       * then other nodes' `start` and `end` numbers will not be correct anymore.
-       * Hence the reason why reversing both arrays with stories _(svelte and compiled)_.
-       */
-      const svelteStories = [...svelteASTNodes.storyComponents].reverse();
-      const compiledStories = [...extractedCompiledStoriesNodes].reverse();
-
-      compiledStories.forEach((compiled, index) =>
-        updateCompiledStoryProps({
-          code: magicCompiledCode,
-          componentASTNodes: { svelte: svelteStories[index], compiled },
-          svelteASTNodes,
-          filename: id,
-          originalCode: rawCode,
-        })
-      );
-      await destructureMetaFromDefineMeta({
-        code: magicCompiledCode,
-        nodes: compiledNodes,
-        filename: id,
-      });
-      insertDefineMetaJSDocCommentAsDescription({
+      await transformStoriesCode({
         code: magicCompiledCode,
         nodes: {
-          compiled: compiledNodes,
           svelte: svelteASTNodes,
+          compiled: compiledASTNodes,
         },
         filename: id,
-      });
-      removeExportDefault({
-        code: magicCompiledCode,
-        nodes: compiledNodes,
-        filename: id,
-      });
-      await createAppendix({
-        code: magicCompiledCode,
-        nodes: {
-          compiled: compiledNodes,
-          svelte: svelteASTNodes,
-        },
-        filename: id,
+        originalCode: rawCode,
       });
 
       return {

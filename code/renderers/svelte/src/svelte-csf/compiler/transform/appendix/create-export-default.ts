@@ -1,14 +1,14 @@
 import type { ExportDefaultDeclaration } from 'estree';
 
-import type { getMetaIdentifier } from '../../../parser/analyse/meta/identifier.js';
+import type { getMetaIdentifier } from '../../../parser/analyse/define-meta/meta-identifier.js';
 
 interface Params {
   metaIdentifier: ReturnType<typeof getMetaIdentifier>;
-  filename: string;
+  filename?: string;
 }
 
 export function createExportDefaultMeta(params: Params): ExportDefaultDeclaration {
-  const { metaIdentifier, filename } = params;
+  const { metaIdentifier } = params;
 
   return {
     type: 'ExportDefaultDeclaration',

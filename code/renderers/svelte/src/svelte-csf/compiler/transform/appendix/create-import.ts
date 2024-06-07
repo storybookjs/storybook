@@ -2,9 +2,9 @@ import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' }
 import type { ImportDeclaration } from 'estree';
 
 /**
- * the export is defined in the `package.json` export map
+ * The export is defined in the `package.json` export map
  */
-export function createImport(): ImportDeclaration {
+export function creatRuntimeStoriesImport(): ImportDeclaration {
   const imported = {
     type: 'Identifier',
     // WARN: Tempting to use `createRuntimeStories.name` here.

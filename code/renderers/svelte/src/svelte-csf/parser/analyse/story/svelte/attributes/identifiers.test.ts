@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { getStoryIdentifiers, getStoriesIdentifiers } from './identifiers.js';
-import { getSvelteAST } from '../../../ast.js';
-import { extractSvelteASTNodes } from '../../../extract/svelte/nodes.js';
-import { extractStoryAttributesNodes } from '../../../extract/svelte/Story/attributes.js';
+
+import { getSvelteAST } from '../../../../ast.js';
+import { extractSvelteASTNodes } from '../../../../extract/svelte/nodes.js';
+import { extractStoryAttributesNodes } from '../../../../extract/svelte/story/attributes.js';
 
 describe(getStoryIdentifiers.name, () => {
   it("extracts 'exportName' attribute when is a Text string", async () => {
@@ -236,7 +237,12 @@ describe(getStoriesIdentifiers.name, () => {
     });
     const nodes = await extractSvelteASTNodes({ ast });
 
-    expect(() => getStoriesIdentifiers({ nodes, filename: 'duplicate-identifiers.stories.svelte'})).toThrowErrorMatchingInlineSnapshot(
+    expect(() =>
+      getStoriesIdentifiers({
+        nodes,
+        filename: 'duplicate-identifiers.stories.svelte',
+      })
+    ).toThrowErrorMatchingInlineSnapshot(
       `
       [Error: Duplicate exportNames found between two <Story /> definitions in 'duplicate-identifiers.stories.svelte':
       First instance: <Story name={undefined} exportName="SomeExportName" ... />
@@ -262,7 +268,12 @@ describe(getStoriesIdentifiers.name, () => {
     });
     const nodes = await extractSvelteASTNodes({ ast });
 
-    expect(() => getStoriesIdentifiers({ nodes, filename: 'duplicate-identifiers.stories.svelte'})).toThrowErrorMatchingInlineSnapshot(
+    expect(() =>
+      getStoriesIdentifiers({
+        nodes,
+        filename: 'duplicate-identifiers.stories.svelte',
+      })
+    ).toThrowErrorMatchingInlineSnapshot(
       `
       [Error: Duplicate exportNames found between two <Story /> definitions in 'duplicate-identifiers.stories.svelte':
       First instance: <Story name={undefined} exportName="SomeStoryName" ... />

@@ -3,7 +3,7 @@ import type { createVariableFromRuntimeStoriesCall } from './create-variable-fro
 
 interface Params {
   exportName: string;
-  filename: string;
+  filename?: string;
   node: ReturnType<typeof createVariableFromRuntimeStoriesCall>;
 }
 

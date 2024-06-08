@@ -3,9 +3,9 @@ import { logger } from '@storybook/client-logger';
 import type { Meta, StoryObj } from '@storybook/svelte';
 import { mount, unmount, type ComponentType } from 'svelte';
 
-import StoriesExtractor from '#runtime/StoriesExtractor.svelte';
-import StoryRenderer from '#runtime/StoryRenderer.svelte';
-import type { StoriesRepository } from '#runtime/contexts/extractor.svelte';
+import StoriesExtractor from './StoriesExtractor.svelte';
+import StoryRenderer from './StoryRenderer.svelte';
+import type { StoriesRepository } from './contexts/extractor.svelte';
 
 const createFragment = document.createDocumentFragment
   ? () => document.createDocumentFragment()

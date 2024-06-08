@@ -2,7 +2,7 @@ import type { Program } from 'estree';
 import { toJs } from 'estree-util-to-js';
 import { describe, it } from 'vitest';
 
-import { createVariableFromRuntimeStoriesCall } from './create-variable-from-runtime-stories-call.js';
+import { createVariableFromRuntimeStoriesCall } from './create-variable-from-runtime-stories-call';
 
 describe(createVariableFromRuntimeStoriesCall.name, () => {
   it('creates a variable correctly', ({ expect }) => {

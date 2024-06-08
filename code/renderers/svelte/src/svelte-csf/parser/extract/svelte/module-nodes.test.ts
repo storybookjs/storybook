@@ -1,7 +1,8 @@
 import { describe, it } from 'vitest';
 
-import { extractModuleNodes } from './module-nodes.js';
-import { getSvelteAST } from '../../../parser/ast.js';
+import { extractModuleNodes } from './module-nodes';
+
+import { getSvelteAST } from '#parser/ast';
 
 describe(extractModuleNodes.name, () => {
   it('fails when module tag not found', ({ expect }) => {

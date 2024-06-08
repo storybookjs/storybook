@@ -8,11 +8,11 @@ import MagicString from 'magic-string';
 import { parseAst } from 'rollup/parseAst';
 import { describe, it } from 'vitest';
 
-import { transformDefineMeta } from './index.js';
+import { transformDefineMeta } from '.';
 
-import { getSvelteAST } from '../../../parser/ast.js';
-import { extractSvelteASTNodes } from '../../../parser/extract/svelte/nodes.js';
-import { extractCompiledASTNodes } from '../../../parser/extract/compiled/nodes.js';
+import { getSvelteAST } from '#parser/ast';
+import { extractSvelteASTNodes } from '#parser/extract/svelte/nodes';
+import { extractCompiledASTNodes } from '#parser/extract/compiled/nodes';
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 

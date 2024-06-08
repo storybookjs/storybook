@@ -1,13 +1,11 @@
 import dedent from 'dedent';
 import type { Attribute } from 'svelte/compiler';
 
-import { getStringValueFromAttribute } from '../attributes.js';
-import type { SvelteASTNodes } from '../../../../extract/svelte/nodes.js';
-import { extractStoryAttributesNodes } from '../../../../extract/svelte/story/attributes.js';
-import {
-  isValidVariableName,
-  storyNameToExportName,
-} from '../../../../../utils/identifier-utils.js';
+import { getStringValueFromAttribute } from '../attributes';
+
+import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
+import { extractStoryAttributesNodes } from '#parser/extract/svelte/story/attributes';
+import { isValidVariableName, storyNameToExportName } from '#utils/identifier-utils';
 
 type StoryIdentifiers = {
   exportName: string;

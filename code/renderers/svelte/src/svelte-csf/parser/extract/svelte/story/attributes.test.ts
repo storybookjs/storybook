@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { extractStoryAttributesNodes } from './attributes.js';
-import { extractSvelteASTNodes } from '../nodes.js';
-import { getSvelteAST } from '../../../ast.js';
+import { extractStoryAttributesNodes } from './attributes';
+
+import { extractSvelteASTNodes } from '#parser/extract/svelte/nodes';
+import { getSvelteAST } from '#parser/ast';
 
 describe(extractStoryAttributesNodes.name, () => {
   it("extracts '<Story />' attributes correctly", async () => {

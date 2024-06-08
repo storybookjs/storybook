@@ -1,4 +1,4 @@
-import type { CompiledASTNodes } from '../../../parser/extract/compiled/nodes.js';
+import type { CompiledASTNodes } from '#parser/extract/compiled/nodes';
 
 interface Params {
   nodes: CompiledASTNodes;

@@ -4,19 +4,19 @@ import { combineTags } from '@storybook/csf';
 import type { IndexInput, Indexer } from '@storybook/types';
 import { preprocess } from 'svelte/compiler';
 
-import { getSvelteAST } from '../parser/ast.js';
+import { getSvelteAST } from '#parser/ast';
 
-import { extractSvelteASTNodes } from '../parser/extract/svelte/nodes.js';
-import { extractDefineMetaPropertiesNodes } from '../parser/extract/define-meta-properties.js';
-import { extractStoryAttributesNodes } from '../parser/extract/svelte/story/attributes.js';
+import { extractSvelteASTNodes } from '#parser/extract/svelte/nodes';
+import { extractDefineMetaPropertiesNodes } from '#parser/extract/define-meta-properties';
+import { extractStoryAttributesNodes } from '#parser/extract/svelte/story/attributes';
 
 import {
   getMetaIdValue,
   getMetaTagsValue,
   getMetaTitleValue,
-} from '../parser/analyse/define-meta/properties.js';
-import { getTagsFromStoryAttribute } from '../parser/analyse/story/svelte/attributes/tags.js';
-import { getStoryIdentifiers } from '../parser/analyse/story/svelte/attributes/identifiers.js';
+} from '#parser/analyse/define-meta/properties';
+import { getTagsFromStoryAttribute } from '#parser/analyse/story/svelte/attributes/tags';
+import { getStoryIdentifiers } from '#parser/analyse/story/svelte/attributes/identifiers';
 
 export const indexer: Indexer = {
   test: /\.svelte$/,

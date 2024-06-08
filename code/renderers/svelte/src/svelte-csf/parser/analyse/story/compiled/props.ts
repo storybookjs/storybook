@@ -1,6 +1,6 @@
 import type { ObjectExpression } from 'estree';
 
-import type { extractStoriesNodesFromExportDefaultFn } from '../../../extract/compiled/stories.js';
+import type { extractStoriesNodesFromExportDefaultFn } from '#parser/extract/compiled/stories';
 
 interface Params {
   node: Awaited<ReturnType<typeof extractStoriesNodesFromExportDefaultFn>>[number];

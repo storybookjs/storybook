@@ -1,6 +1,6 @@
 import type { ExportNamedDeclaration, Identifier } from 'estree';
 
-import type { createVariableFromRuntimeStoriesCall } from './create-variable-from-runtime-stories-call.js';
+import type { createVariableFromRuntimeStoriesCall } from './create-variable-from-runtime-stories-call';
 
 interface Params {
   exportName: string;

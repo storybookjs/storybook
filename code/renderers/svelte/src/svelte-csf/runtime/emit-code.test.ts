@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import dedent from 'dedent';
-import { generateCodeToEmit } from './emit-code.js';
+
+import { generateCodeToEmit } from './emit-code';
 
 describe('Emit Code', () => {
   it('should replace short spread args with single-line props', () => {
@@ -95,7 +96,11 @@ describe('Emit Code', () => {
         args: {
           someIgnoredArg: 'should not show up',
           someString: 'this is a string',
-          someObject: { someBool: true, nested: 'yes', deep: { shouldAlsoBeIgnored: true } },
+          someObject: {
+            someBool: true,
+            nested: 'yes',
+            deep: { shouldAlsoBeIgnored: true },
+          },
         },
       })
     ).toMatchInlineSnapshot(

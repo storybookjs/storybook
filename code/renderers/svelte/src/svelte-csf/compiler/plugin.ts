@@ -14,11 +14,11 @@ import MagicString from 'magic-string';
 import { preprocess } from 'svelte/compiler';
 import type { Plugin } from 'vite';
 
-import { transformStoriesCode } from './transform/index.js';
+import { transformStoriesCode } from './transform';
 
-import { getSvelteAST } from '../parser/ast.js';
-import { extractCompiledASTNodes } from '../parser/extract/compiled/nodes.js';
-import { extractSvelteASTNodes } from '../parser/extract/svelte/nodes.js';
+import { getSvelteAST } from '#parser/ast';
+import { extractCompiledASTNodes } from '#parser/extract/compiled/nodes';
+import { extractSvelteASTNodes } from '#parser/extract/svelte/nodes';
 
 export async function plugin(): Promise<Plugin> {
   const [{ createFilter }, { loadSvelteConfig }] = await Promise.all([

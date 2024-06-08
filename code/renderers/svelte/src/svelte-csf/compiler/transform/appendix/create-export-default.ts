@@ -1,6 +1,6 @@
 import type { ExportDefaultDeclaration } from 'estree';
 
-import type { getMetaIdentifier } from '../../../parser/analyse/define-meta/meta-identifier.js';
+import type { getMetaIdentifier } from '#parser/analyse/define-meta/meta-identifier';
 
 interface Params {
   metaIdentifier: ReturnType<typeof getMetaIdentifier>;

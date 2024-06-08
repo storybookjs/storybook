@@ -1,12 +1,13 @@
 <script lang="ts" generics="TMeta extends Meta">
-  import { storyNameToExportName } from '../utils/identifier-utils.js';
-
   import type { Meta, StoryObj, StoryContext } from '@storybook/svelte';
   import type { Snippet } from 'svelte';
 
-  import { useStoriesExtractor } from './contexts/extractor.svelte.js';
-  import { useStoryRenderer } from './contexts/renderer.svelte.js';
-  import { useStoriesTemplate } from './contexts/template.svelte.js';
+  import { useStoriesExtractor } from '#runtime/contexts/extractor.svelte';
+  import { useStoryRenderer } from '#runtime/contexts/renderer.svelte';
+  import { useStoriesTemplate } from '#runtime/contexts/template.svelte';
+
+  import { storyNameToExportName } from '#utils/identifier-utils';
+
 
   type Props = {
     /**

@@ -2,7 +2,7 @@ import type { Meta } from '@storybook/svelte';
 import type { ComponentProps } from 'svelte';
 import type { Attribute, Component } from 'svelte/compiler';
 
-import type Story from '../../../../runtime/Story.svelte';
+import type Story from '#runtime/Story.svelte';
 
 type StoryAttributes = Array<keyof ComponentProps<Story<Meta>>>;
 

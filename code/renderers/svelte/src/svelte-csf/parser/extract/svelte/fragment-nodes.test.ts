@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { extractFragmentNodes } from './fragment-nodes.js';
-import { extractInstanceNodes } from './instance-nodes.js';
-import { extractModuleNodes } from './module-nodes.js';
-import { getSvelteAST } from '../../../parser/ast.js';
+import { extractFragmentNodes } from './fragment-nodes';
+import { extractInstanceNodes } from './instance-nodes';
+import { extractModuleNodes } from './module-nodes';
+
+import { getSvelteAST } from '#parser/ast';
 
 describe(extractFragmentNodes.name, () => {
   it("extracts '<Story />' AST nodes correctly", async () => {

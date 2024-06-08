@@ -2,7 +2,7 @@ import type { CallExpression } from 'estree';
 import type { Root, SvelteNode } from 'svelte/compiler';
 import type { Visitors } from 'zimmerframe';
 
-import type { extractModuleNodes } from './module-nodes.js';
+import type { extractModuleNodes } from './module-nodes';
 
 interface Result {
   setTemplateCall: CallExpression | undefined;
@@ -21,7 +21,7 @@ interface Params {
 	// NOTE: Is optional for the `*.stories.svelte` files to have this tag.
  */
 export async function extractInstanceNodes(options: Params): Promise<Result> {
-  const { instance, moduleNodes, filename } = options;
+  const { instance, moduleNodes } = options;
   const { setTemplateImport } = moduleNodes;
 
   if (!instance || !setTemplateImport) {

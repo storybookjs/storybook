@@ -11,12 +11,12 @@ import {
   getDescriptionPropertyValue,
   getDocsPropertyValue,
   getParametersPropertyValue,
-} from '../shared/description.js';
+} from '../shared/description';
 
-import type { SvelteASTNodes } from '../../../parser/extract/svelte/nodes.js';
-import type { CompiledASTNodes } from '../../../parser/extract/compiled/nodes.js';
+import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
+import type { CompiledASTNodes } from '#parser/extract/compiled/nodes';
 
-import { getDefineMetaFirstArgumentNode } from '../../../parser/analyse/define-meta/first-argument.js';
+import { getDefineMetaFirstArgumentNode } from '#parser/analyse/define-meta/first-argument';
 
 interface Params {
   nodes: {

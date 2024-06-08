@@ -5,7 +5,7 @@
   import {
     type StoriesRepository,
     createStoriesExtractorContext,
-  } from './contexts/extractor.svelte.js';
+  } from '#runtime/contexts/extractor.svelte';
 
   interface Props {
     Stories: Component extends SvelteComponent ? ComponentType<Component> : never;

@@ -6,9 +6,9 @@ import MagicString from 'magic-string';
 import { parseAst } from 'rollup/parseAst';
 import { describe, it } from 'vitest';
 
-import { removeExportDefault } from './remove-export-default.js';
+import { removeExportDefault } from './remove-export-default';
 
-import { extractCompiledASTNodes } from '../../parser/extract/compiled/nodes.js';
+import { extractCompiledASTNodes } from '#parser/extract/compiled/nodes';
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 

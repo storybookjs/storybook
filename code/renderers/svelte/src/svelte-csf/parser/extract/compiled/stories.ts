@@ -1,7 +1,7 @@
 import type { CallExpression, ExpressionStatement, Node } from 'estree';
 import type { Visitors } from 'zimmerframe';
 
-import type { CompiledASTNodes } from './nodes.js';
+import type { CompiledASTNodes } from './nodes';
 
 interface Params {
   nodes: CompiledASTNodes;

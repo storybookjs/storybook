@@ -1,11 +1,11 @@
 import { toJs } from 'estree-util-to-js';
 import type MagicString from 'magic-string';
 
-import { destructureMetaFromDefineMeta } from './destructure-meta.js';
-import { insertDefineMetaJSDocCommentAsDescription } from './insert-description.js';
+import { destructureMetaFromDefineMeta } from './destructure-meta';
+import { insertDefineMetaJSDocCommentAsDescription } from './insert-description';
 
-import type { CompiledASTNodes } from '../../../parser/extract/compiled/nodes.js';
-import type { SvelteASTNodes } from '../../../parser/extract/svelte/nodes.js';
+import type { CompiledASTNodes } from '#parser/extract/compiled/nodes';
+import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
 
 interface Params {
   code: MagicString;

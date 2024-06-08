@@ -11,12 +11,11 @@ import {
   getParametersPropertyValue,
   getDocsPropertyValue,
   getDescriptionPropertyValue,
-} from '../shared/description.js';
+} from '#compiler/transform/shared/description';
 
-import type { extractStoriesNodesFromExportDefaultFn } from '../../../parser/extract/compiled/stories.js';
-import type { SvelteASTNodes } from '../../../parser/extract/svelte/nodes.js';
-
-import { getStoryPropsObjectExpression } from '../../../parser/analyse/story/compiled/props.js';
+import type { extractStoriesNodesFromExportDefaultFn } from '#parser/extract/compiled/stories';
+import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
+import { getStoryPropsObjectExpression } from '#parser/analyse/story/compiled/props';
 
 interface Params {
   nodes: {

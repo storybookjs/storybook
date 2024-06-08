@@ -2,11 +2,11 @@ import type { Program } from 'estree';
 import { toJs } from 'estree-util-to-js';
 import type MagicString from 'magic-string';
 
-import { insertStoryHTMLCommentAsDescription } from './insert-description.js';
-import { insertSvelteCSFToStoryParameters } from './insert-svelte-csf.js';
+import { insertStoryHTMLCommentAsDescription } from './insert-description';
+import { insertSvelteCSFToStoryParameters } from './insert-svelte-csf';
 
-import type { extractStoriesNodesFromExportDefaultFn } from '../../../parser/extract/compiled/stories.js';
-import type { SvelteASTNodes } from '../../../parser/extract/svelte/nodes.js';
+import type { extractStoriesNodesFromExportDefaultFn } from '#parser/extract/compiled/stories';
+import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
 
 interface Params {
   code: MagicString;

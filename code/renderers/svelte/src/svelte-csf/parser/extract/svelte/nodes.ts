@@ -1,8 +1,8 @@
 import type { Root } from 'svelte/compiler';
 
-import { extractModuleNodes } from './module-nodes.js';
-import { extractFragmentNodes } from './fragment-nodes.js';
-import { extractInstanceNodes } from './instance-nodes.js';
+import { extractModuleNodes } from './module-nodes';
+import { extractFragmentNodes } from './fragment-nodes';
+import { extractInstanceNodes } from './instance-nodes';
 
 /**
  * Selected nodes extracted from the Svelte AST via `svelte.compile`,

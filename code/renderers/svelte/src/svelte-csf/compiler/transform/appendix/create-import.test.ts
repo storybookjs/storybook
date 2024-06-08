@@ -2,7 +2,7 @@ import type { Program } from 'estree';
 import { toJs } from 'estree-util-to-js';
 import { describe, it } from 'vitest';
 
-import { createRuntimeStoriesImport } from './create-import.js';
+import { createRuntimeStoriesImport } from './create-import';
 
 describe(createRuntimeStoriesImport.name, () => {
   it('creates import correctly', ({ expect }) => {

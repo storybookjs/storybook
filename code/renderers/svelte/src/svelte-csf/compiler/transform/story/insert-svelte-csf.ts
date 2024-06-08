@@ -3,16 +3,13 @@ import {
   createASTProperty,
   findPropertyParametersIndex,
   getParametersPropertyValue,
-} from '../shared/description.js';
+} from '#compiler/transform/shared/description';
 
-import type { extractStoriesNodesFromExportDefaultFn } from '../../../parser/extract/compiled/stories.js';
-import type {
-  SvelteASTNodes,
-  extractSvelteASTNodes,
-} from '../../../parser/extract/svelte/nodes.js';
+import type { extractStoriesNodesFromExportDefaultFn } from '#parser/extract/compiled/stories';
+import type { SvelteASTNodes, extractSvelteASTNodes } from '#parser/extract/svelte/nodes';
 
-import { getStoryPropsObjectExpression } from '../../../parser/analyse/story/compiled/props.js';
-import { getStoryChildrenRawCode } from '../../../parser/analyse/story/svelte/children.js';
+import { getStoryPropsObjectExpression } from '#parser/analyse/story/compiled/props';
+import { getStoryChildrenRawCode } from '#parser/analyse/story/svelte/children';
 
 interface Params {
   nodes: {

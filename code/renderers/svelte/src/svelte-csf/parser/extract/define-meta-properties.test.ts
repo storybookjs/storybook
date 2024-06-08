@@ -1,9 +1,10 @@
+import type { ArrayExpression, Literal } from 'estree';
 import { describe, it } from 'vitest';
 
 import { extractDefineMetaPropertiesNodes } from './define-meta-properties';
-import { getSvelteAST } from '../ast.js';
-import { extractSvelteASTNodes } from './svelte/nodes.js';
-import type { ArrayExpression, Literal } from 'estree';
+
+import { getSvelteAST } from '#parser/ast';
+import { extractSvelteASTNodes } from '#parser/extract/svelte/nodes';
 
 describe(extractDefineMetaPropertiesNodes.name, () => {
   it('extracts correctly selected properties', async ({ expect }) => {

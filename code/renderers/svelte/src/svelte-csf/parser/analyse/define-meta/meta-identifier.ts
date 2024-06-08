@@ -1,6 +1,6 @@
 import type { Identifier } from 'estree';
 
-import type { SvelteASTNodes } from '../../extract/svelte/nodes.js';
+import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
 
 interface Params {
   node: SvelteASTNodes['defineMetaVariableDeclaration'];

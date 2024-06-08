@@ -2,7 +2,7 @@ import type { Program } from 'estree';
 import { toJs } from 'estree-util-to-js';
 import { describe, it } from 'vitest';
 
-import { createExportDefaultMeta } from './create-export-default.js';
+import { createExportDefaultMeta } from './create-export-default';
 
 describe(createExportDefaultMeta.name, () => {
   it('creates a new export default correctly', ({ expect }) => {

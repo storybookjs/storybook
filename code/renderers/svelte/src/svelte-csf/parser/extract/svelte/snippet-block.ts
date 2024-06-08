@@ -1,7 +1,7 @@
 import type { Component, SnippetBlock } from 'svelte/compiler';
 
-import type { SvelteASTNodes } from './nodes.js';
-import { extractStoryAttributesNodes } from './story/attributes.js';
+import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
+import { extractStoryAttributesNodes } from '#parser/extract/svelte/story/attributes';
 
 /**
  * Svelte 5 allows to passing `children` as attribute _(aka prop)_.

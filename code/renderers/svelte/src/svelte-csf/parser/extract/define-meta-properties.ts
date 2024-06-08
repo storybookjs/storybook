@@ -1,8 +1,8 @@
 import type { Meta } from '@storybook/svelte';
 import type { ObjectExpression, Property } from 'estree';
 
-import type { SvelteASTNodes } from './svelte/nodes.js';
-import type { CompiledASTNodes } from './compiled/nodes.js';
+import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
+import type { CompiledASTNodes } from '#parser/extract/compiled/nodes';
 
 interface Options<Properties extends Array<keyof Meta>> {
   nodes: SvelteASTNodes | CompiledASTNodes;

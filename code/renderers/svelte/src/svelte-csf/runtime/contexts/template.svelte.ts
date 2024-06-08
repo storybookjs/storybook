@@ -1,7 +1,7 @@
 import type { Meta, StoryObj, StoryContext } from '@storybook/svelte';
 import { getContext, hasContext, setContext, type Snippet } from 'svelte';
 
-import type { Story } from '../../index.js';
+import type Story from '#runtime/Story.svelte';
 
 const CONTEXT_KEYS = 'storybook-stories-template-snippet-context';
 

@@ -2,7 +2,7 @@ import type { Program } from 'estree';
 import { toJs } from 'estree-util-to-js';
 import { describe, it } from 'vitest';
 
-import { createExportOrderVariable } from './create-export-order.js';
+import { createExportOrderVariable } from './create-export-order';
 
 describe(createExportOrderVariable.name, () => {
   it('correctly creates a variable with named exports order', ({ expect }) => {

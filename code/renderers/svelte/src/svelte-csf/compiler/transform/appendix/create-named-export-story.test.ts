@@ -2,8 +2,8 @@ import type { Program } from 'estree';
 import { toJs } from 'estree-util-to-js';
 import { describe, it } from 'vitest';
 
-import { createNamedExportStory } from './create-named-export-story.js';
-import { createVariableFromRuntimeStoriesCall } from './create-variable-from-runtime-stories-call.js';
+import { createNamedExportStory } from './create-named-export-story';
+import { createVariableFromRuntimeStoriesCall } from './create-variable-from-runtime-stories-call';
 
 describe(createNamedExportStory.name, () => {
   it('correctly creates a variable with named exports order', ({ expect }) => {

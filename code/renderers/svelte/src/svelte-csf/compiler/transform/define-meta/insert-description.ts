@@ -9,7 +9,6 @@ import {
   findPropertyDocsIndex,
   findPropertyParametersIndex,
   getDescriptionPropertyValue,
-  getDocsProperty,
   getDocsPropertyValue,
   getParametersPropertyValue,
 } from '../shared/description.js';
@@ -74,10 +73,6 @@ export function insertDefineMetaJSDocCommentAsDescription(params: Params): void 
     getParametersPropertyValue(defineMetaFirstArgumentObjectExpression).properties.push(
       createASTProperty('docs', createASTObjectExpression())
     );
-  }
-
-  if (!getDocsProperty(defineMetaFirstArgumentObjectExpression)) {
-    throw new Error('it was undefined');
   }
 
   if (findPropertyDescriptionIndex(defineMetaFirstArgumentObjectExpression) === -1) {

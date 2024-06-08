@@ -76,15 +76,41 @@ export const generateCodeToEmit = ({ code, args }: { code: string; args: StoryOb
 
   let codeToEmit = code
     .replaceAll('{...args}', allPropsString)
-    // replace single arg references with their actual value, eg. myProp={args.something} => myProp="actual"
-    .replace(/([\w\d_$]*)=\{(args[\w\d_$\.]*)\}*/g, (_, key, argPath) => {
-      const value = get({ args }, argPath);
-      return argsToProps(key, value) ?? '';
+    // replace single arg references with their actual value,
+    // eg. myProp={args.something} => myProp={"actual"}
+    // or <h1>{args.something}</h1> => <h1>"actual"</h1>
+    .replace(/args(?:[\w\d_$\.\?\[\]"'])+/g, (argPath) => {
+      const path = argPath.replaceAll('?', ''); // remove optional chaining character
+      const value = get({ args }, path);
+      return valueToString(value);
     });
-    // TODO: also replace direct references, eg. <h1>{args.heading}</h1>
-    // TODO: support optional chaining syntax, eg. <h1>{args.texts?.h1}</h1>
 
   return codeToEmit;
+};
+
+
+const getFunctionName = (fn: Function & { getMockName?: () => string }) => {
+  const name = fn.getMockName?.() ?? fn.name;
+  if (name && name !== 'spy') {
+    return name;
+  }
+  return '() => {}';
+};
+
+/**
+ * convert a value to a stringified version
+ */
+const valueToString = (value: any): string => {
+  if (typeof value === 'function') {
+    return getFunctionName(value);
+  }
+
+  return (
+    JSON.stringify(value, null, 1)
+      ?.replace(/\n/g, '')
+      // Find "}" or "]" at the end of the string, not preceded by a space, and add a space
+      .replace(/(?<!\s)([}\]])$/, ' $1')
+  );
 };
 
 /**
@@ -99,16 +125,12 @@ const argsToProps = (key: string, value: any): string | null => {
     return key;
   }
 
+  const stringValue = valueToString(value);
+
   if (typeof value === 'string') {
-    return `${key}=${JSON.stringify(value)}`;
+    return `${key}=${stringValue}`;
   }
 
-  if (typeof value === 'function') {
-    return `${key}={${value.getMockName?.() ?? value.name ?? '() => {}'}}`;
-  }
-
-  return `${key}={${JSON.stringify(value, null, 1)
-    .replace(/\n/g, '')
-    // Find "}" or "]" at the end of the string, not preceded by a space, and add a space
-    .replace(/(?<!\s)([}\]])$/, ' $1')}}`;
+  return `${key}={${stringValue}}`;
 };
+

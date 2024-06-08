@@ -74,7 +74,7 @@ describe(transformStoriesCode.name, () => {
         parameters: {
           docs: {
             description: {
-              component: "Description set explicitly in the comment above \`defineMeta\`"
+              component: "Description set explicitly in the comment above \`defineMeta\`.\\n\\nMultiline supported. And also Markdown syntax:\\n\\n* **Bold**,\\n* _Italic_,\\n* \`Code\`."
             }
           }
         }

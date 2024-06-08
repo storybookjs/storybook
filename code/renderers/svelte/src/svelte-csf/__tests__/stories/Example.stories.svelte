@@ -4,7 +4,15 @@
 
   import Example from './Example.svelte';
 
-  // Description set explicitly in the comment above `defineMeta`
+  /**
+   * Description set explicitly in the comment above `defineMeta`.
+   *
+   * Multiline supported. And also Markdown syntax:
+   *
+   * * **Bold**,
+   * * _Italic_,
+   * * `Code`.
+   */
   const { Story } = defineMeta({
     title: 'Example',
     component: Example,

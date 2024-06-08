@@ -53,23 +53,23 @@ describe(transformDefineMeta.name, () => {
     });
 
     expect(toJs(defineMetaVariableDeclaration as unknown as Program).value).toMatchInlineSnapshot(`
-			"const {Story, meta} = defineMeta({
-			  title: 'Example',
-			  component: Example,
-			  tags: ['autodocs'],
-			  args: {
-			    onclick: action("onclick"),
-			    onmouseenter: action("onmouseenter"),
-			    onmouseleave: action("onmouseleave")
-			  },
-			  parameters: {
-			    docs: {
-			      description: {
-			        component: "Description set explicitly in the comment above \`defineMeta\`"
-			      }
-			    }
-			  }
-			});"
-		`);
+      "const {Story, meta} = defineMeta({
+        title: 'Example',
+        component: Example,
+        tags: ['autodocs'],
+        args: {
+          onclick: action("onclick"),
+          onmouseenter: action("onmouseenter"),
+          onmouseleave: action("onmouseleave")
+        },
+        parameters: {
+          docs: {
+            description: {
+              component: "Description set explicitly in the comment above \`defineMeta\`.\\n\\nMultiline supported. And also Markdown syntax:\\n\\n* **Bold**,\\n* _Italic_,\\n* \`Code\`."
+            }
+          }
+        }
+      });"
+    `);
   });
 });

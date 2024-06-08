@@ -1,5 +1,5 @@
 import { logger } from '@storybook/client-logger';
-import dedent from 'dedent';
+import type { Comment } from 'estree';
 
 import {
   createASTObjectExpression,
@@ -102,7 +102,36 @@ export function insertDefineMetaJSDocCommentAsDescription(params: Params): void 
   getDescriptionPropertyValue(defineMetaFirstArgumentObjectExpression).properties.push(
     createASTProperty('component', {
       type: 'Literal',
-      value: dedent(leadingComments[0].value),
+      value: extractDescription(leadingComments),
     })
   );
+}
+
+/**
+ * Adopted from: https://github.com/storybookjs/storybook/blob/next/code/lib/csf-tools/src/enrichCsf.ts/#L148-L164
+ * Adjusted for this addon, because here we use AST format from `estree`, not `babel`.
+ */
+function extractDescription(leadingComments: Comment[]) {
+  const comments = leadingComments
+    .map((comment) => {
+      if (
+        comment.type === 'Line' ||
+        // is not a JSDoc format - `/**` - by default parser omits the leading `/*` and ending `*/`
+        !comment.value.startsWith('*')
+      ) {
+        return null;
+      }
+
+      return (
+        comment.value
+          .split('\n')
+          // remove leading *'s and spaces from the beginning of each line
+          .map((line) => line.replace(/^(\s+)?(\*+)?(\s)?/, ''))
+          .join('\n')
+          .trim()
+      );
+    })
+    .filter(Boolean);
+
+  return comments.join('\n');
 }

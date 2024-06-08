@@ -4,7 +4,7 @@ import type { ImportDeclaration } from 'estree';
 /**
  * The export is defined in the `package.json` export map
  */
-export function creatRuntimeStoriesImport(): ImportDeclaration {
+export function createRuntimeStoriesImport(): ImportDeclaration {
   const imported = {
     type: 'Identifier',
     // WARN: Tempting to use `createRuntimeStories.name` here.

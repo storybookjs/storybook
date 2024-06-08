@@ -4,7 +4,7 @@ import type { ComponentType } from 'svelte';
 import Story from './runtime/Story.svelte';
 
 export type { Story };
-export { setTemplate } from './runtime/contexts/template.svelte.js';
+export { setTemplate } from './runtime/contexts/template.svelte';
 
 export function defineMeta<const TMeta extends Meta = Meta>(meta: TMeta) {
   return {

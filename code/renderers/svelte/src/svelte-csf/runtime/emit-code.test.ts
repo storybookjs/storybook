@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { fn } from '@storybook/test';
 import dedent from 'dedent';
-import { generateCodeToEmit } from './emit-code.js';
+
+import { generateCodeToEmit } from './emit-code';
 
 describe('Emit Code', () => {
   it('should replace short spread args with single-line props', () => {

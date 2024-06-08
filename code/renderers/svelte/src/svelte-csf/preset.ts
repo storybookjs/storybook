@@ -1,7 +1,7 @@
 import type { StorybookConfig } from '@storybook/svelte-vite';
 
-import { plugin } from './compiler/plugin.js';
-import { indexer } from './indexer/index.js';
+import { plugin } from './compiler/plugin';
+import { indexer } from './indexer/index';
 
 export const viteFinal: StorybookConfig['viteFinal'] = async (config) => {
   return {

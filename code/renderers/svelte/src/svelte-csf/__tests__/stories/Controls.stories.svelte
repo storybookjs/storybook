@@ -9,10 +9,6 @@
   const { Story } = defineMeta({
     title: 'Addon/Controls',
     component: Controls,
-    parameters: {
-      actions: { disable: true },
-      interactions: { disable: true },
-    },
     tags: ['autodocs'],
     args: {
       sampleRequiredBoolean: true,
@@ -25,7 +21,13 @@
   });
 </script>
 
-<Story name="Default" />
+<Story
+  name="Default" 
+  parameters={{
+      actions: { disable: true },
+      interactions: { disable: true },
+  }}
+/>
 
 <Story
   name="Playground"

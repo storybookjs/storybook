@@ -1,6 +1,6 @@
-import type { FunctionDeclaration, Identifier, VariableDeclaration } from 'estree';
+import type { FunctionDeclaration, VariableDeclaration } from 'estree';
 
-import type { getMetaIdentifier } from '../../../parser/analyse/define-meta/meta-identifier.js';
+import type { getMetaIdentifier } from '#parser/analyse/define-meta/meta-identifier';
 
 interface Params {
   storiesFunctionDeclaration: FunctionDeclaration;
@@ -23,6 +23,7 @@ export function createVariableFromRuntimeStoriesCall(params: Params): VariableDe
         },
         init: {
           type: 'CallExpression',
+          optional: false,
           callee: {
             type: 'Identifier',
             // WARN: Tempting to use `createRuntimeStories.name` here.
@@ -34,9 +35,8 @@ export function createVariableFromRuntimeStoriesCall(params: Params): VariableDe
               type: 'Identifier',
               name: storiesFunctionDeclaration.id.name,
             },
-            metaIdentifier
+            metaIdentifier,
           ],
-          optional: false,
         },
       },
     ],

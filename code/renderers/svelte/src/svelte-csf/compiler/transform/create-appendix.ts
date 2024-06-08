@@ -1,16 +1,16 @@
 import MagicString from 'magic-string';
 import { toJs } from 'estree-util-to-js';
 
-import { createExportDefaultMeta } from './appendix/create-export-default.js';
-import { createExportOrderVariable } from './appendix/create-export-order.js';
-import { creatRuntimeStoriesImport } from './appendix/create-import.js';
-import { createVariableFromRuntimeStoriesCall } from './appendix/create-variable-from-runtime-stories-call.js';
-import { createNamedExportStory } from './appendix/create-named-export-story.js';
+import { createExportDefaultMeta } from './appendix/create-export-default';
+import { createExportOrderVariable } from './appendix/create-export-order';
+import { createRuntimeStoriesImport } from './appendix/create-import';
+import { createVariableFromRuntimeStoriesCall } from './appendix/create-variable-from-runtime-stories-call';
+import { createNamedExportStory } from './appendix/create-named-export-story';
 
-import { getMetaIdentifier } from '../../parser/analyse/define-meta/meta-identifier.js';
-import type { CompiledASTNodes } from '../../parser/extract/compiled/nodes.js';
-import type { SvelteASTNodes } from '../../parser/extract/svelte/nodes.js';
-import { getStoriesIdentifiers } from '../../parser/analyse/story/svelte/attributes/identifiers.js';
+import { getMetaIdentifier } from '#parser/analyse/define-meta/meta-identifier';
+import type { CompiledASTNodes } from '#parser/extract/compiled/nodes';
+import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
+import { getStoriesIdentifiers } from '#parser/analyse/story/svelte/attributes/identifiers';
 
 interface Params {
   code: MagicString;
@@ -39,21 +39,19 @@ export async function createAppendix(params: Params) {
     metaIdentifier,
     filename,
   });
-  const storiesExports = await Promise.all(
-    storyIdentifiers.map(({ exportName }) =>
-      createNamedExportStory({
-        exportName,
-        filename,
-        node: variableFromRuntimeStoriesCall,
-      })
-    )
+  const storiesExports = storyIdentifiers.map(({ exportName }) =>
+    createNamedExportStory({
+      exportName,
+      filename,
+      node: variableFromRuntimeStoriesCall,
+    })
   );
 
   const appendix = toJs({
     type: 'Program',
     sourceType: 'module',
     body: [
-      creatRuntimeStoriesImport(),
+      createRuntimeStoriesImport(),
       variableFromRuntimeStoriesCall,
       createExportDefaultMeta({ metaIdentifier, filename }),
       createExportOrderVariable({ storyIdentifiers, filename }),

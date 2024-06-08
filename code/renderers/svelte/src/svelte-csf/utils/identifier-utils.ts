@@ -34,23 +34,23 @@ export const storyNameToExportName = (name: string) => storyIdToExportName(story
  * @example isValidVariableName('Some Story') => false
  * @example isValidVariableName('Some-Story') => false
  * @example isValidVariableName('default') => false
- * 
+ *
  * @see https://github.com/shinnn/is-var-name
  */
 export const isValidVariableName = (str: string) => {
-	if (typeof str !== 'string') {
-		return false;
-	}
+  if (typeof str !== 'string') {
+    return false;
+  }
 
-	if (str.trim() !== str) {
-		return false;
-	}
+  if (str.trim() !== str) {
+    return false;
+  }
 
-	try {
-		new Function(str, 'var ' + str);
-	} catch (_) {
-		return false;
-	}
+  try {
+    new Function(str, 'var ' + str);
+  } catch (_) {
+    return false;
+  }
 
-	return true;
-}
+  return true;
+};

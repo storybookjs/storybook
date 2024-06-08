@@ -1,6 +1,6 @@
 import type { Attribute } from 'svelte/compiler';
 
-import { getArrayOfStringsValue } from '../attributes.js';
+import { getArrayOfStringsValue } from '../attributes';
 
 interface Params {
   node: Attribute | undefined;

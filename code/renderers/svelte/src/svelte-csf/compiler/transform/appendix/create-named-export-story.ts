@@ -1,4 +1,5 @@
 import type { ExportNamedDeclaration, Identifier } from 'estree';
+
 import type { createVariableFromRuntimeStoriesCall } from './create-variable-from-runtime-stories-call';
 
 interface Params {
@@ -7,7 +8,7 @@ interface Params {
   node: ReturnType<typeof createVariableFromRuntimeStoriesCall>;
 }
 
-export async function createNamedExportStory(params: Params): Promise<ExportNamedDeclaration> {
+export function createNamedExportStory(params: Params): ExportNamedDeclaration {
   const { exportName, node } = params;
 
   const exported = {

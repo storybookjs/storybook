@@ -1,9 +1,9 @@
 import { describe, it } from 'vitest';
 
-import { getStoryChildrenRawCode } from './children.js';
+import { getStoryChildrenRawCode } from './children';
 
-import { getSvelteAST } from '../../../ast.js';
-import { extractSvelteASTNodes } from '../../../extract/svelte/nodes.js';
+import { getSvelteAST } from '#parser/ast';
+import { extractSvelteASTNodes } from '#parser/extract/svelte/nodes';
 
 describe(getStoryChildrenRawCode.name, () => {
   describe('When a `<Story />` is a self-closing tag...', () => {

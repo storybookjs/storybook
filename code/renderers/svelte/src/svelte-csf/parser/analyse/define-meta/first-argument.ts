@@ -1,6 +1,6 @@
 import type { ObjectExpression } from 'estree';
 
-import type { CompiledASTNodes } from '../../extract/compiled/nodes.js';
+import type { CompiledASTNodes } from '#parser/extract/compiled/nodes';
 
 interface Params {
   nodes: CompiledASTNodes;
@@ -11,7 +11,7 @@ interface Params {
  * Extract AST node of {@link ObjectExpression} from the first argument passed down to `defineMeta()`.
  */
 export function getDefineMetaFirstArgumentNode(params: Params): ObjectExpression {
-  const { nodes, filename } = params;
+  const { nodes } = params;
   const { defineMetaVariableDeclaration, defineMetaImport } = nodes;
   const { declarations } = defineMetaVariableDeclaration;
 

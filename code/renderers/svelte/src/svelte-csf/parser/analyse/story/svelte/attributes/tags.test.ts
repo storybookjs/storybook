@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { getTagsFromStoryAttribute } from './tags.js';
+import { getTagsFromStoryAttribute } from './tags';
 
-import { getSvelteAST } from '../../../../ast.js';
-import { extractSvelteASTNodes } from '../../../../extract/svelte/nodes.js';
-import { extractStoryAttributesNodes } from '../../../../extract/svelte/story/attributes.js';
+import { getSvelteAST } from '#parser/ast';
+import { extractSvelteASTNodes } from '#parser/extract/svelte/nodes';
+import { extractStoryAttributesNodes } from '#parser/extract/svelte/story/attributes';
 
 describe(getTagsFromStoryAttribute.name, () => {
   it("extracts 'tags' attribute when is a correct type - array of strings", async () => {

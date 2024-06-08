@@ -1,14 +1,14 @@
 import dedent from 'dedent';
 import type { Component, SnippetBlock } from 'svelte/compiler';
 
-import { getDefineMetaComponentValue } from '../../define-meta/component-identifier.js';
-
-import type { extractSvelteASTNodes } from '../../../extract/svelte/nodes.js';
-import { extractStoryChildrenSnippetBlock } from '../../../extract/svelte/story/children.js';
+import type { extractSvelteASTNodes } from '#parser/extract/svelte/nodes';
+import { extractStoryChildrenSnippetBlock } from '#parser/extract/svelte/story/children';
 import {
   findSetTemplateSnippetBlock,
   findStoryAttributeChildrenSnippetBlock,
-} from '../../../extract/svelte/snippet-block.js';
+} from '#parser/extract/svelte/snippet-block';
+
+import { getDefineMetaComponentValue } from '#parser/analyse/define-meta/component-identifier';
 
 interface Params {
   nodes: {

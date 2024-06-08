@@ -1,8 +1,8 @@
 import type { Comment, Component, Fragment, SnippetBlock, SvelteNode } from 'svelte/compiler';
 import type { Visitors } from 'zimmerframe';
 
-import type { extractModuleNodes } from './module-nodes.js';
-import type { extractInstanceNodes } from './instance-nodes.js';
+import type { extractModuleNodes } from './module-nodes';
+import type { extractInstanceNodes } from './instance-nodes';
 
 interface Result {
   storyComponents: Array<{

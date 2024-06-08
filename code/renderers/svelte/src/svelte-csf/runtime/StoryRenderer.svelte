@@ -2,8 +2,8 @@
   import type { Meta, StoryContext, StoryObj } from '@storybook/svelte';
   import type { ComponentType } from 'svelte';
 
-  import { useStoryRenderer } from './contexts/renderer.svelte.js';
-  import { emitCode } from './emit-code.js';
+  import { useStoryRenderer } from '#runtime/contexts/renderer.svelte';
+  import { emitCode } from '#runtime/emit-code';
 
   type Props = {
     Stories: ComponentType;

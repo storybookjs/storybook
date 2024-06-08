@@ -1,13 +1,13 @@
 import type MagicString from 'magic-string';
 
-import { transformStory } from './story/index.js';
-import { transformDefineMeta } from './define-meta/index.js';
-import { removeExportDefault } from './remove-export-default.js';
-import { createAppendix } from './create-appendix.js';
+import { transformStory } from './story';
+import { transformDefineMeta } from './define-meta';
+import { removeExportDefault } from './remove-export-default';
+import { createAppendix } from './create-appendix';
 
-import type { CompiledASTNodes } from '../../parser/extract/compiled/nodes.js';
-import { extractStoriesNodesFromExportDefaultFn } from '../../parser/extract/compiled/stories.js';
-import type { SvelteASTNodes } from '../../parser/extract/svelte/nodes.js';
+import type { CompiledASTNodes } from '#parser/extract/compiled/nodes';
+import { extractStoriesNodesFromExportDefaultFn } from '#parser/extract/compiled/stories';
+import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
 
 interface Params {
   code: MagicString;

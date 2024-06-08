@@ -3,7 +3,8 @@
 
 import type { Meta, StoryObj } from '@storybook/svelte';
 import { getContext, hasContext, setContext } from 'svelte';
-import { storyNameToExportName } from '../../utils/identifier-utils.js';
+
+import { storyNameToExportName } from '#utils/identifier-utils';
 
 const CONTEXT_KEY = 'storybook-stories-extractor-context';
 

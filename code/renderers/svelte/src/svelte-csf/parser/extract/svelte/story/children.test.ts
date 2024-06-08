@@ -1,9 +1,9 @@
 import { describe, it } from 'vitest';
 
-import { extractStoryChildrenSnippetBlock } from './children.js';
+import { extractStoryChildrenSnippetBlock } from './children';
 
-import { extractSvelteASTNodes } from '../nodes.js';
-import { getSvelteAST } from '../../../ast.js';
+import { extractSvelteASTNodes } from '#parser/extract/svelte/nodes';
+import { getSvelteAST } from '#parser/ast';
 
 describe(extractStoryChildrenSnippetBlock.name, () => {
   it('returns correctly AST node, when a `<Story>` compponent has a snippet block `children` inside', async ({

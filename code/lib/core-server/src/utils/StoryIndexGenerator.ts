@@ -245,6 +245,11 @@ export class StoryIndexGenerator {
       );
       return Object.values(cache).flatMap((entry): (IndexEntry | ErrorEntry)[] => {
         if (!entry) return [];
+
+        if (entry.type === 'docs' || entry.type === 'stories') {
+          entry.importPath = specifier.importPath;
+        }
+
         if (entry.type === 'docs') return [entry];
         if (entry.type === 'error') return [entry];
 
@@ -283,8 +288,20 @@ export class StoryIndexGenerator {
     absolutePath: Path,
     projectTags: Tag[] = []
   ): Promise<StoriesCacheEntry | DocsCacheEntry> {
-    const relativePath = path.relative(this.options.workingDir, absolutePath);
-    const importPath = slash(normalizeStoryPath(relativePath));
+    const formatPath = (filePath: string) => {
+      if (filePath.startsWith('virtual:')) {
+        return filePath;
+      }
+
+      if (path.isAbsolute(filePath)) {
+        filePath = path.resolve(this.options.workingDir, filePath);
+      }
+
+      return slash(normalizeStoryPath(filePath));
+    };
+
+    const importPath = formatPath(absolutePath);
+
     const defaultMakeTitle = (userTitle?: string) => {
       const title = userOrAutoTitleFromSpecifier(importPath, specifier, userTitle);
       invariant(
@@ -314,7 +331,7 @@ export class StoryIndexGenerator {
           metaId: input.metaId,
           name,
           title,
-          importPath,
+          importPath: input.importPath ? formatPath(input.importPath) : importPath,
           tags,
         };
       });
@@ -409,7 +426,7 @@ export class StoryIndexGenerator {
         invariant(
           csfEntry,
           dedent`Could not find or load CSF file at path "${result.of}" referenced by \`of={}\` in docs file "${relativePath}".
-            
+
         - Does that file exist?
         - If so, is it a CSF file (\`.stories.*\`)?
         - If so, is it matched by the \`stories\` glob in \`main.js\`?

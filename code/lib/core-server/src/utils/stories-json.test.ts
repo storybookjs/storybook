@@ -111,7 +111,7 @@ describe('useStoriesJson', () => {
               "importPath": "./src/docs2/MetaOf.mdx",
               "name": "MetaOf",
               "storiesImports": [
-                "./src/A.stories.js",
+                "'./src/A.stories.js'",
               ],
               "tags": [
                 "dev",
@@ -128,7 +128,7 @@ describe('useStoriesJson', () => {
               "importPath": "./src/docs2/SecondMetaOf.mdx",
               "name": "Second Docs",
               "storiesImports": [
-                "./src/A.stories.js",
+                "'./src/A.stories.js'",
               ],
               "tags": [
                 "dev",
@@ -142,7 +142,7 @@ describe('useStoriesJson', () => {
             },
             "a--story-one": {
               "id": "a--story-one",
-              "importPath": "./src/A.stories.js",
+              "importPath": "'./src/A.stories.js'",
               "name": "Story One",
               "tags": [
                 "dev",
@@ -155,7 +155,7 @@ describe('useStoriesJson', () => {
             },
             "b--story-one": {
               "id": "b--story-one",
-              "importPath": "./src/B.stories.ts",
+              "importPath": "'./src/B.stories.ts'",
               "name": "Story One",
               "tags": [
                 "dev",
@@ -167,7 +167,7 @@ describe('useStoriesJson', () => {
             },
             "d--story-one": {
               "id": "d--story-one",
-              "importPath": "./src/D.stories.jsx",
+              "importPath": "'./src/D.stories.jsx'",
               "name": "Story One",
               "tags": [
                 "dev",
@@ -218,7 +218,7 @@ describe('useStoriesJson', () => {
             },
             "first-nested-deeply-f--story-one": {
               "id": "first-nested-deeply-f--story-one",
-              "importPath": "./src/first-nested/deeply/F.stories.js",
+              "importPath": "'./src/first-nested/deeply/F.stories.js'",
               "name": "Story One",
               "tags": [
                 "dev",
@@ -229,7 +229,7 @@ describe('useStoriesJson', () => {
             },
             "h--story-one": {
               "id": "h--story-one",
-              "importPath": "./src/H.stories.mjs",
+              "importPath": "'./src/H.stories.mjs'",
               "name": "Story One",
               "tags": [
                 "dev",
@@ -241,7 +241,7 @@ describe('useStoriesJson', () => {
             },
             "nested-button--story-one": {
               "id": "nested-button--story-one",
-              "importPath": "./src/nested/Button.stories.ts",
+              "importPath": "'./src/nested/Button.stories.ts'",
               "name": "Story One",
               "tags": [
                 "dev",
@@ -253,7 +253,7 @@ describe('useStoriesJson', () => {
             },
             "second-nested-g--story-one": {
               "id": "second-nested-g--story-one",
-              "importPath": "./src/second-nested/G.stories.ts",
+              "importPath": "'./src/second-nested/G.stories.ts'",
               "name": "Story One",
               "tags": [
                 "dev",

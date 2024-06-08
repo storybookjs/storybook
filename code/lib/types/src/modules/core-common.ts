@@ -68,6 +68,11 @@ export interface Presets {
     config: TypescriptOptions,
     args?: Options
   ): Promise<TypescriptOptions>;
+  apply(
+    extension: 'experimental_indexers',
+    config?: Indexer[],
+    args?: any
+  ): Promise<StorybookConfigRaw['experimental_indexers']>;
   apply(extension: 'framework', config?: {}, args?: any): Promise<Preset>;
   apply(extension: 'babel', config?: {}, args?: any): Promise<any>;
   apply(extension: 'swc', config?: {}, args?: any): Promise<any>;

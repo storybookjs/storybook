@@ -34,7 +34,6 @@ describe('story extraction', () => {
             // properties identical to the auto-generated ones, eg. 'StoryOne' -> 'Story One'
             {
               type: 'story',
-              importPath: fileName,
               exportName: 'StoryOne',
               name: 'Story One',
               title: 'A',
@@ -45,7 +44,6 @@ describe('story extraction', () => {
             // properties different from the auto-generated ones, eg. 'StoryOne' -> 'Another Story Name'
             {
               type: 'story',
-              importPath: fileName,
               exportName: 'StoryOne',
               name: 'Another Story Name',
               title: 'Custom Title',
@@ -104,7 +102,6 @@ describe('story extraction', () => {
           createIndex: async (fileName) => [
             {
               exportName: 'StoryOne',
-              importPath: fileName,
               type: 'story',
             },
           ],
@@ -120,6 +117,47 @@ describe('story extraction', () => {
           {
             "id": "f--story-one",
             "importPath": "./src/first-nested/deeply/F.stories.js",
+            "metaId": undefined,
+            "name": "Story One",
+            "tags": [],
+            "title": "F",
+            "type": "story",
+          },
+        ],
+        "type": "stories",
+      }
+    `);
+  });
+
+  it('leaves virtual paths returned by indexers as is', async () => {
+    const relativePath = './src/first-nested/deeply/F.stories.js';
+    const absolutePath = path.join(options.workingDir, relativePath);
+    const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(relativePath, options);
+
+    const generator = new StoryIndexGenerator([specifier], {
+      ...options,
+      indexers: [
+        {
+          test: /\.stories\.(m?js|ts)x?$/,
+          createIndex: async (fileName) => [
+            {
+              exportName: 'StoryOne',
+              type: 'story',
+              // importPath: "virtual:custom-indexer",
+            },
+          ],
+        },
+      ],
+    });
+    const result = await generator.extractStories(specifier, absolutePath);
+
+    expect(result).toMatchInlineSnapshot(`
+      {
+        "dependents": [],
+        "entries": [
+          {
+            "id": "f--story-one",
+            "importPath": "virtual:custom-indexer",
             "metaId": undefined,
             "name": "Story One",
             "tags": [],
@@ -149,7 +187,6 @@ describe('story extraction', () => {
               name: 'Story One',
               metaId: 'a',
               tags: ['story-tag-from-indexer'],
-              importPath: fileName,
               type: 'story',
             },
           ],
@@ -196,7 +233,6 @@ describe('story extraction', () => {
               title: 'A',
               metaId: 'a',
               tags: ['story-tag-from-indexer'],
-              importPath: fileName,
               type: 'story',
             },
           ],
@@ -243,7 +279,6 @@ describe('story extraction', () => {
               name: 'Story One',
               title: 'A',
               tags: ['story-tag-from-indexer'],
-              importPath: fileName,
               type: 'story',
             },
             // exportName + custom title (ignoring custom name) -> id
@@ -252,7 +287,6 @@ describe('story extraction', () => {
               name: 'Custom Name For Second Story',
               title: 'Custom Title',
               tags: ['story-tag-from-indexer'],
-              importPath: fileName,
               type: 'story',
             },
             // exportName + custom metaId (ignoring custom title and name) -> id
@@ -261,7 +295,6 @@ describe('story extraction', () => {
               metaId: 'custom-meta-id',
               title: 'Custom Title',
               tags: ['story-tag-from-indexer'],
-              importPath: fileName,
               type: 'story',
             },
           ],
@@ -327,7 +360,6 @@ describe('story extraction', () => {
             {
               exportName: 'StoryOne',
               tags: ['story-tag-from-indexer'],
-              importPath: fileName,
               type: 'story',
             },
           ],
@@ -376,7 +408,6 @@ describe('docs entries from story extraction', () => {
               name: 'Story One',
               title: 'A',
               tags: ['story-tag-from-indexer'],
-              importPath: fileName,
               type: 'story',
             },
           ],
@@ -423,7 +454,6 @@ describe('docs entries from story extraction', () => {
               name: 'Story One',
               title: 'A',
               tags: [AUTODOCS_TAG, 'story-tag-from-indexer'],
-              importPath: fileName,
               type: 'story',
             },
           ],
@@ -483,7 +513,6 @@ describe('docs entries from story extraction', () => {
               name: 'Story One',
               title: 'A',
               tags: [AUTODOCS_TAG, 'story-tag-from-indexer'],
-              importPath: fileName,
               type: 'story',
             },
           ],
@@ -531,7 +560,6 @@ describe('docs entries from story extraction', () => {
               name: 'Story One',
               title: 'A',
               tags: [STORIES_MDX_TAG, 'story-tag-from-indexer'],
-              importPath: fileName,
               type: 'story',
             },
           ],

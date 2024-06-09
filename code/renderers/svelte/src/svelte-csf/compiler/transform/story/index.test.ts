@@ -72,59 +72,59 @@ describe(transformStory.name, () => {
 
     expect(toJs(compiledPostTransformedStories[0] as unknown as Program).value)
       .toMatchInlineSnapshot(`
-			"$.validate_component(Story)(node_1, {
-			  name: "Default",
-			  parameters: {
-			    docs: {
-			      description: {
-			        story: "Description for the default story"
-			      }
-			    },
-			    __svelteCsf: {
-			      rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{args?.id}</p>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br>\\n</Example>"
-			    }
-			  }
-			});"
-		`);
+        "$.validate_component(Story)(node_1, {
+          name: "Default",
+          parameters: {
+            docs: {
+              description: {
+                story: "Description for the default story"
+              }
+            },
+            __svelteCsf: {
+              rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{args?.id}</p>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
+            }
+          }
+        });"
+      `);
 
     expect(toJs(compiledPostTransformedStories[1] as unknown as Program).value)
       .toMatchInlineSnapshot(`
-			"$.validate_component(Story)(node_2, {
-			  name: "Rounded",
-			  args: {
-			    rounded: true
-			  },
-			  parameters: {
-			    docs: {
-			      description: {
-			        story: "Description for the rounded story"
-			      }
-			    },
-			    __svelteCsf: {
-			      rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{args?.id}</p>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br>\\n</Example>"
-			    }
-			  }
-			});"
-		`);
+        "$.validate_component(Story)(node_2, {
+          name: "Rounded",
+          args: {
+            rounded: true
+          },
+          parameters: {
+            docs: {
+              description: {
+                story: "Description for the rounded story"
+              }
+            },
+            __svelteCsf: {
+              rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{args?.id}</p>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
+            }
+          }
+        });"
+      `);
     expect(toJs(compiledPostTransformedStories[2] as unknown as Program).value)
       .toMatchInlineSnapshot(`
-			"$.validate_component(Story)(node_3, {
-			  name: "Square",
-			  args: {
-			    rounded: false
-			  },
-			  parameters: {
-			    docs: {
-			      description: {
-			        story: "Description for the squared story"
-			      }
-			    },
-			    __svelteCsf: {
-			      rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{args?.id}</p>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br>\\n</Example>"
-			    }
-			  }
-			});"
-		`);
+        "$.validate_component(Story)(node_3, {
+          name: "Square",
+          args: {
+            rounded: false
+          },
+          parameters: {
+            docs: {
+              description: {
+                story: "Description for the squared story"
+              }
+            },
+            __svelteCsf: {
+              rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{args?.id}</p>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
+            }
+          }
+        });"
+      `);
     expect(toJs(compiledPostTransformedStories[3] as unknown as Program).value)
       .toMatchInlineSnapshot(`
 			"$.validate_component(Story)(node_4, {

@@ -11,7 +11,10 @@
     "start": "yarn task --task dev --template react-vite/default-ts --start-from=install",
     "task": "echo 'Installing Script Dependencies...'; cd scripts; yarn install >/dev/null; cd ..; yarn --cwd=./scripts task",
     "test": "cd code; yarn test",
-    "upload-bench": "cd scripts; yarn upload-bench"
+    "upload-bench": "cd scripts; yarn upload-bench",
+    "vite-ecosystem-ci:build": "yarn task --task sandbox --template react-vite/default-ts",
+    "vite-ecosystem-ci:before-test": "node ./scripts/vite-ecosystem-ci/before-test.js && cd ./sandbox/react-vite-default-ts && yarn install",
+    "vite-ecosystem-ci:test": "yarn task --task test-runner-dev --template react-vite/default-ts --start-from=dev"
   },
   "packageManager": "yarn@4.1.1"
 }

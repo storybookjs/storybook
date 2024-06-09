@@ -165,6 +165,42 @@ describe('useStoriesJson', () => {
               "title": "B",
               "type": "story",
             },
+            "componentpath-extension--story-one": {
+              "componentPath": "./src/componentPath/component.js",
+              "id": "componentpath-extension--story-one",
+              "importPath": "./src/componentPath/extension.stories.js",
+              "name": "Story One",
+              "tags": [
+                "dev",
+                "test",
+              ],
+              "title": "componentPath/extension",
+              "type": "story",
+            },
+            "componentpath-noextension--story-one": {
+              "componentPath": "./src/componentPath/component.js",
+              "id": "componentpath-noextension--story-one",
+              "importPath": "./src/componentPath/noExtension.stories.js",
+              "name": "Story One",
+              "tags": [
+                "dev",
+                "test",
+              ],
+              "title": "componentPath/noExtension",
+              "type": "story",
+            },
+            "componentpath-package--story-one": {
+              "componentPath": "component-package",
+              "id": "componentpath-package--story-one",
+              "importPath": "./src/componentPath/package.stories.js",
+              "name": "Story One",
+              "tags": [
+                "dev",
+                "test",
+              ],
+              "title": "componentPath/package",
+              "type": "story",
+            },
             "d--story-one": {
               "id": "d--story-one",
               "importPath": "./src/D.stories.jsx",

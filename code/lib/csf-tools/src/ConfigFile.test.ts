@@ -216,13 +216,24 @@ describe('ConfigFile', () => {
           )
         ).toEqual([{ directory: '../src', titlePrefix: 'Demo' }]);
       });
-      it('export specfier', () => {
+      it('export specifier', () => {
         expect(
           getField(
             ['foo'],
             dedent`
               const foo = 'bar';
               export { foo };
+            `
+          )
+        ).toEqual('bar');
+      });
+      it('export aliased specifier', () => {
+        expect(
+          getField(
+            ['fooAlias'],
+            dedent`
+              const foo = 'bar';
+              export { foo as fooAlias };
             `
           )
         ).toEqual('bar');

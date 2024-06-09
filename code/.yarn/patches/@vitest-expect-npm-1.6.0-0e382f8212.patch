@@ -1,5 +1,5 @@
 diff --git a/dist/index.js b/dist/index.js
-index 640839e4b9fef0f25d08d055d4350845a8a29791..844f3d5834147848b5fa54276e96e665bcc675f9 100644
+index 13af149aa3c44f52dd5c5a80db3bf5689dfe15ea..1d111032c3fdc104723e19dea49db62be8b79b94 100644
 --- a/dist/index.js
 +++ b/dist/index.js
 @@ -6,26 +6,32 @@ import { processError } from '@vitest/utils/error';

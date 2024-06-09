@@ -1,6 +1,6 @@
 {
   "name": "@storybook/preset-svelte-webpack",
-  "version": "8.2.0-alpha.2",
+  "version": "8.2.0-alpha.6",
   "description": "Storybook for Svelte: Develop Svelte Component in isolation with Hot Reloading.",
   "keywords": [
     "storybook"
@@ -23,29 +23,29 @@
     ".": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./preset": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./dist/framework-preset-svelte-docs": {
       "types": "./dist/framework-preset-svelte-docs.d.ts",
-      "require": "./dist/framework-preset-svelte-docs.js",
-      "import": "./dist/framework-preset-svelte-docs.mjs"
+      "import": "./dist/framework-preset-svelte-docs.mjs",
+      "require": "./dist/framework-preset-svelte-docs.js"
     },
     "./dist/framework-preset-svelte": {
       "types": "./dist/framework-preset-svelte.d.ts",
-      "require": "./dist/framework-preset-svelte.js",
-      "import": "./dist/framework-preset-svelte.mjs"
+      "import": "./dist/framework-preset-svelte.mjs",
+      "require": "./dist/framework-preset-svelte.js"
     },
     "./dist/svelte-docgen-loader": {
       "types": "./dist/svelte-docgen-loader.d.ts",
-      "require": "./dist/svelte-docgen-loader.js",
-      "import": "./dist/svelte-docgen-loader.mjs"
+      "import": "./dist/svelte-docgen-loader.mjs",
+      "require": "./dist/svelte-docgen-loader.js"
     },
     "./package.json": "./package.json"
   },

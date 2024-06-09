@@ -6,6 +6,7 @@ import type {
   Renderer,
   StoryId,
   StrictArgTypes,
+  Tag,
 } from '@storybook/csf';
 
 import type {
@@ -56,6 +57,7 @@ export type ComposedStoryFn<
   storyName: string;
   parameters: Parameters;
   argTypes: StrictArgTypes<TArgs>;
+  tags: Tag[];
 };
 /**
  * Based on a module of stories, it returns all stories within it, filtering non-stories

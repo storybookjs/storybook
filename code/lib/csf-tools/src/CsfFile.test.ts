@@ -1203,4 +1203,116 @@ describe('CsfFile', () => {
       `);
     });
   });
+
+  describe('componenent paths', () => {
+    it('no component', () => {
+      const { indexInputs } = loadCsf(
+        dedent`
+          import { Component } from '../src/Component.js';
+          export default {
+            title: 'custom foo title',
+          };
+
+          export const A = {
+            render: () => {},
+          };
+        `,
+        { makeTitle, fileName: 'foo/bar.stories.js' }
+      ).parse();
+
+      expect(indexInputs).toMatchInlineSnapshot(`
+        - type: story
+          importPath: foo/bar.stories.js
+          exportName: A
+          name: A
+          title: custom foo title
+          tags: []
+          __id: custom-foo-title--a
+      `);
+    });
+
+    it('local component', () => {
+      const { indexInputs } = loadCsf(
+        dedent`
+          const Component = (props) => <div>hello</div>;
+          
+          export default {
+            title: 'custom foo title',
+            component: Component,
+          };
+
+          export const A = {
+            render: () => {},
+          };
+        `,
+        { makeTitle, fileName: 'foo/bar.stories.js' }
+      ).parse();
+
+      expect(indexInputs).toMatchInlineSnapshot(`
+        - type: story
+          importPath: foo/bar.stories.js
+          exportName: A
+          name: A
+          title: custom foo title
+          tags: []
+          __id: custom-foo-title--a
+      `);
+    });
+
+    it('imported component from file', () => {
+      const { indexInputs } = loadCsf(
+        dedent`
+          import { Component } from '../src/Component.js';
+          export default {
+            title: 'custom foo title',
+            component: Component,
+          };
+
+          export const A = {
+            render: () => {},
+          };
+        `,
+        { makeTitle, fileName: 'foo/bar.stories.js' }
+      ).parse();
+
+      expect(indexInputs).toMatchInlineSnapshot(`
+        - type: story
+          importPath: foo/bar.stories.js
+          rawComponentPath: ../src/Component.js
+          exportName: A
+          name: A
+          title: custom foo title
+          tags: []
+          __id: custom-foo-title--a
+      `);
+    });
+
+    it('imported component from library', () => {
+      const { indexInputs } = loadCsf(
+        dedent`
+          import { Component } from 'some-library';
+          export default {
+            title: 'custom foo title',
+            component: Component,
+          };
+
+          export const A = {
+            render: () => {},
+          };
+        `,
+        { makeTitle, fileName: 'foo/bar.stories.js' }
+      ).parse();
+
+      expect(indexInputs).toMatchInlineSnapshot(`
+        - type: story
+          importPath: foo/bar.stories.js
+          rawComponentPath: some-library
+          exportName: A
+          name: A
+          title: custom foo title
+          tags: []
+          __id: custom-foo-title--a
+      `);
+    });
+  });
 });

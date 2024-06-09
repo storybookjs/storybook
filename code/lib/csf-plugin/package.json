@@ -1,6 +1,6 @@
 {
   "name": "@storybook/csf-plugin",
-  "version": "8.2.0-alpha.2",
+  "version": "8.2.0-alpha.6",
   "description": "Enrich CSF files via static analysis",
   "keywords": [
     "storybook"
@@ -24,14 +24,14 @@
     ".": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./dist/webpack-loader": {
       "types": "./dist/webpack-loader.d.ts",
       "node": "./dist/webpack-loader.js",
-      "require": "./dist/webpack-loader.js",
-      "import": "./dist/webpack-loader.mjs"
+      "import": "./dist/webpack-loader.mjs",
+      "require": "./dist/webpack-loader.js"
     },
     "./package.json": "./package.json"
   },

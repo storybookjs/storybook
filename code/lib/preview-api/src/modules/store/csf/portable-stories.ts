@@ -172,6 +172,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
       parameters: story.parameters as Parameters,
       argTypes: story.argTypes as StrictArgTypes<TArgs>,
       play: playFunction as ComposedStoryPlayFn<TRenderer, TArgs> | undefined,
+      tags: story.tags,
     }
   );
 

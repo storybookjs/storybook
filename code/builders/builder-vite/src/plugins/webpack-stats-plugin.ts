@@ -2,6 +2,7 @@
 
 import type { BuilderStats } from '@storybook/types';
 import path from 'path';
+import slash from 'slash';
 import type { Plugin } from 'vite';
 
 /*
@@ -58,7 +59,7 @@ export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): W
     else {
       const relativePath = path.relative(workingDir, stripQueryParams(filename));
       // This seems hacky, got to be a better way to add a `./` to the start of a path.
-      return `./${relativePath}`;
+      return `./${slash(relativePath)}`;
     }
   }
 

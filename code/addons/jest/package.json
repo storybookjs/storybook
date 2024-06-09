@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-jest",
-  "version": "8.2.0-alpha.2",
+  "version": "8.2.0-alpha.6",
   "description": "React storybook addon that show component jest report",
   "keywords": [
     "addon",
@@ -31,8 +31,8 @@
     ".": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./manager": "./dist/manager.js",
     "./register": "./dist/manager.js",

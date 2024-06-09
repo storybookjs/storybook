@@ -2,7 +2,6 @@ import prompts from 'prompts';
 import chalk from 'chalk';
 import boxen from 'boxen';
 import { createWriteStream, move, remove } from 'fs-extra';
-import tempy from 'tempy';
 import { join } from 'path';
 import invariant from 'tiny-invariant';
 import semver from 'semver';
@@ -40,8 +39,9 @@ let TEMP_LOG_FILE_PATH = '';
 const originalStdOutWrite = process.stdout.write.bind(process.stdout);
 const originalStdErrWrite = process.stderr.write.bind(process.stdout);
 
-const augmentLogsToFile = () => {
-  TEMP_LOG_FILE_PATH = tempy.file({ name: LOG_FILE_NAME });
+const augmentLogsToFile = async () => {
+  const { temporaryFile } = await import('tempy');
+  TEMP_LOG_FILE_PATH = temporaryFile({ name: LOG_FILE_NAME });
   const logStream = createWriteStream(TEMP_LOG_FILE_PATH);
 
   process.stdout.write = (d: string) => {
@@ -158,7 +158,7 @@ export const automigrate = async ({
     return null;
   }
 
-  augmentLogsToFile();
+  await augmentLogsToFile();
 
   logger.info('🔎 checking possible migrations..');
 

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/preset-react-webpack",
-  "version": "8.2.0-alpha.2",
+  "version": "8.2.0-alpha.6",
   "description": "Storybook for React: Develop React Component in isolation with Hot Reloading",
   "keywords": [
     "storybook"
@@ -23,29 +23,29 @@
     ".": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./preset": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./dist/framework-preset-cra": {
       "types": "./dist/framework-preset-cra.d.ts",
-      "require": "./dist/framework-preset-cra.js",
-      "import": "./dist/framework-preset-cra.mjs"
+      "import": "./dist/framework-preset-cra.mjs",
+      "require": "./dist/framework-preset-cra.js"
     },
     "./dist/framework-preset-react-docs": {
       "types": "./dist/framework-preset-react-docs.d.ts",
-      "require": "./dist/framework-preset-react-docs.js",
-      "import": "./dist/framework-preset-react-docs.mjs"
+      "import": "./dist/framework-preset-react-docs.mjs",
+      "require": "./dist/framework-preset-react-docs.js"
     },
     "./dist/loaders/react-docgen-loader": {
       "types": "./dist/loaders/react-docgen-loader.d.ts",
-      "require": "./dist/loaders/react-docgen-loader.js",
-      "import": "./dist/loaders/react-docgen-loader.mjs"
+      "import": "./dist/loaders/react-docgen-loader.mjs",
+      "require": "./dist/loaders/react-docgen-loader.js"
     },
     "./package.json": "./package.json"
   },

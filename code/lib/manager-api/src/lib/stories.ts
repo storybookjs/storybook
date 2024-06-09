@@ -153,7 +153,7 @@ export const transformStoryIndexV4toV5 = (
       (acc, entry) => {
         acc[entry.id] = {
           ...entry,
-          tags: entry.tags ? [...entry.tags, 'dev'] : ['dev'],
+          tags: entry.tags ? ['dev', 'test', ...entry.tags] : ['dev'],
         };
 
         return acc;

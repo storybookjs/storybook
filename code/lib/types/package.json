@@ -1,6 +1,6 @@
 {
   "name": "@storybook/types",
-  "version": "8.2.0-alpha.2",
+  "version": "8.2.0-alpha.6",
   "description": "Core Storybook TS Types",
   "keywords": [
     "storybook"
@@ -24,8 +24,8 @@
     ".": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./package.json": "./package.json"
   },
@@ -45,7 +45,7 @@
   },
   "dependencies": {
     "@storybook/channels": "workspace:*",
-    "@types/express": "^4.7.0",
+    "@types/express": "^4.17.21",
     "file-system-cache": "2.3.0"
   },
   "devDependencies": {

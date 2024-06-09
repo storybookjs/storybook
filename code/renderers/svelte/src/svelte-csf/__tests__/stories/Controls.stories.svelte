@@ -1,47 +1,37 @@
 <script context="module">
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from "@storybook/addon-svelte-csf";
 
-  import Controls from './Controls.svelte';
+  import Controls from "./Controls.svelte";
 
   /**
-   * This is an visual example for using/testing the args table
+   * Test the **Args table** below...
+   *
+   * ... or the **Controls tab** in the `Playground` story.
    */
   const { Story } = defineMeta({
-    title: 'Addon/Controls',
+    title: "Addon/Controls",
     component: Controls,
-    tags: ['autodocs'],
+    tags: ["autodocs", "!dev"],
     args: {
       sampleRequiredBoolean: true,
-      sampleRequiredString: 'I agree',
+      sampleRequiredString: "I agree",
       sampleRequiredNumber: 10,
-      sampleRequiredArray: ['I', 'like', 'Svelte', 'and', 'Storybook'],
-      sampleRequiredEnum: 'storybook',
-      sampleRequiredObject: { tool: 'storybook', rating: 10 },
+      sampleRequiredArray: ["I", "like", "Svelte", "and", "Storybook"],
+      sampleRequiredEnum: "storybook",
+      sampleRequiredObject: { tool: "storybook", rating: 10 },
     },
   });
 </script>
 
 <Story
-  name="Default" 
-  parameters={{
-      actions: { disable: true },
-      interactions: { disable: true },
-  }}
-/>
-
-<Story
   name="Playground"
   args={{
     sampleRequiredBoolean: false,
-    sampleRequiredString: 'Different',
+    sampleRequiredString: "Different",
     sampleRequiredNumber: 10,
-    sampleRequiredArray: ['I', 'like', 'Storybook', 'and', 'Svelte'],
-    sampleRequiredEnum: 'storybook',
-    sampleRequiredObject: { tool: 'storybook', rating: 11 },
+    sampleRequiredArray: ["I", "like", "Storybook", "and", "Svelte"],
+    sampleRequiredEnum: "storybook",
+    sampleRequiredObject: { tool: "storybook", rating: 11 },
   }}
->
-  {#snippet children(args)}
-    <Controls {...args} />
-  {/snippet}
-</Story>
-
+  tags={["!dev"]}
+/>

@@ -4,11 +4,11 @@
   import RequiredSnippet from './RequiredSnippet.svelte';
 
   const { Story } = defineMeta({
+    title: "Testing/RequiredSnippet",
     component: RequiredSnippet,
     tags: ['autodocs'],
   });
 </script>
-
 
 <!-- Not working, as expected -->
 <!-- <Story name="Case 1" /> -->
@@ -20,8 +20,10 @@
 <!-- Works, as expected -->
 <Story name="Case 2" args={{ children }} />
 
-<!-- Works, as expected, but TypeScript is not happy -->
-<!-- Current workaround: add `args: { children: "" }` to `defineMeta`, but this is invalid, Svelte snippets cannot be literal, they're functions --> 
+<!--
+Works, but TypeScript is not happy.
+Current workaround: add `args: { children: "" }` to `defineMeta`, but this is invalid, Svelte snippets cannot be literal, they're functions
+-->
 <Story name="Case 3">
   {#snippet children()}
     <p>This works</p>

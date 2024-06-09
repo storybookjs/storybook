@@ -1,6 +1,6 @@
 import type { Identifier } from 'estree';
 
-import { extractDefineMetaPropertiesNodes } from '#parser/extract/define-meta-properties';
+import { extractDefineMetaPropertiesNodes } from '#parser/extract/svelte/define-meta-properties';
 import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
 
 interface Params {

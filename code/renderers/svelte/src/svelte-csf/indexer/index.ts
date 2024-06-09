@@ -7,7 +7,7 @@ import { preprocess } from 'svelte/compiler';
 import { getSvelteAST } from '#parser/ast';
 
 import { extractSvelteASTNodes } from '#parser/extract/svelte/nodes';
-import { extractDefineMetaPropertiesNodes } from '#parser/extract/define-meta-properties';
+import { extractDefineMetaPropertiesNodes } from '#parser/extract/svelte/define-meta-properties';
 import { extractStoryAttributesNodes } from '#parser/extract/svelte/story/attributes';
 
 import {

@@ -3,6 +3,11 @@ import type { Component, SnippetBlock } from 'svelte/compiler';
 import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
 import { extractStoryAttributesNodes } from '#parser/extract/svelte/story/attributes';
 
+import {
+  InvalidSetTemplateFirstArgumentError,
+  InvalidStoryChildrenAttributeError,
+} from '#utils/error/parser/svelte';
+
 /**
  * Svelte 5 allows to passing `children` as attribute _(aka prop)_.
  *
@@ -37,9 +42,11 @@ export function findStoryAttributeChildrenSnippetBlock(options: {
   const { value } = children;
 
   if (value === true || value[0].type === 'Text' || value[0].expression.type !== 'Identifier') {
-    throw new Error(
-      `Invalid schema. Expected '<Story />'s attribute 'children' to be an expression with identifier to existing snippet block. Stories file: ${filename}`
-    );
+    throw new InvalidStoryChildrenAttributeError({
+      storyComponent: component,
+      childrenAttribute: children,
+      filename,
+    });
   }
 
   return findSnippetBlockByName({
@@ -75,9 +82,10 @@ export function findSetTemplateSnippetBlock(options: {
   }
 
   if (setTemplateCall.arguments[0].type !== 'Identifier') {
-    throw new Error(
-      `Invalid schema. Expected 'setTemplate' first argument to be an identifier to existing snippet block. Stories file: ${filename}`
-    );
+    throw new InvalidSetTemplateFirstArgumentError({
+      setTemplateCall,
+      filename,
+    });
   }
 
   return findSnippetBlockByName({

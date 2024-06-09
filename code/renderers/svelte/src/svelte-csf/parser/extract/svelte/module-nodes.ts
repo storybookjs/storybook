@@ -1,10 +1,15 @@
 import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
-import dedent from 'dedent';
 import type { Identifier, ImportSpecifier, VariableDeclaration } from 'estree';
 import type { Root, SvelteNode } from 'svelte/compiler';
 import type { Visitors } from 'zimmerframe';
 
-import { StorybookSvelteCSFError } from '#utils/error';
+import {
+  DefaultOrNamespaceImportUsedError,
+  MissingDefineMetaImportError,
+  MissingDefineMetaVariableDeclarationError,
+  MissingModuleTagError,
+  NoStoryComponentDestructuredError,
+} from '#utils/error/parser/svelte';
 
 const AST_NODES_NAMES = {
   defineMeta: 'defineMeta',
@@ -130,114 +135,4 @@ export async function extractModuleNodes(options: Params): Promise<Result> {
     defineMetaVariableDeclaration,
     storyIdentifier,
   };
-}
-
-const BASE_INITIAL_SNIPPET = dedent`
-\`\`\`svelte
-<script context="module">
-  import { defineMeta } from "@storybook/addon-svelte-csf";
-  
-  const { Story } = defineMeta({});
-</script>
-\`\`\`
-`;
-
-class MissingModuleTagError extends StorybookSvelteCSFError {
-  constructor(filename?: string) {
-    super({ filename });
-  }
-  readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractSvelte;
-  readonly code = 1;
-  template() {
-    return dedent`
-      Stories file: ${this.filepathURL}
-      doesn't have a module tag _(\`<script context="module"> <!-- ... --> </script>\`)_.
-
-      Make sure this stories file has initial code snippet in order for this addon to work correctly:
-
-      ${BASE_INITIAL_SNIPPET}
-    `;
-  }
-}
-
-class DefaultOrNamespaceImportUsedError extends StorybookSvelteCSFError {
-  constructor(filename?: StorybookSvelteCSFError['storiesFilename']) {
-    super({ filename });
-  }
-  readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractSvelte;
-  readonly code = 2;
-  template() {
-    return dedent`
-      Stories file: ${this.filepathURL}
-      is using the default/namespace import from "${pkg.name}".
-      Please change it to named imports.
-      Take a look at the below snippet for an example usage on how to start writing stories file:
-
-      ${BASE_INITIAL_SNIPPET}
-    `;
-  }
-}
-
-class MissingDefineMetaImportError extends StorybookSvelteCSFError {
-  constructor(filename?: StorybookSvelteCSFError['storiesFilename']) {
-    super({ filename });
-  }
-  readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractSvelte;
-  readonly code = 3;
-  template() {
-    return dedent`
-      Stories file: ${this.filepathURL}
-      doesn't have a \`${AST_NODES_NAMES.defineMeta}\` imported from the "${pkg.name}" package inside the module tag.
-      _(\`<script context="module"> <!-- ... --> </script>\`)_.
-
-      Make sure this stories file has initial code snippet in order for this addon to work correctly:
-
-      ${BASE_INITIAL_SNIPPET}
-    `;
-  }
-}
-
-class MissingDefineMetaVariableDeclarationError extends StorybookSvelteCSFError {
-  constructor(filename?: StorybookSvelteCSFError['storiesFilename']) {
-    super({ filename });
-  }
-  readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractSvelte;
-  readonly code = 4;
-  template() {
-    return dedent`
-      Stories file: ${this.filepathURL}
-      doesn't have a \`${AST_NODES_NAMES.defineMeta}\` variable declaration inside the module tag
-      _(\`<script context="module"> <!-- ... --> </script>\`)_.
-
-      Make sure this stories file has initial code snippet in order for this addon to work correctly:
-
-      ${BASE_INITIAL_SNIPPET}
-    `;
-  }
-}
-
-class NoStoryComponentDestructuredError extends StorybookSvelteCSFError {
-  public defineMetaImport: Result['defineMetaImport'];
-  constructor({
-    filename,
-    defineMetaImport,
-  }: {
-    filename?: StorybookSvelteCSFError['storiesFilename'];
-    defineMetaImport: Result['defineMetaImport'];
-  }) {
-    super({ filename });
-    this.defineMetaImport = defineMetaImport;
-  }
-  readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractSvelte;
-  readonly code = 5;
-  template() {
-    return dedent`
-      Stories file: ${this.filepathURL}
-      has no component \`${AST_NODES_NAMES.Story}\` destructured from the '${this.defineMetaImport.local.name}({ ... })' function call.
-
-      Make sure this stories file has initial code snippet in order for this addon to work correctly:
-
-      ${BASE_INITIAL_SNIPPET}
-    `;
-  }
 }

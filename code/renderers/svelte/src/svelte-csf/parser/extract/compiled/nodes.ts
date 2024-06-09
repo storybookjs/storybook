@@ -11,6 +11,14 @@ import type {
 } from 'estree';
 import type { Visitors } from 'zimmerframe';
 
+import {
+  MissingDefineMetaVariableDeclarationError,
+  MissingImportedDefineMetaError,
+  NoExportDefaultError,
+  NoStoriesFunctionDeclarationError,
+  NoStoryIdentifierFoundError,
+} from '#utils/error/parser/compiled';
+
 /**
  * Important AST nodes from the compiled output of a single `*.stories.svelte` file.
  * They are needed for further code transformation by this addon.
@@ -58,9 +66,10 @@ interface Params {
  * Those nodes are required for further code transformation.
  */
 export async function extractCompiledASTNodes(params: Params): Promise<CompiledASTNodes> {
+  const { ast, filename } = params;
+
   const { walk } = await import('zimmerframe');
 
-  const { ast, filename } = params;
   const state: Partial<CompiledASTNodes> & {
     potentialStoriesFunctionDeclaration: FunctionDeclaration[];
   } = { potentialStoriesFunctionDeclaration: [] };
@@ -150,33 +159,23 @@ export async function extractCompiledASTNodes(params: Params): Promise<CompiledA
   } = state;
 
   if (!defineMetaImport) {
-    throw new Error(
-      `Could not find '${AST_NODES_NAMES.defineMeta}' imported from the "${pkg.name}" in the compiled output of stories file: ${filename}`
-    );
+    throw new MissingImportedDefineMetaError(filename);
   }
 
   if (!defineMetaVariableDeclaration) {
-    throw new Error(
-      `Could not find '${defineMetaImport.local.name}({ ... })' in the compiled output of the stories file: ${filename}`
-    );
+    throw new MissingDefineMetaVariableDeclarationError(filename);
   }
 
   if (!exportDefault) {
-    throw new Error(
-      `Could not find 'export default' in the compiled output of the stories file: ${filename}`
-    );
+    throw new NoExportDefaultError(filename);
   }
 
   if (!storyIdentifier) {
-    throw new Error(
-      `Could not find 'Story' identifier in the compiled output of the stories file: ${filename}`
-    );
+    throw new NoStoryIdentifierFoundError(filename);
   }
 
   if (!storiesFunctionDeclaration) {
-    throw new Error(
-      `Could not find the stories component '*.stories.svelte' function in the compiled output of the stories file: ${filename}`
-    );
+    throw new NoStoriesFunctionDeclarationError(filename);
   }
 
   return {

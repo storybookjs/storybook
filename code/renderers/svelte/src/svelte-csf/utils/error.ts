@@ -1,13 +1,24 @@
 import url from 'node:url';
 
+import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
+import type { Component } from 'svelte/compiler';
+
+import { extractStoryAttributesNodes } from '#parser/extract/svelte/story/attributes';
+import { getStringValueFromAttribute } from '#parser/analyse/story/svelte/attributes';
+
 /**
  * Adopted from: {@link https://github.com/storybookjs/storybook/blob/next/code/lib/core-events/src/errors/storybook-error.ts}
  * Copied because is not exposed in the `@storybook/core-events` package,
  * and modified for this addon needs.
  */
 export abstract class StorybookSvelteCSFError extends Error {
+  public static packageName = pkg.name;
+
   public static readonly CATEGORY = {
     parserExtractSvelte: 'PARSER_EXTRACT_SVELTE',
+    parserExtractCompiled: 'PARSER_EXTRACT_COMPILED',
+    parserAnalyseDefineMeta: 'PARSER_ANALYSE_DEFINE_META',
+    parserAnalyseStory: 'PARSER_ANALYSE_STORY',
   } as const;
 
   /**
@@ -75,14 +86,6 @@ export abstract class StorybookSvelteCSFError extends Error {
     return `${this.template()}${page != null ? `\n\nMore info: ${page}\n` : ''}`;
   }
 
-  public get filepathURL() {
-    if (this.storiesFilename) {
-      return url.pathToFileURL(this.storiesFilename);
-    } else {
-      return '<path not specified>';
-    }
-  }
-
   /**
    * `*.stories.svelte` file path where the error has occured.
    */
@@ -91,18 +94,47 @@ export abstract class StorybookSvelteCSFError extends Error {
   /**
    * Name of the `<Story name=">...<" />` component which caused the error.
    */
-  readonly storyName?: string;
+  readonly storyComponent?: Component;
 
   constructor({
     filename,
-    storyName,
+    storyComponent,
   }: {
     filename?: StorybookSvelteCSFError['storiesFilename'];
-    storyName?: StorybookSvelteCSFError['storyName'];
+    storyComponent?: StorybookSvelteCSFError['storyComponent'];
   }) {
     super();
 
     this.storiesFilename = filename;
-    this.storyName = storyName;
+    this.storyComponent = storyComponent;
+  }
+
+  protected get storyNameFromAtttribute() {
+    if (this.storyComponent) {
+      const { name } = extractStoryAttributesNodes({
+        component: this.storyComponent,
+        attributes: ['name'],
+        filename: this.storiesFilename,
+      });
+
+      return getStringValueFromAttribute({
+        node: name,
+        filename: this.storiesFilename,
+      });
+    }
+
+    return '<unspecified Story name>';
+  }
+
+  public get filepathURL() {
+    if (this.storiesFilename) {
+      return url.pathToFileURL(this.storiesFilename);
+    } else {
+      return '<path not specified>';
+    }
+  }
+
+  public get quickStoryRawCodeIdentifier() {
+    return `<Story name="${this.storyNameFromAtttribute}" />`;
   }
 }

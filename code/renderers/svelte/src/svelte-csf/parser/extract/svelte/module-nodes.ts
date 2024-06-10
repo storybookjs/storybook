@@ -3,6 +3,14 @@ import type { Identifier, ImportSpecifier, VariableDeclaration } from 'estree';
 import type { Root, SvelteNode } from 'svelte/compiler';
 import type { Visitors } from 'zimmerframe';
 
+import {
+  DefaultOrNamespaceImportUsedError,
+  MissingDefineMetaImportError,
+  MissingDefineMetaVariableDeclarationError,
+  MissingModuleTagError,
+  NoStoryComponentDestructuredError,
+} from '#utils/error/parser/extract/svelte';
+
 const AST_NODES_NAMES = {
   defineMeta: 'defineMeta',
   setTemplate: 'setTemplate',
@@ -45,12 +53,8 @@ interface Params {
 export async function extractModuleNodes(options: Params): Promise<Result> {
   const { module, filename } = options;
 
-  // TODO: Perhaps we can use some better way to insert error messages?
-  // String interpolations doesn't feel right if we want to provide a whole example (code snippet).
   if (!module) {
-    throw new Error(
-      `Couldn't find a module tag. Add (<script context="module">) to the stories file: ${filename}`
-    );
+    throw new MissingModuleTagError(filename);
   }
 
   const { walk } = await import('zimmerframe');
@@ -63,9 +67,7 @@ export async function extractModuleNodes(options: Params): Promise<Result> {
       if (source.value === pkg.name) {
         for (const specifier of specifiers) {
           if (specifier.type !== 'ImportSpecifier') {
-            throw new Error(
-              `Don't use the default/namespace import from "${pkg.name}" in the stories file: ${filename}`
-            );
+            throw new DefaultOrNamespaceImportUsedError(filename);
           }
 
           visit(specifier, state);
@@ -116,21 +118,15 @@ export async function extractModuleNodes(options: Params): Promise<Result> {
     state;
 
   if (!defineMetaImport) {
-    throw new Error(
-      `Could not find '${AST_NODES_NAMES.defineMeta}' imported from the "${pkg.name}" in the stories file: ${filename}`
-    );
+    throw new MissingDefineMetaImportError(filename);
   }
 
   if (!defineMetaVariableDeclaration) {
-    throw new Error(
-      `Could not find '${defineMetaImport.local.name}({ ... })' call in the module tag ('<script context="module">') of the stories file: ${filename}`
-    );
+    throw new MissingDefineMetaVariableDeclarationError(filename);
   }
 
   if (!storyIdentifier) {
-    throw new Error(
-      `Component 'Story' was not destructured from the '${defineMetaImport.local.name}({ ... })' function call. Use 'const { Story } = defineMeta({ ... })' in the stories file: ${filename}`
-    );
+    throw new NoStoryComponentDestructuredError({ filename, defineMetaImport });
   }
 
   return {

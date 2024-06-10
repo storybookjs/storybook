@@ -58,9 +58,9 @@ describe(transformDefineMeta.name, () => {
         component: Example,
         tags: ['autodocs'],
         args: {
-          onclick: action("onclick"),
-          onmouseenter: action("onmouseenter"),
-          onmouseleave: action("onmouseleave")
+          onclick: action('onclick'),
+          onmouseenter: action('onmouseenter'),
+          onmouseleave: action('onmouseleave')
         },
         parameters: {
           docs: {

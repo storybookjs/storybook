@@ -33,7 +33,17 @@ describe(removeExportDefault.name, () => {
         ast: parseAst(code.toString()),
       })
     ).rejects.toThrowErrorMatchingInlineSnapshot(
-      `[Error: Could not find 'export default' in the compiled output of the stories file: undefined]`
+      `
+      [SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0003 (NoExportDefaultError): Could not find 'export default' in the compiled output of the stories file.
+
+         This is most likely a bug in the parser of addon - "@storybook/addon-svelte-csf".
+
+         If you see this error, please report it using the link below:
+         https://github.com/storybookjs/addon-svelte-csf/issues/new
+
+         While you create an issue, please provide original code of the following stories file: <path not specified>
+         It will help us invegistate the occured issue better.]
+    `
     );
   });
 });

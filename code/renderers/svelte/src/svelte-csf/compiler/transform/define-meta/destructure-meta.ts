@@ -1,4 +1,5 @@
 import type { CompiledASTNodes } from '#parser/extract/compiled/nodes';
+import { NoDestructuredDefineMetaCallError } from '#utils/error/parser/analyse/define-meta';
 
 interface Params {
   nodes: CompiledASTNodes;
@@ -28,18 +29,17 @@ export function destructureMetaFromDefineMeta(params: Params): void {
   const { id } = declarations[0];
 
   if (id.type !== 'ObjectPattern') {
-    // TODO: make error message more user friendly
-    // what happened, how to fix
-    throw new Error(
-      `Internal error during attempt to destructure 'meta' from 'defineMeta({ ... })' - expected object pattern. Stories file: ${filename}`
-    );
+    throw new NoDestructuredDefineMetaCallError({
+      filename,
+      defineMetaVariableDeclarator: declarations[0],
+    });
   }
 
-  const hasDestructuredMeta = id.properties.find((p) => {
+  const destructuredMeta = id.properties.find((p) => {
     return p.type === 'Property' && p.key.type === 'Identifier' && p.key.name === 'meta';
   });
 
-  if (hasDestructuredMeta) {
+  if (destructuredMeta) {
     return;
   }
 

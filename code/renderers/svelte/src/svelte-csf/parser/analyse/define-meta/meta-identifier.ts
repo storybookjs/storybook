@@ -1,6 +1,10 @@
 import type { Identifier } from 'estree';
 
 import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
+import {
+  NoDestructuredDefineMetaCallError,
+  NoMetaIdentifierFoundError,
+} from '#utils/error/parser/analyse/define-meta';
 
 interface Params {
   node: SvelteASTNodes['defineMetaVariableDeclaration'];
@@ -13,22 +17,25 @@ export function getMetaIdentifier(params: Params): Identifier {
   const { id } = declarations[0];
 
   if (id.type !== 'ObjectPattern') {
-    throw new Error(
-      `Invalid schema. Expected 'ObjectPattern' while trying to access 'meta' identifier from the variable declaration with destructured return of 'defineMeta()' call. Stories filename: ${filename}`
-    );
+    throw new NoDestructuredDefineMetaCallError({
+      filename,
+      defineMetaVariableDeclarator: declarations[0],
+    });
   }
 
   const { properties } = id;
 
-  const property = properties.find(
+  const metaProperty = properties.find(
     (p) => p.type === 'Property' && p.key.type === 'Identifier' && p.key.name === 'meta'
   );
 
-  if (!property || property.type !== 'Property' || property.value.type !== 'Identifier') {
-    throw new Error(
-      `Could not find 'meta' identifier in the output code for stories file: ${filename}`
-    );
+  if (
+    !metaProperty ||
+    metaProperty.type !== 'Property' ||
+    metaProperty.value.type !== 'Identifier'
+  ) {
+    throw new NoMetaIdentifierFoundError(filename);
   }
 
-  return property.value;
+  return metaProperty.value;
 }

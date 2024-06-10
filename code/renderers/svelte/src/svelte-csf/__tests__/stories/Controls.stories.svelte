@@ -4,12 +4,14 @@
   import Controls from './Controls.svelte';
 
   /**
-   * This is an visual example for using/testing the args table
+   * Test the **Args table** below...
+   *
+   * ... or the **Controls tab** in the `Playground` story.
    */
   const { Story } = defineMeta({
     title: 'Addon/Controls',
     component: Controls,
-    tags: ['autodocs'],
+    tags: ['autodocs', '!dev'],
     args: {
       sampleRequiredBoolean: true,
       sampleRequiredString: 'I agree',
@@ -22,14 +24,6 @@
 </script>
 
 <Story
-  name="Default"
-  parameters={{
-    actions: { disable: true },
-    interactions: { disable: true },
-  }}
-/>
-
-<Story
   name="Playground"
   args={{
     sampleRequiredBoolean: false,
@@ -39,8 +33,5 @@
     sampleRequiredEnum: 'storybook',
     sampleRequiredObject: { tool: 'storybook', rating: 11 },
   }}
->
-  {#snippet children(args)}
-    <Controls {...args} />
-  {/snippet}
-</Story>
+  tags={['!dev']}
+/>

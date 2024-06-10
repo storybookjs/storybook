@@ -4,6 +4,8 @@ import type { ObjectExpression, Property } from 'estree';
 import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
 import type { CompiledASTNodes } from '#parser/extract/compiled/nodes';
 
+import { GetDefineMetaFirstArgumentError } from '#utils/error/parser/extract/svelte';
+
 interface Options<Properties extends Array<keyof Meta>> {
   nodes: SvelteASTNodes | CompiledASTNodes;
   properties: Properties;
@@ -23,7 +25,7 @@ export function extractDefineMetaPropertiesNodes<const Properties extends Array<
   options: Options<Properties>
 ): Result<Properties> {
   const { properties } = options;
-  const objectExpression = getFirstArgumentObjectExpression(options);
+  const objectExpression = getDefineMetaFirstArgumentObjectExpression(options);
   const results: Result<Properties> = {};
 
   for (const property of objectExpression.properties) {
@@ -43,7 +45,9 @@ export function extractDefineMetaPropertiesNodes<const Properties extends Array<
  * `defineMeta` accepts only one argument - an {@link ObjectExpression},
  * which should satisfy `@storybook/svelte`'s interface {@link Meta}.
  */
-function getFirstArgumentObjectExpression(options: Options<Array<keyof Meta>>): ObjectExpression {
+export function getDefineMetaFirstArgumentObjectExpression(
+  options: Pick<Options<Array<keyof Meta>>, 'filename' | 'nodes'>
+): ObjectExpression {
   const { nodes, filename } = options;
   const { defineMetaVariableDeclaration, defineMetaImport } = nodes;
   const { declarations } = defineMetaVariableDeclaration;
@@ -60,7 +64,8 @@ function getFirstArgumentObjectExpression(options: Options<Array<keyof Meta>>): 
     return init.arguments[0];
   }
 
-  throw new Error(
-    `Internal error while trying to get first argument from defineMeta in stories file: ${filename}.`
-  );
+  throw new GetDefineMetaFirstArgumentError({
+    filename,
+    defineMetaVariableDeclaration,
+  });
 }

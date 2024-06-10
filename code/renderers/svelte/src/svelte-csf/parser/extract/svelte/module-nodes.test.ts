@@ -10,7 +10,18 @@ describe(extractModuleNodes.name, () => {
       code: `<script></script>`,
     });
 
-    expect(extractModuleNodes({ module })).rejects.toThrow();
+    expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
+      [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0001 (MissingModuleTagError): Stories file: <path not specified>
+      doesn't have a module tag _(\`<script context="module"> <!-- ... --> </script>\`)_.
+
+      Make sure this stories file has initial code snippet in order for this addon to work correctly:
+
+      <script context="module">
+      import { defineMeta } from "@storybook/addon-svelte-csf";
+
+      const { Story } = defineMeta({});
+      </script>]
+    `);
   });
 
   it("fails when 'defineMeta' not imported", ({ expect }) => {
@@ -18,7 +29,19 @@ describe(extractModuleNodes.name, () => {
       code: `<script context="module"></script>`,
     });
 
-    expect(extractModuleNodes({ module })).rejects.toThrow();
+    expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
+      [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0003 (MissingDefineMetaImportError): Stories file: <path not specified>
+      doesn't have a 'defineMeta' imported from the "@storybook/addon-svelte-csf" package inside the module tag.
+      ('<script context="module"> <!-- ... --> </script>').
+
+      Make sure this stories file has initial code snippet in order for this addon to work correctly:
+
+      <script context="module">
+      import { defineMeta } from "@storybook/addon-svelte-csf";
+
+      const { Story } = defineMeta({});
+      </script>]
+    `);
   });
 
   it("fails when 'defineMeta' not used", ({ expect }) => {
@@ -30,7 +53,18 @@ describe(extractModuleNodes.name, () => {
       `,
     });
 
-    expect(extractModuleNodes({ module })).rejects.toThrow();
+    expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
+      [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004 (MissingDefineMetaVariableDeclarationError): Stories file: <path not specified>
+      doesn't have 'defineMeta' call used for variable declaration inside the module tag ('<script context="module"> <!-- ... --> </script>').
+
+      Make sure this stories file has initial code snippet in order for this addon to work correctly:
+
+      <script context="module">
+      import { defineMeta } from "@storybook/addon-svelte-csf";
+
+      const { Story } = defineMeta({});
+      </script>]
+    `);
   });
 
   it("fails when 'Story' is not destructured", ({ expect }) => {
@@ -42,7 +76,18 @@ describe(extractModuleNodes.name, () => {
         </script>`,
     });
 
-    expect(extractModuleNodes({ module })).rejects.toThrow();
+    expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
+      [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004 (MissingDefineMetaVariableDeclarationError): Stories file: <path not specified>
+      doesn't have 'defineMeta' call used for variable declaration inside the module tag ('<script context="module"> <!-- ... --> </script>').
+
+      Make sure this stories file has initial code snippet in order for this addon to work correctly:
+
+      <script context="module">
+      import { defineMeta } from "@storybook/addon-svelte-csf";
+
+      const { Story } = defineMeta({});
+      </script>]
+    `);
   });
 
   it('works when it has valid required entry snippet', ({ expect }) => {
@@ -83,10 +128,12 @@ describe(extractModuleNodes.name, () => {
     const nodes = await extractModuleNodes({ module });
 
     expect(nodes.defineMetaImport).toBeDefined();
+    expect(nodes.defineMetaImport.imported.name).toBe('defineMeta');
     expect(nodes.setTemplateImport).toBeDefined();
     expect(nodes.setTemplateImport?.local.name).toBe('setTemplate');
     expect(nodes.defineMetaVariableDeclaration).toBeDefined();
     expect(nodes.storyIdentifier).toBeDefined();
+    expect(nodes.storyIdentifier.name).toBe('Story');
   });
 
   it("works when 'setTemplate' is NOT used in stories", async ({ expect }) => {

@@ -15,8 +15,7 @@ import {
 
 import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
 import type { CompiledASTNodes } from '#parser/extract/compiled/nodes';
-
-import { getDefineMetaFirstArgumentNode } from '#parser/analyse/define-meta/first-argument';
+import { getDefineMetaFirstArgumentObjectExpression } from '#parser/extract/svelte/define-meta';
 
 interface Params {
   nodes: {
@@ -58,34 +57,54 @@ export function insertDefineMetaJSDocCommentAsDescription(params: Params): void 
     return;
   }
 
-  const defineMetaFirstArgumentObjectExpression = getDefineMetaFirstArgumentNode({
+  const defineMetaFirstArgumentObjectExpression = getDefineMetaFirstArgumentObjectExpression({
     nodes: compiled,
     filename,
   });
 
-  if (findPropertyParametersIndex(defineMetaFirstArgumentObjectExpression) === -1) {
+  if (
+    findPropertyParametersIndex({
+      filename,
+      node: defineMetaFirstArgumentObjectExpression,
+    }) === -1
+  ) {
     defineMetaFirstArgumentObjectExpression.properties.push(
       createASTProperty('parameters', createASTObjectExpression())
     );
   }
 
-  if (findPropertyDocsIndex(defineMetaFirstArgumentObjectExpression) === -1) {
-    getParametersPropertyValue(defineMetaFirstArgumentObjectExpression).properties.push(
-      createASTProperty('docs', createASTObjectExpression())
-    );
-  }
-
-  if (findPropertyDescriptionIndex(defineMetaFirstArgumentObjectExpression) === -1) {
-    getDocsPropertyValue(defineMetaFirstArgumentObjectExpression).properties.push(
-      createASTProperty('description', createASTObjectExpression())
-    );
+  if (
+    findPropertyDocsIndex({
+      filename,
+      node: defineMetaFirstArgumentObjectExpression,
+    }) === -1
+  ) {
+    getParametersPropertyValue({
+      filename,
+      node: defineMetaFirstArgumentObjectExpression,
+    }).properties.push(createASTProperty('docs', createASTObjectExpression()));
   }
 
   if (
-    findASTPropertyIndex(
-      'component',
-      getDescriptionPropertyValue(defineMetaFirstArgumentObjectExpression)
-    ) !== -1
+    findPropertyDescriptionIndex({
+      filename,
+      node: defineMetaFirstArgumentObjectExpression,
+    }) === -1
+  ) {
+    getDocsPropertyValue({
+      filename,
+      node: defineMetaFirstArgumentObjectExpression,
+    }).properties.push(createASTProperty('description', createASTObjectExpression()));
+  }
+
+  if (
+    findASTPropertyIndex({
+      name: 'component',
+      node: getDescriptionPropertyValue({
+        filename,
+        node: defineMetaFirstArgumentObjectExpression,
+      }),
+    }) !== -1
   ) {
     logger.warn(
       `defineMeta() already has explictly set description. Ignoring the JSDoc comment above. Stories file: ${filename}`
@@ -94,7 +113,10 @@ export function insertDefineMetaJSDocCommentAsDescription(params: Params): void 
     return;
   }
 
-  getDescriptionPropertyValue(defineMetaFirstArgumentObjectExpression).properties.push(
+  getDescriptionPropertyValue({
+    filename,
+    node: defineMetaFirstArgumentObjectExpression,
+  }).properties.push(
     createASTProperty('component', {
       type: 'Literal',
       value: extractDescription(leadingComments),

@@ -1,6 +1,7 @@
 import type { ObjectExpression } from 'estree';
 
 import type { extractStoriesNodesFromExportDefaultFn } from '#parser/extract/compiled/stories';
+import { NoCompiledStoryPropsObjectExpression } from '#utils/error/parser/extract/compiled';
 
 interface Params {
   node: Awaited<ReturnType<typeof extractStoriesNodesFromExportDefaultFn>>[number];
@@ -38,7 +39,8 @@ export function getStoryPropsObjectExpression(params: Params): ObjectExpression 
     return node.expression.arguments[1];
   }
 
-  throw new Error(
-    `Internal error. Failed to extract Story props as object expression from the compiled code. Stories file: ${filename}`
-  );
+  throw new NoCompiledStoryPropsObjectExpression({
+    filename,
+    node,
+  });
 }

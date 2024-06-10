@@ -1,6 +1,6 @@
 import type { ExportNamedDeclaration } from 'estree';
 
-import type { getStoriesIdentifiers } from '#parser/analyse/story/svelte/attributes/identifiers';
+import type { getStoriesIdentifiers } from '#parser/analyse/story/attributes/identifiers';
 
 interface Params {
   storyIdentifiers: ReturnType<typeof getStoriesIdentifiers>;

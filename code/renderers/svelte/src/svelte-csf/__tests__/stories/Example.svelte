@@ -1,14 +1,22 @@
 <script lang="ts">
-  import type { Snippet } from "svelte";
-  import type { HTMLAttributes } from "svelte/elements";
+  import type { Snippet } from 'svelte';
+  import type { HTMLAttributes } from 'svelte/elements';
 
   interface Props extends HTMLAttributes<HTMLButtonElement> {
-      children?: Snippet,
-      rounded?: boolean,
+    children?: Snippet;
+    rounded?: boolean;
   }
 
   let { children, rounded = true, ...restProps }: Props = $props();
 </script>
+
+<button class="button" class:rounded {...restProps}>
+  <strong>{rounded ? 'Round' : 'Square'} corners</strong>
+  <hr />
+  {#if children}
+    {@render children()}
+  {/if}
+</button>
 
 <style>
   .rounded {
@@ -22,11 +30,3 @@
     outline: none;
   }
 </style>
-
-<button class="button" class:rounded={rounded} {...restProps}>
-  <strong>{rounded ? 'Round' : 'Square'} corners</strong>
-  <hr>
-  {#if children}
-    {@render children()}
-  {/if}
-</button>

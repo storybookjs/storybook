@@ -124,7 +124,7 @@ describe('Emit Code', () => {
             someBool: true,
             nested: 'yes',
             deep: { shouldAlsoBeIgnored: true },
-            someStringKey: { nested: 'deep' }
+            someStringKey: { nested: 'deep' },
           },
           someArray: ['first', 'second'],
           someUnnamedFn: () => {},
@@ -134,7 +134,7 @@ describe('Emit Code', () => {
           yes: 'yup',
           no: 'nope',
           text: 'some text',
-          optional: { text: 'optional text' }
+          optional: { text: 'optional text' },
         },
       })
     ).toMatchInlineSnapshot(

@@ -13,11 +13,11 @@
 <Story name="Default">
   {#snippet children(_args, context)}
     {#each Object.entries(context) as [key, value]}
-      {#if typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' || typeof value === "function"}
-        <code><strong>StoryContext.{key}:</strong> {value.toString()}</code><br>
+      {#if typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' || typeof value === 'function'}
+        <code><strong>StoryContext.{key}:</strong> {value.toString()}</code><br />
       {:else if typeof value === 'object'}
         {#each Object.keys(value) as nestedKey}
-          <code><strong>StoryContext.{key}.${nestedKey}</strong></code><br>
+          <code><strong>StoryContext.{key}.${nestedKey}</strong></code><br />
         {/each}
       {/if}
     {/each}

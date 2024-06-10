@@ -9,7 +9,6 @@
   });
 </script>
 
-
 <!-- Not working, as expected -->
 <!-- <Story name="Case 1" /> -->
 
@@ -21,7 +20,7 @@
 <Story name="Case 2" args={{ children }} />
 
 <!-- Works, as expected, but TypeScript is not happy -->
-<!-- Current workaround: add `args: { children: "" }` to `defineMeta`, but this is invalid, Svelte snippets cannot be literal, they're functions --> 
+<!-- Current workaround: add `args: { children: "" }` to `defineMeta`, but this is invalid, Svelte snippets cannot be literal, they're functions -->
 <Story name="Case 3">
   {#snippet children()}
     <p>This works</p>

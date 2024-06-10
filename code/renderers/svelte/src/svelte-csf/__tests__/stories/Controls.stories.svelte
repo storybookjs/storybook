@@ -22,10 +22,10 @@
 </script>
 
 <Story
-  name="Default" 
+  name="Default"
   parameters={{
-      actions: { disable: true },
-      interactions: { disable: true },
+    actions: { disable: true },
+    interactions: { disable: true },
   }}
 />
 
@@ -44,4 +44,3 @@
     <Controls {...args} />
   {/snippet}
 </Story>
-

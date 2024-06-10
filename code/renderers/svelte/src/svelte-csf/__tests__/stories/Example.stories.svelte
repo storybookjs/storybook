@@ -1,6 +1,11 @@
 <script context="module" lang="ts">
   import { action } from '@storybook/addon-actions';
-  import { defineMeta, setTemplate, type Args, type StoryContext } from '@storybook/addon-svelte-csf';
+  import {
+    defineMeta,
+    setTemplate,
+    type Args,
+    type StoryContext,
+  } from '@storybook/addon-svelte-csf';
 
   import Example from './Example.svelte';
 
@@ -18,15 +23,14 @@
     component: Example,
     tags: ['autodocs'],
     args: {
-      onclick: action("onclick"),
-      onmouseenter: action("onmouseenter"),
-      onmouseleave: action("onmouseleave"),
+      onclick: action('onclick'),
+      onmouseenter: action('onmouseenter'),
+      onmouseleave: action('onmouseleave'),
     },
   });
 </script>
 
 <script lang="ts">
-
   let count = $state(0);
 
   function handleClick() {
@@ -37,11 +41,11 @@
 </script>
 
 {#snippet render(args: Args<typeof Story>, context: StoryContext<typeof Story>)}
-    <Example {...args} onclick={handleClick}>
-      <p>{args?.id}</p>
-      <p>{context.name}</p>
-      You clicked: {count}<br>
-    </Example>
+  <Example {...args} onclick={handleClick}>
+    <p>{args?.id}</p>
+    <p>{context.name}</p>
+    You clicked: {count}<br />
+  </Example>
 {/snippet}
 
 <!-- Description for the default story -->

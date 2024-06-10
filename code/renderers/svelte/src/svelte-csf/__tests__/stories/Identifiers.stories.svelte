@@ -19,9 +19,13 @@
 </Story>
 
 <Story exportName="BothExportNameAndName" name="Both export name and name">
-  <p>Story with both an <code>exportName</code> and a <code>name</code> prop, "matching" each other.</p>
+  <p>
+    Story with both an <code>exportName</code> and a <code>name</code> prop, "matching" each other.
+  </p>
 </Story>
 
 <Story exportName="DifferentExportName" name="ExportName and name, but different">
-  <p>Story with both an <code>exportName</code> and a <code>name</code> prop, not matching each other.</p>
+  <p>
+    Story with both an <code>exportName</code> and a <code>name</code> prop, not matching each other.
+  </p>
 </Story>

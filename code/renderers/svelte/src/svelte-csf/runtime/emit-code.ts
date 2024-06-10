@@ -88,7 +88,6 @@ export const generateCodeToEmit = ({ code, args }: { code: string; args: StoryOb
   return codeToEmit;
 };
 
-
 const getFunctionName = (fn: Function & { getMockName?: () => string }) => {
   const name = fn.getMockName?.() ?? fn.name;
   if (name && name !== 'spy') {
@@ -133,4 +132,3 @@ const argsToProps = (key: string, value: any): string | null => {
 
   return `${key}={${stringValue}}`;
 };
-

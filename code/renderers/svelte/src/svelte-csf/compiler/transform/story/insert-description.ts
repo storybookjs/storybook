@@ -16,6 +16,7 @@ import {
 import type { extractStoriesNodesFromExportDefaultFn } from '#parser/extract/compiled/stories';
 import { getStoryPropsObjectExpression } from '#parser/extract/compiled/story';
 import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
+import type { Literal, Property } from 'estree';
 
 interface Params {
   nodes: {
@@ -95,9 +96,16 @@ export function insertStoryHTMLCommentAsDescription(params: Params) {
       }),
     }) !== -1
   ) {
-    // TODO: Improve warning message with better pointing out which story it is
+    const propertyName = storyPropsObjectExpression.properties.find(
+      (p) => p.type === 'Property' && p.key.type === 'Literal' && p.key.value === 'name'
+    ) as Property;
+    const name = (propertyName.value as Literal).value;
     logger.warn(
-      `One of <Story /> component(s) already has explictly set description. Ignoring the HTML comment above. Stories file: ${filename}`
+      dedent`
+        <Story name="${name}" /> component(s) already has explictly set 'parameterds.docs.description.story'.
+        Ignoring the HTML comment above.
+        Stories file: file://${filename}
+      `
     );
 
     return;

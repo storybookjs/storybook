@@ -9,7 +9,7 @@ import {
   MissingDefineMetaVariableDeclarationError,
   MissingModuleTagError,
   NoStoryComponentDestructuredError,
-} from '#utils/error/parser/svelte';
+} from '#utils/error/parser/extract/svelte';
 
 const AST_NODES_NAMES = {
   defineMeta: 'defineMeta',

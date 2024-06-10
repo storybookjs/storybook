@@ -20,7 +20,7 @@ export class MissingImportedDefineMetaError extends StorybookSvelteCSFError {
       https://github.com/storybookjs/addon-svelte-csf/issues/new
 
       While you create an issue, please provide original code of the following stories file: ${this.filepathURL}
-      It will help us invegistate the occured issue properly.
+      It will help us invegistate the occured issue better.
     `;
   }
 }
@@ -43,7 +43,7 @@ export class MissingDefineMetaVariableDeclarationError extends StorybookSvelteCS
       https://github.com/storybookjs/addon-svelte-csf/issues/new
 
       While you create an issue, please provide original code of the following stories file: ${this.filepathURL}
-      It will help us invegistate the occured issue properly.
+      It will help us invegistate the occured issue better.
     `;
   }
 }
@@ -66,7 +66,7 @@ export class NoExportDefaultError extends StorybookSvelteCSFError {
       https://github.com/storybookjs/addon-svelte-csf/issues/new
 
       While you create an issue, please provide original code of the following stories file: ${this.filepathURL}
-      It will help us invegistate the occured issue properly.
+      It will help us invegistate the occured issue better.
     `;
   }
 }
@@ -89,7 +89,7 @@ export class NoStoryIdentifierFoundError extends StorybookSvelteCSFError {
       https://github.com/storybookjs/addon-svelte-csf/issues/new
 
       While you create an issue, please provide original code of the following stories file: ${this.filepathURL}
-      It will help us invegistate the occured issue properly.
+      It will help us invegistate the occured issue better.
     `;
   }
 }
@@ -112,7 +112,7 @@ export class NoStoriesFunctionDeclarationError extends StorybookSvelteCSFError {
       https://github.com/storybookjs/addon-svelte-csf/issues/new
 
       While you create an issue, please provide original code of the following stories file: ${this.filepathURL}
-      It will help us invegistate the occured issue properly.
+      It will help us invegistate the occured issue better.
     `;
   }
 }

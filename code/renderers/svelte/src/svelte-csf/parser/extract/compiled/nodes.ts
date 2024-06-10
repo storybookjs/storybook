@@ -17,7 +17,7 @@ import {
   NoExportDefaultError,
   NoStoriesFunctionDeclarationError,
   NoStoryIdentifierFoundError,
-} from '#utils/error/parser/compiled';
+} from '#utils/error/parser/extract/compiled';
 
 /**
  * Important AST nodes from the compiled output of a single `*.stories.svelte` file.

@@ -1,7 +1,8 @@
 import type { Identifier } from 'estree';
 
-import { extractDefineMetaPropertiesNodes } from '#parser/extract/svelte/define-meta-properties';
+import { extractDefineMetaPropertiesNodes } from '#parser/extract/svelte/define-meta';
 import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
+import { InvalidComponentValueError } from '#utils/error/parser/analyse/define-meta';
 
 interface Params {
   nodes: SvelteASTNodes;
@@ -22,9 +23,10 @@ export function getDefineMetaComponentValue(params: Params): Identifier | undefi
   const { value } = component;
 
   if (value.type !== 'Identifier') {
-    throw new Error(
-      `Invalid schema. 'defineMeta's property 'component' value should be an identifier to Svelte's component import specifier. Stories file: ${filename}`
-    );
+    throw new InvalidComponentValueError({
+      filename,
+      componentProperty: component,
+    });
   }
 
   return value;

@@ -35,11 +35,11 @@ export function destructureMetaFromDefineMeta(params: Params): void {
     );
   }
 
-  const hasDestructuredMeta = id.properties.find((p) => {
+  const destructuredMeta = id.properties.find((p) => {
     return p.type === 'Property' && p.key.type === 'Identifier' && p.key.name === 'meta';
   });
 
-  if (hasDestructuredMeta) {
+  if (destructuredMeta) {
     return;
   }
 

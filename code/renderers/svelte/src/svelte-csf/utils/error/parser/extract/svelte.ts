@@ -1,8 +1,8 @@
 import dedent from 'dedent';
 import type { Attribute } from 'svelte/compiler';
 
-import { StorybookSvelteCSFError } from '#utils/error';
 import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
+import { StorybookSvelteCSFError } from '#utils/error';
 
 const BASE_INITIAL_SNIPPET = dedent`
 <script context="module">
@@ -36,7 +36,7 @@ export class DefaultOrNamespaceImportUsedError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractSvelte;
   readonly code = 2;
 
-  constructor(filename?: StorybookSvelteCSFError['storiesFilename']) {
+  constructor(filename?: StorybookSvelteCSFError['filename']) {
     super({ filename });
   }
 
@@ -56,7 +56,7 @@ export class MissingDefineMetaImportError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractSvelte;
   readonly code = 3;
 
-  constructor(filename?: StorybookSvelteCSFError['storiesFilename']) {
+  constructor(filename?: StorybookSvelteCSFError['filename']) {
     super({ filename });
   }
 
@@ -77,7 +77,7 @@ export class MissingDefineMetaVariableDeclarationError extends StorybookSvelteCS
   readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractSvelte;
   readonly code = 4;
 
-  constructor(filename?: StorybookSvelteCSFError['storiesFilename']) {
+  constructor(filename?: StorybookSvelteCSFError['filename']) {
     super({ filename });
   }
 
@@ -103,7 +103,7 @@ export class NoStoryComponentDestructuredError extends StorybookSvelteCSFError {
     filename,
     defineMetaImport,
   }: {
-    filename?: StorybookSvelteCSFError['storiesFilename'];
+    filename?: StorybookSvelteCSFError['filename'];
     defineMetaImport: NoStoryComponentDestructuredError['defineMetaImport'];
   }) {
     super({ filename });
@@ -132,7 +132,7 @@ export class GetDefineMetaFirstArgumentError extends StorybookSvelteCSFError {
     filename,
     defineMetaVariableDeclaration,
   }: {
-    filename?: StorybookSvelteCSFError['storiesFilename'];
+    filename?: StorybookSvelteCSFError['filename'];
     defineMetaVariableDeclaration: SvelteASTNodes['defineMetaVariableDeclaration'];
   }) {
     super({ filename });
@@ -160,14 +160,14 @@ export class InvalidStoryChildrenAttributeError extends StorybookSvelteCSFError 
 
   constructor({
     filename,
-    storyComponent,
+    component,
     childrenAttribute,
   }: {
-    filename?: StorybookSvelteCSFError['storiesFilename'];
-    storyComponent: NonNullable<StorybookSvelteCSFError['storyComponent']>;
+    filename?: StorybookSvelteCSFError['filename'];
+    component: NonNullable<StorybookSvelteCSFError['component']>;
     childrenAttribute: InvalidStoryChildrenAttributeError['childrenAttribute'];
   }) {
-    super({ filename, storyComponent });
+    super({ filename, component });
     this.childrenAttribute = childrenAttribute;
   }
 
@@ -199,7 +199,7 @@ export class InvalidSetTemplateFirstArgumentError extends StorybookSvelteCSFErro
     filename,
     setTemplateCall,
   }: {
-    filename?: StorybookSvelteCSFError['storiesFilename'];
+    filename?: StorybookSvelteCSFError['filename'];
     setTemplateCall: InvalidSetTemplateFirstArgumentError['setTemplateCall'];
   }) {
     super({ filename });

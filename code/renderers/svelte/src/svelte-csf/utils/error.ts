@@ -3,9 +3,6 @@ import url from 'node:url';
 import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
 import type { Component } from 'svelte/compiler';
 
-import { extractStoryAttributesNodes } from '#parser/extract/svelte/story/attributes';
-import { getStringValueFromAttribute } from '#parser/analyse/story/svelte/attributes';
-
 /**
  * Adopted from: {@link https://github.com/storybookjs/storybook/blob/next/code/lib/core-events/src/errors/storybook-error.ts}
  * Copied because is not exposed in the `@storybook/core-events` package,
@@ -89,46 +86,57 @@ export abstract class StorybookSvelteCSFError extends Error {
   /**
    * `*.stories.svelte` file path where the error has occured.
    */
-  readonly storiesFilename?: string;
+  readonly filename?: string;
 
   /**
    * Name of the `<Story name=">...<" />` component which caused the error.
    */
-  readonly storyComponent?: Component;
+  readonly component?: Component;
 
   constructor({
     filename,
-    storyComponent,
+    component: component,
   }: {
-    filename?: StorybookSvelteCSFError['storiesFilename'];
-    storyComponent?: StorybookSvelteCSFError['storyComponent'];
+    filename?: StorybookSvelteCSFError['filename'];
+    component?: StorybookSvelteCSFError['component'];
   }) {
     super();
 
-    this.storiesFilename = filename;
-    this.storyComponent = storyComponent;
+    this.filename = filename;
+    this.component = component;
   }
 
+  // WARN: I had to duplicate logic. We already have functions for it.
+  // But we can't import it, because it would create a cyclic-dependency.
   protected get storyNameFromAtttribute() {
-    if (this.storyComponent) {
-      const { name } = extractStoryAttributesNodes({
-        component: this.storyComponent,
-        attributes: ['name'],
-        filename: this.storiesFilename,
-      });
+    if (this.component) {
+      for (const attribute of this.component?.attributes) {
+        if (
+          attribute.type === 'Attribute' &&
+          attribute.name === 'name' &&
+          attribute.value !== true
+        ) {
+          if (attribute.value[0].type === 'Text') {
+            return attribute.value[0].data;
+          }
 
-      return getStringValueFromAttribute({
-        node: name,
-        filename: this.storiesFilename,
-      });
+          if (
+            attribute.value[0].type === 'ExpressionTag' &&
+            attribute.value[0].expression.type === 'Literal' &&
+            typeof attribute.value[0].expression.value === 'string'
+          ) {
+            return attribute.value[0].expression.value;
+          }
+        }
+      }
     }
 
     return '<unspecified Story name>';
   }
 
   public get filepathURL() {
-    if (this.storiesFilename) {
-      return url.pathToFileURL(this.storiesFilename);
+    if (this.filename) {
+      return url.pathToFileURL(this.filename);
     } else {
       return '<path not specified>';
     }

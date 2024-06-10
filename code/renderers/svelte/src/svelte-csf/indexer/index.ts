@@ -7,16 +7,15 @@ import { preprocess } from 'svelte/compiler';
 import { getSvelteAST } from '#parser/ast';
 
 import { extractSvelteASTNodes } from '#parser/extract/svelte/nodes';
-import { extractDefineMetaPropertiesNodes } from '#parser/extract/svelte/define-meta-properties';
+import { extractDefineMetaPropertiesNodes } from '#parser/extract/svelte/define-meta';
 import { extractStoryAttributesNodes } from '#parser/extract/svelte/story/attributes';
 
 import {
-  getMetaIdValue,
-  getMetaTagsValue,
-  getMetaTitleValue,
+  getPropertyArrayOfStringsValue,
+  getPropertyStringValue,
 } from '#parser/analyse/define-meta/properties';
-import { getTagsFromStoryAttribute } from '#parser/analyse/story/svelte/attributes/tags';
-import { getStoryIdentifiers } from '#parser/analyse/story/svelte/attributes/identifiers';
+import { getArrayOfStringsValueFromAttribute } from '#parser/analyse/story/attributes';
+import { getStoryIdentifiers } from '#parser/analyse/story/attributes/identifiers';
 
 export const indexer: Indexer = {
   test: /\.svelte$/,
@@ -36,36 +35,49 @@ export const indexer: Indexer = {
     }
 
     const svelteAST = getSvelteAST({ code, filename });
-    const nodes = await extractSvelteASTNodes({ ast: svelteAST, filename });
+    const svelteASTNodes = await extractSvelteASTNodes({
+      ast: svelteAST,
+      filename,
+    });
     const metaPropertiesNodes = extractDefineMetaPropertiesNodes({
-      nodes,
+      nodes: svelteASTNodes,
       filename,
       properties: ['id', 'title', 'tags'],
     });
-    const storiesAttributesNodes = nodes.storyComponents.map(({ component }) =>
-      extractStoryAttributesNodes({
-        component,
-        filename,
-        attributes: ['exportName', 'name', 'tags'],
-      })
-    );
-
     const metaTitle = metaPropertiesNodes.title
-      ? makeTitle(getMetaTitleValue({ node: metaPropertiesNodes.title, filename }))
+      ? makeTitle(
+          getPropertyStringValue({
+            node: metaPropertiesNodes.title,
+            filename,
+          })
+        )
       : undefined;
     const metaTags = metaPropertiesNodes.tags
-      ? getMetaTagsValue({ node: metaPropertiesNodes.tags, filename })
+      ? getPropertyArrayOfStringsValue({
+          node: metaPropertiesNodes.tags,
+          filename,
+        })
       : [];
     // TODO: Verify if we can remove it
     const metaId = metaPropertiesNodes.id
-      ? getMetaIdValue({ node: metaPropertiesNodes.id, filename })
+      ? getPropertyStringValue({ node: metaPropertiesNodes.id, filename })
       : undefined;
 
-    return storiesAttributesNodes.map((attributeNode) => {
+    return svelteASTNodes.storyComponents.map(({ component }) => {
+      const attributeNode = extractStoryAttributesNodes({
+        component,
+        filename,
+        attributes: ['exportName', 'name', 'tags'],
+      });
       const { exportName, name } = getStoryIdentifiers({
         nameNode: attributeNode.name,
         exportNameNode: attributeNode.exportName,
         filename,
+      });
+      const tags = getArrayOfStringsValueFromAttribute({
+        node: attributeNode.tags,
+        filename,
+        component,
       });
 
       return {
@@ -74,10 +86,7 @@ export const indexer: Indexer = {
         exportName,
         name,
         title: metaTitle,
-        tags: combineTags(
-          ...metaTags,
-          ...getTagsFromStoryAttribute({ node: attributeNode.tags, filename })
-        ),
+        tags: combineTags(...metaTags, ...tags),
       } satisfies IndexInput;
     });
   },

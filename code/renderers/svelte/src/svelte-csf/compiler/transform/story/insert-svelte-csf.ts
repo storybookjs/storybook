@@ -6,10 +6,9 @@ import {
 } from '#compiler/transform/shared/description';
 
 import type { extractStoriesNodesFromExportDefaultFn } from '#parser/extract/compiled/stories';
+import { getStoryPropsObjectExpression } from '#parser/extract/compiled/story';
 import type { SvelteASTNodes, extractSvelteASTNodes } from '#parser/extract/svelte/nodes';
-
-import { getStoryPropsObjectExpression } from '#parser/analyse/story/compiled/props';
-import { getStoryChildrenRawCode } from '#parser/analyse/story/svelte/children';
+import { getStoryChildrenRawCode } from '#parser/analyse/story/children';
 
 interface Params {
   nodes: {

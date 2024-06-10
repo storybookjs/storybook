@@ -14,8 +14,8 @@ import {
 } from '#compiler/transform/shared/description';
 
 import type { extractStoriesNodesFromExportDefaultFn } from '#parser/extract/compiled/stories';
+import { getStoryPropsObjectExpression } from '#parser/extract/compiled/story';
 import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
-import { getStoryPropsObjectExpression } from '#parser/analyse/story/compiled/props';
 
 interface Params {
   nodes: {

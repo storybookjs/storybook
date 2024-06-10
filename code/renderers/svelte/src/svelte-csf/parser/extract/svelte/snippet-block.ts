@@ -6,7 +6,7 @@ import { extractStoryAttributesNodes } from '#parser/extract/svelte/story/attrib
 import {
   InvalidSetTemplateFirstArgumentError,
   InvalidStoryChildrenAttributeError,
-} from '#utils/error/parser/svelte';
+} from '#utils/error/parser/extract/svelte';
 
 /**
  * Svelte 5 allows to passing `children` as attribute _(aka prop)_.
@@ -43,7 +43,7 @@ export function findStoryAttributeChildrenSnippetBlock(options: {
 
   if (value === true || value[0].type === 'Text' || value[0].expression.type !== 'Identifier') {
     throw new InvalidStoryChildrenAttributeError({
-      storyComponent: component,
+      component: component,
       childrenAttribute: children,
       filename,
     });

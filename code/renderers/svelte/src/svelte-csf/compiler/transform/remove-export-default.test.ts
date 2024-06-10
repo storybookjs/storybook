@@ -42,7 +42,7 @@ describe(removeExportDefault.name, () => {
          https://github.com/storybookjs/addon-svelte-csf/issues/new
 
          While you create an issue, please provide original code of the following stories file: <path not specified>
-         It will help us invegistate the occured issue properly.]
+         It will help us invegistate the occured issue better.]
     `
     );
   });

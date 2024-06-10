@@ -15,8 +15,7 @@ import {
 
 import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
 import type { CompiledASTNodes } from '#parser/extract/compiled/nodes';
-
-import { getDefineMetaFirstArgumentNode } from '#parser/analyse/define-meta/first-argument';
+import { getDefineMetaFirstArgumentObjectExpression } from '#parser/extract/svelte/define-meta';
 
 interface Params {
   nodes: {
@@ -58,7 +57,7 @@ export function insertDefineMetaJSDocCommentAsDescription(params: Params): void 
     return;
   }
 
-  const defineMetaFirstArgumentObjectExpression = getDefineMetaFirstArgumentNode({
+  const defineMetaFirstArgumentObjectExpression = getDefineMetaFirstArgumentObjectExpression({
     nodes: compiled,
     filename,
   });

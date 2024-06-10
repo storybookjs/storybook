@@ -4,7 +4,7 @@ import type { ObjectExpression, Property } from 'estree';
 import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
 import type { CompiledASTNodes } from '#parser/extract/compiled/nodes';
 
-import { GetDefineMetaFirstArgumentError } from '#utils/error/parser/svelte';
+import { GetDefineMetaFirstArgumentError } from '#utils/error/parser/extract/svelte';
 
 interface Options<Properties extends Array<keyof Meta>> {
   nodes: SvelteASTNodes | CompiledASTNodes;
@@ -45,8 +45,8 @@ export function extractDefineMetaPropertiesNodes<const Properties extends Array<
  * `defineMeta` accepts only one argument - an {@link ObjectExpression},
  * which should satisfy `@storybook/svelte`'s interface {@link Meta}.
  */
-function getDefineMetaFirstArgumentObjectExpression(
-  options: Options<Array<keyof Meta>>
+export function getDefineMetaFirstArgumentObjectExpression(
+  options: Pick<Options<Array<keyof Meta>>, 'filename' | 'nodes'>
 ): ObjectExpression {
   const { nodes, filename } = options;
   const { defineMetaVariableDeclaration, defineMetaImport } = nodes;

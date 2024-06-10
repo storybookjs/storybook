@@ -37,7 +37,7 @@ export const sandbox: Task = {
       await remove(details.sandboxDir);
     }
 
-    const { create, install, addStories, extendMain, init, addExtraDependencies } =
+    const { create, install, addStories, extendMain, init, addExtraDependencies, setImportMap } =
       // @ts-expect-error esbuild for some reason exports a default object
       // eslint-disable-next-line import/extensions
       (await import('./sandbox-parts.ts')).default;
@@ -83,6 +83,8 @@ export const sandbox: Task = {
     });
 
     await extendMain(details, options);
+
+    await setImportMap(details.sandboxDir);
 
     logger.info(`✅ Storybook sandbox created at ${details.sandboxDir}`);
   },

@@ -18,6 +18,7 @@ export type StandaloneOptions = CLIOptions &
       stylePreprocessorOptions?: StylePreprocessorOptions;
       assets?: AssetPattern[];
       sourceMap?: SourceMapUnion;
+      preserveSymlinks?: boolean;
     };
     angularBuilderContext?: BuilderContext | null;
     tsConfig?: string;

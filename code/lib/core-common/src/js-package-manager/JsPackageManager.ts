@@ -17,6 +17,8 @@ const logger = console;
 
 export type PackageManagerName = 'npm' | 'yarn1' | 'yarn2' | 'pnpm';
 
+type StorybookPackage = keyof typeof storybookPackagesVersions;
+
 /**
  * Extract package name and version from input
  *
@@ -381,9 +383,8 @@ export abstract class JsPackageManager {
   public async getVersion(packageName: string, constraint?: string): Promise<string> {
     let current: string | undefined;
 
-    if (/(@storybook|^sb$|^storybook$)/.test(packageName)) {
-      // @ts-expect-error (Converted from ts-ignore)
-      current = storybookPackagesVersions[packageName];
+    if (packageName in storybookPackagesVersions) {
+      current = storybookPackagesVersions[packageName as StorybookPackage];
     }
 
     let latest;
@@ -533,6 +534,18 @@ export abstract class JsPackageManager {
       }
       return '';
     }
+  }
+
+  /**
+   * Returns the installed (within node_modules or pnp zip) version of a specified package
+   */
+  public async getInstalledVersion(packageName: string): Promise<string | null> {
+    const installations = await this.findInstallations([packageName]);
+    if (!installations) {
+      return null;
+    }
+
+    return Object.entries(installations.dependencies)[0]?.[1]?.[0].version || null;
   }
 
   public async executeCommand({

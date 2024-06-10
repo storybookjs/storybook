@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react-dom-shim",
-  "version": "8.1.0-alpha.1",
+  "version": "8.2.0-alpha.6",
   "description": "",
   "keywords": [
     "storybook"
@@ -24,14 +24,14 @@
     ".": {
       "types": "./dist/react-18.d.ts",
       "node": "./dist/react-18.js",
-      "require": "./dist/react-18.js",
-      "import": "./dist/react-18.mjs"
+      "import": "./dist/react-18.mjs",
+      "require": "./dist/react-18.js"
     },
     "./dist/react-16": {
       "types": "./dist/react-16.d.ts",
       "node": "./dist/react-16.js",
-      "require": "./dist/react-16.js",
-      "import": "./dist/react-16.mjs"
+      "import": "./dist/react-16.mjs",
+      "require": "./dist/react-16.js"
     },
     "./dist/preset": {
       "types": "./dist/preset.d.ts",
@@ -58,8 +58,8 @@
     "typescript": "^5.3.2"
   },
   "peerDependencies": {
-    "react": "^16.8.0 || ^17.0.0 || ^18.0.0",
-    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0"
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
+    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta"
   },
   "publishConfig": {
     "access": "public"

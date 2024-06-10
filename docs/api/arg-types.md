@@ -396,6 +396,12 @@ Type: `boolean`
 
 Set to `true` to remove the argType's row from the table.
 
+#### `table.readonly`
+
+Type: `boolean`
+
+Set to `true` to indicate that the argType is read-only.
+
 #### `table.subcategory`
 
 Type: `string`

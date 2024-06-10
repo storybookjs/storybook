@@ -2,14 +2,21 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { ObjectControl } from './Object';
 import { fn } from '@storybook/test';
 
-export default {
+const meta = {
   component: ObjectControl,
   tags: ['autodocs'],
   parameters: { withRawArg: 'value', controls: { include: ['value'] } },
-  args: { name: 'object' },
-} as Meta<typeof ObjectControl>;
+  args: {
+    name: 'object',
+    onChange: fn(),
+  },
+} satisfies Meta<typeof ObjectControl>;
 
-export const Object: StoryObj<typeof ObjectControl> = {
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+export const Object: Story = {
   args: {
     value: {
       name: 'Michael',
@@ -19,7 +26,7 @@ export const Object: StoryObj<typeof ObjectControl> = {
   },
 };
 
-export const Array: StoryObj<typeof ObjectControl> = {
+export const Array: Story = {
   args: {
     value: [
       'someString',
@@ -31,25 +38,25 @@ export const Array: StoryObj<typeof ObjectControl> = {
   },
 };
 
-export const EmptyObject: StoryObj<typeof ObjectControl> = {
+export const EmptyObject: Story = {
   args: {
     value: {},
   },
 };
 
-export const EmptyArray: StoryObj<typeof ObjectControl> = {
+export const EmptyArray: Story = {
   args: {
     value: {},
   },
 };
 
-export const Null: StoryObj<typeof ObjectControl> = {
+export const Null: Story = {
   args: {
     value: null,
   },
 };
 
-export const Undefined: StoryObj<typeof ObjectControl> = {
+export const Undefined: Story = {
   args: {
     value: undefined,
   },
@@ -70,7 +77,7 @@ class Person {
  * We show a class collapsed as it might contain many methods.
  * It is read-only as we can not construct the class.
  */
-export const Class: StoryObj<typeof ObjectControl> = {
+export const Class: Story = {
   args: {
     value: new Person('Kasper', 'Peulen'),
   },
@@ -80,8 +87,26 @@ export const Class: StoryObj<typeof ObjectControl> = {
  * We show a function collapsed. Even if it is "object" like, such as "fn".
  * It is read-only as we can not construct a function.
  */
-export const Function: StoryObj<typeof ObjectControl> = {
+export const Function: Story = {
   args: {
     value: fn(),
+  },
+};
+
+export const Readonly: Story = {
+  args: {
+    value: {
+      name: 'Michael',
+      someDate: new Date('2022-10-30T12:31:11'),
+      nested: { someBool: true, someNumber: 22 },
+    },
+    argType: { table: { readonly: true } },
+  },
+};
+
+export const ReadonlyAndUndefined: Story = {
+  args: {
+    value: undefined,
+    argType: { table: { readonly: true } },
   },
 };

@@ -62,8 +62,8 @@ export const withActions: <T extends Renderer>(storyFn: PartialStoryFn<T>) => T[
     parameterName: PARAM_KEY,
     skipIfNoParametersOrOptions: true,
     wrapper: (getStory, context, { parameters }) => {
-      if (parameters?.['handles']) {
-        applyEventHandlers(actions, ...parameters['handles']);
+      if (parameters?.handles) {
+        applyEventHandlers(actions, ...parameters.handles);
       }
 
       return getStory(context);

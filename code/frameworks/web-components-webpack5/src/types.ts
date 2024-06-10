@@ -1,4 +1,5 @@
 import type {
+  CompatibleString,
   StorybookConfig as StorybookConfigBase,
   TypescriptOptions as TypescriptOptionsWebComponents,
 } from '@storybook/types';
@@ -8,8 +9,8 @@ import type {
   TypescriptOptions as TypescriptOptionsBuilder,
 } from '@storybook/builder-webpack5';
 
-type FrameworkName = '@storybook/web-components-webpack5';
-type BuilderName = '@storybook/builder-webpack5';
+type FrameworkName = CompatibleString<'@storybook/web-components-webpack5'>;
+type BuilderName = CompatibleString<'@storybook/builder-webpack5'>;
 
 export type FrameworkOptions = {
   builder?: BuilderOptions;

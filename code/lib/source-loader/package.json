@@ -1,6 +1,6 @@
 {
   "name": "@storybook/source-loader",
-  "version": "8.1.0-alpha.1",
+  "version": "8.2.0-alpha.6",
   "description": "Source loader",
   "keywords": [
     "lib",
@@ -25,8 +25,8 @@
     ".": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./package.json": "./package.json"
   },
@@ -45,7 +45,7 @@
     "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/csf": "^0.1.2",
+    "@storybook/csf": "^0.1.7",
     "@storybook/types": "workspace:*",
     "estraverse": "^5.2.0",
     "lodash": "^4.17.21",

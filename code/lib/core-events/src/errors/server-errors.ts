@@ -77,7 +77,7 @@ export class MissingFrameworkFieldError extends StorybookError {
     return dedent`
       Could not find a 'framework' field in Storybook config.
 
-      Please run 'npx storybook@next automigrate' to automatically fix your config.
+      Please run 'npx storybook automigrate' to automatically fix your config.
     `;
   }
 }
@@ -98,7 +98,7 @@ export class InvalidFrameworkNameError extends StorybookError {
     return dedent`
       Invalid value of '${this.data.frameworkName}' in the 'framework' field of Storybook config.
 
-      Please run 'npx storybook@next automigrate' to automatically fix your config.
+      Please run 'npx storybook automigrate' to automatically fix your config.
     `;
   }
 }
@@ -276,7 +276,7 @@ export class AngularLegacyBuildOptionsError extends StorybookError {
       Your Storybook startup script uses a solution that is not supported anymore.
       You must use Angular builder to have an explicit configuration on the project used in angular.json.
 
-      Please run 'npx storybook@next automigrate' to automatically fix your config.
+      Please run 'npx storybook automigrate' to automatically fix your config.
     `;
   }
 }
@@ -390,7 +390,7 @@ export class NoMatchingExportError extends StorybookError {
       Correct example:
       { "@storybook/react": "7.5.3", "@storybook/react-vite": "7.5.3", "storybook": "7.5.3" }
 
-      Please run \`npx storybook@latest doctor\` for guidance on how to fix this issue.
+      Please run \`npx storybook doctor\` for guidance on how to fix this issue.
     `;
   }
 }
@@ -545,7 +545,7 @@ export class UpgradeStorybookToSameVersionError extends StorybookError {
 
   template() {
     return dedent`
-      You are trying to upgrade Storybook to the same version that is currently installed in the project, version ${this.data.beforeVersion}. This is not supported.
+      You are upgrading Storybook to the same version that is currently installed in the project, version ${this.data.beforeVersion}.
       
       This usually happens when running the upgrade command without a version specifier, e.g. "npx storybook upgrade".
       This will cause npm to run the globally cached storybook binary, which might be the same version that you already have.
@@ -557,7 +557,7 @@ export class UpgradeStorybookToSameVersionError extends StorybookError {
 
       If you intended to re-run automigrations, you should run the "automigrate" command directly instead:
 
-      "npx storybook@${this.data.beforeVersion} automigrate"
+      "npx storybook automigrate"
     `;
   }
 }
@@ -573,6 +573,20 @@ export class UpgradeStorybookUnknownCurrentVersionError extends StorybookError {
 
       Are you running the Storybook CLI in a project without Storybook?
       It might help if you specify your Storybook config directory with the --config-dir flag.
+    `;
+  }
+}
+
+export class UpgradeStorybookInWrongWorkingDirectory extends StorybookError {
+  readonly category = Category.CLI_UPGRADE;
+
+  readonly code = 6;
+
+  template() {
+    return dedent`
+      You are running the upgrade command in a CWD that does not contain Storybook dependencies.
+
+      Did you mean to run it in a different directory? Make sure the directory you run this command in contains a package.json with your Storybook dependencies.
     `;
   }
 }

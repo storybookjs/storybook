@@ -58,7 +58,7 @@ export interface TooltipLinkListProps {
   LinkWrapper?: LinkWrapperType;
 }
 
-export const TooltipLinkList = ({ links, LinkWrapper }: TooltipLinkListProps) => {
+export const TooltipLinkList = ({ links, LinkWrapper = null }: TooltipLinkListProps) => {
   const hasIcon = links.some((link) => link.icon);
   return (
     <List>
@@ -67,8 +67,4 @@ export const TooltipLinkList = ({ links, LinkWrapper }: TooltipLinkListProps) =>
       ))}
     </List>
   );
-};
-
-TooltipLinkList.defaultProps = {
-  LinkWrapper: ListItem.defaultProps.LinkWrapper,
 };

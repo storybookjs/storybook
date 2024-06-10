@@ -27,6 +27,7 @@ const { AbortController } = globalThis;
 export type RenderPhase =
   | 'preparing'
   | 'loading'
+  | 'beforeEach'
   | 'rendering'
   | 'playing'
   | 'played'
@@ -55,6 +56,8 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   private canvasElement?: TRenderer['canvasElement'];
 
   private notYetRendered = true;
+
+  private rerenderEnqueued = false;
 
   public disableKeyListeners = false;
 
@@ -101,7 +104,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     });
 
     if ((this.abortController as AbortController).signal.aborted) {
-      this.store.cleanupStory(this.story as PreparedStory<TRenderer>);
+      await this.store.cleanupStory(this.story as PreparedStory<TRenderer>);
       throw PREPARE_ABORTED;
     }
   }
@@ -120,7 +123,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   }
 
   isPending() {
-    return ['rendering', 'playing'].includes(this.phase as RenderPhase);
+    return ['loading', 'beforeEach', 'rendering', 'playing'].includes(this.phase as RenderPhase);
   }
 
   async renderToElement(canvasElement: TRenderer['canvasElement']) {
@@ -149,10 +152,20 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   } = {}) {
     const { canvasElement } = this;
     if (!this.story) throw new Error('cannot render when not prepared');
+    const story = this.story;
     if (!canvasElement) throw new Error('cannot render when canvasElement is unset');
 
-    const { id, componentId, title, name, tags, applyLoaders, unboundStoryFn, playFunction } =
-      this.story;
+    const {
+      id,
+      componentId,
+      title,
+      name,
+      tags,
+      applyLoaders,
+      applyBeforeEach,
+      unboundStoryFn,
+      playFunction,
+    } = story;
 
     if (forceRemount && !initial) {
       // NOTE: we don't check the cancel actually worked here, so the previous
@@ -172,11 +185,11 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         loadedContext = await applyLoaders({
           ...this.storyContext(),
           viewMode: this.viewMode,
-        } as StoryContextForLoaders<TRenderer>);
+          // TODO add this to CSF
+          canvasElement,
+        } as unknown as StoryContextForLoaders<TRenderer>);
       });
-      if (abortSignal.aborted) {
-        return;
-      }
+      if (abortSignal.aborted) return;
 
       const renderStoryContext: StoryContext<TRenderer> = {
         ...loadedContext!,
@@ -187,6 +200,14 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         // We should consider parameterizing the story types with TRenderer['canvasElement'] in the future
         canvasElement: canvasElement as any,
       };
+
+      await this.runPhase(abortSignal, 'beforeEach', async () => {
+        const cleanupCallbacks = await applyBeforeEach(renderStoryContext);
+        this.store.addCleanupCallbacks(story, cleanupCallbacks);
+      });
+
+      if (abortSignal.aborted) return;
+
       const renderContext: RenderContext<TRenderer> = {
         componentId,
         title,
@@ -265,13 +286,31 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       this.phase = 'errored';
       this.callbacks.showException(err as Error);
     }
+
+    // If a rerender was enqueued during the render, clear the queue and render again
+    if (this.rerenderEnqueued) {
+      this.rerenderEnqueued = false;
+      this.render();
+    }
   }
 
+  /**
+   * Rerender the story.
+   * If the story is currently pending (loading/rendering), the rerender will be enqueued,
+   * and will be executed after the current render is completed.
+   * Rerendering while playing will not be enqueued, and will be executed immediately, to support
+   * rendering args changes while playing.
+   */
   async rerender() {
-    return this.render();
+    if (this.isPending() && this.phase !== 'playing') {
+      this.rerenderEnqueued = true;
+    } else {
+      return this.render();
+    }
   }
 
   async remount() {
+    await this.teardown();
     return this.render({ forceRemount: true });
   }
 
@@ -288,10 +327,12 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     this.torndown = true;
     this.cancelRender();
 
-    // If the story has loaded, we need to cleanup
-    if (this.story) this.store.cleanupStory(this.story);
+    // If the story has loaded, we need to clean up
+    if (this.story) {
+      await this.store.cleanupStory(this.story);
+    }
 
-    // Check if we're done rendering/playing. If not, we may have to reload the page.
+    // Check if we're done loading/rendering/playing. If not, we may have to reload the page.
     // Wait several ticks that may be needed to handle the abort, then try again.
     // Note that there's a max of 5 nested timeouts before they're no longer "instant".
     for (let i = 0; i < 3; i += 1) {

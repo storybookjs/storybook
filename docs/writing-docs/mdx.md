@@ -121,7 +121,7 @@ The `Meta` block defines where the document will be placed in the sidebar. In th
 
 <!-- prettier-ignore-end -->
 
-MDX supports standard markdown ([”commonmark”](https://commonmark.org/)) by default and can be extended to support [GitHub-flavored markdown (GFM)](https://github.github.com/gfm) and other extensions (see [Breaking changes](#breaking-changes), below).
+MDX supports standard markdown (["commonmark"](https://commonmark.org/)) by default and can be extended to support [GitHub Flavored Markdown (GFM)](https://github.github.com/gfm/) and other extensions (see the [Troubleshooting section](#troubleshooting) to learn more about some of the current limitations).
 
 <!-- prettier-ignore-start -->
 
@@ -325,11 +325,7 @@ By applying this pattern with the Controls addon, all anchors will be ignored in
 
 ### Markdown tables aren't rendering correctly
 
-As of MDX 2, GFM is no longer included by default:
-
-“We turned off GFM features in MDX by default. GFM extends CommonMark to add autolink literals, footnotes, strikethrough, tables, and task lists. If you do want these features, you can use a plugin. How to do so is described in [our guide on GFM](https://mdxjs.com/guides/gfm/).”
-
-In Storybook, you can apply MDX options, including plugins, in the main configuration file:
+If you're extending your documentation to include specific features (e.g., tables, footnotes), you may run into some issues rendering them correctly using the current MDX version supported by Storybook. We recommend enabling the [`remark-gfm`](https://github.com/remarkjs/remark-gfm) plugin in your configuration file (i.e., [`.storybook/main.js|ts`](../configure/index.md)) to render them correctly.
 
 <!-- prettier-ignore-start -->
 
@@ -344,7 +340,7 @@ paths={[
 
 <Callout variant="info" icon="💡">
 
-The [`remark-gfm`](https://github.com/remarkjs/remark-gfm) package isn't provided by default during migration. We recommend installing it as a development dependency if you use its features.
+The [`remark-gfm`](https://github.com/remarkjs/remark-gfm) package is not included by default with Storybook and must be installed separately as a development dependency. To learn more about how to use it and the other breaking changes introduced by MDX, refer to the [GFM guide](https://mdxjs.com/guides/gfm/) and the [migration guide](https://mdxjs.com/migrating/v2/) provided by the MDX team for more information.
 
 </Callout>
 
@@ -354,11 +350,11 @@ As Storybook relies on [MDX 3](https://mdxjs.com/) to render documentation, some
 
 #### Storybook doesn't create documentation for my component stories
 
-If you run into a situation where Storybook is not able to detect and render the documentation for your component stories, it may be due to a misconfiguration in your Storybook. Check your configuration file (i.e., `.storybook/main.js|ts`) and ensure the `stories` configuration element provides the correct path to your stories location(e.g., `../src/**/*.stories.@(js|jsx|mjs|ts|tsx)`).
+If you run into a situation where Storybook is not able to detect and render the documentation for your component stories, it may be due to a misconfiguration in your Storybook. Check your configuration file (i.e., `.storybook/main.js|ts`) and ensure the `stories` configuration element provides the correct path to your stories location (e.g., `../src/**/*.stories.@(js|jsx|mjs|ts|tsx)`).
 
 ### The migration seems flaky and keeps failing
 
-By default, running the [migration command](#automigration) will try and migrate all existing MDX files in your project according to the MDX 2 specification. However, this might not always be possible, and you might run into issues during the migration. To help you troubleshoot those issues, we've prepared some recommendations that might help you.
+By default, running the [migration](../configure/upgrading.md) command will prompt you to update the existing MDX files in your project according to the MDX version supported by Storybook. However, this might be a disruptive process, specifically if you're upgrading from a previous version of Storybook where you were using the legacy MDX format. To help you troubleshoot those issues, we've prepared some recommendations that might help you.
 
 Start by running the following command inside your project directory:
 

@@ -51,6 +51,7 @@ describe('normalizeStory', () => {
         {
           "argTypes": {},
           "args": {},
+          "beforeEach": [],
           "decorators": [],
           "id": "title--story-export",
           "loaders": [],
@@ -120,6 +121,7 @@ describe('normalizeStory', () => {
           {
             "argTypes": {},
             "args": {},
+            "beforeEach": [],
             "decorators": [],
             "id": "title--story-export",
             "loaders": [],
@@ -156,6 +158,7 @@ describe('normalizeStory', () => {
             "args": {
               "storyArg": "val",
             },
+            "beforeEach": [],
             "decorators": [
               [Function],
             ],
@@ -211,6 +214,7 @@ describe('normalizeStory', () => {
               "storyArg": "val",
               "storyArg2": "legacy",
             },
+            "beforeEach": [],
             "decorators": [
               [Function],
               [Function],

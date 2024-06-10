@@ -21,10 +21,9 @@ const isReactSyntheticEvent = (e: unknown): e is SyntheticEvent =>
       findProto(e, (proto) => /^Synthetic(?:Base)?Event$/.test(proto.constructor.name)) &&
       typeof (e as SyntheticEvent).persist === 'function'
   );
-const serializeArg = <T>(a: T) => {
+const serializeArg = <T extends object>(a: T) => {
   if (isReactSyntheticEvent(a)) {
     const e: SyntheticEvent = Object.create(
-      // @ts-expect-error (Converted from ts-ignore)
       a.constructor.prototype,
       Object.getOwnPropertyDescriptors(a)
     );
@@ -84,7 +83,7 @@ export function action(name: string, options: ActionOptions = {}): HandlerFuncti
     }
 
     const channel = addons.getChannel();
-    // this makes sure that in js enviroments like react native you can still get an id
+    // this makes sure that in js environments like react native you can still get an id
     const id = generateId();
     const minDepth = 5; // anything less is really just storybook internals
     const serializedArgs = args.map(serializeArg);

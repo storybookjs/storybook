@@ -12,7 +12,7 @@ import { parse } from './Number';
 type RangeProps = ControlProps<NumberValue | null> & RangeConfig;
 
 const RangeInput = styled.input<{ min: number; max: number; value: number }>(
-  ({ theme, min, max, value }) => ({
+  ({ theme, min, max, value, disabled }) => ({
     // Resytled using http://danielstern.ca/range.css/#/
     '&': {
       width: '100%',
@@ -35,7 +35,7 @@ const RangeInput = styled.input<{ min: number; max: number; value: number }>(
       borderRadius: 6,
       width: '100%',
       height: 6,
-      cursor: 'pointer',
+      cursor: disabled ? 'not-allowed' : 'pointer',
     },
 
     '&::-webkit-slider-thumb': {
@@ -46,7 +46,7 @@ const RangeInput = styled.input<{ min: number; max: number; value: number }>(
       border: `1px solid ${rgba(theme.appBorderColor, 0.2)}`,
       borderRadius: '50px',
       boxShadow: `0 1px 3px 0px ${rgba(theme.appBorderColor, 0.2)}`,
-      cursor: 'grab',
+      cursor: disabled ? 'not-allowed' : 'grab',
       appearance: 'none',
       background: `${theme.input.background}`,
       transition: 'all 150ms ease-out',
@@ -60,7 +60,7 @@ const RangeInput = styled.input<{ min: number; max: number; value: number }>(
       '&:active': {
         background: `${theme.input.background}`,
         transform: 'scale3d(1, 1, 1) translateY(0px)',
-        cursor: 'grabbing',
+        cursor: disabled ? 'not-allowed' : 'grab',
       },
     },
 
@@ -92,7 +92,7 @@ const RangeInput = styled.input<{ min: number; max: number; value: number }>(
       borderRadius: 6,
       width: '100%',
       height: 6,
-      cursor: 'pointer',
+      cursor: disabled ? 'not-allowed' : 'pointer',
       outline: 'none',
     },
 
@@ -102,7 +102,7 @@ const RangeInput = styled.input<{ min: number; max: number; value: number }>(
       border: `1px solid ${rgba(theme.appBorderColor, 0.2)}`,
       borderRadius: '50px',
       boxShadow: `0 1px 3px 0px ${rgba(theme.appBorderColor, 0.2)}`,
-      cursor: 'grab',
+      cursor: disabled ? 'not-allowed' : 'grap',
       background: `${theme.input.background}`,
       transition: 'all 150ms ease-out',
 
@@ -161,6 +161,9 @@ const RangeLabel = styled.span({
   whiteSpace: 'nowrap',
   fontFeatureSettings: 'tnum',
   fontVariantNumeric: 'tabular-nums',
+  '[aria-readonly=true] &': {
+    opacity: 0.5,
+  },
 });
 
 const RangeCurrentAndMaxLabel = styled(RangeLabel)<{
@@ -202,6 +205,7 @@ export const RangeControl: FC<RangeProps> = ({
   step = 1,
   onBlur,
   onFocus,
+  argType,
 }) => {
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     onChange(parse(event.target.value));
@@ -210,12 +214,15 @@ export const RangeControl: FC<RangeProps> = ({
   const hasValue = value !== undefined;
   const numberOFDecimalsPlaces = useMemo(() => getNumberOfDecimalPlaces(step), [step]);
 
+  const readonly = !!argType?.table?.readonly;
+
   return (
-    <RangeWrapper>
+    <RangeWrapper aria-readonly={readonly}>
       <RangeLabel>{min}</RangeLabel>
       <RangeInput
         id={getControlId(name)}
         type="range"
+        disabled={readonly}
         onChange={handleChange}
         {...{ name, value, min, max, step, onFocus, onBlur }}
       />

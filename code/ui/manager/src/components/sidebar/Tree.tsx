@@ -220,7 +220,8 @@ const Node = React.memo<NodeProps>(function Node({
           }}
           {...(item.type === 'docs' && { docsMode })}
         >
-          {(item.renderLabel as (i: typeof item) => React.ReactNode)?.(item) || item.name}
+          {(item.renderLabel as (i: typeof item, api: API) => React.ReactNode)?.(item, api) ||
+            item.name}
         </LeafNode>
         {isSelected && (
           <SkipToContentLink asChild>
@@ -272,7 +273,7 @@ const Node = React.memo<NodeProps>(function Node({
           aria-expanded={isExpanded}
         >
           <CollapseIcon isExpanded={isExpanded} />
-          {item.renderLabel?.(item) || item.name}
+          {item.renderLabel?.(item, api) || item.name}
         </CollapseButton>
         {isExpanded && (
           <IconButton
@@ -325,7 +326,8 @@ const Node = React.memo<NodeProps>(function Node({
           }
         }}
       >
-        {(item.renderLabel as (i: typeof item) => React.ReactNode)?.(item) || item.name}
+        {(item.renderLabel as (i: typeof item, api: API) => React.ReactNode)?.(item, api) ||
+          item.name}
       </BranchNode>
     );
   }

@@ -98,7 +98,7 @@ const Source: FunctionComponent<SourceProps> = ({
   language,
   code,
   dark,
-  format,
+  format = false,
   ...rest
 }) => {
   const { typography } = useTheme();
@@ -138,7 +138,4 @@ const Source: FunctionComponent<SourceProps> = ({
   );
 };
 
-Source.defaultProps = {
-  format: false,
-};
 export { Source, StyledSyntaxHighlighter };

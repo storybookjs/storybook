@@ -243,6 +243,7 @@ describe('validateOptions', () => {
   });
 
   it('ignores options and logs an error if options is not an array', () => {
+    // @ts-expect-error This should give TS error indeed (finally!)
     expect(validateOptions({ a: 1 }, { a: { options: { 2: 'two' } } })).toStrictEqual({ a: 1 });
     expect(once.error).toHaveBeenCalledWith(
       expect.stringContaining("Invalid argType: 'a.options' should be an array")

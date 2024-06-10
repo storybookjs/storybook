@@ -22,7 +22,7 @@ export default {
 };
 ```
 
-You should now be able to see the viewport addon icon in the the toolbar at the top of the screen.
+You should now be able to see the viewport addon icon in the toolbar at the top of the screen.
 
 ## Usage
 

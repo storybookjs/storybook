@@ -1,4 +1,4 @@
-import { ReactConfetti } from 'react-confetti/src/ReactConfetti';
+import ReactConfetti from 'react-confetti';
 import React, { useEffect } from 'react';
 import { styled } from '@storybook/theming';
 import { createPortal } from 'react-dom';

@@ -11,6 +11,7 @@ import { StorybookError } from './storybook-error';
  * to prevent manager and preview errors from having the same category and error code.
  */
 export enum Category {
+  DOCS_TOOLS = 'DOCS-TOOLS',
   PREVIEW_CLIENT_LOGGER = 'PREVIEW_CLIENT-LOGGER',
   PREVIEW_CHANNELS = 'PREVIEW_CHANNELS',
   PREVIEW_CORE_EVENTS = 'PREVIEW_CORE-EVENTS',
@@ -27,6 +28,7 @@ export enum Category {
   RENDERER_VUE = 'RENDERER_VUE',
   RENDERER_VUE3 = 'RENDERER_VUE3',
   RENDERER_WEB_COMPONENTS = 'RENDERER_WEB-COMPONENTS',
+  FRAMEWORK_NEXTJS = 'FRAMEWORK_NEXTJS',
 }
 
 export class MissingStoryAfterHmrError extends StorybookError {
@@ -233,5 +235,62 @@ export class StoryStoreAccessedBeforeInitializationError extends StorybookError 
 
     It is not recommended to use methods directly on the Story Store anyway, in Storybook 9 we will
     remove access to the store entirely`;
+  }
+}
+
+export class NextJsSharpError extends StorybookError {
+  readonly category = Category.FRAMEWORK_NEXTJS;
+
+  readonly code = 1;
+
+  readonly documentation = 'https://storybook.js.org/docs/get-started/nextjs#faq';
+
+  template() {
+    return dedent`
+    You are importing avif images, but you don't have sharp installed.
+
+    You have to install sharp in order to use image optimization features in Next.js.
+    `;
+  }
+}
+
+export class NextjsRouterMocksNotAvailable extends StorybookError {
+  readonly category = Category.FRAMEWORK_NEXTJS;
+
+  readonly code = 2;
+
+  constructor(public data: { importType: string }) {
+    super();
+  }
+
+  template() {
+    return dedent`
+      Tried to access router mocks from "${this.data.importType}" but they were not created yet. You might be running code in an unsupported environment.
+    `;
+  }
+}
+
+export class UnknownArgTypesError extends StorybookError {
+  readonly category = Category.DOCS_TOOLS;
+
+  readonly code = 1;
+
+  readonly documentation = 'https://github.com/storybookjs/storybook/issues/26606';
+
+  constructor(public data: { type: object; language: string }) {
+    super();
+  }
+
+  template() {
+    return dedent`There was a failure when generating detailed ArgTypes in ${
+      this.data.language
+    } for:
+    
+    ${JSON.stringify(this.data.type, null, 2)} 
+    
+    Storybook will fall back to use a generic type description instead.
+
+    This type is either not supported or it is a bug in the docgen generation in Storybook.
+    If you think this is a bug, please detail it as much as possible in the Github issue.`;
   }
 }

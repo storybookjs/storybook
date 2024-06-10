@@ -1,6 +1,6 @@
 {
   "name": "@storybook/router",
-  "version": "8.1.0-alpha.1",
+  "version": "8.2.0-alpha.6",
   "description": "Core Storybook Router",
   "keywords": [
     "storybook"
@@ -24,13 +24,13 @@
     ".": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./utils": {
       "types": "./dist/utils.d.ts",
-      "require": "./dist/utils.js",
-      "import": "./dist/utils.mjs"
+      "import": "./dist/utils.mjs",
+      "require": "./dist/utils.js"
     },
     "./package.json": "./package.json"
   },

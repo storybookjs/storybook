@@ -19,6 +19,10 @@ export const parse = (value: string) => {
 
 export const format = (value: NumberValue) => (value != null ? String(value) : '');
 
+const FormInput = styled(Form.Input)(({ readOnly }) => ({
+  opacity: readOnly ? 0.5 : 1,
+}));
+
 export const NumberControl: FC<NumberProps> = ({
   name,
   value,
@@ -28,10 +32,12 @@ export const NumberControl: FC<NumberProps> = ({
   step,
   onBlur,
   onFocus,
+  argType,
 }) => {
   const [inputValue, setInputValue] = useState(typeof value === 'number' ? value : '');
   const [forceVisible, setForceVisible] = useState(false);
   const [parseError, setParseError] = useState<Error>(null);
+  const readonly = !!argType?.table?.readonly;
 
   const handleChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -73,6 +79,7 @@ export const NumberControl: FC<NumberProps> = ({
         size="medium"
         id={getControlSetterButtonId(name)}
         onClick={onForceVisible}
+        disabled={readonly}
       >
         Set number
       </Button>
@@ -81,7 +88,7 @@ export const NumberControl: FC<NumberProps> = ({
 
   return (
     <Wrapper>
-      <Form.Input
+      <FormInput
         ref={htmlElRef}
         id={getControlId(name)}
         type="number"
@@ -91,6 +98,7 @@ export const NumberControl: FC<NumberProps> = ({
         value={inputValue}
         valid={parseError ? 'error' : null}
         autoFocus={forceVisible}
+        readOnly={readonly}
         {...{ name, min, max, step, onFocus, onBlur }}
       />
     </Wrapper>

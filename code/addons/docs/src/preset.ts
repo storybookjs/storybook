@@ -1,4 +1,4 @@
-import { dirname, join } from 'path';
+import { dirname, join, isAbsolute } from 'path';
 import rehypeSlug from 'rehype-slug';
 import rehypeExternalLinks from 'rehype-external-links';
 
@@ -45,7 +45,7 @@ async function webpack(
     mdxCompileOptions: {
       providerImportSource: join(
         dirname(require.resolve('@storybook/addon-docs/package.json')),
-        '/dist/shims/mdx-react-shim'
+        '/dist/shims/mdx-react-shim.mjs'
       ),
       ...mdxPluginOptions.mdxCompileOptions,
       rehypePlugins: [
@@ -147,6 +147,8 @@ export const viteFinal = async (config: any, options: Options) => {
       resolve: {
         alias: {
           react,
+          // Vite doesn't respect export maps when resolving an absolute path, so we need to do that manually here
+          ...(isAbsolute(reactDom) && { 'react-dom/server': `${reactDom}/server.browser.js` }),
           'react-dom': reactDom,
           '@mdx-js/react': mdx,
           /**
@@ -164,7 +166,8 @@ export const viteFinal = async (config: any, options: Options) => {
   // add alias plugin early to ensure any other plugins that also add the aliases will override this
   // eg. the preact vite plugin adds its own aliases
   plugins.unshift(packageDeduplicationPlugin);
-  plugins.push(mdxPlugin(options));
+  // mdx plugin needs to be before any react plugins
+  plugins.unshift(mdxPlugin(options));
 
   return config;
 };

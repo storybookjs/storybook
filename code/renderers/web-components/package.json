@@ -1,6 +1,6 @@
 {
   "name": "@storybook/web-components",
-  "version": "8.1.0-alpha.1",
+  "version": "8.2.0-alpha.6",
   "description": "Storybook web-components renderer",
   "keywords": [
     "lit",
@@ -26,8 +26,8 @@
     ".": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./preset": "./preset.js",
     "./dist/entry-preview.mjs": "./dist/entry-preview.mjs",

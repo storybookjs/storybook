@@ -142,6 +142,8 @@ export class CsfFile {
 
   _fileName: string;
 
+  _rawComponentPath?: string;
+
   _makeTitle: (title: string) => string;
 
   _meta?: StaticMeta;
@@ -202,6 +204,21 @@ export class CsfFile {
         } else if (['includeStories', 'excludeStories'].includes(p.key.name)) {
           (meta as any)[p.key.name] = parseIncludeExclude(p.value);
         } else if (p.key.name === 'component') {
+          const n = p.value;
+          if (t.isIdentifier(n)) {
+            const id = n.name;
+            const importStmt = program.body.find(
+              (stmt) =>
+                t.isImportDeclaration(stmt) &&
+                stmt.specifiers.find((spec) => spec.local.name === id)
+            ) as t.ImportDeclaration;
+            if (importStmt) {
+              const { source } = importStmt;
+              if (t.isStringLiteral(source)) {
+                this._rawComponentPath = source.value;
+              }
+            }
+          }
           const { code } = recast.print(p.value, {});
           meta.component = code;
         } else if (p.key.name === 'tags') {
@@ -478,14 +495,6 @@ export class CsfFile {
       throw new NoMetaError('missing default export', self._ast, self._fileName);
     }
 
-    if (!self._meta.title && !self._meta.component) {
-      throw new Error(dedent`
-        CSF: missing title/component ${formatLocation(self._ast, self._fileName)}
-
-        More info: https://storybook.js.org/docs/react/writing-stories#default-export
-      `);
-    }
-
     // default export can come at any point in the file, so we do this post processing last
     const entries = Object.entries(self._stories);
     self._meta.title = this._makeTitle(self._meta?.title as string);
@@ -565,18 +574,19 @@ export class CsfFile {
         Either add the fileName option when creating the CsfFile instance, or create the index inputs manually.`
       );
     }
+
     return Object.entries(this._stories).map(([exportName, story]) => {
-      // combine meta and story tags, removing any duplicates
-      const tags = Array.from(new Set([...(this._meta?.tags ?? []), ...(story.tags ?? [])]));
+      // don't remove any duplicates or negations -- tags will be combined in the index
+      const tags = [...(this._meta?.tags ?? []), ...(story.tags ?? [])];
       return {
         type: 'story',
         importPath: this._fileName,
+        rawComponentPath: this._rawComponentPath,
         exportName,
         name: story.name,
         title: this.meta?.title,
         metaId: this.meta?.id,
         tags,
-        metaTags: this.meta?.tags,
         __id: story.id,
       };
     });
@@ -591,15 +601,19 @@ export const loadCsf = (code: string, options: CsfOptions) => {
 interface FormatOptions {
   sourceMaps?: boolean;
   preserveStyle?: boolean;
+  inputSourceMap?: any;
 }
 
-export const formatCsf = (csf: CsfFile, options: FormatOptions = { sourceMaps: false }) => {
-  const result = generate.default(csf._ast, options);
+export const formatCsf = (
+  csf: CsfFile,
+  options: FormatOptions = { sourceMaps: false },
+  code?: string
+) => {
+  const result = generate.default(csf._ast, options, code);
   if (options.sourceMaps) {
     return result;
   }
-  const { code } = result;
-  return code;
+  return result.code;
 };
 
 /**

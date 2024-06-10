@@ -54,6 +54,10 @@ export function normalizeStory<TRenderer extends Renderer>(
   const args = { ...story?.args, ...storyObject.args };
   const argTypes = { ...(story?.argTypes as ArgTypes), ...(storyObject.argTypes as ArgTypes) };
   const loaders = [...normalizeArrays(storyObject.loaders), ...normalizeArrays(story?.loaders)];
+  const beforeEach = [
+    ...normalizeArrays(storyObject.beforeEach),
+    ...normalizeArrays(story?.beforeEach),
+  ];
   const { render, play, tags = [] } = storyObject;
 
   // eslint-disable-next-line no-underscore-dangle
@@ -68,6 +72,7 @@ export function normalizeStory<TRenderer extends Renderer>(
     args,
     argTypes: normalizeInputTypes(argTypes),
     loaders,
+    beforeEach,
     ...(render && { render }),
     ...(userStoryFn && { userStoryFn }),
     ...(play && { play }),

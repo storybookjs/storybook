@@ -12,6 +12,12 @@
         "react/no-unknown-property": "off",
         "jsx-a11y/anchor-is-valid": "off"
       }
+    },
+    {
+      "files": ["**/*.compat.@(tsx|ts)"],
+      "rules": {
+        "local-rules/no-uncategorized-errors": "off"
+      }
     }
   ]
 }

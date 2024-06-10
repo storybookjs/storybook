@@ -17,6 +17,10 @@ const Wrapper = styled.div(({ theme }) => ({
   position: 'relative',
   display: 'flex',
 
+  '&[aria-readonly="true"]': {
+    opacity: 0.5,
+  },
+
   '.rejt-tree': {
     marginLeft: '1rem',
     fontSize: '13px',
@@ -221,10 +225,7 @@ const selectValue = (event: SyntheticEvent<HTMLInputElement>) => {
   event.currentTarget.select();
 };
 
-export type ObjectProps = ControlProps<ObjectValue> &
-  ObjectConfig & {
-    theme: any; // TODO: is there a type for this?
-  };
+export type ObjectProps = ControlProps<ObjectValue> & ObjectConfig;
 
 const getCustomStyleFunction: (theme: Theme) => JsonTreeProps['getStyle'] = (theme) => () => ({
   name: {
@@ -243,12 +244,13 @@ const getCustomStyleFunction: (theme: Theme) => JsonTreeProps['getStyle'] = (the
   },
 });
 
-export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange }) => {
+export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType }) => {
   const theme = useTheme();
   const data = useMemo(() => value && cloneDeep(value), [value]);
   const hasData = data !== null && data !== undefined;
   const [showRaw, setShowRaw] = useState(!hasData);
   const [parseError, setParseError] = useState<Error>(null);
+  const readonly = !!argType?.table?.readonly;
   const updateRaw: (raw: string) => void = useCallback(
     (raw) => {
       try {
@@ -274,7 +276,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange }) => {
 
   if (!hasData) {
     return (
-      <Button id={getControlSetterButtonId(name)} onClick={onForceVisible}>
+      <Button disabled={readonly} id={getControlSetterButtonId(name)} onClick={onForceVisible}>
         Set object
       </Button>
     );
@@ -290,6 +292,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange }) => {
       placeholder="Edit JSON string..."
       autoFocus={forceVisible}
       valid={parseError ? 'error' : null}
+      readOnly={readonly}
     />
   );
 
@@ -297,7 +300,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange }) => {
     Array.isArray(value) || (typeof value === 'object' && value?.constructor === Object);
 
   return (
-    <Wrapper>
+    <Wrapper aria-readonly={readonly}>
       {isObjectOrArray && (
         <RawButton
           onClick={(e: SyntheticEvent) => {
@@ -311,7 +314,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange }) => {
       )}
       {!showRaw ? (
         <JsonTree
-          readOnly={!isObjectOrArray}
+          readOnly={readonly || !isObjectOrArray}
           isCollapsed={isObjectOrArray ? /* default value */ undefined : () => true}
           data={data}
           rootName={name}

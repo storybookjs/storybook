@@ -1,5 +1,8 @@
 import { minVersion, validRange } from 'semver';
-import type { SupportedFrameworks } from '@storybook/types';
+import type {
+  SupportedFrameworks,
+  SupportedRenderers as CoreSupportedFrameworks,
+} from '@storybook/types';
 
 function eqMajor(versionRange: string, major: number) {
   // Uses validRange to avoid a throw from minVersion if an invalid range gets passed
@@ -22,20 +25,10 @@ export const externalFrameworks: ExternalFramework[] = [
   { name: 'solid', frameworks: ['storybook-solidjs-vite'], renderer: 'storybook-solidjs' },
 ];
 
-// Should match @storybook/<renderer>
-export type SupportedRenderers =
-  | 'react'
-  | 'react-native'
-  | 'vue3'
-  | 'angular'
-  | 'ember'
-  | 'preact'
-  | 'svelte'
-  | 'qwik'
-  | 'html'
-  | 'web-components'
-  | 'server'
-  | 'solid';
+/**
+ * @deprecated Please use `SupportedFrameworks` from `@storybook/types` instead
+ */
+export type SupportedRenderers = CoreSupportedFrameworks;
 
 export const SUPPORTED_RENDERERS: SupportedRenderers[] = [
   'react',

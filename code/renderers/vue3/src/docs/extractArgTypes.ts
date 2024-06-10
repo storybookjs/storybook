@@ -44,10 +44,13 @@ export const extractArgTypes: ArgTypesExtractor = (component) => {
       // skip duplicate and global props
       if (!argType || argTypes[argType.name]) return;
 
-      argTypes[argType.name] = {
-        ...argType,
-        control: { disabled: !['props', 'slots'].includes(section) },
-      };
+      // disable controls for events and exposed since they can not be controlled
+      const sectionsToDisableControls: (typeof section)[] = ['events', 'expose', 'exposed'];
+      if (sectionsToDisableControls.includes(section)) {
+        argType.control = { disable: true };
+      }
+
+      argTypes[argType.name] = argType;
     });
   });
 
@@ -124,7 +127,7 @@ export const extractFromVueDocgenApi = (
     type: sbType ? { ...sbType, required } : { name: 'other', value: type ?? '' },
     table: {
       type: type ? { summary: type } : undefined,
-      defaultValue: extractedProp?.propDef.defaultValue,
+      defaultValue: extractedProp?.propDef.defaultValue ?? undefined,
       jsDocTags: extractedProp?.propDef.jsDocTags,
       category: section,
     },

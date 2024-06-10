@@ -83,7 +83,7 @@ describe('watchStorySpecifiers', () => {
   });
 
   it('watches single file globs', async () => {
-    const specifier = normalizeStoriesEntry('../src/nested/Button.stories.mdx', options);
+    const specifier = normalizeStoriesEntry('../src/nested/Button.mdx', options);
 
     const onInvalidate = vi.fn();
     close = watchStorySpecifiers([specifier], { workingDir }, onInvalidate);
@@ -98,33 +98,33 @@ describe('watchStorySpecifiers', () => {
 
     // File changed, matching
     onInvalidate.mockClear();
-    await onChange('src/nested/Button.stories.mdx', 1234);
-    expect(onInvalidate).toHaveBeenCalledWith(specifier, `./src/nested/Button.stories.mdx`, false);
+    await onChange('src/nested/Button.mdx', 1234);
+    expect(onInvalidate).toHaveBeenCalledWith(specifier, `./src/nested/Button.mdx`, false);
 
     // File changed, NOT matching
     onInvalidate.mockClear();
-    await onChange('src/nested/Button.mdx', 1234);
+    await onChange('src/nested/Button.tsx', 1234);
     expect(onInvalidate).not.toHaveBeenCalled();
 
     // File removed, matching
     onInvalidate.mockClear();
-    await onRemove('src/nested/Button.stories.mdx');
-    expect(onInvalidate).toHaveBeenCalledWith(specifier, `./src/nested/Button.stories.mdx`, true);
+    await onRemove('src/nested/Button.mdx');
+    expect(onInvalidate).toHaveBeenCalledWith(specifier, `./src/nested/Button.mdx`, true);
 
     // File removed, NOT matching
     onInvalidate.mockClear();
-    await onRemove('src/nested/Button.mdx');
+    await onRemove('src/nested/Button.tsx');
     expect(onInvalidate).not.toHaveBeenCalled();
 
     // File moved out, matching
     onInvalidate.mockClear();
-    await onChange('src/nested/Button.stories.mdx', null);
-    expect(onInvalidate).toHaveBeenCalledWith(specifier, `./src/nested/Button.stories.mdx`, true);
+    await onChange('src/nested/Button.mdx', null);
+    expect(onInvalidate).toHaveBeenCalledWith(specifier, `./src/nested/Button.mdx`, true);
   });
 
   it('multiplexes between two specifiers on the same directory', async () => {
     const globSpecifier = normalizeStoriesEntry('../src/**/*.stories.@(ts|js)', options);
-    const fileSpecifier = normalizeStoriesEntry('../src/nested/Button.stories.mdx', options);
+    const fileSpecifier = normalizeStoriesEntry('../src/nested/Button.mdx', options);
 
     const onInvalidate = vi.fn();
     close = watchStorySpecifiers([globSpecifier, fileSpecifier], { workingDir }, onInvalidate);
@@ -145,11 +145,7 @@ describe('watchStorySpecifiers', () => {
     );
 
     onInvalidate.mockClear();
-    await onChange('src/nested/Button.stories.mdx', 1234);
-    expect(onInvalidate).toHaveBeenCalledWith(
-      fileSpecifier,
-      `./src/nested/Button.stories.mdx`,
-      false
-    );
+    await onChange('src/nested/Button.mdx', 1234);
+    expect(onInvalidate).toHaveBeenCalledWith(fileSpecifier, `./src/nested/Button.mdx`, false);
   });
 });

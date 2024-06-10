@@ -15,6 +15,8 @@ import { utils } from 'react-docgen';
 const { getNameOrValue, isReactForwardRefCall } = utils;
 
 const actualNameHandler: Handler = function actualNameHandler(documentation, componentDefinition) {
+  documentation.set('definedInFile', componentDefinition.hub.file.opts.filename);
+
   if (
     (componentDefinition.isClassDeclaration() || componentDefinition.isFunctionDeclaration()) &&
     componentDefinition.has('id')

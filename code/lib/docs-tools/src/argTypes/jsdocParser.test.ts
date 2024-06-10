@@ -10,7 +10,7 @@ describe('parseJsDoc', () => {
     expect(extractedTags).toBeUndefined();
   });
 
-  it('should set includesJsDocto to false when the value dont contains JSDoc', () => {
+  it('should set includesJsDoc to false when the value dont contains JSDoc', () => {
     const { includesJsDoc, description, extractedTags } = parseJsDoc('Hey!');
 
     expect(includesJsDoc).toBeFalsy();
@@ -68,7 +68,7 @@ describe('parseJsDoc', () => {
       expect(extractedTags?.params).not.toBeNull();
       expect(extractedTags?.params?.[0].name).toBe('event');
       expect(extractedTags?.params?.[0].type).not.toBeNull();
-      expect(extractedTags?.params?.[0].type.name).toBe('SyntheticEvent');
+      expect(extractedTags?.params?.[0].type.value).toBe('SyntheticEvent');
       expect(extractedTags?.params?.[0].description).toBeNull();
     });
 
@@ -78,7 +78,7 @@ describe('parseJsDoc', () => {
       expect(extractedTags?.params).not.toBeNull();
       expect(extractedTags?.params?.[0].name).toBe('event');
       expect(extractedTags?.params?.[0].type).not.toBeNull();
-      expect(extractedTags?.params?.[0].type.name).toBe('SyntheticEvent');
+      expect(extractedTags?.params?.[0].type.value).toBe('SyntheticEvent');
       expect(extractedTags?.params?.[0].description).toBe('React event');
     });
 
@@ -90,7 +90,7 @@ describe('parseJsDoc', () => {
       ['event1', 'event2', 'event3'].forEach((x, i) => {
         expect(extractedTags?.params?.[i].name).toBe(x);
         expect(extractedTags?.params?.[i].type).not.toBeNull();
-        expect(extractedTags?.params?.[i].type.name).toBe('SyntheticEvent');
+        expect(extractedTags?.params?.[i].type.value).toBe('SyntheticEvent');
         expect(extractedTags?.params?.[i].description).toBe('React event');
       });
     });
@@ -129,7 +129,7 @@ describe('parseJsDoc', () => {
         expect(extractedTags?.params).not.toBeNull();
         expect(extractedTags?.params?.[0].name).toBe('event');
         expect(extractedTags?.params?.[0].type).not.toBeNull();
-        expect(extractedTags?.params?.[0].type.name).toBe('SyntheticEvent');
+        expect(extractedTags?.params?.[0].type.value).toBe('SyntheticEvent');
         expect(extractedTags?.params?.[0].description).toBe('React event');
       });
     });
@@ -251,7 +251,7 @@ describe('parseJsDoc', () => {
 
       expect(extractedTags?.returns).not.toBeNull();
       expect(extractedTags?.returns?.type).not.toBeNull();
-      expect(extractedTags?.returns?.type.name).toBe('string');
+      expect(extractedTags?.returns?.type.value).toBe('string');
     });
 
     it('should return a @returns with a type and a description', () => {
@@ -259,7 +259,7 @@ describe('parseJsDoc', () => {
 
       expect(extractedTags?.returns).not.toBeNull();
       expect(extractedTags?.returns?.type).not.toBeNull();
-      expect(extractedTags?.returns?.type.name).toBe('string');
+      expect(extractedTags?.returns?.type.value).toBe('string');
       expect(extractedTags?.returns?.description).toBe('A bar description');
     });
 
@@ -270,7 +270,7 @@ describe('parseJsDoc', () => {
 
       expect(extractedTags?.returns).not.toBeNull();
       expect(extractedTags?.returns?.type).not.toBeNull();
-      expect(extractedTags?.returns?.type.name).toBe('string');
+      expect(extractedTags?.returns?.type.value).toBe('string');
       expect(extractedTags?.returns?.description).toBe('This is\na multiline\ndescription');
     });
 
@@ -279,7 +279,7 @@ describe('parseJsDoc', () => {
 
       expect(extractedTags?.returns).not.toBeNull();
       expect(extractedTags?.returns?.type).not.toBeNull();
-      expect(extractedTags?.returns?.type.name).toBe('number');
+      expect(extractedTags?.returns?.type.value).toBe('number');
     });
 
     describe('getTypeName', () => {
@@ -353,9 +353,9 @@ describe('parseJsDoc', () => {
     expect(extractedTags?.params).not.toBeNull();
     expect(Object.keys(extractedTags?.params ?? []).length).toBe(1);
     expect(extractedTags?.params?.[0].name).toBe('event');
-    expect(extractedTags?.params?.[0].type.name).toBe('SyntheticEvent');
+    expect(extractedTags?.params?.[0].type.value).toBe('SyntheticEvent');
     expect(extractedTags?.params?.[0].description).toBe('Original event.');
     expect(extractedTags?.returns).not.toBeNull();
-    expect(extractedTags?.returns?.type.name).toBe('string');
+    expect(extractedTags?.returns?.type.value).toBe('string');
   });
 });

@@ -114,6 +114,7 @@ export interface SidebarProps extends API_LoadedRefData {
   menuHighlighted?: boolean;
   enableShortcuts?: boolean;
   onMenuClick?: HeadingProps['onMenuClick'];
+  showCreateStoryButton?: boolean;
 }
 
 export const Sidebar = React.memo(function Sidebar({
@@ -130,6 +131,7 @@ export const Sidebar = React.memo(function Sidebar({
   enableShortcuts = true,
   refs = {},
   onMenuClick,
+  showCreateStoryButton,
 }: SidebarProps) {
   const selected: Selection = useMemo(() => storyId && { storyId, refId }, [storyId, refId]);
   const dataset = useCombination(index, indexError, previewInitialized, status, refs);
@@ -149,7 +151,12 @@ export const Sidebar = React.memo(function Sidebar({
             isLoading={isLoading}
             onMenuClick={onMenuClick}
           />
-          <Search dataset={dataset} enableShortcuts={enableShortcuts} {...lastViewedProps}>
+          <Search
+            dataset={dataset}
+            enableShortcuts={enableShortcuts}
+            showCreateStoryButton={showCreateStoryButton}
+            {...lastViewedProps}
+          >
             {({
               query,
               results,
@@ -183,7 +190,7 @@ export const Sidebar = React.memo(function Sidebar({
         </Top>
       </ScrollArea>
       {isLoading ? null : (
-        <Bottom>
+        <Bottom className="sb-bar">
           {bottom.map(({ id, render: Render }) => (
             <Render key={id} />
           ))}

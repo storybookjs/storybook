@@ -2,34 +2,33 @@ import { describe, it, expect, vi } from 'vitest';
 import { init as initNotifications } from '../modules/notifications';
 
 describe('notifications API', () => {
-  it('allows adding notifications', () => {
-    const store = {
-      getState: () => ({
-        notifications: [],
-      }),
-      setState: vi.fn(),
-    };
+  const store = {
+    state: { notifications: [] },
+    getState: () => store.state,
+    setState: (update) => {
+      if (typeof update === 'function') {
+        store.state = update(store.state);
+      } else {
+        store.state = update;
+      }
+    },
+  };
 
+  it('allows adding notifications', () => {
     const { api } = initNotifications({ store });
 
     api.addNotification({ id: '1' });
-    expect(store.setState).toHaveBeenCalledWith({
+    expect(store.getState()).toEqual({
       notifications: [{ id: '1' }],
     });
   });
 
   it('allows removing notifications', () => {
-    const store = {
-      getState: () => ({
-        notifications: [{ id: '1' }, { id: '2' }, { id: '3' }],
-      }),
-      setState: vi.fn(),
-    };
-
+    store.setState({ notifications: [{ id: '1' }, { id: '2' }, { id: '3' }] });
     const { api } = initNotifications({ store });
 
     api.clearNotification('2');
-    expect(store.setState).toHaveBeenCalledWith({
+    expect(store.getState()).toEqual({
       notifications: [{ id: '1' }, { id: '3' }],
     });
   });

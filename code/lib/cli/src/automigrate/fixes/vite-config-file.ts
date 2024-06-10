@@ -20,7 +20,7 @@ export const viteConfigFile = {
 
   async check({ mainConfig, packageManager, mainConfigPath }) {
     let isViteConfigFileFound = !!(await findUp(
-      ['vite.config.js', 'vite.config.mjs', 'vite.config.cjs', 'vite.config.ts'],
+      ['vite.config.js', 'vite.config.mjs', 'vite.config.cjs', 'vite.config.ts', 'vite.config.mts'],
       { cwd: mainConfigPath ? path.join(mainConfigPath, '..') : process.cwd() }
     ));
 

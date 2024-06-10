@@ -1,6 +1,5 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { defineConfig, mergeConfig } from 'vitest/config';
-import { sep, posix } from 'path';
 import { vitestCommonConfig } from '../../vitest.workspace';
 
 export default mergeConfig(
@@ -8,7 +7,6 @@ export default mergeConfig(
   defineConfig({
     test: {
       environment: 'node',
-      name: __dirname.split(sep).slice(-2).join(posix.sep),
     },
   })
 );

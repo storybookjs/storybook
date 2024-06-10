@@ -93,6 +93,8 @@ export type IndexEntry = StoryIndexEntry | DocsIndexEntry;
 export type BaseIndexInput = {
   /** The file to import from e.g. the story file. */
   importPath: Path;
+  /** The raw path/package of the file that provides meta.component, if one exists */
+  rawComponentPath?: Path;
   /** The name of the export to import. */
   exportName: ExportName;
   /** The name of the entry, auto-generated from {@link exportName} if unspecified. */
@@ -107,8 +109,6 @@ export type BaseIndexInput = {
   metaId?: MetaId;
   /** Tags for filtering entries in Storybook and its tools. */
   tags?: Tag[];
-  /** Tags from the meta for filtering entries in Storybook and its tools. */
-  metaTags?: Tag[];
   /**
    * The id of the entry, auto-generated from {@link title}/{@link metaId} and {@link exportName} if unspecified.
    * If specified, the story in the CSF file _must_ have a matching id set at `parameters.__id`, to be correctly matched.

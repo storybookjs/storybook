@@ -47,6 +47,13 @@ export async function extractEslintInfo(packageManager: JsPackageManager): Promi
   return { hasEslint, isStorybookPluginInstalled, eslintConfigFile };
 }
 
+export const normalizeExtends = (existingExtends: any): string[] => {
+  if (!existingExtends) return [];
+  if (typeof existingExtends === 'string') return [existingExtends];
+  if (Array.isArray(existingExtends)) return existingExtends;
+  throw new Error(`Invalid eslint extends ${existingExtends}`);
+};
+
 export async function configureEslintPlugin(
   eslintFile: string | undefined,
   packageManager: JsPackageManager
@@ -55,38 +62,29 @@ export async function configureEslintPlugin(
     paddedLog(`Configuring Storybook ESLint plugin at ${eslintFile}`);
     if (eslintFile.endsWith('json')) {
       const eslintConfig = (await readJson(eslintFile)) as { extends?: string[] };
-      const existingConfigValue = Array.isArray(eslintConfig.extends)
-        ? eslintConfig.extends
-        : [eslintConfig.extends].filter(Boolean);
-      eslintConfig.extends = [
-        ...(existingConfigValue || []),
-        'plugin:storybook/recommended',
-      ] as string[];
+      const existingExtends = normalizeExtends(eslintConfig.extends).filter(Boolean);
+      eslintConfig.extends = [...existingExtends, 'plugin:storybook/recommended'] as string[];
 
       const eslintFileContents = await readFile(eslintFile, 'utf8');
       const spaces = detectIndent(eslintFileContents).amount || 2;
       await writeJson(eslintFile, eslintConfig, { spaces });
     } else {
       const eslint = await readConfig(eslintFile);
-      const extendsConfig = eslint.getFieldValue(['extends']) || [];
-      const existingConfigValue = Array.isArray(extendsConfig)
-        ? extendsConfig
-        : [extendsConfig].filter(Boolean);
-      eslint.setFieldValue(
-        ['extends'],
-        [...(existingConfigValue || []), 'plugin:storybook/recommended']
-      );
+      const existingExtends = normalizeExtends(eslint.getFieldValue(['extends'])).filter(Boolean);
+      eslint.setFieldValue(['extends'], [...existingExtends, 'plugin:storybook/recommended']);
 
       await writeConfig(eslint);
     }
   } else {
     paddedLog(`Configuring eslint-plugin-storybook in your package.json`);
     const packageJson = await packageManager.retrievePackageJson();
+    const existingExtends = normalizeExtends(packageJson.eslintConfig?.extends).filter(Boolean);
+
     await packageManager.writePackageJson({
       ...packageJson,
       eslintConfig: {
         ...packageJson.eslintConfig,
-        extends: [...(packageJson.eslintConfig?.extends || []), 'plugin:storybook/recommended'],
+        extends: [...existingExtends, 'plugin:storybook/recommended'],
       },
     });
   }

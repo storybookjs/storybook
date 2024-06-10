@@ -1,6 +1,5 @@
 /* eslint-disable import/no-extraneous-dependencies */
 import { defineConfig, mergeConfig } from 'vitest/config';
-import { sep, posix } from 'path';
 import { vitestCommonConfig } from '../../vitest.workspace';
 
 export default defineConfig(({ mode }) => {
@@ -8,8 +7,6 @@ export default defineConfig(({ mode }) => {
     test: {
       setupFiles: ['src/test-setup.ts'],
       environment: 'jsdom',
-
-      name: __dirname.split(sep).slice(-2).join(posix.sep),
     },
   });
 });

@@ -36,7 +36,7 @@ export const configureCss = (baseConfig: WebpackConfig, nextConfig: NextConfig):
         ],
         // We transform the "target.css" files from next.js into Javascript
         // for Next.js to support fonts, so it should be ignored by the css-loader.
-        exclude: /next\/.*\/target.css$/,
+        exclude: /next(\\|\/|\\\\).*(\\|\/|\\\\)target\.css$/,
       };
     }
   });

@@ -1,5 +1,4 @@
 import { describe, beforeEach, it, expect, vi } from 'vitest';
-import dedent from 'ts-dedent';
 import { Yarn2Proxy } from './Yarn2Proxy';
 
 describe('Yarn 2 Proxy', () => {
@@ -276,35 +275,65 @@ describe('Yarn 2 Proxy', () => {
   });
 
   describe('parseErrors', () => {
-    it('should parse yarn2 errors', () => {
+    it('should single yarn2 error message', () => {
       const YARN2_ERROR_SAMPLE = `
         ➤ YN0000: ┌ Resolution step
         ➤ YN0001: │ Error: react@npm:28.2.0: No candidates found
-            at ge (/Users/yannbraga/.cache/node/corepack/yarn/3.5.1/yarn.js:439:8124)
+            at ge (/Users/xyz/.cache/node/corepack/yarn/3.5.1/yarn.js:439:8124)
             at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
             at async Promise.allSettled (index 8)
-            at async io (/Users/yannbraga/.cache/node/corepack/yarn/3.5.1/yarn.js:390:10398)
+            at async io (/Users/xyz/.cache/node/corepack/yarn/3.5.1/yarn.js:390:10398)
         ➤ YN0000: └ Completed in 2s 369ms
         ➤ YN0000: Failed with errors in 2s 372ms
         ➤ YN0032: fsevents@npm:2.3.2: Implicit dependencies on node-gyp are discouraged
         ➤ YN0061: @npmcli/move-file@npm:2.0.1 is deprecated: This functionality has been moved to @npmcli/fs
       `;
 
-      expect(yarn2Proxy.parseErrorFromLogs(YARN2_ERROR_SAMPLE)).toEqual(
-        'YARN2 error YN0001 - EXCEPTION: react@npm:28.2.0: No candidates found'
+      expect(yarn2Proxy.parseErrorFromLogs(YARN2_ERROR_SAMPLE)).toMatchInlineSnapshot(
+        `
+        "YARN2 error
+        YN0001: EXCEPTION
+        -> Error: react@npm:28.2.0: No candidates found
+        "
+      `
       );
     });
 
-    it('should show unknown yarn2 error', () => {
-      const YARN2_ERROR_SAMPLE = dedent`
+    it('shows multiple yarn2 error messages', () => {
+      const YARN2_ERROR_SAMPLE = `
+        ➤ YN0000: · Yarn 4.1.1
         ➤ YN0000: ┌ Resolution step
-        ➤ YN0000: └ Completed in 2s 369ms
-        ➤ YN0000: Failed with errors in 2s 372ms
-        ➤ YN0032: fsevents@npm:2.3.2: Implicit dependencies on node-gyp are discouraged
-        ➤ YN0061: @npmcli/move-file@npm:2.0.1 is deprecated: This functionality has been moved to @npmcli/fs
+        ➤ YN0085: │ + @chromatic-com/storybook@npm:1.2.25, and 300 more.
+        ➤ YN0000: └ Completed in 0s 763ms
+        ➤ YN0000: ┌ Post-resolution validation
+        ➤ YN0002: │ before-storybook@workspace:. doesn't provide @testing-library/dom (p1ac37), requested by @testing-library/user-event.
+        ➤ YN0002: │ before-storybook@workspace:. doesn't provide eslint (p1f657), requested by eslint-plugin-storybook.
+        ➤ YN0086: │ Some peer dependencies are incorrectly met; run yarn explain peer-requirements <hash> for details, where <hash> is the six-letter p-prefixed code.
+        ➤ YN0000: └ Completed
+        ➤ YN0000: ┌ Fetch step
+        ➤ YN0000: └ Completed
+        ➤ YN0000: ┌ Link step
+        ➤ YN0014: │ Failed to import certain dependencies
+        ➤ YN0071: │ Cannot link @storybook/test into before-storybook@workspace:. dependency @testing-library/jest-dom@npm:6.4.2 [ae73b] conflicts with parent dependency @testing-library/jest-dom@npm:5.17.0
+        ➤ YN0071: │ Cannot link @storybook/test into before-storybook@workspace:. dependency @testing-library/user-event@npm:14.5.2 [ae73b] conflicts with parent dependency @testing-library/user-event@npm:13.5.0 [1b0ac]
+        ➤ YN0000: └ Completed in 0s 262ms
+        ➤ YN0000: · Failed with errors in 1s 301ms
       `;
 
-      expect(yarn2Proxy.parseErrorFromLogs(YARN2_ERROR_SAMPLE)).toEqual(`YARN2 error`);
+      expect(yarn2Proxy.parseErrorFromLogs(YARN2_ERROR_SAMPLE)).toMatchInlineSnapshot(
+        `
+        "YARN2 error
+        YN0014: YARN_IMPORT_FAILED
+        -> Failed to import certain dependencies
+
+        YN0071: NM_CANT_INSTALL_EXTERNAL_SOFT_LINK
+        -> Cannot link @storybook/test into before-storybook@workspace:. dependency @testing-library/jest-dom@npm:6.4.2 [ae73b] conflicts with parent dependency @testing-library/jest-dom@npm:5.17.0
+
+        YN0071: NM_CANT_INSTALL_EXTERNAL_SOFT_LINK
+        -> Cannot link @storybook/test into before-storybook@workspace:. dependency @testing-library/user-event@npm:14.5.2 [ae73b] conflicts with parent dependency @testing-library/user-event@npm:13.5.0 [1b0ac]
+        "
+      `
+      );
     });
   });
 });

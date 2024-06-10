@@ -61,6 +61,19 @@ yarn build --watch react core-server api addon-docs
 yarn task --task dev --template <your template> --start-from=publish
 ```
 
+### Making code changes when working on Angular-specific code
+
+If you are working on Angular-specific code, you will need to append `--prod` to the above mentioned commands to ensure that the Angular compiler is able to pick up the changes appropriately and doesn't fail. This will build all the packages in production mode.
+
+```sh
+yarn task --prod
+```
+
+```bash
+cd code
+yarn build --prod --watch angular core-server api addon-docs
+```
+
 ## Contributing to Storybook
 
 For further advice on how to contribute, please refer to our [NEW contributing guide on the Storybook website](https://storybook.js.org/docs/contribute).

@@ -141,6 +141,51 @@ When specifying a custom sorting function, the function behaves like a typical J
 
 See [the guide](../writing-stories/naming-components-and-hierarchy/#sorting-stories) for usage examples.
 
+### `test`
+
+Type:
+
+```ts
+{
+  clearMocks?: boolean;
+  mockReset?: boolean;
+  restoreMocks?: boolean;
+  dangerouslyIgnoreUnhandledErrors?: boolean;
+}
+```
+
+#### `clearMocks`
+
+Type: `boolean`
+
+Default: `false`
+
+[Similar to Vitest](https://vitest.dev/config/#clearmocks), it will call `.mockClear()` on all spies created with `fn()` from `@storybook/test` when a story unmounts. This will clear mock history, but not reset its implementation to the default one.
+
+#### `mockReset`
+
+Type: `boolean`
+
+Default: `false`
+
+[Similar to Vitest](https://vitest.dev/config/#mockreset), it will call `.mockReset()` on all spies created with `fn()` from `@storybook/test` when a story unmounts. This will clear mock history and reset its implementation to an empty function (will return `undefined`).
+
+#### `restoreMocks`
+
+Type: `boolean`
+
+Default: `true`
+
+[Similar to Vitest](https://vitest.dev/config/#restoremocks), it will call `.restoreMocks()` on all spies created with `fn()` from `@storybook/test` when a story unmounts. This will clear mock history and reset its implementation to the original one.
+
+#### `dangerouslyIgnoreUnhandledErrors`
+
+Type: `boolean`
+
+Default: `false`
+
+Unhandled errors might cause false positive assertions. Setting this to `true` will prevent the [play function](../writing-stories/play-function.md) from failing and showing a warning when unhandled errors are thrown during execution.
+
 ---
 
 ### Essential addons

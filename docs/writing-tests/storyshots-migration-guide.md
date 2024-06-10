@@ -26,7 +26,7 @@ This guide will teach you how to migrate your snapshot tests from the Storyshots
 
 Before you begin the migration process, ensure that you have:
 
-- A fully functional Storybook configured with one of the [suppported frameworks](../configure/frameworks.md) running the latest stable version (i.e., 7.6 or higher).
+- A fully functional Storybook configured with one of the [supported frameworks](../configure/frameworks.md) running the latest stable version (i.e., 7.6 or higher).
 - Familiarity with your current Storybook and its testing setup.
 
 ### With the test-runner

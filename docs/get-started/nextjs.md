@@ -131,7 +131,7 @@ This framework allows you to use Next.js's [next/image](https://nextjs.org/docs/
 [Local images](https://nextjs.org/docs/pages/building-your-application/optimizing/images#local-images) are supported.
 
 ```jsx
-// index.js
+// index.jsx
 import Image from 'next/image';
 import profilePic from '../public/me.png';
 
@@ -158,7 +158,7 @@ function Home() {
 [Remote images](https://nextjs.org/docs/pages/building-your-application/optimizing/images#remote-images) are also supported.
 
 ```jsx
-// index.js
+// index.jsx
 import Image from 'next/image';
 
 export default function Home() {
@@ -301,41 +301,6 @@ The default values on the stubbed router are as follows (see [globals](../essent
 ```ts
 // Default router
 const defaultRouter = {
-  push(...args) {
-    action('nextRouter.push')(...args);
-    return Promise.resolve(true);
-  },
-  replace(...args) {
-    action('nextRouter.replace')(...args);
-    return Promise.resolve(true);
-  },
-  reload(...args) {
-    action('nextRouter.reload')(...args);
-  },
-  back(...args) {
-    action('nextRouter.back')(...args);
-  },
-  forward() {
-    action('nextRouter.forward')();
-  },
-  prefetch(...args) {
-    action('nextRouter.prefetch')(...args);
-    return Promise.resolve();
-  },
-  beforePopState(...args) {
-    action('nextRouter.beforePopState')(...args);
-  },
-  events: {
-    on(...args) {
-      action('nextRouter.events.on')(...args);
-    },
-    off(...args) {
-      action('nextRouter.events.off')(...args);
-    },
-    emit(...args) {
-      action('nextRouter.events.emit')(...args);
-    },
-  },
   // The locale should be configured globally: https://storybook.js.org/docs/essentials/toolbars-and-globals#globals
   locale: globals?.locale,
   asPath: '/',
@@ -350,20 +315,33 @@ const defaultRouter = {
 };
 ```
 
-### Actions integration caveats
+Additionally, the [`router` object](https://nextjs.org/docs/pages/api-reference/functions/use-router#router-object) contains all of the original methods (such as `push()`, `replace()`, etc.) as mock functions that can be manipulated and asserted on using [regular mock APIs](https://vitest.dev/api/mock.html).
 
-If you override a function, you lose the automatic action tab integration and have to build it out yourself, which looks something like this (make sure you install the `@storybook/addon-actions` package):
+To override these defaults, you can use [parameters](../writing-stories/parameters.md) and [`beforeEach`](../writing-stories/mocking-modules.md#setting-up-and-cleaning-up):
 
-<!-- prettier-ignore-start -->
+```ts
+// .storybook/preview.ts
+import { Preview } from '@storybook/react';
+// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
+import { getRouter } from '@storybook/nextjs/router.mock';
 
-<CodeSnippets
-  paths={[
-    'react/nextjs-router-push-override-in-preview.js.mdx',
-    'react/nextjs-router-push-override-in-preview.ts.mdx'
-  ]}
-/>
-
-<!-- prettier-ignore-end -->
+const preview: Preview = {
+  parameters: {
+    nextjs: {
+      // 👇 Override the default router properties
+      router: {
+        basePath: '/app/',
+      },
+    },
+  },
+  async beforeEach() {
+    // 👇 Manipulate the default router method mocks
+    getRouter().push.mockImplementation(() => {
+      /* ... */
+    });
+  },
+};
+```
 
 ## Next.js navigation
 
@@ -493,43 +471,38 @@ The default values on the stubbed navigation context are as follows:
 ```ts
 // Default navigation context
 const defaultNavigationContext = {
-  push(...args) {
-    action('nextNavigation.push')(...args);
-  },
-  replace(...args) {
-    action('nextNavigation.replace')(...args);
-  },
-  forward(...args) {
-    action('nextNavigation.forward')(...args);
-  },
-  back(...args) {
-    action('nextNavigation.back')(...args);
-  },
-  prefetch(...args) {
-    action('nextNavigation.prefetch')(...args);
-  },
-  refresh: () => {
-    action('nextNavigation.refresh')();
-  },
   pathname: '/',
   query: {},
 };
 ```
 
-### Actions integration caveats
+Additionally, the [`router` object](https://nextjs.org/docs/app/api-reference/functions/use-router#userouter) contains all of the original methods (such as `push()`, `replace()`, etc.) as mock functions that can be manipulated and asserted on using [regular mock APIs](https://vitest.dev/api/mock.html).
 
-If you override a function, you lose the automatic action tab integration and have to build it out yourself, which looks something like this (make sure you install the `@storybook/addon-actions` package):
+To override these defaults, you can use [parameters](../writing-stories/parameters.md) and [`beforeEach`](../writing-stories/mocking-modules.md#setting-up-and-cleaning-up):
 
-<!-- prettier-ignore-start -->
+```ts
+// .storybook/preview.ts
+import { Preview } from '@storybook/react';
+// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
+import { getRouter } from '@storybook/nextjs/navigation.mock';
 
-<CodeSnippets
-  paths={[
-    'react/nextjs-navigation-push-override-in-preview.js.mdx',
-    'react/nextjs-navigation-push-override-in-preview.ts.mdx'
-  ]}
-/>
-
-<!-- prettier-ignore-end -->
+const preview: Preview = {
+  parameters: {
+    nextjs: {
+      // 👇 Override the default navigation properties
+      navigation: {
+        pathname: '/app/',
+      },
+    },
+  },
+  async beforeEach() {
+    // 👇 Manipulate the default navigation method mocks
+    getRouter().push.mockImplementation(() => {
+      /* ... */
+    });
+  },
+};
+```
 
 ## Next.js Head
 
@@ -618,7 +591,7 @@ export default HelloWorld;
 
 You can use your own babel config too. This is an example of how you can customize styled-jsx.
 
-```json
+```jsonc
 // .babelrc (or whatever config file you use)
 {
   "presets": [
@@ -645,7 +618,7 @@ This allows for cool things like zero-config Tailwind! (See [Next.js' example](h
 [Absolute imports](https://nextjs.org/docs/pages/building-your-application/configuring/absolute-imports-and-module-aliases#absolute-imports) from the root directory are supported.
 
 ```jsx
-// index.js
+// index.jsx
 // All good!
 import Button from 'components/button';
 // Also good!
@@ -670,6 +643,135 @@ import 'styles/globals.scss';
 
 // ...
 ```
+
+<Callout variant="warning">
+
+Absolute imports **cannot** be mocked in stories/tests. See the [Mocking modules](#mocking-modules) section for more information.
+
+</Callout>
+
+## Module aliases
+
+[Module aliases](https://nextjs.org/docs/app/building-your-application/configuring/absolute-imports-and-module-aliases#module-aliases) are also supported.
+
+```jsx
+// index.jsx
+// All good!
+import Button from '@/components/button';
+// Also good!
+import styles from '@/styles/HomePage.module.css';
+
+export default function HomePage() {
+  return (
+    <>
+      <h1 className={styles.title}>Hello World</h1>
+      <Button />
+    </>
+  );
+}
+```
+
+## Subpath imports
+
+As an alternative to [module aliases](#module-aliases), you can use [subpath imports](https://nodejs.org/api/packages.html#subpath-imports) to import modules. This follows Node package standards and has benefits when [mocking modules](#mocking-modules).
+
+To configure subpath imports, you define the `imports` property in your project's `package.json` file. This property maps the subpath to the actual file path. The example below configures subpath imports for all modules in the project:
+
+```jsonc
+// package.json
+{
+  "imports": {
+    "#*": ["./*", "./*.ts", "./*.tsx"]
+  }
+}
+```
+
+<Callout variant="info">
+
+Because subpath imports replace module aliases, you can remove the path aliases from your TypeScript configuration.
+
+</Callout>
+
+Which can then be used like this:
+
+```jsx
+// index.jsx
+import Button from '#components/button';
+import styles from '#styles/HomePage.module.css';
+
+export default function HomePage() {
+  return (
+    <>
+      <h1 className={styles.title}>Hello World</h1>
+      <Button />
+    </>
+  );
+}
+```
+
+## Mocking modules
+
+Components often depend on modules that are imported into the component file. These can be from external packages or internal to your project. When rendering those components in Storybook or testing them, you may want to [mock those modules](../writing-stories/mocking-modules.md) to control and assert their behavior.
+
+### Built-in mocked modules
+
+This framework provides mocks for many of Next.js' internal modules:
+
+1. [`@storybook/nextjs/cache.mock`](#storybooknextjscachemock)
+2. [`@storybook/nextjs/headers.mock`](#storybooknextjsheadersmock)
+3. [`@storybook/nextjs/navigation.mock`](#storybooknextjsnavigationmock)
+4. [`@storybook/nextjs/router.mock`](#storybooknextjsroutermock)
+
+### Mocking other modules
+
+How you mock other modules in Storybook depends on how you import the module into your component.
+
+With either approach, the first step is to [create a mock file](../writing-stories/mocking-modules.md#mock-files). Here's an example of a mock file for a module named `session`:
+
+<!-- prettier-ignore-start -->
+
+<CodeSnippets
+  paths={[
+    'common/storybook-test-mock-file-example.ts.mdx',
+  ]}
+/>
+
+<!-- prettier-ignore-end -->
+
+#### With subpath imports
+
+If you're using [subpath imports](#subpath-imports), you can adjust your configuration to apply [conditions](../writing-stories/mocking-modules.md#subpath-imports) so that the mocked module is used inside Storybook. The example below configures subpath imports for four internal modules, which are then mocked in Storybook:
+
+<!-- prettier-ignore-start -->
+
+<CodeSnippets
+  paths={[
+    'common/subpath-imports-config.json.mdx',
+  ]}
+/>
+
+<!-- prettier-ignore-end -->
+
+<Callout variant="info">
+
+Each subpath must begin with `#`, to differentiate it from a regular module path. The `#*` entry is a catch-all that maps all subpaths to the root directory.
+
+</Callout>
+
+#### With module aliases
+
+If you're using [module aliases](#module-aliases), you can add a Webpack alias to your Storybook configuration to point to the mock file.
+
+<!-- prettier-ignore-start -->
+
+<CodeSnippets
+  paths={[
+    'common/module-aliases-config.webpack.ts.mdx',
+    'common/module-aliases-config.webpack.js.mdx',
+  ]}
+/>
+
+<!-- prettier-ignore-end -->
 
 ## Runtime config
 
@@ -696,7 +798,7 @@ module.exports = {
 
 Calls to `getConfig` would return the following object when called within Storybook:
 
-```json
+```jsonc
 // Runtime config
 {
   "serverRuntimeConfig": {},
@@ -731,7 +833,7 @@ Below is an example of how to add SVGR support to Storybook with this framework.
 
 Storybook handles most [Typescript](https://www.typescriptlang.org/) configurations, but this framework adds additional support for Next.js's support for [Absolute Imports and Module path aliases](https://nextjs.org/docs/pages/building-your-application/configuring/absolute-imports-and-module-aliases). In short, it takes into account your `tsconfig.json`'s [baseUrl](https://www.typescriptlang.org/tsconfig#baseUrl) and [paths](https://www.typescriptlang.org/tsconfig#paths). Thus, a `tsconfig.json` like the one below would work out of the box.
 
-```json
+```jsonc
 // tsconfig.json
 {
   "compilerOptions": {
@@ -782,6 +884,12 @@ Note that wrapping your server components in Suspense does not help if your serv
 If your server components access data via the network, we recommend using the [MSW Storybook Addon](https://storybook.js.org/addons/msw-storybook-addon) to mock network requests.
 
 In the future we will provide better mocking support in Storybook and support for [Server Actions](https://nextjs.org/docs/app/api-reference/functions/server-actions).
+
+<!-- ## Portable stories
+
+You can test your stories in a Jest environment by using the [portable stories](../api/portable-stories-jest.md) API.
+
+When using portable stories with Next.js, you need to mock the Next.js modules on which your components depend. You can use the [`@storybook/nextjs/export-mocks` module](#storybooknextjsexport-mocks) to generate the aliases needed to set up portable stories in a Jest environment. This is needed because, to replicate Next.js configuration, Storybook sets up aliases in Webpack to make testing and developing your components easier. If you make use of the advanced functionality like the built-in mocks for common Next.js modules, you need to set up this aliasing in your Jest environment as well. -->
 
 ## Notes for Yarn v2 and v3 users
 
@@ -843,7 +951,7 @@ Make sure you are treating image imports the same way you treat them when using 
 
 Before using this framework, image imports would import the raw path to the image (e.g. `'static/media/stories/assets/logo.svg'`). Now image imports work the "Next.js way", meaning that you now get an object when importing an image. For example:
 
-```json
+```jsonc
 // Image import object
 {
   "src": "static/media/stories/assets/logo.svg",
@@ -865,7 +973,178 @@ You might get this if you're using Yarn v2 or v3. See [Notes for Yarn v2 and v3 
 
 The `@storybook/nextjs` package abstracts the Webpack 5 builder and provides all the necessary Webpack configuration needed (and used internally) by Next.js. Webpack is currently the official builder in Next.js, and Next.js does not support Vite, therefore it is not possible to use Vite with `@storybook/nextjs`. You can use `@storybook/react-vite` framework instead, but at the cost of having a degraded experience, and we won't be able to provide you official support.
 
+### Error: You are importing avif images, but you don't have sharp installed. You have to install sharp in order to use image optimization features in Next.js.
+
+`sharp` is a dependency of Next.js's image optimization feature. If you see this error, you need to install `sharp` in your project.
+
+```bash
+npm install sharp
+```
+
+```bash
+yarn add sharp
+```
+
+```bash
+pnpm add sharp
+```
+
+You can refer to the [Install `sharp` to Use Built-In Image Optimization](https://nextjs.org/docs/messages/install-sharp) in the Next.js documentation for more information.
+
 ## API
+
+### Modules
+
+The `@storybook/nextjs` package exports several modules that enable you to [mock](#mocking-modules) Next.js's internal behavior.
+
+#### `@storybook/nextjs/export-mocks`
+
+Type: `{ getPackageAliases: ({ useESM?: boolean }) => void }`
+
+`getPackageAliases` is a helper for generating the aliases needed to set up [portable stories](#portable-stories).
+
+```ts
+// jest.config.ts
+import type { Config } from 'jest';
+import nextJest from 'next/jest.js';
+// 👇 Import the utility function
+import { getPackageAliases } from '@storybook/nextjs/export-mocks';
+
+const createJestConfig = nextJest({
+  // Provide the path to your Next.js app to load next.config.js and .env files in your test environment
+  dir: './',
+});
+
+const config: Config = {
+  testEnvironment: 'jsdom',
+  // ... rest of Jest config
+  moduleNameMapper: {
+    ...getPackageAliases(), // 👈 Add the utility as mapped module names
+  },
+};
+
+export default createJestConfig(config);
+```
+
+#### `@storybook/nextjs/cache.mock`
+
+Type: `typeof import('next/cache')`
+
+This module exports mocked implementations of the `next/cache` module's exports. You can use it to create your own mock implementations or assert on mock calls in a story's [play function](../writing-stories/play-function.md).
+
+<!-- prettier-ignore-start -->
+
+<CodeSnippets
+  paths={[
+    'react/nextjs-cache-mock.js.mdx',
+    'react/nextjs-cache-mock.ts.mdx'
+  ]}
+/>
+
+<!-- prettier-ignore-end -->
+
+#### `@storybook/nextjs/headers.mock`
+
+Type: [`cookies`](https://nextjs.org/docs/app/api-reference/functions/cookies#cookiessetname-value-options), [`headers`](https://nextjs.org/docs/app/api-reference/functions/headers) and [`draftMode`](https://nextjs.org/docs/app/api-reference/functions/draft-mode) from Next.js
+
+This module exports _writable_ mocked implementations of the `next/headers` module's exports. You can use it to set up cookies or headers that are read in your story, and to later assert that they have been called.
+
+Next.js's default [`headers()`](https://nextjs.org/docs/app/api-reference/functions/headers) export is read-only, but this module exposes methods allowing you to write to the headers:
+
+- **`headers().append(name: string, value: string)`**: Appends the value to the header if it exists already.
+- **`headers().delete(name: string)`**: Deletes the header
+- **`headers().set(name: string, value: string)`**: Sets the header to the value provided.
+
+For cookies, you can use the existing API to write them. E.g., `cookies().set('firstName', 'Jane')`.
+
+Because `headers()`, `cookies()` and their sub-functions are all mocks you can use any [mock utilities](https://vitest.dev/api/mock.html) in your stories, like `headers().getAll.mock.calls`.
+
+<!-- prettier-ignore-start -->
+
+<CodeSnippets
+  paths={[
+    'react/nextjs-headers-mock.js.mdx',
+    'react/nextjs-headers-mock.ts.mdx'
+  ]}
+/>
+
+<!-- prettier-ignore-end -->
+
+#### `@storybook/nextjs/navigation.mock`
+
+Type: `typeof import('next/navigation') & getRouter: () => ReturnType<typeof import('next/navigation')['useRouter']>`
+
+This module exports mocked implementations of the `next/navigation` module's exports. It also exports a `getRouter` function that returns a mocked version of [Next.js's `router` object from `useRouter`](https://nextjs.org/docs/app/api-reference/functions/use-router#userouter), allowing the properties to be manipulated and asserted on. You can use it mock implementations or assert on mock calls in a story's [play function](../writing-stories/play-function.md).
+
+<!-- prettier-ignore-start -->
+
+<CodeSnippets
+  paths={[
+    'react/nextjs-navigation-mock.js.mdx',
+    'react/nextjs-navigation-mock.ts.mdx'
+  ]}
+/>
+
+<!-- prettier-ignore-end -->
+
+#### `@storybook/nextjs/router.mock`
+
+Type: `typeof import('next/router') & getRouter: () => ReturnType<typeof import('next/router')['useRouter']>`
+
+This module exports mocked implementations of the `next/router` module's exports. It also exports a `getRouter` function that returns a mocked version of [Next.js's `router` object from `useRouter`](https://nextjs.org/docs/pages/api-reference/functions/use-router#router-object), allowing the properties to be manipulated and asserted on. You can use it mock implementations or assert on mock calls in a story's [play function](../writing-stories/play-function.md).
+
+<!-- prettier-ignore-start -->
+
+<CodeSnippets
+  paths={[
+    'react/nextjs-router-mock.js.mdx',
+    'react/nextjs-router-mock.ts.mdx'
+  ]}
+/>
+
+<!-- prettier-ignore-end -->
+
+### Options
+
+You can pass an options object for additional configuration if needed:
+
+```js
+// .storybook/main.js
+import * as path from 'path';
+
+export default {
+  // ...
+  framework: {
+    name: '@storybook/nextjs',
+    options: {
+      image: {
+        loading: 'eager',
+      },
+      nextConfigPath: path.resolve(__dirname, '../next.config.js'),
+    },
+  },
+};
+```
+
+The available options are:
+
+#### `builder`
+
+Type: `Record<string, any>`
+
+Configure options for the [framework's builder](../api/main-config-framework.md#optionsbuilder). For Next.js, available options can be found in the [Webpack builder docs](../builders/webpack.md).
+
+#### `image`
+
+Type: `object`
+
+Props to pass to every instance of `next/image`. See [next/image docs](https://nextjs.org/docs/pages/api-reference/components/image) for more details.
+
+#### `nextConfigPath`
+
+Type: `string`
+
+The absolute path to the `next.config.js` file. This is necessary if you have a custom `next.config.js` file that is not in the root directory of your project.
 
 ### Parameters
 
@@ -915,48 +1194,6 @@ Type:
 ```
 
 The router object that is passed to the `next/router` context. See [Next.js's router docs](https://nextjs.org/docs/pages/building-your-application/routing) for more details.
-
-### Options
-
-You can pass an options object for additional configuration if needed:
-
-```js
-// .storybook/main.js
-import * as path from 'path';
-
-export default {
-  // ...
-  framework: {
-    name: '@storybook/nextjs',
-    options: {
-      image: {
-        loading: 'eager',
-      },
-      nextConfigPath: path.resolve(__dirname, '../next.config.js'),
-    },
-  },
-};
-```
-
-The available options are:
-
-#### `builder`
-
-Type: `Record<string, any>`
-
-Configure options for the [framework's builder](../api/main-config-framework.md#optionsbuilder). For Next.js, available options can be found in the [Webpack builder docs](../builders/webpack.md).
-
-#### `image`
-
-Type: `object`
-
-Props to pass to every instance of `next/image`. See [next/image docs](https://nextjs.org/docs/pages/api-reference/components/image) for more details.
-
-#### `nextConfigPath`
-
-Type: `string`
-
-The absolute path to the `next.config.js` file. This is necessary if you have a custom `next.config.js` file that is not in the root directory of your project.
 
 <!-- End supported renderers -->
 

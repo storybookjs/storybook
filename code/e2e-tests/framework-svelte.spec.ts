@@ -41,7 +41,7 @@ test.describe('Svelte', () => {
     await showCodeButton.click();
     const sourceCode = root.locator('pre.prismjs');
     const expectedSource = '<ButtonJavaScript primary/>';
-    await expect(sourceCode.textContent()).resolves.toContain(expectedSource);
+    await expect(sourceCode).toHaveText(expectedSource);
   });
 
   test('Decorators runs only once', async ({ page }) => {

@@ -200,7 +200,7 @@ const extractDefaultValueFromComments = (property: Property, value: any) => {
 
 const extractDefaultValue = (property: Property) => {
   try {
-    let value: string | boolean = property.defaultValue?.replace(/^'(.*)'$/, '$1');
+    let value: string = property.defaultValue?.replace(/^'(.*)'$/, '$1');
     value = castDefaultValue(property, value);
 
     if (value == null && property.jsdoctags?.length > 0) {

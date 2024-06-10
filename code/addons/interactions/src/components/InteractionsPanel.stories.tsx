@@ -120,11 +120,11 @@ export const Failed: Story = {
   },
 };
 
-export const NoInteractions: Story = {
-  args: {
-    interactions: [],
-  },
-};
+// export const NoInteractions: Story = {
+//   args: {
+//     interactions: [],
+//   },
+// };
 
 export const CaughtException: Story = {
   args: {

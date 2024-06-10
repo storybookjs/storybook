@@ -46,22 +46,24 @@ export class WebView implements View<HTMLElement> {
 
   constructor() {
     // Special code for testing situations
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    const { __SPECIAL_TEST_PARAMETER__ } = qs.parse(document.location.search, {
-      ignoreQueryPrefix: true,
-    });
-    switch (__SPECIAL_TEST_PARAMETER__) {
-      case 'preparing-story': {
-        this.showPreparingStory();
-        this.testing = true;
-        break;
+    if (typeof document !== 'undefined') {
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      const { __SPECIAL_TEST_PARAMETER__ } = qs.parse(document.location.search, {
+        ignoreQueryPrefix: true,
+      });
+      switch (__SPECIAL_TEST_PARAMETER__) {
+        case 'preparing-story': {
+          this.showPreparingStory();
+          this.testing = true;
+          break;
+        }
+        case 'preparing-docs': {
+          this.showPreparingDocs();
+          this.testing = true;
+          break;
+        }
+        default: // pass;
       }
-      case 'preparing-docs': {
-        this.showPreparingDocs();
-        this.testing = true;
-        break;
-      }
-      default: // pass;
     }
   }
 
@@ -114,8 +116,10 @@ export class WebView implements View<HTMLElement> {
   checkIfLayoutExists(layout: keyof typeof layoutClassMap) {
     if (!layoutClassMap[layout]) {
       logger.warn(
-        dedent`The desired layout: ${layout} is not a valid option.
-         The possible options are: ${Object.keys(layoutClassMap).join(', ')}, none.`
+        dedent`
+          The desired layout: ${layout} is not a valid option.
+          The possible options are: ${Object.keys(layoutClassMap).join(', ')}, none.
+        `
       );
     }
   }

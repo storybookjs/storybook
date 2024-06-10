@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-links",
-  "version": "8.1.0-alpha.1",
+  "version": "8.2.0-alpha.6",
   "description": "Link stories together to build demos and prototypes with your UI components",
   "keywords": [
     "addon",
@@ -25,16 +25,20 @@
     ".": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./react": {
       "types": "./dist/react/index.d.ts",
-      "require": "./dist/react/index.js",
-      "import": "./dist/react/index.mjs"
+      "import": "./dist/react/index.mjs",
+      "require": "./dist/react/index.js"
+    },
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "import": "./dist/preview.mjs",
+      "require": "./dist/preview.js"
     },
     "./manager": "./dist/manager.js",
-    "./preview": "./dist/preview.js",
     "./register": "./dist/manager.js",
     "./package.json": "./package.json"
   },
@@ -63,7 +67,7 @@
     "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
-    "@storybook/csf": "^0.1.2",
+    "@storybook/csf": "^0.1.7",
     "@storybook/global": "^5.0.0",
     "ts-dedent": "^2.0.0"
   },
@@ -78,7 +82,7 @@
     "typescript": "^5.3.2"
   },
   "peerDependencies": {
-    "react": "^16.8.0 || ^17.0.0 || ^18.0.0"
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta"
   },
   "peerDependenciesMeta": {
     "react": {

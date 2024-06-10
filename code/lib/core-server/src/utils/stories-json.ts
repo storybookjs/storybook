@@ -1,3 +1,4 @@
+import { basename } from 'path';
 import type { Router, Request, Response } from 'express';
 import { writeJSON } from 'fs-extra';
 
@@ -7,6 +8,7 @@ import debounce from 'lodash/debounce.js';
 import { STORY_INDEX_INVALIDATED } from '@storybook/core-events';
 import type { StoryIndexGenerator } from './StoryIndexGenerator';
 import { watchStorySpecifiers } from './watch-story-specifiers';
+import { watchConfig } from './watchConfig';
 import type { ServerChannel } from './get-server-channel';
 
 export const DEBOUNCE = 100;
@@ -25,6 +27,7 @@ export function useStoriesJson({
   router,
   initializedStoryIndexGenerator,
   workingDir = process.cwd(),
+  configDir,
   serverChannel,
   normalizedStories,
 }: {
@@ -32,6 +35,7 @@ export function useStoriesJson({
   initializedStoryIndexGenerator: Promise<StoryIndexGenerator>;
   serverChannel: ServerChannel;
   workingDir?: string;
+  configDir?: string;
   normalizedStories: NormalizedStoriesSpecifier[];
 }) {
   const maybeInvalidate = debounce(() => serverChannel.emit(STORY_INDEX_INVALIDATED), DEBOUNCE, {
@@ -42,6 +46,15 @@ export function useStoriesJson({
     generator.invalidate(specifier, path, removed);
     maybeInvalidate();
   });
+  if (configDir) {
+    watchConfig(configDir, async (filePath) => {
+      if (basename(filePath).startsWith('preview')) {
+        const generator = await initializedStoryIndexGenerator;
+        generator.invalidateAll();
+        maybeInvalidate();
+      }
+    });
+  }
 
   router.use('/index.json', async (req: Request, res: Response) => {
     try {

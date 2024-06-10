@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import boxen from 'boxen';
 import dedent from 'ts-dedent';
-import type { InstallationMetadata } from '@storybook/core-common';
+import { type InstallationMetadata } from '@storybook/core-common';
 import type { FixSummary } from '../types';
 import { FixStatus } from '../types';
 
@@ -63,7 +63,7 @@ export function getMigrationSummary({
   messages.push(getGlossaryMessages(fixSummary, fixResults, logFile).join(messageDivider));
 
   messages.push(dedent`If you'd like to run the migrations again, you can do so by running '${chalk.cyan(
-    'npx storybook@next automigrate'
+    'npx storybook automigrate'
   )}'
     
     The automigrations try to migrate common patterns in your project, but might not contain everything needed to migrate to the latest version of Storybook.

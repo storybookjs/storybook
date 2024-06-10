@@ -58,6 +58,17 @@ command('init')
   .option('-y --yes', 'Answer yes to all prompts')
   .option('-b --builder <webpack5 | vite>', 'Builder library')
   .option('-l --linkable', 'Prepare installation for link (contributor helper)')
+  // due to how Commander handles default values and negated options, we have to elevate the default into Commander, and we have to specify `--dev`
+  // alongside `--no-dev` even if we are unlikely to directly use `--dev`. https://github.com/tj/commander.js/issues/2068#issuecomment-1804524585
+  .option(
+    '--dev',
+    'Launch the development server after completing initialization. Enabled by default',
+    process.env.CI !== 'true' && process.env.IN_STORYBOOK_SANDBOX !== 'true'
+  )
+  .option(
+    '--no-dev',
+    'Complete the initialization of Storybook without launching the Storybook development server'
+  )
   .action((options: CommandOptions) => {
     initiate(options).catch(() => process.exit(1));
   });
@@ -68,6 +79,7 @@ command('add <addon>')
     '--package-manager <npm|pnpm|yarn1|yarn2>',
     'Force package manager for installing dependencies'
   )
+  .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
   .option('-s --skip-postinstall', 'Skip package specific postinstall config modifications')
   .action((addonName: string, options: any) => add(addonName, options));
 
@@ -126,6 +138,7 @@ command('migrate [migration]')
   .option('-l --list', 'List available migrations')
   .option('-g --glob <glob>', 'Glob for files upon which to apply the migration', '**/*.js')
   .option('-p --parser <babel | babylon | flow | ts | tsx>', 'jscodeshift parser')
+  .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
   .option(
     '-n --dry-run',
     'Dry run: verify the migration exists and show the files to which it will be applied'
@@ -142,7 +155,6 @@ command('migrate [migration]')
       list,
       rename,
       parser,
-      logger: consoleLogger,
     }).catch((err) => {
       logger.error(err);
       process.exit(1);

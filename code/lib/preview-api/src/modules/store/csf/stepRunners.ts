@@ -3,7 +3,7 @@ import type { Renderer, StepRunner } from '@storybook/types';
 /**
  * Compose step runners to create a single step runner that applies each step runner in order.
  *
- * A step runner is a a function that takes a defined step: `step('label', () => { ... })`
+ * A step runner is a function that takes a defined step: `step('label', () => { ... })`
  * and runs it. The prototypical example is from `@storybook/addon-interactions` where the
  * step runner will decorate all instrumented code inside the step with information about the
  * label.

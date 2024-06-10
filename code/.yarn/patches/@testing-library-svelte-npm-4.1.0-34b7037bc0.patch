@@ -1,0 +1,97 @@
+diff --git a/package.json b/package.json
+index 195dac9ee7d42fdb76bb22dc37580fa0bffd4680..980ad42f41a06023f9f7e370fd382c9217c24be5 100644
+--- a/package.json
++++ b/package.json
+@@ -55,7 +55,7 @@
+     "contributors:generate": "all-contributors generate"
+   },
+   "peerDependencies": {
+-    "svelte": "^3 || ^4"
++    "svelte": "^3 || ^4 || ^5"
+   },
+   "dependencies": {
+     "@testing-library/dom": "^9.3.1"
+diff --git a/src/pure.js b/src/pure.js
+index 6d4943412448c9f310f007ca7dab9d04cef90d0d..d62f4aebeb1b23ccc3c3d82aadd67075c6507c0e 100644
+--- a/src/pure.js
++++ b/src/pure.js
+@@ -3,7 +3,7 @@ import {
+   getQueriesForElement,
+   prettyDOM
+ } from '@testing-library/dom'
+-import { tick } from 'svelte'
++import { tick, mount, unmount } from 'svelte'
+ 
+ const containerCache = new Set()
+ const componentCache = new Set()
+@@ -54,40 +54,34 @@ const render = (
+     return { props: options }
+   }
+ 
+-  let component = new ComponentConstructor({
++  let component = mount(ComponentConstructor, {
+     target,
+-    ...checkProps(options)
++    ...checkProps(options),
++    ondestroy: () => componentCache.delete(component)
+   })
+ 
+   containerCache.add({ container, target, component })
+   componentCache.add(component)
+ 
+-  component.$$.on_destroy.push(() => {
+-    componentCache.delete(component)
+-  })
+-
+   return {
+     container,
+     component,
+     debug: (el = container) => console.log(prettyDOM(el)),
+     rerender: (options) => {
+-      if (componentCache.has(component)) component.$destroy()
++      if (componentCache.has(component)) unmount(component)
+ 
+       // eslint-disable-next-line no-new
+       component = new ComponentConstructor({
+         target,
+-        ...checkProps(options)
++        ...checkProps(options),
++        ondestroy: () => componentCache.delete(component)
+       })
+ 
+       containerCache.add({ container, target, component })
+       componentCache.add(component)
+-
+-      component.$$.on_destroy.push(() => {
+-        componentCache.delete(component)
+-      })
+     },
+     unmount: () => {
+-      if (componentCache.has(component)) component.$destroy()
++      if (componentCache.has(component)) unmount(component)
+     },
+     ...getQueriesForElement(container, queries)
+   }
+@@ -96,7 +90,7 @@ const render = (
+ const cleanupAtContainer = (cached) => {
+   const { target, component } = cached
+ 
+-  if (componentCache.has(component)) component.$destroy()
++  if (componentCache.has(component)) unmount(component)
+ 
+   if (target.parentNode === document.body) {
+     document.body.removeChild(target)
+@@ -109,9 +103,10 @@ const cleanup = () => {
+   Array.from(containerCache.keys()).forEach(cleanupAtContainer)
+ }
+ 
+-const act = async (fn) => {
+-  if (fn) {
+-    await fn()
++const act = (fn) => {
++  const value = fn && fn()
++  if (value !== undefined && typeof value.then === 'function') {
++    return value.then(() => tick())
+   }
+   return tick()
+ }

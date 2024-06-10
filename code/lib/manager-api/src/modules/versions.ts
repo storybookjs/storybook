@@ -109,7 +109,7 @@ export const init: ModuleFn = ({ store }) => {
       }
 
       if (renderer && typeof global.STORYBOOK_RENDERER !== 'undefined') {
-        const rendererName = (global.STORYBOOK_RENDERER as string).split('/').pop()?.toLowerCase();
+        const rendererName = global.STORYBOOK_RENDERER as string;
 
         if (rendererName) {
           url += `?renderer=${normalizeRendererName(rendererName)}`;

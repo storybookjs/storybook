@@ -4,7 +4,7 @@ import { mdxgfm } from './mdx-gfm';
 
 vi.mock('globby', () => ({
   __esModule: true,
-  default: vi.fn().mockResolvedValue(['a/fake/file.mdx']),
+  globby: vi.fn().mockResolvedValue(['a/fake/file.mdx']),
 }));
 
 const check = async ({

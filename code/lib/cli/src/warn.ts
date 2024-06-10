@@ -1,13 +1,18 @@
-import globby from 'globby';
 import { logger } from '@storybook/node-logger';
 
 interface Options {
   hasTSDependency: boolean;
 }
 
-export const warn = ({ hasTSDependency }: Options) => {
+export const warn = async ({ hasTSDependency }: Options) => {
   if (!hasTSDependency) {
-    const hasTSFiles = !!globby.sync(['**/*.@(ts|tsx)', '!**/node_modules', '!**/*.d.ts']).length;
+    // Dynamically import globby because it is a pure ESM module
+    const { globby } = await import('globby');
+
+    const files = await globby(['**/*.@(ts|tsx)', '!**/node_modules', '!**/*.d.ts']);
+
+    const hasTSFiles = !!files.length;
+
     if (hasTSFiles) {
       logger.warn(
         'We have detected TypeScript files in your project directory, however TypeScript is not listed as a project dependency.'

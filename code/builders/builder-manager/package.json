@@ -1,6 +1,6 @@
 {
   "name": "@storybook/builder-manager",
-  "version": "8.1.0-alpha.1",
+  "version": "8.2.0-alpha.6",
   "description": "Storybook manager builder",
   "keywords": [
     "storybook"
@@ -23,8 +23,8 @@
     ".": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./package.json": "./package.json"
   },
@@ -51,10 +51,10 @@
     "@types/ejs": "^3.1.1",
     "@yarnpkg/esbuild-plugin-pnp": "^3.0.0-rc.10",
     "browser-assert": "^1.2.1",
-    "ejs": "^3.1.8",
+    "ejs": "^3.1.10",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0",
     "esbuild-plugin-alias": "^0.2.1",
-    "express": "^4.17.3",
+    "express": "^4.19.2",
     "fs-extra": "^11.1.0",
     "process": "^0.11.10",
     "util": "^0.12.4"

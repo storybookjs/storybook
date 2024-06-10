@@ -4,9 +4,10 @@ import type { Options } from '@storybook/types';
 import type { NextConfig } from 'next';
 import path from 'path';
 import loadJsConfig from 'next/dist/build/load-jsconfig';
+import type { Configuration as WebpackConfig } from 'webpack';
 
 export const configureSWCLoader = async (
-  baseConfig: any,
+  baseConfig: WebpackConfig,
   options: Options,
   nextConfig: NextConfig
 ) => {
@@ -18,33 +19,37 @@ export const configureSWCLoader = async (
 
   const { jsConfig } = await loadJsConfig(dir, nextConfig as any);
 
-  baseConfig.module.rules = [
-    ...baseConfig.module.rules,
-    {
-      test: /\.((c|m)?(j|t)sx?)$/,
-      include: [getProjectRoot()],
-      exclude: [/(node_modules)/, ...Object.keys(virtualModules)],
-      enforce: 'post',
-      use: {
-        // we use our own patch because we need to remove tracing from the original code
-        // which is not possible otherwise
-        loader: require.resolve('./swc/next-swc-loader-patch.js'),
-        options: {
-          isServer: false,
-          rootDir: dir,
-          pagesDir: `${dir}/pages`,
-          appDir: `${dir}/apps`,
-          hasReactRefresh: isDevelopment,
-          jsConfig,
-          nextConfig,
-          supportedBrowsers: require('next/dist/build/utils').getSupportedBrowsers(
-            dir,
-            isDevelopment
-          ),
-          swcCacheDir: path.join(dir, nextConfig?.distDir ?? '.next', 'cache', 'swc'),
-          bundleTarget: 'default',
-        },
+  const rawRule = baseConfig.module?.rules?.find(
+    (rule) => typeof rule === 'object' && rule?.resourceQuery?.toString() === '/raw/'
+  );
+
+  if (rawRule && typeof rawRule === 'object') {
+    rawRule.exclude = /^__barrel_optimize__/;
+  }
+
+  baseConfig.module?.rules?.push({
+    test: /\.((c|m)?(j|t)sx?)$/,
+    include: [getProjectRoot()],
+    exclude: [/(node_modules)/, ...Object.keys(virtualModules)],
+    use: {
+      // we use our own patch because we need to remove tracing from the original code
+      // which is not possible otherwise
+      loader: require.resolve('./swc/next-swc-loader-patch.js'),
+      options: {
+        isServer: false,
+        rootDir: dir,
+        pagesDir: `${dir}/pages`,
+        appDir: `${dir}/apps`,
+        hasReactRefresh: isDevelopment,
+        jsConfig,
+        nextConfig,
+        supportedBrowsers: require('next/dist/build/utils').getSupportedBrowsers(
+          dir,
+          isDevelopment
+        ),
+        swcCacheDir: path.join(dir, nextConfig?.distDir ?? '.next', 'cache', 'swc'),
+        bundleTarget: 'default',
       },
     },
-  ];
+  });
 };

@@ -8,26 +8,40 @@ import type { ControlProps, OptionsMultiSelection, NormalizedOptionsConfig } fro
 import { selectedKeys, selectedValues } from './helpers';
 import { getControlId } from '../helpers';
 
-const Wrapper = styled.div<{ isInline: boolean }>(({ isInline }) =>
-  isInline
-    ? {
-        display: 'flex',
-        flexWrap: 'wrap',
-        alignItems: 'flex-start',
-
-        label: {
-          display: 'inline-flex',
-          marginRight: 15,
-        },
-      }
-    : {
-        label: {
+const Wrapper = styled.div<{ isInline: boolean }>(
+  ({ isInline }) =>
+    isInline
+      ? {
           display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'flex-start',
+
+          label: {
+            display: 'inline-flex',
+            marginRight: 15,
+          },
+        }
+      : {
+          label: {
+            display: 'flex',
+          },
         },
-      }
+  (props) => {
+    if (props['aria-readonly'] === 'true') {
+      return {
+        input: {
+          cursor: 'not-allowed',
+        },
+      };
+    }
+  }
 );
 
-const Text = styled.span({});
+const Text = styled.span({
+  '[aria-readonly=true] &': {
+    opacity: 0.5,
+  },
+});
 
 const Label = styled.label({
   lineHeight: '20px',
@@ -52,6 +66,7 @@ export const CheckboxControl: FC<CheckboxProps> = ({
   value,
   onChange,
   isInline,
+  argType,
 }) => {
   if (!options) {
     logger.warn(`Checkbox with no options: ${name}`);
@@ -60,6 +75,8 @@ export const CheckboxControl: FC<CheckboxProps> = ({
 
   const initial = selectedKeys(value, options);
   const [selected, setSelected] = useState(initial);
+
+  const readonly = !!argType?.table?.readonly;
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const option = (e.target as HTMLInputElement).value;
@@ -80,13 +97,14 @@ export const CheckboxControl: FC<CheckboxProps> = ({
   const controlId = getControlId(name);
 
   return (
-    <Wrapper isInline={isInline}>
+    <Wrapper aria-readonly={readonly} isInline={isInline}>
       {Object.keys(options).map((key, index) => {
         const id = `${controlId}-${index}`;
         return (
           <Label key={id} htmlFor={id}>
             <input
               type="checkbox"
+              disabled={readonly}
               id={id}
               name={id}
               value={key}

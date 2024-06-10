@@ -2,7 +2,6 @@ import chalk from 'chalk';
 import { dedent } from 'ts-dedent';
 import { basename } from 'path';
 import fse from 'fs-extra';
-import globby from 'globby';
 import type { Fix } from '../types';
 
 const MDX1_STYLE_START = /<style>{`/g;
@@ -48,6 +47,9 @@ export const mdx1to3: Fix<Mdx1to3Options> = {
   versionRange: ['<7.0.0', '>=8.0.0-alpha.0'],
 
   async check() {
+    // Dynamically import globby because it is a pure ESM module
+    const { globby } = await import('globby');
+
     const storiesMdxFiles = await globby('./!(node_modules)**/*.(story|stories).mdx');
     return storiesMdxFiles.length ? { storiesMdxFiles } : null;
   },

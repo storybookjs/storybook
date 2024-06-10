@@ -102,8 +102,8 @@ const runFixWrapper = async ({
 describe('runFixes', () => {
   beforeEach(() => {
     retrievePackageJson.mockResolvedValue({
-      depedencies: [],
-      devDepedencies: [],
+      dependencies: [],
+      devDependencies: [],
     });
     getPackageVersion.mockImplementation((packageName) => {
       return beforeVersion;

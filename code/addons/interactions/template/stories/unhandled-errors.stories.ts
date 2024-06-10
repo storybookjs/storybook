@@ -11,6 +11,7 @@ export default {
   },
   parameters: {
     actions: { argTypesRegex: '^on[A-Z].*' },
+    chromatic: { disable: true },
   },
 };
 

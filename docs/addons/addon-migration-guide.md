@@ -41,7 +41,7 @@ To remove your addon's peer dependency on React and reduce its install size, do 
 1. Move `react`, `react-dom`, and the globalized Storybook packages from `peerDependencies` to `devDependencies`
 2. Add the list of globalized packages to the `externals` property in the `tsup` configuration to ensure they are not part of the bundle.
 
-For an example, see [the updates we've made to the Addon Kit](https://github.com/storybookjs/addon-kit/compare/79282986..971e1bb). These changes are optional but recommended.
+For an example, see [the updates we've made to the Addon Kit](https://github.com/storybookjs/addon-kit/compare/79282986..fa7ee7c). These changes are optional but recommended.
 
 <Callout variant="info">
 
@@ -85,13 +85,13 @@ As a workaround, update your documentation to tell users to opt-in to Babel supp
 
 The Addon Kit [repository](https://github.com/storybookjs/addon-kit) has already been updated to support Storybook 8.0, and you can use it as a reference for your migration. You'll see the changes mentioned in this guide, including ESM support via the `type: module` configuration. As an addon maintainer, we encourage you to update your addon to include them. It simplifies the setup and makes it easier for users to use your addon with the latest version of Storybook. If you choose to follow along with the ESM migration, we've prepared an abbreviated list of changes below.
 
-- [`package.json`](https://github.com/storybookjs/addon-kit/compare/79282986..cf0875f#diff-7ae45ad102eab3b6d7e7896acd08c427a9b25b346470d7bc6507b6481575d519) for dependency management, ESM support and updates to the addon's entry points.
-- [`tsup.config.ts`](https://github.com/storybookjs/addon-kit/compare/79282986..cf0875f#diff-8fed899bdbc24789a7bb4973574e624ed6207c6ce572338bc3c3e117672b2a2) for bundling changes, factoring in Storybook's globals.
-- [`.storybook/local-preset.js`](https://github.com/storybookjs/addon-kit/compare/79282986..cf0875f#diff-390b53ea479b1ceffcbf31944f644ee23aa9f337b75a8a0ffd815bed50d376cb) to support the ESM migration.
+- [`package.json`](https://github.com/storybookjs/addon-kit/compare/79282986..fa7ee7c#diff-7ae45ad102eab3b6d7e7896acd08c427a9b25b346470d7bc6507b6481575d519) for dependency management, ESM support and updates to the addon's entry points.
+- [`tsup.config.ts`](https://github.com/storybookjs/addon-kit/compare/79282986..fa7ee7c#diff-8fed899bdbc24789a7bb4973574e624ed6207c6ce572338bc3c3e117672b2a2) for bundling changes, factoring in Storybook's globals.
+- [`.storybook/local-preset.js`](https://github.com/storybookjs/addon-kit/compare/79282986..fa7ee7c#diff-390b53ea479b1ceffcbf31944f644ee23aa9f337b75a8a0ffd815bed50d376cb) to support the ESM migration.
 
 <Callout variant="info" icon="💡">
 
-For a complete overview of the changes applied to the Addon Kit to fully support Storybook 8.0, see the following [diff view](https://github.com/storybookjs/addon-kit/compare/79282986..cf0875f).
+For a complete overview of the changes applied to the Addon Kit to fully support Storybook 8.0, see the following [diff view](https://github.com/storybookjs/addon-kit/compare/79282986..fa7ee7c).
 
 </Callout>
 

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/blocks",
-  "version": "8.1.0-alpha.1",
+  "version": "8.2.0-alpha.6",
   "description": "Storybook Doc Blocks",
   "keywords": [
     "storybook"
@@ -24,8 +24,8 @@
     ".": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./package.json": "./package.json"
   },
@@ -48,7 +48,7 @@
     "@storybook/client-logger": "workspace:*",
     "@storybook/components": "workspace:*",
     "@storybook/core-events": "workspace:*",
-    "@storybook/csf": "^0.1.2",
+    "@storybook/csf": "^0.1.7",
     "@storybook/docs-tools": "workspace:*",
     "@storybook/global": "^5.0.0",
     "@storybook/icons": "^1.2.5",
@@ -60,7 +60,7 @@
     "color-convert": "^2.0.1",
     "dequal": "^2.0.2",
     "lodash": "^4.17.21",
-    "markdown-to-jsx": "7.3.2",
+    "markdown-to-jsx": "^7.4.5",
     "memoizerific": "^1.11.3",
     "polished": "^4.2.2",
     "react-colorful": "^5.1.2",
@@ -75,8 +75,8 @@
     "@types/color-convert": "^2.0.0"
   },
   "peerDependencies": {
-    "react": "^16.8.0 || ^17.0.0 || ^18.0.0",
-    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0"
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
+    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta"
   },
   "peerDependenciesMeta": {
     "react": {

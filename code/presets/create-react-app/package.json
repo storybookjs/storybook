@@ -1,6 +1,6 @@
 {
   "name": "@storybook/preset-create-react-app",
-  "version": "8.1.0-alpha.1",
+  "version": "8.2.0-alpha.6",
   "description": "Storybook for Create React App preset",
   "keywords": [
     "storybook"
@@ -23,14 +23,14 @@
     ".": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./preset": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./package.json": "./package.json"
   },
@@ -50,6 +50,7 @@
   },
   "dependencies": {
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.1",
+    "@storybook/react-docgen-typescript-plugin": "1.0.6--canary.9.0c3f3b7.0",
     "@storybook/types": "workspace:*",
     "@types/semver": "^7.5.6",
     "pnp-webpack-plugin": "^1.7.0",

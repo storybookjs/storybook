@@ -17,6 +17,14 @@ import * as defaultProjectAnnotations from './entry-preview';
 import type { Meta } from './public-types';
 import type { VueRenderer } from './types';
 
+type JSXAble<TElement> = TElement & {
+  new (...args: any[]): any;
+  $props: any;
+};
+type MapToJSXAble<T> = {
+  [K in keyof T]: JSXAble<T[K]>;
+};
+
 /** Function that sets the globalConfig of your Storybook. The global config is the preview module of your .storybook folder.
  *
  * It should be run a single time, so that your global config (e.g. decorators) is applied to your stories when using `composeStories` or `composeStory`.
@@ -87,7 +95,7 @@ export function composeStory<TArgs extends Args = Args>(
 
   // typing this as newable means TS allows it to be used as a JSX element
   // TODO: we should do the same for composeStories as well
-  return renderable as unknown as typeof composedStory & { new (...args: any[]): any };
+  return renderable as unknown as JSXAble<typeof composedStory>;
 }
 
 /**
@@ -122,8 +130,7 @@ export function composeStories<TModule extends Store_CSFExports<VueRenderer, any
   // @ts-expect-error Deep down TRenderer['canvasElement'] resolves to canvasElement: unknown but VueRenderer uses WebRenderer where canvasElement is HTMLElement, so the types clash
   const composedStories = originalComposeStories(csfExports, projectAnnotations, composeStory);
 
-  return composedStories as unknown as Omit<
-    StoriesWithPartialProps<VueRenderer, TModule>,
-    keyof Store_CSFExports
+  return composedStories as unknown as MapToJSXAble<
+    Omit<StoriesWithPartialProps<VueRenderer, TModule>, keyof Store_CSFExports>
   >;
 }

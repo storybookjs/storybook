@@ -59,8 +59,8 @@ describe('Stories Snapshots', () => {
           // Ensures a consistent snapshot by waiting for the component to render by adding a delay of 1 ms before taking the snapshot.
           await new Promise((resolve) => setTimeout(resolve, 1));
           // Defines the custom snapshot path location and file name
-          const customSnaphotPath = `./__snapshots__/${componentName}.test.js.snap`;
-          expect(mounted.container).toMatchSpecificSnapshot(customSnaphotPath);
+          const customSnapshotPath = `./__snapshots__/${componentName}.test.js.snap`;
+          expect(mounted.container).toMatchSpecificSnapshot(customSnapshotPath);
         });
       });
     });

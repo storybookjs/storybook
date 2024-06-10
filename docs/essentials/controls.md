@@ -385,6 +385,45 @@ Unless you need the flexibility of a function, an easier way to map primitives t
 
 Note that both `mapping` and `control.labels` don't have to be exhaustive. If the currently selected option is not listed, it's used verbatim.
 
+## Creating and editing stories from controls
+
+The Controls addon allows you to create or edit stories, directly from the Controls panel.
+
+### Create a new story
+
+Open the Controls panel for a story and adjust the value of a control. Then save those changes as a new story.
+
+<video autoPlay muted playsInline loop>
+  <source
+    src="../get-started/new-story-from-controls-optimized.mp4"
+    type="video/mp4"
+  />
+</video>
+
+<If renderer="react">
+
+If you're working on a component that does not yet have any stories, you can click the ➕ button in the sidebar to search for your component and have a basic story created for you.
+
+<video autoPlay muted playsInline loop>
+  <source
+    src="../get-started/new-component-story-from-plus-button-optimized.mp4"
+    type="video/mp4"
+  />
+</video>
+
+</If>
+
+### Edit a story
+
+You can also update a control's value, then save the changes to the story. The story file's code will be updated for you.
+
+<video autoPlay muted playsInline loop>
+  <source
+    src="../get-started/edit-story-from-controls-optimized.mp4"
+    type="video/mp4"
+  />
+</video>
+
 ## Configuration
 
 The Controls addon can be configured in two ways:

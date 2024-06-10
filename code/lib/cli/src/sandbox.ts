@@ -225,6 +225,7 @@ export const sandbox = async ({
         process.chdir(templateDestination);
         // we run doInitiate, instead of initiate, to avoid sending this init event to telemetry, because it's not a real world project
         await doInitiate({
+          dev: process.env.CI !== 'true' && process.env.IN_STORYBOOK_SANBOX !== 'true',
           ...options,
         });
         process.chdir(before);

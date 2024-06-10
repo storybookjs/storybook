@@ -29,7 +29,8 @@ const toPascalCase = (str: string) => str.charAt(0).toUpperCase() + str.slice(1)
  * @returns {string | null} A displayName for the Symbol in case elementType is a Symbol; otherwise, null.
  */
 export const getReactSymbolName = (elementType: any): string => {
-  const symbolDescription: string = elementType.toString().replace(/^Symbol\((.*)\)$/, '$1');
+  const elementName = elementType.$$typeof || elementType;
+  const symbolDescription: string = elementName.toString().replace(/^Symbol\((.*)\)$/, '$1');
 
   const reactComponentName = symbolDescription
     .split('.')
@@ -124,16 +125,30 @@ export const renderJsx = (code: React.ReactElement, options?: JSXOptions) => {
   } else {
     displayNameDefaults = {
       // To get exotic component names resolving properly
-      displayName: (el: any): string =>
-        el.type.displayName || typeof el.type === 'symbol'
-          ? getReactSymbolName(el.type)
-          : null ||
-            getDocgenSection(el.type, 'displayName') ||
-            (el.type.name !== '_default' ? el.type.name : null) ||
-            (typeof el.type === 'function' ? 'No Display Name' : null) ||
-            (isForwardRef(el.type) ? el.type.render.name : null) ||
-            (isMemo(el.type) ? el.type.type.name : null) ||
-            el.type,
+      displayName: (el: any): string => {
+        if (el.type.displayName) {
+          return el.type.displayName;
+        } else if (getDocgenSection(el.type, 'displayName')) {
+          return getDocgenSection(el.type, 'displayName');
+        } else if (el.type.render?.displayName) {
+          return el.type.render.displayName;
+        } else if (
+          typeof el.type === 'symbol' ||
+          (el.type.$$typeof && typeof el.type.$$typeof === 'symbol')
+        ) {
+          return getReactSymbolName(el.type);
+        } else if (el.type.name && el.type.name !== '_default') {
+          return el.type.name;
+        } else if (typeof el.type === 'function') {
+          return 'No Display Name';
+        } else if (isForwardRef(el.type)) {
+          return el.type.render.name;
+        } else if (isMemo(el.type)) {
+          return el.type.type.name;
+        } else {
+          return el.type;
+        }
+      },
     };
   }
 

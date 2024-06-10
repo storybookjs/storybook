@@ -1,5 +1,7 @@
 import { dedent } from 'ts-dedent';
 import type { Options } from '@storybook/types';
+import { frameworkPackages } from './get-storybook-info';
+import { normalizePath } from './normalize-path';
 
 /**
  * Framework can be a string or an object.  This utility always returns the string name.
@@ -17,3 +19,17 @@ export async function getFrameworkName(options: Options) {
 
   return typeof framework === 'object' ? framework.name : framework;
 }
+
+/**
+ * Extracts the proper framework name from the given framework field.
+ * The framework field can be the framework package name or a path to the framework package.
+ * @example
+ * extractProperFrameworkName('/path/to/@storybook/angular') // => '@storybook/angular'
+ * extractProperFrameworkName('@third-party/framework') // => '@third-party/framework'
+ */
+export const extractProperFrameworkName = (framework: string) => {
+  const normalizedPath = normalizePath(framework);
+  const frameworkName = Object.keys(frameworkPackages).find((pkg) => normalizedPath.endsWith(pkg));
+
+  return frameworkName ?? framework;
+};

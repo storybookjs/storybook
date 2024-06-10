@@ -1,17 +1,58 @@
+/* eslint-disable @typescript-eslint/no-shadow */
+import type { MockInstance } from '@vitest/spy';
 import {
-  spyOn,
+  spyOn as vitestSpyOn,
   isMockFunction,
-  fn,
+  fn as vitestFn,
   mocks,
   type MaybeMocked,
   type MaybeMockedDeep,
   type MaybePartiallyMocked,
   type MaybePartiallyMockedDeep,
 } from '@vitest/spy';
+import type { SpyInternalImpl } from 'tinyspy';
+import * as tinyspy from 'tinyspy';
 
 export type * from '@vitest/spy';
 
-export { spyOn, isMockFunction, fn, mocks };
+export { isMockFunction, mocks };
+
+type Listener = (mock: MockInstance, args: unknown[]) => void;
+const listeners = new Set<Listener>();
+
+export function onMockCall(callback: Listener): () => void {
+  listeners.add(callback);
+  return () => void listeners.delete(callback);
+}
+
+// @ts-expect-error Make sure we export the exact same type as @vitest/spy
+export const spyOn: typeof vitestSpyOn = (...args) => {
+  const mock = vitestSpyOn(...(args as Parameters<typeof vitestSpyOn>));
+  return reactiveMock(mock);
+};
+
+// @ts-expect-error Make sure we export the exact same type as @vitest/spy
+export const fn: typeof vitestFn = (implementation) => {
+  const mock = implementation ? vitestFn(implementation) : vitestFn();
+  return reactiveMock(mock);
+};
+
+function reactiveMock(mock: MockInstance) {
+  const reactive = listenWhenCalled(mock);
+  const originalMockImplementation = reactive.mockImplementation.bind(null);
+  reactive.mockImplementation = (fn) => listenWhenCalled(originalMockImplementation(fn));
+  return reactive;
+}
+
+function listenWhenCalled(mock: MockInstance) {
+  const state = tinyspy.getInternalState(mock as unknown as SpyInternalImpl);
+  const impl = state.impl?.bind(null);
+  state.willCall((...args) => {
+    listeners.forEach((listener) => listener(mock, args));
+    return impl?.(...args);
+  });
+  return mock;
+}
 
 /**
  * Calls [`.mockClear()`](https://vitest.dev/api/mock#mockclear) on every mocked function. This will only empty `.mock` state, it will not reset implementation.

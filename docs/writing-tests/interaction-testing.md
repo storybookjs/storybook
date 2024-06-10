@@ -90,6 +90,34 @@ Once the story loads in the UI, it simulates the user's behavior and verifies th
   />
 </video>
 
+### Run code before each test
+
+It can be helpful to run code before each test to set up the initial state of the component or reset the state of modules. You can do this by adding an asynchronous `beforeEach` function to the story, meta (which will run before each story in the file), or the preview file (`.storybook/preview.js|ts`, which will run before every story in the project).
+
+Additionally, if you return a cleanup function from the `beforeEach` function, it will run **after** each test, when the story is remounted or navigated away from.
+
+<Callout variant="info">
+
+It is _not_ necessary to restore `fn()` mocks with the cleanup function, as Storybook will already do that automatically before rendering a story. See the [`parameters.test.restoreMocks` API](../api/parameters.md#restoremocks) for more information.
+
+</Callout>
+
+Here's an example of using the [`mockdate`](https://github.com/boblauer/MockDate) package to mock the [`Date`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date) and reset it when the story unmounts.
+
+<!-- prettier-ignore-start -->
+
+<CodeSnippets
+  paths={[
+    'angular/before-each-in-meta-mock-date.ts.mdx',
+    'web-components/before-each-in-meta-mock-date.js.mdx',
+    'web-components/before-each-in-meta-mock-date.ts.mdx',
+    'common/before-each-in-meta-mock-date.js.mdx',
+    'common/before-each-in-meta-mock-date.ts.mdx',
+  ]}
+/>
+
+<!-- prettier-ignore-end -->
+
 ### API for user-events
 
 Under the hood, Storybook’s `@storybook/test` package provides Testing Library’s [`user-events`](https://testing-library.com/docs/user-event/intro/) APIs. If you’re familiar with [Testing Library](https://testing-library.com/), you should be at home in Storybook.
@@ -151,6 +179,26 @@ For complex flows, it can be worthwhile to group sets of related interactions to
 This will show your interactions nested in a collapsible group:
 
 ![Interaction testing with labeled steps](./storybook-addon-interactions-steps.png)
+
+### Mocked modules
+
+If your component depends on modules that are imported into the component file, you can mock those modules to control and assert on their behavior. This is detailed in the [mocking modules](./mocking-modules.md) guide.
+
+You can then import the mocked module (which has all of the helpful methods of a [Vitest mocked function](https://vitest.dev/api/mock.html)) into your story and use it to assert on the behavior of your component:
+
+<!-- prettier-ignore-start -->
+
+<CodeSnippets
+  paths={[
+    'angular/storybook-test-fn-mock-spy.ts.mdx',
+    'web-components/storybook-test-fn-mock-spy.js.mdx',
+    'web-components/storybook-test-fn-mock-spy.ts.mdx',
+    'common/storybook-test-fn-mock-spy.js.mdx',
+    'common/storybook-test-fn-mock-spy.ts.mdx',
+  ]}
+/>
+
+<!-- prettier-ignore-end -->
 
 ### Interactive debugger
 

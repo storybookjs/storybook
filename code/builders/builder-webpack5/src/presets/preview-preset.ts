@@ -9,9 +9,13 @@ export const entries = async (_: unknown, options: any) => {
     // Suppress informational messages when --quiet is specified. webpack-hot-middleware's quiet
     // parameter would also suppress warnings.
     result = result.concat(
-      `${require.resolve('webpack-hot-middleware/client')}?reload=true&quiet=false&noInfo=${
-        options.quiet
-      }`
+      `${require.resolve(
+        'webpack-hot-middleware/client'
+      )}?reload=true&quiet=false&overlay=${JSON.stringify({
+        errors: true,
+        warnings: false,
+        runtimeErrors: false,
+      })}&noInfo=${options.quiet}`
     );
   }
 

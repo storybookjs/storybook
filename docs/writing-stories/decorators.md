@@ -40,32 +40,7 @@ Some components require a “harness” to render in a useful way. For instance,
 
 ## “Context” for mocking
 
-Framework-specific libraries (e.g., [Styled Components](https://styled-components.com/), [Fontawesome](https://github.com/FortAwesome/vue-fontawesome) for Vue, Angular's [localize](https://angular.io/api/localize)) may require additional configuration to render correctly in Storybook.
-
-For example, if you're working with React's Styled Components and your components use themes, add a single global decorator to [`.storybook/preview.js`](../configure/index.md#configure-story-rendering) to enable them. With Vue, extend Storybook's application and register your library. Or with Angular, add the package into your `polyfills.ts` and import it:
-
-<!-- prettier-ignore-start -->
-
-<CodeSnippets
-  paths={[
-    'react/storybook-preview-with-styled-components-decorator.js.mdx',
-    'react/storybook-preview-with-styled-components-decorator.ts.mdx',
-    'vue/storybook-preview-with-library-decorator.library-3.js.mdx',
-    'vue/storybook-preview-with-library-decorator.library-3.ts.mdx',
-    'vue/storybook-preview-with-hoc-component-decorator.component-3.js.mdx',
-    'vue/storybook-preview-with-hoc-component-decorator.component-3.ts.mdx',
-    'angular/add-localize-package-to-polyfills.ts.mdx',
-    'angular/storybook-preview-with-angular-polyfills.js.mdx',
-    'solid/storybook-preview-with-styled-components-decorator.js.mdx',
-    'solid/storybook-preview-with-styled-components-decorator.ts.mdx',
-  ]}
-/>
-
-<!-- prettier-ignore-end -->
-
-In the example above, the values provided are hardcoded. Still, you may want to vary them, either per-story basis (i.e., if the values you're adding are relevant to a specific story) or in a user-controlled way (e.g., provide a theme switcher or a different set of icons).
-
-The second argument to a decorator function is the **story context** which in particular contains the keys:
+The second argument to a decorator function is the **story context** which contains the properties:
 
 - `args` - the story arguments. You can use some [`args`](./args.md) in your decorators and drop them in the story implementation itself.
 - `argTypes`- Storybook's [argTypes](../api/arg-types.md) allow you to customize and fine-tune your stories [`args`](./args.md).
@@ -74,15 +49,34 @@ The second argument to a decorator function is the **story context** which in pa
 - `parameters`- the story's static metadata, most commonly used to control Storybook's behavior of features and addons.
 - `viewMode`- Storybook's current active window (e.g., canvas, docs).
 
+This context can be used to adjust the behavior of your decorator based on the story's arguments or other metadata. For example, you could create a decorator that allows you to optionally apply a layout to the story, by defining `parameters.pageLayout = 'page'` (or `'page-mobile'`):
+:
+
+<!-- prettier-ignore-start -->
+
+<CodeSnippets
+  paths={[
+    'react/decorator-parameterized-in-preview.js.mdx',
+    'react/decorator-parameterized-in-preview.ts.mdx',
+    'vue/decorator-parameterized-in-preview.js.mdx',
+    'vue/decorator-parameterized-in-preview.ts.mdx',
+    'angular/decorator-parameterized-in-preview.ts.mdx',
+    'solid/decorator-parameterized-in-preview.js.mdx',
+    'solid/decorator-parameterized-in-preview.ts.mdx',
+  ]}
+/>
+
+<!-- prettier-ignore-end -->
+
 <Callout variant="info" icon="💡">
 
-This pattern can also be applied to your own stories. Some of Storybook's supported frameworks already use it (e.g., Vue 3).
+For another example, see the section on [configuring the mock provider](./mocking-providers.md#configuring-the-mock-provider), which demonstrates how to use the same technique to change which theme is provided to the component.
 
 </Callout>
 
 ### Using decorators to provide data
 
-If your components are “connected” and require side-loaded data to render, you can use decorators to provide that data in a mocked way without having to refactor your components to take that data as an arg. There are several techniques to achieve this. Depending on exactly how you are loading that data -- read more in the [building pages in Storybook](./build-pages-with-storybook.md) section.
+If your components are “connected” and require side-loaded data to render, you can use decorators to provide that data in a mocked way without having to refactor your components to take that data as an arg. There are several techniques to achieve this. Depending on exactly how you are loading that data. Read more in the [building pages in Storybook](./build-pages-with-storybook.md) section.
 
 ## Story decorators
 

@@ -1,5 +1,10 @@
 import { ArrowRightIcon } from '@storybook/icons';
 import { keyframes, styled } from '@storybook/theming';
+import { Modal } from '@storybook/components';
+
+export const ModalWrapper = styled(Modal)`
+  background: white;
+`;
 
 export const ModalContentWrapper = styled.div`
   border-radius: 5px;

@@ -1,7 +1,6 @@
 import chalk from 'chalk';
 import boxen from 'boxen';
 import { createWriteStream, move, remove } from 'fs-extra';
-import tempy from 'tempy';
 import dedent from 'ts-dedent';
 import { join } from 'path';
 
@@ -15,7 +14,6 @@ import {
   getIncompatibleStorybookPackages,
 } from './getIncompatibleStorybookPackages';
 import { getDuplicatedDepsWarnings } from './getDuplicatedDepsWarnings';
-import { isPrerelease } from './utils';
 
 const logger = console;
 const LOG_FILE_NAME = 'doctor-storybook.log';
@@ -25,8 +23,9 @@ let TEMP_LOG_FILE_PATH = '';
 const originalStdOutWrite = process.stdout.write.bind(process.stdout);
 const originalStdErrWrite = process.stderr.write.bind(process.stdout);
 
-const augmentLogsToFile = () => {
-  TEMP_LOG_FILE_PATH = tempy.file({ name: LOG_FILE_NAME });
+const augmentLogsToFile = async () => {
+  const { temporaryFile } = await import('tempy');
+  TEMP_LOG_FILE_PATH = temporaryFile({ name: LOG_FILE_NAME });
   const logStream = createWriteStream(TEMP_LOG_FILE_PATH);
 
   process.stdout.write = (d: string) => {
@@ -52,7 +51,7 @@ export const doctor = async ({
   configDir: userSpecifiedConfigDir,
   packageManager: pkgMgr,
 }: DoctorOptions = {}) => {
-  augmentLogsToFile();
+  await augmentLogsToFile();
 
   let foundIssues = false;
   const logDiagnostic = (title: string, message: string) => {
@@ -141,12 +140,8 @@ export const doctor = async ({
     }
   }
 
-  const doctorCommand = isPrerelease(storybookVersion)
-    ? 'npx storybook@next doctor'
-    : 'npx storybook@latest doctor';
-
   const commandMessage = `You can always recheck the health of your project by running:\n${chalk.cyan(
-    doctorCommand
+    'npx storybook doctor'
   )}`;
   logger.info();
 

@@ -102,7 +102,7 @@ export class Instrumenter {
 
     // Restore state from the parent window in case the iframe was reloaded.
     // @ts-expect-error (TS doesn't know about this global variable)
-    this.state = global.window.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ || {};
+    this.state = global.window?.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ || {};
 
     // When called from `start`, isDebugging will be true.
     const resetState = ({
@@ -242,8 +242,10 @@ export class Instrumenter {
     const patch = typeof update === 'function' ? update(state) : update;
     this.state = { ...this.state, [storyId]: { ...state, ...patch } };
     // Track state on the parent window so we can reload the iframe without losing state.
-    // @ts-expect-error (TS doesn't know about this global variable)
-    global.window.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ = this.state;
+    if (global.window?.parent) {
+      // @ts-expect-error fix this later in d.ts file
+      global.window.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ = this.state;
+    }
   }
 
   cleanup() {
@@ -259,8 +261,10 @@ export class Instrumenter {
     );
     const payload: SyncPayload = { controlStates: controlsDisabled, logItems: [] };
     this.channel.emit(EVENTS.SYNC, payload);
-    // @ts-expect-error (TS doesn't know about this global variable)
-    global.window.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ = this.state;
+    if (global.window?.parent) {
+      // @ts-expect-error fix this later in d.ts file
+      global.window.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ = this.state;
+    }
   }
 
   getLog(storyId: string): LogItem[] {
@@ -426,7 +430,7 @@ export class Instrumenter {
         const { flags, source } = value;
         return { __regexp__: { flags, source } };
       }
-      if (value instanceof global.window.HTMLElement) {
+      if (value instanceof global.window?.HTMLElement) {
         const { prefix, localName, id, classList, innerText } = value;
         const classNames = Array.from(classList);
         return { __element__: { prefix, localName, id, classNames, innerText } };
@@ -572,7 +576,7 @@ export class Instrumenter {
   update(call: Call) {
     this.channel.emit(EVENTS.CALL, call);
     this.setState(call.storyId, ({ calls }) => {
-      // Omit earlier calls for the same ID, which may have been superceded by a later invocation.
+      // Omit earlier calls for the same ID, which may have been superseded by a later invocation.
       // This typically happens when calls are part of a callback which runs multiple times.
       const callsById = calls
         .concat(call)
@@ -640,23 +644,23 @@ export function instrument<TObj extends Record<string, any>>(
     let forceInstrument = false;
     let skipInstrument = false;
 
-    if (global.window.location?.search?.includes('instrument=true')) {
+    if (global.window?.location?.search?.includes('instrument=true')) {
       forceInstrument = true;
-    } else if (global.window.location?.search?.includes('instrument=false')) {
+    } else if (global.window?.location?.search?.includes('instrument=false')) {
       skipInstrument = true;
     }
 
     // Don't do any instrumentation if not loaded in an iframe unless it's forced - instrumentation can also be skipped.
-    if ((global.window.parent === global.window && !forceInstrument) || skipInstrument) {
+    if ((global.window?.parent === global.window && !forceInstrument) || skipInstrument) {
       return obj;
     }
 
     // Only create an instance if we don't have one (singleton) yet.
-    if (!global.window.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER__) {
+    if (global.window && !global.window.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER__) {
       global.window.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER__ = new Instrumenter();
     }
 
-    const instrumenter: Instrumenter = global.window.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER__;
+    const instrumenter: Instrumenter = global.window?.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER__;
     return instrumenter.instrument(obj, options);
   } catch (e) {
     // Access to the parent window might fail due to CORS restrictions.

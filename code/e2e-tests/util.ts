@@ -40,7 +40,7 @@ export class SbPage {
   /**
    * Visit a story by selecting it from the sidebar.
    */
-  async navigateToStory(title: string, name: string) {
+  async navigateToStory(title: string, name: string, viewMode?: 'docs' | 'story') {
     await this.openComponent(title);
 
     const titleId = toId(title);
@@ -50,11 +50,10 @@ export class SbPage {
     const storyLink = this.page.locator('*', { has: this.page.locator(`> ${storyLinkId}`) });
     await storyLink.click({ force: true });
 
-    // assert url changes
-    const viewMode = name === 'docs' ? 'docs' : 'story';
-
     await this.page.waitForURL((url) =>
-      url.search.includes(`path=/${viewMode}/${titleId}--${storyId}`)
+      url.search.includes(
+        `path=/${viewMode ?? name === 'docs' ? 'docs' : 'story'}/${titleId}--${storyId}`
+      )
     );
 
     const selected = await storyLink.getAttribute('data-selected');
@@ -84,7 +83,7 @@ export class SbPage {
   }
 
   async waitUntilLoaded() {
-    // make sure we start every test with clean state – to avoid possible flakyness
+    // make sure we start every test with clean state – to avoid possible flakiness
     await this.page.context().addInitScript(() => {
       const storeState = {
         layout: {

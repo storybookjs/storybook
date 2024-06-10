@@ -108,7 +108,7 @@ export const TabButton = styled(ButtonOrLink, { shouldForwardProp: isPropValid }
 
     '&:focus': {
       outline: '0 none',
-      borderBottomColor: theme.color.secondary,
+      borderBottomColor: theme.barSelectedColor,
     },
   }),
   ({ active, textColor, theme }) =>
@@ -120,6 +120,9 @@ export const TabButton = styled(ButtonOrLink, { shouldForwardProp: isPropValid }
       : {
           color: textColor || theme.barTextColor,
           borderBottomColor: 'transparent',
+          '&:hover': {
+            color: theme.barHoverColor,
+          },
         }
 );
 TabButton.displayName = 'TabButton';

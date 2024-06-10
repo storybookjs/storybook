@@ -5,8 +5,8 @@ import path from 'path';
 import type { PluginOption } from 'vite';
 import {
   TypeMeta,
-  createComponentMetaChecker,
-  createComponentMetaCheckerByJsonConfig,
+  createChecker,
+  createCheckerByJson,
   type ComponentMeta,
   type MetaCheckerOptions,
 } from 'vue-component-meta';
@@ -19,7 +19,7 @@ type MetaSource = {
 } & ComponentMeta &
   MetaCheckerOptions['schema'];
 
-export async function vueComponentMeta(): Promise<PluginOption> {
+export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<PluginOption> {
   const { createFilter } = await import('vite');
 
   // exclude stories, virtual modules and storybook internals
@@ -28,7 +28,7 @@ export async function vueComponentMeta(): Promise<PluginOption> {
   const include = /\.(vue|ts|js|tsx|jsx)$/;
   const filter = createFilter(include, exclude);
 
-  const checker = await createChecker();
+  const checker = await createVueComponentMetaChecker(tsconfigPath);
 
   return {
     name: 'storybook:vue-component-meta-plugin',
@@ -126,9 +126,10 @@ export async function vueComponentMeta(): Promise<PluginOption> {
 }
 
 /**
- * Creates the vue-component-meta checker to use for extracting component meta/docs.
+ * Creates the `vue-component-meta` checker to use for extracting component meta/docs.
+ * Considers the given tsconfig file (will use a fallback checker if it does not exist or is not supported).
  */
-async function createChecker() {
+async function createVueComponentMetaChecker(tsconfigPath = 'tsconfig.json') {
   const checkerOptions: MetaCheckerOptions = {
     forceUseTs: true,
     noDeclarations: true,
@@ -136,26 +137,18 @@ async function createChecker() {
   };
 
   const projectRoot = getProjectRoot();
-  const projectTsConfigPath = path.join(projectRoot, 'tsconfig.json');
+  const projectTsConfigPath = path.join(projectRoot, tsconfigPath);
 
-  const defaultChecker = createComponentMetaCheckerByJsonConfig(
-    projectRoot,
-    { include: ['**/*'] },
-    checkerOptions
-  );
+  const defaultChecker = createCheckerByJson(projectRoot, { include: ['**/*'] }, checkerOptions);
 
   // prefer the tsconfig.json file of the project to support alias resolution etc.
   if (await fileExists(projectTsConfigPath)) {
-    // tsconfig that uses references is currently not supported by vue-component-meta
-    // see: https://github.com/vuejs/language-tools/issues/3896
-    // so we return the no-tsconfig defaultChecker if tsconfig references are found
-    // remove this workaround once the above issue is fixed
+    // vue-component-meta does currently not resolve tsconfig references (see https://github.com/vuejs/language-tools/issues/3896)
+    // so we will return the defaultChecker if references are used.
+    // Otherwise vue-component-meta might not work at all for the Storybook docgen.
     const references = await getTsConfigReferences(projectTsConfigPath);
-    if (references.length > 0) {
-      // TODO: paths/aliases are not resolvable, find workaround for this
-      return defaultChecker;
-    }
-    return createComponentMetaChecker(projectTsConfigPath, checkerOptions);
+    if (references.length > 0) return defaultChecker;
+    return createChecker(projectTsConfigPath, checkerOptions);
   }
 
   return defaultChecker;

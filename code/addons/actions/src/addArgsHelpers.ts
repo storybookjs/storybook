@@ -51,13 +51,11 @@ export const addActionsFromArgTypes: ArgsEnhancer<Renderer> = (context) => {
     return {};
   }
 
-  const argTypesWithAction = Object.entries(argTypes).filter(
-    ([name, argType]) => !!argType['action']
-  );
+  const argTypesWithAction = Object.entries(argTypes).filter(([name, argType]) => !!argType.action);
 
   return argTypesWithAction.reduce((acc, [name, argType]) => {
     if (isInInitialArgs(name, initialArgs)) {
-      acc[name] = action(typeof argType['action'] === 'string' ? argType['action'] : name);
+      acc[name] = action(typeof argType.action === 'string' ? argType.action : name);
     }
     return acc;
   }, {} as Args);

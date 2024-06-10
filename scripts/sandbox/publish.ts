@@ -1,12 +1,11 @@
 import program from 'commander';
 import { dirname, join, relative } from 'path';
 import { existsSync } from 'fs';
-import * as tempy from 'tempy';
 import { copy, emptyDir, remove, writeFile } from 'fs-extra';
 import { execaCommand } from 'execa';
 
 import { getTemplatesData, renderTemplate } from './utils/template';
-// eslint-disable-next-line import/no-cycle
+
 import { commitAllToGit } from './utils/git';
 import { REPROS_DIRECTORY } from '../utils/constants';
 import { glob } from 'glob';
@@ -99,17 +98,22 @@ if (!existsSync(REPROS_DIRECTORY)) {
   throw Error("Couldn't find sandbox directory. Did you forget to run generate-sandboxes?");
 }
 
-const tmpFolder = tempy.directory();
-logger.log(`⏱ Created tmp folder: ${tmpFolder}`);
+async function main() {
+  const { temporaryDirectory } = await import('tempy');
+  const tmpFolder = temporaryDirectory();
+  logger.log(`⏱ Created tmp folder: ${tmpFolder}`);
 
-const options = program.opts() as PublishOptions;
+  const options = program.opts() as PublishOptions;
 
-publish({ ...options, tmpFolder }).catch(async (e) => {
-  logger.error(e);
+  publish({ ...options, tmpFolder }).catch(async (e) => {
+    logger.error(e);
 
-  if (existsSync(tmpFolder)) {
-    logger.log('🚮 Removing the temporary folder..');
-    await remove(tmpFolder);
-  }
-  process.exit(1);
-});
+    if (existsSync(tmpFolder)) {
+      logger.log('🚮 Removing the temporary folder..');
+      await remove(tmpFolder);
+    }
+    process.exit(1);
+  });
+}
+
+main();

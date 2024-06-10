@@ -1,6 +1,6 @@
 {
   "name": "@storybook/html-vite",
-  "version": "8.1.0-alpha.1",
+  "version": "8.2.0-alpha.6",
   "description": "Storybook for HTML and Vite: Develop HTML in isolation with Hot Reloading.",
   "keywords": [
     "storybook"
@@ -23,8 +23,8 @@
     ".": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./preset": {
       "types": "./dist/preset.d.ts",
@@ -51,6 +51,7 @@
     "@storybook/core-server": "workspace:*",
     "@storybook/html": "workspace:*",
     "@storybook/node-logger": "workspace:*",
+    "@storybook/types": "workspace:*",
     "magic-string": "^0.30.0"
   },
   "devDependencies": {

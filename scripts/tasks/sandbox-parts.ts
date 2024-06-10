@@ -282,6 +282,23 @@ function addStoriesEntry(mainConfig: ConfigFile, path: string, disableDocs: bool
   mainConfig.setFieldValue(['stories'], [...stories, entry]);
 }
 
+// Add refs to older versions of storybook to test out composition
+function addRefs(mainConfig: ConfigFile) {
+  const refs = mainConfig.getFieldValue(['refs']) as Record<string, string>;
+
+  mainConfig.setFieldValue(['refs'], {
+    ...refs,
+    'storybook@8.0.0': {
+      title: 'Storybook 8.0.0',
+      url: 'https://635781f3500dd2c49e189caf-gckybvsekn.chromatic.com/',
+    },
+    'storybook@7.6.18': {
+      title: 'Storybook 7.6.18',
+      url: 'https://635781f3500dd2c49e189caf-oljwjdrftz.chromatic.com/',
+    },
+  } as Record<string, any>);
+}
+
 function getStoriesFolderWithVariant(variant?: string, folder = 'stories') {
   return variant ? `${folder}_${variant}` : folder;
 }
@@ -352,8 +369,7 @@ export async function addExtraDependencies({
   debug: boolean;
   extraDeps?: string[];
 }) {
-  // web-components doesn't install '@storybook/testing-library' by default
-  const extraDevDeps = ['@storybook/testing-library@next', '@storybook/test-runner@next'];
+  const extraDevDeps = ['@storybook/test-runner@next'];
   if (debug) logger.log('🎁 Adding extra dev deps', extraDevDeps);
   let packageManager: JsPackageManager;
   if (!dryRun) {
@@ -467,6 +483,12 @@ export const addStories: Task['run'] = async (
       cwd,
       disableDocs,
     });
+
+    await linkPackageStories(await workspacePath('core package', '@storybook/test'), {
+      mainConfig,
+      cwd,
+      disableDocs,
+    });
   }
 
   const mainAddons = (mainConfig.getSafeFieldValue(['addons']) || []).reduce(
@@ -510,9 +532,14 @@ export const addStories: Task['run'] = async (
   await writeConfig(mainConfig);
 };
 
-export const extendMain: Task['run'] = async ({ template, sandboxDir }, { disableDocs }) => {
+export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { disableDocs }) => {
   logger.log('📝 Extending main.js');
   const mainConfig = await readMainConfig({ cwd: sandboxDir });
+
+  if (key === 'react-vite/default-ts') {
+    addRefs(mainConfig);
+  }
+
   const templateConfig = template.modifications?.mainConfig || {};
   const configToAdd = {
     ...templateConfig,
@@ -532,6 +559,32 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir }, { disabl
   };
 
   Object.entries(configToAdd).forEach(([field, value]) => mainConfig.setFieldValue([field], value));
+
+  const previewHeadCode = `
+    (head) => \`
+      \${head}
+      ${templateConfig.previewHead || ''}
+      <style>
+        /* explicitly set monospace font stack to workaround inconsistent fonts in Chromatic */
+        pre, code, kbd, samp {
+          font-family:
+            ui-monospace,
+            Menlo,
+            Monaco,
+            "Cascadia Mono",
+            "Segoe UI Mono",
+            "Roboto Mono",
+            "Oxygen Mono",
+            "Ubuntu Monospace",
+            "Source Code Pro",
+            "Fira Mono",
+            "Droid Sans Mono",
+            "Courier New",
+            monospace;
+        }
+      </style>
+    \``;
+  mainConfig.setFieldNode(['previewHead'], babelParse(previewHeadCode).program.body[0].expression);
 
   // Simulate Storybook Lite
   if (disableDocs) {
@@ -554,18 +607,37 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir }, { disabl
   await writeConfig(mainConfig);
 };
 
-/**
- * Sets compodoc option in angular.json projects to false. We have to generate compodoc
- * manually to avoid symlink issues related to the template-stories folder.
- * In a second step a docs:json script is placed into the package.json to generate the
- * Compodoc documentation.json, which respects symlinks
- * */
+export async function setImportMap(cwd: string) {
+  const packageJson = await readJson(join(cwd, 'package.json'));
+
+  packageJson.imports = {
+    '#utils': {
+      storybook: './template-stories/lib/test/utils.mock.ts',
+      default: './template-stories/lib/test/utils.ts',
+    },
+  };
+
+  await writeJson(join(cwd, 'package.json'), packageJson, { spaces: 2 });
+}
+
 async function prepareAngularSandbox(cwd: string, templateName: string) {
   const angularJson = await readJson(join(cwd, 'angular.json'));
 
   Object.keys(angularJson.projects).forEach((projectName: string) => {
+    /**
+     * Sets compodoc option in angular.json projects to false. We have to generate compodoc
+     * manually to avoid symlink issues related to the template-stories folder.
+     * In a second step a docs:json script is placed into the package.json to generate the
+     * Compodoc documentation.json, which respects symlinks
+     */
     angularJson.projects[projectName].architect.storybook.options.compodoc = false;
     angularJson.projects[projectName].architect['build-storybook'].options.compodoc = false;
+    /**
+     * Sets preserveSymlinks option in angular.json projects to true. This is necessary to
+     * respect symlinks so that Angular doesn't complain about wrong types in @storybook/* packages
+     */
+    angularJson.projects[projectName].architect.storybook.options.preserveSymlinks = true;
+    angularJson.projects[projectName].architect['build-storybook'].options.preserveSymlinks = true;
   });
 
   await writeJson(join(cwd, 'angular.json'), angularJson, { spaces: 2 });

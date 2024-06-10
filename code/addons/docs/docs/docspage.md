@@ -165,8 +165,8 @@ You can override this default behavior in `.storybook/preview.js` (or in any of 
 ```js
 export const parameters = {
   docs: {
-    source: {
-      state: 'open',
+    canvas: {
+      sourceState: 'shown',
     },
   },
 };

@@ -43,7 +43,7 @@ export const removeJestTestingLibrary: Fix<{ incompatiblePackages: string[] }> =
 
       const versionToInstall = getStorybookVersionSpecifier(packageJson);
 
-      await packageManager.addDependencies({ packageJson }, [
+      await packageManager.addDependencies({ installAsDevDependencies: true, packageJson }, [
         `@storybook/test@${versionToInstall}`,
       ]);
 

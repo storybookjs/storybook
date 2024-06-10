@@ -1,0 +1,21 @@
+// auto-generated from scripts/create-nx-sandbox-projects.ts
+{
+  "name": "angular-cli/default-ts",
+  "projectType": "application",
+  "implicitDependencies": [
+    "cli",
+    "test",
+    "essentials",
+    "interactions",
+    "links",
+    "onboarding",
+    "blocks",
+    "angular"
+  ],
+  "targets": {
+    "sandbox": {},
+    "sb:dev": {},
+    "sb:build": {}
+  },
+  "tags": ["ci:normal", "ci:merged", "ci:daily"]
+}

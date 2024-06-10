@@ -66,7 +66,7 @@ An overview of all available API references for Storybook.
     <tr>
       <td><a href="../api/csf">CSF</a></td>
       <td>
-        Component Story Format (CSF) is the API for writing stories. It's an
+        Component Story Format (CSF) is the API for writing stories. It's an 
         <a href="https://github.com/ComponentDriven/csf">open standard</a> based on ES6 modules that
         is portable beyond Storybook.
       </td>

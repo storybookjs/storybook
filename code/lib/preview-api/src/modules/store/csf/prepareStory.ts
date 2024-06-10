@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-loop-func,no-underscore-dangle */
 import { global } from '@storybook/global';
-
 import type {
   Args,
   ArgsStoryFn,
@@ -20,7 +19,8 @@ import type {
   StoryContextForLoaders,
   StrictArgTypes,
 } from '@storybook/types';
-import { includeConditionalArg } from '@storybook/csf';
+import { type CleanupCallback, includeConditionalArg, combineTags } from '@storybook/csf';
+import { global as globalThis } from '@storybook/global';
 
 import { applyHooks } from '../../addons';
 import { combineParameters } from '../parameters';
@@ -65,7 +65,21 @@ export function prepareStory<TRenderer extends Renderer>(
       const loaded: Record<string, any> = Object.assign({}, ...loadResults);
       updatedContext = { ...updatedContext, loaded: { ...updatedContext.loaded, ...loaded } };
     }
+
     return updatedContext;
+  };
+
+  const applyBeforeEach = async (context: StoryContext<TRenderer>): Promise<CleanupCallback[]> => {
+    const cleanupCallbacks = new Array<() => unknown>();
+    for (const beforeEach of [
+      ...normalizeArrays(projectAnnotations.beforeEach),
+      ...normalizeArrays(componentAnnotations.beforeEach),
+      ...normalizeArrays(storyAnnotations.beforeEach),
+    ]) {
+      const cleanup = await beforeEach(context);
+      if (cleanup) cleanupCallbacks.push(cleanup);
+    }
+    return cleanupCallbacks;
   };
 
   const undecoratedStoryFn = (context: StoryContext<TRenderer>) =>
@@ -117,6 +131,7 @@ export function prepareStory<TRenderer extends Renderer>(
     undecoratedStoryFn,
     unboundStoryFn,
     applyLoaders,
+    applyBeforeEach,
     playFunction,
   };
 }
@@ -140,7 +155,16 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
   // anything at render time. The assumption is that as we don't load all the stories at once, this
   // will have a limited cost. If this proves misguided, we can refactor it.
 
-  const tags = [...(storyAnnotations?.tags || componentAnnotations.tags || []), 'story'];
+  const defaultTags = ['dev', 'test'];
+  const extraTags = globalThis.DOCS_OPTIONS?.autodocs === true ? ['autodocs'] : [];
+
+  const tags = combineTags(
+    ...defaultTags,
+    ...extraTags,
+    ...(projectAnnotations.tags ?? []),
+    ...(componentAnnotations.tags ?? []),
+    ...(storyAnnotations?.tags ?? [])
+  );
 
   const parameters: Parameters = combineParameters(
     projectAnnotations.parameters,
@@ -250,10 +274,10 @@ export function prepareContext<
       return acc;
     }
 
-    const mappingFn = (originalValue: any) =>
-      originalValue in targetedContext.argTypes[key].mapping
-        ? targetedContext.argTypes[key].mapping[originalValue]
-        : originalValue;
+    const mappingFn = (originalValue: any) => {
+      const mapping = targetedContext.argTypes[key].mapping;
+      return mapping && originalValue in mapping ? mapping[originalValue] : originalValue;
+    };
 
     acc[key] = Array.isArray(val) ? val.map(mappingFn) : mappingFn(val);
 

@@ -18,7 +18,7 @@ program
     '-R, --release-type <major|minor|patch|prerelease>',
     'Which release type to use to bump the version'
   )
-  .option('-P, --pre-id <id>', 'Which prerelease identifer to change to, eg. "alpha", "beta", "rc"')
+  .option('-P, --pre-id <id>', 'Which prerelease identifier to change to, eg. "alpha", "beta", "rc"')
   .option(
     '-E, --exact <version>',
     'Use exact version instead of calculating from current version, eg. "7.2.0-canary.123". Can not be combined with --release-type or --pre-id'

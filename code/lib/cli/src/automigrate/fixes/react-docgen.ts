@@ -1,15 +1,15 @@
 import { dedent } from 'ts-dedent';
-import { updateMainConfig } from '../helpers/mainConfigFile';
+import { getRendererName, updateMainConfig } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
+import chalk from 'chalk';
 
 const logger = console;
 
 interface Options {
-  reactDocgenTypescriptOptions: any;
+  reactDocgenTypescriptOptions?: any;
+  reactDocgen?: 'react-docgen-typescript' | 'react-docgen' | false;
 }
 
-/**
- */
 export const reactDocgen: Fix<Options> = {
   id: 'react-docgen',
 
@@ -17,13 +17,20 @@ export const reactDocgen: Fix<Options> = {
 
   async check({ mainConfig }) {
     // @ts-expect-error assume react
-    const { reactDocgenTypescriptOptions } = mainConfig.typescript || {};
+    const { reactDocgenTypescriptOptions, reactDocgen: rDocgen } = mainConfig.typescript || {};
 
-    return reactDocgenTypescriptOptions ? { reactDocgenTypescriptOptions } : null;
+    const rendererName = getRendererName(mainConfig);
+
+    if (rendererName !== 'react' || rDocgen !== undefined) {
+      return null;
+    }
+
+    return { reactDocgenTypescriptOptions, reactDocgen: rDocgen };
   },
 
-  prompt() {
-    return dedent`
+  prompt({ reactDocgenTypescriptOptions }) {
+    if (reactDocgenTypescriptOptions) {
+      return dedent`
       You have "typescript.reactDocgenTypescriptOptions" configured in your main.js,
       but "typescript.reactDocgen" is unset.
       
@@ -37,15 +44,36 @@ export const reactDocgen: Fix<Options> = {
 
       https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#react-docgen-component-analysis-by-default
     `;
+    } else {
+      return dedent`
+      Since Storybook 8.0, ${chalk.cyan(
+        'react-docgen'
+      )} is now the default for generating component controls, replacing ${chalk.cyan(
+        'react-docgen-typescript'
+      )}. 
+      This offers better performance and suits most cases. 
+      However, for complex TypeScript types or specific type features, the generated controls might not be as precise.
+      
+      For more on this change, check the migration guide: 
+      ${chalk.yellow(
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#react-docgen-component-analysis-by-default'
+      )}
+      
+      For known "react-docgen" limitations, see: 
+      ${chalk.yellow('https://github.com/storybookjs/storybook/issues/26606')}
+      
+      Press Y to revert to ${chalk.cyan('react-docgen-typescript')}, press N to use ${chalk.cyan(
+        'react-docgen'
+      )}
+    `;
+    }
   },
 
-  async run({ dryRun, mainConfigPath }) {
+  async run({ dryRun, mainConfigPath, result }) {
     if (!dryRun) {
       await updateMainConfig({ mainConfigPath, dryRun: !!dryRun }, async (main) => {
         logger.info(`✅ Setting typescript.reactDocgen`);
-        if (!dryRun) {
-          main.setFieldValue(['typescript', 'reactDocgen'], 'react-docgen-typescript');
-        }
+        main.setFieldValue(['typescript', 'reactDocgen'], 'react-docgen-typescript');
       });
     }
   },

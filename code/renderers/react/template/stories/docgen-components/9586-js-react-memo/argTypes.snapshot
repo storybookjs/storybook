@@ -6,7 +6,7 @@
     "description": "",
     "name": "label",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": undefined,
       "type": {
         "detail": undefined,
@@ -22,7 +22,7 @@
     "description": "",
     "name": "onClick",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": undefined,
       "type": {
         "detail": undefined,

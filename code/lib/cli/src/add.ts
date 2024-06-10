@@ -48,6 +48,12 @@ const checkInstalled = (addonName: string, main: any) => {
 
 const isCoreAddon = (addonName: string) => Object.hasOwn(versions, addonName);
 
+type CLIOptions = {
+  packageManager?: PackageManagerName;
+  configDir?: string;
+  skipPostinstall: boolean;
+};
+
 /**
  * Install the given addon package and add it to main.js
  *
@@ -61,15 +67,18 @@ const isCoreAddon = (addonName: string) => Object.hasOwn(versions, addonName);
  */
 export async function add(
   addon: string,
-  options: { packageManager: PackageManagerName; skipPostinstall: boolean },
+  { packageManager: pkgMgr, skipPostinstall, configDir: userSpecifiedConfigDir }: CLIOptions,
   logger = console
 ) {
-  const { packageManager: pkgMgr } = options;
   const [addonName, inputVersion] = getVersionSpecifier(addon);
 
   const packageManager = JsPackageManagerFactory.getPackageManager({ force: pkgMgr });
   const packageJson = await packageManager.retrievePackageJson();
-  const { mainConfig, configDir } = getStorybookInfo(packageJson);
+  const { mainConfig, configDir: inferredConfigDir } = getStorybookInfo(
+    packageJson,
+    userSpecifiedConfigDir
+  );
+  const configDir = userSpecifiedConfigDir || inferredConfigDir || '.storybook';
 
   if (typeof configDir === 'undefined') {
     throw new Error(dedent`
@@ -119,7 +128,7 @@ export async function add(
   main.appendValueToArray(['addons'], addonName);
   await writeConfig(main);
 
-  if (!options.skipPostinstall && isCoreAddon(addonName)) {
+  if (!skipPostinstall && isCoreAddon(addonName)) {
     await postinstallAddon(addonName, { packageManager: packageManager.type });
   }
 }

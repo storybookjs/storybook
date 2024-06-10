@@ -22,11 +22,14 @@ const CollapseIcon = styled.span<{ isActive: boolean }>(({ theme, isActive }) =>
 
 const AddonButton = styled(TabButton)<{ preActive: boolean }>(({ active, theme, preActive }) => {
   return `
-    color: ${preActive || active ? theme.color.secondary : theme.color.mediumdark};
+    color: ${preActive || active ? theme.barSelectedColor : theme.barTextColor};
+    .addon-collapsible-icon {
+      color: ${preActive || active ? theme.barSelectedColor : theme.barTextColor};
+    }
     &:hover {
-      color: ${theme.color.secondary};
+      color: ${theme.barHoverColor};
       .addon-collapsible-icon {
-        color: ${theme.color.secondary};
+        color: ${theme.barHoverColor};
       }
     }
   `;

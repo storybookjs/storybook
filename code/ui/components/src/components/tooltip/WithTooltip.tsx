@@ -45,23 +45,42 @@ export interface WithTooltipPureProps
 
 // Pure, does not bind to the body
 const WithTooltipPure = ({
-  svg,
-  trigger,
-  closeOnOutsideClick,
-  placement,
-  hasChrome,
+  svg = false,
+  trigger = 'click',
+  closeOnOutsideClick = false,
+  placement = 'top',
+  modifiers = [
+    {
+      name: 'preventOverflow',
+      options: {
+        padding: 8,
+      },
+    },
+    {
+      name: 'offset',
+      options: {
+        offset: [8, 8],
+      },
+    },
+    {
+      name: 'arrow',
+      options: {
+        padding: 8,
+      },
+    },
+  ],
+  hasChrome = true,
+  defaultVisible = false,
   withArrows,
   offset,
   tooltip,
   children,
   closeOnTriggerHidden,
   mutationObserverOptions,
-  defaultVisible,
   delayHide,
   visible,
   interactive,
   delayShow,
-  modifiers,
   strategy,
   followCursor,
   onVisibleChange,
@@ -118,35 +137,6 @@ const WithTooltipPure = ({
       {isVisible && ReactDOM.createPortal(tooltipComponent, document.body)}
     </>
   );
-};
-
-WithTooltipPure.defaultProps = {
-  svg: false,
-  trigger: 'click',
-  closeOnOutsideClick: false,
-  placement: 'top',
-  modifiers: [
-    {
-      name: 'preventOverflow',
-      options: {
-        padding: 8,
-      },
-    },
-    {
-      name: 'offset',
-      options: {
-        offset: [8, 8],
-      },
-    },
-    {
-      name: 'arrow',
-      options: {
-        padding: 8,
-      },
-    },
-  ],
-  hasChrome: true,
-  defaultVisible: false,
 };
 
 export interface WithTooltipStateProps extends Omit<WithTooltipPureProps, 'onVisibleChange'> {

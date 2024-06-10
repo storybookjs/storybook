@@ -160,15 +160,13 @@ const Path = styled.div(({ theme }) => ({
 
 const Result: FC<
   SearchResult & {
-    icon: string;
     isHighlighted: boolean;
-    onClick: MouseEventHandler;
-  }
-> = React.memo(function Result({ item, matches, icon, onClick, ...props }) {
-  const click: MouseEventHandler = useCallback(
+  } & React.DetailedHTMLProps<React.LiHTMLAttributes<HTMLLIElement>, HTMLLIElement>
+> = React.memo(function Result({ item, matches, onClick, ...props }) {
+  const click: MouseEventHandler<HTMLLIElement> = useCallback(
     (event) => {
       event.preventDefault();
-      onClick(event);
+      onClick?.(event);
     },
     [onClick]
   );
@@ -260,7 +258,7 @@ export const SearchResults: FC<{
     return () => document.removeEventListener('keydown', handleEscape);
   }, [closeMenu, enableShortcuts, isLoading]);
 
-  const mouseOverHandler = useCallback((event: MouseEvent) => {
+  const mouseOverHandler: MouseEventHandler = useCallback((event) => {
     if (!api) {
       return;
     }

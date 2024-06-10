@@ -1,10 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import * as sbcc from '@storybook/core-common';
-import {
-  UpgradeStorybookToLowerVersionError,
-  UpgradeStorybookToSameVersionError,
-} from '@storybook/core-events/server-errors';
+import { UpgradeStorybookToLowerVersionError } from '@storybook/core-events/server-errors';
 import { doUpgrade, getStorybookVersion } from './upgrade';
+import { logger } from '@storybook/node-logger';
 
 const findInstallationsMock = vi.fn<string[], Promise<sbcc.InstallationMetadata | undefined>>();
 
@@ -16,6 +14,9 @@ vi.mock('@storybook/core-common', async (importOriginal) => {
     JsPackageManagerFactory: {
       getPackageManager: () => ({
         findInstallations: findInstallationsMock,
+        latestVersion: async () => '8.0.0',
+        retrievePackageJson: async () => {},
+        getAllDependencies: async () => ({ storybook: '8.0.0' }),
       }),
     },
     versions: Object.keys(originalModule.versions).reduce(
@@ -67,7 +68,7 @@ describe('Upgrade errors', () => {
     await expect(doUpgrade({} as any)).rejects.toThrowError(UpgradeStorybookToLowerVersionError);
     expect(findInstallationsMock).toHaveBeenCalledWith(Object.keys(sbcc.versions));
   });
-  it('should throw an error when upgrading to the same version number', async () => {
+  it('should show a warning when upgrading to the same version number', async () => {
     findInstallationsMock.mockResolvedValue({
       dependencies: {
         '@storybook/cli': [
@@ -81,7 +82,15 @@ describe('Upgrade errors', () => {
       dedupeCommand: '',
     });
 
-    await expect(doUpgrade({} as any)).rejects.toThrowError(UpgradeStorybookToSameVersionError);
+    // Mock as a throw, so that we don't have to mock the content of the doUpgrade fn that comes after it
+    vi.spyOn(logger, 'warn').mockImplementation((error) => {
+      // eslint-disable-next-line @typescript-eslint/no-throw-literal
+      throw error;
+    });
+
+    await expect(doUpgrade({ packageManager: 'npm' } as any)).rejects.toContain(
+      'You are upgrading Storybook to the same version that is currently installed in the project'
+    );
     expect(findInstallationsMock).toHaveBeenCalledWith(Object.keys(sbcc.versions));
   });
 });

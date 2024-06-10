@@ -37,7 +37,7 @@ async function benchAutodocs(url: string) {
   const browser = await chromium.launch(/* { headless: false } */);
   await browser.newContext();
   const page = await browser.newPage();
-  await page.setDefaultTimeout(40000);
+  page.setDefaultTimeout(40000);
 
   const start = now();
   await page.goto(`${url}?path=/docs/example-button--docs`);
@@ -45,7 +45,7 @@ async function benchAutodocs(url: string) {
   const tasks = [
     async () => {
       const previewPage = await getPreviewPage(page);
-      await previewPage.setDefaultTimeout(40000);
+      previewPage.setDefaultTimeout(40000);
 
       await previewPage.waitForLoadState('load');
       await previewPage.getByText('Primary UI component for user interaction');
@@ -72,7 +72,7 @@ async function benchMDX(url: string) {
   const tasks = [
     async () => {
       const previewPage = await getPreviewPage(page);
-      await previewPage.setDefaultTimeout(40000);
+      previewPage.setDefaultTimeout(40000);
 
       await previewPage.waitForLoadState('load');
       await previewPage.getByText('Configure your project');
@@ -108,7 +108,7 @@ async function benchStory(url: string) {
     },
     async () => {
       const previewPage = await getPreviewPage(page);
-      await previewPage.setDefaultTimeout(40000);
+      previewPage.setDefaultTimeout(40000);
 
       await previewPage.waitForLoadState('load');
       await previewPage.getByText('Button');

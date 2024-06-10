@@ -3,11 +3,12 @@ import type { Task } from '../task';
 import { exec } from '../utils/exec';
 import { PORT } from './serve';
 
-export const e2eTestsBuild: Task & { port: number } = {
+export const e2eTestsBuild: Task & { port: number; type: 'build' | 'dev' } = {
   description: 'Run e2e tests against a sandbox in prod mode',
   dependsOn: ['serve'],
   junit: true,
   port: PORT,
+  type: 'build',
   async ready() {
     return false;
   },
@@ -29,6 +30,7 @@ export const e2eTestsBuild: Task & { port: number } = {
       {
         env: {
           STORYBOOK_URL: `http://localhost:${this.port}`,
+          STORYBOOK_TYPE: this.type,
           STORYBOOK_TEMPLATE_NAME: key,
           ...(junitFilename && {
             PLAYWRIGHT_JUNIT_OUTPUT_NAME: junitFilename,

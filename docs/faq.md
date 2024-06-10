@@ -347,15 +347,17 @@ Vue 2 entered [End of Life](https://v2.vuejs.org/lts/) (EOL) on December 31, 202
 
 <!-- prettier-ignore-end -->
 
-## Why aren't my code blocks highlighted with Storybook MDX
+## Why aren't my code blocks highlighted with Storybook MDX?
 
-Out of the box, Storybook provides syntax highlighting for a set of languages (e.g., Javascript, Markdown, CSS, HTML, Typescript, GraphQL) you can use with your code blocks. Currently, there's a known limitation when you try and register a custom language to get syntax highlighting. We're working on a fix for this And will update this section once it's available.
+Out of the box, Storybook provides syntax highlighting for a set of languages (e.g., Javascript, Markdown, CSS, HTML, Typescript, GraphQL) you can use with your code blocks. Currently, there's a known limitation when you try to register a custom language to get syntax highlighting. We're working on a fix for this and will update this section once it's available.
 
-## Why aren't my MDX stories working in Storybook?
+## Why aren't my MDX styles working in Storybook?
 
-MDX can be picky about how your code is formatted with line breaks. This is especially true with code blocks. For example, this will break:
+Writing documentation with MDX can be troublesome, especially regarding how your code is formatted when using line breaks with code blocks. For example, this will break:
 
-```
+<!-- prettier-ignore-start -->
+
+```mdx
 <style>{`
   .class1 {
     ...
@@ -365,12 +367,15 @@ MDX can be picky about how your code is formatted with line breaks. This is espe
     ...
   }
 `}</style>
-
 ```
+
+<!-- prettier-ignore-end -->
 
 But this will work:
 
-```
+<!-- prettier-ignore-start -->
+
+```mdx
 <style>
   {`
     .class1 {
@@ -383,6 +388,8 @@ But this will work:
   `}
 </style>
 ```
+
+<!-- prettier-ignore-end -->
 
 See the following [issue](https://github.com/mdx-js/mdx/issues/1945) for more information.
 

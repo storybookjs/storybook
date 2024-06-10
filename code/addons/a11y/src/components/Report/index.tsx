@@ -1,6 +1,6 @@
 import type { FC } from 'react';
 import React, { Fragment } from 'react';
-import { Placeholder } from '@storybook/components';
+import { EmptyTabContent } from '@storybook/components';
 import type { Result } from 'axe-core';
 
 import { Item } from './Item';
@@ -18,7 +18,7 @@ export const Report: FC<ReportProps> = ({ items, empty, type }) => (
     {items && items.length ? (
       items.map((item) => <Item item={item} key={`${type}:${item.id}`} type={type} />)
     ) : (
-      <Placeholder key="placeholder">{empty}</Placeholder>
+      <EmptyTabContent title={empty} />
     )}
   </Fragment>
 );

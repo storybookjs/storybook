@@ -42,8 +42,8 @@ Configure a directory (or a list of directories) where your assets live when sta
 
 <CodeSnippets
   paths={[
-    'common/storybook-main-with-single-static-dir.js.mdx',
-    'common/storybook-main-with-single-static-dir.ts.mdx',
+    'common/main-config-static-dirs.js.mdx',
+    'common/main-config-static-dirs.ts.mdx',
   ]}
 />
 

@@ -11,7 +11,25 @@ import { getStorybookVersionSpecifier } from './helpers';
 
 const logger = console;
 
-export async function migrate(migration: any, { glob, dryRun, list, rename, parser }: any) {
+type CLIOptions = {
+  glob: string;
+  configDir?: string;
+  dryRun?: boolean;
+  list?: string[];
+  /**
+   * Rename suffix of matching files after codemod has been applied, e.g. ".js:.ts"
+   */
+  rename?: string;
+  /**
+   * jscodeshift parser
+   */
+  parser?: 'babel' | 'babylon' | 'flow' | 'ts' | 'tsx';
+};
+
+export async function migrate(
+  migration: any,
+  { glob, dryRun, list, rename, parser, configDir: userSpecifiedConfigDir }: CLIOptions
+) {
   if (list) {
     listCodemods().forEach((key: any) => logger.log(key));
   } else if (migration) {
@@ -19,13 +37,14 @@ export async function migrate(migration: any, { glob, dryRun, list, rename, pars
       const packageManager = JsPackageManagerFactory.getPackageManager();
 
       const [packageJson, storybookVersion] = await Promise.all([
-        //
         packageManager.retrievePackageJson(),
         getCoercedStorybookVersion(packageManager),
       ]);
-      const { configDir: inferredConfigDir, mainConfig: mainConfigPath } =
-        getStorybookInfo(packageJson);
-      const configDir = inferredConfigDir || '.storybook';
+      const { configDir: inferredConfigDir, mainConfig: mainConfigPath } = getStorybookInfo(
+        packageJson,
+        userSpecifiedConfigDir
+      );
+      const configDir = userSpecifiedConfigDir || inferredConfigDir || '.storybook';
 
       // GUARDS
       if (!storybookVersion) {

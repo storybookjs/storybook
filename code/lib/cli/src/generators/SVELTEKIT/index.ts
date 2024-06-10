@@ -8,7 +8,10 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
     npmOptions,
     { ...options, builder: CoreBuilder.Vite },
     'svelte',
-    undefined,
+    {
+      extensions: ['js', 'ts', 'svelte'],
+      extraAddons: ['@storybook/addon-svelte-csf'],
+    },
     'sveltekit'
   );
 };

@@ -1,4 +1,5 @@
 import type { API_Notification } from '@storybook/types';
+import partition from 'lodash/partition.js';
 import type { ModuleFn } from '../lib/types';
 
 export interface SubState {
@@ -25,26 +26,24 @@ export interface SubAPI {
 
 export const init: ModuleFn = ({ store }) => {
   const api: SubAPI = {
-    addNotification: (notification) => {
-      // Get rid of it if already exists
-      api.clearNotification(notification.id);
-
-      const { notifications } = store.getState();
-
-      store.setState({ notifications: [...notifications, notification] });
+    addNotification: (newNotification) => {
+      store.setState(({ notifications }) => {
+        const [existing, others] = partition(notifications, (n) => n.id === newNotification.id);
+        existing.forEach((notification) => {
+          if (notification.onClear) notification.onClear({ dismissed: false, timeout: false });
+        });
+        return { notifications: [...others, newNotification] };
+      });
     },
 
-    clearNotification: (id) => {
-      const { notifications } = store.getState();
-
-      const notification = notifications.find((n) => n.id === id);
-
-      if (notification) {
-        store.setState({ notifications: notifications.filter((n) => n.id !== id) });
-        if (notification.onClear) {
-          notification.onClear({ dismissed: false });
-        }
-      }
+    clearNotification: (notificationId) => {
+      store.setState(({ notifications }) => {
+        const [matching, others] = partition(notifications, (n) => n.id === notificationId);
+        matching.forEach((notification) => {
+          if (notification.onClear) notification.onClear({ dismissed: false, timeout: false });
+        });
+        return { notifications: others };
+      });
     },
   };
 

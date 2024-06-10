@@ -2,7 +2,6 @@
 import fs from 'fs';
 import path from 'path';
 import { promisify } from 'util';
-import globby from 'globby';
 import { sync as spawnSync } from 'cross-spawn';
 import { jscodeshiftToPrettierParser } from './lib/utils';
 
@@ -63,6 +62,9 @@ export async function runCodemod(
     if (knownParser !== 'babel') inferredParser = extension;
   }
 
+  // Dynamically import globby because it is a pure ESM module
+  const { globby } = await import('globby');
+
   const files = await globby([glob, '!**/node_modules', '!**/dist']);
   const extensions = new Set(files.map((file) => path.extname(file).slice(1)));
   const commaSeparatedExtensions = Array.from(extensions).join(',');
@@ -89,7 +91,7 @@ export async function runCodemod(
         '-t',
         `${TRANSFORM_DIR}/${codemod}.js`,
         ...parserArgs,
-        ...files,
+        ...files.map((file) => `"${file}"`),
       ],
       {
         stdio: 'inherit',

@@ -52,27 +52,6 @@ export const Compact = {
   args: { ...Normal.args, compact: true },
 };
 
-const AddonPanelLayout = styled.div(({ theme }) => ({
-  fontSize: theme.typography.size.s2 - 1,
-  background: theme.background.content,
-}));
-
-export const InAddonPanel = {
-  args: { ...Normal.args, inAddonPanel: true },
-  decorators: [(storyFn: any) => <AddonPanelLayout>{storyFn()}</AddonPanelLayout>],
-};
-
-export const InAddonPanelNoControls = {
-  render: (args: any) => <ArgsTable {...args} />,
-  args: {
-    rows: {
-      stringType: { ...stringType, control: false },
-      numberType: { ...numberType, control: false },
-    },
-  },
-  decorators: InAddonPanel.decorators,
-};
-
 export const Sections = {
   args: {
     rows: {
@@ -134,6 +113,33 @@ export const AllControls = {
       object: ArgRow.ObjectOf.args.row,
       func: ArgRow.Func.args.row,
     },
+  },
+};
+
+const AddonPanelLayout = styled.div(({ theme }) => ({
+  fontSize: theme.typography.size.s2 - 1,
+  background: theme.background.content,
+}));
+
+export const InAddonPanel = {
+  args: {
+    ...Normal.args,
+    inAddonPanel: true,
+    rows: SectionsAndSubsections.args.rows,
+  },
+  decorators: [(storyFn: any) => <AddonPanelLayout>{storyFn()}</AddonPanelLayout>],
+  parameters: {
+    layout: 'fullscreen',
+  },
+};
+
+export const InAddonPanelNoControls = {
+  ...InAddonPanel,
+  args: {
+    ...InAddonPanel.args,
+    rows: Object.fromEntries(
+      Object.entries(InAddonPanel.args.rows).map(([k, v]) => [k, { ...v, control: null }])
+    ),
   },
 };
 

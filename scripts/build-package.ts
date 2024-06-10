@@ -115,13 +115,13 @@ async function run() {
   }
 
   selection?.filter(Boolean).forEach(async (v) => {
-    const commmand = (await readJSON(resolve('../code', v.location, 'package.json'))).scripts.prep
+    const command = (await readJSON(resolve('../code', v.location, 'package.json'))).scripts.prep
       .split(posix.sep)
       .join(sep);
 
     const cwd = resolve(__dirname, '..', 'code', v.location);
     const sub = execaCommand(
-      `${commmand}${watchMode ? ' --watch' : ''}${prodMode ? ' --optimized' : ''}`,
+      `${command}${watchMode ? ' --watch' : ''}${prodMode ? ' --optimized' : ''}`,
       {
         cwd,
         buffer: false,

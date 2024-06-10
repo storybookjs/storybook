@@ -1217,6 +1217,8 @@ export const referenceTypeEvents: TestComponent = {
     events: [
       {
         name: 'foo',
+        description: '',
+        tags: [],
         type: '[data?: { foo: string; } | undefined]',
         signature: '(event: "foo", data?: { foo: string; } | undefined): void',
         declarations: [],
@@ -1248,6 +1250,8 @@ export const referenceTypeEvents: TestComponent = {
       },
       {
         name: 'bar',
+        description: '',
+        tags: [],
         type: '[value: { year: number; title?: any; }]',
         signature: '(event: "bar", value: { year: number; title?: any; }): void',
         declarations: [],
@@ -1282,6 +1286,8 @@ export const referenceTypeEvents: TestComponent = {
       },
       {
         name: 'baz',
+        description: '',
+        tags: [],
         type: '[]',
         signature: '(event: "baz"): void',
         declarations: [],

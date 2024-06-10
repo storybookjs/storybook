@@ -448,7 +448,7 @@ describe('Refs API', () => {
       setupResponses({
         indexPrivate: {
           ok: true,
-          response: async () => ({ v: 4, entries: {} }),
+          response: async () => ({ v: 5, entries: {} }),
         },
         storiesPrivate: {
           ok: true,
@@ -506,7 +506,7 @@ describe('Refs API', () => {
               "index": {},
               "internal_index": {
                 "entries": {},
-                "v": 4,
+                "v": 5,
               },
               "title": "Fake",
               "type": "lazy",
@@ -524,7 +524,7 @@ describe('Refs API', () => {
               "index": {},
               "internal_index": {
                 "entries": {},
-                "v": 4,
+                "v": 5,
               },
               "title": "Fake",
               "type": "lazy",
@@ -542,7 +542,7 @@ describe('Refs API', () => {
       setupResponses({
         indexPrivate: {
           ok: true,
-          response: async () => ({ v: 4, entries: {} }),
+          response: async () => ({ v: 5, entries: {} }),
         },
         storiesPrivate: {
           ok: true,
@@ -603,7 +603,7 @@ describe('Refs API', () => {
               "index": {},
               "internal_index": {
                 "entries": {},
-                "v": 4,
+                "v": 5,
               },
               "title": "Fake",
               "type": "lazy",
@@ -622,7 +622,7 @@ describe('Refs API', () => {
       setupResponses({
         indexPrivate: {
           ok: true,
-          response: async () => ({ v: 4, entries: {} }),
+          response: async () => ({ v: 5, entries: {} }),
         },
         storiesPrivate: {
           ok: true,
@@ -684,7 +684,7 @@ describe('Refs API', () => {
               "index": {},
               "internal_index": {
                 "entries": {},
-                "v": 4,
+                "v": 5,
               },
               "title": "Fake",
               "type": "lazy",
@@ -781,7 +781,7 @@ describe('Refs API', () => {
       setupResponses({
         indexPrivate: {
           ok: true,
-          response: async () => ({ v: 4, entries: {} }),
+          response: async () => ({ v: 5, entries: {} }),
         },
         storiesPrivate: {
           ok: true,
@@ -927,7 +927,7 @@ describe('Refs API', () => {
       setupResponses({
         indexPublic: {
           ok: true,
-          response: async () => ({ v: 4, entries: {} }),
+          response: async () => ({ v: 5, entries: {} }),
         },
         storiesPublic: {
           ok: true,
@@ -989,7 +989,7 @@ describe('Refs API', () => {
               "index": {},
               "internal_index": {
                 "entries": {},
-                "v": 4,
+                "v": 5,
               },
               "title": "Fake",
               "type": "lazy",
@@ -1008,7 +1008,7 @@ describe('Refs API', () => {
       setupResponses({
         indexPrivate: {
           ok: true,
-          response: async () => ({ v: 4, entries: {} }),
+          response: async () => ({ v: 5, entries: {} }),
         },
         storiesPrivate: {
           ok: true,
@@ -1070,7 +1070,7 @@ describe('Refs API', () => {
               "index": {},
               "internal_index": {
                 "entries": {},
-                "v": 4,
+                "v": 5,
               },
               "title": "Fake",
               "type": "lazy",
@@ -1206,7 +1206,7 @@ describe('Refs API', () => {
   describe('setRef', () => {
     it('can filter', async () => {
       const index: StoryIndex = {
-        v: 4,
+        v: 5,
         entries: {
           'a--1': {
             id: 'a--1',

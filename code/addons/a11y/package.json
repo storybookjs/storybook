@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-a11y",
-  "version": "8.1.0-alpha.1",
+  "version": "8.2.0-alpha.6",
   "description": "Test component compliance with web accessibility standards",
   "keywords": [
     "a11y",
@@ -29,11 +29,15 @@
     ".": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "import": "./dist/preview.mjs",
+      "require": "./dist/preview.js"
     },
     "./manager": "./dist/manager.js",
-    "./preview": "./dist/preview.js",
     "./register": "./dist/manager.js",
     "./package.json": "./package.json"
   },

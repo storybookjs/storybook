@@ -43,7 +43,7 @@ const getTheLastCommitHashThatUpdatedTheSandboxRepo = async (branch: string) => 
 };
 
 /**
- * When commiting the changes to the sandboxes repo, we want to include the PRs that were merged since the last commit that updated the sandboxes.
+ * When committing the changes to the sandboxes repo, we want to include the PRs that were merged since the last commit that updated the sandboxes.
  * This might help us debug issues or changes that affected the sandboxes at some point in time.
  */
 export async function commitAllToGit({ cwd, branch }: { cwd: string; branch: string }) {

@@ -126,7 +126,16 @@ export interface TooltipProps {
 
 export const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
   (
-    { placement, hasChrome, children, arrowProps, tooltipRef, color, withArrows, ...props },
+    {
+      placement = 'top',
+      hasChrome = true,
+      children,
+      arrowProps = {},
+      tooltipRef,
+      color,
+      withArrows,
+      ...props
+    },
     ref
   ) => {
     return (
@@ -139,10 +148,3 @@ export const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
 );
 
 Tooltip.displayName = 'Tooltip';
-Tooltip.defaultProps = {
-  color: undefined,
-  tooltipRef: undefined,
-  hasChrome: true,
-  placement: 'top',
-  arrowProps: {},
-};

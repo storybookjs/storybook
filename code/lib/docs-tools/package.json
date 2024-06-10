@@ -1,6 +1,6 @@
 {
   "name": "@storybook/docs-tools",
-  "version": "8.1.0-alpha.1",
+  "version": "8.2.0-alpha.6",
   "description": "Shared utility functions for frameworks to implement docs",
   "keywords": [
     "storybook"
@@ -24,8 +24,8 @@
     ".": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./package.json": "./package.json"
   },
@@ -45,15 +45,15 @@
   },
   "dependencies": {
     "@storybook/core-common": "workspace:*",
+    "@storybook/core-events": "workspace:*",
     "@storybook/preview-api": "workspace:*",
     "@storybook/types": "workspace:*",
-    "@types/doctrine": "^0.0.3",
-    "assert": "^2.1.0",
-    "doctrine": "^3.0.0",
+    "comment-parser": "^1.4.1",
+    "jsdoc-type-pratt-parser": "^4.0.0",
     "lodash": "^4.17.21"
   },
   "devDependencies": {
-    "@babel/preset-react": "^7.23.3",
+    "@babel/preset-react": "^7.24.1",
     "babel-plugin-react-docgen": "4.2.1",
     "require-from-string": "^2.0.2",
     "typescript": "^5.3.2"

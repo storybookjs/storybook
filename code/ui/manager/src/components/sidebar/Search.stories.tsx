@@ -43,6 +43,12 @@ const baseProps = {
 
 export const Simple: StoryFn = () => <Search {...baseProps}>{() => null}</Search>;
 
+export const SimpleWithCreateButton: StoryFn = () => (
+  <Search {...baseProps} showCreateStoryButton={true}>
+    {() => null}
+  </Search>
+);
+
 export const FilledIn: StoryFn = () => (
   <Search {...baseProps} initialQuery="Search query">
     {() => <SearchResults {...noResults} />}

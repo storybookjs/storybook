@@ -137,9 +137,36 @@ module.exports = {
           type: 'link',
         },
         {
+          pathSegment: 'tags',
+          title: 'Tags',
+          type: 'link',
+        },
+        {
           pathSegment: 'naming-components-and-hierarchy',
           title: 'Naming components and hierarchy',
           type: 'link',
+        },
+        {
+          pathSegment: '',
+          title: 'Mocking data and modules',
+          type: 'menu',
+          children: [
+            {
+              pathSegment: 'mocking-modules',
+              title: 'Modules',
+              type: 'link',
+            },
+            {
+              pathSegment: 'mocking-network-requests',
+              title: 'Network requests',
+              type: 'link',
+            },
+            {
+              pathSegment: 'mocking-providers',
+              title: 'Providers',
+              type: 'link',
+            },
+          ],
         },
         {
           pathSegment: 'build-pages-with-storybook',
@@ -611,7 +638,7 @@ module.exports = {
               pathSegment: 'main-config-static-dirs',
               type: 'link',
             },
-             {
+            {
               title: 'swc',
               pathSegment: 'main-config-swc',
               type: 'link',
@@ -741,6 +768,31 @@ module.exports = {
           ],
         },
         {
+          title: 'Portable stories',
+          pathSegment: '',
+          type: 'menu',
+          children: [
+            // Unpublished for now
+            // {
+            //   pathSegment: 'portable-stories-jest',
+            //   title: 'Jest',
+            //   type: 'link',
+            // },
+            {
+              pathSegment: 'portable-stories-playwright',
+              title: 'Playwright',
+              type: 'link',
+            },
+            // Unpublished for now
+            // {
+            //   pathSegment: 'portable-stories-vitest',
+            //   title: 'Vitest',
+            //   type: 'link',
+            // },
+          ],
+        },
+        
+        {
           pathSegment: 'new-frameworks',
           title: 'Frameworks',
           type: 'link',
@@ -792,6 +844,11 @@ module.exports = {
         {
           pathSegment: 'how-to-reproduce',
           title: 'Reproduce',
+          type: 'link',
+        },
+        {
+          pathSegment: 'roadmap',
+          title: 'Roadmap',
           type: 'link',
         },
       ],

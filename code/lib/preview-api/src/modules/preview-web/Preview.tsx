@@ -1,6 +1,14 @@
 import { global } from '@storybook/global';
 import { deprecate, logger } from '@storybook/client-logger';
+import type {
+  ArgTypesRequestPayload,
+  ArgTypesResponsePayload,
+  RequestData,
+  ResponseData,
+} from '@storybook/core-events';
 import {
+  ARGTYPES_INFO_REQUEST,
+  ARGTYPES_INFO_RESPONSE,
   CONFIG_ERROR,
   FORCE_REMOUNT,
   FORCE_RE_RENDER,
@@ -100,9 +108,7 @@ export class Preview<TRenderer extends Renderer> {
         get: (_, method) => {
           if (this.storyStoreValue) {
             deprecate('Accessing the Story Store is deprecated and will be removed in 9.0');
-
-            // @ts-expect-error I'm not sure if there's a way to keep TS happy here
-            return this.storyStoreValue[method];
+            return this.storyStoreValue[method as keyof StoryStore<TRenderer>];
           }
 
           throw new StoryStoreAccessedBeforeInitializationError();
@@ -131,6 +137,7 @@ export class Preview<TRenderer extends Renderer> {
     this.channel.on(STORY_INDEX_INVALIDATED, this.onStoryIndexChanged.bind(this));
     this.channel.on(UPDATE_GLOBALS, this.onUpdateGlobals.bind(this));
     this.channel.on(UPDATE_STORY_ARGS, this.onUpdateArgs.bind(this));
+    this.channel.on(ARGTYPES_INFO_REQUEST, this.onRequestArgTypesInfo.bind(this));
     this.channel.on(RESET_STORY_ARGS, this.onResetArgs.bind(this));
     this.channel.on(FORCE_RE_RENDER, this.onForceReRender.bind(this));
     this.channel.on(FORCE_REMOUNT, this.onForceRemount.bind(this));
@@ -295,6 +302,25 @@ export class Preview<TRenderer extends Renderer> {
       storyId,
       args: this.storyStoreValue.args.get(storyId),
     });
+  }
+
+  async onRequestArgTypesInfo({ id, payload }: RequestData<ArgTypesRequestPayload>) {
+    try {
+      await this.storeInitializationPromise;
+      const story = await this.storyStoreValue?.loadStory(payload);
+      this.channel.emit(ARGTYPES_INFO_RESPONSE, {
+        id,
+        success: true,
+        payload: { argTypes: story?.argTypes || {} },
+        error: null,
+      } satisfies ResponseData<ArgTypesResponsePayload>);
+    } catch (e: any) {
+      this.channel.emit(ARGTYPES_INFO_RESPONSE, {
+        id,
+        success: false,
+        error: e?.message,
+      } satisfies ResponseData<ArgTypesResponsePayload>);
+    }
   }
 
   async onResetArgs({ storyId, argNames }: { storyId: string; argNames?: string[] }) {

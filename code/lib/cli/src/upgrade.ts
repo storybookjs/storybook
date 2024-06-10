@@ -4,6 +4,7 @@ import semver, { eq, lt, prerelease } from 'semver';
 import { logger } from '@storybook/node-logger';
 import { withTelemetry } from '@storybook/core-server';
 import {
+  UpgradeStorybookInWrongWorkingDirectory,
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookToSameVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
@@ -22,6 +23,7 @@ import {
 } from '@storybook/core-common';
 import { automigrate } from './automigrate/index';
 import { autoblock } from './autoblock/index';
+import { hasStorybookDependencies } from './helpers';
 
 type Package = {
   package: string;
@@ -134,11 +136,16 @@ export const doUpgrade = async ({
     beforeVersion.startsWith('portal:') ||
     beforeVersion.startsWith('workspace:');
 
+  if (!(await hasStorybookDependencies(packageManager))) {
+    throw new UpgradeStorybookInWrongWorkingDirectory();
+  }
   if (!isCanary && lt(currentVersion, beforeVersion)) {
     throw new UpgradeStorybookToLowerVersionError({ beforeVersion, currentVersion });
   }
+
   if (!isCanary && eq(currentVersion, beforeVersion)) {
-    throw new UpgradeStorybookToSameVersionError({ beforeVersion });
+    // Not throwing, as the beforeVersion calculation doesn't always work in monorepos.
+    logger.warn(new UpgradeStorybookToSameVersionError({ beforeVersion }).message);
   }
 
   const [latestVersion, packageJson] = await Promise.all([

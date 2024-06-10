@@ -40,6 +40,7 @@ import {
   normalizeProjectAnnotations,
   prepareContext,
 } from './csf';
+import type { CleanupCallback } from '@storybook/csf';
 
 // TODO -- what are reasonable values for these?
 const CSF_CACHE_SIZE = 1000;
@@ -55,6 +56,8 @@ export class StoryStore<TRenderer extends Renderer> {
   args: ArgsStore;
 
   hooks: Record<StoryId, HooksContext<TRenderer>>;
+
+  cleanupCallbacks: Record<StoryId, CleanupCallback[] | undefined>;
 
   cachedCSFFiles?: Record<Path, CSFFile<TRenderer>>;
 
@@ -79,6 +82,7 @@ export class StoryStore<TRenderer extends Renderer> {
     this.args = new ArgsStore();
     this.globals = new GlobalsStore({ globals, globalTypes });
     this.hooks = {};
+    this.cleanupCallbacks = {};
 
     // We use a cache for these two functions for two reasons:
     //  1. For performance
@@ -234,8 +238,17 @@ export class StoryStore<TRenderer extends Renderer> {
     });
   }
 
-  cleanupStory(story: PreparedStory<TRenderer>): void {
+  addCleanupCallbacks(story: PreparedStory<TRenderer>, callbacks: CleanupCallback[]) {
+    this.cleanupCallbacks[story.id] = callbacks;
+  }
+
+  async cleanupStory(story: PreparedStory<TRenderer>): Promise<void> {
     this.hooks[story.id].clean();
+
+    const callbacks = this.cleanupCallbacks[story.id];
+    if (callbacks) for (const callback of [...callbacks].reverse()) await callback();
+
+    delete this.cleanupCallbacks[story.id];
   }
 
   extract(

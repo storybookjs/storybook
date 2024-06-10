@@ -19,6 +19,11 @@ const TestComponent1 = Component({})(class {});
 const TestComponent2 = Component({})(class {});
 const StandaloneTestComponent = Component({ standalone: true })(class {});
 const StandaloneTestDirective = Directive({ standalone: true })(class {});
+const MixedTestComponent1 = Component({ standalone: true })(
+  class extends StandaloneTestComponent {}
+);
+const MixedTestComponent2 = Component({})(class extends MixedTestComponent1 {});
+const MixedTestComponent3 = Component({ standalone: true })(class extends MixedTestComponent2 {});
 const TestModuleWithDeclarations = NgModule({ declarations: [TestComponent1] })(class {});
 const TestModuleWithImportsAndProviders = NgModule({
   imports: [TestModuleWithDeclarations],
@@ -150,6 +155,21 @@ describe('PropertyExtractor', () => {
 
     it('isStandalone should be true', () => {
       const { isStandalone } = PropertyExtractor.analyzeDecorators(StandaloneTestComponent);
+      expect(isStandalone).toBe(true);
+    });
+
+    it('isStandalone should be true', () => {
+      const { isStandalone } = PropertyExtractor.analyzeDecorators(MixedTestComponent1);
+      expect(isStandalone).toBe(true);
+    });
+
+    it('isStandalone should be false', () => {
+      const { isStandalone } = PropertyExtractor.analyzeDecorators(MixedTestComponent2);
+      expect(isStandalone).toBe(false);
+    });
+
+    it('isStandalone should be true', () => {
+      const { isStandalone } = PropertyExtractor.analyzeDecorators(MixedTestComponent3);
       expect(isStandalone).toBe(true);
     });
   });

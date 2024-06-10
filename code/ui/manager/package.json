@@ -1,6 +1,6 @@
 {
   "name": "@storybook/manager",
-  "version": "8.1.0-alpha.1",
+  "version": "8.2.0-alpha.6",
   "description": "Core Storybook UI",
   "keywords": [
     "storybook"
@@ -85,16 +85,17 @@
     "@storybook/test": "workspace:*",
     "@storybook/theming": "workspace:*",
     "@storybook/types": "workspace:*",
+    "@tanstack/react-virtual": "^3.3.0",
     "@testing-library/react": "^11.2.2",
     "@types/react-transition-group": "^4",
     "@types/semver": "^7.3.4",
     "browser-dtector": "^3.4.0",
     "copy-to-clipboard": "^3.3.1",
-    "downshift": "^6.0.15",
+    "downshift": "^9.0.4",
     "fs-extra": "^11.1.0",
     "fuse.js": "^3.6.1",
     "lodash": "^4.17.21",
-    "markdown-to-jsx": "7.3.2",
+    "markdown-to-jsx": "^7.4.5",
     "memoizerific": "^1.11.3",
     "polished": "^4.2.2",
     "qs": "^6.10.0",
@@ -107,6 +108,7 @@
     "resolve-from": "^5.0.0",
     "semver": "^7.3.7",
     "store2": "^2.14.2",
+    "telejson": "^7.2.0",
     "ts-dedent": "^2.0.0",
     "typescript": "^5.3.2"
   },

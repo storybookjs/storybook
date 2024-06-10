@@ -63,7 +63,7 @@ const recents = stories
   .map((story) => ({ item: story, matches: [], score: 0 }));
 
 // We need this to prevent react key warnings
-const passKey = (props: any = {}) => ({ key: props.key });
+const passKey: any = (props = { key: '' }) => ({ key: props.key });
 
 export const searching = {
   query: 'query',

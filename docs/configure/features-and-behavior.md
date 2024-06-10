@@ -32,11 +32,11 @@ The following table details how to use the API values:
 
 The following options are configurable under the `sidebar` namespace:
 
-| Name               | Type     | Description                                                   | Example Value                                    |
-| ------------------ | -------- | ------------------------------------------------------------- | ------------------------------------------------ |
-| **showRoots**      | Boolean  | Display the top-level nodes as a "root" in the sidebar        | `false`                                          |
-| **collapsedRoots** | Array    | Set of root node IDs to visually collapse by default          | `['misc', 'other']`                              |
-| **renderLabel**    | Function | Create a custom label for tree nodes; must return a ReactNode | `(item) => <abbr title="...">{item.name}</abbr>` |
+| Name               | Type     | Description                                                   | Example Value                                         |
+| ------------------ | -------- | ------------------------------------------------------------- | ----------------------------------------------------- |
+| **showRoots**      | Boolean  | Display the top-level nodes as a "root" in the sidebar        | `false`                                               |
+| **collapsedRoots** | Array    | Set of root node IDs to visually collapse by default          | `['misc', 'other']`                                   |
+| **renderLabel**    | Function | Create a custom label for tree nodes; must return a ReactNode | `(item, api) => <abbr title="...">{item.name}</abbr>` |
 
 The following options are configurable under the `toolbar` namespace:
 

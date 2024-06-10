@@ -3,6 +3,7 @@ import type {
   ProjectAnnotations as CsfProjectAnnotations,
   DecoratorFunction,
   LoaderFunction,
+  CleanupCallback,
 } from '@storybook/csf';
 
 import type {
@@ -79,7 +80,7 @@ export type NormalizedStoryAnnotations<TRenderer extends Renderer = Renderer> = 
   'storyName' | 'story' | 'decorators' | 'loaders'
 > & {
   moduleExport: ModuleExport;
-  // You cannot actually set id on story annotations, but we normalize it to be there for convience
+  // You cannot actually set id on story annotations, but we normalize it to be there for convenience
   id: StoryId;
   argTypes?: StrictArgTypes;
   name: StoryName;
@@ -103,6 +104,7 @@ export type PreparedStory<TRenderer extends Renderer = Renderer> =
     applyLoaders: (
       context: StoryContextForLoaders<TRenderer>
     ) => Promise<StoryContextForLoaders<TRenderer> & { loaded: StoryContext<TRenderer>['loaded'] }>;
+    applyBeforeEach: (context: StoryContext<TRenderer>) => Promise<CleanupCallback[]>;
     playFunction?: (context: StoryContext<TRenderer>) => Promise<void> | void;
   };
 

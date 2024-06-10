@@ -1,3 +1,6 @@
+// This script makes sure that we can support type checking,
+// without having to build dts files for all packages in the monorepo.
+// It is not implemented yet for angular, svelte and vue.
 import { resolve } from 'path';
 import { readJSON } from 'fs-extra';
 import prompts from 'prompts';
@@ -18,10 +21,16 @@ async function run() {
         helpText: `check only the ${pkg.name} package`,
       };
     })
-    .reduce((acc, next) => {
-      acc[next.name] = next;
-      return acc;
-    }, {} as Record<string, { name: string; defaultValue: boolean; suffix: string; helpText: string }>);
+    .reduce(
+      (acc, next) => {
+        acc[next.name] = next;
+        return acc;
+      },
+      {} as Record<
+        string,
+        { name: string; defaultValue: boolean; suffix: string; helpText: string }
+      >
+    );
 
   const tasks: Record<
     string,
@@ -98,9 +107,9 @@ async function run() {
   }
 
   selection?.filter(Boolean).forEach(async (v) => {
-    const commmand = (await readJSON(resolve('../code', v.location, 'package.json'))).scripts.check;
+    const command = (await readJSON(resolve('../code', v.location, 'package.json'))).scripts.check;
     const cwd = resolve(__dirname, '..', 'code', v.location);
-    const sub = execaCommand(`${commmand}${watchMode ? ' --watch' : ''}`, {
+    const sub = execaCommand(`${command}${watchMode ? ' --watch' : ''}`, {
       cwd,
       buffer: false,
       shell: true,

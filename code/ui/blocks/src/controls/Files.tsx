@@ -38,8 +38,10 @@ export const FilesControl: FC<FilesControlProps> = ({
   name,
   accept = 'image/*',
   value,
+  argType,
 }) => {
   const inputElement = useRef<HTMLInputElement>(null);
+  const readonly = argType?.control?.readOnly;
 
   function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
     if (!e.target.files) {
@@ -64,6 +66,7 @@ export const FilesControl: FC<FilesControlProps> = ({
       type="file"
       name={name}
       multiple
+      disabled={readonly}
       onChange={handleFileChange}
       accept={accept}
       size="flex"

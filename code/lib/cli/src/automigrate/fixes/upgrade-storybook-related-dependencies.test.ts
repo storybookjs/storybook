@@ -52,7 +52,7 @@ describe('upgrade-storybook-related-dependencies fix', () => {
       {
         packageName: 'storybook',
         packageVersion: '8.0.0',
-        availableUpgrade: undefined,
+        availableUpgrade: '8.0.0',
         hasIncompatibleDependencies: true,
       },
     ];
@@ -60,14 +60,18 @@ describe('upgrade-storybook-related-dependencies fix', () => {
     await expect(
       check({
         packageManager: {
-          getAllDependencies: async () => ({
-            '@chromatic-com/storybook': '1.2.9',
-            '@storybook/jest': '0.2.3',
-            '@storybook/preset-create-react-app': '3.2.0',
-            storybook: '8.0.0',
-          }),
+          getAllDependencies: async () =>
+            analyzedPackages.reduce(
+              (acc, { packageName, packageVersion }) => {
+                acc[packageName] = packageVersion;
+                return acc;
+              },
+              {} as Record<string, string>
+            ),
           latestVersion: async (pkgName) =>
             analyzedPackages.find((pkg) => pkg.packageName === pkgName)?.availableUpgrade || '',
+          getInstalledVersion: async (pkgName) =>
+            analyzedPackages.find((pkg) => pkg.packageName === pkgName)?.packageVersion || null,
         },
       })
     ).resolves.toMatchInlineSnapshot(`

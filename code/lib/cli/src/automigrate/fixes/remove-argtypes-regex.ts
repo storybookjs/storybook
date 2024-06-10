@@ -39,17 +39,20 @@ export const removeArgtypesRegex: Fix<{ argTypesRegex: NodePath; previewConfigPa
       
       ${argTypesRegex.buildCodeFrameError(`${previewConfigPath}`).message}
 
-      In Storybook you can write so-called play functions, which are used to render your stories interactively.
-      Mocking action args in play functions was done implicitly by analyzing the argTypesRegex.
-
-      Since Storybook 8, implicit action args mocking isn't supported anymore.
+      Storybook's play functions let you render your stories interactively.
       
-      Use the following command to check for mocked action usages in your play functions:
+      In the past, play functions mocked action args implicitly by analyzing the argTypesRegex
+      in your preview.js|ts file.
+      
+      However, Storybook 8 changes this behavior, and we now recommend using the 
+      (fn) function to mock your component's methods instead.
+      
+      Use the following command to check for implied mocked actions in your play functions:
       ${chalk.cyan(
         'npx storybook migrate find-implicit-spies --glob="**/*.stories.@(js|jsx|ts|tsx)"'
       )}
        
-      And follow the documentation to migrate your play functions:
+      Then, refer to our docs to migrate your play functions to Storybook 8: 
       ${chalk.yellow(
         'https://storybook.js.org/docs/8.0/essentials/actions#via-storybooktest-fn-spy-function'
       )}

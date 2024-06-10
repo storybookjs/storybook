@@ -74,9 +74,9 @@ First, install the framework:
 
 <CodeSnippets
   paths={[
-    'vue/vue-webpack5-install.npm.js.mdx',
-    'vue/vue-webpack5-install.pnpm.js.mdx',
-    'vue/vue-webpack5-install.yarn.js.mdx'
+    'vue/vue3-webpack5-install.npm.js.mdx',
+    'vue/vue3-webpack5-install.pnpm.js.mdx',
+    'vue/vue3-webpack5-install.yarn.js.mdx'
   ]}
 />
 
@@ -118,8 +118,8 @@ Finally, update your `.storybook/main.js|ts` to change the framework property:
 
 <CodeSnippets
   paths={[
-    'vue/vue-webpack5-add-framework.js.mdx',
-    'vue/vue-webpack5-add-framework.ts.mdx'
+    'vue/vue3-webpack5-add-framework.js.mdx',
+    'vue/vue3-webpack5-add-framework.ts.mdx'
   ]}
 />
 

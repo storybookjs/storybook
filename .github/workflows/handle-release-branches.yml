@@ -23,7 +23,7 @@ jobs:
     if: ${{ needs.branch-checks.outputs.is-latest-branch == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - run: curl -X POST "https://api.netlify.com/build_hooks/${{ secrets.FRONTPAGE_HOOK }}"
 
@@ -32,7 +32,7 @@ jobs:
     if: ${{ needs.branch-checks.outputs.is-next-branch == 'true' || needs.branch-checks.outputs.is-release-branch == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: next
           path: next
@@ -54,7 +54,7 @@ jobs:
     if: ${{ needs.branch-checks.outputs.is-next-branch == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -88,7 +88,8 @@ jobs:
 
   request-create-frontpage-branch:
     if: ${{ always() }}
-    needs: [branch-checks, next-release-branch-check, create-next-release-branch]
+    needs:
+      [branch-checks, next-release-branch-check, create-next-release-branch]
     runs-on: ubuntu-latest
     steps:
       - if: ${{ needs.branch-checks.outputs.is-actionable-branch == 'true' && needs.branch-checks.outputs.is-latest-branch == 'false' && needs.next-release-branch-check.outputs.check == 'false' }}

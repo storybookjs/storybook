@@ -50,6 +50,7 @@ const annotateWithDocgen = (inputPath: string) => {
 const skippedTests = [
   'js-class-component',
   'js-function-component',
+  'js-re-exported-component',
   'js-function-component-inline-defaults',
   'js-function-component-inline-defaults-no-propTypes',
   'ts-function-component',

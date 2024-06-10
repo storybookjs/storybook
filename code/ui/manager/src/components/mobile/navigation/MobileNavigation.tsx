@@ -19,16 +19,17 @@ interface MobileNavigationProps {
  */
 const useFullStoryName = () => {
   const { index } = useStorybookState();
-  const currentStory = useStorybookApi().getCurrentStoryData();
+  const api = useStorybookApi();
+  const currentStory = api.getCurrentStoryData();
 
   if (!currentStory) return '';
 
-  let fullStoryName = currentStory.renderLabel?.(currentStory) || currentStory.name;
+  let fullStoryName = currentStory.renderLabel?.(currentStory, api) || currentStory.name;
   let node = index[currentStory.id];
 
   while ('parent' in node && node.parent && index[node.parent] && fullStoryName.length < 24) {
     node = index[node.parent];
-    const parentName = node.renderLabel?.(node) || node.name;
+    const parentName = node.renderLabel?.(node, api) || node.name;
     fullStoryName = `${parentName}/${fullStoryName}`;
   }
   return fullStoryName;
@@ -45,7 +46,7 @@ export const MobileNavigation: FC<MobileNavigationProps> = ({ menu, panel, showP
       {isMobilePanelOpen ? (
         <MobileAddonsDrawer>{panel}</MobileAddonsDrawer>
       ) : (
-        <Nav>
+        <Nav className="sb-bar">
           <Button onClick={() => setMobileMenuOpen(!isMobileMenuOpen)} title="Open navigation menu">
             <MenuIcon />
             <Text>{fullStoryName}</Text>
@@ -84,7 +85,7 @@ const Button = styled.button(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   gap: 10,
-  color: theme.color.mediumdark,
+  color: theme.barTextColor,
   fontSize: `${theme.typography.size.s2 - 1}px`,
   padding: '0 7px',
   fontWeight: theme.typography.weight.bold,

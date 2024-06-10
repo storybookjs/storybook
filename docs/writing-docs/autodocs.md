@@ -6,35 +6,78 @@ title: 'Automatic documentation and Storybook'
 
 Storybook Autodocs is a powerful tool that can help you quickly generate comprehensive documentation for your UI components. By leveraging Autodocs, you're transforming your stories into living documentation which can be further extended with [MDX](./mdx.md) and [Doc Blocks](./doc-blocks.md) to provide a clear and concise understanding of your components' functionality.
 
-## Setup automated documentation
+Storybook infers the relevant metadata (e.g., [`args`](../writing-stories/args.md), [`argTypes`](../api/arg-types.md), [`parameters`](../writing-stories/parameters.md)) and automatically generates a documentation page with this information positioned at the root-level of your component tree in the sidebar.
 
-To enable auto-generated documentation for your stories, you'll need to add the `tags` configuration property to the story's default export. For example:
+![Storybook autodocs](./autodocs.png)
+
+## Set up automated documentation
+
+Autodocs is configured through [tags](../writing-stories/tags.md). If a [CSF](../api/csf.md) file contains at least one story tagged with `autodocs`, then a documentation page will be generated for that component.
+
+To enable automatic documentation for all stories in a project, add it to `tags` in your `.storybook/preview.js|ts` file:
 
 <!-- prettier-ignore-start -->
 
 <CodeSnippets
   paths={[
-    'react/button-story-auto-docs.js.mdx',
-    'react/button-story-auto-docs.ts.mdx',
-    'vue/button-story-auto-docs.js.mdx',
-    'vue/button-story-auto-docs.ts.mdx',
-    'angular/button-story-auto-docs.ts.mdx',
-    'svelte/button-story-auto-docs.js.mdx',
-    'svelte/button-story-auto-docs.ts.mdx',
-    'web-components/button-story-auto-docs.js.mdx',
-    'web-components/button-story-auto-docs.ts.mdx',
+    'common/tags-autodocs-in-preview.js.mdx',
+    'common/tags-autodocs-in-preview.ts.mdx',
   ]}
 />
 
 <!-- prettier-ignore-end -->
 
-![Storybook autodocs](./autodocs.png)
+You can also enable it at the component (or story) level:
 
-Once the story loads, Storybook infers the relevant metadata (e.g., [`args`](../writing-stories/args.md), [`argTypes`](../api/arg-types.md), [`parameters`](../writing-stories/parameters.md)) and automatically generates a documentation page with this information positioned at the root-level of your component tree in the sidebar.
+<!-- prettier-ignore-start -->
+
+<CodeSnippets
+  paths={[
+    'common/tags-autodocs-in-meta.js.mdx',
+    'common/tags-autodocs-in-meta.ts.mdx',
+    'angular/tags-autodocs-in-meta.ts.mdx',
+    'web-components/tags-autodocs-in-meta.ts.mdx',
+    'web-components/tags-autodocs-in-meta.ts.mdx',
+  ]}
+/>
+
+<!-- prettier-ignore-end -->
+
+You can disable auto docs for a particular component by [removing the tag](../writing-stories/tags.md#removing-tags):
+
+<!-- prettier-ignore-start -->
+
+<CodeSnippets
+  paths={[
+    'common/tags-autodocs-remove-component.js.mdx',
+    'common/tags-autodocs-remove-component.ts.mdx',
+    'angular/tags-autodocs-remove-component.ts.mdx',
+    'web-components/tags-autodocs-remove-component.ts.mdx',
+    'web-components/tags-autodocs-remove-component.ts.mdx',
+  ]}
+/>
+
+<!-- prettier-ignore-end -->
+
+Similarly, you can exclude a particular story from the auto docs page, by removing the tag:
+
+<!-- prettier-ignore-start -->
+
+<CodeSnippets
+  paths={[
+    'common/tags-autodocs-remove-story.js.mdx',
+    'common/tags-autodocs-remove-story.ts.mdx',
+    'angular/tags-autodocs-remove-story.ts.mdx',
+    'web-components/tags-autodocs-remove-story.ts.mdx',
+    'web-components/tags-autodocs-remove-story.ts.mdx',
+  ]}
+/>
+
+<!-- prettier-ignore-end -->
 
 ### Configure
 
-By default, Storybook offers zero-config support for documentation and automatically sets up a documentation page for each story enabled via the `tags` configuration property. However, you can extend your Storybook configuration file (i.e., `.storybook/main.js|ts|cjs`) and provide additional options to control how documentation gets created. Listed below are the available options and examples of how to use them.
+In addition to enabling the feature with `tags`, you can extend your Storybook configuration file (i.e., `.storybook/main.js|ts|cjs`) and provide additional options to control how documentation gets created. Listed below are the available options and examples of how to use them.
 
 <!-- prettier-ignore-start -->
 
@@ -47,10 +90,9 @@ By default, Storybook offers zero-config support for documentation and automatic
 
 <!-- prettier-ignore-end -->
 
-| Option        | Description                                                                                                                                                                                                                                                                                                              |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `autodocs`    | Configures auto-generated documentation pages. Available options: `true`, `false`,`tag` (default). `true`/`false` enable/disable autodocs globally. `tag` allows you to opt in per component by adding the `tags: ['autodocs']` annotation in the component's default export. <br/> Default: `docs: { autodocs: 'tag' }` |
-| `defaultName` | Renames the auto-generated documentation page<br/> Default: `docs: { defaultName: 'Documentation' }`                                                                                                                                                                                                                     |
+| Option        | Description                                                                                          |
+| ------------- | ---------------------------------------------------------------------------------------------------- |
+| `defaultName` | Renames the auto-generated documentation page<br/> Default: `docs: { defaultName: 'Documentation' }` |
 
 ### Write a custom template
 
@@ -134,7 +176,7 @@ Storybook's auto-generated documentation pages can be quite long and difficult t
 By default, the table of contents on the documentation page will only show the `h3` headings that are automatically generated. However, if you want to customize the table of contents, you can add more parameters to the `toc` property. The following options and examples of how to use them are available.
 
 | Option                | Description                                                                                                                                                                                                     |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `contentsSelector`    | Defines the container's CSS selector for search for the headings <br/> `toc: { contentsSelector: '.sbdocs-content' }`                                                                                           |
 | `disable`             | Hides the table of contents for the documentation pages <br/> `toc: { disable: true }`                                                                                                                          |
 | `headingSelector`     | Defines the list of headings to feature in the table of contents <br/> `toc: { headingSelector: 'h1, h2, h3' }`                                                                                                 |

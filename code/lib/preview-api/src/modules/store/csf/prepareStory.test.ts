@@ -44,7 +44,7 @@ describe('prepareStory', () => {
         { render }
       );
 
-      expect(tags).toEqual(['story-1', 'story-2', 'story']);
+      expect(tags).toEqual(['dev', 'test', 'component-1', 'component-2', 'story-1', 'story-2']);
     });
 
     it('component tags work if story are unset', () => {
@@ -58,13 +58,13 @@ describe('prepareStory', () => {
         { render }
       );
 
-      expect(tags).toEqual(['component-1', 'component-2', 'story']);
+      expect(tags).toEqual(['dev', 'test', 'component-1', 'component-2']);
     });
 
     it('sets a value even if annotations do not have tags', () => {
       const { tags } = prepareStory({ id, name, moduleExport }, { id, title }, { render });
 
-      expect(tags).toEqual(['story']);
+      expect(tags).toEqual(['dev', 'test']);
     });
   });
 
@@ -150,7 +150,7 @@ describe('prepareStory', () => {
       });
     });
 
-    it('can be overriden by `undefined`', () => {
+    it('can be overridden by `undefined`', () => {
       const { initialArgs } = prepareStory(
         { id, name, args: { a: undefined }, moduleExport },
         { id, title, args: { a: 'component' } },
@@ -718,6 +718,7 @@ describe('prepareMeta', () => {
       name: storyName,
       story,
       applyLoaders,
+      applyBeforeEach,
       originalStoryFn,
       unboundStoryFn,
       undecoratedStoryFn,

@@ -37,9 +37,7 @@ export const hrefTo = (title: ComponentTitle, name: StoryName): Promise<string> 
   return new Promise((resolve) => {
     const { location } = document;
     const query = parseQuery(location.search);
-    // @ts-expect-error (Converted from ts-ignore)
-    const existingId = [].concat(query.id)[0];
-    // @ts-expect-error (Converted from ts-ignore)
+    const existingId = query.id;
     const titleToLink = title || existingId.split('--', 2)[0];
     const id = toId(titleToLink, name);
     const path = `/story/${id}`;

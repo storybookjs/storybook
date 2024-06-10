@@ -1950,7 +1950,7 @@ Fix bad publish of `6.4.0-alpha.27` to the `latest` tag
 ### Bug Fixes
 
 - Controls: Don't set arg in validateOptions if it would be `undefined` ([#15654](https://github.com/storybookjs/storybook/pull/15654))
-- Trailing comma handling for "-s" command line paramenter ([#15615](https://github.com/storybookjs/storybook/pull/15615))
+- Trailing comma handling for "-s" command line parameter ([#15615](https://github.com/storybookjs/storybook/pull/15615))
 - Controls: Fix color matching behavior for non-string types ([#15549](https://github.com/storybookjs/storybook/pull/15549))
 - Composition: Fix refs ordering ([#15527](https://github.com/storybookjs/storybook/pull/15527))
 
@@ -1963,7 +1963,7 @@ Fix bad publish of `6.4.0-alpha.27` to the `latest` tag
 
 ### Bug Fixes
 
-- CLI: Fix trailing comma handling for "-s" command line paramenter ([#15615](https://github.com/storybookjs/storybook/pull/15615))
+- CLI: Fix trailing comma handling for "-s" command line parameter ([#15615](https://github.com/storybookjs/storybook/pull/15615))
 - Components: Lazy-load syntax highlighter ([#15607](https://github.com/storybookjs/storybook/pull/15607))
 
 ### Maintenance

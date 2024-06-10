@@ -94,6 +94,7 @@ If you're already using any of those flags in your project, you should be able t
 | `--url`                         | Define the URL to run tests in. Useful for custom Storybook URLs <br/>`test-storybook --url http://the-storybook-url-here.com`                                                                          |
 | `--browsers`                    | Define browsers to run tests in. One or multiple of: chromium, firefox, webkit <br/>`test-storybook --browsers firefox chromium`                                                                        |
 | `--maxWorkers [amount]`         | Specifies the maximum number of workers the worker-pool will spawn for running tests <br/>`test-storybook --maxWorkers=2`                                                                               |
+| `--testTimeout [amount]`        | Defines the maximum time in milliseconds that a test can run before it is automatically marked as failed. Useful for long-running tests <br/> `test-storybook --testTimeout=60000`                      |
 | `--no-cache`                    | Disable the cache <br/>`test-storybook --no-cache`                                                                                                                                                      |
 | `--clearCache`                  | Deletes the Jest cache directory and then exits without running tests <br/>`test-storybook --clearCache`                                                                                                |
 | `--verbose`                     | Display individual test results with the test suite hierarchy <br/>`test-storybook --verbose`                                                                                                           |
@@ -207,7 +208,7 @@ Listed below are the available hooks and an overview of how to use them.
 | `prepare`   | Prepares the browser for tests<br/>`async prepare({ page, browserContext, testRunnerConfig }) {}`               |
 | `setup`     | Executes once before all the tests run<br/>`setup() {}`                                                         |
 | `preVisit`  | Executes before a story is initially visited and rendered in the browser<br/>`async preVisit(page, context) {}` |
-| `postVisit` | Executes after the story is is visited and fully rendered<br/>`async postVisit(page, context) {}`               |
+| `postVisit` | Executes after the story is visited and fully rendered<br/>`async postVisit(page, context) {}`                  |
 
 <Callout variant="info" icon="💡">
 

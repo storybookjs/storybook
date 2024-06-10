@@ -157,6 +157,11 @@ export const options = createOptions({
     inverse: true,
     promptType: false,
   },
+  prod: {
+    type: 'boolean',
+    description: 'Build code for production',
+    promptType: false,
+  },
   dryRun: {
     type: 'boolean',
     description: "Don't execute commands, just list them (dry run)?",

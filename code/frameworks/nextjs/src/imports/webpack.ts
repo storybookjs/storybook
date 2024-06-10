@@ -11,8 +11,8 @@ export const configureImports = ({
 }): void => {
   const configLoadResult = loadConfig(configDir);
 
-  if (configLoadResult.resultType === 'failed' || !configLoadResult.baseUrl) {
-    // either not a typescript project or tsconfig contains no baseUrl
+  if (configLoadResult.resultType === 'failed') {
+    // either not a typescript project or tsconfig is not found - we bail
     return;
   }
 

@@ -6,7 +6,7 @@
     "description": "Please work...",
     "name": "test",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": undefined,
       "type": {
         "detail": undefined,

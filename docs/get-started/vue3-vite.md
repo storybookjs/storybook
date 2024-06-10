@@ -275,15 +275,36 @@ The definition above will generate the following controls:
 
 ![Controls generated from exposed properties and methods](./vue-component-meta-exposed-types-controls.png)
 
-### Limitations
+### Override the default configuration
 
-`vue-component-meta` cannot currently reference types from an import alias. You will need to replace any aliased imports with relative ones, as in the example below. See [this issue](https://github.com/vuejs/language-tools/issues/3896) for more information.
+If you're working with a project that relies on [`tsconfig references`](https://www.typescriptlang.org/docs/handbook/project-references.html) to link to other existing configuration files (e.g. `tsconfig.app.json`, `tsconfig.node.json`), we recommend that you update your [`.storybook/main.js|ts`](../configure/index.md) configuration file and add the following:
 
 ```ts
-// YourComponent.ts
-import type { MyProps } from '@/types'; // ❌ Cannot be resolved
-import type { MyProps } from '../types'; // ✅ Can be resolved
+// .storybook/main.ts
+import type { StorybookConfig } from '@storybook/vue3-vite';
+
+const config: StorybookConfig = {
+  framework: {
+    name: '@storybook/vue3-vite',
+    options: {
+      docgen: {
+        plugin: 'vue-component-meta',
+        tsconfig: 'tsconfig.app.json',
+      },
+    },
+  },
+};
+
+export default config;
 ```
+
+<Callout variant="info">
+
+This is not a limitation of Storybook, but instead how `vue-component-meta` works. For more information, refer to the appropriate [GitHub issue](https://github.com/vuejs/language-tools/issues/3896).
+
+</Callout>
+
+Otherwise, you might face missing component types/descriptions or unresolvable import aliases like `@/some/import`.
 
 ## Troubleshooting
 

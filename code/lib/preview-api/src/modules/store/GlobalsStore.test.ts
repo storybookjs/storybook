@@ -146,7 +146,7 @@ describe('GlobalsStore', () => {
             arg2: { defaultValue: 'arg2' },
           },
         });
-        // However undeclared valuse aren't persisted
+        // However undeclared values aren't persisted
         expect(store.get()).toEqual({ arg1: 'new-arg1', arg2: 'new-arg2' });
       });
     });

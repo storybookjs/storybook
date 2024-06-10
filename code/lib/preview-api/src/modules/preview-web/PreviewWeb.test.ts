@@ -208,15 +208,19 @@ describe('PreviewWeb', () => {
         one: 1,
       });
     });
-    it('updates args from the URL', async () => {
+
+    it('prepares story with args from the URL', async () => {
       document.location.search = '?id=component-one--a&args=foo:url';
 
       await createAndRenderPreview();
 
-      expect(mockChannel.emit).toHaveBeenCalledWith(STORY_ARGS_UPDATED, {
-        storyId: 'component-one--a',
-        args: { foo: 'url', one: 1 },
-      });
+      expect(mockChannel.emit).toHaveBeenCalledWith(
+        STORY_PREPARED,
+        expect.objectContaining({
+          id: 'component-one--a',
+          args: { foo: 'url', one: 1 },
+        })
+      );
     });
 
     it('allows async getProjectAnnotations', async () => {
@@ -310,7 +314,7 @@ describe('PreviewWeb', () => {
         preview.onStoriesChanged({
           importFn: newImportFn,
           storyIndex: {
-            v: 4,
+            v: 5,
             entries: {
               ...storyIndex.entries,
               'component-one--missing': {
@@ -365,7 +369,7 @@ describe('PreviewWeb', () => {
           preview.onStoriesChanged({
             importFn: newImportFn,
             storyIndex: {
-              v: 4,
+              v: 5,
               entries: {
                 ...storyIndex.entries,
                 'component-one--missing': {
@@ -907,43 +911,72 @@ describe('PreviewWeb', () => {
     });
 
     describe('while story is still rendering', () => {
-      it('runs loaders again', async () => {
+      it('runs loaders again after renderToCanvas is done', async () => {
+        // Arrange - set up a gate to control when the loaders run
         const [loadersRanGate, openLoadersRanGate] = createGate();
         const [blockLoadersGate, openBlockLoadersGate] = createGate();
 
         document.location.search = '?id=component-one--a';
-        componentOneExports.default.loaders[0].mockImplementationOnce(async () => {
+        componentOneExports.default.loaders[0].mockImplementationOnce(async (input) => {
           openLoadersRanGate();
           return blockLoadersGate;
         });
 
+        // Act - render the first time
         await new PreviewWeb(importFn, getProjectAnnotations).ready();
         await loadersRanGate;
 
+        // Assert - loader to be called the first time
+        expect(componentOneExports.default.loaders[0]).toHaveBeenCalledOnce();
         expect(componentOneExports.default.loaders[0]).toHaveBeenCalledWith(
           expect.objectContaining({
             args: { foo: 'a', one: 'mapped-1' },
           })
         );
 
-        componentOneExports.default.loaders[0].mockClear();
+        // Act - update the args (while loader is still running)
         emitter.emit(UPDATE_STORY_ARGS, {
           storyId: 'component-one--a',
           updatedArgs: { new: 'arg' },
         });
+
+        // Arrange - open the gate to let the loader finish and wait for render
+        openBlockLoadersGate({ l: 8 });
         await waitForRender();
 
-        expect(componentOneExports.default.loaders[0]).toHaveBeenCalledWith(
-          expect.objectContaining({
-            args: { foo: 'a', new: 'arg', one: 'mapped-1' },
-          })
-        );
-
-        // Story gets rendered with updated args
-        expect(projectAnnotations.renderToCanvas).toHaveBeenCalledTimes(1);
+        // Assert - renderToCanvas to be called the first time with initial args
+        expect(projectAnnotations.renderToCanvas).toHaveBeenCalledOnce();
         expect(projectAnnotations.renderToCanvas).toHaveBeenCalledWith(
           expect.objectContaining({
-            forceRemount: true, // Wasn't yet rendered so we need to force remount
+            forceRemount: true,
+            storyContext: expect.objectContaining({
+              loaded: { l: 8 }, // This is the value returned by the *first* loader call
+              args: { foo: 'a', new: 'arg', one: 'mapped-1' },
+            }),
+          }),
+          'story-element'
+        );
+        // Assert - loaders are not run again yet
+        expect(componentOneExports.default.loaders[0]).toHaveBeenCalledOnce();
+
+        // Arrange - wait for loading and rendering to finish a second time
+        mockChannel.emit.mockClear();
+        await waitForRender();
+        // Assert - loader is called a second time with updated args
+        await vi.waitFor(() => {
+          expect(projectAnnotations.renderToCanvas).toHaveBeenCalledTimes(2);
+          expect(componentOneExports.default.loaders[0]).toHaveBeenCalledWith(
+            expect.objectContaining({
+              args: { foo: 'a', new: 'arg', one: 'mapped-1' },
+            })
+          );
+        });
+
+        // Assert - renderToCanvas is called a second time with updated args
+        expect(projectAnnotations.renderToCanvas).toHaveBeenCalledTimes(2);
+        expect(projectAnnotations.renderToCanvas).toHaveBeenCalledWith(
+          expect.objectContaining({
+            forceRemount: false,
             storyContext: expect.objectContaining({
               loaded: { l: 7 }, // This is the value returned by the *second* loader call
               args: { foo: 'a', new: 'arg', one: 'mapped-1' },
@@ -951,28 +984,9 @@ describe('PreviewWeb', () => {
           }),
           'story-element'
         );
-
-        // Now let the first loader call resolve
-        mockChannel.emit.mockClear();
-        projectAnnotations.renderToCanvas.mockClear();
-        openBlockLoadersGate({ l: 8 });
-        await waitForRender();
-
-        // Now the first call comes through, but picks up the new args
-        // Note this isn't a particularly realistic case (the second loader being quicker than the first)
-        expect(projectAnnotations.renderToCanvas).toHaveBeenCalledTimes(1);
-        expect(projectAnnotations.renderToCanvas).toHaveBeenCalledWith(
-          expect.objectContaining({
-            storyContext: expect.objectContaining({
-              loaded: { l: 8 },
-              args: { foo: 'a', new: 'arg', one: 'mapped-1' },
-            }),
-          }),
-          'story-element'
-        );
       });
 
-      it('renders a second time if renderToCanvas is running', async () => {
+      it('renders a second time after the already running renderToCanvas is done', async () => {
         const [gate, openGate] = createGate();
 
         document.location.search = '?id=component-one--a';
@@ -986,54 +1000,27 @@ describe('PreviewWeb', () => {
           updatedArgs: { new: 'arg' },
         });
 
-        // Now let the renderToCanvas call resolve
+        // Now let the first renderToCanvas call resolve
         openGate();
+        expect(projectAnnotations.renderToCanvas).toHaveBeenCalledTimes(1);
+        expect(projectAnnotations.renderToCanvas).toHaveBeenCalledWith(
+          expect.objectContaining({
+            forceRemount: true,
+            storyContext: expect.objectContaining({
+              loaded: { l: 7 },
+              args: { foo: 'a', one: 'mapped-1' },
+            }),
+          }),
+          'story-element'
+        );
+
+        // Wait for the second render to finish
+        mockChannel.emit.mockClear();
         await waitForRender();
+        await waitForRenderPhase('rendering');
 
+        // Expect the second render to have the updated args
         expect(projectAnnotations.renderToCanvas).toHaveBeenCalledTimes(2);
-        expect(projectAnnotations.renderToCanvas).toHaveBeenCalledWith(
-          expect.objectContaining({
-            forceRemount: true,
-            storyContext: expect.objectContaining({
-              loaded: { l: 7 },
-              args: { foo: 'a', one: 'mapped-1' },
-            }),
-          }),
-          'story-element'
-        );
-        expect(projectAnnotations.renderToCanvas).toHaveBeenCalledWith(
-          expect.objectContaining({
-            forceRemount: false,
-            storyContext: expect.objectContaining({
-              loaded: { l: 7 },
-              args: { foo: 'a', new: 'arg', one: 'mapped-1' },
-            }),
-          }),
-          'story-element'
-        );
-      });
-
-      it('works if it is called directly from inside non async renderToCanvas', async () => {
-        document.location.search = '?id=component-one--a';
-        projectAnnotations.renderToCanvas.mockImplementation(() => {
-          emitter.emit(UPDATE_STORY_ARGS, {
-            storyId: 'component-one--a',
-            updatedArgs: { new: 'arg' },
-          });
-        });
-        await createAndRenderPreview();
-
-        expect(projectAnnotations.renderToCanvas).toHaveBeenCalledTimes(2);
-        expect(projectAnnotations.renderToCanvas).toHaveBeenCalledWith(
-          expect.objectContaining({
-            forceRemount: true,
-            storyContext: expect.objectContaining({
-              loaded: { l: 7 },
-              args: { foo: 'a', one: 'mapped-1' },
-            }),
-          }),
-          'story-element'
-        );
         expect(projectAnnotations.renderToCanvas).toHaveBeenCalledWith(
           expect.objectContaining({
             forceRemount: false,
@@ -1501,6 +1488,9 @@ describe('PreviewWeb', () => {
       // Now let the renderToCanvas call resolve
       openGate();
       await waitForRenderPhase('aborted');
+
+      // allow teardown to complete its retries
+      vi.runOnlyPendingTimers();
 
       await waitForRenderPhase('rendering');
       expect(projectAnnotations.renderToCanvas).toHaveBeenCalledTimes(2);
@@ -2141,39 +2131,6 @@ describe('PreviewWeb', () => {
           window.location = { ...originalLocation, reload: originalLocation.reload };
         });
 
-        it('stops initial story after loaders if running', async () => {
-          const [gate, openGate] = createGate();
-          componentOneExports.default.loaders[0].mockImplementationOnce(async () => gate);
-
-          document.location.search = '?id=component-one--a';
-          await new PreviewWeb(importFn, getProjectAnnotations).ready();
-          await waitForRenderPhase('loading');
-
-          emitter.emit(SET_CURRENT_STORY, {
-            storyId: 'component-one--b',
-            viewMode: 'story',
-          });
-          await waitForSetCurrentStory();
-          await waitForRender();
-
-          // Now let the loader resolve
-          openGate({ l: 8 });
-          await waitForRender();
-
-          // Story gets rendered with updated args
-          expect(projectAnnotations.renderToCanvas).toHaveBeenCalledTimes(1);
-          expect(projectAnnotations.renderToCanvas).toHaveBeenCalledWith(
-            expect.objectContaining({
-              forceRemount: true,
-              storyContext: expect.objectContaining({
-                id: 'component-one--b',
-                loaded: { l: 7 },
-              }),
-            }),
-            'story-element'
-          );
-        });
-
         it('aborts render for initial story', async () => {
           const [gate, openGate] = createGate();
 
@@ -2731,6 +2688,60 @@ describe('PreviewWeb', () => {
       });
     });
 
+    describe('if called twice simultaneously', () => {
+      it('does not get renders confused', async () => {
+        const [blockImportFnGate, openBlockImportFnGate] = createGate();
+        const [importFnCalledGate, openImportFnCalledGate] = createGate();
+        const newImportFn = vi.fn(async (path) => {
+          openImportFnCalledGate();
+          await blockImportFnGate;
+          return importFn(path);
+        });
+
+        document.location.search = '?id=component-one--a';
+        const preview = await createAndRenderPreview();
+        mockChannel.emit.mockClear();
+
+        preview.onStoriesChanged({ importFn: newImportFn });
+        await importFnCalledGate;
+        preview.onStoriesChanged({ importFn });
+
+        openBlockImportFnGate();
+        await waitForRender();
+
+        expect(preview.storyRenders.length).toEqual(1);
+      });
+
+      it('renders the second importFn', async () => {
+        const [importGate, openImportGate] = createGate();
+        const [importedGate, openImportedGate] = createGate();
+        const secondImportFn = vi.fn(async (path) => {
+          openImportedGate();
+          await importGate;
+          return importFn(path);
+        });
+
+        const thirdImportFn = vi.fn(async (path) => {
+          openImportedGate();
+          await importGate;
+          return importFn(path);
+        });
+
+        document.location.search = '?id=component-one--a';
+        const preview = await createAndRenderPreview();
+        mockChannel.emit.mockClear();
+
+        preview.onStoriesChanged({ importFn: secondImportFn });
+        await importedGate;
+        preview.onStoriesChanged({ importFn: thirdImportFn });
+
+        openImportGate();
+        await waitForRender();
+
+        expect(thirdImportFn).toHaveBeenCalled();
+      });
+    });
+
     describe('when the current story changes', () => {
       const newComponentOneExports = merge({}, componentOneExports, {
         a: { args: { foo: 'edited' } },
@@ -2794,20 +2805,6 @@ describe('PreviewWeb', () => {
             foo: { name: 'foo', type: { name: 'string' } },
             one: { name: 'one', type: { name: 'string' }, mapping: { 1: 'mapped-1' } },
           },
-          args: { foo: 'edited', one: 1 },
-        });
-      });
-
-      it('emits STORY_ARGS_UPDATED with new args', async () => {
-        document.location.search = '?id=component-one--a';
-        const preview = await createAndRenderPreview();
-        mockChannel.emit.mockClear();
-
-        preview.onStoriesChanged({ importFn: newImportFn });
-        await waitForRender();
-
-        expect(mockChannel.emit).toHaveBeenCalledWith(STORY_ARGS_UPDATED, {
-          storyId: 'component-one--a',
           args: { foo: 'edited', one: 1 },
         });
       });
@@ -2980,7 +2977,7 @@ describe('PreviewWeb', () => {
       const newImportFn = vi.fn(async (path) => ({ ...componentOneExports }));
 
       const newStoryIndex = {
-        v: 4,
+        v: 5,
         entries: {
           ...storyIndex.entries,
           'component-one--a': {
@@ -3177,7 +3174,7 @@ describe('PreviewWeb', () => {
       });
 
       const newStoryIndex = {
-        v: 4,
+        v: 5,
         entries: {
           'component-one--b': storyIndex.entries['component-one--b'],
         },
@@ -3402,7 +3399,7 @@ describe('PreviewWeb', () => {
       });
     });
 
-    it('emits SET_STORY_ARGS with new values', async () => {
+    it('emits SET_PREPARED with new args', async () => {
       document.location.search = '?id=component-one--a';
       const preview = await createAndRenderPreview();
 
@@ -3410,10 +3407,13 @@ describe('PreviewWeb', () => {
       preview.onGetProjectAnnotationsChanged({ getProjectAnnotations: newGetProjectAnnotations });
       await waitForRender();
 
-      expect(mockChannel.emit).toHaveBeenCalledWith(STORY_ARGS_UPDATED, {
-        storyId: 'component-one--a',
-        args: { foo: 'a', one: 1, global: 'added' },
-      });
+      expect(mockChannel.emit).toHaveBeenCalledWith(
+        STORY_PREPARED,
+        expect.objectContaining({
+          id: 'component-one--a',
+          args: { foo: 'a', one: 1, global: 'added' },
+        })
+      );
     });
 
     it('calls renderToCanvas teardown', async () => {
@@ -3625,7 +3625,8 @@ describe('PreviewWeb', () => {
             "story": "A",
             "subcomponents": undefined,
             "tags": [
-              "story",
+              "dev",
+              "test",
             ],
             "title": "Component One",
           },
@@ -3672,7 +3673,8 @@ describe('PreviewWeb', () => {
             "story": "B",
             "subcomponents": undefined,
             "tags": [
-              "story",
+              "dev",
+              "test",
             ],
             "title": "Component One",
           },
@@ -3697,7 +3699,8 @@ describe('PreviewWeb', () => {
             "story": "E",
             "subcomponents": undefined,
             "tags": [
-              "story",
+              "dev",
+              "test",
             ],
             "title": "Component One",
           },
@@ -3732,7 +3735,8 @@ describe('PreviewWeb', () => {
             "story": "C",
             "subcomponents": undefined,
             "tags": [
-              "story",
+              "dev",
+              "test",
             ],
             "title": "Component Two",
           },

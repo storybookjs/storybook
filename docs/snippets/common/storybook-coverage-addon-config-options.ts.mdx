@@ -13,7 +13,7 @@ const coverageConfig: AddonOptionsWebpack = {
   istanbul: {
     include: ['**/stories/**'],
     exclude: ['**/exampleDirectory/**'],
-  }
+  },
 };
 
 const config: StorybookConfig = {
@@ -23,7 +23,6 @@ const config: StorybookConfig = {
     {
       name: '@storybook/addon-coverage',
       options: coverageConfig,
-      },
     },
   ],
 };

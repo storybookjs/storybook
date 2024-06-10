@@ -26,4 +26,26 @@ test.describe('addon-actions', () => {
     });
     await expect(logItem).toBeVisible();
   });
+
+  test('should show spies', async ({ page }) => {
+    test.skip(
+      templateName.includes('svelte') && templateName.includes('prerelease'),
+      'Svelte 5 prerelase does not support automatic actions with our current example components yet'
+    );
+    await page.goto(storybookUrl);
+    const sbPage = new SbPage(page);
+    sbPage.waitUntilLoaded();
+
+    await sbPage.navigateToStory('addons/actions/spies', 'show-spy-on-in-actions');
+
+    const root = sbPage.previewRoot();
+    const button = root.locator('button', { hasText: 'Button' });
+    await button.click();
+
+    await sbPage.viewAddonPanel('Actions');
+    const logItem = await page.locator('#storybook-panel-root #panel-tab-content', {
+      hasText: 'console.log',
+    });
+    await expect(logItem).toBeVisible();
+  });
 });

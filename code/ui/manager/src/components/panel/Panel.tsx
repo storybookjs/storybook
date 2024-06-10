@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
-import { Tabs, IconButton } from '@storybook/components';
+import { Tabs, IconButton, Link, EmptyTabContent } from '@storybook/components';
 import type { State } from '@storybook/manager-api';
 import { shortcutToHumanString } from '@storybook/manager-api';
 import type { Addon_BaseType } from '@storybook/types';
 import { styled } from '@storybook/theming';
-import { BottomBarIcon, CloseIcon, SidebarAltIcon } from '@storybook/icons';
+import { BottomBarIcon, CloseIcon, DocumentIcon, SidebarAltIcon } from '@storybook/icons';
 import { useLayout } from '../layout/LayoutProvider';
 
 export interface SafeTabProps {
@@ -60,6 +60,23 @@ export const AddonPanel = React.memo<{
         {...(selectedPanel ? { selected: selectedPanel } : {})}
         menuName="Addons"
         actions={actions}
+        showToolsWhenEmpty
+        emptyState={
+          <EmptyTabContent
+            title="Storybook add-ons"
+            description={
+              <>
+                Integrate your tools with Storybook to connect workflows and unlock advanced
+                features.
+              </>
+            }
+            footer={
+              <Link href={'https://storybook.js.org/integrations'} target="_blank" withArrow>
+                <DocumentIcon /> Explore integrations catalog
+              </Link>
+            }
+          />
+        }
         tools={
           <Actions>
             {isDesktop ? (

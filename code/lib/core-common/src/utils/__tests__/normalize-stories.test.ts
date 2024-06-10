@@ -42,172 +42,172 @@ const options = {
 
 describe('normalizeStoriesEntry', () => {
   it('direct file path', () => {
-    const specifier = normalizeStoriesEntry('../path/to/file.stories.mdx', options);
+    const specifier = normalizeStoriesEntry('../path/to/file.stories.jsx', options);
     expect(specifier).toMatchInlineSnapshot(`
       {
         "titlePrefix": "",
         "directory": "./path/to",
-        "files": "file.stories.mdx",
+        "files": "file.stories.jsx",
         "importPathMatcher": {}
       }
     `);
 
-    expect(specifier.importPathMatcher).toMatchPaths(['./path/to/file.stories.mdx']);
+    expect(specifier.importPathMatcher).toMatchPaths(['./path/to/file.stories.jsx']);
     expect(specifier.importPathMatcher).not.toMatchPaths([
       './path/to/file.stories.js',
-      './file.stories.mdx',
-      '../file.stories.mdx',
+      './file.stories.jsx',
+      '../file.stories.jsx',
     ]);
   });
 
   it('story in config dir', () => {
-    const specifier = normalizeStoriesEntry('./file.stories.mdx', options);
+    const specifier = normalizeStoriesEntry('./file.stories.jsx', options);
     expect(specifier).toMatchInlineSnapshot(`
       {
         "titlePrefix": "",
         "directory": "./.storybook",
-        "files": "file.stories.mdx",
+        "files": "file.stories.jsx",
         "importPathMatcher": {}
       }
     `);
 
-    expect(specifier.importPathMatcher).toMatchPaths(['./.storybook/file.stories.mdx']);
+    expect(specifier.importPathMatcher).toMatchPaths(['./.storybook/file.stories.jsx']);
     expect(specifier.importPathMatcher).not.toMatchPaths([
-      '.storybook/file.stories.mdx',
-      './file.stories.mdx',
-      '../file.stories.mdx',
+      '.storybook/file.stories.jsx',
+      './file.stories.jsx',
+      '../file.stories.jsx',
     ]);
   });
 
   it('non-recursive files glob', () => {
-    const specifier = normalizeStoriesEntry('../*/*.stories.mdx', options);
+    const specifier = normalizeStoriesEntry('../*/*.stories.jsx', options);
     expect(specifier).toMatchInlineSnapshot(`
       {
         "titlePrefix": "",
         "directory": ".",
-        "files": "*/*.stories.mdx",
+        "files": "*/*.stories.jsx",
         "importPathMatcher": {}
       }
     `);
 
     expect(specifier.importPathMatcher).toMatchPaths([
-      './path/file.stories.mdx',
-      './second-path/file.stories.mdx',
+      './path/file.stories.jsx',
+      './second-path/file.stories.jsx',
     ]);
     expect(specifier.importPathMatcher).not.toMatchPaths([
       './path/file.stories.js',
-      './path/to/file.stories.mdx',
-      './file.stories.mdx',
-      '../file.stories.mdx',
+      './path/to/file.stories.jsx',
+      './file.stories.jsx',
+      '../file.stories.jsx',
     ]);
   });
 
   it('double non-recursive directory/files glob', () => {
-    const specifier = normalizeStoriesEntry('../*/*/*.stories.mdx', options);
+    const specifier = normalizeStoriesEntry('../*/*/*.stories.jsx', options);
     expect(specifier).toMatchInlineSnapshot(`
       {
         "titlePrefix": "",
         "directory": ".",
-        "files": "*/*/*.stories.mdx",
+        "files": "*/*/*.stories.jsx",
         "importPathMatcher": {}
       }
     `);
 
     expect(specifier.importPathMatcher).toMatchPaths([
-      './path/to/file.stories.mdx',
-      './second-path/to/file.stories.mdx',
+      './path/to/file.stories.jsx',
+      './second-path/to/file.stories.jsx',
     ]);
     expect(specifier.importPathMatcher).not.toMatchPaths([
-      './file.stories.mdx',
-      './path/file.stories.mdx',
-      './path/to/third/file.stories.mdx',
+      './file.stories.jsx',
+      './path/file.stories.jsx',
+      './path/to/third/file.stories.jsx',
       './path/to/file.stories.js',
-      '../file.stories.mdx',
+      '../file.stories.jsx',
     ]);
   });
 
   it('directory/files glob', () => {
-    const specifier = normalizeStoriesEntry('../**/*.stories.mdx', options);
+    const specifier = normalizeStoriesEntry('../**/*.stories.jsx', options);
     expect(specifier).toMatchInlineSnapshot(`
       {
         "titlePrefix": "",
         "directory": ".",
-        "files": "**/*.stories.mdx",
+        "files": "**/*.stories.jsx",
         "importPathMatcher": {}
       }
     `);
     expect(specifier.importPathMatcher).toMatchPaths([
-      './file.stories.mdx',
-      './path/file.stories.mdx',
-      './path/to/file.stories.mdx',
-      './path/to/third/file.stories.mdx',
+      './file.stories.jsx',
+      './path/file.stories.jsx',
+      './path/to/file.stories.jsx',
+      './path/to/third/file.stories.jsx',
     ]);
     expect(specifier.importPathMatcher).not.toMatchPaths([
       './file.stories.js',
-      '../file.stories.mdx',
+      '../file.stories.jsx',
     ]);
   });
 
   it('double stars glob', () => {
-    const specifier = normalizeStoriesEntry('../**/foo/**/*.stories.mdx', options);
+    const specifier = normalizeStoriesEntry('../**/foo/**/*.stories.jsx', options);
     expect(specifier).toMatchInlineSnapshot(`
       {
         "titlePrefix": "",
         "directory": ".",
-        "files": "**/foo/**/*.stories.mdx",
+        "files": "**/foo/**/*.stories.jsx",
         "importPathMatcher": {}
       }
     `);
 
     expect(specifier.importPathMatcher).toMatchPaths([
-      './foo/file.stories.mdx',
-      './path/to/foo/file.stories.mdx',
-      './path/to/foo/third/fourth/file.stories.mdx',
+      './foo/file.stories.jsx',
+      './path/to/foo/file.stories.jsx',
+      './path/to/foo/third/fourth/file.stories.jsx',
     ]);
     expect(specifier.importPathMatcher).not.toMatchPaths([
-      './file.stories.mdx',
+      './file.stories.jsx',
       './file.stories.js',
-      '../file.stories.mdx',
+      '../file.stories.jsx',
     ]);
   });
 
   it('intermediate directory glob', () => {
-    const specifier = normalizeStoriesEntry('../**/foo/*.stories.mdx', options);
+    const specifier = normalizeStoriesEntry('../**/foo/*.stories.jsx', options);
     expect(specifier).toMatchInlineSnapshot(`
       {
         "titlePrefix": "",
         "directory": ".",
-        "files": "**/foo/*.stories.mdx",
+        "files": "**/foo/*.stories.jsx",
         "importPathMatcher": {}
       }
     `);
 
     expect(specifier.importPathMatcher).toMatchPaths([
-      './path/to/foo/file.stories.mdx',
-      './foo/file.stories.mdx',
+      './path/to/foo/file.stories.jsx',
+      './foo/file.stories.jsx',
     ]);
     expect(specifier.importPathMatcher).not.toMatchPaths([
-      './file.stories.mdx',
+      './file.stories.jsx',
       './file.stories.js',
-      './path/to/foo/third/fourth/file.stories.mdx',
-      '../file.stories.mdx',
+      './path/to/foo/third/fourth/file.stories.jsx',
+      '../file.stories.jsx',
     ]);
   });
 
   it('directory outside of working dir', () => {
-    const specifier = normalizeStoriesEntry('../../src/*.stories.mdx', options);
+    const specifier = normalizeStoriesEntry('../../src/*.stories.jsx', options);
     expect(specifier).toMatchInlineSnapshot(`
       {
         "titlePrefix": "",
         "directory": "../src",
-        "files": "*.stories.mdx",
+        "files": "*.stories.jsx",
         "importPathMatcher": {}
       }
     `);
 
-    expect(specifier.importPathMatcher).toMatchPaths(['../src/file.stories.mdx']);
+    expect(specifier.importPathMatcher).toMatchPaths(['../src/file.stories.jsx']);
     expect(specifier.importPathMatcher).not.toMatchPaths([
-      './src/file.stories.mdx',
+      './src/file.stories.jsx',
       '../src/file.stories.js',
     ]);
   });
@@ -237,11 +237,11 @@ describe('normalizeStoriesEntry', () => {
   });
 
   it('directory/files specifier', () => {
-    const specifier = normalizeStoriesEntry({ directory: '..', files: '*.stories.mdx' }, options);
+    const specifier = normalizeStoriesEntry({ directory: '..', files: '*.stories.jsx' }, options);
     expect(specifier).toMatchInlineSnapshot(`
       {
         "titlePrefix": "",
-        "files": "*.stories.mdx",
+        "files": "*.stories.jsx",
         "directory": ".",
         "importPathMatcher": {}
       }
@@ -262,13 +262,13 @@ describe('normalizeStoriesEntry', () => {
 
   it('directory/titlePrefix/files specifier', () => {
     const specifier = normalizeStoriesEntry(
-      { directory: '..', titlePrefix: 'atoms', files: '*.stories.mdx' },
+      { directory: '..', titlePrefix: 'atoms', files: '*.stories.jsx' },
       options
     );
     expect(specifier).toMatchInlineSnapshot(`
       {
         "titlePrefix": "atoms",
-        "files": "*.stories.mdx",
+        "files": "*.stories.jsx",
         "directory": ".",
         "importPathMatcher": {}
       }
@@ -276,25 +276,25 @@ describe('normalizeStoriesEntry', () => {
   });
 
   it('globs with negation', () => {
-    const specifier = normalizeStoriesEntry('../!(negation)/*.stories.mdx', options);
+    const specifier = normalizeStoriesEntry('../!(negation)/*.stories.jsx', options);
     expect(specifier).toMatchInlineSnapshot(`
       {
         "titlePrefix": "",
         "directory": ".",
-        "files": "!(negation)/*.stories.mdx",
+        "files": "!(negation)/*.stories.jsx",
         "importPathMatcher": {}
       }
     `);
 
     expect(specifier.importPathMatcher).toMatchPaths([
-      './path/file.stories.mdx',
-      './second-path/file.stories.mdx',
+      './path/file.stories.jsx',
+      './second-path/file.stories.jsx',
     ]);
     expect(specifier.importPathMatcher).not.toMatchPaths([
       './path/file.stories.js',
-      './path/to/file.stories.mdx',
-      './file.stories.mdx',
-      '../file.stories.mdx',
+      './path/to/file.stories.jsx',
+      './file.stories.jsx',
+      '../file.stories.jsx',
     ]);
   });
 });

@@ -1,12 +1,13 @@
 import type {
+  CompatibleString,
   StorybookConfig as StorybookConfigBase,
   TypescriptOptions as TypescriptOptionsBase,
 } from '@storybook/types';
 import type { StorybookConfigVite, BuilderOptions } from '@storybook/builder-vite';
 import type docgenTypescript from '@joshwooding/vite-plugin-react-docgen-typescript';
 
-type FrameworkName = '@storybook/react-vite';
-type BuilderName = '@storybook/builder-vite';
+type FrameworkName = CompatibleString<'@storybook/react-vite'>;
+type BuilderName = CompatibleString<'@storybook/builder-vite'>;
 
 export type FrameworkOptions = {
   builder?: BuilderOptions;

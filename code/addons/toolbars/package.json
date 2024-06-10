@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-toolbars",
-  "version": "8.1.0-alpha.1",
+  "version": "8.2.0-alpha.6",
   "description": "Create your own toolbar items that control story rendering",
   "keywords": [
     "addon",
@@ -29,8 +29,8 @@
     ".": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./manager": "./dist/manager.js",
     "./register": "./dist/manager.js",

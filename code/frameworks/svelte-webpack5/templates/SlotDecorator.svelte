@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte';
+  export let svelteVersion;
   export let decorator;
   export let decoratorProps = {};
   export let component;
@@ -14,7 +15,7 @@
     return instance || decoratorInstance;
   }
 
-  if (on) {
+  if (on && svelteVersion < 5) {
     // Attach svelte event listeners.
     Object.keys(on).forEach((eventName) => {
       onMount(() => getInstance().$on(eventName, on[eventName]));

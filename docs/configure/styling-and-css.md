@@ -37,8 +37,7 @@ However, these files will not be subject to HMR, so you'll need to restart your 
 
 <CodeSnippets
   paths={[
-    'common/storybook-preview-import-global-styles.js.mdx',
-    'common/storybook-preview-import-global-styles.ts.mdx',
+    'common/storybook-preview-head-import-global-styles.html.mdx',
   ]}
 />
 
@@ -138,7 +137,7 @@ To add global styles to your Storybook, you can add them to the `styles` array i
 Don't forget to also add your global styles to your `build-storybook` target in your `angular.json` file. This will ensure that your global styles are included in the static build of your Storybook as well.
 
 ```json
-  {
+{
   "storybook": {
     "builder": "@storybook/angular:start-storybook",
     "options": {
@@ -234,4 +233,3 @@ Starting with version 14.1.8, Nx uses the Storybook builder directly, which mean
 When Nx runs, it will load Storybook's configuration and styling based on [`storybook.browserTarget`](https://nx.dev/storybook/extra-topics-for-angular-projects#setting-up-browsertarget).
 
 </IfRenderer>
-

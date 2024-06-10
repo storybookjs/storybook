@@ -8,7 +8,7 @@ export interface API_BaseEntry {
   depth: number;
   name: string;
   refId?: string;
-  renderLabel?: (item: API_BaseEntry) => any;
+  renderLabel?: (item: API_BaseEntry, api: any) => any;
 }
 
 export interface API_RootEntry extends API_BaseEntry {

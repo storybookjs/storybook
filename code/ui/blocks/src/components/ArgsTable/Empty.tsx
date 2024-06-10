@@ -1,8 +1,8 @@
 import type { FC } from 'react';
 import React, { useEffect, useState } from 'react';
 import { styled } from '@storybook/theming';
-import { Link } from '@storybook/components';
-import { DocumentIcon, SupportIcon, VideoIcon } from '@storybook/icons';
+import { Link, EmptyTabContent } from '@storybook/components';
+import { DocumentIcon, VideoIcon } from '@storybook/icons';
 
 interface EmptyProps {
   inAddonPanel?: boolean;
@@ -20,27 +20,6 @@ const Wrapper = styled.div<{ inAddonPanel?: boolean }>(({ inAddonPanel, theme })
   gap: 15,
   background: theme.background.content,
   boxShadow: 'rgba(0, 0, 0, 0.10) 0 1px 3px 0',
-}));
-
-const Content = styled.div({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 4,
-  maxWidth: 415,
-});
-
-const Title = styled.div(({ theme }) => ({
-  fontWeight: theme.typography.weight.bold,
-  fontSize: theme.typography.size.s2 - 1,
-  textAlign: 'center',
-  color: theme.textColor,
-}));
-
-const Description = styled.div(({ theme }) => ({
-  fontWeight: theme.typography.weight.regular,
-  fontSize: theme.typography.size.s2 - 1,
-  textAlign: 'center',
-  color: theme.textMutedColor,
 }));
 
 const Links = styled.div(({ theme }) => ({
@@ -73,39 +52,47 @@ export const Empty: FC<EmptyProps> = ({ inAddonPanel }) => {
 
   return (
     <Wrapper inAddonPanel={inAddonPanel}>
-      <Content>
-        <Title>
-          {inAddonPanel
+      <EmptyTabContent
+        title={
+          inAddonPanel
             ? 'Interactive story playground'
-            : "Args table with interactive controls couldn't be auto-generated"}
-        </Title>
-        <Description>
-          Controls give you an easy to use interface to test your components. Set your story args
-          and you&apos;ll see controls appearing here automatically.
-        </Description>
-      </Content>
-      <Links>
-        {inAddonPanel && (
+            : "Args table with interactive controls couldn't be auto-generated"
+        }
+        description={
           <>
-            <Link href="https://youtu.be/0gOfS6K0x0E" target="_blank" withArrow>
-              <VideoIcon /> Watch 5m video
-            </Link>
-            <Divider />
-            <Link
-              href="https://storybook.js.org/docs/essentials/controls"
-              target="_blank"
-              withArrow
-            >
-              <DocumentIcon /> Read docs
-            </Link>
+            Controls give you an easy to use interface to test your components. Set your story args
+            and you&apos;ll see controls appearing here automatically.
           </>
-        )}
-        {!inAddonPanel && (
-          <Link href="https://storybook.js.org/docs/essentials/controls" target="_blank" withArrow>
-            <SupportIcon /> Learn how to set that up
-          </Link>
-        )}
-      </Links>
+        }
+        footer={
+          <Links>
+            {inAddonPanel && (
+              <>
+                <Link href="https://youtu.be/0gOfS6K0x0E" target="_blank" withArrow>
+                  <VideoIcon /> Watch 5m video
+                </Link>
+                <Divider />
+                <Link
+                  href="https://storybook.js.org/docs/essentials/controls"
+                  target="_blank"
+                  withArrow
+                >
+                  <DocumentIcon /> Read docs
+                </Link>
+              </>
+            )}
+            {!inAddonPanel && (
+              <Link
+                href="https://storybook.js.org/docs/essentials/controls"
+                target="_blank"
+                withArrow
+              >
+                <DocumentIcon /> Learn how to set that up
+              </Link>
+            )}
+          </Links>
+        }
+      />
     </Wrapper>
   );
 };

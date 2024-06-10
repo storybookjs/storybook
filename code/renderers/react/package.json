@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react",
-  "version": "8.1.0-alpha.1",
+  "version": "8.2.0-alpha.6",
   "description": "Storybook React renderer",
   "keywords": [
     "storybook"
@@ -23,8 +23,14 @@
     ".": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./experimental-playwright": {
+      "types": "./dist/playwright.d.ts",
+      "node": "./dist/playwright.js",
+      "import": "./dist/playwright.mjs",
+      "require": "./dist/playwright.js"
     },
     "./preset": "./preset.js",
     "./dist/entry-preview.mjs": "./dist/entry-preview.mjs",
@@ -35,6 +41,16 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "dist/index.d.ts"
+      ],
+      "experimental-playwright": [
+        "dist/playwright.d.ts"
+      ]
+    }
+  },
   "files": [
     "dist/**/*",
     "template/cli/**/*",
@@ -80,8 +96,8 @@
     "require-from-string": "^2.0.2"
   },
   "peerDependencies": {
-    "react": "^16.8.0 || ^17.0.0 || ^18.0.0",
-    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0",
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
+    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
     "typescript": ">= 4.2.x"
   },
   "peerDependenciesMeta": {
@@ -101,7 +117,8 @@
       "./src/preset.ts",
       "./src/entry-preview.ts",
       "./src/entry-preview-docs.ts",
-      "./src/entry-preview-rsc.tsx"
+      "./src/entry-preview-rsc.tsx",
+      "./src/playwright.ts"
     ],
     "platform": "browser"
   },

@@ -38,7 +38,3 @@ export const Field = ({ label, children, ...props }: FieldProps) => (
     {children}
   </Wrapper>
 );
-
-Field.defaultProps = {
-  label: undefined,
-};

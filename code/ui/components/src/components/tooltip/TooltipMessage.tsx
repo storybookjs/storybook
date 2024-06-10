@@ -60,9 +60,3 @@ export const TooltipMessage = ({ title, desc, links }: TooltipMessageProps) => {
     </MessageWrapper>
   );
 };
-
-TooltipMessage.defaultProps = {
-  title: null,
-  desc: null,
-  links: null,
-};

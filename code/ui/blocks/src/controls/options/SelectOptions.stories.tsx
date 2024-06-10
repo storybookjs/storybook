@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { fn } from '@storybook/test';
 import { OptionsControl } from './Options';
 
 const arrayOptions = ['Bat', 'Cat', 'Rat'];
@@ -19,7 +20,7 @@ const argTypeMultiSelect = {
       options: arrayOptions,
     },
   },
-};
+} as const;
 
 const meta = {
   title: 'Controls/Options/Select',
@@ -33,6 +34,7 @@ const meta = {
     name: 'select',
     type: 'select',
     argType: { options: arrayOptions },
+    onChange: fn(),
   },
   argTypes: {
     value: {
@@ -40,17 +42,19 @@ const meta = {
       options: arrayOptions,
     },
   },
-} as Meta<typeof OptionsControl>;
+} satisfies Meta<typeof OptionsControl>;
 
 export default meta;
 
-export const Array: StoryObj<typeof OptionsControl> = {
+type Story = StoryObj<typeof meta>;
+
+export const Array: Story = {
   args: {
     value: arrayOptions[0],
   },
 };
 
-export const ArrayMulti: StoryObj<typeof OptionsControl> = {
+export const ArrayMulti: Story = {
   args: {
     type: 'multi-select',
     value: [arrayOptions[1], arrayOptions[2]],
@@ -58,13 +62,13 @@ export const ArrayMulti: StoryObj<typeof OptionsControl> = {
   ...argTypeMultiSelect,
 };
 
-export const ArrayUndefined: StoryObj<typeof OptionsControl> = {
+export const ArrayUndefined: Story = {
   args: {
     value: undefined,
   },
 };
 
-export const ArrayMultiUndefined: StoryObj<typeof OptionsControl> = {
+export const ArrayMultiUndefined: Story = {
   args: {
     type: 'multi-select',
     value: undefined,
@@ -72,14 +76,14 @@ export const ArrayMultiUndefined: StoryObj<typeof OptionsControl> = {
   ...argTypeMultiSelect,
 };
 
-export const ArrayLabels: StoryObj<typeof OptionsControl> = {
+export const ArrayLabels: Story = {
   args: {
     value: arrayOptions[0],
     labels,
   },
 };
 
-export const ArrayMultiLabels: StoryObj<typeof OptionsControl> = {
+export const ArrayMultiLabels: Story = {
   args: {
     type: 'multi-select',
     value: [arrayOptions[1], arrayOptions[2]],
@@ -88,7 +92,7 @@ export const ArrayMultiLabels: StoryObj<typeof OptionsControl> = {
   ...argTypeMultiSelect,
 };
 
-export const Object: StoryObj<typeof OptionsControl> = {
+export const Object: Story = {
   name: 'DEPRECATED: Object',
   args: {
     value: objectOptions.B,
@@ -97,7 +101,7 @@ export const Object: StoryObj<typeof OptionsControl> = {
   argTypes: { value: { control: { type: 'object' } } },
 };
 
-export const ObjectMulti: StoryObj<typeof OptionsControl> = {
+export const ObjectMulti: Story = {
   name: 'DEPRECATED: Object Multi',
   args: {
     type: 'multi-select',
@@ -107,7 +111,7 @@ export const ObjectMulti: StoryObj<typeof OptionsControl> = {
   argTypes: { value: { control: { type: 'object' } } },
 };
 
-export const ObjectUndefined: StoryObj<typeof OptionsControl> = {
+export const ObjectUndefined: Story = {
   name: 'DEPRECATED: Object Undefined',
   args: {
     value: undefined,
@@ -116,7 +120,7 @@ export const ObjectUndefined: StoryObj<typeof OptionsControl> = {
   argTypes: { value: { control: { type: 'object' } } },
 };
 
-export const ObjectMultiUndefined: StoryObj<typeof OptionsControl> = {
+export const ObjectMultiUndefined: Story = {
   name: 'DEPRECATED: Object Multi Undefined',
   args: {
     type: 'multi-select',
@@ -124,4 +128,36 @@ export const ObjectMultiUndefined: StoryObj<typeof OptionsControl> = {
     argType: { options: objectOptions },
   },
   argTypes: { value: { control: { type: 'object' } } },
+};
+
+export const ArrayReadonly: Story = {
+  args: {
+    value: arrayOptions[0],
+    argType: {
+      options: arrayOptions,
+      table: {
+        readonly: true,
+      },
+    },
+  },
+  argTypes: {
+    value: {
+      control: { type: 'select' },
+      options: arrayOptions,
+    },
+  },
+};
+
+export const ArrayMultiReadonly: Story = {
+  args: {
+    type: 'multi-select',
+    value: [arrayOptions[1], arrayOptions[2]],
+    argType: {
+      options: arrayOptions,
+      table: {
+        readonly: true,
+      },
+    },
+  },
+  ...argTypeMultiSelect,
 };

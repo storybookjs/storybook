@@ -18,7 +18,11 @@ addons.register(STATIC_FILTER, (api) => {
   );
 
   api.experimental_setFilter(STATIC_FILTER, (item) => {
-    const tags = item.tags || [];
-    return tags.filter((tag) => excludeTags[tag]).length === 0;
+    const tags = item.tags ?? [];
+    return (
+      // we can filter out the primary story, but we still want to show autodocs
+      (tags.includes('dev') || item.type === 'docs') &&
+      tags.filter((tag) => excludeTags[tag]).length === 0
+    );
   });
 });

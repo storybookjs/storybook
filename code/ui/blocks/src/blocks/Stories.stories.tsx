@@ -26,3 +26,13 @@ export const DifferentToolbars: Story = {
     relativeCsfPaths: ['../examples/StoriesParameters.stories'],
   },
 };
+export const NoAutodocs: Story = {
+  parameters: {
+    relativeCsfPaths: ['../examples/ButtonNoAutodocs.stories'],
+  },
+};
+export const SomeAutodocs: Story = {
+  parameters: {
+    relativeCsfPaths: ['../examples/ButtonSomeAutodocs.stories'],
+  },
+};

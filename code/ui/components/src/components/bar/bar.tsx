@@ -93,10 +93,10 @@ export interface FlexBarProps extends ComponentProps<typeof Bar> {
   backgroundColor?: string;
 }
 
-export const FlexBar = ({ children, backgroundColor, ...rest }: FlexBarProps) => {
+export const FlexBar = ({ children, backgroundColor, className, ...rest }: FlexBarProps) => {
   const [left, right] = Children.toArray(children);
   return (
-    <Bar {...rest}>
+    <Bar className={`sb-bar ${className}`} {...rest}>
       <BarInner bgColor={backgroundColor}>
         <Side scrollable={rest.scrollable} left>
           {left}

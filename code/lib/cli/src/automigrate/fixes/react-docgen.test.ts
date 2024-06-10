@@ -25,31 +25,35 @@ describe('no-ops', () => {
       check({
         packageManager: {},
         main: {
+          framework: '@storybook/react-vite',
           typescript: {
             // @ts-expect-error assume react
             reactDocgen: 'react-docgen-typescript',
           },
         },
       })
-    ).resolves.toBeFalsy();
+    ).resolves.toBeNull();
 
     await expect(
       check({
         packageManager: {},
         main: {
+          framework: '@storybook/react-vite',
           typescript: {
             // @ts-expect-error assume react
             reactDocgen: false,
           },
         },
       })
-    ).resolves.toBeFalsy();
+    ).resolves.toBeNull();
   });
+
   it('typescript.reactDocgen and typescript.reactDocgenTypescriptOptions are both unset', async () => {
     await expect(
       check({
         packageManager: {},
         main: {
+          framework: '@storybook/react-vite',
           typescript: {
             // @ts-expect-error assume react
             reactDocgen: 'react-docgen-typescript',
@@ -57,22 +61,55 @@ describe('no-ops', () => {
           },
         },
       })
-    ).resolves.toBeFalsy();
+    ).resolves.toBeNull();
+  });
+
+  it('typescript.reactDocgen is undefined and it is not a react framework', async () => {
+    await expect(
+      check({
+        packageManager: {},
+        main: {
+          framework: '@storybook/sveltekit',
+        },
+      })
+    ).resolves.toBeNull();
   });
 });
 
 describe('continue', () => {
+  it('should resolve if the framework is using a react renderer', async () => {
+    await expect(
+      check({
+        packageManager: {},
+        main: {
+          framework: '@storybook/nextjs',
+        },
+      })
+    ).resolves.toEqual({
+      reactDocgenTypescriptOptions: undefined,
+      reactDocgen: undefined,
+    });
+  });
+
   it('typescript.reactDocgenTypescriptOptions is set', async () => {
     await expect(
       check({
         packageManager: {},
         main: {
+          framework: '@storybook/react-vite',
           typescript: {
             // @ts-expect-error assume react
-            reactDocgenTypescriptOptions: {},
+            reactDocgenTypescriptOptions: {
+              someOption: true,
+            },
           },
         },
       })
-    ).resolves.toBeTruthy();
+    ).resolves.toEqual({
+      reactDocgenTypescriptOptions: {
+        someOption: true,
+      },
+      reactDocgen: undefined,
+    });
   });
 });

@@ -109,7 +109,7 @@ If you need, you can also configure Storybook's Vite builder using TypeScript. R
 
 ### Working directory not being detected
 
-By default, the Vite builder enables Vite's [`server.fs.strict`](https://vitejs.dev/config/#server-fs-strict) option for increased security, defining the project's `root` to Storybook's configuration directory
+By default, the Vite builder enables Vite's [`server.fs.strict`](https://vitejs.dev/config/#server-fs-strict) option for increased security, defining the project's `root` to Storybook's configuration directory.
 If you need to override it, you can use the `viteFinal` function and adjust it.
 
 ### ArgTypes are not generated automatically

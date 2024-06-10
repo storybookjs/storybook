@@ -3,7 +3,7 @@ import { dirname, join } from 'path';
 import type { PluginOption } from 'vite';
 import { vueComponentMeta } from './plugins/vue-component-meta';
 import { vueDocgen } from './plugins/vue-docgen';
-import type { FrameworkOptions, StorybookConfig } from './types';
+import type { FrameworkOptions, StorybookConfig, VueDocgenPlugin } from './types';
 
 const getAbsolutePath = <I extends string>(input: I): I =>
   dirname(require.resolve(join(input, 'package.json'))) as any;
@@ -20,11 +20,11 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
   const frameworkOptions: FrameworkOptions =
     typeof framework === 'string' ? {} : framework.options ?? {};
 
-  const docgenPlugin = frameworkOptions.docgen ?? 'vue-docgen-api';
+  const docgen = resolveDocgenOptions(frameworkOptions.docgen);
 
   // add docgen plugin depending on framework option
-  if (docgenPlugin === 'vue-component-meta') {
-    plugins.push(await vueComponentMeta());
+  if (docgen.plugin === 'vue-component-meta') {
+    plugins.push(await vueComponentMeta(docgen.tsconfig));
   } else {
     plugins.push(await vueDocgen());
   }
@@ -38,4 +38,15 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
       },
     },
   });
+};
+
+/**
+ * Resolves the docgen framework option.
+ */
+const resolveDocgenOptions = (
+  docgen?: FrameworkOptions['docgen']
+): { plugin: VueDocgenPlugin; tsconfig?: string } => {
+  if (!docgen) return { plugin: 'vue-docgen-api' };
+  if (typeof docgen === 'string') return { plugin: docgen };
+  return docgen;
 };

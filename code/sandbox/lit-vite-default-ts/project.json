@@ -1,0 +1,21 @@
+// auto-generated from scripts/create-nx-sandbox-projects.ts
+{
+  "name": "lit-vite/default-ts",
+  "projectType": "application",
+  "implicitDependencies": [
+    "cli",
+    "test",
+    "essentials",
+    "interactions",
+    "links",
+    "onboarding",
+    "blocks",
+    "web-components-vite"
+  ],
+  "targets": {
+    "sandbox": {},
+    "sb:dev": {},
+    "sb:build": {}
+  },
+  "tags": ["ci:normal", "ci:merged", "ci:daily"]
+}

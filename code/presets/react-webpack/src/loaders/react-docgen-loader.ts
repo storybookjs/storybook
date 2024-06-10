@@ -22,6 +22,7 @@ import {
 const { getNameOrValue, isReactForwardRefCall } = utils;
 
 const actualNameHandler: Handler = function actualNameHandler(documentation, componentDefinition) {
+  documentation.set('definedInFile', componentDefinition.hub.file.opts.filename);
   if (
     (componentDefinition.isClassDeclaration() || componentDefinition.isFunctionDeclaration()) &&
     componentDefinition.has('id')
@@ -58,7 +59,7 @@ const actualNameHandler: Handler = function actualNameHandler(documentation, com
   }
 };
 
-type DocObj = Documentation & { actualName: string };
+type DocObj = Documentation & { actualName: string; definedInFile: string };
 
 const defaultHandlers = Object.values(docgenHandlers).map((handler) => handler);
 const defaultResolver = new docgenResolver.FindExportedDefinitionsResolver();
@@ -69,7 +70,8 @@ let matchPath: TsconfigPaths.MatchPath | undefined;
 
 export default async function reactDocgenLoader(
   this: LoaderContext<{ debug: boolean }>,
-  source: string
+  source: string,
+  map: any
 ) {
   const callback = this.async();
   // get options
@@ -107,15 +109,23 @@ export default async function reactDocgenLoader(
     const magicString = new MagicString(source);
 
     docgenResults.forEach((info) => {
-      const { actualName, ...docgenInfo } = info;
-      if (actualName) {
+      const { actualName, definedInFile, ...docgenInfo } = info;
+      if (actualName && definedInFile == this.resourcePath) {
         const docNode = JSON.stringify(docgenInfo);
         magicString.append(`;${actualName}.__docgenInfo=${docNode}`);
       }
     });
 
-    const map = magicString.generateMap({ hires: true });
-    callback(null, magicString.toString(), map);
+    callback(
+      null,
+      magicString.toString(),
+      map ??
+        magicString.generateMap({
+          hires: true,
+          source: this.resourcePath,
+          includeContent: true,
+        })
+    );
   } catch (error: any) {
     if (error.code === ERROR_CODES.MISSING_DEFINITION) {
       callback(null, source);

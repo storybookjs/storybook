@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-actions",
-  "version": "8.1.0-alpha.1",
+  "version": "8.2.0-alpha.6",
   "description": "Get UI feedback when an action is performed on an interactive element",
   "keywords": [
     "storybook",
@@ -25,16 +25,20 @@
     ".": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./decorator": {
       "types": "./dist/decorator.d.ts",
-      "require": "./dist/decorator.js",
-      "import": "./dist/decorator.mjs"
+      "import": "./dist/decorator.mjs",
+      "require": "./dist/decorator.js"
+    },
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "import": "./dist/preview.mjs",
+      "require": "./dist/preview.js"
     },
     "./manager": "./dist/manager.js",
-    "./preview": "./dist/preview.js",
     "./register.js": "./dist/manager.js",
     "./package.json": "./package.json"
   },

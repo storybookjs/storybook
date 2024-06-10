@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-highlight",
-  "version": "8.1.0-alpha.1",
+  "version": "8.2.0-alpha.6",
   "description": "Highlight DOM nodes within your stories",
   "keywords": [
     "storybook-addons",
@@ -27,10 +27,14 @@
     ".": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
-    "./preview": "./dist/preview.js",
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "import": "./dist/preview.mjs",
+      "require": "./dist/preview.js"
+    },
     "./package.json": "./package.json"
   },
   "main": "dist/index.js",

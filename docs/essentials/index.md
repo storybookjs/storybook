@@ -87,16 +87,16 @@ Below is an abridged configuration and table with all the available options for 
 
 <!-- prettier-ignore-end -->
 
-| Addon                          | Option             | Description                                                                                                                                              |
-| ------------------------------ | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@storybook/addon-actions`     | N/A                | N/A                                                                                                                                                      |
-| `@storybook/addon-viewport`    | N/A                | N/A                                                                                                                                                      |
-| `@storybook/addon-docs`        | `csfPluginOptions` | Provides additional configuration for Storybook's CSF plugin. Can be disabled with `null`.                                                               |
-|                                | `mdxPluginOptions` | Provides additional configuration options and plugin configuration for [MDX documentation](../writing-docs/mdx.md#lack-of-github-flavored-markdown-gfm). |
-| `@storybook/addon-controls`    | N/A                | N/A                                                                                                                                                      |
-| `@storybook/addon-backgrounds` | N/A                | N/A                                                                                                                                                      |
-| `@storybook/addon-toolbars`    | N/A                | N/A                                                                                                                                                      |
-| `@storybook/addon-measure`     | N/A                | N/A                                                                                                                                                      |
+| Addon                          | Option             | Description                                                                                                                                                   |
+| ------------------------------ | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@storybook/addon-actions`     | N/A                | N/A                                                                                                                                                           |
+| `@storybook/addon-viewport`    | N/A                | N/A                                                                                                                                                           |
+| `@storybook/addon-docs`        | `csfPluginOptions` | Provides additional configuration for Storybook's CSF plugin. Can be disabled with `null`.                                                                    |
+|                                | `mdxPluginOptions` | Provides additional configuration options and plugin configuration for [MDX documentation](../writing-docs/mdx.md#markdown-tables-arent-rendering-correctly). |
+| `@storybook/addon-controls`    | N/A                | N/A                                                                                                                                                           |
+| `@storybook/addon-backgrounds` | N/A                | N/A                                                                                                                                                           |
+| `@storybook/addon-toolbars`    | N/A                | N/A                                                                                                                                                           |
+| `@storybook/addon-measure`     | N/A                | N/A                                                                                                                                                           |
 
 When you start Storybook, your custom configuration will override the default.
 

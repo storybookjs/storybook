@@ -1,0 +1,21 @@
+// auto-generated from scripts/create-nx-sandbox-projects.ts
+{
+  "name": "html-webpack/default",
+  "projectType": "application",
+  "implicitDependencies": [
+    "cli",
+    "test",
+    "essentials",
+    "interactions",
+    "links",
+    "onboarding",
+    "blocks",
+    "html-webpack5"
+  ],
+  "targets": {
+    "sandbox": {},
+    "sb:dev": {},
+    "sb:build": {}
+  },
+  "tags": ["ci:merged", "ci:daily"]
+}

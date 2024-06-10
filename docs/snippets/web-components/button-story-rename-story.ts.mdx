@@ -1,6 +1,5 @@
 ```ts
 // Button.stories.ts
-
 import type { Meta, StoryObj } from '@storybook/web-components';
 
 const meta: Meta = {
@@ -11,6 +10,11 @@ export default meta;
 type Story = StoryObj;
 
 export const Primary: Story = {
+  // 👇 Rename this story
   name: 'I am the primary',
+  args: {
+    label: 'Button',
+    primary: true,
+  },
 };
 ```

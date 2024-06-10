@@ -2,7 +2,13 @@
 title: 'Stories for multiple components'
 ---
 
-It's useful to write stories that [render two or more components](../writing-stories/index.md#stories-for-two-or-more-components) at once if those components are designed to work together. For example, `ButtonGroups`, `Lists`, and `Page` components. Here's an example with `List` and `ListItem` components:
+It's useful to write stories that [render two or more components](./index.md#stories-for-two-or-more-components) at once if those components are designed to work together. For example, `ButtonGroup`, `List`, and `Page` components.
+
+## Subcomponents
+
+When the components you're documenting have a parent-child relationship, you can use the `subcomponents` property to document them together. This is especially useful when the child component is not meant to be used on its own, but only as part of the parent component.
+
+Here's an example with `List` and `ListItem` components:
 
 <!-- prettier-ignore-start -->
 
@@ -33,31 +39,35 @@ Subcomponents are only intended for documentation purposes and have some limitat
 
 Let's talk about some techniques you can use to mitigate the above, which are especially useful in more complicated situations.
 
-## Reusing subcomponent stories
+## Reusing story definitions
 
-The simplest change we can make to the above is to reuse the stories of the `ListItem` in the `List`:
+We can also reduce repetition in our stories by reusing story definitions. Here, we can reuse the `ListItem` stories' args in the story for `List`:
 
 <!-- prettier-ignore-start -->
 
 <CodeSnippets
   paths={[
-    'react/list-story-unchecked.js.mdx',
-    'react/list-story-unchecked.ts.mdx',
-    'vue/list-story-unchecked.3.js.mdx',
-    'vue/list-story-unchecked.3.ts.mdx',
-    'angular/list-story-unchecked.ts.mdx',
-    'web-components/list-story-unchecked.js.mdx',
-    'web-components/list-story-unchecked.ts.mdx',
-    'solid/list-story-unchecked.js.mdx',
-    'solid/list-story-unchecked.ts.mdx',
+    'react/list-story-reuse-data.js.mdx',
+    'react/list-story-reuse-data.ts.mdx',
+    'angular/list-story-reuse-data.ts.mdx',
+    'vue/list-story-reuse-data.3.js.mdx',
+    'vue/list-story-reuse-data.3.ts.mdx',
+    'web-components/list-story-reuse-data.js.mdx',
+    'web-components/list-story-reuse-data.ts.mdx',
+    'html/list-story-reuse-data.js.mdx',
+    'html/list-story-reuse-data.ts.mdx',
+    'solid/list-story-reuse-data.js.mdx',
+    'solid/list-story-reuse-data.ts.mdx',
   ]}
   usesCsf3
-  csf2Path="writing-stories/stories-for-multiple-components#snippet-list-story-unchecked"
+  csf2Path="writing-stories/#snippet-list-story-reuse-data"
 />
 
 <!-- prettier-ignore-end -->
 
 By rendering the `Unchecked` story with its args, we are able to reuse the input data from the `ListItem` stories in the `List`.
+
+<If renderer="react">
 
 However, we still aren’t using args to control the `ListItem` stories, which means we cannot change them with controls and we cannot reuse them in other, more complex component stories.
 
@@ -82,18 +92,20 @@ Now that `children` is an arg, we can potentially reuse it in another story.
 
 However, there are some caveats when using this approach that you should be aware of.
 
-The `children` `args` as any other arg needs to be JSON serializable. It means that you should:
+The `children` arg, just like all args, needs to be JSON serializable. To avoid errors with your Storybook, you should:
 
 - Avoid using empty values
+- Use [mapping](../essentials/controls.md#dealing-with-complex-values) if you want to adjust the value with [controls](../essentials/controls.md)
 - Use caution with components that include third party libraries
-
-As they could lead into errors with your Storybook.
 
 <Callout variant="info">
 
 We're currently working on improving the overall experience for the children arg and allow you to edit children arg in a control and allow you to use other types of components in the near future. But for now you need to factor in this caveat when you're implementing your stories.
 
 </Callout>
+
+<!-- End if react -->
+</If>
 
 ## Creating a Template Component
 

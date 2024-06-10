@@ -1,7 +1,14 @@
 import React from 'react';
+import { action } from '@storybook/addon-actions';
 import { LocationProvider } from '@storybook/router';
 import type { Meta, StoryObj } from '@storybook/react';
 import NotificationItem from './NotificationItem';
+import {
+  AccessibilityIcon as AccessibilityIconIcon,
+  BookIcon as BookIconIcon,
+  FaceHappyIcon,
+} from '@storybook/icons';
+import { expect, fn, userEvent, waitFor, within } from '@storybook/test';
 
 const meta = {
   component: NotificationItem,
@@ -19,13 +26,16 @@ const meta = {
     ),
   ],
   excludeStories: /.*Data$/,
+  args: {
+    onDismissNotification: () => {},
+  },
 } satisfies Meta<typeof NotificationItem>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const onClear = () => {};
-const onDismissNotification = () => {};
+const onClear = fn(action('onClear'));
+const onClick = fn(action('onClick'));
 
 export const Simple: Story = {
   args: {
@@ -35,29 +45,68 @@ export const Simple: Story = {
       content: {
         headline: 'Storybook cool!',
       },
-      link: '/some/path',
     },
-    onDismissNotification,
+  },
+};
+
+export const Timeout: Story = {
+  args: {
+    notification: {
+      id: 'Timeout',
+      onClear,
+      onClick,
+      content: {
+        headline: 'Storybook cool!',
+      },
+      duration: 3000,
+    },
+  },
+  play: async ({ args }) => {
+    await waitFor(
+      () => {
+        expect(args.notification.onClear).toHaveBeenCalledWith({ dismissed: false, timeout: true });
+      },
+      {
+        timeout: 4000,
+      }
+    );
   },
 };
 
 export const LongHeadline: Story = {
   args: {
-    ...Simple.args,
     notification: {
       id: '2',
       onClear,
       content: {
         headline: 'This is a long message that extends over two lines!',
       },
-      link: '/some/path',
+      link: undefined,
     },
+  },
+};
+
+export const Clickable: Story = {
+  args: {
+    notification: {
+      id: 'Clickable',
+      onClear,
+      onClick,
+      content: {
+        headline: 'Storybook cool!',
+      },
+    },
+  },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    const notification = await canvas.findByText('Storybook cool!');
+    await userEvent.click(notification);
+    await expect(args.notification.onClick).toHaveBeenCalledWith({ onDismiss: expect.anything() });
   },
 };
 
 export const Link: Story = {
   args: {
-    ...Simple.args,
     notification: {
       id: '3',
       onClear,
@@ -71,17 +120,13 @@ export const Link: Story = {
 
 export const LinkIconWithColor: Story = {
   args: {
-    ...Simple.args,
     notification: {
       id: '4',
       onClear,
       content: {
         headline: 'Storybook with a smile!',
       },
-      icon: {
-        name: 'facehappy',
-        color: 'hotpink',
-      },
+      icon: <FaceHappyIcon color="hotpink" />,
       link: '/some/path',
     },
   },
@@ -89,7 +134,6 @@ export const LinkIconWithColor: Story = {
 
 export const LinkIconWithColorSubHeadline: Story = {
   args: {
-    ...Simple.args,
     notification: {
       id: '5',
       onClear,
@@ -97,10 +141,7 @@ export const LinkIconWithColorSubHeadline: Story = {
         headline: 'Storybook X.X is available with a smile! Download now »',
         subHeadline: 'This link also has a sub headline',
       },
-      icon: {
-        name: 'facehappy',
-        color: 'tomato',
-      },
+      icon: <FaceHappyIcon color="tomato" />,
       link: '/some/path',
     },
   },
@@ -108,24 +149,20 @@ export const LinkIconWithColorSubHeadline: Story = {
 
 export const BookIcon: Story = {
   args: {
-    ...Simple.args,
     notification: {
       id: '6',
       onClear,
       content: {
         headline: 'Storybook has a book icon!',
       },
-      icon: {
-        name: 'book',
-      },
-      link: '/some/path',
+      icon: <BookIconIcon />,
+      link: undefined,
     },
   },
 };
 
 export const StrongSubHeadline: Story = {
   args: {
-    ...Simple.args,
     notification: {
       id: '7',
       onClear,
@@ -133,17 +170,14 @@ export const StrongSubHeadline: Story = {
         headline: 'Storybook has a book icon!',
         subHeadline: <strong>Strong subHeadline</strong>,
       },
-      icon: {
-        name: 'book',
-      },
-      link: '/some/path',
+      icon: <BookIconIcon />,
+      link: undefined,
     },
   },
 };
 
 export const StrongEmphasizedSubHeadline: Story = {
   args: {
-    ...Simple.args,
     notification: {
       id: '8',
       onClear,
@@ -155,17 +189,14 @@ export const StrongEmphasizedSubHeadline: Story = {
           </span>
         ),
       },
-      icon: {
-        name: 'book',
-      },
-      link: '/some/path',
+      icon: <BookIconIcon />,
+      link: undefined,
     },
   },
 };
 
 export const BookIconSubHeadline: Story = {
   args: {
-    ...Simple.args,
     notification: {
       id: '9',
       onClear,
@@ -173,36 +204,30 @@ export const BookIconSubHeadline: Story = {
         headline: 'Storybook has a book icon!',
         subHeadline: 'Find out more!',
       },
-      icon: {
-        name: 'book',
-      },
-      link: '/some/path',
+      icon: <BookIconIcon />,
+      link: undefined,
     },
   },
 };
 
 export const BookIconLongSubHeadline: Story = {
   args: {
-    ...Simple.args,
     notification: {
       id: '10',
       onClear,
       content: {
         headline: 'Storybook has a book icon!',
         subHeadline:
-          'Find out more! by clicking on on buttons and downloading some applications. Find out more! by clicking on buttons and downloading some applications',
+          'Find out more! by clicking on buttons and downloading some applications. Find out more! by clicking on buttons and downloading some applications',
       },
-      icon: {
-        name: 'book',
-      },
-      link: '/some/path',
+      icon: <BookIconIcon />,
+      link: undefined,
     },
   },
 };
 
 export const AccessibilityIcon: Story = {
   args: {
-    ...Simple.args,
     notification: {
       id: '11',
       onClear,
@@ -210,17 +235,14 @@ export const AccessibilityIcon: Story = {
         headline: 'Storybook has a accessibility icon!',
         subHeadline: 'It is here!',
       },
-      icon: {
-        name: 'accessibility',
-      },
-      link: '/some/path',
+      icon: <AccessibilityIconIcon />,
+      link: undefined,
     },
   },
 };
 
 export const AccessibilityGoldIcon: Story = {
   args: {
-    ...Simple.args,
     notification: {
       id: '12',
       onClear,
@@ -228,18 +250,28 @@ export const AccessibilityGoldIcon: Story = {
         headline: 'Accessibility icon!',
         subHeadline: 'It is gold!',
       },
-      icon: {
-        name: 'accessibility',
-        color: 'gold',
-      },
-      link: '/some/path',
+      icon: <AccessibilityIconIcon color="gold" />,
+      link: undefined,
     },
   },
 };
 
 export const AccessibilityGoldIconLongHeadLineNoSubHeadline: Story = {
   args: {
-    ...Simple.args,
+    notification: {
+      id: '13',
+      onClear,
+      content: {
+        headline: 'Storybook notifications has a accessibility icon it can be any color!',
+      },
+      icon: <AccessibilityIconIcon color="gold" />,
+      link: undefined,
+    },
+  },
+};
+
+export const WithOldIconFormat: Story = {
+  args: {
     notification: {
       id: '13',
       onClear,
@@ -250,7 +282,7 @@ export const AccessibilityGoldIconLongHeadLineNoSubHeadline: Story = {
         name: 'accessibility',
         color: 'gold',
       },
-      link: '/some/path',
+      link: undefined,
     },
   },
 };

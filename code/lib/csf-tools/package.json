@@ -1,6 +1,6 @@
 {
   "name": "@storybook/csf-tools",
-  "version": "8.1.0-alpha.1",
+  "version": "8.2.0-alpha.6",
   "description": "Parse and manipulate CSF and Storybook config files",
   "keywords": [
     "storybook"
@@ -42,11 +42,11 @@
     "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@babel/generator": "^7.23.0",
-    "@babel/parser": "^7.23.0",
-    "@babel/traverse": "^7.23.2",
-    "@babel/types": "^7.23.0",
-    "@storybook/csf": "^0.1.2",
+    "@babel/generator": "^7.24.4",
+    "@babel/parser": "^7.24.4",
+    "@babel/traverse": "^7.24.1",
+    "@babel/types": "^7.24.0",
+    "@storybook/csf": "^0.1.7",
     "@storybook/types": "workspace:*",
     "fs-extra": "^11.1.0",
     "recast": "^0.23.5",

@@ -8,8 +8,11 @@ const isBlocksOnly = process.env.STORYBOOK_BLOCKS_ONLY === 'true';
 const allStories = [
   {
     directory: '../manager/src',
-    files: '**/*.stories.@(js|jsx|mjs|ts|tsx|mdx)',
     titlePrefix: '@manager',
+  },
+  {
+    directory: '../../lib/preview-api/src',
+    titlePrefix: '@preview',
   },
   {
     directory: '../components/src/components',
@@ -18,6 +21,18 @@ const allStories = [
   {
     directory: '../blocks/src',
     titlePrefix: '@blocks',
+  },
+  {
+    directory: '../../addons/controls/src', // TODO other addons?
+    titlePrefix: '@addons/controls',
+  },
+  {
+    directory: '../../addons/onboarding/src',
+    titlePrefix: '@addons/onboarding',
+  },
+  {
+    directory: '../../addons/interactions/src',
+    titlePrefix: '@addons/interactions',
   },
 ];
 
@@ -52,6 +67,7 @@ const config: StorybookConfig = {
     '@storybook/addon-interactions',
     '@storybook/addon-storysource',
     '@storybook/addon-designs',
+    '@storybook/addon-a11y',
     '@chromatic-com/storybook',
   ],
   build: {

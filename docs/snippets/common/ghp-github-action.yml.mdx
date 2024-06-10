@@ -22,15 +22,15 @@ jobs:
     # Job steps
     steps:
       # Manual Checkout
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       # Set up Node
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: '16.x'
 
       #👇 Add Storybook build and deploy to GitHub Pages as a step in the workflow
-      - uses: bitovi/github-actions-storybook-to-github-pages@v1.0.1
+      - uses: bitovi/github-actions-storybook-to-github-pages@v1.0.3
         with:
           install_command: yarn install # default: npm ci
           build_command: yarn build-storybook # default: npm run build-storybook

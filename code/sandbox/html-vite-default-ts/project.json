@@ -1,0 +1,21 @@
+// auto-generated from scripts/create-nx-sandbox-projects.ts
+{
+  "name": "html-vite/default-ts",
+  "projectType": "application",
+  "implicitDependencies": [
+    "cli",
+    "test",
+    "essentials",
+    "interactions",
+    "links",
+    "onboarding",
+    "blocks",
+    "html-vite"
+  ],
+  "targets": {
+    "sandbox": {},
+    "sb:dev": {},
+    "sb:build": {}
+  },
+  "tags": ["ci:merged", "ci:daily"]
+}

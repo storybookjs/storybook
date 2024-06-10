@@ -2,7 +2,7 @@
   "projectId": "Project:635781f3500dd2c49e189caf",
   "projectToken": "80b312430ec4",
   "buildScriptName": "storybook:ui:build",
-  "onlyChanged": true,
+  "onlyChanged": false,
   "storybookConfigDir": "ui/.storybook",
   "storybookBaseDir": "./code",
   "zip": true

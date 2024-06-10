@@ -39,13 +39,9 @@ export async function getFontFaceDeclarations(
     .map(({ prop, value }: { prop: string; value: string }) => `${prop}: ${value};`)
     .join('\n');
 
-  const arePathsWin32Format = /^[a-z]:\\/iu.test(options.filename);
-  const cleanWin32Path = (pathString: string): string =>
-    arePathsWin32Format ? pathString.replace(/\\/gu, '/') : pathString;
-
   const getFontFaceCSS = () => {
     if (typeof localFontSrc === 'string') {
-      const localFontPath = cleanWin32Path(path.join(parentFolder, localFontSrc));
+      const localFontPath = path.join(parentFolder, localFontSrc).replaceAll('\\', '/');
 
       return `@font-face {
           font-family: ${id};
@@ -55,7 +51,7 @@ export async function getFontFaceDeclarations(
     }
     return localFontSrc
       .map((font) => {
-        const localFontPath = cleanWin32Path(path.join(parentFolder, font.path));
+        const localFontPath = path.join(parentFolder, font.path).replaceAll('\\', '/');
 
         return `@font-face {
           font-family: ${id};

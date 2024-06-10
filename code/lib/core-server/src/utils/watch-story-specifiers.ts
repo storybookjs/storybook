@@ -2,7 +2,6 @@ import Watchpack from 'watchpack';
 import slash from 'slash';
 import fs from 'fs';
 import path from 'path';
-import glob from 'globby';
 import uniq from 'lodash/uniq.js';
 
 import type { NormalizedStoriesSpecifier, Path } from '@storybook/types';
@@ -74,8 +73,12 @@ export function watchStorySpecifiers(
               // because the directoru could already be within the files part (e.g. './x/foo/bar')
               path.basename(specifier.files)
             );
+
+            // Dynamically import globby because it is a pure ESM module
+            const { globby } = await import('globby');
+
             // glob only supports forward slashes
-            const files = await glob(slash(dirGlob), commonGlobOptions(dirGlob));
+            const files = await globby(slash(dirGlob), commonGlobOptions(dirGlob));
 
             files.forEach((filePath) => {
               const fileImportPath = toImportPath(

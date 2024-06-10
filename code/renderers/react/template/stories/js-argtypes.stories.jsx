@@ -7,6 +7,7 @@ import { ThemeProvider, themes, convert } from '@storybook/theming';
 
 import { component as JsClassComponentComponent } from './docgen-components/js-class-component/input.jsx';
 import { component as JsFunctionComponentComponent } from './docgen-components/js-function-component/input.jsx';
+import { component as JsRexportedComponentComponent } from './docgen-components/js-re-exported-component/input.jsx';
 import { component as JsFunctionComponentInlineDefaultsComponent } from './docgen-components/js-function-component-inline-defaults/input.jsx';
 import { component as JsFunctionComponentInlineDefaultsNoPropTypesComponent } from './docgen-components/js-function-component-inline-defaults-no-propTypes/input.jsx';
 import { component as JsProptypesShapeComponent } from './docgen-components/9399-js-proptypes-shape/input.jsx';
@@ -59,6 +60,10 @@ ArgsStory.propTypes = {
 export const JsClassComponent = { parameters: { component: JsClassComponentComponent } };
 
 export const JsFunctionComponent = { parameters: { component: JsFunctionComponentComponent } };
+
+export const JsRexportedComponent = {
+  parameters: { component: JsRexportedComponentComponent },
+};
 
 export const JsFunctionComponentInlineDefaults = {
   parameters: { component: JsFunctionComponentInlineDefaultsComponent },

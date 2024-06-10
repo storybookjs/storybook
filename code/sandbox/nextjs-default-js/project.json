@@ -1,0 +1,21 @@
+// auto-generated from scripts/create-nx-sandbox-projects.ts
+{
+  "name": "nextjs/default-js",
+  "projectType": "application",
+  "implicitDependencies": [
+    "cli",
+    "test",
+    "essentials",
+    "interactions",
+    "links",
+    "onboarding",
+    "blocks",
+    "nextjs"
+  ],
+  "targets": {
+    "sandbox": {},
+    "sb:dev": {},
+    "sb:build": {}
+  },
+  "tags": ["ci:daily"]
+}

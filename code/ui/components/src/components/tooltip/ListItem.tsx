@@ -186,17 +186,18 @@ export interface ListItemProps extends Omit<ComponentProps<typeof Item>, 'href' 
 }
 
 const ListItem = ({
-  loading,
-  title,
-  center,
-  right,
-  icon,
-  active,
-  disabled,
+  loading = false,
+  title = <span>Loading state</span>,
+  center = null,
+  right = null,
+
+  active = false,
+  disabled = false,
   isIndented,
-  href,
-  onClick,
-  LinkWrapper,
+  href = null,
+  onClick = null,
+  icon,
+  LinkWrapper = null,
   ...rest
 }: ListItemProps) => {
   const itemProps = getItemProps(onClick, href, LinkWrapper);
@@ -218,18 +219,6 @@ const ListItem = ({
       {right && <Right {...commonProps}>{right}</Right>}
     </Item>
   );
-};
-
-ListItem.defaultProps = {
-  loading: false,
-  title: <span>Loading state</span>,
-  center: null,
-  right: null,
-  active: false,
-  disabled: false,
-  href: null,
-  LinkWrapper: null,
-  onClick: null,
 };
 
 export default ListItem;

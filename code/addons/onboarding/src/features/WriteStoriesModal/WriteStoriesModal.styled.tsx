@@ -1,4 +1,7 @@
 import { keyframes, styled } from '@storybook/theming';
+import { Modal } from '@storybook/components';
+
+export const ModalWrapper = styled(Modal)``;
 
 export const ModalContent = styled.div`
   display: flex;
@@ -16,10 +19,13 @@ export const Main = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
+  background: white;
   font-family: ${({ theme }) => theme.typography.fonts.base};
 `;
 
 export const Header = styled.div`
+  position: relative;
+  z-index: 1;
   box-sizing: border-box;
   display: flex;
   justify-content: space-between;
@@ -59,20 +65,20 @@ export const Content = styled.div`
   }
 `;
 
-export const SpanHighlight = styled.span`
-  display: inline-flex;
-  border-radius: 3px;
-  padding: 0 5px;
-  margin-bottom: -2px;
-  opacity: 0.8;
-  font-family: ${({ theme }) => theme.typography.fonts.mono};
-  font-size: 11px;
-  border: 1px solid #ecf4f9;
-  color: ${({ theme }) => theme.color.darkest};
-  background-color: #f7fafc;
-  box-sizing: border-box;
-  line-height: 17px;
-`;
+export const SpanHighlight = styled.span(({ theme }) => ({
+  display: 'inline-flex',
+  borderRadius: 3,
+  padding: '0 5px',
+  marginBottom: -2,
+  opacity: 0.8,
+  fontFamily: theme.typography.fonts.mono,
+  fontSize: 11,
+  border: theme.base === 'dark' ? theme.color.darkest : theme.color.lightest,
+  color: theme.base === 'dark' ? theme.color.lightest : theme.color.darkest,
+  backgroundColor: theme.base === 'dark' ? 'black' : theme.color.light,
+  boxSizing: 'border-box',
+  lineHeight: '17px',
+}));
 
 export const Image = styled.img`
   max-width: 100%;
@@ -85,8 +91,10 @@ export const Background = styled.div`
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: -1;
+  z-index: 0;
   overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
 `;
 
 export const circle1Anim = keyframes`

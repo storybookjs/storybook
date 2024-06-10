@@ -1,6 +1,6 @@
 {
   "name": "@storybook/preset-vue3-webpack",
-  "version": "8.1.0-alpha.1",
+  "version": "8.2.0-alpha.6",
   "description": "Storybook for Vue 3: Develop Vue 3 Components in isolation with Hot Reloading.",
   "keywords": [
     "storybook"
@@ -23,24 +23,24 @@
     ".": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./preset": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./dist/framework-preset-vue3-docs": {
       "types": "./dist/framework-preset-vue3-docs.d.ts",
-      "require": "./dist/framework-preset-vue3-docs.js",
-      "import": "./dist/framework-preset-vue3-docs.mjs"
+      "import": "./dist/framework-preset-vue3-docs.mjs",
+      "require": "./dist/framework-preset-vue3-docs.js"
     },
     "./dist/framework-preset-vue3": {
       "types": "./dist/framework-preset-vue3.d.ts",
-      "require": "./dist/framework-preset-vue3.js",
-      "import": "./dist/framework-preset-vue3.mjs"
+      "import": "./dist/framework-preset-vue3.mjs",
+      "require": "./dist/framework-preset-vue3.js"
     },
     "./package.json": "./package.json"
   },

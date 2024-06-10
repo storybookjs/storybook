@@ -166,7 +166,7 @@ export const withVuetifyTheme = ({ themes, defaultTheme }) => {
       setup() {
         const theme = useTheme();
 
-        theme.global.name.value = selected;
+        theme.global.name.value = themes[selected];
 
         return {
           theme,
@@ -195,12 +195,14 @@ setup((app) => {
 
 export const decorators = [
   withVuetifyTheme({
+    // These keys are the labels that will be displayed in the toolbar theme switcher
+    // The values must match the theme keys from your VuetifyOptions
     themes: {
       light: 'light',
       dark: 'dark',
-      customTheme: 'myCustomTheme',
+      'high contrast': 'highContrast',
     },
-    defaultTheme: 'customTheme', // The key of your default theme
+    defaultTheme: 'light', // The key of your default theme
   }),
 ];
 ```

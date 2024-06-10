@@ -26,4 +26,5 @@ declare var __STORYBOOK_ICONS__: any;
 declare var __STORYBOOK_CLIENT_LOGGER__: any;
 declare var __STORYBOOK_ADDONS_CHANNEL__: any;
 declare var __STORYBOOK_TYPES__: any;
+declare var STORYBOOK_RENDERER: string | undefined;
 declare var sendTelemetryError: (error: any) => void;

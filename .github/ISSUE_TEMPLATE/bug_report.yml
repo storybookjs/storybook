@@ -1,7 +1,7 @@
 name: Bug report 🐞
 description: >-
   Something is broken and you have a reliable reproduction? Let us know here.
-  For questions, please use "Question" below.
+  For questions, please post in GitHub Discussion.
 title: '[Bug]: '
 labels:
   - needs triage
@@ -14,23 +14,34 @@ body:
       description: A clear and concise description of what the bug is
     validations:
       required: true
-  - type: textarea
-    id: reproduce
+  - type: input
+    id: repro-link
     attributes:
-      label: To Reproduce
+      label: Reproduction link
       description: >-
-        We prioritize bug reports that have a reproduction. You can create a reproduction using [storybook.new](https://storybook.new), or by running `npx sb@next sandbox` and
-        following the instructions. Read our
-        [documentation](https://storybook.js.org/docs/react/contribute/how-to-reproduce)
-        to learn more about creating reproductions.
+        Please provide a link to a reproduction of the issue. We accept reproductions hosted on GitHub, CodeSandbox, and StackBlitz. Due to the high volume of reports, we prioritize those with clear reproductions. The easiest way to create a reproduction is to use [storybook.new](https://storybook.new). For detailed guidance, please refer to our [documentation](https://storybook.js.org/docs/react/contribute/how-to-reproduce).
+
+        Important: If the provided URL is invalid (e.g., 404 error or private repository), we may close the issue. Thank you for your understanding!
+    validations:
+      required: true
+  - type: textarea
+    id: repro-steps
+    attributes:
+      label: Reproduction steps
+      description: >-
+        Include the steps to reproduce the issue using the provided link. Additionally, provide a clear and concise description of what you expected to happen.
       placeholder: >-
-        Paste a link to your reproduction here. We prioritize issues with reproductions over those without.
+        1. Go to above link
+        2. Click on '....'
+        3. ...
   - type: textarea
     id: system
     attributes:
       label: System
       description: Please paste the results of `npx storybook@latest info` here.
       render: bash
+    validations:
+      required: true
   - type: textarea
     id: context
     attributes:

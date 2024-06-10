@@ -38,7 +38,7 @@ describe('summarizeIndex', () => {
   it('example stories', () => {
     expect(
       summarizeIndex({
-        v: 4,
+        v: 5,
         entries: {
           'example-introduction--docs': {
             id: 'example-introduction--docs',
@@ -144,16 +144,15 @@ describe('summarizeIndex', () => {
         "onboardingStoryCount": 0,
         "pageStoryCount": 0,
         "playStoryCount": 0,
-        "storiesMdxCount": 0,
         "storyCount": 0,
-        "version": 4,
+        "version": 5,
       }
     `);
   });
   it('onboarding stories', () => {
     expect(
       summarizeIndex({
-        v: 4,
+        v: 5,
         entries: {
           'example-introduction--docs': {
             id: 'example-introduction--docs',
@@ -202,16 +201,15 @@ describe('summarizeIndex', () => {
         "onboardingStoryCount": 1,
         "pageStoryCount": 0,
         "playStoryCount": 0,
-        "storiesMdxCount": 0,
         "storyCount": 0,
-        "version": 4,
+        "version": 5,
       }
     `);
   });
   it('user stories', () => {
     expect(
       summarizeIndex({
-        v: 4,
+        v: 5,
         entries: {
           'stories-renderers-react-errors--story-contains-unrenderable': {
             id: 'stories-renderers-react-errors--story-contains-unrenderable',
@@ -258,16 +256,15 @@ describe('summarizeIndex', () => {
         "onboardingStoryCount": 0,
         "pageStoryCount": 0,
         "playStoryCount": 0,
-        "storiesMdxCount": 0,
         "storyCount": 4,
-        "version": 4,
+        "version": 5,
       }
     `);
   });
   it('pages', () => {
     expect(
       summarizeIndex({
-        v: 4,
+        v: 5,
         entries: {
           'example-page--logged-out': {
             id: 'example-page--logged-out',
@@ -315,73 +312,15 @@ describe('summarizeIndex', () => {
         "onboardingStoryCount": 0,
         "pageStoryCount": 1,
         "playStoryCount": 1,
-        "storiesMdxCount": 0,
         "storyCount": 1,
-        "version": 4,
-      }
-    `);
-  });
-  it('storiesMdx', () => {
-    expect(
-      summarizeIndex({
-        v: 4,
-        entries: {
-          'stories-renderers-react-react-mdx--docs': {
-            id: 'stories-renderers-react-react-mdx--docs',
-            title: 'stories/renderers/react/react-mdx',
-            name: 'Docs',
-            importPath: './src/stories/renderers/react/react-mdx.stories.mdx',
-            type: 'docs',
-            tags: ['stories-mdx', 'docs'],
-            storiesImports: [],
-          },
-          'stories-renderers-react-react-mdx--primary': {
-            id: 'stories-renderers-react-react-mdx--primary',
-            title: 'stories/renderers/react/react-mdx',
-            name: 'Primary',
-            importPath: './src/stories/renderers/react/react-mdx.stories.mdx',
-            tags: ['stories-mdx', 'story'],
-            type: 'story',
-          },
-          'stories-renderers-react-react-mdx--secondary': {
-            id: 'stories-renderers-react-react-mdx--secondary',
-            title: 'stories/renderers/react/react-mdx',
-            name: 'Secondary',
-            importPath: './src/stories/renderers/react/react-mdx.stories.mdx',
-            tags: ['stories-mdx', 'story'],
-            type: 'story',
-          },
-          'stories-renderers-react-react-mdx--from-template': {
-            id: 'stories-renderers-react-react-mdx--from-template',
-            title: 'stories/renderers/react/react-mdx',
-            name: 'From Template',
-            importPath: './src/stories/renderers/react/react-mdx.stories.mdx',
-            tags: ['stories-mdx', 'story'],
-            type: 'story',
-          },
-        },
-      })
-    ).toMatchInlineSnapshot(`
-      {
-        "autodocsCount": 0,
-        "componentCount": 1,
-        "exampleDocsCount": 0,
-        "exampleStoryCount": 0,
-        "mdxCount": 0,
-        "onboardingDocsCount": 0,
-        "onboardingStoryCount": 0,
-        "pageStoryCount": 0,
-        "playStoryCount": 0,
-        "storiesMdxCount": 1,
-        "storyCount": 3,
-        "version": 4,
+        "version": 5,
       }
     `);
   });
   it('autodocs', () => {
     expect(
       summarizeIndex({
-        v: 4,
+        v: 5,
         entries: {
           'example-button--docs': {
             id: 'example-button--docs',
@@ -430,16 +369,15 @@ describe('summarizeIndex', () => {
         "onboardingStoryCount": 0,
         "pageStoryCount": 0,
         "playStoryCount": 0,
-        "storiesMdxCount": 0,
         "storyCount": 0,
-        "version": 4,
+        "version": 5,
       }
     `);
   });
   it('mdx', () => {
     expect(
       summarizeIndex({
-        v: 4,
+        v: 5,
         entries: {
           'example-introduction--docs': {
             id: 'example-introduction--docs',
@@ -457,7 +395,7 @@ describe('summarizeIndex', () => {
             importPath: './template-stories/addons/docs/docs2/NoTitle.mdx',
             storiesImports: [],
             type: 'docs',
-            tags: ['docs'],
+            tags: ['docs', 'attached-mdx'],
           },
           'addons-docs-yabbadabbadooo--docs': {
             id: 'addons-docs-yabbadabbadooo--docs',
@@ -466,7 +404,7 @@ describe('summarizeIndex', () => {
             importPath: './template-stories/addons/docs/docs2/Title.mdx',
             storiesImports: [],
             type: 'docs',
-            tags: ['docs'],
+            tags: ['docs', 'attached-mdx'],
           },
         },
       })
@@ -481,9 +419,8 @@ describe('summarizeIndex', () => {
         "onboardingStoryCount": 0,
         "pageStoryCount": 0,
         "playStoryCount": 0,
-        "storiesMdxCount": 0,
         "storyCount": 0,
-        "version": 4,
+        "version": 5,
       }
     `);
   });

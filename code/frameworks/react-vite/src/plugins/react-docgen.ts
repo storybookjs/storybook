@@ -20,7 +20,7 @@ import {
 } from './docgen-resolver';
 import { logger } from '@storybook/node-logger';
 
-type DocObj = Documentation & { actualName: string };
+type DocObj = Documentation & { actualName: string; definedInFile: string };
 
 // TODO: None of these are able to be overridden, so `default` is aspirational here.
 const defaultHandlers = Object.values(docgenHandlers).map((handler) => handler);
@@ -71,8 +71,8 @@ export async function reactDocgen({
         const s = new MagicString(src);
 
         docgenResults.forEach((info) => {
-          const { actualName, ...docgenInfo } = info;
-          if (actualName) {
+          const { actualName, definedInFile, ...docgenInfo } = info;
+          if (actualName && definedInFile == id) {
             const docNode = JSON.stringify(docgenInfo);
             s.append(`;${actualName}.__docgenInfo=${docNode}`);
           }
@@ -80,7 +80,7 @@ export async function reactDocgen({
 
         return {
           code: s.toString(),
-          map: s.generateMap(),
+          map: s.generateMap({ hires: true, source: id }),
         };
       } catch (e: any) {
         // Ignore the error when react-docgen cannot find a react component

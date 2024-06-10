@@ -4,6 +4,8 @@ import type { StoryFn as CSF2Story, StoryObj as CSF3Story, Meta } from '..';
 
 import type { ButtonProps } from './Button';
 import { Button } from './Button';
+import type { HandlerFunction } from '@storybook/addon-actions';
+import { action } from '@storybook/addon-actions';
 
 const meta = {
   title: 'Example/Button',
@@ -122,5 +124,37 @@ export const LoaderStory: CSF3Story<{ mockFn: (val: string) => string }> = {
   },
   play: async () => {
     expect(mockFn).toHaveBeenCalledWith('render');
+  },
+};
+
+export const WithActionArg: CSF3Story<{ someActionArg: HandlerFunction }> = {
+  args: {
+    someActionArg: action('some-action-arg'),
+  },
+  render: (args) => {
+    args.someActionArg('in render');
+    return (
+      <button
+        onClick={() => {
+          args.someActionArg('on click');
+        }}
+      />
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const buttonEl = await canvas.getByRole('button');
+    await buttonEl.click();
+  },
+};
+
+export const WithActionArgType: CSF3Story<{ someActionArg: HandlerFunction }> = {
+  argTypes: {
+    someActionArg: {
+      action: true,
+    },
+  },
+  render: () => {
+    return <div>nothing</div>;
   },
 };

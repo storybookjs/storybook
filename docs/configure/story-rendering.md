@@ -2,7 +2,54 @@
 title: 'Story rendering'
 ---
 
-In Storybook, your stories render in a particular “preview” iframe (Canvas tab) inside the larger Storybook web application. The JavaScript build configuration of the preview is controlled by a [webpack](../builders/webpack.md) config, but you also may want to directly control the rendered HTML to help your stories render correctly.
+In Storybook, your stories render in a particular “preview” iframe (also called the Canvas) inside the larger Storybook web application. The JavaScript build configuration of the preview is controlled by a [builder](../builders/index.md) config, but you also may want to run some code for every story or directly control the rendered HTML to help your stories render correctly.
+
+## Running code for every story
+
+Code executed in the preview file (`.storybook/preview.js|ts`) runs for every story in your Storybook. This is useful for setting up global styles, initializing libraries, or anything else required to render your components.
+
+<If notRenderer={['angular', 'vue']}>
+
+Here's an example of how you might use the preview file to initialize a library that must run before your components render:
+
+```ts
+// .storybook/preview.ts
+// Replace your-renderer with the renderer you are using (e.g., react, vue3)
+import { Preview } from '@storybook/your-renderer';
+
+import { initialize } from '../lib/your-library';
+
+initialize();
+
+const preview: Preview = {
+  // ...
+};
+
+export default preview;
+```
+
+</If>
+
+<If renderer={['angular', 'vue']}>
+
+For example, with Vue, you can extend Storybook's application and register your library (e.g., [Fontawesome](https://github.com/FortAwesome/vue-fontawesome)). Or with Angular, add the package ([localize](https://angular.io/api/localize)) into your `polyfills.ts` and import it:
+
+<!-- prettier-ignore-start -->
+
+<CodeSnippets
+  paths={[
+    'vue/storybook-preview-with-library-decorator.library-3.js.mdx',
+    'vue/storybook-preview-with-library-decorator.library-3.ts.mdx',
+    'vue/storybook-preview-with-hoc-component-decorator.component-3.js.mdx',
+    'vue/storybook-preview-with-hoc-component-decorator.component-3.ts.mdx',
+    'angular/add-localize-package-to-polyfills.ts.mdx',
+    'angular/storybook-preview-with-angular-polyfills.js.mdx',
+  ]}
+/>
+
+<!-- prettier-ignore-end -->
+
+</If>
 
 ## Adding to &#60;head&#62;
 

@@ -1,11 +1,9 @@
-/* eslint-disable no-console */
 import { join, relative } from 'path';
 import type { Options as ExecaOptions } from 'execa';
 import pLimit from 'p-limit';
 import prettyTime from 'pretty-hrtime';
 import { copy, emptyDir, ensureDir, move, remove, rename, writeFile } from 'fs-extra';
 import { program } from 'commander';
-import { directory } from 'tempy';
 import { execaCommand } from 'execa';
 import { esMain } from '../utils/esmain';
 
@@ -15,7 +13,6 @@ import { allTemplates as sandboxTemplates } from '../../code/lib/cli/src/sandbox
 import storybookVersions from '../../code/lib/core-common/src/versions';
 import { JsPackageManagerFactory } from '../../code/lib/core-common/src/js-package-manager/JsPackageManagerFactory';
 
-// eslint-disable-next-line import/no-cycle
 import { localizeYarnConfigFiles, setupYarn } from './utils/yarn';
 import type { GeneratorConfig } from './utils/types';
 import { getStackblitzUrl, renderTemplate } from './utils/template';
@@ -62,7 +59,6 @@ const withLocalRegistry = async (packageManager: JsPackageManager, action: () =>
     await packageManager.setRegistryURL(prevUrl);
 
     if (error) {
-      // eslint-disable-next-line no-unsafe-finally
       throw error;
     }
   }
@@ -84,7 +80,8 @@ const addStorybook = async ({
   const beforeDir = join(baseDir, BEFORE_DIR_NAME);
   const afterDir = join(baseDir, AFTER_DIR_NAME);
 
-  const tmpDir = directory();
+  const { temporaryDirectory } = await import('tempy');
+  const tmpDir = temporaryDirectory();
 
   try {
     await copy(beforeDir, tmpDir);
@@ -154,6 +151,7 @@ const runGenerators = async (
   console.log(`🤹‍♂️ Generating sandboxes with a concurrency of ${1}`);
 
   const limit = pLimit(1);
+  const { temporaryDirectory } = await import('tempy');
 
   const generationResults = await Promise.allSettled(
     generators.map(({ dirName, name, script, expected, env }) =>
@@ -166,11 +164,11 @@ const runGenerators = async (
           else if (expected.renderer === '@storybook/server') flags = ['--type server'];
 
           const time = process.hrtime();
-          console.log(`🧬 Generating ${name} (${{ dirName }})`);
+          console.log(`🧬 Generating ${name} (${dirName})`);
           await emptyDir(baseDir);
 
           // We do the creation inside a temp dir to avoid yarn container problems
-          const createBaseDir = directory();
+          const createBaseDir = temporaryDirectory();
           if (!script.includes('pnp')) {
             await setupYarn({ cwd: createBaseDir });
           }

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/cli",
-  "version": "8.1.0-alpha.1",
+  "version": "8.2.0-alpha.6",
   "description": "Storybook's CLI - install, dev, build, upgrade, and more",
   "keywords": [
     "cli",
@@ -28,8 +28,8 @@
     ".": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./package.json": "./package.json",
     "./bin/index": "./bin/index.js"
@@ -56,8 +56,8 @@
     "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@babel/core": "^7.23.0",
-    "@babel/types": "^7.23.0",
+    "@babel/core": "^7.24.4",
+    "@babel/types": "^7.24.0",
     "@ndelangen/get-tarball": "^3.0.7",
     "@storybook/codemod": "workspace:*",
     "@storybook/core-common": "workspace:*",
@@ -80,7 +80,7 @@
     "fs-extra": "^11.1.0",
     "get-npm-tarball-url": "^2.0.3",
     "giget": "^1.0.0",
-    "globby": "^11.0.2",
+    "globby": "^14.0.1",
     "jscodeshift": "^0.15.1",
     "leven": "^3.1.0",
     "ora": "^5.4.1",
@@ -89,7 +89,7 @@
     "read-pkg-up": "^7.0.1",
     "semver": "^7.3.7",
     "strip-json-comments": "^3.0.1",
-    "tempy": "^1.0.1",
+    "tempy": "^3.1.0",
     "tiny-invariant": "^1.3.1",
     "ts-dedent": "^2.0.0"
   },

@@ -9,7 +9,7 @@ type TSArgType = TSType;
 
 type TSCombinationType = TSBaseType & {
   name: 'union' | 'intersection';
-  elements: TSType[];
+  elements?: TSType[];
 };
 
 type TSFuncSigType = TSBaseType & {

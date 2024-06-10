@@ -3,6 +3,7 @@ import { getFontFaceDeclarations as getLocalFontFaceDeclarations } from './local
 import type { LoaderOptions } from './types';
 import { getCSSMeta } from './utils/get-css-meta';
 import { setFontDeclarationsInHead } from './utils/set-font-declarations-in-head';
+import path from 'path';
 
 type FontFaceDeclaration = {
   id: string;
@@ -39,11 +40,19 @@ export default async function storybookNextjsFontLoader(this: any) {
 
   let fontFaceDeclaration: FontFaceDeclaration | undefined;
 
-  if (options.source.endsWith('next/font/google') || options.source.endsWith('@next/font/google')) {
+  const pathSep = path.sep;
+
+  if (
+    options.source.endsWith(`next${pathSep}font${pathSep}google`) ||
+    options.source.endsWith(`@next${pathSep}font${pathSep}google`)
+  ) {
     fontFaceDeclaration = await getGoogleFontFaceDeclarations(options);
   }
 
-  if (options.source.endsWith('next/font/local') || options.source.endsWith('@next/font/local')) {
+  if (
+    options.source.endsWith(`next${pathSep}font${pathSep}local`) ||
+    options.source.endsWith(`@next${pathSep}font${pathSep}local`)
+  ) {
     fontFaceDeclaration = await getLocalFontFaceDeclarations(options, rootCtx, swcMode);
   }
 

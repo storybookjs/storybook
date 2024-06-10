@@ -81,7 +81,7 @@ const useLayoutSyncingState = ({
   useLayoutEffect(() => {
     if (
       internalDraggingSizeState.isDragging || // wait with syncing managerLayoutState until user is done dragging
-      layoutStateIsEqual(prevManagerLayoutStateRef.current, internalDraggingSizeState) // don't sync managerLayoutState if it doesn't differ from internalDraggingSizeState
+      layoutStateIsEqual(managerLayoutState, internalDraggingSizeState) // don't sync managerLayoutState if it doesn't differ from internalDraggingSizeStatee)
     ) {
       return;
     }
@@ -95,6 +95,7 @@ const useLayoutSyncingState = ({
       ...nextState,
     };
     setManagerLayoutState(nextState);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [internalDraggingSizeState, setManagerLayoutState]);
 
   const isPagesShown =

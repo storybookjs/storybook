@@ -354,7 +354,6 @@ export async function baseGenerator(
       },
       prefixes,
       storybookConfigFolder,
-      docs: { autodocs: 'tag' },
       addons: shouldApplyRequireWrapperOnPackageNames
         ? addons.map((addon) => applyRequireWrapper(addon))
         : addons,

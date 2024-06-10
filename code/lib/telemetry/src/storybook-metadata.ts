@@ -69,6 +69,34 @@ export const computeStorybookMetadata = async ({
     };
   }
 
+  const testPackages = [
+    'playwright',
+    'vitest',
+    'jest',
+    'cypress',
+    'nightwatch',
+    'webdriver',
+    '@web/test-runner',
+    'puppeteer',
+    'karma',
+    'jasmine',
+    'chai',
+    'testing-library',
+    '@ngneat/spectator',
+    'wdio',
+    'msw',
+    'miragejs',
+    'sinon',
+  ];
+  const testPackageDeps = Object.keys(allDependencies).filter((dep) =>
+    testPackages.find((pkg) => dep.includes(pkg))
+  );
+  metadata.testPackages = Object.fromEntries(
+    await Promise.all(
+      testPackageDeps.map(async (dep) => [dep, (await getActualPackageVersion(dep))?.version])
+    )
+  );
+
   const monorepoType = getMonorepoType();
   if (monorepoType) {
     metadata.monorepo = monorepoType;

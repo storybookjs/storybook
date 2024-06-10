@@ -58,7 +58,8 @@ describe('inferControls', () => {
         })
       );
 
-      expect(inferredControls.background.control.type).toEqual('color');
+      const control = inferredControls.background.control;
+      expect(typeof control === 'object' && control.type).toEqual('color');
     });
 
     it('should return inferred type when using color matcher but arg passed is not a string', () => {
@@ -97,7 +98,8 @@ describe('inferControls', () => {
         );
 
         expect(warnSpy).toHaveBeenCalled();
-        expect(inferredControls.background.control.type).toEqual(type.name);
+        const control = inferredControls.background.control;
+        expect(typeof control === 'object' && control.type).toEqual(type.name);
       });
     });
   });

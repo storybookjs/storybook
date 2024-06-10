@@ -4,17 +4,19 @@ title: 'How to write stories'
 
 <YouTubeCallout id="P0WHt_L0-2g" title="How to write Storybook stories | Component Story Format" />
 
-A story captures the rendered state of a UI component. It’s a function that returns a component’s state given a set of arguments.
+A story captures the rendered state of a UI component. It's an object with annotations that describe the component's behavior and appearance given a set of arguments.
 
 Storybook uses the generic term arguments (args for short) when talking about React’s `props`, Vue’s `props`, Angular’s `@Input`, and other similar concepts.
 
 ## Where to put stories
 
-A component’s stories are defined in a story file that lives alongside the component file. The story file is for development-only, and it won't be included in your production bundle.
+A component’s stories are defined in a story file that lives alongside the component file. The story file is for development-only, and it won't be included in your production bundle. In your filesytem, it looks something like this:
 
 ```
-Button.js | ts | jsx | tsx | vue | svelte
-Button.stories.js | ts | jsx | tsx
+components/
+├─ Button/
+│  ├─ Button.js | ts | jsx | tsx | vue | svelte
+│  ├─ Button.stories.js | ts | jsx | tsx
 ```
 
 ## Component Story Format
@@ -63,22 +65,23 @@ Use the _named_ exports of a CSF file to define your component’s stories. We r
 
 <CodeSnippets
   paths={[
-    'react/button-story.js.mdx',
-    'react/button-story.ts.mdx',
-    'vue/button-story.js.mdx',
-    'vue/button-story.ts.mdx',
-    'angular/button-story.ts.mdx',
-    'web-components/button-story.js.mdx',
-    'web-components/button-story.ts.mdx',
-    'svelte/button-story.js.mdx',
-    'svelte/button-story.ts.mdx',
-    'html/button-story.js.mdx',
-    'html/button-story.ts.mdx',
-    'solid/button-story.js.mdx',
-    'solid/button-story.ts.mdx',
+    'react/button-story-with-args.js.mdx',
+    'react/button-story-with-args.ts.mdx',
+    'vue/button-story-with-args.3.js.mdx',
+    'vue/button-story-with-args.3.ts.mdx',
+    'angular/button-story-with-args.ts.mdx',
+    'web-components/button-story-with-args.js.mdx',
+    'web-components/button-story-with-args.ts.mdx',
+    'svelte/button-story-with-args.js.mdx',
+    'svelte/button-story-with-args.ts.mdx',
+    'html/button-story-with-args.js.mdx',
+    'html/button-story-with-args.ts.mdx',
+    'preact/button-story-with-args.js.mdx',
+    'solid/button-story-with-args.js.mdx',
+    'solid/button-story-with-args.ts.mdx',
   ]}
   usesCsf3
-  csf2Path="writing-stories/#snippet-button-story"
+  csf2Path="get-started/whats-a-story#snippet-button-story-with-args"
 />
 
 <!-- prettier-ignore-end -->
@@ -102,12 +105,6 @@ Use the _named_ exports of a CSF file to define your component’s stories. We r
 
 <!-- prettier-ignore-end -->
 
-<Callout variant="info" icon="💡">
-
-The recommendation mentioned above also applies to other frameworks, not only React.
-
-</Callout>
-
 </IfRenderer>
 
 <IfRenderer renderer='solid'>
@@ -128,12 +125,6 @@ The recommendation mentioned above also applies to other frameworks, not only Re
 />
 
 <!-- prettier-ignore-end -->
-
-<Callout variant="info" icon="💡">
-
-The recommendation mentioned above also applies to other frameworks, not only Solid.
-
-</Callout>
 
 </IfRenderer>
 
@@ -167,39 +158,12 @@ You can rename any particular story you need. For instance, to give it a more ac
 
 Your story will now be shown in the sidebar with the given text.
 
+<!-- Maintaining a prior heading -->
+<a id="using-args" />
+
 ## How to write stories
 
-A story is a function that describes how to render a component. You can have multiple stories per component, and the simplest way to create stories is to render a component with different arguments multiple times.
-
-<!-- prettier-ignore-start -->
-
-<CodeSnippets
-  paths={[
-    'react/button-story-with-emojis.js.mdx',
-    'react/button-story-with-emojis.ts.mdx',
-    'vue/button-story-with-emojis.js.mdx',
-    'vue/button-story-with-emojis.ts.mdx',
-    'angular/button-story-with-emojis.ts.mdx',
-    'web-components/button-story-with-emojis.js.mdx',
-    'web-components/button-story-with-emojis.ts.mdx',
-    'svelte/button-story-with-emojis.js.mdx',
-    'svelte/button-story-with-emojis.ts.mdx',
-    'html/button-story-with-emojis.js.mdx',
-    'html/button-story-with-emojis.ts.mdx',
-    'solid/button-story-with-emojis.js.mdx',
-    'solid/button-story-with-emojis.ts.mdx',
-  ]}
-  usesCsf3
-  csf2Path="writing-stories/#snippet-button-story-with-emojis"
-/>
-
-<!-- prettier-ignore-end -->
-
-It's straightforward for components with few stories but can be repetitive with many stories.
-
-### Using args
-
-Refine this pattern by introducing `args` for your component's stories. It reduces the boilerplate code you'll need to write and maintain for each story.
+A story is an object that describes how to render a component. You can have multiple stories per component, and those stories can build upon one another. For example, we can add Secondary and Tertiary stories based on our Primary story from above.
 
 <!-- prettier-ignore-start -->
 
@@ -224,8 +188,6 @@ Refine this pattern by introducing `args` for your component's stories. It reduc
 />
 
 <!-- prettier-ignore-end -->
-
-By introducing args into your component's stories, you're not only reducing the amount of code you need to write, but you're also decreasing data duplication, as shown by spreading the `Primary` story's args into the other stories.
 
 What’s more, you can import `args` to reuse when writing stories for other components, and it's helpful when you’re building composite components. For example, if we make a `ButtonGroup` story, we might remix two stories from its child component `Button`.
 
@@ -254,11 +216,20 @@ What’s more, you can import `args` to reuse when writing stories for other com
 
 When Button’s signature changes, you only need to change Button’s stories to reflect the new schema, and ButtonGroup’s stories will automatically be updated. This pattern allows you to reuse your data definitions across the component hierarchy, making your stories more maintainable.
 
-That’s not all! Each of the args from the story function are live editable using Storybook’s [controls](../essentials/controls.md) panel. It means your team can dynamically change components in Storybook to stress test and find edge cases.
+That’s not all! Each of the args from the story function are live editable using Storybook’s [Controls](../essentials/controls.md) panel. It means your team can dynamically change components in Storybook to stress test and find edge cases.
 
 <video autoPlay muted playsInline loop>
   <source
     src="addon-controls-demo-optimized.mp4"
+    type="video/mp4"
+  />
+</video>
+
+You can also use the Controls panel to edit or save a new story after adjusting its control values.
+
+<video autoPlay muted playsInline loop>
+  <source
+    src="../get-started/edit-story-from-controls-optimized.mp4"
     type="video/mp4"
   />
 </video>
@@ -356,7 +327,7 @@ Decorators [can be more complex](./decorators.md#context-for-mocking) and are of
 
 ## Stories for two or more components
 
-When building design systems or component libraries, you may have two or more components created to work together. For instance, if you have a parent `List` component, it may require child `ListItem` components.
+Sometimes you may have two or more components created to work together. For instance, if you have a parent `List` component, it may require child `ListItem` components.
 
 <!-- prettier-ignore-start -->
 
@@ -404,7 +375,7 @@ In such cases, it makes sense to render a different function for each story:
 
 <!-- prettier-ignore-end -->
 
-You can also reuse stories from the child `ListItem` in your `List` component. That’s easier to maintain because you don’t have to keep the identical story definitions updated in multiple places.
+You can also reuse _story data_ from the child `ListItem` in your `List` component. That’s easier to maintain because you don’t have to update it in multiple places.
 
 <!-- prettier-ignore-start -->
 

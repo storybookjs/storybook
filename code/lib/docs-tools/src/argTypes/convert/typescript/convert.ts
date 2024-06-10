@@ -1,3 +1,4 @@
+import { UnknownArgTypesError } from '@storybook/core-events/preview-errors';
 import type { SBType } from '@storybook/types';
 import type { TSType, TSSigType } from './types';
 import { parseLiteral } from '../utils';
@@ -16,7 +17,7 @@ const convertSig = (type: TSSigType) => {
         value: values,
       };
     default:
-      throw new Error(`Unknown: ${type}`);
+      throw new UnknownArgTypesError({ type, language: 'Typescript' });
   }
 };
 
@@ -38,19 +39,19 @@ export const convert = (type: TSType): SBType | void => {
       return { ...base, ...convertSig(type) };
     case 'union':
       let result;
-      if (type.elements.every((element) => element.name === 'literal')) {
+      if (type.elements?.every((element) => element.name === 'literal')) {
         result = {
           ...base,
           name: 'enum',
           // @ts-expect-error fix types
-          value: type.elements.map((v) => parseLiteral(v.value)),
+          value: type.elements?.map((v) => parseLiteral(v.value)),
         };
       } else {
-        result = { ...base, name, value: type.elements.map(convert) };
+        result = { ...base, name, value: type.elements?.map(convert) };
       }
       return result;
     case 'intersection':
-      return { ...base, name, value: type.elements.map(convert) };
+      return { ...base, name, value: type.elements?.map(convert) };
     default:
       return { ...base, name: 'other', value: name };
   }

@@ -1,5 +1,6 @@
 import path from 'path';
 import type { Options } from '@storybook/types';
+import { extractProperRendererNameFromFramework, getFrameworkName } from '@storybook/core-common';
 
 interface PropertyObject {
   name: string;
@@ -28,12 +29,14 @@ export const pluckThirdPartyPackageFromPath = (packagePath: string) =>
 export const buildFrameworkGlobalsFromOptions = async (options: Options) => {
   const globals: Record<string, any> = {};
 
-  const { renderer, builder } = await options.presets.apply('core');
+  const { builder } = await options.presets.apply('core');
 
-  const rendererName = pluckNameFromConfigProperty(renderer);
+  const frameworkName = await getFrameworkName(options);
+  const rendererName = await extractProperRendererNameFromFramework(frameworkName);
+
   if (rendererName) {
     globals.STORYBOOK_RENDERER =
-      pluckStorybookPackageFromPath(rendererName) ?? pluckThirdPartyPackageFromPath(rendererName);
+      (await extractProperRendererNameFromFramework(frameworkName)) ?? undefined;
   }
 
   const builderName = pluckNameFromConfigProperty(builder);

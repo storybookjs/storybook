@@ -16,7 +16,7 @@ export function useStories<TRenderer extends Renderer = Renderer>(
   context: DocsContextProps<TRenderer>
 ): (PreparedStory<TRenderer> | void)[] {
   // Legacy docs pages can reference any story by id. Those stories will need to be
-  // asyncronously loaded; we use the state for this
+  // asynchronously loaded; we use the state for this
   const [storiesById, setStories] = useState<Record<StoryId, PreparedStory<TRenderer>>>({});
 
   useEffect(() => {

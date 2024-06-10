@@ -41,6 +41,21 @@ export interface ArgType {
   description?: string;
   defaultValue?: any;
   if?: Conditional;
+  table?: {
+    category?: string;
+    disable?: boolean;
+    subcategory?: string;
+    defaultValue?: {
+      summary?: string;
+      detail?: string;
+    };
+    type?: {
+      summary?: string;
+      detail?: string;
+    };
+    readonly?: boolean;
+    [key: string]: any;
+  };
   [key: string]: any;
 }
 

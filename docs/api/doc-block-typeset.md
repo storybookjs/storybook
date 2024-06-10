@@ -84,7 +84,7 @@ Provides a font family to be displayed.
 
 ### `fontSizes`
 
-Type: `number[]`
+Type: `(string | number)[]`
 
 Provides a list of available font sizes (in `px`).
 

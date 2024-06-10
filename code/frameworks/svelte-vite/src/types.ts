@@ -1,8 +1,8 @@
-import type { StorybookConfig as StorybookConfigBase } from '@storybook/types';
+import type { CompatibleString, StorybookConfig as StorybookConfigBase } from '@storybook/types';
 import type { StorybookConfigVite, BuilderOptions } from '@storybook/builder-vite';
 
-type FrameworkName = '@storybook/svelte-vite';
-type BuilderName = '@storybook/builder-vite';
+type FrameworkName = CompatibleString<'@storybook/svelte-vite'>;
+type BuilderName = CompatibleString<'@storybook/builder-vite'>;
 
 export type FrameworkOptions = {
   builder?: BuilderOptions;

@@ -17,6 +17,10 @@
         control: { type: 'select' },
         options: ['small', 'medium', 'large'],
       },
+      content: { control: 'text' },
+    },
+    args: {
+      content: 'Content',
     },
   });
 </script>
@@ -25,8 +29,8 @@
   setTemplate(template);
 </script>
 
-{#snippet template(args)}
-  <Button {...args}>Content</Button>
+{#snippet template({ ...args })}
+  <Button {...args}>{args.content}</Button>
 {/snippet}
 
 <!-- More on writing stories with args: https://storybook.js.org/docs/writing-stories/args -->
@@ -37,3 +41,5 @@
 <Story name="Large" args={{ size: 'large' }} />
 
 <Story name="Small" args={{ size: 'small' }} />
+
+<Story name="Long content" args={{ content: 'this is a lot of text for a button' }} />

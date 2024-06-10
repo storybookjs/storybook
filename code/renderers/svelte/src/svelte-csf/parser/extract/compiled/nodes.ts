@@ -18,6 +18,7 @@ import {
   NoStoriesFunctionDeclarationError,
   NoStoryIdentifierFoundError,
 } from '#utils/error/parser/extract/compiled';
+import { DefaultOrNamespaceImportUsedError } from '#utils/error/parser/extract/svelte';
 
 /**
  * Important AST nodes from the compiled output of a single `*.stories.svelte` file.
@@ -80,9 +81,7 @@ export async function extractCompiledASTNodes(params: Params): Promise<CompiledA
       if (source.value === pkg.name) {
         for (const specifier of specifiers) {
           if (specifier.type !== 'ImportSpecifier') {
-            throw new Error(
-              `Don't use the default/namespace import from "${pkg.name}" in the stories file: ${filename}`
-            );
+            throw new DefaultOrNamespaceImportUsedError(filename);
           }
 
           visit(specifier, state);

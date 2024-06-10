@@ -1,4 +1,11 @@
 import type { ObjectExpression, Property } from 'estree';
+import type { Component } from 'svelte/compiler';
+
+import {
+  DescriptionNotObjectExpressionError,
+  DocsNotObjectExpressionError,
+  ParametersNotObjectExpressionError,
+} from '#utils/error/compiler';
 
 /**
  * Create ESTree compliant AST node for {@link Property}
@@ -31,25 +38,44 @@ export function createASTObjectExpression(
   };
 }
 
+interface FindPropertyOptions {
+  name: string;
+  node: ObjectExpression;
+  filename?: string;
+  component?: Component;
+}
+
 /**
  * In order to be able to acces AST node - {@link Property} - from the {@link ObjectExpression},
  * we need to have its index based on the property name, so the key must be an identifier.
  * NOTE: Reminder, it always returns a number and `-1` means not found.
  */
-export function findASTPropertyIndex(name: string, node: ObjectExpression) {
+export function findASTPropertyIndex(options: FindPropertyOptions) {
+  const { node, name } = options;
+
   return node.properties.findIndex(
     (p) => p.type === 'Property' && p.key.type === 'Identifier' && p.key.name === name
   );
 }
 
-export const findPropertyParametersIndex = (node: ObjectExpression) =>
-  findASTPropertyIndex('parameters', node);
+export const findPropertyParametersIndex = (options: Omit<FindPropertyOptions, 'name'>) => {
+  return findASTPropertyIndex({
+    ...options,
+    name: 'parameters',
+  });
+};
 
-export const getParametersProperty = (node: ObjectExpression) =>
-  node.properties[findPropertyParametersIndex(node)] as Property;
+export const getParametersProperty = (options: Omit<FindPropertyOptions, 'name'>) => {
+  const { node } = options;
 
-export const getParametersPropertyValue = (node: ObjectExpression): ObjectExpression => {
-  let property = getParametersProperty(node);
+  return node.properties[findPropertyParametersIndex(options)] as Property;
+};
+
+export const getParametersPropertyValue = (
+  options: Omit<FindPropertyOptions, 'name'>
+): ObjectExpression => {
+  const { filename, component } = options;
+  let property = getParametersProperty(options);
 
   // NOTE: is a getter property - `get parameters()`
   // WARN: This is probably a bad idea. Need second opinion.
@@ -88,12 +114,16 @@ export const getParametersPropertyValue = (node: ObjectExpression): ObjectExpres
   }
 
   if (property.value.type !== 'ObjectExpression') {
-    // TODO: Update message
-    throw new Error('Invalid schema');
+    throw new ParametersNotObjectExpressionError({
+      filename,
+      component,
+      property,
+    });
   }
 
-  // FIXME: This is a dirty hack, because somehow the properties array gets preventExtension on,
-  // and there's no possibility to push array, which leads to an error.
+  // FIXME: This is a dirty workaround.
+  // I couldn't figure out how and where it gets `Object.preventExtension(properties)` enabled, or anything that gives the same effect.
+  // There's no possibility to push an element to 'properties' array - throws an error related to "Object is not extensible".
   if (!Object.isExtensible(property.value.properties)) {
     property.value.properties = Array.from(property.value.properties);
   }
@@ -101,41 +131,59 @@ export const getParametersPropertyValue = (node: ObjectExpression): ObjectExpres
   return property.value;
 };
 
-export const findPropertyDocsIndex = (node: ObjectExpression) => {
-  return findASTPropertyIndex('docs', getParametersPropertyValue(node));
+export const findPropertyDocsIndex = (options: Omit<FindPropertyOptions, 'name'>) => {
+  return findASTPropertyIndex({
+    ...options,
+    name: 'docs',
+    node: getParametersPropertyValue(options),
+  });
 };
 
-export const getDocsProperty = (node: ObjectExpression) => {
-  return getParametersPropertyValue(node).properties[findPropertyDocsIndex(node)] as Property;
+export const getDocsProperty = (options: Omit<FindPropertyOptions, 'name'>) => {
+  return getParametersPropertyValue(options).properties[findPropertyDocsIndex(options)] as Property;
 };
 
-export const getDocsPropertyValue = (node: ObjectExpression) => {
-  const { value } = getDocsProperty(node);
+export const getDocsPropertyValue = (options: Omit<FindPropertyOptions, 'name'>) => {
+  const { filename, component } = options;
+  const property = getDocsProperty(options);
+  const { value } = property;
 
   if (value.type !== 'ObjectExpression') {
-    throw new Error(
-      // TODO: Add filename
-      `Invalid schema for property "docs" value - expected "ObjectExpression", but got ${value.type}. Stories file: ${''}`
-    );
+    throw new DocsNotObjectExpressionError({
+      filename,
+      component,
+      property,
+    });
   }
 
   return value;
 };
 
-export const findPropertyDescriptionIndex = (node: ObjectExpression) =>
-  findASTPropertyIndex('description', getDocsPropertyValue(node));
+export const findPropertyDescriptionIndex = (options: Omit<FindPropertyOptions, 'name'>) => {
+  return findASTPropertyIndex({
+    ...options,
+    name: 'description',
+    node: getDocsPropertyValue(options),
+  });
+};
 
-export const getDescriptionProperty = (node: ObjectExpression) =>
-  getDocsPropertyValue(node).properties[findPropertyDescriptionIndex(node)] as Property;
+export const getDescriptionProperty = (options: Omit<FindPropertyOptions, 'name'>) => {
+  return getDocsPropertyValue(options).properties[
+    findPropertyDescriptionIndex(options)
+  ] as Property;
+};
 
-export const getDescriptionPropertyValue = (node: ObjectExpression) => {
-  const { value } = getDescriptionProperty(node);
+export const getDescriptionPropertyValue = (options: Omit<FindPropertyOptions, 'name'>) => {
+  const { filename, component } = options;
+  const property = getDescriptionProperty(options);
+  const { value } = property;
 
   if (value.type !== 'ObjectExpression') {
-    throw new Error(
-      // TODO: Add filename
-      `Invalid schema for property "description" value - expected "ObjectExpression", but got ${value.type}. Stories file: ${''}`
-    );
+    throw new DescriptionNotObjectExpressionError({
+      filename,
+      component,
+      property,
+    });
   }
 
   return value;

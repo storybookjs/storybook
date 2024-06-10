@@ -32,7 +32,7 @@ interface Params {
 export function insertStoryHTMLCommentAsDescription(params: Params) {
   const { nodes, filename } = params;
   const { svelte, compiled } = nodes;
-  const { comment } = svelte;
+  const { comment, component } = svelte;
 
   if (!comment) {
     return;
@@ -43,26 +43,57 @@ export function insertStoryHTMLCommentAsDescription(params: Params) {
     filename,
   });
 
-  if (findPropertyParametersIndex(storyPropsObjectExpression) === -1) {
+  if (
+    findPropertyParametersIndex({
+      filename,
+      component,
+      node: storyPropsObjectExpression,
+    }) === -1
+  ) {
     storyPropsObjectExpression.properties.push(
       createASTProperty('parameters', createASTObjectExpression())
     );
   }
 
-  if (findPropertyDocsIndex(storyPropsObjectExpression) === -1) {
-    getParametersPropertyValue(storyPropsObjectExpression).properties.push(
-      createASTProperty('docs', createASTObjectExpression())
-    );
-  }
-
-  if (findPropertyDescriptionIndex(storyPropsObjectExpression) === -1) {
-    getDocsPropertyValue(storyPropsObjectExpression).properties.push(
-      createASTProperty('description', createASTObjectExpression())
-    );
+  if (
+    findPropertyDocsIndex({
+      filename,
+      component,
+      node: storyPropsObjectExpression,
+    }) === -1
+  ) {
+    getParametersPropertyValue({
+      filename,
+      component,
+      node: storyPropsObjectExpression,
+    }).properties.push(createASTProperty('docs', createASTObjectExpression()));
   }
 
   if (
-    findASTPropertyIndex('story', getDescriptionPropertyValue(storyPropsObjectExpression)) !== -1
+    findPropertyDescriptionIndex({
+      filename,
+      component,
+      node: storyPropsObjectExpression,
+    }) === -1
+  ) {
+    getDocsPropertyValue({
+      filename,
+      component,
+      node: storyPropsObjectExpression,
+    }).properties.push(createASTProperty('description', createASTObjectExpression()));
+  }
+
+  if (
+    findASTPropertyIndex({
+      filename,
+      component,
+      name: 'story',
+      node: getDescriptionPropertyValue({
+        filename,
+        component,
+        node: storyPropsObjectExpression,
+      }),
+    }) !== -1
   ) {
     // TODO: Improve warning message with better pointing out which story it is
     logger.warn(
@@ -72,7 +103,11 @@ export function insertStoryHTMLCommentAsDescription(params: Params) {
     return;
   }
 
-  getDescriptionPropertyValue(storyPropsObjectExpression).properties.push(
+  getDescriptionPropertyValue({
+    filename,
+    component,
+    node: storyPropsObjectExpression,
+  }).properties.push(
     createASTProperty('story', {
       type: 'Literal',
       value: dedent(comment.data),

@@ -44,10 +44,7 @@ export class DefaultOrNamespaceImportUsedError extends StorybookSvelteCSFError {
     return dedent`
       Stories file: ${this.filepathURL}
       is using the default/namespace import from "${StorybookSvelteCSFError.packageName}".
-      Please change it to named imports.
-      Take a look at the below snippet for an example usage on how to start writing stories file:
-
-      ${BASE_INITIAL_SNIPPET}
+      Please change it to a named import.
     `;
   }
 }
@@ -65,10 +62,6 @@ export class MissingDefineMetaImportError extends StorybookSvelteCSFError {
       Stories file: ${this.filepathURL}
       doesn't have a 'defineMeta' imported from the "${StorybookSvelteCSFError.packageName}" package inside the module tag.
       ('<script context="module"> <!-- ... --> </script>').
-
-      Make sure this stories file has initial code snippet in order for this addon to work correctly:
-
-      ${BASE_INITIAL_SNIPPET}
     `;
   }
 }
@@ -85,10 +78,6 @@ export class MissingDefineMetaVariableDeclarationError extends StorybookSvelteCS
     return dedent`
       Stories file: ${this.filepathURL}
       doesn't have 'defineMeta' call used for variable declaration inside the module tag ('<script context="module"> <!-- ... --> </script>').
-
-      Make sure this stories file has initial code snippet in order for this addon to work correctly:
-
-      ${BASE_INITIAL_SNIPPET}
     `;
   }
 }
@@ -114,10 +103,6 @@ export class NoStoryComponentDestructuredError extends StorybookSvelteCSFError {
     return dedent`
       Stories file: ${this.filepathURL}
       has no component 'Story' destructured from the '${this.defineMetaImport.local.name}({ ... })' function call.
-
-      Make sure this stories file has initial code snippet in order for this addon to work correctly:
-
-      ${BASE_INITIAL_SNIPPET}
     `;
   }
 }
@@ -141,13 +126,7 @@ export class GetDefineMetaFirstArgumentError extends StorybookSvelteCSFError {
 
   template() {
     return dedent`
-      Addon's parser had a problem extracting the first argument from the 'defineMeta' call
-      in the stories file: ${this.filepathURL}
-
-      Make sure it is a valid object expression which follows the 'Meta' interface from '@storybook/svelte'.
-
-      If you verified that this is valid object, please report it using the link below:
-      https://github.com/storybookjs/addon-svelte-csf/issues/new
+      Failed to extract the first argument from the 'defineMeta' call as object expression in the stories file: ${this.filepathURL}
     `;
   }
 }
@@ -208,18 +187,8 @@ export class InvalidSetTemplateFirstArgumentError extends StorybookSvelteCSFErro
 
   template() {
     return dedent`
-      In the stories file: ${this.filepathURL}
-      'setTemplate()' first argument should be a valid identifier with a reference to a Svelte snippet existing at the roof of fragment.
-
-      Below is a demonstration of correct usage:
-
-      <script>
-        setTemplate(template);
-      </script>
-
-      {#snippet template()}
-        <!-- ... -->
-      {/snippet}
+      'setTemplate()' first argument should be a valid identifier with a reference to a Svelte snippet existing at the root of fragment.
+      This issue happened in the stories file: ${this.filepathURL}
     `;
   }
 }

@@ -17,10 +17,10 @@
         control: { type: 'select' },
         options: ['small', 'medium', 'large'],
       },
-      content: { control: 'text' },
+      children: { control: 'text' },
     },
     args: {
-      content: 'Content',
+      children: 'Content',
     },
   });
 </script>
@@ -30,7 +30,7 @@
 </script>
 
 {#snippet template({ ...args })}
-  <Button {...args}>{args.content}</Button>
+  <Button {...args}>{args.children}</Button>
 {/snippet}
 
 <!-- More on writing stories with args: https://storybook.js.org/docs/writing-stories/args -->
@@ -42,4 +42,4 @@
 
 <Story name="Small" args={{ size: 'small' }} />
 
-<Story name="Long content" args={{ content: 'this is a lot of text for a button' }} />
+<Story name="Long content" args={{ children: 'this is a lot of text for a button' }} />

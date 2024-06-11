@@ -100,6 +100,10 @@ const getFunctionName = (fn: Function & { getMockName?: () => string }) => {
  * convert a value to a stringified version
  */
 const valueToString = (value: any): string => {
+  if (value[Symbol.for('svelte.snippet')]) {
+    return 'snippet';
+  }
+
   if (typeof value === 'function') {
     return getFunctionName(value);
   }

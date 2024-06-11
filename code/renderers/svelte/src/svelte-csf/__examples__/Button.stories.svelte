@@ -1,8 +1,7 @@
 <script context="module" lang="ts">
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta, setTemplate } from '@storybook/addon-svelte-csf';
 
   import Button from './components/Button.svelte';
-  import { setTemplate } from '#index';
 
   /**
    * These are the stories for the `Button` component.

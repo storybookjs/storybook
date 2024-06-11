@@ -1,5 +1,10 @@
 <script context="module" lang="ts">
-  import { defineMeta, setTemplate } from '@storybook/addon-svelte-csf';
+  import {
+    defineMeta,
+    setTemplate,
+    type Args,
+    type StoryContext,
+  } from '@storybook/addon-svelte-csf';
 
   import Button from './components/Button.svelte';
 
@@ -18,18 +23,15 @@
       },
       children: { control: 'text' },
     },
-    args: {
-      children: 'Content',
-    },
   });
 </script>
 
-<script>
+<script lang="ts">
   setTemplate(template);
 </script>
 
-{#snippet template({ ...args })}
-  <Button {...args}>{args.children}</Button>
+{#snippet template({children, ...args}: Args<typeof Story>, context: StoryContext<typeof Story>)}
+  <Button {...args}>{children}</Button>
 {/snippet}
 
 <!-- More on writing stories with args: https://storybook.js.org/docs/writing-stories/args -->
@@ -41,4 +43,6 @@
 
 <Story name="Small" args={{ size: 'small' }} />
 
-<Story name="Long content" args={{ children: 'this is a lot of text for a button' }} />
+<Story name="Long content">
+  <Button>The content</Button>
+</Story>

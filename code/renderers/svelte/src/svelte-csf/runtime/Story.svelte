@@ -8,6 +8,12 @@
 
   import { storyNameToExportName } from '#utils/identifier-utils';
 
+  type SnippetsToPrimitives<Args> = {
+    [ArgKey in keyof Args]: Args[ArgKey] extends Snippet
+      ? Snippet | string | number | boolean | void
+      : Args[ArgKey];
+  };
+
   type Props = {
     /**
      * The content to render in the story, either as:
@@ -41,7 +47,11 @@
      * Use `parameters={{ docs: { source: { code: "..." } } }}` instead.
      */
     source?: never;
-  } & StoryObj<TMeta>;
+    /**
+     * The args for the story
+     */
+    args?: SnippetsToPrimitives<StoryObj<TMeta>['args']>;
+  } & Omit<StoryObj<TMeta>, 'args'>;
 
   const { children, name, exportName: exportNameProp, play, ...restProps }: Props = $props();
   const exportName = exportNameProp ?? storyNameToExportName(name!);
@@ -82,8 +92,10 @@
   {:else if template}
     {@render template(renderer.args, renderer.storyContext)}
   {:else if renderer.storyContext.component}
-    <!-- TODO: there's a risk here that this discards decorators -->
-    <svelte:component this={renderer.storyContext.component} {...renderer.args} />
+    <svelte:component
+      this={renderer.storyContext.component as unknown as ConstructorOfATypedSvelteComponent}
+      {...renderer.args}
+    />
   {:else}
     <p>Warning: no story rendered. improve this message</p>
   {/if}

@@ -12,7 +12,7 @@ export class InvalidComponentValueError extends StorybookSvelteCSFError {
     filename,
     componentProperty,
   }: {
-    filename: StorybookSvelteCSFError['storiesFilename'];
+    filename: StorybookSvelteCSFError['filename'];
     componentProperty: InvalidComponentValueError['componentProperty'];
   }) {
     super({ filename });
@@ -41,7 +41,7 @@ export class NoDestructuredDefineMetaCallError extends StorybookSvelteCSFError {
     filename,
     defineMetaVariableDeclarator,
   }: {
-    filename: StorybookSvelteCSFError['storiesFilename'];
+    filename: StorybookSvelteCSFError['filename'];
     defineMetaVariableDeclarator: NoDestructuredDefineMetaCallError['defineMetaVariableDeclarator'];
   }) {
     super({ filename });
@@ -68,7 +68,7 @@ export class NoMetaIdentifierFoundError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseDefineMeta;
   readonly code = 3;
 
-  constructor(filename: StorybookSvelteCSFError['storiesFilename']) {
+  constructor(filename: StorybookSvelteCSFError['filename']) {
     super({ filename });
   }
 
@@ -97,7 +97,7 @@ export class NoStringLiteralError extends StorybookSvelteCSFError {
     filename,
     property,
   }: {
-    filename: StorybookSvelteCSFError['storiesFilename'];
+    filename: StorybookSvelteCSFError['filename'];
     property: NoStringLiteralError['property'];
   }) {
     super({ filename });
@@ -126,7 +126,7 @@ export class NoArrayExpressionError extends StorybookSvelteCSFError {
     filename,
     property,
   }: {
-    filename: StorybookSvelteCSFError['storiesFilename'];
+    filename: StorybookSvelteCSFError['filename'];
     property: NoArrayExpressionError['property'];
   }) {
     super({ filename });
@@ -157,7 +157,7 @@ export class ArrayElementNotStringError extends StorybookSvelteCSFError {
     property,
     element,
   }: {
-    filename: StorybookSvelteCSFError['storiesFilename'];
+    filename: StorybookSvelteCSFError['filename'];
     property: ArrayElementNotStringError['property'];
     element: ArrayElementNotStringError['element'];
   }) {

@@ -77,7 +77,10 @@ describe(getStoryIdentifiers.name, () => {
         filename: 'invalid.stories.svelte',
       })
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Error: Missing 'name' or 'exportName' prop in a <Story /> definition in the 'invalid.stories.svelte' file. All stories must either have a 'name' or an 'exportName' prop.]`
+      `
+      [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0004 (NoStoryIdentifierError): Missing 'name' or 'exportName' attribute (prop) in a '<Story />' definition in the stories file:  'file:///Users/xeho91/Nextcloud/Projects/oss/addon-svelte-csf/invalid.stories.svelte'.
+      All stories must either have a 'name' or an 'exportName' prop.]
+    `
     );
   });
 
@@ -177,9 +180,11 @@ describe(getStoryIdentifiers.name, () => {
       })
     ).toThrowErrorMatchingInlineSnapshot(
       `
-      [Error: Invalid exportName 'default' found in <Story /> component in 'invalid.stories.svelte'.
-      exportName must be a valid JavaScript variable name. It must start with a letter, $ or _, followed by letters, numbers, $ or _.
-      Reserved words like 'default' are also not allowed (see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#reserved_words)]
+      [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0005 (InvalidStoryExportNameError): Invalid attribute 'exportName' value 'default' found in '<Story />' component inside stories file: file:///Users/xeho91/Nextcloud/Projects/oss/addon-svelte-csf/invalid.stories.svelte
+
+        'exportName' alue must be a valid JavaScript variable name.
+        It must start with a letter, $ or _, followed by letters, numbers, $ or _.
+        Reserved words like 'default' are also not allowed (see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#reserved_words)]
     `
     );
   });
@@ -244,11 +249,13 @@ describe(getStoriesIdentifiers.name, () => {
       })
     ).toThrowErrorMatchingInlineSnapshot(
       `
-      [Error: Duplicate exportNames found between two <Story /> definitions in 'duplicate-identifiers.stories.svelte':
+      [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0006 (DuplicateStoryIdentifiersError): Duplicate exportNames found between two '<Story />' definitions in stories file: file:///Users/xeho91/Nextcloud/Projects/oss/addon-svelte-csf/duplicate-identifiers.stories.svelte
+
       First instance: <Story name={undefined} exportName="SomeExportName" ... />
       Second instance: <Story name={undefined} exportName="SomeExportName" ... />
 
-      This can happen when 'exportName' is implicitly derived by 'name'. Complex names will be simplified to a PascalCased, valid JavaScript variable name,
+      This can happen when 'exportName' is implicitly derived by 'name'.
+      Complex names will be simplified to a PascalCased, valid JavaScript variable name,
       eg. 'Some story name!!' will be converted to 'SomeStoryName'.
       You can fix this collision by providing a unique 'exportName' prop with <Story exportName="SomeUniqueExportName" ... />.]
     `
@@ -275,11 +282,13 @@ describe(getStoriesIdentifiers.name, () => {
       })
     ).toThrowErrorMatchingInlineSnapshot(
       `
-      [Error: Duplicate exportNames found between two <Story /> definitions in 'duplicate-identifiers.stories.svelte':
+      [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0006 (DuplicateStoryIdentifiersError): Duplicate exportNames found between two '<Story />' definitions in stories file: file:///Users/xeho91/Nextcloud/Projects/oss/addon-svelte-csf/duplicate-identifiers.stories.svelte
+
       First instance: <Story name={undefined} exportName="SomeStoryName" ... />
       Second instance: <Story name="some story name!!!" exportName="SomeStoryName" ... />
 
-      This can happen when 'exportName' is implicitly derived by 'name'. Complex names will be simplified to a PascalCased, valid JavaScript variable name,
+      This can happen when 'exportName' is implicitly derived by 'name'.
+      Complex names will be simplified to a PascalCased, valid JavaScript variable name,
       eg. 'Some story name!!' will be converted to 'SomeStoryName'.
       You can fix this collision by providing a unique 'exportName' prop with <Story exportName="SomeUniqueExportName" ... />.]
     `

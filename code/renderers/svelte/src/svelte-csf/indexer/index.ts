@@ -70,6 +70,7 @@ export const indexer: Indexer = {
         attributes: ['exportName', 'name', 'tags'],
       });
       const { exportName, name } = getStoryIdentifiers({
+        component,
         nameNode: attributeNode.name,
         exportNameNode: attributeNode.exportName,
         filename,

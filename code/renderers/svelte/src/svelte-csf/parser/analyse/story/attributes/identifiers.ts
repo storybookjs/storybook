@@ -1,11 +1,15 @@
-import dedent from 'dedent';
-import type { Attribute } from 'svelte/compiler';
+import type { Attribute, Component } from 'svelte/compiler';
 
 import { getStringValueFromAttribute } from '../attributes';
 
 import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
 import { extractStoryAttributesNodes } from '#parser/extract/svelte/story/attributes';
 import { isValidVariableName, storyNameToExportName } from '#utils/identifier-utils';
+import {
+  DuplicateStoryIdentifiersError,
+  InvalidStoryExportNameError,
+  NoStoryIdentifierError,
+} from '#utils/error/parser/analyse/story';
 
 type StoryIdentifiers = {
   exportName: string;
@@ -16,31 +20,39 @@ interface GetIdentifiersParams {
   nameNode?: Attribute | undefined;
   exportNameNode?: Attribute | undefined;
   filename?: string;
+  component: Component;
 }
 
 export function getStoryIdentifiers(options: GetIdentifiersParams): StoryIdentifiers {
-  const { nameNode, exportNameNode, filename } = options;
+  const { nameNode, exportNameNode, filename, component } = options;
 
   let exportName = getStringValueFromAttribute({
     node: exportNameNode,
     filename,
+    component,
   });
-  const name = getStringValueFromAttribute({ node: nameNode, filename });
+  const name = getStringValueFromAttribute({
+    node: nameNode,
+    filename,
+    component,
+  });
 
   if (!exportName) {
     if (!name) {
-      throw new Error(
-        `Missing 'name' or 'exportName' prop in a <Story /> definition in the '${filename}' file. All stories must either have a 'name' or an 'exportName' prop.`
-      );
+      throw new NoStoryIdentifierError({
+        component,
+        filename,
+      });
     }
     exportName = storyNameToExportName(name);
   }
 
   if (!isValidVariableName(exportName)) {
-    throw new Error(dedent`Invalid exportName '${exportName}' found in <Story /> component in '${filename}'.
-    exportName must be a valid JavaScript variable name. It must start with a letter, $ or _, followed by letters, numbers, $ or _.
-    Reserved words like 'default' are also not allowed (see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#reserved_words)
-    `);
+    throw new InvalidStoryExportNameError({
+      filename,
+      component,
+      value: exportName,
+    });
   }
 
   return {
@@ -70,6 +82,7 @@ export function getStoriesIdentifiers(params: GetStoriesIdentifiersParams): Stor
       exportNameNode: exportName,
       nameNode: name,
       filename,
+      component: story.component,
     });
 
     const duplicateIdentifiers = allIdentifiers.find(
@@ -77,14 +90,11 @@ export function getStoriesIdentifiers(params: GetStoriesIdentifiersParams): Stor
     );
 
     if (duplicateIdentifiers) {
-      throw new Error(dedent`Duplicate exportNames found between two <Story /> definitions in '${filename}':
-      First instance: <Story name=${duplicateIdentifiers.name ? `"${duplicateIdentifiers.name}"` : '{undefined}'} exportName="${duplicateIdentifiers.exportName}" ... />
-      Second instance: <Story name=${identifiers.name ? `"${identifiers.name}"` : '{undefined}'} exportName="${identifiers.exportName}" ... />
-
-      This can happen when 'exportName' is implicitly derived by 'name'. Complex names will be simplified to a PascalCased, valid JavaScript variable name,
-      eg. 'Some story name!!' will be converted to 'SomeStoryName'.
-      You can fix this collision by providing a unique 'exportName' prop with <Story exportName="SomeUniqueExportName" ... />.
-      `);
+      throw new DuplicateStoryIdentifiersError({
+        filename,
+        identifiers,
+        duplicateIdentifiers,
+      });
     }
 
     allIdentifiers.push(identifiers);

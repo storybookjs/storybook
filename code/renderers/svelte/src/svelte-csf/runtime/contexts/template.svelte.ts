@@ -1,14 +1,12 @@
-import type { Meta, StoryObj, StoryContext } from '@storybook/svelte';
-import { getContext, hasContext, setContext, type Snippet } from 'svelte';
+import type { Meta } from '@storybook/svelte';
+import { getContext, hasContext, setContext, type ComponentProps } from 'svelte';
 
 import type Story from '#runtime/Story.svelte';
 
 const CONTEXT_KEYS = 'storybook-stories-template-snippet-context';
 
-function buildContext<TMeta extends Meta>() {
-  let template = $state<
-    Snippet<[StoryObj<TMeta>['args'], StoryContext<TMeta['args']>]> | undefined
-  >();
+function buildContext<TMeta extends Meta = Meta>() {
+  let template = $state<ComponentProps<Story<TMeta>>['children']>();
 
   function set(snippet?: typeof template) {
     template = snippet;
@@ -22,9 +20,9 @@ function buildContext<TMeta extends Meta>() {
   };
 }
 
-type StoriesTemplateContext<TMeta extends Meta> = ReturnType<typeof buildContext<TMeta>>;
+type StoriesTemplateContext<TMeta extends Meta = Meta> = ReturnType<typeof buildContext<TMeta>>;
 
-export function useStoriesTemplate<TMeta extends Meta>() {
+export function useStoriesTemplate<TMeta extends Meta = Meta>() {
   if (!hasContext(CONTEXT_KEYS)) {
     setContext(CONTEXT_KEYS, buildContext<TMeta>());
   }

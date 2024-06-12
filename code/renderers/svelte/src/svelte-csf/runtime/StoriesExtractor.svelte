@@ -1,4 +1,4 @@
-<script lang="ts" generics="Component extends SvelteComponent">
+<script lang="ts" generics="Component extends SvelteComponent = SvelteComponent">
   import type { Meta } from '@storybook/svelte';
   import type { ComponentType, SvelteComponent } from 'svelte';
 
@@ -8,7 +8,7 @@
   } from '#runtime/contexts/extractor.svelte';
 
   interface Props {
-    Stories: Component extends SvelteComponent ? ComponentType<Component> : never;
+    Stories: ComponentType;
     repository: () => StoriesRepository<Meta<Component>>;
   }
 

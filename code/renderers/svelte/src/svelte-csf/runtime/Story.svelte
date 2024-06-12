@@ -1,6 +1,6 @@
-<script lang="ts" generics="TMeta extends Meta, TOverrideArgs = unknown">
-  import type { Meta, StoryObj, StoryContext } from '@storybook/svelte';
-  import type { Snippet } from 'svelte';
+<script lang="ts" generics="TMeta extends Meta = Meta, TOverrideArgs = unknown">
+  import type { StoryObj, StoryContext, Meta } from '@storybook/svelte';
+  import type { ComponentProps, ComponentType, Snippet } from 'svelte';
 
   import { useStoriesExtractor } from '#runtime/contexts/extractor.svelte';
   import { useStoryRenderer } from '#runtime/contexts/renderer.svelte';
@@ -9,8 +9,8 @@
   import { storyNameToExportName } from '#utils/identifier-utils';
 
   type SnippetsToPrimitives<Args> = {
-    [ArgKey in keyof Args]: Args[ArgKey] extends Snippet
-      ? Snippet | string | number | boolean | void
+    [ArgKey in keyof Args]?: Args[ArgKey] extends Snippet
+      ? Snippet | string | number | boolean | undefined
       : Args[ArgKey];
   };
 
@@ -22,7 +22,7 @@
      * Can be omitted if a default template is set with setTemplate()
      *
      */
-    children?: Snippet<[StoryObj<TMeta>['args'], StoryContext<TMeta['args']>]>;
+    children?: Snippet<[Omit<StoryObj<TMeta>['args'], 'children'>, StoryContext<TMeta['args']>]>;
     /**
      * Name of the story. Can be omitted if `exportName` is provided.
      */
@@ -50,8 +50,12 @@
     /**
      * The args for the story
      */
-    args?: SnippetsToPrimitives<Omit<StoryObj<TMeta>['args'], keyof TOverrideArgs> & TOverrideArgs>;
-  } & Omit<StoryObj<TMeta>, 'args'>;
+    // args?: SnippetsToPrimitives<Omit<StoryObj<TMeta>['args'], keyof TOverrideArgs> & TOverrideArgs>;
+  } & Omit<StoryObj<TMeta>, 'args'> & {
+      args?: TMeta['component'] extends ComponentType<infer Component>
+        ? Partial<SnippetsToPrimitives<ComponentProps<Component>>>
+        : unknown;
+    };
 
   const { children, name, exportName: exportNameProp, play, ...restProps }: Props = $props();
   const exportName = exportNameProp ?? storyNameToExportName(name!);
@@ -92,10 +96,7 @@
   {:else if template}
     {@render template(renderer.args, renderer.storyContext)}
   {:else if renderer.storyContext.component}
-    <svelte:component
-      this={renderer.storyContext.component as unknown as ConstructorOfATypedSvelteComponent}
-      {...renderer.args}
-    />
+    <svelte:component this={renderer.storyContext.component as ComponentType} {...renderer.args} />
   {:else}
     <p>Warning: no story rendered. improve this message</p>
   {/if}

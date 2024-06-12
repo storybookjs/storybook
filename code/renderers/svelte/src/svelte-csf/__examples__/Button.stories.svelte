@@ -15,6 +15,9 @@
   const { Story } = defineMeta({
     component: Button,
     tags: ['autodocs'],
+    args: {
+      children: 'Click me',
+    },
     argTypes: {
       backgroundColor: { control: 'color' },
       size: {
@@ -30,7 +33,7 @@
   setTemplate(template);
 </script>
 
-{#snippet template({children, ...args}: Args<typeof Story>, context: StoryContext<typeof Story>)}
+{#snippet template({ children, ...args }: Args<typeof Story>, context: StoryContext<typeof Story>)}
   <Button {...args}>{children}</Button>
 {/snippet}
 

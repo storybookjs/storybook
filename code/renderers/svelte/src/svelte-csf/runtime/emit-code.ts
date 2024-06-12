@@ -5,7 +5,7 @@ import get from 'lodash-es/get';
 
 type Params = {
   args: StoryObj['args'];
-  storyContext: StoryContext;
+  storyContext: StoryContext<Meta['args']>;
 };
 
 const channel: ReturnType<(typeof addons)['getChannel']> | undefined = addons.getChannel();

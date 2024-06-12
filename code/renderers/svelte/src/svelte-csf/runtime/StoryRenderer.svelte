@@ -1,6 +1,8 @@
-<script lang="ts" generics="TMeta extends Meta">
+<script lang="ts" generics="TMeta extends Meta = Meta">
   import type { Meta, StoryContext, StoryObj } from '@storybook/svelte';
-  import type { ComponentType } from 'svelte';
+  import type { ComponentType, SvelteComponent } from 'svelte';
+
+  import type Story from './Story.svelte';
 
   import { useStoryRenderer } from '#runtime/contexts/renderer.svelte';
   import { emitCode } from '#runtime/emit-code';
@@ -12,7 +14,7 @@
     storyContext: StoryContext<TMeta['args']>;
   };
 
-  let { Stories, exportName, args, storyContext, code }: Props = $props();
+  let { Stories, exportName, args, storyContext }: Props = $props();
 
   const context = useStoryRenderer<TMeta>();
 

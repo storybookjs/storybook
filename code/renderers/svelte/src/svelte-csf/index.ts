@@ -1,9 +1,9 @@
-import type { Meta, StoryContext as BaseStoryContext, StoryObj } from '@storybook/svelte';
+import type { Meta, StoryContext as BaseStoryContext } from '@storybook/svelte';
 import type { ComponentType } from 'svelte';
 
 import Story from './runtime/Story.svelte';
+import type { StoryObj } from '#types';
 
-export type { Story };
 export { setTemplate } from './runtime/contexts/template.svelte';
 
 export function defineMeta<TOverrideArgs = unknown, const TMeta extends Meta = Meta>(meta: TMeta) {
@@ -12,14 +12,15 @@ export function defineMeta<TOverrideArgs = unknown, const TMeta extends Meta = M
     meta,
   };
 }
+
 export type Args<TStory extends ComponentType> = TStory extends typeof Story<
   infer TMeta extends Meta
 >
-  ? StoryObj<TMeta>['args']
+  ? StoryObj<TMeta>
   : never;
 
 export type StoryContext<TStory extends ComponentType> = TStory extends typeof Story<
   infer TMeta extends Meta
 >
-  ? BaseStoryContext<StoryObj<TMeta>['args']>
+  ? BaseStoryContext<StoryObj<TMeta>>
   : never;

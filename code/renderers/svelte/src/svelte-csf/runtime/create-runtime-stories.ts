@@ -49,7 +49,7 @@ export const createRuntimeStories = <TMeta extends Meta>(Stories: ComponentType,
     const storyObj: StoryObj<StoryRenderer<TMeta>> = {
       ...story,
       render: (args, storyContext) => ({
-        Component: StoryRenderer<TMeta>,
+        Component: StoryRenderer,
         props: {
           exportName,
           Stories,

@@ -1,20 +1,22 @@
-import type { Meta, StoryObj, StoryContext } from '@storybook/svelte';
+import type { StoryContext, StoryObj } from '@storybook/svelte';
 import { getContext, hasContext, setContext } from 'svelte';
+
+import type { Meta } from '#types';
 
 const CONTEXT_KEY = 'storybook-story-renderer-context';
 
-interface StoryRendererContextProps<TMeta extends Meta> {
+interface ContextProps<TMeta extends Meta> {
   currentStoryExportName: string | undefined;
   args: StoryObj<TMeta>['args'];
   storyContext: StoryContext<StoryObj<TMeta>['args']>;
 }
 
-function buildContext<TMeta extends Meta>(props: StoryRendererContextProps<TMeta>) {
+function buildContext<TMeta extends Meta>(props: ContextProps<TMeta>) {
   let currentStoryExportName = $state(props.currentStoryExportName);
   let args = $state(props.args);
   let storyContext = $state(props.storyContext);
 
-  function set(props: StoryRendererContextProps<TMeta>) {
+  function set(props: ContextProps<TMeta>) {
     currentStoryExportName = props.currentStoryExportName;
     args = props.args;
     storyContext = props.storyContext;

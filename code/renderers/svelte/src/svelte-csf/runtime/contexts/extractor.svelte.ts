@@ -1,8 +1,7 @@
-// WARN: Temporary location. Feel free to move if needed.
-// It is likely this file will be removed if we successfully get rid of `StoriesExtractor`.
-
-import type { Meta, StoryObj } from '@storybook/svelte';
+import type { StoryObj } from '@storybook/svelte';
 import { getContext, hasContext, setContext } from 'svelte';
+
+import type { Meta } from '#types';
 
 import { storyNameToExportName } from '#utils/identifier-utils';
 

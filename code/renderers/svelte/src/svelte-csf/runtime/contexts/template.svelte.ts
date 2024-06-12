@@ -1,7 +1,8 @@
-import type { Meta } from '@storybook/svelte';
 import { getContext, hasContext, setContext, type ComponentProps } from 'svelte';
 
 import type Story from '#runtime/Story.svelte';
+
+import type { Meta } from '#types';
 
 const CONTEXT_KEYS = 'storybook-stories-template-snippet-context';
 

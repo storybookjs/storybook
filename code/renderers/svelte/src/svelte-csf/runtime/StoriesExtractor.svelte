@@ -1,6 +1,7 @@
 <script lang="ts" generics="Component extends SvelteComponent = SvelteComponent">
-  import type { Meta } from '@storybook/svelte';
   import type { ComponentType, SvelteComponent } from 'svelte';
+
+  import type { Meta } from '#types';
 
   import {
     type StoriesRepository,

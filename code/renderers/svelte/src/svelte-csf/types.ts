@@ -1,14 +1,27 @@
-import type { Meta, StoryObj as BaseStoryObj } from '@storybook/svelte';
-import type { ComponentProps, ComponentType, Snippet } from 'svelte';
+import type {
+  Args as BaseArgs,
+  Meta as BaseMeta,
+  StoryContext as BaseStoryContext,
+} from '@storybook/svelte';
+import type { ComponentType, Snippet, SvelteComponent } from 'svelte';
+import type { Primitive } from 'type-fest';
 
-type SnippetsToPrimitives<Args> = {
-  [ArgKey in keyof Args]?: Args[ArgKey] extends Snippet
-    ? Snippet | string | number | boolean | undefined
-    : Args[ArgKey];
+import Story from './runtime/Story.svelte';
+
+type SnippetsToPrimitives<Props extends Record<string, unknown>> = {
+  [ArgKey in keyof Props]?: Props[ArgKey] extends Snippet ? Snippet | Primitive : Props[ArgKey];
 };
 
-export type StoryObj<TMeta extends Meta> = Omit<BaseStoryObj<TMeta>, 'args'> & {
-  args?: TMeta['component'] extends ComponentType<infer Component>
-    ? Partial<SnippetsToPrimitives<ComponentProps<Component>>>
-    : unknown;
-};
+export type Meta<CmpOrArgs = BaseArgs> =
+  CmpOrArgs extends SvelteComponent<infer Props extends Record<string, unknown>>
+    ? BaseMeta<SvelteComponent<SnippetsToPrimitives<Props>>>
+    : BaseMeta<CmpOrArgs>;
+
+export type Args<TStory extends ComponentType = ComponentType> =
+  TStory extends ComponentType<Story<infer TOverrideArgs, infer TMeta extends Meta>>
+    ? TMeta['args']
+    : never;
+
+export type StoryContext<TStory extends ComponentType = ComponentType> = BaseStoryContext<
+  Args<TStory>
+>;

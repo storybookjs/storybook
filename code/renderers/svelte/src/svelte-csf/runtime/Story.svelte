@@ -1,4 +1,4 @@
-<script lang="ts" generics="TMeta extends Meta">
+<script lang="ts" generics="TMeta extends Meta, TOverrideArgs = unknown">
   import type { Meta, StoryObj, StoryContext } from '@storybook/svelte';
   import type { Snippet } from 'svelte';
 
@@ -50,7 +50,7 @@
     /**
      * The args for the story
      */
-    args?: SnippetsToPrimitives<StoryObj<TMeta>['args']>;
+    args?: SnippetsToPrimitives<Omit<StoryObj<TMeta>['args'], keyof TOverrideArgs> & TOverrideArgs>;
   } & Omit<StoryObj<TMeta>, 'args'>;
 
   const { children, name, exportName: exportNameProp, play, ...restProps }: Props = $props();

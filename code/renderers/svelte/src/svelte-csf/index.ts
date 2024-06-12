@@ -6,9 +6,9 @@ import Story from './runtime/Story.svelte';
 export type { Story };
 export { setTemplate } from './runtime/contexts/template.svelte';
 
-export function defineMeta<const TMeta extends Meta = Meta>(meta: TMeta) {
+export function defineMeta<TOverrideArgs = unknown, const TMeta extends Meta = Meta>(meta: TMeta) {
   return {
-    Story: Story as typeof Story<TMeta>,
+    Story: Story as typeof Story<TMeta, TOverrideArgs>,
     meta,
   };
 }

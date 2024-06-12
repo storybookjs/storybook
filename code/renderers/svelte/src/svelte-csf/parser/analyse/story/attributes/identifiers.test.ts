@@ -24,7 +24,13 @@ describe(getStoryIdentifiers.name, () => {
       attributes: ['exportName', 'name'],
     });
 
-    expect(getStoryIdentifiers({ exportNameNode: exportName, nameNode: name })).toEqual({
+    expect(
+      getStoryIdentifiers({
+        exportNameNode: exportName,
+        nameNode: name,
+        component,
+      })
+    ).toEqual({
       exportName: 'Text',
       name: undefined,
     });
@@ -47,7 +53,13 @@ describe(getStoryIdentifiers.name, () => {
       attributes: ['exportName', 'name'],
     });
 
-    expect(getStoryIdentifiers({ exportNameNode: exportName, nameNode: name })).toEqual({
+    expect(
+      getStoryIdentifiers({
+        exportNameNode: exportName,
+        nameNode: name,
+        component,
+      })
+    ).toEqual({
       exportName: 'ExpressionWithLiteral',
       name: undefined,
     });
@@ -75,6 +87,7 @@ describe(getStoryIdentifiers.name, () => {
         exportNameNode: exportName,
         nameNode: name,
         filename: 'invalid.stories.svelte',
+        component,
       })
     ).toThrowErrorMatchingInlineSnapshot(
       `
@@ -103,7 +116,13 @@ describe(getStoryIdentifiers.name, () => {
       attributes: ['exportName', 'args'],
     });
 
-    expect(getStoryIdentifiers({ exportNameNode: exportName, nameNode: undefined })).toEqual({
+    expect(
+      getStoryIdentifiers({
+        exportNameNode: exportName,
+        nameNode: undefined,
+        component,
+      })
+    ).toEqual({
       exportName: 'Default',
       name: undefined,
     });
@@ -126,7 +145,13 @@ describe(getStoryIdentifiers.name, () => {
       attributes: ['exportName', 'name'],
     });
 
-    expect(getStoryIdentifiers({ exportNameNode: exportName, nameNode: name })).toEqual({
+    expect(
+      getStoryIdentifiers({
+        exportNameNode: exportName,
+        nameNode: name,
+        component,
+      })
+    ).toEqual({
       exportName: 'SomeExportName',
       name: 'some name',
     });
@@ -149,7 +174,13 @@ describe(getStoryIdentifiers.name, () => {
       attributes: ['exportName', 'name'],
     });
 
-    expect(getStoryIdentifiers({ exportNameNode: exportName, nameNode: name })).toEqual({
+    expect(
+      getStoryIdentifiers({
+        exportNameNode: exportName,
+        nameNode: name,
+        component,
+      })
+    ).toEqual({
       exportName: 'SomeName',
       name: 'some name',
     });
@@ -177,6 +208,7 @@ describe(getStoryIdentifiers.name, () => {
         exportNameNode: exportName,
         nameNode: undefined,
         filename: 'invalid.stories.svelte',
+        component,
       })
     ).toThrowErrorMatchingInlineSnapshot(
       `

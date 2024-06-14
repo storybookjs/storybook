@@ -253,7 +253,7 @@ command('dev')
     'URL path to be appended when visiting Storybook for the first time'
   )
   .action(async (options) => {
-    logger.setLevel(program.loglevel);
+    logger.setLevel(options.loglevel ?? program.loglevel);
     consoleLogger.log(chalk.bold(`${pkg.name} v${pkg.version}`) + chalk.reset('\n'));
 
     // The key is the field created in `options` variable for

@@ -3,7 +3,7 @@
   generics="const TOverrideArgs extends Args = EmptyObject, const TMeta extends Meta = Meta"
 >
   import type { Args, StoryAnnotations } from '@storybook/types';
-  import type { Component, ComponentProps, Snippet } from 'svelte';
+  import type { Component, ComponentProps, Snippet, SvelteComponent } from 'svelte';
   import type { EmptyObject } from 'type-fest';
 
   import { useStoriesExtractor } from '#runtime/contexts/extractor.svelte';
@@ -14,7 +14,7 @@
   import type { Meta, SvelteRenderer } from '#types';
 
   type Renderer = SvelteRenderer<
-    TMeta['component'] extends Component<any, any, any>
+    TMeta['component'] extends SvelteComponent
       ? TMeta['component']
       : TMeta['args'] extends Args
         ? TMeta['args']
@@ -25,13 +25,13 @@
     // TODO: Verify if `Renderer` type is defined correctly
     Renderer,
     // FIXME: ... args (non-required? - what is TArgs supposed to be? from meta - defineMeta?)
-    TMeta['component'] extends Component<any, any, any>
+    TMeta['component'] extends SvelteComponent
       ? ComponentProps<TMeta['component']>
       : TMeta['args'] extends Args
         ? TMeta['args']
         : Args,
     // FIXME: ... required args... I don't understand how they're picked (from the type parameters default)
-    TMeta['component'] extends Component<any, any, any>
+    TMeta['component'] extends SvelteComponent
       ? ComponentProps<TMeta['component']>
       : TMeta['args'] extends Args
         ? TMeta['args']

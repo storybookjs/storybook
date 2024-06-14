@@ -1,7 +1,7 @@
-<script lang="ts" generics="Cmp extends Component = Component">
+<script lang="ts">
   import type { Component } from 'svelte';
 
-  import type { Meta, StoryCmpProps } from '#types';
+  import type { StoryCmpProps } from '#types';
 
   import {
     type StoriesRepository,

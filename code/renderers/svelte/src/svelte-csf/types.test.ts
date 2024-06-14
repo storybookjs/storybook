@@ -8,18 +8,20 @@ import type { Meta, SvelteRenderer } from '#types';
 
 describe('Meta', () => {
   it('Generic parameter of Meta can be a component', () => {
-    const meta: Meta<typeof Button> = {
+    const meta = {
       component: Button,
       args: {
+        // FIXME: allow mapping snippets to primitives
         children: 'good' as unknown as Snippet,
         disabled: false,
       },
-    };
+    } satisfies Meta<Button>;
 
-    expectTypeOf(meta).toEqualTypeOf<
+    expectTypeOf(meta).toMatchTypeOf<Meta<Button>>();
+    expectTypeOf(meta).toMatchTypeOf<
       ComponentAnnotations<
         // Renderer
-        SvelteRenderer<typeof Button>,
+        SvelteRenderer<Button>,
         /// Args
         ComponentProps<Button>
       >
@@ -27,15 +29,17 @@ describe('Meta', () => {
   });
 
   it('Generic parameter of Meta can be the props of the component', () => {
-    const meta: Meta<{ disabled: boolean; children: Snippet }> = {
+    const meta = {
       component: Button,
+      // FIXME: allow mapping snippets to primitives
       args: { children: 'good' as unknown as Snippet, disabled: false },
-    };
+    } satisfies Meta<{ disabled: boolean; children: Snippet }>;
 
-    expectTypeOf(meta).toEqualTypeOf<
+    expectTypeOf(meta).toMatchTypeOf<Meta<{ disabled: boolean; children: Snippet }>>();
+    expectTypeOf(meta).toMatchTypeOf<
       ComponentAnnotations<
         // Renderer
-        SvelteRenderer<{ disabled: boolean; children: Snippet }>,
+        SvelteRenderer<Component<{ disabled: boolean; children: Snippet }>>,
         // Args
         { disabled: boolean; children: Snippet }
       >
@@ -43,10 +47,9 @@ describe('Meta', () => {
   });
 
   it('Events are inferred from component', () => {
-    const meta: Meta<typeof Button> = {
+    const meta = {
       component: Button,
       args: {
-        children: 'good' as unknown as Snippet,
         disabled: false,
         onclick: (event) => {
           expectTypeOf(event).toEqualTypeOf<
@@ -54,26 +57,8 @@ describe('Meta', () => {
           >();
         },
       },
-    };
+    } satisfies Meta<Button>;
 
-    expectTypeOf(meta).toMatchTypeOf<Meta<typeof Button>>();
+    expectTypeOf(meta).toMatchTypeOf<Meta<Button>>();
   });
-
-  // FIXME: Verify if this still needs to be tested, after Svelte v5
-  // it("Events fallback to custom events when no component is specified", () => {
-  // 	const meta: Meta<{ disabled: boolean; label: string }> = {
-  // 		component: Button,
-  // 		args: { label: "good", disabled: false },
-  // 		render: (args) => ({
-  // 			Component: Button,
-  // 			props: args,
-  // 			on: {
-  // 				mousemove: (event) => {
-  // 					expectTypeOf(event).toEqualTypeOf<CustomEvent>();
-  // 				},
-  // 			},
-  // 		}),
-  // 	};
-  // 	expectTypeOf(meta).toMatchTypeOf<Meta<Button>>();
-  // });
 });

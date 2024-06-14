@@ -7,9 +7,10 @@ import { defineMeta } from '#index';
 import type StoryCmp from './runtime/Story.svelte';
 
 import Button from '../examples/components/Button.svelte';
+import type { Meta } from '#types';
 
 describe(defineMeta.name, () => {
-  it('works when no "component" entry is provided', ({ expect }) => {
+  it('works when no "component" entry is provided', () => {
     const { Story, meta } = defineMeta({
       args: {
         children: 'Click me',
@@ -19,20 +20,17 @@ describe(defineMeta.name, () => {
     expectTypeOf(Story).toMatchTypeOf<typeof StoryCmp<EmptyObject, typeof meta>>();
   });
 
-  it('works with provided "component" entry', ({ expect }) => {
-    const { Story, meta } = defineMeta({
+  it('works with provided "component" entry', () => {
+    const { Story, meta } = defineMeta<EmptyObject, Meta<Button>>({
       component: Button,
       args: {
+        // FIXME: allow mapping snippets to primitives
         children: 'Click me' as unknown as Snippet,
       },
     });
 
-    const test = {
-      component: Button,
-    } as const;
-
     expectTypeOf(Button).toMatchTypeOf<Component<ComponentProps<Button>>>();
-    expectTypeOf(Story).toMatchTypeOf<typeof StoryCmp<EmptyObject, typeof meta>>();
+    expectTypeOf(Story).toMatchTypeOf<typeof StoryCmp<EmptyObject, Meta<Button>>>();
   });
 });
 

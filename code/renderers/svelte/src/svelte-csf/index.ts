@@ -1,9 +1,10 @@
 import type { Args as BaseArgs, StoryContext as BaseStoryContext } from '@storybook/types';
 import type { EmptyObject } from 'type-fest';
 
-import type { Meta, SvelteRenderer } from '#types';
+import type { Meta, StoryCmp, SvelteRenderer } from '#types';
 
 import Story from './runtime/Story.svelte';
+import type { Component, SvelteComponent } from 'svelte';
 
 export { setTemplate } from './runtime/contexts/template.svelte';
 
@@ -12,7 +13,7 @@ export function defineMeta<
   const TMeta extends Meta = Meta,
 >(meta: TMeta) {
   return {
-    Story: Story as typeof Story<TOverrideArgs, TMeta>,
+    Story: Story as StoryCmp<TOverrideArgs, TMeta>,
     meta,
   };
 }

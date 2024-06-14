@@ -1,20 +1,20 @@
-import type { StoryObj } from '@storybook/svelte';
-import { getContext, hasContext, setContext } from 'svelte';
-
-import type { Meta } from '#types';
+import { getContext, hasContext, setContext, type ComponentProps } from 'svelte';
 
 import { storyNameToExportName } from '#utils/identifier-utils';
+import type { StoryCmpProps } from '#types';
 
 const CONTEXT_KEY = 'storybook-stories-extractor-context';
 
-export interface StoriesExtractorContextProps<TMeta extends Meta> {
+export interface StoriesExtractorContextProps<TProps extends StoryCmpProps = StoryCmpProps> {
   isExtracting: boolean;
-  register: (story: StoryObj<TMeta> & { exportName?: string }) => void;
+  register: (storyCmpProps: TProps) => void;
 }
 
-function buildContext<TMeta extends Meta>(props: StoriesExtractorContextProps<TMeta>) {
-  let isExtracting = $state(props.isExtracting);
-  let register = $state(props.register);
+function buildContext<TProps extends StoryCmpProps = StoryCmpProps>(
+  storyCmpProps: StoriesExtractorContextProps<TProps>
+) {
+  let isExtracting = $state(storyCmpProps.isExtracting);
+  let register = $state(storyCmpProps.register);
 
   return {
     get isExtracting() {
@@ -26,18 +26,20 @@ function buildContext<TMeta extends Meta>(props: StoriesExtractorContextProps<TM
   };
 }
 
-export type StoriesExtractorContext<TMeta extends Meta> = ReturnType<typeof buildContext<TMeta>>;
+export type StoriesExtractorContext<TProps extends StoryCmpProps = StoryCmpProps> = ReturnType<
+  typeof buildContext<TProps>
+>;
 
-export type StoriesRepository<TMeta extends Meta> = {
-  stories: Map<string, StoryObj<TMeta>>;
+export type StoriesRepository<TProps extends StoryCmpProps = StoryCmpProps> = {
+  stories: Map<string, TProps>;
 };
 
-export function createStoriesExtractorContext<TMeta extends Meta>(
-  repository: StoriesRepository<TMeta>
+export function createStoriesExtractorContext<TProps extends StoryCmpProps = StoryCmpProps>(
+  repository: StoriesRepository<TProps>
 ): void {
   const { stories } = repository;
 
-  const ctx = buildContext<TMeta>({
+  const ctx = buildContext<TProps>({
     isExtracting: true,
     register: (s) => {
       stories.set(s.exportName ?? storyNameToExportName(s.name!), s);
@@ -47,16 +49,16 @@ export function createStoriesExtractorContext<TMeta extends Meta>(
   setContext(CONTEXT_KEY, ctx);
 }
 
-export function useStoriesExtractor<TMeta extends Meta>() {
+export function useStoriesExtractor<TProps extends StoryCmpProps = StoryCmpProps>() {
   if (!hasContext(CONTEXT_KEY)) {
     setContext(
       CONTEXT_KEY,
-      buildContext({
+      buildContext<TProps>({
         isExtracting: false,
         register: () => {},
       })
     );
   }
 
-  return getContext<StoriesExtractorContext<TMeta>>(CONTEXT_KEY);
+  return getContext<StoriesExtractorContext<TProps>>(CONTEXT_KEY);
 }

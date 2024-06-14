@@ -1,10 +1,14 @@
-import type { Meta, StoryContext, StoryObj } from '@storybook/svelte';
 import { SourceType, SNIPPET_RENDERED } from '@storybook/docs-tools';
 import { addons } from '@storybook/preview-api';
 import get from 'lodash-es/get';
+import type { ComponentProps } from 'svelte';
+
+import type { Meta, StoryContext } from '#types';
+
+import type Story from './Story.svelte';
 
 type Params = {
-  args: StoryObj['args'];
+  args: ComponentProps<Story>['args'];
   storyContext: StoryContext<Meta['args']>;
 };
 

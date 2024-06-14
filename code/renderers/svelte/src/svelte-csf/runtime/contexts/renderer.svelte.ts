@@ -1,17 +1,18 @@
-import type { StoryContext, StoryObj } from '@storybook/svelte';
 import { getContext, hasContext, setContext } from 'svelte';
 
-import type { Meta } from '#types';
+import type { Meta, StoryContext } from '#types';
+
+import type Story from '../Story.svelte';
 
 const CONTEXT_KEY = 'storybook-story-renderer-context';
 
-interface ContextProps<TMeta extends Meta> {
+interface ContextProps<TMeta extends Meta = Meta> {
   currentStoryExportName: string | undefined;
-  args: StoryObj<TMeta>['args'];
-  storyContext: StoryContext<StoryObj<TMeta>['args']>;
+  args: Story['args'];
+  storyContext: StoryContext<TMeta['args']>;
 }
 
-function buildContext<TMeta extends Meta>(props: ContextProps<TMeta>) {
+function buildContext<TMeta extends Meta = Meta>(props: ContextProps<TMeta>) {
   let currentStoryExportName = $state(props.currentStoryExportName);
   let args = $state(props.args);
   let storyContext = $state(props.storyContext);
@@ -36,9 +37,11 @@ function buildContext<TMeta extends Meta>(props: ContextProps<TMeta>) {
   };
 }
 
-export type StoryRendererContext<TMeta extends Meta> = ReturnType<typeof buildContext<TMeta>>;
+export type StoryRendererContext<TMeta extends Meta = Meta> = ReturnType<
+  typeof buildContext<TMeta>
+>;
 
-function createStoryRendererContext<TMeta extends Meta>(): void {
+function createStoryRendererContext<TMeta extends Meta = Meta>(): void {
   const ctx = buildContext<TMeta>({
     currentStoryExportName: undefined,
     args: {},
@@ -49,7 +52,7 @@ function createStoryRendererContext<TMeta extends Meta>(): void {
   setContext(CONTEXT_KEY, ctx);
 }
 
-export function useStoryRenderer<TMeta extends Meta>() {
+export function useStoryRenderer<TMeta extends Meta = Meta>() {
   if (!hasContext(CONTEXT_KEY)) {
     createStoryRendererContext<TMeta>();
   }

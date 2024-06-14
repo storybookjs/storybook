@@ -1,11 +1,13 @@
 /* eslint-env browser */
 import { logger } from '@storybook/client-logger';
-import type { Meta, StoryObj } from '@storybook/svelte';
-import { mount, unmount, type ComponentType } from 'svelte';
+import type { StoryObj } from '@storybook/svelte';
+import { mount, unmount, type Component } from 'svelte';
+
+import type { StoriesRepository } from '#runtime/contexts/extractor.svelte';
+import type { Meta } from '#types';
 
 import StoriesExtractor from './StoriesExtractor.svelte';
 import StoryRenderer from './StoryRenderer.svelte';
-import type { StoriesRepository } from './contexts/extractor.svelte';
 
 const createFragment = document.createDocumentFragment
   ? () => document.createDocumentFragment()
@@ -24,8 +26,8 @@ const createFragment = document.createDocumentFragment
  * the one selected is disabled.
  */
 // TODO: I'm not sure the 'meta' is necessary here. As long as it's default exported, SB should internally combine it with the stories. Except for the play logic below, that looks funky, need to ask Pablo about that.
-export const createRuntimeStories = <TMeta extends Meta>(Stories: ComponentType, meta: TMeta) => {
-  const repository: StoriesRepository<TMeta> = {
+export const createRuntimeStories = (Stories: Component, meta: Meta) => {
+  const repository: StoriesRepository = {
     stories: new Map(),
   };
 
@@ -43,10 +45,10 @@ export const createRuntimeStories = <TMeta extends Meta>(Stories: ComponentType,
     logger.error(`Error in mounting stories ${e.toString()}`, e);
   }
 
-  const stories: Record<string, StoryObj<StoryRenderer<TMeta>>> = {};
+  const stories: Record<string, StoryObj<StoryRenderer>> = {};
 
   for (const [exportName, story] of repository.stories) {
-    const storyObj: StoryObj<StoryRenderer<TMeta>> = {
+    const storyObj: StoryObj<StoryRenderer> = {
       ...story,
       render: (args, storyContext) => ({
         Component: StoryRenderer,

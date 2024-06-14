@@ -1,10 +1,10 @@
-import type { Meta } from '@storybook/svelte';
 import type { ObjectExpression, Property } from 'estree';
 
 import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
 import type { CompiledASTNodes } from '#parser/extract/compiled/nodes';
 
 import { GetDefineMetaFirstArgumentError } from '#utils/error/parser/extract/svelte';
+import type { Meta } from '#types';
 
 interface Options<Properties extends Array<keyof Meta>> {
   nodes: SvelteASTNodes | CompiledASTNodes;

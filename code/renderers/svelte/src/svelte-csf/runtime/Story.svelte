@@ -1,21 +1,44 @@
-<script lang="ts" generics="TOverrideArgs = unknown, const TMeta extends Meta = Meta">
-  import type { StoryObj } from '@storybook/svelte';
-  import type { ComponentType, Snippet } from 'svelte';
-
-  import type { Meta } from '#types';
+<script
+  lang="ts"
+  generics="const TOverrideArgs extends Args = EmptyObject, const TMeta extends Meta = Meta"
+>
+  import type { Args, StoryAnnotations } from '@storybook/types';
+  import type { Component, ComponentProps, Snippet } from 'svelte';
+  import type { EmptyObject } from 'type-fest';
 
   import { useStoriesExtractor } from '#runtime/contexts/extractor.svelte';
   import { useStoryRenderer, type StoryRendererContext } from '#runtime/contexts/renderer.svelte';
   import { useStoriesTemplate } from '#runtime/contexts/template.svelte';
 
   import { storyNameToExportName } from '#utils/identifier-utils';
+  import type { Meta, SvelteRenderer } from '#types';
 
-  type SnippetSchildrenArgs = [
-    StoryRendererContext<TMeta>['args'],
-    StoryRendererContext<TMeta>['storyContext'],
-  ];
+  type Renderer = SvelteRenderer<
+    TMeta['component'] extends Component<any, any, any>
+      ? TMeta['component']
+      : TMeta['args'] extends Args
+        ? TMeta['args']
+        : Args
+  >;
 
-  type Props = {
+  type Annotations = StoryAnnotations<
+    // TODO: Verify if `Renderer` type is defined correctly
+    Renderer,
+    // FIXME: ... args (non-required? - what is TArgs supposed to be? from meta - defineMeta?)
+    TMeta['component'] extends Component<any, any, any>
+      ? ComponentProps<TMeta['component']>
+      : TMeta['args'] extends Args
+        ? TMeta['args']
+        : Args,
+    // FIXME: ... required args... I don't understand how they're picked (from the type parameters default)
+    TMeta['component'] extends Component<any, any, any>
+      ? ComponentProps<TMeta['component']>
+      : TMeta['args'] extends Args
+        ? TMeta['args']
+        : Args
+  >;
+
+  type Props = Annotations & {
     /**
      * The content to render in the story, either as:
      * 1. A snippet taking args and storyContext as parameters
@@ -23,11 +46,13 @@
      * Can be omitted if a default template is set with setTemplate()
      *
      */
-    children?: Snippet<SnippetSchildrenArgs>;
+    children?: Snippet<
+      [StoryRendererContext<TMeta>['args'], StoryRendererContext<TMeta>['storyContext']]
+    >;
     /**
      * Name of the story. Can be omitted if `exportName` is provided.
      */
-    name?: string;
+    name: string;
     /**
      * exportName of the story.
      * If not provided, it will be generated from the 'name', by converting it to a valid, PascalCased JS variable name.
@@ -51,13 +76,14 @@
     /**
      * The args for the story
      */
+    // TODO: Finish this implementation - to be specific - using TOverrideArgs somewhere in annotations.
     // args?: SnippetsToPrimitives<Omit<StoryObj<TMeta>['args'], keyof TOverrideArgs> & TOverrideArgs>;
-  } & StoryObj<TMeta>;
+  };
 
   const { children, name, exportName: exportNameProp, play, ...restProps }: Props = $props();
   const exportName = exportNameProp ?? storyNameToExportName(name!);
 
-  const extractor = useStoriesExtractor<TMeta>();
+  const extractor = useStoriesExtractor<Props>();
   const renderer = useStoryRenderer<TMeta>();
   const template = useStoriesTemplate<TMeta>();
 
@@ -66,9 +92,7 @@
   );
 
   if (extractor.isExtracting) {
-    extractor.register({ ...restProps, exportName, play } as unknown as StoryObj<TMeta> & {
-      exportName: string;
-    });
+    extractor.register({ ...restProps, exportName, play, children } as unknown as Props);
   }
 
   function injectIntoPlayFunction(
@@ -93,7 +117,7 @@
   {:else if template}
     {@render template(renderer.args, renderer.storyContext)}
   {:else if renderer.storyContext.component}
-    <svelte:component this={renderer.storyContext.component as ComponentType} {...renderer.args} />
+    <svelte:component this={renderer.storyContext.component} {...renderer.args} />
   {:else}
     <p>Warning: no story rendered. improve this message</p>
   {/if}

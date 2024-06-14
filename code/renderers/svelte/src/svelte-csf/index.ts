@@ -1,19 +1,28 @@
-import type { Meta } from '@storybook/svelte';
-import type { ComponentType } from 'svelte';
+import type { Args as BaseArgs, StoryContext as BaseStoryContext } from '@storybook/types';
+import type { EmptyObject } from 'type-fest';
 
-import type { Args, StoryContext } from '#types';
+import type { Meta, SvelteRenderer } from '#types';
 
 import Story from './runtime/Story.svelte';
 
 export { setTemplate } from './runtime/contexts/template.svelte';
 
-export function defineMeta<const TOverrideArgs = unknown, const TMeta extends Meta = Meta>(
-  meta: TMeta
-) {
+export function defineMeta<
+  const TOverrideArgs extends BaseArgs = EmptyObject,
+  const TMeta extends Meta = Meta,
+>(meta: TMeta) {
   return {
-    Story: Story as ComponentType<Story<TOverrideArgs, TMeta>>,
+    Story: Story as typeof Story<TOverrideArgs, TMeta>,
     meta,
   };
 }
 
-export type { Args, StoryContext };
+export type Args<Component extends ReturnType<typeof defineMeta>['Story']> =
+  Component extends typeof Story<infer _TOverrideArgs extends BaseArgs, infer TMeta extends Meta>
+    ? TMeta['args']
+    : never;
+
+export type StoryContext<Component extends ReturnType<typeof defineMeta>['Story']> =
+  Component extends typeof Story<infer _TOverrideArgs extends BaseArgs, infer TMeta extends Meta>
+    ? BaseStoryContext<SvelteRenderer, TMeta['args']>
+    : never;

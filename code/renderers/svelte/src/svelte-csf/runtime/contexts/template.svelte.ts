@@ -1,13 +1,11 @@
-import { getContext, hasContext, setContext, type ComponentProps } from 'svelte';
+import { getContext, hasContext, setContext } from 'svelte';
 
-import type Story from '#runtime/Story.svelte';
-
-import type { Meta } from '#types';
+import type { Meta, StoryCmp, StoryCmpProps } from '#types';
 
 const CONTEXT_KEYS = 'storybook-stories-template-snippet-context';
 
 function buildContext<TMeta extends Meta = Meta>() {
-  let template = $state<ComponentProps<Story<TMeta>>['children']>();
+  let template = $state<StoryCmpProps['children']>();
 
   function set(snippet?: typeof template) {
     template = snippet;
@@ -31,17 +29,17 @@ export function useStoriesTemplate<TMeta extends Meta = Meta>() {
   return getContext<StoriesTemplateContext<TMeta>>(CONTEXT_KEYS).template;
 }
 
-type InferMeta<TStory extends Story<Meta>> =
-  TStory extends Story<infer TMeta extends Meta> ? TMeta : never;
+type InferMeta<TStory extends StoryCmp> =
+  TStory extends StoryCmp<infer _TOverrideArgs, infer TMeta extends Meta> ? TMeta : never;
 
-export function setTemplate<TStory extends Story<Meta>>(
-  snippet?: StoriesTemplateContext<InferMeta<TStory>>['template']
+export function setTemplate<TStoryCmp extends StoryCmp = StoryCmp>(
+  snippet?: StoriesTemplateContext<InferMeta<TStoryCmp>>['template']
 ): void {
   if (!hasContext(CONTEXT_KEYS)) {
-    setContext(CONTEXT_KEYS, buildContext<InferMeta<TStory>>());
+    setContext(CONTEXT_KEYS, buildContext<InferMeta<TStoryCmp>>());
   }
 
-  const ctx = getContext<StoriesTemplateContext<InferMeta<TStory>>>(CONTEXT_KEYS);
+  const ctx = getContext<StoriesTemplateContext<InferMeta<TStoryCmp>>>(CONTEXT_KEYS);
 
   ctx.set(snippet);
 }

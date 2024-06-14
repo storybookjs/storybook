@@ -1,6 +1,7 @@
-import type { Meta } from '@storybook/svelte';
 import type { ComponentProps } from 'svelte';
 import type { Attribute, Component } from 'svelte/compiler';
+
+import type { Meta } from '#types';
 
 import type Story from '#runtime/Story.svelte';
 

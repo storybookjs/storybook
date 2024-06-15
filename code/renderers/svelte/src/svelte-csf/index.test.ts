@@ -16,20 +16,21 @@ describe(defineMeta.name, () => {
     });
 
     expectTypeOf(Story).toMatchTypeOf<StoryCmp<EmptyObject, typeof meta>>();
-    expectTypeOf(meta).toMatchTypeOf<Meta<Component<{ sample: 0 }>>>();
+    expectTypeOf(meta).toMatchTypeOf<Meta<{ sample: 0 }>>();
   });
 
-  it('works with provided "component" entry', () => {
+  it('works with provided meta entry "component" entry', () => {
     const { Story, meta } = defineMeta({
       component: Button,
       args: {
+        lol: 'never',
         // FIXME: allow mapping snippets to primitives
         children: 'Click me' as unknown as Snippet,
       },
     });
 
     expectTypeOf(Button).toMatchTypeOf<Component<ComponentProps<Button>>>();
-    expectTypeOf(Story).toMatchTypeOf<StoryCmp<EmptyObject, Meta<Button>>>();
+    expectTypeOf(Story).toMatchTypeOf<StoryCmp<EmptyObject, typeof meta>>();
   });
 });
 

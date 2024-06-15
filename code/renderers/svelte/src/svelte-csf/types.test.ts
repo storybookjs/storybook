@@ -1,13 +1,31 @@
 import type { ComponentAnnotations, PlayFunctionContext } from '@storybook/types';
-import type { ComponentProps, Snippet, SvelteComponent } from 'svelte';
+import type { Component, ComponentProps, Snippet } from 'svelte';
 import { describe, expectTypeOf, it } from 'vitest';
-
-import Button from '../examples/components/Button.svelte';
 
 import type { Meta, SvelteRenderer } from '#types';
 
+import Button from '../examples/components/Button.svelte';
+
 describe('Meta', () => {
-  it('Generic parameter of Meta can be a component', () => {
+  it(`works correctly when no 'meta.component' entry provided`, () => {
+    const meta = {
+      args: {
+        sample: 0,
+      },
+    } satisfies Meta<{ sample: 0 }>;
+
+    expectTypeOf(meta).toMatchTypeOf<Meta<{ sample: 0 }>>();
+    expectTypeOf(meta).toMatchTypeOf<
+      ComponentAnnotations<
+        // Renderer
+        SvelteRenderer<Component<{ sample: 0 }>>,
+        // Args
+        { sample: 0 }
+      >
+    >();
+  });
+
+  it('generic parameter can be a component', () => {
     const meta = {
       component: Button,
       args: {
@@ -22,26 +40,29 @@ describe('Meta', () => {
       ComponentAnnotations<
         // Renderer
         SvelteRenderer<Button>,
-        /// Args
+        // Args
         ComponentProps<Button>
       >
     >();
   });
 
-  it('Generic parameter of Meta can be the props of the component', () => {
+  it('generic parameter can be the props of the component', () => {
     const meta = {
       component: Button,
       // FIXME: allow mapping snippets to primitives
-      args: { children: 'good' as unknown as Snippet, disabled: false },
-    } satisfies Meta<Button>;
+      args: {
+        children: 'good' as unknown as Snippet,
+        disabled: false,
+      },
+    } satisfies Meta<ComponentProps<Button>>;
 
-    expectTypeOf(meta).toMatchTypeOf<Meta<Button>>();
+    expectTypeOf(meta).toMatchTypeOf<Meta<ComponentProps<Button>>>();
     expectTypeOf(meta).toMatchTypeOf<
       ComponentAnnotations<
         // Renderer
-        SvelteRenderer<Button>,
+        SvelteRenderer<ComponentProps<Button>>,
         // Args
-        { disabled: false; children: Snippet }
+        ComponentProps<Button>
       >
     >();
   });
@@ -58,9 +79,7 @@ describe('Meta', () => {
         },
       },
       play: (context) => {
-        expectTypeOf(context).toMatchTypeOf<
-          PlayFunctionContext<SvelteRenderer<SvelteComponent<ComponentProps<Button>>>>
-        >();
+        expectTypeOf(context).toMatchTypeOf<PlayFunctionContext<SvelteRenderer<Button>>>();
       },
     } satisfies Meta<Button>;
 

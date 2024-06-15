@@ -25,28 +25,34 @@ export type Meta<TCmp = any> = TCmp extends
   | SvelteComponent
   | __sveltets_2_IsomorphicComponent
   ? ComponentAnnotations<SvelteRenderer<TCmp>, ComponentProps<TCmp>>
-  : never;
+  : TCmp extends Args
+    ? ComponentAnnotations<SvelteRenderer<TCmp>, TCmp>
+    : never;
 
 export interface SvelteRenderer<TCmp = any> extends WebRenderer {
-  component: TCmp | Component | SvelteComponent | __sveltets_2_IsomorphicComponent;
+  component: TCmp extends Component | SvelteComponent | __sveltets_2_IsomorphicComponent
+    ? TCmp | Component | SvelteComponent | __sveltets_2_IsomorphicComponent
+    : TCmp extends Args
+      ? Component<TCmp> | SvelteComponent<TCmp> | __sveltets_2_IsomorphicComponent<TCmp>
+      : never;
   storyResult: SvelteStoryResult<TCmp>;
 }
 
 export interface SvelteStoryResult<TCmp = any> {
   Component: TCmp;
-  props: TCmp extends Component<infer TProps>
-    ? TProps
-    : TCmp extends SvelteComponent<infer TProps>
-      ? TProps
+  props: TCmp extends Component | SvelteComponent | __sveltets_2_IsomorphicComponent
+    ? ComponentProps<TCmp>
+    : TCmp extends Args
+      ? TCmp
       : never;
   decorator?: TCmp;
 }
 
 export type StoryContext<TArgs = StrictArgs> = GenericStoryContext<SvelteRenderer, TArgs>;
 
-export type StoryCmp<
-  TOverrideArgs extends Args = EmptyObject,
-  TMeta extends Meta = Meta,
-> = typeof Story<TOverrideArgs, TMeta>;
+export type StoryCmp<TOverrideArgs extends Args, TMeta extends Meta> = typeof Story<
+  TOverrideArgs,
+  TMeta
+>;
 
 export type StoryCmpProps = ComponentProps<Story>;

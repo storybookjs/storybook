@@ -2,13 +2,11 @@ import { getContext, hasContext, setContext } from 'svelte';
 
 import type { Meta, StoryContext } from '#types';
 
-import type Story from '../Story.svelte';
-
 const CONTEXT_KEY = 'storybook-story-renderer-context';
 
 interface ContextProps<TMeta extends Meta = Meta> {
   currentStoryExportName: string | undefined;
-  args: Story['args'];
+  args: Meta['args'];
   storyContext: StoryContext<TMeta['args']>;
 }
 

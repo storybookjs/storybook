@@ -20,39 +20,26 @@ type MapSnippetsToAcceptPrimitives<Props extends ComponentProps<Component>> = {
  *
  * @see [Default export](https://storybook.js.org/docs/formats/component-story-format/#default-export)
  */
-export type Meta<CmpOrArgs extends Component | SvelteComponent | Args = Args> =
-  CmpOrArgs extends Component<infer Props>
-    ? ComponentAnnotations<SvelteRenderer<CmpOrArgs>, Props>
-    : CmpOrArgs extends SvelteComponent<infer Props>
-      ? ComponentAnnotations<SvelteRenderer<CmpOrArgs>, Props>
-      : ComponentAnnotations<SvelteRenderer<CmpOrArgs>, CmpOrArgs>;
+export type Meta<TCmp = any> = TCmp extends
+  | Component
+  | SvelteComponent
+  | __sveltets_2_IsomorphicComponent
+  ? ComponentAnnotations<SvelteRenderer<TCmp>, ComponentProps<TCmp>>
+  : never;
 
-export interface SvelteRenderer<CmpOrArgs extends Component | SvelteComponent | Args = Args>
-  extends WebRenderer {
-  component: CmpOrArgs extends SvelteComponent<infer Props>
-    ? Component<Props>
-    : CmpOrArgs extends Component<infer Props>
-      ? Component<Props>
-      : Component<CmpOrArgs>;
-  storyResult: SvelteStoryResult<CmpOrArgs>;
+export interface SvelteRenderer<TCmp = any> extends WebRenderer {
+  component: TCmp | Component | SvelteComponent | __sveltets_2_IsomorphicComponent;
+  storyResult: SvelteStoryResult<TCmp>;
 }
 
-export interface SvelteStoryResult<CmpOrArgs extends Component | SvelteComponent | Args = Args> {
-  Component: CmpOrArgs extends Component<infer Props>
-    ? Component<Props>
-    : CmpOrArgs extends SvelteComponent<infer Props>
-      ? Component<Props>
-      : Component<CmpOrArgs>;
-  props: CmpOrArgs extends Component<infer Props>
-    ? Props
-    : CmpOrArgs extends SvelteComponent<infer Props>
-      ? Props
-      : CmpOrArgs;
-  decorator?: CmpOrArgs extends Component<infer Props>
-    ? Component<Props>
-    : CmpOrArgs extends SvelteComponent<infer Props>
-      ? Component<Props>
-      : Component<CmpOrArgs>;
+export interface SvelteStoryResult<TCmp = any> {
+  Component: TCmp;
+  props: TCmp extends Component<infer TProps>
+    ? TProps
+    : TCmp extends SvelteComponent<infer TProps>
+      ? TProps
+      : never;
+  decorator?: TCmp;
 }
 
 export type StoryContext<TArgs = StrictArgs> = GenericStoryContext<SvelteRenderer, TArgs>;

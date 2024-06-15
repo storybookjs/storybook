@@ -11,14 +11,16 @@
   import { useStoriesTemplate } from '#runtime/contexts/template.svelte';
 
   import { storyNameToExportName } from '#utils/identifier-utils';
-  import type { Meta, SvelteRenderer } from '#types';
+  import type { Meta, StoryCmpProps, SvelteRenderer } from '#types';
 
   type Renderer = SvelteRenderer<
     TMeta['component'] extends SvelteComponent
       ? TMeta['component']
-      : TMeta['args'] extends Args
-        ? TMeta['args']
-        : Args
+      : TMeta['component'] extends Component<infer Props>
+        ? SvelteComponent<Props>
+        : TMeta['args'] extends Args
+          ? SvelteComponent<TMeta['args']>
+          : SvelteComponent<Args>
   >;
 
   type Annotations = StoryAnnotations<
@@ -38,7 +40,7 @@
         : Args
   >;
 
-  type Props = Annotations & {
+  type Props = Partial<Annotations> & {
     /**
      * The content to render in the story, either as:
      * 1. A snippet taking args and storyContext as parameters
@@ -83,16 +85,16 @@
   const { children, name, exportName: exportNameProp, play, ...restProps }: Props = $props();
   const exportName = exportNameProp ?? storyNameToExportName(name!);
 
-  const extractor = useStoriesExtractor<Props>();
-  const renderer = useStoryRenderer<TMeta>();
-  const template = useStoriesTemplate<TMeta>();
+  const extractor = useStoriesExtractor();
+  const renderer = useStoryRenderer();
+  const template = useStoriesTemplate();
 
   const isCurrentlyViewed = $derived(
     !extractor.isExtracting && renderer.currentStoryExportName === exportName
   );
 
   if (extractor.isExtracting) {
-    extractor.register({ ...restProps, exportName, play, children } as unknown as Props);
+    extractor.register({ ...restProps, exportName, play, children } as unknown as StoryCmpProps);
   }
 
   function injectIntoPlayFunction(

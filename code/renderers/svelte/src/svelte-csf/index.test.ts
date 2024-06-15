@@ -2,26 +2,25 @@ import type { Component, ComponentProps, Snippet } from 'svelte';
 import type { EmptyObject } from 'type-fest';
 import { describe, expectTypeOf, it } from 'vitest';
 
-import { defineMeta } from '#index';
-
-import type StoryCmp from './runtime/Story.svelte';
+import { defineMeta, type Args, type StoryContext } from '#index';
+import type { Meta, StoryCmp, StoryContext as BaseStoryContext } from '#types';
 
 import Button from '../examples/components/Button.svelte';
-import type { Meta } from '#types';
 
 describe(defineMeta.name, () => {
-  it('works when no "component" entry is provided', () => {
+  it('works when no meta entry "component" is provided', () => {
     const { Story, meta } = defineMeta({
       args: {
-        children: 'Click me',
+        sample: 0,
       },
     });
 
-    expectTypeOf(Story).toMatchTypeOf<typeof StoryCmp<EmptyObject, typeof meta>>();
+    expectTypeOf(Story).toMatchTypeOf<StoryCmp<EmptyObject, typeof meta>>();
+    expectTypeOf(meta).toMatchTypeOf<Meta<Component<{ sample: 0 }>>>();
   });
 
   it('works with provided "component" entry', () => {
-    const { Story, meta } = defineMeta<EmptyObject, Meta<Button>>({
+    const { Story, meta } = defineMeta({
       component: Button,
       args: {
         // FIXME: allow mapping snippets to primitives
@@ -30,10 +29,32 @@ describe(defineMeta.name, () => {
     });
 
     expectTypeOf(Button).toMatchTypeOf<Component<ComponentProps<Button>>>();
-    expectTypeOf(Story).toMatchTypeOf<typeof StoryCmp<EmptyObject, Meta<Button>>>();
+    expectTypeOf(Story).toMatchTypeOf<StoryCmp<EmptyObject, Meta<Button>>>();
   });
 });
 
-describe.todo('type helper Args');
+describe("type helper for snippets 'Args'", () => {
+  const { Story, meta } = defineMeta({
+    component: Button,
+    args: {
+      // FIXME: allow mapping snippets to primitives
+      children: 'Click me' as unknown as Snippet,
+    },
+  });
 
-describe.todo('type helper StoryContext');
+  expectTypeOf<Args<typeof Story>>().toMatchTypeOf<(typeof meta)['args']>();
+});
+
+describe("type helper for snippets 'StoryContext'", () => {
+  const { Story, meta } = defineMeta({
+    component: Button,
+    args: {
+      // FIXME: allow mapping snippets to primitives
+      children: 'Click me' as unknown as Snippet,
+    },
+  });
+
+  expectTypeOf<StoryContext<typeof Story>>().toMatchTypeOf<
+    BaseStoryContext<(typeof meta)['args']>
+  >();
+});

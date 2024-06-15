@@ -1,4 +1,4 @@
-import { getContext, hasContext, setContext, type ComponentProps } from 'svelte';
+import { getContext, hasContext, setContext } from 'svelte';
 
 import { storyNameToExportName } from '#utils/identifier-utils';
 import type { StoryCmpProps } from '#types';

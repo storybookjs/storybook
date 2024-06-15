@@ -1,5 +1,5 @@
-import type { ComponentAnnotations } from '@storybook/types';
-import type { Component, ComponentProps, Snippet } from 'svelte';
+import type { ComponentAnnotations, PlayFunctionContext } from '@storybook/types';
+import type { ComponentProps, Snippet, SvelteComponent } from 'svelte';
 import { describe, expectTypeOf, it } from 'vitest';
 
 import Button from '../examples/components/Button.svelte';
@@ -33,15 +33,15 @@ describe('Meta', () => {
       component: Button,
       // FIXME: allow mapping snippets to primitives
       args: { children: 'good' as unknown as Snippet, disabled: false },
-    } satisfies Meta<{ disabled: boolean; children: Snippet }>;
+    } satisfies Meta<Button>;
 
-    expectTypeOf(meta).toMatchTypeOf<Meta<{ disabled: boolean; children: Snippet }>>();
+    expectTypeOf(meta).toMatchTypeOf<Meta<Button>>();
     expectTypeOf(meta).toMatchTypeOf<
       ComponentAnnotations<
         // Renderer
-        SvelteRenderer<Component<{ disabled: boolean; children: Snippet }>>,
+        SvelteRenderer<Button>,
         // Args
-        { disabled: boolean; children: Snippet }
+        { disabled: false; children: Snippet }
       >
     >();
   });
@@ -56,6 +56,11 @@ describe('Meta', () => {
             MouseEvent & { currentTarget: EventTarget & HTMLButtonElement }
           >();
         },
+      },
+      play: (context) => {
+        expectTypeOf(context).toMatchTypeOf<
+          PlayFunctionContext<SvelteRenderer<SvelteComponent<ComponentProps<Button>>>>
+        >();
       },
     } satisfies Meta<Button>;
 

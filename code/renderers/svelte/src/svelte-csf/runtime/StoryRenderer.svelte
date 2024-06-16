@@ -1,17 +1,15 @@
 <script lang="ts" generics="const TMeta extends Meta = Meta">
-  import type { Component, ComponentProps } from 'svelte';
+  import type { Component } from 'svelte';
 
   import { useStoryRenderer } from '#runtime/contexts/renderer.svelte';
   import { emitCode } from '#runtime/emit-code';
 
-  import type { Meta, StoryContext } from '#types';
-
-  import type Story from './Story.svelte';
+  import type { Meta, StoryCmpProps, StoryContext } from '#types';
 
   type Props = {
     Stories: Component;
     exportName: string;
-    args: ComponentProps<Story<TMeta>>['args'];
+    args: StoryCmpProps['args'];
     storyContext: StoryContext<TMeta['args']>;
   };
 

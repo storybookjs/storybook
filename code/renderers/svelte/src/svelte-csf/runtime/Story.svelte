@@ -1,46 +1,33 @@
-<script
-  lang="ts"
-  generics="const TOverrideArgs extends Args = EmptyObject, const TMeta extends Meta = Meta"
->
-  import type { Args, StoryAnnotations } from '@storybook/types';
+<script lang="ts" generics="const TOverrideArgs extends Args, const TMeta extends Meta">
+  import type { Args } from '@storybook/types';
   import type { Component, ComponentProps, Snippet, SvelteComponent } from 'svelte';
-  import type { EmptyObject } from 'type-fest';
+  import type { EmptyObject, SetOptional, Simplify } from 'type-fest';
 
   import { useStoriesExtractor } from '#runtime/contexts/extractor.svelte';
   import { useStoryRenderer, type StoryRendererContext } from '#runtime/contexts/renderer.svelte';
   import { useStoriesTemplate } from '#runtime/contexts/template.svelte';
 
   import { storyNameToExportName } from '#utils/identifier-utils';
-  import type { Meta, StoryCmpProps, SvelteRenderer } from '#types';
+  import type { Meta, StoryAnnotations, StoryCmpProps, SvelteRenderer } from '#types';
 
-  type Renderer = SvelteRenderer<
-    TMeta['component'] extends SvelteComponent
-      ? TMeta['component']
-      : TMeta['component'] extends Component<infer Props>
-        ? SvelteComponent<Props>
-        : TMeta['args'] extends Args
-          ? SvelteComponent<TMeta['args']>
-          : SvelteComponent<Args>
-  >;
+  type TCmp =
+    TMeta extends Meta<infer T>
+      ? T extends Component | SvelteComponent | __sveltets_2_IsomorphicComponent
+        ? T
+        : T extends Args
+          ? Component<T>
+          : never
+      : never;
+  type TArgs = Simplify<ComponentProps<TCmp> & TMeta['args']>;
+  type TStoryArgs = Simplify<SetOptional<TArgs, Extract<keyof TArgs, keyof TMeta['args']>>>;
 
-  type Annotations = StoryAnnotations<
-    // TODO: Verify if `Renderer` type is defined correctly
-    Renderer,
-    // FIXME: ... args (non-required? - what is TArgs supposed to be? from meta - defineMeta?)
-    TMeta['component'] extends SvelteComponent
-      ? ComponentProps<TMeta['component']>
-      : TMeta['args'] extends Args
-        ? TMeta['args']
-        : Args,
-    // FIXME: ... required args... I don't understand how they're picked (from the type parameters default)
-    TMeta['component'] extends SvelteComponent
-      ? ComponentProps<TMeta['component']>
-      : TMeta['args'] extends Args
-        ? TMeta['args']
-        : Args
-  >;
-
-  type Props = Partial<Annotations> & {
+  type Props = StoryAnnotations<TCmp, TArgs, TStoryArgs> & {
+    // TCmp?: TCmp;
+    // Trenderer?: TRenderer;
+    // TArgsFromMeta?: TArgsFromMeta;
+    // TArgs?: TArgs;
+    // TAnnotations?: StoryAnnotations;
+    // TStoryArgs?: TStoryArgs;
     /**
      * The content to render in the story, either as:
      * 1. A snippet taking args and storyContext as parameters

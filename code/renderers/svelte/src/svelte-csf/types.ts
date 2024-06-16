@@ -2,6 +2,7 @@ import type {
   Args,
   ComponentAnnotations,
   StrictArgs,
+  StoryAnnotations as BaseStoryAnnotations,
   StoryContext as GenericStoryContext,
   WebRenderer,
 } from '@storybook/types';
@@ -50,9 +51,22 @@ export interface SvelteStoryResult<TCmp = any> {
 
 export type StoryContext<TArgs = StrictArgs> = GenericStoryContext<SvelteRenderer, TArgs>;
 
-export type StoryCmp<TOverrideArgs extends Args, TMeta extends Meta> = typeof Story<
+export type StoryCmp<TOverrideArgs extends Args = Args, TMeta extends Meta = Meta> = typeof Story<
   TOverrideArgs,
   TMeta
 >;
 
-export type StoryCmpProps = ComponentProps<Story>;
+export type StoryCmpProps = ComponentProps<Story<Args, Meta>>;
+
+export type StoryAnnotations<
+  TCmp = any,
+  TArgs = Args,
+  TRequiredArgs = Partial<TArgs>,
+> = BaseStoryAnnotations<
+  // Renderer
+  SvelteRenderer<TCmp>,
+  // All of the args - combining the component props and excluding the ones from meta - defineMeta
+  TArgs,
+  // Set all of the args specified in 'defineMeta' to be optional for Story
+  TRequiredArgs
+>;

@@ -1,5 +1,5 @@
 import type { Component, ComponentProps, Snippet } from 'svelte';
-import type { EmptyObject } from 'type-fest';
+import type { EmptyObject, Simplify } from 'type-fest';
 import { describe, expectTypeOf, it } from 'vitest';
 
 import { defineMeta, type Args, type StoryContext } from '#index';
@@ -23,7 +23,6 @@ describe(defineMeta.name, () => {
     const { Story, meta } = defineMeta({
       component: Button,
       args: {
-        lol: 'never',
         // FIXME: allow mapping snippets to primitives
         children: 'Click me' as unknown as Snippet,
       },
@@ -58,4 +57,28 @@ describe("type helper for snippets 'StoryContext'", () => {
   expectTypeOf<StoryContext<typeof Story>>().toMatchTypeOf<
     BaseStoryContext<(typeof meta)['args']>
   >();
+});
+
+describe("component 'Story' destructured from 'defineMeta", () => {
+  const { Story } = defineMeta({
+    component: Button,
+    args: {
+      // FIXME: allow mapping snippets to primitives
+      children: 'Click me' as unknown as Snippet,
+    },
+  });
+
+  type TStoryProps = typeof Story extends __sveltets_2_IsomorphicComponent
+    ? ComponentProps<typeof Story>
+    : never;
+
+  expectTypeOf<ComponentProps<Button>['children']>().not.toBeNullable();
+  expectTypeOf<Meta<Button>['args']>().toBeNullable();
+  expectTypeOf<NonNullable<Meta<Button>['args']>['children']>().toBeNullable();
+  expectTypeOf<TStoryProps>().toHaveProperty('name');
+  expectTypeOf<TStoryProps['name']>().not.toBeNullable();
+  expectTypeOf<TStoryProps['args']>().toBeNullable();
+  expectTypeOf<NonNullable<TStoryProps['args']>>().toHaveProperty('size');
+  expectTypeOf<NonNullable<TStoryProps['args']>>().toHaveProperty('children');
+  expectTypeOf<NonNullable<TStoryProps['args']>['children']>().toBeNullable();
 });

@@ -10,9 +10,9 @@
   import { useStoriesTemplate } from '#runtime/contexts/template.svelte';
 
   import { storyNameToExportName } from '#utils/identifier-utils';
-  import type { Meta, StoryAnnotations, StoryCmpProps, SvelteRenderer } from '#types';
+  import type { Meta, StoryAnnotations, StoryCmpProps } from '#types';
 
-  type Props = StoryAnnotations<TMeta> & {
+  type Props = Partial<StoryAnnotations<TMeta>> & {
     /**
      * The content to render in the story, either as:
      * 1. A snippet taking args and storyContext as parameters

@@ -1,9 +1,9 @@
-import type { Component, ComponentProps } from 'svelte';
-import type { EmptyObject } from 'type-fest';
+import type { Component, ComponentProps, Snippet } from 'svelte';
+import type { EmptyObject, Primitive } from 'type-fest';
 import { describe, expectTypeOf, it } from 'vitest';
 
 import { defineMeta, type Args, type StoryContext } from '#index';
-import type { Meta, StoryCmp, StoryContext as BaseStoryContext } from '#types';
+import type { Meta, StoryAnnotations, StoryCmp, StoryContext as BaseStoryContext } from '#types';
 
 import Button from '../examples/components/Button.svelte';
 
@@ -41,7 +41,10 @@ describe("type helper for snippets 'Args'", () => {
       },
     });
 
-    expectTypeOf<Args<typeof Story>>().toMatchTypeOf<(typeof meta)['args']>();
+    expectTypeOf<Args<typeof Story>>().not.toBeNullable();
+    expectTypeOf<Args<typeof Story>>().toMatchTypeOf<StoryAnnotations<typeof meta>['args']>();
+    expectTypeOf<Args<typeof Story>['children']>().toMatchTypeOf<Snippet | Primitive>();
+    expectTypeOf<Args<typeof Story>['children']>().toBeNullable();
   });
 });
 

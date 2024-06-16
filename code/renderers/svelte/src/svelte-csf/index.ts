@@ -1,5 +1,5 @@
 import type { Args as BaseArgs } from '@storybook/types';
-import type { Component, ComponentProps, SvelteComponent } from 'svelte';
+import type { ComponentProps } from 'svelte';
 import type { EmptyObject } from 'type-fest';
 
 import type {
@@ -8,6 +8,7 @@ import type {
   StoryContext as BaseStoryContext,
   PossibleCmpType,
   MapSnippetsToAcceptPrimitives,
+  StoryAnnotations,
 } from '#types';
 
 import Story from './runtime/Story.svelte';
@@ -36,12 +37,12 @@ export function defineMeta<
   };
 }
 
-export type Args<TStoryCmp extends StoryCmp<any, any>> =
+export type Args<TStoryCmp> =
   TStoryCmp extends StoryCmp<infer _TOverrideArgs extends BaseArgs, infer TMeta extends Meta>
-    ? TMeta['args']
+    ? NonNullable<StoryAnnotations<TMeta>['args']>
     : never;
 
-export type StoryContext<TStoryCmp extends StoryCmp<any, any>> =
+export type StoryContext<TStoryCmp> =
   TStoryCmp extends StoryCmp<infer _TOverrideArgs extends BaseArgs, infer TMeta extends Meta>
     ? BaseStoryContext<TMeta['args']>
     : never;

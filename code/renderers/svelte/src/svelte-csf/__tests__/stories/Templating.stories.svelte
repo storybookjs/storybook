@@ -8,7 +8,6 @@
   const { Story } = defineMeta({
     title: 'Templating',
     tags: ['autodocs'],
-    args: { text: '' },
     argsTypes: {
       text: { control: 'text' },
     },

@@ -46,14 +46,22 @@ describe(transformStoriesCode.name, () => {
 
     expect(code.toString()).toMatchInlineSnapshot(
       `
-      "import "svelte/internal/disclose-version";
+      "import 'svelte/internal/disclose-version';
 
       $.mark_module_start();
-      Example_stories.filename = "stories/Example.stories.svelte";
+      Example_stories.filename = 'stories/Example.stories.svelte';
 
-      import * as $ from "svelte/internal/client";
+      import * as $ from 'svelte/internal/client';
 
-      var Example_default = $.add_locations($.template(\`<p> </p> <p> </p> <br>\`, 1), Example_stories.filename, [[45, 4], [46, 4], [47, 24]]);
+      var Example_default = $.add_locations(
+        $.template(\`<p> </p> <p> </p> <br>\`, 1),
+        Example_stories.filename,
+        [
+          [45, 4],
+          [46, 4],
+          [47, 24],
+        ]
+      );
       var Example_default_1 = $.add_locations($.template(\`Label\`, 1), Example_stories.filename, []);
       var root = $.add_locations($.template(\`<!> <!> <!> <!>\`, 1), Example_stories.filename, []);
 
@@ -90,53 +98,59 @@ describe(transformStoriesCode.name, () => {
 
 
       function Example_stories($$anchor, $$props) {
-      	if (new.target === Example_stories) throw new Error("Instantiating a component with \`new\` is no longer valid in Svelte 5. See https://svelte-5-preview.vercel.app/docs/breaking-changes#components-are-no-longer-classes for more information");
-      	$.push($$props, true, Example_stories);
+        if (new.target === Example_stories)
+          throw new Error(
+            'Instantiating a component with \`new\` is no longer valid in Svelte 5. See https://svelte-5-preview.vercel.app/docs/breaking-changes#components-are-no-longer-classes for more information'
+          );
+        $.push($$props, true, Example_stories);
 
-      	var render = $.wrap_snippet(($$anchor, args = $.noop, context = $.noop) => {
-      		var fragment = $.comment();
-      		var node = $.first_child(fragment);
+        var render = $.wrap_snippet(($$anchor, args = $.noop, context = $.noop) => {
+          var fragment = $.comment();
+          var node = $.first_child(fragment);
 
-      		$.validate_component(Example)(node, $.spread_props(args, {
-      			onclick: handleClick,
-      			children: $.wrap_snippet(($$anchor, $$slotProps) => {
-      				var fragment_1 = Example_default();
-      				var p = $.first_child(fragment_1);
-      				var text = $.child(p);
-      				var p_1 = $.sibling($.sibling(p, true));
-      				var text_1 = $.child(p_1);
-      				var text_2 = $.sibling(p_1, true);
-      				var br = $.sibling(text_2);
+          $.validate_component(Example)(
+            node,
+            $.spread_props(args, {
+              onclick: handleClick,
+              children: $.wrap_snippet(($$anchor, $$slotProps) => {
+                var fragment_1 = Example_default();
+                var p = $.first_child(fragment_1);
+                var text = $.child(p);
+                var p_1 = $.sibling($.sibling(p, true));
+                var text_1 = $.child(p_1);
+                var text_2 = $.sibling(p_1, true);
+                var br = $.sibling(text_2);
 
-      				$.template_effect(() => {
-      					$.set_text(text, args()?.id);
-      					$.set_text(text_1, context().name);
-      					$.set_text(text_2, \` You clicked: \${$.stringify($.get(count))}\`);
-      				});
+                $.template_effect(() => {
+                  $.set_text(text, args()?.id);
+                  $.set_text(text_1, context().name);
+                  $.set_text(text_2, \` You clicked: \${$.stringify($.get(count))}\`);
+                });
 
-      				$.append($$anchor, fragment_1);
-      			}),
-      			$$slots: { default: true }
-      		}));
+                $.append($$anchor, fragment_1);
+              }),
+              $$slots: { default: true },
+            })
+          );
 
-      		$.append($$anchor, fragment);
-      	});
+          $.append($$anchor, fragment);
+        });
 
-      	$.validate_prop_bindings($$props, [], [], Example_stories);
+        $.validate_prop_bindings($$props, [], [], Example_stories);
 
-      	let count = $.source(0);
+        let count = $.source(0);
 
-      	function handleClick() {
-      		$.set(count, $.get(count) + 1);
-      	}
+        function handleClick() {
+          $.set(count, $.get(count) + 1);
+        }
 
-      	setTemplate(render);
+        setTemplate(render);
 
-      	var fragment_2 = root();
-      	var node_1 = $.first_child(fragment_2);
+        var fragment_2 = root();
+        var node_1 = $.first_child(fragment_2);
 
-      	$.validate_component(Story)(node_1, {
-        name: "Default",
+        $.validate_component(Story)(node_1, {
+        name: 'Default',
         parameters: {
           docs: {
             description: {
@@ -149,10 +163,10 @@ describe(transformStoriesCode.name, () => {
         }
       });
 
-      	var node_2 = $.sibling($.sibling(node_1, true));
+        var node_2 = $.sibling($.sibling(node_1, true));
 
-      	$.validate_component(Story)(node_2, {
-        name: "Rounded",
+        $.validate_component(Story)(node_2, {
+        name: 'Rounded',
         args: {
           rounded: true
         },
@@ -168,10 +182,10 @@ describe(transformStoriesCode.name, () => {
         }
       });
 
-      	var node_3 = $.sibling($.sibling(node_2, true));
+        var node_3 = $.sibling($.sibling(node_2, true));
 
-      	$.validate_component(Story)(node_3, {
-        name: "Square",
+        $.validate_component(Story)(node_3, {
+        name: 'Square',
         args: {
           rounded: false
         },
@@ -187,10 +201,10 @@ describe(transformStoriesCode.name, () => {
         }
       });
 
-      	var node_4 = $.sibling($.sibling(node_3, true));
+        var node_4 = $.sibling($.sibling(node_3, true));
 
-      	$.validate_component(Story)(node_4, {
-        name: "Without template",
+        $.validate_component(Story)(node_4, {
+        name: 'Without template',
         children: $.wrap_snippet(($$anchor, $$slotProps) => {
           var fragment_3 = $.comment();
           var node_5 = $.first_child(fragment_3);
@@ -215,31 +229,32 @@ describe(transformStoriesCode.name, () => {
         }
       });
 
-      	$.append($$anchor, fragment_2);
-      	return $.pop({ ...$.legacy_api() });
+        $.append($$anchor, fragment_2);
+        return $.pop({ ...$.legacy_api() });
       }
 
       if (import.meta.hot) {
-      	const s = $.source(Example_stories);
-      	const filename = Example_stories.filename;
+        const s = $.source(Example_stories);
+        const filename = Example_stories.filename;
 
-      	Example_stories = $.hmr(s);
-      	Example_stories.filename = filename;
+        Example_stories = $.hmr(s);
+        Example_stories.filename = filename;
 
-      	if (import.meta.hot.acceptExports) {
-      		import.meta.hot.acceptExports(["default"], (module) => {
-      			$.set(s, module.default);
-      		});
-      	} else {
-      		import.meta.hot.acceptExports(["default"],(module) => {
-      			$.set(s, module.default);
-      		});
-      	}
+        if (import.meta.hot.acceptExports) {
+          import.meta.hot.acceptExports(['default'], (module) => {
+            $.set(s, module.default);
+          });
+        } else {
+          import.meta.hot.acceptExports(['default'], (module) => {
+            $.set(s, module.default);
+          });
+        }
       }
 
 
 
-      $.mark_module_end(Example_stories);;Example_stories.__docgen = {"keywords":[],"data":[],"name":"Example.stories.svelte"}
+      $.mark_module_end(Example_stories);
+      Example_stories.__docgen = { keywords: [], data: [], name: 'Example.stories.svelte' };
 
       import {createRuntimeStories} from "@storybook/addon-svelte-csf/internal/create-runtime-stories";
       const __stories = createRuntimeStories(Example_stories, meta);

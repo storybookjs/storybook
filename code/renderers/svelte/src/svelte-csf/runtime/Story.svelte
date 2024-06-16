@@ -1,7 +1,9 @@
+<!-- // TODO: Finish this implementation - to be specific - using TOverrideArgs somewhere in annotations? -->
+<!-- // args?: SnippetsToPrimitives<Omit<StoryObj<TMeta>['args'], keyof TOverrideArgs> & TOverrideArgs>; -->
+
 <script lang="ts" generics="const TOverrideArgs extends Args, const TMeta extends Meta">
   import type { Args } from '@storybook/types';
-  import type { Component, ComponentProps, Snippet } from 'svelte';
-  import type { EmptyObject, SetOptional, Simplify } from 'type-fest';
+  import type { Component, Snippet } from 'svelte';
 
   import { useStoriesExtractor } from '#runtime/contexts/extractor.svelte';
   import { useStoryRenderer, type StoryRendererContext } from '#runtime/contexts/renderer.svelte';
@@ -45,11 +47,6 @@
      * Use `parameters={{ docs: { source: { code: "..." } } }}` instead.
      */
     source?: never;
-    /**
-     * The args for the story
-     */
-    // TODO: Finish this implementation - to be specific - using TOverrideArgs somewhere in annotations.
-    // args?: SnippetsToPrimitives<Omit<StoryObj<TMeta>['args'], keyof TOverrideArgs> & TOverrideArgs>;
   };
 
   const { children, name, exportName: exportNameProp, play, ...restProps }: Props = $props();

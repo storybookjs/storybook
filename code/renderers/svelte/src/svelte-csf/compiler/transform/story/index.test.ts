@@ -73,7 +73,7 @@ describe(transformStory.name, () => {
     expect(toJs(compiledPostTransformedStories[0] as unknown as Program).value)
       .toMatchInlineSnapshot(`
         "$.validate_component(Story)(node_1, {
-          name: "Default",
+          name: 'Default',
           parameters: {
             docs: {
               description: {
@@ -90,7 +90,7 @@ describe(transformStory.name, () => {
     expect(toJs(compiledPostTransformedStories[1] as unknown as Program).value)
       .toMatchInlineSnapshot(`
         "$.validate_component(Story)(node_2, {
-          name: "Rounded",
+          name: 'Rounded',
           args: {
             rounded: true
           },
@@ -109,7 +109,7 @@ describe(transformStory.name, () => {
     expect(toJs(compiledPostTransformedStories[2] as unknown as Program).value)
       .toMatchInlineSnapshot(`
         "$.validate_component(Story)(node_3, {
-          name: "Square",
+          name: 'Square',
           args: {
             rounded: false
           },
@@ -127,31 +127,31 @@ describe(transformStory.name, () => {
       `);
     expect(toJs(compiledPostTransformedStories[3] as unknown as Program).value)
       .toMatchInlineSnapshot(`
-			"$.validate_component(Story)(node_4, {
-			  name: "Without template",
-			  children: $.wrap_snippet(($$anchor, $$slotProps) => {
-			    var fragment_3 = $.comment();
-			    var node_5 = $.first_child(fragment_3);
-			    $.validate_component(Example)(node_5, {
-			      children: $.wrap_snippet(($$anchor, $$slotProps) => {
-			        var fragment_4 = Example_default_1();
-			        $.append($$anchor, fragment_4);
-			      }),
-			      $$slots: {
-			        default: true
-			      }
-			    });
-			    $.append($$anchor, fragment_3);
-			  }),
-			  $$slots: {
-			    default: true
-			  },
-			  parameters: {
-			    __svelteCsf: {
-			      rawCode: "<Example>Label</Example>"
-			    }
-			  }
-			});"
-		`);
+        "$.validate_component(Story)(node_4, {
+          name: 'Without template',
+          children: $.wrap_snippet(($$anchor, $$slotProps) => {
+            var fragment_3 = $.comment();
+            var node_5 = $.first_child(fragment_3);
+            $.validate_component(Example)(node_5, {
+              children: $.wrap_snippet(($$anchor, $$slotProps) => {
+                var fragment_4 = Example_default_1();
+                $.append($$anchor, fragment_4);
+              }),
+              $$slots: {
+                default: true
+              }
+            });
+            $.append($$anchor, fragment_3);
+          }),
+          $$slots: {
+            default: true
+          },
+          parameters: {
+            __svelteCsf: {
+              rawCode: "<Example>Label</Example>"
+            }
+          }
+        });"
+      `);
   });
 });

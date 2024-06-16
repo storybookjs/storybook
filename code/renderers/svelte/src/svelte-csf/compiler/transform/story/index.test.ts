@@ -21,13 +21,13 @@ describe(transformStory.name, () => {
   it("each transformed compiled 'Story' component matches inlined snapshots", async ({
     expect,
   }) => {
-    const filename = path.resolve(__dirname, '../../../../stories/Example.stories.svelte');
+    const filename = path.resolve(__dirname, '../../../../tests/stories/Example.stories.svelte');
     const originalCode = fs.readFileSync(filename).toString();
     const compiledPreTransformCode = fs
       .readFileSync(
         path.resolve(
           __dirname,
-          '../../../../test/__compiled__/pre-transform/Example.stories.dev.js'
+          '../../../../tests/__compiled__/pre-transform/Example.stories.dev.js'
         )
       )
       .toString();

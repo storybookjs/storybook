@@ -1,5 +1,5 @@
-import type { Component, ComponentProps, Snippet } from 'svelte';
-import type { EmptyObject, Simplify } from 'type-fest';
+import type { Component, ComponentProps } from 'svelte';
+import type { EmptyObject } from 'type-fest';
 import { describe, expectTypeOf, it } from 'vitest';
 
 import { defineMeta, type Args, type StoryContext } from '#index';

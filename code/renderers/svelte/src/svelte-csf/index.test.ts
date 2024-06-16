@@ -23,8 +23,7 @@ describe(defineMeta.name, () => {
     const { Story, meta } = defineMeta({
       component: Button,
       args: {
-        // FIXME: allow mapping snippets to primitives
-        children: 'Click me' as unknown as Snippet,
+        children: 'Click me',
       },
     });
 
@@ -34,51 +33,54 @@ describe(defineMeta.name, () => {
 });
 
 describe("type helper for snippets 'Args'", () => {
-  const { Story, meta } = defineMeta({
-    component: Button,
-    args: {
-      // FIXME: allow mapping snippets to primitives
-      children: 'Click me' as unknown as Snippet,
-    },
-  });
+  it("infers the type of entry 'args' from 'defineMeta' correctly", () => {
+    const { Story, meta } = defineMeta({
+      component: Button,
+      args: {
+        children: 'Click me',
+      },
+    });
 
-  expectTypeOf<Args<typeof Story>>().toMatchTypeOf<(typeof meta)['args']>();
+    expectTypeOf<Args<typeof Story>>().toMatchTypeOf<(typeof meta)['args']>();
+  });
 });
 
 describe("type helper for snippets 'StoryContext'", () => {
-  const { Story, meta } = defineMeta({
-    component: Button,
-    args: {
-      // FIXME: allow mapping snippets to primitives
-      children: 'Click me' as unknown as Snippet,
-    },
-  });
+  it("infers the type of entry 'args' from 'defineMeta' correctly", () => {
+    const { Story, meta } = defineMeta({
+      component: Button,
+      args: {
+        children: 'Click me',
+      },
+    });
 
-  expectTypeOf<StoryContext<typeof Story>>().toMatchTypeOf<
-    BaseStoryContext<(typeof meta)['args']>
-  >();
+    expectTypeOf<StoryContext<typeof Story>>().toMatchTypeOf<
+      BaseStoryContext<(typeof meta)['args']>
+    >();
+  });
 });
 
 describe("component 'Story' destructured from 'defineMeta", () => {
-  const { Story } = defineMeta({
-    component: Button,
-    args: {
-      // FIXME: allow mapping snippets to primitives
-      children: 'Click me' as unknown as Snippet,
-    },
+  it("creates valid types inside the 'args' attribute (prop)", () => {
+    const { Story } = defineMeta({
+      component: Button,
+      args: {
+        children: 'Click me',
+      },
+    });
+
+    type TStoryProps = typeof Story extends __sveltets_2_IsomorphicComponent
+      ? ComponentProps<typeof Story>
+      : never;
+
+    expectTypeOf<ComponentProps<Button>['children']>().not.toBeNullable();
+    expectTypeOf<Meta<Button>['args']>().toBeNullable();
+    expectTypeOf<NonNullable<Meta<Button>['args']>['children']>().toBeNullable();
+    expectTypeOf<TStoryProps>().toHaveProperty('name');
+    expectTypeOf<TStoryProps['name']>().not.toBeNullable();
+    expectTypeOf<TStoryProps['args']>().toBeNullable();
+    expectTypeOf<NonNullable<TStoryProps['args']>>().toHaveProperty('size');
+    expectTypeOf<NonNullable<TStoryProps['args']>>().toHaveProperty('children');
+    expectTypeOf<NonNullable<TStoryProps['args']>['children']>().toBeNullable();
   });
-
-  type TStoryProps = typeof Story extends __sveltets_2_IsomorphicComponent
-    ? ComponentProps<typeof Story>
-    : never;
-
-  expectTypeOf<ComponentProps<Button>['children']>().not.toBeNullable();
-  expectTypeOf<Meta<Button>['args']>().toBeNullable();
-  expectTypeOf<NonNullable<Meta<Button>['args']>['children']>().toBeNullable();
-  expectTypeOf<TStoryProps>().toHaveProperty('name');
-  expectTypeOf<TStoryProps['name']>().not.toBeNullable();
-  expectTypeOf<TStoryProps['args']>().toBeNullable();
-  expectTypeOf<NonNullable<TStoryProps['args']>>().toHaveProperty('size');
-  expectTypeOf<NonNullable<TStoryProps['args']>>().toHaveProperty('children');
-  expectTypeOf<NonNullable<TStoryProps['args']>['children']>().toBeNullable();
 });

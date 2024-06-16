@@ -16,8 +16,7 @@
     component: Button,
     tags: ['autodocs'],
     args: {
-      // FIXME: Finish allowing primitves as snippets
-      children: 'Click me' as unknown as import('svelte').Snippet,
+      children: 'Click me',
     },
     argTypes: {
       backgroundColor: { control: 'color' },

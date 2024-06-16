@@ -1,6 +1,6 @@
 <script lang="ts" generics="const TOverrideArgs extends Args, const TMeta extends Meta">
   import type { Args } from '@storybook/types';
-  import type { Component, ComponentProps, Snippet, SvelteComponent } from 'svelte';
+  import type { Component, ComponentProps, Snippet } from 'svelte';
   import type { EmptyObject, SetOptional, Simplify } from 'type-fest';
 
   import { useStoriesExtractor } from '#runtime/contexts/extractor.svelte';
@@ -10,24 +10,7 @@
   import { storyNameToExportName } from '#utils/identifier-utils';
   import type { Meta, StoryAnnotations, StoryCmpProps, SvelteRenderer } from '#types';
 
-  type TCmp =
-    TMeta extends Meta<infer T>
-      ? T extends Component | SvelteComponent | __sveltets_2_IsomorphicComponent
-        ? T
-        : T extends Args
-          ? Component<T>
-          : never
-      : never;
-  type TArgs = Simplify<ComponentProps<TCmp> & TMeta['args']>;
-  type TStoryArgs = Simplify<SetOptional<TArgs, Extract<keyof TArgs, keyof TMeta['args']>>>;
-
-  type Props = StoryAnnotations<TCmp, TArgs, TStoryArgs> & {
-    // TCmp?: TCmp;
-    // Trenderer?: TRenderer;
-    // TArgsFromMeta?: TArgsFromMeta;
-    // TArgs?: TArgs;
-    // TAnnotations?: StoryAnnotations;
-    // TStoryArgs?: TStoryArgs;
+  type Props = StoryAnnotations<TMeta> & {
     /**
      * The content to render in the story, either as:
      * 1. A snippet taking args and storyContext as parameters
@@ -106,7 +89,8 @@
   {:else if template}
     {@render template(renderer.args, renderer.storyContext)}
   {:else if renderer.storyContext.component}
-    <svelte:component this={renderer.storyContext.component} {...renderer.args} />
+    <!-- WARN: This can be resolved once Svelte gets rid of 'SvelteComponent' -->
+    <svelte:component this={renderer.storyContext.component as Component} {...renderer.args} />
   {:else}
     <p>Warning: no story rendered. improve this message</p>
   {/if}

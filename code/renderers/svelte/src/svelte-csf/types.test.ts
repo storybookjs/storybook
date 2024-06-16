@@ -1,10 +1,11 @@
-import type { ComponentAnnotations, PlayFunctionContext } from '@storybook/types';
-import type { Component, ComponentProps, Snippet } from 'svelte';
+import type { PlayFunctionContext } from '@storybook/types';
+import type { Component, ComponentProps } from 'svelte';
 import { describe, expectTypeOf, it } from 'vitest';
 
-import type { Meta, SvelteRenderer } from '#types';
+import type { Meta, SvelteRenderer, ComponentAnnotations, SvelteStoryResult } from '#types';
 
 import Button from '../examples/components/Button.svelte';
+import type { Simplify } from 'type-fest';
 
 describe('Meta', () => {
   it(`works correctly when no 'meta.component' entry provided`, () => {
@@ -15,56 +16,44 @@ describe('Meta', () => {
     } satisfies Meta<{ sample: 0 }>;
 
     expectTypeOf(meta).toMatchTypeOf<Meta<{ sample: 0 }>>();
-    expectTypeOf(meta).toMatchTypeOf<
-      ComponentAnnotations<
-        // Renderer
-        SvelteRenderer<Component<{ sample: 0 }>>,
-        // Args
-        { sample: 0 }
-      >
-    >();
+    expectTypeOf(meta).toMatchTypeOf<ComponentAnnotations<{ sample?: 0 }>>();
   });
 
   it('generic parameter can be a component', () => {
     const meta = {
       component: Button,
       args: {
-        // FIXME: allow mapping snippets to primitives
-        children: 'good' as unknown as Snippet,
+        children: 'good',
         disabled: false,
       },
     } satisfies Meta<Button>;
 
-    expectTypeOf(meta).toMatchTypeOf<Meta<Button>>();
-    expectTypeOf(meta).toMatchTypeOf<
-      ComponentAnnotations<
-        // Renderer
-        SvelteRenderer<Button>,
-        // Args
-        ComponentProps<Button>
-      >
-    >();
-  });
+    type XCA = ComponentAnnotations<Button>['args'];
+    type XR = SvelteRenderer<Button>;
+    type XSR = SvelteStoryResult<Button>;
+    type Z = XSR['props'];
 
+    type TMeta = Simplify<typeof meta>;
+
+    expectTypeOf(meta).toMatchTypeOf<Meta<Button>>();
+    expectTypeOf(meta).toMatchTypeOf<ComponentAnnotations<ComponentProps<Button>>>();
+  });
   it('generic parameter can be the props of the component', () => {
     const meta = {
       component: Button,
-      // FIXME: allow mapping snippets to primitives
       args: {
-        children: 'good' as unknown as Snippet,
+        children: 'good',
         disabled: false,
+        onclick: (event) => {
+          expectTypeOf(event).toEqualTypeOf<
+            MouseEvent & { currentTarget: EventTarget & HTMLButtonElement }
+          >();
+        },
       },
     } satisfies Meta<ComponentProps<Button>>;
 
     expectTypeOf(meta).toMatchTypeOf<Meta<ComponentProps<Button>>>();
-    expectTypeOf(meta).toMatchTypeOf<
-      ComponentAnnotations<
-        // Renderer
-        SvelteRenderer<ComponentProps<Button>>,
-        // Args
-        ComponentProps<Button>
-      >
-    >();
+    expectTypeOf(meta).toMatchTypeOf<ComponentAnnotations<ComponentProps<Button>>>();
   });
 
   it('Events are inferred from component', () => {
@@ -72,6 +61,7 @@ describe('Meta', () => {
       component: Button,
       args: {
         disabled: false,
+        children: 'good',
         onclick: (event) => {
           expectTypeOf(event).toEqualTypeOf<
             MouseEvent & { currentTarget: EventTarget & HTMLButtonElement }

@@ -1,8 +1,14 @@
 import type { Args as BaseArgs } from '@storybook/types';
-import type { ComponentProps } from 'svelte';
+import type { Component, ComponentProps, SvelteComponent } from 'svelte';
 import type { EmptyObject } from 'type-fest';
 
-import type { Meta, StoryCmp, StoryContext as BaseStoryContext } from '#types';
+import type {
+  Meta,
+  StoryCmp,
+  StoryContext as BaseStoryContext,
+  PossibleCmpType,
+  MapSnippetsToAcceptPrimitives,
+} from '#types';
 
 import Story from './runtime/Story.svelte';
 
@@ -14,7 +20,13 @@ export function defineMeta<
   TCmp = TMeta['component'],
 >(
   meta: TMeta & {
-    args?: TCmp extends __sveltets_2_IsomorphicComponent ? ComponentProps<TCmp> : TMeta['args'];
+    args?: MapSnippetsToAcceptPrimitives<
+      TCmp extends PossibleCmpType
+        ? ComponentProps<TCmp>
+        : TMeta['args'] extends BaseArgs
+          ? TMeta['args']
+          : never
+    >;
   }
 ) {
   return {

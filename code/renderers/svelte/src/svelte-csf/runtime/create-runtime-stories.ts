@@ -50,6 +50,7 @@ export const createRuntimeStories = (Stories: Component, meta: Meta) => {
   for (const [exportName, story] of repository.stories) {
     const storyObj: StoryObj<StoryRenderer> = {
       ...story,
+      // @ts-expect-error WARN: Here we are attempting to convert every `StoryCmp` into `StoryObj`, and the types are different
       render: (args, storyContext) => ({
         Component: StoryRenderer,
         props: {
@@ -75,6 +76,7 @@ export const createRuntimeStories = (Stories: Component, meta: Meta) => {
           return delegate(storyContext);
         }
 
+        // @ts-expect-error WARN: It should not affect user perspective- the problem lies in this addon's type `SvelteRenderer` missing type constrains or default generic parameter type
         return play(storyContext);
       };
     }

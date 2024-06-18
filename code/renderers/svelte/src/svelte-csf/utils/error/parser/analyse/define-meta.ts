@@ -56,10 +56,6 @@ export class NoDestructuredDefineMetaCallError extends StorybookSvelteCSFError {
       The issue occured in Stories file: ${this.filepathURL}
 
       The current pattern type is: "${this.defineMetaVariableDeclarator.id.type}", and expected is "ObjectPattern".
-
-      Please verify if you're using the following syntax:
-
-      const { Story } = defineMeta({ /* ... */ });
     `;
   }
 }
@@ -75,14 +71,6 @@ export class NoMetaIdentifierFoundError extends StorybookSvelteCSFError {
   template(): string {
     return dedent`
 			Could not find 'meta' identifier in the compiled output of stories file: ${this.filepathURL}
-
-      This is most likely a bug in the parser of addon - "${StorybookSvelteCSFError.packageName}".
-
-      If you see this error, please report it using the link below:
-      https://github.com/storybookjs/addon-svelte-csf/issues/new
-
-      While you create an issue, please provide original code,
-      it will help us invegistate the occured issue better.
     `;
   }
 }

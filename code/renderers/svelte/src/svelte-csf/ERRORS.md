@@ -192,25 +192,75 @@ It will help us investigate the occurred issue better.
 
 ### `SB_SVELTE_CSF_PARSER_ANALYSE_DEFINE_META_1`
 
-<!-- TODO:  -->
+Our parser spotted an invalid schema on the `component` entry.
+It expected an identifier to a Svelte component but got something else.
+
+Ensure you're using the correct syntax, following the example above:
+
+```svelte
+<script context="module">
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+  });
+</script>
+```
 
 ### `SB_SVELTE_CSF_PARSER_ANALYSE_DEFINE_META_2`
 
-<!-- TODO:  -->
+Our parser spotted an invalid schema on the variable declaration from the `defineMeta` call.
+You most likely forgot to destructure the return value.
+
+```diff
+- const Story = defineMeta({
++ const { Story } = defineMeta({
+    component: Button,
+});
+```
 
 ### `SB_SVELTE_CSF_PARSER_ANALYSE_DEFINE_META_3`
 
-<!-- TODO:  -->
+Our parser couldn't find auto-destructured `meta` identifier from the return value of `defineMeta()` in the compiled
+output.
+
+If you see this error, please report it using the link below:
+<https://github.com/storybookjs/addon-svelte-csf/issues/new>
+
+While you create an issue, please provide original code of the stories file that caused this error.
+It will help us investigate the occurred issue better.
 
 ### `SB_SVELTE_CSF_PARSER_ANALYSE_DEFINE_META_4`
 
-<!-- TODO:  -->
+Our parser spotted an invalid schema on one of entries in the `defineMeta({ ... })` first argument.
+Expected a **static string literal**, but got something else.
+
+Those known and common keys should have a **static** string literal as value:
+
+- **title**
+- **name**
+
+Do not use any function generating those values, because our parser doesn't know what those values return while
+analysing the source code.
 
 ### `SB_SVELTE_CSF_PARSER_ANALYSE_DEFINE_META_5`
 
-<!-- TODO:  -->
+Our parser spotted an invalid schema on one of entries in the `defineMeta({ ... })` first argument.
+Expected an **array expression** `[/* items... */]`, but got something else.
+
+Those known and common keys should be an array expression as value:
+
+- **tags**
 
 ### `SB_SVELTE_CSF_PARSER_ANALYSE_DEFINE_META_6`
+
+Our parser spotted an invalid schema on one of entries in the `defineMeta({ ... })` first argument.
+
+Those known keys should have array expression as value with only **static string literals** as items:
+
+- **tags**
 
 ## `PARSER_ANALYSE_STORY`
 

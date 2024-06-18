@@ -81,7 +81,7 @@ describe(transformStory.name, () => {
               }
             },
             __svelteCsf: {
-              rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{args?.id}</p>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
+              rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{args.id}</p>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
             }
           }
         });"
@@ -101,7 +101,7 @@ describe(transformStory.name, () => {
               }
             },
             __svelteCsf: {
-              rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{args?.id}</p>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
+              rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{args.id}</p>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
             }
           }
         });"
@@ -120,7 +120,7 @@ describe(transformStory.name, () => {
               }
             },
             __svelteCsf: {
-              rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{args?.id}</p>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
+              rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{args.id}</p>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
             }
           }
         });"

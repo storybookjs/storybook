@@ -1,3 +1,4 @@
+import type { Program } from 'estree';
 import { toJs } from 'estree-util-to-js';
 import type MagicString from 'magic-string';
 
@@ -34,16 +35,11 @@ export function transformDefineMeta(params: Params): void {
 
   const { compiled } = nodes;
   const { defineMetaVariableDeclaration } = compiled;
-  // @ts-expect-error FIXME: These keys exists at runtime, perhaps I missed some type extension from `svelte/compiler`?
   const { start, end } = defineMetaVariableDeclaration;
 
   code.update(
-    start,
-    end,
-    toJs({
-      type: 'Program',
-      sourceType: 'module',
-      body: [defineMetaVariableDeclaration],
-    }).value
+    start as number,
+    end as number,
+    toJs(defineMetaVariableDeclaration as unknown as Program).value
   );
 }

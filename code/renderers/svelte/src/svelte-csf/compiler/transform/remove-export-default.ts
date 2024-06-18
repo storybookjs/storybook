@@ -18,13 +18,12 @@ export function removeExportDefault(params: Params) {
   const { exportDefault, storiesFunctionDeclaration } = nodes;
 
   if (exportDefault.declaration.type === 'FunctionDeclaration') {
-    // @ts-expect-error FIXME: I couldn't find the right type (extension?) in the `estree`, but these exists at runtime
     const { start, end } = exportDefault;
 
     // NOTE: It updates code by removing `export default` from the stories function declaration.
     code.update(
-      start,
-      end,
+      start as number,
+      end as number,
       toJs({
         type: 'Program',
         sourceType: 'module',
@@ -34,7 +33,6 @@ export function removeExportDefault(params: Params) {
   }
 
   if (exportDefault.declaration.type === 'Identifier') {
-    // @ts-expect-error FIXME: I couldn't find the right type (extension?) in the `estree`, but these exists at runtime
-    code.remove(exportDefault.start, exportDefault.end);
+    code.remove(exportDefault.start as number, exportDefault.end as number);
   }
 }

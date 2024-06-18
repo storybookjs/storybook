@@ -40,8 +40,7 @@ export function transformStory(params: Params): void {
   });
 
   const { compiled } = component;
-  // @ts-expect-error FIXME: These keys exists at runtime, perhaps I missed some type extension from `svelte/compiler`?
   const { start, end } = compiled;
 
-  code.update(start, end, toJs(compiled as unknown as Program).value);
+  code.update(start as number, end as number, toJs(compiled as unknown as Program).value);
 }

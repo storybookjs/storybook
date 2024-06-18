@@ -9,6 +9,7 @@ import type {
   Program,
   VariableDeclaration,
 } from 'estree';
+import type { ProgramNode } from 'rollup';
 import type { Visitors } from 'zimmerframe';
 
 import {
@@ -58,7 +59,7 @@ const AST_NODES_NAMES = {
 } as const;
 
 interface Params {
-  ast: Program;
+  ast: Program | ProgramNode;
   filename?: string;
 }
 
@@ -147,7 +148,7 @@ export async function extractCompiledASTNodes(params: Params): Promise<CompiledA
     },
   };
 
-  walk(ast, state, visitors);
+  walk(ast as Program, state, visitors);
 
   const {
     defineMetaImport,

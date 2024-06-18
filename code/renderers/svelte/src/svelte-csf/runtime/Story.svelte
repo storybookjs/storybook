@@ -1,18 +1,21 @@
 <!-- // TODO: Finish this implementation - to be specific - using TOverrideArgs somewhere in annotations? -->
 <!-- // args?: SnippetsToPrimitives<Omit<StoryObj<TMeta>['args'], keyof TOverrideArgs> & TOverrideArgs>; -->
 
-<script lang="ts" generics="const TOverrideArgs extends Args, const TMeta extends Meta">
+<script
+  lang="ts"
+  generics="const TOverrideArgs extends Args, const TCmp extends Cmp, TMeta extends Meta<TCmp>"
+>
   import type { Args } from '@storybook/types';
-  import type { Component, Snippet } from 'svelte';
+  import type { Snippet } from 'svelte';
 
   import { useStoriesExtractor } from '#runtime/contexts/extractor.svelte';
   import { useStoryRenderer, type StoryRendererContext } from '#runtime/contexts/renderer.svelte';
   import { useStoriesTemplate } from '#runtime/contexts/template.svelte';
 
   import { storyNameToExportName } from '#utils/identifier-utils';
-  import type { Meta, StoryAnnotations, StoryCmpProps } from '#types';
+  import type { Cmp, Meta, StoryAnnotations } from '#types';
 
-  type Props = Partial<StoryAnnotations<TMeta>> & {
+  type Props = Partial<StoryAnnotations<TCmp, TMeta>> & {
     /**
      * The content to render in the story, either as:
      * 1. A snippet taking args and storyContext as parameters
@@ -21,7 +24,10 @@
      *
      */
     children?: Snippet<
-      [StoryRendererContext<TMeta>['args'], StoryRendererContext<TMeta>['storyContext']]
+      [
+        StoryRendererContext<TOverrideArgs, TCmp, TMeta>['args'],
+        StoryRendererContext<TOverrideArgs, TCmp, TMeta>['storyContext'],
+      ]
     >;
     /**
      * Name of the story. Can be omitted if `exportName` is provided.
@@ -52,16 +58,18 @@
   const { children, name, exportName: exportNameProp, play, ...restProps }: Props = $props();
   const exportName = exportNameProp ?? storyNameToExportName(name!);
 
-  const extractor = useStoriesExtractor();
-  const renderer = useStoryRenderer();
-  const template = useStoriesTemplate();
+  const extractor = useStoriesExtractor<TOverrideArgs, TCmp, TMeta>();
+  const renderer = useStoryRenderer<TOverrideArgs, TCmp, TMeta>();
+  const template = useStoriesTemplate<TOverrideArgs, TCmp, TMeta>();
 
   const isCurrentlyViewed = $derived(
     !extractor.isExtracting && renderer.currentStoryExportName === exportName
   );
 
   if (extractor.isExtracting) {
-    extractor.register({ ...restProps, exportName, play, children } as unknown as StoryCmpProps);
+    extractor.register({ ...restProps, exportName, play, children } as Parameters<
+      (typeof extractor)['register']
+    >[0]);
   }
 
   function injectIntoPlayFunction(
@@ -86,8 +94,7 @@
   {:else if template}
     {@render template(renderer.args, renderer.storyContext)}
   {:else if renderer.storyContext.component}
-    <!-- WARN: This can be resolved once Svelte gets rid of 'SvelteComponent' -->
-    <svelte:component this={renderer.storyContext.component as Component} {...renderer.args} />
+    <svelte:component this={renderer.storyContext.component} {...renderer.args} />
   {:else}
     <p>Warning: no story rendered. improve this message</p>
   {/if}

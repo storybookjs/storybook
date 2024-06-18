@@ -2,12 +2,14 @@ import { SourceType, SNIPPET_RENDERED } from '@storybook/docs-tools';
 import { addons } from '@storybook/preview-api';
 import type { StoryObj } from '@storybook/svelte';
 import get from 'lodash-es/get';
+import type { ComponentProps } from 'svelte';
+import type { EmptyObject } from 'type-fest';
 
-import type { Meta, StoryCmpProps, StoryContext } from '#types';
+import type { Cmp, Meta, StoryCmp, StoryContext } from '#types';
 
 type Params = {
-  args: StoryCmpProps['args'];
-  storyContext: StoryContext<Meta['args']>;
+  args: ComponentProps<StoryCmp<EmptyObject, Cmp, Meta<Cmp>>>['args'];
+  storyContext: StoryContext<Cmp, Meta<Cmp>>;
 };
 
 const channel: ReturnType<(typeof addons)['getChannel']> | undefined = addons.getChannel();

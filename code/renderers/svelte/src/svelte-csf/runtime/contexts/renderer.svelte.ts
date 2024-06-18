@@ -1,21 +1,24 @@
 import { getContext, hasContext, setContext } from 'svelte';
 
-import type { Meta, StoryContext } from '#types';
+import type { Cmp, Meta, StoryAnnotations, StoryContext } from '#types';
+import type { Args } from '@storybook/types';
 
 const CONTEXT_KEY = 'storybook-story-renderer-context';
 
-interface ContextProps<TMeta extends Meta = Meta> {
+interface ContextProps<TOverrideArgs extends Args, TCmp extends Cmp, TMeta extends Meta<TCmp>> {
   currentStoryExportName: string | undefined;
-  args: Meta['args'];
-  storyContext: StoryContext<TMeta['args']>;
+  args: NonNullable<StoryAnnotations<TCmp, TMeta>['args']>;
+  storyContext: StoryContext<TCmp, TMeta>;
 }
 
-function buildContext<TMeta extends Meta = Meta>(props: ContextProps<TMeta>) {
+function buildContext<TOverrideArgs extends Args, TCmp extends Cmp, TMeta extends Meta<TCmp>>(
+  props: ContextProps<TOverrideArgs, TCmp, TMeta>
+) {
   let currentStoryExportName = $state(props.currentStoryExportName);
   let args = $state(props.args);
   let storyContext = $state(props.storyContext);
 
-  function set(props: ContextProps<TMeta>) {
+  function set(props: ContextProps<TOverrideArgs, TCmp, TMeta>) {
     currentStoryExportName = props.currentStoryExportName;
     args = props.args;
     storyContext = props.storyContext;
@@ -35,13 +38,20 @@ function buildContext<TMeta extends Meta = Meta>(props: ContextProps<TMeta>) {
   };
 }
 
-export type StoryRendererContext<TMeta extends Meta = Meta> = ReturnType<
-  typeof buildContext<TMeta>
->;
+export type StoryRendererContext<
+  TOverrideArgs extends Args,
+  TCmp extends Cmp,
+  TMeta extends Meta<TCmp>,
+> = ReturnType<typeof buildContext<TOverrideArgs, TCmp, TMeta>>;
 
-function createStoryRendererContext<TMeta extends Meta = Meta>(): void {
-  const ctx = buildContext<TMeta>({
+function createStoryRendererContext<
+  TOverrideArgs extends Args,
+  TCmp extends Cmp,
+  TMeta extends Meta<TCmp>,
+>(): void {
+  const ctx = buildContext<TOverrideArgs, TCmp, TMeta>({
     currentStoryExportName: undefined,
+    // @ts-expect-error FIXME: I don't know how to satisfy this one
     args: {},
     // @ts-expect-error FIXME: I don't know how to satisfy this one
     storyContext: {},
@@ -50,10 +60,14 @@ function createStoryRendererContext<TMeta extends Meta = Meta>(): void {
   setContext(CONTEXT_KEY, ctx);
 }
 
-export function useStoryRenderer<TMeta extends Meta = Meta>() {
+export function useStoryRenderer<
+  TOverrideArgs extends Args,
+  TCmp extends Cmp,
+  TMeta extends Meta<TCmp>,
+>() {
   if (!hasContext(CONTEXT_KEY)) {
-    createStoryRendererContext<TMeta>();
+    createStoryRendererContext<TOverrideArgs, TCmp, TMeta>();
   }
 
-  return getContext<StoryRendererContext<TMeta>>(CONTEXT_KEY);
+  return getContext<StoryRendererContext<TOverrideArgs, TCmp, TMeta>>(CONTEXT_KEY);
 }

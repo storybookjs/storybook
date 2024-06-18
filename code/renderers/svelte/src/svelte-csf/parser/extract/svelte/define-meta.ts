@@ -4,15 +4,15 @@ import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
 import type { CompiledASTNodes } from '#parser/extract/compiled/nodes';
 
 import { GetDefineMetaFirstArgumentError } from '#utils/error/parser/extract/svelte';
-import type { Meta } from '#types';
+import type { Cmp, Meta } from '#types';
 
-interface Options<Properties extends Array<keyof Meta>> {
+interface Options<Properties extends Array<keyof Meta<Cmp>>> {
   nodes: SvelteASTNodes | CompiledASTNodes;
   properties: Properties;
   filename?: string;
 }
 
-type Result<Properties extends Array<keyof Meta>> = Partial<{
+type Result<Properties extends Array<keyof Meta<Cmp>>> = Partial<{
   [Key in Properties[number]]: Property;
 }>;
 
@@ -21,7 +21,7 @@ type Result<Properties extends Array<keyof Meta>> = Partial<{
  * It works for original svelte code as well as compiled code,
  * because in both cases, the AST structure is the same _(or should be!)_.
  */
-export function extractDefineMetaPropertiesNodes<const Properties extends Array<keyof Meta>>(
+export function extractDefineMetaPropertiesNodes<const Properties extends Array<keyof Meta<Cmp>>>(
   options: Options<Properties>
 ): Result<Properties> {
   const { properties } = options;
@@ -46,7 +46,7 @@ export function extractDefineMetaPropertiesNodes<const Properties extends Array<
  * which should satisfy `@storybook/svelte`'s interface {@link Meta}.
  */
 export function getDefineMetaFirstArgumentObjectExpression(
-  options: Pick<Options<Array<keyof Meta>>, 'filename' | 'nodes'>
+  options: Pick<Options<Array<keyof Meta<Cmp>>>, 'filename' | 'nodes'>
 ): ObjectExpression {
   const { nodes, filename } = options;
   const { defineMetaVariableDeclaration, defineMetaImport } = nodes;

@@ -1,17 +1,22 @@
-import { getContext, hasContext, setContext } from 'svelte';
+import type { Args } from '@storybook/types';
+import { getContext, hasContext, setContext, type ComponentProps } from 'svelte';
 
 import { storyNameToExportName } from '#utils/identifier-utils';
-import type { StoryCmpProps } from '#types';
+import type { Cmp, Meta, StoryCmp } from '#types';
 
 const CONTEXT_KEY = 'storybook-stories-extractor-context';
 
-export interface StoriesExtractorContextProps<TProps extends StoryCmpProps = StoryCmpProps> {
+export interface StoriesExtractorContextProps<
+  TOverrideArgs extends Args,
+  TCmp extends Cmp,
+  TMeta extends Meta<TCmp>,
+> {
   isExtracting: boolean;
-  register: (storyCmpProps: TProps) => void;
+  register: (storyCmpProps: ComponentProps<StoryCmp<TOverrideArgs, TCmp, TMeta>>) => void;
 }
 
-function buildContext<TProps extends StoryCmpProps = StoryCmpProps>(
-  storyCmpProps: StoriesExtractorContextProps<TProps>
+function buildContext<TOverrideArgs extends Args, TCmp extends Cmp, TMeta extends Meta<TCmp>>(
+  storyCmpProps: StoriesExtractorContextProps<TOverrideArgs, TCmp, TMeta>
 ) {
   let isExtracting = $state(storyCmpProps.isExtracting);
   let register = $state(storyCmpProps.register);
@@ -26,20 +31,28 @@ function buildContext<TProps extends StoryCmpProps = StoryCmpProps>(
   };
 }
 
-export type StoriesExtractorContext<TProps extends StoryCmpProps = StoryCmpProps> = ReturnType<
-  typeof buildContext<TProps>
->;
+export type StoriesExtractorContext<
+  TOverrideArgs extends Args,
+  TCmp extends Cmp,
+  TMeta extends Meta<TCmp>,
+> = ReturnType<typeof buildContext<TOverrideArgs, TCmp, TMeta>>;
 
-export type StoriesRepository<TProps extends StoryCmpProps = StoryCmpProps> = {
-  stories: Map<string, TProps>;
+export type StoriesRepository<
+  TOverrideArgs extends Args,
+  TCmp extends Cmp,
+  TMeta extends Meta<TCmp>,
+> = {
+  stories: Map<string, ComponentProps<StoryCmp<TOverrideArgs, TCmp, TMeta>>>;
 };
 
-export function createStoriesExtractorContext<TProps extends StoryCmpProps = StoryCmpProps>(
-  repository: StoriesRepository<TProps>
-): void {
+export function createStoriesExtractorContext<
+  TOverrideArgs extends Args,
+  TCmp extends Cmp,
+  TMeta extends Meta<TCmp>,
+>(repository: StoriesRepository<TOverrideArgs, TCmp, TMeta>): void {
   const { stories } = repository;
 
-  const ctx = buildContext<TProps>({
+  const ctx = buildContext<TOverrideArgs, TCmp, TMeta>({
     isExtracting: true,
     register: (s) => {
       stories.set(s.exportName ?? storyNameToExportName(s.name!), s);
@@ -49,16 +62,20 @@ export function createStoriesExtractorContext<TProps extends StoryCmpProps = Sto
   setContext(CONTEXT_KEY, ctx);
 }
 
-export function useStoriesExtractor<TProps extends StoryCmpProps = StoryCmpProps>() {
+export function useStoriesExtractor<
+  TOverrideArgs extends Args,
+  TCmp extends Cmp,
+  TMeta extends Meta<TCmp>,
+>() {
   if (!hasContext(CONTEXT_KEY)) {
     setContext(
       CONTEXT_KEY,
-      buildContext<TProps>({
+      buildContext<TOverrideArgs, TCmp, TMeta>({
         isExtracting: false,
         register: () => {},
       })
     );
   }
 
-  return getContext<StoriesExtractorContext<TProps>>(CONTEXT_KEY);
+  return getContext<StoriesExtractorContext<TOverrideArgs, TCmp, TMeta>>(CONTEXT_KEY);
 }

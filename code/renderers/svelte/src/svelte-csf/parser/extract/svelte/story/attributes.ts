@@ -1,8 +1,10 @@
 import type { Attribute, Component } from 'svelte/compiler';
+import type { ComponentProps } from 'svelte';
+import type { EmptyObject } from 'type-fest';
 
-import type { StoryCmpProps } from '#types';
+import type { Cmp, Meta, StoryCmp } from '#types';
 
-type StoryAttributes = Array<keyof StoryCmpProps>;
+type StoryAttributes = Array<keyof ComponentProps<StoryCmp<EmptyObject, Cmp, Meta<Cmp>>>>;
 
 interface Options<Attributes extends StoryAttributes> {
   component: Component;

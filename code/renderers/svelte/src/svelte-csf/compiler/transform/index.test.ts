@@ -96,7 +96,6 @@ describe(transformStoriesCode.name, () => {
         }
       });
 
-
       function Example_stories($$anchor, $$props) {
         if (new.target === Example_stories)
           throw new Error(

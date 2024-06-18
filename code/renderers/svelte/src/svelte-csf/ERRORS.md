@@ -124,27 +124,69 @@ Perhaps you've made a typo?
 
 ## `PARSER_EXTRACT_COMPILED`
 
+> [!NOTE]:
+> **For maintainers**: Those errors are less likely caused by the user, but rather a bug with parsing on our end on the
+> compiled output.
+
 ### `SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_1`
 
-<!-- TODO:  -->
+Parser couldn't find `defineMeta` import specifier in the compiled output.
+
+If you see this error, please report it using the link below:
+<https://github.com/storybookjs/addon-svelte-csf/issues/new>
+
+While you create an issue, please provide original code of the stories file that caused this error.
+It will help us investigate the occurred issue better.
 
 ### `SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_2`
 
-<!-- TODO:  -->
+Parser couldn't find a variable declaration with `defineMeta` call in the compiled output.
+
+If you see this error, please report it using the link below:
+<https://github.com/storybookjs/addon-svelte-csf/issues/new>
+
+While you create an issue, please provide original code of the stories file that caused this error.
+It will help us investigate the occurred issue better.
 
 ### `SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_3`
 
-<!-- TODO:  -->
+Parser couldn't find the `export default` in the compiled output.
+
+If you see this error, please report it using the link below:
+<https://github.com/storybookjs/addon-svelte-csf/issues/new>
+
+While you create an issue, please provide original code of the stories file that caused this error.
+It will help us investigate the occurred issue better.
 
 ### `SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_4`
 
-<!-- TODO:  -->
+Parser couldn't find a 'Story' identifier in the compiled output.
+
+If you see this error, please report it using the link below:
+<https://github.com/storybookjs/addon-svelte-csf/issues/new>
+
+While you create an issue, please provide original code of the stories file that caused this error.
+It will help us investigate the occurred issue better.
 
 ### `SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_5`
 
-<!-- TODO:  -->
+Parser couldn't find a main function component for the `*.stories.svelte` file in the compiled output.
+
+If you see this error, please report it using the link below:
+<https://github.com/storybookjs/addon-svelte-csf/issues/new>
+
+While you create an issue, please provide original code of the stories file that caused this error.
+It will help us investigate the occurred issue better.
 
 ### `SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_6`
+
+Parser failed to extract compiled Story component attributes _(aka props)_ as object expression.
+
+If you see this error, please report it using the link below:
+<https://github.com/storybookjs/addon-svelte-csf/issues/new>
+
+While you create an issue, please provide original code of the stories file that caused this error.
+It will help us investigate the occurred issue better.
 
 ## `PARSER_ANALYSE_DEFINE_META`
 

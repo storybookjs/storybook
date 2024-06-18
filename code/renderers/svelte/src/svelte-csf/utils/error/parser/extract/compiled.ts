@@ -13,15 +13,7 @@ export class MissingImportedDefineMetaError extends StorybookSvelteCSFError {
 
   template() {
     return dedent`
-      Could not find 'defineMeta' imported from the "${StorybookSvelteCSFError.packageName}" in the compiled output.
-
-      This is most likely a bug in the parser of addon - "${StorybookSvelteCSFError.packageName}".
-
-      If you see this error, please report it using the link below:
-      https://github.com/storybookjs/addon-svelte-csf/issues/new
-
-      While you create an issue, please provide original code of the following stories file: ${this.filepathURL}
-      It will help us invegistate the occured issue better.
+      Could not find 'defineMeta' imported from the "${StorybookSvelteCSFError.packageName}" in the compiled output of: ${this.filepathURL}
     `;
   }
 }
@@ -36,15 +28,7 @@ export class MissingDefineMetaVariableDeclarationError extends StorybookSvelteCS
 
   template() {
     return dedent`
-			Could not find variable declartion from 'defineMeta' call in the compiled output of the stories file.
-l
-      This is most likely a bug in the parser of addon - "${StorybookSvelteCSFError.packageName}".
-
-      If you see this error, please report it using the link below:
-      https://github.com/storybookjs/addon-svelte-csf/issues/new
-
-      While you create an issue, please provide original code of the following stories file: ${this.filepathURL}
-      It will help us invegistate the occured issue better.
+			Could not find variable declaration from 'defineMeta' call in the compiled output of the stories file: ${this.filepathURL}
     `;
   }
 }
@@ -59,15 +43,7 @@ export class NoExportDefaultError extends StorybookSvelteCSFError {
 
   template() {
     return dedent`
-			Could not find 'export default' in the compiled output of the stories file.
-
-      This is most likely a bug in the parser of addon - "${StorybookSvelteCSFError.packageName}".
-
-      If you see this error, please report it using the link below:
-      https://github.com/storybookjs/addon-svelte-csf/issues/new
-
-      While you create an issue, please provide original code of the following stories file: ${this.filepathURL}
-      It will help us invegistate the occured issue better.
+			Could not find 'export default' in the compiled output of the stories file: ${this.filepathURL}
     `;
   }
 }
@@ -82,15 +58,7 @@ export class NoStoryIdentifierFoundError extends StorybookSvelteCSFError {
 
   template() {
     return dedent`
-			Could not find a 'Story' identifier in the compiled output of the stories file.
-
-      This is most likely a bug in the parser of addon - "${StorybookSvelteCSFError.packageName}".
-
-      If you see this error, please report it using the link below:
-      https://github.com/storybookjs/addon-svelte-csf/issues/new
-
-      While you create an issue, please provide original code of the following stories file: ${this.filepathURL}
-      It will help us invegistate the occured issue better.
+			Could not find a 'Story' identifier in the compiled output of the stories file: ${this.filepathURL}
     `;
   }
 }
@@ -105,15 +73,7 @@ export class NoStoriesFunctionDeclarationError extends StorybookSvelteCSFError {
 
   template() {
     return dedent`
-			Could not find the stories component '*.stories.svelte' function declaration compiled output of the stories file.
-
-      This is most likely a bug in the parser of addon - "${StorybookSvelteCSFError.packageName}".
-
-      If you see this error, please report it using the link below:
-      https://github.com/storybookjs/addon-svelte-csf/issues/new
-
-      While you create an issue, please provide original code of the following stories file: ${this.filepathURL}
-      It will help us invegistate the occured issue better.
+			Could not find the stories component '*.stories.svelte' function declaration compiled output of the stories file: ${this.filepathURL}
     `;
   }
 }
@@ -137,15 +97,7 @@ export class NoCompiledStoryPropsObjectExpression extends StorybookSvelteCSFErro
 
   template() {
     return dedent`
-      Failed to extract compiled Story component attributes (props) as object expression.
-
-      This is most likely a bug in the parser of addon - "${StorybookSvelteCSFError.packageName}".
-
-      If you see this error, please report it using the link below:
-      https://github.com/storybookjs/addon-svelte-csf/issues/new
-
-      While you create an issue, please provide original code of the following stories file: ${this.filepathURL}
-      It will help us invegistate the occured issue better.
+      Failed to extract compiled Story component attributes (props) as object expression in the compiled output of stories file: ${this.filepathURL}
     `;
   }
 }

@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+
 /* eslint-disable import/namespace */
 import React from 'react';
 import { vi, it, expect, afterEach, describe } from 'vitest';
@@ -81,7 +83,7 @@ describe('projectAnnotations', () => {
 
   it('renders with custom projectAnnotations via composeStory params', () => {
     const WithPortugueseText = composeStory(stories.CSF2StoryWithLocale, stories.default, {
-      globals: { locale: 'pt' },
+      initialGlobals: { locale: 'pt' },
     });
     const { getByText } = render(<WithPortugueseText />);
     const buttonElement = getByText('Olá!');

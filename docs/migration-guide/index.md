@@ -7,9 +7,8 @@ Storybook 8 focuses on improving performance, compatibility, and stability. Key 
 - 🩻 A new visual testing workflow via [the Visual Tests addon](https://www.chromatic.com/docs/visual-tests-addon/)
 - 💨 [2-4x faster test builds](https://storybook.js.org/blog/optimize-storybook-7-6/#2-4x-faster-builds-with-thetest-flag), [25-50% faster React docgen](https://storybook.js.org/blog/optimize-storybook-7-6/#22x-faster-react-docgen), and [SWC support for Webpack projects](https://storybook.js.org/blog/optimize-storybook-7-6/#using-webpack-enable-swc)
 - 🧩 Improved framework support: you no longer need to install React as a peer dependency when using a non-React renderer
-- 🎛️ Strengthened control generation in [React](https://storybook.js.org/blog/storybook-8-beta/#major-performance-improvements
-) and [Vue](https://storybook.js.org/blog/first-class-vue-support-storybook-8/) projects
-- ⚡️ Improved Vite architecture, Vitest testing, and Vite 5 support 
+- 🎛️ Strengthened control generation in [React](https://storybook.js.org/blog/storybook-8-beta/#major-performance-improvements) and [Vue](https://storybook.js.org/blog/first-class-vue-support-storybook-8/) projects
+- ⚡️ Improved Vite architecture, Vitest testing, and Vite 5 support
 - 🌐 [Support for React Server Components (RSC)](https://storybook.js.org/blog/storybook-react-server-components/): our experimental solution renders async RSC in the browser and mocks Node code
 - ✨ A refreshed desktop UI & mobile UX
 - ➕ Much, much more
@@ -30,6 +29,7 @@ The rest of this guide will help you upgrade successfully, either automatically 
 
 - [`storiesOf` API has been removed](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#removal-of-storiesof-api)
 - [`*.stories.mdx` format has been removed](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropping-support-for-storiesmdx-csf-in-mdx-format-and-mdx1-support)
+- [Packages have been consolidated/removed](#package-structure-changes)
 - [Implicit actions (from `argTypesRegex`) can no longer be used during rendering (e.g. in a play function)](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#implicit-actions-can-not-be-used-during-rendering-for-example-in-the-play-function)
 - [`react-docgen` (instead of `react-docgen-typescript`) is the default for component analysis](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#react-docgen-component-analysis-by-default)
 - [Storyshots has been removed](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storyshots-has-been-removed)
@@ -151,6 +151,27 @@ If you prefer to debug yourself, here are a few useful things you can do to help
 
 1. Try removing all addons that are not in the `@storybook` npm namespace (make sure you don't remove the `storybook` package). Community addons that work well with 7.x might not yet be compatible with 8.0, and this is the fastest way to isolate that possibility. If you find an addon that needs to be upgraded to work with Storybook 8, please post an issue on the addon’s repository, or better yet, a pull request to upgrade it!
 2. Another debugging technique is to bisect to older prerelease versions of Storybook to figure out which release broke your Storybook. For example, assuming that the current prerelease of Storybook is `8.0.0-beta.56`, you could set the version to `8.0.0-alpha.0` in your `package.json` and reinstall to verify that it still works (`alpha.0` should be nearly identical to `7.6.x`). If it works, you could then try `8.0.0-beta.0`, then `8.0.0-beta.28` and so forth. Once you’ve isolated the bad release, read through its [CHANGELOG](https://github.com/storybookjs/storybook/blob/next/CHANGELOG.md) entry and perhaps there’s a change that jumps out as the culprit. If you find the problem, please submit an issue or pull request to the Storybook monorepo and we’ll do our best to take care of it quickly.
+
+## Package structure changes
+
+The following packages are **removed**. See the [full migration notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#removed-deprecated-shim-packages) for details.
+
+| Removal                          | Replacement                                           |
+| -------------------------------- | ----------------------------------------------------- |
+| `@storybook/addons`              | `@storybook/manager-api` or `@storyboook/preview-api` |
+| `@storybook/channel-postmessage` | `@storybook/channels`                                 |
+| `@storybook/channel-websocket`   | `@storybook/channels`                                 |
+| `@storybook/client-api`          | `@storybook/preview-api`                              |
+| `@storybook/core-client`         | `@storybook/preview-api`                              |
+| `@storybook/preview-web`         | `@storybook/preview-api`                              |
+| `@storybook/store`               | `@storybook/preview-api`                              |
+| `@storybook/api`                 | `@storybook/manager-api`                              |
+
+The following packages are **deprecated**. See the [full migration notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#deprecated-storybooktesting-library-package) for details.
+
+| Deprecation                  | Replacement       |
+| ---------------------------- | ----------------- |
+| `@storybook/testing-library` | `@storybook/test` |
 
 ## Optional migrations
 

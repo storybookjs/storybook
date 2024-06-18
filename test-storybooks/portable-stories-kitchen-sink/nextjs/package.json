@@ -26,7 +26,7 @@
     "@storybook/nextjs": "^8.0.0",
     "@storybook/react": "^8.0.0",
     "@storybook/test": "^8.0.0",
-    "@testing-library/jest-dom": "^6.4.2",
+    "@testing-library/jest-dom": "6.4.5",
     "@testing-library/react": "^14.2.1",
     "@types/react": "^18.2.55",
     "@types/react-dom": "^18.2.19",

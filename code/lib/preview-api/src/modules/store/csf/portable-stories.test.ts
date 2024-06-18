@@ -23,6 +23,7 @@ describe('composeStory', () => {
       label: 'Hello World',
       primary: true,
     },
+    tags: ['metaTag'],
   };
 
   it('should compose project annotations in all module formats', () => {
@@ -40,15 +41,16 @@ describe('composeStory', () => {
   it('should return story with composed annotations from story, meta and project', () => {
     const decoratorFromProjectAnnotations = vi.fn((StoryFn) => StoryFn());
     const decoratorFromStoryAnnotations = vi.fn((StoryFn) => StoryFn());
-    setProjectAnnotations([
-      {
-        parameters: { injected: true },
-        globalTypes: {
-          locale: { defaultValue: 'en' },
-        },
-        decorators: [decoratorFromProjectAnnotations],
+    const projectAnnotations = {
+      parameters: { injected: true },
+      globalTypes: {
+        locale: { defaultValue: 'en' },
       },
-    ]);
+      decorators: [decoratorFromProjectAnnotations],
+      tags: ['projectTag'],
+    };
+
+    setProjectAnnotations(projectAnnotations);
 
     const Story: Story = {
       render: () => {},
@@ -57,6 +59,7 @@ describe('composeStory', () => {
         secondAddon: true,
       },
       decorators: [decoratorFromStoryAnnotations],
+      tags: ['storyTag'],
     };
 
     const composedStory = composeStory(Story, meta);
@@ -64,6 +67,7 @@ describe('composeStory', () => {
     expect(composedStory.parameters).toEqual(
       expect.objectContaining({ ...Story.parameters, ...meta.parameters })
     );
+    expect(composedStory.tags).toEqual(['dev', 'test', 'projectTag', 'metaTag', 'storyTag']);
 
     composedStory();
 

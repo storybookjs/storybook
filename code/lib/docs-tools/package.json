@@ -1,6 +1,6 @@
 {
   "name": "@storybook/docs-tools",
-  "version": "8.2.0-alpha.1",
+  "version": "8.2.0-alpha.10",
   "description": "Shared utility functions for frameworks to implement docs",
   "keywords": [
     "storybook"
@@ -24,8 +24,8 @@
     ".": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./package.json": "./package.json"
   },
@@ -48,9 +48,8 @@
     "@storybook/core-events": "workspace:*",
     "@storybook/preview-api": "workspace:*",
     "@storybook/types": "workspace:*",
-    "@types/doctrine": "^0.0.3",
-    "assert": "^2.1.0",
-    "doctrine": "^3.0.0",
+    "comment-parser": "^1.4.1",
+    "jsdoc-type-pratt-parser": "^4.0.0",
     "lodash": "^4.17.21"
   },
   "devDependencies": {
@@ -67,5 +66,5 @@
       "./src/index.ts"
     ]
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae17"
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

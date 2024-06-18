@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+
 /* eslint-disable no-underscore-dangle */
 import { addons, mockChannel } from '@storybook/preview-api';
 import { describe, beforeEach, afterEach, it, expect, vi } from 'vitest';

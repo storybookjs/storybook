@@ -130,53 +130,59 @@ export const doUpgrade = async ({
   // If we can't determine the existing version fallback to v0.0.0 to not block the upgrade
   const beforeVersion = (await getInstalledStorybookVersion(packageManager)) ?? '0.0.0';
 
-  const currentVersion = versions['@storybook/cli'];
+  const currentCLIVersion = versions['@storybook/cli'];
   const isCanary =
-    currentVersion.startsWith('0.0.0') ||
+    currentCLIVersion.startsWith('0.0.0') ||
     beforeVersion.startsWith('portal:') ||
     beforeVersion.startsWith('workspace:');
 
   if (!(await hasStorybookDependencies(packageManager))) {
     throw new UpgradeStorybookInWrongWorkingDirectory();
   }
-  if (!isCanary && lt(currentVersion, beforeVersion)) {
-    throw new UpgradeStorybookToLowerVersionError({ beforeVersion, currentVersion });
-  }
-  if (!isCanary && eq(currentVersion, beforeVersion)) {
-    throw new UpgradeStorybookToSameVersionError({ beforeVersion });
+  if (!isCanary && lt(currentCLIVersion, beforeVersion)) {
+    throw new UpgradeStorybookToLowerVersionError({
+      beforeVersion,
+      currentVersion: currentCLIVersion,
+    });
   }
 
-  const [latestVersion, packageJson] = await Promise.all([
-    //
+  if (!isCanary && eq(currentCLIVersion, beforeVersion)) {
+    // Not throwing, as the beforeVersion calculation doesn't always work in monorepos.
+    logger.warn(new UpgradeStorybookToSameVersionError({ beforeVersion }).message);
+  }
+
+  const [latestCLIVersionOnNPM, packageJson] = await Promise.all([
     packageManager.latestVersion('@storybook/cli'),
     packageManager.retrievePackageJson(),
   ]);
 
-  const isOutdated = lt(currentVersion, latestVersion);
-  const isExactLatest = currentVersion === latestVersion;
-  const isPrerelease = prerelease(currentVersion) !== null;
+  const isCLIOutdated = lt(currentCLIVersion, latestCLIVersionOnNPM);
+  const isCLIExactLatest = currentCLIVersion === latestCLIVersionOnNPM;
+  const isCLIPrerelease = prerelease(currentCLIVersion) !== null;
 
-  const borderColor = isOutdated ? '#FC521F' : '#F1618C';
+  const isUpgrade = lt(beforeVersion, currentCLIVersion);
+
+  const borderColor = isCLIOutdated ? '#FC521F' : '#F1618C';
 
   const messages = {
     welcome: `Upgrading Storybook from version ${chalk.bold(beforeVersion)} to version ${chalk.bold(
-      currentVersion
+      currentCLIVersion
     )}..`,
     notLatest: chalk.red(dedent`
-      This version is behind the latest release, which is: ${chalk.bold(latestVersion)}!
+      This version is behind the latest release, which is: ${chalk.bold(latestCLIVersionOnNPM)}!
       You likely ran the upgrade command through npx, which can use a locally cached version, to upgrade to the latest version please run:
       ${chalk.bold('npx storybook@latest upgrade')}
       
       You may want to CTRL+C to stop, and run with the latest version instead.
     `),
-    prelease: chalk.yellow('This is a pre-release version.'),
+    prerelease: chalk.yellow('This is a pre-release version.'),
   };
 
   logger.plain(
     boxen(
       [messages.welcome]
-        .concat(isOutdated && !isPrerelease ? [messages.notLatest] : [])
-        .concat(isPrerelease ? [messages.prelease] : [])
+        .concat(isCLIOutdated && !isCLIPrerelease ? [messages.notLatest] : [])
+        .concat(isCLIPrerelease ? [messages.prerelease] : [])
         .join('\n'),
       { borderStyle: 'round', padding: 1, borderColor }
     )
@@ -225,7 +231,7 @@ export const doUpgrade = async ({
       }) as Array<keyof typeof versions>;
       return monorepoDependencies.map((dependency) => {
         let char = '^';
-        if (isOutdated) {
+        if (isCLIOutdated) {
           char = '';
         }
         if (isCanary) {
@@ -266,9 +272,9 @@ export const doUpgrade = async ({
       configDir,
       mainConfigPath,
       beforeVersion,
-      storybookVersion: currentVersion,
-      isUpgrade: isOutdated,
-      isLatest: isExactLatest,
+      storybookVersion: currentCLIVersion,
+      isUpgrade,
+      isLatest: isCLIExactLatest,
     });
   }
 
@@ -282,7 +288,7 @@ export const doUpgrade = async ({
 
     await telemetry('upgrade', {
       beforeVersion,
-      afterVersion: currentVersion,
+      afterVersion: currentCLIVersion,
       ...automigrationTelemetry,
     });
   }

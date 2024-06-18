@@ -1,4 +1,3 @@
-/* eslint-disable jest/no-export, jest/expect-expect, no-console */
 import chalk from 'chalk';
 import assert from 'assert';
 import fetch from 'node-fetch';

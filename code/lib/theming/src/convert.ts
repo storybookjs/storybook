@@ -178,7 +178,7 @@ export const convert = (inherit: ThemeVars = themes[getPreferredColorScheme()]):
     }),
 
     // Addon actions theme
-    // API example https://github.com/xyc/react-inspector/blob/master/src/styles/themes/chromeLight.js
+    // API example https://github.com/storybookjs/react-inspector/blob/master/src/styles/themes/chromeLight.tsx
     addonActionsTheme: {
       ...(base === 'light' ? chromeLight : chromeDark),
 

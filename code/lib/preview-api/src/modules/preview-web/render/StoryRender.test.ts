@@ -1,4 +1,4 @@
-// @vitest-environment jsdom
+// @vitest-environment happy-dom
 import { describe, it, expect, vi } from 'vitest';
 import { Channel } from '@storybook/channels';
 import type { Renderer, StoryIndexEntry } from '@storybook/types';

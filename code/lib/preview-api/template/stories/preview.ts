@@ -19,7 +19,7 @@ export const decorators = [
   },
 ];
 
-export const globals = {
+export const initialGlobals = {
   foo: 'fooValue',
 };
 

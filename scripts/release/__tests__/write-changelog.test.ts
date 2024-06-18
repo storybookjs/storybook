@@ -1,5 +1,3 @@
-/* eslint-disable jest/no-mocks-import */
-
 /* eslint-disable no-underscore-dangle */
 import path from 'path';
 import dedent from 'ts-dedent';

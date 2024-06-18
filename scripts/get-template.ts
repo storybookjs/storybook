@@ -62,8 +62,8 @@ export async function getTemplate(
     throw new Error(dedent`Circle parallelism set incorrectly.
     
       Parallelism is set to ${total}, but there are ${
-      potentialTemplateKeys.length
-    } templates to run for the "${scriptName}" task:
+        potentialTemplateKeys.length
+      } templates to run for the "${scriptName}" task:
       ${potentialTemplateKeys.map((v) => `- ${v}`).join('\n')}
     
       ${await checkParallelism(cadence)}

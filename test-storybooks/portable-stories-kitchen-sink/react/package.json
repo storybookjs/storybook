@@ -28,7 +28,7 @@
     "@storybook/test": "^8.0.0",
     "@swc/core": "^1.4.2",
     "@swc/jest": "^0.2.36",
-    "@testing-library/jest-dom": "^6.4.2",
+    "@testing-library/jest-dom": "6.4.5",
     "@testing-library/react": "^14.2.1",
     "@types/identity-obj-proxy": "^3",
     "@types/react": "^18.2.55",
@@ -127,6 +127,5 @@
     "@storybook/web-components-webpack5": "portal:../../../code/frameworks/web-components-webpack5",
     "sb": "portal:../../../code/lib/cli-sb",
     "storybook": "portal:../../../code/lib/cli-storybook"
-  },
-  "packageManager": "yarn@4.1.0"
+  }
 }

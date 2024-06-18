@@ -405,7 +405,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   );
 
   return {
-    shouldRunDev: !!options.dev,
+    shouldRunDev: !!options.dev && !options.skipInstall,
     projectType,
     packageManager,
     storybookCommand,

@@ -99,6 +99,8 @@ exports[`Renders CSF3InputFieldFilled story 1`] = `
   <div>
     <input
       data-testid="input"
+      formaction="http://localhost:3000/"
+      formmethod=""
     />
     <!---->
     <!---->

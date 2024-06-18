@@ -1,7 +1,7 @@
 import { pathExists, readJSON, writeJSON } from 'fs-extra';
 import path from 'path';
 
-import type { TemplateKey } from 'get-template';
+import type { TemplateKey } from '../get-template';
 import { exec } from './exec';
 // TODO -- should we generate this file a second time outside of CLI?
 import storybookVersions from '../../code/lib/core-common/src/versions';
@@ -26,6 +26,7 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
     ...storybookVersions,
     'enhanced-resolve': '~5.10.0', // TODO, remove this
     // this is for our CI test, ensure we use the same version as docker image, it should match version specified in `./code/package.json` and `.circleci/config.yml`
+    '@swc/core': '1.5.7',
     playwright: '1.36.0',
     'playwright-core': '1.36.0',
     '@playwright/test': '1.36.0',

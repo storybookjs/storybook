@@ -2,7 +2,6 @@ import Watchpack from 'watchpack';
 import slash from 'slash';
 import fs from 'fs';
 import path from 'path';
-import uniq from 'lodash/uniq.js';
 
 import type { NormalizedStoriesSpecifier, Path } from '@storybook/types';
 import { commonGlobOptions } from '@storybook/core-common';
@@ -15,11 +14,27 @@ const isDirectory = (directory: Path) => {
   }
 };
 
-// Watchpack (and path.relative) passes paths either with no leading './' - e.g. `src/Foo.stories.js`,
-// or with a leading `../` (etc), e.g. `../src/Foo.stories.js`.
-// We want to deal in importPaths relative to the working dir, so we normalize
-function toImportPath(relativePath: Path) {
-  return relativePath.startsWith('.') ? relativePath : `./${relativePath}`;
+// Takes an array of absolute paths to directories and synchronously returns
+// absolute paths to all existing files and directories nested within those
+// directories (including the passed parent directories).
+function getNestedFilesAndDirectories(directories: Path[]) {
+  const traversedDirectories = new Set<Path>();
+  const files = new Set<Path>();
+  const traverse = (directory: Path) => {
+    if (traversedDirectories.has(directory)) {
+      return;
+    }
+    fs.readdirSync(directory, { withFileTypes: true }).forEach((ent: fs.Dirent) => {
+      if (ent.isDirectory()) {
+        traverse(path.join(directory, ent.name));
+      } else if (ent.isFile()) {
+        files.add(path.join(directory, ent.name));
+      }
+    });
+    traversedDirectories.add(directory);
+  };
+  directories.filter(isDirectory).forEach(traverse);
+  return { files: Array.from(files), directories: Array.from(traversedDirectories) };
 }
 
 export function watchStorySpecifiers(
@@ -27,6 +42,12 @@ export function watchStorySpecifiers(
   options: { workingDir: Path },
   onInvalidate: (specifier: NormalizedStoriesSpecifier, path: Path, removed: boolean) => void
 ) {
+  // Watch all nested files and directories up front to avoid this issue:
+  // https://github.com/webpack/watchpack/issues/222
+  const { files, directories } = getNestedFilesAndDirectories(
+    specifiers.map((ns) => path.resolve(options.workingDir, ns.directory))
+  );
+
   // See https://www.npmjs.com/package/watchpack for full options.
   // If you want less traffic, consider using aggregation with some interval
   const wp = new Watchpack({
@@ -34,15 +55,17 @@ export function watchStorySpecifiers(
     followSymlinks: false,
     ignored: ['**/.git', '**/node_modules'],
   });
-  wp.watch({
-    directories: uniq(specifiers.map((ns) => ns.directory)),
-  });
+  wp.watch({ files, directories });
 
-  async function onChangeOrRemove(watchpackPath: Path, removed: boolean) {
-    // Watchpack passes paths either with no leading './' - e.g. `src/Foo.stories.js`,
-    // or with a leading `../` (etc), e.g. `../src/Foo.stories.js`.
-    // We want to deal in importPaths relative to the working dir, or absolute paths.
-    const importPath = slash(watchpackPath.startsWith('.') ? watchpackPath : `./${watchpackPath}`);
+  const toImportPath = (absolutePath: Path) => {
+    const relativePath = path.relative(options.workingDir, absolutePath);
+    return slash(relativePath.startsWith('.') ? relativePath : `./${relativePath}`);
+  };
+
+  async function onChangeOrRemove(absolutePath: Path, removed: boolean) {
+    // Watchpack should return absolute paths, given we passed in absolute paths
+    // to watch. Convert to an import path so we can run against the specifiers.
+    const importPath = toImportPath(absolutePath);
 
     const matchingSpecifier = specifiers.find((ns) => ns.importPathMatcher.exec(importPath));
     if (matchingSpecifier) {
@@ -55,7 +78,6 @@ export function watchStorySpecifiers(
     // However, when a directory is added, it does not fire events for any files *within* the directory,
     // so we need to scan within that directory for new files. It is tricky to use a glob for this,
     // so we'll do something a bit more "dumb" for now
-    const absolutePath = path.join(options.workingDir, importPath);
     if (!removed && isDirectory(absolutePath)) {
       await Promise.all(
         specifiers
@@ -66,11 +88,10 @@ export function watchStorySpecifiers(
             // If `./path/to/dir` was added, check all files matching `./path/to/dir/**/*.stories.*`
             // (where the last bit depends on `files`).
             const dirGlob = path.join(
-              options.workingDir,
-              importPath,
+              absolutePath,
               '**',
               // files can be e.g. '**/foo/*/*.js' so we just want the last bit,
-              // because the directoru could already be within the files part (e.g. './x/foo/bar')
+              // because the directory could already be within the files part (e.g. './x/foo/bar')
               path.basename(specifier.files)
             );
 
@@ -78,13 +99,10 @@ export function watchStorySpecifiers(
             const { globby } = await import('globby');
 
             // glob only supports forward slashes
-            const files = await globby(slash(dirGlob), commonGlobOptions(dirGlob));
+            const addedFiles = await globby(slash(dirGlob), commonGlobOptions(dirGlob));
 
-            files.forEach((filePath) => {
-              const fileImportPath = toImportPath(
-                // use posix path separators even on windows
-                path.relative(options.workingDir, filePath).replace(/\\/g, '/')
-              );
+            addedFiles.forEach((filePath: Path) => {
+              const fileImportPath = toImportPath(filePath);
 
               if (specifier.importPathMatcher.exec(fileImportPath)) {
                 onInvalidate(specifier, fileImportPath, removed);

@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Component, ɵresetJitOptions } from '@angular/core';
 import { platformBrowserDynamicTesting } from '@angular/platform-browser-dynamic/testing';

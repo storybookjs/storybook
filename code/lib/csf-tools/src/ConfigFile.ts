@@ -224,9 +224,14 @@ export class ConfigFile {
           } else if (node.specifiers) {
             // export { X };
             node.specifiers.forEach((spec) => {
-              if (t.isExportSpecifier(spec) && t.isIdentifier(spec.exported)) {
+              if (
+                t.isExportSpecifier(spec) &&
+                t.isIdentifier(spec.local) &&
+                t.isIdentifier(spec.exported)
+              ) {
+                const { name: localName } = spec.local;
                 const { name: exportName } = spec.exported;
-                const decl = _findVarDeclarator(exportName, parent as t.Program) as any;
+                const decl = _findVarDeclarator(localName, parent as t.Program) as any;
                 self._exports[exportName] = decl.init;
                 self._exportDecls[exportName] = decl;
               }
@@ -488,10 +493,19 @@ export class ConfigFile {
           }
         }
         // default export
-        if (t.isExportDefaultDeclaration(node) && t.isObjectExpression(node.declaration)) {
-          const properties = node.declaration.properties as t.ObjectProperty[];
-          removeProperty(properties, path[0]);
-          removedRootProperty = true;
+        if (t.isExportDefaultDeclaration(node)) {
+          let decl: t.Expression | undefined | null = node.declaration as t.Expression;
+          if (t.isIdentifier(decl)) {
+            decl = _findVarInitialization(decl.name, this._ast.program);
+          }
+          if (t.isTSAsExpression(decl) || t.isTSSatisfiesExpression(decl)) {
+            decl = decl.expression;
+          }
+          if (t.isObjectExpression(decl)) {
+            const properties = decl.properties as t.ObjectProperty[];
+            removeProperty(properties, path[0]);
+            removedRootProperty = true;
+          }
         }
         // module.exports
         if (

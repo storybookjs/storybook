@@ -32,7 +32,7 @@ _Details matter_: RFCs that do not present convincing motivation, demonstrate a 
 
 RFCs tend to remain in this stage for a while, giving the community and core team members time to weigh in. During this period, the author of an RFC should be prepared to revise the proposal, integrate feedback, and build consensus. RFCs that have broad support are much more likely to make progress than those that don't receive any comments.
 
-Every Monday at 11 a.m. (EST), the Storybook core team conducts a weekly triage meeting to review open RFCs as part of the meeting's agenda. The meeting is held in the [Storybook Discord's Watercooler channel](https://discord.com/channels/486522875931656193/486522876388704260). We invite the RFC author(s) and interested members of the community to participate and engage in a more detailed discussion of the RFC. If a core team member deems it necessary, they will be assigned as the "champion" of the RFC. The champion will collaborate with the RFC author and assist them throughout the RFC process.
+Every week, the Storybook core team conducts a triage meeting to review open RFCs as part of the meeting's agenda. The event is publicly scheduled in the [Storybook Discord](https://discord.gg/storybook) and held in the [Storybook Discord's Watercooler channel](https://discord.com/channels/486522875931656193/486522876388704260). We invite the RFC author(s) and interested members of the community to participate and engage in a more detailed discussion of the RFC. If a core team member deems it necessary, they will be assigned as the "champion" of the RFC. The champion will collaborate with the RFC author and assist them throughout the RFC process.
 
 ### 3. `Status: accepted/rejected`
 

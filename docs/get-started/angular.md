@@ -26,7 +26,7 @@ Storybook for Angular is only supported in [Angular](?renderer=angular) projects
 
 ## Requirements
 
-- Angular ≥ 15.0 < 18.0
+- Angular ≥ 15.0 < 19.0
 - Webpack ≥ 5.0
 - Storybook ≥ 8.0
 

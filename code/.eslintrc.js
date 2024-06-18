@@ -58,8 +58,7 @@ module.exports = {
       },
     },
     {
-      // this package depends on a lot of peerDependencies we don't want to specify, because npm would install them
-      files: ['**/addons/docs/**/*'],
+      files: ['**/template/**/*', '**/vitest.config.ts', '**/addons/docs/**/*'],
       rules: {
         'import/no-extraneous-dependencies': 'off',
       },

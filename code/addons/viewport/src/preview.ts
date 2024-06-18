@@ -1,1 +1,1 @@
-export const globals = { viewport: 'reset', viewportRotated: false };
+export const initialGlobals = { viewport: 'reset', viewportRotated: false };

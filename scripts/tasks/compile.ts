@@ -33,9 +33,9 @@ export const compile: Task = {
       return false;
     }
   },
-  async run({ codeDir }, { link, dryRun, debug }) {
+  async run({ codeDir }, { link, dryRun, debug, prod }) {
     return exec(
-      link ? linkCommand : noLinkCommand,
+      link && !prod ? linkCommand : noLinkCommand,
       { cwd: codeDir },
       {
         startMessage: '🥾 Bootstrapping',

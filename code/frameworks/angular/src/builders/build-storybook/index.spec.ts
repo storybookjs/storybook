@@ -1,7 +1,3 @@
-/*
- * @vitest-environment node
- */
-
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { vi, describe, beforeEach, expect, it, afterEach } from 'vitest';
 import { Architect, createBuilder } from '@angular-devkit/architect';

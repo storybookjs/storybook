@@ -165,6 +165,42 @@ describe('useStoriesJson', () => {
               "title": "B",
               "type": "story",
             },
+            "componentpath-extension--story-one": {
+              "componentPath": "./src/componentPath/component.js",
+              "id": "componentpath-extension--story-one",
+              "importPath": "./src/componentPath/extension.stories.js",
+              "name": "Story One",
+              "tags": [
+                "dev",
+                "test",
+              ],
+              "title": "componentPath/extension",
+              "type": "story",
+            },
+            "componentpath-noextension--story-one": {
+              "componentPath": "./src/componentPath/component.js",
+              "id": "componentpath-noextension--story-one",
+              "importPath": "./src/componentPath/noExtension.stories.js",
+              "name": "Story One",
+              "tags": [
+                "dev",
+                "test",
+              ],
+              "title": "componentPath/noExtension",
+              "type": "story",
+            },
+            "componentpath-package--story-one": {
+              "componentPath": "component-package",
+              "id": "componentpath-package--story-one",
+              "importPath": "./src/componentPath/package.stories.js",
+              "name": "Story One",
+              "tags": [
+                "dev",
+                "test",
+              ],
+              "title": "componentPath/package",
+              "type": "story",
+            },
             "d--story-one": {
               "id": "d--story-one",
               "importPath": "./src/D.stories.jsx",
@@ -263,7 +299,7 @@ describe('useStoriesJson', () => {
               "type": "story",
             },
           },
-          "v": 4,
+          "v": 5,
         }
       `);
     }, 20_000);
@@ -320,12 +356,17 @@ describe('useStoriesJson', () => {
 
       expect(Watchpack).toHaveBeenCalledTimes(1);
       const watcher = Watchpack.mock.instances[0];
-      expect(watcher.watch).toHaveBeenCalledWith({ directories: ['./src'] });
+      expect(watcher.watch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          directories: expect.any(Array),
+          files: expect.any(Array),
+        })
+      );
 
       expect(watcher.on).toHaveBeenCalledTimes(2);
       const onChange = watcher.on.mock.calls[0][1];
 
-      await onChange('src/nested/Button.stories.ts');
+      await onChange(`${workingDir}/src/nested/Button.stories.ts`);
       expect(mockServerChannel.emit).toHaveBeenCalledTimes(1);
       expect(mockServerChannel.emit).toHaveBeenCalledWith(STORY_INDEX_INVALIDATED);
     });
@@ -353,12 +394,17 @@ describe('useStoriesJson', () => {
 
       expect(Watchpack).toHaveBeenCalledTimes(1);
       const watcher = Watchpack.mock.instances[0];
-      expect(watcher.watch).toHaveBeenCalledWith({ directories: ['./src'] });
+      expect(watcher.watch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          directories: expect.any(Array),
+          files: expect.any(Array),
+        })
+      );
 
       expect(watcher.on).toHaveBeenCalledTimes(2);
       const onChange = watcher.on.mock.calls[0][1];
 
-      await onChange('src/nested/Button.stories.ts');
+      await onChange(`${workingDir}/src/nested/Button.stories.ts`);
       expect(mockServerChannel.emit).toHaveBeenCalledTimes(1);
       expect(mockServerChannel.emit).toHaveBeenCalledWith(STORY_INDEX_INVALIDATED);
     });
@@ -387,16 +433,21 @@ describe('useStoriesJson', () => {
 
       expect(Watchpack).toHaveBeenCalledTimes(1);
       const watcher = Watchpack.mock.instances[0];
-      expect(watcher.watch).toHaveBeenCalledWith({ directories: ['./src'] });
+      expect(watcher.watch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          directories: expect.any(Array),
+          files: expect.any(Array),
+        })
+      );
 
       expect(watcher.on).toHaveBeenCalledTimes(2);
       const onChange = watcher.on.mock.calls[0][1];
 
-      await onChange('src/nested/Button.stories.ts');
-      await onChange('src/nested/Button.stories.ts');
-      await onChange('src/nested/Button.stories.ts');
-      await onChange('src/nested/Button.stories.ts');
-      await onChange('src/nested/Button.stories.ts');
+      await onChange(`${workingDir}/src/nested/Button.stories.ts`);
+      await onChange(`${workingDir}/src/nested/Button.stories.ts`);
+      await onChange(`${workingDir}/src/nested/Button.stories.ts`);
+      await onChange(`${workingDir}/src/nested/Button.stories.ts`);
+      await onChange(`${workingDir}/src/nested/Button.stories.ts`);
 
       expect(mockServerChannel.emit).toHaveBeenCalledTimes(1);
       expect(mockServerChannel.emit).toHaveBeenCalledWith(STORY_INDEX_INVALIDATED);

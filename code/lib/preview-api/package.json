@@ -1,6 +1,6 @@
 {
   "name": "@storybook/preview-api",
-  "version": "8.2.0-alpha.1",
+  "version": "8.2.0-alpha.10",
   "description": "",
   "keywords": [
     "storybook"
@@ -47,7 +47,7 @@
     "@storybook/channels": "workspace:*",
     "@storybook/client-logger": "workspace:*",
     "@storybook/core-events": "workspace:*",
-    "@storybook/csf": "^0.1.7",
+    "@storybook/csf": "^0.1.8",
     "@storybook/global": "^5.0.0",
     "@storybook/types": "workspace:*",
     "@types/qs": "^6.9.5",
@@ -72,5 +72,5 @@
       "./src/index.ts"
     ]
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae17"
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

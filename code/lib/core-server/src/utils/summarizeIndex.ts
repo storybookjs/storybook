@@ -1,6 +1,6 @@
 import type { IndexEntry, StoryIndex } from '@storybook/types';
 
-import { STORIES_MDX_TAG, isMdxEntry, AUTODOCS_TAG, PLAY_FN_TAG } from './StoryIndexGenerator';
+import { isMdxEntry, AUTODOCS_TAG, PLAY_FN_TAG } from './StoryIndexGenerator';
 
 const PAGE_REGEX = /(page|screen)/i;
 
@@ -44,7 +44,6 @@ export function summarizeIndex(storyIndex: StoryIndex) {
   let pageStoryCount = 0;
   let playStoryCount = 0;
   let autodocsCount = 0;
-  let storiesMdxCount = 0;
   let mdxCount = 0;
   Object.values(storyIndex.entries).forEach((entry) => {
     if (isCLIExampleEntry(entry)) {
@@ -65,8 +64,6 @@ export function summarizeIndex(storyIndex: StoryIndex) {
     } else if (entry.type === 'docs') {
       if (isMdxEntry(entry)) {
         mdxCount += 1;
-      } else if (entry.tags?.includes(STORIES_MDX_TAG)) {
-        storiesMdxCount += 1;
       } else if (entry.tags?.includes(AUTODOCS_TAG)) {
         autodocsCount += 1;
       }
@@ -79,7 +76,6 @@ export function summarizeIndex(storyIndex: StoryIndex) {
     pageStoryCount,
     playStoryCount,
     autodocsCount,
-    storiesMdxCount,
     mdxCount,
     exampleStoryCount,
     exampleDocsCount,

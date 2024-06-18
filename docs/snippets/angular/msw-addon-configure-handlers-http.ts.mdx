@@ -43,7 +43,7 @@ export const MockedSuccess: Story = {
     msw: {
       handlers: [
         http.get('https://your-restful-endpoint/', () => {
-          return new HttpResponse.json(TestData);
+          return HttpResponse.json(TestData);
         }),
       ],
     },

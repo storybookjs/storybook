@@ -30,6 +30,10 @@ const allStories = [
     directory: '../../addons/onboarding/src',
     titlePrefix: '@addons/onboarding',
   },
+  {
+    directory: '../../addons/interactions/src',
+    titlePrefix: '@addons/interactions',
+  },
 ];
 
 /**

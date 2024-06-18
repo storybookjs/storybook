@@ -196,7 +196,7 @@ Here's how you might insert a custom `<Canvas />` block:
 
 Some addons require specific theme variables that a Storybook user must add. If you share your theme with the community, make sure to support the official API and other popular addons, so your users have a consistent experience.
 
-For example, the popular Actions addon uses [react-inspector](https://github.com/xyc/react-inspector/blob/master/src/styles/themes/chromeLight.js), which has themes of its own. Supply additional theme variables to style it like so:
+For example, the popular Actions addon uses [react-inspector](https://github.com/storybookjs/react-inspector/blob/master/src/styles/themes/chromeLight.tsx), which has themes of its own. Supply additional theme variables to style it like so:
 
 <!-- prettier-ignore-start -->
 

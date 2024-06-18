@@ -2,7 +2,7 @@
  * This script cancels all running preparation workflows in GitHub.
  * It will fetch all active runs for the preparation workflows, and cancel them.
  */
-/* eslint-disable no-console */
+
 import chalk from 'chalk';
 import program from 'commander';
 import dedent from 'ts-dedent';

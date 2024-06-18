@@ -18,6 +18,6 @@ export const parameters = {
   },
 };
 
-export const globals = {
+export const initialGlobals = {
   [PARAM_KEY]: null as any,
 };

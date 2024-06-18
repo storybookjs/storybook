@@ -29,6 +29,7 @@ import { addonPostCSS } from './addon-postcss';
 import { vta } from './vta';
 import { upgradeStorybookRelatedDependencies } from './upgrade-storybook-related-dependencies';
 import { autodocsTags } from './autodocs-tags';
+import { initialGlobals } from './initial-globals';
 
 export * from '../types';
 
@@ -62,6 +63,7 @@ export const allFixes: Fix[] = [
   upgradeStorybookRelatedDependencies,
   vta,
   autodocsTags,
+  initialGlobals,
 ];
 
 export const initFixes: Fix[] = [eslintPlugin];

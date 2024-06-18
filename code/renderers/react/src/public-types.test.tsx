@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+
 // this file tests Typescript types that's why there are no assertions
 import { describe, it } from 'vitest';
 

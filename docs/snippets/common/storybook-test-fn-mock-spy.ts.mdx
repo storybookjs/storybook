@@ -5,8 +5,8 @@ import type { Meta, StoryObj } from '@storybook/your-renderer';
 import { expect, userEvent, within } from '@storybook/test';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { saveNote } from '../../app/actions.mock';
-import { createNotes } from '../../mocks/notes';
+import { saveNote } from '#app/actions.mock';
+import { createNotes } from '#mocks/notes';
 import NoteUI from './note-ui';
 
 const meta: Meta<typeof NoteUI> = {

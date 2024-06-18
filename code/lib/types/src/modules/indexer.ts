@@ -93,6 +93,8 @@ export type IndexEntry = StoryIndexEntry | DocsIndexEntry;
 export type BaseIndexInput = {
   /** The file to import from e.g. the story file. */
   importPath: Path;
+  /** The raw path/package of the file that provides meta.component, if one exists */
+  rawComponentPath?: Path;
   /** The name of the export to import. */
   exportName: ExportName;
   /** The name of the entry, auto-generated from {@link exportName} if unspecified. */

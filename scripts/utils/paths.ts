@@ -1,4 +1,3 @@
-/* eslint-disable no-await-in-loop, no-restricted-syntax */
 import { pathExists } from 'fs-extra';
 import { join } from 'path';
 

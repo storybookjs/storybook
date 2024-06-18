@@ -66,7 +66,7 @@ export const docsRenderer = {
 };
 export const teardownrenderToCanvas: Mock<[TeardownRenderToCanvas]> = vi.fn();
 export const projectAnnotations = {
-  globals: { a: 'b' },
+  initialGlobals: { a: 'b' },
   globalTypes: {},
   decorators: [vi.fn((s) => s())],
   render: vi.fn(),
@@ -76,7 +76,7 @@ export const projectAnnotations = {
 export const getProjectAnnotations = vi.fn(() => projectAnnotations as any);
 
 export const storyIndex: StoryIndex = {
-  v: 4,
+  v: 5,
   entries: {
     'component-one--docs': {
       type: 'docs',

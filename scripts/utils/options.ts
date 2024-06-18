@@ -72,14 +72,14 @@ export type MaybeOptionValue<TOption extends Option> = TOption extends StringArr
       : never // It isn't possible for values to not be a readonly string[], but TS can't work it out
     : string[]
   : TOption extends StringOption
-  ? TOption extends { values: infer TValues }
-    ? TValues extends readonly string[]
-      ? TValues[number] | undefined
-      : never // It isn't possible for values to not be a readonly string[], but TS can't work it out
-    : string | undefined
-  : TOption extends BooleanOption
-  ? boolean
-  : never;
+    ? TOption extends { values: infer TValues }
+      ? TValues extends readonly string[]
+        ? TValues[number] | undefined
+        : never // It isn't possible for values to not be a readonly string[], but TS can't work it out
+      : string | undefined
+    : TOption extends BooleanOption
+      ? boolean
+      : never;
 
 export type OptionValue<TOption extends Option> = TOption extends { required: true }
   ? NonNullable<MaybeOptionValue<TOption>>
@@ -172,7 +172,6 @@ export function getOptions<TOptions extends OptionSpecifier>(
 
   const intermediate = command.opts();
   if (intermediate.task === undefined && argv[2] && !argv[2].startsWith('-')) {
-    // eslint-disable-next-line prefer-destructuring
     intermediate.task = argv[2];
   }
 

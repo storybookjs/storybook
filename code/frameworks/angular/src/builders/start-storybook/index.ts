@@ -37,6 +37,7 @@ export type StorybookBuilderOptions = JsonObject & {
   styles?: StyleElement[];
   stylePreprocessorOptions?: StylePreprocessorOptions;
   assets?: AssetPattern[];
+  preserveSymlinks?: boolean;
   sourceMap?: SourceMapUnion;
 } & Pick<
     // makes sure the option exists
@@ -118,6 +119,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (options, cont
         statsJson,
         previewUrl,
         sourceMap = false,
+        preserveSymlinks = false,
       } = options;
 
       const standaloneOptions: StandaloneOptions = {
@@ -141,6 +143,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (options, cont
           ...(stylePreprocessorOptions ? { stylePreprocessorOptions } : {}),
           ...(styles ? { styles } : {}),
           ...(assets ? { assets } : {}),
+          preserveSymlinks,
           sourceMap,
         },
         tsConfig,

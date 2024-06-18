@@ -5,7 +5,6 @@ import { vitestCommonConfig } from '../../vitest.workspace';
 export default defineConfig(
   mergeConfig(vitestCommonConfig, {
     test: {
-      environment: 'jsdom',
       // setupFiles: ['./vitest-setup.ts'],
     },
     plugins: [

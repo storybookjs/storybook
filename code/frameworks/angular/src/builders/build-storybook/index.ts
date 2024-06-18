@@ -40,6 +40,7 @@ export type StorybookBuilderOptions = JsonObject & {
   enableProdMode?: boolean;
   styles?: StyleElement[];
   stylePreprocessorOptions?: StylePreprocessorOptions;
+  preserveSymlinks?: boolean;
   assets?: AssetPattern[];
   sourceMap?: SourceMapUnion;
 } & Pick<
@@ -102,6 +103,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
         assets,
         previewUrl,
         sourceMap = false,
+        preserveSymlinks = false,
       } = options;
 
       const standaloneOptions: StandaloneBuildOptions = {
@@ -121,6 +123,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
           ...(styles ? { styles } : {}),
           ...(assets ? { assets } : {}),
           sourceMap,
+          preserveSymlinks,
         },
         tsConfig,
         webpackStatsJson,

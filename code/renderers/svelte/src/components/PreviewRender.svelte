@@ -2,6 +2,7 @@
   import SlotDecorator from './SlotDecorator.svelte';
   import { dedent } from 'ts-dedent';
 
+  export let svelteVersion;
   export let name;
   export let title;
   export let storyFn;
@@ -55,4 +56,4 @@
   }
 </script>
 
-<SlotDecorator {Component} {props} on={{ ...eventsFromArgTypes, ...on }} />
+<SlotDecorator {svelteVersion} {Component} {props} on={{ ...eventsFromArgTypes, ...on }} />

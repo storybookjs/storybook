@@ -19,12 +19,5 @@
     "noUnusedLocals": true,
     "strict": true
   },
-  "exclude": ["dist", "**/dist", "node_modules", "**/node_modules"],
-  "ts-node": {
-    "transpileOnly": true,
-    "files": true,
-    "compilerOptions": {
-      "types": ["node"]
-    }
-  }
+  "exclude": ["dist", "**/dist", "node_modules", "**/node_modules"]
 }

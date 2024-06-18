@@ -35,6 +35,7 @@ Specifically, we track the following information in our telemetry events:
   - Builder (e.g., Webpack5, Vite).
   - Meta framework (e.g., [Next](https://nextjs.org/), [Gatsby](https://www.gatsbyjs.com/), [CRA](https://create-react-app.dev/)).
   - [Addons](https://storybook.js.org/integrations) (e.g., [Essentials](../essentials/index.md), [Accessibility](https://storybook.js.org/addons/@storybook/addon-a11y/)).
+  - Testing tools (e.g. [Jest](https://jestjs.io/), [Vitest](https://vitest.dev/), [Playwright](https://playwright.dev/)).
 - Package manager information (e.g., `npm`, `yarn`).
 - Monorepo information (e.g., [NX](https://nx.dev/), [Turborepo](https://turborepo.org/)).
 - In-app events (e.g., [Storybook guided tour](https://github.com/storybookjs/addon-onboarding)).
@@ -70,7 +71,6 @@ Will generate the following output:
       "pageStoryCount": 0,
       "playStoryCount": 0,
       "autodocsCount": 0,
-      "storiesMdxCount": 0,
       "mdxCount": 0,
       "exampleStoryCount": 8,
       "exampleDocsCount": 3,

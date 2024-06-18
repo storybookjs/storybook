@@ -1,6 +1,3 @@
-/**
- * @vitest-environment node
- */
 import { describe, it, expect, vi } from 'vitest';
 
 import path from 'path';
@@ -8,7 +5,7 @@ import { normalizeStoriesEntry } from '@storybook/core-common';
 import type { NormalizedStoriesSpecifier } from '@storybook/types';
 
 import type { StoryIndexGeneratorOptions } from '../StoryIndexGenerator';
-import { AUTODOCS_TAG, STORIES_MDX_TAG, StoryIndexGenerator } from '../StoryIndexGenerator';
+import { AUTODOCS_TAG, StoryIndexGenerator } from '../StoryIndexGenerator';
 
 vi.mock('@storybook/node-logger');
 
@@ -64,6 +61,7 @@ describe('story extraction', () => {
         "dependents": [],
         "entries": [
           {
+            "componentPath": undefined,
             "id": "a--story-one",
             "importPath": "./src/A.stories.js",
             "metaId": "a",
@@ -75,6 +73,7 @@ describe('story extraction', () => {
             "type": "story",
           },
           {
+            "componentPath": undefined,
             "id": "some-fully-custom-id",
             "importPath": "./src/A.stories.js",
             "metaId": "custom-id",
@@ -118,6 +117,7 @@ describe('story extraction', () => {
         "dependents": [],
         "entries": [
           {
+            "componentPath": undefined,
             "id": "f--story-one",
             "importPath": "./src/first-nested/deeply/F.stories.js",
             "metaId": undefined,
@@ -163,6 +163,7 @@ describe('story extraction', () => {
         "dependents": [],
         "entries": [
           {
+            "componentPath": undefined,
             "id": "a--story-one",
             "importPath": "./src/first-nested/deeply/F.stories.js",
             "metaId": "a",
@@ -210,6 +211,7 @@ describe('story extraction', () => {
         "dependents": [],
         "entries": [
           {
+            "componentPath": undefined,
             "id": "a--story-one",
             "importPath": "./src/A.stories.js",
             "metaId": "a",
@@ -275,6 +277,7 @@ describe('story extraction', () => {
         "dependents": [],
         "entries": [
           {
+            "componentPath": undefined,
             "id": "a--story-one",
             "importPath": "./src/A.stories.js",
             "metaId": undefined,
@@ -286,6 +289,7 @@ describe('story extraction', () => {
             "type": "story",
           },
           {
+            "componentPath": undefined,
             "id": "custom-title--story-two",
             "importPath": "./src/A.stories.js",
             "metaId": undefined,
@@ -297,6 +301,7 @@ describe('story extraction', () => {
             "type": "story",
           },
           {
+            "componentPath": undefined,
             "id": "custom-meta-id--story-three",
             "importPath": "./src/A.stories.js",
             "metaId": "custom-meta-id",
@@ -341,6 +346,7 @@ describe('story extraction', () => {
         "dependents": [],
         "entries": [
           {
+            "componentPath": undefined,
             "id": "a--story-one",
             "importPath": "./src/A.stories.js",
             "metaId": undefined,
@@ -390,6 +396,7 @@ describe('docs entries from story extraction', () => {
         "dependents": [],
         "entries": [
           {
+            "componentPath": undefined,
             "id": "a--story-one",
             "importPath": "./src/A.stories.js",
             "metaId": undefined,
@@ -449,6 +456,7 @@ describe('docs entries from story extraction', () => {
             "type": "docs",
           },
           {
+            "componentPath": undefined,
             "id": "a--story-one",
             "importPath": "./src/A.stories.js",
             "metaId": undefined,
@@ -497,72 +505,13 @@ describe('docs entries from story extraction', () => {
         "dependents": [],
         "entries": [
           {
+            "componentPath": undefined,
             "id": "a--story-one",
             "importPath": "./src/A.stories.js",
             "metaId": undefined,
             "name": "Story One",
             "tags": [
               "autodocs",
-              "story-tag-from-indexer",
-            ],
-            "title": "A",
-            "type": "story",
-          },
-        ],
-        "type": "stories",
-      }
-    `);
-  });
-  it(`adds docs entry when an entry has the "${STORIES_MDX_TAG}" tag`, async () => {
-    const relativePath = './src/A.stories.js';
-    const absolutePath = path.join(options.workingDir, relativePath);
-    const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(relativePath, options);
-
-    const generator = new StoryIndexGenerator([specifier], {
-      ...options,
-      docs: { defaultName: 'docs', autodocs: false },
-      indexers: [
-        {
-          test: /\.stories\.(m?js|ts)x?$/,
-          createIndex: async (fileName) => [
-            {
-              exportName: 'StoryOne',
-              __id: 'a--story-one',
-              name: 'Story One',
-              title: 'A',
-              tags: [STORIES_MDX_TAG, 'story-tag-from-indexer'],
-              importPath: fileName,
-              type: 'story',
-            },
-          ],
-        },
-      ],
-    });
-    const result = await generator.extractStories(specifier, absolutePath);
-
-    expect(result).toMatchInlineSnapshot(`
-      {
-        "dependents": [],
-        "entries": [
-          {
-            "id": "a--docs",
-            "importPath": "./src/A.stories.js",
-            "name": "docs",
-            "storiesImports": [],
-            "tags": [
-              "stories-mdx",
-              "story-tag-from-indexer",
-            ],
-            "title": "A",
-            "type": "docs",
-          },
-          {
-            "id": "a--story-one",
-            "importPath": "./src/A.stories.js",
-            "metaId": undefined,
-            "name": "Story One",
-            "tags": [
-              "stories-mdx",
               "story-tag-from-indexer",
             ],
             "title": "A",

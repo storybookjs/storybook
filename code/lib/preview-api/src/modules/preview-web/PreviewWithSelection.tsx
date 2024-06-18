@@ -53,7 +53,6 @@ function focusInInput(event: Event) {
 }
 
 export const AUTODOCS_TAG = 'autodocs';
-export const STORIES_MDX_TAG = 'stories-mdx';
 export const ATTACHED_MDX_TAG = 'attached-mdx';
 export const UNATTACHED_MDX_TAG = 'unattached-mdx';
 

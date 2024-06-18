@@ -20,6 +20,7 @@ const logActionsWhenMockCalled: LoaderFunction = (context) => {
     const onMockCall = global.__STORYBOOK_TEST_ON_MOCK_CALL__ as typeof onMockCallType;
     onMockCall((mock, args) => {
       const name = mock.getMockName();
+      if (name === 'spy') return;
 
       // TODO: Make this a configurable API in 8.2
       if (

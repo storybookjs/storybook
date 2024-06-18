@@ -216,13 +216,24 @@ describe('ConfigFile', () => {
           )
         ).toEqual([{ directory: '../src', titlePrefix: 'Demo' }]);
       });
-      it('export specfier', () => {
+      it('export specifier', () => {
         expect(
           getField(
             ['foo'],
             dedent`
               const foo = 'bar';
               export { foo };
+            `
+          )
+        ).toEqual('bar');
+      });
+      it('export aliased specifier', () => {
+        expect(
+          getField(
+            ['fooAlias'],
+            dedent`
+              const foo = 'bar';
+              export { foo as fooAlias };
             `
           )
         ).toEqual('bar');
@@ -743,6 +754,42 @@ describe('ConfigFile', () => {
           export default {
             addons: []
           };
+        `);
+      });
+      it('root globals as variable', () => {
+        expect(
+          removeField(
+            ['globals'],
+            dedent`
+              const preview = { globals: { a: 1 }, bar: { a: 1 } };
+              export default preview;
+            `
+          )
+        ).toMatchInlineSnapshot(`
+          const preview = {
+            bar: { a: 1 }
+          };
+          export default preview;
+        `);
+      });
+
+      it('root globals satsifies as variable', () => {
+        expect(
+          removeField(
+            ['globals'],
+            dedent`
+              const preview = {
+                globals: { a: 1 },
+                bar: { a: 1 }
+              } satisfies Foo;
+              export default preview;
+            `
+          )
+        ).toMatchInlineSnapshot(`
+          const preview = {
+            bar: { a: 1 }
+          } satisfies Foo;
+          export default preview;
         `);
       });
     });

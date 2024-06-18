@@ -1,5 +1,3 @@
-#!/usr/bin/env ../../node_modules/.bin/ts-node
-
 import * as fs from 'fs-extra';
 import path, { dirname, join, relative } from 'path';
 import type { Options } from 'tsup';
@@ -126,10 +124,8 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         platform: 'neutral',
         external: [...commonExternals, ...globalManagerPackages, ...globalPreviewPackages],
         esbuildOptions: (options) => {
-          /* eslint-disable no-param-reassign */
           options.platform = 'neutral';
           Object.assign(options, getESBuildOptions(optimized));
-          /* eslint-enable no-param-reassign */
         },
       })
     );

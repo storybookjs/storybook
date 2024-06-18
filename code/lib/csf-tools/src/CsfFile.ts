@@ -142,6 +142,8 @@ export class CsfFile {
 
   _fileName: string;
 
+  _rawComponentPath?: string;
+
   _makeTitle: (title: string) => string;
 
   _meta?: StaticMeta;
@@ -202,6 +204,21 @@ export class CsfFile {
         } else if (['includeStories', 'excludeStories'].includes(p.key.name)) {
           (meta as any)[p.key.name] = parseIncludeExclude(p.value);
         } else if (p.key.name === 'component') {
+          const n = p.value;
+          if (t.isIdentifier(n)) {
+            const id = n.name;
+            const importStmt = program.body.find(
+              (stmt) =>
+                t.isImportDeclaration(stmt) &&
+                stmt.specifiers.find((spec) => spec.local.name === id)
+            ) as t.ImportDeclaration;
+            if (importStmt) {
+              const { source } = importStmt;
+              if (t.isStringLiteral(source)) {
+                this._rawComponentPath = source.value;
+              }
+            }
+          }
           const { code } = recast.print(p.value, {});
           meta.component = code;
         } else if (p.key.name === 'tags') {
@@ -564,6 +581,7 @@ export class CsfFile {
       return {
         type: 'story',
         importPath: this._fileName,
+        rawComponentPath: this._rawComponentPath,
         exportName,
         name: story.name,
         title: this.meta?.title,
@@ -583,15 +601,19 @@ export const loadCsf = (code: string, options: CsfOptions) => {
 interface FormatOptions {
   sourceMaps?: boolean;
   preserveStyle?: boolean;
+  inputSourceMap?: any;
 }
 
-export const formatCsf = (csf: CsfFile, options: FormatOptions = { sourceMaps: false }) => {
-  const result = generate.default(csf._ast, options);
+export const formatCsf = (
+  csf: CsfFile,
+  options: FormatOptions = { sourceMaps: false },
+  code?: string
+) => {
+  const result = generate.default(csf._ast, options, code);
   if (options.sourceMaps) {
     return result;
   }
-  const { code } = result;
-  return code;
+  return result.code;
 };
 
 /**

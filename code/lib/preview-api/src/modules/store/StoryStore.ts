@@ -77,10 +77,10 @@ export class StoryStore<TRenderer extends Renderer> {
     this.storyIndex = new StoryIndexStore(storyIndex);
 
     this.projectAnnotations = normalizeProjectAnnotations(projectAnnotations);
-    const { globals, globalTypes } = projectAnnotations;
+    const { initialGlobals, globalTypes } = this.projectAnnotations;
 
     this.args = new ArgsStore();
-    this.globals = new GlobalsStore({ globals, globalTypes });
+    this.globals = new GlobalsStore({ globals: initialGlobals, globalTypes });
     this.hooks = {};
     this.cleanupCallbacks = {};
 
@@ -95,8 +95,8 @@ export class StoryStore<TRenderer extends Renderer> {
   setProjectAnnotations(projectAnnotations: ProjectAnnotations<TRenderer>) {
     // By changing `this.projectAnnotations, we implicitly invalidate the `prepareStoryWithCache`
     this.projectAnnotations = normalizeProjectAnnotations(projectAnnotations);
-    const { globals, globalTypes } = projectAnnotations;
-    this.globals.set({ globals, globalTypes });
+    const { initialGlobals, globalTypes } = projectAnnotations;
+    this.globals.set({ globals: initialGlobals, globalTypes });
   }
 
   // This means that one of the CSF files has changed.

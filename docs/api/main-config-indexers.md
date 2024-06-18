@@ -97,6 +97,7 @@ Type:
   exportName: string;
   importPath: string;
   type: 'story';
+  rawComponentPath?: string;
   metaId?: string;
   name?: string;
   tags?: string[];
@@ -132,6 +133,12 @@ It is likely that the [`fileName`](#filename) being indexed is not CSF, in which
 Type: `'story'`
 
 The type of entry.
+
+##### `rawComponentPath`
+
+Type: `string`
+
+The raw path/package of the file that provides `meta.component`, if one exists.
 
 ##### `metaId`
 

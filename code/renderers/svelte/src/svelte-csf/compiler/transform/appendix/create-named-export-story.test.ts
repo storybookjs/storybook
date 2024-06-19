@@ -1,5 +1,5 @@
 import type { Program } from 'estree';
-import { toJs } from 'estree-util-to-js';
+import { print } from 'esrap';
 import { describe, it } from 'vitest';
 
 import { createNamedExportStory } from './create-named-export-story';
@@ -7,7 +7,7 @@ import { createVariableFromRuntimeStoriesCall } from './create-variable-from-run
 
 describe(createNamedExportStory.name, () => {
   it('correctly creates a variable with named exports order', ({ expect }) => {
-    const stringified = toJs(
+    const stringified = print(
       createNamedExportStory({
         exportName: 'Default',
         node: createVariableFromRuntimeStoriesCall({
@@ -29,7 +29,7 @@ describe(createNamedExportStory.name, () => {
           },
         }),
       }) as unknown as Program
-    ).value;
+    ).code;
 
     expect(stringified).toMatchInlineSnapshot(`"export const Default = __stories["Default"];"`);
   });

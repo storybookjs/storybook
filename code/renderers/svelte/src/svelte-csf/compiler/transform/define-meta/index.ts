@@ -1,5 +1,4 @@
-import type { Program } from 'estree';
-import { toJs } from 'estree-util-to-js';
+import { print } from 'esrap';
 import type MagicString from 'magic-string';
 
 import { destructureMetaFromDefineMeta } from './destructure-meta';
@@ -37,9 +36,5 @@ export function transformDefineMeta(params: Params): void {
   const { defineMetaVariableDeclaration } = compiled;
   const { start, end } = defineMetaVariableDeclaration;
 
-  code.update(
-    start as number,
-    end as number,
-    toJs(defineMetaVariableDeclaration as unknown as Program).value
-  );
+  code.update(start as number, end as number, print(defineMetaVariableDeclaration).code);
 }

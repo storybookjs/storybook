@@ -1,5 +1,5 @@
+import { print } from 'esrap';
 import MagicString from 'magic-string';
-import { toJs } from 'estree-util-to-js';
 
 import { createExportDefaultMeta } from './appendix/create-export-default';
 import { createExportOrderVariable } from './appendix/create-export-order';
@@ -47,7 +47,7 @@ export async function createAppendix(params: Params) {
     })
   );
 
-  const appendix = toJs({
+  const appendix = print({
     type: 'Program',
     sourceType: 'module',
     body: [
@@ -59,5 +59,5 @@ export async function createAppendix(params: Params) {
     ],
   });
 
-  code.append('\n' + appendix.value);
+  code.append('\n' + appendix.code);
 }

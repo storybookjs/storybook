@@ -78,22 +78,22 @@ describe(transformStoriesCode.name, () => {
        * * _Italic_,
        * * \`Code\`.
        */
-      const {Story, meta} = defineMeta({
-        title: 'Example',
-        component: Example,
-        tags: ['autodocs'],
-        args: {
-          onclick: action('onclick'),
-          onmouseenter: action('onmouseenter'),
-          onmouseleave: action('onmouseleave')
-        },
-        parameters: {
-          docs: {
-            description: {
-              component: "Description set explicitly in the comment above \`defineMeta\`.\\n\\nMultiline supported. And also Markdown syntax:\\n\\n* **Bold**,\\n* _Italic_,\\n* \`Code\`."
-            }
-          }
-        }
+      const { Story, meta } = defineMeta({
+      	title: 'Example',
+      	component: Example,
+      	tags: ['autodocs'],
+      	args: {
+      		onclick: action('onclick'),
+      		onmouseenter: action('onmouseenter'),
+      		onmouseleave: action('onmouseleave')
+      	},
+      	parameters: {
+      		docs: {
+      			description: {
+      				component: "Description set explicitly in the comment above \`defineMeta\`.\\n\\nMultiline supported. And also Markdown syntax:\\n\\n* **Bold**,\\n* _Italic_,\\n* \`Code\`."
+      			}
+      		}
+      	}
       });
 
       function Example_stories($$anchor, $$props) {
@@ -149,83 +149,70 @@ describe(transformStoriesCode.name, () => {
         var node_1 = $.first_child(fragment_2);
 
         $.validate_component(Story)(node_1, {
-        name: 'Default',
-        parameters: {
-          docs: {
-            description: {
-              story: "Description for the default story"
-            }
-          },
-          __svelteCsf: {
-            rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{args.id}</p>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
-          }
-        }
+      	name: 'Default',
+      	parameters: {
+      		docs: {
+      			description: { story: "Description for the default story" }
+      		},
+      		__svelteCsf: {
+      			rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{args.id}</p>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
+      		}
+      	}
       });
 
         var node_2 = $.sibling($.sibling(node_1, true));
 
         $.validate_component(Story)(node_2, {
-        name: 'Rounded',
-        args: {
-          rounded: true
-        },
-        parameters: {
-          docs: {
-            description: {
-              story: "Description for the rounded story"
-            }
-          },
-          __svelteCsf: {
-            rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{args.id}</p>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
-          }
-        }
+      	name: 'Rounded',
+      	args: { rounded: true },
+      	parameters: {
+      		docs: {
+      			description: { story: "Description for the rounded story" }
+      		},
+      		__svelteCsf: {
+      			rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{args.id}</p>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
+      		}
+      	}
       });
 
         var node_3 = $.sibling($.sibling(node_2, true));
 
         $.validate_component(Story)(node_3, {
-        name: 'Square',
-        args: {
-          rounded: false
-        },
-        parameters: {
-          docs: {
-            description: {
-              story: "Description for the squared story"
-            }
-          },
-          __svelteCsf: {
-            rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{args.id}</p>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
-          }
-        }
+      	name: 'Square',
+      	args: { rounded: false },
+      	parameters: {
+      		docs: {
+      			description: { story: "Description for the squared story" }
+      		},
+      		__svelteCsf: {
+      			rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{args.id}</p>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
+      		}
+      	}
       });
 
         var node_4 = $.sibling($.sibling(node_3, true));
 
         $.validate_component(Story)(node_4, {
-        name: 'Without template',
-        children: $.wrap_snippet(($$anchor, $$slotProps) => {
-          var fragment_3 = $.comment();
-          var node_5 = $.first_child(fragment_3);
-          $.validate_component(Example)(node_5, {
-            children: $.wrap_snippet(($$anchor, $$slotProps) => {
-              var fragment_4 = Example_default_1();
-              $.append($$anchor, fragment_4);
-            }),
-            $$slots: {
-              default: true
-            }
-          });
-          $.append($$anchor, fragment_3);
-        }),
-        $$slots: {
-          default: true
-        },
-        parameters: {
-          __svelteCsf: {
-            rawCode: "<Example>Label</Example>"
-          }
-        }
+      	name: 'Without template',
+      	children: $.wrap_snippet(($$anchor, $$slotProps) => {
+      		var fragment_3 = $.comment();
+      		var node_5 = $.first_child(fragment_3);
+
+      		$.validate_component(Example)(node_5, {
+      			children: $.wrap_snippet(($$anchor, $$slotProps) => {
+      				var fragment_4 = Example_default_1();
+
+      				$.append($$anchor, fragment_4);
+      			}),
+      			$$slots: { default: true }
+      		});
+
+      		$.append($$anchor, fragment_3);
+      	}),
+      	$$slots: { default: true },
+      	parameters: {
+      		__svelteCsf: { rawCode: "<Example>Label</Example>" }
+      	}
       });
 
         $.append($$anchor, fragment_2);
@@ -255,15 +242,23 @@ describe(transformStoriesCode.name, () => {
       $.mark_module_end(Example_stories);
       Example_stories.__docgen = { keywords: [], data: [], name: 'Example.stories.svelte' };
 
-      import {createRuntimeStories} from "@storybook/addon-svelte-csf/internal/create-runtime-stories";
+      import { createRuntimeStories } from "@storybook/addon-svelte-csf/internal/create-runtime-stories";
+
       const __stories = createRuntimeStories(Example_stories, meta);
+
       export default meta;
-      export const __namedExportsOrder = ["Default", "Rounded", "Square", "WithoutTemplate"];
+
+      export const __namedExportsOrder = [
+      	"Default",
+      	"Rounded",
+      	"Square",
+      	"WithoutTemplate"
+      ];
+
       export const Default = __stories["Default"];
       export const Rounded = __stories["Rounded"];
       export const Square = __stories["Square"];
-      export const WithoutTemplate = __stories["WithoutTemplate"];
-      "
+      export const WithoutTemplate = __stories["WithoutTemplate"];"
     `
     );
   });

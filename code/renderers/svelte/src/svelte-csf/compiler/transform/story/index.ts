@@ -1,5 +1,4 @@
-import type { Program } from 'estree';
-import { toJs } from 'estree-util-to-js';
+import { print } from 'esrap';
 import type MagicString from 'magic-string';
 
 import { insertStoryHTMLCommentAsDescription } from './insert-description';
@@ -42,5 +41,5 @@ export function transformStory(params: Params): void {
   const { compiled } = component;
   const { start, end } = compiled;
 
-  code.update(start as number, end as number, toJs(compiled as unknown as Program).value);
+  code.update(start as number, end as number, print(compiled).code);
 }

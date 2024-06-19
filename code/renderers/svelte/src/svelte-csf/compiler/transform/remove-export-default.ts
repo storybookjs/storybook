@@ -1,4 +1,4 @@
-import { toJs } from 'estree-util-to-js';
+import { print } from 'esrap';
 import type MagicString from 'magic-string';
 
 import type { CompiledASTNodes } from '#parser/extract/compiled/nodes';
@@ -21,15 +21,7 @@ export function removeExportDefault(params: Params) {
     const { start, end } = exportDefault;
 
     // NOTE: It updates code by removing `export default` from the stories function declaration.
-    code.update(
-      start as number,
-      end as number,
-      toJs({
-        type: 'Program',
-        sourceType: 'module',
-        body: [storiesFunctionDeclaration],
-      }).value
-    );
+    code.update(start as number, end as number, print(storiesFunctionDeclaration).code);
   }
 
   if (exportDefault.declaration.type === 'Identifier') {

@@ -1,12 +1,11 @@
-import type { Program } from 'estree';
-import { toJs } from 'estree-util-to-js';
+import { print } from 'esrap';
 import { describe, it } from 'vitest';
 
 import { createVariableFromRuntimeStoriesCall } from './create-variable-from-runtime-stories-call';
 
 describe(createVariableFromRuntimeStoriesCall.name, () => {
   it('creates a variable correctly', ({ expect }) => {
-    const stringified = toJs(
+    const stringified = print(
       createVariableFromRuntimeStoriesCall({
         metaIdentifier: {
           type: 'Identifier',
@@ -24,8 +23,8 @@ describe(createVariableFromRuntimeStoriesCall.name, () => {
           },
           params: [],
         },
-      }) as unknown as Program
-    ).value;
+      })
+    ).code;
 
     expect(stringified).toMatchInlineSnapshot(
       `"const __stories = createRuntimeStories(Example_stories, meta);"`

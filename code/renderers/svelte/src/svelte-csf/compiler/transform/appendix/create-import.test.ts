@@ -1,15 +1,14 @@
-import type { Program } from 'estree';
-import { toJs } from 'estree-util-to-js';
+import { print } from 'esrap';
 import { describe, it } from 'vitest';
 
 import { createRuntimeStoriesImport } from './create-import';
 
 describe(createRuntimeStoriesImport.name, () => {
   it('creates import correctly', ({ expect }) => {
-    const stringified = toJs(createRuntimeStoriesImport() as unknown as Program).value;
+    const stringified = print(createRuntimeStoriesImport()).code;
 
     expect(stringified).toMatchInlineSnapshot(
-      `"import {createRuntimeStories} from \"@storybook/addon-svelte-csf/internal/create-runtime-stories\";"`
+      `"import { createRuntimeStories } from "@storybook/addon-svelte-csf/internal/create-runtime-stories";"`
     );
   });
 });

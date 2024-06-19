@@ -34,13 +34,11 @@ describe(getStringValueFromAttribute.name, () => {
 
     expect(() => getStringValueFromAttribute({ component, node: name }))
       .toThrowErrorMatchingInlineSnapshot(`
-			[SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0001 (AttributeNotStringError): Invalid schema.
-			In the stories file: <path not specified>
+        [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0001 (AttributeNotStringError): Invalid schema.
+        In the stories file: <path not specified>
 
-			A '<Story name="<unspecified Story name>" />' has an attribute 'name' whose value was expected to be a static literal string.
-
-			Any dynamic values are not currently supported.]
-		`);
+        A '<Story name="<unspecified Story name>" />' has an attribute 'name' whose value was expected to be a static literal string.]
+      `);
   });
 });
 

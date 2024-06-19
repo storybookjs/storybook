@@ -30,8 +30,6 @@ export class AttributeNotStringError extends StorybookSvelteCSFError {
       In the stories file: ${this.filepathURL}
 
       A '${this.quickStoryRawCodeIdentifier}' has an attribute '${this.attribute.name}' whose value was expected to be a static literal string.
-
-      Any dynamic values are not currently supported.
     `;
   }
 }

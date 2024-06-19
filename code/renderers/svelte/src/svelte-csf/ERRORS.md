@@ -266,27 +266,78 @@ Those known keys should have array expression as value with only **static string
 
 ### `SB_SVELTE_CSF_PARSER_ANALYSE_STORY_1`
 
-<!-- TODO:  -->
+Our parser found an invalid schema on an attribute _(prop)_ in one of `<Story />`.
+A **static literal string** was expected but found something else.
+
+Those known and common attributes should have a **static** string literal as value:
+
+- **name**
+- **exportName**
+
+Any functions that dynamically generates value is not supported.
+
+Examples:
+
+```svelte
+<Story name="Default" />
+
+<Story exportName="MyComponent" />
+```
 
 ### `SB_SVELTE_CSF_PARSER_ANALYSE_STORY_2`
 
-<!-- TODO:  -->
+Our parser found an invalid schema on an attribute _(prop)_ in one of `<Story />`.
+An **array expression _(`[]`)_** was expected but found something else.
+
+Those known and common attributes should be an **array expression** _(`[]`)_ as value:
+
+- **tags**
 
 ### `SB_SVELTE_CSF_PARSER_ANALYSE_STORY_3`
 
-<!-- TODO:  -->
+Our parser found an invalid schema on an attribute _(prop)_ in one of `<Story />`.
+An **array expression _(`[]`)_ with static literal strings as items** was expected but found something else.
+
+Those known and common attributes should be an **array expression with static literal strings** as items:
+
+- **tags**
+
+Example:
+
+```svelte
+<Story tags={['autodocs']} />
+```
 
 ### `SB_SVELTE_CSF_PARSER_ANALYSE_STORY_4`
 
-<!-- TODO:  -->
+Our parser couldn't find an attribute _(prop)_ `name` or `exportName` in one of `<Story />` components.
+
+Please ensure that every `<Story />` component uses one of these attributes:
+
+```svelte
+<Story name="My Story" />
+<!-- or ... -->
+<Story exportName="MyStory" />
+```
 
 ### `SB_SVELTE_CSF_PARSER_ANALYSE_STORY_5`
 
-<!-- TODO:  -->
+Our parser found an invalid attribute - `exportName` - _(prop)_ value in one of `<Story />` component.
+
+**It must be a valid JavaScript variable name.**
+It must start with a letter, `$` or `_`, followed by letters, numbers, `$` or `_`.
+Reserved words like `default` are also not allowed (see <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#reserved_words>)
 
 ### `SB_SVELTE_CSF_PARSER_ANALYSE_STORY_6`
 
-<!-- TODO:  -->
+Our parser found a duplicate value of `exportName` attribute _(prop)_ between two `<Story />` components.
+
+**This can happen when `exportName` is implicitly derived by `name` attribute.**
+
+Complex names will be simplified to a `PascalCased`, valid JavaScript variable name,
+eg. `Some story name!!` will be converted to `SomeStoryName`.
+
+You can fix this collision by providing a unique `exportName`` prop with`<Story exportName="SomeUniqueExportName" ... />`.
 
 ## `COMPILER`
 

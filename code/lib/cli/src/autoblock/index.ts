@@ -1,6 +1,6 @@
 import type { AutoblockOptions, Blocker } from './types';
 import { logger } from '@storybook/node-logger';
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import boxen from 'boxen';
 
 const excludesFalse = <T>(x: T | false): x is T => x !== false;
@@ -47,7 +47,9 @@ export const autoblock = async (
   if (faults.length > 0) {
     const messages = {
       welcome: `Storybook has found potential blockers in your project that need to be resolved before upgrading:`,
-      reminder: chalk.yellow('Fix the above issues and try running the upgrade command again.'),
+      reminder: picocolors.yellow(
+        'Fix the above issues and try running the upgrade command again.'
+      ),
     };
     const borderColor = '#FC521F';
 

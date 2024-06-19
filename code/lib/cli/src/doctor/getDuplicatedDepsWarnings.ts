@@ -1,4 +1,4 @@
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import { frameworkPackages, rendererPackages } from '@storybook/core-common';
 import type { InstallationMetadata } from '@storybook/core-common';
 import { hasMultipleVersions } from './hasMultipleVersions';
@@ -67,9 +67,9 @@ export function getDuplicatedDepsWarnings(
         const hasMultipleMajorVersions = hasMultipleVersions(packageVersions);
 
         if (disallowList.includes(dep) && hasMultipleMajorVersions) {
-          acc.critical.push(`${chalk.redBright(dep)}:\n${packageVersions.join(', ')}`);
+          acc.critical.push(`${picocolors.redBright(dep)}:\n${packageVersions.join(', ')}`);
         } else {
-          acc.trivial.push(`${chalk.hex('#ff9800')(dep)}:\n${packageVersions.join(', ')}`);
+          acc.trivial.push(`${picocolors.hex('#ff9800')(dep)}:\n${packageVersions.join(', ')}`);
         }
 
         return acc;
@@ -83,7 +83,7 @@ export function getDuplicatedDepsWarnings(
 
     if (critical.length > 0) {
       messages.push(
-        `${chalk.bold(
+        `${picocolors.bold(
           'Critical:'
         )} The following dependencies are duplicated and WILL cause unexpected behavior:`
       );
@@ -92,7 +92,7 @@ export function getDuplicatedDepsWarnings(
 
     if (trivial.length > 0) {
       messages.push(
-        `${chalk.bold(
+        `${picocolors.bold(
           'Attention:'
         )} The following dependencies are duplicated which might cause unexpected behavior:`
       );
@@ -101,14 +101,14 @@ export function getDuplicatedDepsWarnings(
 
     messages.push(
       '\n',
-      `Please try de-duplicating these dependencies by running ${chalk.cyan(
+      `Please try de-duplicating these dependencies by running ${picocolors.cyan(
         `${installationMetadata.dedupeCommand}`
       )}`
     );
 
     messages.push(
       '\n',
-      `You can find more information for a given dependency by running ${chalk.cyan(
+      `You can find more information for a given dependency by running ${picocolors.cyan(
         `${installationMetadata.infoCommand} <package-name>`
       )}`
     );

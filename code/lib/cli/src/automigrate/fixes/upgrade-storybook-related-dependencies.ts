@@ -1,5 +1,5 @@
 import { dedent } from 'ts-dedent';
-import { cyan, yellow } from 'chalk';
+import { cyan, yellow } from 'picocolors';
 import { gt } from 'semver';
 import type { JsPackageManager } from '@storybook/core-common';
 import { isCorePackage } from '@storybook/core-common';

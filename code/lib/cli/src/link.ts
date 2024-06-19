@@ -2,7 +2,7 @@ import fse from 'fs-extra';
 import path from 'path';
 import { sync as spawnSync, spawn as spawnAsync } from 'cross-spawn';
 import { logger } from '@storybook/node-logger';
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 
 type ExecOptions = Parameters<typeof spawnAsync>[2];
 
@@ -44,7 +44,7 @@ export const exec = async (
       if (code === 0) {
         resolve(undefined);
       } else {
-        logger.error(chalk.red(`An error occurred while executing: \`${command}\``));
+        logger.error(picocolors.red(`An error occurred while executing: \`${command}\``));
         if (errorMessage) {
           logger.info(errorMessage);
         }

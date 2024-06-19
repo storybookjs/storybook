@@ -7,7 +7,7 @@ import {
 } from './getIncompatibleStorybookPackages';
 import type { JsPackageManager } from '@storybook/core-common';
 
-vi.mock('chalk', () => {
+vi.mock('picocolors', () => {
   return {
     default: {
       yellow: (str: string) => str,

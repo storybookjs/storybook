@@ -1,4 +1,4 @@
-import { bold, gray, grey, white, yellow, underline } from 'chalk';
+import { bold, gray, white, yellow, underline, cyan } from 'picocolors';
 import dedent from 'ts-dedent';
 import { StorybookError } from './storybook-error';
 
@@ -421,11 +421,11 @@ export class MainFileESMOnlyImportError extends StorybookError {
     if (this.data.line) {
       message.push(
         white(
-          `In your ${yellow(this.data.location)} file, line ${bold.cyan(
-            this.data.num
+          `In your ${yellow(this.data.location)} file, line ${bold(
+            cyan(this.data.num)
           )} threw an error:`
         ),
-        grey(this.data.line)
+        gray(this.data.line)
       );
     }
 

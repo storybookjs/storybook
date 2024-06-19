@@ -9,7 +9,7 @@ import {
 import type { StorybookConfigRaw, StorybookConfig } from '@storybook/types';
 import type { ConfigFile } from '@storybook/csf-tools';
 import { readConfig, writeConfig as writeConfigFile } from '@storybook/csf-tools';
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import dedent from 'ts-dedent';
 import path from 'path';
 import type { JsPackageManager } from '@storybook/core-common';
@@ -137,7 +137,7 @@ export const getStorybookData = async ({
     mainConfig = (await loadMainConfig({ configDir, noCache: true })) as StorybookConfigRaw;
   } catch (err) {
     throw new Error(
-      dedent`Unable to find or evaluate ${chalk.blue(mainConfigPath)}: ${String(err)}`
+      dedent`Unable to find or evaluate ${picocolors.blue(mainConfigPath)}: ${String(err)}`
     );
   }
 
@@ -178,13 +178,13 @@ export const updateMainConfig = async (
     }
   } catch (e) {
     logger.info(
-      `❌ The migration failed to update your ${chalk.blue(
+      `❌ The migration failed to update your ${picocolors.blue(
         mainConfigPath
       )} on your behalf because of the following error:
         ${e}\n`
     );
     logger.info(
-      `⚠️ Storybook automigrations are based on AST parsing and it's possible that your ${chalk.blue(
+      `⚠️ Storybook automigrations are based on AST parsing and it's possible that your ${picocolors.blue(
         mainConfigPath
       )} file contains a non-standard format (e.g. your export is not an object) or that there was an error when parsing dynamic values (e.g. "require" calls, or usage of environment variables). When your main config is non-standard, automigrations are unfortunately not possible. Please follow the instructions given previously and follow the documentation to make the updates manually.`
     );

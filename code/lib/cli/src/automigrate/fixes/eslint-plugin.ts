@@ -1,4 +1,4 @@
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import {
@@ -57,7 +57,9 @@ export const eslintPlugin: Fix<EslintPluginRunOptions> = {
 
       In order to have the best experience with Storybook and follow best practices, we advise you to install eslint-plugin-storybook.
 
-      More info: ${chalk.yellow('https://github.com/storybookjs/eslint-plugin-storybook#readme')}
+      More info: ${picocolors.yellow(
+        'https://github.com/storybookjs/eslint-plugin-storybook#readme'
+      )}
     `;
   },
 

@@ -1,4 +1,4 @@
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import { copy, emptyDir, ensureDir } from 'fs-extra';
 import { dirname, join, relative, resolve } from 'path';
 import { global } from '@storybook/global';
@@ -36,7 +36,9 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   options.outputDir = resolve(options.outputDir);
   options.configDir = resolve(options.configDir);
 
-  logger.info(chalk`=> Cleaning outputDir: {cyan ${relative(process.cwd(), options.outputDir)}}`);
+  logger.info(
+    `=> Cleaning outputDir: ${picocolors.cyan(relative(process.cwd(), options.outputDir))}`
+  );
   if (options.outputDir === '/') {
     throw new Error("Won't remove directory '/'. Check your outputDir!");
   }

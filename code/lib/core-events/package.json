@@ -82,7 +82,7 @@
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
-    "chalk": "^4.1.0",
+    "picocolors": "^1.0.1",
     "typescript": "^5.3.2"
   },
   "publishConfig": {

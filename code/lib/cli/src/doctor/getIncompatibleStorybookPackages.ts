@@ -1,5 +1,5 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import semver from 'semver';
 import type { JsPackageManager } from '@storybook/core-common';
 import { JsPackageManagerFactory, versions as storybookCorePackages } from '@storybook/core-common';
@@ -103,15 +103,15 @@ export const getIncompatiblePackagesSummary = (
 
   if (incompatiblePackages.length > 0) {
     summaryMessage.push(
-      `The following packages are incompatible with Storybook ${chalk.bold(
+      `The following packages are incompatible with Storybook ${picocolors.bold(
         currentStorybookVersion
       )} as they depend on different major versions of Storybook packages:`
     );
     incompatiblePackages.forEach(
       ({ packageName: addonName, packageVersion: addonVersion, homepage, availableUpdate }) => {
-        const packageDescription = `${chalk.cyan(addonName)}@${chalk.cyan(addonVersion)}`;
+        const packageDescription = `${picocolors.cyan(addonName)}@${picocolors.cyan(addonVersion)}`;
         const updateMessage = availableUpdate ? ` (${availableUpdate} available!)` : '';
-        const packageRepo = homepage ? `\n Repo: ${chalk.yellow(homepage)}` : '';
+        const packageRepo = homepage ? `\n Repo: ${picocolors.yellow(homepage)}` : '';
 
         summaryMessage.push(`- ${packageDescription}${updateMessage}${packageRepo}`);
       }
@@ -121,7 +121,7 @@ export const getIncompatiblePackagesSummary = (
       '\n',
       'Please consider updating your packages or contacting the maintainers for compatibility details.',
       'For more on Storybook 8 compatibility, see the linked GitHub issue:',
-      chalk.yellow('https://github.com/storybookjs/storybook/issues/26031')
+      picocolors.yellow('https://github.com/storybookjs/storybook/issues/26031')
     );
   }
 

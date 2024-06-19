@@ -2,7 +2,7 @@ import fse, { readFile, readJson, writeJson } from 'fs-extra';
 import { dedent } from 'ts-dedent';
 import detectIndent from 'detect-indent';
 import prompts from 'prompts';
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 
 import { readConfig, writeConfig } from '@storybook/csf-tools';
 import type { JsPackageManager } from '@storybook/core-common';
@@ -95,7 +95,7 @@ export const suggestESLintPlugin = async (): Promise<boolean> => {
     type: 'confirm',
     name: 'shouldInstall',
     message: dedent`
-        We have detected that you're using ESLint. Storybook provides a plugin that gives the best experience with Storybook and helps follow best practices: ${chalk.yellow(
+        We have detected that you're using ESLint. Storybook provides a plugin that gives the best experience with Storybook and helps follow best practices: ${picocolors.yellow(
           'https://github.com/storybookjs/eslint-plugin-storybook#readme'
         )}
 

@@ -1,4 +1,4 @@
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import fs from 'fs-extra';
 import { join, relative } from 'path';
 import { logger } from '@storybook/node-logger';
@@ -16,9 +16,9 @@ export async function copyAllStaticFiles(staticDirs: any[] | undefined, outputDi
           // we copy prebuild static files from node_modules/@storybook/manager & preview
           if (!staticDir.includes('node_modules')) {
             logger.info(
-              chalk`=> Copying static files: {cyan ${print(staticDir)}} => {cyan ${print(
-                targetDir
-              )}}`
+              `=> Copying static files: ${picocolors.cyan(print(staticDir))} => ${picocolors.cyan(
+                print(targetDir)
+              )}`
             );
           }
 
@@ -61,7 +61,9 @@ export async function copyAllStaticFilesRelativeToMain(
     const skipPaths = ['index.html', 'iframe.html'].map((f) => join(targetPath, f));
     if (!from.includes('node_modules')) {
       logger.info(
-        chalk`=> Copying static files: {cyan ${print(from)}} at {cyan ${print(targetPath)}}`
+        `=> Copying static files: ${picocolors.cyan(print(from))} at ${picocolors.cyan(
+          print(targetPath)
+        )}`
       );
     }
     await fs.copy(from, targetPath, {

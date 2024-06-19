@@ -1,5 +1,5 @@
 import program from 'commander';
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import envinfo from 'envinfo';
 import leven from 'leven';
 import { sync as readUpSync } from 'read-pkg-up';
@@ -114,7 +114,7 @@ command('upgrade')
 command('info')
   .description('Prints debugging information about the local environment')
   .action(async () => {
-    consoleLogger.log(chalk.bold('\nStorybook Environment Info:'));
+    consoleLogger.log(picocolors.bold('\nStorybook Environment Info:'));
     const pkgManager = await JsPackageManagerFactory.getPackageManager();
     const activePackageManager = pkgManager.type.replace(/\d/, ''); // 'yarn1' -> 'yarn'
     const output = await envinfo.run({
@@ -128,7 +128,7 @@ command('info')
     consoleLogger.log(
       output.replace(
         activePackageManagerLine,
-        chalk.bold(`${activePackageManagerLine} <----- active`)
+        picocolors.bold(`${activePackageManagerLine} <----- active`)
       )
     );
   });
@@ -254,7 +254,7 @@ command('dev')
   )
   .action(async (options) => {
     logger.setLevel(program.loglevel);
-    consoleLogger.log(chalk.bold(`${pkg.name} v${pkg.version}`) + chalk.reset('\n'));
+    consoleLogger.log(picocolors.bold(`${pkg.name} v${pkg.version}`) + picocolors.reset('\n'));
 
     // The key is the field created in `options` variable for
     // each command line argument. Value is the env variable.
@@ -294,7 +294,7 @@ command('build')
   .action(async (options) => {
     process.env.NODE_ENV = process.env.NODE_ENV || 'production';
     logger.setLevel(program.loglevel);
-    consoleLogger.log(chalk.bold(`${pkg.name} v${pkg.version}\n`));
+    consoleLogger.log(picocolors.bold(`${pkg.name} v${pkg.version}\n`));
 
     // The key is the field created in `options` variable for
     // each command line argument. Value is the env variable.

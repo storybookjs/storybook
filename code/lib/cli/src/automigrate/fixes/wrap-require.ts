@@ -1,4 +1,4 @@
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 import { readConfig } from '@storybook/csf-tools';
 import type { Fix } from '../types';
@@ -48,7 +48,7 @@ export const wrapRequire: Fix<WrapRequireRunOptions> = {
   },
 
   prompt({ storybookVersion, isStorybookInMonorepo }) {
-    const sbFormatted = chalk.cyan(`Storybook ${storybookVersion}`);
+    const sbFormatted = picocolors.cyan(`Storybook ${storybookVersion}`);
 
     return dedent`We have detected that you're using ${sbFormatted} in a ${
       isStorybookInMonorepo ? 'monorepo' : 'PnP'

@@ -47,10 +47,10 @@
     "@storybook/client-logger": "workspace:*",
     "@storybook/core-common": "workspace:*",
     "@storybook/csf-tools": "workspace:*",
-    "chalk": "^4.1.0",
     "detect-package-manager": "^2.0.1",
     "fetch-retry": "^5.0.2",
     "fs-extra": "^11.1.0",
+    "picocolors": "^1.0.1",
     "read-pkg-up": "^7.0.1"
   },
   "devDependencies": {

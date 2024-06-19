@@ -312,7 +312,7 @@ Example:
 
 Our parser couldn't find an attribute _(prop)_ `name` or `exportName` in one of `<Story />` components.
 
-Please ensure that every `<Story />` component uses one of these attributes:
+Please ensure that every `<Story />` component uses one of these attributes, see example below:
 
 ```svelte
 <Story name="My Story" />
@@ -343,12 +343,35 @@ You can fix this collision by providing a unique `exportName`` prop with`<Story 
 
 ### `SB_SVELTE_CSF_COMPILER_1`
 
-<!-- TODO:  -->
+There was an issue with code transformation on our side.
+The parser tried to find `parameters` either in `defineMeta({})` entries or in `Story` _(compiled)_ props.
+
+If you see this error, please report it using the link below:
+<https://github.com/storybookjs/addon-svelte-csf/issues/new>
+
+While you create an issue, please provide original code of the stories file that caused this error.
+It will help us investigate the occurred issue better.
 
 ### `SB_SVELTE_CSF_COMPILER_2`
 
-<!-- TODO:  -->
+Our parser spotted an invalid schema on the property `parameters.docs` either in `defineMeta ({})` entries or in `Story` _(compiled)_ props.
+It was expected to be an **object expression** as value, but got something else.
+
+If you haven't defined this property by yourself, then it's likely that the issue is on our side.
+Please report it using the link below:
+<https://github.com/storybookjs/addon-svelte-csf/issues/new>
+
+While you create an issue, please provide original code of the stories file that caused this error.
+It will help us investigate the occurred issue better.
 
 ### `SB_SVELTE_CSF_COMPILER_3`
 
-<!-- TODO:  -->
+Our parser spotted an invalid schema on the property `parameters.docs.description` either in `defineMeta ({})` entries or in `Story` _(compiled)_ props.
+It was expected to be an **object expression** as value, but got something else.
+
+If you haven't defined this property by yourself, then it's likely that the issue is on our side.
+Please report it using the link below:
+<https://github.com/storybookjs/addon-svelte-csf/issues/new>
+
+While you create an issue, please provide original code of the stories file that caused this error.
+It will help us investigate the occurred issue better.

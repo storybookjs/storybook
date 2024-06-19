@@ -7027,6 +7027,7 @@ __metadata:
     detect-package-manager: "npm:^2.0.1"
     fetch-retry: "npm:^5.0.2"
     fs-extra: "npm:^11.1.0"
+    glob: "npm:^10.0.0"
     nanoid: "npm:^4.0.2"
     node-fetch: "npm:^3.3.1"
     read-pkg-up: "npm:^7.0.1"

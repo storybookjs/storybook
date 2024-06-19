@@ -51,6 +51,7 @@
     "detect-package-manager": "^2.0.1",
     "fetch-retry": "^5.0.2",
     "fs-extra": "^11.1.0",
+    "glob": "^10.0.0",
     "read-pkg-up": "^7.0.1"
   },
   "devDependencies": {

@@ -15,6 +15,7 @@ import { getMonorepoType } from './get-monorepo-type';
 import { cleanPaths } from './sanitize';
 import { getFrameworkInfo } from './get-framework-info';
 import { getChromaticVersionSpecifier } from './get-chromatic-version';
+import { getPortableStoriesFileCount } from './get-portable-stories-usage';
 
 export const metaFrameworks = {
   next: 'Next',
@@ -205,10 +206,12 @@ export const computeStorybookMetadata = async ({
   }
 
   const storybookVersion = storybookPackages[storybookInfo.frameworkPackage]?.version;
+  const portableStoriesFileCount = await getPortableStoriesFileCount();
 
   return {
     ...metadata,
     ...frameworkInfo,
+    portableStoriesFileCount,
     storybookVersion,
     storybookVersionSpecifier: storybookInfo.version,
     language,

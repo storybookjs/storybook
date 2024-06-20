@@ -2,7 +2,7 @@ import type { Plugin } from "vite";
 
 function VitePlugin(): Plugin {
 	return {
-		name: "vite-plugin",
+		name: "vite-plugin-next",
 	};
 }
 

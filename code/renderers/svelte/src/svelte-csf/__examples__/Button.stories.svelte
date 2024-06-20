@@ -5,8 +5,11 @@
     type Args,
     type StoryContext,
   } from '@storybook/addon-svelte-csf';
+  import { fn } from '@storybook/test';
 
   import Button from './components/Button.svelte';
+
+  const onclickFn = fn().mockName('onclick');
 
   /**
    * These are the stories for the `Button` component.
@@ -17,6 +20,7 @@
     tags: ['autodocs'],
     args: {
       children: 'Click me',
+      onclick: onclickFn,
     },
     argTypes: {
       backgroundColor: { control: 'color' },
@@ -37,15 +41,16 @@
   <Button {...args}>{children}</Button>
 {/snippet}
 
-<!-- More on writing stories with args: https://storybook.js.org/docs/writing-stories/args -->
+<!-- Only use this sparingly as the main CTA. -->
 <Story name="Primary" args={{ primary: true }} />
 
 <Story name="Secondary" />
 
 <Story name="Large" args={{ size: 'large' }} />
 
+<!-- This is _tiny_ 🤏 -->
 <Story name="Small" args={{ size: 'small' }} />
 
 <Story name="Long content">
-  <Button>The content</Button>
+  <Button onclick={onclickFn}>The very long content</Button>
 </Story>

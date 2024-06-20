@@ -15,14 +15,17 @@
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "scripts": {
-    "prepublishOnly": "npm run build",
+    "prepublishOnly": "pnpm build",
     "build": "tsup src/index.ts --dts --format cjs,esm",
-    "dev": "npm run build -- --watch"
+    "dev": "pnpm build --watch",
+    "check": "biome check",
+    "check:write": "biome check --write"
   },
   "peerDependencies": {
     "vite": "^5.0.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "1.8.1",
     "@types/node": "^20.0.0",
     "tsup": "^8.1.0",
     "typescript": "^5.0.0",

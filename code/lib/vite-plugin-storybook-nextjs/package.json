@@ -12,7 +12,7 @@
 	"types": "dist/index.d.ts",
 	"scripts": {
 		"prepublishOnly": "pnpm build",
-		"build": "tsup src/index.ts --dts --format cjs,esm",
+		"build": "tsup src/index.ts --dts --format cjs,esm --treeshake",
 		"dev": "pnpm build --watch",
 		"check": "biome check",
 		"check:write": "biome check --write"

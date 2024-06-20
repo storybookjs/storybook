@@ -18,15 +18,21 @@
 		"check:write": "biome check --write"
 	},
 	"peerDependencies": {
+		"next": "^14.0.0",
 		"vite": "^5.0.0"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "1.8.1",
 		"@types/node": "^20.0.0",
 		"lefthook": "^1.6.16",
+		"next": "^14.0.0",
 		"tsup": "^8.1.0",
 		"typescript": "^5.0.0",
 		"vite": "^5.0.0"
 	},
-	"packageManager": "pnpm@9.4.0"
+	"packageManager": "pnpm@9.4.0",
+	"dependencies": {
+		"@next/env": "^14.2.4",
+		"find-up": "^7.0.0"
+	}
 }

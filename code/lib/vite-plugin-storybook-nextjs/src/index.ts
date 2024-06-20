@@ -6,8 +6,8 @@ import type { Plugin } from "vite";
 import {
 	getConfig,
 	getConfigPaths,
+	loadEnvironmentConfig,
 	loadSWCBindingsEagerly,
-	setUpEnv,
 } from "./utils/nextjs";
 import { getPackageJSON } from "./utils/packageJSON";
 import { isDefined } from "./utils/typescript";
@@ -20,7 +20,7 @@ type VitePluginOptions = {
 	dir?: string;
 };
 
-function VitePlugin({ dir = process.cwd() }: VitePluginOptions): Plugin {
+function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin {
 	let nextConfig: NextConfigComplete;
 	let packageJSONConfig: Awaited<ReturnType<typeof getPackageJSON>>;
 	let loadedJSConfig: Awaited<ReturnType<typeof loadJsConfig>>;
@@ -52,15 +52,14 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions): Plugin {
 			packageJSONConfig = await getPackageJSON(resolvedDir);
 			nextConfig = await getConfig(resolvedDir);
 			nextDirectories = findPagesDir(resolvedDir);
+			loadedJSConfig = await loadJsConfig(resolvedDir, nextConfig);
+
+			await loadEnvironmentConfig(resolvedDir);
 
 			// Set watchers for the Next.js configuration files
 			for (const configPath of await getConfigPaths(resolvedDir)) {
 				this.addWatchFile(configPath);
 			}
-
-			setUpEnv(resolvedDir);
-
-			loadedJSConfig = await loadJsConfig(resolvedDir, nextConfig);
 
 			await loadSWCBindingsEagerly(nextConfig);
 		},

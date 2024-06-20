@@ -24,9 +24,9 @@ export async function getConfigPaths(dir: string) {
 /**
  * Set up the environment variables for the Next.js project
  */
-export async function setUpEnv(dir: string) {
+export async function loadEnvironmentConfig(dir: string) {
 	const dev = false;
-	loadEnvConfig(dir, dev, Log);
+	return loadEnvConfig(dir, dev, Log);
 }
 
 /**

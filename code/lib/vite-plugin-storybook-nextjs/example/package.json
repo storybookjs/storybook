@@ -15,9 +15,14 @@
 		"react-dom": "^18"
 	},
 	"devDependencies": {
+		"@testing-library/dom": "^10.1.0",
+		"@testing-library/jest-dom": "^6.4.6",
+		"@testing-library/react": "^16.0.0",
 		"@types/node": "^20",
 		"@types/react": "^18",
 		"@types/react-dom": "^18",
+		"@types/testing-library__jest-dom": "^6.0.0",
+		"happy-dom": "^14.12.0",
 		"postcss": "^8",
 		"tailwindcss": "^3.4.1",
 		"typescript": "^5",

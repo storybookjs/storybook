@@ -1,0 +1,16 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Page > renders a heading 1`] = `
+<div>
+  <div>
+    <h1>
+      Home
+    </h1>
+    <a
+      href="/about"
+    >
+      About
+    </a>
+  </div>
+</div>
+`;

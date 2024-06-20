@@ -1,0 +1,351 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "tsup",
+  "version": 1.1,
+  "anyOf": [
+    {
+      "type": "object",
+      "required": ["tsup"],
+      "additionalProperties": true,
+      "properties": {
+        "tsup": {
+          "type": ["object", "array"],
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "$ref": "#/definitions/options"
+            },
+            {
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "$ref": "#/definitions/options"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": ["object", "array"],
+      "oneOf": [
+        {
+          "type": "object",
+          "$ref": "#/definitions/options"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/options"
+          }
+        }
+      ]
+    }
+  ],
+  "definitions": {
+    "options": {
+      "type": "object",
+      "markdownDescription": "Configuration options for [tsup](https://tsup.egoist.dev)",
+      "properties": {
+        "entry": {
+          "markdownDescription": "Files that each serve as an input to the bundling algorithm.\n\n---\nReferences:\n- [Entry Points](https://esbuild.github.io/api/#entry-points) - esbuild\n - [Multiple Entrypoints](https://tsup.egoist.dev/#multiple-entrypoints) - tsup",
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "object"
+            }
+          ]
+        },
+        "treeshake": {
+          "markdownDescription": "By default esbuild already does treeshaking but this option allow you to perform additional treeshaking with Rollup and result in smaller bundle size.",
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "enum": ["smallest", "safest", "recommended"]
+            }
+          ]
+        },
+        "name": {
+          "type": "string",
+          "description": "Optional config name to show in CLI output"
+        },
+        "legacyOutput": {
+          "type": "boolean",
+          "description": "Output different formats to different folder instead of using different extension"
+        },
+        "target": {
+          "markdownDescription": "This sets the target environment for the generated code\n\n---\nReferences:\n- [Target](https://esbuild.github.io/api/#target) - esbuild",
+          "default": "node14",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "minify": {
+          "type": "boolean",
+          "description": "When enabled, the generated code will be minified instead of pretty-printed."
+        },
+        "minifyWhitespace": {
+          "type": "boolean"
+        },
+        "minifyIdentifiers": {
+          "type": "boolean"
+        },
+        "minifySyntax": {
+          "type": "boolean"
+        },
+        "keepNames": {
+          "type": "boolean"
+        },
+        "watch": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": ["string", "boolean"]
+              }
+            }
+          ]
+        },
+        "ignoreWatch": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "onSuccess": {
+          "type": "string"
+        },
+        "jsxFactory": {
+          "type": "string"
+        },
+        "jsxFragment": {
+          "type": "string"
+        },
+        "outDir": {
+          "type": "string"
+        },
+        "format": {
+          "oneOf": [
+            {
+              "enum": ["cjs", "iife", "esm"],
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": ["cjs", "iife", "esm"]
+              }
+            }
+          ]
+        },
+        "globalName": {
+          "type": "string"
+        },
+        "env": {
+          "type": "object"
+        },
+        "define": {
+          "type": "object"
+        },
+        "dts": {
+          "markdownDescription": "This will emit `./dist/index.js` and `./dist/index.d.ts`.\n\nIf you have multiple entry files, each entry will get a corresponding `.d.ts` file. So when you only want to generate declaration file for a single entry, use `--dts <entry>` format, e.g. `--dts src/index.ts`.\n\n**Note** that `--dts` does not resolve external (aka in node_modules) types used in the `.d.ts file`, if that's somehow a requirement, try the experimental `--dts-resolve` flag instead.",
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "entry": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "object"
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "sourcemap": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "enum": ["inline"]
+            }
+          ]
+        },
+        "noExternal": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Always bundle modules matching given patterns"
+        },
+        "external": {
+          "description": "Don't bundle these modules",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "replaceNodeEnv": {
+          "type": "boolean",
+          "markdownDescription": "Replace `process.env.NODE_ENV` with `production` or `development` `production` when the bundled is minified, `development` otherwise"
+        },
+        "splitting": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "You may want to disable code splitting sometimes: [`#255`](https://github.com/egoist/tsup/issues/255)"
+        },
+        "clean": {
+          "description": "Clean output directory before each buil",
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "silent": {
+          "type": "boolean",
+          "description": "Suppress non-error logs (excluding \"onSuccess\" process output)"
+        },
+        "skipNodeModulesBundle": {
+          "type": "boolean",
+          "description": "Skip node_modules bundling"
+        },
+        "pure": {
+          "markdownDescription": "See:\n- [Pure](https://esbuild.github.io/api/#pure) - esbuild",
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "bundle": {
+          "default": true,
+          "type": "boolean",
+          "description": "Disable bundling, default to true"
+        },
+        "inject": {
+          "markdownDescription": "This option allows you to automatically replace a global variable with an import from another file.\n\n---\nSee:\n- [Inject](https://esbuild.github.io/api/#inject) - esbuild",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "metafile": {
+          "type": "boolean",
+          "markdownDescription": "Emit esbuild metafile.\n\n---\nSee:\n- [Metafile](https://esbuild.github.io/api/#metafile) - esbuild"
+        },
+        "footer": {
+          "type": "object",
+          "properties": {
+            "js": {
+              "type": "string"
+            },
+            "css": {
+              "type": "string"
+            }
+          }
+        },
+        "banner": {
+          "type": "object",
+          "properties": {
+            "js": {
+              "type": "string"
+            },
+            "css": {
+              "type": "string"
+            }
+          }
+        },
+        "platform": {
+          "description": "Target platform",
+          "type": "string",
+          "default": "node",
+          "enum": ["node", "browser"]
+        },
+        "config": {
+          "markdownDescription": "Disable config file with `false` or pass a custom config filename",
+          "type": ["boolean", "string"]
+        },
+        "tsconfig": {
+          "type": "string",
+          "description": " Use a custom tsconfig"
+        },
+        "injectStyle": {
+          "type": "boolean",
+          "default": false,
+          "description": "Inject CSS as style tags to document head"
+        },
+        "shims": {
+          "type": "boolean",
+          "default": false,
+          "description": "Inject cjs and esm shims if needed"
+        }
+      }
+    }
+  }
+}

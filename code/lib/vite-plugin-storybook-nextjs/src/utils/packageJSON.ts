@@ -1,6 +1,5 @@
 import assert from "node:assert";
 import { readFile } from "node:fs/promises";
-import { findUp } from "find-up";
 
 type PackageJSON = {
 	name: string;
@@ -9,6 +8,7 @@ type PackageJSON = {
 };
 
 export async function getPackageJSON(cwd: string): Promise<PackageJSON> {
+	const { findUp } = await import("find-up");
 	const packageJSONPath = await findUp("package.json", { cwd });
 	assert(
 		packageJSONPath,

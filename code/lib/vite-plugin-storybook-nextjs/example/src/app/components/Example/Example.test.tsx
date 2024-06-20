@@ -6,6 +6,6 @@ import Example from "./Example";
 describe("Example", () => {
 	it("should render correctly", () => {
 		render(<Example />);
-		expect(screen.getByText("Hello World")).toBeInTheDocument();
+		expect(screen.getByText("Analytics ID: abcdefghijk")).toBeInTheDocument();
 	});
 });

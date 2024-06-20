@@ -1,35 +1,32 @@
 {
-  "name": "vite-plugin-next",
-  "version": "1.0.0",
-  "description": "",
-  "keywords": [
-    "vite-plugin"
-  ],
-  "author": "",
-  "license": "MIT",
-  "sideEffects": false,
-  "files": [
-    "dist"
-  ],
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
-  "scripts": {
-    "prepublishOnly": "pnpm build",
-    "build": "tsup src/index.ts --dts --format cjs,esm",
-    "dev": "pnpm build --watch",
-    "check": "biome check",
-    "check:write": "biome check --write"
-  },
-  "peerDependencies": {
-    "vite": "^5.0.0"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "1.8.1",
-    "@types/node": "^20.0.0",
-    "tsup": "^8.1.0",
-    "typescript": "^5.0.0",
-    "vite": "^5.0.0"
-  },
-  "packageManager": "pnpm@9.4.0"
+	"name": "vite-plugin-next",
+	"version": "1.0.0",
+	"description": "",
+	"keywords": ["vite-plugin"],
+	"author": "",
+	"license": "MIT",
+	"sideEffects": false,
+	"files": ["dist"],
+	"main": "dist/index.js",
+	"module": "dist/index.mjs",
+	"types": "dist/index.d.ts",
+	"scripts": {
+		"prepublishOnly": "pnpm build",
+		"build": "tsup src/index.ts --dts --format cjs,esm",
+		"dev": "pnpm build --watch",
+		"check": "biome check",
+		"check:write": "biome check --write"
+	},
+	"peerDependencies": {
+		"vite": "^5.0.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "1.8.1",
+		"@types/node": "^20.0.0",
+		"lefthook": "^1.6.16",
+		"tsup": "^8.1.0",
+		"typescript": "^5.0.0",
+		"vite": "^5.0.0"
+	},
+	"packageManager": "pnpm@9.4.0"
 }

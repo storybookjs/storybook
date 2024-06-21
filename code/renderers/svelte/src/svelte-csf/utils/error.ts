@@ -10,6 +10,7 @@ import type { Component } from 'svelte/compiler';
  */
 export abstract class StorybookSvelteCSFError extends Error {
   public static packageName = pkg.name;
+  public static packageVersion = pkg.version;
 
   public static readonly CATEGORY = {
     parserExtractSvelte: 'PARSER_EXTRACT_SVELTE',
@@ -74,7 +75,7 @@ export abstract class StorybookSvelteCSFError extends Error {
     let page: string | undefined;
 
     if (this.documentation === true) {
-      page = `https://storybook.js.org/error/${this.fullErrorCode}`;
+      page = `https://github.com/storybookjs/addon-svelte-csf/blob/v${StorybookSvelteCSFError.packageVersion}/ERRORS.md#${this.fullErrorCode}`;
     } else if (typeof this.documentation === 'string') {
       page = this.documentation;
     } else if (Array.isArray(this.documentation)) {

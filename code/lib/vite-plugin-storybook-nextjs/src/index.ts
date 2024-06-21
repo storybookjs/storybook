@@ -58,6 +58,11 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin {
 			}
 
 			return {
+				resolve: {
+					alias: {
+						"@opentelemetry/api": "next/dist/compiled/@opentelemetry/api",
+					},
+				},
 				esbuild: {
 					// We will use Next.js custom SWC transpiler instead of Vite's build-in esbuild
 					exclude: [/node_modules/, /.m?(t|j)sx?/],

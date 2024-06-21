@@ -1,15 +1,12 @@
 import { resolve } from "node:path";
-import loadJsConfig, {} from "next/dist/build/load-jsconfig";
+import loadJsConfig from "next/dist/build/load-jsconfig";
+import { minify, transform } from "next/dist/build/swc";
 import { findPagesDir } from "next/dist/lib/find-pages-dir";
 import type { NextConfigComplete } from "next/dist/server/config-shared";
 import type { Plugin } from "vite";
-import {
-	getConfig,
-	getConfigPaths,
-	loadEnvironmentConfig,
-	loadSWCBindingsEagerly,
-} from "./utils/nextjs";
+import * as NextUtils from "./utils/nextjs";
 import { getPackageJSON } from "./utils/packageJSON";
+import { getVitestSWCTransformConfig } from "./utils/swc/transform";
 import { isDefined } from "./utils/typescript";
 
 type VitePluginOptions = {
@@ -25,24 +22,9 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin {
 	let packageJSONConfig: Awaited<ReturnType<typeof getPackageJSON>>;
 	let loadedJSConfig: Awaited<ReturnType<typeof loadJsConfig>>;
 	let nextDirectories: ReturnType<typeof findPagesDir>;
+	let isServerEnvironment: boolean;
 
-	const getPagesDir = () => nextDirectories.pagesDir;
-	const getHasServerComponents = () => !!nextDirectories.appDir;
-	const getIsEsmProject = () => packageJSONConfig.type === "module";
 	const getTranspiledPackages = () => nextConfig?.transpilePackages ?? [];
-	const getJsConfig = () => loadedJSConfig.jsConfig;
-	const getResolvedBaseUrl = () => loadedJSConfig.resolvedBaseUrl;
-
-	const getVitestTransformConfig = () => ({
-		modularizeImports: nextConfig.modularizeImports,
-		swcPlugins: nextConfig.experimental.swcPlugins,
-		compilerOptions: nextConfig?.compiler,
-		jsConfig: getJsConfig(),
-		resolvedBaseUrl: getResolvedBaseUrl(),
-		serverComponents: getHasServerComponents(),
-		isEsmProject: getIsEsmProject(),
-		pagesDir: getPagesDir(),
-	});
 
 	return {
 		name: "vite-plugin-next",
@@ -50,23 +32,36 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin {
 			const resolvedDir = resolve(dir);
 
 			packageJSONConfig = await getPackageJSON(resolvedDir);
-			nextConfig = await getConfig(resolvedDir);
+			nextConfig = await NextUtils.getConfig(resolvedDir);
 			nextDirectories = findPagesDir(resolvedDir);
 			loadedJSConfig = await loadJsConfig(resolvedDir, nextConfig);
 
-			await loadEnvironmentConfig(resolvedDir);
+			await NextUtils.loadEnvironmentConfig(resolvedDir);
 
 			// Set watchers for the Next.js configuration files
-			for (const configPath of await getConfigPaths(resolvedDir)) {
+			for (const configPath of await NextUtils.getConfigPaths(resolvedDir)) {
 				this.addWatchFile(configPath);
 			}
 
-			await loadSWCBindingsEagerly(nextConfig);
+			await NextUtils.loadSWCBindingsEagerly(nextConfig);
 		},
 		config(config, env) {
 			const serverWatchIgnored = config.server?.watch?.ignored;
 			const isServerWatchIgnoredArray = Array.isArray(serverWatchIgnored);
+
+			if (
+				config.test?.environment === "node" ||
+				config.test?.environment === "edge-runtime" ||
+				config.test?.browser?.enabled !== false
+			) {
+				isServerEnvironment = true;
+			}
+
 			return {
+				esbuild: {
+					// We will use Next.js custom SWC transpiler instead of Vite's build-in esbuild
+					exclude: [/node_modules/, /.m?(t|j)sx?/],
+				},
 				server: {
 					watch: {
 						ignored: [
@@ -78,6 +73,24 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin {
 					},
 				},
 			};
+		},
+		async transform(code, id) {
+			const inputSourceMap = this.getCombinedSourcemap();
+
+			const output = await transform(
+				code,
+				getVitestSWCTransformConfig({
+					filename: id,
+					inputSourceMap,
+					isServerEnvironment,
+					loadedJSConfig,
+					nextConfig,
+					nextDirectories,
+					packageJSONConfig,
+				}),
+			);
+
+			return output;
 		},
 	};
 }

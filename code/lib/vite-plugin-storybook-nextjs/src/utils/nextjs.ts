@@ -6,6 +6,9 @@ import loadConfig from "next/dist/server/config";
 import type { NextConfigComplete } from "next/dist/server/config-shared";
 import { CONFIG_FILES, PHASE_TEST } from "next/dist/shared/lib/constants";
 
+const nextDistPath =
+	/(next[\\/]dist[\\/]shared[\\/]lib)|(next[\\/]dist[\\/]client)|(next[\\/]dist[\\/]pages)/;
+
 /**
  * Load the user's Next.js configuration
  */
@@ -38,4 +41,11 @@ export async function loadSWCBindingsEagerly(nextConfig?: NextConfigComplete) {
 	if (lockfilePatchPromise.cur) {
 		await lockfilePatchPromise.cur;
 	}
+}
+
+/**
+ * Check if the file should be output as CommonJS
+ */
+export function shouldOutputCommonJs(filename: string) {
+	return filename.endsWith(".cjs") || nextDistPath.test(filename);
 }

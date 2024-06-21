@@ -26,9 +26,11 @@
 		"@types/node": "^20.0.0",
 		"lefthook": "^1.6.16",
 		"next": "^14.0.0",
+		"rollup": "^4.18.0",
 		"tsup": "^8.1.0",
 		"typescript": "^5.0.0",
-		"vite": "^5.0.0"
+		"vite": "^5.0.0",
+		"vitest": "^1.6.0"
 	},
 	"packageManager": "pnpm@9.4.0",
 	"dependencies": {

@@ -27,6 +27,9 @@ importers:
       next:
         specifier: ^14.0.0
         version: 14.2.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      rollup:
+        specifier: ^4.18.0
+        version: 4.18.0
       tsup:
         specifier: ^8.1.0
         version: 8.1.0(postcss@8.4.38)(typescript@5.4.5)
@@ -36,6 +39,9 @@ importers:
       vite:
         specifier: ^5.0.0
         version: 5.3.1(@types/node@20.14.6)
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.0(@types/node@20.14.6)(happy-dom@14.12.0)
 
   example:
     dependencies:

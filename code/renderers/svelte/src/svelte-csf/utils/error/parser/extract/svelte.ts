@@ -15,6 +15,7 @@ const BASE_INITIAL_SNIPPET = dedent`
 export class MissingModuleTagError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractSvelte;
   readonly code = 1;
+  public documentation = true;
 
   constructor(filename?: string) {
     super({ filename });
@@ -22,10 +23,10 @@ export class MissingModuleTagError extends StorybookSvelteCSFError {
 
   template() {
     return dedent`
-      Stories file: ${this.filepathURL}
-      doesn't have a module tag _(\`<script context="module"> <!-- ... --> </script>\`)_.
+      The file '${this.filepathURL}'
+      does not have a module context (<script context="module"> ... </script>).
 
-      Make sure this stories file has initial code snippet in order for this addon to work correctly:
+      defineMeta(...) should be called inside a module script tag, like so:
 
       ${BASE_INITIAL_SNIPPET}
     `;
@@ -35,6 +36,7 @@ export class MissingModuleTagError extends StorybookSvelteCSFError {
 export class DefaultOrNamespaceImportUsedError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractSvelte;
   readonly code = 2;
+  public documentation = true;
 
   constructor(filename?: StorybookSvelteCSFError['filename']) {
     super({ filename });
@@ -42,9 +44,9 @@ export class DefaultOrNamespaceImportUsedError extends StorybookSvelteCSFError {
 
   template() {
     return dedent`
-      Stories file: ${this.filepathURL}
+      The file '${this.filepathURL}'
       is using the default/namespace import from "${StorybookSvelteCSFError.packageName}".
-      Please change it to a named import.
+      Only named imports are supported.
     `;
   }
 }
@@ -52,6 +54,7 @@ export class DefaultOrNamespaceImportUsedError extends StorybookSvelteCSFError {
 export class MissingDefineMetaImportError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractSvelte;
   readonly code = 3;
+  public documentation = true;
 
   constructor(filename?: StorybookSvelteCSFError['filename']) {
     super({ filename });
@@ -59,9 +62,12 @@ export class MissingDefineMetaImportError extends StorybookSvelteCSFError {
 
   template() {
     return dedent`
-      Stories file: ${this.filepathURL}
-      doesn't have a 'defineMeta' imported from the "${StorybookSvelteCSFError.packageName}" package inside the module tag.
-      ('<script context="module"> <!-- ... --> </script>').
+      The file '${this.filepathURL}'
+      does not import defineMeta from "${StorybookSvelteCSFError.packageName}" inside the module context.
+
+      Make sure to import defineMeta from the package and use it inside the module context like so:
+
+      ${BASE_INITIAL_SNIPPET}
     `;
   }
 }
@@ -69,6 +75,7 @@ export class MissingDefineMetaImportError extends StorybookSvelteCSFError {
 export class MissingDefineMetaVariableDeclarationError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractSvelte;
   readonly code = 4;
+  public documentation = true;
 
   constructor(filename?: StorybookSvelteCSFError['filename']) {
     super({ filename });
@@ -76,8 +83,11 @@ export class MissingDefineMetaVariableDeclarationError extends StorybookSvelteCS
 
   template() {
     return dedent`
-      Stories file: ${this.filepathURL}
-      doesn't have 'defineMeta' call used for variable declaration inside the module tag ('<script context="module"> <!-- ... --> </script>').
+    The file '${this.filepathURL}'
+    does not store the result of calling defineMeta(). While defineMeta() might have been called,
+    it's return value needs to be stored and destructured for the parsing to succeed, eg.:
+
+    ${BASE_INITIAL_SNIPPET}
     `;
   }
 }
@@ -85,6 +95,7 @@ export class MissingDefineMetaVariableDeclarationError extends StorybookSvelteCS
 export class NoStoryComponentDestructuredError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractSvelte;
   readonly code = 5;
+  public documentation = true;
 
   public defineMetaImport: SvelteASTNodes['defineMetaImport'];
 
@@ -101,8 +112,11 @@ export class NoStoryComponentDestructuredError extends StorybookSvelteCSFError {
 
   template() {
     return dedent`
-      Stories file: ${this.filepathURL}
-      has no component 'Story' destructured from the '${this.defineMetaImport.local.name}({ ... })' function call.
+      The file '${this.filepathURL}'
+      does not destructure the Story component from the '${this.defineMetaImport.local.name}({ ... })' function call.
+      eg.:
+
+      ${BASE_INITIAL_SNIPPET}
     `;
   }
 }
@@ -110,6 +124,7 @@ export class NoStoryComponentDestructuredError extends StorybookSvelteCSFError {
 export class GetDefineMetaFirstArgumentError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractSvelte;
   readonly code = 6;
+  public documentation = true;
 
   public defineMetaVariableDeclaration: SvelteASTNodes['defineMetaVariableDeclaration'];
 
@@ -126,7 +141,10 @@ export class GetDefineMetaFirstArgumentError extends StorybookSvelteCSFError {
 
   template() {
     return dedent`
-      Failed to extract the first argument from the 'defineMeta' call as object expression in the stories file: ${this.filepathURL}
+      The file '${this.filepathURL}'
+      passes an invalid first argument to the 'defineMeta' call.
+
+      The first argument must be an object expression with the meta properties set.
     `;
   }
 }
@@ -134,6 +152,7 @@ export class GetDefineMetaFirstArgumentError extends StorybookSvelteCSFError {
 export class InvalidStoryChildrenAttributeError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractSvelte;
   readonly code = 7;
+  public documentation = true;
 
   public childrenAttribute: Attribute;
 
@@ -152,15 +171,15 @@ export class InvalidStoryChildrenAttributeError extends StorybookSvelteCSFError 
 
   template() {
     return dedent`
-      Component '${this.quickStoryRawCodeIdentifier}' in the stories file: ${this.filepathURL}
-      has an invalid 'children' attribute (prop).
+      Component '${this.quickStoryRawCodeIdentifier}' in the stories file '${this.filepathURL}'
+      has an invalid 'children'-prop.
 
-      It's supposed to be an expression with reference to a Svelte snippet existing at the roof of fragment.
+      When set, the 'children'-prop must be an expression with reference to a root-level snippet.
 
-      Below is a demonstration of correct usage:
+      Eg.:
 
       {#snippet template()}
-        <!-- ... -->
+        ...
       {/snippet}
 
       <Story name="${this.storyNameFromAtttribute}" children={template} />
@@ -171,6 +190,7 @@ export class InvalidStoryChildrenAttributeError extends StorybookSvelteCSFError 
 export class InvalidSetTemplateFirstArgumentError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractSvelte;
   readonly code = 8;
+  public documentation = true;
 
   public setTemplateCall: SvelteASTNodes['setTemplateCall'];
 
@@ -187,8 +207,8 @@ export class InvalidSetTemplateFirstArgumentError extends StorybookSvelteCSFErro
 
   template() {
     return dedent`
-      'setTemplate()' first argument should be a valid identifier with a reference to a Svelte snippet existing at the root of fragment.
-      This issue happened in the stories file: ${this.filepathURL}
+      The file '${this.filepathURL}'
+      has an invalid 'setTemplate' call. The first argument must reference a root-level snippet in the file.
     `;
   }
 }

@@ -11,16 +11,19 @@ describe(extractModuleNodes.name, () => {
     });
 
     expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
-      [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0001 (MissingModuleTagError): Stories file: <path not specified>
-      doesn't have a module tag _(\`<script context="module"> <!-- ... --> </script>\`)_.
+      [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0001 (MissingModuleTagError): The file '<path not specified>'
+      does not have a module context (<script context="module"> ... </script>).
 
-      Make sure this stories file has initial code snippet in order for this addon to work correctly:
+      defineMeta(...) should be called inside a module script tag, like so:
 
       <script context="module">
       import { defineMeta } from "@storybook/addon-svelte-csf";
 
       const { Story } = defineMeta({});
-      </script>]
+      </script>
+
+      More info: https://github.com/storybookjs/addon-svelte-csf/blob/v4.1.2/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0001
+      ]
     `);
   });
 
@@ -30,9 +33,19 @@ describe(extractModuleNodes.name, () => {
     });
 
     expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
-      [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0003 (MissingDefineMetaImportError): Stories file: <path not specified>
-      doesn't have a 'defineMeta' imported from the "@storybook/addon-svelte-csf" package inside the module tag.
-      ('<script context="module"> <!-- ... --> </script>').]
+      [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0003 (MissingDefineMetaImportError): The file '<path not specified>'
+      does not import defineMeta from "@storybook/addon-svelte-csf" inside the module context.
+
+      Make sure to import defineMeta from the package and use it inside the module context like so:
+
+      <script context="module">
+      import { defineMeta } from "@storybook/addon-svelte-csf";
+
+      const { Story } = defineMeta({});
+      </script>
+
+      More info: https://github.com/storybookjs/addon-svelte-csf/blob/v4.1.2/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0003
+      ]
     `);
   });
 
@@ -46,8 +59,18 @@ describe(extractModuleNodes.name, () => {
     });
 
     expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
-      [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004 (MissingDefineMetaVariableDeclarationError): Stories file: <path not specified>
-      doesn't have 'defineMeta' call used for variable declaration inside the module tag ('<script context="module"> <!-- ... --> </script>').]
+      [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004 (MissingDefineMetaVariableDeclarationError): The file '<path not specified>'
+      does not store the result of calling defineMeta(). While defineMeta() might have been called,
+      it's return value needs to be stored and destructured for the parsing to succeed, eg.:
+
+      <script context="module">
+      import { defineMeta } from "@storybook/addon-svelte-csf";
+
+      const { Story } = defineMeta({});
+      </script>
+
+      More info: https://github.com/storybookjs/addon-svelte-csf/blob/v4.1.2/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004
+      ]
     `);
   });
 
@@ -61,8 +84,18 @@ describe(extractModuleNodes.name, () => {
     });
 
     expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
-      [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004 (MissingDefineMetaVariableDeclarationError): Stories file: <path not specified>
-      doesn't have 'defineMeta' call used for variable declaration inside the module tag ('<script context="module"> <!-- ... --> </script>').]
+      [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004 (MissingDefineMetaVariableDeclarationError): The file '<path not specified>'
+      does not store the result of calling defineMeta(). While defineMeta() might have been called,
+      it's return value needs to be stored and destructured for the parsing to succeed, eg.:
+
+      <script context="module">
+      import { defineMeta } from "@storybook/addon-svelte-csf";
+
+      const { Story } = defineMeta({});
+      </script>
+
+      More info: https://github.com/storybookjs/addon-svelte-csf/blob/v4.1.2/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004
+      ]
     `);
   });
 

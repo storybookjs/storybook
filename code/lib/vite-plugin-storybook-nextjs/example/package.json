@@ -23,6 +23,7 @@
 		"@storybook/addon-links": "^8.2.0-alpha.10",
 		"@storybook/addon-onboarding": "^8.2.0-alpha.10",
 		"@storybook/blocks": "^8.2.0-alpha.10",
+		"@storybook/builder-vite": "^8.2.0-alpha.10",
 		"@storybook/nextjs": "^8.2.0-alpha.10",
 		"@storybook/react": "^8.2.0-alpha.10",
 		"@storybook/test": "^8.2.0-alpha.10",

@@ -1,8 +1,8 @@
-import next from "vite-plugin-next";
+import vitePluginNext from "vite-plugin-next";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
-	plugins: [next()],
+	plugins: [vitePluginNext()],
 	test: {
 		globals: true,
 		environment: "happy-dom",

@@ -73,6 +73,9 @@ importers:
       '@storybook/blocks':
         specifier: ^8.2.0-alpha.10
         version: 8.2.0-alpha.10(@types/react-dom@18.3.0)(@types/react@18.3.3)(prettier@3.3.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@storybook/builder-vite':
+        specifier: ^8.2.0-alpha.10
+        version: 8.2.0-alpha.10(prettier@3.3.2)(typescript@5.4.5)(vite@5.3.1(@types/node@20.14.6)(terser@5.31.1))
       '@storybook/nextjs':
         specifier: ^8.2.0-alpha.10
         version: 8.2.0-alpha.10(esbuild@0.21.5)(next@14.2.4(@babel/core@7.24.7)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(prettier@3.3.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(type-fest@2.19.0)(typescript@5.4.5)(vitest@1.6.0(@types/node@20.14.6)(happy-dom@14.12.0)(terser@5.31.1))(webpack-hot-middleware@2.26.1)(webpack@5.92.1(esbuild@0.21.5))
@@ -1516,6 +1519,11 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@rollup/wasm-node@4.18.0':
+    resolution: {integrity: sha512-DkLoyblRMhJw9ZogW9zCpyH0CNJ+7GaM7Ty+Vl+G21z/Gr7uKBaXqcJqwWUiNYVxTOgxZrxhDG6pmOFxOuswvw==}
+    engines: {node: '>=18.0.0', npm: '>=8.0.0'}
+    hasBin: true
+
   '@sinclair/typebox@0.27.8':
     resolution: {integrity: sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==}
 
@@ -1580,6 +1588,21 @@ packages:
 
   '@storybook/builder-manager@8.2.0-alpha.10':
     resolution: {integrity: sha512-kYeJnFCdWYvJVx9sUOEqNP85MlUOsaENKgxJtSCt2NqN1Oyz9G4OHe5W5sknyGQj7ja07A4A4d+H6abha5UCDQ==}
+
+  '@storybook/builder-vite@8.2.0-alpha.10':
+    resolution: {integrity: sha512-kWLMSuBb0VHW/iu+yg/IoI23c9jgz5ijzp84b7k8RFzbEnDaFGKOFybbHElvGhUEey0P4rauzDcarZ69sbg/Yg==}
+    peerDependencies:
+      '@preact/preset-vite': '*'
+      typescript: '>= 4.3.x'
+      vite: ^4.0.0 || ^5.0.0
+      vite-plugin-glimmerx: '*'
+    peerDependenciesMeta:
+      '@preact/preset-vite':
+        optional: true
+      typescript:
+        optional: true
+      vite-plugin-glimmerx:
+        optional: true
 
   '@storybook/builder-webpack5@8.2.0-alpha.10':
     resolution: {integrity: sha512-PffBa+PJGm0fP4MGS9WI+KM9aCvvMyMspHtc7rvWK6u6mfImDN0U97JV/llC/zSArey2hifWQe6R77y07NS9Aw==}
@@ -1872,6 +1895,9 @@ packages:
 
   '@types/express@4.17.21':
     resolution: {integrity: sha512-ejlPM315qwLpaQlQDTjPdsUFSc6ZsP4AN6AlWnogPjQ7CVi7PYF3YVz+CY3jE2pwYf7E/7HlDAN0rV2GxTG0HQ==}
+
+  '@types/find-cache-dir@3.2.1':
+    resolution: {integrity: sha512-frsJrz2t/CeGifcu/6uRo4b+SzAwT4NYCVPu1GN8IB9XTzrpPkGuV0tmh9mN+/L0PklAlsC3u5Fxt0ju00LXIw==}
 
   '@types/hast@3.0.4':
     resolution: {integrity: sha512-WPs+bbQw5aCj+x6laNGWLH3wviHtoCv/P3+otBhbOhJgG8qtpdAMlTCxLtsTWA7LH1Oh/bFCHsBn0TPS5m30EQ==}
@@ -6605,6 +6631,12 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.18.0':
     optional: true
 
+  '@rollup/wasm-node@4.18.0':
+    dependencies:
+      '@types/estree': 1.0.5
+    optionalDependencies:
+      fsevents: 2.3.3
+
   '@sinclair/typebox@0.27.8': {}
 
   '@sindresorhus/merge-streams@2.3.0': {}
@@ -6793,6 +6825,33 @@ snapshots:
       fs-extra: 11.2.0
       process: 0.11.10
       util: 0.12.5
+    transitivePeerDependencies:
+      - encoding
+      - prettier
+      - supports-color
+
+  '@storybook/builder-vite@8.2.0-alpha.10(prettier@3.3.2)(typescript@5.4.5)(vite@5.3.1(@types/node@20.14.6)(terser@5.31.1))':
+    dependencies:
+      '@storybook/channels': 8.2.0-alpha.10
+      '@storybook/client-logger': 8.2.0-alpha.10
+      '@storybook/core-common': 8.2.0-alpha.10(prettier@3.3.2)
+      '@storybook/core-events': 8.2.0-alpha.10
+      '@storybook/csf-plugin': 8.2.0-alpha.10
+      '@storybook/node-logger': 8.2.0-alpha.10
+      '@storybook/preview': 8.2.0-alpha.10
+      '@storybook/preview-api': 8.2.0-alpha.10
+      '@storybook/types': 8.2.0-alpha.10
+      '@types/find-cache-dir': 3.2.1
+      browser-assert: 1.2.1
+      es-module-lexer: 1.5.3
+      express: 4.19.2
+      find-cache-dir: 3.3.2
+      fs-extra: 11.2.0
+      magic-string: 0.30.10
+      ts-dedent: 2.2.0
+      vite: 5.3.1(@types/node@20.14.6)(terser@5.31.1)
+    optionalDependencies:
+      typescript: 5.4.5
     transitivePeerDependencies:
       - encoding
       - prettier
@@ -7504,6 +7563,8 @@ snapshots:
       '@types/express-serve-static-core': 4.19.5
       '@types/qs': 6.9.15
       '@types/serve-static': 1.15.7
+
+  '@types/find-cache-dir@3.2.1': {}
 
   '@types/hast@3.0.4':
     dependencies:
@@ -10709,7 +10770,7 @@ snapshots:
       joycon: 3.1.1
       postcss-load-config: 4.0.2(postcss@8.4.38)
       resolve-from: 5.0.0
-      rollup: 4.18.0
+      rollup: '@rollup/wasm-node@4.18.0'
       source-map: 0.8.0-beta.0
       sucrase: 3.35.0
       tree-kill: 1.2.2
@@ -10867,7 +10928,7 @@ snapshots:
     dependencies:
       esbuild: 0.21.5
       postcss: 8.4.38
-      rollup: 4.18.0
+      rollup: '@rollup/wasm-node@4.18.0'
     optionalDependencies:
       '@types/node': 20.14.6
       fsevents: 2.3.3

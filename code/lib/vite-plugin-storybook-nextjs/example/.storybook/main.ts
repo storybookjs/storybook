@@ -1,4 +1,5 @@
 import type { StorybookConfig } from "@storybook/nextjs";
+import vitePluginNext from "vite-plugin-next";
 
 const config: StorybookConfig = {
 	stories: ["../src/**/*.mdx", "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
@@ -13,6 +14,13 @@ const config: StorybookConfig = {
 		name: "@storybook/nextjs",
 		options: {},
 	},
+	core: {
+		builder: "@storybook/builder-vite",
+	},
 	staticDirs: ["../public"],
+	viteFinal: (config) => {
+		config.plugins.push(vitePluginNext());
+		return config;
+	},
 };
 export default config;

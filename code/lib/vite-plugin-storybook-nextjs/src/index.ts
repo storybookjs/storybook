@@ -19,7 +19,6 @@ type VitePluginOptions = {
 
 function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin {
 	let nextConfig: NextConfigComplete;
-	let packageJSONConfig: Awaited<ReturnType<typeof getPackageJSON>>;
 	let loadedJSConfig: Awaited<ReturnType<typeof loadJsConfig>>;
 	let nextDirectories: ReturnType<typeof findPagesDir>;
 	let isServerEnvironment: boolean;
@@ -31,7 +30,6 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin {
 		async buildStart() {
 			const resolvedDir = resolve(dir);
 
-			packageJSONConfig = await getPackageJSON(resolvedDir);
 			nextConfig = await NextUtils.getConfig(resolvedDir);
 			nextDirectories = findPagesDir(resolvedDir);
 			loadedJSConfig = await loadJsConfig(resolvedDir, nextConfig);

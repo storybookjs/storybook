@@ -1,11 +1,12 @@
 import { resolve } from "node:path";
+import type { Env } from "@next/env";
 import loadJsConfig from "next/dist/build/load-jsconfig";
 import { transform } from "next/dist/build/swc";
+import { getDefineEnv } from "next/dist/build/webpack/plugins/define-env-plugin";
 import { findPagesDir } from "next/dist/lib/find-pages-dir";
 import type { NextConfigComplete } from "next/dist/server/config-shared";
 import type { Plugin } from "vite";
 import * as NextUtils from "./utils/nextjs";
-import { getPackageJSON } from "./utils/packageJSON";
 import { getVitestSWCTransformConfig } from "./utils/swc/transform";
 import { isDefined } from "./utils/typescript";
 
@@ -24,32 +25,33 @@ type VitePluginOptions = {
 };
 
 function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin {
+	const resolvedDir = resolve(dir);
+
 	let nextConfig: NextConfigComplete;
 	let loadedJSConfig: Awaited<ReturnType<typeof loadJsConfig>>;
 	let nextDirectories: ReturnType<typeof findPagesDir>;
 	let isServerEnvironment: boolean;
+	let envConfig: Env;
 
 	const getTranspiledPackages = () => nextConfig?.transpilePackages ?? [];
 
 	return {
 		name: "vite-plugin-next",
 		async buildStart() {
-			const resolvedDir = resolve(dir);
-
-			nextConfig = await NextUtils.getConfig(resolvedDir);
-			nextDirectories = findPagesDir(resolvedDir);
-			loadedJSConfig = await loadJsConfig(resolvedDir, nextConfig);
-
-			await NextUtils.loadEnvironmentConfig(resolvedDir);
-
 			// Set watchers for the Next.js configuration files
 			for (const configPath of await NextUtils.getConfigPaths(resolvedDir)) {
 				this.addWatchFile(configPath);
 			}
+		},
+		async config(config, env) {
+			nextConfig = await NextUtils.getConfig(resolvedDir);
+			nextDirectories = findPagesDir(resolvedDir);
+			loadedJSConfig = await loadJsConfig(resolvedDir, nextConfig);
+			envConfig = (await NextUtils.loadEnvironmentConfig(resolvedDir))
+				.combinedEnv;
 
 			await NextUtils.loadSWCBindingsEagerly(nextConfig);
-		},
-		config(config, env) {
+
 			const serverWatchIgnored = config.server?.watch?.ignored;
 			const isServerWatchIgnoredArray = Array.isArray(serverWatchIgnored);
 
@@ -61,7 +63,32 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin {
 				isServerEnvironment = true;
 			}
 
+			const publicNextEnvMap = Object.fromEntries(
+				Object.entries(envConfig)
+					.filter(([key]) => key.startsWith("NEXT_PUBLIC_"))
+					.map(([key, value]) => {
+						return [`process.env.${key}`, JSON.stringify(value)];
+					}),
+			);
+
 			return {
+				define: {
+					...publicNextEnvMap,
+					...getDefineEnv({
+						isTurbopack: false,
+						config: nextConfig,
+						isClient: true,
+						isEdgeServer: false,
+						isNodeOrEdgeCompilation: false,
+						isNodeServer: false,
+						clientRouterFilters: undefined,
+						dev: env.mode === "development",
+						middlewareMatchers: undefined,
+						hasRewrites: false,
+						distDir: nextConfig.distDir,
+						fetchCacheKeyPrefix: nextConfig?.experimental?.fetchCacheKeyPrefix,
+					}),
+				},
 				resolve: {
 					alias: {
 						"@opentelemetry/api": "next/dist/compiled/@opentelemetry/api",

@@ -9,6 +9,12 @@ import { getPackageJSON } from "./utils/packageJSON";
 import { getVitestSWCTransformConfig } from "./utils/swc/transform";
 import { isDefined } from "./utils/typescript";
 
+/** Regular expression to exclude certain files from transformation */
+const excluded =
+	/[\\/](cache[\\/][^\\/]+\.zip[\\/]node_modules|virtual:)[\\/]/g;
+
+const included = /\.((c|m)?(j|t)sx?)$/;
+
 type VitePluginOptions = {
 	/**
 	 * Provide the path to your Next.js project directory
@@ -77,7 +83,12 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin {
 				},
 			};
 		},
+
 		async transform(code, id) {
+			if (excluded.test(id) || !included.test(id)) {
+				return;
+			}
+
 			const inputSourceMap = this.getCombinedSourcemap();
 
 			const output = await transform(

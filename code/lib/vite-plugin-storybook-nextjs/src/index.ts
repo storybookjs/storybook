@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 import loadJsConfig from "next/dist/build/load-jsconfig";
-import { minify, transform } from "next/dist/build/swc";
+import { transform } from "next/dist/build/swc";
 import { findPagesDir } from "next/dist/lib/find-pages-dir";
 import type { NextConfigComplete } from "next/dist/server/config-shared";
 import type { Plugin } from "vite";
@@ -91,7 +91,6 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin {
 					loadedJSConfig,
 					nextConfig,
 					nextDirectories,
-					packageJSONConfig,
 				}),
 			);
 

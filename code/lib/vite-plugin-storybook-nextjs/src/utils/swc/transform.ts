@@ -8,7 +8,6 @@ import { getVitestSWCOptions } from "./options";
 type VitestSWCTransformConfigParams = {
 	filename: string;
 	inputSourceMap: SourceMap;
-	packageJSONConfig: Awaited<ReturnType<typeof getPackageJSON>>;
 	isServerEnvironment: boolean;
 	loadedJSConfig: Awaited<ReturnType<typeof loadJsConfig>>;
 	nextDirectories: ReturnType<typeof findPagesDir>;
@@ -21,7 +20,6 @@ type VitestSWCTransformConfigParams = {
 export const getVitestSWCTransformConfig = ({
 	filename,
 	inputSourceMap,
-	packageJSONConfig,
 	isServerEnvironment,
 	loadedJSConfig,
 	nextDirectories,

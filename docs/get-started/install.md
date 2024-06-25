@@ -328,7 +328,7 @@ If you're still running into some issues during the installation process, we enc
 
 <IfRenderer renderer='web-components'>
 
-- [Storybook's Web Components Webpack README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/web-components-webpack55) for more information on how to set up Storybook in your Web Components project with Webpack 5.
+- [Storybook's Web Components Webpack README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/web-components-webpack5) for more information on how to set up Storybook in your Web Components project with Webpack 5.
 - [Storybook's Web Components Vite README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/web-components-vite) for more information on how to set up Storybook in your Web Components project with Vite.
 - [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
 

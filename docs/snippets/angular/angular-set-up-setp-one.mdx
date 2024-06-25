@@ -1,0 +1,19 @@
+// Button.stories.ts
+import { Meta, StoryObj } from '@storybook/angular';
+import { ButtonComponent } from '../path/to/your/button.component';
+
+// Metadata for the Storybook
+export default {
+  title: 'Example/Button',
+  component: ButtonComponent,
+} as Meta;
+
+// Default story
+export const Primary: StoryObj<typeof ButtonComponent> = {
+  render: () => ({
+    props: {
+      label: 'Click me!',
+      onClick: () => console.log('Button clicked'),
+    },
+  }),
+};

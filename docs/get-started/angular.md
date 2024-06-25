@@ -32,6 +32,65 @@ Storybook for Angular is only supported in [Angular](?renderer=angular) projects
 
 ## Getting started
 
+## Introduction to Storybook for Angular
+
+Storybook for Angular is an open-source tool that helps developers design and test Angular components independently from their applications. It supports features like:
+
+- Angular builders for seamless integration.
+- Compodoc for automatic documentation generation.
+- Extensive customization through various add-ons.
+
+## Quick Start Guide
+
+### Step 1: Install Storybook
+
+Run the following command in your Angular project directory to install Storybook:
+npx sb init --type angular
+
+### Step 2: Start Storybook
+
+npm run storybook
+
+### Step 3: Create Your First Story
+
+A "story" in Storybook is a single state of one of your components. Creating stories involves writing a small piece of code that configures exactly how you want to showcase a component in the Storybook UI, with props, slots, events, and more.
+
+Here's how to create a basic story for an Angular component called ButtonComponent. You'll define a story that demonstrates a button with a simple click event.
+
+1. Define the Story for Your Component:
+
+Navigate to your project's stories directory, which is usually under the .storybook folder, and create a new file named Button.stories.ts. Add the following content to define your story:
+
+// Button.stories.ts
+import { Meta, StoryObj } from '@storybook/angular';
+import { ButtonComponent } from '../path/to/your/button.component';
+
+// Metadata for the Storybook
+export default {
+title: 'Example/Button',
+component: ButtonComponent,
+} as Meta;
+
+// Default story
+export const Primary: StoryObj<typeof ButtonComponent> = {
+render: () => ({
+props: {
+label: 'Click me!',
+onClick: () => console.log('Button clicked'),
+},
+}),
+};
+
+2. Explanation of the Story Code:
+
+Meta provides metadata about the component like its title in the Storybook UI and the actual component class.
+StoryObj is a template object that defines how the component should be rendered, including props and event handlers.
+Primary is a story named "Primary" which will appear under the "Button" component in Storybook. This story renders the ButtonComponent with a label and a click handler that logs a message to the console when clicked.
+
+3. View Your Story:
+
+After defining your story, run Storybook again using npm run storybook and navigate to http://localhost:6006. You should see your "Button" component listed, and you can interact with it based on the defined story.
+
 ### In a project without Storybook
 
 Follow the prompts after running this command in your Angular project's root directory:
@@ -226,8 +285,8 @@ Go to your `.storybook/preview.js` and add the following:
 ```js
 // .storybook/preview.js
 // 👇 Add these
-import { setCompodocJson } from '@storybook/addon-docs/angular';
-import docJson from '../documentation.json';
+import { setCompodocJson } from "@storybook/addon-docs/angular";
+import docJson from "../documentation.json";
 setCompodocJson(docJson);
 
 // ... rest of file
@@ -419,12 +478,12 @@ You can pass an options object for additional configuration if needed:
 
 ```js
 // .storybook/main.js
-import * as path from 'path';
+import * as path from "path";
 
 export default {
   // ...
   framework: {
-    name: '@storybook/angular',
+    name: "@storybook/angular",
     options: {
       // ...
     },

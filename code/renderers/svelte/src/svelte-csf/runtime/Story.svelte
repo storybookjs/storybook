@@ -32,7 +32,7 @@
     /**
      * Name of the story. Can be omitted if `exportName` is provided.
      */
-    name: string;
+    name?: string;
     /**
      * exportName of the story.
      * If not provided, it will be generated from the 'name', by converting it to a valid, PascalCased JS variable name.
@@ -53,7 +53,7 @@
      * Use `parameters={{ docs: { source: { code: "..." } } }}` instead.
      */
     source?: never;
-  };
+  } & ({ exportName: string } | { name: string });
 
   const { children, name, exportName: exportNameProp, play, ...restProps }: Props = $props();
   const exportName = exportNameProp ?? storyNameToExportName(name!);

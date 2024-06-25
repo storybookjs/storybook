@@ -18,6 +18,10 @@ const meta = {
     info: 'This is info for the Button stories',
     jsx: { useBooleanShorthandSyntax: false },
     docs: {
+      stories: {
+        title: 'Stories',
+        includePrimary: true,
+      },
       subtitle: 'This is the subtitle for the Button stories',
     },
   },

@@ -33,7 +33,7 @@ import { Stories } from '@storybook/blocks';
 
 Type: `boolean`
 
-Default: `true`
+Default: `parameters.docs.stories.includePrimary`
 
 Determines if the collection of stories includes the primary (first) story.
 
@@ -43,10 +43,16 @@ If a stories file contains only one story and `includePrimary={true}`, the `Stor
 
 </Callout>
 
+### `of`
+
+Type: CSF file exports
+
+Specifies which meta's stories are displayed.
+
 ### `title`
 
 Type: `string`
 
-Default: `'Stories'`
+Default: `parameters.docs.stories.title`
 
 Sets the heading content preceding the collection of stories.

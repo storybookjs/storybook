@@ -5,6 +5,14 @@ import { EmptyExample } from './EmptyExample';
 const meta = {
   title: 'examples/Stories for the Stories and Primary Block',
   component: EmptyExample,
+  parameters: {
+    docs: {
+      stories: {
+        title: 'Title Parameter',
+        includePrimary: true,
+      },
+    },
+  },
 } satisfies Meta<typeof EmptyExample>;
 export default meta;
 

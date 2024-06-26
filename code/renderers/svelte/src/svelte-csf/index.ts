@@ -1,4 +1,5 @@
 import type { Args as BaseArgs } from '@storybook/types';
+import dedent from 'dedent';
 import type { EmptyObject } from 'type-fest';
 
 import type {
@@ -35,27 +36,33 @@ export type StoryContext<TStoryCmp> =
 
 /**
  * @deprecated Use `defineMeta` instead
- * @see TODO link to MIGRATION.md
+ * @see {@link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#%3Cmeta%3E-component-removed-in-favor-of-definemeta}
  */
 export const Meta = () => {
-  throw new Error(`The Meta component has been removed in favor of the defineMeta function.
-    See TODO link to MIGRATION.md for more details.`);
+  throw new Error(dedent`
+    The Meta component has been removed in favor of the defineMeta function.
+    For more details, see: https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#%3Cmeta%3E-component-removed-in-favor-of-definemeta
+  `);
 };
 
 /**
  * @deprecated Use `Story` component returned from `defineMeta` instead
- * @see TODO link to MIGRATION.md
+ * @see {@link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#export-meta-removed-in-favor-of-definemeta}
  */
 export const Story = () => {
-  throw new Error(`The Story component can not be imported anymore, but must be desctructured from the defineMeta() call.
-    See TODO link to MIGRATION.md for more details.`);
+  throw new Error(dedent`
+    The Story component can not be imported anymore, but must be desctructured from the defineMeta() call.
+    For more details, see: https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#export-meta-removed-in-favor-of-definemeta
+  `);
 };
 
 /**
  * @deprecated Use snippets instead
- * @see TODO link to MIGRATION.md
+ * @see {@link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#%3Ctemplate%3E-component-removed}
  */
 export const Template = () => {
-  throw new Error(`The Template component has been removed in favor of the snippets syntax.
-    See TODO link to MIGRATION.md for more details.`);
+  throw new Error(dedent`
+    The Template component has been removed in favor of the snippets syntax.
+    For more details, see: https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#%3Ctemplate%3E-component-removed
+  `);
 };

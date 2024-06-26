@@ -9,11 +9,11 @@ This document is a guide how to migrate the usage of addon from a specific versi
 **This new iteration of the addon will require Svelte 5.**\
 While Svelte 5 itself largely supports the Svelte 4 syntax, this means that your actual components most likely don’t need to change, but as you’ll see below, your stories file will require migration to the new snippet syntax.
 
-| Dependency | Version |
-| ---------- | ------- |
-| [Storybook](https://github.com/storybookjs/storybook) | `v8.0.0` |
-| [Svelte](https://github.com/sveltejs/svelte) | `v5.0.0` |
-| [Vite](https://github.com/vitejs/vite) | `v5.0.0` |
+| Dependency                                                                                                             | Version  |
+| ---------------------------------------------------------------------------------------------------------------------- | -------- |
+| [Storybook](https://github.com/storybookjs/storybook)                                                                  | `v8.0.0` |
+| [Svelte](https://github.com/sveltejs/svelte)                                                                           | `v5.0.0` |
+| [Vite](https://github.com/vitejs/vite)                                                                                 | `v5.0.0` |
 | [`@sveltejs/vite-plugin-svelte`](https://github.com/sveltejs/vite-plugin-svelte/tree/main/packages/vite-plugin-svelte) | `v4.0.0` |
 
 > [!IMPORTANT]
@@ -21,7 +21,64 @@ While Svelte 5 itself largely supports the Svelte 4 syntax, this means that your
 
 ---
 
-### `<Meta>` component and `export meta` removed in favor of `defineMeta`
+### `<Meta>` component removed in favor of `defineMeta`
+
+#### Before
+
+```svelte
+<script>
+  import { Meta } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+</script>
+
+<Meta title="Atoms/Button" component={Button} args={{ size: 'medium' }} />
+```
+
+#### After
+
+```svelte
+<script context="module">
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    title: 'Atoms/Button',
+    component: Button,
+    args: {
+      size: 'medium',
+    },
+  });
+</script>
+```
+
+#### Difference
+
+```diff
+- <script>
++ <script context="module">
+-   import { Meta } from "@storybook/addon-svelte-csf";
++   import { defineMeta } from "@storybook/addon-svelte-csf";
+
+    import Button from "./Button.svelte";
+
++   export const meta = {
++   const { Story } = defineMeta({
++       title: "Atoms/Button",
++       component: Button,
++       args: {
++           size: "medium",
++       },
++   });
+</script>
+
+- <Meta title="Atoms/Button" component={Button} args={{ size: "medium" }} />
+```
+
+---
+
+### `export meta` removed in favor of `defineMeta`
 
 #### Before
 
@@ -47,17 +104,17 @@ export const meta = {
 
 ```svelte
 <script context="module">
-import { defineMeta } from "@storybook/addon-svelte-csf";
+  import { defineMeta } from '@storybook/addon-svelte-csf';
 
-import Button from "./Button.svelte";
+  import Button from './Button.svelte';
 
-const { Story } = defineMeta({
-    title: "Atoms/Button",
+  const { Story } = defineMeta({
+    title: 'Atoms/Button',
     component: Button,
     args: {
-        size: "medium",
+      size: 'medium',
     },
-});
+  });
 </script>
 ```
 
@@ -70,7 +127,7 @@ const { Story } = defineMeta({
 
     import Button from "./Button.svelte";
 
--   export const meta = { 
+-   export const meta = {
 +   const { Story } = defineMeta({
         title: "Atoms/Button",
         component: Button,
@@ -80,26 +137,24 @@ const { Story } = defineMeta({
 -   };
 +   });
 </script>
-
-<Story name="Default" />
 ```
 
 ---
 
-### `Story` slots replaced with snippets
+### `<Story>` slots replaced with snippets
 
 1. [Inline snippet](./README.md#inline-snippet)
 1. [Shared snippet](./README.md#shared-snippet)
 
 ---
 
-### `Story` directive `let:args` replaced with snippets first argument
+### `<Story>` directive `let:args` replaced with snippets first argument
 
 #### Before
 
 ```svelte
 <Story name="Default" let:args>
-    <Button {...args} />
+  <Button {...args} />
 </Story>
 ```
 
@@ -107,9 +162,9 @@ const { Story } = defineMeta({
 
 ```svelte
 <Story name="Default">
-    {#snippet children(args)}
-        <Button {...args} />
-    {/snippet}
+  {#snippet children(args)}
+    <Button {...args} />
+  {/snippet}
 </Story>
 ```
 
@@ -126,14 +181,14 @@ const { Story } = defineMeta({
 
 ---
 
-### `Story` directive `let:context` replaced with snippets second argument
+### `<Story>` directive `let:context` replaced with snippets second argument
 
 #### Before
 
 ```svelte
 <Story name="Context" let:context>
-    <div>StoryContext.name = {context.name}</div>
-    <div>StoryContext.id = {context.id}</div>
+  <div>StoryContext.name = {context.name}</div>
+  <div>StoryContext.id = {context.id}</div>
 </Story>
 ```
 
@@ -141,10 +196,10 @@ const { Story } = defineMeta({
 
 ```svelte
 <Story name="Context">
-    {#snippet children(_args, context)}
-        <div>StoryContext.name = {context.name}</div>
-        <div>StoryContext.id = {context.id}</div>
-    {/snippet}
+  {#snippet children(_args, context)}
+    <div>StoryContext.name = {context.name}</div>
+    <div>StoryContext.id = {context.id}</div>
+  {/snippet}
 </Story>
 ```
 
@@ -165,7 +220,7 @@ const { Story } = defineMeta({
 
 ---
 
-### `Template` component removed
+### `<Template>` component removed
 
 Svelte has deprecated support for slots in favour of **snippets**.\
 We have **new ways of setting a template** for our `<Story>` components:

@@ -137,7 +137,8 @@ describe("component 'Story' destructured from 'defineMeta", () => {
     expectTypeOf<Meta<typeof Button>['args']>().toBeNullable();
     expectTypeOf<NonNullable<Meta<typeof Button>['args']>['children']>().toBeNullable();
     expectTypeOf<TStoryProps>().toHaveProperty('name');
-    expectTypeOf<TStoryProps['name']>().not.toBeNullable();
+    expectTypeOf<TStoryProps['name']>().toBeNullable();
+    expectTypeOf<TStoryProps['exportName']>().toBeNullable();
     expectTypeOf<TStoryProps['args']>().toBeNullable();
     expectTypeOf<NonNullable<TStoryProps['args']>>().toHaveProperty('size');
     expectTypeOf<NonNullable<TStoryProps['args']>>().toHaveProperty('children');

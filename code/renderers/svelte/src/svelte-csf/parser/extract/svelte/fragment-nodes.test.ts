@@ -75,7 +75,7 @@ describe(extractFragmentNodes.name, () => {
     }
   });
 
-  it('extracts first level snippet blocks (at the root of fragment) correclty', async () => {
+  it('extracts first level snippet blocks (at the root of fragment) correctly', async () => {
     const ast = getSvelteAST({
       code: `
         <script context="module">

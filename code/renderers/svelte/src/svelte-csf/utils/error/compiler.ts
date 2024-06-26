@@ -30,7 +30,7 @@ export class ParametersNotObjectExpressionError extends StorybookSvelteCSFError 
       Expected '${this.quickStoryRawCodeIdentifier}' attribute 'parameters' value to be an object expression.
       Instead it was '${this.property.value.type}'
 
-      This issue occured in the stories file: ${this.filepathURL}
+      This issue occurred in the stories file: ${this.filepathURL}
     `;
     }
 
@@ -39,7 +39,7 @@ export class ParametersNotObjectExpressionError extends StorybookSvelteCSFError 
       Expected 'defineMeta' property 'parameters' value to be an object expression.
       Instead it was '${this.property.value.type}'
 
-      This issue occured in the stories file: ${this.filepathURL}
+      This issue occurred in the stories file: ${this.filepathURL}
    `;
   }
 }
@@ -70,7 +70,7 @@ export class DocsNotObjectExpressionError extends StorybookSvelteCSFError {
       Expected '${this.quickStoryRawCodeIdentifier}' property 'parameters.docs' value to be an object expression.
       Instead it was '${this.property.value.type}'
 
-      This issue occured in the stories file: ${this.filepathURL}
+      This issue occurred in the stories file: ${this.filepathURL}
     `;
     }
 
@@ -79,7 +79,7 @@ export class DocsNotObjectExpressionError extends StorybookSvelteCSFError {
       Expected 'defineMeta' property 'parameters.docs' value to be an object expression.
       Instead it was '${this.property.value.type}'
 
-      This issue occured in the stories file: ${this.filepathURL}
+      This issue occurred in the stories file: ${this.filepathURL}
    `;
   }
 }
@@ -110,7 +110,7 @@ export class DescriptionNotObjectExpressionError extends StorybookSvelteCSFError
       Expected '${this.quickStoryRawCodeIdentifier}' property 'parameters.docs.description' value to be an object expression.
       Instead it was '${this.property.value.type}'
 
-      This issue occured in the stories file: ${this.filepathURL}
+      This issue occurred in the stories file: ${this.filepathURL}
     `;
     }
 
@@ -119,7 +119,7 @@ export class DescriptionNotObjectExpressionError extends StorybookSvelteCSFError
       Expected 'defineMeta' property 'parameters.docs.description' value to be an object expression.
       Instead it was '${this.property.value.type}'
 
-      This issue occured in the stories file: ${this.filepathURL}
+      This issue occurred in the stories file: ${this.filepathURL}
    `;
   }
 }

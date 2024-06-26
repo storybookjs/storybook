@@ -28,7 +28,7 @@ interface Params {
 
 /**
  * Attempt to insert HTML comment above the `<Story />` component as a description **into the compiled code**.
- * If the user did explictly set `parameters.docs.description.story` and the HTML comment exists, then it will log a warning.
+ * If the user did explicitly set `parameters.docs.description.story` and the HTML comment exists, then it will log a warning.
  */
 export function insertStoryHTMLCommentAsDescription(params: Params) {
   const { nodes, filename } = params;
@@ -102,7 +102,7 @@ export function insertStoryHTMLCommentAsDescription(params: Params) {
     const name = (propertyName.value as Literal).value;
     logger.warn(
       dedent`
-        <Story name="${name}" /> component(s) already has explictly set 'parameterds.docs.description.story'.
+        <Story name="${name}" /> component(s) already has explicitly set 'parameterds.docs.description.story'.
         Ignoring the HTML comment above.
         Stories file: file://${filename}
       `

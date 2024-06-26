@@ -74,7 +74,7 @@ export const generateCodeToEmit = ({ code, args }: { code: string; args: StoryOb
   // make the props multiline if the string is longer than 50 chars
   // TODO: do this at the final stage instead, taking into account the singular args replacements
   if (allPropsString.length > 50) {
-    // TODO: the indendation only works if it's in the root-level component. In a nested component, the indentation will be too shallow
+    // TODO: the indentation only works if it's in the root-level component. In a nested component, the indentation will be too shallow
     allPropsString = `\n  ${allPropsArray.join('\n  ')}\n`;
   }
 

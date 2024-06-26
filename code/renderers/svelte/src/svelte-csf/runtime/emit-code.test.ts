@@ -22,7 +22,7 @@ describe('Emit Code', () => {
           someBool: true,
           someString: 'this is a string',
           someNumber: 42,
-          someObject: { nested: 'yes', mutliple: 'also yes' },
+          someObject: { nested: 'yes', multiple: 'also yes' },
         },
       })
     ).toMatchInlineSnapshot(`
@@ -30,7 +30,7 @@ describe('Emit Code', () => {
         someBool
         someString="this is a string"
         someNumber={42}
-        someObject={{ "nested": "yes", "mutliple": "also yes" }}
+        someObject={{ "nested": "yes", "multiple": "also yes" }}
        />"
     `);
   });

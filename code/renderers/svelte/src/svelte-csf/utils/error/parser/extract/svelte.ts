@@ -182,7 +182,7 @@ export class InvalidStoryChildrenAttributeError extends StorybookSvelteCSFError 
         ...
       {/snippet}
 
-      <Story name="${this.storyNameFromAtttribute}" children={template} />
+      <Story name="${this.storyNameFromAttribute}" children={template} />
     `;
   }
 }

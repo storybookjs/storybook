@@ -214,7 +214,7 @@ describe(getStoryIdentifiers.name, () => {
       `
       [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0005 (InvalidStoryExportNameError): Invalid attribute 'exportName' value 'default' found in '<Story />' component inside stories file: file://${process.cwd()}/invalid.stories.svelte
 
-        'exportName' alue must be a valid JavaScript variable name.
+        'exportName' value must be a valid JavaScript variable name.
         It must start with a letter, $ or _, followed by letters, numbers, $ or _.
         Reserved words like 'default' are also not allowed (see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#reserved_words)]
     `

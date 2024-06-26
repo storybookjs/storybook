@@ -107,7 +107,7 @@ export function insertDefineMetaJSDocCommentAsDescription(params: Params): void 
     }) !== -1
   ) {
     logger.warn(
-      `defineMeta() already has explictly set description. Ignoring the JSDoc comment above. Stories file: ${filename}`
+      `defineMeta() already has explicitly set description. Ignoring the JSDoc comment above. Stories file: ${filename}`
     );
 
     return;

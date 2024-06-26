@@ -26,7 +26,7 @@ export class InvalidComponentValueError extends StorybookSvelteCSFError {
       'defineMeta's property with key 'component' value should be an identifier to Svelte component import specifier.
       The current type is '${this.componentProperty.value.type}'.
 
-      The issue occured in Stories file: ${this.filepathURL}
+      The issue occurred in Stories file: ${this.filepathURL}
     `;
   }
 }
@@ -53,7 +53,7 @@ export class NoDestructuredDefineMetaCallError extends StorybookSvelteCSFError {
       Invalid schema.
 
       Storybook addon "${StorybookSvelteCSFError.packageName}" tried to access destructured object pattern from a variable declaration with 'defineMeta()' call.
-      The issue occured in Stories file: ${this.filepathURL}
+      The issue occurred in Stories file: ${this.filepathURL}
 
       The current pattern type is: "${this.defineMetaVariableDeclarator.id.type}", and expected is "ObjectPattern".
     `;
@@ -99,7 +99,7 @@ export class NoStringLiteralError extends StorybookSvelteCSFError {
       'defineMeta()' first argument object property '${(this.property.key as Identifier).name}' value is supposed to be a static string literal.
       Instead it has a type '${this.property.value.type}'.
 
-      This issue occured in stories file: ${this.filepathURL}
+      This issue occurred in stories file: ${this.filepathURL}
     `;
   }
 }
@@ -128,7 +128,7 @@ export class NoArrayExpressionError extends StorybookSvelteCSFError {
       'defineMeta()' first argument object property '${(this.property.key as Identifier).name}' value is supposed to be an array expression.
       Instead it has a type '${this.property.value.type}'.
 
-      This issue occured in stories file: ${this.filepathURL}
+      This issue occurred in stories file: ${this.filepathURL}
     `;
   }
 }
@@ -161,7 +161,7 @@ export class ArrayElementNotStringError extends StorybookSvelteCSFError {
       'defineMeta()' first argument object property '${(this.property.key as Identifier).name}' value is supposed to be an array with only static string literals.
       One of the elements is not a string. Instead it has a type '${this.element?.type}'.
 
-      This issue occured in stories file: ${this.filepathURL}
+      This issue occurred in stories file: ${this.filepathURL}
     `;
   }
 }

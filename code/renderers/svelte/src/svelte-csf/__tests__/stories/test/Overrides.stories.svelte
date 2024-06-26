@@ -26,7 +26,7 @@
 >
   <p data-testid="test">
     You can override
-    <strong>the following identifers name</strong> that belongs to this Storybook addon:
+    <strong>the following identifiers name</strong> that belongs to this Storybook addon:
   </p>
 
   <ul>

@@ -46,7 +46,7 @@ interface FindPropertyOptions {
 }
 
 /**
- * In order to be able to acces AST node - {@link Property} - from the {@link ObjectExpression},
+ * In order to be able to access AST node - {@link Property} - from the {@link ObjectExpression},
  * we need to have its index based on the property name, so the key must be an identifier.
  * NOTE: Reminder, it always returns a number and `-1` means not found.
  */

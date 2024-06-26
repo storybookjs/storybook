@@ -86,7 +86,7 @@ export abstract class StorybookSvelteCSFError extends Error {
   }
 
   /**
-   * `*.stories.svelte` file path where the error has occured.
+   * `*.stories.svelte` file path where the error has occurred.
    */
   readonly filename?: string;
 
@@ -110,7 +110,7 @@ export abstract class StorybookSvelteCSFError extends Error {
 
   // WARN: I had to duplicate logic. We already have functions for it.
   // But we can't import it, because it would create a cyclic-dependency.
-  protected get storyNameFromAtttribute() {
+  protected get storyNameFromAttribute() {
     if (this.component) {
       for (const attribute of this.component?.attributes) {
         if (
@@ -145,6 +145,6 @@ export abstract class StorybookSvelteCSFError extends Error {
   }
 
   public get quickStoryRawCodeIdentifier() {
-    return `<Story name="${this.storyNameFromAtttribute}" />`;
+    return `<Story name="${this.storyNameFromAttribute}" />`;
   }
 }

@@ -203,7 +203,7 @@ After:
 ```
 
 > [!NOTE]
-> snippet `children` second argument `storyContext` is optional.
+> Snippet `children` second argument `context` is optional.
 
 Difference:
 

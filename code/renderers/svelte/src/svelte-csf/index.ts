@@ -36,12 +36,12 @@ export type StoryContext<TStoryCmp> =
 
 /**
  * @deprecated Use `defineMeta` instead
- * @see {@link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#%3Cmeta%3E-component-removed-in-favor-of-definemeta}
+ * @see {@link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#meta-component-removed-in-favor-of-definemeta}
  */
 export const Meta = () => {
   throw new Error(dedent`
     The Meta component has been removed in favor of the defineMeta function.
-    For more details, see: https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#%3Cmeta%3E-component-removed-in-favor-of-definemeta
+    For more details, see: @link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#meta-component-removed-in-favor-of-definemeta
   `);
 };
 
@@ -58,11 +58,11 @@ export const Story = () => {
 
 /**
  * @deprecated Use snippets instead
- * @see {@link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#%3Ctemplate%3E-component-removed}
+ * @see {@link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#template-component-removed}
  */
 export const Template = () => {
   throw new Error(dedent`
     The Template component has been removed in favor of the snippets syntax.
-    For more details, see: https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#%3Ctemplate%3E-component-removed
+    see: https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#template-component-removed
   `);
 };

@@ -23,7 +23,7 @@ While Svelte 5 itself largely supports the Svelte 4 syntax, this means that your
 
 ### `<Meta>` component removed in favor of `defineMeta`
 
-#### Before
+Before:
 
 ```svelte
 <script>
@@ -35,7 +35,7 @@ While Svelte 5 itself largely supports the Svelte 4 syntax, this means that your
 <Meta title="Atoms/Button" component={Button} args={{ size: 'medium' }} />
 ```
 
-#### After
+After:
 
 ```svelte
 <script context="module">
@@ -53,24 +53,23 @@ While Svelte 5 itself largely supports the Svelte 4 syntax, this means that your
 </script>
 ```
 
-#### Difference
+Difference:
 
 ```diff
 - <script>
 + <script context="module">
--   import { Meta } from "@storybook/addon-svelte-csf";
-+   import { defineMeta } from "@storybook/addon-svelte-csf";
+-  import { Meta } from "@storybook/addon-svelte-csf";
++  import { defineMeta } from "@storybook/addon-svelte-csf";
 
-    import Button from "./Button.svelte";
+   import Button from "./Button.svelte";
 
-+   export const meta = {
-+   const { Story } = defineMeta({
-+       title: "Atoms/Button",
-+       component: Button,
-+       args: {
-+           size: "medium",
-+       },
-+   });
++  const { Story } = defineMeta({
++    title: 'Atoms/Button',
++    component: Button,
++    args: {
++      size: 'medium',
++    },
++  });
 </script>
 
 - <Meta title="Atoms/Button" component={Button} args={{ size: "medium" }} />
@@ -80,27 +79,27 @@ While Svelte 5 itself largely supports the Svelte 4 syntax, this means that your
 
 ### `export meta` removed in favor of `defineMeta`
 
-#### Before
+Before:
 
 ```svelte
 <script context="module">
-import { Story } from "@storybook/addon-svelte-csf";
+  import { Story } from '@storybook/addon-svelte-csf';
 
-import Button from "./Button.svelte";
+  import Button from './Button.svelte';
 
-export const meta = {
-    title: "Atoms/Button",
-        component: Button,
-        args: {
-            size: "medium",
-        },
-    });
+  export const meta = {
+    title: 'Atoms/Button',
+    component: Button,
+    args: {
+      size: 'medium',
+    },
+  };
 </script>
 
 <Story name="Default" />
 ```
 
-#### After
+After:
 
 ```svelte
 <script context="module">
@@ -118,7 +117,7 @@ export const meta = {
 </script>
 ```
 
-#### Difference
+Difference:
 
 ```diff
 <script context="module">
@@ -129,10 +128,10 @@ export const meta = {
 
 -   export const meta = {
 +   const { Story } = defineMeta({
-        title: "Atoms/Button",
+        title: 'Atoms/Button',
         component: Button,
         args: {
-            size: "medium",
+            size: 'medium',
         },
 -   };
 +   });
@@ -150,7 +149,7 @@ export const meta = {
 
 ### `<Story>` directive `let:args` replaced with snippets first argument
 
-#### Before
+Before:
 
 ```svelte
 <Story name="Default" let:args>
@@ -158,7 +157,7 @@ export const meta = {
 </Story>
 ```
 
-#### After
+After:
 
 ```svelte
 <Story name="Default">
@@ -168,7 +167,7 @@ export const meta = {
 </Story>
 ```
 
-#### Difference
+Difference:
 
 ```diff
 - <Story name="Default" let:args>
@@ -183,7 +182,7 @@ export const meta = {
 
 ### `<Story>` directive `let:context` replaced with snippets second argument
 
-#### Before
+Before:
 
 ```svelte
 <Story name="Context" let:context>
@@ -192,7 +191,7 @@ export const meta = {
 </Story>
 ```
 
-#### After
+After:
 
 ```svelte
 <Story name="Context">
@@ -206,7 +205,7 @@ export const meta = {
 > [!NOTE]
 > snippet `children` second argument `storyContext` is optional.
 
-#### Difference
+Difference:
 
 ```diff
 - <Story name="Context" let:context>
@@ -234,13 +233,13 @@ It’s also no longer required to define a template. Stories without templates w
 
 ### `<Story>` prop `autodocs` has been removed
 
-#### Before
+Before:
 
 ```svelte
 <Story name="Default" autodocs />
 ```
 
-#### After
+After:
 
 ```svelte
 <Story name="Default" tags={['autodocs']} />
@@ -250,7 +249,7 @@ It’s also no longer required to define a template. Stories without templates w
 
 ### `<Story>` prop `source` has been removed
 
-#### Before
+Before:
 
 ```svelte
 <Story name="Default" source />
@@ -258,7 +257,7 @@ It’s also no longer required to define a template. Stories without templates w
 <Story name="Default" source={'<Button size="medium">Click me</Button>'} />
 ```
 
-#### After
+After:
 
 ```svelte
 <Story name="Default" />

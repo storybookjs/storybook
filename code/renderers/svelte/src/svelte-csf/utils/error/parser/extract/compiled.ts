@@ -6,6 +6,7 @@ import type { extractStoriesNodesFromExportDefaultFn } from '#parser/extract/com
 export class MissingImportedDefineMetaError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractCompiled;
   readonly code = 1;
+  readonly documentation = true;
 
   constructor(filename?: StorybookSvelteCSFError['filename']) {
     super({ filename });
@@ -13,7 +14,7 @@ export class MissingImportedDefineMetaError extends StorybookSvelteCSFError {
 
   template() {
     return dedent`
-      Could not find 'defineMeta' imported from the "${StorybookSvelteCSFError.packageName}" in the compiled output of: ${this.filepathURL}
+      Could not find the import statement of 'defineMeta' from the "${StorybookSvelteCSFError.packageName}" in the compiled output of: ${this.filepathURL}
     `;
   }
 }
@@ -21,6 +22,7 @@ export class MissingImportedDefineMetaError extends StorybookSvelteCSFError {
 export class MissingDefineMetaVariableDeclarationError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractCompiled;
   readonly code = 2;
+  readonly documentation = true;
 
   constructor(filename?: StorybookSvelteCSFError['filename']) {
     super({ filename });
@@ -36,6 +38,7 @@ export class MissingDefineMetaVariableDeclarationError extends StorybookSvelteCS
 export class NoExportDefaultError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractCompiled;
   readonly code = 3;
+  readonly documentation = true;
 
   constructor(filename?: StorybookSvelteCSFError['filename']) {
     super({ filename });
@@ -51,6 +54,7 @@ export class NoExportDefaultError extends StorybookSvelteCSFError {
 export class NoStoryIdentifierFoundError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractCompiled;
   readonly code = 4;
+  readonly documentation = true;
 
   constructor(filename?: StorybookSvelteCSFError['filename']) {
     super({ filename });
@@ -66,6 +70,7 @@ export class NoStoryIdentifierFoundError extends StorybookSvelteCSFError {
 export class NoStoriesFunctionDeclarationError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractCompiled;
   readonly code = 5;
+  readonly documentation = true;
 
   constructor(filename?: StorybookSvelteCSFError['filename']) {
     super({ filename });
@@ -81,6 +86,7 @@ export class NoStoriesFunctionDeclarationError extends StorybookSvelteCSFError {
 export class NoCompiledStoryPropsObjectExpression extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractCompiled;
   readonly code = 6;
+  readonly documentation = true;
 
   public node: Awaited<ReturnType<typeof extractStoriesNodesFromExportDefaultFn>>[number];
 
@@ -97,7 +103,7 @@ export class NoCompiledStoryPropsObjectExpression extends StorybookSvelteCSFErro
 
   template() {
     return dedent`
-      Failed to extract compiled Story component attributes (props) as object expression in the compiled output of stories file: ${this.filepathURL}
+      Failed to extract compiled Story component props as object expression in the compiled output of stories file: ${this.filepathURL}
     `;
   }
 }

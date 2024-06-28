@@ -21,6 +21,7 @@ export const decorators = [
 
 export const initialGlobals = {
   foo: 'fooValue',
+  baz: 'bazValue',
 };
 
 export const globalTypes = {

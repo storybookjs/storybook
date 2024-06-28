@@ -51,7 +51,7 @@ export class StoryStore<TRenderer extends Renderer> {
 
   projectAnnotations: NormalizedProjectAnnotations<TRenderer>;
 
-  globals: GlobalsStore;
+  userGlobals: GlobalsStore;
 
   args: ArgsStore;
 
@@ -80,7 +80,7 @@ export class StoryStore<TRenderer extends Renderer> {
     const { initialGlobals, globalTypes } = this.projectAnnotations;
 
     this.args = new ArgsStore();
-    this.globals = new GlobalsStore({ globals: initialGlobals, globalTypes });
+    this.userGlobals = new GlobalsStore({ globals: initialGlobals, globalTypes });
     this.hooks = {};
     this.cleanupCallbacks = {};
 
@@ -96,7 +96,7 @@ export class StoryStore<TRenderer extends Renderer> {
     // By changing `this.projectAnnotations, we implicitly invalidate the `prepareStoryWithCache`
     this.projectAnnotations = normalizeProjectAnnotations(projectAnnotations);
     const { initialGlobals, globalTypes } = projectAnnotations;
-    this.globals.set({ globals: initialGlobals, globalTypes });
+    this.userGlobals.set({ globals: initialGlobals, globalTypes });
   }
 
   // This means that one of the CSF files has changed.
@@ -230,10 +230,17 @@ export class StoryStore<TRenderer extends Renderer> {
     story: PreparedStory<TRenderer>,
     { forceInitialArgs = false } = {}
   ): Omit<StoryContextForLoaders, 'viewMode'> {
+    const userGlobals = this.userGlobals.get();
+    const { initialGlobals } = this.userGlobals;
     return prepareContext({
       ...story,
       args: forceInitialArgs ? story.initialArgs : this.args.get(story.id),
-      globals: this.globals.get(),
+      initialGlobals,
+      userGlobals,
+      globals: {
+        ...userGlobals,
+        ...story.storyGlobals,
+      },
       hooks: this.hooks[story.id] as unknown,
     });
   }
@@ -300,7 +307,7 @@ export class StoryStore<TRenderer extends Renderer> {
 
     return {
       v: 2,
-      globals: this.globals.get(),
+      globals: this.userGlobals.get(),
       globalParameters: {},
       kindParameters,
       stories,

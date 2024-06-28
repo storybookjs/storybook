@@ -321,6 +321,37 @@ describe('prepareStory', () => {
     });
   });
 
+  describe('globals => storyGlobals', () => {
+    it('are combined in the right order', () => {
+      const { storyGlobals } = prepareStory(
+        {
+          id,
+          name,
+          globals: {
+            a: 'a-story',
+            b: 'b-story',
+          },
+          moduleExport,
+        },
+        {
+          id,
+          title,
+          globals: {
+            a: 'a-component',
+            c: 'c-component',
+          },
+        },
+        { render }
+      );
+
+      expect(storyGlobals).toEqual({
+        a: 'a-story',
+        b: 'b-story',
+        c: 'c-component',
+      });
+    });
+  });
+
   describe('applyLoaders', () => {
     it('awaits the result of a loader', async () => {
       const loader = vi.fn(async () => new Promise((r) => setTimeout(() => r({ foo: 7 }), 100)));

@@ -58,7 +58,7 @@ export function normalizeStory<TRenderer extends Renderer>(
     ...normalizeArrays(storyObject.beforeEach),
     ...normalizeArrays(story?.beforeEach),
   ];
-  const { render, play, tags = [] } = storyObject;
+  const { render, play, tags = [], globals = {} } = storyObject;
 
   // eslint-disable-next-line no-underscore-dangle
   const id = parameters.__id || toId(meta.id, exportName);
@@ -76,5 +76,6 @@ export function normalizeStory<TRenderer extends Renderer>(
     ...(render && { render }),
     ...(userStoryFn && { userStoryFn }),
     ...(play && { play }),
+    globals,
   };
 }

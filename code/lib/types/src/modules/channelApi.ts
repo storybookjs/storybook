@@ -56,6 +56,13 @@ export interface SetGlobalsPayload {
   globalTypes: GlobalTypes;
 }
 
+export interface GlobalsUpdatedPayload {
+  initialGlobals: Globals;
+  userGlobals: Globals;
+  storyGlobals: Globals;
+  globals: Globals;
+}
+
 export interface StoryPreparedPayload {
   id: StoryId;
   parameters: Parameters;

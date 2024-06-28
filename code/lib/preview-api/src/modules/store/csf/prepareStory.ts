@@ -3,6 +3,7 @@ import { global } from '@storybook/global';
 import type {
   Args,
   ArgsStoryFn,
+  Globals,
   ModuleExport,
   NormalizedComponentAnnotations,
   NormalizedProjectAnnotations,
@@ -200,6 +201,11 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
     ...storyAnnotations?.args,
   } as Args;
 
+  const storyGlobals: Globals = {
+    ...componentAnnotations.globals,
+    ...storyAnnotations?.globals,
+  };
+
   const contextForEnhancers: StoryContextForEnhancers<TRenderer> = {
     componentId: componentAnnotations.id,
     title: componentAnnotations.title,
@@ -214,6 +220,7 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
     parameters,
     initialArgs: passedArgs,
     argTypes: passedArgTypes,
+    storyGlobals,
   };
 
   contextForEnhancers.argTypes = argTypesEnhancers.reduce(

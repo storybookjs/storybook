@@ -33,7 +33,12 @@ describe(removeExportDefault.name, () => {
         ast: parseAst(code.toString()),
       })
     ).rejects.toThrowErrorMatchingInlineSnapshot(
-      `[SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0003 (NoExportDefaultError): Could not find 'export default' in the compiled output of the stories file: <path not specified>]`
+      `
+      [SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0003 (NoExportDefaultError): Could not find 'export default' in the compiled output of the stories file: <path not specified>
+
+      More info: https://github.com/storybookjs/addon-svelte-csf/blob/v4.1.2/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0003
+      ]
+    `
     );
   });
 });

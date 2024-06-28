@@ -1,11 +1,7 @@
+import { logger } from '@storybook/client-logger';
+import dedent from 'dedent';
 import type { ObjectExpression, Property } from 'estree';
 import type { Component } from 'svelte/compiler';
-
-import {
-  DescriptionNotObjectExpressionError,
-  DocsNotObjectExpressionError,
-  ParametersNotObjectExpressionError,
-} from '#utils/error/compiler';
 
 /**
  * Create ESTree compliant AST node for {@link Property}
@@ -114,11 +110,14 @@ export const getParametersPropertyValue = (
   }
 
   if (property.value.type !== 'ObjectExpression') {
-    throw new ParametersNotObjectExpressionError({
-      filename,
-      component,
-      property,
-    });
+    logger.warn(dedent`
+      Encountered invalid schema in an attempt to access 'parameters' of ${component ? "Story's prop" : 'defineMeta'}}.
+      Expected value to be an object expression.
+      Instead it was '${property.value.type}'.
+      This issue occurred in the stories file: ${filename}
+    `);
+
+    return undefined as never;
   }
 
   // FIXME: This is a dirty workaround.
@@ -149,11 +148,13 @@ export const getDocsPropertyValue = (options: Omit<FindPropertyOptions, 'name'>)
   const { value } = property;
 
   if (value.type !== 'ObjectExpression') {
-    throw new DocsNotObjectExpressionError({
-      filename,
-      component,
-      property,
-    });
+    logger.warn(dedent`
+      Encountered invalid schema in an attempt to access 'parameters.docs' of ${component ? "Story's prop" : 'defineMeta'}}.
+      Expected value to be an object expression.
+      Instead it was '${value.type}'.
+      This issue occurred in the stories file: ${filename}
+    `);
+    return undefined as never;
   }
 
   return value;
@@ -179,11 +180,13 @@ export const getDescriptionPropertyValue = (options: Omit<FindPropertyOptions, '
   const { value } = property;
 
   if (value.type !== 'ObjectExpression') {
-    throw new DescriptionNotObjectExpressionError({
-      filename,
-      component,
-      property,
-    });
+    logger.warn(dedent`
+      Encountered invalid schema in an attempt to access 'parameters.docs.description' of ${component ? "Story's prop" : 'defineMeta'}}.
+      Expected value to be an object expression.
+      Instead it was '${value.type}'.
+      This issue occurred in the stories file: ${filename}.
+    `);
+    return undefined as never;
   }
 
   return value;

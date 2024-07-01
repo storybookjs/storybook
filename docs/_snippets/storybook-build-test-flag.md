@@ -1,12 +1,12 @@
 ```shell renderer="common" language="js" packageManager="npm"
-npm run build-storybook -- --test
+npm run storybook build -- --test
 ```
 
 ```shell renderer="common" language="js" packageManager="pnpm"
-pnpm run build-storybook --test
+pnpm run storybook build --test
 ```
 
 ```shell renderer="common" language="js" packageManager="yarn"
-yarn build-storybook --test
+yarn storybook build --test
 ```
 

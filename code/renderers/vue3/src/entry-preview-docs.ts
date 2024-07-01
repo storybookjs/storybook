@@ -1,5 +1,5 @@
-import type { ArgTypesEnhancer, DecoratorFunction } from '@storybook/types';
-import { extractComponentDescription, enhanceArgTypes } from '@storybook/docs-tools';
+import { enhanceArgTypes, extractComponentDescription } from '@storybook/docs-tools';
+import type { ArgTypesEnhancer } from '@storybook/types';
 import { extractArgTypes } from './docs/extractArgTypes';
 import { sourceDecorator } from './docs/sourceDecorator';
 import type { VueRenderer } from './types';
@@ -12,6 +12,6 @@ export const parameters = {
   },
 };
 
-export const decorators: DecoratorFunction<VueRenderer>[] = [sourceDecorator];
+export const decorators = [sourceDecorator];
 
 export const argTypesEnhancers: ArgTypesEnhancer<VueRenderer>[] = [enhanceArgTypes];

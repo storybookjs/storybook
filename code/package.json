@@ -294,5 +294,6 @@
       ]
     ]
   },
-  "packageManager": "yarn@4.3.1"
+  "packageManager": "yarn@4.3.1",
+  "deferredNextVersion": "8.2.0-alpha.11"
 }

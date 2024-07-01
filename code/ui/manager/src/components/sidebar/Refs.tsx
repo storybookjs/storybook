@@ -17,6 +17,8 @@ import type { Highlight, RefType } from './types';
 import { getStateType } from '../../utils/tree';
 import { CollapseIcon } from './components/CollapseIcon';
 
+import type { API_IndexHash } from '@storybook/types';
+
 export interface RefProps {
   isLoading: boolean;
   isBrowsing: boolean;
@@ -128,6 +130,28 @@ export const Ref: FC<RefType & RefProps & { status?: State['status'] }> = React.
       [api, isMain, refId]
     );
 
+    const filteredIndex = {} as API_IndexHash;
+
+    function getLastWord(str: string) {
+      const words = str.split(' ');
+      return words[words.length - 1];
+    }
+
+    // Iterate through the index data
+    for (const key in index) {
+      // Check if the key starts with id of the error message
+      if (
+        indexError &&
+        indexError.hasOwnProperty('message') &&
+        key.startsWith(getLastWord(indexError.message))
+      ) {
+        // Do not include this item in the filtered index
+        continue;
+      }
+      // Otherwise, include it in the filtered index
+      filteredIndex[key] = index[key];
+    }
+
     return (
       <>
         {isMain || (
@@ -145,7 +169,23 @@ export const Ref: FC<RefType & RefProps & { status?: State['status'] }> = React.
         {isExpanded && (
           <Wrapper data-title={title} isMain={isMain}>
             {state === 'auth' && <AuthBlock id={refId} loginUrl={loginUrl} />}
-            {state === 'error' && <ErrorBlock error={indexError} />}
+            {state === 'error' && (
+              <>
+                <ErrorBlock error={indexError} />
+                <Tree
+                  status={props.status}
+                  isBrowsing={isBrowsing}
+                  isMain={isMain}
+                  refId={refId}
+                  data={filteredIndex}
+                  docsMode={docsOptions.docsMode}
+                  selectedStoryId={selectedStoryId}
+                  onSelectStoryId={onSelectStoryId}
+                  highlightedRef={highlightedRef}
+                  setHighlightedItemId={setHighlightedItemId}
+                />
+              </>
+            )}
             {state === 'loading' && <LoaderBlock isMain={isMain} />}
             {state === 'empty' && <EmptyBlock isMain={isMain} />}
             {state === 'ready' && (

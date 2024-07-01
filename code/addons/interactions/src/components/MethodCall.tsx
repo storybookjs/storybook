@@ -340,8 +340,8 @@ export const ElementNode = ({
   );
 };
 
-export const DateNode = ({ value }: { value: string }) => {
-  const [date, time, ms] = value.split(/[T.Z]/);
+export const DateNode = ({ value }: { value: string | Date }) => {
+  const [date, time, ms] = (value instanceof Date ? value.toISOString() : value).split(/[T.Z]/);
   const colors = useThemeColors();
   return (
     <span style={{ whiteSpace: 'nowrap', color: colors.date }}>

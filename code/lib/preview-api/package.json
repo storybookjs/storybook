@@ -50,11 +50,10 @@
     "@storybook/csf": "0.1.10--canary.d841bb4.0",
     "@storybook/global": "^5.0.0",
     "@storybook/types": "workspace:*",
-    "@types/qs": "^6.9.5",
     "dequal": "^2.0.2",
     "lodash": "^4.17.21",
     "memoizerific": "^1.11.3",
-    "qs": "^6.10.0",
+    "picoquery": "^1.3.0",
     "tiny-invariant": "^1.3.1",
     "ts-dedent": "^2.0.0",
     "util-deprecate": "^1.0.2"

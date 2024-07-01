@@ -20,5 +20,5 @@ export interface SelectionStore {
 
   setSelection(selection: Selection): void;
 
-  setQueryParams(queryParams: qs.ParsedQs): void;
+  setQueryParams(queryParams: Record<PropertyKey, unknown>): void;
 }

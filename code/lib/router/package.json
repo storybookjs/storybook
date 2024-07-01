@@ -51,7 +51,7 @@
   "dependencies": {
     "@storybook/client-logger": "workspace:*",
     "memoizerific": "^1.11.3",
-    "qs": "^6.10.0"
+    "picoquery": "^1.3.0"
   },
   "devDependencies": {
     "@storybook/global": "^5.0.0",

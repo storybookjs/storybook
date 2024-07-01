@@ -1,4 +1,4 @@
-import qs from 'qs';
+import { parse, type Options } from 'picoquery';
 import { dedent } from 'ts-dedent';
 import type { Args } from '@storybook/types';
 import { once } from '@storybook/client-logger';
@@ -30,17 +30,14 @@ const validateArgs = (key = '', value: unknown): boolean => {
   return false;
 };
 
-const QS_OPTIONS = {
+const QS_OPTIONS: Partial<Options> = {
   delimiter: ';', // we're parsing a single query param
-  allowDots: true, // objects are encoded using dot notation
-  allowSparse: true, // arrays will be merged on top of their initial value
-  decoder(
-    str: string,
-    defaultDecoder: (str: string, decoder?: any, charset?: string) => string,
-    charset: string,
-    type: 'key' | 'value'
-  ) {
-    if (type === 'value' && str.startsWith('!')) {
+  nesting: true,
+  arrayRepeat: true,
+  arrayRepeatSyntax: 'bracket',
+  nestingSyntax: 'js', // objects are encoded using dot notation
+  valueDeserializer(str: string) {
+    if (str.startsWith('!')) {
       if (str === '!undefined') return undefined;
       if (str === '!null') return null;
       if (str === '!true') return true;
@@ -59,13 +56,13 @@ const QS_OPTIONS = {
           : `${color[1]}(${color[2]}, ${color[3]}%, ${color[4]}%)`;
       }
     }
-    if (type === 'value' && NUMBER_REGEXP.test(str)) return Number(str);
-    return defaultDecoder(str, defaultDecoder, charset);
+    if (NUMBER_REGEXP.test(str)) return Number(str);
+    return str;
   },
 };
 export const parseArgsParam = (argsString: string): Args => {
   const parts = argsString.split(';').map((part) => part.replace('=', '~').replace(':', '='));
-  return Object.entries(qs.parse(parts.join(';'), QS_OPTIONS)).reduce((acc, [key, value]) => {
+  return Object.entries(parse(parts.join(';'), QS_OPTIONS)).reduce((acc, [key, value]) => {
     if (validateArgs(key, value)) return Object.assign(acc, { [key]: value });
     once.warn(dedent`
       Omitted potentially unsafe URL args.

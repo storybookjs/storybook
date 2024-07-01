@@ -62,7 +62,6 @@
   },
   "devDependencies": {
     "@types/lodash": "^4.14.167",
-    "@types/qs": "^6",
     "@types/semver": "^7.3.4",
     "flush-promises": "^1.0.2",
     "react": "^18.2.0",

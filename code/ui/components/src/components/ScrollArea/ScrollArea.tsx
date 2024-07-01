@@ -18,6 +18,9 @@ const ScrollAreaRoot = styled(ScrollAreaPrimitive.Root)<{ scrollbarsize: number;
     overflow: 'hidden',
     '--scrollbar-size': `${scrollbarsize + offset}px`,
     '--radix-scroll-area-thumb-width': `${scrollbarsize}px`,
+    '& > div:nth-child(1) > div:nth-child(1)': {
+      display: 'block',
+    },
   })
 );
 

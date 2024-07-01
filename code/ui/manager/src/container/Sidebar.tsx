@@ -6,6 +6,7 @@ import { Addon_TypesEnum } from '@storybook/types';
 
 import type { SidebarProps as SidebarComponentProps } from '../components/sidebar/Sidebar';
 import { Sidebar as SidebarComponent } from '../components/sidebar/Sidebar';
+import { FILTER_KEY } from '../components/sidebar/Search';
 import { useMenu } from './Menu';
 
 export type Item = StoriesHash[keyof StoriesHash];
@@ -65,6 +66,7 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
       enableShortcuts,
       bottom,
       extra: top,
+      initialQuery: api.getQueryParam(FILTER_KEY),
     };
   };
 

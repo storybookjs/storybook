@@ -86,7 +86,6 @@
     "@storybook/theming": "workspace:*",
     "@storybook/types": "workspace:*",
     "@tanstack/react-virtual": "^3.3.0",
-    "@testing-library/react": "^11.2.2",
     "@types/react-transition-group": "^4",
     "@types/semver": "^7.3.4",
     "browser-dtector": "^3.4.0",

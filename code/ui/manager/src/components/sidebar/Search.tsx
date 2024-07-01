@@ -1,6 +1,6 @@
 import { useStorybookApi, shortcutToHumanString } from '@storybook/manager-api';
 import { styled } from '@storybook/theming';
-import type { DownshiftState, StateChangeOptions } from 'downshift';
+import type { DownshiftState, StateChangeOptions, ControllerStateAndHelpers } from 'downshift';
 import Downshift from 'downshift';
 import type { FuseOptions } from 'fuse.js';
 import Fuse from 'fuse.js';
@@ -27,6 +27,8 @@ import { CreateNewStoryFileModal } from './CreateNewStoryFileModal';
 const { document } = global;
 
 const DEFAULT_MAX_SEARCH_RESULTS = 50;
+
+export const FILTER_KEY = 'search';
 
 const options = {
   shouldSort: true,
@@ -167,21 +169,23 @@ const FocusContainer = styled.div({ outline: 0 });
 const isDevelopment = global.CONFIG_TYPE === 'DEVELOPMENT';
 const isRendererReact = global.STORYBOOK_RENDERER === 'react';
 
-export const Search = React.memo<{
+export interface SearchProps {
   children: SearchChildrenFn;
   dataset: CombinedDataset;
   enableShortcuts?: boolean;
   getLastViewed: () => Selection[];
   initialQuery?: string;
   showCreateStoryButton?: boolean;
-}>(function Search({
+}
+
+export const Search = React.memo(function Search({
   children,
   dataset,
   enableShortcuts = true,
   getLastViewed,
   initialQuery = '',
   showCreateStoryButton = isDevelopment && isRendererReact,
-}) {
+}: SearchProps) {
   const api = useStorybookApi();
   const inputRef = useRef<HTMLInputElement>(null);
   const [inputPlaceholder, setPlaceholder] = useState('Find components');
@@ -261,9 +265,26 @@ export const Search = React.memo<{
     [api]
   );
 
-  const onInputValueChange = useCallback((inputValue: string, stateAndHelpers: any) => {
-    showAllComponents(false);
-  }, []);
+  const onInputValueChange = useCallback(
+    (inputValue: string, stateAndHelpers: ControllerStateAndHelpers<DownshiftItem>) => {
+      showAllComponents(false);
+      const isBrowsing = !stateAndHelpers.isOpen && document.activeElement !== inputRef.current;
+      api.setQueryParams({
+        [FILTER_KEY]: isBrowsing ? null : inputValue,
+      });
+      const params = new URLSearchParams(window.location.search);
+      if (window.history.replaceState) {
+        if (inputValue) {
+          params.set(FILTER_KEY, inputValue);
+        } else {
+          params.delete(FILTER_KEY);
+        }
+        const paramsString = params.size > 0 ? `?${params.toString()}` : '';
+        window.history.replaceState({}, '', paramsString);
+      }
+    },
+    []
+  );
 
   const stateReducer = useCallback(
     (state: DownshiftState<DownshiftItem>, changes: StateChangeOptions<DownshiftItem>) => {
@@ -318,6 +339,7 @@ export const Search = React.memo<{
     <Downshift<DownshiftItem>
       initialInputValue={initialQuery}
       stateReducer={stateReducer}
+      initialIsOpen={initialQuery !== ''}
       // @ts-expect-error (Converted from ts-ignore)
       itemToString={(result) => result?.item?.name || ''}
       scrollIntoView={(e) => scrollIntoView(e)}
@@ -339,6 +361,8 @@ export const Search = React.memo<{
       }) => {
         const input = inputValue ? inputValue.trim() : '';
         let results: DownshiftItem[] = input ? getResults(input) : [];
+
+        const isBrowsing = !isOpen && document.activeElement !== inputRef.current;
 
         const lastViewed = !input && getLastViewed();
         if (lastViewed && lastViewed.length) {
@@ -405,7 +429,7 @@ export const Search = React.memo<{
                   </FocusKey>
                 )}
                 {isOpen && (
-                  <ClearIcon onClick={() => clearSelection()}>
+                  <ClearIcon onClick={() => clearSelection()} title="Clear search">
                     <CloseIcon />
                   </ClearIcon>
                 )}
@@ -437,7 +461,7 @@ export const Search = React.memo<{
               {children({
                 query: input,
                 results,
-                isBrowsing: !isOpen && document.activeElement !== inputRef.current,
+                isBrowsing,
                 closeMenu,
                 getMenuProps,
                 getItemProps,

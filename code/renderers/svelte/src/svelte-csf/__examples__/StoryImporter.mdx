@@ -1,0 +1,28 @@
+import { Meta, Canvas } from '@storybook/blocks';
+import * as ExportNameStories from './ExportName.stories.svelte';
+
+<Meta title="Examples/ExportName" name="MDX Docs" />
+
+This document demonstrates how to import stories in other files, such as MDX docs.
+
+Stories are imported by using their export name, either derived from their `name` prop or the explicit `exportName` prop.
+
+The following "Simple name" story is added like this:
+
+```mdx
+import * as ExportNameStories from './ExportName.stories.svelte';
+...
+<Canvas of={ExportNameStories.SimpleName} />
+```
+
+<Canvas of={ExportNameStories.SimpleName} />
+
+The following story with a custom export name is added like this:
+
+```mdx
+import * as ExportNameStories from './ExportName.stories.svelte';
+...
+<Canvas of={ExportNameStories.CustomExportName} />
+```
+
+<Canvas of={ExportNameStories.CustomExportName} />

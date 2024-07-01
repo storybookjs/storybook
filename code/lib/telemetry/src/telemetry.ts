@@ -46,6 +46,7 @@ const globalContext = {
   inCI: Boolean(process.env.CI),
   isTTY: process.stdout.isTTY,
   platform: getOperatingSystem(),
+  nodeVersion: process.versions.node,
 } as Record<string, any>;
 
 const prepareRequest = async (data: TelemetryData, context: Record<string, any>, options: any) => {

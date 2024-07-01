@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
 import type {
-  PlayFunction,
   ProjectAnnotations,
   Renderer,
+  StoryContext,
   StoryId,
   StrictArgTypes,
   Tag,
@@ -35,14 +35,6 @@ export type PartialArgsStoryFn<TRenderer extends Renderer = Renderer, TArgs = Ar
   T: TArgs;
 })['storyResult'];
 
-type MakeAllParametersOptional<T> = T extends (...args: infer P) => infer R
-  ? (...args: { [K in keyof P]?: Partial<P[K]> }) => R
-  : never;
-
-export type ComposedStoryPlayFn<
-  TRenderer extends Renderer = Renderer,
-  TArgs = Args,
-> = MakeAllParametersOptional<PlayFunction<TRenderer, Partial<TArgs>>>;
 /**
  * A story that got recomposed for portable stories, containing all the necessary data to be rendered in external environments
  */
@@ -52,7 +44,7 @@ export type ComposedStoryFn<
 > = PartialArgsStoryFn<TRenderer, TArgs> & {
   args: TArgs;
   id: StoryId;
-  play?: ComposedStoryPlayFn<TRenderer, TArgs>;
+  play?: (context?: Partial<StoryContext<TRenderer, Partial<TArgs>>>) => Promise<void>;
   load: () => Promise<void>;
   storyName: string;
   parameters: Parameters;

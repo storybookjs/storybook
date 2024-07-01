@@ -1,41 +1,21 @@
 {
   "name": "portable-stories-vue3",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "scripts": {
-    "dev": "vite",
     "build": "tsc && vite build",
+    "cypress": "cypress run --component",
+    "cypress-open": "cypress open --component",
+    "dev": "vite",
+    "jest": "echo 'Jest tests are not implemented!'",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "playwright": "playwright test",
     "preview": "vite preview",
     "storybook": "STORYBOOK_TELEMETRY_URL=\"http://localhost:6007/event-log\" storybook dev -p 6006",
-    "jest": "echo 'Jest tests are not implemented!'",
-    "vitest": "echo 'Vitest tests are implemented in the renderer directory instead!'",
-    "playwright": "playwright test",
-    "cypress": "cypress run --component",
-    "cypress-open": "cypress open --component"
-  },
-  "dependencies": {
-    "vue": "^3.4.19"
-  },
-  "devDependencies": {
-    "@playwright/experimental-ct-vue": "^1.42.1",
-    "@storybook/addon-essentials": "^8.0.0",
-    "@storybook/addon-interactions": "^8.0.0",
-    "@storybook/test": "^8.0.0",
-    "@storybook/vue3": "^8.0.0",
-    "@storybook/vue3-vite": "^8.0.0",
-    "@testing-library/jest-dom": "6.4.5",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.21.0",
-    "@vitejs/plugin-vue": "^5.0.4",
-    "cypress": "^13.6.4",
-    "eslint": "^8.56.0",
-    "eslint-plugin-storybook": "^0.6.15",
-    "storybook": "^8.0.0",
-    "typescript": "^5.2.2",
-    "vite": "^5.1.1"
+    "vitest": "echo 'Vitest tests are implemented in the renderer directory instead!'"
   },
   "resolutions": {
+    "@playwright/test": "1.42.1",
     "@storybook/addon-a11y": "portal:../../../code/addons/a11y",
     "@storybook/addon-actions": "portal:../../../code/addons/actions",
     "@storybook/addon-backgrounds": "portal:../../../code/addons/backgrounds",
@@ -46,8 +26,8 @@
     "@storybook/addon-interactions": "portal:../../../code/addons/interactions",
     "@storybook/addon-jest": "portal:../../../code/addons/jest",
     "@storybook/addon-links": "portal:../../../code/addons/links",
-    "@storybook/addon-mgx-gfm": "portal:../../../code/addons/mgx-gfm",
     "@storybook/addon-measure": "portal:../../../code/addons/measure",
+    "@storybook/addon-mgx-gfm": "portal:../../../code/addons/mgx-gfm",
     "@storybook/addon-outline": "portal:../../../code/addons/outline",
     "@storybook/addon-storysource": "portal:../../../code/addons/storysource",
     "@storybook/addon-themes": "portal:../../../code/addons/themes",
@@ -112,7 +92,29 @@
     "@storybook/web-components": "portal:../../../code/renderers/web-components",
     "@storybook/web-components-vite": "portal:../../../code/frameworks/web-components-vite",
     "@storybook/web-components-webpack5": "portal:../../../code/frameworks/web-components-webpack5",
+    "playwright": "1.42.1",
     "sb": "portal:../../../code/lib/cli-sb",
     "storybook": "portal:../../../code/lib/cli-storybook"
+  },
+  "dependencies": {
+    "vue": "^3.4.19"
+  },
+  "devDependencies": {
+    "@playwright/experimental-ct-vue": "1.42.1",
+    "@storybook/addon-essentials": "^8.0.0",
+    "@storybook/addon-interactions": "^8.0.0",
+    "@storybook/test": "^8.0.0",
+    "@storybook/vue3": "^8.0.0",
+    "@storybook/vue3-vite": "^8.0.0",
+    "@testing-library/jest-dom": "6.4.5",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "@vitejs/plugin-vue": "^5.0.4",
+    "cypress": "^13.6.4",
+    "eslint": "^8.56.0",
+    "eslint-plugin-storybook": "^0.6.15",
+    "storybook": "^8.0.0",
+    "typescript": "^5.2.2",
+    "vite": "^5.1.1"
   }
 }

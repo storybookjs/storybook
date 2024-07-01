@@ -1,4 +1,4 @@
-import readPkgUp from 'read-pkg-up';
+import { findPackageSync } from 'fd-package-json';
 import { detect, getNpmVersion } from 'detect-package-manager';
 import {
   loadMainConfig,
@@ -104,11 +104,11 @@ export const computeStorybookMetadata = async ({
 
   try {
     const packageManagerType = await detect({ cwd: getProjectRoot() });
-    const packageManagerVerson = await getNpmVersion(packageManagerType);
+    const packageManagerVersion = await getNpmVersion(packageManagerType);
 
     metadata.packageManager = {
       type: packageManagerType,
-      version: packageManagerVerson,
+      version: packageManagerVersion,
     };
     // Better be safe than sorry, some codebases/paths might end up breaking with something like "spawn pnpm ENOENT"
     // so we just set the package manager if the detection is successful
@@ -224,7 +224,7 @@ export const getStorybookMetadata = async (_configDir?: string) => {
     return cachedMetadata;
   }
 
-  const { packageJson = {} } = readPkgUp.sync({ cwd: process.cwd(), normalize: false }) || {};
+  const packageJson = findPackageSync(process.cwd()) || {};
   // TODO: improve the way configDir is extracted, as a "storybook" script might not be present
   // Scenarios:
   // 1. user changed it to something else e.g. "storybook:dev"
@@ -232,7 +232,7 @@ export const getStorybookMetadata = async (_configDir?: string) => {
   const configDir =
     (_configDir ||
       (getStorybookConfiguration(
-        packageJson?.scripts?.storybook || '',
+        String((packageJson?.scripts as Record<string, unknown> | undefined)?.storybook || ''),
         '-c',
         '--config-dir'
       ) as string)) ??

@@ -17,7 +17,6 @@ import type {
   V3CompatIndexEntry,
   StoryContext,
   StoryContextForEnhancers,
-  StoryContextForLoaders,
   StoryId,
   PreparedMeta,
 } from '@storybook/types';
@@ -226,10 +225,7 @@ export class StoryStore<TRenderer extends Renderer> {
 
   // A prepared story does not include args, globals or hooks. These are stored in the story store
   // and updated separtely to the (immutable) story.
-  getStoryContext(
-    story: PreparedStory<TRenderer>,
-    { forceInitialArgs = false } = {}
-  ): Omit<StoryContextForLoaders, 'viewMode'> {
+  getStoryContext(story: PreparedStory<TRenderer>, { forceInitialArgs = false } = {}) {
     return prepareContext({
       ...story,
       args: forceInitialArgs ? story.initialArgs : this.args.get(story.id),
@@ -369,6 +365,12 @@ export class StoryStore<TRenderer extends Renderer> {
       storyFn: (update) => {
         const context = {
           ...this.getStoryContext(story),
+          abortSignal: new AbortController().signal,
+          canvasElement: null!,
+          loaded: {},
+          step: (label, play) => story.runStep(label, play, context),
+          context: null!,
+          canvas: {},
           viewMode: 'story',
         } as StoryContext<TRenderer>;
 

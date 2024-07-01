@@ -604,3 +604,22 @@ export class NoStatsForViteDevError extends StorybookError {
     `;
   }
 }
+
+export class FindPackageVersionsError extends StorybookError {
+  readonly category = Category.CLI;
+
+  readonly code = 1;
+
+  constructor(
+    public data: { error: Error | unknown; packageName: string; packageManager: string }
+  ) {
+    super();
+  }
+
+  template() {
+    return dedent`
+      Unable to find versions of "${this.data.packageName}" using ${this.data.packageManager}
+      ${this.data.error && `Reason: ${this.data.error}`}
+    `;
+  }
+}

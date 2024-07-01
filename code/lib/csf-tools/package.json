@@ -46,7 +46,7 @@
     "@babel/parser": "^7.24.4",
     "@babel/traverse": "^7.24.1",
     "@babel/types": "^7.24.0",
-    "@storybook/csf": "^0.1.8",
+    "@storybook/csf": "0.1.10--canary.d841bb4.0",
     "@storybook/types": "workspace:*",
     "fs-extra": "^11.1.0",
     "recast": "^0.23.5",

@@ -33,7 +33,6 @@
       ".tsx"
     ]
   },
-  "eslint.packageManager": "yarn",
   "eslint.useESLintClass": true,
   "eslint.validate": [
     "json",

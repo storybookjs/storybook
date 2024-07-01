@@ -2,7 +2,7 @@ import program from 'commander';
 import chalk from 'chalk';
 import envinfo from 'envinfo';
 import leven from 'leven';
-import { sync as readUpSync } from 'read-pkg-up';
+import { findPackageSync } from 'fd-package-json';
 import invariant from 'tiny-invariant';
 
 import { logger } from '@storybook/node-logger';
@@ -30,9 +30,8 @@ import { doctor } from './doctor';
 
 addToGlobalContext('cliVersion', versions.storybook);
 
-const readUpResult = readUpSync({ cwd: __dirname });
-invariant(readUpResult, 'Failed to find the closest package.json file.');
-const pkg = readUpResult.packageJson;
+const pkg = findPackageSync(__dirname);
+invariant(pkg, 'Failed to find the closest package.json file.');
 const consoleLogger = console;
 
 const command = (name: string) =>
@@ -325,4 +324,4 @@ program.on('command:*', ([invalidCmd]) => {
   process.exit(1);
 });
 
-program.usage('<command> [options]').version(pkg.version).parse(process.argv);
+program.usage('<command> [options]').version(String(pkg.version)).parse(process.argv);

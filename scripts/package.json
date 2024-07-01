@@ -186,7 +186,6 @@
     "verdaccio": "^5.31.1",
     "verdaccio-auth-memory": "^10.2.2"
   },
-  "packageManager": "yarn@4.0.2",
   "engines": {
     "node": ">=18.0.0"
   }

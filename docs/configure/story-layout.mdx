@@ -1,0 +1,46 @@
+---
+title: 'Story layout'
+sidebar:
+  order: 6
+  title: Story layout
+---
+
+The `layout` [parameter](../writing-stories/parameters.mdx) allows you to configure how stories are positioned in Storybook's Canvas tab.
+
+## Global layout
+
+You can add the parameter to your [`./storybook/preview.js`](./index.mdx#configure-story-rendering), like so:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-preview-layout-param.md" />
+
+{/* prettier-ignore-end */}
+
+![Layout params centered story](../_assets/configure/layout-params-story-centered.png)
+
+In the example above, Storybook will center all stories in the UI. `layout` accepts these options:
+
+* `centered`: center the component horizontally and vertically in the Canvas
+* `fullscreen`: allow the component to expand to the full width and height of the Canvas
+* `padded`: *(default)* Add extra padding around the component
+
+## Component layout
+
+You can also set it at a component level like so:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-component-layout-param.md" />
+
+{/* prettier-ignore-end */}
+
+## Story layout
+
+Or even apply it to specific stories like so:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-story-layout-param.md" usesCsf3 csf2Path="configure/story-layout#snippet-storybook-story-layout-param" />
+
+{/* prettier-ignore-end */}

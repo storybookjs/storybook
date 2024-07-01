@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import type { PlayFunctionContext, StepRunner } from '@storybook/types';
+import type { StoryContext, StepRunner } from '@storybook/types';
 import { composeStepRunners } from './stepRunners';
 
 describe('stepRunners', () => {
@@ -21,10 +21,10 @@ describe('stepRunners', () => {
     const composed = composeStepRunners([firstStepRunner, secondStepRunner]);
 
     const playFnA = vi.fn();
-    const playContextA = {} as PlayFunctionContext;
+    const playContextA = {} as StoryContext;
     await composed('a', playFnA, playContextA);
     const playFnB = vi.fn();
-    const playContextB = {} as PlayFunctionContext;
+    const playContextB = {} as StoryContext;
     await composed('b', playFnB, playContextB);
 
     expect(playFnA).toHaveBeenCalledTimes(1);
@@ -47,10 +47,10 @@ describe('stepRunners', () => {
     const composed = composeStepRunners([]);
 
     const playFnA = vi.fn();
-    const playContextA = {} as PlayFunctionContext;
+    const playContextA = {} as StoryContext;
     await composed('a', playFnA, playContextA);
     const playFnB = vi.fn();
-    const playContextB = {} as PlayFunctionContext;
+    const playContextB = {} as StoryContext;
     await composed('b', playFnB, playContextB);
 
     expect(playFnA).toHaveBeenCalledTimes(1);

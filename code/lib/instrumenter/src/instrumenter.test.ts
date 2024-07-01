@@ -175,6 +175,27 @@ describe('Instrumenter', () => {
     );
   });
 
+  it('handles circular references', () => {
+    const { fn } = instrument({ fn: (...args: any) => {} });
+    const obj = { key: 'value', obj: {}, array: [] as any[] };
+    obj.obj = obj;
+    obj.array = [obj];
+
+    expect(() => fn(obj)).not.toThrow();
+
+    expect(callSpy.mock.calls[0][0].args).toMatchInlineSnapshot(`
+      [
+        {
+          "array": [
+            "[Circular]",
+          ],
+          "key": "value",
+          "obj": "[Circular]",
+        },
+      ]
+    `);
+  });
+
   it('provides metadata about the call in the event', () => {
     const { obj } = instrument({ obj: { fn: () => {} } });
     obj.fn();

@@ -13,6 +13,10 @@ import { normalizeInputTypes } from './normalizeInputTypes';
 import { normalizeArrays } from './normalizeArrays';
 import { combineParameters } from '../parameters';
 
+// TODO(kasperpeulen) Consolidate this function with composeConfigs
+// As composeConfigs is the real normalizer, and always run before normalizeProjectAnnotations
+// tmeasday: Alternatively we could get rid of composeConfigs and just pass ProjectAnnotations[] around -- and do the composing here.
+// That makes sense to me as it avoids the need for both WP + Vite to call composeConfigs at the right time.
 export function normalizeProjectAnnotations<TRenderer extends Renderer>({
   argTypes,
   globalTypes,
@@ -48,6 +52,6 @@ export function normalizeProjectAnnotations<TRenderer extends Renderer>({
       inferControls,
     ],
     initialGlobals: combineParameters(initialGlobals, globals),
-    ...annotations,
+    ...(annotations as NormalizedProjectAnnotations<TRenderer>),
   };
 }

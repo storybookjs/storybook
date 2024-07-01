@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-loop-func,no-underscore-dangle */
+/* eslint-disable no-underscore-dangle */
 import { global } from '@storybook/global';
 import type {
   Args,
@@ -8,12 +8,9 @@ import type {
   NormalizedProjectAnnotations,
   NormalizedStoryAnnotations,
   Parameters,
-  PlayFunction,
-  PlayFunctionContext,
   PreparedMeta,
   PreparedStory,
   Renderer,
-  StepLabel,
   StoryContext,
   StoryContextForEnhancers,
   StoryContextForLoaders,
@@ -50,9 +47,9 @@ export function prepareStory<TRenderer extends Renderer>(
   );
 
   const applyLoaders = async (
-    context: StoryContextForLoaders<TRenderer>
-  ): Promise<StoryContextForLoaders<TRenderer> & { loaded: StoryContext<TRenderer>['loaded'] }> => {
-    let updatedContext = { ...context, loaded: {} };
+    context: StoryContext<TRenderer>
+  ): Promise<StoryContext<TRenderer>['loaded']> => {
+    const loaded = {};
     for (const loaders of [
       ...('__STORYBOOK_TEST_LOADERS__' in global && Array.isArray(global.__STORYBOOK_TEST_LOADERS__)
         ? [global.__STORYBOOK_TEST_LOADERS__]
@@ -61,12 +58,11 @@ export function prepareStory<TRenderer extends Renderer>(
       normalizeArrays(componentAnnotations.loaders),
       normalizeArrays(storyAnnotations.loaders),
     ]) {
-      const loadResults = await Promise.all(loaders.map((loader) => loader(updatedContext)));
-      const loaded: Record<string, any> = Object.assign({}, ...loadResults);
-      updatedContext = { ...updatedContext, loaded: { ...updatedContext.loaded, ...loaded } };
+      if (context.abortSignal.aborted) return loaded;
+      const loadResults = await Promise.all(loaders.map((loader) => loader(context)));
+      Object.assign(loaded, ...loadResults);
     }
-
-    return updatedContext;
+    return loaded;
   };
 
   const applyBeforeEach = async (context: StoryContext<TRenderer>): Promise<CleanupCallback[]> => {
@@ -76,6 +72,7 @@ export function prepareStory<TRenderer extends Renderer>(
       ...normalizeArrays(componentAnnotations.beforeEach),
       ...normalizeArrays(storyAnnotations.beforeEach),
     ]) {
+      if (context.abortSignal.aborted) return cleanupCallbacks;
       const cleanup = await beforeEach(context);
       if (cleanup) cleanupCallbacks.push(cleanup);
     }
@@ -106,20 +103,7 @@ export function prepareStory<TRenderer extends Renderer>(
   const decoratedStoryFn = applyHooks<TRenderer>(applyDecorators)(undecoratedStoryFn, decorators);
   const unboundStoryFn = (context: StoryContext<TRenderer>) => decoratedStoryFn(context);
 
-  const play = storyAnnotations?.play || componentAnnotations.play;
-
-  const playFunction =
-    play &&
-    (async (storyContext: StoryContext<TRenderer>) => {
-      const playFunctionContext: PlayFunctionContext<TRenderer> = {
-        ...storyContext,
-        // eslint-disable-next-line @typescript-eslint/no-shadow
-        step: (label: StepLabel, play: PlayFunction<TRenderer>) =>
-          // TODO: We know runStep is defined, we need a proper normalized annotations type
-          runStep!(label, play, playFunctionContext),
-      };
-      return play(playFunctionContext);
-    });
+  const playFunction = storyAnnotations?.play ?? componentAnnotations?.play;
 
   return {
     ...partialAnnotations,
@@ -133,6 +117,7 @@ export function prepareStory<TRenderer extends Renderer>(
     applyLoaders,
     applyBeforeEach,
     playFunction,
+    runStep,
   };
 }
 export function prepareMeta<TRenderer extends Renderer>(

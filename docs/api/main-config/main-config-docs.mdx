@@ -1,0 +1,64 @@
+---
+title: 'docs'
+sidebar:
+  order: 9
+  title: docs
+---
+
+Parent: [main.js|ts configuration](./main-config.mdx)
+
+Type:
+
+```ts
+{
+  autodocs?: boolean | 'tag';
+  defaultName?: string;
+  docsMode?: boolean;
+}
+```
+
+Configures Storybook's [auto-generated documentation](../../writing-docs/autodocs.mdx).
+
+## `autodocs`
+
+Type: `boolean | 'tag'`
+
+Default: `'tag'`
+
+Enables or disables automatic documentation for stories.
+
+* `true`: Enables it for all stories
+* `false`: Disables it for all stories
+* `'tag'`: Enables it for stories tagged with `'autodocs'`
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="main-config-docs-autodocs.md" />
+
+{/* prettier-ignore-end */}
+
+## `defaultName`
+
+Type: `string`
+
+Default: `'Docs'`
+
+Name used for generated documentation pages.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="main-config-docs-default-name.md" />
+
+{/* prettier-ignore-end */}
+
+## `docsMode`
+
+Type: `boolean`
+
+Only show documentation pages in the sidebar (usually set with the `--docs` CLI flag).
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="main-config-docs-docs-mode.md" />
+
+{/* prettier-ignore-end */}

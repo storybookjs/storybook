@@ -942,14 +942,14 @@ describe('PreviewWeb', () => {
         openBlockLoadersGate({ l: 8 });
         await waitForRender();
 
-        // Assert - renderToCanvas to be called the first time with initial args
+        // Assert - renderToCanvas to be called the first time with initial args and returned `loaded` value.
         expect(projectAnnotations.renderToCanvas).toHaveBeenCalledOnce();
         expect(projectAnnotations.renderToCanvas).toHaveBeenCalledWith(
           expect.objectContaining({
             forceRemount: true,
             storyContext: expect.objectContaining({
               loaded: { l: 8 }, // This is the value returned by the *first* loader call
-              args: { foo: 'a', new: 'arg', one: 'mapped-1' },
+              args: { foo: 'a', one: 'mapped-1' },
             }),
           }),
           'story-element'

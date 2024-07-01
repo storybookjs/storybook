@@ -2,6 +2,8 @@ import dedent from 'ts-dedent';
 import { sync as findUpSync } from 'find-up';
 import { existsSync, readFileSync } from 'fs';
 import path from 'path';
+import { FindPackageVersionsError } from '@storybook/core-events/server-errors';
+
 import { createLogStream } from '../utils/cli';
 import { JsPackageManager } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
@@ -162,20 +164,24 @@ export class Yarn1Proxy extends JsPackageManager {
     fetchAllVersions: T
   ): Promise<T extends true ? string[] : string> {
     const args = [fetchAllVersions ? 'versions' : 'version', '--json'];
-
-    const commandResult = await this.executeCommand({
-      command: 'yarn',
-      args: ['info', packageName, ...args],
-    });
-
     try {
+      const commandResult = await this.executeCommand({
+        command: 'yarn',
+        args: ['info', packageName, ...args],
+      });
+
       const parsedOutput = JSON.parse(commandResult);
       if (parsedOutput.type === 'inspect') {
         return parsedOutput.data;
       }
-      throw new Error(`Unable to find versions of ${packageName} using yarn`);
-    } catch (e) {
-      throw new Error(`Unable to find versions of ${packageName} using yarn`);
+      // eslint-disable-next-line local-rules/no-uncategorized-errors
+      throw new Error(`Yarn did not provide an output with type 'inspect'.`);
+    } catch (error) {
+      throw new FindPackageVersionsError({
+        error,
+        packageManager: 'Yarn 1',
+        packageName,
+      });
     }
   }
 

@@ -5,6 +5,8 @@ import { sync as findUpSync } from 'find-up';
 import { existsSync, readFileSync } from 'fs';
 import path from 'path';
 import { logger } from '@storybook/node-logger';
+import { FindPackageVersionsError } from '@storybook/core-events/server-errors';
+
 import { JsPackageManager } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
 import type { InstallationMetadata, PackageMetadata } from './types';
@@ -225,23 +227,26 @@ export class NPMProxy extends JsPackageManager {
     fetchAllVersions: T
   ): Promise<T extends true ? string[] : string> {
     const args = [fetchAllVersions ? 'versions' : 'version', '--json'];
-
-    const commandResult = await this.executeCommand({
-      command: 'npm',
-      args: ['info', packageName, ...args],
-    });
-
     try {
+      const commandResult = await this.executeCommand({
+        command: 'npm',
+        args: ['info', packageName, ...args],
+      });
+
       const parsedOutput = JSON.parse(commandResult);
 
-      if (parsedOutput.error) {
-        // FIXME: improve error handling
-        throw new Error(parsedOutput.error.summary);
-      } else {
-        return parsedOutput;
+      if (parsedOutput.error?.summary) {
+        // this will be handled in the catch block below
+        throw parsedOutput.error.summary;
       }
-    } catch (e) {
-      throw new Error(`Unable to find versions of ${packageName} using npm`);
+
+      return parsedOutput;
+    } catch (error) {
+      throw new FindPackageVersionsError({
+        error,
+        packageManager: 'NPM',
+        packageName,
+      });
     }
   }
 

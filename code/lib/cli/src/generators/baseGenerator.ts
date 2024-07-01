@@ -23,6 +23,7 @@ const defaultOptions: FrameworkOptions = {
   staticDir: undefined,
   addScripts: true,
   addMainFile: true,
+  addPreviewFile: true,
   addComponents: true,
   webpackCompiler: () => undefined,
   extraMain: undefined,
@@ -30,6 +31,8 @@ const defaultOptions: FrameworkOptions = {
   extensions: undefined,
   componentsDestinationPath: undefined,
   storybookConfigFolder: '.storybook',
+  installStorybookPackage: true,
+  installFrameworkPackages: true,
 };
 
 const getBuilderDetails = (builder: string) => {
@@ -202,12 +205,15 @@ export async function baseGenerator(
     staticDir,
     addScripts,
     addMainFile,
+    addPreviewFile,
     addComponents,
     extraMain,
     extensions,
     storybookConfigFolder,
     componentsDestinationPath,
     webpackCompiler,
+    installStorybookPackage,
+    installFrameworkPackages,
   } = {
     ...defaultOptions,
     ...options,
@@ -279,9 +285,9 @@ export async function baseGenerator(
       : extraPackages;
 
   const allPackages = [
-    'storybook',
+    installStorybookPackage ? 'storybook' : undefined,
     getExternalFramework(rendererId) ? undefined : `@storybook/${rendererId}`,
-    ...frameworkPackages,
+    ...(installFrameworkPackages ? frameworkPackages : []),
     ...addonPackages,
     ...(extraPackagesToInstall || []),
   ].filter(Boolean);
@@ -323,7 +329,9 @@ export async function baseGenerator(
     addDependenciesSpinner.succeed();
   }
 
-  await fse.ensureDir(`./${storybookConfigFolder}`);
+  if (addMainFile || addPreviewFile) {
+    await fse.ensureDir(`./${storybookConfigFolder}`);
+  }
 
   if (addMainFile) {
     const prefixes = shouldApplyRequireWrapperOnPackageNames
@@ -371,12 +379,14 @@ export async function baseGenerator(
     });
   }
 
-  await configurePreview({
-    frameworkPreviewParts,
-    storybookConfigFolder: storybookConfigFolder as string,
-    language,
-    rendererId,
-  });
+  if (addPreviewFile) {
+    await configurePreview({
+      frameworkPreviewParts,
+      storybookConfigFolder: storybookConfigFolder as string,
+      language,
+      rendererId,
+    });
+  }
 
   if (addScripts) {
     await packageManager.addStorybookCommandInScripts({

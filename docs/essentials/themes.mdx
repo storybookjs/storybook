@@ -1,0 +1,45 @@
+---
+title: Themes
+draft: true
+sidebar:
+  order: 9
+  title: Themes
+---
+
+Storybook's [Themes](https://github.com/storybookjs/storybook/tree/next/code/addons/themes) addon allows you to switch between multiple themes for your components inside of the preview in [Storybook](https://storybook.js.org).
+
+![Switching between themes in Storybook](../_assets/essentials/addon-themes-example.gif)
+
+## Theme decorators
+
+To make your themes accessible to your stories, `@storybook/addon-themes` exposes three [decorators](https://storybook.js.org/docs/writing-stories/decorators) for different methods of theming.
+
+### JSX providers
+
+For libraries that expose themes to components through providers, such as [Material UI](https://storybook.js.org/recipes/@mui/material/), [Styled-components](https://storybook.js.org/recipes/styled-components/), and [Emotion](https://storybook.js.org/recipes/@emotion/styled/), use the `withThemeFromJSXProvider`.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-addon-themes-jsx-provider-decorator.md" />
+
+{/* prettier-ignore-end */}
+
+### CSS classes
+
+For libraries that rely on CSS classes on a parent element to determine the theme, you can use the `withThemeByClassName` decorator.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-addon-themes-classname-decorator.md" />
+
+{/* prettier-ignore-end */}
+
+### Data attributes
+
+For libraries that rely on data attributes on a parent element to determine the theme, you can use the `withThemeByDataAttribute` decorator.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-addon-themes-data-attribute-decorator.md" />
+
+{/* prettier-ignore-end */}

@@ -11,7 +11,7 @@ import { JsonObject } from '@angular-devkit/core';
 import { from, of, throwError } from 'rxjs';
 import { catchError, map, mapTo, switchMap } from 'rxjs/operators';
 import { sync as findUpSync } from 'find-up';
-import { sync as readUpSync } from 'read-pkg-up';
+import { findPackageSync } from 'fd-package-json';
 import { BrowserBuilderOptions, StylePreprocessorOptions } from '@angular-devkit/build-angular';
 
 import { CLIOptions } from '@storybook/types';
@@ -107,7 +107,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
       } = options;
 
       const standaloneOptions: StandaloneBuildOptions = {
-        packageJson: readUpSync({ cwd: __dirname }).packageJson,
+        packageJson: findPackageSync(__dirname),
         configDir,
         ...(docs ? { docs } : {}),
         loglevel,

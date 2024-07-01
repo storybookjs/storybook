@@ -49,6 +49,8 @@ const sanitizeFramework = (framework: string) => {
   return matches[0];
 };
 
+const typescriptExtensions = ['ts', 'tsx', 'mts', 'cts'];
+
 export async function configureMain({
   addons,
   extensions = ['js', 'jsx', 'mjs', 'ts', 'tsx'],
@@ -57,10 +59,14 @@ export async function configureMain({
   prefixes = [],
   ...custom
 }: ConfigureMainOptions) {
+  const isLanguageJavascript = language === SupportedLanguage.JAVASCRIPT;
+  const filteredExtensions = extensions.filter((extension) =>
+    isLanguageJavascript ? !typescriptExtensions.includes(extension) : true
+  );
   const srcPath = path.resolve(storybookConfigFolder, '../src');
   const prefix = (await fse.pathExists(srcPath)) ? '../src' : '../stories';
   const config = {
-    stories: [`${prefix}/**/*.mdx`, `${prefix}/**/*.stories.@(${extensions.join('|')})`],
+    stories: [`${prefix}/**/*.mdx`, `${prefix}/**/*.stories.@(${filteredExtensions.join('|')})`],
     addons,
     ...custom,
   };

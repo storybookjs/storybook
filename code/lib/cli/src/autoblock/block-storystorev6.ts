@@ -24,7 +24,7 @@ export const blocker = createBlocker({
         'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storystorev6-and-storiesof-is-deprecated'
       )}
       
-      In your Storybook configuration we found storyStoryV7 feature defined. For instance:
+      In your Storybook configuration we found storyStoreV7 feature defined. For instance:
 
       export default = {
           features: {

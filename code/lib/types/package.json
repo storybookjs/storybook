@@ -49,7 +49,7 @@
     "file-system-cache": "2.3.0"
   },
   "devDependencies": {
-    "@storybook/csf": "^0.1.8",
+    "@storybook/csf": "0.1.10--canary.d841bb4.0",
     "@types/fs-extra": "^11.0.1",
     "@types/node": "^18.0.0",
     "typescript": "^5.3.2"

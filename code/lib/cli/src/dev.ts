@@ -1,5 +1,5 @@
 import { dedent } from 'ts-dedent';
-import { sync as readUpSync } from 'read-pkg-up';
+import { findPackageSync } from 'fd-package-json';
 import { logger, instance as npmLog } from '@storybook/node-logger';
 import { buildDevStandalone, withTelemetry } from '@storybook/core-server';
 import { cache } from '@storybook/core-common';
@@ -40,15 +40,15 @@ function printError(error: any) {
 export const dev = async (cliOptions: CLIOptions) => {
   process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 
-  const readUpResult = readUpSync({ cwd: __dirname });
-  invariant(readUpResult, 'Failed to find the closest package.json file.');
+  const packageJson = findPackageSync(__dirname);
+  invariant(packageJson, 'Failed to find the closest package.json file.');
   const options = {
     ...cliOptions,
     configDir: cliOptions.configDir || './.storybook',
     configType: 'DEVELOPMENT',
     ignorePreview: !!cliOptions.previewUrl && !cliOptions.forceBuildPreview,
     cache,
-    packageJson: readUpSync({ cwd: __dirname })?.packageJson,
+    packageJson,
   } as Parameters<typeof buildDevStandalone>[0];
 
   await withTelemetry(

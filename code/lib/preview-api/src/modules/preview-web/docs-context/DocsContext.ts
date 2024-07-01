@@ -4,7 +4,6 @@ import type {
   ModuleExport,
   ModuleExports,
   PreparedStory,
-  StoryContextForLoaders,
   StoryId,
   StoryName,
   ResolvedModuleExportType,
@@ -232,8 +231,9 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
   getStoryContext = (story: PreparedStory<TRenderer>) => {
     return {
       ...this.store.getStoryContext(story),
+      loaded: {},
       viewMode: 'docs',
-    } as StoryContextForLoaders<TRenderer>;
+    };
   };
 
   loadStory = (id: StoryId) => {

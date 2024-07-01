@@ -143,6 +143,7 @@ export const frameworkToDefaultBuilder: Record<SupportedFrameworks, CoreBuilder>
   'html-vite': CoreBuilder.Vite,
   'html-webpack5': CoreBuilder.Webpack5,
   nextjs: CoreBuilder.Webpack5,
+  nuxt: CoreBuilder.Vite,
   'preact-vite': CoreBuilder.Vite,
   'preact-webpack5': CoreBuilder.Webpack5,
   qwik: CoreBuilder.Vite,

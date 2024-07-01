@@ -24,7 +24,11 @@ const defaultContext: Addon_StoryContext<AngularRenderer> = {
   viewMode: 'story',
   abortSignal: undefined,
   canvasElement: undefined,
+  step: undefined,
+  context: undefined,
 };
+
+defaultContext.context = defaultContext;
 
 class MockModule {}
 class MockModuleTwo {}

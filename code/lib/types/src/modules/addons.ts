@@ -83,11 +83,11 @@ export type Addon_StoryContext<TRenderer extends Renderer = Renderer> =
   StoryContextForFramework<TRenderer>;
 export type Addon_StoryContextUpdate = Partial<Addon_StoryContext>;
 
-type Addon_ReturnTypeFramework<ReturnType> = {
+interface Addon_ReturnTypeFramework<ReturnType> extends Renderer {
   component: any;
   storyResult: ReturnType;
   canvasElement: any;
-};
+}
 export type Addon_PartialStoryFn<ReturnType = unknown> = PartialStoryFnForFramework<
   Addon_ReturnTypeFramework<ReturnType>
 >;

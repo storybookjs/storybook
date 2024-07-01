@@ -137,7 +137,7 @@ export const SaveStory = ({ saveStory, createStory, resetArgs }: SaveStoryProps)
   };
 
   return (
-    <Container>
+    <Container id="save-from-controls">
       <Bar>
         <Actions>
           <WithTooltip
@@ -184,7 +184,7 @@ export const SaveStory = ({ saveStory, createStory, resetArgs }: SaveStoryProps)
         </Info>
 
         <Modal width={350} open={creating} onOpenChange={setCreating}>
-          <Form onSubmit={onSubmitForm}>
+          <Form onSubmit={onSubmitForm} id="create-new-story-form">
             <Modal.Content>
               <Modal.Header>
                 <Modal.Title>Create new story</Modal.Title>

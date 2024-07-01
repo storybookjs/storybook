@@ -6,7 +6,7 @@ import path from 'node:path';
 import prettier from 'prettier';
 import dedent from 'ts-dedent';
 
-const thirdPartyFrameworks = ['qwik', 'solid'];
+const thirdPartyFrameworks = ['qwik', 'solid', 'nuxt'];
 
 const run = async () => {
   const frameworks = await readdir(path.join(__dirname, '..', '..', '..', 'frameworks'));

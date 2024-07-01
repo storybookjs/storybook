@@ -4,6 +4,7 @@ import type {
   DecoratorFunction,
   LoaderFunction,
   CleanupCallback,
+  StepRunner,
 } from '@storybook/csf';
 
 import type {
@@ -16,7 +17,6 @@ import type {
   StoryAnnotations,
   StoryContext,
   StoryContextForEnhancers,
-  StoryContextForLoaders,
   StoryFn,
   StoryId,
   StoryIdentifier,
@@ -41,12 +41,12 @@ export type RenderToCanvas<TRenderer extends Renderer> = (
   element: TRenderer['canvasElement']
 ) => MaybePromise<void | TeardownRenderToCanvas>;
 
-export type ProjectAnnotations<TRenderer extends Renderer> = CsfProjectAnnotations<TRenderer> & {
+export interface ProjectAnnotations<TRenderer extends Renderer>
+  extends CsfProjectAnnotations<TRenderer> {
   renderToCanvas?: RenderToCanvas<TRenderer>;
-
   /* @deprecated use renderToCanvas */
   renderToDOM?: RenderToCanvas<TRenderer>;
-};
+}
 
 type NamedExportsOrDefault<TExport> = TExport | { default: TExport };
 
@@ -55,12 +55,13 @@ export type NamedOrDefaultProjectAnnotations<TRenderer extends Renderer = Render
 
 export type NormalizedProjectAnnotations<TRenderer extends Renderer = Renderer> = Omit<
   ProjectAnnotations<TRenderer>,
-  'decorators' | 'loaders'
+  'decorators' | 'loaders' | 'runStep'
 > & {
   argTypes?: StrictArgTypes;
   globalTypes?: StrictGlobalTypes;
   decorators?: DecoratorFunction<TRenderer>[];
   loaders?: LoaderFunction<TRenderer>[];
+  runStep: StepRunner<TRenderer>;
 };
 
 export type NormalizedComponentAnnotations<TRenderer extends Renderer = Renderer> = Omit<
@@ -101,11 +102,10 @@ export type PreparedStory<TRenderer extends Renderer = Renderer> =
     originalStoryFn: StoryFn<TRenderer>;
     undecoratedStoryFn: LegacyStoryFn<TRenderer>;
     unboundStoryFn: LegacyStoryFn<TRenderer>;
-    applyLoaders: (
-      context: StoryContextForLoaders<TRenderer>
-    ) => Promise<StoryContextForLoaders<TRenderer> & { loaded: StoryContext<TRenderer>['loaded'] }>;
+    applyLoaders: (context: StoryContext<TRenderer>) => Promise<StoryContext<TRenderer>['loaded']>;
     applyBeforeEach: (context: StoryContext<TRenderer>) => Promise<CleanupCallback[]>;
     playFunction?: (context: StoryContext<TRenderer>) => Promise<void> | void;
+    runStep: StepRunner<TRenderer>;
   };
 
 export type PreparedMeta<TRenderer extends Renderer = Renderer> = Omit<

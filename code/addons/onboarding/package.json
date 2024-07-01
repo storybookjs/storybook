@@ -63,7 +63,7 @@
     "framer-motion": "^11.0.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-joyride": "^2.7.2",
+    "react-joyride": "^2.8.2",
     "react-use-measure": "^2.1.1",
     "typescript": "^5.3.2"
   },

@@ -49,9 +49,9 @@
     "@storybook/csf-tools": "workspace:*",
     "chalk": "^4.1.0",
     "detect-package-manager": "^2.0.1",
+    "fd-package-json": "^1.2.0",
     "fetch-retry": "^5.0.2",
-    "fs-extra": "^11.1.0",
-    "read-pkg-up": "^7.0.1"
+    "fs-extra": "^11.1.0"
   },
   "devDependencies": {
     "nanoid": "^4.0.2",

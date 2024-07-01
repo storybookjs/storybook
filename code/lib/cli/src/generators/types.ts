@@ -22,6 +22,7 @@ export interface FrameworkOptions {
   staticDir?: string;
   addScripts?: boolean;
   addMainFile?: boolean;
+  addPreviewFile?: boolean;
   addComponents?: boolean;
   webpackCompiler?: ({ builder }: { builder: Builder }) => 'babel' | 'swc' | undefined;
   extraMain?: any;
@@ -29,6 +30,8 @@ export interface FrameworkOptions {
   framework?: Record<string, any>;
   storybookConfigFolder?: string;
   componentsDestinationPath?: string;
+  installStorybookPackage?: boolean;
+  installFrameworkPackages?: boolean;
 }
 
 export type Generator<T = void> = (

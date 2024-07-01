@@ -1,0 +1,82 @@
+---
+title: 'Highlight'
+sidebar:
+  order: 4
+  title: Highlight
+---
+
+Storybook's [Highlight](https://storybook.js.org/addons/@storybook/addon-highlight/) addon is a helpful tool for visually debugging your components, allowing you to highlight specific DOM nodes within your story when used as a standalone addon or enhancing other addons such as the [Accessibility addon](https://storybook.js.org/addons/@storybook/addon-a11y/) to inform you of accessibility issues within your components.
+
+![Story with highlighted elements](../_assets/essentials/highlight.png)
+
+## Highlighting DOM Elements
+
+To highlight DOM elements with the addon, you'll need to emit the `HIGHLIGHT` event from within a story or an addon. The event payload must contain an `elements` property assigned to an array of selectors matching the elements you want to highlight. For example:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="component-story-highlight-addon.md" />
+
+{/* prettier-ignore-end */}
+
+<Callout variant="info" icon="💡">
+  We recommend choosing the most specific selector possible to avoid highlighting elements other addons use. This is because the addon tries to match selectors against the entire DOM tree.
+</Callout>
+
+### Reset highlighted elements
+
+Out of the box, Storybook automatically removes highlighted elements when transitioning between stories. However, if you need to clear them manually, you can emit the `RESET_HIGHLIGHT` event from within a story or an addon. For example:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="addon-highlight-reset.md" />
+
+{/* prettier-ignore-end */}
+
+<Callout variant="info">
+  The `emit` function derived from the `useChannel` API hook creates a communication channel in Storybook's UI to listen for events and update the UI accordingly. The Highlight addon uses this channel to listen to custom events and update the highlighted elements (if any) accordingly.
+</Callout>
+
+## Customize style
+
+By default, the addon applies a standard style to the highlighted elements you've enabled for the story. However, you can enable your custom style by extending the payload object and providing a `color` and/or `style` properties. For example:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="highlight-addon-custom-style.md" />
+
+{/* prettier-ignore-end */}
+
+## API
+
+### Parameters
+
+This addon contributes the following [parameters](../writing-stories/parameters.mdx) to Storybook, under the `highlight` namespace:
+
+#### `disable`
+
+Type: `boolean`
+
+Disable this addon's behavior. If you wish to disable this addon for the entire Storybook, you should do so when registering `addon-essentials`. See the [essential addon's docs](../essentials/index.mdx#disabling-addons) for more information.
+
+This parameter is most useful to allow overriding at more specific levels. For example, if this parameter is set to `true` at the project level, it could then be re-enabled by setting it to `false` at the meta (component) or story level.
+
+### Exports
+
+This addon contributes the following exports to Storybook:
+
+```js
+import { HIGHLIGHT, RESET_HIGHLIGHT } from '@storybook/addon-highlight';
+```
+
+#### `HIGHLIGHT`
+
+Type: `string`
+
+An event that highlights DOM elements. The event payload must contain an `elements` property assigned to an array of selectors matching the elements you want to highlight. See the [usage example](#highlighting-dom-elements), above.
+
+#### `RESET_HIGHLIGHT`
+
+Type: `string`
+
+An event to clear all highlights from highlighted elements. See the [usage example](#reset-highlighted-elements), above.

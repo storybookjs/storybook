@@ -1,5 +1,5 @@
 import type { Channel } from '@storybook/channels';
-import type { Renderer, StoryContextForLoaders, StoryId, StoryName, Parameters } from './csf';
+import type { Renderer, StoryContext, StoryId, StoryName, Parameters } from './csf';
 import type {
   ModuleExport,
   ModuleExports,
@@ -91,7 +91,9 @@ export interface DocsContextProps<TRenderer extends Renderer = Renderer> {
   /**
    * Get the story context of the referenced story.
    */
-  getStoryContext: (story: PreparedStory<TRenderer>) => StoryContextForLoaders<TRenderer>;
+  getStoryContext: (
+    story: PreparedStory<TRenderer>
+  ) => Omit<StoryContext<TRenderer>, 'abortSignal' | 'canvasElement' | 'step' | 'context'>;
   /**
    * Asyncronously load an arbitrary story by id.
    */

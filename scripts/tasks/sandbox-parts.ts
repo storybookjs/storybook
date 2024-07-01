@@ -205,7 +205,7 @@ function addEsbuildLoaderToStories(mainConfig: ConfigFile) {
           loader: '${esbuildLoaderPath}',
           options: {
             loader: 'tsx',
-            target: 'es2015',
+            target: 'es2022',
           },
         },
         // Handle MDX files per the addon-docs presets (ish)

@@ -4,6 +4,8 @@ import { existsSync, readFileSync } from 'fs';
 import path from 'path';
 import { PosixFS, VirtualFS, ZipOpenFS } from '@yarnpkg/fslib';
 import { getLibzipSync } from '@yarnpkg/libzip';
+import { FindPackageVersionsError } from '@storybook/core-events/server-errors';
+
 import { createLogStream } from '../utils/cli';
 import { JsPackageManager } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
@@ -248,17 +250,20 @@ export class Yarn2Proxy extends JsPackageManager {
   ): Promise<T extends true ? string[] : string> {
     const field = fetchAllVersions ? 'versions' : 'version';
     const args = ['--fields', field, '--json'];
-
-    const commandResult = await this.executeCommand({
-      command: 'yarn',
-      args: ['npm', 'info', packageName, ...args],
-    });
-
     try {
+      const commandResult = await this.executeCommand({
+        command: 'yarn',
+        args: ['npm', 'info', packageName, ...args],
+      });
+
       const parsedOutput = JSON.parse(commandResult);
       return parsedOutput[field];
-    } catch (e) {
-      throw new Error(`Unable to find versions of ${packageName} using yarn 2`);
+    } catch (error) {
+      throw new FindPackageVersionsError({
+        error,
+        packageManager: 'Yarn Berry',
+        packageName,
+      });
     }
   }
 

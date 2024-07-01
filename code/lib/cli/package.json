@@ -53,7 +53,8 @@
   ],
   "scripts": {
     "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts",
+    "sb": "node ./bin/index.js"
   },
   "dependencies": {
     "@babel/core": "^7.24.4",
@@ -76,6 +77,7 @@
     "detect-indent": "^6.1.0",
     "envinfo": "^7.7.3",
     "execa": "^5.0.0",
+    "fd-package-json": "^1.2.0",
     "find-up": "^5.0.0",
     "fs-extra": "^11.1.0",
     "get-npm-tarball-url": "^2.0.3",
@@ -86,7 +88,6 @@
     "ora": "^5.4.1",
     "prettier": "^3.1.1",
     "prompts": "^2.4.0",
-    "read-pkg-up": "^7.0.1",
     "semver": "^7.3.7",
     "strip-json-comments": "^3.0.1",
     "tempy": "^3.1.0",

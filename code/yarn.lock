@@ -2843,25 +2843,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@gilbarbara/helpers@npm:^0.9.2":
-  version: 0.9.2
-  resolution: "@gilbarbara/helpers@npm:0.9.2"
-  dependencies:
-    "@gilbarbara/types": "npm:^0.2.2"
-    is-lite: "npm:^1.2.1"
-  checksum: 10c0/18aa7c59b412d3b76e84aa745595a76cba0d505af3c1bfc109993f1da99655769539296993cc2db5f78b3db260907020895bb6adec4f9ea4486532b9a255c290
-  languageName: node
-  linkType: hard
-
-"@gilbarbara/types@npm:^0.2.2":
-  version: 0.2.2
-  resolution: "@gilbarbara/types@npm:0.2.2"
-  dependencies:
-    type-fest: "npm:^4.1.0"
-  checksum: 10c0/c998bfb41ff84b5640fcb0cd47d2bdf963c7d36792673edddc469d5a1752a5f7105697e79d34db69062562ae3506283c2474ca14785af652610d8abe17ddbef3
-  languageName: node
-  linkType: hard
-
 "@gitbeaker/core@npm:^35.8.1":
   version: 35.8.1
   resolution: "@gitbeaker/core@npm:35.8.1"
@@ -5307,7 +5288,7 @@ __metadata:
   dependencies:
     "@storybook/client-logger": "workspace:*"
     "@storybook/core-events": "workspace:*"
-    "@storybook/csf": "npm:^0.1.8"
+    "@storybook/csf": "npm:0.1.10--canary.d841bb4.0"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/manager-api": "workspace:*"
     "@storybook/preview-api": "workspace:*"
@@ -5373,7 +5354,7 @@ __metadata:
     react: "npm:^18.2.0"
     react-confetti: "npm:^6.1.0"
     react-dom: "npm:^18.2.0"
-    react-joyride: "npm:^2.7.2"
+    react-joyride: "npm:^2.8.2"
     react-use-measure: "npm:^2.1.1"
     typescript: "npm:^5.3.2"
   languageName: unknown
@@ -5508,8 +5489,8 @@ __metadata:
     "@types/tmp": "npm:^0.2.3"
     "@types/webpack-env": "npm:^1.18.0"
     cross-spawn: "npm:^7.0.3"
+    fd-package-json: "npm:^1.2.0"
     find-up: "npm:^5.0.0"
-    read-pkg-up: "npm:^7.0.1"
     semver: "npm:^7.3.7"
     telejson: "npm:^7.2.0"
     tmp: "npm:^0.2.1"
@@ -5574,7 +5555,7 @@ __metadata:
     "@storybook/client-logger": "workspace:*"
     "@storybook/components": "workspace:*"
     "@storybook/core-events": "workspace:*"
-    "@storybook/csf": "npm:^0.1.8"
+    "@storybook/csf": "npm:0.1.10--canary.d841bb4.0"
     "@storybook/docs-tools": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^1.2.5"
@@ -5763,6 +5744,7 @@ __metadata:
     detect-indent: "npm:^6.1.0"
     envinfo: "npm:^7.7.3"
     execa: "npm:^5.0.0"
+    fd-package-json: "npm:^1.2.0"
     find-up: "npm:^5.0.0"
     fs-extra: "npm:^11.1.0"
     get-npm-tarball-url: "npm:^2.0.3"
@@ -5773,7 +5755,6 @@ __metadata:
     ora: "npm:^5.4.1"
     prettier: "npm:^3.1.1"
     prompts: "npm:^2.4.0"
-    read-pkg-up: "npm:^7.0.1"
     semver: "npm:^7.3.7"
     slash: "npm:^5.0.0"
     strip-ansi: "npm:^7.1.0"
@@ -5804,7 +5785,7 @@ __metadata:
     "@babel/core": "npm:^7.24.4"
     "@babel/preset-env": "npm:^7.24.4"
     "@babel/types": "npm:^7.24.0"
-    "@storybook/csf": "npm:^0.1.8"
+    "@storybook/csf": "npm:0.1.10--canary.d841bb4.0"
     "@storybook/csf-tools": "workspace:*"
     "@storybook/node-logger": "workspace:*"
     "@storybook/types": "workspace:*"
@@ -5841,7 +5822,7 @@ __metadata:
     "@radix-ui/react-scroll-area": "npm:^1.0.5"
     "@radix-ui/react-slot": "npm:^1.0.2"
     "@storybook/client-logger": "workspace:*"
-    "@storybook/csf": "npm:^0.1.8"
+    "@storybook/csf": "npm:0.1.10--canary.d841bb4.0"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^1.2.5"
     "@storybook/test": "workspace:*"
@@ -5889,6 +5870,7 @@ __metadata:
     esbuild: "npm:^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0"
     esbuild-register: "npm:^3.5.0"
     execa: "npm:^5.0.0"
+    fd-package-json: "npm:^1.2.0"
     file-system-cache: "npm:2.3.0"
     find-cache-dir: "npm:^3.0.0"
     find-up: "npm:^5.0.0"
@@ -5899,7 +5881,6 @@ __metadata:
     mock-fs: "npm:^5.2.0"
     node-fetch: "npm:^2.0.0"
     picomatch: "npm:^2.3.0"
-    pkg-dir: "npm:^5.0.0"
     prettier-fallback: "npm:prettier@^3"
     prettier-v2: "npm:prettier@^2"
     prettier-v3: "npm:prettier@^3"
@@ -5924,7 +5905,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/core-events@workspace:lib/core-events"
   dependencies:
-    "@storybook/csf": "npm:^0.1.8"
+    "@storybook/csf": "npm:0.1.10--canary.d841bb4.0"
     chalk: "npm:^4.1.0"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.3.2"
@@ -5944,7 +5925,7 @@ __metadata:
     "@storybook/channels": "workspace:*"
     "@storybook/core-common": "workspace:*"
     "@storybook/core-events": "workspace:*"
-    "@storybook/csf": "npm:^0.1.8"
+    "@storybook/csf": "npm:0.1.10--canary.d841bb4.0"
     "@storybook/csf-tools": "workspace:*"
     "@storybook/docs-mdx": "npm:3.1.0-next.0"
     "@storybook/global": "npm:^5.0.0"
@@ -5971,6 +5952,7 @@ __metadata:
     detect-port: "npm:^1.3.0"
     diff: "npm:^5.2.0"
     express: "npm:^4.19.2"
+    fd-package-json: "npm:^1.2.0"
     fs-extra: "npm:^11.1.0"
     globby: "npm:^14.0.1"
     lodash: "npm:^4.17.21"
@@ -5978,7 +5960,6 @@ __metadata:
     open: "npm:^8.4.0"
     pretty-hrtime: "npm:^1.0.3"
     prompts: "npm:^2.4.0"
-    read-pkg-up: "npm:^7.0.1"
     semver: "npm:^7.3.7"
     slash: "npm:^5.0.0"
     telejson: "npm:^7.2.0"
@@ -6026,7 +6007,7 @@ __metadata:
     "@babel/parser": "npm:^7.24.4"
     "@babel/traverse": "npm:^7.24.1"
     "@babel/types": "npm:^7.24.0"
-    "@storybook/csf": "npm:^0.1.8"
+    "@storybook/csf": "npm:0.1.10--canary.d841bb4.0"
     "@storybook/types": "workspace:*"
     "@types/fs-extra": "npm:^11.0.1"
     "@types/js-yaml": "npm:^4.0.5"
@@ -6038,21 +6019,21 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@storybook/csf@npm:0.1.10--canary.d841bb4.0":
+  version: 0.1.10--canary.d841bb4.0
+  resolution: "@storybook/csf@npm:0.1.10--canary.d841bb4.0"
+  dependencies:
+    type-fest: "npm:^2.19.0"
+  checksum: 10c0/35a9b5cf88a3378fb362d0a1988265ec218aa98d54b82b56e78a4c1142b3beed6e2ee42bd8731bac009fd8133e085c92af43541028468865b51c0b1220ded338
+  languageName: node
+  linkType: hard
+
 "@storybook/csf@npm:^0.0.1":
   version: 0.0.1
   resolution: "@storybook/csf@npm:0.0.1"
   dependencies:
     lodash: "npm:^4.17.15"
   checksum: 10c0/7b0f75763415f9147692a460b44417ee56ea9639433716a1fd4d1df4c8b0221cbc71b8da0fbed4dcecb3ccd6c7ed64be39f5c255c713539a6088a1d6488aaa24
-  languageName: node
-  linkType: hard
-
-"@storybook/csf@npm:^0.1.8":
-  version: 0.1.8
-  resolution: "@storybook/csf@npm:0.1.8"
-  dependencies:
-    type-fest: "npm:^2.19.0"
-  checksum: 10c0/4fd08bd65205395aba693f053706d5c880db5102543744c4e13768902a615df9a479ac03f80fe33297bd5457a0d0ef655cd33d41a0e379764dd6f0c6b9a7d88c
   languageName: node
   linkType: hard
 
@@ -6225,7 +6206,7 @@ __metadata:
     "@storybook/channels": "workspace:*"
     "@storybook/client-logger": "workspace:*"
     "@storybook/core-events": "workspace:*"
-    "@storybook/csf": "npm:^0.1.8"
+    "@storybook/csf": "npm:0.1.10--canary.d841bb4.0"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^1.2.5"
     "@storybook/router": "workspace:*"
@@ -6565,7 +6546,7 @@ __metadata:
     "@storybook/client-logger": "workspace:*"
     "@storybook/core-common": "workspace:*"
     "@storybook/core-events": "workspace:*"
-    "@storybook/csf": "npm:^0.1.8"
+    "@storybook/csf": "npm:0.1.10--canary.d841bb4.0"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/types": "workspace:*"
     "@types/qs": "npm:^6.9.5"
@@ -6673,6 +6654,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/react@workspace:renderers/react"
   dependencies:
+    "@storybook/blocks": "workspace:*"
     "@storybook/client-logger": "workspace:*"
     "@storybook/docs-tools": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
@@ -6752,7 +6734,7 @@ __metadata:
     "@storybook/core-events": "workspace:*"
     "@storybook/core-server": "workspace:*"
     "@storybook/core-webpack": "workspace:*"
-    "@storybook/csf": "npm:^0.1.8"
+    "@storybook/csf": "npm:0.1.10--canary.d841bb4.0"
     "@storybook/csf-plugin": "workspace:*"
     "@storybook/csf-tools": "workspace:*"
     "@storybook/docs-tools": "workspace:*"
@@ -6904,7 +6886,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/server@workspace:renderers/server"
   dependencies:
-    "@storybook/csf": "npm:^0.1.8"
+    "@storybook/csf": "npm:0.1.10--canary.d841bb4.0"
     "@storybook/csf-tools": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/preview-api": "workspace:*"
@@ -6921,7 +6903,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/source-loader@workspace:lib/source-loader"
   dependencies:
-    "@storybook/csf": "npm:^0.1.8"
+    "@storybook/csf": "npm:0.1.10--canary.d841bb4.0"
     "@storybook/types": "workspace:*"
     estraverse: "npm:^5.2.0"
     lodash: "npm:^4.17.21"
@@ -7025,11 +7007,11 @@ __metadata:
     "@storybook/csf-tools": "workspace:*"
     chalk: "npm:^4.1.0"
     detect-package-manager: "npm:^2.0.1"
+    fd-package-json: "npm:^1.2.0"
     fetch-retry: "npm:^5.0.2"
     fs-extra: "npm:^11.1.0"
     nanoid: "npm:^4.0.2"
     node-fetch: "npm:^3.3.1"
-    read-pkg-up: "npm:^7.0.1"
     typescript: "npm:^5.3.2"
   languageName: unknown
   linkType: soft
@@ -7091,7 +7073,7 @@ __metadata:
   resolution: "@storybook/types@workspace:lib/types"
   dependencies:
     "@storybook/channels": "workspace:*"
-    "@storybook/csf": "npm:^0.1.8"
+    "@storybook/csf": "npm:0.1.10--canary.d841bb4.0"
     "@types/express": "npm:^4.17.21"
     "@types/fs-extra": "npm:^11.0.1"
     "@types/node": "npm:^18.0.0"
@@ -8111,13 +8093,6 @@ __metadata:
   dependencies:
     undici-types: "npm:~5.26.4"
   checksum: 10c0/3ed943d06e9dff70a3da793f794f1192cd93b0ababdb9f07425a05680f17cfce649cbc46734265f6fbe52fd9f277496d3a4da26c013f1193a0345f2420ea6cd0
-  languageName: node
-  linkType: hard
-
-"@types/normalize-package-data@npm:^2.4.0":
-  version: 2.4.2
-  resolution: "@types/normalize-package-data@npm:2.4.2"
-  checksum: 10c0/e38713ca1befc341701c078d592d1fddc1d13eec73b4d81fbab14638221733029f03cdf410b4486b23d48fd8d3809fa36611de98220e76f71517d42b582b3509
   languageName: node
   linkType: hard
 
@@ -15079,6 +15054,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"fd-package-json@npm:^1.2.0":
+  version: 1.2.0
+  resolution: "fd-package-json@npm:1.2.0"
+  dependencies:
+    walk-up-path: "npm:^3.0.1"
+  checksum: 10c0/712a78a12bd8ec8482867b26bbcb2ff1dca9b096a416150c138e1512f1879c6d23dfb41b03b8e9226afc1e58a35df4738e9f9ae57032ff1dbbae75acfb70343b
+  languageName: node
+  linkType: hard
+
 "fetch-blob@npm:^3.1.2, fetch-blob@npm:^3.1.4":
   version: 3.2.0
   resolution: "fetch-blob@npm:3.2.0"
@@ -16688,13 +16672,6 @@ __metadata:
   dependencies:
     parse-passwd: "npm:^1.0.0"
   checksum: 10c0/3c099844f94b8b438f124bd5698bdcfef32b2d455115fb8050d7148e7f7b95fc89ba9922586c491f0e1cdebf437b1053c84ecddb8d596e109e9ac69c5b4a9e27
-  languageName: node
-  linkType: hard
-
-"hosted-git-info@npm:^2.1.4":
-  version: 2.8.9
-  resolution: "hosted-git-info@npm:2.8.9"
-  checksum: 10c0/317cbc6b1bbbe23c2a40ae23f3dafe9fa349ce42a89a36f930e3f9c0530c179a3882d2ef1e4141a4c3674d6faaea862138ec55b43ad6f75e387fda2483a13c70
   languageName: node
   linkType: hard
 
@@ -21335,18 +21312,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"normalize-package-data@npm:^2.5.0":
-  version: 2.5.0
-  resolution: "normalize-package-data@npm:2.5.0"
-  dependencies:
-    hosted-git-info: "npm:^2.1.4"
-    resolve: "npm:^1.10.0"
-    semver: "npm:2 || 3 || 4 || 5"
-    validate-npm-package-license: "npm:^3.0.1"
-  checksum: 10c0/357cb1646deb42f8eb4c7d42c4edf0eec312f3628c2ef98501963cc4bbe7277021b2b1d977f982b2edce78f5a1014613ce9cf38085c3df2d76730481357ca504
-  languageName: node
-  linkType: hard
-
 "normalize-package-data@npm:^6.0.0":
   version: 6.0.0
   resolution: "normalize-package-data@npm:6.0.0"
@@ -23654,12 +23619,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-joyride@npm:^2.7.2":
-  version: 2.7.3
-  resolution: "react-joyride@npm:2.7.3"
+"react-joyride@npm:^2.8.2":
+  version: 2.8.2
+  resolution: "react-joyride@npm:2.8.2"
   dependencies:
     "@gilbarbara/deep-equal": "npm:^0.3.1"
-    "@gilbarbara/helpers": "npm:^0.9.2"
     deep-diff: "npm:^1.0.2"
     deepmerge: "npm:^4.3.1"
     is-lite: "npm:^1.2.1"
@@ -23669,11 +23633,11 @@ __metadata:
     scroll: "npm:^3.0.1"
     scrollparent: "npm:^2.1.0"
     tree-changes: "npm:^0.11.2"
-    type-fest: "npm:^4.10.2"
+    type-fest: "npm:^4.18.2"
   peerDependencies:
     react: 15 - 18
     react-dom: 15 - 18
-  checksum: 10c0/cd68fde2ba82b771179220f5594bb145ef25e29e6a07cfd182d21cbfaf87c59a374601cf9c96f3990e992ed2e81d47ecbae37a9a5d28f387dda83da723e94332
+  checksum: 10c0/c336836d1052cbe64d12a01d34e3e09b4429be9f92741f43c838aecc09ddf01ddaae645c1bda1df97482d34fb86e37d98524cc62f079d04aa999f8ecc13b1fc1
   languageName: node
   linkType: hard
 
@@ -23890,29 +23854,6 @@ __metadata:
     normalize-package-data: "npm:^6.0.0"
     npm-normalize-package-bin: "npm:^3.0.0"
   checksum: 10c0/a2d373d0f87613fe86ec49c7e4bcdaf2a14967c258c6ccfd9585dec8b21e3d5bfe422c460648fb30e8c93fc13579da0d9c9c65adc5ec4e95ec888d99e4bccc79
-  languageName: node
-  linkType: hard
-
-"read-pkg-up@npm:^7.0.1":
-  version: 7.0.1
-  resolution: "read-pkg-up@npm:7.0.1"
-  dependencies:
-    find-up: "npm:^4.1.0"
-    read-pkg: "npm:^5.2.0"
-    type-fest: "npm:^0.8.1"
-  checksum: 10c0/82b3ac9fd7c6ca1bdc1d7253eb1091a98ff3d195ee0a45386582ce3e69f90266163c34121e6a0a02f1630073a6c0585f7880b3865efcae9c452fa667f02ca385
-  languageName: node
-  linkType: hard
-
-"read-pkg@npm:^5.2.0":
-  version: 5.2.0
-  resolution: "read-pkg@npm:5.2.0"
-  dependencies:
-    "@types/normalize-package-data": "npm:^2.4.0"
-    normalize-package-data: "npm:^2.5.0"
-    parse-json: "npm:^5.0.0"
-    type-fest: "npm:^0.6.0"
-  checksum: 10c0/b51a17d4b51418e777029e3a7694c9bd6c578a5ab99db544764a0b0f2c7c0f58f8a6bc101f86a6fceb8ba6d237d67c89acf6170f6b98695d0420ddc86cf109fb
   languageName: node
   linkType: hard
 
@@ -25227,15 +25168,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"semver@npm:2 || 3 || 4 || 5, semver@npm:^5.3.0, semver@npm:^5.5.0, semver@npm:^5.6.0":
-  version: 5.7.2
-  resolution: "semver@npm:5.7.2"
-  bin:
-    semver: bin/semver
-  checksum: 10c0/e4cf10f86f168db772ae95d86ba65b3fd6c5967c94d97c708ccb463b778c2ee53b914cd7167620950fc07faf5a564e6efe903836639e512a1aa15fbc9667fa25
-  languageName: node
-  linkType: hard
-
 "semver@npm:7.6.0, semver@npm:^7.0.0, semver@npm:^7.1.1, semver@npm:^7.2.1, semver@npm:^7.3.4, semver@npm:^7.3.5, semver@npm:^7.3.7, semver@npm:^7.3.8, semver@npm:^7.5.3, semver@npm:^7.5.4, semver@npm:^7.6.0":
   version: 7.6.0
   resolution: "semver@npm:7.6.0"
@@ -25244,6 +25176,15 @@ __metadata:
   bin:
     semver: bin/semver.js
   checksum: 10c0/fbfe717094ace0aa8d6332d7ef5ce727259815bd8d8815700853f4faf23aacbd7192522f0dc5af6df52ef4fa85a355ebd2f5d39f554bd028200d6cf481ab9b53
+  languageName: node
+  linkType: hard
+
+"semver@npm:^5.3.0, semver@npm:^5.5.0, semver@npm:^5.6.0":
+  version: 5.7.2
+  resolution: "semver@npm:5.7.2"
+  bin:
+    semver: bin/semver
+  checksum: 10c0/e4cf10f86f168db772ae95d86ba65b3fd6c5967c94d97c708ccb463b778c2ee53b914cd7167620950fc07faf5a564e6efe903836639e512a1aa15fbc9667fa25
   languageName: node
   linkType: hard
 
@@ -28094,7 +28035,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"validate-npm-package-license@npm:^3.0.1, validate-npm-package-license@npm:^3.0.4":
+"validate-npm-package-license@npm:^3.0.4":
   version: 3.0.4
   resolution: "validate-npm-package-license@npm:3.0.4"
   dependencies:

@@ -126,7 +126,7 @@
     "@storybook/core-events": "workspace:*",
     "@storybook/core-server": "workspace:*",
     "@storybook/core-webpack": "workspace:*",
-    "@storybook/csf": "^0.1.8",
+    "@storybook/csf": "0.1.10--canary.d841bb4.0",
     "@storybook/csf-plugin": "workspace:*",
     "@storybook/csf-tools": "workspace:*",
     "@storybook/docs-tools": "workspace:*",
@@ -248,7 +248,6 @@
       "built": false
     }
   },
-  "packageManager": "yarn@4.1.1",
   "engines": {
     "node": ">=18.0.0"
   },
@@ -294,5 +293,7 @@
         "Dependency Upgrades"
       ]
     ]
-  }
+  },
+  "packageManager": "yarn@4.3.1",
+  "deferredNextVersion": "8.2.0-alpha.11"
 }

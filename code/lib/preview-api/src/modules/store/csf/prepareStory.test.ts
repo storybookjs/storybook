@@ -1,10 +1,21 @@
-import { describe, beforeEach, it, expect, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { global } from '@storybook/global';
-import type { Renderer, ArgsEnhancer, PlayFunctionContext, SBScalarType } from '@storybook/types';
+import type {
+  ArgsEnhancer,
+  NormalizedComponentAnnotations,
+  NormalizedStoryAnnotations,
+  PreparedStory,
+  ProjectAnnotations,
+  Renderer,
+  SBScalarType,
+  StoryContext,
+} from '@storybook/types';
 import { addons, HooksContext } from '../../addons';
 
 import { UNTARGETED } from '../args';
-import { prepareStory, prepareMeta, prepareContext } from './prepareStory';
+import { prepareMeta, prepareStory as realPrepareStory, prepareContext } from './prepareStory';
+import { composeConfigs } from './composeConfigs';
+import { normalizeProjectAnnotations } from './normalizeProjectAnnotations';
 
 vi.mock('@storybook/global', async (importOriginal) => ({
   global: {
@@ -15,21 +26,42 @@ vi.mock('@storybook/global', async (importOriginal) => ({
 const id = 'id';
 const name = 'name';
 const title = 'title';
-const render = (args: any) => {};
+const render = () => {};
 const moduleExport = {};
 
 const stringType: SBScalarType = { name: 'string' };
 const numberType: SBScalarType = { name: 'number' };
 const booleanType: SBScalarType = { name: 'boolean' };
 
+// Normalize the project annotations to mimick live behavior
+export function prepareStory<TRenderer extends Renderer>(
+  storyAnnotations: NormalizedStoryAnnotations<TRenderer>,
+  componentAnnotations: NormalizedComponentAnnotations<TRenderer>,
+  projectAnnotations: ProjectAnnotations<TRenderer>
+): PreparedStory<TRenderer> {
+  return realPrepareStory(
+    storyAnnotations,
+    componentAnnotations,
+    normalizeProjectAnnotations(composeConfigs([projectAnnotations]))
+  );
+}
 // Extra fields that must be added to the story context after enhancers
-const storyContextExtras = () => ({
-  hooks: new HooksContext(),
-  viewMode: 'story' as const,
-  loaded: {},
-  abortSignal: new AbortController().signal,
-  canvasElement: {},
-});
+const addExtraContext = (
+  context: PreparedStory & Pick<StoryContext, 'args' | 'globals'>
+): StoryContext => {
+  const extraContext = {
+    ...context,
+    hooks: new HooksContext(),
+    viewMode: 'story' as const,
+    loaded: {},
+    abortSignal: new AbortController().signal,
+    canvasElement: {},
+    step: vi.fn(),
+    context: undefined! as StoryContext,
+  };
+  extraContext.context = extraContext;
+  return extraContext;
+};
 
 describe('prepareStory', () => {
   describe('tags', () => {
@@ -93,7 +125,7 @@ describe('prepareStory', () => {
       );
 
       expect(parameters).toEqual({
-        __isArgsStory: true,
+        __isArgsStory: false,
         a: 'story',
         b: { name: 'component' },
         c: { name: 'global' },
@@ -102,7 +134,11 @@ describe('prepareStory', () => {
     });
 
     it('sets a value even if annotations do not have parameters', () => {
-      const { parameters } = prepareStory({ id, name, moduleExport }, { id, title }, { render });
+      const { parameters } = prepareStory(
+        { id, name, moduleExport },
+        { id, title },
+        { render: (args: any) => {} }
+      );
 
       expect(parameters).toEqual({ __isArgsStory: true });
     });
@@ -322,6 +358,7 @@ describe('prepareStory', () => {
   });
 
   describe('applyLoaders', () => {
+    const abortSignal = new AbortController().signal;
     it('awaits the result of a loader', async () => {
       const loader = vi.fn(async () => new Promise((r) => setTimeout(() => r({ foo: 7 }), 100)));
       const { applyLoaders } = prepareStory(
@@ -330,14 +367,15 @@ describe('prepareStory', () => {
         { render }
       );
 
-      const storyContext = { context: 'value' } as any;
-      const loadedContext = await applyLoaders({ ...storyContext });
+      const storyContext = { abortSignal } as StoryContext;
+      const loaded = await applyLoaders(storyContext);
 
-      expect(loader).toHaveBeenCalledWith({ ...storyContext, loaded: {} });
-      expect(loadedContext).toEqual({
-        context: 'value',
-        loaded: { foo: 7 },
-      });
+      expect(loader).toHaveBeenCalledWith(storyContext);
+      expect(loaded).toMatchInlineSnapshot(`
+        {
+          "foo": 7,
+        }
+      `);
     });
 
     it('loaders are composed in the right order', async () => {
@@ -351,13 +389,13 @@ describe('prepareStory', () => {
         { render, loaders: [globalLoader] }
       );
 
-      const storyContext = { context: 'value' } as any;
-      const loadedContext = await applyLoaders(storyContext);
-
-      expect(loadedContext).toEqual({
-        context: 'value',
-        loaded: { foo: 5, bar: 3, baz: 1 },
-      });
+      expect(await applyLoaders({ abortSignal } as StoryContext)).toMatchInlineSnapshot(`
+        {
+          "bar": 3,
+          "baz": 1,
+          "foo": 5,
+        }
+      `);
     });
 
     it('later loaders override earlier loaders', async () => {
@@ -372,13 +410,12 @@ describe('prepareStory', () => {
         { render }
       );
 
-      const storyContext = { context: 'value' } as any;
-      const loadedContext = await applyLoaders(storyContext);
-
-      expect(loadedContext).toEqual({
-        context: 'value',
-        loaded: { foo: 3 },
-      });
+      expect(await applyLoaders({ abortSignal: abortSignal } as StoryContext))
+        .toMatchInlineSnapshot(`
+        {
+          "foo": 3,
+        }
+      `);
     });
   });
 
@@ -401,7 +438,7 @@ describe('prepareStory', () => {
       );
 
       const context = prepareContext({ args: story.initialArgs, globals: {}, ...story });
-      story.undecoratedStoryFn({ ...context, ...storyContextExtras() });
+      story.undecoratedStoryFn(addExtraContext(context));
       expect(renderMock).toHaveBeenCalledWith(
         { one: 'mapped', two: 2, three: 3 },
         expect.objectContaining({ args: { one: 'mapped', two: 2, three: 3 } })
@@ -473,7 +510,7 @@ describe('prepareStory', () => {
 
       const hooks = new HooksContext();
       const context = prepareContext({ args: story.initialArgs, globals: {}, ...story });
-      story.unboundStoryFn({ ...context, ...storyContextExtras(), hooks });
+      story.unboundStoryFn(addExtraContext(context));
 
       expect(ctx1).toMatchObject({ unmappedArgs: { one: 1 }, args: { one: 'mapped-1' } });
       expect(ctx2).toMatchObject({ unmappedArgs: { one: 1 }, args: { one: 'mapped-1' } });
@@ -548,7 +585,7 @@ describe('prepareStory', () => {
       );
 
       const context = prepareContext({ args: firstStory.initialArgs, globals: {}, ...firstStory });
-      firstStory.unboundStoryFn({ ...context, ...storyContextExtras() });
+      firstStory.unboundStoryFn(addExtraContext(context));
       expect(renderMock).toHaveBeenCalledWith(
         { a: 1 },
         expect.objectContaining({ args: { a: 1 }, allArgs: { a: 1, b: 2 } })
@@ -570,7 +607,7 @@ describe('prepareStory', () => {
       );
 
       const context = prepareContext({ args: firstStory.initialArgs, globals: {}, ...firstStory });
-      firstStory.unboundStoryFn({ ...context, ...storyContextExtras() });
+      firstStory.unboundStoryFn(addExtraContext(context));
       expect(renderMock).toHaveBeenCalledWith(
         { a: 1 },
         expect.objectContaining({ args: { a: 1 }, allArgs: { a: 1, b: 2 } })
@@ -592,7 +629,7 @@ describe('prepareStory', () => {
       );
 
       const context = prepareContext({ args: firstStory.initialArgs, globals: {}, ...firstStory });
-      firstStory.unboundStoryFn({ ...context, ...storyContextExtras() });
+      firstStory.unboundStoryFn(addExtraContext(context));
       expect(renderMock).toHaveBeenCalledWith(
         { a: 1 },
         expect.objectContaining({ argsByTarget: { [UNTARGETED]: { a: 1 }, foo: { b: 2 } } })
@@ -614,7 +651,7 @@ describe('prepareStory', () => {
       );
 
       const context = prepareContext({ args: firstStory.initialArgs, globals: {}, ...firstStory });
-      firstStory.unboundStoryFn({ ...context, ...storyContextExtras() });
+      firstStory.unboundStoryFn(addExtraContext(context));
       expect(renderMock).toHaveBeenCalledWith(
         {},
         expect.objectContaining({ argsByTarget: { foo: { b: 2 } } })
@@ -634,7 +671,7 @@ describe('prepareStory', () => {
       );
 
       const context = prepareContext({ args: firstStory.initialArgs, globals: {}, ...firstStory });
-      firstStory.unboundStoryFn({ ...context, ...storyContextExtras() });
+      firstStory.unboundStoryFn(addExtraContext(context));
       expect(renderMock).toHaveBeenCalledWith({}, expect.objectContaining({ argsByTarget: {} }));
     });
   });
@@ -653,7 +690,7 @@ describe('playFunction', () => {
       { render }
     );
 
-    await playFunction!({} as PlayFunctionContext);
+    await playFunction?.({} as StoryContext);
     expect(play).toHaveBeenCalled();
     expect(inner).toHaveBeenCalled();
   });
@@ -667,16 +704,19 @@ describe('playFunction', () => {
       await step('label', stepPlay);
     });
     const runStep = vi.fn((label, p, c) => p(c));
-    const { playFunction } = prepareStory(
+    const { playFunction, runStep: preparedRunStep } = prepareStory(
       { id, name, play, moduleExport },
       { id, title },
       { render, runStep }
     );
 
-    await playFunction!({} as PlayFunctionContext);
+    const context: Partial<StoryContext> = {
+      step: (label, playFn) => preparedRunStep(label, playFn, context as StoryContext),
+    };
+    await playFunction?.(context as StoryContext);
     expect(play).toHaveBeenCalled();
     expect(stepPlay).toHaveBeenCalled();
-    expect(runStep).toBeCalledWith('label', stepPlay, expect.any(Object));
+    expect(runStep).toBeCalledWith('label', expect.any(Function), expect.any(Object));
   });
 });
 
@@ -689,7 +729,7 @@ describe('moduleExport', () => {
 });
 
 describe('prepareMeta', () => {
-  it('returns the same as prepareStory', () => {
+  it('returns a similar object as prepareStory', () => {
     const meta = {
       id,
       title,
@@ -710,8 +750,6 @@ describe('prepareMeta', () => {
         nested: { name: 'nested', type: booleanType, a: 'story' },
       },
     };
-    const preparedStory = prepareStory({ id, name, moduleExport }, meta, { render });
-    const preparedMeta = prepareMeta(meta, { render }, {});
 
     // omitting the properties from preparedStory that are not in preparedMeta
     const {
@@ -723,12 +761,20 @@ describe('prepareMeta', () => {
       unboundStoryFn,
       undecoratedStoryFn,
       playFunction,
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      parameters: { __isArgsStory, ...parameters },
-      ...expectedPreparedMeta
-    } = preparedStory;
+      runStep,
+      ...preparedStory
+    } = prepareStory({ id, name, moduleExport }, meta, { render });
 
-    expect(preparedMeta).toMatchObject({ ...expectedPreparedMeta, parameters });
-    expect(Object.keys(preparedMeta)).toHaveLength(Object.keys(expectedPreparedMeta).length + 1);
+    const preparedMeta = prepareMeta(
+      meta,
+      normalizeProjectAnnotations(composeConfigs([{ render }])),
+      {}
+    );
+
+    // prepareMeta doesn't explicitly set this parameter to false
+    // eslint-disable-next-line no-underscore-dangle
+    preparedMeta.parameters.__isArgsStory = false;
+
+    expect(preparedMeta).toEqual(preparedStory);
   });
 });

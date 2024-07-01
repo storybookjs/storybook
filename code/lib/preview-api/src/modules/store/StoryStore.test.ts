@@ -5,6 +5,7 @@ import { prepareStory } from './csf/prepareStory';
 import { processCSFFile } from './csf/processCSFFile';
 import { StoryStore } from './StoryStore';
 import type { HooksContext } from './hooks';
+import { composeConfigs } from './csf/composeConfigs';
 
 // Spy on prepareStory/processCSFFile
 vi.mock('./csf/prepareStory', async (importOriginal) => {
@@ -41,12 +42,14 @@ const importFn = vi.fn(async (path) => {
   return path === './src/ComponentOne.stories.js' ? componentOneExports : componentTwoExports;
 });
 
-const projectAnnotations: ProjectAnnotations<any> = {
-  globals: { a: 'b' },
-  globalTypes: { a: { type: 'string' } },
-  argTypes: { a: { type: 'string' } },
-  render: vi.fn(),
-};
+const projectAnnotations: ProjectAnnotations<any> = composeConfigs([
+  {
+    globals: { a: 'b' },
+    globalTypes: { a: { type: 'string' } },
+    argTypes: { a: { type: 'string' } },
+    render: vi.fn(),
+  },
+]);
 
 const storyIndex: StoryIndex = {
   v: 5,
@@ -660,6 +663,7 @@ describe('StoryStore', () => {
               "fileName": "./src/ComponentOne.stories.js",
             },
             "playFunction": undefined,
+            "runStep": [Function],
             "story": "A",
             "storyFn": [Function],
             "subcomponents": undefined,
@@ -707,6 +711,7 @@ describe('StoryStore', () => {
               "fileName": "./src/ComponentOne.stories.js",
             },
             "playFunction": undefined,
+            "runStep": [Function],
             "story": "B",
             "storyFn": [Function],
             "subcomponents": undefined,
@@ -754,6 +759,7 @@ describe('StoryStore', () => {
               "fileName": "./src/ComponentTwo.stories.js",
             },
             "playFunction": undefined,
+            "runStep": [Function],
             "story": "C",
             "storyFn": [Function],
             "subcomponents": undefined,

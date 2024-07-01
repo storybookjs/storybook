@@ -67,7 +67,7 @@
   );
 
   if (extractor.isExtracting) {
-    extractor.register({ ...restProps, exportName, play, children } as Parameters<
+    extractor.register({ children, name, exportName, play, ...restProps } as Parameters<
       (typeof extractor)['register']
     >[0]);
   }

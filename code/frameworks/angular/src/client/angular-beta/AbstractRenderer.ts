@@ -42,17 +42,6 @@ export abstract class AbstractRenderer {
   // Observable to change the properties dynamically without reloading angular module&component
   protected storyProps$: Subject<ICollection | undefined>;
 
-  constructor() {
-    if (typeof NODE_ENV === 'string' && NODE_ENV !== 'development') {
-      try {
-        // platform should be set after enableProdMode()
-        enableProdMode();
-      } catch (e) {
-        console.debug(e);
-      }
-    }
-  }
-
   protected abstract beforeFullRender(domNode?: HTMLElement): Promise<void>;
 
   /**

@@ -399,13 +399,8 @@ describe('jsxDecorator', () => {
     jsxDecorator(storyFn, context);
     await new Promise((r) => setTimeout(r, 0));
 
-    expect(mockChannel.emit).toHaveBeenCalledTimes(2);
-    expect(mockChannel.emit).nthCalledWith(1, SNIPPET_RENDERED, {
-      id: 'jsx-test--args',
-      args: {},
-      source: '',
-    });
-    expect(mockChannel.emit).nthCalledWith(2, SNIPPET_RENDERED, {
+    expect(mockChannel.emit).toHaveBeenCalledTimes(1);
+    expect(mockChannel.emit).toHaveBeenCalledWith(SNIPPET_RENDERED, {
       id: 'jsx-test--args',
       args: {},
       source: '<div>\n  resolved args story\n</div>',

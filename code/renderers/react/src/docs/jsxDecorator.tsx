@@ -225,13 +225,32 @@ export const jsxDecorator = (
   storyFn: PartialStoryFn<ReactRenderer>,
   context: StoryContext<ReactRenderer>
 ) => {
-  const channel = addons.getChannel();
-  const skip = skipJsxRender(context);
-
-  let jsx = '';
+  const story = storyFn();
 
   useEffect(() => {
+    const skip = skipJsxRender(context);
+    // We only need to render JSX if the source block is actually going to
+    // consume it. Otherwise it's just slowing us down.
     if (!skip) {
+      const channel = addons.getChannel();
+      let jsx = '';
+
+      const options = {
+        ...defaultOpts,
+        ...(context?.parameters.jsx || {}),
+      } as Required<JSXOptions>;
+
+      // Exclude decorators from source code snippet by default
+      const storyJsx = context?.parameters.docs?.source?.excludeDecorators
+        ? (context.originalStoryFn as ArgsStoryFn<ReactRenderer>)(context.args, context)
+        : story;
+
+      const sourceJsx = mdxToJsx(storyJsx);
+
+      const rendered = renderJsx(sourceJsx, options);
+      if (rendered) {
+        jsx = rendered;
+      }
       const { id, unmappedArgs } = context;
       channel.emit(SNIPPET_RENDERED, {
         id,
@@ -240,30 +259,6 @@ export const jsxDecorator = (
       });
     }
   });
-
-  const story = storyFn();
-  // We only need to render JSX if the source block is actually going to
-  // consume it. Otherwise it's just slowing us down.
-  if (skip) {
-    return story;
-  }
-
-  const options = {
-    ...defaultOpts,
-    ...(context?.parameters.jsx || {}),
-  } as Required<JSXOptions>;
-
-  // Exclude decorators from source code snippet by default
-  const storyJsx = context?.parameters.docs?.source?.excludeDecorators
-    ? (context.originalStoryFn as ArgsStoryFn<ReactRenderer>)(context.args, context)
-    : story;
-
-  const sourceJsx = mdxToJsx(storyJsx);
-
-  const rendered = renderJsx(sourceJsx, options);
-  if (rendered) {
-    jsx = rendered;
-  }
 
   return story;
 };

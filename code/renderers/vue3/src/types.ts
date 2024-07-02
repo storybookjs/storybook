@@ -1,4 +1,8 @@
-import { type StoryContext as StoryContextBase, type WebRenderer } from 'storybook/internal/types';
+import {
+  type Canvas,
+  type StoryContext as StoryContextBase,
+  type WebRenderer,
+} from 'storybook/internal/types';
 import type { App, ConcreteComponent } from 'vue';
 
 export type { RenderContext } from 'storybook/internal/types';
@@ -21,4 +25,10 @@ export interface VueRenderer extends WebRenderer {
   // Try not omitting, and check the type errros in the test file, if you want to learn more.
   component: Omit<ConcreteComponent<this['T']>, 'props'>;
   storyResult: StoryFnVueReturnType;
+
+  mount: (
+    Component?: StoryFnVueReturnType,
+    // TODO add proper typesafety
+    options?: { props?: Record<string, any>; slots?: Record<string, any> }
+  ) => Promise<Canvas>;
 }

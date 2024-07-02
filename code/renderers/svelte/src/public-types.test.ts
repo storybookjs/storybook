@@ -231,3 +231,13 @@ describe('Story args can be inferred', () => {
     expectTypeOf(Basic).toEqualTypeOf<Expected>();
   });
 });
+
+it('mount accepts a Component and props', () => {
+  const Basic: StoryObj<Button> = {
+    async play({ mount }) {
+      const canvas = await mount(Button, { label: 'label', disabled: true });
+      expectTypeOf(canvas).toEqualTypeOf<Canvas>();
+    },
+  };
+  expectTypeOf(Basic).toEqualTypeOf<StoryObj<Button>>();
+});

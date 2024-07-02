@@ -1,5 +1,5 @@
 import { writeJSON } from 'fs-extra';
-import type { Request, Response, Router } from 'express';
+import type { Server } from './server-connect';
 import { getStorybookMetadata } from '@storybook/core/telemetry';
 
 export async function extractStorybookMetadata(outputFile: string, configDir: string) {
@@ -8,10 +8,11 @@ export async function extractStorybookMetadata(outputFile: string, configDir: st
   await writeJSON(outputFile, storybookMetadata);
 }
 
-export function useStorybookMetadata(router: Router, configDir?: string) {
-  router.use('/project.json', async (req: Request, res: Response) => {
+export function useStorybookMetadata(app: Server, configDir?: string) {
+  app.use('/project.json', async (req, res) => {
     const storybookMetadata = await getStorybookMetadata(configDir);
-    res.header('Content-Type', 'application/json');
-    res.send(JSON.stringify(storybookMetadata));
+    res.setHeader('Content-Type', 'application/json');
+    res.write(JSON.stringify(storybookMetadata));
+    res.end();
   });
 }

@@ -1,6 +1,6 @@
 import { dirname, join, parse } from 'node:path';
 import fs from 'fs-extra';
-import express from 'express';
+import sirv from 'sirv';
 
 import { logger } from '@storybook/core/node-logger';
 
@@ -26,6 +26,7 @@ import { safeResolve } from './utils/safeResolve';
 import { readOrderedFiles } from './utils/files';
 import { buildFrameworkGlobalsFromOptions } from './utils/framework';
 
+const isRootPath = /^\/($|\?)/;
 let compilation: Compilation;
 let asyncIterator: ReturnType<StarterFunction> | ReturnType<BuilderFunction>;
 
@@ -121,11 +122,7 @@ export const executor = {
  *
  * I am sorry for making you read about generators today :')
  */
-const starter: StarterFunction = async function* starterGeneratorFn({
-  startTime,
-  options,
-  router,
-}) {
+const starter: StarterFunction = async function* starterGeneratorFn({ startTime, options, app }) {
   logger.info('=> Starting manager..');
 
   const {
@@ -163,8 +160,33 @@ const starter: StarterFunction = async function* starterGeneratorFn({
     'manager'
   );
 
-  router.use(`/sb-addons`, express.static(addonsDir, { immutable: true, maxAge: '5m' }));
-  router.use(`/sb-manager`, express.static(coreDirOrigin, { immutable: true, maxAge: '5m' }));
+  const serveAddons = sirv(addonsDir, {
+    maxAge: 300000,
+    dev: true,
+    immutable: true,
+  });
+  const serveCore = sirv(coreDirOrigin, {
+    maxAge: 300000,
+    dev: true,
+    immutable: true,
+  });
+  // TODO (43081j): maybe abstract this into a reusable function
+  app.use('/sb-addons', (req, res, next) => {
+    if (!req.url || req.url === '/') {
+      next();
+      return;
+    }
+
+    serveAddons(req, res, next);
+  });
+  app.use('/sb-manager', (req, res, next) => {
+    if (!req.url || req.url === '/') {
+      next();
+      return;
+    }
+
+    serveCore(req, res, next);
+  });
 
   const { cssFiles, jsFiles } = await readOrderedFiles(addonsDir, compilation?.outputFiles);
 
@@ -191,15 +213,19 @@ const starter: StarterFunction = async function* starterGeneratorFn({
 
   yield;
 
-  router.use(`/`, ({ path }, res, next) => {
-    if (path === '/') {
-      res.status(200).send(html);
+  app.use('/', ({ url }, res, next) => {
+    if (url && isRootPath.test(url)) {
+      res.statusCode = 200;
+      res.write(html);
+      res.end();
     } else {
       next();
     }
   });
-  router.use(`/index.html`, ({ path }, res) => {
-    res.status(200).send(html);
+  app.use(`/index.html`, (req, res) => {
+    res.statusCode = 200;
+    res.write(html);
+    res.end();
   });
 
   return {

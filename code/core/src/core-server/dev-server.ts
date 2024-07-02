@@ -1,4 +1,3 @@
-import express from 'express';
 import compression from 'compression';
 import invariant from 'tiny-invariant';
 
@@ -19,12 +18,12 @@ import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator';
 import { getStoryIndexGenerator } from './utils/getStoryIndexGenerator';
 import { doTelemetry } from './utils/doTelemetry';
-import { router } from './utils/router';
 import { getAccessControlMiddleware } from './utils/getAccessControlMiddleware';
 import { getCachingMiddleware } from './utils/get-caching-middleware';
+import { type NextHandleFunction, connect } from './utils/server-connect';
 
 export async function storybookDevServer(options: Options) {
-  const app = express();
+  const app = connect();
 
   const [server, features, core] = await Promise.all([
     getServer(app, options),
@@ -40,12 +39,12 @@ export async function storybookDevServer(options: Options) {
   let indexError: Error | undefined;
   // try get index generator, if failed, send telemetry without storyCount, then rethrow the error
   const initializedStoryIndexGenerator: Promise<StoryIndexGenerator | undefined> =
-    getStoryIndexGenerator(features ?? {}, options, serverChannel).catch((err) => {
+    getStoryIndexGenerator(app, features ?? {}, options, serverChannel).catch((err) => {
       indexError = err;
       return undefined;
     });
 
-  app.use(compression({ level: 1 }));
+  app.use(compression({ level: 1 }) as NextHandleFunction);
 
   if (typeof options.extendServer === 'function') {
     options.extendServer(server);
@@ -54,9 +53,7 @@ export async function storybookDevServer(options: Options) {
   app.use(getAccessControlMiddleware(core?.crossOriginIsolated ?? false));
   app.use(getCachingMiddleware());
 
-  getMiddleware(options.configDir)(router);
-
-  app.use(router);
+  getMiddleware(options.configDir)(app);
 
   const { port, host, initialPath } = options;
   invariant(port, 'expected options to have a port');
@@ -77,7 +74,7 @@ export async function storybookDevServer(options: Options) {
   const [previewBuilder, managerBuilder] = await Promise.all([
     getPreviewBuilder(builderName, options.configDir),
     getManagerBuilder(),
-    useStatics(router, options),
+    useStatics(app, options),
   ]);
 
   if (options.debugWebpack) {
@@ -87,7 +84,7 @@ export async function storybookDevServer(options: Options) {
   const managerResult = await managerBuilder.start({
     startTime: process.hrtime(),
     options,
-    router,
+    app,
     server,
     channel: serverChannel,
   });
@@ -100,7 +97,7 @@ export async function storybookDevServer(options: Options) {
       .start({
         startTime: process.hrtime(),
         options,
-        router,
+        app,
         server,
         channel: serverChannel,
       })
@@ -122,7 +119,7 @@ export async function storybookDevServer(options: Options) {
 
   // this is a preview route, the builder has to be started before we can serve it
   // this handler keeps request to that route pending until the builder is ready to serve it, preventing a 404
-  router.get('/iframe.html', (req, res, next) => {
+  app.use('/iframe.html', (req, res, next) => {
     // We need to catch here or node will treat any errors thrown by `previewStarted` as
     // unhandled and exit (even though they are very much handled below)
     previewStarted.catch(() => {}).then(() => next());
@@ -142,7 +139,7 @@ export async function storybookDevServer(options: Options) {
   const previewResult = await previewStarted;
 
   // Now the preview has successfully started, we can count this as a 'dev' event.
-  doTelemetry(core, initializedStoryIndexGenerator, options);
+  doTelemetry(app, core, initializedStoryIndexGenerator, options);
 
   return { previewResult, managerResult, address, networkAddress };
 }

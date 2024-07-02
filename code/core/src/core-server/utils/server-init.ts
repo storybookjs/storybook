@@ -1,11 +1,11 @@
 import { logger } from '@storybook/core/node-logger';
-import type { Express } from 'express';
+import type { Server } from './server-connect';
 import { readFile } from 'fs-extra';
 import http from 'http';
 import https from 'https';
 
 export async function getServer(
-  app: Express,
+  app: Server,
   options: {
     https?: boolean;
     sslCert?: string;

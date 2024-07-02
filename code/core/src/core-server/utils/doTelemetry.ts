@@ -4,11 +4,12 @@ import { telemetry, getPrecedingUpgrade } from '@storybook/core/telemetry';
 import { useStorybookMetadata } from './metadata';
 import type { StoryIndexGenerator } from './StoryIndexGenerator';
 import { summarizeIndex } from './summarizeIndex';
-import { router } from './router';
 import { versionStatus } from './versionStatus';
 import { sendTelemetryError } from '../withTelemetry';
+import type { Server } from './server-connect';
 
 export async function doTelemetry(
+  app: Server,
   core: CoreConfig,
   initializedStoryIndexGenerator: Promise<StoryIndexGenerator | undefined>,
   options: Options
@@ -47,6 +48,6 @@ export async function doTelemetry(
   }
 
   if (!core?.disableProjectJson) {
-    useStorybookMetadata(router, options.configDir);
+    useStorybookMetadata(app, options.configDir);
   }
 }

@@ -3,9 +3,10 @@ import { normalizeStories } from '@storybook/core/common';
 import { useStoriesJson } from './stories-json';
 import type { ServerChannel } from './get-server-channel';
 import { StoryIndexGenerator } from './StoryIndexGenerator';
-import { router } from './router';
+import type { Server } from './server-connect';
 
 export async function getStoryIndexGenerator(
+  app: Server,
   features: {
     argTypeTargetsV7?: boolean;
   },
@@ -33,7 +34,7 @@ export async function getStoryIndexGenerator(
   const initializedStoryIndexGenerator = generator.initialize().then(() => generator);
 
   useStoriesJson({
-    router,
+    app,
     initializedStoryIndexGenerator,
     normalizedStories,
     serverChannel,

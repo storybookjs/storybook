@@ -20,10 +20,8 @@ export const bench: Task = {
     const controllers: AbortController[] = [];
     try {
       const { disableDocs } = options;
-      // @ts-expect-error Default import required for dynamic import processed by esbuild
-      const { browse } = (await import('../bench/browse.ts')).default;
-      // @ts-expect-error Default import required for dynamic import processed by esbuild
-      const { saveBench, loadBench } = (await import('../bench/utils.ts')).default;
+      const { browse } = await import('../bench/browse');
+      const { saveBench, loadBench } = await import('../bench/utils');
 
       const devController = await dev.run(details, { ...options, debug: false });
       if (!devController) {

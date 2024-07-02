@@ -48,8 +48,8 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/addon-bundle.ts"
+    "check": "bun ../../../scripts/prepare/check.ts",
+    "prep": "bun ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
     "memoizerific": "^1.11.3"

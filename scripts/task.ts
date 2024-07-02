@@ -4,6 +4,7 @@ import { outputFile, readFile, pathExists } from 'fs-extra';
 import { join, resolve } from 'path';
 import { prompt } from 'prompts';
 import { dedent } from 'ts-dedent';
+import { fileURLToPath } from 'url';
 
 import invariant from 'tiny-invariant';
 import { CODE_DIRECTORY, JUNIT_DIRECTORY, SANDBOX_DIRECTORY } from './utils/constants';
@@ -465,11 +466,7 @@ async function run() {
       writeTaskList(statuses);
 
       try {
-        const controller = await runTask(task, details, {
-          ...optionValues,
-          // Always debug the final task so we can see it's output fully
-          debug: task === finalTask ? true : optionValues.debug,
-        });
+        const controller = await runTask(task, details, optionValues);
         if (controller) controllers.push(controller);
       } catch (err) {
         invariant(err instanceof Error);
@@ -521,7 +518,9 @@ process.on('exit', () => {
   });
 });
 
-if (require.main === module) {
+const isMainModule = fileURLToPath(import.meta.url) === process.argv[1];
+
+if (isMainModule) {
   run()
     .then((status) => process.exit(status))
     .catch((err) => {

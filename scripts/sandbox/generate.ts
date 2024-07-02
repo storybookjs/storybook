@@ -1,10 +1,9 @@
 import { join, relative } from 'path';
-import type { Options as ExecaOptions } from 'execa';
 import pLimit from 'p-limit';
 import prettyTime from 'pretty-hrtime';
 import { copy, emptyDir, ensureDir, move, remove, rename, writeFile } from 'fs-extra';
 import { program } from 'commander';
-import { execaCommand } from 'execa';
+import { temporaryDirectory } from 'tempy';
 import { esMain } from '../utils/esmain';
 
 import type { OptionValues } from '../utils/options';
@@ -26,6 +25,9 @@ import {
 } from '../utils/constants';
 import * as ghActions from '@actions/core';
 import { dedent } from 'ts-dedent';
+import type { SpawnOptions } from 'bun';
+import fs from 'fs/promises';
+import chalk from 'chalk';
 
 const isCI = process.env.GITHUB_ACTIONS === 'true';
 
@@ -39,10 +41,10 @@ const sbInit = async (
   debug?: boolean
 ) => {
   const sbCliBinaryPath = join(__dirname, `../../code/lib/cli/bin/index.js`);
-  console.log(`🎁 Installing storybook`);
+  console.log(`🎁 Installing Storybook`);
   const env = { STORYBOOK_DISABLE_TELEMETRY: 'true', ...envVars };
   const fullFlags = ['--yes', ...(flags || [])];
-  await runCommand(`${sbCliBinaryPath} init ${fullFlags.join(' ')}`, { cwd, env }, debug);
+  await runCommand(`yarn exec ${sbCliBinaryPath} init ${fullFlags.join(' ')}`, { cwd, env }, debug);
 };
 
 const withLocalRegistry = async (packageManager: JsPackageManager, action: () => Promise<void>) => {
@@ -80,11 +82,10 @@ const addStorybook = async ({
   const beforeDir = join(baseDir, BEFORE_DIR_NAME);
   const afterDir = join(baseDir, AFTER_DIR_NAME);
 
-  const { temporaryDirectory } = await import('tempy');
   const tmpDir = temporaryDirectory();
 
   try {
-    await copy(beforeDir, tmpDir);
+    await fs.cp(beforeDir, tmpDir, { mode: fs.constants.COPYFILE_FICLONE, recursive: true });
 
     const packageManager = JsPackageManagerFactory.getPackageManager({ force: 'yarn1' }, tmpDir);
     if (localRegistry) {
@@ -94,7 +95,6 @@ const addStorybook = async ({
           // Yarn1 Issue: https://github.com/storybookjs/storybook/issues/22431
           jackspeak: '2.1.1',
         });
-
         await sbInit(tmpDir, env, [...flags, '--package-manager=yarn1'], debug);
       });
     } else {
@@ -108,17 +108,38 @@ const addStorybook = async ({
   await rename(tmpDir, afterDir);
 };
 
-export const runCommand = async (script: string, options: ExecaOptions, debug = false) => {
+export const runCommand = async (
+  script: string,
+  options: SpawnOptions.OptionsObject<
+    SpawnOptions.Writable,
+    SpawnOptions.Readable,
+    SpawnOptions.Readable
+    // Timeout not yet supported
+    // https://github.com/oven-sh/bun/issues/1788
+  > & { timeout?: number },
+  debug = false
+) => {
   if (debug) {
     console.log(`Running command: ${script}`);
   }
 
-  return execaCommand(script, {
-    stdout: debug ? 'inherit' : 'ignore',
-    shell: true,
-    cleanup: true,
+  const std = debug ? 'inherit' : 'pipe';
+
+  const spawnProcess = Bun.spawn(script.trim().split(' '), {
+    stdout: std,
+    stderr: 'pipe',
     ...options,
   });
+
+  if ((await spawnProcess.exited) && spawnProcess.exitCode !== 0) {
+    const error = await new Response(spawnProcess.stderr).text();
+
+    throw new Error(
+      `\nExecution failed of script: \n${chalk.yellow(script)}\nwith error: \n${chalk.red(error)}`
+    );
+  }
+
+  return spawnProcess.exited;
 };
 
 const addDocumentation = async (
@@ -151,7 +172,6 @@ const runGenerators = async (
   console.log(`🤹‍♂️ Generating sandboxes with a concurrency of ${1}`);
 
   const limit = pLimit(1);
-  const { temporaryDirectory } = await import('tempy');
 
   const generationResults = await Promise.allSettled(
     generators.map(({ dirName, name, script, expected, env }) =>
@@ -181,6 +201,7 @@ const runGenerators = async (
           try {
             if (script.includes('{{beforeDir}}')) {
               const scriptWithBeforeDir = script.replaceAll('{{beforeDir}}', BEFORE_DIR_NAME);
+
               await runCommand(
                 scriptWithBeforeDir,
                 {

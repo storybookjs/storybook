@@ -9,7 +9,7 @@
     "nx": "cd code; yarn nx",
     "pretty-docs": "cd scripts; yarn install >/dev/null; yarn docs:prettier:write",
     "start": "yarn task --task dev --template react-vite/default-ts --start-from=install",
-    "task": "echo 'Installing Script Dependencies...'; cd scripts; yarn install >/dev/null; cd ..; yarn --cwd=./scripts task",
+    "task": "echo 'Installing Script Dependencies...'; cd scripts; yarn install; cd ..; yarn --cwd=./scripts task",
     "test": "cd code; yarn test",
     "upload-bench": "cd scripts; yarn upload-bench",
     "vite-ecosystem-ci:before-test": "node ./scripts/vite-ecosystem-ci/before-test.js && cd ./sandbox/react-vite-default-ts && yarn install",

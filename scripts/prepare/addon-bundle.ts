@@ -195,6 +195,13 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   }
 
   console.log('done');
+
+  // TODO: Remove as soon as https://github.com/egoist/tsup/pull/1140 is merged and released
+  // The PR will fix an issue with worker_threads, which don't terminate the process properly
+  // and therefore cause the process to hang indefinitely.
+  if (!watch) {
+    process.exit(0);
+  }
 };
 
 /* UTILS */

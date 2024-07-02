@@ -60,7 +60,7 @@
   ],
   "scripts": {
     "check": "vue-tsc --noEmit",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "prep": "bun ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
     "@storybook/global": "^5.0.0",

@@ -32,7 +32,7 @@ export const steps = {
   init: {
     command: 'init',
     description: 'Initializing Storybook',
-    icon: '⚙️',
+    icon: '✨',
     options: createOptions({
       yes: { type: 'boolean' },
       type: { type: 'string' },

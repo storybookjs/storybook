@@ -1,5 +1,5 @@
-import { exec } from 'child_process';
-import { remove, pathExists, readJSON } from 'fs-extra';
+import { execaCommand } from 'execa';
+import fsExtra from 'fs-extra';
 import chalk from 'chalk';
 import path from 'path';
 import program from 'commander';
@@ -23,6 +23,7 @@ program.parse(process.argv);
 
 const logger = console;
 
+const dirname = path.dirname(new URL(import.meta.url).pathname);
 const root = path.resolve(__dirname, '..');
 
 const startVerdaccio = async () => {
@@ -63,9 +64,9 @@ const startVerdaccio = async () => {
           resolve(verdaccioApp);
         }
       });
-      const cache = path.join(__dirname, '..', '.verdaccio-cache');
+      const cache = path.join(dirname, '..', '.verdaccio-cache');
       const config = {
-        ...parseConfigFile(path.join(__dirname, 'verdaccio.yaml')),
+        ...parseConfigFile(path.join(dirname, 'verdaccio.yaml')),
         self_path: cache,
       };
 
@@ -92,7 +93,7 @@ const startVerdaccio = async () => {
 };
 
 const currentVersion = async () => {
-  const { version } = await readJSON(path.join(__dirname, '..', 'code', 'package.json'));
+  const { version } = await fsExtra.readJSON(path.join(dirname, '..', 'code', 'package.json'));
   return version;
 };
 
@@ -121,28 +122,32 @@ const publish = async (packages: { name: string; location: string }[], url: stri
     packages.map(({ name, location }) =>
       limit(
         () =>
-          new Promise((res, rej) => {
+          new Promise<void>(async (res, rej) => {
             logger.log(
               `🛫 publishing ${name} (${location.replace(
-                path.resolve(path.join(__dirname, '..')),
+                path.resolve(path.join(dirname, '..')),
                 '.'
               )})`
             );
 
             const tarballFilename = `${name.replace('@', '').replace('/', '-')}.tgz`;
-            const command = `cd ${path.resolve(
-              '../code',
-              location
-            )} && yarn pack --out=${PACKS_DIRECTORY}/${tarballFilename} && cd ${PACKS_DIRECTORY} && npm publish ./${tarballFilename} --registry ${url} --force --ignore-scripts`;
-            exec(command, (e) => {
-              if (e) {
-                rej(e);
-              } else {
-                i += 1;
-                logger.log(`${i}/${packages.length} 🛬 successful publish of ${name}!`);
-                res(undefined);
-              }
-            });
+            const pathLocation = path.resolve('../code', location);
+            try {
+              await execaCommand(`yarn pack --out ${PACKS_DIRECTORY}/${tarballFilename}`, {
+                cwd: pathLocation,
+              });
+              await execaCommand(
+                `npm publish ${tarballFilename} --registry ${url} --force --ignore-scripts`,
+                {
+                  cwd: PACKS_DIRECTORY,
+                }
+              );
+              i += 1;
+              logger.log(`${i}/${packages.length} 🛬 successful publish of ${name}!`);
+              res();
+            } catch (e) {
+              rej(e as any);
+            }
           })
       )
     )
@@ -157,10 +162,10 @@ const run = async () => {
 
   if (!process.env.CI) {
     // when running e2e locally, clear cache to avoid EPUBLISHCONFLICT errors
-    const verdaccioCache = path.resolve(__dirname, '..', '.verdaccio-cache');
-    if (await pathExists(verdaccioCache)) {
+    const verdaccioCache = path.resolve(dirname, '..', '.verdaccio-cache');
+    if (await fsExtra.pathExists(verdaccioCache)) {
       logger.log(`🗑 cleaning up cache`);
-      await remove(verdaccioCache);
+      await fsExtra.remove(verdaccioCache);
     }
   }
 
@@ -200,12 +205,17 @@ const run = async () => {
     await publish(packages, 'http://localhost:6002');
   }
 
-  await execa('npx', ['rimraf', '.npmrc'], { cwd: root });
+  return new Promise<void>(async (res) => {
+    await execa('npx', ['rimraf', '.npmrc'], { cwd: root });
 
-  if (!program.open) {
-    verdaccioServer.close();
-    process.exit(0);
-  }
+    if (!program.open) {
+      verdaccioServer.close(() => {
+        res();
+      });
+    } else {
+      res();
+    }
+  });
 };
 
 run().catch((e) => {

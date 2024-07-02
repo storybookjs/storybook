@@ -3,8 +3,6 @@ import type { Meta, StoryObj } from '@storybook/angular';
 
 import { moduleMetadata } from '@storybook/angular';
 
-import fetch from 'node-fetch';
-
 import { CommonModule } from '@angular/common';
 
 import { TodoItem } from './TodoItem';
@@ -43,8 +41,6 @@ export const Primary: Story = {
 ```
 
 ```js filename="TodoItem.stories.js|jsx" renderer="react" language="js"
-import fetch from 'node-fetch';
-
 import { TodoItem } from './TodoItem';
 
 /*
@@ -68,8 +64,6 @@ export const Primary = {
 
 ```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9"
 import type { Meta, StoryObj } from '@storybook/react';
-
-import fetch from 'node-fetch';
 
 import { TodoItem } from './TodoItem';
 
@@ -97,8 +91,6 @@ export const Primary: Story = {
 
 ```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
 import type { Meta, StoryObj } from '@storybook/react';
-
-import fetch from 'node-fetch';
 
 import { TodoItem } from './TodoItem';
 
@@ -201,8 +193,6 @@ export const Primary: Story = {
 ```
 
 ```js filename="TodoItem.stories.js" renderer="svelte" language="js"
-import fetch from 'node-fetch';
-
 import TodoItem from './TodoItem.svelte';
 
 export default {
@@ -232,8 +222,6 @@ export const Primary = {
 
 ```ts filename="TodoItem.stories.ts" renderer="svelte" language="ts-4-9"
 import type { Meta, StoryObj } from '@storybook/svelte';
-
-import fetch from 'node-fetch';
 
 import TodoItem from './TodoItem.svelte';
 
@@ -268,8 +256,6 @@ export const Primary: Story = {
 ```ts filename="TodoItem.stories.ts" renderer="svelte" language="ts"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
-import fetch from 'node-fetch';
-
 import TodoItem from './TodoItem.svelte';
 
 /*
@@ -303,8 +289,6 @@ export const Primary: Story = {
 ```js filename="TodoItem.stories.js" renderer="vue" language="js"
 import TodoItem from './TodoItem.vue';
 
-import fetch from 'node-fetch';
-
 export default {
   component: TodoItem,
 };
@@ -334,8 +318,6 @@ export const Primary = {
 import type { Meta, StoryObj } from '@storybook/vue3';
 
 import TodoItem from './TodoItem.vue';
-
-import fetch from 'node-fetch';
 
 const meta = {
   component: TodoItem,
@@ -370,8 +352,6 @@ import type { Meta, StoryObj } from '@storybook/vue3';
 
 import TodoItem from './TodoItem.vue';
 
-import fetch from 'node-fetch';
-
 const meta: Meta<typeof TodoItem> = {
   component: TodoItem,
 };
@@ -401,7 +381,6 @@ export const Primary: Story = {
 ```
 
 ```js filename="TodoItem.stories.js" renderer="web-components" language="js"
-import fetch from 'node-fetch';
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
  * See https://storybook.js.org/docs/api/csf
@@ -423,8 +402,6 @@ export const Primary = {
 
 ```ts filename="TodoItem.stories.ts" renderer="web-components" language="ts"
 import type { Meta, StoryObj } from '@storybook/web-components';
-
-import fetch from 'node-fetch';
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.

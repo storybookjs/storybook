@@ -1,6 +1,5 @@
 import chalk from 'chalk';
 import assert from 'assert';
-import fetch from 'node-fetch';
 import { esMain } from './utils/esmain';
 import { allTemplates } from '../code/lib/cli/src/sandbox-templates';
 import versions from '../code/core/src/common/versions';

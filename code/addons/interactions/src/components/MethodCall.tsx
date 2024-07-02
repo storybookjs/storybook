@@ -341,15 +341,31 @@ export const ElementNode = ({
 };
 
 export const DateNode = ({ value }: { value: string | Date }) => {
-  const [date, time, ms] = new Date(value).toISOString().split(/[T.Z]/);
+  let dateSplit: string[] = [];
+  if (value instanceof Date) {
+    try {
+      dateSplit = value.toISOString().split(/[T.Z]/);
+    } catch (error) {
+      console.error('Invalid date value provided to DateNode:', value);
+      dateSplit = ['Invalid date', '', ''];
+    }
+  } else {
+    dateSplit = value.split(/[T.Z]/);
+  }
+  const [date, time, ms] = dateSplit;
+
   const colors = useThemeColors();
   return (
     <span style={{ whiteSpace: 'nowrap', color: colors.date }}>
       {date}
-      <span style={{ opacity: 0.7 }}>T</span>
-      {time === '00:00:00' ? <span style={{ opacity: 0.7 }}>{time}</span> : time}
-      {ms === '000' ? <span style={{ opacity: 0.7 }}>.{ms}</span> : `.${ms}`}
-      <span style={{ opacity: 0.7 }}>Z</span>
+      { date !== 'Invalid date' && (
+        <>
+          <span style={{ opacity: 0.7 }}>T</span>
+          {time === '00:00:00' ? <span style={{ opacity: 0.7 }}>{time}</span> : time}
+          {ms === '000' ? <span style={{ opacity: 0.7 }}>.{ms}</span> : `.${ms}`}
+          <span style={{ opacity: 0.7 }}>Z</span>
+        </>
+      )}
     </span>
   );
 };

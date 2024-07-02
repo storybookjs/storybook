@@ -10,6 +10,7 @@ import type {
   Store_CSFExports,
   StoriesWithPartialProps,
   ComposedStoryFn,
+  NamedOrDefaultProjectAnnotations,
 } from 'storybook/internal/types';
 
 import * as svelteProjectAnnotations from './entry-preview';
@@ -51,9 +52,11 @@ type MapToComposed<TModule> = {
  * @param projectAnnotations - e.g. (import projectAnnotations from '../.storybook/preview')
  */
 export function setProjectAnnotations(
-  projectAnnotations: ProjectAnnotations<SvelteRenderer> | ProjectAnnotations<SvelteRenderer>[]
-) {
-  originalSetProjectAnnotations<SvelteRenderer>(projectAnnotations);
+  projectAnnotations:
+    | NamedOrDefaultProjectAnnotations<SvelteRenderer>
+    | NamedOrDefaultProjectAnnotations<SvelteRenderer>[]
+): ProjectAnnotations<SvelteRenderer> {
+  return originalSetProjectAnnotations<SvelteRenderer>(projectAnnotations);
 }
 
 // This will not be necessary once we have auto preset loading

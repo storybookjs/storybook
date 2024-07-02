@@ -20,7 +20,22 @@ import {
   UPDATE_GLOBALS,
   UPDATE_STORY_ARGS,
 } from '@storybook/core/core-events';
+import type { CleanupCallback } from '@storybook/csf';
 import type { Channel } from '@storybook/core/channels';
+import type {
+  Renderer,
+  Args,
+  Globals,
+  ModuleImportFn,
+  RenderContextCallbacks,
+  RenderToCanvas,
+  PreparedStory,
+  StoryIndex,
+  ProjectAnnotations,
+  StoryId,
+  StoryRenderOptions,
+  SetGlobalsPayload,
+} from '@storybook/core/types';
 import {
   CalledPreviewMethodBeforeInitializationError,
   MissingRenderToCanvasError,
@@ -33,16 +48,6 @@ import { StoryStore } from '../../store';
 import { StoryRender } from './render/StoryRender';
 import type { CsfDocsRender } from './render/CsfDocsRender';
 import type { MdxDocsRender } from './render/MdxDocsRender';
-import type { Args, Globals, Renderer, StoryId } from '@storybook/core/types';
-import type {
-  ModuleImportFn,
-  PreparedStory,
-  ProjectAnnotations,
-  RenderToCanvas,
-} from '@storybook/core/types';
-import type { RenderContextCallbacks, StoryRenderOptions } from '@storybook/core/types';
-import type { StoryIndex } from '@storybook/core/types';
-import type { SetGlobalsPayload } from '@storybook/core/types';
 
 const { fetch } = global;
 
@@ -67,6 +72,8 @@ export class Preview<TRenderer extends Renderer> {
   // While we wait for the index to load (note it may error for a while), we need to store the
   // project annotations. Once the index loads, it is stored on the store and this will get unset.
   private projectAnnotationsBeforeInitialization?: ProjectAnnotations<TRenderer>;
+
+  private beforeAllCleanup?: CleanupCallback | void;
 
   protected storeInitializationPromise: Promise<void>;
 
@@ -119,6 +126,7 @@ export class Preview<TRenderer extends Renderer> {
 
     try {
       const projectAnnotations = await this.getProjectAnnotationsOrRenderError();
+      await this.runBeforeAllHook(projectAnnotations);
       await this.initializeWithProjectAnnotations(projectAnnotations);
     } catch (err) {
       this.rejectStoreInitializationPromise(err as Error);
@@ -163,6 +171,16 @@ export class Preview<TRenderer extends Renderer> {
       return this.initializeWithStoryIndex(storyIndex);
     } catch (err) {
       this.renderPreviewEntryError('Error loading story index:', err as Error);
+      throw err;
+    }
+  }
+
+  async runBeforeAllHook(projectAnnotations: ProjectAnnotations<TRenderer>) {
+    try {
+      await this.beforeAllCleanup?.();
+      this.beforeAllCleanup = await projectAnnotations.beforeAll?.();
+    } catch (err) {
+      this.renderPreviewEntryError('Error in beforeAll hook:', err as Error);
       throw err;
     }
   }
@@ -222,6 +240,8 @@ export class Preview<TRenderer extends Renderer> {
     this.getProjectAnnotations = getProjectAnnotations;
 
     const projectAnnotations = await this.getProjectAnnotationsOrRenderError();
+    await this.runBeforeAllHook(projectAnnotations);
+
     if (!this.storyStoreValue) {
       await this.initializeWithProjectAnnotations(projectAnnotations);
       return;

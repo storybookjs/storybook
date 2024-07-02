@@ -44,8 +44,8 @@ export function setProjectAnnotations(
   projectAnnotations:
     | NamedOrDefaultProjectAnnotations<VueRenderer>
     | NamedOrDefaultProjectAnnotations<VueRenderer>[]
-) {
-  originalSetProjectAnnotations<VueRenderer>(projectAnnotations);
+): ProjectAnnotations<VueRenderer> {
+  return originalSetProjectAnnotations<VueRenderer>(projectAnnotations);
 }
 
 /**

@@ -33,8 +33,10 @@ const DEFAULT_STORY_NAME = 'Unnamed Story';
 function extractAnnotation<TRenderer extends Renderer = Renderer>(
   annotation: NamedOrDefaultProjectAnnotations<TRenderer>
 ) {
+  if (!annotation) return {};
   // support imports such as
   // import * as annotations from '.storybook/preview'
+  // import annotations from '.storybook/preview'
   // in both cases: 1 - the file has a default export; 2 - named exports only
   return 'default' in annotation ? annotation.default : annotation;
 }
@@ -43,9 +45,11 @@ export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
   projectAnnotations:
     | NamedOrDefaultProjectAnnotations<TRenderer>
     | NamedOrDefaultProjectAnnotations<TRenderer>[]
-) {
+): ProjectAnnotations<TRenderer> {
   const annotations = Array.isArray(projectAnnotations) ? projectAnnotations : [projectAnnotations];
   globalProjectAnnotations = composeConfigs(annotations.map(extractAnnotation));
+
+  return globalProjectAnnotations;
 }
 
 const cleanups: { storyName: string; callback: CleanupCallback }[] = [];
@@ -142,7 +146,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
         }
         console.warn(
           dedent`Some stories were not cleaned up before rendering '${humanReadableIdentifier}'.
-          
+
           You should load the story with \`await Story.load()\` before rendering it.`
         );
         // TODO: Add a link to the docs when they are ready
@@ -233,10 +237,10 @@ export function createPlaywrightTest<TFixture extends { extend: any }>(
           throw new Error(dedent`
               Portable stories in Playwright CT only work when referencing JSX elements.
               Please use JSX format for your components such as:
-              
+
               instead of:
               await mount(MyComponent, { props: { foo: 'bar' } })
-              
+
               do:
               await mount(<MyComponent foo="bar"/>)
 

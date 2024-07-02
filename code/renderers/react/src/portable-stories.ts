@@ -35,8 +35,8 @@ export function setProjectAnnotations(
   projectAnnotations:
     | NamedOrDefaultProjectAnnotations<ReactRenderer>
     | NamedOrDefaultProjectAnnotations<ReactRenderer>[]
-) {
-  originalSetProjectAnnotations<ReactRenderer>(projectAnnotations);
+): ProjectAnnotations<ReactRenderer> {
+  return originalSetProjectAnnotations<ReactRenderer>(projectAnnotations);
 }
 
 // This will not be necessary once we have auto preset loading

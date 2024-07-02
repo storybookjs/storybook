@@ -51,9 +51,7 @@ test.describe('addon-backgrounds', () => {
       const sbPage = new SbPage(page);
 
       // We start on the introduction page by default.
-      await sbPage.page.waitForURL((url) =>
-        url.search.includes(`path=/docs/configure-your-project--docs`)
-      );
+      await sbPage.page.waitForURL((url) => url.search.includes(`path=/docs/all-ui--docs`));
 
       await expect(sbPage.page.locator(backgroundToolbarSelector)).toBeVisible();
     });

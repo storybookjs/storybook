@@ -157,3 +157,13 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
 
   return baseConfig;
 };
+
+export const env: StorybookConfig['env'] = async (baseEnv, options) => {
+  const nextEnv = { ...baseEnv } as Record<string, string>;
+  Object.entries(process.env)
+    .filter(([key]) => key.startsWith('NEXT_PUBLIC_'))
+    .forEach(([key, val]) => {
+      if (typeof val === 'string') nextEnv[key] = val;
+    });
+  return nextEnv;
+};

@@ -68,6 +68,7 @@ export const Args = () => (
     />
     <Node value={{ __date__: { value: new Date(1600000000000).toISOString() } }} />
     <Node value={{ __date__: { value: new Date(1600000000123).toISOString() } }} />
+    <Node value={{ __date__: { value: new Date(1600000000123) } }} />
     <Node value={{ __error__: { name: 'EvalError', message: '' } }} />
     <Node value={{ __error__: { name: 'SyntaxError', message: "Can't do that" } }} />
     <Node

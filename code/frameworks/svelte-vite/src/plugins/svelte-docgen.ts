@@ -100,15 +100,18 @@ export async function svelteDocgen(svelteOptions: Record<string, any> = {}): Pro
 
       let docOptions;
       if (docPreprocessOptions) {
-        const rawSource = fs.readFileSync(resource).toString();
+        try {
+          const rawSource = fs.readFileSync(resource).toString();
+          const { code: fileContent } = await preprocess(rawSource, docPreprocessOptions, {
+            filename: resource,
+          })
 
-        const { code: fileContent } = await preprocess(rawSource, docPreprocessOptions, {
-          filename: resource,
-        });
-
-        docOptions = {
-          fileContent,
-        };
+          docOptions = {
+            fileContent,
+          }
+        } catch (_) {
+          // ignore fail due to virtual module import
+        }
       } else {
         docOptions = { filename: resource };
       }

@@ -29,7 +29,10 @@ test.describe('addon-backgrounds', () => {
     await sbPage.navigateToStory('example/button', 'primary');
     await sbPage.selectToolbar(gridToolbarSelector);
 
-    await expect(sbPage.getCanvasBodyElement()).toHaveCSS('background-image', /linear-gradient/);
+    const root = sbPage.previewRoot();
+    const gridElement = await root.locator('#addon-backgrounds-grid-component');
+
+    await expect(gridElement).toHaveCSS('background-image', /linear-gradient/);
   });
 
   test('button should appear for story pages', async ({ page }) => {

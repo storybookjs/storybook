@@ -11,6 +11,8 @@ import * as stories from './Button.stories';
 import type Button from './Button.vue';
 import { composeStories, composeStory, setProjectAnnotations } from '../../portable-stories';
 
+setProjectAnnotations({ testingLibraryRender: render });
+
 // example with composeStories, returns an object with all stories composed with args/decorators
 const { CSF3Primary, LoaderStory } = composeStories(stories);
 
@@ -58,6 +60,7 @@ describe('projectAnnotations', () => {
   it('renders with default projectAnnotations', () => {
     setProjectAnnotations([
       {
+        testingLibraryRender: render,
         parameters: { injected: true },
         globalTypes: {
           locale: { defaultValue: 'en' },
@@ -100,9 +103,7 @@ describe('CSF3', () => {
   it('renders with play function', async () => {
     const CSF3InputFieldFilled = composeStory(stories.CSF3InputFieldFilled, stories.default);
 
-    render(CSF3InputFieldFilled);
-
-    await CSF3InputFieldFilled.play!();
+    await CSF3InputFieldFilled.play();
 
     const input = screen.getByTestId('input') as HTMLInputElement;
     expect(input.value).toEqual('Hello world!');
@@ -143,14 +144,8 @@ describe('ComposeStories types', () => {
 // Batch snapshot testing
 const testCases = Object.values(composeStories(stories)).map((Story) => [Story.storyName, Story]);
 it.each(testCases)('Renders %s story', async (_storyName, Story) => {
-  if (typeof Story === 'string' || _storyName === 'CSF2StoryWithLocale') {
-    return;
-  }
-
-  await Story.load();
-  const { baseElement } = await render(Story);
-  await Story.play?.();
+  if (typeof Story === 'string' || _storyName === 'CSF2StoryWithLocale') return;
+  await Story.play();
   await new Promise((resolve) => setTimeout(resolve, 0));
-
-  expect(baseElement).toMatchSnapshot();
+  expect(document.body).toMatchSnapshot();
 });

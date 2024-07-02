@@ -5,6 +5,7 @@ import type {
   LoaderFunction,
   CleanupCallback,
   StepRunner,
+  Canvas,
 } from '@storybook/csf';
 
 import type {
@@ -43,6 +44,7 @@ export type RenderToCanvas<TRenderer extends Renderer> = (
 
 export interface ProjectAnnotations<TRenderer extends Renderer>
   extends CsfProjectAnnotations<TRenderer> {
+  testingLibraryRender?: (...args: never[]) => { unmount: () => void };
   renderToCanvas?: RenderToCanvas<TRenderer>;
   /* @deprecated use renderToCanvas */
   renderToDOM?: RenderToCanvas<TRenderer>;
@@ -106,6 +108,9 @@ export type PreparedStory<TRenderer extends Renderer = Renderer> =
     applyBeforeEach: (context: StoryContext<TRenderer>) => Promise<CleanupCallback[]>;
     playFunction?: (context: StoryContext<TRenderer>) => Promise<void> | void;
     runStep: StepRunner<TRenderer>;
+    mount: (context: StoryContext<TRenderer>) => () => Promise<Canvas>;
+    testingLibraryRender?: (...args: never[]) => unknown;
+    renderToCanvas?: ProjectAnnotations<TRenderer>['renderToCanvas'];
   };
 
 export type PreparedMeta<TRenderer extends Renderer = Renderer> = Omit<
@@ -119,6 +124,7 @@ export type BoundStory<TRenderer extends Renderer = Renderer> = PreparedStory<TR
   storyFn: PartialStoryFn<TRenderer>;
 };
 
+// TODO Consolidate this with context for 9.0
 export declare type RenderContext<TRenderer extends Renderer = Renderer> = StoryIdentifier & {
   showMain: () => void;
   showError: (error: { title: string; description: string }) => void;

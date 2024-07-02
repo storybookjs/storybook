@@ -238,6 +238,63 @@ export class StoryStoreAccessedBeforeInitializationError extends StorybookError 
   }
 }
 
+export class MountMustBeDestructuredError extends StorybookError {
+  readonly category = Category.PREVIEW_API;
+
+  readonly code = 12;
+
+  constructor(public data: { playFunction: string }) {
+    super();
+  }
+
+  template() {
+    return dedent`
+    To use mount in the play function, you must use object destructuring, e.g. play: ({ mount }) => {}.
+    
+    Instead received:
+    ${this.data.playFunction}
+    `;
+  }
+}
+
+export class TestingLibraryMustBeConfiguredError extends StorybookError {
+  readonly category = Category.PREVIEW_API;
+
+  readonly code = 13;
+
+  template() {
+    return dedent`
+    You must configure testingLibraryRender to use play in portable stories.
+    
+    import { render } from '@testing-library/[renderer]';
+    
+    setProjectAnnotations({
+      testingLibraryRender: render,
+    });
+    
+    For other testing renderers, you can configure renderToCanvas:
+    
+    import { render } from 'your-renderer';
+    
+    setProjectAnnotations({
+      renderToCanvas: ({ storyFn }) => {
+        const Story = storyFn();
+        
+        // Svelte
+        render(Story.Component, Story.props);
+        
+        // Vue
+        render(Story);
+        
+        // or for React
+        render(<Story/>);
+      },
+    });
+    
+    `;
+  }
+}
+
 export class NextJsSharpError extends StorybookError {
   readonly category = Category.FRAMEWORK_NEXTJS;
 

@@ -15,6 +15,7 @@ import { fn } from '@storybook/test';
 
 import type { Decorator, Meta, StoryObj } from './public-types';
 import type { ReactRenderer } from './types';
+import type { Canvas } from '@storybook/csf';
 
 type ReactStory<TArgs, TRequiredArgs> = StoryAnnotations<ReactRenderer, TArgs, TRequiredArgs>;
 
@@ -315,7 +316,9 @@ it('Infer mock function given to args in meta.', () => {
   type Story = StoryObj<typeof meta>;
 
   const Basic: Story = {
-    play: async ({ args }) => {
+    play: async ({ args, mount }) => {
+      const canvas = await mount();
+      expectTypeOf(canvas).toEqualTypeOf<Canvas>();
       expectTypeOf(args.onClick).toEqualTypeOf<Mock<[], void>>();
       expectTypeOf(args.onRender).toEqualTypeOf<() => JSX.Element>();
     },

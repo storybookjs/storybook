@@ -85,8 +85,12 @@ describe('composeStory', () => {
       spy(context);
     };
 
-    const composedStory = composeStory(Story, meta);
-    await composedStory.play!({ canvasElement: null });
+    const composedStory = composeStory(Story, meta, {
+      mount: (context) => async () => {
+        return context.canvas;
+      },
+    });
+    await composedStory.play({ canvasElement: null });
     expect(spy).toHaveBeenCalledWith(
       expect.objectContaining({
         args: {
@@ -257,48 +261,6 @@ describe('composeStory', () => {
     await composedStory.load();
     expect(spyFn).toHaveBeenNthCalledWith(1, 'from loaders');
     expect(spyFn).toHaveBeenNthCalledWith(2, 'from beforeEach');
-  });
-
-  it('should warn when previous cleanups are still around when rendering a story', async () => {
-    const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const cleanupSpy = vi.fn();
-    const beforeEachSpy = vi.fn(() => {
-      return () => {
-        cleanupSpy();
-      };
-    });
-
-    const PreviousStory: Story = {
-      render: () => 'first',
-      beforeEach: beforeEachSpy,
-    };
-    const CurrentStory: Story = {
-      render: () => 'second',
-      args: {
-        firstArg: false,
-        secondArg: true,
-      },
-    };
-    const firstComposedStory = composeStory(PreviousStory, {});
-    await firstComposedStory.load();
-    firstComposedStory();
-
-    expect(beforeEachSpy).toHaveBeenCalled();
-    expect(cleanupSpy).not.toHaveBeenCalled();
-    expect(consoleWarnSpy).not.toHaveBeenCalled();
-
-    const secondComposedStory = composeStory(CurrentStory, {});
-    secondComposedStory();
-
-    expect(cleanupSpy).not.toHaveBeenCalled();
-    expect(consoleWarnSpy).toHaveBeenCalledOnce();
-    expect(consoleWarnSpy.mock.calls[0][0]).toMatchInlineSnapshot(
-      `
-      "Some stories were not cleaned up before rendering 'Unnamed Story (firstArg, secondArg)'.
-
-      You should load the story with \`await Story.load()\` before rendering it."
-    `
-    );
   });
 
   it('should throw an error if Story is undefined', () => {

@@ -54,6 +54,7 @@ const addExtraContext = (
     hooks: new HooksContext(),
     viewMode: 'story' as const,
     loaded: {},
+    mount: vi.fn(),
     abortSignal: new AbortController().signal,
     canvasElement: {},
     step: vi.fn(),
@@ -763,6 +764,9 @@ describe('prepareMeta', () => {
       undecoratedStoryFn,
       playFunction,
       runStep,
+      mount,
+      renderToCanvas,
+      testingLibraryRender,
       ...preparedStory
     } = prepareStory({ id, name, moduleExport }, meta, { render });
 

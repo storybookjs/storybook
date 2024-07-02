@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, vi } from 'vitest';
 import { Channel } from '@storybook/core/channels';
-import type { Renderer, StoryIndexEntry } from '@storybook/core/types';
+import type { PreparedStory, Renderer, StoryContext, StoryIndexEntry } from '@storybook/core/types';
 import type { StoryStore } from '../../store';
 import { PREPARE_ABORTED } from './Render';
 
@@ -26,29 +26,45 @@ const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 window.location = { reload: vi.fn() } as any;
 
+const buildStory = (overrides: Partial<PreparedStory> = {}): PreparedStory =>
+  ({
+    id: 'id',
+    title: 'title',
+    name: 'name',
+    tags: [],
+    applyLoaders: vi.fn(),
+    applyBeforeEach: vi.fn(),
+    unboundStoryFn: vi.fn(),
+    playFunction: vi.fn(),
+    mount: vi.fn((context: StoryContext) => {
+      return async () => {
+        await context.renderToCanvas();
+        return context.canvas;
+      };
+    }),
+    ...overrides,
+  }) as any;
+
+const buildStore = (overrides: Partial<StoryStore<Renderer>> = {}): StoryStore<Renderer> =>
+  ({
+    getStoryContext: () => ({}),
+    addCleanupCallbacks: vi.fn(),
+    cleanupStory: vi.fn(),
+    ...overrides,
+  }) as any;
+
 describe('StoryRender', () => {
   it('does run play function if passed autoplay=true', async () => {
-    const story = {
-      id: 'id',
-      title: 'title',
-      name: 'name',
-      tags: [],
-      applyLoaders: vi.fn(),
-      applyBeforeEach: vi.fn(),
-      unboundStoryFn: vi.fn(),
-      playFunction: vi.fn(),
-      prepareContext: vi.fn(),
-    };
-
+    const story = buildStory();
     const render = new StoryRender(
       new Channel({}),
-      { getStoryContext: () => ({}), addCleanupCallbacks: vi.fn() } as any,
+      buildStore(),
       vi.fn() as any,
       {} as any,
       entry.id,
       'story',
       { autoplay: true },
-      story as any
+      story
     );
 
     await render.renderToElement({} as any);
@@ -56,27 +72,16 @@ describe('StoryRender', () => {
   });
 
   it('does not run play function if passed autoplay=false', async () => {
-    const story = {
-      id: 'id',
-      title: 'title',
-      name: 'name',
-      tags: [],
-      applyLoaders: vi.fn(),
-      applyBeforeEach: vi.fn(),
-      unboundStoryFn: vi.fn(),
-      playFunction: vi.fn(),
-      prepareContext: vi.fn(),
-    };
-
+    const story = buildStory();
     const render = new StoryRender(
       new Channel({}),
-      { getStoryContext: () => ({}), addCleanupCallbacks: vi.fn() } as any,
+      buildStore(),
       vi.fn() as any,
       {} as any,
       entry.id,
       'story',
       { autoplay: false },
-      story as any
+      story
     );
 
     await render.renderToElement({} as any);
@@ -86,32 +91,20 @@ describe('StoryRender', () => {
   it('only rerenders once when triggered multiple times while pending', async () => {
     // Arrange - setup StoryRender and async gate blocking applyLoaders
     const [loaderGate, openLoaderGate] = createGate();
-    const story = {
-      id: 'id',
-      title: 'title',
-      name: 'name',
-      tags: [],
-      applyLoaders: vi.fn(() => loaderGate),
-      applyBeforeEach: vi.fn(),
-      unboundStoryFn: vi.fn(),
-      playFunction: vi.fn(),
-      prepareContext: vi.fn(),
-    };
-    const store = {
-      getStoryContext: () => ({}),
-      cleanupStory: vi.fn(),
-      addCleanupCallbacks: vi.fn(),
-    };
     const renderToScreen = vi.fn();
+
+    const story = buildStory({
+      applyLoaders: vi.fn(() => loaderGate as any),
+    });
     const render = new StoryRender(
       new Channel({}),
-      store as any,
+      buildStore(),
       renderToScreen,
       {} as any,
       entry.id,
       'story',
       { autoplay: true },
-      story as any
+      story
     );
     // Arrange - render (blocked by loaders)
     render.renderToElement({} as any);
@@ -133,27 +126,129 @@ describe('StoryRender', () => {
 
     // Assert - loaded and rendered twice, played once
     await vi.waitFor(async () => {
-      console.log(render.phase);
       expect(story.applyLoaders).toHaveBeenCalledTimes(2);
       expect(renderToScreen).toHaveBeenCalledTimes(2);
       expect(story.playFunction).toHaveBeenCalledOnce();
     });
   });
 
+  it('calls mount if play function does not destructure mount', async () => {
+    const actualMount = vi.fn(async (context) => {
+      await context.renderToCanvas();
+      return {};
+    });
+    const story = buildStory({
+      mount: (context) => () => actualMount(context) as any,
+      playFunction: () => {},
+    });
+    const render = new StoryRender(
+      new Channel({}),
+      buildStore(),
+      vi.fn() as any,
+      {} as any,
+      entry.id,
+      'story',
+      { autoplay: true },
+      story
+    );
+
+    await render.renderToElement({} as any);
+    expect(actualMount).toHaveBeenCalled();
+  });
+
+  it('does not call mount if play function destructures mount', async () => {
+    const actualMount = vi.fn(async (context) => {
+      await context.renderToCanvas();
+      return context.canvas;
+    });
+    const story = buildStory({
+      mount: (context) => () => actualMount(context) as any,
+      playFunction: ({ mount }) => {},
+    });
+    const render = new StoryRender(
+      new Channel({}),
+      buildStore(),
+      vi.fn() as any,
+      {} as any,
+      entry.id,
+      'story',
+      { autoplay: true },
+      story
+    );
+
+    await render.renderToElement({} as any);
+    expect(actualMount).not.toHaveBeenCalled();
+  });
+
+  it('errors if play function calls mount without destructuring', async () => {
+    const actualMount = vi.fn(async (context) => {
+      await context.renderToCanvas();
+      return {};
+    });
+    const story = buildStory({
+      mount: (context) => () => actualMount(context) as any,
+      playFunction: async (context) => {
+        await context.mount();
+      },
+    });
+    const view = { showException: vi.fn() };
+    const render = new StoryRender(
+      new Channel({}),
+      buildStore(),
+      vi.fn() as any,
+      view as any,
+      entry.id,
+      'story',
+      { autoplay: true },
+      story
+    );
+
+    await render.renderToElement({} as any);
+    expect(view.showException).toHaveBeenCalled();
+  });
+
+  it('enters rendering phase during play if play function calls mount', async () => {
+    const actualMount = vi.fn(async (context) => {
+      await context.renderToCanvas();
+      return {};
+    });
+    const story = buildStory({
+      mount: (context) => () => actualMount(context) as any,
+      playFunction: ({ mount }) => {
+        expect(render.phase).toBe('playing');
+        mount();
+      },
+    });
+    const render = new StoryRender(
+      new Channel({}),
+      buildStore(),
+      vi.fn(() => {
+        expect(render.phase).toBe('rendering');
+      }) as any,
+      {} as any,
+      entry.id,
+      'story',
+      { autoplay: true },
+      story
+    );
+
+    await render.renderToElement({} as any);
+    expect(actualMount).toHaveBeenCalled();
+  });
+
   describe('teardown', () => {
     it('throws PREPARE_ABORTED if torndown during prepare', async () => {
       const [importGate, openImportGate] = createGate();
-      const mockStore = {
+      const mockStore = buildStore({
         loadStory: vi.fn(async () => {
           await importGate;
           return {};
-        }),
-        cleanupStory: vi.fn(),
-      };
+        }) as any,
+      });
 
       const render = new StoryRender(
         new Channel({}),
-        mockStore as unknown as StoryStore<Renderer>,
+        mockStore,
         vi.fn(),
         {} as any,
         entry.id,
@@ -172,31 +267,19 @@ describe('StoryRender', () => {
     it('reloads the page when tearing down during loading', async () => {
       // Arrange - setup StoryRender and async gate blocking applyLoaders
       const [loaderGate] = createGate();
-      const story = {
-        id: 'id',
-        title: 'title',
-        name: 'name',
-        tags: [],
-        applyLoaders: vi.fn(() => loaderGate),
-        applyBeforeEach: vi.fn(),
-        unboundStoryFn: vi.fn(),
-        playFunction: vi.fn(),
-        prepareContext: vi.fn(),
-      };
-      const store = {
-        getStoryContext: () => ({}),
-        cleanupStory: vi.fn(),
-        addCleanupCallbacks: vi.fn(),
-      };
+      const story = buildStory({
+        applyLoaders: vi.fn(() => loaderGate as any),
+      });
+      const store = buildStore();
       const render = new StoryRender(
         new Channel({}),
-        store as any,
+        store,
         vi.fn() as any,
         {} as any,
         entry.id,
         'story',
         { autoplay: true },
-        story as any
+        story
       );
 
       // Act - render (blocked by loaders), teardown
@@ -215,33 +298,19 @@ describe('StoryRender', () => {
     it('reloads the page when tearing down during rendering', async () => {
       // Arrange - setup StoryRender and async gate blocking renderToScreen
       const [renderGate] = createGate();
-      const story = {
-        id: 'id',
-        title: 'title',
-        name: 'name',
-        tags: [],
-        applyLoaders: vi.fn(),
-        applyBeforeEach: vi.fn(),
-        unboundStoryFn: vi.fn(),
-        playFunction: vi.fn(),
-        prepareContext: vi.fn(),
-      };
-      const store = {
-        getStoryContext: () => ({}),
-        cleanupStory: vi.fn(),
-        addCleanupCallbacks: vi.fn(),
-      };
+      const story = buildStory();
+      const store = buildStore();
       const renderToScreen = vi.fn(() => renderGate);
 
       const render = new StoryRender(
         new Channel({}),
-        store as any,
+        store,
         renderToScreen as any,
         {} as any,
         entry.id,
         'story',
         { autoplay: true },
-        story as any
+        story
       );
 
       // Act - render (blocked by renderToScreen), teardown
@@ -261,32 +330,20 @@ describe('StoryRender', () => {
     it('reloads the page when tearing down during playing', async () => {
       // Arrange - setup StoryRender and async gate blocking playing
       const [playGate] = createGate();
-      const story = {
-        id: 'id',
-        title: 'title',
-        name: 'name',
-        tags: [],
-        applyLoaders: vi.fn(),
-        applyBeforeEach: vi.fn(),
-        unboundStoryFn: vi.fn(),
-        playFunction: vi.fn(() => playGate),
-        prepareContext: vi.fn(),
-      };
-      const store = {
-        getStoryContext: () => ({}),
-        cleanupStory: vi.fn(),
-        addCleanupCallbacks: vi.fn(),
-      };
+      const story = buildStory({
+        playFunction: vi.fn(() => playGate as any),
+      });
+      const store = buildStore();
 
       const render = new StoryRender(
         new Channel({}),
-        store as any,
+        store,
         vi.fn() as any,
         {} as any,
         entry.id,
         'story',
         { autoplay: true },
-        story as any
+        story
       );
 
       // Act - render (blocked by playFn), teardown
@@ -307,31 +364,20 @@ describe('StoryRender', () => {
     it('reloads the page when remounting during loading', async () => {
       // Arrange - setup StoryRender and async gate blocking applyLoaders
       const [loaderGate] = createGate();
-      const story = {
-        id: 'id',
-        title: 'title',
-        name: 'name',
-        tags: [],
-        applyLoaders: vi.fn(() => loaderGate),
-        applyBeforeEach: vi.fn(),
-        unboundStoryFn: vi.fn(),
-        playFunction: vi.fn(),
-        prepareContext: vi.fn(),
-      };
-      const store = {
-        getStoryContext: () => ({}),
-        cleanupStory: vi.fn(),
-        addCleanupCallbacks: vi.fn(),
-      };
+      const story = buildStory({
+        applyLoaders: vi.fn(() => loaderGate as any),
+      });
+      const store = buildStore();
+
       const render = new StoryRender(
         new Channel({}),
-        store as any,
+        store,
         vi.fn() as any,
         {} as any,
         entry.id,
         'story',
         { autoplay: true },
-        story as any
+        story
       );
 
       // Act - render, blocked by loaders

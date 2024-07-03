@@ -49,15 +49,17 @@ export function prepareStory<TRenderer extends Renderer>(
 const addExtraContext = (
   context: PreparedStory & Pick<StoryContext, 'args' | 'globals'>
 ): StoryContext => {
-  const extraContext = {
+  const extraContext: StoryContext = {
     ...context,
     hooks: new HooksContext(),
     viewMode: 'story' as const,
     loaded: {},
+    mount: vi.fn(),
     abortSignal: new AbortController().signal,
     canvasElement: {},
     step: vi.fn(),
-    context: undefined! as StoryContext,
+    context: null! as StoryContext,
+    canvas: null!,
   };
   extraContext.context = extraContext;
   return extraContext;
@@ -762,6 +764,9 @@ describe('prepareMeta', () => {
       undecoratedStoryFn,
       playFunction,
       runStep,
+      mount,
+      renderToCanvas,
+      testingLibraryRender,
       ...preparedStory
     } = prepareStory({ id, name, moduleExport }, meta, { render });
 

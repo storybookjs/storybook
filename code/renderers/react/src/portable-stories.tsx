@@ -15,6 +15,8 @@ import type {
 import * as reactProjectAnnotations from './entry-preview';
 import type { Meta } from './public-types';
 import type { ReactRenderer } from './types';
+import { TestingLibraryMustBeConfiguredError } from 'storybook/internal/preview-errors';
+import React from 'react';
 
 /** Function that sets the globalConfig of your storybook. The global config is the preview module of your .storybook folder.
  *
@@ -40,8 +42,16 @@ export function setProjectAnnotations(
 }
 
 // This will not be necessary once we have auto preset loading
-export const INTERNAL_DEFAULT_PROJECT_ANNOTATIONS: ProjectAnnotations<ReactRenderer> =
-  reactProjectAnnotations;
+export const INTERNAL_DEFAULT_PROJECT_ANNOTATIONS: ProjectAnnotations<ReactRenderer> = {
+  ...reactProjectAnnotations,
+  renderToCanvas: ({
+    storyContext: { context, unboundStoryFn: Story, testingLibraryRender: render, canvasElement },
+  }) => {
+    if (render == null) throw new TestingLibraryMustBeConfiguredError();
+    const { unmount } = render(<Story {...context} />, { baseElement: context.canvasElement });
+    return unmount;
+  },
+};
 
 /**
  * Function that will receive a story along with meta (e.g. a default export from a .stories file)

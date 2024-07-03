@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Renders CSF2Secondary story 1`] = `
+exports[`Legacy Portable Stories API > Renders CSF2Secondary story 1`] = `
 <body>
   <div>
     <button
@@ -13,7 +13,7 @@ exports[`Renders CSF2Secondary story 1`] = `
 </body>
 `;
 
-exports[`Renders CSF2StoryWithParamsAndDecorator story 1`] = `
+exports[`Legacy Portable Stories API > Renders CSF2StoryWithParamsAndDecorator story 1`] = `
 <body>
   <div>
     <button
@@ -26,7 +26,7 @@ exports[`Renders CSF2StoryWithParamsAndDecorator story 1`] = `
 </body>
 `;
 
-exports[`Renders CSF3Button story 1`] = `
+exports[`Legacy Portable Stories API > Renders CSF3Button story 1`] = `
 <body>
   <div>
     <button
@@ -39,7 +39,7 @@ exports[`Renders CSF3Button story 1`] = `
 </body>
 `;
 
-exports[`Renders CSF3ButtonWithRender story 1`] = `
+exports[`Legacy Portable Stories API > Renders CSF3ButtonWithRender story 1`] = `
 <body>
   <div>
     <div>
@@ -59,7 +59,7 @@ exports[`Renders CSF3ButtonWithRender story 1`] = `
 </body>
 `;
 
-exports[`Renders CSF3InputFieldFilled story 1`] = `
+exports[`Legacy Portable Stories API > Renders CSF3InputFieldFilled story 1`] = `
 <body>
   <div>
     <input
@@ -69,7 +69,7 @@ exports[`Renders CSF3InputFieldFilled story 1`] = `
 </body>
 `;
 
-exports[`Renders CSF3Primary story 1`] = `
+exports[`Legacy Portable Stories API > Renders CSF3Primary story 1`] = `
 <body>
   <div>
     <button
@@ -82,7 +82,7 @@ exports[`Renders CSF3Primary story 1`] = `
 </body>
 `;
 
-exports[`Renders LoaderStory story 1`] = `
+exports[`Legacy Portable Stories API > Renders LoaderStory story 1`] = `
 <body>
   <div>
     <div>
@@ -101,26 +101,7 @@ exports[`Renders LoaderStory story 1`] = `
 </body>
 `;
 
-exports[`Renders MountInPlayFunction story 1`] = `
-<body>
-  <div>
-    <div>
-      <div
-        data-testid="loaded-data"
-      >
-        loaded data
-      </div>
-      <div
-        data-testid="spy-data"
-      >
-        mockFn return value
-      </div>
-    </div>
-  </div>
-</body>
-`;
-
-exports[`Renders WithActionArg story 1`] = `
+exports[`Legacy Portable Stories API > Renders WithActionArg story 1`] = `
 <body>
   <div>
     <button />
@@ -128,7 +109,7 @@ exports[`Renders WithActionArg story 1`] = `
 </body>
 `;
 
-exports[`Renders WithActionArgType story 1`] = `
+exports[`Legacy Portable Stories API > Renders WithActionArgType story 1`] = `
 <body>
   <div>
     <div>

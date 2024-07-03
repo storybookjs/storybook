@@ -244,7 +244,7 @@
     "prep": "bun ./scripts/prep.ts"
   },
   "dependencies": {
-    "@storybook/csf": "0.1.10--canary.d841bb4.0",
+    "@storybook/csf": "0.1.11",
     "@types/express": "^4.17.21",
     "@types/node": "^18.0.0",
     "browser-assert": "^1.2.1",
@@ -276,7 +276,6 @@
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-scroll-area": "^1.0.5",
     "@radix-ui/react-slot": "^1.0.2",
-    "@storybook/csf": "0.1.10--canary.d841bb4.0",
     "@storybook/docs-mdx": "3.1.0-next.0",
     "@storybook/global": "^5.0.0",
     "@storybook/icons": "^1.2.5",

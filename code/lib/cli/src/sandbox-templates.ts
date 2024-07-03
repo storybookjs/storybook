@@ -1,4 +1,5 @@
-import type { StorybookConfigRaw } from '@storybook/core/types';
+import type { StoriesEntry, StorybookConfigRaw } from '@storybook/core/types';
+import type { ConfigFile } from '@storybook/core/csf-tools';
 
 export type SkippableTask =
   | 'smoke-test'
@@ -70,7 +71,9 @@ export type Template = {
    */
   modifications?: {
     skipTemplateStories?: boolean;
-    mainConfig?: Partial<StorybookConfigRaw>;
+    mainConfig?:
+      | Partial<StorybookConfigRaw>
+      | ((config: ConfigFile) => Partial<StorybookConfigRaw>);
     testBuild?: boolean;
     disableDocs?: boolean;
     extraDependencies?: string[];
@@ -92,7 +95,10 @@ type BaseTemplates = Template & {
 const baseTemplates = {
   'cra/default-js': {
     name: 'Create React App Latest (Webpack | JavaScript)',
-    script: 'npx create-react-app {{beforeDir}}',
+    script: `
+      npx create-react-app {{beforeDir}} && cd {{beforeDir}} && \
+      jq '.browserslist.production[0] = ">0.9%"' package.json > tmp.json && mv tmp.json package.json
+    `,
     expected: {
       // TODO: change this to @storybook/cra once that package is created
       framework: '@storybook/react-webpack5',
@@ -100,10 +106,27 @@ const baseTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     skipTasks: ['e2e-tests-dev', 'bench'],
+    modifications: {
+      mainConfig: (config) => {
+        const stories = config.getFieldValue<Array<StoriesEntry>>(['stories']);
+        return {
+          stories: stories?.map((s) => {
+            if (typeof s === 'string') {
+              return s.replace(/\|(tsx?|ts)\b|\b(tsx?|ts)\|/g, '');
+            } else {
+              return s;
+            }
+          }),
+        };
+      },
+    },
   },
   'cra/default-ts': {
     name: 'Create React App Latest (Webpack | TypeScript)',
-    script: 'npx create-react-app {{beforeDir}} --template typescript',
+    script: `
+      npx create-react-app {{beforeDir}} --template typescript && cd {{beforeDir}} && \
+      jq '.browserslist.production[0] = ">0.9%"' package.json > tmp.json && mv tmp.json package.json
+    `,
     // Re-enable once https://github.com/storybookjs/storybook/issues/19351 is fixed.
     skipTasks: ['smoke-test', 'bench'],
     expected: {

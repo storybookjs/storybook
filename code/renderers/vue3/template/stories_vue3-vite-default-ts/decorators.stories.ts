@@ -1,4 +1,4 @@
-import type { DecoratorFunction } from '@storybook/csf';
+import type { DecoratorFunction } from 'storybook/internal/types';
 import { global as globalThis } from '@storybook/global';
 import type { Meta, StoryObj, VueRenderer } from '@storybook/vue3';
 import { h } from 'vue';

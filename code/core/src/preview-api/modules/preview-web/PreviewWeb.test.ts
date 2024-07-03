@@ -908,6 +908,41 @@ describe('PreviewWeb', () => {
       expect(mockChannel.emit).toHaveBeenCalledWith(STORY_RENDERED, 'component-one--a');
     });
 
+    describe('if play function destructures mount', () => {
+      it('passes forceRemount to renderToCanvas', async () => {
+        document.location.search = '?id=component-one--a';
+        const newImportFn = vi.fn(async (path) => {
+          if (path === './src/ComponentOne.stories.js') {
+            return {
+              ...componentOneExports,
+              a: { ...componentOneExports.a, play: ({ mount }: any) => mount() },
+            };
+          }
+          return importFn(path);
+        });
+        await createAndRenderPreview({ importFn: newImportFn });
+
+        mockChannel.emit.mockClear();
+        projectAnnotations.renderToCanvas.mockClear();
+        emitter.emit(UPDATE_STORY_ARGS, {
+          storyId: 'component-one--a',
+          updatedArgs: { new: 'arg' },
+        });
+        await waitForRender();
+
+        expect(projectAnnotations.renderToCanvas).toHaveBeenCalledWith(
+          expect.objectContaining({
+            forceRemount: true,
+            storyContext: expect.objectContaining({
+              initialArgs: { foo: 'a', one: 1 },
+              args: { foo: 'a', new: 'arg', one: 'mapped-1' },
+            }),
+          }),
+          'story-element'
+        );
+      });
+    });
+
     describe('while story is still rendering', () => {
       it('runs loaders again after renderToCanvas is done', async () => {
         // Arrange - set up a gate to control when the loaders run
@@ -3626,6 +3661,7 @@ describe('PreviewWeb', () => {
               "dev",
               "test",
             ],
+            "testingLibraryRender": undefined,
             "title": "Component One",
           },
           "component-one--b": {
@@ -3674,6 +3710,7 @@ describe('PreviewWeb', () => {
               "dev",
               "test",
             ],
+            "testingLibraryRender": undefined,
             "title": "Component One",
           },
           "component-one--e": {
@@ -3700,6 +3737,7 @@ describe('PreviewWeb', () => {
               "dev",
               "test",
             ],
+            "testingLibraryRender": undefined,
             "title": "Component One",
           },
           "component-two--c": {
@@ -3736,6 +3774,7 @@ describe('PreviewWeb', () => {
               "dev",
               "test",
             ],
+            "testingLibraryRender": undefined,
             "title": "Component Two",
           },
         }

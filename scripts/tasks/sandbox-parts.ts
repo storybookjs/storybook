@@ -42,6 +42,7 @@ import { workspacePath } from '../utils/workspace';
 import { babelParse } from '../../code/core/src/csf-tools/babelParse';
 import { CODE_DIRECTORY, REPROS_DIRECTORY } from '../utils/constants';
 import type { TemplateKey } from '../../code/lib/cli/src/sandbox-templates';
+import { isFunction } from 'lodash';
 
 const logger = console;
 
@@ -278,7 +279,9 @@ function addStoriesEntry(mainConfig: ConfigFile, path: string, disableDocs: bool
   const entry = {
     directory: slash(join('../template-stories', path)),
     titlePrefix: slash(path),
-    files: disableDocs ? '**/*.stories.@(js|jsx|ts|tsx)' : '**/*.@(mdx|stories.@(js|jsx|ts|tsx))',
+    files: disableDocs
+      ? '**/*.stories.@(js|jsx|mjs|ts|tsx)'
+      : '**/*.@(mdx|stories.@(js|jsx|mjs|ts|tsx))',
   };
 
   mainConfig.setFieldValue(['stories'], [...stories, entry]);
@@ -536,7 +539,9 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
     addRefs(mainConfig);
   }
 
-  const templateConfig = template.modifications?.mainConfig || {};
+  const templateConfig = isFunction(template.modifications?.mainConfig)
+    ? template.modifications?.mainConfig(mainConfig)
+    : template.modifications?.mainConfig || {};
   const configToAdd = {
     ...templateConfig,
     features: {

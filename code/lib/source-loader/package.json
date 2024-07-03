@@ -45,7 +45,7 @@
     "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/csf": "0.1.10--canary.d841bb4.0",
+    "@storybook/csf": "0.1.11",
     "estraverse": "^5.2.0",
     "lodash": "^4.17.21",
     "prettier": "^3.1.1"

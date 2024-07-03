@@ -463,17 +463,9 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     this.channel.emit(STORY_THREW_EXCEPTION, { name, message, stack });
     this.channel.emit(STORY_RENDER_PHASE_CHANGED, { newPhase: 'errored', storyId });
 
-    // Ignored exceptions exist for control flow purposes, and are typically handled elsewhere.
-    //
-    // FIXME: Should be '=== IGNORED_EXCEPTION', but currently the object
-    // is coming from two different bundles (index.js vs index.mjs)
-    //
-    // https://github.com/storybookjs/storybook/issues/19321
-    if (!error.message?.startsWith('ignoredException')) {
-      this.view.showErrorDisplay(error);
-      logger.error(`Error rendering story '${storyId}':`);
-      logger.error(error);
-    }
+    this.view.showErrorDisplay(error);
+    logger.error(`Error rendering story '${storyId}':`);
+    logger.error(error);
   }
 
   // renderError is used by the various app layers to inform the user they have done something

@@ -3,7 +3,7 @@ import type { StoryId, ComponentTitle, StoryName, Parameters, Tag, Path } from '
 type ExportName = string;
 type MetaId = string;
 
-interface StoriesSpecifier {
+export interface StoriesSpecifier {
   /**
    * When auto-titling, what to prefix all generated titles with (default: '')
    */

@@ -3,17 +3,21 @@
 import { type CleanupCallback, isExportStory } from '@storybook/csf';
 import { dedent } from 'ts-dedent';
 import type {
-  Renderer,
   Args,
+  Canvas,
   ComponentAnnotations,
+  ComposedStoryFn,
+  ComposeStoryFn,
   LegacyStoryAnnotationsOrFn,
   NamedOrDefaultProjectAnnotations,
-  ComposeStoryFn,
+  Parameters,
+  PreparedStory,
+  ProjectAnnotations,
+  RenderContext,
+  Renderer,
   Store_CSFExports,
   StoryContext,
-  Parameters,
   StrictArgTypes,
-  ProjectAnnotations,
 } from '@storybook/core/types';
 
 import { HooksContext } from '../../../addons';
@@ -23,7 +27,8 @@ import { normalizeStory } from './normalizeStory';
 import { normalizeComponentAnnotations } from './normalizeComponentAnnotations';
 import { getValuesFromArgTypes } from './getValuesFromArgTypes';
 import { normalizeProjectAnnotations } from './normalizeProjectAnnotations';
-import type { ComposedStoryFn } from '@storybook/core/types';
+import { mountDestructured } from '../../../modules/preview-web/render/mount-utils';
+import { MountMustBeDestructuredError } from '@storybook/core/preview-errors';
 
 let globalProjectAnnotations: ProjectAnnotations<any> = {};
 
@@ -48,7 +53,7 @@ export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
   globalProjectAnnotations = composeConfigs(annotations.map(extractAnnotation));
 }
 
-const cleanups: { storyName: string; callback: CleanupCallback }[] = [];
+const cleanups: CleanupCallback[] = [];
 
 export function composeStory<TRenderer extends Renderer = Renderer, TArgs extends Args = Args>(
   storyAnnotations: LegacyStoryAnnotationsOrFn<TRenderer>,
@@ -81,8 +86,25 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
     normalizedComponentAnnotations
   );
 
+  // TODO: Remove this in 9.0
+  // We can only use the renderToCanvas definition of the default config when testingLibraryRender is set
+  // This makes sure, that when the user doesn't do this, and doesn't provide its own renderToCanvas definition,
+  // we fall back to the < 8.1 behavior of the play function.
+
+  const fallback =
+    defaultConfig &&
+    !globalProjectAnnotations?.testingLibraryRender &&
+    !projectAnnotations?.testingLibraryRender;
+
   const normalizedProjectAnnotations = normalizeProjectAnnotations<TRenderer>(
-    composeConfigs([defaultConfig ?? {}, globalProjectAnnotations, projectAnnotations ?? {}])
+    composeConfigs([
+      {
+        ...defaultConfig,
+        renderToCanvas: fallback ? undefined : defaultConfig?.renderToCanvas,
+      },
+      globalProjectAnnotations,
+      projectAnnotations ?? {},
+    ])
   );
 
   const story = prepareStory<TRenderer>(
@@ -93,84 +115,114 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
 
   const globalsFromGlobalTypes = getValuesFromArgTypes(normalizedProjectAnnotations.globalTypes);
 
-  const context: StoryContext<TRenderer> = {
-    hooks: new HooksContext(),
-    globals: {
-      ...globalsFromGlobalTypes,
-      ...normalizedProjectAnnotations.initialGlobals,
-    },
-    args: { ...story.initialArgs },
-    viewMode: 'story',
-    loaded: {},
-    abortSignal: new AbortController().signal,
-    step: (label, play) => story.runStep(label, play, context),
-    canvasElement: globalThis?.document?.body,
-    context: null!,
-    ...story,
+  const initializeContext = () => {
+    const context: StoryContext<TRenderer> = prepareContext({
+      hooks: new HooksContext(),
+      globals: {
+        ...globalsFromGlobalTypes,
+        ...normalizedProjectAnnotations.initialGlobals,
+      },
+      args: { ...story.initialArgs },
+      viewMode: 'story',
+      loaded: {},
+      abortSignal: new AbortController().signal,
+      step: (label, play) => story.runStep(label, play, context),
+      canvasElement: globalThis?.document?.body,
+      canvas: {} as Canvas,
+      ...story,
+      context: null!,
+      mount: null!,
+    });
+
+    context.context = context;
+
+    if (story.renderToCanvas) {
+      context.renderToCanvas = async () => {
+        // Consolidate this renderContext with Context in SB 9.0
+        const unmount = await story.renderToCanvas?.(
+          {
+            componentId: story.componentId,
+            title: story.title,
+            id: story.id,
+            name: story.name,
+            tags: story.tags,
+            showError: (error) => {},
+            showException: (error) => {},
+            forceRemount: true,
+            storyContext: context,
+            storyFn: () => story.unboundStoryFn(context),
+            unboundStoryFn: story.unboundStoryFn,
+          } as RenderContext<TRenderer>,
+          context.canvasElement
+        );
+        if (unmount) {
+          cleanups.push(unmount);
+        }
+      };
+    }
+
+    context.mount = story.mount(context);
+
+    return context;
   };
 
-  context.context = context;
+  let loadedContext: StoryContext<TRenderer> | undefined;
 
-  const playFunction = story.playFunction
-    ? async (extraContext?: Partial<StoryContext<TRenderer, Partial<TArgs>>>) => {
-        Object.assign(context, extraContext);
-        return story.playFunction!(context);
-      }
-    : undefined;
-
-  let previousCleanupsDone = false;
+  // TODO: Remove in 9.0
+  const backwardsCompatiblePlay = async (
+    extraContext?: Partial<StoryContext<TRenderer, Partial<TArgs>>>
+  ) => {
+    const context = initializeContext();
+    if (loadedContext) {
+      context.loaded = loadedContext.loaded;
+    }
+    Object.assign(context, extraContext);
+    return story.playFunction!(context);
+  };
+  const newPlay = (extraContext?: Partial<StoryContext<TRenderer, Partial<TArgs>>>) => {
+    const context = initializeContext();
+    Object.assign(context, extraContext);
+    return playStory(story, context);
+  };
+  const playFunction =
+    !story.renderToCanvas && story.playFunction
+      ? backwardsCompatiblePlay
+      : !story.renderToCanvas && !story.playFunction
+        ? undefined
+        : newPlay;
 
   const composedStory: ComposedStoryFn<TRenderer, Partial<TArgs>> = Object.assign(
     function storyFn(extraArgs?: Partial<TArgs>) {
+      const context = initializeContext();
+      if (loadedContext) {
+        context.loaded = loadedContext.loaded;
+      }
       context.args = {
         ...context.initialArgs,
         ...extraArgs,
       };
-
-      if (cleanups.length > 0 && !previousCleanupsDone) {
-        let humanReadableIdentifier = storyName;
-        if (story.title !== DEFAULT_STORY_TITLE) {
-          // prefix with title unless it's the generic ComposedStory title
-          humanReadableIdentifier = `${story.title} - ${humanReadableIdentifier}`;
-        }
-        if (storyName === DEFAULT_STORY_NAME && Object.keys(context.args).length > 0) {
-          // suffix with args if it's an unnamed story and there are args
-          humanReadableIdentifier = `${humanReadableIdentifier} (${Object.keys(context.args).join(
-            ', '
-          )})`;
-        }
-        console.warn(
-          dedent`Some stories were not cleaned up before rendering '${humanReadableIdentifier}'.
-          
-          You should load the story with \`await Story.load()\` before rendering it.`
-        );
-        // TODO: Add a link to the docs when they are ready
-        // eg. "See https://storybook.js.org/docs/api/portable-stories-${process.env.JEST_WORKER_ID !== undefined ? 'jest' : 'vitest'}#3-load for more information."
-      }
-      return story.unboundStoryFn(prepareContext(context));
+      return story.unboundStoryFn(context);
     },
     {
       id: story.id,
       storyName,
       load: async () => {
         // First run any registered cleanup function
-        for (const { callback } of [...cleanups].reverse()) await callback();
+        for (const callback of [...cleanups].reverse()) await callback();
         cleanups.length = 0;
 
-        previousCleanupsDone = true;
+        const context = initializeContext();
 
         context.loaded = await story.applyLoaders(context);
 
-        cleanups.push(
-          ...(await story.applyBeforeEach(context))
-            .filter(Boolean)
-            .map((callback) => ({ storyName, callback }))
-        );
+        cleanups.push(...(await story.applyBeforeEach(context)).filter(Boolean));
+
+        loadedContext = context;
       },
       args: story.initialArgs as Partial<TArgs>,
       parameters: story.parameters as Parameters,
       argTypes: story.argTypes as StrictArgTypes<TArgs>,
-      play: playFunction,
+      play: playFunction!,
       tags: story.tags,
     }
   );
@@ -206,9 +258,12 @@ export function composeStories<TModule extends Store_CSFExports>(
 type WrappedStoryRef = { __pw_type: 'jsx' | 'importRef' };
 type UnwrappedJSXStoryRef = {
   __pw_type: 'jsx';
-  type: ComposedStoryFn;
+  type: UnwrappedImportStoryRef;
 };
-type UnwrappedImportStoryRef = ComposedStoryFn;
+type UnwrappedImportStoryRef = ComposedStoryFn & {
+  playPromise?: Promise<void>;
+  renderingEnded?: PromiseWithResolvers<void>;
+};
 
 declare global {
   function __pwUnwrapObject(
@@ -266,4 +321,38 @@ export function createPlaywrightTest<TFixture extends { extend: any }>(
       });
     },
   });
+}
+
+// TODO At some point this function should live in prepareStory and become the core of StoryRender.render as well.
+// Will make a follow up PR for that
+async function playStory<TRenderer extends Renderer>(
+  story: PreparedStory<TRenderer>,
+  context: StoryContext<TRenderer>
+) {
+  for (const callback of [...cleanups].reverse()) await callback();
+  cleanups.length = 0;
+
+  context.loaded = await story.applyLoaders(context);
+  if (context.abortSignal.aborted) return;
+
+  cleanups.push(...(await story.applyBeforeEach(context)).filter(Boolean));
+
+  const playFunction = story.playFunction;
+
+  const isMountDestructured = playFunction && mountDestructured(playFunction);
+
+  if (!isMountDestructured) {
+    await context.mount();
+  }
+
+  if (context.abortSignal.aborted) return;
+
+  if (playFunction) {
+    if (!isMountDestructured) {
+      context.mount = async () => {
+        throw new MountMustBeDestructuredError({ playFunction: playFunction.toString() });
+      };
+    }
+    await playFunction(context);
+  }
 }

@@ -11,6 +11,7 @@ export type {
   ArgTypes,
   ArgTypesEnhancer,
   BaseAnnotations,
+  Canvas,
   ComponentAnnotations,
   ComponentId,
   ComponentTitle,

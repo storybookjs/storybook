@@ -374,6 +374,7 @@ export class StoryStore<TRenderer extends Renderer> {
           loaded: {},
           step: (label, play) => story.runStep(label, play, context),
           context: null!,
+          mount: null!,
           canvas: {},
           viewMode: 'story',
         } as StoryContext<TRenderer>;

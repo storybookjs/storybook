@@ -120,14 +120,16 @@ export class StoryIndexGenerator {
       this.specifiers.map(async (specifier) => {
         const pathToSubIndex = {} as SpecifierStoriesCache;
 
-        const fullGlob = slash(
-          path.join(this.options.workingDir, specifier.directory, specifier.files)
-        );
+        const fullGlob = slash(path.join(specifier.directory, specifier.files));
 
         // Dynamically import globby because it is a pure ESM module
         const { globby } = await import('globby');
 
-        const files = await globby(fullGlob, commonGlobOptions(fullGlob));
+        const files = await globby(fullGlob, {
+          absolute: true,
+          cwd: this.options.workingDir,
+          ...commonGlobOptions(fullGlob),
+        });
 
         if (files.length === 0) {
           once.warn(

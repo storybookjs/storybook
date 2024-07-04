@@ -17,12 +17,10 @@ import { angularBuilders } from './angular-builders';
 import { angularBuildersMultiproject } from './angular-builders-multiproject';
 import { wrapRequire } from './wrap-require';
 import { reactDocgen } from './react-docgen';
-import { mdxToCSF } from './mdx-to-csf';
 import { removeReactDependency } from './prompt-remove-react';
 import { storyshotsMigration } from './storyshots-migration';
 import { removeArgtypesRegex } from './remove-argtypes-regex';
 import { webpack5CompilerSetup } from './webpack5-compiler-setup';
-import { removeJestTestingLibrary } from './remove-jest-testing-library';
 import { addonsAPI } from './addons-api';
 import { mdx1to3 } from './mdx-1-to-3';
 import { addonPostCSS } from './addon-postcss';
@@ -45,11 +43,9 @@ export const allFixes: Fix[] = [
   builderVite,
   sbBinary,
   sbScripts,
-  removeJestTestingLibrary,
   removeArgtypesRegex,
   removedGlobalClientAPIs,
   mdxgfm,
-  mdxToCSF,
   autodocsTrue,
   angularBuildersMultiproject,
   angularBuilders,

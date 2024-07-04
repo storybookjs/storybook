@@ -1,5 +1,5 @@
 {
-  "name": "cli",
+  "name": "toolbox",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
   "targets": {

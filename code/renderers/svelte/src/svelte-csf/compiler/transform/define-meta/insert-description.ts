@@ -1,4 +1,4 @@
-import { logger } from '@storybook/client-logger';
+import { logger } from '@storybook/node-logger';
 import type { Comment } from 'estree';
 
 import {
@@ -107,7 +107,10 @@ export function insertDefineMetaJSDocCommentAsDescription(params: Params): void 
     }) !== -1
   ) {
     logger.warn(
-      `defineMeta() already has explicitly set description. Ignoring the JSDoc comment above. Stories file: ${filename}`
+      `Svelte CSF:
+        Description was already set in parameters.docs.description.component,
+        ignoring JSDoc comment above defineMeta() in:
+        ${filename}`
     );
 
     return;

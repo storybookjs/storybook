@@ -1,4 +1,4 @@
-import { logger } from '@storybook/client-logger';
+import { logger } from '@storybook/node-logger';
 import dedent from 'dedent';
 
 import {
@@ -102,10 +102,12 @@ export function insertStoryHTMLCommentAsDescription(params: Params) {
     const name = (propertyName.value as Literal).value;
     logger.warn(
       dedent`
-        <Story name="${name}" /> component(s) already has explicitly set 'parameterds.docs.description.story'.
-        Ignoring the HTML comment above.
-        Stories file: file://${filename}
-      `
+        Svelte CSF:
+          Description was already set in parameters.docs.description.story
+          in the story: <Story name="${name}" />.
+          ignoring JSDoc comment above.
+          in:
+          ${filename}`
     );
 
     return;

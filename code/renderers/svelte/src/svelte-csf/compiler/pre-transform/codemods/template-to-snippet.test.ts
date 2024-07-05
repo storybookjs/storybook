@@ -3,7 +3,7 @@ import { describe, it } from 'vitest';
 
 import { transformTemplateToSnippet } from './template-to-snippet';
 
-import { extractLegacySvelteComponents } from '#compiler/pre-transform/extractor';
+import { extractLegacyNodes } from '#compiler/pre-transform/extractor';
 import { getSvelteAST } from '#parser/ast';
 
 describe(transformTemplateToSnippet.name, () => {
@@ -14,7 +14,7 @@ describe(transformTemplateToSnippet.name, () => {
       </Template>
     `;
     const parsed = getSvelteAST({ code });
-    const { componentsTemplate } = extractLegacySvelteComponents(parsed);
+    const { componentsTemplate } = extractLegacyNodes(parsed);
     const template = componentsTemplate[0];
 
     expect(print(transformTemplateToSnippet(template))).toMatchInlineSnapshot(`
@@ -31,7 +31,7 @@ describe(transformTemplateToSnippet.name, () => {
       </Template>
     `;
     const parsed = getSvelteAST({ code });
-    const { componentsTemplate } = extractLegacySvelteComponents(parsed);
+    const { componentsTemplate } = extractLegacyNodes(parsed);
     const template = componentsTemplate[0];
 
     expect(print(transformTemplateToSnippet(template))).toMatchInlineSnapshot(`

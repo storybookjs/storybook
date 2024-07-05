@@ -6,9 +6,9 @@ interface Results {
 }
 
 /**
- * Extract legacy components AST nodes, for usage with codemods into modern syntax.
+ * Extract legacy AST nodes, for usage with codemods into modern syntax.
  */
-export function extractLegacySvelteComponents(parsed: SvelteNode): Results {
+export function extractLegacyNodes(parsed: SvelteNode): Results {
   const state: {
     componentsTemplate: Component[];
   } = {

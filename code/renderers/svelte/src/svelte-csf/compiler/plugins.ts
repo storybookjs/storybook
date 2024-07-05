@@ -19,6 +19,8 @@ import { transformStoriesCode } from './post-transform';
 import { getSvelteAST } from '#parser/ast';
 import { extractCompiledASTNodes } from '#parser/extract/compiled/nodes';
 import { extractSvelteASTNodes } from '#parser/extract/svelte/nodes';
+import { extractLegacyNodes } from '#compiler/pre-transform/extractor';
+import { codemodLegacyNodes } from '#compiler/pre-transform/index';
 
 export async function preTransformPlugin(): Promise<Plugin> {
   const [{ createFilter }, { loadSvelteConfig }] = await Promise.all([
@@ -27,18 +29,41 @@ export async function preTransformPlugin(): Promise<Plugin> {
   ]);
 
   const svelteConfig = await loadSvelteConfig();
+
   const include = /\.stories\.svelte$/;
   const filter = createFilter(include);
 
   return {
-    name: 'storybook:addon-svelte-csf-plugin-post',
-    enforce: 'post',
-    async transform(originalCode, id) {
+    name: 'storybook:addon-svelte-csf-plugin-pre',
+    enforce: 'pre',
+    async transform(code, id) {
       if (!filter(id)) return undefined;
 
-      const svelteAST = getSvelteAST({ code: originalCode, filename: id });
+      // @ts-expect-error FIXME: `this.originalCode` exists at runtime in the development mode only.
+      // Need to research if its documented somewhere
+      let legacyCode = this.originalCode ?? code;
 
-      // TODO: Add logic here
+      if (svelteConfig?.preprocess) {
+        const processed = await preprocess(legacyCode, svelteConfig.preprocess, {
+          filename: id,
+        });
+        legacyCode = processed.code;
+      }
+
+      let magicLegacyCode = new MagicString(legacyCode);
+
+      const svelteAST = getSvelteAST({ code: legacyCode, filename: id });
+      const legacyNodes = extractLegacyNodes(svelteAST);
+
+      codemodLegacyNodes({
+        code: magicLegacyCode,
+        legacyNodes,
+      });
+
+      return {
+        code: magicLegacyCode.toString(),
+        map: magicLegacyCode.generateMap({ hires: true, source: id }),
+      };
     },
   };
 }

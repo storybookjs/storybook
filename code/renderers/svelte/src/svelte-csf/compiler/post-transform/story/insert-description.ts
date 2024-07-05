@@ -11,7 +11,7 @@ import {
   getParametersPropertyValue,
   getDocsPropertyValue,
   getDescriptionPropertyValue,
-} from '#compiler/transform/shared/description';
+} from '#compiler/post-transform/shared/description';
 
 import type { extractStoriesNodesFromExportDefaultFn } from '#parser/extract/compiled/stories';
 import { getStoryPropsObjectExpression } from '#parser/extract/compiled/story';

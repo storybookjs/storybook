@@ -2,6 +2,7 @@ import findPackageJson from 'find-package-json';
 import fs from 'fs/promises';
 import MagicString from 'magic-string';
 import path from 'path';
+import ts from 'typescript';
 import type { PluginOption } from 'vite';
 import {
   TypeMeta,
@@ -133,6 +134,20 @@ async function createVueComponentMetaChecker(tsconfigPath = 'tsconfig.json') {
   const checkerOptions: MetaCheckerOptions = {
     forceUseTs: true,
     noDeclarations: true,
+    schema: {
+      ignore: [
+        (name, type, typeChecker) => {
+          // Omit all schemas whose declaration paths are in node_modules and are objects.
+          const isInNodeModules = type
+            .getSymbol()
+            ?.getDeclarations()
+            ?.some((declaration) => declaration.getSourceFile().fileName.includes('node_modules'));
+          const isObject = type.getFlags() === ts.TypeFlags.Object;
+
+          return isInNodeModules && isObject;
+        },
+      ],
+    },
     printer: { newLine: 1 },
   };
 

@@ -14,13 +14,36 @@ import MagicString from 'magic-string';
 import { preprocess } from 'svelte/compiler';
 import type { Plugin } from 'vite';
 
-import { transformStoriesCode } from './transform';
+import { transformStoriesCode } from './post-transform';
 
 import { getSvelteAST } from '#parser/ast';
 import { extractCompiledASTNodes } from '#parser/extract/compiled/nodes';
 import { extractSvelteASTNodes } from '#parser/extract/svelte/nodes';
 
-export async function plugin(): Promise<Plugin> {
+export async function preTransformPlugin(): Promise<Plugin> {
+  const [{ createFilter }, { loadSvelteConfig }] = await Promise.all([
+    import('vite'),
+    import('@sveltejs/vite-plugin-svelte'),
+  ]);
+
+  const svelteConfig = await loadSvelteConfig();
+  const include = /\.stories\.svelte$/;
+  const filter = createFilter(include);
+
+  return {
+    name: 'storybook:addon-svelte-csf-plugin-post',
+    enforce: 'post',
+    async transform(originalCode, id) {
+      if (!filter(id)) return undefined;
+
+      const svelteAST = getSvelteAST({ code: originalCode, filename: id });
+
+      // TODO: Add logic here
+    },
+  };
+}
+
+export async function postTransformPlugin(): Promise<Plugin> {
   const [{ createFilter }, { loadSvelteConfig }] = await Promise.all([
     import('vite'),
     import('@sveltejs/vite-plugin-svelte'),

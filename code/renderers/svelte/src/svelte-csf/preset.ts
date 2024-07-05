@@ -1,12 +1,16 @@
 import type { StorybookConfig } from '@storybook/svelte-vite';
 
-import { plugin } from './compiler/plugin';
-import { indexer } from './indexer/index';
+import { postTransformPlugin, preTransformPlugin } from '#compiler/plugins';
+import { indexer } from '#indexer/index';
 
-export const viteFinal: StorybookConfig['viteFinal'] = async (config) => {
+export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) => {
   return {
     ...config,
-    plugins: [...(config.plugins ?? []), plugin()],
+    plugins: [
+      ...(config.plugins ?? []),
+      /** TODO: Is this the place for `options.supportLegacy`? */ preTransformPlugin(),
+      postTransformPlugin(),
+    ],
   };
 };
 

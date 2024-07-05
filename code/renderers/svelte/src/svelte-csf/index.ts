@@ -11,6 +11,7 @@ import type {
 } from '#types';
 
 import StoryComponent from './runtime/Story.svelte';
+import TemplateComponent from './runtime/Template.svelte';
 
 export { setTemplate } from './runtime/contexts/template.svelte';
 
@@ -56,13 +57,10 @@ export const Story = () => {
   `);
 };
 
-/**
- * @deprecated Use snippets instead
- * @see {@link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#template-component-removed}
- */
-export const Template = () => {
-  throw new Error(dedent`
-    The Template component has been removed in favor of the snippets syntax.
-    see: https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#template-component-removed
-  `);
+export {
+  /**
+   * @deprecated Use snippets instead
+   * @see {@link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#template-component-removed}
+   */
+  TemplateComponent as Template,
 };

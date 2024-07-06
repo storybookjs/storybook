@@ -315,9 +315,7 @@ it('Infer mock function given to args in meta.', () => {
   type Story = StoryObj<typeof meta>;
 
   const Basic: Story = {
-    play: async ({ args, mount }) => {
-      const canvas = await mount(<TestButton {...args} />);
-      expectTypeOf(canvas).toEqualTypeOf<Canvas>();
+    play: async ({ args }) => {
       expectTypeOf(args.onClick).toEqualTypeOf<Mock<[], void>>();
       expectTypeOf(args.onRender).toEqualTypeOf<() => JSX.Element>();
     },

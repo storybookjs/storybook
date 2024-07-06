@@ -14,7 +14,6 @@ import { fn } from '@storybook/test';
 
 import type { Decorator, Meta, StoryObj } from './public-types';
 import type { PreactRenderer } from './types';
-import type { Canvas } from '@storybook/csf';
 
 type PreactStory<TArgs, TRequiredArgs> = StoryAnnotations<PreactRenderer, TArgs, TRequiredArgs>;
 

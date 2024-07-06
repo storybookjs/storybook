@@ -1,5 +1,4 @@
 import type { Component, SvelteNode } from 'svelte/compiler';
-import { walk } from 'zimmerframe';
 
 interface Results {
   componentsTemplate: Component[];
@@ -8,7 +7,9 @@ interface Results {
 /**
  * Extract legacy AST nodes, for usage with codemods into modern syntax.
  */
-export function extractLegacyNodes(parsed: SvelteNode): Results {
+export async function extractLegacyNodes(parsed: SvelteNode): Promise<Results> {
+  const { walk } = await import('zimmerframe');
+
   const state: {
     componentsTemplate: Component[];
   } = {

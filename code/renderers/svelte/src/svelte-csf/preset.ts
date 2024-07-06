@@ -7,8 +7,9 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
   return {
     ...config,
     plugins: [
+      /** TODO: Is this the place for `options.supportLegacy`? */
+      preTransformPlugin(),
       ...(config.plugins ?? []),
-      /** TODO: Is this the place for `options.supportLegacy`? */ preTransformPlugin(),
       postTransformPlugin(),
     ],
   };

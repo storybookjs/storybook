@@ -1,29 +1,15 @@
 <script lang="ts">
-  import type { Snippet } from 'svelte';
+  /**
+   * This is a legacy template, this functionality is just a "mock".
+   * To allow user still have typing experience
+   * Vite pre-transform hook does codemod where this component gets transformed into Svelte v5 SnippetBlock.
+   */
 
-  import { useStoryRenderer, type StoryRendererContext } from './contexts/renderer.svelte';
+  import { type StoryRendererContext } from './contexts/renderer.svelte';
 
-  interface Props {
-    /**
-     * The content of template to be rendered inside the `<Story />`
-     */
-    children: Snippet<
-      [
-        //
-        StoryRendererContext['args'],
-        StoryRendererContext['storyContext'],
-      ]
-    >;
-    /**
-     * Unique id of template - to be used in `<Story templateId={id} />`
-     * @default id
-     */
-    id?: string;
-  }
-
-  const renderer = useStoryRenderer();
-
-  let { children, id = 'default' }: Props = $props();
+  let id: string = 'default';
+  let args: StoryRendererContext['storyContext'];
+  let context: StoryRendererContext['args'];
 </script>
 
-{@render children(renderer.args, renderer.storyContext)}
+<slot {context} {args} />

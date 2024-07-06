@@ -1,5 +1,5 @@
 import { getStringValueFromAttribute } from '#parser/analyse/story/attributes';
-import type { Attribute, Component, SnippetBlock } from 'svelte/compiler';
+import type { Attribute, Component, LetDirective, SnippetBlock } from 'svelte/compiler';
 
 /**
  *
@@ -40,24 +40,43 @@ export function transformTemplateToSnippet(component: Component): SnippetBlock {
     component,
   });
 
+  const letDirectiveArgs = attributes.find((attr) => {
+    if (attr.type === 'LetDirective') {
+      return attr.name === 'args';
+    }
+    // Will TypeScript 5.5 handle type inference for this one better? 🤔
+  }) as LetDirective | undefined;
+
+  const letDirectiveContext = attributes.find((attr) => {
+    if (attr.type === 'LetDirective') {
+      return attr.name === 'context';
+    }
+    // Will TypeScript 5.5 handle type inference for this one better? 🤔
+  }) as LetDirective | undefined;
+
+  let parameters: SnippetBlock['parameters'] = [];
+
+  if (letDirectiveArgs) {
+    parameters.push({
+      type: 'Identifier',
+      name: 'args',
+    });
+  }
+
+  if (letDirectiveContext) {
+    parameters.push({
+      type: 'Identifier',
+      name: 'context',
+    });
+  }
+
   return {
     type: 'SnippetBlock',
     expression: {
       type: 'Identifier',
       name: id ?? 'children',
     },
-    // WARN: I suspect at this point, it doesn't matter if user used one of directives `let:args` and `let:context`.
-    // W provide both parameters, just in case.
-    parameters: [
-      {
-        type: 'Identifier',
-        name: 'args',
-      },
-      {
-        type: 'Identifier',
-        name: 'storyContext',
-      },
-    ],
+    parameters,
     body: fragment,
     // NOTE: Those are useless, but I want TypeScript to 🤫
     start,

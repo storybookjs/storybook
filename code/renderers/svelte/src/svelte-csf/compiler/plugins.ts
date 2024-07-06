@@ -53,9 +53,9 @@ export async function preTransformPlugin(): Promise<Plugin> {
       let magicLegacyCode = new MagicString(legacyCode);
 
       const svelteAST = getSvelteAST({ code: legacyCode, filename: id });
-      const legacyNodes = extractLegacyNodes(svelteAST);
+      const legacyNodes = await extractLegacyNodes(svelteAST);
 
-      codemodLegacyNodes({
+      await codemodLegacyNodes({
         code: magicLegacyCode,
         legacyNodes,
       });

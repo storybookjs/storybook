@@ -6200,8 +6200,11 @@ __metadata:
     "@storybook/manager-api": "workspace:^"
     "@storybook/preview-api": "workspace:^"
     "@storybook/theming": "workspace:^"
+    "@storybook/test": "workspace:*"
+    expect-type: "npm:^0.15.0"
     preact: "npm:^10.5.13"
     ts-dedent: "npm:^2.0.0"
+    type-fest: "npm:~2.19"
     typescript: "npm:^5.3.2"
   peerDependencies:
     preact: ^8.0.0||^10.0.0

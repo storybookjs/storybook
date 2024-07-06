@@ -1,4 +1,4 @@
-import { h, type FunctionComponent } from 'preact';
+import { h, type ComponentChildren, type FunctionComponent } from 'preact';
 import './button.css';
 
 export interface ButtonProps {
@@ -17,7 +17,7 @@ export interface ButtonProps {
   /**
    * Button contents
    */
-  children: React.ReactNode;
+  children: ComponentChildren;
   /**
    * Optional click handler
    */

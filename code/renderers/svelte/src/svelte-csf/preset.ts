@@ -1,17 +1,36 @@
 import type { StorybookConfig } from '@storybook/svelte-vite';
+import type { Options } from '@storybook/types';
 
 import { postTransformPlugin, preTransformPlugin } from '#compiler/plugins';
 import { indexer } from '#indexer/index';
 
-export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) => {
+export interface StorybookAddonSvelteCsFOptions extends Options {
+  /**
+   * **Do you want to enable support for legacy code?**
+   *
+   * It will add overhead to the runtime, because it will trigger a pre-transform plugin,
+   * which will run codemods to transform legacy syntax into modern.
+   *
+   * @default false
+   */
+  supportLegacy?: boolean;
+}
+
+export const viteFinal: StorybookConfig['viteFinal'] = async (
+  config,
+  options: StorybookAddonSvelteCsFOptions
+) => {
+  let { plugins = [], ...restConfig } = config;
+  const { supportLegacy = false } = options;
+
+  if (supportLegacy) {
+    plugins.unshift(preTransformPlugin());
+  }
+  plugins.push(postTransformPlugin());
+
   return {
-    ...config,
-    plugins: [
-      /** TODO: Is this the place for `options.supportLegacy`? */
-      preTransformPlugin(),
-      ...(config.plugins ?? []),
-      postTransformPlugin(),
-    ],
+    ...restConfig,
+    plugins,
   };
 };
 

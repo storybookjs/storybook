@@ -56,10 +56,10 @@ export function transformTemplateToSnippet(component: Component): SnippetBlock {
 
   let parameters: SnippetBlock['parameters'] = [];
 
-  if (letDirectiveArgs) {
+  if (letDirectiveArgs || letDirectiveContext) {
     parameters.push({
       type: 'Identifier',
-      name: 'args',
+      name: letDirectiveArgs ? 'args' : '_args',
     });
   }
 
@@ -78,7 +78,6 @@ export function transformTemplateToSnippet(component: Component): SnippetBlock {
     },
     parameters,
     body: fragment,
-    // NOTE: Those are useless, but I want TypeScript to 🤫
     start,
     parent,
     end,

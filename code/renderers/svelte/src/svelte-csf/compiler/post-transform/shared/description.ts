@@ -3,36 +3,7 @@ import dedent from 'dedent';
 import type { ObjectExpression, Property } from 'estree';
 import type { Component } from 'svelte/compiler';
 
-/**
- * Create ESTree compliant AST node for {@link Property}
- */
-export function createASTProperty(name: string, value: Property['value']): Property {
-  return {
-    type: 'Property',
-    kind: 'init',
-    computed: false,
-    method: false,
-    shorthand: false,
-    key: {
-      type: 'Identifier',
-      name,
-    },
-    value,
-  };
-}
-
-/**
- * Create ESTree compliant AST node for {@link ObjectExpression} with optional array of properties.
- * By default it will create an enpty object.
- */
-export function createASTObjectExpression(
-  properties: ObjectExpression['properties'] = []
-): ObjectExpression {
-  return {
-    type: 'ObjectExpression',
-    properties,
-  };
-}
+import { createASTObjectExpression } from '#parser/ast';
 
 interface FindPropertyOptions {
   name: string;

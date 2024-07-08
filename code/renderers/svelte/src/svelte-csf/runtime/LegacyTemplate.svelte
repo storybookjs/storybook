@@ -1,7 +1,8 @@
 <script lang="ts">
   /**
-   * This is a legacy template, this functionality is just a "mock".
-   * To allow user still have typing experience
+   * This component is to support deprecated legacy component - `Template`,
+   * and this component functionality is just a "mock".
+   * E.g. to allow user still have typing experience.
    * Vite pre-transform hook does codemod where this component gets transformed into Svelte v5 SnippetBlock.
    */
 

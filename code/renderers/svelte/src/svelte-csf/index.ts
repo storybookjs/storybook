@@ -11,7 +11,8 @@ import type {
 } from '#types';
 
 import StoryComponent from './runtime/Story.svelte';
-import TemplateComponent from './runtime/Template.svelte';
+import LegacyStoryComponent from './runtime/LegacyStory.svelte';
+import LegacyTemplateComponent from './runtime/LegacyTemplate.svelte';
 
 export { setTemplate } from './runtime/contexts/template.svelte';
 
@@ -39,28 +40,22 @@ export type StoryContext<TStoryCmp> =
  * @deprecated Use `defineMeta` instead
  * @see {@link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#meta-component-removed-in-favor-of-definemeta}
  */
-export const Meta = () => {
+export const Meta = (): never => {
   throw new Error(dedent`
     The Meta component has been removed in favor of the defineMeta function.
     For more details, see: @link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#meta-component-removed-in-favor-of-definemeta
   `);
 };
 
-/**
- * @deprecated Use `Story` component returned from `defineMeta` instead
- * @see {@link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#export-meta-removed-in-favor-of-definemeta}
- */
-export const Story = () => {
-  throw new Error(dedent`
-    The Story component can not be imported anymore, but must be desctructured from the defineMeta() call.
-    For more details, see: https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#export-meta-removed-in-favor-of-definemeta
-  `);
-};
-
 export {
+  /**
+   * @deprecated Use `Story` component returned from `defineMeta` instead
+   * @see {@link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#export-meta-removed-in-favor-of-definemeta}
+   */
+  LegacyStoryComponent as Story,
   /**
    * @deprecated Use snippets instead
    * @see {@link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#template-component-removed}
    */
-  TemplateComponent as Template,
+  LegacyTemplateComponent as Template,
 };

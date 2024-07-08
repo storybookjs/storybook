@@ -14,22 +14,14 @@ import MagicString from 'magic-string';
 import { preprocess } from 'svelte/compiler';
 import type { Plugin } from 'vite';
 
-import { transformStoriesCode } from './post-transform';
-
+import { codemodLegacyNodes } from '#compiler/pre-transform/index';
+import { transformStoriesCode } from '#compiler/post-transform/index';
 import { getSvelteAST } from '#parser/ast';
 import { extractCompiledASTNodes } from '#parser/extract/compiled/nodes';
 import { extractSvelteASTNodes } from '#parser/extract/svelte/nodes';
-import { extractLegacyNodes } from '#compiler/pre-transform/extractor';
-import { codemodLegacyNodes } from '#compiler/pre-transform/index';
 
 export async function preTransformPlugin(): Promise<Plugin> {
-  const [{ createFilter }, { loadSvelteConfig }] = await Promise.all([
-    import('vite'),
-    import('@sveltejs/vite-plugin-svelte'),
-  ]);
-
-  const svelteConfig = await loadSvelteConfig();
-
+  const [{ createFilter }] = await Promise.all([import('vite')]);
   const include = /\.stories\.svelte$/;
   const filter = createFilter(include);
 
@@ -39,30 +31,18 @@ export async function preTransformPlugin(): Promise<Plugin> {
     async transform(code, id) {
       if (!filter(id)) return undefined;
 
-      // @ts-expect-error FIXME: `this.originalCode` exists at runtime in the development mode only.
-      // Need to research if its documented somewhere
-      let legacyCode = this.originalCode ?? code;
+      const { print } = await import('svelte-ast-print');
 
-      if (svelteConfig?.preprocess) {
-        const processed = await preprocess(legacyCode, svelteConfig.preprocess, {
-          filename: id,
-        });
-        legacyCode = processed.code;
-      }
+      const svelteAST = getSvelteAST({ code, filename: id });
+      const transformedSvelteAST = await codemodLegacyNodes(svelteAST);
 
-      let magicLegacyCode = new MagicString(legacyCode);
+      let magicCode = new MagicString(code);
 
-      const svelteAST = getSvelteAST({ code: legacyCode, filename: id });
-      const legacyNodes = await extractLegacyNodes(svelteAST);
-
-      await codemodLegacyNodes({
-        code: magicLegacyCode,
-        legacyNodes,
-      });
+      magicCode.overwrite(0, code.length - 1, print(transformedSvelteAST));
 
       return {
-        code: magicLegacyCode.toString(),
-        map: magicLegacyCode.generateMap({ hires: true, source: id }),
+        code: magicCode.toString(),
+        map: magicCode.generateMap({ hires: true, source: id }),
       };
     },
   };

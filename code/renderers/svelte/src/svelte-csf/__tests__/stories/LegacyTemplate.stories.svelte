@@ -1,10 +1,11 @@
 <script context="module" lang="ts">
-  import { Template, defineMeta } from '@storybook/addon-svelte-csf';
+  import { Story, Template } from '@storybook/addon-svelte-csf';
+  import type { Meta } from '@storybook/svelte';
 
   import LegacyTemplate from './LegacyTemplate.svelte';
 
   /**
-   * Description set explicitly in the comment above `defineMeta`.
+   * Description set explicitly in the comment above export const meta.
    *
    * Multiline supported. And also Markdown syntax:
    *
@@ -12,11 +13,11 @@
    * * _Italic_,
    * * `Code`.
    */
-  const { Story } = defineMeta({
+  export const meta = {
     title: 'LegacyTemplate',
     component: LegacyTemplate,
     tags: ['autodocs'],
-  });
+  } satisfies Meta<LegacyTemplate>;
 </script>
 
 <script lang="ts">
@@ -37,8 +38,6 @@
   <LegacyTemplate {...args} onclick={handleClick} rounded />
 </Template>
 
-<!-- TODO: Need to restore legacy Story first -->
-<Story name="Default" {children} />
+<Story name="Default" />
 
-<!-- TODO: Need to restore legacy Story first -->
-<Story name="Rounded" children={rounded} />
+<Story name="Rounded" template="rounded" />

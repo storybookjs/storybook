@@ -24,9 +24,9 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (
   const { supportLegacy = false } = options;
 
   if (supportLegacy) {
-    plugins.unshift(preTransformPlugin());
+    plugins.unshift(await preTransformPlugin());
   }
-  plugins.push(postTransformPlugin());
+  plugins.push(await postTransformPlugin());
 
   return {
     ...restConfig,

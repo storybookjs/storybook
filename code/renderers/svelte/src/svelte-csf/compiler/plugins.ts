@@ -67,6 +67,10 @@ export async function postTransformPlugin(): Promise<Plugin> {
       const compiledAST = this.parse(compiledCode);
       let magicCompiledCode = new MagicString(compiledCode);
 
+      // FIXME: This needs to change.
+      // we need to access the code - results from `pre-transform` plugin - 'storybook:addon-svelte-csf-plugin-post'.
+      // But how?
+
       // @ts-expect-error FIXME: `this.originalCode` exists at runtime in the development mode only.
       // Need to research if its documented somewhere
       let rawCode = this.originalCode ?? fs.readFileSync(id).toString();

@@ -6,14 +6,16 @@ import { createIndexer } from '#indexer/index';
 
 export interface StorybookAddonSvelteCsFOptions extends Options {
   /**
-   * **Do you want to enable support for legacy code?**
+   * Enable support for legacy templating.
+   * This option is deprecated, it will be removed in a future major version and should only be used for gradual migration purposes.
+   * Please migrate to the new snippet-based templating API when possible.
    *
-   * It will add overhead to the runtime, because it will trigger a pre-transform plugin,
-   * which will run codemods to transform legacy syntax into modern.
+   * Enabling this can slow down the build-performance because it requires more transformations.
    *
    * @default false
+   * @deprecated
    */
-  supportLegacy?: boolean;
+  legacyTemplate?: boolean;
 }
 
 export const viteFinal: StorybookConfig['viteFinal'] = async (
@@ -21,9 +23,9 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (
   options: StorybookAddonSvelteCsFOptions
 ) => {
   let { plugins = [], ...restConfig } = config;
-  const { supportLegacy = false } = options;
+  const { legacyTemplate = false } = options;
 
-  if (supportLegacy) {
+  if (legacyTemplate) {
     plugins.unshift(await preTransformPlugin());
   }
   plugins.push(await postTransformPlugin());
@@ -38,5 +40,5 @@ export const experimental_indexers: StorybookConfig['experimental_indexers'] = (
   indexers,
   options: StorybookAddonSvelteCsFOptions
 ) => {
-  return [createIndexer(options.supportLegacy ?? false), ...(indexers || [])];
+  return [createIndexer(options.legacyTemplate ?? false), ...(indexers || [])];
 };

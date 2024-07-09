@@ -38,7 +38,7 @@ export async function parseForIndexer(
     import('@sveltejs/vite-plugin-svelte'),
   ]);
 
-  const { supportLegacy } = options;
+  const { legacyTemplate } = options;
   const svelteConfig = await loadSvelteConfig();
 
   let defineMetaIdentifier = 'defineMeta';
@@ -72,7 +72,7 @@ export async function parseForIndexer(
       const { module, fragment } = node;
       const { state, visit } = context;
 
-      if (!module && !supportLegacy) {
+      if (!module && !legacyTemplate) {
         throw new MissingModuleTagError(filename);
       }
 
@@ -93,7 +93,7 @@ export async function parseForIndexer(
 
       for (const statement of body) {
         if (
-          supportLegacy &&
+          legacyTemplate &&
           statement.type === 'ImportDeclaration' &&
           statement.source.value === pkg.name
         ) {
@@ -105,7 +105,7 @@ export async function parseForIndexer(
         }
 
         // TODO: Remove it in the next major version
-        if (supportLegacy && statement.type === 'ExportNamedDeclaration') {
+        if (legacyTemplate && statement.type === 'ExportNamedDeclaration') {
           const { declaration } = statement;
 
           if (declaration?.type === 'VariableDeclaration') {
@@ -123,17 +123,17 @@ export async function parseForIndexer(
           throw new DefaultOrNamespaceImportUsedError(filename);
         }
 
-        if (supportLegacy && specifier.import.name === defineMetaIdentifier) {
+        if (legacyTemplate && specifier.import.name === defineMetaIdentifier) {
           componentMetaIdentifier = specifier.local.name;
         }
 
         // TODO: Remove it in the next major version
-        if (supportLegacy && specifier.import.name === componentMetaIdentifier) {
+        if (legacyTemplate && specifier.import.name === componentMetaIdentifier) {
           componentMetaIdentifier = specifier.local.name;
         }
 
         // TODO: Remove it in the next major version
-        if (supportLegacy && specifier.import.name === componentStoryIdentifier) {
+        if (legacyTemplate && specifier.import.name === componentStoryIdentifier) {
           componentStoryIdentifier = specifier.local.name;
         }
       }
@@ -181,7 +181,7 @@ export async function parseForIndexer(
         }
       }
 
-      if (supportLegacy && !foundMeta && id.type === 'Identifier') {
+      if (legacyTemplate && !foundMeta && id.type === 'Identifier') {
         const { name } = id;
 
         if (name === 'meta') {
@@ -246,7 +246,7 @@ export async function parseForIndexer(
       const { state } = context;
 
       // TODO: Remove in the next major version
-      if (!foundMeta && supportLegacy && name === componentMetaIdentifier) {
+      if (!foundMeta && legacyTemplate && name === componentMetaIdentifier) {
         const { attributes } = node;
         for (const attribute of attributes) {
           if (attribute.type === 'Attribute') {

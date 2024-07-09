@@ -2,7 +2,7 @@ import type { StorybookConfig } from '@storybook/svelte-vite';
 import type { Options } from '@storybook/types';
 
 import { postTransformPlugin, preTransformPlugin } from '#compiler/plugins';
-import { indexer } from '#indexer/index';
+import { createIndexer } from '#indexer/index';
 
 export interface StorybookAddonSvelteCsFOptions extends Options {
   /**
@@ -34,6 +34,9 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (
   };
 };
 
-export const experimental_indexers: StorybookConfig['experimental_indexers'] = (indexers) => {
-  return [indexer, ...(indexers || [])];
+export const experimental_indexers: StorybookConfig['experimental_indexers'] = (
+  indexers,
+  options: StorybookAddonSvelteCsFOptions
+) => {
+  return [createIndexer(options.supportLegacy ?? false), ...(indexers || [])];
 };

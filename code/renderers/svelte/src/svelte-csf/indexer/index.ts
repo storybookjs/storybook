@@ -3,16 +3,10 @@ import type { IndexInput, Indexer } from '@storybook/types';
 
 import { parseForIndexer } from '#indexer/parser';
 
-export const indexer: Indexer = {
+export const createIndexer = (supportLegacy: boolean): Indexer => ({
   test: /\.svelte$/,
   createIndex: async (filename, { makeTitle }) => {
-    const { meta, stories } = await parseForIndexer(
-      filename,
-      // TODO: @JReinhold Replace with dynamic pass of options
-      {
-        supportLegacy: false,
-      }
-    );
+    const { meta, stories } = await parseForIndexer(filename, { supportLegacy });
 
     return stories.map((story) => {
       return {
@@ -25,4 +19,4 @@ export const indexer: Indexer = {
       } satisfies IndexInput;
     });
   },
-};
+});

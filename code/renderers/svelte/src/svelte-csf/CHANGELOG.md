@@ -1,3 +1,15 @@
+# v4.1.4 (Tue Jul 09 2024)
+
+#### 🐛 Bug Fix
+
+- fix: Allow 8.2.0-beta.0 peer dependency of @storybook/svelte [#187](https://github.com/storybookjs/addon-svelte-csf/pull/187) ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
 # v4.1.3 (Thu May 16 2024)
 
 #### 🐛 Bug Fix

@@ -40,9 +40,14 @@ export async function preTransformPlugin(): Promise<Plugin> {
 
       magicCode.overwrite(0, code.length - 1, print(transformedSvelteAST));
 
+      const stringifiedMagicCode = magicCode.toString();
+
       return {
-        code: magicCode.toString(),
+        code: stringifiedMagicCode,
         map: magicCode.generateMap({ hires: true, source: id }),
+        meta: {
+          _storybook_csf_pre_transform: stringifiedMagicCode,
+        },
       };
     },
   };
@@ -66,14 +71,9 @@ export async function postTransformPlugin(): Promise<Plugin> {
 
       const compiledAST = this.parse(compiledCode);
       let magicCompiledCode = new MagicString(compiledCode);
-
-      // FIXME: This needs to change.
-      // we need to access the code - results from `pre-transform` plugin - 'storybook:addon-svelte-csf-plugin-post'.
-      // But how?
-
-      // @ts-expect-error FIXME: `this.originalCode` exists at runtime in the development mode only.
-      // Need to research if its documented somewhere
-      let rawCode = this.originalCode ?? fs.readFileSync(id).toString();
+      let rawCode =
+        (this.getModuleInfo(id)?.meta._storybook_csf_pre_transform as string | undefined) ??
+        fs.readFileSync(id).toString();
 
       if (svelteConfig?.preprocess) {
         const processed = await preprocess(rawCode, svelteConfig.preprocess, {

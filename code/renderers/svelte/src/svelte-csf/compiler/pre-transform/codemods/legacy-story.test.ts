@@ -172,7 +172,8 @@ describe(transformLegacyStory.name, () => {
     const node = await parseAndExtractSvelteNode<Component>(code, 'Component');
 
     expect(print(transformLegacyStory(node))).toMatchInlineSnapshot(`
-			"<Story name="Default">	{#snippet children(args)}
+			"<Story name="Default">
+				{#snippet children(args)}
 					<Button {...args} />
 				{/snippet}
 			</Story>"
@@ -195,7 +196,8 @@ describe(transformLegacyStory.name, () => {
     const node = await parseAndExtractSvelteNode<Component>(code, 'Component');
 
     expect(print(transformLegacyStory(node))).toMatchInlineSnapshot(`
-			"<Story name="Default">	{#snippet children(_args, context)}
+			"<Story name="Default">
+				{#snippet children(_args, context)}
 					<p>{context.id}</p>
 				{/snippet}
 			</Story>"

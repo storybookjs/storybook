@@ -50,8 +50,8 @@ describe(transformComponentMetaToDefineMeta.name, () => {
           comment,
         })
       )
-    ).toMatchInlineSnapshot(
-      `"/** This is a description for the **Button** component stories. */ const { Story } = defineMeta({ title: "Atoms/Button", component: Button });"`
-    );
+    ).toMatchInlineSnapshot(`
+      "/** This is a description for the **Button** component stories. */ const { Story } = defineMeta({ title: "Atoms/Button", component: Button });"
+    `);
   });
 });

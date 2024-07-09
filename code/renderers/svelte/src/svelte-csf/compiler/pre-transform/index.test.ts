@@ -26,20 +26,17 @@ describe(codemodLegacyNodes.name, () => {
     const ast = getSvelteAST({ code });
     const transformed = await codemodLegacyNodes(ast);
 
-    expect(print(transformed)).toMatchInlineSnapshot(
-      `
-			"<script context="module">
-				import { defineMeta } from "@storybook/addon-svelte-csf";
+    expect(print(transformed)).toMatchInlineSnapshot(`
+      "<script context="module">
+      	import { defineMeta } from "@storybook/addon-svelte-csf";
 
-				/** This is a description for the **Button** component stories. */
-				const { Story } = defineMeta({ title: "Atoms/Button", component: Button });
-			</script>
-			<!-- This is a description for **default** Button. -->
+      	/** This is a description for the **Button** component stories. */
+      	const { Story } = defineMeta({ title: "Atoms/Button", component: Button });
+      </script>
 
-			   <Story name="Default" />
-			"
-		`
-    );
+      <!-- This is a description for **default** Button. -->
+      <Story name="Default" />"
+    `);
   });
 
   it("replaces 'Meta' with inserting 'defineMeta' to module tag", async ({ expect }) => {
@@ -56,14 +53,13 @@ describe(codemodLegacyNodes.name, () => {
 
     expect(print(transformed)).toMatchInlineSnapshot(
       `
-			"<script context="module">
-				import { defineMeta } from "@storybook/addon-svelte-csf";
+      "<script context="module">
+      	import { defineMeta } from "@storybook/addon-svelte-csf";
 
-				/** This is a description for the **Button** component stories. */
-				const { Story } = defineMeta({ title: "Atoms/Button", component: Button });
-			</script>
-			"
-		`
+      	/** This is a description for the **Button** component stories. */
+      	const { Story } = defineMeta({ title: "Atoms/Button", component: Button });
+      </script>"
+    `
     );
   });
 
@@ -85,23 +81,19 @@ describe(codemodLegacyNodes.name, () => {
     const ast = getSvelteAST({ code });
     const transformed = await codemodLegacyNodes(ast);
 
-    expect(print(transformed)).toMatchInlineSnapshot(
-      `
+    expect(print(transformed)).toMatchInlineSnapshot(`
 			"<script context="module">
 				import { defineMeta } from "@storybook/addon-svelte-csf";
 
 				/** This is a description for the **Button** component stories. */
 				const { Story } = defineMeta({ title: "Atoms/Button", component: Button });
 			</script>
-			 {#snippet children(args)}
 
-			     <Button {...args} />
-
-			   {/snippet}
-			 <Story name="Default" />
-			"
-		`
-    );
+			{#snippet children(args)}
+				<Button {...args} />
+			{/snippet}
+			<Story name="Default" />"
+		`);
   });
 
   it('transforms legacy syntax correctly', async ({ expect }) => {
@@ -126,31 +118,26 @@ describe(codemodLegacyNodes.name, () => {
     const ast = getSvelteAST({ code });
     const transformed = await codemodLegacyNodes(ast);
 
-    expect(print(transformed)).toMatchInlineSnapshot(
-      `
+    expect(print(transformed)).toMatchInlineSnapshot(`
 			"<script context="module">
 				import { defineMeta } from "@storybook/addon-svelte-csf";
 
 				/** This is a description for the **Button** component stories. */
 				const { Story } = defineMeta({ title: "Atoms/Button", component: Button });
 			</script>
-			 {#snippet sample(args, context)}
 
-			     <p>{context.id}</p>
-			 <Button {...args} />
-
-			   {/snippet}
-			 <Story name="Default" children={sample} tags={["autodocs"]} parameters={{
+			{#snippet sample(args, context)}
+				<p>{context.id}</p>
+				<Button {...args} />
+			{/snippet}
+			<Story name="Default" children={sample} tags={["autodocs"]} parameters={{
 				docs: { source: { code: "<Button {...args} />" } }
-			}}>	{#snippet children(args, context)}
-
-			     <p>{context.id}</p>
-			 <Button {...args} />
-
-			   	{/snippet}
-			</Story>
-			"
-		`
-    );
+			}}>
+				{#snippet children(args, context)}
+					<p>{context.id}</p>
+					<Button {...args} />
+				{/snippet}
+			</Story>"
+		`);
   });
 });

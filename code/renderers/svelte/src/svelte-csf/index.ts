@@ -1,5 +1,4 @@
 import type { Args as BaseArgs } from '@storybook/types';
-import dedent from 'dedent';
 import type { EmptyObject } from 'type-fest';
 
 import type {
@@ -11,6 +10,8 @@ import type {
 } from '#types';
 
 import StoryComponent from './runtime/Story.svelte';
+// TODO: Remove in next major release
+import LegacyMetaComponent from './runtime/LegacyMeta.svelte';
 import LegacyStoryComponent from './runtime/LegacyStory.svelte';
 import LegacyTemplateComponent from './runtime/LegacyTemplate.svelte';
 
@@ -36,18 +37,12 @@ export type StoryContext<TStoryCmp> =
     ? BaseStoryContext<TCmpOrArgs, TMeta>
     : never;
 
-/**
- * @deprecated Use `defineMeta` instead
- * @see {@link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#meta-component-removed-in-favor-of-definemeta}
- */
-export const Meta = (): never => {
-  throw new Error(dedent`
-    The Meta component has been removed in favor of the defineMeta function.
-    For more details, see: @link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#meta-component-removed-in-favor-of-definemeta
-  `);
-};
-
 export {
+  /**
+   * @deprecated Use `defineMeta` instead
+   * @see {@link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#meta-component-removed-in-favor-of-definemeta}
+   */
+  LegacyMetaComponent as Meta,
   /**
    * @deprecated Use `Story` component returned from `defineMeta` instead
    * @see {@link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#export-meta-removed-in-favor-of-definemeta}

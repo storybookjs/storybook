@@ -5,6 +5,7 @@ import type { ArrayExpression, Identifier, Property, VariableDeclarator } from '
 export class InvalidComponentValueError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseDefineMeta;
   readonly code = 1;
+  public documentation = true;
 
   public componentProperty: Property;
 
@@ -21,10 +22,8 @@ export class InvalidComponentValueError extends StorybookSvelteCSFError {
 
   template(): string {
     return dedent`
-      Invalid schema.
-
-      'defineMeta's property with key 'component' value should be an identifier to Svelte component import specifier.
-      The current type is '${this.componentProperty.value.type}'.
+      The 'component' property of 'defineMeta' must reference an imported Svelte component.
+      The current type of the property is '${this.componentProperty.value.type}'.
 
       The issue occurred in Stories file: ${this.filepathURL}
     `;
@@ -34,6 +33,7 @@ export class InvalidComponentValueError extends StorybookSvelteCSFError {
 export class NoDestructuredDefineMetaCallError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseDefineMeta;
   readonly code = 2;
+  public documentation = true;
 
   public defineMetaVariableDeclarator: VariableDeclarator;
 
@@ -50,9 +50,7 @@ export class NoDestructuredDefineMetaCallError extends StorybookSvelteCSFError {
 
   template(): string {
     return dedent`
-      Invalid schema.
-
-      Storybook addon "${StorybookSvelteCSFError.packageName}" tried to access destructured object pattern from a variable declaration with 'defineMeta()' call.
+      The return value of the 'defineMeta' call was not destructured to { Story }.
       The issue occurred in Stories file: ${this.filepathURL}
 
       The current pattern type is: "${this.defineMetaVariableDeclarator.id.type}", and expected is "ObjectPattern".
@@ -63,6 +61,7 @@ export class NoDestructuredDefineMetaCallError extends StorybookSvelteCSFError {
 export class NoMetaIdentifierFoundError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseDefineMeta;
   readonly code = 3;
+  public documentation = true;
 
   constructor(filename: StorybookSvelteCSFError['filename']) {
     super({ filename });
@@ -71,6 +70,7 @@ export class NoMetaIdentifierFoundError extends StorybookSvelteCSFError {
   template(): string {
     return dedent`
 			Could not find 'meta' identifier in the compiled output of stories file: ${this.filepathURL}
+      This is most likely a bug in @storybook/addon-svelte-csf. Please open an issue on GitHub.
     `;
   }
 }
@@ -78,6 +78,7 @@ export class NoMetaIdentifierFoundError extends StorybookSvelteCSFError {
 export class NoStringLiteralError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseDefineMeta;
   readonly code = 4;
+  public documentation = true;
 
   readonly property: Property;
 
@@ -94,10 +95,8 @@ export class NoStringLiteralError extends StorybookSvelteCSFError {
 
   template(): string {
     return dedent`
-      Invalid schema.
-
-      'defineMeta()' first argument object property '${(this.property.key as Identifier).name}' value is supposed to be a static string literal.
-      Instead it has a type '${this.property.value.type}'.
+      The '${(this.property.key as Identifier).name}' passed to 'defineMeta()' must be a static string literal.
+      But it is of type '${this.property.value.type}'.
 
       This issue occurred in stories file: ${this.filepathURL}
     `;
@@ -107,6 +106,7 @@ export class NoStringLiteralError extends StorybookSvelteCSFError {
 export class NoArrayExpressionError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseDefineMeta;
   readonly code = 5;
+  public documentation = true;
 
   readonly property: Property;
 
@@ -123,10 +123,8 @@ export class NoArrayExpressionError extends StorybookSvelteCSFError {
 
   template(): string {
     return dedent`
-      Invalid schema.
-
-      'defineMeta()' first argument object property '${(this.property.key as Identifier).name}' value is supposed to be an array expression.
-      Instead it has a type '${this.property.value.type}'.
+      The '${(this.property.key as Identifier).name}' passed to 'defineMeta()' must be a static array.
+      But it is of type '${this.property.value.type}'.
 
       This issue occurred in stories file: ${this.filepathURL}
     `;
@@ -136,6 +134,7 @@ export class NoArrayExpressionError extends StorybookSvelteCSFError {
 export class ArrayElementNotStringError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseDefineMeta;
   readonly code = 6;
+  public documentation = true;
 
   readonly property: Property;
   readonly element: ArrayExpression['elements'][number];
@@ -156,10 +155,8 @@ export class ArrayElementNotStringError extends StorybookSvelteCSFError {
 
   template(): string {
     return dedent`
-      Invalid schema.
-
-      'defineMeta()' first argument object property '${(this.property.key as Identifier).name}' value is supposed to be an array with only static string literals.
-      One of the elements is not a string. Instead it has a type '${this.element?.type}'.
+      All entries in the '${(this.property.key as Identifier).name}' property passed to 'defineMeta()' must be static strings.
+      One of the elements is not a string but is instead of type '${this.element?.type}'.
 
       This issue occurred in stories file: ${this.filepathURL}
     `;

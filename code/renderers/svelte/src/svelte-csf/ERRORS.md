@@ -182,10 +182,10 @@ https://github.com/storybookjs/addon-svelte-csf/issues/new
 
 ### `SB_SVELTE_CSF_PARSER_ANALYSE_DEFINE_META_0001`
 
-Our parser spotted an invalid schema on the `component` entry.
+The `component` property in `defineMeta` was not referencing an imported Svelte component.
 It expected an identifier to a Svelte component but got something else.
 
-Ensure you're using the correct syntax, following the example above:
+Ensure you're using the correct syntax, following the example below:
 
 ```svelte
 <script context="module">
@@ -213,44 +213,34 @@ You most likely forgot to destructure the return value.
 
 ### `SB_SVELTE_CSF_PARSER_ANALYSE_DEFINE_META_0003`
 
-Our parser couldn't find auto-destructured `meta` identifier from the return value of `defineMeta()` in the compiled
-output.
+The addon automatically adds a `meta` identifier to the return value of `defineMeta()` during compilation.
+But for some reason, this couldn't be found in the compiled output.
 
-If you see this error, please report it using the link below:
-<https://github.com/storybookjs/addon-svelte-csf/issues/new>
+If you see this error, please open a [bug report](https://github.com/storybookjs/addon-svelte-csf/issues/new).
 
 While you create an issue, please provide original code of the stories file that caused this error.
 It will help us investigate the occurred issue better.
 
 ### `SB_SVELTE_CSF_PARSER_ANALYSE_DEFINE_META_0004`
 
-Our parser spotted an invalid schema on one of entries in the `defineMeta({ ... })` first argument.
-Expected a **static string literal**, but got something else.
+When analysing the object passed to `defineMeta({ ... })`, invalid properties were found. The following properties must be **static string literals**, but got something else:
 
-Those known and common keys should have a **static** string literal as value:
+- `title`
+- `name`
 
-- **title**
-- **name**
-
-Do not use any function generating those values, because our parser doesn't know what those values return while
-analysing the source code.
+Dynamically generating these properties with functions or with template strings is not supported.
 
 ### `SB_SVELTE_CSF_PARSER_ANALYSE_DEFINE_META_0005`
 
-Our parser spotted an invalid schema on one of entries in the `defineMeta({ ... })` first argument.
-Expected an **array expression** `[/* items... */]`, but got something else.
+When analysing the object passed to `defineMeta({ ... })`, invalid properties were found. The `tags` property must be a **static array of static string literals**, but got something else
 
-Those known and common keys should be an array expression as value:
-
-- **tags**
+Dynamically generating the array or the entries with functions or with template strings is not supported.
 
 ### `SB_SVELTE_CSF_PARSER_ANALYSE_DEFINE_META_0006`
 
-Our parser spotted an invalid schema on one of entries in the `defineMeta({ ... })` first argument.
+When analysing the object passed to `defineMeta({ ... })`, invalid properties were found. The `tags` property must be a **static array of static string literals**, but got something else
 
-Those known keys should have array expression as value with only **static string literals** as items:
-
-- **tags**
+Dynamically generating the array or the entries with functions or with template strings is not supported.
 
 ## `PARSER_ANALYSE_STORY`
 

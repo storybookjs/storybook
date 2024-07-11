@@ -5,6 +5,7 @@ import { getArrayOfStringsValueFromAttribute, getStringValueFromAttribute } from
 import { getSvelteAST } from '#parser/ast';
 import { extractSvelteASTNodes } from '#parser/extract/svelte/nodes';
 import { extractStoryAttributesNodes } from '#parser/extract/svelte/story/attributes';
+import { StorybookSvelteCSFError } from '#utils/error';
 
 describe(getStringValueFromAttribute.name, () => {
   it("throws error when a `<Story />` 'name' attribute value is not a string", async ({
@@ -34,10 +35,12 @@ describe(getStringValueFromAttribute.name, () => {
 
     expect(() => getStringValueFromAttribute({ component, node: name }))
       .toThrowErrorMatchingInlineSnapshot(`
-        [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0001 (AttributeNotStringError): Invalid schema.
-        In the stories file: <path not specified>
+        [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0001 (AttributeNotStringError): In the stories file: <path not specified>
 
-        A '<Story name="<unspecified Story name>" />' has an attribute 'name' whose value was expected to be a static literal string.]
+        A '<Story name="<unspecified Story name>" />' has a prop 'name' whose value must be a static literal string.
+
+        More info: https://github.com/storybookjs/addon-svelte-csf/blob/v${StorybookSvelteCSFError.packageVersion}/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0001
+        ]
       `);
   });
 });
@@ -72,12 +75,14 @@ describe(getArrayOfStringsValueFromAttribute.name, () => {
       getArrayOfStringsValueFromAttribute({ component, node: tags })
     ).toThrowErrorMatchingInlineSnapshot(
       `
-			[SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0002 (AttributeNotArrayError): Invalid schema.
-			In the stories file: <path not specified>
+      [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0002 (AttributeNotArrayError): In the stories file: <path not specified>
 
-			  A '<Story name="Default" />' has attribute 'tags' whose value was expected to be an array expression.
-			  Instead the value type is '0'.]
-		`
+      A '<Story name="Default" />' has a prop'tags' whose value was expected to be a static array.
+      Instead the value type is '0'.
+
+      More info: https://github.com/storybookjs/addon-svelte-csf/blob/v${StorybookSvelteCSFError.packageVersion}/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0002
+      ]
+    `
     );
   });
 
@@ -110,13 +115,14 @@ describe(getArrayOfStringsValueFromAttribute.name, () => {
       getArrayOfStringsValueFromAttribute({ component, node: tags })
     ).toThrowErrorMatchingInlineSnapshot(
       `
-			[SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0003 (AttributeNotArrayOfStringsError): Invalid schema.
-			In the stories file: <path not specified>
+      [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0003 (AttributeNotArrayOfStringsError): In the stories file: <path not specified>
 
-			A '<Story name="Default" />' has attribute 'tags' whose value was expected to be an array expression.
-			And this array elements are supposed to be static literal strings only.
-			One of the elements has a type 'undefined']
-		`
+      A '<Story name="Default" />' has attribute 'tags' whose value was expected to be an array expression.
+      All elements in the array must be static literal strings only, but one of the elements is of type 'undefined'.
+
+      More info: https://github.com/storybookjs/addon-svelte-csf/blob/v${StorybookSvelteCSFError.packageVersion}/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0003
+      ]
+    `
     );
   });
 

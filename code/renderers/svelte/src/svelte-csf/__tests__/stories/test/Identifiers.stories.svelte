@@ -2,7 +2,7 @@
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
   const { Story } = defineMeta({
-    title: 'Testing/Identifiers',
+    title: 'Identifiers',
     parameters: {
       actions: { disable: true },
       controls: { disable: true },

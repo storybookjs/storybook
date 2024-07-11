@@ -4,7 +4,7 @@
   import { expect, userEvent, within } from '@storybook/test';
 
   const { Story } = defineMeta({
-    title: 'Addon/Actions',
+    title: 'Addons/Actions',
     args: {
       onclick: fn().mockName('onclick'),
     },

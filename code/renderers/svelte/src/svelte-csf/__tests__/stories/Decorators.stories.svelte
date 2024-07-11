@@ -3,7 +3,7 @@
   import { expect, userEvent, within } from '@storybook/test';
 
   import Text from './Text.svelte';
-  import BackgroundDecorator from './BackgroundDecorator.svelte';
+  import BorderDecorator from './BorderDecorator.svelte';
 
   /**
    * **Documentation resource**: https://storybook.js.org/docs/writing-stories/decorators#wrap-stories-with-extra-markup
@@ -18,8 +18,8 @@
        * it will wrap together all of the decorators defined in this stories file.
        */
       () => ({
-        Component: BackgroundDecorator,
-        props: { color: 'lightpink', width: '100%' },
+        Component: BorderDecorator,
+        props: { color: 'pink' },
       }),
     ],
   });
@@ -35,8 +35,8 @@
     const { Story } = defineMeta({
       decorators: [
         () => ({
-          Component: BackgroundDecorator,
-          props: { color: 'lightpink', width: '100%' },
+          Component: BorderDecorator,
+          props: { color: 'pink' },
         }),
       ],
     });
@@ -53,7 +53,7 @@
     const element = canvas.getByText(args.text);
 
     expect(element).toBeInTheDocument();
-    expect(element.parentNode.style.backgroundColor).toBe('lightpink');
+    expect(element.parentNode.style.borderColor).toBe('pink');
   }}
 />
 
@@ -67,8 +67,8 @@
   <Story
     decorators={[
       () => ({
-        Component: BackgroundDecorator,
-        props: { color: 'lightblue', width: '75%' },
+        Component: BorderDecorator,
+        props: { color: 'blue', width: '75%' },
       }),
     ]}
   />
@@ -79,8 +79,8 @@
   args={{ text: 'Text is inside `<Story decorators={[/* ... */]} >`' }}
   decorators={[
     () => ({
-      Component: BackgroundDecorator,
-      props: { color: 'lightblue', width: '75%' },
+      Component: BorderDecorator,
+      props: { color: 'blue' },
     }),
   ]}
   play={async (context) => {
@@ -89,8 +89,8 @@
     const element = canvas.getByText(args.text);
 
     expect(element).toBeInTheDocument();
-    expect(element.parentNode.style.backgroundColor).toBe('lightblue');
-    expect(element.parentNode.parentNode.style.backgroundColor).toBe('lightpink');
+    expect(element.parentNode.style.borderColor).toBe('blue');
+    expect(element.parentNode.parentNode.style.borderColor).toBe('pink');
   }}
 />
 
@@ -106,10 +106,10 @@
     args={{ text: 'Text is inside `<Story decorators={[/* first one */]} >`' }}
     decorators={[
       // NOTE: First one decorator is the most deeply nested children
-      () => ({ Component: BackgroundDecorator, props: { color: 'lightcyan', width: 'fit-content' } }),
-      () => ({ Component: BackgroundDecorator, props: { color: 'darkorchid', width: '60ch' } }),
+      () => ({ Component: BorderDecorator, props: { color: 'cyan' } }),
+      () => ({ Component: BorderDecorator, props: { color: 'darkorchid' } }),
       // NOTE: The last one decorator wraps all of the above decorators
-      () => ({ Component: BackgroundDecorator, props: { color: 'gold', width: '90%' } }),
+      () => ({ Component: BorderDecorator, props: { color: 'gold' } }),
     ]}
   />
   ```
@@ -119,10 +119,10 @@
   args={{ text: 'Text is inside `<Story decorators={[/* first one */]} >`' }}
   decorators={[
     // NOTE: First one decorator is the most deeply nested children
-    () => ({ Component: BackgroundDecorator, props: { color: 'lightcyan', width: 'fit-content' } }),
-    () => ({ Component: BackgroundDecorator, props: { color: 'darkorchid', width: '60ch' } }),
+    () => ({ Component: BorderDecorator, props: { color: 'cyan' } }),
+    () => ({ Component: BorderDecorator, props: { color: 'darkorchid' } }),
     // NOTE: The last one decorator wraps all of the above decorators
-    () => ({ Component: BackgroundDecorator, props: { color: 'gold', width: '90%' } }),
+    () => ({ Component: BorderDecorator, props: { color: 'gold' } }),
   ]}
   play={async (context) => {
     const { args, canvasElement } = context;
@@ -130,11 +130,9 @@
     const element = canvas.getByText(args.text);
 
     expect(element).toBeInTheDocument();
-    expect(element.parentNode.style.backgroundColor).toBe('lightcyan');
-    expect(element.parentNode.parentNode.style.backgroundColor).toBe('darkorchid');
-    expect(element.parentNode.parentNode.parentNode.style.backgroundColor).toBe('gold');
-    expect(element.parentNode.parentNode.parentNode.parentNode.style.backgroundColor).toBe(
-      'lightpink'
-    );
+    expect(element.parentNode.style.borderColor).toBe('cyan');
+    expect(element.parentNode.parentNode.style.borderColor).toBe('darkorchid');
+    expect(element.parentNode.parentNode.parentNode.style.borderColor).toBe('gold');
+    expect(element.parentNode.parentNode.parentNode.parentNode.style.borderColor).toBe('pink');
   }}
 />

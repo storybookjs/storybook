@@ -19,6 +19,7 @@ import {
   PlayNextIcon,
   RewindIcon,
   SyncIcon,
+  ButtonIcon,
 } from '@storybook/icons';
 import { StatusBadge } from './StatusBadge';
 
@@ -177,6 +178,11 @@ export const Subnav: React.FC<SubnavProps> = ({
             <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Rerun" />}>
               <RerunButton aria-label="Rerun" onClick={controls.rerun}>
                 <SyncIcon />
+              </RerunButton>
+            </WithTooltip>
+            <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Demo mode" />}>
+              <RerunButton aria-label="Demo mode" onClick={controls.toggleDemoMode}>
+                <ButtonIcon />
               </RerunButton>
             </WithTooltip>
           </Group>

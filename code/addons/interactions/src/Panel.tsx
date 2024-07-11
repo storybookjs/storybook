@@ -1,7 +1,12 @@
 import { global } from '@storybook/global';
 import type { Dispatch, SetStateAction } from 'react';
 import React, { Fragment, memo, useEffect, useMemo, useRef, useState } from 'react';
-import { useAddonState, useChannel, useParameter } from 'storybook/internal/manager-api';
+import {
+  useAddonState,
+  useChannel,
+  useGlobals,
+  useParameter,
+} from 'storybook/internal/manager-api';
 import {
   FORCE_REMOUNT,
   STORY_RENDER_PHASE_CHANGED,
@@ -11,6 +16,7 @@ import {
 } from 'storybook/internal/core-events';
 import { EVENTS, type Call, CallStates, type LogItem } from '@storybook/instrumenter';
 
+import type { Controls } from './components/InteractionsPanel';
 import { InteractionsPanel } from './components/InteractionsPanel';
 import { ADDON_ID } from './constants';
 
@@ -126,6 +132,8 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
     return () => observer?.disconnect();
   }, []);
 
+  const [globals, updateGlobals] = useGlobals();
+
   const emit = useChannel(
     {
       [EVENTS.CALL]: setCall,
@@ -208,7 +216,7 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
     });
   }, [collapsed]);
 
-  const controls = useMemo(
+  const controls: Controls = useMemo(
     () => ({
       start: () => emit(EVENTS.START, { storyId }),
       back: () => emit(EVENTS.BACK, { storyId }),
@@ -218,8 +226,15 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
       rerun: () => {
         emit(FORCE_REMOUNT, { storyId });
       },
+      toggleDemoMode: () => {
+        updateGlobals({
+          ...globals,
+          interactionsDemoMode: !globals.interactionsDemoMode,
+        });
+        emit(FORCE_REMOUNT, { storyId });
+      },
     }),
-    [storyId]
+    [storyId, globals, updateGlobals, emit]
   );
 
   const storyFilePath = useParameter('fileName', '');

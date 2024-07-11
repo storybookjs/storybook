@@ -8,6 +8,7 @@ import type { getStoryIdentifiers } from '#parser/analyse/story/attributes/ident
 export class AttributeNotStringError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseStory;
   readonly code = 1;
+  public documentation = true;
 
   public attribute: Attribute;
 
@@ -26,10 +27,9 @@ export class AttributeNotStringError extends StorybookSvelteCSFError {
 
   template(): string {
     return dedent`
-      Invalid schema.
       In the stories file: ${this.filepathURL}
 
-      A '${this.quickStoryRawCodeIdentifier}' has an attribute '${this.attribute.name}' whose value was expected to be a static literal string.
+      A '${this.quickStoryRawCodeIdentifier}' has a prop '${this.attribute.name}' whose value must be a static literal string.
     `;
   }
 }
@@ -37,6 +37,7 @@ export class AttributeNotStringError extends StorybookSvelteCSFError {
 export class AttributeNotArrayError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseStory;
   readonly code = 2;
+  public documentation = true;
 
   public attribute: Attribute;
 
@@ -67,11 +68,10 @@ export class AttributeNotArrayError extends StorybookSvelteCSFError {
 
   template(): string {
     return dedent`
-      Invalid schema.
       In the stories file: ${this.filepathURL}
 
-        A '${this.quickStoryRawCodeIdentifier}' has attribute '${this.attribute.name}' whose value was expected to be an array expression.
-        Instead the value type is '${this.valueType}'.
+      A '${this.quickStoryRawCodeIdentifier}' has a prop'${this.attribute.name}' whose value was expected to be a static array.
+      Instead the value type is '${this.valueType}'.
     `;
   }
 }
@@ -79,6 +79,7 @@ export class AttributeNotArrayError extends StorybookSvelteCSFError {
 export class AttributeNotArrayOfStringsError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseStory;
   readonly code = 3;
+  public documentation = true;
 
   public attribute: Attribute;
   public element: ArrayExpression['elements'][number];
@@ -113,12 +114,10 @@ export class AttributeNotArrayOfStringsError extends StorybookSvelteCSFError {
 
   template(): string {
     return dedent`
-      Invalid schema.
       In the stories file: ${this.filepathURL}
 
       A '${this.quickStoryRawCodeIdentifier}' has attribute '${this.attribute.name}' whose value was expected to be an array expression.
-      And this array elements are supposed to be static literal strings only.
-      One of the elements has a type '${this.valueType}'
+      All elements in the array must be static literal strings only, but one of the elements is of type '${this.valueType}'.
     `;
   }
 }
@@ -126,6 +125,7 @@ export class AttributeNotArrayOfStringsError extends StorybookSvelteCSFError {
 export class NoStoryIdentifierError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseStory;
   readonly code = 4;
+  public documentation = true;
 
   constructor({
     filename,
@@ -140,7 +140,7 @@ export class NoStoryIdentifierError extends StorybookSvelteCSFError {
   template(): string {
     return dedent`
         Missing 'name' or 'exportName' attribute (prop) in a '<Story />' definition in the stories file:  '${this.filepathURL}'.
-        All stories must either have a 'name' or an 'exportName' prop.
+        All stories must either have a 'name' or an 'exportName' prop, or both.
     `;
   }
 }
@@ -148,6 +148,7 @@ export class NoStoryIdentifierError extends StorybookSvelteCSFError {
 export class InvalidStoryExportNameError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseStory;
   readonly code = 5;
+  public documentation = true;
 
   public value: string;
 
@@ -178,6 +179,7 @@ export class InvalidStoryExportNameError extends StorybookSvelteCSFError {
 export class DuplicateStoryIdentifiersError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseStory;
   readonly code = 6;
+  public documentation = true;
 
   public identifiers: ReturnType<typeof getStoryIdentifiers>;
   public duplicateIdentifiers: NonNullable<ReturnType<typeof getStoryIdentifiers>>;

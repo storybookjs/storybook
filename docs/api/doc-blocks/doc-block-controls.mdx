@@ -100,7 +100,7 @@ Specifies which story to get the controls from. If a CSF file exports is provide
 
 ### `sort`
 
-Type: `'none' | 'alpha' | 'requiredFirst'`
+Type: `'none' | 'alpha' | 'requiredFirst' | SortFn`
 
 Default: `parameters.docs.controls.sort` or `'none'`
 
@@ -109,3 +109,4 @@ Specifies how the controls are sorted.
 * **none**: Unsorted, displayed in the same order the controls are processed in
 * **alpha**: Sorted alphabetically, by the arg type's name
 * **requiredFirst**: Same as `alpha`, with any required controls displayed first
+* **SortFn**: A callback to define your own sorting logic

@@ -475,7 +475,7 @@ Specify preset color swatches for the color picker control. The color value may 
 
 #### `sort`
 
-Type: `'none' | 'alpha' | 'requiredFirst'`
+Type: `'none' | 'alpha' | 'requiredFirst' | SortFn`
 
 Default: `'none'`
 
@@ -484,3 +484,4 @@ Specifies how the controls are sorted.
 * **none**: Unsorted, displayed in the same order the arg types are processed in
 * **alpha**: Sorted alphabetically, by the arg type's name
 * **requiredFirst**: Same as `alpha`, with any required arg types displayed first
+* **SortFn**: A callback to define your own sorting logic

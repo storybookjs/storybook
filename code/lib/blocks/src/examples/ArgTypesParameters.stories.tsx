@@ -49,6 +49,20 @@ export const Sort: Story = {
   parameters: { docs: { argTypes: { sort: 'alpha' } } },
 };
 
+export const SortCustom: Story = {
+  ...NoParameters,
+  parameters: {
+    docs: {
+      argTypes: {
+        sort: (a, b) =>
+          a.table?.category?.localeCompare(b.table?.category) ||
+          (a.type?.required === b.type?.required ? 0 : a.type?.required ? 1 : -1) ||
+          0,
+      },
+    },
+  },
+};
+
 export const Categories: Story = {
   ...NoParameters,
   argTypes: {

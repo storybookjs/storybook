@@ -31,3 +31,14 @@ export const None = { parameters: { controls: { sort: 'none' } } };
 export const Alpha = { parameters: { controls: { sort: 'alpha' } } };
 
 export const RequiredFirst = { parameters: { controls: { sort: 'requiredFirst' } } };
+
+export const CustomSort = {
+  parameters: {
+    controls: {
+      sort: (a, b) =>
+        a.table?.category?.localeCompare(b.table?.category) ||
+        (a.type?.required === b.type?.required ? 0 : a.type?.required ? 1 : -1) ||
+        0,
+    },
+  },
+};

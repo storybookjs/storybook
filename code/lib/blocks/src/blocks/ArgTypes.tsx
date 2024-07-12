@@ -7,7 +7,7 @@ import { filterArgTypes } from 'storybook/internal/preview-api';
 import type { ArgTypesExtractor } from 'storybook/internal/docs-tools';
 import React from 'react';
 
-import type { SortType } from '../components';
+import type { SortFn, SortType } from '../components';
 import { ArgsTable as PureArgsTable, ArgsTableError, TabbedArgsTable } from '../components';
 import { useOf } from './useOf';
 import { getComponentName } from './utils';
@@ -15,7 +15,7 @@ import { getComponentName } from './utils';
 type ArgTypesParameters = {
   include?: PropDescriptor;
   exclude?: PropDescriptor;
-  sort?: SortType;
+  sort?: SortType | SortFn;
 };
 
 type ArgTypesProps = ArgTypesParameters & {

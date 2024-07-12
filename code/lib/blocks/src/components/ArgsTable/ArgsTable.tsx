@@ -180,7 +180,7 @@ export enum ArgsTableError {
 }
 
 export type SortType = 'alpha' | 'requiredFirst' | 'none';
-type SortFn = (a: ArgType, b: ArgType) => number;
+export type SortFn = (a: ArgType, b: ArgType) => number;
 
 const sortFns: Record<SortType, SortFn | null> = {
   alpha: (a: ArgType, b: ArgType) => a.name.localeCompare(b.name),
@@ -197,7 +197,7 @@ export interface ArgsTableOptionProps {
   inAddonPanel?: boolean;
   initialExpandedArgs?: boolean;
   isLoading?: boolean;
-  sort?: SortType;
+  sort?: SortType | SortFn;
 }
 interface ArgsTableDataProps {
   rows: ArgTypes;
@@ -228,7 +228,7 @@ type Sections = {
   sections: Record<string, Section>;
 };
 
-const groupRows = (rows: ArgType, sort: SortType) => {
+const groupRows = (rows: ArgType, sort: SortType | SortFn) => {
   const sections: Sections = { ungrouped: [], ungroupedSubsections: {}, sections: {} };
   if (!rows) return sections;
 
@@ -254,7 +254,7 @@ const groupRows = (rows: ArgType, sort: SortType) => {
   });
 
   // apply sort
-  const sortFn = sortFns[sort];
+  const sortFn = typeof sort === 'function' ? sort : sortFns[sort];
 
   const sortSubsection = (record: Record<string, Subsection>) => {
     if (!sortFn) return record;

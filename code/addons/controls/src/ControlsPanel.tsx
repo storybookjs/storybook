@@ -8,7 +8,12 @@ import {
   useParameter,
   useStorybookState,
 } from 'storybook/internal/manager-api';
-import { PureArgsTable as ArgsTable, type PresetColor, type SortType } from '@storybook/blocks';
+import {
+  PureArgsTable as ArgsTable,
+  type PresetColor,
+  type SortFn,
+  type SortType,
+} from '@storybook/blocks';
 import { styled } from 'storybook/internal/theming';
 import type { ArgTypes } from 'storybook/internal/types';
 
@@ -31,7 +36,7 @@ const AddonWrapper = styled.div({
 });
 
 interface ControlsParameters {
-  sort?: SortType;
+  sort?: SortType | SortFn;
   expanded?: boolean;
   presetColors?: PresetColor[];
 }

@@ -7,7 +7,7 @@ import { filterArgTypes } from 'storybook/internal/preview-api';
 import type { PropDescriptor } from 'storybook/internal/preview-api';
 import type { ArgTypesExtractor } from 'storybook/internal/docs-tools';
 
-import type { SortType } from '../components';
+import type { SortFn, SortType } from '../components';
 import { ArgsTable as PureArgsTable, ArgsTableError, TabbedArgsTable } from '../components';
 import { DocsContext } from './DocsContext';
 import { useGlobals } from './useGlobals';
@@ -17,7 +17,7 @@ import { getComponentName } from './utils';
 type ControlsParameters = {
   include?: PropDescriptor;
   exclude?: PropDescriptor;
-  sort?: SortType;
+  sort?: SortType | SortFn;
 };
 
 type ControlsProps = ControlsParameters & {

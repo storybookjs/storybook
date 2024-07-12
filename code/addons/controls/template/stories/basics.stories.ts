@@ -16,7 +16,7 @@ export default {
         presetColors: ['#ff0', 'pink', { color: '#00f', title: 'mystery' }],
       },
     },
-    colorStartOpen: { control: { type: 'color', startOpen: true } },
+    colorStartOpen: { control: { type: 'color', startOpen: false } },
     date: { control: 'date' },
     file: { control: { type: 'file', accept: '.png' }, name: 'Image Urls' },
     number: { control: 'number' },

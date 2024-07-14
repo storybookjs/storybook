@@ -1,9 +1,4 @@
-// import { SourceType, SNIPPET_RENDERED } from '@storybook/docs-tools';
-// Workaround for @storybook/docs-tools@8.2.0+ only exporting a "require" condition, which isn't usable in the preview context.
-const { SourceType, SNIPPET_RENDERED } = {
-  SourceType: { AUTO: 'auto', CODE: 'code', DYNAMIC: 'dynamic' },
-  SNIPPET_RENDERED: 'storybook/docs/snippet-rendered',
-};
+import { SourceType, SNIPPET_RENDERED } from '@storybook/docs-tools';
 
 import { addons } from '@storybook/preview-api';
 import type { StoryObj } from '@storybook/svelte';

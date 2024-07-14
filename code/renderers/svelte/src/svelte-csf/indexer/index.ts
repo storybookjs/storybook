@@ -58,10 +58,6 @@ export const indexer: Indexer = {
           filename,
         })
       : [];
-    // TODO: Verify if we can remove it
-    const metaId = metaPropertiesNodes.id
-      ? getPropertyStringValue({ node: metaPropertiesNodes.id, filename })
-      : undefined;
 
     return svelteASTNodes.storyComponents.map(({ component }) => {
       const attributeNode = extractStoryAttributesNodes({

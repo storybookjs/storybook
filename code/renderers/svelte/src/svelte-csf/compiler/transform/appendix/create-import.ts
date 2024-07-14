@@ -16,7 +16,6 @@ export function createRuntimeStoriesImport(): ImportDeclaration {
     type: 'ImportDeclaration',
     source: {
       type: 'Literal',
-      // TODO: Probably possible to achieve picking the whole path from `pkg.exports` with Object.keys or something like that
       value: `${pkg.name}/internal/create-runtime-stories`,
     },
     specifiers: [

@@ -91,7 +91,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         ...options.loader,
         '.png': 'dataurl',
       };
-      Object.assign(options, getESBuildOptions(optimized));
+      Object.assign(options, getESBuildOptions());
     },
   };
 
@@ -127,7 +127,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         external: [...commonExternals, ...globalManagerPackages, ...globalPreviewPackages],
         esbuildOptions: (options) => {
           options.platform = 'neutral';
-          Object.assign(options, getESBuildOptions(optimized));
+          Object.assign(options, getESBuildOptions());
         },
       })
     );
@@ -184,7 +184,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         external: commonExternals,
         esbuildOptions: (c) => {
           c.platform = 'node';
-          Object.assign(c, getESBuildOptions(optimized));
+          Object.assign(c, getESBuildOptions());
         },
       })
     );
@@ -239,13 +239,13 @@ async function getDTSConfigs({
   return { dtsBuild, dtsConfig, tsConfigExists };
 }
 
-function getESBuildOptions(optimized: boolean) {
+function getESBuildOptions() {
   return {
     logLevel: 'error',
     legalComments: 'none',
-    minifyWhitespace: optimized,
+    minifyWhitespace: false,
     minifyIdentifiers: false,
-    minifySyntax: optimized,
+    minifySyntax: false,
   };
 }
 

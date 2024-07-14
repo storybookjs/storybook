@@ -70,7 +70,7 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
     target: ['chrome100', 'safari15', 'firefox91'],
     platform: 'browser',
     bundle: true,
-    minify: true,
+    minify: false,
     sourcemap: false,
     conditions: ['browser', 'module', 'default'],
 
@@ -249,7 +249,7 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
   compilation = await instance({
     ...config,
 
-    minify: true,
+    minify: false,
   });
 
   yield;

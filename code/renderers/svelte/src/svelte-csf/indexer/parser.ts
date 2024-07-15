@@ -74,7 +74,9 @@ export async function parseForIndexer(
       const { module, fragment } = node;
       const { state, visit } = context;
 
-      if (!module && !legacyTemplate) {
+      if (module) {
+        visit(module, state);
+      } else if (!legacyTemplate) {
         throw new MissingModuleTagError(filename);
       }
 
@@ -94,11 +96,7 @@ export async function parseForIndexer(
       const { state, visit } = context;
 
       for (const statement of body) {
-        if (
-          legacyTemplate &&
-          statement.type === 'ImportDeclaration' &&
-          statement.source.value === pkg.name
-        ) {
+        if (statement.type === 'ImportDeclaration' && statement.source.value === pkg.name) {
           visit(statement, state);
         }
 
@@ -126,17 +124,17 @@ export async function parseForIndexer(
           throw new DefaultOrNamespaceImportUsedError(filename);
         }
 
-        if (legacyTemplate && specifier.import.name === 'defineMeta') {
+        if (specifier.imported.name === 'defineMeta') {
           state.defineMetaImport = specifier;
         }
 
         // TODO: Remove it in the next major version
-        if (legacyTemplate && specifier.import.name === 'Meta') {
+        if (legacyTemplate && specifier.imported.name === 'Meta') {
           state.legacyMetaImport = specifier;
         }
 
         // TODO: Remove it in the next major version
-        if (legacyTemplate && specifier.import.name === 'Story') {
+        if (legacyTemplate && specifier.imported.name === 'Story') {
           state.legacyStoryImport = specifier;
         }
       }
@@ -215,7 +213,7 @@ export async function parseForIndexer(
 
       for (const property of properties) {
         if (property.type === 'Property' && property.key.type === 'Identifier') {
-          visit(node, state);
+          visit(property, state);
         }
       }
     },

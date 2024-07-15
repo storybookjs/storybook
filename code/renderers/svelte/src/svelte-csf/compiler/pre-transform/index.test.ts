@@ -24,7 +24,7 @@ describe(codemodLegacyNodes.name, () => {
       <Story name="Default" />
     `);
     const ast = getSvelteAST({ code });
-    const transformed = await codemodLegacyNodes(ast);
+    const transformed = await codemodLegacyNodes({ ast });
 
     expect(print(transformed)).toMatchInlineSnapshot(`
       "<script context="module">
@@ -49,7 +49,7 @@ describe(codemodLegacyNodes.name, () => {
       <Meta title="Atoms/Button" component={Button} />
     `);
     const ast = getSvelteAST({ code });
-    const transformed = await codemodLegacyNodes(ast);
+    const transformed = await codemodLegacyNodes({ ast });
 
     expect(print(transformed)).toMatchInlineSnapshot(
       `
@@ -79,7 +79,7 @@ describe(codemodLegacyNodes.name, () => {
       <Story name="Default" />
     `);
     const ast = getSvelteAST({ code });
-    const transformed = await codemodLegacyNodes(ast);
+    const transformed = await codemodLegacyNodes({ ast });
 
     expect(print(transformed)).toMatchInlineSnapshot(`
 			"<script context="module">
@@ -116,28 +116,28 @@ describe(codemodLegacyNodes.name, () => {
       </Story>
     `);
     const ast = getSvelteAST({ code });
-    const transformed = await codemodLegacyNodes(ast);
+    const transformed = await codemodLegacyNodes({ ast });
 
     expect(print(transformed)).toMatchInlineSnapshot(`
-			"<script context="module">
-				import { defineMeta } from "@storybook/addon-svelte-csf";
+      "<script context="module">
+      	import { defineMeta } from "@storybook/addon-svelte-csf";
 
-				/** This is a description for the **Button** component stories. */
-				const { Story } = defineMeta({ title: "Atoms/Button", component: Button });
-			</script>
+      	/** This is a description for the **Button** component stories. */
+      	const { Story } = defineMeta({ title: "Atoms/Button", component: Button });
+      </script>
 
-			{#snippet sample(args, context)}
-				<p>{context.id}</p>
-				<Button {...args} />
-			{/snippet}
-			<Story name="Default" children={sample} tags={["autodocs"]} parameters={{
-				docs: { source: { code: "<Button {...args} />" } }
-			}}>
-				{#snippet children(args, context)}
-					<p>{context.id}</p>
-					<Button {...args} />
-				{/snippet}
-			</Story>"
-		`);
+      {#snippet sample(args, context)}
+      	<p>{context.id}</p>
+      	<Button {...args} />
+      {/snippet}
+      <Story name="Default" children={Sample} tags={["autodocs"]} parameters={{
+      	docs: { source: { code: "<Button {...args} />" } }
+      }}>
+      	{#snippet children(args, context)}
+      		<p>{context.id}</p>
+      		<Button {...args} />
+      	{/snippet}
+      </Story>"
+    `);
   });
 });

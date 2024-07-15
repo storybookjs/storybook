@@ -18,7 +18,7 @@ describe(transformLegacyStory.name, () => {
     `;
     const node = await parseAndExtractSvelteNode<Component>(code, 'Component');
 
-    expect(print(transformLegacyStory(node))).toMatchInlineSnapshot(
+    expect(print(transformLegacyStory({ node }))).toMatchInlineSnapshot(
       `"<Story name="Default" tags={["autodocs"]} />"`
     );
   });
@@ -33,7 +33,7 @@ describe(transformLegacyStory.name, () => {
     `;
     const node = await parseAndExtractSvelteNode<Component>(code, 'Component');
 
-    expect(print(transformLegacyStory(node))).toMatchInlineSnapshot(
+    expect(print(transformLegacyStory({ node }))).toMatchInlineSnapshot(
       `"<Story name="Default" tags={["!dev", "autodocs"]} />"`
     );
   });
@@ -48,7 +48,9 @@ describe(transformLegacyStory.name, () => {
     `;
     const node = await parseAndExtractSvelteNode<Component>(code, 'Component');
 
-    expect(print(transformLegacyStory(node))).toMatchInlineSnapshot(`"<Story name="Default" />"`);
+    expect(print(transformLegacyStory({ node }))).toMatchInlineSnapshot(
+      `"<Story name="Default" />"`
+    );
   });
 
   it("'source' prop when is a text expression gets moved to 'parameters' prop", async ({
@@ -63,7 +65,7 @@ describe(transformLegacyStory.name, () => {
     `;
     const node = await parseAndExtractSvelteNode<Component>(code, 'Component');
 
-    expect(print(transformLegacyStory(node))).toMatchInlineSnapshot(
+    expect(print(transformLegacyStory({ node }))).toMatchInlineSnapshot(
       `
 			"<Story name="Default" parameters={{
 				docs: { source: { code: "'<Button primary />'" } }
@@ -91,7 +93,7 @@ describe(transformLegacyStory.name, () => {
     `;
     const node = await parseAndExtractSvelteNode<Component>(code, 'Component');
 
-    expect(print(transformLegacyStory(node))).toMatchInlineSnapshot(
+    expect(print(transformLegacyStory({ node }))).toMatchInlineSnapshot(
       `
 			"<Story name="Default" parameters={{
 				controls: { disable: true },
@@ -125,7 +127,7 @@ describe(transformLegacyStory.name, () => {
     `;
     const node = await parseAndExtractSvelteNode<Component>(code, 'Component');
 
-    expect(print(transformLegacyStory(node))).toMatchInlineSnapshot(
+    expect(print(transformLegacyStory({ node }))).toMatchInlineSnapshot(
       `
 			"<Story name="Default" parameters={{
 				controls: { disable: true },
@@ -151,8 +153,8 @@ describe(transformLegacyStory.name, () => {
     `;
     const node = await parseAndExtractSvelteNode<Component>(code, 'Component');
 
-    expect(print(transformLegacyStory(node))).toMatchInlineSnapshot(
-      `"<Story name="Default" children={someTemplate} />"`
+    expect(print(transformLegacyStory({ node }))).toMatchInlineSnapshot(
+      `"<Story name="Default" children={SomeTemplate} />"`
     );
   });
 
@@ -171,7 +173,7 @@ describe(transformLegacyStory.name, () => {
     `;
     const node = await parseAndExtractSvelteNode<Component>(code, 'Component');
 
-    expect(print(transformLegacyStory(node))).toMatchInlineSnapshot(`
+    expect(print(transformLegacyStory({ node }))).toMatchInlineSnapshot(`
 			"<Story name="Default">
 				{#snippet children(args)}
 					<Button {...args} />
@@ -195,7 +197,7 @@ describe(transformLegacyStory.name, () => {
     `;
     const node = await parseAndExtractSvelteNode<Component>(code, 'Component');
 
-    expect(print(transformLegacyStory(node))).toMatchInlineSnapshot(`
+    expect(print(transformLegacyStory({ node }))).toMatchInlineSnapshot(`
 			"<Story name="Default">
 				{#snippet children(_args, context)}
 					<p>{context.id}</p>

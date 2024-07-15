@@ -8,7 +8,7 @@ import { transformImportDeclaration } from './import-declaration';
 import { parseAndExtractSvelteNode } from '#tests/extractor';
 
 describe(transformImportDeclaration.name, () => {
-  it("removes legacy components and add 'defineMEta'", async ({ expect }) => {
+  it("removes legacy components and add 'defineMeta'", async ({ expect }) => {
     const code = `
       <script context="module" lang="ts">
         import { Story, Template } from "${pkg.name}";
@@ -16,7 +16,7 @@ describe(transformImportDeclaration.name, () => {
     `;
     const node = await parseAndExtractSvelteNode<ImportDeclaration>(code, 'ImportDeclaration');
 
-    expect(print(transformImportDeclaration(node))).toMatchInlineSnapshot(
+    expect(print(transformImportDeclaration({ node }))).toMatchInlineSnapshot(
       `"import { defineMeta } from "${pkg.name}";"`
     );
   });
@@ -29,7 +29,7 @@ describe(transformImportDeclaration.name, () => {
     `;
     const node = await parseAndExtractSvelteNode<ImportDeclaration>(code, 'ImportDeclaration');
 
-    expect(print(transformImportDeclaration(node))).toMatchInlineSnapshot(
+    expect(print(transformImportDeclaration({ node }))).toMatchInlineSnapshot(
       `"import { defineMeta } from "${pkg.name}";"`
     );
   });

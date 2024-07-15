@@ -4,7 +4,7 @@
   import RequiredSnippet from './RequiredSnippet.svelte';
 
   const { Story } = defineMeta({
-    title: 'Testing/RequiredSnippet',
+    title: 'RequiredSnippet',
     component: RequiredSnippet,
     tags: ['autodocs'],
   });

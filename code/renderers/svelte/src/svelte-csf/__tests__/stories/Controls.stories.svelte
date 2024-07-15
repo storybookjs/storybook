@@ -9,7 +9,7 @@
    * ... or the **Controls tab** in the `Playground` story.
    */
   const { Story } = defineMeta({
-    title: 'Addon/Controls',
+    title: 'Addons/Controls',
     component: Controls,
     tags: ['autodocs', '!dev'],
     args: {

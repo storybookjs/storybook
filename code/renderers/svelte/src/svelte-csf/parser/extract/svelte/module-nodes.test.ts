@@ -3,6 +3,7 @@ import { describe, it } from 'vitest';
 import { extractModuleNodes } from './module-nodes';
 
 import { getSvelteAST } from '#parser/ast';
+import { StorybookSvelteCSFError } from '#utils/error';
 
 describe(extractModuleNodes.name, () => {
   it('fails when module tag not found', ({ expect }) => {
@@ -22,7 +23,7 @@ describe(extractModuleNodes.name, () => {
       const { Story } = defineMeta({});
       </script>
 
-      More info: https://github.com/storybookjs/addon-svelte-csf/blob/v4.1.2/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0001
+      More info: https://github.com/storybookjs/addon-svelte-csf/blob/v${StorybookSvelteCSFError.packageVersion}/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0001
       ]
     `);
   });
@@ -44,7 +45,7 @@ describe(extractModuleNodes.name, () => {
       const { Story } = defineMeta({});
       </script>
 
-      More info: https://github.com/storybookjs/addon-svelte-csf/blob/v4.1.2/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0003
+      More info: https://github.com/storybookjs/addon-svelte-csf/blob/v${StorybookSvelteCSFError.packageVersion}/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0003
       ]
     `);
   });
@@ -69,7 +70,7 @@ describe(extractModuleNodes.name, () => {
       const { Story } = defineMeta({});
       </script>
 
-      More info: https://github.com/storybookjs/addon-svelte-csf/blob/v4.1.2/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004
+      More info: https://github.com/storybookjs/addon-svelte-csf/blob/v${StorybookSvelteCSFError.packageVersion}/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004
       ]
     `);
   });
@@ -94,7 +95,7 @@ describe(extractModuleNodes.name, () => {
       const { Story } = defineMeta({});
       </script>
 
-      More info: https://github.com/storybookjs/addon-svelte-csf/blob/v4.1.2/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004
+      More info: https://github.com/storybookjs/addon-svelte-csf/blob/v${StorybookSvelteCSFError.packageVersion}/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004
       ]
     `);
   });

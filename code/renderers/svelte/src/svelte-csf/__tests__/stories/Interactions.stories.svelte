@@ -6,7 +6,7 @@
   import Interactions from './Interactions.svelte';
 
   const { Story } = defineMeta({
-    title: 'Addon/Interactions',
+    title: 'Addons/Interactions',
     component: Interactions,
     parameters: {
       actions: { disable: true },

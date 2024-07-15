@@ -1,16 +1,15 @@
 <script context="module">
-  import { action } from '@storybook/addon-actions';
+  import { fn } from '@storybook/test';
   import { defineMeta } from '@storybook/addon-svelte-csf';
   import { expect, userEvent, within } from '@storybook/test';
 
   const { Story } = defineMeta({
-    title: 'Addon/Actions',
+    title: 'Addons/Actions',
     args: {
-      onclick: action('I am logging in the actions tab'),
+      onclick: fn().mockName('onclick'),
     },
     parameters: {
       controls: { disable: true },
-      interactions: { disable: true },
     },
   });
 </script>

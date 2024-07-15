@@ -5,6 +5,7 @@ import { getStoryIdentifiers, getStoriesIdentifiers } from './identifiers';
 import { getSvelteAST } from '#parser/ast';
 import { extractSvelteASTNodes } from '#parser/extract/svelte/nodes';
 import { extractStoryAttributesNodes } from '#parser/extract/svelte/story/attributes';
+import { StorybookSvelteCSFError } from '#utils/error';
 
 describe(getStoryIdentifiers.name, () => {
   it("extracts 'exportName' attribute when is a Text string", async () => {
@@ -92,7 +93,10 @@ describe(getStoryIdentifiers.name, () => {
     ).toThrowErrorMatchingInlineSnapshot(
       `
       [SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0004 (NoStoryIdentifierError): Missing 'name' or 'exportName' attribute (prop) in a '<Story />' definition in the stories file:  'file://${process.cwd()}/invalid.stories.svelte'.
-      All stories must either have a 'name' or an 'exportName' prop.]
+      All stories must either have a 'name' or an 'exportName' prop, or both.
+
+      More info: https://github.com/storybookjs/addon-svelte-csf/blob/v${StorybookSvelteCSFError.packageVersion}/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0004
+      ]
     `
     );
   });
@@ -216,7 +220,10 @@ describe(getStoryIdentifiers.name, () => {
 
         'exportName' value must be a valid JavaScript variable name.
         It must start with a letter, $ or _, followed by letters, numbers, $ or _.
-        Reserved words like 'default' are also not allowed (see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#reserved_words)]
+        Reserved words like 'default' are also not allowed (see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#reserved_words)
+
+      More info: https://github.com/storybookjs/addon-svelte-csf/blob/v${StorybookSvelteCSFError.packageVersion}/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0005
+      ]
     `
     );
   });
@@ -289,7 +296,10 @@ describe(getStoriesIdentifiers.name, () => {
       This can happen when 'exportName' is implicitly derived by 'name'.
       Complex names will be simplified to a PascalCased, valid JavaScript variable name,
       eg. 'Some story name!!' will be converted to 'SomeStoryName'.
-      You can fix this collision by providing a unique 'exportName' prop with <Story exportName="SomeUniqueExportName" ... />.]
+      You can fix this collision by providing a unique 'exportName' prop with <Story exportName="SomeUniqueExportName" ... />.
+
+      More info: https://github.com/storybookjs/addon-svelte-csf/blob/v${StorybookSvelteCSFError.packageVersion}/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0006
+      ]
     `
     );
   });
@@ -322,7 +332,10 @@ describe(getStoriesIdentifiers.name, () => {
       This can happen when 'exportName' is implicitly derived by 'name'.
       Complex names will be simplified to a PascalCased, valid JavaScript variable name,
       eg. 'Some story name!!' will be converted to 'SomeStoryName'.
-      You can fix this collision by providing a unique 'exportName' prop with <Story exportName="SomeUniqueExportName" ... />.]
+      You can fix this collision by providing a unique 'exportName' prop with <Story exportName="SomeUniqueExportName" ... />.
+
+      More info: https://github.com/storybookjs/addon-svelte-csf/blob/v${StorybookSvelteCSFError.packageVersion}/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0006
+      ]
     `
     );
   });

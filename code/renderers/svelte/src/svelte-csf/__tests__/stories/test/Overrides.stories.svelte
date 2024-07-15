@@ -6,7 +6,7 @@
    * Testing if **overriding identifier names** of the addon important AST nodes does work.
    */
   const { Story: S, meta: m } = d({
-    title: 'Testing/Overrides',
+    title: 'Overrides',
     parameters: {
       actions: { disable: true },
       controls: { disable: true },

@@ -2,25 +2,29 @@
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
   const { Story } = defineMeta({
-    title: 'Testing/StoryContext',
+    title: 'StoryContext',
     parameters: {
       actions: { disable: true },
       controls: { disable: true },
       interactions: { disable: true },
     },
   });
+
+  // removes circular references
+  function replacer(key, value) {
+    if (['context', 'currentContext'].includes(key)) {
+      return null;
+    }
+    return value;
+  }
 </script>
 
 <Story name="Default">
   {#snippet children(_args, context)}
-    {#each Object.entries(context) as [key, value]}
-      {#if typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' || typeof value === 'function'}
-        <code><strong>StoryContext.{key}:</strong> {value.toString()}</code><br />
-      {:else if typeof value === 'object'}
-        {#each Object.keys(value) as nestedKey}
-          <code><strong>StoryContext.{key}.${nestedKey}</strong></code><br />
-        {/each}
-      {/if}
-    {/each}
+    <pre>
+      <code>
+{JSON.stringify(context, replacer, 2)}
+      </code>
+    </pre>
   {/snippet}
 </Story>

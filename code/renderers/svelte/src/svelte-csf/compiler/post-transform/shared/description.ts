@@ -1,4 +1,4 @@
-import { logger } from '@storybook/client-logger';
+import { logger } from '@storybook/node-logger';
 import dedent from 'dedent';
 import type { ObjectExpression, Property } from 'estree';
 import type { Component } from 'svelte/compiler';
@@ -82,12 +82,16 @@ export const getParametersPropertyValue = (
 
   if (property.value.type !== 'ObjectExpression') {
     logger.warn(dedent`
-      Encountered invalid schema in an attempt to access 'parameters' of ${component ? "Story's prop" : 'defineMeta'}}.
-      Expected value to be an object expression.
-      Instead it was '${property.value.type}'.
-      This issue occurred in the stories file: ${filename}
+      Svelte CSF:
+        Could not access 'parameters' of ${component ? "Story's prop" : 'defineMeta'}}.
+        Expected value to be an object expression.
+        Instead it was '${property.value.type}', in: 
+        ${filename}
+        Property:
+        ${JSON.stringify(property, null, 2)}
     `);
 
+    // TODO: this is unsafe. If this happens, we'll just have an error later on. we want to skip instead.
     return undefined as never;
   }
 
@@ -120,10 +124,13 @@ export const getDocsPropertyValue = (options: Omit<FindPropertyOptions, 'name'>)
 
   if (value.type !== 'ObjectExpression') {
     logger.warn(dedent`
-      Encountered invalid schema in an attempt to access 'parameters.docs' of ${component ? "Story's prop" : 'defineMeta'}}.
-      Expected value to be an object expression.
-      Instead it was '${value.type}'.
-      This issue occurred in the stories file: ${filename}
+      Svelte CSF:
+        Could not access 'parameters.docs' of ${component ? "Story's prop" : 'defineMeta'}}.
+        Expected value to be an object expression.
+        Instead it was '${property.value.type}', in: 
+        ${filename}
+        Property:
+        ${JSON.stringify(property, null, 2)}
     `);
     return undefined as never;
   }
@@ -152,10 +159,13 @@ export const getDescriptionPropertyValue = (options: Omit<FindPropertyOptions, '
 
   if (value.type !== 'ObjectExpression') {
     logger.warn(dedent`
-      Encountered invalid schema in an attempt to access 'parameters.docs.description' of ${component ? "Story's prop" : 'defineMeta'}}.
-      Expected value to be an object expression.
-      Instead it was '${value.type}'.
-      This issue occurred in the stories file: ${filename}.
+      Svelte CSF:
+        Could not access 'parameters.docs.description' of ${component ? "Story's prop" : 'defineMeta'}}.
+        Expected value to be an object expression.
+        Instead it was '${property.value.type}', in: 
+        ${filename}
+        Property:
+        ${JSON.stringify(property, null, 2)}
     `);
     return undefined as never;
   }

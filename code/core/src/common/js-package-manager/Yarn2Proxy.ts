@@ -120,16 +120,22 @@ export class Yarn2Proxy extends JsPackageManager {
     return this.executeCommand({ command: 'yarn', args: [command, ...args], cwd });
   }
 
-  public async findInstallations(pattern: string[]) {
-    const commandResult = await this.executeCommand({
-      command: 'yarn',
-      args: ['info', '--name-only', '--recursive', ...pattern],
-      env: {
-        FORCE_COLOR: 'false',
-      },
-    });
+  public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {
+    const yarnArgs = ['info', '--name-only'];
+
+    if (depth !== 0) {
+      yarnArgs.push('--recursive');
+    }
 
     try {
+      const commandResult = await this.executeCommand({
+        command: 'yarn',
+        args: yarnArgs.concat(pattern),
+        env: {
+          FORCE_COLOR: 'false',
+        },
+      });
+
       return this.mapDependencies(commandResult, pattern);
     } catch (e) {
       return undefined;

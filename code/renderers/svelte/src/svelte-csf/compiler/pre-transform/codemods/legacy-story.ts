@@ -14,9 +14,17 @@ import {
   createASTObjectExpression,
   createASTProperty,
 } from '#parser/ast';
+import { InvalidTemplateAttribute } from '#utils/error/codemod/index';
+import { storyNameToExportName } from '#utils/identifier-utils';
 
-export function transformLegacyStory(component: Component): Component {
-  let { attributes, fragment, ...rest } = component;
+interface Params {
+  node: Component;
+  filename?: string;
+}
+
+export function transformLegacyStory(params: Params): Component {
+  const { node, filename } = params;
+  let { attributes, fragment, ...rest } = node;
 
   let newAttributes: Component['attributes'] = [];
   let autodocs: Attribute | undefined;
@@ -43,6 +51,7 @@ export function transformLegacyStory(component: Component): Component {
 
     if (attribute.type === 'Attribute' && attribute.name === 'source') {
       const { value } = attribute;
+
       if (value === true) continue;
       source = attribute;
       continue;
@@ -50,6 +59,7 @@ export function transformLegacyStory(component: Component): Component {
 
     if (attribute.type === 'Attribute' && attribute.name === 'parameters') {
       const { value } = attribute;
+
       if (value === true || value[0].type === 'Text') continue; // WARN: Invalid syntax (shorthand or text expression), but lets move on
       parameters = attribute;
       continue;
@@ -63,7 +73,7 @@ export function transformLegacyStory(component: Component): Component {
     }
 
     if (attribute.type === 'Attribute' && attribute.name === 'template') {
-      attribute = templateToChildren(attribute);
+      attribute = templateToChildren(attribute, filename);
     }
 
     newAttributes.push(attribute);
@@ -205,12 +215,11 @@ function getSourceValue(attribute: Attribute): string | undefined {
   }
 }
 
-function templateToChildren(attribute: Attribute): Attribute {
+function templateToChildren(attribute: Attribute, filename?: string): Attribute {
   const { name, value, ...rest } = attribute;
 
   if (value === true) {
-    // TODO: Improve error message
-    throw new Error('');
+    throw new InvalidTemplateAttribute({ attribute, filename });
   }
 
   return {
@@ -219,11 +228,14 @@ function templateToChildren(attribute: Attribute): Attribute {
     value: [
       createASTExpressionTag({
         type: 'Identifier',
-        // TODO: Transform name to be snakeCase or valid JavaScript syntax for naming variables
         name:
-          value[0].type === 'Text'
-            ? value[0].data
-            : ((value[0].expression as Literal).value as string),
+          // NOTE: Transform name to be snakeCase or valid JavaScript syntax for naming variables
+          // TODO: change function name, because it does the same job?
+          storyNameToExportName(
+            value[0].type === 'Text'
+              ? value[0].data
+              : ((value[0].expression as Literal).value as string)
+          ),
       }),
     ],
   };

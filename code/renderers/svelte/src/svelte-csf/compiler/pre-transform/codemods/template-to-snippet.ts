@@ -29,10 +29,7 @@ export function transformTemplateToSnippet(component: Component): SnippetBlock {
   const { attributes, fragment, parent, start, end } = component;
 
   const attributeId = attributes.find((attr) => {
-    if (attr.type === 'Attribute') {
-      return attr.name === 'id';
-    }
-    // Will TypeScript 5.5 handle type inference for this one better? 🤔
+    return attr.type === 'Attribute' && attr.name === 'id';
   }) as Attribute | undefined;
 
   const id = getStringValueFromAttribute({
@@ -41,17 +38,11 @@ export function transformTemplateToSnippet(component: Component): SnippetBlock {
   });
 
   const letDirectiveArgs = attributes.find((attr) => {
-    if (attr.type === 'LetDirective') {
-      return attr.name === 'args';
-    }
-    // Will TypeScript 5.5 handle type inference for this one better? 🤔
+    return attr.type === 'LetDirective' && attr.name === 'args';
   }) as LetDirective | undefined;
 
   const letDirectiveContext = attributes.find((attr) => {
-    if (attr.type === 'LetDirective') {
-      return attr.name === 'context';
-    }
-    // Will TypeScript 5.5 handle type inference for this one better? 🤔
+    return attr.type === 'LetDirective' && attr.name === 'context';
   }) as LetDirective | undefined;
 
   let parameters: SnippetBlock['parameters'] = [];

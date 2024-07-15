@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 
 import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
 import type { IndexInput } from '@storybook/types';
-import type { Identifier, Property } from 'estree';
+import type { Identifier, ImportSpecifier, Property } from 'estree';
 import { preprocess, type Script, type SvelteNode } from 'svelte/compiler';
 
 import { getSvelteAST } from '#parser/ast';
@@ -21,7 +21,9 @@ import {
   DefaultOrNamespaceImportUsedError,
   GetDefineMetaFirstArgumentError,
   MissingModuleTagError,
+  NoStoryComponentDestructuredError,
 } from '#utils/error/parser/extract/svelte';
+import { NoDestructuredDefineMetaCallError } from '#utils/error/parser/analyse/define-meta';
 
 interface Results {
   meta: Pick<IndexInput, 'title' | 'tags'>;
@@ -41,11 +43,6 @@ export async function parseForIndexer(
   const { legacyTemplate } = options;
   const svelteConfig = await loadSvelteConfig();
 
-  let defineMetaIdentifier = 'defineMeta';
-  let componentStoryIdentifier = 'Story';
-  // TODO: Remove it in the next major version
-  let componentMetaIdentifier = 'Meta';
-
   if (svelteConfig?.preprocess) {
     code = (
       await preprocess(code, svelteConfig.preprocess, {
@@ -55,7 +52,12 @@ export async function parseForIndexer(
   }
 
   const svelteAST = getSvelteAST({ code, filename });
-  let results: Results = {
+  let results: Results & {
+    defineMetaImport?: ImportSpecifier;
+    legacyMetaImport?: ImportSpecifier;
+    legacyStoryImport?: ImportSpecifier;
+    defineMetaStory?: Identifier;
+  } = {
     meta: {},
     stories: [],
   };
@@ -115,26 +117,27 @@ export async function parseForIndexer(
       }
     },
 
-    ImportDeclaration(node, _context) {
+    ImportDeclaration(node, context) {
       const { specifiers } = node;
+      const { state } = context;
 
       for (const specifier of specifiers) {
         if (specifier.type !== 'ImportSpecifier') {
           throw new DefaultOrNamespaceImportUsedError(filename);
         }
 
-        if (legacyTemplate && specifier.import.name === defineMetaIdentifier) {
-          componentMetaIdentifier = specifier.local.name;
+        if (legacyTemplate && specifier.import.name === 'defineMeta') {
+          state.defineMetaImport = specifier;
         }
 
         // TODO: Remove it in the next major version
-        if (legacyTemplate && specifier.import.name === componentMetaIdentifier) {
-          componentMetaIdentifier = specifier.local.name;
+        if (legacyTemplate && specifier.import.name === 'Meta') {
+          state.legacyMetaImport = specifier;
         }
 
         // TODO: Remove it in the next major version
-        if (legacyTemplate && specifier.import.name === componentStoryIdentifier) {
-          componentStoryIdentifier = specifier.local.name;
+        if (legacyTemplate && specifier.import.name === 'Story') {
+          state.legacyStoryImport = specifier;
         }
       }
     },
@@ -147,12 +150,14 @@ export async function parseForIndexer(
       if (init?.type === 'CallExpression') {
         const { arguments: arguments_, callee } = init;
 
-        if (callee.type === 'Identifier' && callee.name === defineMetaIdentifier) {
+        if (callee.type === 'Identifier' && callee.name === state.defineMetaImport?.local.name) {
           foundMeta = true;
 
           if (id?.type !== 'ObjectPattern') {
-            // TODO:
-            throw new Error('Invalid syntax');
+            throw new NoDestructuredDefineMetaCallError({
+              defineMetaVariableDeclarator: declarations[0],
+              filename,
+            });
           }
 
           const { properties } = id;
@@ -160,15 +165,17 @@ export async function parseForIndexer(
             (property) =>
               property.type === 'Property' &&
               property.key.type === 'Identifier' &&
-              property.key.name === componentStoryIdentifier
+              property.key.name === 'Story'
           ) as Property | undefined;
 
           if (!destructuredStoryIdentifier) {
-            // TODO:
-            throw new Error('Invalid syntax');
+            throw new NoStoryComponentDestructuredError({
+              filename,
+              defineMetaImport: state.defineMetaImport,
+            });
           }
 
-          componentStoryIdentifier = (destructuredStoryIdentifier.value as Identifier).name;
+          state.defineMetaStory = destructuredStoryIdentifier.value as Identifier;
 
           if (arguments_[0].type !== 'ObjectExpression') {
             throw new GetDefineMetaFirstArgumentError({
@@ -181,6 +188,7 @@ export async function parseForIndexer(
         }
       }
 
+      // TODO: Remove in the next major version
       if (legacyTemplate && !foundMeta && id.type === 'Identifier') {
         const { name } = id;
 
@@ -246,7 +254,7 @@ export async function parseForIndexer(
       const { state } = context;
 
       // TODO: Remove in the next major version
-      if (!foundMeta && legacyTemplate && name === componentMetaIdentifier) {
+      if (!foundMeta && legacyTemplate && name === state.legacyMetaImport?.local.name) {
         const { attributes } = node;
         for (const attribute of attributes) {
           if (attribute.type === 'Attribute') {
@@ -273,7 +281,11 @@ export async function parseForIndexer(
         }
       }
 
-      if (name === componentStoryIdentifier) {
+      if (
+        state.defineMetaStory?.name === name ||
+        // TODO: Remove in the next major version
+        (legacyTemplate && name === state.legacyStoryImport?.local.name)
+      ) {
         const attribute = extractStoryAttributesNodes({
           component: node,
           attributes: ['exportName', 'name', 'tags'],
@@ -300,5 +312,10 @@ export async function parseForIndexer(
     },
   });
 
-  return results;
+  const { meta, stories } = results;
+
+  return {
+    meta,
+    stories,
+  };
 }

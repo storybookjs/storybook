@@ -1,4 +1,11 @@
+import { DefaultOrNamespaceImportUsedError } from '#utils/error/parser/extract/svelte';
 import type { Identifier, ImportDeclaration } from 'estree';
+
+interface Params {
+  node: ImportDeclaration;
+  filename?: string;
+}
+
 /**
  *
  * Codemod to transform AST node of {@link ImportDeclaration} specifiers.
@@ -12,18 +19,16 @@ import type { Identifier, ImportDeclaration } from 'estree';
  * } from "@storybook/addon-svelte-csf";
  * ```
  */
-export function transformImportDeclaration(
-  importDeclaration: ImportDeclaration
-): ImportDeclaration {
-  let { specifiers, ...rest } = importDeclaration;
+export function transformImportDeclaration(params: Params): ImportDeclaration {
+  const { node, filename } = params;
+  let { specifiers, ...rest } = node;
 
   let newSpecifiers: typeof specifiers = [];
   let hasDefineMeta = false;
 
   for (const specifier of specifiers) {
     if (specifier.type !== 'ImportSpecifier') {
-      // TODO: Update and document error message, this issue could exist in both legacy and new syntax
-      throw new Error();
+      throw new DefaultOrNamespaceImportUsedError(filename);
     }
 
     if (specifier.imported.name === 'defineMeta') {

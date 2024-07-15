@@ -12,7 +12,9 @@ import type {
 import StoryComponent from './runtime/Story.svelte';
 // TODO: Remove in next major release
 import LegacyMetaComponent from './runtime/LegacyMeta.svelte';
+// TODO: Remove in next major release
 import LegacyStoryComponent from './runtime/LegacyStory.svelte';
+// TODO: Remove in next major release
 import LegacyTemplateComponent from './runtime/LegacyTemplate.svelte';
 
 export { setTemplate } from './runtime/contexts/template.svelte';
@@ -37,6 +39,7 @@ export type StoryContext<TStoryCmp> =
     ? BaseStoryContext<TCmpOrArgs, TMeta>
     : never;
 
+// TODO: Remove in next major release
 export {
   /**
    * @deprecated Use `defineMeta` instead

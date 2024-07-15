@@ -34,7 +34,10 @@ export async function preTransformPlugin(): Promise<Plugin> {
       const { print } = await import('svelte-ast-print');
 
       const svelteAST = getSvelteAST({ code, filename: id });
-      const transformedSvelteAST = await codemodLegacyNodes(svelteAST);
+      const transformedSvelteAST = await codemodLegacyNodes({
+        ast: svelteAST,
+        filename: id,
+      });
 
       let magicCode = new MagicString(code);
 

@@ -7,9 +7,17 @@ import { transformExportMetaToDefineMeta } from '#compiler/pre-transform/codemod
 import { transformImportDeclaration } from '#compiler/pre-transform/codemods/import-declaration';
 import { transformLegacyStory } from '#compiler/pre-transform/codemods/legacy-story';
 import { transformTemplateToSnippet } from '#compiler/pre-transform/codemods/template-to-snippet';
+import { MissingModuleTagError } from '#utils/error/parser/extract/svelte';
 
-export async function codemodLegacyNodes(ast: Root): Promise<Root> {
+interface Params {
+  ast: Root;
+  filename?: string;
+}
+
+export async function codemodLegacyNodes(params: Params): Promise<Root> {
   const { walk } = await import('zimmerframe');
+
+  const { ast, filename } = params;
 
   interface State {
     componentIdentifierName: ComponentIdentifierName;
@@ -22,18 +30,21 @@ export async function codemodLegacyNodes(ast: Root): Promise<Root> {
   let transformedAst = walk(ast as SvelteNode | Script, state, {
     _(_node, context) {
       const { next, state } = context;
+
       next(state);
     },
 
     Root(node, context) {
       const { fragment, module, ...rest } = node;
       const { state, visit } = context;
+
       if (!module) {
-        // TODO: Add description & document - invalid syntax in both modern and legacy
-        throw new Error();
+        throw new MissingModuleTagError(filename);
       }
+
       const transformedModule = visit(module, state) as Script;
       const transformedFragment = visit(fragment, state) as Fragment;
+
       return {
         ...rest,
         fragment: transformedFragment,
@@ -43,6 +54,7 @@ export async function codemodLegacyNodes(ast: Root): Promise<Root> {
 
     Script(node, context) {
       const { next, state } = context;
+
       if (node.context === 'module') {
         next(state);
       }
@@ -50,6 +62,7 @@ export async function codemodLegacyNodes(ast: Root): Promise<Root> {
 
     Program(_node, context) {
       const { next, state } = context;
+
       next(state);
     },
 
@@ -57,14 +70,17 @@ export async function codemodLegacyNodes(ast: Root): Promise<Root> {
       const { source, specifiers } = node;
       const { state } = context;
       const { value } = source;
+
       if (value === pkg.name) {
         state.componentIdentifierName = getComponentsIdentifiersNames(specifiers);
-        return transformImportDeclaration(node);
+
+        return transformImportDeclaration({ node, filename });
       }
     },
 
     ExportNamedDeclaration(node, _context) {
       const { declaration } = node;
+
       if (
         declaration &&
         declaration.type === 'VariableDeclaration' &&
@@ -78,11 +94,13 @@ export async function codemodLegacyNodes(ast: Root): Promise<Root> {
 
     Fragment(_node, context) {
       const { next, state } = context;
+
       next(state);
     },
 
     Comment(node, context) {
       const { state } = context;
+
       state.componentMetaHtmlComment = node;
     },
 
@@ -90,16 +108,19 @@ export async function codemodLegacyNodes(ast: Root): Promise<Root> {
       const { name } = node;
       const { state } = context;
       const { componentIdentifierName, componentMetaHtmlComment } = state;
+
       if (name === componentIdentifierName?.Meta) {
         state.defineMetaFromMeta = transformComponentMetaToDefineMeta({
           component: node,
           comment: componentMetaHtmlComment,
         });
       }
+
       if (name === componentIdentifierName?.Story) {
         state.componentMetaHtmlComment = undefined;
-        return transformLegacyStory(node);
+        return transformLegacyStory({ node, filename });
       }
+
       if (name === componentIdentifierName?.Template) {
         state.componentMetaHtmlComment = undefined;
         return transformTemplateToSnippet(node);
@@ -116,34 +137,43 @@ export async function codemodLegacyNodes(ast: Root): Promise<Root> {
   transformedAst = walk(transformedAst, null, {
     Script(node, context) {
       const { context: scriptContext } = node;
+
       if (scriptContext === 'module') {
         const { next, state } = context;
+
         next(state);
       }
     },
 
     Program(node, _context) {
       let { body, ...rest } = node;
+
       if (defineMetaFromMeta) {
         body.push(defineMetaFromMeta);
+
         return { ...rest, body };
       }
     },
 
     Fragment(node, context) {
       const { stop } = context;
+
       if (defineMetaFromMeta) {
         let { nodes, ...rest } = node;
+
         const componentMetaIndex = nodes.findIndex(
           (node) => node.type === 'Component' && node.name === componentIdentifierName.Meta
         );
+
         if (componentMetaIndex !== -1) {
           // NOTE: Removes Meta component AST
           nodes.splice(componentMetaIndex, 1);
+
           if (nodes[componentMetaIndex - 1]?.type === 'Comment') {
             // NOTE: Removes leading Ccomment
             nodes.splice(componentMetaIndex - 1, 1);
           }
+
           if (
             nodes[componentMetaIndex - 1]?.type === 'Text' &&
             nodes[componentMetaIndex - 2]?.type === 'Comment'
@@ -152,8 +182,10 @@ export async function codemodLegacyNodes(ast: Root): Promise<Root> {
             nodes.splice(componentMetaIndex - 2, 2);
           }
         }
+
         return { ...rest, nodes };
       }
+
       stop();
     },
   });

@@ -18,6 +18,7 @@ export abstract class StorybookSvelteCSFError extends Error {
     parserAnalyseDefineMeta: 'PARSER_ANALYSE_DEFINE_META',
     parserAnalyseStory: 'PARSER_ANALYSE_STORY',
     compiler: 'COMPILER',
+    codemod: 'CODEMOD',
   } as const;
 
   /**

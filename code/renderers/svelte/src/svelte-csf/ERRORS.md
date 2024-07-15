@@ -325,3 +325,19 @@ eg. `Some story name!!` will be converted to `SomeStoryName`.
 You can fix this collision by providing a unique `exportName` prop with`<Story exportName="SomeUniqueExportName" ... />`.
 
 See more in [the `exportName` API docs](./README.md#custom-export-name).
+
+## `CODEMOD`
+
+### `SB_SVELTE_CSF_CODEMOD_0001`
+
+`<Story/>` component prop `template` value must be a text with string reference to existing `<Template />`' component property `id`.
+
+It cannot be a shorthand or a dynamic value.
+
+```diff
+<Story
+-  template
+-  template={dynamicId}
++  template="custom-template"
+/>
+```

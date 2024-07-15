@@ -3,7 +3,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { dedent } from 'ts-dedent';
 
 import * as t from '@babel/types';
-import bg from '@babel/generator';
+import bg, { type GeneratorOptions } from '@babel/generator';
 import bt from '@babel/traverse';
 
 import * as recast from 'recast';
@@ -599,15 +599,9 @@ export const loadCsf = (code: string, options: CsfOptions) => {
   return new CsfFile(ast, options);
 };
 
-interface FormatOptions {
-  sourceMaps?: boolean;
-  preserveStyle?: boolean;
-  inputSourceMap?: any;
-}
-
 export const formatCsf = (
   csf: CsfFile,
-  options: FormatOptions = { sourceMaps: false },
+  options: GeneratorOptions & { inputSourceMap?: any } = { sourceMaps: false },
   code?: string
 ) => {
   const result = generate(csf._ast, options, code);

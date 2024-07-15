@@ -500,6 +500,10 @@ export abstract class JsPackageManager {
     stdio?: 'inherit' | 'pipe'
   ): string;
   public abstract findInstallations(pattern?: string[]): Promise<InstallationMetadata | undefined>;
+  public abstract findInstallations(
+    pattern?: string[],
+    options?: { depth: number }
+  ): Promise<InstallationMetadata | undefined>;
   public abstract parseErrorFromLogs(logs?: string): string;
 
   public executeCommandSync({

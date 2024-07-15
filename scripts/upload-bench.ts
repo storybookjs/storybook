@@ -80,8 +80,13 @@ const uploadBench = async () => {
   const appTable = dataset.table('bench2');
 
   async function uploadToGithub() {
-    if (templateKey !== 'bench/react-vite-default-ts') {
-      console.log('skip uploading results to github because we can only upload 1 result per PR.');
+    if (
+      !prNumber ||
+      !baseBranch ||
+      prNumber === '0' ||
+      templateKey !== 'bench/react-vite-default-ts'
+    ) {
+      console.log('skip uploading results to github');
       return;
     }
     const [[base]]: any[] = await appTable.query({

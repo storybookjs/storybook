@@ -23,7 +23,6 @@ import { commonGlobOptions, normalizeStoryPath } from '@storybook/core/common';
 import { logger, once } from '@storybook/core/node-logger';
 import { getStorySortParameter, loadConfig } from '@storybook/core/csf-tools';
 import { storyNameFromExport, toId, combineTags } from '@storybook/csf';
-import { analyze } from '@storybook/docs-mdx';
 import { dedent } from 'ts-dedent';
 import { autoName } from './autoName';
 import { IndexingError, MultipleIndexingError } from './IndexingError';
@@ -408,7 +407,8 @@ export class StoryIndexGenerator {
 
       const content = await fs.readFile(absolutePath, 'utf8');
 
-      const result = analyze(content);
+      const { analyze } = await import('@storybook/docs-mdx');
+      const result = await analyze(content);
 
       // Templates are not indexed
       if (result.isTemplate) return false;

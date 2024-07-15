@@ -263,10 +263,7 @@ type UnwrappedJSXStoryRef = {
   __pw_type: 'jsx';
   type: UnwrappedImportStoryRef;
 };
-type UnwrappedImportStoryRef = ComposedStoryFn & {
-  playPromise?: Promise<void>;
-  renderingEnded?: PromiseWithResolvers<void>;
-};
+type UnwrappedImportStoryRef = ComposedStoryFn;
 
 declare global {
   function __pwUnwrapObject(

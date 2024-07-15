@@ -5437,8 +5437,12 @@ __metadata:
     "@angular/platform-browser": "npm:^17.3.0"
     "@angular/platform-browser-dynamic": "npm:^17.3.0"
     "@storybook/builder-webpack5": "workspace:*"
+    "@storybook/components": "workspace:^"
     "@storybook/core-webpack": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
+    "@storybook/manager-api": "workspace:^"
+    "@storybook/preview-api": "workspace:^"
+    "@storybook/theming": "workspace:^"
     "@types/cross-spawn": "npm:^6.0.2"
     "@types/node": "npm:^18.0.0"
     "@types/react": "npm:^18.0.37"
@@ -5688,7 +5692,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/components@workspace:deprecated/components":
+"@storybook/components@workspace:^, @storybook/components@workspace:deprecated/components":
   version: 0.0.0-use.local
   resolution: "@storybook/components@workspace:deprecated/components"
   peerDependencies:
@@ -5758,7 +5762,7 @@ __metadata:
     "@radix-ui/react-scroll-area": "npm:^1.0.5"
     "@radix-ui/react-slot": "npm:^1.0.2"
     "@storybook/csf": "npm:0.1.11"
-    "@storybook/docs-mdx": "npm:3.1.0-next.0"
+    "@storybook/docs-mdx": "npm:4.0.0-next.0"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^1.2.5"
     "@tanstack/react-virtual": "npm:^3.3.0"
@@ -5911,10 +5915,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/docs-mdx@npm:3.1.0-next.0":
-  version: 3.1.0-next.0
-  resolution: "@storybook/docs-mdx@npm:3.1.0-next.0"
-  checksum: 10c0/7622d7c6318e842c90a71c1836d68531236c31fff7081c885803eddfafb7e3f8998689f612eaa0292209ada8352a36657dcacb5d3ef4632b8e8b8a283c39602e
+"@storybook/docs-mdx@npm:4.0.0-next.0":
+  version: 4.0.0-next.0
+  resolution: "@storybook/docs-mdx@npm:4.0.0-next.0"
+  dependencies:
+    acorn: "npm:^8.12.1"
+  checksum: 10c0/6253361e4e3c6c716c4f4c8cc30c082bcdab66b35b30183f6574d94720d875e28927916be8bda0bff4987090c3e50d348ca898160b1812a90c5afa845400414e
   languageName: node
   linkType: hard
 
@@ -5998,7 +6004,11 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/html@workspace:renderers/html"
   dependencies:
+    "@storybook/components": "workspace:^"
     "@storybook/global": "npm:^5.0.0"
+    "@storybook/manager-api": "workspace:^"
+    "@storybook/preview-api": "workspace:^"
+    "@storybook/theming": "workspace:^"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.3.2"
   peerDependencies:
@@ -6056,7 +6066,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/manager-api@workspace:deprecated/manager-api":
+"@storybook/manager-api@workspace:^, @storybook/manager-api@workspace:deprecated/manager-api":
   version: 0.0.0-use.local
   resolution: "@storybook/manager-api@workspace:deprecated/manager-api"
   peerDependencies:
@@ -6185,7 +6195,11 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/preact@workspace:renderers/preact"
   dependencies:
+    "@storybook/components": "workspace:^"
     "@storybook/global": "npm:^5.0.0"
+    "@storybook/manager-api": "workspace:^"
+    "@storybook/preview-api": "workspace:^"
+    "@storybook/theming": "workspace:^"
     preact: "npm:^10.5.13"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.3.2"
@@ -6325,7 +6339,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/preview-api@workspace:deprecated/preview-api":
+"@storybook/preview-api@workspace:^, @storybook/preview-api@workspace:deprecated/preview-api":
   version: 0.0.0-use.local
   resolution: "@storybook/preview-api@workspace:deprecated/preview-api"
   peerDependencies:
@@ -6418,9 +6432,13 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/react@workspace:renderers/react"
   dependencies:
+    "@storybook/components": "workspace:^"
     "@storybook/global": "npm:^5.0.0"
+    "@storybook/manager-api": "workspace:^"
+    "@storybook/preview-api": "workspace:^"
     "@storybook/react-dom-shim": "workspace:*"
     "@storybook/test": "workspace:*"
+    "@storybook/theming": "workspace:^"
     "@types/babel-plugin-react-docgen": "npm:^4"
     "@types/escodegen": "npm:^0.0.6"
     "@types/estree": "npm:^0.0.51"
@@ -6624,8 +6642,12 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/server@workspace:renderers/server"
   dependencies:
+    "@storybook/components": "workspace:^"
     "@storybook/csf": "npm:0.1.11"
     "@storybook/global": "npm:^5.0.0"
+    "@storybook/manager-api": "workspace:^"
+    "@storybook/preview-api": "workspace:^"
+    "@storybook/theming": "workspace:^"
     "@types/fs-extra": "npm:^11.0.1"
     fs-extra: "npm:^11.1.0"
     ts-dedent: "npm:^2.0.0"
@@ -6694,7 +6716,11 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/svelte@workspace:renderers/svelte"
   dependencies:
+    "@storybook/components": "workspace:^"
     "@storybook/global": "npm:^5.0.0"
+    "@storybook/manager-api": "workspace:^"
+    "@storybook/preview-api": "workspace:^"
+    "@storybook/theming": "workspace:^"
     "@sveltejs/vite-plugin-svelte": "npm:^3.0.2"
     "@testing-library/jest-dom": "npm:^6.4.1"
     "@testing-library/svelte": "patch:@testing-library/svelte@npm%3A4.1.0#~/.yarn/patches/@testing-library-svelte-npm-4.1.0-34b7037bc0.patch"
@@ -6771,7 +6797,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/theming@workspace:*, @storybook/theming@workspace:deprecated/theming":
+"@storybook/theming@workspace:*, @storybook/theming@workspace:^, @storybook/theming@workspace:deprecated/theming":
   version: 0.0.0-use.local
   resolution: "@storybook/theming@workspace:deprecated/theming"
   peerDependencies:
@@ -6830,7 +6856,11 @@ __metadata:
   resolution: "@storybook/vue3@workspace:renderers/vue3"
   dependencies:
     "@digitak/esrun": "npm:^3.2.2"
+    "@storybook/components": "workspace:^"
     "@storybook/global": "npm:^5.0.0"
+    "@storybook/manager-api": "workspace:^"
+    "@storybook/preview-api": "workspace:^"
+    "@storybook/theming": "workspace:^"
     "@testing-library/vue": "npm:^8.0.0"
     "@types/prettier": "npm:^3.0.0"
     "@vitejs/plugin-vue": "npm:^4.4.0"
@@ -6881,7 +6911,11 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/web-components@workspace:renderers/web-components"
   dependencies:
+    "@storybook/components": "workspace:^"
     "@storybook/global": "npm:^5.0.0"
+    "@storybook/manager-api": "workspace:^"
+    "@storybook/preview-api": "workspace:^"
+    "@storybook/theming": "workspace:^"
     "@types/cross-spawn": "npm:^6.0.2"
     "@types/node": "npm:^18.0.0"
     cross-spawn: "npm:^7.0.3"
@@ -9241,7 +9275,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"acorn@npm:^8.0.0, acorn@npm:^8.10.0, acorn@npm:^8.11.2, acorn@npm:^8.11.3, acorn@npm:^8.4.1, acorn@npm:^8.6.0, acorn@npm:^8.7.1, acorn@npm:^8.8.2, acorn@npm:^8.9.0":
+"acorn@npm:^8.0.0, acorn@npm:^8.10.0, acorn@npm:^8.11.2, acorn@npm:^8.11.3, acorn@npm:^8.12.1, acorn@npm:^8.4.1, acorn@npm:^8.6.0, acorn@npm:^8.7.1, acorn@npm:^8.8.2, acorn@npm:^8.9.0":
   version: 8.12.1
   resolution: "acorn@npm:8.12.1"
   bin:

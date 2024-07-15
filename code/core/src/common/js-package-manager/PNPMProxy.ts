@@ -98,16 +98,16 @@ export class PNPMProxy extends JsPackageManager {
     });
   }
 
-  public async findInstallations(pattern: string[]) {
-    const commandResult = await this.executeCommand({
-      command: 'pnpm',
-      args: ['list', pattern.map((p) => `"${p}"`).join(' '), '--json', '--depth=99'],
-      env: {
-        FORCE_COLOR: 'false',
-      },
-    });
-
+  public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {
     try {
+      const commandResult = await this.executeCommand({
+        command: 'pnpm',
+        args: ['list', pattern.map((p) => `"${p}"`).join(' '), '--json', `--depth=${depth}`],
+        env: {
+          FORCE_COLOR: 'false',
+        },
+      });
+
       const parsedOutput = JSON.parse(commandResult);
       return this.mapDependencies(parsedOutput, pattern);
     } catch (e) {

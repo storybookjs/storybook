@@ -10,7 +10,7 @@ const meta: Meta<Button> = {
 export default meta;
 type Story = StoryObj<Button>;
 
-//👇 Throws a type error it the args don't match the component props
+//👇 Throws a type error if the args don't match the component props
 export const Primary: Story = {
   args: {
     primary: true,
@@ -31,7 +31,7 @@ const meta: Meta<typeof Button> = {
 export default meta;
 type Story = StoryObj<typeof Button>;
 
-//👇 Throws a type error it the args don't match the component props
+//👇 Throws a type error if the args don't match the component props
 export const Primary: Story = {
   args: {
     primary: true,
@@ -49,11 +49,10 @@ const meta: Meta = {
 export default meta;
 type Story = StoryObj;
 
-//👇 Throws a type error it the args don't match the component props
+//👇 Throws a type error if the args don't match the component props
 export const Primary: Story = {
   args: {
     primary: true,
   },
 };
 ```
-

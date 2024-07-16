@@ -95,7 +95,9 @@ export async function storybookDevServer(options: Options) {
   let previewStarted: Promise<any> = Promise.resolve();
 
   if (!options.ignorePreview) {
-    logger.info('=> Starting preview..');
+    if (!options.quiet) {
+      logger.info('=> Starting preview..');
+    }
     previewStarted = previewBuilder
       .start({
         startTime: process.hrtime(),

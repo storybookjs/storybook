@@ -78,7 +78,7 @@ export const getStorybookScripts = (allScripts: NonNullable<PackageJson['scripts
 export const sbScripts: Fix<SbScriptsRunOptions> = {
   id: 'sb-scripts',
 
-  versionRange: ['<7', '>=7'],
+  versionRange: ['*', '*'],
 
   async check({ packageManager, storybookVersion }) {
     const packageJson = await packageManager.retrievePackageJson();

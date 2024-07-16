@@ -3,6 +3,7 @@ import type { Call, CallRef, ElementRef } from '@storybook/instrumenter';
 import { useTheme } from 'storybook/internal/theming';
 import type { ReactElement } from 'react';
 import React, { Fragment } from 'react';
+import { logger } from 'storybook/internal/client-logger';
 
 const colorsLight = {
   base: '#444',
@@ -341,31 +342,25 @@ export const ElementNode = ({
 };
 
 export const DateNode = ({ value }: { value: string | Date }) => {
-  let dateSplit: string[] = [];
-  if (value instanceof Date) {
-    try {
-      dateSplit = value.toISOString().split(/[T.Z]/);
-    } catch (error) {
-      console.error('Invalid date value provided to DateNode:', value);
-      dateSplit = ['Invalid date', '', ''];
-    }
-  } else {
-    dateSplit = value.split(/[T.Z]/);
+  let parsed = new Date(value);
+  if (isNaN(+parsed)) {
+    logger.warn('Invalid date value:', value);
+    parsed = null;
   }
-  const [date, time, ms] = dateSplit;
 
   const colors = useThemeColors();
+  if (!parsed) {
+    return <span style={{ whiteSpace: 'nowrap', color: colors.date }}>Invalid date</span>;
+  }
+
+  const [date, time, ms] = parsed.toISOString().split(/[T.Z]/);
   return (
     <span style={{ whiteSpace: 'nowrap', color: colors.date }}>
       {date}
-      { date !== 'Invalid date' && (
-        <>
-          <span style={{ opacity: 0.7 }}>T</span>
-          {time === '00:00:00' ? <span style={{ opacity: 0.7 }}>{time}</span> : time}
-          {ms === '000' ? <span style={{ opacity: 0.7 }}>.{ms}</span> : `.${ms}`}
-          <span style={{ opacity: 0.7 }}>Z</span>
-        </>
-      )}
+      <span style={{ opacity: 0.7 }}>T</span>
+      {time === '00:00:00' ? <span style={{ opacity: 0.7 }}>{time}</span> : time}
+      {ms === '000' ? <span style={{ opacity: 0.7 }}>.{ms}</span> : `.${ms}`}
+      <span style={{ opacity: 0.7 }}>Z</span>
     </span>
   );
 };

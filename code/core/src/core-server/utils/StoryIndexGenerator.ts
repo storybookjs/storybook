@@ -23,7 +23,6 @@ import { commonGlobOptions, normalizeStoryPath } from '@storybook/core/common';
 import { logger, once } from '@storybook/core/node-logger';
 import { getStorySortParameter, loadConfig } from '@storybook/core/csf-tools';
 import { storyNameFromExport, toId, combineTags } from '@storybook/csf';
-import { analyze } from '@storybook/docs-mdx';
 import { dedent } from 'ts-dedent';
 import { autoName } from './autoName';
 import { IndexingError, MultipleIndexingError } from './IndexingError';
@@ -408,7 +407,8 @@ export class StoryIndexGenerator {
 
       const content = await fs.readFile(absolutePath, 'utf8');
 
-      const result = analyze(content);
+      const { analyze } = await import('@storybook/docs-mdx');
+      const result = await analyze(content);
 
       // Templates are not indexed
       if (result.isTemplate) return false;
@@ -506,7 +506,7 @@ export class StoryIndexGenerator {
     }
   }
 
-  chooseDuplicate(firstEntry: IndexEntry, secondEntry: IndexEntry): IndexEntry {
+  chooseDuplicate(firstEntry: IndexEntry, secondEntry: IndexEntry, projectTags: Tag[]): IndexEntry {
     // NOTE: it is possible for the same entry to show up twice (if it matches >1 glob). That's OK.
     if (firstEntry.importPath === secondEntry.importPath) {
       return firstEntry;
@@ -555,13 +555,16 @@ export class StoryIndexGenerator {
       }
 
       // If you link a file to a tagged CSF file, you have probably made a mistake
-      if (worseEntry.tags?.includes(AUTODOCS_TAG) && this.options.docs.autodocs !== true)
+      if (
+        worseEntry.tags?.includes(AUTODOCS_TAG) &&
+        !(this.options.docs.autodocs === true || projectTags?.includes(AUTODOCS_TAG))
+      )
         throw new IndexingError(
           `You created a component docs page for '${worseEntry.title}', but also tagged the CSF file with '${AUTODOCS_TAG}'. This is probably a mistake.`,
           [betterEntry.importPath, worseEntry.importPath]
         );
 
-      // Otherwise the existing entry is created by `autodocs=true` which allowed to be overridden.
+      // Otherwise the existing entry is created by project-level autodocs which is allowed to be overridden.
     } else {
       // If both entries are templates (e.g. you have two CSF files with the same title), then
       //   we need to merge the entries. We'll use the first one's name and importPath,
@@ -617,7 +620,7 @@ export class StoryIndexGenerator {
         try {
           const existing = indexEntries[entry.id];
           if (existing) {
-            indexEntries[entry.id] = this.chooseDuplicate(existing, entry);
+            indexEntries[entry.id] = this.chooseDuplicate(existing, entry, projectTags);
           } else {
             indexEntries[entry.id] = entry;
           }
@@ -709,7 +712,7 @@ export class StoryIndexGenerator {
   }
 
   getProjectTags(previewCode?: string) {
-    let projectTags = [];
+    let projectTags = [] as Tag[];
     const defaultTags = ['dev', 'test'];
     const extraTags = this.options.docs.autodocs === true ? [AUTODOCS_TAG] : [];
     if (previewCode) {

@@ -26,7 +26,7 @@ import { render, fireEvent } from '@testing-library/preact';
 
 import { InvalidForm } from './LoginForm.stories'; //👈 Our stories imported here.
 
-it('Checks if the form is valid', () => {
+it('Checks if the form is valid', async () => {
   const { getByTestId, getByText } = render(<InvalidForm {...InvalidForm.args} />);
 
   fireEvent.click(getByText('Submit'));
@@ -39,14 +39,15 @@ it('Checks if the form is valid', () => {
 ```js filename="Form.test.js|jsx" renderer="react" language="js"
 import { fireEvent, render, screen } from '@testing-library/react';
 
-import { composeStory } from '@storybook/react';
+import { composeStories } from '@storybook/react';
 
-import Meta, { InvalidForm as InvalidFormStory } from './LoginForm.stories'; //👈 Our stories imported here.
+import * as stories from './LoginForm.stories'; // 👈 Our stories imported here.
 
-const FormError = composeStory(InvalidFormStory, Meta);
+const { InvalidForm } = composeStories(stories);
 
-test('Checks if the form is valid', () => {
-  render(<FormError />);
+test('Checks if the form is valid', async () => {
+  // Renders the composed story
+  await InvalidForm.play();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',
@@ -62,14 +63,15 @@ test('Checks if the form is valid', () => {
 ```ts filename="Form.test.ts|tsx" renderer="react" language="ts"
 import { fireEvent, render, screen } from '@testing-library/react';
 
-import { composeStory } from '@storybook/react';
+import { composeStories } from '@storybook/react';
 
-import Meta, { InvalidForm as InvalidFormStory } from './LoginForm.stories'; //👈 Our stories imported here.
+import * as stories from './LoginForm.stories'; // 👈 Our stories imported here.
 
-const FormError = composeStory(InvalidFormStory, Meta);
+const { InvalidForm } = composeStories(stories);
 
-test('Checks if the form is valid', () => {
-  render(<FormError />);
+test('Checks if the form is valid', async () => {
+  // Renders the composed story
+  await InvalidForm.play();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',
@@ -82,21 +84,22 @@ test('Checks if the form is valid', () => {
 });
 ```
 
-```js filename="Form.test.js|ts" renderer="svelte" language="js"
-import { render, fireEvent } from '@testing-library/svelte';
+```js filename="Form.test.js" renderer="svelte" language="js"
+import { fireEvent, render, screen } from '@testing-library/svelte';
 
-import LoginForm from './LoginForm.svelte';
+import { composeStories } from '@storybook/svelte';
 
-import { InvalidForm } from './LoginForm.stories'; //👈 Our stories imported here.
+import * as stories from './LoginForm.stories'; // 👈 Our stories imported here.
+
+const { InvalidForm } = composeStories(stories);
 
 it('Checks if the form is valid', async () => {
-  const { getByTestId, getByText } = render(LoginForm, {
-    props: InvalidForm.args,
-  });
+  // Renders the composed story
+  await InvalidForm.play();
 
-  await fireEvent.click(getByText('Submit'));
+  await fireEvent.click(screen.getByText('Submit'));
 
-  const isFormValid = getByTestId('invalid-form');
+  const isFormValid = screen.getByTestId('invalid-form');
   expect(isFormValid).toBeInTheDocument();
 });
 ```
@@ -104,14 +107,15 @@ it('Checks if the form is valid', async () => {
 ```js filename="tests/Form.test.js" renderer="vue" language="js" tabTitle="3"
 import { fireEvent, render, screen } from '@testing-library/vue';
 
-import { composeStory } from '@storybook/vue3';
+import { composeStories } from '@storybook/vue3';
 
-import Meta, { InvalidForm as InvalidFormStory } from './LoginForm.stories'; //👈 Our stories imported here.
+import * as stories from './LoginForm.stories'; // 👈 Our stories imported here.
 
-const FormError = composeStory(InvalidFormStory, Meta);
+const { InvalidForm } = composeStories(stories);
 
-test('Checks if the form is valid', () => {
-  render(FormError());
+test('Checks if the form is valid', async () => {
+  // Renders the composed story
+  await InvalidForm.play();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',
@@ -127,14 +131,15 @@ test('Checks if the form is valid', () => {
 ```ts filename="tests/Form.test.ts" renderer="vue" language="ts" tabTitle="3"
 import { fireEvent, render, screen } from '@testing-library/vue';
 
-import { composeStory } from '@storybook/vue3';
+import { composeStories } from '@storybook/vue3';
 
-import Meta, { InvalidForm as InvalidFormStory } from './LoginForm.stories'; //👈 Our stories imported here.
+import * as stories from './LoginForm.stories'; // 👈 Our stories imported here.
 
-const FormError = composeStory(InvalidFormStory, Meta);
+const { InvalidForm } = composeStories(stories);
 
-test('Checks if the form is valid', () => {
-  render(FormError());
+test('Checks if the form is valid', async () => {
+  // Renders the composed story
+  await InvalidForm.play();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',
@@ -146,4 +151,3 @@ test('Checks if the form is valid', () => {
   expect(isFormValid).toBeInTheDocument();
 });
 ```
-

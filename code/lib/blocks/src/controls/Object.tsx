@@ -249,12 +249,15 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
   const data = useMemo(() => value && cloneDeep(value), [value]);
   const hasData = data !== null && data !== undefined;
   const [showRaw, setShowRaw] = useState(!hasData);
+
   const [parseError, setParseError] = useState<Error>(null);
   const readonly = !!argType?.table?.readonly;
   const updateRaw: (raw: string) => void = useCallback(
     (raw) => {
       try {
-        if (raw) onChange(JSON.parse(raw));
+        if (raw) {
+          onChange(JSON.parse(raw));
+        }
         setParseError(undefined);
       } catch (e) {
         setParseError(e);
@@ -271,7 +274,9 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
 
   const htmlElRef = useRef(null);
   useEffect(() => {
-    if (forceVisible && htmlElRef.current) htmlElRef.current.select();
+    if (forceVisible && htmlElRef.current) {
+      htmlElRef.current.select();
+    }
   }, [forceVisible]);
 
   if (!hasData) {

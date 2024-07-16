@@ -1,5 +1,7 @@
 import React from 'react';
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore-error (importing a js file)
 import { imported } from '../imported';
 
 const local = 'local-value';

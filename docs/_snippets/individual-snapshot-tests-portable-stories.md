@@ -7,18 +7,15 @@ import 'jest-specific-snapshot';
 
 import { describe, test, expect } from '@jest/globals';
 
-// Replace your-testing-library with one of the supported testing libraries (e.g., react, vue)
-import { render } from '@testing-library/your-testing-library';
-
-// Adjust the import based on the supported framework or Storybook's testing libraries (e.g., react, vue3)
-import { composeStories } from '@storybook/your-framework';
+// Replace your-renderer with the renderer you are using (e.g., react, vue3, svelte, etc.)
+import { composeStories } from '@storybook/your-renderer';
 
 const compose = (entry) => {
   try {
     return composeStories(entry);
   } catch (e) {
     throw new Error(
-      `There was an issue composing stories for the module: ${JSON.stringify(entry)}, ${e}`,
+      `There was an issue composing stories for the module: ${JSON.stringify(entry)}, ${e}`
     );
   }
 };
@@ -26,7 +23,7 @@ const compose = (entry) => {
 function getAllStoryFiles() {
   // Place the glob you want to match your stories files
   const storyFiles = glob.sync(
-    path.join(__dirname, 'stories/**/*.{stories,story}.{js,jsx,mjs,ts,tsx}'),
+    path.join(__dirname, 'stories/**/*.{stories,story}.{js,jsx,mjs,ts,tsx}')
   );
 
   return storyFiles.map((filePath) => {
@@ -48,18 +45,18 @@ describe('Stories Snapshots', () => {
 
       if (stories.length <= 0) {
         throw new Error(
-          `No stories found for this module: ${title}. Make sure there is at least one valid story for this module.`,
+          `No stories found for this module: ${title}. Make sure there is at least one valid story for this module.`
         );
       }
 
       stories.forEach(({ name, story }) => {
         test(name, async () => {
-          const mounted = render(story());
+          await story.play();
           // Ensures a consistent snapshot by waiting for the component to render by adding a delay of 1 ms before taking the snapshot.
           await new Promise((resolve) => setTimeout(resolve, 1));
           // Defines the custom snapshot path location and file name
           const customSnapshotPath = `./__snapshots__/${componentName}.test.js.snap`;
-          expect(mounted.container).toMatchSpecificSnapshot(customSnapshotPath);
+          expect(document.body.firstChild).toMatchSpecificSnapshot(customSnapshotPath);
         });
       });
     });
@@ -79,11 +76,8 @@ import "jest-specific-snapshot";
 
 import { describe, test, expect } from "@jest/globals";
 
-// Replace your-testing-library with one of the supported testing libraries (e.g., react, vue)
-import { render } from '@testing-library/your-testing-library';
-
-// Adjust the import based on the supported framework or Storybook's testing libraries (e.g., react, vue3)
-import { composeStories } from '@storybook/your-framework';
+// Replace your-renderer with the renderer you are using (e.g., react, vue3, svelte, etc.)
+import { composeStories } from '@storybook/your-renderer';
 
 type StoryFile = {
   default: Meta;
@@ -137,12 +131,12 @@ describe("Stories Snapshots", () => {
 
       stories.forEach(({ name, story }) => {
         test(name, async () => {
-          const mounted = render(story());
+          await story.play();
           // Ensures a consistent snapshot by waiting for the component to render by adding a delay of 1 ms before taking the snapshot.
           await new Promise((resolve) => setTimeout(resolve, 1));
           // Defines the custom snapshot path location and file name
           const customSnapshotPath = `./__snapshots__/${componentName}.test.ts.snap`;
-          expect(mounted.container).toMatchSpecificSnapshot(customSnapshotPath);
+          expect(document.body.firstChild).toMatchSpecificSnapshot(customSnapshotPath);
       });
     });
   });
@@ -155,18 +149,15 @@ describe("Stories Snapshots", () => {
 import path from 'path';
 import { describe, expect, test } from 'vitest';
 
-// Replace your-testing-library with one of the supported testing libraries (e.g., react, vue)
-import { render } from '@testing-library/your-testing-library';
-
-// Adjust the import based on the supported framework or Storybook's testing libraries (e.g., react, vue3)
-import { composeStories } from '@storybook/your-framework';
+// Replace your-renderer with the renderer you are using (e.g., react, vue3, svelte, etc.)
+import { composeStories } from '@storybook/your-renderer';
 
 const compose = (entry) => {
   try {
     return composeStories(entry);
   } catch (error) {
     throw new Error(
-      `There was an issue composing stories for the module: ${JSON.stringify(entry)}, ${error}`,
+      `There was an issue composing stories for the module: ${JSON.stringify(entry)}, ${error}`
     );
   }
 };
@@ -175,7 +166,7 @@ function getAllStoryFiles() {
   const storyFiles = Object.entries(
     import.meta.glob('./stories/**/*.(stories|story).@(js|jsx|mjs|ts|tsx)', {
       eager: true,
-    }),
+    })
   );
 
   return storyFiles.map(([filePath, storyFile]) => {
@@ -194,18 +185,18 @@ describe('Stories Snapshots', () => {
 
       if (stories.length <= 0) {
         throw new Error(
-          `No stories found for this module: ${title}. Make sure there is at least one valid story for this module.`,
+          `No stories found for this module: ${title}. Make sure there is at least one valid story for this module.`
         );
       }
 
       stories.forEach(({ name, story }) => {
         test(name, async () => {
-          const mounted = render(story());
+          await story.play();
           // Ensures a consistent snapshot by waiting for the component to render by adding a delay of 1 ms before taking the snapshot.
           await new Promise((resolve) => setTimeout(resolve, 1));
           // Defines the custom snapshot path location and file name
           const customSnapshotPath = `./__snapshots__/${componentName}.spec.js.snap`;
-          expect(mounted.container).toMatchFileSnapshot(customSnapshotPath);
+          expect(document.body.firstChild).toMatchFileSnapshot(customSnapshotPath);
         });
       });
     });
@@ -222,11 +213,8 @@ import type { Meta, StoryFn } from '@storybook/your-framework';
 import path from 'path';
 import { describe, expect, test } from 'vitest';
 
-// Replace your-testing-library with one of the supported testing libraries (e.g., react, vue)
-import { render } from '@testing-library/your-testing-library';
-
-// Adjust the import based on the supported framework or Storybook's testing libraries (e.g., react, vue3)
-import { composeStories } from '@storybook/your-framework';
+// Replace your-renderer with the renderer you are using (e.g., react, vue3, svelte, etc.)
+import { composeStories } from '@storybook/your-renderer';
 
 type StoryFile = {
   default: Meta;
@@ -238,7 +226,7 @@ const compose = (entry: StoryFile): ReturnType<typeof composeStories<StoryFile>>
     return composeStories(entry);
   } catch (e) {
     throw new Error(
-      `There was an issue composing stories for the module: ${JSON.stringify(entry)}, ${e}`,
+      `There was an issue composing stories for the module: ${JSON.stringify(entry)}, ${e}`
     );
   }
 };
@@ -248,7 +236,7 @@ function getAllStoryFiles() {
   const storyFiles = Object.entries(
     import.meta.glob<StoryFile>('./stories/**/*.(stories|story).@(js|jsx|mjs|ts|tsx)', {
       eager: true,
-    }),
+    })
   );
 
   return storyFiles.map(([filePath, storyFile]) => {
@@ -268,22 +256,21 @@ describe('Stories Snapshots', () => {
 
       if (stories.length <= 0) {
         throw new Error(
-          `No stories found for this module: ${title}. Make sure there is at least one valid story for this module.`,
+          `No stories found for this module: ${title}. Make sure there is at least one valid story for this module.`
         );
       }
 
       stories.forEach(({ name, story }) => {
         test(name, async () => {
-          const mounted = render(story());
+          await story.play();
           // Ensures a consistent snapshot by waiting for the component to render by adding a delay of 1 ms before taking the snapshot.
           await new Promise((resolve) => setTimeout(resolve, 1));
           // Defines the custom snapshot path location and file name
           const customSnapshotPath = `./__snapshots__/${componentName}.spec.ts.snap`;
-          expect(mounted.container).toMatchFileSnapshot(customSnapshotPath);
+          expect(document.body.firstChild).toMatchFileSnapshot(customSnapshotPath);
         });
       });
     });
   });
 });
 ```
-

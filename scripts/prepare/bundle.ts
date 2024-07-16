@@ -7,6 +7,7 @@ import aliasPlugin from 'esbuild-plugin-alias';
 import { dedent } from 'ts-dedent';
 import slash from 'slash';
 import { exec } from '../utils/exec';
+import { glob } from 'glob';
 
 /* TYPES */
 
@@ -146,6 +147,17 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   }
 
   await Promise.all(tasks);
+
+  const dtsFiles = await glob(outDir + '/**/*.d.ts');
+  await Promise.all(
+    dtsFiles.map(async (file) => {
+      const content = await fs.readFile(file, 'utf-8');
+      await fs.writeFile(
+        file,
+        content.replace(/from \'core\/dist\/(.*)\'/g, `from 'storybook/internal/$1'`)
+      );
+    })
+  );
 
   if (post) {
     await exec(`bun ${post}`, { cwd }, { debug: true });

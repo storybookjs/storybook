@@ -32,14 +32,20 @@ export const sourceDecorator = (
   const channel = addons.getChannel();
   const { props, template, userDefinedTemplate } = story;
 
-  const { component, argTypes } = context;
+  const { component, argTypes, parameters } = context;
 
   let toEmit: string;
 
   useEffect(() => {
     if (toEmit) {
       const { id, unmappedArgs } = context;
-      channel.emit(SNIPPET_RENDERED, { id, args: unmappedArgs, source: toEmit, format: 'angular' });
+      const format = parameters?.docs?.source?.format ?? true;
+      channel.emit(SNIPPET_RENDERED, {
+        id,
+        args: unmappedArgs,
+        source: toEmit,
+        format: format === true ? 'angular' : format,
+      });
     }
   });
 

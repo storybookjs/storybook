@@ -20,10 +20,10 @@ For more information visit: [storybook.js.org](https://storybook.js.org)
 ---
 
 Storybook also comes with a lot of [addons](https://storybook.js.org/addons) and a great API to customize as you wish.
-You can also build a [static version](https://storybook.js.org/docs/preact/sharing/publish-storybook) of your Storybook and deploy it anywhere you want.
+You can also build a [static version](https://storybook.js.org/docs/sharing/publish-storybook?renderer=preact) of your Storybook and deploy it anywhere you want.
 
 ## Docs
 
-- [Basics](https://storybook.js.org/docs/preact/get-started)
-- [Configurations](https://storybook.js.org/docs/preact/configure)
-- [Addons](https://storybook.js.org/docs/preact/configure/storybook-addons)
+- [Basics](https://storybook.js.org/docs/get-started/install?renderer=preact)
+- [Configurations](https://storybook.js.org/docs/configure?renderer=preact)
+- [Addons](https://storybook.js.org/docs/configure/user-interface/storybook-addons?renderer=preact)

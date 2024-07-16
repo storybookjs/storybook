@@ -218,6 +218,10 @@ export const transformStoryIndexToStoriesHash = (
       const parent = idx > 0 && list[idx - 1];
       const id = sanitize(parent ? `${parent}-${name}` : name!);
 
+      if (name.trim() === '') {
+        throw new Error(dedent`Invalid title ${title} ending in slash.`);
+      }
+
       if (parent === id) {
         throw new Error(
           dedent`

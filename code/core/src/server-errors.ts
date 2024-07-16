@@ -51,150 +51,125 @@ export enum Category {
 }
 
 export class NxProjectDetectedError extends StorybookError {
-  readonly category = Category.CLI_INIT;
-
-  readonly code = 1;
-
-  public readonly documentation = 'https://nx.dev/packages/storybook';
-
-  template() {
-    return dedent`
-      We have detected Nx in your project. Nx has its own Storybook initializer, so please use it instead.
-      Run "nx g @nx/storybook:configuration" to add Storybook to your project.
-    `;
+  constructor() {
+    super({
+      category: Category.CLI_INIT,
+      code: 1,
+      documentation: 'https://nx.dev/packages/storybook',
+      message: dedent`
+        We have detected Nx in your project. Nx has its own Storybook initializer, so please use it instead.
+        Run "nx g @nx/storybook:configuration" to add Storybook to your project.`,
+    });
   }
 }
 
 export class MissingFrameworkFieldError extends StorybookError {
-  readonly category = Category.CORE_COMMON;
-
-  readonly code = 1;
-
-  public readonly documentation =
-    'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#new-framework-api';
-
-  template() {
-    return dedent`
-      Could not find a 'framework' field in Storybook config.
-
-      Please run 'npx storybook automigrate' to automatically fix your config.
-    `;
+  constructor() {
+    super({
+      category: Category.CORE_COMMON,
+      code: 1,
+      documentation:
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#new-framework-api',
+      message: dedent`
+        Could not find a 'framework' field in Storybook config.
+        
+        Please run 'npx storybook automigrate' to automatically fix your config.`,
+    });
   }
 }
 
 export class InvalidFrameworkNameError extends StorybookError {
-  readonly category = Category.CORE_COMMON;
-
-  readonly code = 2;
-
-  public readonly documentation =
-    'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#new-framework-api';
-
   constructor(public data: { frameworkName: string }) {
-    super();
-  }
-
-  template() {
-    return dedent`
-      Invalid value of '${this.data.frameworkName}' in the 'framework' field of Storybook config.
-
-      Please run 'npx storybook automigrate' to automatically fix your config.
-    `;
+    super({
+      category: Category.CORE_COMMON,
+      code: 2,
+      documentation:
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#new-framework-api',
+      message: dedent`
+        Invalid value of '${data.frameworkName}' in the 'framework' field of Storybook config.
+        
+        Please run 'npx storybook automigrate' to automatically fix your config.
+      `,
+    });
   }
 }
 
 export class CouldNotEvaluateFrameworkError extends StorybookError {
-  readonly category = Category.CORE_COMMON;
-
-  readonly code = 3;
-
   constructor(public data: { frameworkName: string }) {
-    super();
-  }
-
-  template() {
-    return dedent`
-      Could not evaluate the '${this.data.frameworkName}' package from the 'framework' field of Storybook config.
-
-      Are you sure it's a valid package and is installed?
-    `;
+    super({
+      category: Category.CORE_COMMON,
+      code: 3,
+      documentation: '',
+      message: dedent`
+        Could not evaluate the '${data.frameworkName}' package from the 'framework' field of Storybook config.
+        
+        Are you sure it's a valid package and is installed?`,
+    });
   }
 }
 
 // this error is not used anymore, but we keep it to maintain unique its error code
 // which is used for telemetry
 export class ConflictingStaticDirConfigError extends StorybookError {
-  readonly category = Category.CORE_SERVER;
-
-  readonly code = 1;
-
-  public readonly documentation =
-    'https://storybook.js.org/docs/react/configure/images-and-assets#serving-static-files-via-storybook-configuration';
-
-  template() {
-    return dedent`
-      Storybook encountered a conflict when trying to serve statics. You have configured both:
-      * Storybook's option in the config file: 'staticDirs'
-      * Storybook's (deprecated) CLI flag: '--staticDir' or '-s'
-      
-      Please remove the CLI flag from your storybook script and use only the 'staticDirs' option instead.
-    `;
+  constructor() {
+    super({
+      category: Category.CORE_SERVER,
+      code: 1,
+      documentation:
+        'https://storybook.js.org/docs/react/configure/images-and-assets#serving-static-files-via-storybook-configuration',
+      message: dedent`
+        Storybook encountered a conflict when trying to serve statics. You have configured both:
+        * Storybook's option in the config file: 'staticDirs'
+        * Storybook's (deprecated) CLI flag: '--staticDir' or '-s'
+        
+        Please remove the CLI flag from your storybook script and use only the 'staticDirs' option instead.`,
+    });
   }
 }
+
 export class InvalidStoriesEntryError extends StorybookError {
-  readonly category = Category.CORE_COMMON;
-
-  readonly code = 4;
-
-  public readonly documentation =
-    'https://storybook.js.org/docs/react/faq#can-i-have-a-storybook-with-no-local-stories';
-
-  template() {
-    return dedent`
-      Storybook could not index your stories.
-      Your main configuration somehow does not contain a 'stories' field, or it resolved to an empty array.
-
-      Please check your main configuration file and make sure it exports a 'stories' field that is not an empty array.
-    `;
+  constructor() {
+    super({
+      category: Category.CORE_COMMON,
+      code: 4,
+      documentation:
+        'https://storybook.js.org/docs/react/faq#can-i-have-a-storybook-with-no-local-stories',
+      message: dedent`
+        Storybook could not index your stories.
+        Your main configuration somehow does not contain a 'stories' field, or it resolved to an empty array.
+        
+        Please check your main configuration file and make sure it exports a 'stories' field that is not an empty array.`,
+    });
   }
 }
 
 export class WebpackMissingStatsError extends StorybookError {
-  readonly category = Category.BUILDER_WEBPACK5;
-
-  readonly code = 1;
-
-  public documentation = [
-    'https://webpack.js.org/configuration/stats/',
-    'https://storybook.js.org/docs/react/builders/webpack#configure',
-  ];
-
-  template() {
-    return dedent`
-      No Webpack stats found. Did you turn off stats reporting in your webpack config?
-      Storybook needs Webpack stats (including errors) in order to build correctly.
-    `;
+  constructor() {
+    super({
+      category: Category.BUILDER_WEBPACK5,
+      code: 1,
+      documentation: [
+        'https://webpack.js.org/configuration/stats/',
+        'https://storybook.js.org/docs/react/builders/webpack#configure',
+      ],
+      message: dedent`
+        No Webpack stats found. Did you turn off stats reporting in your Webpack config?
+        Storybook needs Webpack stats (including errors) in order to build correctly.`,
+    });
   }
 }
 
 export class WebpackInvocationError extends StorybookError {
-  readonly category = Category.BUILDER_WEBPACK5;
-
-  readonly code = 2;
-
-  private errorMessage = '';
-
   constructor(
     public data: {
       error: Error;
     }
   ) {
-    super();
-    this.errorMessage = data.error.message;
-  }
-
-  template() {
-    return this.errorMessage.trim();
+    super({
+      category: Category.BUILDER_WEBPACK5,
+      code: 2,
+      message: data.error.message.trim(),
+    });
   }
 }
 
@@ -203,10 +178,6 @@ function removeAnsiEscapeCodes(input = '') {
 }
 
 export class WebpackCompilationError extends StorybookError {
-  readonly category = Category.BUILDER_WEBPACK5;
-
-  readonly code = 3;
-
   constructor(
     public data: {
       errors: {
@@ -216,9 +187,7 @@ export class WebpackCompilationError extends StorybookError {
       }[];
     }
   ) {
-    super();
-
-    this.data.errors = data.errors.map((err) => {
+    data.errors = data.errors.map((err) => {
       return {
         ...err,
         message: removeAnsiEscapeCodes(err.message),
@@ -226,206 +195,166 @@ export class WebpackCompilationError extends StorybookError {
         name: err.name,
       };
     });
-  }
 
-  template() {
-    // This error message is a followup of errors logged by Webpack to the user
-    return dedent`
-      There were problems when compiling your code with Webpack.
-      Run Storybook with --debug-webpack for more information.
-    `;
+    super({
+      category: Category.BUILDER_WEBPACK5,
+      code: 3,
+      // This error message is a followup of errors logged by Webpack to the user
+      message: dedent`
+        There were problems when compiling your code with Webpack.
+        Run Storybook with --debug-webpack for more information.
+      `,
+    });
   }
 }
 
 export class MissingAngularJsonError extends StorybookError {
-  readonly category = Category.CLI_INIT;
-
-  readonly code = 2;
-
-  public readonly documentation =
-    'https://storybook.js.org/docs/angular/faq#error-no-angularjson-file-found';
-
   constructor(
     public data: {
       path: string;
     }
   ) {
-    super();
-  }
-
-  template() {
-    return dedent`
-      An angular.json file was not found in the current working directory: ${this.data.path}
-      Storybook needs it to work properly, so please rerun the command at the root of your project, where the angular.json file is located.
-    `;
+    super({
+      category: Category.CLI_INIT,
+      code: 2,
+      documentation: 'https://storybook.js.org/docs/angular/faq#error-no-angularjson-file-found',
+      message: dedent`
+        An angular.json file was not found in the current working directory: ${data.path}
+        Storybook needs it to work properly, so please rerun the command at the root of your project, where the angular.json file is located.`,
+    });
   }
 }
 
 export class AngularLegacyBuildOptionsError extends StorybookError {
-  readonly category = Category.FRAMEWORK_ANGULAR;
-
-  readonly code = 1;
-
-  public readonly documentation = [
-    'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#angular-drop-support-for-calling-storybook-directly',
-    'https://github.com/storybookjs/storybook/tree/next/code/frameworks/angular#how-do-i-migrate-to-an-angular-storybook-builder',
-  ];
-
-  template() {
-    return dedent`
-      Your Storybook startup script uses a solution that is not supported anymore.
-      You must use Angular builder to have an explicit configuration on the project used in angular.json.
-
-      Please run 'npx storybook automigrate' to automatically fix your config.
-    `;
+  constructor() {
+    super({
+      category: Category.FRAMEWORK_ANGULAR,
+      code: 1,
+      documentation: [
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#angular-drop-support-for-calling-storybook-directly',
+        'https://github.com/storybookjs/storybook/tree/next/code/frameworks/angular#how-do-i-migrate-to-an-angular-storybook-builder',
+      ],
+      message: dedent`
+        Your Storybook startup script uses a solution that is not supported anymore.
+        You must use Angular builder to have an explicit configuration on the project used in angular.json.
+        
+        Please run 'npx storybook automigrate' to automatically fix your config.`,
+    });
   }
 }
 
 export class CriticalPresetLoadError extends StorybookError {
-  readonly category = Category.CORE_SERVER;
-
-  readonly code = 2;
-
   constructor(
     public data: {
       error: Error;
       presetName: string;
     }
   ) {
-    super();
-  }
-
-  template() {
-    return dedent`
-      Storybook failed to load the following preset: ${this.data.presetName}.
-
-      Please check whether your setup is correct, the Storybook dependencies (and their peer dependencies) are installed correctly and there are no package version clashes.
-
-      If you believe this is a bug, please open an issue on Github.
-
-      ${this.data.error.stack || this.data.error.message}
-    `;
+    super({
+      category: Category.CORE_SERVER,
+      code: 2,
+      documentation: '',
+      message: dedent`
+        Storybook failed to load the following preset: ${data.presetName}.
+        
+        Please check whether your setup is correct, the Storybook dependencies (and their peer dependencies) are installed correctly and there are no package version clashes.
+        
+        If you believe this is a bug, please open an issue on Github.
+        
+        ${data.error.stack || data.error.message}`,
+    });
   }
 }
 
 export class MissingBuilderError extends StorybookError {
-  readonly category = Category.CORE_SERVER;
-
-  readonly code = 3;
-
-  public readonly documentation = 'https://github.com/storybookjs/storybook/issues/24071';
-
-  template() {
-    return dedent`
-      Storybook could not find a builder configuration for your project. 
-      Builders normally come from a framework package e.g. '@storybook/react-vite', or from builder packages e.g. '@storybook/builder-vite'.
-      
-      - Does your main config file contain a 'framework' field configured correctly?
-      - Is the Storybook framework package installed correctly?
-      - If you don't use a framework, does your main config contain a 'core.builder' configured correctly?
-      - Are you in a monorepo and perhaps the framework package is hoisted incorrectly?
-
-      If you believe this is a bug, please describe your issue in detail on Github.
-    `;
+  constructor() {
+    super({
+      category: Category.CORE_SERVER,
+      code: 3,
+      documentation: 'https://github.com/storybookjs/storybook/issues/24071',
+      message: dedent`
+        Storybook could not find a builder configuration for your project. 
+        Builders normally come from a framework package e.g. '@storybook/react-vite', or from builder packages e.g. '@storybook/builder-vite'.
+        
+        - Does your main config file contain a 'framework' field configured correctly?
+        - Is the Storybook framework package installed correctly?
+        - If you don't use a framework, does your main config contain a 'core.builder' configured correctly?
+        - Are you in a monorepo and perhaps the framework package is hoisted incorrectly?
+        
+        If you believe this is a bug, please describe your issue in detail on Github.`,
+    });
   }
 }
 
 export class GoogleFontsDownloadError extends StorybookError {
-  readonly category = Category.FRAMEWORK_NEXTJS;
-
-  readonly code = 1;
-
-  public readonly documentation =
-    'https://github.com/storybookjs/storybook/blob/next/code/frameworks/nextjs/README.md#nextjs-font-optimization';
-
   constructor(public data: { fontFamily: string; url: string }) {
-    super();
-  }
-
-  template() {
-    return dedent`
-      Failed to fetch \`${this.data.fontFamily}\` from Google Fonts with URL: \`${this.data.url}\`
-    `;
+    super({
+      category: Category.FRAMEWORK_NEXTJS,
+      code: 1,
+      documentation:
+        'https://github.com/storybookjs/storybook/blob/next/code/frameworks/nextjs/README.md#nextjs-font-optimization',
+      message: dedent`
+        Failed to fetch \`${data.fontFamily}\` from Google Fonts with URL: \`${data.url}\``,
+    });
   }
 }
 
 export class GoogleFontsLoadingError extends StorybookError {
-  readonly category = Category.FRAMEWORK_NEXTJS;
-
-  readonly code = 2;
-
-  public readonly documentation =
-    'https://github.com/storybookjs/storybook/blob/next/code/frameworks/nextjs/README.md#nextjs-font-optimization';
-
   constructor(public data: { error: unknown | Error; url: string }) {
-    super();
-  }
-
-  template() {
-    return dedent`
-      An error occurred when trying to load Google Fonts with URL \`${this.data.url}\`.
-      
-      ${this.data.error instanceof Error ? this.data.error.message : ''}
-    `;
+    super({
+      category: Category.FRAMEWORK_NEXTJS,
+      code: 2,
+      documentation:
+        'https://github.com/storybookjs/storybook/blob/next/code/frameworks/nextjs/README.md#nextjs-font-optimization',
+      message: dedent`
+        An error occurred when trying to load Google Fonts with URL \`${data.url}\`.
+        
+        ${data.error instanceof Error ? data.error.message : ''}`,
+    });
   }
 }
 
 export class NoMatchingExportError extends StorybookError {
-  readonly category = Category.CORE_SERVER;
-
-  readonly code = 4;
-
   constructor(public data: { error: unknown | Error }) {
-    super();
-  }
-
-  template() {
-    return dedent`
-      There was an exports mismatch error when trying to build Storybook.
-      Please check whether the versions of your Storybook packages match whenever possible, as this might be the cause.
-      
-      Problematic example:
-      { "@storybook/react": "7.5.3", "@storybook/react-vite": "7.4.5", "storybook": "7.3.0" }
-
-      Correct example:
-      { "@storybook/react": "7.5.3", "@storybook/react-vite": "7.5.3", "storybook": "7.5.3" }
-
-      Please run \`npx storybook doctor\` for guidance on how to fix this issue.
-    `;
+    super({
+      category: Category.CORE_SERVER,
+      code: 4,
+      documentation: '',
+      message: dedent`
+        There was an exports mismatch error when trying to build Storybook.
+        Please check whether the versions of your Storybook packages match whenever possible, as this might be the cause.
+        
+        Problematic example:
+        { "@storybook/react": "7.5.3", "@storybook/react-vite": "7.4.5", "storybook": "7.3.0" }
+        
+        Correct example:
+        { "@storybook/react": "7.5.3", "@storybook/react-vite": "7.5.3", "storybook": "7.5.3" }
+        
+        Please run \`npx storybook doctor\` for guidance on how to fix this issue.`,
+    });
   }
 }
 
 export class MainFileESMOnlyImportError extends StorybookError {
-  readonly category = Category.CORE_SERVER;
-
-  readonly code = 5;
-
-  public documentation =
-    'https://github.com/storybookjs/storybook/issues/23972#issuecomment-1948534058';
-
   constructor(
     public data: { location: string; line: string | undefined; num: number | undefined }
   ) {
-    super();
-  }
-
-  template() {
     const message = [
-      `Storybook failed to load ${this.data.location}`,
+      `Storybook failed to load ${data.location}`,
       '',
       `It looks like the file tried to load/import an ESM only module.`,
-      `Support for this is currently limited in ${this.data.location}`,
+      `Support for this is currently limited in ${data.location}`,
       `You can import ESM modules in your main file, but only as dynamic import.`,
       '',
     ];
-    if (this.data.line) {
+    if (data.line) {
       message.push(
         chalk.white(
-          `In your ${chalk.yellow(this.data.location)} file, line ${chalk.bold.cyan(
-            this.data.num
+          `In your ${chalk.yellow(data.location)} file, line ${chalk.bold.cyan(
+            data.num
           )} threw an error:`
         ),
-        chalk.grey(this.data.line)
+        chalk.grey(data.line)
       );
     }
 
@@ -438,190 +367,160 @@ export class MainFileESMOnlyImportError extends StorybookError {
       ''
     );
 
-    return message.join('\n');
+    super({
+      category: Category.CORE_SERVER,
+      code: 5,
+      documentation:
+        'https://github.com/storybookjs/storybook/issues/23972#issuecomment-1948534058',
+      message: message.join('\n'),
+    });
   }
 }
 
 export class MainFileMissingError extends StorybookError {
-  readonly category = Category.CORE_SERVER;
-
-  readonly code = 6;
-
-  readonly stack = '';
-
-  public readonly documentation = 'https://storybook.js.org/docs/configure';
-
   constructor(public data: { location: string }) {
-    super();
-  }
-
-  template() {
-    return dedent`
-      No configuration files have been found in your configDir: ${chalk.yellow(this.data.location)}.
-      Storybook needs a "main.js" file, please add it.
-      
-      You can pass a --config-dir flag to tell Storybook, where your main.js file is located at).
-    `;
+    super({
+      category: Category.CORE_SERVER,
+      code: 6,
+      documentation: 'https://storybook.js.org/docs/configure',
+      message: dedent`
+        No configuration files have been found in your configDir: ${chalk.yellow(data.location)}.
+        Storybook needs a "main.js" file, please add it.
+        
+        You can pass a --config-dir flag to tell Storybook, where your main.js file is located at).`,
+    });
   }
 }
 
 export class MainFileEvaluationError extends StorybookError {
-  readonly category = Category.CORE_SERVER;
-
-  readonly code = 7;
-
-  readonly stack = '';
-
   constructor(public data: { location: string; error: Error }) {
-    super();
-  }
-
-  template() {
     const errorText = chalk.white(
-      (this.data.error.stack || this.data.error.message).replaceAll(process.cwd(), '')
+      (data.error.stack || data.error.message).replaceAll(process.cwd(), '')
     );
 
-    return dedent`
-      Storybook couldn't evaluate your ${chalk.yellow(this.data.location)} file.
-
-      ${errorText}
-    `;
+    super({
+      category: Category.CORE_SERVER,
+      code: 7,
+      message: dedent`
+        Storybook couldn't evaluate your ${chalk.yellow(data.location)} file.
+        
+        Original error:
+        ${errorText}`,
+    });
   }
 }
 
 export class GenerateNewProjectOnInitError extends StorybookError {
-  readonly category = Category.CLI_INIT;
-
-  readonly code = 3;
-
   constructor(
     public data: { error: unknown | Error; packageManager: string; projectType: string }
   ) {
-    super();
-  }
-
-  template() {
-    return dedent`
-      There was an error while using ${this.data.packageManager} to create a new ${
-        this.data.projectType
-      } project.
-      
-      ${this.data.error instanceof Error ? this.data.error.message : ''}
-      `;
+    super({
+      category: Category.CLI_INIT,
+      code: 3,
+      documentation: '',
+      message: dedent`
+        There was an error while using ${data.packageManager} to create a new ${
+          data.projectType
+        } project.
+        
+        ${data.error instanceof Error ? data.error.message : ''}`,
+    });
   }
 }
 
 export class UpgradeStorybookToLowerVersionError extends StorybookError {
-  readonly category = Category.CLI_UPGRADE;
-
-  readonly code = 3;
-
   constructor(public data: { beforeVersion: string; currentVersion: string }) {
-    super();
-  }
-
-  template() {
-    return dedent`
-      You are trying to upgrade Storybook to a lower version than the version currently installed. This is not supported.
-
-      Storybook version ${this.data.beforeVersion} was detected in your project, but you are trying to "upgrade" to version ${this.data.currentVersion}.
-      
-      This usually happens when running the upgrade command without a version specifier, e.g. "npx storybook upgrade".
-      This will cause npm to run the globally cached storybook binary, which might be an older version.
-
-      Instead you should always run the Storybook CLI with a version specifier to force npm to download the latest version:
-      
-      "npx storybook@latest upgrade"
-    `;
+    super({
+      category: Category.CLI_UPGRADE,
+      code: 3,
+      message: dedent`
+        You are trying to upgrade Storybook to a lower version than the version currently installed. This is not supported.
+        
+        Storybook version ${data.beforeVersion} was detected in your project, but you are trying to "upgrade" to version ${data.currentVersion}.
+        
+        This usually happens when running the upgrade command without a version specifier, e.g. "npx storybook upgrade".
+        This will cause npm to run the globally cached storybook binary, which might be an older version.
+        
+        Instead you should always run the Storybook CLI with a version specifier to force npm to download the latest version:
+        
+        "npx storybook@latest upgrade"`,
+    });
   }
 }
 
 export class UpgradeStorybookToSameVersionError extends StorybookError {
-  readonly category = Category.CLI_UPGRADE;
-
-  readonly code = 4;
-
   constructor(public data: { beforeVersion: string }) {
-    super();
-  }
-
-  template() {
-    return dedent`
-      You are upgrading Storybook to the same version that is currently installed in the project, version ${this.data.beforeVersion}.
-      
-      This usually happens when running the upgrade command without a version specifier, e.g. "npx storybook upgrade".
-      This will cause npm to run the globally cached storybook binary, which might be the same version that you already have.
-      This also happens if you're running the Storybook CLI that is locally installed in your project.
-
-      If you intended to upgrade to the latest version, you should always run the Storybook CLI with a version specifier to force npm to download the latest version:
-
-      "npx storybook@latest upgrade"
-
-      If you intended to re-run automigrations, you should run the "automigrate" command directly instead:
-
-      "npx storybook automigrate"
-    `;
+    super({
+      category: Category.CLI_UPGRADE,
+      code: 4,
+      message: dedent`
+        You are upgrading Storybook to the same version that is currently installed in the project, version ${data.beforeVersion}.
+        
+        This usually happens when running the upgrade command without a version specifier, e.g. "npx storybook upgrade".
+        This will cause npm to run the globally cached storybook binary, which might be the same version that you already have.
+        This also happens if you're running the Storybook CLI that is locally installed in your project.
+        
+        If you intended to upgrade to the latest version, you should always run the Storybook CLI with a version specifier to force npm to download the latest version:
+        
+        "npx storybook@latest upgrade"
+        
+        If you intended to re-run automigrations, you should run the "automigrate" command directly instead:
+        
+        "npx storybook automigrate"`,
+    });
   }
 }
 
 export class UpgradeStorybookUnknownCurrentVersionError extends StorybookError {
-  readonly category = Category.CLI_UPGRADE;
-
-  readonly code = 5;
-
-  template() {
-    return dedent`
-      We couldn't determine the current version of Storybook in your project.
-
-      Are you running the Storybook CLI in a project without Storybook?
-      It might help if you specify your Storybook config directory with the --config-dir flag.
-    `;
+  constructor() {
+    super({
+      category: Category.CLI_UPGRADE,
+      code: 5,
+      message: dedent`
+        We couldn't determine the current version of Storybook in your project.
+        
+        Are you running the Storybook CLI in a project without Storybook?
+        It might help if you specify your Storybook config directory with the --config-dir flag.`,
+    });
   }
 }
 
 export class UpgradeStorybookInWrongWorkingDirectory extends StorybookError {
-  readonly category = Category.CLI_UPGRADE;
-
-  readonly code = 6;
-
-  template() {
-    return dedent`
-      You are running the upgrade command in a CWD that does not contain Storybook dependencies.
-
-      Did you mean to run it in a different directory? Make sure the directory you run this command in contains a package.json with your Storybook dependencies.
-    `;
+  constructor() {
+    super({
+      category: Category.CLI_UPGRADE,
+      code: 6,
+      message: dedent`
+        You are running the upgrade command in a CWD that does not contain Storybook dependencies.
+        
+        Did you mean to run it in a different directory? Make sure the directory you run this command in contains a package.json with your Storybook dependencies.`,
+    });
   }
 }
 
 export class NoStatsForViteDevError extends StorybookError {
-  readonly category = Category.BUILDER_VITE;
-
-  readonly code = 1;
-
-  template() {
-    return dedent`
-      Unable to write preview stats as the Vite builder does not support stats in dev mode.
-
-      Please remove the \`--stats-json\` flag when running in dev mode.
-    `;
+  constructor() {
+    super({
+      category: Category.BUILDER_VITE,
+      code: 1,
+      message: dedent`
+        Unable to write preview stats as the Vite builder does not support stats in dev mode.
+        
+        Please remove the \`--stats-json\` flag when running in dev mode.`,
+    });
   }
 }
 
 export class FindPackageVersionsError extends StorybookError {
-  readonly category = Category.CLI;
-
-  readonly code = 1;
-
   constructor(
     public data: { error: Error | unknown; packageName: string; packageManager: string }
   ) {
-    super();
-  }
-
-  template() {
-    return dedent`
-      Unable to find versions of "${this.data.packageName}" using ${this.data.packageManager}
-      ${this.data.error && `Reason: ${this.data.error}`}
-    `;
+    super({
+      category: Category.CLI,
+      code: 1,
+      message: dedent`
+        Unable to find versions of "${data.packageName}" using ${data.packageManager}
+        ${data.error && `Reason: ${data.error}`}`,
+    });
   }
 }

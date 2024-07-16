@@ -43,7 +43,7 @@ await Promise.all(
     await dts(
       i.file,
       [...external, ...i.externals],
-      join(import.meta.dirname, '..', 'tsconfig.build.json')
+      join(import.meta.dirname, '..', 'tsconfig.json')
     );
   })
 );

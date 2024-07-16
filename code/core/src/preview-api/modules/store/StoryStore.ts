@@ -27,7 +27,7 @@ import {
   normalizeProjectAnnotations,
   prepareContext,
 } from './csf';
-import type { CleanupCallback } from '@storybook/csf';
+import type { Canvas, CleanupCallback } from '@storybook/csf';
 import type {
   BoundStory,
   CSFFile,
@@ -375,7 +375,7 @@ export class StoryStore<TRenderer extends Renderer> {
           step: (label, play) => story.runStep(label, play, context),
           context: null!,
           mount: null!,
-          canvas: {},
+          canvas: {} as Canvas,
           viewMode: 'story',
         } as StoryContext<TRenderer>;
 

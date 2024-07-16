@@ -13,7 +13,7 @@ type TelemetryOptions = {
 };
 
 const promptCrashReports = async () => {
-  if (process.env.CI && process.env.NODE_ENV !== 'test') {
+  if (process.env.CI) {
     return undefined;
   }
 

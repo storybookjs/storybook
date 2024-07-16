@@ -62,7 +62,9 @@ export const NumberControl: FC<NumberProps> = ({
 
   const htmlElRef = useRef(null);
   useEffect(() => {
-    if (forceVisible && htmlElRef.current) htmlElRef.current.select();
+    if (forceVisible && htmlElRef.current) {
+      htmlElRef.current.select();
+    }
   }, [forceVisible]);
 
   useEffect(() => {

@@ -1,144 +1,37 @@
-```js filename="Form.test.js|jsx" renderer="react" language="js" tabTitle="compose-stories"
-import { composeStories } from '@storybook/react';
+```js filename="Form.test.js|ts" renderer="common" language="js" tabTitle="compose-stories"
+// Replace your-renderer with the renderer you are using (e.g., react, vue3, svelte, etc.)
+import { composeStories } from '@storybook/your-renderer';
 
-import * as FormStories from './LoginForm.stories';
+import * as stories from './LoginForm.stories';
 
-const { ValidForm } = composeStories(FormStories, {
+const { ValidForm } = composeStories(stories, {
   decorators: [
-    // Define your story-level decorators here
+    // Decorators defined here will be added to all composed stories from this function
   ],
   globalTypes: {
-    // Define your global types here
+    // Override globals for all composed stories from this function
   },
   parameters: {
-    // Define your story-level parameters here
+    // Override parameters for all composed stories from this function
   },
 });
 ```
 
-```ts filename="Form.test.ts|tsx" renderer="react" language="ts" tabTitle="compose-stories"
-import { composeStories } from '@storybook/react';
-
-import * as FormStories from './LoginForm.stories';
-
-const { ValidForm } = composeStories(FormStories, {
-  decorators: [
-    // Define your story-level decorators here
-  ],
-  globalTypes: {
-    // Define your global types here
-  },
-  parameters: {
-    // Define your story-level parameters here
-  },
-});
-```
-
-```js filename="Form.test.js|jsx" renderer="react" language="js" tabTitle="compose-story"
-import { composeStory } from '@storybook/react';
+```js filename="Form.test.js|ts" renderer="common" language="js" tabTitle="compose-story"
+// Replace your-renderer with the renderer you are using (e.g., react, vue3, svelte, etc.)
+import { composeStories } from '@storybook/your-renderer';
 
 import Meta, { ValidForm as ValidFormStory } from './LoginForm.stories';
 
-const FormValidation = composeStory(ValidFormStory, Meta, {
+const ValidForm = composeStory(ValidFormStory, Meta, {
   decorators: [
-    // Define your story-level decorators here
+    // Decorators defined here will be added to this story
   ],
   globalTypes: {
-    // Define your global types here
+    // Override globals for this story
   },
   parameters: {
-    // Define your story-level parameters here
+    // Override parameters for this story
   },
 });
 ```
-
-```ts filename="Form.test.ts|tsx" renderer="react" language="ts" tabTitle="compose-story"
-import { composeStory } from '@storybook/react';
-
-import Meta, { ValidForm as ValidFormStory } from './LoginForm.stories';
-
-const FormValidation = composeStory(ValidFormStory, Meta, {
-  decorators: [
-    // Define your story-level decorators here
-  ],
-  globalTypes: {
-    // Define your global types here
-  },
-  parameters: {
-    // Define your story-level parameters here
-  },
-});
-```
-
-```js filename="tests/Form.test.js" renderer="vue" language="js" tabTitle="compose-stories-3"
-import { composeStory } from '@storybook/vue3';
-
-import * as FormStories from './LoginForm.stories';
-
-const { ValidForm } = composeStories(FormStories, {
-  decorators: [
-    // Define your story-level decorators here
-  ],
-  globalTypes: {
-    // Define your global types here
-  },
-  parameters: {
-    // Define your story-level parameters here
-  },
-});
-```
-
-```ts filename="tests/Form.test.ts" renderer="vue" language="ts" tabTitle="compose-stories-3"
-import { composeStory } from '@storybook/vue3';
-
-import * as FormStories from './LoginForm.stories';
-
-const { ValidForm } = composeStories(FormStories, {
-  decorators: [
-    // Define your story-level decorators here
-  ],
-  globalTypes: {
-    // Define your global types here
-  },
-  parameters: {
-    // Define your story-level parameters here
-  },
-});
-```
-
-```js filename="tests/Form.test.js" renderer="vue" language="js" tabTitle="compose-story-3"
-import { composeStory } from '@storybook/vue3';
-
-import Meta, { ValidForm as ValidFormStory } from './LoginForm.stories';
-
-const FormValidation = composeStory(ValidFormStory, Meta, {
-  decorators: [
-    // Define your story-level decorators here
-  ],
-  globalTypes: {
-    // Define your global types here
-  },
-  parameters: {
-    // Define your story-level parameters here
-  },
-});
-```
-
-```ts filename="tests/Form.test.ts" renderer="vue" language="ts" tabTitle="compose-story-3"
-import { composeStory } from '@storybook/vue3';
-
-import Meta, { ValidForm as ValidFormStory } from './LoginForm.stories';
-
-const FormValidation = composeStory(ValidFormStory, Meta, {
-  decorators: [
-    // Define your story-level decorators here
-  ],
-  globalTypes: {
-    // Define your global types here
-  },
-  parameters: {
-    // Define your story-level parameters here
-  },
-});
-```
-

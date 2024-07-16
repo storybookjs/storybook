@@ -86,7 +86,9 @@ Attaching an MDX file to a component’s stories with the `of` prop serves two p
 2. Attaches the component and its stories to the MDX file, allowing you to use other doc blocks in “attached” mode (for instance to use the `Stories` block).
 
 <Callout variant="info" icon="💡">
+
   The `of` prop is optional. If you don’t want to attach a specific CSF file to this MDX file, you can either use the `title` prop to control the location, or emit `Meta` entirely, and let [autotitle](../../configure/user-interface/sidebar-and-urls.mdx#csf-30-auto-titles) decide where it goes.
+
 </Callout>
 
 ### `title`
@@ -109,7 +111,9 @@ import { Meta } from '@storybook/blocks';
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
+
   If you want to change the sorting of the docs entry with the component’s stories, use [Story Sorting](../../writing-stories/naming-components-and-hierarchy.mdx#sorting-stories), or add specific MDX files to your `stories` field in `main.js` in order.
+  
 </Callout>
 
 ## Attached vs. unattached

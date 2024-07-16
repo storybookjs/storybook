@@ -88,8 +88,7 @@ Storybook for Vue & Webpack is a [framework](../../contribute/framework.mdx) tha
 
   ## Extending the Vue application
 
-  Storybook creates a [Vue 3 application](https://vuejs.org/api/application.html#application-api) for your component preview.
-  When using global custom components (`app.component`), directives (`app.directive`), extensions (`app.use`), or other application methods, you will need to configure those in the `./storybook/preview.js` file.
+  Storybook creates a [Vue 3 application](https://vuejs.org/api/application.html#application-api) for your component preview. When using global custom components (`app.component`), directives (`app.directive`), extensions (`app.use`), or other application methods, you will need to configure those in the `./storybook/preview.js` file.
 
   Therefore, Storybook provides you with a `setup` function exported from this package, which receives as a callback your Storybook instance, which you can interact with and add your custom configuration.
 

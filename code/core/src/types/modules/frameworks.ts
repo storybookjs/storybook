@@ -18,5 +18,4 @@ export type SupportedFrameworks =
   | 'web-components-vite'
   | 'web-components-webpack5'
   | 'qwik'
-  | 'solid'
-  | 'nuxt';
+  | 'solid';

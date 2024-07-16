@@ -54,7 +54,9 @@ yarn task
 When prompted, answer the questions as accurately as possible to allow Storybook to determine your goals. After answering these questions, you should see the entire command with the options you've selected should you require to re-run it.
 
 <Callout variant="info" icon="💡">
+
   The `yarn task` command takes a few development shortcuts that can catch you off guard when switching branches and may require you to re-run both the `install` and `compile` tasks. You can speed up the process by running the command with the `start-from=install` flag.
+
 </Callout>
 
 ## Running tests
@@ -86,7 +88,9 @@ yarn build
 When prompted to start the build process in `watch` mode, answer **yes** to develop in interactive mode. Afterward, choose which packages you want to build. For example, if you're going to work on a feature for `@storybook/addon-docs`, you might want to select both `@storybook/addon-docs` and `@storybook/components`.
 
 <Callout variant="info" icon="💡">
+
   Build's `watch` mode is great for interactive development. However, for performance reasons, it only transpiles your code and doesn't execute the TypeScript compiler. If something isn't working as expected, try running the `build` command **WITHOUT** enabling watch mode: it will re-generate TypeScript types and perform automatic type checking for you.
+
 </Callout>
 
 ![Storybook package selector](../_assets/contribute/storybook-build-packages-selection-optimized.png)
@@ -144,7 +148,9 @@ yarn test
 ```
 
 <Callout variant="info" icon="💡">
+
   Storybook relies on [Vitest](https://vitest.dev/) as part of it's testing suite. During the test run, if you spot that snapshot tests are failing, re-run the command with the `-u` flag to update them.
+  
 </Callout>
 
 Doing this prevents last-minute bugs and is a great way to merge your contribution faster once you submit your pull request. Failing to do so will lead to one of the maintainers mark the pull request with the **Work in Progress** label until all tests pass.

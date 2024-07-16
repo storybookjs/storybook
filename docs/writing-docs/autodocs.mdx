@@ -59,8 +59,8 @@ In addition to enabling the feature with `tags`, you can extend your Storybook c
 
 {/* prettier-ignore-end */}
 
-| Option        | Description                                                                                          |
-| ------------- | ---------------------------------------------------------------------------------------------------- |
+| Option        | Description                                                                                           |
+| ------------- | ----------------------------------------------------------------------------------------------------- |
 | `defaultName` | Renames the auto-generated documentation page<br /> Default: `docs: { defaultName: 'Documentation' }` |
 
 ### Write a custom template
@@ -105,7 +105,9 @@ Then you can use it in your `.storybook/preview.js` or an individual story file 
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
+
   If you only need to override the documentation page for a single component, we recommend creating an MDX file and referencing it directly via the `<Meta of={} />` Doc Block.
+
 </Callout>
 
 ### Generate a table of contents
@@ -122,17 +124,19 @@ Storybook's auto-generated documentation pages can be quite long and difficult t
 
 By default, the table of contents on the documentation page will only show the `h3` headings that are automatically generated. However, if you want to customize the table of contents, you can add more parameters to the `toc` property. The following options and examples of how to use them are available.
 
-| Option                | Description                                                                                                                                                                                                     |
-| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `contentsSelector`    | Defines the container's CSS selector for search for the headings <br /> `toc: { contentsSelector: '.sbdocs-content' }`                                                                                           |
-| `disable`             | Hides the table of contents for the documentation pages <br /> `toc: { disable: true }`                                                                                                                          |
-| `headingSelector`     | Defines the list of headings to feature in the table of contents <br /> `toc: { headingSelector: 'h1, h2, h3' }`                                                                                                 |
-| `ignoreSelector`      | Configures the table of contents to ignore specific headings or stories. By default, the table of contents will ignore all content placed within Story blocks <br /> `toc: { ignoreSelector: '.docs-story h2' }` |
+| Option                | Description                                                                                                                                                                                                       |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `contentsSelector`    | Defines the container's CSS selector for search for the headings <br /> `toc: { contentsSelector: '.sbdocs-content' }`                                                                                            |
+| `disable`             | Hides the table of contents for the documentation pages <br /> `toc: { disable: true }`                                                                                                                           |
+| `headingSelector`     | Defines the list of headings to feature in the table of contents <br /> `toc: { headingSelector: 'h1, h2, h3' }`                                                                                                  |
+| `ignoreSelector`      | Configures the table of contents to ignore specific headings or stories. By default, the table of contents will ignore all content placed within Story blocks <br /> `toc: { ignoreSelector: '.docs-story h2' }`  |
 | `title`               | Defines a title caption for the table of contents. <br />Accepts one of: `string`, `null`, React element <br /> `toc: { title: 'Table of Contents' }`                                                             |
-| `unsafeTocbotOptions` | Provides additional [`TocBot`](https://tscanlin.github.io/tocbot/) configuration options <br /> `toc: { unsafeTocbotOptions: { orderedList: true } }`                                                            |
+| `unsafeTocbotOptions` | Provides additional [`TocBot`](https://tscanlin.github.io/tocbot/) configuration options <br /> `toc: { unsafeTocbotOptions: { orderedList: true } }`                                                             |
 
 <Callout variant="info">
+
   The `contentsSelector`, `headingSelector`, and `ignoreSelector` properties allow additional customization. For more information on using them, see the [`Tocbot` documentation](https://tscanlin.github.io/tocbot/).
+  
 </Callout>
 
 {/* prettier-ignore-start */}

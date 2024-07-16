@@ -1,1 +1,1 @@
-module.exports = require('storybook/internal/core-errors');
+module.exports = require('storybook/internal/core-events');

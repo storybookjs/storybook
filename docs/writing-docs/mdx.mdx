@@ -14,7 +14,9 @@ In addition, you can write pure documentation pages in MDX and add them to Story
 ![MDX simple example result](../_assets/writing-docs/mdx-hero.png)
 
 <Callout variant="info">
-  Writing stories directly in MDX was removed in Storybook 8, and we're no longer supporting it. Please reference the [previous documentation](../../../release-6-5/docs/writing-docs/mdx.mdx) for guidance on that feature or [migrate](../migration-guide.mdx#storiesmdx-to-mdxcsf) to the new format.
+
+  Writing stories directly in MDX was removed in Storybook 8, and we're no longer supporting it. Please reference the [previous documentation](../../../release-6-5/docs/writing-docs/mdx.mdx) for guidance on that feature or [migrate](../migration-guide/index.mdx#storiesmdx-to-mdxcsf) to the new format.
+  
 </Callout>
 
 ## Basic example
@@ -163,7 +165,9 @@ However, providing the `Meta` Doc Block may not be required for certain use case
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
+
   If you're overriding an existing auto-generated documentation page enabled via [`tags`](./autodocs.mdx#setup-automated-docs) configuration property, we recommend removing it to avoid errors.
+  
 </Callout>
 
 Once the custom MDX documentation is loaded, Storybook will infer the title and location using the same heuristic rules to generate [auto-title stories](../configure/user-interface/sidebar-and-urls.mdx#csf-30-auto-titles) and render it in the sidebar as a `Docs` entry.

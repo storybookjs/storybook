@@ -27,6 +27,7 @@ import type {
   NormalizedStoryAnnotations,
 } from '@storybook/core/types';
 import { mountDestructured } from '../../preview-web/render/mount-utils';
+import { NoRenderFunctionError } from '@storybook/core/preview-errors';
 
 // Combine all the metadata about a story (both direct and inherited from the component/global scope)
 // into a "render-able" story function, with all decorators applied, parameters passed as context etc
@@ -107,19 +108,10 @@ export function prepareStory<TRenderer extends Renderer>(
 
   const playFunction = storyAnnotations?.play ?? componentAnnotations?.play;
 
-  const mountUsed = mountDestructured(playFunction);
+  const usesMount = mountDestructured(playFunction);
 
-  if (!render && !mountUsed) {
-    // TODO Make this a named error
-    throw new Error(`No render function available for storyId '${id}'`);
-  }
-
-  let { tags } = partialAnnotations;
-
-  if (mountUsed) {
-    // Don't show stories where mount is used in docs.
-    // As the play function is not running in docs, and when mount is used, the mounting is happening in play itself.
-    tags = tags.filter((tag) => tag !== 'autodocs');
+  if (!render && !usesMount) {
+    throw new NoRenderFunctionError({ id });
   }
 
   const defaultMount = (context: StoryContext) => {
@@ -139,7 +131,6 @@ export function prepareStory<TRenderer extends Renderer>(
 
   return {
     ...partialAnnotations,
-    tags,
     moduleExport,
     id,
     name,
@@ -154,6 +145,7 @@ export function prepareStory<TRenderer extends Renderer>(
     mount,
     testingLibraryRender,
     renderToCanvas: projectAnnotations.renderToCanvas,
+    usesMount,
   };
 }
 export function prepareMeta<TRenderer extends Renderer>(

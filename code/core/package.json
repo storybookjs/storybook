@@ -1,6 +1,6 @@
 {
   "name": "@storybook/core",
-  "version": "8.2.0-alpha.10",
+  "version": "8.3.0-alpha.1",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -119,7 +119,8 @@
     },
     "./components": {
       "types": "./dist/components/index.d.ts",
-      "import": "./dist/components/index.js"
+      "import": "./dist/components/index.js",
+      "require": "./dist/components/index.cjs"
     },
     "./theming": {
       "types": "./dist/theming/index.d.ts",
@@ -248,7 +249,7 @@
     "@types/express": "^4.17.21",
     "@types/node": "^18.0.0",
     "browser-assert": "^1.2.1",
-    "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0",
+    "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0",
     "esbuild-register": "^3.5.0",
     "express": "^4.19.2",
     "process": "^0.11.10",
@@ -276,7 +277,7 @@
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-scroll-area": "^1.0.5",
     "@radix-ui/react-slot": "^1.0.2",
-    "@storybook/docs-mdx": "3.1.0-next.0",
+    "@storybook/docs-mdx": "4.0.0-next.0",
     "@storybook/global": "^5.0.0",
     "@storybook/icons": "^1.2.5",
     "@tanstack/react-virtual": "^3.3.0",
@@ -326,7 +327,7 @@
     "diff": "^5.2.0",
     "downshift": "^9.0.4",
     "ejs": "^3.1.10",
-    "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0",
+    "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0",
     "esbuild-plugin-alias": "^0.2.1",
     "execa": "^8.0.1",
     "express": "^4.19.2",

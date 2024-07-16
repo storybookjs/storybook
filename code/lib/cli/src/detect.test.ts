@@ -43,28 +43,6 @@ const MOCK_FRAMEWORK_FILES: {
     },
   },
   {
-    name: ProjectType.NUXT,
-    files: {
-      'package.json': {
-        dependencies: {
-          nuxt: '^3.11.2',
-        },
-      },
-    },
-  },
-  {
-    name: ProjectType.NUXT,
-    files: {
-      'package.json': {
-        dependencies: {
-          // Nuxt projects may have Vue 3 as an explicit dependency
-          nuxt: '^3.11.2',
-          vue: '^3.0.0',
-        },
-      },
-    },
-  },
-  {
     name: ProjectType.VUE3,
     files: {
       'package.json': {
@@ -454,6 +432,16 @@ describe('Detect', () => {
     it(`UNDETECTED for unknown frameworks`, () => {
       const result = detectFrameworkPreset();
       expect(result).toBe(ProjectType.UNDETECTED);
+    });
+
+    // TODO(blaine): Remove once Nuxt3 is supported
+    it(`UNSUPPORTED for Nuxt framework above version 3.0.0`, () => {
+      const result = detectFrameworkPreset({
+        dependencies: {
+          nuxt: '3.0.0',
+        },
+      });
+      expect(result).toBe(ProjectType.UNSUPPORTED);
     });
 
     // TODO: The mocking in this test causes tests after it to fail

@@ -27,4 +27,4 @@ run `npm init` and `npm install typescript --save-dev` before initializing story
 ---
 
 Storybook also comes with a lot of [addons](https://storybook.js.org/addons) and a great API to customize as you wish.
-You can also build a [static version](https://storybook.js.org/docs/html/sharing/publish-storybook) of your Storybook and deploy it anywhere you want.
+You can also build a [static version](https://storybook.js.org/docs/sharing/publish-storybook?renderer=html) of your Storybook and deploy it anywhere you want.

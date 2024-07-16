@@ -1,3 +1,4 @@
+/* eslint-disable local-rules/no-uncategorized-errors */
 import type { Meta, StoryObj } from '@storybook/react';
 import { within, fireEvent, expect } from '@storybook/test';
 import React from 'react';
@@ -116,10 +117,18 @@ export const ErrorStory: Story = {
   render: () => {
     const err = new Error('Rendering problem');
     // force stack for consistency in capture
-    err.stack = err.stack
-      .replace(/\d+:\d+(:\d+)?/g, `000:0001`)
-      .replace(/v=[^:]+/g, 'v=00000000')
-      .replace(/[^/]+\.js/g, 'file.js');
+    err.stack = `
+      at undecoratedStoryFn (/sb-preview/file.js:000:0001)
+      at hookified (/sb-preview/file.js:000:0001)
+      at defaultDecorateStory (/sb-preview/file.js:000:0001)
+      at jsxDecorator (/assets/file.js:000:0001)
+      at hookified (/sb-preview/file.js:000:0001)
+      at decorateStory (/sb-preview/file.js:000:0001)
+      at renderWithHooks (/sb-preview/file.js:000:0001)
+      at mountIndeterminateComponent (/assets/file.js:000:0001)
+      at beginWork (/assets/file.js:000:0001)
+      at longMockedPath (/node_modules/.cache/storybook/da6a511058d185c3c92ed7790fc88078d8a947a8d0ac75815e8fd5704bcd4baa/sb-vite/deps/file.js?v=00000000:000:0001)
+    `;
     throw err;
   },
   args: { label: 'Button' },

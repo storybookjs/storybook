@@ -26,7 +26,6 @@ const safeDeepEqual = (a: any, b: any): boolean => {
 };
 
 export default class ActionLogger extends Component<ActionLoggerProps, ActionLoggerState> {
-  // @ts-expect-error Unused, possibly remove, leaving, because it could be accessed even though it is private
   private mounted: boolean;
 
   constructor(props: ActionLoggerProps) {

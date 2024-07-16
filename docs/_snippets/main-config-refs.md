@@ -8,6 +8,7 @@ export default {
       title: 'Storybook Design System',
       url: 'https://master--5ccbc373887ca40020446347.chromatic.com/',
       expanded: false, // Optional, true by default
+      sourceUrl: 'https://github.com/storybookjs/storybook', // Optional
     },
   },
 };
@@ -24,11 +25,11 @@ const config: StorybookConfig = {
     'design-system': {
       title: 'Storybook Design System',
       url: 'https://master--5ccbc373887ca40020446347.chromatic.com/',
-      expanded: false, // Optional, true by default
+      expanded: false, // Optional, true by default,
+      sourceUrl: 'https://github.com/storybookjs/storybook', // Optional
     },
   },
 };
 
 export default config;
 ```
-

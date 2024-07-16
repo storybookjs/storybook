@@ -13,7 +13,7 @@ type PropertyMetaSchema = VueDocgenInfoEntry<'vue-component-meta', 'props'>['sch
 // "exposed" is used by the vue-component-meta plugin while "expose" is used by vue-docgen-api
 const ARG_TYPE_SECTIONS = ['props', 'events', 'slots', 'exposed', 'expose'] as const;
 
-export const extractArgTypes: ArgTypesExtractor = (component) => {
+export const extractArgTypes: ArgTypesExtractor = (component): StrictArgTypes | null => {
   if (!hasDocgen<VueDocgenInfo<VueDocgenPlugin>>(component)) {
     return null;
   }

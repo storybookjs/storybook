@@ -17,7 +17,9 @@ function hasKeyword(keyword: string, keywords: JSDocKeyword[]): boolean {
   return keywords ? keywords.find((k) => k.name === keyword) != null : false;
 }
 
-export const extractArgTypes: ArgTypesExtractor = (component: ComponentWithDocgen) => {
+export const extractArgTypes: ArgTypesExtractor = (
+  component: ComponentWithDocgen
+): StrictArgTypes | null => {
   try {
     // eslint-disable-next-line no-underscore-dangle
     const docgen = component.__docgen;

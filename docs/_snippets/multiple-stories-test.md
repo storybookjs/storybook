@@ -1,5 +1,5 @@
 ```js filename="Form.test.js|jsx" renderer="react" language="js"
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 
 import { composeStories } from '@storybook/react';
 
@@ -7,8 +7,8 @@ import * as FormStories from './LoginForm.stories';
 
 const { InvalidForm, ValidForm } = composeStories(FormStories);
 
-test('Tests invalid form state', () => {
-  render(<InvalidForm />);
+test('Tests invalid form state', async () => {
+  await InvalidForm.play();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',
@@ -20,8 +20,8 @@ test('Tests invalid form state', () => {
   expect(isFormValid).toBeInTheDocument();
 });
 
-test('Tests filled form', () => {
-  render(<ValidForm />);
+test('Tests filled form', async () => {
+  await ValidForm.play();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',
@@ -35,7 +35,7 @@ test('Tests filled form', () => {
 ```
 
 ```ts filename="Form.test.ts|tsx" renderer="react" language="ts"
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 
 import { composeStories } from '@storybook/react';
 
@@ -43,8 +43,8 @@ import * as FormStories from './LoginForm.stories';
 
 const { InvalidForm, ValidForm } = composeStories(FormStories);
 
-test('Tests invalid form state', () => {
-  render(<InvalidForm />);
+test('Tests invalid form state', async () => {
+  await InvalidForm.play();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',
@@ -56,8 +56,8 @@ test('Tests invalid form state', () => {
   expect(isFormValid).toBeInTheDocument();
 });
 
-test('Tests filled form', () => {
-  render(<ValidForm />);
+test('Tests filled form', async () => {
+  await ValidForm.play();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',
@@ -71,7 +71,7 @@ test('Tests filled form', () => {
 ```
 
 ```js filename="tests/Form.test.js" renderer="vue" language="js" tabTitle="3"
-import { fireEvent, render, screen } from '@testing-library/vue';
+import { fireEvent, screen } from '@testing-library/vue';
 
 import { composeStories } from '@storybook/vue3';
 
@@ -79,8 +79,8 @@ import * as FormStories from './LoginForm.stories';
 
 const { InvalidForm, ValidForm } = composeStories(FormStories);
 
-test('Tests invalid form state', () => {
-  render(InvalidForm());
+test('Tests invalid form state', async () => {
+  await InvalidForm.play();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',
@@ -92,8 +92,8 @@ test('Tests invalid form state', () => {
   expect(isFormValid).toBeInTheDocument();
 });
 
-test('Tests filled form', () => {
-  render(ValidForm());
+test('Tests filled form', async () => {
+  await ValidForm.play();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',
@@ -107,7 +107,7 @@ test('Tests filled form', () => {
 ```
 
 ```ts filename="tests/Form.test.ts" renderer="vue" language="ts" tabTitle="3"
-import { fireEvent, render, screen } from '@testing-library/vue';
+import { fireEvent, screen } from '@testing-library/vue';
 
 import { composeStories } from '@storybook/vue3';
 
@@ -115,8 +115,8 @@ import * as FormStories from './LoginForm.stories';
 
 const { InvalidForm, ValidForm } = composeStories(FormStories);
 
-test('Tests invalid form state', () => {
-  render(InvalidForm());
+test('Tests invalid form state', async () => {
+  await InvalidForm.play();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',
@@ -128,8 +128,8 @@ test('Tests invalid form state', () => {
   expect(isFormValid).toBeInTheDocument();
 });
 
-test('Tests filled form', () => {
-  render(ValidForm());
+test('Tests filled form', async () => {
+  await ValidForm.play();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',
@@ -141,4 +141,3 @@ test('Tests filled form', () => {
   expect(isFormValid).not.toBeInTheDocument();
 });
 ```
-

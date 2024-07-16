@@ -10,6 +10,7 @@ import type {
   Store_CSFExports,
   StoriesWithPartialProps,
   ProjectAnnotations,
+  ComposedStoryFn,
 } from 'storybook/internal/types';
 
 import * as reactProjectAnnotations from './entry-preview';
@@ -37,8 +38,8 @@ export function setProjectAnnotations(
   projectAnnotations:
     | NamedOrDefaultProjectAnnotations<ReactRenderer>
     | NamedOrDefaultProjectAnnotations<ReactRenderer>[]
-) {
-  originalSetProjectAnnotations<ReactRenderer>(projectAnnotations);
+): ProjectAnnotations<ReactRenderer> {
+  return originalSetProjectAnnotations<ReactRenderer>(projectAnnotations);
 }
 
 // This will not be necessary once we have auto preset loading
@@ -85,7 +86,7 @@ export function composeStory<TArgs extends Args = Args>(
   componentAnnotations: Meta<TArgs | any>,
   projectAnnotations?: ProjectAnnotations<ReactRenderer>,
   exportsName?: string
-) {
+): ComposedStoryFn<ReactRenderer, Partial<TArgs>> {
   return originalComposeStory<ReactRenderer, TArgs>(
     story as StoryAnnotationsOrFn<ReactRenderer, Args>,
     componentAnnotations,

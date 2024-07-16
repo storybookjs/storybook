@@ -11,7 +11,6 @@ describe('UnknownFlowArgTypesError', () => {
     const typeError = new UnknownArgTypesError({ type, language: 'Typescript' });
     expect(typeError.message).toMatchInlineSnapshot(`
       "There was a failure when generating detailed ArgTypes in Typescript for:
-
       {
         "name": "signature",
         "raw": "SomeType['someProperty']"

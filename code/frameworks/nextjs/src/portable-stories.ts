@@ -10,6 +10,8 @@ import type {
   StoryAnnotationsOrFn,
   Store_CSFExports,
   StoriesWithPartialProps,
+  NamedOrDefaultProjectAnnotations,
+  ComposedStoryFn,
 } from 'storybook/internal/types';
 
 // ! ATTENTION: This needs to be a relative import so it gets prebundled. This is to avoid ESM issues in Nextjs + Jest setups
@@ -34,9 +36,11 @@ import type { ReactRenderer, Meta } from '@storybook/react';
  * @param projectAnnotations - e.g. (import projectAnnotations from '../.storybook/preview')
  */
 export function setProjectAnnotations(
-  projectAnnotations: ProjectAnnotations<ReactRenderer> | ProjectAnnotations<ReactRenderer>[]
-) {
-  originalSetProjectAnnotations<ReactRenderer>(projectAnnotations);
+  projectAnnotations:
+    | NamedOrDefaultProjectAnnotations<ReactRenderer>
+    | NamedOrDefaultProjectAnnotations<ReactRenderer>[]
+): ProjectAnnotations<ReactRenderer> {
+  return originalSetProjectAnnotations<ReactRenderer>(projectAnnotations);
 }
 
 // This will not be necessary once we have auto preset loading
@@ -77,7 +81,7 @@ export function composeStory<TArgs extends Args = Args>(
   componentAnnotations: Meta<TArgs | any>,
   projectAnnotations?: ProjectAnnotations<ReactRenderer>,
   exportsName?: string
-) {
+): ComposedStoryFn<ReactRenderer, Partial<TArgs>> {
   return originalComposeStory<ReactRenderer, TArgs>(
     story as StoryAnnotationsOrFn<ReactRenderer, Args>,
     componentAnnotations,

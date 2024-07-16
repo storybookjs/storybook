@@ -22,6 +22,7 @@ describe('composeConfigs', () => {
       initialGlobals: {},
       globalTypes: {},
       loaders: [],
+      beforeAll: expect.any(Function),
       beforeEach: [],
       runStep: expect.any(Function),
       tags: [],
@@ -49,6 +50,7 @@ describe('composeConfigs', () => {
       initialGlobals: {},
       globalTypes: {},
       loaders: [],
+      beforeAll: expect.any(Function),
       beforeEach: [],
       runStep: expect.any(Function),
       tags: [],
@@ -80,6 +82,7 @@ describe('composeConfigs', () => {
       initialGlobals: {},
       globalTypes: {},
       loaders: [],
+      beforeAll: expect.any(Function),
       beforeEach: [],
       runStep: expect.any(Function),
       tags: [],
@@ -117,6 +120,7 @@ describe('composeConfigs', () => {
       initialGlobals: {},
       globalTypes: { x: '2', y: '1', z: '2', obj: { a: '2', c: '2' } },
       loaders: [],
+      beforeAll: expect.any(Function),
       beforeEach: [],
       runStep: expect.any(Function),
       tags: [],
@@ -157,6 +161,7 @@ describe('composeConfigs', () => {
       initialGlobals: {},
       globalTypes: { x: '2', y: '1', z: '2', obj: { a: '2', c: '2' } },
       loaders: [],
+      beforeAll: expect.any(Function),
       beforeEach: [],
       runStep: expect.any(Function),
       tags: [],
@@ -188,6 +193,7 @@ describe('composeConfigs', () => {
       initialGlobals: {},
       globalTypes: {},
       loaders: ['1', '2', '3', '4'],
+      beforeAll: expect.any(Function),
       beforeEach: [],
       runStep: expect.any(Function),
       tags: [],
@@ -219,6 +225,7 @@ describe('composeConfigs', () => {
       initialGlobals: {},
       globalTypes: {},
       loaders: ['1', '2', '3'],
+      beforeAll: expect.any(Function),
       beforeEach: [],
       runStep: expect.any(Function),
       tags: [],
@@ -246,6 +253,7 @@ describe('composeConfigs', () => {
       initialGlobals: {},
       globalTypes: {},
       loaders: [],
+      beforeAll: expect.any(Function),
       beforeEach: [],
       runStep: expect.any(Function),
       tags: [],
@@ -274,6 +282,7 @@ describe('composeConfigs', () => {
       initialGlobals: {},
       globalTypes: {},
       loaders: [],
+      beforeAll: expect.any(Function),
       beforeEach: [],
       runStep: expect.any(Function),
       tags: [],
@@ -305,6 +314,7 @@ describe('composeConfigs', () => {
       initialGlobals: {},
       globalTypes: {},
       loaders: [],
+      beforeAll: expect.any(Function),
       beforeEach: [],
       render: 'render-2',
       renderToCanvas: 'renderToCanvas-2',
@@ -312,6 +322,24 @@ describe('composeConfigs', () => {
       runStep: expect.any(Function),
       tags: [],
     });
+  });
+
+  it('composes beforeAll hooks', async () => {
+    const one = vi.fn();
+    const two = vi.fn();
+    const three = vi.fn();
+
+    const { beforeAll } = composeConfigs([
+      { beforeAll: one },
+      { beforeAll: two },
+      { beforeAll: three },
+    ]);
+
+    await beforeAll?.();
+
+    expect(one).toHaveBeenCalled();
+    expect(two).toHaveBeenCalled();
+    expect(three).toHaveBeenCalled();
   });
 
   it('composes step runners', () => {

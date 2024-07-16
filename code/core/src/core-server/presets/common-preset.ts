@@ -104,8 +104,36 @@ export const favicon = async (
 
 export const babel = async (_: unknown, options: Options) => {
   const { presets } = options;
-
-  return presets.apply('babelDefault', {}, options);
+  const babelDefault = ((await presets.apply('babelDefault', {}, options)) ?? {}) as Record<
+    string,
+    any
+  >;
+  return {
+    ...babelDefault,
+    // This override makes sure that we will never transpile babel further down then the browsers that storybook supports.
+    // This is needed to support the mount property of the context described here:
+    // https://storybook.js.org/docs/writing-tests/interaction-testing#run-code-before-each-test
+    overrides: [
+      ...(babelDefault?.overrides ?? []),
+      {
+        include: /\.(story|stories)\.[cm]?[jt]sx?$/,
+        presets: [
+          [
+            '@babel/preset-env',
+            {
+              bugfixes: true,
+              targets: {
+                // This is the same browser supports that we use to bundle our manager and preview code.
+                chrome: 100,
+                safari: 15,
+                firefox: 91,
+              },
+            },
+          ],
+        ],
+      },
+    ],
+  };
 };
 
 export const title = (previous: string, options: Options) =>

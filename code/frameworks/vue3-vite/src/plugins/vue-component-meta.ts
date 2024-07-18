@@ -50,6 +50,26 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
 
           const exportName = exportNames[index];
 
+          // we remove nested object schemas here since they are not used inside Storybook (we don't generate controls for object properties)
+          // and they can cause "out of memory" issues for large/complex schemas (e.g. HTMLElement)
+          // it also reduced the bundle size when running "Storybook build" when such schemas are used
+          (['props', 'exposed'] as const).forEach((key) => {
+            meta[key].forEach((value) => {
+              if (typeof value.schema !== 'object') return;
+
+              // we need to use Object.defineProperty here since schema is a getter so we can not set it directly
+              Object.defineProperty(value, 'schema', {
+                configurable: true,
+                enumerable: true,
+                value: {
+                  kind: value.schema.kind,
+                  type: value.schema.type,
+                  // note that value.schema.schema is not included here (see comment above)
+                },
+              });
+            });
+          });
+
           const exposed =
             // the meta also includes duplicated entries in the "exposed" array with "on"
             // prefix (e.g. onClick instead of click), so we need to filter them out here

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/vue3",
-  "version": "8.3.0-alpha.0",
+  "version": "8.3.0-alpha.1",
   "description": "Storybook Vue 3 renderer",
   "keywords": [
     "storybook"
@@ -63,7 +63,11 @@
     "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
+    "@storybook/components": "workspace:^",
     "@storybook/global": "^5.0.0",
+    "@storybook/manager-api": "workspace:^",
+    "@storybook/preview-api": "workspace:^",
+    "@storybook/theming": "workspace:^",
     "@vue/compiler-core": "^3.0.0",
     "lodash": "^4.17.21",
     "ts-dedent": "^2.0.0",

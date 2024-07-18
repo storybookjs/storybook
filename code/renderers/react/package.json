@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react",
-  "version": "8.3.0-alpha.0",
+  "version": "8.3.0-alpha.1",
   "description": "Storybook React renderer",
   "keywords": [
     "storybook"
@@ -64,8 +64,12 @@
     "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
+    "@storybook/components": "workspace:^",
     "@storybook/global": "^5.0.0",
+    "@storybook/manager-api": "workspace:^",
+    "@storybook/preview-api": "workspace:^",
     "@storybook/react-dom-shim": "workspace:*",
+    "@storybook/theming": "workspace:^",
     "@types/escodegen": "^0.0.6",
     "@types/estree": "^0.0.51",
     "@types/node": "^18.0.0",

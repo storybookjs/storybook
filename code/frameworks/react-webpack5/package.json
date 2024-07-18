@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react-webpack5",
-  "version": "8.3.0-alpha.0",
+  "version": "8.3.0-alpha.1",
   "description": "Storybook for React: Develop React Component in isolation with Hot Reloading.",
   "keywords": [
     "storybook"

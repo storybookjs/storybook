@@ -65,7 +65,7 @@ export async function commonConfig(
     base: './',
     plugins: await pluginConfig(options),
     resolve: {
-      conditions: ['storybook', 'stories', 'test', 'browser', 'import', 'module', 'default'],
+      conditions: ['storybook', 'stories', 'test'],
       preserveSymlinks: isPreservingSymlinks(),
       alias: {
         assert: require.resolve('browser-assert'),

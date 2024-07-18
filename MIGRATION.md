@@ -1,6 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 8.1.x to 8.2.x](#from-version-81x-to-82x)
+  - [Failed to resolve import "@storybook/X" error](#failed-to-resolve-import-storybookx-error)
   - [Preview.js globals renamed to initialGlobals](#previewjs-globals-renamed-to-initialglobals)
 - [From version 8.0.x to 8.1.x](#from-version-80x-to-81x)
   - [Portable stories](#portable-stories)
@@ -414,6 +415,26 @@
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
 ## From version 8.1.x to 8.2.x
+
+### Failed to resolve import "@storybook/X" error
+
+Storybook's package structure changed in 8.2. It is a non-breaking change, but can expose missing project dependencies.
+
+This happens when `@storybook/X` is missing in your `package.json`, but your project references `@storybook/X` in your source code (typically in a story file or in a `.storybook` config file). This is a problem with your project, and if it worked in earlier versions of Storybook, it was purely accidental.
+
+Now in Storybook 8.2, that incorrect project configuration no longer works. The solution is to install `@storybook/X` as a dev dependency and re-run.
+
+Example errors:
+
+```sh
+Cannot find module @storybook/preview-api or its corresponding type declarations
+```
+
+```sh
+Internal server error: Failed to resolve import "@storybook/theming/create" from ".storybook/theme.ts". Does the file exist?
+```
+
+To protect your project from missing dependencies, try the `no-extraneous-dependencies` rule in [eslint-plugin-import](https://www.npmjs.com/package/eslint-plugin-import).
 
 ### Preview.js globals renamed to initialGlobals
 

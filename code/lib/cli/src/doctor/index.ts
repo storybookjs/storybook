@@ -105,6 +105,15 @@ export const doctor = async ({
 
   const allDependencies = (await packageManager.getAllDependencies()) as Record<string, string>;
 
+  if (!('storybook' in allDependencies)) {
+    logDiagnostic(
+      `Package ${chalk.cyan('storybook')} not found`,
+      dedent`
+        The ${chalk.cyan('storybook')} package was not found in your package.json.
+        Installing ${chalk.cyan('storybook')} as a direct dev dependency in your package.json is required. 
+      `
+    );
+  }
   const incompatibleStorybookPackagesList = await getIncompatibleStorybookPackages({
     currentStorybookVersion: storybookVersion,
   });

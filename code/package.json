@@ -1,6 +1,6 @@
 {
   "name": "@storybook/root",
-  "version": "8.3.0-alpha.0",
+  "version": "8.3.0-alpha.1",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -54,7 +54,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "yarn lint-staged"
+      "pre-commit": "if [ -z \"$SKIP_STORYBOOK_GIT_HOOKS\" ]; then yarn lint-staged; fi"
     }
   },
   "lint-staged": {

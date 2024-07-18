@@ -1,6 +1,7 @@
 import { Provider, importProvidersFrom } from '@angular/core';
 import { ApplicationConfig } from '@angular/platform-browser';
 import {
+  Canvas,
   Parameters as DefaultParameters,
   StoryContext as DefaultStoryContext,
   WebRenderer,
@@ -40,6 +41,7 @@ export interface StoryFnAngularReturnType {
 export interface AngularRenderer extends WebRenderer {
   component: any;
   storyResult: StoryFnAngularReturnType;
+  mount: (storyFnReturn?: StoryFnAngularReturnType) => Promise<Canvas>;
 }
 
 export type Parameters = DefaultParameters & {

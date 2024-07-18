@@ -72,6 +72,8 @@
     "@angular/forms": "^17.3.0",
     "@angular/platform-browser": "^17.3.0",
     "@angular/platform-browser-dynamic": "^17.3.0",
+    "@angular/router": "^17.3.0",
+    "@testing-library/angular": "^14.1.1",
     "@types/cross-spawn": "^6.0.2",
     "@types/tmp": "^0.2.3",
     "cross-spawn": "^7.0.3",

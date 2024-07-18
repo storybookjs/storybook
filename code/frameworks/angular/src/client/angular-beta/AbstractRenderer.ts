@@ -149,7 +149,7 @@ export abstract class AbstractRenderer {
     targetDOMNode.appendChild(document.createElement(targetSelector));
   }
 
-  private fullRendererRequired({
+  protected fullRendererRequired({
     targetDOMNode,
     storyFnAngular,
     moduleMetadata,

@@ -349,6 +349,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@angular/router@npm:^17.3.0":
+  version: 17.3.12
+  resolution: "@angular/router@npm:17.3.12"
+  dependencies:
+    tslib: "npm:^2.3.0"
+  peerDependencies:
+    "@angular/common": 17.3.12
+    "@angular/core": 17.3.12
+    "@angular/platform-browser": 17.3.12
+    rxjs: ^6.5.3 || ^7.4.0
+  checksum: 10c0/b7d832804daa6c0777a2a09b4a53ae8c797e92e4224cc089bf8c05fb767b714c64e9feecaa5f0d4e3f72e86c487eddb23ebc0dc7a1a960b24e0ce96db99b4610
+  languageName: node
+  linkType: hard
+
 "@aw-web-design/x-default-browser@npm:1.4.126":
   version: 1.4.126
   resolution: "@aw-web-design/x-default-browser@npm:1.4.126"
@@ -5436,6 +5450,7 @@ __metadata:
     "@angular/forms": "npm:^17.3.0"
     "@angular/platform-browser": "npm:^17.3.0"
     "@angular/platform-browser-dynamic": "npm:^17.3.0"
+    "@angular/router": "npm:^17.3.0"
     "@storybook/builder-webpack5": "workspace:*"
     "@storybook/components": "workspace:^"
     "@storybook/core-webpack": "workspace:*"
@@ -5443,6 +5458,7 @@ __metadata:
     "@storybook/manager-api": "workspace:^"
     "@storybook/preview-api": "workspace:^"
     "@storybook/theming": "workspace:^"
+    "@testing-library/angular": "npm:^14.1.1"
     "@types/cross-spawn": "npm:^6.0.2"
     "@types/node": "npm:^18.0.0"
     "@types/react": "npm:^18.0.37"
@@ -6995,6 +7011,21 @@ __metadata:
   version: 3.3.0
   resolution: "@tanstack/virtual-core@npm:3.3.0"
   checksum: 10c0/d31125fde6a3ef3aefd3754b37f4724772c8a567f4e8212cf02a64fba6fde9ab8f80a8c9f99d28b046f84a938aea390adbd591eb4858d849a05326b0cebdfc25
+  languageName: node
+  linkType: hard
+
+"@testing-library/angular@npm:^14.1.1":
+  version: 14.5.1
+  resolution: "@testing-library/angular@npm:14.5.1"
+  dependencies:
+    "@testing-library/dom": "npm:^9.0.0"
+    tslib: "npm:^2.3.1"
+  peerDependencies:
+    "@angular/common": ">= 15.1.0 || >= 16.0.0 || >= 17.0.0"
+    "@angular/core": ">= 15.1.0 || >= 16.0.0 || >= 17.0.0"
+    "@angular/platform-browser": ">= 15.1.0 || >= 16.0.0 || >= 17.0.0"
+    "@angular/router": ">= 15.1.0 || >= 16.0.0 || >= 17.0.0"
+  checksum: 10c0/b16cf6099e02edf2342a7782bdb96099b1314a008a70e36c8295ec8367d6707b0a30b48d72d5661698741005f62a4156eae534e457177c28091d61ac1361c858
   languageName: node
   linkType: hard
 
@@ -26708,6 +26739,13 @@ __metadata:
   version: 1.14.1
   resolution: "tslib@npm:1.14.1"
   checksum: 10c0/69ae09c49eea644bc5ebe1bca4fa4cc2c82b7b3e02f43b84bd891504edf66dbc6b2ec0eef31a957042de2269139e4acff911e6d186a258fb14069cd7f6febce2
+  languageName: node
+  linkType: hard
+
+"tslib@npm:^2.3.1":
+  version: 2.6.3
+  resolution: "tslib@npm:2.6.3"
+  checksum: 10c0/2598aef53d9dbe711af75522464b2104724d6467b26a60f2bdac8297d2b5f1f6b86a71f61717384aa8fd897240467aaa7bcc36a0700a0faf751293d1331db39a
   languageName: node
   linkType: hard
 

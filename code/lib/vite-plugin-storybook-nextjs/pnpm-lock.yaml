@@ -86,14 +86,14 @@ importers:
         specifier: ^8.3.0-alpha.1
         version: 8.3.0-alpha.1(storybook@8.3.0-alpha.1(@babel/preset-env@7.24.7(@babel/core@7.24.7)))(vitest@1.6.0(@types/node@20.14.6)(happy-dom@14.12.0)(sass@1.77.6)(terser@5.31.1))
       '@testing-library/dom':
-        specifier: ^10.1.0
-        version: 10.1.0
+        specifier: ^10.3.2
+        version: 10.3.2
       '@testing-library/jest-dom':
         specifier: ^6.4.6
         version: 6.4.6(vitest@1.6.0(@types/node@20.14.6)(happy-dom@14.12.0)(sass@1.77.6)(terser@5.31.1))
       '@testing-library/react':
         specifier: ^16.0.0
-        version: 16.0.0(@testing-library/dom@10.1.0)(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 16.0.0(@testing-library/dom@10.3.2)(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@types/node':
         specifier: ^20
         version: 20.14.6
@@ -103,9 +103,6 @@ importers:
       '@types/react-dom':
         specifier: ^18
         version: 18.3.0
-      '@types/testing-library__jest-dom':
-        specifier: ^6.0.0
-        version: 6.0.0(vitest@1.6.0(@types/node@20.14.6)(happy-dom@14.12.0)(sass@1.77.6)(terser@5.31.1))
       autoprefixer:
         specifier: ^10.4.19
         version: 10.4.19(postcss@8.4.38)
@@ -1583,6 +1580,10 @@ packages:
     resolution: {integrity: sha512-wdsYKy5zupPyLCW2Je5DLHSxSfbIp6h80WoHOQc+RPtmPGA52O9x5MJEkv92Sjonpq+poOAtUKhh1kBGAXBrNA==}
     engines: {node: '>=18'}
 
+  '@testing-library/dom@10.3.2':
+    resolution: {integrity: sha512-0bxIdP9mmPiOJ6wHLj8bdJRq+51oddObeCGdEf6PNEhYd93ZYAN+lPRnEOVFtheVwDM7+p+tza3LAQgp0PTudg==}
+    engines: {node: '>=18'}
+
   '@testing-library/jest-dom@6.4.5':
     resolution: {integrity: sha512-AguB9yvTXmCnySBP1lWjfNNUwpbElsaQ567lt2VdGqAdHtpieLgjmcVyv1q7PMIvLbgpDdkWV5Ydv3FEejyp2A==}
     engines: {node: '>=14', npm: '>=6', yarn: '>=1'}
@@ -1756,10 +1757,6 @@ packages:
 
   '@types/serve-static@1.15.7':
     resolution: {integrity: sha512-W8Ym+h8nhuRwaKPaDw34QUkwsGi6Rc4yYqvKFo5rm2FUEhCFbzVWrxXUxuKK8TASjWsysJY0nsmNCGhCOIsrOw==}
-
-  '@types/testing-library__jest-dom@6.0.0':
-    resolution: {integrity: sha512-bnreXCgus6IIadyHNlN/oI5FfX4dWgvGhOPvpr7zzCYDGAPIfvyIoAozMBINmhmsVuqV0cncejF2y5KC7ScqOg==}
-    deprecated: This is a stub types definition. @testing-library/jest-dom provides its own type definitions, so you do not need this installed.
 
   '@types/unist@3.0.2':
     resolution: {integrity: sha512-dqId9J8K/vGi5Zr7oo212BGii5m3q5Hxlkwy3WpYuKPklmBEvsbMYYyLxAQpSffdLl/gdW0XUpKWFvYmyoWCoQ==}
@@ -6431,6 +6428,17 @@ snapshots:
       lz-string: 1.5.0
       pretty-format: 27.5.1
 
+  '@testing-library/dom@10.3.2':
+    dependencies:
+      '@babel/code-frame': 7.24.7
+      '@babel/runtime': 7.24.7
+      '@types/aria-query': 5.0.4
+      aria-query: 5.3.0
+      chalk: 4.1.2
+      dom-accessibility-api: 0.5.16
+      lz-string: 1.5.0
+      pretty-format: 27.5.1
+
   '@testing-library/jest-dom@6.4.5(vitest@1.6.0(@types/node@20.14.6)(happy-dom@14.12.0)(sass@1.77.6)(terser@5.31.1))':
     dependencies:
       '@adobe/css-tools': 4.4.0
@@ -6457,10 +6465,10 @@ snapshots:
     optionalDependencies:
       vitest: 1.6.0(@types/node@20.14.6)(happy-dom@14.12.0)(sass@1.77.6)(terser@5.31.1)
 
-  '@testing-library/react@16.0.0(@testing-library/dom@10.1.0)(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@testing-library/react@16.0.0(@testing-library/dom@10.3.2)(@types/react-dom@18.3.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@babel/runtime': 7.24.7
-      '@testing-library/dom': 10.1.0
+      '@testing-library/dom': 10.3.2
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
     optionalDependencies:
@@ -6598,16 +6606,6 @@ snapshots:
       '@types/http-errors': 2.0.4
       '@types/node': 20.14.6
       '@types/send': 0.17.4
-
-  '@types/testing-library__jest-dom@6.0.0(vitest@1.6.0(@types/node@20.14.6)(happy-dom@14.12.0)(sass@1.77.6)(terser@5.31.1))':
-    dependencies:
-      '@testing-library/jest-dom': 6.4.6(vitest@1.6.0(@types/node@20.14.6)(happy-dom@14.12.0)(sass@1.77.6)(terser@5.31.1))
-    transitivePeerDependencies:
-      - '@jest/globals'
-      - '@types/bun'
-      - '@types/jest'
-      - jest
-      - vitest
 
   '@types/unist@3.0.2': {}
 

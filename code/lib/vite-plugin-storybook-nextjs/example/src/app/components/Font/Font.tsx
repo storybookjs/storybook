@@ -1,13 +1,13 @@
 /* eslint-disable react/prop-types */
-import { Rubik_Puddles } from "next/font/google";
+import { Comic_Neue } from "next/font/google";
 import localFont from "next/font/local";
 
 import React from "react";
 
-const rubik = Rubik_Puddles({
+const comicNeue = Comic_Neue({
 	subsets: ["latin"],
-	variable: "--font-latin-rubik",
-	weight: "400",
+	variable: "--font-comic-neue",
+	weight: ["700"],
 });
 
 export const localRubikStorm = localFont({
@@ -24,31 +24,29 @@ export default function Font({ variant }: FontProps) {
 		case "className":
 			return (
 				<div>
-					<h1 className={rubik.className}>Google Rubik Puddles</h1>
-					<h1 className={localRubikStorm.className}>
-						Google Local Rubik Storm
-					</h1>
+					<h1 className={comicNeue.className}>Google Comic Neue</h1>
+					<h1 className={localRubikStorm.className}>Local Rubik Storm</h1>
 				</div>
 			);
 		case "style":
 			return (
 				<div>
-					<h1 style={rubik.style}>Google Rubik Puddles</h1>
-					<h1 style={localRubikStorm.style}>Google Local Rubik Storm</h1>
+					<h1 style={comicNeue.style}>Google Comic Neue</h1>
+					<h1 style={localRubikStorm.style}>Local Rubik Storm</h1>
 				</div>
 			);
 		case "variable":
 			return (
 				<div>
-					<div className={rubik.variable}>
+					<div className={comicNeue.variable}>
 						<h1
 							style={{
-								fontFamily: "var(--font-latin-rubik)",
-								fontStyle: rubik.style.fontStyle,
-								fontWeight: rubik.style.fontWeight,
+								fontFamily: "var(--font-comic-neue)",
+								fontStyle: comicNeue.style.fontStyle,
+								fontWeight: comicNeue.style.fontWeight,
 							}}
 						>
-							Google Rubik Puddles
+							Google Comic Neue
 						</h1>
 					</div>
 					<div className={localRubikStorm.variable}>
@@ -59,7 +57,7 @@ export default function Font({ variant }: FontProps) {
 								fontWeight: localRubikStorm.style.fontWeight,
 							}}
 						>
-							Google Local Rubik Storm
+							Local Rubik Storm
 						</h1>
 					</div>
 				</div>

@@ -330,7 +330,7 @@ See more in [the `exportName` API docs](./README.md#custom-export-name).
 
 ### `SB_SVELTE_CSF_CODEMOD_0001`
 
-`<Story/>` component prop `template` value must be a text with string reference to existing `<Template />`' component property `id`.
+`<Story/>` component prop `template` value must be a text with string reference to existing `<Template />`'s `id` prop.
 
 It cannot be a shorthand or a dynamic value.
 

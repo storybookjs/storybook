@@ -3,7 +3,8 @@
 	"compilerOptions": {
 		"outDir": "dist",
 		"target": "ES2020",
-		"module": "ES2020",
+		"lib": ["ESNext"],
+		"module": "Preserve",
 		"moduleResolution": "bundler",
 		"strict": true,
 		"declaration": true,

@@ -13,16 +13,15 @@ import type { NextConfig } from "next";
 import type { JsConfig, ResolvedBaseUrl } from "next/dist/build/load-jsconfig";
 import { getParserOptions } from "next/dist/build/swc/options";
 import type { ExperimentalConfig } from "next/dist/server/config-shared";
-import { shouldOutputCommonJs } from "../nextjs";
+
 import { getEmotionOptions, getStyledComponentsOptions } from "./styles";
 
 const regeneratorRuntimePath = require.resolve(
 	"next/dist/compiled/regenerator-runtime",
 );
 
-function getBaseSWCOptions({
+export function getBaseSWCOptions({
 	filename,
-	jest,
 	development,
 	hasReactRefresh,
 	globalWindow,
@@ -35,7 +34,6 @@ function getBaseSWCOptions({
 	swcCacheDir,
 }: {
 	filename: string;
-	jest?: boolean;
 	development: boolean;
 	hasReactRefresh: boolean;
 	globalWindow: boolean;
@@ -146,64 +144,5 @@ function getBaseSWCOptions({
 		// For app router we prefer to bundle ESM,
 		// On server side of pages router we prefer CJS.
 		preferEsm: esm,
-	};
-}
-
-type VitestSWCOptionsParams = {
-	isServer: boolean;
-	filename: string;
-	esm: boolean;
-	modularizeImports?: NextConfig["modularizeImports"];
-	swcPlugins: ExperimentalConfig["swcPlugins"];
-	compilerOptions: NextConfig["compiler"];
-	jsConfig: JsConfig;
-	resolvedBaseUrl?: ResolvedBaseUrl;
-	pagesDir?: string;
-	serverComponents?: boolean;
-};
-
-/**
- * Get the SWC options for being passed to Next.js' custom SWC transpiler
- */
-export function getVitestSWCOptions({
-	isServer,
-	filename,
-	esm,
-	modularizeImports,
-	swcPlugins,
-	compilerOptions,
-	jsConfig,
-	resolvedBaseUrl,
-	pagesDir,
-}: VitestSWCOptionsParams) {
-	const baseOptions = getBaseSWCOptions({
-		filename,
-		jest: true,
-		development: false,
-		hasReactRefresh: false,
-		globalWindow: !isServer,
-		modularizeImports,
-		swcPlugins,
-		compilerOptions,
-		jsConfig,
-		resolvedBaseUrl,
-		esm,
-	});
-
-	const useCjsModules = shouldOutputCommonJs(filename);
-	return {
-		...baseOptions,
-		env: {
-			targets: {
-				// Targets the current version of Node.js
-				node: process.versions.node,
-			},
-		},
-		module: {
-			type: esm && !useCjsModules ? "es6" : "commonjs",
-		},
-		disableNextSsg: true,
-		disablePageConfig: true,
-		pagesDir,
 	};
 }

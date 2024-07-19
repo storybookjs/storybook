@@ -17,13 +17,7 @@ const config: StorybookConfig = {
 	core: {
 		builder: "@storybook/builder-vite",
 	},
-	staticDirs: [
-		"../public",
-		{
-			from: "../src/app/components/Font/fonts",
-			to: "src/app/components/Font/fonts",
-		},
-	],
+	staticDirs: ["../public"],
 	viteFinal: (config) => {
 		config.plugins.push(vitePluginNext());
 		return config;

@@ -29,6 +29,10 @@
 
 - process.env.STORYBOOK_PROJECT_ROOT not supported yet
 
+### next/font
+
+- static dir config not required anymore
+
 ### CSS
 
 #### Sass

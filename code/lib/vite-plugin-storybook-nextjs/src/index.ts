@@ -30,6 +30,9 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin {
 			}
 		},
 		enforce: "pre",
+		configureServer(server) {
+			nextFontPlugin.configureServer.call(this, server);
+		},
 		async config(config, env) {
 			const mergedNextSwcConfig = await nextSwcPlugin.config.call(
 				this,
@@ -41,11 +44,16 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin {
 				mergedNextSwcConfig,
 				env,
 			);
+			const mergedNextFontConfig = await nextFontPlugin.config.call(
+				this,
+				mergedNextEnvConfig,
+				env,
+			);
 
-			return mergedNextEnvConfig;
+			return mergedNextFontConfig;
 		},
 		resolveId(source, importer, options) {
-			return nextFontPlugin.resolveId.call(this, source, importer, options);
+			return nextFontPlugin.resolveId.call(this, source, importer);
 		},
 		load(id) {
 			return nextFontPlugin.load.call(this, id);

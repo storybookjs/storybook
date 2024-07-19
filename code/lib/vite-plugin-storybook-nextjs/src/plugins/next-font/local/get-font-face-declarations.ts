@@ -4,22 +4,13 @@ import { validateLocalFontFunctionCall } from "next/dist/compiled/@next/font/dis
 import loaderUtils from "next/dist/compiled/loader-utils3";
 
 import type { LoaderOptions } from "../types";
-import { getProjectRoot } from "../utils/get-project-root";
 
-type LocalFontSrc =
+export type LocalFontSrc =
 	| string
 	| Array<{ path: string; weight?: string; style?: string }>;
 
-export async function getFontFaceDeclarations(
-	options: LoaderOptions,
-	rootContext: string,
-) {
+export async function getFontFaceDeclarations(options: LoaderOptions) {
 	const localFontSrc = options.props.src as LocalFontSrc;
-
-	// Parent folder relative to the root context
-	const parentFolder = path
-		.dirname(path.join(process.cwd(), options.filename))
-		.replace(rootContext, "");
 
 	const {
 		weight,
@@ -44,25 +35,17 @@ export async function getFontFaceDeclarations(
 
 	const getFontFaceCSS = () => {
 		if (typeof localFontSrc === "string") {
-			const localFontPath = path
-				.join(parentFolder, localFontSrc)
-				.replaceAll("\\", "/");
-
 			return `@font-face {
           font-family: ${id};
-          src: url(.${localFontPath});
+          src: url(.${localFontSrc});
           ${fontDeclarations}
       }`;
 		}
 		return localFontSrc
 			.map((font) => {
-				const localFontPath = path
-					.join(parentFolder, font.path)
-					.replaceAll("\\", "/");
-
 				return `@font-face {
           font-family: ${id};
-          src: url(.${localFontPath});
+          src: url(.${font.path});
           ${font.weight ? `font-weight: ${font.weight};` : ""}
           ${font.style ? `font-style: ${font.style};` : ""}
           ${fontDeclarations}

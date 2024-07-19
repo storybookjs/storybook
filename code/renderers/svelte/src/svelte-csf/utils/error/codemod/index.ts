@@ -22,7 +22,7 @@ export class InvalidTemplateAttribute extends StorybookSvelteCSFError {
 
   template(): string {
     return dedent`
-      'Story' component prop 'template' value must be a text (string) with a reference to existing '<Template>' component id.
+      'Story' component prop 'template' value must be a string with a reference to existing '<Template>' component id.
 
       The issue occurred in Stories file: ${this.filepathURL}
     `;

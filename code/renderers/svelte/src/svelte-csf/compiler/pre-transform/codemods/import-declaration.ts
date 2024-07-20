@@ -31,10 +31,11 @@ export function transformImportDeclaration(params: Params): ImportDeclaration {
       throw new DefaultOrNamespaceImportUsedError(filename);
     }
 
-    if (specifier.imported.name === 'defineMeta') {
+    if (['defineMeta', 'setTemplate'].includes(specifier.imported.name)) {
       newSpecifiers.push(specifier);
-      hasDefineMeta = true;
+      if (specifier.imported.name === 'defineMeta') hasDefineMeta = true;
     }
+
   }
 
   if (!hasDefineMeta) {

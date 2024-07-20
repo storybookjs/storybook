@@ -33,4 +33,17 @@ describe(transformImportDeclaration.name, () => {
       `"import { defineMeta } from "${pkg.name}";"`
     );
   });
+
+  it("it doesn't remove existing 'setTemplate'", async ({ expect }) => {
+    const code = `
+      <script context="module" lang="ts">
+        import { defineMeta, setTemplate } from "${pkg.name}";
+      </script>
+    `;
+    const node = await parseAndExtractSvelteNode<ImportDeclaration>(code, 'ImportDeclaration');
+
+    expect(print(transformImportDeclaration({ node }))).toMatchInlineSnapshot(
+      `"import { defineMeta, setTemplate } from "${pkg.name}";"`
+    );
+  });
 });

@@ -187,6 +187,7 @@ const LayoutContainer = styled.div<LayoutState & { showPanel: boolean }>(
       overflow: 'hidden',
       display: 'flex',
       flexDirection: 'column',
+      colorScheme: 'light dark',
 
       [MEDIA_DESKTOP_BREAKPOINT]: {
         display: 'grid',

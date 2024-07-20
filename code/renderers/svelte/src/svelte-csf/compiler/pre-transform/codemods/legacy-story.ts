@@ -7,6 +7,7 @@ import type {
   LetDirective,
   SnippetBlock,
 } from 'svelte/compiler';
+import { camelCase } from 'es-toolkit/string';
 
 import {
   createASTAttribute,
@@ -229,9 +230,7 @@ function templateToChildren(attribute: Attribute, filename?: string): Attribute 
       createASTExpressionTag({
         type: 'Identifier',
         name:
-          // NOTE: Transform name to be snakeCase or valid JavaScript syntax for naming variables
-          // TODO: change function name, because it does the same job?
-          storyNameToExportName(
+          camelCase(
             value[0].type === 'Text'
               ? value[0].data
               : ((value[0].expression as Literal).value as string)

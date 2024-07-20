@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "8.3.0-alpha.1",
+  "version": "8.3.0-alpha.2",
   "description": "Storybook's CLI - install, dev, build, upgrade, and more",
   "keywords": [
     "cli",
@@ -167,6 +167,11 @@
       "types": "./core/preview/globals.d.ts",
       "import": "./core/preview/globals.js",
       "require": "./core/preview/globals.cjs"
+    },
+    "./internal/manager/globals": {
+      "types": "./core/manager/globals.d.ts",
+      "import": "./core/manager/globals.js",
+      "require": "./core/manager/globals.cjs"
     }
   },
   "main": "dist/index.cjs",
@@ -218,6 +223,9 @@
       ],
       "internal/manager-errors": [
         "./core/manager-errors.d.ts"
+      ],
+      "internal/manager/globals": [
+        "./core/manager/globals.d.ts"
       ],
       "internal/manager/globals-module-info": [
         "./core/manager/globals-module-info.d.ts"

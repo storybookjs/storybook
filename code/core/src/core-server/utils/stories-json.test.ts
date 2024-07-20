@@ -263,6 +263,63 @@ describe('useStoriesJson', () => {
               "title": "first-nested/deeply/F",
               "type": "story",
             },
+            "first-nested-deeply-features--with-csf-1": {
+              "id": "first-nested-deeply-features--with-csf-1",
+              "importPath": "./src/first-nested/deeply/Features.stories.jsx",
+              "name": "With CSF 1",
+              "tags": [
+                "dev",
+                "test",
+              ],
+              "title": "first-nested/deeply/Features",
+              "type": "story",
+            },
+            "first-nested-deeply-features--with-play": {
+              "id": "first-nested-deeply-features--with-play",
+              "importPath": "./src/first-nested/deeply/Features.stories.jsx",
+              "name": "With Play",
+              "tags": [
+                "dev",
+                "test",
+                "play-fn",
+              ],
+              "title": "first-nested/deeply/Features",
+              "type": "story",
+            },
+            "first-nested-deeply-features--with-render": {
+              "id": "first-nested-deeply-features--with-render",
+              "importPath": "./src/first-nested/deeply/Features.stories.jsx",
+              "name": "With Render",
+              "tags": [
+                "dev",
+                "test",
+              ],
+              "title": "first-nested/deeply/Features",
+              "type": "story",
+            },
+            "first-nested-deeply-features--with-story-fn": {
+              "id": "first-nested-deeply-features--with-story-fn",
+              "importPath": "./src/first-nested/deeply/Features.stories.jsx",
+              "name": "With Story Fn",
+              "tags": [
+                "dev",
+                "test",
+              ],
+              "title": "first-nested/deeply/Features",
+              "type": "story",
+            },
+            "first-nested-deeply-features--with-test": {
+              "id": "first-nested-deeply-features--with-test",
+              "importPath": "./src/first-nested/deeply/Features.stories.jsx",
+              "name": "With Test",
+              "tags": [
+                "dev",
+                "test",
+                "play-fn",
+              ],
+              "title": "first-nested/deeply/Features",
+              "type": "story",
+            },
             "h--story-one": {
               "id": "h--story-one",
               "importPath": "./src/H.stories.mjs",

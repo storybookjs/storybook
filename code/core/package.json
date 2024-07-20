@@ -1,6 +1,6 @@
 {
   "name": "@storybook/core",
-  "version": "8.3.0-alpha.1",
+  "version": "8.3.0-alpha.2",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -142,6 +142,11 @@
       "import": "./dist/manager/globals-module-info.js",
       "require": "./dist/manager/globals-module-info.cjs"
     },
+    "./manager/globals": {
+      "types": "./dist/manager/globals.d.ts",
+      "import": "./dist/manager/globals.js",
+      "require": "./dist/manager/globals.cjs"
+    },
     "./preview/globals": {
       "types": "./dist/preview/globals.d.ts",
       "import": "./dist/preview/globals.js",
@@ -229,6 +234,9 @@
       "manager/globals-module-info": [
         "./dist/manager/globals-module-info.d.ts"
       ],
+      "manager/globals": [
+        "./dist/manager/globals.d.ts"
+      ],
       "preview/globals": [
         "./dist/preview/globals.d.ts"
       ]
@@ -277,7 +285,7 @@
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-scroll-area": "^1.0.5",
     "@radix-ui/react-slot": "^1.0.2",
-    "@storybook/docs-mdx": "4.0.0-next.0",
+    "@storybook/docs-mdx": "4.0.0-next.1",
     "@storybook/global": "^5.0.0",
     "@storybook/icons": "^1.2.5",
     "@tanstack/react-virtual": "^3.3.0",

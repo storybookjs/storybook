@@ -68,11 +68,11 @@ async function webpack(
    *
    * In the future the `@storybook/theming` and `@storybook/components` can be removed, as they should be singletons in the future due to the peerDependency on `storybook` package.
    */
-  const cliPath = require.resolve('storybook/package.json');
-  const themingPath = join(cliPath, '..', 'core', 'theming', 'index.js');
+  const cliPath = dirname(require.resolve('storybook/package.json'));
+  const themingPath = join(cliPath, 'core', 'theming', 'index.js');
   const themingCreatePath = join(cliPath, 'core', 'theming', 'create.js');
 
-  const componentsPath = join(cliPath, '..', 'core', 'components', 'index.js');
+  const componentsPath = join(cliPath, 'core', 'components', 'index.js');
   const blocksPath = dirname(require.resolve('@storybook/blocks/package.json'));
   if (Array.isArray(webpackConfig.resolve?.alias)) {
     alias = [...webpackConfig.resolve?.alias];

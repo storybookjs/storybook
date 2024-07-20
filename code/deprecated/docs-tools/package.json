@@ -1,6 +1,6 @@
 {
   "name": "@storybook/docs-tools",
-  "version": "8.3.0-alpha.1",
+  "version": "8.3.0-alpha.2",
   "description": "Shared utility functions for frameworks to implement docs",
   "keywords": [
     "storybook"

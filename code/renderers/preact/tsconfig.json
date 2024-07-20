@@ -1,10 +1,10 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "strict": true,
     "resolveJsonModule": true,
     "jsxFactory": "h",
-    "jsxFragmentFactory": "Fragment"
+    "jsxFragmentFactory": "Fragment",
+    "types": ["preact"]
   },
   "include": ["src/**/*", "template/**/*"]
 }

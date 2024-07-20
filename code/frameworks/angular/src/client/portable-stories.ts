@@ -12,6 +12,8 @@ import {
   ProjectAnnotations,
 } from 'storybook/internal/types';
 import { TestingLibraryMustBeConfiguredError } from 'storybook/internal/preview-errors';
+import { TestBed } from '@angular/core/testing';
+
 import { AngularRenderer } from './types';
 import { Meta } from './public-types';
 import * as angularProjectAnnotations from './entry-preview';
@@ -43,13 +45,28 @@ export function setProjectAnnotations(
 // This will not be necessary once we have auto preset loading
 export const INTERNAL_DEFAULT_PROJECT_ANNOTATIONS: ProjectAnnotations<AngularRenderer> = {
   ...angularProjectAnnotations,
-  renderToCanvas: ({
+  renderToCanvas: async ({
     storyFn,
     storyContext: { context, unboundStoryFn: Story, testingLibraryRender: render, canvasElement },
   }) => {
     if (render == null) throw new TestingLibraryMustBeConfiguredError();
+    // TODO: Confirm that my reasoning is correct for calling TestBed.resetTestingModule().
+    // Since render creates a new TestBed module and Storybook may call render
+    // multiple times, we need to manually reset the TestBed module, instead of
+    // relying on the afterEach hook.
+    TestBed.resetTestingModule();
     const { component, applicationConfig } = createMountable(storyFn({ label: 'Hello world' }));
-    const { unmount } = render(component, { providers: applicationConfig.providers });
+    const { unmount, container } = await render(component, {
+      providers: applicationConfig.providers,
+    });
+
+    // I did not see a way to pass the canvasElement to the render function. So,
+    // instead render is called then the container is appended to the
+    // canvasElement.
+    if (canvasElement) {
+      canvasElement.appendChild(container);
+    }
+
     return unmount;
   },
 };

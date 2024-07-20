@@ -7,7 +7,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
       type="button"
       class="storybook-button storybook-button--{{ size }} {{ mode }}"
       [style.backgroundColor]="backgroundColor"
-      (click)="onClick($event)"
+      (click)="onClick.emit($event)"
     >
       {{ label }}
     </button>

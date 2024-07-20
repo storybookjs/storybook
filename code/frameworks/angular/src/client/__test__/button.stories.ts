@@ -54,10 +54,17 @@ export const CSF2StoryWithLocale: CSF2Story = (args, { globals }) => ({
     label: getCaptionForLocale(globals.locale),
     locale: globals.locale,
   },
+  // template: '<storybook-button [label]="label"></storybook-button>',
 });
 CSF2StoryWithLocale.storyName = 'WithLocale';
+CSF2StoryWithLocale.args = {
+  label: '',
+};
 CSF2StoryWithLocale.decorators = [
-  componentWrapperDecorator((story) => `<div><p>locale: {{ locale }}</p>${story}</div>`),
+  // componentWrapperDecorator((story) => `<div><p>locale: {{ locale }}</p>${story}</div>`),
+  componentWrapperDecorator((story) => {
+    return `<div><p>locale: {{ locale }}</p>${story}</div>`;
+  }),
 ];
 
 export const CSF2StoryWithParamsAndDecorator = Template.bind({});

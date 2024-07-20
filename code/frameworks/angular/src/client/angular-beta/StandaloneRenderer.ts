@@ -9,6 +9,7 @@ import { AbstractRenderer } from './AbstractRenderer';
 import { PropertyExtractor } from './utils/PropertyExtractor';
 import { getApplication } from './StorybookModule';
 import { storyPropsProvider } from './StorybookProvider';
+import { getNextStoryUID } from './utils/StoryUID';
 
 export class StandaloneRenderer extends AbstractRenderer {
   protected isFirstRender: boolean = true;
@@ -129,10 +130,12 @@ export function createMountable(storyFnReturn: StoryFnAngularReturnType): Render
     targetDOMNode: domNode,
   });
 
+  const storyUid = getNextStoryUID(storyId);
+
   // This additional wrapper can probably be avoided by making some changes to
   // the renderer or wrapper component in '@storybook/angular'.
   @Component({
-    selector: 'sb-testing-mountable',
+    selector: `sb-testing-mountable[${storyUid}]`,
     template: `<${storyId}></${storyId}>`,
     imports: [(componentAndConfig as any).component],
     standalone: true,

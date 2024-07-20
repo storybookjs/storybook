@@ -3,11 +3,9 @@
 /// <reference types="@testing-library/jest-dom" />;
 import { it, expect, vi, describe, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/angular';
-// import '@testing-library/svelte/vitest';
 import { expectTypeOf } from 'expect-type';
 import { Meta } from '..';
 import * as stories from './button.stories';
-// import type Button from './Button.svelte';
 import { ButtonComponent } from './button.component';
 import { composeStories, composeStory, setProjectAnnotations } from '../portable-stories';
 import { createMountable } from '../angular-beta/StandaloneRenderer';
@@ -16,10 +14,6 @@ setProjectAnnotations({ testingLibraryRender: render as any });
 
 // example with composeStories, returns an object with all stories composed with args/decorators
 const { CSF3Primary, LoaderStory } = composeStories(stories);
-
-// afterEach(() => {
-//   cleanup();
-// });
 
 // example with composeStory, returns a single story composed with args/decorators
 const Secondary = composeStory(stories.CSF2Secondary, stories.default);
@@ -44,135 +38,140 @@ describe('renders', () => {
     await expect(buttonElement).not.toBeNull();
   });
 
-  // it('reuses args from composed story', () => {
-  //   render(Secondary.Component, Secondary.props);
-  //   const buttonElement = screen.getByRole('button');
-  //   expect(buttonElement.textContent).toMatch(Secondary.args.label);
-  // });
+  it('reuses args from composed story', async () => {
+    const { component, applicationConfig } = createMountable(Secondary());
+    await render(component, { providers: applicationConfig.providers });
+    const buttonElement = screen.getByRole('button');
+    await expect(buttonElement.textContent).toMatch(Secondary.args.label);
+  });
 
-  // // TODO TypeError: component.$on is not a function - Potentially only works in Svelte 4
-  // it.skip('onclick handler is called', async () => {
-  //   const onClickSpy = vi.fn();
-  //   const { component } = render(Secondary.Component, { ...Secondary.props, onClick: onClickSpy });
-  //   component.$on('click', onClickSpy);
-  //   const buttonElement = screen.getByRole('button');
-  //   buttonElement.click();
-  //   expect(onClickSpy).toHaveBeenCalled();
-  // });
+  it('onclick handler is called', async () => {
+    const onClickSpy = vi.fn();
+    const { component, applicationConfig } = createMountable(Secondary({ onClick: onClickSpy }));
+    await render(component, { providers: applicationConfig.providers });
+    const buttonElement = screen.getByRole('button');
+    buttonElement.click();
+    expect(onClickSpy).toHaveBeenCalled();
+  });
 
-  // it('reuses args from composeStories', () => {
-  //   const { getByText } = render(CSF3Primary.Component, CSF3Primary.props);
-  //   const buttonElement = getByText(/foo/i);
-  //   expect(buttonElement).not.toBeNull();
-  // });
+  it('reuses args from composeStories', async () => {
+    const { component, applicationConfig } = createMountable(CSF3Primary());
+    const { getByText } = await render(component, { providers: applicationConfig.providers });
+    const buttonElement = getByText(/foo/i);
+    expect(buttonElement).not.toBeNull();
+  });
 
-  // it('should call and compose loaders data', async () => {
-  //   await LoaderStory.load();
-  //   const { getByTestId } = render(LoaderStory.Component, LoaderStory.props);
-  //   expect(getByTestId('spy-data').textContent).toEqual('mockFn return value');
-  //   expect(getByTestId('loaded-data').textContent).toEqual('loaded data');
-  //   // spy assertions happen in the play function and should work
-  //   await LoaderStory.play!();
-  // });
+  it('should call and compose loaders data', async () => {
+    await LoaderStory.load();
+    const { component, applicationConfig } = createMountable(LoaderStory());
+    const { getByTestId } = await render(component, { providers: applicationConfig.providers });
+    await expect(getByTestId('spy-data').textContent).toEqual('mockFn return value');
+    await expect(getByTestId('loaded-data').textContent).toEqual('loaded data');
+    // spy assertions happen in the play function and should work
+    await LoaderStory.play!();
+  });
 });
 
 // describe('projectAnnotations', () => {
-//   it('renders with default projectAnnotations', () => {
+//   it('renders with default projectAnnotations', async () => {
 //     setProjectAnnotations([
 //       {
 //         parameters: { injected: true },
 //         globalTypes: {
 //           locale: { defaultValue: 'en' },
 //         },
-//         testingLibraryRender: render,
+//         testingLibraryRender: render as any,
 //       },
 //     ]);
 //     const WithEnglishText = composeStory(stories.CSF2StoryWithLocale, stories.default);
-//     const { getByText } = render(WithEnglishText.Component, WithEnglishText.props);
+//     const { component, applicationConfig } = createMountable(WithEnglishText());
+//     const { getByText } = await render(component, { providers: applicationConfig.providers });
 //     const buttonElement = getByText('Hello!');
 //     expect(buttonElement).not.toBeNull();
 //     expect(WithEnglishText.parameters?.injected).toBe(true);
 //   });
 
-//   it('renders with custom projectAnnotations via composeStory params', () => {
+//   it('renders with custom projectAnnotations via composeStory params', async () => {
 //     const WithPortugueseText = composeStory(stories.CSF2StoryWithLocale, stories.default, {
 //       initialGlobals: { locale: 'pt' },
 //     });
-//     const { getByText } = render(WithPortugueseText.Component, WithPortugueseText.props);
+//     const { component, applicationConfig } = createMountable(WithPortugueseText());
+//     const { getByText } = await render(component, { providers: applicationConfig.providers });
 //     const buttonElement = getByText('Olá!');
 //     expect(buttonElement).not.toBeNull();
 //   });
 // });
 
-// describe('CSF3', () => {
-//   it('renders with inferred globalRender', () => {
-//     const Primary = composeStory(stories.CSF3Button, stories.default);
-//     render(Primary.Component, Primary.props);
-//     const buttonElement = screen.getByText(/foo/i);
-//     expect(buttonElement).not.toBeNull();
-//   });
+describe('CSF3', () => {
+  it('renders with inferred globalRender', async () => {
+    const Primary = composeStory(stories.CSF3Button, stories.default);
+    const { component, applicationConfig } = createMountable(Primary());
+    await render(component, { providers: applicationConfig.providers });
+    const buttonElement = screen.getByText(/foo/i);
+    expect(buttonElement).not.toBeNull();
+  });
 
-//   it('renders with custom render function', () => {
-//     const Primary = composeStory(stories.CSF3ButtonWithRender, stories.default);
+  it('renders with custom render function', async () => {
+    const Primary = composeStory(stories.CSF3ButtonWithRender, stories.default);
 
-//     render(Primary.Component, Primary.props);
-//     expect(screen.getByTestId('custom-render')).not.toBeNull();
-//   });
+    const { component, applicationConfig } = createMountable(Primary());
+    await render(component, { providers: applicationConfig.providers });
+    expect(screen.getByTestId('custom-render')).not.toBeNull();
+  });
 
-//   it('renders with play function without canvas element', async () => {
-//     const CSF3InputFieldFilled = composeStory(stories.CSF3InputFieldFilled, stories.default);
+  it('renders with play function without canvas element', async () => {
+    const CSF3InputFieldFilled = composeStory(stories.CSF3InputFieldFilled, stories.default);
 
-//     await CSF3InputFieldFilled.play();
+    await CSF3InputFieldFilled.play();
 
-//     const input = screen.getByTestId('input') as HTMLInputElement;
-//     expect(input.value).toEqual('Hello world!');
-//   });
+    const input = screen.getByTestId('input') as HTMLInputElement;
+    expect(input.value).toEqual('Hello world!');
+  });
 
-//   it('renders with play function with canvas element', async () => {
-//     const CSF3InputFieldFilled = composeStory(stories.CSF3InputFieldFilled, stories.default);
+  it('renders with play function with canvas element', async () => {
+    const CSF3InputFieldFilled = composeStory(stories.CSF3InputFieldFilled, stories.default);
 
-//     const div = document.createElement('div');
-//     document.body.appendChild(div);
+    const div = document.createElement('div');
+    document.body.appendChild(div);
 
-//     await CSF3InputFieldFilled.play({ canvasElement: div });
+    await CSF3InputFieldFilled.play({ canvasElement: div });
 
-//     const input = screen.getByTestId('input') as HTMLInputElement;
-//     expect(input.value).toEqual('Hello world!');
+    const input = screen.getByTestId('input') as HTMLInputElement;
+    expect(input.value).toEqual('Hello world!');
 
-//     document.body.removeChild(div);
-//   });
-// });
+    document.body.removeChild(div);
+  });
+});
 
-// describe('ComposeStories types', () => {
-//   // this file tests Typescript types that's why there are no assertions
-//   it('Should support typescript operators', () => {
-//     type ComposeStoriesParam = Parameters<typeof composeStories>[0];
+describe('ComposeStories types', () => {
+  // this file tests Typescript types that's why there are no assertions
+  it('Should support typescript operators', () => {
+    type ComposeStoriesParam = Parameters<typeof composeStories>[0];
 
-//     expectTypeOf({
-//       ...stories,
-//       default: stories.default as Meta<typeof Button>,
-//     }).toMatchTypeOf<ComposeStoriesParam>();
+    expectTypeOf({
+      ...stories,
+      default: stories.default as Meta<ButtonComponent>,
+    }).toMatchTypeOf<ComposeStoriesParam>();
 
-//     expectTypeOf({
-//       ...stories,
+    expectTypeOf({
+      ...stories,
 
-//       /**
-//        * Types of property 'argTypes' are incompatible.
-//        * Type '{ backgroundColor: { control: string; }; size: { control: { type: string; }; options: string[]; }; }'
-//        * has no properties in common with type 'Partial<ArgTypes<ComponentType>>'.
-//        */
-//       // @ts-expect-error fix this later
-//       default: stories.default satisfies Meta<typeof Button>,
-//     }).toMatchTypeOf<ComposeStoriesParam>();
-//   });
-// });
+      /**
+       * Types of property 'argTypes' are incompatible.
+       * Type '{ backgroundColor: { control: string; }; size: { control: { type: string; }; options: string[]; }; }'
+       * has no properties in common with type 'Partial<ArgTypes<ComponentType>>'.
+       */
+      default: stories.default satisfies Meta<ButtonComponent>,
+    }).toMatchTypeOf<ComposeStoriesParam>();
+  });
+});
 
-// // Batch snapshot testing
-// const testCases = Object.values(composeStories(stories)).map(
-//   (Story) => [Story.storyName, Story] as [string, typeof Story]
-// );
-// it.each(testCases)('Renders %s story', async (_storyName, Story) => {
-//   if (_storyName === 'CSF2StoryWithLocale') return;
-//   await Story.play();
-//   expect(document.body).toMatchSnapshot();
-// });
+// Batch snapshot testing
+const testCases = Object.values(composeStories(stories)).map(
+  (Story) => [Story.storyName, Story] as [string, typeof Story]
+);
+it.each(testCases)('Renders %s story', async (_storyName, Story) => {
+  if (_storyName === 'CSF2StoryWithLocale') return;
+  await Story.play();
+  expect(document.body).toMatchSnapshot();
+});

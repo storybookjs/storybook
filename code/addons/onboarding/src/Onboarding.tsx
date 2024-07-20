@@ -75,6 +75,7 @@ export default function Onboarding({ api }: { api: API }) {
   const [createNewStoryForm, setCreateNewStoryForm] = useState<HTMLElement | null>();
   const [createdStory, setCreatedStory] = useState<{
     newStoryName: string;
+    newStoryExportName: string;
     sourceFileContent: string;
     sourceFileName: string;
   } | null>();
@@ -158,8 +159,8 @@ export default function Onboarding({ api }: { api: API }) {
   }
 
   const source = createdStory?.sourceFileContent;
-  const startIndex = source?.lastIndexOf(`export const ${createdStory?.newStoryName}`);
-  const snippet = source?.slice(startIndex);
+  const startIndex = source?.lastIndexOf(`export const ${createdStory?.newStoryExportName}`);
+  const snippet = source?.slice(startIndex).trim();
   const startingLineNumber = source?.slice(0, startIndex).split('\n').length;
 
   const steps: StepDefinition[] = [

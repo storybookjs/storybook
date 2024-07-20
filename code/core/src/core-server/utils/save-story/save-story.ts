@@ -111,9 +111,11 @@ export function initializeSaveStory(channel: Channel, options: Options, coreConf
           csfId,
           newStoryId,
           newStoryName,
+          newStoryExportName: name,
           sourceFileContent: code,
           sourceFileName,
           sourceStoryName,
+          sourceStoryExportName: storyName,
         },
         error: null,
       } satisfies ResponseData<SaveStoryResponsePayload>);

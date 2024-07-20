@@ -62,9 +62,12 @@ describe('story extraction', () => {
         "entries": [
           {
             "componentPath": undefined,
+            "extra": {
+              "metaId": "a",
+              "stats": {},
+            },
             "id": "a--story-one",
             "importPath": "./src/A.stories.js",
-            "metaId": "a",
             "name": "Story One",
             "tags": [
               "story-tag-from-indexer",
@@ -74,9 +77,12 @@ describe('story extraction', () => {
           },
           {
             "componentPath": undefined,
+            "extra": {
+              "metaId": "custom-id",
+              "stats": {},
+            },
             "id": "some-fully-custom-id",
             "importPath": "./src/A.stories.js",
-            "metaId": "custom-id",
             "name": "Another Story Name",
             "tags": [
               "story-tag-from-indexer",
@@ -118,9 +124,12 @@ describe('story extraction', () => {
         "entries": [
           {
             "componentPath": undefined,
+            "extra": {
+              "metaId": undefined,
+              "stats": {},
+            },
             "id": "f--story-one",
             "importPath": "./src/first-nested/deeply/F.stories.js",
-            "metaId": undefined,
             "name": "Story One",
             "tags": [],
             "title": "F",
@@ -164,9 +173,12 @@ describe('story extraction', () => {
         "entries": [
           {
             "componentPath": undefined,
+            "extra": {
+              "metaId": "a",
+              "stats": {},
+            },
             "id": "a--story-one",
             "importPath": "./src/first-nested/deeply/F.stories.js",
-            "metaId": "a",
             "name": "Story One",
             "tags": [
               "story-tag-from-indexer",
@@ -212,9 +224,12 @@ describe('story extraction', () => {
         "entries": [
           {
             "componentPath": undefined,
+            "extra": {
+              "metaId": "a",
+              "stats": {},
+            },
             "id": "a--story-one",
             "importPath": "./src/A.stories.js",
-            "metaId": "a",
             "name": "Story One",
             "tags": [
               "story-tag-from-indexer",
@@ -278,9 +293,12 @@ describe('story extraction', () => {
         "entries": [
           {
             "componentPath": undefined,
+            "extra": {
+              "metaId": undefined,
+              "stats": {},
+            },
             "id": "a--story-one",
             "importPath": "./src/A.stories.js",
-            "metaId": undefined,
             "name": "Story One",
             "tags": [
               "story-tag-from-indexer",
@@ -290,9 +308,12 @@ describe('story extraction', () => {
           },
           {
             "componentPath": undefined,
+            "extra": {
+              "metaId": undefined,
+              "stats": {},
+            },
             "id": "custom-title--story-two",
             "importPath": "./src/A.stories.js",
-            "metaId": undefined,
             "name": "Custom Name For Second Story",
             "tags": [
               "story-tag-from-indexer",
@@ -302,9 +323,12 @@ describe('story extraction', () => {
           },
           {
             "componentPath": undefined,
+            "extra": {
+              "metaId": "custom-meta-id",
+              "stats": {},
+            },
             "id": "custom-meta-id--story-three",
             "importPath": "./src/A.stories.js",
-            "metaId": "custom-meta-id",
             "name": "Story Three",
             "tags": [
               "story-tag-from-indexer",
@@ -347,9 +371,12 @@ describe('story extraction', () => {
         "entries": [
           {
             "componentPath": undefined,
+            "extra": {
+              "metaId": undefined,
+              "stats": {},
+            },
             "id": "a--story-one",
             "importPath": "./src/A.stories.js",
-            "metaId": undefined,
             "name": "Story One",
             "tags": [
               "story-tag-from-indexer",
@@ -397,9 +424,12 @@ describe('docs entries from story extraction', () => {
         "entries": [
           {
             "componentPath": undefined,
+            "extra": {
+              "metaId": undefined,
+              "stats": {},
+            },
             "id": "a--story-one",
             "importPath": "./src/A.stories.js",
-            "metaId": undefined,
             "name": "Story One",
             "tags": [
               "story-tag-from-indexer",
@@ -457,9 +487,12 @@ describe('docs entries from story extraction', () => {
           },
           {
             "componentPath": undefined,
+            "extra": {
+              "metaId": undefined,
+              "stats": {},
+            },
             "id": "a--story-one",
             "importPath": "./src/A.stories.js",
-            "metaId": undefined,
             "name": "Story One",
             "tags": [
               "autodocs",
@@ -506,9 +539,12 @@ describe('docs entries from story extraction', () => {
         "entries": [
           {
             "componentPath": undefined,
+            "extra": {
+              "metaId": undefined,
+              "stats": {},
+            },
             "id": "a--story-one",
             "importPath": "./src/A.stories.js",
-            "metaId": undefined,
             "name": "Story One",
             "tags": [
               "autodocs",

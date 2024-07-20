@@ -34,6 +34,7 @@ export const getEntries = (cwd: string) => {
     define('src/docs-tools/index.ts', ['browser', 'node'], true),
 
     define('src/manager/globals-module-info.ts', ['node'], true),
+    define('src/manager/globals.ts', ['node'], true),
     define('src/preview/globals.ts', ['node'], true),
   ];
 };

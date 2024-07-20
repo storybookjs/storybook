@@ -5762,7 +5762,7 @@ __metadata:
     "@radix-ui/react-scroll-area": "npm:^1.0.5"
     "@radix-ui/react-slot": "npm:^1.0.2"
     "@storybook/csf": "npm:0.1.11"
-    "@storybook/docs-mdx": "npm:4.0.0-next.0"
+    "@storybook/docs-mdx": "npm:4.0.0-next.1"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^1.2.5"
     "@tanstack/react-virtual": "npm:^3.3.0"
@@ -5915,12 +5915,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/docs-mdx@npm:4.0.0-next.0":
-  version: 4.0.0-next.0
-  resolution: "@storybook/docs-mdx@npm:4.0.0-next.0"
+"@storybook/docs-mdx@npm:4.0.0-next.1":
+  version: 4.0.0-next.1
+  resolution: "@storybook/docs-mdx@npm:4.0.0-next.1"
   dependencies:
     acorn: "npm:^8.12.1"
-  checksum: 10c0/6253361e4e3c6c716c4f4c8cc30c082bcdab66b35b30183f6574d94720d875e28927916be8bda0bff4987090c3e50d348ca898160b1812a90c5afa845400414e
+  checksum: 10c0/8779279014a0a48c00d5884d310b3ca7828a49057c7403371e4eaf0fd053d8c93a412084cbbd6e5ea65e509e27f96752e8de7dadacdfa89198158b8b10deabdc
   languageName: node
   linkType: hard
 

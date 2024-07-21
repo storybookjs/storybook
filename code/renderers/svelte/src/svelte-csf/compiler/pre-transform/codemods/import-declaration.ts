@@ -35,7 +35,6 @@ export function transformImportDeclaration(params: Params): ImportDeclaration {
       newSpecifiers.push(specifier);
       if (specifier.imported.name === 'defineMeta') hasDefineMeta = true;
     }
-
   }
 
   if (!hasDefineMeta) {

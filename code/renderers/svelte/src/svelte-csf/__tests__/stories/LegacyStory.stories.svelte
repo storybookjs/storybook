@@ -37,6 +37,6 @@
 
 <Story name="With source as shorthand" source />
 
-<Story name="With source as text" source="<LegacyStory>{'Hi'}</LegacyStory>">
+<Story name="With source as text" source="<LegacyStory>Hi</LegacyStory>">
   <LegacyStory>{'Hi'}</LegacyStory>
 </Story>

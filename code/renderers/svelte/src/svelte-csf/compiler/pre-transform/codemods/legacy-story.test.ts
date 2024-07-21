@@ -1,4 +1,3 @@
-import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
 import type { Component } from 'svelte/compiler';
 import { print } from 'svelte-ast-print';
 import { describe, it } from 'vitest';
@@ -11,7 +10,7 @@ describe(transformLegacyStory.name, () => {
   it("it moves 'autodocs' prop to 'tags' correctly", async ({ expect }) => {
     const code = `
       <script context="module">
-        import { Story } from "${pkg.name}";
+        import { Story } from "@storybook/addon-svelte-csf";
       </script>
 
       <Story name="Default" autodocs />
@@ -26,7 +25,7 @@ describe(transformLegacyStory.name, () => {
   it("moving 'autodocs' prop doesn't break with existing 'tags' prop", async ({ expect }) => {
     const code = `
       <script context="module">
-        import { Story } from "${pkg.name}";
+        import { Story } from "@storybook/addon-svelte-csf";
       </script>
 
       <Story name="Default" autodocs tags={["!dev"]} />
@@ -41,7 +40,7 @@ describe(transformLegacyStory.name, () => {
   it("'source' prop when is a shorthand gets removed", async ({ expect }) => {
     const code = `
       <script context="module">
-        import { Story } from "${pkg.name}";
+        import { Story } from "@storybook/addon-svelte-csf";
       </script>
 
       <Story name="Default" source />
@@ -58,7 +57,7 @@ describe(transformLegacyStory.name, () => {
   }) => {
     const code = `
       <script context="module">
-        import { Story } from "${pkg.name}";
+        import { Story } from "@storybook/addon-svelte-csf";
       </script>
 
       <Story name="Default" source="'<Button primary />'" />
@@ -74,12 +73,39 @@ describe(transformLegacyStory.name, () => {
     );
   });
 
+  it("'source' prop when is a text expression gets moved to 'parameters' prop", async ({
+    expect,
+  }) => {
+    const code = `
+      <script context="module">
+        import { Story } from "@storybook/addon-svelte-csf";
+      </script>
+
+      <Story name="With source as text" source="<LegacyStory>Hi</LegacyStory>">
+        <LegacyStory>{'Hi'}</LegacyStory>
+      </Story>
+    `;
+    const node = await parseAndExtractSvelteNode<Component>(code, 'Component');
+
+    expect(print(transformLegacyStory({ node }))).toMatchInlineSnapshot(
+      `
+      "<Story name="With source as text" parameters={{
+      	docs: {
+      		source: { code: "<LegacyStory>Hi</LegacyStory>" }
+      	}
+      }}>
+      	<LegacyStory>{'Hi'}</LegacyStory>
+      </Story>"
+    `
+    );
+  });
+
   it("'source' prop when is a text expression gets moved to existing 'parameters'", async ({
     expect,
   }) => {
     const code = `
       <script context="module">
-        import { Story } from "${pkg.name}";
+        import { Story } from "@storybook/addon-svelte-csf";
       </script>
 
       <Story
@@ -104,49 +130,13 @@ describe(transformLegacyStory.name, () => {
     );
   });
 
-  it("'source' prop when is a text expression doesn't override existing 'parameters.docs.source.code'", async ({
-    expect,
-  }) => {
-    // TODO: Check if warning was emitted?
-    const code = `
-      <script context="module">
-        import { Story } from "${pkg.name}";
-      </script>
-
-      <Story
-        name="Default"
-        source="'<Button primary />'"
-        parameters={{
-          controls: { disable: true },
-          interactions: { disable: true },
-          docs: {
-            source: { code: '<Button variant="outlined" />' }
-          }
-        }}
-      />
-    `;
-    const node = await parseAndExtractSvelteNode<Component>(code, 'Component');
-
-    expect(print(transformLegacyStory({ node }))).toMatchInlineSnapshot(
-      `
-			"<Story name="Default" parameters={{
-				controls: { disable: true },
-				interactions: { disable: true },
-				docs: {
-					source: { code: '<Button variant="outlined" />' }
-				}
-			}} />"
-		`
-    );
-  });
-
   it("transforms 'template' prop to 'children' and text expression becomes expression tag with identifier to snippet", async ({
     expect,
   }) => {
     // TODO: Check if warning was emitted?
     const code = `
       <script context="module">
-        import { Story } from "${pkg.name}";
+        import { Story } from "@storybook/addon-svelte-csf";
       </script>
 
       <Story name="Default" template="someTemplate" />
@@ -164,7 +154,7 @@ describe(transformLegacyStory.name, () => {
     // TODO: Check if warning was emitted?
     const code = `
       <script context="module">
-        import { Story } from "${pkg.name}";
+        import { Story } from "@storybook/addon-svelte-csf";
       </script>
 
       <Story name="Default" let:args>
@@ -188,7 +178,7 @@ describe(transformLegacyStory.name, () => {
     // TODO: Check if warning was emitted?
     const code = `
       <script context="module">
-        import { Story } from "${pkg.name}";
+        import { Story } from "@storybook/addon-svelte-csf";
       </script>
 
       <Story name="Default" let:context>

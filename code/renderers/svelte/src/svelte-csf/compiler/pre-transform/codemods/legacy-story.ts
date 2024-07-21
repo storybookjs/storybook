@@ -229,12 +229,11 @@ function templateToChildren(attribute: Attribute, filename?: string): Attribute 
     value: [
       createASTExpressionTag({
         type: 'Identifier',
-        name:
-          camelCase(
-            value[0].type === 'Text'
-              ? value[0].data
-              : ((value[0].expression as Literal).value as string)
-          ),
+        name: camelCase(
+          value[0].type === 'Text'
+            ? value[0].data
+            : ((value[0].expression as Literal).value as string)
+        ),
       }),
     ],
   };

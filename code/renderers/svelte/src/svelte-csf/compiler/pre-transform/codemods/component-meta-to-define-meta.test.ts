@@ -73,11 +73,7 @@ describe(transformComponentMetaToDefineMeta.name, () => {
     `;
     const component = await parseAndExtractSvelteNode<Component>(code, 'Component');
 
-    expect(
-      print(
-        transformComponentMetaToDefineMeta({ component })
-      )
-    ).toMatchInlineSnapshot(`
+    expect(print(transformComponentMetaToDefineMeta({ component }))).toMatchInlineSnapshot(`
       "const { Story } = defineMeta({
       	component: WithParameters,
       	parameters: {
@@ -93,7 +89,9 @@ describe(transformComponentMetaToDefineMeta.name, () => {
     `);
   });
 
-  it('supports <Meta> with parameters being referenced to variable in the instance tag', async ({ expect }) => {
+  it('supports <Meta> with parameters being referenced to variable in the instance tag', async ({
+    expect,
+  }) => {
     const code = `
       <script>
         const parameters = { foo: 'bar' };
@@ -103,11 +101,7 @@ describe(transformComponentMetaToDefineMeta.name, () => {
     `;
     const component = await parseAndExtractSvelteNode<Component>(code, 'Component');
 
-    expect(
-      print(
-        transformComponentMetaToDefineMeta({ component })
-      )
-    ).toMatchInlineSnapshot(`
+    expect(print(transformComponentMetaToDefineMeta({ component }))).toMatchInlineSnapshot(`
       "const { Story } = defineMeta({
       	component: WithParameters,
       	parameters: { ...parameters, baz: 'yes' }

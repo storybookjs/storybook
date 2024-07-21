@@ -21,7 +21,10 @@ import { extractCompiledASTNodes } from '#parser/extract/compiled/nodes';
 import { extractSvelteASTNodes } from '#parser/extract/svelte/nodes';
 
 export async function preTransformPlugin(): Promise<Plugin> {
-  const [{ createFilter }, { print }] = await Promise.all([import('vite'), import('svelte-ast-print')]);
+  const [{ createFilter }, { print }] = await Promise.all([
+    import('vite'),
+    import('svelte-ast-print'),
+  ]);
   const include = /\.stories\.svelte$/;
   const filter = createFilter(include);
 
@@ -30,7 +33,6 @@ export async function preTransformPlugin(): Promise<Plugin> {
     enforce: 'pre',
     async transform(code, id) {
       if (!filter(id)) return undefined;
-
 
       const svelteAST = getSvelteAST({ code, filename: id });
       const transformedSvelteAST = await codemodLegacyNodes({

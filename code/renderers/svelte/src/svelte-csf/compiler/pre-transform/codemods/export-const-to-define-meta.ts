@@ -22,15 +22,13 @@ export function transformExportMetaToDefineMeta(
 ): VariableDeclaration {
   const { declaration, leadingComments, start, end } = exportMeta;
   if (!declaration || declaration.type !== 'VariableDeclaration') {
-    // WARN: This would happen if there was a syntax error, I don't think we should document this error.
-    return undefined as never;
+    throw new Error("Invalid syntax - 'export meta' declaration was empty or not a variable declaration");
   }
   const { declarations } = declaration;
   const { init } = declarations[0];
 
   if (!init || init.type !== 'ObjectExpression') {
-    // WARN: This would happen if there was a syntax error, I don't think we should document this error.
-    return undefined as never;
+    throw new Error("Invalid syntax - 'export meta' init was empty or not an object expression");
   }
 
   const key = {

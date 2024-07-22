@@ -43,7 +43,7 @@ export const mdxToCSF: Fix<BareMdxStoriesGlobRunOptions> = {
         ❌ Unable to determine Storybook stories globs in ${chalk.blue(
           mainConfig
         )}, skipping ${chalk.cyan(this.id)} fix.
-        
+
         In Storybook 7, we have deprecated defining stories in MDX files, and consequently have changed the suffix to simply .mdx.
 
         Now, since Storybook 8.0, we have removed support for .stories.mdx files.
@@ -95,7 +95,7 @@ export const mdxToCSF: Fix<BareMdxStoriesGlobRunOptions> = {
     return dedent`
       We've detected your project has one or more globs in your 'stories' config that matches .stories.mdx files:
         ${chalk.cyan(prettyExistingStoriesEntries)}
-      
+
       In Storybook 7, we have deprecated defining stories in MDX files, and consequently have changed the suffix to simply .mdx. Since Storybook 8, we have removed the support of story definition in MDX files entirely. Therefore '.stories.mdx' files aren't supported anymore.
 
       Now, since Storybook 8.0, we have removed support for .stories.mdx files.
@@ -113,8 +113,10 @@ export const mdxToCSF: Fix<BareMdxStoriesGlobRunOptions> = {
   },
 
   async run({ dryRun, mainConfigPath, result: { nextStoriesEntries } }) {
-    logger.info(dedent`✅ Setting 'stories' config:
-      ${JSON.stringify(nextStoriesEntries, null, 2)}`);
+    logger.info(dedent`
+      ✅ Setting 'stories' config:
+      ${JSON.stringify(nextStoriesEntries, null, 2)}
+    `);
 
     if (!dryRun) {
       const { glob: globString } = await prompt({

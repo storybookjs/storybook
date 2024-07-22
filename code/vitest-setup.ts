@@ -38,9 +38,11 @@ expect.extend({
 
     const pass = matched.every(Boolean);
     const failures = paths.filter((_, i) => (pass ? matched[i] : !matched[i]));
-    const message = () => dedent`Expected ${regex} to ${pass ? 'not ' : ''}match all strings.
-    
-    Failures:${['', ...failures].join('\n - ')}`;
+    const message = () => dedent`
+      Expected ${regex} to ${pass ? 'not ' : ''}match all strings.
+
+      Failures:${['', ...failures].join('\n - ')}
+    `;
     return {
       pass,
       message,

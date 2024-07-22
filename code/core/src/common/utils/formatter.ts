@@ -62,11 +62,11 @@ export async function formatFileContent(filePath: string, content: string): Prom
         return await formatWithEditorConfig(filePath, content);
       default:
         console.warn(dedent`
-        Your prettier version ${
-          (prettier as any).version
-        } is not supported to format files which were edited by Storybook. 
-        Please raise an issue on the Storybook GitHub repository. 
-        Falling back to EditorConfig settings, if available.
+          Your prettier version ${
+            (prettier as any).version
+          } is not supported to format files which were edited by Storybook. 
+          Please raise an issue on the Storybook GitHub repository. 
+          Falling back to EditorConfig settings, if available.
         `);
         return await formatWithEditorConfig(filePath, content);
     }

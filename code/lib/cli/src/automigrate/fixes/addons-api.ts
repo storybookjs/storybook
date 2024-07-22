@@ -31,7 +31,7 @@ export const addonsAPI: Fix<AddonsAPIRunOptions> = {
       )}: We've detected that you're using the following package which is removed in Storybook 8 and beyond:
 
       - ${chalk.cyan(`@storybook/addons`)}
-      
+
       This package has been deprecated and replaced with ${chalk.cyan(
         `@storybook/preview-api`
       )} and ${chalk.cyan(`@storybook/manager-api`)}.

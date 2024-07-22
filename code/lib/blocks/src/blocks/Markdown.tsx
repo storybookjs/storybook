@@ -13,9 +13,10 @@ export const Markdown = (props: MarkdownProps) => {
   }
   if (typeof props.children !== 'string') {
     throw new Error(
-      dedent`The Markdown block only accepts children as a single string, but children were of type: '${typeof props.children}'
+      dedent`
+        The Markdown block only accepts children as a single string, but children were of type: '${typeof props.children}'
         This is often caused by not wrapping the child in a template string.
-        
+
         This is invalid:
         <Markdown>
           # Some heading

@@ -31,41 +31,41 @@ export const reactDocgen: Fix<Options> = {
   prompt({ reactDocgenTypescriptOptions }) {
     if (reactDocgenTypescriptOptions) {
       return dedent`
-      You have "typescript.reactDocgenTypescriptOptions" configured in your main.js,
-      but "typescript.reactDocgen" is unset.
-      
-      Since Storybook 8.0, we changed the default React docgen analysis from 
-      "react-docgen-typescript" to "react-docgen". We recommend "react-docgen"
-      for most projects, since it is dramatically faster. However, it doesn't
-      handle all TypeScript constructs, and may generate different results
-      than "react-docgen-typescript".
-      
-      Should we update your config to continue to use "react-docgen-typescript"?
+        You have "typescript.reactDocgenTypescriptOptions" configured in your main.js,
+        but "typescript.reactDocgen" is unset.
 
-      https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#react-docgen-component-analysis-by-default
-    `;
+        Since Storybook 8.0, we changed the default React docgen analysis from 
+        "react-docgen-typescript" to "react-docgen". We recommend "react-docgen"
+        for most projects, since it is dramatically faster. However, it doesn't
+        handle all TypeScript constructs, and may generate different results
+        than "react-docgen-typescript".
+
+        Should we update your config to continue to use "react-docgen-typescript"?
+
+        https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#react-docgen-component-analysis-by-default
+      `;
     } else {
       return dedent`
-      Since Storybook 8.0, ${chalk.cyan(
-        'react-docgen'
-      )} is now the default for generating component controls, replacing ${chalk.cyan(
-        'react-docgen-typescript'
-      )}. 
-      This offers better performance and suits most cases. 
-      However, for complex TypeScript types or specific type features, the generated controls might not be as precise.
-      
-      For more on this change, check the migration guide: 
-      ${chalk.yellow(
-        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#react-docgen-component-analysis-by-default'
-      )}
-      
-      For known "react-docgen" limitations, see: 
-      ${chalk.yellow('https://github.com/storybookjs/storybook/issues/26606')}
-      
-      Press Y to revert to ${chalk.cyan('react-docgen-typescript')}, press N to use ${chalk.cyan(
-        'react-docgen'
-      )}
-    `;
+        Since Storybook 8.0, ${chalk.cyan(
+          'react-docgen'
+        )} is now the default for generating component controls, replacing ${chalk.cyan(
+          'react-docgen-typescript'
+        )}. 
+        This offers better performance and suits most cases. 
+        However, for complex TypeScript types or specific type features, the generated controls might not be as precise.
+
+        For more on this change, check the migration guide: 
+        ${chalk.yellow(
+          'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#react-docgen-component-analysis-by-default'
+        )}
+
+        For known "react-docgen" limitations, see: 
+        ${chalk.yellow('https://github.com/storybookjs/storybook/issues/26606')}
+
+        Press Y to revert to ${chalk.cyan('react-docgen-typescript')}, press N to use ${chalk.cyan(
+          'react-docgen'
+        )}
+      `;
     }
   },
 

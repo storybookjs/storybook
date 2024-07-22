@@ -31,7 +31,7 @@ export async function getStoryId(data: StoryIdData, options: Options) {
   if (autoTitle === undefined) {
     // eslint-disable-next-line local-rules/no-uncategorized-errors
     throw new Error(dedent`
-    The new story file was successfully generated, but we are unable to index it. Please ensure that the new Story file is matched by the 'stories' glob pattern in your Storybook configuration.
+      The new story file was successfully generated, but we are unable to index it. Please ensure that the new Story file is matched by the 'stories' glob pattern in your Storybook configuration.
     `);
   }
 

@@ -32,7 +32,7 @@ export const addonPostCSS: Fix<AddonPostcssRunOptions> = {
       )}: We've detected that you're using the following package which is incompatible with Storybook 8 and beyond:
 
       - ${chalk.cyan(`@storybook/addon-postcss`)}
-      
+
       Please migrate to ${chalk.cyan(
         `@storybook/addon-styling-webpack`
       )} once you're done upgrading.

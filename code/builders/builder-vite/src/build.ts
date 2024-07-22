@@ -46,10 +46,12 @@ export async function build(options: Options) {
   const hasTurbosnapPlugin =
     finalConfig.plugins && (await hasVitePlugins(finalConfig.plugins, [turbosnapPluginName]));
   if (hasTurbosnapPlugin) {
-    logger.warn(dedent`Found '${turbosnapPluginName}' which is now included by default in Storybook 8.
+    logger.warn(dedent`
+      Found '${turbosnapPluginName}' which is now included by default in Storybook 8.
       Removing from your plugins list. Ensure you pass \`--stats-json\` to generate stats.
 
-      For more information, see https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#turbosnap-vite-plugin-is-no-longer-needed`);
+      For more information, see https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#turbosnap-vite-plugin-is-no-longer-needed
+    `);
 
     finalConfig.plugins = await withoutVitePlugins(finalConfig.plugins, [turbosnapPluginName]);
   }

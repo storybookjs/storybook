@@ -172,7 +172,7 @@ export const doUpgrade = async ({
       This version is behind the latest release, which is: ${chalk.bold(latestCLIVersionOnNPM)}!
       You likely ran the upgrade command through npx, which can use a locally cached version, to upgrade to the latest version please run:
       ${chalk.bold('npx storybook@latest upgrade')}
-      
+
       You may want to CTRL+C to stop, and run with the latest version instead.
     `),
     prerelease: chalk.yellow('This is a pre-release version.'),

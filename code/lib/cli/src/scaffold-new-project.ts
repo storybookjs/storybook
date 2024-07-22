@@ -203,10 +203,10 @@ export const scaffoldNewProject = async (
   logger.plain(
     boxen(
       dedent`
-      "${projectDisplayName}" project with ${chalk.bold(packageManagerName)} created successfully!
+        "${projectDisplayName}" project with ${chalk.bold(packageManagerName)} created successfully!
 
-      Continuing with Storybook installation...
-    `,
+        Continuing with Storybook installation...
+      `,
       {
         title: chalk.bold('✅ Success!'),
         padding: 1,

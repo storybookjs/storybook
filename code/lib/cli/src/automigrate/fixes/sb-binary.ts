@@ -66,7 +66,7 @@ export const sbBinary: Fix<SbBinaryRunOptions> = {
       More info: ${chalk.yellow(
         'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#start-storybook--build-storybook-binaries-removed'
       )}
-      `;
+    `;
   },
 
   async run({

@@ -54,7 +54,7 @@ export const blocker = createBlocker({
           ${chalk.yellow(
             'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#create-react-app-dropped-cra4-support'
           )}
-          
+
           Upgrade to the latest version of react-scripts.
         `;
       case 'vue':

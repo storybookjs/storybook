@@ -50,12 +50,14 @@ export const wrapRequire: Fix<WrapRequireRunOptions> = {
   prompt({ storybookVersion, isStorybookInMonorepo }) {
     const sbFormatted = chalk.cyan(`Storybook ${storybookVersion}`);
 
-    return dedent`We have detected that you're using ${sbFormatted} in a ${
-      isStorybookInMonorepo ? 'monorepo' : 'PnP'
-    } project. 
-    For Storybook to work correctly, some fields in your main config must be updated. We can do this for you automatically.
-    
-    More info: https://storybook.js.org/docs/react/faq#how-do-i-fix-module-resolution-in-special-environments`;
+    return dedent`
+      We have detected that you're using ${sbFormatted} in a ${
+        isStorybookInMonorepo ? 'monorepo' : 'PnP'
+      } project. 
+      For Storybook to work correctly, some fields in your main config must be updated. We can do this for you automatically.
+
+      More info: https://storybook.js.org/docs/react/faq#how-do-i-fix-module-resolution-in-special-environments
+    `;
   },
 
   async run({ dryRun, mainConfigPath, result }) {

@@ -314,16 +314,18 @@ export const newFrameworks: Fix<NewFrameworkRunOptions> = {
       dependenciesToRemove.includes('@storybook/builder-webpack4') ||
       dependenciesToRemove.includes('@storybook/manager-webpack4')
     ) {
-      disclaimer = dedent`\n\n
-      ${chalk.underline(chalk.bold(chalk.cyan('Webpack 4 users')))}
+      disclaimer = dedent`
+        \n\n
+        ${chalk.underline(chalk.bold(chalk.cyan('Webpack 4 users')))}
 
-      Unless you're using Storybook's Vite builder, this automigration will install a Webpack 5 based framework.
-      
-      Given you were using Storybook's Webpack 4 builder (default in 6.x, discontinued in 7.0), this could be a breaking change -- especially if your project has a custom webpack configuration.
-      
-      To learn more about migrating from Webpack4, see: ${chalk.yellow(
-        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#webpack4-support-discontinued'
-      )}`;
+        Unless you're using Storybook's Vite builder, this automigration will install a Webpack 5 based framework.
+
+        Given you were using Storybook's Webpack 4 builder (default in 6.x, discontinued in 7.0), this could be a breaking change -- especially if your project has a custom webpack configuration.
+
+        To learn more about migrating from Webpack4, see: ${chalk.yellow(
+          'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#webpack4-support-discontinued'
+        )}
+      `;
     }
 
     if (metaFramework === 'nextjs') {
@@ -336,45 +338,48 @@ export const newFrameworks: Fix<NewFrameworkRunOptions> = {
       }
 
       if (frameworkPackage === '@storybook/react-vite') {
-        disclaimer = dedent`\n\n
+        disclaimer = dedent`
+          \n\n
           ${chalk.bold('Important')}: We've detected you are using Storybook in a Next.js project.
-  
+
           This migration is set to update your project to use the ${chalk.magenta(
             '@storybook/react-vite'
           )} framework, but Storybook provides a framework package specifically for Next.js projects: ${chalk.magenta(
             '@storybook/nextjs'
           )}.
-  
+
           This package provides a better, out of the box experience for Next.js users, however it is only compatible with the Webpack 5 builder, so we can't automigrate for you, as you are using the Vite builder. If you switch this project to use Webpack 5 and rerun this migration, we can update your project.
-          
+
           If you are interested in using this package, see: ${chalk.yellow(
             'https://github.com/storybookjs/storybook/blob/next/code/frameworks/nextjs/README.md'
           )}
         `;
       } else if (frameworkPackage === '@storybook/nextjs') {
-        disclaimer = dedent`\n\n
-        The ${chalk.magenta(
-          '@storybook/nextjs'
-        )} package provides great user experience for Next.js users, and we highly recommend you to read more about it at ${chalk.yellow(
-          'https://github.com/storybookjs/storybook/blob/next/code/frameworks/nextjs/README.md'
-        )}
+        disclaimer = dedent`
+          \n\n
+          The ${chalk.magenta(
+            '@storybook/nextjs'
+          )} package provides great user experience for Next.js users, and we highly recommend you to read more about it at ${chalk.yellow(
+            'https://github.com/storybookjs/storybook/blob/next/code/frameworks/nextjs/README.md'
+          )}
         `;
       }
     }
 
     if (metaFramework === 'sveltekit') {
       if (frameworkPackage === '@storybook/svelte-webpack5') {
-        disclaimer = dedent`\n\n
+        disclaimer = dedent`
+          \n\n
           ${chalk.bold('Important')}: We've detected you are using Storybook in a SvelteKit project.
-  
+
           This migration is set to update your project to use the ${chalk.magenta(
             '@storybook/svelte-webpack5'
           )} framework, but Storybook provides a framework package specifically for SvelteKit projects: ${chalk.magenta(
             '@storybook/sveltekit'
           )}.
-  
+
           This package provides a better experience for SvelteKit users, however it is only compatible with the Vite builder, so we can't automigrate for you, as you are using the Webpack builder.
-          
+
           If you are interested in using this package, see: ${chalk.yellow(
             'https://github.com/storybookjs/storybook/blob/next/code/frameworks/sveltekit/README.md'
           )}
@@ -386,12 +391,13 @@ export const newFrameworks: Fix<NewFrameworkRunOptions> = {
         More info: ${chalk.yellow(
           'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vite-builder-uses-vite-config-automatically'
         )}\n`;
-        disclaimer = dedent`\n\n
-        The ${chalk.magenta(
-          '@storybook/sveltekit'
-        )} package provides great user experience for SvelteKit users, and we highly recommend you to read more about it at ${chalk.yellow(
-          'https://github.com/storybookjs/storybook/blob/next/code/frameworks/sveltekit/README.md'
-        )}
+        disclaimer = dedent`
+          \n\n
+          The ${chalk.magenta(
+            '@storybook/sveltekit'
+          )} package provides great user experience for SvelteKit users, and we highly recommend you to read more about it at ${chalk.yellow(
+            'https://github.com/storybookjs/storybook/blob/next/code/frameworks/sveltekit/README.md'
+          )}
         `;
       }
     }

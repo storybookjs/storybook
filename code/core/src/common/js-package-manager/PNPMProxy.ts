@@ -199,9 +199,11 @@ export class PNPMProxy extends JsPackageManager {
       await moveLogFile();
 
       throw new Error(
-        dedent`${errorMessage}
-        
-        Please check the logfile generated at ./storybook.log for troubleshooting and try again.`
+        dedent`
+          ${errorMessage}
+
+          Please check the logfile generated at ./storybook.log for troubleshooting and try again.
+        `
       );
     }
 

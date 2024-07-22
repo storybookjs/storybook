@@ -40,14 +40,14 @@ export const sortStoriesV7 = (
     return sortStoriesCommon(stories, storySortParameter, fileNameOrder);
   } catch (err) {
     throw new Error(dedent`
-    Error sorting stories with sort parameter ${storySortParameter}:
+      Error sorting stories with sort parameter ${storySortParameter}:
 
-    > ${(err as Error).message}
-    
-    Are you using a V6-style sort function in V7 mode?
+      > ${(err as Error).message}
 
-    More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#v7-style-story-sort
-  `);
+      Are you using a V6-style sort function in V7 mode?
+
+      More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#v7-style-story-sort
+    `);
   }
 };
 

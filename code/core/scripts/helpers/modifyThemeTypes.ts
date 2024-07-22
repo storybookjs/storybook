@@ -13,9 +13,9 @@ export async function modifyThemeTypes() {
   const footer = contents.includes('// auto generated file')
     ? `export { StorybookTheme as Theme } from '../src/index';`
     : dedent`
-        interface Theme extends StorybookTheme {}
-        export type { Theme };
-      `;
+      interface Theme extends StorybookTheme {}
+      export type { Theme };
+    `;
 
   const newContents = dedent`
     ${contents}

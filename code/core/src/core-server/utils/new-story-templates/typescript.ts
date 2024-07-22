@@ -21,18 +21,18 @@ export async function getTypeScriptTemplateForNewStoryFile(data: TypeScriptTempl
     : `import { ${importName} } from './${data.basenameWithoutExtension}'`;
 
   return dedent`
-  import type { Meta, StoryObj } from '${data.rendererPackage}';
+    import type { Meta, StoryObj } from '${data.rendererPackage}';
 
-  ${importStatement};
+    ${importStatement};
 
-  const meta = {
-    component: ${importName},
-  } satisfies Meta<typeof ${importName}>;
+    const meta = {
+      component: ${importName},
+    } satisfies Meta<typeof ${importName}>;
 
-  export default meta;
+    export default meta;
 
-  type Story = StoryObj<typeof meta>;
+    type Story = StoryObj<typeof meta>;
 
-  export const ${data.exportedStoryName}: Story = {};
+    export const ${data.exportedStoryName}: Story = {};
   `;
 }

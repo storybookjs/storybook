@@ -110,8 +110,8 @@ export default async function svelteDocgen(this: any, source: string) {
   const componentName = getNameFromFilename(resource);
 
   docgen = dedent`
-      ${componentName}.__docgen = ${JSON.stringify(componentDoc)};
-    `;
+    ${componentName}.__docgen = ${JSON.stringify(componentDoc)};
+  `;
 
   // inject __docgen prop in svelte component
   const output = source + docgen;

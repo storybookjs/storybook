@@ -51,7 +51,7 @@ export const removedGlobalClientAPIs: Fix<GlobalClientAPIOptions> = {
       )}: We could not automatically make this change. You'll need to do it manually.
 
       The following APIs (used in "${chalk.yellow(previewPath)}") have been removed from Storybook:
-      
+
       ${usedAPIs.map((api) => `- ${chalk.cyan(api)}`).join('\n')}
 
       Please see the migration guide for more information:

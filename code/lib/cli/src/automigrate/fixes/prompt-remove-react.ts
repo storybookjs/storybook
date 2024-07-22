@@ -36,7 +36,7 @@ export const removeReactDependency: Fix<{}> = {
       Storybook asked you to add "react" as a direct dependency in the past when upgrading from Storybook 6 to 7.
       However, since version 8.0, Storybook no longer requires you to provide "react" as a dependency.
       Some community addons might still wrongfully list "react" and "react-dom" as required peer dependencies, but since Storybook 7.6 it should not be needed in the majority of cases.
-      
+
       If you know you are not using React outside of Storybook, it should be safe to remove the "react" and "react-dom" dependencies from your project's package.json.
       Storybook cannot do this automatically as removing it might break your project, so it should be done manually with care.
     `;

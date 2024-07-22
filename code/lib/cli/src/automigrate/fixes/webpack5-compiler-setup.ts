@@ -112,47 +112,48 @@ export const webpack5CompilerSetup = {
 
     if (shouldRemoveSWCFlag) {
       message.push(dedent`
-      We need to update your Storybook configuration for Webpack 5.
-      The ${chalk.yellow('framework.options.builder.useSWC')} flag will be removed.`);
+        We need to update your Storybook configuration for Webpack 5.
+        The ${chalk.yellow('framework.options.builder.useSWC')} flag will be removed.
+      `);
     }
 
     if (isNextJs) {
       message.push(dedent`
-      Storybook now detects whether it should use Babel or SWC as a compiler by applying the same logic as Next.js itself:\n
-        - If you have a ${chalk.yellow('.babelrc')} (or ${chalk.yellow(
-          'babel.config.js'
-        )}) file in your project, Storybook will use Babel as the compiler.
-        - If you have a ${chalk.yellow('.babelrc')} (or ${chalk.yellow(
-          'babel.config.js'
-        )}) file in your project and you have set 
-          ${chalk.yellow('experimental.forceSwcTransforms = true')} in your ${chalk.yellow(
-            'next.config.js'
-          )} file, 
-          Storybook will use SWC as the compiler.
-        - If you don't have a ${chalk.yellow('.babelrc')} (or ${chalk.yellow(
-          'babel.config.js'
-        )}) file in your project, Storybook will use SWC as the compiler.
+        Storybook now detects whether it should use Babel or SWC as a compiler by applying the same logic as Next.js itself:\n
+          - If you have a ${chalk.yellow('.babelrc')} (or ${chalk.yellow(
+            'babel.config.js'
+          )}) file in your project, Storybook will use Babel as the compiler.
+          - If you have a ${chalk.yellow('.babelrc')} (or ${chalk.yellow(
+            'babel.config.js'
+          )}) file in your project and you have set 
+            ${chalk.yellow('experimental.forceSwcTransforms = true')} in your ${chalk.yellow(
+              'next.config.js'
+            )} file, 
+            Storybook will use SWC as the compiler.
+          - If you don't have a ${chalk.yellow('.babelrc')} (or ${chalk.yellow(
+            'babel.config.js'
+          )}) file in your project, Storybook will use SWC as the compiler.
       `);
     } else if (defaultCompiler === CoreWebpackCompilers.Babel) {
       message.push(dedent`
-      Storybook's Webpack5 builder is now compiler agnostic, meaning you can choose a compiler addon that best fits your project:\n
-        - Babel: A vast ecosystem and is battle-tested. It's a robust choice if you have an extensive Babel setup or need specific Babel plugins for your project.
-        - SWC:  Fast and easy to configure. Ideal if you want faster builds and have a straightforward configuration without the need for Babel's extensibility.\n
-      In the next step, Storybook will ask you to choose a compiler to automatically set it up for you.\n
-      After the migration, you can switch Webpack5 compilers by swapping the addon in your project.
-      You can find more information here: ${chalk.yellow(
-        'https://storybook.js.org/docs/8.0/builders/webpack#compiler-support'
-      )}
+        Storybook's Webpack5 builder is now compiler agnostic, meaning you can choose a compiler addon that best fits your project:\n
+          - Babel: A vast ecosystem and is battle-tested. It's a robust choice if you have an extensive Babel setup or need specific Babel plugins for your project.
+          - SWC:  Fast and easy to configure. Ideal if you want faster builds and have a straightforward configuration without the need for Babel's extensibility.\n
+        In the next step, Storybook will ask you to choose a compiler to automatically set it up for you.\n
+        After the migration, you can switch Webpack5 compilers by swapping the addon in your project.
+        You can find more information here: ${chalk.yellow(
+          'https://storybook.js.org/docs/8.0/builders/webpack#compiler-support'
+        )}
       `);
     } else {
       message.push(dedent`
-      Storybook's Webpack5 builder is now compiler agnostic, meaning you have to install an additional addon to set up a compiler for Webpack5.\n
-      We have detected, that you want to use SWC as the compiler for Webpack5.\n
-      In the next step, Storybook will install @storybook/addon-webpack5-compiler-swc and will add it to your addons list in your Storybook config.\n
-      After the migration, you can switch Webpack5 compilers by swapping the addon in your project.
-      You can find more information here: ${chalk.yellow(
-        'https://storybook.js.org/docs/8.0/builders/webpack#compiler-support'
-      )}
+        Storybook's Webpack5 builder is now compiler agnostic, meaning you have to install an additional addon to set up a compiler for Webpack5.\n
+        We have detected, that you want to use SWC as the compiler for Webpack5.\n
+        In the next step, Storybook will install @storybook/addon-webpack5-compiler-swc and will add it to your addons list in your Storybook config.\n
+        After the migration, you can switch Webpack5 compilers by swapping the addon in your project.
+        You can find more information here: ${chalk.yellow(
+          'https://storybook.js.org/docs/8.0/builders/webpack#compiler-support'
+        )}
       `);
     }
 

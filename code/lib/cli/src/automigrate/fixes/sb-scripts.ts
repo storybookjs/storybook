@@ -127,7 +127,7 @@ export const sbScripts: Fix<SbScriptsRunOptions> = {
       In case this migration did not cover all of your scripts, or you'd like more info: ${chalk.yellow(
         'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#start-storybook--build-storybook-binaries-removed'
       )}
-      `;
+    `;
   },
 
   async run({ result: { storybookScripts }, packageManager, dryRun }) {

@@ -36,16 +36,16 @@ export async function warnWhenUsingArgTypesRegex(
             ${chalk.bold('Attention')}: We've detected that you're using ${chalk.cyan(
               'actions.argTypesRegex'
             )} together with the visual test addon:
-            
+
             ${path.buildCodeFrameError(previewConfig).message}
-            
+
             We recommend removing the ${chalk.cyan(
               'argTypesRegex'
             )} and assigning explicit action with the ${chalk.cyan(
               'fn'
             )} function from ${chalk.cyan('@storybook/test')} instead:
             https://storybook.js.org/docs/essentials/actions#via-storybooktest-fn-spy-function
-            
+
             The build used by the addon for snapshot testing doesn't take the regex into account, which can cause hard to debug problems when a snapshot depends on the presence of action props.
           `;
           console.warn(message);

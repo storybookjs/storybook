@@ -52,10 +52,10 @@ export function stringifyDefault(section: StorybookSection): string {
   const optionsString = stringifyObject(options, 0, true);
 
   return dedent`
-  export default {
-    title: ${JSON.stringify(title)},${decoratorsString}${optionsString}
-  };
-  
+    export default {
+      title: ${JSON.stringify(title)},${decoratorsString}${optionsString}
+    };
+
   `;
 }
 

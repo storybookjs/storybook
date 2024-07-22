@@ -26,13 +26,13 @@ function printError(error: any) {
   logger.warn(
     error.close
       ? dedent`
-          FATAL broken build!, will close the process,
-          Fix the error below and restart storybook.
-        `
+        FATAL broken build!, will close the process,
+        Fix the error below and restart storybook.
+      `
       : dedent`
-          Broken build, fix the error above.
-          You may need to refresh the browser.
-        `
+        Broken build, fix the error above.
+        You may need to refresh the browser.
+      `
   );
   logger.line();
 }

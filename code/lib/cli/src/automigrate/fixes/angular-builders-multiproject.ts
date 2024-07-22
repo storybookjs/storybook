@@ -46,15 +46,15 @@ export const angularBuildersMultiproject: Fix<AngularBuildersMultiprojectRunOpti
 
   prompt() {
     return dedent`
-    In Storybook 6.4 we have deprecated calling Storybook directly (npm run storybook) for Angular. In Storybook 7.0, we've removed it entirely. Instead you have to set up the Storybook builder in your ${chalk.yellow(
-      'angular.json'
-    )} and execute ${chalk.yellow('ng run <your-project>:storybook')} to start Storybook. 
-    
-    ❌ Your Angular workspace uses multiple projects defined in the ${chalk.yellow(
-      'angular.json'
-    )} file and we were not able to detect a root project. Therefore we are not able to automigrate to use Angular Storybook builder. Instead, please visit ${chalk.yellow(
-      'https://github.com/storybookjs/storybook/tree/next/code/frameworks/angular'
-    )} to do the migration manually.
+      In Storybook 6.4 we have deprecated calling Storybook directly (npm run storybook) for Angular. In Storybook 7.0, we've removed it entirely. Instead you have to set up the Storybook builder in your ${chalk.yellow(
+        'angular.json'
+      )} and execute ${chalk.yellow('ng run <your-project>:storybook')} to start Storybook. 
+
+      ❌ Your Angular workspace uses multiple projects defined in the ${chalk.yellow(
+        'angular.json'
+      )} file and we were not able to detect a root project. Therefore we are not able to automigrate to use Angular Storybook builder. Instead, please visit ${chalk.yellow(
+        'https://github.com/storybookjs/storybook/tree/next/code/frameworks/angular'
+      )} to do the migration manually.
     `;
   },
 };

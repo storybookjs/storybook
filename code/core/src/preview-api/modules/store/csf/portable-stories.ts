@@ -285,17 +285,17 @@ export function createPlaywrightTest<TFixture extends { extend: any }>(
         ) {
           // eslint-disable-next-line local-rules/no-uncategorized-errors
           throw new Error(dedent`
-              Portable stories in Playwright CT only work when referencing JSX elements.
-              Please use JSX format for your components such as:
+            Portable stories in Playwright CT only work when referencing JSX elements.
+            Please use JSX format for your components such as:
 
-              instead of:
-              await mount(MyComponent, { props: { foo: 'bar' } })
+            instead of:
+            await mount(MyComponent, { props: { foo: 'bar' } })
 
-              do:
-              await mount(<MyComponent foo="bar"/>)
+            do:
+            await mount(<MyComponent foo="bar"/>)
 
-              More info: https://storybook.js.org/docs/api/portable-stories-playwright
-            `);
+            More info: https://storybook.js.org/docs/api/portable-stories-playwright
+          `);
         }
 
         await page.evaluate(async (wrappedStoryRef: WrappedStoryRef) => {

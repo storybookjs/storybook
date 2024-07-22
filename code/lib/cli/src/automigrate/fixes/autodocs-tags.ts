@@ -30,7 +30,7 @@ export const autodocsTags: Fix<Options> = {
         ❌ Failed to remove the deprecated ${chalk.cyan('docs.autodocs')} setting from ${chalk.cyan(
           mainConfigPath
         )}.
-        
+
         There is no preview config file in which to add the ${chalk.cyan('autodocs')} tag.
 
         Please perform the migration by hand: ${chalk.yellow(MIGRATION)}
@@ -60,9 +60,9 @@ export const autodocsTags: Fix<Options> = {
       The ${chalk.cyan('docs.autodocs')} setting in ${chalk.cyan(
         mainConfigPath
       )} is deprecated.${falseMessage}
-        
+  
       Learn more: ${chalk.yellow(MIGRATION)}
-      
+
       Remove ${chalk.cyan('docs.autodocs')}${trueMessage}?
     `;
   },

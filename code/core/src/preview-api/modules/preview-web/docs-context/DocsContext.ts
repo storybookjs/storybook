@@ -170,12 +170,14 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
 
     if (validTypes.length && !validTypes.includes(resolved.type as TType)) {
       const prettyType = resolved.type === 'component' ? 'component or unknown' : resolved.type;
-      throw new Error(dedent`Invalid value passed to the 'of' prop. The value was resolved to a '${prettyType}' type but the only types for this block are: ${validTypes.join(
-        ', '
-      )}.
+      throw new Error(dedent`
+        Invalid value passed to the 'of' prop. The value was resolved to a '${prettyType}' type but the only types for this block are: ${validTypes.join(
+          ', '
+        )}.
         - Did you pass a component to the 'of' prop when the block only supports a story or a meta?
         - ... or vice versa?
-        - Did you pass a story, CSF file or meta to the 'of' prop that is not indexed, ie. is not targeted by the 'stories' globs in the main configuration?`);
+        - Did you pass a story, CSF file or meta to the 'of' prop that is not indexed, ie. is not targeted by the 'stories' globs in the main configuration?
+      `);
     }
 
     switch (resolved.type) {

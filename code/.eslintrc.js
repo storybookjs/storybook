@@ -17,7 +17,7 @@ module.exports = {
     tsconfigRootDir: __dirname,
     project: ['./tsconfig.json'],
   },
-  plugins: ['local-rules'],
+  plugins: ['local-rules', 'eslint-plugin-unicorn'],
   rules: {
     'import/no-unresolved': 'off', // covered by typescript
     'eslint-comments/disable-enable-pair': ['error', { allowWholeFile: true }],
@@ -46,6 +46,21 @@ module.exports = {
     '@typescript-eslint/default-param-last': 'off',
   },
   overrides: [
+    {
+      files: ['**/*.ts', '**/*.tsx'],
+      // Excluding tests for now, to focus on the most important use cases first.
+      excludedFiles: ['**/*.test.*', '**/*.stories.*'],
+      rules: {
+        'unicorn/template-indent': [
+          'error',
+          {
+            tags: ['dedent'],
+            functions: [],
+            indent: 2,
+          },
+        ],
+      },
+    },
     {
       // this package depends on a lot of peerDependencies we don't want to specify, because npm would install them
       files: ['**/frameworks/angular/template/**/*'],

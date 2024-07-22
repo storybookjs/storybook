@@ -26,7 +26,7 @@ export const removeJestTestingLibrary: Fix<{ incompatiblePackages: string[] }> =
       )}: We've detected that you're using the following packages which are known to be incompatible since Storybook 8:
 
       ${incompatiblePackages.map((name) => `- ${chalk.cyan(`${name}`)}`).join('\n')}
-      
+
       We will uninstall them for you and install ${chalk.cyan('@storybook/test')} instead.
 
       Also, we can help you migrate your stories to use the new package.

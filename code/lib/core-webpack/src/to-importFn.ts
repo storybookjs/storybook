@@ -42,18 +42,18 @@ export function toImportFnPart(specifier: NormalizedStoriesSpecifier) {
   const { directory, importPathMatcher } = specifier;
 
   return dedent`
-      async (path) => {
-        if (!${importPathMatcher}.exec(path)) {
-          return;
-        }
-
-        const pathRemainder = path.substring(${directory.length + 1});
-        return import(
-          /* webpackChunkName: "[request]" */
-          /* webpackInclude: ${webpackIncludeRegexp(specifier)} */
-          '${directory}/' + pathRemainder
-        );
+    async (path) => {
+      if (!${importPathMatcher}.exec(path)) {
+        return;
       }
+
+      const pathRemainder = path.substring(${directory.length + 1});
+      return import(
+        /* webpackChunkName: "[request]" */
+        /* webpackInclude: ${webpackIncludeRegexp(specifier)} */
+        '${directory}/' + pathRemainder
+      );
+    }
 
   `;
 }

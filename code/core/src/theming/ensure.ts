@@ -15,10 +15,10 @@ export const ensure = (input: ThemeVars): StorybookTheme => {
   if (Object.keys(missing).length) {
     logger.warn(
       dedent`
-          Your theme is missing properties, you should update your theme!
+        Your theme is missing properties, you should update your theme!
 
-          theme-data missing:
-        `,
+        theme-data missing:
+      `,
       missing
     );
   }

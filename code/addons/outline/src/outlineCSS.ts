@@ -399,5 +399,6 @@ export default function outlineCSS(selector: string) {
 
     ${selector} wbr {
       outline: 1px solid #db175b !important;
-    }`;
+    }
+  `;
 }

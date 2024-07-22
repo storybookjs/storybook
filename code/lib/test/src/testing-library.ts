@@ -23,9 +23,9 @@ const testingLibrary = instrument(
 testingLibrary.screen = new Proxy(testingLibrary.screen, {
   get(target, prop, receiver) {
     once.warn(dedent`
-          You are using Testing Library's \`screen\` object. Use \`within(canvasElement)\` instead.
-          More info: https://storybook.js.org/docs/react/essentials/interactions
-        `);
+      You are using Testing Library's \`screen\` object. Use \`within(canvasElement)\` instead.
+      More info: https://storybook.js.org/docs/react/essentials/interactions
+    `);
     return Reflect.get(target, prop, receiver);
   },
 });

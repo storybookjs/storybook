@@ -17,10 +17,10 @@ import type {
 } from '@storybook/core/types';
 
 const deprecatedStoryAnnotation = dedent`
-CSF .story annotations deprecated; annotate story functions directly:
-- StoryFn.story.name => StoryFn.storyName
-- StoryFn.story.(parameters|decorators) => StoryFn.(parameters|decorators)
-See https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#hoisted-csf-annotations for details and codemod.
+  CSF .story annotations deprecated; annotate story functions directly:
+  - StoryFn.story.name => StoryFn.storyName
+  - StoryFn.story.(parameters|decorators) => StoryFn.(parameters|decorators)
+  See https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#hoisted-csf-annotations for details and codemod.
 `;
 
 export function normalizeStory<TRenderer extends Renderer>(

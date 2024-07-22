@@ -59,7 +59,7 @@ export const sandbox = async ({
       This version is behind the latest release, which is: ${chalk.bold(latestVersion)}!
       You likely ran the init command through npx, which can use a locally cached version, to get the latest please run:
       ${chalk.bold('npx storybook@latest sandbox')}
-      
+
       You may want to CTRL+C to stop, and run with the latest version instead.
     `),
     longInitTime: chalk.yellow(
@@ -118,7 +118,7 @@ export const sandbox = async ({
 
             Available templates:
             ${keys.map((key) => chalk.blue`- ${key}`).join('\n')}
-            `.trim(),
+          `.trim(),
           { borderStyle: 'round', padding: 1, borderColor: '#F1618C' } as any
         )
       );
@@ -139,7 +139,7 @@ export const sandbox = async ({
             2. select a location for the reproduction, outside of your project.
 
             After the reproduction is ready, we'll guide you through the next steps.
-            `.trim(),
+          `.trim(),
           { borderStyle: 'round', padding: 1, borderColor: '#F1618C' } as any
         )
       );
@@ -235,27 +235,27 @@ export const sandbox = async ({
 
     const initMessage = init
       ? chalk.yellow(dedent`
-          yarn install
-          yarn storybook
-        `)
+        yarn install
+        yarn storybook
+      `)
       : `Recreate your setup, then ${chalk.yellow(`npx storybook@latest init`)}`;
 
     logger.info(
       boxen(
         dedent`
-        🎉 Your Storybook reproduction project is ready to use! 🎉
+          🎉 Your Storybook reproduction project is ready to use! 🎉
 
-        ${chalk.yellow(`cd ${selectedDirectory}`)}
-        ${initMessage}
+          ${chalk.yellow(`cd ${selectedDirectory}`)}
+          ${initMessage}
 
-        Once you've recreated the problem you're experiencing, please:
+          Once you've recreated the problem you're experiencing, please:
 
-        1. Document any additional steps in ${chalk.cyan('README.md')}
-        2. Publish the repository to github
-        3. Link to the repro repository in your issue
+          1. Document any additional steps in ${chalk.cyan('README.md')}
+          2. Publish the repository to github
+          3. Link to the repro repository in your issue
 
-        Having a clean repro helps us solve your issue faster! 🙏
-      `.trim(),
+          Having a clean repro helps us solve your issue faster! 🙏
+        `.trim(),
         { borderStyle: 'round', padding: 1, borderColor: '#F1618C' } as any
       )
     );

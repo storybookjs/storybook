@@ -52,21 +52,23 @@ test.describe('addon-docs', () => {
     const showCodeButton = (await root.locator('button', { hasText: 'Show Code' }).all())[2];
     await showCodeButton.click();
     const sourceCode = root.locator('pre.prismjs');
-    const expectedSource = dedent`{
-      args: {
-        label: 'Another'
-      },
-      parameters: {
-        docs: {
-          source: {
-            type: 'code'
+    const expectedSource = dedent`
+      {
+            args: {
+              label: 'Another'
+            },
+            parameters: {
+              docs: {
+                source: {
+                  type: 'code'
+                }
+              }
+            },
+            play: async () => {
+              await new Promise(resolve => resolve('Play function'));
+            }
           }
-        }
-      },
-      play: async () => {
-        await new Promise(resolve => resolve('Play function'));
-      }
-    }`;
+    `;
     await expect(sourceCode).toHaveText(expectedSource);
   });
 

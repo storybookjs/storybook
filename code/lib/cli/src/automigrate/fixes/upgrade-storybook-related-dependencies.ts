@@ -143,7 +143,7 @@ export const upgradeStorybookRelatedDependencies = {
             return `- ${cyan(packageName)}: ${cyan(beforeVersion)} => ${cyan(afterVersion)}`;
           })
           .join('\n')}
-        `);
+      `);
     }
     console.log();
   },

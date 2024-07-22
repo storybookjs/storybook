@@ -35,9 +35,9 @@ export const initialGlobals: Fix<Options> = {
     return dedent`
       The ${chalk.cyan('globals')} setting in ${chalk.cyan(previewConfigPath)} is deprecated
       and has been renamed to ${chalk.cyan('initialGlobals')}.
-        
+  
       Learn more: ${chalk.yellow(MIGRATION)}
-      
+
       Rename ${chalk.cyan('globals')} to ${chalk.cyan('initalGlobals')}?
     `;
   },

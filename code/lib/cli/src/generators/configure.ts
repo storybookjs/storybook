@@ -68,8 +68,10 @@ export async function configureMain({
   const isTypescript =
     language === SupportedLanguage.TYPESCRIPT_4_9 || language === SupportedLanguage.TYPESCRIPT_3_8;
 
-  let mainConfigTemplate = dedent`<<import>><<prefix>>const config<<type>> = <<mainContents>>;
-    export default config;`;
+  let mainConfigTemplate = dedent`
+    <<import>><<prefix>>const config<<type>> = <<mainContents>>;
+    export default config;
+  `;
 
   const frameworkPackage = sanitizeFramework(custom.framework?.name);
 
@@ -160,9 +162,9 @@ export async function configurePreview(options: ConfigurePreviewOptions) {
         },
       },
     };
-    
+
     export default preview;
-    `
+  `
     .replace('  \n', '')
     .trim();
 

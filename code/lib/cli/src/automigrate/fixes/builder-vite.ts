@@ -46,13 +46,13 @@ export const builderVite: Fix<BuilderViteOptions> = {
 
     return dedent`
       We've detected you're using the community vite builder: ${builderFormatted}
-      
+
       'storybook-builder-vite' is deprecated and now located at ${chalk.cyan(
         '@storybook/builder-vite'
       )}.
 
       We can upgrade your project to use the new builder automatically.
-      
+
       More info: ${chalk.yellow(
         'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vite-builder-renamed'
       )}

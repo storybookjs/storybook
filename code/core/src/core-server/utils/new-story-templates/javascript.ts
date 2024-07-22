@@ -19,14 +19,14 @@ export async function getJavaScriptTemplateForNewStoryFile(data: JavaScriptTempl
     : `import { ${importName} } from './${data.basenameWithoutExtension}';`;
 
   return dedent`
-  ${importStatement}
+    ${importStatement}
 
-  const meta = {
-    component: ${importName},
-  };
-  
-  export default meta;
-  
-  export const ${data.exportedStoryName} = {};
+    const meta = {
+      component: ${importName},
+    };
+
+    export default meta;
+
+    export const ${data.exportedStoryName} = {};
   `;
 }

@@ -12,7 +12,8 @@ export function loadPreviewOrConfigFile({ configDir }: { configDir: string }) {
       You have both a "config.js" and a "preview.js", remove the "config.js" file from your configDir (${path.resolve(
         configDir,
         'config'
-      )})`);
+      )})
+    `);
   }
 
   return storybookPreviewPath || storybookConfigPath;

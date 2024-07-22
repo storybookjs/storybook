@@ -28,7 +28,7 @@ export async function handleSvelteKit(plugins: PluginOption[], options: Options)
       We've detected a SvelteKit project using the @storybook/svelte-vite framework, which is not supported in Storybook 7.0
       Please use the @storybook/sveltekit framework instead.
       You can migrate automatically by running
-      
+
       npx storybook@latest automigrate
 
       See https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#sveltekit-needs-the-storybooksveltekit-framework

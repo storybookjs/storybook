@@ -61,11 +61,11 @@ export function outputStartupInformation(options: {
   console.log(
     boxen(
       dedent`
-          ${colors.green(`Storybook ${chalk.bold(version)} for ${chalk.bold(name)} started`)}
-          ${chalk.gray(timeStatement)}
+        ${colors.green(`Storybook ${chalk.bold(version)} for ${chalk.bold(name)} started`)}
+        ${chalk.gray(timeStatement)}
 
-          ${serveMessage.toString()}${updateMessage ? `\n\n${updateMessage}` : ''}
-        `,
+        ${serveMessage.toString()}${updateMessage ? `\n\n${updateMessage}` : ''}
+      `,
       { borderStyle: 'round', padding: 1, borderColor: '#F1618C' } as any
     )
   );

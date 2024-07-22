@@ -38,9 +38,9 @@ const getCsfParsingErrorMessage = ({
   }
 
   return dedent`
-      CSF Parsing error: Expected '${expectedType}' but found '${foundType}' instead in '${node?.type}'.
-      ${nodeInfo}
-    `;
+    CSF Parsing error: Expected '${expectedType}' but found '${foundType}' instead in '${node?.type}'.
+    ${nodeInfo}
+  `;
 };
 
 const propKey = (p: t.ObjectProperty) => {

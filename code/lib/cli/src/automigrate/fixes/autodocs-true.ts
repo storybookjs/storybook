@@ -52,19 +52,19 @@ export const autodocsTrue: Fix<AutodocsTrueFrameworkRunOptions> = {
 
     if (value) {
       return dedent`
-      We've changed the configuration of autodocs (previous docsPage), so now the value:
-        - docs.autodocs: true -- means automatically create docs for every CSF file
-        - docs.autodocs: 'tag' -- means only create autodocs for CSF files with the 'autodocs' tag
-        - docs.autodocs: false -- means never create autodocs
+        We've changed the configuration of autodocs (previous docsPage), so now the value:
+          - docs.autodocs: true -- means automatically create docs for every CSF file
+          - docs.autodocs: 'tag' -- means only create autodocs for CSF files with the 'autodocs' tag
+          - docs.autodocs: false -- means never create autodocs
 
-      Based on your prior configuration,  we can set the \`docs.autodocs\` to keep your old behaviour:
+        Based on your prior configuration,  we can set the \`docs.autodocs\` to keep your old behaviour:
 
-      ${autodocsFormatted}
-      ${value === 'tag' ? tagWarning : ''}
-      More info: ${chalk.yellow(
-        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#autodocs-changes'
-      )}
-    `;
+        ${autodocsFormatted}
+        ${value === 'tag' ? tagWarning : ''}
+        More info: ${chalk.yellow(
+          'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#autodocs-changes'
+        )}
+      `;
     }
 
     return dedent`

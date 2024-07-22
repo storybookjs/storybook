@@ -618,8 +618,10 @@ export class CsfFile {
   public get indexInputs(): IndexInput[] {
     if (!this._fileName) {
       throw new Error(
-        dedent`Cannot automatically create index inputs with CsfFile.indexInputs because the CsfFile instance was created without a the fileName option.
-        Either add the fileName option when creating the CsfFile instance, or create the index inputs manually.`
+        dedent`
+          Cannot automatically create index inputs with CsfFile.indexInputs because the CsfFile instance was created without a the fileName option.
+          Either add the fileName option when creating the CsfFile instance, or create the index inputs manually.
+        `
       );
     }
 

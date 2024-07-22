@@ -17,7 +17,8 @@ export function loadManagerOrAddonsFile({ configDir }: { configDir: string }) {
       You have both a "addons.js" and a "manager.js", remove the "addons.js" file from your configDir (${path.resolve(
         configDir,
         'addons'
-      )})`);
+      )})
+    `);
   }
 
   return storybookCustomManagerPath || storybookCustomAddonsPath;

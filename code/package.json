@@ -183,6 +183,7 @@
     "eslint-import-resolver-typescript": "^3.6.1",
     "eslint-plugin-local-rules": "portal:../scripts/eslint-plugin-local-rules",
     "eslint-plugin-storybook": "^0.8.0",
+    "eslint-plugin-unicorn": "^54.0.0",
     "fs-extra": "^11.1.0",
     "github-release-from-changelog": "^2.1.1",
     "glob": "^10.0.0",

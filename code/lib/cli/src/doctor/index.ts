@@ -95,7 +95,7 @@ export const doctor = async ({
     logger.info(dedent`
       [Storybook doctor] ❌ Unable to determine Storybook version so the command will not proceed.
       🤔 Are you running storybook doctor from your project directory? Please specify your Storybook config directory with the --config-dir flag.
-      `);
+    `);
     process.exit(1);
   }
 

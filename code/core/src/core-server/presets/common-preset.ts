@@ -93,7 +93,7 @@ export const favicon = async (
         Looks like multiple favicons were detected. Using the first one.
 
         ${flatlist.join(', ')}
-        `);
+      `);
     }
 
     return flatlist[0] || defaultFavicon;

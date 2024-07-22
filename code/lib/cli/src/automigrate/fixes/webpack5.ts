@@ -47,7 +47,7 @@ export const webpack5 = {
     return dedent`
       We've detected you're running ${webpackFormatted}.
       Your Storybook's main.js files specifies webpack4, which is incompatible.
-      
+
       To run Storybook in webpack5-mode, we can install Storybook's ${chalk.cyan(
         '@storybook/builder-webpack5'
       )} for you.

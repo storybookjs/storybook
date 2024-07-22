@@ -1,11 +1,11 @@
 import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
+import dedent from 'dedent';
+import { print } from 'svelte-ast-print';
 import { describe, it } from 'vitest';
 
 import { codemodLegacyNodes } from './index';
 
 import { getSvelteAST } from '#parser/ast';
-import { print } from 'svelte-ast-print';
-import dedent from 'dedent';
 
 describe(codemodLegacyNodes.name, () => {
   it("replaces 'export const meta' with 'defineMeta'", async ({ expect }) => {
@@ -153,6 +153,68 @@ describe(codemodLegacyNodes.name, () => {
     expect(print(transformed)).toMatchInlineSnapshot(`
       "<script context="module">
       	import { defineMeta } from "@storybook/addon-svelte-csf";
+      </script>"
+    `);
+  });
+
+  it('moves transformed export const meta from instance to module tag', async ({ expect }) => {
+    const code = dedent(`
+      <script>
+        import { Story, Template } from "${pkg.name}";
+
+        export const meta = {
+          args: {
+            primary: true,
+          },
+          tags: ["autodocs"],
+        };
+      </script>
+    `);
+    const ast = getSvelteAST({ code });
+    const transformed = await codemodLegacyNodes({ ast });
+
+    expect(print(transformed)).toMatchInlineSnapshot(`
+      "<script context="module">
+      	import { defineMeta } from "@storybook/addon-svelte-csf";
+
+      	const { Story } = defineMeta({
+      		args: { primary: true },
+      		tags: ["autodocs"]
+      	});
+      </script>"
+    `);
+  });
+
+  it('moves transformed export const meta and stories component import declaration from instance to module tag', async ({
+    expect,
+  }) => {
+    const code = dedent(`
+      <script>
+        import { Story, Template } from "${pkg.name}";
+        import Button from "./Button.svelte";
+
+        export const meta = {
+          component: Button,
+          args: {
+            primary: true,
+          },
+          tags: ["autodocs"],
+        };
+      </script>
+    `);
+    const ast = getSvelteAST({ code });
+    const transformed = await codemodLegacyNodes({ ast });
+
+    expect(print(transformed)).toMatchInlineSnapshot(`
+      "<script context="module">
+      	import { defineMeta } from "@storybook/addon-svelte-csf";
+      	import Button from "./Button.svelte";
+
+      	const { Story } = defineMeta({
+      		component: Button,
+      		args: { primary: true },
+      		tags: ["autodocs"]
+      	});
       </script>"
     `);
   });

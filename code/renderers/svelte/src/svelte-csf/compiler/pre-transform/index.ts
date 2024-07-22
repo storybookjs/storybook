@@ -7,7 +7,7 @@ import { transformExportMetaToDefineMeta } from '#compiler/pre-transform/codemod
 import { transformImportDeclaration } from '#compiler/pre-transform/codemods/import-declaration';
 import { transformLegacyStory } from '#compiler/pre-transform/codemods/legacy-story';
 import { transformTemplateToSnippet } from '#compiler/pre-transform/codemods/template-to-snippet';
-import { MissingModuleTagError } from '#utils/error/parser/extract/svelte';
+import { createASTScript } from '#parser/ast';
 
 interface Params {
   ast: Root;
@@ -23,6 +23,8 @@ export async function codemodLegacyNodes(params: Params): Promise<Root> {
     componentIdentifierName: ComponentIdentifierName;
     componentMetaHtmlComment?: Comment;
     defineMetaFromMeta?: VariableDeclaration;
+    currentScript?: 'instance' | 'module';
+    pkgImportDeclaration?: ImportDeclaration;
   }
   const state: State = {
     componentIdentifierName: {},
@@ -35,29 +37,50 @@ export async function codemodLegacyNodes(params: Params): Promise<Root> {
     },
 
     Root(node, context) {
-      const { fragment, module, ...rest } = node;
+      const { fragment, instance, module, ...rest } = node;
       const { state, visit } = context;
 
-      if (!module) {
-        throw new MissingModuleTagError(filename);
+      // NOTE: We walk on instance first to see if the package import declaration is there or `export const meta`
+      const transformedInstance = (instance ? visit(instance, state) : null) as Script | null;
+
+      let transformedModule: Script;
+
+      if (module) {
+        transformedModule = visit(module, state) as Script;
+      } else {
+        const { pkgImportDeclaration } = state;
+
+        if (!pkgImportDeclaration) {
+          // TODO: Document it?
+          throw new Error('Invalid syntax');
+        }
+
+        transformedModule = createASTScript({
+          module: true,
+          content: {
+            type: 'Program',
+            body: [pkgImportDeclaration],
+            sourceType: 'module',
+          },
+        });
       }
 
-      const transformedModule = visit(module, state) as Script;
       const transformedFragment = visit(fragment, state) as Fragment;
 
       return {
         ...rest,
         fragment: transformedFragment,
+        instance: transformedInstance,
         module: transformedModule,
       };
     },
 
+    // NOTE: It walks either on module or instance tag
     Script(node, context) {
       const { next, state } = context;
 
-      if (node.context === 'module') {
-        next(state);
-      }
+      state.currentScript = state.currentScript = node.context === 'module' ? 'module' : 'instance';
+      next(state);
     },
 
     Program(_node, context) {
@@ -72,9 +95,19 @@ export async function codemodLegacyNodes(params: Params): Promise<Root> {
       const { value } = source;
 
       if (value === pkg.name) {
+        const { currentScript } = state;
+
         state.componentIdentifierName = getComponentsIdentifiersNames(specifiers);
 
-        return transformImportDeclaration({ node, filename });
+        const transformedImportDeclaration = transformImportDeclaration({ node, filename });
+
+        if (currentScript !== 'module') {
+          // NOTE: We store current node in AST walker state.
+          // And will remove it from instance & append it to module in the "clean-up" walk after this one.
+          state.pkgImportDeclaration = transformedImportDeclaration;
+        }
+
+        return transformedImportDeclaration;
       }
     },
 
@@ -134,19 +167,38 @@ export async function codemodLegacyNodes(params: Params): Promise<Root> {
   // TODO: To optimize it (stop walking on AST again)...
   // it might be possible to use `visit(path(-1))` for some cases in the previous AST walk,
   // but I haven't managed to get it to work properly
-  transformedAst = walk(transformedAst, null, {
+  transformedAst = walk(transformedAst, state, {
+    Root(_node, context) {
+      const { next, state } = context;
+
+      next(state);
+    },
+
     Script(node, context) {
       const { context: scriptContext } = node;
 
-      if (scriptContext === 'module') {
-        const { next, state } = context;
+      const { next, state } = context;
 
-        next(state);
-      }
+      next({ ...state, currentScript: scriptContext === 'module' ? 'module' : 'instance' });
     },
 
     Program(node, _context) {
       let { body, ...rest } = node;
+      const { currentScript, pkgImportDeclaration, defineMetaFromMeta } = state;
+
+      if (pkgImportDeclaration) {
+        if (currentScript === 'module') {
+          body.unshift(pkgImportDeclaration);
+        }
+
+        if (currentScript === 'instance') {
+          body.filter((declaration) => {
+            return (
+              declaration.type === 'ImportDeclaration' && declaration.source.value === pkg.name
+            );
+          });
+        }
+      }
 
       if (defineMetaFromMeta) {
         body.push(defineMetaFromMeta);
@@ -170,7 +222,7 @@ export async function codemodLegacyNodes(params: Params): Promise<Root> {
           nodes.splice(componentMetaIndex, 1);
 
           if (nodes[componentMetaIndex - 1]?.type === 'Comment') {
-            // NOTE: Removes leading Ccomment
+            // NOTE: Removes leading Comment
             nodes.splice(componentMetaIndex - 1, 1);
           }
 

@@ -1,5 +1,11 @@
 import type { ArrayExpression, ObjectExpression, Property } from 'estree';
-import { compile, type Attribute, type ExpressionTag, type Root } from 'svelte/compiler';
+import {
+  compile,
+  type Attribute,
+  type ExpressionTag,
+  type Root,
+  type Script,
+} from 'svelte/compiler';
 
 interface GetSvelteASTOptions {
   code: string;
@@ -96,5 +102,41 @@ export function createASTObjectExpression(
   return {
     type: 'ObjectExpression',
     properties,
+  };
+}
+
+interface ASTScriptOptions {
+  module?: boolean;
+  content: Script['content'];
+}
+export function createASTScript(options: ASTScriptOptions): Script {
+  const { content, module = false } = options;
+  const attributes: Attribute[] = [];
+
+  if (module) {
+    attributes.push(
+      createASTAttribute('context', [
+        {
+          type: 'Text',
+          data: 'module',
+          raw: 'module',
+          // NOTE: Those are useless at this point, but I needed TypeScript to 🤫
+          parent: null,
+          start: 0,
+          end: 0,
+        },
+      ])
+    );
+  }
+
+  return {
+    type: 'Script',
+    context: module ? 'module' : '',
+    attributes,
+    content,
+    // NOTE: Those are useless at this point, but I needed TypeScript to 🤫
+    parent: null,
+    start: 0,
+    end: 0,
   };
 }

@@ -140,4 +140,24 @@ describe(codemodLegacyNodes.name, () => {
       </Story>"
     `);
   });
+
+  it('moves package import declaration from instance to module tag', async ({ expect }) => {
+    const code = dedent(`
+      <script>
+        import { Meta, Story, Template } from "${pkg.name}";
+      </script>
+    `);
+    const ast = getSvelteAST({ code });
+    const transformed = await codemodLegacyNodes({ ast });
+
+    expect(print(transformed)).toMatchInlineSnapshot(`
+      "<script context="module">
+      	import { defineMeta } from "@storybook/addon-svelte-csf";
+      </script>
+
+      <script>
+      	import { defineMeta } from "@storybook/addon-svelte-csf";
+      </script>"
+    `);
+  });
 });

@@ -5,13 +5,13 @@ import localFont from "next/font/local";
 
 import React from "react";
 
-export const kalina = Kalnia({
+const kalina = Kalnia({
 	subsets: ["latin"],
 	variable: "--font-kalina",
 	display: "swap",
 });
 
-export const roboto_mono = Roboto_Mono({
+const roboto_mono = Roboto_Mono({
 	subsets: ["latin"],
 	variable: "--font-roboto-mono",
 	display: "swap",
@@ -23,9 +23,17 @@ const comicNeue = Comic_Neue({
 	weight: ["700"],
 });
 
-export const localRubikStorm = localFont({
-	src: "/fonts/RubikStorm-Regular.ttf",
+const localRubikStorm = localFont({
+	src: "/fonts/RubikStorm/RubikStorm-Regular.ttf",
 	variable: "--font-rubik-storm",
+});
+
+const localPlaywrite = localFont({
+	src: [
+		{ path: "/fonts/Playwrite/PlaywriteBEVLG-Regular.ttf", weight: "400" },
+		{ path: "/fonts/Playwrite/PlaywriteBEVLG-ExtraLight.ttf", weight: "200" },
+	],
+	variable: "--font-playwrite",
 });
 
 type FontProps = {
@@ -41,6 +49,10 @@ export default function Font({ variant }: FontProps) {
 					<h1 className={roboto_mono.className}>Google Roboto Mono</h1>
 					<h1 className={comicNeue.className}>Google Comic Neue</h1>
 					<h1 className={localRubikStorm.className}>Local Rubik Storm</h1>
+					<h1 className={localPlaywrite.className}>Local Playwrite 400</h1>
+					<h1 className={localPlaywrite.className} style={{ fontWeight: 200 }}>
+						Local Playwrite 200
+					</h1>
 				</div>
 			);
 		case "style":
@@ -50,6 +62,10 @@ export default function Font({ variant }: FontProps) {
 					<h1 style={roboto_mono.style}>Google Roboto Mono</h1>
 					<h1 style={comicNeue.style}>Google Comic Neue</h1>
 					<h1 style={localRubikStorm.style}>Local Rubik Storm</h1>
+					<h1 style={localPlaywrite.style}>Local Playwrite 400</h1>
+					<h1 style={{ ...localPlaywrite.style, fontWeight: 200 }}>
+						Local Playwrite 200
+					</h1>
 				</div>
 			);
 		case "variable":
@@ -92,11 +108,33 @@ export default function Font({ variant }: FontProps) {
 						<h1
 							style={{
 								fontFamily: "var(--font-rubik-storm)",
-								fontStyle: localRubikStorm.style.fontStyle,
-								fontWeight: localRubikStorm.style.fontWeight,
+								fontStyle: localPlaywrite.style.fontStyle,
+								fontWeight: 200,
 							}}
 						>
 							Local Rubik Storm
+						</h1>
+					</div>
+					<div className={localPlaywrite.variable}>
+						<h1
+							style={{
+								fontFamily: "var(--font-playwrite)",
+								fontStyle: localPlaywrite.style.fontStyle,
+								fontWeight: localPlaywrite.style.fontWeight,
+							}}
+						>
+							Local Playwrite 400
+						</h1>
+					</div>
+					<div className={localPlaywrite.variable}>
+						<h1
+							style={{
+								fontFamily: "var(--font-playwrite)",
+								fontStyle: localPlaywrite.style.fontStyle,
+								fontWeight: 200,
+							}}
+						>
+							Local Playwrite 200
 						</h1>
 					</div>
 				</div>

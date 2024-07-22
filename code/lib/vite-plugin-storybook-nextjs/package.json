@@ -35,6 +35,7 @@
 	"packageManager": "pnpm@9.4.0",
 	"dependencies": {
 		"@next/env": "^14.2.4",
-		"find-up": "^7.0.0"
+		"find-up": "^7.0.0",
+		"ts-dedent": "^2.2.0"
 	}
 }

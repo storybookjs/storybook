@@ -2,15 +2,50 @@ import path from "node:path";
 import { validateLocalFontFunctionCall } from "next/dist/compiled/@next/font/dist/local/validate-local-font-function-call";
 // @ts-expect-error no types
 import loaderUtils from "next/dist/compiled/loader-utils3";
+import { dedent } from "ts-dedent";
 
-import type { LoaderOptions } from "../types";
+type FontOrigin = { fontReferenceId?: string; fontPath: string };
 
 export type LocalFontSrc =
-	| string
-	| Array<{ path: string; weight?: string; style?: string }>;
+	| FontOrigin
+	| Array<{ path: FontOrigin; weight?: string; style?: string }>;
+
+export type LoaderOptions = {
+	/**
+	 * Initial import name. Can be `next/font/google` or `next/font/local`
+	 */
+	source: string;
+	/**
+	 * Props passed to the `next/font` function call
+	 */
+	props: {
+		src?: string | Array<{ path: string; weight?: string; style?: string }>;
+		metaSrc?: LocalFontSrc;
+	};
+	/**
+	 * Font Family name
+	 */
+	fontFamily: string;
+	/**
+	 * Filename of the issuer file, which imports `next/font/google` or `next/font/local
+	 */
+	filename: string;
+};
+
+/**
+ * Returns a placeholder URL for a font reference
+ * @param refId - The reference ID of the font
+ * @returns The placeholder URL
+ */
+export const getPlaceholderFontUrl = (refId: string) =>
+	`__%%import.meta.ROLLUP_FILE_URL_${refId}%%__`;
+/**
+ * Regular expression to match the placeholder URL
+ */
+getPlaceholderFontUrl.regexp = /__%%import\.meta\.ROLLUP_FILE_URL_(.*?)%%__/g;
 
 export async function getFontFaceDeclarations(options: LoaderOptions) {
-	const localFontSrc = options.props.src as LocalFontSrc;
+	const localFontSrc = options.props.metaSrc;
 
 	const {
 		weight,
@@ -34,24 +69,34 @@ export async function getFontFaceDeclarations(options: LoaderOptions) {
 		.join("\n");
 
 	const getFontFaceCSS = () => {
-		if (typeof localFontSrc === "string") {
-			return `@font-face {
-          font-family: ${id};
-          src: url(.${localFontSrc});
-          ${fontDeclarations}
-      }`;
+		if (localFontSrc) {
+			if ("fontReferenceId" in localFontSrc) {
+				return dedent`@font-face {
+					font-family: ${id};
+					src: url(${localFontSrc.fontReferenceId ? getPlaceholderFontUrl(localFontSrc.fontReferenceId) : `.${localFontSrc.fontPath}`})
+					${fontDeclarations}
+				}`;
+			}
+			return (
+				localFontSrc as Array<{
+					path: FontOrigin;
+					weight?: string;
+					style?: string;
+				}>
+			)
+				.map((font) => {
+					return dedent`@font-face {
+						font-family: ${id};
+						src: url(${font.path.fontReferenceId ? getPlaceholderFontUrl(font.path.fontReferenceId) : `.${font.path.fontPath}`});
+						${font.weight ? `font-weight: ${font.weight};` : ""}
+						${font.style ? `font-style: ${font.style};` : ""}
+						${fontDeclarations}
+					}`;
+				})
+				.join("");
 		}
-		return localFontSrc
-			.map((font) => {
-				return `@font-face {
-          font-family: ${id};
-          src: url(.${font.path});
-          ${font.weight ? `font-weight: ${font.weight};` : ""}
-          ${font.style ? `font-style: ${font.style};` : ""}
-          ${fontDeclarations}
-        }`;
-			})
-			.join("");
+
+		return "";
 	};
 
 	return {

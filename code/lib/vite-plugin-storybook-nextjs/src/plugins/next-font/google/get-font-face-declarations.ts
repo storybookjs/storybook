@@ -4,9 +4,35 @@ import { getGoogleFontsUrl } from "next/dist/compiled/@next/font/dist/google/get
 import { validateGoogleFontFunctionCall } from "next/dist/compiled/@next/font/dist/google/validate-google-font-function-call";
 // @ts-expect-error no types
 import loaderUtils from "next/dist/compiled/loader-utils3";
-import type { LoaderOptions } from "../types";
 
 const cssCache = new Map<string, string>();
+
+type FontOrigin = string;
+
+export type LocalFontSrc =
+	| FontOrigin
+	| Array<{ path: FontOrigin; weight?: string; style?: string }>;
+
+export type LoaderOptions = {
+	/**
+	 * Initial import name. Can be `next/font/google` or `next/font/local`
+	 */
+	source: string;
+	/**
+	 * Props passed to the `next/font` function call
+	 */
+	props: {
+		src?: LocalFontSrc;
+	};
+	/**
+	 * Font Family name
+	 */
+	fontFamily: string;
+	/**
+	 * Filename of the issuer file, which imports `next/font/google` or `next/font/local
+	 */
+	filename: string;
+};
 
 export async function getFontFaceDeclarations(options: LoaderOptions) {
 	const {

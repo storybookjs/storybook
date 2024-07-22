@@ -1,12 +1,10 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-// @ts-expect-error no types
-import loaderUtils from "next/dist/compiled/loader-utils3";
 import type { Plugin } from "vite";
 
 import { getFontFaceDeclarations as getGoogleFontFaceDeclarations } from "./google/get-font-face-declarations";
 import {
-	type LocalFontSrc,
+	type LoaderOptions,
 	getFontFaceDeclarations as getLocalFontFaceDeclarations,
 } from "./local/get-font-face-declarations";
 import { getCSSMeta } from "./utils/get-css-meta";
@@ -25,7 +23,7 @@ type FontOptions = {
 	filename: string;
 	fontFamily: string;
 	props: {
-		src?: LocalFontSrc;
+		src?: string | Array<{ path: string; weight?: string; style?: string }>;
 	};
 	source: string;
 };
@@ -135,53 +133,55 @@ export function configureNextFont() {
 
 					if (devMode) {
 						fontAssetPaths.set(importerRelativeFontPath, fontPath);
-						return importerRelativeFontPath;
+						return {
+							fontPath: importerRelativeFontPath,
+							fontReferenceId: undefined,
+						};
 					}
 
 					try {
 						const fontData = await fs.readFile(fontPath);
 
-						const fileHash = loaderUtils.getHashDigest(
-							fontData,
-							"md5",
-							"hex",
-							8,
-						);
-
 						const fontReferenceId = this.emitFile({
-							fileName: path.join(
-								importerDirPath,
-								`${fontBaseName}-${fileHash}${fontExtension}`,
-							),
+							name: `${fontBaseName}${fontExtension}`,
 							type: "asset",
 							source: fontData,
 						});
 
-						return `/${this.getFileName(fontReferenceId)}`;
+						return { fontReferenceId, fontPath };
 					} catch (err) {
 						console.error(`Could not read font file ${fontPath}:`, err);
 						return undefined;
 					}
 				};
 
-				if (fontOptions.props.src) {
+				const loaderOptions: LoaderOptions = {
+					...fontOptions,
+				};
+
+				if (loaderOptions) {
 					if (typeof fontOptions.props.src === "string") {
-						const fontPath = await emitFont(fontOptions.props.src);
-						fontOptions.props.src = fontPath;
+						const font = await emitFont(fontOptions.props.src);
+						loaderOptions.props.metaSrc = font;
 					} else {
-						fontOptions.props.src = await Promise.all(
-							(fontOptions.props.src ?? []).map(async (font) => {
-								const fontPath = await emitFont(font.path);
-								return {
-									...font,
-									path: fontPath ?? "",
-								};
-							}),
-						);
+						loaderOptions.props.metaSrc = (
+							await Promise.all(
+								(fontOptions.props.src ?? []).map(async (fontSrc) => {
+									const font = await emitFont(fontSrc.path);
+									if (!font) {
+										return undefined;
+									}
+									return {
+										...fontSrc,
+										path: font,
+									};
+								}),
+							)
+						).filter((font) => font !== undefined);
 					}
 				}
 
-				fontFaceDeclaration = await getLocalFontFaceDeclarations(fontOptions);
+				fontFaceDeclaration = await getLocalFontFaceDeclarations(loaderOptions);
 			}
 
 			return {

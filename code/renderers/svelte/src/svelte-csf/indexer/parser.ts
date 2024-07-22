@@ -71,8 +71,18 @@ export async function parseForIndexer(
     },
 
     Root(node, context) {
-      const { module, fragment } = node;
+      const {
+        fragment,
+        // TODO: Remove it in the next major version
+        instance,
+        module,
+      } = node;
       const { state, visit } = context;
+
+      // TODO: Remove it in the next major version
+      if (legacyTemplate && instance) {
+        visit(instance, state);
+      }
 
       if (module) {
         visit(module, state);
@@ -83,12 +93,12 @@ export async function parseForIndexer(
       visit(fragment, state);
     },
 
+    // NOTE: We walk on instance (if flag was enabled - `Root` handles it) or module
     Script(node, context) {
-      const { content, context: scriptContext } = node;
+      const { content } = node;
       const { state, visit } = context;
-      if (scriptContext === 'module') {
-        visit(content, state);
-      }
+
+      visit(content, state);
     },
 
     Program(node, context) {

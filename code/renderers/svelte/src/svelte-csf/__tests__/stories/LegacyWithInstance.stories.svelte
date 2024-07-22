@@ -14,7 +14,7 @@
    * * `Code`.
    */
   export const meta = {
-    title: 'LegacyTemplate',
+    title: 'LegacyTemplateWithInstance',
     component: LegacyTemplate,
     tags: ['autodocs'],
   } satisfies Meta<LegacyTemplate>;

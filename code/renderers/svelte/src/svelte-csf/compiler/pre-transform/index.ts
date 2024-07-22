@@ -1,5 +1,5 @@
 import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
-import type { ImportDeclaration, VariableDeclaration } from 'estree';
+import type { ImportDeclaration, Program, VariableDeclaration } from 'estree';
 import type { Comment, Fragment, Root, Script, SvelteNode } from 'svelte/compiler';
 
 import { transformComponentMetaToDefineMeta } from '#compiler/pre-transform/codemods/component-meta-to-define-meta';
@@ -161,54 +161,64 @@ export async function codemodLegacyNodes(params: Params): Promise<Root> {
     },
   });
 
-  const { componentIdentifierName, defineMetaFromMeta } = state;
-
   // Clean-up
   // TODO: To optimize it (stop walking on AST again)...
   // it might be possible to use `visit(path(-1))` for some cases in the previous AST walk,
   // but I haven't managed to get it to work properly
   transformedAst = walk(transformedAst, state, {
-    Root(_node, context) {
-      const { next, state } = context;
+    Root(node, context) {
+      let { fragment, instance, module, ...rest } = node;
+      const { state, visit } = context;
 
-      next(state);
+      // NOTE: At this point, we decide for walker where it should walk first instead of using `next(state)`
+      module = visit(module as Script, state) as Script;
+      instance = instance ? (visit(instance, state) as Script) : null;
+      fragment = visit(fragment, state) as Fragment;
+
+      // NOTE: Remove if body is empty
+      if (instance && instance.content.body.length === 0) {
+        instance = null;
+      }
+
+      return {
+        ...rest,
+        module,
+        instance,
+        fragment,
+      };
     },
 
     Script(node, context) {
-      const { context: scriptContext } = node;
+      let { content, context: scriptContext, ...rest } = node;
+      const { state, visit } = context;
 
-      const { next, state } = context;
+      state.currentScript = scriptContext === 'module' ? 'module' : 'instance';
 
-      next({ ...state, currentScript: scriptContext === 'module' ? 'module' : 'instance' });
+      content = visit(content, state) as Program;
+
+      return { ...rest, content, context: scriptContext };
     },
 
     Program(node, _context) {
       let { body, ...rest } = node;
       const { currentScript, pkgImportDeclaration, defineMetaFromMeta } = state;
 
-      if (pkgImportDeclaration) {
-        if (currentScript === 'module') {
-          body.unshift(pkgImportDeclaration);
-        }
-
-        if (currentScript === 'instance') {
-          body.filter((declaration) => {
-            return (
-              declaration.type === 'ImportDeclaration' && declaration.source.value === pkg.name
-            );
-          });
-        }
+      if (pkgImportDeclaration && currentScript === 'instance') {
+        body = body.filter((declaration) => {
+          return declaration.type === 'ImportDeclaration' && declaration.source.value !== pkg.name;
+        });
       }
 
-      if (defineMetaFromMeta) {
+      if (currentScript === 'module' && defineMetaFromMeta) {
         body.push(defineMetaFromMeta);
-
-        return { ...rest, body };
       }
+
+      return { ...rest, body };
     },
 
     Fragment(node, context) {
-      const { stop } = context;
+      const { state, stop } = context;
+      const { componentIdentifierName, defineMetaFromMeta } = state;
 
       if (defineMetaFromMeta) {
         let { nodes, ...rest } = node;

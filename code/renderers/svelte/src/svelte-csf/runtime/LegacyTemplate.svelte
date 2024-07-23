@@ -10,8 +10,9 @@
   import { type StoryRendererContext } from './contexts/renderer.svelte';
 
   export let id: string = 'default';
-  export let args: StoryRendererContext['storyContext'];
-  export let context: StoryRendererContext['args'];
+
+  let args: StoryRendererContext['storyContext'];
+  let context: StoryRendererContext['args'];
 
   throw new LegacyTemplateNotEnabledError('Template');
 </script>

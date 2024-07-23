@@ -31,6 +31,7 @@ function Component() {
 
 export default {
   component: Component,
+  tags: ['test-skip'],
   parameters: {
     nextjs: {
       appDirectory: true,

@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-  import { Story } from '@storybook/addon-svelte-csf';
+  import { Story, Template } from '@storybook/addon-svelte-csf';
   import type { Meta } from '@storybook/svelte';
 
   import LegacyStory from './LegacyTemplate.svelte';
@@ -18,25 +18,27 @@
     component: LegacyStory,
     tags: ['autodocs'],
   } satisfies Meta<LegacyStory>;
+
+  let count = 0;
+
+  function handleClick() {
+    count += 1;
+  }
 </script>
 
-<Story name="With args only" let:args>
-  <LegacyStory {...args}>{'With args only'}</LegacyStory>
-</Story>
+<Template let:args>
+  <LegacyStory {...args} on:click={handleClick} on:click>
+    You clicked: {count}
+  </LegacyStory>
+</Template>
 
-<Story name="With context only" let:context>
-  <p>{context.id}</p>
-</Story>
+<Story name="Default" />
 
-<Story name="With both args and context" let:args let:context>
-  <p>{context.id}</p>
-  <LegacyStory {...args} />
-</Story>
+<Story name="Rounded" args={{ rounded: true }} />
 
-<Story name="With autodocs" autodocs />
+<Story name="Square" source args={{ rounded: false }} />
 
-<Story name="With source as shorthand" source />
-
-<Story name="With source as text" source="<LegacyStory>Hi</LegacyStory>">
-  <LegacyStory>{'Hi'}</LegacyStory>
+<!-- Dynamic snippet should be disabled for this story -->
+<Story name="No Args">
+  <LegacyStory>Label</LegacyStory>
 </Story>

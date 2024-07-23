@@ -5,12 +5,15 @@
    * E.g. to allow user still have typing experience.
    * Vite pre-transform hook does codemod where this component gets transformed into Svelte v5 SnippetBlock.
    */
+  import { LegacyTemplateNotEnabledError } from '#utils/error/codemod/index';
 
   import { type StoryRendererContext } from './contexts/renderer.svelte';
 
-  let id: string = 'default';
-  let args: StoryRendererContext['storyContext'];
-  let context: StoryRendererContext['args'];
+  export let id: string = 'default';
+  export let args: StoryRendererContext['storyContext'];
+  export let context: StoryRendererContext['args'];
+
+  throw new LegacyTemplateNotEnabledError('Template');
 </script>
 
 <slot {context} {args} />

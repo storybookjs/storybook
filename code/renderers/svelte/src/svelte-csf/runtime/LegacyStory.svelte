@@ -12,6 +12,7 @@
 
   import { type StoryRendererContext } from '#runtime/contexts/renderer.svelte';
   import type { Meta } from '#types';
+  import { LegacyTemplateNotEnabledError } from '#utils/error/codemod/index';
 
   type Props = ComponentProps<Story<EmptyObject, Component, Meta<Component>>> & {
     /**
@@ -23,6 +24,8 @@
   let { args }: Props = $props();
 
   let context: StoryRendererContext['storyContext'];
+
+  throw new LegacyTemplateNotEnabledError('Story');
 </script>
 
 <slot {context} {args} />

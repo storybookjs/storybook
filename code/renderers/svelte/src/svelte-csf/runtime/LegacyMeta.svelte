@@ -8,7 +8,11 @@
    */
   import type { Meta } from '@storybook/svelte';
 
+  import { LegacyTemplateNotEnabledError } from '#utils/error/codemod/index';
+
   interface Props extends Meta {}
 
   let {}: Props = $props();
+
+  throw new LegacyTemplateNotEnabledError('Meta');
 </script>

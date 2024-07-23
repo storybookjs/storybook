@@ -14,6 +14,9 @@ importers:
       find-up:
         specifier: ^7.0.0
         version: 7.0.0
+      image-size:
+        specifier: ^1.1.1
+        version: 1.1.1
       ts-dedent:
         specifier: ^2.2.0
         version: 2.2.0
@@ -24,15 +27,24 @@ importers:
       '@types/node':
         specifier: ^20.0.0
         version: 20.14.6
+      '@types/react':
+        specifier: ^18
+        version: 18.3.3
       lefthook:
         specifier: ^1.6.16
         version: 1.6.16
       next:
         specifier: ^14.0.0
         version: 14.2.4(@babel/core@7.24.7)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(sass@1.77.6)
+      react:
+        specifier: ^18
+        version: 18.3.1
       rollup:
         specifier: ^4.18.0
         version: 4.18.0
+      sharp:
+        specifier: ^0.33.4
+        version: 0.33.4
       tsup:
         specifier: ^8.1.0
         version: 8.1.0(postcss@8.4.38)(typescript@5.4.5)
@@ -7145,13 +7157,11 @@ snapshots:
     dependencies:
       color-name: 1.1.4
       simple-swizzle: 0.2.2
-    optional: true
 
   color@4.2.3:
     dependencies:
       color-convert: 2.0.1
       color-string: 1.9.1
-    optional: true
 
   colorette@2.0.20: {}
 
@@ -7338,8 +7348,7 @@ snapshots:
 
   detect-indent@6.1.0: {}
 
-  detect-libc@2.0.3:
-    optional: true
+  detect-libc@2.0.3: {}
 
   didyoumean@1.2.2: {}
 
@@ -7979,8 +7988,7 @@ snapshots:
 
   is-arrayish@0.2.1: {}
 
-  is-arrayish@0.3.2:
-    optional: true
+  is-arrayish@0.3.2: {}
 
   is-binary-path@2.1.0:
     dependencies:
@@ -9147,7 +9155,6 @@ snapshots:
       '@img/sharp-wasm32': 0.33.4
       '@img/sharp-win32-ia32': 0.33.4
       '@img/sharp-win32-x64': 0.33.4
-    optional: true
 
   shebang-command@2.0.0:
     dependencies:
@@ -9171,7 +9178,6 @@ snapshots:
   simple-swizzle@0.2.2:
     dependencies:
       is-arrayish: 0.3.2
-    optional: true
 
   sisteransi@1.0.5: {}
 

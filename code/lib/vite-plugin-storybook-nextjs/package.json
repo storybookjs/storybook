@@ -5,14 +5,18 @@
 	"keywords": ["vite-plugin"],
 	"author": "",
 	"license": "MIT",
-	"sideEffects": false,
+	"sideEffects": ["./src/polyfills/promise-with-resolvers.ts"],
 	"files": ["dist"],
-	"main": "dist/index.js",
-	"module": "dist/index.mjs",
-	"types": "dist/index.d.ts",
+	"type": "module",
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"require": "./dist/index.cjs"
+		}
+	},
 	"scripts": {
 		"prepublishOnly": "pnpm build",
-		"build": "tsup src/index.ts --dts --format cjs,esm --treeshake",
+		"build": "tsup",
 		"dev": "pnpm build --watch",
 		"check": "biome check",
 		"check:write": "biome check --write"
@@ -24,9 +28,12 @@
 	"devDependencies": {
 		"@biomejs/biome": "1.8.1",
 		"@types/node": "^20.0.0",
+		"@types/react": "^18",
 		"lefthook": "^1.6.16",
 		"next": "^14.0.0",
+		"react": "^18",
 		"rollup": "^4.18.0",
+		"sharp": "^0.33.4",
 		"tsup": "^8.1.0",
 		"typescript": "^5.0.0",
 		"vite": "^5.0.0",
@@ -36,6 +43,10 @@
 	"dependencies": {
 		"@next/env": "^14.2.4",
 		"find-up": "^7.0.0",
+		"image-size": "^1.1.1",
 		"ts-dedent": "^2.2.0"
+	},
+	"optionalDependencies": {
+		"sharp": "^0.33.4"
 	}
 }

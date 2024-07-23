@@ -16,8 +16,10 @@ const excluded =
 
 const included = /\.((c|m)?(j|t)sx?)$/;
 
-export function vitePluginNextSwc(rootDir: string) {
-	let nextConfig: NextConfigComplete;
+export function vitePluginNextSwc(
+	rootDir: string,
+	nextConfigResolver: PromiseWithResolvers<NextConfigComplete>,
+) {
 	let loadedJSConfig: Awaited<ReturnType<typeof loadJsConfig>>;
 	let nextDirectories: ReturnType<typeof findPagesDir>;
 	let isServerEnvironment: boolean;
@@ -29,7 +31,7 @@ export function vitePluginNextSwc(rootDir: string) {
 	return {
 		name: "vite-plugin-next-swc",
 		async config(config, env) {
-			nextConfig = await NextUtils.getConfig(resolvedDir);
+			const nextConfig = await nextConfigResolver.promise;
 			nextDirectories = findPagesDir(resolvedDir);
 			loadedJSConfig = await loadJsConfig(resolvedDir, nextConfig);
 			envConfig = (await NextUtils.loadEnvironmentConfig(resolvedDir))
@@ -82,7 +84,7 @@ export function vitePluginNextSwc(rootDir: string) {
 						inputSourceMap,
 						isServerEnvironment,
 						loadedJSConfig,
-						nextConfig,
+						nextConfig: await nextConfigResolver.promise,
 						nextDirectories,
 						rootDir,
 						isDev,

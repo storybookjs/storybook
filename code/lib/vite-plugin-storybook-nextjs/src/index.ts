@@ -1,10 +1,14 @@
 import { resolve } from "node:path";
 
+import type { NextConfigComplete } from "next/dist/server/config-shared";
 import type { Plugin } from "vite";
 import { vitePluginNextConfig } from "./plugins/next-env/plugin";
 import { configureNextFont } from "./plugins/next-font/plugin";
 import { vitePluginNextSwc } from "./plugins/next-swc/plugin";
 import * as NextUtils from "./utils/nextjs";
+
+import "./polyfills/promise-with-resolvers";
+import { vitePluginNextImage } from "./plugins/next-image/plugin";
 
 type VitePluginOptions = {
 	/**
@@ -16,10 +20,12 @@ type VitePluginOptions = {
 
 function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin {
 	const resolvedDir = resolve(dir);
+	const nextConfigResolver = Promise.withResolvers<NextConfigComplete>();
 
 	const nextFontPlugin = configureNextFont();
-	const nextSwcPlugin = vitePluginNextSwc(dir);
+	const nextSwcPlugin = vitePluginNextSwc(dir, nextConfigResolver);
 	const nextEnvPlugin = vitePluginNextConfig(dir);
+	const nextImagePlugin = vitePluginNextImage(nextConfigResolver);
 
 	return {
 		name: "vite-plugin-next",
@@ -34,6 +40,8 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin {
 			nextFontPlugin.configureServer.call(this, server);
 		},
 		async config(config, env) {
+			nextConfigResolver.resolve(await NextUtils.getConfig(resolvedDir));
+
 			const mergedNextSwcConfig = await nextSwcPlugin.config.call(
 				this,
 				config,
@@ -50,13 +58,35 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin {
 				env,
 			);
 
-			return mergedNextFontConfig;
+			const mergedNextImageConfig = await nextImagePlugin.config.call(
+				this,
+				mergedNextFontConfig,
+				env,
+			);
+
+			return mergedNextImageConfig;
 		},
-		resolveId(source, importer, options) {
-			return nextFontPlugin.resolveId.call(this, source, importer);
+		async resolveId(source, importer, options) {
+			const nextFontResolver = await nextFontPlugin.resolveId.call(
+				this,
+				source,
+				importer,
+			);
+
+			if (nextFontResolver) {
+				return nextFontResolver;
+			}
+
+			return nextImagePlugin.resolveId.call(this, source, importer);
 		},
 		load(id) {
-			return nextFontPlugin.load.call(this, id);
+			const nextFontLoaderResult = nextFontPlugin.load.call(this, id);
+
+			if (nextFontLoaderResult) {
+				return nextFontLoaderResult;
+			}
+
+			return nextImagePlugin.load.call(this, id);
 		},
 		transform(code, id) {
 			return nextSwcPlugin.transform.call(this, code, id);

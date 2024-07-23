@@ -3,8 +3,9 @@
 	"compilerOptions": {
 		"outDir": "dist",
 		"target": "ES2020",
-		"lib": ["ESNext"],
+		"lib": ["ESNext", "DOM"],
 		"module": "Preserve",
+		"jsx": "react",
 		"moduleResolution": "bundler",
 		"strict": true,
 		"declaration": true,

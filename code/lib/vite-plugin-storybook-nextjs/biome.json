@@ -1,20 +1,24 @@
 {
-	"$schema": "https://biomejs.dev/schemas/1.8.1/schema.json",
-	"organizeImports": {
-		"enabled": true
-	},
-	"linter": {
-		"enabled": true,
-		"rules": {
-			"recommended": true
-		}
-	},
-	"files": {
-		"ignore": [
-			"dist/**/*",
-			"example/.next/**/*",
-			"**/node_modules/**/*",
-			"example/storybook-static/**/*"
-		]
-	}
+  "$schema": "https://biomejs.dev/schemas/1.8.1/schema.json",
+  "organizeImports": {
+    "enabled": true
+  },
+  "formatter": {
+    "indentStyle": "space"
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true
+    }
+  },
+  "files": {
+    "ignore": [
+      "dist/**/*",
+      "example/.next/**/*",
+      "**/node_modules/**/*",
+      "example/storybook-static/**/*",
+      ".tsup/**"
+    ]
+  }
 }

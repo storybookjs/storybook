@@ -11,24 +11,24 @@ const OriginalNextImage = NextImageNamespace.default;
 const { getImageProps: originalGetImageProps } = NextImageNamespace;
 
 const MockedNextImage = React.forwardRef<
-	HTMLImageElement,
-	_NextImage.ImageProps
+  HTMLImageElement,
+  _NextImage.ImageProps
 >(({ loader, ...props }, ref) => {
-	const imageParameters = React.useContext(ImageContext);
+  const imageParameters = React.useContext(ImageContext);
 
-	return (
-		<OriginalNextImage
-			ref={ref}
-			{...imageParameters}
-			{...props}
-			loader={loader ?? defaultLoader}
-		/>
-	);
+  return (
+    <OriginalNextImage
+      ref={ref}
+      {...imageParameters}
+      {...props}
+      loader={loader ?? defaultLoader}
+    />
+  );
 });
 
 MockedNextImage.displayName = "NextImage";
 
 export const getImageProps = (props: _NextImage.ImageProps) =>
-	originalGetImageProps?.({ loader: defaultLoader, ...props });
+  originalGetImageProps?.({ loader: defaultLoader, ...props });
 
 export default MockedNextImage;

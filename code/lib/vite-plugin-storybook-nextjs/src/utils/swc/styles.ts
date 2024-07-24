@@ -10,57 +10,57 @@
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import type {
-	EmotionConfig,
-	StyledComponentsConfig,
+  EmotionConfig,
+  StyledComponentsConfig,
 } from "next/dist/server/config-shared";
 
 export function getStyledComponentsOptions(
-	styledComponentsConfig: undefined | boolean | StyledComponentsConfig,
-	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-	development: any,
+  styledComponentsConfig: undefined | boolean | StyledComponentsConfig,
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  development: any,
 ) {
-	if (!styledComponentsConfig) {
-		return null;
-	}
+  if (!styledComponentsConfig) {
+    return null;
+  }
 
-	if (typeof styledComponentsConfig === "object") {
-		return {
-			...styledComponentsConfig,
-			displayName: styledComponentsConfig.displayName ?? Boolean(development),
-		};
-	}
+  if (typeof styledComponentsConfig === "object") {
+    return {
+      ...styledComponentsConfig,
+      displayName: styledComponentsConfig.displayName ?? Boolean(development),
+    };
+  }
 
-	return {
-		displayName: Boolean(development),
-	};
+  return {
+    displayName: Boolean(development),
+  };
 }
 
 export function getEmotionOptions(
-	emotionConfig: undefined | boolean | EmotionConfig,
-	development: boolean,
+  emotionConfig: undefined | boolean | EmotionConfig,
+  development: boolean,
 ) {
-	if (!emotionConfig) {
-		return null;
-	}
-	let autoLabel = !!development;
-	switch (typeof emotionConfig === "object" && emotionConfig.autoLabel) {
-		case "never":
-			autoLabel = false;
-			break;
-		case "always":
-			autoLabel = true;
-			break;
-		default:
-			break;
-	}
-	return {
-		enabled: true,
-		autoLabel,
-		sourcemap: development,
-		...(typeof emotionConfig === "object" && {
-			importMap: emotionConfig.importMap,
-			labelFormat: emotionConfig.labelFormat,
-			sourcemap: development && emotionConfig.sourceMap,
-		}),
-	};
+  if (!emotionConfig) {
+    return null;
+  }
+  let autoLabel = !!development;
+  switch (typeof emotionConfig === "object" && emotionConfig.autoLabel) {
+    case "never":
+      autoLabel = false;
+      break;
+    case "always":
+      autoLabel = true;
+      break;
+    default:
+      break;
+  }
+  return {
+    enabled: true,
+    autoLabel,
+    sourcemap: development,
+    ...(typeof emotionConfig === "object" && {
+      importMap: emotionConfig.importMap,
+      labelFormat: emotionConfig.labelFormat,
+      sourcemap: development && emotionConfig.sourceMap,
+    }),
+  };
 }

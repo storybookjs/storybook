@@ -2,5 +2,5 @@
 import styles from "./styles.module.css";
 
 export default function CSSModules() {
-	return <div className={styles.random}>Hello, CSS Modules!</div>;
+  return <div className={styles.random}>Hello, CSS Modules!</div>;
 }

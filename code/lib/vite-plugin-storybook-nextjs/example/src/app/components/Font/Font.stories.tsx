@@ -1,23 +1,23 @@
 import Font from "./Font";
 
 export default {
-	component: Font,
+  component: Font,
 };
 
 export const WithClassName = {
-	args: {
-		variant: "className",
-	},
+  args: {
+    variant: "className",
+  },
 };
 
 export const WithStyle = {
-	args: {
-		variant: "style",
-	},
+  args: {
+    variant: "style",
+  },
 };
 
 export const WithVariable = {
-	args: {
-		variant: "variable",
-	},
+  args: {
+    variant: "variable",
+  },
 };

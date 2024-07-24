@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest";
 import Example from "./Example";
 
 describe("Example", () => {
-	it("should render correctly", () => {
-		render(<Example />);
-		expect(screen.getByText("Analytics ID: abcdefghijk")).toBeInTheDocument();
-	});
+  it("should render correctly", () => {
+    render(<Example />);
+    expect(screen.getByText("Analytics ID: abcdefghijk")).toBeInTheDocument();
+  });
 });

@@ -10,75 +10,75 @@ const cssCache = new Map<string, string>();
 type FontOrigin = string;
 
 export type LocalFontSrc =
-	| FontOrigin
-	| Array<{ path: FontOrigin; weight?: string; style?: string }>;
+  | FontOrigin
+  | Array<{ path: FontOrigin; weight?: string; style?: string }>;
 
 export type LoaderOptions = {
-	/**
-	 * Initial import name. Can be `next/font/google` or `next/font/local`
-	 */
-	source: string;
-	/**
-	 * Props passed to the `next/font` function call
-	 */
-	props: {
-		src?: LocalFontSrc;
-	};
-	/**
-	 * Font Family name
-	 */
-	fontFamily: string;
-	/**
-	 * Filename of the issuer file, which imports `next/font/google` or `next/font/local
-	 */
-	filename: string;
+  /**
+   * Initial import name. Can be `next/font/google` or `next/font/local`
+   */
+  source: string;
+  /**
+   * Props passed to the `next/font` function call
+   */
+  props: {
+    src?: LocalFontSrc;
+  };
+  /**
+   * Font Family name
+   */
+  fontFamily: string;
+  /**
+   * Filename of the issuer file, which imports `next/font/google` or `next/font/local
+   */
+  filename: string;
 };
 
 export async function getFontFaceDeclarations(options: LoaderOptions) {
-	const {
-		fontFamily,
-		weights,
-		styles,
-		selectedVariableAxes,
-		display,
-		variable,
-	} = validateGoogleFontFunctionCall(options.fontFamily, options.props);
+  const {
+    fontFamily,
+    weights,
+    styles,
+    selectedVariableAxes,
+    display,
+    variable,
+  } = validateGoogleFontFunctionCall(options.fontFamily, options.props);
 
-	const fontAxes = getFontAxes(
-		fontFamily,
-		weights,
-		styles,
-		selectedVariableAxes,
-	);
-	const url = getGoogleFontsUrl(fontFamily, fontAxes, display);
+  const fontAxes = getFontAxes(
+    fontFamily,
+    weights,
+    styles,
+    selectedVariableAxes,
+  );
+  const url = getGoogleFontsUrl(fontFamily, fontAxes, display);
 
-	try {
-		const hasCachedCSS = cssCache.has(url);
-		const fontFaceCSS = hasCachedCSS
-			? cssCache.get(url)
-			: await fetchCSSFromGoogleFonts(url, fontFamily, true).catch(() => null);
-		if (!hasCachedCSS) {
-			cssCache.set(url, fontFaceCSS as string);
-		} else {
-			cssCache.delete(url);
-		}
-		if (fontFaceCSS === null) {
-			throw new Error(
-				`Failed to fetch \`${fontFamily}\` from Google Fonts with URL: \`${url}\``,
-			);
-		}
+  try {
+    const hasCachedCSS = cssCache.has(url);
+    const fontFaceCSS = hasCachedCSS
+      ? cssCache.get(url)
+      : await fetchCSSFromGoogleFonts(url, fontFamily, true).catch(() => null);
+    if (!hasCachedCSS) {
+      cssCache.set(url, fontFaceCSS as string);
+    } else {
+      cssCache.delete(url);
+    }
+    if (fontFaceCSS === null) {
+      throw new Error(
+        `Failed to fetch \`${fontFamily}\` from Google Fonts with URL: \`${url}\``,
+      );
+    }
 
-		return {
-			id: loaderUtils.getHashDigest(url, "md5", "hex", 6),
-			fontFamily,
-			fontFaceCSS,
-			weights,
-			styles,
-			variable,
-		};
-	} catch (error) {
-		throw new Error(
-			`Failed to fetch \`${fontFamily}\` from Google Fonts with URL: \`${url}\``,
-		);
-	}
+    return {
+      id: loaderUtils.getHashDigest(url, "md5", "hex", 6),
+      fontFamily,
+      fontFaceCSS,
+      weights,
+      styles,
+      variable,
+    };
+  } catch (error) {
+    throw new Error(
+      `Failed to fetch \`${fontFamily}\` from Google Fonts with URL: \`${url}\``,
+    );
+  }
 }

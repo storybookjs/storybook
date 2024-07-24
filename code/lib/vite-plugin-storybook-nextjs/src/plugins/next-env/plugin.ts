@@ -7,49 +7,49 @@ import type { Plugin } from "vite";
 import * as NextUtils from "../../utils/nextjs";
 
 export function vitePluginNextConfig(rootDir: string) {
-	let nextConfig: NextConfigComplete;
-	let envConfig: Env;
-	let isDev: boolean;
+  let nextConfig: NextConfigComplete;
+  let envConfig: Env;
+  let isDev: boolean;
 
-	const resolvedDir = resolve(rootDir);
+  const resolvedDir = resolve(rootDir);
 
-	return {
-		name: "vite-plugin-storybook-nextjs-swc",
-		async config(config, env) {
-			nextConfig = await NextUtils.getConfig(resolvedDir);
-			envConfig = (await NextUtils.loadEnvironmentConfig(resolvedDir))
-				.combinedEnv;
-			isDev = env.mode === "development";
+  return {
+    name: "vite-plugin-storybook-nextjs-swc",
+    async config(config, env) {
+      nextConfig = await NextUtils.getConfig(resolvedDir);
+      envConfig = (await NextUtils.loadEnvironmentConfig(resolvedDir))
+        .combinedEnv;
+      isDev = env.mode === "development";
 
-			const publicNextEnvMap = Object.fromEntries(
-				Object.entries(envConfig)
-					.filter(([key]) => key.startsWith("NEXT_PUBLIC_"))
-					.map(([key, value]) => {
-						return [`process.env.${key}`, JSON.stringify(value)];
-					}),
-			);
+      const publicNextEnvMap = Object.fromEntries(
+        Object.entries(envConfig)
+          .filter(([key]) => key.startsWith("NEXT_PUBLIC_"))
+          .map(([key, value]) => {
+            return [`process.env.${key}`, JSON.stringify(value)];
+          }),
+      );
 
-			return {
-				...config,
-				define: {
-					...config.define,
-					...publicNextEnvMap,
-					...getDefineEnv({
-						isTurbopack: false,
-						config: nextConfig,
-						isClient: true,
-						isEdgeServer: false,
-						isNodeOrEdgeCompilation: false,
-						isNodeServer: false,
-						clientRouterFilters: undefined,
-						dev: isDev,
-						middlewareMatchers: undefined,
-						hasRewrites: false,
-						distDir: nextConfig.distDir,
-						fetchCacheKeyPrefix: nextConfig?.experimental?.fetchCacheKeyPrefix,
-					}),
-				},
-			};
-		},
-	} satisfies Plugin;
+      return {
+        ...config,
+        define: {
+          ...config.define,
+          ...publicNextEnvMap,
+          ...getDefineEnv({
+            isTurbopack: false,
+            config: nextConfig,
+            isClient: true,
+            isEdgeServer: false,
+            isNodeOrEdgeCompilation: false,
+            isNodeServer: false,
+            clientRouterFilters: undefined,
+            dev: isDev,
+            middlewareMatchers: undefined,
+            hasRewrites: false,
+            distDir: nextConfig.distDir,
+            fetchCacheKeyPrefix: nextConfig?.experimental?.fetchCacheKeyPrefix,
+          }),
+        },
+      };
+    },
+  } satisfies Plugin;
 }

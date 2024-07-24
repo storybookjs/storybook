@@ -17,132 +17,132 @@ import type { ExperimentalConfig } from "next/dist/server/config-shared";
 import { getEmotionOptions, getStyledComponentsOptions } from "./styles";
 
 const regeneratorRuntimePath = require.resolve(
-	"next/dist/compiled/regenerator-runtime",
+  "next/dist/compiled/regenerator-runtime",
 );
 
 export function getBaseSWCOptions({
-	filename,
-	development,
-	hasReactRefresh,
-	globalWindow,
-	esm,
-	modularizeImports,
-	swcPlugins,
-	compilerOptions,
-	resolvedBaseUrl,
-	jsConfig,
-	swcCacheDir,
+  filename,
+  development,
+  hasReactRefresh,
+  globalWindow,
+  esm,
+  modularizeImports,
+  swcPlugins,
+  compilerOptions,
+  resolvedBaseUrl,
+  jsConfig,
+  swcCacheDir,
 }: {
-	filename: string;
-	development: boolean;
-	hasReactRefresh: boolean;
-	globalWindow: boolean;
-	esm: boolean;
-	modularizeImports?: NextConfig["modularizeImports"];
-	compilerOptions: NextConfig["compiler"];
-	swcPlugins: ExperimentalConfig["swcPlugins"];
-	resolvedBaseUrl?: ResolvedBaseUrl;
-	jsConfig: JsConfig;
-	swcCacheDir?: string;
+  filename: string;
+  development: boolean;
+  hasReactRefresh: boolean;
+  globalWindow: boolean;
+  esm: boolean;
+  modularizeImports?: NextConfig["modularizeImports"];
+  compilerOptions: NextConfig["compiler"];
+  swcPlugins: ExperimentalConfig["swcPlugins"];
+  resolvedBaseUrl?: ResolvedBaseUrl;
+  jsConfig: JsConfig;
+  swcCacheDir?: string;
 }) {
-	const parserConfig = getParserOptions({ filename, jsConfig });
-	const paths = jsConfig?.compilerOptions?.paths;
-	const enableDecorators = Boolean(
-		jsConfig?.compilerOptions?.experimentalDecorators,
-	);
-	const emitDecoratorMetadata = Boolean(
-		jsConfig?.compilerOptions?.emitDecoratorMetadata,
-	);
-	const useDefineForClassFields = Boolean(
-		jsConfig?.compilerOptions?.useDefineForClassFields,
-	);
-	const plugins = (swcPlugins ?? [])
-		.filter(Array.isArray)
-		.map(([name, options]) => [require.resolve(name), options]);
+  const parserConfig = getParserOptions({ filename, jsConfig });
+  const paths = jsConfig?.compilerOptions?.paths;
+  const enableDecorators = Boolean(
+    jsConfig?.compilerOptions?.experimentalDecorators,
+  );
+  const emitDecoratorMetadata = Boolean(
+    jsConfig?.compilerOptions?.emitDecoratorMetadata,
+  );
+  const useDefineForClassFields = Boolean(
+    jsConfig?.compilerOptions?.useDefineForClassFields,
+  );
+  const plugins = (swcPlugins ?? [])
+    .filter(Array.isArray)
+    .map(([name, options]) => [require.resolve(name), options]);
 
-	return {
-		jsc: {
-			...(resolvedBaseUrl && paths
-				? {
-						baseUrl: resolvedBaseUrl.baseUrl,
-						paths,
-					}
-				: {}),
-			externalHelpers: false,
-			parser: parserConfig,
-			experimental: {
-				keepImportAttributes: true,
-				emitAssertForImportAttributes: true,
-				plugins,
-				cacheRoot: swcCacheDir,
-			},
-			transform: {
-				legacyDecorator: enableDecorators,
-				decoratorMetadata: emitDecoratorMetadata,
-				useDefineForClassFields: useDefineForClassFields,
-				react: {
-					importSource:
-						jsConfig?.compilerOptions?.jsxImportSource ??
-						(compilerOptions?.emotion ? "@emotion/react" : "react"),
-					runtime: "automatic",
-					pragmaFrag: "React.Fragment",
-					throwIfNamespace: true,
-					development: !!development,
-					useBuiltins: true,
-					refresh: !!hasReactRefresh,
-				},
-				optimizer: {
-					simplify: false,
-					// TODO: Figuring out for what globals are exactly used for
-					globals: {
-						typeofs: {
-							window: globalWindow ? "object" : "undefined",
-						},
-						envs: {
-							NODE_ENV: development ? '"development"' : '"production"',
-						},
-					},
-				},
-				regenerator: {
-					importPath: regeneratorRuntimePath,
-				},
-			},
-		},
-		sourceMaps: "inline",
-		removeConsole: compilerOptions?.removeConsole,
-		reactRemoveProperties: false,
-		// Map the k-v map to an array of pairs.
-		modularizeImports: modularizeImports
-			? Object.fromEntries(
-					Object.entries(modularizeImports).map(([mod, config]) => [
-						mod,
-						{
-							...config,
-							transform:
-								typeof config.transform === "string"
-									? config.transform
-									: Object.entries(config.transform).map(([key, value]) => [
-											key,
-											value,
-										]),
-						},
-					]),
-				)
-			: undefined,
-		relay: compilerOptions?.relay,
-		// Always transform styled-jsx and error when `client-only` condition is triggered
-		styledJsx: {},
-		// Disable css-in-js libs (without client-only integration) transform on server layer for server components
-		emotion: getEmotionOptions(compilerOptions?.emotion, development),
-		// eslint-disable-next-line @typescript-eslint/no-use-before-define
-		styledComponents: getStyledComponentsOptions(
-			compilerOptions?.styledComponents,
-			development,
-		),
-		serverComponents: undefined,
-		serverActions: undefined,
-		// For app router we prefer to bundle ESM,
-		// On server side of pages router we prefer CJS.
-		preferEsm: esm,
-	};
+  return {
+    jsc: {
+      ...(resolvedBaseUrl && paths
+        ? {
+            baseUrl: resolvedBaseUrl.baseUrl,
+            paths,
+          }
+        : {}),
+      externalHelpers: false,
+      parser: parserConfig,
+      experimental: {
+        keepImportAttributes: true,
+        emitAssertForImportAttributes: true,
+        plugins,
+        cacheRoot: swcCacheDir,
+      },
+      transform: {
+        legacyDecorator: enableDecorators,
+        decoratorMetadata: emitDecoratorMetadata,
+        useDefineForClassFields: useDefineForClassFields,
+        react: {
+          importSource:
+            jsConfig?.compilerOptions?.jsxImportSource ??
+            (compilerOptions?.emotion ? "@emotion/react" : "react"),
+          runtime: "automatic",
+          pragmaFrag: "React.Fragment",
+          throwIfNamespace: true,
+          development: !!development,
+          useBuiltins: true,
+          refresh: !!hasReactRefresh,
+        },
+        optimizer: {
+          simplify: false,
+          // TODO: Figuring out for what globals are exactly used for
+          globals: {
+            typeofs: {
+              window: globalWindow ? "object" : "undefined",
+            },
+            envs: {
+              NODE_ENV: development ? '"development"' : '"production"',
+            },
+          },
+        },
+        regenerator: {
+          importPath: regeneratorRuntimePath,
+        },
+      },
+    },
+    sourceMaps: "inline",
+    removeConsole: compilerOptions?.removeConsole,
+    reactRemoveProperties: false,
+    // Map the k-v map to an array of pairs.
+    modularizeImports: modularizeImports
+      ? Object.fromEntries(
+          Object.entries(modularizeImports).map(([mod, config]) => [
+            mod,
+            {
+              ...config,
+              transform:
+                typeof config.transform === "string"
+                  ? config.transform
+                  : Object.entries(config.transform).map(([key, value]) => [
+                      key,
+                      value,
+                    ]),
+            },
+          ]),
+        )
+      : undefined,
+    relay: compilerOptions?.relay,
+    // Always transform styled-jsx and error when `client-only` condition is triggered
+    styledJsx: {},
+    // Disable css-in-js libs (without client-only integration) transform on server layer for server components
+    emotion: getEmotionOptions(compilerOptions?.emotion, development),
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+    styledComponents: getStyledComponentsOptions(
+      compilerOptions?.styledComponents,
+      development,
+    ),
+    serverComponents: undefined,
+    serverActions: undefined,
+    // For app router we prefer to bundle ESM,
+    // On server side of pages router we prefer CJS.
+    preferEsm: esm,
+  };
 }

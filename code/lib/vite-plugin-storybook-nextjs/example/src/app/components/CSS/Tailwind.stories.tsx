@@ -1,7 +1,7 @@
 import { TailwindCSS } from "./Tailwind";
 
 export default {
-	component: TailwindCSS,
+  component: TailwindCSS,
 };
 
 export const Default = {};

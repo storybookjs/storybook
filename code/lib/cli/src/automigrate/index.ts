@@ -247,6 +247,23 @@ export async function runFixes({
         packageManager,
       });
 
+      console.log({
+        storybookVersion,
+        beforeVersion,
+        satisfiesATrue: semver.satisfies(beforeVersion, f.versionRange[0], {
+          includePrerelease: true,
+        }),
+        satisfiesBFalse: semver.satisfies(beforeVersion, f.versionRange[0], {
+          includePrerelease: false,
+        }),
+        satisfiesDTrue: semver.satisfies(storybookVersion, f.versionRange[1], {
+          includePrerelease: true,
+        }),
+        satisfiesCFalse: semver.satisfies(storybookVersion, f.versionRange[1], {
+          includePrerelease: false,
+        }),
+      });
+
       if (
         (isUpgrade &&
           semver.satisfies(beforeVersion, f.versionRange[0], { includePrerelease: true }) &&

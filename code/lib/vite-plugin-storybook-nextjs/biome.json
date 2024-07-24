@@ -10,6 +10,11 @@
 		}
 	},
 	"files": {
-		"ignore": ["dist/**/*", "example/.next/**/*"]
+		"ignore": [
+			"dist/**/*",
+			"example/.next/**/*",
+			"**/node_modules/**/*",
+			"example/storybook-static/**/*"
+		]
 	}
 }

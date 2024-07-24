@@ -1,9 +1,9 @@
-name: Release
+name: CI
 
 on: [push]
 
 jobs:
-  release:
+  checks:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -14,9 +14,10 @@ jobs:
         with:
           version: 9.4.0
           run_install: true
-      - run: pnpm build
-      - name: Release
-        run: pnpm release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Build the plugin
+        run: pnpm build
+      - name: Check if the App builds successfully
+        run: pnpm build
+        working-directory: example
+      - name: Biome checks
+        run: pnpm check

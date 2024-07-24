@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest --project=next",
-    "test:storybook": "vitest --project=storybook",
+    "test:storybook": "vitest --project=storybook --reporter=verbose",
     "test:all": "vitest",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",

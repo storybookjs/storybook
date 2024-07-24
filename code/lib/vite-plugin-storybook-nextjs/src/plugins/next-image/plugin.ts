@@ -48,6 +48,7 @@ export function vitePluginNextImage(
           ...config.resolve,
           alias: {
             react: "next/dist/compiled/react",
+            "react-dom/test-utils": "react-dom/test-utils",
             "react-dom": "next/dist/compiled/react-dom",
           },
         },

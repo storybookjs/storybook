@@ -5,7 +5,7 @@ import {
 } from "@testing-library/react/pure";
 import { beforeAll, beforeEach } from "vitest";
 
-import * as projectAnnotations from "./.storybook/preview";
+import * as projectAnnotations from "./preview";
 
 beforeEach(cleanup);
 

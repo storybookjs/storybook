@@ -1,52 +1,58 @@
 {
-	"name": "vite-plugin-next",
-	"version": "1.0.0",
-	"description": "",
-	"keywords": ["vite-plugin"],
-	"author": "",
-	"license": "MIT",
-	"sideEffects": ["./src/polyfills/promise-with-resolvers.ts"],
-	"files": ["dist"],
-	"type": "module",
-	"exports": {
-		".": {
-			"import": "./dist/index.js",
-			"require": "./dist/index.cjs"
-		}
-	},
-	"scripts": {
-		"prepublishOnly": "pnpm build",
-		"build": "tsup",
-		"dev": "pnpm build --watch",
-		"check": "biome check",
-		"check:write": "biome check --write"
-	},
-	"peerDependencies": {
-		"next": "^14.0.0",
-		"vite": "^5.0.0"
-	},
-	"devDependencies": {
-		"@biomejs/biome": "1.8.1",
-		"@types/node": "^20.0.0",
-		"@types/react": "^18",
-		"lefthook": "^1.6.16",
-		"next": "^14.0.0",
-		"react": "^18",
-		"rollup": "^4.18.0",
-		"sharp": "^0.33.4",
-		"tsup": "^8.1.0",
-		"typescript": "^5.0.0",
-		"vite": "^5.0.0",
-		"vitest": "^1.6.0"
-	},
-	"packageManager": "pnpm@9.4.0",
-	"dependencies": {
-		"@next/env": "^14.2.4",
-		"find-up": "^7.0.0",
-		"image-size": "^1.1.1",
-		"ts-dedent": "^2.2.0"
-	},
-	"optionalDependencies": {
-		"sharp": "^0.33.4"
-	}
+  "name": "vite-plugin-storybook-nextjs",
+  "version": "0.0.0",
+  "description": "",
+  "keywords": ["vite-plugin", "nextjs", "storybook", "vitest"],
+  "author": "",
+  "license": "MIT",
+  "sideEffects": ["./src/polyfills/promise-with-resolvers.ts"],
+  "files": ["dist"],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "prepublishOnly": "pnpm build",
+    "build": "tsup",
+    "dev": "pnpm build --watch",
+    "check": "biome check",
+    "check:write": "biome check --write",
+    "release": "auto shipit"
+  },
+  "peerDependencies": {
+    "next": "^14.0.0",
+    "vite": "^5.0.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.8.1",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18",
+    "auto": "^11.2.0",
+    "lefthook": "^1.6.16",
+    "next": "^14.0.0",
+    "react": "^18",
+    "rollup": "^4.18.0",
+    "sharp": "^0.33.4",
+    "tsup": "^8.1.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0",
+    "vitest": "^1.6.0"
+  },
+  "packageManager": "pnpm@9.4.0",
+  "dependencies": {
+    "@next/env": "^14.2.4",
+    "find-up": "^7.0.0",
+    "image-size": "^1.1.1",
+    "ts-dedent": "^2.2.0"
+  },
+  "optionalDependencies": {
+    "sharp": "^0.33.4"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

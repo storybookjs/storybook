@@ -4,9 +4,9 @@
  * https://nextjs.org/docs/app/building-your-application/styling/css-modules#external-stylesheets
  */
 export function BootstrapButton() {
-	return (
-		<button type="button" className="btn btn-success">
-			Success
-		</button>
-	);
+  return (
+    <button type="button" className="btn btn-success">
+      Success
+    </button>
+  );
 }

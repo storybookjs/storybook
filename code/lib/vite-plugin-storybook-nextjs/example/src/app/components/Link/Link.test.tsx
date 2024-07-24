@@ -5,12 +5,12 @@ import { describe, expect, it } from "vitest";
 import Home from "./Link";
 
 describe("Page", () => {
-	it("renders a heading", () => {
-		const { container } = render(<Home />);
+  it("renders a heading", () => {
+    const { container } = render(<Home />);
 
-		const heading = screen.getByRole("heading", { level: 1 });
+    const heading = screen.getByRole("heading", { level: 1 });
 
-		expect(container).toMatchSnapshot();
-		expect(heading).toBeInTheDocument();
-	});
+    expect(container).toMatchSnapshot();
+    expect(heading).toBeInTheDocument();
+  });
 });

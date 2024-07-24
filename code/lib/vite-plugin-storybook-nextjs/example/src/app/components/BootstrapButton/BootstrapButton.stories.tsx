@@ -1,7 +1,7 @@
 import { BootstrapButton } from "./BootstrapButton";
 
 export default {
-	component: BootstrapButton,
+  component: BootstrapButton,
 };
 
 export const Default = {};

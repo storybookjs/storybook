@@ -1,6 +1,6 @@
 {
 	"name": "vite-plugin-storybook-nextjs",
-	"version": "1.0.0",
+	"version": "0.0.0",
 	"description": "",
 	"keywords": ["vite-plugin", "nextjs", "storybook", "vitest"],
 	"author": "",

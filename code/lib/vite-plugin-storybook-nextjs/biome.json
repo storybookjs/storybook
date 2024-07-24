@@ -10,6 +10,6 @@
 		}
 	},
 	"files": {
-		"ignore": ["dist/**/*"]
+		"ignore": ["dist/**/*", "example/.next/**/*"]
 	}
 }

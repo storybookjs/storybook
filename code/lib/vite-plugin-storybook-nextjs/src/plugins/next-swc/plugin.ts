@@ -29,7 +29,7 @@ export function vitePluginNextSwc(
 	const resolvedDir = resolve(rootDir);
 
 	return {
-		name: "vite-plugin-next-swc",
+		name: "vite-plugin-storybook-nextjs-swc",
 		async config(config, env) {
 			const nextConfig = await nextConfigResolver.promise;
 			nextDirectories = findPagesDir(resolvedDir);

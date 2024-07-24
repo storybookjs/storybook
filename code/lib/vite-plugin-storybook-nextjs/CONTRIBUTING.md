@@ -7,7 +7,7 @@
 pnpm install
 ```
 
-## vite-plugin-next development
+## vite-plugin-storybook-nextjs development
 
 Run tsup in dev mode to watch for changes
 

@@ -1,4 +1,4 @@
-import vitePluginNext from "vite-plugin-next";
+import vitePluginNext from "vite-plugin-storybook-nextjs";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({

@@ -38,7 +38,7 @@ export function vitePluginNextImage(
 	let devMode = true;
 
 	return {
-		name: "vite-plugin-next-image",
+		name: "vite-plugin-storybook-nextjs-image",
 		config(config, env) {
 			devMode = env.mode === "development";
 

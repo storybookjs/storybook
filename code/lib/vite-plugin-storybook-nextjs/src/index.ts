@@ -28,7 +28,7 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin {
 	const nextImagePlugin = vitePluginNextImage(nextConfigResolver);
 
 	return {
-		name: "vite-plugin-next",
+		name: "vite-plugin-storybook-nextjs",
 		async buildStart() {
 			// Set watchers for the Next.js configuration files
 			for (const configPath of await NextUtils.getConfigPaths(resolvedDir)) {

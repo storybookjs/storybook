@@ -1,5 +1,5 @@
 import type { StorybookConfig } from "@storybook/nextjs";
-import vitePluginNext from "vite-plugin-next";
+import vitePluginNext from "vite-plugin-storybook-nextjs";
 
 const config: StorybookConfig = {
 	stories: ["../src/**/*.mdx", "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],

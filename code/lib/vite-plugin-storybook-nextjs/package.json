@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "description": "",
   "keywords": ["vite-plugin", "nextjs", "storybook", "vitest"],
-  "author": "",
+  "author": "Storybook Bot <storybookbot@gmail.com>",
   "license": "MIT",
   "sideEffects": ["./src/polyfills/promise-with-resolvers.ts"],
   "files": ["dist"],

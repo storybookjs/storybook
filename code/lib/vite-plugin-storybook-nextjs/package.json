@@ -19,7 +19,8 @@
 		"build": "tsup",
 		"dev": "pnpm build --watch",
 		"check": "biome check",
-		"check:write": "biome check --write"
+		"check:write": "biome check --write",
+		"release": "auto shipit"
 	},
 	"peerDependencies": {
 		"next": "^14.0.0",
@@ -29,6 +30,7 @@
 		"@biomejs/biome": "1.8.1",
 		"@types/node": "^20.0.0",
 		"@types/react": "^18",
+		"auto": "^11.2.0",
 		"lefthook": "^1.6.16",
 		"next": "^14.0.0",
 		"react": "^18",
@@ -48,5 +50,8 @@
 	},
 	"optionalDependencies": {
 		"sharp": "^0.33.4"
+	},
+	"publishConfig": {
+		"access": "public"
 	}
 }

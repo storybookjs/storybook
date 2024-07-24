@@ -1,6 +1,6 @@
 ## Bugs
 
-- Readd functionality so that Vite plugin works in Storybook mode
+- Read functionality so that Vite plugin works in Storybook mode
   -- Fast refresh
 - Sourcemaps broken
 

@@ -3,8 +3,7 @@
   "compilerOptions": {
     "resolveJsonModule": true,
     "jsxFactory": "h",
-    "jsxFragmentFactory": "Fragment",
-    "types": ["preact"]
+    "jsxFragmentFactory": "Fragment"
   },
   "include": ["src/**/*", "template/**/*"]
 }

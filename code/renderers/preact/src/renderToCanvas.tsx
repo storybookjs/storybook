@@ -23,7 +23,7 @@ const unmountElement = (canvasElement: Element) => renderElement(null, canvasEle
 class ErrorBoundary extends preact.Component<{
   showException: (err: Error) => void;
   showMain: () => void;
-  children?: preact.ComponentChildren
+  children?: preact.ComponentChildren;
 }> {
   state = { hasError: false };
 
@@ -65,11 +65,7 @@ export function renderToCanvas(
 ) {
   const Story = unboundStoryFn as preact.FunctionComponent<StoryContext<PreactRenderer>>;
 
-  const content = (
-    <ErrorBoundary showMain={showMain} showException={showException}>
-      <Story {...storyContext} />
-    </ErrorBoundary>
-  );
+  const content = h(ErrorBoundary, { showMain, showException }, h(Story, storyContext));
 
   if (forceRemount) {
     unmountElement(canvasElement);

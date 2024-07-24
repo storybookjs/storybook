@@ -16,7 +16,7 @@
   - [x] Sass
   - [x] CSS-in-JS
 - [x] next/link
-- [ ] next/image
+- [x] next/image
 - [x] next/font
 - [ ] next/head
 - [ ] next/cache
@@ -32,6 +32,10 @@
 ### next/font
 
 - static dir config not required anymore
+
+### Experimental
+
+- https://nextjs.org/docs/app/api-reference/next-config-js/urlImports
 
 ### CSS
 

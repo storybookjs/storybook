@@ -14,7 +14,8 @@
   "dependencies": {
     "next": "14.2.4",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "styled-jsx": "^5.1.6"
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^1.5.0",

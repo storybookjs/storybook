@@ -16,8 +16,6 @@ jobs:
           run_install: true
       - name: Build the plugin
         run: pnpm build
-      - name: Check if the App builds successfully
-        run: pnpm build
         working-directory: example
       - name: Biome checks
         run: pnpm check

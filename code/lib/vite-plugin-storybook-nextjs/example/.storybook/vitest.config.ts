@@ -19,17 +19,12 @@ export default defineConfig({
     name: "storybook",
     include: ["../src/**/*.{story,stories}.?(c|m)[jt]s?(x)"],
     browser: {
-      enabled: true,
+      // enabled: true,
       name: "chromium",
       provider: "playwright",
       headless: true,
     },
     setupFiles: ["./storybook.setup.ts"],
-
-    // env: {
-    //     // Necessary to avoid "act(...) is not supported in production builds of React"
-    //     // for some reason Testing-library is resolving the production build of React in the tests
-    //     NODE_ENV: "test",
-    //   },
+    environment: "happy-dom",
   },
 });

@@ -99,8 +99,8 @@ importers:
         specifier: ^8.3.0-alpha.1
         version: 8.3.0-alpha.1(storybook@8.3.0-alpha.1(@babel/preset-env@7.24.7(@babel/core@7.24.7)))(typescript@5.4.5)(vite@5.3.1(@types/node@20.14.6)(sass@1.77.6)(terser@5.31.1))
       '@storybook/experimental-vitest-plugin':
-        specifier: 0.0.1--canary.2.21a2e59.0
-        version: 0.0.1--canary.2.21a2e59.0(vitest@2.0.4(@types/node@20.14.6)(@vitest/browser@2.0.4)(happy-dom@14.12.0)(sass@1.77.6)(terser@5.31.1))
+        specifier: 0.0.1--canary.2.7c41420.0
+        version: 0.0.1--canary.2.7c41420.0(vitest@2.0.4(@types/node@20.14.6)(@vitest/browser@2.0.4)(happy-dom@14.12.0)(sass@1.77.6)(terser@5.31.1))
       '@storybook/nextjs':
         specifier: ^8.3.0-alpha.1
         version: 8.3.0-alpha.1(esbuild@0.21.5)(next@14.2.4(@babel/core@7.24.7)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(sass@1.77.6))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(sass@1.77.6)(storybook@8.3.0-alpha.1(@babel/preset-env@7.24.7(@babel/core@7.24.7)))(type-fest@4.23.0)(typescript@5.4.5)(vitest@2.0.4(@types/node@20.14.6)(@vitest/browser@2.0.4)(happy-dom@14.12.0)(sass@1.77.6)(terser@5.31.1))(webpack-hot-middleware@2.26.1)(webpack@5.92.1(esbuild@0.21.5))
@@ -1724,8 +1724,8 @@ packages:
   '@storybook/csf@0.1.11':
     resolution: {integrity: sha512-dHYFQH3mA+EtnCkHXzicbLgsvzYjcDJ1JWsogbItZogkPHgSJM/Wr71uMkcvw8v9mmCyP4NpXJuu6bPoVsOnzg==}
 
-  '@storybook/experimental-vitest-plugin@0.0.1--canary.2.21a2e59.0':
-    resolution: {integrity: sha512-eH1W+1Uam7H4g4JpjmiNzk9+LmoFaknEpjnrznRLB3oZBaJZJoDU7BnpiMWBthQnDfAHZHSG1aNVbHfw9YLCOw==}
+  '@storybook/experimental-vitest-plugin@0.0.1--canary.2.7c41420.0':
+    resolution: {integrity: sha512-ETGp9YM2YIAoqdeY32TB/234Op9dbgvDm5tZBepm3Uw7Uboih9LORSvBq9VSk5pi/SZopBooVTIkEyh7rPhCow==}
     peerDependencies:
       vitest: ^2.0.0
 
@@ -7787,7 +7787,7 @@ snapshots:
     dependencies:
       type-fest: 2.19.0
 
-  '@storybook/experimental-vitest-plugin@0.0.1--canary.2.21a2e59.0(vitest@2.0.4(@types/node@20.14.6)(@vitest/browser@2.0.4)(happy-dom@14.12.0)(sass@1.77.6)(terser@5.31.1))':
+  '@storybook/experimental-vitest-plugin@0.0.1--canary.2.7c41420.0(vitest@2.0.4(@types/node@20.14.6)(@vitest/browser@2.0.4)(happy-dom@14.12.0)(sass@1.77.6)(terser@5.31.1))':
     dependencies:
       execa: 5.1.1
       magic-string: 0.30.10

@@ -28,7 +28,7 @@
     "@storybook/addon-onboarding": "^8.3.0-alpha.1",
     "@storybook/blocks": "^8.3.0-alpha.1",
     "@storybook/builder-vite": "^8.3.0-alpha.1",
-    "@storybook/experimental-vitest-plugin": "0.0.1--canary.2.21a2e59.0",
+    "@storybook/experimental-vitest-plugin": "0.0.1--canary.2.7c41420.0",
     "@storybook/nextjs": "^8.3.0-alpha.1",
     "@storybook/react": "^8.3.0-alpha.1",
     "@storybook/test": "^8.3.0-alpha.1",

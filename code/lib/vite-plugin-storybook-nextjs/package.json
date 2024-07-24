@@ -2,7 +2,7 @@
 	"name": "vite-plugin-storybook-nextjs",
 	"version": "1.0.0",
 	"description": "",
-	"keywords": ["vite-plugin"],
+	"keywords": ["vite-plugin", "nextjs", "storybook", "vitest"],
 	"author": "",
 	"license": "MIT",
 	"sideEffects": ["./src/polyfills/promise-with-resolvers.ts"],

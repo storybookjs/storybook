@@ -16,8 +16,21 @@ jobs:
           run_install: true
       - name: Build the plugin
         run: pnpm build
+      
       - name: Check if Storybook builds successfully
         run: pnpm build-storybook
-        working-directory: example
+
+      - name: Install Playwright
+        working-directory: ./example
+        run: pnpm exec playwright install
+      
+      - name: Run Next.js tests
+        run: pnpm test
+        working-directory: ./example
+      
+      - name: Run Portable stories tests
+        run: pnpm test:storybook
+        working-directory: ./example
+        
       - name: Biome checks
         run: pnpm check

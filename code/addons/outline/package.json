@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-outline",
-  "version": "8.2.5",
+  "version": "8.2.6",
   "description": "Outline all elements with CSS to help with layout placement and alignment",
   "keywords": [
     "storybook-addons",

@@ -20,6 +20,14 @@
   },
   "license": "MIT",
   "sideEffects": false,
+  "type": "module",
+  "exports": {
+    "./globals": {
+      "type": "./globals.d.ts",
+      "import": "./globals.js",
+      "require": "./globals.cjs"
+    }
+  },
   "files": [
     "README.md",
     "*.js",

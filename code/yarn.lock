@@ -5286,7 +5286,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/addon-links@workspace:addons/links"
   dependencies:
-    "@storybook/csf": "npm:0.1.11"
+    "@storybook/csf": "npm:^0.1.11"
     "@storybook/global": "npm:^5.0.0"
     fs-extra: "npm:^11.1.0"
     ts-dedent: "npm:^2.0.0"
@@ -5513,7 +5513,7 @@ __metadata:
   resolution: "@storybook/blocks@workspace:lib/blocks"
   dependencies:
     "@storybook/addon-actions": "workspace:*"
-    "@storybook/csf": "npm:0.1.11"
+    "@storybook/csf": "npm:^0.1.11"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^1.2.5"
     "@storybook/react": "workspace:*"
@@ -5666,7 +5666,7 @@ __metadata:
     "@babel/preset-env": "npm:^7.24.4"
     "@babel/types": "npm:^7.24.0"
     "@storybook/core": "workspace:*"
-    "@storybook/csf": "npm:0.1.11"
+    "@storybook/csf": "npm:^0.1.11"
     "@types/cross-spawn": "npm:^6.0.2"
     "@types/jscodeshift": "npm:^0.11.10"
     ansi-regex: "npm:^6.0.1"
@@ -5760,7 +5760,7 @@ __metadata:
     "@radix-ui/react-dialog": "npm:^1.0.5"
     "@radix-ui/react-scroll-area": "npm:^1.0.5"
     "@radix-ui/react-slot": "npm:^1.0.2"
-    "@storybook/csf": "npm:0.1.11"
+    "@storybook/csf": "npm:^0.1.11"
     "@storybook/docs-mdx": "npm:4.0.0-next.1"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^1.2.5"
@@ -5896,21 +5896,21 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/csf@npm:0.1.11":
-  version: 0.1.11
-  resolution: "@storybook/csf@npm:0.1.11"
-  dependencies:
-    type-fest: "npm:^2.19.0"
-  checksum: 10c0/c5329fc13e7d762049b5c91df1bc1c0e510a1a898c401b72b68f1ff64139a85ab64a92f8e681d2fcb226c0a4a55d0f23b569b2bdb517e0f067bd05ea46228356
-  languageName: node
-  linkType: hard
-
 "@storybook/csf@npm:^0.0.1":
   version: 0.0.1
   resolution: "@storybook/csf@npm:0.0.1"
   dependencies:
     lodash: "npm:^4.17.15"
   checksum: 10c0/7b0f75763415f9147692a460b44417ee56ea9639433716a1fd4d1df4c8b0221cbc71b8da0fbed4dcecb3ccd6c7ed64be39f5c255c713539a6088a1d6488aaa24
+  languageName: node
+  linkType: hard
+
+"@storybook/csf@npm:^0.1.11":
+  version: 0.1.11
+  resolution: "@storybook/csf@npm:0.1.11"
+  dependencies:
+    type-fest: "npm:^2.19.0"
+  checksum: 10c0/c5329fc13e7d762049b5c91df1bc1c0e510a1a898c401b72b68f1ff64139a85ab64a92f8e681d2fcb226c0a4a55d0f23b569b2bdb517e0f067bd05ea46228356
   languageName: node
   linkType: hard
 
@@ -6506,7 +6506,7 @@ __metadata:
     "@storybook/codemod": "workspace:*"
     "@storybook/core": "workspace:*"
     "@storybook/core-webpack": "workspace:*"
-    "@storybook/csf": "npm:0.1.11"
+    "@storybook/csf": "npm:^0.1.11"
     "@storybook/csf-plugin": "workspace:*"
     "@storybook/ember": "workspace:*"
     "@storybook/eslint-config-storybook": "npm:^4.0.0"
@@ -6642,7 +6642,7 @@ __metadata:
   resolution: "@storybook/server@workspace:renderers/server"
   dependencies:
     "@storybook/components": "workspace:^"
-    "@storybook/csf": "npm:0.1.11"
+    "@storybook/csf": "npm:^0.1.11"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/manager-api": "workspace:^"
     "@storybook/preview-api": "workspace:^"
@@ -6661,7 +6661,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/source-loader@workspace:lib/source-loader"
   dependencies:
-    "@storybook/csf": "npm:0.1.11"
+    "@storybook/csf": "npm:^0.1.11"
     estraverse: "npm:^5.2.0"
     lodash: "npm:^4.17.21"
     prettier: "npm:^3.1.1"
@@ -6767,7 +6767,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/test@workspace:lib/test"
   dependencies:
-    "@storybook/csf": "npm:0.1.11"
+    "@storybook/csf": "npm:^0.1.11"
     "@storybook/instrumenter": "workspace:*"
     "@testing-library/dom": "npm:10.1.0"
     "@testing-library/jest-dom": "npm:6.4.5"

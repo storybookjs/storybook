@@ -118,7 +118,7 @@
     "@storybook/codemod": "workspace:*",
     "@storybook/core": "workspace:*",
     "@storybook/core-webpack": "workspace:*",
-    "@storybook/csf": "0.1.11",
+    "@storybook/csf": "^0.1.11",
     "@storybook/csf-plugin": "workspace:*",
     "@storybook/ember": "workspace:*",
     "@storybook/eslint-config-storybook": "^4.0.0",

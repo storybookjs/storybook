@@ -58,7 +58,7 @@
     "@babel/preset-env": "^7.24.4",
     "@babel/types": "^7.24.0",
     "@storybook/core": "workspace:*",
-    "@storybook/csf": "0.1.11",
+    "@storybook/csf": "^0.1.11",
     "@types/cross-spawn": "^6.0.2",
     "cross-spawn": "^7.0.3",
     "globby": "^14.0.1",

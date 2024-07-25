@@ -108,7 +108,7 @@ export function getBaseSWCOptions({
         },
       },
     },
-    sourceMaps: "inline",
+    sourceMaps: true,
     removeConsole: compilerOptions?.removeConsole,
     reactRemoveProperties: false,
     // Map the k-v map to an array of pairs.

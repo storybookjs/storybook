@@ -1,21 +1,13 @@
+import fs from "node:fs";
 import { join } from "node:path";
 import { loadEnvConfig } from "@next/env";
 import Log from "next/dist/build/output/log";
 import { loadBindings, lockfilePatchPromise } from "next/dist/build/swc";
-import loadConfig from "next/dist/server/config";
 import type { NextConfigComplete } from "next/dist/server/config-shared";
-import { CONFIG_FILES, PHASE_TEST } from "next/dist/shared/lib/constants";
+import { CONFIG_FILES } from "next/dist/shared/lib/constants";
 
 const nextDistPath =
   /(next[\\/]dist[\\/]shared[\\/]lib)|(next[\\/]dist[\\/]client)|(next[\\/]dist[\\/]pages)/;
-
-/**
- * Load the user's Next.js configuration
- */
-export async function getConfig(dir: string) {
-  const conf = await loadConfig(PHASE_TEST, dir);
-  return conf;
-}
 
 /**
  * Get the potential paths to the Next.js configuration files
@@ -27,8 +19,7 @@ export async function getConfigPaths(dir: string) {
 /**
  * Set up the environment variables for the Next.js project
  */
-export async function loadEnvironmentConfig(dir: string) {
-  const dev = false;
+export async function loadEnvironmentConfig(dir: string, dev: boolean) {
   return loadEnvConfig(dir, dev, Log);
 }
 
@@ -48,4 +39,25 @@ export async function loadSWCBindingsEagerly(nextConfig?: NextConfigComplete) {
  */
 export function shouldOutputCommonJs(filename: string) {
   return filename.endsWith(".cjs") || nextDistPath.test(filename);
+}
+
+/**
+ * Load the closest package.json file to the given directory
+ */
+export async function loadClosestPackageJson(dir: string, attempts = 1) {
+  if (attempts > 5) {
+    throw new Error("Can't resolve main package.json file");
+  }
+
+  const mainPath = attempts === 1 ? ["."] : new Array(attempts).fill("..");
+
+  try {
+    const file = await fs.promises.readFile(
+      join(dir, ...mainPath, "package.json"),
+      "utf8",
+    );
+    return JSON.parse(file);
+  } catch (e) {
+    return loadClosestPackageJson(dir, attempts + 1);
+  }
 }

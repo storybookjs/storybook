@@ -6,8 +6,10 @@ import type { Plugin } from "vite";
 
 import * as NextUtils from "../../utils/nextjs";
 
-export function vitePluginNextConfig(rootDir: string) {
-  let nextConfig: NextConfigComplete;
+export function vitePluginNextConfig(
+  rootDir: string,
+  nextConfigResolver: PromiseWithResolvers<NextConfigComplete>,
+) {
   let envConfig: Env;
   let isDev: boolean;
 
@@ -16,10 +18,11 @@ export function vitePluginNextConfig(rootDir: string) {
   return {
     name: "vite-plugin-storybook-nextjs-swc",
     async config(config, env) {
-      nextConfig = await NextUtils.getConfig(resolvedDir);
-      envConfig = (await NextUtils.loadEnvironmentConfig(resolvedDir))
+      envConfig = (await NextUtils.loadEnvironmentConfig(resolvedDir, isDev))
         .combinedEnv;
       isDev = env.mode === "development";
+
+      const nextConfig = await nextConfigResolver.promise;
 
       const publicNextEnvMap = Object.fromEntries(
         Object.entries(envConfig)

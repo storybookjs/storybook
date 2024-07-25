@@ -1,5 +1,4 @@
 import { resolve } from "node:path";
-import type { Env } from "@next/env";
 import loadJsConfig from "next/dist/build/load-jsconfig";
 import { transform } from "next/dist/build/swc";
 import { findPagesDir } from "next/dist/lib/find-pages-dir";
@@ -23,8 +22,9 @@ export function vitePluginNextSwc(
   let loadedJSConfig: Awaited<ReturnType<typeof loadJsConfig>>;
   let nextDirectories: ReturnType<typeof findPagesDir>;
   let isServerEnvironment: boolean;
-  let envConfig: Env;
   let isDev: boolean;
+  let isEsmProject: boolean;
+  let packageJson: { type: string };
 
   const resolvedDir = resolve(rootDir);
 
@@ -34,9 +34,11 @@ export function vitePluginNextSwc(
       const nextConfig = await nextConfigResolver.promise;
       nextDirectories = findPagesDir(resolvedDir);
       loadedJSConfig = await loadJsConfig(resolvedDir, nextConfig);
-      envConfig = (await NextUtils.loadEnvironmentConfig(resolvedDir))
-        .combinedEnv;
       isDev = env.mode === "development";
+      packageJson = await NextUtils.loadClosestPackageJson(resolvedDir);
+      isEsmProject = true;
+      // TODO: Setting isEsmProject to false errors. Need to investigate further.
+      // isEsmProject = packageJson.type === "module";
 
       await NextUtils.loadSWCBindingsEagerly(nextConfig);
 
@@ -88,6 +90,7 @@ export function vitePluginNextSwc(
             nextDirectories,
             rootDir,
             isDev,
+            isEsmProject,
           }),
         );
 

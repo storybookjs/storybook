@@ -5,9 +5,14 @@ import type { Plugin } from "vite";
 import { vitePluginNextConfig } from "./plugins/next-env/plugin";
 import { configureNextFont } from "./plugins/next-font/plugin";
 import { vitePluginNextSwc } from "./plugins/next-swc/plugin";
-import * as NextUtils from "./utils/nextjs";
 
 import "./polyfills/promise-with-resolvers";
+import loadConfig from "next/dist/server/config";
+import {
+  PHASE_DEVELOPMENT_SERVER,
+  PHASE_PRODUCTION_BUILD,
+  PHASE_TEST,
+} from "next/dist/shared/lib/constants";
 import { vitePluginNextImage } from "./plugins/next-image/plugin";
 
 type VitePluginOptions = {
@@ -24,47 +29,40 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin {
 
   const nextFontPlugin = configureNextFont();
   const nextSwcPlugin = vitePluginNextSwc(dir, nextConfigResolver);
-  const nextEnvPlugin = vitePluginNextConfig(dir);
+  const nextEnvPlugin = vitePluginNextConfig(dir, nextConfigResolver);
   const nextImagePlugin = vitePluginNextImage(nextConfigResolver);
 
   return {
     name: "vite-plugin-storybook-nextjs",
-    async buildStart() {
-      // Set watchers for the Next.js configuration files
-      for (const configPath of await NextUtils.getConfigPaths(resolvedDir)) {
-        this.addWatchFile(configPath);
-      }
-    },
     enforce: "pre",
+
     configureServer(server) {
       nextFontPlugin.configureServer.call(this, server);
     },
     async config(config, env) {
-      nextConfigResolver.resolve(await NextUtils.getConfig(resolvedDir));
+      const phase =
+        env.mode === "development"
+          ? PHASE_DEVELOPMENT_SERVER
+          : env.mode === "test"
+            ? PHASE_TEST
+            : PHASE_PRODUCTION_BUILD;
 
-      const mergedNextSwcConfig = await nextSwcPlugin.config.call(
-        this,
-        config,
-        env,
-      );
-      const mergedNextEnvConfig = await nextEnvPlugin.config.call(
-        this,
-        mergedNextSwcConfig,
-        env,
-      );
-      const mergedNextFontConfig = await nextFontPlugin.config.call(
-        this,
-        mergedNextEnvConfig,
-        env,
-      );
+      nextConfigResolver.resolve(await loadConfig(phase, resolvedDir));
 
-      const mergedNextImageConfig = await nextImagePlugin.config.call(
-        this,
-        mergedNextFontConfig,
-        env,
-      );
+      const plugins = [
+        nextSwcPlugin,
+        nextEnvPlugin,
+        nextFontPlugin,
+        nextImagePlugin,
+      ];
 
-      return mergedNextImageConfig;
+      let mergedConfig = config;
+
+      for (const plugin of plugins) {
+        mergedConfig = await plugin.config.call(this, mergedConfig, env);
+      }
+
+      return mergedConfig;
     },
     async resolveId(source, importer, options) {
       const nextFontResolver = await nextFontPlugin.resolveId.call(

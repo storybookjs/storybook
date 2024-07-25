@@ -16,6 +16,7 @@ type VitestSWCTransformConfigParams = {
   nextConfig: NextConfigComplete;
   rootDir: string;
   isDev: boolean;
+  isEsmProject: boolean;
 };
 
 /**
@@ -30,9 +31,8 @@ export const getVitestSWCTransformConfig = ({
   nextConfig,
   rootDir,
   isDev,
+  isEsmProject,
 }: VitestSWCTransformConfigParams) => {
-  const esm = true;
-
   const baseOptions = getBaseSWCOptions({
     filename,
     development: false,
@@ -43,7 +43,7 @@ export const getVitestSWCTransformConfig = ({
     resolvedBaseUrl: loadedJSConfig.resolvedBaseUrl,
     swcPlugins: nextConfig.experimental.swcPlugins,
     compilerOptions: nextConfig?.compilerOptions,
-    esm,
+    esm: isEsmProject,
     swcCacheDir: path.join(
       rootDir,
       nextConfig.distDir ?? ".next",
@@ -88,7 +88,7 @@ export const getVitestSWCTransformConfig = ({
           },
         }),
     module: {
-      type: esm && !useCjsModules ? "es6" : "commonjs",
+      type: isEsmProject && !useCjsModules ? "es6" : "commonjs",
     },
     disableNextSsg: true,
     disablePageConfig: true,

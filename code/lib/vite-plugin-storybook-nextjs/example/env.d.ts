@@ -1,5 +1,5 @@
 interface ImportMetaEnv {
-  readonly NEXT_PUBLIC_ANALYTICS_ID: string;
+  readonly NEXT_PUBLIC_EXAMPLE1: string;
   readonly MODE: string;
   readonly PROD: string;
   readonly DEV: string;

@@ -157,10 +157,10 @@
     "@storybook/web-components": "workspace:*",
     "@storybook/web-components-vite": "workspace:*",
     "@storybook/web-components-webpack5": "workspace:*",
-    "@testing-library/dom": "^7.29.4",
-    "@testing-library/jest-dom": "6.4.5",
-    "@testing-library/react": "^14.0.0",
-    "@testing-library/user-event": "^14.4.3",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.4.8",
+    "@testing-library/react": "^16.0.0",
+    "@testing-library/user-event": "^14.5.2",
     "@types/express": "^4.17.21",
     "@types/fs-extra": "^11.0.1",
     "@types/lodash": "^4.14.167",
@@ -206,7 +206,7 @@
     "typescript": "^5.4.3",
     "util": "^0.12.4",
     "vite": "^4.0.0",
-    "vitest": "^1.2.2",
+    "vitest": "^2.0.4",
     "wait-on": "^7.0.1"
   },
   "dependenciesMeta": {

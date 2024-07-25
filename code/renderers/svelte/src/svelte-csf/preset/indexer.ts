@@ -9,7 +9,12 @@ import { loadSvelteConfig } from '../config-loader.js';
 
 export async function readStories(fileName: string) {
   let code = (await fs.readFile(fileName, 'utf-8')).toString();
-  const svelteOptions = await loadSvelteConfig();
+  const loadedSvelteOptions = await loadSvelteConfig()
+
+  /**
+   * loadedSvelteOptions can be {default: {...}, configFile: '...path'}
+   */
+  const svelteOptions = loadedSvelteOptions.default ? loadedSvelteOptions.default : loadedSvelteOptions;
 
   if (svelteOptions && svelteOptions.preprocess) {
     code = (await svelte.preprocess(code, svelteOptions.preprocess, { filename: fileName })).code;

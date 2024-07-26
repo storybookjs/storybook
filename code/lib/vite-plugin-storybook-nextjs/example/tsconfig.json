@@ -26,7 +26,8 @@
     "env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    "vitest.config.mts"
   ],
   "exclude": ["node_modules"]
 }

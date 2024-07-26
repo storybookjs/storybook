@@ -11,8 +11,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": "./dist/index.js"
     }
   },
   "scripts": {
@@ -29,7 +28,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "1.8.1",
-    "@types/node": "^20.0.0",
+    "@types/node": "^18",
     "@types/react": "^18",
     "auto": "^11.2.0",
     "lefthook": "^1.6.16",
@@ -47,6 +46,7 @@
     "@next/env": "^14.2.4",
     "find-up": "^7.0.0",
     "image-size": "^1.1.1",
+    "module-alias": "^2.2.3",
     "ts-dedent": "^2.2.0"
   },
   "optionalDependencies": {

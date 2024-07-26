@@ -1,6 +1,5 @@
 import path from "node:path";
 import type { StorybookConfig } from "@storybook/nextjs";
-import vitePluginNext from "vite-plugin-storybook-nextjs";
 
 const config: StorybookConfig = {
   stories: ["../src/**/*.mdx", "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
@@ -19,7 +18,9 @@ const config: StorybookConfig = {
     builder: "@storybook/builder-vite",
   },
   staticDirs: ["../public"],
-  viteFinal: (config) => {
+  viteFinal: async (config) => {
+    const vitePluginNext = (await import("vite-plugin-storybook-nextjs"))
+      .default;
     config.plugins.push(vitePluginNext({ dir: path.join(__dirname, "..") }));
     return config;
   },

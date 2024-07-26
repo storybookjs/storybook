@@ -4,7 +4,6 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [
-    // @ts-expect-error TODO fix this later
     vitePluginNext(),
     Inspect({ build: true, outputDir: ".vite-inspect" }),
   ],

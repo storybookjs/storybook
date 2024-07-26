@@ -38,7 +38,7 @@ export function vitePluginNextFont() {
 
   return {
     name: "vite-plugin-storybook-nextjs-font",
-    enforce: "pre",
+    enforce: "pre" as const,
     async config(config, env) {
       devMode = env.mode === "development";
 

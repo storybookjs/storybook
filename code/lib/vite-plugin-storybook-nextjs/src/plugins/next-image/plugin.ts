@@ -4,8 +4,8 @@ import path from "node:path";
 import { decode, encode } from "node:querystring";
 import { URL, fileURLToPath } from "node:url";
 import imageSizeOf from "image-size";
-import type { NextConfigComplete } from "next/dist/server/config-shared";
-import dedent from "ts-dedent";
+import type { NextConfigComplete } from "next/dist/server/config-shared.js";
+import { dedent } from "ts-dedent";
 import type { Plugin } from "vite";
 
 const includePattern = /\.(png|jpg|jpeg|gif|webp|avif|ico|bmp|svg)$/;
@@ -40,24 +40,29 @@ export function vitePluginNextImage(
 
   return {
     name: "vite-plugin-storybook-nextjs-image",
-    enforce: "pre",
+    enforce: "pre" as const,
     async config(config, env) {
       devMode = env.mode === "development";
       return config;
     },
     async resolveId(id, importer) {
+      const [source, queryA] = id.split("?");
+
+      if (queryA === "ignore") {
+        return null;
+      }
+
       if (
-        includePattern.test(id) &&
+        includePattern.test(source) &&
         !excludeImporterPattern.test(importer ?? "") &&
-        !importer?.startsWith(virtualImage) &&
-        !id.startsWith(virtualImage)
+        !importer?.startsWith(virtualImage)
       ) {
         const isAbsolute = path.isAbsolute(id);
         const imagePath = importer
           ? isAbsolute
-            ? id
-            : path.join(path.dirname(importer), id)
-          : id;
+            ? source
+            : path.join(path.dirname(importer), source)
+          : source;
 
         const query = encode({
           imagePath,
@@ -149,7 +154,7 @@ export function vitePluginNextImage(
         try {
           if (nextConfig.images?.disableStaticImages) {
             return dedent`
-						import image from "${imagePath}";
+						import image from "${imagePath}?ignore";
 						export default image;
 					`;
           }
@@ -171,7 +176,7 @@ export function vitePluginNextImage(
           }
 
           return dedent`
-						import src from "${imagePath}";
+						import src from "${imagePath}?ignore";
 						export default {
 							src,
 							height: ${height},

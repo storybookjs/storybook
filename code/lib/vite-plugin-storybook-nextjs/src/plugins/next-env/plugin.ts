@@ -1,12 +1,12 @@
 import { resolve } from "node:path";
 import type { Env } from "@next/env";
-import { getDefineEnv } from "next/dist/build/webpack/plugins/define-env-plugin";
-import type { NextConfigComplete } from "next/dist/server/config-shared";
+import { getDefineEnv } from "next/dist/build/webpack/plugins/define-env-plugin.js";
+import type { NextConfigComplete } from "next/dist/server/config-shared.js";
 import type { Plugin } from "vite";
 
 import * as NextUtils from "../../utils/nextjs";
 
-export function vitePluginNextConfig(
+export function vitePluginNextEnv(
   rootDir: string,
   nextConfigResolver: PromiseWithResolvers<NextConfigComplete>,
 ) {
@@ -17,7 +17,7 @@ export function vitePluginNextConfig(
 
   return {
     name: "vite-plugin-storybook-nextjs-env",
-    enforce: "pre",
+    enforce: "pre" as const,
     async config(config, env) {
       envConfig = (await NextUtils.loadEnvironmentConfig(resolvedDir, isDev))
         .combinedEnv;
@@ -33,25 +33,43 @@ export function vitePluginNextConfig(
           }),
       );
 
+      const finalConfig = {
+        ...config.define,
+        ...publicNextEnvMap,
+        ...getDefineEnv({
+          isTurbopack: false,
+          config: nextConfig,
+          isClient: true,
+          isEdgeServer: false,
+          isNodeOrEdgeCompilation: false,
+          isNodeServer: false,
+          clientRouterFilters: undefined,
+          dev: isDev,
+          middlewareMatchers: undefined,
+          hasRewrites: false,
+          distDir: nextConfig.distDir,
+          fetchCacheKeyPrefix: nextConfig?.experimental?.fetchCacheKeyPrefix,
+        }),
+      };
+
+      // NEXT_IMAGE_OPTS is used by next/image to pass options to the loader
+      // it doesn't get properly serialized by Vitest (Vite seems to be fine) so we need to remove it
+      // for now
+      // biome-ignore lint/performance/noDelete: <explanation>
+      delete process.env.__NEXT_IMAGE_OPTS;
+      // biome-ignore lint/performance/noDelete: <explanation>
+      delete finalConfig["process.env.__NEXT_IMAGE_OPTS"];
+
       return {
-        ...config,
-        define: {
-          ...config.define,
-          ...publicNextEnvMap,
-          ...getDefineEnv({
-            isTurbopack: false,
-            config: nextConfig,
-            isClient: true,
-            isEdgeServer: false,
-            isNodeOrEdgeCompilation: false,
-            isNodeServer: false,
-            clientRouterFilters: undefined,
-            dev: isDev,
-            middlewareMatchers: undefined,
-            hasRewrites: false,
-            distDir: nextConfig.distDir,
-            fetchCacheKeyPrefix: nextConfig?.experimental?.fetchCacheKeyPrefix,
-          }),
+        define: finalConfig,
+        test: {
+          deps: {
+            optimizer: {
+              ssr: {
+                include: ["next"],
+              },
+            },
+          },
         },
       };
     },

@@ -10,13 +10,15 @@ export default defineConfig({
   ],
   splitting: false,
   clean: true,
-  format: ["esm", "cjs"],
+  format: ["esm"],
   treeshake: true,
+  dts: true,
   target: "node18",
   external: [
     "sb-original/image-context",
     "sb-original/default-loader",
     "react",
     "sharp",
+    "next",
   ],
 });

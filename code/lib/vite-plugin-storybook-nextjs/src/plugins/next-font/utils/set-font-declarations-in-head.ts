@@ -1,4 +1,4 @@
-import dedent from "ts-dedent";
+import { dedent } from "ts-dedent";
 import { getPlaceholderFontUrl } from "../local/get-font-face-declarations";
 
 type Props = {

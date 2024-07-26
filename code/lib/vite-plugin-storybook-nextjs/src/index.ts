@@ -1,19 +1,22 @@
 import { resolve } from "node:path";
 
-import type { NextConfigComplete } from "next/dist/server/config-shared";
+import { createRequire } from "node:module";
+import type { NextConfigComplete } from "next/dist/server/config-shared.js";
 import type { Plugin } from "vite";
-import { vitePluginNextConfig } from "./plugins/next-env/plugin";
+import { vitePluginNextEnv } from "./plugins/next-env/plugin";
 import { vitePluginNextFont } from "./plugins/next-font/plugin";
 import { vitePluginNextSwc } from "./plugins/next-swc/plugin";
 
 import "./polyfills/promise-with-resolvers";
-import loadConfig from "next/dist/server/config";
+import loadConfig from "next/dist/server/config.js";
 import {
   PHASE_DEVELOPMENT_SERVER,
   PHASE_PRODUCTION_BUILD,
   PHASE_TEST,
-} from "next/dist/shared/lib/constants";
+} from "next/dist/shared/lib/constants.js";
 import { vitePluginNextImage } from "./plugins/next-image/plugin";
+
+const require = createRequire(import.meta.url);
 
 type VitePluginOptions = {
   /**
@@ -30,7 +33,7 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin[] {
   return [
     {
       name: "vite-plugin-storybook-nextjs",
-      enforce: "pre",
+      enforce: "pre" as const,
       async config(config, env) {
         const phase =
           env.mode === "development"
@@ -39,14 +42,33 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin[] {
               ? PHASE_TEST
               : PHASE_PRODUCTION_BUILD;
 
-        nextConfigResolver.resolve(await loadConfig(phase, resolvedDir));
+        nextConfigResolver.resolve(
+          // @ts-ignore TODO figure out why TypeScript is complaining about this
+          await loadConfig.default(phase, resolvedDir),
+        );
 
         return {
-          resolve: {
+          test: {
             alias: {
-              react: "next/dist/compiled/react",
-              "react-dom/test-utils": "react-dom/test-utils",
-              "react-dom": "next/dist/compiled/react-dom",
+              "react/jsx-runtime": require.resolve(
+                "next/dist/compiled/react/jsx-runtime.js",
+              ),
+
+              react: require.resolve("next/dist/compiled/react"),
+
+              "react-dom/test-utils": require.resolve(
+                "next/dist/compiled/react-dom/cjs/react-dom-test-utils.production.js",
+              ),
+
+              "react-dom/cjs/react-dom.development.js": require.resolve(
+                "next/dist/compiled/react-dom/cjs/react-dom.development.js",
+              ),
+
+              "react-dom/client": require.resolve(
+                "next/dist/compiled/react-dom/client.js",
+              ),
+
+              "react-dom": require.resolve("next/dist/compiled/react-dom"),
             },
           },
         };
@@ -54,7 +76,7 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin[] {
     },
     vitePluginNextFont(),
     vitePluginNextSwc(dir, nextConfigResolver),
-    vitePluginNextConfig(dir, nextConfigResolver),
+    vitePluginNextEnv(dir, nextConfigResolver),
     vitePluginNextImage(nextConfigResolver),
   ];
 }

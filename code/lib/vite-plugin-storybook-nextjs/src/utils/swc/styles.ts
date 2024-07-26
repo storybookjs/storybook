@@ -12,7 +12,7 @@
 import type {
   EmotionConfig,
   StyledComponentsConfig,
-} from "next/dist/server/config-shared";
+} from "next/dist/server/config-shared.js";
 
 export function getStyledComponentsOptions(
   styledComponentsConfig: undefined | boolean | StyledComponentsConfig,

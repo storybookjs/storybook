@@ -1,6 +1,6 @@
+import { createContext } from "next/dist/compiled/react";
 import type { ImageProps, StaticImageData } from "next/image";
 import type { ImageProps as LegacyImageProps } from "next/legacy/image";
-import { createContext } from "react";
 
 // StaticRequire needs to be in scope for the TypeScript compiler to work.
 // See: https://github.com/microsoft/TypeScript/issues/5711

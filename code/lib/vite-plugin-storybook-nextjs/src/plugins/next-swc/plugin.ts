@@ -1,8 +1,8 @@
 import { resolve } from "node:path";
-import loadJsConfig from "next/dist/build/load-jsconfig";
-import { transform } from "next/dist/build/swc";
-import { findPagesDir } from "next/dist/lib/find-pages-dir";
-import type { NextConfigComplete } from "next/dist/server/config-shared";
+import loadJsConfig from "next/dist/build/load-jsconfig.js";
+import { transform } from "next/dist/build/swc/index.js";
+import { findPagesDir } from "next/dist/lib/find-pages-dir.js";
+import type { NextConfigComplete } from "next/dist/server/config-shared.js";
 import type { Plugin } from "vite";
 
 import * as NextUtils from "../../utils/nextjs";
@@ -30,11 +30,12 @@ export function vitePluginNextSwc(
 
   return {
     name: "vite-plugin-storybook-nextjs-swc",
-    enforce: "pre",
+    enforce: "pre" as const,
     async config(config, env) {
       const nextConfig = await nextConfigResolver.promise;
       nextDirectories = findPagesDir(resolvedDir);
-      loadedJSConfig = await loadJsConfig(resolvedDir, nextConfig);
+      // @ts-ignore TODO figure out why TypeScript is complaining about this
+      loadedJSConfig = await loadJsConfig.default(resolvedDir, nextConfig);
       isDev = env.mode === "development";
       packageJson = await NextUtils.loadClosestPackageJson(resolvedDir);
       isEsmProject = true;

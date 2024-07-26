@@ -17,6 +17,9 @@ importers:
       image-size:
         specifier: ^1.1.1
         version: 1.1.1
+      module-alias:
+        specifier: ^2.2.3
+        version: 2.2.3
       ts-dedent:
         specifier: ^2.2.0
         version: 2.2.0
@@ -29,14 +32,14 @@ importers:
         specifier: 1.8.1
         version: 1.8.1
       '@types/node':
-        specifier: ^20.0.0
-        version: 20.14.6
+        specifier: ^18
+        version: 18.19.38
       '@types/react':
         specifier: ^18
         version: 18.3.3
       auto:
         specifier: ^11.2.0
-        version: 11.2.0(@types/node@20.14.6)(typescript@5.4.5)
+        version: 11.2.0(@types/node@18.19.38)(typescript@5.4.5)
       lefthook:
         specifier: ^1.6.16
         version: 1.6.16
@@ -51,16 +54,16 @@ importers:
         version: 4.18.0
       tsup:
         specifier: ^8.1.0
-        version: 8.1.0(@microsoft/api-extractor@7.47.3(@types/node@20.14.6))(postcss@8.4.38)(ts-node@10.9.2(@types/node@20.14.6)(typescript@5.4.5))(typescript@5.4.5)
+        version: 8.1.0(@microsoft/api-extractor@7.47.3(@types/node@18.19.38))(postcss@8.4.38)(ts-node@10.9.2(@types/node@18.19.38)(typescript@5.4.5))(typescript@5.4.5)
       typescript:
         specifier: ^5.0.0
         version: 5.4.5
       vite:
         specifier: ^5.0.0
-        version: 5.3.1(@types/node@20.14.6)(sass@1.77.6)(terser@5.31.1)
+        version: 5.3.1(@types/node@18.19.38)(sass@1.77.6)(terser@5.31.1)
       vitest:
         specifier: ^1.6.0
-        version: 1.6.0(@types/node@20.14.6)(happy-dom@14.12.0)(sass@1.77.6)(terser@5.31.1)
+        version: 1.6.0(@types/node@18.19.38)(happy-dom@14.12.0)(sass@1.77.6)(terser@5.31.1)
 
   example:
     dependencies:
@@ -5908,7 +5911,7 @@ snapshots:
 
   '@auto-it/bot-list@11.2.0': {}
 
-  '@auto-it/core@11.2.0(@types/node@20.14.6)(typescript@5.4.5)':
+  '@auto-it/core@11.2.0(@types/node@18.19.38)(typescript@5.4.5)':
     dependencies:
       '@auto-it/bot-list': 11.2.0
       '@endemolshinegroup/cosmiconfig-typescript-loader': 3.0.2(cosmiconfig@7.0.0)(typescript@5.4.5)
@@ -5945,23 +5948,23 @@ snapshots:
       tapable: 2.2.1
       terminal-link: 2.1.1
       tinycolor2: 1.6.0
-      ts-node: 10.9.2(@types/node@20.14.6)(typescript@5.4.5)
+      ts-node: 10.9.2(@types/node@18.19.38)(typescript@5.4.5)
       tslib: 2.1.0
       type-fest: 0.21.3
       typescript: 5.4.5
       typescript-memoize: 1.1.1
       url-join: 4.0.1
     optionalDependencies:
-      '@types/node': 20.14.6
+      '@types/node': 18.19.38
     transitivePeerDependencies:
       - '@swc/core'
       - '@swc/wasm'
       - encoding
       - supports-color
 
-  '@auto-it/npm@11.2.0(@types/node@20.14.6)(typescript@5.4.5)':
+  '@auto-it/npm@11.2.0(@types/node@18.19.38)(typescript@5.4.5)':
     dependencies:
-      '@auto-it/core': 11.2.0(@types/node@20.14.6)(typescript@5.4.5)
+      '@auto-it/core': 11.2.0(@types/node@18.19.38)(typescript@5.4.5)
       '@auto-it/package-json-utils': 11.2.0
       await-to-js: 3.0.0
       endent: 2.1.0
@@ -5988,10 +5991,10 @@ snapshots:
       parse-author: 2.0.0
       parse-github-url: 1.0.2
 
-  '@auto-it/released@11.2.0(@types/node@20.14.6)(typescript@5.4.5)':
+  '@auto-it/released@11.2.0(@types/node@18.19.38)(typescript@5.4.5)':
     dependencies:
       '@auto-it/bot-list': 11.2.0
-      '@auto-it/core': 11.2.0(@types/node@20.14.6)(typescript@5.4.5)
+      '@auto-it/core': 11.2.0(@types/node@18.19.38)(typescript@5.4.5)
       deepmerge: 4.3.1
       fp-ts: 2.16.8
       io-ts: 2.2.21(fp-ts@2.16.8)
@@ -6004,9 +6007,9 @@ snapshots:
       - supports-color
       - typescript
 
-  '@auto-it/version-file@11.2.0(@types/node@20.14.6)(typescript@5.4.5)':
+  '@auto-it/version-file@11.2.0(@types/node@18.19.38)(typescript@5.4.5)':
     dependencies:
-      '@auto-it/core': 11.2.0(@types/node@20.14.6)(typescript@5.4.5)
+      '@auto-it/core': 11.2.0(@types/node@18.19.38)(typescript@5.4.5)
       fp-ts: 2.16.8
       io-ts: 2.2.21(fp-ts@2.16.8)
       semver: 7.6.2
@@ -7217,24 +7220,24 @@ snapshots:
       '@types/react': 18.3.3
       react: 18.3.1
 
-  '@microsoft/api-extractor-model@7.29.3(@types/node@20.14.6)':
+  '@microsoft/api-extractor-model@7.29.3(@types/node@18.19.38)':
     dependencies:
       '@microsoft/tsdoc': 0.15.0
       '@microsoft/tsdoc-config': 0.17.0
-      '@rushstack/node-core-library': 5.5.0(@types/node@20.14.6)
+      '@rushstack/node-core-library': 5.5.0(@types/node@18.19.38)
     transitivePeerDependencies:
       - '@types/node'
     optional: true
 
-  '@microsoft/api-extractor@7.47.3(@types/node@20.14.6)':
+  '@microsoft/api-extractor@7.47.3(@types/node@18.19.38)':
     dependencies:
-      '@microsoft/api-extractor-model': 7.29.3(@types/node@20.14.6)
+      '@microsoft/api-extractor-model': 7.29.3(@types/node@18.19.38)
       '@microsoft/tsdoc': 0.15.0
       '@microsoft/tsdoc-config': 0.17.0
-      '@rushstack/node-core-library': 5.5.0(@types/node@20.14.6)
+      '@rushstack/node-core-library': 5.5.0(@types/node@18.19.38)
       '@rushstack/rig-package': 0.5.2
-      '@rushstack/terminal': 0.13.2(@types/node@20.14.6)
-      '@rushstack/ts-command-line': 4.22.2(@types/node@20.14.6)
+      '@rushstack/terminal': 0.13.2(@types/node@18.19.38)
+      '@rushstack/ts-command-line': 4.22.2(@types/node@18.19.38)
       lodash: 4.17.21
       minimatch: 3.0.8
       resolve: 1.22.8
@@ -7486,7 +7489,7 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.18.0':
     optional: true
 
-  '@rushstack/node-core-library@5.5.0(@types/node@20.14.6)':
+  '@rushstack/node-core-library@5.5.0(@types/node@18.19.38)':
     dependencies:
       ajv: 8.13.0
       ajv-draft-04: 1.0.0(ajv@8.13.0)
@@ -7497,7 +7500,7 @@ snapshots:
       resolve: 1.22.8
       semver: 7.5.4
     optionalDependencies:
-      '@types/node': 20.14.6
+      '@types/node': 18.19.38
     optional: true
 
   '@rushstack/rig-package@0.5.2':
@@ -7506,17 +7509,17 @@ snapshots:
       strip-json-comments: 3.1.1
     optional: true
 
-  '@rushstack/terminal@0.13.2(@types/node@20.14.6)':
+  '@rushstack/terminal@0.13.2(@types/node@18.19.38)':
     dependencies:
-      '@rushstack/node-core-library': 5.5.0(@types/node@20.14.6)
+      '@rushstack/node-core-library': 5.5.0(@types/node@18.19.38)
       supports-color: 8.1.1
     optionalDependencies:
-      '@types/node': 20.14.6
+      '@types/node': 18.19.38
     optional: true
 
-  '@rushstack/ts-command-line@4.22.2(@types/node@20.14.6)':
+  '@rushstack/ts-command-line@4.22.2(@types/node@18.19.38)':
     dependencies:
-      '@rushstack/terminal': 0.13.2(@types/node@20.14.6)
+      '@rushstack/terminal': 0.13.2(@types/node@18.19.38)
       '@types/argparse': 1.0.38
       argparse: 1.0.10
       string-argv: 0.3.2
@@ -8100,7 +8103,7 @@ snapshots:
   '@types/body-parser@1.19.5':
     dependencies:
       '@types/connect': 3.4.38
-      '@types/node': 20.14.6
+      '@types/node': 20.14.12
 
   '@types/command-line-args@5.2.3': {}
 
@@ -8108,13 +8111,13 @@ snapshots:
 
   '@types/connect@3.4.38':
     dependencies:
-      '@types/node': 20.14.6
+      '@types/node': 20.14.12
 
   '@types/cookie@0.6.0': {}
 
   '@types/cross-spawn@6.0.6':
     dependencies:
-      '@types/node': 20.14.6
+      '@types/node': 20.14.12
 
   '@types/doctrine@0.0.9': {}
 
@@ -8138,7 +8141,7 @@ snapshots:
 
   '@types/express-serve-static-core@4.19.5':
     dependencies:
-      '@types/node': 20.14.6
+      '@types/node': 20.14.12
       '@types/qs': 6.9.15
       '@types/range-parser': 1.2.7
       '@types/send': 0.17.4
@@ -8208,12 +8211,12 @@ snapshots:
   '@types/send@0.17.4':
     dependencies:
       '@types/mime': 1.3.5
-      '@types/node': 20.14.6
+      '@types/node': 20.14.12
 
   '@types/serve-static@1.15.7':
     dependencies:
       '@types/http-errors': 2.0.4
-      '@types/node': 20.14.6
+      '@types/node': 20.14.12
       '@types/send': 0.17.4
 
   '@types/statuses@2.0.5': {}
@@ -8594,12 +8597,12 @@ snapshots:
 
   author-regex@1.0.0: {}
 
-  auto@11.2.0(@types/node@20.14.6)(typescript@5.4.5):
+  auto@11.2.0(@types/node@18.19.38)(typescript@5.4.5):
     dependencies:
-      '@auto-it/core': 11.2.0(@types/node@20.14.6)(typescript@5.4.5)
-      '@auto-it/npm': 11.2.0(@types/node@20.14.6)(typescript@5.4.5)
-      '@auto-it/released': 11.2.0(@types/node@20.14.6)(typescript@5.4.5)
-      '@auto-it/version-file': 11.2.0(@types/node@20.14.6)(typescript@5.4.5)
+      '@auto-it/core': 11.2.0(@types/node@18.19.38)(typescript@5.4.5)
+      '@auto-it/npm': 11.2.0(@types/node@18.19.38)(typescript@5.4.5)
+      '@auto-it/released': 11.2.0(@types/node@18.19.38)(typescript@5.4.5)
+      '@auto-it/version-file': 11.2.0(@types/node@18.19.38)(typescript@5.4.5)
       await-to-js: 3.0.0
       chalk: 4.1.2
       command-line-application: 0.10.1
@@ -10094,7 +10097,7 @@ snapshots:
 
   jest-worker@27.5.1:
     dependencies:
-      '@types/node': 20.14.6
+      '@types/node': 20.14.12
       merge-stream: 2.0.0
       supports-color: 8.1.1
 
@@ -10863,6 +10866,14 @@ snapshots:
     dependencies:
       camelcase-css: 2.0.1
       postcss: 8.4.38
+
+  postcss-load-config@4.0.2(postcss@8.4.38)(ts-node@10.9.2(@types/node@18.19.38)(typescript@5.4.5)):
+    dependencies:
+      lilconfig: 3.1.2
+      yaml: 2.4.5
+    optionalDependencies:
+      postcss: 8.4.38
+      ts-node: 10.9.2(@types/node@18.19.38)(typescript@5.4.5)
 
   postcss-load-config@4.0.2(postcss@8.4.38)(ts-node@10.9.2(@types/node@20.14.6)(typescript@5.4.5)):
     dependencies:
@@ -11814,6 +11825,24 @@ snapshots:
 
   ts-interface-checker@0.1.13: {}
 
+  ts-node@10.9.2(@types/node@18.19.38)(typescript@5.4.5):
+    dependencies:
+      '@cspotcode/source-map-support': 0.8.1
+      '@tsconfig/node10': 1.0.11
+      '@tsconfig/node12': 1.0.11
+      '@tsconfig/node14': 1.0.3
+      '@tsconfig/node16': 1.0.4
+      '@types/node': 18.19.38
+      acorn: 8.12.0
+      acorn-walk: 8.3.3
+      arg: 4.1.3
+      create-require: 1.1.1
+      diff: 4.0.2
+      make-error: 1.3.6
+      typescript: 5.4.5
+      v8-compile-cache-lib: 3.0.1
+      yn: 3.1.1
+
   ts-node@10.9.2(@types/node@20.14.6)(typescript@5.4.5):
     dependencies:
       '@cspotcode/source-map-support': 0.8.1
@@ -11831,6 +11860,7 @@ snapshots:
       typescript: 5.4.5
       v8-compile-cache-lib: 3.0.1
       yn: 3.1.1
+    optional: true
 
   ts-node@9.1.1(typescript@5.4.5):
     dependencies:
@@ -11866,7 +11896,7 @@ snapshots:
 
   tslib@2.6.3: {}
 
-  tsup@8.1.0(@microsoft/api-extractor@7.47.3(@types/node@20.14.6))(postcss@8.4.38)(ts-node@10.9.2(@types/node@20.14.6)(typescript@5.4.5))(typescript@5.4.5):
+  tsup@8.1.0(@microsoft/api-extractor@7.47.3(@types/node@18.19.38))(postcss@8.4.38)(ts-node@10.9.2(@types/node@18.19.38)(typescript@5.4.5))(typescript@5.4.5):
     dependencies:
       bundle-require: 4.2.1(esbuild@0.21.5)
       cac: 6.7.14
@@ -11876,14 +11906,14 @@ snapshots:
       execa: 5.1.1
       globby: 11.1.0
       joycon: 3.1.1
-      postcss-load-config: 4.0.2(postcss@8.4.38)(ts-node@10.9.2(@types/node@20.14.6)(typescript@5.4.5))
+      postcss-load-config: 4.0.2(postcss@8.4.38)(ts-node@10.9.2(@types/node@18.19.38)(typescript@5.4.5))
       resolve-from: 5.0.0
       rollup: 4.18.0
       source-map: 0.8.0-beta.0
       sucrase: 3.35.0
       tree-kill: 1.2.2
     optionalDependencies:
-      '@microsoft/api-extractor': 7.47.3(@types/node@20.14.6)
+      '@microsoft/api-extractor': 7.47.3(@types/node@18.19.38)
       postcss: 8.4.38
       typescript: 5.4.5
     transitivePeerDependencies:
@@ -12025,13 +12055,13 @@ snapshots:
 
   vary@1.1.2: {}
 
-  vite-node@1.6.0(@types/node@20.14.6)(sass@1.77.6)(terser@5.31.1):
+  vite-node@1.6.0(@types/node@18.19.38)(sass@1.77.6)(terser@5.31.1):
     dependencies:
       cac: 6.7.14
       debug: 4.3.5
       pathe: 1.1.2
       picocolors: 1.0.1
-      vite: 5.3.1(@types/node@20.14.6)(sass@1.77.6)(terser@5.31.1)
+      vite: 5.3.1(@types/node@18.19.38)(sass@1.77.6)(terser@5.31.1)
     transitivePeerDependencies:
       - '@types/node'
       - less
@@ -12075,6 +12105,17 @@ snapshots:
       - rollup
       - supports-color
 
+  vite@5.3.1(@types/node@18.19.38)(sass@1.77.6)(terser@5.31.1):
+    dependencies:
+      esbuild: 0.21.5
+      postcss: 8.4.38
+      rollup: 4.18.0
+    optionalDependencies:
+      '@types/node': 18.19.38
+      fsevents: 2.3.3
+      sass: 1.77.6
+      terser: 5.31.1
+
   vite@5.3.1(@types/node@20.14.6)(sass@1.77.6)(terser@5.31.1):
     dependencies:
       esbuild: 0.21.5
@@ -12086,7 +12127,7 @@ snapshots:
       sass: 1.77.6
       terser: 5.31.1
 
-  vitest@1.6.0(@types/node@20.14.6)(happy-dom@14.12.0)(sass@1.77.6)(terser@5.31.1):
+  vitest@1.6.0(@types/node@18.19.38)(happy-dom@14.12.0)(sass@1.77.6)(terser@5.31.1):
     dependencies:
       '@vitest/expect': 1.6.0
       '@vitest/runner': 1.6.0
@@ -12105,11 +12146,11 @@ snapshots:
       strip-literal: 2.1.0
       tinybench: 2.8.0
       tinypool: 0.8.4
-      vite: 5.3.1(@types/node@20.14.6)(sass@1.77.6)(terser@5.31.1)
-      vite-node: 1.6.0(@types/node@20.14.6)(sass@1.77.6)(terser@5.31.1)
+      vite: 5.3.1(@types/node@18.19.38)(sass@1.77.6)(terser@5.31.1)
+      vite-node: 1.6.0(@types/node@18.19.38)(sass@1.77.6)(terser@5.31.1)
       why-is-node-running: 2.2.2
     optionalDependencies:
-      '@types/node': 20.14.6
+      '@types/node': 18.19.38
       happy-dom: 14.12.0
     transitivePeerDependencies:
       - less

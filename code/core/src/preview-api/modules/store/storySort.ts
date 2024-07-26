@@ -55,7 +55,9 @@ export const storySort =
             weightB = 0;
           }
 
-          return weightA - weightB;
+          if (weightA !== weightB) {
+            return weightA - weightB;
+          }
         }
 
         // Look for the names in the given `order` array.

@@ -30,6 +30,7 @@ export function vitePluginNextSwc(
 
   return {
     name: "vite-plugin-storybook-nextjs-swc",
+    enforce: "pre",
     async config(config, env) {
       const nextConfig = await nextConfigResolver.promise;
       nextDirectories = findPagesDir(resolvedDir);

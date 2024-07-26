@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import { cpus } from "node:os";
 import path from "node:path";
+import { decode, encode } from "node:querystring";
 import { URL, fileURLToPath } from "node:url";
 import imageSizeOf from "image-size";
 import type { NextConfigComplete } from "next/dist/server/config-shared";
@@ -39,34 +40,30 @@ export function vitePluginNextImage(
 
   return {
     name: "vite-plugin-storybook-nextjs-image",
+    enforce: "pre",
     async config(config, env) {
       devMode = env.mode === "development";
-
-      return {
-        ...config,
-        resolve: {
-          ...config.resolve,
-          alias: {
-            react: "next/dist/compiled/react",
-            "react-dom/test-utils": "react-dom/test-utils",
-            "react-dom": "next/dist/compiled/react-dom",
-          },
-        },
-      };
+      return config;
     },
     async resolveId(id, importer) {
       if (
         includePattern.test(id) &&
         !excludeImporterPattern.test(importer ?? "") &&
-        !importer?.startsWith(virtualImage)
+        !importer?.startsWith(virtualImage) &&
+        !id.startsWith(virtualImage)
       ) {
-        return {
-          id: `${virtualImage}?${id}`,
-          meta: {
-            id,
-            importer: importer ?? "",
-          },
-        };
+        const isAbsolute = path.isAbsolute(id);
+        const imagePath = importer
+          ? isAbsolute
+            ? id
+            : path.join(path.dirname(importer), id)
+          : id;
+
+        const query = encode({
+          imagePath,
+        });
+
+        return `${virtualImage}?${query}`;
       }
 
       if (id === "next/image" && importer !== virtualNextImage) {
@@ -141,17 +138,13 @@ export function vitePluginNextImage(
         ).toString("utf-8");
       }
 
-      const [source] = id.split("?");
+      const [source, query] = id.split("?");
 
       if (virtualImage === source) {
-        const moduleInfo = this.getModuleInfo(id);
-
-        const meta = moduleInfo?.meta as { id: string; importer: string };
-        const basename = path.basename(id);
+        const imagePath = decode(query).imagePath as string;
 
         const nextConfig = await nextConfigResolver.promise;
-        const extension = meta.id.split(".").pop();
-        const imagePath = path.join(path.dirname(meta.importer), meta.id);
+        const extension = path.extname(imagePath);
 
         try {
           if (nextConfig.images?.disableStaticImages) {
@@ -166,7 +159,7 @@ export function vitePluginNextImage(
           let width: number | undefined;
           let height: number | undefined;
 
-          if (extension === "avif" && sharp) {
+          if (extension === ".avif" && sharp) {
             const transformer = sharp(Buffer.from(imageData));
             const result = await transformer.metadata();
             width = result.width;

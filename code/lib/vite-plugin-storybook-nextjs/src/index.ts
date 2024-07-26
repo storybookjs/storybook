@@ -47,31 +47,7 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin[] {
           await loadConfig.default(phase, resolvedDir),
         );
 
-        return {
-          test: {
-            alias: {
-              "react/jsx-runtime": require.resolve(
-                "next/dist/compiled/react/jsx-runtime.js",
-              ),
-
-              react: require.resolve("next/dist/compiled/react"),
-
-              "react-dom/test-utils": require.resolve(
-                "next/dist/compiled/react-dom/cjs/react-dom-test-utils.production.js",
-              ),
-
-              "react-dom/cjs/react-dom.development.js": require.resolve(
-                "next/dist/compiled/react-dom/cjs/react-dom.development.js",
-              ),
-
-              "react-dom/client": require.resolve(
-                "next/dist/compiled/react-dom/client.js",
-              ),
-
-              "react-dom": require.resolve("next/dist/compiled/react-dom"),
-            },
-          },
-        };
+        return config;
       },
     },
     vitePluginNextFont(),

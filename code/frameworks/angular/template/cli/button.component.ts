@@ -39,7 +39,7 @@ export class ButtonComponent {
    *
    * @required
    */
-  @Input()
+  @Input({ required: true })
   label = 'Button';
 
   /**

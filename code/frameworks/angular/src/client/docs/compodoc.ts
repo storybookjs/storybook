@@ -20,6 +20,9 @@ export const isMethod = (methodOrProp: Method | Property): methodOrProp is Metho
   return (methodOrProp as Method).args !== undefined;
 };
 
+export const isRequired = (methodOrProp: Method | Property) =>
+  methodOrProp.hasOwnProperty('required');
+
 export const setCompodocJson = (compodocJson: CompodocJson) => {
   global.__STORYBOOK_COMPODOC_JSON__ = compodocJson;
 };
@@ -138,19 +141,19 @@ const extractEnumValues = (compodocType: any) => {
 export const extractType = (property: Property, defaultValue: any): SBType => {
   const compodocType = property.type || extractTypeFromValue(defaultValue);
   switch (compodocType) {
-    case 'string':
     case 'boolean':
+    case 'string':
     case 'number':
-      return { name: compodocType };
+      return { name: compodocType, required: isRequired(property) };
     case undefined:
     case null:
-      return { name: 'other', value: 'void' };
+      return { name: 'other', value: 'void', required: isRequired(property) };
     default: {
       const resolvedType = resolveTypealias(compodocType);
       const enumValues = extractEnumValues(resolvedType);
       return enumValues
-        ? { name: 'enum', value: enumValues }
-        : { name: 'other', value: 'empty-enum' };
+        ? { name: 'enum', value: enumValues, required: isRequired(property) }
+        : { name: 'other', value: 'empty-enum', required: isRequired(property) };
     }
   }
 };

@@ -20,6 +20,7 @@ export interface Property {
   type: string;
   optional: boolean;
   defaultValue?: string;
+  required?: boolean;
   description?: string;
   rawdescription?: string;
   jsdoctags?: JsDocTag[];

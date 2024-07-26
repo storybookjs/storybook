@@ -19,6 +19,7 @@ export const storySort =
     // Get the StorySortParameter options.
     const method = options.method || 'configure';
     let order = options.order || [];
+    const weights = options.weights || {};
 
     // Examine each part of the story title in turn.
     const storyTitleA = a.title.trim().split(STORY_KIND_PATH_SEPARATOR);
@@ -42,6 +43,21 @@ export const storySort =
       const nameA = storyTitleA[depth];
       const nameB = storyTitleB[depth];
       if (nameA !== nameB) {
+        let weightA = weights[nameA];
+        let weightB = weights[nameB];
+
+        // If at least one of the names has a weight, use it for sorting.
+        if (weightA !== undefined || weightB !== undefined) {
+          if (!weightA) {
+            weightA = 0;
+          }
+          if (!weightB) {
+            weightB = 0;
+          }
+
+          return weightA - weightB;
+        }
+
         // Look for the names in the given `order` array.
         let indexA = order.indexOf(nameA);
         let indexB = order.indexOf(nameB);

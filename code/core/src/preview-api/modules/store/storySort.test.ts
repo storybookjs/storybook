@@ -144,4 +144,15 @@ describe('preview.storySort', () => {
     expect(sortFn(fixture.a_b, fixture.a_c)).toBeGreaterThan(0);
     expect(sortFn(fixture.a_a, fixture.a_a)).toBe(0);
   });
+
+  it('uses weighted sorting when one or both names have a weight', () => {
+    const sortFn = storySort({ order: ['a', 'b'], weights: { a: 1, b: -1 } });
+
+    expect(sortFn(fixture.a, fixture.b)).toBeGreaterThan(0);
+    expect(sortFn(fixture.a, fixture.c)).toBeGreaterThan(0);
+    expect(sortFn(fixture.b, fixture.a)).toBeLessThan(0);
+    expect(sortFn(fixture.b, fixture.c)).toBeLessThan(0);
+    expect(sortFn(fixture.c, fixture.a)).toBeLessThan(0);
+    expect(sortFn(fixture.c, fixture.b)).toBeGreaterThan(0);
+  });
 });

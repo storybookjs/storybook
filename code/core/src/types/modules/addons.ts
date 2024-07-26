@@ -45,6 +45,7 @@ export type Addon_StorySortMethod = 'configure' | 'alphabetical';
 export interface Addon_StorySortObjectParameter {
   method?: Addon_StorySortMethod;
   order?: any[];
+  weights?: { [key: string]: number };
   locales?: string;
   includeNames?: boolean;
 }

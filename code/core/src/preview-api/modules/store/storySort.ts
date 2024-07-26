@@ -55,6 +55,7 @@ export const storySort =
             weightB = 0;
           }
 
+          // Only use weighted sorting if the weights are different.
           if (weightA !== weightB) {
             return weightA - weightB;
           }

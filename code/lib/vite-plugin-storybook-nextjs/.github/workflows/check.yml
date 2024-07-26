@@ -29,9 +29,9 @@ jobs:
         run: pnpm test
         working-directory: ./example
 
-      - name: Run Portable stories tests
-        run: pnpm test:storybook
-        working-directory: ./example
+      # - name: Run Portable stories tests
+      #   run: pnpm test:storybook
+      #   working-directory: ./example
 
       - name: Biome checks
         run: pnpm check

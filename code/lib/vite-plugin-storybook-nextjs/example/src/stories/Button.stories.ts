@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { fn } from "@storybook/test";
+import { expect, fn, userEvent } from "@storybook/test";
 import { Button } from "./Button";
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
@@ -28,6 +28,10 @@ export const Primary: Story = {
   args: {
     primary: true,
     label: "Button",
+  },
+  play: async ({ canvas, args }) => {
+    await userEvent.click(await canvas.getByRole("button"));
+    await expect(args.onClick).toHaveBeenCalled();
   },
 };
 

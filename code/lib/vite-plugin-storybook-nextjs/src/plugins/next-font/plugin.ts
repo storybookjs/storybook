@@ -32,12 +32,13 @@ const includePattern = /next(\\|\/|\\\\).*(\\|\/|\\\\)target\.css.*$/;
 
 const virtualModuleId = "virtual:next-font";
 
-export function configureNextFont() {
+export function vitePluginNextFont() {
   let devMode = true;
   const fontAssetPaths = new Map<string, string>();
 
   return {
-    name: "configure-next-font",
+    name: "vite-plugin-storybook-nextjs-font",
+    enforce: "pre",
     async config(config, env) {
       devMode = env.mode === "development";
 

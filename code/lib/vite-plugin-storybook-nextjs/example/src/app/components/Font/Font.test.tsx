@@ -1,22 +1,28 @@
 import { render } from "@testing-library/react";
-import { describe, it } from "vitest";
+import { describe, expect, it } from "vitest";
+
 import Font from "./Font";
 
-// Write three test cases with vitest where variant is "className", "style", and "variable" for the Font component.
 describe("Font", () => {
   it("should render correctly with className", () => {
-    const { container } = render(<Font variant="className" />);
+    const { getByText } = render(<Font variant="className" />);
 
-    // Write your test case here
+    const heading = getByText("Google Kalina");
+    expect(heading.className).toBe("kalnia-normal");
+    expect(heading.style.fontFamily).toBeFalsy();
   });
 
   it("should render correctly with style", () => {
-    const { container } = render(<Font variant="className" />);
-    // Write your test case here
+    const { getByText } = render(<Font variant="style" />);
+
+    const heading = getByText("Google Kalina");
+    expect(heading.style.fontFamily).toBe("Kalnia");
   });
 
   it("should render correctly with variable", () => {
-    const { container } = render(<Font variant="className" />);
-    // Write your test case here
+    const { getByText } = render(<Font variant="variable" />);
+
+    const heading = getByText("Google Kalina");
+    expect(heading.style.fontFamily).toBe("var(--font-kalina)");
   });
 });

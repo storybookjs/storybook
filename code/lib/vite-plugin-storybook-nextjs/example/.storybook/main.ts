@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { StorybookConfig } from "@storybook/nextjs";
 import vitePluginNext from "vite-plugin-storybook-nextjs";
 
@@ -19,7 +20,7 @@ const config: StorybookConfig = {
   },
   staticDirs: ["../public"],
   viteFinal: (config) => {
-    config.plugins.push(vitePluginNext());
+    config.plugins.push(vitePluginNext({ dir: path.join(__dirname, "..") }));
     return config;
   },
 };

@@ -16,7 +16,8 @@ export function vitePluginNextConfig(
   const resolvedDir = resolve(rootDir);
 
   return {
-    name: "vite-plugin-storybook-nextjs-swc",
+    name: "vite-plugin-storybook-nextjs-env",
+    enforce: "pre",
     async config(config, env) {
       envConfig = (await NextUtils.loadEnvironmentConfig(resolvedDir, isDev))
         .combinedEnv;

@@ -97,12 +97,13 @@ The `storySort` can also accept a configuration object.
 
 {/* prettier-ignore-end */}
 
-| Field            | Type    | Description                                              | Required | Default Value           | Example                   |
-| ---------------- | ------- | -------------------------------------------------------- | -------- | ----------------------- | ------------------------- |
-| **method**       | String  | Tells Storybook in which order the stories are displayed | No       | Storybook configuration | `'alphabetical'`          |
-| **order**        | Array   | The stories to be shown, ordered by supplied name        | No       | Empty Array `[]`        | `['Intro', 'Components']` |
-| **includeNames** | Boolean | Include story name in sort calculation                   | No       | `false`                 | `true`                    |
-| **locales**      | String  | The locale required to be displayed                      | No       | System locale           | `en-US`                   |
+| Field            | Type    | Description                                              | Required | Default Value           | Example                       |
+| ---------------- | ------- | -------------------------------------------------------- | -------- | ----------------------- | ----------------------------- |
+| **method**       | String  | Tells Storybook in which order the stories are displayed | No       | Storybook configuration | `'alphabetical'`              |
+| **order**        | Array   | The stories to be shown, ordered by supplied name        | No       | Empty Array `[]`        | `['Intro', 'Components']`     |
+| **weights**      | Object  | A map of story names to weights.                         | No       | Empty Object `{}`       | `{Intro: -2, Components: -1}` |
+| **includeNames** | Boolean | Include story name in sort calculation                   | No       | `false`                 | `true`                        |
+| **locales**      | String  | The locale required to be displayed                      | No       | System locale           | `en-US`                       |
 
 To sort your stories alphabetically, set `method` to `'alphabetical'` and optionally set the `locales` string. To sort your stories using a custom list, use the `order` array; stories that don't match an item in the `order` list will appear after the items in the list.
 
@@ -136,3 +137,15 @@ If you want specific categories to sort to the end of the list, you can insert a
 In this example, the `WIP` category would be displayed at the end of the list.
 
 Note that the `order` option is independent of the `method` option; stories are sorted first by the `order` array and then by either the `method: 'alphabetical'` or the default `configure()` import order.
+
+The `weights` object gives you the flexibility to ensure certain story names always appear at either the top or bottom of the list, regardless of how deep they are in the story hierarchy. Negative-weighted stories will appear at the top of the list, while positive-weighted stories will appear at the bottom. If two stories have the same weight, it will not affect the order. Unweighted stories are treated as having a weight of `0`.
+
+For example, the following configurations are functionally identical:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-preview-with-ordered-pages-and-weights.md" />
+
+<CodeSnippets path="storybook-preview-with-ordered-pages-before-weights.md" />
+
+{/* prettier-ignore-end */}

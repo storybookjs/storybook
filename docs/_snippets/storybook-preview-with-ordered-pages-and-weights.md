@@ -3,10 +3,11 @@ export default {
   parameters: {
     options: {
       storySort: {
-        method: '',
-        order: [],
-        weights: {},
-        locales: '',
+        weights: {
+          Intro: -1,
+          WIP: 1,
+        },
+        order: ['Pages', ['Home', 'Login', 'Admin'], 'Components'],
       },
     },
   },
@@ -21,10 +22,11 @@ const preview: Preview = {
   parameters: {
     options: {
       storySort: {
-        method: '',
-        order: [],
-        weights: {},
-        locales: '',
+        weights: {
+          Intro: -1,
+          WIP: 1,
+        },
+        order: ['Pages', ['Home', 'Login', 'Admin'], 'Components'],
       },
     },
   },

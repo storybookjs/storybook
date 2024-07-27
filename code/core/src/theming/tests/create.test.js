@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { create } from '../create';
+import { getPreferredColorScheme } from './../utils';
+
+vi.mock('./../utils', () => ({
+  getPreferredColorScheme: vi.fn().mockReturnValue('light'),
+}));
 
 describe('create base', () => {
   it('should create a theme with minimal viable theme', () => {
@@ -139,5 +144,27 @@ describe('create extend', () => {
     );
 
     expect(result.base).toEqual('light');
+  });
+});
+
+describe('themes', () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  it('should set `normal` to `light` theme when user preference is `light`', async () => {
+    getPreferredColorScheme.mockReturnValue('light');
+
+    const { themes } = await import('./../create');
+
+    expect(themes.normal).toBe(themes.light);
+  });
+
+  it('should set `normal` to `dark` theme when user preference is `dark`', async () => {
+    getPreferredColorScheme.mockReturnValue('dark');
+
+    const { themes } = await import('./../create');
+
+    expect(themes.normal).toBe(themes.dark);
   });
 });

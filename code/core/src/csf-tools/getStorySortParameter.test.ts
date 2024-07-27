@@ -108,6 +108,30 @@ describe('getStorySortParameter', () => {
         `);
       });
 
+      it('with weights', () => {
+        expect(
+          getStorySortParameter(dedent`
+          export const parameters = {
+            options: {
+              storySort: {
+                weights: {
+                  Intro: -1,
+                  WIP: 1,
+                },
+              },
+            },
+          };
+        `)
+        ).toMatchInlineSnapshot(`
+          {
+            "weights": {
+              "Intro": -1,
+              "WIP": 1,
+            },
+          }
+        `);
+      });
+
       it('parameters typescript', () => {
         expect(
           getStorySortParameter(dedent`
@@ -249,6 +273,33 @@ export default {
       `)
         ).toThrowErrorMatchingInlineSnapshot(`
           [Error: Unexpected 'order'. Parameter 'options.storySort' should be defined inline e.g.:
+
+export default {
+  parameters: {
+    options: {
+      storySort: <array | object | function>
+    },
+  },
+};]
+`);
+      });
+
+      it('weights var', () => {
+        expect(() =>
+          getStorySortParameter(dedent`
+          const weights = {};
+          export const parameters = {
+            options: {
+              storySort: {
+                method: "",
+                weights,
+                locales: "",
+              }
+            },
+          };
+      `)
+        ).toThrowErrorMatchingInlineSnapshot(`
+          [Error: Unexpected 'weights'. Parameter 'options.storySort' should be defined inline e.g.:
 
 export default {
   parameters: {

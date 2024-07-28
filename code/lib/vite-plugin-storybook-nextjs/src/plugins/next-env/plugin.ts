@@ -19,9 +19,9 @@ export function vitePluginNextEnv(
     name: "vite-plugin-storybook-nextjs-env",
     enforce: "pre" as const,
     async config(config, env) {
+      isDev = env.mode !== "production";
       envConfig = (await NextUtils.loadEnvironmentConfig(resolvedDir, isDev))
         .combinedEnv;
-      isDev = env.mode === "development";
 
       const nextConfig = await nextConfigResolver.promise;
 

@@ -12,10 +12,5 @@ export default defineConfig({
     globals: true,
     environment: "happy-dom",
     setupFiles: ["./vitest.setup.ts"],
-    env: {
-      // Necessary to avoid "act(...) is not supported in production builds of React"
-      // for some reason Testing-library is resolving the production build of React in the tests
-      NODE_ENV: "test",
-    },
   },
 });

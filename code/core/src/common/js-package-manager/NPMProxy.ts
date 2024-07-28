@@ -181,6 +181,17 @@ export class NPMProxy extends JsPackageManager {
     });
   }
 
+  public async getRegistryURL() {
+    const res = await this.executeCommand({
+      command: 'npm',
+      // "npm config" commands are not allowed in workspaces per default
+      // https://github.com/npm/cli/issues/6099#issuecomment-1847584792
+      args: ['config', 'get', 'registry', '-ws=false', '-iwr'],
+    });
+    const url = res.trim();
+    return url === 'undefined' ? undefined : url;
+  }
+
   protected async runAddDeps(dependencies: string[], installAsDevDependencies: boolean) {
     const { logStream, readLogFile, moveLogFile, removeLogFile } = await createLogStream();
     let args = [...dependencies];

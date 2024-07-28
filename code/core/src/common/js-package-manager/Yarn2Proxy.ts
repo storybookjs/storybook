@@ -239,6 +239,15 @@ export class Yarn2Proxy extends JsPackageManager {
     await removeLogFile();
   }
 
+  public async getRegistryURL() {
+    const res = await this.executeCommand({
+      command: 'yarn',
+      args: ['config', 'get', 'npmRegistryServer'],
+    });
+    const url = res.trim();
+    return url === 'undefined' ? undefined : url;
+  }
+
   protected async runRemoveDeps(dependencies: string[]) {
     const args = [...dependencies];
 

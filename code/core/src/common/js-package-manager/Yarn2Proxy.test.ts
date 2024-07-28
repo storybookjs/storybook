@@ -53,21 +53,6 @@ describe('Yarn 2 Proxy', () => {
     });
   });
 
-  describe('setRegistryUrl', () => {
-    it('should run `yarn config set npmRegistryServer https://foo.bar`', async () => {
-      const executeCommandSpy = vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValueOnce('');
-
-      await yarn2Proxy.setRegistryURL('https://foo.bar');
-
-      expect(executeCommandSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          command: 'npm',
-          args: ['config', 'set', 'registry', 'https://foo.bar'],
-        })
-      );
-    });
-  });
-
   describe('addDependencies', () => {
     it('with devDep it should run `yarn install -D @storybook/core`', async () => {
       const executeCommandSpy = vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValueOnce('');

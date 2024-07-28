@@ -253,7 +253,7 @@
     "prep": "bun ./scripts/prep.ts"
   },
   "dependencies": {
-    "@storybook/csf": "0.1.11",
+    "@storybook/csf": "^0.1.11",
     "@types/express": "^4.17.21",
     "@types/node": "^18.0.0",
     "browser-assert": "^1.2.1",

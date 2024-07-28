@@ -100,4 +100,10 @@ describe('argsToTemplate', () => {
     const result = argsToTemplate(args, {});
     expect(result).toEqual('[input]="input" (event1)="event1($event)"');
   });
+
+  it('should format for non dot notation', () => {
+    const args = { 'non-dot': 'Value1', 'dash-out': () => {} };
+    const result = argsToTemplate(args, {});
+    expect(result).toEqual('[non-dot]="this[\'non-dot\']" (dash-out)="this[\'dash-out\']($event)"');
+  });
 });

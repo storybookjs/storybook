@@ -90,6 +90,15 @@ export class PNPMProxy extends JsPackageManager {
     });
   }
 
+  public async getRegistryURL() {
+    const res = await this.executeCommand({
+      command: 'pnpm',
+      args: ['config', 'get', 'registry'],
+    });
+    const url = res.trim();
+    return url === 'undefined' ? undefined : url;
+  }
+
   async runPackageCommand(command: string, args: string[], cwd?: string): Promise<string> {
     return this.executeCommand({
       command: 'pnpm',

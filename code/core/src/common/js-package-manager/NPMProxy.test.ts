@@ -34,21 +34,6 @@ describe('NPM Proxy', () => {
     });
   });
 
-  describe('setRegistryUrl', () => {
-    it('should run `npm config set registry https://foo.bar`', async () => {
-      const executeCommandSpy = vi.spyOn(npmProxy, 'executeCommand').mockResolvedValueOnce('');
-
-      await npmProxy.setRegistryURL('https://foo.bar');
-
-      expect(executeCommandSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          command: 'npm',
-          args: ['config', 'set', 'registry', 'https://foo.bar'],
-        })
-      );
-    });
-  });
-
   describe('installDependencies', () => {
     describe('npm6', () => {
       it('should run `npm install`', async () => {

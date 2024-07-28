@@ -6,7 +6,14 @@ import { describe, it } from 'vitest';
 import { satisfies } from 'storybook/internal/common';
 import type { Args, StoryAnnotations, StrictArgs } from 'storybook/internal/types';
 import { expectTypeOf } from 'expect-type';
-import { Fragment, h, type ComponentChildren, type FunctionComponent, type JSX, type VNode } from 'preact';
+import {
+  Fragment,
+  h,
+  type ComponentChildren,
+  type FunctionComponent,
+  type JSX,
+  type VNode,
+} from 'preact';
 
 import type { SetOptional } from 'type-fest';
 import type { Mock } from '@storybook/test';

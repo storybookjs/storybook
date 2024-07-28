@@ -11,7 +11,7 @@ import type {
   StrictArgs,
   ProjectAnnotations,
 } from 'storybook/internal/types';
-import type { ComponentProps, ComponentType } from 'preact'
+import type { ComponentProps, ComponentType } from 'preact';
 import type { SetOptional, Simplify } from 'type-fest';
 import type { PreactRenderer } from './types';
 

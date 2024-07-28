@@ -1,5 +1,4 @@
 import { setProjectAnnotations } from "@storybook/nextjs";
-import React from "react";
 import { beforeAll, beforeEach } from "vitest";
 
 import * as projectAnnotations from "./preview";

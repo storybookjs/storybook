@@ -34,56 +34,17 @@ const virtualModuleId = "virtual:next-font";
 
 export function vitePluginNextFont() {
   let devMode = true;
-  const fontAssetPaths = new Map<string, string>();
 
   return {
     name: "vite-plugin-storybook-nextjs-font",
     enforce: "pre" as const,
     async config(config, env) {
-      devMode = env.mode === "development";
+      devMode = env.mode !== "production";
 
       return config;
     },
-    configureServer(server) {
-      server.middlewares.use(async (req, res, next) => {
-        if (req.url && fontAssetPaths.has(req.url)) {
-          // biome-ignore lint/style/noNonNullAssertion: <explanation>
-          const fontAbsoluteAssetPath = fontAssetPaths.get(req.url)!;
-          const fontFileExtension = path.extname(fontAbsoluteAssetPath);
-          try {
-            const fontData = await fs.readFile(fontAbsoluteAssetPath);
-            // set content type dependent of the file extension
-            switch (fontFileExtension) {
-              case ".woff":
-                res.setHeader("Content-Type", "font/woff");
-                break;
-              case ".woff2":
-                res.setHeader("Content-Type", "font/woff2");
-                break;
-              case ".ttf":
-                res.setHeader("Content-Type", "font/ttf");
-                break;
-              case ".otf":
-                res.setHeader("Content-Type", "font/otf");
-                break;
-              default:
-                res.setHeader("Content-Type", "font");
-            }
-            res.end(fontData);
-          } catch (e) {
-            console.error(
-              `Could not read font file ${fontAbsoluteAssetPath}:`,
-              e,
-            );
-            res.statusCode = 404;
-            res.end();
-          }
-        } else {
-          next();
-        }
-      });
-    },
     async resolveId(source, importer) {
+      const cwd = process.cwd();
       if (!includePattern.test(source) || !importer) {
         return null;
       }
@@ -133,9 +94,8 @@ export function vitePluginNextFont() {
           const fontPath = path.join(importerDirPath, importerRelativeFontPath);
 
           if (devMode) {
-            fontAssetPaths.set(importerRelativeFontPath, fontPath);
             return {
-              fontPath: importerRelativeFontPath,
+              fontPath: path.join(cwd, fontPath),
               fontReferenceId: undefined,
             };
           }

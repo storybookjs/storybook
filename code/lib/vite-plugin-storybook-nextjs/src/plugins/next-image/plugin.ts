@@ -35,14 +35,10 @@ try {
 export function vitePluginNextImage(
   nextConfigResolver: PromiseWithResolvers<NextConfigComplete>,
 ) {
-  const imageAssetPaths = new Map<string, string>();
-  let devMode = true;
-
   return {
     name: "vite-plugin-storybook-nextjs-image",
     enforce: "pre" as const,
     async config(config, env) {
-      devMode = env.mode === "development";
       return config;
     },
     async resolveId(id, importer) {
@@ -64,11 +60,7 @@ export function vitePluginNextImage(
             : path.join(path.dirname(importer), source)
           : source;
 
-        const query = encode({
-          imagePath,
-        });
-
-        return `${virtualImage}?${query}`;
+        return `${virtualImage}?imagePath=${imagePath}`;
       }
 
       if (id === "next/image" && importer !== virtualNextImage) {

@@ -60,6 +60,8 @@ const formatLocation = (node: t.Node, fileName?: string) => {
   return `${fileName || ''} (line ${line}, col ${column})`.trim();
 };
 
+export const isModuleMock = (importPath: string) => MODULE_MOCK_REGEX.test(importPath);
+
 const isArgsStory = (init: t.Node, parent: t.Node, csf: CsfFile) => {
   let storyFn: t.Node = init;
   // export const Foo = Bar.bind({})
@@ -115,6 +117,25 @@ const sortExports = (exportByName: Record<string, any>, order: string[]) => {
     {} as Record<string, any>
   );
 };
+
+const hasMount = (play: t.Node | undefined) => {
+  if (t.isArrowFunctionExpression(play) || t.isFunctionDeclaration(play)) {
+    const params = play.params;
+    if (params.length >= 1) {
+      const [arg] = params;
+      if (t.isObjectPattern(arg)) {
+        return !!arg.properties.find((prop) => {
+          if (t.isObjectProperty(prop) && t.isIdentifier(prop.key)) {
+            return prop.key.name === 'mount';
+          }
+        });
+      }
+    }
+  }
+  return false;
+};
+
+const MODULE_MOCK_REGEX = /^[.\/#].*\.mock($|\.[^.]*$)/i;
 
 export interface CsfOptions {
   fileName?: string;
@@ -544,14 +565,17 @@ export class CsfFile {
         if (play) {
           acc[key].tags = [...(acc[key].tags || []), 'play-fn'];
         }
-        ['play', 'render', 'loaders'].forEach((annotation) => {
-          acc[key].__stats[annotation as keyof IndexInputStats] =
+        const stats = acc[key].__stats;
+        ['play', 'render', 'loaders', 'beforeEach'].forEach((annotation) => {
+          stats[annotation as keyof IndexInputStats] =
             !!storyAnnotations[annotation] || !!self._metaAnnotations[annotation];
         });
         const storyExport = self.getStoryExport(key);
-        acc[key].__stats.storyFn = !!(
+        stats.storyFn = !!(
           t.isArrowFunctionExpression(storyExport) || t.isFunctionDeclaration(storyExport)
         );
+        stats.mount = hasMount(storyAnnotations.play ?? self._metaAnnotations.play);
+        stats.moduleMock = !!self.imports.find((fname) => isModuleMock(fname));
 
         return acc;
       },

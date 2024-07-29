@@ -9,6 +9,7 @@ import {
   createCheckerByJson,
   type ComponentMeta,
   type MetaCheckerOptions,
+  type PropertyMetaSchema,
 } from 'vue-component-meta';
 import { parseMulti } from 'vue-docgen-api';
 
@@ -52,21 +53,14 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
 
           // we remove nested object schemas here since they are not used inside Storybook (we don't generate controls for object properties)
           // and they can cause "out of memory" issues for large/complex schemas (e.g. HTMLElement)
-          // it also reduced the bundle size when running "Storybook build" when such schemas are used
-          (['props', 'exposed'] as const).forEach((key) => {
+          // it also reduced the bundle size when running "storybook build" when such schemas are used
+          (['props', 'events', 'slots', 'exposed'] as const).forEach((key) => {
             meta[key].forEach((value) => {
-              if (typeof value.schema !== 'object') return;
-
-              // we need to use Object.defineProperty here since schema is a getter so we can not set it directly
-              Object.defineProperty(value, 'schema', {
-                configurable: true,
-                enumerable: true,
-                value: {
-                  kind: value.schema.kind,
-                  type: value.schema.type,
-                  // note that value.schema.schema is not included here (see comment above)
-                },
-              });
+              if (Array.isArray(value.schema)) {
+                value.schema.forEach((eventSchema) => removeNestedSchemas(eventSchema));
+              } else {
+                removeNestedSchemas(value.schema);
+              }
             });
           });
 
@@ -269,4 +263,13 @@ async function getTsConfigReferences(tsConfigPath: string) {
     // invalid project tsconfig
     return [];
   }
+}
+
+/**
+ * Removes any nested schemas from the given main schema (e.g. from a prop, event, slot or exposed).
+ * Useful to drastically reduce build size and prevent out of memory issues when large schemas (e.g. HTMLElement, MouseEvent) are used.
+ */
+function removeNestedSchemas(schema: PropertyMetaSchema) {
+  if (typeof schema !== 'object') return;
+  delete schema.schema;
 }

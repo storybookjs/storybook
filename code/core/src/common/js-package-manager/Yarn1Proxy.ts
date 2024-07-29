@@ -83,6 +83,15 @@ export class Yarn1Proxy extends JsPackageManager {
     return JSON.parse(readFileSync(packageJsonPath, 'utf-8')) as Record<string, any>;
   }
 
+  public async getRegistryURL() {
+    const res = await this.executeCommand({
+      command: 'yarn',
+      args: ['config', 'get', 'registry'],
+    });
+    const url = res.trim();
+    return url === 'undefined' ? undefined : url;
+  }
+
   public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {
     const yarnArgs = ['list', '--pattern', pattern.map((p) => `"${p}"`).join(' '), '--json'];
 

@@ -6,6 +6,7 @@ import type {
   CleanupCallback,
   StepRunner,
   Canvas,
+  BeforeAll,
 } from '@storybook/csf';
 
 import type {
@@ -57,13 +58,14 @@ export type NamedOrDefaultProjectAnnotations<TRenderer extends Renderer = Render
 
 export type NormalizedProjectAnnotations<TRenderer extends Renderer = Renderer> = Omit<
   ProjectAnnotations<TRenderer>,
-  'decorators' | 'loaders' | 'runStep'
+  'decorators' | 'loaders' | 'runStep' | 'beforeAll'
 > & {
   argTypes?: StrictArgTypes;
   globalTypes?: StrictGlobalTypes;
   decorators?: DecoratorFunction<TRenderer>[];
   loaders?: LoaderFunction<TRenderer>[];
   runStep: StepRunner<TRenderer>;
+  beforeAll: BeforeAll;
 };
 
 export type NormalizedComponentAnnotations<TRenderer extends Renderer = Renderer> = Omit<

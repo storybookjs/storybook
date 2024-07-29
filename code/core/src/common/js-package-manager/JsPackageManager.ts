@@ -12,6 +12,7 @@ import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson';
 import storybookPackagesVersions from '../versions';
 import type { InstallationMetadata } from './types';
 import { HandledError } from '../utils/HandledError';
+import { paddedLog } from '../utils/log';
 
 const logger = console;
 
@@ -62,22 +63,6 @@ export abstract class JsPackageManager {
   async getPackageVersion(packageName: string, basePath = this.cwd): Promise<string | null> {
     const packageJSON = await this.getPackageJSON(packageName, basePath);
     return packageJSON ? packageJSON.version ?? null : null;
-  }
-
-  // NOTE: for some reason yarn prefers the npm registry in
-  // local development, so always use npm
-  async setRegistryURL(url: string) {
-    if (url) {
-      await this.executeCommand({ command: 'npm', args: ['config', 'set', 'registry', url] });
-    } else {
-      await this.executeCommand({ command: 'npm', args: ['config', 'delete', 'registry'] });
-    }
-  }
-
-  async getRegistryURL() {
-    const res = await this.executeCommand({ command: 'npm', args: ['config', 'get', 'registry'] });
-    const url = res.trim();
-    return url === 'undefined' ? undefined : url;
   }
 
   constructor(options?: JsPackageManagerOptions) {
@@ -132,7 +117,7 @@ export abstract class JsPackageManager {
    * Install dependencies listed in `package.json`
    */
   public async installDependencies() {
-    logger.log('Installing dependencies...');
+    paddedLog('Installing dependencies...', 1);
     logger.log();
 
     try {
@@ -486,6 +471,8 @@ export abstract class JsPackageManager {
     fetchAllVersions: T
   ): // Use generic and conditional type to force `string[]` if fetchAllVersions is true and `string` if false
   Promise<T extends true ? string[] : string>;
+
+  public abstract getRegistryURL(): Promise<string | undefined>;
 
   public abstract runPackageCommand(
     command: string,

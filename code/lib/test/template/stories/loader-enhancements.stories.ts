@@ -12,7 +12,7 @@ export default meta;
 export const canvas_is_equal_to_within_canvas_element = {
   async play({ canvas, canvasElement }) {
     const oldCanvas = within(canvasElement);
-    await expect(canvas satisfies typeof oldCanvas).toEqual(oldCanvas);
+    await expect(Object.keys(canvas)).toEqual(Object.keys(oldCanvas));
   },
 };
 

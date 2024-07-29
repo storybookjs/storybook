@@ -3,8 +3,7 @@ import chalk from 'chalk';
 const logger = console;
 
 export const commandLog = (message: string) => {
-  process.stdout.write(chalk.cyan(' • ') + message);
-
+  process.stdout.write(`${chalk.cyan(' • ')} ${message}\n`);
   // Need `void` to be able to use this function in a then of a Promise<void>
   return (errorMessage?: string | void, errorInfo?: string) => {
     if (errorMessage) {
@@ -22,15 +21,14 @@ export const commandLog = (message: string) => {
       logger.error(`${newErrorInfo}\n`);
       return;
     }
-
-    process.stdout.write(`. ${chalk.green('✓')}\n`);
   };
 };
 
-export function paddedLog(message: string) {
+export function paddedLog(message: string, spaces: number = 4) {
+  const appendSpace = ' '.repeat(spaces);
   const newMessage = message
     .split('\n')
-    .map((line) => `    ${line}`)
+    .map((line) => `${appendSpace}${line}`)
     .join('\n');
 
   logger.log(newMessage);

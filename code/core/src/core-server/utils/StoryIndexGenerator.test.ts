@@ -93,7 +93,10 @@ describe('StoryIndexGenerator', () => {
 
         expect(stats).toMatchInlineSnapshot(`
           {
+            "beforeEach": 0,
             "loaders": 0,
+            "moduleMock": 0,
+            "mount": 0,
             "play": 0,
             "render": 0,
             "storyFn": 0,
@@ -457,7 +460,10 @@ describe('StoryIndexGenerator', () => {
 
         expect(stats).toMatchInlineSnapshot(`
           {
+            "beforeEach": 1,
             "loaders": 1,
+            "moduleMock": 0,
+            "mount": 1,
             "play": 2,
             "render": 1,
             "storyFn": 1,
@@ -718,7 +724,10 @@ describe('StoryIndexGenerator', () => {
 
         expect(stats).toMatchInlineSnapshot(`
           {
+            "beforeEach": 1,
             "loaders": 1,
+            "moduleMock": 0,
+            "mount": 1,
             "play": 2,
             "render": 1,
             "storyFn": 1,

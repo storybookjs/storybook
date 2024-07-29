@@ -118,7 +118,7 @@
     "@storybook/codemod": "workspace:*",
     "@storybook/core": "workspace:*",
     "@storybook/core-webpack": "workspace:*",
-    "@storybook/csf": "0.1.11",
+    "@storybook/csf": "^0.1.11",
     "@storybook/csf-plugin": "workspace:*",
     "@storybook/ember": "workspace:*",
     "@storybook/eslint-config-storybook": "^4.0.0",
@@ -206,7 +206,7 @@
     "typescript": "^5.4.3",
     "util": "^0.12.4",
     "vite": "^4.0.0",
-    "vitest": "^1.2.2",
+    "vitest": "^1.6.0",
     "wait-on": "^7.0.1"
   },
   "dependenciesMeta": {

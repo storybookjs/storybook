@@ -1,1 +1,1 @@
-module.exports = require('storybook/internal/preview/globals');
+export * from 'storybook/internal/preview/globals';

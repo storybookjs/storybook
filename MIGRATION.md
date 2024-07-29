@@ -1632,7 +1632,7 @@ export const Primary = {
 
 ## From version 6.5.x to 7.0.0
 
-A number of these changes can be made automatically by the Storybook CLI. To take advantage of these "automigrations", run `npx storybook@latest upgrade --prerelease` or `pnpx dlx storybook@latest upgrade --prerelease`.
+A number of these changes can be made automatically by the Storybook CLI. To take advantage of these "automigrations", run `npx storybook@7 upgrade` or `pnpx dlx storybook@7 upgrade`.
 
 ### 7.0 breaking changes
 

@@ -9,7 +9,7 @@ export default {
 export const Default = {};
 
 export const DisableRSC = {
-  tags: ['test-skip'],
+  tags: ['!test'],
   parameters: {
     chromatic: { disable: true },
     nextjs: { rsc: false },
@@ -17,7 +17,7 @@ export const DisableRSC = {
 };
 
 export const Error = {
-  tags: ['test-skip'],
+  tags: ['!test'],
   parameters: {
     chromatic: { disable: true },
   },

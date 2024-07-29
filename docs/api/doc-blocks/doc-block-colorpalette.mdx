@@ -46,6 +46,18 @@ import { Meta, ColorPalette, ColorItem } from '@storybook/blocks';
       Apple30: 'rgba(102,191,60,.3)',
     }}
   />
+  <ColorItem
+    title="gradient"
+    subtitle="Grayscale"
+    colors={{
+      Gradient: 'linear-gradient(to right,white,black)',
+    }}
+  />
+  <ColorItem
+    title="gradient"
+    subtitle="Grayscale"
+    colors={['linear-gradient(65deg,white,black)']}
+  />
 </ColorPalette>
 ```
 
@@ -79,7 +91,7 @@ import { ColorItem } from '@storybook/blocks';
 
 Type: `string[] | { [key: string]: string }`
 
-Provides the list of colors to be displayed. Accepts any valid CSS color format (hex, RGB, HSL, etc.). When an object is provided, the keys will be displayed above the values.
+Provides the list of colors to be displayed. Accepts any valid CSS color format (hex, RGB, HSL, etc.). When an object is provided, the keys will be displayed above the values. Additionally, it supports gradients such as 'linear-gradient(to right, white, black)' or 'linear-gradient(65deg, white, black)', etc. 
 
 ### `subtitle`
 

@@ -19,7 +19,9 @@ export type EventType =
   | 'remove'
   | 'save-story'
   | 'create-new-story-file'
-  | 'create-new-story-file-search';
+  | 'create-new-story-file-search'
+  // TODO: Discuss about telemetry
+  | 'setup-vitest';
 
 export interface Dependency {
   version: string | undefined;

@@ -3,8 +3,6 @@ import { Comic_Neue } from "next/font/google";
 import { Kalnia, Roboto_Mono } from "next/font/google";
 import localFont from "next/font/local";
 
-import React from "react";
-
 const kalina = Kalnia({
   subsets: ["latin"],
   variable: "--font-kalina",

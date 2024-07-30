@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "8.2.0-alpha.10",
+  "version": "8.3.0-alpha.3",
   "description": "Storybook's CLI - install, dev, build, upgrade, and more",
   "keywords": [
     "cli",
@@ -140,7 +140,8 @@
     },
     "./internal/components": {
       "types": "./core/components/index.d.ts",
-      "import": "./core/components/index.js"
+      "import": "./core/components/index.js",
+      "require": "./core/components/index.cjs"
     },
     "./internal/theming": {
       "types": "./core/theming/index.d.ts",
@@ -166,6 +167,11 @@
       "types": "./core/preview/globals.d.ts",
       "import": "./core/preview/globals.js",
       "require": "./core/preview/globals.cjs"
+    },
+    "./internal/manager/globals": {
+      "types": "./core/manager/globals.d.ts",
+      "import": "./core/manager/globals.js",
+      "require": "./core/manager/globals.cjs"
     }
   },
   "main": "dist/index.cjs",
@@ -217,6 +223,9 @@
       ],
       "internal/manager-errors": [
         "./core/manager-errors.d.ts"
+      ],
+      "internal/manager/globals": [
+        "./core/manager/globals.d.ts"
       ],
       "internal/manager/globals-module-info": [
         "./core/manager/globals-module-info.d.ts"
@@ -281,13 +290,11 @@
   ],
   "scripts": {
     "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts",
-    "sb": "node ./bin/index.js"
+    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
     "@babel/core": "^7.24.4",
     "@babel/types": "^7.24.0",
-    "@ndelangen/get-tarball": "^3.0.7",
     "@storybook/codemod": "workspace:*",
     "@storybook/core": "workspace:*",
     "@types/semver": "^7.3.4",
@@ -302,7 +309,6 @@
     "fd-package-json": "^1.2.0",
     "find-up": "^5.0.0",
     "fs-extra": "^11.1.0",
-    "get-npm-tarball-url": "^2.0.3",
     "giget": "^1.0.0",
     "globby": "^14.0.1",
     "jscodeshift": "^0.15.1",
@@ -317,10 +323,12 @@
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
+    "@ndelangen/get-tarball": "^3.0.7",
     "@types/cross-spawn": "^6.0.2",
     "@types/prompts": "^2.0.9",
     "@types/util-deprecate": "^1.0.0",
     "boxen": "^7.1.1",
+    "get-npm-tarball-url": "^2.0.3",
     "slash": "^5.0.0",
     "strip-ansi": "^7.1.0",
     "strip-json-comments": "^3.1.1",

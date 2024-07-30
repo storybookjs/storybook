@@ -132,12 +132,12 @@ export class NPMProxy extends JsPackageManager {
     });
   }
 
-  public async findInstallations(pattern: string[]) {
-    const exec = async ({ depth }: { depth: number }) => {
+  public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {
+    const exec = async ({ packageDepth }: { packageDepth: number }) => {
       const pipeToNull = platform() === 'win32' ? '2>NUL' : '2>/dev/null';
       return this.executeCommand({
         command: 'npm',
-        args: ['ls', '--json', `--depth=${depth}`, pipeToNull],
+        args: ['ls', '--json', `--depth=${packageDepth}`, pipeToNull],
         env: {
           FORCE_COLOR: 'false',
         },
@@ -145,7 +145,7 @@ export class NPMProxy extends JsPackageManager {
     };
 
     try {
-      const commandResult = await exec({ depth: 99 });
+      const commandResult = await exec({ packageDepth: depth });
       const parsedOutput = JSON.parse(commandResult);
 
       return this.mapDependencies(parsedOutput, pattern);
@@ -153,7 +153,7 @@ export class NPMProxy extends JsPackageManager {
       // when --depth is higher than 0, npm can return a non-zero exit code
       // in case the user's project has peer dependency issues. So we try again with no depth
       try {
-        const commandResult = await exec({ depth: 0 });
+        const commandResult = await exec({ packageDepth: 0 });
         const parsedOutput = JSON.parse(commandResult);
 
         return this.mapDependencies(parsedOutput, pattern);
@@ -179,6 +179,17 @@ export class NPMProxy extends JsPackageManager {
       args: ['install', ...this.getInstallArgs()],
       stdio: 'inherit',
     });
+  }
+
+  public async getRegistryURL() {
+    const res = await this.executeCommand({
+      command: 'npm',
+      // "npm config" commands are not allowed in workspaces per default
+      // https://github.com/npm/cli/issues/6099#issuecomment-1847584792
+      args: ['config', 'get', 'registry', '-ws=false', '-iwr'],
+    });
+    const url = res.trim();
+    return url === 'undefined' ? undefined : url;
   }
 
   protected async runAddDeps(dependencies: string[], installAsDevDependencies: boolean) {

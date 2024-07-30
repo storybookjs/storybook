@@ -1,19 +1,25 @@
 ```tsx filename="Button.test.tsx" renderer="react" language="ts"
 import { vi, test, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { composeStory } from '@storybook/react';
 
-import meta, { Primary } from './Button.stories';
+import meta, { Primary as PrimaryStory } from './Button.stories';
 
-test('onclick handler is called', () => {
-  // Returns a story which already contains all annotations from story, meta and global levels
-  const PrimaryStory = composeStory(Primary, meta);
+// Returns a story which already contains all annotations from story, meta and global levels
+const Primary = composeStory(PrimaryStory, meta);
 
-  const onClickSpy = vi.fn();
-  render(<PrimaryStory onClick={onClickSpy} />);
-  const buttonElement = screen.getByRole('button');
-  buttonElement.click();
-  expect(onClickSpy).toHaveBeenCalled();
+test('renders primary button with default args', async () => {
+  await Primary.play();
+
+  const buttonElement = screen.getByText('Text coming from args in stories file!');
+  expect(buttonElement).not.toBeNull();
+});
+
+test('renders primary button with overridden props', async () => {
+  await Primary.play({ args: { ...Primary.args, label: 'Hello world' } });
+
+  const buttonElement = screen.getByText(/Hello world/i);
+  expect(buttonElement).not.toBeNull();
 });
 ```
 
@@ -22,22 +28,21 @@ import { vi, test, expect } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 import { composeStory } from '@storybook/svelte';
 
-import meta, { Primary } from './Button.stories';
+import meta, { Primary as PrimaryStory } from './Button.stories';
 
-test('renders primary button with default args', () => {
-  // Returns a story which already contains all annotations from story, meta and global levels
-  const PrimaryStory = composeStory(Primary, meta);
+// Returns a story which already contains all annotations from story, meta and global levels
+const Primary = composeStory(PrimaryStory, meta);
 
-  render(PrimaryStory.Component, PrimaryStory.props);
+test('renders primary button with default args', async () => {
+  await Primary.play();
+
   const buttonElement = screen.getByText('Text coming from args in stories file!');
   expect(buttonElement).not.toBeNull();
 });
 
-test('renders primary button with overridden props', () => {
-  // You can override props and they will get merged with values from the story's args
-  const PrimaryStory = composeStory({ ...Primary, args: { label: 'Hello world' } }, meta);
+test('renders primary button with overridden props', async () => {
+  await Primary.play({ args: { ...Primary.args, label: 'Hello world' } });
 
-  render(PrimaryStory.Component, PrimaryStory.props);
   const buttonElement = screen.getByText(/Hello world/i);
   expect(buttonElement).not.toBeNull();
 });
@@ -48,17 +53,22 @@ import { vi, test, expect } from 'vitest';
 import { render, screen } from '@testing-library/vue';
 import { composeStory } from '@storybook/vue3';
 
-import meta, { Primary } from './Button.stories';
+import meta, { Primary as PrimaryStory } from './Button.stories';
 
-test('onclick handler is called', () => {
-  // Returns a story which already contains all annotations from story, meta and global levels
-  const PrimaryStory = composeStory(Primary, meta);
+// Returns a story which already contains all annotations from story, meta and global levels
+const Primary = composeStory(PrimaryStory, meta);
 
-  const onClickSpy = vi.fn();
-  render(Primary, { props: { onClick: onClickSpy } });
-  const buttonElement = screen.getByRole('button');
-  buttonElement.click();
-  expect(onClickSpy).toHaveBeenCalled();
+test('renders primary button with default args', async () => {
+  await Primary.play();
+
+  const buttonElement = screen.getByText('Text coming from args in stories file!');
+  expect(buttonElement).not.toBeNull();
+});
+
+test('renders primary button with overridden props', async () => {
+  await Primary.play({ args: { ...Primary.args, label: 'Hello world' } });
+
+  const buttonElement = screen.getByText(/Hello world/i);
+  expect(buttonElement).not.toBeNull();
 });
 ```
-

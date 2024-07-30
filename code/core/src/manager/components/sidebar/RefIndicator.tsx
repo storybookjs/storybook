@@ -15,6 +15,7 @@ import {
   GlobeIcon,
   LightningIcon,
   LockIcon,
+  MarkupIcon,
   TimeIcon,
 } from '@storybook/icons';
 import type { RefType } from './types';
@@ -186,7 +187,10 @@ export const RefIndicator = React.memo(
                     <ErrorOccurredMessage url={ref.url} />
                   )}
                   {state === 'ready' && (
-                    <ReadyMessage {...{ url: ref.url, componentCount, leafCount }} />
+                    <>
+                      <ReadyMessage {...{ url: ref.url, componentCount, leafCount }} />
+                      {ref.sourceUrl && <SourceCodeMessage url={ref.sourceUrl} />}
+                    </>
                   )}
                   {state === 'auth' && <LoginRequiredMessage {...ref} />}
                   {ref.type === 'auto-inject' && state !== 'error' && (
@@ -249,6 +253,21 @@ const ReadyMessage: FC<{
         <div>
           Explore {componentCount} components and {leafCount} stories in a new browser tab.
         </div>
+      </div>
+    </Message>
+  );
+};
+
+const SourceCodeMessage: FC<{
+  url?: string;
+}> = ({ url }) => {
+  const theme = useTheme();
+
+  return (
+    <Message href={url} target="_blank">
+      <MarkupIcon color={theme.color.secondary} />
+      <div>
+        <MessageTitle>View source code</MessageTitle>
       </div>
     </Message>
   );

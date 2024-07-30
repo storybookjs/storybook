@@ -68,9 +68,11 @@ async function webpack(
    *
    * In the future the `@storybook/theming` and `@storybook/components` can be removed, as they should be singletons in the future due to the peerDependency on `storybook` package.
    */
-  const cliPath = require.resolve('storybook/package.json');
-  const themingPath = join(cliPath, '..', 'core', 'theming', 'index.js');
-  const componentsPath = join(cliPath, '..', 'core', 'components', 'index.js');
+  const cliPath = dirname(require.resolve('storybook/package.json'));
+  const themingPath = join(cliPath, 'core', 'theming', 'index.js');
+  const themingCreatePath = join(cliPath, 'core', 'theming', 'create.js');
+
+  const componentsPath = join(cliPath, 'core', 'components', 'index.js');
   const blocksPath = dirname(require.resolve('@storybook/blocks/package.json'));
   if (Array.isArray(webpackConfig.resolve?.alias)) {
     alias = [...webpackConfig.resolve?.alias];
@@ -86,6 +88,10 @@ async function webpack(
       {
         name: '@mdx-js/react',
         alias: mdx,
+      },
+      {
+        name: '@storybook/theming/create',
+        alias: themingCreatePath,
       },
       {
         name: '@storybook/theming',
@@ -104,6 +110,7 @@ async function webpack(
     alias = {
       ...webpackConfig.resolve?.alias,
       react,
+      '@storybook/theming/create': themingCreatePath,
       '@storybook/theming': themingPath,
       '@storybook/components': componentsPath,
       '@storybook/blocks': blocksPath,
@@ -168,6 +175,7 @@ export const viteFinal = async (config: any, options: Options) => {
 
   const cliPath = dirname(require.resolve('storybook/package.json'));
   const themingPath = join(cliPath, 'core', 'theming', 'index.js');
+  const themingCreatePath = join(cliPath, 'core', 'theming', 'create.js');
   const componentsPath = join(cliPath, 'core', 'components', 'index.js');
   const blocksPath = dirname(require.resolve('@storybook/blocks/package.json'));
 
@@ -187,6 +195,7 @@ export const viteFinal = async (config: any, options: Options) => {
            *
            * In the future the `@storybook/theming` and `@storybook/components` can be removed, as they should be singletons in the future due to the peerDependency on `storybook` package.
            */
+          '@storybook/theming/create': themingCreatePath,
           '@storybook/theming': themingPath,
           '@storybook/components': componentsPath,
           '@storybook/blocks': blocksPath,

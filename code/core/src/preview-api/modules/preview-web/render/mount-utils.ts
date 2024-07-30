@@ -4,8 +4,8 @@ import { type PreparedStory, type Renderer } from '@storybook/types';
 
 export function mountDestructured<TRenderer extends Renderer>(
   playFunction: PreparedStory<TRenderer>['playFunction']
-) {
-  return playFunction && getUsedProps(playFunction).includes('mount');
+): boolean {
+  return playFunction != null && getUsedProps(playFunction).includes('mount');
 }
 export function getUsedProps(fn: Function) {
   const match = fn.toString().match(/[^(]*\(([^)]*)/);

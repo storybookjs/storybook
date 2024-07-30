@@ -260,6 +260,10 @@ You can also update a control's value, then save the changes to the story. The s
 
 <Video src="../_assets/get-started/edit-story-from-controls-optimized.mp4" />
 
+### Disable creating and editing of stories
+
+If you don't want to allow the creation or editing of stories from the Controls panel, you can disable this feature by setting the `disableSaveFromUI` parameter to `true` in the `parameters.controls` parameter in your `.storybook/preview.js` file.
+
 ## Configuration
 
 The Controls addon can be configured in two ways:
@@ -271,23 +275,23 @@ The Controls addon can be configured in two ways:
 
 As shown above, you can configure individual controls with the “control" annotation in the [argTypes](../api/arg-types.mdx) field of either a component or story. Below is a condensed example and table featuring all available controls.
 
-| Data Type   | Control        | Description                                                                                                                                                                                                               |
-| ----------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **boolean** | `boolean`      | Provides a toggle for switching between possible states.<br /> `argTypes: { active: { control: 'boolean' }}`                                                                                                               |
-| **number**  | `number`       | Provides a numeric input to include the range of all possible values.<br /> `argTypes: { even: { control: { type: 'number', min:1, max:30, step: 2 } }}`                                                                   |
-|             | `range`        | Provides a range slider component to include all possible values.<br /> `argTypes: { odd: { control: { type: 'range', min: 1, max: 30, step: 3 } }}`                                                                       |
+| Data Type   | Control        | Description                                                                                                                                                                                                                 |
+| ----------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **boolean** | `boolean`      | Provides a toggle for switching between possible states.<br /> `argTypes: { active: { control: 'boolean' }}`                                                                                                                |
+| **number**  | `number`       | Provides a numeric input to include the range of all possible values.<br /> `argTypes: { even: { control: { type: 'number', min:1, max:30, step: 2 } }}`                                                                    |
+|             | `range`        | Provides a range slider component to include all possible values.<br /> `argTypes: { odd: { control: { type: 'range', min: 1, max: 30, step: 3 } }}`                                                                        |
 | **object**  | `object`       | Provides a JSON-based editor component to handle the object's values.<br /> Also allows edition in raw mode.<br /> `argTypes: { user: { control: 'object' }}`                                                               |
 | **array**   | `object`       | Provides a JSON-based editor component to handle the array's values.<br /> Also allows edition in raw mode.<br /> `argTypes: { odd: { control: 'object' }}`                                                                 |
 |             | `file`         | Provides a file input component that returns an array of URLs.<br /> Can be further customized to accept specific file types.<br /> `argTypes: { avatar: { control: { type: 'file', accept: '.png' } }}`                    |
-| **enum**    | `radio`        | Provides a set of radio buttons based on the available options.<br /> `argTypes: { contact: { control: 'radio', options: ['email', 'phone', 'mail'] }}`                                                                    |
-|             | `inline-radio` | Provides a set of inlined radio buttons based on the available options.<br /> `argTypes: { contact: { control: 'inline-radio', options: ['email', 'phone', 'mail'] }}`                                                     |
-|             | `check`        | Provides a set of checkbox components for selecting multiple options.<br /> `argTypes: { contact: { control: 'check', options: ['email', 'phone', 'mail'] }}`                                                              |
-|             | `inline-check` | Provides a set of inlined checkbox components for selecting multiple options.<br /> `argTypes: { contact: { control: 'inline-check', options: ['email', 'phone', 'mail'] }}`                                               |
-|             | `select`       | Provides a drop-down list component to handle single value selection. `argTypes: { age: { control: 'select', options: [20, 30, 40, 50] }}`                                                                                |
-|             | `multi-select` | Provides a drop-down list that allows multiple selected values. `argTypes: { countries: { control: 'multi-select', options: ['USA', 'Canada', 'Mexico'] }}`                                                               |
-| **string**  | `text`         | Provides a freeform text input. <br /> `argTypes: { label: { control: 'text' }}`                                                                                                                                           |
+| **enum**    | `radio`        | Provides a set of radio buttons based on the available options.<br /> `argTypes: { contact: { control: 'radio', options: ['email', 'phone', 'mail'] }}`                                                                     |
+|             | `inline-radio` | Provides a set of inlined radio buttons based on the available options.<br /> `argTypes: { contact: { control: 'inline-radio', options: ['email', 'phone', 'mail'] }}`                                                      |
+|             | `check`        | Provides a set of checkbox components for selecting multiple options.<br /> `argTypes: { contact: { control: 'check', options: ['email', 'phone', 'mail'] }}`                                                               |
+|             | `inline-check` | Provides a set of inlined checkbox components for selecting multiple options.<br /> `argTypes: { contact: { control: 'inline-check', options: ['email', 'phone', 'mail'] }}`                                                |
+|             | `select`       | Provides a drop-down list component to handle single value selection. `argTypes: { age: { control: 'select', options: [20, 30, 40, 50] }}`                                                                                  |
+|             | `multi-select` | Provides a drop-down list that allows multiple selected values. `argTypes: { countries: { control: 'multi-select', options: ['USA', 'Canada', 'Mexico'] }}`                                                                 |
+| **string**  | `text`         | Provides a freeform text input. <br /> `argTypes: { label: { control: 'text' }}`                                                                                                                                            |
 |             | `color`        | Provides a color picker component to handle color values.<br /> Can be additionally configured to include a set of color presets.<br /> `argTypes: { color: { control: { type: 'color', presetColors: ['red', 'green']} }}` |
-|             | `date`         | Provides a datepicker component to handle date selection. `argTypes: { startDate: { control: 'date' }}`                                                                                                                   |
+|             | `date`         | Provides a datepicker component to handle date selection. `argTypes: { startDate: { control: 'date' }}`                                                                                                                     |
 
 <Callout variant="info" icon="💡">
   The `date` control will convert the date into a UNIX timestamp when the value changes. It's a known limitation that will be fixed in a future release. If you need to represent the actual date, you'll need to update the story's implementation and convert the value into a date object.
@@ -484,3 +488,11 @@ Specifies how the controls are sorted.
 * **none**: Unsorted, displayed in the same order the arg types are processed in
 * **alpha**: Sorted alphabetically, by the arg type's name
 * **requiredFirst**: Same as `alpha`, with any required arg types displayed first
+
+#### `disableSaveFromUI`
+
+Type: `boolean`
+
+Default: `false`
+
+Disable the ability to create or edit stories from the Controls panel.

@@ -10,6 +10,7 @@ import type {
   StoryAnnotationsOrFn,
   Store_CSFExports,
   StoriesWithPartialProps,
+  ComposedStoryFn,
 } from 'storybook/internal/types';
 import { TestingLibraryMustBeConfiguredError } from 'storybook/internal/preview-errors';
 import { h } from 'vue';
@@ -45,8 +46,8 @@ export function setProjectAnnotations(
   projectAnnotations:
     | NamedOrDefaultProjectAnnotations<VueRenderer>
     | NamedOrDefaultProjectAnnotations<VueRenderer>[]
-) {
-  originalSetProjectAnnotations<VueRenderer>(projectAnnotations);
+): ProjectAnnotations<VueRenderer> {
+  return originalSetProjectAnnotations<VueRenderer>(projectAnnotations);
 }
 
 // This will not be necessary once we have auto preset loading
@@ -91,7 +92,7 @@ export function composeStory<TArgs extends Args = Args>(
   componentAnnotations: Meta<TArgs | any>,
   projectAnnotations?: ProjectAnnotations<VueRenderer>,
   exportsName?: string
-) {
+): JSXAble<ComposedStoryFn<VueRenderer, Partial<TArgs>>> {
   const composedStory = originalComposeStory<VueRenderer, TArgs>(
     story as StoryAnnotationsOrFn<VueRenderer, Args>,
     componentAnnotations,

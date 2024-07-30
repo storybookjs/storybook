@@ -1,8 +1,8 @@
 ---
 title: 'Portable stories in Playwright CT'
 sidebar:
-  order: 1
   title: Playwright
+  order: 2
 ---
 
 (⚠️ **Experimental**)
@@ -29,8 +29,6 @@ sidebar:
       Your project must be using React 18+ to use the portable stories API with Playwright CT.
 
       **Using `Next.js`?** The portable stories API is not yet supported in Next.js with Playwright CT.
-
-      {/* **Using `Next.js`?** Next.js requires specific configuration that is only available in [Jest](./portable-stories-jest.mdx). The portable stories API is not supported in Next.js with Playwright CT. */}
     </Callout>
   </If>
 
@@ -78,8 +76,8 @@ sidebar:
 
     ```ts
     // Button.stories.portable.ts
-    // Replace <your-renderer> with your renderer, e.g. react, vue3
-    import { composeStories } from '@storybook/<your-renderer>';
+    // Replace your-renderer with the renderer you are using (e.g. react, vue3)
+    import { composeStories } from '@storybook/your-renderer';
 
     import * as stories from './Button.stories';
 
@@ -118,27 +116,26 @@ sidebar:
   ## setProjectAnnotations
 
   This API should be called once, before the tests run, in [`playwright/index.ts`](https://playwright.dev/docs/test-components#step-1-install-playwright-test-for-components-for-your-respective-framework). This will make sure that when `mount` is called, the project annotations are taken into account as well.
+  
+  These are the configurations needed in the setup file:
+  - preview annotations: those defined in `.storybook/preview.ts`
+  - addon annotations (optional): those exported by addons
+  - beforeAll: code that runs before all tests ([more info](../../writing-tests/interaction-testing.mdx#beforeall))
 
-  ```ts
-  // playwright/index.ts
-  // Replace <your-renderer> with your renderer, e.g. react, vue3
-  import { setProjectAnnotations } from '@storybook/<your-renderer>';
-  import * as addonAnnotations from 'my-addon/preview';
-  import * as previewAnnotations from '../.storybook/preview';
+  {/* prettier-ignore-start */}
 
-  setProjectAnnotations([previewAnnotations, addonAnnotations]);
-  ```
+  <CodeSnippets path="portable-stories-playwright-ct-compose-stories.md" />
 
-  <Callout variant="warning">
-    Sometimes a story can require an addon's [decorator](../../writing-stories/decorators.mdx) or [loader](../../writing-stories/loaders.mdx) to render properly. For example, an addon can apply a decorator that wraps your story in the necessary router context. In this case, you must include that addon's `preview` export in the project annotations set. See `addonAnnotations` in the example above.
+  {/* prettier-ignore-end */}
 
-    Note: If the addon doesn't automatically apply the decorator or loader itself, but instead exports them for you to apply manually in `.storybook/preview.js|ts` (e.g. using `withThemeFromJSXProvider` from [@storybook/addon-themes](https://github.com/storybookjs/storybook/blob/next/code/addons/themes/docs/api.md#withthemefromjsxprovider)), then you do not need to do anything else. They are already included in the `previewAnnotations` in the example above.
-  </Callout>
+  Sometimes a story can require an addon's [decorator](../../writing-stories/decorators.mdx) or [loader](../../writing-stories/loaders.mdx) to render properly. For example, an addon can apply a decorator that wraps your story in the necessary router context. In this case, you must include that addon's `preview` export in the project annotations set. See `addonAnnotations` in the example above.
+
+  Note: If the addon doesn't automatically apply the decorator or loader itself, but instead exports them for you to apply manually in `.storybook/preview.js|ts` (e.g. using `withThemeFromJSXProvider` from [@storybook/addon-themes](https://github.com/storybookjs/storybook/blob/next/code/addons/themes/docs/api.md#withthemefromjsxprovider)), then you do not need to do anything else. They are already included in the `previewAnnotations` in the example above.
 
   ### Type
 
   ```ts
-  (projectAnnotations: ProjectAnnotation | ProjectAnnotation[]) => void
+  (projectAnnotations: ProjectAnnotation | ProjectAnnotation[]) => ProjectAnnotation
   ```
 
   ### Parameters
@@ -163,21 +160,21 @@ sidebar:
 
   To preview your stories, Storybook runs a story pipeline, which includes applying project annotations, loading data, rendering the story, and playing interactions. This is a simplified version of the pipeline:
 
-  ![A flow diagram of the story pipeline. First, set project annotations. Storybook automatically collects decorators etc. which are exported by addons and the .storybook/preview file. .storybook/preview.js produces project annotations; some-addon/preview produces addon annotations. The rest of the steps are labeled as a group, Playwright test. Second, prepare. Storybook gathers all the metadata required for a story to be composed. Select.stories.js produces component annotations from the default export and story annotations from the named export. Third, load. Storybook executes all loaders (async). Fourth, render. Storybook renders the story as a component. Illustration of the rendered Select component. Fifth, play. Storybook runs the play function (interacting with component). Illustration of the renderer Select component, now open.](../../_assets/api/story-pipeline-playwright-ct.png)
+  ![A flow diagram of the story pipeline. First, set project annotations. Collect annotations (decorators, args, etc) which are exported by addons and the preview file. Second, compose story. Create renderable elements based on the stories passed onto the API. Third, render story. Load, mount, and execute the play function as part of the portable stories API.](../../_assets/api/story-pipeline-playwright.png)
 
   When you want to reuse a story in a different environment, however, it's crucial to understand that all these steps make a story. The portable stories API provides you with the mechanism to recreate that story pipeline in your external environment:
 
   ### 1. Apply project-level annotations
 
-  [Annotations](#annotations) come from the story itself, that story's component, and the project. The project-level annotatations are those defined in your `.storybook/preview.js` file and by addons you're using. In portable stories, these annotations are not applied automatically—you must apply them yourself.
+  [Annotations](#annotations) come from the story itself, that story's component, and the project. The project-level annotations are those defined in your `.storybook/preview.js` file and by addons you're using. In portable stories, these annotations are not applied automatically — you must apply them yourself.
 
-  👉 For this, you use the [`setProjectAnnotations`](#setprojectannotations) API.
+  👉 For this, you use the [`setProjectAnnotations`](#setprojectannotations) API.
 
   ### 2. Prepare, load, render, and play
 
   The story pipeline includes preparing the story, [loading data](../../writing-stories/loaders.mdx), rendering the story, and [playing interactions](../../essentials/interactions.mdx#play-function-for-interactions). In portable stories within Playwright CT, the `mount` function takes care of these steps for you.
 
-  👉 For this, you use the [`createTest`](#createtest) API.
+  👉 For this, you use the [`createTest`](#createtest) API.
 
   <Callout variant="info">
     If your play function contains assertions (e.g. `expect` calls), your test will fail when those assertions fail.
@@ -189,23 +186,7 @@ sidebar:
 
   {/* prettier-ignore-start */}
 
-  ```tsx
-  // Button.portable.ts
-  import { test } from 'playwright';
-  import { render } from '@testing-library/react';
-  import { composeStory } from '@storybook/react';
-
-  import meta, { Primary } from './Button.stories';
-
-  export const PrimaryEnglish = composeStory(
-    Primary,
-    meta,
-    { globals: { locale: 'en' } } // 👈 Project annotations to override the locale
-  );
-
-  export const PrimarySpanish =
-    composeStory(Primary, meta, { globals: { locale: 'es' } });
-  ```
+  <CodeSnippets path="portable-stories-playwright-ct-override-globals.md" />
 
   You can then use those composed stories in your Playwright test file using the [`createTest`](#createtest) function.
 

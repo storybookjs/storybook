@@ -1,5 +1,7 @@
 import React from 'react';
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore (js import not supported in TS)
 import { imported } from '../imported';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore (css import not supported in TS)

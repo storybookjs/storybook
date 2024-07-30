@@ -767,6 +767,7 @@ describe('prepareMeta', () => {
       mount,
       renderToCanvas,
       testingLibraryRender,
+      usesMount,
       ...preparedStory
     } = prepareStory({ id, name, moduleExport }, meta, { render });
 

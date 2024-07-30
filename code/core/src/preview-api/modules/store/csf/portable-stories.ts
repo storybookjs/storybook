@@ -27,7 +27,6 @@ import { normalizeStory } from './normalizeStory';
 import { normalizeComponentAnnotations } from './normalizeComponentAnnotations';
 import { getValuesFromArgTypes } from './getValuesFromArgTypes';
 import { normalizeProjectAnnotations } from './normalizeProjectAnnotations';
-import { mountDestructured } from '../../../modules/preview-web/render/mount-utils';
 import { MountMustBeDestructuredError } from '@storybook/core/preview-errors';
 
 let globalProjectAnnotations: ProjectAnnotations<any> = {};
@@ -38,8 +37,10 @@ const DEFAULT_STORY_NAME = 'Unnamed Story';
 function extractAnnotation<TRenderer extends Renderer = Renderer>(
   annotation: NamedOrDefaultProjectAnnotations<TRenderer>
 ) {
+  if (!annotation) return {};
   // support imports such as
   // import * as annotations from '.storybook/preview'
+  // import annotations from '.storybook/preview'
   // in both cases: 1 - the file has a default export; 2 - named exports only
   return 'default' in annotation ? annotation.default : annotation;
 }
@@ -48,9 +49,11 @@ export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
   projectAnnotations:
     | NamedOrDefaultProjectAnnotations<TRenderer>
     | NamedOrDefaultProjectAnnotations<TRenderer>[]
-) {
+): ProjectAnnotations<TRenderer> {
   const annotations = Array.isArray(projectAnnotations) ? projectAnnotations : [projectAnnotations];
   globalProjectAnnotations = composeConfigs(annotations.map(extractAnnotation));
+
+  return globalProjectAnnotations;
 }
 
 const cleanups: CleanupCallback[] = [];
@@ -260,10 +263,7 @@ type UnwrappedJSXStoryRef = {
   __pw_type: 'jsx';
   type: UnwrappedImportStoryRef;
 };
-type UnwrappedImportStoryRef = ComposedStoryFn & {
-  playPromise?: Promise<void>;
-  renderingEnded?: PromiseWithResolvers<void>;
-};
+type UnwrappedImportStoryRef = ComposedStoryFn;
 
 declare global {
   function __pwUnwrapObject(
@@ -287,10 +287,10 @@ export function createPlaywrightTest<TFixture extends { extend: any }>(
           throw new Error(dedent`
               Portable stories in Playwright CT only work when referencing JSX elements.
               Please use JSX format for your components such as:
-              
+
               instead of:
               await mount(MyComponent, { props: { foo: 'bar' } })
-              
+
               do:
               await mount(<MyComponent foo="bar"/>)
 
@@ -339,7 +339,7 @@ async function playStory<TRenderer extends Renderer>(
 
   const playFunction = story.playFunction;
 
-  const isMountDestructured = playFunction && mountDestructured(playFunction);
+  const isMountDestructured = story.usesMount;
 
   if (!isMountDestructured) {
     await context.mount();

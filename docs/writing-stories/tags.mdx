@@ -11,10 +11,10 @@ Tags allow you to control which stories are included in your Storybook, enabling
 
 The following tags are available in every Storybook project:
 
-| Tag        | Applied by default? | Description                                                                                                                                                                                                              |
-| ---------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Tag        | Applied by default?           | Description                                                                                                                                                                                                               |
+| ---------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `autodocs` | No                            | Stories tagged with `autodocs` will be included in the [docs page](../writing-docs/autodocs.mdx). If a CSF file does not contain at least one story tagged with `autodocs`, that component will not generate a docs page. |
-| `dev`      | Yes                           | Stories tagged with `dev` are rendered in Storybook's sidebar.                                                                                                                                                           |
+| `dev`      | Yes                           | Stories tagged with `dev` are rendered in Storybook's sidebar.                                                                                                                                                            |
 | `test`     | Yes                           | Stories tagged with `test` do not currently affect Storybook's UI, but can be used to filter the [test runner](../writing-tests/test-runner.mdx#run-tests-for-a-subset-of-stories).                                       |
 
 The `dev` and `test` tags are automatically, implicitly applied to every story in your Storybook project.

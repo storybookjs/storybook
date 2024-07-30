@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Channel } from '@storybook/core/channels';
 import type { PreparedStory, Renderer, StoryContext, StoryIndexEntry } from '@storybook/core/types';
 import type { StoryStore } from '../../store';
@@ -26,6 +26,11 @@ const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 window.location = { reload: vi.fn() } as any;
 
+const mountSpy = vi.fn(async (context) => {
+  await context.renderToCanvas();
+  return context.canvas;
+});
+
 const buildStory = (overrides: Partial<PreparedStory> = {}): PreparedStory =>
   ({
     id: 'id',
@@ -36,12 +41,7 @@ const buildStory = (overrides: Partial<PreparedStory> = {}): PreparedStory =>
     applyBeforeEach: vi.fn(),
     unboundStoryFn: vi.fn(),
     playFunction: vi.fn(),
-    mount: vi.fn((context: StoryContext) => {
-      return async () => {
-        await context.renderToCanvas();
-        return context.canvas;
-      };
-    }),
+    mount: (context: StoryContext) => () => mountSpy(context),
     ...overrides,
   }) as any;
 
@@ -52,6 +52,10 @@ const buildStore = (overrides: Partial<StoryStore<Renderer>> = {}): StoryStore<R
     cleanupStory: vi.fn(),
     ...overrides,
   }) as any;
+
+beforeEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('StoryRender', () => {
   it('does run play function if passed autoplay=true', async () => {
@@ -133,12 +137,7 @@ describe('StoryRender', () => {
   });
 
   it('calls mount if play function does not destructure mount', async () => {
-    const actualMount = vi.fn(async (context) => {
-      await context.renderToCanvas();
-      return {};
-    });
     const story = buildStory({
-      mount: (context) => () => actualMount(context) as any,
       playFunction: () => {},
     });
     const render = new StoryRender(
@@ -153,17 +152,15 @@ describe('StoryRender', () => {
     );
 
     await render.renderToElement({} as any);
-    expect(actualMount).toHaveBeenCalled();
+    expect(mountSpy).toHaveBeenCalledOnce();
   });
 
-  it('does not call mount if play function destructures mount', async () => {
-    const actualMount = vi.fn(async (context) => {
-      await context.renderToCanvas();
-      return context.canvas;
-    });
+  it('does not call mount twice if mount called in play function', async () => {
     const story = buildStory({
-      mount: (context) => () => actualMount(context) as any,
-      playFunction: ({ mount }) => {},
+      usesMount: true,
+      playFunction: async ({ mount }) => {
+        await mount();
+      },
     });
     const render = new StoryRender(
       new Channel({}),
@@ -177,18 +174,36 @@ describe('StoryRender', () => {
     );
 
     await render.renderToElement({} as any);
-    expect(actualMount).not.toHaveBeenCalled();
+    expect(mountSpy).toHaveBeenCalledOnce();
   });
 
   it('errors if play function calls mount without destructuring', async () => {
-    const actualMount = vi.fn(async (context) => {
-      await context.renderToCanvas();
-      return {};
-    });
     const story = buildStory({
-      mount: (context) => () => actualMount(context) as any,
       playFunction: async (context) => {
         await context.mount();
+      },
+    });
+    const view = { showException: vi.fn() };
+    const render = new StoryRender(
+      new Channel({}),
+      buildStore(),
+      vi.fn() as any,
+      view as any,
+      entry.id,
+      'story',
+      { autoplay: true },
+      story
+    );
+
+    await render.renderToElement({} as any);
+    expect(view.showException).toHaveBeenCalled();
+  });
+
+  it('errors if play function destructures mount but does not call it', async () => {
+    const story = buildStory({
+      usesMount: true,
+      playFunction: async ({ mount }) => {
+        // forget to call mount
       },
     });
     const view = { showException: vi.fn() };
@@ -210,13 +225,16 @@ describe('StoryRender', () => {
   it('enters rendering phase during play if play function calls mount', async () => {
     const actualMount = vi.fn(async (context) => {
       await context.renderToCanvas();
-      return {};
+      expect(render.phase).toBe('rendering');
+      return context.canvas;
     });
     const story = buildStory({
       mount: (context) => () => actualMount(context) as any,
-      playFunction: ({ mount }) => {
+      usesMount: true,
+      playFunction: async ({ mount }) => {
+        expect(render.phase).toBe('loading');
+        await mount();
         expect(render.phase).toBe('playing');
-        mount();
       },
     });
     const render = new StoryRender(

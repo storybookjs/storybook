@@ -124,8 +124,8 @@ Default: [Inferred](#automatic-argtype-inference); `'select'`, if [`options`](#o
 
 Specifies the type of control used to change the arg value with the [controls addon](../essentials/controls.mdx). Here are the available types, `ControlType`, grouped by the type of data they handle:
 
-| Data type | ControlType      | Description                                                                                                                                                                            |
-| -------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Data type      | ControlType      | Description                                                                                                                                                                             |
+| -------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **array**      | `'object'`       | Provides a JSON-based editor to handle the values of the array. Also allows editing in raw mode.<br /> `{ control: 'object' }`                                                          |
 | **boolean**    | `'boolean'`      | Provides a toggle for switching between possible states.<br /> `{ control: 'boolean' }`                                                                                                 |
 | **enum**       | `'check'`        | Provides a set of stacked checkboxes for selecting multiple options.<br /> `{ control: 'check', options: ['email', 'phone', 'mail'] }`                                                  |
@@ -139,7 +139,7 @@ Specifies the type of control used to change the arg value with the [controls ad
 | **object**     | `'file'`         | Provides a file input that returns an array of URLs. Can be further customized to accept specific file types.<br /> `{ control: { type: 'file', accept: '.png' } }`                     |
 |                | `'object'`       | Provides a JSON-based editor to handle the object's values. Also allows editing in raw mode.<br /> `{ control: 'object' }`                                                              |
 | **string**     | `'color'`        | Provides a color picker to choose color values. Can be additionally configured to include a set of color presets.<br /> `{ control: { type: 'color', presetColors: ['red', 'green']} }` |
-|                | `'date'`         | Provides a datepicker to choose a date.<br /> `{ control: 'date' }`                                                                                                                    |
+|                | `'date'`         | Provides a datepicker to choose a date.<br /> `{ control: 'date' }`                                                                                                                     |
 |                | `'text'`         | Provides a freeform text input.<br /> `{ control: 'text' }`                                                                                                                             |
 
 <Callout variant="info" icon="💡">

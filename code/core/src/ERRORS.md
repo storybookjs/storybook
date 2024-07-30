@@ -27,11 +27,15 @@ Second use the `StorybookError` class to define custom errors with specific code
 ```typescript
 import { StorybookError } from './storybook-error';
 export class YourCustomError extends StorybookError {
-  readonly category: Category; // The category to which the error belongs. Check the source in client-errors.ts or server-errors.ts for reference.
-  readonly code: number; // The numeric code for the error.
-
-  template(): string {
-    // A function that returns the error message.
+  constructor() {
+    super({
+      // The category to which the error belongs. Check the source in client-errors.ts or server-errors.ts for reference.
+      category: Category,
+      // The numeric code for the error.
+      code: number,
+      // The error message.
+      message: string,
+    });
   }
 }
 ```
@@ -42,7 +46,7 @@ export class YourCustomError extends StorybookError {
 | ------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | category      | `Category`            | The category to which the error belongs.                                                                                                                   |
 | code          | `number`              | The numeric code for the error.                                                                                                                            |
-| template      | `() => string`        | Function that returns a properly written error message.                                                                                                    |
+| message       | `string`              | The error message.                                                                                                                                         |
 | data          | `Object`              | Optional. Data associated with the error. Used to provide additional information in the error message or to be passed to telemetry.                        |
 | documentation | `boolean` or `string` | Optional. Should be set to `true` **if the error is documented on the Storybook website**. If defined as string, it should be a custom documentation link. |
 
@@ -51,28 +55,26 @@ export class YourCustomError extends StorybookError {
 ```typescript
 // Define a custom error with a numeric code and a static error message template.
 export class StorybookIndexGenerationError extends StorybookError {
-  category = Category.Generic;
-  code = 1;
-
-  template(): string {
-    return `Storybook failed when generating an index for your stories. Check the stories field in your main.js`;
+  constructor() {
+    super({
+      category: Category.Generic,
+      code: 1,
+      message: `Storybook failed when generating an index for your stories. Check the stories field in your main.js`,
+    });
   }
 }
 
-// Define a custom error with a numeric code and a dynamic error message template based on properties from the constructor.
+// Define a custom error with a numeric code and a dynamic error message based on properties from the constructor.
 export class InvalidFileExtensionError extends StorybookError {
-  category = Category.Validation;
-  code = 2;
-  documentation = 'https://some-custom-documentation.com/validation-errors';
-
   // extra properties are defined in the constructor via a data property, which is available in any class method
   // always use this data Object notation!
   constructor(public data: { extension: string }) {
-    super();
-  }
-
-  template(): string {
-    return `Invalid file extension found: ${this.data.extension}.`;
+    super({
+      category: Category.Validation,
+      code: 2,
+      documentation: 'https://some-custom-documentation.com/validation-errors',
+      message: `Invalid file extension found: ${data.extension}.`,
+    });
   }
 }
 

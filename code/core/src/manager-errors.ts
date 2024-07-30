@@ -21,30 +21,26 @@ export enum Category {
 }
 
 export class ProviderDoesNotExtendBaseProviderError extends StorybookError {
-  readonly category = Category.MANAGER_UI;
-
-  readonly code = 1;
-
-  template() {
-    return `The Provider passed into Storybook's UI is not extended from the base Provider. Please check your Provider implementation.`;
+  constructor() {
+    super({
+      category: Category.MANAGER_UI,
+      code: 1,
+      message: `The Provider passed into Storybook's UI is not extended from the base Provider. Please check your Provider implementation.`,
+    });
   }
 }
 
 export class UncaughtManagerError extends StorybookError {
-  readonly category = Category.MANAGER_UNCAUGHT;
-
-  readonly code = 1;
-
   constructor(
     public data: {
       error: Error;
     }
   ) {
-    super(data.error.message);
+    super({
+      category: Category.MANAGER_UNCAUGHT,
+      code: 1,
+      message: data.error.message,
+    });
     this.stack = data.error.stack;
-  }
-
-  template() {
-    return this.message;
   }
 }

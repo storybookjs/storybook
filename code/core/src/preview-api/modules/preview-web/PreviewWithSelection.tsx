@@ -308,11 +308,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
       render = new StoryRender<TRenderer>(
         this.channel,
         this.storyStoreValue,
-        (...args: Parameters<typeof renderToCanvas>) => {
-          // At the start of renderToCanvas we make the story visible (see note in WebView)
-          this.view.showStoryDuringRender();
-          return renderToCanvas(...args);
-        },
+        renderToCanvas,
         this.mainStoryCallbacks(storyId),
         storyId,
         'story'
@@ -434,6 +430,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   // UTILITIES
   mainStoryCallbacks(storyId: StoryId) {
     return {
+      showStoryDuringRender: () => this.view.showStoryDuringRender(),
       showMain: () => this.view.showMain(),
       showError: (err: { title: string; description: string }) => this.renderError(storyId, err),
       showException: (err: Error) => this.renderException(storyId, err),

@@ -3,12 +3,13 @@ import { StorybookError } from '../storybook-error';
 
 describe('StorybookError', () => {
   class TestError extends StorybookError {
-    category = 'TEST_CATEGORY';
-
-    code = 123;
-
-    template() {
-      return 'This is a test error.';
+    constructor(documentation?: StorybookError['documentation']) {
+      super({
+        category: 'TEST_CATEGORY',
+        code: 123,
+        message: 'This is a test error.',
+        documentation,
+      });
     }
   }
 
@@ -24,16 +25,14 @@ describe('StorybookError', () => {
   });
 
   it('should generate the correct message with internal documentation link', () => {
-    const error = new TestError();
-    error.documentation = true;
+    const error = new TestError(true);
     const expectedMessage =
       'This is a test error.\n\nMore info: https://storybook.js.org/error/SB_TEST_CATEGORY_0123\n';
     expect(error.message).toBe(expectedMessage);
   });
 
   it('should generate the correct message with external documentation link', () => {
-    const error = new TestError();
-    error.documentation = 'https://example.com/docs/test-error';
+    const error = new TestError('https://example.com/docs/test-error');
     expect(error.message).toMatchInlineSnapshot(`
       "This is a test error.
 
@@ -43,11 +42,10 @@ describe('StorybookError', () => {
   });
 
   it('should generate the correct message with multiple external documentation links', () => {
-    const error = new TestError();
-    error.documentation = [
+    const error = new TestError([
       'https://example.com/docs/first-error',
       'https://example.com/docs/second-error',
-    ];
+    ]);
     expect(error.message).toMatchInlineSnapshot(`
       "This is a test error.
 

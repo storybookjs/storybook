@@ -10,6 +10,7 @@ import { exec } from '../utils/exec';
 
 import { globalPackages as globalPreviewPackages } from '../../code/core/src/preview/globals/globals';
 import { globalPackages as globalManagerPackages } from '../../code/core/src/manager/globals/globals';
+import { glob } from 'glob';
 
 /* TYPES */
 
@@ -62,8 +63,9 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
 
   const tasks: Promise<any>[] = [];
 
+  const outDir = join(process.cwd(), 'dist');
   const commonOptions: Options = {
-    outDir: join(process.cwd(), 'dist'),
+    outDir,
     silent: true,
     treeshake: true,
     shims: false,
@@ -189,6 +191,17 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   }
 
   await Promise.all(tasks);
+
+  const dtsFiles = await glob(outDir + '/**/*.d.ts');
+  await Promise.all(
+    dtsFiles.map(async (file) => {
+      const content = await fs.readFile(file, 'utf-8');
+      await fs.writeFile(
+        file,
+        content.replace(/from \'core\/dist\/(.*)\'/g, `from 'storybook/internal/$1'`)
+      );
+    })
+  );
 
   if (post) {
     await exec(`bun ${post}`, { cwd }, { debug: true });

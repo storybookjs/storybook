@@ -74,12 +74,14 @@ By default, the test-runner provides you with the option to run multiple testing
 
   {/* prettier-ignore-start */}
 
-  <CodeSnippets path="portable-stories-import-annotations.md" />
+  <CodeSnippets path="portable-stories-vitest-set-project-annotations.md" />
 
   {/* prettier-ignore-end */}
 
-  <Callout variant="info" icon="ℹ️">
-    If you're using Vue 3, you must install the [`@storybook/testing-vue3`](https://storybook.js.org/addons/@storybook/testing-vue3) package to use the `setProjectAnnotations` API in your setup file and the `composeStories` API in your existing tests.
+  <Callout variant="warning">
+
+  You **must** provide `testingLibraryRenderer` to use portable stories with Vitest or Jest.
+
   </Callout>
 
   #### Configure the testing framework for portable stories

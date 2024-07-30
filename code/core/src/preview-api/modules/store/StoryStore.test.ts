@@ -320,6 +320,7 @@ describe('StoryStore', () => {
             ],
             "testingLibraryRender": undefined,
             "title": "Component One",
+            "usesMount": false,
           },
         }
       `);
@@ -488,6 +489,7 @@ describe('StoryStore', () => {
             ],
             "testingLibraryRender": undefined,
             "title": "Component One",
+            "usesMount": false,
           },
           "component-one--b": {
             "argTypes": {
@@ -529,6 +531,7 @@ describe('StoryStore', () => {
             ],
             "testingLibraryRender": undefined,
             "title": "Component One",
+            "usesMount": false,
           },
           "component-two--c": {
             "argTypes": {
@@ -570,6 +573,7 @@ describe('StoryStore', () => {
             ],
             "testingLibraryRender": undefined,
             "title": "Component Two",
+            "usesMount": false,
           },
         }
       `);
@@ -685,6 +689,7 @@ describe('StoryStore', () => {
             "title": "Component One",
             "unboundStoryFn": [Function],
             "undecoratedStoryFn": [Function],
+            "usesMount": false,
           },
           {
             "applyBeforeEach": [Function],
@@ -736,6 +741,7 @@ describe('StoryStore', () => {
             "title": "Component One",
             "unboundStoryFn": [Function],
             "undecoratedStoryFn": [Function],
+            "usesMount": false,
           },
           {
             "applyBeforeEach": [Function],
@@ -787,6 +793,7 @@ describe('StoryStore', () => {
             "title": "Component Two",
             "unboundStoryFn": [Function],
             "undecoratedStoryFn": [Function],
+            "usesMount": false,
           },
         ]
       `);
@@ -849,6 +856,7 @@ describe('StoryStore', () => {
               ],
               "testingLibraryRender": undefined,
               "title": "Component One",
+              "usesMount": false,
             },
             "component-one--b": {
               "argTypes": {
@@ -890,6 +898,7 @@ describe('StoryStore', () => {
               ],
               "testingLibraryRender": undefined,
               "title": "Component One",
+              "usesMount": false,
             },
             "component-two--c": {
               "argTypes": {
@@ -931,6 +940,7 @@ describe('StoryStore', () => {
               ],
               "testingLibraryRender": undefined,
               "title": "Component Two",
+              "usesMount": false,
             },
           },
           "v": 2,

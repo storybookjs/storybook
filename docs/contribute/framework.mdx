@@ -127,7 +127,7 @@ Because a framework is a node package, it must contain a `package.json` file. He
 
 #### `preset.js` ([example](https://github.com/storybookjs/storybook/blob/next/code/frameworks/nextjs/src/preset.ts))
 
-The [preset API](../addons/writing-presets) is where you will configure the Storybook core (which builder and renderer are used by your framework), the builder (via either the [`webpackFinal`](../builders/webpack#extending-storybooks-webpack-config) or [`viteFinal`](../builders/vite#configuration) export), babel (via the `babel` export), any necessary addons, and any available options for your framework.
+The [preset API](../addons/writing-presets.mdx) is where you will configure the Storybook core (which builder and renderer are used by your framework), the builder (via either the [`webpackFinal`](../builders/webpack.mdx#override-the-default-configuration) or [`viteFinal`](../builders/vite.mdx#configuration) export), babel (via the `babel` export), any necessary addons, and any available options for your framework.
 
 #### `preview.js` ([example](https://github.com/storybookjs/storybook/blob/next/code/frameworks/nextjs/src/preview.tsx))
 

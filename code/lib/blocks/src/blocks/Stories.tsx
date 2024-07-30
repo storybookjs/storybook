@@ -43,7 +43,9 @@ export const Stories: FC<StoriesProps> = ({ title = 'Stories', includePrimary = 
   // the new behavior.
   const hasAutodocsTaggedStory = stories.some((story) => story.tags?.includes('autodocs'));
   if (hasAutodocsTaggedStory) {
-    stories = stories.filter((story) => story.tags?.includes('autodocs'));
+    // Don't show stories where mount is used in docs.
+    // As the play function is not running in docs, and when mount is used, the mounting is happening in play itself.
+    stories = stories.filter((story) => story.tags?.includes('autodocs') && !story.usesMount);
   }
 
   if (!includePrimary) stories = stories.slice(1);

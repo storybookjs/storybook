@@ -1,6 +1,6 @@
 {
   "name": "@storybook/manager",
-  "version": "8.2.0-alpha.10",
+  "version": "8.3.0-alpha.3",
   "description": "Core Storybook UI",
   "keywords": [
     "storybook"
@@ -20,6 +20,14 @@
   },
   "license": "MIT",
   "sideEffects": false,
+  "type": "module",
+  "exports": {
+    "./globals": {
+      "type": "./globals.d.ts",
+      "import": "./globals.js",
+      "require": "./globals.cjs"
+    }
+  },
   "files": [
     "README.md",
     "*.js",

@@ -1,3 +1,4 @@
+/* eslint-disable react/destructuring-assignment */
 import { global } from '@storybook/global';
 import type { FunctionComponent } from 'react';
 import React, { useRef, useEffect, useState } from 'react';
@@ -5,6 +6,7 @@ import type { DocsContextProps, PreparedStory } from 'storybook/internal/types';
 import { Loader, getStoryHref, ErrorFormatter } from 'storybook/internal/components';
 import { IFrame } from './IFrame';
 import { ZoomContext } from './ZoomContext';
+import { styled } from 'storybook/internal/theming';
 
 const { PREVIEW_URL } = global;
 const BASE_URL = PREVIEW_URL || 'iframe.html';
@@ -113,8 +115,23 @@ const IFrameStory: FunctionComponent<IFrameStoryProps> = ({ story, height = '500
  * A story element, either rendered inline or in an iframe,
  * with configurable height.
  */
+
+const ErrorMessage = styled.strong(({ theme }) => ({
+  color: theme.color.orange,
+}));
+
 const Story: FunctionComponent<StoryProps> = (props) => {
-  const { inline } = props;
+  const { inline, story } = props;
+
+  if (inline && !props.autoplay && story.usesMount) {
+    return (
+      <ErrorMessage>
+        This story mounts inside of play. Set{' '}
+        <a href="https://storybook.js.org/docs/api/doc-blocks/doc-block-story#autoplay">autoplay</a>{' '}
+        to true to view this story.
+      </ErrorMessage>
+    );
+  }
 
   return (
     <div id={storyBlockIdFromId(props)} className="sb-story sb-unstyled" data-story-block="true">

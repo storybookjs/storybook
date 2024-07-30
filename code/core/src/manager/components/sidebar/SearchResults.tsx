@@ -53,10 +53,10 @@ const IconWrapper = styled.div({
   marginTop: 2,
 });
 
-const ResultRowContent = styled.div(() => ({
+const ResultRowContent = styled.div({
   display: 'flex',
   flexDirection: 'column',
-}));
+});
 
 const NoResults = styled.div(({ theme }) => ({
   marginTop: 20,

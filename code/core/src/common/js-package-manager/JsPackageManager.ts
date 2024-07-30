@@ -64,22 +64,6 @@ export abstract class JsPackageManager {
     return packageJSON ? packageJSON.version ?? null : null;
   }
 
-  // NOTE: for some reason yarn prefers the npm registry in
-  // local development, so always use npm
-  async setRegistryURL(url: string) {
-    if (url) {
-      await this.executeCommand({ command: 'npm', args: ['config', 'set', 'registry', url] });
-    } else {
-      await this.executeCommand({ command: 'npm', args: ['config', 'delete', 'registry'] });
-    }
-  }
-
-  async getRegistryURL() {
-    const res = await this.executeCommand({ command: 'npm', args: ['config', 'get', 'registry'] });
-    const url = res.trim();
-    return url === 'undefined' ? undefined : url;
-  }
-
   constructor(options?: JsPackageManagerOptions) {
     this.cwd = options?.cwd || process.cwd();
   }
@@ -487,6 +471,8 @@ export abstract class JsPackageManager {
   ): // Use generic and conditional type to force `string[]` if fetchAllVersions is true and `string` if false
   Promise<T extends true ? string[] : string>;
 
+  public abstract getRegistryURL(): Promise<string | undefined>;
+
   public abstract runPackageCommand(
     command: string,
     args: string[],
@@ -500,6 +486,10 @@ export abstract class JsPackageManager {
     stdio?: 'inherit' | 'pipe'
   ): string;
   public abstract findInstallations(pattern?: string[]): Promise<InstallationMetadata | undefined>;
+  public abstract findInstallations(
+    pattern?: string[],
+    options?: { depth: number }
+  ): Promise<InstallationMetadata | undefined>;
   public abstract parseErrorFromLogs(logs?: string): string;
 
   public executeCommandSync({

@@ -46,10 +46,10 @@ function reactiveMock(mock: MockInstance) {
 
 function listenWhenCalled(mock: MockInstance) {
   const state = tinyspy.getInternalState(mock as unknown as SpyInternalImpl);
-  const impl = state.impl?.bind(null);
-  state.willCall((...args) => {
+  const impl = state.impl;
+  state.willCall(function (this: unknown, ...args) {
     listeners.forEach((listener) => listener(mock, args));
-    return impl?.(...args);
+    return impl?.apply(this, args);
   });
   return mock;
 }

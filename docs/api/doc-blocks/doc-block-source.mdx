@@ -93,7 +93,9 @@ Default: `parameters.docs.source.dark`
 Determines if the snippet is rendered in dark mode.
 
 <Callout variant="info" icon="💡">
+
   Light mode is only supported when the `Source` block is rendered independently. When rendered as part of a [`Canvas` block](./doc-block-canvas.mdx)—like it is in [autodocs](../../writing-docs/autodocs.mdx)—it will always use dark mode.
+
 </Callout>
 
 <IfRenderer renderer={['angular', 'react', 'html', 'web-components' ]}>
@@ -158,5 +160,7 @@ Specifies how the source code is rendered.
 * **dynamic**: Renders the story source with dynamically updated arg values
 
 <Callout variant="info" icon="💡">
+
   Note that dynamic snippets will only work if the story uses [`args`](../../writing-stories/args.mdx) and the [`Story` block](./doc-block-story.mdx) for that story is rendered along with the `Source` block.
+  
 </Callout>

@@ -28,7 +28,9 @@ Storybook has a simple, declarative syntax for configuring toolbar menus. In you
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
+
   As globals are *global* you can *only* set `globalTypes` in [`.storybook/preview.js|ts`](../configure/index.mdx#configure-story-rendering).
+
 </Callout>
 
 When you start your Storybook, you should see a new dropdown with the `light` and `dark` options in your toolbar.
@@ -92,12 +94,15 @@ In your [`.storybook/preview.js|ts`](../configure/index.mdx#configure-story-rend
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡" style={{ marginBottom: '10px' }}>
+
   The `icon` element used in the examples loads the icons from the `@storybook/components` package. See [here](../faq.mdx#what-icons-are-available-for-my-toolbar-or-my-addon) for the list of available icons that you can use.
+  
 </Callout>
 
 <Callout variant="info" icon="💡">
-  The `@storybook/addon-toolbars` addon is required to use toolbars. The toolbars addon is included by default in
-  `@storybook/addon-essentials`.
+
+  The `@storybook/addon-toolbars` addon is required to use toolbars. The toolbars addon is included by default in `@storybook/addon-essentials`.
+
 </Callout>
 
 By adding the configuration element `right`, the text will be displayed on the right side in the toolbar menu once you connect it to a decorator.

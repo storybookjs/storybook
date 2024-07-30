@@ -1,14 +1,12 @@
 ```js filename="test/Button.test.js|ts" renderer="react" language="js" tabTitle="jest"
-import { render } from '@testing-library/react';
-
 import { composeStories } from '@storybook/react';
 
 import * as stories from '../stories/Button.stories';
 
 const { Primary } = composeStories(stories);
 test('Button snapshot', async () => {
-  const mounted = render(<Primary />);
-  expect(mounted.container).toMatchSnapshot();
+  await Primary.play();
+  expect(document.body.firstChild).toMatchSnapshot();
 });
 ```
 
@@ -17,16 +15,14 @@ test('Button snapshot', async () => {
 
 import { expect, test } from 'vitest';
 
-import { render } from '@testing-library/react';
-
 import { composeStories } from '@storybook/react';
 
 import * as stories from '../stories/Button.stories';
 
 const { Primary } = composeStories(stories);
 test('Button snapshot', async () => {
-  const mounted = render(Primary());
-  expect(mounted.container).toMatchSnapshot();
+  await Primary.play();
+  expect(document.body.firstChild).toMatchSnapshot();
 });
 ```
 
@@ -35,16 +31,29 @@ test('Button snapshot', async () => {
 
 import { expect, test } from 'vitest';
 
-import { render } from '@testing-library/vue';
-
 import { composeStories } from '@storybook/vue3';
 
 import * as stories from '../stories/Button.stories';
 
 const { Primary } = composeStories(stories);
 test('Button snapshot', async () => {
-  const mounted = render(Primary());
-  expect(mounted.container).toMatchSnapshot();
+  await Primary.play();
+  expect(document.body.firstChild).toMatchSnapshot();
 });
 ```
 
+```js filename="__tests__/Button.spec.js|ts" renderer="svelte" language="js"
+// @vitest-environment jsdom
+
+import { expect, test } from 'vitest';
+
+import { composeStories } from '@storybook/svelte';
+
+import * as stories from '../stories/Button.stories';
+
+const { Primary } = composeStories(stories);
+test('Button snapshot', async () => {
+  await Primary.play();
+  expect(document.body.firstChild).toMatchSnapshot();
+});
+```

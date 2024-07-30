@@ -180,13 +180,13 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
         });
       },
       [STORY_THREW_EXCEPTION]: () => {
-        set((s) => ({ ...s, isErrored: true }));
+        set((s) => ({ ...s, isErrored: true, hasException: true }));
       },
       [PLAY_FUNCTION_THREW_EXCEPTION]: (e) => {
-        set((s) => ({ ...s, caughtException: e }));
+        set((s) => ({ ...s, caughtException: e, hasException: true }));
       },
       [UNHANDLED_ERRORS_WHILE_PLAYING]: (e) => {
-        set((s) => ({ ...s, unhandledErrors: e }));
+        set((s) => ({ ...s, unhandledErrors: e, hasException: true }));
       },
     },
     [collapsed]

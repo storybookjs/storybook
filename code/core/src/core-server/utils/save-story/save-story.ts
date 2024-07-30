@@ -35,8 +35,8 @@ const parseArgs = (args: string): Record<string, any> =>
 // Removes extra newlines between story properties. See https://github.com/benjamn/recast/issues/242
 // Only updates the part of the code for the story with the given name.
 const removeExtraNewlines = (code: string, name: string) => {
-  const anything = '(.|\r\n|\r|\n)'; // Multiline match for any character.
-  const newline = '(\r\n|\r|\n)'; // Either newlines or carriage returns may be used in the file.
+  const anything = '([\\s\\S])'; // Multiline match for any character.
+  const newline = '(\\r\\n|\\r|\\n)'; // Either newlines or carriage returns may be used in the file.
   const closing = newline + '};' + newline; // Marks the end of the story definition.
   const regex = new RegExp(
     // Looks for an export by the given name, considers the first closing brace on its own line
@@ -111,9 +111,11 @@ export function initializeSaveStory(channel: Channel, options: Options, coreConf
           csfId,
           newStoryId,
           newStoryName,
+          newStoryExportName: name,
           sourceFileContent: code,
           sourceFileName,
           sourceStoryName,
+          sourceStoryExportName: storyName,
         },
         error: null,
       } satisfies ResponseData<SaveStoryResponsePayload>);

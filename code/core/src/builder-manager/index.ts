@@ -126,7 +126,9 @@ const starter: StarterFunction = async function* starterGeneratorFn({
   options,
   router,
 }) {
-  logger.info('=> Starting manager..');
+  if (!options.quiet) {
+    logger.info('=> Starting manager..');
+  }
 
   const {
     config,

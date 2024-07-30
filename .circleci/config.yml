@@ -6,6 +6,14 @@ parameters:
     type: enum
     enum: ["normal", "merged", "daily", "skipped", "docs"]
     default: "skipped"
+  ghPrNumber:
+    description: The PR number
+    type: string
+    default: ""
+  ghBaseBranch:
+    description: The name of the base branch (the target of the PR)
+    type: string
+    default: "next"
 
 executors:
   sb_node_18_classic:
@@ -204,6 +212,7 @@ jobs:
       - run:
           name: Check
           command: |
+            yarn task --task compile --start-from=auto --no-link --debug
             yarn task --task check --start-from=auto --no-link --debug
             git diff --exit-code
       - report-workflow-on-failure
@@ -381,7 +390,7 @@ jobs:
       parallelism:
         type: integer
     executor:
-      class: medium
+      class: large
       name: sb_playwright
     parallelism: << parameters.parallelism >>
     steps:
@@ -499,7 +508,7 @@ jobs:
           command: yarn task --task bench --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task bench) --no-link --start-from=never --junit
       - run:
           name: Uploading results
-          command: yarn upload-bench $(yarn get-template --cadence << pipeline.parameters.workflow >> --task bench)
+          command: yarn upload-bench $(yarn get-template --cadence << pipeline.parameters.workflow >> --task bench) << pipeline.parameters.ghPrNumber >> << pipeline.parameters.ghBaseBranch >>
       - report-workflow-on-failure:
           template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task bench)
   test-empty-init:
@@ -832,6 +841,10 @@ workflows:
                 # --smoke-test is not supported for the angular builder right now
                 # - "angular-cli"
                 - "lit-vite-ts"
+      - bench:
+          parallelism: 5
+          requires:
+            - build-sandboxes
 
       # TODO: reenable once we find out the source of flakyness
       # - test-runner-dev:

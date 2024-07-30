@@ -14,7 +14,7 @@ const preview: Preview = {
           return `<div class="page-layout">${story}</div>`;
         case 'page-mobile':
           return `<div class="page-mobile-layout">${story}</div>`;
-        case default:
+        default:
           // In the default case, don't apply a layout
           return story;
       }
@@ -44,7 +44,7 @@ export default {
           return (
             <div className="page-mobile-layout"><Story /></div>
           );
-        case default:
+        default:
           // In the default case, don't apply a layout
           return <Story />;
       }
@@ -74,7 +74,7 @@ const preview: Preview = {
           return (
             <div className="page-mobile-layout"><Story /></div>
           );
-        case default:
+        default:
           // In the default case, don't apply a layout
           return <Story />;
       }
@@ -102,7 +102,7 @@ export default {
           return (
             <div className="page-mobile-layout"><Story /></div>
           );
-        case default:
+        default:
           // In the default case, don't apply a layout
           return <Story />;
       }
@@ -130,7 +130,7 @@ const preview: Preview = {
           return (
             <div className="page-mobile-layout"><Story /></div>
           );
-        case default:
+        default:
           // In the default case, don't apply a layout
           return <Story />;
       }
@@ -154,7 +154,7 @@ export default {
           return { template: '<div class="page-layout"><story/></div>' };
         case 'page-mobile':
           return { template: '<div class="page-mobile-layout"><story/></div>' };
-        case default:
+        default:
           // In the default case, don't apply a layout
           return { template: '<story/>' };
       }
@@ -178,7 +178,7 @@ const preview: Preview = {
           return { template: '<div class="page-layout"><story/></div>' };
         case 'page-mobile':
           return { template: '<div class="page-mobile-layout"><story/></div>' };
-        case default:
+        default:
           // In the default case, don't apply a layout
           return { template: '<story/>' };
       }

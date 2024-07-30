@@ -11,8 +11,8 @@ Type:
 
 ```ts
 { [key: string]:
-  | { title: string; url: string; expanded?: boolean }
-  | (config: { title: string; url: string; expanded?: boolean }) => { title: string; url: string; expanded?: boolean }
+  | { title: string; url: string; expanded?: boolean, sourceUrl?: string }
+  | (config: { title: string; url: string; expanded?: boolean, sourceUrl: string }) => { title: string; url: string; expanded?: boolean, sourceUrl?: string }
   | { disable: boolean }
 }
 ```

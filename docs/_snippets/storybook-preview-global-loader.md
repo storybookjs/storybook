@@ -1,6 +1,4 @@
 ```js filename=".storybook/preview.js" renderer="common" language="js"
-import fetch from 'node-fetch';
-
 export default {
   loaders: [
     async () => ({

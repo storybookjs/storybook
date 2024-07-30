@@ -120,11 +120,7 @@ export async function detectBuilder(packageManager: JsPackageManager, projectTyp
   }
 
   // REWORK
-  if (
-    webpackConfig ||
-    ((dependencies.webpack || dependencies['@nuxt/webpack-builder']) &&
-      dependencies.vite !== undefined)
-  ) {
+  if (webpackConfig || (dependencies.webpack && dependencies.vite !== undefined)) {
     commandLog('Detected webpack project. Setting builder to webpack')();
     return CoreBuilder.Webpack5;
   }
@@ -137,8 +133,6 @@ export async function detectBuilder(packageManager: JsPackageManager, projectTyp
     case ProjectType.NEXTJS:
     case ProjectType.EMBER:
       return CoreBuilder.Webpack5;
-    case ProjectType.NUXT:
-      return CoreBuilder.Vite;
     default:
       const { builder } = await prompts(
         {
@@ -207,13 +201,6 @@ export async function detectLanguage(packageManager: JsPackageManager) {
       language = SupportedLanguage.TYPESCRIPT_3_8;
     } else if (semver.lt(typescriptVersion, '3.8.0')) {
       logger.warn('Detected TypeScript < 3.8, populating with JavaScript examples');
-    }
-  } else {
-    // No direct dependency on TypeScript, but could be a transitive dependency
-    // This is eg the case for Nuxt projects, which support a recent version of TypeScript
-    // Check for tsconfig.json (https://www.typescriptlang.org/docs/handbook/tsconfig-json.html)
-    if (fs.existsSync('tsconfig.json')) {
-      language = SupportedLanguage.TYPESCRIPT_4_9;
     }
   }
 

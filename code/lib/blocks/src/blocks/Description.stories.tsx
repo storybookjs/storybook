@@ -121,7 +121,7 @@ export const OfUndefinedAttached: Story = {
     relativeCsfPaths: ['../examples/Button.stories'],
     attached: true,
   },
-  decorators: [(s) => (window?.navigator.userAgent.match(/StorybookTestRunner/) ? <div /> : s())],
+  tags: ['!test'],
 };
 export const OfStringComponentAttached: Story = {
   name: 'Of "component" Attached',

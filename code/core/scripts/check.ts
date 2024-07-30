@@ -1,6 +1,6 @@
 import { getTSFilesAndConfig, getTSProgramAndHost, getTSDiagnostics } from './helpers/typescript';
 
-const tsconfigPath = 'tsconfig.check.json';
+const tsconfigPath = 'tsconfig.json';
 
 const { options, fileNames } = getTSFilesAndConfig(tsconfigPath);
 const { program, host } = getTSProgramAndHost(fileNames, options);

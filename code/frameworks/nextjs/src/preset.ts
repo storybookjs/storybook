@@ -108,6 +108,29 @@ export const babel: PresetProperty<'babel'> = async (baseConfig: TransformOption
     presets,
     babelrc: false,
     configFile: false,
+    overrides: [
+      ...(options?.overrides ?? []),
+      // We need to re-apply the default storybook babel override from:
+      // https://github.com/storybookjs/storybook/blob/next/code/core/src/core-server/presets/common-preset.ts
+      // Because it get lost in the loadPartialConfig call above.
+      // See https://github.com/storybookjs/storybook/issues/28467
+      {
+        include: /(story|stories)\.[cm]?[jt]sx?$/,
+        presets: [
+          [
+            'next/dist/compiled/babel/preset-env',
+            {
+              bugfixes: true,
+              targets: {
+                chrome: 100,
+                safari: 15,
+                firefox: 91,
+              },
+            },
+          ],
+        ],
+      },
+    ],
   };
 };
 

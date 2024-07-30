@@ -56,23 +56,127 @@ Once the story loads in the UI, it simulates the user's behavior and verifies th
 
 <Video src="../_assets/writing-tests/addon-interaction-example-optimized.mp4" />
 
-### Run code before each test
+### Run code before the component gets rendered
 
-It can be helpful to run code before each test to set up the initial state of the component or reset the state of modules. You can do this by adding an asynchronous `beforeEach` function to the story, meta (which will run before each story in the file), or the preview file (`.storybook/preview.js|ts`, which will run before every story in the project).
+<If notRenderer="angular">
 
-Additionally, if you return a cleanup function from the `beforeEach` function, it will run **after** each test, when the story is remounted or navigated away from.
+You can execute code before rendering by using the `mount` function in the `play` method.
 
-<Callout variant="info">
-  It is *not* necessary to restore `fn()` mocks with the cleanup function, as Storybook will already do that automatically before rendering a story. See the [`parameters.test.restoreMocks` API](../api/parameters.mdx#restoremocks) for more information.
+Here's an example of using the [`mockdate`](https://github.com/boblauer/MockDate) package to mock the [`Date`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date), a useful way to make your story render in a consistent state.
+
+<CodeSnippets path="mount-basic.md" />
+
+<Callout variant="warning">
+  There are two requirements to use the `mount` function:
+
+  1. You *must* destructure the mount property from the `context` (the argument passed to your play function). This makes sure that Storybook does not start rendering the story before the play function begins.
+  2. Your Storybook framework or builder must be configured to transpile to ES2017 or newer. This is because destructuring statements and async/await usages are otherwise transpiled away, which prevents Storybook from recognizing your usage of `mount`.
 </Callout>
 
-Here's an example of using the [`mockdate`](https://github.com/boblauer/MockDate) package to mock the [`Date`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date) and reset it when the story unmounts.
+<If renderer={['react', 'vue', 'svelte']}>
+
+#### Create mock data before rendering
+
+You can also use `mount` to create mock data that you want to pass to the component. To do so, first create your data in the play function and then call the `mount` function with a component configured with that data. In this example, we create a mock `note` and pass its `id` to the Page component, which we call `mount` with.
+
+<CodeSnippets path="mount-advanced.md" />
+
+<Callout variant="info">
+  When you call `mount()` with no arguments, the component is rendered using the story’s render function, whether the [implicit default](../api/csf.mdx#default-render-functions) or the [explicit custom definition](../api/csf.mdx#custom-render-functions).
+
+  When you mount a specific component inside the `mount` function like in the example above, the story’s render function will be ignored. This is why you must forward the `args` to the component.
+</Callout>
+
+</If>
+
+</If>
+
+<If renderer="angular">
+
+You can execute code before running test by defining an asynchronous `beforeEach` function for the story.
+
+Additionally, if you return a cleanup function from the `beforeEach` function, it will run **after** the test is run, when the story is remounted or navigated away from.
+
+<Callout variant="info">
+Generally, you should reset component and module state in the [preview file's `beforeEach` function](#reset-state-for-all-tests), to ensure it applies to your entire project. However, if a story's needs are particularly unique, you can use the returned cleanup function in the story's `beforeEach` to reset the state as needed.
+</Callout>
+
+Here's an example of using the [`mockdate`](https://github.com/boblauer/MockDate) package to mock the [`Date`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date), a useful way to make your story render in a consistent state.
+
+```ts filename="Page.stories.ts"
+import MockDate from 'mockdate';
+
+// ...rest of story file
+
+export const ChristmasUI = {
+  // 👇 Set the value of Date for this story
+  async beforeEach() {
+    MockDate.set('2024-12-25');
+
+    // 👇 Reset the Date after this test runs
+    return () => {
+      MockDate.reset();
+    };
+  }
+  async play({ canvasElement }) {
+    // ... This will run with the mocked Date
+  },
+};
+```
+
+</If>
+
+### Run code before each story in a file
+
+Sometimes you might need to run the same code before each story in a file. For instance, you might need to set up the initial state of the component or modules. You can do this by adding an asynchronous `beforeEach` function to the component meta.
+
+You can return a cleanup function from the `beforeEach` function, which will run **after** each story, when the story is remounted or navigated away from.
+
+<Callout variant="info">
+Generally, you should reset component and module state in the [preview file's `beforeAll` or `beforeEach` functions](#reset-state-for-all-tests), to ensure it applies to your entire project. However, if a component's needs are particularly unique, you can use the returned cleanup function in the component meta `beforeEach` to reset the state as needed.
+</Callout>
 
 {/* prettier-ignore-start */}
 
 <CodeSnippets path="before-each-in-meta-mock-date.md" />
 
 {/* prettier-ignore-end */}
+
+### Set up or reset state for all tests
+
+When you [alter a component's state](#run-code-before-the-component-gets-rendered), it's important to reset that state before rendering another story to maintain isolation between tests. 
+
+There are two options for resetting state, `beforeAll` and `beforeEach`.
+
+#### `beforeAll`
+
+The `beforeAll` function in the preview file (`.storybook/preview.js|ts`) will run once before any stories in the project and will _not_ re-run between stories. Beyond its initial run when kicking off a test run, it will not run again unless the preview file is updated. This is a good place to bootstrap your project or run any setup that your entire project depends on, as in the example below.
+
+You can return a cleanup function from the `beforeAll` function, which will run before re-running the `beforeAll` function or during the teardown process in the test runner.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="before-all-in-preview.md" />
+
+{/* prettier-ignore-end */}
+
+{/* prettier-ignore-start */}
+
+#### `beforeEach`
+
+Unlike `beforeAll`, which runs only once, the `beforeEach` function in the preview file (`.storybook/preview.js|ts`) will run before each story in the project. This is best used for resetting state or modules that are used by all or most of your stories. In the example below, we use it to reset the mocked Date.
+
+You can return a cleanup function from the `beforeEach` function, which will run **after** each story, when the story is remounted or navigated away from.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="before-each-in-preview.md" />
+
+{/* prettier-ignore-end */}
+
+<Callout variant="info">
+  It is *not* necessary to restore `fn()` mocks, as Storybook will already do that automatically before rendering a story. See the [`parameters.test.restoreMocks` API](../api/parameters.mdx#restoremocks) for more information.
+</Callout>
 
 ### API for user-events
 
@@ -165,19 +269,6 @@ Storybook only runs the interaction test when you're viewing a story. Therefore,
 Once you're ready to push your code into a pull request, you'll want to automatically run all your checks using a Continuous Integration (CI) service before merging it. Read our [documentation](./test-runner.mdx#set-up-ci-to-run-tests) for a detailed guide on setting up a CI environment to run tests.
 
 ## Troubleshooting
-
-### The TypeScript types aren't recognized
-
-If you're writing interaction tests with TypeScript, you may run into a situation where the TypeScript types aren't recognized in your IDE. This a known issue with newer package managers (e.g., pnpm, Yarn) and how they hoist dependencies. If you're working with Yarn the process happens automatically and the types should be recognized. However, if you're working with pnpm, you'll need to create a `.npmrc` file in the root of your project and add the following:
-
-```text
-// .npmrc
-public-hoist-pattern[]=@types*
-```
-
-If you're still encountering issues, you can always add the [`@types/testing-library__jest-dom`](https://www.npmjs.com/package/@types/testing-library__jest-dom) package to your project.
-
-***
 
 #### What’s the difference between interaction tests and visual tests?
 

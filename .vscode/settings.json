@@ -18,8 +18,8 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },
-  "editor.tabSize": 2,
   "editor.formatOnSave": true,
+  "editor.tabSize": 2,
   "eslint.format.enable": true,
   "eslint.options": {
     "cache": true,
@@ -49,7 +49,15 @@
   "files.associations": {
     "*.js": "javascriptreact"
   },
+  "javascript.preferences.importModuleSpecifier": "relative",
+  "javascript.preferences.quoteStyle": "single",
+  "js/ts.implicitProjectConfig.target": "ESNext",
   "prettier.ignorePath": "./code/.prettierignore",
-  "typescript.tsdk": "./code/node_modules/typescript/lib",
-  "storyExplorer.storybookConfigDir": "./code/ui/.storybook"
+  "storyExplorer.storybookConfigDir": "./code/.storybook",
+  "typescript.format.enable": false,
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "typescript.preferences.preferTypeOnlyAutoImports": true,
+  "typescript.preferences.quoteStyle": "single",
+  "typescript.preferGoToSourceDefinition": true,
+  "typescript.tsdk": "./code/node_modules/typescript/lib"
 }

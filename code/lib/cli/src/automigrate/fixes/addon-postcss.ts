@@ -10,7 +10,7 @@ interface AddonPostcssRunOptions {
 export const addonPostCSS: Fix<AddonPostcssRunOptions> = {
   id: 'addon-postcss',
 
-  versionRange: ['<7', '>=7'],
+  versionRange: ['*', '*'],
 
   promptType: 'notification',
 

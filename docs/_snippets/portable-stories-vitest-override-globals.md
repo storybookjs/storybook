@@ -3,22 +3,22 @@ import { test } from 'vitest';
 import { render } from '@testing-library/react';
 import { composeStory } from '@storybook/react';
 
-import meta, { Primary } from './Button.stories';
+import meta, { Primary as PrimaryStory } from './Button.stories';
 
 test('renders in English', async () => {
-  const PrimaryStory = composeStory(
-    Primary,
+  const Primary = composeStory(
+    PrimaryStory,
     meta,
-    { globals: { locale: 'en' } }, // 👈 Project annotations to override the locale
+    { globals: { locale: 'en' } } // 👈 Project annotations to override the locale
   );
 
-  render(<PrimaryStory />);
+  await Primary.play();
 });
 
 test('renders in Spanish', async () => {
-  const PrimaryStory = composeStory(Primary, meta, { globals: { locale: 'es' } });
+  const Primary = composeStory(PrimaryStory, meta, { globals: { locale: 'es' } });
 
-  render(<PrimaryStory />);
+  await Primary.play();
 });
 ```
 
@@ -27,22 +27,22 @@ import { test } from 'vitest';
 import { render } from '@testing-library/svelte';
 import { composeStory } from '@storybook/svelte';
 
-import meta, { Primary } from './Button.stories';
+import meta, { Primary as PrimaryStory } from './Button.stories';
 
 test('renders in English', async () => {
-  const PrimaryStory = composeStory(
-    Primary,
+  const Primary = composeStory(
+    PrimaryStory,
     meta,
-    { globals: { locale: 'en' } }, // 👈 Project annotations to override the locale
+    { globals: { locale: 'en' } } // 👈 Project annotations to override the locale
   );
 
-  render(PrimaryStory.Component, PrimaryStory.props);
+  await Primary.play();
 });
 
 test('renders in Spanish', async () => {
-  const PrimaryStory = composeStory(Primary, meta, { globals: { locale: 'es' } });
+  const Primary = composeStory(PrimaryStory, meta, { globals: { locale: 'es' } });
 
-  render(PrimaryStory.Component, PrimaryStory.props);
+  await Primary.play();
 });
 ```
 
@@ -51,22 +51,21 @@ import { test } from 'vitest';
 import { render } from '@testing-library/vue';
 import { composeStory } from '@storybook/vue3';
 
-import meta, { Primary } from './Button.stories';
+import meta, { Primary as PrimaryStory } from './Button.stories';
 
 test('renders in English', async () => {
-  const PrimaryStory = composeStory(
-    Primary,
+  const Primary = composeStory(
+    PrimaryStory,
     meta,
-    { globals: { locale: 'en' } }, // 👈 Project annotations to override the locale
+    { globals: { locale: 'en' } } // 👈 Project annotations to override the locale
   );
 
-  render(PrimaryStory);
+  await Primary.play();
 });
 
 test('renders in Spanish', async () => {
-  const PrimaryStory = composeStory(Primary, meta, { globals: { locale: 'es' } });
+  const Primary = composeStory(PrimaryStory, meta, { globals: { locale: 'es' } });
 
-  render(PrimaryStory);
+  await Primary.play();
 });
 ```
-

@@ -10,6 +10,7 @@ import type {
   Store_CSFExports,
   StoriesWithPartialProps,
   ComposedStoryFn,
+  NamedOrDefaultProjectAnnotations,
 } from 'storybook/internal/types';
 
 import * as svelteProjectAnnotations from './entry-preview';
@@ -52,9 +53,11 @@ type MapToComposed<TModule> = {
  * @param projectAnnotations - e.g. (import projectAnnotations from '../.storybook/preview')
  */
 export function setProjectAnnotations(
-  projectAnnotations: ProjectAnnotations<SvelteRenderer> | ProjectAnnotations<SvelteRenderer>[]
-) {
-  originalSetProjectAnnotations<SvelteRenderer>(projectAnnotations);
+  projectAnnotations:
+    | NamedOrDefaultProjectAnnotations<SvelteRenderer>
+    | NamedOrDefaultProjectAnnotations<SvelteRenderer>[]
+): ProjectAnnotations<SvelteRenderer> {
+  return originalSetProjectAnnotations<SvelteRenderer>(projectAnnotations);
 }
 
 // This will not be necessary once we have auto preset loading
@@ -100,7 +103,7 @@ export function composeStory<TArgs extends Args = Args>(
   componentAnnotations: Meta<TArgs | any>,
   projectAnnotations?: ProjectAnnotations<SvelteRenderer>,
   exportsName?: string
-) {
+): ComposedStory<TArgs> {
   const composedStory = originalComposeStory<SvelteRenderer, TArgs>(
     story as StoryAnnotationsOrFn<SvelteRenderer, Args>,
     // @ts-expect-error Fix this later: Type 'Partial<{ [x: string]: any; }>' is not assignable to type 'Partial<Simplify<TArgs, {}>>'

@@ -1,4 +1,3 @@
-import fetch from 'node-fetch';
 import invariant from 'tiny-invariant';
 
 import { execaCommand } from 'execa';

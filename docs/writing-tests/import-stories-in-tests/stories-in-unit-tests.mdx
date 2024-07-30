@@ -1,5 +1,8 @@
 ---
-title: 'Unit tests'
+title: 'Stories in unit tests'
+sidebar:
+  title: Unit tests
+  order: 0
 ---
 
 Teams test a variety of UI characteristics using different tools. Each tool requires you to replicate the same component state over and over. That’s a maintenance headache. Ideally, you’d set up your tests similarly and reuse that across tools.
@@ -12,51 +15,27 @@ Stories are a practical starting point for UI testing. Import stories into tools
 
 [Testing Library](https://testing-library.com/) is a suite of helper libraries for browser-based interaction tests. With [Component Story Format](../../api/csf.mdx), your stories are reusable with Testing Library. Each named export (story) is renderable within your testing setup. For example, if you were working on a login component and wanted to test the invalid credentials scenario, here's how you could write your test:
 
+Storybook provides a [`composeStories`](../../api/portable-stories/portable-stories-vitest.mdx#composestories) utility that helps convert stories from a test file into renderable elements that can be reused in your Node tests with JSDOM. It also allows you to apply other Storybook features that you have enabled your project (e.g., [decorators](../../writing-stories/decorators.mdx), [args](../../writing-stories/args.mdx)) into your tests, enabling you to reuse your stories in your testing environment of choice (e.g., [Jest](https://jestjs.io/), [Vitest](https://vitest.dev/)), ensuring your tests are always in sync with your stories without having to rewrite them. This is what we refer to as portable stories in Storybook.
+
 {/* prettier-ignore-start */}
 
 <CodeSnippets path="component-test-with-testing-library.md" />
 
 {/* prettier-ignore-end */}
 
-<Callout variant="info" icon="💡">
-  You can use Testing Library out-of-the-box with [Storybook Interaction Testing](../interaction-testing.mdx).
+<Callout variant="warning">
+  
+  You **must** [configure your test environment to use portable stories](../../api/portable-stories/portable-stories-vitest.mdx#1-apply-project-level-annotations) to ensure your stories are composed with all aspects of your Storybook configuration, such as [decorators](../../writing-stories/decorators.mdx).
+
 </Callout>
 
 Once the test runs, it loads the story and renders it. [Testing Library](https://testing-library.com/) then emulates the user's behavior and checks if the component state has been updated.
 
-## Configure
-
-By default, Storybook offers a zero-config setup for React and other frameworks via addons, allowing you to run your stories as tests with Testing Library. However, if you're running tests and you've set up specific configurations in your Storybook instance (e.g., global [decorators](../../writing-stories/decorators.mdx#global-decorators), [parameters](../../writing-stories/parameters.mdx#global-parameters)) that you want to use in your tests, you'll need to extend your test setup to include these configurations. To do so, create a `setup.js|ts` file as follows:
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="storybook-testing-addon-optional-config.md" />
-
-{/* prettier-ignore-end */}
-
-<IfRenderer renderer="react">
-  Update your test script to include the configuration file:
-
-  {/* prettier-ignore-start */}
-
-  <CodeSnippets path="react-test-scripts-optional-config-scripts.md" />
-
-  {/* prettier-ignore-end */}
-</IfRenderer>
-
-<IfRenderer renderer="vue">
-  Update your test configuration file (e.g., `vite.config.js|ts`) if you're using [Vitest](https://vitest.dev/) or your test script if you're using [Jest](https://jestjs.io/):
-
-  {/* prettier-ignore-start */}
-
-  <CodeSnippets path="storybook-testing-addon-optional-config.md" />
-
-  {/* prettier-ignore-end */}
-</IfRenderer>
-
 ### Override story properties
 
-By default, the `setProjectAnnotations` function injects into your existing tests any global configuration you've defined in your Storybook instance (i.e., parameters, decorators in the `preview.js|ts` file). Nevertheless, this may cause unforeseen side effects for tests that are not intended to use these global configurations. To avoid this, you can override the global configurations by extending either the `composeStory` or `composeStories` functions to provide test-specific configurations. For example:
+By default, the `setProjectAnnotations` function injects into your existing tests any global configuration you've defined in your Storybook instance (i.e., parameters, decorators in the `preview.js|ts` file). Nevertheless, this may cause unforeseen side effects for tests that are not intended to use these global configurations. For example, you may want to always test a story in a particular locale (via `globalTypes`) or configure a story to apply specific `decorators` or `parameters`.
+
+To avoid this, you can override the global configurations by extending either the `composeStory` or `composeStories` functions to provide test-specific configurations. For example:
 
 {/* prettier-ignore-start */}
 
@@ -66,7 +45,7 @@ By default, the `setProjectAnnotations` function injects into your existing test
 
 ## Run tests on a single story
 
-You can use the `composeStory` function from the appropriate framework or supported addon to allow your tests to run on a single story. However, if you're relying on this method, we recommend that you supply the story metadata (i.e., the [default export](../../writing-stories/index.mdx#default-export)) to the `composeStory` function. This ensures that your tests can accurately determine the correct information about the story. For example:
+You can use the [`composeStory`](../../api/portable-stories/portable-stories-vitest.mdx#composestory) function to allow your tests to run on a single story. However, if you're relying on this method, we recommend that you supply the story metadata (i.e., the [default export](../../writing-stories/index.mdx#default-export)) to the `composeStory` function. This ensures that your tests can accurately determine the correct information about the story. For example:
 
 {/* prettier-ignore-start */}
 
@@ -76,7 +55,7 @@ You can use the `composeStory` function from the appropriate framework or suppor
 
 ## Combine stories into a single test
 
-If you intend to test multiple stories in a single test, use the `composeStories` function from the appropriate framework or supported addon. The function will process every component story you've specified, including any [`args`](../../writing-stories/args.mdx) or [`decorators`](../../writing-stories/decorators.mdx) you've defined. For example:
+If you intend to test multiple stories in a single test, use the [`composeStories`](../../api/portable-stories/portable-stories-vitest.mdx#composestories) function. It will process every component story you've specified, including any [`args`](../../writing-stories/args.mdx) or [`decorators`](../../writing-stories/decorators.mdx) you've defined. For example:
 
 {/* prettier-ignore-start */}
 

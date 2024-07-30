@@ -30,10 +30,12 @@ import { vta } from './vta';
 import { upgradeStorybookRelatedDependencies } from './upgrade-storybook-related-dependencies';
 import { autodocsTags } from './autodocs-tags';
 import { initialGlobals } from './initial-globals';
+import { missingStorybookDependencies } from './missing-storybook-dependencies';
 
 export * from '../types';
 
 export const allFixes: Fix[] = [
+  missingStorybookDependencies,
   addonsAPI,
   newFrameworks,
   cra5,

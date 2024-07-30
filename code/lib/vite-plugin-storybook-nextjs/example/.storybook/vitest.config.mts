@@ -1,8 +1,8 @@
 import path from "node:path";
 import { storybookTest } from "@storybook/experimental-vitest-plugin";
 import Inspect from "vite-plugin-inspect";
-import { defineConfig } from "vitest/config";
 import vitePluginNext from "vite-plugin-storybook-nextjs";
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [

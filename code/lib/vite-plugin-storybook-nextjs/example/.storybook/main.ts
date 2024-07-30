@@ -17,6 +17,9 @@ const config: StorybookConfig = {
   core: {
     builder: "@storybook/builder-vite",
   },
+  features: {
+    experimentalRSC: true,
+  },
   staticDirs: ["../public"],
   viteFinal: async (config) => {
     const vitePluginNext = (await import("vite-plugin-storybook-nextjs"))

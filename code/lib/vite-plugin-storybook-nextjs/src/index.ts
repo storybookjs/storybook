@@ -15,6 +15,7 @@ import {
   PHASE_TEST,
 } from "next/dist/shared/lib/constants.js";
 import { vitePluginNextImage } from "./plugins/next-image/plugin";
+import { vitePluginNextMocks } from "./plugins/next-mocks/plugin";
 
 const require = createRequire(import.meta.url);
 
@@ -54,6 +55,7 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin[] {
     vitePluginNextSwc(dir, nextConfigResolver),
     vitePluginNextEnv(dir, nextConfigResolver),
     vitePluginNextImage(nextConfigResolver),
+    vitePluginNextMocks(),
   ];
 }
 

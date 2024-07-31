@@ -1,3 +1,16 @@
+# v0.0.8 (Wed Jul 31 2024)
+
+#### ⚠️ Pushed to `main`
+
+- Update dependencies ([@valentinpalkovic](https://github.com/valentinpalkovic))
+- Add extensions to file imports ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
 # v0.0.7 (Wed Jul 31 2024)
 
 #### ⚠️ Pushed to `main`

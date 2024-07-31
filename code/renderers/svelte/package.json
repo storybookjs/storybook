@@ -67,6 +67,7 @@
     "type-fest": "~2.19"
   },
   "devDependencies": {
+    "@storybook/addon-svelte-csf": "^4.1.4",
     "@sveltejs/vite-plugin-svelte": "^3.0.2",
     "@testing-library/jest-dom": "^6.4.1",
     "@testing-library/svelte": "patch:@testing-library/svelte@npm%3A4.1.0#~/.yarn/patches/@testing-library-svelte-npm-4.1.0-34b7037bc0.patch",

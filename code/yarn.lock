@@ -3657,6 +3657,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@jridgewell/sourcemap-codec@npm:^1.5.0":
+  version: 1.5.0
+  resolution: "@jridgewell/sourcemap-codec@npm:1.5.0"
+  checksum: 10c0/2eb864f276eb1096c3c11da3e9bb518f6d9fc0023c78344cdc037abadc725172c70314bdb360f2d4b7bffec7f5d657ce006816bc5d4ecb35e61b66132db00c18
+  languageName: node
+  linkType: hard
+
 "@jridgewell/trace-mapping@npm:0.3.9":
   version: 0.3.9
   resolution: "@jridgewell/trace-mapping@npm:0.3.9"
@@ -5389,6 +5396,30 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@storybook/addon-svelte-csf@npm:^4.1.4":
+  version: 4.1.4
+  resolution: "@storybook/addon-svelte-csf@npm:4.1.4"
+  dependencies:
+    "@babel/runtime": "npm:^7.22.6"
+    dedent: "npm:^1.2.0"
+    magic-string: "npm:^0.30.1"
+  peerDependencies:
+    "@storybook/svelte": ^7.0.0 || ^8.0.0 || ^8.0.0-beta.0 || ^8.2.0-beta.0
+    "@sveltejs/vite-plugin-svelte": ^2.0.0 || ^3.0.0
+    svelte: ^4.0.0
+    svelte-loader: ^3.1.2
+    vite: ^4.0.0 || ^5.0.0
+  peerDependenciesMeta:
+    "@sveltejs/vite-plugin-svelte":
+      optional: true
+    svelte-loader:
+      optional: true
+    vite:
+      optional: true
+  checksum: 10c0/01125e21082a2b687dd884b92c2ee448b38c327fdd10a3cca662d612507f2f4042e399a7e8e4d794857d0bef9bb4e02ebee6fcd4d0160c046f1c2e7a5750b836
+  languageName: node
+  linkType: hard
+
 "@storybook/addon-themes@workspace:addons/themes":
   version: 0.0.0-use.local
   resolution: "@storybook/addon-themes@workspace:addons/themes"
@@ -6725,7 +6756,14 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/svelte@workspace:renderers/svelte"
   dependencies:
+<<<<<<< Updated upstream
     "@storybook/components": "workspace:^"
+=======
+    "@storybook/addon-svelte-csf": "npm:^4.1.4"
+    "@storybook/client-logger": "workspace:*"
+    "@storybook/core-events": "workspace:*"
+    "@storybook/docs-tools": "workspace:*"
+>>>>>>> Stashed changes
     "@storybook/global": "npm:^5.0.0"
     "@storybook/manager-api": "workspace:^"
     "@storybook/preview-api": "workspace:^"
@@ -12455,6 +12493,18 @@ __metadata:
   version: 0.7.0
   resolution: "dedent@npm:0.7.0"
   checksum: 10c0/7c3aa00ddfe3e5fcd477958e156156a5137e3bb6ff1493ca05edff4decf29a90a057974cc77e75951f8eb801c1816cb45aea1f52d628cdd000b82b36ab839d1b
+  languageName: node
+  linkType: hard
+
+"dedent@npm:^1.2.0":
+  version: 1.5.3
+  resolution: "dedent@npm:1.5.3"
+  peerDependencies:
+    babel-plugin-macros: ^3.1.0
+  peerDependenciesMeta:
+    babel-plugin-macros:
+      optional: true
+  checksum: 10c0/d94bde6e6f780be4da4fd760288fcf755ec368872f4ac5218197200d86430aeb8d90a003a840bff1c20221188e3f23adced0119cb811c6873c70d0ac66d12832
   languageName: node
   linkType: hard
 
@@ -18880,6 +18930,15 @@ __metadata:
   dependencies:
     "@jridgewell/sourcemap-codec": "npm:^1.4.13"
   checksum: 10c0/cddacfea14441ca57ae8a307bc3cf90bac69efaa4138dd9a80804cffc2759bf06f32da3a293fb13eaa96334b7d45b7768a34f1d226afae25d2f05b05a3bb37d8
+  languageName: node
+  linkType: hard
+
+"magic-string@npm:^0.30.1":
+  version: 0.30.11
+  resolution: "magic-string@npm:0.30.11"
+  dependencies:
+    "@jridgewell/sourcemap-codec": "npm:^1.5.0"
+  checksum: 10c0/b9eb370773d0bd90ca11a848753409d8e5309b1ad56d2a1aa49d6649da710a6d2fe7237ad1a643c5a5d3800de2b9946ed9690acdfc00e6cc1aeafff3ab1752c4
   languageName: node
   linkType: hard
 

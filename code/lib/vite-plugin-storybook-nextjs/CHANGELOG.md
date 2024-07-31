@@ -10,6 +10,18 @@
 
 ---
 
+# v0.0.10 (Wed Jul 31 2024)
+
+#### ⚠️ Pushed to `main`
+
+- Update Next.js dependency ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
 # v0.0.9 (Wed Jul 31 2024)
 
 #### ⚠️ Pushed to `main`

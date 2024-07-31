@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { StorybookConfig } from '@storybook/types';
+import type { StorybookConfig } from '@storybook/core/types';
 import { autodocsTags } from './autodocs-tags';
 
 const check = async ({

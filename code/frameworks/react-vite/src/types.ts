@@ -2,7 +2,7 @@ import type {
   CompatibleString,
   StorybookConfig as StorybookConfigBase,
   TypescriptOptions as TypescriptOptionsBase,
-} from '@storybook/types';
+} from 'storybook/internal/types';
 import type { StorybookConfigVite, BuilderOptions } from '@storybook/builder-vite';
 import type docgenTypescript from '@joshwooding/vite-plugin-react-docgen-typescript';
 

@@ -1,4 +1,4 @@
-import type { ComponentTitle, StoryKind, StoryName } from '@storybook/types';
+import type { ComponentTitle, StoryKind, StoryName } from 'storybook/internal/types';
 import type { MouseEvent, ReactNode } from 'react';
 import React, { PureComponent } from 'react';
 

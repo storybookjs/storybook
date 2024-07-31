@@ -8,7 +8,7 @@ import type {
   BuilderOptions,
   TypescriptOptions as TypescriptOptionsBuilder,
 } from '@storybook/builder-webpack5';
-import type { CompatibleString } from '@storybook/types';
+import type { CompatibleString } from 'storybook/internal/types';
 
 type FrameworkName = CompatibleString<'@storybook/svelte-webpack5'>;
 type BuilderName = CompatibleString<'@storybook/builder-webpack5'>;

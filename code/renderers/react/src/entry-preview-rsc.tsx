@@ -1,6 +1,6 @@
 import * as React from 'react';
 import semver from 'semver';
-import type { Addon_DecoratorFunction } from '@storybook/types';
+import type { Addon_DecoratorFunction } from 'storybook/internal/types';
 import type { StoryContext } from './types';
 
 export const ServerComponentDecorator = (

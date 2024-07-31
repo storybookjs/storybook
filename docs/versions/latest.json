@@ -1,1 +1,1 @@
-{"version":"8.1.0","info":{"plain":"- Automigration: Improve react-docgen automigration prompt - [#27106](https://github.com/storybookjs/storybook/pull/27106), thanks @valentinpalkovic!\n- Typescript: Add types for `experimental-playwright` entries without `type:bundler` - [#27107](https://github.com/storybookjs/storybook/pull/27107), thanks @ndelangen!"}}
+{"version":"8.2.0","info":{"plain":""}}

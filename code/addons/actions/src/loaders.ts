@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle */
-import type { LoaderFunction } from '@storybook/types';
+import type { LoaderFunction } from 'storybook/internal/types';
 import { global } from '@storybook/global';
 import type { onMockCall as onMockCallType } from '@storybook/test';
 import { action } from './runtime';

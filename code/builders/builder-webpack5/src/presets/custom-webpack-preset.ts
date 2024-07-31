@@ -1,9 +1,27 @@
 import * as webpackReal from 'webpack';
-import { logger } from '@storybook/node-logger';
-import type { Options } from '@storybook/types';
+import { logger } from 'storybook/internal/node-logger';
+import type { Options, PresetProperty } from 'storybook/internal/types';
 import type { Configuration } from 'webpack';
 import { loadCustomWebpackConfig } from '@storybook/core-webpack';
 import { createDefaultWebpackConfig } from '../preview/base-webpack.config';
+
+export const swc: PresetProperty<'swc'> = (config: Record<string, any>): Record<string, any> => {
+  return {
+    ...config,
+    env: {
+      ...(config?.env ?? {}),
+      targets: config?.env?.targets ?? {
+        chrome: 100,
+        safari: 15,
+        firefox: 91,
+      },
+      // Transpiles the broken syntax to the closest non-broken modern syntax.
+      // E.g. it won't transpile parameter destructuring in Safari
+      // which would break how we detect if the mount context property is used in the play function.
+      bugfixes: config?.env?.bugfixes ?? true,
+    },
+  };
+};
 
 export async function webpack(config: Configuration, options: Options) {
   const { configDir, configType, presets } = options;

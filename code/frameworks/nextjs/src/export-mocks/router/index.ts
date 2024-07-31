@@ -1,6 +1,6 @@
 import type { Mock } from '@storybook/test';
 import { fn } from '@storybook/test';
-import { NextjsRouterMocksNotAvailable } from '@storybook/core-events/preview-errors';
+import { NextjsRouterMocksNotAvailable } from 'storybook/internal/preview-errors';
 import type { NextRouter, SingletonRouter } from 'next/router';
 import singletonRouter, * as originalRouter from 'next/dist/client/router';
 

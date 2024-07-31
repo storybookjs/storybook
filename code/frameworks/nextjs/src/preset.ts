@@ -1,9 +1,9 @@
 // https://storybook.js.org/docs/react/addons/writing-presets
 import { dirname, join } from 'path';
-import type { PresetProperty } from '@storybook/types';
+import type { PresetProperty } from 'storybook/internal/types';
 import type { ConfigItem, PluginItem, TransformOptions } from '@babel/core';
 import { loadPartialConfig } from '@babel/core';
-import { getProjectRoot } from '@storybook/core-common';
+import { getProjectRoot } from 'storybook/internal/common';
 import fs from 'fs';
 import semver from 'semver';
 import { configureConfig } from './config/webpack';
@@ -22,7 +22,7 @@ import { configureSWCLoader } from './swc/loader';
 import { configureBabelLoader } from './babel/loader';
 import { configureFastRefresh } from './fastRefresh/webpack';
 import { configureAliases } from './aliases/webpack';
-import { logger } from '@storybook/node-logger';
+import { logger } from 'storybook/internal/node-logger';
 import { configureNextExportMocks } from './export-mocks/webpack';
 import { configureCompatibilityAliases } from './compatibility/compatibility-map';
 
@@ -108,6 +108,29 @@ export const babel: PresetProperty<'babel'> = async (baseConfig: TransformOption
     presets,
     babelrc: false,
     configFile: false,
+    overrides: [
+      ...(options?.overrides ?? []),
+      // We need to re-apply the default storybook babel override from:
+      // https://github.com/storybookjs/storybook/blob/next/code/core/src/core-server/presets/common-preset.ts
+      // Because it get lost in the loadPartialConfig call above.
+      // See https://github.com/storybookjs/storybook/issues/28467
+      {
+        include: /(story|stories)\.[cm]?[jt]sx?$/,
+        presets: [
+          [
+            'next/dist/compiled/babel/preset-env',
+            {
+              bugfixes: true,
+              targets: {
+                chrome: 100,
+                safari: 15,
+                firefox: 91,
+              },
+            },
+          ],
+        ],
+      },
+    ],
   };
 };
 

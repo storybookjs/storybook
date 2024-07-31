@@ -1,5 +1,5 @@
 import { dirname, join } from 'path';
-import { PresetProperty } from '@storybook/types';
+import { PresetProperty } from 'storybook/internal/types';
 import { StorybookConfig } from './types';
 import { StandaloneOptions } from './builders/utils/standalone-options';
 

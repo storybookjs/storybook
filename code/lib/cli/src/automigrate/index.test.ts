@@ -1,8 +1,7 @@
-import { vi, it, expect, describe, beforeEach } from 'vitest';
+import { vi, it, expect, describe, beforeEach, afterEach } from 'vitest';
 import { runFixes } from './index';
 import type { Fix } from './types';
-import type { JsPackageManager, PackageJsonWithDepsAndDevDeps } from '@storybook/core-common';
-import { afterEach } from 'node:test';
+import type { JsPackageManager, PackageJsonWithDepsAndDevDeps } from '@storybook/core/common';
 
 const check1 = vi.fn();
 const run1 = vi.fn();
@@ -38,8 +37,8 @@ const coreCommonMock = vi.hoisted(() => {
   };
 });
 
-vi.mock('@storybook/core-common', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@storybook/core-common')>()),
+vi.mock('@storybook/core/common', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@storybook/core/common')>()),
   loadMainConfig: coreCommonMock.loadMainConfig,
 }));
 

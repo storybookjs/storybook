@@ -25,7 +25,7 @@ const MockedConsole = {
   error: vi.fn(),
 } as any as Console;
 
-vi.mock('@storybook/csf-tools', () => {
+vi.mock('@storybook/core/csf-tools', () => {
   return {
     readConfig: vi.fn(() => MockedConfig),
     writeConfig: vi.fn(),
@@ -34,7 +34,7 @@ vi.mock('@storybook/csf-tools', () => {
 vi.mock('./postinstallAddon', () => {
   return MockedPostInstall;
 });
-vi.mock('@storybook/core-common', () => {
+vi.mock('@storybook/core/common', () => {
   return {
     getStorybookInfo: vi.fn(() => ({ mainConfig: {}, configDir: '' })),
     serverRequire: vi.fn(() => ({})),

@@ -1,5 +1,5 @@
 import type { InlineConfig, UserConfig } from 'vite';
-import type { Builder, Options } from '@storybook/types';
+import type { Builder, Options } from 'storybook/internal/types';
 
 // Storybook's Stats are optional Webpack related property
 type ViteStats = {

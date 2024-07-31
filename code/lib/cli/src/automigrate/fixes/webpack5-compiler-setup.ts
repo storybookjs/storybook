@@ -1,6 +1,6 @@
 import prompts from 'prompts';
-import type { SupportedFrameworks } from '@storybook/types';
-import { frameworkPackages } from '@storybook/core-common';
+import type { SupportedFrameworks } from '@storybook/core/types';
+import { frameworkPackages } from '@storybook/core/common';
 import type { Fix } from '../types';
 import {
   getAddonNames,
@@ -16,7 +16,7 @@ import {
   builderNameToCoreBuilder,
   compilerNameToCoreCompiler,
 } from '../../project_types';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 import chalk from 'chalk';
 import { add } from '../../add';
 

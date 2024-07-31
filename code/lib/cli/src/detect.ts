@@ -1,9 +1,9 @@
 import * as fs from 'fs';
 import findUp from 'find-up';
 import semver from 'semver';
-import { logger } from '@storybook/node-logger';
+import { logger } from '@storybook/core/node-logger';
 
-import { resolve } from 'path';
+import { resolve } from 'node:path';
 import prompts from 'prompts';
 import type { TemplateConfiguration, TemplateMatcher } from './project_types';
 import {
@@ -14,8 +14,8 @@ import {
   CoreBuilder,
 } from './project_types';
 import { isNxProject } from './helpers';
-import type { JsPackageManager, PackageJsonWithMaybeDeps } from '@storybook/core-common';
-import { commandLog, HandledError } from '@storybook/core-common';
+import type { JsPackageManager, PackageJsonWithMaybeDeps } from '@storybook/core/common';
+import { commandLog, HandledError } from '@storybook/core/common';
 
 const viteConfigFiles = ['vite.config.ts', 'vite.config.js', 'vite.config.mjs'];
 const webpackConfigFiles = ['webpack.config.js'];
@@ -114,13 +114,13 @@ export async function detectBuilder(packageManager: JsPackageManager, projectTyp
   const webpackConfig = findUp.sync(webpackConfigFiles);
   const dependencies = await packageManager.getAllDependencies();
 
-  if (viteConfig || (dependencies['vite'] && dependencies['webpack'] === undefined)) {
+  if (viteConfig || (dependencies.vite && dependencies.webpack === undefined)) {
     commandLog('Detected Vite project. Setting builder to Vite')();
     return CoreBuilder.Vite;
   }
 
   // REWORK
-  if (webpackConfig || (dependencies['webpack'] && dependencies['vite'] !== undefined)) {
+  if (webpackConfig || (dependencies.webpack && dependencies.vite !== undefined)) {
     commandLog('Detected webpack project. Setting builder to webpack')();
     return CoreBuilder.Webpack5;
   }
@@ -173,7 +173,7 @@ export async function detectLanguage(packageManager: JsPackageManager) {
 
   const isTypescriptDirectDependency = await packageManager
     .getAllDependencies()
-    .then((deps) => Boolean(deps['typescript']));
+    .then((deps) => Boolean(deps.typescript));
 
   const typescriptVersion = await packageManager.getPackageVersion('typescript');
   const prettierVersion = await packageManager.getPackageVersion('prettier');

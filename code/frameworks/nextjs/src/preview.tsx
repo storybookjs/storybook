@@ -1,4 +1,4 @@
-import type { Addon_DecoratorFunction, Addon_LoaderFunction } from '@storybook/types';
+import type { Addon_DecoratorFunction, Addon_LoaderFunction } from 'storybook/internal/types';
 import './config/preview';
 import { ImageDecorator } from './images/decorator';
 import { RouterDecorator } from './routing/decorator';

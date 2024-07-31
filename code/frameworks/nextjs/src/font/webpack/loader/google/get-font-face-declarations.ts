@@ -4,7 +4,7 @@ import loaderUtils from 'next/dist/compiled/loader-utils3';
 import {
   GoogleFontsDownloadError,
   GoogleFontsLoadingError,
-} from '@storybook/core-events/server-errors';
+} from 'storybook/internal/server-errors';
 import { validateGoogleFontFunctionCall } from 'next/dist/compiled/@next/font/dist/google/validate-google-font-function-call';
 import { getGoogleFontsUrl } from 'next/dist/compiled/@next/font/dist/google/get-google-fonts-url';
 import { getFontAxes } from 'next/dist/compiled/@next/font/dist/google/get-font-axes';

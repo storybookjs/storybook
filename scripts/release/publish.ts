@@ -1,11 +1,9 @@
-/* eslint-disable no-console */
 import chalk from 'chalk';
 import path from 'path';
 import program from 'commander';
 import semver from 'semver';
 import { z } from 'zod';
 import { readJson } from 'fs-extra';
-import fetch from 'node-fetch';
 import dedent from 'ts-dedent';
 import pRetry from 'p-retry';
 import { execaCommand } from 'execa';
@@ -174,7 +172,7 @@ export const run = async (options: unknown) => {
   const currentVersion = await getCurrentVersion(verbose);
   const isAlreadyPublished = await isCurrentVersionPublished({
     currentVersion,
-    packageName: '@storybook/manager-api',
+    packageName: '@storybook/core',
     verbose,
   });
   if (isAlreadyPublished) {

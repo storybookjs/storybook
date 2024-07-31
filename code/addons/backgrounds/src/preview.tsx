@@ -1,4 +1,4 @@
-import type { Addon_DecoratorFunction } from '@storybook/types';
+import type { Addon_DecoratorFunction } from 'storybook/internal/types';
 import { withBackground } from './decorators/withBackground';
 import { withGrid } from './decorators/withGrid';
 import { PARAM_KEY } from './constants';
@@ -18,6 +18,6 @@ export const parameters = {
   },
 };
 
-export const globals = {
+export const initialGlobals = {
   [PARAM_KEY]: null as any,
 };

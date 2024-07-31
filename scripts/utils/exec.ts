@@ -1,4 +1,3 @@
-/* eslint-disable no-await-in-loop, no-restricted-syntax */
 import type { ExecaChildProcess, Options } from 'execa';
 import chalk from 'chalk';
 import { execa } from 'execa';

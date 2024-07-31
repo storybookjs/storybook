@@ -1,6 +1,6 @@
-import { type API } from '@storybook/manager-api';
+import { type API } from 'storybook/internal/manager-api';
 import { ADDON_ID } from './constants';
-import { globals as defaultGlobals } from './preview';
+import { initialGlobals as defaultGlobals } from './preview';
 
 const getCurrentViewportIndex = (viewportsKeys: string[], current: string): number =>
   viewportsKeys.indexOf(current);

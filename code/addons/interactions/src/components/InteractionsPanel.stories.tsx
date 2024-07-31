@@ -1,9 +1,9 @@
 import React from 'react';
 import type { StoryObj, Meta } from '@storybook/react';
 import { CallStates } from '@storybook/instrumenter';
-import { styled } from '@storybook/theming';
+import { styled } from 'storybook/internal/theming';
 import { userEvent, within, waitFor, expect } from '@storybook/test';
-import { isChromatic } from '../../../../ui/.storybook/isChromatic';
+import { isChromatic } from '../../../../.storybook/isChromatic';
 
 import { getCalls, getInteractions } from '../mocks';
 import { InteractionsPanel } from './InteractionsPanel';
@@ -24,7 +24,7 @@ const StyledWrapper = styled.div(({ theme }) => ({
 const interactions = getInteractions(CallStates.DONE);
 
 const meta = {
-  title: 'Addons/Interactions/InteractionsPanel',
+  title: 'InteractionsPanel',
   component: InteractionsPanel,
   decorators: [
     (Story: any) => (
@@ -120,11 +120,11 @@ export const Failed: Story = {
   },
 };
 
-export const NoInteractions: Story = {
-  args: {
-    interactions: [],
-  },
-};
+// export const NoInteractions: Story = {
+//   args: {
+//     interactions: [],
+//   },
+// };
 
 export const CaughtException: Story = {
   args: {

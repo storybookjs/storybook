@@ -1,11 +1,9 @@
-/* eslint-disable jest/no-export, jest/expect-expect, no-console */
 import chalk from 'chalk';
 import assert from 'assert';
-import fetch from 'node-fetch';
 import { esMain } from './utils/esmain';
 import { allTemplates } from '../code/lib/cli/src/sandbox-templates';
-import versions from '../code/lib/core-common/src/versions';
-import { oneWayHash } from '../code/lib/telemetry/src/one-way-hash';
+import versions from '../code/core/src/common/versions';
+import { oneWayHash } from '../code/core/src/telemetry/one-way-hash';
 
 const PORT = process.env.PORT || 6007;
 

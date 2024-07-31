@@ -1,5 +1,5 @@
 import path from 'path';
-import { serverRequire } from '@storybook/core-common';
+import { serverRequire } from 'storybook/internal/common';
 
 const webpackConfigs = ['webpack.config', 'webpackfile'];
 

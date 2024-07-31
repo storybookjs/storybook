@@ -1,39 +1,42 @@
 const PLUGIN_NAME = 'storybook-normalize-angular-entry-plugin';
-
 /**
- * Angular's webpack plugin @angular-devkit/build-angular/src/webpack/plugins/styles-webpack-plugin.js
- * transforms the original webpackOptions.entry point array into a structure like this:
- *
- * ```js
- * {
- *  main: {
- *    import: [...]
- *  },
- *
- *  styles: {
- *    import: [...]
- *  },
- * }
- * ```
- *
- * Storybook throws an __webpack_require__.nmd is not a function error, when another runtime bundle (styles~runtime.iframe.bundle.js) is loaded.
- * To prevent this error, we have to normalize the entry point to only generate one runtime bundle (main~runtime.iframe.bundle.js).
+ * This plugin is designed to modify the Webpack configuration for Storybook projects that use Angular,
+ * specifically to prevent multiple runtime bundle issues by merging 'main' and 'styles' entry points.
+ * It ensures that only one runtime bundle is generated to avoid '__webpack_require__.nmd is not a function' errors.
  */
+
 export default class StorybookNormalizeAngularEntryPlugin {
   constructor(options) {
-    this.options = options;
+    this.options = options; // Store options if future configuration is needed
   }
 
   apply(compiler) {
     compiler.hooks.environment.tap(PLUGIN_NAME, () => {
-      const webpackOptions = compiler.options;
-      const entry =
-        typeof webpackOptions.entry === 'function' ? webpackOptions.entry() : webpackOptions.entry;
+      // Store the original entry configuration
+      const originalEntry = compiler.options.entry;
 
-      webpackOptions.entry = async () => {
-        const entryResult = await entry;
+      // Overwrite the entry configuration to normalize it
+      compiler.options.entry = async () => {
+        let entryResult;
 
-        if (entryResult.main && entryResult.styles) {
+        // Handle the case where the original entry is a function, which could be async
+        if (typeof originalEntry === 'function') {
+          try {
+            // Execute the function and await its result, in case it returns a promise
+            entryResult = await originalEntry();
+          } catch (error) {
+            // Log the error and re-throw it to ensure it's visible and doesn't silently fail
+            console.error('Failed to execute the entry function:', error);
+            throw error;
+          }
+        } else {
+          // If the original entry is not a function, use it as is
+          entryResult = originalEntry;
+        }
+
+        // Merge 'main' and 'styles' entries if both exist
+        if (entryResult && entryResult.main && entryResult.styles) {
+          // Combine and deduplicate imports from 'main' and 'styles'
           return {
             main: {
               import: Array.from(
@@ -43,7 +46,8 @@ export default class StorybookNormalizeAngularEntryPlugin {
           };
         }
 
-        return entry;
+        // If not both 'main' and 'styles' are present, return the original or resolved entry result
+        return entryResult;
       };
     });
 

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/nextjs",
-  "version": "8.2.0-alpha.6",
+  "version": "8.3.0-alpha.3",
   "description": "Storybook for Next.js",
   "keywords": [
     "storybook",
@@ -140,14 +140,9 @@
     "@babel/runtime": "^7.24.4",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.11",
     "@storybook/builder-webpack5": "workspace:*",
-    "@storybook/core-common": "workspace:*",
-    "@storybook/core-events": "workspace:*",
-    "@storybook/node-logger": "workspace:*",
     "@storybook/preset-react-webpack": "workspace:*",
-    "@storybook/preview-api": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/test": "workspace:*",
-    "@storybook/types": "workspace:*",
     "@types/node": "^18.0.0",
     "@types/semver": "^7.3.4",
     "babel-loader": "^9.1.3",
@@ -185,6 +180,7 @@
     "next": "^13.5.0 || ^14.0.0",
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
+    "storybook": "workspace:^",
     "webpack": "^5.0.0"
   },
   "peerDependenciesMeta": {
@@ -232,5 +228,5 @@
     ],
     "platform": "node"
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae17"
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

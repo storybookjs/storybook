@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { readJson } from 'fs-extra';
 import { join } from 'path';
 import { execaCommand } from 'execa';

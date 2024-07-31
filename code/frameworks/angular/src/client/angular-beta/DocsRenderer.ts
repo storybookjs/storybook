@@ -1,5 +1,5 @@
-import { addons } from '@storybook/preview-api';
-import { DOCS_RENDERED, STORY_CHANGED } from '@storybook/core-events';
+import { addons } from 'storybook/internal/preview-api';
+import { DOCS_RENDERED, STORY_CHANGED } from 'storybook/internal/core-events';
 
 import { getNextStoryUID } from './utils/StoryUID';
 import { AbstractRenderer, STORY_UID_ATTRIBUTE } from './AbstractRenderer';

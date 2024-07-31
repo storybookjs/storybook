@@ -1,5 +1,5 @@
-import { loadPreviewOrConfigFile, getFrameworkName } from '@storybook/core-common';
-import type { Options, PreviewAnnotation } from '@storybook/types';
+import { loadPreviewOrConfigFile, getFrameworkName } from 'storybook/internal/common';
+import type { Options, PreviewAnnotation } from 'storybook/internal/types';
 import { virtualStoriesFile, virtualAddonSetupFile } from './virtual-file-names';
 import { processPreviewAnnotation } from './utils/process-preview-annotation';
 
@@ -64,7 +64,7 @@ export async function generateModernIframeScriptCode(options: Options, projectRo
    * @todo Inline variable and remove `noinspection`
    */
   const code = `
-  import { composeConfigs, PreviewWeb, ClientApi } from '@storybook/preview-api';
+  import { composeConfigs, PreviewWeb, ClientApi } from 'storybook/internal/preview-api';
   import '${virtualAddonSetupFile}';
   import { importFn } from '${virtualStoriesFile}';
   

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { addons, types } from '@storybook/manager-api';
+import { addons, types } from 'storybook/internal/manager-api';
 
 import { ADDON_ID } from './constants';
 

@@ -1,5 +1,5 @@
-import type { DecoratorFunction, StoryContext, LegacyStoryFn } from '@storybook/types';
-import { sanitizeStoryContextUpdate } from '@storybook/preview-api';
+import type { DecoratorFunction, StoryContext, LegacyStoryFn } from 'storybook/internal/types';
+import { sanitizeStoryContextUpdate } from 'storybook/internal/preview-api';
 /*
 ! DO NOT change this SlotDecorator import to a relative path, it will break it.
 ! A relative import will be compiled at build time, and Svelte will be unable to

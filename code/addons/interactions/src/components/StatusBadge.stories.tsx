@@ -2,7 +2,7 @@ import { CallStates } from '@storybook/instrumenter';
 import { StatusBadge } from './StatusBadge';
 
 export default {
-  title: 'Addons/Interactions/StatusBadge',
+  title: 'StatusBadge',
   component: StatusBadge,
   parameters: { layout: 'padded' },
 };

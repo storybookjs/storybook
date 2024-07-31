@@ -1,7 +1,7 @@
-import { frameworkPackages } from '@storybook/core-common';
-import type { Preset, StorybookConfigRaw } from '@storybook/types';
+import { frameworkPackages } from '@storybook/core/common';
+import type { Preset, StorybookConfigRaw } from '@storybook/core/types';
 import findUp from 'find-up';
-import type { JsPackageManager } from '@storybook/core-common';
+import type { JsPackageManager } from '@storybook/core/common';
 import { getBuilderPackageName, getFrameworkPackageName } from './mainConfigFile';
 
 const logger = console;

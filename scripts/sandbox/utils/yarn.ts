@@ -1,6 +1,6 @@
 import { join } from 'path';
 import { move, remove } from 'fs-extra';
-// eslint-disable-next-line import/no-cycle
+
 import { runCommand } from '../generate';
 
 interface SetupYarnOptions {

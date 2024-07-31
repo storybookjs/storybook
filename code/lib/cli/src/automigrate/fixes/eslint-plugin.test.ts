@@ -2,7 +2,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { dedent } from 'ts-dedent';
 import * as fsExtra from 'fs-extra';
-import type { PackageJson } from '@storybook/core-common';
+import type { PackageJson } from '@storybook/core/common';
 import { eslintPlugin } from './eslint-plugin';
 import { makePackageManager } from '../helpers/testing-helpers';
 

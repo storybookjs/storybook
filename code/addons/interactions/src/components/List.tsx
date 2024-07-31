@@ -1,5 +1,5 @@
 import React, { Fragment, useState } from 'react';
-import { styled, themes, convert } from '@storybook/theming';
+import { styled, themes, convert } from 'storybook/internal/theming';
 import { ChevronSmallDownIcon } from '@storybook/icons';
 
 const ListWrapper = styled.ul({

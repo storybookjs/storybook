@@ -1,7 +1,3 @@
-/*
- * @vitest-environment node
- */
-
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { vi, describe, beforeEach, expect, it, afterEach } from 'vitest';
 import { Architect, createBuilder } from '@angular-devkit/architect';
@@ -18,8 +14,8 @@ const buildMock = {
   withTelemetry: (name: string, options: any, fn: any) => fn(),
 };
 
-vi.doMock('@storybook/core-server', () => buildMock);
-vi.doMock('@storybook/core-common', () => ({
+vi.doMock('storybook/internal/core-server', () => buildMock);
+vi.doMock('storybook/internal/common', () => ({
   JsPackageManagerFactory: {
     getPackageManager: () => ({
       runPackageCommand: mockRunScript,

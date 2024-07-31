@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 import type { Fix } from '../types';
 import { getStorybookVersionSpecifier } from '../../helpers';
 import { runCodemod } from '@storybook/codemod';

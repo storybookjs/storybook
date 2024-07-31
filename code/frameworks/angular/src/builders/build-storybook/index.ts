@@ -11,14 +11,14 @@ import { JsonObject } from '@angular-devkit/core';
 import { from, of, throwError } from 'rxjs';
 import { catchError, map, mapTo, switchMap } from 'rxjs/operators';
 import { sync as findUpSync } from 'find-up';
-import { sync as readUpSync } from 'read-pkg-up';
+import { findPackageSync } from 'fd-package-json';
 import { BrowserBuilderOptions, StylePreprocessorOptions } from '@angular-devkit/build-angular';
 
-import { CLIOptions } from '@storybook/types';
-import { getEnvConfig, versions } from '@storybook/core-common';
-import { addToGlobalContext } from '@storybook/telemetry';
+import { CLIOptions } from 'storybook/internal/types';
+import { getEnvConfig, versions } from 'storybook/internal/common';
+import { addToGlobalContext } from 'storybook/internal/telemetry';
 
-import { buildStaticStandalone, withTelemetry } from '@storybook/core-server';
+import { buildStaticStandalone, withTelemetry } from 'storybook/internal/core-server';
 import {
   AssetPattern,
   SourceMapUnion,
@@ -40,6 +40,7 @@ export type StorybookBuilderOptions = JsonObject & {
   enableProdMode?: boolean;
   styles?: StyleElement[];
   stylePreprocessorOptions?: StylePreprocessorOptions;
+  preserveSymlinks?: boolean;
   assets?: AssetPattern[];
   sourceMap?: SourceMapUnion;
 } & Pick<
@@ -102,10 +103,11 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
         assets,
         previewUrl,
         sourceMap = false,
+        preserveSymlinks = false,
       } = options;
 
       const standaloneOptions: StandaloneBuildOptions = {
-        packageJson: readUpSync({ cwd: __dirname }).packageJson,
+        packageJson: findPackageSync(__dirname),
         configDir,
         ...(docs ? { docs } : {}),
         loglevel,
@@ -121,6 +123,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
           ...(styles ? { styles } : {}),
           ...(assets ? { assets } : {}),
           sourceMap,
+          preserveSymlinks,
         },
         tsConfig,
         webpackStatsJson,

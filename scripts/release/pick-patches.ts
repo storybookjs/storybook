@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-/* eslint-disable no-await-in-loop */
 import program from 'commander';
 import chalk from 'chalk';
 import ora from 'ora';
@@ -51,7 +49,6 @@ export const run = async (_: unknown) => {
 
   const failedCherryPicks: string[] = [];
 
-  // eslint-disable-next-line no-restricted-syntax
   for (const pr of patchPRs) {
     const prSpinner = ora(`Cherry picking #${pr.number}`).start();
 

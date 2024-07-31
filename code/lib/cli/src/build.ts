@@ -1,11 +1,11 @@
-import { sync as readUpSync } from 'read-pkg-up';
-import { buildStaticStandalone, withTelemetry } from '@storybook/core-server';
-import { cache } from '@storybook/core-common';
+import { findPackage } from 'fd-package-json';
+import { buildStaticStandalone, withTelemetry } from '@storybook/core/core-server';
+import { cache } from '@storybook/core/common';
 import invariant from 'tiny-invariant';
 
 export const build = async (cliOptions: any) => {
-  const readUpResult = readUpSync({ cwd: __dirname });
-  invariant(readUpResult, 'Failed to find the closest package.json file.');
+  const packageJson = await findPackage(__dirname);
+  invariant(packageJson, 'Failed to find the closest package.json file.');
   const options = {
     ...cliOptions,
     configDir: cliOptions.configDir || './.storybook',
@@ -13,7 +13,7 @@ export const build = async (cliOptions: any) => {
     ignorePreview: !!cliOptions.previewUrl && !cliOptions.forceBuildPreview,
     configType: 'PRODUCTION',
     cache,
-    packageJson: readUpResult.packageJson,
+    packageJson,
   };
   await withTelemetry('build', { cliOptions, presetOptions: options }, () =>
     buildStaticStandalone(options)

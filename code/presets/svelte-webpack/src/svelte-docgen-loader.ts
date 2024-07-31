@@ -3,7 +3,7 @@ import { dedent } from 'ts-dedent';
 import * as path from 'path';
 import * as fs from 'fs';
 import { preprocess } from 'svelte/compiler';
-import { logger } from '@storybook/node-logger';
+import { logger } from 'storybook/internal/node-logger';
 
 /*
  * Patch sveltedoc-parser internal options.

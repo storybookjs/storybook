@@ -1,6 +1,6 @@
 import { addonsAPI } from './addons-api';
-import type { StorybookConfig } from '@storybook/types';
-import type { JsPackageManager } from '@storybook/core-common';
+import type { StorybookConfig } from '@storybook/core/types';
+import type { JsPackageManager } from '@storybook/core/common';
 import { expect, describe, it } from 'vitest';
 
 const checkAddonsAPI = async ({

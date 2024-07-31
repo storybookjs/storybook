@@ -1,9 +1,9 @@
 import ReactDOM from 'react-dom';
 import React, { lazy, Suspense } from 'react';
-import { addons } from '@storybook/manager-api';
-import { STORY_SPECIFIED } from '@storybook/core-events';
+import { addons } from 'storybook/internal/manager-api';
+import { STORY_SPECIFIED } from 'storybook/internal/core-events';
 
-const App = lazy(() => import('./App'));
+const Onboarding = lazy(() => import('./Onboarding'));
 
 // The addon is enabled only when:
 // 1. The onboarding query parameter is present
@@ -43,8 +43,8 @@ addons.register('@storybook/addon-onboarding', async (api) => {
     // Render the React app
     // eslint-disable-next-line react/no-deprecated
     ReactDOM.render(
-      <Suspense fallback={<div>Loading...</div>}>
-        <App api={api} />
+      <Suspense fallback={<div />}>
+        <Onboarding api={api} />
       </Suspense>,
       domNode
     );

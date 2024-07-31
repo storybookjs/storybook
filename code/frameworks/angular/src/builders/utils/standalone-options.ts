@@ -5,7 +5,7 @@ import {
   StyleElement,
   StylePreprocessorOptions,
 } from '@angular-devkit/build-angular/src/builders/browser/schema';
-import { LoadOptions, CLIOptions, BuilderOptions } from '@storybook/types';
+import { LoadOptions, CLIOptions, BuilderOptions } from 'storybook/internal/types';
 
 export type StandaloneOptions = CLIOptions &
   LoadOptions &
@@ -18,6 +18,7 @@ export type StandaloneOptions = CLIOptions &
       stylePreprocessorOptions?: StylePreprocessorOptions;
       assets?: AssetPattern[];
       sourceMap?: SourceMapUnion;
+      preserveSymlinks?: boolean;
     };
     angularBuilderContext?: BuilderContext | null;
     tsConfig?: string;

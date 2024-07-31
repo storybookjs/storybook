@@ -1,4 +1,4 @@
-/* eslint-disable jest/no-mocks-import, no-underscore-dangle */
+/* eslint-disable no-underscore-dangle */
 import path from 'path';
 import { vi, describe, expect, it } from 'vitest';
 import * as fsExtraImp from 'fs-extra';

@@ -5,7 +5,7 @@ import {
   getIncompatiblePackagesSummary,
   checkPackageCompatibility,
 } from './getIncompatibleStorybookPackages';
-import type { JsPackageManager } from '@storybook/core-common';
+import type { JsPackageManager } from '@storybook/core/common';
 
 vi.mock('chalk', () => {
   return {
@@ -61,7 +61,7 @@ describe('checkPackageCompatibility', () => {
       name: packageName,
       version: '1.0.0',
       dependencies: {
-        '@storybook/core-common': '8.0.0',
+        '@storybook/core/common': '8.0.0',
       },
     });
     const result = await checkPackageCompatibility(packageName, {

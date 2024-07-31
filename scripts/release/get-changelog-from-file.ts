@@ -1,11 +1,10 @@
-/* eslint-disable no-console */
 import { setOutput } from '@actions/core';
 import chalk from 'chalk';
 import { program } from 'commander';
 import { readFile } from 'fs-extra';
 import path from 'path';
 import semver from 'semver';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 import { esMain } from '../utils/esmain';
 import { getCurrentVersion } from './get-current-version';
 

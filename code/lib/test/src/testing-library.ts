@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import { once } from '@storybook/client-logger';
+import { once } from 'storybook/internal/client-logger';
 import { instrument } from '@storybook/instrumenter';
 import * as domTestingLibrary from '@testing-library/dom';
 import _userEvent from '@testing-library/user-event';

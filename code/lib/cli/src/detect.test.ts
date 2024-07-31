@@ -1,9 +1,9 @@
 import { describe, afterEach, it, expect, vi } from 'vitest';
 import * as fs from 'fs';
-import { logger } from '@storybook/node-logger';
+import { logger } from '@storybook/core/node-logger';
 import { detect, detectFrameworkPreset, detectLanguage } from './detect';
 import { ProjectType, SupportedLanguage } from './project_types';
-import type { JsPackageManager, PackageJsonWithMaybeDeps } from '@storybook/core-common';
+import type { JsPackageManager, PackageJsonWithMaybeDeps } from '@storybook/core/common';
 
 vi.mock('./helpers', () => ({
   isNxProject: vi.fn(),
@@ -14,18 +14,19 @@ vi.mock('fs', () => ({
   stat: vi.fn(),
   lstat: vi.fn(),
   access: vi.fn(),
+  realpathSync: vi.fn(),
+  lstatSync: vi.fn(),
+  readdir: vi.fn(),
+  readdirSync: vi.fn(),
+  readlinkSync: vi.fn(),
+  default: vi.fn(),
 }));
 
 vi.mock('fs-extra', () => ({
   pathExistsSync: vi.fn(() => true),
 }));
 
-vi.mock('path', () => ({
-  // make it return just the second path, for easier testing
-  join: vi.fn((_, p) => p),
-}));
-
-vi.mock('@storybook/node-logger');
+vi.mock('@storybook/core/node-logger');
 
 const MOCK_FRAMEWORK_FILES: {
   name: string;

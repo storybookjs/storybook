@@ -1,7 +1,7 @@
-import { describe, it, expect } from '@jest/globals'
+import { describe, it, expect } from '@jest/globals';
 import { render } from '@testing-library/react';
 
-import { composeStories } from '@storybook/nextjs';
+import { composeStories, setProjectAnnotations } from '@storybook/nextjs';
 import * as imageStories from './Image.stories';
 import * as navigationStories from './Navigation.stories';
 import * as linkStories from './Link.stories';
@@ -20,14 +20,12 @@ const runTests = (name: string, storiesModule: any) => {
     const composedStories = composeStories(storiesModule);
     Object.entries(composedStories).forEach(([name, Story]: [any, any]) => {
       it(`renders ${name}`, async () => {
-        await Story.load();
-        const { baseElement } = render(<Story />);
-        await Story.play?.();
-        expect(baseElement).toMatchSnapshot();
+        await Story.run?.();
+        expect(document.body).toMatchSnapshot();
       });
     });
-  })
-}
+  });
+};
 
 // example with composeStory, returns a single story composed with args/decorators
 describe('renders', () => {

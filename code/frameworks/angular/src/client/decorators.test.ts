@@ -1,4 +1,4 @@
-import { Addon_StoryContext } from '@storybook/types';
+import { Addon_StoryContext } from 'storybook/internal/types';
 
 import { vi, expect, describe, it } from 'vitest';
 import { Component } from '@angular/core';
@@ -24,7 +24,13 @@ const defaultContext: Addon_StoryContext<AngularRenderer> = {
   viewMode: 'story',
   abortSignal: undefined,
   canvasElement: undefined,
+  step: undefined,
+  context: undefined,
+  canvas: undefined,
+  mount: undefined,
 };
+
+defaultContext.context = defaultContext;
 
 class MockModule {}
 class MockModuleTwo {}

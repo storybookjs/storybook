@@ -1,6 +1,6 @@
 import { describe, beforeAll, expect, vi, it } from 'vitest';
 import fse from 'fs-extra';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 import { SupportedLanguage } from '../project_types';
 import { configureMain, configurePreview } from './configure';
 

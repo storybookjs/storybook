@@ -1,5 +1,5 @@
 import { dedent } from 'ts-dedent';
-import { deprecate } from '@storybook/node-logger';
+import { deprecate } from 'storybook/internal/node-logger';
 
 import remarkGfm from 'remark-gfm';
 

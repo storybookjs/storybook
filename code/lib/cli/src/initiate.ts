@@ -2,9 +2,9 @@ import { appendFile, readFile } from 'fs/promises';
 import findUp from 'find-up';
 import chalk from 'chalk';
 import prompts from 'prompts';
-import { telemetry } from '@storybook/telemetry';
-import { withTelemetry } from '@storybook/core-server';
-import { NxProjectDetectedError } from '@storybook/core-events/server-errors';
+import { telemetry } from 'storybook/internal/telemetry';
+import { withTelemetry } from '@storybook/core/core-server';
+import { NxProjectDetectedError } from '@storybook/core/server-errors';
 import {
   versions,
   HandledError,
@@ -12,10 +12,10 @@ import {
   commandLog,
   paddedLog,
   getProjectRoot,
-} from '@storybook/core-common';
-import type { JsPackageManager } from '@storybook/core-common';
+} from '@storybook/core/common';
+import type { JsPackageManager } from '@storybook/core/common';
 
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 import boxen from 'boxen';
 import { lt, prerelease } from 'semver';
 import type { Builder } from './project_types';
@@ -242,8 +242,8 @@ export async function doInitiate(options: CommandOptions): Promise<
     force: pkgMgr,
   });
 
-  const latestVersion = await packageManager.latestVersion('@storybook/cli');
-  const currentVersion = versions['@storybook/cli'];
+  const latestVersion = await packageManager.latestVersion('storybook');
+  const currentVersion = versions.storybook;
   const isPrerelease = prerelease(currentVersion);
   const isOutdated = lt(currentVersion, latestVersion);
   const borderColor = isOutdated ? '#FC521F' : '#F1618C';
@@ -281,12 +281,6 @@ export async function doInitiate(options: CommandOptions): Promise<
     }
     // Prompt the user to create a new project from our list.
     await scaffoldNewProject(packageManager.type, options);
-
-    if (process.env.IN_STORYBOOK_SANDBOX === 'true' || process.env.CI === 'true') {
-      packageManager.addPackageResolutions({
-        '@storybook/telemetry': versions['@storybook/telemetry'],
-      });
-    }
   }
 
   let projectType: ProjectType;
@@ -405,7 +399,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   );
 
   return {
-    shouldRunDev: !!options.dev,
+    shouldRunDev: !!options.dev && !options.skipInstall,
     projectType,
     packageManager,
     storybookCommand,
@@ -427,12 +421,15 @@ export async function initiate(options: CommandOptions): Promise<void> {
     logger.log('\nRunning Storybook');
 
     try {
-      const isReactWebProject =
-        projectType === ProjectType.REACT_SCRIPTS ||
-        projectType === ProjectType.REACT ||
-        projectType === ProjectType.WEBPACK_REACT ||
-        projectType === ProjectType.REACT_PROJECT ||
-        projectType === ProjectType.NEXTJS;
+      const supportsOnboarding = [
+        ProjectType.REACT_SCRIPTS,
+        ProjectType.REACT,
+        ProjectType.WEBPACK_REACT,
+        ProjectType.REACT_PROJECT,
+        ProjectType.NEXTJS,
+        ProjectType.VUE3,
+        ProjectType.ANGULAR,
+      ].includes(projectType);
 
       const flags = [];
 
@@ -442,7 +439,7 @@ export async function initiate(options: CommandOptions): Promise<void> {
         flags.push('--');
       }
 
-      if (isReactWebProject) {
+      if (supportsOnboarding) {
         flags.push('--initial-path=/onboarding');
       }
 

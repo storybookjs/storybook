@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import semver from 'semver';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
 import { baseGenerator } from '../baseGenerator';
 import type { Generator } from '../types';

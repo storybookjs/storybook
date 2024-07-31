@@ -1,6 +1,6 @@
 import type { FC } from 'react';
 import React, { Fragment } from 'react';
-import { EmptyTabContent } from '@storybook/components';
+import { EmptyTabContent } from 'storybook/internal/components';
 import type { Result } from 'axe-core';
 
 import { Item } from './Item';

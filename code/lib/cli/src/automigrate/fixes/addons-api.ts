@@ -9,7 +9,7 @@ interface AddonsAPIRunOptions {
 export const addonsAPI: Fix<AddonsAPIRunOptions> = {
   id: 'addons-api',
 
-  versionRange: ['<8', '>=8'],
+  versionRange: ['*', '*'],
 
   promptType: 'notification',
 

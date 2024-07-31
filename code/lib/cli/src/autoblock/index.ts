@@ -1,5 +1,5 @@
 import type { AutoblockOptions, Blocker } from './types';
-import { logger } from '@storybook/node-logger';
+import { logger } from '@storybook/core/node-logger';
 import chalk from 'chalk';
 import boxen from 'boxen';
 

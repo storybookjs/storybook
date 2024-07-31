@@ -1,5 +1,5 @@
 import { join } from 'path';
-import { commandLog } from '@storybook/core-common';
+import { commandLog } from '@storybook/core/common';
 import { baseGenerator } from '../baseGenerator';
 import type { Generator } from '../types';
 import { CoreBuilder } from '../../project_types';
@@ -68,6 +68,7 @@ const generator: Generator<{ projectName: string }> = async (
     },
     'angular',
     {
+      extraAddons: [`@storybook/addon-onboarding`],
       ...(useCompodoc && { extraPackages: ['@compodoc/compodoc', '@storybook/addon-docs'] }),
       addScripts: false,
       componentsDestinationPath: root ? `${root}/src/stories` : undefined,

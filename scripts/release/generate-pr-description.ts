@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import program from 'commander';
 import { z } from 'zod';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 import semver from 'semver';
 import { setOutput } from '@actions/core';
 import { esMain } from '../utils/esmain';

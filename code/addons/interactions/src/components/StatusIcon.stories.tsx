@@ -2,7 +2,7 @@ import { CallStates } from '@storybook/instrumenter';
 import { StatusIcon } from './StatusIcon';
 
 export default {
-  title: 'Addons/Interactions/StatusIcon',
+  title: 'StatusIcon',
   component: StatusIcon,
 };
 

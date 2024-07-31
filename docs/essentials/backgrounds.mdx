@@ -1,0 +1,161 @@
+---
+title: 'Backgrounds'
+sidebar:
+  order: 2
+  title: Backgrounds
+---
+
+The backgrounds toolbar addon allows you to set the background color in which the story renders in the UI:
+
+<Video src="../_assets/essentials/addon-backgrounds-optimized.mp4" />
+
+## Configuration
+
+By default, the backgrounds toolbar includes a light and dark background.
+
+But you're not restricted to these backgrounds, you can configure your own set of colors with the `parameters.backgrounds` [parameter](../writing-stories/parameters.mdx) in your [`.storybook/preview.js`](../configure/index.mdx#configure-story-rendering):
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-preview-configure-background-colors.md" />
+
+{/* prettier-ignore-end */}
+
+If you define the `default` property, the addon will apply it to all stories. Otherwise, it's only listed as an available color.
+
+### Extending the configuration
+
+You can also define backgrounds per-component or per-story basis through [parameter inheritance](../writing-stories/parameters.mdx#component-parameters):
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-addon-backgrounds-configure-backgrounds.md" />
+
+{/* prettier-ignore-end */}
+
+You can also override a single key on the `backgrounds` parameter, for instance, to set a different default value for a particular story:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-addon-backgrounds-override-background-color.md" usesCsf3 csf2Path="essentials/backgrounds#snippet-storybook-addon-backgrounds-override-background-color" />
+
+{/* prettier-ignore-end */}
+
+### Disable backgrounds
+
+If you want to disable backgrounds in a story, you can do so by setting the `backgrounds` parameter like so:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-addon-backgrounds-disable-backgrounds.md" usesCsf3 csf2Path="essentials/backgrounds#snippet-storybook-addon-backgrounds-disable-backgrounds" />
+
+{/* prettier-ignore-end */}
+
+## Grid
+
+Backgrounds toolbar also includes a Grid selector. This way, you can quickly see if your components are aligned.
+
+You don't need additional configuration to get started. But its properties are fully customizable, if you don't supply any value to any of its properties, they'll default to the following values:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-addon-backgrounds-configure-grid.md" />
+
+{/* prettier-ignore-end */}
+
+### Disable the grid
+
+If you need to disable the grid for a specific story, set the `backgrounds` parameter to the following:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-addon-backgrounds-disable-grid.md" usesCsf3 csf2Path="essentials/backgrounds#snippet-storybook-addon-backgrounds-disable-grid" />
+
+{/* prettier-ignore-end */}
+
+## API
+
+### Parameters
+
+This addon contributes the following [parameters](../writing-stories/parameters.mdx) to Storybook, under the `backgrounds` namespace:
+
+#### `default`
+
+Type: `string`
+
+Default background color. Must match the `name` property of one of the [available colors](#values).
+
+#### `disable`
+
+Type: `boolean`
+
+Disable this addon's behavior. If you wish to disable this addon for the entire Storybook, you should do so when registering `addon-essentials`. See the [essential addon's docs](../essentials/index.mdx#disabling-addons) for more information.
+
+This parameter is most useful to allow overriding at more specific levels. For example, if this parameter is set to `true` at the project level, it could then be re-enabled by setting it to `false` at the meta (component) or story level.
+
+#### `grid`
+
+Type:
+
+```ts
+{
+  cellAmount?: number;
+  cellSize?: number;
+  disable?: boolean;
+  offsetX: number;
+  offsetY: number;
+  opacity?: number;
+}
+```
+
+##### `grid.cellAmount`
+
+Type: `number`
+
+Default: `5`
+
+Specify the size of the minor grid lines.
+
+##### `grid.cellSize`
+
+Type: `number`
+
+Default: `20`
+
+Specify the size of the major grid lines.
+
+##### `grid.disable`
+
+Type: `boolean`
+
+Disable the grid.
+
+##### `grid.offsetX`
+
+Type: `number`
+
+Default: `0` if [story layout](../api/parameters.mdx#layout) is `'fullscreen'`; `16` if story layout is `'padded'`
+
+Horizontal offset of the grid.
+
+##### `grid.offsetY`
+
+Type: `number`
+
+Default: `0` if [story layout](../api/parameters.mdx#layout) is `'fullscreen'`; `16` if story layout is `'padded'`
+
+Vertical offset of the grid.
+
+##### `grid.opacity`
+
+Type: `number`
+
+Default: `0.5`
+
+Opacity of the grid lines.
+
+#### `values`
+
+Type: `{ name: string; value: string }[]`
+
+Available background colors. See above for a [usage example](#configuration).

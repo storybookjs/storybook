@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import svelteDoc from 'sveltedoc-parser';
 import type { SvelteComponentDoc, SvelteParserOptions } from 'sveltedoc-parser';
-import { logger } from '@storybook/node-logger';
+import { logger } from 'storybook/internal/node-logger';
 import { preprocess } from 'svelte/compiler';
 import { replace, typescript } from 'svelte-preprocess';
 

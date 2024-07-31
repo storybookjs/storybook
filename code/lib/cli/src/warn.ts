@@ -1,4 +1,4 @@
-import { logger } from '@storybook/node-logger';
+import { logger } from '@storybook/core/node-logger';
 
 interface Options {
   hasTSDependency: boolean;

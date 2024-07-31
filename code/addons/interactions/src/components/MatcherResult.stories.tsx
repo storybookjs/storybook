@@ -1,6 +1,6 @@
 import React from 'react';
-import dedent from 'ts-dedent';
-import { styled } from '@storybook/theming';
+import { dedent } from 'ts-dedent';
+import { styled } from 'storybook/internal/theming';
 import { MatcherResult } from './MatcherResult';
 
 const StyledWrapper = styled.div(({ theme }) => ({
@@ -12,7 +12,7 @@ const StyledWrapper = styled.div(({ theme }) => ({
 }));
 
 export default {
-  title: 'Addons/Interactions/MatcherResult',
+  title: 'MatcherResult',
   component: MatcherResult,
   decorators: [
     (Story: any) => (
@@ -29,11 +29,18 @@ export default {
 export const Expected = {
   args: {
     message: dedent`
-      expect(jest.fn()).lastCalledWith(...expected)
-
-      Expected: {"email": "michael@chromatic.com", "password": "testpasswordthatwontfail"}
-
-      Number of calls: 0
+      expected last "spy" call to have been called with [ { …(2) } ]
+      
+      - Expected: 
+      Array [
+        Object {
+          "email": "michael@chromatic.com",
+          "password": "testpasswordthatwontfail",
+        },
+      ]
+      
+      + Received: 
+      undefined
     `,
   },
 };
@@ -41,12 +48,18 @@ export const Expected = {
 export const ExpectedReceived = {
   args: {
     message: dedent`
-      expect(jest.fn()).toHaveBeenCalledWith(...expected)
-
-      Expected: called with 0 arguments
-      Received: {"email": "michael@chromatic.com", "password": "testpasswordthatwontfail"}
-
-      Number of calls: 1
+      expected last "spy" call to have been called with []
+      
+      - Expected
+      + Received
+      
+      - Array []
+      + Array [
+      +   Object {
+      +     "email": "michael@chromatic.com",
+      +     "password": "testpasswordthatwontfail",
+      +   },
+      + ]
     `,
   },
 };
@@ -54,10 +67,21 @@ export const ExpectedReceived = {
 export const ExpectedNumberOfCalls = {
   args: {
     message: dedent`
-      expect(jest.fn()).toHaveBeenCalledTimes(expected)
-
-      Expected number of calls: 1
-      Received number of calls: 0
+      expected "spy" to not be called at all, but actually been called 1 times
+      
+      Received: 
+      
+        1st spy call:
+      
+          Array [
+            Object {
+              "email": "michael@chromatic.com",
+              "password": "testpasswordthatwontfail",
+            },
+          ]
+      
+      
+      Number of calls: 1
     `,
   },
 };
@@ -65,17 +89,21 @@ export const ExpectedNumberOfCalls = {
 export const Diff = {
   args: {
     message: dedent`
-      expect(jest.fn()).toHaveBeenCalledWith(...expected)
-
-      - Expected
-      + Received
-
-        Object {
-      -   "email": "michael@chromatic.com",
-      +   "email": "michael@chromaui.com",
-          "password": "testpasswordthatwontfail",
-        },
-
+      expected "spy" to be called with arguments: [ { …(2) } ]
+      
+      Received: 
+      
+        1st spy call:
+      
+        Array [
+          Object {
+      -     "email": "michael@chromaui.com",
+      +     "email": "michael@chromatic.com",
+            "password": "testpasswordthatwontfail",
+          },
+        ]
+      
+      
       Number of calls: 1
     `,
   },

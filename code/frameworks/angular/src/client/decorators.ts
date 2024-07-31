@@ -1,6 +1,6 @@
 import { Type } from '@angular/core';
 import { ApplicationConfig } from '@angular/platform-browser';
-import { DecoratorFunction, StoryContext } from '@storybook/types';
+import { DecoratorFunction, StoryContext } from 'storybook/internal/types';
 import { computesTemplateFromComponent } from './angular-beta/ComputesTemplateFromComponent';
 import { isComponent } from './angular-beta/utils/NgComponentAnalyzer';
 import { ICollection, NgModuleMetadata, AngularRenderer } from './types';

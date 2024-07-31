@@ -1,5 +1,5 @@
 import { instrument } from '@storybook/instrumenter';
-import { type LoaderFunction } from '@storybook/csf';
+import type { LoaderFunction } from '@storybook/csf';
 import chai from 'chai';
 import { global } from '@storybook/global';
 import { expect as rawExpect } from './expect';
@@ -11,9 +11,19 @@ import {
   resetAllMocks,
   restoreAllMocks,
 } from './spy';
-import type { Renderer } from '@storybook/types';
+import { type queries, within } from './testing-library';
 
 export * from './spy';
+
+type Queries = ReturnType<typeof within<typeof queries>>;
+
+declare module '@storybook/csf' {
+  interface Canvas extends Queries {}
+  interface StoryContext {
+    // TODO enable this in a later PR, once we have time to QA this properly
+    //   userEvent: ReturnType<typeof userEvent.setup>;
+  }
+}
 
 export const { expect } = instrument(
   { expect: rawExpect },
@@ -84,12 +94,24 @@ export const traverseArgs = (value: unknown, depth = 0, key?: string): unknown =
   return value;
 };
 
-const nameSpiesAndWrapActionsInSpies: LoaderFunction<Renderer> = ({ initialArgs }) => {
+const nameSpiesAndWrapActionsInSpies: LoaderFunction = ({ initialArgs }) => {
   traverseArgs(initialArgs);
+};
+
+const enhanceContext: LoaderFunction = (context) => {
+  if (globalThis.HTMLElement && context.canvasElement instanceof globalThis.HTMLElement) {
+    context.canvas = within(context.canvasElement);
+    // TODO enable this in a later PR, once we have time to QA this properly
+    // context.userEvent = userEvent.setup();
+  }
 };
 
 // We are using this as a default Storybook loader, when the test package is used. This avoids the need for optional peer dependency workarounds.
 // eslint-disable-next-line no-underscore-dangle
-(global as any).__STORYBOOK_TEST_LOADERS__ = [resetAllMocksLoader, nameSpiesAndWrapActionsInSpies];
+(global as any).__STORYBOOK_TEST_LOADERS__ = [
+  resetAllMocksLoader,
+  nameSpiesAndWrapActionsInSpies,
+  enhanceContext,
+];
 // eslint-disable-next-line no-underscore-dangle
 (global as any).__STORYBOOK_TEST_ON_MOCK_CALL__ = onMockCall;

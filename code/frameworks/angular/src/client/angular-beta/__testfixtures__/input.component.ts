@@ -11,6 +11,7 @@ export interface ISomeInterface {
   one: string;
   two: boolean;
   three: any[];
+  ref?: ISomeInterface;
 }
 
 @Component({
@@ -39,9 +40,13 @@ export class InputComponent<T> {
   @Input()
   public label: string;
 
+  @Input('aria-label') public ariaLabel: string;
+
   /** Specifies some arbitrary object */
   @Input() public someDataObject: ISomeInterface;
 
   @Output()
   public onClick = new EventEmitter<Event>();
+
+  @Output('dash-out') public dashOut = new EventEmitter<any>();
 }

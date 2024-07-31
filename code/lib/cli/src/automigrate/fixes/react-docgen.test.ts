@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { StorybookConfig } from '@storybook/types';
+import type { StorybookConfig } from '@storybook/core/types';
 import { reactDocgen } from './react-docgen';
 
 const check = async ({

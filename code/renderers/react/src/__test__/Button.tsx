@@ -28,14 +28,14 @@ export interface ButtonProps {
  * Primary UI component for user interaction
  */
 export const Button: React.FC<ButtonProps> = (props) => {
-  const { primary = false, size = 'medium', backgroundColor, children, ...otherProps } = props;
+  const { primary = false, size = 'medium', backgroundColor, children, onClick } = props;
   const mode = primary ? 'storybook-button--primary' : 'storybook-button--secondary';
   return (
     <button
       type="button"
       className={['storybook-button', `storybook-button--${size}`, mode].join(' ')}
       style={{ backgroundColor }}
-      {...otherProps}
+      onClick={onClick}
     >
       {children}
     </button>

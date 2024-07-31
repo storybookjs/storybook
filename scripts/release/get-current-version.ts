@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import chalk from 'chalk';
 import { setOutput } from '@actions/core';
 import path from 'path';

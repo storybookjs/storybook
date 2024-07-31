@@ -1,13 +1,15 @@
+// @vitest-environment happy-dom
+
 /// <reference types="@testing-library/jest-dom" />;
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import React from 'react';
-import { addons } from '@storybook/preview-api';
+import { addons } from 'storybook/internal/preview-api';
 import { render, screen, waitFor, cleanup, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { SELECT_STORY } from '@storybook/core-events';
+import { SELECT_STORY } from 'storybook/internal/core-events';
 import LinkTo from './link';
 
-vi.mock('@storybook/preview-api');
+vi.mock('storybook/internal/preview-api');
 vi.mock('@storybook/global', () => ({
   global: {
     document: {

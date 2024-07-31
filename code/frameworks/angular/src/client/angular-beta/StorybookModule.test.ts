@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+
 import { NgModule, Component, EventEmitter, Input, Output } from '@angular/core';
 import { describe, expect, it } from 'vitest';
 

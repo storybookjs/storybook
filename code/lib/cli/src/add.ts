@@ -5,11 +5,11 @@ import {
   getCoercedStorybookVersion,
   type PackageManagerName,
   versions,
-} from '@storybook/core-common';
-import { readConfig, writeConfig } from '@storybook/csf-tools';
+} from '@storybook/core/common';
+import { readConfig, writeConfig } from '@storybook/core/csf-tools';
 import { isAbsolute, join } from 'path';
 import SemVer from 'semver';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 import { postinstallAddon } from './postinstallAddon';
 
 export interface PostinstallOptions {

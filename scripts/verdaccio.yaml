@@ -1,5 +1,7 @@
 storage: .verdaccio-cache
 
+max_body_size: 60mb
+
 auth:
   auth-memory:
     users:

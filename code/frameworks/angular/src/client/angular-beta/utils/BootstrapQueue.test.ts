@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+
 import { Subject, lastValueFrom } from 'rxjs';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 

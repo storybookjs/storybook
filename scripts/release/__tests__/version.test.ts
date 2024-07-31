@@ -5,13 +5,12 @@ import * as fsExtraImp from 'fs-extra';
 import { execaCommand } from 'execa';
 import { run as version } from '../version';
 
-// eslint-disable-next-line jest/no-mocks-import
 import type * as MockedFSToExtra from '../../../code/__mocks__/fs-extra';
 
 vi.mock('fs-extra', async () => import('../../../code/__mocks__/fs-extra'));
 const fsExtra = fsExtraImp as unknown as typeof MockedFSToExtra;
 
-vi.mock('../../../code/lib/core-common/src/versions', () => ({
+vi.mock('../../../code/core/src/common/src/versions', () => ({
   '@storybook/addon-a11y': '7.1.0-alpha.29',
 }));
 
@@ -35,12 +34,12 @@ describe('Version', () => {
   const CODE_PACKAGE_JSON_PATH = path.join(CODE_DIR_PATH, 'package.json');
   const MANAGER_API_VERSION_PATH = path.join(
     CODE_DIR_PATH,
-    'lib',
-    'manager-api',
+    'core',
     'src',
+    'manager-api',
     'version.ts'
   );
-  const VERSIONS_PATH = path.join(CODE_DIR_PATH, 'lib', 'core-common', 'src', 'versions.ts');
+  const VERSIONS_PATH = path.join(CODE_DIR_PATH, 'core', 'src', 'common', 'versions.ts');
   const A11Y_PACKAGE_JSON_PATH = path.join(CODE_DIR_PATH, 'addons', 'a11y', 'package.json');
 
   it('should throw when release type is invalid', async () => {
@@ -255,7 +254,6 @@ describe('Version', () => {
       await version({ releaseType, preId, exact, apply });
       expect(fsExtra.writeJson).toHaveBeenCalledTimes(apply ? 3 : 2);
       if (apply) {
-        // eslint-disable-next-line jest/no-conditional-expect -- guarded against problems with the assertion above
         expect(fsExtra.writeJson).toHaveBeenCalledWith(
           CODE_PACKAGE_JSON_PATH,
           // this call is the write that removes the "deferredNextVersion" property

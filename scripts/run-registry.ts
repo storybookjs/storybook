@@ -3,6 +3,7 @@ import { remove, pathExists, readJSON } from 'fs-extra';
 import chalk from 'chalk';
 import path from 'path';
 import program from 'commander';
+import http from 'http';
 
 import { runServer, parseConfigFile } from 'verdaccio';
 import pLimit from 'p-limit';
@@ -12,6 +13,7 @@ import { PACKS_DIRECTORY } from './utils/constants';
 
 import { maxConcurrentTasks } from './utils/concurrency';
 import { getWorkspaces } from './utils/workspace';
+import { execa, execaSync } from 'execa';
 
 program
   .option('-O, --open', 'keep process open')
@@ -21,10 +23,46 @@ program.parse(process.argv);
 
 const logger = console;
 
+const root = path.resolve(__dirname, '..');
+
 const startVerdaccio = async () => {
-  let resolved = false;
+  const ready = {
+    proxy: false,
+    verdaccio: false,
+  };
   return Promise.race([
     new Promise((resolve) => {
+      /** The proxy server will sit in front of verdaccio and tunnel traffic to either verdaccio or the actual npm global registry
+       * We do this because tunneling all traffic through verdaccio is slow (this might get fixed in verdaccio)
+       * With this heuristic we get the best of both worlds:
+       * - verdaccio for storybook packages (including unscoped packages such as `storybook` and `sb`)
+       * - npm global registry for all other packages
+       * - the best performance for both
+       *
+       * The proxy server listens on port 6001 and verdaccio on port 6002
+       *
+       * If you want to access the verdaccio UI, you can do so by visiting http://localhost:6002
+       */
+      const proxy = http.createServer((req, res) => {
+        // if request contains "storybook" redirect to verdaccio
+        if (req.url?.includes('storybook') || req.url?.includes('/sb') || req.method === 'PUT') {
+          res.writeHead(302, { Location: 'http://localhost:6002' + req.url });
+          res.end();
+        } else {
+          // forward to npm registry
+          res.writeHead(302, { Location: 'https://registry.npmjs.org' + req.url });
+          res.end();
+        }
+      });
+
+      let verdaccioApp: http.Server<typeof http.IncomingMessage, typeof http.ServerResponse>;
+
+      proxy.listen(6001, () => {
+        ready.proxy = true;
+        if (ready.verdaccio) {
+          resolve(verdaccioApp);
+        }
+      });
       const cache = path.join(__dirname, '..', '.verdaccio-cache');
       const config = {
         ...parseConfigFile(path.join(__dirname, 'verdaccio.yaml')),
@@ -33,16 +71,19 @@ const startVerdaccio = async () => {
 
       // @ts-expect-error (verdaccio's interface is wrong)
       runServer(config).then((app: Server) => {
-        app.listen(6001, () => {
-          resolved = true;
-          resolve(app);
+        verdaccioApp = app;
+
+        app.listen(6002, () => {
+          ready.verdaccio = true;
+          if (ready.proxy) {
+            resolve(verdaccioApp);
+          }
         });
       });
     }),
     new Promise((_, rej) => {
       setTimeout(() => {
-        if (!resolved) {
-          resolved = true;
+        if (!ready.verdaccio || !ready.proxy) {
           rej(new Error(`TIMEOUT - verdaccio didn't start within 10s`));
         }
       }, 10000);
@@ -92,7 +133,7 @@ const publish = async (packages: { name: string; location: string }[], url: stri
             const command = `cd ${path.resolve(
               '../code',
               location
-            )} && yarn pack --out=${PACKS_DIRECTORY}/${tarballFilename} && cd ${PACKS_DIRECTORY} && npm publish ./${tarballFilename} --registry ${url} --force --access restricted --ignore-scripts`;
+            )} && yarn pack --out=${PACKS_DIRECTORY}/${tarballFilename} && cd ${PACKS_DIRECTORY} && npm publish ./${tarballFilename} --registry ${url} --force --ignore-scripts`;
             exec(command, (e) => {
               if (e) {
                 rej(e);
@@ -107,19 +148,6 @@ const publish = async (packages: { name: string; location: string }[], url: stri
     )
   );
 };
-
-const addUser = (url: string) =>
-  new Promise<void>((res, rej) => {
-    logger.log(`👤 add temp user to verdaccio`);
-
-    exec(`npx npm-cli-adduser -r "${url}" -a -u user -p password -e user@example.com`, (e) => {
-      if (e) {
-        rej(e);
-      } else {
-        res();
-      }
-    });
-  });
 
 const run = async () => {
   const verdaccioUrl = `http://localhost:6001`;
@@ -146,25 +174,42 @@ const run = async () => {
 
   logger.log(`🌿 verdaccio running on ${verdaccioUrl}`);
 
-  // in some environments you need to add a dummy user. always try to add & catch on failure
-  try {
-    await addUser(verdaccioUrl);
-  } catch (e) {
-    //
-  }
+  logger.log(`👤 add temp user to verdaccio`);
+  await execa(
+    'npx',
+    // creates a .npmrc file in the root directory of the project
+    [
+      'npm-auth-to-token',
+      '-u',
+      'foo',
+      '-p',
+      's3cret',
+      '-e',
+      'test@test.com',
+      '-r',
+      'http://localhost:6002',
+    ],
+    {
+      cwd: root,
+    }
+  );
 
   logger.log(`📦 found ${packages.length} storybook packages at version ${chalk.blue(version)}`);
 
   if (program.publish) {
-    await publish(packages, verdaccioUrl);
+    await publish(packages, 'http://localhost:6002');
   }
+
+  await execa('npx', ['rimraf', '.npmrc'], { cwd: root });
 
   if (!program.open) {
     verdaccioServer.close();
+    process.exit(0);
   }
 };
 
 run().catch((e) => {
   logger.error(e);
+  execaSync('npx', ['rimraf', '.npmrc'], { cwd: root });
   process.exit(1);
 });

@@ -2,11 +2,11 @@ import type { ReactNode, FC } from 'react';
 import React, { useState, Fragment, useEffect, useRef, memo } from 'react';
 import memoize from 'memoizerific';
 
-import { styled, Global, type Theme, withTheme } from '@storybook/theming';
+import { styled, Global, type Theme, withTheme } from 'storybook/internal/theming';
 
-import { IconButton, WithTooltip, TooltipLinkList } from '@storybook/components';
+import { IconButton, WithTooltip, TooltipLinkList } from 'storybook/internal/components';
 
-import { useStorybookApi, useParameter, useGlobals } from '@storybook/manager-api';
+import { useStorybookApi, useParameter, useGlobals } from 'storybook/internal/manager-api';
 import { GrowIcon, TransferIcon } from '@storybook/icons';
 import { registerShortcuts } from './shortcuts';
 import { PARAM_KEY } from './constants';

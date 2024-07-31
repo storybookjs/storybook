@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { applyTransform } from 'jscodeshift/dist/testUtils';
 
-vi.mock('@storybook/node-logger');
+vi.mock('@storybook/core/node-logger');
 
 const inputRegExp = /\.input\.js$/;
 

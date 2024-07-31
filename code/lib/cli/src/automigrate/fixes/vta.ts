@@ -32,7 +32,7 @@ export const vta: Fix<Options> = {
     return dedent`
       New to Storybook 8: Storybook's Visual Tests addon helps you catch unintentional changes/bugs in your stories. The addon is powered by Chromatic, a cloud-based testing tool developed by Storybook's core team.
 
-      Learn more: ${chalk.yellow('storybook.js.org/docs/writing-tests/visual-testing')}
+      Learn more: ${chalk.yellow('https://storybook.js.org/docs/writing-tests/visual-testing')}
       
       Install Visual Tests addon in your project?
     `;

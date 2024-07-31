@@ -89,7 +89,11 @@
     },
     "sandbox": {
       "executor": "nx:run-commands",
-      "inputs": [{ "runtime": "storybook --version" }],
+      "inputs": [
+        {
+          "runtime": "storybook --version"
+        }
+      ],
       "outputs": ["{workspaceRoot}/../{projectRoot}"],
       "options": {
         "cwd": "{workspaceRoot}",
@@ -127,14 +131,6 @@
       },
       "dependsOn": ["sb:build"]
     }
-    //    "e2e": {
-    //      "executor": "nx:run-commands",
-    //      "options": {
-    //        "cwd": "{workspaceRoot}",
-    //        "command": "yarn playwright test"
-    //      },
-    //      "dependsOn": ["sb:build"]
-    //    }
   },
   "namedInputs": {
     "default": ["{projectRoot}/**/*", "sharedGlobals"],

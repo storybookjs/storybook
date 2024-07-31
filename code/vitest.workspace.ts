@@ -5,9 +5,9 @@ export default defineWorkspace([
   'addons/*/vitest.config.ts',
   'frameworks/*/vitest.config.ts',
   'lib/*/vitest.config.ts',
+  'core/vitest.config.ts',
   'deprecated/*/vitest.config.ts',
   'builders/*/vitest.config.ts',
-  'ui/*/vitest.config.ts',
   'presets/*/vitest.config.ts',
   'renderers/*/vitest.config.ts',
 ]);
@@ -29,6 +29,7 @@ export const vitestCommonConfig = defineConfig({
     setupFiles: [resolve(__dirname, './vitest-setup.ts')],
     globals: true,
     testTimeout: 10000,
+    environment: 'node',
     poolOptions: {
       threads: {
         minThreads: threadCount,

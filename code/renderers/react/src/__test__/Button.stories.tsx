@@ -6,6 +6,7 @@ import type { ButtonProps } from './Button';
 import { Button } from './Button';
 import type { HandlerFunction } from '@storybook/addon-actions';
 import { action } from '@storybook/addon-actions';
+import { mocked } from '@storybook/test';
 
 const meta = {
   title: 'Example/Button',
@@ -124,6 +125,30 @@ export const LoaderStory: CSF3Story<{ mockFn: (val: string) => string }> = {
   },
   play: async () => {
     expect(mockFn).toHaveBeenCalledWith('render');
+  },
+};
+
+export const MountInPlayFunction: CSF3Story<{ mockFn: (val: string) => string }> = {
+  args: {
+    mockFn: fn(),
+  },
+  play: async ({ args, mount, context }) => {
+    // equivalent of loaders
+    const loadedData = await Promise.resolve('loaded data');
+    mocked(args.mockFn).mockReturnValueOnce('mockFn return value');
+    // equivalent of render
+    const data = args.mockFn('render');
+    // TODO refactor this in the mount args PR
+    context.originalStoryFn = () => (
+      <div>
+        <div data-testid="loaded-data">{loadedData}</div>
+        <div data-testid="spy-data">{String(data)}</div>
+      </div>
+    );
+    await mount();
+
+    // equivalent of play
+    expect(args.mockFn).toHaveBeenCalledWith('render');
   },
 };
 

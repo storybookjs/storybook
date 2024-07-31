@@ -1,8 +1,8 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
 import chalk from 'chalk';
 import semver from 'semver';
-import type { JsPackageManager } from '@storybook/core-common';
-import { JsPackageManagerFactory, versions as storybookCorePackages } from '@storybook/core-common';
+import type { JsPackageManager } from '@storybook/core/common';
+import { JsPackageManagerFactory, versions as storybookCorePackages } from '@storybook/core/common';
 
 export type AnalysedPackage = {
   packageName: string;

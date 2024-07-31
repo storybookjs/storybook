@@ -1,4 +1,4 @@
-import { extractComponentProps, hasDocgen } from '@storybook/docs-tools';
+import { extractComponentProps, hasDocgen } from 'storybook/internal/docs-tools';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi, vitest } from 'vitest';
 import { extractArgTypes } from './extractArgTypes';
@@ -12,7 +12,7 @@ import {
   vueDocgenMocks,
 } from './tests-meta-components/meta-components';
 
-vitest.mock('@storybook/docs-tools', async (importOriginal) => {
+vitest.mock('storybook/internal/docs-tools', async (importOriginal) => {
   const module: Record<string, unknown> = await importOriginal();
   return {
     ...module,

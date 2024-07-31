@@ -1,5 +1,5 @@
 import { global as globalThis } from '@storybook/global';
-import type { PartialStoryFn, StoryContext } from '@storybook/types';
+import type { PartialStoryFn, StoryContext } from 'storybook/internal/types';
 
 const greetingForLocale = (locale: string) => {
   switch (locale) {

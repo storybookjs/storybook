@@ -8,7 +8,7 @@ const flatten = require('lodash/flatten.js');
 const intersection = require('lodash/intersection.js');
 const isEmpty = require('lodash/isEmpty.js');
 
-const pkg = require('../code/package.json'); // eslint-disable-line import/newline-after-import
+const pkg = require('../code/package.json');
 const prLogConfig = pkg['pr-log'];
 
 const Versions = {

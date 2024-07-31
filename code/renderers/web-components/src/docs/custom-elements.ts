@@ -1,6 +1,6 @@
 import invariant from 'tiny-invariant';
-import type { InputType, ArgTypes } from '@storybook/types';
-import { logger } from '@storybook/client-logger';
+import type { InputType, ArgTypes } from 'storybook/internal/types';
+import { logger } from 'storybook/internal/client-logger';
 import { getCustomElements, isValidComponent, isValidMetaData } from '..';
 
 interface TagItem {

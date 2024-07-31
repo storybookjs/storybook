@@ -1,5 +1,5 @@
-import type { Renderer } from '@storybook/types';
-import type { StoryStore } from '@storybook/preview-api';
+import type { Renderer } from '@storybook/core/types';
+import type { StoryStore } from 'storybook/internal/preview-api';
 
 declare global {
   interface Window {

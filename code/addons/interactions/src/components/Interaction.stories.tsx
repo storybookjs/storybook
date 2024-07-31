@@ -9,7 +9,7 @@ import SubnavStories from './Subnav.stories';
 type Story = StoryObj<typeof Interaction>;
 
 export default {
-  title: 'Addons/Interactions/Interaction',
+  title: 'Interaction',
   component: Interaction,
   args: {
     callsById: new Map(getCalls(CallStates.DONE).map((call) => [call.id, call])),

@@ -1,4 +1,3 @@
-/* eslint-disable no-await-in-loop */
 import type { TestCase } from 'junit-xml';
 import { getJunitXml } from 'junit-xml';
 import { outputFile, readFile, pathExists } from 'fs-extra';
@@ -155,6 +154,11 @@ export const options = createOptions({
     type: 'boolean',
     description: 'Build code and link for local development?',
     inverse: true,
+    promptType: false,
+  },
+  prod: {
+    type: 'boolean',
+    description: 'Build code for production',
     promptType: false,
   },
   dryRun: {

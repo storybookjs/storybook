@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-essentials",
-  "version": "8.2.0-alpha.6",
+  "version": "8.3.0-alpha.3",
   "description": "Curated addons to bring out the best of Storybook",
   "keywords": [
     "addon",
@@ -98,14 +98,13 @@
     "@storybook/addon-outline": "workspace:*",
     "@storybook/addon-toolbars": "workspace:*",
     "@storybook/addon-viewport": "workspace:*",
-    "@storybook/core-common": "workspace:*",
-    "@storybook/manager-api": "workspace:*",
-    "@storybook/node-logger": "workspace:*",
-    "@storybook/preview-api": "workspace:*",
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
     "typescript": "^5.3.2"
+  },
+  "peerDependencies": {
+    "storybook": "workspace:^"
   },
   "publishConfig": {
     "access": "public"
@@ -135,5 +134,5 @@
       "./src/viewport/preview.ts"
     ]
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae17"
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

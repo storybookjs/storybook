@@ -4,7 +4,7 @@ import { createOptions, getCommand } from './options';
 import { exec } from './exec';
 
 const require = createRequire(import.meta.url);
-const cliExecutable = require.resolve('../../code/lib/cli/bin/index.js');
+const cliExecutable = require.resolve('../../code/lib/cli/bin/index.cjs');
 
 export type CLIStep<TOptions extends OptionSpecifier> = {
   command: string;

@@ -3,7 +3,7 @@ import { CallStates } from '@storybook/instrumenter';
 import { Subnav } from './Subnav';
 
 export default {
-  title: 'Addons/Interactions/Subnav',
+  title: 'Subnav',
   component: Subnav,
   args: {
     controls: {

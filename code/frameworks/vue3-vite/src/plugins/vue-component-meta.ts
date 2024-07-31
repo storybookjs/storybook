@@ -9,6 +9,7 @@ import {
   createCheckerByJson,
   type ComponentMeta,
   type MetaCheckerOptions,
+  type PropertyMetaSchema,
 } from 'vue-component-meta';
 import { parseMulti } from 'vue-docgen-api';
 
@@ -49,6 +50,19 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
           if (isEmpty || meta.type === TypeMeta.Unknown) return;
 
           const exportName = exportNames[index];
+
+          // we remove nested object schemas here since they are not used inside Storybook (we don't generate controls for object properties)
+          // and they can cause "out of memory" issues for large/complex schemas (e.g. HTMLElement)
+          // it also reduced the bundle size when running "storybook build" when such schemas are used
+          (['props', 'events', 'slots', 'exposed'] as const).forEach((key) => {
+            meta[key].forEach((value) => {
+              if (Array.isArray(value.schema)) {
+                value.schema.forEach((eventSchema) => removeNestedSchemas(eventSchema));
+              } else {
+                removeNestedSchemas(value.schema);
+              }
+            });
+          });
 
           const exposed =
             // the meta also includes duplicated entries in the "exposed" array with "on"
@@ -249,4 +263,13 @@ async function getTsConfigReferences(tsConfigPath: string) {
     // invalid project tsconfig
     return [];
   }
+}
+
+/**
+ * Removes any nested schemas from the given main schema (e.g. from a prop, event, slot or exposed).
+ * Useful to drastically reduce build size and prevent out of memory issues when large schemas (e.g. HTMLElement, MouseEvent) are used.
+ */
+function removeNestedSchemas(schema: PropertyMetaSchema) {
+  if (typeof schema !== 'object') return;
+  delete schema.schema;
 }

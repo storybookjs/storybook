@@ -1,6 +1,6 @@
 import type { MockInstance } from 'vitest';
 import { describe, beforeEach, afterEach, it, expect, vi } from 'vitest';
-import type { StorybookConfigRaw } from '@storybook/types';
+import type { StorybookConfigRaw } from '@storybook/core/types';
 import { checkWebpack5Builder } from './checkWebpack5Builder';
 import { getBuilderPackageName } from './mainConfigFile';
 

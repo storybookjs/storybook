@@ -4,11 +4,11 @@ import React, { StrictMode, createElement, Profiler } from 'react';
 import type { Mock } from 'vitest';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import PropTypes from 'prop-types';
-import { addons, useEffect } from '@storybook/preview-api';
-import { SNIPPET_RENDERED } from '@storybook/docs-tools';
+import { addons, useEffect } from 'storybook/internal/preview-api';
+import { SNIPPET_RENDERED } from 'storybook/internal/docs-tools';
 import { renderJsx, jsxDecorator, getReactSymbolName } from './jsxDecorator';
 
-vi.mock('@storybook/preview-api');
+vi.mock('storybook/internal/preview-api');
 const mockedAddons = vi.mocked(addons);
 const mockedUseEffect = vi.mocked(useEffect);
 

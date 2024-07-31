@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { JsPackageManager } from '@storybook/core-common';
+import type { JsPackageManager } from '@storybook/core/common';
 import { sbBinary } from './sb-binary';
 
 const checkStorybookBinary = async ({
@@ -18,32 +18,12 @@ const checkStorybookBinary = async ({
 
 describe('storybook-binary fix', () => {
   describe('sb >= 7.0', () => {
-    it('should no-op in NX projects', async () => {
-      const packageManager = {
-        getPackageVersion: (packageName) => {
-          switch (packageName) {
-            case '@storybook/react':
-              return Promise.resolve('7.0.0');
-            case '@nrwl/storybook':
-              return Promise.resolve('15.7.1');
-            default:
-              return null;
-          }
-        },
-        retrievePackageJson: () => Promise.resolve({}),
-      } as Partial<JsPackageManager>;
-
-      await expect(
-        checkStorybookBinary({
-          packageManager,
-        })
-      ).resolves.toBeFalsy();
-    });
-
     it('should add storybook dependency if not present', async () => {
       const packageManager = {
         getPackageVersion: (packageName) => {
           switch (packageName) {
+            case '@nrwl/storybook':
+              return Promise.resolve('15.7.1');
             case '@storybook/react':
               return Promise.resolve('7.0.0-alpha.0');
             default:

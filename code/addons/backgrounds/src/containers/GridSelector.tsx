@@ -1,8 +1,8 @@
 import type { FC } from 'react';
 import React, { memo } from 'react';
 
-import { useGlobals, useParameter } from '@storybook/manager-api';
-import { IconButton } from '@storybook/components';
+import { useGlobals, useParameter } from 'storybook/internal/manager-api';
+import { IconButton } from 'storybook/internal/components';
 
 import { GridIcon } from '@storybook/icons';
 import { PARAM_KEY as BACKGROUNDS_PARAM_KEY } from '../constants';

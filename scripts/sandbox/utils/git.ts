@@ -1,8 +1,7 @@
-import fetch from 'node-fetch';
 import invariant from 'tiny-invariant';
 
 import { execaCommand } from 'execa';
-// eslint-disable-next-line import/no-cycle
+
 import { logger } from '../publish';
 
 import { version as storybookVersion } from '../../../code/package.json';

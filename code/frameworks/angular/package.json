@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular",
-  "version": "8.2.0-alpha.6",
+  "version": "8.3.0-alpha.3",
   "description": "Storybook for Angular: Develop Angular components in isolation with hot reloading.",
   "keywords": [
     "storybook",
@@ -38,24 +38,19 @@
   },
   "dependencies": {
     "@storybook/builder-webpack5": "workspace:*",
-    "@storybook/client-logger": "workspace:*",
-    "@storybook/core-common": "workspace:*",
-    "@storybook/core-events": "workspace:*",
-    "@storybook/core-server": "workspace:*",
+    "@storybook/components": "workspace:^",
     "@storybook/core-webpack": "workspace:*",
-    "@storybook/docs-tools": "workspace:*",
     "@storybook/global": "^5.0.0",
-    "@storybook/node-logger": "workspace:*",
-    "@storybook/preview-api": "workspace:*",
-    "@storybook/telemetry": "workspace:*",
-    "@storybook/types": "workspace:*",
+    "@storybook/manager-api": "workspace:^",
+    "@storybook/preview-api": "workspace:^",
+    "@storybook/theming": "workspace:^",
     "@types/node": "^18.0.0",
     "@types/react": "^18.0.37",
     "@types/react-dom": "^18.0.11",
     "@types/semver": "^7.3.4",
     "@types/webpack-env": "^1.18.0",
+    "fd-package-json": "^1.2.0",
     "find-up": "^5.0.0",
-    "read-pkg-up": "^7.0.1",
     "semver": "^7.3.7",
     "telejson": "^7.2.0",
     "ts-dedent": "^2.0.0",
@@ -80,7 +75,6 @@
     "@types/cross-spawn": "^6.0.2",
     "@types/tmp": "^0.2.3",
     "cross-spawn": "^7.0.3",
-    "jsdom": "^23.0.1",
     "tmp": "^0.2.1",
     "typescript": "^5.3.2",
     "webpack": "5",
@@ -99,6 +93,7 @@
     "@angular/platform-browser": ">=15.0.0 < 19.0.0",
     "@angular/platform-browser-dynamic": ">=15.0.0 < 19.0.0",
     "rxjs": "^6.0.0 || ^7.4.0",
+    "storybook": "workspace:^",
     "typescript": "^4.0.0 || ^5.0.0",
     "zone.js": ">= 0.11.1 < 1.0.0"
   },
@@ -118,5 +113,5 @@
     "post": "./scripts/postbuild.js",
     "tsConfig": "tsconfig.build.json"
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae17"
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

@@ -1,5 +1,5 @@
 import { copyTemplateFiles, getBabelDependencies } from '../../helpers';
-import type { JsPackageManager } from '@storybook/core-common';
+import type { JsPackageManager } from '@storybook/core/common';
 import type { NpmOptions } from '../../NpmOptions';
 import { SupportedLanguage } from '../../project_types';
 

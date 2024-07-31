@@ -4,9 +4,9 @@ import detectIndent from 'detect-indent';
 import prompts from 'prompts';
 import chalk from 'chalk';
 
-import { readConfig, writeConfig } from '@storybook/csf-tools';
-import type { JsPackageManager } from '@storybook/core-common';
-import { paddedLog } from '@storybook/core-common';
+import { readConfig, writeConfig } from '@storybook/core/csf-tools';
+import type { JsPackageManager } from '@storybook/core/common';
+import { paddedLog } from '@storybook/core/common';
 
 export const SUPPORTED_ESLINT_EXTENSIONS = ['js', 'cjs', 'json'];
 const UNSUPPORTED_ESLINT_EXTENSIONS = ['yaml', 'yml'];

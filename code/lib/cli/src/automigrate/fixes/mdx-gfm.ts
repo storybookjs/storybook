@@ -1,7 +1,7 @@
 import { dedent } from 'ts-dedent';
 import { join } from 'path';
 import slash from 'slash';
-import { commonGlobOptions } from '@storybook/core-common';
+import { commonGlobOptions } from '@storybook/core/common';
 import { updateMainConfig } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
 import { getStorybookVersionSpecifier } from '../../helpers';

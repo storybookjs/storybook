@@ -7,8 +7,8 @@ import { render as litRender } from 'lit';
 // Keep `.js` extension to avoid issue with Webpack (related to export map?)
 
 import { isTemplateResult } from 'lit/directive-helpers.js';
-import { simulatePageLoad, simulateDOMContentLoaded } from '@storybook/preview-api';
-import type { RenderContext, ArgsStoryFn } from '@storybook/types';
+import { simulatePageLoad, simulateDOMContentLoaded } from 'storybook/internal/preview-api';
+import type { RenderContext, ArgsStoryFn } from 'storybook/internal/types';
 import type { WebComponentsRenderer } from './types';
 
 const { Node } = global;

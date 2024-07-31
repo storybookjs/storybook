@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeStoriesEntry } from '@storybook/core-common';
+import { normalizeStoriesEntry } from 'storybook/internal/common';
 
 import { webpackIncludeRegexp } from './to-importFn';
 

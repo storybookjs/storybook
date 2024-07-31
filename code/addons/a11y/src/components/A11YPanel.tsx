@@ -1,8 +1,8 @@
 import React, { useCallback, useMemo, useState } from 'react';
 
-import { styled } from '@storybook/theming';
+import { styled } from 'storybook/internal/theming';
 
-import { ActionBar, ScrollArea } from '@storybook/components';
+import { ActionBar, ScrollArea } from 'storybook/internal/components';
 import { SyncIcon, CheckIcon } from '@storybook/icons';
 
 import type { AxeResults } from 'axe-core';
@@ -11,7 +11,7 @@ import {
   useParameter,
   useStorybookApi,
   useStorybookState,
-} from '@storybook/manager-api';
+} from 'storybook/internal/manager-api';
 
 import { Report } from './Report';
 

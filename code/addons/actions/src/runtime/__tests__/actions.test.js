@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
-import { addons } from '@storybook/preview-api';
+import { addons } from 'storybook/internal/preview-api';
 import { actions } from '../..';
 
-vi.mock('@storybook/preview-api');
+vi.mock('storybook/internal/preview-api');
 
 const createChannel = () => {
   const channel = { emit: vi.fn() };

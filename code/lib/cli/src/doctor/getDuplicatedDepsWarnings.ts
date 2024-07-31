@@ -1,6 +1,6 @@
 import chalk from 'chalk';
-import { frameworkPackages, rendererPackages } from '@storybook/core-common';
-import type { InstallationMetadata } from '@storybook/core-common';
+import { frameworkPackages, rendererPackages } from '@storybook/core/common';
+import type { InstallationMetadata } from '@storybook/core/common';
 import { hasMultipleVersions } from './hasMultipleVersions';
 
 export const messageDivider = '\n\n';
@@ -13,10 +13,8 @@ export const allowList = [
   '@storybook/channel-postmessage',
   '@storybook/channel-websocket',
   '@storybook/client-api',
-  '@storybook/client-logger',
   '@storybook/core-client',
   '@storybook/preview-web',
-  '@storybook/preview-api',
   '@storybook/store',
 
   // see this file for more info: code/ui/manager/src/globals/types.ts
@@ -31,9 +29,9 @@ export const allowList = [
 export const disallowList = [
   Object.keys(rendererPackages),
   Object.keys(frameworkPackages),
-  '@storybook/core-events',
+  'storybook',
   '@storybook/instrumenter',
-  '@storybook/core-common',
+  '@storybook/core',
   '@storybook/core-server',
   '@storybook/manager',
   '@storybook/preview',

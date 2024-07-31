@@ -83,13 +83,14 @@ sidebar:
 
   | Property   | Type                                      | Description                                                                           |
   | ---------- | ----------------------------------------- | ------------------------------------------------------------------------------------- |
-  | storyName  | `string`                                  | The story's name                                                                      |
   | args       | `Record<string, any>`                     | The story's [args](../../writing-stories/args.mdx)                                    |
   | argTypes   | `ArgType`                                 | The story's [argTypes](../arg-types.mdx)                                              |
   | id         | `string`                                  | The story's id                                                                        |
-  | tags       | `string[]`                                | The story's [tags](../../writing-stories/tags.mdx)                                    |
   | parameters | `Record<string, any>`                     | The story's [parameters](../parameters.mdx)                                           |
-  | play       | `(context) => Promise<void> \| undefined` | Mounts and executes the [play function](#3-play) of a given story                     |
+  | play       | `(context) => Promise<void> \| undefined` | Executes the play function of a given story                                |
+  | run        | `(context) => Promise<void> \| undefined` | [Mounts and executes the play function](#3-run) of a given story                     |
+  | storyName  | `string`                                  | The story's name                                                                      |
+  | tags       | `string[]`                                | The story's [tags](../../writing-stories/tags.mdx)                                    |
 
   ## composeStory
 
@@ -202,7 +203,7 @@ sidebar:
 
   To preview your stories in Storybook, Storybook runs a story pipeline, which includes applying project annotations, loading data, rendering the story, and playing interactions. This is a simplified version of the pipeline:
 
-  ![A flow diagram of the story pipeline. First, set project annotations. Collect annotations (decorators, args, etc) which are exported by addons and the preview file. Second, compose story. Create renderable elements based on the stories passed onto the API. Third, play. Mount the component and execute all the story lifecycle hooks.](../../_assets/api/story-pipeline.png)
+  ![A flow diagram of the story pipeline. First, set project annotations. Collect annotations (decorators, args, etc) which are exported by addons and the preview file. Second, compose story. Create renderable elements based on the stories passed onto the API. Third, run. Mount the component and execute all the story lifecycle hooks, including the play function.](../../_assets/api/story-pipeline.png)
 
   When you want to reuse a story in a different environment, however, it's crucial to understand that all these steps make a story. The portable stories API provides you with the mechanism to recreate that story pipeline in your external environment:
 
@@ -216,11 +217,11 @@ sidebar:
 
   The story is prepared by running [`composeStories`](#composestories) or [`composeStory`](#composestory). The outcome is a renderable component that represents the render function of the story.
 
-  ### 3. Play
+  ### 3. Run
 
-  Finally, stories can prepare data they need (e.g. setting up some mocks or fetching data) before rendering by defining [loaders](../../writing-stories/loaders.mdx), [beforeEach](../../writing-tests/interaction-testing.mdx#run-code-before-each-story) or by having all the story code in the play function when using the [mount](../../writing-tests/interaction-testing.mdx#run-code-before-the-component-gets-rendered). In portable stories, all of these steps will be executed when you run the `play` method of the composed story.
+  Finally, stories can prepare data they need (e.g. setting up some mocks or fetching data) before rendering by defining [loaders](../../writing-stories/loaders.mdx), [beforeEach](../../writing-tests/interaction-testing.mdx#run-code-before-each-story) or by having all the story code in the play function when using the [mount](../../writing-tests/interaction-testing.mdx#run-code-before-the-component-gets-rendered). In portable stories, all of these steps will be executed when you call the `run` method of the composed story.
 
-  👉 For this, you use the [`composeStories`](#composestories) or [`composeStory`](#composestory) API. The composed story will return a `play` method to be called.
+  👉 For this, you use the [`composeStories`](#composestories) or [`composeStory`](#composestory) API. The composed story will return a `run` method to be called.
 
   {/* prettier-ignore-start */}
 

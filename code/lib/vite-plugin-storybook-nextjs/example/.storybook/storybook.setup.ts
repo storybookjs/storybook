@@ -1,6 +1,10 @@
 import { setProjectAnnotations } from "@storybook/nextjs";
 import { beforeAll, beforeEach } from "vitest";
 
+import * as addonActionsAnnotations from "@storybook/addon-actions/preview";
+import * as addonInteractionsAnnotations from "@storybook/addon-interactions/preview";
+import * as rendererDocsAnnotations from "@storybook/react/dist/entry-preview-docs.mjs";
+import * as rendererRSCAnnotations from "@storybook/react/dist/entry-preview-rsc.mjs";
 import * as projectAnnotations from "./preview";
 
 const { cleanup, render: testingLibraryRender } = await import(
@@ -10,7 +14,11 @@ const { cleanup, render: testingLibraryRender } = await import(
 beforeEach(cleanup);
 
 const annotations = setProjectAnnotations([
+  rendererRSCAnnotations,
+  rendererDocsAnnotations,
   projectAnnotations,
+  addonActionsAnnotations,
+  addonInteractionsAnnotations,
   { testingLibraryRender },
 ]);
 

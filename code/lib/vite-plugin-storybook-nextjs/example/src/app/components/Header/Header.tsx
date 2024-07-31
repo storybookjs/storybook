@@ -1,5 +1,4 @@
 import { cookies, headers } from "next/headers";
-import React from "react";
 
 export default async function Component() {
   async function handleClick() {

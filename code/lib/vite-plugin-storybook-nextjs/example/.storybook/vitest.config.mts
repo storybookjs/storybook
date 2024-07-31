@@ -11,8 +11,6 @@ export default defineConfig({
       renderer: "react",
     }),
     Inspect({ build: true, outputDir: ".vite-inspect" }),
-    // for experimentation sake
-    // reactPlugin(),
   ],
   test: {
     name: "storybook",

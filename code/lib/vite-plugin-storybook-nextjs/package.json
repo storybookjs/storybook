@@ -2,20 +2,11 @@
   "name": "vite-plugin-storybook-nextjs",
   "version": "0.0.3",
   "description": "",
-  "keywords": [
-    "vite-plugin",
-    "nextjs",
-    "storybook",
-    "vitest"
-  ],
+  "keywords": ["vite-plugin", "nextjs", "storybook", "vitest"],
   "author": "Storybook Bot <storybookbot@gmail.com>",
   "license": "MIT",
-  "sideEffects": [
-    "./src/polyfills/promise-with-resolvers.ts"
-  ],
-  "files": [
-    "dist"
-  ],
+  "sideEffects": ["./src/polyfills/promise-with-resolvers.ts"],
+  "files": ["dist"],
   "type": "module",
   "exports": {
     ".": {
@@ -32,11 +23,14 @@
     "release": "auto shipit"
   },
   "peerDependencies": {
+    "@storybook/test": "^8.3.0-alpha.3",
     "next": "^14.0.0",
+    "storybook": "^8.3.0-alpha.3",
     "vite": "^5.0.0"
   },
   "devDependencies": {
     "@biomejs/biome": "1.8.1",
+    "@storybook/test": "8.3.0-alpha.3",
     "@types/node": "^18",
     "@types/react": "^18",
     "auto": "^11.2.0",
@@ -45,6 +39,7 @@
     "react": "^18",
     "rollup": "^4.18.0",
     "sharp": "^0.33.4",
+    "storybook": "8.3.0-alpha.3",
     "tsup": "^8.1.0",
     "typescript": "^5.0.0",
     "vite": "^5.0.0",

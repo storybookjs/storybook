@@ -36,7 +36,7 @@ export function vitePluginNextSwc(
       nextDirectories = findPagesDir(resolvedDir);
       // @ts-ignore TODO figure out why TypeScript is complaining about this
       loadedJSConfig = await loadJsConfig.default(resolvedDir, nextConfig);
-      isDev = env.mode === "development";
+      isDev = env.mode !== "production";
       packageJson = await NextUtils.loadClosestPackageJson(resolvedDir);
       isEsmProject = true;
       // TODO: Setting isEsmProject to false errors. Need to investigate further.

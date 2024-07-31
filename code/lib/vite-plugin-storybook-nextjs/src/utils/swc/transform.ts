@@ -35,7 +35,7 @@ export const getVitestSWCTransformConfig = ({
 }: VitestSWCTransformConfigParams) => {
   const baseOptions = getBaseSWCOptions({
     filename,
-    development: false,
+    development: isDev,
     hasReactRefresh: false,
     globalWindow: !isServerEnvironment,
     modularizeImports: nextConfig.modularizeImports,
@@ -52,6 +52,9 @@ export const getVitestSWCTransformConfig = ({
     ),
   });
   const useCjsModules = shouldOutputCommonJs(filename);
+  const isPageFile = nextDirectories.pagesDir
+    ? filename.startsWith(nextDirectories.pagesDir)
+    : false;
 
   return {
     ...baseOptions,
@@ -90,10 +93,13 @@ export const getVitestSWCTransformConfig = ({
     module: {
       type: isEsmProject && !useCjsModules ? "es6" : "commonjs",
     },
-    disableNextSsg: true,
+    disableNextSsg: !isPageFile,
     disablePageConfig: true,
+    isPageFile,
     pagesDir: nextDirectories.pagesDir,
     appDir: nextDirectories.appDir,
+    isDevelopment: isDev,
+    isServerCompiler: isServerEnvironment,
     inputSourceMap:
       inputSourceMap && typeof inputSourceMap === "object"
         ? JSON.stringify(inputSourceMap)

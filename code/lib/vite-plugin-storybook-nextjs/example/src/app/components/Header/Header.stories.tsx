@@ -1,3 +1,7 @@
+/**
+ * @vitest-environment jsdom
+ */
+
 import { cookies, headers } from "@storybook/nextjs/headers.mock";
 import type { Meta } from "@storybook/react";
 import type { StoryObj } from "@storybook/react";

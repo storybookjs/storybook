@@ -23,7 +23,7 @@ export const vitePluginNextMocks = () =>
           "@storybook/nextjs/router.mock": joinDir("router", "index.js"),
           "next/cache": joinDir("cache", "index.js"),
           "@storybook/nextjs/cache.mock": joinDir("cache", "index.js"),
-          "server-only$": joinDir("rsc", "server-only.js"),
+          "server-only": joinDir("rsc", "server-only.js"),
         },
       },
     }),

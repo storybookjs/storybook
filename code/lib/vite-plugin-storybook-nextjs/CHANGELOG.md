@@ -1,3 +1,15 @@
+# v0.0.7 (Wed Jul 31 2024)
+
+#### ⚠️ Pushed to `main`
+
+- Fix server-only import ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
 # v0.0.6 (Wed Jul 31 2024)
 
 #### 🐛 Bug Fix

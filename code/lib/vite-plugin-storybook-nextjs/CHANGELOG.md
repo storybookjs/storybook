@@ -1,3 +1,15 @@
+# v0.0.5 (Wed Jul 31 2024)
+
+#### 🐛 Bug Fix
+
+- Remove unused ts-up [#6](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/6) ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
 # v0.0.4 (Wed Jul 31 2024)
 
 #### 🐛 Bug Fix

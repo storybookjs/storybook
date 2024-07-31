@@ -5,7 +5,7 @@ import type * as _NextImage from "next/image";
 import { defaultLoader } from "sb-original/default-loader";
 import { ImageContext } from "sb-original/image-context";
 
-import React from "react";
+import React from "next/dist/compiled/react";
 
 const OriginalNextImage = NextImageNamespace.default;
 const { getImageProps: originalGetImageProps } = NextImageNamespace;

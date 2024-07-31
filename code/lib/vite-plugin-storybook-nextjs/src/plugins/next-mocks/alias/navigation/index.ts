@@ -60,7 +60,7 @@ export const getRouter = () => {
 };
 
 // re-exports of the actual module
-export * from "next/dist/client/components/navigation";
+export * from "next/dist/client/components/navigation.js";
 
 // mock utilities/overrides (as of Next v14.2.0)
 export const redirect = fn(

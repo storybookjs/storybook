@@ -1,3 +1,15 @@
+# v0.0.9 (Wed Jul 31 2024)
+
+#### ⚠️ Pushed to `main`
+
+- Use react alias in Next.js component ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
 # v0.0.8 (Wed Jul 31 2024)
 
 #### ⚠️ Pushed to `main`

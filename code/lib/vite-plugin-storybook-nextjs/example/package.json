@@ -40,8 +40,7 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "@vitejs/plugin-react": "^4.3.1",
-    "@vitest/browser": "^2.0.4",
+    "@vitest/browser": "^2.0.5",
     "autoprefixer": "^10.4.19",
     "bootstrap": "^5.3.3",
     "happy-dom": "^14.12.3",
@@ -54,6 +53,6 @@
     "typescript": "^5",
     "vite-plugin-inspect": "^0.8.5",
     "vite-plugin-storybook-nextjs": "workspace:*",
-    "vitest": "^2.0.4"
+    "vitest": "^2.0.5"
   }
 }

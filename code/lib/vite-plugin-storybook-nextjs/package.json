@@ -2,20 +2,11 @@
   "name": "vite-plugin-storybook-nextjs",
   "version": "0.0.9",
   "description": "",
-  "keywords": [
-    "vite-plugin",
-    "nextjs",
-    "storybook",
-    "vitest"
-  ],
+  "keywords": ["vite-plugin", "nextjs", "storybook", "vitest"],
   "author": "Storybook Bot <storybookbot@gmail.com>",
   "license": "MIT",
-  "sideEffects": [
-    "./src/polyfills/promise-with-resolvers.ts"
-  ],
-  "files": [
-    "dist"
-  ],
+  "sideEffects": ["./src/polyfills/promise-with-resolvers.ts"],
+  "files": ["dist"],
   "type": "module",
   "exports": {
     ".": {
@@ -33,7 +24,7 @@
   },
   "peerDependencies": {
     "@storybook/test": "^8.3.0-alpha.3",
-    "next": "^14.0.0",
+    "next": "^14.2.5",
     "storybook": "^8.3.0-alpha.3",
     "vite": "^5.0.0"
   },
@@ -44,7 +35,7 @@
     "@types/react": "^18",
     "auto": "^11.2.0",
     "lefthook": "^1.6.16",
-    "next": "^14.0.0",
+    "next": "^14.2.5",
     "react": "^18",
     "rollup": "^4.18.0",
     "sharp": "^0.33.4",
@@ -56,7 +47,7 @@
   },
   "packageManager": "pnpm@9.4.0",
   "dependencies": {
-    "@next/env": "^14.2.4",
+    "@next/env": "^14.2.5",
     "image-size": "^1.1.1",
     "module-alias": "^2.2.3",
     "ts-dedent": "^2.2.0"

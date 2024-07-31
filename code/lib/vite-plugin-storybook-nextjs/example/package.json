@@ -15,7 +15,7 @@
     "inspect": "serve .storybook/.vite-inspect"
   },
   "dependencies": {
-    "next": "14.2.4",
+    "next": "14.2.5",
     "react": "^18",
     "react-dom": "^18",
     "styled-jsx": "^5.1.6"

@@ -6756,14 +6756,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/svelte@workspace:renderers/svelte"
   dependencies:
-<<<<<<< Updated upstream
-    "@storybook/components": "workspace:^"
-=======
     "@storybook/addon-svelte-csf": "npm:^4.1.4"
-    "@storybook/client-logger": "workspace:*"
-    "@storybook/core-events": "workspace:*"
-    "@storybook/docs-tools": "workspace:*"
->>>>>>> Stashed changes
+    "@storybook/components": "workspace:^"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/manager-api": "workspace:^"
     "@storybook/preview-api": "workspace:^"

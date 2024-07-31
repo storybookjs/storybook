@@ -30,7 +30,7 @@
     "@storybook/addon-toolbars": "0.0.0-pr-28756-sha-d271575c",
     "@storybook/blocks": "0.0.0-pr-28756-sha-d271575c",
     "@storybook/builder-vite": "0.0.0-pr-28756-sha-d271575c",
-    "@storybook/experimental-vitest-plugin": "0.0.1--canary.1.1c6117a.0",
+    "@storybook/experimental-vitest-plugin": "0.0.2",
     "@storybook/nextjs": "0.0.0-pr-28756-sha-d271575c",
     "@storybook/react": "0.0.0-pr-28756-sha-d271575c",
     "@storybook/test": "0.0.0-pr-28756-sha-d271575c",

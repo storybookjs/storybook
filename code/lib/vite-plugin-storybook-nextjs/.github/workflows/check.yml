@@ -25,8 +25,8 @@ jobs:
         working-directory: ./example
         run: pnpm exec playwright install
 
-      - name: Run Next.js tests
-        run: pnpm test
+      - name: Run all tests
+        run: pnpm test:all
         working-directory: ./example
 
       # - name: Run Portable stories tests

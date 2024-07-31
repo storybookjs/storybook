@@ -49,6 +49,16 @@ export const createNavigation = (
   return navigationAPI;
 };
 
+export const getRouter = () => {
+  if (!navigationAPI) {
+    throw new NextjsRouterMocksNotAvailable({
+      importType: "next/navigation",
+    });
+  }
+
+  return navigationAPI;
+};
+
 // re-exports of the actual module
 export * from "next/dist/client/components/navigation";
 

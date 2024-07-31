@@ -1,3 +1,15 @@
+# v0.0.4 (Wed Jul 31 2024)
+
+#### 🐛 Bug Fix
+
+- Implement Next.js Mocks [#5](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/5) ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
 # v0.0.3 (Tue Jul 30 2024)
 
 #### 🐛 Bug Fix

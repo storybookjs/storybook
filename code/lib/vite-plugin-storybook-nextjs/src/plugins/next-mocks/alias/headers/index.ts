@@ -1,5 +1,5 @@
 import { fn } from "@storybook/test";
-import * as originalHeaders from "next/dist/client/components/headers";
+import * as originalHeaders from "next/dist/client/components/headers.js";
 
 // mock utilities/overrides (as of Next v14.2.0)
 export { headers } from "./headers";

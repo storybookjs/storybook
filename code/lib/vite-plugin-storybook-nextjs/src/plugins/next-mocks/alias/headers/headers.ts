@@ -1,6 +1,6 @@
 import { fn } from "@storybook/test";
 
-import { HeadersAdapter } from "next/dist/server/web/spec-extension/adapters/headers";
+import { HeadersAdapter } from "next/dist/server/web/spec-extension/adapters/headers.js";
 
 class HeadersAdapterMock extends HeadersAdapter {
   constructor() {

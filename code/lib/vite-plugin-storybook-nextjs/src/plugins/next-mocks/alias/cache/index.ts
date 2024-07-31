@@ -1,6 +1,6 @@
 import { fn } from "@storybook/test";
-import { unstable_cache } from "next/dist/server/web/spec-extension/unstable-cache";
-import { unstable_noStore } from "next/dist/server/web/spec-extension/unstable-no-store";
+import { unstable_cache } from "next/dist/server/web/spec-extension/unstable-cache.js";
+import { unstable_noStore } from "next/dist/server/web/spec-extension/unstable-no-store.js";
 
 // mock utilities/overrides (as of Next v14.2.0)
 const revalidatePath = fn().mockName("next/cache::revalidatePath");

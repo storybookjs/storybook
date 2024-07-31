@@ -30,6 +30,7 @@ type VitePluginOptions = {
 function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin[] {
   const resolvedDir = resolve(dir);
   const nextConfigResolver = Promise.withResolvers<NextConfigComplete>();
+  const isVitestEnv = process.env.VITEST === "true";
 
   return [
     {
@@ -48,7 +49,51 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin[] {
           await loadConfig.default(phase, resolvedDir),
         );
 
-        return config;
+        return {
+          ...(!isVitestEnv && {
+            resolve: {
+              alias: {
+                react: "next/dist/compiled/react",
+                "react-dom": "next/dist/compiled/react-dom",
+              },
+            },
+          }),
+          test: {
+            alias: {
+              "react/jsx-dev-runtime": require.resolve(
+                "next/dist/compiled/react/jsx-dev-runtime.js",
+              ),
+              "react/jsx-runtime": require.resolve(
+                "next/dist/compiled/react/jsx-runtime.js",
+              ),
+
+              react: require.resolve("next/dist/compiled/react"),
+
+              "react-dom/test-utils": require.resolve(
+                "next/dist/compiled/react-dom/cjs/react-dom-test-utils.production.js",
+              ),
+
+              "react-dom/cjs/react-dom.development.js": require.resolve(
+                "next/dist/compiled/react-dom/cjs/react-dom.development.js",
+              ),
+
+              "react-dom/client": require.resolve(
+                "next/dist/compiled/react-dom/client.js",
+              ),
+
+              "react-dom": require.resolve("next/dist/compiled/react-dom"),
+            },
+          },
+        };
+      },
+      configResolved(config) {
+        if (!config.test?.browser?.enabled) {
+          // biome-ignore lint/style/noNonNullAssertion: test is available in the config
+          config.test!.setupFiles = [
+            require.resolve("./mocks/storybook.global.js"),
+            ...(config.test?.setupFiles ?? []),
+          ];
+        }
       },
     },
     vitePluginNextFont(),

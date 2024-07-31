@@ -1,3 +1,15 @@
+# v0.0.6 (Wed Jul 31 2024)
+
+#### 🐛 Bug Fix
+
+- Fix Storybook global [#7](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/7) ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
 # v0.0.5 (Wed Jul 31 2024)
 
 #### 🐛 Bug Fix

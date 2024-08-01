@@ -156,11 +156,10 @@ const DismissButtonWrapper = styled(IconButton)(({ theme }) => ({
   color: theme.base === 'light' ? 'rgba(255,255,255,0.7)' : ' #999999',
 }));
 
-const DismissNotificationItem: FC<{
-  onDismiss: () => void;
-}> = ({ onDismiss }) => (
+const DismissNotificationItem: FC<{ onDismiss: () => void }> = ({ onDismiss }) => (
   <DismissButtonWrapper
-    title="Dismiss notification"
+    title="Close search"
+    aria-label="Close search"
     onClick={(e: SyntheticEvent) => {
       e.preventDefault();
       e.stopPropagation();

@@ -8,7 +8,7 @@ import * as FormStories from './LoginForm.stories';
 const { InvalidForm, ValidForm } = composeStories(FormStories);
 
 test('Tests invalid form state', async () => {
-  await InvalidForm.play();
+  await InvalidForm.run();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',
@@ -21,7 +21,7 @@ test('Tests invalid form state', async () => {
 });
 
 test('Tests filled form', async () => {
-  await ValidForm.play();
+  await ValidForm.run();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',
@@ -44,7 +44,7 @@ import * as FormStories from './LoginForm.stories';
 const { InvalidForm, ValidForm } = composeStories(FormStories);
 
 test('Tests invalid form state', async () => {
-  await InvalidForm.play();
+  await InvalidForm.run();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',
@@ -57,7 +57,7 @@ test('Tests invalid form state', async () => {
 });
 
 test('Tests filled form', async () => {
-  await ValidForm.play();
+  await ValidForm.run();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',
@@ -80,7 +80,7 @@ import * as FormStories from './LoginForm.stories';
 const { InvalidForm, ValidForm } = composeStories(FormStories);
 
 test('Tests invalid form state', async () => {
-  await InvalidForm.play();
+  await InvalidForm.run();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',
@@ -93,7 +93,7 @@ test('Tests invalid form state', async () => {
 });
 
 test('Tests filled form', async () => {
-  await ValidForm.play();
+  await ValidForm.run();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',
@@ -116,7 +116,7 @@ import * as FormStories from './LoginForm.stories';
 const { InvalidForm, ValidForm } = composeStories(FormStories);
 
 test('Tests invalid form state', async () => {
-  await InvalidForm.play();
+  await InvalidForm.run();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',
@@ -129,7 +129,7 @@ test('Tests invalid form state', async () => {
 });
 
 test('Tests filled form', async () => {
-  await ValidForm.play();
+  await ValidForm.run();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',

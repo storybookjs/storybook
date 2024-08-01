@@ -16,6 +16,7 @@ import type {
 
 // ! ATTENTION: This needs to be a relative import so it gets prebundled. This is to avoid ESM issues in Nextjs + Jest setups
 import { INTERNAL_DEFAULT_PROJECT_ANNOTATIONS as reactAnnotations } from '../../../renderers/react/src/portable-stories';
+import * as rscAnnotations from '../../../renderers/react/src/entry-preview-rsc';
 import * as nextJsAnnotations from './preview';
 
 import type { ReactRenderer, Meta } from '@storybook/react';
@@ -46,6 +47,7 @@ export function setProjectAnnotations(
 // This will not be necessary once we have auto preset loading
 const defaultProjectAnnotations: ProjectAnnotations<ReactRenderer> = composeConfigs([
   reactAnnotations,
+  rscAnnotations,
   nextJsAnnotations,
 ]);
 

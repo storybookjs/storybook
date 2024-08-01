@@ -52,7 +52,7 @@ describe('renders', () => {
     expect(getByTestId('spy-data').textContent).toEqual('mockFn return value');
     expect(getByTestId('loaded-data').textContent).toEqual('loaded data');
     // spy assertions happen in the play function and should work
-    await LoaderStory.play!();
+    await LoaderStory.run!();
   });
 });
 
@@ -103,7 +103,7 @@ describe('CSF3', () => {
   it('renders with play function', async () => {
     const CSF3InputFieldFilled = composeStory(stories.CSF3InputFieldFilled, stories.default);
 
-    await CSF3InputFieldFilled.play();
+    await CSF3InputFieldFilled.run();
 
     const input = screen.getByTestId('input') as HTMLInputElement;
     expect(input.value).toEqual('Hello world!');
@@ -145,7 +145,7 @@ describe('ComposeStories types', () => {
 const testCases = Object.values(composeStories(stories)).map((Story) => [Story.storyName, Story]);
 it.each(testCases)('Renders %s story', async (_storyName, Story) => {
   if (typeof Story === 'string' || _storyName === 'CSF2StoryWithLocale') return;
-  await Story.play();
+  await Story.run();
   await new Promise((resolve) => setTimeout(resolve, 0));
   expect(document.body).toMatchSnapshot();
 });

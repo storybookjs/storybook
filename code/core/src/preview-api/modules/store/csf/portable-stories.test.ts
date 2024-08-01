@@ -127,7 +127,7 @@ describe('composeStory', () => {
         return context.canvas;
       },
     });
-    await composedStory.play({ canvasElement: null });
+    await composedStory.play?.({ canvasElement: null });
     expect(spy).toHaveBeenCalledWith(
       expect.objectContaining({
         args: {

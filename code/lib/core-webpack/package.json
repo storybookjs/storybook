@@ -1,6 +1,6 @@
 {
   "name": "@storybook/core-webpack",
-  "version": "8.2.6",
+  "version": "8.2.7",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"

@@ -1,3 +1,4 @@
+import { logger } from '@storybook/core/client-logger';
 import { useStorybookApi } from '@storybook/core/manager-api';
 import type {
   StoriesHash,
@@ -22,7 +23,7 @@ import {
   StatusWarnIcon,
   StatusPassIcon,
 } from '@storybook/icons';
-import type { StoryId, API_StatusValue } from '@storybook/types';
+import type { StoryId, API_StatusValue, API_StatusObject } from '@storybook/types';
 
 import { ComponentNode, DocumentNode, GroupNode, RootNode, StoryNode } from './TreeNode';
 
@@ -280,6 +281,19 @@ const Node = React.memo<NodeProps>(function Node({
     );
   }
 
+  const createClickHandler =
+    (statusesByStoryId: Record<StoryId, API_StatusObject[]>, onHide: () => void) => () => {
+      try {
+        const [firstStoryId, [firstStatus]] = Object.entries(statusesByStoryId)[0];
+        onSelectStoryId(firstStoryId);
+        firstStatus.onClick?.();
+      } catch (e) {
+        logger.error(e);
+      } finally {
+        onHide();
+      }
+    };
+
   if (item.type === 'component' || item.type === 'group') {
     const { counts, statuses } = useStatusSummary(item);
 
@@ -296,12 +310,7 @@ const Node = React.memo<NodeProps>(function Node({
           id: 'errors',
           icon: <StatusFailIcon color={theme.color.negative} />,
           title: `${counts.error} ${counts.error === 1 ? 'story' : 'stories'} with errors`,
-          onClick: () => {
-            const [firstStoryId, [firstError]] = Object.entries(statuses.error)[0];
-            onSelectStoryId(firstStoryId);
-            firstError.onClick?.();
-            onHide();
-          },
+          onClick: createClickHandler(statuses.error, onHide),
         });
       }
       if (counts.warn) {
@@ -309,12 +318,7 @@ const Node = React.memo<NodeProps>(function Node({
           id: 'warnings',
           icon: <StatusWarnIcon color={theme.color.gold} />,
           title: `${counts.warn} ${counts.warn === 1 ? 'story' : 'stories'} with warnings`,
-          onClick: () => {
-            const [firstStoryId, [firstWarning]] = Object.entries(statuses.warn)[0];
-            onSelectStoryId(firstStoryId);
-            firstWarning.onClick?.();
-            onHide();
-          },
+          onClick: createClickHandler(statuses.warn, onHide),
         });
       }
       return links;

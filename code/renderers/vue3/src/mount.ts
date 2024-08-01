@@ -1,6 +1,6 @@
 import { type StoryContext, type VueRenderer } from './public-types';
 import { h } from 'vue';
-import { type BaseAnnotations } from '@storybook/types';
+import { type BaseAnnotations } from 'storybook/internal/types';
 
 export const mount: BaseAnnotations<VueRenderer>['mount'] = (context: StoryContext) => {
   return async (Component, options) => {

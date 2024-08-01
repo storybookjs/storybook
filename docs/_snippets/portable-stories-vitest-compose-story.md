@@ -9,14 +9,14 @@ import meta, { Primary as PrimaryStory } from './Button.stories';
 const Primary = composeStory(PrimaryStory, meta);
 
 test('renders primary button with default args', async () => {
-  await Primary.play();
+  await Primary.run();
 
   const buttonElement = screen.getByText('Text coming from args in stories file!');
   expect(buttonElement).not.toBeNull();
 });
 
 test('renders primary button with overridden props', async () => {
-  await Primary.play({ args: { ...Primary.args, label: 'Hello world' } });
+  await Primary.run({ args: { ...Primary.args, label: 'Hello world' } });
 
   const buttonElement = screen.getByText(/Hello world/i);
   expect(buttonElement).not.toBeNull();
@@ -34,14 +34,14 @@ import meta, { Primary as PrimaryStory } from './Button.stories';
 const Primary = composeStory(PrimaryStory, meta);
 
 test('renders primary button with default args', async () => {
-  await Primary.play();
+  await Primary.run();
 
   const buttonElement = screen.getByText('Text coming from args in stories file!');
   expect(buttonElement).not.toBeNull();
 });
 
 test('renders primary button with overridden props', async () => {
-  await Primary.play({ args: { ...Primary.args, label: 'Hello world' } });
+  await Primary.run({ args: { ...Primary.args, label: 'Hello world' } });
 
   const buttonElement = screen.getByText(/Hello world/i);
   expect(buttonElement).not.toBeNull();
@@ -59,14 +59,14 @@ import meta, { Primary as PrimaryStory } from './Button.stories';
 const Primary = composeStory(PrimaryStory, meta);
 
 test('renders primary button with default args', async () => {
-  await Primary.play();
+  await Primary.run();
 
   const buttonElement = screen.getByText('Text coming from args in stories file!');
   expect(buttonElement).not.toBeNull();
 });
 
 test('renders primary button with overridden props', async () => {
-  await Primary.play({ args: { ...Primary.args, label: 'Hello world' } });
+  await Primary.run({ args: { ...Primary.args, label: 'Hello world' } });
 
   const buttonElement = screen.getByText(/Hello world/i);
   expect(buttonElement).not.toBeNull();

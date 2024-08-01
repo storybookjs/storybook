@@ -260,6 +260,10 @@ You can also update a control's value, then save the changes to the story. The s
 
 <Video src="../_assets/get-started/edit-story-from-controls-optimized.mp4" />
 
+### Disable creating and editing of stories
+
+If you don't want to allow the creation or editing of stories from the Controls panel, you can disable this feature by setting the `disableSaveFromUI` parameter to `true` in the `parameters.controls` parameter in your `.storybook/preview.js` file.
+
 ## Configuration
 
 The Controls addon can be configured in two ways:
@@ -484,3 +488,11 @@ Specifies how the controls are sorted.
 * **none**: Unsorted, displayed in the same order the arg types are processed in
 * **alpha**: Sorted alphabetically, by the arg type's name
 * **requiredFirst**: Same as `alpha`, with any required arg types displayed first
+
+#### `disableSaveFromUI`
+
+Type: `boolean`
+
+Default: `false`
+
+Disable the ability to create or edit stories from the Controls panel.

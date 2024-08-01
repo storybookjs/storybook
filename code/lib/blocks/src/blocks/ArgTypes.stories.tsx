@@ -49,7 +49,7 @@ export const OfUndefined: Story = {
     of: ExampleStories.NotDefined,
   },
   parameters: { chromatic: { disableSnapshot: true } },
-  decorators: [(s) => (window?.navigator.userAgent.match(/StorybookTestRunner/) ? <div /> : s())],
+  tags: ['!test'],
 };
 
 export const OfStoryUnattached: Story = {

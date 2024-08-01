@@ -24,9 +24,6 @@ export const ForceRemount = {
    */
   parameters: { chromatic: { disableSnapshot: true } },
   play: async ({ canvasElement, id }: PlayFunctionContext<any>) => {
-    if (window?.navigator.userAgent.match(/StorybookTestRunner/)) {
-      return;
-    }
     const channel = globalThis.__STORYBOOK_ADDONS_CHANNEL__;
     const button = await within(canvasElement).findByRole('button');
 
@@ -39,6 +36,7 @@ export const ForceRemount = {
     // By forcing the component to remount, we reset the focus state
     await channel.emit(FORCE_REMOUNT, { storyId: id });
   },
+  tags: ['!test'],
 };
 
 export const ChangeArgs = {

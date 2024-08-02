@@ -4,7 +4,8 @@ import { dirname } from 'node:path';
 
 async function build(options: any = {}, frameworkOptions: any = {}) {
   const { mode = 'dev' } = options;
-  const packageJson = dirname(require.resolve('@storybook/core/package.json'));
+  const packageJsonDir = dirname(require.resolve('@storybook/core/package.json'));
+  const packageJson = JSON.parse(require('fs').readFileSync(`${packageJsonDir}/package.json`));
 
   const commonOptions = {
     ...options,

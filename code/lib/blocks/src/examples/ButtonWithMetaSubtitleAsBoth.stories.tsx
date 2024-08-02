@@ -7,9 +7,8 @@ const meta = {
   argTypes: {
     backgroundColor: { control: 'color' },
   },
+  globals: { sb_theme: 'light' },
   parameters: {
-    // Stop *this* story from being stacked in Chromatic
-    theme: 'default',
     // this is to test the deprecated features of the Subtitle block
     componentSubtitle: 'This subtitle is set in parameters.componentSubtitle',
     docs: {

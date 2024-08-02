@@ -5,7 +5,7 @@ import type {
   StoryContext,
 } from 'storybook/internal/types';
 
-import { clearStyles, addGridStyle } from '../helpers';
+import { clearStyles, addGridStyle } from '../utils';
 import { PARAM_KEY as BACKGROUNDS_PARAM_KEY } from '../constants';
 
 export const withGrid = (StoryFn: StoryFunction<Renderer>, context: StoryContext<Renderer>) => {

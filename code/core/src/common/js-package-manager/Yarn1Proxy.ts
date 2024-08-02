@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import dedent from 'ts-dedent';
 import { findUpSync } from 'find-up';
 import path from 'node:path';
-import { FindPackageVersionsError } from '@storybook/core-events/server-errors';
+import { FindPackageVersionsError } from '@storybook/core/server-errors';
 
 import { createLogStream } from '../utils/cli';
 import { JsPackageManager } from './JsPackageManager';

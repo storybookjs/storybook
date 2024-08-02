@@ -53,9 +53,17 @@ export function setProjectAnnotations(
 // This will not be necessary once we have auto preset loading
 export const vueProjectAnnotations: ProjectAnnotations<VueRenderer> = {
   ...defaultProjectAnnotations,
-  renderToCanvas: ({ storyFn, storyContext: { testingLibraryRender: render, canvasElement } }) => {
-    if (render == null) throw new TestingLibraryMustBeConfiguredError();
-    const { unmount } = render(storyFn(), { baseElement: canvasElement });
+  renderToCanvas: (renderContext, canvasElement) => {
+    if (renderContext.storyContext.testingLibraryRender == null) {
+      throw new TestingLibraryMustBeConfiguredError();
+      // Enable for 8.3
+      // return defaultProjectAnnotations.renderToCanvas(renderContext, canvasElement);
+    }
+    const {
+      storyFn,
+      storyContext: { testingLibraryRender: render },
+    } = renderContext;
+    const { unmount } = render(storyFn(), { container: canvasElement });
     return unmount;
   },
 };

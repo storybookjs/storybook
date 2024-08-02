@@ -10,6 +10,7 @@ import { argsHash, SourceContext } from './SourceContainer';
 const meta: Meta<typeof Source> = {
   component: Source,
   parameters: {
+    layout: 'fullscreen',
     relativeCsfPaths: ['../examples/SourceParameters.stories'],
     snippets: {
       'storybook-blocks-examples-stories-for-the-source-block--no-parameters': {
@@ -66,7 +67,7 @@ export const OfUndefined: Story = {
     of: ParametersStories.NotDefined,
   },
   parameters: { chromatic: { disableSnapshot: true } },
-  decorators: [(s) => (window?.navigator.userAgent.match(/StorybookTestRunner/) ? <div /> : s())],
+  tags: ['!test'],
 };
 
 export const OfTypeProp: Story = {

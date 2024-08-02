@@ -6,12 +6,8 @@ import type {
 } from 'storybook/internal/types';
 
 import { PARAM_KEY as BACKGROUNDS_PARAM_KEY } from '../constants';
-import {
-  clearStyles,
-  addBackgroundStyle,
-  getBackgroundColorByName,
-  isReduceMotionEnabled,
-} from '../helpers';
+import { clearStyles, addBackgroundStyle, isReduceMotionEnabled } from '../utils';
+import { getBackgroundColorByName } from './getBackgroundColorByName';
 
 export const withBackground = (
   StoryFn: StoryFunction<Renderer>,

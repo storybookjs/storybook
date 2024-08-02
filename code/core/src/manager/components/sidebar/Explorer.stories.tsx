@@ -9,7 +9,8 @@ import { IconSymbols } from './IconSymbols';
 export default {
   component: Explorer,
   title: 'Sidebar/Explorer',
-  parameters: { layout: 'fullscreen', theme: 'side-by-side' },
+  globals: { sb_theme: 'side-by-side' },
+  parameters: { layout: 'fullscreen' },
   decorators: [
     RefStories.default.decorators[0],
     (storyFn: any) => (

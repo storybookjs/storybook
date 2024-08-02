@@ -11,6 +11,7 @@ const meta: Meta<typeof ArgTypes> = {
   title: 'Blocks/ArgTypes',
   component: ArgTypes,
   parameters: {
+    layout: 'fullscreen',
     relativeCsfPaths: [
       '../examples/ArgTypesParameters.stories',
       '../examples/ArgTypesWithSubcomponentsParameters.stories',
@@ -49,7 +50,7 @@ export const OfUndefined: Story = {
     of: ExampleStories.NotDefined,
   },
   parameters: { chromatic: { disableSnapshot: true } },
-  decorators: [(s) => (window?.navigator.userAgent.match(/StorybookTestRunner/) ? <div /> : s())],
+  tags: ['!test'],
 };
 
 export const OfStoryUnattached: Story = {

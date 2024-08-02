@@ -63,8 +63,16 @@ export function setProjectAnnotations(
 // This will not be necessary once we have auto preset loading
 export const INTERNAL_DEFAULT_PROJECT_ANNOTATIONS: ProjectAnnotations<SvelteRenderer> = {
   ...svelteProjectAnnotations,
-  renderToCanvas: ({ storyFn, storyContext: { testingLibraryRender: render, canvasElement } }) => {
-    if (render == null) throw new TestingLibraryMustBeConfiguredError();
+  renderToCanvas: (renderContext, canvasElement) => {
+    if (renderContext.storyContext.testingLibraryRender == null) {
+      throw new TestingLibraryMustBeConfiguredError();
+      // Enable for 8.3
+      // return svelteProjectAnnotations.renderToCanvas(renderContext, canvasElement);
+    }
+    const {
+      storyFn,
+      storyContext: { testingLibraryRender: render },
+    } = renderContext;
     const { Component, props } = storyFn();
     const { unmount } = render(Component, { props, target: canvasElement });
     return unmount;

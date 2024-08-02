@@ -1,6 +1,6 @@
 {
   "name": "@storybook/root",
-  "version": "8.3.0-alpha.2",
+  "version": "8.3.0-alpha.3",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -108,6 +108,7 @@
     "@storybook/addon-onboarding": "workspace:*",
     "@storybook/addon-outline": "workspace:*",
     "@storybook/addon-storysource": "workspace:*",
+    "@storybook/addon-themes": "workspace:*",
     "@storybook/addon-toolbars": "workspace:*",
     "@storybook/addon-viewport": "workspace:*",
     "@storybook/angular": "workspace:*",

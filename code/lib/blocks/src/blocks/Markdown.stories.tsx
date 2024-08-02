@@ -5,7 +5,10 @@ import mdContent from '../examples/Markdown-content.md?raw';
 
 export default {
   component: MarkdownComponent,
-  parameters: { docsStyles: true },
+  parameters: {
+    layout: 'fullscreen',
+    docsStyles: true,
+  },
 };
 
 export const Markdown = {

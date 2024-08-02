@@ -10,6 +10,7 @@ import * as SourceParameterStories from '../examples/SourceParameters.stories';
 const meta: Meta<typeof Canvas> = {
   component: Canvas,
   parameters: {
+    layout: 'fullscreen',
     relativeCsfPaths: [
       '../examples/Button.stories',
       '../examples/CanvasParameters.stories',
@@ -61,7 +62,7 @@ export const OfUndefined: Story = {
     of: ButtonStories.NotDefined,
   },
   parameters: { chromatic: { disableSnapshot: true } },
-  decorators: [(s) => (window?.navigator.userAgent.match(/StorybookTestRunner/) ? <div /> : s())],
+  tags: ['!test'],
 };
 
 export const PropWithToolbar: Story = {

@@ -83,7 +83,7 @@
     "react-element-to-jsx-string": "^15.0.0",
     "semver": "^7.3.7",
     "ts-dedent": "^2.0.0",
-    "type-fest": "~2.19",
+    "type-fest": "^4.23.0",
     "util-deprecate": "^1.0.2"
   },
   "devDependencies": {

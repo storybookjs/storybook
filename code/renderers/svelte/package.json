@@ -64,7 +64,7 @@
     "@storybook/theming": "workspace:^",
     "sveltedoc-parser": "^4.2.1",
     "ts-dedent": "^2.0.0",
-    "type-fest": "~2.19"
+    "type-fest": "^4.23.0"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^3.0.2",

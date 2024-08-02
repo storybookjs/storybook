@@ -80,7 +80,7 @@
     "unist-util-is": "^6.0.0",
     "unist-util-select": "^5.1.0",
     "unist-util-visit": "^5.0.0",
-    "util": "^0.12.4",
+    "util": "^0.12.5",
     "vfile": "^5.3.7"
   },
   "publishConfig": {

@@ -71,7 +71,7 @@
     "@vue/compiler-core": "^3.0.0",
     "lodash": "^4.17.21",
     "ts-dedent": "^2.0.0",
-    "type-fest": "~2.19",
+    "type-fest": "^4.23.0",
     "vue-component-type-helpers": "latest"
   },
   "devDependencies": {

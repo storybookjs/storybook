@@ -51,13 +51,13 @@
     "@testing-library/user-event": "14.5.2",
     "@vitest/expect": "1.6.0",
     "@vitest/spy": "1.6.0",
-    "util": "^0.12.4"
+    "util": "^0.12.5"
   },
   "devDependencies": {
     "chai": "^4.4.1",
     "tinyspy": "^2.2.0",
     "ts-dedent": "^2.2.0",
-    "type-fest": "~2.19",
+    "type-fest": "~4.23.0",
     "typescript": "^5.3.2"
   },
   "peerDependencies": {

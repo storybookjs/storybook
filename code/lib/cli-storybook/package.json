@@ -50,7 +50,6 @@
     "cross-spawn": "^7.0.3",
     "envinfo": "^7.7.3",
     "fd-package-json": "^1.2.0",
-    "find-up": "^5.0.0",
     "fs-extra": "^11.1.0",
     "giget": "^1.0.0",
     "globby": "^14.0.1",
@@ -65,7 +64,8 @@
   "devDependencies": {
     "@types/cross-spawn": "^6.0.2",
     "@types/prompts": "^2.0.9",
-    "boxen": "^7.1.1",
+    "boxen": "^8.0.0",
+    "find-up": "^7.0.0",
     "slash": "^5.0.0",
     "strip-ansi": "^7.1.0",
     "typescript": "^5.3.2"

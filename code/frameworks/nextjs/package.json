@@ -147,7 +147,6 @@
     "@types/semver": "^7.3.4",
     "babel-loader": "^9.1.3",
     "css-loader": "^6.7.3",
-    "find-up": "^5.0.0",
     "fs-extra": "^11.1.0",
     "image-size": "^1.0.0",
     "loader-utils": "^3.2.1",
@@ -172,6 +171,7 @@
     "@types/babel__preset-env": "^7",
     "@types/loader-utils": "^2.0.5",
     "@types/react-refresh": "^0",
+    "find-up": "^7.0.0",
     "next": "^14.1.0",
     "typescript": "^5.3.2",
     "webpack": "^5.65.0"

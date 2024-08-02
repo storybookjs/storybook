@@ -87,6 +87,7 @@ export const computeStorybookMetadata = async ({
     'msw',
     'miragejs',
     'sinon',
+    'vite-plugin-storybook-nextjs',
   ];
   const testPackageDeps = Object.keys(allDependencies).filter((dep) =>
     testPackages.find((pkg) => dep.includes(pkg))

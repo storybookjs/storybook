@@ -55,7 +55,6 @@
     "@storybook/global": "^5.0.0"
   },
   "devDependencies": {
-    "@types/webpack-env": "^1.16.0",
     "typescript": "^5.3.2"
   },
   "peerDependencies": {

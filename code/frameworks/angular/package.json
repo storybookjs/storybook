@@ -54,7 +54,7 @@
     "semver": "^7.3.7",
     "telejson": "^7.2.0",
     "ts-dedent": "^2.0.0",
-    "tsconfig-paths-webpack-plugin": "^4.0.1",
+    "tsconfig-paths-webpack-plugin": "^4.0.0",
     "util-deprecate": "^1.0.2",
     "webpack": "5"
   },
@@ -77,7 +77,7 @@
     "cross-spawn": "^7.0.3",
     "tmp": "^0.2.1",
     "typescript": "^5.3.2",
-    "webpack": "5",
+    "webpack": "5.93.0",
     "zone.js": "^0.14.2"
   },
   "peerDependencies": {

@@ -360,7 +360,7 @@
     "express": "^4.19.2",
     "fd-package-json": "^1.2.0",
     "fetch-retry": "^6.0.0",
-    "file-system-cache": "^3.0.0",
+    "file-system-cache": "^2.4.7",
     "find-cache-dir": "^5.0.0",
     "find-up": "^7.0.0",
     "flush-promises": "^1.0.2",
@@ -412,7 +412,7 @@
     "unique-string": "^3.0.0",
     "use-resize-observer": "^9.1.0",
     "util": "^0.12.5",
-    "watchpack": "^2.2.0"
+    "watchpack": "^2.4.1"
   },
   "publishConfig": {
     "access": "public"

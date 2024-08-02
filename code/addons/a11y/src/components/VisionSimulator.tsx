@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import ReactDOMServer from 'react-dom/server';
 import { Global, styled } from 'storybook/internal/theming';
 import { IconButton, WithTooltip, TooltipLinkList } from 'storybook/internal/components';
 
@@ -7,6 +8,7 @@ import { AccessibilityIcon } from '@storybook/icons';
 import { Filters } from './ColorFilters';
 
 const iframeId = 'storybook-preview-iframe';
+const iframeContents = 'storybook-root';
 
 interface Option {
   name: string;
@@ -39,14 +41,6 @@ const getFilter = (filterName: string) => {
   }
   return `url('#${filterName}')`;
 };
-
-const Hidden = styled.div(() => ({
-  '&, & svg': {
-    position: 'absolute',
-    width: 0,
-    height: 0,
-  },
-}));
 
 const ColorIcon = styled.span<{ filter: string }>(
   {
@@ -119,19 +113,39 @@ const getColorList = (active: Filter, set: (i: Filter) => void): Link[] => [
   }),
 ];
 
+const hiddenStyles = {
+  position: 'absolute',
+  width: '0',
+  height: '0',
+};
+
+const injectFilters = (iframeDocument: Document) => {
+  if (!iframeDocument.getElementById('color-filters')) {
+    const filtersContainer = iframeDocument.createElement('div');
+    filtersContainer.id = 'color-filters';
+    Object.assign(filtersContainer.style, hiddenStyles);
+    iframeDocument.body.appendChild(filtersContainer);
+    const filtersSvgString = ReactDOMServer.renderToStaticMarkup(<Filters />);
+    filtersContainer.innerHTML = filtersSvgString;
+  }
+};
+
 export const VisionSimulator = () => {
   const [filter, setFilter] = useState<Filter>(null);
+
+  useEffect(() => {
+    const iframe = document.getElementById(iframeId) as HTMLIFrameElement;
+    if (iframe && iframe.contentDocument) {
+      injectFilters(iframe.contentDocument);
+      const storyRoot = iframe.contentDocument.getElementById(iframeContents);
+      if (storyRoot) {
+        storyRoot.style.filter = filter ? getFilter(filter.name) : 'none';
+      }
+    }
+  }, [filter]);
+
   return (
     <>
-      {filter && (
-        <Global
-          styles={{
-            [`#${iframeId}`]: {
-              filter: getFilter(filter.name),
-            },
-          }}
-        />
-      )}
       <WithTooltip
         placement="top"
         tooltip={({ onHide }) => {
@@ -148,9 +162,6 @@ export const VisionSimulator = () => {
           <AccessibilityIcon />
         </IconButton>
       </WithTooltip>
-      <Hidden>
-        <Filters />
-      </Hidden>
     </>
   );
 };

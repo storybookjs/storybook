@@ -56,7 +56,7 @@
     "@types/find-cache-dir": "^5.0.0",
     "@types/node": "^18.0.0",
     "find-cache-dir": "^5.0.0",
-    "glob": "^10.0.0",
+    "glob": "^11.0.0",
     "slash": "^5.0.0",
     "typescript": "^5.3.2",
     "vite": "^4.0.4"

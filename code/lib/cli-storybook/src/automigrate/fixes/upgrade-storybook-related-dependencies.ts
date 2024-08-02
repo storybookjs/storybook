@@ -1,5 +1,5 @@
 import { dedent } from 'ts-dedent';
-import { cyan, yellow } from 'chalk';
+import chalk from 'chalk';
 import { gt } from 'semver';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { isCorePackage } from 'storybook/internal/common';
@@ -81,7 +81,7 @@ export const upgradeStorybookRelatedDependencies = {
       You're upgrading to the latest version of Storybook. We recommend upgrading the following packages:
       ${upgradable
         .map(({ packageName, afterVersion, beforeVersion }) => {
-          return `- ${cyan(packageName)}: ${cyan(beforeVersion)} => ${cyan(afterVersion)}`;
+          return `- ${chalk.cyan(packageName)}: ${chalk.cyan(beforeVersion)} => ${chalk.cyan(afterVersion)}`;
         })
         .join('\n')}
 
@@ -137,10 +137,10 @@ export const upgradeStorybookRelatedDependencies = {
 
       console.log();
       console.log(dedent`
-        We upgraded ${yellow(upgradable.length)} packages:
+        We upgraded ${chalk.yellow(upgradable.length)} packages:
         ${upgradable
           .map(({ packageName, afterVersion, beforeVersion }) => {
-            return `- ${cyan(packageName)}: ${cyan(beforeVersion)} => ${cyan(afterVersion)}`;
+            return `- ${chalk.cyan(packageName)}: ${chalk.cyan(beforeVersion)} => ${chalk.cyan(afterVersion)}`;
           })
           .join('\n')}
         `);

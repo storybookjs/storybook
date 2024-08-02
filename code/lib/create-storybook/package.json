@@ -56,7 +56,6 @@
   },
   "dependencies": {
     "@types/semver": "^7.3.4",
-    "chalk": "^4.1.0",
     "commander": "^6.2.1",
     "execa": "^5.0.0",
     "fd-package-json": "^1.2.0",
@@ -73,6 +72,7 @@
     "@types/prompts": "^2.0.9",
     "@types/util-deprecate": "^1.0.0",
     "boxen": "^8.0.0",
+    "chalk": "^5.3.0",
     "find-up": "^7.0.0",
     "typescript": "^5.3.2"
   },

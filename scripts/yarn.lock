@@ -1432,8 +1432,8 @@ __metadata:
     "@vitest/coverage-v8": "npm:^1.6.0"
     ansi-regex: "npm:^6.0.1"
     browser-assert: "npm:^1.2.1"
-    chalk: "npm:^4.1.0"
-    chromatic: "npm:^11.5.5"
+    chalk: "npm:^5.3.0"
+    chromatic: "npm:^11.7.0"
     codecov: "npm:^3.8.1"
     commander: "npm:^6.2.1"
     cross-env: "npm:^7.0.3"
@@ -3788,7 +3788,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chalk@npm:^5.0.0, chalk@npm:~5.3.0":
+"chalk@npm:^5.0.0, chalk@npm:^5.3.0, chalk@npm:~5.3.0":
   version: 5.3.0
   resolution: "chalk@npm:5.3.0"
   checksum: 10c0/8297d436b2c0f95801103ff2ef67268d362021b8210daf8ddbe349695333eb3610a71122172ff3b0272f1ef2cf7cc2c41fdaa4715f52e49ffe04c56340feed09
@@ -3844,9 +3844,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chromatic@npm:^11.5.5":
-  version: 11.5.5
-  resolution: "chromatic@npm:11.5.5"
+"chromatic@npm:^11.7.0":
+  version: 11.7.0
+  resolution: "chromatic@npm:11.7.0"
   peerDependencies:
     "@chromatic-com/cypress": ^0.*.* || ^1.0.0
     "@chromatic-com/playwright": ^0.*.* || ^1.0.0
@@ -3859,7 +3859,7 @@ __metadata:
     chroma: dist/bin.js
     chromatic: dist/bin.js
     chromatic-cli: dist/bin.js
-  checksum: 10c0/3d812122548f9c29ab7116f7054e03cbf523b30ddde7e3142017cd23c42b6b99b3023e0146ef3afcfe4245a8cbb2ed97cedecca4e2cf9e5f6e8666db84a827d4
+  checksum: 10c0/f9164191f0ca4412ebdd2756428c02d5365d5b7e9cc70f509aeda870dfa569ff96654e3b4f6540e2c0f5ec8e49640bccc22dedafc7329fa2a922ac27cbd3b9ce
   languageName: node
   linkType: hard
 

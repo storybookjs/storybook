@@ -1,5 +1,6 @@
-import React, { Fragment } from 'react';
+import React from 'react';
 import { addons, types } from 'storybook/internal/manager-api';
+import { styled } from 'storybook/internal/theming';
 
 import { ADDON_ID } from './constants';
 import { BackgroundSelector } from './containers/BackgroundSelector';
@@ -11,10 +12,23 @@ addons.register(ADDON_ID, () => {
     type: types.TOOL,
     match: ({ viewMode, tabId }) => !!(viewMode && viewMode.match(/^(story|docs)$/)) && !tabId,
     render: () => (
-      <Fragment>
-        <BackgroundSelector />
-        <GridSelector />
-      </Fragment>
+      <ToolList>
+        <li>
+          <BackgroundSelector />
+        </li>
+        <li>
+          <GridSelector />
+        </li>
+      </ToolList>
     ),
   });
+});
+
+const ToolList = styled.ul({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 6,
+  listStyle: 'none',
+  padding: 0,
+  margin: 0,
 });

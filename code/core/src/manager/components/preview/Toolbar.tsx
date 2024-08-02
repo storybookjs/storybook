@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react';
+import React, { Fragment, useId } from 'react';
 
 import { styled } from '@storybook/core/theming';
 
@@ -135,8 +135,17 @@ export const ToolbarComp = React.memo<ToolData>(function ToolbarComp({
   tabId,
   api,
 }) {
+  const id = useId();
+
   return tabs || tools || toolsExtra ? (
-    <Toolbar className="sb-bar" key="toolbar" shown={isShown} data-test-id="sb-preview-toolbar">
+    <Toolbar
+      className="sb-bar"
+      aria-labelledby={id}
+      key="toolbar"
+      shown={isShown}
+      data-test-id="sb-preview-toolbar"
+    >
+      <ScreenReaderLabel id={id}>Toolbar</ScreenReaderLabel>
       <ToolbarInner>
         <ToolbarLeft>
           {tabs.length > 1 ? (
@@ -172,12 +181,14 @@ export const ToolbarComp = React.memo<ToolData>(function ToolbarComp({
 
 export const Tools = React.memo<{ list: Addon_BaseType[] }>(function Tools({ list }) {
   return (
-    <>
+    <ToolList>
       {list.filter(Boolean).map(({ render: Render, id, ...t }, index) => (
         // @ts-expect-error (Converted from ts-ignore)
-        <Render key={id || t.key || `f-${index}`} />
+        <ToolListItem key={id || t.key || `f-${index}`}>
+          <Render />
+        </ToolListItem>
       ))}
-    </>
+    </ToolList>
   );
 });
 
@@ -217,7 +228,7 @@ export function filterToolsSide(
   return tools.filter(filter);
 }
 
-const Toolbar = styled.div<{ shown: boolean }>(({ theme, shown }) => ({
+const Toolbar = styled.section<{ shown: boolean }>(({ theme, shown }) => ({
   position: 'relative',
   color: theme.barTextColor,
   width: '100%',
@@ -253,4 +264,28 @@ const ToolbarLeft = styled.div({
 
 const ToolbarRight = styled(ToolbarLeft)({
   marginLeft: 30,
+});
+
+const ToolList = styled.ul({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 6,
+  listStyle: 'none',
+  padding: 0,
+  margin: 0,
+});
+
+const ToolListItem = styled.li({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 6,
+});
+
+const ScreenReaderLabel = styled.span({
+  position: 'absolute',
+  left: -10000,
+  top: 'auto',
+  width: 1,
+  height: 1,
+  overflow: 'hidden',
 });

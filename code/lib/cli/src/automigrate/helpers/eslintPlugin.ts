@@ -3,10 +3,10 @@ import { dedent } from 'ts-dedent';
 import detectIndent from 'detect-indent';
 import prompts from 'prompts';
 import chalk from 'chalk';
+import ora from 'ora';
 
 import { readConfig, writeConfig } from '@storybook/core/csf-tools';
 import type { JsPackageManager } from '@storybook/core/common';
-import { paddedLog } from '@storybook/core/common';
 
 export const SUPPORTED_ESLINT_EXTENSIONS = ['js', 'cjs', 'json'];
 const UNSUPPORTED_ESLINT_EXTENSIONS = ['yaml', 'yml'];
@@ -54,12 +54,21 @@ export const normalizeExtends = (existingExtends: any): string[] => {
   throw new Error(`Invalid eslint extends ${existingExtends}`);
 };
 
+const configureEslintSpinnerStart = (message: string) => {
+  return ora({
+    indent: 2,
+    text: message,
+  }).start();
+};
+
 export async function configureEslintPlugin(
   eslintFile: string | undefined,
   packageManager: JsPackageManager
 ) {
   if (eslintFile) {
-    paddedLog(`Configuring Storybook ESLint plugin at ${eslintFile}`);
+    const configureEslintSpinner = configureEslintSpinnerStart(
+      `Configuring Storybook ESLint plugin at ${eslintFile}`
+    );
     if (eslintFile.endsWith('json')) {
       const eslintConfig = (await readJson(eslintFile)) as { extends?: string[] };
       const existingExtends = normalizeExtends(eslintConfig.extends).filter(Boolean);
@@ -72,11 +81,13 @@ export async function configureEslintPlugin(
       const eslint = await readConfig(eslintFile);
       const existingExtends = normalizeExtends(eslint.getFieldValue(['extends'])).filter(Boolean);
       eslint.setFieldValue(['extends'], [...existingExtends, 'plugin:storybook/recommended']);
-
       await writeConfig(eslint);
     }
+    configureEslintSpinner.succeed();
   } else {
-    paddedLog(`Configuring eslint-plugin-storybook in your package.json`);
+    const configureEslintSpinner = configureEslintSpinnerStart(
+      `Configuring eslint-plugin-storybook in your package.json`
+    );
     const packageJson = await packageManager.retrievePackageJson();
     const existingExtends = normalizeExtends(packageJson.eslintConfig?.extends).filter(Boolean);
 
@@ -87,6 +98,7 @@ export async function configureEslintPlugin(
         extends: [...existingExtends, 'plugin:storybook/recommended'],
       },
     });
+    configureEslintSpinner.succeed();
   }
 }
 

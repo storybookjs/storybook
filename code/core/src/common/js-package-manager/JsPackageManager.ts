@@ -12,6 +12,7 @@ import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson';
 import storybookPackagesVersions from '../versions';
 import type { InstallationMetadata } from './types';
 import { HandledError } from '../utils/HandledError';
+import { paddedLog } from '../utils/log';
 
 const logger = console;
 
@@ -116,7 +117,7 @@ export abstract class JsPackageManager {
    * Install dependencies listed in `package.json`
    */
   public async installDependencies() {
-    logger.log('Installing dependencies...');
+    paddedLog('Installing dependencies...', 1);
     logger.log();
 
     try {

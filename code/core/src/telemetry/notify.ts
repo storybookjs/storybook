@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { cache } from '@storybook/core/common';
+import { cache, paddedLog } from '@storybook/core/common';
 
 const TELEMETRY_KEY_NOTIFY_DATE = 'telemetry-notification-date';
 
@@ -18,10 +18,11 @@ export const notify = async () => {
   cache.set(TELEMETRY_KEY_NOTIFY_DATE, Date.now());
 
   logger.log();
-  logger.log(
+  paddedLog(
     `${chalk.magenta.bold(
       'attention'
-    )} => Storybook now collects completely anonymous telemetry regarding usage.`
+    )} => Storybook now collects completely anonymous telemetry regarding usage.`,
+    1
   );
   logger.log(`This information is used to shape Storybook's roadmap and prioritize features.`);
   logger.log(

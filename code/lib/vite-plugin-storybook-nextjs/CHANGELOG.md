@@ -1,3 +1,15 @@
+# v0.0.13 (Fri Aug 02 2024)
+
+#### 🐛 Bug Fix
+
+- Fix aliases [#8](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/8) ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
 # v0.0.12 (Wed Jul 31 2024)
 
 #### ⚠️ Pushed to `main`

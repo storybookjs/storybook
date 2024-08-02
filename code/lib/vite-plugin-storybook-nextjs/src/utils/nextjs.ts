@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import { join } from "node:path";
-import nextEnv from "@next/env";
+import { loadEnvConfig } from "@next/env";
 import Log from "next/dist/build/output/log.js";
 import {
   loadBindings,
@@ -8,8 +8,6 @@ import {
 } from "next/dist/build/swc/index.js";
 import type { NextConfigComplete } from "next/dist/server/config-shared.js";
 import { CONFIG_FILES } from "next/dist/shared/lib/constants.js";
-
-const { loadEnvConfig } = nextEnv;
 
 const nextDistPath =
   /(next[\\/]dist[\\/]shared[\\/]lib)|(next[\\/]dist[\\/]client)|(next[\\/]dist[\\/]pages)/;

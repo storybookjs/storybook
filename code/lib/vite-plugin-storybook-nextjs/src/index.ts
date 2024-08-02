@@ -16,6 +16,7 @@ import {
 } from "next/dist/shared/lib/constants.js";
 import { vitePluginNextImage } from "./plugins/next-image/plugin";
 import { vitePluginNextMocks } from "./plugins/next-mocks/plugin";
+import { isVitestEnv } from "./utils";
 
 const require = createRequire(import.meta.url);
 
@@ -30,7 +31,6 @@ type VitePluginOptions = {
 function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin[] {
   const resolvedDir = resolve(dir);
   const nextConfigResolver = Promise.withResolvers<NextConfigComplete>();
-  const isVitestEnv = process.env.VITEST === "true";
 
   return [
     {
@@ -44,10 +44,7 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin[] {
               ? PHASE_TEST
               : PHASE_PRODUCTION_BUILD;
 
-        nextConfigResolver.resolve(
-          // @ts-ignore TODO figure out why TypeScript is complaining about this
-          await loadConfig.default(phase, resolvedDir),
-        );
+        nextConfigResolver.resolve(await loadConfig(phase, resolvedDir));
 
         return {
           ...(!isVitestEnv && {

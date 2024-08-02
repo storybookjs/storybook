@@ -1,5 +1,5 @@
 import { appendFile, readFile } from 'fs/promises';
-import findUp from 'find-up';
+import { findUp } from 'find-up';
 import chalk from 'chalk';
 import prompts from 'prompts';
 import { telemetry } from 'storybook/internal/telemetry';

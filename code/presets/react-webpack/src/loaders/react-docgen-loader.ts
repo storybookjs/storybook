@@ -7,7 +7,7 @@ import {
   utils,
 } from 'react-docgen';
 import * as TsconfigPaths from 'tsconfig-paths';
-import findUp from 'find-up';
+import { findUp } from 'find-up';
 import MagicString from 'magic-string';
 import type { LoaderContext } from 'webpack';
 import type { Handler, NodePath, babelTypes as t, Documentation } from 'react-docgen';

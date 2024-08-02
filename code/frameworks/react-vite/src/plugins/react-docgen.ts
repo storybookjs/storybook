@@ -11,7 +11,7 @@ import {
 import MagicString from 'magic-string';
 import type { PluginOption } from 'vite';
 import * as TsconfigPaths from 'tsconfig-paths';
-import findUp from 'find-up';
+import { findUp } from 'find-up';
 import actualNameHandler from './docgen-handlers/actualNameHandler';
 import {
   RESOLVE_EXTENSIONS,

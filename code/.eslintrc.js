@@ -19,6 +19,13 @@ module.exports = {
   },
   plugins: ['local-rules'],
   rules: {
+    'import/no-extraneous-dependencies': [
+      'error',
+      {
+        devDependencies: true,
+        peerDependencies: true,
+      },
+    ],
     'import/no-unresolved': 'off', // covered by typescript
     'eslint-comments/disable-enable-pair': ['error', { allowWholeFile: true }],
     'eslint-comments/no-unused-disable': 'error',

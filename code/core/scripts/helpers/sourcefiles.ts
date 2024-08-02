@@ -54,7 +54,7 @@ async function generateVersionsFile(prettierConfig: prettier.Options | null): Pr
 }
 
 async function generateFrameworksFile(prettierConfig: prettier.Options | null): Promise<void> {
-  const thirdPartyFrameworks = ['qwik', 'solid'];
+  const thirdPartyFrameworks = ['qwik', 'solid', 'nuxt'];
   const location = join(
     import.meta.dirname,
     '..',

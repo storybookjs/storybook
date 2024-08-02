@@ -18,7 +18,7 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
 
   const framework = await options.presets.apply('framework');
   const frameworkOptions: FrameworkOptions =
-    typeof framework === 'string' ? {} : framework.options ?? {};
+    typeof framework === 'string' ? {} : (framework.options ?? {});
 
   const docgen = resolveDocgenOptions(frameworkOptions.docgen);
 

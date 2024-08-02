@@ -274,7 +274,7 @@ export async function runFixes({
 
     if (result) {
       const promptType: Prompt =
-        typeof f.promptType === 'function' ? await f.promptType(result) : f.promptType ?? 'auto';
+        typeof f.promptType === 'function' ? await f.promptType(result) : (f.promptType ?? 'auto');
 
       logger.info(`\n🔎 found a '${chalk.cyan(f.id)}' migration:`);
       const message = f.prompt(result);

@@ -61,7 +61,7 @@ export abstract class JsPackageManager {
    */
   async getPackageVersion(packageName: string, basePath = this.cwd): Promise<string | null> {
     const packageJSON = await this.getPackageJSON(packageName, basePath);
-    return packageJSON ? packageJSON.version ?? null : null;
+    return packageJSON ? (packageJSON.version ?? null) : null;
   }
 
   constructor(options?: JsPackageManagerOptions) {

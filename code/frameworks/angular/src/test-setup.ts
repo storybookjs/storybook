@@ -1,4 +1,3 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
 import '@analogjs/vite-plugin-angular/setup-vitest';
 
 import {

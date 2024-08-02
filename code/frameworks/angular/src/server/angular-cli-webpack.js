@@ -70,7 +70,7 @@ exports.getWebpackConfig = async (baseConfig, { builderOptions, builderContext }
       outputPath:
         typeof builderOptions.outputPath === 'string'
           ? builderOptions.outputPath
-          : builderOptions.outputPath?.base ?? 'noop-out',
+          : (builderOptions.outputPath?.base ?? 'noop-out'),
 
       // Fixed options
       optimization: false,

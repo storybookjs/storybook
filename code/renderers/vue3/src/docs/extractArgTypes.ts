@@ -119,7 +119,7 @@ export const extractFromVueDocgenApi = (
     }
   }
 
-  const required = 'required' in docgenInfo ? docgenInfo.required ?? false : false;
+  const required = 'required' in docgenInfo ? (docgenInfo.required ?? false) : false;
 
   return {
     name: docgenInfo.name,

@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { createRequire } from "node:module";
 import { cpus } from "node:os";
 import path from "node:path";
 import { decode, encode } from "node:querystring";
@@ -7,6 +8,7 @@ import imageSizeOf from "image-size";
 import type { NextConfigComplete } from "next/dist/server/config-shared.js";
 import { dedent } from "ts-dedent";
 import type { Plugin } from "vite";
+import { VITEST_PLUGIN_NAME, isVitestEnv } from "../../utils";
 
 const includePattern = /\.(png|jpg|jpeg|gif|webp|avif|ico|bmp|svg)$/;
 const excludeImporterPattern = /\.(css|scss|sass)$/;
@@ -14,10 +16,10 @@ const excludeImporterPattern = /\.(css|scss|sass)$/;
 const virtualImage = "virtual:next-image";
 const virtualNextImage = "virtual:next/image";
 const virtualNextLegacyImage = "virtual:next/legacy/image";
-const virtualNextImageDefaultLoader = "virtual:next/image-default-loader";
-const virtualNextImageContext = "virtual:next/image-context";
 
 let sharp: typeof import("sharp") | undefined;
+
+const require = createRequire(import.meta.url);
 
 try {
   sharp = require("sharp");
@@ -32,14 +34,32 @@ try {
   );
 }
 
+type Env = "browser" | "node";
+
+const getEntryPoint = (subPath: string, env: Env) =>
+  require.resolve(`${VITEST_PLUGIN_NAME}/${env}/mocks/${subPath}`);
+
+export const getAlias = (env: Env) => ({
+  "sb-original/default-loader": getEntryPoint("image-default-loader", env),
+  "sb-original/image-context": getEntryPoint("image-context", env),
+});
+
 export function vitePluginNextImage(
   nextConfigResolver: PromiseWithResolvers<NextConfigComplete>,
 ) {
+  let isBrowser = !isVitestEnv;
   return {
     name: "vite-plugin-storybook-nextjs-image",
     enforce: "pre" as const,
     async config(config, env) {
-      return config;
+      if (config.test?.browser?.enabled === true) {
+        isBrowser = true;
+      }
+      return {
+        resolve: {
+          alias: getAlias(isBrowser ? "browser" : "node"),
+        },
+      };
     },
     async resolveId(id, importer) {
       const [source, queryA] = id.split("?");
@@ -71,27 +91,15 @@ export function vitePluginNextImage(
         return virtualNextLegacyImage;
       }
 
-      if (id === "sb-original/image-context") {
-        return virtualNextImageContext;
-      }
-
-      if (id === "sb-original/default-loader") {
-        return virtualNextImageDefaultLoader;
-      }
-
       return null;
     },
 
     async load(id) {
+      const aliasEnv = isBrowser ? "browser" : "node";
       if (virtualNextImage === id) {
         return (
           await fs.promises.readFile(
-            fileURLToPath(
-              new URL(
-                "./plugins/next-image/alias/next-image.js",
-                import.meta.url,
-              ),
-            ),
+            require.resolve(`${VITEST_PLUGIN_NAME}/${aliasEnv}/mocks/image`),
           )
         ).toString("utf-8");
       }
@@ -99,37 +107,8 @@ export function vitePluginNextImage(
       if (virtualNextLegacyImage === id) {
         return (
           await fs.promises.readFile(
-            fileURLToPath(
-              new URL(
-                "./plugins/next-image/alias/next-legacy-image.js",
-                import.meta.url,
-              ),
-            ),
-          )
-        ).toString("utf-8");
-      }
-
-      if (virtualNextImageDefaultLoader === id) {
-        return (
-          await fs.promises.readFile(
-            fileURLToPath(
-              new URL(
-                "./plugins/next-image/alias/image-default-loader.js",
-                import.meta.url,
-              ),
-            ),
-          )
-        ).toString("utf-8");
-      }
-
-      if (virtualNextImageContext === id) {
-        return (
-          await fs.promises.readFile(
-            fileURLToPath(
-              new URL(
-                "./plugins/next-image/alias/image-context.js",
-                import.meta.url,
-              ),
+            require.resolve(
+              `${VITEST_PLUGIN_NAME}/${aliasEnv}/mocks/legacy-image`,
             ),
           )
         ).toString("utf-8");

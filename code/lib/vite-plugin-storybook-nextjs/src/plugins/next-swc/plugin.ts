@@ -34,8 +34,7 @@ export function vitePluginNextSwc(
     async config(config, env) {
       const nextConfig = await nextConfigResolver.promise;
       nextDirectories = findPagesDir(resolvedDir);
-      // @ts-ignore TODO figure out why TypeScript is complaining about this
-      loadedJSConfig = await loadJsConfig.default(resolvedDir, nextConfig);
+      loadedJSConfig = await loadJsConfig(resolvedDir, nextConfig);
       isDev = env.mode !== "production";
       packageJson = await NextUtils.loadClosestPackageJson(resolvedDir);
       isEsmProject = true;
@@ -56,11 +55,6 @@ export function vitePluginNextSwc(
       }
 
       return {
-        resolve: {
-          alias: {
-            "@opentelemetry/api": "next/dist/compiled/@opentelemetry/api",
-          },
-        },
         // esbuild: {
         //   // We will use Next.js custom SWC transpiler instead of Vite's build-in esbuild
         //   exclude: [/node_modules/, /.m?(t|j)sx?/],

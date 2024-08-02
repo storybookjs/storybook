@@ -15,6 +15,7 @@ export default {
   title: 'Sidebar/Heading',
   excludeStories: /.*Data$/,
   parameters: { layout: 'fullscreen' },
+  globals: { sb_theme: 'side-by-side' },
   decorators: [
     (storyFn) => <div style={{ padding: '0 20px', maxWidth: '230px' }}>{storyFn()}</div>,
   ],
@@ -229,6 +230,7 @@ export const SkipToCanvasLinkFocused: StoryObj<typeof Heading> = {
     extra: [],
     isLoading: false,
   },
+  globals: { sb_theme: 'light' },
   parameters: { layout: 'padded', chromatic: { delay: 300 } },
   play: () => {
     // focus each instance for chromatic/storybook's stacked theme

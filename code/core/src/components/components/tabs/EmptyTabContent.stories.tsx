@@ -5,6 +5,7 @@ import { Link } from '@storybook/core/components';
 import type { Meta, StoryObj } from '@storybook/react';
 
 export default {
+  title: 'TabContentEmpty',
   component: EmptyTabContent,
   parameters: {
     layout: 'centered',

@@ -55,6 +55,7 @@ const Header = styled.h2`
 `;
 
 export default {
+  title: 'Icons (deprecated)',
   component: Icons,
   argTypes: {
     color: { control: 'color' },

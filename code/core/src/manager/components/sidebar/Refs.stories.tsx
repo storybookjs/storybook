@@ -12,6 +12,7 @@ export default {
   title: 'Sidebar/Refs',
   excludeStories: /.*Data$/,
   parameters: { layout: 'fullscreen' },
+  globals: { sb_theme: 'side-by-side' },
   decorators: [
     (storyFn: any) => (
       <ManagerContext.Provider value={{ state: { docsOptions: {} } } as any}>

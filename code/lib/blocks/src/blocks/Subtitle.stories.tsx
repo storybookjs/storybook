@@ -9,6 +9,7 @@ import * as ButtonStoriesWithMetaSubtitleAsDocsSubtitle from '../examples/Button
 const meta: Meta<typeof Subtitle> = {
   component: Subtitle,
   parameters: {
+    layout: 'fullscreen',
     controls: {
       include: [],
       hideNoControlsWarning: true,
@@ -89,7 +90,7 @@ export const OfUndefinedAttached: Story = {
     relativeCsfPaths: ['../examples/Button.stories'],
     attached: true,
   },
-  decorators: [(s) => (window?.navigator.userAgent.match(/StorybookTestRunner/) ? <div /> : s())],
+  tags: ['!test'],
 };
 export const OfStringMetaAttached: Story = {
   name: 'Of "meta" Attached',

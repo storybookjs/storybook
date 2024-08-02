@@ -9,12 +9,18 @@ import bt from '@babel/traverse';
 import * as recast from 'recast';
 
 import { toId, isExportStory, storyNameFromExport } from '@storybook/csf';
-import type { ComponentAnnotations, StoryAnnotations, Tag } from '@storybook/core/types';
+import type {
+  Tag,
+  StoryAnnotations,
+  ComponentAnnotations,
+  IndexedCSFFile,
+  IndexInput,
+  IndexInputStats,
+} from '@storybook/core/types';
 import type { Options } from 'recast';
 import { babelParse } from './babelParse';
 import { findVarInitialization } from './findVarInitialization';
 import type { PrintResultType } from './PrintResultType';
-import type { IndexInput, IndexedCSFFile } from '@storybook/core/types';
 
 // @ts-expect-error (needed due to it's use of `exports.default`)
 const traverse = (bt.default || bt) as typeof bt;
@@ -53,6 +59,8 @@ const formatLocation = (node: t.Node, fileName?: string) => {
   const { line, column } = node.loc?.start || {};
   return `${fileName || ''} (line ${line}, col ${column})`.trim();
 };
+
+export const isModuleMock = (importPath: string) => MODULE_MOCK_REGEX.test(importPath);
 
 const isArgsStory = (init: t.Node, parent: t.Node, csf: CsfFile) => {
   let storyFn: t.Node = init;
@@ -110,6 +118,25 @@ const sortExports = (exportByName: Record<string, any>, order: string[]) => {
   );
 };
 
+const hasMount = (play: t.Node | undefined) => {
+  if (t.isArrowFunctionExpression(play) || t.isFunctionDeclaration(play)) {
+    const params = play.params;
+    if (params.length >= 1) {
+      const [arg] = params;
+      if (t.isObjectPattern(arg)) {
+        return !!arg.properties.find((prop) => {
+          if (t.isObjectProperty(prop) && t.isIdentifier(prop.key)) {
+            return prop.key.name === 'mount';
+          }
+        });
+      }
+    }
+  }
+  return false;
+};
+
+const MODULE_MOCK_REGEX = /^[.\/#].*\.mock($|\.[^.]*$)/i;
+
 export interface CsfOptions {
   fileName?: string;
   makeTitle: (userTitle: string) => string;
@@ -136,6 +163,7 @@ export interface StaticMeta
 
 export interface StaticStory extends Pick<StoryAnnotations, 'name' | 'parameters' | 'tags'> {
   id: string;
+  __stats: IndexInputStats;
 }
 
 export class CsfFile {
@@ -392,6 +420,7 @@ export class CsfFile {
                   id: 'FIXME',
                   name,
                   parameters,
+                  __stats: {},
                 };
               }
             });
@@ -422,7 +451,12 @@ export class CsfFile {
                   }
                 } else {
                   self._storyAnnotations[exportName] = {};
-                  self._stories[exportName] = { id: 'FIXME', name: exportName, parameters: {} };
+                  self._stories[exportName] = {
+                    id: 'FIXME',
+                    name: exportName,
+                    parameters: {},
+                    __stats: {},
+                  };
                 }
               }
             });
@@ -520,7 +554,8 @@ export class CsfFile {
           parameters.docsOnly = true;
         }
         acc[key] = { ...story, id, parameters };
-        const { tags, play } = self._storyAnnotations[key];
+        const storyAnnotations = self._storyAnnotations[key];
+        const { tags, play } = storyAnnotations;
         if (tags) {
           const node = t.isIdentifier(tags)
             ? findVarInitialization(tags.name, this._ast.program)
@@ -530,6 +565,18 @@ export class CsfFile {
         if (play) {
           acc[key].tags = [...(acc[key].tags || []), 'play-fn'];
         }
+        const stats = acc[key].__stats;
+        ['play', 'render', 'loaders', 'beforeEach'].forEach((annotation) => {
+          stats[annotation as keyof IndexInputStats] =
+            !!storyAnnotations[annotation] || !!self._metaAnnotations[annotation];
+        });
+        const storyExport = self.getStoryExport(key);
+        stats.storyFn = !!(
+          t.isArrowFunctionExpression(storyExport) || t.isFunctionDeclaration(storyExport)
+        );
+        stats.mount = hasMount(storyAnnotations.play ?? self._metaAnnotations.play);
+        stats.moduleMock = !!self.imports.find((fname) => isModuleMock(fname));
+
         return acc;
       },
       {} as Record<string, StaticStory>
@@ -589,6 +636,7 @@ export class CsfFile {
         metaId: this.meta?.id,
         tags,
         __id: story.id,
+        __stats: story.__stats,
       };
     });
   }

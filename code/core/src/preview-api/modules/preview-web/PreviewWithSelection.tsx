@@ -2,6 +2,7 @@ import invariant from 'tiny-invariant';
 import {
   CURRENT_STORY_WAS_SET,
   DOCS_PREPARED,
+  GLOBALS_UPDATED,
   PRELOAD_ENTRIES,
   PREVIEW_KEYDOWN,
   SET_CURRENT_STORY,
@@ -112,7 +113,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
 
     const { globals } = this.selectionStore.selectionSpecifier || {};
     if (globals) {
-      this.storyStoreValue.globals.updateFromPersisted(globals);
+      this.storyStoreValue.userGlobals.updateFromPersisted(globals);
     }
     this.emitGlobals();
   }
@@ -229,7 +230,9 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   }
 
   async onUpdateGlobals({ globals }: { globals: Globals }) {
-    super.onUpdateGlobals({ globals });
+    const currentStory =
+      (this.currentRender instanceof StoryRender && this.currentRender.story) || undefined;
+    super.onUpdateGlobals({ globals, currentStory });
     if (
       this.currentRender instanceof MdxDocsRender ||
       this.currentRender instanceof CsfDocsRender
@@ -377,8 +380,16 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
 
     if (isStoryRender(render)) {
       invariant(!!render.story);
-      const { parameters, initialArgs, argTypes, unmappedArgs } =
-        this.storyStoreValue.getStoryContext(render.story);
+      const {
+        parameters,
+        initialArgs,
+        argTypes,
+        unmappedArgs,
+        initialGlobals,
+        userGlobals,
+        storyGlobals,
+        globals,
+      } = this.storyStoreValue.getStoryContext(render.story);
 
       this.channel.emit(STORY_PREPARED, {
         id: storyId,
@@ -387,9 +398,22 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
         argTypes,
         args: unmappedArgs,
       });
+      // We need to update globals whenever we go in or out of an overridden story.
+      // As an optimization we could check if that's the case, but it seems complex and error-prone
+      this.channel.emit(GLOBALS_UPDATED, { userGlobals, storyGlobals, globals, initialGlobals });
     } else {
       // Default to the project parameters for MDX docs
       let { parameters } = this.storyStoreValue.projectAnnotations;
+
+      // We need to update globals whenever we go in or out of an overridden story.
+      // As an optimization we could check if that's the case, but it seems complex and error-prone
+      const { initialGlobals, globals } = this.storyStoreValue.userGlobals;
+      this.channel.emit(GLOBALS_UPDATED, {
+        globals,
+        initialGlobals,
+        storyGlobals: {},
+        userGlobals: globals,
+      });
 
       if (isCsfDocsRender(render) || render.entry.tags?.includes(ATTACHED_MDX_TAG)) {
         if (!render.csfFiles) throw new MdxFileWithNoCsfReferencesError({ storyId });

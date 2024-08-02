@@ -1,3 +1,31 @@
+## 8.3.0-alpha.3
+
+- Angular: Fix Angular template error for props with a circular reference - [#28498](https://github.com/storybookjs/storybook/pull/28498), thanks @Marklb!
+- Angular: Fix template props not able to use dot notation - [#28588](https://github.com/storybookjs/storybook/pull/28588), thanks @Marklb!
+- CLI: Fix the initialization of Storybook in workspaces - [#28699](https://github.com/storybookjs/storybook/pull/28699), thanks @valentinpalkovic!
+- CPC: Fix missing exports for addon-kit - [#28691](https://github.com/storybookjs/storybook/pull/28691), thanks @ndelangen!
+- CPC: Fix type usage in renderers - [#28745](https://github.com/storybookjs/storybook/pull/28745), thanks @ndelangen!
+- Controls: Add disableSave parameter - [#28734](https://github.com/storybookjs/storybook/pull/28734), thanks @valentinpalkovic!
+- React: Avoid 'Dynamic require of react is not possible' issue - [#28730](https://github.com/storybookjs/storybook/pull/28730), thanks @valentinpalkovic!
+- Telemetry: Add mount, beforeEach, moduleMock stats - [#28624](https://github.com/storybookjs/storybook/pull/28624), thanks @shilman!
+- Telemetry: CSF feature usage - [#28622](https://github.com/storybookjs/storybook/pull/28622), thanks @shilman!
+- Types: Adjust beforeAll to be non-nullable in NormalizedProjectAnnotations - [#28671](https://github.com/storybookjs/storybook/pull/28671), thanks @kasperpeulen!
+- Vue: Fix out of memory error when using vue-component-meta for events and slots - [#28674](https://github.com/storybookjs/storybook/pull/28674), thanks @larsrickert!
+- Vue: Improve generated code snippets - [#27194](https://github.com/storybookjs/storybook/pull/27194), thanks @larsrickert!
+
+## 8.3.0-alpha.2
+
+- Addon-Interactions: Fix status in panel tab - [#28580](https://github.com/storybookjs/storybook/pull/28580), thanks @yannbf!
+- Build: Remove external overrides, use package.json as source of truth - [#28632](https://github.com/storybookjs/storybook/pull/28632), thanks @kasperpeulen!
+- CLI: Add conditional logging for manager and preview start - [#28603](https://github.com/storybookjs/storybook/pull/28603), thanks @tobiasdiez!
+- CPC: Add the globals export for manager - [#28650](https://github.com/storybookjs/storybook/pull/28650), thanks @ndelangen!
+- CPC: Correct path to the `@storybook/theming/create` alias - [#28643](https://github.com/storybookjs/storybook/pull/28643), thanks @Averethel!
+- Core: Fix manager-builder `tsconfig` to emit `react-jsx` - [#28541](https://github.com/storybookjs/storybook/pull/28541), thanks @williamhelmrath!
+- Fix: Add header for MountMustBeDestructuredError message - [#28590](https://github.com/storybookjs/storybook/pull/28590), thanks @0916dhkim!
+- Fix: Prevent iframe from capturing mouse events in composed Storybooks - [#28568](https://github.com/storybookjs/storybook/pull/28568), thanks @Vincentdevreede!
+- Onboarding: Fix code snippet when story name differs from export name - [#28649](https://github.com/storybookjs/storybook/pull/28649), thanks @ghengeveld!
+- Vue: Fix out of memory error when using vue-component-meta - [#28589](https://github.com/storybookjs/storybook/pull/28589), thanks @larsrickert!
+
 ## 8.3.0-alpha.1
 
 - Bug: Fix invalid docs links in Configure.mdx template page - [#28560](https://github.com/storybookjs/storybook/pull/28560), thanks @kylegach!

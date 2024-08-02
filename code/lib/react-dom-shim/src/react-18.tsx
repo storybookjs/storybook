@@ -1,7 +1,7 @@
 import type { FC, ReactElement } from 'react';
-import React, { useLayoutEffect, useRef } from 'react';
+import * as React from 'react';
 import type { Root as ReactRoot, RootOptions } from 'react-dom/client';
-import ReactDOM from 'react-dom/client';
+import * as ReactDOM from 'react-dom/client';
 
 // A map of all rendered React 18 nodes
 const nodes = new Map<Element, ReactRoot>();
@@ -11,8 +11,8 @@ const WithCallback: FC<{ callback: () => void; children: ReactElement }> = ({
   children,
 }) => {
   // See https://github.com/reactwg/react-18/discussions/5#discussioncomment-2276079
-  const once = useRef<() => void>();
-  useLayoutEffect(() => {
+  const once = React.useRef<() => void>();
+  React.useLayoutEffect(() => {
     if (once.current === callback) return;
     once.current = callback;
     callback();

@@ -3,6 +3,7 @@ import { global } from '@storybook/global';
 import type {
   Args,
   ArgsStoryFn,
+  Globals,
   Parameters,
   PreparedMeta,
   PreparedStory,
@@ -114,7 +115,7 @@ export function prepareStory<TRenderer extends Renderer>(
     throw new NoRenderFunctionError({ id });
   }
 
-  const defaultMount = (context: StoryContext) => {
+  const defaultMount = (context: StoryContext<TRenderer>) => {
     return async () => {
       await context.renderToCanvas();
       return context.canvas;
@@ -130,6 +131,7 @@ export function prepareStory<TRenderer extends Renderer>(
   const testingLibraryRender = projectAnnotations.testingLibraryRender;
 
   return {
+    storyGlobals: {},
     ...partialAnnotations,
     moduleExport,
     id,
@@ -213,7 +215,12 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
     ...storyAnnotations?.args,
   } as Args;
 
-  const contextForEnhancers: StoryContextForEnhancers<TRenderer> = {
+  const storyGlobals: Globals = {
+    ...componentAnnotations.globals,
+    ...storyAnnotations?.globals,
+  };
+
+  const contextForEnhancers: StoryContextForEnhancers<TRenderer> & { storyGlobals: Globals } = {
     componentId: componentAnnotations.id,
     title: componentAnnotations.title,
     kind: componentAnnotations.title, // Back compat
@@ -227,6 +234,7 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
     parameters,
     initialArgs: passedArgs,
     argTypes: passedArgTypes,
+    storyGlobals,
   };
 
   contextForEnhancers.argTypes = argTypesEnhancers.reduce(

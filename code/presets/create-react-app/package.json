@@ -1,6 +1,6 @@
 {
   "name": "@storybook/preset-create-react-app",
-  "version": "8.3.0-alpha.1",
+  "version": "8.3.0-alpha.3",
   "description": "Storybook for Create React App preset",
   "keywords": [
     "storybook"

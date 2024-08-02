@@ -1,6 +1,6 @@
 {
   "name": "@storybook/root",
-  "version": "8.3.0-alpha.1",
+  "version": "8.3.0-alpha.3",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -108,6 +108,7 @@
     "@storybook/addon-onboarding": "workspace:*",
     "@storybook/addon-outline": "workspace:*",
     "@storybook/addon-storysource": "workspace:*",
+    "@storybook/addon-themes": "workspace:*",
     "@storybook/addon-toolbars": "workspace:*",
     "@storybook/addon-viewport": "workspace:*",
     "@storybook/angular": "workspace:*",
@@ -118,7 +119,7 @@
     "@storybook/codemod": "workspace:*",
     "@storybook/core": "workspace:*",
     "@storybook/core-webpack": "workspace:*",
-    "@storybook/csf": "0.1.11",
+    "@storybook/csf": "^0.1.11",
     "@storybook/csf-plugin": "workspace:*",
     "@storybook/ember": "workspace:*",
     "@storybook/eslint-config-storybook": "^4.0.0",
@@ -206,7 +207,7 @@
     "typescript": "^5.4.3",
     "util": "^0.12.4",
     "vite": "^4.0.0",
-    "vitest": "^1.2.2",
+    "vitest": "^1.6.0",
     "wait-on": "^7.0.1"
   },
   "dependenciesMeta": {

@@ -1,3 +1,4 @@
+import type { VueDocgenInfo, VueDocgenInfoEntry, VueDocgenPlugin } from '@storybook/vue3-vite';
 import type { ExtractedProp } from 'storybook/internal/docs-tools';
 import {
   convert,
@@ -6,7 +7,6 @@ import {
   type ArgTypesExtractor,
 } from 'storybook/internal/docs-tools';
 import type { SBType, StrictArgTypes, StrictInputType } from 'storybook/internal/types';
-import type { VueDocgenInfo, VueDocgenInfoEntry, VueDocgenPlugin } from '@storybook/vue3-vite';
 
 type PropertyMetaSchema = VueDocgenInfoEntry<'vue-component-meta', 'props'>['schema'];
 
@@ -283,17 +283,12 @@ export const convertVueComponentMetaProp = (
       };
     }
 
-    // recursively/deeply convert all properties of the object
     case 'object':
       return {
         name: 'object',
-        value: Object.entries(schema.schema ?? {}).reduce<Record<string, SBType>>(
-          (obj, [propName, propSchema]) => {
-            obj[propName] = convertVueComponentMetaProp(propSchema);
-            return obj;
-          },
-          {}
-        ),
+        // while Storybook generates simple JSON object controls, nested schemas don't have specialized controls
+        // so we don't need to recursively map the object schema here
+        value: {},
         required,
       };
 

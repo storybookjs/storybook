@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-links",
-  "version": "8.3.0-alpha.1",
+  "version": "8.3.0-alpha.3",
   "description": "Link stories together to build demos and prototypes with your UI components",
   "keywords": [
     "addon",
@@ -67,7 +67,7 @@
     "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
-    "@storybook/csf": "0.1.11",
+    "@storybook/csf": "^0.1.11",
     "@storybook/global": "^5.0.0",
     "ts-dedent": "^2.0.0"
   },

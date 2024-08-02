@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-viewport",
-  "version": "8.3.0-alpha.1",
+  "version": "8.3.0-alpha.3",
   "description": "Build responsive components by adjusting Storybook’s viewport size and orientation",
   "keywords": [
     "addon",
@@ -69,7 +69,6 @@
   },
   "bundler": {
     "exportEntries": [
-      "./src/models/index.ts",
       "./src/index.ts"
     ],
     "managerEntries": [

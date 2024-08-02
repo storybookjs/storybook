@@ -24,21 +24,6 @@ describe('PNPM Proxy', () => {
     });
   });
 
-  describe('setRegistryUrl', () => {
-    it('should run `npm config set registry https://foo.bar`', async () => {
-      const executeCommandSpy = vi.spyOn(pnpmProxy, 'executeCommand').mockResolvedValueOnce('');
-
-      await pnpmProxy.setRegistryURL('https://foo.bar');
-
-      expect(executeCommandSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          command: 'npm',
-          args: ['config', 'set', 'registry', 'https://foo.bar'],
-        })
-      );
-    });
-  });
-
   describe('installDependencies', () => {
     it('should run `pnpm install`', async () => {
       const executeCommandSpy = vi

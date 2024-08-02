@@ -8,7 +8,7 @@ import Meta, { ValidForm as ValidFormStory } from './LoginForm.stories';
 const ValidForm = composeStory(ValidFormStory, Meta);
 
 test('Validates form', async () => {
-  await ValidForm.play();
+  await ValidForm.run();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',
@@ -31,7 +31,7 @@ import Meta, { ValidForm as ValidFormStory } from './LoginForm.stories';
 const ValidForm = composeStory(ValidFormStory, Meta);
 
 test('Validates form', async () => {
-  await ValidForm.play();
+  await ValidForm.run();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',
@@ -54,7 +54,7 @@ import Meta, { ValidForm as ValidFormStory } from './LoginForm.stories';
 const ValidForm = composeStory(ValidFormStory, Meta);
 
 test('Validates form', async () => {
-  await ValidForm.play();
+  await ValidForm.run();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',
@@ -77,7 +77,7 @@ import Meta, { ValidForm as ValidFormStory } from './LoginForm.stories';
 const ValidForm = composeStory(ValidFormStory, Meta);
 
 test('Validates form', async () => {
-  await ValidForm.play();
+  await ValidForm.run();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',

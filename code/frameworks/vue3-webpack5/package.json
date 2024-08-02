@@ -1,6 +1,6 @@
 {
   "name": "@storybook/vue3-webpack5",
-  "version": "8.3.0-alpha.1",
+  "version": "8.3.0-alpha.3",
   "description": "Storybook for Vue 3: Develop Vue 3 Components in isolation with Hot Reloading.",
   "keywords": [
     "storybook"

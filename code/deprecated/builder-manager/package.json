@@ -1,6 +1,6 @@
 {
   "name": "@storybook/builder-manager",
-  "version": "8.3.0-alpha.1",
+  "version": "8.3.0-alpha.3",
   "description": "Storybook manager builder",
   "keywords": [
     "storybook"

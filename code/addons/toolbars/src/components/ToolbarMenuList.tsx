@@ -18,11 +18,12 @@ export const ToolbarMenuList: FC<ToolbarMenuListProps> = withKeyboardCycle(
     description,
     toolbar: { icon: _icon, items, title: _title, preventDynamicIcon, dynamicTitle },
   }) => {
-    const [globals, updateGlobals] = useGlobals();
+    const [globals, updateGlobals, storyGlobals] = useGlobals();
     const [isTooltipVisible, setIsTooltipVisible] = useState(false);
 
     const currentValue = globals[id];
     const hasGlobalValue = !!currentValue;
+    const isOverridden = id in storyGlobals;
     let icon = _icon;
     let title = _title;
 
@@ -42,7 +43,7 @@ export const ToolbarMenuList: FC<ToolbarMenuListProps> = withKeyboardCycle(
       (value: string | undefined) => {
         updateGlobals({ [id]: value });
       },
-      [currentValue, updateGlobals]
+      [id, updateGlobals]
     );
 
     return (
@@ -64,6 +65,7 @@ export const ToolbarMenuList: FC<ToolbarMenuListProps> = withKeyboardCycle(
               const listItem = ToolbarMenuListItem({
                 ...item,
                 currentValue,
+                disabled: isOverridden,
                 onClick: () => {
                   handleItemClick(item.value);
                   onHide();
@@ -77,12 +79,15 @@ export const ToolbarMenuList: FC<ToolbarMenuListProps> = withKeyboardCycle(
         closeOnOutsideClick
         onVisibleChange={setIsTooltipVisible}
       >
-        <ToolbarMenuButton
-          active={isTooltipVisible || hasGlobalValue}
-          description={description || ''}
-          icon={icon}
-          title={title || ''}
-        />
+        {
+          <ToolbarMenuButton
+            active={isTooltipVisible || hasGlobalValue}
+            disabled={isOverridden}
+            description={description || ''}
+            icon={icon}
+            title={title || ''}
+          />
+        }
       </WithTooltip>
     );
   }

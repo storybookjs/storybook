@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-backgrounds",
-  "version": "8.3.0-alpha.1",
+  "version": "8.3.0-alpha.3",
   "description": "Switch backgrounds to view components in different settings",
   "keywords": [
     "addon",
@@ -80,7 +80,7 @@
       "./src/manager.tsx"
     ],
     "previewEntries": [
-      "./src/preview.tsx"
+      "./src/preview.ts"
     ]
   },
   "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16",

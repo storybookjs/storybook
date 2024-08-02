@@ -11,6 +11,7 @@ import * as EmptyArgTypesStories from '../examples/EmptyArgTypes.stories';
 const meta = {
   component: Controls,
   parameters: {
+    layout: 'fullscreen',
     relativeCsfPaths: [
       '../examples/ControlsParameters.stories',
       '../examples/EmptyArgTypes.stories',
@@ -46,7 +47,7 @@ export const OfUndefined: Story = {
     of: ExampleStories.NotDefined,
   },
   parameters: { chromatic: { disableSnapshot: true } },
-  decorators: [(s) => (window?.navigator.userAgent.match(/StorybookTestRunner/) ? <div /> : s())],
+  tags: ['!test'],
 };
 
 export const IncludeProp: Story = {

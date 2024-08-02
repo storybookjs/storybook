@@ -2,7 +2,7 @@
 import { dedent } from 'ts-dedent';
 import { describe, it, expect, vi } from 'vitest';
 import yaml from 'js-yaml';
-import { loadCsf } from './CsfFile';
+import { loadCsf, isModuleMock } from './CsfFile';
 
 expect.addSnapshotSerializer({
   print: (val: any) => yaml.dump(val).trimEnd(),
@@ -42,11 +42,27 @@ describe('CsfFile', () => {
             parameters:
               __isArgsStory: false
               __id: foo-bar--a
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
           - id: foo-bar--b
             name: B
             parameters:
               __isArgsStory: true
               __id: foo-bar--b
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
       `);
     });
 
@@ -69,10 +85,26 @@ describe('CsfFile', () => {
             name: A
             parameters:
               __id: foo-bar--a
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: false
+              mount: false
+              moduleMock: false
           - id: foo-bar--b
             name: B
             parameters:
               __id: foo-bar--b
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: false
+              mount: false
+              moduleMock: false
       `);
     });
 
@@ -94,6 +126,14 @@ describe('CsfFile', () => {
             parameters:
               __isArgsStory: false
               __id: foo-bar--basic
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
       `);
     });
 
@@ -116,6 +156,14 @@ describe('CsfFile', () => {
         stories:
           - id: foo-bar--a
             name: A
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
       `);
     });
 
@@ -136,6 +184,14 @@ describe('CsfFile', () => {
         stories:
           - id: foo-bar--include-a
             name: Include A
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
       `);
     });
 
@@ -154,6 +210,14 @@ describe('CsfFile', () => {
         stories:
           - id: foo-bar--a
             name: Some story
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
       `);
     });
 
@@ -173,8 +237,24 @@ describe('CsfFile', () => {
         stories:
           - id: default-title--a
             name: A
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
           - id: default-title--b
             name: B
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
       `);
     });
 
@@ -194,8 +274,24 @@ describe('CsfFile', () => {
         stories:
           - id: custom-id--a
             name: A
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
           - id: custom-id--b
             name: B
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
       `);
     });
 
@@ -215,8 +311,24 @@ describe('CsfFile', () => {
         stories:
           - id: custom-meta-id--just-custom-meta-id
             name: Just Custom Meta Id
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: false
+              mount: false
+              moduleMock: false
           - id: custom-id
             name: Custom Paremeters Id
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: false
+              mount: false
+              moduleMock: false
       `);
     });
 
@@ -237,8 +349,24 @@ describe('CsfFile', () => {
         stories:
           - id: foo-bar-baz--a
             name: A
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
           - id: foo-bar-baz--b
             name: B
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
       `);
     });
 
@@ -263,11 +391,27 @@ describe('CsfFile', () => {
             parameters:
               __isArgsStory: true
               __id: foo-bar--a
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: false
+              mount: false
+              moduleMock: false
           - id: foo-bar--b
             name: B
             parameters:
               __isArgsStory: true
               __id: foo-bar--b
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: false
+              mount: false
+              moduleMock: false
       `);
     });
 
@@ -292,11 +436,27 @@ describe('CsfFile', () => {
             parameters:
               __isArgsStory: true
               __id: foo-bar--a
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: false
+              mount: false
+              moduleMock: false
           - id: foo-bar--b
             name: B
             parameters:
               __isArgsStory: true
               __id: foo-bar--b
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: false
+              mount: false
+              moduleMock: false
       `);
     });
 
@@ -318,8 +478,24 @@ describe('CsfFile', () => {
         stories:
           - id: foo-bar-baz--a
             name: A
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
           - id: foo-bar-baz--b
             name: B
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
       `);
     });
 
@@ -341,8 +517,24 @@ describe('CsfFile', () => {
         stories:
           - id: foo-bar-baz--a
             name: A
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
           - id: foo-bar-baz--b
             name: B
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
       `);
     });
 
@@ -362,8 +554,24 @@ describe('CsfFile', () => {
         stories:
           - id: default-title--a
             name: A
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
           - id: default-title--b
             name: B
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
       `);
     });
 
@@ -387,6 +595,14 @@ describe('CsfFile', () => {
             parameters:
               __isArgsStory: true
               __id: foo-bar--a
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
       `);
     });
 
@@ -409,6 +625,14 @@ describe('CsfFile', () => {
             parameters:
               __isArgsStory: false
               __id: foo-bar--a
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
       `);
     });
 
@@ -432,6 +656,14 @@ describe('CsfFile', () => {
               __isArgsStory: false
               __id: foo-bar--page
               docsOnly: true
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
       `);
     });
 
@@ -460,6 +692,14 @@ describe('CsfFile', () => {
               __isArgsStory: false
               __id: foo-bar--page
               docsOnly: true
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
       `);
     });
 
@@ -483,11 +723,27 @@ describe('CsfFile', () => {
             parameters:
               __isArgsStory: false
               __id: foo-bar--a
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
           - id: foo-bar--b
             name: B
             parameters:
               __isArgsStory: true
               __id: foo-bar--b
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
       `);
     });
 
@@ -506,8 +762,24 @@ describe('CsfFile', () => {
         stories:
           - id: foo-bar--a
             name: A
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: false
+              mount: false
+              moduleMock: false
           - id: foo-bar--b
             name: B
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: false
+              mount: false
+              moduleMock: false
       `);
     });
 
@@ -531,11 +803,27 @@ describe('CsfFile', () => {
             parameters:
               __isArgsStory: true
               __id: foo-bar--b
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
           - id: foo-bar--a
             name: A
             parameters:
               __isArgsStory: false
               __id: foo-bar--a
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
       `);
     });
 
@@ -560,6 +848,14 @@ describe('CsfFile', () => {
             name: A
             parameters:
               __id: foo-bar--a
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
       `);
     });
 
@@ -631,8 +927,24 @@ describe('CsfFile', () => {
         stories:
           - id: default-title--a
             name: A
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
           - id: default-title--b
             name: B
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
       `);
     });
 
@@ -677,8 +989,24 @@ describe('CsfFile', () => {
         stories:
           - id: foo-bar--a
             name: A
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
           - id: foo-bar--b
             name: B
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
       `);
     });
   });
@@ -747,6 +1075,14 @@ describe('CsfFile', () => {
             parameters:
               __isArgsStory: false
               __id: foo-bar--a
+            __stats:
+              play: false
+              render: true
+              loaders: false
+              beforeEach: false
+              storyFn: false
+              mount: false
+              moduleMock: false
       `);
     });
 
@@ -770,6 +1106,14 @@ describe('CsfFile', () => {
             parameters:
               __isArgsStory: true
               __id: foo-bar--a
+            __stats:
+              play: false
+              render: true
+              loaders: false
+              beforeEach: false
+              storyFn: false
+              mount: false
+              moduleMock: false
       `);
     });
 
@@ -791,6 +1135,14 @@ describe('CsfFile', () => {
             parameters:
               __isArgsStory: true
               __id: foo-bar--a
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: false
+              mount: false
+              moduleMock: false
       `);
     });
 
@@ -814,6 +1166,14 @@ describe('CsfFile', () => {
             parameters:
               __isArgsStory: true
               __id: foo-bar--a
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: false
+              mount: false
+              moduleMock: false
       `);
     });
 
@@ -886,6 +1246,14 @@ describe('CsfFile', () => {
         stories:
           - id: foo-bar--a
             name: A
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
             tags:
               - 'Y'
       `);
@@ -910,6 +1278,14 @@ describe('CsfFile', () => {
         stories:
           - id: foo-bar--a
             name: A
+            __stats:
+              play: false
+              render: true
+              loaders: false
+              beforeEach: false
+              storyFn: false
+              mount: false
+              moduleMock: false
             tags:
               - 'Y'
       `);
@@ -936,6 +1312,14 @@ describe('CsfFile', () => {
         stories:
           - id: foo-bar--a
             name: A
+            __stats:
+              play: false
+              render: true
+              loaders: false
+              beforeEach: false
+              storyFn: false
+              mount: false
+              moduleMock: false
             tags:
               - 'Y'
       `);
@@ -987,6 +1371,14 @@ describe('CsfFile', () => {
         stories:
           - id: foo-bar--a
             name: A
+            __stats:
+              play: true
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
             tags:
               - 'Y'
               - play-fn
@@ -1013,9 +1405,105 @@ describe('CsfFile', () => {
         stories:
           - id: foo-bar--a
             name: A
+            __stats:
+              play: true
+              render: true
+              loaders: false
+              beforeEach: false
+              storyFn: false
+              mount: false
+              moduleMock: false
             tags:
               - 'Y'
               - play-fn
+      `);
+    });
+
+    it('mount', () => {
+      expect(
+        parse(
+          dedent`
+          export default { title: 'foo/bar' };
+          export const A = {
+            play: ({ mount }) => {},
+          };
+        `
+        )
+      ).toMatchInlineSnapshot(`
+        meta:
+          title: foo/bar
+        stories:
+          - id: foo-bar--a
+            name: A
+            __stats:
+              play: true
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: false
+              mount: true
+              moduleMock: false
+            tags:
+              - play-fn
+      `);
+    });
+
+    it('mount renamed', () => {
+      expect(
+        parse(
+          dedent`
+          export default { title: 'foo/bar' };
+          export const A = {
+            play: ({ mount: mountRenamed, context }) => {},
+          };
+        `
+        )
+      ).toMatchInlineSnapshot(`
+        meta:
+          title: foo/bar
+        stories:
+          - id: foo-bar--a
+            name: A
+            __stats:
+              play: true
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: false
+              mount: true
+              moduleMock: false
+            tags:
+              - play-fn
+      `);
+    });
+
+    it('mount meta', () => {
+      expect(
+        parse(
+          dedent`
+          export default {
+            title: 'foo/bar',
+            play: ({ context, mount: mountRenamed }) => {},
+          };
+          export const A = {};
+        `
+        )
+      ).toMatchInlineSnapshot(`
+        meta:
+          title: foo/bar
+          tags:
+            - play-fn
+        stories:
+          - id: foo-bar--a
+            name: A
+            __stats:
+              play: true
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: false
+              mount: true
+              moduleMock: false
       `);
     });
 
@@ -1026,6 +1514,7 @@ describe('CsfFile', () => {
           export default { title: 'foo/bar', play: () => {}, tags: ['X'] };
           export const A = {
             render: () => {},
+            loaders: [],
             tags: ['Y'],
           };
         `
@@ -1039,6 +1528,14 @@ describe('CsfFile', () => {
         stories:
           - id: foo-bar--a
             name: A
+            __stats:
+              play: true
+              render: true
+              loaders: true
+              beforeEach: false
+              storyFn: false
+              mount: false
+              moduleMock: false
             tags:
               - 'Y'
       `);
@@ -1062,6 +1559,14 @@ describe('CsfFile', () => {
         stories:
           - id: foo-bar--a
             name: A
+            __stats:
+              play: true
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: true
+              mount: false
+              moduleMock: false
             tags:
               - 'Y'
       `);
@@ -1103,6 +1608,14 @@ describe('CsfFile', () => {
             - story-tag
             - play-fn
           __id: component-id--a
+          __stats:
+            play: true
+            render: false
+            loaders: false
+            beforeEach: false
+            storyFn: false
+            mount: false
+            moduleMock: false
         - type: story
           importPath: foo/bar.stories.js
           exportName: B
@@ -1114,6 +1627,14 @@ describe('CsfFile', () => {
             - story-tag
             - play-fn
           __id: component-id--b
+          __stats:
+            play: true
+            render: false
+            loaders: false
+            beforeEach: false
+            storyFn: false
+            mount: false
+            moduleMock: false
       `);
     });
 
@@ -1143,6 +1664,14 @@ describe('CsfFile', () => {
           tags:
             - component-tag
           __id: custom-story-id
+          __stats:
+            play: false
+            render: false
+            loaders: false
+            beforeEach: false
+            storyFn: false
+            mount: false
+            moduleMock: false
       `);
     });
 
@@ -1177,6 +1706,14 @@ describe('CsfFile', () => {
             - story-tag-dup
             - inherit-tag-dup
           __id: custom-foo-title--a
+          __stats:
+            play: false
+            render: false
+            loaders: false
+            beforeEach: false
+            storyFn: false
+            mount: false
+            moduleMock: false
       `);
     });
 
@@ -1226,6 +1763,14 @@ describe('CsfFile', () => {
           title: custom foo title
           tags: []
           __id: custom-foo-title--a
+          __stats:
+            play: false
+            render: true
+            loaders: false
+            beforeEach: false
+            storyFn: false
+            mount: false
+            moduleMock: false
       `);
     });
 
@@ -1254,6 +1799,14 @@ describe('CsfFile', () => {
           title: custom foo title
           tags: []
           __id: custom-foo-title--a
+          __stats:
+            play: false
+            render: true
+            loaders: false
+            beforeEach: false
+            storyFn: false
+            mount: false
+            moduleMock: false
       `);
     });
 
@@ -1282,6 +1835,14 @@ describe('CsfFile', () => {
           title: custom foo title
           tags: []
           __id: custom-foo-title--a
+          __stats:
+            play: false
+            render: true
+            loaders: false
+            beforeEach: false
+            storyFn: false
+            mount: false
+            moduleMock: false
       `);
     });
 
@@ -1310,7 +1871,117 @@ describe('CsfFile', () => {
           title: custom foo title
           tags: []
           __id: custom-foo-title--a
+          __stats:
+            play: false
+            render: true
+            loaders: false
+            beforeEach: false
+            storyFn: false
+            mount: false
+            moduleMock: false
       `);
     });
+  });
+
+  describe('beforeEach', () => {
+    it('basic', () => {
+      expect(
+        parse(
+          dedent`
+          export default { title: 'foo/bar' };
+          export const A = {
+            beforeEach: async () => {},
+          };
+        `
+        )
+      ).toMatchInlineSnapshot(`
+        meta:
+          title: foo/bar
+        stories:
+          - id: foo-bar--a
+            name: A
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: true
+              storyFn: false
+              mount: false
+              moduleMock: false
+      `);
+    });
+  });
+
+  describe('module mocks', () => {
+    it('alias', () => {
+      expect(
+        parse(
+          dedent`
+          import foo from '#bar.mock';
+          export default { title: 'foo/bar' };
+          export const A = {};
+        `
+        )
+      ).toMatchInlineSnapshot(`
+        meta:
+          title: foo/bar
+        stories:
+          - id: foo-bar--a
+            name: A
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: false
+              mount: false
+              moduleMock: true
+      `);
+    });
+    it('relative', () => {
+      expect(
+        parse(
+          dedent`
+          import foo from './bar.mock';
+          export default { title: 'foo/bar' };
+          export const A = {};
+        `
+        )
+      ).toMatchInlineSnapshot(`
+        meta:
+          title: foo/bar
+        stories:
+          - id: foo-bar--a
+            name: A
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              storyFn: false
+              mount: false
+              moduleMock: true
+      `);
+    });
+  });
+});
+
+describe('isModuleMock', () => {
+  it('prefix', () => {
+    expect(isModuleMock('#foo.mock')).toBe(true);
+    expect(isModuleMock('./foo.mock')).toBe(true);
+    expect(isModuleMock('../foo.mock')).toBe(true);
+    expect(isModuleMock('/foo.mock')).toBe(true);
+
+    expect(isModuleMock('foo.mock')).toBe(false);
+    expect(isModuleMock('@/foo.mock')).toBe(false);
+  });
+  it('sufixes', () => {
+    expect(isModuleMock('#foo.mock.js')).toBe(true);
+    expect(isModuleMock('#foo.mock.mjs')).toBe(true);
+    expect(isModuleMock('#foo.mock.vue')).toBe(true);
+
+    expect(isModuleMock('#foo.mocktail')).toBe(false);
+    expect(isModuleMock('#foo.mock.test.ts')).toBe(false);
   });
 });

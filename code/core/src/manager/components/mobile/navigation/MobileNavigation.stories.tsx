@@ -69,7 +69,6 @@ const meta = {
   ],
   parameters: {
     layout: 'fullscreen',
-    theme: 'light',
     viewport: {
       defaultViewport: 'mobile1',
     },
@@ -86,9 +85,12 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {};
+export const Default: Story = {
+  globals: { sb_theme: 'light' },
+};
 export const Dark: Story = {
-  parameters: { theme: 'dark' },
+  globals: { sb_theme: 'dark' },
+  parameters: { chromatic: { disable: true } },
 };
 
 export const LongStoryName: Story = {

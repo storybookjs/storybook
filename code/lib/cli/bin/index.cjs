@@ -27,6 +27,7 @@ const run = async () => {
   await import('../dist/cli.js');
 };
 
-run().catch(() => {
+run().catch((e) => {
+  console.error(e);
   process.exit(1);
 });

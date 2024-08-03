@@ -8,7 +8,8 @@ const run = async () => {
 };
 
 if (['dev', 'build'].includes(args[0])) {
-  run().catch(() => {
+  run().catch((e) => {
+    console.error(e);
     process.exit(1);
   });
 } else {

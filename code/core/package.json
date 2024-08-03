@@ -400,6 +400,7 @@
     "react-transition-group": "^4.4.5",
     "require-from-string": "^2.0.2",
     "resolve-from": "^5.0.0",
+    "resolve.exports": "^2.0.2",
     "slash": "^5.0.0",
     "store2": "^2.14.2",
     "strip-json-comments": "^5.0.1",

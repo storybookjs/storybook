@@ -1,3 +1,17 @@
+# v0.0.14 (Sun Aug 04 2024)
+
+#### ⚠️ Pushed to `main`
+
+- Format package.json (valentin@chromatic.com)
+- Support @storybook/nextjs-vite (valentin@chromatic.com)
+- Bundle optimization (valentin@chromatic.com)
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
 # v0.0.13 (Fri Aug 02 2024)
 
 #### 🐛 Bug Fix

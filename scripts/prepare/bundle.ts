@@ -15,6 +15,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 type Formats = 'esm' | 'cjs';
 type BundlerConfig = {
   entries: string[];
+  nodeEntries: string[];
   externals: string[];
   noExternal: string[];
   platform: Options['platform'];
@@ -36,6 +37,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
     peerDependencies,
     bundler: {
       entries = [],
+      nodeEntries = [],
       externals: extraExternals = [],
       noExternal: extraNoExternal = [],
       platform,
@@ -155,6 +157,70 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         },
       })
     );
+  }
+
+  if (nodeEntries.length > 0) {
+    if (formats.includes('esm')) {
+      tasks.push(
+        build({
+          noExternal,
+          silent: true,
+          treeshake: true,
+          entry: nodeEntries,
+          shims: false,
+          watch,
+          outDir,
+          sourcemap: false,
+          format: ['esm'],
+          target: ['node18'],
+          clean: false,
+          ...(dtsBuild === 'esm' ? dtsConfig : {}),
+          platform: 'node',
+          banner: {
+            js: dedent`
+            import ESM_COMPAT_Module from "node:module";
+            import { fileURLToPath as ESM_COMPAT_fileURLToPath } from 'node:url';
+            import { dirname as ESM_COMPAT_dirname } from 'node:path';
+            const __filename = ESM_COMPAT_fileURLToPath(import.meta.url);
+            const __dirname = ESM_COMPAT_dirname(__filename);
+            const require = ESM_COMPAT_Module.createRequire(import.meta.url);
+          `,
+          },
+
+          external: [...externals, 'fs', 'path', 'os'],
+
+          esbuildOptions: (c) => {
+            c.conditions = ['module'];
+            c.platform = 'node';
+            Object.assign(c, getESBuildOptions(optimized));
+          },
+        })
+      );
+    }
+
+    if (formats.includes('cjs')) {
+      tasks.push(
+        build({
+          noExternal,
+          silent: true,
+          entry: nodeEntries,
+          watch,
+          outDir,
+          sourcemap: false,
+          format: ['cjs'],
+          target: 'node18',
+          ...(dtsBuild === 'cjs' ? dtsConfig : {}),
+          platform: 'node',
+          clean: false,
+          external: externals,
+
+          esbuildOptions: (c) => {
+            c.platform = 'node';
+            Object.assign(c, getESBuildOptions(optimized));
+          },
+        })
+      );
+    }
   }
 
   if (tsConfigExists && !optimized) {

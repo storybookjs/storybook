@@ -24,7 +24,7 @@ process.once('uncaughtException', (error) => {
 });
 
 const run = async () => {
-  await import('../dist/cli.js');
+  await import('../dist/proxy.js');
 };
 
 run().catch((e) => {

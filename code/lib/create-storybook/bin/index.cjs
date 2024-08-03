@@ -24,7 +24,7 @@ process.once('uncaughtException', (error) => {
 });
 
 const run = async () => {
-  await import('../dist/bin/index.cjs');
+  await import('../dist/bin/index.js');
 };
 
 run().catch((e) => {

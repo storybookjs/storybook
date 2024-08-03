@@ -20,14 +20,12 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "import": "./dist/index.mjs"
     },
     "./input/iframe.html": "./input/iframe.html",
     "./package.json": "./package.json"
   },
-  "main": "dist/index.js",
+  "main": "dist/index.mjs",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
@@ -87,6 +85,9 @@
   "bundler": {
     "entries": [
       "./src/index.ts"
+    ],
+    "formats": [
+      "esm"
     ],
     "platform": "node"
   },

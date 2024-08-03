@@ -23,4 +23,10 @@ process.once('uncaughtException', (error) => {
   throw error;
 });
 
-require('../dist/bin/index.cjs');
+const run = async () => {
+  await import('../dist/bin/index.cjs');
+};
+
+run().catch(() => {
+  process.exit(1);
+});

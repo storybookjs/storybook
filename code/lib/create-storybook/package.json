@@ -24,7 +24,7 @@
       "import": "./dist/index.js"
     },
     "./bin/index.cjs": {
-      "import": "./bin/index.js"
+      "require": "./bin/index.cjs"
     },
     "./package.json": "./package.json"
   },

@@ -4,7 +4,7 @@ import path from 'path';
 import type { TemplateKey } from '../get-template';
 import { exec } from './exec';
 // TODO -- should we generate this file a second time outside of CLI?
-import storybookVersions from '../../code/lib/core-common/src/versions';
+import storybookVersions from '../../code/core/src/common/versions';
 import touch from './touch';
 
 export type YarnOptions = {
@@ -41,6 +41,7 @@ export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
     touch('yarn.lock'),
     touch('.yarnrc.yml'),
     `yarn set version berry`,
+
     // Use the global cache so we aren't re-caching dependencies each time we run sandbox
     `yarn config set enableGlobalCache true`,
     `yarn config set checksumBehavior ignore`,
@@ -74,6 +75,11 @@ export const addWorkaroundResolutions = async ({ cwd, dryRun }: YarnOptions) => 
     '@vitejs/plugin-react': '4.2.0',
     '@sveltejs/vite-plugin-svelte': '3.0.1',
     '@vitejs/plugin-vue': '4.5.0',
+    '@testing-library/dom': '^9.3.4',
+    '@testing-library/jest-dom': '^6.4.2',
+    '@testing-library/user-event': '^14.5.2',
+    // TODO: Remove as soon as @storybook/csf@0.1.10 is released
+    '@storybook/csf': '0.1.10--canary.d841bb4.0',
   };
   await writeJSON(packageJsonPath, packageJson, { spaces: 2 });
 };
@@ -90,7 +96,7 @@ export const configureYarn2ForVerdaccio = async ({
     `yarn config set enableGlobalCache false`,
     `yarn config set enableMirror false`,
     // ⚠️ Need to set registry because Yarn 2 is not using the conf of Yarn 1 (URL is hardcoded in CircleCI config.yml)
-    `yarn config set npmScopes --json '{ "storybook": { "npmRegistryServer": "http://localhost:6001/" } }'`,
+    `yarn config set npmRegistryServer "http://localhost:6001/"`,
     // Some required magic to be able to fetch deps from local registry
     `yarn config set unsafeHttpWhitelist --json '["localhost"]'`,
     // Disable fallback mode to make sure everything is required correctly

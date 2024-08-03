@@ -1,6 +1,6 @@
 export const packageNames = {
   '@kadira/react-storybook-decorator-centered': '@storybook/addon-centered',
-  '@kadira/storybook-addons': '@storybook/preview-api',
+  '@kadira/storybook-addons': 'storybook/internal/preview-api',
   '@kadira/storybook-addon-actions': '@storybook/addon-actions',
   '@kadira/storybook-addon-comments': '@storybook/addon-comments',
   '@kadira/storybook-addon-graphql': '@storybook/addon-graphql',
@@ -9,16 +9,16 @@ export const packageNames = {
   '@kadira/storybook-addon-links': '@storybook/addon-links',
   '@kadira/storybook-addon-notes': '@storybook/addon-notes',
   '@kadira/storybook-addon-options': '@storybook/addon-options',
-  '@kadira/storybook-channels': '@storybook/channels',
+  '@kadira/storybook-channels': 'storybook/internal/channels',
   '@kadira/storybook-channel-postmsg': '@storybook/channel-postmessage',
   '@kadira/storybook-channel-websocket': '@storybook/channel-websocket',
-  '@kadira/storybook-ui': '@storybook/manager',
+  '@kadira/storybook-ui': 'storybook/internal/manager',
   '@kadira/react-native-storybook': '@storybook/react-native',
   '@kadira/react-storybook': '@storybook/react',
-  '@kadira/getstorybook': '@storybook/cli',
+  '@kadira/getstorybook': 'storybook',
   '@kadira/storybook': '@storybook/react',
   storyshots: '@storybook/addon-storyshots',
-  getstorybook: '@storybook/cli',
+  getstorybook: 'storybook',
 };
 
 export default function transformer(file, api) {

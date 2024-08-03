@@ -1,5 +1,5 @@
 import { precompile } from 'ember-source/dist/ember-template-compiler';
-import type { PresetProperty, PresetPropertyFn } from '@storybook/types';
+import type { PresetProperty, PresetPropertyFn } from 'storybook/internal/types';
 import type { TransformOptions } from '@babel/core';
 import { findDistFile } from '../util';
 

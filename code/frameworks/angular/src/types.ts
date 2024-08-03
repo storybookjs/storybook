@@ -7,7 +7,7 @@ import {
   BuilderOptions,
   TypescriptOptions as TypescriptOptionsBuilder,
 } from '@storybook/builder-webpack5';
-import { CompatibleString } from '@storybook/types';
+import { CompatibleString } from 'storybook/internal/types';
 
 type FrameworkName = CompatibleString<'@storybook/angular'>;
 type BuilderName = CompatibleString<'@storybook/builder-webpack5'>;

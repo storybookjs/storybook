@@ -1,8 +1,8 @@
 /* eslint-disable no-underscore-dangle */
 import { render } from 'lit';
-import type { ArgsStoryFn, PartialStoryFn, StoryContext } from '@storybook/types';
-import { addons, useEffect } from '@storybook/preview-api';
-import { SNIPPET_RENDERED, SourceType } from '@storybook/docs-tools';
+import type { ArgsStoryFn, PartialStoryFn, StoryContext } from 'storybook/internal/types';
+import { addons, useEffect } from 'storybook/internal/preview-api';
+import { SNIPPET_RENDERED, SourceType } from 'storybook/internal/docs-tools';
 
 import type { WebComponentsRenderer } from '../types';
 

@@ -1,8 +1,8 @@
 import { describe, beforeEach, it, expect, vi } from 'vitest';
-import { logger } from '@storybook/node-logger';
+import { logger } from '@storybook/core/node-logger';
 import { warn } from './warn';
 
-vi.mock('@storybook/node-logger');
+vi.mock('@storybook/core/node-logger');
 
 const mocks = vi.hoisted(() => {
   return {

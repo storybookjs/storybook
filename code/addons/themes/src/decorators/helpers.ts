@@ -1,5 +1,5 @@
-import { addons, useParameter } from '@storybook/preview-api';
-import type { StoryContext } from '@storybook/types';
+import { addons, useParameter } from 'storybook/internal/preview-api';
+import type { StoryContext } from 'storybook/internal/types';
 import type { ThemeParameters } from '../constants';
 import { GLOBAL_KEY, PARAM_KEY, THEMING_EVENTS, DEFAULT_THEME_PARAMETERS } from '../constants';
 

@@ -1,4 +1,7 @@
-import type { StorybookConfig as StorybookConfigBase, CompatibleString } from '@storybook/types';
+import type {
+  StorybookConfig as StorybookConfigBase,
+  CompatibleString,
+} from 'storybook/internal/types';
 import type { StorybookConfigVite, BuilderOptions } from '@storybook/builder-vite';
 
 type FrameworkName = CompatibleString<'@storybook/html-vite'>;

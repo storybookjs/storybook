@@ -1,6 +1,6 @@
 {
   "name": "@storybook/server",
-  "version": "8.2.0-alpha.10",
+  "version": "8.3.0-alpha.3",
   "description": "Storybook Server renderer",
   "keywords": [
     "storybook"
@@ -46,11 +46,12 @@
     "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/csf": "^0.1.8",
-    "@storybook/csf-tools": "workspace:*",
+    "@storybook/components": "workspace:^",
+    "@storybook/csf": "^0.1.11",
     "@storybook/global": "^5.0.0",
-    "@storybook/preview-api": "workspace:*",
-    "@storybook/types": "workspace:*",
+    "@storybook/manager-api": "workspace:^",
+    "@storybook/preview-api": "workspace:^",
+    "@storybook/theming": "workspace:^",
     "@types/fs-extra": "^11.0.1",
     "fs-extra": "^11.1.0",
     "ts-dedent": "^2.0.0",
@@ -58,6 +59,9 @@
   },
   "devDependencies": {
     "typescript": "^5.3.2"
+  },
+  "peerDependencies": {
+    "storybook": "workspace:^"
   },
   "engines": {
     "node": ">=18.0.0"

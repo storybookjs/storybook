@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import type { Plugin } from 'vite';
-import type { Options } from '@storybook/types';
+import type { Options } from 'storybook/internal/types';
 import { transformIframeHtml } from '../transform-iframe-html';
 import { generateModernIframeScriptCode } from '../codegen-modern-iframe-script';
 import { generateImportFnScriptCode } from '../codegen-importfn-script';

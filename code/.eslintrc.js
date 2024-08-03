@@ -9,10 +9,6 @@ const addonsPackages = fs
 const libPackages = fs
   .readdirSync(path.join(__dirname, 'lib'))
   .filter((p) => fs.statSync(path.join(__dirname, 'lib', p)).isDirectory());
-const uiPackages = fs
-  .readdirSync(path.join(__dirname, 'ui'))
-  .filter((p) => fs.statSync(path.join(__dirname, 'ui', p)).isDirectory())
-  .filter((p) => !p.startsWith('.'));
 
 module.exports = {
   root: true,
@@ -23,6 +19,7 @@ module.exports = {
   },
   plugins: ['local-rules'],
   rules: {
+    'import/no-unresolved': 'off', // covered by typescript
     'eslint-comments/disable-enable-pair': ['error', { allowWholeFile: true }],
     'eslint-comments/no-unused-disable': 'error',
     'react-hooks/rules-of-hooks': 'off',
@@ -93,20 +90,20 @@ module.exports = {
     {
       // these packages use pre-bundling, dependencies will be bundled, and will be in devDepenencies
       files: ['frameworks/**/*', 'builders/**/*', 'deprecated/**/*', 'renderers/**/*'],
-      excludedFiles: ['frameworks/angular/**/*', 'frameworks/ember/**/*', 'lib/core-server/**/*'],
+      excludedFiles: ['frameworks/angular/**/*', 'frameworks/ember/**/*', 'core/**/*'],
       rules: {
         'import/no-extraneous-dependencies': [
           'error',
-          { bundledDependencies: false, devDependencies: true },
+          { bundledDependencies: false, devDependencies: true, peerDependencies: true },
         ],
       },
     },
     {
-      files: ['**/ui/.storybook/**'],
+      files: ['**/.storybook/**'],
       rules: {
         'import/no-extraneous-dependencies': [
           'error',
-          { packageDir: [__dirname], devDependencies: true },
+          { packageDir: [__dirname], devDependencies: true, peerDependencies: true },
         ],
       },
     },
@@ -119,15 +116,6 @@ module.exports = {
             packageDir: [__dirname, path.join(__dirname, 'addons', directory)],
             devDependencies: true,
           },
-        ],
-      },
-    })),
-    ...uiPackages.map((directory) => ({
-      files: [path.join('**', 'ui', directory, '**', '*.*')],
-      rules: {
-        'import/no-extraneous-dependencies': [
-          'error',
-          { packageDir: [__dirname, path.join(__dirname, 'ui', directory)], devDependencies: true },
         ],
       },
     })),
@@ -221,7 +209,14 @@ module.exports = {
       },
     },
     {
-      files: ['**/core-events/src/**/*'],
+      files: ['**/*.ts', '!**/*.test.*', '!**/*.spec.*'],
+      excludedFiles: ['**/*.test.*'],
+      rules: {
+        'local-rules/storybook-monorepo-imports': 'error',
+      },
+    },
+    {
+      files: ['./core/src/preview-errors.ts'],
       excludedFiles: ['**/*.test.*'],
       rules: {
         'local-rules/no-duplicated-error-codes': 'error',

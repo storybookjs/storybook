@@ -1,6 +1,6 @@
 import { dedent } from 'ts-dedent';
 
-import { writeConfig } from '@storybook/csf-tools';
+import { writeConfig } from '@storybook/core/csf-tools';
 
 import type { Fix } from '../types';
 import { updateMainConfig } from '../helpers/mainConfigFile';

@@ -1,11 +1,11 @@
 import chalk from 'chalk';
 import boxen from 'boxen';
 import { createWriteStream, move, remove } from 'fs-extra';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 import { join } from 'path';
 
-import { JsPackageManagerFactory } from '@storybook/core-common';
-import type { PackageManagerName } from '@storybook/core-common';
+import { JsPackageManagerFactory } from '@storybook/core/common';
+import type { PackageManagerName } from '@storybook/core/common';
 import { getStorybookData } from '../automigrate/helpers/mainConfigFile';
 import { cleanLog } from '../automigrate/helpers/cleanLog';
 import { getMismatchingVersionsWarnings } from './getMismatchingVersionsWarning';
@@ -105,6 +105,15 @@ export const doctor = async ({
 
   const allDependencies = (await packageManager.getAllDependencies()) as Record<string, string>;
 
+  if (!('storybook' in allDependencies)) {
+    logDiagnostic(
+      `Package ${chalk.cyan('storybook')} not found`,
+      dedent`
+        The ${chalk.cyan('storybook')} package was not found in your package.json.
+        Installing ${chalk.cyan('storybook')} as a direct dev dependency in your package.json is required. 
+      `
+    );
+  }
   const incompatibleStorybookPackagesList = await getIncompatibleStorybookPackages({
     currentStorybookVersion: storybookVersion,
   });

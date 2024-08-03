@@ -1,7 +1,7 @@
 import fse from 'fs-extra';
 import path from 'path';
 import { sync as spawnSync, spawn as spawnAsync } from 'cross-spawn';
-import { logger } from '@storybook/node-logger';
+import { logger } from '@storybook/core/node-logger';
 import chalk from 'chalk';
 
 type ExecOptions = Parameters<typeof spawnAsync>[2];
@@ -97,7 +97,7 @@ export const link = async ({ target, local, start }: LinkOptions) => {
   }
 
   logger.info(`Linking ${reproDir}`);
-  await exec(`yarn link --all ${storybookDir}`, { cwd: reproDir });
+  await exec(`yarn link --all --relative ${storybookDir}`, { cwd: reproDir });
 
   logger.info(`Installing ${reproName}`);
   await exec(`yarn install`, { cwd: reproDir });

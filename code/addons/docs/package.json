@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-docs",
-  "version": "8.2.0-alpha.10",
+  "version": "8.3.0-alpha.3",
   "description": "Document component usage and properties in Markdown",
   "keywords": [
     "addon",
@@ -101,16 +101,9 @@
     "@babel/core": "^7.24.4",
     "@mdx-js/react": "^3.0.0",
     "@storybook/blocks": "workspace:*",
-    "@storybook/client-logger": "workspace:*",
-    "@storybook/components": "workspace:*",
     "@storybook/csf-plugin": "workspace:*",
-    "@storybook/csf-tools": "workspace:*",
     "@storybook/global": "^5.0.0",
-    "@storybook/node-logger": "workspace:*",
-    "@storybook/preview-api": "workspace:*",
     "@storybook/react-dom-shim": "workspace:*",
-    "@storybook/theming": "workspace:*",
-    "@storybook/types": "workspace:*",
     "@types/react": "^16.8.0 || ^17.0.0 || ^18.0.0",
     "fs-extra": "^11.1.0",
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0",
@@ -122,11 +115,13 @@
   "devDependencies": {
     "@mdx-js/mdx": "^3.0.0",
     "@rollup/pluginutils": "^5.0.2",
-    "@storybook/test": "workspace:*",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "typescript": "^5.3.2",
     "vite": "^4.0.4"
+  },
+  "peerDependencies": {
+    "storybook": "workspace:^"
   },
   "publishConfig": {
     "access": "public"

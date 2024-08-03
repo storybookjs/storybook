@@ -1,5 +1,5 @@
 import { global as globalThis } from '@storybook/global';
-import type { PartialStoryFn, StoryContext } from '@storybook/types';
+import type { PartialStoryFn, StoryContext } from 'storybook/internal/types';
 
 export default {
   component: globalThis.Components.Pre,
@@ -54,9 +54,9 @@ export const ToggleExpandCollapse = {
 
 export const GlobalBased = {
   argTypes: {
-    ifThemeExists: { control: 'text', if: { global: 'theme' } },
-    ifThemeNotExists: { control: 'text', if: { global: 'theme', exists: false } },
-    ifLightTheme: { control: 'text', if: { global: 'theme', eq: 'light' } },
-    ifNotLightTheme: { control: 'text', if: { global: 'theme', neq: 'light' } },
+    ifThemeExists: { control: 'text', if: { global: 'sb_theme' } },
+    ifThemeNotExists: { control: 'text', if: { global: 'sb_theme', exists: false } },
+    ifLightTheme: { control: 'text', if: { global: 'sb_theme', eq: 'light' } },
+    ifNotLightTheme: { control: 'text', if: { global: 'sb_theme', neq: 'light' } },
   },
 };

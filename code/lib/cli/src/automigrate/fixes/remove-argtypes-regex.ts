@@ -2,8 +2,8 @@ import type { Fix } from '../types';
 import * as fs from 'node:fs/promises';
 import * as babel from '@babel/core';
 import type { BabelFile, NodePath } from '@babel/core';
-import { babelParse } from '@storybook/csf-tools';
-import dedent from 'ts-dedent';
+import { babelParse } from '@storybook/core/csf-tools';
+import { dedent } from 'ts-dedent';
 import chalk from 'chalk';
 
 export const removeArgtypesRegex: Fix<{ argTypesRegex: NodePath; previewConfigPath: string }> = {

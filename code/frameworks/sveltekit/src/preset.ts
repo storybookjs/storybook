@@ -1,6 +1,6 @@
 // @ts-expect-error -- TS picks up the type from preset.js instead of dist/preset.d.ts
 import { viteFinal as svelteViteFinal } from '@storybook/svelte-vite/preset';
-import type { PresetProperty } from '@storybook/types';
+import type { PresetProperty } from 'storybook/internal/types';
 import { withoutVitePlugins } from '@storybook/builder-vite';
 import { dirname, join } from 'path';
 import { configOverrides } from './plugins/config-overrides';

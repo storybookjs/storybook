@@ -3,7 +3,7 @@ import type { Fix } from '../types';
 import findUp from 'find-up';
 import { getFrameworkPackageName } from '../helpers/mainConfigFile';
 import { frameworkToRenderer } from '../../helpers';
-import { frameworkPackages } from '@storybook/core-common';
+import { frameworkPackages } from '@storybook/core/common';
 import path from 'path';
 
 interface ViteConfigFileRunOptions {

@@ -25,8 +25,8 @@ import {
   addWorkaroundResolutions,
 } from '../utils/yarn';
 import { exec } from '../utils/exec';
-import type { ConfigFile } from '../../code/lib/csf-tools/src';
-import { writeConfig } from '../../code/lib/csf-tools/src';
+import type { ConfigFile } from '../../code/core/src/csf-tools';
+import { writeConfig } from '../../code/core/src/csf-tools';
 import { filterExistsInCodeDir } from '../utils/filterExistsInCodeDir';
 import { findFirstPath } from '../utils/paths';
 import { detectLanguage } from '../../code/lib/cli/src/detect';
@@ -37,11 +37,12 @@ import {
   type JsPackageManager,
   versions as storybookPackages,
   JsPackageManagerFactory,
-} from '../../code/lib/core-common/src';
+} from '../../code/core/src/common';
 import { workspacePath } from '../utils/workspace';
-import { babelParse } from '../../code/lib/csf-tools/src/babelParse';
+import { babelParse } from '../../code/core/src/csf-tools/babelParse';
 import { CODE_DIRECTORY, REPROS_DIRECTORY } from '../utils/constants';
 import type { TemplateKey } from '../../code/lib/cli/src/sandbox-templates';
+import { isFunction } from 'lodash';
 
 const logger = console;
 
@@ -205,7 +206,7 @@ function addEsbuildLoaderToStories(mainConfig: ConfigFile) {
           loader: '${esbuildLoaderPath}',
           options: {
             loader: 'tsx',
-            target: 'es2015',
+            target: 'es2022',
           },
         },
         // Handle MDX files per the addon-docs presets (ish)
@@ -228,6 +229,7 @@ function addEsbuildLoaderToStories(mainConfig: ConfigFile) {
   })`;
   mainConfig.setFieldNode(
     ['webpackFinal'],
+    // @ts-expect-error (Property 'expression' does not exist on type 'BlockStatement')
     babelParse(webpackFinalCode).program.body[0].expression
   );
 }
@@ -251,6 +253,7 @@ function setSandboxViteFinal(mainConfig: ConfigFile) {
       },
     },
   })`;
+  // @ts-expect-error (Property 'expression' does not exist on type 'BlockStatement')
   mainConfig.setFieldNode(['viteFinal'], babelParse(viteFinalCode).program.body[0].expression);
 }
 
@@ -276,7 +279,9 @@ function addStoriesEntry(mainConfig: ConfigFile, path: string, disableDocs: bool
   const entry = {
     directory: slash(join('../template-stories', path)),
     titlePrefix: slash(path),
-    files: disableDocs ? '**/*.stories.@(js|jsx|ts|tsx)' : '**/*.@(mdx|stories.@(js|jsx|ts|tsx))',
+    files: disableDocs
+      ? '**/*.stories.@(js|jsx|mjs|ts|tsx)'
+      : '**/*.@(mdx|stories.@(js|jsx|mjs|ts|tsx))',
   };
 
   mainConfig.setFieldValue(['stories'], [...stories, entry]);
@@ -478,13 +483,13 @@ export const addStories: Task['run'] = async (
   if (isCoreRenderer) {
     // Add stories for lib/preview-api (and addons below). NOTE: these stories will be in the
     // template-stories folder and *not* processed by the framework build config (instead by esbuild-loader)
-    await linkPackageStories(await workspacePath('core package', '@storybook/preview-api'), {
+    await linkPackageStories(await workspacePath('core package', '@storybook/core'), {
       mainConfig,
       cwd,
       disableDocs,
     });
 
-    await linkPackageStories(await workspacePath('core package', '@storybook/test'), {
+    await linkPackageStories(await workspacePath('test package', '@storybook/test'), {
       mainConfig,
       cwd,
       disableDocs,
@@ -540,7 +545,9 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
     addRefs(mainConfig);
   }
 
-  const templateConfig = template.modifications?.mainConfig || {};
+  const templateConfig = isFunction(template.modifications?.mainConfig)
+    ? template.modifications?.mainConfig(mainConfig)
+    : template.modifications?.mainConfig || {};
   const configToAdd = {
     ...templateConfig,
     features: {
@@ -584,6 +591,7 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
         }
       </style>
     \``;
+  // @ts-expect-error (Property 'expression' does not exist on type 'BlockStatement')
   mainConfig.setFieldNode(['previewHead'], babelParse(previewHeadCode).program.body[0].expression);
 
   // Simulate Storybook Lite
@@ -612,8 +620,8 @@ export async function setImportMap(cwd: string) {
 
   packageJson.imports = {
     '#utils': {
-      storybook: './template-stories/lib/test/utils.mock.ts',
-      default: './template-stories/lib/test/utils.ts',
+      storybook: './template-stories/core/utils.mock.ts',
+      default: './template-stories/core/utils.ts',
     },
   };
 

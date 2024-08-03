@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { type Call, CallStates, type ControlStates } from '@storybook/instrumenter';
-import { styled } from '@storybook/theming';
+import { styled } from 'storybook/internal/theming';
 import { transparentize } from 'polished';
 
 import { Subnav } from './Subnav';

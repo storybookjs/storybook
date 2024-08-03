@@ -1,9 +1,9 @@
 import chalk from 'chalk';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 import semver from 'semver';
-import { frameworkPackages, rendererPackages } from '@storybook/core-common';
+import { frameworkPackages, rendererPackages } from '@storybook/core/common';
 
-import type { Preset } from '@storybook/types';
+import type { Preset } from '@storybook/core/types';
 import invariant from 'tiny-invariant';
 import type { Fix } from '../types';
 import { getStorybookVersionSpecifier } from '../../helpers';

@@ -2,7 +2,7 @@ import {
   composeStory as originalComposeStory,
   composeStories as originalComposeStories,
   setProjectAnnotations as originalSetProjectAnnotations,
-} from '@storybook/preview-api';
+} from 'storybook/internal/preview-api';
 import type {
   Args,
   NamedOrDefaultProjectAnnotations,
@@ -10,7 +10,9 @@ import type {
   StoryAnnotationsOrFn,
   Store_CSFExports,
   StoriesWithPartialProps,
-} from '@storybook/types';
+  ComposedStoryFn,
+} from 'storybook/internal/types';
+import { TestingLibraryMustBeConfiguredError } from 'storybook/internal/preview-errors';
 import { h } from 'vue';
 
 import * as defaultProjectAnnotations from './entry-preview';
@@ -44,9 +46,27 @@ export function setProjectAnnotations(
   projectAnnotations:
     | NamedOrDefaultProjectAnnotations<VueRenderer>
     | NamedOrDefaultProjectAnnotations<VueRenderer>[]
-) {
-  originalSetProjectAnnotations<VueRenderer>(projectAnnotations);
+): ProjectAnnotations<VueRenderer> {
+  return originalSetProjectAnnotations<VueRenderer>(projectAnnotations);
 }
+
+// This will not be necessary once we have auto preset loading
+export const vueProjectAnnotations: ProjectAnnotations<VueRenderer> = {
+  ...defaultProjectAnnotations,
+  renderToCanvas: (renderContext, canvasElement) => {
+    if (renderContext.storyContext.testingLibraryRender == null) {
+      throw new TestingLibraryMustBeConfiguredError();
+      // Enable for 8.3
+      // return defaultProjectAnnotations.renderToCanvas(renderContext, canvasElement);
+    }
+    const {
+      storyFn,
+      storyContext: { testingLibraryRender: render },
+    } = renderContext;
+    const { unmount } = render(storyFn(), { container: canvasElement });
+    return unmount;
+  },
+};
 
 /**
  * Function that will receive a story along with meta (e.g. a default export from a .stories file)
@@ -80,12 +100,12 @@ export function composeStory<TArgs extends Args = Args>(
   componentAnnotations: Meta<TArgs | any>,
   projectAnnotations?: ProjectAnnotations<VueRenderer>,
   exportsName?: string
-) {
+): JSXAble<ComposedStoryFn<VueRenderer, Partial<TArgs>>> {
   const composedStory = originalComposeStory<VueRenderer, TArgs>(
     story as StoryAnnotationsOrFn<VueRenderer, Args>,
     componentAnnotations,
     projectAnnotations,
-    defaultProjectAnnotations,
+    vueProjectAnnotations,
     exportsName
   );
 

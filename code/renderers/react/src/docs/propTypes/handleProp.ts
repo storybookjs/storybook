@@ -1,4 +1,4 @@
-import type { PropDef, ExtractedProp } from '@storybook/docs-tools';
+import type { PropDef, ExtractedProp } from 'storybook/internal/docs-tools';
 import { createType } from './createType';
 import { createDefaultValue, createDefaultValueFromRawDefaultProp } from '../lib/defaultValues';
 import { keepOriginalDefinitionOrder } from './sortProps';

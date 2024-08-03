@@ -1,0 +1,46 @@
+{
+  "name": "@storybook/manager-api",
+  "version": "8.3.0-alpha.3",
+  "description": "Core Storybook Manager API & Context",
+  "keywords": [
+    "storybook"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/manager-api",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/lib/manager-api"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./shim.d.ts",
+      "import": "./shim.mjs",
+      "require": "./shim.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./shim.js",
+  "module": "./shim.mjs",
+  "types": "./shim.d.ts",
+  "files": [
+    "README.md",
+    "*.js",
+    "*.mjs",
+    "*.cjs",
+    "*.d.ts"
+  ],
+  "peerDependencies": {
+    "storybook": "workspace:^"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

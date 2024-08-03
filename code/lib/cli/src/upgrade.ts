@@ -1,26 +1,26 @@
 import { sync as spawnSync } from 'cross-spawn';
-import { telemetry } from '@storybook/telemetry';
+import { telemetry } from 'storybook/internal/telemetry';
 import semver, { eq, lt, prerelease } from 'semver';
-import { logger } from '@storybook/node-logger';
-import { withTelemetry } from '@storybook/core-server';
+import { logger } from '@storybook/core/node-logger';
+import { withTelemetry } from 'storybook/internal/core-server';
 import {
   UpgradeStorybookInWrongWorkingDirectory,
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookToSameVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
-} from '@storybook/core-events/server-errors';
+} from 'storybook/internal/server-errors';
 
 import chalk from 'chalk';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 import boxen from 'boxen';
-import type { JsPackageManager, PackageManagerName } from '@storybook/core-common';
+import type { JsPackageManager, PackageManagerName } from '@storybook/core/common';
 import {
   isCorePackage,
   versions,
   getStorybookInfo,
   loadMainConfig,
   JsPackageManagerFactory,
-} from '@storybook/core-common';
+} from '@storybook/core/common';
 import { automigrate } from './automigrate/index';
 import { autoblock } from './autoblock/index';
 import { hasStorybookDependencies } from './helpers';
@@ -130,7 +130,7 @@ export const doUpgrade = async ({
   // If we can't determine the existing version fallback to v0.0.0 to not block the upgrade
   const beforeVersion = (await getInstalledStorybookVersion(packageManager)) ?? '0.0.0';
 
-  const currentCLIVersion = versions['@storybook/cli'];
+  const currentCLIVersion = versions.storybook;
   const isCanary =
     currentCLIVersion.startsWith('0.0.0') ||
     beforeVersion.startsWith('portal:') ||
@@ -152,7 +152,7 @@ export const doUpgrade = async ({
   }
 
   const [latestCLIVersionOnNPM, packageJson] = await Promise.all([
-    packageManager.latestVersion('@storybook/cli'),
+    packageManager.latestVersion('storybook'),
     packageManager.retrievePackageJson(),
   ]);
 

@@ -1,4 +1,4 @@
-import { createSummaryValue } from '@storybook/docs-tools';
+import { createSummaryValue } from 'storybook/internal/docs-tools';
 import type { TypeResolver } from '../lib/defaultValues';
 import { extractFunctionName, createTypeResolvers } from '../lib/defaultValues';
 import { FUNCTION_CAPTION, ELEMENT_CAPTION } from '../lib';

@@ -10,7 +10,7 @@ import type * as MockedFSToExtra from '../../../code/__mocks__/fs-extra';
 vi.mock('fs-extra', async () => import('../../../code/__mocks__/fs-extra'));
 const fsExtra = fsExtraImp as unknown as typeof MockedFSToExtra;
 
-vi.mock('../../../code/lib/core-common/src/versions', () => ({
+vi.mock('../../../code/core/src/common/src/versions', () => ({
   '@storybook/addon-a11y': '7.1.0-alpha.29',
 }));
 
@@ -34,12 +34,12 @@ describe('Version', () => {
   const CODE_PACKAGE_JSON_PATH = path.join(CODE_DIR_PATH, 'package.json');
   const MANAGER_API_VERSION_PATH = path.join(
     CODE_DIR_PATH,
-    'lib',
-    'manager-api',
+    'core',
     'src',
+    'manager-api',
     'version.ts'
   );
-  const VERSIONS_PATH = path.join(CODE_DIR_PATH, 'lib', 'core-common', 'src', 'versions.ts');
+  const VERSIONS_PATH = path.join(CODE_DIR_PATH, 'core', 'src', 'common', 'versions.ts');
   const A11Y_PACKAGE_JSON_PATH = path.join(CODE_DIR_PATH, 'addons', 'a11y', 'package.json');
 
   it('should throw when release type is invalid', async () => {

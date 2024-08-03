@@ -1,5 +1,5 @@
 import { describe, afterEach, it, expect, vi } from 'vitest';
-import type { JsPackageManager } from '@storybook/core-common';
+import type { JsPackageManager } from '@storybook/core/common';
 import { getStorybookScripts, sbScripts } from './sb-scripts';
 
 const checkSbScripts = async ({

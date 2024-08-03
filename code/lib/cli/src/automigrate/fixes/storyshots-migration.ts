@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 import type { Fix } from '../types';
 
 export const storyshotsMigration: Fix = {

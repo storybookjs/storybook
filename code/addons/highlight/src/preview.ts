@@ -1,7 +1,7 @@
 /* eslint-env browser */
 import { global } from '@storybook/global';
-import { addons } from '@storybook/preview-api';
-import { STORY_CHANGED } from '@storybook/core-events';
+import { addons } from 'storybook/internal/preview-api';
+import { STORY_CHANGED } from 'storybook/internal/core-events';
 import { HIGHLIGHT, RESET_HIGHLIGHT, HIGHLIGHT_STYLE_ID } from './constants';
 
 const { document } = global;

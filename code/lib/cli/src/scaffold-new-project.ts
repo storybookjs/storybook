@@ -3,14 +3,14 @@ import chalk from 'chalk';
 import execa from 'execa';
 import { readdirSync, remove } from 'fs-extra';
 import prompts from 'prompts';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
-import { telemetry } from '@storybook/telemetry';
+import { telemetry } from 'storybook/internal/telemetry';
 
-import { GenerateNewProjectOnInitError } from '@storybook/core-events/server-errors';
-import { logger } from '@storybook/node-logger';
+import { GenerateNewProjectOnInitError } from 'storybook/internal/server-errors';
+import { logger } from '@storybook/core/node-logger';
 
-import type { PackageManagerName } from '@storybook/core-common';
+import type { PackageManagerName } from '@storybook/core/common';
 import type { CommandOptions } from './generators/types';
 
 type CoercedPackageManagerName = 'npm' | 'yarn' | 'pnpm';

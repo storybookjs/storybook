@@ -101,6 +101,25 @@ exports[`Renders LoaderStory story 1`] = `
 </body>
 `;
 
+exports[`Renders MountInPlayFunction story 1`] = `
+<body>
+  <div>
+    <div>
+      <div
+        data-testid="loaded-data"
+      >
+        loaded data
+      </div>
+      <div
+        data-testid="spy-data"
+      >
+        mockFn return value
+      </div>
+    </div>
+  </div>
+</body>
+`;
+
 exports[`Renders WithActionArg story 1`] = `
 <body>
   <div>

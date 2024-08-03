@@ -1,0 +1,159 @@
+import { Canvas, Meta, Controls, Source } from '@storybook/blocks';
+
+import * as ButtonStories from './Button.stories';
+
+<Meta of={ButtonStories} />
+
+# Button
+
+Button component is used to trigger an action or event, such as submitting a form, opening a Dialog, canceling an action, or performing a delete operation.
+
+## Import
+
+<Source
+  language="tsx"
+  dark={true}
+  code={`
+import { Button } from '@storybook/components';
+
+// If you would like to use icons, please import them from the icons library
+import { FaceHappyIcon, HeartIcon } from '@storybook/icons'
+`} />
+
+## Usage
+<Source
+  language="tsx"
+  dark={true}
+  code={`
+// Using the onClick event handler
+<Button onClick={}>Hello world!</Button>
+
+// Using the asChild prop to render a custom child
+<Button asChild>
+  <a href="https://storybook.js.org">Hello world!</a>
+</Button>
+`} />
+<Canvas of={ButtonStories.Base} />
+<Controls />
+
+### Button sizes
+
+Use the `size` prop to change the size of the button. You can set the value to `small` or `medium`.
+
+<Canvas of={ButtonStories.Sizes} />
+<Source
+  language="tsx"
+  dark={true}
+  code={`
+<Button size="small">Small Button</Button>
+<Button size="medium">Medium Button</Button>
+`} />
+
+### Button variants
+
+Use the `variant` prop to change the visual style of the button. You can set the value to `outline`, `solid` or `ghost`.
+
+<Canvas of={ButtonStories.Variants} />
+<Source
+  language="tsx"
+  dark={true}
+  code={`
+<Button variant="outline">Outline</Button>
+<Button variant="solid">Solid</Button>
+<Button variant="Ghost">Ghost</Button>
+`} />
+
+### Button with icon
+
+You can add an icon to the button by adding the icon on the left of the text. Please use any icon from the icon library `@storybook/icons`.
+
+<Canvas of={ButtonStories.WithIcon} />
+<Source
+  language="tsx"
+  dark={true}
+  code={`
+<Button>
+  <FaceHappyIcon />Button
+</Button>
+`} />
+
+### Icon only buttons
+
+You can also use the button as an icon only button by removing the text. to make sure the button is square, please set the padding prop to `small`
+
+<Canvas of={ButtonStories.IconOnly} />
+<Source
+  language="tsx"
+  dark={true}
+  code={`
+<Button padding="small">
+  <FaceHappyIcon />
+</Button>
+`} />
+
+### Button with custom wrapper
+
+If you want to use a custom wrapper to set the button as an external link or to use your custom router, you can use the `asChild` prop. This will render the button as a child of the wrapper.
+
+<Canvas of={ButtonStories.WithHref} />
+<Source
+  language="tsx"
+  dark={true}
+  code={`
+<Button asChild>
+  <a href="https://storybook.js.org">Hello world!</a>
+</Button>
+<Button asChild>
+  <Link href='/home'>Hello world!</Link>
+</Button>
+`} />
+
+### Button with animations
+
+You can use the `animate` prop to add animations to the button. You can set the value to `glow`, `jiggle` or `rotate360`.
+
+<Canvas of={ButtonStories.Animated} />
+<Source
+  language="tsx"
+  dark={true}
+  code={`
+<Button animation="glow">
+  <FaceHappyIcon />Button
+</Button>
+<Button animation="jiggle">
+  <FaceHappyIcon />Button
+</Button>
+<Button animation="rotate360">
+  <FaceHappyIcon />Button
+</Button>
+`} />
+
+### Active button
+
+You can use the `active` prop to set the button as active. This will change the background color of the button.
+
+<Canvas of={ButtonStories.Active} />
+<Source
+  language="tsx"
+  dark={true}
+  code={`
+<Button active>
+  <FaceHappyIcon />Button
+</Button>
+ `}
+/>
+
+### Disabled button
+
+You can use the `disabled` prop to set the button as disabled.
+
+<Canvas of={ButtonStories.Disabled} />
+<Source
+  language="tsx"
+  dark={true}
+  code={`
+<Button disabled>
+  <FaceHappyIcon />Button
+</Button>
+ `}
+/>

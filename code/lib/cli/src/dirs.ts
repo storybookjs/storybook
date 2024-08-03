@@ -6,12 +6,12 @@ import getNpmTarballUrl from 'get-npm-tarball-url';
 import invariant from 'tiny-invariant';
 import { externalFrameworks } from './project_types';
 import type { SupportedRenderers } from './project_types';
-import type { JsPackageManager } from '@storybook/core-common';
-import { versions } from '@storybook/core-common';
-import type { SupportedFrameworks } from '@storybook/types';
+import type { JsPackageManager } from '@storybook/core/common';
+import { versions } from '@storybook/core/common';
+import type { SupportedFrameworks } from '@storybook/core/types';
 
 export function getCliDir() {
-  return dirname(require.resolve('@storybook/cli/package.json'));
+  return dirname(require.resolve('storybook/package.json'));
 }
 
 const resolveUsingBranchInstall = async (packageManager: JsPackageManager, request: string) => {

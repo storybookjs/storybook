@@ -21,7 +21,7 @@ test.describe('preview-api', () => {
     );
 
     const sbPage = new SbPage(page);
-    await sbPage.deepLinkToStory(storybookUrl, 'lib/preview-api/shortcuts', 'keydown-during-play');
+    await sbPage.deepLinkToStory(storybookUrl, 'core/shortcuts', 'keydown-during-play');
     await expect(sbPage.page.locator('.sidebar-container')).toBeVisible();
 
     // wait for the play function to complete
@@ -45,7 +45,7 @@ test.describe('preview-api', () => {
     );
 
     const sbPage = new SbPage(page);
-    await sbPage.deepLinkToStory(storybookUrl, 'lib/preview-api/shortcuts', 'docs');
+    await sbPage.deepLinkToStory(storybookUrl, 'core/shortcuts', 'docs');
 
     await expect(sbPage.page.locator('.sidebar-container')).toBeVisible();
 
@@ -56,7 +56,7 @@ test.describe('preview-api', () => {
   // if rerenders were interleaved the button would have rendered "Error: Interleaved loaders. Changed arg"
   test('should only render once at a time when rapidly changing args', async ({ page }) => {
     const sbPage = new SbPage(page);
-    await sbPage.navigateToStory('lib/preview-api/rendering', 'slow-loader');
+    await sbPage.navigateToStory('core/rendering', 'slow-loader');
 
     const root = sbPage.previewRoot();
 
@@ -74,7 +74,7 @@ test.describe('preview-api', () => {
 
   test('should reload plage when remounting while loading', async ({ page }) => {
     const sbPage = new SbPage(page);
-    await sbPage.navigateToStory('lib/preview-api/rendering', 'slow-loader');
+    await sbPage.navigateToStory('core/rendering', 'slow-loader');
 
     const root = sbPage.previewRoot();
 

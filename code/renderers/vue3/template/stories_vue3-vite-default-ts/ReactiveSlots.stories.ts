@@ -1,6 +1,10 @@
 import { global as globalThis } from '@storybook/global';
 import { within, expect } from '@storybook/test';
-import { STORY_ARGS_UPDATED, RESET_STORY_ARGS, UPDATE_STORY_ARGS } from '@storybook/core-events';
+import {
+  STORY_ARGS_UPDATED,
+  RESET_STORY_ARGS,
+  UPDATE_STORY_ARGS,
+} from 'storybook/internal/core-events';
 import { h } from 'vue';
 import type { Meta, StoryObj } from '@storybook/vue3';
 import BaseLayout from './BaseLayout.vue';

@@ -5,4 +5,12 @@ module.exports = {
       { prefer: 'no-type-imports', disallowTypeAnnotations: false },
     ],
   },
+  overrides: [
+    {
+      files: ['template/**/*.*'],
+      rules: {
+        'import/no-extraneous-dependencies': 'off',
+      },
+    },
+  ],
 };

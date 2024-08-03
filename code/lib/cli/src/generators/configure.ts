@@ -1,7 +1,7 @@
 import fse from 'fs-extra';
 import path from 'path';
 import { dedent } from 'ts-dedent';
-import { logger } from '@storybook/node-logger';
+import { logger } from '@storybook/core/node-logger';
 import { externalFrameworks, SupportedLanguage } from '../project_types';
 
 interface ConfigureMainOptions {

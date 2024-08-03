@@ -5,6 +5,7 @@ export default {
   component: globalThis.Components.Button,
   args: {
     label: 'Button',
+    // onClick: fn(), <-- this is intentionally missing to trigger an unhandled error
   },
   argTypes: {
     onClick: { type: 'function' },
@@ -13,6 +14,7 @@ export default {
     actions: { argTypesRegex: '^on[A-Z].*' },
     chromatic: { disable: true },
   },
+  tags: ['!test'],
 };
 
 export const Default = {

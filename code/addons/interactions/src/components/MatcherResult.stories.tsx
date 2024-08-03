@@ -1,6 +1,6 @@
 import React from 'react';
-import dedent from 'ts-dedent';
-import { styled } from '@storybook/theming';
+import { dedent } from 'ts-dedent';
+import { styled } from 'storybook/internal/theming';
 import { MatcherResult } from './MatcherResult';
 
 const StyledWrapper = styled.div(({ theme }) => ({
@@ -12,7 +12,7 @@ const StyledWrapper = styled.div(({ theme }) => ({
 }));
 
 export default {
-  title: 'Addons/Interactions/MatcherResult',
+  title: 'MatcherResult',
   component: MatcherResult,
   decorators: [
     (Story: any) => (

@@ -1,6 +1,6 @@
 import ReactConfetti from 'react-confetti';
 import React, { useEffect } from 'react';
-import { styled } from '@storybook/theming';
+import { styled } from 'storybook/internal/theming';
 import { createPortal } from 'react-dom';
 import { useState } from 'react';
 

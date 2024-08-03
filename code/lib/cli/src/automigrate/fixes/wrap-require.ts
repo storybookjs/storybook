@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import { dedent } from 'ts-dedent';
-import { readConfig } from '@storybook/csf-tools';
+import { readConfig } from '@storybook/core/csf-tools';
 import type { Fix } from '../types';
 import { detectPnp } from '../../detect';
 import { updateMainConfig } from '../helpers/mainConfigFile';
@@ -22,7 +22,7 @@ interface WrapRequireRunOptions {
 export const wrapRequire: Fix<WrapRequireRunOptions> = {
   id: 'wrap-require',
 
-  versionRange: ['<7.2.0-rc.0', '>=7.2.0-rc.0'],
+  versionRange: ['*', '*'],
 
   async check({ packageManager, storybookVersion, mainConfigPath }) {
     const isStorybookInMonorepo = await packageManager.isStorybookInMonorepo();

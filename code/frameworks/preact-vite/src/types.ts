@@ -1,4 +1,7 @@
-import type { CompatibleString, StorybookConfig as StorybookConfigBase } from '@storybook/types';
+import type {
+  CompatibleString,
+  StorybookConfig as StorybookConfigBase,
+} from 'storybook/internal/types';
 import type { StorybookConfigVite, BuilderOptions } from '@storybook/builder-vite';
 
 type FrameworkName = CompatibleString<'@storybook/preact-vite'>;

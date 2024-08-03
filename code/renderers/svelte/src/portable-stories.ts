@@ -2,7 +2,7 @@ import {
   composeStory as originalComposeStory,
   composeStories as originalComposeStories,
   setProjectAnnotations as originalSetProjectAnnotations,
-} from '@storybook/preview-api';
+} from 'storybook/internal/preview-api';
 import type {
   Args,
   ProjectAnnotations,
@@ -10,7 +10,8 @@ import type {
   Store_CSFExports,
   StoriesWithPartialProps,
   ComposedStoryFn,
-} from '@storybook/types';
+  NamedOrDefaultProjectAnnotations,
+} from 'storybook/internal/types';
 
 import * as svelteProjectAnnotations from './entry-preview';
 import type { Meta } from './public-types';
@@ -19,6 +20,7 @@ import PreviewRender from '@storybook/svelte/internal/PreviewRender.svelte';
 // @ts-expect-error Don't know why TS doesn't pick up the types export here
 import { createSvelte5Props } from '@storybook/svelte/internal/createSvelte5Props';
 import { IS_SVELTE_V4 } from './utils';
+import { TestingLibraryMustBeConfiguredError } from 'storybook/internal/preview-errors';
 
 type ComposedStory<TArgs extends Args = any> = ComposedStoryFn<SvelteRenderer, TArgs> & {
   Component: typeof PreviewRender;
@@ -51,14 +53,31 @@ type MapToComposed<TModule> = {
  * @param projectAnnotations - e.g. (import projectAnnotations from '../.storybook/preview')
  */
 export function setProjectAnnotations(
-  projectAnnotations: ProjectAnnotations<SvelteRenderer> | ProjectAnnotations<SvelteRenderer>[]
-) {
-  originalSetProjectAnnotations<SvelteRenderer>(projectAnnotations);
+  projectAnnotations:
+    | NamedOrDefaultProjectAnnotations<SvelteRenderer>
+    | NamedOrDefaultProjectAnnotations<SvelteRenderer>[]
+): ProjectAnnotations<SvelteRenderer> {
+  return originalSetProjectAnnotations<SvelteRenderer>(projectAnnotations);
 }
 
 // This will not be necessary once we have auto preset loading
-export const INTERNAL_DEFAULT_PROJECT_ANNOTATIONS: ProjectAnnotations<SvelteRenderer> =
-  svelteProjectAnnotations;
+export const INTERNAL_DEFAULT_PROJECT_ANNOTATIONS: ProjectAnnotations<SvelteRenderer> = {
+  ...svelteProjectAnnotations,
+  renderToCanvas: (renderContext, canvasElement) => {
+    if (renderContext.storyContext.testingLibraryRender == null) {
+      throw new TestingLibraryMustBeConfiguredError();
+      // Enable for 8.3
+      // return svelteProjectAnnotations.renderToCanvas(renderContext, canvasElement);
+    }
+    const {
+      storyFn,
+      storyContext: { testingLibraryRender: render },
+    } = renderContext;
+    const { Component, props } = storyFn();
+    const { unmount } = render(Component, { props, target: canvasElement });
+    return unmount;
+  },
+};
 
 /**
  * Function that will receive a story along with meta (e.g. a default export from a .stories file)
@@ -92,7 +111,7 @@ export function composeStory<TArgs extends Args = Args>(
   componentAnnotations: Meta<TArgs | any>,
   projectAnnotations?: ProjectAnnotations<SvelteRenderer>,
   exportsName?: string
-) {
+): ComposedStory<TArgs> {
   const composedStory = originalComposeStory<SvelteRenderer, TArgs>(
     story as StoryAnnotationsOrFn<SvelteRenderer, Args>,
     // @ts-expect-error Fix this later: Type 'Partial<{ [x: string]: any; }>' is not assignable to type 'Partial<Simplify<TArgs, {}>>'

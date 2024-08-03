@@ -1,9 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
-import type { PreviewWeb } from '@storybook/preview-api';
-import { addons } from '@storybook/preview-api';
-import type { Renderer } from '@storybook/types';
+import type { PreviewWeb } from 'storybook/internal/preview-api';
+import { addons } from 'storybook/internal/preview-api';
+import type { Renderer } from 'storybook/internal/types';
 import { global } from '@storybook/global';
-import { ImplicitActionsDuringRendering } from '@storybook/core-events/preview-errors';
+import { ImplicitActionsDuringRendering } from 'storybook/internal/preview-errors';
 import { EVENT_ID } from '../constants';
 import type { ActionDisplay, ActionOptions, HandlerFunction } from '../models';
 import { config } from './configureActions';

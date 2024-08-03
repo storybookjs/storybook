@@ -1,7 +1,11 @@
 import { global as globalThis } from '@storybook/global';
-import type { Channel } from '@storybook/channels';
+import type { Channel } from 'storybook/internal/channels';
 import { within, expect } from '@storybook/test';
-import { UPDATE_STORY_ARGS, STORY_ARGS_UPDATED, RESET_STORY_ARGS } from '@storybook/core-events';
+import {
+  UPDATE_STORY_ARGS,
+  STORY_ARGS_UPDATED,
+  RESET_STORY_ARGS,
+} from 'storybook/internal/core-events';
 
 import type { Meta, StoryObj } from '@storybook/vue3';
 import MySlotComponent from './MySlotComponent.vue';

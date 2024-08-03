@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 
 import path from 'path';
 import * as fsExtra from 'fs-extra';
-import type { JsPackageManager } from '@storybook/core-common';
+import type { JsPackageManager } from '@storybook/core/common';
 import { RemovedAPIs, removedGlobalClientAPIs as migration } from './remove-global-client-apis';
 
 vi.mock('fs-extra', async () => import('../../../../../__mocks__/fs-extra'));

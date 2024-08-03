@@ -82,6 +82,12 @@ export default (api: any, options: NextBabelPresetOptions = {}): BabelPreset => 
     // In production/development this option is set to `false` so that webpack can handle import/export with tree-shaking
     modules: 'auto',
     exclude: ['transform-typeof-symbol'],
+    bugfixes: true,
+    targets: {
+      chrome: 100,
+      safari: 15,
+      firefox: 91,
+    },
     ...options['preset-env'],
   };
 

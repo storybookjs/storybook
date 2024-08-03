@@ -4,7 +4,7 @@ import fse from 'fs-extra';
 import { sep } from 'path';
 import * as helpers from './helpers';
 import { IS_WINDOWS } from '../../../vitest.helpers';
-import type { JsPackageManager } from '@storybook/core-common';
+import type { JsPackageManager } from '@storybook/core/common';
 import type { SupportedRenderers } from './project_types';
 import { SupportedLanguage } from './project_types';
 
@@ -38,7 +38,7 @@ vi.mock('fs', async (importOriginal) => {
 vi.mock('./dirs', () => ({
   getRendererDir: (_: JsPackageManager, renderer: string) =>
     normalizePath(`@storybook/${renderer}`),
-  getCliDir: () => normalizePath('@storybook/cli'),
+  getCliDir: () => normalizePath('storybook'),
 }));
 
 vi.mock('fs-extra', async (importOriginal) => {
@@ -127,7 +127,7 @@ describe('Helpers', () => {
 
       expect(fse.copy).toHaveBeenNthCalledWith(
         1,
-        normalizePath('@storybook/cli/rendererAssets/common'),
+        normalizePath('storybook/rendererAssets/common'),
         './stories',
         expect.anything()
       );

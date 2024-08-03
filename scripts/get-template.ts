@@ -1,7 +1,7 @@
 import { readdir } from 'fs/promises';
 import { pathExists, readFile } from 'fs-extra';
 import { program } from 'commander';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 import chalk from 'chalk';
 import yaml from 'yaml';
 import { esMain } from './utils/esmain';

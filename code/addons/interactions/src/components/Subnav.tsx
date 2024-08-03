@@ -8,10 +8,10 @@ import {
   TooltipNote,
   WithTooltip,
   Bar,
-} from '@storybook/components';
+} from 'storybook/internal/components';
 import type { Call, ControlStates } from '@storybook/instrumenter';
 import { CallStates } from '@storybook/instrumenter';
-import { styled } from '@storybook/theming';
+import { styled } from 'storybook/internal/theming';
 
 import {
   FastForwardIcon,

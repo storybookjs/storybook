@@ -36,79 +36,31 @@ jobs:
     outputs:
       branch: ${{ env.branch }}
 
-  trigger-normal-tests:
+  get-parameters:
     runs-on: ubuntu-latest
-    needs: get-branch
-    if: github.event_name == 'pull_request_target' && ((github.event.action == 'labeled' && github.event.label.name == 'ci:normal') || (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'ci:normal')))
+    steps:
+      - if: github.event_name == 'pull_request_target' && ((github.event.action == 'labeled' && github.event.label.name == 'ci:normal') || (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'ci:normal')))
+        run: echo "workflow=normal" >> $GITHUB_ENV
+      - if: github.event_name == 'pull_request_target' && ((github.event.action == 'labeled' && github.event.label.name == 'ci:docs') || (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'ci:docs')))
+        run: echo "workflow=docs" >> $GITHUB_ENV
+      - if: github.event_name == 'push' || (github.event.action == 'labeled' && github.event.label.name == 'ci:merged') || (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'ci:merged'))
+        run: echo "workflow=merged" >> $GITHUB_ENV
+      - if: github.event_name == 'pull_request_target' && ((github.event.action == 'labeled' && github.event.label.name == 'ci:daily') || (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'ci:daily')))
+        run: echo "workflow=daily" >> $GITHUB_ENV
+    outputs:
+      workflow: ${{ env.workflow }}
+      ghBaseBranch: ${{ github.event.pull_request.base.ref }}
+      ghPrNumber: ${{ github.event.pull_request.number }}
+
+  trigger-circle-ci-workflow:
+    runs-on: ubuntu-latest
+    needs: [get-branch, get-parameters]
+    if: needs.get-parameters.outputs.workflow != ''
     steps:
       - name: Trigger Normal tests
-        run: >
-          curl -X POST --location "https://circleci.com/api/v2/project/gh/storybookjs/storybook/pipeline" \
-            -H "Content-Type: application/json" \
-            -H "Circle-Token: $CIRCLE_CI_TOKEN" \
-            -d '{
-                  "branch": "'"$BRANCH"'",
-                  "parameters": {
-                    "workflow": "normal"
-                  }
-                }'
-        env:
-          CIRCLE_CI_TOKEN: ${{ secrets.CIRCLE_CI_TOKEN }}
-          BRANCH: ${{ needs.get-branch.outputs.branch }}
-  trigger-docs-tests:
-    runs-on: ubuntu-latest
-    needs: get-branch
-    if: github.event_name == 'pull_request_target' && ((github.event.action == 'labeled' && github.event.label.name == 'ci:docs') || (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'ci:docs')))
-    steps:
-      - name: Trigger docs tests
-        run: >
-          curl -X POST --location "https://circleci.com/api/v2/project/gh/storybookjs/storybook/pipeline" \
-            -H "Content-Type: application/json" \
-            -H "Circle-Token: $CIRCLE_CI_TOKEN" \
-            -d '{
-                  "branch": "'"$BRANCH"'",
-                  "parameters": {
-                    "workflow": "docs"
-                  }
-                }'
-        env:
-          CIRCLE_CI_TOKEN: ${{ secrets.CIRCLE_CI_TOKEN }}
-          BRANCH: ${{ needs.get-branch.outputs.branch }}
-  trigger-merged-tests:
-    runs-on: ubuntu-latest
-    needs: get-branch
-    if: github.event_name == 'push' || (github.event.action == 'labeled' && github.event.label.name == 'ci:merged') || (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'ci:merged'))
-    steps:
-      - name: Trigger merged tests
-        run: >
-          curl -X POST --location "https://circleci.com/api/v2/project/gh/storybookjs/storybook/pipeline" \
-            -H "Content-Type: application/json" \
-            -H "Circle-Token: $CIRCLE_CI_TOKEN" \
-            -d '{
-                  "branch": "'"$BRANCH"'",
-                  "parameters": {
-                    "workflow": "merged"
-                  }
-                }'
-        env:
-          CIRCLE_CI_TOKEN: ${{ secrets.CIRCLE_CI_TOKEN }}
-          BRANCH: ${{ needs.get-branch.outputs.branch }}
-  trigger-daily-tests:
-    runs-on: ubuntu-latest
-    needs: get-branch
-    if: github.event_name == 'pull_request_target' && ((github.event.action == 'labeled' && github.event.label.name == 'ci:daily') || (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'ci:daily')))
-    steps:
-      - name: Trigger the daily tests
-        run: >
-          curl -X POST --location "https://circleci.com/api/v2/project/gh/storybookjs/storybook/pipeline" \
-            -H "Content-Type: application/json" \
-            -H "Circle-Token: $CIRCLE_CI_TOKEN" \
-            -d '{
-                  "branch": "'"$BRANCH"'",
-                  "parameters": {
-                    "workflow": "daily"
-                  }
-                }'
-        env:
-          CIRCLE_CI_TOKEN: ${{ secrets.CIRCLE_CI_TOKEN }}
-          BRANCH: ${{ needs.get-branch.outputs.branch }}
+        uses: fjogeleit/http-request-action@v1
+        with:
+          url: 'https://circleci.com/api/v2/project/gh/storybookjs/storybook/pipeline'
+          method: 'POST'
+          customHeaders: '{"Content-Type": "application/json", "Circle-Token": "${{ secrets.CIRCLE_CI_TOKEN }}"}'
+          data: '{ "branch": "${{needs.get-branch.outputs.branch}}", "parameters": ${{toJson(needs.get-parameters.outputs)}} }'

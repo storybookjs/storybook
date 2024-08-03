@@ -1,6 +1,6 @@
 import type { Plugin } from 'vite';
 import { vite } from '@storybook/csf-plugin';
-import type { Options } from '@storybook/types';
+import type { Options } from 'storybook/internal/types';
 
 export async function csfPlugin(config: Options): Promise<Plugin> {
   const { presets } = config;

@@ -1,6 +1,6 @@
 import { describe, afterEach, it, expect, vi } from 'vitest';
-import type { StorybookConfig } from '@storybook/types';
-import type { JsPackageManager } from '@storybook/core-common';
+import type { StorybookConfig } from '@storybook/core/types';
+import type { JsPackageManager } from '@storybook/core/common';
 import * as docsUtils from '../../doctor/getIncompatibleStorybookPackages';
 
 import { upgradeStorybookRelatedDependencies } from './upgrade-storybook-related-dependencies';

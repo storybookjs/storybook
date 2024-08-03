@@ -3,7 +3,7 @@ import {
   JsPackageManagerFactory,
   getCoercedStorybookVersion,
   getStorybookInfo,
-} from '@storybook/core-common';
+} from '@storybook/core/common';
 
 import { runFixes } from './automigrate';
 import { mdxToCSF } from './automigrate/fixes/mdx-to-csf';

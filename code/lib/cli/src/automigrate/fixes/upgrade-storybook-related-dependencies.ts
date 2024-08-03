@@ -1,8 +1,8 @@
 import { dedent } from 'ts-dedent';
 import { cyan, yellow } from 'chalk';
 import { gt } from 'semver';
-import type { JsPackageManager } from '@storybook/core-common';
-import { isCorePackage } from '@storybook/core-common';
+import type { JsPackageManager } from '@storybook/core/common';
+import { isCorePackage } from '@storybook/core/common';
 import type { Fix } from '../types';
 import { getIncompatibleStorybookPackages } from '../../doctor/getIncompatibleStorybookPackages';
 

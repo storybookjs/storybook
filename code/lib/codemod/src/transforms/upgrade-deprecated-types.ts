@@ -3,7 +3,7 @@ import prettier from 'prettier';
 import type { API, FileInfo } from 'jscodeshift';
 import type { BabelFile, NodePath } from '@babel/core';
 import * as babel from '@babel/core';
-import { loadCsf, printCsf } from '@storybook/csf-tools';
+import { loadCsf, printCsf } from '@storybook/core/csf-tools';
 import * as t from '@babel/types';
 
 const logger = console;

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment,@typescript-eslint/no-shadow */
 import type { FileInfo } from 'jscodeshift';
-import { babelParse, babelParseExpression } from '@storybook/csf-tools';
+import { babelParse, babelParseExpression } from '@storybook/core/csf-tools';
 import { remark } from 'remark';
 import remarkMdx from 'remark-mdx';
 import { SKIP, visit } from 'unist-util-visit';

@@ -3,7 +3,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 // @ts-expect-error somehow TS thinks there is a default export
-const { allTemplates, merged, daily, normal } = templates.default as typeof templates;
+const { allTemplates, merged, daily, normal } = (templates.default ||
+  templates) as typeof templates;
 
 const projectJson = (name: string, framework: string, tags: string[]) => ({
   name,

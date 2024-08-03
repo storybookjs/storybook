@@ -1,5 +1,5 @@
 import { describe, expect, vi, it } from 'vitest';
-import type { StorybookConfig } from '@storybook/types';
+import type { StorybookConfig } from '@storybook/core/types';
 import { mdxgfm } from './mdx-gfm';
 
 vi.mock('globby', () => ({

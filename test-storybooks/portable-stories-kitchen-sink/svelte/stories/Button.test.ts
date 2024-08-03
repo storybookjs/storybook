@@ -6,6 +6,8 @@ import * as stories from './Button.stories';
 // import type Button from './Button.svelte';
 import { composeStories, composeStory, setProjectAnnotations } from '@storybook/svelte';
 
+setProjectAnnotations({ testingLibraryRender: render });
+
 // example with composeStories, returns an object with all stories composed with args/decorators
 const { CSF3Primary, LoaderStory } = composeStories(stories);
 
@@ -53,7 +55,7 @@ describe('renders', () => {
     expect(getByTestId('spy-data').textContent).toEqual('mockFn return value');
     expect(getByTestId('loaded-data').textContent).toEqual('loaded data');
     // spy assertions happen in the play function and should work
-    await LoaderStory.play!();
+    await LoaderStory.run!();
   });
 });
 
@@ -69,6 +71,7 @@ describe('projectAnnotations', () => {
         globalTypes: {
           locale: { defaultValue: 'en' },
         },
+        testingLibraryRender: render,
       },
     ]);
     const WithEnglishText = composeStory(stories.CSF2StoryWithLocale, stories.default);
@@ -111,9 +114,7 @@ describe('CSF3', () => {
   it('renders with play function without canvas element', async () => {
     const CSF3InputFieldFilled = composeStory(stories.CSF3InputFieldFilled, stories.default);
 
-    render(CSF3InputFieldFilled.Component, CSF3InputFieldFilled.props);
-
-    await CSF3InputFieldFilled.play!();
+    await CSF3InputFieldFilled.run();
 
     const input = screen.getByTestId('input') as HTMLInputElement;
     expect(input.value).toEqual('Hello world!');
@@ -122,12 +123,15 @@ describe('CSF3', () => {
   it('renders with play function with canvas element', async () => {
     const CSF3InputFieldFilled = composeStory(stories.CSF3InputFieldFilled, stories.default);
 
-    const { container } = render(CSF3InputFieldFilled.Component, CSF3InputFieldFilled.props);
+    const div = document.createElement('div');
+    document.body.appendChild(div);
 
-    await CSF3InputFieldFilled.play!({ canvasElement: container });
+    await CSF3InputFieldFilled.run({ canvasElement: div });
 
     const input = screen.getByTestId('input') as HTMLInputElement;
     expect(input.value).toEqual('Hello world!');
+
+    document.body.removeChild(div);
   });
 });
 
@@ -136,17 +140,7 @@ const testCases = Object.values(composeStories(stories)).map(
   (Story) => [Story.storyName, Story] as [string, typeof Story]
 );
 it.each(testCases)('Renders %s story', async (_storyName, Story) => {
-  cleanup();
-
-  if (_storyName === 'CSF2StoryWithLocale') {
-    return;
-  }
-
-  await Story.load();
-
-  const { container } = await render(Story.Component, Story.props);
-
-  await Story.play?.({ canvasElement: container });
-  expect(container).toMatchSnapshot();
+  if (_storyName === 'CSF2StoryWithLocale') return;
+  await Story.run();
+  expect(document.body).toMatchSnapshot();
 });
-

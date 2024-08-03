@@ -1,6 +1,6 @@
 {
   "name": "sb",
-  "version": "8.2.0-alpha.10",
+  "version": "8.3.0-alpha.3",
   "description": "Storybook CLI",
   "keywords": [
     "storybook"
@@ -21,7 +21,7 @@
   "license": "MIT",
   "bin": "./index.js",
   "dependencies": {
-    "@storybook/cli": "workspace:*"
+    "storybook": "workspace:*"
   },
   "publishConfig": {
     "access": "public"

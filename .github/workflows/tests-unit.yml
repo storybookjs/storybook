@@ -17,11 +17,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: 1.1.1
       - name: Set node version
         uses: actions/setup-node@v4
         with:
           node-version-file: ".nvmrc"
+
       - name: install and compile
-        run: yarn task --task compile --start-from=auto --no-link
+        run: yarn task --task compile --start-from=auto
       - name: test
         run: yarn test

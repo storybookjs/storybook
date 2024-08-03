@@ -1,13 +1,13 @@
-import React, { Fragment, useMemo } from 'react';
+import React from 'react';
 import {
   useAddonState,
   useChannel,
   useGlobals,
   useParameter,
   addons,
-} from '@storybook/manager-api';
-import { styled } from '@storybook/theming';
-import { IconButton, WithTooltip, TooltipLinkList } from '@storybook/components';
+} from 'storybook/internal/manager-api';
+import { styled } from 'storybook/internal/theming';
+import { IconButton, WithTooltip, TooltipLinkList } from 'storybook/internal/components';
 
 import { PaintBrushIcon } from '@storybook/icons';
 import type { ThemeAddonState, ThemeParameters } from './constants';
@@ -17,6 +17,7 @@ import {
   THEMING_EVENTS,
   DEFAULT_ADDON_STATE,
   DEFAULT_THEME_PARAMETERS,
+  GLOBAL_KEY as KEY,
 } from './constants';
 
 const IconButtonLabel = styled.div(({ theme }) => ({
@@ -27,11 +28,11 @@ const hasMultipleThemes = (themesList: ThemeAddonState['themesList']) => themesL
 const hasTwoThemes = (themesList: ThemeAddonState['themesList']) => themesList.length === 2;
 
 export const ThemeSwitcher = React.memo(function ThemeSwitcher() {
-  const { themeOverride } = useParameter<ThemeParameters>(
+  const { themeOverride, disable } = useParameter<ThemeParameters>(
     PARAM_KEY,
     DEFAULT_THEME_PARAMETERS
   ) as ThemeParameters;
-  const [{ theme: selected }, updateGlobals] = useGlobals();
+  const [{ theme: selected }, updateGlobals, storyGlobals] = useGlobals();
 
   const channel = addons.getChannel();
   const fromLast = channel.last(THEMING_EVENTS.REGISTER_THEMES);
@@ -45,6 +46,8 @@ export const ThemeSwitcher = React.memo(function ThemeSwitcher() {
     initializeThemeState
   );
 
+  const isLocked = KEY in storyGlobals || !!themeOverride;
+
   useChannel({
     [THEMING_EVENTS.REGISTER_THEMES]: ({ themes, defaultTheme }) => {
       updateState((state) => ({
@@ -55,21 +58,24 @@ export const ThemeSwitcher = React.memo(function ThemeSwitcher() {
     },
   });
 
-  const label = useMemo(() => {
-    if (themeOverride) {
-      return <>Story override</>;
-    }
+  const themeName = selected || themeDefault;
+  let label = '';
+  if (isLocked) {
+    label = 'Story override';
+  } else if (themeName) {
+    label = `${themeName} theme`;
+  }
 
-    const themeName = selected || themeDefault;
-
-    return themeName && <>{`${themeName} theme`}</>;
-  }, [themeOverride, themeDefault, selected]);
+  if (disable) {
+    return null;
+  }
 
   if (hasTwoThemes(themesList)) {
     const currentTheme = selected || themeDefault;
     const alternateTheme = themesList.find((theme) => theme !== currentTheme);
     return (
       <IconButton
+        disabled={isLocked}
         key={THEME_SWITCHER_ID}
         active={!themeOverride}
         title="Theme"
@@ -78,40 +84,43 @@ export const ThemeSwitcher = React.memo(function ThemeSwitcher() {
         }}
       >
         <PaintBrushIcon />
-        {label && <IconButtonLabel>{label}</IconButtonLabel>}
+        {label ? <IconButtonLabel>{label}</IconButtonLabel> : null}
       </IconButton>
     );
   }
 
   if (hasMultipleThemes(themesList)) {
     return (
-      <Fragment>
-        <WithTooltip
-          placement="top"
-          trigger="click"
-          closeOnOutsideClick
-          tooltip={({ onHide }) => {
-            return (
-              <TooltipLinkList
-                links={themesList.map((theme) => ({
-                  id: theme,
-                  title: theme,
-                  active: selected === theme,
-                  onClick: () => {
-                    updateGlobals({ theme });
-                    onHide();
-                  },
-                }))}
-              />
-            );
-          }}
+      <WithTooltip
+        placement="top"
+        trigger="click"
+        closeOnOutsideClick
+        tooltip={({ onHide }) => {
+          return (
+            <TooltipLinkList
+              links={themesList.map((theme) => ({
+                id: theme,
+                title: theme,
+                active: selected === theme,
+                onClick: () => {
+                  updateGlobals({ theme });
+                  onHide();
+                },
+              }))}
+            />
+          );
+        }}
+      >
+        <IconButton
+          key={THEME_SWITCHER_ID}
+          active={!themeOverride}
+          title="Theme"
+          disabled={isLocked}
         >
-          <IconButton key={THEME_SWITCHER_ID} active={!themeOverride} title="Theme">
-            <PaintBrushIcon />
-            {label && <IconButtonLabel>{label}</IconButtonLabel>}
-          </IconButton>
-        </WithTooltip>
-      </Fragment>
+          <PaintBrushIcon />
+          {label && <IconButtonLabel>{label}</IconButtonLabel>}
+        </IconButton>
+      </WithTooltip>
     );
   }
 

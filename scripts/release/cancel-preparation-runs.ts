@@ -5,7 +5,7 @@
 
 import chalk from 'chalk';
 import program from 'commander';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 import { esMain } from '../utils/esmain';
 import { githubRestClient } from './utils/github-client';
 

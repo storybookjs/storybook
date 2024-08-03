@@ -1,6 +1,6 @@
 import React, { Fragment, useState } from 'react';
 
-import { styled } from '@storybook/theming';
+import { styled } from 'storybook/internal/theming';
 
 import type { Result } from 'axe-core';
 import { Info } from './Info';

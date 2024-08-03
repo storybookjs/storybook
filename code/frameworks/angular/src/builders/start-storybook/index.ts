@@ -11,12 +11,12 @@ import { BrowserBuilderOptions, StylePreprocessorOptions } from '@angular-devkit
 import { from, Observable, of } from 'rxjs';
 import { map, switchMap, mapTo } from 'rxjs/operators';
 import { sync as findUpSync } from 'find-up';
-import { sync as readUpSync } from 'read-pkg-up';
+import { findPackageSync } from 'fd-package-json';
 
-import { CLIOptions } from '@storybook/types';
-import { getEnvConfig, versions } from '@storybook/core-common';
-import { addToGlobalContext } from '@storybook/telemetry';
-import { buildDevStandalone, withTelemetry } from '@storybook/core-server';
+import { CLIOptions } from 'storybook/internal/types';
+import { getEnvConfig, versions } from 'storybook/internal/common';
+import { addToGlobalContext } from 'storybook/internal/telemetry';
+import { buildDevStandalone, withTelemetry } from 'storybook/internal/core-server';
 import {
   AssetPattern,
   SourceMapUnion,
@@ -123,7 +123,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (options, cont
       } = options;
 
       const standaloneOptions: StandaloneOptions = {
-        packageJson: readUpSync({ cwd: __dirname }).packageJson,
+        packageJson: findPackageSync(__dirname),
         ci,
         configDir,
         ...(docs ? { docs } : {}),

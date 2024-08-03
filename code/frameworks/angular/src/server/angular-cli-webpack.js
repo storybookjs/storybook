@@ -61,7 +61,6 @@ exports.getWebpackConfig = async (baseConfig, { builderOptions, builderContext }
       // Default options
       index: 'noop-index',
       main: 'noop-main',
-      outputPath: 'noop-out',
 
       // Options provided by user
       ...builderOptions,
@@ -71,7 +70,7 @@ exports.getWebpackConfig = async (baseConfig, { builderOptions, builderContext }
       outputPath:
         typeof builderOptions.outputPath === 'string'
           ? builderOptions.outputPath
-          : builderOptions.outputPath?.base,
+          : builderOptions.outputPath?.base ?? 'noop-out',
 
       // Fixed options
       optimization: false,

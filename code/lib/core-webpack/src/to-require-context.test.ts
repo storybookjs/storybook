@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import path from 'path';
-import { normalizeStoriesEntry } from '@storybook/core-common';
+import { normalizeStoriesEntry } from 'storybook/internal/common';
 
 import { toRequireContext } from './to-require-context';
 

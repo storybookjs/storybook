@@ -105,7 +105,7 @@ jobs:
 
             | | |
             | --- | --- |
-            | **Published version** | [`${{ steps.version.outputs.next-version }}`](https://npmjs.com/package/@storybook/cli/v/${{ steps.version.outputs.next-version }}) |
+            | **Published version** | [`${{ steps.version.outputs.next-version }}`](https://npmjs.com/package/storybook/v/${{ steps.version.outputs.next-version }}) |
             | **Triggered by** | @${{ github.triggering_actor }} |
             | **Repository** | [${{ steps.info.outputs.repository }}](https://github.com/${{ steps.info.outputs.repository }}) |
             | **Branch** | [`${{ steps.info.outputs.branch }}`](https://github.com/${{ steps.info.outputs.repository }}/tree/${{ steps.info.outputs.branch }}) |

@@ -16,7 +16,11 @@
     "pretty": true,
     "noErrorTruncation": true,
     "listEmittedFiles": false,
-    "noUnusedLocals": false
+    "noUnusedLocals": false,
+    "baseUrl": ".",
+    "paths": {
+      "storybook/internal/*": ["../../lib/cli/core/*"]
+    }
   },
   "include": ["src/**/*", "src/**/*.json"]
 }

@@ -1,10 +1,10 @@
-// auto-generated from scripts/create-nx-sandbox-projects.ts
 {
   "name": "angular-cli/15-ts",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "implicitDependencies": [
     "cli",
-    "test",
+    "core",
     "essentials",
     "interactions",
     "links",

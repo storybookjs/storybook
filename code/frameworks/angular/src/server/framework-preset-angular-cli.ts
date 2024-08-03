@@ -1,6 +1,6 @@
 import webpack from 'webpack';
-import { logger } from '@storybook/node-logger';
-import { AngularLegacyBuildOptionsError } from '@storybook/core-events/server-errors';
+import { logger } from 'storybook/internal/node-logger';
+import { AngularLegacyBuildOptionsError } from 'storybook/internal/server-errors';
 import { BuilderContext, targetFromTargetString } from '@angular-devkit/architect';
 import { sync as findUpSync } from 'find-up';
 import { JsonObject, logging } from '@angular-devkit/core';

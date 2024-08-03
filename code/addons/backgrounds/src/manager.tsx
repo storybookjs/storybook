@@ -1,20 +1,24 @@
 import React, { Fragment } from 'react';
-import { addons, types } from '@storybook/manager-api';
+import { addons, types } from 'storybook/internal/manager-api';
 
 import { ADDON_ID } from './constants';
-import { BackgroundSelector } from './containers/BackgroundSelector';
-import { GridSelector } from './containers/GridSelector';
+import { BackgroundToolLegacy } from './legacy/BackgroundSelectorLegacy';
+import { GridToolLegacy } from './legacy/GridSelectorLegacy';
+import { BackgroundTool } from './components/Tool';
 
 addons.register(ADDON_ID, () => {
   addons.add(ADDON_ID, {
     title: 'Backgrounds',
     type: types.TOOL,
     match: ({ viewMode, tabId }) => !!(viewMode && viewMode.match(/^(story|docs)$/)) && !tabId,
-    render: () => (
-      <Fragment>
-        <BackgroundSelector />
-        <GridSelector />
-      </Fragment>
-    ),
+    render: () =>
+      FEATURES?.backgroundsStoryGlobals ? (
+        <BackgroundTool />
+      ) : (
+        <Fragment>
+          <BackgroundToolLegacy />
+          <GridToolLegacy />
+        </Fragment>
+      ),
   });
 });

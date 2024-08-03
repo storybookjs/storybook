@@ -1,6 +1,6 @@
 /* eslint-disable no-underscore-dangle */
 import path from 'path';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 import { vi, expect, describe, it, beforeEach } from 'vitest';
 import * as fsExtraImp from 'fs-extra';
 import { run as writeChangelog } from '../write-changelog';

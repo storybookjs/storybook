@@ -1,6 +1,6 @@
 import type { Call } from '@storybook/instrumenter';
 import React from 'react';
-import { styled, typography } from '@storybook/theming';
+import { styled, typography } from 'storybook/internal/theming';
 import { Node, MethodCall } from './MethodCall';
 
 const StyledWrapper = styled.div(({ theme }) => ({
@@ -13,7 +13,7 @@ const StyledWrapper = styled.div(({ theme }) => ({
 }));
 
 export default {
-  title: 'Addons/Interactions/MethodCall',
+  title: 'MethodCall',
   component: MethodCall,
   decorators: [
     (Story: any) => (

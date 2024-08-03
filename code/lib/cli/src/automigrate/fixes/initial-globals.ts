@@ -2,8 +2,8 @@ import { dedent } from 'ts-dedent';
 import chalk from 'chalk';
 import { readFile, writeFile } from 'fs-extra';
 import type { Expression } from '@babel/types';
-import type { ConfigFile } from '@storybook/csf-tools';
-import { loadConfig, formatConfig } from '@storybook/csf-tools';
+import type { ConfigFile } from '@storybook/core/csf-tools';
+import { loadConfig, formatConfig } from '@storybook/core/csf-tools';
 import type { Fix } from '../types';
 
 const MIGRATION =

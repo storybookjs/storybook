@@ -4,10 +4,10 @@ import React, { isValidElement, createElement } from 'react';
 import type { Options } from 'react-element-to-jsx-string';
 import reactElementToJSXString from 'react-element-to-jsx-string';
 
-import { addons, useEffect } from '@storybook/preview-api';
-import type { StoryContext, ArgsStoryFn, PartialStoryFn } from '@storybook/types';
-import { SourceType, SNIPPET_RENDERED, getDocgenSection } from '@storybook/docs-tools';
-import { logger } from '@storybook/client-logger';
+import { addons, useEffect } from 'storybook/internal/preview-api';
+import type { StoryContext, ArgsStoryFn, PartialStoryFn } from 'storybook/internal/types';
+import { SourceType, SNIPPET_RENDERED, getDocgenSection } from 'storybook/internal/docs-tools';
+import { logger } from 'storybook/internal/client-logger';
 import { isMemo, isForwardRef } from './lib';
 
 import type { ReactRenderer } from '../types';

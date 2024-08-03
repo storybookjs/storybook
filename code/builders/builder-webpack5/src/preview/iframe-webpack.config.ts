@@ -8,14 +8,14 @@ import TerserWebpackPlugin from 'terser-webpack-plugin';
 import VirtualModulePlugin from 'webpack-virtual-modules';
 import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import type { TransformOptions as EsbuildOptions } from 'esbuild';
-import type { Options } from '@storybook/types';
-import { globalsNameReferenceMap } from '@storybook/preview/globals';
+import type { Options } from 'storybook/internal/types';
+import { globalsNameReferenceMap } from 'storybook/internal/preview/globals';
 import {
   getBuilderOptions,
   stringifyProcessEnvs,
   normalizeStories,
   isPreservingSymlinks,
-} from '@storybook/core-common';
+} from 'storybook/internal/common';
 import { type BuilderOptions } from '@storybook/core-webpack';
 import { dedent } from 'ts-dedent';
 import type { TypescriptOptions } from '../types';
@@ -31,25 +31,13 @@ const maybeGetAbsolutePath = <I extends string>(input: I): I | false => {
   }
 };
 
-const managerAPIPath = maybeGetAbsolutePath(`@storybook/manager-api`);
-const componentsPath = maybeGetAbsolutePath(`@storybook/components`);
 const globalPath = maybeGetAbsolutePath(`@storybook/global`);
-const routerPath = maybeGetAbsolutePath(`@storybook/router`);
-const themingPath = maybeGetAbsolutePath(`@storybook/theming`);
 
 // these packages are not pre-bundled because of react dependencies.
 // these are not dependencies of the builder anymore, thus resolving them can fail.
 // we should remove the aliases in 8.0, I'm not sure why they are here in the first place.
 const storybookPaths: Record<string, string> = {
-  ...(managerAPIPath
-    ? {
-        [`@storybook/manager-api`]: managerAPIPath,
-      }
-    : {}),
-  ...(componentsPath ? { [`@storybook/components`]: componentsPath } : {}),
   ...(globalPath ? { [`@storybook/global`]: globalPath } : {}),
-  ...(routerPath ? { [`@storybook/router`]: routerPath } : {}),
-  ...(themingPath ? { [`@storybook/theming`]: themingPath } : {}),
 };
 
 export default async (

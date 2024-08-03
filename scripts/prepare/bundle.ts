@@ -4,9 +4,10 @@ import type { Options } from 'tsup';
 import type { PackageJson } from 'type-fest';
 import { build } from 'tsup';
 import aliasPlugin from 'esbuild-plugin-alias';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 import slash from 'slash';
 import { exec } from '../utils/exec';
+import { glob } from 'glob';
 
 /* TYPES */
 
@@ -44,7 +45,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   } = (await fs.readJson(join(cwd, 'package.json'))) as PackageJsonWithBundlerConfig;
 
   if (pre) {
-    await exec(`node -r ${__dirname}/../node_modules/esbuild-register/register.js ${pre}`, { cwd });
+    await exec(`bun ${pre}`, { cwd });
   }
 
   const reset = hasFlag(flags, 'reset');
@@ -79,7 +80,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
    */
   const nonPresetEntries = allEntries.filter((f) => !path.parse(f).name.includes('preset'));
 
-  const noExternal = [/^@vitest\/.+$/, ...extraNoExternal];
+  const noExternal = [...extraNoExternal];
 
   if (formats.includes('esm')) {
     tasks.push(
@@ -93,16 +94,19 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         outDir,
         sourcemap: false,
         format: ['esm'],
-        target: ['chrome100', 'safari15', 'firefox91'],
+        target: platform === 'node' ? ['node18'] : ['chrome100', 'safari15', 'firefox91'],
         clean: false,
         ...(dtsBuild === 'esm' ? dtsConfig : {}),
         platform: platform || 'browser',
-        esbuildPlugins: [
-          aliasPlugin({
-            process: path.resolve('../node_modules/process/browser.js'),
-            util: path.resolve('../node_modules/util/util.js'),
-          }),
-        ],
+        esbuildPlugins:
+          platform === 'node'
+            ? []
+            : [
+                aliasPlugin({
+                  process: path.resolve('../node_modules/process/browser.js'),
+                  util: path.resolve('../node_modules/util/util.js'),
+                }),
+              ],
         external: externals,
 
         esbuildOptions: (c) => {
@@ -144,12 +148,19 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
 
   await Promise.all(tasks);
 
+  const dtsFiles = await glob(outDir + '/**/*.d.ts');
+  await Promise.all(
+    dtsFiles.map(async (file) => {
+      const content = await fs.readFile(file, 'utf-8');
+      await fs.writeFile(
+        file,
+        content.replace(/from \'core\/dist\/(.*)\'/g, `from 'storybook/internal/$1'`)
+      );
+    })
+  );
+
   if (post) {
-    await exec(
-      `node -r ${__dirname}/../node_modules/esbuild-register/register.js ${post}`,
-      { cwd },
-      { debug: true }
-    );
+    await exec(`bun ${post}`, { cwd }, { debug: true });
   }
 
   if (process.env.CI !== 'true') {

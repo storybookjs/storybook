@@ -1,6 +1,6 @@
 import chalk from 'chalk';
-import dedent from 'ts-dedent';
-import type { StoriesEntry } from '@storybook/types';
+import { dedent } from 'ts-dedent';
+import type { StoriesEntry } from '@storybook/core/types';
 import { updateMainConfig } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
 import { runCodemod } from '@storybook/codemod';

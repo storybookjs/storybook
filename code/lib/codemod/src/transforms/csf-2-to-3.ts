@@ -2,8 +2,8 @@
 import prettier from 'prettier';
 import * as t from '@babel/types';
 import { isIdentifier, isTSTypeAnnotation, isTSTypeReference } from '@babel/types';
-import type { CsfFile } from '@storybook/csf-tools';
-import { loadCsf, printCsf } from '@storybook/csf-tools';
+import type { CsfFile } from '@storybook/core/csf-tools';
+import { loadCsf, printCsf } from '@storybook/core/csf-tools';
 import type { API, FileInfo } from 'jscodeshift';
 import type { BabelFile, NodePath } from '@babel/core';
 import * as babel from '@babel/core';

@@ -45,11 +45,8 @@ import { Button } from './Button';
 export default {
   title: 'Example/Button',
   component: Button,
-  parameters: {
-    themes: {
-      themeOverride: 'light', // component level override
-    },
-  },
+  // meta level override
+  globals: { theme: 'dark' },
 };
 
 export const Primary = {
@@ -64,10 +61,7 @@ export const PrimaryDark = {
     primary: true,
     label: 'Button',
   },
-  parameters: {
-    themes: {
-      themeOverride: 'dark', // Story level override
-    },
-  },
+  // story level override
+  globals: { theme: 'dark' },
 };
 ```

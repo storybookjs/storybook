@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import semver from 'semver';
-import { frameworkPackages, versions as storybookCorePackages } from '@storybook/core-common';
-import type { InstallationMetadata } from '@storybook/core-common';
+import { frameworkPackages, versions as storybookCorePackages } from '@storybook/core/common';
+import type { InstallationMetadata } from '@storybook/core/common';
 
 function getPrimaryVersion(name: string | undefined, installationMetadata?: InstallationMetadata) {
   if (!name) {
@@ -30,9 +30,7 @@ export function getMismatchingVersionsWarnings(
         return Object.keys(frameworkPackages).includes(packageName);
       }
     );
-    const cliVersion =
-      getPrimaryVersion('@storybook/cli', installationMetadata) ||
-      getPrimaryVersion('storybook', installationMetadata);
+    const cliVersion = getPrimaryVersion('storybook', installationMetadata);
     const frameworkVersion = getPrimaryVersion(frameworkPackageName, installationMetadata);
 
     if (!cliVersion || !frameworkVersion || semver.eq(cliVersion, frameworkVersion)) {

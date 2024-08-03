@@ -1,6 +1,6 @@
 import { beforeEach, expect, test, vi } from 'vitest';
 import transform from '../find-implicit-spies';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 import ansiRegex from 'ansi-regex';
 
 expect.addSnapshotSerializer({

@@ -1,17 +1,18 @@
 import { expect, test, vi } from 'vitest';
 import { autoblock } from './index';
-import { JsPackageManagerFactory } from '@storybook/core-common';
+import { JsPackageManagerFactory } from '@storybook/core/common';
 import { createBlocker } from './types';
-import { logger as loggerRaw } from '@storybook/node-logger';
+import { logger as loggerRaw } from '@storybook/core/node-logger';
 import stripAnsi from 'strip-ansi';
 
-vi.mock('node:fs/promises', () => ({
+vi.mock('node:fs/promises', async (importOriginal) => ({
+  ...(await importOriginal<any>()),
   writeFile: vi.fn(),
 }));
 vi.mock('boxen', () => ({
   default: vi.fn((x) => x),
 }));
-vi.mock('@storybook/node-logger', () => ({
+vi.mock('@storybook/core/node-logger', () => ({
   logger: {
     info: vi.fn(),
     line: vi.fn(),

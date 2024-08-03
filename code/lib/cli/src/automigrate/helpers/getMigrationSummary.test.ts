@@ -1,7 +1,7 @@
 import { describe, expect, vi, it } from 'vitest';
 import { getMigrationSummary } from './getMigrationSummary';
 import { FixStatus } from '../types';
-import type { InstallationMetadata } from '@storybook/core-common';
+import type { InstallationMetadata } from '@storybook/core/common';
 
 vi.mock('boxen', () => ({
   default: vi.fn((str, { title = '' }) => `${title}\n\n${str.replace(/\x1b\[[0-9;]*[mG]/g, '')}`),
@@ -26,7 +26,7 @@ describe('getMigrationSummary', () => {
   const installationMetadata: InstallationMetadata = {
     duplicatedDependencies: {
       '@storybook/instrumenter': ['6.0.0', '7.1.0'],
-      '@storybook/core-common': ['6.0.0', '7.1.0'],
+      '@storybook/core/common': ['6.0.0', '7.1.0'],
       '@storybook/addon-essentials': ['7.0.0', '7.1.0'],
     },
     dependencies: {},

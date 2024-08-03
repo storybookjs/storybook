@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import fs from '@ndelangen/fs-extra-unified';
 import path from 'node:path';
 import { onlyWindows, skipWindows } from '../../../../../vitest.helpers';
 import { parseStaticDir } from '../server-statics';
+import { pathExists } from '@ndelangen/fs-extra-unified';
 
 vi.mock('@ndelangen/fs-extra-unified');
-const pathExistsMock = vi.mocked(fs.pathExists);
+const pathExistsMock = vi.mocked(pathExists);
 
 describe('parseStaticDir', () => {
   beforeEach(() => {

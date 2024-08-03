@@ -1,6 +1,5 @@
 import chalk from 'chalk';
 import fs from 'fs';
-import fse from '@ndelangen/fs-extra-unified';
 import path, { join } from 'path';
 import { coerce, satisfies } from 'semver';
 import stripJsonComments from 'strip-json-comments';
@@ -17,6 +16,8 @@ import {
 import type { SupportedFrameworks, SupportedRenderers } from '@storybook/core/types';
 import { CoreBuilder, SupportedLanguage } from './project_types';
 import { versions as storybookMonorepoPackages } from '@storybook/core/common';
+import { copy, copySync, pathExists } from '@ndelangen/fs-extra-unified';
+import { readFile, writeFile } from 'node:fs/promises';
 
 const logger = console;
 
@@ -120,7 +121,7 @@ export function copyTemplate(templateRoot: string, destination = '.') {
     throw new Error(`Couldn't find template dir`);
   }
 
-  fse.copySync(templateDir, destination, { overwrite: true });
+  copySync(templateDir, destination, { overwrite: true });
 }
 
 type CopyTemplateFilesOptions = {
@@ -182,30 +183,30 @@ export async function copyTemplateFiles({
     const assetsTS38 = join(assetsDir, languageFolderMapping[SupportedLanguage.TYPESCRIPT_3_8]);
 
     // Ideally use the assets that match the language & version.
-    if (await fse.pathExists(assetsLanguage)) {
+    if (await pathExists(assetsLanguage)) {
       return assetsLanguage;
     }
     // Use fallback typescript 3.8 assets if new ones aren't available
-    if (language === SupportedLanguage.TYPESCRIPT_4_9 && (await fse.pathExists(assetsTS38))) {
+    if (language === SupportedLanguage.TYPESCRIPT_4_9 && (await pathExists(assetsTS38))) {
       return assetsTS38;
     }
     // Fallback further to TS (for backwards compatibility purposes)
-    if (await fse.pathExists(assetsTS)) {
+    if (await pathExists(assetsTS)) {
       return assetsTS;
     }
     // Fallback further to JS
-    if (await fse.pathExists(assetsJS)) {
+    if (await pathExists(assetsJS)) {
       return assetsJS;
     }
     // As a last resort, look for the root of the asset directory
-    if (await fse.pathExists(assetsDir)) {
+    if (await pathExists(assetsDir)) {
       return assetsDir;
     }
     throw new Error(`Unsupported renderer: ${renderer} (${baseDir})`);
   };
 
   const targetPath = async () => {
-    if (await fse.pathExists('./src')) {
+    if (await pathExists('./src')) {
       return './src/stories';
     }
     return './stories';
@@ -213,11 +214,11 @@ export async function copyTemplateFiles({
 
   const destinationPath = destination ?? (await targetPath());
   if (commonAssetsDir) {
-    await fse.copy(commonAssetsDir, destinationPath, {
+    await copy(commonAssetsDir, destinationPath, {
       overwrite: true,
     });
   }
-  await fse.copy(await templatePath(), destinationPath, { overwrite: true });
+  await copy(await templatePath(), destinationPath, { overwrite: true });
 
   if (commonAssetsDir) {
     let rendererType = frameworkToRenderer[renderer] || 'react';
@@ -230,13 +231,13 @@ export async function copyTemplateFiles({
 export async function adjustTemplate(templatePath: string, templateData: Record<string, any>) {
   // for now, we're just doing a simple string replace
   // in the future we might replace this with a proper templating engine
-  let template = await fse.readFile(templatePath, 'utf8');
+  let template = await readFile(templatePath, 'utf8');
 
   Object.keys(templateData).forEach((key) => {
     template = template.replaceAll(`{{${key}}}`, `${templateData[key]}`);
   });
 
-  await fse.writeFile(templatePath, template);
+  await writeFile(templatePath, template);
 }
 
 // Given a package.json, finds any official storybook package within it

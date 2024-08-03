@@ -1,5 +1,4 @@
 import path, { dirname } from 'path';
-import fse from '@ndelangen/fs-extra-unified';
 import { dedent } from 'ts-dedent';
 import ora from 'ora';
 import invariant from 'tiny-invariant';
@@ -14,6 +13,7 @@ import { configureMain, configurePreview } from './configure';
 import type { FrameworkOptions, GeneratorOptions } from './types';
 import { configureEslintPlugin, extractEslintInfo } from 'storybook/internal/cli';
 import { detectBuilder } from 'storybook/internal/cli';
+import { ensureDir } from '@ndelangen/fs-extra-unified';
 
 const logger = console;
 
@@ -323,7 +323,7 @@ export async function baseGenerator(
     addDependenciesSpinner.succeed();
   }
 
-  await fse.ensureDir(`./${storybookConfigFolder}`);
+  await ensureDir(`./${storybookConfigFolder}`);
 
   if (addMainFile) {
     const prefixes = shouldApplyRequireWrapperOnPackageNames

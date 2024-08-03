@@ -1,9 +1,9 @@
 import { dirname, join } from 'node:path';
-import fs from '@ndelangen/fs-extra-unified';
 
 import { render } from 'ejs';
 
 import type { DocsOptions, TagsOptions, Options, Ref } from '@storybook/core/types';
+import { readFile } from 'node:fs/promises';
 
 export const getTemplatePath = async (template: string) => {
   return join(dirname(require.resolve('@storybook/core/package.json')), 'assets/server', template);
@@ -12,7 +12,7 @@ export const getTemplatePath = async (template: string) => {
 export const readTemplate = async (template: string) => {
   const path = await getTemplatePath(template);
 
-  return fs.readFile(path, 'utf8');
+  return readFile(path, 'utf8');
 };
 
 export async function getManagerMainTemplate() {

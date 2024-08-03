@@ -1,5 +1,4 @@
 import { describe, beforeEach, it, expect, vi } from 'vitest';
-import fse from '@ndelangen/fs-extra-unified';
 
 import { sep } from 'path';
 import * as helpers from './helpers';
@@ -7,6 +6,7 @@ import { IS_WINDOWS } from '../../../vitest.helpers';
 import type { JsPackageManager } from '@storybook/core/common';
 import type { SupportedRenderers } from './project_types';
 import { SupportedLanguage } from './project_types';
+import { copy, copySync, pathExists } from '@ndelangen/fs-extra-unified';
 
 const normalizePath = (path: string) => (IS_WINDOWS ? path.replace(/\//g, sep) : path);
 
@@ -81,7 +81,7 @@ describe('Helpers', () => {
 
       helpers.copyTemplate('');
 
-      expect(fse.copySync).toHaveBeenCalledWith(
+      expect(copySync).toHaveBeenCalledWith(
         expect.stringMatching(csfDirectory),
         expect.anything(),
         expect.anything()
@@ -125,7 +125,7 @@ describe('Helpers', () => {
         commonAssetsDir: normalizePath('create-storybook/rendererAssets/common'),
       });
 
-      expect(fse.copy).toHaveBeenNthCalledWith(
+      expect(copy).toHaveBeenNthCalledWith(
         1,
         normalizePath('create-storybook/rendererAssets/common'),
         './stories',
@@ -133,17 +133,12 @@ describe('Helpers', () => {
       );
 
       const expectedDirectory = normalizePath(`@storybook/react/template/cli${expected}`);
-      expect(fse.copy).toHaveBeenNthCalledWith(
-        2,
-        expectedDirectory,
-        './stories',
-        expect.anything()
-      );
+      expect(copy).toHaveBeenNthCalledWith(2, expectedDirectory, './stories', expect.anything());
     }
   );
 
   it(`should copy to src folder when exists`, async () => {
-    vi.mocked(fse.pathExists).mockImplementation((filePath) => {
+    vi.mocked(pathExists).mockImplementation((filePath) => {
       return filePath === normalizePath('@storybook/react/template/cli') || filePath === './src';
     });
     await helpers.copyTemplateFiles({
@@ -151,11 +146,11 @@ describe('Helpers', () => {
       language: SupportedLanguage.JAVASCRIPT,
       packageManager: packageManagerMock,
     });
-    expect(fse.copy).toHaveBeenCalledWith(expect.anything(), './src/stories', expect.anything());
+    expect(copy).toHaveBeenCalledWith(expect.anything(), './src/stories', expect.anything());
   });
 
   it(`should copy to root folder when src doesn't exist`, async () => {
-    vi.mocked(fse.pathExists).mockImplementation((filePath) => {
+    vi.mocked(pathExists).mockImplementation((filePath) => {
       return filePath === normalizePath('@storybook/react/template/cli');
     });
     await helpers.copyTemplateFiles({
@@ -163,7 +158,7 @@ describe('Helpers', () => {
       language: SupportedLanguage.JAVASCRIPT,
       packageManager: packageManagerMock,
     });
-    expect(fse.copy).toHaveBeenCalledWith(expect.anything(), './stories', expect.anything());
+    expect(copy).toHaveBeenCalledWith(expect.anything(), './stories', expect.anything());
   });
 
   it(`should throw an error for unsupported renderer`, async () => {

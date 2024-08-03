@@ -36,7 +36,6 @@ export async function getPreviewBuilder(
   }
 
   const previewBuilder = await import(builderPackage);
-  console.log({ builderPackage, href: pathToFileURL(builderPackage).href });
   return previewBuilder;
 }
 

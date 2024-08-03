@@ -6,7 +6,6 @@ import express from 'express';
 import { join, parse } from 'path';
 import { NoStatsForViteDevError } from 'storybook/internal/server-errors';
 import type { Options } from 'storybook/internal/types';
-import { corePath } from 'storybook/core-path';
 import { transformIframeHtml } from './transform-iframe-html';
 import { createViteServer } from './vite-server';
 import { build as viteBuild } from './build';
@@ -58,7 +57,7 @@ export const start: ViteBuilder['start'] = async ({
 }) => {
   server = await createViteServer(options as Options, devServer);
 
-  const previewResolvedDir = join(corePath, 'dist/preview');
+  const previewResolvedDir = join((await import('storybook/core-path')).corePath, 'dist/preview');
   const previewDirOrigin = previewResolvedDir;
 
   router.use(`/sb-preview`, express.static(previewDirOrigin, { immutable: true, maxAge: '5m' }));
@@ -80,7 +79,7 @@ export const start: ViteBuilder['start'] = async ({
 export const build: ViteBuilder['build'] = async ({ options }) => {
   const viteCompilation = viteBuild(options as Options);
 
-  const previewResolvedDir = join(corePath, 'dist/preview');
+  const previewResolvedDir = join((await import('storybook/core-path')).corePath, 'dist/preview');
   const previewDirOrigin = previewResolvedDir;
   const previewDirTarget = join(options.outputDir || '', `sb-preview`);
 

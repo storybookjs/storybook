@@ -4,7 +4,6 @@ import webpackDevMiddleware from 'webpack-dev-middleware';
 import webpackHotMiddleware from 'webpack-hot-middleware';
 import { logger } from 'storybook/internal/node-logger';
 import type { Builder, Options } from 'storybook/internal/types';
-import { corePath } from 'storybook/core-path';
 import { checkWebpackVersion } from '@storybook/core-webpack';
 import { join, parse } from 'path';
 import express from 'express';
@@ -177,7 +176,7 @@ const starter: StarterFunction = async function* starterGeneratorFn({
 
   compilation = webpackDevMiddleware(compiler, middlewareOptions);
 
-  const previewResolvedDir = join(corePath, 'dist/preview');
+  const previewResolvedDir = join((await import('storybook/core-path')).corePath, 'dist/preview');
   const previewDirOrigin = previewResolvedDir;
 
   router.use(`/sb-preview`, express.static(previewDirOrigin, { immutable: true, maxAge: '5m' }));
@@ -286,7 +285,7 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
     });
   });
 
-  const previewResolvedDir = join(corePath, 'dist/preview');
+  const previewResolvedDir = join((await import('storybook/core-path')).corePath, 'dist/preview');
   const previewDirOrigin = previewResolvedDir;
   const previewDirTarget = join(options.outputDir || '', `sb-preview`);
 

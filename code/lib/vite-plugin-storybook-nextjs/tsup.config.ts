@@ -28,7 +28,7 @@ export default defineConfig([
       "sb-original/default-loader",
       "storybook",
       "@storybook/test-runner",
-      "@storybook/nextjs/headers.mock",
+      "@storybook/nextjs",
       "@storybook/test",
       "react",
       "sharp",

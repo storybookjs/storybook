@@ -7,6 +7,8 @@ import type { JsPackageManager } from 'storybook/internal/common';
 import { RemovedAPIs, removedGlobalClientAPIs as migration } from './remove-global-client-apis';
 
 vi.mock('@ndelangen/fs-extra-unified', async () => import('../../../../../__mocks__/fs-extra'));
+vi.mock('node:fs/promises', async () => import('../../../../../__mocks__/fs-extra'));
+vi.mock('node:fs', async () => import('../../../../../__mocks__/fs-extra'));
 
 const check = async ({ contents, previewConfigPath }: any) => {
   if (contents) {

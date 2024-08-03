@@ -4,7 +4,7 @@ import type { StoriesEntry } from 'storybook/internal/types';
 import { updateMainConfig } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
 import { runCodemod } from '@storybook/codemod';
-import { prompt } from 'prompts';
+import prompts from 'prompts';
 import { glob } from 'glob';
 
 const logger = console;
@@ -117,7 +117,7 @@ export const mdxToCSF: Fix<BareMdxStoriesGlobRunOptions> = {
       ${JSON.stringify(nextStoriesEntries, null, 2)}`);
 
     if (!dryRun) {
-      const { glob: globString } = await prompt({
+      const { glob: globString } = await prompts({
         type: 'text',
         name: 'glob',
         message: 'Please enter the glob for your MDX stories',

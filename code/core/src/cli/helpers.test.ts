@@ -51,6 +51,17 @@ vi.mock('@ndelangen/fs-extra-unified', async (importOriginal) => {
     },
   };
 });
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ndelangen/fs-extra-unified')>();
+  return {
+    ...actual,
+    ...fseMocks,
+    default: {
+      ...actual,
+      ...fseMocks,
+    },
+  };
+});
 
 vi.mock('find-up', () => ({
   sync: vi.fn(),

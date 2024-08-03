@@ -1,5 +1,5 @@
 import path from 'path';
-import { pathExists } from 'fs-extra';
+import { pathExists } from '@ndelangen/fs-extra-unified';
 import { CODE_DIRECTORY } from './constants';
 
 // packageDirs of the form `lib/preview-api`

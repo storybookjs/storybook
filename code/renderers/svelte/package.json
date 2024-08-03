@@ -67,9 +67,11 @@
     "type-fest": "~2.19"
   },
   "devDependencies": {
+    "@ndelangen/fs-extra-unified": "1.0.4--canary.5.5f6cfdd.0",
     "@sveltejs/vite-plugin-svelte": "^3.0.2",
     "@testing-library/jest-dom": "^6.4.1",
     "@testing-library/svelte": "patch:@testing-library/svelte@npm%3A4.1.0#~/.yarn/patches/@testing-library-svelte-npm-4.1.0-34b7037bc0.patch",
+    "@types/fs-extra": "^11.0.4",
     "expect-type": "^0.15.0",
     "fs-extra": "^11.1.0",
     "svelte": "^5.0.0-next.65",

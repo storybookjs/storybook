@@ -88,6 +88,7 @@
   "dependencies": {
     "@chromatic-com/storybook": "^1.6.1",
     "@happy-dom/global-registrator": "^14.12.0",
+    "@ndelangen/fs-extra-unified": "1.0.4--canary.5.5f6cfdd.0",
     "@nx/eslint": "18.0.6",
     "@nx/vite": "18.0.6",
     "@nx/workspace": "18.0.6",

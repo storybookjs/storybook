@@ -43,8 +43,10 @@
     "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
+    "@ndelangen/fs-extra-unified": "1.0.4--canary.5.5f6cfdd.0",
     "@storybook/csf-plugin": "workspace:*",
     "@types/find-cache-dir": "^3.2.1",
+    "@types/fs-extra": "^11.0.4",
     "browser-assert": "^1.2.1",
     "es-module-lexer": "^1.5.0",
     "express": "^4.19.2",

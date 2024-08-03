@@ -8,7 +8,7 @@ import { corePath } from 'storybook/core-path';
 import { checkWebpackVersion } from '@storybook/core-webpack';
 import { join, parse } from 'path';
 import express from 'express';
-import fs from 'fs-extra';
+import { copy } from '@ndelangen/fs-extra-unified';
 import { PREVIEW_BUILDER_PROGRESS } from 'storybook/internal/core-events';
 import {
   WebpackCompilationError,
@@ -290,7 +290,7 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
   const previewDirOrigin = previewResolvedDir;
   const previewDirTarget = join(options.outputDir || '', `sb-preview`);
 
-  const previewFiles = fs.copy(previewDirOrigin, previewDirTarget, {
+  const previewFiles = copy(previewDirOrigin, previewDirTarget, {
     filter: (src) => {
       const { ext } = parse(src);
       if (ext) {

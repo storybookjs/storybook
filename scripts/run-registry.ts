@@ -1,5 +1,5 @@
 import { exec } from 'child_process';
-import { remove, pathExists, readJSON } from 'fs-extra';
+import { remove, pathExists, readJSON } from '@ndelangen/fs-extra-unified';
 import chalk from 'chalk';
 import path from 'path';
 import program from 'commander';

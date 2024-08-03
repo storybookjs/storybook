@@ -1,6 +1,7 @@
 import chalk from 'chalk';
 import boxen from 'boxen';
-import { createWriteStream, move, remove } from 'fs-extra';
+import { move, remove } from '@ndelangen/fs-extra-unified';
+import { createWriteStream } from 'node:fs';
 import { dedent } from 'ts-dedent';
 import { join } from 'path';
 

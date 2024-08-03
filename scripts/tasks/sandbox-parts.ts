@@ -5,12 +5,10 @@ import {
   copy,
   ensureSymlink,
   ensureDir,
-  existsSync,
   pathExists,
-  readFileSync,
   readJson,
   writeJson,
-} from 'fs-extra';
+} from '@ndelangen/fs-extra-unified';
 import { join, resolve, sep } from 'path';
 import JSON5 from 'json5';
 import { createRequire } from 'module';
@@ -43,6 +41,7 @@ import { babelParse } from '../../code/core/src/csf-tools/babelParse';
 import { CODE_DIRECTORY, REPROS_DIRECTORY } from '../utils/constants';
 import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
 import { isFunction } from 'lodash';
+import { existsSync, readFileSync } from 'node:fs';
 
 const logger = console;
 

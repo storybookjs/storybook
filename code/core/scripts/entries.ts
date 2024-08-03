@@ -3,7 +3,7 @@ import { defineEntry } from '../../../scripts/prepare/tools';
 export const getEntries = (cwd: string) => {
   const define = defineEntry(cwd);
   return [
-    // empty, right now, TDB what to do with this
+    // empty, right now, TBD what to do with this
     define('src/index.ts', ['node', 'browser'], true),
 
     define('src/node-logger/index.ts', ['node'], true),

@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { pathExistsSync } from 'fs-extra';
+import { pathExistsSync } from '@ndelangen/fs-extra-unified';
 import { getStorybookConfiguration } from './get-storybook-configuration';
 import type { SupportedFrameworks } from '@storybook/core/types';
 import type { CoreCommon_StorybookInfo, PackageJson } from '@storybook/core/types';

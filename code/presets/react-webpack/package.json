@@ -64,9 +64,11 @@
     "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
+    "@ndelangen/fs-extra-unified": "1.0.4--canary.5.5f6cfdd.0",
     "@storybook/core-webpack": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/react-docgen-typescript-plugin": "1.0.6--canary.9.0c3f3b7.0",
+    "@types/fs-extra": "^11.0.4",
     "@types/node": "^18.0.0",
     "@types/semver": "^7.3.4",
     "find-up": "^5.0.0",

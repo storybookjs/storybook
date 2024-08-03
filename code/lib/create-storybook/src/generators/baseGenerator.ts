@@ -1,5 +1,5 @@
 import path, { dirname } from 'path';
-import fse from 'fs-extra';
+import fse from '@ndelangen/fs-extra-unified';
 import { dedent } from 'ts-dedent';
 import ora from 'ora';
 import invariant from 'tiny-invariant';

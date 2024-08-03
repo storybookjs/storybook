@@ -1,4 +1,4 @@
-import { pathExists } from 'fs-extra';
+import { pathExists } from '@ndelangen/fs-extra-unified';
 import dirSize from 'fast-folder-size';
 import { promisify } from 'util';
 import { join } from 'path';

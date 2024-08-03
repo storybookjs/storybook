@@ -1,6 +1,5 @@
 // noinspection JSUnusedGlobalSymbols
 
-import * as fs from 'fs-extra';
 import type { RequestHandler } from 'express';
 import type { ViteDevServer } from 'vite';
 import express from 'express';
@@ -12,6 +11,8 @@ import { transformIframeHtml } from './transform-iframe-html';
 import { createViteServer } from './vite-server';
 import { build as viteBuild } from './build';
 import type { ViteBuilder } from './types';
+import { readFile } from 'node:fs/promises';
+import { copy } from '@ndelangen/fs-extra-unified';
 
 export { withoutVitePlugins } from './utils/without-vite-plugins';
 export { hasVitePlugins } from './utils/has-vite-plugins';
@@ -32,7 +33,7 @@ function iframeMiddleware(options: Options, server: ViteDevServer): RequestHandl
       return;
     }
 
-    const indexHtml = await fs.readFile(
+    const indexHtml = await readFile(
       require.resolve('@storybook/builder-vite/input/iframe.html'),
       'utf-8'
     );
@@ -83,7 +84,7 @@ export const build: ViteBuilder['build'] = async ({ options }) => {
   const previewDirOrigin = previewResolvedDir;
   const previewDirTarget = join(options.outputDir || '', `sb-preview`);
 
-  const previewFiles = fs.copy(previewDirOrigin, previewDirTarget, {
+  const previewFiles = copy(previewDirOrigin, previewDirTarget, {
     filter: (src) => {
       const { ext } = parse(src);
       if (ext) {

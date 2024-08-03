@@ -1,14 +1,16 @@
 /* eslint-disable no-underscore-dangle */
 import { describe, it, expect, vi } from 'vitest';
 import path from 'path';
-import * as fsExtraImp from 'fs-extra';
+import * as fsExtraImp from '@ndelangen/fs-extra-unified';
 import { execaCommand } from 'execa';
 import { run as version } from '../version';
 
 import type * as MockedFSToExtra from '../../../code/__mocks__/fs-extra';
 
-vi.mock('fs-extra', async () => import('../../../code/__mocks__/fs-extra'));
+vi.mock('@ndelangen/fs-extra-unified', async () => import('../../../code/__mocks__/fs-extra'));
+vi.mock('node:fs/promises', async () => import('../../../code/__mocks__/fs-extra'));
 const fsExtra = fsExtraImp as unknown as typeof MockedFSToExtra;
+
 
 vi.mock('../../../code/core/src/common/src/versions', () => ({
   '@storybook/addon-a11y': '7.1.0-alpha.29',
@@ -49,6 +51,7 @@ describe('Version', () => {
       [VERSIONS_PATH]: `export default { "@storybook/addon-a11y": "1.0.0" };`,
     });
 
+
     await expect(version({ releaseType: 'invalid' })).rejects.toThrowErrorMatchingInlineSnapshot(`
       [ZodError: [
   {
@@ -79,6 +82,7 @@ describe('Version', () => {
       [VERSIONS_PATH]: `export default { "@storybook/addon-a11y": "1.0.0" };`,
     });
 
+
     await expect(version({ releaseType: 'major', preId: 'alpha' })).rejects
       .toThrowErrorMatchingInlineSnapshot(`
       [ZodError: [
@@ -97,6 +101,8 @@ describe('Version', () => {
       [MANAGER_API_VERSION_PATH]: `export const version = "1.0.0";`,
       [VERSIONS_PATH]: `export default { "@storybook/addon-a11y": "1.0.0" };`,
     });
+
+    
 
     await expect(version({ releaseType: 'major', exact: '1.0.0' })).rejects
       .toThrowErrorMatchingInlineSnapshot(`

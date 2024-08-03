@@ -1,4 +1,4 @@
-import { pathExists } from 'fs-extra';
+import { pathExists } from '@ndelangen/fs-extra-unified';
 import { resolve } from 'path';
 
 import { exec } from '../utils/exec';

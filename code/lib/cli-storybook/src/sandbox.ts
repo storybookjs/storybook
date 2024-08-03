@@ -5,7 +5,8 @@ import boxen from 'boxen';
 import { dedent } from 'ts-dedent';
 import { downloadTemplate } from 'giget';
 
-import { existsSync, readdir } from 'fs-extra';
+import { readdir } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import invariant from 'tiny-invariant';
 import { lt, prerelease } from 'semver';
 import type { Template, TemplateKey } from './sandbox-templates';

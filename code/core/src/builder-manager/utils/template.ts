@@ -1,5 +1,5 @@
 import { dirname, join } from 'node:path';
-import fs from 'fs-extra';
+import fs from '@ndelangen/fs-extra-unified';
 
 import { render } from 'ejs';
 

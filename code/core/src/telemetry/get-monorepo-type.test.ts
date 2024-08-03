@@ -1,11 +1,11 @@
 /* eslint-disable no-underscore-dangle */
 import { describe, it, expect, vi } from 'vitest';
-import * as fsExtra from 'fs-extra';
+import * as fsExtra from '@ndelangen/fs-extra-unified';
 import path from 'node:path';
 
 import { getMonorepoType, monorepoConfigs } from './get-monorepo-type';
 
-vi.mock('fs-extra', async () => import('../../../__mocks__/fs-extra'));
+vi.mock('@ndelangen/fs-extra-unified', async () => import('../../../__mocks__/fs-extra'));
 
 vi.mock('@storybook/core/common', async (importOriginal) => {
   return {

@@ -1,4 +1,4 @@
-import fse, { readFile, readJson, writeJson } from 'fs-extra';
+import fse, { readFile, readJson, writeJson } from '@ndelangen/fs-extra-unified';
 import { dedent } from 'ts-dedent';
 import detectIndent from 'detect-indent';
 import prompts from 'prompts';

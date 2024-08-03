@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import fs from 'fs-extra';
+import fs from '@ndelangen/fs-extra-unified';
 import { join, relative } from 'node:path';
 import { logger } from '@storybook/core/node-logger';
 import { getDirectoryFromWorkingDir } from '@storybook/core/common';

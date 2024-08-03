@@ -1,5 +1,5 @@
 import { dirname, join, parse } from 'node:path';
-import fs from 'fs-extra';
+import fs from '@ndelangen/fs-extra-unified';
 import express from 'express';
 
 import { logger } from '@storybook/core/node-logger';

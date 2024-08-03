@@ -1,4 +1,4 @@
-import { readFile } from 'fs-extra';
+import { readFile } from 'node:fs/promises';
 import { resolve } from 'path';
 
 import { maxConcurrentTasks } from '../utils/maxConcurrentTasks';

@@ -4,7 +4,7 @@ import { getDirectoryFromWorkingDir } from '@storybook/core/common';
 import chalk from 'chalk';
 import type { Router } from 'express';
 import express from 'express';
-import { pathExists } from 'fs-extra';
+import { pathExists } from '@ndelangen/fs-extra-unified';
 import path, { basename, isAbsolute } from 'node:path';
 
 import { dedent } from 'ts-dedent';

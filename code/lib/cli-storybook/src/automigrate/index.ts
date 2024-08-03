@@ -1,7 +1,8 @@
 import prompts from 'prompts';
 import chalk from 'chalk';
 import boxen from 'boxen';
-import { createWriteStream, move, remove } from 'fs-extra';
+import { move, remove } from '@ndelangen/fs-extra-unified';
+import { createWriteStream } from 'node:fs';
 import { join } from 'path';
 import invariant from 'tiny-invariant';
 import semver from 'semver';

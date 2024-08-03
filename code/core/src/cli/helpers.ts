@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import fs from 'fs';
-import fse from 'fs-extra';
+import fse from '@ndelangen/fs-extra-unified';
 import path, { join } from 'path';
 import { coerce, satisfies } from 'semver';
 import stripJsonComments from 'strip-json-comments';

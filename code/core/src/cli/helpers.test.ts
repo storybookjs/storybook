@@ -1,5 +1,5 @@
 import { describe, beforeEach, it, expect, vi } from 'vitest';
-import fse from 'fs-extra';
+import fse from '@ndelangen/fs-extra-unified';
 
 import { sep } from 'path';
 import * as helpers from './helpers';
@@ -40,8 +40,8 @@ vi.mock('./dirs', () => ({
     normalizePath(`@storybook/${renderer}`),
 }));
 
-vi.mock('fs-extra', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('fs-extra')>();
+vi.mock('@ndelangen/fs-extra-unified', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ndelangen/fs-extra-unified')>();
   return {
     ...actual,
     ...fseMocks,

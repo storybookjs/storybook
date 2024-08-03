@@ -1,11 +1,11 @@
+import { readJson } from '@ndelangen/fs-extra-unified';
 import { join } from 'path';
-import fs from 'fs-extra';
 import ts from 'typescript';
 
 const run = async ({ cwd }: { cwd: string }) => {
   const {
     bundler: { tsConfig: tsconfigPath = 'tsconfig.json' },
-  } = await fs.readJson(join(cwd, 'package.json'));
+  } = await readJson(join(cwd, 'package.json'));
 
   const { options, fileNames } = getTSFilesAndConfig(tsconfigPath);
   const { program, host } = getTSProgramAndHost(fileNames, options);

@@ -46,6 +46,7 @@
     "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
+    "@ndelangen/fs-extra-unified": "1.0.4--canary.5.5f6cfdd.0",
     "@storybook/components": "workspace:^",
     "@storybook/csf": "^0.1.11",
     "@storybook/global": "^5.0.0",

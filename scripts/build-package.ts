@@ -1,5 +1,5 @@
 import { resolve, posix, sep } from 'path';
-import { readJSON } from 'fs-extra';
+import { readJSON } from '@ndelangen/fs-extra-unified';
 import prompts from 'prompts';
 import program from 'commander';
 import chalk from 'chalk';

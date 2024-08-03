@@ -1,4 +1,4 @@
-import fse from 'fs-extra';
+import fse from '@ndelangen/fs-extra-unified';
 import path from 'path';
 import { dedent } from 'ts-dedent';
 import { logger } from 'storybook/internal/node-logger';

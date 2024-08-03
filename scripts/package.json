@@ -62,6 +62,7 @@
     "@actions/core": "^1.10.1",
     "@fal-works/esbuild-plugin-global-externals": "^2.1.2",
     "@google-cloud/bigquery": "^6.2.0",
+    "@ndelangen/fs-extra-unified": "1.0.4--canary.5.5f6cfdd.0",
     "@nx/workspace": "18.0.6",
     "@octokit/graphql": "^5.0.5",
     "@octokit/request": "^8.1.2",

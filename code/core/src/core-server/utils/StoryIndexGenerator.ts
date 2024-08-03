@@ -1,7 +1,7 @@
 /* eslint-disable no-underscore-dangle */
 import path from 'node:path';
 import chalk from 'chalk';
-import fs from 'fs-extra';
+import {} from '@ndelangen/fs-extra-unified';
 import slash from 'slash';
 import invariant from 'tiny-invariant';
 import * as TsconfigPaths from 'tsconfig-paths';
@@ -29,6 +29,8 @@ import { dedent } from 'ts-dedent';
 import { autoName } from './autoName';
 import { IndexingError, MultipleIndexingError } from './IndexingError';
 import { addStats, type IndexStatsSummary } from './summarizeStats';
+import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 
 // Extended type to keep track of the csf meta id so we know the component id when referencing docs in `extractDocs`
 type StoryIndexEntryWithExtra = StoryIndexEntry & {
@@ -313,7 +315,7 @@ export class StoryIndexGenerator {
     const absoluteComponentPath = path.resolve(path.dirname(absolutePath), rawPath);
     const existing = ['', '.js', '.ts', '.jsx', '.tsx', '.mjs', '.mts']
       .map((ext) => `${absoluteComponentPath}${ext}`)
-      .find((candidate) => fs.existsSync(candidate));
+      .find((candidate) => existsSync(candidate));
     if (existing) {
       const relativePath = path.relative(this.options.workingDir, existing);
       return slash(normalizeStoryPath(relativePath));
@@ -421,7 +423,7 @@ export class StoryIndexGenerator {
       const normalizedPath = normalizeStoryPath(relativePath);
       const importPath = slash(normalizedPath);
 
-      const content = await fs.readFile(absolutePath, 'utf8');
+      const content = await readFile(absolutePath, 'utf8');
 
       const { analyze } = await import('@storybook/docs-mdx');
       const result = await analyze(content);
@@ -728,9 +730,9 @@ export class StoryIndexGenerator {
   async getPreviewCode() {
     const previewFile = ['js', 'jsx', 'ts', 'tsx', 'mjs', 'cjs', 'mts']
       .map((ext) => path.join(this.options.configDir, `preview.${ext}`))
-      .find((fname) => fs.existsSync(fname));
+      .find((fname) => existsSync(fname));
 
-    return previewFile && (await fs.readFile(previewFile, 'utf-8')).toString();
+    return previewFile && (await readFile(previewFile, 'utf-8')).toString();
   }
 
   getProjectTags(previewCode?: string) {

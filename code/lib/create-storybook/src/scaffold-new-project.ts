@@ -1,7 +1,8 @@
 import boxen from 'boxen';
 import chalk from 'chalk';
 import execa from 'execa';
-import { readdirSync, remove } from 'fs-extra';
+import { remove } from '@ndelangen/fs-extra-unified';
+import { readdirSync } from 'node:fs';
 import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
 

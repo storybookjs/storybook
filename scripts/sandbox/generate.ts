@@ -2,7 +2,13 @@ import { join, relative } from 'path';
 import type { Options as ExecaOptions } from 'execa';
 import pLimit from 'p-limit';
 import prettyTime from 'pretty-hrtime';
-import { copy, emptyDir, ensureDir, move, remove, rename, writeFile } from 'fs-extra';
+import {
+  copy,
+  emptyDir,
+  ensureDir,
+  move,
+  remove,
+} from '@ndelangen/fs-extra-unified';
 import { program } from 'commander';
 import { execaCommand } from 'execa';
 import { esMain } from '../utils/esmain';
@@ -26,6 +32,7 @@ import {
 } from '../utils/constants';
 import * as ghActions from '@actions/core';
 import { dedent } from 'ts-dedent';
+import { rename, writeFile } from 'node:fs/promises';
 
 const isCI = process.env.GITHUB_ACTIONS === 'true';
 

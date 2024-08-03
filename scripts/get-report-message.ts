@@ -1,4 +1,4 @@
-import { readJson } from 'fs-extra';
+import { readJson } from '@ndelangen/fs-extra-unified';
 import { join } from 'path';
 import { execaCommand } from 'execa';
 import { esMain } from './utils/esmain';

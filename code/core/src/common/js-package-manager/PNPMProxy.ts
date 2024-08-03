@@ -1,4 +1,4 @@
-import { pathExistsSync } from 'fs-extra';
+import { pathExistsSync } from '@ndelangen/fs-extra-unified';
 import dedent from 'ts-dedent';
 import { existsSync, readFileSync } from 'node:fs';
 import { findUpSync } from 'find-up';

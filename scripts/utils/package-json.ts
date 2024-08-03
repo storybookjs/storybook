@@ -1,4 +1,4 @@
-import { readJSON, writeJSON } from 'fs-extra';
+import { readJSON, writeJSON } from '@ndelangen/fs-extra-unified';
 import { join } from 'path';
 
 export async function updatePackageScripts({ cwd, prefix }: { cwd: string; prefix: string }) {

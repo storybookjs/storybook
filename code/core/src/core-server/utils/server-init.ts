@@ -1,6 +1,6 @@
 import { logger } from '@storybook/core/node-logger';
 import type { Express } from 'express';
-import { readFile } from 'fs-extra';
+import { readFile } from 'node:fs/promises';
 import http from 'http';
 import https from 'https';
 

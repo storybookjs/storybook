@@ -1,7 +1,7 @@
 import { createRequire } from "node:module";
 // @ts-ignore no types
 import moduleAlias from "module-alias";
-import { getAlias as getNextImageAlias } from "../plugins/next-image/plugin";
+import { getAlias as getNextImageAlias } from "../plugins/next-image/alias";
 import { getAlias as getNextMocksAlias } from "../plugins/next-mocks/plugin";
 
 const require = createRequire(import.meta.url);

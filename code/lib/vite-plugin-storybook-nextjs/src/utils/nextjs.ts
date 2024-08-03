@@ -7,17 +7,9 @@ import {
   lockfilePatchPromise,
 } from "next/dist/build/swc/index.js";
 import type { NextConfigComplete } from "next/dist/server/config-shared.js";
-import { CONFIG_FILES } from "next/dist/shared/lib/constants.js";
 
 const nextDistPath =
   /(next[\\/]dist[\\/]shared[\\/]lib)|(next[\\/]dist[\\/]client)|(next[\\/]dist[\\/]pages)/;
-
-/**
- * Get the potential paths to the Next.js configuration files
- */
-export async function getConfigPaths(dir: string) {
-  return CONFIG_FILES.map((file) => join(dir, file));
-}
 
 /**
  * Set up the environment variables for the Next.js project

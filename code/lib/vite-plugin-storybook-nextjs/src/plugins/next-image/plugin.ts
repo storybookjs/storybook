@@ -2,13 +2,13 @@ import fs from "node:fs";
 import { createRequire } from "node:module";
 import { cpus } from "node:os";
 import path from "node:path";
-import { decode, encode } from "node:querystring";
-import { URL, fileURLToPath } from "node:url";
+import { decode } from "node:querystring";
 import imageSizeOf from "image-size";
 import type { NextConfigComplete } from "next/dist/server/config-shared.js";
 import { dedent } from "ts-dedent";
 import type { Plugin } from "vite";
 import { VITEST_PLUGIN_NAME, isVitestEnv } from "../../utils";
+import { getAlias } from "./alias";
 
 const includePattern = /\.(png|jpg|jpeg|gif|webp|avif|ico|bmp|svg)$/;
 const excludeImporterPattern = /\.(css|scss|sass)$/;
@@ -33,16 +33,6 @@ try {
     "You have to install sharp in order to use image optimization features in Next.js. AVIF support is also disabled.",
   );
 }
-
-type Env = "browser" | "node";
-
-const getEntryPoint = (subPath: string, env: Env) =>
-  require.resolve(`${VITEST_PLUGIN_NAME}/${env}/mocks/${subPath}`);
-
-export const getAlias = (env: Env) => ({
-  "sb-original/default-loader": getEntryPoint("image-default-loader", env),
-  "sb-original/image-context": getEntryPoint("image-context", env),
-});
 
 export function vitePluginNextImage(
   nextConfigResolver: PromiseWithResolvers<NextConfigComplete>,

@@ -1,7 +1,6 @@
 /* eslint-disable no-underscore-dangle */
 import path from 'node:path';
 import chalk from 'chalk';
-import {} from '@ndelangen/fs-extra-unified';
 import slash from 'slash';
 import invariant from 'tiny-invariant';
 import * as TsconfigPaths from 'tsconfig-paths';

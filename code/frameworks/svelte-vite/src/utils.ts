@@ -1,7 +1,6 @@
 import type { PluginOption } from 'vite';
 import type { Options } from 'storybook/internal/types';
 import { dedent } from 'ts-dedent';
-import { hasVitePlugins } from '@storybook/builder-vite';
 
 /**
  * A migration step that ensures the svelte-vite framework still supports SvelteKit,
@@ -17,6 +16,7 @@ export async function handleSvelteKit(plugins: PluginOption[], options: Options)
   const frameworkPreset = await options.presets.apply('framework', {}, options);
   const framework = typeof frameworkPreset === 'string' ? frameworkPreset : frameworkPreset.name;
 
+  const { hasVitePlugins } = await import('@storybook/builder-vite');
   const hasSvelteKitPlugins = await hasVitePlugins(plugins, [
     'vite-plugin-svelte-kit',
     'vite-plugin-sveltekit-setup',

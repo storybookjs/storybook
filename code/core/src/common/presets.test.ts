@@ -439,7 +439,7 @@ describe('resolveAddonName', () => {
 
   it('should error on invalid inputs', async () => {
     // @ts-expect-error (invalid use)
-    expect(() => await resolveAddonName({} as any, null, {})).toThrow();
+    await expect(async () => resolveAddonName({} as any, null, {})).rejects.toThrow();
   });
 });
 

@@ -9,9 +9,14 @@ function sortExtensions() {
 const possibleExtensions = sortExtensions();
 
 export async function getInterpretedFile(pathToFile: string) {
-  return possibleExtensions
-    .map((ext) => (pathToFile.endsWith(ext) ? pathToFile : `${pathToFile}${ext}`))
-    .find((candidate) => pathExists(candidate));
+  for (const ext of possibleExtensions) {
+    const candidate = pathToFile.endsWith(ext) ? pathToFile : `${pathToFile}${ext}`;
+    if (await pathExists(candidate)) {
+      return candidate;
+    }
+  }
+
+  return undefined;
 }
 
 export async function getInterpretedFileWithExt(pathToFile: string) {

@@ -125,16 +125,16 @@ const config: StorybookConfig = {
   viteFinal: (viteConfig, { configType }) =>
     mergeConfig(viteConfig, {
       resolve: {
-        alias: {
-          ...(configType === 'DEVELOPMENT'
-            ? {
-                '@storybook/components': componentsPath,
-                'storybook/internal/components': componentsPath,
-                '@storybook/manager-api': managerApiPath,
-                'storybook/internal/manager-api': managerApiPath,
-              }
-            : {}),
-        },
+        // alias: {
+        //   ...(configType === 'DEVELOPMENT'
+        //     ? {
+        //         '@storybook/components': componentsPath,
+        //         'storybook/internal/components': componentsPath,
+        //         '@storybook/manager-api': managerApiPath,
+        //         'storybook/internal/manager-api': managerApiPath,
+        //       }
+        //     : {}),
+        // },
       },
       optimizeDeps: {
         force: true,

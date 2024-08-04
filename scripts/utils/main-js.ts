@@ -14,7 +14,7 @@ export async function readMainConfig({ cwd }: { cwd: string }) {
     );
   }
 
-  const mainConfigPath = getInterpretedFile(resolve(configDir, 'main'));
+  const mainConfigPath = await getInterpretedFile(resolve(configDir, 'main'));
   return readConfig(mainConfigPath);
 }
 

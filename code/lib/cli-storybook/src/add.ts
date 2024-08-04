@@ -31,7 +31,7 @@ export const getVersionSpecifier = (addon: string) => {
   return [addon, undefined] as const;
 };
 
-const requireMain = (configDir: string) => {
+const requireMain = async (configDir: string) => {
   const absoluteConfigDir = isAbsolute(configDir) ? configDir : join(process.cwd(), configDir);
   const mainFile = join(absoluteConfigDir, 'main');
 
@@ -91,7 +91,7 @@ export async function add(
     return;
   }
 
-  if (checkInstalled(addonName, requireMain(configDir))) {
+  if (checkInstalled(addonName, await requireMain(configDir))) {
     throw new Error(dedent`
       Addon ${addonName} is already installed; we skipped adding it to your ${mainConfig}.
     `);

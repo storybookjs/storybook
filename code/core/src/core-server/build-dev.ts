@@ -133,7 +133,9 @@ export async function buildDevStandalone(
       dedent(`Using CommonJS in your main configuration file is deprecated with Vite.
               - Refer to the migration guide at https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#commonjs-with-vite-is-deprecated`);
 
-    const mainJsPath = serverResolve(resolve(options.configDir || '.storybook', 'main')) as string;
+    const mainJsPath = (await serverResolve(
+      resolve(options.configDir || '.storybook', 'main')
+    )) as string;
     if (/\.c[jt]s$/.test(mainJsPath)) {
       deprecate(deprecationMessage);
     }
@@ -146,7 +148,8 @@ export async function buildDevStandalone(
     }
   }
 
-  const resolvedRenderer = renderer && resolveAddonName(options.configDir, renderer, options);
+  const resolvedRenderer =
+    renderer && (await resolveAddonName(options.configDir, renderer, options));
 
   // Load second pass: all presets are applied in order
   presets = await loadAllPresets({

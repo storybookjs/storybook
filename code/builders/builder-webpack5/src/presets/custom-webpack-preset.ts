@@ -37,7 +37,7 @@ export async function webpack(config: Configuration, options: Options) {
 
   // Check whether user has a custom webpack config file and
   // return the (extended) base configuration if it's not available.
-  const customConfig = loadCustomWebpackConfig(configDir);
+  const customConfig = await loadCustomWebpackConfig(configDir);
 
   if (typeof customConfig === 'function') {
     logger.info('=> Loading custom Webpack config (full-control mode).');

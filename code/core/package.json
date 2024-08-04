@@ -279,6 +279,7 @@
     "process": "^0.11.10",
     "recast": "^0.23.5",
     "semver": "^7.6.2",
+    "ts-import": "^5.0.0-beta.0",
     "ws": "^8.2.3"
   },
   "devDependencies": {

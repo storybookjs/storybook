@@ -136,7 +136,10 @@ const config: StorybookConfig = {
             : {}),
         },
       },
-      optimizeDeps: { force: true },
+      optimizeDeps: {
+        force: true,
+        exclude: ['firebase-functions'],
+      },
       build: {
         // disable sourcemaps in CI to not run out of memory
         sourcemap: process.env.CI !== 'true',

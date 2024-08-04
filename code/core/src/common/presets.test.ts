@@ -380,66 +380,66 @@ describe('presets', () => {
   });
 });
 describe('resolveAddonName', () => {
-  it('should resolve packages with metadata (relative path)', () => {
+  it('should resolve packages with metadata (relative path)', async () => {
     mockPreset('./local/preset', {
       presets: [],
     });
-    expect(resolveAddonName({} as any, './local/preset', {})).toEqual({
+    expect(await resolveAddonName({} as any, './local/preset', {})).toEqual({
       name: './local/preset',
       type: 'presets',
     });
   });
 
-  it('should resolve packages with metadata (absolute path)', () => {
+  it('should resolve packages with metadata (absolute path)', async () => {
     mockPreset('/absolute/preset', {
       presets: [],
     });
-    expect(resolveAddonName({} as any, '/absolute/preset', {})).toEqual({
+    expect(await resolveAddonName({} as any, '/absolute/preset', {})).toEqual({
       name: '/absolute/preset',
       type: 'presets',
     });
   });
 
-  it('should resolve packages without metadata', () => {
-    expect(resolveAddonName({} as any, '@storybook/preset-create-react-app', {})).toEqual({
+  it('should resolve packages without metadata', async () => {
+    expect(await resolveAddonName({} as any, '@storybook/preset-create-react-app', {})).toEqual({
       name: '@storybook/preset-create-react-app',
       type: 'presets',
     });
   });
 
-  it('should resolve managerEntries', () => {
-    expect(resolveAddonName({} as any, '@storybook/addon-actions/register.js', {})).toEqual({
+  it('should resolve managerEntries', async () => {
+    expect(await resolveAddonName({} as any, '@storybook/addon-actions/register.js', {})).toEqual({
       name: '@storybook/addon-actions/register.js',
       managerEntries: [path.normalize('@storybook/addon-actions/register')],
       type: 'virtual',
     });
   });
 
-  it('should resolve managerEntries from new /manager path', () => {
-    expect(resolveAddonName({} as any, '@storybook/addon-actions/manager', {})).toEqual({
+  it('should resolve managerEntries from new /manager path', async () => {
+    expect(await resolveAddonName({} as any, '@storybook/addon-actions/manager', {})).toEqual({
       name: '@storybook/addon-actions/manager',
       managerEntries: [path.normalize('@storybook/addon-actions/manager')],
       type: 'virtual',
     });
   });
 
-  it('should resolve presets', () => {
-    expect(resolveAddonName({} as any, '@storybook/addon-docs/preset', {})).toEqual({
+  it('should resolve presets', async () => {
+    expect(await resolveAddonName({} as any, '@storybook/addon-docs/preset', {})).toEqual({
       name: '@storybook/addon-docs/preset',
       type: 'presets',
     });
   });
 
-  it('should resolve preset packages', () => {
-    expect(resolveAddonName({} as any, '@storybook/addon-essentials', {})).toEqual({
+  it('should resolve preset packages', async () => {
+    expect(await resolveAddonName({} as any, '@storybook/addon-essentials', {})).toEqual({
       name: '@storybook/addon-essentials',
       type: 'presets',
     });
   });
 
-  it('should error on invalid inputs', () => {
+  it('should error on invalid inputs', async () => {
     // @ts-expect-error (invalid use)
-    expect(() => resolveAddonName({} as any, null, {})).toThrow();
+    expect(() => await resolveAddonName({} as any, null, {})).toThrow();
   });
 });
 

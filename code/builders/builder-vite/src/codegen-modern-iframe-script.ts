@@ -7,7 +7,7 @@ export async function generateModernIframeScriptCode(options: Options, projectRo
   const { presets, configDir } = options;
   const frameworkName = await getFrameworkName(options);
 
-  const previewOrConfigFile = loadPreviewOrConfigFile({ configDir });
+  const previewOrConfigFile = await loadPreviewOrConfigFile({ configDir });
   const previewAnnotations = await presets.apply<PreviewAnnotation[]>(
     'previewAnnotations',
     [],

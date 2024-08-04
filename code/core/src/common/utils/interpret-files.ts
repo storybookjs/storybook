@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { pathExists } from '@ndelangen/fs-extra-unified';
 
 export const boost = new Set(['.js', '.jsx', '.ts', '.tsx', '.cts', '.mts', '.cjs', '.mjs']);
 
@@ -8,14 +8,24 @@ function sortExtensions() {
 
 const possibleExtensions = sortExtensions();
 
-export function getInterpretedFile(pathToFile: string) {
-  return possibleExtensions
-    .map((ext) => (pathToFile.endsWith(ext) ? pathToFile : `${pathToFile}${ext}`))
-    .find((candidate) => existsSync(candidate));
+export async function getInterpretedFile(pathToFile: string) {
+  for (const ext of possibleExtensions) {
+    const candidate = pathToFile.endsWith(ext) ? pathToFile : `${pathToFile}${ext}`;
+    if (await pathExists(candidate)) {
+      return candidate;
+    }
+  }
+
+  return undefined;
 }
 
-export function getInterpretedFileWithExt(pathToFile: string) {
-  return possibleExtensions
-    .map((ext) => ({ path: pathToFile.endsWith(ext) ? pathToFile : `${pathToFile}${ext}`, ext }))
-    .find((candidate) => existsSync(candidate.path));
+export async function getInterpretedFileWithExt(pathToFile: string) {
+  for (const ext of possibleExtensions) {
+    const candidate = pathToFile.endsWith(ext) ? pathToFile : `${pathToFile}${ext}`;
+    if (await pathExists(candidate)) {
+      return { path: candidate, ext };
+    }
+  }
+
+  return undefined;
 }

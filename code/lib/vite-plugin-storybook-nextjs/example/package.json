@@ -29,7 +29,7 @@
     "@storybook/addon-onboarding": "0.0.0-pr-28800-sha-2528064a",
     "@storybook/addon-toolbars": "0.0.0-pr-28800-sha-2528064a",
     "@storybook/blocks": "0.0.0-pr-28800-sha-2528064a",
-    "@storybook/experimental-vitest-plugin": "0.0.2",
+    "@storybook/experimental-vitest-plugin": "0.0.4",
     "@storybook/nextjs-vite": "0.0.0-pr-28800-sha-2528064a",
     "@storybook/react": "0.0.0-pr-28800-sha-2528064a",
     "@storybook/test": "0.0.0-pr-28800-sha-2528064a",

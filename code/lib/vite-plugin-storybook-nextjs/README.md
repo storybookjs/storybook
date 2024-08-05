@@ -46,9 +46,9 @@ export default defineConfig({
 
 This plugin is necessary to run portable stories in Vitest, as it provides the necessary Next.js features to ensure that your components are tested in an environment that closely mirrors production.
 
-#### Experimental @storybook/experimental-vitest-plugin
+#### Experimental @storybook/experimental-addon-vitest
 
-The experimental `@storybook/experimental-vitest-plugin` can be used to automatically transform your stories at Vitest runtime to in-memory test files. This allows you to run your stories in a Vitest environment without needing to manually transform your stories. Please visit https://github.com/storybookjs/vitest-plugin for more information.
+The experimental `@storybook/experimental-addon-vitest` can be used to automatically transform your stories at Vitest runtime to in-memory test files. This allows you to run your stories in a Vitest environment without needing to manually transform your stories. Please visit https://github.com/storybookjs/vitest-plugin for more information.
 
 ## Configuration Options
 

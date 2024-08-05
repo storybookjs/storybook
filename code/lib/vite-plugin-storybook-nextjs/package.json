@@ -2,20 +2,11 @@
   "name": "vite-plugin-storybook-nextjs",
   "version": "0.0.14",
   "description": "",
-  "keywords": [
-    "vite-plugin",
-    "nextjs",
-    "storybook",
-    "vitest"
-  ],
+  "keywords": ["vite-plugin", "nextjs", "storybook", "vitest"],
   "author": "Storybook Bot <storybookbot@gmail.com>",
   "license": "MIT",
-  "sideEffects": [
-    "./src/polyfills/promise-with-resolvers.ts"
-  ],
-  "files": [
-    "dist"
-  ],
+  "sideEffects": ["./src/polyfills/promise-with-resolvers.ts"],
+  "files": ["dist"],
   "type": "module",
   "exports": {
     ".": {
@@ -28,6 +19,7 @@
     "./browser/mocks/headers": "./dist/plugins/next-mocks/alias/headers/index.js",
     "./browser/mocks/router": "./dist/plugins/next-mocks/alias/router/index.js",
     "./browser/mocks/server-only": "./dist/plugins/next-mocks/alias/rsc/server-only.js",
+    "./browser/mocks/dynamic": "./dist/plugins/next-mocks/alias/dynamic/index.js",
     "./browser/mocks/image": "./dist/plugins/next-image/alias/next-image.js",
     "./browser/mocks/legacy-image": "./dist/plugins/next-image/alias/next-legacy-image.js",
     "./browser/mocks/image-default-loader": "./dist/plugins/next-image/alias/image-default-loader.js",
@@ -37,6 +29,7 @@
     "./node/mocks/headers": "./dist/plugins/next-mocks/alias/headers/index.cjs",
     "./node/mocks/router": "./dist/plugins/next-mocks/alias/router/index.cjs",
     "./node/mocks/server-only": "./dist/plugins/next-mocks/alias/rsc/server-only.cjs",
+    "./node/mocks/dynamic": "./dist/plugins/next-mocks/alias/dynamic/index.cjs",
     "./node/mocks/image": "./dist/plugins/next-image/alias/next-image.cjs",
     "./node/mocks/legacy-image": "./dist/plugins/next-image/alias/next-legacy-image.cjs",
     "./node/mocks/image-default-loader": "./dist/plugins/next-image/alias/image-default-loader.cjs",
@@ -77,6 +70,7 @@
   "dependencies": {
     "@next/env": "^14.2.5",
     "image-size": "^1.1.1",
+    "magic-string": "^0.30.11",
     "module-alias": "^2.2.3",
     "ts-dedent": "^2.2.0"
   },

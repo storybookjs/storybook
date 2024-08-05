@@ -14,6 +14,7 @@ import {
   PHASE_PRODUCTION_BUILD,
   PHASE_TEST,
 } from "next/dist/shared/lib/constants.js";
+import { vitePluginNextDynamic } from "./plugins/next-dynamic/plugin";
 import { vitePluginNextImage } from "./plugins/next-image/plugin";
 import { vitePluginNextMocks } from "./plugins/next-mocks/plugin";
 import { isVitestEnv } from "./utils";
@@ -98,6 +99,7 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin[] {
     vitePluginNextEnv(dir, nextConfigResolver),
     vitePluginNextImage(nextConfigResolver),
     vitePluginNextMocks(),
+    vitePluginNextDynamic(),
   ];
 }
 

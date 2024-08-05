@@ -15,6 +15,7 @@ export default defineConfig([
       "src/plugins/next-mocks/alias/navigation/index.ts",
       "src/plugins/next-mocks/alias/router/index.ts",
       "src/plugins/next-mocks/alias/rsc/server-only.ts",
+      "src/plugins/next-mocks/alias/dynamic/index.tsx",
       "src/mocks/storybook.global.ts",
     ],
     splitting: false,

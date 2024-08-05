@@ -24,7 +24,7 @@ import type { Plugin } from "vite";
 export const vitePluginNextDynamic = () =>
   ({
     name: "vite-plugin-storybook-nextjs-dynamic",
-    transform(code) {
+    transform(code, id) {
       // Regex to match the dynamic import pattern
       const dynamicImportRegex =
         /dynamic\(\s*async\s*\(\s*\)\s*=>\s*\{\s*typeof\s*require\.resolveWeak\s*!==\s*"undefined"\s*&&\s*require\.resolveWeak\(([^)]+)\);\s*\}/g;
@@ -32,11 +32,11 @@ export const vitePluginNextDynamic = () =>
       // Check if the code matches the pattern
       if (dynamicImportRegex.test(code)) {
         const s = new MagicString(code);
+        dynamicImportRegex.lastIndex = 0;
 
-        let match: RegExpExecArray | null;
+        let match = dynamicImportRegex.exec(code);
 
-        // biome-ignore lint/suspicious/noAssignInExpressions: <explanation>
-        while ((match = dynamicImportRegex.exec(code)) !== null) {
+        while (match !== null) {
           const [fullMatch, importPath] = match;
 
           // Construct the new import statement
@@ -44,6 +44,7 @@ export const vitePluginNextDynamic = () =>
 
           // Replace the old code with the new import statement
           s.overwrite(match.index, match.index + fullMatch.length, newImport);
+          match = dynamicImportRegex.exec(code);
         }
 
         return {

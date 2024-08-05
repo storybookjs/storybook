@@ -19,7 +19,8 @@
       ".vite-inspect/**/*",
       "**/node_modules/**/*",
       "example/storybook-static/**/*",
-      ".tsup/**"
+      ".tsup/**",
+      "package.json"
     ]
   }
 }

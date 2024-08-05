@@ -105,8 +105,10 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
     const context: StoryContext<TRenderer> = prepareContext({
       hooks: new HooksContext(),
       globals: {
+        // TODO: remove loading from globalTypes in 9.0
         ...globalsFromGlobalTypes,
         ...normalizedProjectAnnotations.initialGlobals,
+        ...story.storyGlobals,
       },
       args: { ...story.initialArgs },
       viewMode: 'story',
@@ -115,6 +117,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
       step: (label, play) => story.runStep(label, play, context),
       canvasElement: null!,
       canvas: {} as Canvas,
+      globalTypes: normalizedProjectAnnotations.globalTypes,
       ...story,
       context: null!,
       mount: null!,

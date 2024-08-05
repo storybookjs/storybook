@@ -7,7 +7,8 @@ import { IconSymbols } from './IconSymbols';
 
 export default {
   title: 'Sidebar/TreeNode',
-  parameters: { layout: 'fullscreen' },
+  parameters: { layout: 'padded' },
+  globals: { sb_theme: 'side-by-side' },
   component: StoryNode,
   decorators: [
     (StoryFn: any) => (

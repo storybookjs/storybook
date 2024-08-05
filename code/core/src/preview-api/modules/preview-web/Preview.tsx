@@ -35,6 +35,7 @@ import type {
   StoryId,
   StoryRenderOptions,
   SetGlobalsPayload,
+  GlobalsUpdatedPayload,
 } from '@storybook/core/types';
 import {
   CalledPreviewMethodBeforeInitializationError,
@@ -102,7 +103,7 @@ export class Preview<TRenderer extends Renderer> {
   // Create a proxy object for `__STORYBOOK_STORY_STORE__` and `__STORYBOOK_PREVIEW__.storyStore`
   // That proxies through to the store once ready, and errors beforehand. This means we can set
   // `__STORYBOOK_STORY_STORE__ = __STORYBOOK_PREVIEW__.storyStore` without having to wait, and
-  // simiarly integrators can access the `storyStore` on the preview at any time, although
+  // similarly integrators can access the `storyStore` on the preview at any time, although
   // it is considered deprecated and we will no longer allow access in 9.0
   get storyStore() {
     return new Proxy(
@@ -117,7 +118,7 @@ export class Preview<TRenderer extends Renderer> {
           throw new StoryStoreAccessedBeforeInitializationError();
         },
       }
-    );
+    ) as StoryStore<TRenderer>;
   }
 
   // INITIALIZATION
@@ -222,7 +223,7 @@ export class Preview<TRenderer extends Renderer> {
       throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'emitGlobals' });
 
     const payload: SetGlobalsPayload = {
-      globals: this.storyStoreValue.globals.get() || {},
+      globals: this.storyStoreValue.userGlobals.get() || {},
       globalTypes: this.storyStoreValue.projectAnnotations.globalTypes || {},
     };
     this.channel.emit(SET_GLOBALS, payload);
@@ -290,17 +291,44 @@ export class Preview<TRenderer extends Renderer> {
     await this.storyStoreValue.onStoriesChanged({ importFn, storyIndex });
   }
 
-  async onUpdateGlobals({ globals }: { globals: Globals }) {
-    if (!this.storyStoreValue)
+  async onUpdateGlobals({
+    globals: updatedGlobals,
+    currentStory,
+  }: {
+    globals: Globals;
+    currentStory?: PreparedStory<TRenderer>;
+  }) {
+    if (!this.storyStoreValue) {
+      await this.storeInitializationPromise;
+    }
+    if (!this.storyStoreValue) {
       throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'onUpdateGlobals' });
-    this.storyStoreValue.globals.update(globals);
+    }
+
+    this.storyStoreValue.userGlobals.update(updatedGlobals);
+
+    if (currentStory) {
+      const { initialGlobals, storyGlobals, userGlobals, globals } =
+        this.storyStoreValue.getStoryContext(currentStory);
+      this.channel.emit(GLOBALS_UPDATED, {
+        initialGlobals,
+        userGlobals,
+        storyGlobals,
+        globals,
+      } satisfies GlobalsUpdatedPayload);
+    } else {
+      // If there is no known selected story (e.g. if we are in docs mode), the userGlobals
+      // are not overridden.
+      const { initialGlobals, globals } = this.storyStoreValue.userGlobals;
+      this.channel.emit(GLOBALS_UPDATED, {
+        initialGlobals,
+        userGlobals: globals,
+        storyGlobals: {},
+        globals,
+      } satisfies GlobalsUpdatedPayload);
+    }
 
     await Promise.all(this.storyRenders.map((r) => r.rerender()));
-
-    this.channel.emit(GLOBALS_UPDATED, {
-      globals: this.storyStoreValue.globals.get(),
-      initialGlobals: this.storyStoreValue.globals.initialGlobals,
-    });
   }
 
   async onUpdateArgs({ storyId, updatedArgs }: { storyId: StoryId; updatedArgs: Args }) {

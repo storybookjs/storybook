@@ -101,7 +101,6 @@ const content = Object.entries(panels).map(([k, v]) => (
 ));
 
 export default {
-  title: 'Tabs',
   args: {
     menuName: 'Addons',
   },
@@ -178,12 +177,11 @@ const customViewports = {
 export const StatefulDynamicWithOpenTooltip = {
   parameters: {
     viewport: {
-      defaultViewport: 'sized',
       viewports: customViewports,
     },
-    theme: 'light',
     chromatic: { viewports: [380] },
   },
+  globals: { sb_theme: 'light', viewport: 'sized' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 

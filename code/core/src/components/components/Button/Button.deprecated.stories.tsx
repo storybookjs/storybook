@@ -5,7 +5,7 @@ import { Button } from './Button';
 import { Form } from '../form';
 
 const meta: Meta<typeof Button> = {
-  title: 'Button/Deprecated',
+  title: 'Button (Deprecated)',
   component: Button,
   tags: ['autodocs'],
 };

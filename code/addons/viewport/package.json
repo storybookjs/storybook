@@ -69,7 +69,6 @@
   },
   "bundler": {
     "exportEntries": [
-      "./src/models/index.ts",
       "./src/index.ts"
     ],
     "managerEntries": [

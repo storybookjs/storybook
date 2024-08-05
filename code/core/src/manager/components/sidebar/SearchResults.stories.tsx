@@ -12,6 +12,7 @@ export default {
   title: 'Sidebar/SearchResults',
   includeStories: /^[A-Z]/,
   parameters: { layout: 'fullscreen' },
+  globals: { sb_theme: 'side-by-side' },
   decorators: [
     (storyFn: any) => (
       <div style={{ padding: '0 20px', maxWidth: '230px' }}>

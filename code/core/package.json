@@ -152,6 +152,16 @@
       "import": "./dist/preview/globals.js",
       "require": "./dist/preview/globals.cjs"
     },
+    "./cli": {
+      "types": "./dist/cli/index.d.ts",
+      "import": "./dist/cli/index.js",
+      "require": "./dist/cli/index.cjs"
+    },
+    "./cli/bin": {
+      "types": "./dist/cli/bin/index.d.ts",
+      "import": "./dist/cli/bin/index.js",
+      "require": "./dist/cli/bin/index.cjs"
+    },
     "./package.json": "./package.json"
   },
   "main": "dist/index.cjs",
@@ -239,6 +249,12 @@
       ],
       "preview/globals": [
         "./dist/preview/globals.d.ts"
+      ],
+      "cli": [
+        "./dist/cli/index.d.ts"
+      ],
+      "cli/bin": [
+        "./dist/cli/bin/index.d.ts"
       ]
     }
   },
@@ -262,7 +278,7 @@
     "express": "^4.19.2",
     "process": "^0.11.10",
     "recast": "^0.23.5",
-    "util": "^0.12.4",
+    "semver": "^7.6.2",
     "ws": "^8.2.3"
   },
   "devDependencies": {
@@ -280,7 +296,7 @@
     "@emotion/styled": "^11.11.0",
     "@emotion/use-insertion-effect-with-fallbacks": "^1.0.1",
     "@fal-works/esbuild-plugin-global-externals": "^2.1.2",
-    "@ndelangen/fs-extra-unified": "^1.0.3",
+    "@ndelangen/get-tarball": "^3.0.7",
     "@popperjs/core": "^2.6.0",
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-scroll-area": "^1.0.5",
@@ -304,10 +320,11 @@
     "@types/picomatch": "^2.3.0",
     "@types/prettier": "^3.0.0",
     "@types/pretty-hrtime": "^1.0.0",
+    "@types/prompts": "^2.0.9",
     "@types/qs": "^6",
     "@types/react-syntax-highlighter": "11.0.5",
     "@types/react-transition-group": "^4",
-    "@types/semver": "^7.3.4",
+    "@types/semver": "^7.5.8",
     "@types/ws": "^8",
     "@vitest/utils": "^1.3.1",
     "@yarnpkg/esbuild-plugin-pnp": "^3.0.0-rc.10",
@@ -323,6 +340,7 @@
     "chai": "^4.4.1",
     "chalk": "^5.3.0",
     "cli-table3": "^0.6.1",
+    "commander": "^6.2.1",
     "comment-parser": "^1.4.1",
     "compression": "^1.7.4",
     "copy-to-clipboard": "^3.3.1",
@@ -330,6 +348,7 @@
     "css": "^3.0.0",
     "deep-object-diff": "^1.1.0",
     "dequal": "^2.0.2",
+    "detect-indent": "^7.0.1",
     "detect-package-manager": "^3.0.2",
     "detect-port": "^1.3.0",
     "diff": "^5.2.0",
@@ -347,12 +366,14 @@
     "flush-promises": "^1.0.2",
     "fs-extra": "^11.1.0",
     "fuse.js": "^3.6.1",
+    "get-npm-tarball-url": "^2.0.3",
     "glob": "^10.0.0",
     "globby": "^14.0.1",
     "handlebars": "^4.7.7",
     "js-yaml": "^4.1.0",
     "jsdoc-type-pratt-parser": "^4.0.0",
     "lazy-universal-dotenv": "^4.0.0",
+    "leven": "^4.0.0",
     "lodash": "^4.17.21",
     "markdown-to-jsx": "^7.4.5",
     "memoizerific": "^1.11.3",
@@ -378,9 +399,9 @@
     "react-transition-group": "^4.4.5",
     "require-from-string": "^2.0.2",
     "resolve-from": "^5.0.0",
-    "semver": "^7.3.7",
     "slash": "^5.0.0",
     "store2": "^2.14.2",
+    "strip-json-comments": "^5.0.1",
     "telejson": "^7.2.0",
     "tiny-invariant": "^1.3.1",
     "tinyspy": "^2.2.0",

@@ -32,7 +32,7 @@ import {
   allTemplates as TEMPLATES,
   type TemplateKey,
   type Template,
-} from '../code/lib/cli/src/sandbox-templates';
+} from '../code/lib/cli-storybook/src/sandbox-templates';
 
 import { version } from '../code/package.json';
 

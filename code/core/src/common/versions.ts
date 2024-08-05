@@ -62,6 +62,7 @@ export default {
   '@storybook/cli': '8.3.0-alpha.3',
   '@storybook/codemod': '8.3.0-alpha.3',
   '@storybook/core-webpack': '8.3.0-alpha.3',
+  'create-storybook': '8.3.0-alpha.3',
   '@storybook/csf-plugin': '8.3.0-alpha.3',
   '@storybook/instrumenter': '8.3.0-alpha.3',
   '@storybook/react-dom-shim': '8.3.0-alpha.3',

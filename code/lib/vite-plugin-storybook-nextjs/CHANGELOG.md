@@ -1,3 +1,17 @@
+# v0.0.15 (Mon Aug 05 2024)
+
+#### ⚠️ Pushed to `main`
+
+- Fix dynamic/import ([@valentinpalkovic](https://github.com/valentinpalkovic))
+- Update vite-integration-plugin ([@valentinpalkovic](https://github.com/valentinpalkovic))
+- Support next/dynamic ssr=false ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
 # v0.0.14 (Sun Aug 04 2024)
 
 #### ⚠️ Pushed to `main`

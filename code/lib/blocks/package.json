@@ -1,6 +1,6 @@
 {
   "name": "@storybook/blocks",
-  "version": "8.3.0-alpha.2",
+  "version": "8.3.0-alpha.3",
   "description": "Storybook Doc Blocks",
   "keywords": [
     "storybook"
@@ -44,7 +44,7 @@
     "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/csf": "0.1.11",
+    "@storybook/csf": "^0.1.11",
     "@storybook/global": "^5.0.0",
     "@storybook/icons": "^1.2.5",
     "@types/lodash": "^4.14.167",

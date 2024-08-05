@@ -89,25 +89,8 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
     normalizedComponentAnnotations
   );
 
-  // TODO: Remove this in 9.0
-  // We can only use the renderToCanvas definition of the default config when testingLibraryRender is set
-  // This makes sure, that when the user doesn't do this, and doesn't provide its own renderToCanvas definition,
-  // we fall back to the < 8.1 behavior of the play function.
-
-  const fallback =
-    defaultConfig &&
-    !globalProjectAnnotations?.testingLibraryRender &&
-    !projectAnnotations?.testingLibraryRender;
-
   const normalizedProjectAnnotations = normalizeProjectAnnotations<TRenderer>(
-    composeConfigs([
-      {
-        ...defaultConfig,
-        renderToCanvas: fallback ? undefined : defaultConfig?.renderToCanvas,
-      },
-      globalProjectAnnotations,
-      projectAnnotations ?? {},
-    ])
+    composeConfigs([defaultConfig ?? {}, globalProjectAnnotations, projectAnnotations ?? {}])
   );
 
   const story = prepareStory<TRenderer>(
@@ -122,16 +105,19 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
     const context: StoryContext<TRenderer> = prepareContext({
       hooks: new HooksContext(),
       globals: {
+        // TODO: remove loading from globalTypes in 9.0
         ...globalsFromGlobalTypes,
         ...normalizedProjectAnnotations.initialGlobals,
+        ...story.storyGlobals,
       },
       args: { ...story.initialArgs },
       viewMode: 'story',
       loaded: {},
       abortSignal: new AbortController().signal,
       step: (label, play) => story.runStep(label, play, context),
-      canvasElement: globalThis?.document?.body,
+      canvasElement: null!,
       canvas: {} as Canvas,
+      globalTypes: normalizedProjectAnnotations.globalTypes,
       ...story,
       context: null!,
       mount: null!,
@@ -149,6 +135,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
             id: story.id,
             name: story.name,
             tags: story.tags,
+            showMain: () => {},
             showError: (error) => {},
             showException: (error) => {},
             forceRemount: true,
@@ -171,28 +158,23 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
 
   let loadedContext: StoryContext<TRenderer> | undefined;
 
-  // TODO: Remove in 9.0
-  const backwardsCompatiblePlay = async (
-    extraContext?: Partial<StoryContext<TRenderer, Partial<TArgs>>>
-  ) => {
+  const play = async (extraContext?: Partial<StoryContext<TRenderer, Partial<TArgs>>>) => {
     const context = initializeContext();
+    context.canvasElement ??= globalThis?.document?.body;
     if (loadedContext) {
       context.loaded = loadedContext.loaded;
     }
     Object.assign(context, extraContext);
     return story.playFunction!(context);
   };
-  const newPlay = (extraContext?: Partial<StoryContext<TRenderer, Partial<TArgs>>>) => {
+
+  const run = (extraContext?: Partial<StoryContext<TRenderer, Partial<TArgs>>>) => {
     const context = initializeContext();
     Object.assign(context, extraContext);
-    return playStory(story, context);
+    return runStory(story, context);
   };
-  const playFunction =
-    !story.renderToCanvas && story.playFunction
-      ? backwardsCompatiblePlay
-      : !story.renderToCanvas && !story.playFunction
-        ? undefined
-        : newPlay;
+
+  const playFunction = story.playFunction ? play : undefined;
 
   const composedStory: ComposedStoryFn<TRenderer, Partial<TArgs>> = Object.assign(
     function storyFn(extraArgs?: Partial<TArgs>) {
@@ -226,6 +208,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
       parameters: story.parameters as Parameters,
       argTypes: story.argTypes as StrictArgTypes<TArgs>,
       play: playFunction!,
+      run,
       tags: story.tags,
     }
   );
@@ -325,12 +308,23 @@ export function createPlaywrightTest<TFixture extends { extend: any }>(
 
 // TODO At some point this function should live in prepareStory and become the core of StoryRender.render as well.
 // Will make a follow up PR for that
-async function playStory<TRenderer extends Renderer>(
+async function runStory<TRenderer extends Renderer>(
   story: PreparedStory<TRenderer>,
   context: StoryContext<TRenderer>
 ) {
   for (const callback of [...cleanups].reverse()) await callback();
   cleanups.length = 0;
+
+  if (!context.canvasElement) {
+    const container = document.createElement('div');
+    globalThis?.document?.body?.appendChild(container);
+    context.canvasElement = container;
+    cleanups.push(() => {
+      if (globalThis?.document?.body?.contains(container)) {
+        globalThis?.document?.body?.removeChild(container);
+      }
+    });
+  }
 
   context.loaded = await story.applyLoaders(context);
   if (context.abortSignal.aborted) return;

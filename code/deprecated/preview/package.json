@@ -1,6 +1,6 @@
 {
   "name": "@storybook/preview",
-  "version": "8.3.0-alpha.2",
+  "version": "8.3.0-alpha.3",
   "description": "",
   "keywords": [
     "storybook"
@@ -20,6 +20,14 @@
   },
   "license": "MIT",
   "sideEffects": false,
+  "type": "module",
+  "exports": {
+    "./globals": {
+      "type": "./globals.d.ts",
+      "import": "./globals.js",
+      "require": "./globals.cjs"
+    }
+  },
   "files": [
     "README.md",
     "*.js",

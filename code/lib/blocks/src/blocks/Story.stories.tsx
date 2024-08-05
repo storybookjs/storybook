@@ -10,6 +10,7 @@ import * as StoryParametersStories from '../examples/StoryParameters.stories';
 const meta: Meta<typeof StoryBlock> = {
   component: StoryBlock,
   parameters: {
+    layout: 'fullscreen',
     relativeCsfPaths: ['../examples/Button.stories', '../examples/StoryParameters.stories'],
     docsStyles: true,
   },
@@ -54,7 +55,7 @@ export const OfUndefined: Story = {
     of: ButtonStories.NotDefined,
   },
   parameters: { chromatic: { disableSnapshot: true } },
-  decorators: [(s) => (window?.navigator.userAgent.match(/StorybookTestRunner/) ? <div /> : s())],
+  tags: ['!test'],
 };
 
 export const Inline: Story = {

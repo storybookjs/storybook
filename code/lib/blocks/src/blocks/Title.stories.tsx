@@ -6,6 +6,7 @@ const meta: Meta<typeof Title> = {
   component: Title,
   title: 'Blocks/Title',
   parameters: {
+    layout: 'fullscreen',
     controls: {
       include: [],
       hideNoControlsWarning: true,

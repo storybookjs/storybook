@@ -11,14 +11,14 @@ import * as stories from './Button.stories';
 const { Primary, Secondary } = composeStories(stories);
 
 test('renders primary button with default args', async () => {
-  await Primary.play();
+  await Primary.run();
   const buttonElement = screen.getByText('Text coming from args in stories file!');
   expect(buttonElement).not.toBeNull();
 });
 
 test('renders primary button with overridden props', async () => {
   // You can override props by passing them in the context argument of the play function
-  await Primary.play({ args: { ...Primary.args, children: 'Hello world' } });
+  await Primary.run({ args: { ...Primary.args, children: 'Hello world' } });
   const buttonElement = screen.getByText(/Hello world/i);
   expect(buttonElement).not.toBeNull();
 });
@@ -37,14 +37,14 @@ import * as stories from './Button.stories';
 const { Primary, Secondary } = composeStories(stories);
 
 test('renders primary button with default args', async () => {
-  await Primary.play();
+  await Primary.run();
   const buttonElement = screen.getByText('Text coming from args in stories file!');
   expect(buttonElement).not.toBeNull();
 });
 
 test('renders primary button with overridden props', async () => {
   // You can override props by passing them in the context argument of the play function
-  await Primary.play({ args: { ...Primary.args, children: 'Hello world' } });
+  await Primary.run({ args: { ...Primary.args, children: 'Hello world' } });
   const buttonElement = screen.getByText(/Hello world/i);
   expect(buttonElement).not.toBeNull();
 });
@@ -63,14 +63,14 @@ import * as stories from './Button.stories';
 const { Primary, Secondary } = composeStories(stories);
 
 test('renders primary button with default args', async () => {
-  await Primary.play();
+  await Primary.run();
   const buttonElement = screen.getByText('Text coming from args in stories file!');
   expect(buttonElement).not.toBeNull();
 });
 
 test('renders primary button with overridden props', async () => {
   // You can override props by passing them in the context argument of the play function
-  await Primary.play({ args: { ...Primary.args, children: 'Hello world' } });
+  await Primary.run({ args: { ...Primary.args, children: 'Hello world' } });
   const buttonElement = screen.getByText(/Hello world/i);
   expect(buttonElement).not.toBeNull();
 });

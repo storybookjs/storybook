@@ -39,8 +39,8 @@ export default {
   component: Component,
   parameters: {
     layout: 'fullscreen',
-    theme: 'light',
   },
+  globals: { sb_theme: 'light' },
   title: 'Errors',
   args: {
     id: 'sb-errordisplay',

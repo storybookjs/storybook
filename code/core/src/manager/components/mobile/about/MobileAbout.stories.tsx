@@ -19,9 +19,9 @@ const OpenAboutHelper = ({ children }: { children: any }) => {
 const meta = {
   component: MobileAbout,
   title: 'Mobile/About',
+  globals: { sb_theme: 'light' },
   parameters: {
     layout: 'fullscreen',
-    theme: 'light',
     viewport: {
       defaultViewport: 'mobile1',
     },
@@ -56,7 +56,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 export const Dark: Story = {
-  parameters: { theme: 'dark' },
+  globals: { sb_theme: 'dark' },
 };
 
 export const Closed: Story = {

@@ -234,9 +234,9 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
     }
   });
 
-  provider.channel?.on(GLOBALS_UPDATED, ({ globals, initialGlobals }: any) => {
+  provider.channel?.on(GLOBALS_UPDATED, ({ userGlobals, initialGlobals }: any) => {
     const { path, queryParams } = api.getUrlState();
-    const globalsString = buildArgsParam(initialGlobals, globals);
+    const globalsString = buildArgsParam(initialGlobals, userGlobals);
     navigateTo(path, { ...queryParams, globals: globalsString }, { replace: true });
     api.setQueryParams({ globals: globalsString });
   });

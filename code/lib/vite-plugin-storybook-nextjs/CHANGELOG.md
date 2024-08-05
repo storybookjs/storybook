@@ -1,3 +1,15 @@
+# v1.0.0 (Mon Aug 05 2024)
+
+#### 💥 Breaking Change
+
+- Add docs [#9](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/9) ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
 # v0.0.15 (Mon Aug 05 2024)
 
 #### ⚠️ Pushed to `main`

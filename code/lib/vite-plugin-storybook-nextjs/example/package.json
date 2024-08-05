@@ -42,6 +42,7 @@
     "@vitest/browser": "^2.0.5",
     "autoprefixer": "^10.4.19",
     "bootstrap": "^5.3.3",
+    "chromatic": "^11.7.0",
     "happy-dom": "^14.12.3",
     "jsdom": "^24.1.1",
     "playwright": "^1.45.3",

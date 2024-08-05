@@ -94,6 +94,10 @@ When using components that rely on Next.js Server Actions, there are some limita
 
 This comment ensures that the components using Next.js Server Actions are properly handled in a jsdom environment, which is necessary for them to function correctly in Vitest.
 
+## SWC Mode
+
+Only Next.js in SWC mode is supported. If you were forced to opt out of Babel for some reason, you will very likely encounter issues with this plugin (e.g., emotion support in SWC is still lacking behind).
+
 ## License
 
 This project is licensed under the MIT License.

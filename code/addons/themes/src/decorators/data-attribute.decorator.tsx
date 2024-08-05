@@ -31,7 +31,7 @@ export const withThemeByDataAttribute = <TRenderer extends Renderer = any>({
       if (parentElement) {
         parentElement.setAttribute(attributeName, themes[themeKey]);
       }
-    }, [themeOverride, selected, parentSelector, attributeName]);
+    }, [themeOverride, selected]);
 
     return storyFn();
   };

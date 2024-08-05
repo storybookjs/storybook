@@ -69,6 +69,10 @@ const config: StorybookConfig = {
       titlePrefix: 'addons/toolbars',
     },
     {
+      directory: '../addons/themes/template/stories',
+      titlePrefix: 'addons/themes',
+    },
+    {
       directory: '../addons/onboarding/src',
       titlePrefix: 'addons/onboarding',
     },
@@ -83,6 +87,7 @@ const config: StorybookConfig = {
   ],
   addons: [
     '@storybook/addon-links',
+    '@storybook/addon-themes',
     '@storybook/addon-essentials',
     '@storybook/addon-interactions',
     '@storybook/addon-storysource',
@@ -119,7 +124,6 @@ const config: StorybookConfig = {
   },
   features: {
     viewportStoryGlobals: true,
-    themesStoryGlobals: true,
     backgroundsStoryGlobals: true,
   },
   viteFinal: (viteConfig, { configType }) =>

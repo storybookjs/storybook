@@ -6,6 +6,7 @@ import type { ToolbarItem } from '../types';
 export type ToolbarMenuListItemProps = {
   currentValue: string;
   onClick: () => void;
+  disabled?: boolean;
 } & ToolbarItem;
 
 export const ToolbarMenuListItem = ({
@@ -15,6 +16,7 @@ export const ToolbarMenuListItem = ({
   icon,
   hideIcon,
   onClick,
+  disabled,
   currentValue,
 }: ToolbarMenuListItemProps) => {
   const Icon = icon && <Icons style={{ opacity: 1 }} icon={icon} />;
@@ -24,7 +26,7 @@ export const ToolbarMenuListItem = ({
     active: currentValue === value,
     right,
     title,
-    icon,
+    disabled,
     onClick,
   };
 

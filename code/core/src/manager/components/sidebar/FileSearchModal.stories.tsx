@@ -14,31 +14,30 @@ const meta = {
     onOpenChange: fn(),
     setFileSearchQuery: fn(),
   },
+  parameters: {
+    layout: 'fullscreen',
+  },
   // This decorator is used to show the modal in the side by side view
   decorators: [
     (Story, context) => {
       const [container, setContainer] = useState<HTMLElement | null>(null);
 
-      if (context.globals.theme === 'side-by-side') {
-        return (
-          <div
-            ref={(element) => {
-              setContainer(element);
-            }}
-            style={{
-              width: '100%',
-              height: '100%',
-              minHeight: '600px',
-              transform: 'translateZ(0)',
-            }}
-          >
-            {/* @ts-expect-error (non strict) */}
-            {Story({ args: { ...context.args, container } })}
-          </div>
-        );
-      }
-
-      return Story();
+      return (
+        <div
+          ref={(element) => {
+            setContainer(element);
+          }}
+          style={{
+            width: '100%',
+            height: '100%',
+            minHeight: '600px',
+            transform: 'translateZ(0)',
+          }}
+        >
+          {/* @ts-expect-error (non strict) */}
+          {Story({ args: { ...context.args, container } })}
+        </div>
+      );
     },
   ],
 } satisfies Meta<typeof FileSearchModal>;

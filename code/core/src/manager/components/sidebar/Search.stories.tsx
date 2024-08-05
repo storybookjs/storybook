@@ -24,6 +24,7 @@ const meta = {
   component: Search,
   title: 'Sidebar/Search',
   parameters: { layout: 'fullscreen' },
+  globals: { sb_theme: 'side-by-side' },
   decorators: [
     (storyFn: any) => (
       <div style={{ padding: 20, maxWidth: '230px' }}>

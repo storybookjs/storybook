@@ -9,26 +9,26 @@ import { Tree } from './Tree';
 import { index } from './mockdata.large';
 import { DEFAULT_REF_ID } from './Sidebar';
 
-const customViewports = {
-  sized: {
-    name: 'Sized',
-    styles: {
-      width: '380px',
-      height: '90%',
-    },
-  },
-};
-
 const meta = {
   component: Tree,
   title: 'Sidebar/Tree',
   excludeStories: /.*Data$/,
+  globals: {
+    sb_theme: 'light',
+    viewport: { value: 'sized' },
+  },
   parameters: {
     layout: 'fullscreen',
-    theme: 'light',
     viewport: {
-      defaultViewport: 'sized',
-      viewports: customViewports,
+      options: {
+        sized: {
+          name: 'Sized',
+          styles: {
+            width: '380px',
+            height: '90%',
+          },
+        },
+      },
     },
     chromatic: { viewports: [380] },
   },
@@ -64,7 +64,7 @@ export const Full: Story = {
 };
 export const Dark: Story = {
   ...Full,
-  parameters: { theme: 'dark' },
+  globals: { sb_theme: 'dark' },
 };
 
 export const SingleStoryComponents: Story = {
@@ -206,11 +206,6 @@ export const SkipToCanvasLinkFocused: Story = {
   ...DocsOnlySingleStoryComponents,
   parameters: {
     chromatic: { disable: true },
-    viewport: {
-      defaultViewport: 'sized',
-      viewports: customViewports,
-      defaultOrientation: 'landscape',
-    },
   },
   play: async ({ canvasElement }) => {
     const screen = await within(canvasElement);

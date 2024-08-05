@@ -1,10 +1,14 @@
 import { action } from '@storybook/addon-actions';
 import { CallStates } from '@storybook/instrumenter';
 import { Subnav } from './Subnav';
+import { parameters } from '../preview';
 
 export default {
   title: 'Subnav',
   component: Subnav,
+  parameters: {
+    layout: 'fullscreen',
+  },
   args: {
     controls: {
       start: action('start'),

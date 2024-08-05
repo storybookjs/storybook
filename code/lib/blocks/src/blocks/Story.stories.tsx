@@ -10,6 +10,7 @@ import * as StoryParametersStories from '../examples/StoryParameters.stories';
 const meta: Meta<typeof StoryBlock> = {
   component: StoryBlock,
   parameters: {
+    layout: 'fullscreen',
     relativeCsfPaths: ['../examples/Button.stories', '../examples/StoryParameters.stories'],
     docsStyles: true,
   },

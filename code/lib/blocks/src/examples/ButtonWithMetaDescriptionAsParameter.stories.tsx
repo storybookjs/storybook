@@ -7,9 +7,8 @@ const meta = {
   argTypes: {
     backgroundColor: { control: 'color' },
   },
+  globals: { sb_theme: 'light' },
   parameters: {
-    // Stop *this* story from being stacked in Chromatic
-    theme: 'default',
     docs: {
       description: {
         component: `

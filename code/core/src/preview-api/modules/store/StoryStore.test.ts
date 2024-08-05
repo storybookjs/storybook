@@ -313,6 +313,7 @@ describe('StoryStore', () => {
             "playFunction": undefined,
             "renderToCanvas": undefined,
             "story": "A",
+            "storyGlobals": {},
             "subcomponents": undefined,
             "tags": [
               "dev",
@@ -374,7 +375,7 @@ describe('StoryStore', () => {
       const story = await store.loadStory({ storyId: 'component-one--a' });
 
       store.args.update(story.id, { foo: 'bar' });
-      store.globals!.update({ a: 'c' });
+      store.userGlobals!.update({ a: 'c' });
 
       expect(store.getStoryContext(story)).toMatchObject({
         args: { foo: 'bar' },
@@ -482,6 +483,7 @@ describe('StoryStore', () => {
             "playFunction": undefined,
             "renderToCanvas": undefined,
             "story": "A",
+            "storyGlobals": {},
             "subcomponents": undefined,
             "tags": [
               "dev",
@@ -524,6 +526,7 @@ describe('StoryStore', () => {
             "playFunction": undefined,
             "renderToCanvas": undefined,
             "story": "B",
+            "storyGlobals": {},
             "subcomponents": undefined,
             "tags": [
               "dev",
@@ -566,6 +569,7 @@ describe('StoryStore', () => {
             "playFunction": undefined,
             "renderToCanvas": undefined,
             "story": "C",
+            "storyGlobals": {},
             "subcomponents": undefined,
             "tags": [
               "dev",
@@ -680,6 +684,7 @@ describe('StoryStore', () => {
             "runStep": [Function],
             "story": "A",
             "storyFn": [Function],
+            "storyGlobals": {},
             "subcomponents": undefined,
             "tags": [
               "dev",
@@ -732,6 +737,7 @@ describe('StoryStore', () => {
             "runStep": [Function],
             "story": "B",
             "storyFn": [Function],
+            "storyGlobals": {},
             "subcomponents": undefined,
             "tags": [
               "dev",
@@ -784,6 +790,7 @@ describe('StoryStore', () => {
             "runStep": [Function],
             "story": "C",
             "storyFn": [Function],
+            "storyGlobals": {},
             "subcomponents": undefined,
             "tags": [
               "dev",
@@ -849,6 +856,7 @@ describe('StoryStore', () => {
               "playFunction": undefined,
               "renderToCanvas": undefined,
               "story": "A",
+              "storyGlobals": {},
               "subcomponents": undefined,
               "tags": [
                 "dev",
@@ -891,6 +899,7 @@ describe('StoryStore', () => {
               "playFunction": undefined,
               "renderToCanvas": undefined,
               "story": "B",
+              "storyGlobals": {},
               "subcomponents": undefined,
               "tags": [
                 "dev",
@@ -933,6 +942,7 @@ describe('StoryStore', () => {
               "playFunction": undefined,
               "renderToCanvas": undefined,
               "story": "C",
+              "storyGlobals": {},
               "subcomponents": undefined,
               "tags": [
                 "dev",

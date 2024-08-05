@@ -11,6 +11,7 @@ const meta: Meta<typeof ArgTypes> = {
   title: 'Blocks/ArgTypes',
   component: ArgTypes,
   parameters: {
+    layout: 'fullscreen',
     relativeCsfPaths: [
       '../examples/ArgTypesParameters.stories',
       '../examples/ArgTypesWithSubcomponentsParameters.stories',

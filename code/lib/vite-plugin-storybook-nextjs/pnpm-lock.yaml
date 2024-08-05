@@ -149,6 +149,9 @@ importers:
       bootstrap:
         specifier: ^5.3.3
         version: 5.3.3(@popperjs/core@2.11.8)
+      chromatic:
+        specifier: ^11.7.0
+        version: 11.7.0
       happy-dom:
         specifier: ^14.12.3
         version: 14.12.3
@@ -2329,8 +2332,8 @@ packages:
     resolution: {integrity: sha512-bIomtDF5KGpdogkLd9VspvFzk9KfpyyGlS8YFVZl7TGPBHL5snIOnxeshwVgPteQ9b4Eydl+pVbIyE1DcvCWgQ==, tarball: https://registry.npmjs.org/chownr/-/chownr-2.0.0.tgz}
     engines: {node: '>=10'}
 
-  chromatic@11.5.4:
-    resolution: {integrity: sha512-+J+CopeUSyGUIQJsU6X7CfvSmeVBs0j6LZ9AgF4+XTjI4pFmUiUXsTc00rH9x9W1jCppOaqDXv2kqJJXGDK3mA==, tarball: https://registry.npmjs.org/chromatic/-/chromatic-11.5.4.tgz}
+  chromatic@11.7.0:
+    resolution: {integrity: sha512-Afblm4MWK6GXutxHPJVWKoY1PxCD98Uw0S3/f1a2wu4VTQy97g4+G8vPVqutSMpZFGzG5NjH9QdzKPFMmZczpw==, tarball: https://registry.npmjs.org/chromatic/-/chromatic-11.7.0.tgz}
     hasBin: true
     peerDependencies:
       '@chromatic-com/cypress': ^0.*.* || ^1.0.0
@@ -6028,7 +6031,7 @@ snapshots:
 
   '@chromatic-com/storybook@1.5.0(react@18.3.1)':
     dependencies:
-      chromatic: 11.5.4
+      chromatic: 11.7.0
       filesize: 10.1.2
       jsonfile: 6.1.0
       react-confetti: 6.1.0(react@18.3.1)
@@ -7635,7 +7638,7 @@ snapshots:
 
   chownr@2.0.0: {}
 
-  chromatic@11.5.4: {}
+  chromatic@11.7.0: {}
 
   citty@0.1.6:
     dependencies:

@@ -18,7 +18,7 @@ pnpm dev
 Run the tests in `./example` to test the plugin
 
 ```bash
-pnpm test
+pnpm test:all
 ```
 
 OR

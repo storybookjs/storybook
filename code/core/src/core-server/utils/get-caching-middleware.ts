@@ -1,8 +1,8 @@
-import type { RequestHandler } from 'express';
+import type { NextHandleFunction } from './server-connect';
 
-export function getCachingMiddleware(): RequestHandler {
+export function getCachingMiddleware(): NextHandleFunction {
   return (req, res, next) => {
-    res.header('Cache-Control', 'no-store');
+    res.setHeader('Cache-Control', 'no-store');
     next();
   };
 }

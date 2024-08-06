@@ -1,3 +1,19 @@
+# v1.0.2 (Tue Aug 06 2024)
+
+#### 🐛 Bug Fix
+
+- chore: Setup Chromatic [#10](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/10) ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### ⚠️ Pushed to `main`
+
+- Support @storybook/experimental-nextjs-vite ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
 # v1.0.1 (Mon Aug 05 2024)
 
 #### ⚠️ Pushed to `main`

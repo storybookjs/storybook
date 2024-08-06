@@ -57,7 +57,7 @@ describe('parseArgsParam', () => {
   });
 
   it('parses Date with timezone offset', () => {
-    const args = parseArgsParam('key:!date(2001-02-03T04:05:06.789+09:00)');
+    const args = parseArgsParam('key:!date(2001-02-03T04:05:06.789%2B09:00)');
     expect(args).toStrictEqual({ key: new Date('2001-02-03T04:05:06.789+09:00') });
   });
 
@@ -126,7 +126,7 @@ describe('parseArgsParam', () => {
   });
 
   it('parses single object in array', () => {
-    const args = parseArgsParam('arr[].one:A;arr[].two:B');
+    const args = parseArgsParam('arr[0].one:A;arr[0].two:B');
     expect(args).toStrictEqual({ arr: [{ one: 'A', two: 'B' }] });
   });
 
@@ -134,14 +134,10 @@ describe('parseArgsParam', () => {
     expect(parseArgsParam('arr[0].key:A;arr[1].key:B')).toStrictEqual({
       arr: [{ key: 'A' }, { key: 'B' }],
     });
-    expect(parseArgsParam('arr[0][key]:A;arr[1][key]:B')).toStrictEqual({
-      arr: [{ key: 'A' }, { key: 'B' }],
-    });
   });
 
   it('parses nested object in array', () => {
-    expect(parseArgsParam('arr[].foo.bar:val')).toStrictEqual({ arr: [{ foo: { bar: 'val' } }] });
-    expect(parseArgsParam('arr[][foo][bar]:val')).toStrictEqual({ arr: [{ foo: { bar: 'val' } }] });
+    expect(parseArgsParam('arr[0].foo.bar:val')).toStrictEqual({ arr: [{ foo: { bar: 'val' } }] });
   });
 
   describe('key sanitization', () => {
@@ -163,8 +159,6 @@ describe('parseArgsParam', () => {
       expect(parseArgsParam('a/b:val')).toStrictEqual({});
       expect(parseArgsParam('a\\b:val')).toStrictEqual({});
       expect(parseArgsParam('a|b:val')).toStrictEqual({});
-      expect(parseArgsParam('a[b:val')).toStrictEqual({});
-      expect(parseArgsParam('a]b:val')).toStrictEqual({});
       expect(parseArgsParam('a{b:val')).toStrictEqual({});
       expect(parseArgsParam('a}b:val')).toStrictEqual({});
       expect(parseArgsParam('a?b:val')).toStrictEqual({});
@@ -184,14 +178,10 @@ describe('parseArgsParam', () => {
 
     it('also applies to nested object keys', () => {
       expect(parseArgsParam('obj.a!b:val')).toStrictEqual({});
-      expect(parseArgsParam('obj[a!b]:val')).toStrictEqual({});
-      expect(parseArgsParam('arr[][a!b]:val')).toStrictEqual({});
-      expect(parseArgsParam('arr[0][a!b]:val')).toStrictEqual({});
     });
 
     it('completely omits an arg when a (deeply) nested key is invalid', () => {
       expect(parseArgsParam('obj.foo.a!b:val;obj.foo.bar:val;obj.baz:val')).toStrictEqual({});
-      expect(parseArgsParam('obj.foo[][a!b]:val;obj.foo.bar:val;obj.baz:val')).toStrictEqual({});
       expect(parseArgsParam('obj.foo.a!b:val;key:val')).toStrictEqual({ key: 'val' });
     });
   });
@@ -246,9 +236,6 @@ describe('parseArgsParam', () => {
 
     it('also applies to nested object and array values', () => {
       expect(parseArgsParam('obj.key:a!b')).toStrictEqual({});
-      expect(parseArgsParam('obj[key]:a!b')).toStrictEqual({});
-      expect(parseArgsParam('arr[][key]:a!b')).toStrictEqual({});
-      expect(parseArgsParam('arr[0][key]:a!b')).toStrictEqual({});
       expect(parseArgsParam('arr[]:a!b')).toStrictEqual({});
       expect(parseArgsParam('arr[0]:a!b')).toStrictEqual({});
     });
@@ -257,7 +244,7 @@ describe('parseArgsParam', () => {
       expect(parseArgsParam('obj.key:a!b;obj.foo:val;obj.bar.baz:val')).toStrictEqual({});
       expect(parseArgsParam('obj.arr[]:a!b;obj.foo:val;obj.bar.baz:val')).toStrictEqual({});
       expect(parseArgsParam('obj.arr[0]:val;obj.arr[1]:a!b;obj.foo:val')).toStrictEqual({});
-      expect(parseArgsParam('obj.arr[][one]:a!b;obj.arr[][two]:val')).toStrictEqual({});
+      expect(parseArgsParam('obj.arr[]:a!b;obj.arr[]:val')).toStrictEqual({});
       expect(parseArgsParam('arr[]:val;arr[]:a!b;key:val')).toStrictEqual({ key: 'val' });
       expect(parseArgsParam('arr[0]:val;arr[1]:a!1;key:val')).toStrictEqual({ key: 'val' });
       expect(parseArgsParam('arr[0]:val;arr[2]:a!1;key:val')).toStrictEqual({ key: 'val' });

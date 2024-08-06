@@ -27,6 +27,7 @@ import { doAutomigrate } from './automigrate';
 import { dev } from './dev';
 import { build } from './build';
 import { doctor } from './doctor';
+import { setupVitest } from './setup-vitest';
 
 addToGlobalContext('cliVersion', versions.storybook);
 
@@ -308,6 +309,19 @@ command('build')
       packageJson: pkg,
       test: !!options.test || process.env.SB_TESTBUILD === 'true',
     }).catch(() => process.exit(1));
+  });
+
+command('setup-vitest')
+  .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
+  .description('Set up the Storybook vitest integration')
+  .action(async (options) => {
+    logger.setLevel(program.loglevel);
+    consoleLogger.log(chalk.bold(`${pkg.name} v${pkg.version}\n`));
+
+    await setupVitest({
+      ...options,
+      packageJson: pkg,
+    });
   });
 
 program.on('command:*', ([invalidCmd]) => {

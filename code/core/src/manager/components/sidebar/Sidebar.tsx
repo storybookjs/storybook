@@ -114,6 +114,7 @@ export interface SidebarProps extends API_LoadedRefData {
   refId?: string;
   menuHighlighted?: boolean;
   enableShortcuts?: boolean;
+  initialQuery?: string;
   onMenuClick?: HeadingProps['onMenuClick'];
   showCreateStoryButton?: boolean;
 }
@@ -132,6 +133,7 @@ export const Sidebar = React.memo(function Sidebar({
   menuHighlighted = false,
   enableShortcuts = true,
   refs = {},
+  initialQuery,
   onMenuClick,
   showCreateStoryButton,
 }: SidebarProps) {
@@ -157,6 +159,7 @@ export const Sidebar = React.memo(function Sidebar({
           <Search
             dataset={dataset}
             enableShortcuts={enableShortcuts}
+            initialQuery={initialQuery}
             showCreateStoryButton={showCreateStoryButton}
             {...lastViewedProps}
           >

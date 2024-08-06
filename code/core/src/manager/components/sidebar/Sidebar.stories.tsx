@@ -62,6 +62,8 @@ const meta = {
                 'api::getShortcutKeys'
               ),
               selectStory: fn().mockName('api::selectStory'),
+              setQueryParams: fn().mockName('api::setQueryParams'),
+              getQueryParams: fn().mockName('api::getQueryParams'),
             },
           } as any
         }

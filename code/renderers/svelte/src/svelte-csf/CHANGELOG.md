@@ -1,3 +1,15 @@
+# v4.1.5 (Tue Aug 06 2024)
+
+#### 🐛 Bug Fix
+
+- Fix type errors due to imports from @storybook/types [#198](https://github.com/storybookjs/addon-svelte-csf/pull/198) ([@rChaoz](https://github.com/rChaoz))
+
+#### Authors: 1
+
+- Matei Trandafir ([@rChaoz](https://github.com/rChaoz))
+
+---
+
 # v4.1.4 (Tue Jul 09 2024)
 
 #### 🐛 Bug Fix

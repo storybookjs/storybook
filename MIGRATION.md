@@ -444,7 +444,7 @@ Starting in 8.2 `preview.js` `globals` are deprecated and have been renamed to `
 // .storybook/preview.js
 export default {
 -  globals: [ a: 1, b: 2 ],
-+  initiaGlobals: [ a: 1, b: 2 ],
++  initialGlobals: [ a: 1, b: 2 ],
 }
 ```
 

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/vue3",
-  "version": "8.3.0-alpha.3",
+  "version": "8.3.0-alpha.4",
   "description": "Storybook Vue 3 renderer",
   "keywords": [
     "storybook"
@@ -69,7 +69,6 @@
     "@storybook/preview-api": "workspace:^",
     "@storybook/theming": "workspace:^",
     "@vue/compiler-core": "^3.0.0",
-    "lodash": "^4.17.21",
     "ts-dedent": "^2.0.0",
     "type-fest": "~2.19",
     "vue-component-type-helpers": "latest"
@@ -79,6 +78,7 @@
     "@testing-library/vue": "^8.0.0",
     "@types/prettier": "^3.0.0",
     "@vitejs/plugin-vue": "^4.4.0",
+    "lodash": "^4.17.21",
     "typescript": "^5.3.2",
     "vue": "^3.2.47",
     "vue-tsc": "latest"

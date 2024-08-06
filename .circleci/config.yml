@@ -51,20 +51,7 @@ executors:
         default: "small"
     working_directory: /tmp/storybook
     docker:
-      - image: mcr.microsoft.com/playwright:v1.36.0-focal
-        environment:
-          NODE_OPTIONS: --max_old_space_size=6144
-    resource_class: <<parameters.class>>
-  sb_playwright_component_testing:
-    parameters:
-      class:
-        description: The Resource class
-        type: enum
-        enum: ["small", "medium", "medium+", "large", "xlarge"]
-        default: "small"
-    working_directory: /tmp/storybook
-    docker:
-      - image: mcr.microsoft.com/playwright:v1.42.1-jammy
+      - image: mcr.microsoft.com/playwright:v1.45.1-jammy
         environment:
           NODE_OPTIONS: --max_old_space_size=6144
     resource_class: <<parameters.class>>
@@ -398,6 +385,16 @@ jobs:
           clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
+      # As of Playwright 0.14.0 its images come with Node 20, but we need Node 18 because of esbuild-register's limitations
+      - run:
+          name: Downgrade to Node.js 18
+          command: |
+            apt-get update
+            apt-get remove -y nodejs
+            apt-get install -y curl
+            curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+            apt-get install -y nodejs
+            node -v
       - run:
           name: Running Test Runner
           command: yarn task --task test-runner --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner) --no-link --start-from=never --junit
@@ -418,6 +415,16 @@ jobs:
           clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
+      # As of Playwright 0.14.0 its images come with Node 20, but we need Node 18 because of esbuild-register's limitations
+      - run:
+          name: Downgrade to Node.js 18
+          command: |
+            apt-get update
+            apt-get remove -y nodejs
+            apt-get install -y curl
+            curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+            apt-get install -y nodejs
+            node -v
       - run:
           name: Running Test Runner in Dev mode
           command: yarn task --task test-runner-dev --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner-dev) --no-link --start-from=never --junit
@@ -457,6 +464,16 @@ jobs:
           clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
+      # As of Playwright 0.14.0 its images come with Node 20, but we need Node 18 because of esbuild-register's limitations
+      - run:
+          name: Downgrade to Node.js 18
+          command: |
+            apt-get update
+            apt-get remove -y nodejs
+            apt-get install -y curl
+            curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+            apt-get install -y nodejs
+            node -v
       - run:
           name: Running E2E Tests
           command: yarn task --task e2e-tests --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests) --no-link --start-from=never --junit
@@ -480,6 +497,16 @@ jobs:
           clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
+      # As of Playwright 0.14.0 its images come with Node 20, but we need Node 18 because of esbuild-register's limitations
+      - run:
+          name: Downgrade to Node.js 18
+          command: |
+            apt-get update
+            apt-get remove -y nodejs
+            apt-get install -y curl
+            curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+            apt-get install -y nodejs
+            node -v
       - run:
           name: Running E2E Tests
           command: yarn task --task e2e-tests-dev --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests-dev) --no-link --start-from=never --junit
@@ -503,6 +530,16 @@ jobs:
           clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
+      # As of Playwright 0.14.0 its images come with Node 20, but we need Node 18 because of esbuild-register's limitations
+      - run:
+          name: Downgrade to Node.js 18
+          command: |
+            apt-get update
+            apt-get remove -y nodejs
+            apt-get install -y curl
+            curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+            apt-get install -y nodejs
+            node -v
       - run:
           name: Running Bench
           command: yarn task --task bench --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task bench) --no-link --start-from=never --junit
@@ -608,7 +645,7 @@ jobs:
       directory:
         type: string
     executor:
-      name: sb_playwright_component_testing
+      name: sb_playwright
       class: medium
     steps:
       - git-shallow-clone/checkout_advanced:

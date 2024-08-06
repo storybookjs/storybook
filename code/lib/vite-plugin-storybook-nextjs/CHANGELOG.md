@@ -1,3 +1,15 @@
+# v1.0.3 (Tue Aug 06 2024)
+
+#### ⚠️ Pushed to `main`
+
+- fix: Do not transform node_modules ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
 # v1.0.2 (Tue Aug 06 2024)
 
 #### 🐛 Bug Fix

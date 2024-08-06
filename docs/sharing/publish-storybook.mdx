@@ -11,13 +11,25 @@ Teams publish Storybook online to review and collaborate on works in progress. T
 
 ## Build Storybook as a static web application
 
-First, we'll need to build Storybook as a static web application. The functionality is already built-in and pre-configured for most supported frameworks. Others require a bit of customization (e.g., Angular). Run the following command inside your project's root directory:
+First, we'll need to build Storybook as a static web application. The functionality is already built-in and pre-configured for most supported frameworks. Run the following command inside your project's root directory:
 
 {/* prettier-ignore-start */}
 
 <CodeSnippets path="build-storybook-production-mode.md" />
 
 {/* prettier-ignore-end */}
+
+<If renderer="angular">
+
+If you're using Angular, it's often better to use the [Angular builder](../get-started/frameworks/angular.mdx#how-do-i-migrate-to-an-angular-storybook-builder) to build Storybook: 
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="angular-builder-production.md" />
+
+{/* prettier-ignore-end */}
+
+</If>
 
 <Callout variant="info" icon="💡">
 

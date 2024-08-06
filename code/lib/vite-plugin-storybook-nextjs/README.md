@@ -1,6 +1,6 @@
 # vite-plugin-storybook-nextjs
 
-This is a Vite plugin that allows you to use Next.js features in Vite. It is the basis for `@storybook/nextjs-vite` and should be used when running portable stories in Vitest.
+This is a Vite plugin that allows you to use Next.js features in Vite. It is the basis for `@storybook/experimental-nextjs-vite` and should be used when running portable stories in Vitest.
 
 ## Features
 

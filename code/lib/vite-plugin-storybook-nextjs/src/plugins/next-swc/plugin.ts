@@ -3,15 +3,14 @@ import loadJsConfig from "next/dist/build/load-jsconfig.js";
 import { transform } from "next/dist/build/swc/index.js";
 import { findPagesDir } from "next/dist/lib/find-pages-dir.js";
 import type { NextConfigComplete } from "next/dist/server/config-shared.js";
-import type { Plugin } from "vite";
+import { type Plugin, createFilter } from "vite";
 
 import * as NextUtils from "../../utils/nextjs";
 import { getVitestSWCTransformConfig } from "../../utils/swc/transform";
 import { isDefined } from "../../utils/typescript";
 
 /** Regular expression to exclude certain files from transformation */
-const excluded =
-  /[\\/](cache[\\/][^\\/]+\.zip[\\/]node_modules|virtual:)[\\/]/g;
+const excluded = /[\\/]((cache[\\/][^\\/]+\.zip[\\/])|virtual:)[\\/]/;
 
 const included = /\.((c|m)?(j|t)sx?)$/;
 
@@ -25,6 +24,7 @@ export function vitePluginNextSwc(
   let isDev: boolean;
   let isEsmProject: boolean;
   let packageJson: { type: string };
+  const filter = createFilter(included, excluded);
 
   const resolvedDir = resolve(rootDir);
 
@@ -72,26 +72,28 @@ export function vitePluginNextSwc(
       };
     },
     async transform(code, id) {
-      if (!excluded.test(id) && included.test(id)) {
-        const inputSourceMap = this.getCombinedSourcemap();
-
-        const output = await transform(
-          code,
-          getVitestSWCTransformConfig({
-            filename: id,
-            inputSourceMap,
-            isServerEnvironment,
-            loadedJSConfig,
-            nextConfig: await nextConfigResolver.promise,
-            nextDirectories,
-            rootDir,
-            isDev,
-            isEsmProject,
-          }),
-        );
-
-        return output;
+      if (id.includes("/node_modules/") || !filter(id)) {
+        return;
       }
+
+      const inputSourceMap = this.getCombinedSourcemap();
+
+      const output = await transform(
+        code,
+        getVitestSWCTransformConfig({
+          filename: id,
+          inputSourceMap,
+          isServerEnvironment,
+          loadedJSConfig,
+          nextConfig: await nextConfigResolver.promise,
+          nextDirectories,
+          rootDir,
+          isDev,
+          isEsmProject,
+        }),
+      );
+
+      return output;
     },
   } satisfies Plugin;
 }

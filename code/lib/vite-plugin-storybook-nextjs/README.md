@@ -5,7 +5,7 @@ This is a Vite plugin that allows you to use Next.js features in Vite. It is the
 ## Features
 
 - **Next.js Integration**: Seamlessly integrate Next.js features into your Vite project.
-- **Storybook Compatibility**: Acts as the foundation for `@storybook/experimental-nextjs-vite`, enabling you to use Storybook with Next.js in a Vite environment.
+- **Storybook Compatibility**: Acts as the foundation for [the `@storybook/experimental-nextjs-vite` framework](https://storybook.js.org/docs/get-started/frameworks/nextjs#with-vite), enabling you to use Storybook with Next.js in a Vite environment.
 - **Portable Stories**: Ideal for running portable stories in Vitest, ensuring your components are tested in an environment that closely mirrors production.
 
 ## Installation
@@ -40,16 +40,6 @@ export default defineConfig({
 });
 ```
 
-### Usage with portable stories
-
-[Portable stories](https://storybook.js.org/docs/api/portable-stories/portable-stories-vitest) are Storybook stories which can be used in external environments, such as Vitest.
-
-This plugin is necessary to run portable stories in Vitest, as it provides the necessary Next.js features to ensure that your components are tested in an environment that closely mirrors production.
-
-### Experimental @storybook/experimental-vitest-plugin
-
-The experimental `@storybook/experimental-vitest-plugin` can be used to automatically transform your stories at Vitest runtime to in-memory test files. This allows you to run your stories in a Vitest environment without needing to manually transform your stories. Please visit https://github.com/storybookjs/vitest-plugin for more information.
-
 ## Configuration Options
 
 You can configure the plugin using the following options:
@@ -63,6 +53,18 @@ type VitePluginOptions = {
   dir?: string;
 };
 ```
+
+## Usage with portable stories
+
+[Portable stories](https://storybook.js.org/docs/api/portable-stories/portable-stories-vitest) are Storybook stories which can be used in external environments, such as Vitest.
+
+This plugin is necessary to run portable stories in Vitest, as it provides the necessary Next.js features to ensure that your components are tested in an environment that closely mirrors production.
+
+## Automatic story transformation
+
+(⚠️ **Experimental**)
+
+The experimental `@storybook/experimental-vitest-plugin` can be used to automatically transform your stories at Vitest runtime to in-memory test files. This allows you to run your stories in a Vitest environment without needing to manually transform your stories. Please visit https://github.com/storybookjs/vitest-plugin for more information.
 
 ## Limitations and differences to the Webpack5-based integration of Next.js in Storybook
 
@@ -110,7 +112,7 @@ When testing components that rely on Next.js Server Actions, you need to ensure 
 
 ## SWC Mode
 
-Only [Next.js in SWC mode](https://nextjs.org/docs/architecture/nextjs-compiler) is supported. If your project was forced to opt out of Babel for some reason, you will very likely encounter issues with this plugin (e.g., emotion support in SWC is still lacking behind).
+Only [Next.js in SWC mode](https://nextjs.org/docs/architecture/nextjs-compiler) is supported. If your project was forced to opt out of Babel for some reason, you will very likely encounter issues with this plugin (e.g., Emotion support in SWC is still lagging behind).
 
 ## License
 

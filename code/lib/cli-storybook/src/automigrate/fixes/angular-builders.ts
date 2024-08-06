@@ -1,6 +1,6 @@
 import { dedent } from 'ts-dedent';
+import picocolors from 'picocolors';
 import type { StorybookConfig } from 'storybook/internal/types';
-import chalk from 'chalk';
 import prompts from 'prompts';
 import type { Fix } from '../types';
 import { isNxProject, AngularJSON } from 'storybook/internal/cli';
@@ -58,7 +58,7 @@ export const angularBuilders: Fix<AngularBuildersRunOptions> = {
 
       Also feel free to remove the Compodoc script from your package.json file if you don't use it apart from Storybook anymore. Storybook uses Compodoc internally and you don't have to call in separately anymore.
 
-      Read more about the Angular builder here: ${chalk.yellow(
+      Read more about the Angular builder here: ${picocolors.yellow(
         'https://github.com/storybookjs/storybook/tree/next/code/frameworks/angular#how-do-i-migrate-to-an-angular-storybook-builder'
       )}
     `;

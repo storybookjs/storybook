@@ -1,4 +1,4 @@
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import { gt, satisfies } from 'semver';
 import type { CommonOptions } from 'execa';
 import { execaCommand, execaCommandSync } from 'execa';
@@ -376,11 +376,11 @@ export abstract class JsPackageManager {
       latest = await this.latestVersion(packageName, constraint);
     } catch (e) {
       if (current) {
-        logger.warn(`\n     ${chalk.yellow(String(e))}`);
+        logger.warn(`\n     ${picocolors.yellow(String(e))}`);
         return current;
       }
 
-      logger.error(`\n     ${chalk.red(String(e))}`);
+      logger.error(`\n     ${picocolors.red(String(e))}`);
       throw new HandledError(e);
     }
 

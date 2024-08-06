@@ -1,5 +1,5 @@
 import program from 'commander';
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import envinfo from 'envinfo';
 import leven from 'leven';
 import { findPackageSync } from 'fd-package-json';
@@ -81,7 +81,7 @@ command('upgrade')
 command('info')
   .description('Prints debugging information about the local environment')
   .action(async () => {
-    consoleLogger.log(chalk.bold('\nStorybook Environment Info:'));
+    consoleLogger.log(picocolors.bold('\nStorybook Environment Info:'));
     const pkgManager = await JsPackageManagerFactory.getPackageManager();
     const activePackageManager = pkgManager.type.replace(/\d/, ''); // 'yarn1' -> 'yarn'
     const output = await envinfo.run({
@@ -95,7 +95,7 @@ command('info')
     consoleLogger.log(
       output.replace(
         activePackageManagerLine,
-        chalk.bold(`${activePackageManagerLine} <----- active`)
+        picocolors.bold(`${activePackageManagerLine} <----- active`)
       )
     );
   });

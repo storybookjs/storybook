@@ -1,5 +1,5 @@
 import prompts from 'prompts';
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import boxen from 'boxen';
 import { createWriteStream, move, remove } from 'fs-extra';
 import { join } from 'path';
@@ -60,7 +60,7 @@ const cleanup = () => {
 
 const logAvailableMigrations = () => {
   const availableFixes = allFixes
-    .map((f) => chalk.yellow(f.id))
+    .map((f) => picocolors.yellow(f.id))
     .map((x) => `- ${x}`)
     .join('\n');
 
@@ -153,7 +153,7 @@ export const automigrate = async ({
   const fixes: Fix[] = fixId ? selectedFixes.filter((f) => f.id === fixId) : selectedFixes;
 
   if (fixId && fixes.length === 0) {
-    logger.info(`📭 No migrations found for ${chalk.magenta(fixId)}.`);
+    logger.info(`📭 No migrations found for ${picocolors.magenta(fixId)}.`);
     logAvailableMigrations();
     return null;
   }
@@ -264,7 +264,7 @@ export async function runFixes({
         });
       }
     } catch (error) {
-      logger.info(`⚠️  failed to check fix ${chalk.bold(f.id)}`);
+      logger.info(`⚠️  failed to check fix ${picocolors.bold(f.id)}`);
       if (error instanceof Error) {
         logger.error(`\n${error.stack}`);
         fixSummary.failed[f.id] = error.message;
@@ -276,7 +276,7 @@ export async function runFixes({
       const promptType: Prompt =
         typeof f.promptType === 'function' ? await f.promptType(result) : f.promptType ?? 'auto';
 
-      logger.info(`\n🔎 found a '${chalk.cyan(f.id)}' migration:`);
+      logger.info(`\n🔎 found a '${picocolors.cyan(f.id)}' migration:`);
       const message = f.prompt(result);
 
       const getTitle = () => {
@@ -341,7 +341,9 @@ export async function runFixes({
             {
               type: 'confirm',
               name: 'fix',
-              message: `Do you want to run the '${chalk.cyan(f.id)}' migration on your project?`,
+              message: `Do you want to run the '${picocolors.cyan(
+                f.id
+              )}' migration on your project?`,
               initial: f.promptDefaultValue ?? true,
             },
             {
@@ -382,7 +384,7 @@ export async function runFixes({
               mainConfigPath,
               skipInstall,
             });
-            logger.info(`✅ ran ${chalk.cyan(f.id)} migration`);
+            logger.info(`✅ ran ${picocolors.cyan(f.id)} migration`);
 
             fixResults[f.id] = FixStatus.SUCCEEDED;
             fixSummary.succeeded.push(f.id);
@@ -391,7 +393,7 @@ export async function runFixes({
             fixSummary.failed[f.id] =
               error instanceof Error ? error.message : 'Failed to run migration';
 
-            logger.info(`❌ error when running ${chalk.cyan(f.id)} migration`);
+            logger.info(`❌ error when running ${picocolors.cyan(f.id)} migration`);
             logger.info(error);
             logger.info();
           }

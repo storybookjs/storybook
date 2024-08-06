@@ -1,4 +1,4 @@
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import fs from 'fs';
 import fse from 'fs-extra';
 import path, { join } from 'path';
@@ -32,7 +32,7 @@ export function readFileAsJson(jsonPath: string, allowComments?: boolean) {
   try {
     return JSON.parse(jsonContent);
   } catch (e) {
-    logger.error(chalk.red(`Invalid json in file: ${filePath}`));
+    logger.error(picocolors.red(`Invalid json in file: ${filePath}`));
     throw e;
   }
 }

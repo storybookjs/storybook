@@ -1,6 +1,6 @@
 /* eslint-disable no-underscore-dangle */
+import picocolors from 'picocolors';
 import path from 'node:path';
-import chalk from 'chalk';
 import fs from 'fs-extra';
 import slash from 'slash';
 import invariant from 'tiny-invariant';
@@ -140,7 +140,7 @@ export class StoryIndexGenerator {
 
         if (files.length === 0) {
           once.warn(
-            `No story files found for the specified pattern: ${chalk.blue(
+            `No story files found for the specified pattern: ${picocolors.blue(
               path.join(specifier.directory, specifier.files)
             )}`
           );
@@ -513,7 +513,7 @@ export class StoryIndexGenerator {
     } catch (err) {
       if (err && (err as { source: any }).source?.match(/mdast-util-mdx-jsx/g)) {
         logger.warn(
-          `💡 This seems to be an MDX2 syntax error. Please refer to the MDX section in the following resource for assistance on how to fix this: ${chalk.yellow(
+          `💡 This seems to be an MDX2 syntax error. Please refer to the MDX section in the following resource for assistance on how to fix this: ${picocolors.yellow(
             'https://storybook.js.org/migration-guides/7.0'
           )}`
         );

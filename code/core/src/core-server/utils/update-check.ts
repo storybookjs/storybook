@@ -1,4 +1,4 @@
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import { colors } from '@storybook/core/node-logger';
 import semver from 'semver';
 import { dedent } from 'ts-dedent';
@@ -42,13 +42,13 @@ export function createUpdateMessage(updateInfo: VersionCheck, version: string): 
       updateInfo.success && semver.lt(version, updateInfo.data.latest.version)
         ? dedent`
           ${colors.orange(
-            `A new version (${chalk.bold(updateInfo.data.latest.version)}) is available!`
+            `A new version (${picocolors.bold(updateInfo.data.latest.version)}) is available!`
           )}
 
-          ${chalk.gray('Upgrade now:')} ${colors.green(upgradeCommand)}
+          ${picocolors.gray('Upgrade now:')} ${colors.green(upgradeCommand)}
 
-          ${chalk.gray('Read full changelog:')} ${chalk.gray.underline(
-            'https://github.com/storybookjs/storybook/blob/main/CHANGELOG.md'
+          ${picocolors.gray('Read full changelog:')} ${picocolors.gray(
+            picocolors.underline('https://github.com/storybookjs/storybook/blob/main/CHANGELOG.md')
           )}
         `
         : '';

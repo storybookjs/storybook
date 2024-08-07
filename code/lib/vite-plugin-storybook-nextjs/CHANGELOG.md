@@ -1,3 +1,15 @@
+# v1.0.4 (Wed Aug 07 2024)
+
+#### ⚠️ Pushed to `main`
+
+- Fix proper handling of require in ESM environments ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
 # v1.0.3 (Tue Aug 06 2024)
 
 #### ⚠️ Pushed to `main`

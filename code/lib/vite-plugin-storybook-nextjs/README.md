@@ -110,7 +110,7 @@ When testing components that rely on Next.js Server Actions, you need to ensure 
    });
    ```
 
-## SWC Mode
+### SWC Mode
 
 Only [Next.js in SWC mode](https://nextjs.org/docs/architecture/nextjs-compiler) is supported. If your project was forced to opt out of Babel for some reason, you will very likely encounter issues with this plugin (e.g., Emotion support in SWC is still lagging behind).
 

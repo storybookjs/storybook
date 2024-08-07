@@ -116,6 +116,7 @@ async function generateDistFiles() {
     target: 'node18',
     splitting: false,
     platform: 'neutral',
+    external: ['prettier'],
     mainFields: ['main', 'module', 'node'],
     conditions: ['node', 'module', 'import', 'require'],
   } satisfies EsbuildContextOptions;
@@ -304,6 +305,7 @@ async function generateDistFiles() {
       console.log(`compiled ${chalk.cyan(filename)}`);
     });
   } else {
+    const i = 0;
     await Promise.all(
       compile.map(async (context) => {
         const out = await context.rebuild();
@@ -316,7 +318,7 @@ async function generateDistFiles() {
          */
 
         // if (out.metafile) {
-        //   await Bun.write('report/meta.json', JSON.stringify(out.metafile, null, 2));
+        //   await Bun.write(`report/${i++}/meta.json`, JSON.stringify(out.metafile, null, 2));
         //   await Bun.write(
         //     'report/meta.txt',
         //     await esbuild.analyzeMetafile(out.metafile, { color: false, verbose: false })

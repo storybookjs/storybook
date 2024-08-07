@@ -29,7 +29,9 @@ export const dts = async (entry: string, externals: string[], tsconfig: string) 
   const dir = dirname(entry).replace('src', 'dist');
   const out = await rollup.rollup({
     input: entry,
-    external: [...externals, 'ast-types'].map((dep) => new RegExp(`^${dep}($|\\/|\\\\)`)),
+    external: [...externals, 'ast-types', '@babel/traverse'].map(
+      (dep) => new RegExp(`^${dep}($|\\/|\\\\)`)
+    ),
     output: { file: entry.replace('src', 'dist').replace('.ts', '.d.ts'), format: 'es' },
     plugins: [
       rpd.dts({

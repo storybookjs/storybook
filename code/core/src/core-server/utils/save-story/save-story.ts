@@ -19,10 +19,10 @@ import type { CoreConfig, Options } from '@storybook/core/types';
 import { telemetry } from '@storybook/core/telemetry';
 
 import { basename, join } from 'node:path';
-import { updateArgsInCsfFile } from './update-args-in-csf-file';
-import { duplicateStoryWithNewName } from './duplicate-story-with-new-name';
+import { updateArgsInCsfFile } from '@storybook/core/csf-tools';
+import { duplicateStoryWithNewName } from '@storybook/core/csf-tools';
 import { formatFileContent } from '@storybook/core/common';
-import { SaveStoryError } from './utils';
+import { SaveStoryError } from '@storybook/core/csf-tools';
 
 const parseArgs = (args: string): Record<string, any> =>
   JSON.parse(args, (_, value) => {

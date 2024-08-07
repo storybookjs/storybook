@@ -1,11 +1,9 @@
 import type { PackageJson, StorybookConfig } from '@storybook/core/types';
 import { getConfigInfo } from '@storybook/core/common';
 import { readFile } from 'fs-extra';
-import * as babel from '@babel/core';
-import type { BabelFile } from '@babel/core';
-import { babelParse } from '@storybook/core/csf-tools';
 import { dedent } from 'ts-dedent';
 import chalk from 'chalk';
+import { babelParseFile } from '@storybook/core/csf-tools';
 
 export async function warnWhenUsingArgTypesRegex(
   packageJson: PackageJson,
@@ -23,11 +21,7 @@ export async function warnWhenUsingArgTypesRegex(
     ) ?? false;
 
   if (hasVisualTestAddon && previewConfig && previewContent.includes('argTypesRegex')) {
-    // @ts-expect-error File is not yet exposed, see https://github.com/babel/babel/issues/11350#issuecomment-644118606
-    const file: BabelFile = new babel.File(
-      { filename: previewConfig },
-      { code: previewContent, ast: babelParse(previewContent) }
-    );
+    const file = babelParseFile(previewContent, previewConfig);
 
     file.path.traverse({
       Identifier: (path) => {

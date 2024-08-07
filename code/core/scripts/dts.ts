@@ -16,7 +16,6 @@ const external = [
   ...nodeInternals,
   'typescript',
   '@storybook/core',
-
   '@storybook/core/builder-manager',
   '@storybook/core/channels',
   '@storybook/core/client-logger',

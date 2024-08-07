@@ -413,6 +413,14 @@
     "util": "^0.12.4",
     "watchpack": "^2.2.0"
   },
+  "peerDependencies": {
+    "prettier": "^2 || ^3"
+  },
+  "peerDependenciesMeta": {
+    "prettier": {
+      "optional": true
+    }
+  },
   "publishConfig": {
     "access": "public"
   },

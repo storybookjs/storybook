@@ -8,7 +8,7 @@ import {
 import path from 'node:path';
 import fs from 'fs/promises';
 
-import { getParser } from '../utils/parser';
+import { getParser } from '@storybook/core/csf-tools';
 import { searchFiles } from '../utils/search-files';
 import type {
   FileComponentSearchRequestPayload,

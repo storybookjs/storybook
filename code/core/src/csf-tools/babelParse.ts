@@ -1,7 +1,7 @@
 import type * as t from '@babel/types';
 import * as babelParser from '@babel/parser';
+import * as babel from '@babel/core';
 import * as recast from 'recast';
-import type { ParserOptions } from '@babel/parser';
 
 function parseWithFlowOrTypescript(source: string, parserOptions: babelParser.ParserOptions) {
   const flowCommentPattern = /^\s*\/\/\s*@flow/;
@@ -20,7 +20,7 @@ function parseWithFlowOrTypescript(source: string, parserOptions: babelParser.Pa
   return babelParser.parse(source, mergedParserOptions);
 }
 
-export const parserOptions: ParserOptions = {
+export const parserOptions: babelParser.ParserOptions = {
   sourceType: 'module',
   // FIXME: we should get this from the project config somehow?
   plugins: ['jsx', 'decorators-legacy', 'classProperties'],
@@ -35,6 +35,14 @@ export const babelParse = (code: string): t.File => {
       },
     },
   });
+};
+
+/**
+ * Using new babel.File is more powerful and give access to API such as buildCodeFrameError
+ */
+export const babelParseFile = (code: string, filename: string): babel.BabelFile => {
+  // @ts-expect-error File is not yet exposed, see https://github.com/babel/babel/issues/11350#issuecomment-644118606
+  return new babel.File({ filename }, { code, ast: babelParse(code) });
 };
 
 interface ASTNode {

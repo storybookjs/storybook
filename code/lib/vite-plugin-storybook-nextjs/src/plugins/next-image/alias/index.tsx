@@ -1,4 +1,7 @@
+import { createRequire } from "node:module";
 import { VITEST_PLUGIN_NAME } from "../../../utils";
+
+const require = createRequire(import.meta.url);
 
 type Env = "browser" | "node";
 

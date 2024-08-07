@@ -112,7 +112,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         esbuildOptions: (c) => {
           c.conditions = ['module'];
           c.platform = platform || 'browser';
-          Object.assign(c, getESBuildOptions(optimized));
+          Object.assign(c, getESBuildOptions());
         },
       })
     );
@@ -136,7 +136,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
 
         esbuildOptions: (c) => {
           c.platform = 'node';
-          Object.assign(c, getESBuildOptions(optimized));
+          Object.assign(c, getESBuildOptions());
         },
       })
     );
@@ -195,13 +195,13 @@ async function getDTSConfigs({
   return { dtsBuild, dtsConfig, tsConfigExists };
 }
 
-function getESBuildOptions(optimized: boolean) {
+function getESBuildOptions() {
   return {
     logLevel: 'error',
     legalComments: 'none',
-    minifyWhitespace: optimized,
+    minifyWhitespace: false,
     minifyIdentifiers: false,
-    minifySyntax: optimized,
+    minifySyntax: false,
   };
 }
 

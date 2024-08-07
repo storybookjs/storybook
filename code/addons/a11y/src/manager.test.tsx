@@ -56,7 +56,6 @@ describe('A11yManager', () => {
           >
             Accessibility
           </span>
-          
         </Spaced>
       </div>
     `);

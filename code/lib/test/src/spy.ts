@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-shadow */
-import type { MockInstance } from '@vitest/spy';
+import type { Mock as MockV2, MockInstance } from '@vitest/spy';
 import {
   spyOn as vitestSpyOn,
   isMockFunction,
@@ -31,11 +31,30 @@ export const spyOn: typeof vitestSpyOn = (...args) => {
   return reactiveMock(mock);
 };
 
-// @ts-expect-error Make sure we export the exact same type as @vitest/spy
-export const fn: typeof vitestFn = (implementation) => {
+type Procedure = (...args: any[]) => any;
+
+// TODO: Remove in 9.0
+export type Mock<T extends Procedure | any[] = any[], R = any> = T extends Procedure
+  ? MockV2<T>
+  : T extends any[]
+    ? MockV2<(...args: T) => R>
+    : never;
+
+// V2
+export function fn<T extends Procedure = Procedure>(implementation?: T): Mock<T>;
+// TODO: Remove in 9.0
+// V1
+export function fn<TArgs extends any[] = any, R = any>(): Mock<(...args: TArgs) => R>;
+export function fn<TArgs extends any[] = any[], R = any>(
+  implementation: (...args: TArgs) => R
+): Mock<(...args: TArgs) => R>;
+export function fn<TArgs extends any[] = any[], R = any>(
+  implementation?: (...args: TArgs) => R
+): Mock<(...args: TArgs) => R>;
+export function fn(implementation?: Procedure) {
   const mock = implementation ? vitestFn(implementation) : vitestFn();
   return reactiveMock(mock);
-};
+}
 
 function reactiveMock(mock: MockInstance) {
   const reactive = listenWhenCalled(mock);

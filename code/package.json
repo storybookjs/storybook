@@ -1,6 +1,6 @@
 {
   "name": "@storybook/root",
-  "version": "8.3.0-alpha.3",
+  "version": "8.3.0-alpha.4",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -76,14 +76,13 @@
   ],
   "resolutions": {
     "@playwright/test": "1.36.0",
-    "@testing-library/jest-dom/aria-query": "5.1.3",
     "@types/node": "^18.0.0",
-    "@vitest/expect": "patch:@vitest/expect@npm%3A1.6.0#~/.yarn/patches/@vitest-expect-npm-1.6.0-0e382f8212.patch",
     "esbuild": "^0.23.0",
     "playwright": "1.36.0",
     "playwright-core": "1.36.0",
     "serialize-javascript": "^3.1.0",
-    "type-fest": "~2.19"
+    "type-fest": "~2.19",
+    "@vitest/expect@npm:2.0.5": "patch:@vitest/expect@npm%3A2.0.5#~/.yarn/patches/@vitest-expect-npm-2.0.5-8933466cce.patch"
   },
   "dependencies": {
     "@chromatic-com/storybook": "^1.6.1",
@@ -158,10 +157,10 @@
     "@storybook/web-components": "workspace:*",
     "@storybook/web-components-vite": "workspace:*",
     "@storybook/web-components-webpack5": "workspace:*",
-    "@testing-library/dom": "^7.29.4",
-    "@testing-library/jest-dom": "6.4.5",
-    "@testing-library/react": "^14.0.0",
-    "@testing-library/user-event": "^14.4.3",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.4.8",
+    "@testing-library/react": "^16.0.0",
+    "@testing-library/user-event": "^14.5.2",
     "@types/express": "^4.17.21",
     "@types/fs-extra": "^11.0.1",
     "@types/lodash": "^4.14.167",
@@ -174,7 +173,7 @@
     "@typescript-eslint/experimental-utils": "^5.62.0",
     "@typescript-eslint/parser": "^6.18.1",
     "@vitejs/plugin-react": "^3.0.1",
-    "@vitest/coverage-v8": "^1.2.2",
+    "@vitest/coverage-v8": "^2.0.5",
     "create-storybook": "workspace:*",
     "cross-env": "^7.0.3",
     "danger": "^12.3.3",
@@ -208,7 +207,7 @@
     "typescript": "^5.4.3",
     "util": "^0.12.4",
     "vite": "^4.0.0",
-    "vitest": "^1.6.0",
+    "vitest": "^2.0.5",
     "wait-on": "^7.0.1"
   },
   "dependenciesMeta": {

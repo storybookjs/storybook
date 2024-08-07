@@ -521,12 +521,10 @@ process.on('exit', () => {
   });
 });
 
-if (require.main === module) {
-  run()
-    .then((status) => process.exit(status))
-    .catch((err) => {
-      logger.error();
-      logger.error(err);
-      process.exit(1);
-    });
-}
+run()
+  .then((status) => process.exit(status))
+  .catch((err) => {
+    logger.error();
+    logger.error(err);
+    process.exit(1);
+  });

@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
   # To test fixes on push rather than wait for the scheduling, do the following:
   # 1. Uncomment the lines below and add your branch.
-  # push:
-  #   branches:
-  #     - <your-branch-name>
+  push:
+    branches:
+      - norbert/temp-jiti
   # 2. Change the "ref" value to <your-branch-name> in the actions/checkout step below.
   # 3. Comment out the whole "generate-main" job starting at line 77
   # 4. 👉 DON'T FORGET TO UNDO THE STEPS BEFORE YOU MERGE YOUR CHANGES!

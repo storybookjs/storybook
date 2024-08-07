@@ -8,6 +8,7 @@ const require = createRequire(import.meta.url);
 
 moduleAlias.addAliases({
   react: "next/dist/compiled/react",
+  "react-dom/server": "next/dist/compiled/react-dom/server.js",
   "react-dom/test-utils": require.resolve(
     "next/dist/compiled/react-dom/cjs/react-dom-test-utils.production.js",
   ),

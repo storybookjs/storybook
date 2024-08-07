@@ -1,6 +1,6 @@
 import { createRequire } from "node:module";
 import type { Plugin } from "vite";
-import { VITEST_PLUGIN_NAME, isVitestEnv } from "../../utils";
+import { VITEST_PLUGIN_NAME, getExecutionEnvironment } from "../../utils";
 
 const require = createRequire(import.meta.url);
 
@@ -45,9 +45,8 @@ export const getAlias = (env: Env) => ({
 export const vitePluginNextMocks = () =>
   ({
     name: "vite-plugin-next-mocks",
-    config: (env) => {
-      const aliasEnv =
-        isVitestEnv && env.test?.browser?.enabled !== true ? "node" : "browser";
+    config: (config) => {
+      const aliasEnv = getExecutionEnvironment(config);
       return {
         resolve: {
           alias: getAlias(aliasEnv),

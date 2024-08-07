@@ -1,3 +1,20 @@
+# v1.0.5 (Wed Aug 07 2024)
+
+#### 🐛 Bug Fix
+
+- Prose tweaks and other improvements for README [#12](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/12) ([@kylegach](https://github.com/kylegach) [@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### ⚠️ Pushed to `main`
+
+- Support react-dom/server ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 2
+
+- Kyle Gach ([@kylegach](https://github.com/kylegach))
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
 # v1.0.4 (Wed Aug 07 2024)
 
 #### ⚠️ Pushed to `main`

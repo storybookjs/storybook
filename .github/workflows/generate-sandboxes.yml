@@ -78,58 +78,58 @@ jobs:
             The generation of some or all sandboxes on the **next** branch has failed.
             [See the job summary for details](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
-  generate-main:
-    name: Generate to main
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: main
+  # generate-main:
+  #   name: Generate to main
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         ref: main
 
-      - uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: 1.1.1
+  #     - uses: oven-sh/setup-bun@v1
+  #       with:
+  #         bun-version: 1.1.1
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: ".nvmrc"
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version-file: ".nvmrc"
 
-      - name: Setup git user
-        run: |
-          git config --global user.name "storybook-bot"
-          git config --global user.email "32066757+storybook-bot@users.noreply.github.com"
+  #     - name: Setup git user
+  #       run: |
+  #         git config --global user.name "storybook-bot"
+  #         git config --global user.email "32066757+storybook-bot@users.noreply.github.com"
 
-      - name: Install dependencies
-        working-directory: ./scripts
-        run: node --experimental-modules ./check-dependencies.js
+  #     - name: Install dependencies
+  #       working-directory: ./scripts
+  #       run: node --experimental-modules ./check-dependencies.js
 
-      - name: Compile Storybook libraries
-        run: yarn task --task compile --start-from=auto --no-link
+  #     - name: Compile Storybook libraries
+  #       run: yarn task --task compile --start-from=auto --no-link
 
-      - name: Publish to local registry
-        run: yarn local-registry --publish
+  #     - name: Publish to local registry
+  #       run: yarn local-registry --publish
 
-      - name: Run local registry
-        run: yarn local-registry --open &
+  #     - name: Run local registry
+  #       run: yarn local-registry --open &
 
-      - name: Wait for registry
-        run: yarn wait-on tcp:127.0.0.1:6001
+  #     - name: Wait for registry
+  #       run: yarn wait-on tcp:127.0.0.1:6001
 
-      - name: Generate
-        id: generate
-        run: yarn generate-sandboxes --local-registry
+  #     - name: Generate
+  #       id: generate
+  #       run: yarn generate-sandboxes --local-registry
 
-      - name: Publish
-        # publish sandboxes even if the generation fails, as some sandboxes might have been generated successfully
-        if: ${{ !cancelled() }}
-        run: yarn publish-sandboxes --remote=https://storybook-bot:${{ secrets.PAT_STORYBOOK_BOT }}@github.com/storybookjs/sandboxes.git --push --branch=main
+  #     - name: Publish
+  #       # publish sandboxes even if the generation fails, as some sandboxes might have been generated successfully
+  #       if: ${{ !cancelled() }}
+  #       run: yarn publish-sandboxes --remote=https://storybook-bot:${{ secrets.PAT_STORYBOOK_BOT }}@github.com/storybookjs/sandboxes.git --push --branch=main
 
-      - name: Report failure to Discord
-        if: failure()
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
-        uses: Ilshidur/action-discord@master
-        with:
-          args: |
-            The generation of some or all sandboxes on the **main** branch has failed.
-            [See the job summary for details](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+  #     - name: Report failure to Discord
+  #       if: failure()
+  #       env:
+  #         DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
+  #       uses: Ilshidur/action-discord@master
+  #       with:
+  #         args: |
+  #           The generation of some or all sandboxes on the **main** branch has failed.
+  #           [See the job summary for details](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})

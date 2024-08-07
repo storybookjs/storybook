@@ -28,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: next
+          ref: norbert/temp-jiti
 
       - uses: oven-sh/setup-bun@v1
         with:

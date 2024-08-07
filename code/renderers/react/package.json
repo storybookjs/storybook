@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react",
-  "version": "8.3.0-alpha.3",
+  "version": "8.3.0-alpha.4",
   "description": "Storybook React renderer",
   "keywords": [
     "storybook"
@@ -60,8 +60,8 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
     "@storybook/components": "workspace:^",
@@ -72,13 +72,12 @@
     "@storybook/theming": "workspace:^",
     "@types/escodegen": "^0.0.6",
     "@types/estree": "^0.0.51",
-    "@types/node": "^18.0.0",
+    "@types/node": "^20.0.0",
     "acorn": "^7.4.1",
     "acorn-jsx": "^5.3.1",
     "acorn-walk": "^7.2.0",
     "escodegen": "^2.1.0",
     "html-tags": "^3.1.0",
-    "lodash": "^4.17.21",
     "prop-types": "^15.7.2",
     "react-element-to-jsx-string": "^15.0.0",
     "semver": "^7.3.7",
@@ -93,6 +92,7 @@
     "@types/util-deprecate": "^1.0.0",
     "babel-plugin-react-docgen": "^4.2.1",
     "expect-type": "^0.15.0",
+    "lodash": "^4.17.21",
     "require-from-string": "^2.0.2"
   },
   "peerDependencies": {

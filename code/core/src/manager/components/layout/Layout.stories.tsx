@@ -63,10 +63,8 @@ const meta = {
     setManagerLayoutState: fn(),
     hasTab: false,
   },
-  parameters: {
-    theme: 'light',
-    layout: 'fullscreen',
-  },
+  globals: { sb_theme: 'light' },
+  parameters: { layout: 'fullscreen' },
   decorators: [
     MobileNavigationStoriesMeta.decorators[0] as any,
     (storyFn) => (
@@ -97,7 +95,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Desktop: Story = {};
 export const Dark: Story = {
-  parameters: { theme: 'dark' },
+  globals: { sb_theme: 'dark' },
 };
 export const DesktopHorizontal: Story = {
   args: {
@@ -127,10 +125,7 @@ export const Mobile = {
 };
 export const MobileDark = {
   ...Mobile,
-  parameters: {
-    ...Mobile.parameters,
-    theme: 'dark',
-  },
+  globals: { sb_theme: 'dark' },
 };
 
 export const MobileDocs = {

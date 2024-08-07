@@ -47,6 +47,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -60,6 +61,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -90,6 +92,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -102,6 +105,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -131,6 +135,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -161,6 +166,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -189,6 +195,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -215,6 +222,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -242,6 +250,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -252,6 +261,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -279,6 +289,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -289,6 +300,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -316,6 +328,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -326,6 +339,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -354,6 +368,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -364,6 +379,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -396,6 +412,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -409,6 +426,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -441,6 +459,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -454,6 +473,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -483,6 +503,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -493,6 +514,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -522,6 +544,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -532,6 +555,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -559,6 +583,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -569,6 +594,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -600,6 +626,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -630,6 +657,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -661,6 +689,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -697,6 +726,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -728,6 +758,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -741,6 +772,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -767,6 +799,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -777,6 +810,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -808,6 +842,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -821,6 +856,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -853,6 +889,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -932,6 +969,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -942,6 +980,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -994,6 +1033,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -1004,6 +1044,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -1080,6 +1121,7 @@ describe('CsfFile', () => {
               render: true
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -1111,6 +1153,7 @@ describe('CsfFile', () => {
               render: true
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -1140,6 +1183,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -1171,6 +1215,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -1251,6 +1296,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -1283,6 +1329,7 @@ describe('CsfFile', () => {
               render: true
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -1317,6 +1364,7 @@ describe('CsfFile', () => {
               render: true
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -1376,6 +1424,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -1410,6 +1459,7 @@ describe('CsfFile', () => {
               render: true
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -1440,6 +1490,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: false
               mount: true
               moduleMock: false
@@ -1469,6 +1520,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: false
               mount: true
               moduleMock: false
@@ -1501,6 +1553,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: false
               mount: true
               moduleMock: false
@@ -1533,6 +1586,7 @@ describe('CsfFile', () => {
               render: true
               loaders: true
               beforeEach: false
+              globals: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -1564,6 +1618,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -1613,6 +1668,7 @@ describe('CsfFile', () => {
             render: false
             loaders: false
             beforeEach: false
+            globals: false
             storyFn: false
             mount: false
             moduleMock: false
@@ -1632,6 +1688,7 @@ describe('CsfFile', () => {
             render: false
             loaders: false
             beforeEach: false
+            globals: false
             storyFn: false
             mount: false
             moduleMock: false
@@ -1669,6 +1726,7 @@ describe('CsfFile', () => {
             render: false
             loaders: false
             beforeEach: false
+            globals: false
             storyFn: false
             mount: false
             moduleMock: false
@@ -1711,6 +1769,7 @@ describe('CsfFile', () => {
             render: false
             loaders: false
             beforeEach: false
+            globals: false
             storyFn: false
             mount: false
             moduleMock: false
@@ -1768,6 +1827,7 @@ describe('CsfFile', () => {
             render: true
             loaders: false
             beforeEach: false
+            globals: false
             storyFn: false
             mount: false
             moduleMock: false
@@ -1804,6 +1864,7 @@ describe('CsfFile', () => {
             render: true
             loaders: false
             beforeEach: false
+            globals: false
             storyFn: false
             mount: false
             moduleMock: false
@@ -1840,6 +1901,7 @@ describe('CsfFile', () => {
             render: true
             loaders: false
             beforeEach: false
+            globals: false
             storyFn: false
             mount: false
             moduleMock: false
@@ -1876,6 +1938,7 @@ describe('CsfFile', () => {
             render: true
             loaders: false
             beforeEach: false
+            globals: false
             storyFn: false
             mount: false
             moduleMock: false
@@ -1905,6 +1968,37 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: true
+              globals: false
+              storyFn: false
+              mount: false
+              moduleMock: false
+      `);
+    });
+  });
+
+  describe('globals', () => {
+    it('basic', () => {
+      expect(
+        parse(
+          dedent`
+          export default { title: 'foo/bar' };
+          export const A = {
+            globals: { foo: 'bar' }
+          };
+        `
+        )
+      ).toMatchInlineSnapshot(`
+        meta:
+          title: foo/bar
+        stories:
+          - id: foo-bar--a
+            name: A
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              globals: true
               storyFn: false
               mount: false
               moduleMock: false
@@ -1933,6 +2027,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: false
               mount: false
               moduleMock: true
@@ -1958,6 +2053,7 @@ describe('CsfFile', () => {
               render: false
               loaders: false
               beforeEach: false
+              globals: false
               storyFn: false
               mount: false
               moduleMock: true

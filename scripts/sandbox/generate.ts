@@ -2,13 +2,7 @@ import { join, relative } from 'path';
 import type { Options as ExecaOptions } from 'execa';
 import pLimit from 'p-limit';
 import prettyTime from 'pretty-hrtime';
-import {
-  copy,
-  emptyDir,
-  ensureDir,
-  move,
-  remove,
-} from '@ndelangen/fs-extra-unified';
+import { copy, emptyDir, ensureDir, move, remove } from '@ndelangen/fs-extra-unified';
 import { program } from 'commander';
 import { execaCommand } from 'execa';
 import { esMain } from '../utils/esmain';
@@ -33,6 +27,7 @@ import {
 import * as ghActions from '@actions/core';
 import { dedent } from 'ts-dedent';
 import { rename, writeFile } from 'node:fs/promises';
+import { temporaryDirectory } from '../../code/core/src/common/utils/cli';
 
 const isCI = process.env.GITHUB_ACTIONS === 'true';
 
@@ -103,8 +98,7 @@ const addStorybook = async ({
   const beforeDir = join(baseDir, BEFORE_DIR_NAME);
   const afterDir = join(baseDir, AFTER_DIR_NAME);
 
-  const { temporaryDirectory } = await import('tempy');
-  const tmpDir = temporaryDirectory();
+  const tmpDir = await temporaryDirectory();
 
   try {
     await copy(beforeDir, tmpDir);
@@ -180,7 +174,6 @@ const runGenerators = async (
   console.log(`🤹‍♂️ Generating sandboxes with a concurrency of ${1}`);
 
   const limit = pLimit(1);
-  const { temporaryDirectory } = await import('tempy');
 
   const generationResults = await Promise.allSettled(
     generators.map(({ dirName, name, script, expected, env }) =>
@@ -197,7 +190,7 @@ const runGenerators = async (
           await emptyDir(baseDir);
 
           // We do the creation inside a temp dir to avoid yarn container problems
-          const createBaseDir = temporaryDirectory();
+          const createBaseDir = await temporaryDirectory();
           if (!script.includes('pnp')) {
             await setupYarn({ cwd: createBaseDir });
           }

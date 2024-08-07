@@ -9,7 +9,7 @@ module.exports = {
         shippedProposals: true,
         useBuiltIns: 'usage',
         corejs: '3',
-        targets: { node: '18' },
+        targets: { node: '20' },
       },
     ],
   ],

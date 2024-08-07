@@ -51,7 +51,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   } = (await readJson(join(cwd, 'package.json'))) as PackageJsonWithBundlerConfig;
 
   if (pre) {
-    await exec(`bun ${pre}`, { cwd });
+    await exec(`jiti ${pre}`, { cwd });
   }
 
   const reset = hasFlag(flags, 'reset');
@@ -205,7 +205,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   );
 
   if (post) {
-    await exec(`bun ${post}`, { cwd }, { debug: true });
+    await exec(`jiti ${post}`, { cwd }, { debug: true });
   }
 
   console.log('done');

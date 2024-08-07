@@ -566,7 +566,7 @@ export class CsfFile {
           acc[key].tags = [...(acc[key].tags || []), 'play-fn'];
         }
         const stats = acc[key].__stats;
-        ['play', 'render', 'loaders', 'beforeEach'].forEach((annotation) => {
+        ['play', 'render', 'loaders', 'beforeEach', 'globals'].forEach((annotation) => {
           stats[annotation as keyof IndexInputStats] =
             !!storyAnnotations[annotation] || !!self._metaAnnotations[annotation];
         });

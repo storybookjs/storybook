@@ -71,7 +71,7 @@ export const docsRenderer = {
   render: vi.fn().mockImplementation((context, parameters, element) => Promise.resolve()),
   unmount: vi.fn(),
 };
-export const teardownrenderToCanvas: Mock<[TeardownRenderToCanvas]> = vi.fn();
+export const teardownrenderToCanvas: Mock<(teardown: TeardownRenderToCanvas) => void> = vi.fn();
 const rawProjectAnnotations = {
   initialGlobals: { a: 'b' },
   globalTypes: {},

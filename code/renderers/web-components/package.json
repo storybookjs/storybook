@@ -1,6 +1,6 @@
 {
   "name": "@storybook/web-components",
-  "version": "8.3.0-alpha.3",
+  "version": "8.3.0-alpha.4",
   "description": "Storybook web-components renderer",
   "keywords": [
     "lit",
@@ -46,8 +46,8 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
     "@storybook/components": "workspace:^",
@@ -60,7 +60,7 @@
   },
   "devDependencies": {
     "@types/cross-spawn": "^6.0.2",
-    "@types/node": "^18.0.0",
+    "@types/node": "^20.0.0",
     "cross-spawn": "^7.0.3",
     "lit": "2.3.1",
     "typescript": "^5.3.2",

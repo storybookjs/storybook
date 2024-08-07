@@ -22,6 +22,7 @@ const meta = {
   args: {
     menu: fakemenu,
   },
+  globals: { sb_theme: 'side-by-side' },
   decorators: [(storyFn) => <LayoutProvider>{storyFn()}</LayoutProvider>],
 } satisfies Meta<typeof SidebarMenu>;
 export default meta;
@@ -47,6 +48,7 @@ const DoubleThemeRenderingHack = styled.div({
 });
 
 export const Expanded: Story = {
+  globals: { sb_theme: 'light' },
   render: () => {
     const menu = useMenu(
       { whatsNewData: { status: 'SUCCESS', disableWhatsNewNotifications: false } } as State,

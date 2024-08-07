@@ -72,7 +72,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     private renderToScreen: RenderToCanvas<TRenderer>,
     private callbacks: RenderContextCallbacks<TRenderer> & { showStoryDuringRender?: () => void },
     public id: StoryId,
-    public viewMode: StoryContext['viewMode'],
+    public viewMode: StoryContext<TRenderer>['viewMode'],
     public renderOptions: StoryRenderOptions = { autoplay: true, forceInitialArgs: false },
     story?: PreparedStory<TRenderer>
   ) {

@@ -10,6 +10,7 @@ import { argsHash, SourceContext } from './SourceContainer';
 const meta: Meta<typeof Source> = {
   component: Source,
   parameters: {
+    layout: 'fullscreen',
     relativeCsfPaths: ['../examples/SourceParameters.stories'],
     snippets: {
       'storybook-blocks-examples-stories-for-the-source-block--no-parameters': {

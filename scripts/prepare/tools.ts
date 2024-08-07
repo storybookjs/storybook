@@ -1,7 +1,6 @@
 import { dirname, join } from 'node:path';
 import * as process from 'node:process';
 import { glob } from 'glob';
-import Bun from 'bun';
 
 import slash from 'slash';
 import typescript from 'typescript';
@@ -21,11 +20,13 @@ import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 
 import * as rpd from 'rollup-plugin-dts';
 import * as rollup from 'rollup';
+import { writeFile } from 'node:fs/promises';
+import { readJson } from 'fs-extra';
+import { spawn } from 'cross-spawn';
 
 export { globalExternals };
 
 export const dts = async (entry: string, externals: string[], tsconfig: string) => {
-  console.log(entry);
   const dir = dirname(entry).replace('src', 'dist');
   const out = await rollup.rollup({
     input: entry,
@@ -60,13 +61,15 @@ export const dts = async (entry: string, externals: string[], tsconfig: string) 
   await Promise.all(
     output.map(async (o) => {
       if (o.type === 'chunk') {
-        await Bun.write(join(dir, o.fileName), o.code);
+        await writeFile(join(dir, o.fileName), o.code);
       } else {
         throw new Error(`Unexpected output type: ${o.type} for ${entry} (${o.fileName})`);
       }
     })
   );
 };
+
+export { spawn };
 
 export const defineEntry =
   (cwd: string) =>
@@ -106,7 +109,6 @@ export {
   limit,
   sortPackageJson,
   prettier,
-  Bun,
 };
 
 export const nodeInternals = [
@@ -116,7 +118,7 @@ export const nodeInternals = [
 ];
 
 export const getWorkspace = async () => {
-  const codePackage = await Bun.file(join(CODE_DIRECTORY, 'package.json')).json();
+  const codePackage = await readJson(join(CODE_DIRECTORY, 'package.json'));
   const {
     workspaces: { packages: patterns },
   } = codePackage;
@@ -129,7 +131,7 @@ export const getWorkspace = async () => {
     workspaces
       .flatMap((p) => p.map((i) => join(CODE_DIRECTORY, i)))
       .map(async (p) => {
-        const pkg = await Bun.file(join(p, 'package.json')).json();
+        const pkg = await readJson(join(p, 'package.json'));
         return { ...pkg, path: p } as typefest.PackageJson &
           Required<Pick<typefest.PackageJson, 'name' | 'version'>> & { path: string };
       })

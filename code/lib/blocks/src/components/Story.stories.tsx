@@ -29,8 +29,10 @@ const meta: Meta<ExtendedStoryProps> = {
   // @ts-expect-error getting too complex with props
   component: StoryComponent,
   parameters: {
+    layout: 'fullscreen',
     relativeCsfPaths: ['../examples/Button.stories'],
   },
+  globals: { sb_theme: 'light' },
   args: {
     height: '100px',
     primary: false,
@@ -48,7 +50,10 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Loading = () => <StorySkeleton />;
+export const Loading = {
+  globals: { sb_theme: 'side-by-side' },
+  render: () => <StorySkeleton />,
+};
 
 export const Inline: Story = {
   args: {

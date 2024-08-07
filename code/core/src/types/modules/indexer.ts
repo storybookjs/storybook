@@ -95,6 +95,7 @@ export interface IndexInputStats {
   mount?: boolean;
   beforeEach?: boolean;
   moduleMock?: boolean;
+  globals?: boolean;
 }
 
 /**

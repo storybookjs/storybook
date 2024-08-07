@@ -1,6 +1,6 @@
 import { instrument } from '@storybook/instrumenter';
 import type { LoaderFunction } from '@storybook/csf';
-import chai from 'chai';
+import * as chai from 'chai';
 import { global } from '@storybook/global';
 import { expect as rawExpect } from './expect';
 import {

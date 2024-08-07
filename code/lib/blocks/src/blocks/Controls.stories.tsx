@@ -11,6 +11,7 @@ import * as EmptyArgTypesStories from '../examples/EmptyArgTypes.stories';
 const meta = {
   component: Controls,
   parameters: {
+    layout: 'fullscreen',
     relativeCsfPaths: [
       '../examples/ControlsParameters.stories',
       '../examples/EmptyArgTypes.stories',

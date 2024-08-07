@@ -9,6 +9,7 @@ import * as ButtonStoriesWithMetaSubtitleAsDocsSubtitle from '../examples/Button
 const meta: Meta<typeof Subtitle> = {
   component: Subtitle,
   parameters: {
+    layout: 'fullscreen',
     controls: {
       include: [],
       hideNoControlsWarning: true,

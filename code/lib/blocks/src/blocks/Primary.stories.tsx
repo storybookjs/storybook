@@ -6,6 +6,7 @@ import * as StoriesParametersStories from '../examples/StoriesParameters.stories
 const meta = {
   component: Primary,
   parameters: {
+    layout: 'fullscreen',
     // workaround for https://github.com/storybookjs/storybook/issues/20505
     docs: { source: { type: 'code' } },
     docsStyles: true,

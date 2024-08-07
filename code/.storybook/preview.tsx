@@ -12,16 +12,17 @@ import {
 } from 'storybook/internal/theming';
 import { useArgs, DocsContext as DocsContextProps } from 'storybook/internal/preview-api';
 import type { PreviewWeb } from 'storybook/internal/preview-api';
-import type { ReactRenderer } from '@storybook/react';
+import type { ReactRenderer, Decorator } from '@storybook/react';
 import type { Channel } from 'storybook/internal/channels';
 
 import { DocsContext } from '@storybook/blocks';
+import { MINIMAL_VIEWPORTS } from '@storybook/addon-viewport';
 
 import { DocsPageWrapper } from '../lib/blocks/src/components';
 
 const { document } = global;
 
-const ThemeBlock = styled.div<{ side: 'left' | 'right' }>(
+const ThemeBlock = styled.div<{ side: 'left' | 'right'; layout: string }>(
   {
     position: 'absolute',
     top: 0,
@@ -31,8 +32,10 @@ const ThemeBlock = styled.div<{ side: 'left' | 'right' }>(
     height: '100vh',
     bottom: 0,
     overflow: 'auto',
-    padding: 10,
   },
+  ({ layout }) => ({
+    padding: layout === 'fullscreen' ? 0 : '1rem',
+  }),
   ({ theme }) => ({
     background: theme.background.content,
     color: theme.color.defaultText,
@@ -49,14 +52,17 @@ const ThemeBlock = styled.div<{ side: 'left' | 'right' }>(
         }
 );
 
-const ThemeStack = styled.div(
+const ThemeStack = styled.div<{ layout: string }>(
   {
     position: 'relative',
-    minHeight: 'calc(50vh - 15px)',
+    flex: 1,
   },
   ({ theme }) => ({
     background: theme.background.content,
     color: theme.color.defaultText,
+  }),
+  ({ layout }) => ({
+    padding: layout === 'fullscreen' ? 0 : '1rem',
   })
 );
 
@@ -78,6 +84,25 @@ const PlayFnNotice = styled.div(
     background: '#fffbd9',
     color: theme.color.defaultText,
   })
+);
+
+const StackContainer = ({ children, layout }) => (
+  <div
+    style={{
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      // margin: layout === 'fullscreen' ? 0 : '-1rem',
+    }}
+  >
+    <style dangerouslySetInnerHTML={{ __html: 'html, body, #storybook-root { height: 100%; }' }} />
+    {layout === 'fullscreen' ? null : (
+      <style
+        dangerouslySetInnerHTML={{ __html: 'html, body { padding: 0!important; margin: 0; }' }}
+      />
+    )}
+    {children}
+  </div>
 );
 
 const ThemedSetRoot = () => {
@@ -159,10 +184,20 @@ export const decorators = [
   /**
    * This decorator renders the stories side-by-side, stacked or default based on the theme switcher in the toolbar
    */
-  (StoryFn, { globals, parameters, playFunction, args }) => {
-    const defaultTheme =
-      isChromatic() && !playFunction && args.autoplay !== true ? 'stacked' : 'light';
-    const theme = globals.theme || parameters.theme || defaultTheme;
+  (StoryFn, { globals, playFunction, args, storyGlobals, parameters }) => {
+    let theme = globals.sb_theme;
+    let showPlayFnNotice = false;
+
+    // this makes the decorator be out of 'phase' with the actually selected theme in the toolbar
+    // but this is acceptable, I guess
+    // we need to ensure only a single rendering in chromatic
+    // a more 'correct' approach would be to set a specific theme global on every story that has a playFunction
+    if (playFunction && args.autoplay !== false && !(theme === 'light' || theme === 'dark')) {
+      theme = 'light';
+      showPlayFnNotice = true;
+    } else if (isChromatic() && !storyGlobals.sb_theme && !playFunction) {
+      theme = 'stacked';
+    }
 
     switch (theme) {
       case 'side-by-side': {
@@ -172,12 +207,12 @@ export const decorators = [
               <Global styles={createReset} />
             </ThemeProvider>
             <ThemeProvider theme={convert(themes.light)}>
-              <ThemeBlock side="left" data-side="left">
+              <ThemeBlock side="left" data-side="left" layout={parameters.layout}>
                 <StoryFn />
               </ThemeBlock>
             </ThemeProvider>
             <ThemeProvider theme={convert(themes.dark)}>
-              <ThemeBlock side="right" data-side="right">
+              <ThemeBlock side="right" data-side="right" layout={parameters.layout}>
                 <StoryFn />
               </ThemeBlock>
             </ThemeProvider>
@@ -190,16 +225,18 @@ export const decorators = [
             <ThemeProvider theme={convert(themes.light)}>
               <Global styles={createReset} />
             </ThemeProvider>
-            <ThemeProvider theme={convert(themes.light)}>
-              <ThemeStack data-side="left">
-                <StoryFn />
-              </ThemeStack>
-            </ThemeProvider>
-            <ThemeProvider theme={convert(themes.dark)}>
-              <ThemeStack data-side="right">
-                <StoryFn />
-              </ThemeStack>
-            </ThemeProvider>
+            <StackContainer layout={parameters.layout}>
+              <ThemeProvider theme={convert(themes.light)}>
+                <ThemeStack data-side="left" layout={parameters.layout}>
+                  <StoryFn />
+                </ThemeStack>
+              </ThemeProvider>
+              <ThemeProvider theme={convert(themes.dark)}>
+                <ThemeStack data-side="right" layout={parameters.layout}>
+                  <StoryFn />
+                </ThemeStack>
+              </ThemeProvider>
+            </StackContainer>
           </Fragment>
         );
       }
@@ -209,7 +246,7 @@ export const decorators = [
           <ThemeProvider theme={convert(themes[theme])}>
             <Global styles={createReset} />
             <ThemedSetRoot />
-            {!parameters.theme && isChromatic() && playFunction && (
+            {showPlayFnNotice && (
               <>
                 <PlayFnNotice>
                   <span>
@@ -233,7 +270,7 @@ export const decorators = [
    *
    * If parameters.withRawArg is not set, this decorator will do nothing
    */
-  (StoryFn, { parameters, args, hooks }) => {
+  (StoryFn, { parameters, args }) => {
     const [, updateArgs] = useArgs();
     if (!parameters.withRawArg) {
       return <StoryFn />;
@@ -246,6 +283,7 @@ export const decorators = [
             ...args,
             onChange: (newValue) => {
               updateArgs({ [parameters.withRawArg]: newValue });
+              // @ts-expect-error onChange is not a valid arg
               args.onChange?.(newValue);
             },
           }}
@@ -257,7 +295,7 @@ export const decorators = [
       </>
     );
   },
-];
+] satisfies Decorator[];
 
 export const parameters = {
   options: {
@@ -294,5 +332,23 @@ export const parameters = {
       'HSLA(240,11%,91%,0.5)',
       'slategray',
     ],
+  },
+  viewport: {
+    options: MINIMAL_VIEWPORTS,
+  },
+  themes: {
+    disable: true,
+  },
+  backgrounds: {
+    options: {
+      light: { name: 'light', value: '#edecec' },
+      dark: { name: 'dark', value: '#262424' },
+      blue: { name: 'blue', value: '#1b1a2c' },
+    },
+    grid: {
+      cellSize: 15,
+      cellAmount: 10,
+      opacity: 0.4,
+    },
   },
 };

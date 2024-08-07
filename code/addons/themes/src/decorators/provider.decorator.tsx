@@ -38,7 +38,7 @@ export const withThemeFromJSXProvider = <TRenderer extends Renderer = any>({
       const pairs = Object.entries(themes);
 
       return pairs.length === 1 ? pluckThemeFromKeyPairTuple(pairs[0]) : themes[selectedThemeName];
-    }, [themes, selected, themeOverride]);
+    }, [selected, themeOverride]);
 
     if (!Provider) {
       return (

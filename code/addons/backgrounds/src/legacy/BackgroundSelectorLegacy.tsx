@@ -1,5 +1,5 @@
-import type { FC } from 'react';
-import React, { useState, Fragment, useCallback, useMemo, memo } from 'react';
+import type { FC, ReactElement } from 'react';
+import React, { useState, useCallback, useMemo, memo } from 'react';
 import memoize from 'memoizerific';
 
 import { useParameter, useGlobals } from 'storybook/internal/manager-api';
@@ -8,14 +8,29 @@ import { IconButton, WithTooltip, TooltipLinkList } from 'storybook/internal/com
 
 import { PhotoIcon } from '@storybook/icons';
 import { PARAM_KEY as BACKGROUNDS_PARAM_KEY } from '../constants';
-import { ColorIcon } from '../components/ColorIcon';
-import type {
-  BackgroundSelectorItem,
-  Background,
-  BackgroundsParameter,
-  GlobalState,
-} from '../types';
-import { getBackgroundColorByName } from '../helpers';
+import { ColorIcon } from './ColorIcon';
+import type { Background } from '../types';
+import { getBackgroundColorByName } from './getBackgroundColorByName';
+
+export interface DeprecatedGlobalState {
+  name: string | undefined;
+  selected: string | undefined;
+}
+
+export interface BackgroundsParameter {
+  default?: string | null;
+  disable?: boolean;
+  values: Background[];
+}
+
+export interface BackgroundSelectorItem {
+  id: string;
+  title: string;
+  onClick: () => void;
+  value: string;
+  active: boolean;
+  right?: ReactElement;
+}
 
 const createBackgroundSelectorItem = memoize(1000)(
   (
@@ -62,7 +77,7 @@ const DEFAULT_BACKGROUNDS_CONFIG: BackgroundsParameter = {
   values: [],
 };
 
-export const BackgroundSelector: FC = memo(function BackgroundSelector() {
+export const BackgroundToolLegacy: FC = memo(function BackgroundSelector() {
   const backgroundsConfig = useParameter<BackgroundsParameter>(
     BACKGROUNDS_PARAM_KEY,
     DEFAULT_BACKGROUNDS_CONFIG
@@ -98,36 +113,34 @@ export const BackgroundSelector: FC = memo(function BackgroundSelector() {
   }
 
   return (
-    <Fragment>
-      <WithTooltip
-        placement="top"
-        closeOnOutsideClick
-        tooltip={({ onHide }) => {
-          return (
-            <TooltipLinkList
-              links={getDisplayedItems(
-                backgroundsConfig.values,
-                selectedBackgroundColor,
-                ({ selected }: GlobalState) => {
-                  if (selectedBackgroundColor !== selected) {
-                    onBackgroundChange(selected);
-                  }
-                  onHide();
+    <WithTooltip
+      placement="top"
+      closeOnOutsideClick
+      tooltip={({ onHide }) => {
+        return (
+          <TooltipLinkList
+            links={getDisplayedItems(
+              backgroundsConfig.values,
+              selectedBackgroundColor,
+              ({ selected }: DeprecatedGlobalState) => {
+                if (selectedBackgroundColor !== selected) {
+                  onBackgroundChange(selected);
                 }
-              )}
-            />
-          );
-        }}
-        onVisibleChange={setIsTooltipVisible}
+                onHide();
+              }
+            )}
+          />
+        );
+      }}
+      onVisibleChange={setIsTooltipVisible}
+    >
+      <IconButton
+        key="background"
+        title="Change the background of the preview"
+        active={selectedBackgroundColor !== 'transparent' || isTooltipVisible}
       >
-        <IconButton
-          key="background"
-          title="Change the background of the preview"
-          active={selectedBackgroundColor !== 'transparent' || isTooltipVisible}
-        >
-          <PhotoIcon />
-        </IconButton>
-      </WithTooltip>
-    </Fragment>
+        <PhotoIcon />
+      </IconButton>
+    </WithTooltip>
   );
 });

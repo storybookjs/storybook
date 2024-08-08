@@ -271,7 +271,6 @@
   "dependencies": {
     "@storybook/csf": "^0.1.11",
     "@types/express": "^4.17.21",
-    "@types/node": "^22.0.0",
     "browser-assert": "^1.2.1",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0",
     "esbuild-register": "^3.5.0",

@@ -142,6 +142,7 @@
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/preset-react-webpack": "workspace:*",
     "@storybook/react": "workspace:*",
+    "@storybook/react-dom-shim": "workspace:*",
     "@storybook/test": "workspace:*",
     "@types/node": "^18.0.0",
     "@types/semver": "^7.3.4",

@@ -10,7 +10,7 @@
     "isolatedModules": true,
     "jsx": "react",
     "lib": ["dom", "dom.iterable", "esnext"],
-    "module": "ES2022",
+    "module": "Preserve",
     "moduleResolution": "Bundler",
     "noImplicitAny": true,
     "noUnusedLocals": false,

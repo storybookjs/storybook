@@ -1,6 +1,6 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { vi, describe, afterEach, it, expect } from 'vitest';
-import { LoggerApi } from '@angular-devkit/core/src/logger';
+import { LoggerApi } from '@angular-devkit/core/src/logger/index';
 import { take } from 'rxjs/operators';
 import { BuilderContext } from '@angular-devkit/architect';
 

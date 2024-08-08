@@ -138,7 +138,7 @@
     "@babel/preset-react": "^7.24.1",
     "@babel/preset-typescript": "^7.24.1",
     "@babel/runtime": "^7.24.4",
-    "@ndelangen/fs-extra-unified": "1.0.4--canary.5.5f6cfdd.0",
+    "@ndelangen/fs-extra-unified": "^1.0.4",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.11",
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/preset-react-webpack": "workspace:*",

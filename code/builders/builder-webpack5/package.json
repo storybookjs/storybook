@@ -63,7 +63,7 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@ndelangen/fs-extra-unified": "1.0.4--canary.5.5f6cfdd.0",
+    "@ndelangen/fs-extra-unified": "^1.0.4",
     "@storybook/core-webpack": "workspace:*",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^22.0.0",

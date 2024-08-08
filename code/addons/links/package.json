@@ -72,7 +72,7 @@
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
-    "@ndelangen/fs-extra-unified": "1.0.4--canary.5.5f6cfdd.0",
+    "@ndelangen/fs-extra-unified": "^1.0.4",
     "@types/fs-extra": "^11.0.4",
     "fs-extra": "^11.1.0",
     "typescript": "^5.3.2"

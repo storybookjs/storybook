@@ -296,7 +296,7 @@
     "@emotion/styled": "^11.11.0",
     "@emotion/use-insertion-effect-with-fallbacks": "^1.0.1",
     "@fal-works/esbuild-plugin-global-externals": "^2.1.2",
-    "@ndelangen/fs-extra-unified": "1.0.4--canary.5.5f6cfdd.0",
+    "@ndelangen/fs-extra-unified": "^1.0.4",
     "@ndelangen/get-tarball": "^3.0.7",
     "@popperjs/core": "^2.6.0",
     "@radix-ui/react-dialog": "^1.0.5",

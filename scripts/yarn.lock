@@ -637,16 +637,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ndelangen/fs-extra-unified@npm:1.0.4--canary.5.5f6cfdd.0":
-  version: 1.0.4--canary.5.5f6cfdd.0
-  resolution: "@ndelangen/fs-extra-unified@npm:1.0.4--canary.5.5f6cfdd.0"
+"@ndelangen/fs-extra-unified@npm:^1.0.4":
+  version: 1.0.4
+  resolution: "@ndelangen/fs-extra-unified@npm:1.0.4"
   peerDependencies:
     "@types/fs-extra": ^11.0.0
     fs-extra: ^11.0.0
   peerDependenciesMeta:
     "@types/fs-extra":
       optional: true
-  checksum: 10c0/ed3c88378e38cdf6cefa6cff77c37e1c4caafe94097f1ab2ab9fca850e1949e3c671f5ec68644c2c7544b5b5ad36ce4990f2af5c993099f6d3fb7e2802ac535b
+  checksum: 10c0/4bdce65882db58ce42bf08efce9993324e2f6a639aecbb82f2cf2a72fdfe6b18b587e4551bac776d3c1787a784d7e295f3fedb9bd24c6f1a970f85d17b8499df
   languageName: node
   linkType: hard
 
@@ -1410,7 +1410,7 @@ __metadata:
     "@actions/core": "npm:^1.10.1"
     "@fal-works/esbuild-plugin-global-externals": "npm:^2.1.2"
     "@google-cloud/bigquery": "npm:^6.2.0"
-    "@ndelangen/fs-extra-unified": "npm:1.0.4--canary.5.5f6cfdd.0"
+    "@ndelangen/fs-extra-unified": "npm:^1.0.4"
     "@nx/workspace": "npm:18.0.6"
     "@octokit/graphql": "npm:^5.0.5"
     "@octokit/request": "npm:^8.1.2"

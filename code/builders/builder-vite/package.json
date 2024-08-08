@@ -41,7 +41,7 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@ndelangen/fs-extra-unified": "1.0.4--canary.5.5f6cfdd.0",
+    "@ndelangen/fs-extra-unified": "^1.0.4",
     "@storybook/csf-plugin": "workspace:*",
     "@types/find-cache-dir": "^3.2.1",
     "@types/fs-extra": "^11.0.4",

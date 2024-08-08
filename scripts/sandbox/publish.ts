@@ -9,6 +9,7 @@ import { getTemplatesData, renderTemplate } from './utils/template';
 import { commitAllToGit } from './utils/git';
 import { REPROS_DIRECTORY } from '../utils/constants';
 import { glob } from 'glob';
+import { temporaryDirectory } from '../../code/core/src/common/utils/cli';
 
 export const logger = console;
 
@@ -99,8 +100,7 @@ if (!existsSync(REPROS_DIRECTORY)) {
 }
 
 async function main() {
-  const { temporaryDirectory } = await import('tempy');
-  const tmpFolder = temporaryDirectory();
+  const tmpFolder = await temporaryDirectory();
   logger.log(`⏱ Created tmp folder: ${tmpFolder}`);
 
   const options = program.opts() as PublishOptions;

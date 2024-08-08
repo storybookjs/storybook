@@ -29,8 +29,8 @@ import type { ConfigFile } from '../../code/core/src/csf-tools';
 import { writeConfig } from '../../code/core/src/csf-tools';
 import { filterExistsInCodeDir } from '../utils/filterExistsInCodeDir';
 import { findFirstPath } from '../utils/paths';
-import { detectLanguage } from '../../code/lib/cli/src/detect';
-import { SupportedLanguage } from '../../code/lib/cli/src/project_types';
+import { detectLanguage } from '../../code/core/src/cli/detect';
+import { SupportedLanguage } from '../../code/core/src/cli/project_types';
 import { updatePackageScripts } from '../utils/package-json';
 import { addPreviewAnnotations, readMainConfig } from '../utils/main-js';
 import {
@@ -41,7 +41,7 @@ import {
 import { workspacePath } from '../utils/workspace';
 import { babelParse } from '../../code/core/src/csf-tools/babelParse';
 import { CODE_DIRECTORY, REPROS_DIRECTORY } from '../utils/constants';
-import type { TemplateKey } from '../../code/lib/cli/src/sandbox-templates';
+import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
 import { isFunction } from 'lodash';
 
 const logger = console;
@@ -655,8 +655,7 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
 
   packageJson.scripts = {
     ...packageJson.scripts,
-    'docs:json':
-      'DIR=$PWD; cd ../../scripts; node --loader esbuild-register/loader -r esbuild-register combine-compodoc $DIR',
+    'docs:json': 'DIR=$PWD; cd ../../scripts; jiti combine-compodoc $DIR',
     storybook: `yarn docs:json && ${packageJson.scripts.storybook}`,
     'build-storybook': `yarn docs:json && ${packageJson.scripts['build-storybook']}`,
   };

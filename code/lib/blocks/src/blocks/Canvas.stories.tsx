@@ -10,6 +10,7 @@ import * as SourceParameterStories from '../examples/SourceParameters.stories';
 const meta: Meta<typeof Canvas> = {
   component: Canvas,
   parameters: {
+    layout: 'fullscreen',
     relativeCsfPaths: [
       '../examples/Button.stories',
       '../examples/CanvasParameters.stories',

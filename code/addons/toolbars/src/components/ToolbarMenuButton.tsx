@@ -4,6 +4,7 @@ import { Icons, IconButton, type IconsProps } from 'storybook/internal/component
 
 interface ToolbarMenuButtonProps {
   active: boolean;
+  disabled?: boolean;
   title: string;
   icon?: IconsProps['icon'];
   description: string;
@@ -16,13 +17,19 @@ interface ToolbarMenuButtonProps {
 
 export const ToolbarMenuButton: FC<ToolbarMenuButtonProps> = ({
   active,
+  disabled,
   title,
   icon,
   description,
   onClick,
 }) => {
   return (
-    <IconButton active={active} title={description} onClick={onClick}>
+    <IconButton
+      active={active}
+      title={description}
+      disabled={disabled}
+      onClick={disabled ? () => {} : onClick}
+    >
       {icon && <Icons icon={icon} __suppressDeprecationWarning={true} />}
       {title ? `\xa0${title}` : null}
     </IconButton>

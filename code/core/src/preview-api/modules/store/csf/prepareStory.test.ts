@@ -60,6 +60,7 @@ const addExtraContext = (
     step: vi.fn(),
     context: null! as StoryContext,
     canvas: null!,
+    globalTypes: {},
   };
   extraContext.context = extraContext;
   return extraContext;
@@ -355,6 +356,37 @@ describe('prepareStory', () => {
           expect.objectContaining({ argTypes: { a: { name: 'b' }, c: { name: 'd' } } })
         );
         expect(argTypes).toEqual({ a: { name: 'b' }, c: { name: 'd' }, e: { name: 'f' } });
+      });
+    });
+  });
+
+  describe('globals => storyGlobals', () => {
+    it('are combined in the right order', () => {
+      const { storyGlobals } = prepareStory(
+        {
+          id,
+          name,
+          globals: {
+            a: 'a-story',
+            b: 'b-story',
+          },
+          moduleExport,
+        },
+        {
+          id,
+          title,
+          globals: {
+            a: 'a-component',
+            c: 'c-component',
+          },
+        },
+        { render }
+      );
+
+      expect(storyGlobals).toEqual({
+        a: 'a-story',
+        b: 'b-story',
+        c: 'c-component',
       });
     });
   });

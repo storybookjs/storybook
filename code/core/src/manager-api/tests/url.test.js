@@ -178,7 +178,12 @@ describe('initModule', () => {
     const channel = new EventEmitter();
     initURL({ store, provider: { channel }, state: { location: {} }, navigate, fullAPI });
 
-    channel.emit(GLOBALS_UPDATED, { globals: { a: 2 }, initialGlobals: { a: 1, b: 1 } });
+    channel.emit(GLOBALS_UPDATED, {
+      userGlobals: { a: 2 },
+      storyGlobals: {},
+      globals: { a: 2 },
+      initialGlobals: { a: 1, b: 1 },
+    });
     expect(navigate).toHaveBeenCalledWith(
       '/story/test--story&globals=a:2;b:!undefined',
       expect.objectContaining({ replace: true })
@@ -200,7 +205,7 @@ describe('initModule', () => {
       }),
     });
 
-    channel.emit(GLOBALS_UPDATED, { globals: { g: 2 } });
+    channel.emit(GLOBALS_UPDATED, { userGlobals: { g: 2 }, storyGlobals: {}, globals: { g: 2 } });
     expect(navigate).toHaveBeenCalledWith(
       '/story/test--story&full=1&globals=g:2',
       expect.objectContaining({ replace: true })

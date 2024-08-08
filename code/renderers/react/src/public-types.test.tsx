@@ -319,15 +319,11 @@ it('Infer mock function given to args in meta.', () => {
     play: async ({ args, mount }) => {
       const canvas = await mount(<TestButton {...args} />);
       expectTypeOf(canvas).toEqualTypeOf<Canvas>();
-      expectTypeOf(args.onClick).toEqualTypeOf<Mock<[], void>>();
+      expectTypeOf(args.onClick).toEqualTypeOf<Mock>();
       expectTypeOf(args.onRender).toEqualTypeOf<() => JSX.Element>();
     },
   };
-  type Expected = StoryAnnotations<
-    ReactRenderer,
-    Props & { onClick: Mock<[], void> },
-    Partial<Props>
-  >;
+  type Expected = StoryAnnotations<ReactRenderer, Props & { onClick: Mock }, Partial<Props>>;
 
   expectTypeOf(Basic).toEqualTypeOf<Expected>();
 });

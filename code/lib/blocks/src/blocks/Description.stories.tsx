@@ -10,6 +10,7 @@ import * as ButtonStoriesWithMetaDescriptionAsBoth from '../examples/ButtonWithM
 const meta: Meta<typeof Description> = {
   component: Description,
   parameters: {
+    layout: 'fullscreen',
     controls: {
       include: [],
     },

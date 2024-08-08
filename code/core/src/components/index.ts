@@ -76,8 +76,8 @@ export { AddonPanel } from './components/addon-panel/addon-panel';
 export type { IconsProps } from './components/icon/icon';
 export { Icons, Symbols } from './components/icon/icon';
 export { icons } from './components/icon/icon';
-export { StorybookLogo } from './components/brand/StorybookLogo';
-export { StorybookIcon } from './components/brand/StorybookIcon';
+export { StorybookLogo } from './brand/StorybookLogo';
+export { StorybookIcon } from './brand/StorybookIcon';
 
 // Loader
 export { Loader } from './components/Loader/Loader';

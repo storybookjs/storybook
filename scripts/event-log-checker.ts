@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import assert from 'assert';
 import { esMain } from './utils/esmain';
-import { allTemplates } from '../code/lib/cli/src/sandbox-templates';
+import { allTemplates } from '../code/lib/cli-storybook/src/sandbox-templates';
 import versions from '../code/core/src/common/versions';
 import { oneWayHash } from '../code/core/src/telemetry/one-way-hash';
 

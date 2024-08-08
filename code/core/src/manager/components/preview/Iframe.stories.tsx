@@ -20,9 +20,9 @@ export default {
         },
       },
     },
-    theme: 'light',
     chromatic: { viewports: [700] },
   },
+  globals: { sb_theme: 'light' },
 };
 
 const style: CSSProperties = {
@@ -50,7 +50,7 @@ export const WorkingDocs = () => (
     active
     id="iframe"
     title="Missing"
-    src="/iframe.html?id=components-colorpalette--docs"
+    src="/iframe.html?id=brand-colorpalette--docs"
     allowFullScreen
     style={style}
     scale={1.0}

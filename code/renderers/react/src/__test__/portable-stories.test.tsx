@@ -135,7 +135,6 @@ describe('CSF3', () => {
     const CSF3InputFieldFilled = composeStory(stories.CSF3InputFieldFilled, stories.default);
 
     const div = document.createElement('div');
-    console.log(div.tagName);
     document.body.appendChild(div);
 
     await CSF3InputFieldFilled.run({ canvasElement: div });

@@ -1,4 +1,4 @@
-import * as templates from '../code/lib/cli/src/sandbox-templates';
+import * as templates from '../code/lib/cli-storybook/src/sandbox-templates';
 import * as fs from 'fs';
 import * as path from 'path';
 

@@ -1,4 +1,4 @@
-import sort from 'semver/functions/sort';
+import sort from 'semver/functions/sort.js';
 import { platform } from 'os';
 import dedent from 'ts-dedent';
 import { findUpSync } from 'find-up';

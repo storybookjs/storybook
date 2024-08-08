@@ -2,7 +2,7 @@ import { render } from 'ejs';
 import { readFile } from 'fs-extra';
 import prettier from 'prettier';
 import type { GeneratorConfig } from './types';
-import { allTemplates as sandboxTemplates } from '../../../code/lib/cli/src/sandbox-templates';
+import { allTemplates as sandboxTemplates } from '../../../code/lib/cli-storybook/src/sandbox-templates';
 
 export async function renderTemplate(templatePath: string, templateData: Record<string, any>) {
   const template = await readFile(templatePath, 'utf8');

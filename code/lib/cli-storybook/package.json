@@ -1,6 +1,6 @@
 {
   "name": "@storybook/cli",
-  "version": "8.3.0-alpha.3",
+  "version": "8.3.0-alpha.4",
   "description": "Storybook CLI",
   "keywords": [
     "storybook"
@@ -19,15 +19,66 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
-  "bin": {
-    "sb": "./index.js",
-    "storybook": "./index.js"
+  "author": "Storybook Team",
+  "type": "module",
+  "exports": {
+    "./bin/index.cjs": {
+      "node": "./bin/index.cjs",
+      "require": "./bin/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "bin": "./bin/index.cjs",
+  "files": [
+    "bin/**/*",
+    "dist/**/*",
+    "README.md",
+    "!src/**/*"
+  ],
+  "scripts": {
+    "check": "jiti  ../../../scripts/prepare/check.ts",
+    "prep": "jiti  ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "storybook": "workspace:*"
+    "@babel/core": "^7.24.4",
+    "@babel/types": "^7.24.0",
+    "@storybook/codemod": "workspace:*",
+    "@types/semver": "^7.3.4",
+    "chalk": "^4.1.0",
+    "commander": "^6.2.1",
+    "create-storybook": "workspace:*",
+    "cross-spawn": "^7.0.3",
+    "envinfo": "^7.7.3",
+    "fd-package-json": "^1.2.0",
+    "find-up": "^5.0.0",
+    "fs-extra": "^11.1.0",
+    "giget": "^1.0.0",
+    "globby": "^14.0.1",
+    "jscodeshift": "^0.15.1",
+    "leven": "^3.1.0",
+    "prompts": "^2.4.0",
+    "semver": "^7.3.7",
+    "storybook": "workspace:*",
+    "tiny-invariant": "^1.3.1",
+    "ts-dedent": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/cross-spawn": "^6.0.2",
+    "@types/prompts": "^2.0.9",
+    "boxen": "^7.1.1",
+    "slash": "^5.0.0",
+    "strip-ansi": "^7.1.0",
+    "typescript": "^5.3.2"
   },
   "publishConfig": {
     "access": "public"
+  },
+  "bundler": {
+    "entries": [
+      "./src/index.ts",
+      "./src/bin/index.ts"
+    ],
+    "platform": "node"
   },
   "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

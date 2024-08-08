@@ -1,3 +1,7 @@
+/**
+ * @vitest-environment jsdom
+ */
+
 import NextHeader from './NextHeader';
 import type { Meta } from '@storybook/react';
 import type { StoryObj } from '@storybook/react';
@@ -6,6 +10,11 @@ import { cookies, headers } from '@storybook/nextjs/headers.mock';
 
 export default {
   component: NextHeader,
+  parameters: {
+    react: {
+      rsc: true,
+    },
+  },
 } as Meta<typeof NextHeader>;
 
 type Story = StoryObj<typeof NextHeader>;

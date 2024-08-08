@@ -76,13 +76,13 @@
   ],
   "resolutions": {
     "@playwright/test": "1.36.0",
-    "@types/node": "^18.0.0",
+    "@types/node": "^22.0.0",
+    "@vitest/expect@npm:2.0.5": "patch:@vitest/expect@npm%3A2.0.5#~/.yarn/patches/@vitest-expect-npm-2.0.5-8933466cce.patch",
     "esbuild": "^0.23.0",
     "playwright": "1.36.0",
     "playwright-core": "1.36.0",
     "serialize-javascript": "^3.1.0",
-    "type-fest": "~2.19",
-    "@vitest/expect@npm:2.0.5": "patch:@vitest/expect@npm%3A2.0.5#~/.yarn/patches/@vitest-expect-npm-2.0.5-8933466cce.patch"
+    "type-fest": "~2.19"
   },
   "dependencies": {
     "@chromatic-com/storybook": "^1.6.1",
@@ -165,7 +165,7 @@
     "@types/fs-extra": "^11.0.1",
     "@types/lodash": "^4.14.167",
     "@types/mock-require": "^2.0.3",
-    "@types/node": "^18.0.0",
+    "@types/node": "^22.0.0",
     "@types/react": "^18.0.37",
     "@types/react-dom": "^18.0.11",
     "@types/semver": "^7.3.4",
@@ -193,7 +193,6 @@
     "lint-staged": "^13.2.2",
     "lodash": "^4.17.21",
     "mock-require": "^3.0.3",
-    "node-gyp": "^9.3.1",
     "nx": "18.0.6",
     "prettier": "^3.1.1",
     "process": "^0.11.10",

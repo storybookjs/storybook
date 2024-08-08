@@ -72,7 +72,7 @@
     "@storybook/theming": "workspace:^",
     "@types/escodegen": "^0.0.6",
     "@types/estree": "^0.0.51",
-    "@types/node": "^18.0.0",
+    "@types/node": "^22.0.0",
     "acorn": "^7.4.1",
     "acorn-jsx": "^5.3.1",
     "acorn-walk": "^7.2.0",

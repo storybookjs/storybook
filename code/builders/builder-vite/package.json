@@ -55,7 +55,7 @@
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
-    "@types/node": "^18.0.0",
+    "@types/node": "^22.0.0",
     "glob": "^10.0.0",
     "slash": "^5.0.0",
     "typescript": "^5.3.2",

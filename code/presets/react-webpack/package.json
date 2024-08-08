@@ -67,7 +67,7 @@
     "@storybook/core-webpack": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/react-docgen-typescript-plugin": "1.0.6--canary.9.0c3f3b7.0",
-    "@types/node": "^18.0.0",
+    "@types/node": "^22.0.0",
     "@types/semver": "^7.3.4",
     "find-up": "^5.0.0",
     "fs-extra": "^11.1.0",

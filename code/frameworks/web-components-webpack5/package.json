@@ -52,7 +52,7 @@
   "dependencies": {
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/web-components": "workspace:*",
-    "@types/node": "^18.0.0"
+    "@types/node": "^22.0.0"
   },
   "devDependencies": {
     "lit": "2.3.1",

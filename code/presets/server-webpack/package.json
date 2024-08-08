@@ -57,7 +57,7 @@
     "@storybook/core-webpack": "workspace:*",
     "@storybook/global": "^5.0.0",
     "@storybook/server": "workspace:*",
-    "@types/node": "^18.0.0",
+    "@types/node": "^22.0.0",
     "safe-identifier": "^0.4.1",
     "ts-dedent": "^2.0.0",
     "yaml-loader": "^0.8.0"

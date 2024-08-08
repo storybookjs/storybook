@@ -16,7 +16,7 @@ parameters:
     default: "next"
 
 executors:
-  sb_node_18_classic:
+  sb_node_22_classic:
     parameters:
       class:
         description: The Resource class
@@ -25,7 +25,7 @@ executors:
         default: "small"
     working_directory: /tmp/storybook
     docker:
-      - image: cimg/node:18.19.1
+      - image: cimg/node:22.6.0
         environment:
           NODE_OPTIONS: --max_old_space_size=6144
     resource_class: <<parameters.class>>
@@ -38,7 +38,20 @@ executors:
         default: "small"
     working_directory: /tmp/storybook
     docker:
-      - image: cimg/node:18.19.1-browsers
+      - image: cimg/node:18.20.3-browsers
+        environment:
+          NODE_OPTIONS: --max_old_space_size=6144
+    resource_class: <<parameters.class>>
+  sb_node_22_browsers:
+    parameters:
+      class:
+        description: The Resource class
+        type: enum
+        enum: ["small", "medium", "medium+", "large", "xlarge"]
+        default: "small"
+    working_directory: /tmp/storybook
+    docker:
+      - image: cimg/node:22.6.0-browsers
         environment:
           NODE_OPTIONS: --max_old_space_size=6144
     resource_class: <<parameters.class>>
@@ -108,7 +121,7 @@ jobs:
   pretty-docs:
     executor:
       class: medium
-      name: sb_node_18_classic
+      name: sb_node_22_classic
     steps:
       - git-shallow-clone/checkout_advanced:
           clone_options: "--depth 1 --verbose"
@@ -134,7 +147,7 @@ jobs:
   build:
     executor:
       class: xlarge
-      name: sb_node_18_classic
+      name: sb_node_22_classic
     steps:
       - git-shallow-clone/checkout_advanced:
           clone_options: "--depth 1 --verbose"
@@ -179,7 +192,7 @@ jobs:
   lint:
     executor:
       class: large
-      name: sb_node_18_classic
+      name: sb_node_22_classic
     steps:
       - git-shallow-clone/checkout_advanced:
           clone_options: "--depth 1 --verbose"
@@ -195,7 +208,7 @@ jobs:
   check:
     executor:
       class: xlarge
-      name: sb_node_18_classic
+      name: sb_node_22_classic
     steps:
       - git-shallow-clone/checkout_advanced:
           clone_options: "--depth 1 --verbose"
@@ -213,7 +226,7 @@ jobs:
       - report-workflow-on-failure
       - cancel-workflow-on-failure
   script-checks:
-    executor: sb_node_18_browsers
+    executor: sb_node_22_browsers
     steps:
       - git-shallow-clone/checkout_advanced:
           clone_options: "--depth 1 --verbose"
@@ -241,7 +254,7 @@ jobs:
   unit-tests:
     executor:
       class: xlarge
-      name: sb_node_18_browsers
+      name: sb_node_22_browsers
     steps:
       - git-shallow-clone/checkout_advanced:
           clone_options: "--depth 1 --verbose"
@@ -263,7 +276,7 @@ jobs:
   coverage:
     executor:
       class: small
-      name: sb_node_18_browsers
+      name: sb_node_22_browsers
     steps:
       - git-shallow-clone/checkout_advanced:
           clone_options: "--depth 1 --verbose"
@@ -274,7 +287,7 @@ jobs:
   chromatic-internal-storybook:
     executor:
       class: medium+
-      name: sb_node_18_browsers
+      name: sb_node_22_browsers
     environment:
       NODE_OPTIONS: --max_old_space_size=6144
     steps:
@@ -296,7 +309,7 @@ jobs:
         type: integer
     executor:
       class: medium
-      name: sb_node_18_browsers
+      name: sb_node_22_browsers
     parallelism: << parameters.parallelism >>
     steps:
       - git-shallow-clone/checkout_advanced:
@@ -343,7 +356,7 @@ jobs:
         type: integer
     executor:
       class: large
-      name: sb_node_18_browsers
+      name: sb_node_22_browsers
     parallelism: << parameters.parallelism >>
     steps:
       - git-shallow-clone/checkout_advanced:
@@ -424,7 +437,7 @@ jobs:
         type: integer
     executor:
       class: medium
-      name: sb_node_18_browsers
+      name: sb_node_22_browsers
     parallelism: << parameters.parallelism >>
     steps:
       - checkout
@@ -507,7 +520,7 @@ jobs:
   test-empty-init:
     executor:
       class: medium
-      name: sb_node_18_browsers
+      name: sb_node_22_browsers
     parameters:
       packageManager:
         type: string

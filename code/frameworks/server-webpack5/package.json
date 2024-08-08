@@ -50,7 +50,7 @@
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/preset-server-webpack": "workspace:*",
     "@storybook/server": "workspace:*",
-    "@types/node": "^18.0.0"
+    "@types/node": "^22.0.0"
   },
   "devDependencies": {
     "typescript": "^5.3.2"

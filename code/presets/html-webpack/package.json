@@ -50,7 +50,7 @@
   },
   "dependencies": {
     "@storybook/core-webpack": "workspace:*",
-    "@types/node": "^18.0.0",
+    "@types/node": "^22.0.0",
     "html-loader": "^3.1.0",
     "webpack": "5"
   },

@@ -44,7 +44,7 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@types/node": "^18.0.0",
+    "@types/node": "^22.0.0",
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {

@@ -2,7 +2,7 @@ import { join, relative } from 'node:path';
 import slash from 'slash';
 import { sortPackageJson } from '../../../../scripts/prepare/tools';
 import type { getEntries } from '../entries';
-import { readJSON } from 'fs-extra';
+import { readJSON } from '@ndelangen/fs-extra-unified';
 import { writeFile } from 'node:fs/promises';
 
 const cwd = process.cwd();

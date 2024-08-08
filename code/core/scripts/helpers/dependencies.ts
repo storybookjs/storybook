@@ -1,4 +1,4 @@
-import { readJson } from 'fs-extra';
+import { readJson } from '@ndelangen/fs-extra-unified';
 import { join } from 'node:path';
 
 export async function flattenDependencies(

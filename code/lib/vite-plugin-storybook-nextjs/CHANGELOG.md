@@ -1,3 +1,15 @@
+# v1.0.6 (Thu Aug 08 2024)
+
+#### ⚠️ Pushed to `main`
+
+- Fix compiler options forwarding ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
 # v1.0.5 (Wed Aug 07 2024)
 
 #### 🐛 Bug Fix

@@ -50,7 +50,7 @@
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/preact": "workspace:*",
     "@storybook/preset-preact-webpack": "workspace:*",
-    "@types/node": "^20.0.0"
+    "@types/node": "^22.0.0"
   },
   "devDependencies": {
     "preact": "^10.5.13",

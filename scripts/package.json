@@ -80,7 +80,7 @@
     "@types/http-server": "^0.12.4",
     "@types/jest": "^29.5.12",
     "@types/lodash": "^4.17.6",
-    "@types/node": "^20.0.0",
+    "@types/node": "^22.0.0",
     "@types/prettier": "^3.0.0",
     "@types/pretty-hrtime": "^1.0.3",
     "@types/prompts": "2.4.9",
@@ -189,6 +189,6 @@
     "verdaccio-auth-memory": "^10.2.2"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.0.0"
   }
 }

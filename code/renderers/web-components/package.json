@@ -60,7 +60,7 @@
   },
   "devDependencies": {
     "@types/cross-spawn": "^6.0.2",
-    "@types/node": "^20.0.0",
+    "@types/node": "^22.0.0",
     "cross-spawn": "^7.0.3",
     "lit": "2.3.1",
     "typescript": "^5.3.2",

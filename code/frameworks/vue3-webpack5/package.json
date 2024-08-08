@@ -50,7 +50,7 @@
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/preset-vue3-webpack": "workspace:*",
     "@storybook/vue3": "workspace:*",
-    "@types/node": "^20.0.0"
+    "@types/node": "^22.0.0"
   },
   "devDependencies": {
     "@vue/compiler-sfc": "3.0.0",

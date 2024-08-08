@@ -5237,7 +5237,7 @@ __metadata:
     "@storybook/icons": "npm:^1.2.5"
     "@storybook/instrumenter": "workspace:*"
     "@storybook/test": "workspace:*"
-    "@types/node": "npm:^20.0.0"
+    "@types/node": "npm:^22.0.0"
     formik: "npm:^2.2.9"
     polished: "npm:^4.2.2"
     react: "npm:^18.2.0"
@@ -5430,7 +5430,7 @@ __metadata:
     "@storybook/preview-api": "workspace:^"
     "@storybook/theming": "workspace:^"
     "@types/cross-spawn": "npm:^6.0.2"
-    "@types/node": "npm:^20.0.0"
+    "@types/node": "npm:^22.0.0"
     "@types/react": "npm:^18.0.37"
     "@types/react-dom": "npm:^18.0.11"
     "@types/semver": "npm:^7.3.4"
@@ -5547,7 +5547,7 @@ __metadata:
     "@types/express": "npm:^4.17.21"
     "@types/find-cache-dir": "npm:^3.2.1"
     "@types/fs-extra": "npm:^11.0.4"
-    "@types/node": "npm:^20.0.0"
+    "@types/node": "npm:^22.0.0"
     browser-assert: "npm:^1.2.1"
     es-module-lexer: "npm:^1.5.0"
     express: "npm:^4.19.2"
@@ -5582,7 +5582,7 @@ __metadata:
     "@ndelangen/fs-extra-unified": "npm:1.0.4--canary.5.5f6cfdd.0"
     "@storybook/core-webpack": "workspace:*"
     "@types/fs-extra": "npm:^11.0.4"
-    "@types/node": "npm:^20.0.0"
+    "@types/node": "npm:^22.0.0"
     "@types/pretty-hrtime": "npm:^1.0.0"
     "@types/semver": "npm:^7.3.4"
     "@types/terser-webpack-plugin": "npm:^5.2.0"
@@ -5745,7 +5745,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/core-webpack@workspace:lib/core-webpack"
   dependencies:
-    "@types/node": "npm:^20.0.0"
+    "@types/node": "npm:^22.0.0"
     slash: "npm:^5.1.0"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.3.2"
@@ -5794,7 +5794,7 @@ __metadata:
     "@types/fs-extra": "npm:^11.0.1"
     "@types/js-yaml": "npm:^4.0.5"
     "@types/lodash": "npm:^4.14.167"
-    "@types/node": "npm:^20.0.0"
+    "@types/node": "npm:^22.0.0"
     "@types/npmlog": "npm:^7.0.0"
     "@types/picomatch": "npm:^2.3.0"
     "@types/prettier": "npm:^3.0.0"
@@ -6000,7 +6000,7 @@ __metadata:
   dependencies:
     "@storybook/builder-vite": "workspace:*"
     "@storybook/html": "workspace:*"
-    "@types/node": "npm:^20.0.0"
+    "@types/node": "npm:^22.0.0"
     magic-string: "npm:^0.30.0"
     typescript: "npm:^5.3.2"
   peerDependencies:
@@ -6016,7 +6016,7 @@ __metadata:
     "@storybook/global": "npm:^5.0.0"
     "@storybook/html": "workspace:*"
     "@storybook/preset-html-webpack": "workspace:*"
-    "@types/node": "npm:^20.0.0"
+    "@types/node": "npm:^22.0.0"
     typescript: "npm:^5.3.2"
   peerDependencies:
     storybook: "workspace:^"
@@ -6134,7 +6134,7 @@ __metadata:
     "@types/babel__preset-env": "npm:^7"
     "@types/fs-extra": "npm:^11.0.4"
     "@types/loader-utils": "npm:^2.0.5"
-    "@types/node": "npm:^20.0.0"
+    "@types/node": "npm:^22.0.0"
     "@types/react-refresh": "npm:^0"
     "@types/semver": "npm:^7.3.4"
     babel-loader: "npm:^9.1.3"
@@ -6191,7 +6191,7 @@ __metadata:
   dependencies:
     "@storybook/builder-vite": "workspace:*"
     "@storybook/preact": "workspace:*"
-    "@types/node": "npm:^20.0.0"
+    "@types/node": "npm:^22.0.0"
     typescript: "npm:^5.3.2"
     vite: "npm:^4.0.0"
   peerDependencies:
@@ -6207,7 +6207,7 @@ __metadata:
     "@storybook/builder-webpack5": "workspace:*"
     "@storybook/preact": "workspace:*"
     "@storybook/preset-preact-webpack": "workspace:*"
-    "@types/node": "npm:^20.0.0"
+    "@types/node": "npm:^22.0.0"
     preact: "npm:^10.5.13"
     typescript: "npm:^5.3.2"
   peerDependencies:
@@ -6240,7 +6240,7 @@ __metadata:
   dependencies:
     "@pmmmwh/react-refresh-webpack-plugin": "npm:^0.5.1"
     "@storybook/react-docgen-typescript-plugin": "npm:1.0.6--canary.9.0c3f3b7.0"
-    "@types/node": "npm:^20.0.0"
+    "@types/node": "npm:^22.0.0"
     "@types/semver": "npm:^7.5.6"
     pnp-webpack-plugin: "npm:^1.7.0"
     semver: "npm:^7.5.4"
@@ -6256,7 +6256,7 @@ __metadata:
   resolution: "@storybook/preset-html-webpack@workspace:presets/html-webpack"
   dependencies:
     "@storybook/core-webpack": "workspace:*"
-    "@types/node": "npm:^20.0.0"
+    "@types/node": "npm:^22.0.0"
     html-loader: "npm:^3.1.0"
     typescript: "npm:^5.3.2"
     webpack: "npm:5"
@@ -6270,7 +6270,7 @@ __metadata:
   resolution: "@storybook/preset-preact-webpack@workspace:presets/preact-webpack"
   dependencies:
     "@storybook/core-webpack": "workspace:*"
-    "@types/node": "npm:^20.0.0"
+    "@types/node": "npm:^22.0.0"
     preact: "npm:^10.5.13"
     typescript: "npm:^5.3.2"
   peerDependencies:
@@ -6288,7 +6288,7 @@ __metadata:
     "@storybook/react": "workspace:*"
     "@storybook/react-docgen-typescript-plugin": "npm:1.0.6--canary.9.0c3f3b7.0"
     "@types/fs-extra": "npm:^11.0.4"
-    "@types/node": "npm:^20.0.0"
+    "@types/node": "npm:^22.0.0"
     "@types/semver": "npm:^7.3.4"
     find-up: "npm:^5.0.0"
     fs-extra: "npm:^11.1.0"
@@ -6318,7 +6318,7 @@ __metadata:
     "@storybook/global": "npm:^5.0.0"
     "@storybook/server": "workspace:*"
     "@types/fs-extra": "npm:^11.0.4"
-    "@types/node": "npm:^20.0.0"
+    "@types/node": "npm:^22.0.0"
     fs-extra: "npm:^11.1.0"
     safe-identifier: "npm:^0.4.1"
     ts-dedent: "npm:^2.0.0"
@@ -6352,7 +6352,7 @@ __metadata:
   resolution: "@storybook/preset-vue3-webpack@workspace:presets/vue3-webpack"
   dependencies:
     "@storybook/core-webpack": "workspace:*"
-    "@types/node": "npm:^20.0.0"
+    "@types/node": "npm:^22.0.0"
     "@vue/compiler-sfc": "npm:^3.2.33"
     ts-loader: "npm:^9.2.8"
     typescript: "npm:^5.3.2"
@@ -6422,7 +6422,7 @@ __metadata:
     "@rollup/pluginutils": "npm:^5.0.2"
     "@storybook/builder-vite": "workspace:*"
     "@storybook/react": "workspace:*"
-    "@types/node": "npm:^20.0.0"
+    "@types/node": "npm:^22.0.0"
     find-up: "npm:^5.0.0"
     magic-string: "npm:^0.30.0"
     react-docgen: "npm:^7.0.0"
@@ -6445,7 +6445,7 @@ __metadata:
     "@storybook/builder-webpack5": "workspace:*"
     "@storybook/preset-react-webpack": "workspace:*"
     "@storybook/react": "workspace:*"
-    "@types/node": "npm:^20.0.0"
+    "@types/node": "npm:^22.0.0"
   peerDependencies:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
@@ -6471,7 +6471,7 @@ __metadata:
     "@types/babel-plugin-react-docgen": "npm:^4"
     "@types/escodegen": "npm:^0.0.6"
     "@types/estree": "npm:^0.0.51"
-    "@types/node": "npm:^20.0.0"
+    "@types/node": "npm:^22.0.0"
     "@types/semver": "npm:^7.3.4"
     "@types/util-deprecate": "npm:^1.0.0"
     acorn: "npm:^7.4.1"
@@ -6585,7 +6585,7 @@ __metadata:
     "@types/fs-extra": "npm:^11.0.1"
     "@types/lodash": "npm:^4.14.167"
     "@types/mock-require": "npm:^2.0.3"
-    "@types/node": "npm:^20.0.0"
+    "@types/node": "npm:^22.0.0"
     "@types/react": "npm:^18.0.37"
     "@types/react-dom": "npm:^18.0.11"
     "@types/semver": "npm:^7.3.4"
@@ -6662,7 +6662,7 @@ __metadata:
     "@storybook/builder-webpack5": "workspace:*"
     "@storybook/preset-server-webpack": "workspace:*"
     "@storybook/server": "workspace:*"
-    "@types/node": "npm:^20.0.0"
+    "@types/node": "npm:^22.0.0"
     typescript: "npm:^5.3.2"
   peerDependencies:
     storybook: "workspace:^"
@@ -6711,7 +6711,7 @@ __metadata:
     "@storybook/builder-vite": "workspace:*"
     "@storybook/svelte": "workspace:*"
     "@sveltejs/vite-plugin-svelte": "npm:^3.0.1"
-    "@types/node": "npm:^20.0.0"
+    "@types/node": "npm:^22.0.0"
     magic-string: "npm:^0.30.0"
     svelte: "npm:^5.0.0-next.65"
     svelte-preprocess: "npm:^5.1.1"
@@ -6780,7 +6780,7 @@ __metadata:
     "@storybook/builder-vite": "workspace:*"
     "@storybook/svelte": "workspace:*"
     "@storybook/svelte-vite": "workspace:*"
-    "@types/node": "npm:^20.0.0"
+    "@types/node": "npm:^22.0.0"
     typescript: "npm:^5.3.2"
     vite: "npm:^4.0.0"
   peerDependencies:
@@ -6854,7 +6854,7 @@ __metadata:
     "@storybook/builder-vite": "workspace:*"
     "@storybook/vue3": "workspace:*"
     "@types/find-package-json": "npm:^1.2.6"
-    "@types/node": "npm:^20.0.0"
+    "@types/node": "npm:^22.0.0"
     find-package-json: "npm:^1.2.0"
     magic-string: "npm:^0.30.0"
     typescript: "npm:^5.3.2"
@@ -6874,7 +6874,7 @@ __metadata:
     "@storybook/builder-webpack5": "workspace:*"
     "@storybook/preset-vue3-webpack": "workspace:*"
     "@storybook/vue3": "workspace:*"
-    "@types/node": "npm:^20.0.0"
+    "@types/node": "npm:^22.0.0"
     "@vue/compiler-sfc": "npm:3.0.0"
     typescript: "npm:^5.3.2"
     vue: "npm:3.0.0"
@@ -6918,7 +6918,7 @@ __metadata:
   dependencies:
     "@storybook/builder-vite": "workspace:*"
     "@storybook/web-components": "workspace:*"
-    "@types/node": "npm:^20.0.0"
+    "@types/node": "npm:^22.0.0"
     magic-string: "npm:^0.30.0"
     typescript: "npm:^5.3.2"
   peerDependencies:
@@ -6932,7 +6932,7 @@ __metadata:
   dependencies:
     "@storybook/builder-webpack5": "workspace:*"
     "@storybook/web-components": "workspace:*"
-    "@types/node": "npm:^20.0.0"
+    "@types/node": "npm:^22.0.0"
     lit: "npm:2.3.1"
     typescript: "npm:^5.3.2"
   peerDependencies:
@@ -6951,7 +6951,7 @@ __metadata:
     "@storybook/preview-api": "workspace:^"
     "@storybook/theming": "workspace:^"
     "@types/cross-spawn": "npm:^6.0.2"
-    "@types/node": "npm:^20.0.0"
+    "@types/node": "npm:^22.0.0"
     cross-spawn: "npm:^7.0.3"
     lit: "npm:2.3.1"
     tiny-invariant: "npm:^1.3.1"
@@ -7762,12 +7762,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:^20.0.0":
-  version: 20.14.14
-  resolution: "@types/node@npm:20.14.14"
+"@types/node@npm:^22.0.0":
+  version: 22.1.0
+  resolution: "@types/node@npm:22.1.0"
   dependencies:
-    undici-types: "npm:~5.26.4"
-  checksum: 10c0/4fc8d368df2b6f5497698327b30db68d7d20e32221ce7d057fb15cbd5834685b2fde0440609e4cb2204e5d305b928f008faf41b950a425f3fd55b60cb1b997cf
+    undici-types: "npm:~6.13.0"
+  checksum: 10c0/553dafcb842b889c036d43b390d464e8ffcf3ca455ddd5b1a1ef98396381eafbeb0c112a15cc6bf9662b72bc25fc45efc4b6f604760e1e84c410f1b7936c488b
   languageName: node
   linkType: hard
 
@@ -26873,10 +26873,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"undici-types@npm:~5.26.4":
-  version: 5.26.5
-  resolution: "undici-types@npm:5.26.5"
-  checksum: 10c0/bb673d7876c2d411b6eb6c560e0c571eef4a01c1c19925175d16e3a30c4c428181fb8d7ae802a261f283e4166a0ac435e2f505743aa9e45d893f9a3df017b501
+"undici-types@npm:~6.13.0":
+  version: 6.13.0
+  resolution: "undici-types@npm:6.13.0"
+  checksum: 10c0/2de55181f569c77a4f08063f8bf2722fcbb6ea312a26a9e927bd1f5ea5cf3a281c5ddf23155061db083e0a25838f54813543ff13b0ac34d230d5c1205ead66c1
   languageName: node
   linkType: hard
 

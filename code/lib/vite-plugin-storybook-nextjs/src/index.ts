@@ -8,7 +8,7 @@ import { vitePluginNextFont } from "./plugins/next-font/plugin";
 import { vitePluginNextSwc } from "./plugins/next-swc/plugin";
 
 import "./polyfills/promise-with-resolvers";
-import loadConfig from "next/dist/server/config.js";
+import nextServerConfig from "next/dist/server/config.js";
 import {
   PHASE_DEVELOPMENT_SERVER,
   PHASE_PRODUCTION_BUILD,
@@ -20,6 +20,9 @@ import { vitePluginNextMocks } from "./plugins/next-mocks/plugin";
 import { getExecutionEnvironment, isVitestEnv } from "./utils";
 
 const require = createRequire(import.meta.url);
+const loadConfig: typeof nextServerConfig =
+  // biome-ignore lint/suspicious/noExplicitAny: CJS support
+  (nextServerConfig as any).default || nextServerConfig;
 
 type VitePluginOptions = {
   /**

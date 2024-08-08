@@ -20,8 +20,8 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "browser": "./dist/index.js",
-      "node": "./dist/index.cjs"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     },
     "./browser/mocks/cache": "./dist/plugins/next-mocks/alias/cache/index.js",
     "./browser/mocks/navigation": "./dist/plugins/next-mocks/alias/navigation/index.js",

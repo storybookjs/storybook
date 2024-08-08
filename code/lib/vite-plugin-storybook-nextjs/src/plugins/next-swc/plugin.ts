@@ -1,5 +1,5 @@
 import { resolve } from "node:path";
-import loadJsConfig from "next/dist/build/load-jsconfig.js";
+import nextLoadJsConfig from "next/dist/build/load-jsconfig.js";
 import { transform } from "next/dist/build/swc/index.js";
 import { findPagesDir } from "next/dist/lib/find-pages-dir.js";
 import type { NextConfigComplete } from "next/dist/server/config-shared.js";
@@ -13,6 +13,10 @@ import { isDefined } from "../../utils/typescript";
 const excluded = /[\\/]((cache[\\/][^\\/]+\.zip[\\/])|virtual:)[\\/]/;
 
 const included = /\.((c|m)?(j|t)sx?)$/;
+
+const loadJsConfig: typeof nextLoadJsConfig =
+  // biome-ignore lint/suspicious/noExplicitAny: CJS support
+  (nextLoadJsConfig as any).default || nextLoadJsConfig;
 
 export function vitePluginNextSwc(
   rootDir: string,

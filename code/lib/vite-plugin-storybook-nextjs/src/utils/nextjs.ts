@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import { join } from "node:path";
-import { loadEnvConfig } from "@next/env";
+import * as nextEnv from "@next/env";
 import Log from "next/dist/build/output/log.js";
 import {
   loadBindings,
@@ -10,6 +10,10 @@ import type { NextConfigComplete } from "next/dist/server/config-shared.js";
 
 const nextDistPath =
   /(next[\\/]dist[\\/]shared[\\/]lib)|(next[\\/]dist[\\/]client)|(next[\\/]dist[\\/]pages)/;
+
+// biome-ignore lint/suspicious/noExplicitAny: Support for CJS
+const { loadEnvConfig } = ((nextEnv as any).default ||
+  nextEnv) as typeof nextEnv;
 
 /**
  * Set up the environment variables for the Next.js project

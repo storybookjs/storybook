@@ -34,7 +34,7 @@ export function getBaseSWCOptions({
   esm,
   modularizeImports,
   swcPlugins,
-  compilerOptions,
+  compiler,
   resolvedBaseUrl,
   jsConfig,
   swcCacheDir,
@@ -45,7 +45,7 @@ export function getBaseSWCOptions({
   globalWindow: boolean;
   esm: boolean;
   modularizeImports?: NextConfig["modularizeImports"];
-  compilerOptions: NextConfig["compiler"];
+  compiler: NextConfig["compiler"];
   swcPlugins: ExperimentalConfig["swcPlugins"];
   resolvedBaseUrl?: ResolvedBaseUrl;
   jsConfig: JsConfig;
@@ -89,7 +89,7 @@ export function getBaseSWCOptions({
         react: {
           importSource:
             jsConfig?.compilerOptions?.jsxImportSource ??
-            (compilerOptions?.emotion ? "@emotion/react" : "react"),
+            (compiler?.emotion ? "@emotion/react" : "react"),
           runtime: "automatic",
           pragmaFrag: "React.Fragment",
           throwIfNamespace: true,
@@ -115,7 +115,7 @@ export function getBaseSWCOptions({
       },
     },
     sourceMaps: true,
-    removeConsole: compilerOptions?.removeConsole,
+    removeConsole: compiler?.removeConsole,
     reactRemoveProperties: false,
     // Map the k-v map to an array of pairs.
     modularizeImports: modularizeImports
@@ -135,14 +135,14 @@ export function getBaseSWCOptions({
           ]),
         )
       : undefined,
-    relay: compilerOptions?.relay,
+    relay: compiler?.relay,
     // Always transform styled-jsx and error when `client-only` condition is triggered
     styledJsx: {},
     // Disable css-in-js libs (without client-only integration) transform on server layer for server components
-    emotion: getEmotionOptions(compilerOptions?.emotion, development),
+    emotion: getEmotionOptions(compiler?.emotion, development),
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
     styledComponents: getStyledComponentsOptions(
-      compilerOptions?.styledComponents,
+      compiler?.styledComponents,
       development,
     ),
     serverComponents: undefined,

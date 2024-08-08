@@ -42,7 +42,7 @@ export const getVitestSWCTransformConfig = ({
     jsConfig: loadedJSConfig.jsConfig,
     resolvedBaseUrl: loadedJSConfig.resolvedBaseUrl,
     swcPlugins: nextConfig.experimental.swcPlugins,
-    compilerOptions: nextConfig?.compilerOptions,
+    compiler: nextConfig?.compiler,
     esm: isEsmProject,
     swcCacheDir: path.join(
       rootDir,

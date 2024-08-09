@@ -1,3 +1,5 @@
+import versions from './versions';
+
 /// <reference types="@types/compression" />
 
 export * from './presets';
@@ -40,7 +42,6 @@ export * from './utils/strip-abs-node-modules-path';
 export * from './utils/formatter';
 export * from './js-package-manager';
 
-import versions from './versions';
 export { versions };
 
 export { createFileSystemCache } from './utils/file-cache';

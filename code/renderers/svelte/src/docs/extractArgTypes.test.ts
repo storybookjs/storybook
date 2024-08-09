@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import svelteDoc from 'sveltedoc-parser';
+
 import * as fs from 'fs';
+import svelteDoc from 'sveltedoc-parser';
+
 import { createArgTypes } from './extractArgTypes';
 
 const content = fs.readFileSync(`${__dirname}/sample/MockButton.svelte`, 'utf-8');

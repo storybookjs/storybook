@@ -1,12 +1,12 @@
-import type { Configuration, Stats } from 'webpack';
 import type {
-  Options,
   BuilderResult as BuilderResultBase,
+  Options,
   StorybookConfig,
   TypescriptOptions as WebpackTypescriptOptions,
 } from '@storybook/core-webpack';
 
 import type ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
+import type { Configuration, Stats } from 'webpack';
 
 type TypeScriptOptionsBase = Partial<WebpackTypescriptOptions>;
 

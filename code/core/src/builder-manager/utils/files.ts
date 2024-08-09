@@ -1,9 +1,11 @@
-import type { OutputFile } from 'esbuild';
-import { ensureFile } from '@ndelangen/fs-extra-unified';
-import { join, normalize } from 'node:path';
-import slash from 'slash';
-import type { Compilation } from '../types';
 import { writeFile } from 'node:fs/promises';
+import { join, normalize } from 'node:path';
+
+import { ensureFile } from '@ndelangen/fs-extra-unified';
+import type { OutputFile } from 'esbuild';
+import slash from 'slash';
+
+import type { Compilation } from '../types';
 
 export async function readOrderedFiles(
   addonsDir: string,

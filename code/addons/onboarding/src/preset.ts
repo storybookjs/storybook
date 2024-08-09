@@ -1,8 +1,10 @@
-import type { CoreConfig, Options } from 'storybook/internal/types';
 import type { Channel } from 'storybook/internal/channels';
-import { STORYBOOK_ADDON_ONBOARDING_CHANNEL } from './constants';
 import { telemetry } from 'storybook/internal/telemetry';
+import type { CoreConfig, Options } from 'storybook/internal/types';
+
 import fs from 'fs';
+
+import { STORYBOOK_ADDON_ONBOARDING_CHANNEL } from './constants';
 
 type Event = {
   type: 'telemetry';

@@ -1,16 +1,17 @@
+import React, { useCallback, useEffect, useState } from 'react';
+
 import { SyntaxHighlighter } from 'storybook/internal/components';
 import { SAVE_STORY_RESPONSE } from 'storybook/internal/core-events';
 import { type API } from 'storybook/internal/manager-api';
 import { ThemeProvider, convert, styled, themes } from 'storybook/internal/theming';
-import React, { useCallback, useEffect, useState } from 'react';
+
 import type { Step } from 'react-joyride';
 
-import { GuidedTour } from './features/GuidedTour/GuidedTour';
 import { Confetti } from './components/Confetti/Confetti';
+import { HighlightElement } from './components/HighlightElement/HighlightElement';
 import type { STORYBOOK_ADDON_ONBOARDING_STEPS } from './constants';
 import { STORYBOOK_ADDON_ONBOARDING_CHANNEL } from './constants';
-
-import { HighlightElement } from './components/HighlightElement/HighlightElement';
+import { GuidedTour } from './features/GuidedTour/GuidedTour';
 import { SplashScreen } from './features/SplashScreen/SplashScreen';
 
 const SpanHighlight = styled.span(({ theme }) => ({

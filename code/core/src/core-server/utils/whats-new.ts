@@ -1,20 +1,24 @@
-import { logger } from '@storybook/core/node-logger';
-import { telemetry } from '@storybook/core/telemetry';
-import { findConfigFile } from '@storybook/core/common';
-import type { CoreConfig, Options } from '@storybook/core/types';
-import { printConfig, readConfig } from '@storybook/core/csf-tools';
+import { writeFile } from 'node:fs/promises';
+
 import type { Channel } from '@storybook/core/channels';
+import { findConfigFile } from '@storybook/core/common';
+import { telemetry } from '@storybook/core/telemetry';
+import type { CoreConfig, Options } from '@storybook/core/types';
+
 import type { WhatsNewCache, WhatsNewData } from '@storybook/core/core-events';
 import {
   REQUEST_WHATS_NEW_DATA,
   RESULT_WHATS_NEW_DATA,
-  TELEMETRY_ERROR,
   SET_WHATS_NEW_CACHE,
+  TELEMETRY_ERROR,
   TOGGLE_WHATS_NEW_NOTIFICATIONS,
 } from '@storybook/core/core-events';
+import { printConfig, readConfig } from '@storybook/core/csf-tools';
+import { logger } from '@storybook/core/node-logger';
+
 import invariant from 'tiny-invariant';
+
 import { sendTelemetryError } from '../withTelemetry';
-import { writeFile } from 'node:fs/promises';
 
 export type OptionsWithRequiredCache = Exclude<Options, 'cache'> & Required<Pick<Options, 'cache'>>;
 

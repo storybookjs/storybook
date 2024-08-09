@@ -1,12 +1,13 @@
 import * as React from 'react';
 
 import { styled } from 'storybook/internal/theming';
+
 import type { NodeResult, Result } from 'axe-core';
 import { useResizeDetector } from 'react-resize-detector';
-import HighlightToggle from './Report/HighlightToggle';
 
 import type { RuleType } from './A11YPanel';
 import { useA11yContext } from './A11yContext';
+import HighlightToggle from './Report/HighlightToggle';
 
 // TODO: reuse the Tabs component from @storybook/theming instead of re-building identical functionality
 

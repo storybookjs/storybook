@@ -10,7 +10,6 @@
  *       return acc;
  *     }, {}), null, 2)
  */
-
 import type { Dataset } from './types';
 
 // @ts-expect-error (TODO)

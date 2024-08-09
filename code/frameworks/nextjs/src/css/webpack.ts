@@ -1,8 +1,9 @@
 import type { NextConfig } from 'next';
-import { getCssModuleLocalIdent } from 'next/dist/build/webpack/config/blocks/css/loaders/getCssModuleLocalIdent';
 import { cssFileResolve } from 'next/dist/build/webpack/config/blocks/css/loaders/file-resolve';
-import type { Configuration as WebpackConfig } from 'webpack';
+import { getCssModuleLocalIdent } from 'next/dist/build/webpack/config/blocks/css/loaders/getCssModuleLocalIdent';
 import semver from 'semver';
+import type { Configuration as WebpackConfig } from 'webpack';
+
 import { scopedResolve } from '../utils';
 
 // This tries to follow nextjs's css config, please refer to this file for more info:

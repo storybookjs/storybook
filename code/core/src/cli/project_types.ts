@@ -1,8 +1,9 @@
-import { minVersion, validRange } from 'semver';
 import type {
-  SupportedFrameworks,
   SupportedRenderers as CoreSupportedFrameworks,
+  SupportedFrameworks,
 } from '@storybook/core/types';
+
+import { minVersion, validRange } from 'semver';
 
 function eqMajor(versionRange: string, major: number) {
   // Uses validRange to avoid a throw from minVersion if an invalid range gets passed

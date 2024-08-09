@@ -1,4 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
+
 import { add, getVersionSpecifier } from './add';
 
 const MockedConfig = vi.hoisted(() => {

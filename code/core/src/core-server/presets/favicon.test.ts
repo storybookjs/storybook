@@ -1,8 +1,11 @@
-import { expect, vi, it } from 'vitest';
-
 import { dirname, join } from 'node:path';
-import * as fs from '@ndelangen/fs-extra-unified';
+
+import { expect, it, vi } from 'vitest';
+
 import { logger } from '@storybook/core/node-logger';
+
+import * as fs from '@ndelangen/fs-extra-unified';
+
 import * as m from './common-preset';
 
 const defaultFavicon = join(

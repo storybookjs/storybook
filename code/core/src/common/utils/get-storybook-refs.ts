@@ -1,10 +1,12 @@
-import { readJSON } from '@ndelangen/fs-extra-unified';
 import { dirname, join } from 'node:path';
-import { findUp } from 'find-up';
 
-import resolveFrom from 'resolve-from';
-import { logger } from '@storybook/core/node-logger';
 import type { Options, Ref } from '@storybook/core/types';
+
+import { logger } from '@storybook/core/node-logger';
+
+import { readJSON } from '@ndelangen/fs-extra-unified';
+import { findUp } from 'find-up';
+import resolveFrom from 'resolve-from';
 
 export const getAutoRefs = async (options: Options): Promise<Record<string, Ref>> => {
   const location = await findUp('package.json', { cwd: options.configDir });

@@ -2,11 +2,12 @@ import type { FC } from 'react';
 import React, { useCallback, useMemo } from 'react';
 
 import { Badge } from '@storybook/core/components';
-import type { API, State } from '@storybook/core/manager-api';
-import { shortcutToHumanString } from '@storybook/core/manager-api';
 import { styled, useTheme } from '@storybook/core/theming';
 import { CheckIcon, InfoIcon, ShareAltIcon, WandIcon } from '@storybook/icons';
+
 import { STORIES_COLLAPSE_ALL } from '@storybook/core/core-events';
+import type { API, State } from '@storybook/core/manager-api';
+import { shortcutToHumanString } from '@storybook/core/manager-api';
 
 const focusableUIElements = {
   storySearchField: 'storybook-explorer-searchfield',

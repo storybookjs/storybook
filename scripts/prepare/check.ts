@@ -1,5 +1,6 @@
+import { join } from 'node:path';
+
 import { readJson } from '@ndelangen/fs-extra-unified';
-import { join } from 'path';
 import ts from 'typescript';
 
 const run = async ({ cwd }: { cwd: string }) => {

@@ -1,10 +1,11 @@
-import { Configuration } from 'webpack';
-import * as path from 'path';
 import { Preset } from 'storybook/internal/types';
-import fs from 'fs';
 
-import { PresetOptions } from './preset-options';
+import fs from 'fs';
+import * as path from 'path';
+import { Configuration } from 'webpack';
+
 import { AngularOptions } from '../types';
+import { PresetOptions } from './preset-options';
 
 /**
  * Source : https://github.com/angular/angular-cli/blob/ebccb5de4a455af813c5e82483db6af20666bdbd/packages/angular_devkit/build_angular/src/utils/load-esm.ts#L23

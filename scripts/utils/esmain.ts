@@ -1,6 +1,6 @@
+import { createRequire } from 'module';
 import path from 'path';
 import process from 'process';
-import { createRequire } from 'module';
 import { fileURLToPath } from 'url';
 
 /**

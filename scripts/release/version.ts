@@ -1,15 +1,17 @@
+import { readFile, writeFile } from 'node:fs/promises';
+
 import { setOutput } from '@actions/core';
 import { readJson, writeJson } from '@ndelangen/fs-extra-unified';
 import chalk from 'chalk';
-import path from 'path';
 import program from 'commander';
+import { execaCommand } from 'execa';
+import path from 'path';
 import semver from 'semver';
 import { z } from 'zod';
-import { execaCommand } from 'execa';
+
 import { esMain } from '../utils/esmain';
 import type { Workspace } from '../utils/workspace';
 import { getWorkspaces } from '../utils/workspace';
-import { readFile, writeFile } from 'node:fs/promises';
 
 program
   .name('version')

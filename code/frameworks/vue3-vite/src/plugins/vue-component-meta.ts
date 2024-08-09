@@ -4,12 +4,12 @@ import MagicString from 'magic-string';
 import path from 'path';
 import type { PluginOption } from 'vite';
 import {
-  TypeMeta,
-  createChecker,
-  createCheckerByJson,
   type ComponentMeta,
   type MetaCheckerOptions,
   type PropertyMetaSchema,
+  TypeMeta,
+  createChecker,
+  createCheckerByJson,
 } from 'vue-component-meta';
 import { parseMulti } from 'vue-docgen-api';
 

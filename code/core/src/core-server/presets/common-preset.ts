@@ -1,6 +1,7 @@
-import { pathExists } from '@ndelangen/fs-extra-unified';
-import { logger } from '@storybook/core/node-logger';
-import { telemetry } from '@storybook/core/telemetry';
+import { readFile } from 'node:fs/promises';
+import { dirname, isAbsolute, join } from 'node:path';
+
+import type { Channel } from '@storybook/core/channels';
 import {
   getDirectoryFromWorkingDir,
   getPreviewBodyTemplate,
@@ -8,25 +9,28 @@ import {
   loadEnvs,
   removeAddon as removeAddonBase,
 } from '@storybook/core/common';
+import { telemetry } from '@storybook/core/telemetry';
 import type {
   CLIOptions,
   CoreConfig,
   Indexer,
   Options,
-  PresetPropertyFn,
   PresetProperty,
+  PresetPropertyFn,
 } from '@storybook/core/types';
+
 import { readCsf } from '@storybook/core/csf-tools';
-import { join, dirname, isAbsolute } from 'node:path';
+import { logger } from '@storybook/core/node-logger';
+
+import { pathExists } from '@ndelangen/fs-extra-unified';
 import { dedent } from 'ts-dedent';
-import type { Channel } from '@storybook/core/channels';
-import { parseStaticDir } from '../utils/server-statics';
-import { defaultStaticDirs } from '../utils/constants';
-import { initializeWhatsNew, type OptionsWithRequiredCache } from '../utils/whats-new';
-import { initializeSaveStory } from '../utils/save-story/save-story';
-import { initFileSearchChannel } from '../server-channel/file-search-channel';
+
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
-import { readFile } from 'node:fs/promises';
+import { initFileSearchChannel } from '../server-channel/file-search-channel';
+import { defaultStaticDirs } from '../utils/constants';
+import { initializeSaveStory } from '../utils/save-story/save-story';
+import { parseStaticDir } from '../utils/server-statics';
+import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new';
 
 const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);

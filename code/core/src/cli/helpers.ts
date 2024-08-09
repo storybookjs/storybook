@@ -1,23 +1,25 @@
+import { readFile, writeFile } from 'node:fs/promises';
+
+import {
+  frameworkToRenderer as CoreFrameworkToRenderer,
+  type JsPackageManager,
+  type PackageJson,
+  type PackageJsonWithDepsAndDevDeps,
+} from '@storybook/core/common';
+import { versions as storybookMonorepoPackages } from '@storybook/core/common';
+import type { SupportedFrameworks, SupportedRenderers } from '@storybook/core/types';
+
+import { copy, copySync, pathExists } from '@ndelangen/fs-extra-unified';
 import chalk from 'chalk';
+import { findUpSync } from 'find-up';
 import fs from 'fs';
 import path, { join } from 'path';
 import { coerce, satisfies } from 'semver';
 import stripJsonComments from 'strip-json-comments';
-
-import { findUpSync } from 'find-up';
 import invariant from 'tiny-invariant';
+
 import { getRendererDir } from './dirs';
-import {
-  type JsPackageManager,
-  type PackageJson,
-  type PackageJsonWithDepsAndDevDeps,
-  frameworkToRenderer as CoreFrameworkToRenderer,
-} from '@storybook/core/common';
-import type { SupportedFrameworks, SupportedRenderers } from '@storybook/core/types';
 import { CoreBuilder, SupportedLanguage } from './project_types';
-import { versions as storybookMonorepoPackages } from '@storybook/core/common';
-import { copy, copySync, pathExists } from '@ndelangen/fs-extra-unified';
-import { readFile, writeFile } from 'node:fs/promises';
 
 const logger = console;
 

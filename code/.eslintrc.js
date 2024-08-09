@@ -19,6 +19,10 @@ module.exports = {
   },
   plugins: ['local-rules'],
   rules: {
+    'import/no-extraneous-dependencies': [
+      'error',
+      { devDependencies: true, peerDependencies: true },
+    ],
     'import/no-unresolved': 'off', // covered by typescript
     'eslint-comments/disable-enable-pair': ['error', { allowWholeFile: true }],
     'import/no-unresolved': 'off',
@@ -61,7 +65,13 @@ module.exports = {
       },
     },
     {
-      files: ['**/template/**/*', '**/vitest.config.ts', '**/addons/docs/**/*'],
+      files: [
+        '*.test.*',
+        '*.spec.*',
+        '**/template/**/*',
+        '**/vitest.config.ts',
+        '**/addons/docs/**/*',
+      ],
       rules: {
         'import/no-extraneous-dependencies': 'off',
       },

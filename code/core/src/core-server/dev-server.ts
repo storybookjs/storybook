@@ -1,27 +1,26 @@
-import express from 'express';
-import compression from 'compression';
-import invariant from 'tiny-invariant';
-
+import { logConfig } from '@storybook/core/common';
 import type { Options } from '@storybook/core/types';
 
-import { logConfig } from '@storybook/core/common';
 import { logger } from '@storybook/core/node-logger';
-
 import { MissingBuilderError } from '@storybook/core/server-errors';
+
+import compression from 'compression';
+import express from 'express';
+import invariant from 'tiny-invariant';
+
+import type { StoryIndexGenerator } from './utils/StoryIndexGenerator';
+import { doTelemetry } from './utils/doTelemetry';
+import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
+import { getCachingMiddleware } from './utils/get-caching-middleware';
+import { getServerChannel } from './utils/get-server-channel';
+import { getAccessControlMiddleware } from './utils/getAccessControlMiddleware';
+import { getStoryIndexGenerator } from './utils/getStoryIndexGenerator';
 import { getMiddleware } from './utils/middleware';
+import { openInBrowser } from './utils/open-in-browser';
+import { router } from './utils/router';
 import { getServerAddresses } from './utils/server-address';
 import { getServer } from './utils/server-init';
 import { useStatics } from './utils/server-statics';
-import { getServerChannel } from './utils/get-server-channel';
-
-import { openInBrowser } from './utils/open-in-browser';
-import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
-import type { StoryIndexGenerator } from './utils/StoryIndexGenerator';
-import { getStoryIndexGenerator } from './utils/getStoryIndexGenerator';
-import { doTelemetry } from './utils/doTelemetry';
-import { router } from './utils/router';
-import { getAccessControlMiddleware } from './utils/getAccessControlMiddleware';
-import { getCachingMiddleware } from './utils/get-caching-middleware';
 
 export async function storybookDevServer(options: Options) {
   const app = express();

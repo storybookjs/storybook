@@ -8,7 +8,6 @@
  * This is inspired by `actualNameHandler` from https://github.com/storybookjs/babel-plugin-react-docgen, but is modified
  * directly from displayNameHandler, using the same approach as babel-plugin-react-docgen.
  */
-
 import type { Handler, NodePath, babelTypes as t } from 'react-docgen';
 import { utils } from 'react-docgen';
 

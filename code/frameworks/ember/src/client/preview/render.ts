@@ -1,7 +1,10 @@
-import { global } from '@storybook/global';
-import { dedent } from 'ts-dedent';
 import type { RenderContext } from 'storybook/internal/types';
-import type { OptionsArgs, EmberRenderer } from './types';
+
+import { global } from '@storybook/global';
+
+import { dedent } from 'ts-dedent';
+
+import type { EmberRenderer, OptionsArgs } from './types';
 
 const { document } = global;
 

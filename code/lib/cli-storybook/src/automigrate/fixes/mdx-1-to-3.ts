@@ -1,8 +1,10 @@
-import chalk from 'chalk';
-import { dedent } from 'ts-dedent';
-import { basename } from 'path';
-import type { Fix } from '../types';
 import { readFile, writeFile } from 'node:fs/promises';
+
+import chalk from 'chalk';
+import { basename } from 'path';
+import { dedent } from 'ts-dedent';
+
+import type { Fix } from '../types';
 
 const MDX1_STYLE_START = /<style>{`/g;
 const MDX1_STYLE_END = /`}<\/style>/g;

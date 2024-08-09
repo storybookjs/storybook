@@ -1,7 +1,9 @@
-import { join } from 'path';
+import { join } from 'node:path';
+
 import { emptyDir, move, readJson } from '@ndelangen/fs-extra-unified';
-import * as ts from 'typescript';
 import { globSync } from 'glob';
+import * as ts from 'typescript';
+
 import { exec } from '../utils/exec';
 
 const hasFlag = (flags: string[], name: string) => !!flags.find((s) => s.startsWith(`--${name}`));

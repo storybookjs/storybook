@@ -1,16 +1,18 @@
 /* eslint-disable no-underscore-dangle */
-import { describe, it, expect, vi } from 'vitest';
-import path from 'path';
+import 'node:path';
+import { join } from 'node:path';
+
+import { describe, expect, it, vi } from 'vitest';
+
 import * as fsExtraImp from '@ndelangen/fs-extra-unified';
 import { execaCommand } from 'execa';
-import { run as version } from '../version';
 
 import type * as MockedFSToExtra from '../../../code/__mocks__/fs-extra';
+import { run as version } from '../version';
 
 vi.mock('@ndelangen/fs-extra-unified', async () => import('../../../code/__mocks__/fs-extra'));
 vi.mock('node:fs/promises', async () => import('../../../code/__mocks__/fs-extra'));
 const fsExtra = fsExtraImp as unknown as typeof MockedFSToExtra;
-
 
 vi.mock('../../../code/core/src/common/src/versions', () => ({
   '@storybook/addon-a11y': '7.1.0-alpha.29',
@@ -32,17 +34,11 @@ vi.spyOn(console, 'warn').mockImplementation(() => {});
 vi.spyOn(console, 'error').mockImplementation(() => {});
 
 describe('Version', () => {
-  const CODE_DIR_PATH = path.join(__dirname, '..', '..', '..', 'code');
-  const CODE_PACKAGE_JSON_PATH = path.join(CODE_DIR_PATH, 'package.json');
-  const MANAGER_API_VERSION_PATH = path.join(
-    CODE_DIR_PATH,
-    'core',
-    'src',
-    'manager-api',
-    'version.ts'
-  );
-  const VERSIONS_PATH = path.join(CODE_DIR_PATH, 'core', 'src', 'common', 'versions.ts');
-  const A11Y_PACKAGE_JSON_PATH = path.join(CODE_DIR_PATH, 'addons', 'a11y', 'package.json');
+  const CODE_DIR_PATH = join(__dirname, '..', '..', '..', 'code');
+  const CODE_PACKAGE_JSON_PATH = join(CODE_DIR_PATH, 'package.json');
+  const MANAGER_API_VERSION_PATH = join(CODE_DIR_PATH, 'core', 'src', 'manager-api', 'version.ts');
+  const VERSIONS_PATH = join(CODE_DIR_PATH, 'core', 'src', 'common', 'versions.ts');
+  const A11Y_PACKAGE_JSON_PATH = join(CODE_DIR_PATH, 'addons', 'a11y', 'package.json');
 
   it('should throw when release type is invalid', async () => {
     fsExtra.__setMockFiles({
@@ -50,7 +46,6 @@ describe('Version', () => {
       [MANAGER_API_VERSION_PATH]: `export const version = "1.0.0";`,
       [VERSIONS_PATH]: `export default { "@storybook/addon-a11y": "1.0.0" };`,
     });
-
 
     await expect(version({ releaseType: 'invalid' })).rejects.toThrowErrorMatchingInlineSnapshot(`
       [ZodError: [
@@ -82,7 +77,6 @@ describe('Version', () => {
       [VERSIONS_PATH]: `export default { "@storybook/addon-a11y": "1.0.0" };`,
     });
 
-
     await expect(version({ releaseType: 'major', preId: 'alpha' })).rejects
       .toThrowErrorMatchingInlineSnapshot(`
       [ZodError: [
@@ -101,8 +95,6 @@ describe('Version', () => {
       [MANAGER_API_VERSION_PATH]: `export const version = "1.0.0";`,
       [VERSIONS_PATH]: `export default { "@storybook/addon-a11y": "1.0.0" };`,
     });
-
-    
 
     await expect(version({ releaseType: 'major', exact: '1.0.0' })).rejects
       .toThrowErrorMatchingInlineSnapshot(`

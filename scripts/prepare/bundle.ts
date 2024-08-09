@@ -1,14 +1,16 @@
-import path, { dirname, join, relative } from 'path';
-import type { Options } from 'tsup';
-import type { PackageJson } from 'type-fest';
-import { build } from 'tsup';
-import aliasPlugin from 'esbuild-plugin-alias';
-import { dedent } from 'ts-dedent';
-import slash from 'slash';
-import { exec } from '../utils/exec';
-import { glob } from 'glob';
-import { emptyDir, ensureFile, pathExists, readJson } from '@ndelangen/fs-extra-unified';
 import { readFile, writeFile } from 'node:fs/promises';
+
+import { emptyDir, ensureFile, pathExists, readJson } from '@ndelangen/fs-extra-unified';
+import aliasPlugin from 'esbuild-plugin-alias';
+import { glob } from 'glob';
+import path, { dirname, join, relative } from 'path';
+import slash from 'slash';
+import { dedent } from 'ts-dedent';
+import type { Options } from 'tsup';
+import { build } from 'tsup';
+import type { PackageJson } from 'type-fest';
+
+import { exec } from '../utils/exec';
 
 /* TYPES */
 

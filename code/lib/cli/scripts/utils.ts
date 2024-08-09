@@ -1,5 +1,6 @@
-import { ensureFile } from '@ndelangen/fs-extra-unified';
 import { writeFile } from 'node:fs/promises';
+
+import { ensureFile } from '@ndelangen/fs-extra-unified';
 import { dedent } from 'ts-dedent';
 
 export const write = async (location: string, data: string) => {

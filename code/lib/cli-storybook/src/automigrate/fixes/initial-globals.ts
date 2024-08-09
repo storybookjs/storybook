@@ -1,9 +1,12 @@
-import { dedent } from 'ts-dedent';
-import chalk from 'chalk';
 import { readFile, writeFile } from 'node:fs/promises';
-import type { Expression } from '@babel/types';
+
 import type { ConfigFile } from 'storybook/internal/csf-tools';
-import { loadConfig, formatConfig } from 'storybook/internal/csf-tools';
+import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
+
+import type { Expression } from '@babel/types';
+import chalk from 'chalk';
+import { dedent } from 'ts-dedent';
+
 import type { Fix } from '../types';
 
 const MIGRATION =

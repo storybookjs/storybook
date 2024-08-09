@@ -1,12 +1,13 @@
 /* eslint-disable no-underscore-dangle */
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import * as fsExtraImp from '@ndelangen/fs-extra-unified';
 import path from 'path';
 import { dedent } from 'ts-dedent';
-import { vi, expect, describe, it, beforeEach } from 'vitest';
-import * as fsExtraImp from '@ndelangen/fs-extra-unified';
-import { run as writeChangelog } from '../write-changelog';
-import * as changesUtils_ from '../utils/get-changes';
 
 import type * as MockedFSToExtra from '../../../code/__mocks__/fs-extra';
+import * as changesUtils_ from '../utils/get-changes';
+import { run as writeChangelog } from '../write-changelog';
 
 vi.mock('@ndelangen/fs-extra-unified', async () => import('../../../code/__mocks__/fs-extra'));
 vi.mock('node:fs/promises', async () => import('../../../code/__mocks__/fs-extra'));

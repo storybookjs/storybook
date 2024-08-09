@@ -1,4 +1,5 @@
 import { global as globalThis } from '@storybook/global';
+
 import { withLinks } from '@storybook/addon-links';
 
 export default {

@@ -1,9 +1,10 @@
 import chalk from 'chalk';
-import { dedent } from 'ts-dedent';
 import semver from 'semver';
+import { dedent } from 'ts-dedent';
+
+import { checkWebpack5Builder } from '../helpers/checkWebpack5Builder';
 import type { Fix } from '../types';
 import { webpack5 } from './webpack5';
-import { checkWebpack5Builder } from '../helpers/checkWebpack5Builder';
 
 interface CRA5RunOptions {
   craVersion: string;

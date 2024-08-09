@@ -1,9 +1,10 @@
-import yaml from 'yaml';
-import type { Tag, StoryName, ComponentTitle, PresetProperty } from 'storybook/internal/types';
-
-import { join } from 'path';
-import { readJson } from '@ndelangen/fs-extra-unified';
 import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+
+import type { ComponentTitle, PresetProperty, StoryName, Tag } from 'storybook/internal/types';
+
+import { readJson } from '@ndelangen/fs-extra-unified';
+import yaml from 'yaml';
 
 type FileContent = {
   title: ComponentTitle;

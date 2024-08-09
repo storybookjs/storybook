@@ -1,5 +1,6 @@
+import { expect, userEvent, within } from '@storybook/test';
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { within, userEvent, expect } from '@storybook/test';
+
 import MyPage from './Page.vue';
 
 const meta: Meta<typeof MyPage> = {

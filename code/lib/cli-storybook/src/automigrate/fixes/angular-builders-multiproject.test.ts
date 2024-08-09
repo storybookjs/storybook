@@ -1,8 +1,10 @@
-import { describe, beforeEach, afterEach, it, expect, vi } from 'vitest';
-import type { StorybookConfig } from 'storybook/internal/types';
-import type { JsPackageManager } from 'storybook/internal/common';
-import { angularBuildersMultiproject } from './angular-builders-multiproject';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import * as helpers from 'storybook/internal/cli';
+import type { JsPackageManager } from 'storybook/internal/common';
+import type { StorybookConfig } from 'storybook/internal/types';
+
+import { angularBuildersMultiproject } from './angular-builders-multiproject';
 
 const checkAngularBuilders = async ({
   packageManager,

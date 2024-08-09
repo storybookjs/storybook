@@ -1,8 +1,10 @@
-import type { getEntries } from '../entries';
-import { join, relative } from 'node:path';
-import { dedent } from '../../../../scripts/prepare/tools';
 import { writeFile } from 'node:fs/promises';
+import { join, relative } from 'node:path';
+
 import { ensureFile } from '@ndelangen/fs-extra-unified';
+
+import { dedent } from '../../../../scripts/prepare/tools';
+import type { getEntries } from '../entries';
 
 const cwd = process.cwd();
 

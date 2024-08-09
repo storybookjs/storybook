@@ -1,6 +1,9 @@
-import { viteFinal as svelteViteFinal } from '@storybook/svelte-vite/preset';
-import type { PresetProperty } from 'storybook/internal/types';
 import { dirname, join } from 'node:path';
+
+import type { PresetProperty } from 'storybook/internal/types';
+
+import { viteFinal as svelteViteFinal } from '@storybook/svelte-vite/preset';
+
 import { configOverrides } from './plugins/config-overrides';
 import { mockSveltekitStores } from './plugins/mock-sveltekit-stores';
 import { type StorybookConfig } from './types';

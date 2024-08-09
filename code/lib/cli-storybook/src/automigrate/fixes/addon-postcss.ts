@@ -1,7 +1,8 @@
 import chalk from 'chalk';
 import { dedent } from 'ts-dedent';
-import type { Fix } from '../types';
+
 import { getAddonNames } from '../helpers/mainConfigFile';
+import type { Fix } from '../types';
 
 interface AddonPostcssRunOptions {
   hasAddonPostcss: boolean;

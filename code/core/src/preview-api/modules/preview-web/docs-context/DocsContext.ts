@@ -1,8 +1,4 @@
 import type { Channel } from '@storybook/core/channels';
-
-import { dedent } from 'ts-dedent';
-import type { StoryStore } from '../../store';
-import type { DocsContextProps } from './DocsContextProps';
 import type {
   CSFFile,
   ModuleExport,
@@ -14,6 +10,11 @@ import type {
   StoryId,
   StoryName,
 } from '@storybook/core/types';
+
+import { dedent } from 'ts-dedent';
+
+import type { StoryStore } from '../../store';
+import type { DocsContextProps } from './DocsContextProps';
 
 export class DocsContext<TRenderer extends Renderer> implements DocsContextProps<TRenderer> {
   private componentStoriesValue: PreparedStory<TRenderer>[];

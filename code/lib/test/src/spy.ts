@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-shadow */
-import type { Mock as MockV2, MockInstance } from '@vitest/spy';
+import type { MockInstance, Mock as MockV2 } from '@vitest/spy';
 import {
-  spyOn as vitestSpyOn,
-  isMockFunction,
-  fn as vitestFn,
-  mocks,
   type MaybeMocked,
   type MaybeMockedDeep,
   type MaybePartiallyMocked,
   type MaybePartiallyMockedDeep,
+  isMockFunction,
+  mocks,
+  fn as vitestFn,
+  spyOn as vitestSpyOn,
 } from '@vitest/spy';
 import type { SpyInternalImpl } from 'tinyspy';
 import * as tinyspy from 'tinyspy';

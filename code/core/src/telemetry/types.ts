@@ -1,4 +1,5 @@
 import type { StorybookConfig, TypescriptOptions } from '@storybook/core/types';
+
 import type { PM } from 'detect-package-manager';
 
 import type { MonorepoType } from './get-monorepo-type';

@@ -1,4 +1,5 @@
-import fs from 'fs';
+import { appendFile } from 'node:fs';
+
 import { remove } from '@ndelangen/fs-extra-unified';
 import { spawn } from 'child_process';
 import trash from 'trash';
@@ -47,7 +48,7 @@ cleaningProcess.stdout.on('data', (data) => {
         }
       });
   }
-  fs.appendFile('reset.log', data, (err) => {
+  appendFile('reset.log', data, (err) => {
     if (err) {
       throw err;
     }

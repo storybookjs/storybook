@@ -1,6 +1,8 @@
-import Head from 'next/head';
 import React from 'react';
-import { waitFor, expect } from '@storybook/test';
+
+import { expect, waitFor } from '@storybook/test';
+
+import Head from 'next/head';
 
 function Component() {
   return (

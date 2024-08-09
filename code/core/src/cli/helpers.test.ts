@@ -1,12 +1,20 @@
-import { describe, beforeEach, it, expect, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { sep } from 'path';
-import * as helpers from './helpers';
-import { IS_WINDOWS } from '../../../vitest.helpers';
 import type { JsPackageManager } from '@storybook/core/common';
+
+import { copy, copySync, pathExists } from '@ndelangen/fs-extra-unified';
+import { sep } from 'path';
+
+import { IS_WINDOWS } from '../../../vitest.helpers';
+import {
+  coerceSemver,
+  copyTemplate,
+  copyTemplateFiles,
+  getStorybookVersionSpecifier,
+  hasStorybookDependencies,
+} from './helpers';
 import type { SupportedRenderers } from './project_types';
 import { SupportedLanguage } from './project_types';
-import { copy, copySync, pathExists } from '@ndelangen/fs-extra-unified';
 
 const normalizePath = (path: string) => (IS_WINDOWS ? path.replace(/\//g, sep) : path);
 
@@ -90,7 +98,7 @@ describe('Helpers', () => {
       const csfDirectory = /template-csf$/;
       fsMocks.existsSync.mockReturnValue(true);
 
-      helpers.copyTemplate('');
+      copyTemplate('');
 
       expect(copySync).toHaveBeenCalledWith(
         expect.stringMatching(csfDirectory),
@@ -103,7 +111,7 @@ describe('Helpers', () => {
       fsMocks.existsSync.mockReturnValue(false);
 
       expect(() => {
-        helpers.copyTemplate('');
+        copyTemplate('');
       }).toThrowError("Couldn't find template dir");
     });
   });
@@ -129,7 +137,7 @@ describe('Helpers', () => {
           componentsDirectory.includes(filePath) ||
           filePath === normalizePath('@storybook/react/template/cli')
       );
-      await helpers.copyTemplateFiles({
+      await copyTemplateFiles({
         renderer: 'react',
         language,
         packageManager: packageManagerMock,
@@ -152,7 +160,7 @@ describe('Helpers', () => {
     vi.mocked(pathExists).mockImplementation((filePath) => {
       return filePath === normalizePath('@storybook/react/template/cli') || filePath === './src';
     });
-    await helpers.copyTemplateFiles({
+    await copyTemplateFiles({
       renderer: 'react',
       language: SupportedLanguage.JAVASCRIPT,
       packageManager: packageManagerMock,
@@ -164,7 +172,7 @@ describe('Helpers', () => {
     vi.mocked(pathExists).mockImplementation((filePath) => {
       return filePath === normalizePath('@storybook/react/template/cli');
     });
-    await helpers.copyTemplateFiles({
+    await copyTemplateFiles({
       renderer: 'react',
       language: SupportedLanguage.JAVASCRIPT,
       packageManager: packageManagerMock,
@@ -176,7 +184,7 @@ describe('Helpers', () => {
     const renderer = 'unknown renderer' as SupportedRenderers;
     const expectedMessage = `Unsupported renderer: ${renderer}`;
     await expect(
-      helpers.copyTemplateFiles({
+      copyTemplateFiles({
         renderer,
         language: SupportedLanguage.JAVASCRIPT,
         packageManager: packageManagerMock,
@@ -187,7 +195,7 @@ describe('Helpers', () => {
   describe('getStorybookVersionSpecifier', () => {
     it(`should return the specifier if storybook lib exists in package.json`, () => {
       expect(
-        helpers.getStorybookVersionSpecifier({
+        getStorybookVersionSpecifier({
           dependencies: {},
           devDependencies: {
             '@storybook/react': '^x.x.x',
@@ -198,7 +206,7 @@ describe('Helpers', () => {
 
     it(`should throw an error if no package is found`, () => {
       expect(() => {
-        helpers.getStorybookVersionSpecifier({
+        getStorybookVersionSpecifier({
           dependencies: {},
           devDependencies: {
             'something-else': '^x.x.x',
@@ -212,21 +220,21 @@ describe('Helpers', () => {
     it(`should throw if the version argument is invalid semver string`, () => {
       const invalidSemverString = 'hello, world';
       expect(() => {
-        helpers.coerceSemver(invalidSemverString);
+        coerceSemver(invalidSemverString);
       }).toThrowError(`Could not coerce ${invalidSemverString} into a semver.`);
     });
   });
 
   describe('hasStorybookDependencies', () => {
     it(`should return true when any storybook dependency exists`, async () => {
-      const result = await helpers.hasStorybookDependencies({
+      const result = await hasStorybookDependencies({
         getAllDependencies: async () => ({ storybook: 'x.y.z' }),
       } as unknown as JsPackageManager);
       expect(result).toEqual(true);
     });
 
     it(`should return false when no storybook dependency exists`, async () => {
-      const result = await helpers.hasStorybookDependencies({
+      const result = await hasStorybookDependencies({
         getAllDependencies: async () => ({ axios: 'x.y.z' }),
       } as unknown as JsPackageManager);
       expect(result).toEqual(false);

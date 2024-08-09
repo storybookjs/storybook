@@ -1,14 +1,16 @@
-import { global } from '@storybook/global';
-import pick from 'lodash/pick.js';
-import { dequal as deepEqual } from 'dequal';
-import { create } from '@storybook/core/theming/create';
-import { SET_CONFIG } from '@storybook/core/core-events';
 import type { ThemeVars } from '@storybook/core/theming';
-
+import { create } from '@storybook/core/theming/create';
 import type { API_Layout, API_PanelPositions, API_UI } from '@storybook/core/types';
+import { global } from '@storybook/global';
+
+import { SET_CONFIG } from '@storybook/core/core-events';
+
+import { dequal as deepEqual } from 'dequal';
+import pick from 'lodash/pick.js';
+
 import merge from '../lib/merge';
-import type { State } from '../root';
 import type { ModuleFn } from '../lib/types';
+import type { State } from '../root';
 
 const { document } = global;
 

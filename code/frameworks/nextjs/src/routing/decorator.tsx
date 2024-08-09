@@ -1,9 +1,12 @@
 import * as React from 'react';
+
 import type { Addon_StoryContext } from 'storybook/internal/types';
+
+import { RedirectBoundary } from 'next/dist/client/components/redirect-boundary';
+
 import { AppRouterProvider } from './app-router-provider';
 import { PageRouterProvider } from './page-router-provider';
-import type { RouteParams, NextAppDirectory } from './types';
-import { RedirectBoundary } from 'next/dist/client/components/redirect-boundary';
+import type { NextAppDirectory, RouteParams } from './types';
 
 const defaultRouterParams: RouteParams = {
   pathname: '/',

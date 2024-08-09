@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { installableProjectTypes, SUPPORTED_RENDERERS } from './project_types';
+import { describe, expect, it } from 'vitest';
+
+import { SUPPORTED_RENDERERS, installableProjectTypes } from './project_types';
 
 describe('installableProjectTypes should have an entry for the supported framework', () => {
   SUPPORTED_RENDERERS.forEach((framework) => {

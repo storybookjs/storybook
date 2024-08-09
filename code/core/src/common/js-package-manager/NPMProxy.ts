@@ -1,16 +1,18 @@
-import sort from 'semver/functions/sort.js';
-import { platform } from 'os';
-import dedent from 'ts-dedent';
-import { findUpSync } from 'find-up';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+
 import { logger } from '@storybook/core/node-logger';
 import { FindPackageVersionsError } from '@storybook/core/server-errors';
 
+import { findUpSync } from 'find-up';
+import { platform } from 'os';
+import sort from 'semver/functions/sort.js';
+import dedent from 'ts-dedent';
+
+import { createLogStream } from '../utils/cli';
 import { JsPackageManager } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
 import type { InstallationMetadata, PackageMetadata } from './types';
-import { createLogStream } from '../utils/cli';
 
 type NpmDependency = {
   version: string;

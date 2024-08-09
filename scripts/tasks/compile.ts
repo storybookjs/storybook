@@ -1,9 +1,9 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'path';
 
-import { maxConcurrentTasks } from '../utils/maxConcurrentTasks';
-import { exec } from '../utils/exec';
 import type { Task } from '../task';
+import { exec } from '../utils/exec';
+import { maxConcurrentTasks } from '../utils/maxConcurrentTasks';
 
 // The amount of VCPUs for the check task on CI is 4 (large resource)
 const amountOfVCPUs = 4;

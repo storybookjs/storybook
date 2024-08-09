@@ -1,4 +1,5 @@
 import type { Channel } from '@storybook/core/channels';
+
 import type { RequestData, ResponseData } from '@storybook/core/core-events';
 
 export class RequestResponseError<Payload extends Record<string, any> | void> extends Error {

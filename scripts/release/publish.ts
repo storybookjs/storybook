@@ -1,12 +1,14 @@
-import chalk from 'chalk';
-import path from 'path';
-import program from 'commander';
-import semver from 'semver';
-import { z } from 'zod';
+import { join } from 'node:path';
+
 import { readJson } from '@ndelangen/fs-extra-unified';
-import dedent from 'ts-dedent';
-import pRetry from 'p-retry';
+import chalk from 'chalk';
+import program from 'commander';
 import { execaCommand } from 'execa';
+import pRetry from 'p-retry';
+import semver from 'semver';
+import dedent from 'ts-dedent';
+import { z } from 'zod';
+
 import { esMain } from '../utils/esmain';
 
 program
@@ -36,8 +38,8 @@ type Options = {
   dryRun?: boolean;
 };
 
-const CODE_DIR_PATH = path.join(__dirname, '..', '..', 'code');
-const CODE_PACKAGE_JSON_PATH = path.join(CODE_DIR_PATH, 'package.json');
+const CODE_DIR_PATH = join(__dirname, '..', '..', 'code');
+const CODE_PACKAGE_JSON_PATH = join(CODE_DIR_PATH, 'package.json');
 
 const validateOptions = (options: { [key: string]: any }): options is Options => {
   optionsSchema.parse(options);

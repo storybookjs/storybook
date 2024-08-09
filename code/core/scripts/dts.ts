@@ -1,7 +1,8 @@
 import { join } from 'node:path';
-import { process, dts, nodeInternals } from '../../../scripts/prepare/tools';
-import { getEntries } from './entries';
+
+import { dts, nodeInternals, process } from '../../../scripts/prepare/tools';
 import pkg from '../package.json';
+import { getEntries } from './entries';
 
 async function run() {
   const cwd = process.cwd();

@@ -1,6 +1,8 @@
-import * as path from 'path';
-import type { InlineConfig as ViteInlineConfig, UserConfig } from 'vite';
 import type { Options } from 'storybook/internal/types';
+
+import * as path from 'path';
+import type { UserConfig, InlineConfig as ViteInlineConfig } from 'vite';
+
 import { listStories } from './list-stories';
 
 // It ensures that vite converts cjs deps into esm without vite having to find them during startup and then having to log a message about them and restart

@@ -1,8 +1,9 @@
+import { logger } from '@storybook/core/node-logger';
+
 import { ensureDir, readJSON } from '@ndelangen/fs-extra-unified';
-import path from 'path';
-import { sync as spawnSync, spawn as spawnAsync } from 'cross-spawn';
-import { logger } from 'storybook/internal/node-logger';
 import chalk from 'chalk';
+import { spawn as spawnAsync, sync as spawnSync } from 'cross-spawn';
+import path from 'path';
 
 type ExecOptions = Parameters<typeof spawnAsync>[2];
 
@@ -107,7 +108,7 @@ export const link = async ({ target, local, start }: LinkOptions) => {
   }
 
   // ensure that linking is possible
-  await exec(`yarn add @types/node@18`, { cwd: reproDir });
+  await exec(`yarn add @types/node@22`, { cwd: reproDir });
 
   if (start) {
     logger.info(`Running ${reproName} storybook`);

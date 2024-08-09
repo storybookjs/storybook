@@ -1,9 +1,11 @@
-import { describe, it, expect, vi } from 'vitest';
-import { global } from '@storybook/global';
+import { describe, expect, it, vi } from 'vitest';
+
 import type { StoryIndex } from '@storybook/core/types';
-import type { State } from '../root';
+import { global } from '@storybook/global';
+
 import { transformStoryIndexToStoriesHash } from '../lib/stories';
 import { getSourceType, init as initRefs } from '../modules/refs';
+import type { State } from '../root';
 import type Store from '../store';
 
 const { fetch } = global;

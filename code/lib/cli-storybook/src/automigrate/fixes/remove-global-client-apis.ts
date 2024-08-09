@@ -1,6 +1,8 @@
+import { readFile } from 'node:fs/promises';
+
 import chalk from 'chalk';
 import { dedent } from 'ts-dedent';
-import { readFile } from 'node:fs/promises';
+
 import type { Fix } from '../types';
 
 export enum RemovedAPIs {

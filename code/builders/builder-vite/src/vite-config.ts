@@ -1,28 +1,29 @@
-import * as path from 'path';
-import type {
-  ConfigEnv,
-  InlineConfig as ViteInlineConfig,
-  PluginOption,
-  UserConfig as ViteConfig,
-  InlineConfig,
-} from 'vite';
 import {
-  isPreservingSymlinks,
-  getFrameworkName,
   getBuilderOptions,
+  getFrameworkName,
+  isPreservingSymlinks,
   resolvePathInStorybookCache,
 } from 'storybook/internal/common';
 import { globalsNameReferenceMap } from 'storybook/internal/preview/globals';
 import type { Options } from 'storybook/internal/types';
+
+import * as path from 'path';
+import type {
+  ConfigEnv,
+  InlineConfig,
+  PluginOption,
+  UserConfig as ViteConfig,
+  InlineConfig as ViteInlineConfig,
+} from 'vite';
+
 import {
   codeGeneratorPlugin,
   csfPlugin,
-  injectExportOrderPlugin,
-  stripStoryHMRBoundary,
   externalGlobalsPlugin,
+  injectExportOrderPlugin,
   pluginWebpackStats,
+  stripStoryHMRBoundary,
 } from './plugins';
-
 import type { BuilderOptions } from './types';
 
 export type PluginConfigType = 'build' | 'development';

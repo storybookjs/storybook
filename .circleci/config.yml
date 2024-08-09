@@ -608,6 +608,23 @@ jobs:
                   IN_STORYBOOK_SANDBOX: true
                   STORYBOOK_INIT_EMPTY_TYPE: << parameters.template >>
                   STORYBOOK_DISABLE_TELEMETRY: true
+      - when:
+          condition:
+            equal: ["react-vite-ts", << parameters.template >>]
+          steps:
+            - run:
+                name: Storybook init from empty directory (--skip-install)
+                command: |
+                  cd code
+                  yarn local-registry --open &
+                  cd ../../
+                  mkdir empty-<< parameters.template >>-no-install
+                  cd empty-<< parameters.template >>-no-install
+                  npx storybook init --yes --skip-install
+                environment:
+                  IN_STORYBOOK_SANDBOX: true
+                  STORYBOOK_INIT_EMPTY_TYPE: << parameters.template >>
+                  STORYBOOK_DISABLE_TELEMETRY: true
       - report-workflow-on-failure
   test-portable-stories:
     parameters:

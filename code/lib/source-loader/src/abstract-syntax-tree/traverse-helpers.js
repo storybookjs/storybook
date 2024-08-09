@@ -1,6 +1,8 @@
 import { isExportStory } from '@storybook/csf';
+
 import estraverse from 'estraverse';
-import { handleADD, handleSTORYOF, patchNode, handleExportedName } from './parse-helpers';
+
+import { handleADD, handleExportedName, handleSTORYOF, patchNode } from './parse-helpers';
 
 export function splitSTORYOF(ast, source) {
   let lastIndex = 0;

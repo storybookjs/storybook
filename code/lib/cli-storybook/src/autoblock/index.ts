@@ -1,7 +1,9 @@
-import type { AutoblockOptions, Blocker } from './types';
 import { logger } from 'storybook/internal/node-logger';
-import chalk from 'chalk';
+
 import boxen from 'boxen';
+import chalk from 'chalk';
+
+import type { AutoblockOptions, Blocker } from './types';
 
 const excludesFalse = <T>(x: T | false): x is T => x !== false;
 

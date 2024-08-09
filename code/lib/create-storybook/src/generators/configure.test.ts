@@ -1,9 +1,13 @@
-import { describe, beforeAll, expect, vi, it } from 'vitest';
-import { dedent } from 'ts-dedent';
 import { writeFile } from 'node:fs/promises';
+
+import { beforeAll, describe, expect, it, vi } from 'vitest';
+
 import { SupportedLanguage } from 'storybook/internal/cli';
-import { configureMain, configurePreview } from './configure';
+
 import { pathExists } from '@ndelangen/fs-extra-unified';
+import { dedent } from 'ts-dedent';
+
+import { configureMain, configurePreview } from './configure';
 
 vi.mock('@ndelangen/fs-extra-unified');
 vi.mock('node:fs/promises');
@@ -205,8 +209,11 @@ describe('configurePreview', () => {
     expect(previewConfigPath).toEqual('./.storybook/preview.ts');
     expect(previewConfigContent).toMatchInlineSnapshot(`
       "import type { Preview } from '@storybook/angular';
+
       import { setCompodocJson } from '@storybook/addon-docs/angular';
+
       import docJson from '../documentation.json';
+
       setCompodocJson(docJson);
 
       const preview: Preview = {

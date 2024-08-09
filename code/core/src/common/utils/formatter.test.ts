@@ -1,6 +1,8 @@
-import { formatFileContent } from './formatter';
-import { describe, it, expect, vi } from 'vitest';
 import path from 'node:path';
+
+import { describe, expect, it, vi } from 'vitest';
+
+import { formatFileContent } from './formatter';
 
 const mockPrettier = vi.hoisted(() => ({
   resolveConfig: vi.fn(),

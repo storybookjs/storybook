@@ -3,9 +3,9 @@ import { logger } from '@storybook/core/client-logger';
 import { deletedDiff } from 'deep-object-diff';
 import { dedent } from 'ts-dedent';
 
-import light from './themes/light';
-import type { ThemeVars, StorybookTheme } from './types';
 import { convert } from './convert';
+import light from './themes/light';
+import type { StorybookTheme, ThemeVars } from './types';
 
 export const ensure = (input: ThemeVars): StorybookTheme => {
   if (!input) {

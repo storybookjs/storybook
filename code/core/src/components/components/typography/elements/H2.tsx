@@ -1,5 +1,6 @@
 import { styled } from '@storybook/core/theming';
-import { withReset, headerCommon } from '../lib/common';
+
+import { headerCommon, withReset } from '../lib/common';
 
 export const H2 = styled.h2(withReset, headerCommon, ({ theme }) => ({
   fontSize: `${theme.typography.size.m2}px`,

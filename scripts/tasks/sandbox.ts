@@ -1,10 +1,10 @@
+import { join } from 'node:path';
+import { promisify } from 'node:util';
+
 import { pathExists, remove } from '@ndelangen/fs-extra-unified';
 
-import { join } from 'path';
-import { promisify } from 'util';
-import dirSize from 'fast-folder-size';
-import type { Task } from '../task';
 import { now, saveBench } from '../bench/utils';
+import type { Task } from '../task';
 
 const logger = console;
 

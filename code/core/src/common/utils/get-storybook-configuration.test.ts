@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import { getStorybookConfiguration } from './get-storybook-configuration';
 
 describe('getStorybookConfiguration', () => {

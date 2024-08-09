@@ -1,42 +1,43 @@
-import { appendFile, readFile } from 'fs/promises';
-import findUp from 'find-up';
-import chalk from 'chalk';
-import prompts from 'prompts';
-import { telemetry } from 'storybook/internal/telemetry';
-import { withTelemetry } from 'storybook/internal/core-server';
-import { NxProjectDetectedError } from 'storybook/internal/server-errors';
+import type { Builder, NpmOptions } from 'storybook/internal/cli';
+import { ProjectType, installableProjectTypes } from 'storybook/internal/cli';
+import { detect, detectLanguage, detectPnp, isStorybookInstantiated } from 'storybook/internal/cli';
 import {
-  versions,
   HandledError,
   JsPackageManagerFactory,
   commandLog,
-  paddedLog,
   getProjectRoot,
+  paddedLog,
+  versions,
 } from 'storybook/internal/common';
 import type { JsPackageManager } from 'storybook/internal/common';
+import { withTelemetry } from 'storybook/internal/core-server';
+import { NxProjectDetectedError } from 'storybook/internal/server-errors';
+import { telemetry } from 'storybook/internal/telemetry';
 
-import { dedent } from 'ts-dedent';
 import boxen from 'boxen';
+import chalk from 'chalk';
+import findUp from 'find-up';
+import { appendFile, readFile } from 'fs/promises';
+import prompts from 'prompts';
 import { lt, prerelease } from 'semver';
-import type { Builder, NpmOptions } from 'storybook/internal/cli';
-import { installableProjectTypes, ProjectType } from 'storybook/internal/cli';
-import { detect, isStorybookInstantiated, detectLanguage, detectPnp } from 'storybook/internal/cli';
+import { dedent } from 'ts-dedent';
+
 import angularGenerator from './generators/ANGULAR';
 import emberGenerator from './generators/EMBER';
+import htmlGenerator from './generators/HTML';
+import nextjsGenerator from './generators/NEXTJS';
+import preactGenerator from './generators/PREACT';
+import qwikGenerator from './generators/QWIK';
 import reactGenerator from './generators/REACT';
 import reactNativeGenerator from './generators/REACT_NATIVE';
 import reactScriptsGenerator from './generators/REACT_SCRIPTS';
-import nextjsGenerator from './generators/NEXTJS';
-import vue3Generator from './generators/VUE3';
-import webpackReactGenerator from './generators/WEBPACK_REACT';
-import htmlGenerator from './generators/HTML';
-import webComponentsGenerator from './generators/WEB-COMPONENTS';
-import preactGenerator from './generators/PREACT';
-import svelteGenerator from './generators/SVELTE';
-import qwikGenerator from './generators/QWIK';
-import svelteKitGenerator from './generators/SVELTEKIT';
-import solidGenerator from './generators/SOLID';
 import serverGenerator from './generators/SERVER';
+import solidGenerator from './generators/SOLID';
+import svelteGenerator from './generators/SVELTE';
+import svelteKitGenerator from './generators/SVELTEKIT';
+import vue3Generator from './generators/VUE3';
+import webComponentsGenerator from './generators/WEB-COMPONENTS';
+import webpackReactGenerator from './generators/WEBPACK_REACT';
 import type { CommandOptions, GeneratorOptions } from './generators/types';
 import { currentDirectoryIsEmpty, scaffoldNewProject } from './scaffold-new-project';
 

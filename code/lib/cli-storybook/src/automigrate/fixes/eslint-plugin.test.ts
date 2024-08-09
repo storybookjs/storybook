@@ -1,11 +1,15 @@
 /* eslint-disable no-underscore-dangle */
-import { describe, it, expect, vi } from 'vitest';
-import { dedent } from 'ts-dedent';
-import * as fsExtra from '@ndelangen/fs-extra-unified';
-import type { PackageJson } from 'storybook/internal/common';
-import { eslintPlugin } from './eslint-plugin';
-import { makePackageManager } from '../helpers/testing-helpers';
 import * as fs from 'node:fs';
+
+import { describe, expect, it, vi } from 'vitest';
+
+import type { PackageJson } from 'storybook/internal/common';
+
+import * as fsExtra from '@ndelangen/fs-extra-unified';
+import { dedent } from 'ts-dedent';
+
+import { makePackageManager } from '../helpers/testing-helpers';
+import { eslintPlugin } from './eslint-plugin';
 
 vi.mock('@ndelangen/fs-extra-unified', async () => import('../../../../../__mocks__/fs-extra'));
 vi.mock('fs');

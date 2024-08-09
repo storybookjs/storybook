@@ -1,9 +1,11 @@
-import path from 'path';
-import { dedent } from 'ts-dedent';
-import { logger } from 'storybook/internal/node-logger';
-import { externalFrameworks, SupportedLanguage } from 'storybook/internal/cli';
-import { pathExists } from '@ndelangen/fs-extra-unified';
 import { writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+
+import { SupportedLanguage, externalFrameworks } from 'storybook/internal/cli';
+import { logger } from 'storybook/internal/node-logger';
+
+import { pathExists } from '@ndelangen/fs-extra-unified';
+import { dedent } from 'ts-dedent';
 
 interface ConfigureMainOptions {
   addons: string[];
@@ -58,7 +60,7 @@ export async function configureMain({
   prefixes = [],
   ...custom
 }: ConfigureMainOptions) {
-  const srcPath = path.resolve(storybookConfigFolder, '../src');
+  const srcPath = resolve(storybookConfigFolder, '../src');
   const prefix = (await pathExists(srcPath)) ? '../src' : '../stories';
   const config = {
     stories: [`${prefix}/**/*.mdx`, `${prefix}/**/*.stories.@(${extensions.join('|')})`],

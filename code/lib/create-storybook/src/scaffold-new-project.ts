@@ -1,17 +1,17 @@
+import { readdirSync } from 'node:fs';
+
+import type { PackageManagerName } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
+import { GenerateNewProjectOnInitError } from 'storybook/internal/server-errors';
+import { telemetry } from 'storybook/internal/telemetry';
+
+import { remove } from '@ndelangen/fs-extra-unified';
 import boxen from 'boxen';
 import chalk from 'chalk';
 import execa from 'execa';
-import { remove } from '@ndelangen/fs-extra-unified';
-import { readdirSync } from 'node:fs';
 import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
 
-import { telemetry } from 'storybook/internal/telemetry';
-
-import { GenerateNewProjectOnInitError } from 'storybook/internal/server-errors';
-import { logger } from 'storybook/internal/node-logger';
-
-import type { PackageManagerName } from 'storybook/internal/common';
 import type { CommandOptions } from './generators/types';
 
 type CoercedPackageManagerName = 'npm' | 'yarn' | 'pnpm';

@@ -1,10 +1,8 @@
+import { execaCommand } from 'execa';
 import invariant from 'tiny-invariant';
 
-import { execaCommand } from 'execa';
-
-import { logger } from '../publish';
-
 import { version as storybookVersion } from '../../../code/package.json';
+import { logger } from '../publish';
 
 const getTheLastCommitHashThatUpdatedTheSandboxRepo = async (branch: string) => {
   const owner = 'storybookjs';

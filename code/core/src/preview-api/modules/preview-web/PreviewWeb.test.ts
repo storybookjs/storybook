@@ -1,15 +1,19 @@
 // @vitest-environment happy-dom
-import { describe, beforeEach, afterEach, it, expect, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { ModuleImportFn, ProjectAnnotations, Renderer } from '@storybook/core/types';
 import { global } from '@storybook/global';
-import merge from 'lodash/merge.js';
+
+import { logger } from '@storybook/core/client-logger';
 import {
   CONFIG_ERROR,
   CURRENT_STORY_WAS_SET,
+  DOCS_PREPARED,
   DOCS_RENDERED,
   FORCE_REMOUNT,
   FORCE_RE_RENDER,
   GLOBALS_UPDATED,
+  PLAY_FUNCTION_THREW_EXCEPTION,
   PREVIEW_KEYDOWN,
   RESET_STORY_ARGS,
   SET_CURRENT_STORY,
@@ -22,36 +26,34 @@ import {
   STORY_RENDERED,
   STORY_SPECIFIED,
   STORY_THREW_EXCEPTION,
-  PLAY_FUNCTION_THREW_EXCEPTION,
   STORY_UNCHANGED,
   UPDATE_GLOBALS,
   UPDATE_STORY_ARGS,
-  DOCS_PREPARED,
 } from '@storybook/core/core-events';
-import { logger } from '@storybook/core/client-logger';
-import type { Renderer, ModuleImportFn, ProjectAnnotations } from '@storybook/core/types';
-import { addons } from '../addons';
 
+import merge from 'lodash/merge.js';
+
+import { addons } from '../addons';
+import type { StoryStore } from '../store';
 import { PreviewWeb } from './PreviewWeb';
 import {
   componentOneExports,
   componentTwoExports,
-  importFn,
-  projectAnnotations,
-  getProjectAnnotations,
-  storyIndex,
-  emitter,
-  mockChannel,
-  waitForEvents,
-  waitForRender,
-  waitForQuiescence,
-  waitForRenderPhase,
   docsRenderer,
-  unattachedDocsExports,
+  emitter,
+  getProjectAnnotations,
+  importFn,
+  mockChannel,
+  projectAnnotations,
+  storyIndex,
   teardownrenderToCanvas,
+  unattachedDocsExports,
+  waitForEvents,
+  waitForQuiescence,
+  waitForRender,
+  waitForRenderPhase,
 } from './PreviewWeb.mockdata';
 import { WebView } from './WebView';
-import type { StoryStore } from '../store';
 
 const { history, document } = global;
 

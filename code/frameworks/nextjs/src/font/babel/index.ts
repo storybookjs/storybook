@@ -1,4 +1,5 @@
 import type * as BabelCoreNamespace from '@babel/core';
+
 import {
   getVariableMetasBySpecifier,
   isDefined,

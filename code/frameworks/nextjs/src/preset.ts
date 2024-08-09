@@ -59,7 +59,7 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = (
 export const babel: PresetProperty<'babel'> = async (baseConfig: TransformOptions) => {
   const configPartial = loadPartialConfig({
     ...baseConfig,
-    filename: `${getProjectRoot()}/__fake__.js`,
+    filename: baseConfig.filename || `${getProjectRoot()}/__fake__.js`,
   });
 
   const options = configPartial?.options;

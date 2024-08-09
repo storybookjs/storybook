@@ -39,6 +39,9 @@ const parseValue = (value: t.Expression): any => {
       return acc;
     }, {} as any);
   }
+  if (t.isUnaryExpression(expr) && t.isNumericLiteral(expr.argument)) {
+    return Number(expr.operator + expr.argument.value);
+  }
   if (t.isLiteral(expr)) {
     // @ts-expect-error (Converted from ts-ignore)
     return expr.value;

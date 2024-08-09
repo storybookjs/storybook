@@ -7,6 +7,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { execaCommand, execa } from 'execa';
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -26,3 +27,6 @@ sandboxPackageJson.resolutions = {
 };
 
 await fs.promises.writeFile(sandboxPackageJsonPath, JSON.stringify(sandboxPackageJson, null, 2));
+const sandboxFolder = path.dirname(sandboxPackageJsonPath);
+await execa('yarn add playwright', { cwd: sandboxFolder, shell: true });
+await execaCommand('yarn playwright install', { cwd: sandboxFolder, shell: true });

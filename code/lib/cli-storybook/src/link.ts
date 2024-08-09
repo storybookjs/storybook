@@ -107,7 +107,7 @@ export const link = async ({ target, local, start }: LinkOptions) => {
   }
 
   // ensure that linking is possible
-  await exec(`yarn add @types/node@18`, { cwd: reproDir });
+  await exec(`yarn add @types/node@22`, { cwd: reproDir });
 
   if (start) {
     logger.info(`Running ${reproName} storybook`);

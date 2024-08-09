@@ -8,8 +8,9 @@ const cache = createFileSystemCache({
   ttl: 24 * 60 * 60 * 1000, // 24h
 });
 
-export const getPortableStoriesFileCountUncached = async () => {
-  const { stdout } = await execaCommand(`git grep -m1 -c composeStor`, {
+export const getPortableStoriesFileCountUncached = async (path?: string) => {
+  const command = `git grep -m1 -c composeStor` + (path ? ` -- ${path}` : '');
+  const { stdout } = await execaCommand(command, {
     cwd: process.cwd(),
     shell: true,
   });
@@ -17,7 +18,7 @@ export const getPortableStoriesFileCountUncached = async () => {
 };
 
 const CACHE_KEY = 'portableStories';
-export const getPortableStoriesFileCount = async () => {
+export const getPortableStoriesFileCount = async (path?: string) => {
   let cached = await cache.get(CACHE_KEY);
   if (!cached) {
     try {

@@ -1,5 +1,8 @@
 <h1>Migration</h1>
 
+- [From version 8.2.x to 8.3.x](#from-version-82x-to-83x)
+  - [New parameters format for addon backgrounds](#new-parameters-format-for-addon-backgrounds)
+  - [New parameters format for addon viewport](#new-parameters-format-for-addon-viewport)
 - [From version 8.1.x to 8.2.x](#from-version-81x-to-82x)
   - [Failed to resolve import "@storybook/X" error](#failed-to-resolve-import-storybookx-error)
   - [Preview.js globals renamed to initialGlobals](#previewjs-globals-renamed-to-initialglobals)
@@ -414,6 +417,90 @@
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
+## From version 8.2.x to 8.3.x
+
+### New parameters format for addon backgrounds
+
+The `addon-backgrounds` addon now uses a new format for parameters. The `backgrounds` parameter is now an object with a `values` key that contains the background values.
+
+> ! You need to set the feature flag `backgroundsStoryGlobals` to `true` in your `.storybook/main.ts` to use the new format.
+
+```diff
+// .storybook/preview.js
+export const parameters = {
+  backgrounds: {
+-    values: [
+-      { name: 'twitter', value: '#00aced' },
+-      { name: 'facebook', value: '#3b5998' },
+-    ],
++    options: {
++      twitter: { name: 'twitter', value: '#00aced' },
++      facebook: { name: 'facebook', value: '#3b5998' },
++    },
+  },
+};
+```
+
+Setting an override value should now be done via a `globals` property on your component/meta or story itself:
+
+```ts
+// Button.stories.ts
+export default {
+  component: Button,
+  globals: {
+    backgrounds: { value: 'twitter' },
+  },
+};
+```
+
+This locks that story to the `twitter` background, it cannot be changed by the addon UI.
+
+### New parameters format for addon viewport
+
+> ! You need to set the feature flag `viewportStoryGlobals` to `true` in your `.storybook/main.ts` to use the new format.
+
+The `addon-viewport` addon now uses a new format for parameters. The `viewport` parameter is now an object with a `viewports` key that contains the viewport values.
+
+```diff
+// .storybook/preview.js
+export const parameters = {
+  viewport: {
+-    viewports: {
+-      iphone5: {
+-        name: 'phone',
+-        styles: {
+-          width: '320px',
+-          height: '568px',
+-        },
+-      },
+-     },
++    options: {
++      iphone5: {
++        name: 'phone',
++        styles: {
++          width: '320px',
++          height: '568px',
++        },
++      },
++    },
+  },
+};
+```
+
+Setting an override value should now be done via a `globals` property on your component/meta or story itself:
+
+```ts
+// Button.stories.ts
+export default {
+  component: Button,
+  globals: {
+    viewport: { value: 'phone' },
+  },
+};
+```
+
+This locks that story to the `phone` viewport, it cannot be changed by the addon UI.
+
 ## From version 8.1.x to 8.2.x
 
 ### Failed to resolve import "@storybook/X" error
@@ -444,7 +531,7 @@ Starting in 8.2 `preview.js` `globals` are deprecated and have been renamed to `
 // .storybook/preview.js
 export default {
 -  globals: [ a: 1, b: 2 ],
-+  initiaGlobals: [ a: 1, b: 2 ],
++  initialGlobals: [ a: 1, b: 2 ],
 }
 ```
 

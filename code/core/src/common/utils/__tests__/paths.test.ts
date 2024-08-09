@@ -1,8 +1,11 @@
-import { describe, it, expect, vi } from 'vitest';
 import path from 'node:path';
+
+import { describe, expect, it, vi } from 'vitest';
+
 import { findUpSync } from 'find-up';
 import slash from 'slash';
-import { normalizeStoryPath, getProjectRoot } from '../paths';
+
+import { getProjectRoot, normalizeStoryPath } from '../paths';
 
 vi.mock('find-up');
 

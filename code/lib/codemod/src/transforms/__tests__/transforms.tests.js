@@ -1,7 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
-import path from 'path';
+import { describe, expect, it, vi } from 'vitest';
+
 import fs from 'fs';
 import { applyTransform } from 'jscodeshift/dist/testUtils';
+import path from 'path';
 
 vi.mock('@storybook/core/node-logger');
 

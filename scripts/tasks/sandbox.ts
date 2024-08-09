@@ -1,10 +1,10 @@
+import dirSize from 'fast-folder-size';
 import { pathExists, remove } from 'fs-extra';
-
 import { join } from 'path';
 import { promisify } from 'util';
-import dirSize from 'fast-folder-size';
-import type { Task } from '../task';
+
 import { now, saveBench } from '../bench/utils';
+import type { Task } from '../task';
 
 const logger = console;
 
@@ -38,9 +38,7 @@ export const sandbox: Task = {
     }
 
     const { create, install, addStories, extendMain, init, addExtraDependencies, setImportMap } =
-      // @ts-expect-error esbuild for some reason exports a default object
-      // eslint-disable-next-line import/extensions
-      (await import('./sandbox-parts.ts')).default;
+      await import('./sandbox-parts');
 
     let startTime = now();
     await create(details, options);

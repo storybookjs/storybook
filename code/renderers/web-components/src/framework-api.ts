@@ -1,5 +1,4 @@
 /* eslint-disable no-underscore-dangle */
-
 import { global } from '@storybook/global';
 
 export function isValidComponent(tagName: string) {

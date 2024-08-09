@@ -1,5 +1,5 @@
-import type * as BabelTypesNamespace from '@babel/types';
 import type * as BabelCoreNamespace from '@babel/core';
+import type * as BabelTypesNamespace from '@babel/types';
 
 type BabelTypes = typeof BabelTypesNamespace;
 type PrimaryTypes = Record<string, any> | string | number | boolean | undefined | null;

@@ -1,5 +1,6 @@
 import { detectLanguage } from 'storybook/internal/cli';
 import { CoreBuilder, SupportedLanguage } from 'storybook/internal/cli';
+
 import { baseGenerator } from '../baseGenerator';
 import type { Generator } from '../types';
 

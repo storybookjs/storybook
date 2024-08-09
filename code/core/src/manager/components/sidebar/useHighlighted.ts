@@ -1,13 +1,14 @@
-import { global } from '@storybook/global';
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useStorybookApi } from '@storybook/core/manager-api';
+
+import { global } from '@storybook/global';
+
 import { PRELOAD_ENTRIES } from '@storybook/core/core-events';
+import { useStorybookApi } from '@storybook/core/manager-api';
+
 import { matchesKeyCode, matchesModifiers } from '../../keybinding';
-
-import type { CombinedDataset, Highlight, Selection } from './types';
-
 import { cycle, isAncestor, scrollIntoView } from '../../utils/tree';
+import type { CombinedDataset, Highlight, Selection } from './types';
 
 const { document, window: globalWindow } = global;
 

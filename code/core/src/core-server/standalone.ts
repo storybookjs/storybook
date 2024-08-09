@@ -1,6 +1,7 @@
-import { buildStaticStandalone } from './build-static';
-import { buildDevStandalone } from './build-dev';
 import { dirname } from 'node:path';
+
+import { buildDevStandalone } from './build-dev';
+import { buildStaticStandalone } from './build-static';
 
 async function build(options: any = {}, frameworkOptions: any = {}) {
   const { mode = 'dev' } = options;

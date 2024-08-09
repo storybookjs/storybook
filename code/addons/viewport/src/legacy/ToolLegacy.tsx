@@ -1,17 +1,18 @@
-import type { ReactNode, FC } from 'react';
-import React, { useState, Fragment, useEffect, useRef, memo } from 'react';
+import type { FC, ReactNode } from 'react';
+import React, { Fragment, memo, useEffect, useRef, useState } from 'react';
+
+import { IconButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
+import { useGlobals, useParameter, useStorybookApi } from 'storybook/internal/manager-api';
+import { Global, styled } from 'storybook/internal/theming';
+
+import { GrowIcon, TransferIcon } from '@storybook/icons';
+
 import memoize from 'memoizerific';
 
-import { styled, Global } from 'storybook/internal/theming';
-
-import { IconButton, WithTooltip, TooltipLinkList } from 'storybook/internal/components';
-
-import { useStorybookApi, useParameter, useGlobals } from 'storybook/internal/manager-api';
-import { GrowIcon, TransferIcon } from '@storybook/icons';
-import { registerShortcuts } from '../shortcuts';
 import { PARAM_KEY } from '../constants';
 import { MINIMAL_VIEWPORTS } from '../defaults';
-import type { ViewportMap, ViewportStyles, Styles } from '../types';
+import { registerShortcuts } from '../shortcuts';
+import type { Styles, ViewportMap, ViewportStyles } from '../types';
 import type { ViewportAddonParameter } from './ViewportAddonParameter';
 
 interface ViewportItem {

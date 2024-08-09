@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+
 import { DocsPage } from './DocsPage';
 
 const meta = {

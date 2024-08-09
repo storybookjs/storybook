@@ -1,8 +1,8 @@
 import detectFreePort from 'detect-port';
 
+import type { Task } from '../task';
 import { CODE_DIRECTORY } from '../utils/constants';
 import { exec } from '../utils/exec';
-import type { Task } from '../task';
 
 export async function runRegistry({ dryRun, debug }: { dryRun?: boolean; debug?: boolean }) {
   const controller = new AbortController();

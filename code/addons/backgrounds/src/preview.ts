@@ -1,8 +1,9 @@
 import type { Addon_DecoratorFunction } from 'storybook/internal/types';
-import { withBackground } from './legacy/withBackgroundLegacy';
-import { withGrid } from './legacy/withGridLegacy';
+
 import { PARAM_KEY as KEY } from './constants';
 import { withBackgroundAndGrid } from './decorator';
+import { withBackground } from './legacy/withBackgroundLegacy';
+import { withGrid } from './legacy/withGridLegacy';
 import type { Config, GlobalState } from './types';
 
 export const decorators: Addon_DecoratorFunction[] = FEATURES?.backgroundsStoryGlobals

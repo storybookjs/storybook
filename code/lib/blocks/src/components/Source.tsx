@@ -1,16 +1,17 @@
 import type { ComponentProps, FunctionComponent } from 'react';
 import React from 'react';
-import {
-  styled,
-  ThemeProvider,
-  convert,
-  themes,
-  ignoreSsrWarning,
-  useTheme,
-} from 'storybook/internal/theming';
 
 import type { SupportedLanguage, SyntaxHighlighterProps } from 'storybook/internal/components';
 import { SyntaxHighlighter } from 'storybook/internal/components';
+import {
+  ThemeProvider,
+  convert,
+  ignoreSsrWarning,
+  styled,
+  themes,
+  useTheme,
+} from 'storybook/internal/theming';
+
 import { EmptyBlock } from './EmptyBlock';
 
 const StyledSyntaxHighlighter: React.FunctionComponent<SyntaxHighlighterProps> = styled(

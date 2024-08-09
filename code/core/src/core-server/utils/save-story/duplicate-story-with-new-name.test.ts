@@ -1,11 +1,14 @@
 /* eslint-disable no-underscore-dangle */
-import { describe, test, expect } from 'vitest';
-import { readCsf, printCsf } from '@storybook/core/csf-tools';
+import { join } from 'node:path';
+
+import { describe, expect, test } from 'vitest';
+
+import { printCsf, readCsf } from '@storybook/core/csf-tools';
+
+import { readFile } from 'fs/promises';
+import { format } from 'prettier';
 
 import { duplicateStoryWithNewName } from './duplicate-story-with-new-name';
-import { readFile } from 'fs/promises';
-import { join } from 'node:path';
-import { format } from 'prettier';
 import { getDiff } from './getDiff';
 
 const makeTitle = (userTitle: string) => userTitle;

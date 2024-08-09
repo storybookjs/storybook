@@ -1,7 +1,8 @@
 import { createRequire } from 'module';
+
+import { exec } from './exec';
 import type { OptionSpecifier, OptionValues } from './options';
 import { createOptions, getCommand } from './options';
-import { exec } from './exec';
 
 const require = createRequire(import.meta.url);
 const cliExecutable = require.resolve('../../code/lib/cli/bin/index.cjs');

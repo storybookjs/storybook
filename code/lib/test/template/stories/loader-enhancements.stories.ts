@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention,storybook/prefer-pascal-case */
-import { expect, within, userEvent as globalUserEvent } from '@storybook/test';
+import { expect, userEvent as globalUserEvent, within } from '@storybook/test';
 
 const meta = {
   component: globalThis.Components.Button,

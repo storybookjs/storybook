@@ -1,7 +1,8 @@
-import chalk from 'chalk';
 import { setOutput } from '@actions/core';
-import path from 'path';
+import chalk from 'chalk';
 import { readJson } from 'fs-extra';
+import path from 'path';
+
 import { esMain } from '../utils/esmain';
 
 const CODE_DIR_PATH = path.join(__dirname, '..', '..', 'code');

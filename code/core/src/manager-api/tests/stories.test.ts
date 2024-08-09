@@ -1,30 +1,32 @@
 import type { Mocked } from 'vitest';
-import { describe, it, expect, vi } from 'vitest';
-import {
-  STORY_ARGS_UPDATED,
-  UPDATE_STORY_ARGS,
-  RESET_STORY_ARGS,
-  SET_STORIES,
-  STORY_SPECIFIED,
-  STORY_PREPARED,
-  STORY_INDEX_INVALIDATED,
-  CONFIG_ERROR,
-  SET_INDEX,
-  CURRENT_STORY_WAS_SET,
-  STORY_MISSING,
-  DOCS_PREPARED,
-} from '@storybook/core/core-events';
-import { EventEmitter } from 'events';
-import { global } from '@storybook/global';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { API_StoryEntry } from '@storybook/core/types';
-import { getEventMetadata as getEventMetadataOriginal } from '../lib/events';
+import { global } from '@storybook/global';
 
-import { init as initStories } from '../modules/stories';
-import type Store from '../store';
-import type { API, State } from '../root';
-import { mockEntries, docsEntries, preparedEntries, navigationEntries } from './mockStoriesEntries';
+import {
+  CONFIG_ERROR,
+  CURRENT_STORY_WAS_SET,
+  DOCS_PREPARED,
+  RESET_STORY_ARGS,
+  SET_INDEX,
+  SET_STORIES,
+  STORY_ARGS_UPDATED,
+  STORY_INDEX_INVALIDATED,
+  STORY_MISSING,
+  STORY_PREPARED,
+  STORY_SPECIFIED,
+  UPDATE_STORY_ARGS,
+} from '@storybook/core/core-events';
+
+import { EventEmitter } from 'events';
+
+import { getEventMetadata as getEventMetadataOriginal } from '../lib/events';
 import type { ModuleArgs } from '../lib/types';
+import { init as initStories } from '../modules/stories';
+import type { API, State } from '../root';
+import type Store from '../store';
+import { docsEntries, mockEntries, navigationEntries, preparedEntries } from './mockStoriesEntries';
 
 const mockGetEntries = vi.fn();
 const fetch = vi.mocked(global.fetch);

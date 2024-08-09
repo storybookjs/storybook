@@ -1,4 +1,22 @@
+import type { Channel } from '@storybook/core/channels';
+import type {
+  Args,
+  Globals,
+  GlobalsUpdatedPayload,
+  ModuleImportFn,
+  PreparedStory,
+  ProjectAnnotations,
+  RenderContextCallbacks,
+  RenderToCanvas,
+  Renderer,
+  SetGlobalsPayload,
+  StoryId,
+  StoryIndex,
+  StoryRenderOptions,
+} from '@storybook/core/types';
+import type { CleanupCallback } from '@storybook/csf';
 import { global } from '@storybook/global';
+
 import { deprecate, logger } from '@storybook/core/client-logger';
 import type {
   ArgTypesRequestPayload,
@@ -20,35 +38,18 @@ import {
   UPDATE_GLOBALS,
   UPDATE_STORY_ARGS,
 } from '@storybook/core/core-events';
-import type { CleanupCallback } from '@storybook/csf';
-import type { Channel } from '@storybook/core/channels';
-import type {
-  Renderer,
-  Args,
-  Globals,
-  ModuleImportFn,
-  RenderContextCallbacks,
-  RenderToCanvas,
-  PreparedStory,
-  StoryIndex,
-  ProjectAnnotations,
-  StoryId,
-  StoryRenderOptions,
-  SetGlobalsPayload,
-  GlobalsUpdatedPayload,
-} from '@storybook/core/types';
 import {
   CalledPreviewMethodBeforeInitializationError,
   MissingRenderToCanvasError,
   StoryIndexFetchError,
   StoryStoreAccessedBeforeInitializationError,
 } from '@storybook/core/preview-errors';
-import { addons } from '../addons';
-import { StoryStore } from '../../store';
 
-import { StoryRender } from './render/StoryRender';
+import { StoryStore } from '../../store';
+import { addons } from '../addons';
 import type { CsfDocsRender } from './render/CsfDocsRender';
 import type { MdxDocsRender } from './render/MdxDocsRender';
+import { StoryRender } from './render/StoryRender';
 
 const { fetch } = global;
 

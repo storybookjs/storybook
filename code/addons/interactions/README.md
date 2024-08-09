@@ -27,8 +27,8 @@ Note that `@storybook/addon-interactions` must be listed **after** `@storybook/a
 Interactions relies on "instrumented" versions of Vitest and Testing Library, that you import from `@storybook/test` instead of their original package. You can then use these libraries in your `play` function.
 
 ```js
+import { expect, fn, userEvent, within } from '@storybook/test';
 import { Button } from './Button';
-import { within, userEvent, expect, fn } from '@storybook/test';
 
 export default {
   title: 'Button',

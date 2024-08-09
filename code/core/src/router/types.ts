@@ -1,5 +1,7 @@
-import type * as R from 'react-router-dom';
 import type { ReactNode } from 'react';
+
+import type * as R from 'react-router-dom';
+
 import type { StoryData } from './utils';
 
 export interface Other extends StoryData {

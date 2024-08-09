@@ -1,23 +1,24 @@
-import chalk from 'chalk';
-import { dedent } from 'ts-dedent';
-import semver from 'semver';
-import { frameworkPackages, rendererPackages } from 'storybook/internal/common';
-
-import type { Preset } from 'storybook/internal/types';
-import invariant from 'tiny-invariant';
-import type { Fix } from '../types';
 import { getStorybookVersionSpecifier } from 'storybook/internal/cli';
-import {
-  getNextjsAddonOptions,
-  detectBuilderInfo,
-  packagesMap,
-} from '../helpers/new-frameworks-utils';
+import { frameworkPackages, rendererPackages } from 'storybook/internal/common';
+import type { Preset } from 'storybook/internal/types';
+
+import chalk from 'chalk';
+import semver from 'semver';
+import invariant from 'tiny-invariant';
+import { dedent } from 'ts-dedent';
+
+import { detectRenderer } from '../helpers/detectRenderer';
 import {
   getFrameworkPackageName,
   getRendererPackageNameFromFramework,
   updateMainConfig,
 } from '../helpers/mainConfigFile';
-import { detectRenderer } from '../helpers/detectRenderer';
+import {
+  detectBuilderInfo,
+  getNextjsAddonOptions,
+  packagesMap,
+} from '../helpers/new-frameworks-utils';
+import type { Fix } from '../types';
 
 const logger = console;
 

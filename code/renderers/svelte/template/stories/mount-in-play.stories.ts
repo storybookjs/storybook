@@ -1,5 +1,6 @@
-import Button from './Button.svelte';
 import type { StoryObj } from '@storybook/svelte';
+
+import Button from './Button.svelte';
 
 export default {
   component: Button,

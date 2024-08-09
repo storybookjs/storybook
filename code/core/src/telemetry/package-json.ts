@@ -1,5 +1,6 @@
-import { readJson } from 'fs-extra';
 import path from 'node:path';
+
+import { readJson } from 'fs-extra';
 
 import type { Dependency } from './types';
 

@@ -1,11 +1,12 @@
 import React from 'react';
+
 import { ManagerContext } from '@storybook/core/manager-api';
 
-import { Ref } from './Refs';
 import { standardData as standardHeaderData } from './Heading.stories';
+import { IconSymbols } from './IconSymbols';
+import { Ref } from './Refs';
 import { mockDataset } from './mockdata';
 import type { RefType } from './types';
-import { IconSymbols } from './IconSymbols';
 
 export default {
   component: Ref,

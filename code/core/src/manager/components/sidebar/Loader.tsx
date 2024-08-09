@@ -1,5 +1,6 @@
 import type { FC } from 'react';
 import React, { Fragment } from 'react';
+
 import { styled } from '@storybook/core/theming';
 
 const LOADER_SEQUENCE = [0, 0, 1, 1, 2, 3, 3, 3, 1, 1, 1, 2, 2, 2, 3];

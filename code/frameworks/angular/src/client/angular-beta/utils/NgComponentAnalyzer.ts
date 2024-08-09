@@ -1,11 +1,11 @@
 import {
-  Type,
   Component,
   Directive,
   Input,
   Output,
   Pipe,
   ɵReflectionCapabilities as ReflectionCapabilities,
+  Type,
 } from '@angular/core';
 
 const reflectionCapabilities = new ReflectionCapabilities();

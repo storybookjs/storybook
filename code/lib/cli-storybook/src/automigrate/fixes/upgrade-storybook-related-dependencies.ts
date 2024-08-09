@@ -1,10 +1,12 @@
-import { dedent } from 'ts-dedent';
-import { cyan, yellow } from 'chalk';
-import { gt } from 'semver';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { isCorePackage } from 'storybook/internal/common';
-import type { Fix } from '../types';
+
+import { cyan, yellow } from 'chalk';
+import { gt } from 'semver';
+import { dedent } from 'ts-dedent';
+
 import { getIncompatibleStorybookPackages } from '../../doctor/getIncompatibleStorybookPackages';
+import type { Fix } from '../types';
 
 type PackageMetadata = {
   packageName: string;

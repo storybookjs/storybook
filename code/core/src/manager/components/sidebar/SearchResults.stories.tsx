@@ -1,11 +1,12 @@
 import React from 'react';
+
 import type { StoriesHash } from '@storybook/core/manager-api';
 
-import { mockDataset } from './mockdata';
-import { SearchResults } from './SearchResults';
-import type { CombinedDataset, Refs, SearchItem } from './types';
 import { searchItem } from '../../utils/tree';
 import { IconSymbols } from './IconSymbols';
+import { SearchResults } from './SearchResults';
+import { mockDataset } from './mockdata';
+import type { CombinedDataset, Refs, SearchItem } from './types';
 
 export default {
   component: SearchResults,

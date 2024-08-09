@@ -1,5 +1,5 @@
+import type { ActionOptions, ActionsFunction, ActionsMap } from '../models';
 import { action } from './action';
-import type { ActionsFunction, ActionOptions, ActionsMap } from '../models';
 import { config } from './configureActions';
 
 export const actions: ActionsFunction = (...args: any[]) => {

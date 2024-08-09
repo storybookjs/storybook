@@ -1,12 +1,15 @@
 import type { FC, SyntheticEvent } from 'react';
 import React, { useCallback, useEffect, useRef } from 'react';
-import { type State } from '@storybook/core/manager-api';
-import { Link } from '@storybook/core/router';
-import { keyframes, styled, useTheme } from '@storybook/core/theming';
+
 import type { IconsProps } from '@storybook/core/components';
 import { IconButton, Icons } from '@storybook/core/components';
-import { transparentize } from 'polished';
+import { Link } from '@storybook/core/router';
+import { keyframes, styled, useTheme } from '@storybook/core/theming';
 import { CloseAltIcon } from '@storybook/icons';
+
+import { type State } from '@storybook/core/manager-api';
+
+import { transparentize } from 'polished';
 
 const slideIn = keyframes({
   '0%': {

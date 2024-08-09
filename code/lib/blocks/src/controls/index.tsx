@@ -1,5 +1,6 @@
 import type { ComponentProps } from 'react';
-import React, { lazy, Suspense } from 'react';
+import React, { Suspense, lazy } from 'react';
+
 import type { ColorControlProps } from './Color';
 
 export * from './types';

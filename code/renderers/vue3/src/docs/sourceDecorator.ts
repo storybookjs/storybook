@@ -1,8 +1,10 @@
 /* eslint-disable no-underscore-dangle */
 import { SNIPPET_RENDERED, SourceType } from 'storybook/internal/docs-tools';
 import { addons } from 'storybook/internal/preview-api';
+
 import type { VNode } from 'vue';
 import { isVNode, watch } from 'vue';
+
 import type { Args, Decorator, StoryContext } from '../public-types';
 
 /**

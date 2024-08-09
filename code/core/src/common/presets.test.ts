@@ -1,8 +1,12 @@
-import mockRequire from 'mock-require';
-import { describe, beforeEach, afterEach, it, expect, vi } from 'vitest';
 import path from 'node:path';
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { logger } from '@storybook/core/node-logger';
-import { getPresets, resolveAddonName, loadPreset } from './presets';
+
+import mockRequire from 'mock-require';
+
+import { getPresets, loadPreset, resolveAddonName } from './presets';
 
 function wrapPreset(basePresets: any): { babel: Function; webpack: Function } {
   return {

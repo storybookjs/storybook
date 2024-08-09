@@ -1,9 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import {
-  generateReleaseDescription,
   generateNonReleaseDescription,
-  mapToChangelist,
+  generateReleaseDescription,
   mapCherryPicksToTodo,
+  mapToChangelist,
 } from '../generate-pr-description';
 import type { Change } from '../utils/get-changes';
 

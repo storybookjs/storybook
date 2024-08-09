@@ -1,6 +1,6 @@
 import React, { Suspense, lazy } from 'react';
-
 import type { ComponentProps } from 'react';
+
 import type ReactSyntaxHighlighter from './syntaxhighlighter';
 
 let languages: Parameters<typeof ReactSyntaxHighlighter.registerLanguage>[] = [];

@@ -1,7 +1,7 @@
 /**
  * Source: https://github.com/vercel/next.js/blob/canary/packages/next/src/build/babel/plugins/optimize-hook-destructuring.ts
  */
-import type { NodePath, PluginObj, types as BabelTypes } from '@babel/core';
+import type { types as BabelTypes, NodePath, PluginObj } from '@babel/core';
 
 // matches any hook-like (the default)
 const isHook = /^use[A-Z]/;

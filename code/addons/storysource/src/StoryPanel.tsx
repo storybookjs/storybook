@@ -1,18 +1,19 @@
 import React from 'react';
-import { type API, useParameter } from 'storybook/internal/manager-api';
-import { styled } from 'storybook/internal/theming';
-import { Link } from 'storybook/internal/router';
+
 import {
   SyntaxHighlighter,
   type SyntaxHighlighterProps,
   type SyntaxHighlighterRendererProps,
 } from 'storybook/internal/components';
-import invariant from 'tiny-invariant';
+import { type API, useParameter } from 'storybook/internal/manager-api';
+import { Link } from 'storybook/internal/router';
+import { styled } from 'storybook/internal/theming';
+
+import type { LocationsMap, SourceBlock } from '@storybook/source-loader';
 
 // @ts-expect-error Typedefs don't currently expose `createElement` even though it exists
 import { createElement as createSyntaxHighlighterElement } from 'react-syntax-highlighter';
-
-import type { SourceBlock, LocationsMap } from '@storybook/source-loader';
+import invariant from 'tiny-invariant';
 
 const StyledStoryLink = styled(Link)<{ to: string; key: string }>(({ theme }) => ({
   display: 'block',

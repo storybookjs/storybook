@@ -1,8 +1,10 @@
 import React from 'react';
-import { EmptyTabContent } from './EmptyTabContent';
-import { DocumentIcon } from '@storybook/icons';
+
 import { Link } from '@storybook/core/components';
+import { DocumentIcon } from '@storybook/icons';
 import type { Meta, StoryObj } from '@storybook/react';
+
+import { EmptyTabContent } from './EmptyTabContent';
 
 export default {
   title: 'TabContentEmpty',

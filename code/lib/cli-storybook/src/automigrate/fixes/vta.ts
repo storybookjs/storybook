@@ -1,5 +1,6 @@
-import { dedent } from 'ts-dedent';
 import chalk from 'chalk';
+import { dedent } from 'ts-dedent';
+
 import { getAddonNames, updateMainConfig } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
 

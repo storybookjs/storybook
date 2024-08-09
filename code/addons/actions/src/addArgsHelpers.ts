@@ -1,4 +1,5 @@
-import type { Args, Renderer, ArgsEnhancer } from 'storybook/internal/types';
+import type { Args, ArgsEnhancer, Renderer } from 'storybook/internal/types';
+
 import { action } from './runtime/action';
 
 // interface ActionsParameter {

@@ -1,5 +1,6 @@
 import { chromium } from 'playwright';
-import { now, getPreviewPage } from './utils';
+
+import { getPreviewPage, now } from './utils';
 
 interface Result {
   managerHeaderVisible?: number;

@@ -60,10 +60,6 @@ jobs:
         with:
           node-version-file: ".nvmrc"
 
-      - uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: 1.1.1
-
       - name: Cache dependencies
         uses: actions/cache@v4
         with:

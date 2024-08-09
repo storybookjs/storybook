@@ -5,15 +5,17 @@ import type {
   ArgsStoryFn,
   ComponentAnnotations,
   DecoratorFunction,
+  StoryContext as GenericStoryContext,
   LoaderFunction,
   ProjectAnnotations,
   StoryAnnotations,
-  StoryContext as GenericStoryContext,
   StrictArgs,
 } from 'storybook/internal/types';
+
 import type { Constructor, RemoveIndexSignature, SetOptional, Simplify } from 'type-fest';
 import type { FunctionalComponent, VNodeChild } from 'vue';
 import type { ComponentProps, ComponentSlots } from 'vue-component-type-helpers';
+
 import type { VueRenderer } from './types';
 
 export type { Args, ArgTypes, Parameters, StrictArgs } from 'storybook/internal/types';

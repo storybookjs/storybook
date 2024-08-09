@@ -1,6 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import fs from 'fs';
 import path from 'path';
+
 import injectDecorator from './inject-decorator';
 
 describe('inject-decorator', () => {

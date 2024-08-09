@@ -1,11 +1,14 @@
-import { global } from '@storybook/global';
 import React from 'react';
-import copy from 'copy-to-clipboard';
-import { getStoryHref, IconButton } from '@storybook/core/components';
+
+import { IconButton, getStoryHref } from '@storybook/core/components';
+import type { Addon_BaseType } from '@storybook/core/types';
+import { global } from '@storybook/global';
+import { LinkIcon } from '@storybook/icons';
+
 import { Consumer, types } from '@storybook/core/manager-api';
 import type { Combo } from '@storybook/core/manager-api';
-import type { Addon_BaseType } from '@storybook/core/types';
-import { LinkIcon } from '@storybook/icons';
+
+import copy from 'copy-to-clipboard';
 
 const { PREVIEW_URL, document } = global;
 

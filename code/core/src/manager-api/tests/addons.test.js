@@ -1,5 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
 import { Addon_TypesEnum as types } from '@storybook/core/types';
+
 import { init as initAddons } from '../modules/addons';
 
 const PANELS = {

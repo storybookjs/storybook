@@ -1,15 +1,18 @@
-import type { Options } from '@storybook/core/types';
+import fs from 'node:fs';
+import path from 'node:path';
+
 import {
   extractProperRendererNameFromFramework,
   getFrameworkName,
   getProjectRoot,
   rendererPackages,
 } from '@storybook/core/common';
-import path from 'node:path';
-import fs from 'node:fs';
-import { getTypeScriptTemplateForNewStoryFile } from './new-story-templates/typescript';
-import { getJavaScriptTemplateForNewStoryFile } from './new-story-templates/javascript';
+import type { Options } from '@storybook/core/types';
+
 import type { CreateNewStoryRequestPayload } from '@storybook/core/core-events';
+
+import { getJavaScriptTemplateForNewStoryFile } from './new-story-templates/javascript';
+import { getTypeScriptTemplateForNewStoryFile } from './new-story-templates/typescript';
 
 export async function getNewStoryFile(
   {

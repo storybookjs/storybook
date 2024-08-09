@@ -1,5 +1,6 @@
 import React from 'react';
-import { RSC, Nested } from './RSC';
+
+import { Nested, RSC } from './RSC';
 
 export default {
   component: RSC,

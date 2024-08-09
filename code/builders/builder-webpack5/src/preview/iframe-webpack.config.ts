@@ -1,23 +1,26 @@
-import { dirname, join, resolve } from 'path';
-import { DefinePlugin, HotModuleReplacementPlugin, ProgressPlugin, ProvidePlugin } from 'webpack';
-import type { Configuration } from 'webpack';
-import HtmlWebpackPlugin from 'html-webpack-plugin';
-// @ts-expect-error (I removed this on purpose, because it's incorrect)
-import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin';
-import TerserWebpackPlugin from 'terser-webpack-plugin';
-import VirtualModulePlugin from 'webpack-virtual-modules';
-import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
-import type { TransformOptions as EsbuildOptions } from 'esbuild';
-import type { Options } from 'storybook/internal/types';
-import { globalsNameReferenceMap } from 'storybook/internal/preview/globals';
 import {
   getBuilderOptions,
-  stringifyProcessEnvs,
-  normalizeStories,
   isPreservingSymlinks,
+  normalizeStories,
+  stringifyProcessEnvs,
 } from 'storybook/internal/common';
+import { globalsNameReferenceMap } from 'storybook/internal/preview/globals';
+import type { Options } from 'storybook/internal/types';
+
 import { type BuilderOptions } from '@storybook/core-webpack';
+
+// @ts-expect-error (I removed this on purpose, because it's incorrect)
+import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin';
+import type { TransformOptions as EsbuildOptions } from 'esbuild';
+import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
+import HtmlWebpackPlugin from 'html-webpack-plugin';
+import { dirname, join, resolve } from 'path';
+import TerserWebpackPlugin from 'terser-webpack-plugin';
 import { dedent } from 'ts-dedent';
+import { DefinePlugin, HotModuleReplacementPlugin, ProgressPlugin, ProvidePlugin } from 'webpack';
+import type { Configuration } from 'webpack';
+import VirtualModulePlugin from 'webpack-virtual-modules';
+
 import type { TypescriptOptions } from '../types';
 import { getVirtualModules } from './virtual-module-mapping';
 

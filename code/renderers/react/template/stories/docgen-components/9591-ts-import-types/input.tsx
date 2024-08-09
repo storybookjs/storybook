@@ -1,4 +1,5 @@
 import React from 'react';
+
 import type { BarProps } from './Bar';
 
 type OtherProps = BarProps & {

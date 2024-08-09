@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
+
 /* eslint-disable no-underscore-dangle */
 import { vi } from 'vitest';
 

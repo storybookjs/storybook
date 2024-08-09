@@ -1,4 +1,5 @@
 import { checkAddonOrder, serverRequire } from 'storybook/internal/common';
+
 import path from 'path';
 
 export const checkActionsLoaded = (configDir: string) => {

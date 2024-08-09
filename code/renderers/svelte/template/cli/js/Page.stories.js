@@ -1,4 +1,4 @@
-import { within, userEvent, expect, waitFor } from '@storybook/test';
+import { expect, userEvent, waitFor, within } from '@storybook/test';
 
 import Page from './Page.svelte';
 

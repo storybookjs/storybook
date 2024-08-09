@@ -1,7 +1,7 @@
 import React, { Fragment } from 'react';
 
-import { Placeholder } from './placeholder';
 import { Link } from '../typography/link/link';
+import { Placeholder } from './placeholder';
 
 export default {
   component: Placeholder,

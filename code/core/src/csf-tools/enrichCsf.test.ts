@@ -1,6 +1,8 @@
 /* eslint-disable no-underscore-dangle */
+import { describe, expect, it } from 'vitest';
+
 import { dedent } from 'ts-dedent';
-import { describe, it, expect } from 'vitest';
+
 import { formatCsf, loadCsf } from './CsfFile';
 import type { EnrichCsfOptions } from './enrichCsf';
 import { enrichCsf, extractSource } from './enrichCsf';

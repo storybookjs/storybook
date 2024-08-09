@@ -1,7 +1,9 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
-import type { Meta, StoryObj } from '@storybook/react';
-import { within, fireEvent, expect } from '@storybook/test';
 import React from 'react';
+
+import type { Meta, StoryObj } from '@storybook/react';
+import { expect, fireEvent, within } from '@storybook/test';
+
 import { Button } from './Button';
 
 const meta = {

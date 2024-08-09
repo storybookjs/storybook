@@ -1,5 +1,6 @@
-import { getImageProps } from 'next/image';
 import React from 'react';
+
+import { getImageProps } from 'next/image';
 
 import Accessibility from '../../assets/accessibility.svg';
 import Testing from '../../assets/testing.png';

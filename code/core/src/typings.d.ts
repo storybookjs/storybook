@@ -27,23 +27,6 @@ declare module 'lazy-universal-dotenv';
 declare module 'open';
 declare module 'pnp-webpack-plugin';
 declare module 'react-inspector';
-// declare module 'detect-package-manager' {
-//   // copied from https://www.npmjs.com/package/detect-package-manager?activeTab=code
-//   // because
-//   declare type PM = 'npm' | 'yarn' | 'pnpm' | 'bun';
-//   declare const detect: ({
-//     cwd,
-//     includeGlobalBun,
-//   }?: {
-//     cwd?: string | undefined;
-//     includeGlobalBun?: boolean | undefined;
-//   }) => Promise<PM>;
-
-//   declare function getNpmVersion(pm: PM): Promise<string>;
-//   declare function clearCache(): void;
-
-//   export { PM, clearCache, detect, getNpmVersion };
-// }
 
 declare var STORIES: any;
 

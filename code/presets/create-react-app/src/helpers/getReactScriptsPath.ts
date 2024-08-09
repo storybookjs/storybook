@@ -1,5 +1,5 @@
-import { readFileSync, realpathSync, lstatSync } from 'fs';
-import { join, dirname } from 'path';
+import { lstatSync, readFileSync, realpathSync } from 'fs';
+import { dirname, join } from 'path';
 
 export const getReactScriptsPath = (): string => {
   const cwd = process.cwd();

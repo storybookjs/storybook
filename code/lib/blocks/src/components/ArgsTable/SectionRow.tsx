@@ -1,8 +1,11 @@
 import type { FC } from 'react';
 import React, { useState } from 'react';
-import { transparentize, lighten } from 'polished';
+
 import { styled } from 'storybook/internal/theming';
+
 import { ChevronDownIcon, ChevronRightIcon } from '@storybook/icons';
+
+import { lighten, transparentize } from 'polished';
 
 type Level = 'section' | 'subsection';
 

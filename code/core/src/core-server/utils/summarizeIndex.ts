@@ -1,6 +1,6 @@
 import type { IndexEntry, StoryIndex } from '@storybook/core/types';
 
-import { isMdxEntry, AUTODOCS_TAG, PLAY_FN_TAG } from './StoryIndexGenerator';
+import { AUTODOCS_TAG, PLAY_FN_TAG, isMdxEntry } from './StoryIndexGenerator';
 
 const PAGE_REGEX = /(page|screen)/i;
 

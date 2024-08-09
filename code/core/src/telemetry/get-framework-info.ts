@@ -1,8 +1,10 @@
-import type { PackageJson, StorybookConfig } from '@storybook/core/types';
 import path from 'node:path';
+
 import { frameworkPackages } from '@storybook/core/common';
-import { cleanPaths } from './sanitize';
+import type { PackageJson, StorybookConfig } from '@storybook/core/types';
+
 import { getActualPackageJson } from './package-json';
+import { cleanPaths } from './sanitize';
 
 const knownRenderers = [
   'html',

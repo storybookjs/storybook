@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { color, styled, typography } from '@storybook/core/theming';
 
 const Code = styled.pre`

@@ -1,5 +1,6 @@
 import type { FC } from 'react';
 import React from 'react';
+
 import type { StoryObj } from '@storybook/react';
 
 const Button: FC<{ label?: string; disabled?: boolean }> = (props) => {

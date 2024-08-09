@@ -1,13 +1,14 @@
-import { listCodemods, runCodemod } from '@storybook/codemod';
+import { getStorybookVersionSpecifier } from 'storybook/internal/cli';
 import {
   JsPackageManagerFactory,
   getCoercedStorybookVersion,
   getStorybookInfo,
 } from 'storybook/internal/common';
 
+import { listCodemods, runCodemod } from '@storybook/codemod';
+
 import { runFixes } from './automigrate';
 import { mdxToCSF } from './automigrate/fixes/mdx-to-csf';
-import { getStorybookVersionSpecifier } from 'storybook/internal/cli';
 
 const logger = console;
 

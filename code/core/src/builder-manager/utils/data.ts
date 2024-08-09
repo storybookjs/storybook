@@ -1,10 +1,10 @@
 import { basename } from 'node:path';
-import type { Options } from '@storybook/core/types';
-import { getRefs } from '@storybook/core/common';
 
-import { readTemplate } from './template';
+import { getRefs } from '@storybook/core/common';
+import type { Options } from '@storybook/core/types';
 
 import { executor, getConfig } from '../index';
+import { readTemplate } from './template';
 
 export const getData = async (options: Options) => {
   const refs = getRefs(options);

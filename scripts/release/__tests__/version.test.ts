@@ -1,11 +1,12 @@
 /* eslint-disable no-underscore-dangle */
-import { describe, it, expect, vi } from 'vitest';
-import path from 'path';
-import * as fsExtraImp from 'fs-extra';
+import { describe, expect, it, vi } from 'vitest';
+
 import { execaCommand } from 'execa';
-import { run as version } from '../version';
+import * as fsExtraImp from 'fs-extra';
+import path from 'path';
 
 import type * as MockedFSToExtra from '../../../code/__mocks__/fs-extra';
+import { run as version } from '../version';
 
 vi.mock('fs-extra', async () => import('../../../code/__mocks__/fs-extra'));
 const fsExtra = fsExtraImp as unknown as typeof MockedFSToExtra;

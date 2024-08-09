@@ -1,4 +1,5 @@
 import { dedent } from 'ts-dedent';
+
 import { getFrameworkPackageName } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
 

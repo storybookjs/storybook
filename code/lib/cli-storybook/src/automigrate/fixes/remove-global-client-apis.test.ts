@@ -1,9 +1,11 @@
 /* eslint-disable no-underscore-dangle */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import path from 'path';
-import * as fsExtra from 'fs-extra';
 import type { JsPackageManager } from 'storybook/internal/common';
+
+import * as fsExtra from 'fs-extra';
+import path from 'path';
+
 import { RemovedAPIs, removedGlobalClientAPIs as migration } from './remove-global-client-apis';
 
 vi.mock('fs-extra', async () => import('../../../../../__mocks__/fs-extra'));

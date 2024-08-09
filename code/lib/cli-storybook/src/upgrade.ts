@@ -1,29 +1,30 @@
-import { sync as spawnSync } from 'cross-spawn';
-import { telemetry } from 'storybook/internal/telemetry';
-import semver, { eq, lt, prerelease, clean } from 'semver';
-import { logger } from 'storybook/internal/node-logger';
+import { hasStorybookDependencies } from 'storybook/internal/cli';
+import type { JsPackageManager, PackageManagerName } from 'storybook/internal/common';
+import {
+  JsPackageManagerFactory,
+  getStorybookInfo,
+  isCorePackage,
+  loadMainConfig,
+  versions,
+} from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
+import { logger } from 'storybook/internal/node-logger';
 import {
   UpgradeStorybookInWrongWorkingDirectory,
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookToSameVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
 } from 'storybook/internal/server-errors';
+import { telemetry } from 'storybook/internal/telemetry';
 
-import chalk from 'chalk';
-import { dedent } from 'ts-dedent';
 import boxen from 'boxen';
-import type { JsPackageManager, PackageManagerName } from 'storybook/internal/common';
-import {
-  isCorePackage,
-  versions,
-  getStorybookInfo,
-  loadMainConfig,
-  JsPackageManagerFactory,
-} from 'storybook/internal/common';
-import { automigrate } from './automigrate/index';
+import chalk from 'chalk';
+import { sync as spawnSync } from 'cross-spawn';
+import semver, { clean, eq, lt, prerelease } from 'semver';
+import { dedent } from 'ts-dedent';
+
 import { autoblock } from './autoblock/index';
-import { hasStorybookDependencies } from 'storybook/internal/cli';
+import { automigrate } from './automigrate/index';
 
 type Package = {
   package: string;

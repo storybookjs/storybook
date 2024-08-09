@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { ColorItem, ColorPalette } from './ColorPalette';
 
 export default {

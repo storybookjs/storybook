@@ -1,6 +1,7 @@
+import { ensureDir, readJSON, readdir, writeJSON } from 'fs-extra';
 import { join } from 'path';
-import { ensureDir, writeJSON, readJSON, readdir } from 'fs-extra';
 import type { Page } from 'playwright-core';
+
 import type { BenchResults } from './types';
 
 export const now = () => new Date().getTime();

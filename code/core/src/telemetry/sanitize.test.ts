@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
-import { sanitizeError, cleanPaths } from './sanitize';
+import { describe, expect, it, vi } from 'vitest';
+
+import { cleanPaths, sanitizeError } from './sanitize';
 
 describe(`Errors Helpers`, () => {
   describe(`sanitizeError`, () => {

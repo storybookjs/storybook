@@ -1,6 +1,6 @@
 import { AbstractRenderer } from './AbstractRenderer';
-import { DocsRenderer } from './DocsRenderer';
 import { CanvasRenderer } from './CanvasRenderer';
+import { DocsRenderer } from './DocsRenderer';
 
 type RenderType = 'canvas' | 'docs';
 export class RendererFactory {

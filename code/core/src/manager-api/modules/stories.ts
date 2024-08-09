@@ -1,61 +1,60 @@
-import { global } from '@storybook/global';
-import { toId, sanitize } from '@storybook/csf';
 import type {
-  StoryKind,
-  ComponentTitle,
-  StoryName,
-  StoryId,
-  Args,
   API_ComposedRef,
-  API_HashEntry,
-  API_LeafEntry,
-  API_PreparedStoryIndex,
-  SetStoriesPayload,
-  API_StoryEntry,
-  StoryIndex,
-  API_LoadedRefData,
-  API_IndexHash,
-  StoryPreparedPayload,
-  DocsPreparedPayload,
   API_DocsEntry,
-  API_ViewMode,
+  API_FilterFunction,
+  API_HashEntry,
+  API_IndexHash,
+  API_LeafEntry,
+  API_LoadedRefData,
+  API_PreparedStoryIndex,
   API_StatusState,
   API_StatusUpdate,
-  API_FilterFunction,
+  API_StoryEntry,
+  API_ViewMode,
+  Args,
+  ComponentTitle,
+  DocsPreparedPayload,
+  SetStoriesPayload,
+  StoryId,
+  StoryIndex,
+  StoryKind,
+  StoryName,
+  StoryPreparedPayload,
 } from '@storybook/core/types';
+import { sanitize, toId } from '@storybook/csf';
+import { global } from '@storybook/global';
+
+import { logger } from '@storybook/core/client-logger';
 import {
-  PRELOAD_ENTRIES,
-  STORY_PREPARED,
-  UPDATE_STORY_ARGS,
-  RESET_STORY_ARGS,
-  STORY_ARGS_UPDATED,
-  STORY_CHANGED,
-  SELECT_STORY,
-  SET_STORIES,
-  SET_INDEX,
-  STORY_SPECIFIED,
-  STORY_INDEX_INVALIDATED,
   CONFIG_ERROR,
   CURRENT_STORY_WAS_SET,
-  STORY_MISSING,
   DOCS_PREPARED,
-  SET_CURRENT_STORY,
+  PRELOAD_ENTRIES,
+  RESET_STORY_ARGS,
+  SELECT_STORY,
   SET_CONFIG,
+  SET_CURRENT_STORY,
+  SET_INDEX,
+  SET_STORIES,
+  STORY_ARGS_UPDATED,
+  STORY_CHANGED,
+  STORY_INDEX_INVALIDATED,
+  STORY_MISSING,
+  STORY_PREPARED,
+  STORY_SPECIFIED,
+  UPDATE_STORY_ARGS,
 } from '@storybook/core/core-events';
-import { logger } from '@storybook/core/client-logger';
 
 import { getEventMetadata } from '../lib/events';
-
 import {
+  addPreparedStories,
   denormalizeStoryParameters,
-  transformStoryIndexToStoriesHash,
   getComponentLookupList,
   getStoriesLookupList,
-  addPreparedStories,
+  transformStoryIndexToStoriesHash,
 } from '../lib/stories';
-
-import type { ComposedRef } from '../root';
 import type { ModuleFn } from '../lib/types';
+import type { ComposedRef } from '../root';
 
 const { fetch } = global;
 const STORY_INDEX_PATH = './index.json';

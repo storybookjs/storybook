@@ -1,30 +1,29 @@
 import React, { Fragment } from 'react';
 
+import { IconButton, Separator, TabBar, TabButton } from '@storybook/core/components';
 import { styled } from '@storybook/core/theming';
+import { type Addon_BaseType, Addon_TypesEnum } from '@storybook/core/types';
+import { CloseIcon, ExpandIcon } from '@storybook/icons';
 
-import { IconButton, Separator, TabButton, TabBar } from '@storybook/core/components';
 import {
-  shortcutToHumanString,
-  Consumer,
-  type Combo,
   type API,
-  type State,
-  merge,
+  type Combo,
+  Consumer,
   type LeafEntry,
+  type State,
   addons,
+  merge,
+  shortcutToHumanString,
   types,
 } from '@storybook/core/manager-api';
 
-import { Addon_TypesEnum, type Addon_BaseType } from '@storybook/core/types';
-import { CloseIcon, ExpandIcon } from '@storybook/icons';
-import { zoomTool } from './tools/zoom';
-
-import type { PreviewProps } from './utils/types';
+import { useLayout } from '../layout/LayoutProvider';
+import { addonsTool } from './tools/addons';
 import { copyTool } from './tools/copy';
 import { ejectTool } from './tools/eject';
-import { addonsTool } from './tools/addons';
 import { remountTool } from './tools/remount';
-import { useLayout } from '../layout/LayoutProvider';
+import { zoomTool } from './tools/zoom';
+import type { PreviewProps } from './utils/types';
 
 export const getTools = (getFn: API['getElements']) => Object.values(getFn(types.TOOL));
 export const getToolsExtra = (getFn: API['getElements']) => Object.values(getFn(types.TOOLEXTRA));

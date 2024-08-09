@@ -1,26 +1,26 @@
-import program from 'commander';
-import chalk from 'chalk';
-import envinfo from 'envinfo';
-import leven from 'leven';
-import { findPackageSync } from 'fd-package-json';
-import invariant from 'tiny-invariant';
-
-import { logger } from 'storybook/internal/node-logger';
-import { addToGlobalContext, telemetry } from 'storybook/internal/telemetry';
 import {
   JsPackageManagerFactory,
-  versions,
   removeAddon as remove,
+  versions,
 } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
+import { logger } from 'storybook/internal/node-logger';
+import { addToGlobalContext, telemetry } from 'storybook/internal/telemetry';
+
+import chalk from 'chalk';
+import program from 'commander';
+import envinfo from 'envinfo';
+import { findPackageSync } from 'fd-package-json';
+import leven from 'leven';
+import invariant from 'tiny-invariant';
 
 import { add } from '../add';
-import { migrate } from '../migrate';
-import { upgrade, type UpgradeOptions } from '../upgrade';
-import { sandbox } from '../sandbox';
-import { link } from '../link';
 import { doAutomigrate } from '../automigrate';
 import { doctor } from '../doctor';
+import { link } from '../link';
+import { migrate } from '../migrate';
+import { sandbox } from '../sandbox';
+import { type UpgradeOptions, upgrade } from '../upgrade';
 
 addToGlobalContext('cliVersion', versions.storybook);
 

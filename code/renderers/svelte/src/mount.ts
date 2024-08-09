@@ -1,5 +1,6 @@
-import { type StoryContext, type SvelteRenderer } from './public-types';
 import { type BaseAnnotations } from 'storybook/internal/types';
+
+import { type StoryContext, type SvelteRenderer } from './public-types';
 
 export const mount: BaseAnnotations<SvelteRenderer>['mount'] = (context: StoryContext) => {
   return async (Component, options) => {

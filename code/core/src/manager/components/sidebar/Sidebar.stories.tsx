@@ -1,18 +1,20 @@
 import React from 'react';
 
+import { Button, IconButton } from '@storybook/core/components';
+import type { Addon_SidebarTopType } from '@storybook/core/types';
+import { FaceHappyIcon } from '@storybook/icons';
+import type { Meta, StoryObj } from '@storybook/react';
+import { expect, fn, userEvent, within } from '@storybook/test';
+
 import type { IndexHash, State } from '@storybook/core/manager-api';
 import { ManagerContext, types } from '@storybook/core/manager-api';
-import type { StoryObj, Meta } from '@storybook/react';
-import { within, userEvent, expect, fn } from '@storybook/test';
-import type { Addon_SidebarTopType } from '@storybook/core/types';
-import { Button, IconButton } from '@storybook/core/components';
-import { FaceHappyIcon } from '@storybook/icons';
-import { Sidebar, DEFAULT_REF_ID } from './Sidebar';
+
+import { LayoutProvider } from '../layout/LayoutProvider';
 import { standardData as standardHeaderData } from './Heading.stories';
+import { IconSymbols } from './IconSymbols';
+import { DEFAULT_REF_ID, Sidebar } from './Sidebar';
 import { mockDataset } from './mockdata';
 import type { RefType } from './types';
-import { LayoutProvider } from '../layout/LayoutProvider';
-import { IconSymbols } from './IconSymbols';
 
 const wait = (ms: number) =>
   new Promise<void>((resolve) => {

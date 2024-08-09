@@ -1,6 +1,6 @@
+import flowParser from './parser-flow';
 import jsParser from './parser-js';
 import tsParser from './parser-ts';
-import flowParser from './parser-flow';
 
 function getParser(type) {
   if (type === 'javascript' || /\.jsx?/.test(type) || !type) {

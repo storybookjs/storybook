@@ -1,11 +1,12 @@
 import type {
+  API_StateMerger,
   Addon_BaseType,
   Addon_Collection,
   Addon_Types,
   Addon_TypesMapping,
-  API_StateMerger,
 } from '@storybook/core/types';
 import { Addon_TypesEnum } from '@storybook/core/types';
+
 import type { ModuleFn } from '../lib/types';
 import type { Options } from '../store';
 

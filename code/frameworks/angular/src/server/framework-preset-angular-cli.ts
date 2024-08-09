@@ -1,13 +1,14 @@
-import webpack from 'webpack';
 import { logger } from 'storybook/internal/node-logger';
 import { AngularLegacyBuildOptionsError } from 'storybook/internal/server-errors';
+
 import { BuilderContext, targetFromTargetString } from '@angular-devkit/architect';
-import { sync as findUpSync } from 'find-up';
 import { JsonObject, logging } from '@angular-devkit/core';
+import { sync as findUpSync } from 'find-up';
+import webpack from 'webpack';
 
 import { getWebpackConfig as getCustomWebpackConfig } from './angular-cli-webpack';
-import { moduleIsAvailable } from './utils/module-is-available';
 import { PresetOptions } from './preset-options';
+import { moduleIsAvailable } from './utils/module-is-available';
 
 export async function webpackFinal(baseConfig: webpack.Configuration, options: PresetOptions) {
   if (!moduleIsAvailable('@angular-devkit/build-angular')) {

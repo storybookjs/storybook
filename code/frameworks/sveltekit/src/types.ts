@@ -1,8 +1,10 @@
-import type { BuilderOptions, StorybookConfigVite } from '@storybook/builder-vite';
 import type {
   CompatibleString,
   StorybookConfig as StorybookConfigBase,
 } from 'storybook/internal/types';
+
+import type { BuilderOptions, StorybookConfigVite } from '@storybook/builder-vite';
+
 import type { enhance } from './mocks/app/forms';
 import type { goto, invalidate, invalidateAll } from './mocks/app/navigation';
 

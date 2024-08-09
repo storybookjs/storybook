@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useTransition } from 'react';
-import { Modal, Form } from '@storybook/core/components';
+
+import { Form, Modal } from '@storybook/core/components';
 import { styled } from '@storybook/core/theming';
 import { CloseAltIcon, SearchIcon, SyncIcon } from '@storybook/icons';
 
+import { useMeasure } from '../../hooks/useMeasure';
 import type { NewStoryPayload, SearchResult } from './FileSearchList';
 import { FileSearchList } from './FileSearchList';
-import { useMeasure } from '../../hooks/useMeasure';
 
 const MODAL_HEIGHT = 418;
 

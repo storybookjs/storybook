@@ -1,4 +1,5 @@
 import type { Renderer, StoryContextForEnhancers } from '@storybook/core/types';
+
 import { combineParameters } from '@storybook/core/preview-api';
 
 export const enhanceArgTypes = <TRenderer extends Renderer>(

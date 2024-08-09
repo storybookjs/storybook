@@ -1,6 +1,8 @@
-import { describe, expect, it, vi } from 'vitest';
-import { getNewStoryFile } from './get-new-story-file';
 import path from 'node:path';
+
+import { describe, expect, it, vi } from 'vitest';
+
+import { getNewStoryFile } from './get-new-story-file';
 
 vi.mock('@storybook/core/common', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@storybook/core/common')>();

@@ -1,4 +1,5 @@
 import { global as globalThis } from '@storybook/global';
+
 import { MINIMAL_VIEWPORTS } from '@storybook/addon-viewport';
 
 // these stories only work with `viewportStoryGlobals` set to false

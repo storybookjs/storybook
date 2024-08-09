@@ -1,7 +1,7 @@
 import { copyTemplateFiles, getBabelDependencies } from 'storybook/internal/cli';
-import type { JsPackageManager } from 'storybook/internal/common';
 import type { NpmOptions } from 'storybook/internal/cli';
 import { SupportedLanguage } from 'storybook/internal/cli';
+import type { JsPackageManager } from 'storybook/internal/common';
 
 const generator = async (
   packageManager: JsPackageManager,

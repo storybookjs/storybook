@@ -1,14 +1,14 @@
 // @vitest-environment happy-dom
+import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { describe, beforeEach, afterEach, it, expect, vi } from 'vitest';
 import React from 'react';
-import { render, waitFor, fireEvent, act, cleanup } from '@testing-library/react';
 
-import { ThemeProvider, themes, convert } from 'storybook/internal/theming';
 import * as api from 'storybook/internal/manager-api';
+import { ThemeProvider, convert, themes } from 'storybook/internal/theming';
 
-import { A11YPanel } from './A11YPanel';
 import { EVENTS } from '../constants';
+import { A11YPanel } from './A11YPanel';
 
 vi.mock('storybook/internal/manager-api');
 

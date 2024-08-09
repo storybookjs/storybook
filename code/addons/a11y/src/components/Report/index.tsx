@@ -1,11 +1,12 @@
 import type { FC } from 'react';
 import React, { Fragment } from 'react';
+
 import { EmptyTabContent } from 'storybook/internal/components';
+
 import type { Result } from 'axe-core';
 
-import { Item } from './Item';
-
 import type { RuleType } from '../A11YPanel';
+import { Item } from './Item';
 
 export interface ReportProps {
   items: Result[];

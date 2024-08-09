@@ -1,20 +1,23 @@
 import type {
-  Renderer,
   ArgTypes,
   LegacyStoryAnnotationsOrFn,
+  Renderer,
   StoryAnnotations,
   StoryFn,
   StoryId,
 } from '@storybook/core/types';
-import { storyNameFromExport, toId } from '@storybook/csf';
-import { dedent } from 'ts-dedent';
-import { logger, deprecate } from '@storybook/core/client-logger';
-import { normalizeInputTypes } from './normalizeInputTypes';
-import { normalizeArrays } from './normalizeArrays';
 import type {
   NormalizedComponentAnnotations,
   NormalizedStoryAnnotations,
 } from '@storybook/core/types';
+import { storyNameFromExport, toId } from '@storybook/csf';
+
+import { deprecate, logger } from '@storybook/core/client-logger';
+
+import { dedent } from 'ts-dedent';
+
+import { normalizeArrays } from './normalizeArrays';
+import { normalizeInputTypes } from './normalizeInputTypes';
 
 const deprecatedStoryAnnotation = dedent`
 CSF .story annotations deprecated; annotate story functions directly:

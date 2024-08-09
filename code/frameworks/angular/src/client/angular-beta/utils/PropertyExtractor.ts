@@ -2,7 +2,6 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   Directive,
-  importProvidersFrom,
   Injectable,
   InjectionToken,
   Input,
@@ -11,6 +10,7 @@ import {
   Pipe,
   Provider,
   ɵReflectionCapabilities as ReflectionCapabilities,
+  importProvidersFrom,
 } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import {
@@ -20,6 +20,7 @@ import {
   provideNoopAnimations,
 } from '@angular/platform-browser/animations';
 import { dedent } from 'ts-dedent';
+
 import { NgModuleMetadata } from '../../types';
 import { isComponentAlreadyDeclared } from './NgModulesAnalyzer';
 

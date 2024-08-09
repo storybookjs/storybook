@@ -681,10 +681,10 @@ describe('angular source decorator', () => {
           `a string literal with 'single quotes'`,
           'a single quoted string with "double quotes"',
           "a double quoted string with 'single quotes'",
-          // eslint-disable-next-line prettier/prettier
-          'a single quoted string with escaped \'single quotes\'',
-          // eslint-disable-next-line prettier/prettier
-          "a double quoted string with escaped \"double quotes\"",
+
+          "a single quoted string with escaped 'single quotes'",
+
+          'a double quoted string with escaped "double quotes"',
 
           `a string literal with \'escaped single quotes\'`,
 
@@ -717,10 +717,10 @@ describe('angular source decorator', () => {
           `a string literal with 'single quotes'`,
           'a single quoted string with "double quotes"',
           "a double quoted string with 'single quotes'",
-          // eslint-disable-next-line prettier/prettier
-          'a single quoted string with escaped \'single quotes\'',
-          // eslint-disable-next-line prettier/prettier
-          "a double quoted string with escaped \"double quotes\"",
+
+          "a single quoted string with escaped 'single quotes'",
+
+          'a double quoted string with escaped "double quotes"',
 
           `a string literal with \'escaped single quotes\'`,
 

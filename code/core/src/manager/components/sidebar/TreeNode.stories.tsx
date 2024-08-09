@@ -1,9 +1,9 @@
 import React from 'react';
-import { HighlightStyles } from './HighlightStyles';
-import { LeafNodeStyleWrapper } from './Tree';
 
-import { ComponentNode, DocumentNode, GroupNode, StoryNode } from './TreeNode';
+import { HighlightStyles } from './HighlightStyles';
 import { IconSymbols } from './IconSymbols';
+import { LeafNodeStyleWrapper } from './Tree';
+import { ComponentNode, DocumentNode, GroupNode, StoryNode } from './TreeNode';
 
 export default {
   title: 'Sidebar/TreeNode',

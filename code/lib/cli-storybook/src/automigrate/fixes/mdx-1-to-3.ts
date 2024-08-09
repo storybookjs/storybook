@@ -1,7 +1,8 @@
 import chalk from 'chalk';
-import { dedent } from 'ts-dedent';
-import { basename } from 'path';
 import fse from 'fs-extra';
+import { basename } from 'path';
+import { dedent } from 'ts-dedent';
+
 import type { Fix } from '../types';
 
 const MDX1_STYLE_START = /<style>{`/g;

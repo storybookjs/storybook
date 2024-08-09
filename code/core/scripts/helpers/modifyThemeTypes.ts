@@ -1,5 +1,7 @@
+import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { dedent, Bun } from '../../../../scripts/prepare/tools';
+
+import { dedent } from '../../../../scripts/prepare/tools';
 
 export async function modifyThemeTypes() {
   /**
@@ -7,8 +9,8 @@ export async function modifyThemeTypes() {
    * This is not an option for us, because we pre-bundle emotion in.
    * The little hack work to ensure the `Theme` export is overloaded with our `StorybookTheme` interface. (in both development and production builds)
    */
-  const target = join(import.meta.dirname, '..', '..', 'dist', 'theming', 'index.d.ts');
-  const contents = await Bun.file(target).text();
+  const target = join(__dirname, '..', '..', 'dist', 'theming', 'index.d.ts');
+  const contents = await readFile(target, 'utf-8');
 
   const footer = contents.includes('// auto generated file')
     ? `export { StorybookTheme as Theme } from '../src/index';`
@@ -22,5 +24,5 @@ export async function modifyThemeTypes() {
     ${footer}
   `;
 
-  await Bun.write(target, newContents);
+  await writeFile(target, newContents);
 }

@@ -1,10 +1,12 @@
-import { dedent } from 'ts-dedent';
-import type { Fix } from '../types';
-import findUp from 'find-up';
-import { getFrameworkPackageName } from '../helpers/mainConfigFile';
 import { frameworkToRenderer } from 'storybook/internal/cli';
 import { frameworkPackages } from 'storybook/internal/common';
+
+import findUp from 'find-up';
 import path from 'path';
+import { dedent } from 'ts-dedent';
+
+import { getFrameworkPackageName } from '../helpers/mainConfigFile';
+import type { Fix } from '../types';
 
 interface ViteConfigFileRunOptions {
   plugins: string[];

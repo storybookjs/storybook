@@ -1,4 +1,5 @@
 import type { Args, StoryId, ViewMode } from '@storybook/core/types';
+
 import type { StorySpecifier } from '../store/StoryIndexStore';
 
 export interface SelectionSpecifier {

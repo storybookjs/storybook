@@ -1,15 +1,16 @@
 // @vitest-environment node
-import { describe, expect, vi, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
 import type {
   ComponentAnnotations as Meta,
-  StoryAnnotationsOrFn as Story,
   Store_CSFExports,
+  StoryAnnotationsOrFn as Story,
 } from '@storybook/core/types';
+import type { ProjectAnnotations } from '@storybook/csf';
 
-import { composeStory, composeStories, setProjectAnnotations } from './portable-stories';
 import * as defaultExportAnnotations from './__mocks__/defaultExportAnnotations.mockfile';
 import * as namedExportAnnotations from './__mocks__/namedExportAnnotations.mockfile';
-import type { ProjectAnnotations } from '@storybook/csf';
+import { composeStories, composeStory, setProjectAnnotations } from './portable-stories';
 
 type StoriesModule = Store_CSFExports & Record<string, any>;
 

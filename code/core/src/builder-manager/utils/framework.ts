@@ -1,6 +1,7 @@
 import path from 'node:path';
-import type { Options } from '@storybook/core/types';
+
 import { extractProperRendererNameFromFramework, getFrameworkName } from '@storybook/core/common';
+import type { Options } from '@storybook/core/types';
 
 interface PropertyObject {
   name: string;

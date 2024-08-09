@@ -1,6 +1,6 @@
-import { logger } from '@storybook/core/client-logger';
-
 import type { API_ComposedRef } from '@storybook/core/types';
+
+import { logger } from '@storybook/core/client-logger';
 
 import { getSourceType } from '../modules/refs';
 import type { API } from '../root';

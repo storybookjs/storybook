@@ -1,7 +1,8 @@
 import type { FC } from 'react';
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import { Link } from 'storybook/internal/components';
+
 import {
   BooleanControl,
   ColorControl,
@@ -13,7 +14,7 @@ import {
   RangeControl,
   TextControl,
 } from '../../controls';
-import type { Args, ArgType } from './types';
+import type { ArgType, Args } from './types';
 
 export interface ArgControlProps {
   row: ArgType;

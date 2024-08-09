@@ -1,11 +1,13 @@
 import type { ComponentProps, FC } from 'react';
 import React, { useMemo, useState } from 'react';
 
-import { styled } from '@storybook/core/theming';
-import { transparentize } from 'polished';
 import type { Button, TooltipLinkListLink } from '@storybook/core/components';
-import { WithTooltip, TooltipLinkList, IconButton } from '@storybook/core/components';
+import { IconButton, TooltipLinkList, WithTooltip } from '@storybook/core/components';
+import { styled } from '@storybook/core/theming';
 import { CloseIcon, CogIcon } from '@storybook/icons';
+
+import { transparentize } from 'polished';
+
 import { useLayout } from '../layout/LayoutProvider';
 
 export type MenuList = ComponentProps<typeof TooltipLinkList>['links'];

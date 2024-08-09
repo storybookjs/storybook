@@ -1,12 +1,15 @@
 import type { EventHandler, FocusEvent, MouseEvent } from 'react';
 import React, { useCallback, useRef, useState } from 'react';
-import { action } from '@storybook/addon-actions';
+
 import { Badge, Spaced } from '@storybook/core/components';
 import type { Addon_BaseType, Addon_Collection } from '@storybook/core/types';
 import { Addon_TypesEnum } from '@storybook/core/types';
 import { BellIcon } from '@storybook/icons';
-import { AddonPanel } from './Panel';
+
+import { action } from '@storybook/addon-actions';
+
 import { defaultShortcuts } from '../../settings/defaultShortcuts';
+import { AddonPanel } from './Panel';
 
 const onSelect = action('onSelect');
 const toggleVisibility = action('toggleVisibility');

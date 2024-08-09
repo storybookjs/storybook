@@ -1,10 +1,12 @@
-import { dedent } from 'ts-dedent';
-import { findPackage } from 'fd-package-json';
-import { logger, instance as npmLog } from '@storybook/core/node-logger';
-import { buildDevStandalone, withTelemetry } from '@storybook/core/core-server';
 import { cache } from '@storybook/core/common';
 import type { CLIOptions } from '@storybook/core/types';
+
+import { buildDevStandalone, withTelemetry } from '@storybook/core/core-server';
+import { logger, instance as npmLog } from '@storybook/core/node-logger';
+
+import { findPackage } from 'fd-package-json';
 import invariant from 'tiny-invariant';
+import { dedent } from 'ts-dedent';
 
 function printError(error: any) {
   // this is a weird bugfix, somehow 'node-pre-gyp' is polluting the npmLog header

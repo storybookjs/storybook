@@ -1,4 +1,5 @@
 import { resolve } from 'node:path';
+
 import type { Plugin } from 'vite';
 
 export async function mockSveltekitStores() {

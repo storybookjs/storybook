@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-
 import type { ReactElement } from 'react';
-import type { RenderData } from '../../router/types';
+
 import type { Channel } from '../../channels';
+import type { RenderData } from '../../router/types';
 import type { ThemeVars } from '../../theming/types';
-import type { DocsOptions } from './core-common';
+import type { Addon_RenderOptions } from './addons';
 import type { API_FilterFunction, API_HashEntry, API_IndexHash } from './api-stories';
 import type { SetStoriesStory, SetStoriesStoryData } from './channelApi';
-import type { Addon_RenderOptions } from './addons';
+import type { DocsOptions } from './core-common';
 import type { StoryIndex } from './indexer';
 
 type OrString<T extends string> = T | (string & {});

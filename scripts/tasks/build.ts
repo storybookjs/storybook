@@ -1,10 +1,11 @@
-import { pathExists } from 'fs-extra';
 import dirSize from 'fast-folder-size';
-import { promisify } from 'util';
+import { pathExists } from 'fs-extra';
 import { join } from 'path';
+import { promisify } from 'util';
+
+import { now, saveBench } from '../bench/utils';
 import type { Task } from '../task';
 import { exec } from '../utils/exec';
-import { now, saveBench } from '../bench/utils';
 
 export const build: Task = {
   description: 'Build the static version of the sandbox',

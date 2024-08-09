@@ -1,13 +1,13 @@
 import type { FC } from 'react';
 import React, { useCallback } from 'react';
 
-import { opacify, transparentize } from 'polished';
+import { Button } from 'storybook/internal/components';
 import { styled } from 'storybook/internal/theming';
 
-import { Button } from 'storybook/internal/components';
-import { getControlId, getControlSetterButtonId } from './helpers';
+import { opacify, transparentize } from 'polished';
 
-import type { ControlProps, BooleanValue, BooleanConfig } from './types';
+import { getControlId, getControlSetterButtonId } from './helpers';
+import type { BooleanConfig, BooleanValue, ControlProps } from './types';
 
 const Label = styled.label(({ theme }) => ({
   lineHeight: '18px',

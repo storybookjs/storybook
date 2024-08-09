@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { useEffect, useRef } from 'react';
+
 import type { LayoutState } from './Layout';
 
 // the distance from the edge of the screen at which the panel/sidebar will snap to the edge

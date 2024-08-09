@@ -1,5 +1,4 @@
 /// <reference types="webpack-env" />
-
 import { global } from '@storybook/global';
 
 import './globals';

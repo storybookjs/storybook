@@ -1,10 +1,11 @@
-import type { SyntheticEvent, MouseEventHandler, PropsWithChildren } from 'react';
+import type { MouseEventHandler, PropsWithChildren, SyntheticEvent } from 'react';
 import React, { Component, createContext, memo, useCallback } from 'react';
 
 import { IconButton, Separator } from '@storybook/core/components';
 import type { Addon_BaseType } from '@storybook/core/types';
-import { types } from '@storybook/core/manager-api';
 import { ZoomIcon, ZoomOutIcon, ZoomResetIcon } from '@storybook/icons';
+
+import { types } from '@storybook/core/manager-api';
 
 const initialZoom = 1 as const;
 

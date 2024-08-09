@@ -1,6 +1,7 @@
 import chalk from 'chalk';
-import { dedent } from 'ts-dedent';
 import { readFile } from 'fs-extra';
+import { dedent } from 'ts-dedent';
+
 import type { Fix } from '../types';
 
 export enum RemovedAPIs {

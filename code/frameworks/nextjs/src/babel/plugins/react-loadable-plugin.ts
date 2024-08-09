@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/naming-convention */
+
 /* eslint-disable no-underscore-dangle */
 
 /**
  * Source: https://github.com/vercel/next.js/blob/canary/packages/next/src/build/babel/plugins/react-loadable-plugin.ts
  */
-import type { NodePath, PluginObj, types as BabelTypes } from '@babel/core';
-
+import type { types as BabelTypes, NodePath, PluginObj } from '@babel/core';
 import { relative as relativePath } from 'path';
 
 export default function ({ types: t }: { types: typeof BabelTypes }): PluginObj {

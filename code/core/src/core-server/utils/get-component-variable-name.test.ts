@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { getComponentVariableName } from './get-component-variable-name';
 
 describe('get-variable-name', () => {

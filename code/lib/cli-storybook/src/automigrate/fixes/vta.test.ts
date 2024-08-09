@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+
 import type { StorybookConfig } from 'storybook/internal/types';
+
 import { vta } from './vta';
 
 const check = async ({

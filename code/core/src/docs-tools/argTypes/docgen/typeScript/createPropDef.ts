@@ -1,8 +1,6 @@
 import type { PropDefFactory } from '../createPropDef';
-
-import { createType } from './createType';
-
 import { createDefaultValue } from './createDefaultValue';
+import { createType } from './createType';
 
 export const createTsPropDef: PropDefFactory = (propName, docgenInfo) => {
   const { description, required } = docgenInfo;

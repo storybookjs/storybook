@@ -1,11 +1,14 @@
 import type { FC } from 'react';
 import React, { Fragment } from 'react';
-import { styled, themes, convert } from 'storybook/internal/theming';
-import { ScrollArea, TabsState, Link, Placeholder } from 'storybook/internal/components';
+
+import { Link, Placeholder, ScrollArea, TabsState } from 'storybook/internal/components';
+import { convert, styled, themes } from 'storybook/internal/theming';
+
 import { useResizeDetector } from 'react-resize-detector';
-import { Result } from './Result';
+
 import type { Test } from '../hoc/provideJestResult';
 import { provideTests as provideJestResult } from '../hoc/provideJestResult';
+import { Result } from './Result';
 
 const StatusTypes = {
   PASSED_TYPE: 'passed',

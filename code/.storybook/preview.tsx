@@ -1,24 +1,26 @@
-import { global } from '@storybook/global';
 import React, { Fragment, useEffect } from 'react';
-import { isChromatic } from './isChromatic';
+
+import type { Channel } from 'storybook/internal/channels';
+import { DocsContext as DocsContextProps, useArgs } from 'storybook/internal/preview-api';
+import type { PreviewWeb } from 'storybook/internal/preview-api';
 import {
   Global,
   ThemeProvider,
-  themes,
-  createReset,
   convert,
+  createReset,
   styled,
+  themes,
   useTheme,
 } from 'storybook/internal/theming';
-import { useArgs, DocsContext as DocsContextProps } from 'storybook/internal/preview-api';
-import type { PreviewWeb } from 'storybook/internal/preview-api';
-import type { ReactRenderer, Decorator } from '@storybook/react';
-import type { Channel } from 'storybook/internal/channels';
 
 import { DocsContext } from '@storybook/blocks';
+import { global } from '@storybook/global';
+import type { Decorator, ReactRenderer } from '@storybook/react';
+
 import { MINIMAL_VIEWPORTS } from '@storybook/addon-viewport';
 
 import { DocsPageWrapper } from '../lib/blocks/src/components';
+import { isChromatic } from './isChromatic';
 
 const { document } = global;
 

@@ -1,13 +1,14 @@
-import * as fs from 'fs-extra';
-import path, { dirname, join, relative } from 'path';
-import type { Options } from 'tsup';
-import type { PackageJson } from 'type-fest';
-import { build } from 'tsup';
 import aliasPlugin from 'esbuild-plugin-alias';
-import { dedent } from 'ts-dedent';
-import slash from 'slash';
-import { exec } from '../utils/exec';
+import * as fs from 'fs-extra';
 import { glob } from 'glob';
+import path, { dirname, join, relative } from 'path';
+import slash from 'slash';
+import { dedent } from 'ts-dedent';
+import type { Options } from 'tsup';
+import { build } from 'tsup';
+import type { PackageJson } from 'type-fest';
+
+import { exec } from '../utils/exec';
 
 /* TYPES */
 
@@ -45,7 +46,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   } = (await fs.readJson(join(cwd, 'package.json'))) as PackageJsonWithBundlerConfig;
 
   if (pre) {
-    await exec(`bun ${pre}`, { cwd });
+    await exec(`jiti ${pre}`, { cwd });
   }
 
   const reset = hasFlag(flags, 'reset');
@@ -160,7 +161,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   );
 
   if (post) {
-    await exec(`bun ${post}`, { cwd }, { debug: true });
+    await exec(`jiti ${post}`, { cwd }, { debug: true });
   }
 
   if (process.env.CI !== 'true') {

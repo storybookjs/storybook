@@ -1,10 +1,13 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+import type { JsPackageManager } from 'storybook/internal/common';
+
 import * as findUp from 'find-up';
+
 import {
   detectBuilderInfo as _getBuilderInfo,
   getNextjsAddonOptions,
 } from './new-frameworks-utils';
-import type { JsPackageManager } from 'storybook/internal/common';
 
 vi.mock('find-up');
 

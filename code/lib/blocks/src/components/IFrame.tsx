@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+
 import { global } from '@storybook/global';
 
 const { window: globalWindow } = global;

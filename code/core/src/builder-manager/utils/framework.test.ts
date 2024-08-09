@@ -1,5 +1,6 @@
 import path from 'node:path';
-import { describe, it, expect } from 'vitest';
+
+import { describe, expect, it } from 'vitest';
 
 import {
   pluckNameFromConfigProperty,

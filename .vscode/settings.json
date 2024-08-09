@@ -24,14 +24,7 @@
   "eslint.options": {
     "cache": true,
     "cacheLocation": ".cache/eslint",
-    "extensions": [
-      ".js",
-      ".jsx",
-      ".mjs",
-      ".json",
-      ".ts",
-      ".tsx"
-    ]
+    "extensions": [".js", ".jsx", ".mjs", ".json", ".ts", ".tsx"]
   },
   "eslint.useESLintClass": true,
   "eslint.validate": [
@@ -42,10 +35,7 @@
     "typescript",
     "typescriptreact"
   ],
-  "eslint.workingDirectories": [
-    "./code",
-    "./scripts"
-  ],
+  "eslint.workingDirectories": ["./code", "./scripts"],
   "files.associations": {
     "*.js": "javascriptreact"
   },
@@ -59,5 +49,6 @@
   "typescript.preferences.preferTypeOnlyAutoImports": true,
   "typescript.preferences.quoteStyle": "single",
   "typescript.preferGoToSourceDefinition": true,
-  "typescript.tsdk": "./code/node_modules/typescript/lib"
+  "typescript.tsdk": "./code/node_modules/typescript/lib",
+  "vitest.workspaceConfig": "./code/vitest.workspace.ts"
 }

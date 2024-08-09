@@ -1,20 +1,23 @@
-import { findPackage } from 'fd-package-json';
-import { detect, getNpmVersion } from 'detect-package-manager';
 import {
-  loadMainConfig,
-  getStorybookInfo,
-  getStorybookConfiguration,
   getProjectRoot,
+  getStorybookConfiguration,
+  getStorybookInfo,
+  loadMainConfig,
 } from '@storybook/core/common';
-import type { StorybookConfig, PackageJson } from '@storybook/core/types';
+import type { PackageJson, StorybookConfig } from '@storybook/core/types';
+
 import { readConfig } from '@storybook/core/csf-tools';
 
-import type { StorybookMetadata, Dependency, StorybookAddon } from './types';
-import { getActualPackageVersion, getActualPackageVersions } from './package-json';
-import { getMonorepoType } from './get-monorepo-type';
-import { cleanPaths } from './sanitize';
-import { getFrameworkInfo } from './get-framework-info';
+import { detect, getNpmVersion } from 'detect-package-manager';
+import { findPackage } from 'fd-package-json';
+
 import { getChromaticVersionSpecifier } from './get-chromatic-version';
+import { getFrameworkInfo } from './get-framework-info';
+import { getMonorepoType } from './get-monorepo-type';
+import { getPortableStoriesFileCount } from './get-portable-stories-usage';
+import { getActualPackageVersion, getActualPackageVersions } from './package-json';
+import { cleanPaths } from './sanitize';
+import type { Dependency, StorybookAddon, StorybookMetadata } from './types';
 
 export const metaFrameworks = {
   next: 'Next',
@@ -205,10 +208,12 @@ export const computeStorybookMetadata = async ({
   }
 
   const storybookVersion = storybookPackages[storybookInfo.frameworkPackage]?.version;
+  const portableStoriesFileCount = await getPortableStoriesFileCount();
 
   return {
     ...metadata,
     ...frameworkInfo,
+    portableStoriesFileCount,
     storybookVersion,
     storybookVersionSpecifier: storybookInfo.version,
     language,

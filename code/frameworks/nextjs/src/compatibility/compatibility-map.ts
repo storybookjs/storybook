@@ -1,6 +1,7 @@
-import type { Configuration as WebpackConfig } from 'webpack';
 import semver from 'semver';
-import { getNextjsVersion, addScopedAlias } from '../utils';
+import type { Configuration as WebpackConfig } from 'webpack';
+
+import { addScopedAlias, getNextjsVersion } from '../utils';
 
 const mapping: Record<string, Record<string, string>> = {
   '<14.1.0': {

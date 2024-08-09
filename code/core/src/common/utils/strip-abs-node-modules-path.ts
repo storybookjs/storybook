@@ -1,4 +1,5 @@
 import path from 'node:path';
+
 import slash from 'slash';
 
 function normalizePath(id: string) {

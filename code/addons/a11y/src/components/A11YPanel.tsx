@@ -1,25 +1,23 @@
 import React, { useCallback, useMemo, useState } from 'react';
 
-import { styled } from 'storybook/internal/theming';
-
 import { ActionBar, ScrollArea } from 'storybook/internal/components';
-import { SyncIcon, CheckIcon } from '@storybook/icons';
-
-import type { AxeResults } from 'axe-core';
 import {
   useChannel,
   useParameter,
   useStorybookApi,
   useStorybookState,
 } from 'storybook/internal/manager-api';
+import { styled } from 'storybook/internal/theming';
 
-import { Report } from './Report';
+import { CheckIcon, SyncIcon } from '@storybook/icons';
 
-import { Tabs } from './Tabs';
+import type { AxeResults } from 'axe-core';
 
-import { useA11yContext } from './A11yContext';
 import { EVENTS } from '../constants';
 import type { A11yParameters } from '../params';
+import { useA11yContext } from './A11yContext';
+import { Report } from './Report';
+import { Tabs } from './Tabs';
 
 export enum RuleType {
   VIOLATION,

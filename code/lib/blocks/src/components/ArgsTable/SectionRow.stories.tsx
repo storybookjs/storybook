@@ -1,8 +1,10 @@
 import type { ComponentProps } from 'react';
 import React from 'react';
+
 import { ResetWrapper } from 'storybook/internal/components';
-import { SectionRow } from './SectionRow';
+
 import { TableWrapper } from './ArgsTable';
+import { SectionRow } from './SectionRow';
 
 export default {
   component: SectionRow,

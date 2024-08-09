@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { global } from '@storybook/global';
+
 import { eventToShortcut, keyToSymbol } from '../lib/shortcut';
 
 const { KeyboardEvent } = global;

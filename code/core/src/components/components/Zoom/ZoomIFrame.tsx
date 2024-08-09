@@ -1,4 +1,4 @@
-import type { RefObject, ReactElement } from 'react';
+import type { ReactElement, RefObject } from 'react';
 import React, { Component } from 'react';
 
 export type IZoomIFrameProps = {

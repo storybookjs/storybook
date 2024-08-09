@@ -1,19 +1,21 @@
 /* eslint-disable no-underscore-dangle */
 import type { Channel } from 'storybook/internal/channels';
-import { addons } from 'storybook/internal/preview-api';
-import type { StoryId } from 'storybook/internal/types';
 import { once } from 'storybook/internal/client-logger';
-import './typings.d.ts';
 import {
   FORCE_REMOUNT,
   SET_CURRENT_STORY,
   STORY_RENDER_PHASE_CHANGED,
 } from 'storybook/internal/core-events';
+import { addons } from 'storybook/internal/preview-api';
+import type { StoryId } from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
+
 import { processError } from '@vitest/utils/error';
 
 import type { Call, CallRef, ControlStates, LogItem, Options, State, SyncPayload } from './types';
 import { CallStates } from './types';
+import './typings.d.ts';
 
 export const EVENTS = {
   CALL: 'storybook/instrumenter/call',

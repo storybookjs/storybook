@@ -1,9 +1,11 @@
-import { beforeEach, expect, vi, it } from 'vitest';
-import type { LogResult } from 'simple-git';
+import { beforeEach, expect, it, vi } from 'vitest';
+
 import ansiRegex from 'ansi-regex';
+import type { LogResult } from 'simple-git';
+
 import { run } from '../label-patches';
-import * as gitClient_ from '../utils/git-client';
 import * as githubInfo_ from '../utils/get-github-info';
+import * as gitClient_ from '../utils/git-client';
 import * as github_ from '../utils/github-client';
 
 vi.mock('uuid');

@@ -1,20 +1,22 @@
 import type { FC } from 'react';
 import React from 'react';
-import pickBy from 'lodash/pickBy.js';
-import { styled } from 'storybook/internal/theming';
-import { transparentize } from 'polished';
-import { includeConditionalArg } from '@storybook/csf';
-import { once } from 'storybook/internal/client-logger';
-import { IconButton, ResetWrapper, Link } from 'storybook/internal/components';
 
+import { once } from 'storybook/internal/client-logger';
+import { IconButton, Link, ResetWrapper } from 'storybook/internal/components';
+import { styled } from 'storybook/internal/theming';
+
+import { includeConditionalArg } from '@storybook/csf';
 import { DocumentIcon, UndoIcon } from '@storybook/icons';
-import { ArgRow } from './ArgRow';
-import { SectionRow } from './SectionRow';
-import type { ArgType, ArgTypes, Args, Globals } from './types';
+
+import pickBy from 'lodash/pickBy.js';
+import { transparentize } from 'polished';
 
 import { EmptyBlock } from '..';
-import { Skeleton } from './Skeleton';
+import { ArgRow } from './ArgRow';
 import { Empty } from './Empty';
+import { SectionRow } from './SectionRow';
+import { Skeleton } from './Skeleton';
+import type { ArgType, ArgTypes, Args, Globals } from './types';
 
 export const TableWrapper = styled.table<{
   compact?: boolean;

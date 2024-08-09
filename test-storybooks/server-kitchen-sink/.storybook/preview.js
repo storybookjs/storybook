@@ -2,7 +2,7 @@ import { withLinks } from '@storybook/addon-links';
 
 export const decorators = [withLinks];
 
-const port = process.env.SERVER_PORT || 1337;
+const port = process.env.STORYBOOK_SERVER_PORT || 1337;
 
 export const parameters = {
   docs: {

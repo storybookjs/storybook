@@ -1,11 +1,12 @@
 import type { Block, Spec } from 'comment-parser';
-import type { RootResult as JSDocType } from 'jsdoc-type-pratt-parser';
 import { parse as parseJSDoc } from 'comment-parser';
+import type { RootResult as JSDocType } from 'jsdoc-type-pratt-parser';
 import {
   parse as parseJSDocType,
-  transform as transformJSDocType,
   stringifyRules,
+  transform as transformJSDocType,
 } from 'jsdoc-type-pratt-parser';
+
 import type { JsDocParam, JsDocReturns } from './docgen';
 
 export interface ExtractedJsDocParam extends JsDocParam {

@@ -1,4 +1,5 @@
 import React from 'react';
+
 import Image from 'next/legacy/image';
 
 import Accessibility from '../../assets/accessibility.svg';

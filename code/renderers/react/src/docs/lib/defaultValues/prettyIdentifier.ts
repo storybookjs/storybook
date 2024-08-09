@@ -1,4 +1,4 @@
-import type { InspectionIdentifiableInferedType, InspectionFunction } from '../inspection';
+import type { InspectionFunction, InspectionIdentifiableInferedType } from '../inspection';
 import { InspectionType } from '../inspection';
 
 export function getPrettyFuncIdentifier(identifier: string, hasArguments: boolean): string {

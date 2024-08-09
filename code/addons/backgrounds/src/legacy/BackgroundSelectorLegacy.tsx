@@ -1,15 +1,17 @@
 import type { FC, ReactElement } from 'react';
-import React, { useState, useCallback, useMemo, memo } from 'react';
-import memoize from 'memoizerific';
+import React, { memo, useCallback, useMemo, useState } from 'react';
 
-import { useParameter, useGlobals } from 'storybook/internal/manager-api';
 import { logger } from 'storybook/internal/client-logger';
-import { IconButton, WithTooltip, TooltipLinkList } from 'storybook/internal/components';
+import { IconButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
+import { useGlobals, useParameter } from 'storybook/internal/manager-api';
 
 import { PhotoIcon } from '@storybook/icons';
+
+import memoize from 'memoizerific';
+
 import { PARAM_KEY as BACKGROUNDS_PARAM_KEY } from '../constants';
-import { ColorIcon } from './ColorIcon';
 import type { Background } from '../types';
+import { ColorIcon } from './ColorIcon';
 import { getBackgroundColorByName } from './getBackgroundColorByName';
 
 export interface DeprecatedGlobalState {

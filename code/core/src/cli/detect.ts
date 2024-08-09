@@ -1,21 +1,24 @@
-import * as fs from 'fs';
-import { findUpSync } from 'find-up';
-import semver from 'semver';
+import { resolve } from 'node:path';
+
+import type { JsPackageManager, PackageJsonWithMaybeDeps } from '@storybook/core/common';
+import { HandledError, commandLog } from '@storybook/core/common';
+
 import { logger } from '@storybook/core/node-logger';
 
-import { resolve } from 'node:path';
+import { findUpSync } from 'find-up';
+import * as fs from 'fs';
 import prompts from 'prompts';
+import semver from 'semver';
+
+import { isNxProject } from './helpers';
 import type { TemplateConfiguration, TemplateMatcher } from './project_types';
 import {
-  ProjectType,
-  supportedTemplates,
-  SupportedLanguage,
-  unsupportedTemplate,
   CoreBuilder,
+  ProjectType,
+  SupportedLanguage,
+  supportedTemplates,
+  unsupportedTemplate,
 } from './project_types';
-import { isNxProject } from './helpers';
-import type { JsPackageManager, PackageJsonWithMaybeDeps } from '@storybook/core/common';
-import { commandLog, HandledError } from '@storybook/core/common';
 
 const viteConfigFiles = ['vite.config.ts', 'vite.config.js', 'vite.config.mjs'];
 const webpackConfigFiles = ['webpack.config.js'];

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import type { Meta, StoryObj } from '@storybook/react';
-import { userEvent, within, expect } from '@storybook/test';
 
-import { Modal } from './Modal';
+import type { Meta, StoryObj } from '@storybook/react';
+import { expect, userEvent, within } from '@storybook/test';
+
 import { Button } from '../Button/Button';
+import { Modal } from './Modal';
 
 type Story = StoryObj<typeof meta>;
 

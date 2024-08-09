@@ -1,6 +1,6 @@
-import * as path from 'path';
-
 import type { Options } from 'storybook/internal/types';
+
+import * as path from 'path';
 
 import { listStories } from './list-stories';
 

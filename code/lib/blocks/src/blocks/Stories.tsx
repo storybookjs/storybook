@@ -1,6 +1,8 @@
 import type { FC, ReactElement } from 'react';
 import React, { useContext } from 'react';
+
 import { styled } from 'storybook/internal/theming';
+
 import { DocsContext } from './DocsContext';
 import { DocsStory } from './DocsStory';
 import { Heading } from './Heading';

@@ -1,19 +1,18 @@
-import { exec } from 'child_process';
-import { remove, pathExists, readJSON } from 'fs-extra';
 import chalk from 'chalk';
-import path from 'path';
+import { exec } from 'child_process';
 import program from 'commander';
-import http from 'http';
-
-import { runServer, parseConfigFile } from 'verdaccio';
-import pLimit from 'p-limit';
-import type { Server } from 'http';
+import { execa, execaSync } from 'execa';
+import { pathExists, readJSON, remove } from 'fs-extra';
 import { mkdir } from 'fs/promises';
-import { PACKS_DIRECTORY } from './utils/constants';
+import http from 'http';
+import type { Server } from 'http';
+import pLimit from 'p-limit';
+import path from 'path';
+import { parseConfigFile, runServer } from 'verdaccio';
 
 import { maxConcurrentTasks } from './utils/concurrency';
+import { PACKS_DIRECTORY } from './utils/constants';
 import { getWorkspaces } from './utils/workspace';
-import { execa, execaSync } from 'execa';
 
 program
   .option('-O, --open', 'keep process open')

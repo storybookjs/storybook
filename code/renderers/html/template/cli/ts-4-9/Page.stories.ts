@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/html';
-import { within, userEvent, expect } from '@storybook/test';
+import { expect, userEvent, within } from '@storybook/test';
+
 import { createPage } from './Page';
 
 const meta = {

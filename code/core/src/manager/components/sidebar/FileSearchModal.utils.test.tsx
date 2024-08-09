@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { extractSeededRequiredArgs } from './FileSearchModal.utils';
+
 import type { ArgTypes } from '@storybook/csf';
+
+import { extractSeededRequiredArgs } from './FileSearchModal.utils';
 
 describe('FileSearchModal.utils', () => {
   describe('extractSeededRequiredArgs', () => {

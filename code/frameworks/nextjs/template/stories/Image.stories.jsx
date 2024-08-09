@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+
 import Image from 'next/image';
 
 import Accessibility from '../../assets/accessibility.svg';

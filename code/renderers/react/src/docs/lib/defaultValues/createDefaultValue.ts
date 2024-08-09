@@ -1,21 +1,21 @@
 import {
+  type PropDefaultValue,
   createSummaryValue,
   isTooLongForDefaultValueSummary,
-  type PropDefaultValue,
 } from 'storybook/internal/docs-tools';
 
-import { FUNCTION_CAPTION, ELEMENT_CAPTION } from '../captions';
+import { ELEMENT_CAPTION, FUNCTION_CAPTION } from '../captions';
+import { generateCode } from '../generateCode';
 import type {
-  InspectionFunction,
-  InspectionResult,
   InspectionElement,
+  InspectionFunction,
   InspectionIdentifiableInferedType,
+  InspectionResult,
 } from '../inspection';
 import { InspectionType, inspectValue } from '../inspection';
 import { isHtmlTag } from '../isHtmlTag';
-import { generateCode } from '../generateCode';
-import { generateObject } from './generateObject';
 import { generateArray } from './generateArray';
+import { generateObject } from './generateObject';
 import { getPrettyIdentifier } from './prettyIdentifier';
 
 function generateFunc({ inferredType, ast }: InspectionResult): PropDefaultValue {

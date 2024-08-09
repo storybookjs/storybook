@@ -1,7 +1,8 @@
-import { global as globalThis } from '@storybook/global';
 import type { PartialStoryFn, PlayFunctionContext } from '@storybook/core/types';
+import { global as globalThis } from '@storybook/global';
+import { userEvent, within } from '@storybook/test';
+
 import { useEffect, useState } from '@storybook/core/preview-api';
-import { within, userEvent } from '@storybook/test';
 
 export default {
   component: globalThis.Components.Button,

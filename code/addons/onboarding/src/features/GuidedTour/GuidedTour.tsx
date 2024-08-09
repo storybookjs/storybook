@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import type { CallBackProps } from 'react-joyride';
-import Joyride, { ACTIONS } from 'react-joyride';
+
 import { useTheme } from 'storybook/internal/theming';
 
-import { Tooltip } from './Tooltip';
+import type { CallBackProps } from 'react-joyride';
+import Joyride, { ACTIONS } from 'react-joyride';
+
 import type { StepDefinition, StepKey } from '../../Onboarding';
+import { Tooltip } from './Tooltip';
 
 export function GuidedTour({
   step,

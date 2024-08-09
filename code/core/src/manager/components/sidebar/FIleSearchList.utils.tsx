@@ -1,6 +1,7 @@
-import type { Virtualizer } from '@tanstack/react-virtual';
 import { useEffect } from 'react';
 import { flushSync } from 'react-dom';
+
+import type { Virtualizer } from '@tanstack/react-virtual';
 
 interface UseArrowKeyNavigationProps {
   rowVirtualizer: Virtualizer<HTMLDivElement, Element>;

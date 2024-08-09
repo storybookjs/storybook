@@ -1,7 +1,8 @@
-import { ThemeProvider, ensure, themes } from '@storybook/core/theming';
-
 import type { ComponentProps } from 'react';
 import React from 'react';
+
+import { ThemeProvider, ensure, themes } from '@storybook/core/theming';
+
 import { SyntaxHighlighter } from './lazy-syntaxhighlighter';
 
 export default {

@@ -1,4 +1,5 @@
 import { styled } from 'storybook/internal/theming';
+
 import { opacify } from 'polished';
 
 export const Action = styled.div({

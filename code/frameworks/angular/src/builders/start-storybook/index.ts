@@ -1,3 +1,8 @@
+import { getEnvConfig, versions } from 'storybook/internal/common';
+import { buildDevStandalone, withTelemetry } from 'storybook/internal/core-server';
+import { addToGlobalContext } from 'storybook/internal/telemetry';
+import { CLIOptions } from 'storybook/internal/types';
+
 import {
   BuilderContext,
   BuilderHandlerFn,
@@ -6,25 +11,21 @@ import {
   createBuilder,
   targetFromTargetString,
 } from '@angular-devkit/architect';
-import { JsonObject } from '@angular-devkit/core';
 import { BrowserBuilderOptions, StylePreprocessorOptions } from '@angular-devkit/build-angular';
-import { from, Observable, of } from 'rxjs';
-import { map, switchMap, mapTo } from 'rxjs/operators';
-import { sync as findUpSync } from 'find-up';
-import { findPackageSync } from 'fd-package-json';
-
-import { CLIOptions } from 'storybook/internal/types';
-import { getEnvConfig, versions } from 'storybook/internal/common';
-import { addToGlobalContext } from 'storybook/internal/telemetry';
-import { buildDevStandalone, withTelemetry } from 'storybook/internal/core-server';
 import {
   AssetPattern,
   SourceMapUnion,
   StyleElement,
 } from '@angular-devkit/build-angular/src/builders/browser/schema';
-import { StandaloneOptions } from '../utils/standalone-options';
+import { JsonObject } from '@angular-devkit/core';
+import { findPackageSync } from 'fd-package-json';
+import { sync as findUpSync } from 'find-up';
+import { Observable, from, of } from 'rxjs';
+import { map, mapTo, switchMap } from 'rxjs/operators';
+
+import { errorSummary, printErrorDetails } from '../utils/error-handler';
 import { runCompodoc } from '../utils/run-compodoc';
-import { printErrorDetails, errorSummary } from '../utils/error-handler';
+import { StandaloneOptions } from '../utils/standalone-options';
 
 addToGlobalContext('cliVersion', versions.storybook);
 

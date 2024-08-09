@@ -1,13 +1,15 @@
 // @vitest-environment happy-dom
 
 /* eslint-disable no-underscore-dangle */
-import { addons, mockChannel } from 'storybook/internal/preview-api';
-import { describe, beforeEach, afterEach, it, expect, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import {
   FORCE_REMOUNT,
   SET_CURRENT_STORY,
   STORY_RENDER_PHASE_CHANGED,
 } from 'storybook/internal/core-events';
+import { addons, mockChannel } from 'storybook/internal/preview-api';
+
 import { global } from '@storybook/global';
 
 import { EVENTS, Instrumenter } from './instrumenter';

@@ -1,10 +1,12 @@
 // @TODO: use addon-interactions and remove the rule disable above
 import React from 'react';
-import type { Meta, StoryObj, StoryFn } from '@storybook/react';
+
 import { ThemeProvider, useTheme } from '@storybook/core/theming';
 import type { Theme } from '@storybook/core/theming';
-import { action } from '@storybook/addon-actions';
+import type { Meta, StoryFn, StoryObj } from '@storybook/react';
 import { screen } from '@storybook/test';
+
+import { action } from '@storybook/addon-actions';
 
 import { Heading } from './Heading';
 

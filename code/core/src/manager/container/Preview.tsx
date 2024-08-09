@@ -1,24 +1,25 @@
-import { global } from '@storybook/global';
-import type { Addon_BaseType, Addon_Collection, Addon_WrapperType } from '@storybook/core/types';
-import { Addon_TypesEnum } from '@storybook/core/types';
 import type { ComponentProps } from 'react';
 import React from 'react';
 
-import memoizerific from 'memoizerific';
+import type { Addon_BaseType, Addon_Collection, Addon_WrapperType } from '@storybook/core/types';
+import { Addon_TypesEnum } from '@storybook/core/types';
+import { global } from '@storybook/global';
 
 import type { State, StoriesHash } from '@storybook/core/manager-api';
 import { Consumer } from '@storybook/core/manager-api';
 
+import memoizerific from 'memoizerific';
+
 import { Preview, createCanvasTab, filterTabs } from '../components/preview/Preview';
-import { defaultWrappers } from '../components/preview/Wrappers';
 import { filterToolsSide, fullScreenTool } from '../components/preview/Toolbar';
+import { defaultWrappers } from '../components/preview/Wrappers';
+import { addonsTool } from '../components/preview/tools/addons';
+import { copyTool } from '../components/preview/tools/copy';
+import { ejectTool } from '../components/preview/tools/eject';
 import { menuTool } from '../components/preview/tools/menu';
 import { remountTool } from '../components/preview/tools/remount';
 import { zoomTool } from '../components/preview/tools/zoom';
 import type { PreviewProps } from '../components/preview/utils/types';
-import { addonsTool } from '../components/preview/tools/addons';
-import { copyTool } from '../components/preview/tools/copy';
-import { ejectTool } from '../components/preview/tools/eject';
 
 const defaultTabs = [createCanvasTab()];
 const defaultTools = [menuTool, remountTool, zoomTool];

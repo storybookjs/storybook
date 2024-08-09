@@ -1,10 +1,11 @@
-import { resolve, posix, sep } from 'path';
-import { readJSON } from 'fs-extra';
-import prompts from 'prompts';
-import program from 'commander';
 import chalk from 'chalk';
-import windowSize from 'window-size';
+import program from 'commander';
 import { execaCommand } from 'execa';
+import { readJSON } from 'fs-extra';
+import { posix, resolve, sep } from 'path';
+import prompts from 'prompts';
+import windowSize from 'window-size';
+
 import { getWorkspaces } from './utils/workspace';
 
 async function run() {

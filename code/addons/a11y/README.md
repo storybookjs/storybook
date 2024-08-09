@@ -168,7 +168,7 @@ You can override these options [at story level too](https://storybook.js.org/doc
 
 ```js
 import React from 'react';
-import { storiesOf, addDecorator, addParameters } from '@storybook/react';
+import { addDecorator, addParameters, storiesOf } from '@storybook/react';
 
 export default {
   title: 'button',

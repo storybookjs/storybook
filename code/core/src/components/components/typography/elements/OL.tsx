@@ -1,6 +1,7 @@
 import { styled } from '@storybook/core/theming';
 import type { Interpolation } from '@storybook/core/theming';
-import { withReset, withMargin } from '../lib/common';
+
+import { withMargin, withReset } from '../lib/common';
 
 const listCommon: Interpolation = {
   paddingLeft: 30,

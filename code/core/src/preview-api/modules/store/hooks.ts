@@ -1,17 +1,17 @@
 import {
   HooksContext,
   applyHooks,
-  useMemo,
+  useArgs,
   useCallback,
+  useChannel,
+  useEffect,
+  useGlobals,
+  useMemo,
+  useParameter,
+  useReducer,
   useRef,
   useState,
-  useReducer,
-  useEffect,
-  useChannel,
   useStoryContext,
-  useParameter,
-  useArgs,
-  useGlobals,
 } from '../addons';
 
 export {

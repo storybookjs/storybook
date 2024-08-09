@@ -1,9 +1,12 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+import type { JsPackageManager } from 'storybook/internal/common';
 import type { StorybookConfig } from 'storybook/internal/types';
+
 import * as findUp from 'find-up';
+
 import * as rendererHelpers from '../helpers/detectRenderer';
 import { newFrameworks } from './new-frameworks';
-import type { JsPackageManager } from 'storybook/internal/common';
 
 vi.mock('find-up');
 vi.mock('../helpers/detectRenderer', async (importOriginal) => ({

@@ -1,13 +1,15 @@
 /* eslint-disable react/destructuring-assignment */
 import React, { useContext } from 'react';
 import type { FC } from 'react';
+
 import type { ModuleExport, ModuleExports } from 'storybook/internal/types';
+
 import type { Layout, PreviewProps as PurePreviewProps } from '../components';
 import { Preview as PurePreview } from '../components';
 import { DocsContext } from './DocsContext';
-import { SourceContext } from './SourceContainer';
 import type { SourceProps } from './Source';
 import { useSourceProps } from './Source';
+import { SourceContext } from './SourceContainer';
 import type { StoryProps } from './Story';
 import { Story } from './Story';
 import { useOf } from './useOf';

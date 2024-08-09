@@ -1,10 +1,12 @@
 import React from 'react';
-import type { StoryObj, Meta } from '@storybook/react';
-import { CallStates } from '@storybook/instrumenter';
-import { styled } from 'storybook/internal/theming';
-import { userEvent, within, waitFor, expect } from '@storybook/test';
-import { isChromatic } from '../../../../.storybook/isChromatic';
 
+import { styled } from 'storybook/internal/theming';
+
+import { CallStates } from '@storybook/instrumenter';
+import type { Meta, StoryObj } from '@storybook/react';
+import { expect, userEvent, waitFor, within } from '@storybook/test';
+
+import { isChromatic } from '../../../../.storybook/isChromatic';
 import { getCalls, getInteractions } from '../mocks';
 import { InteractionsPanel } from './InteractionsPanel';
 import SubnavStories from './Subnav.stories';

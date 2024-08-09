@@ -1,6 +1,7 @@
-import * as templates from '../code/lib/cli-storybook/src/sandbox-templates';
 import * as fs from 'fs';
 import * as path from 'path';
+
+import * as templates from '../code/lib/cli-storybook/src/sandbox-templates';
 
 // @ts-expect-error somehow TS thinks there is a default export
 const { allTemplates, merged, daily, normal } = (templates.default ||

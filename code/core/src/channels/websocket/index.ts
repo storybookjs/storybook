@@ -1,11 +1,12 @@
 /// <reference path="../../typings.d.ts" />
-
 import { global } from '@storybook/global';
+
+import * as EVENTS from '@storybook/core/core-events';
+
 import { isJSON, parse, stringify } from 'telejson';
 import invariant from 'tiny-invariant';
 
-import * as EVENTS from '@storybook/core/core-events';
-import type { ChannelTransport, ChannelHandler, Config } from '../types';
+import type { ChannelHandler, ChannelTransport, Config } from '../types';
 
 const { WebSocket } = global;
 

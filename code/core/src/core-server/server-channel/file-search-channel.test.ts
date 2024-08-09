@@ -1,13 +1,14 @@
 // @vitest-environment happy-dom
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ChannelTransport } from '@storybook/core/channels';
 import { Channel } from '@storybook/core/channels';
-import type { RequestData, FileComponentSearchRequestPayload } from '@storybook/core/core-events';
+
+import type { FileComponentSearchRequestPayload, RequestData } from '@storybook/core/core-events';
 import {
-  FILE_COMPONENT_SEARCH_RESPONSE,
   FILE_COMPONENT_SEARCH_REQUEST,
+  FILE_COMPONENT_SEARCH_RESPONSE,
 } from '@storybook/core/core-events';
-import { beforeEach, describe, expect, vi, it } from 'vitest';
 
 import { initFileSearchChannel } from './file-search-channel';
 

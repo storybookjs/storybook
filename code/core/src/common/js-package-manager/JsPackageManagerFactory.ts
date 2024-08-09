@@ -1,14 +1,13 @@
 import path, { parse, relative } from 'node:path';
+
 import { sync as spawnSync } from 'cross-spawn';
 import { findUpSync } from 'find-up';
 
+import type { JsPackageManager, PackageManagerName } from './JsPackageManager';
 import { NPMProxy } from './NPMProxy';
 import { PNPMProxy } from './PNPMProxy';
-
-import type { JsPackageManager, PackageManagerName } from './JsPackageManager';
-
-import { Yarn2Proxy } from './Yarn2Proxy';
 import { Yarn1Proxy } from './Yarn1Proxy';
+import { Yarn2Proxy } from './Yarn2Proxy';
 
 const NPM_LOCKFILE = 'package-lock.json';
 const PNPM_LOCKFILE = 'pnpm-lock.yaml';

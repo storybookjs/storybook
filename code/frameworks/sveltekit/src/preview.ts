@@ -1,6 +1,9 @@
 import type { Decorator } from '@storybook/svelte';
+
 import { action } from '@storybook/addon-actions';
+
 import { onMount } from 'svelte';
+
 import { setAfterNavigateArgument } from './mocks/app/navigation';
 import { setNavigating, setPage, setUpdated } from './mocks/app/stores';
 import type { HrefConfig, NormalizedHrefConfig, SvelteKitParameters } from './types';

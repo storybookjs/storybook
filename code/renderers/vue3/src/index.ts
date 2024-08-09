@@ -1,5 +1,4 @@
 /// <reference types="webpack-env" />
-
 import './globals';
 
 export { setup } from './render';

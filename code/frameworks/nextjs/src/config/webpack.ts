@@ -1,7 +1,7 @@
-import type { Configuration as WebpackConfig } from 'webpack';
-
 import type { NextConfig } from 'next';
+import type { Configuration as WebpackConfig } from 'webpack';
 import { DefinePlugin } from 'webpack';
+
 import { addScopedAlias, resolveNextConfig } from '../utils';
 
 const tryResolve = (path: string) => {

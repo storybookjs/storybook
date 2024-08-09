@@ -1,5 +1,6 @@
 import type { FC, ReactNode } from 'react';
 import React from 'react';
+
 import { styled } from '@storybook/core/theming';
 
 interface MobileAddonsDrawerProps {

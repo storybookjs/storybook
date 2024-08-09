@@ -1,5 +1,6 @@
-import { StoryObj, Meta, moduleMetadata } from '@storybook/angular';
-import { WithoutSelectorComponent, WITHOUT_SELECTOR_DATA } from './without-selector.component';
+import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
+
+import { WITHOUT_SELECTOR_DATA, WithoutSelectorComponent } from './without-selector.component';
 
 const meta: Meta<WithoutSelectorComponent> = {
   // title: 'Basics / Component / without selector',

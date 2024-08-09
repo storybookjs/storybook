@@ -1,10 +1,11 @@
 // @vitest-environment happy-dom
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { Channel } from '@storybook/core/channels';
 import type { PreparedStory, Renderer, StoryContext, StoryIndexEntry } from '@storybook/core/types';
+
 import type { StoryStore } from '../../store';
 import { PREPARE_ABORTED } from './Render';
-
 import { StoryRender } from './StoryRender';
 
 const entry = {

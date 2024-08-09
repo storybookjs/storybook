@@ -1,22 +1,25 @@
-import * as chai from 'chai';
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import * as matchers from '@testing-library/jest-dom/matchers';
+import type { TestingLibraryMatchers } from '@testing-library/jest-dom/matchers';
+
 import type {
   AsymmetricMatchersContaining,
   ExpectStatic,
   JestAssertion,
-  MatchersObject,
   MatcherState,
+  MatchersObject,
 } from '@vitest/expect';
 import {
-  getState,
   GLOBAL_EXPECT,
   JestAsymmetricMatchers,
   JestChaiExpect,
   JestExtend,
+  getState,
   setState,
 } from '@vitest/expect';
-import * as matchers from '@testing-library/jest-dom/matchers';
+import * as chai from 'chai';
+
 import type { PromisifyObject } from './utils';
-import type { TestingLibraryMatchers } from '@testing-library/jest-dom/matchers';
 
 type Matchers<T> = PromisifyObject<JestAssertion<T>> &
   TestingLibraryMatchers<ReturnType<ExpectStatic['stringContaining']>, Promise<void>>;
@@ -65,7 +68,9 @@ export function createExpect() {
   // @ts-expect-error chai.extend is not typed
   expect.extend = (expects: MatchersObject) => chai.expect.extend(expect, expects);
 
+  // @ts-ignore tsup borks here for some reason
   expect.soft = (...args) => {
+    // @ts-ignore tsup borks here for some reason
     const assert = expect(...args);
     expect.setState({
       soft: true,
@@ -73,6 +78,7 @@ export function createExpect() {
     return assert;
   };
 
+  // @ts-ignore tsup borks here for some reason
   expect.unreachable = (message?: string): never => {
     chai.assert.fail(`expected${message ? ` "${message}" ` : ' '}not to be reached`);
   };
@@ -123,7 +129,7 @@ export function createExpect() {
   return expect as unknown as Expect;
 }
 
-const expect = createExpect();
+const expect: Expect = createExpect();
 
 // @vitest/expect expects this to be set
 Object.defineProperty(globalThis, GLOBAL_EXPECT, {

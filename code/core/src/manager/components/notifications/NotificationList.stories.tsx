@@ -1,9 +1,10 @@
 import React from 'react';
+
 import { LocationProvider } from '@storybook/core/router';
 import type { Meta, StoryObj } from '@storybook/react';
 
-import { NotificationList } from './NotificationList';
 import * as itemStories from './NotificationItem.stories';
+import { NotificationList } from './NotificationList';
 
 const meta = {
   component: NotificationList,

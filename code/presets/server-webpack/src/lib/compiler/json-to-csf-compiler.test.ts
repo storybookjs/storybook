@@ -1,7 +1,9 @@
-import { describe, it, expect } from 'vitest';
-import path from 'path';
+import { describe, expect, it } from 'vitest';
+
 import fs from 'fs-extra';
+import path from 'path';
 import YAML from 'yaml';
+
 import { compileCsfModule } from '.';
 
 async function generate(filePath: string) {

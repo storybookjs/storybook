@@ -1,21 +1,20 @@
 import type { FC, MutableRefObject } from 'react';
-import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+import { styled } from '@storybook/core/theming';
+
 import type { State } from '@storybook/core/manager-api';
 import { useStorybookApi, useStorybookState } from '@storybook/core/manager-api';
-import { styled } from '@storybook/core/theming';
+
 import { transparentize } from 'polished';
 
-import { AuthBlock, ErrorBlock, LoaderBlock, EmptyBlock } from './RefBlocks';
-
-import { RefIndicator } from './RefIndicator';
-
-import { Tree } from './Tree';
-
-import { DEFAULT_REF_ID } from './Sidebar';
-import type { Highlight, RefType } from './types';
-
 import { getStateType } from '../../utils/tree';
+import { AuthBlock, EmptyBlock, ErrorBlock, LoaderBlock } from './RefBlocks';
+import { RefIndicator } from './RefIndicator';
+import { DEFAULT_REF_ID } from './Sidebar';
+import { Tree } from './Tree';
 import { CollapseIcon } from './components/CollapseIcon';
+import type { Highlight, RefType } from './types';
 
 export interface RefProps {
   isLoading: boolean;

@@ -1,5 +1,6 @@
 import type { FunctionComponent, ReactNode } from 'react';
 import React from 'react';
+
 import { deprecate } from 'storybook/internal/client-logger';
 
 import { Subtitle as PureSubtitle } from '../components';

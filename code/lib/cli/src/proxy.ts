@@ -1,5 +1,6 @@
-import { spawn } from 'child_process';
 import { versions } from '@storybook/core/common';
+
+import { spawn } from 'child_process';
 
 const args = process.argv.slice(2);
 

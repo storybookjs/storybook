@@ -1,8 +1,10 @@
-import type { BuilderOptions, StorybookConfigVite } from '@storybook/builder-vite';
 import type {
   CompatibleString,
   StorybookConfig as StorybookConfigBase,
 } from 'storybook/internal/types';
+
+import type { BuilderOptions, StorybookConfigVite } from '@storybook/builder-vite';
+
 import type { ComponentMeta } from 'vue-component-meta';
 import type { ComponentDoc } from 'vue-docgen-api';
 

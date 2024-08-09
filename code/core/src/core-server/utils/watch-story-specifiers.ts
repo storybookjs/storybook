@@ -1,10 +1,11 @@
-import Watchpack from 'watchpack';
-import slash from 'slash';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import type { NormalizedStoriesSpecifier, Path } from '@storybook/core/types';
 import { commonGlobOptions } from '@storybook/core/common';
+import type { NormalizedStoriesSpecifier, Path } from '@storybook/core/types';
+
+import slash from 'slash';
+import Watchpack from 'watchpack';
 
 const isDirectory = (directory: Path) => {
   try {

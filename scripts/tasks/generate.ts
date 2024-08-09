@@ -1,9 +1,9 @@
 /* eslint-disable import/extensions */
 import { pathExists, remove } from 'fs-extra';
 import { join } from 'path';
-import { REPROS_DIRECTORY } from '../utils/constants';
 
 import type { Task } from '../task';
+import { REPROS_DIRECTORY } from '../utils/constants';
 
 const logger = console;
 

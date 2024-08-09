@@ -1,10 +1,11 @@
+import { getProjectRoot } from 'storybook/internal/common';
+
+import type { NextConfig } from 'next';
+import { PHASE_DEVELOPMENT_SERVER } from 'next/constants';
+import loadConfig from 'next/dist/server/config';
 import path from 'path';
 import { DefinePlugin } from 'webpack';
-import { PHASE_DEVELOPMENT_SERVER } from 'next/constants';
 import type { Configuration as WebpackConfig } from 'webpack';
-import type { NextConfig } from 'next';
-import loadConfig from 'next/dist/server/config';
-import { getProjectRoot } from 'storybook/internal/common';
 
 export const configureRuntimeNextjsVersionResolution = (baseConfig: WebpackConfig): void => {
   baseConfig.plugins?.push(

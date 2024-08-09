@@ -1,7 +1,9 @@
-import chalk from 'chalk';
-import boxen from 'boxen';
-import { dedent } from 'ts-dedent';
 import { type InstallationMetadata } from 'storybook/internal/common';
+
+import boxen from 'boxen';
+import chalk from 'chalk';
+import { dedent } from 'ts-dedent';
+
 import type { FixSummary } from '../types';
 import { FixStatus } from '../types';
 

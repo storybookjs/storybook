@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { resolve } from 'path';
-import type { Configuration, RuleSetCondition, RuleSetRule } from 'webpack';
-import semver from 'semver';
 import type { PluginItem, TransformOptions } from '@babel/core';
+import { resolve } from 'path';
+import semver from 'semver';
+import type { Configuration, RuleSetCondition, RuleSetRule } from 'webpack';
+
 import type { PluginOptions } from '../types';
 
 type RuleSetConditions = RuleSetCondition[];

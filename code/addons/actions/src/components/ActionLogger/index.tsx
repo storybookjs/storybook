@@ -1,13 +1,14 @@
 import type { ElementRef, ReactNode } from 'react';
-import React, { forwardRef, Fragment, useEffect, useRef } from 'react';
+import React, { Fragment, forwardRef, useEffect, useRef } from 'react';
+
+import { ActionBar, ScrollArea } from 'storybook/internal/components';
 import type { Theme } from 'storybook/internal/theming';
 import { styled, withTheme } from 'storybook/internal/theming';
 
 import { Inspector } from 'react-inspector';
-import { ActionBar, ScrollArea } from 'storybook/internal/components';
 
-import { Action, Counter, InspectorContainer } from './style';
 import type { ActionDisplay } from '../../models';
+import { Action, Counter, InspectorContainer } from './style';
 
 const UnstyledWrapped = forwardRef<HTMLDivElement, { children: ReactNode; className?: string }>(
   ({ children, className }, ref) => (

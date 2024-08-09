@@ -1,12 +1,12 @@
-import { useMemo, useEffect } from 'storybook/internal/preview-api';
+import { useEffect, useMemo } from 'storybook/internal/preview-api';
 import type {
   Renderer,
-  PartialStoryFn as StoryFunction,
   StoryContext,
+  PartialStoryFn as StoryFunction,
 } from 'storybook/internal/types';
 
-import { clearStyles, addGridStyle } from '../utils';
 import { PARAM_KEY as BACKGROUNDS_PARAM_KEY } from '../constants';
+import { addGridStyle, clearStyles } from '../utils';
 
 export const withGrid = (StoryFn: StoryFunction<Renderer>, context: StoryContext<Renderer>) => {
   const { globals, parameters } = context;

@@ -1,9 +1,10 @@
 /* eslint-disable no-underscore-dangle */
 import type { Context } from 'react';
 import { createContext } from 'react';
-import { global } from '@storybook/global';
 
 import type { DocsContextProps, Renderer } from 'storybook/internal/types';
+
+import { global } from '@storybook/global';
 
 export type { DocsContextProps };
 

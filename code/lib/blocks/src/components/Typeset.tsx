@@ -1,8 +1,11 @@
 import type { FC } from 'react';
 import React from 'react';
-import { transparentize } from 'polished';
-import { styled } from 'storybook/internal/theming';
+
 import { withReset } from 'storybook/internal/components';
+import { styled } from 'storybook/internal/theming';
+
+import { transparentize } from 'polished';
+
 import { getBlockBackgroundStyle } from './BlockBackgroundStyles';
 
 const Label = styled.div(({ theme }) => ({

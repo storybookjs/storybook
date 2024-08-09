@@ -1,10 +1,10 @@
 import { existsSync } from 'fs';
 import { join, resolve } from 'path';
-
 import slash from 'slash';
+
+import { getInterpretedFile } from '../../code/core/src/common';
 import type { ConfigFile } from '../../code/core/src/csf-tools';
 import { readConfig } from '../../code/core/src/csf-tools';
-import { getInterpretedFile } from '../../code/core/src/common';
 
 export async function readMainConfig({ cwd }: { cwd: string }) {
   const configDir = join(cwd, '.storybook');

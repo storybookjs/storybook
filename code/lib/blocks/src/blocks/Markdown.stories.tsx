@@ -1,7 +1,7 @@
 import { dedent } from 'ts-dedent';
-import { Markdown as MarkdownComponent } from './Markdown';
 
 import mdContent from '../examples/Markdown-content.md?raw';
+import { Markdown as MarkdownComponent } from './Markdown';
 
 export default {
   component: MarkdownComponent,

@@ -1,4 +1,5 @@
 import { Meta, StoryObj } from '@storybook/angular';
+
 import { OnPushBoxComponent } from './on-push-box.component';
 
 const meta: Meta<OnPushBoxComponent> = {

@@ -1,9 +1,11 @@
-import { dedent } from 'ts-dedent';
-import semver from 'semver';
+import { AngularJSON, isNxProject } from 'storybook/internal/cli';
+
 import chalk from 'chalk';
-import type { Fix } from '../types';
-import { isNxProject, AngularJSON } from 'storybook/internal/cli';
+import semver from 'semver';
+import { dedent } from 'ts-dedent';
+
 import { getFrameworkPackageName } from '../helpers/mainConfigFile';
+import type { Fix } from '../types';
 
 interface AngularBuildersMultiprojectRunOptions {}
 

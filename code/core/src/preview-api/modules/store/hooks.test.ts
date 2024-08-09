@@ -1,29 +1,31 @@
-import { describe, beforeEach, it, expect, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { DecoratorFunction, StoryContext } from '@storybook/core/types';
+
 import {
   FORCE_RE_RENDER,
-  STORY_RENDERED,
-  UPDATE_STORY_ARGS,
   RESET_STORY_ARGS,
+  STORY_RENDERED,
   UPDATE_GLOBALS,
+  UPDATE_STORY_ARGS,
 } from '@storybook/core/core-events';
-import type { DecoratorFunction, StoryContext } from '@storybook/core/types';
+
 import {
+  HooksContext,
   addons,
   applyHooks,
-  useEffect,
-  useMemo,
+  useArgs,
   useCallback,
+  useChannel,
+  useEffect,
+  useGlobals,
+  useMemo,
+  useParameter,
+  useReducer,
   useRef,
   useState,
-  useReducer,
-  useChannel,
-  useParameter,
   useStoryContext,
-  HooksContext,
-  useArgs,
-  useGlobals,
 } from '../addons';
-
 import { defaultDecorateStory } from './decorators';
 
 vi.mock('@storybook/core/client-logger', () => ({

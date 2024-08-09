@@ -2,13 +2,14 @@ import type {
   AnchorHTMLAttributes,
   ButtonHTMLAttributes,
   DetailedHTMLProps,
-  ForwardedRef,
   ForwardRefExoticComponent,
+  ForwardedRef,
   ReactElement,
   RefAttributes,
 } from 'react';
 import React, { forwardRef } from 'react';
-import { styled, isPropValid } from '@storybook/core/theming';
+
+import { isPropValid, styled } from '@storybook/core/theming';
 
 interface ButtonProps
   extends DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement> {

@@ -1,4 +1,5 @@
-import { it, expect, vi } from 'vitest';
+import { expect, it, vi } from 'vitest';
+
 import { importPipeline } from './importPipeline';
 
 const createGate = (): [Promise<any | undefined>, (_?: any) => void] => {

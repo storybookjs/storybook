@@ -1,9 +1,10 @@
 import { logger } from '@storybook/core/node-logger';
-import type { EventType, Payload, Options, TelemetryData } from './types';
-import { getStorybookMetadata } from './storybook-metadata';
-import { sendTelemetry } from './telemetry';
+
 import { notify } from './notify';
 import { sanitizeError } from './sanitize';
+import { getStorybookMetadata } from './storybook-metadata';
+import { sendTelemetry } from './telemetry';
+import type { EventType, Options, Payload, TelemetryData } from './types';
 
 export { oneWayHash } from './one-way-hash';
 

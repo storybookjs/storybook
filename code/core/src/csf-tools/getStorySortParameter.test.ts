@@ -1,5 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import { dedent } from 'ts-dedent';
+
 import { getStorySortParameter } from './getStorySortParameter';
 
 describe('getStorySortParameter', () => {

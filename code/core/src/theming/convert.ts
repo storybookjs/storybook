@@ -1,10 +1,11 @@
 import { opacify } from 'polished';
-import { background, typography, color } from './base';
-import type { Color, StorybookTheme, ThemeVars, ThemeVarsColors } from './types';
-import { easing, animation } from './animation';
-import { create as createSyntax, chromeLight, chromeDark } from './modules/syntax';
-import { getPreferredColorScheme } from './utils';
+
+import { animation, easing } from './animation';
+import { background, color, typography } from './base';
 import { themes } from './create';
+import { chromeDark, chromeLight, create as createSyntax } from './modules/syntax';
+import type { Color, StorybookTheme, ThemeVars, ThemeVarsColors } from './types';
+import { getPreferredColorScheme } from './utils';
 
 const lightSyntaxColors = {
   green1: '#008000',

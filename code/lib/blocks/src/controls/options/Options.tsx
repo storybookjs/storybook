@@ -1,13 +1,10 @@
 import type { FC } from 'react';
 import React from 'react';
 
+import type { ControlProps, Options, OptionsConfig, OptionsSelection } from '../types';
 import { CheckboxControl } from './Checkbox';
-
 import { RadioControl } from './Radio';
-
 import { SelectControl } from './Select';
-
-import type { ControlProps, OptionsSelection, OptionsConfig, Options } from '../types';
 
 /**
  * Options can accept `options` in two formats:

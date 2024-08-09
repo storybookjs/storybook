@@ -1,11 +1,13 @@
 // @vitest-environment happy-dom
-
-import { vi, describe, afterEach, it, expect } from 'vitest';
-import type { AnchorHTMLAttributes } from 'react';
-import React from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ThemeProvider, themes, convert } from '@storybook/core/theming';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import type { AnchorHTMLAttributes } from 'react';
+import React from 'react';
+
+import { ThemeProvider, convert, themes } from '@storybook/core/theming';
+
 import type { LinkProps } from './link';
 import { Link } from './link';
 

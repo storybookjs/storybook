@@ -1,11 +1,13 @@
-import { describe, it, expect } from 'vitest';
-import type { StoryIndexV2, StoryIndexV3, API_PreparedStoryIndex } from '@storybook/core/types';
+import { describe, expect, it } from 'vitest';
+
+import type { API_PreparedStoryIndex, StoryIndexV2, StoryIndexV3 } from '@storybook/core/types';
+
+import { mockEntries } from '../tests/mockStoriesEntries';
 import {
   transformStoryIndexV2toV3,
   transformStoryIndexV3toV4,
   transformStoryIndexV4toV5,
 } from './stories';
-import { mockEntries } from '../tests/mockStoriesEntries';
 
 const baseV2: StoryIndexV2['stories'][0] = {
   id: '1',

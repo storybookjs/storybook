@@ -1,9 +1,12 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { ManagerContext } from '@storybook/core/manager-api';
 import React, { useEffect } from 'react';
+
+import type { Meta, StoryObj } from '@storybook/react';
 import { within } from '@storybook/test';
-import { MobileAbout } from './MobileAbout';
+
+import { ManagerContext } from '@storybook/core/manager-api';
+
 import { LayoutProvider, useLayout } from '../../layout/LayoutProvider';
+import { MobileAbout } from './MobileAbout';
 
 /**
  * A helper component to open the about page via the MobileLayoutContext

@@ -1,13 +1,14 @@
+import type { CompatibleString } from 'storybook/internal/types';
+
+import type {
+  BuilderOptions,
+  StorybookConfigWebpack,
+  TypescriptOptions as TypescriptOptionsBuilder,
+} from '@storybook/builder-webpack5';
 import type {
   StorybookConfig as StorybookConfigBase,
   TypescriptOptions as TypescriptOptionsReact,
 } from '@storybook/core-webpack';
-import type {
-  StorybookConfigWebpack,
-  BuilderOptions,
-  TypescriptOptions as TypescriptOptionsBuilder,
-} from '@storybook/builder-webpack5';
-import type { CompatibleString } from 'storybook/internal/types';
 
 type FrameworkName = CompatibleString<'@storybook/ember-webpack5'>;
 type BuilderName = CompatibleString<'@storybook/builder-webpack5'>;

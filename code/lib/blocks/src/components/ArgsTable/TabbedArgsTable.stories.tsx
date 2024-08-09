@@ -1,5 +1,5 @@
+import { Compact, Normal, Sections } from './ArgsTable.stories';
 import { TabbedArgsTable } from './TabbedArgsTable';
-import { Normal, Compact, Sections } from './ArgsTable.stories';
 
 export default {
   component: TabbedArgsTable,

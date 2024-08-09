@@ -1,7 +1,9 @@
 /* eslint-disable no-underscore-dangle */
 import type { CsfFile } from '@storybook/core/csf-tools';
-import * as t from '@babel/types';
+
 import bt from '@babel/traverse';
+import * as t from '@babel/types';
+
 import { SaveStoryError } from './utils';
 
 // @ts-expect-error (needed due to it's use of `exports.default`)

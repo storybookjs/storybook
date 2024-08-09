@@ -1,12 +1,13 @@
 import React, { Component } from 'react';
+
+import { STORY_CHANGED } from 'storybook/internal/core-events';
+import type { API } from 'storybook/internal/manager-api';
+
 import { dequal as deepEqual } from 'dequal';
 
-import type { API } from 'storybook/internal/manager-api';
-import { STORY_CHANGED } from 'storybook/internal/core-events';
-
 import { ActionLogger as ActionLoggerComponent } from '../../components/ActionLogger';
-import type { ActionDisplay } from '../../models';
 import { CLEAR_ID, EVENT_ID } from '../../constants';
+import type { ActionDisplay } from '../../models';
 
 interface ActionLoggerProps {
   active: boolean;

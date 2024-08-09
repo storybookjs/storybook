@@ -1,6 +1,8 @@
-import { findPackage } from 'fd-package-json';
-import { buildStaticStandalone, withTelemetry } from '@storybook/core/core-server';
 import { cache } from '@storybook/core/common';
+
+import { buildStaticStandalone, withTelemetry } from '@storybook/core/core-server';
+
+import { findPackage } from 'fd-package-json';
 import invariant from 'tiny-invariant';
 
 export const build = async (cliOptions: any) => {

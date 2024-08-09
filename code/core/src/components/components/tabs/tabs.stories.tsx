@@ -1,12 +1,15 @@
-import { expect } from '@storybook/test';
 import React from 'react';
-import { action } from '@storybook/addon-actions';
-import type { Meta, StoryObj } from '@storybook/react';
-import { within, fireEvent, waitFor, screen, userEvent, findByText } from '@storybook/test';
+
 import { BottomBarIcon, CloseIcon } from '@storybook/icons';
-import { Tabs, TabsState, TabWrapper } from './tabs';
-import type { ChildrenList } from './tabs.helpers';
+import type { Meta, StoryObj } from '@storybook/react';
+import { expect } from '@storybook/test';
+import { findByText, fireEvent, screen, userEvent, waitFor, within } from '@storybook/test';
+
+import { action } from '@storybook/addon-actions';
+
 import { IconButton } from '../IconButton/IconButton';
+import { TabWrapper, Tabs, TabsState } from './tabs';
+import type { ChildrenList } from './tabs.helpers';
 
 const colours = Array.from(new Array(15), (val, index) => index).map((i) =>
   Math.floor((1 / 15) * i * 16777215)

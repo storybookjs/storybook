@@ -1,6 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
-
 import path from 'node:path';
+
+import { describe, expect, it, vi } from 'vitest';
+
 import { normalizeStoriesEntry } from '@storybook/core/common';
 import type { NormalizedStoriesSpecifier } from '@storybook/core/types';
 

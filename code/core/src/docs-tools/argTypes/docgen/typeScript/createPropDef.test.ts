@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { createTsPropDef } from './createPropDef';
+import { describe, expect, it } from 'vitest';
+
 import type { DocgenInfo } from '../types';
+import { createTsPropDef } from './createPropDef';
 
 const PROP_NAME = 'propName';
 

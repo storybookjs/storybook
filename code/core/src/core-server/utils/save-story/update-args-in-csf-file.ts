@@ -1,7 +1,8 @@
-import * as t from '@babel/types';
 import bt from '@babel/traverse';
-import { valueToAST } from './valueToAST';
+import * as t from '@babel/types';
+
 import { SaveStoryError } from './utils';
+import { valueToAST } from './valueToAST';
 
 // @ts-expect-error (needed due to it's use of `exports.default`)
 const traverse = (bt.default || bt) as typeof bt;

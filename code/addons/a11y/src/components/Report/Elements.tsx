@@ -4,10 +4,10 @@ import React from 'react';
 import { styled } from 'storybook/internal/theming';
 
 import type { NodeResult } from 'axe-core';
-import { Rules } from './Rules';
 
 import type { RuleType } from '../A11YPanel';
 import HighlightToggle from './HighlightToggle';
+import { Rules } from './Rules';
 
 const Item = styled.li({
   fontWeight: 600,

@@ -1,16 +1,15 @@
 /* eslint-disable no-underscore-dangle */
 import { readFile, writeFile } from 'node:fs/promises';
-import { dedent } from 'ts-dedent';
 
-import * as t from '@babel/types';
 import bg from '@babel/generator';
 import bt from '@babel/traverse';
-
+import * as t from '@babel/types';
 import type { Options } from 'recast';
 import * as recast from 'recast';
+import { dedent } from 'ts-dedent';
 
-import { babelParse } from './babelParse';
 import type { PrintResultType } from './PrintResultType';
+import { babelParse } from './babelParse';
 
 // @ts-expect-error (needed due to it's use of `exports.default`)
 const traverse = (bt.default || bt) as typeof bt;

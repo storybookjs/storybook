@@ -1,6 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import { readFile } from 'fs/promises';
 import path from 'path';
+
 import injectDecorator from './inject-decorator';
 import getParser from './parsers';
 

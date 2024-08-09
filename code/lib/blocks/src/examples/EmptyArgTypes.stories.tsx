@@ -1,6 +1,8 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import type { ControlsParameters } from './ControlsParameters';
 import React from 'react';
+
+import type { Meta, StoryObj } from '@storybook/react';
+
+import type { ControlsParameters } from './ControlsParameters';
 
 const meta = {
   title: 'examples/Empty ArgTypes for Control blocks',

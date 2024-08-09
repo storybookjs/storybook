@@ -1,8 +1,9 @@
-import { global } from '@storybook/global';
 import type { FC } from 'react';
-import React, { Component as ReactComponent, StrictMode, Fragment } from 'react';
+import React, { Fragment, Component as ReactComponent, StrictMode } from 'react';
 
 import type { RenderContext } from 'storybook/internal/types';
+
+import { global } from '@storybook/global';
 
 import type { ReactRenderer, StoryContext } from './types';
 

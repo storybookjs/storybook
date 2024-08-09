@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+
 import { WhatsNewFooter } from './whats_new';
 
 const meta = {

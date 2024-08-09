@@ -1,8 +1,11 @@
+import type { ArgTypesEnhancer, Renderer, SBType } from '@storybook/core/types';
+
+import { logger } from '@storybook/core/client-logger';
+
 import mapValues from 'lodash/mapValues.js';
 import { dedent } from 'ts-dedent';
-import { logger } from '@storybook/core/client-logger';
+
 import { combineParameters } from './parameters';
-import type { ArgTypesEnhancer, Renderer, SBType } from '@storybook/core/types';
 
 const inferType = (value: any, name: string, visited: Set<any>): SBType => {
   const type = typeof value;

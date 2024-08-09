@@ -1,7 +1,9 @@
+import { join, normalize } from 'node:path';
+
 import type { OutputFile } from 'esbuild';
 import fs from 'fs-extra';
-import { join, normalize } from 'node:path';
 import slash from 'slash';
+
 import type { Compilation } from '../types';
 
 export async function readOrderedFiles(

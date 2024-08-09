@@ -1,12 +1,15 @@
 /* eslint-disable react/destructuring-assignment */
-import { global } from '@storybook/global';
 import type { FunctionComponent } from 'react';
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+
+import { ErrorFormatter, Loader, getStoryHref } from 'storybook/internal/components';
+import { styled } from 'storybook/internal/theming';
 import type { DocsContextProps, PreparedStory } from 'storybook/internal/types';
-import { Loader, getStoryHref, ErrorFormatter } from 'storybook/internal/components';
+
+import { global } from '@storybook/global';
+
 import { IFrame } from './IFrame';
 import { ZoomContext } from './ZoomContext';
-import { styled } from 'storybook/internal/theming';
 
 const { PREVIEW_URL } = global;
 const BASE_URL = PREVIEW_URL || 'iframe.html';

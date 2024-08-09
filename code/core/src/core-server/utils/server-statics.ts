@@ -1,12 +1,14 @@
-import { logger } from '@storybook/core/node-logger';
-import type { Options } from '@storybook/core/types';
+import path, { basename, isAbsolute } from 'node:path';
+
 import { getDirectoryFromWorkingDir } from '@storybook/core/common';
+import type { Options } from '@storybook/core/types';
+
+import { logger } from '@storybook/core/node-logger';
+
 import chalk from 'chalk';
 import type { Router } from 'express';
 import express from 'express';
 import { pathExists } from 'fs-extra';
-import path, { basename, isAbsolute } from 'node:path';
-
 import { dedent } from 'ts-dedent';
 
 export async function useStatics(router: Router, options: Options) {

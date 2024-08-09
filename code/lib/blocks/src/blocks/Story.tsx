@@ -1,10 +1,11 @@
-import type { FC, ComponentProps } from 'react';
+import type { ComponentProps, FC } from 'react';
 import React, { useContext } from 'react';
+
 import type {
-  Renderer,
   ModuleExport,
   ModuleExports,
   PreparedStory,
+  Renderer,
   StoryId,
 } from 'storybook/internal/types';
 

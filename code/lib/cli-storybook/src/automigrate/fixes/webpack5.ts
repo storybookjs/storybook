@@ -1,9 +1,10 @@
 import chalk from 'chalk';
-import { dedent } from 'ts-dedent';
 import semver from 'semver';
-import type { Fix } from '../types';
+import { dedent } from 'ts-dedent';
+
 import { checkWebpack5Builder } from '../helpers/checkWebpack5Builder';
 import { updateMainConfig } from '../helpers/mainConfigFile';
+import type { Fix } from '../types';
 
 const logger = console;
 

@@ -1,9 +1,10 @@
-import { interpolateName } from 'loader-utils';
+import { NextJsSharpError } from 'storybook/internal/preview-errors';
+
 import imageSizeOf from 'image-size';
-import type { RawLoaderDefinition } from 'webpack';
+import { interpolateName } from 'loader-utils';
 import type { NextConfig } from 'next';
 import { cpus } from 'os';
-import { NextJsSharpError } from 'storybook/internal/preview-errors';
+import type { RawLoaderDefinition } from 'webpack';
 
 interface LoaderOptions {
   filename: string;

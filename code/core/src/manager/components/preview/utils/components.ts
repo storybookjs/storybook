@@ -1,5 +1,5 @@
-import { styled } from '@storybook/core/theming';
 import { Link } from '@storybook/core/router';
+import { styled } from '@storybook/core/theming';
 
 export const PreviewContainer = styled.main({
   display: 'flex',

@@ -1,17 +1,18 @@
-import chalk from 'chalk';
-import { gt, satisfies } from 'semver';
-import type { CommonOptions } from 'execa';
-import { execaCommand, execaCommandSync } from 'execa';
-import path from 'node:path';
-
-import { dedent } from 'ts-dedent';
 import { existsSync, readFileSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+
+import chalk from 'chalk';
+import type { CommonOptions } from 'execa';
+import { execaCommand, execaCommandSync } from 'execa';
+import { gt, satisfies } from 'semver';
 import invariant from 'tiny-invariant';
-import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson';
-import storybookPackagesVersions from '../versions';
-import type { InstallationMetadata } from './types';
+import { dedent } from 'ts-dedent';
+
 import { HandledError } from '../utils/HandledError';
+import storybookPackagesVersions from '../versions';
+import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson';
+import type { InstallationMetadata } from './types';
 
 const logger = console;
 

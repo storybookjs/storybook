@@ -1,5 +1,7 @@
 import React from 'react';
+
 import * as Dialog from '@radix-ui/react-dialog';
+
 import * as Components from './Modal.styled';
 
 type ContentProps = React.ComponentProps<typeof Dialog.Content>;

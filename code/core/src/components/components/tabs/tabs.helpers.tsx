@@ -1,7 +1,9 @@
-import { styled } from '@storybook/core/theming';
 import type { FC, PropsWithChildren, ReactChild, ReactElement, ReactNode } from 'react';
 import React, { Children } from 'react';
+
+import { styled } from '@storybook/core/theming';
 import type { Addon_RenderOptions } from '@storybook/core/types';
+
 import type { TabsProps } from './tabs';
 
 export interface VisuallyHiddenProps {

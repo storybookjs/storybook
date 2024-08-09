@@ -1,4 +1,5 @@
 import { createContext } from 'react';
+
 import type { ImageProps, StaticImageData } from 'next/image';
 import type { ImageProps as LegacyImageProps } from 'next/legacy/image';
 

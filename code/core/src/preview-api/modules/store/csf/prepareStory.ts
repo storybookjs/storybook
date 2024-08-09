@@ -1,5 +1,4 @@
 /* eslint-disable no-underscore-dangle */
-import { global } from '@storybook/global';
 import type {
   Args,
   ArgsStoryFn,
@@ -13,22 +12,24 @@ import type {
   StoryContextForLoaders,
   StrictArgTypes,
 } from '@storybook/core/types';
-import { type CleanupCallback, includeConditionalArg, combineTags } from '@storybook/csf';
-import { global as globalThis } from '@storybook/global';
-
-import { applyHooks } from '../../addons';
-import { combineParameters } from '../parameters';
-import { defaultDecorateStory } from '../decorators';
-import { groupArgsByTarget, UNTARGETED } from '../args';
-import { normalizeArrays } from './normalizeArrays';
 import type {
   ModuleExport,
   NormalizedComponentAnnotations,
   NormalizedProjectAnnotations,
   NormalizedStoryAnnotations,
 } from '@storybook/core/types';
-import { mountDestructured } from '../../preview-web/render/mount-utils';
+import { type CleanupCallback, combineTags, includeConditionalArg } from '@storybook/csf';
+import { global } from '@storybook/global';
+import { global as globalThis } from '@storybook/global';
+
 import { NoRenderFunctionError } from '@storybook/core/preview-errors';
+
+import { applyHooks } from '../../addons';
+import { mountDestructured } from '../../preview-web/render/mount-utils';
+import { UNTARGETED, groupArgsByTarget } from '../args';
+import { defaultDecorateStory } from '../decorators';
+import { combineParameters } from '../parameters';
+import { normalizeArrays } from './normalizeArrays';
 
 // Combine all the metadata about a story (both direct and inherited from the component/global scope)
 // into a "render-able" story function, with all decorators applied, parameters passed as context etc

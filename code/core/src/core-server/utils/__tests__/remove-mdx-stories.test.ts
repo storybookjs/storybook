@@ -1,9 +1,13 @@
-import { glob as globOriginal } from 'glob';
-import { type StoriesEntry } from '@storybook/core/types';
-import { normalizeStoriesEntry } from '@storybook/core/common';
 import { join } from 'node:path';
+
+import { describe, expect, it, vi } from 'vitest';
+
+import { normalizeStoriesEntry } from '@storybook/core/common';
+import { type StoriesEntry } from '@storybook/core/types';
+
+import { glob as globOriginal } from 'glob';
 import slash from 'slash';
-import { vi, it, describe, expect } from 'vitest';
+
 import { removeMDXEntries } from '../remove-mdx-entries';
 
 const configDir = '/configDir/';

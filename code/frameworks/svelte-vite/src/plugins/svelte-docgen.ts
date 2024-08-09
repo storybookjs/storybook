@@ -1,12 +1,13 @@
-import type { PluginOption } from 'vite';
+import { logger } from 'storybook/internal/node-logger';
+
+import fs from 'fs';
 import MagicString from 'magic-string';
 import path from 'path';
-import fs from 'fs';
+import { replace, typescript } from 'svelte-preprocess';
+import { preprocess } from 'svelte/compiler';
 import svelteDoc from 'sveltedoc-parser';
 import type { SvelteComponentDoc, SvelteParserOptions } from 'sveltedoc-parser';
-import { logger } from 'storybook/internal/node-logger';
-import { preprocess } from 'svelte/compiler';
-import { replace, typescript } from 'svelte-preprocess';
+import type { PluginOption } from 'vite';
 
 /*
  * Patch sveltedoc-parser internal options.

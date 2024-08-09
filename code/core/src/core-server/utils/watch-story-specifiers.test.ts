@@ -1,6 +1,9 @@
-import { describe, afterEach, it, expect, vi } from 'vitest';
-import { normalizeStoriesEntry } from '@storybook/core/common';
 import path from 'node:path';
+
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import { normalizeStoriesEntry } from '@storybook/core/common';
+
 import Watchpack from 'watchpack';
 
 import { watchStorySpecifiers } from './watch-story-specifiers';

@@ -104,6 +104,7 @@ Consider the following input:
 // Button.js
 import React from 'react';
 import PropTypes from 'prop-types';
+
 export const Button = ({ label }) => <button>{label}</button>;
 Button.propTypes = {
   /** demo description */

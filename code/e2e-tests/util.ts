@@ -1,6 +1,7 @@
+import { toId } from '@storybook/csf';
+
 import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
-import { toId } from '@storybook/csf';
 
 export class SbPage {
   readonly page: Page;

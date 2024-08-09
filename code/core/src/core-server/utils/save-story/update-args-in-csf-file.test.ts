@@ -1,12 +1,15 @@
 /* eslint-disable no-underscore-dangle */
-import { describe, test, expect } from 'vitest';
-import { readCsf, printCsf } from '@storybook/core/csf-tools';
-
-import { updateArgsInCsfFile } from './update-args-in-csf-file';
-import { readFile } from 'fs/promises';
 import { join } from 'node:path';
+
+import { describe, expect, test } from 'vitest';
+
+import { printCsf, readCsf } from '@storybook/core/csf-tools';
+
+import { readFile } from 'fs/promises';
 import { format } from 'prettier';
+
 import { getDiff } from './getDiff';
+import { updateArgsInCsfFile } from './update-args-in-csf-file';
 
 const makeTitle = (userTitle: string) => userTitle;
 

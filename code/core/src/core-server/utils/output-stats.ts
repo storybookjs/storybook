@@ -1,9 +1,12 @@
-import { stringifyStream } from '@discoveryjs/json-ext';
-import { logger } from '@storybook/core/node-logger';
+import path from 'node:path';
+
 import type { Stats } from '@storybook/core/types';
+
+import { logger } from '@storybook/core/node-logger';
+
+import { stringifyStream } from '@discoveryjs/json-ext';
 import chalk from 'chalk';
 import fs from 'fs-extra';
-import path from 'node:path';
 
 export async function outputStats(directory: string, previewStats?: any, managerStats?: any) {
   if (previewStats) {

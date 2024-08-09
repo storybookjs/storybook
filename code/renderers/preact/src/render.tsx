@@ -1,9 +1,10 @@
 /** @jsx h */
+import type { ArgsStoryFn, RenderContext } from 'storybook/internal/types';
+
 import * as preact from 'preact';
 import { dedent } from 'ts-dedent';
-import type { RenderContext, ArgsStoryFn } from 'storybook/internal/types';
 
-import type { StoryFnPreactReturnType, PreactRenderer } from './types';
+import type { PreactRenderer, StoryFnPreactReturnType } from './types';
 
 const { h } = preact;
 

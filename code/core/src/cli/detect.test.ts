@@ -1,9 +1,13 @@
-import { describe, afterEach, it, expect, vi } from 'vitest';
-import * as fs from 'fs';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import type { JsPackageManager, PackageJsonWithMaybeDeps } from '@storybook/core/common';
+
 import { logger } from '@storybook/core/node-logger';
+
+import * as fs from 'fs';
+
 import { detect, detectFrameworkPreset, detectLanguage } from './detect';
 import { ProjectType, SupportedLanguage } from './project_types';
-import type { JsPackageManager, PackageJsonWithMaybeDeps } from '@storybook/core/common';
 
 vi.mock('./helpers', () => ({
   isNxProject: vi.fn(),

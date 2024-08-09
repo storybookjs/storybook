@@ -23,9 +23,9 @@
   "exports": {
     ".": {
       "types": "./shim.d.ts",
-      "node": "./shim.js",
       "import": "./shim.mjs",
-      "require": "./shim.js"
+      "require": "./shim.js",
+      "node": "./shim.js"
     },
     "./create": {
       "types": "./create.d.ts",

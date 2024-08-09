@@ -1,7 +1,8 @@
+import type { Options } from '@storybook/core/types';
+
+import { frameworkToRenderer } from './framework-to-renderer';
 import { extractProperFrameworkName, getFrameworkName } from './get-framework-name';
 import { frameworkPackages } from './get-storybook-info';
-import { frameworkToRenderer } from './framework-to-renderer';
-import type { Options } from '@storybook/core/types';
 
 /**
  * Render is set as a string on core. It must be set by the framework

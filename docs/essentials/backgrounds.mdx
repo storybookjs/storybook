@@ -23,6 +23,43 @@ But you're not restricted to these backgrounds, you can configure your own set o
 
 If you define the `default` property, the addon will apply it to all stories. Otherwise, it's only listed as an available color.
 
+### Overriding backgrounds with globals
+
+The Backgrounds addon enables you to change the background color applied to a story by selecting from the list of predefined background colors in the toolbar. If you need, you can opt into the globals API to configure backgrounds to ensure that a story always uses a specific background color regardless of the existing configuration.
+
+To enable it, you'll need to take some additional steps to set it up properly. Our recommendation for configuring and using the globals API with the Backgrounds addon is detailed below.
+
+Update your [`.storybook/main.js|ts`](../configure/index.mdx#configure-your-storybook-project) to include the [`backgroundsStoryGlobals`](../api/main-config/main-config-features.mdx#backgroundsstoryglobals) option within Storybok's `features` configuration.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="main-config-features-backgrounds-story-globals.md" />
+
+{/* prettier-ignore-end */}
+
+<Callout variant="info">
+
+Enabling this API will turn off the ability to change any options from the toolbar to ensure that the background is always set to the intended value for the story.
+
+</Callout>
+
+Adjust the `backgrounds` parameter in your [`.storybook/preview.js|ts`](../configure/index.mdx#configure-story-rendering) with an `options` object to define the available background colors for your stories.
+
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-preview-migrate-backgrounds-globals.md" />
+
+{/* prettier-ignore-end */}
+
+Update your stories to enable the new story globals API using the `global` configuration option to set the required options for your stories.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-addon-backgrounds-global-api.md" usesCsf3 />
+
+{/* prettier-ignore-end */}
+
 ### Extending the configuration
 
 You can also define backgrounds per-component or per-story basis through [parameter inheritance](../writing-stories/parameters.mdx#component-parameters):
@@ -33,43 +70,33 @@ You can also define backgrounds per-component or per-story basis through [parame
 
 {/* prettier-ignore-end */}
 
-You can also override a single key on the `backgrounds` parameter, for instance, to set a different default value for a particular story:
+You can also override a single key on the `backgrounds` parameter:
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="storybook-addon-backgrounds-override-background-color.md" usesCsf3 csf2Path="essentials/backgrounds#snippet-storybook-addon-backgrounds-override-background-color" />
+<CodeSnippets path="storybook-addon-backgrounds-override-background-color.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
 ### Disable backgrounds
 
-If you want to disable backgrounds in a story, you can do so by setting the `backgrounds` parameter like so:
+If you want to turn off backgrounds in a story, you can do so by setting the `backgrounds` parameter like so:
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="storybook-addon-backgrounds-disable-backgrounds.md" usesCsf3 csf2Path="essentials/backgrounds#snippet-storybook-addon-backgrounds-disable-backgrounds" />
+<CodeSnippets path="storybook-addon-backgrounds-disable-backgrounds.md" usesCsf3/>
 
 {/* prettier-ignore-end */}
 
-## Grid
+### Grid
 
-Backgrounds toolbar also includes a Grid selector. This way, you can quickly see if your components are aligned.
+The Backgrounds toolbar also includes a Grid selector, which allows you to quickly see if your components are aligned.
 
-You don't need additional configuration to get started. But its properties are fully customizable, if you don't supply any value to any of its properties, they'll default to the following values:
+You don't need additional configuration to get started. But its properties are fully customizable; if you don't supply any value to any of its properties, they'll default to the following values:
 
 {/* prettier-ignore-start */}
 
 <CodeSnippets path="storybook-addon-backgrounds-configure-grid.md" />
-
-{/* prettier-ignore-end */}
-
-### Disable the grid
-
-If you need to disable the grid for a specific story, set the `backgrounds` parameter to the following:
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="storybook-addon-backgrounds-disable-grid.md" usesCsf3 csf2Path="essentials/backgrounds#snippet-storybook-addon-backgrounds-disable-grid" />
 
 {/* prettier-ignore-end */}
 
@@ -83,15 +110,31 @@ This addon contributes the following [parameters](../writing-stories/parameters.
 
 Type: `string`
 
-Default background color. Must match the `name` property of one of the [available colors](#values).
+Default background color. Must match the `name` property of one of the [available colors](#values). Required if you haven't opted into the [globals API](#overriding-backgrounds-with-globals).
 
-#### `disable`
+#### `options`
+
+Requires: [globals API](#overriding-backgrounds-with-globals)
+
+Type: `Record<string, { name: string; value: string }>`
+
+Defines the background colors. See above for a [usage example](#configuration).
+
+#### `disabled`
+
+Requires: [globals API](#overriding-backgrounds-with-globals)
 
 Type: `boolean`
 
-Disable this addon's behavior. If you wish to disable this addon for the entire Storybook, you should do so when registering `addon-essentials`. See the [essential addon's docs](../essentials/index.mdx#disabling-addons) for more information.
+Turn off this addon's behavior. If you wish to turn off this addon for the entire Storybook, you should do so when registering `addon-essentials`. See the [essential addon's docs](../essentials/index.mdx#disabling-addons) for more information.
 
-This parameter is most useful to allow overriding at more specific levels. For example, if this parameter is set to `true` at the project level, it could then be re-enabled by setting it to `false` at the meta (component) or story level.
+This parameter is most useful to allow overriding at more specific levels. For example, if this parameter is set to `true` at the project level, it could be re-enabled by setting it to `false` at the meta (component) or story level.
+
+<Callout variant="info">
+
+The `disabled` parameter is only available with the globals API introduced in Storybook 8.3. If you're using a previous Storybook version, use the `disable` parameter instead.
+
+</Callout>
 
 #### `grid`
 
@@ -99,12 +142,12 @@ Type:
 
 ```ts
 {
-  cellAmount?: number;
-  cellSize?: number;
-  disable?: boolean;
-  offsetX: number;
-  offsetY: number;
-  opacity?: number;
+ cellAmount?: number;
+ cellSize?: number;
+ disable?: boolean;
+ offsetX?: number;
+ offsetY?: number;
+ opacity?: number;
 }
 ```
 
@@ -128,7 +171,7 @@ Specify the size of the major grid lines.
 
 Type: `boolean`
 
-Disable the grid.
+Turn off the grid.
 
 ##### `grid.offsetX`
 
@@ -152,10 +195,10 @@ Type: `number`
 
 Default: `0.5`
 
-Opacity of the grid lines.
+The opacity of the grid lines.
 
 #### `values`
 
 Type: `{ name: string; value: string }[]`
 
-Available background colors. See above for a [usage example](#configuration).
+Available background colors. See above for a [usage example](#configuration). Required if you haven't opted into the [globals API](#overriding-backgrounds-with-globals).

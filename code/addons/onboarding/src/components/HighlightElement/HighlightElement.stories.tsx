@@ -1,7 +1,9 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { HighlightElement } from './HighlightElement';
 import React from 'react';
-import { within, expect } from '@storybook/test';
+
+import type { Meta, StoryObj } from '@storybook/react';
+import { expect, within } from '@storybook/test';
+
+import { HighlightElement } from './HighlightElement';
 
 const meta: Meta<typeof HighlightElement> = {
   component: HighlightElement,

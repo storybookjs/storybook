@@ -1,9 +1,10 @@
-import type { DocsOptions, Options } from '@storybook/core/types';
 import { normalizeStories } from '@storybook/core/common';
-import { useStoriesJson } from './stories-json';
-import type { ServerChannel } from './get-server-channel';
+import type { DocsOptions, Options } from '@storybook/core/types';
+
 import { StoryIndexGenerator } from './StoryIndexGenerator';
+import type { ServerChannel } from './get-server-channel';
 import { router } from './router';
+import { useStoriesJson } from './stories-json';
 
 export async function getStoryIndexGenerator(
   features: {

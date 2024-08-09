@@ -1,10 +1,11 @@
+import { logger } from '@storybook/core/node-logger';
+import { MissingAngularJsonError } from '@storybook/core/server-errors';
+
+import boxen from 'boxen';
 import fs from 'fs';
 import { join } from 'path';
 import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
-import { MissingAngularJsonError } from '@storybook/core/server-errors';
-import boxen from 'boxen';
-import { logger } from '@storybook/core/node-logger';
 
 export const ANGULAR_JSON_PATH = 'angular.json';
 

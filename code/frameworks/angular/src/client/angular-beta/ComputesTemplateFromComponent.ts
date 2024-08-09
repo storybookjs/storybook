@@ -1,5 +1,7 @@
-import { Type } from '@angular/core';
 import { ArgTypes } from 'storybook/internal/types';
+
+import { Type } from '@angular/core';
+
 import { ICollection } from '../types';
 import {
   ComponentInputsOutputs,

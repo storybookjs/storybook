@@ -1,4 +1,5 @@
 import { fn } from '@storybook/test';
+
 import MyHeader from './Header.vue';
 
 export default {

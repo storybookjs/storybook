@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { extractProperFrameworkName } from './get-framework-name';
 
 describe('get-framework-name', () => {

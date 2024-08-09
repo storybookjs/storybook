@@ -1,4 +1,5 @@
 import React from 'react';
+
 import PropTypes from 'prop-types';
 
 const JsDocProps = () => <div>JSDoc with PropTypes!</div>;

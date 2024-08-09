@@ -1,10 +1,12 @@
-import { describe, expect, vi, it } from 'vitest';
-import type { Server } from 'http';
+import { describe, expect, it, vi } from 'vitest';
+
 import { Channel } from '@storybook/core/channels';
 
 import { EventEmitter } from 'events';
+import type { Server } from 'http';
 import { stringify } from 'telejson';
-import { getServerChannel, ServerChannelTransport } from '../get-server-channel';
+
+import { ServerChannelTransport, getServerChannel } from '../get-server-channel';
 
 describe('getServerChannel', () => {
   it('should return a channel', () => {

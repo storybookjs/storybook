@@ -1,7 +1,8 @@
 import { styled } from '@storybook/core/theming';
+
+import { Button } from '../Button/Button';
 import { Field } from './field/field';
 import { Input, Select, Textarea } from './input/input';
-import { Button } from '../Button/Button';
 
 export const Form = Object.assign(
   styled.form({

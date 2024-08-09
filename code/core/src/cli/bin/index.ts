@@ -1,15 +1,16 @@
-import program from 'commander';
-import chalk from 'chalk';
-import leven from 'leven';
-import { findPackageSync } from 'fd-package-json';
-import invariant from 'tiny-invariant';
+import { getEnvConfig, parseList, versions } from '@storybook/core/common';
+import { addToGlobalContext } from '@storybook/core/telemetry';
 
 import { logger } from '@storybook/core/node-logger';
-import { addToGlobalContext } from '@storybook/core/telemetry';
-import { parseList, getEnvConfig, versions } from '@storybook/core/common';
 
-import { dev } from '../dev';
+import chalk from 'chalk';
+import program from 'commander';
+import { findPackageSync } from 'fd-package-json';
+import leven from 'leven';
+import invariant from 'tiny-invariant';
+
 import { build } from '../build';
+import { dev } from '../dev';
 
 addToGlobalContext('cliVersion', versions.storybook);
 

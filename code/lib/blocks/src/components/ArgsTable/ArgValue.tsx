@@ -1,11 +1,15 @@
 import type { FC } from 'react';
 import React, { useState } from 'react';
-import memoize from 'memoizerific';
-import uniq from 'lodash/uniq.js';
+
+import { SyntaxHighlighter, WithTooltipPure, codeCommon } from 'storybook/internal/components';
 import { styled } from 'storybook/internal/theming';
-import { WithTooltipPure, SyntaxHighlighter, codeCommon } from 'storybook/internal/components';
-import type { PropSummaryValue } from './types';
+
 import { ChevronSmallDownIcon, ChevronSmallUpIcon } from '@storybook/icons';
+
+import uniq from 'lodash/uniq.js';
+import memoize from 'memoizerific';
+
+import type { PropSummaryValue } from './types';
 
 interface ArgValueProps {
   value?: PropSummaryValue;

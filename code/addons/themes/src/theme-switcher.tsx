@@ -1,23 +1,25 @@
 import React from 'react';
+
+import { IconButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
 import {
+  addons,
   useAddonState,
   useChannel,
   useGlobals,
   useParameter,
-  addons,
 } from 'storybook/internal/manager-api';
 import { styled } from 'storybook/internal/theming';
-import { IconButton, WithTooltip, TooltipLinkList } from 'storybook/internal/components';
 
 import { PaintBrushIcon } from '@storybook/icons';
+
 import type { ThemeAddonState, ThemeParameters } from './constants';
 import {
-  PARAM_KEY,
-  THEME_SWITCHER_ID,
-  THEMING_EVENTS,
   DEFAULT_ADDON_STATE,
   DEFAULT_THEME_PARAMETERS,
   GLOBAL_KEY as KEY,
+  PARAM_KEY,
+  THEME_SWITCHER_ID,
+  THEMING_EVENTS,
 } from './constants';
 
 const IconButtonLabel = styled.div(({ theme }) => ({

@@ -1,9 +1,9 @@
 import { dirname, join } from 'node:path';
-import fs from 'fs-extra';
+
+import type { DocsOptions, Options, Ref, TagsOptions } from '@storybook/core/types';
 
 import { render } from 'ejs';
-
-import type { DocsOptions, TagsOptions, Options, Ref } from '@storybook/core/types';
+import fs from 'fs-extra';
 
 export const getTemplatePath = async (template: string) => {
   return join(dirname(require.resolve('@storybook/core/package.json')), 'assets/server', template);

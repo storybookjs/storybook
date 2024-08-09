@@ -1,9 +1,9 @@
-import { addons } from 'storybook/internal/preview-api';
 import { DOCS_RENDERED, STORY_CHANGED } from 'storybook/internal/core-events';
+import { addons } from 'storybook/internal/preview-api';
 
-import { getNextStoryUID } from './utils/StoryUID';
+import { Parameters, StoryFnAngularReturnType } from '../types';
 import { AbstractRenderer, STORY_UID_ATTRIBUTE } from './AbstractRenderer';
-import { StoryFnAngularReturnType, Parameters } from '../types';
+import { getNextStoryUID } from './utils/StoryUID';
 
 export class DocsRenderer extends AbstractRenderer {
   public async render(options: {

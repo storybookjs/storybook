@@ -1,7 +1,10 @@
 import type { ComponentProps } from 'react';
 import React from 'react';
-import { action } from '@storybook/addon-actions';
+
 import { DiscordIcon, SidebarIcon } from '@storybook/icons';
+
+import { action } from '@storybook/addon-actions';
+
 import { Link } from './link';
 
 const onClick = action('onClick');

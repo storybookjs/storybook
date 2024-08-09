@@ -27,6 +27,8 @@ const modifyErrorMessage = (currentTask: RunnerTask) => {
     const currentError = currentTask.result.errors[0];
     const storybookUrl = import.meta.env.__STORYBOOK_URL__;
     let storyUrl = `${storybookUrl}/?path=/story/${meta.storyId}`;
+    // TODO: figure out why this is being called twice. For now we just do not modify the message again
+    if (currentError.message.includes(storyUrl)) return;
     if (meta.hasPlayFunction) {
       storyUrl = `${storyUrl}&addonPanel=storybook/interactions/panel`;
     }

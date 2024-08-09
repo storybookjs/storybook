@@ -30,6 +30,7 @@ export default mergeConfig(
         name: 'chromium',
         provider: 'playwright',
         headless: true,
+        screenshotFailures: true,
       },
       setupFiles: ['./storybook.setup.ts'],
       environment: 'happy-dom',

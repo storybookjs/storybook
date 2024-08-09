@@ -35,16 +35,15 @@ export class LegacyTemplateNotEnabledError extends StorybookSvelteCSFError {
   readonly code = 2;
   public documentation = true;
 
-  public componentName: string;
-
-  constructor(componentName: string) {
-    super({ filename: undefined });
-    this.componentName = componentName;
+  constructor(filename?: string) {
+    super({ filename });
   }
 
   template(): string {
     return dedent`
-      One of your stories file is using legacy API component - '<${this.componentName}>'.
+      Stories file: ${this.filename}
+      is using legacy API.
+
       To enable support for it, enable 'legacyTemplate' in "${pkg.name}" option.
     `;
   }

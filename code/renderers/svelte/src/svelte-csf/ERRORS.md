@@ -125,6 +125,11 @@ Below is a demonstration of correct usage:
 {/snippet}
 ```
 
+### SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0009
+
+Storybook stories indexer parser threw an unrecognized error.
+If you see this error, [please report it on the issue tracker on GitHub](https://github.com/storybookjs/addon-svelte-csf/issues/new?assignees=&labels=bug&projects=&template=bug_report.md&title=%5BBug%5D).
+
 ## `PARSER_EXTRACT_COMPILED`
 
 > [!NOTE]

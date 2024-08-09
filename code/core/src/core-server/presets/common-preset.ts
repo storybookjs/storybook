@@ -1,4 +1,4 @@
-import { pathExists, readFile } from 'fs-extra';
+import { pathExists } from '@ndelangen/fs-extra-unified';
 import { logger } from '@storybook/core/node-logger';
 import { telemetry } from '@storybook/core/telemetry';
 import {
@@ -26,6 +26,7 @@ import { initializeWhatsNew, type OptionsWithRequiredCache } from '../utils/what
 import { initializeSaveStory } from '../utils/save-story/save-story';
 import { initFileSearchChannel } from '../server-channel/file-search-channel';
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
+import { readFile } from 'node:fs/promises';
 
 const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);

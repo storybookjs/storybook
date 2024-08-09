@@ -6,6 +6,12 @@ module.exports = {
     project: ['./tsconfig.json'],
   },
   rules: {
+    'import/no-unresolved': 'off',
+    'import/no-extraneous-dependencies': [
+      'error',
+      { devDependencies: true, peerDependencies: true },
+    ],
+
     // remove as shared eslint has jest rules removed
     '@typescript-eslint/ban-ts-comment': 'error',
     '@typescript-eslint/consistent-type-imports': ['error', { disallowTypeAnnotations: false }],

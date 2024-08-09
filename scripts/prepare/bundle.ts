@@ -1,4 +1,3 @@
-import * as fs from 'fs-extra';
 import path, { dirname, join, relative } from 'path';
 import type { Options } from 'tsup';
 import type { PackageJson } from 'type-fest';
@@ -8,12 +7,15 @@ import { dedent } from 'ts-dedent';
 import slash from 'slash';
 import { exec } from '../utils/exec';
 import { glob } from 'glob';
+import { emptyDir, ensureFile, pathExists, readJson } from '@ndelangen/fs-extra-unified';
+import { readFile, writeFile } from 'node:fs/promises';
 
 /* TYPES */
 
 type Formats = 'esm' | 'cjs';
 type BundlerConfig = {
   entries: string[];
+  nodeEntries: string[];
   externals: string[];
   noExternal: string[];
   platform: Options['platform'];
@@ -35,6 +37,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
     peerDependencies,
     bundler: {
       entries = [],
+      nodeEntries = [],
       externals: extraExternals = [],
       noExternal: extraNoExternal = [],
       platform,
@@ -42,7 +45,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
       post,
       formats = ['esm', 'cjs'],
     },
-  } = (await fs.readJson(join(cwd, 'package.json'))) as PackageJsonWithBundlerConfig;
+  } = (await readJson(join(cwd, 'package.json'))) as PackageJsonWithBundlerConfig;
 
   if (pre) {
     await exec(`jiti ${pre}`, { cwd });
@@ -53,7 +56,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   const optimized = hasFlag(flags, 'optimized');
 
   if (reset) {
-    await fs.emptyDir(join(process.cwd(), 'dist'));
+    await emptyDir(join(process.cwd(), 'dist'));
   }
 
   const tasks: Promise<any>[] = [];
@@ -98,6 +101,20 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         clean: false,
         ...(dtsBuild === 'esm' ? dtsConfig : {}),
         platform: platform || 'browser',
+        banner:
+          platform === 'node'
+            ? {
+                js: dedent`
+            import ESM_COMPAT_Module from "node:module";
+            import { fileURLToPath as ESM_COMPAT_fileURLToPath } from 'node:url';
+            import { dirname as ESM_COMPAT_dirname } from 'node:path';
+            const __filename = ESM_COMPAT_fileURLToPath(import.meta.url);
+            const __dirname = ESM_COMPAT_dirname(__filename);
+            const require = ESM_COMPAT_Module.createRequire(import.meta.url);
+          `,
+              }
+            : {},
+
         esbuildPlugins:
           platform === 'node'
             ? []
@@ -142,6 +159,70 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
     );
   }
 
+  if (nodeEntries.length > 0) {
+    if (formats.includes('esm')) {
+      tasks.push(
+        build({
+          noExternal,
+          silent: true,
+          treeshake: true,
+          entry: nodeEntries,
+          shims: false,
+          watch,
+          outDir,
+          sourcemap: false,
+          format: ['esm'],
+          target: ['node18'],
+          clean: false,
+          ...(dtsBuild === 'esm' ? dtsConfig : {}),
+          platform: 'node',
+          banner: {
+            js: dedent`
+            import ESM_COMPAT_Module from "node:module";
+            import { fileURLToPath as ESM_COMPAT_fileURLToPath } from 'node:url';
+            import { dirname as ESM_COMPAT_dirname } from 'node:path';
+            const __filename = ESM_COMPAT_fileURLToPath(import.meta.url);
+            const __dirname = ESM_COMPAT_dirname(__filename);
+            const require = ESM_COMPAT_Module.createRequire(import.meta.url);
+          `,
+          },
+
+          external: [...externals, 'fs', 'path', 'os'],
+
+          esbuildOptions: (c) => {
+            c.conditions = ['module'];
+            c.platform = 'node';
+            Object.assign(c, getESBuildOptions(optimized));
+          },
+        })
+      );
+    }
+
+    if (formats.includes('cjs')) {
+      tasks.push(
+        build({
+          noExternal,
+          silent: true,
+          entry: nodeEntries,
+          watch,
+          outDir,
+          sourcemap: false,
+          format: ['cjs'],
+          target: 'node18',
+          ...(dtsBuild === 'cjs' ? dtsConfig : {}),
+          platform: 'node',
+          clean: false,
+          external: externals,
+
+          esbuildOptions: (c) => {
+            c.platform = 'node';
+            Object.assign(c, getESBuildOptions(optimized));
+          },
+        })
+      );
+    }
+  }
+
   if (tsConfigExists && !optimized) {
     tasks.push(...entries.map(generateDTSMapperFile));
   }
@@ -151,8 +232,8 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   const dtsFiles = await glob(outDir + '/**/*.d.ts');
   await Promise.all(
     dtsFiles.map(async (file) => {
-      const content = await fs.readFile(file, 'utf-8');
-      await fs.writeFile(
+      const content = await readFile(file, 'utf-8');
+      await writeFile(
         file,
         content.replace(/from \'core\/dist\/(.*)\'/g, `from 'storybook/internal/$1'`)
       );
@@ -180,7 +261,7 @@ async function getDTSConfigs({
   optimized: boolean;
 }) {
   const tsConfigPath = join(cwd, 'tsconfig.json');
-  const tsConfigExists = await fs.pathExists(tsConfigPath);
+  const tsConfigExists = await pathExists(tsConfigPath);
 
   const dtsBuild = optimized && formats[0] && tsConfigExists ? formats[0] : undefined;
 
@@ -212,8 +293,8 @@ async function generateDTSMapperFile(file: string) {
   const srcName = join(process.cwd(), file);
   const rel = relative(dirname(pathName), dirname(srcName)).split(path.sep).join(path.posix.sep);
 
-  await fs.ensureFile(pathName);
-  await fs.writeFile(
+  await ensureFile(pathName);
+  await writeFile(
     pathName,
     dedent`
       // dev-mode

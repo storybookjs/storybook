@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { copy, emptyDir, ensureDir } from 'fs-extra';
+import { copy, emptyDir, ensureDir } from '@ndelangen/fs-extra-unified';
 import { dirname, join, relative, resolve } from 'node:path';
 import { global } from '@storybook/global';
 import { logger } from '@storybook/core/node-logger';

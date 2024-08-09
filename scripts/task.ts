@@ -1,8 +1,8 @@
 import type { TestCase } from 'junit-xml';
 import { getJunitXml } from 'junit-xml';
-import { outputFile, readFile, pathExists } from 'fs-extra';
+import { outputFile, pathExists } from '@ndelangen/fs-extra-unified';
 import { join, resolve } from 'path';
-import { prompt } from 'prompts';
+import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
 
 import invariant from 'tiny-invariant';
@@ -35,6 +35,7 @@ import {
 } from '../code/lib/cli-storybook/src/sandbox-templates';
 
 import { version } from '../code/package.json';
+import { readFile } from 'node:fs/promises';
 
 const sandboxDir = process.env.SANDBOX_ROOT || SANDBOX_DIRECTORY;
 
@@ -422,7 +423,7 @@ async function run() {
     setUnready(sortedTasks[0]);
   } else {
     // We don't know what to do! Let's ask
-    const { startFromTask } = await prompt(
+    const { startFromTask } = await prompts(
       {
         type: 'select',
         message: firstUnready

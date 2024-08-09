@@ -21,17 +21,13 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.cjs",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": "./dist/index.js"
     },
     "./bin/index.cjs": {
-      "node": "./bin/index.cjs",
       "require": "./bin/index.cjs"
     },
     "./package.json": "./package.json"
   },
-  "main": "dist/index.cjs",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "typesVersions": {
@@ -55,6 +51,8 @@
     "prep": "jiti  ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
+    "@ndelangen/fs-extra-unified": "^1.0.4",
+    "@types/fs-extra": "^11.0.4",
     "@types/semver": "^7.3.4",
     "chalk": "^4.1.0",
     "commander": "^6.2.1",
@@ -83,6 +81,9 @@
     "entries": [
       "./src/index.ts",
       "./src/bin/index.ts"
+    ],
+    "formats": [
+      "esm"
     ],
     "platform": "node"
   },

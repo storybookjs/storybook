@@ -1,4 +1,4 @@
-import { writeJSON } from 'fs-extra';
+import { writeJSON } from '@ndelangen/fs-extra-unified';
 import type { Request, Response, Router } from 'express';
 import { getStorybookMetadata } from '@storybook/core/telemetry';
 

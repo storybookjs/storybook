@@ -1,4 +1,3 @@
-import fs from 'fs-extra';
 import { logger } from '@storybook/core/node-logger';
 import { telemetry } from '@storybook/core/telemetry';
 import { findConfigFile } from '@storybook/core/common';
@@ -15,6 +14,7 @@ import {
 } from '@storybook/core/core-events';
 import invariant from 'tiny-invariant';
 import { sendTelemetryError } from '../withTelemetry';
+import { writeFile } from 'node:fs/promises';
 
 export type OptionsWithRequiredCache = Exclude<Options, 'cache'> & Required<Pick<Options, 'cache'>>;
 
@@ -87,7 +87,7 @@ export function initializeWhatsNew(
         invariant(mainPath, `unable to find storybook main file in ${options.configDir}`);
         const main = await readConfig(mainPath);
         main.setFieldValue(['core', 'disableWhatsNewNotifications'], disableWhatsNewNotifications);
-        await fs.writeFile(mainPath, printConfig(main).code);
+        await writeFile(mainPath, printConfig(main).code);
         if (isTelemetryEnabled) {
           await telemetry('core-config', { disableWhatsNewNotifications });
         }

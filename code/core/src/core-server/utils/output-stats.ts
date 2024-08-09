@@ -2,8 +2,8 @@ import { stringifyStream } from '@discoveryjs/json-ext';
 import { logger } from '@storybook/core/node-logger';
 import type { Stats } from '@storybook/core/types';
 import chalk from 'chalk';
-import fs from 'fs-extra';
 import path from 'node:path';
+import { createWriteStream } from 'node:fs';
 
 export async function outputStats(directory: string, previewStats?: any, managerStats?: any) {
   if (previewStats) {
@@ -22,7 +22,7 @@ export const writeStats = async (directory: string, name: string, stats: Stats) 
   await new Promise((resolve, reject) => {
     stringifyStream(data, null, 2)
       .on('error', reject)
-      .pipe(fs.createWriteStream(filePath))
+      .pipe(createWriteStream(filePath))
       .on('error', reject)
       .on('finish', resolve);
   });

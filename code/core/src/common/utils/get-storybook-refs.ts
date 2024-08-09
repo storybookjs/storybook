@@ -1,4 +1,4 @@
-import { readJSON } from 'fs-extra';
+import { readJSON } from '@ndelangen/fs-extra-unified';
 import { dirname, join } from 'node:path';
 import { findUp } from 'find-up';
 

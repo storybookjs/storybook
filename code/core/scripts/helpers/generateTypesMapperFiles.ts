@@ -2,7 +2,7 @@ import type { getEntries } from '../entries';
 import { join, relative } from 'node:path';
 import { dedent } from '../../../../scripts/prepare/tools';
 import { writeFile } from 'node:fs/promises';
-import { ensureFile } from 'fs-extra';
+import { ensureFile } from '@ndelangen/fs-extra-unified';
 
 const cwd = process.cwd();
 

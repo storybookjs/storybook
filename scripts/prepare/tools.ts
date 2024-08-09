@@ -21,7 +21,7 @@ import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import * as rpd from 'rollup-plugin-dts';
 import * as rollup from 'rollup';
 import { writeFile } from 'node:fs/promises';
-import { readJson } from 'fs-extra';
+import { readJson } from '@ndelangen/fs-extra-unified';
 import { spawn } from 'cross-spawn';
 
 export { globalExternals };

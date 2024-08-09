@@ -23,4 +23,11 @@ process.once('uncaughtException', (error) => {
   throw error;
 });
 
-require('../dist/proxy.cjs');
+const run = async () => {
+  await import('../dist/proxy.js');
+};
+
+run().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

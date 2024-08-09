@@ -1,7 +1,7 @@
 /* eslint-disable no-underscore-dangle */
 import path from 'path';
 import { vi, describe, expect, it } from 'vitest';
-import * as fsExtraImp from 'fs-extra';
+import * as fsExtraImp from '@ndelangen/fs-extra-unified';
 import * as simpleGitImp from 'simple-git';
 import { run as isPrFrozen } from '../is-pr-frozen';
 
@@ -14,7 +14,7 @@ import { CODE_DIRECTORY } from '../../utils/constants';
 
 vi.mock('../utils/get-github-info');
 vi.mock('simple-git');
-vi.mock('fs-extra', async () => import('../../../code/__mocks__/fs-extra'));
+vi.mock('@ndelangen/fs-extra-unified', async () => import('../../../code/__mocks__/fs-extra'));
 const fsExtra = fsExtraImp as unknown as typeof MockedFSExtra;
 const simpleGit = simpleGitImp as unknown as typeof MockedSimpleGit;
 

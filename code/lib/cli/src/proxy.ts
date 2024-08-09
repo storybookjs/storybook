@@ -3,8 +3,15 @@ import { versions } from '@storybook/core/common';
 
 const args = process.argv.slice(2);
 
+const run = async () => {
+  await import('@storybook/core/cli/bin');
+};
+
 if (['dev', 'build'].includes(args[0])) {
-  require('@storybook/core/cli/bin');
+  run().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
 } else {
   const proxiedArgs =
     args[0] === 'init'

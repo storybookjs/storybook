@@ -1,11 +1,11 @@
+import { readJson } from '@ndelangen/fs-extra-unified';
 import { join } from 'path';
-import fs from 'fs-extra';
 import ts from 'typescript';
 
 const run = async ({ cwd }: { cwd: string }) => {
   const {
     bundler: { tsConfig: tsconfigPath = 'tsconfig.json' },
-  } = await fs.readJson(join(cwd, 'package.json'));
+  } = await readJson(join(cwd, 'package.json'));
 
   const { options, fileNames } = getTSFilesAndConfig(tsconfigPath);
   const { program, host } = getTSProgramAndHost(fileNames, options);
@@ -39,7 +39,7 @@ run({ cwd: process.cwd() }).catch((err: unknown) => {
 
 function getTSDiagnostics(program: ts.Program, cwd: string, host: ts.CompilerHost): any {
   return ts.formatDiagnosticsWithColorAndContext(
-    ts.getPreEmitDiagnostics(program).filter((d) => d.file.fileName.startsWith(cwd)),
+    ts.getPreEmitDiagnostics(program).filter((d) => d.file?.fileName.startsWith(cwd)),
     host
   );
 }

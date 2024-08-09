@@ -1,4 +1,4 @@
-import fse from 'fs-extra';
+import { ensureDir, readJSON } from '@ndelangen/fs-extra-unified';
 import path from 'path';
 import { sync as spawnSync, spawn as spawnAsync } from 'cross-spawn';
 import { logger } from 'storybook/internal/node-logger';
@@ -57,7 +57,7 @@ export const exec = async (
 export const link = async ({ target, local, start }: LinkOptions) => {
   const storybookDir = process.cwd();
   try {
-    const packageJson = await fse.readJSON('package.json');
+    const packageJson = await readJSON('package.json');
     if (packageJson.name !== '@storybook/root') {
       throw new Error();
     }
@@ -71,7 +71,7 @@ export const link = async ({ target, local, start }: LinkOptions) => {
   if (!local) {
     const reprosDir = path.join(storybookDir, '../storybook-repros');
     logger.info(`Ensuring directory ${reprosDir}`);
-    await fse.ensureDir(reprosDir);
+    await ensureDir(reprosDir);
 
     logger.info(`Cloning ${target}`);
     await exec(`git clone ${target}`, { cwd: reprosDir });
@@ -80,7 +80,7 @@ export const link = async ({ target, local, start }: LinkOptions) => {
     reproDir = path.join(reprosDir, reproName);
   }
 
-  const reproPackageJson = await fse.readJSON(path.join(reproDir, 'package.json'));
+  const reproPackageJson = await readJSON(path.join(reproDir, 'package.json'));
 
   const version = spawnSync('yarn', ['--version'], {
     cwd: reproDir,

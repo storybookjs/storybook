@@ -1,4 +1,4 @@
-import { pathExists, remove } from 'fs-extra';
+import { pathExists, remove } from '@ndelangen/fs-extra-unified';
 
 import { join } from 'path';
 import { promisify } from 'util';

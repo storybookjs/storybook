@@ -5,7 +5,7 @@
     "incremental": false,
     "noImplicitAny": true,
     "jsx": "react",
-    "moduleResolution": "bundler",
+    "moduleResolution": "Bundler",
     "target": "es2022",
     "module": "ES2022",
     "skipLibCheck": true,

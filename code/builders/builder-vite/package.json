@@ -20,14 +20,12 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "import": "./dist/index.mjs"
     },
     "./input/iframe.html": "./input/iframe.html",
     "./package.json": "./package.json"
   },
-  "main": "dist/index.js",
+  "main": "dist/index.mjs",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
@@ -43,8 +41,10 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
+    "@ndelangen/fs-extra-unified": "^1.0.4",
     "@storybook/csf-plugin": "workspace:*",
     "@types/find-cache-dir": "^3.2.1",
+    "@types/fs-extra": "^11.0.4",
     "browser-assert": "^1.2.1",
     "es-module-lexer": "^1.5.0",
     "express": "^4.19.2",
@@ -85,6 +85,9 @@
   "bundler": {
     "entries": [
       "./src/index.ts"
+    ],
+    "formats": [
+      "esm"
     ],
     "platform": "node"
   },

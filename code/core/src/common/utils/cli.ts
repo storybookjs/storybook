@@ -1,12 +1,11 @@
-import type { WriteStream } from 'fs-extra';
-import { move, remove, writeFile, readFile, createWriteStream, mkdirSync } from 'fs-extra';
+import { move, remove } from '@ndelangen/fs-extra-unified';
 import { join } from 'node:path';
 import { rendererPackages } from './get-storybook-info';
 import type { JsPackageManager } from '../js-package-manager';
 import versions from '../versions';
 import uniqueString from 'unique-string';
 import os from 'node:os';
-import { realpath } from 'node:fs/promises';
+import { readFile, realpath, writeFile } from 'node:fs/promises';
 
 const tempDir = () => realpath(os.tmpdir());
 
@@ -19,6 +18,7 @@ export async function temporaryDirectory({ prefix = '' } = {}) {
 }
 
 import { type MergeExclusive } from 'type-fest';
+import { createWriteStream, mkdirSync, type WriteStream } from 'node:fs';
 
 export type FileOptions = MergeExclusive<
   {

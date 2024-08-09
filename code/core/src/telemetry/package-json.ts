@@ -1,4 +1,4 @@
-import { readJson } from 'fs-extra';
+import { readJson } from '@ndelangen/fs-extra-unified';
 import path from 'node:path';
 
 import type { Dependency } from './types';

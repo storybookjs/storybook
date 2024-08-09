@@ -1,5 +1,5 @@
 import { readdir } from 'fs/promises';
-import { pathExists, readFile } from 'fs-extra';
+import { pathExists } from '@ndelangen/fs-extra-unified';
 import { program } from 'commander';
 import { dedent } from 'ts-dedent';
 import chalk from 'chalk';
@@ -13,6 +13,7 @@ import {
   type SkippableTask,
 } from '../code/lib/cli-storybook/src/sandbox-templates';
 import { SANDBOX_DIRECTORY } from './utils/constants';
+import { readFile } from 'node:fs/promises';
 
 const sandboxDir = process.env.SANDBOX_ROOT || SANDBOX_DIRECTORY;
 

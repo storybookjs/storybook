@@ -1,4 +1,4 @@
-import type { Configuration } from 'webpack';
+import { type Configuration } from 'webpack';
 import NodePolyfillPlugin from 'node-polyfill-webpack-plugin';
 
 export const configureNodePolyfills = (baseConfig: Configuration) => {

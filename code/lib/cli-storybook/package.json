@@ -42,7 +42,9 @@
   "dependencies": {
     "@babel/core": "^7.24.4",
     "@babel/types": "^7.24.0",
+    "@ndelangen/fs-extra-unified": "^1.0.4",
     "@storybook/codemod": "workspace:*",
+    "@types/fs-extra": "^11.0.4",
     "@types/semver": "^7.3.4",
     "chalk": "^4.1.0",
     "commander": "^6.2.1",
@@ -77,6 +79,9 @@
     "entries": [
       "./src/index.ts",
       "./src/bin/index.ts"
+    ],
+    "formats": [
+      "esm"
     ],
     "platform": "node"
   },

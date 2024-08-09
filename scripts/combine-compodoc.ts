@@ -3,7 +3,7 @@
 // then combine the results into one large documentation.json
 
 import { join, resolve } from 'path';
-import { realpath, readFile, writeFile, lstat } from 'fs-extra';
+import { realpath, readFile, writeFile, lstat } from 'node:fs/promises';
 import { globSync } from 'glob';
 import { execaCommand } from 'execa';
 import { esMain } from './utils/esmain';

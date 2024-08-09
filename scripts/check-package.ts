@@ -2,7 +2,7 @@
 // without having to build dts files for all packages in the monorepo.
 // It is not implemented yet for angular, svelte and vue.
 import { resolve } from 'path';
-import { readJSON } from 'fs-extra';
+import { readJSON } from '@ndelangen/fs-extra-unified';
 import prompts from 'prompts';
 import program from 'commander';
 import chalk from 'chalk';

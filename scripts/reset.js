@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { remove } from 'fs-extra';
+import { remove } from '@ndelangen/fs-extra-unified';
 import { spawn } from 'child_process';
 import trash from 'trash';
 

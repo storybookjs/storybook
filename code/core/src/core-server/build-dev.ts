@@ -16,7 +16,6 @@ import { oneWayHash, telemetry } from '@storybook/core/telemetry';
 import { join, relative, resolve } from 'node:path';
 import { deprecate } from '@storybook/core/node-logger';
 import { dedent } from 'ts-dedent';
-import { readFile } from 'fs-extra';
 import { MissingBuilderError, NoStatsForViteDevError } from '@storybook/core/server-errors';
 import { storybookDevServer } from './dev-server';
 import { outputStats } from './utils/output-stats';
@@ -27,6 +26,7 @@ import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
 import { warnOnIncompatibleAddons } from './utils/warnOnIncompatibleAddons';
 import { warnWhenUsingArgTypesRegex } from './utils/warnWhenUsingArgTypesRegex';
 import { buildOrThrow } from './utils/build-or-throw';
+import { readFile } from 'node:fs/promises';
 
 export async function buildDevStandalone(
   options: CLIOptions & LoadOptions & BuilderOptions
@@ -195,7 +195,7 @@ export async function buildDevStandalone(
     try {
       warnings.push(...(previewStats?.toJson()?.warnings || []));
     } catch (err) {
-      if (err instanceof NoStatsForViteDevError) {
+      if ((err as Error).toString().includes('SB_BUILDER-VITE_0001')) {
         // pass, the Vite builder has no warnings in the stats object anyway,
         // but no stats at all in dev mode
       } else {

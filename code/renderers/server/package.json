@@ -46,6 +46,7 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
+    "@ndelangen/fs-extra-unified": "^1.0.4",
     "@storybook/components": "workspace:^",
     "@storybook/csf": "^0.1.11",
     "@storybook/global": "^5.0.0",

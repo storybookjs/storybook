@@ -22,7 +22,7 @@ vi.mock('fs', () => ({
   default: vi.fn(),
 }));
 
-vi.mock('fs-extra', () => ({
+vi.mock('@ndelangen/fs-extra-unified', () => ({
   pathExistsSync: vi.fn(() => true),
 }));
 

@@ -47,70 +47,74 @@ describe('file-search-channel', () => {
   });
 
   describe('initFileSearchChannel', async () => {
-    it('should emit search result event with the search result', async () => {
-      const mockOptions = {};
-      const data = { searchQuery: 'es-module' };
+    it(
+      '@flaky should emit search result event with the search result',
+      async () => {
+        const mockOptions = {};
+        const data = { searchQuery: 'es-module' };
 
-      initFileSearchChannel(mockChannel, mockOptions as any, { disableTelemetry: true });
+        initFileSearchChannel(mockChannel, mockOptions as any, { disableTelemetry: true });
 
-      mockChannel.addListener(FILE_COMPONENT_SEARCH_RESPONSE, searchResultChannelListener);
-      mockChannel.emit(FILE_COMPONENT_SEARCH_REQUEST, {
-        id: data.searchQuery,
-        payload: {},
-      } satisfies RequestData<FileComponentSearchRequestPayload>);
+        mockChannel.addListener(FILE_COMPONENT_SEARCH_RESPONSE, searchResultChannelListener);
+        mockChannel.emit(FILE_COMPONENT_SEARCH_REQUEST, {
+          id: data.searchQuery,
+          payload: {},
+        } satisfies RequestData<FileComponentSearchRequestPayload>);
 
-      mocks.searchFiles.mockImplementation(async (...args) => {
-        // @ts-expect-error Ignore type issue
-        return (await vi.importActual('../utils/search-files')).searchFiles(...args);
-      });
+        mocks.searchFiles.mockImplementation(async (...args) => {
+          // @ts-expect-error Ignore type issue
+          return (await vi.importActual('../utils/search-files')).searchFiles(...args);
+        });
 
-      await vi.waitFor(
-        () => {
-          expect(searchResultChannelListener).toHaveBeenCalled();
-        },
-        { timeout: 2000 }
-      );
+        await vi.waitFor(
+          () => {
+            expect(searchResultChannelListener).toHaveBeenCalled();
+          },
+          { timeout: 2000 }
+        );
 
-      expect(searchResultChannelListener).toHaveBeenCalledWith({
-        id: data.searchQuery,
-        error: null,
-        payload: {
-          files: [
-            {
-              exportedComponents: [
-                {
-                  default: false,
-                  name: 'p',
-                },
-                {
-                  default: false,
-                  name: 'q',
-                },
-                {
-                  default: false,
-                  name: 'C',
-                },
-                {
-                  default: false,
-                  name: 'externalName',
-                },
-                {
-                  default: false,
-                  name: 'ns',
-                },
-                {
-                  default: true,
-                  name: 'default',
-                },
-              ],
-              filepath: 'src/es-module.js',
-              storyFileExists: true,
-            },
-          ],
-        },
-        success: true,
-      });
-    });
+        expect(searchResultChannelListener).toHaveBeenCalledWith({
+          id: data.searchQuery,
+          error: null,
+          payload: {
+            files: [
+              {
+                exportedComponents: [
+                  {
+                    default: false,
+                    name: 'p',
+                  },
+                  {
+                    default: false,
+                    name: 'q',
+                  },
+                  {
+                    default: false,
+                    name: 'C',
+                  },
+                  {
+                    default: false,
+                    name: 'externalName',
+                  },
+                  {
+                    default: false,
+                    name: 'ns',
+                  },
+                  {
+                    default: true,
+                    name: 'default',
+                  },
+                ],
+                filepath: 'src/es-module.js',
+                storyFileExists: true,
+              },
+            ],
+          },
+          success: true,
+        });
+      },
+      { retry: 3 }
+    );
 
     it('should emit search result event with an empty search result', async () => {
       const mockOptions = {};

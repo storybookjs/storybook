@@ -13,6 +13,7 @@ export default {
   args: {
     label: 'Click me',
   },
+  tags: ['!vitest'],
 };
 
 export const ForceRemount = {

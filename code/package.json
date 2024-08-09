@@ -48,6 +48,8 @@
     "storybook:ui": "NODE_OPTIONS=\"--preserve-symlinks --preserve-symlinks-main\" ./lib/cli/bin/index.cjs dev --port 6006 --config-dir ./.storybook",
     "storybook:ui:build": "NODE_OPTIONS=\"--preserve-symlinks --preserve-symlinks-main\" ./lib/cli/bin/index.cjs build --config-dir ./.storybook --webpack-stats-json",
     "storybook:ui:chromatic": "../scripts/node_modules/.bin/chromatic --build-script-name storybook:ui:build --storybook-base-dir ./ --exit-zero-on-changes --exit-once-uploaded",
+    "storybook:vitest": "yarn test --project storybook-ui",
+    "storybook:vitest:inspect": "INSPECT=true yarn test --project storybook-ui",
     "task": "yarn --cwd ../scripts task",
     "test": "NODE_OPTIONS=--max_old_space_size=4096 vitest run",
     "test:watch": "NODE_OPTIONS=--max_old_space_size=4096 vitest watch"
@@ -122,6 +124,7 @@
     "@storybook/csf-plugin": "workspace:*",
     "@storybook/ember": "workspace:*",
     "@storybook/eslint-config-storybook": "^4.0.0",
+    "@storybook/experimental-addon-vitest": "workspace:*",
     "@storybook/global": "^5.0.0",
     "@storybook/html": "workspace:*",
     "@storybook/html-vite": "workspace:*",
@@ -173,6 +176,8 @@
     "@typescript-eslint/experimental-utils": "^5.62.0",
     "@typescript-eslint/parser": "^6.18.1",
     "@vitejs/plugin-react": "^3.0.1",
+    "@vitest/browser": "^2.0.5",
+    "@vitest/coverage-istanbul": "^2.0.5",
     "@vitest/coverage-v8": "^2.0.5",
     "create-storybook": "workspace:*",
     "cross-env": "^7.0.3",
@@ -206,6 +211,7 @@
     "typescript": "^5.4.3",
     "util": "^0.12.4",
     "vite": "^4.0.0",
+    "vite-plugin-inspect": "^0.8.5",
     "vitest": "^2.0.5",
     "wait-on": "^7.0.1"
   },

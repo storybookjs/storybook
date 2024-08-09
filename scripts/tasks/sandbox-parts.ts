@@ -10,13 +10,14 @@ import {
   readFileSync,
   readJson,
   writeJson,
+  writeFile,
 } from 'fs-extra';
-import { join, resolve, sep } from 'path';
+import { join, resolve, sep, relative } from 'path';
 import JSON5 from 'json5';
 import { createRequire } from 'module';
 import slash from 'slash';
 
-import type { Task } from '../task';
+import type { PassedOptionValues, Task, TemplateDetails } from '../task';
 import { executeCLIStep, steps } from '../utils/cli-step';
 import {
   installYarn2,
@@ -33,16 +34,13 @@ import { detectLanguage } from '../../code/core/src/cli/detect';
 import { SupportedLanguage } from '../../code/core/src/cli/project_types';
 import { updatePackageScripts } from '../utils/package-json';
 import { addPreviewAnnotations, readMainConfig } from '../utils/main-js';
-import {
-  type JsPackageManager,
-  versions as storybookPackages,
-  JsPackageManagerFactory,
-} from '../../code/core/src/common';
+import { versions as storybookPackages, JsPackageManagerFactory } from '../../code/core/src/common';
 import { workspacePath } from '../utils/workspace';
 import { babelParse } from '../../code/core/src/csf-tools/babelParse';
 import { CODE_DIRECTORY, REPROS_DIRECTORY } from '../utils/constants';
 import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
 import { isFunction } from 'lodash';
+import dedent from 'ts-dedent';
 
 const logger = console;
 
@@ -363,6 +361,139 @@ async function linkPackageStories(
   );
 }
 
+export async function setupVitest(details: TemplateDetails, options: PassedOptionValues) {
+  const { sandboxDir, template } = details;
+
+  const isSvelte = template.expected.renderer === '@storybook/svelte';
+  const isVue = template.expected.renderer === '@storybook/vue3';
+  const isNextjs = template.expected.framework === '@storybook/nextjs';
+  // const isAngular = template.expected.framework === '@storybook/angular';
+  const storybookPackage = isNextjs ? template.expected.framework : template.expected.renderer;
+
+  await writeFile(
+    join(sandboxDir, '.storybook/setupTests.ts'),
+    dedent`import { beforeAll } from 'vitest'
+    import { setProjectAnnotations } from '${storybookPackage}'
+    import * as rendererDocsAnnotations from '${template.expected.renderer}/dist/entry-preview-docs.mjs'
+    import * as addonActionsAnnotations from '@storybook/addon-actions/preview'
+    import * as addonInteractionsAnnotations from '@storybook/addon-interactions/preview'
+    import '../src/stories/components'
+    import * as coreAnnotations from '../template-stories/core/preview'
+    import * as toolbarAnnotations from '../template-stories/addons/toolbars/preview'
+    import * as projectAnnotations from './preview'
+    ${isVue ? 'import * as vueAnnotations from "../src/stories/renderers/vue3/preview.js"' : ''}
+
+    const annotations = setProjectAnnotations([
+      rendererDocsAnnotations,
+      projectAnnotations,
+      coreAnnotations,
+      toolbarAnnotations,
+      addonActionsAnnotations,
+      addonInteractionsAnnotations,
+      ${isVue ? 'vueAnnotations,' : ''}
+    ])
+
+    beforeAll(annotations.beforeAll!)`
+  );
+
+  await writeFile(
+    join(sandboxDir, '.storybook/vitest.config.mts'),
+    dedent`import path from 'node:path'
+    import { defineConfig, mergeConfig, defaultExclude } from 'vitest/config'
+    import { storybookTest } from '@storybook/experimental-addon-vitest/plugin'
+    ${!isNextjs ? "import viteConfig from '../vite.config'" : ''}
+    ${isNextjs ? "import vitePluginNext from 'vite-plugin-storybook-nextjs'" : ''}
+    ${isSvelte ? "import { svelteTesting } from '@testing-library/svelte/vite'" : ''}
+
+    export default mergeConfig(
+      ${!isNextjs ? 'viteConfig' : '{}'},
+      defineConfig({
+        plugins: [
+          storybookTest({
+            configDir: process.cwd(),
+            storybookScript: 'yarn storybook --ci',
+            tags: {
+              include: ['vitest'],
+            }
+          }),
+          ${isSvelte ? 'svelteTesting(),' : ''}
+          ${isNextjs ? "vitePluginNext({ dir: path.join(__dirname, '..') })," : ''}
+        ],
+        resolve: {
+          preserveSymlinks: true,
+          ${isVue ? "alias: { vue: 'vue/dist/vue.esm-bundler.js' }," : ''}
+        },
+        test: {
+          name: 'storybook',
+          include: [
+           // we need to set the path like this because svelte-kit overrides the root path so this makes it work in all sandboxes
+            path.join(__dirname, '../src/**/*.{story,stories}.?(c|m)[jt]s?(x)'),
+            path.join(__dirname, '../template-stories/**/*.{story,stories}.?(c|m)[jt]s?(x)'),
+          ],
+          exclude: [
+            ...defaultExclude,
+            // TODO: investigate TypeError: Cannot read properties of null (reading 'useContext')
+            path.join(__dirname, '../**/*argtypes*'),
+            // TODO (SVELTEKIT): Failures related to missing framework annotations
+            path.join(__dirname, '../**/frameworks/sveltekit_svelte-kit-skeleton-ts/navigation.stories*'),
+            path.join(__dirname, '../**/frameworks/sveltekit_svelte-kit-skeleton-ts/hrefs.stories*'),
+            // TODO (SVELTEKIT): Investigate Error: use:enhance can only be used on <form> fields with method="POST"
+            path.join(__dirname, '../**/frameworks/sveltekit_svelte-kit-skeleton-ts/forms.stories*'),
+            // TODO (SVELTE|SVELTEKIT): Typescript preprocessor issue
+            path.join(__dirname, '../**/frameworks/svelte-vite_svelte-vite-default-ts/ts-docs.stories.*'),
+            path.join(__dirname, '../**/frameworks/sveltekit_svelte-kit-skeleton-ts/ts-docs.stories.*'),
+            ${isSvelte ? "path.join(__dirname, '../**/stories/(Button|Header|Page).stories.ts')," : ''}
+          ],
+          /**
+           * TODO: Either fix or acknowledge limitation of:
+           * - @storybook/core/preview-api hooks:
+           * -- UseState
+           */
+          testNamePattern: /^(?!.*(UseState)).*$/,
+          browser: {
+            enabled: true,
+            name: 'chromium',
+            provider: 'playwright',
+            headless: true,
+            screenshotFailures: false,
+          },
+          setupFiles: ['./.storybook/setupTests.ts'],
+          environment: 'happy-dom',
+        },
+      })
+    )`
+  );
+
+  await writeFile(
+    join(sandboxDir, 'vitest.workspace.ts'),
+    dedent`
+      import { defineWorkspace } from 'vitest/config'
+
+      export default defineWorkspace(['.storybook'])
+  `
+  );
+
+  const packageJsonPath = join(sandboxDir, 'package.json');
+  const packageJson = await readJson(packageJsonPath);
+
+  packageJson.scripts = {
+    ...packageJson.scripts,
+    vitest: 'vitest',
+  };
+
+  // This workaround is needed because Vitest seems to have issues in link mode
+  // so the /setup-file and /global-setup files from the vitest addon won't work in portal protocol
+  if (options.link) {
+    const vitestAddonPath = relative(sandboxDir, join(CODE_DIRECTORY, 'addons', 'vitest'));
+    packageJson.resolutions = {
+      ...packageJson.resolutions,
+      '@storybook/experimental-addon-vitest': `file:${vitestAddonPath}`,
+    };
+  }
+
+  await writeJson(packageJsonPath, packageJson, { spaces: 2 });
+}
+
 export async function addExtraDependencies({
   cwd,
   dryRun,
@@ -376,15 +507,16 @@ export async function addExtraDependencies({
 }) {
   const extraDevDeps = ['@storybook/test-runner@next'];
   if (debug) logger.log('🎁 Adding extra dev deps', extraDevDeps);
-  let packageManager: JsPackageManager;
-  if (!dryRun) {
-    packageManager = JsPackageManagerFactory.getPackageManager({}, cwd);
-    await packageManager.addDependencies({ installAsDevDependencies: true }, extraDevDeps);
-  }
+  if (dryRun) return;
+
+  const packageManager = JsPackageManagerFactory.getPackageManager({}, cwd);
+  await packageManager.addDependencies({ installAsDevDependencies: true }, extraDevDeps);
+
   if (extraDeps) {
     if (debug) logger.log('🎁 Adding extra deps', extraDeps);
-    await packageManager.addDependencies({ installAsDevDependencies: false }, extraDeps);
+    await packageManager.addDependencies({ installAsDevDependencies: true }, extraDeps);
   }
+  await packageManager.installDependencies();
 }
 
 export const addStories: Task['run'] = async (

@@ -47,6 +47,8 @@ enum events {
   STORY_ARGS_UPDATED = 'storyArgsUpdated',
   // Reset either a single arg of a story all args of a story
   RESET_STORY_ARGS = 'resetStoryArgs',
+  // Emitted after a filter is set
+  SET_FILTER = 'setFilter',
   // Emitted by the preview at startup once it knows the initial set of globals+globalTypes
   SET_GLOBALS = 'setGlobals',
   // Tell the preview to update the value of a global
@@ -114,6 +116,7 @@ export const {
   SELECT_STORY,
   SET_CONFIG,
   SET_CURRENT_STORY,
+  SET_FILTER,
   SET_GLOBALS,
   SET_INDEX,
   SET_STORIES,

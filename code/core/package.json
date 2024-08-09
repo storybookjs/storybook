@@ -302,7 +302,7 @@
     "@radix-ui/react-slot": "^1.0.2",
     "@storybook/docs-mdx": "4.0.0-next.1",
     "@storybook/global": "^5.0.0",
-    "@storybook/icons": "^1.2.5",
+    "@storybook/icons": "^1.2.10",
     "@tanstack/react-virtual": "^3.3.0",
     "@testing-library/react": "^14.0.0",
     "@types/compression": "^1.7.0",

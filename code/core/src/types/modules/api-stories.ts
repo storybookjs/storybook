@@ -125,6 +125,7 @@ export interface API_StatusObject {
   title: string;
   description: string;
   data?: any;
+  onClick?: () => void;
 }
 
 export type API_StatusState = Record<StoryId, Record<string, API_StatusObject>>;

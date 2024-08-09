@@ -2,6 +2,7 @@ import {
   composeStory as originalComposeStory,
   composeStories as originalComposeStories,
   setProjectAnnotations as originalSetProjectAnnotations,
+  setDefaultProjectAnnotations,
 } from 'storybook/internal/preview-api';
 import type {
   Args,
@@ -20,7 +21,6 @@ import PreviewRender from '@storybook/svelte/internal/PreviewRender.svelte';
 // @ts-expect-error Don't know why TS doesn't pick up the types export here
 import { createSvelte5Props } from '@storybook/svelte/internal/createSvelte5Props';
 import { IS_SVELTE_V4 } from './utils';
-import { TestingLibraryMustBeConfiguredError } from 'storybook/internal/preview-errors';
 
 type ComposedStory<TArgs extends Args = any> = ComposedStoryFn<SvelteRenderer, TArgs> & {
   Component: typeof PreviewRender;
@@ -57,6 +57,7 @@ export function setProjectAnnotations(
     | NamedOrDefaultProjectAnnotations<SvelteRenderer>
     | NamedOrDefaultProjectAnnotations<SvelteRenderer>[]
 ): ProjectAnnotations<SvelteRenderer> {
+  setDefaultProjectAnnotations(INTERNAL_DEFAULT_PROJECT_ANNOTATIONS);
   return originalSetProjectAnnotations<SvelteRenderer>(projectAnnotations);
 }
 
@@ -65,9 +66,7 @@ export const INTERNAL_DEFAULT_PROJECT_ANNOTATIONS: ProjectAnnotations<SvelteRend
   ...svelteProjectAnnotations,
   renderToCanvas: (renderContext, canvasElement) => {
     if (renderContext.storyContext.testingLibraryRender == null) {
-      throw new TestingLibraryMustBeConfiguredError();
-      // Enable for 8.3
-      // return svelteProjectAnnotations.renderToCanvas(renderContext, canvasElement);
+      return svelteProjectAnnotations.renderToCanvas(renderContext, canvasElement);
     }
     const {
       storyFn,

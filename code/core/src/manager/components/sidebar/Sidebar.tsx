@@ -20,6 +20,7 @@ import { SearchResults } from './SearchResults';
 import type { CombinedDataset, Selection } from './types';
 import { useLastViewed } from './useLastViewed';
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
+import { SidebarBottom } from './SidebarBottom';
 
 export const DEFAULT_REF_ID = 'storybook_internal';
 
@@ -109,7 +110,6 @@ export interface SidebarProps extends API_LoadedRefData {
   status: State['status'];
   menu: any[];
   extra: Addon_SidebarTopType[];
-  bottom?: Addon_SidebarBottomType[];
   storyId?: string;
   refId?: string;
   menuHighlighted?: boolean;
@@ -128,7 +128,6 @@ export const Sidebar = React.memo(function Sidebar({
   previewInitialized,
   menu,
   extra,
-  bottom = [],
   menuHighlighted = false,
   enableShortcuts = true,
   refs = {},
@@ -194,9 +193,7 @@ export const Sidebar = React.memo(function Sidebar({
       </ScrollArea>
       {isLoading ? null : (
         <Bottom className="sb-bar">
-          {bottom.map(({ id, render: Render }) => (
-            <Render key={id} />
-          ))}
+          <SidebarBottom />
         </Bottom>
       )}
     </Container>

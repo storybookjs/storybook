@@ -65,6 +65,7 @@ export const Targets = {
       b: 'b',
     });
   },
+  tags: ['!vitest'],
 };
 
 export const Events = {

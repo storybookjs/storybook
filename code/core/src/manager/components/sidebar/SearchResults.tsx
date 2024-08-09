@@ -16,6 +16,7 @@ import { matchesKeyCode, matchesModifiers } from '../../keybinding';
 
 import { statusMapping } from '../../utils/status';
 import { UseSymbol } from './IconSymbols';
+import { StatusLabel } from './StatusButton';
 
 const { document } = global;
 
@@ -31,6 +32,7 @@ const ResultRow = styled.li<{ isHighlighted: boolean }>(({ theme, isHighlighted 
   cursor: 'pointer',
   display: 'flex',
   alignItems: 'start',
+  justifyContent: 'space-between',
   textAlign: 'left',
   color: 'inherit',
   fontSize: `${theme.typography.size.s2}px`,
@@ -54,6 +56,7 @@ const IconWrapper = styled.div({
 });
 
 const ResultRowContent = styled.div({
+  flex: 1,
   display: 'flex',
   flexDirection: 'column',
 });
@@ -181,7 +184,7 @@ const Result: FC<
   const nameMatch = matches.find((match: Match) => match.key === 'name');
   const pathMatches = matches.filter((match: Match) => match.key === 'path');
 
-  const [i] = item.status ? statusMapping[item.status] : [];
+  const [icon] = item.status ? statusMapping[item.status] : [];
 
   return (
     <ResultRow {...props} onClick={click}>
@@ -216,7 +219,7 @@ const Result: FC<
           ))}
         </Path>
       </ResultRowContent>
-      {item.status ? i : null}
+      {item.status ? <StatusLabel status={item.status}>{icon}</StatusLabel> : null}
     </ResultRow>
   );
 });

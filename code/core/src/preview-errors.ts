@@ -235,42 +235,6 @@ export class MountMustBeDestructuredError extends StorybookError {
   }
 }
 
-export class TestingLibraryMustBeConfiguredError extends StorybookError {
-  constructor() {
-    super({
-      category: Category.PREVIEW_API,
-      code: 13,
-      message: dedent`
-        You must configure testingLibraryRender to use play in portable stories.
-        
-        import { render } from '@testing-library/[renderer]';
-        
-        setProjectAnnotations({
-          testingLibraryRender: render,
-        });
-        
-        For other testing renderers, you can configure \`renderToCanvas\` like so:
-        
-        import { render } from 'your-test-renderer';
-        
-        setProjectAnnotations({
-          renderToCanvas: ({ storyFn }) => {
-            const Story = storyFn();
-            
-            // Svelte
-            render(Story.Component, Story.props);
-            
-            // Vue
-            render(Story);
-            
-            // or for React
-            render(<Story/>);
-          },
-        });`,
-    });
-  }
-}
-
 export class NoRenderFunctionError extends StorybookError {
   constructor(public data: { id: string }) {
     super({

@@ -2,6 +2,7 @@ import {
   composeStory as originalComposeStory,
   composeStories as originalComposeStories,
   setProjectAnnotations as originalSetProjectAnnotations,
+  setDefaultProjectAnnotations,
 } from 'storybook/internal/preview-api';
 import type {
   Args,
@@ -12,7 +13,6 @@ import type {
   StoriesWithPartialProps,
   ComposedStoryFn,
 } from 'storybook/internal/types';
-import { TestingLibraryMustBeConfiguredError } from 'storybook/internal/preview-errors';
 import { h } from 'vue';
 
 import * as defaultProjectAnnotations from './entry-preview';
@@ -47,6 +47,7 @@ export function setProjectAnnotations(
     | NamedOrDefaultProjectAnnotations<VueRenderer>
     | NamedOrDefaultProjectAnnotations<VueRenderer>[]
 ): ProjectAnnotations<VueRenderer> {
+  setDefaultProjectAnnotations(vueProjectAnnotations);
   return originalSetProjectAnnotations<VueRenderer>(projectAnnotations);
 }
 
@@ -55,9 +56,7 @@ export const vueProjectAnnotations: ProjectAnnotations<VueRenderer> = {
   ...defaultProjectAnnotations,
   renderToCanvas: (renderContext, canvasElement) => {
     if (renderContext.storyContext.testingLibraryRender == null) {
-      throw new TestingLibraryMustBeConfiguredError();
-      // Enable for 8.3
-      // return defaultProjectAnnotations.renderToCanvas(renderContext, canvasElement);
+      return defaultProjectAnnotations.renderToCanvas(renderContext, canvasElement);
     }
     const {
       storyFn,

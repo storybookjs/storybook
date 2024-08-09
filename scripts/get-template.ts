@@ -82,6 +82,7 @@ const tasksMap = {
   'test-runner': 'test-runner-production',
   // 'test-runner-dev', TODO: bring this back when the task is enabled again
   bench: 'bench',
+  'vitest-integration': 'vitest-integration',
 } as const;
 
 type TaskKey = keyof typeof tasksMap;

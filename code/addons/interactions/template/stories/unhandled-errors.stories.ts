@@ -14,7 +14,7 @@ export default {
     actions: { argTypesRegex: '^on[A-Z].*' },
     chromatic: { disable: true },
   },
-  tags: ['!test'],
+  tags: ['!test', '!vitest'],
 };
 
 export const Default = {

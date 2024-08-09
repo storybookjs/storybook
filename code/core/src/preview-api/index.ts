@@ -54,6 +54,7 @@ export {
   normalizeStory,
   filterArgTypes,
   sanitizeStoryContextUpdate,
+  setDefaultProjectAnnotations,
   setProjectAnnotations,
   inferControls,
   userOrAutoTitleFromSpecifier,

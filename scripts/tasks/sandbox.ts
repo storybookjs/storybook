@@ -37,8 +37,16 @@ export const sandbox: Task = {
       await remove(details.sandboxDir);
     }
 
-    const { create, install, addStories, extendMain, init, addExtraDependencies, setImportMap } =
-      await import('./sandbox-parts');
+    const {
+      create,
+      install,
+      addStories,
+      extendMain,
+      init,
+      addExtraDependencies,
+      setImportMap,
+      setupVitest,
+    } = await import('./sandbox-parts');
 
     let startTime = now();
     await create(details, options);
@@ -73,11 +81,41 @@ export const sandbox: Task = {
       await addStories(details, options);
     }
 
+    const extraDeps = details.template.modifications?.extraDependencies ?? [];
+    if (!details.template.skipTasks?.includes('vitest-integration')) {
+      const renderer = details.template.expected.renderer.replace('@storybook/', '');
+
+      // Remove numbers so that vue3 becomes vue
+      const testingLibraryPackage = `@testing-library/${renderer.replace(/\d/g, '')}`;
+      extraDeps.push(
+        'happy-dom',
+        'vitest',
+        'playwright',
+        '@vitest/browser',
+        '@storybook/experimental-addon-vitest',
+        testingLibraryPackage
+      );
+
+      if (details.template.expected.framework === '@storybook/nextjs') {
+        extraDeps.push('vite-plugin-storybook-nextjs', 'jsdom');
+      }
+
+      // if (details.template.expected.renderer === '@storybook/svelte') {
+      //   extraDeps.push(`@testing-library/svelte`);
+      // }
+      //
+      // if (details.template.expected.framework === '@storybook/angular') {
+      //   extraDeps.push('@testing-library/angular', '@analogjs/vitest-angular');
+      // }
+
+      await setupVitest(details, options);
+    }
+
     await addExtraDependencies({
       cwd: details.sandboxDir,
       debug: options.debug,
       dryRun: options.dryRun,
-      extraDeps: details.template.modifications?.extraDependencies,
+      extraDeps,
     });
 
     await extendMain(details, options);

@@ -4,7 +4,7 @@ import type { IndexHash, State } from '@storybook/core/manager-api';
 import { ManagerContext, types } from '@storybook/core/manager-api';
 import type { StoryObj, Meta } from '@storybook/react';
 import { within, userEvent, expect, fn } from '@storybook/test';
-import type { Addon_SidebarTopType } from '@storybook/core/types';
+import type { Addon_SidebarTopType, API_StatusState } from '@storybook/core/types';
 import { Button, IconButton } from '@storybook/core/components';
 import { FaceHappyIcon } from '@storybook/icons';
 import { Sidebar, DEFAULT_REF_ID } from './Sidebar';
@@ -26,6 +26,26 @@ const storyId = 'root-1-child-a2--grandchild-a1-1';
 export const simpleData = { menu, index, storyId };
 export const loadingData = { menu };
 
+const managerContext: any = {
+  state: {
+    docsOptions: {
+      defaultName: 'Docs',
+      autodocs: 'tag',
+      docsMode: false,
+    },
+  },
+  api: {
+    emit: fn().mockName('api::emit'),
+    on: fn().mockName('api::on'),
+    off: fn().mockName('api::off'),
+    getShortcutKeys: fn(() => ({ search: ['control', 'shift', 's'] })).mockName(
+      'api::getShortcutKeys'
+    ),
+    selectStory: fn().mockName('api::selectStory'),
+    experimental_setFilter: fn().mockName('api::experimental_setFilter'),
+  },
+};
+
 const meta = {
   component: Sidebar,
   title: 'Sidebar/Sidebar',
@@ -44,28 +64,7 @@ const meta = {
   },
   decorators: [
     (storyFn) => (
-      <ManagerContext.Provider
-        value={
-          {
-            state: {
-              docsOptions: {
-                defaultName: 'Docs',
-                autodocs: 'tag',
-                docsMode: false,
-              },
-            },
-            api: {
-              emit: fn().mockName('api::emit'),
-              on: fn().mockName('api::on'),
-              off: fn().mockName('api::off'),
-              getShortcutKeys: fn(() => ({ search: ['control', 'shift', 's'] })).mockName(
-                'api::getShortcutKeys'
-              ),
-              selectStory: fn().mockName('api::selectStory'),
-            },
-          } as any
-        }
-      >
+      <ManagerContext.Provider value={managerContext}>
         <LayoutProvider>
           <IconSymbols />
           {storyFn()}
@@ -227,41 +226,29 @@ export const Searching: Story = {
 };
 
 export const Bottom: Story = {
-  args: {
-    bottom: [
-      {
-        id: '1',
-        type: types.experimental_SIDEBAR_BOTTOM,
-        render: () => (
-          <Button>
-            <FaceHappyIcon />
-            Custom addon A
-          </Button>
-        ),
-      },
-      {
-        id: '2',
-        type: types.experimental_SIDEBAR_BOTTOM,
-        render: () => (
-          <Button>
-            {' '}
-            <FaceHappyIcon />
-            Custom addon B
-          </Button>
-        ),
-      },
-      {
-        id: '3',
-        type: types.experimental_SIDEBAR_BOTTOM,
-        render: () => (
-          <IconButton>
-            {' '}
-            <FaceHappyIcon />
-          </IconButton>
-        ),
-      },
-    ],
-  },
+  decorators: [
+    (storyFn) => (
+      <ManagerContext.Provider
+        value={{
+          ...managerContext,
+          state: {
+            ...managerContext.state,
+            status: {
+              [storyId]: {
+                vitest: { status: 'warn', title: '', description: '' },
+                vta: { status: 'error', title: '', description: '' },
+              },
+              'root-1-child-a2--grandchild-a1-2': {
+                vitest: { status: 'warn', title: '', description: '' },
+              },
+            } satisfies API_StatusState,
+          },
+        }}
+      >
+        {storyFn()}
+      </ManagerContext.Provider>
+    ),
+  ],
 };
 
 /**

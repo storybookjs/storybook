@@ -431,6 +431,10 @@ export interface Addon_WrapperType {
     }>
   >;
 }
+
+/**
+ * @deprecated This doesn't do anything anymore and will be removed in Storybook 9.0.
+ */
 export interface Addon_SidebarBottomType {
   type: Addon_TypesEnum.experimental_SIDEBAR_BOTTOM;
   /**
@@ -443,6 +447,9 @@ export interface Addon_SidebarBottomType {
   render: FC;
 }
 
+/**
+ * @deprecated This will be removed in Storybook 9.0.
+ */
 export interface Addon_SidebarTopType {
   type: Addon_TypesEnum.experimental_SIDEBAR_TOP;
   /**
@@ -523,12 +530,12 @@ export enum Addon_TypesEnum {
   experimental_PAGE = 'page',
   /**
    * This adds items in the bottom of the sidebar.
-   * @unstable
+   * @deprecated This doesn't do anything anymore and will be removed in Storybook 9.0.
    */
   experimental_SIDEBAR_BOTTOM = 'sidebar-bottom',
   /**
    * This adds items in the top of the sidebar.
-   * @unstable This will get replaced with a new API in 8.0, use at your own risk.
+   * @deprecated This will be removed in Storybook 9.0.
    */
   experimental_SIDEBAR_TOP = 'sidebar-top',
 }

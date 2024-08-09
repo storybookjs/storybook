@@ -43,14 +43,10 @@ const BranchNode = styled.button<{
   gap: 6,
   paddingTop: 5,
   paddingBottom: 4,
-
-  '&:hover, &:focus': {
-    background: transparentize(0.93, theme.color.secondary),
-    outline: 'none',
-  },
 }));
 
 const LeafNode = styled.a<{ depth?: number }>(({ theme, depth = 0 }) => ({
+  width: '100%',
   cursor: 'pointer',
   color: 'inherit',
   display: 'flex',

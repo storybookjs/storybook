@@ -29,7 +29,22 @@ import { getValuesFromArgTypes } from './getValuesFromArgTypes';
 import { normalizeProjectAnnotations } from './normalizeProjectAnnotations';
 import { MountMustBeDestructuredError } from '@storybook/core/preview-errors';
 
-let globalProjectAnnotations: ProjectAnnotations<any> = {};
+// TODO we should get to the bottom of the singleton issues caused by dual ESM/CJS modules
+declare global {
+  // eslint-disable-next-line no-var
+  var globalProjectAnnotations: ProjectAnnotations<any>;
+  // eslint-disable-next-line no-var
+  var defaultProjectAnnotations: ProjectAnnotations<any>;
+}
+
+globalThis.globalProjectAnnotations ??= {};
+
+export function setDefaultProjectAnnotations<TRenderer extends Renderer = Renderer>(
+  _defaultProjectAnnotations: ProjectAnnotations<TRenderer>
+) {
+  // Use a variable once we figure out the ESM/CJS issues
+  globalThis.defaultProjectAnnotations = _defaultProjectAnnotations;
+}
 
 const DEFAULT_STORY_TITLE = 'ComposedStory';
 const DEFAULT_STORY_NAME = 'Unnamed Story';
@@ -51,9 +66,9 @@ export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
     | NamedOrDefaultProjectAnnotations<TRenderer>[]
 ): ProjectAnnotations<TRenderer> {
   const annotations = Array.isArray(projectAnnotations) ? projectAnnotations : [projectAnnotations];
-  globalProjectAnnotations = composeConfigs(annotations.map(extractAnnotation));
+  globalThis.globalProjectAnnotations = composeConfigs(annotations.map(extractAnnotation));
 
-  return globalProjectAnnotations;
+  return globalThis.globalProjectAnnotations;
 }
 
 const cleanups: CleanupCallback[] = [];
@@ -90,7 +105,13 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
   );
 
   const normalizedProjectAnnotations = normalizeProjectAnnotations<TRenderer>(
-    composeConfigs([defaultConfig ?? {}, globalProjectAnnotations, projectAnnotations ?? {}])
+    composeConfigs([
+      defaultConfig && Object.keys(defaultConfig).length > 0
+        ? defaultConfig
+        : globalThis.defaultProjectAnnotations ?? {},
+      globalThis.globalProjectAnnotations,
+      projectAnnotations ?? {},
+    ])
   );
 
   const story = prepareStory<TRenderer>(
@@ -216,10 +237,13 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
   return composedStory;
 }
 
+const defaultComposeStory: ComposeStoryFn = (story, component, project, exportsName) =>
+  composeStory(story, component, project, {}, exportsName);
+
 export function composeStories<TModule extends Store_CSFExports>(
   storiesImport: TModule,
   globalConfig: ProjectAnnotations<Renderer>,
-  composeStoryFn: ComposeStoryFn
+  composeStoryFn: ComposeStoryFn = defaultComposeStory
 ) {
   const { default: meta, __esModule, __namedExportsOrder, ...stories } = storiesImport;
   const composedStories = Object.entries(stories).reduce((storiesMap, [exportsName, story]) => {

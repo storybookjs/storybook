@@ -2,7 +2,7 @@ import { global as globalThis } from '@storybook/global';
 
 export default {
   component: globalThis.Components.Button,
-  tags: ['autodocs', '!test'],
+  tags: ['autodocs', '!test', '!vitest'],
   args: { label: 'Click Me!' },
   parameters: { chromatic: { disable: true } },
 };

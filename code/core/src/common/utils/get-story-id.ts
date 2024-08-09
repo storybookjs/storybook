@@ -1,4 +1,4 @@
-import type { Options } from '@storybook/core/types';
+import type { Options, StoriesEntry } from '@storybook/core/types';
 import { dedent } from 'ts-dedent';
 import { normalizeStories, normalizeStoryPath } from '@storybook/core/common';
 import path from 'node:path';
@@ -11,22 +11,21 @@ interface StoryIdData {
   exportedStoryName: string;
 }
 
+type GetStoryIdOptions = StoryIdData & {
+  configDir: string;
+  stories: StoriesEntry[];
+  workingDir?: string;
+  storyFilePath: string;
+};
+
 export async function getStoryId(data: StoryIdData, options: Options) {
   const stories = await options.presets.apply('stories', [], options);
 
-  const workingDir = process.cwd();
-
-  const normalizedStories = normalizeStories(stories, {
+  const autoTitle = getStoryTitle({
+    ...data,
+    stories,
     configDir: options.configDir,
-    workingDir,
   });
-
-  const relativePath = path.relative(workingDir, data.storyFilePath);
-  const importPath = posix(normalizeStoryPath(relativePath));
-
-  const autoTitle = normalizedStories
-    .map((normalizeStory) => userOrAutoTitleFromSpecifier(importPath, normalizeStory))
-    .filter(Boolean)[0];
 
   if (autoTitle === undefined) {
     // eslint-disable-next-line local-rules/no-uncategorized-errors
@@ -41,4 +40,23 @@ export async function getStoryId(data: StoryIdData, options: Options) {
   const kind = sanitize(autoTitle);
 
   return { storyId, kind };
+}
+
+export function getStoryTitle({
+  storyFilePath,
+  configDir,
+  stories,
+  workingDir = process.cwd(),
+}: Omit<GetStoryIdOptions, 'exportedStoryName'>) {
+  const normalizedStories = normalizeStories(stories, {
+    configDir,
+    workingDir,
+  });
+
+  const relativePath = path.relative(workingDir, storyFilePath);
+  const importPath = posix(normalizeStoryPath(relativePath));
+
+  return normalizedStories
+    .map((normalizeStory) => userOrAutoTitleFromSpecifier(importPath, normalizeStory))
+    .filter(Boolean)[0];
 }

@@ -16,7 +16,7 @@ const meta = {
     default: () => 'Default Text Slot',
     footer: h('p', 'Footer VNode Slot'),
   },
-  tags: ['autodocs'],
+  tags: ['autodocs', '!vitest'],
 } satisfies Meta<typeof BaseLayout>;
 
 export default meta;

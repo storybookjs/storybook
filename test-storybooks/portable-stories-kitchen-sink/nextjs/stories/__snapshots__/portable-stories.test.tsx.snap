@@ -8,6 +8,9 @@ exports[`renders dynamicImportStories stories renders Default 1`] = `
     >
       Global Decorator
       <br />
+      <div>
+        I am a dynamically loaded component
+      </div>
     </div>
   </div>
 </body>

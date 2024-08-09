@@ -5,6 +5,7 @@ export type SkippableTask =
   | 'smoke-test'
   | 'test-runner'
   | 'test-runner-dev'
+  | 'vitest-integration'
   | 'chromatic'
   | 'e2e-tests'
   | 'e2e-tests-dev'
@@ -105,7 +106,7 @@ const baseTemplates = {
       renderer: '@storybook/react',
       builder: '@storybook/builder-webpack5',
     },
-    skipTasks: ['e2e-tests-dev', 'bench'],
+    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
     modifications: {
       mainConfig: (config) => {
         const stories = config.getFieldValue<Array<StoriesEntry>>(['stories']);
@@ -128,7 +129,7 @@ const baseTemplates = {
       jq '.browserslist.production[0] = ">0.9%"' package.json > tmp.json && mv tmp.json package.json
     `,
     // Re-enable once https://github.com/storybookjs/storybook/issues/19351 is fixed.
-    skipTasks: ['smoke-test', 'bench'],
+    skipTasks: ['smoke-test', 'bench', 'vitest-integration'],
     expected: {
       // TODO: change this to @storybook/cra once that package is created
       framework: '@storybook/react-webpack5',
@@ -151,7 +152,7 @@ const baseTemplates = {
       },
       extraDependencies: ['server-only'],
     },
-    skipTasks: ['e2e-tests-dev', 'bench'],
+    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'nextjs/default-js': {
     name: 'Next.js Latest (Webpack | JavaScript)',
@@ -168,7 +169,7 @@ const baseTemplates = {
       },
       extraDependencies: ['server-only'],
     },
-    skipTasks: ['e2e-tests-dev', 'bench'],
+    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'nextjs/default-ts': {
     name: 'Next.js Latest (Webpack | TypeScript)',
@@ -254,7 +255,7 @@ const baseTemplates = {
       renderer: '@storybook/react',
       builder: '@storybook/builder-webpack5',
     },
-    skipTasks: ['e2e-tests-dev', 'bench'],
+    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'react-webpack/17-ts': {
     name: 'React v17 (Webpack | TypeScript)',
@@ -265,7 +266,7 @@ const baseTemplates = {
       renderer: '@storybook/react',
       builder: '@storybook/builder-webpack5',
     },
-    skipTasks: ['e2e-tests-dev', 'bench'],
+    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'react-webpack/prerelease-ts': {
     name: 'React Prerelease (Webpack | TypeScript)',
@@ -285,7 +286,7 @@ const baseTemplates = {
       renderer: '@storybook/react',
       builder: '@storybook/builder-webpack5',
     },
-    skipTasks: ['e2e-tests-dev', 'bench'],
+    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'solid-vite/default-js': {
     name: 'SolidJS Latest (Vite | JavaScript)',
@@ -297,7 +298,7 @@ const baseTemplates = {
     },
     // TODO: remove this once solid-vite framework is released
     inDevelopment: true,
-    skipTasks: ['e2e-tests-dev', 'bench'],
+    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'solid-vite/default-ts': {
     name: 'SolidJS Latest (Vite | TypeScript)',
@@ -339,7 +340,7 @@ const baseTemplates = {
       renderer: '@storybook/html',
       builder: '@storybook/builder-webpack5',
     },
-    skipTasks: ['e2e-tests-dev', 'bench'],
+    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'html-vite/default-js': {
     name: 'HTML Latest (Vite | JavaScript)',
@@ -350,7 +351,7 @@ const baseTemplates = {
       renderer: '@storybook/html',
       builder: '@storybook/builder-vite',
     },
-    skipTasks: ['e2e-tests-dev', 'bench'],
+    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'html-vite/default-ts': {
     name: 'HTML Latest (Vite | TypeScript)',
@@ -361,7 +362,7 @@ const baseTemplates = {
       renderer: '@storybook/html',
       builder: '@storybook/builder-vite',
     },
-    skipTasks: ['e2e-tests-dev', 'bench'],
+    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'svelte-vite/default-js': {
     name: 'Svelte Latest (Vite | JavaScript)',
@@ -393,7 +394,7 @@ const baseTemplates = {
       renderer: '@storybook/angular',
       builder: '@storybook/builder-webpack5',
     },
-    skipTasks: ['e2e-tests-dev', 'bench'],
+    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'angular-cli/default-ts': {
     name: 'Angular CLI Latest (Webpack | TypeScript)',
@@ -404,7 +405,7 @@ const baseTemplates = {
       renderer: '@storybook/angular',
       builder: '@storybook/builder-webpack5',
     },
-    skipTasks: ['e2e-tests-dev', 'bench'],
+    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'angular-cli/15-ts': {
     name: 'Angular CLI v15 (Webpack | TypeScript)',
@@ -415,7 +416,7 @@ const baseTemplates = {
       renderer: '@storybook/angular',
       builder: '@storybook/builder-webpack5',
     },
-    skipTasks: ['e2e-tests-dev', 'bench'],
+    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'svelte-kit/skeleton-js': {
     name: 'SvelteKit Latest (Vite | JavaScript)',
@@ -460,7 +461,7 @@ const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
-    skipTasks: ['smoke-test', 'e2e-tests-dev', 'bench'],
+    skipTasks: ['smoke-test', 'e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'lit-vite/default-ts': {
     name: 'Lit Latest (Vite | TypeScript)',
@@ -472,7 +473,7 @@ const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
-    skipTasks: ['smoke-test', 'e2e-tests-dev', 'bench'],
+    skipTasks: ['smoke-test', 'e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'vue-cli/default-js': {
     name: 'Vue CLI v3 (Webpack | JavaScript)',
@@ -484,7 +485,7 @@ const baseTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
-    skipTasks: ['smoke-test', 'e2e-tests-dev', 'bench'],
+    skipTasks: ['smoke-test', 'e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'preact-vite/default-js': {
     name: 'Preact Latest (Vite | JavaScript)',
@@ -497,7 +498,7 @@ const baseTemplates = {
     modifications: {
       extraDependencies: ['preact-render-to-string'],
     },
-    skipTasks: ['e2e-tests-dev', 'bench'],
+    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'preact-vite/default-ts': {
     name: 'Preact Latest (Vite | TypeScript)',
@@ -510,7 +511,7 @@ const baseTemplates = {
     modifications: {
       extraDependencies: ['preact-render-to-string'],
     },
-    skipTasks: ['e2e-tests-dev', 'bench'],
+    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'qwik-vite/default-ts': {
     name: 'Qwik CLI Latest (Vite | TypeScript)',
@@ -523,7 +524,7 @@ const baseTemplates = {
       builder: 'storybook-framework-qwik',
     },
     // TODO: The community template does not provide standard stories, which is required for e2e tests.
-    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench'],
+    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'ember/3-js': {
     name: 'Ember v3 (Webpack | JavaScript)',
@@ -570,7 +571,7 @@ const internalTemplates = {
         ),
     },
     isInternal: true,
-    skipTasks: ['e2e-tests-dev', 'bench'],
+    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'internal/react16-webpack': {
     name: 'React 16 (Webpack | TypeScript)',
@@ -581,7 +582,7 @@ const internalTemplates = {
       renderer: '@storybook/react',
       builder: '@storybook/builder-webpack5',
     },
-    skipTasks: ['e2e-tests-dev', 'bench'],
+    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
     isInternal: true,
   },
   'internal/server-webpack5': {
@@ -593,7 +594,7 @@ const internalTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     isInternal: true,
-    skipTasks: ['bench'],
+    skipTasks: ['bench', 'vitest-integration'],
   },
   // 'internal/pnp': {
   //   ...baseTemplates['cra/default-ts'],
@@ -612,7 +613,14 @@ const benchTemplates = {
     modifications: {
       skipTemplateStories: true,
     },
-    skipTasks: ['e2e-tests-dev', 'test-runner', 'test-runner-dev', 'e2e-tests', 'chromatic'],
+    skipTasks: [
+      'e2e-tests-dev',
+      'test-runner',
+      'test-runner-dev',
+      'e2e-tests',
+      'chromatic',
+      'vitest-integration',
+    ],
   },
   'bench/react-webpack-18-ts': {
     ...baseTemplates['react-webpack/18-ts'],
@@ -621,7 +629,14 @@ const benchTemplates = {
     modifications: {
       skipTemplateStories: true,
     },
-    skipTasks: ['e2e-tests-dev', 'test-runner', 'test-runner-dev', 'e2e-tests', 'chromatic'],
+    skipTasks: [
+      'e2e-tests-dev',
+      'test-runner',
+      'test-runner-dev',
+      'e2e-tests',
+      'chromatic',
+      'vitest-integration',
+    ],
   },
   'bench/react-vite-default-ts-nodocs': {
     ...baseTemplates['react-vite/default-ts'],
@@ -631,7 +646,14 @@ const benchTemplates = {
       skipTemplateStories: true,
       disableDocs: true,
     },
-    skipTasks: ['e2e-tests-dev', 'test-runner', 'test-runner-dev', 'e2e-tests', 'chromatic'],
+    skipTasks: [
+      'e2e-tests-dev',
+      'test-runner',
+      'test-runner-dev',
+      'e2e-tests',
+      'chromatic',
+      'vitest-integration',
+    ],
   },
   'bench/react-vite-default-ts-test-build': {
     ...baseTemplates['react-vite/default-ts'],
@@ -641,7 +663,13 @@ const benchTemplates = {
       skipTemplateStories: true,
       testBuild: true,
     },
-    skipTasks: ['e2e-tests-dev', 'test-runner', 'test-runner-dev', 'e2e-tests'],
+    skipTasks: [
+      'e2e-tests-dev',
+      'test-runner',
+      'test-runner-dev',
+      'e2e-tests',
+      'vitest-integration',
+    ],
   },
   'bench/react-webpack-18-ts-test-build': {
     ...baseTemplates['react-webpack/18-ts'],
@@ -651,7 +679,13 @@ const benchTemplates = {
       skipTemplateStories: true,
       testBuild: true,
     },
-    skipTasks: ['e2e-tests-dev', 'test-runner', 'test-runner-dev', 'e2e-tests'],
+    skipTasks: [
+      'e2e-tests-dev',
+      'test-runner',
+      'test-runner-dev',
+      'e2e-tests',
+      'vitest-integration',
+    ],
   },
 } satisfies Record<string, Template & { isInternal: true }>;
 

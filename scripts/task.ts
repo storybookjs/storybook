@@ -27,6 +27,7 @@ import { chromatic } from './tasks/chromatic';
 import { e2eTestsBuild } from './tasks/e2e-tests-build';
 import { e2eTestsDev } from './tasks/e2e-tests-dev';
 import { bench } from './tasks/bench';
+import { vitestTests } from './tasks/vitest-test';
 
 import {
   allTemplates as TEMPLATES,
@@ -109,6 +110,7 @@ export const tasks = {
   'e2e-tests': e2eTestsBuild,
   'e2e-tests-dev': e2eTestsDev,
   bench,
+  'vitest-integration': vitestTests,
 };
 type TaskKey = keyof typeof tasks;
 
@@ -188,7 +190,7 @@ export const options = createOptions({
   },
 });
 
-type PassedOptionValues = Omit<OptionValues<typeof options>, 'task' | 'startFrom' | 'junit'>;
+export type PassedOptionValues = Omit<OptionValues<typeof options>, 'task' | 'startFrom' | 'junit'>;
 
 const logger = console;
 

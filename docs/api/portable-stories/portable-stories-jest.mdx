@@ -164,12 +164,11 @@ sidebar:
   ## setProjectAnnotations
 
   This API should be called once, before the tests run, typically in a [setup file](https://jestjs.io/docs/configuration#setupfiles-array). This will make sure that whenever `composeStories` or `composeStory` are called, the project annotations are taken into account as well.
-  
+
   These are the configurations needed in the setup file:
   - preview annotations: those defined in `.storybook/preview.ts`
   - addon annotations (optional): those exported by addons
   - beforeAll: code that runs before all tests ([more info](../../writing-tests/interaction-testing.mdx#beforeall))
-  - testingLibraryRender: the render function from Testing Library
 
   {/* prettier-ignore-start */}
 

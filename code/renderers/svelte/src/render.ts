@@ -77,7 +77,6 @@ function renderToCanvasV4(
     const mountedComponent = new PreviewRender({
       target: canvasElement,
       props: {
-        svelteVersion: 4,
         storyFn,
         storyContext,
         name,
@@ -149,7 +148,6 @@ function renderToCanvasV5(
       name,
       title,
       showError,
-      svelteVersion: 5,
     });
     const mountedComponent = svelte.mount(PreviewRender, {
       target: canvasElement,

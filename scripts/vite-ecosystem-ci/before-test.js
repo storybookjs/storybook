@@ -3,10 +3,10 @@
  * This is necessary because the sandbox package.json is used to run the tests and the resolutions are needed to run the tests.
  * The vite-ecosystem-ci, though, sets the resolutions in the root package.json.
  */
+import { execa, execaCommand } from 'execa';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { execaCommand, execa } from 'execa';
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);

@@ -1,10 +1,11 @@
+import { dirname, join } from 'node:path';
+
 import type { JsPackageManager } from '@storybook/core/common';
 import { temporaryDirectory, versions } from '@storybook/core/common';
 import type { SupportedFrameworks } from '@storybook/core/types';
 
-import downloadTarball from '@ndelangen/get-tarball';
-import getNpmTarballUrl from 'get-npm-tarball-url';
-import { dirname, join } from 'path';
+import downloadTarballDefault from '@ndelangen/get-tarball';
+import getNpmTarballUrlDefault from 'get-npm-tarball-url';
 import invariant from 'tiny-invariant';
 
 import { externalFrameworks } from './project_types';
@@ -16,6 +17,12 @@ const resolveUsingBranchInstall = async (packageManager: JsPackageManager, reque
 
   // FIXME: this might not be the right version for community packages
   const version = versions[name] || (await packageManager.latestVersion(request));
+
+  // an artifact of esbuild + type=commonjs + exportmap
+  // @ts-expect-error (default export)
+  const getNpmTarballUrl = getNpmTarballUrlDefault.default || getNpmTarballUrlDefault;
+  // @ts-expect-error (default export)
+  const downloadTarball = downloadTarballDefault.default || downloadTarballDefault;
 
   const url = getNpmTarballUrl(request, version, {
     registry: await packageManager.getRegistryURL(),

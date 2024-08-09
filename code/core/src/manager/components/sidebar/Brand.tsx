@@ -12,7 +12,7 @@ export const StorybookLogoStyled = styled(StorybookLogo)(({ theme }) => ({
 
 export const Img = styled.img({
   display: 'block',
-  maxWidth: '150px',
+  maxWidth: '100%',
   maxHeight: '100px',
 });
 

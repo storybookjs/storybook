@@ -116,8 +116,6 @@ const ThemedSetRoot = () => {
   return null;
 };
 
-// eslint-disable-next-line no-underscore-dangle
-const preview = (window as any).__STORYBOOK_PREVIEW__ as PreviewWeb<ReactRenderer>;
 const channel = (window as any).__STORYBOOK_ADDONS_CHANNEL__ as Channel;
 export const loaders = [
   /**
@@ -129,6 +127,8 @@ export const loaders = [
    * The DocsContext will then be added via the decorator below.
    */
   async ({ parameters: { relativeCsfPaths, attached = true } }) => {
+    // eslint-disable-next-line no-underscore-dangle
+    const preview = (window as any).__STORYBOOK_PREVIEW__ as PreviewWeb<ReactRenderer>;
     if (!relativeCsfPaths) return {};
     const csfFiles = await Promise.all(
       (relativeCsfPaths as string[]).map(async (blocksRelativePath) => {

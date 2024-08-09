@@ -1,0 +1,61 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`generateModernIframeScriptCodeFromPreviews > handle multiple annotations 1`] = `
+"import { composeConfigs, PreviewWeb, ClientApi } from 'storybook/internal/preview-api';
+import '/virtual:/@storybook/builder-vite/setup-addons.js';
+import { importFn } from '/virtual:/@storybook/builder-vite/storybook-stories.js';
+import * as previewAnnotations1_2526 from "/user/previewAnnotations1";
+import * as previewAnnotations2_2527 from "/user/previewAnnotations2";
+const getProjectAnnotations = (hmrPreviewAnnotationModules = []) => {
+  const configs = [
+    hmrPreviewAnnotationModules.at(0) ?? previewAnnotations1_2526,
+    hmrPreviewAnnotationModules.at(1) ?? previewAnnotations2_2527
+  ]
+  return composeConfigs(configs);
+}
+
+window.__STORYBOOK_PREVIEW__ = window.__STORYBOOK_PREVIEW__ || new PreviewWeb(importFn, getProjectAnnotations);
+
+window.__STORYBOOK_STORY_STORE__ = window.__STORYBOOK_STORY_STORE__ || window.__STORYBOOK_PREVIEW__.storyStore;
+
+if (import.meta.hot) {
+  import.meta.hot.accept('/virtual:/@storybook/builder-vite/storybook-stories.js', (newModule) => {
+    // importFn has changed so we need to patch the new one in
+    window.__STORYBOOK_PREVIEW__.onStoriesChanged({ importFn: newModule.importFn });
+  });
+
+  import.meta.hot.accept(["/user/previewAnnotations1","/user/previewAnnotations2"], (previewAnnotationModules) => {
+    // getProjectAnnotations has changed so we need to patch the new one in
+    window.__STORYBOOK_PREVIEW__.onGetProjectAnnotationsChanged({ getProjectAnnotations: () => getProjectAnnotations(previewAnnotationModules) });
+  });
+};"
+`;
+
+exports[`generateModernIframeScriptCodeFromPreviews > handle one annotation 1`] = `
+"import { composeConfigs, PreviewWeb, ClientApi } from 'storybook/internal/preview-api';
+import '/virtual:/@storybook/builder-vite/setup-addons.js';
+import { importFn } from '/virtual:/@storybook/builder-vite/storybook-stories.js';
+import * as previewAnnotations_2477 from "/user/previewAnnotations";
+const getProjectAnnotations = (hmrPreviewAnnotationModules = []) => {
+  const configs = [
+    hmrPreviewAnnotationModules.at(0) ?? previewAnnotations_2477
+  ]
+  return composeConfigs(configs);
+}
+
+window.__STORYBOOK_PREVIEW__ = window.__STORYBOOK_PREVIEW__ || new PreviewWeb(importFn, getProjectAnnotations);
+
+window.__STORYBOOK_STORY_STORE__ = window.__STORYBOOK_STORY_STORE__ || window.__STORYBOOK_PREVIEW__.storyStore;
+
+if (import.meta.hot) {
+  import.meta.hot.accept('/virtual:/@storybook/builder-vite/storybook-stories.js', (newModule) => {
+    // importFn has changed so we need to patch the new one in
+    window.__STORYBOOK_PREVIEW__.onStoriesChanged({ importFn: newModule.importFn });
+  });
+
+  import.meta.hot.accept(["/user/previewAnnotations"], (previewAnnotationModules) => {
+    // getProjectAnnotations has changed so we need to patch the new one in
+    window.__STORYBOOK_PREVIEW__.onGetProjectAnnotationsChanged({ getProjectAnnotations: () => getProjectAnnotations(previewAnnotationModules) });
+  });
+};"
+`;

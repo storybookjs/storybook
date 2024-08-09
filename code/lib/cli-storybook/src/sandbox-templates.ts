@@ -197,10 +197,32 @@ const baseTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     modifications: {
+      extraDependencies: ['server-only'],
+    },
+    skipTasks: ['e2e-tests-dev', 'bench'],
+  },
+  'experimental-nextjs-vite/default-ts': {
+    name: 'Next.js Latest (Vite | TypeScript)',
+    script:
+      'yarn create next-app {{beforeDir}} --typescript --eslint --tailwind --app --import-alias="@/*" --src-dir',
+    inDevelopment: true,
+    expected: {
+      framework: '@storybook/experimental-nextjs-vite',
+      renderer: '@storybook/react',
+      builder: '@storybook/builder-vite',
+    },
+
+    modifications: {
       mainConfig: {
+        framework: '@storybook/experimental-nextjs-vite',
         features: { experimentalRSC: true },
       },
-      extraDependencies: ['server-only'],
+      extraDependencies: [
+        'server-only',
+        'vite-plugin-storybook-nextjs',
+        '@storybook/experimental-nextjs-vite',
+        'vite',
+      ],
     },
     skipTasks: ['e2e-tests-dev', 'bench'],
   },
@@ -692,6 +714,7 @@ export const daily: TemplateKey[] = [
   ...merged,
   'angular-cli/prerelease',
   'cra/default-js',
+  'experimental-nextjs-vite/default-ts',
   'react-vite/default-js',
   'react-vite/prerelease-ts',
   'react-webpack/prerelease-ts',

@@ -1,5 +1,4 @@
-import type { PackageJson, StorybookConfig } from '@storybook/core/types';
-import { getConfigInfo } from '@storybook/core/common';
+import type { StorybookConfig } from '@storybook/core/types';
 import { readFile } from 'fs-extra';
 import * as babel from '@babel/core';
 import type { BabelFile } from '@babel/core';
@@ -8,12 +7,10 @@ import { dedent } from 'ts-dedent';
 import chalk from 'chalk';
 
 export async function warnWhenUsingArgTypesRegex(
-  packageJson: PackageJson,
-  configDir: string,
+  previewConfigPath: string | undefined,
   config: StorybookConfig
 ) {
-  const { previewConfig } = getConfigInfo(packageJson, configDir);
-  const previewContent = previewConfig ? await readFile(previewConfig, 'utf8') : '';
+  const previewContent = previewConfigPath ? await readFile(previewConfigPath, 'utf8') : '';
 
   const hasVisualTestAddon =
     config?.addons?.some((it) =>
@@ -22,10 +19,10 @@ export async function warnWhenUsingArgTypesRegex(
         : it.name === '@chromatic-com/storybook'
     ) ?? false;
 
-  if (hasVisualTestAddon && previewConfig && previewContent.includes('argTypesRegex')) {
+  if (hasVisualTestAddon && previewConfigPath && previewContent.includes('argTypesRegex')) {
     // @ts-expect-error File is not yet exposed, see https://github.com/babel/babel/issues/11350#issuecomment-644118606
     const file: BabelFile = new babel.File(
-      { filename: previewConfig },
+      { filename: previewConfigPath },
       { code: previewContent, ast: babelParse(previewContent) }
     );
 
@@ -37,7 +34,7 @@ export async function warnWhenUsingArgTypesRegex(
               'actions.argTypesRegex'
             )} together with the visual test addon:
             
-            ${path.buildCodeFrameError(previewConfig).message}
+            ${path.buildCodeFrameError(previewConfigPath).message}
             
             We recommend removing the ${chalk.cyan(
               'argTypesRegex'

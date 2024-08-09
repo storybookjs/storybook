@@ -3,6 +3,7 @@ import type { Call, CallRef, ElementRef } from '@storybook/instrumenter';
 import { useTheme } from 'storybook/internal/theming';
 import type { ReactElement } from 'react';
 import React, { Fragment } from 'react';
+import { logger } from 'storybook/internal/client-logger';
 
 const colorsLight = {
   base: '#444',
@@ -342,9 +343,19 @@ export const ElementNode = ({
   );
 };
 
-export const DateNode = ({ value }: { value: string }) => {
-  const [date, time, ms] = value.split(/[T.Z]/);
+export const DateNode = ({ value }: { value: string | Date }) => {
+  let parsed = new Date(value);
+  if (isNaN(+parsed)) {
+    logger.warn('Invalid date value:', value);
+    parsed = null;
+  }
+
   const colors = useThemeColors();
+  if (!parsed) {
+    return <span style={{ whiteSpace: 'nowrap', color: colors.date }}>Invalid date</span>;
+  }
+
+  const [date, time, ms] = parsed.toISOString().split(/[T.Z]/);
   return (
     <span style={{ whiteSpace: 'nowrap', color: colors.date }}>
       {date}

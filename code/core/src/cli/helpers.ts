@@ -1,33 +1,35 @@
-import chalk from 'chalk';
-import fs from 'fs';
-import path, { join } from 'path';
-import { coerce, satisfies } from 'semver';
-import stripJsonComments from 'strip-json-comments';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFile, writeFile } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
 
-import { findUpSync } from 'find-up';
-import invariant from 'tiny-invariant';
-import { getRendererDir } from './dirs';
 import {
+  frameworkToRenderer as CoreFrameworkToRenderer,
   type JsPackageManager,
   type PackageJson,
   type PackageJsonWithDepsAndDevDeps,
-  frameworkToRenderer as CoreFrameworkToRenderer,
 } from '@storybook/core/common';
-import type { SupportedFrameworks, SupportedRenderers } from '@storybook/core/types';
-import { CoreBuilder, SupportedLanguage } from './project_types';
 import { versions as storybookMonorepoPackages } from '@storybook/core/common';
+import type { SupportedFrameworks, SupportedRenderers } from '@storybook/core/types';
+
 import { copy, copySync, pathExists } from '@ndelangen/fs-extra-unified';
-import { readFile, writeFile } from 'node:fs/promises';
+import chalk from 'chalk';
+import { findUpSync } from 'find-up';
+import { coerce, satisfies } from 'semver';
+import stripJsonComments from 'strip-json-comments';
+import invariant from 'tiny-invariant';
+
+import { getRendererDir } from './dirs';
+import { CoreBuilder, SupportedLanguage } from './project_types';
 
 const logger = console;
 
 export function readFileAsJson(jsonPath: string, allowComments?: boolean) {
-  const filePath = path.resolve(jsonPath);
-  if (!fs.existsSync(filePath)) {
+  const filePath = resolve(jsonPath);
+  if (!existsSync(filePath)) {
     return false;
   }
 
-  const fileContent = fs.readFileSync(filePath, 'utf8');
+  const fileContent = readFileSync(filePath, 'utf8');
   const jsonContent = allowComments ? stripJsonComments(fileContent) : fileContent;
 
   try {
@@ -39,12 +41,12 @@ export function readFileAsJson(jsonPath: string, allowComments?: boolean) {
 }
 
 export const writeFileAsJson = (jsonPath: string, content: unknown) => {
-  const filePath = path.resolve(jsonPath);
-  if (!fs.existsSync(filePath)) {
+  const filePath = resolve(jsonPath);
+  if (!existsSync(filePath)) {
     return false;
   }
 
-  fs.writeFileSync(filePath, `${JSON.stringify(content, null, 2)}\n`);
+  writeFileSync(filePath, `${JSON.stringify(content, null, 2)}\n`);
   return true;
 };
 
@@ -115,9 +117,9 @@ export function addToDevDependenciesIfNotPresent(
 }
 
 export function copyTemplate(templateRoot: string, destination = '.') {
-  const templateDir = path.resolve(templateRoot, `template-csf/`);
+  const templateDir = resolve(templateRoot, `template-csf/`);
 
-  if (!fs.existsSync(templateDir)) {
+  if (!existsSync(templateDir)) {
     throw new Error(`Couldn't find template dir`);
   }
 

@@ -8,7 +8,6 @@ You will need to have the following installed:
 - git
 - node
 - yarn
-- [bun](https://bun.sh/)
 
 ## Using fnm as a Node version manager
 

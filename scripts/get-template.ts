@@ -1,19 +1,20 @@
-import { readdir } from 'fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
+
 import { pathExists } from '@ndelangen/fs-extra-unified';
+import chalk from 'chalk';
 import { program } from 'commander';
 import { dedent } from 'ts-dedent';
-import chalk from 'chalk';
 import yaml from 'yaml';
-import { esMain } from './utils/esmain';
+
 import {
+  type Cadence,
+  type SkippableTask,
+  type Template as TTemplate,
   allTemplates,
   templatesByCadence,
-  type Cadence,
-  type Template as TTemplate,
-  type SkippableTask,
 } from '../code/lib/cli-storybook/src/sandbox-templates';
 import { SANDBOX_DIRECTORY } from './utils/constants';
-import { readFile } from 'node:fs/promises';
+import { esMain } from './utils/esmain';
 
 const sandboxDir = process.env.SANDBOX_ROOT || SANDBOX_DIRECTORY;
 

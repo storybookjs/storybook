@@ -1,6 +1,6 @@
 /// <reference path="../typings.d.ts" />
-
 import { global } from '@storybook/global';
+
 import { Channel } from './main';
 import { PostMessageTransport } from './postmessage';
 import type { ChannelTransport, Config } from './types';

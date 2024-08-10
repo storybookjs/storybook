@@ -1,10 +1,11 @@
-import { join } from 'node:path';
-import findCacheDirectory from 'find-cache-dir';
-import { init, parse } from 'es-module-lexer';
-import MagicString from 'magic-string';
-import { ensureFile } from '@ndelangen/fs-extra-unified';
-import type { Alias, Plugin } from 'vite';
 import { writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+
+import { ensureFile } from '@ndelangen/fs-extra-unified';
+import { init, parse } from 'es-module-lexer';
+import findCacheDirectory from 'find-cache-dir';
+import MagicString from 'magic-string';
+import type { Alias, Plugin } from 'vite';
 
 const escapeKeys = (key: string) => key.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
 const defaultImportRegExp = 'import ([^*{}]+) from';

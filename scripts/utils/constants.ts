@@ -1,4 +1,4 @@
-import { join } from 'path';
+import { join } from 'node:path';
 
 export const AFTER_DIR_NAME = 'after-storybook';
 export const BEFORE_DIR_NAME = 'before-storybook';

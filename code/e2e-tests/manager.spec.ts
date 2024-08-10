@@ -1,5 +1,6 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import process from 'process';
+
 import { SbPage } from './util';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
@@ -189,6 +190,7 @@ test.describe('Manager UI', () => {
   });
 
   test.describe('Mobile', () => {
+    test.describe.configure({ retries: 3 });
     // TODO: remove this when SSV6 templates have been removed
     // Some assertions in these tests are not compatible with SSV6
     // GIven that SSV6 will be removed before the new mobile UI released, it doesn't make sense to fix them
@@ -200,10 +202,11 @@ test.describe('Manager UI', () => {
     test('Navigate to story', async ({ page }) => {
       const sbPage = new SbPage(page);
 
+      const closeNavigationButton = await sbPage.page.locator('[title="Close navigation menu"]');
       const mobileNavigationHeading = await sbPage.page.locator('[title="Open navigation menu"]');
 
       // navigation menu is closed
-      await expect(mobileNavigationHeading).toHaveText('Configure your project/Docs');
+      await expect(closeNavigationButton).not.toBeVisible();
       await expect(sbPage.page.locator('#storybook-explorer-menu')).not.toBeVisible();
 
       // open navigation menu

@@ -1,16 +1,18 @@
-import {
-  NAVIGATE_URL,
-  STORY_ARGS_UPDATED,
-  SET_CURRENT_STORY,
-  GLOBALS_UPDATED,
-  UPDATE_QUERY_PARAMS,
-} from '@storybook/core/core-events';
 import type { NavigateOptions } from '@storybook/core/router';
-import { queryFromLocation, buildArgsParam } from '@storybook/core/router';
-import { dequal as deepEqual } from 'dequal';
+import { buildArgsParam, queryFromLocation } from '@storybook/core/router';
+import type { API_Layout, API_UI, Args } from '@storybook/core/types';
 import { global } from '@storybook/global';
 
-import type { API_Layout, API_UI, Args } from '@storybook/core/types';
+import {
+  GLOBALS_UPDATED,
+  NAVIGATE_URL,
+  SET_CURRENT_STORY,
+  STORY_ARGS_UPDATED,
+  UPDATE_QUERY_PARAMS,
+} from '@storybook/core/core-events';
+
+import { dequal as deepEqual } from 'dequal';
+
 import type { ModuleArgs, ModuleFn } from '../lib/types';
 import { defaultLayoutState } from './layout';
 
@@ -234,9 +236,9 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
     }
   });
 
-  provider.channel?.on(GLOBALS_UPDATED, ({ globals, initialGlobals }: any) => {
+  provider.channel?.on(GLOBALS_UPDATED, ({ userGlobals, initialGlobals }: any) => {
     const { path, queryParams } = api.getUrlState();
-    const globalsString = buildArgsParam(initialGlobals, globals);
+    const globalsString = buildArgsParam(initialGlobals, userGlobals);
     navigateTo(path, { ...queryParams, globals: globalsString }, { replace: true });
     api.setQueryParams({ globals: globalsString });
   });

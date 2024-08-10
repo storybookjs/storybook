@@ -1,5 +1,6 @@
 import chalk from 'chalk';
 import semver from 'semver';
+
 import type { PullRequestInfo } from './get-github-info';
 import { getPullInfoFromCommit } from './get-github-info';
 import { getLatestTag, git } from './git-client';

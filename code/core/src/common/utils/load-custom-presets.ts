@@ -1,7 +1,9 @@
-import path from 'node:path';
+import { resolve } from 'node:path';
+
+import type { PresetConfig } from '@storybook/core/types';
+
 import { serverRequire, serverResolve } from './interpret-require';
 import { validateConfigurationFiles } from './validate-configuration-files';
-import type { PresetConfig } from '@storybook/core/types';
 
 export async function loadCustomPresets({
   configDir,
@@ -10,11 +12,11 @@ export async function loadCustomPresets({
 }): Promise<PresetConfig[]> {
   validateConfigurationFiles(configDir);
 
-  const presets = await serverRequire(path.resolve(configDir, 'presets'));
-  const main = await serverRequire(path.resolve(configDir, 'main'));
+  const presets = await serverRequire(resolve(configDir, 'presets'));
+  const main = await serverRequire(resolve(configDir, 'main'));
 
   if (main) {
-    const resolved = await serverResolve(path.resolve(configDir, 'main'));
+    const resolved = await serverResolve(resolve(configDir, 'main'));
     if (resolved) {
       return [resolved];
     }

@@ -1,47 +1,47 @@
 // This file requires many imports from `../code`, which requires both an install and bootstrap of
 // the repo to work properly. So we load it async in the task runner *after* those steps.
+import { existsSync, readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { join, resolve, sep } from 'node:path';
 
 import {
   copy,
-  ensureSymlink,
   ensureDir,
+  ensureSymlink,
   pathExists,
   readJson,
   writeJson,
 } from '@ndelangen/fs-extra-unified';
-import { join, resolve, sep } from 'path';
 import JSON5 from 'json5';
-import { createRequire } from 'module';
+import { isFunction } from 'lodash';
 import slash from 'slash';
 
-import type { Task } from '../task';
-import { executeCLIStep, steps } from '../utils/cli-step';
-import {
-  installYarn2,
-  configureYarn2ForVerdaccio,
-  addPackageResolutions,
-  addWorkaroundResolutions,
-} from '../utils/yarn';
-import { exec } from '../utils/exec';
-import type { ConfigFile } from '../../code/core/src/csf-tools';
-import { writeConfig } from '../../code/core/src/csf-tools';
-import { filterExistsInCodeDir } from '../utils/filterExistsInCodeDir';
-import { findFirstPath } from '../utils/paths';
 import { detectLanguage } from '../../code/core/src/cli/detect';
 import { SupportedLanguage } from '../../code/core/src/cli/project_types';
-import { updatePackageScripts } from '../utils/package-json';
-import { addPreviewAnnotations, readMainConfig } from '../utils/main-js';
 import {
   type JsPackageManager,
-  versions as storybookPackages,
   JsPackageManagerFactory,
+  versions as storybookPackages,
 } from '../../code/core/src/common';
-import { workspacePath } from '../utils/workspace';
+import type { ConfigFile } from '../../code/core/src/csf-tools';
+import { writeConfig } from '../../code/core/src/csf-tools';
 import { babelParse } from '../../code/core/src/csf-tools/babelParse';
-import { CODE_DIRECTORY, REPROS_DIRECTORY } from '../utils/constants';
 import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
-import { isFunction } from 'lodash';
-import { existsSync, readFileSync } from 'node:fs';
+import type { Task } from '../task';
+import { executeCLIStep, steps } from '../utils/cli-step';
+import { CODE_DIRECTORY, REPROS_DIRECTORY } from '../utils/constants';
+import { exec } from '../utils/exec';
+import { filterExistsInCodeDir } from '../utils/filterExistsInCodeDir';
+import { addPreviewAnnotations, readMainConfig } from '../utils/main-js';
+import { updatePackageScripts } from '../utils/package-json';
+import { findFirstPath } from '../utils/paths';
+import { workspacePath } from '../utils/workspace';
+import {
+  addPackageResolutions,
+  addWorkaroundResolutions,
+  configureYarn2ForVerdaccio,
+  installYarn2,
+} from '../utils/yarn';
 
 const logger = console;
 
@@ -654,8 +654,7 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
 
   packageJson.scripts = {
     ...packageJson.scripts,
-    'docs:json':
-      'DIR=$PWD; cd ../../scripts; node --loader esbuild-register/loader -r esbuild-register combine-compodoc $DIR',
+    'docs:json': 'DIR=$PWD; cd ../../scripts; jiti combine-compodoc $DIR',
     storybook: `yarn docs:json && ${packageJson.scripts.storybook}`,
     'build-storybook': `yarn docs:json && ${packageJson.scripts['build-storybook']}`,
   };

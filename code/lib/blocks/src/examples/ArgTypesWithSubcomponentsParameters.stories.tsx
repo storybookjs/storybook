@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+
 import { ArgTypesParameters, SubcomponentA, SubcomponentB } from './ArgTypesParameters';
 
 /**

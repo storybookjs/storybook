@@ -3,7 +3,6 @@ const preview = {
   globalTypes: {
     theme: {
       description: 'Global theme for components',
-      defaultValue: 'light',
       toolbar: {
         // The label to show for this toolbar item
         title: 'Theme',
@@ -14,6 +13,9 @@ const preview = {
         dynamicTitle: true,
       },
     },
+  },
+  initialGlobals: {
+    theme: 'light',
   },
 };
 
@@ -28,7 +30,6 @@ const preview: Preview = {
   globalTypes: {
     theme: {
       description: 'Global theme for components',
-      defaultValue: 'light',
       toolbar: {
         // The label to show for this toolbar item
         title: 'Theme',
@@ -39,6 +40,9 @@ const preview: Preview = {
         dynamicTitle: true,
       },
     },
+  },
+  initialGlobals: {
+    theme: 'light',
   },
 };
 
@@ -53,7 +57,6 @@ const preview: Preview = {
   globalTypes: {
     theme: {
       description: 'Global theme for components',
-      defaultValue: 'light',
       toolbar: {
         // The label to show for this toolbar item
         title: 'Theme',
@@ -64,6 +67,9 @@ const preview: Preview = {
         dynamicTitle: true,
       },
     },
+  },
+  initialGlobals: {
+    theme: 'light',
   },
 };
 

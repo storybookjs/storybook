@@ -1,4 +1,5 @@
-import { describe, beforeEach, afterAll, it, expect, vi } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { logger } from '.';
 
 vi.mock('@storybook/global', () => ({ global: { ...global, LOGLEVEL: 'debug' } }));

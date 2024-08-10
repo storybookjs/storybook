@@ -1,4 +1,5 @@
 import { fn } from '@storybook/test';
+
 import { Header } from './Header';
 
 export default {

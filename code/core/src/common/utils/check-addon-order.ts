@@ -1,9 +1,10 @@
-import { logger } from '@storybook/core/node-logger';
 import type {
   CoreCommon_AddonEntry,
   CoreCommon_AddonInfo,
   CoreCommon_OptionsEntry,
 } from '@storybook/core/types';
+
+import { logger } from '@storybook/core/node-logger';
 
 interface Options {
   before: CoreCommon_AddonInfo;

@@ -1,15 +1,17 @@
+import { readFile, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+
 import { setOutput } from '@actions/core';
 import { readJson, writeJson } from '@ndelangen/fs-extra-unified';
 import chalk from 'chalk';
-import path from 'path';
 import program from 'commander';
+import { execaCommand } from 'execa';
 import semver from 'semver';
 import { z } from 'zod';
-import { execaCommand } from 'execa';
+
 import { esMain } from '../utils/esmain';
 import type { Workspace } from '../utils/workspace';
 import { getWorkspaces } from '../utils/workspace';
-import { readFile, writeFile } from 'node:fs/promises';
 
 program
   .name('version')
@@ -100,8 +102,8 @@ type ApplyOptions = BaseOptions & {
 };
 type Options = BumpOptions | ExactOptions | ApplyOptions;
 
-const CODE_DIR_PATH = path.join(__dirname, '..', '..', 'code');
-const CODE_PACKAGE_JSON_PATH = path.join(CODE_DIR_PATH, 'package.json');
+const CODE_DIR_PATH = join(__dirname, '..', '..', 'code');
+const CODE_PACKAGE_JSON_PATH = join(CODE_DIR_PATH, 'package.json');
 
 const validateOptions = (options: { [key: string]: any }): options is Options => {
   optionsSchema.parse(options);
@@ -127,8 +129,8 @@ const bumpCodeVersion = async (nextVersion: string) => {
 
 const bumpVersionSources = async (currentVersion: string, nextVersion: string) => {
   const filesToUpdate = [
-    path.join(CODE_DIR_PATH, 'core', 'src', 'manager-api', 'version.ts'),
-    path.join(CODE_DIR_PATH, 'core', 'src', 'common', 'versions.ts'),
+    join(CODE_DIR_PATH, 'core', 'src', 'manager-api', 'version.ts'),
+    join(CODE_DIR_PATH, 'core', 'src', 'common', 'versions.ts'),
   ];
   console.log(`🤜 Bumping versions in...:\n  ${chalk.cyan(filesToUpdate.join('\n  '))}`);
 
@@ -161,7 +163,7 @@ const bumpAllPackageJsons = async ({
   await Promise.all(
     packages.map(async (pkg) => {
       // 2. get the package.json
-      const packageJsonPath = path.join(CODE_DIR_PATH, pkg.location, 'package.json');
+      const packageJsonPath = join(CODE_DIR_PATH, pkg.location, 'package.json');
       const packageJson: {
         version: string;
         [key: string]: any;
@@ -285,7 +287,7 @@ export const run = async (options: unknown) => {
 
     console.log(`⬆️ Updating lock file with ${chalk.blue('yarn install --mode=update-lockfile')}`);
     await execaCommand(`yarn install --mode=update-lockfile`, {
-      cwd: path.join(CODE_DIR_PATH),
+      cwd: join(CODE_DIR_PATH),
       stdio: verbose ? 'inherit' : undefined,
       cleanup: true,
     });

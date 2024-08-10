@@ -1,8 +1,10 @@
-import { join } from 'path';
-import { ensureDir, writeJSON, readJSON } from '@ndelangen/fs-extra-unified';
-import type { Page } from 'playwright-core';
-import type { BenchResults } from './types';
 import { readdir } from 'node:fs/promises';
+import { join } from 'node:path';
+
+import { ensureDir, readJSON, writeJSON } from '@ndelangen/fs-extra-unified';
+import type { Page } from 'playwright-core';
+
+import type { BenchResults } from './types';
 
 export const now = () => new Date().getTime();
 

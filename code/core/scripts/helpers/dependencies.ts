@@ -1,5 +1,7 @@
 import { join } from 'node:path';
 
+import { readJson } from '@ndelangen/fs-extra-unified';
+
 export async function flattenDependencies(
   list: string[],
   output: string[] = [],
@@ -16,7 +18,7 @@ export async function flattenDependencies(
         console.log(dep + ' not found');
         return;
       }
-      const { dependencies = {}, peerDependencies = {} } = await Bun.file(path).json();
+      const { dependencies = {}, peerDependencies = {} } = await readJson(path);
       const all: string[] = [
         ...new Set([...Object.keys(dependencies), ...Object.keys(peerDependencies)]),
       ]

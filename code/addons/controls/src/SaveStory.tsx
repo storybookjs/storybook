@@ -1,3 +1,5 @@
+import React from 'react';
+
 import {
   Bar as BaseBar,
   Button,
@@ -7,9 +9,9 @@ import {
   TooltipNote,
   WithTooltip,
 } from 'storybook/internal/components';
-import { AddIcon, CheckIcon, UndoIcon } from '@storybook/icons';
 import { keyframes, styled } from 'storybook/internal/theming';
-import React from 'react';
+
+import { AddIcon, CheckIcon, UndoIcon } from '@storybook/icons';
 
 const slideIn = keyframes({
   from: { transform: 'translateY(40px)' },

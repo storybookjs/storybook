@@ -1,13 +1,12 @@
 /* eslint-disable no-underscore-dangle */
+
 /* eslint-disable @typescript-eslint/naming-convention */
-import { type CleanupCallback, isExportStory } from '@storybook/csf';
-import { dedent } from 'ts-dedent';
 import type {
   Args,
   Canvas,
   ComponentAnnotations,
-  ComposedStoryFn,
   ComposeStoryFn,
+  ComposedStoryFn,
   LegacyStoryAnnotationsOrFn,
   NamedOrDefaultProjectAnnotations,
   Parameters,
@@ -19,15 +18,19 @@ import type {
   StoryContext,
   StrictArgTypes,
 } from '@storybook/core/types';
+import { type CleanupCallback, isExportStory } from '@storybook/csf';
+
+import { MountMustBeDestructuredError } from '@storybook/core/preview-errors';
+
+import { dedent } from 'ts-dedent';
 
 import { HooksContext } from '../../../addons';
 import { composeConfigs } from './composeConfigs';
-import { prepareContext, prepareStory } from './prepareStory';
-import { normalizeStory } from './normalizeStory';
-import { normalizeComponentAnnotations } from './normalizeComponentAnnotations';
 import { getValuesFromArgTypes } from './getValuesFromArgTypes';
+import { normalizeComponentAnnotations } from './normalizeComponentAnnotations';
 import { normalizeProjectAnnotations } from './normalizeProjectAnnotations';
-import { MountMustBeDestructuredError } from '@storybook/core/preview-errors';
+import { normalizeStory } from './normalizeStory';
+import { prepareContext, prepareStory } from './prepareStory';
 
 let globalProjectAnnotations: ProjectAnnotations<any> = {};
 
@@ -105,8 +108,10 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
     const context: StoryContext<TRenderer> = prepareContext({
       hooks: new HooksContext(),
       globals: {
+        // TODO: remove loading from globalTypes in 9.0
         ...globalsFromGlobalTypes,
         ...normalizedProjectAnnotations.initialGlobals,
+        ...story.storyGlobals,
       },
       args: { ...story.initialArgs },
       viewMode: 'story',
@@ -115,6 +120,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
       step: (label, play) => story.runStep(label, play, context),
       canvasElement: null!,
       canvas: {} as Canvas,
+      globalTypes: normalizedProjectAnnotations.globalTypes,
       ...story,
       context: null!,
       mount: null!,

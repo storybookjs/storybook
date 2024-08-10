@@ -1,6 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
 import detectPort from 'detect-port';
-import { getServerAddresses, getServerPort, getServerChannelUrl } from './server-address';
+
+import { getServerAddresses, getServerChannelUrl, getServerPort } from './server-address';
 
 vi.mock('os', () => ({
   default: { release: () => '' },

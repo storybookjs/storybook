@@ -1,7 +1,14 @@
 import type { Mock, Mocked } from 'vitest';
 import { vi } from 'vitest';
 
-import { EventEmitter } from 'events';
+import type {
+  ModuleImportFn,
+  ProjectAnnotations,
+  Renderer,
+  StoryIndex,
+  TeardownRenderToCanvas,
+} from '@storybook/core/types';
+
 import {
   DOCS_RENDERED,
   STORY_ERRORED,
@@ -11,15 +18,10 @@ import {
   STORY_THREW_EXCEPTION,
 } from '@storybook/core/core-events';
 
-import type {
-  ModuleImportFn,
-  ProjectAnnotations,
-  Renderer,
-  StoryIndex,
-  TeardownRenderToCanvas,
-} from '@storybook/core/types';
-import type { RenderPhase } from './render/StoryRender';
+import { EventEmitter } from 'events';
+
 import { composeConfigs } from '../store';
+import type { RenderPhase } from './render/StoryRender';
 
 export const componentOneExports = {
   default: {
@@ -71,7 +73,7 @@ export const docsRenderer = {
   render: vi.fn().mockImplementation((context, parameters, element) => Promise.resolve()),
   unmount: vi.fn(),
 };
-export const teardownrenderToCanvas: Mock<[TeardownRenderToCanvas]> = vi.fn();
+export const teardownrenderToCanvas: Mock<(teardown: TeardownRenderToCanvas) => void> = vi.fn();
 const rawProjectAnnotations = {
   initialGlobals: { a: 'b' },
   globalTypes: {},

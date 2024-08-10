@@ -1,6 +1,6 @@
 {
   "name": "@storybook/core",
-  "version": "8.3.0-alpha.3",
+  "version": "8.3.0-alpha.4",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -265,13 +265,12 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "bun ./scripts/check.ts",
-    "prep": "bun ./scripts/prep.ts"
+    "check": "jiti ./scripts/check.ts",
+    "prep": "jiti ./scripts/prep.ts"
   },
   "dependencies": {
     "@storybook/csf": "^0.1.11",
     "@types/express": "^4.17.21",
-    "@types/node": "^18.0.0",
     "browser-assert": "^1.2.1",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0",
     "express": "^4.19.2",
@@ -296,7 +295,7 @@
     "@emotion/styled": "^11.11.0",
     "@emotion/use-insertion-effect-with-fallbacks": "^1.0.1",
     "@fal-works/esbuild-plugin-global-externals": "^2.1.2",
-    "@ndelangen/fs-extra-unified": "1.0.4--canary.5.5f6cfdd.0",
+    "@ndelangen/fs-extra-unified": "^1.0.4",
     "@ndelangen/get-tarball": "^3.0.7",
     "@popperjs/core": "^2.6.0",
     "@radix-ui/react-dialog": "^1.0.5",
@@ -315,8 +314,7 @@
     "@types/fs-extra": "^11.0.1",
     "@types/js-yaml": "^4.0.5",
     "@types/lodash": "^4.14.167",
-    "@types/mock-fs": "^4.13.1",
-    "@types/node": "^18.0.0",
+    "@types/node": "^22.0.0",
     "@types/npmlog": "^7.0.0",
     "@types/picomatch": "^2.3.0",
     "@types/prettier": "^3.0.0",
@@ -327,7 +325,6 @@
     "@types/react-transition-group": "^4",
     "@types/semver": "^7.5.8",
     "@types/ws": "^8",
-    "@vitest/utils": "^1.3.1",
     "@yarnpkg/esbuild-plugin-pnp": "^3.0.0-rc.10",
     "@yarnpkg/fslib": "2.10.3",
     "@yarnpkg/libzip": "2.3.0",
@@ -377,8 +374,8 @@
     "leven": "^4.0.0",
     "lodash": "^4.17.21",
     "markdown-to-jsx": "^7.4.5",
+    "memfs": "^4.11.1",
     "memoizerific": "^1.11.3",
-    "mock-fs": "^5.2.0",
     "nanoid": "^4.0.2",
     "npmlog": "^7.0.0",
     "open": "^8.4.0",

@@ -1,9 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react';
+
 import { Anchor } from './Anchor';
 
 const meta = {
   component: Anchor,
   parameters: {
+    layout: 'fullscreen',
     docsStyles: true,
   },
 } as Meta<typeof Anchor>;

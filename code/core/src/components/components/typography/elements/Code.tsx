@@ -1,10 +1,12 @@
-import { styled } from '@storybook/core/theming';
 import type { ComponentProps } from 'react';
 import React, { Children } from 'react';
+
+import { styled } from '@storybook/core/theming';
+
 import { SyntaxHighlighter } from '../../syntaxhighlighter/syntaxhighlighter';
-import { isReactChildString } from '../lib/isReactChildString';
-import { codeCommon } from '../lib/common';
 import type { SupportedLanguage } from '../../syntaxhighlighter/syntaxhighlighter-types';
+import { codeCommon } from '../lib/common';
+import { isReactChildString } from '../lib/isReactChildString';
 
 const isInlineCodeRegex = /[\n\r]/g;
 

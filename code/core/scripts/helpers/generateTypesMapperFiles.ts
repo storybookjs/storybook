@@ -1,7 +1,10 @@
-import { Bun } from '../../../../scripts/prepare/tools';
-import type { getEntries } from '../entries';
+import { writeFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
+
+import { ensureFile } from '@ndelangen/fs-extra-unified';
+
 import { dedent } from '../../../../scripts/prepare/tools';
+import type { getEntries } from '../entries';
 
 const cwd = process.cwd();
 
@@ -10,7 +13,7 @@ async function generateTypesMapperContent(filePath: string) {
   const downwards = relative(cwd, filePath);
 
   return dedent`
-    // auto generated file from ${import.meta.filename}, do not edit
+    // auto generated file from ${__filename}, do not edit
     export * from '${join(upwards, downwards)}';
     export type * from '${join(upwards, downwards)}';
   `;
@@ -27,11 +30,10 @@ export async function generateTypesMapperFiles(entries: ReturnType<typeof getEnt
   const all = entries.filter((e) => e.dts).map((e) => e.file);
 
   await Promise.all(
-    all.map(async (filePath) =>
-      Bun.write(
-        filePath.replace('src', 'dist').replace(/\.tsx?/, '.d.ts'),
-        await generateTypesMapperContent(filePath)
-      )
-    )
+    all.map(async (filePath) => {
+      const location = filePath.replace('src', 'dist').replace(/\.tsx?/, '.d.ts');
+      await ensureFile(location);
+      await writeFile(location, await generateTypesMapperContent(filePath));
+    })
   );
 }

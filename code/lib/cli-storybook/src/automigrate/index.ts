@@ -1,37 +1,37 @@
-import prompts from 'prompts';
-import chalk from 'chalk';
-import boxen from 'boxen';
-import { move, remove } from '@ndelangen/fs-extra-unified';
 import { createWriteStream } from 'node:fs';
-import { join } from 'path';
-import invariant from 'tiny-invariant';
-import semver from 'semver';
+import { join } from 'node:path';
 
 import {
-  JsPackageManagerFactory,
   type JsPackageManager,
+  JsPackageManagerFactory,
   getCoercedStorybookVersion,
   getStorybookInfo,
   temporaryFile,
 } from 'storybook/internal/common';
 
+import { move, remove } from '@ndelangen/fs-extra-unified';
+import boxen from 'boxen';
+import chalk from 'chalk';
+import prompts from 'prompts';
+import semver from 'semver';
+import invariant from 'tiny-invariant';
+import { dedent } from 'ts-dedent';
+
+import { doctor } from '../doctor';
 import type {
+  AutofixOptions,
+  AutofixOptionsFromCLI,
   Fix,
   FixId,
-  AutofixOptions,
   FixSummary,
   PreCheckFailure,
-  AutofixOptionsFromCLI,
   Prompt,
 } from './fixes';
 import { FixStatus, allFixes } from './fixes';
+import { upgradeStorybookRelatedDependencies } from './fixes/upgrade-storybook-related-dependencies';
 import { cleanLog } from './helpers/cleanLog';
 import { getMigrationSummary } from './helpers/getMigrationSummary';
 import { getStorybookData } from './helpers/mainConfigFile';
-import { doctor } from '../doctor';
-
-import { upgradeStorybookRelatedDependencies } from './fixes/upgrade-storybook-related-dependencies';
-import { dedent } from 'ts-dedent';
 
 const logger = console;
 const LOG_FILE_NAME = 'migration-storybook.log';

@@ -1,7 +1,8 @@
-import { within, expect } from '@storybook/test';
 import * as ReactExport from 'react';
 import * as ReactDom from 'react-dom';
 import * as ReactDomServer from 'react-dom/server';
+
+import { expect, within } from '@storybook/test';
 
 /**
  * This component is used to display the resolved version of React and its related packages.

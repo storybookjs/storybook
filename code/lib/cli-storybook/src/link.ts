@@ -1,8 +1,10 @@
-import { ensureDir, readJSON } from '@ndelangen/fs-extra-unified';
-import path from 'path';
-import { sync as spawnSync, spawn as spawnAsync } from 'cross-spawn';
+import { basename, extname, join } from 'node:path';
+
 import { logger } from 'storybook/internal/node-logger';
+
+import { ensureDir, readJSON } from '@ndelangen/fs-extra-unified';
 import chalk from 'chalk';
+import { spawn as spawnAsync, sync as spawnSync } from 'cross-spawn';
 
 type ExecOptions = Parameters<typeof spawnAsync>[2];
 
@@ -66,21 +68,21 @@ export const link = async ({ target, local, start }: LinkOptions) => {
   }
 
   let reproDir = target;
-  let reproName = path.basename(target);
+  let reproName = basename(target);
 
   if (!local) {
-    const reprosDir = path.join(storybookDir, '../storybook-repros');
+    const reprosDir = join(storybookDir, '../storybook-repros');
     logger.info(`Ensuring directory ${reprosDir}`);
     await ensureDir(reprosDir);
 
     logger.info(`Cloning ${target}`);
     await exec(`git clone ${target}`, { cwd: reprosDir });
     // Extract a repro name from url given as input (take the last part of the path and remove the extension)
-    reproName = path.basename(target, path.extname(target));
-    reproDir = path.join(reprosDir, reproName);
+    reproName = basename(target, extname(target));
+    reproDir = join(reprosDir, reproName);
   }
 
-  const reproPackageJson = await readJSON(path.join(reproDir, 'package.json'));
+  const reproPackageJson = await readJSON(join(reproDir, 'package.json'));
 
   const version = spawnSync('yarn', ['--version'], {
     cwd: reproDir,
@@ -107,7 +109,7 @@ export const link = async ({ target, local, start }: LinkOptions) => {
   }
 
   // ensure that linking is possible
-  await exec(`yarn add @types/node@18`, { cwd: reproDir });
+  await exec(`yarn add @types/node@22`, { cwd: reproDir });
 
   if (start) {
     logger.info(`Running ${reproName} storybook`);

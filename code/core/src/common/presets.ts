@@ -1,12 +1,5 @@
-import { dedent } from 'ts-dedent';
-import { logger } from '@storybook/core/node-logger';
 import { join, parse } from 'node:path';
-import { CriticalPresetLoadError } from '@storybook/core/server-errors';
-import { loadCustomPresets } from './utils/load-custom-presets';
-import { safeResolve, safeResolveFrom } from './utils/safeResolve';
-import { interopRequireDefault } from './utils/interpret-require';
-import * as resolveHelper from 'resolve.exports';
-import { stripAbsNodeModulesPath } from './utils/strip-abs-node-modules-path';
+
 import type {
   BuilderOptions,
   CLIOptions,
@@ -18,6 +11,17 @@ import type {
   Presets,
   StorybookConfigRaw,
 } from '@storybook/core/types';
+
+import { logger } from '@storybook/core/node-logger';
+import { CriticalPresetLoadError } from '@storybook/core/server-errors';
+
+import * as resolveHelper from 'resolve.exports';
+import { dedent } from 'ts-dedent';
+
+import { interopRequireDefault } from './utils/interpret-require';
+import { loadCustomPresets } from './utils/load-custom-presets';
+import { safeResolve, safeResolveFrom } from './utils/safeResolve';
+import { stripAbsNodeModulesPath } from './utils/strip-abs-node-modules-path';
 
 type InterPresetOptions = Omit<
   CLIOptions &

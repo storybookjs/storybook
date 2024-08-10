@@ -1,5 +1,6 @@
 import type { SyntheticEvent } from 'react';
 import React, { useCallback } from 'react';
+
 import { styled } from '@storybook/core/theming';
 
 import type { LinkWrapperType, ListItemProps } from './ListItem';

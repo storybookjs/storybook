@@ -1,11 +1,13 @@
-import { dedent } from 'ts-dedent';
+import { AngularJSON, isNxProject } from 'storybook/internal/cli';
+import type { JsPackageManager } from 'storybook/internal/common';
 import type { StorybookConfig } from 'storybook/internal/types';
+
 import chalk from 'chalk';
 import prompts from 'prompts';
-import type { Fix } from '../types';
-import { isNxProject, AngularJSON } from 'storybook/internal/cli';
-import type { JsPackageManager } from 'storybook/internal/common';
+import { dedent } from 'ts-dedent';
+
 import { getFrameworkPackageName } from '../helpers/mainConfigFile';
+import type { Fix } from '../types';
 
 interface AngularBuildersRunOptions {
   mainConfig: StorybookConfig;

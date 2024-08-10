@@ -1,8 +1,8 @@
 import { global as globalThis } from '@storybook/global';
 import {
   expect,
-  fn,
   fireEvent,
+  fn,
   userEvent,
   waitFor,
   waitForElementToBeRemoved,
@@ -13,6 +13,9 @@ export default {
   component: globalThis.Components.Form,
   args: {
     onSuccess: fn(),
+  },
+  globals: {
+    sb_theme: 'light',
   },
 };
 

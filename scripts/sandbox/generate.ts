@@ -1,38 +1,33 @@
-import { join, relative } from 'path';
+import { rename, writeFile } from 'node:fs/promises';
+import { join, relative } from 'node:path';
+
+import * as ghActions from '@actions/core';
+import { copy, emptyDir, ensureDir, move, remove } from '@ndelangen/fs-extra-unified';
+import { program } from 'commander';
 import type { Options as ExecaOptions } from 'execa';
+import { execaCommand } from 'execa';
 import pLimit from 'p-limit';
 import prettyTime from 'pretty-hrtime';
-import {
-  copy,
-  emptyDir,
-  ensureDir,
-  move,
-  remove,
-} from '@ndelangen/fs-extra-unified';
-import { program } from 'commander';
-import { execaCommand } from 'execa';
-import { esMain } from '../utils/esmain';
+import { dedent } from 'ts-dedent';
 
+import type { JsPackageManager } from '../../code/core/src/common/js-package-manager';
+import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager/JsPackageManagerFactory';
+import { temporaryDirectory } from '../../code/core/src/common/utils/cli';
+import storybookVersions from '../../code/core/src/common/versions';
+import { allTemplates as sandboxTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates';
+import {
+  AFTER_DIR_NAME,
+  BEFORE_DIR_NAME,
+  LOCAL_REGISTRY_URL,
+  REPROS_DIRECTORY,
+  SCRIPT_TIMEOUT,
+} from '../utils/constants';
+import { esMain } from '../utils/esmain';
 import type { OptionValues } from '../utils/options';
 import { createOptions } from '../utils/options';
-import { allTemplates as sandboxTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates';
-import storybookVersions from '../../code/core/src/common/versions';
-import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager/JsPackageManagerFactory';
-
-import { localizeYarnConfigFiles, setupYarn } from './utils/yarn';
-import type { GeneratorConfig } from './utils/types';
 import { getStackblitzUrl, renderTemplate } from './utils/template';
-import type { JsPackageManager } from '../../code/core/src/common/js-package-manager';
-import {
-  BEFORE_DIR_NAME,
-  AFTER_DIR_NAME,
-  SCRIPT_TIMEOUT,
-  REPROS_DIRECTORY,
-  LOCAL_REGISTRY_URL,
-} from '../utils/constants';
-import * as ghActions from '@actions/core';
-import { dedent } from 'ts-dedent';
-import { rename, writeFile } from 'node:fs/promises';
+import type { GeneratorConfig } from './utils/types';
+import { localizeYarnConfigFiles, setupYarn } from './utils/yarn';
 
 const isCI = process.env.GITHUB_ACTIONS === 'true';
 
@@ -103,8 +98,7 @@ const addStorybook = async ({
   const beforeDir = join(baseDir, BEFORE_DIR_NAME);
   const afterDir = join(baseDir, AFTER_DIR_NAME);
 
-  const { temporaryDirectory } = await import('tempy');
-  const tmpDir = temporaryDirectory();
+  const tmpDir = await temporaryDirectory();
 
   try {
     await copy(beforeDir, tmpDir);
@@ -180,7 +174,6 @@ const runGenerators = async (
   console.log(`🤹‍♂️ Generating sandboxes with a concurrency of ${1}`);
 
   const limit = pLimit(1);
-  const { temporaryDirectory } = await import('tempy');
 
   const generationResults = await Promise.allSettled(
     generators.map(({ dirName, name, script, expected, env }) =>
@@ -197,7 +190,7 @@ const runGenerators = async (
           await emptyDir(baseDir);
 
           // We do the creation inside a temp dir to avoid yarn container problems
-          const createBaseDir = temporaryDirectory();
+          const createBaseDir = await temporaryDirectory();
           if (!script.includes('pnp')) {
             await setupYarn({ cwd: createBaseDir });
           }

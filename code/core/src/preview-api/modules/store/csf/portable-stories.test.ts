@@ -1,14 +1,16 @@
 // @vitest-environment node
-import { describe, expect, vi, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
 import type {
   ComponentAnnotations as Meta,
-  StoryAnnotationsOrFn as Story,
   Store_CSFExports,
+  StoryAnnotationsOrFn as Story,
 } from '@storybook/core/types';
+import type { ProjectAnnotations } from '@storybook/csf';
 
-import { composeStory, composeStories, setProjectAnnotations } from './portable-stories';
 import * as defaultExportAnnotations from './__mocks__/defaultExportAnnotations.mockfile';
 import * as namedExportAnnotations from './__mocks__/namedExportAnnotations.mockfile';
+import { composeStories, composeStory, setProjectAnnotations } from './portable-stories';
 
 type StoriesModule = Store_CSFExports & Record<string, any>;
 
@@ -160,6 +162,48 @@ describe('composeStory', () => {
     const setProjectAnnotationsPrecedence = composeStory(storyAnnotations, {}, {});
     expect(setProjectAnnotationsPrecedence.parameters.label).toEqual(
       'setProjectAnnotationsOverrides'
+    );
+  });
+
+  it('should merge globals with correct precedence in all combinations', async () => {
+    const renderSpy = vi.fn();
+    const storyAnnotations = { render: renderSpy };
+    const metaAnnotations: Meta = { globals: { language: 'de' } };
+    const projectAnnotations: ProjectAnnotations = { initialGlobals: { language: 'nl' } };
+
+    const storyPrecedence = composeStory(
+      { ...storyAnnotations, globals: { language: 'pt' } },
+      metaAnnotations,
+      projectAnnotations
+    );
+    storyPrecedence();
+    expect(renderSpy.mock.calls[0][1]).toEqual(
+      expect.objectContaining({ globals: { language: 'pt' } })
+    );
+
+    renderSpy.mockClear();
+
+    const metaPrecedence = composeStory(storyAnnotations, metaAnnotations, projectAnnotations);
+    metaPrecedence();
+    expect(renderSpy.mock.calls[0][1]).toEqual(
+      expect.objectContaining({ globals: { language: 'de' } })
+    );
+
+    renderSpy.mockClear();
+
+    const projectPrecedence = composeStory(storyAnnotations, {}, projectAnnotations);
+    projectPrecedence();
+    expect(renderSpy.mock.calls[0][1]).toEqual(
+      expect.objectContaining({ globals: { language: 'nl' } })
+    );
+
+    renderSpy.mockClear();
+
+    setProjectAnnotations({ initialGlobals: { language: 'be' } });
+    const setProjectAnnotationsPrecedence = composeStory(storyAnnotations, {}, {});
+    setProjectAnnotationsPrecedence();
+    expect(renderSpy.mock.calls[0][1]).toEqual(
+      expect.objectContaining({ globals: { language: 'be' } })
     );
   });
 

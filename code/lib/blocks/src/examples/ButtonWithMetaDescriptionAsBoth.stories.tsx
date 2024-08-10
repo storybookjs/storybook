@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+
 import { Button } from './Button';
 
 /**
@@ -13,9 +14,9 @@ const meta = {
   argTypes: {
     backgroundColor: { control: 'color' },
   },
+  // Stop *this* story from being stacked in Chromatic
+  globals: { sb_theme: 'default' },
   parameters: {
-    // Stop *this* story from being stacked in Chromatic
-    theme: 'default',
     docs: {
       description: {
         component: `

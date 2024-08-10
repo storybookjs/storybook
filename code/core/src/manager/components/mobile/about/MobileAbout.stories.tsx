@@ -1,9 +1,12 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { ManagerContext } from '@storybook/core/manager-api';
 import React, { useEffect } from 'react';
+
+import type { Meta, StoryObj } from '@storybook/react';
 import { within } from '@storybook/test';
-import { MobileAbout } from './MobileAbout';
+
+import { ManagerContext } from '@storybook/core/manager-api';
+
 import { LayoutProvider, useLayout } from '../../layout/LayoutProvider';
+import { MobileAbout } from './MobileAbout';
 
 /**
  * A helper component to open the about page via the MobileLayoutContext
@@ -19,9 +22,9 @@ const OpenAboutHelper = ({ children }: { children: any }) => {
 const meta = {
   component: MobileAbout,
   title: 'Mobile/About',
+  globals: { sb_theme: 'light' },
   parameters: {
     layout: 'fullscreen',
-    theme: 'light',
     viewport: {
       defaultViewport: 'mobile1',
     },
@@ -56,7 +59,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 export const Dark: Story = {
-  parameters: { theme: 'dark' },
+  globals: { sb_theme: 'dark' },
 };
 
 export const Closed: Story = {

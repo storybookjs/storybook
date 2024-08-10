@@ -1,17 +1,17 @@
+import { writeFile } from 'node:fs/promises';
 import { dirname, join, parse } from 'node:path';
-import { copy, remove } from '@ndelangen/fs-extra-unified';
-import express from 'express';
 
+import { stringifyProcessEnvs } from '@storybook/core/common';
+
+import { globalsModuleInfoMap } from '@storybook/core/manager/globals-module-info';
 import { logger } from '@storybook/core/node-logger';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
+import { copy, remove } from '@ndelangen/fs-extra-unified';
 import { pnpPlugin } from '@yarnpkg/esbuild-plugin-pnp';
 import aliasPlugin from 'esbuild-plugin-alias';
+import express from 'express';
 
-import { stringifyProcessEnvs } from '@storybook/core/common';
-import { globalsModuleInfoMap } from '@storybook/core/manager/globals-module-info';
-import { getTemplatePath, renderHTML } from './utils/template';
-import { wrapManagerEntries } from './utils/managerEntries';
 import type {
   BuilderBuildResult,
   BuilderFunction,
@@ -20,12 +20,12 @@ import type {
   ManagerBuilder,
   StarterFunction,
 } from './types';
-
 import { getData } from './utils/data';
-import { safeResolve } from './utils/safeResolve';
 import { readOrderedFiles } from './utils/files';
 import { buildFrameworkGlobalsFromOptions } from './utils/framework';
-import { writeFile } from 'node:fs/promises';
+import { wrapManagerEntries } from './utils/managerEntries';
+import { safeResolve } from './utils/safeResolve';
+import { getTemplatePath, renderHTML } from './utils/template';
 
 let compilation: Compilation;
 let asyncIterator: ReturnType<StarterFunction> | ReturnType<BuilderFunction>;

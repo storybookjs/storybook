@@ -1,6 +1,7 @@
+import { toId } from '@storybook/csf';
+
 import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
-import { toId } from '@storybook/csf';
 
 export class SbPage {
   readonly page: Page;
@@ -95,6 +96,17 @@ export class SbPage {
       };
       window.sessionStorage.setItem('@storybook/manager/store', JSON.stringify(storeState));
     }, {});
+
+    // disable all transitions to avoid flakiness
+    await this.page.addStyleTag({
+      content: `
+            *,
+            *::before,
+            *::after {
+              transition: none !important;
+            }
+          `,
+    });
     const root = this.previewRoot();
     const docsLoadingPage = root.locator('.sb-preparing-docs');
     const storyLoadingPage = root.locator('.sb-preparing-story');

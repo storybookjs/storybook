@@ -1,14 +1,17 @@
-import path, { dirname, join, relative } from 'path';
-import type { Options } from 'tsup';
-import type { PackageJson } from 'type-fest';
-import { build } from 'tsup';
-import aliasPlugin from 'esbuild-plugin-alias';
-import { dedent } from 'ts-dedent';
-import slash from 'slash';
-import { exec } from '../utils/exec';
-import { glob } from 'glob';
-import { emptyDir, ensureFile, pathExists, readJson } from '@ndelangen/fs-extra-unified';
 import { readFile, writeFile } from 'node:fs/promises';
+import { dirname, join, parse, posix, relative, resolve, sep } from 'node:path';
+
+import { emptyDir, ensureFile, pathExists, readJson } from '@ndelangen/fs-extra-unified';
+import aliasPlugin from 'esbuild-plugin-alias';
+import { glob } from 'glob';
+import slash from 'slash';
+import { dedent } from 'ts-dedent';
+import type { Options } from 'tsup';
+import { build } from 'tsup';
+import type { PackageJson } from 'type-fest';
+
+import { exec } from '../utils/exec';
+import { nodeInternals } from './tools';
 
 /* TYPES */
 
@@ -48,7 +51,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   } = (await readJson(join(cwd, 'package.json'))) as PackageJsonWithBundlerConfig;
 
   if (pre) {
-    await exec(`bun ${pre}`, { cwd });
+    await exec(`jiti ${pre}`, { cwd });
   }
 
   const reset = hasFlag(flags, 'reset');
@@ -81,11 +84,11 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
    * Generating an ESM file for them anyway is problematic because they often have a reference to `require`.
    * TSUP generated code will then have a `require` polyfill/guard in the ESM files, which causes issues for webpack.
    */
-  const nonPresetEntries = allEntries.filter((f) => !path.parse(f).name.includes('preset'));
+  const nonPresetEntries = allEntries.filter((f) => !parse(f).name.includes('preset'));
 
   const noExternal = [...extraNoExternal];
 
-  if (formats.includes('esm')) {
+  if (formats.includes('esm') && nonPresetEntries.length > 0) {
     tasks.push(
       build({
         noExternal,
@@ -120,8 +123,8 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
             ? []
             : [
                 aliasPlugin({
-                  process: path.resolve('../node_modules/process/browser.js'),
-                  util: path.resolve('../node_modules/util/util.js'),
+                  process: resolve('../node_modules/process/browser.js'),
+                  util: resolve('../node_modules/util/util.js'),
                 }),
               ],
         external: externals,
@@ -135,7 +138,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
     );
   }
 
-  if (formats.includes('cjs')) {
+  if (formats.includes('cjs') && allEntries.length > 0) {
     tasks.push(
       build({
         noExternal,
@@ -160,6 +163,12 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   }
 
   if (nodeEntries.length > 0) {
+    const dts = await getDTSConfigs({
+      formats,
+      entries: nodeEntries,
+      optimized,
+    });
+
     if (formats.includes('esm')) {
       tasks.push(
         build({
@@ -174,24 +183,23 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
           format: ['esm'],
           target: ['node18'],
           clean: false,
-          ...(dtsBuild === 'esm' ? dtsConfig : {}),
-          platform: 'node',
+          ...(dts.dtsBuild === 'esm' ? dts.dtsConfig : {}),
+          platform: 'neutral',
           banner: {
             js: dedent`
-            import ESM_COMPAT_Module from "node:module";
-            import { fileURLToPath as ESM_COMPAT_fileURLToPath } from 'node:url';
-            import { dirname as ESM_COMPAT_dirname } from 'node:path';
-            const __filename = ESM_COMPAT_fileURLToPath(import.meta.url);
-            const __dirname = ESM_COMPAT_dirname(__filename);
-            const require = ESM_COMPAT_Module.createRequire(import.meta.url);
-          `,
+              import ESM_COMPAT_Module from "node:module";
+              import { fileURLToPath as ESM_COMPAT_fileURLToPath } from 'node:url';
+              import { dirname as ESM_COMPAT_dirname } from 'node:path';
+              const __filename = ESM_COMPAT_fileURLToPath(import.meta.url);
+              const __dirname = ESM_COMPAT_dirname(__filename);
+              const require = ESM_COMPAT_Module.createRequire(import.meta.url);
+            `,
           },
 
-          external: [...externals, 'fs', 'path', 'os'],
+          external: [...externals, ...nodeInternals],
 
           esbuildOptions: (c) => {
             c.conditions = ['module'];
-            c.platform = 'node';
             Object.assign(c, getESBuildOptions(optimized));
           },
         })
@@ -209,10 +217,10 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
           sourcemap: false,
           format: ['cjs'],
           target: 'node18',
-          ...(dtsBuild === 'cjs' ? dtsConfig : {}),
+          ...(dts.dtsBuild === 'cjs' ? dts.dtsConfig : {}),
           platform: 'node',
           clean: false,
-          external: externals,
+          external: [...externals, ...nodeInternals],
 
           esbuildOptions: (c) => {
             c.platform = 'node';
@@ -241,7 +249,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   );
 
   if (post) {
-    await exec(`bun ${post}`, { cwd }, { debug: true });
+    await exec(`jiti ${post}`, { cwd }, { debug: true });
   }
 
   if (process.env.CI !== 'true') {
@@ -287,11 +295,11 @@ function getESBuildOptions(optimized: boolean) {
 }
 
 async function generateDTSMapperFile(file: string) {
-  const { name: entryName, dir } = path.parse(file);
+  const { name: entryName, dir } = parse(file);
 
   const pathName = join(process.cwd(), dir.replace('./src', 'dist'), `${entryName}.d.ts`);
   const srcName = join(process.cwd(), file);
-  const rel = relative(dirname(pathName), dirname(srcName)).split(path.sep).join(path.posix.sep);
+  const rel = relative(dirname(pathName), dirname(srcName)).split(sep).join(posix.sep);
 
   await ensureFile(pathName);
   await writeFile(

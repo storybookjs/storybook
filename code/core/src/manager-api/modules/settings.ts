@@ -1,4 +1,5 @@
 import type { API_Settings, StoryId } from '@storybook/core/types';
+
 import type { ModuleFn } from '../lib/types';
 
 export interface SubAPI {

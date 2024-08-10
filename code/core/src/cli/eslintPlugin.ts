@@ -1,14 +1,16 @@
-import { readJson, writeJson } from '@ndelangen/fs-extra-unified';
-import { dedent } from 'ts-dedent';
-import detectIndent from 'detect-indent';
-import prompts from 'prompts';
-import chalk from 'chalk';
+import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 
-import { readConfig, writeConfig } from '@storybook/core/csf-tools';
 import type { JsPackageManager } from '@storybook/core/common';
 import { paddedLog } from '@storybook/core/common';
-import fs from 'node:fs';
-import { readFile } from 'node:fs/promises';
+
+import { readJson, writeJson } from '@ndelangen/fs-extra-unified';
+import chalk from 'chalk';
+import detectIndent from 'detect-indent';
+import prompts from 'prompts';
+import { dedent } from 'ts-dedent';
+
+import { readConfig, writeConfig } from '../csf-tools/ConfigFile';
 
 export const SUPPORTED_ESLINT_EXTENSIONS = ['js', 'cjs', 'json'];
 const UNSUPPORTED_ESLINT_EXTENSIONS = ['yaml', 'yml'];
@@ -16,7 +18,7 @@ const UNSUPPORTED_ESLINT_EXTENSIONS = ['yaml', 'yml'];
 export const findEslintFile = () => {
   const filePrefix = '.eslintrc';
   const unsupportedExtension = UNSUPPORTED_ESLINT_EXTENSIONS.find((ext: string) =>
-    fs.existsSync(`${filePrefix}.${ext}`)
+    existsSync(`${filePrefix}.${ext}`)
   );
 
   if (unsupportedExtension) {
@@ -24,7 +26,7 @@ export const findEslintFile = () => {
   }
 
   const extension = SUPPORTED_ESLINT_EXTENSIONS.find((ext: string) =>
-    fs.existsSync(`${filePrefix}.${ext}`)
+    existsSync(`${filePrefix}.${ext}`)
   );
   return extension ? `${filePrefix}.${extension}` : null;
 };

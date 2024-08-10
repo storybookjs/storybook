@@ -1,7 +1,8 @@
-import { loadPreviewOrConfigFile, getFrameworkName } from 'storybook/internal/common';
+import { getFrameworkName, loadPreviewOrConfigFile } from 'storybook/internal/common';
 import type { Options, PreviewAnnotation } from 'storybook/internal/types';
-import { virtualStoriesFile, virtualAddonSetupFile } from './virtual-file-names';
+
 import { processPreviewAnnotation } from './utils/process-preview-annotation';
+import { virtualAddonSetupFile, virtualStoriesFile } from './virtual-file-names';
 
 export async function generateModernIframeScriptCode(options: Options, projectRoot: string) {
   const { presets, configDir } = options;

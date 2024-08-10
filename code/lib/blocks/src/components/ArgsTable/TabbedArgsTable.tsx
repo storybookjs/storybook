@@ -1,5 +1,6 @@
 import type { FC } from 'react';
 import React from 'react';
+
 import { TabsState } from 'storybook/internal/components';
 
 import type { ArgsTableProps } from './ArgsTable';

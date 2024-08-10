@@ -1,14 +1,13 @@
-import path, { parse, relative } from 'node:path';
+import { basename, parse, relative } from 'node:path';
+
 import { sync as spawnSync } from 'cross-spawn';
 import { findUpSync } from 'find-up';
 
+import type { JsPackageManager, PackageManagerName } from './JsPackageManager';
 import { NPMProxy } from './NPMProxy';
 import { PNPMProxy } from './PNPMProxy';
-
-import type { JsPackageManager, PackageManagerName } from './JsPackageManager';
-
-import { Yarn2Proxy } from './Yarn2Proxy';
 import { Yarn1Proxy } from './Yarn1Proxy';
+import { Yarn2Proxy } from './Yarn2Proxy';
 
 const NPM_LOCKFILE = 'package-lock.json';
 const PNPM_LOCKFILE = 'pnpm-lock.yaml';
@@ -56,7 +55,7 @@ export class JsPackageManagerFactory {
     // Option 2: We try to infer the package manager from the closest lockfile
     const closestLockfilePath = lockFiles[0];
 
-    const closestLockfile = closestLockfilePath && path.basename(closestLockfilePath);
+    const closestLockfile = closestLockfilePath && basename(closestLockfilePath);
 
     const hasNPMCommand = hasNPM(cwd);
     const hasPNPMCommand = hasPNPM(cwd);

@@ -1,13 +1,15 @@
 // This script makes sure that we can support type checking,
 // without having to build dts files for all packages in the monorepo.
 // It is not implemented yet for angular, svelte and vue.
-import { resolve } from 'path';
+import { resolve } from 'node:path';
+
 import { readJSON } from '@ndelangen/fs-extra-unified';
-import prompts from 'prompts';
-import program from 'commander';
 import chalk from 'chalk';
-import windowSize from 'window-size';
+import program from 'commander';
 import { execaCommand } from 'execa';
+import prompts from 'prompts';
+import windowSize from 'window-size';
+
 import { getWorkspaces } from './utils/workspace';
 
 async function run() {

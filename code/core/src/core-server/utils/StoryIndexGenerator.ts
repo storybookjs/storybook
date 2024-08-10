@@ -1,35 +1,38 @@
 /* eslint-disable no-underscore-dangle */
-import path from 'node:path';
-import chalk from 'chalk';
-import slash from 'slash';
-import invariant from 'tiny-invariant';
-import * as TsconfigPaths from 'tsconfig-paths';
-import { findUp } from 'find-up';
-
-import type {
-  IndexEntry,
-  StoryIndexEntry,
-  DocsIndexEntry,
-  NormalizedStoriesSpecifier,
-  DocsOptions,
-  Path,
-  Tag,
-  StoryIndex,
-  Indexer,
-  StorybookConfigRaw,
-  IndexInputStats,
-} from '@storybook/core/types';
-import { userOrAutoTitleFromSpecifier, sortStoriesV7 } from '@storybook/core/preview-api';
-import { commonGlobOptions, normalizeStoryPath } from '@storybook/core/common';
-import { logger, once } from '@storybook/core/node-logger';
-import { getStorySortParameter, loadConfig } from '@storybook/core/csf-tools';
-import { storyNameFromExport, toId, combineTags } from '@storybook/csf';
-import { dedent } from 'ts-dedent';
-import { autoName } from './autoName';
-import { IndexingError, MultipleIndexingError } from './IndexingError';
-import { addStats, type IndexStatsSummary } from './summarizeStats';
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
+import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
+
+import { commonGlobOptions, normalizeStoryPath } from '@storybook/core/common';
+import type {
+  DocsIndexEntry,
+  DocsOptions,
+  IndexEntry,
+  IndexInputStats,
+  Indexer,
+  NormalizedStoriesSpecifier,
+  Path,
+  StoryIndex,
+  StoryIndexEntry,
+  StorybookConfigRaw,
+  Tag,
+} from '@storybook/core/types';
+import { combineTags, storyNameFromExport, toId } from '@storybook/csf';
+
+import { getStorySortParameter, loadConfig } from '@storybook/core/csf-tools';
+import { logger, once } from '@storybook/core/node-logger';
+import { sortStoriesV7, userOrAutoTitleFromSpecifier } from '@storybook/core/preview-api';
+
+import chalk from 'chalk';
+import { findUp } from 'find-up';
+import slash from 'slash';
+import invariant from 'tiny-invariant';
+import { dedent } from 'ts-dedent';
+import * as TsconfigPaths from 'tsconfig-paths';
+
+import { IndexingError, MultipleIndexingError } from './IndexingError';
+import { autoName } from './autoName';
+import { type IndexStatsSummary, addStats } from './summarizeStats';
 
 // Extended type to keep track of the csf meta id so we know the component id when referencing docs in `extractDocs`
 type StoryIndexEntryWithExtra = StoryIndexEntry & {
@@ -70,12 +73,7 @@ export function isMdxEntry({ tags }: DocsIndexEntry) {
 
 const makeAbsolute = (otherImport: Path, normalizedPath: Path, workingDir: Path) =>
   otherImport.startsWith('.')
-    ? slash(
-        path.resolve(
-          workingDir,
-          normalizeStoryPath(path.join(path.dirname(normalizedPath), otherImport))
-        )
-      )
+    ? slash(resolve(workingDir, normalizeStoryPath(join(dirname(normalizedPath), otherImport))))
     : otherImport;
 
 /**
@@ -128,7 +126,7 @@ export class StoryIndexGenerator {
       this.specifiers.map(async (specifier) => {
         const pathToSubIndex = {} as SpecifierStoriesCache;
 
-        const fullGlob = slash(path.join(specifier.directory, specifier.files));
+        const fullGlob = slash(join(specifier.directory, specifier.files));
 
         // Dynamically import globby because it is a pure ESM module
         const { globby } = await import('globby');
@@ -142,15 +140,15 @@ export class StoryIndexGenerator {
         if (files.length === 0) {
           once.warn(
             `No story files found for the specified pattern: ${chalk.blue(
-              path.join(specifier.directory, specifier.files)
+              join(specifier.directory, specifier.files)
             )}`
           );
         }
 
         files.sort().forEach((absolutePath: Path) => {
-          const ext = path.extname(absolutePath);
+          const ext = extname(absolutePath);
           if (ext === '.storyshot') {
-            const relativePath = path.relative(this.options.workingDir, absolutePath);
+            const relativePath = relative(this.options.workingDir, absolutePath);
             logger.info(`Skipping ${ext} file ${relativePath}`);
             return;
           }
@@ -202,10 +200,7 @@ export class StoryIndexGenerator {
             try {
               entry[absolutePath] = await updater(specifier, absolutePath, entry[absolutePath]);
             } catch (err) {
-              const relativePath = `.${path.sep}${path.relative(
-                this.options.workingDir,
-                absolutePath
-              )}`;
+              const relativePath = `.${sep}${relative(this.options.workingDir, absolutePath)}`;
 
               entry[absolutePath] = {
                 type: 'error',
@@ -299,7 +294,7 @@ export class StoryIndexGenerator {
    * the same format as `importPath`. Respect tsconfig paths if available.
    *
    * If no such file exists, assume that the import is from a package and
-   * return the raw path.
+   * return the raw
    */
   resolveComponentPath(
     rawComponentPath: Path,
@@ -311,12 +306,12 @@ export class StoryIndexGenerator {
       rawPath = matchPath(rawPath) ?? rawPath;
     }
 
-    const absoluteComponentPath = path.resolve(path.dirname(absolutePath), rawPath);
+    const absoluteComponentPath = resolve(dirname(absolutePath), rawPath);
     const existing = ['', '.js', '.ts', '.jsx', '.tsx', '.mjs', '.mts']
       .map((ext) => `${absoluteComponentPath}${ext}`)
       .find((candidate) => existsSync(candidate));
     if (existing) {
-      const relativePath = path.relative(this.options.workingDir, existing);
+      const relativePath = relative(this.options.workingDir, existing);
       return slash(normalizeStoryPath(relativePath));
     }
 
@@ -328,7 +323,7 @@ export class StoryIndexGenerator {
     absolutePath: Path,
     projectTags: Tag[] = []
   ): Promise<StoriesCacheEntry | DocsCacheEntry> {
-    const relativePath = path.relative(this.options.workingDir, absolutePath);
+    const relativePath = relative(this.options.workingDir, absolutePath);
     const importPath = slash(normalizeStoryPath(relativePath));
     const defaultMakeTitle = (userTitle?: string) => {
       const title = userOrAutoTitleFromSpecifier(importPath, specifier, userTitle);
@@ -417,7 +412,7 @@ export class StoryIndexGenerator {
     absolutePath: Path,
     projectTags: Tag[] = []
   ) {
-    const relativePath = path.relative(this.options.workingDir, absolutePath);
+    const relativePath = relative(this.options.workingDir, absolutePath);
     try {
       const normalizedPath = normalizeStoryPath(relativePath);
       const importPath = slash(normalizedPath);
@@ -453,9 +448,9 @@ export class StoryIndexGenerator {
             const first = dep.entries.find((e) => e.type !== 'docs') as StoryIndexEntryWithExtra;
 
             if (
-              path
-                .normalize(path.resolve(this.options.workingDir, first.importPath))
-                .startsWith(path.normalize(absoluteOf))
+              normalize(resolve(this.options.workingDir, first.importPath)).startsWith(
+                normalize(absoluteOf)
+              )
             ) {
               csfEntry = first;
             }
@@ -683,7 +678,7 @@ export class StoryIndexGenerator {
   }
 
   invalidate(specifier: NormalizedStoriesSpecifier, importPath: Path, removed: boolean) {
-    const absolutePath = slash(path.resolve(this.options.workingDir, importPath));
+    const absolutePath = slash(resolve(this.options.workingDir, importPath));
     const cache = this.specifierToCache.get(specifier);
     invariant(
       cache,
@@ -711,7 +706,7 @@ export class StoryIndexGenerator {
     if (removed) {
       if (cacheEntry && cacheEntry.type === 'docs') {
         const absoluteImports = cacheEntry.storiesImports.map((p) =>
-          path.resolve(this.options.workingDir, p)
+          resolve(this.options.workingDir, p)
         );
         const dependencies = this.findDependencies(absoluteImports);
         dependencies.forEach((dep) =>
@@ -728,7 +723,7 @@ export class StoryIndexGenerator {
 
   async getPreviewCode() {
     const previewFile = ['js', 'jsx', 'ts', 'tsx', 'mjs', 'cjs', 'mts']
-      .map((ext) => path.join(this.options.configDir, `preview.${ext}`))
+      .map((ext) => join(this.options.configDir, `preview.${ext}`))
       .find((fname) => existsSync(fname));
 
     return previewFile && (await readFile(previewFile, 'utf-8')).toString();

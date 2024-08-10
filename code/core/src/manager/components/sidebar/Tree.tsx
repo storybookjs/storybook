@@ -1,38 +1,38 @@
-import { useStorybookApi } from '@storybook/core/manager-api';
-import type {
-  StoriesHash,
-  GroupEntry,
-  ComponentEntry,
-  StoryEntry,
-  State,
-  API,
-} from '@storybook/core/manager-api';
-import { styled } from '@storybook/core/theming';
-import { Button, IconButton, TooltipLinkList, WithTooltip } from '@storybook/core/components';
-import { transparentize } from 'polished';
 import type { MutableRefObject } from 'react';
 import React, { useCallback, useMemo, useRef } from 'react';
 
+import { Button, IconButton, TooltipLinkList, WithTooltip } from '@storybook/core/components';
+import { styled } from '@storybook/core/theming';
+import { CollapseIcon as CollapseIconSvg, ExpandAltIcon } from '@storybook/icons';
+
 import { PRELOAD_ENTRIES } from '@storybook/core/core-events';
-import { ExpandAltIcon, CollapseIcon as CollapseIconSvg } from '@storybook/icons';
-import { ComponentNode, DocumentNode, GroupNode, RootNode, StoryNode } from './TreeNode';
+import { useStorybookApi } from '@storybook/core/manager-api';
+import type {
+  API,
+  ComponentEntry,
+  GroupEntry,
+  State,
+  StoriesHash,
+  StoryEntry,
+} from '@storybook/core/manager-api';
 
-import type { ExpandAction, ExpandedState } from './useExpanded';
+import { transparentize } from 'polished';
 
-import { useExpanded } from './useExpanded';
-import type { Highlight, Item } from './types';
-
+import { getGroupStatus, getHighestStatus, statusMapping } from '../../utils/status';
 import {
-  isStoryHoistable,
   createId,
   getAncestorIds,
   getDescendantIds,
   getLink,
+  isStoryHoistable,
 } from '../../utils/tree';
-import { statusMapping, getHighestStatus, getGroupStatus } from '../../utils/status';
 import { useLayout } from '../layout/LayoutProvider';
 import { IconSymbols } from './IconSymbols';
+import { ComponentNode, DocumentNode, GroupNode, RootNode, StoryNode } from './TreeNode';
 import { CollapseIcon } from './components/CollapseIcon';
+import type { Highlight, Item } from './types';
+import type { ExpandAction, ExpandedState } from './useExpanded';
+import { useExpanded } from './useExpanded';
 
 const Container = styled.div<{ hasOrphans: boolean }>((props) => ({
   marginTop: props.hasOrphans ? 20 : 0,

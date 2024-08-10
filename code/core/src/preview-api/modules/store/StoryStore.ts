@@ -1,33 +1,12 @@
-import memoize from 'memoizerific';
 import type {
-  Renderer,
   ComponentTitle,
   Parameters,
   Path,
+  Renderer,
   StoryContext,
   StoryContextForEnhancers,
   StoryId,
 } from '@storybook/core/types';
-import mapValues from 'lodash/mapValues.js';
-import pick from 'lodash/pick.js';
-
-import {
-  CalledExtractOnStoreError,
-  MissingStoryFromCsfFileError,
-} from '@storybook/core/preview-errors';
-import { deprecate } from '@storybook/core/client-logger';
-import { HooksContext } from '../addons';
-import { StoryIndexStore } from './StoryIndexStore';
-import { ArgsStore } from './ArgsStore';
-import { GlobalsStore } from './GlobalsStore';
-import {
-  processCSFFile,
-  prepareStory,
-  prepareMeta,
-  normalizeProjectAnnotations,
-  prepareContext,
-} from './csf';
-import type { Canvas, CleanupCallback } from '@storybook/csf';
 import type {
   BoundStory,
   CSFFile,
@@ -44,6 +23,29 @@ import type {
   StoryIndexV3,
   V3CompatIndexEntry,
 } from '@storybook/core/types';
+import type { Canvas, CleanupCallback } from '@storybook/csf';
+
+import { deprecate } from '@storybook/core/client-logger';
+import {
+  CalledExtractOnStoreError,
+  MissingStoryFromCsfFileError,
+} from '@storybook/core/preview-errors';
+
+import mapValues from 'lodash/mapValues.js';
+import pick from 'lodash/pick.js';
+import memoize from 'memoizerific';
+
+import { HooksContext } from '../addons';
+import { ArgsStore } from './ArgsStore';
+import { GlobalsStore } from './GlobalsStore';
+import { StoryIndexStore } from './StoryIndexStore';
+import {
+  normalizeProjectAnnotations,
+  prepareContext,
+  prepareMeta,
+  prepareStory,
+  processCSFFile,
+} from './csf';
 
 // TODO -- what are reasonable values for these?
 const CSF_CACHE_SIZE = 1000;
@@ -54,7 +56,7 @@ export class StoryStore<TRenderer extends Renderer> {
 
   projectAnnotations: NormalizedProjectAnnotations<TRenderer>;
 
-  globals: GlobalsStore;
+  userGlobals: GlobalsStore;
 
   args: ArgsStore;
 
@@ -83,7 +85,7 @@ export class StoryStore<TRenderer extends Renderer> {
     const { initialGlobals, globalTypes } = this.projectAnnotations;
 
     this.args = new ArgsStore();
-    this.globals = new GlobalsStore({ globals: initialGlobals, globalTypes });
+    this.userGlobals = new GlobalsStore({ globals: initialGlobals, globalTypes });
     this.hooks = {};
     this.cleanupCallbacks = {};
 
@@ -99,7 +101,7 @@ export class StoryStore<TRenderer extends Renderer> {
     // By changing `this.projectAnnotations, we implicitly invalidate the `prepareStoryWithCache`
     this.projectAnnotations = normalizeProjectAnnotations(projectAnnotations);
     const { initialGlobals, globalTypes } = projectAnnotations;
-    this.globals.set({ globals: initialGlobals, globalTypes });
+    this.userGlobals.set({ globals: initialGlobals, globalTypes });
   }
 
   // This means that one of the CSF files has changed.
@@ -230,10 +232,18 @@ export class StoryStore<TRenderer extends Renderer> {
   // A prepared story does not include args, globals or hooks. These are stored in the story store
   // and updated separtely to the (immutable) story.
   getStoryContext(story: PreparedStory<TRenderer>, { forceInitialArgs = false } = {}) {
+    const userGlobals = this.userGlobals.get();
+    const { initialGlobals } = this.userGlobals;
     return prepareContext({
       ...story,
       args: forceInitialArgs ? story.initialArgs : this.args.get(story.id),
-      globals: this.globals.get(),
+      initialGlobals,
+      globalTypes: this.projectAnnotations.globalTypes,
+      userGlobals,
+      globals: {
+        ...userGlobals,
+        ...story.storyGlobals,
+      },
       hooks: this.hooks[story.id] as unknown,
     });
   }
@@ -287,6 +297,7 @@ export class StoryStore<TRenderer extends Renderer> {
     );
   }
 
+  // TODO: Remove in 9.0
   getSetStoriesPayload() {
     const stories = this.extract({ includeDocsOnly: true });
 
@@ -300,13 +311,14 @@ export class StoryStore<TRenderer extends Renderer> {
 
     return {
       v: 2,
-      globals: this.globals.get(),
+      globals: this.userGlobals.get(),
       globalParameters: {},
       kindParameters,
       stories,
     };
   }
 
+  // TODO: Remove in 9.0
   // NOTE: this is legacy `stories.json` data for the `extract` script.
   // It is used to allow v7 Storybooks to be composed in v6 Storybooks, which expect a
   // `stories.json` file with legacy fields (`kind` etc).

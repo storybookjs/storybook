@@ -1,12 +1,14 @@
-import { pathExists, remove } from '@ndelangen/fs-extra-unified';
+import { join } from 'node:path';
+import { promisify } from 'node:util';
 
-import { join } from 'path';
-import { promisify } from 'util';
+import { pathExists, remove } from '@ndelangen/fs-extra-unified';
 import dirSize from 'fast-folder-size';
-import type { Task } from '../task';
+
 import { now, saveBench } from '../bench/utils';
+import type { Task } from '../task';
 
 const logger = console;
+const dirSizeAsync = promisify(dirSize);
 
 export const sandbox: Task = {
   description: 'Create the sandbox from a template',
@@ -38,9 +40,7 @@ export const sandbox: Task = {
     }
 
     const { create, install, addStories, extendMain, init, addExtraDependencies, setImportMap } =
-      // @ts-expect-error esbuild for some reason exports a default object
-      // eslint-disable-next-line import/extensions
-      (await import('./sandbox-parts.ts')).default;
+      await import('./sandbox-parts');
 
     let startTime = now();
     await create(details, options);
@@ -50,12 +50,13 @@ export const sandbox: Task = {
     startTime = now();
     await install(details, options);
     const generateTime = now() - startTime;
-    const generateSize = await promisify(dirSize)(join(details.sandboxDir, 'node_modules'));
+
+    const generateSize = await dirSizeAsync(join(details.sandboxDir, 'node_modules'));
 
     startTime = now();
     await init(details, options);
     const initTime = now() - startTime;
-    const initSize = await promisify(dirSize)(join(details.sandboxDir, 'node_modules'));
+    const initSize = await dirSizeAsync(join(details.sandboxDir, 'node_modules'));
 
     await saveBench(
       'sandbox',

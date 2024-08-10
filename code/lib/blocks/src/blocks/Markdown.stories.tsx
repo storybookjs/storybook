@@ -1,11 +1,14 @@
 import { dedent } from 'ts-dedent';
-import { Markdown as MarkdownComponent } from './Markdown';
 
 import mdContent from '../examples/Markdown-content.md?raw';
+import { Markdown as MarkdownComponent } from './Markdown';
 
 export default {
   component: MarkdownComponent,
-  parameters: { docsStyles: true },
+  parameters: {
+    layout: 'fullscreen',
+    docsStyles: true,
+  },
 };
 
 export const Markdown = {

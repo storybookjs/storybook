@@ -1,15 +1,16 @@
-import program from 'commander';
-import { dirname, join, relative } from 'path';
-import { existsSync } from 'fs';
-import { copy, emptyDir, remove } from '@ndelangen/fs-extra-unified';
-import { execaCommand } from 'execa';
-
-import { getTemplatesData, renderTemplate } from './utils/template';
-
-import { commitAllToGit } from './utils/git';
-import { REPROS_DIRECTORY } from '../utils/constants';
-import { glob } from 'glob';
+import { existsSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
+import { dirname, join, relative } from 'node:path';
+
+import { copy, emptyDir, remove } from '@ndelangen/fs-extra-unified';
+import program from 'commander';
+import { execaCommand } from 'execa';
+import { glob } from 'glob';
+
+import { temporaryDirectory } from '../../code/core/src/common/utils/cli';
+import { REPROS_DIRECTORY } from '../utils/constants';
+import { commitAllToGit } from './utils/git';
+import { getTemplatesData, renderTemplate } from './utils/template';
 
 export const logger = console;
 
@@ -100,8 +101,7 @@ if (!existsSync(REPROS_DIRECTORY)) {
 }
 
 async function main() {
-  const { temporaryDirectory } = await import('tempy');
-  const tmpFolder = temporaryDirectory();
+  const tmpFolder = await temporaryDirectory();
   logger.log(`⏱ Created tmp folder: ${tmpFolder}`);
 
   const options = program.opts() as PublishOptions;

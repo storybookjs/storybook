@@ -1,11 +1,9 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { vi, describe, afterEach, it, expect } from 'vitest';
-// @ts-expect-error (no types)
-import { LoggerApi } from '@angular-devkit/core/src/logger';
+import { LoggerApi } from '@angular-devkit/core/src/logger/index';
 import { take } from 'rxjs/operators';
-import { BuilderContext } from '@angular-devkit/architect';
 
 import { runCompodoc } from './run-compodoc';
+import { BuilderContext } from '@angular-devkit/architect';
 
 const mockRunScript = vi.fn();
 

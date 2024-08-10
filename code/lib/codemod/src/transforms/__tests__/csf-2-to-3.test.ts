@@ -1,7 +1,9 @@
-import { describe, it, expect } from 'vitest';
-import { dedent } from 'ts-dedent';
-import type { API } from 'jscodeshift';
+import { describe, expect, it } from 'vitest';
+
 import ansiRegex from 'ansi-regex';
+import type { API } from 'jscodeshift';
+import { dedent } from 'ts-dedent';
+
 import _transform from '../csf-2-to-3';
 
 expect.addSnapshotSerializer({
@@ -313,7 +315,8 @@ describe('csf-2-to-3', () => {
           };
         `)
       ).resolves.toMatchInlineSnapshot(`
-        import { Meta, StoryObj as CSF3, StoryFn as CSF2 } from '@storybook/react';
+        import { StoryFn as CSF2, StoryObj as CSF3, Meta } from '@storybook/react';
+
         import { CatProps } from './Cat';
 
         const meta = { title: 'Cat', component: Cat } satisfies Meta<CatProps>;
@@ -372,7 +375,7 @@ describe('csf-2-to-3', () => {
           };
         `)
       ).resolves.toMatchInlineSnapshot(`
-        import { StoryObj, StoryFn } from '@storybook/react';
+        import { StoryFn, StoryObj } from '@storybook/react';
 
         // some extra whitespace to test
 
@@ -429,7 +432,7 @@ describe('csf-2-to-3', () => {
           export const Default = Template.bind({})
         `)
       ).resolves.toMatchInlineSnapshot(`
-        import { StoryFn, Meta } from '@storybook/react';
+        import { Meta, StoryFn } from '@storybook/react';
 
         export default {
           component: Cat,

@@ -1,6 +1,6 @@
 /* eslint-disable import/extensions */
-import { fail, danger } from 'danger';
 import { execSync } from 'child_process';
+import { danger, fail } from 'danger';
 
 execSync('npm install lodash');
 

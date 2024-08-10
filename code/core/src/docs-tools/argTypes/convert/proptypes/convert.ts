@@ -1,7 +1,9 @@
-import mapValues from 'lodash/mapValues.js';
 import type { SBType } from '@storybook/core/types';
-import type { PTType } from './types';
+
+import mapValues from 'lodash/mapValues.js';
+
 import { parseLiteral } from '../utils';
+import type { PTType } from './types';
 
 const SIGNATURE_REGEXP = /^\(.*\) => /;
 

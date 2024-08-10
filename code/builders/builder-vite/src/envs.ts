@@ -1,6 +1,7 @@
 import { stringifyEnvs } from 'storybook/internal/common';
-import type { UserConfig as ViteConfig } from 'vite';
 import type { Builder_EnvsRaw, Options } from 'storybook/internal/types';
+
+import type { UserConfig as ViteConfig } from 'vite';
 
 // Allowed env variables on the client
 const allowedEnvVariables = [

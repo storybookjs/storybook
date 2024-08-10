@@ -3,7 +3,8 @@
   "compileOnSave": false,
   "compilerOptions": {
     "target": "ES2020",
-    "module": "ES2022",
+    "module": "Preserve",
+    "noEmit": false,
     "lib": ["es2020", "dom", "dom.iterable"],
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,

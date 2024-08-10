@@ -1,6 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
+import { join } from 'node:path';
 
-import path from 'node:path';
+import { describe, expect, it, vi } from 'vitest';
+
 import { normalizeStoriesEntry } from '@storybook/core/common';
 import type { NormalizedStoriesSpecifier } from '@storybook/core/types';
 
@@ -10,8 +11,8 @@ import { AUTODOCS_TAG, StoryIndexGenerator } from '../StoryIndexGenerator';
 vi.mock('@storybook/core/node-logger');
 
 const options: StoryIndexGeneratorOptions = {
-  configDir: path.join(__dirname, '..', '__mockdata__'),
-  workingDir: path.join(__dirname, '..', '__mockdata__'),
+  configDir: join(__dirname, '..', '__mockdata__'),
+  workingDir: join(__dirname, '..', '__mockdata__'),
   indexers: [],
   docs: { defaultName: 'docs', autodocs: false },
 };
@@ -19,7 +20,7 @@ const options: StoryIndexGeneratorOptions = {
 describe('story extraction', () => {
   it('extracts stories from full indexer inputs', async () => {
     const relativePath = './src/A.stories.js';
-    const absolutePath = path.join(options.workingDir, relativePath);
+    const absolutePath = join(options.workingDir, relativePath);
     const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(relativePath, options);
 
     const generator = new StoryIndexGenerator([specifier], {
@@ -98,7 +99,7 @@ describe('story extraction', () => {
 
   it('extracts stories from minimal indexer inputs', async () => {
     const relativePath = './src/first-nested/deeply/F.stories.js';
-    const absolutePath = path.join(options.workingDir, relativePath);
+    const absolutePath = join(options.workingDir, relativePath);
     const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(relativePath, options);
 
     const generator = new StoryIndexGenerator([specifier], {
@@ -143,7 +144,7 @@ describe('story extraction', () => {
 
   it('auto-generates title from indexer inputs without title', async () => {
     const relativePath = './src/first-nested/deeply/F.stories.js';
-    const absolutePath = path.join(options.workingDir, relativePath);
+    const absolutePath = join(options.workingDir, relativePath);
     const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(relativePath, options);
 
     const generator = new StoryIndexGenerator([specifier], {
@@ -194,7 +195,7 @@ describe('story extraction', () => {
 
   it('auto-generates name from indexer inputs without name', async () => {
     const relativePath = './src/A.stories.js';
-    const absolutePath = path.join(options.workingDir, relativePath);
+    const absolutePath = join(options.workingDir, relativePath);
     const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(relativePath, options);
 
     const generator = new StoryIndexGenerator([specifier], {
@@ -245,7 +246,7 @@ describe('story extraction', () => {
 
   it('auto-generates id', async () => {
     const relativePath = './src/A.stories.js';
-    const absolutePath = path.join(options.workingDir, relativePath);
+    const absolutePath = join(options.workingDir, relativePath);
     const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(relativePath, options);
 
     const generator = new StoryIndexGenerator([specifier], {
@@ -344,7 +345,7 @@ describe('story extraction', () => {
 
   it('auto-generates id, title and name from exportName input', async () => {
     const relativePath = './src/A.stories.js';
-    const absolutePath = path.join(options.workingDir, relativePath);
+    const absolutePath = join(options.workingDir, relativePath);
     const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(relativePath, options);
 
     const generator = new StoryIndexGenerator([specifier], {
@@ -393,7 +394,7 @@ describe('story extraction', () => {
 describe('docs entries from story extraction', () => {
   it('adds docs entry when autodocs is globally enabled', async () => {
     const relativePath = './src/A.stories.js';
-    const absolutePath = path.join(options.workingDir, relativePath);
+    const absolutePath = join(options.workingDir, relativePath);
     const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(relativePath, options);
 
     const generator = new StoryIndexGenerator([specifier], {
@@ -444,7 +445,7 @@ describe('docs entries from story extraction', () => {
   });
   it(`adds docs entry when autodocs is "tag" and an entry has the "${AUTODOCS_TAG}" tag`, async () => {
     const relativePath = './src/A.stories.js';
-    const absolutePath = path.join(options.workingDir, relativePath);
+    const absolutePath = join(options.workingDir, relativePath);
     const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(relativePath, options);
 
     const generator = new StoryIndexGenerator([specifier], {
@@ -508,7 +509,7 @@ describe('docs entries from story extraction', () => {
   });
   it(`DOES NOT adds docs entry when autodocs is false and an entry has the "${AUTODOCS_TAG}" tag`, async () => {
     const relativePath = './src/A.stories.js';
-    const absolutePath = path.join(options.workingDir, relativePath);
+    const absolutePath = join(options.workingDir, relativePath);
     const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(relativePath, options);
 
     const generator = new StoryIndexGenerator([specifier], {

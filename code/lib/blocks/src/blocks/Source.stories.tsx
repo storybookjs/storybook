@@ -1,15 +1,19 @@
 import React from 'react';
+
 import { SourceType } from 'storybook/internal/docs-tools';
+
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { dedent } from 'ts-dedent';
-import { Source } from './Source';
+
 import * as ParametersStories from '../examples/SourceParameters.stories';
-import { argsHash, SourceContext } from './SourceContainer';
+import { Source } from './Source';
+import { SourceContext, argsHash } from './SourceContainer';
 
 const meta: Meta<typeof Source> = {
   component: Source,
   parameters: {
+    layout: 'fullscreen',
     relativeCsfPaths: ['../examples/SourceParameters.stories'],
     snippets: {
       'storybook-blocks-examples-stories-for-the-source-block--no-parameters': {

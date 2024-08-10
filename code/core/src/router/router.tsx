@@ -1,10 +1,12 @@
-import { global } from '@storybook/global';
 import React, { useCallback } from 'react';
-import type { ReactNode, ReactElement, ComponentProps } from 'react';
+import type { ComponentProps, ReactElement, ReactNode } from 'react';
+
+import { global } from '@storybook/global';
 
 import * as R from 'react-router-dom';
-import { queryFromString, parsePath, getMatch } from './utils';
+
 import type { LinkProps, NavigateOptions, RenderData } from './types';
+import { getMatch, parsePath, queryFromString } from './utils';
 
 const { document } = global;
 

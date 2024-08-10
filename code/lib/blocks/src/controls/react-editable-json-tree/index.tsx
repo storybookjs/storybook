@@ -2,12 +2,12 @@ import type { ReactElement } from 'react';
 import React, { Component } from 'react';
 
 import { JsonNode } from './JsonNodes';
-import { value, object, array } from './utils/styles';
-import { ADD_DELTA_TYPE, REMOVE_DELTA_TYPE, UPDATE_DELTA_TYPE } from './types/deltaTypes';
-import { getObjectType } from './utils/objectTypes';
 import * as DATA_TYPES from './types/dataTypes';
+import { ADD_DELTA_TYPE, REMOVE_DELTA_TYPE, UPDATE_DELTA_TYPE } from './types/deltaTypes';
 import * as INPUT_USAGE_TYPES from './types/inputUsageTypes';
+import { getObjectType } from './utils/objectTypes';
 import { parse } from './utils/parse';
+import { array, object, value } from './utils/styles';
 
 interface JsonTreeState {
   data: JsonTreeProps['data'];

@@ -1,4 +1,6 @@
-import type { BuilderOptions, CLIOptions, LoadOptions, Options } from '@storybook/core/types';
+import { readFile } from 'node:fs/promises';
+import { join, relative, resolve } from 'node:path';
+
 import {
   getProjectRoot,
   loadAllPresets,
@@ -8,25 +10,26 @@ import {
   serverResolve,
   validateFrameworkName,
 } from '@storybook/core/common';
+import { oneWayHash, telemetry } from '@storybook/core/telemetry';
+import type { BuilderOptions, CLIOptions, LoadOptions, Options } from '@storybook/core/types';
+import { global } from '@storybook/global';
+
+import { deprecate } from '@storybook/core/node-logger';
+import { MissingBuilderError } from '@storybook/core/server-errors';
+
 import prompts from 'prompts';
 import invariant from 'tiny-invariant';
-import { global } from '@storybook/global';
-import { oneWayHash, telemetry } from '@storybook/core/telemetry';
-
-import { join, relative, resolve } from 'node:path';
-import { deprecate } from '@storybook/core/node-logger';
 import { dedent } from 'ts-dedent';
-import { MissingBuilderError, NoStatsForViteDevError } from '@storybook/core/server-errors';
+
 import { storybookDevServer } from './dev-server';
-import { outputStats } from './utils/output-stats';
-import { outputStartupInformation } from './utils/output-startup-information';
-import { updateCheck } from './utils/update-check';
-import { getServerChannelUrl, getServerPort } from './utils/server-address';
+import { buildOrThrow } from './utils/build-or-throw';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
+import { outputStartupInformation } from './utils/output-startup-information';
+import { outputStats } from './utils/output-stats';
+import { getServerChannelUrl, getServerPort } from './utils/server-address';
+import { updateCheck } from './utils/update-check';
 import { warnOnIncompatibleAddons } from './utils/warnOnIncompatibleAddons';
 import { warnWhenUsingArgTypesRegex } from './utils/warnWhenUsingArgTypesRegex';
-import { buildOrThrow } from './utils/build-or-throw';
-import { readFile } from 'node:fs/promises';
 
 export async function buildDevStandalone(
   options: CLIOptions & LoadOptions & BuilderOptions

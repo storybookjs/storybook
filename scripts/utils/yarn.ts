@@ -1,10 +1,11 @@
-import { pathExists, readJSON, writeJSON } from '@ndelangen/fs-extra-unified';
-import path from 'path';
+import { join } from 'node:path';
 
-import type { TemplateKey } from '../get-template';
-import { exec } from './exec';
+import { pathExists, readJSON, writeJSON } from '@ndelangen/fs-extra-unified';
+
 // TODO -- should we generate this file a second time outside of CLI?
 import storybookVersions from '../../code/core/src/common/versions';
+import type { TemplateKey } from '../get-template';
+import { exec } from './exec';
 import touch from './touch';
 
 export type YarnOptions = {
@@ -19,7 +20,7 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
   logger.info(`🔢 Adding package resolutions:`);
   if (dryRun) return;
 
-  const packageJsonPath = path.join(cwd, 'package.json');
+  const packageJsonPath = join(cwd, 'package.json');
   const packageJson = await readJSON(packageJsonPath);
   packageJson.resolutions = {
     ...packageJson.resolutions,
@@ -35,7 +36,7 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
 };
 
 export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
-  const pnpApiExists = await pathExists(path.join(cwd, '.pnp.cjs'));
+  const pnpApiExists = await pathExists(join(cwd, '.pnp.cjs'));
 
   const command = [
     touch('yarn.lock'),
@@ -67,7 +68,7 @@ export const addWorkaroundResolutions = async ({ cwd, dryRun }: YarnOptions) => 
   logger.info(`🔢 Adding resolutions for workarounds`);
   if (dryRun) return;
 
-  const packageJsonPath = path.join(cwd, 'package.json');
+  const packageJsonPath = join(cwd, 'package.json');
   const packageJson = await readJSON(packageJsonPath);
   packageJson.resolutions = {
     ...packageJson.resolutions,

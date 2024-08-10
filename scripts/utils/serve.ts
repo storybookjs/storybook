@@ -1,6 +1,7 @@
+import type { Server } from 'node:http';
+
 import express from 'express';
 import serveStatic from 'serve-static';
-import type { Server } from 'http';
 
 export const serve = async (location: string, port: string): Promise<Server> => {
   return new Promise((resolve) => {

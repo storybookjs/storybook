@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { ObjectControl } from './Object';
 import { fn } from '@storybook/test';
+
+import { ObjectControl } from './Object';
 
 const meta = {
   component: ObjectControl,

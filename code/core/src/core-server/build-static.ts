@@ -1,10 +1,5 @@
-import chalk from 'chalk';
-import { copy, emptyDir, ensureDir } from '@ndelangen/fs-extra-unified';
 import { dirname, join, relative, resolve } from 'node:path';
-import { global } from '@storybook/global';
-import { logger } from '@storybook/core/node-logger';
-import { getPrecedingUpgrade, telemetry } from '@storybook/core/telemetry';
-import type { BuilderOptions, CLIOptions, LoadOptions, Options } from '@storybook/core/types';
+
 import {
   loadAllPresets,
   loadMainConfig,
@@ -12,15 +7,23 @@ import {
   normalizeStories,
   resolveAddonName,
 } from '@storybook/core/common';
+import { getPrecedingUpgrade, telemetry } from '@storybook/core/telemetry';
+import type { BuilderOptions, CLIOptions, LoadOptions, Options } from '@storybook/core/types';
+import { global } from '@storybook/global';
 
-import { outputStats } from './utils/output-stats';
+import { logger } from '@storybook/core/node-logger';
+
+import { copy, emptyDir, ensureDir } from '@ndelangen/fs-extra-unified';
+import chalk from 'chalk';
+
+import { StoryIndexGenerator } from './utils/StoryIndexGenerator';
+import { buildOrThrow } from './utils/build-or-throw';
 import { copyAllStaticFilesRelativeToMain } from './utils/copy-all-static-files';
 import { getBuilders } from './utils/get-builders';
-import { extractStoriesJson } from './utils/stories-json';
 import { extractStorybookMetadata } from './utils/metadata';
-import { StoryIndexGenerator } from './utils/StoryIndexGenerator';
+import { outputStats } from './utils/output-stats';
+import { extractStoriesJson } from './utils/stories-json';
 import { summarizeIndex } from './utils/summarizeIndex';
-import { buildOrThrow } from './utils/build-or-throw';
 
 export type BuildStaticStandaloneOptions = CLIOptions &
   LoadOptions &

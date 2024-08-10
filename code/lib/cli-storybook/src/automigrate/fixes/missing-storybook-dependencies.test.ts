@@ -1,5 +1,7 @@
-import { describe, expect, vi, it, beforeEach } from 'vitest';
-import type { JsPackageManager } from '@storybook/core/common';
+import { describe, expect, it, vi } from 'vitest';
+
+import type { JsPackageManager } from 'storybook/internal/common';
+
 import stripAnsi from 'strip-ansi';
 
 import { missingStorybookDependencies } from './missing-storybook-dependencies';

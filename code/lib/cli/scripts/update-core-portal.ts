@@ -1,8 +1,9 @@
 import { join } from 'node:path';
-import { sortPackageJson } from '../../../../scripts/node_modules/sort-package-json';
 
 import { readJSON } from '@ndelangen/fs-extra-unified';
-import { mapCoreExportToSelf, write, generateMapperContent } from './utils';
+
+import { sortPackageJson } from '../../../../scripts/prepare/tools';
+import { generateMapperContent, mapCoreExportToSelf, write } from './utils';
 
 /** Update the `storybook` package's `exports` and `typesVersion` fields to expose all things exposed from `@storybook/core`
  * We do this to ensure that users that import `storybook/theming` will get the code located at `@storybook/theming` (note the `@` symbol!)

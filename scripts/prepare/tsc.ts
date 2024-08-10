@@ -1,7 +1,9 @@
-import { join } from 'path';
+import { join } from 'node:path';
+
 import { emptyDir, move, readJson } from '@ndelangen/fs-extra-unified';
-import * as ts from 'typescript';
 import { globSync } from 'glob';
+import * as ts from 'typescript';
+
 import { exec } from '../utils/exec';
 
 const hasFlag = (flags: string[], name: string) => !!flags.find((s) => s.startsWith(`--${name}`));
@@ -12,7 +14,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   } = await readJson(join(cwd, 'package.json'));
 
   if (pre) {
-    await exec(`bun ${pre}`, { cwd });
+    await exec(`jiti ${pre}`, { cwd });
   }
 
   const reset = hasFlag(flags, 'reset');
@@ -66,7 +68,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   }
 
   if (post) {
-    await exec(`bun ${post}`, { cwd }, { debug: true });
+    await exec(`jiti ${post}`, { cwd }, { debug: true });
   }
 
   if (!watch) {

@@ -1,7 +1,9 @@
-import { ensureFile } from '@ndelangen/fs-extra-unified';
-import { resolvePathInStorybookCache } from '@storybook/core/common';
 import { writeFile } from 'node:fs/promises';
 import { join, parse, relative, sep } from 'node:path';
+
+import { resolvePathInStorybookCache } from '@storybook/core/common';
+
+import { ensureFile } from '@ndelangen/fs-extra-unified';
 import slash from 'slash';
 
 const sanitizeBase = (path: string) => {

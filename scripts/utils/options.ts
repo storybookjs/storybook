@@ -1,14 +1,13 @@
 /**
  * Use commander and prompts to gather a list of options for a script
  */
-
-import prompts from 'prompts';
-import type { PromptObject, Falsy, PrevCaller, PromptType } from 'prompts';
-import program from 'commander';
-import { dedent } from 'ts-dedent';
 import chalk from 'chalk';
+import program from 'commander';
 // eslint-disable-next-line import/extensions
 import kebabCase from 'lodash/kebabCase.js';
+import prompts from 'prompts';
+import type { Falsy, PrevCaller, PromptObject, PromptType } from 'prompts';
+import { dedent } from 'ts-dedent';
 
 // Option types
 

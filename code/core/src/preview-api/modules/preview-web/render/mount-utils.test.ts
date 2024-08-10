@@ -1,4 +1,5 @@
 import { expect, test } from 'vitest';
+
 import { getUsedProps } from './mount-utils';
 
 const StoryWithContext = {

@@ -1,8 +1,10 @@
+import { readFile, writeFile } from 'node:fs/promises';
+import { basename } from 'node:path';
+
 import chalk from 'chalk';
 import { dedent } from 'ts-dedent';
-import { basename } from 'path';
+
 import type { Fix } from '../types';
-import { readFile, writeFile } from 'node:fs/promises';
 
 const MDX1_STYLE_START = /<style>{`/g;
 const MDX1_STYLE_END = /`}<\/style>/g;

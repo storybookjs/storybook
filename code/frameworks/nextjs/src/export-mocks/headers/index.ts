@@ -1,4 +1,5 @@
 import { fn } from '@storybook/test';
+
 import * as originalHeaders from 'next/dist/client/components/headers';
 
 // re-exports of the actual module

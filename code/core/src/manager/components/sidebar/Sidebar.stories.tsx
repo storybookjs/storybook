@@ -1,18 +1,20 @@
 import React from 'react';
 
+import { Button, IconButton } from '@storybook/core/components';
+import type { Addon_SidebarTopType } from '@storybook/core/types';
+import { FaceHappyIcon } from '@storybook/icons';
+import type { Meta, StoryObj } from '@storybook/react';
+import { expect, fn, userEvent, within } from '@storybook/test';
+
 import type { IndexHash, State } from '@storybook/core/manager-api';
 import { ManagerContext, types } from '@storybook/core/manager-api';
-import type { StoryObj, Meta } from '@storybook/react';
-import { within, userEvent, expect, fn } from '@storybook/test';
-import type { Addon_SidebarTopType } from '@storybook/core/types';
-import { Button, IconButton } from '@storybook/core/components';
-import { FaceHappyIcon } from '@storybook/icons';
-import { Sidebar, DEFAULT_REF_ID } from './Sidebar';
+
+import { LayoutProvider } from '../layout/LayoutProvider';
 import { standardData as standardHeaderData } from './Heading.stories';
+import { IconSymbols } from './IconSymbols';
+import { DEFAULT_REF_ID, Sidebar } from './Sidebar';
 import { mockDataset } from './mockdata';
 import type { RefType } from './types';
-import { LayoutProvider } from '../layout/LayoutProvider';
-import { IconSymbols } from './IconSymbols';
 
 const wait = (ms: number) =>
   new Promise<void>((resolve) => {
@@ -73,6 +75,7 @@ const meta = {
       </ManagerContext.Provider>
     ),
   ],
+  globals: { sb_theme: 'side-by-side' },
 } satisfies Meta<typeof Sidebar>;
 
 export default meta;
@@ -208,6 +211,14 @@ export const StatusesOpen: Story = {
 export const Searching: Story = {
   ...StatusesOpen,
   parameters: { chromatic: { delay: 2200 } },
+  globals: { sb_theme: 'light' },
+  decorators: [
+    (StoryFn) => (
+      <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
+        <StoryFn />
+      </div>
+    ),
+  ],
   play: async ({ canvasElement, step }) => {
     await step('wait 2000ms', () => wait(2000));
     const canvas = await within(canvasElement);
@@ -273,12 +284,21 @@ export const Scrolled: Story = {
   args: {
     storyId: 'group-1--child-b1',
   },
+  globals: { sb_theme: 'light' },
+  decorators: [
+    (StoryFn) => (
+      <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
+        <StoryFn />
+      </div>
+    ),
+  ],
+
   render: (args) => {
     const [, setState] = React.useState(0);
     return (
       <>
         <button
-          style={{ position: 'absolute', zIndex: 10 }}
+          style={{ position: 'absolute', zIndex: 10, bottom: 0, right: 0 }}
           onClick={() => setState(() => Math.random())}
         >
           Change state

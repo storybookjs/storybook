@@ -1,18 +1,19 @@
 import {
-  composeStory as originalComposeStory,
   composeStories as originalComposeStories,
+  composeStory as originalComposeStory,
   setProjectAnnotations as originalSetProjectAnnotations,
 } from 'storybook/internal/preview-api';
+import { TestingLibraryMustBeConfiguredError } from 'storybook/internal/preview-errors';
 import type {
   Args,
+  ComposedStoryFn,
   NamedOrDefaultProjectAnnotations,
   ProjectAnnotations,
-  StoryAnnotationsOrFn,
   Store_CSFExports,
   StoriesWithPartialProps,
-  ComposedStoryFn,
+  StoryAnnotationsOrFn,
 } from 'storybook/internal/types';
-import { TestingLibraryMustBeConfiguredError } from 'storybook/internal/preview-errors';
+
 import { h } from 'vue';
 
 import * as defaultProjectAnnotations from './entry-preview';

@@ -1,9 +1,13 @@
-import { describe, afterEach, it, expect, vi } from 'vitest';
-import * as fs from 'fs';
+import { existsSync } from 'node:fs';
+
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import type { JsPackageManager, PackageJsonWithMaybeDeps } from '@storybook/core/common';
+
 import { logger } from '@storybook/core/node-logger';
+
 import { detect, detectFrameworkPreset, detectLanguage } from './detect';
 import { ProjectType, SupportedLanguage } from './project_types';
-import type { JsPackageManager, PackageJsonWithMaybeDeps } from '@storybook/core/common';
 
 vi.mock('./helpers', () => ({
   isNxProject: vi.fn(),
@@ -417,7 +421,7 @@ describe('Detect', () => {
 
     MOCK_FRAMEWORK_FILES.forEach((structure) => {
       it(`${structure.name}`, () => {
-        vi.mocked(fs.existsSync).mockImplementation((filePath) => {
+        vi.mocked(existsSync).mockImplementation((filePath) => {
           return typeof filePath === 'string' && Object.keys(structure.files).includes(filePath);
         });
 
@@ -450,7 +454,7 @@ describe('Detect', () => {
         '/node_modules/.bin/react-scripts': 'file content',
       };
 
-      vi.mocked(fs.existsSync).mockImplementation((filePath) => {
+      vi.mocked(existsSync).mockImplementation((filePath) => {
         return (
           typeof filePath === 'string' && Object.keys(forkedReactScriptsConfig).includes(filePath)
         );

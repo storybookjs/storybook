@@ -26,6 +26,7 @@ Second use the `StorybookError` class to define custom errors with specific code
 
 ```typescript
 import { StorybookError } from './storybook-error';
+
 export class YourCustomError extends StorybookError {
   constructor() {
     super({

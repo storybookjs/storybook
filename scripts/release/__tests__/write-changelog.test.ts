@@ -1,12 +1,14 @@
 /* eslint-disable no-underscore-dangle */
-import path from 'path';
-import { dedent } from 'ts-dedent';
-import { vi, expect, describe, it, beforeEach } from 'vitest';
+import { join } from 'node:path';
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import * as fsExtraImp from '@ndelangen/fs-extra-unified';
-import { run as writeChangelog } from '../write-changelog';
-import * as changesUtils_ from '../utils/get-changes';
+import { dedent } from 'ts-dedent';
 
 import type * as MockedFSToExtra from '../../../code/__mocks__/fs-extra';
+import * as changesUtils_ from '../utils/get-changes';
+import { run as writeChangelog } from '../write-changelog';
 
 vi.mock('@ndelangen/fs-extra-unified', async () => import('../../../code/__mocks__/fs-extra'));
 vi.mock('node:fs/promises', async () => import('../../../code/__mocks__/fs-extra'));
@@ -29,18 +31,10 @@ beforeEach(() => {
   });
 });
 
-const STABLE_CHANGELOG_PATH = path.join(__dirname, '..', '..', '..', 'CHANGELOG.md');
-const PRERELEASE_CHANGELOG_PATH = path.join(__dirname, '..', '..', '..', 'CHANGELOG.prerelease.md');
-const LATEST_VERSION_PATH = path.join(
-  __dirname,
-  '..',
-  '..',
-  '..',
-  'docs',
-  'versions',
-  'latest.json'
-);
-const NEXT_VERSION_PATH = path.join(__dirname, '..', '..', '..', 'docs', 'versions', 'next.json');
+const STABLE_CHANGELOG_PATH = join(__dirname, '..', '..', '..', 'CHANGELOG.md');
+const PRERELEASE_CHANGELOG_PATH = join(__dirname, '..', '..', '..', 'CHANGELOG.prerelease.md');
+const LATEST_VERSION_PATH = join(__dirname, '..', '..', '..', 'docs', 'versions', 'latest.json');
+const NEXT_VERSION_PATH = join(__dirname, '..', '..', '..', 'docs', 'versions', 'next.json');
 
 const EXISTING_STABLE_CHANGELOG = dedent`## 7.0.0
 

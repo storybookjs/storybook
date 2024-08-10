@@ -1,13 +1,17 @@
+import { writeFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
+
+import { readJSON } from '@ndelangen/fs-extra-unified';
 import slash from 'slash';
-import { sortPackageJson, Bun } from '../../../../scripts/prepare/tools';
+
+import { sortPackageJson } from '../../../../scripts/prepare/tools';
 import type { getEntries } from '../entries';
 
 const cwd = process.cwd();
 
 export async function generatePackageJsonFile(entries: ReturnType<typeof getEntries>) {
   const location = join(cwd, 'package.json');
-  const pkgJson = await Bun.file(location).json();
+  const pkgJson = await readJSON(location);
 
   /** Re-create the `exports` field in `code/core/package.json`
    * This way we only need to update the `./scripts/entries.ts` file to ensure all things we create actually exist and are mapped to the correct path.
@@ -67,5 +71,5 @@ export async function generatePackageJsonFile(entries: ReturnType<typeof getEntr
     },
   };
 
-  await Bun.write(location, `${sortPackageJson(JSON.stringify(pkgJson, null, 2))}\n`, {});
+  await writeFile(location, `${sortPackageJson(JSON.stringify(pkgJson, null, 2))}\n`, {});
 }

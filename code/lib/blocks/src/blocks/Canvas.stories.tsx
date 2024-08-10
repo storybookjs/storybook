@@ -1,15 +1,19 @@
 import React from 'react';
+
 import type { Meta, StoryObj } from '@storybook/react';
+
 import { dedent } from 'ts-dedent';
-import { Canvas } from './Canvas';
-import SourceStoriesMeta from './Source.stories';
+
 import * as ButtonStories from '../examples/Button.stories';
 import * as ParameterStories from '../examples/CanvasParameters.stories';
 import * as SourceParameterStories from '../examples/SourceParameters.stories';
+import { Canvas } from './Canvas';
+import SourceStoriesMeta from './Source.stories';
 
 const meta: Meta<typeof Canvas> = {
   component: Canvas,
   parameters: {
+    layout: 'fullscreen',
     relativeCsfPaths: [
       '../examples/Button.stories',
       '../examples/CanvasParameters.stories',

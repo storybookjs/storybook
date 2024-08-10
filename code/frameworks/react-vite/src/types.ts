@@ -3,7 +3,9 @@ import type {
   StorybookConfig as StorybookConfigBase,
   TypescriptOptions as TypescriptOptionsBase,
 } from 'storybook/internal/types';
-import type { StorybookConfigVite, BuilderOptions } from '@storybook/builder-vite';
+
+import type { BuilderOptions, StorybookConfigVite } from '@storybook/builder-vite';
+
 import type docgenTypescript from '@joshwooding/vite-plugin-react-docgen-typescript';
 
 type FrameworkName = CompatibleString<'@storybook/react-vite'>;

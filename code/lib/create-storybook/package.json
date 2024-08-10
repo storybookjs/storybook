@@ -1,6 +1,6 @@
 {
   "name": "create-storybook",
-  "version": "8.3.0-alpha.3",
+  "version": "8.3.0-alpha.4",
   "description": "Initialize Storybook into your project",
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/create-storybook",
   "bugs": {
@@ -47,11 +47,11 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "check": "jiti  ../../../scripts/prepare/check.ts",
+    "prep": "jiti  ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@ndelangen/fs-extra-unified": "1.0.4--canary.5.5f6cfdd.0",
+    "@ndelangen/fs-extra-unified": "^1.0.4",
     "@types/fs-extra": "^11.0.4",
     "@types/semver": "^7.3.4",
     "chalk": "^4.1.0",

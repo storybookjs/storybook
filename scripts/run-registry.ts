@@ -1,19 +1,19 @@
-import { exec } from 'child_process';
-import { remove, pathExists, readJSON } from '@ndelangen/fs-extra-unified';
-import chalk from 'chalk';
-import path from 'path';
-import program from 'commander';
-import http from 'http';
+import { exec } from 'node:child_process';
+import { mkdir } from 'node:fs/promises';
+import http from 'node:http';
+import type { Server } from 'node:http';
+import { join, resolve as resolvePath } from 'node:path';
 
-import { runServer, parseConfigFile } from 'verdaccio';
+import { pathExists, readJSON, remove } from '@ndelangen/fs-extra-unified';
+import chalk from 'chalk';
+import program from 'commander';
+import { execa, execaSync } from 'execa';
 import pLimit from 'p-limit';
-import type { Server } from 'http';
-import { mkdir } from 'fs/promises';
-import { PACKS_DIRECTORY } from './utils/constants';
+import { parseConfigFile, runServer } from 'verdaccio';
 
 import { maxConcurrentTasks } from './utils/concurrency';
+import { PACKS_DIRECTORY } from './utils/constants';
 import { getWorkspaces } from './utils/workspace';
-import { execa, execaSync } from 'execa';
 
 program
   .option('-O, --open', 'keep process open')
@@ -23,7 +23,7 @@ program.parse(process.argv);
 
 const logger = console;
 
-const root = path.resolve(__dirname, '..');
+const root = resolvePath(__dirname, '..');
 
 const startVerdaccio = async () => {
   const ready = {
@@ -31,7 +31,7 @@ const startVerdaccio = async () => {
     verdaccio: false,
   };
   return Promise.race([
-    new Promise((resolve) => {
+    new Promise((resolvePromise) => {
       /** The proxy server will sit in front of verdaccio and tunnel traffic to either verdaccio or the actual npm global registry
        * We do this because tunneling all traffic through verdaccio is slow (this might get fixed in verdaccio)
        * With this heuristic we get the best of both worlds:
@@ -60,12 +60,12 @@ const startVerdaccio = async () => {
       proxy.listen(6001, () => {
         ready.proxy = true;
         if (ready.verdaccio) {
-          resolve(verdaccioApp);
+          resolvePromise(verdaccioApp);
         }
       });
-      const cache = path.join(__dirname, '..', '.verdaccio-cache');
+      const cache = join(__dirname, '..', '.verdaccio-cache');
       const config = {
-        ...parseConfigFile(path.join(__dirname, 'verdaccio.yaml')),
+        ...parseConfigFile(join(__dirname, 'verdaccio.yaml')),
         self_path: cache,
       };
 
@@ -76,7 +76,7 @@ const startVerdaccio = async () => {
         app.listen(6002, () => {
           ready.verdaccio = true;
           if (ready.proxy) {
-            resolve(verdaccioApp);
+            resolvePromise(verdaccioApp);
           }
         });
       });
@@ -92,7 +92,7 @@ const startVerdaccio = async () => {
 };
 
 const currentVersion = async () => {
-  const { version } = await readJSON(path.join(__dirname, '..', 'code', 'package.json'));
+  const { version } = await readJSON(join(__dirname, '..', 'code', 'package.json'));
   return version;
 };
 
@@ -123,14 +123,11 @@ const publish = async (packages: { name: string; location: string }[], url: stri
         () =>
           new Promise((res, rej) => {
             logger.log(
-              `🛫 publishing ${name} (${location.replace(
-                path.resolve(path.join(__dirname, '..')),
-                '.'
-              )})`
+              `🛫 publishing ${name} (${location.replace(resolvePath(join(__dirname, '..')), '.')})`
             );
 
             const tarballFilename = `${name.replace('@', '').replace('/', '-')}.tgz`;
-            const command = `cd ${path.resolve(
+            const command = `cd ${resolvePath(
               '../code',
               location
             )} && yarn pack --out=${PACKS_DIRECTORY}/${tarballFilename} && cd ${PACKS_DIRECTORY} && npm publish ./${tarballFilename} --registry ${url} --force --ignore-scripts`;
@@ -157,7 +154,7 @@ const run = async () => {
 
   if (!process.env.CI) {
     // when running e2e locally, clear cache to avoid EPUBLISHCONFLICT errors
-    const verdaccioCache = path.resolve(__dirname, '..', '.verdaccio-cache');
+    const verdaccioCache = resolvePath(__dirname, '..', '.verdaccio-cache');
     if (await pathExists(verdaccioCache)) {
       logger.log(`🗑 cleaning up cache`);
       await remove(verdaccioCache);

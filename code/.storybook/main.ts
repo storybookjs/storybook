@@ -1,10 +1,12 @@
-import path from 'path';
+import { join } from 'node:path';
+
 // eslint-disable-next-line @typescript-eslint/no-restricted-imports
 import { mergeConfig } from 'vite';
+
 import type { StorybookConfig } from '../frameworks/react-vite';
 
-const componentsPath = path.join(__dirname, '../core/src/components');
-const managerApiPath = path.join(__dirname, '../core/src/manager-api');
+const componentsPath = join(__dirname, '../core/src/components');
+const managerApiPath = join(__dirname, '../core/src/manager-api');
 
 const config: StorybookConfig = {
   stories: [
@@ -69,6 +71,10 @@ const config: StorybookConfig = {
       titlePrefix: 'addons/toolbars',
     },
     {
+      directory: '../addons/themes/template/stories',
+      titlePrefix: 'addons/themes',
+    },
+    {
       directory: '../addons/onboarding/src',
       titlePrefix: 'addons/onboarding',
     },
@@ -83,6 +89,7 @@ const config: StorybookConfig = {
   ],
   addons: [
     '@storybook/addon-links',
+    '@storybook/addon-themes',
     '@storybook/addon-essentials',
     '@storybook/addon-interactions',
     '@storybook/addon-storysource',
@@ -119,7 +126,6 @@ const config: StorybookConfig = {
   },
   features: {
     viewportStoryGlobals: true,
-    themesStoryGlobals: true,
     backgroundsStoryGlobals: true,
   },
   viteFinal: (viteConfig, { configType }) =>

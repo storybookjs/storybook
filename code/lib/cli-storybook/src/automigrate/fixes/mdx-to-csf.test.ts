@@ -1,6 +1,7 @@
-import { describe, afterEach, it, expect, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { StorybookConfigRaw, PackageJson } from 'storybook/internal/types';
+import type { PackageJson, StorybookConfigRaw } from 'storybook/internal/types';
+
 import { ansiRegex } from '../helpers/cleanLog';
 import { makePackageManager } from '../helpers/testing-helpers';
 import type { BareMdxStoriesGlobRunOptions } from './mdx-to-csf';

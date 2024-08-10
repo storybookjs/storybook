@@ -1,6 +1,6 @@
 {
   "name": "@storybook/svelte",
-  "version": "8.3.0-alpha.3",
+  "version": "8.3.0-alpha.4",
   "description": "Storybook Svelte renderer",
   "keywords": [
     "storybook"
@@ -54,7 +54,7 @@
   ],
   "scripts": {
     "check": "svelte-check",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
     "@storybook/components": "workspace:^",
@@ -67,7 +67,7 @@
     "type-fest": "~2.19"
   },
   "devDependencies": {
-    "@ndelangen/fs-extra-unified": "1.0.4--canary.5.5f6cfdd.0",
+    "@ndelangen/fs-extra-unified": "^1.0.4",
     "@sveltejs/vite-plugin-svelte": "^3.0.2",
     "@testing-library/jest-dom": "^6.4.1",
     "@testing-library/svelte": "patch:@testing-library/svelte@npm%3A4.1.0#~/.yarn/patches/@testing-library-svelte-npm-4.1.0-34b7037bc0.patch",

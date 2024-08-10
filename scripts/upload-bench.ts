@@ -1,7 +1,8 @@
-import { join } from 'path';
-import { BigQuery } from '@google-cloud/bigquery';
+import { join } from 'node:path';
 
+import { BigQuery } from '@google-cloud/bigquery';
 import { execaCommand } from 'execa';
+
 import type { BenchResults } from './bench/types';
 import { loadBench } from './bench/utils';
 import { SANDBOX_DIRECTORY } from './utils/constants';

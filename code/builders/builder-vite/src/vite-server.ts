@@ -1,9 +1,11 @@
-import type { Server } from 'http';
+import type { Server } from 'node:http';
+
 import type { Options } from 'storybook/internal/types';
-import { commonConfig } from './vite-config';
-import { getOptimizeDeps } from './optimizeDeps';
-import { sanitizeEnvVars } from './envs';
+
 import { getAssetsInclude } from './assetsInclude';
+import { sanitizeEnvVars } from './envs';
+import { getOptimizeDeps } from './optimizeDeps';
+import { commonConfig } from './vite-config';
 
 export async function createViteServer(options: Options, devServer: Server) {
   const { presets } = options;

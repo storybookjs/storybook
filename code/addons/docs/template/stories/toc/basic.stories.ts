@@ -1,4 +1,5 @@
 import { global as globalThis } from '@storybook/global';
+import { fn } from '@storybook/test';
 
 export default {
   component: globalThis.Components.Button,

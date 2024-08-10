@@ -1,12 +1,14 @@
 import React from 'react';
-import { within, userEvent, fn, expect } from '@storybook/test';
-import type { StoryFn as CSF2Story, StoryObj as CSF3Story, Meta } from '..';
 
-import type { ButtonProps } from './Button';
-import { Button } from './Button';
+import { expect, fn, userEvent, within } from '@storybook/test';
+import { mocked } from '@storybook/test';
+
 import type { HandlerFunction } from '@storybook/addon-actions';
 import { action } from '@storybook/addon-actions';
-import { mocked } from '@storybook/test';
+
+import type { StoryFn as CSF2Story, StoryObj as CSF3Story, Meta } from '..';
+import type { ButtonProps } from './Button';
+import { Button } from './Button';
 
 const meta = {
   title: 'Example/Button',

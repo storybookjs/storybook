@@ -1,5 +1,6 @@
 import React from 'react';
 import type { FC } from 'react';
+
 import type { Meta } from '@storybook/react';
 
 export default {

@@ -1,41 +1,40 @@
+import { readFile } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
+
+import { outputFile, pathExists } from '@ndelangen/fs-extra-unified';
 import type { TestCase } from 'junit-xml';
 import { getJunitXml } from 'junit-xml';
-import { outputFile, pathExists } from '@ndelangen/fs-extra-unified';
-import { join, resolve } from 'path';
 import prompts from 'prompts';
-import { dedent } from 'ts-dedent';
-
 import invariant from 'tiny-invariant';
-import { CODE_DIRECTORY, JUNIT_DIRECTORY, SANDBOX_DIRECTORY } from './utils/constants';
-import type { OptionValues } from './utils/options';
-import { createOptions, getCommand, getOptionsOrPrompt } from './utils/options';
-import { install } from './tasks/install';
-import { compile } from './tasks/compile';
-import { check } from './tasks/check';
-import { publish } from './tasks/publish';
-import { runRegistryTask } from './tasks/run-registry';
-import { generate } from './tasks/generate';
-import { sandbox } from './tasks/sandbox';
-import { syncDocs } from './tasks/sync-docs';
-import { dev } from './tasks/dev';
-import { smokeTest } from './tasks/smoke-test';
-import { build } from './tasks/build';
-import { serve } from './tasks/serve';
-import { testRunnerBuild } from './tasks/test-runner-build';
-import { testRunnerDev } from './tasks/test-runner-dev';
-import { chromatic } from './tasks/chromatic';
-import { e2eTestsBuild } from './tasks/e2e-tests-build';
-import { e2eTestsDev } from './tasks/e2e-tests-dev';
-import { bench } from './tasks/bench';
+import { dedent } from 'ts-dedent';
 
 import {
   allTemplates as TEMPLATES,
-  type TemplateKey,
   type Template,
+  type TemplateKey,
 } from '../code/lib/cli-storybook/src/sandbox-templates';
-
 import { version } from '../code/package.json';
-import { readFile } from 'node:fs/promises';
+import { bench } from './tasks/bench';
+import { build } from './tasks/build';
+import { check } from './tasks/check';
+import { chromatic } from './tasks/chromatic';
+import { compile } from './tasks/compile';
+import { dev } from './tasks/dev';
+import { e2eTestsBuild } from './tasks/e2e-tests-build';
+import { e2eTestsDev } from './tasks/e2e-tests-dev';
+import { generate } from './tasks/generate';
+import { install } from './tasks/install';
+import { publish } from './tasks/publish';
+import { runRegistryTask } from './tasks/run-registry';
+import { sandbox } from './tasks/sandbox';
+import { serve } from './tasks/serve';
+import { smokeTest } from './tasks/smoke-test';
+import { syncDocs } from './tasks/sync-docs';
+import { testRunnerBuild } from './tasks/test-runner-build';
+import { testRunnerDev } from './tasks/test-runner-dev';
+import { CODE_DIRECTORY, JUNIT_DIRECTORY, SANDBOX_DIRECTORY } from './utils/constants';
+import type { OptionValues } from './utils/options';
+import { createOptions, getCommand, getOptionsOrPrompt } from './utils/options';
 
 const sandboxDir = process.env.SANDBOX_ROOT || SANDBOX_DIRECTORY;
 
@@ -522,12 +521,10 @@ process.on('exit', () => {
   });
 });
 
-if (require.main === module) {
-  run()
-    .then((status) => process.exit(status))
-    .catch((err) => {
-      logger.error();
-      logger.error(err);
-      process.exit(1);
-    });
-}
+run()
+  .then((status) => process.exit(status))
+  .catch((err) => {
+    logger.error();
+    logger.error(err);
+    process.exit(1);
+  });

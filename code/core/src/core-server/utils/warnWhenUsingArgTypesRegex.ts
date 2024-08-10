@@ -1,11 +1,14 @@
-import type { PackageJson, StorybookConfig } from '@storybook/core/types';
-import { getConfigInfo } from '@storybook/core/common';
+import { readFile } from 'node:fs/promises';
+
+import { type PackageJson, getConfigInfo } from '@storybook/core/common';
+import type { StorybookConfig } from '@storybook/core/types';
+
+import { babelParse } from '@storybook/core/csf-tools';
+
 import * as babel from '@babel/core';
 import type { BabelFile } from '@babel/core';
-import { babelParse } from '@storybook/core/csf-tools';
-import { dedent } from 'ts-dedent';
 import chalk from 'chalk';
-import { readFile } from 'node:fs/promises';
+import { dedent } from 'ts-dedent';
 
 export async function warnWhenUsingArgTypesRegex(
   packageJson: PackageJson,

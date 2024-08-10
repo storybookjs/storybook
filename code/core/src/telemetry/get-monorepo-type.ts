@@ -1,8 +1,9 @@
-import { readJsonSync } from '@ndelangen/fs-extra-unified';
-import path from 'node:path';
-import type { PackageJson } from '@storybook/core/types';
-import { getProjectRoot } from '@storybook/core/common';
 import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+
+import { type PackageJson, getProjectRoot } from '@storybook/core/common';
+
+import { readJsonSync } from '@ndelangen/fs-extra-unified';
 
 export const monorepoConfigs = {
   Nx: 'nx.json',
@@ -20,7 +21,7 @@ export const getMonorepoType = (): MonorepoType => {
 
   const keys = Object.keys(monorepoConfigs) as (keyof typeof monorepoConfigs)[];
   const monorepoType: MonorepoType = keys.find((monorepo) => {
-    const configFile = path.join(projectRootPath, monorepoConfigs[monorepo]);
+    const configFile = join(projectRootPath, monorepoConfigs[monorepo]);
     return existsSync(configFile);
   }) as MonorepoType;
 
@@ -28,11 +29,11 @@ export const getMonorepoType = (): MonorepoType => {
     return monorepoType;
   }
 
-  if (!existsSync(path.join(projectRootPath, 'package.json'))) {
+  if (!existsSync(join(projectRootPath, 'package.json'))) {
     return undefined;
   }
 
-  const packageJson = readJsonSync(path.join(projectRootPath, 'package.json')) as PackageJson;
+  const packageJson = readJsonSync(join(projectRootPath, 'package.json')) as PackageJson;
 
   if (packageJson?.workspaces) {
     return 'Workspaces';

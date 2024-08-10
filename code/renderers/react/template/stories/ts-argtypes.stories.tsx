@@ -1,30 +1,33 @@
 import React, { useState } from 'react';
-import mapValues from 'lodash/mapValues.js';
+
+import { inferControls } from 'storybook/internal/preview-api';
+import { ThemeProvider, convert, themes } from 'storybook/internal/theming';
+import type { Args, Parameters, StoryContext } from 'storybook/internal/types';
+
 import { PureArgsTable as ArgsTable } from '@storybook/blocks';
 import type { StoryObj } from '@storybook/react';
-import type { Args, Parameters, StoryContext } from 'storybook/internal/types';
-import { inferControls } from 'storybook/internal/preview-api';
-import { ThemeProvider, themes, convert } from 'storybook/internal/theming';
 
-import { component as TsFunctionComponentComponent } from './docgen-components/ts-function-component/input';
-import { component as TsFunctionComponentInlineDefaultsComponent } from './docgen-components/ts-function-component-inline-defaults/input';
-import { component as TsReactFcGenericsComponent } from './docgen-components/8143-ts-react-fc-generics/input';
+import mapValues from 'lodash/mapValues.js';
+
 import { component as TsImportedTypesComponent } from './docgen-components/8143-ts-imported-types/input';
+import { component as TsReactFcGenericsComponent } from './docgen-components/8143-ts-react-fc-generics/input';
 import { component as TsMultiPropsComponent } from './docgen-components/8740-ts-multi-props/input';
-import { component as TsReactDefaultExportsComponent } from './docgen-components/9556-ts-react-default-exports/input';
-import { component as TsImportTypesComponent } from './docgen-components/9591-ts-import-types/input';
-import { component as TsDeprecatedJsdocComponent } from './docgen-components/9721-ts-deprecated-jsdoc/input';
-import { component as TsDefaultValuesComponent } from './docgen-components/9827-ts-default-values/input';
-import { component as TsCamelCaseComponent } from './docgen-components/9575-ts-camel-case/input';
-import { component as TsDisplayNameComponent } from './docgen-components/9493-ts-display-name/input';
 import { component as TsForwardRefComponent } from './docgen-components/8894-9511-ts-forward-ref/input';
 import { component as TsTypePropsComponent } from './docgen-components/9465-ts-type-props/input';
+import { component as TsDisplayNameComponent } from './docgen-components/9493-ts-display-name/input';
+import { component as TsReactDefaultExportsComponent } from './docgen-components/9556-ts-react-default-exports/input';
+import { component as TsCamelCaseComponent } from './docgen-components/9575-ts-camel-case/input';
+import { component as TsImportTypesComponent } from './docgen-components/9591-ts-import-types/input';
+import { component as TsDeprecatedJsdocComponent } from './docgen-components/9721-ts-deprecated-jsdoc/input';
 import { component as TsExtendPropsComponent } from './docgen-components/9764-ts-extend-props/input';
+import { component as TsDefaultValuesComponent } from './docgen-components/9827-ts-default-values/input';
 import { component as TsComponentPropsComponent } from './docgen-components/9922-ts-component-props/input';
-import { component as TsJsdocComponent } from './docgen-components/ts-jsdoc/input';
-import { component as TsTypesComponent } from './docgen-components/ts-types/input';
+import { component as TsFunctionComponentInlineDefaultsComponent } from './docgen-components/ts-function-component-inline-defaults/input';
+import { component as TsFunctionComponentComponent } from './docgen-components/ts-function-component/input';
 import { component as TsHtmlComponent } from './docgen-components/ts-html/input';
+import { component as TsJsdocComponent } from './docgen-components/ts-jsdoc/input';
 import { component as TsFCComponent } from './docgen-components/ts-react-fc/input';
+import { component as TsTypesComponent } from './docgen-components/ts-types/input';
 
 export default {
   component: {},

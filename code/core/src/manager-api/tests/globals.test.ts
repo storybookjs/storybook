@@ -1,19 +1,22 @@
-import { describe, beforeEach, it, expect, vi } from 'vitest';
-import { EventEmitter } from 'events';
-import {
-  SET_STORIES,
-  SET_GLOBALS,
-  UPDATE_GLOBALS,
-  GLOBALS_UPDATED,
-} from '@storybook/core/core-events';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { GlobalsUpdatedPayload, SetGlobalsPayload } from '@storybook/core/types';
 
 import { logger as _logger } from '@storybook/core/client-logger';
-import type { API } from '../root';
-import type { SubAPI } from '../modules/globals';
-import { init as initModule } from '../modules/globals';
-import type { ModuleArgs } from '../lib/types';
+import {
+  GLOBALS_UPDATED,
+  SET_GLOBALS,
+  SET_STORIES,
+  UPDATE_GLOBALS,
+} from '@storybook/core/core-events';
+
+import { EventEmitter } from 'events';
 
 import { getEventMetadata as _getEventData } from '../lib/events';
+import type { ModuleArgs } from '../lib/types';
+import type { SubAPI } from '../modules/globals';
+import { init as initModule } from '../modules/globals';
+import type { API } from '../root';
 
 const getEventMetadata = vi.mocked(_getEventData, true);
 const logger = vi.mocked(_logger, true);
@@ -41,6 +44,8 @@ describe('globals API', () => {
     const { state } = initModule({ store, provider: { channel } } as unknown as ModuleArgs);
 
     expect(state).toEqual({
+      userGlobals: {},
+      storyGlobals: {},
       globals: {},
       globalTypes: {},
     });
@@ -58,10 +63,44 @@ describe('globals API', () => {
     channel.emit(SET_GLOBALS, {
       globals: { a: 'b' },
       globalTypes: { a: { type: { name: 'string' } } },
-    });
+    } satisfies SetGlobalsPayload);
     expect(store.getState()).toEqual({
+      userGlobals: { a: 'b' },
+      storyGlobals: {},
       globals: { a: 'b' },
       globalTypes: { a: { type: { name: 'string' } } },
+    });
+  });
+
+  it('emits UPDATE_GLOBALS if retains a globals value different to what recieves on SET_GLOBALS', () => {
+    const channel = new EventEmitter();
+    const listener = vi.fn();
+    channel.on(UPDATE_GLOBALS, listener);
+
+    const store = createMockStore();
+    const { state } = initModule({
+      store,
+      provider: { channel },
+    } as unknown as ModuleArgs);
+    store.setState({
+      ...state,
+      globals: { a: 'c' },
+    });
+
+    channel.emit(SET_GLOBALS, {
+      globals: { a: 'b' },
+      globalTypes: { a: { type: { name: 'string' } } },
+    } satisfies SetGlobalsPayload);
+    expect(store.getState()).toEqual({
+      userGlobals: { a: 'b' },
+      storyGlobals: {},
+      globals: { a: 'b' },
+      globalTypes: { a: { type: { name: 'string' } } },
+    });
+
+    expect(listener).toHaveBeenCalledWith({
+      globals: { a: 'c' },
+      options: { target: 'storybook-preview-iframe' },
     });
   });
 
@@ -78,7 +117,12 @@ describe('globals API', () => {
 
     getEventMetadata.mockReturnValueOnce({ sourceType: 'external', ref: { id: 'ref' } } as any);
     channel.emit(SET_STORIES, { globals: { a: 'b' } });
-    expect(store.getState()).toEqual({ globals: {}, globalTypes: {} });
+    expect(store.getState()).toEqual({
+      userGlobals: {},
+      storyGlobals: {},
+      globals: {},
+      globalTypes: {},
+    });
   });
 
   it('ignores SET_GLOBALS from other refs', () => {
@@ -96,8 +140,13 @@ describe('globals API', () => {
     channel.emit(SET_GLOBALS, {
       globals: { a: 'b' },
       globalTypes: { a: { type: { name: 'string' } } },
+    } satisfies SetGlobalsPayload);
+    expect(store.getState()).toEqual({
+      userGlobals: {},
+      storyGlobals: {},
+      globals: {},
+      globalTypes: {},
     });
-    expect(store.getState()).toEqual({ globals: {}, globalTypes: {} });
   });
 
   it('updates the state when the preview emits GLOBALS_UPDATED', () => {
@@ -111,15 +160,45 @@ describe('globals API', () => {
     } as unknown as ModuleArgs);
     store.setState(state);
 
-    channel.emit(GLOBALS_UPDATED, { globals: { a: 'b' } });
-    expect(store.getState()).toEqual({ globals: { a: 'b' }, globalTypes: {} });
+    channel.emit(GLOBALS_UPDATED, {
+      initialGlobals: { a: 'b' },
+      userGlobals: { a: 'b' },
+      storyGlobals: {},
+      globals: { a: 'b' },
+    } satisfies GlobalsUpdatedPayload);
+    expect(store.getState()).toEqual({
+      userGlobals: { a: 'b' },
+      storyGlobals: {},
+      globals: { a: 'b' },
+      globalTypes: {},
+    });
 
-    channel.emit(GLOBALS_UPDATED, { globals: { a: 'c' } });
-    expect(store.getState()).toEqual({ globals: { a: 'c' }, globalTypes: {} });
+    channel.emit(GLOBALS_UPDATED, {
+      initialGlobals: { a: 'b' },
+      userGlobals: { a: 'c' },
+      storyGlobals: {},
+      globals: { a: 'c' },
+    } satisfies GlobalsUpdatedPayload);
+    expect(store.getState()).toEqual({
+      userGlobals: { a: 'c' },
+      storyGlobals: {},
+      globals: { a: 'c' },
+      globalTypes: {},
+    });
 
-    // SHOULD NOT merge global args
-    channel.emit(GLOBALS_UPDATED, { globals: { d: 'e' } });
-    expect(store.getState()).toEqual({ globals: { d: 'e' }, globalTypes: {} });
+    // SHOULD NOT merge globals
+    channel.emit(GLOBALS_UPDATED, {
+      initialGlobals: { a: 'b' },
+      userGlobals: { d: 'e' },
+      storyGlobals: {},
+      globals: { d: 'e' },
+    } satisfies GlobalsUpdatedPayload);
+    expect(store.getState()).toEqual({
+      userGlobals: { d: 'e' },
+      storyGlobals: {},
+      globals: { d: 'e' },
+      globalTypes: {},
+    });
   });
 
   it('ignores GLOBALS_UPDATED from other refs', () => {
@@ -135,8 +214,18 @@ describe('globals API', () => {
 
     getEventMetadata.mockReturnValueOnce({ sourceType: 'external', ref: { id: 'ref' } } as any);
     logger.warn.mockClear();
-    channel.emit(GLOBALS_UPDATED, { globals: { a: 'b' } });
-    expect(store.getState()).toEqual({ globals: {}, globalTypes: {} });
+    channel.emit(GLOBALS_UPDATED, {
+      initialGlobals: { a: 'b' },
+      userGlobals: { a: 'b' },
+      storyGlobals: {},
+      globals: { a: 'b' },
+    } satisfies GlobalsUpdatedPayload);
+    expect(store.getState()).toEqual({
+      userGlobals: {},
+      storyGlobals: {},
+      globals: {},
+      globalTypes: {},
+    });
     expect(logger.warn).toHaveBeenCalled();
   });
 

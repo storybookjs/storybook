@@ -1,5 +1,6 @@
+import { join } from 'node:path';
+
 import { pathExists } from '@ndelangen/fs-extra-unified';
-import { join } from 'path';
 
 export async function findFirstPath(paths: string[], { cwd }: { cwd: string }) {
   for (const filePath of paths) {

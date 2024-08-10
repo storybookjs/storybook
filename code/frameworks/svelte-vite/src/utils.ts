@@ -1,6 +1,7 @@
-import type { PluginOption } from 'vite';
 import type { Options } from 'storybook/internal/types';
+
 import { dedent } from 'ts-dedent';
+import type { PluginOption } from 'vite';
 
 /**
  * A migration step that ensures the svelte-vite framework still supports SvelteKit,

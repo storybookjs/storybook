@@ -1,7 +1,10 @@
-import type { Builder, Options } from '@storybook/core/types';
-import { MissingBuilderError } from '@storybook/core/server-errors';
-import { pathToFileURL } from 'node:url';
 import { isAbsolute, join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+import type { Builder, Options } from '@storybook/core/types';
+
+import { MissingBuilderError } from '@storybook/core/server-errors';
+
 import * as resolve from 'resolve.exports';
 
 export async function getManagerBuilder(): Promise<Builder<unknown>> {

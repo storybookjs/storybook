@@ -1,6 +1,7 @@
+import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { readFile, writeFile, writeJson } from '@ndelangen/fs-extra-unified';
+import { writeJson } from '@ndelangen/fs-extra-unified';
 import chalk from 'chalk';
 import program from 'commander';
 import semver from 'semver';

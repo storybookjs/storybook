@@ -2,11 +2,13 @@ import { join } from 'node:path';
 import { promisify } from 'node:util';
 
 import { pathExists, remove } from '@ndelangen/fs-extra-unified';
+import dirSize from 'fast-folder-size';
 
 import { now, saveBench } from '../bench/utils';
 import type { Task } from '../task';
 
 const logger = console;
+const dirSizeAsync = promisify(dirSize);
 
 export const sandbox: Task = {
   description: 'Create the sandbox from a template',
@@ -48,12 +50,13 @@ export const sandbox: Task = {
     startTime = now();
     await install(details, options);
     const generateTime = now() - startTime;
-    const generateSize = await promisify(dirSize)(join(details.sandboxDir, 'node_modules'));
+
+    const generateSize = await dirSizeAsync(join(details.sandboxDir, 'node_modules'));
 
     startTime = now();
     await init(details, options);
     const initTime = now() - startTime;
-    const initSize = await promisify(dirSize)(join(details.sandboxDir, 'node_modules'));
+    const initSize = await dirSizeAsync(join(details.sandboxDir, 'node_modules'));
 
     await saveBench(
       'sandbox',

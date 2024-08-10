@@ -1,4 +1,4 @@
-import path from 'node:path';
+import { relative } from 'node:path';
 
 import { normalizeStories, normalizeStoryPath } from '@storybook/core/common';
 import type { Options } from '@storybook/core/types';
@@ -25,7 +25,7 @@ export async function getStoryId(data: StoryIdData, options: Options) {
     workingDir,
   });
 
-  const relativePath = path.relative(workingDir, data.storyFilePath);
+  const relativePath = relative(workingDir, data.storyFilePath);
   const importPath = posix(normalizeStoryPath(relativePath));
 
   const autoTitle = normalizedStories

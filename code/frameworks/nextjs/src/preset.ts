@@ -1,5 +1,5 @@
 // https://storybook.js.org/docs/react/addons/writing-presets
-import fs from 'node:fs';
+import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 import { getProjectRoot } from 'storybook/internal/common';
@@ -146,7 +146,7 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
 
   const babelRCPath = join(getProjectRoot(), '.babelrc');
   const babelConfigPath = join(getProjectRoot(), 'babel.config.js');
-  const hasBabelConfig = fs.existsSync(babelRCPath) || fs.existsSync(babelConfigPath);
+  const hasBabelConfig = existsSync(babelRCPath) || existsSync(babelConfigPath);
   const nextjsVersion = getNextjsVersion();
   const isDevelopment = options.configType !== 'PRODUCTION';
 

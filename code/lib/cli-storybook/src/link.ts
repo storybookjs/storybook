@@ -1,4 +1,4 @@
-import path from 'node:path';
+import { basename, extname, join } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
 
@@ -68,21 +68,21 @@ export const link = async ({ target, local, start }: LinkOptions) => {
   }
 
   let reproDir = target;
-  let reproName = path.basename(target);
+  let reproName = basename(target);
 
   if (!local) {
-    const reprosDir = path.join(storybookDir, '../storybook-repros');
+    const reprosDir = join(storybookDir, '../storybook-repros');
     logger.info(`Ensuring directory ${reprosDir}`);
     await ensureDir(reprosDir);
 
     logger.info(`Cloning ${target}`);
     await exec(`git clone ${target}`, { cwd: reprosDir });
     // Extract a repro name from url given as input (take the last part of the path and remove the extension)
-    reproName = path.basename(target, path.extname(target));
-    reproDir = path.join(reprosDir, reproName);
+    reproName = basename(target, extname(target));
+    reproDir = join(reprosDir, reproName);
   }
 
-  const reproPackageJson = await readJSON(path.join(reproDir, 'package.json'));
+  const reproPackageJson = await readJSON(join(reproDir, 'package.json'));
 
   const version = spawnSync('yarn', ['--version'], {
     cwd: reproDir,

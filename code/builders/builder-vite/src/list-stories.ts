@@ -1,4 +1,4 @@
-import * as path from 'node:path';
+import { isAbsolute, join } from 'node:path';
 
 import { commonGlobOptions, normalizeStories } from 'storybook/internal/common';
 import type { Options } from 'storybook/internal/types';
@@ -16,10 +16,8 @@ export async function listStories(options: Options) {
           configDir: options.configDir,
           workingDir: options.configDir,
         }).map(({ directory, files }) => {
-          const pattern = path.join(directory, files);
-          const absolutePattern = path.isAbsolute(pattern)
-            ? pattern
-            : path.join(options.configDir, pattern);
+          const pattern = join(directory, files);
+          const absolutePattern = isAbsolute(pattern) ? pattern : join(options.configDir, pattern);
 
           return glob(slash(absolutePattern), {
             ...commonGlobOptions(absolutePattern),

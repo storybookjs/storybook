@@ -1,5 +1,4 @@
 /* eslint-disable no-underscore-dangle */
-import 'node:path';
 import { join } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';

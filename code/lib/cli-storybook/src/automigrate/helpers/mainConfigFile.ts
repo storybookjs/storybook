@@ -1,4 +1,4 @@
-import path from 'node:path';
+import { normalize } from 'node:path';
 
 import { frameworkToRenderer } from 'storybook/internal/cli';
 import {
@@ -77,7 +77,7 @@ export const getBuilderPackageName = (mainConfig?: StorybookConfigRaw) => {
     return null;
   }
 
-  const normalizedPath = path.normalize(packageNameOrPath).replace(new RegExp(/\\/, 'g'), '/');
+  const normalizedPath = normalize(packageNameOrPath).replace(new RegExp(/\\/, 'g'), '/');
 
   return builderPackages.find((pkg) => normalizedPath.endsWith(pkg)) || packageNameOrPath;
 };

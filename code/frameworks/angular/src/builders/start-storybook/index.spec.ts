@@ -1,7 +1,7 @@
 import { Architect, createBuilder } from '@angular-devkit/architect';
 import { TestingArchitectHost } from '@angular-devkit/architect/testing';
 import { schema } from '@angular-devkit/core';
-import * as path from 'node:path';
+import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const buildDevStandaloneMock = vi.fn();
@@ -62,7 +62,7 @@ describe.skip('Start Storybook Builder', () => {
     );
     // This will either take a Node package name, or a path to the directory
     // for the package.json file.
-    await architectHost.addBuilderFromPackage(path.join(__dirname, '../../..'));
+    await architectHost.addBuilderFromPackage(join(__dirname, '../../..'));
   });
 
   beforeEach(() => {

@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle */
-import fs from 'node:fs/promises';
+import { writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 
 import type { Channel } from '@storybook/core/channels';
@@ -103,7 +103,7 @@ export function initializeSaveStory(channel: Channel, options: Options, coreConf
           channel.on(STORY_RENDERED, resolve);
           setTimeout(() => resolve(channel.off(STORY_RENDERED, resolve)), 3000);
         }),
-        fs.writeFile(sourceFilePath, code),
+        writeFile(sourceFilePath, code),
       ]);
 
       channel.emit(SAVE_STORY_RESPONSE, {

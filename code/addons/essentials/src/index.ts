@@ -1,4 +1,4 @@
-import path from 'node:path';
+import { isAbsolute, join } from 'node:path';
 
 import { serverRequire } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
@@ -57,10 +57,8 @@ interface PresetOptions {
 }
 
 const requireMain = (configDir: string) => {
-  const absoluteConfigDir = path.isAbsolute(configDir)
-    ? configDir
-    : path.join(process.cwd(), configDir);
-  const mainFile = path.join(absoluteConfigDir, 'main');
+  const absoluteConfigDir = isAbsolute(configDir) ? configDir : join(process.cwd(), configDir);
+  const mainFile = join(absoluteConfigDir, 'main');
 
   return serverRequire(mainFile) ?? {};
 };

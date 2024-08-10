@@ -1,7 +1,7 @@
 /* eslint import/prefer-default-export: "off" */
-import fs from 'node:fs';
-import path from 'node:path';
-import { promisify } from 'node:util';
+import { readdirSync } from 'node:fs';
+import { rename as renameAsync } from 'node:fs/promises';
+import { extname } from 'node:path';
 
 import { sync as spawnSync } from 'cross-spawn';
 
@@ -17,13 +17,10 @@ export { default as updateAddonInfo } from './transforms/update-addon-info';
 const TRANSFORM_DIR = `${__dirname}/transforms`;
 
 export function listCodemods() {
-  return fs
-    .readdirSync(TRANSFORM_DIR)
+  return readdirSync(TRANSFORM_DIR)
     .filter((fname) => fname.endsWith('.js'))
     .map((fname) => fname.slice(0, -3));
 }
-
-const renameAsync = promisify(fs.rename);
 
 async function renameFile(file: any, from: any, to: any, { logger }: any) {
   const newFile = file.replace(from, to);
@@ -59,7 +56,7 @@ export async function runCodemod(
   let inferredParser = parser;
 
   if (!parser) {
-    const extension = path.extname(glob).slice(1);
+    const extension = extname(glob).slice(1);
     const knownParser = jscodeshiftToPrettierParser(extension);
     if (knownParser !== 'babel') inferredParser = extension;
   }
@@ -68,7 +65,7 @@ export async function runCodemod(
   const { globby } = await import('globby');
 
   const files = await globby([glob, '!**/node_modules', '!**/dist']);
-  const extensions = new Set(files.map((file) => path.extname(file).slice(1)));
+  const extensions = new Set(files.map((file) => extname(file).slice(1)));
   const commaSeparatedExtensions = Array.from(extensions).join(',');
 
   logger.log(`=> Applying ${codemod}: ${files.length} files`);

@@ -1,5 +1,5 @@
-import fs from 'node:fs';
-import path from 'node:path';
+import { existsSync } from 'node:fs';
+import { basename, dirname, extname, join } from 'node:path';
 
 import {
   extractProperRendererNameFromFramework,
@@ -31,10 +31,10 @@ export async function getNewStoryFile(
     ([, value]) => value === rendererName
   )?.[0];
 
-  const basename = path.basename(componentFilePath);
-  const extension = path.extname(componentFilePath);
-  const basenameWithoutExtension = basename.replace(extension, '');
-  const dirname = path.dirname(componentFilePath);
+  const base = basename(componentFilePath);
+  const extension = extname(componentFilePath);
+  const basenameWithoutExtension = base.replace(extension, '');
+  const dir = dirname(componentFilePath);
 
   const { storyFileName, isTypescript, storyFileExtension } = getStoryMetadata(componentFilePath);
   const storyFileNameWithExtension = `${storyFileName}.${storyFileExtension}`;
@@ -59,18 +59,18 @@ export async function getNewStoryFile(
         });
 
   const storyFilePath =
-    doesStoryFileExist(path.join(cwd, dirname), storyFileName) && componentExportCount > 1
-      ? path.join(cwd, dirname, alternativeStoryFileNameWithExtension)
-      : path.join(cwd, dirname, storyFileNameWithExtension);
+    doesStoryFileExist(join(cwd, dir), storyFileName) && componentExportCount > 1
+      ? join(cwd, dir, alternativeStoryFileNameWithExtension)
+      : join(cwd, dir, storyFileNameWithExtension);
 
   return { storyFilePath, exportedStoryName, storyFileContent, dirname };
 }
 
 export const getStoryMetadata = (componentFilePath: string) => {
   const isTypescript = /\.(ts|tsx|mts|cts)$/.test(componentFilePath);
-  const basename = path.basename(componentFilePath);
-  const extension = path.extname(componentFilePath);
-  const basenameWithoutExtension = basename.replace(extension, '');
+  const base = basename(componentFilePath);
+  const extension = extname(componentFilePath);
+  const basenameWithoutExtension = base.replace(extension, '');
   const storyFileExtension = isTypescript ? 'tsx' : 'jsx';
   return {
     storyFileName: `${basenameWithoutExtension}.stories`,
@@ -81,9 +81,9 @@ export const getStoryMetadata = (componentFilePath: string) => {
 
 export const doesStoryFileExist = (parentFolder: string, storyFileName: string) => {
   return (
-    fs.existsSync(path.join(parentFolder, `${storyFileName}.ts`)) ||
-    fs.existsSync(path.join(parentFolder, `${storyFileName}.tsx`)) ||
-    fs.existsSync(path.join(parentFolder, `${storyFileName}.js`)) ||
-    fs.existsSync(path.join(parentFolder, `${storyFileName}.jsx`))
+    existsSync(join(parentFolder, `${storyFileName}.ts`)) ||
+    existsSync(join(parentFolder, `${storyFileName}.tsx`)) ||
+    existsSync(join(parentFolder, `${storyFileName}.js`)) ||
+    existsSync(join(parentFolder, `${storyFileName}.jsx`))
   );
 };

@@ -26,7 +26,7 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
 IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
-import path, { isAbsolute } from 'node:path';
+import { isAbsolute, relative } from 'node:path';
 
 import type { NextConfig } from 'next';
 import { isWasm, transform } from 'next/dist/build/swc';
@@ -72,7 +72,7 @@ async function loaderTransform(this: any, parentTrace: any, source?: string, inp
     isReactServerLayer,
   } = loaderOptions;
   const isPageFile = filename.startsWith(pagesDir);
-  const relativeFilePathFromRoot = path.relative(rootDir, filename);
+  const relativeFilePathFromRoot = relative(rootDir, filename);
 
   const swcOptions = getLoaderSWCOptions({
     pagesDir,

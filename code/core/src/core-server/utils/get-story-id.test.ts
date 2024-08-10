@@ -1,4 +1,4 @@
-import path from 'node:path';
+import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
@@ -8,7 +8,7 @@ describe('getStoryId', () => {
   it('should return the storyId', async () => {
     const cwd = process.cwd();
     const options = {
-      configDir: path.join(cwd, '.storybook'),
+      configDir: join(cwd, '.storybook'),
       presets: {
         apply: (val: string) => {
           if (val === 'stories') {
@@ -17,7 +17,7 @@ describe('getStoryId', () => {
         },
       },
     } as any;
-    const storyFilePath = path.join(cwd, 'src', 'components', 'stories', 'Page1.stories.ts');
+    const storyFilePath = join(cwd, 'src', 'components', 'stories', 'Page1.stories.ts');
     const exportedStoryName = 'Default';
 
     const { storyId, kind } = await getStoryId({ storyFilePath, exportedStoryName }, options);
@@ -29,7 +29,7 @@ describe('getStoryId', () => {
   it('should throw an error if the storyId cannot be calculated', async () => {
     const cwd = process.cwd();
     const options = {
-      configDir: path.join(cwd, '.storybook'),
+      configDir: join(cwd, '.storybook'),
       presets: {
         apply: (val: string) => {
           if (val === 'stories') {
@@ -38,7 +38,7 @@ describe('getStoryId', () => {
         },
       },
     } as any;
-    const storyFilePath = path.join(cwd, 'not-covered-path', 'stories', 'Page1.stories.ts');
+    const storyFilePath = join(cwd, 'not-covered-path', 'stories', 'Page1.stories.ts');
     const exportedStoryName = 'Default';
 
     await expect(() =>

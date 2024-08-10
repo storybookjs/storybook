@@ -1,4 +1,4 @@
-import path from 'node:path';
+import { resolve as resolvePath } from 'node:path';
 
 import type { NextConfig } from 'next';
 import semver from 'semver';
@@ -19,14 +19,14 @@ const configureImageDefaults = (baseConfig: WebpackConfig): void => {
   resolve.alias = {
     ...resolve.alias,
     'sb-original/next/image': require.resolve('next/image'),
-    'next/image': path.resolve(__dirname, './images/next-image'),
+    'next/image': resolvePath(__dirname, './images/next-image'),
   };
 
   if (semver.satisfies(version, '>=13.0.0')) {
     resolve.alias = {
       ...resolve.alias,
       'sb-original/next/legacy/image': require.resolve('next/legacy/image'),
-      'next/legacy/image': path.resolve(__dirname, './images/next-legacy-image'),
+      'next/legacy/image': resolvePath(__dirname, './images/next-legacy-image'),
     };
   }
 };

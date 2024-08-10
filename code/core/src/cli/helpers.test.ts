@@ -96,7 +96,7 @@ describe('Helpers', () => {
 
   describe('copyTemplate', () => {
     it(`should copy template files when directory is present`, () => {
-      const csfDirectory = /template-csf$/;
+      const csfDirectory = /template-csf\/$/;
       fsMocks.existsSync.mockReturnValue(true);
 
       copyTemplate('');

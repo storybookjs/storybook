@@ -1,4 +1,4 @@
-import path from 'node:path';
+import { join, sep } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
@@ -11,12 +11,12 @@ vi.mock('find-up');
 
 describe('paths - normalizeStoryPath()', () => {
   it('returns a path starting with "./" unchanged', () => {
-    const filename = `.${path.sep}${path.join('src', 'Comp.story.js')}`;
+    const filename = `.${sep}${join('src', 'Comp.story.js')}`;
     expect(normalizeStoryPath(filename)).toEqual(filename);
   });
 
   it('returns a path starting with "../" unchanged', () => {
-    const filename = path.join('..', 'src', 'Comp.story.js');
+    const filename = join('..', 'src', 'Comp.story.js');
     expect(normalizeStoryPath(filename)).toEqual(filename);
   });
 
@@ -31,18 +31,18 @@ describe('paths - normalizeStoryPath()', () => {
   });
 
   it('adds "./" to a normalized relative path', () => {
-    const filename = path.join('src', 'Comp.story.js');
-    expect(normalizeStoryPath(filename)).toEqual(`.${path.sep}${filename}`);
+    const filename = join('src', 'Comp.story.js');
+    expect(normalizeStoryPath(filename)).toEqual(`.${sep}${filename}`);
   });
 
   it('adds "./" to a hidden folder', () => {
-    const filename = path.join('.storybook', 'Comp.story.js');
-    expect(normalizeStoryPath(filename)).toEqual(`.${path.sep}${filename}`);
+    const filename = join('.storybook', 'Comp.story.js');
+    expect(normalizeStoryPath(filename)).toEqual(`.${sep}${filename}`);
   });
 
   it('adds "./" to a hidden file', () => {
     const filename = `.Comp.story.js`;
-    expect(normalizeStoryPath(filename)).toEqual(`.${path.sep}${filename}`);
+    expect(normalizeStoryPath(filename)).toEqual(`.${sep}${filename}`);
   });
 });
 

@@ -1,4 +1,4 @@
-import * as path from 'node:path';
+import { resolve } from 'node:path';
 
 import {
   getBuilderOptions,
@@ -51,7 +51,7 @@ export async function commonConfig(
 
   const { viteConfigPath } = await getBuilderOptions<BuilderOptions>(options);
 
-  const projectRoot = path.resolve(options.configDir, '..');
+  const projectRoot = resolve(options.configDir, '..');
 
   // I destructure away the `build` property from the user's config object
   // I do this because I can contain config that breaks storybook, such as we had in a lit project.

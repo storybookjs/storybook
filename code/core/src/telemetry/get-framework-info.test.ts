@@ -1,4 +1,4 @@
-import path from 'node:path';
+import { sep } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
@@ -30,7 +30,7 @@ describe('getFrameworkInfo', () => {
   });
 
   it('should resolve the framework package json correctly and strip project paths in the metadata', async () => {
-    const packageName = `${process.cwd()}/@storybook/react`.split('/').join(path.sep);
+    const packageName = `${process.cwd()}/@storybook/react`.split('/').join(sep);
     const framework = { name: packageName };
     const frameworkPackageJson = {
       name: packageName,
@@ -48,7 +48,7 @@ describe('getFrameworkInfo', () => {
 
     expect(result).toEqual({
       framework: {
-        name: '$SNIP/@storybook/react'.split('/').join(path.sep),
+        name: '$SNIP/@storybook/react'.split('/').join(sep),
         options: undefined,
       },
       builder: '@storybook/builder-vite',

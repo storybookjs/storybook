@@ -1,5 +1,5 @@
 // This plugin is a direct port of https://github.com/IanVS/vite-plugin-turbosnap
-import path from 'node:path';
+import { relative } from 'node:path';
 
 import type { BuilderStats } from 'storybook/internal/types';
 
@@ -58,7 +58,7 @@ export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): W
     }
     // Otherwise, we need them in the format `./path/to/file.js`.
     else {
-      const relativePath = path.relative(workingDir, stripQueryParams(filename));
+      const relativePath = relative(workingDir, stripQueryParams(filename));
       // This seems hacky, got to be a better way to add a `./` to the start of a path.
       return `./${slash(relativePath)}`;
     }

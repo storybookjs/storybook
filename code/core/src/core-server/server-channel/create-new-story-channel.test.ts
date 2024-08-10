@@ -1,4 +1,4 @@
-import path from 'node:path';
+import { join } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -56,7 +56,7 @@ describe(
         initCreateNewStoryChannel(
           mockChannel,
           {
-            configDir: path.join(cwd, '.storybook'),
+            configDir: join(cwd, '.storybook'),
             presets: {
               apply: (val: string) => {
                 if (val === 'framework') {
@@ -89,7 +89,7 @@ describe(
           id: 'components-page--default',
           payload: {
             storyId: 'components-page--default',
-            storyFilePath: path.join('src', 'components', 'Page.stories.jsx'),
+            storyFilePath: join('src', 'components', 'Page.stories.jsx'),
             exportedStoryName: 'Default',
           },
           success: true,
@@ -107,7 +107,7 @@ describe(
         initCreateNewStoryChannel(
           mockChannel,
           {
-            configDir: path.join(cwd, '.storybook'),
+            configDir: join(cwd, '.storybook'),
             presets: {
               apply: (val: string) => {
                 if (val === 'framework') {

@@ -1,5 +1,5 @@
 import { lstatSync } from 'node:fs';
-import path from 'node:path';
+import { basename, dirname, relative, resolve } from 'node:path';
 
 import type { NormalizedStoriesSpecifier, StoriesEntry } from '@storybook/core/types';
 
@@ -16,7 +16,7 @@ const DEFAULT_FILES_PATTERN = '**/*.@(mdx|stories.@(js|jsx|mjs|ts|tsx))';
 
 const isDirectory = (configDir: string, entry: string) => {
   try {
-    return lstatSync(path.resolve(configDir, entry)).isDirectory();
+    return lstatSync(resolve(configDir, entry)).isDirectory();
   } catch (err) {
     return false;
   }
@@ -27,8 +27,8 @@ export const getDirectoryFromWorkingDir = ({
   workingDir,
   directory,
 }: NormalizeOptions & { directory: string }) => {
-  const directoryFromConfig = path.resolve(configDir, directory);
-  const directoryFromWorking = path.relative(workingDir, directoryFromConfig);
+  const directoryFromConfig = resolve(configDir, directory);
+  const directoryFromWorking = relative(workingDir, directoryFromConfig);
 
   // relative('/foo', '/foo/src') => 'src'
   // but we want `./src` to match importPaths
@@ -61,8 +61,8 @@ export const normalizeStoriesEntry = (
     } else {
       specifierWithoutMatcher = {
         titlePrefix: DEFAULT_TITLE_PREFIX,
-        directory: path.dirname(entry),
-        files: path.basename(entry),
+        directory: dirname(entry),
+        files: basename(entry),
       };
     }
   } else {

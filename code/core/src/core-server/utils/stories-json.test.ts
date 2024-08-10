@@ -1,4 +1,4 @@
-import path from 'node:path';
+import { join } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -20,7 +20,7 @@ vi.mock('watchpack');
 vi.mock('lodash/debounce');
 vi.mock('@storybook/core/node-logger');
 
-const workingDir = path.join(__dirname, '__mockdata__');
+const workingDir = join(__dirname, '__mockdata__');
 const normalizedStories = [
   normalizeStoriesEntry(
     {

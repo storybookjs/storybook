@@ -1,4 +1,4 @@
-import path from 'node:path';
+import { resolve } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -19,14 +19,14 @@ describe('parseStaticDir', () => {
   it('returns the static dir/path and default target', async () => {
     await expect(parseStaticDir('public')).resolves.toEqual({
       staticDir: './public',
-      staticPath: path.resolve('public'),
+      staticPath: resolve('public'),
       targetDir: './',
       targetEndpoint: '/',
     });
 
     await expect(parseStaticDir('foo/bar')).resolves.toEqual({
       staticDir: './foo/bar',
-      staticPath: path.resolve('foo/bar'),
+      staticPath: resolve('foo/bar'),
       targetDir: './',
       targetEndpoint: '/',
     });
@@ -35,14 +35,14 @@ describe('parseStaticDir', () => {
   it('returns the static dir/path and custom target', async () => {
     await expect(parseStaticDir('public:/custom-endpoint')).resolves.toEqual({
       staticDir: './public',
-      staticPath: path.resolve('public'),
+      staticPath: resolve('public'),
       targetDir: './custom-endpoint',
       targetEndpoint: '/custom-endpoint',
     });
 
     await expect(parseStaticDir('foo/bar:/custom-endpoint')).resolves.toEqual({
       staticDir: './foo/bar',
-      staticPath: path.resolve('foo/bar'),
+      staticPath: resolve('foo/bar'),
       targetDir: './custom-endpoint',
       targetEndpoint: '/custom-endpoint',
     });
@@ -59,7 +59,7 @@ describe('parseStaticDir', () => {
   it('checks that the path exists', async () => {
     // @ts-expect-error for some reason vitest does not match the return type with one of the overloads from pathExists
     pathExistsMock.mockResolvedValue(false);
-    await expect(parseStaticDir('nonexistent')).rejects.toThrow(path.resolve('nonexistent'));
+    await expect(parseStaticDir('nonexistent')).rejects.toThrow(resolve('nonexistent'));
   });
 
   skipWindows(() => {
@@ -85,8 +85,8 @@ describe('parseStaticDir', () => {
   onlyWindows(() => {
     it('supports absolute file paths - windows', async () => {
       await expect(parseStaticDir('C:\\foo\\bar')).resolves.toEqual({
-        staticDir: path.resolve('C:\\foo\\bar'),
-        staticPath: path.resolve('C:\\foo\\bar'),
+        staticDir: resolve('C:\\foo\\bar'),
+        staticPath: resolve('C:\\foo\\bar'),
         targetDir: './',
         targetEndpoint: '/',
       });
@@ -95,14 +95,14 @@ describe('parseStaticDir', () => {
     it('supports absolute file paths with custom endpoint - windows', async () => {
       await expect(parseStaticDir('C:\\foo\\bar:/custom-endpoint')).resolves.toEqual({
         staticDir: expect.any(String), // can't test this properly on unix
-        staticPath: path.resolve('C:\\foo\\bar'),
+        staticPath: resolve('C:\\foo\\bar'),
         targetDir: './custom-endpoint',
         targetEndpoint: '/custom-endpoint',
       });
 
       await expect(parseStaticDir('C:\\foo\\bar:\\custom-endpoint')).resolves.toEqual({
         staticDir: expect.any(String), // can't test this properly on unix
-        staticPath: path.resolve('C:\\foo\\bar'),
+        staticPath: resolve('C:\\foo\\bar'),
         targetDir: './custom-endpoint',
         targetEndpoint: '/custom-endpoint',
       });

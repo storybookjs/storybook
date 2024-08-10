@@ -1,6 +1,6 @@
-import fs from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
-import path, { join } from 'node:path';
+import { join, resolve } from 'node:path';
 
 import {
   frameworkToRenderer as CoreFrameworkToRenderer,
@@ -24,12 +24,12 @@ import { CoreBuilder, SupportedLanguage } from './project_types';
 const logger = console;
 
 export function readFileAsJson(jsonPath: string, allowComments?: boolean) {
-  const filePath = path.resolve(jsonPath);
-  if (!fs.existsSync(filePath)) {
+  const filePath = resolve(jsonPath);
+  if (!existsSync(filePath)) {
     return false;
   }
 
-  const fileContent = fs.readFileSync(filePath, 'utf8');
+  const fileContent = readFileSync(filePath, 'utf8');
   const jsonContent = allowComments ? stripJsonComments(fileContent) : fileContent;
 
   try {
@@ -41,12 +41,12 @@ export function readFileAsJson(jsonPath: string, allowComments?: boolean) {
 }
 
 export const writeFileAsJson = (jsonPath: string, content: unknown) => {
-  const filePath = path.resolve(jsonPath);
-  if (!fs.existsSync(filePath)) {
+  const filePath = resolve(jsonPath);
+  if (!existsSync(filePath)) {
     return false;
   }
 
-  fs.writeFileSync(filePath, `${JSON.stringify(content, null, 2)}\n`);
+  writeFileSync(filePath, `${JSON.stringify(content, null, 2)}\n`);
   return true;
 };
 
@@ -117,9 +117,9 @@ export function addToDevDependenciesIfNotPresent(
 }
 
 export function copyTemplate(templateRoot: string, destination = '.') {
-  const templateDir = path.resolve(templateRoot, `template-csf/`);
+  const templateDir = resolve(templateRoot, `template-csf/`);
 
-  if (!fs.existsSync(templateDir)) {
+  if (!existsSync(templateDir)) {
     throw new Error(`Couldn't find template dir`);
   }
 

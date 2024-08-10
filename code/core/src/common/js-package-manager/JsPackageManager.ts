@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
-import path from 'node:path';
+import { dirname, resolve } from 'node:path';
 
 import chalk from 'chalk';
 import type { CommonOptions } from 'execa';
@@ -99,7 +99,7 @@ export abstract class JsPackageManager {
       }
 
       // Move up to the parent directory
-      const parentDir = path.dirname(cwd);
+      const parentDir = dirname(cwd);
 
       // Check if we have reached the root of the filesystem
       if (parentDir === cwd) {
@@ -132,7 +132,7 @@ export abstract class JsPackageManager {
     if (!this.cwd) {
       throw new Error('Missing cwd');
     }
-    return path.resolve(this.cwd, 'package.json');
+    return resolve(this.cwd, 'package.json');
   }
 
   async readPackageJson(): Promise<PackageJson> {

@@ -1,4 +1,4 @@
-import * as fs from 'node:fs';
+import { readFileSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
@@ -6,7 +6,7 @@ import svelteDoc from 'sveltedoc-parser';
 
 import { createArgTypes } from './extractArgTypes';
 
-const content = fs.readFileSync(`${__dirname}/sample/MockButton.svelte`, 'utf-8');
+const content = readFileSync(`${__dirname}/sample/MockButton.svelte`, 'utf-8');
 describe('Extracting Arguments', () => {
   it('should be svelte', () => {
     expect(content).toMatchInlineSnapshot(`

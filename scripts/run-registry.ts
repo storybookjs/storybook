@@ -2,12 +2,12 @@ import { exec } from 'node:child_process';
 import { mkdir } from 'node:fs/promises';
 import http from 'node:http';
 import type { Server } from 'node:http';
-import { join, resolve } from 'node:path';
+import { join, resolve as resolvePath } from 'node:path';
 
-import { pathExists, readJSON, remove } from '@ndelangen/fs-extra-unified';
 import chalk from 'chalk';
 import program from 'commander';
 import { execa, execaSync } from 'execa';
+import { pathExists, readJSON, remove } from 'fs-extra';
 import pLimit from 'p-limit';
 import { parseConfigFile, runServer } from 'verdaccio';
 
@@ -23,7 +23,7 @@ program.parse(process.argv);
 
 const logger = console;
 
-const root = resolve(__dirname, '..');
+const root = resolvePath(__dirname, '..');
 
 const startVerdaccio = async () => {
   const ready = {
@@ -123,11 +123,11 @@ const publish = async (packages: { name: string; location: string }[], url: stri
         () =>
           new Promise((res, rej) => {
             logger.log(
-              `🛫 publishing ${name} (${location.replace(resolve(join(__dirname, '..')), '.')})`
+              `🛫 publishing ${name} (${location.replace(resolvePath(join(__dirname, '..')), '.')})`
             );
 
             const tarballFilename = `${name.replace('@', '').replace('/', '-')}.tgz`;
-            const command = `cd ${resolve(
+            const command = `cd ${resolvePath(
               '../code',
               location
             )} && yarn pack --out=${PACKS_DIRECTORY}/${tarballFilename} && cd ${PACKS_DIRECTORY} && npm publish ./${tarballFilename} --registry ${url} --force --ignore-scripts`;
@@ -154,7 +154,7 @@ const run = async () => {
 
   if (!process.env.CI) {
     // when running e2e locally, clear cache to avoid EPUBLISHCONFLICT errors
-    const verdaccioCache = resolve(__dirname, '..', '.verdaccio-cache');
+    const verdaccioCache = resolvePath(__dirname, '..', '.verdaccio-cache');
     if (await pathExists(verdaccioCache)) {
       logger.log(`🗑 cleaning up cache`);
       await remove(verdaccioCache);

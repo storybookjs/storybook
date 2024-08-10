@@ -1,4 +1,4 @@
-import path from 'node:path';
+import { resolve } from 'node:path';
 
 import { logger } from '@storybook/core/node-logger';
 
@@ -7,8 +7,8 @@ import { dedent } from 'ts-dedent';
 import { getInterpretedFile } from './interpret-files';
 
 export function loadManagerOrAddonsFile({ configDir }: { configDir: string }) {
-  const storybookCustomAddonsPath = getInterpretedFile(path.resolve(configDir, 'addons'));
-  const storybookCustomManagerPath = getInterpretedFile(path.resolve(configDir, 'manager'));
+  const storybookCustomAddonsPath = getInterpretedFile(resolve(configDir, 'addons'));
+  const storybookCustomManagerPath = getInterpretedFile(resolve(configDir, 'manager'));
 
   if (storybookCustomAddonsPath || storybookCustomManagerPath) {
     logger.info('=> Loading custom manager config');
@@ -16,7 +16,7 @@ export function loadManagerOrAddonsFile({ configDir }: { configDir: string }) {
 
   if (storybookCustomAddonsPath && storybookCustomManagerPath) {
     throw new Error(dedent`
-      You have both a "addons.js" and a "manager.js", remove the "addons.js" file from your configDir (${path.resolve(
+      You have both a "addons.js" and a "manager.js", remove the "addons.js" file from your configDir (${resolve(
         configDir,
         'addons'
       )})`);

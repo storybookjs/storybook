@@ -1,4 +1,4 @@
-import * as fs from 'node:fs';
+import { existsSync } from 'node:fs';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -421,7 +421,7 @@ describe('Detect', () => {
 
     MOCK_FRAMEWORK_FILES.forEach((structure) => {
       it(`${structure.name}`, () => {
-        vi.mocked(fs.existsSync).mockImplementation((filePath) => {
+        vi.mocked(existsSync).mockImplementation((filePath) => {
           return typeof filePath === 'string' && Object.keys(structure.files).includes(filePath);
         });
 
@@ -454,7 +454,7 @@ describe('Detect', () => {
         '/node_modules/.bin/react-scripts': 'file content',
       };
 
-      vi.mocked(fs.existsSync).mockImplementation((filePath) => {
+      vi.mocked(existsSync).mockImplementation((filePath) => {
         return (
           typeof filePath === 'string' && Object.keys(forkedReactScriptsConfig).includes(filePath)
         );

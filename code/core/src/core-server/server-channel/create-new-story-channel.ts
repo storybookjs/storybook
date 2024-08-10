@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
-import path from 'node:path';
+import { relative } from 'node:path';
 
 import type { Channel } from '@storybook/core/channels';
 import { telemetry } from '@storybook/core/telemetry';
@@ -38,7 +38,7 @@ export function initCreateNewStoryChannel(
           options
         );
 
-        const relativeStoryFilePath = path.relative(process.cwd(), storyFilePath);
+        const relativeStoryFilePath = relative(process.cwd(), storyFilePath);
 
         const { storyId, kind } = await getStoryId({ storyFilePath, exportedStoryName }, options);
 
@@ -70,7 +70,7 @@ export function initCreateNewStoryChannel(
           id: data.id,
           payload: {
             storyId,
-            storyFilePath: path.relative(process.cwd(), storyFilePath),
+            storyFilePath: relative(process.cwd(), storyFilePath),
             exportedStoryName,
           },
           error: null,

@@ -1,4 +1,4 @@
-import path from 'node:path';
+import { join } from 'node:path';
 
 import { getProjectRoot } from 'storybook/internal/common';
 import type { Options } from 'storybook/internal/types';
@@ -50,7 +50,7 @@ export const configureSWCLoader = async (
           dir,
           isDevelopment
         ),
-        swcCacheDir: path.join(dir, nextConfig?.distDir ?? '.next', 'cache', 'swc'),
+        swcCacheDir: join(dir, nextConfig?.distDir ?? '.next', 'cache', 'swc'),
         bundleTarget: 'default',
       },
     },

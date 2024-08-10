@@ -1,5 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises';
-import path, { dirname, join, relative } from 'node:path';
+import { dirname, join, parse, posix, relative, resolve, sep } from 'node:path';
 
 import { emptyDir, ensureFile, pathExists, readJson } from '@ndelangen/fs-extra-unified';
 import aliasPlugin from 'esbuild-plugin-alias';
@@ -84,7 +84,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
    * Generating an ESM file for them anyway is problematic because they often have a reference to `require`.
    * TSUP generated code will then have a `require` polyfill/guard in the ESM files, which causes issues for webpack.
    */
-  const nonPresetEntries = allEntries.filter((f) => !path.parse(f).name.includes('preset'));
+  const nonPresetEntries = allEntries.filter((f) => !parse(f).name.includes('preset'));
 
   const noExternal = [...extraNoExternal];
 
@@ -123,8 +123,8 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
             ? []
             : [
                 aliasPlugin({
-                  process: path.resolve('../node_modules/process/browser.js'),
-                  util: path.resolve('../node_modules/util/util.js'),
+                  process: resolve('../node_modules/process/browser.js'),
+                  util: resolve('../node_modules/util/util.js'),
                 }),
               ],
         external: externals,
@@ -295,11 +295,11 @@ function getESBuildOptions(optimized: boolean) {
 }
 
 async function generateDTSMapperFile(file: string) {
-  const { name: entryName, dir } = path.parse(file);
+  const { name: entryName, dir } = parse(file);
 
   const pathName = join(process.cwd(), dir.replace('./src', 'dist'), `${entryName}.d.ts`);
   const srcName = join(process.cwd(), file);
-  const rel = relative(dirname(pathName), dirname(srcName)).split(path.sep).join(path.posix.sep);
+  const rel = relative(dirname(pathName), dirname(srcName)).split(sep).join(posix.sep);
 
   await ensureFile(pathName);
   await writeFile(

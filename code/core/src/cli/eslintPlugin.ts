@@ -1,4 +1,3 @@
-import 'node:fs';
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 

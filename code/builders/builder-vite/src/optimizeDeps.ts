@@ -1,4 +1,4 @@
-import * as path from 'node:path';
+import { relative } from 'node:path';
 
 import type { Options } from 'storybook/internal/types';
 
@@ -122,7 +122,7 @@ export async function getOptimizeDeps(config: ViteInlineConfig, options: Options
   const { root = process.cwd() } = config;
   const { normalizePath, resolveConfig } = await import('vite');
   const absoluteStories = await listStories(options);
-  const stories = absoluteStories.map((storyPath) => normalizePath(path.relative(root, storyPath)));
+  const stories = absoluteStories.map((storyPath) => normalizePath(relative(root, storyPath)));
   // TODO: check if resolveConfig takes a lot of time, possible optimizations here
   const resolvedConfig = await resolveConfig(config, 'serve', 'development');
 

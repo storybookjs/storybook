@@ -1,4 +1,4 @@
-import path from 'node:path';
+import { join } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -153,7 +153,7 @@ describe('CLASS: JsPackageManagerFactory', () => {
             status: 1,
           } as any;
         });
-        const fixture = path.join(__dirname, 'fixtures', 'pnpm-workspace', 'package');
+        const fixture = join(__dirname, 'fixtures', 'pnpm-workspace', 'package');
         expect(JsPackageManagerFactory.getPackageManager({}, fixture)).toBeInstanceOf(PNPMProxy);
       });
     });
@@ -271,7 +271,7 @@ describe('CLASS: JsPackageManagerFactory', () => {
             status: 1,
           } as any;
         });
-        const fixture = path.join(__dirname, 'fixtures', 'multiple-lockfiles');
+        const fixture = join(__dirname, 'fixtures', 'multiple-lockfiles');
         expect(JsPackageManagerFactory.getPackageManager({}, fixture)).toBeInstanceOf(Yarn1Proxy);
       });
     });

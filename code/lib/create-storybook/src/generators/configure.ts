@@ -89,7 +89,7 @@ export async function configureMain({
   const finalPrefixes = [...prefixes];
 
   if (custom.framework?.name.includes('path.dirname(')) {
-    imports.push(`import path from 'path';`);
+    imports.push(`import path from 'node:path';`);
   }
 
   if (isTypescript) {

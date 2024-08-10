@@ -1,4 +1,4 @@
-import path from 'node:path';
+import { sep } from 'node:path';
 
 import { getFontFaceDeclarations as getGoogleFontFaceDeclarations } from './google/get-font-face-declarations';
 import { getFontFaceDeclarations as getLocalFontFaceDeclarations } from './local/get-font-face-declarations';
@@ -41,7 +41,7 @@ export default async function storybookNextjsFontLoader(this: any) {
 
   let fontFaceDeclaration: FontFaceDeclaration | undefined;
 
-  const pathSep = path.sep;
+  const pathSep = sep;
 
   if (
     options.source.endsWith(`next${pathSep}font${pathSep}google`) ||

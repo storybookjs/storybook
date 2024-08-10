@@ -1,4 +1,4 @@
-import path from 'node:path';
+import { relative } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
 
@@ -60,7 +60,7 @@ export async function reactDocgen({
     name: 'storybook:react-docgen-plugin',
     enforce: 'pre',
     async transform(src: string, id: string) {
-      if (!filter(path.relative(cwd, id))) {
+      if (!filter(relative(cwd, id))) {
         return;
       }
 

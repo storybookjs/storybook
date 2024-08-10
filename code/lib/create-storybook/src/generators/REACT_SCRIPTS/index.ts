@@ -1,5 +1,5 @@
-import fs from 'node:fs';
-import path from 'node:path';
+import { existsSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 
 import { CoreBuilder } from 'storybook/internal/cli';
 
@@ -10,7 +10,7 @@ import { baseGenerator } from '../baseGenerator';
 import type { Generator } from '../types';
 
 const generator: Generator = async (packageManager, npmOptions, options) => {
-  const monorepoRootPath = path.join(__dirname, '..', '..', '..', '..', '..', '..');
+  const monorepoRootPath = join(__dirname, '..', '..', '..', '..', '..', '..');
   const extraMain = options.linkable
     ? {
         webpackFinal: `%%(config) => {
@@ -59,7 +59,7 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
       webpackCompiler: () => undefined,
       extraAddons,
       extraPackages,
-      staticDir: fs.existsSync(path.resolve('./public')) ? 'public' : undefined,
+      staticDir: existsSync(resolve('./public')) ? 'public' : undefined,
       extraMain,
     }
   );

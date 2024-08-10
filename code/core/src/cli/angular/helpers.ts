@@ -1,4 +1,4 @@
-import fs from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { logger } from '@storybook/core/node-logger';
@@ -44,11 +44,11 @@ export class AngularJSON {
   };
 
   constructor() {
-    if (!fs.existsSync(ANGULAR_JSON_PATH)) {
+    if (!existsSync(ANGULAR_JSON_PATH)) {
       throw new MissingAngularJsonError({ path: join(process.cwd(), ANGULAR_JSON_PATH) });
     }
 
-    const jsonContent = fs.readFileSync(ANGULAR_JSON_PATH, 'utf8');
+    const jsonContent = readFileSync(ANGULAR_JSON_PATH, 'utf8');
     this.json = JSON.parse(jsonContent);
   }
 
@@ -150,6 +150,6 @@ export class AngularJSON {
   }
 
   write() {
-    fs.writeFileSync(ANGULAR_JSON_PATH, JSON.stringify(this.json, null, 2));
+    writeFileSync(ANGULAR_JSON_PATH, JSON.stringify(this.json, null, 2));
   }
 }

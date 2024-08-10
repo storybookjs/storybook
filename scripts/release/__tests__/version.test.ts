@@ -1,5 +1,4 @@
 /* eslint-disable no-underscore-dangle */
-import 'node:path';
 import { join } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
@@ -282,7 +281,7 @@ describe('Version', () => {
         { spaces: 2 }
       );
       expect(execaCommand).toHaveBeenCalledWith('yarn install --mode=update-lockfile', {
-        cwd: path.join(CODE_DIR_PATH),
+        cwd: join(CODE_DIR_PATH),
         cleanup: true,
         stdio: undefined,
       });

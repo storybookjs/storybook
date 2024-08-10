@@ -163,6 +163,12 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   }
 
   if (nodeEntries.length > 0) {
+    const dts = await getDTSConfigs({
+      formats,
+      entries: nodeEntries,
+      optimized,
+    });
+
     if (formats.includes('esm')) {
       tasks.push(
         build({
@@ -177,7 +183,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
           format: ['esm'],
           target: ['node18'],
           clean: false,
-          ...(dtsBuild === 'esm' ? dtsConfig : {}),
+          ...(dts.dtsBuild === 'esm' ? dts.dtsConfig : {}),
           platform: 'neutral',
           banner: {
             js: dedent`
@@ -211,7 +217,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
           sourcemap: false,
           format: ['cjs'],
           target: 'node18',
-          ...(dtsBuild === 'cjs' ? dtsConfig : {}),
+          ...(dts.dtsBuild === 'cjs' ? dts.dtsConfig : {}),
           platform: 'node',
           clean: false,
           external: [...externals, ...nodeInternals],

@@ -3,6 +3,7 @@ import { join } from 'node:path';
 
 import { ensureFile } from '@ndelangen/fs-extra-unified';
 import { init, parse } from 'es-module-lexer';
+import findCacheDirectory from 'find-cache-dir';
 import MagicString from 'magic-string';
 import type { Alias, Plugin } from 'vite';
 

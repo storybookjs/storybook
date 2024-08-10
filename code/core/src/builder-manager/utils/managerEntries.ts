@@ -4,7 +4,6 @@ import { join, parse, relative, sep } from 'node:path';
 import { resolvePathInStorybookCache } from '@storybook/core/common';
 
 import { ensureFile } from '@ndelangen/fs-extra-unified';
-import fs from 'fs-extra';
 import slash from 'slash';
 
 const sanitizeBase = (path: string) => {

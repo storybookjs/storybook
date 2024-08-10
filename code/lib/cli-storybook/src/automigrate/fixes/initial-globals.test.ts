@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { expect, it, vi } from 'vitest';
 
-import * as fsExtra from 'fs-extra';
+import * as fsExtra from '@ndelangen/fs-extra-unified';
 
 import { initialGlobals } from './initial-globals';
 

@@ -4,10 +4,10 @@ import http from 'node:http';
 import type { Server } from 'node:http';
 import { join, resolve as resolvePath } from 'node:path';
 
+import { pathExists, readJSON, remove } from '@ndelangen/fs-extra-unified';
 import chalk from 'chalk';
 import program from 'commander';
 import { execa, execaSync } from 'execa';
-import { pathExists, readJSON, remove } from 'fs-extra';
 import pLimit from 'p-limit';
 import { parseConfigFile, runServer } from 'verdaccio';
 

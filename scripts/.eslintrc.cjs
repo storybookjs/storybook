@@ -6,7 +6,6 @@ module.exports = {
     project: ['./tsconfig.json'],
   },
   rules: {
-    'import/no-unresolved': 'off',
     'import/no-extraneous-dependencies': [
       'error',
       { devDependencies: true, peerDependencies: true },

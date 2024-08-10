@@ -1,4 +1,6 @@
+import fs from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
+import path, { join } from 'node:path';
 
 import {
   frameworkToRenderer as CoreFrameworkToRenderer,
@@ -12,8 +14,6 @@ import type { SupportedFrameworks, SupportedRenderers } from '@storybook/core/ty
 import { copy, copySync, pathExists } from '@ndelangen/fs-extra-unified';
 import chalk from 'chalk';
 import { findUpSync } from 'find-up';
-import fs from 'fs';
-import path, { join } from 'path';
 import { coerce, satisfies } from 'semver';
 import stripJsonComments from 'strip-json-comments';
 import invariant from 'tiny-invariant';

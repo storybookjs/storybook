@@ -1,9 +1,10 @@
+import { sep } from 'node:path';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from '@storybook/core/common';
 
 import { copy, copySync, pathExists } from '@ndelangen/fs-extra-unified';
-import { sep } from 'path';
 
 import { IS_WINDOWS } from '../../../vitest.helpers';
 import {

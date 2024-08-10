@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/naming-convention */
+// should be node:http, but that caused the ui/manager to fail to build, might be able to switch this back once ui/manager is in the core
+import type { Server } from 'node:http';
+
 import type { Router } from 'express';
 import type { FileSystemCache } from 'file-system-cache';
-// should be node:http, but that caused the ui/manager to fail to build, might be able to switch this back once ui/manager is in the core
-import type { Server } from 'http';
 import type * as telejson from 'telejson';
 import type { PackageJson as PackageJsonFromTypeFest } from 'type-fest';
 

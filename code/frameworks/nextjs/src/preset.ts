@@ -1,12 +1,13 @@
 // https://storybook.js.org/docs/react/addons/writing-presets
+import fs from 'node:fs';
+import { dirname, join } from 'node:path';
+
 import { getProjectRoot } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { PresetProperty } from 'storybook/internal/types';
 
 import type { ConfigItem, PluginItem, TransformOptions } from '@babel/core';
 import { loadPartialConfig } from '@babel/core';
-import fs from 'fs';
-import { dirname, join } from 'path';
 import semver from 'semver';
 
 import { configureAliases } from './aliases/webpack';

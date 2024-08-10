@@ -1,9 +1,10 @@
+import path from 'node:path';
+
 import { logger } from 'storybook/internal/node-logger';
 
 import { createFilter } from '@rollup/pluginutils';
 import findUp from 'find-up';
 import MagicString from 'magic-string';
-import path from 'path';
 import type { Documentation } from 'react-docgen';
 import {
   ERROR_CODES,

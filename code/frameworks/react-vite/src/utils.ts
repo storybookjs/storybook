@@ -1,5 +1,5 @@
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 
 export function readPackageJson(): Record<string, any> | false {
   const packageJsonPath = path.resolve('package.json');

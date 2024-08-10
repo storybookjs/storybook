@@ -4,7 +4,7 @@ import * as process from 'node:process';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import { readJson } from '@ndelangen/fs-extra-unified';
-import type chalk from 'chalk';
+import chalk from 'chalk';
 import { spawn } from 'cross-spawn';
 import * as esbuild from 'esbuild';
 import { glob } from 'glob';

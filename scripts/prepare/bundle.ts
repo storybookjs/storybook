@@ -1,9 +1,9 @@
 import { readFile, writeFile } from 'node:fs/promises';
+import path, { dirname, join, relative } from 'node:path';
 
 import { emptyDir, ensureFile, pathExists, readJson } from '@ndelangen/fs-extra-unified';
 import aliasPlugin from 'esbuild-plugin-alias';
 import { glob } from 'glob';
-import path, { dirname, join, relative } from 'path';
 import slash from 'slash';
 import { dedent } from 'ts-dedent';
 import type { Options } from 'tsup';
@@ -11,6 +11,7 @@ import { build } from 'tsup';
 import type { PackageJson } from 'type-fest';
 
 import { exec } from '../utils/exec';
+import { nodeInternals } from './tools';
 
 /* TYPES */
 
@@ -87,7 +88,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
 
   const noExternal = [...extraNoExternal];
 
-  if (formats.includes('esm')) {
+  if (formats.includes('esm') && nonPresetEntries.length > 0) {
     tasks.push(
       build({
         noExternal,
@@ -137,7 +138,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
     );
   }
 
-  if (formats.includes('cjs')) {
+  if (formats.includes('cjs') && allEntries.length > 0) {
     tasks.push(
       build({
         noExternal,
@@ -177,23 +178,22 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
           target: ['node18'],
           clean: false,
           ...(dtsBuild === 'esm' ? dtsConfig : {}),
-          platform: 'node',
+          platform: 'neutral',
           banner: {
             js: dedent`
-            import ESM_COMPAT_Module from "node:module";
-            import { fileURLToPath as ESM_COMPAT_fileURLToPath } from 'node:url';
-            import { dirname as ESM_COMPAT_dirname } from 'node:path';
-            const __filename = ESM_COMPAT_fileURLToPath(import.meta.url);
-            const __dirname = ESM_COMPAT_dirname(__filename);
-            const require = ESM_COMPAT_Module.createRequire(import.meta.url);
-          `,
+              import ESM_COMPAT_Module from "node:module";
+              import { fileURLToPath as ESM_COMPAT_fileURLToPath } from 'node:url';
+              import { dirname as ESM_COMPAT_dirname } from 'node:path';
+              const __filename = ESM_COMPAT_fileURLToPath(import.meta.url);
+              const __dirname = ESM_COMPAT_dirname(__filename);
+              const require = ESM_COMPAT_Module.createRequire(import.meta.url);
+            `,
           },
 
-          external: [...externals, 'fs', 'path', 'os'],
+          external: [...externals, ...nodeInternals],
 
           esbuildOptions: (c) => {
             c.conditions = ['module'];
-            c.platform = 'node';
             Object.assign(c, getESBuildOptions(optimized));
           },
         })
@@ -214,7 +214,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
           ...(dtsBuild === 'cjs' ? dtsConfig : {}),
           platform: 'node',
           clean: false,
-          external: externals,
+          external: [...externals, ...nodeInternals],
 
           esbuildOptions: (c) => {
             c.platform = 'node';

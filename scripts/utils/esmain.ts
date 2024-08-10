@@ -1,7 +1,7 @@
-import { createRequire } from 'module';
-import path from 'path';
-import process from 'process';
-import { fileURLToPath } from 'url';
+import { createRequire } from 'node:module';
+import path from 'node:path';
+import process from 'node:process';
+import { fileURLToPath } from 'node:url';
 
 /**
  * Strip the extension from a filename if it has one.

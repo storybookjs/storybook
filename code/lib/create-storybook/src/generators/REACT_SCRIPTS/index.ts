@@ -1,7 +1,8 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
 import { CoreBuilder } from 'storybook/internal/cli';
 
-import fs from 'fs';
-import path from 'path';
 import semver from 'semver';
 import { dedent } from 'ts-dedent';
 

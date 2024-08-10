@@ -1,7 +1,8 @@
+import { join } from 'node:path';
+
 import { getStorybookVersionSpecifier } from 'storybook/internal/cli';
 import { commonGlobOptions } from 'storybook/internal/common';
 
-import { join } from 'path';
 import slash from 'slash';
 import { dedent } from 'ts-dedent';
 

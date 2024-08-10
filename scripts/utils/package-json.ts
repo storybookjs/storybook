@@ -1,5 +1,6 @@
+import { join } from 'node:path';
+
 import { readJSON, writeJSON } from '@ndelangen/fs-extra-unified';
-import { join } from 'path';
 
 export async function updatePackageScripts({ cwd, prefix }: { cwd: string; prefix: string }) {
   const packageJsonPath = join(cwd, 'package.json');

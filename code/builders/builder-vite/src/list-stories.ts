@@ -1,8 +1,9 @@
+import * as path from 'node:path';
+
 import { commonGlobOptions, normalizeStories } from 'storybook/internal/common';
 import type { Options } from 'storybook/internal/types';
 
 import { glob } from 'glob';
-import * as path from 'path';
 import slash from 'slash';
 
 export async function listStories(options: Options) {

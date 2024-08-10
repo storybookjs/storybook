@@ -1,9 +1,12 @@
+import { dirname, join } from 'node:path';
+
 import {
   type Builder,
   type NpmOptions,
   SupportedLanguage,
   type SupportedRenderers,
   configureEslintPlugin,
+  copyTemplateFiles,
   externalFrameworks,
   extractEslintInfo,
 } from 'storybook/internal/cli';
@@ -14,7 +17,6 @@ import type { SupportedFrameworks } from 'storybook/internal/types';
 
 import { ensureDir } from '@ndelangen/fs-extra-unified';
 import ora from 'ora';
-import path, { dirname } from 'path';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
@@ -365,7 +367,7 @@ export async function baseGenerator(
         : addons,
       extensions,
       language,
-      ...(staticDir ? { staticDirs: [path.join('..', staticDir)] } : null),
+      ...(staticDir ? { staticDirs: [join('..', staticDir)] } : null),
       ...extraMain,
       ...(type !== 'framework'
         ? {
@@ -400,7 +402,7 @@ export async function baseGenerator(
       packageManager,
       language,
       destination: componentsDestinationPath,
-      commonAssetsDir: path.join(getCliDir(), 'rendererAssets', 'common'),
+      commonAssetsDir: join(getCliDir(), 'rendererAssets', 'common'),
     });
   }
 }

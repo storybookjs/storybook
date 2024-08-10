@@ -1,8 +1,7 @@
 import { readFile } from 'node:fs/promises';
 
 import { getStorybookVersionSpecifier } from 'storybook/internal/cli';
-
-import type { InstallationMetadata, JsPackageManager } from '@storybook/core/common';
+import type { InstallationMetadata, JsPackageManager } from 'storybook/internal/common';
 
 import chalk from 'chalk';
 import { dedent } from 'ts-dedent';

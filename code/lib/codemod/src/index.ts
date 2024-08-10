@@ -1,8 +1,9 @@
 /* eslint import/prefer-default-export: "off" */
+import fs from 'node:fs';
+import path from 'node:path';
+import { promisify } from 'node:util';
+
 import { sync as spawnSync } from 'cross-spawn';
-import fs from 'fs';
-import path from 'path';
-import { promisify } from 'util';
 
 import { jscodeshiftToPrettierParser } from './lib/utils';
 

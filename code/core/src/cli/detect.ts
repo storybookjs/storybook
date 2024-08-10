@@ -1,3 +1,4 @@
+import * as fs from 'node:fs';
 import { resolve } from 'node:path';
 
 import type { JsPackageManager, PackageJsonWithMaybeDeps } from '@storybook/core/common';
@@ -6,7 +7,6 @@ import { HandledError, commandLog } from '@storybook/core/common';
 import { logger } from '@storybook/core/node-logger';
 
 import { findUpSync } from 'find-up';
-import * as fs from 'fs';
 import prompts from 'prompts';
 import semver from 'semver';
 

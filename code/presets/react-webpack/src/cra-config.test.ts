@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 
-import fs from 'fs';
-import path from 'path';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getReactScriptsPath } from './cra-config';
 

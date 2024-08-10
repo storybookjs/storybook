@@ -1,8 +1,9 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
 import { logger } from 'storybook/internal/node-logger';
 
-import fs from 'fs';
 import MagicString from 'magic-string';
-import path from 'path';
 import { replace, typescript } from 'svelte-preprocess';
 import { preprocess } from 'svelte/compiler';
 import svelteDoc from 'sveltedoc-parser';

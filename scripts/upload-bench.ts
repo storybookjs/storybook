@@ -1,6 +1,7 @@
+import { join } from 'node:path';
+
 import { BigQuery } from '@google-cloud/bigquery';
 import { execaCommand } from 'execa';
-import { join } from 'path';
 
 import type { BenchResults } from './bench/types';
 import { loadBench } from './bench/utils';

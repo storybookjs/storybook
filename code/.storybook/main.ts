@@ -1,4 +1,5 @@
-import path from 'path';
+import path from 'node:path';
+
 // eslint-disable-next-line @typescript-eslint/no-restricted-imports
 import { mergeConfig } from 'vite';
 

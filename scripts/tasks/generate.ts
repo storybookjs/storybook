@@ -1,6 +1,7 @@
 /* eslint-disable import/extensions */
+import { join } from 'node:path';
+
 import { pathExists, remove } from '@ndelangen/fs-extra-unified';
-import { join } from 'path';
 
 import type { Task } from '../task';
 import { REPROS_DIRECTORY } from '../utils/constants';

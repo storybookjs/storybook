@@ -1,4 +1,5 @@
 import { createWriteStream } from 'node:fs';
+import { join } from 'node:path';
 
 import { JsPackageManagerFactory, temporaryFile } from 'storybook/internal/common';
 import type { PackageManagerName } from 'storybook/internal/common';
@@ -6,7 +7,6 @@ import type { PackageManagerName } from 'storybook/internal/common';
 import { move, remove } from '@ndelangen/fs-extra-unified';
 import boxen from 'boxen';
 import chalk from 'chalk';
-import { join } from 'path';
 import { dedent } from 'ts-dedent';
 
 import { cleanLog } from '../automigrate/helpers/cleanLog';

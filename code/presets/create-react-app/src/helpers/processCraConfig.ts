@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
+import { resolve } from 'node:path';
+
 import type { PluginItem, TransformOptions } from '@babel/core';
-import { resolve } from 'path';
 import semver from 'semver';
 import type { Configuration, RuleSetCondition, RuleSetRule } from 'webpack';
 

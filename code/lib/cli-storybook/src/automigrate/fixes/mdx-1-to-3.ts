@@ -1,7 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
+import { basename } from 'node:path';
 
 import chalk from 'chalk';
-import { basename } from 'path';
 import { dedent } from 'ts-dedent';
 
 import type { Fix } from '../types';

@@ -1,7 +1,7 @@
 import { Preset } from 'storybook/internal/types';
 
-import fs from 'fs';
-import * as path from 'path';
+import fs from 'node:fs';
+import * as path from 'node:path';
 import { Configuration } from 'webpack';
 
 import { AngularOptions } from '../types';

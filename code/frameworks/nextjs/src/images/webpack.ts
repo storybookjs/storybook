@@ -1,5 +1,6 @@
+import path from 'node:path';
+
 import type { NextConfig } from 'next';
-import path from 'path';
 import semver from 'semver';
 import type { RuleSetRule, Configuration as WebpackConfig } from 'webpack';
 

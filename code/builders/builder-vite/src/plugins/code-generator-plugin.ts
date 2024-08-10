@@ -1,6 +1,7 @@
+import * as fs from 'node:fs';
+
 import type { Options } from 'storybook/internal/types';
 
-import * as fs from 'fs';
 import type { Plugin } from 'vite';
 
 import { generateImportFnScriptCode } from '../codegen-importfn-script';

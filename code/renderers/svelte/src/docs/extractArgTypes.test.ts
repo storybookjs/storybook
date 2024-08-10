@@ -1,6 +1,7 @@
+import * as fs from 'node:fs';
+
 import { describe, expect, it } from 'vitest';
 
-import * as fs from 'fs';
 import svelteDoc from 'sveltedoc-parser';
 
 import { createArgTypes } from './extractArgTypes';

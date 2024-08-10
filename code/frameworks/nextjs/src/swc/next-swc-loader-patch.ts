@@ -26,10 +26,11 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
 IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
+import path, { isAbsolute } from 'node:path';
+
 import type { NextConfig } from 'next';
 import { isWasm, transform } from 'next/dist/build/swc';
 import { getLoaderSWCOptions } from 'next/dist/build/swc/options';
-import path, { isAbsolute } from 'path';
 
 export interface SWCLoaderOptions {
   rootDir: string;

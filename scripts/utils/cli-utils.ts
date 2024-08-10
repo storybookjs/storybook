@@ -1,6 +1,6 @@
-import { spawn } from 'child_process';
-import { existsSync } from 'fs';
-import { join } from 'path';
+import { spawn } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 
 const logger = console;
 

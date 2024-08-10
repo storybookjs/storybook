@@ -1,6 +1,7 @@
+import { join } from 'node:path';
+
 import { pathExists } from '@ndelangen/fs-extra-unified';
 import dirSize from 'fast-folder-size';
-import { join } from 'path';
 import { promisify } from 'util';
 
 import { now, saveBench } from '../bench/utils';

@@ -1,5 +1,6 @@
+import path from 'node:path';
+
 import { pathExists, readJSON, writeJSON } from '@ndelangen/fs-extra-unified';
-import path from 'path';
 
 // TODO -- should we generate this file a second time outside of CLI?
 import storybookVersions from '../../code/core/src/common/versions';

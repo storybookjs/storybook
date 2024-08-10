@@ -1,4 +1,5 @@
 import { createWriteStream } from 'node:fs';
+import { join } from 'node:path';
 
 import {
   type JsPackageManager,
@@ -11,7 +12,6 @@ import {
 import { move, remove } from '@ndelangen/fs-extra-unified';
 import boxen from 'boxen';
 import chalk from 'chalk';
-import { join } from 'path';
 import prompts from 'prompts';
 import semver from 'semver';
 import invariant from 'tiny-invariant';

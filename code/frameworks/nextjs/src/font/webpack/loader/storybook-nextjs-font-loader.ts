@@ -1,4 +1,4 @@
-import path from 'path';
+import path from 'node:path';
 
 import { getFontFaceDeclarations as getGoogleFontFaceDeclarations } from './google/get-font-face-declarations';
 import { getFontFaceDeclarations as getLocalFontFaceDeclarations } from './local/get-font-face-declarations';

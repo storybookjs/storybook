@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 import { normalizeNewlines } from 'storybook/internal/docs-tools';
@@ -5,8 +8,6 @@ import { inferControls } from 'storybook/internal/preview-api';
 import type { Renderer } from 'storybook/internal/types';
 
 import { transformFileSync, transformSync } from '@babel/core';
-import fs from 'fs';
-import path from 'path';
 // @ts-expect-error (seems broken/missing)
 import requireFromString from 'require-from-string';
 

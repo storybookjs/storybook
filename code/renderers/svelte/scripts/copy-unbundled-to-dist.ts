@@ -1,5 +1,6 @@
+import { join } from 'node:path';
+
 import { copy } from '@ndelangen/fs-extra-unified';
-import { join } from 'path';
 
 const src = join(__dirname, '..', 'src');
 const dist = join(__dirname, '..', 'dist');

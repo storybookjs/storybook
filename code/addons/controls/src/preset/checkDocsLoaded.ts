@@ -1,6 +1,6 @@
-import { checkAddonOrder, serverRequire } from 'storybook/internal/common';
+import path from 'node:path';
 
-import path from 'path';
+import { checkAddonOrder, serverRequire } from 'storybook/internal/common';
 
 export const checkDocsLoaded = (configDir: string) => {
   checkAddonOrder({

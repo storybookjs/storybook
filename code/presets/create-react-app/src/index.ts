@@ -1,6 +1,7 @@
+import { dirname, join, relative } from 'node:path';
+
 import { logger } from 'storybook/internal/node-logger';
 
-import { dirname, join, relative } from 'path';
 import PnpWebpackPlugin from 'pnp-webpack-plugin';
 import type { Configuration, RuleSetRule, WebpackPluginInstance } from 'webpack';
 

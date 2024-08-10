@@ -5,8 +5,9 @@
 /**
  * Source: https://github.com/vercel/next.js/blob/canary/packages/next/src/build/babel/plugins/react-loadable-plugin.ts
  */
+import { relative as relativePath } from 'node:path';
+
 import type { types as BabelTypes, NodePath, PluginObj } from '@babel/core';
-import { relative as relativePath } from 'path';
 
 export default function ({ types: t }: { types: typeof BabelTypes }): PluginObj {
   return {

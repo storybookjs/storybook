@@ -1,8 +1,9 @@
 /* eslint-disable no-underscore-dangle */
+import path from 'node:path';
+
 import { expect, it, vi } from 'vitest';
 
 import * as fsExtra from '@ndelangen/fs-extra-unified';
-import path from 'path';
 
 import { initialGlobals } from './initial-globals';
 

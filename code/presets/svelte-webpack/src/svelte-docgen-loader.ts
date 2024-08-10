@@ -1,7 +1,8 @@
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+
 import { logger } from 'storybook/internal/node-logger';
 
-import * as fs from 'fs';
-import * as path from 'path';
 import { preprocess } from 'svelte/compiler';
 import svelteDoc from 'sveltedoc-parser';
 import { dedent } from 'ts-dedent';

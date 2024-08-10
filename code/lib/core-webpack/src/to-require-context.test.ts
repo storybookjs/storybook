@@ -1,8 +1,8 @@
+import path from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 import { normalizeStoriesEntry } from 'storybook/internal/common';
-
-import path from 'path';
 
 import { toRequireContext } from './to-require-context';
 

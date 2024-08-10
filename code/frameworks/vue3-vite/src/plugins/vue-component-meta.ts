@@ -1,7 +1,8 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+
 import findPackageJson from 'find-package-json';
-import fs from 'fs/promises';
 import MagicString from 'magic-string';
-import path from 'path';
 import type { PluginOption } from 'vite';
 import {
   type ComponentMeta,

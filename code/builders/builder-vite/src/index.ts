@@ -1,5 +1,6 @@
 // noinspection JSUnusedGlobalSymbols
 import { readFile } from 'node:fs/promises';
+import { join, parse } from 'node:path';
 
 import { NoStatsForViteDevError } from 'storybook/internal/server-errors';
 import type { Options } from 'storybook/internal/types';
@@ -7,7 +8,6 @@ import type { Options } from 'storybook/internal/types';
 import { copy } from '@ndelangen/fs-extra-unified';
 import type { RequestHandler } from 'express';
 import express from 'express';
-import { join, parse } from 'path';
 import type { ViteDevServer } from 'vite';
 
 import { build as viteBuild } from './build';

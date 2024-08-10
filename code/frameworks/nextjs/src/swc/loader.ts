@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 import { getProjectRoot } from 'storybook/internal/common';
 import type { Options } from 'storybook/internal/types';
 
@@ -5,7 +7,6 @@ import { getVirtualModules } from '@storybook/builder-webpack5';
 
 import type { NextConfig } from 'next';
 import loadJsConfig from 'next/dist/build/load-jsconfig';
-import path from 'path';
 import type { Configuration as WebpackConfig } from 'webpack';
 
 export const configureSWCLoader = async (

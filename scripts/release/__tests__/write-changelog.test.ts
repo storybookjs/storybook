@@ -1,8 +1,9 @@
 /* eslint-disable no-underscore-dangle */
+import path from 'node:path';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as fsExtraImp from '@ndelangen/fs-extra-unified';
-import path from 'path';
 import { dedent } from 'ts-dedent';
 
 import type * as MockedFSToExtra from '../../../code/__mocks__/fs-extra';

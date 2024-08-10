@@ -1,6 +1,6 @@
-import type { Options } from 'storybook/internal/types';
+import type { Server } from 'node:http';
 
-import type { Server } from 'http';
+import type { Options } from 'storybook/internal/types';
 
 import { getAssetsInclude } from './assetsInclude';
 import { sanitizeEnvVars } from './envs';

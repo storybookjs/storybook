@@ -1,8 +1,9 @@
+import path from 'node:path';
+
 import { frameworkToRenderer } from 'storybook/internal/cli';
 import { frameworkPackages } from 'storybook/internal/common';
 
 import findUp from 'find-up';
-import path from 'path';
 import { dedent } from 'ts-dedent';
 
 import { getFrameworkPackageName } from '../helpers/mainConfigFile';

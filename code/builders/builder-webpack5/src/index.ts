@@ -1,3 +1,5 @@
+import { join, parse } from 'node:path';
+
 import { PREVIEW_BUILDER_PROGRESS } from 'storybook/internal/core-events';
 import { logger } from 'storybook/internal/node-logger';
 import {
@@ -11,7 +13,6 @@ import { checkWebpackVersion } from '@storybook/core-webpack';
 
 import { copy } from '@ndelangen/fs-extra-unified';
 import express from 'express';
-import { join, parse } from 'path';
 import prettyTime from 'pretty-hrtime';
 import type { Configuration, Stats, StatsOptions } from 'webpack';
 import webpack, { ProgressPlugin } from 'webpack';

@@ -1,5 +1,6 @@
-import { existsSync } from 'fs';
-import { join, resolve } from 'path';
+import { existsSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+
 import slash from 'slash';
 
 import { getInterpretedFile } from '../../code/core/src/common';

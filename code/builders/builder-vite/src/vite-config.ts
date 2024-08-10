@@ -1,3 +1,5 @@
+import * as path from 'node:path';
+
 import {
   getBuilderOptions,
   getFrameworkName,
@@ -7,7 +9,6 @@ import {
 import { globalsNameReferenceMap } from 'storybook/internal/preview/globals';
 import type { Options } from 'storybook/internal/types';
 
-import * as path from 'path';
 import type {
   ConfigEnv,
   InlineConfig,

@@ -1,9 +1,10 @@
+import path from 'node:path';
+
 import { getProjectRoot } from 'storybook/internal/common';
 
 import type { NextConfig } from 'next';
 import { PHASE_DEVELOPMENT_SERVER } from 'next/constants';
 import loadConfig from 'next/dist/server/config';
-import path from 'path';
 import { DefinePlugin } from 'webpack';
 import type { Configuration as WebpackConfig } from 'webpack';
 

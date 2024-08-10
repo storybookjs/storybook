@@ -1,9 +1,10 @@
-import { logger } from '@storybook/core/node-logger';
+import path from 'node:path';
+
+import { logger } from 'storybook/internal/node-logger';
 
 import { ensureDir, readJSON } from '@ndelangen/fs-extra-unified';
 import chalk from 'chalk';
 import { spawn as spawnAsync, sync as spawnSync } from 'cross-spawn';
-import path from 'path';
 
 type ExecOptions = Parameters<typeof spawnAsync>[2];
 

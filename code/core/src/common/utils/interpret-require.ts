@@ -1,12 +1,13 @@
 import { builtinModules } from 'node:module';
 import { dirname, join, relative, sep } from 'node:path';
 
-import { getInterpretedFileWithExt } from './interpret-files';
-import { cache } from './cache';
-import { findUpMultiple } from 'find-up';
-import { getProjectRoot } from './paths';
 import { readJSON } from '@ndelangen/fs-extra-unified';
+import { findUpMultiple } from 'find-up';
 import { dedent } from 'ts-dedent';
+
+import { cache } from './cache';
+import { getInterpretedFileWithExt } from './interpret-files';
+import { getProjectRoot } from './paths';
 
 export const nodeInternals: string[] = [
   'module',

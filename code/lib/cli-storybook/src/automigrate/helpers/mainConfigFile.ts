@@ -1,20 +1,21 @@
+import { frameworkToRenderer } from 'storybook/internal/cli';
 import {
+  builderPackages,
+  extractProperFrameworkName,
+  frameworkPackages,
   getStorybookInfo,
   loadMainConfig,
   rendererPackages,
-  frameworkPackages,
-  builderPackages,
-  extractProperFrameworkName,
 } from 'storybook/internal/common';
-import type { StorybookConfigRaw, StorybookConfig } from 'storybook/internal/types';
-import type { ConfigFile } from 'storybook/internal/csf-tools';
-import { readConfig, writeConfig as writeConfigFile } from 'storybook/internal/csf-tools';
-import chalk from 'chalk';
-import { dedent } from 'ts-dedent';
-import path from 'path';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { getCoercedStorybookVersion } from 'storybook/internal/common';
-import { frameworkToRenderer } from 'storybook/internal/cli';
+import type { ConfigFile } from 'storybook/internal/csf-tools';
+import { readConfig, writeConfig as writeConfigFile } from 'storybook/internal/csf-tools';
+import type { StorybookConfig, StorybookConfigRaw } from 'storybook/internal/types';
+
+import chalk from 'chalk';
+import path from 'path';
+import { dedent } from 'ts-dedent';
 
 const logger = console;
 

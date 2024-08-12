@@ -1,26 +1,26 @@
 import {
-  composeStory as originalComposeStory,
+  composeConfigs,
   composeStories as originalComposeStories,
+  composeStory as originalComposeStory,
   setProjectAnnotations as originalSetProjectAnnotations,
   setDefaultProjectAnnotations,
-  composeConfigs,
 } from 'storybook/internal/preview-api';
 import type {
   Args,
+  ComposedStoryFn,
+  NamedOrDefaultProjectAnnotations,
   ProjectAnnotations,
-  StoryAnnotationsOrFn,
   Store_CSFExports,
   StoriesWithPartialProps,
-  NamedOrDefaultProjectAnnotations,
-  ComposedStoryFn,
+  StoryAnnotationsOrFn,
 } from 'storybook/internal/types';
 
+import type { Meta, ReactRenderer } from '@storybook/react';
+
+import * as rscAnnotations from '../../../renderers/react/src/entry-preview-rsc';
 // ! ATTENTION: This needs to be a relative import so it gets prebundled. This is to avoid ESM issues in Nextjs + Jest setups
 import { INTERNAL_DEFAULT_PROJECT_ANNOTATIONS as reactAnnotations } from '../../../renderers/react/src/portable-stories';
-import * as rscAnnotations from '../../../renderers/react/src/entry-preview-rsc';
 import * as nextJsAnnotations from './preview';
-
-import type { ReactRenderer, Meta } from '@storybook/react';
 
 /** Function that sets the globalConfig of your storybook. The global config is the preview module of your .storybook folder.
  *

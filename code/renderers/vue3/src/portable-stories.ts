@@ -1,18 +1,19 @@
 import {
-  composeStory as originalComposeStory,
   composeStories as originalComposeStories,
+  composeStory as originalComposeStory,
   setProjectAnnotations as originalSetProjectAnnotations,
   setDefaultProjectAnnotations,
 } from 'storybook/internal/preview-api';
 import type {
   Args,
+  ComposedStoryFn,
   NamedOrDefaultProjectAnnotations,
   ProjectAnnotations,
-  StoryAnnotationsOrFn,
   Store_CSFExports,
   StoriesWithPartialProps,
-  ComposedStoryFn,
+  StoryAnnotationsOrFn,
 } from 'storybook/internal/types';
+
 import { h } from 'vue';
 
 import * as defaultProjectAnnotations from './entry-preview';

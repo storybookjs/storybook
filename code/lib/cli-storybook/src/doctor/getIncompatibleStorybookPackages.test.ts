@@ -1,11 +1,13 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+import type { JsPackageManager } from 'storybook/internal/common';
+
 import type { AnalysedPackage } from './getIncompatibleStorybookPackages';
 import {
-  getIncompatibleStorybookPackages,
-  getIncompatiblePackagesSummary,
   checkPackageCompatibility,
+  getIncompatiblePackagesSummary,
+  getIncompatibleStorybookPackages,
 } from './getIncompatibleStorybookPackages';
-import type { JsPackageManager } from 'storybook/internal/common';
 
 vi.mock('chalk', () => {
   return {

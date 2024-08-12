@@ -1,11 +1,12 @@
-import { fn } from '@storybook/test';
-import { RequestCookies } from 'next/dist/compiled/@edge-runtime/cookies';
 // We need this import to be a singleton, and because it's used in multiple entrypoints
 // both in ESM and CJS, importing it via the package name instead of having a local import
 // is the only way to achieve it actually being a singleton
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore we must ignore types here as during compilation they are not generated yet
 import { headers } from '@storybook/nextjs/headers.mock';
+import { fn } from '@storybook/test';
+
+import { RequestCookies } from 'next/dist/compiled/@edge-runtime/cookies';
 
 class RequestCookiesMock extends RequestCookies {
   get = fn(super.get.bind(this)).mockName('next/headers::cookies().get');

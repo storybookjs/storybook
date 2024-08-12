@@ -1,6 +1,7 @@
 import path from 'path';
 // eslint-disable-next-line @typescript-eslint/no-restricted-imports
 import { mergeConfig } from 'vite';
+
 import type { StorybookConfig } from '../frameworks/react-vite';
 
 const componentsPath = path.join(__dirname, '../core/src/components');

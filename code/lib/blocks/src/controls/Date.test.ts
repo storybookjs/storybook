@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
+import { describe, expect, it } from 'vitest';
 
-import { describe, it, expect } from 'vitest';
-import { parseDate, parseTime, formatDate, formatTime } from './Date';
+import { formatDate, formatTime, parseDate, parseTime } from './Date';
 
 describe('Date control', () => {
   it.each([

@@ -1,12 +1,15 @@
 import type { FC } from 'react';
 import React from 'react';
-import { styled } from '@storybook/core/theming';
+
 import { IconButton } from '@storybook/core/components';
-import { useStorybookApi, useStorybookState } from '@storybook/core/manager-api';
+import { styled } from '@storybook/core/theming';
 import { BottomBarToggleIcon, MenuIcon } from '@storybook/icons';
-import { MobileMenuDrawer } from './MobileMenuDrawer';
-import { MobileAddonsDrawer } from './MobileAddonsDrawer';
+
+import { useStorybookApi, useStorybookState } from '@storybook/core/manager-api';
+
 import { useLayout } from '../../layout/LayoutProvider';
+import { MobileAddonsDrawer } from './MobileAddonsDrawer';
+import { MobileMenuDrawer } from './MobileMenuDrawer';
 
 interface MobileNavigationProps {
   menu?: React.ReactNode;

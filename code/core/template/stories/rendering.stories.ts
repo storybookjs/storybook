@@ -1,6 +1,7 @@
-import { global as globalThis } from '@storybook/global';
 import type { PlayFunctionContext } from '@storybook/core/types';
-import { within, waitFor, expect } from '@storybook/test';
+import { global as globalThis } from '@storybook/global';
+import { expect, waitFor, within } from '@storybook/test';
+
 import {
   FORCE_REMOUNT,
   RESET_STORY_ARGS,

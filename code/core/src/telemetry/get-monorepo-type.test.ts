@@ -1,7 +1,9 @@
 /* eslint-disable no-underscore-dangle */
-import { describe, it, expect, vi } from 'vitest';
-import * as fsExtra from 'fs-extra';
 import path from 'node:path';
+
+import { describe, expect, it, vi } from 'vitest';
+
+import * as fsExtra from 'fs-extra';
 
 import { getMonorepoType, monorepoConfigs } from './get-monorepo-type';
 

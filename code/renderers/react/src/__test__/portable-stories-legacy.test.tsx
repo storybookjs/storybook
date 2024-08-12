@@ -1,13 +1,17 @@
 // @vitest-environment happy-dom
 
 /* eslint-disable import/namespace */
-import React from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import React from 'react';
+
+import type { Meta } from '@storybook/react';
+
 import { addons } from '@storybook/preview-api';
 
 import * as addonActionsPreview from '@storybook/addon-actions/preview';
-import type { Meta } from '@storybook/react';
+
 import { expectTypeOf } from 'expect-type';
 
 import { composeStories, composeStory, setProjectAnnotations } from '..';

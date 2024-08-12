@@ -1,30 +1,32 @@
 // https://storybook.js.org/docs/react/addons/writing-presets
-import { dirname, join } from 'path';
+import { getProjectRoot } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 import type { PresetProperty } from 'storybook/internal/types';
+
 import type { ConfigItem, PluginItem, TransformOptions } from '@babel/core';
 import { loadPartialConfig } from '@babel/core';
-import { getProjectRoot } from 'storybook/internal/common';
 import fs from 'fs';
+import { dirname, join } from 'path';
 import semver from 'semver';
+
+import { configureAliases } from './aliases/webpack';
+import { configureBabelLoader } from './babel/loader';
+import nextBabelPreset from './babel/preset';
+import { configureCompatibilityAliases } from './compatibility/compatibility-map';
 import { configureConfig } from './config/webpack';
 import { configureCss } from './css/webpack';
-import { configureImports } from './imports/webpack';
-import { configureStyledJsx } from './styledJsx/webpack';
-import { configureImages } from './images/webpack';
-import { configureRSC } from './rsc/webpack';
-import { configureRuntimeNextjsVersionResolution, getNextjsVersion } from './utils';
-import type { FrameworkOptions, StorybookConfig } from './types';
+import { configureNextExportMocks } from './export-mocks/webpack';
+import { configureFastRefresh } from './fastRefresh/webpack';
 import TransformFontImports from './font/babel';
 import { configureNextFont } from './font/webpack/configureNextFont';
-import nextBabelPreset from './babel/preset';
+import { configureImages } from './images/webpack';
+import { configureImports } from './imports/webpack';
 import { configureNodePolyfills } from './nodePolyfills/webpack';
+import { configureRSC } from './rsc/webpack';
+import { configureStyledJsx } from './styledJsx/webpack';
 import { configureSWCLoader } from './swc/loader';
-import { configureBabelLoader } from './babel/loader';
-import { configureFastRefresh } from './fastRefresh/webpack';
-import { configureAliases } from './aliases/webpack';
-import { logger } from 'storybook/internal/node-logger';
-import { configureNextExportMocks } from './export-mocks/webpack';
-import { configureCompatibilityAliases } from './compatibility/compatibility-map';
+import type { FrameworkOptions, StorybookConfig } from './types';
+import { configureRuntimeNextjsVersionResolution, getNextjsVersion } from './utils';
 
 export const addons: PresetProperty<'addons'> = [
   dirname(require.resolve(join('@storybook/preset-react-webpack', 'package.json'))),

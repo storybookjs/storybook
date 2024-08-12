@@ -1,4 +1,5 @@
 import { dedent } from 'ts-dedent';
+
 import { StorybookError } from './storybook-error';
 
 /**

@@ -3,9 +3,9 @@ import type { Renderer } from '@storybook/core/types';
 import { global } from '@storybook/global';
 
 import { combineParameters } from '../parameters';
-import { composeStepRunners } from './stepRunners';
-import { normalizeArrays } from './normalizeArrays';
 import { composeBeforeAllHooks } from './beforeAll';
+import { normalizeArrays } from './normalizeArrays';
+import { composeStepRunners } from './stepRunners';
 
 export function getField<TFieldType = any>(
   moduleExportList: ModuleExports[],

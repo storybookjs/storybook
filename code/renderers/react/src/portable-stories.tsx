@@ -1,23 +1,24 @@
+import React from 'react';
+
 import {
-  composeStory as originalComposeStory,
   composeStories as originalComposeStories,
+  composeStory as originalComposeStory,
   setProjectAnnotations as originalSetProjectAnnotations,
   setDefaultProjectAnnotations,
 } from 'storybook/internal/preview-api';
 import type {
   Args,
+  ComposedStoryFn,
   NamedOrDefaultProjectAnnotations,
-  StoryAnnotationsOrFn,
+  ProjectAnnotations,
   Store_CSFExports,
   StoriesWithPartialProps,
-  ProjectAnnotations,
-  ComposedStoryFn,
+  StoryAnnotationsOrFn,
 } from 'storybook/internal/types';
 
 import * as reactProjectAnnotations from './entry-preview';
 import type { Meta } from './public-types';
 import type { ReactRenderer } from './types';
-import React from 'react';
 
 /** Function that sets the globalConfig of your storybook. The global config is the preview module of your .storybook folder.
  *

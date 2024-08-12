@@ -1,7 +1,9 @@
-import { vi, it, expect, describe, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { JsPackageManager, PackageJsonWithDepsAndDevDeps } from '@storybook/core/common';
+
 import { runFixes } from './index';
 import type { Fix } from './types';
-import type { JsPackageManager, PackageJsonWithDepsAndDevDeps } from '@storybook/core/common';
 
 const check1 = vi.fn();
 const run1 = vi.fn();

@@ -1,10 +1,12 @@
-import { describe, beforeEach, it, expect, vi } from 'vitest';
-import fse from 'fs-extra';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { sep } from 'path';
-import * as helpers from './helpers';
-import { IS_WINDOWS } from '../../../vitest.helpers';
 import type { JsPackageManager } from '@storybook/core/common';
+
+import fse from 'fs-extra';
+import { sep } from 'path';
+
+import { IS_WINDOWS } from '../../../vitest.helpers';
+import * as helpers from './helpers';
 import type { SupportedRenderers } from './project_types';
 import { SupportedLanguage } from './project_types';
 

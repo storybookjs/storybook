@@ -1,6 +1,10 @@
+import { getStoryTitle } from 'storybook/internal/common';
+import type { StoriesEntry } from 'storybook/internal/types';
+
 import MagicString from 'magic-string';
-import typescript from 'typescript';
 import { dedent } from 'ts-dedent';
+import typescript from 'typescript';
+
 import type { InternalOptions } from './types';
 
 // Main transform function for the Vitest plugin
@@ -8,10 +12,12 @@ export async function transform({
   code,
   id,
   options,
+  stories,
 }: {
   code: string;
   id: string;
   options: InternalOptions;
+  stories: StoriesEntry[];
 }) {
   const isStoryFile = /\.stor(y|ies)\./.test(id);
   if (!isStoryFile) {
@@ -34,18 +40,56 @@ export async function transform({
 
     if (typescript.isIdentifier(exportExpression)) {
       // Handle default export as a variable, e.g. "export default meta"
-      // get the name of the variable to use later when appending composeStory below each story
       metaExportName = exportExpression.getText();
+
+      // Find the corresponding variable statement for the export
+      const metaDeclaration = sourceFile.statements.find(
+        (stmt): stmt is typescript.VariableStatement =>
+          typescript.isVariableStatement(stmt) &&
+          stmt.declarationList.declarations.some(
+            (decl) => typescript.isIdentifier(decl.name) && decl.name.getText() === metaExportName
+          )
+      );
+
+      if (metaDeclaration) {
+        const metaObjectLiteral = metaDeclaration.declarationList.declarations[0]
+          .initializer as typescript.Node;
+        if (
+          typescript.isObjectLiteralExpression(metaObjectLiteral) &&
+          !metaObjectLiteral.properties.some(
+            (prop) =>
+              typescript.isPropertyAssignment(prop) &&
+              typescript.isIdentifier(prop.name) &&
+              prop.name.getText() === 'title'
+          )
+        ) {
+          const title = getStoryTitle({ storyFilePath: id, configDir: options.configDir, stories });
+
+          const insertPos = metaObjectLiteral.getStart() + 1;
+          s.appendLeft(insertPos, `\n\ttitle: '${title}',\n`);
+        }
+      }
     } else if (typescript.isObjectLiteralExpression(exportExpression)) {
       // Handle inline default export, e.g. "export default {}"
-      // rewrite it to const __STORYBOOK_META__ = {}; export default __STORYBOOK_META__;
-      const defaultExportCode = code.substring(
-        exportExpression.getStart(),
-        exportExpression.getEnd()
+      const hasTitleProperty = exportExpression.properties.some(
+        (prop) =>
+          typescript.isPropertyAssignment(prop) &&
+          typescript.isIdentifier(prop.name) &&
+          prop.name.getText() === 'title'
       );
-      const insertPos = node.getStart();
+
+      if (!hasTitleProperty) {
+        const title = getStoryTitle({ storyFilePath: id, configDir: options.configDir, stories });
+
+        const insertPos = exportExpression.getStart() + 1;
+        s.appendLeft(insertPos, `\n\ttitle: '${title}',\n`);
+      }
+
+      // Replace inline export with a variable
+      const defaultExportCode = s.slice(exportExpression.getStart(), exportExpression.getEnd());
+      const nodeInsertPos = node.getStart();
       s.overwrite(
-        insertPos,
+        nodeInsertPos,
         node.getEnd(),
         `const ${metaExportName} = ${defaultExportCode};\nexport default ${metaExportName};`
       );

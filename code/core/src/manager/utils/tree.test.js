@@ -1,8 +1,7 @@
 // @vitest-environment happy-dom
+import { describe, expect, it } from 'vitest';
 
-import { describe, it, expect } from 'vitest';
 import { mockDataset, mockExpanded, mockSelected } from '../components/sidebar/mockdata';
-
 import * as utils from './tree';
 
 const noRoot = {

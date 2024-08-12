@@ -1,5 +1,5 @@
-import path from 'path';
 import fs from 'fs';
+import path from 'path';
 import { describe, expect, it } from 'vitest';
 
 // File hierarchy: __testfixtures__ / some-test-case / input.*

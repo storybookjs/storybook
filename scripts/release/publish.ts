@@ -1,12 +1,13 @@
 import chalk from 'chalk';
-import path from 'path';
 import program from 'commander';
-import semver from 'semver';
-import { z } from 'zod';
-import { readJson } from 'fs-extra';
-import dedent from 'ts-dedent';
-import pRetry from 'p-retry';
 import { execaCommand } from 'execa';
+import { readJson } from 'fs-extra';
+import pRetry from 'p-retry';
+import path from 'path';
+import semver from 'semver';
+import dedent from 'ts-dedent';
+import { z } from 'zod';
+
 import { esMain } from '../utils/esmain';
 
 program

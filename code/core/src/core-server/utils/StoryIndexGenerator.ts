@@ -1,34 +1,37 @@
 /* eslint-disable no-underscore-dangle */
 import path from 'node:path';
+
+import { commonGlobOptions, normalizeStoryPath } from '@storybook/core/common';
+import type {
+  DocsIndexEntry,
+  DocsOptions,
+  IndexEntry,
+  IndexInputStats,
+  Indexer,
+  NormalizedStoriesSpecifier,
+  Path,
+  StoryIndex,
+  StoryIndexEntry,
+  StorybookConfigRaw,
+  Tag,
+} from '@storybook/core/types';
+import { combineTags, storyNameFromExport, toId } from '@storybook/csf';
+
+import { getStorySortParameter, loadConfig } from '@storybook/core/csf-tools';
+import { logger, once } from '@storybook/core/node-logger';
+import { sortStoriesV7, userOrAutoTitleFromSpecifier } from '@storybook/core/preview-api';
+
 import chalk from 'chalk';
+import { findUp } from 'find-up';
 import fs from 'fs-extra';
 import slash from 'slash';
 import invariant from 'tiny-invariant';
-import * as TsconfigPaths from 'tsconfig-paths';
-import { findUp } from 'find-up';
-
-import type {
-  IndexEntry,
-  StoryIndexEntry,
-  DocsIndexEntry,
-  NormalizedStoriesSpecifier,
-  DocsOptions,
-  Path,
-  Tag,
-  StoryIndex,
-  Indexer,
-  StorybookConfigRaw,
-  IndexInputStats,
-} from '@storybook/core/types';
-import { userOrAutoTitleFromSpecifier, sortStoriesV7 } from '@storybook/core/preview-api';
-import { commonGlobOptions, normalizeStoryPath } from '@storybook/core/common';
-import { logger, once } from '@storybook/core/node-logger';
-import { getStorySortParameter, loadConfig } from '@storybook/core/csf-tools';
-import { storyNameFromExport, toId, combineTags } from '@storybook/csf';
 import { dedent } from 'ts-dedent';
-import { autoName } from './autoName';
+import * as TsconfigPaths from 'tsconfig-paths';
+
 import { IndexingError, MultipleIndexingError } from './IndexingError';
-import { addStats, type IndexStatsSummary } from './summarizeStats';
+import { autoName } from './autoName';
+import { type IndexStatsSummary, addStats } from './summarizeStats';
 
 // Extended type to keep track of the csf meta id so we know the component id when referencing docs in `extractDocs`
 type StoryIndexEntryWithExtra = StoryIndexEntry & {

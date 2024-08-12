@@ -1,4 +1,5 @@
 import React from 'react';
+
 import type { Foo } from './types';
 
 interface FooProps {

@@ -1,5 +1,6 @@
 import { dirname, join } from 'path';
 import type { Configuration as WebpackConfig } from 'webpack';
+
 import { getCompatibilityAliases } from '../compatibility/compatibility-map';
 
 const mapping = {

@@ -1,5 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
-import type { StoryContext, StepRunner } from '@storybook/core/types';
+import { describe, expect, it, vi } from 'vitest';
+
+import type { StepRunner, StoryContext } from '@storybook/core/types';
+
 import { composeStepRunners } from './stepRunners';
 
 describe('stepRunners', () => {

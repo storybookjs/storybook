@@ -1,11 +1,12 @@
-import path from 'path';
+import { CoreBuilder } from 'storybook/internal/cli';
+
 import fs from 'fs';
+import path from 'path';
 import semver from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { baseGenerator } from '../baseGenerator';
 import type { Generator } from '../types';
-import { CoreBuilder } from 'storybook/internal/cli';
 
 const generator: Generator = async (packageManager, npmOptions, options) => {
   const monorepoRootPath = path.join(__dirname, '..', '..', '..', '..', '..', '..');

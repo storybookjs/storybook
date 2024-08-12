@@ -1,7 +1,8 @@
-import type { PreviewAnnotation } from 'storybook/internal/types';
-import { resolve, isAbsolute, relative } from 'path';
-import slash from 'slash';
 import { stripAbsNodeModulesPath } from 'storybook/internal/common';
+import type { PreviewAnnotation } from 'storybook/internal/types';
+
+import { isAbsolute, relative, resolve } from 'path';
+import slash from 'slash';
 
 /**
  * Preview annotations can take several forms, and vite needs them to be

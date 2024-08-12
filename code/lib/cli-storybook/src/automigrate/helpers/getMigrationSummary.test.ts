@@ -1,7 +1,9 @@
-import { describe, expect, vi, it } from 'vitest';
-import { getMigrationSummary } from './getMigrationSummary';
-import { FixStatus } from '../types';
+import { describe, expect, it, vi } from 'vitest';
+
 import type { InstallationMetadata } from 'storybook/internal/common';
+
+import { FixStatus } from '../types';
+import { getMigrationSummary } from './getMigrationSummary';
 
 vi.mock('boxen', () => ({
   default: vi.fn((str, { title = '' }) => `${title}\n\n${str.replace(/\x1b\[[0-9;]*[mG]/g, '')}`),

@@ -1,9 +1,12 @@
 import React from 'react';
-import { action } from '@storybook/addon-actions';
-import type { Meta, StoryObj } from '@storybook/react';
+
 import { LinkIcon, LinuxIcon } from '@storybook/icons';
-import { WithTooltip } from './WithTooltip';
+import type { Meta, StoryObj } from '@storybook/react';
+
+import { action } from '@storybook/addon-actions';
+
 import { TooltipLinkList } from './TooltipLinkList';
+import { WithTooltip } from './WithTooltip';
 import ellipseUrl from './assets/ellipse.png';
 
 const onLinkClick = action('onLinkClick');

@@ -1,7 +1,8 @@
-import { createBlocker } from './types';
-import { dedent } from 'ts-dedent';
-import { lt } from 'semver';
 import chalk from 'chalk';
+import { lt } from 'semver';
+import { dedent } from 'ts-dedent';
+
+import { createBlocker } from './types';
 
 const minimalVersionsMap = {
   '@angular/core': '15.0.0',

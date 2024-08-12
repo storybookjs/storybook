@@ -1,4 +1,5 @@
-import { describe, beforeEach, it, expect, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { ChannelTransport, Listener } from '.';
 import { Channel, WebsocketTransport } from '.';
 

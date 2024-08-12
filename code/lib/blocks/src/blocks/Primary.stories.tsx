@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { Primary } from './Primary';
+
 import * as DefaultButtonStories from '../examples/Button.stories';
 import * as StoriesParametersStories from '../examples/StoriesParameters.stories';
+import { Primary } from './Primary';
 
 const meta = {
   component: Primary,

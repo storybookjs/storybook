@@ -1,16 +1,19 @@
 // this file tests Typescript types that's why there are no assertions
 import { describe, it } from 'vitest';
+
 import { satisfies } from 'storybook/internal/common';
 import type { Canvas, ComponentAnnotations, StoryAnnotations } from 'storybook/internal/types';
+
 import { expectTypeOf } from 'expect-type';
 import type { SetOptional } from 'type-fest';
 import { h } from 'vue';
-import type { ComponentPropsAndSlots, Decorator, Meta, StoryObj } from './public-types';
-import type { VueRenderer } from './types';
+
 import BaseLayout from './__tests__/BaseLayout.vue';
 import Button from './__tests__/Button.vue';
-import DecoratorTsVue from './__tests__/Decorator.vue';
 import Decorator2TsVue from './__tests__/Decorator2.vue';
+import DecoratorTsVue from './__tests__/Decorator.vue';
+import type { ComponentPropsAndSlots, Decorator, Meta, StoryObj } from './public-types';
+import type { VueRenderer } from './types';
 
 type ButtonProps = ComponentPropsAndSlots<typeof Button>;
 

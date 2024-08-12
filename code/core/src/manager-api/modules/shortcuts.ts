@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { global } from '@storybook/global';
+
 import {
   FORCE_REMOUNT,
   PREVIEW_KEYDOWN,
@@ -7,10 +8,9 @@ import {
   STORIES_EXPAND_ALL,
 } from '@storybook/core/core-events';
 
-import type { ModuleFn } from '../lib/types';
-
 import type { KeyboardEventLike } from '../lib/shortcut';
-import { shortcutMatchesShortcut, eventToShortcut } from '../lib/shortcut';
+import { eventToShortcut, shortcutMatchesShortcut } from '../lib/shortcut';
+import type { ModuleFn } from '../lib/types';
 import { focusableUIElements } from './layout';
 
 const { navigator, document } = global;

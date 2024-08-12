@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { expect, fn, mocked, userEvent, within } from '@storybook/test';
-import type { Meta, StoryFn as CSF2Story, StoryObj as CSF3Story } from '..';
+import { createPortal } from 'react-dom';
 
-import type { ButtonProps } from './Button';
-import { Button } from './Button';
+import { expect, fn, mocked, userEvent, within } from '@storybook/test';
+
 import type { HandlerFunction } from '@storybook/addon-actions';
 import { action } from '@storybook/addon-actions';
-import { createPortal } from 'react-dom';
+
+import type { StoryFn as CSF2Story, StoryObj as CSF3Story, Meta } from '..';
+import type { ButtonProps } from './Button';
+import { Button } from './Button';
 
 const meta = {
   title: 'Example/Button',

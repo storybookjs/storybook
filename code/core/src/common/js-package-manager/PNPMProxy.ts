@@ -1,14 +1,16 @@
-import { pathExistsSync } from 'fs-extra';
-import dedent from 'ts-dedent';
 import { existsSync, readFileSync } from 'node:fs';
-import { findUpSync } from 'find-up';
 import path from 'node:path';
+
 import { FindPackageVersionsError } from '@storybook/core/server-errors';
 
+import { findUpSync } from 'find-up';
+import { pathExistsSync } from 'fs-extra';
+import dedent from 'ts-dedent';
+
+import { createLogStream } from '../utils/cli';
 import { JsPackageManager } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
 import type { InstallationMetadata, PackageMetadata } from './types';
-import { createLogStream } from '../utils/cli';
 
 type PnpmDependency = {
   from: string;

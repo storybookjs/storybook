@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import type { FileSystemCache } from 'file-system-cache';
-import type * as telejson from 'telejson';
 import type { Router } from 'express';
+import type { FileSystemCache } from 'file-system-cache';
 // should be node:http, but that caused the ui/manager to fail to build, might be able to switch this back once ui/manager is in the core
 import type { Server } from 'http';
+import type * as telejson from 'telejson';
 import type { PackageJson as PackageJsonFromTypeFest } from 'type-fest';
 
-import type { StoriesEntry, Indexer } from './indexer';
+import type { Indexer, StoriesEntry } from './indexer';
 
 /**
  * ⚠️ This file contains internal WIP types they MUST NOT be exported outside this package for now!

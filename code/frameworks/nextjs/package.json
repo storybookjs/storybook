@@ -121,8 +121,8 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
     "@babel/core": "^7.24.4",
@@ -144,7 +144,7 @@
     "@storybook/react": "workspace:*",
     "@storybook/react-dom-shim": "workspace:*",
     "@storybook/test": "workspace:*",
-    "@types/node": "^18.0.0",
+    "@types/node": "^22.0.0",
     "@types/semver": "^7.3.4",
     "babel-loader": "^9.1.3",
     "css-loader": "^6.7.3",

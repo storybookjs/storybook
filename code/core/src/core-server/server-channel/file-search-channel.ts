@@ -1,15 +1,14 @@
-import type { CoreConfig, Options, SupportedRenderers } from '@storybook/core/types';
+import path from 'node:path';
+
 import type { Channel } from '@storybook/core/channels';
 import {
   extractProperRendererNameFromFramework,
   getFrameworkName,
   getProjectRoot,
 } from '@storybook/core/common';
-import path from 'node:path';
-import fs from 'fs/promises';
+import { telemetry } from '@storybook/core/telemetry';
+import type { CoreConfig, Options, SupportedRenderers } from '@storybook/core/types';
 
-import { getParser } from '../utils/parser';
-import { searchFiles } from '../utils/search-files';
 import type {
   FileComponentSearchRequestPayload,
   FileComponentSearchResponsePayload,
@@ -20,8 +19,12 @@ import {
   FILE_COMPONENT_SEARCH_REQUEST,
   FILE_COMPONENT_SEARCH_RESPONSE,
 } from '@storybook/core/core-events';
+
+import fs from 'fs/promises';
+
 import { doesStoryFileExist, getStoryMetadata } from '../utils/get-new-story-file';
-import { telemetry } from '@storybook/core/telemetry';
+import { getParser } from '../utils/parser';
+import { searchFiles } from '../utils/search-files';
 
 export async function initFileSearchChannel(
   channel: Channel,

@@ -1,16 +1,16 @@
 /* eslint-disable no-underscore-dangle */
-import path from 'path';
-import { vi, describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
 import * as fsExtraImp from 'fs-extra';
+import path from 'path';
 import * as simpleGitImp from 'simple-git';
-import { run as isPrFrozen } from '../is-pr-frozen';
 
 import type * as MockedFSExtra from '../../../code/__mocks__/fs-extra';
 import type * as MockedSimpleGit from '../../__mocks__/simple-git';
-
+import { CODE_DIRECTORY } from '../../utils/constants';
+import { run as isPrFrozen } from '../is-pr-frozen';
 import type { PullRequestInfo } from '../utils/get-github-info';
 import { getPullInfoFromCommit } from '../utils/get-github-info';
-import { CODE_DIRECTORY } from '../../utils/constants';
 
 vi.mock('../utils/get-github-info');
 vi.mock('simple-git');

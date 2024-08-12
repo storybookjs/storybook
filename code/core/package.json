@@ -265,13 +265,12 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "bun ./scripts/check.ts",
-    "prep": "bun ./scripts/prep.ts"
+    "check": "jiti ./scripts/check.ts",
+    "prep": "jiti ./scripts/prep.ts"
   },
   "dependencies": {
     "@storybook/csf": "^0.1.11",
     "@types/express": "^4.17.21",
-    "@types/node": "^18.0.0",
     "browser-assert": "^1.2.1",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0",
     "esbuild-register": "^3.5.0",
@@ -314,8 +313,7 @@
     "@types/fs-extra": "^11.0.1",
     "@types/js-yaml": "^4.0.5",
     "@types/lodash": "^4.14.167",
-    "@types/mock-fs": "^4.13.1",
-    "@types/node": "^18.0.0",
+    "@types/node": "^22.0.0",
     "@types/npmlog": "^7.0.0",
     "@types/picomatch": "^2.3.0",
     "@types/prettier": "^3.0.0",
@@ -375,8 +373,8 @@
     "leven": "^4.0.0",
     "lodash": "^4.17.21",
     "markdown-to-jsx": "^7.4.5",
+    "memfs": "^4.11.1",
     "memoizerific": "^1.11.3",
-    "mock-fs": "^5.2.0",
     "nanoid": "^4.0.2",
     "npmlog": "^7.0.0",
     "open": "^8.4.0",

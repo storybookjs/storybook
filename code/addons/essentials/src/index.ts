@@ -1,6 +1,7 @@
-import path from 'path';
-import { logger } from 'storybook/internal/node-logger';
 import { serverRequire } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
+
+import path from 'path';
 
 interface PresetOptions {
   /**

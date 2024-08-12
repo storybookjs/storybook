@@ -5,6 +5,7 @@ import { readFile } from 'fs-extra';
 import path from 'path';
 import semver from 'semver';
 import { dedent } from 'ts-dedent';
+
 import { esMain } from '../utils/esmain';
 import { getCurrentVersion } from './get-current-version';
 

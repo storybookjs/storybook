@@ -5,15 +5,16 @@ import type {
   ArgsStoryFn,
   ComponentAnnotations,
   DecoratorFunction,
-  LoaderFunction,
-  StoryAnnotations,
   StoryContext as GenericStoryContext,
-  StrictArgs,
+  LoaderFunction,
   ProjectAnnotations,
+  StoryAnnotations,
+  StrictArgs,
 } from 'storybook/internal/types';
 
-import type { ComponentType, ComponentProps, SvelteComponent } from 'svelte';
+import type { ComponentProps, ComponentType, SvelteComponent } from 'svelte';
 import type { SetOptional, Simplify } from 'type-fest';
+
 import type { SvelteRenderer } from './types';
 
 export type { Args, ArgTypes, Parameters, StrictArgs } from 'storybook/internal/types';

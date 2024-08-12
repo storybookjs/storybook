@@ -1,12 +1,15 @@
 import { lstatSync } from 'node:fs';
 import path from 'node:path';
+
+import type { NormalizedStoriesSpecifier, StoriesEntry } from '@storybook/core/types';
+
+import { InvalidStoriesEntryError } from '@storybook/core/server-errors';
+
 import * as pico from 'picomatch';
 import slash from 'slash';
 
-import { InvalidStoriesEntryError } from '@storybook/core/server-errors';
-import { normalizeStoryPath } from './paths';
 import { globToRegexp } from './glob-to-regexp';
-import type { NormalizedStoriesSpecifier, StoriesEntry } from '@storybook/core/types';
+import { normalizeStoryPath } from './paths';
 
 const DEFAULT_TITLE_PREFIX = '';
 const DEFAULT_FILES_PATTERN = '**/*.@(mdx|stories.@(js|jsx|mjs|ts|tsx))';

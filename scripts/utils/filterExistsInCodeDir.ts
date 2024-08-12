@@ -1,5 +1,6 @@
-import path from 'path';
 import { pathExists } from 'fs-extra';
+import path from 'path';
+
 import { CODE_DIRECTORY } from './constants';
 
 // packageDirs of the form `lib/preview-api`

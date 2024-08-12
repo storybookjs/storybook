@@ -1,6 +1,8 @@
-import { describe, beforeEach, it, expect, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import fs from 'fs';
 import path from 'path';
+
 import { getReactScriptsPath } from './cra-config';
 
 vi.mock('fs', () => ({

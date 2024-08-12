@@ -1,31 +1,31 @@
 import type { MouseEvent } from 'react';
 import React, { useCallback, useEffect, useState } from 'react';
-import { logger } from '@storybook/core/client-logger';
+
 import { styled } from '@storybook/core/theming';
 import { global } from '@storybook/global';
-import memoize from 'memoizerific';
 
-import jsx from 'react-syntax-highlighter/dist/esm/languages/prism/jsx';
+import { logger } from '@storybook/core/client-logger';
+
+import memoize from 'memoizerific';
+// @ts-expect-error (Converted from ts-ignore)
+import { createElement } from 'react-syntax-highlighter/dist/esm/index';
 import bash from 'react-syntax-highlighter/dist/esm/languages/prism/bash';
 import css from 'react-syntax-highlighter/dist/esm/languages/prism/css';
+import graphql from 'react-syntax-highlighter/dist/esm/languages/prism/graphql';
 // @ts-expect-error (Converted from ts-ignore)
 import jsExtras from 'react-syntax-highlighter/dist/esm/languages/prism/js-extras';
 import json from 'react-syntax-highlighter/dist/esm/languages/prism/json';
-import graphql from 'react-syntax-highlighter/dist/esm/languages/prism/graphql';
-import html from 'react-syntax-highlighter/dist/esm/languages/prism/markup';
+import jsx from 'react-syntax-highlighter/dist/esm/languages/prism/jsx';
 import md from 'react-syntax-highlighter/dist/esm/languages/prism/markdown';
-import yml from 'react-syntax-highlighter/dist/esm/languages/prism/yaml';
+import html from 'react-syntax-highlighter/dist/esm/languages/prism/markup';
 import tsx from 'react-syntax-highlighter/dist/esm/languages/prism/tsx';
 import typescript from 'react-syntax-highlighter/dist/esm/languages/prism/typescript';
-
+import yml from 'react-syntax-highlighter/dist/esm/languages/prism/yaml';
 import ReactSyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism-light';
-// @ts-expect-error (Converted from ts-ignore)
-import { createElement } from 'react-syntax-highlighter/dist/esm/index';
 
 import { ActionBar } from '../ActionBar/ActionBar';
 import type { ScrollAreaProps } from '../ScrollArea/ScrollArea';
 import { ScrollArea } from '../ScrollArea/ScrollArea';
-
 import type {
   SyntaxHighlighterProps,
   SyntaxHighlighterRenderer,

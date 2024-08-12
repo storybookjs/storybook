@@ -1,49 +1,48 @@
-import { useStorybookApi } from '@storybook/core/manager-api';
-import type {
-  StoriesHash,
-  GroupEntry,
-  ComponentEntry,
-  StoryEntry,
-  State,
-  API,
-} from '@storybook/core/manager-api';
-import { styled, useTheme } from '@storybook/core/theming';
-import { Button, IconButton, TooltipLinkList, WithTooltip } from '@storybook/core/components';
-import { transparentize } from 'polished';
 import type { ComponentProps, MutableRefObject } from 'react';
 import React, { useCallback, useMemo, useRef } from 'react';
 
-import { PRELOAD_ENTRIES } from '@storybook/core/core-events';
+import { Button, IconButton, TooltipLinkList, WithTooltip } from '@storybook/core/components';
+import { styled, useTheme } from '@storybook/core/theming';
 import {
-  ExpandAltIcon,
   CollapseIcon as CollapseIconSvg,
-  SyncIcon,
+  ExpandAltIcon,
   StatusFailIcon,
-  StatusWarnIcon,
   StatusPassIcon,
+  StatusWarnIcon,
+  SyncIcon,
 } from '@storybook/icons';
-import type { StoryId, API_StatusValue } from '@storybook/types';
+import type { API_StatusValue, StoryId } from '@storybook/types';
 
-import { ComponentNode, DocumentNode, GroupNode, RootNode, StoryNode } from './TreeNode';
+import { PRELOAD_ENTRIES } from '@storybook/core/core-events';
+import type {
+  API,
+  ComponentEntry,
+  GroupEntry,
+  State,
+  StoriesHash,
+  StoryEntry,
+} from '@storybook/core/manager-api';
+import { useStorybookApi } from '@storybook/core/manager-api';
 
-import type { ExpandAction, ExpandedState } from './useExpanded';
+import { transparentize } from 'polished';
 
-import { useExpanded } from './useExpanded';
-import type { Highlight, Item } from './types';
-
+import { getGroupStatus, getHighestStatus, statusMapping } from '../../utils/status';
 import {
-  isStoryHoistable,
   createId,
   getAncestorIds,
   getDescendantIds,
   getLink,
+  isStoryHoistable,
 } from '../../utils/tree';
-import { statusMapping, getHighestStatus, getGroupStatus } from '../../utils/status';
 import { useLayout } from '../layout/LayoutProvider';
 import { IconSymbols, UseSymbol } from './IconSymbols';
-import { CollapseIcon } from './components/CollapseIcon';
-import { StatusContext, useStatusSummary } from './StatusContext';
 import { StatusButton } from './StatusButton';
+import { StatusContext, useStatusSummary } from './StatusContext';
+import { ComponentNode, DocumentNode, GroupNode, RootNode, StoryNode } from './TreeNode';
+import { CollapseIcon } from './components/CollapseIcon';
+import type { Highlight, Item } from './types';
+import type { ExpandAction, ExpandedState } from './useExpanded';
+import { useExpanded } from './useExpanded';
 
 const Container = styled.div<{ hasOrphans: boolean }>((props) => ({
   marginTop: props.hasOrphans ? 20 : 0,

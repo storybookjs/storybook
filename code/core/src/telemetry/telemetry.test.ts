@@ -1,7 +1,6 @@
+import { beforeEach, expect, it, vi } from 'vitest';
+
 import { fetch } from './fetch';
-
-import { beforeEach, it, expect, vi } from 'vitest';
-
 import { sendTelemetry } from './telemetry';
 
 vi.mock('./fetch');

@@ -1,12 +1,12 @@
-import React from 'react';
 import type { ReactElement } from 'react';
-import type { API_HashEntry, API_StatusState, API_StatusValue } from '@storybook/core/types';
+import React from 'react';
 
 import { styled } from '@storybook/core/theming';
-
-import { getDescendantIds } from './tree';
+import type { API_HashEntry, API_StatusState, API_StatusValue } from '@storybook/core/types';
 import { CircleIcon } from '@storybook/icons';
+
 import { UseSymbol } from '../components/sidebar/IconSymbols';
+import { getDescendantIds } from './tree';
 
 const SmallIcons = styled(CircleIcon)({
   // specificity hack

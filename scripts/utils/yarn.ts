@@ -1,10 +1,10 @@
 import { pathExists, readJSON, writeJSON } from 'fs-extra';
 import path from 'path';
 
-import type { TemplateKey } from '../get-template';
-import { exec } from './exec';
 // TODO -- should we generate this file a second time outside of CLI?
 import storybookVersions from '../../code/core/src/common/versions';
+import type { TemplateKey } from '../get-template';
+import { exec } from './exec';
 import touch from './touch';
 
 export type YarnOptions = {

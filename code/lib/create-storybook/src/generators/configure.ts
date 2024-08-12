@@ -1,8 +1,9 @@
+import { SupportedLanguage, externalFrameworks } from 'storybook/internal/cli';
+import { logger } from 'storybook/internal/node-logger';
+
 import fse from 'fs-extra';
 import path from 'path';
 import { dedent } from 'ts-dedent';
-import { logger } from 'storybook/internal/node-logger';
-import { externalFrameworks, SupportedLanguage } from 'storybook/internal/cli';
 
 interface ConfigureMainOptions {
   addons: string[];

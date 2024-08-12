@@ -1,6 +1,6 @@
+import { spawn } from 'child_process';
 import fs from 'fs';
 import { remove } from 'fs-extra';
-import { spawn } from 'child_process';
 import trash from 'trash';
 
 const logger = console;

@@ -1,26 +1,20 @@
 import React, { useMemo } from 'react';
 
-import { styled } from '@storybook/core/theming';
 import { ScrollArea, Spaced } from '@storybook/core/components';
+import { styled } from '@storybook/core/theming';
+import type { API_LoadedRefData, Addon_SidebarTopType } from '@storybook/core/types';
+
 import type { State } from '@storybook/core/manager-api';
 
-import type {
-  Addon_SidebarBottomType,
-  Addon_SidebarTopType,
-  API_LoadedRefData,
-} from '@storybook/core/types';
+import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
+import { Explorer } from './Explorer';
 import type { HeadingProps } from './Heading';
 import { Heading } from './Heading';
-
-import { Explorer } from './Explorer';
-
 import { Search } from './Search';
-
 import { SearchResults } from './SearchResults';
+import { SidebarBottom } from './SidebarBottom';
 import type { CombinedDataset, Selection } from './types';
 import { useLastViewed } from './useLastViewed';
-import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
-import { SidebarBottom } from './SidebarBottom';
 
 export const DEFAULT_REF_ID = 'storybook_internal';
 

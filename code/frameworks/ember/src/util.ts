@@ -1,5 +1,5 @@
-import path from 'path';
 import { sync as findUpSync } from 'find-up';
+import path from 'path';
 
 export const findDistFile = (cwd: string, relativePath: string) => {
   const nearestPackageJson = findUpSync('package.json', { cwd });

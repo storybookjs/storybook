@@ -1,5 +1,7 @@
 import { global } from '@storybook/global';
+
 import type { App } from 'vue';
+
 import type { StoryContext } from './public-types';
 
 const { window: globalWindow } = global;

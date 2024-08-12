@@ -1,14 +1,15 @@
 /* eslint-disable no-underscore-dangle */
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
+
 import type { Plugin } from 'vitest/config';
-import { createRequire } from 'node:module';
+
+import { loadAllPresets, validateConfigurationFiles } from 'storybook/internal/common';
+import { MainFileMissingError } from 'storybook/internal/server-errors';
+import type { StoriesEntry } from 'storybook/internal/types';
+
 import { transform } from './transformer';
 import type { InternalOptions, UserOptions } from './types';
 import { log } from './utils';
-
-const DEFAULT_CONFIG_DIR = '.storybook';
-
-const require = createRequire(import.meta.url);
 
 const defaultOptions: UserOptions = {
   storybookScript: undefined,
@@ -43,14 +44,35 @@ export const storybookTest = (options?: UserOptions): Plugin => {
   process.env.__STORYBOOK_URL__ = storybookUrl;
   process.env.__STORYBOOK_SCRIPT__ = finalOptions.storybookScript;
 
+  let stories: StoriesEntry[];
+
+  if (!finalOptions.configDir) {
+    finalOptions.configDir = resolve(join(process.cwd(), '.storybook'));
+  } else {
+    finalOptions.configDir = resolve(process.cwd(), finalOptions.configDir);
+  }
+
   return {
     name: 'vite-plugin-storybook-test',
     enforce: 'pre',
-    async configureServer() {
-      // this might be useful in the future
-      if (!finalOptions.configDir) {
-        finalOptions.configDir = join(process.cwd(), options?.configDir ?? DEFAULT_CONFIG_DIR);
+    async buildStart() {
+      try {
+        await validateConfigurationFiles(finalOptions.configDir);
+      } catch (err) {
+        throw new MainFileMissingError({
+          location: finalOptions.configDir,
+          source: 'vitest',
+        });
       }
+
+      const presets = await loadAllPresets({
+        configDir: finalOptions.configDir,
+        corePresets: [],
+        overridePresets: [],
+        packageJson: {},
+      });
+
+      stories = await presets.apply('stories', []);
     },
     async config(config) {
       // If we end up needing to know if we are running in browser mode later
@@ -93,7 +115,6 @@ export const storybookTest = (options?: UserOptions): Plugin => {
       }
 
       log('Final plugin options:', finalOptions);
-
       return config;
     },
     async transform(code, id) {
@@ -106,6 +127,7 @@ export const storybookTest = (options?: UserOptions): Plugin => {
           code,
           id,
           options: finalOptions,
+          stories,
         });
       }
     },

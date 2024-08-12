@@ -1,10 +1,10 @@
 import React from 'react';
 
 import { Explorer } from './Explorer';
+import { IconSymbols } from './IconSymbols';
+import * as RefStories from './Refs.stories';
 import { mockDataset } from './mockdata';
 import type { RefType } from './types';
-import * as RefStories from './Refs.stories';
-import { IconSymbols } from './IconSymbols';
 
 export default {
   component: Explorer,

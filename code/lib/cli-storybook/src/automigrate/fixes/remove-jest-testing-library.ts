@@ -1,9 +1,12 @@
-import chalk from 'chalk';
-import { dedent } from 'ts-dedent';
-import type { Fix } from '../types';
 import { getStorybookVersionSpecifier } from 'storybook/internal/cli';
+
 import { runCodemod } from '@storybook/codemod';
+
+import chalk from 'chalk';
 import prompts from 'prompts';
+import { dedent } from 'ts-dedent';
+
+import type { Fix } from '../types';
 
 const logger = console;
 

@@ -1,14 +1,15 @@
+import type { CompatibleString } from 'storybook/internal/types';
+
 import type {
-  SvelteOptions,
-  StorybookConfig as StorybookConfigBase,
-  TypescriptOptions as TypescriptOptionsReact,
-} from '@storybook/preset-svelte-webpack';
-import type {
-  StorybookConfigWebpack,
   BuilderOptions,
+  StorybookConfigWebpack,
   TypescriptOptions as TypescriptOptionsBuilder,
 } from '@storybook/builder-webpack5';
-import type { CompatibleString } from 'storybook/internal/types';
+import type {
+  StorybookConfig as StorybookConfigBase,
+  SvelteOptions,
+  TypescriptOptions as TypescriptOptionsReact,
+} from '@storybook/preset-svelte-webpack';
 
 type FrameworkName = CompatibleString<'@storybook/svelte-webpack5'>;
 type BuilderName = CompatibleString<'@storybook/builder-webpack5'>;

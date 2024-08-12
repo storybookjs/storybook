@@ -1,5 +1,7 @@
 import React from 'react';
-import PropTypes, { string, shape } from 'prop-types';
+
+import PropTypes, { shape, string } from 'prop-types';
+
 import { PRESET_SHAPE, SOME_PROP_TYPES } from './ext';
 
 const NAMED_OBJECT = {

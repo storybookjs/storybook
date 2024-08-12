@@ -1,9 +1,10 @@
+import path from 'path';
+
 import { getFontFaceDeclarations as getGoogleFontFaceDeclarations } from './google/get-font-face-declarations';
 import { getFontFaceDeclarations as getLocalFontFaceDeclarations } from './local/get-font-face-declarations';
 import type { LoaderOptions } from './types';
 import { getCSSMeta } from './utils/get-css-meta';
 import { setFontDeclarationsInHead } from './utils/set-font-declarations-in-head';
-import path from 'path';
 
 type FontFaceDeclaration = {
   id: string;

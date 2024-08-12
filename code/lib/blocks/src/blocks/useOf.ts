@@ -1,9 +1,11 @@
+import { useContext } from 'react';
+
 import type {
   DocsContextProps,
-  ResolvedModuleExportType,
   ResolvedModuleExportFromType,
+  ResolvedModuleExportType,
 } from 'storybook/internal/types';
-import { useContext } from 'react';
+
 import { DocsContext } from './DocsContext';
 
 export type Of = Parameters<DocsContextProps['resolveOf']>[0];

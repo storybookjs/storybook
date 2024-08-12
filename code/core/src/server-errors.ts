@@ -1,5 +1,6 @@
 import chalk from 'chalk';
 import { dedent } from 'ts-dedent';
+
 import { StorybookError } from './storybook-error';
 
 /**
@@ -378,16 +379,30 @@ export class MainFileESMOnlyImportError extends StorybookError {
 }
 
 export class MainFileMissingError extends StorybookError {
-  constructor(public data: { location: string }) {
+  constructor(public data: { location: string; source?: 'storybook' | 'vitest' }) {
+    const map = {
+      storybook: {
+        helperMessage:
+          'You can pass a --config-dir flag to tell Storybook, where your main.js file is located at.',
+        documentation: 'https://storybook.js.org/docs/configure',
+      },
+      vitest: {
+        helperMessage:
+          'You can pass a configDir plugin option to tell where your main.js file is located at.',
+        // TODO: add proper docs once available
+        documentation: 'https://storybook.js.org/docs/configure',
+      },
+    };
+    const { documentation, helperMessage } = map[data.source || 'storybook'];
     super({
       category: Category.CORE_SERVER,
       code: 6,
-      documentation: 'https://storybook.js.org/docs/configure',
+      documentation,
       message: dedent`
         No configuration files have been found in your configDir: ${chalk.yellow(data.location)}.
         Storybook needs a "main.js" file, please add it.
         
-        You can pass a --config-dir flag to tell Storybook, where your main.js file is located at).`,
+        ${helperMessage}`,
     });
   }
 }

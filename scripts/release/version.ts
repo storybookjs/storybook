@@ -1,11 +1,12 @@
 import { setOutput } from '@actions/core';
-import { readFile, readJson, writeFile, writeJson } from 'fs-extra';
 import chalk from 'chalk';
-import path from 'path';
 import program from 'commander';
+import { execaCommand } from 'execa';
+import { readFile, readJson, writeFile, writeJson } from 'fs-extra';
+import path from 'path';
 import semver from 'semver';
 import { z } from 'zod';
-import { execaCommand } from 'execa';
+
 import { esMain } from '../utils/esmain';
 import type { Workspace } from '../utils/workspace';
 import { getWorkspaces } from '../utils/workspace';

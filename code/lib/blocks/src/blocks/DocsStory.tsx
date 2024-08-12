@@ -1,10 +1,11 @@
 import type { FC } from 'react';
 import React from 'react';
+
+import { Anchor } from './Anchor';
+import { Canvas } from './Canvas';
+import { Description } from './Description';
 import { Subheading } from './Subheading';
 import type { DocsStoryProps } from './types';
-import { Anchor } from './Anchor';
-import { Description } from './Description';
-import { Canvas } from './Canvas';
 import { useOf } from './useOf';
 
 export const DocsStory: FC<DocsStoryProps> = ({

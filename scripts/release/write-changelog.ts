@@ -1,9 +1,10 @@
 import chalk from 'chalk';
-import path from 'path';
 import program from 'commander';
+import { readFile, writeFile, writeJson } from 'fs-extra';
+import path from 'path';
 import semver from 'semver';
 import { z } from 'zod';
-import { readFile, writeFile, writeJson } from 'fs-extra';
+
 import { esMain } from '../utils/esmain';
 import { getChanges } from './utils/get-changes';
 

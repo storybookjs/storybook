@@ -1,7 +1,9 @@
-import { UnknownArgTypesError } from '@storybook/core/preview-errors';
 import type { SBType } from '@storybook/core/types';
-import type { TSType, TSSigType } from './types';
+
+import { UnknownArgTypesError } from '@storybook/core/preview-errors';
+
 import { parseLiteral } from '../utils';
+import type { TSSigType, TSType } from './types';
 
 const convertSig = (type: TSSigType) => {
   switch (type.type) {

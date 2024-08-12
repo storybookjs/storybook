@@ -70,33 +70,33 @@ export function codeGeneratorPlugin(options: Options): Plugin {
     },
     resolveId(source) {
       if (source === virtualFileId) {
-        return `\0${virtualFileId}`;
+        return virtualFileId;
       }
       if (source === iframePath) {
         return iframeId;
       }
       if (source === virtualStoriesFile) {
-        return `\0${virtualStoriesFile}`;
+        return virtualStoriesFile;
       }
       if (source === virtualPreviewFile) {
         return virtualPreviewFile;
       }
       if (source === virtualAddonSetupFile) {
-        return `\0${virtualAddonSetupFile}`;
+        return virtualAddonSetupFile;
       }
 
       return undefined;
     },
     async load(id, config) {
-      if (id === `\0${virtualStoriesFile}`) {
+      if (id === virtualStoriesFile) {
         return generateImportFnScriptCode(options);
       }
 
-      if (id === `\0${virtualAddonSetupFile}`) {
+      if (id === virtualAddonSetupFile) {
         return generateAddonSetupCode();
       }
 
-      if (id === `\0${virtualFileId}`) {
+      if (id === virtualFileId) {
         return generateModernIframeScriptCode(options, projectRoot);
       }
 

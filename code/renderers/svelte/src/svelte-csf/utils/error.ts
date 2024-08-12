@@ -111,23 +111,35 @@ export abstract class StorybookSvelteCSFError extends Error {
   // WARN: I had to duplicate logic. We already have functions for it.
   // But we can't import it, because it would create a cyclic-dependency.
   protected get storyNameFromAttribute() {
-    if (this.component) {
-      for (const attribute of this.component?.attributes) {
+    const { component } = this;
+    const { attributes } = component;
+    if (component) {
+      for (const attribute of attributes) {
         if (
           attribute.type === 'Attribute' &&
           attribute.name === 'name' &&
           attribute.value !== true
         ) {
-          if (attribute.value[0].type === 'Text') {
-            return attribute.value[0].data;
+          const { value } = attribute;
+
+          if (value.type === 'ExpressionTag') {
+            return value.expression.value;
+          }
+
+          if (value[0].type === 'Text') {
+            return value[0].data;
+          }
+
+          if (value[0].type === 'Text') {
+            return value[0].data;
           }
 
           if (
-            attribute.value[0].type === 'ExpressionTag' &&
-            attribute.value[0].expression.type === 'Literal' &&
-            typeof attribute.value[0].expression.value === 'string'
+            value[0].type === 'ExpressionTag' &&
+            value[0].expression.type === 'Literal' &&
+            typeof value[0].expression.value === 'string'
           ) {
-            return attribute.value[0].expression.value;
+            return value[0].expression.value;
           }
         }
       }

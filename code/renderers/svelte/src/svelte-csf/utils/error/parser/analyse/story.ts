@@ -55,10 +55,17 @@ export class AttributeNotArrayError extends StorybookSvelteCSFError {
   }
 
   get valueType() {
-    const { value } = this.attribute;
+    const { attribute } = this;
+    const { value } = attribute;
+
     if (value === true) {
       return true;
     }
+
+    if (value.type === "ExpressionTag") {
+      return value.expression.value;
+    }
+
     if (value[0].type === 'Text') {
       return value[0].data;
     }
@@ -101,10 +108,17 @@ export class AttributeNotArrayOfStringsError extends StorybookSvelteCSFError {
   }
 
   get valueType() {
-    const { value } = this.attribute;
+    const { attribute } = this;
+    const { value } = attribute;
+
     if (value === true) {
       return true;
     }
+
+    if (value.type === "ExpressionTag") {
+      return value.expression.value;
+    }
+
     if (value[0].type === 'Text') {
       return value[0].data;
     }

@@ -41,7 +41,7 @@ export function findStoryAttributeChildrenSnippetBlock(options: {
 
   const { value } = children;
 
-  if (value === true || value[0].type === 'Text' || value[0].expression.type !== 'Identifier') {
+  if (value === true || value.type !== 'ExpressionTag' || value.expression.type !== 'Identifier') {
     throw new InvalidStoryChildrenAttributeError({
       component: component,
       childrenAttribute: children,
@@ -50,7 +50,7 @@ export function findStoryAttributeChildrenSnippetBlock(options: {
   }
 
   return findSnippetBlockByName({
-    name: value[0].expression.name,
+    name: value.expression.name,
     nodes: nodes,
   });
 }

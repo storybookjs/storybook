@@ -24,6 +24,8 @@ export async function exec(channel: Channel) {
       coverage: {
         reportOnFailure: true,
         reporter: [
+          'text',
+          'text-summary',
           [
             require.resolve('@storybook/experimental-addon-coverage/coverage-reporter'),
             {

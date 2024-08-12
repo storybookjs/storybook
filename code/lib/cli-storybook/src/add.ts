@@ -1,15 +1,18 @@
+import { isAbsolute, join } from 'node:path';
+
 import {
+  JsPackageManagerFactory,
+  type PackageManagerName,
+  getCoercedStorybookVersion,
   getStorybookInfo,
   serverRequire,
-  JsPackageManagerFactory,
-  getCoercedStorybookVersion,
-  type PackageManagerName,
   versions,
 } from 'storybook/internal/common';
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
-import { isAbsolute, join } from 'path';
+
 import SemVer from 'semver';
 import { dedent } from 'ts-dedent';
+
 import { postinstallAddon } from './postinstallAddon';
 
 export interface PostinstallOptions {

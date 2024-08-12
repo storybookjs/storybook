@@ -1,6 +1,7 @@
 import type { Locator } from '@playwright/test';
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import process from 'process';
+
 import { SbPage } from './util';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:6006';

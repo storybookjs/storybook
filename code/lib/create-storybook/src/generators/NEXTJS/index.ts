@@ -1,6 +1,8 @@
-import { join } from 'path';
-import { existsSync } from 'fs';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { CoreBuilder } from 'storybook/internal/cli';
+
 import { baseGenerator } from '../baseGenerator';
 import type { Generator } from '../types';
 

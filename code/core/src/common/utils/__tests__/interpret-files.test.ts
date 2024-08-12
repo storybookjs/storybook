@@ -1,6 +1,8 @@
-import { describe, afterEach, it, expect, vi } from 'vitest';
-import { getInterpretedFile } from '../interpret-files';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import { vol } from 'memfs';
+
+import { getInterpretedFile } from '../interpret-files';
 
 vi.mock('fs', async () => {
   const memfs = await vi.importActual('memfs');

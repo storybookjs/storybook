@@ -1,19 +1,21 @@
-import chalk from 'chalk';
-import boxen from 'boxen';
-import { createWriteStream, move, remove } from 'fs-extra';
-import { dedent } from 'ts-dedent';
-import { join } from 'path';
+import { join } from 'node:path';
 
 import { JsPackageManagerFactory, temporaryFile } from 'storybook/internal/common';
 import type { PackageManagerName } from 'storybook/internal/common';
-import { getStorybookData } from '../automigrate/helpers/mainConfigFile';
+
+import boxen from 'boxen';
+import chalk from 'chalk';
+import { createWriteStream, move, remove } from 'fs-extra';
+import { dedent } from 'ts-dedent';
+
 import { cleanLog } from '../automigrate/helpers/cleanLog';
-import { getMismatchingVersionsWarnings } from './getMismatchingVersionsWarning';
+import { getStorybookData } from '../automigrate/helpers/mainConfigFile';
+import { getDuplicatedDepsWarnings } from './getDuplicatedDepsWarnings';
 import {
   getIncompatiblePackagesSummary,
   getIncompatibleStorybookPackages,
 } from './getIncompatibleStorybookPackages';
-import { getDuplicatedDepsWarnings } from './getDuplicatedDepsWarnings';
+import { getMismatchingVersionsWarnings } from './getMismatchingVersionsWarning';
 
 const logger = console;
 const LOG_FILE_NAME = 'doctor-storybook.log';

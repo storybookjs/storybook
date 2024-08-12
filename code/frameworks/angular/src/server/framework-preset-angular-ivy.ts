@@ -1,10 +1,12 @@
-import { Configuration } from 'webpack';
-import * as path from 'path';
-import { Preset } from 'storybook/internal/types';
-import fs from 'fs';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
-import { PresetOptions } from './preset-options';
+import { Preset } from 'storybook/internal/types';
+
+import { Configuration } from 'webpack';
+
 import { AngularOptions } from '../types';
+import { PresetOptions } from './preset-options';
 
 /**
  * Source : https://github.com/angular/angular-cli/blob/ebccb5de4a455af813c5e82483db6af20666bdbd/packages/angular_devkit/build_angular/src/utils/load-esm.ts#L23
@@ -42,7 +44,7 @@ export const runNgcc = async () => {
     // should be async: true but does not work due to
     // https://github.com/storybookjs/storybook/pull/11157/files#r615413803
     async: false,
-    basePath: path.join(process.cwd(), 'node_modules'), // absolute path to node_modules
+    basePath: join(process.cwd(), 'node_modules'), // absolute path to node_modules
     createNewEntryPointFormats: true, // --create-ivy-entry-points
     compileAllFormats: false, // --first-only
   });
@@ -50,7 +52,7 @@ export const runNgcc = async () => {
 
 export const webpack = async (webpackConfig: Configuration, options: PresetOptions) => {
   const packageJsonPath = require.resolve('@angular/core/package.json');
-  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
   const VERSION = packageJson.version;
   const framework = await options.presets.apply<Preset>('framework');
   const angularOptions = (typeof framework === 'object' ? framework.options : {}) as AngularOptions;

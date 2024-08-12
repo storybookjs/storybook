@@ -1,14 +1,3 @@
-import prompts from 'prompts';
-import type { SupportedFrameworks } from 'storybook/internal/types';
-import { frameworkPackages } from 'storybook/internal/common';
-import type { Fix } from '../types';
-import {
-  getAddonNames,
-  getBuilderPackageName,
-  getFrameworkOptions,
-  getFrameworkPackageName,
-  updateMainConfig,
-} from '../helpers/mainConfigFile';
 import { frameworkToDefaultBuilder } from 'storybook/internal/cli';
 import {
   CoreBuilder,
@@ -16,9 +5,22 @@ import {
   builderNameToCoreBuilder,
   compilerNameToCoreCompiler,
 } from 'storybook/internal/cli';
-import { dedent } from 'ts-dedent';
+import { frameworkPackages } from 'storybook/internal/common';
+import type { SupportedFrameworks } from 'storybook/internal/types';
+
 import chalk from 'chalk';
+import prompts from 'prompts';
+import { dedent } from 'ts-dedent';
+
 import { add } from '../../add';
+import {
+  getAddonNames,
+  getBuilderPackageName,
+  getFrameworkOptions,
+  getFrameworkPackageName,
+  updateMainConfig,
+} from '../helpers/mainConfigFile';
+import type { Fix } from '../types';
 
 type Options = {
   defaultCompiler?: CoreWebpackCompilers;

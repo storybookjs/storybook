@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
+
 import { h } from 'vue';
+
 import SourceCode from './SourceCode.vue';
 
 const meta: Meta<typeof SourceCode> = {

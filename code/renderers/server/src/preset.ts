@@ -1,8 +1,9 @@
+import { join } from 'node:path';
+
+import type { ComponentTitle, PresetProperty, StoryName, Tag } from 'storybook/internal/types';
+
 import fs from 'fs-extra';
 import yaml from 'yaml';
-import type { Tag, StoryName, ComponentTitle, PresetProperty } from 'storybook/internal/types';
-
-import { join } from 'path';
 
 type FileContent = {
   title: ComponentTitle;

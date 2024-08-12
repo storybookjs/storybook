@@ -1,15 +1,17 @@
+import React from 'react';
+
+import { getRouter } from '@storybook/nextjs/navigation.mock';
+import type { Meta, StoryObj } from '@storybook/react';
+import { expect, userEvent, within } from '@storybook/test';
+
 import {
-  useRouter,
-  usePathname,
-  useSearchParams,
   useParams,
+  usePathname,
+  useRouter,
+  useSearchParams,
   useSelectedLayoutSegment,
   useSelectedLayoutSegments,
 } from 'next/navigation';
-import React from 'react';
-import type { Meta, StoryObj } from '@storybook/react';
-import { expect, userEvent, within } from '@storybook/test';
-import { getRouter } from '@storybook/nextjs/navigation.mock';
 
 function Component() {
   const router = useRouter();

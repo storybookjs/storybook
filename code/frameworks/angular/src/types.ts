@@ -1,13 +1,14 @@
+import { CompatibleString } from 'storybook/internal/types';
+
+import {
+  BuilderOptions,
+  StorybookConfigWebpack,
+  TypescriptOptions as TypescriptOptionsBuilder,
+} from '@storybook/builder-webpack5';
 import {
   StorybookConfig as StorybookConfigBase,
   TypescriptOptions as TypescriptOptionsReact,
 } from '@storybook/core-webpack';
-import {
-  StorybookConfigWebpack,
-  BuilderOptions,
-  TypescriptOptions as TypescriptOptionsBuilder,
-} from '@storybook/builder-webpack5';
-import { CompatibleString } from 'storybook/internal/types';
 
 type FrameworkName = CompatibleString<'@storybook/angular'>;
 type BuilderName = CompatibleString<'@storybook/builder-webpack5'>;

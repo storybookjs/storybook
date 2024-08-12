@@ -1,7 +1,7 @@
 /* eslint-disable no-underscore-dangle */
+import bg from '@babel/generator';
 import * as t from '@babel/types';
 
-import bg from '@babel/generator';
 import type { CsfFile } from './CsfFile';
 
 // @ts-expect-error (needed due to it's use of `exports.default`)

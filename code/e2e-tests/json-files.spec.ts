@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import process from 'process';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';

@@ -1,7 +1,7 @@
 import type {
-  WebpackConfiguration as WebpackConfigurationBase,
   StorybookConfig as StorybookConfigBase,
   TypescriptOptions as TypescriptOptionsBase,
+  WebpackConfiguration as WebpackConfigurationBase,
 } from '@storybook/core-webpack';
 import type { PluginOptions as ReactDocgenTypescriptOptions } from '@storybook/react-docgen-typescript-plugin';
 

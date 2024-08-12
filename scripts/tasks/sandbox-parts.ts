@@ -1,48 +1,47 @@
 // This file requires many imports from `../code`, which requires both an install and bootstrap of
 // the repo to work properly. So we load it async in the task runner *after* those steps.
-
 import {
   copy,
-  ensureSymlink,
   ensureDir,
+  ensureSymlink,
   existsSync,
   pathExists,
   readFileSync,
   readJson,
   writeJson,
 } from 'fs-extra';
-import { join, resolve, sep } from 'path';
 import JSON5 from 'json5';
+import { isFunction } from 'lodash';
 import { createRequire } from 'module';
+import { join, resolve, sep } from 'path';
 import slash from 'slash';
 
-import type { Task } from '../task';
-import { executeCLIStep, steps } from '../utils/cli-step';
-import {
-  installYarn2,
-  configureYarn2ForVerdaccio,
-  addPackageResolutions,
-  addWorkaroundResolutions,
-} from '../utils/yarn';
-import { exec } from '../utils/exec';
-import type { ConfigFile } from '../../code/core/src/csf-tools';
-import { writeConfig } from '../../code/core/src/csf-tools';
-import { filterExistsInCodeDir } from '../utils/filterExistsInCodeDir';
-import { findFirstPath } from '../utils/paths';
 import { detectLanguage } from '../../code/core/src/cli/detect';
 import { SupportedLanguage } from '../../code/core/src/cli/project_types';
-import { updatePackageScripts } from '../utils/package-json';
-import { addPreviewAnnotations, readMainConfig } from '../utils/main-js';
 import {
   type JsPackageManager,
-  versions as storybookPackages,
   JsPackageManagerFactory,
+  versions as storybookPackages,
 } from '../../code/core/src/common';
-import { workspacePath } from '../utils/workspace';
+import type { ConfigFile } from '../../code/core/src/csf-tools';
+import { writeConfig } from '../../code/core/src/csf-tools';
 import { babelParse } from '../../code/core/src/csf-tools/babelParse';
-import { CODE_DIRECTORY, REPROS_DIRECTORY } from '../utils/constants';
 import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
-import { isFunction } from 'lodash';
+import type { Task } from '../task';
+import { executeCLIStep, steps } from '../utils/cli-step';
+import { CODE_DIRECTORY, REPROS_DIRECTORY } from '../utils/constants';
+import { exec } from '../utils/exec';
+import { filterExistsInCodeDir } from '../utils/filterExistsInCodeDir';
+import { addPreviewAnnotations, readMainConfig } from '../utils/main-js';
+import { updatePackageScripts } from '../utils/package-json';
+import { findFirstPath } from '../utils/paths';
+import { workspacePath } from '../utils/workspace';
+import {
+  addPackageResolutions,
+  addWorkaroundResolutions,
+  configureYarn2ForVerdaccio,
+  installYarn2,
+} from '../utils/yarn';
 
 const logger = console;
 

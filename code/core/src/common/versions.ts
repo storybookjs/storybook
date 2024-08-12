@@ -41,6 +41,7 @@ export default {
   '@storybook/types': '8.3.0-alpha.4',
   '@storybook/angular': '8.3.0-alpha.4',
   '@storybook/ember': '8.3.0-alpha.4',
+  '@storybook/experimental-nextjs-vite': '8.3.0-alpha.4',
   '@storybook/html-vite': '8.3.0-alpha.4',
   '@storybook/html-webpack5': '8.3.0-alpha.4',
   '@storybook/nextjs': '8.3.0-alpha.4',

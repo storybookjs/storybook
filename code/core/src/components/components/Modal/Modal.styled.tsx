@@ -1,10 +1,12 @@
-import { keyframes, styled } from '@storybook/core/theming';
-import * as Dialog from '@radix-ui/react-dialog';
 import type { ComponentProps } from 'react';
 import React from 'react';
 
-import { IconButton } from '../IconButton/IconButton';
+import { keyframes, styled } from '@storybook/core/theming';
 import { CrossIcon } from '@storybook/icons';
+
+import * as Dialog from '@radix-ui/react-dialog';
+
+import { IconButton } from '../IconButton/IconButton';
 
 const fadeIn = keyframes({
   from: { opacity: 0 },

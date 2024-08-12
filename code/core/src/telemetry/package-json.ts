@@ -1,5 +1,6 @@
+import { join } from 'node:path';
+
 import { readJson } from 'fs-extra';
-import path from 'node:path';
 
 import type { Dependency } from './types';
 
@@ -21,7 +22,7 @@ export const getActualPackageVersion = async (packageName: string) => {
 };
 
 export const getActualPackageJson = async (packageName: string) => {
-  const resolvedPackageJson = require.resolve(path.join(packageName, 'package.json'), {
+  const resolvedPackageJson = require.resolve(join(packageName, 'package.json'), {
     paths: [process.cwd()],
   });
   const packageJson = await readJson(resolvedPackageJson);

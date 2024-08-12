@@ -1,5 +1,6 @@
 import { join } from 'node:path';
-import { describe, it, expect } from 'vitest';
+
+import { describe, expect, it } from 'vitest';
 
 import { getPortableStoriesFileCountUncached } from './get-portable-stories-usage';
 

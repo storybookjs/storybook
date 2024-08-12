@@ -1,10 +1,13 @@
-import { dedent } from 'ts-dedent';
-import type { Fix } from '../types';
-import findUp from 'find-up';
-import { getFrameworkPackageName } from '../helpers/mainConfigFile';
+import { join } from 'node:path';
+
 import { frameworkToRenderer } from 'storybook/internal/cli';
 import { frameworkPackages } from 'storybook/internal/common';
-import path from 'path';
+
+import findUp from 'find-up';
+import { dedent } from 'ts-dedent';
+
+import { getFrameworkPackageName } from '../helpers/mainConfigFile';
+import type { Fix } from '../types';
 
 interface ViteConfigFileRunOptions {
   plugins: string[];
@@ -21,7 +24,7 @@ export const viteConfigFile = {
   async check({ mainConfig, packageManager, mainConfigPath }) {
     let isViteConfigFileFound = !!(await findUp(
       ['vite.config.js', 'vite.config.mjs', 'vite.config.cjs', 'vite.config.ts', 'vite.config.mts'],
-      { cwd: mainConfigPath ? path.join(mainConfigPath, '..') : process.cwd() }
+      { cwd: mainConfigPath ? join(mainConfigPath, '..') : process.cwd() }
     ));
 
     const rendererToVitePluginMap: Record<string, string> = {

@@ -1,6 +1,7 @@
-import { join } from 'node:path';
-import { dedent } from '../../../../scripts/prepare/tools';
 import { readFile, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+
+import { dedent } from '../../../../scripts/prepare/tools';
 
 export async function modifyThemeTypes() {
   /**

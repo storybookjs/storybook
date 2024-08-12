@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { Loader } from './Loader';
 
 const withBackground = (storyFn: any) => (

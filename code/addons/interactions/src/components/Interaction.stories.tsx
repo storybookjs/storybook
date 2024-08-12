@@ -1,8 +1,8 @@
-import type { StoryObj, Meta } from '@storybook/react';
 import { CallStates } from '@storybook/instrumenter';
-import { userEvent, within, expect } from '@storybook/test';
-import { getCalls } from '../mocks';
+import type { Meta, StoryObj } from '@storybook/react';
+import { expect, userEvent, within } from '@storybook/test';
 
+import { getCalls } from '../mocks';
 import { Interaction } from './Interaction';
 import SubnavStories from './Subnav.stories';
 

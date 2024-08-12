@@ -1,9 +1,11 @@
+import { writeFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
+
+import { readJSON } from 'fs-extra';
 import slash from 'slash';
+
 import { sortPackageJson } from '../../../../scripts/prepare/tools';
 import type { getEntries } from '../entries';
-import { readJSON } from 'fs-extra';
-import { writeFile } from 'node:fs/promises';
 
 const cwd = process.cwd();
 

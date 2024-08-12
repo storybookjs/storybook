@@ -1,5 +1,6 @@
-import memoize from 'memoizerific';
 import { execaCommand } from 'execa';
+import memoize from 'memoizerific';
+
 import { CODE_DIRECTORY } from './constants';
 
 export type Workspace = { name: string; location: string };

@@ -1,10 +1,11 @@
 import React, { Fragment } from 'react';
+
 import { addons, types } from 'storybook/internal/manager-api';
 
+import { BackgroundTool } from './components/Tool';
 import { ADDON_ID } from './constants';
 import { BackgroundToolLegacy } from './legacy/BackgroundSelectorLegacy';
 import { GridToolLegacy } from './legacy/GridSelectorLegacy';
-import { BackgroundTool } from './components/Tool';
 
 addons.register(ADDON_ID, () => {
   addons.add(ADDON_ID, {

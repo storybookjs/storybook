@@ -1,8 +1,10 @@
-import fse from 'fs-extra';
-import path from 'path';
-import { dedent } from 'ts-dedent';
+import { resolve } from 'node:path';
+
+import { SupportedLanguage, externalFrameworks } from 'storybook/internal/cli';
 import { logger } from 'storybook/internal/node-logger';
-import { externalFrameworks, SupportedLanguage } from 'storybook/internal/cli';
+
+import fse from 'fs-extra';
+import { dedent } from 'ts-dedent';
 
 interface ConfigureMainOptions {
   addons: string[];
@@ -57,7 +59,7 @@ export async function configureMain({
   prefixes = [],
   ...custom
 }: ConfigureMainOptions) {
-  const srcPath = path.resolve(storybookConfigFolder, '../src');
+  const srcPath = resolve(storybookConfigFolder, '../src');
   const prefix = (await fse.pathExists(srcPath)) ? '../src' : '../stories';
   const config = {
     stories: [`${prefix}/**/*.mdx`, `${prefix}/**/*.stories.@(${extensions.join('|')})`],
@@ -86,7 +88,7 @@ export async function configureMain({
   const finalPrefixes = [...prefixes];
 
   if (custom.framework?.name.includes('path.dirname(')) {
-    imports.push(`import path from 'path';`);
+    imports.push(`import path from 'node:path';`);
   }
 
   if (isTypescript) {

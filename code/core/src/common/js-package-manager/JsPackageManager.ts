@@ -1,17 +1,18 @@
-import chalk from 'chalk';
-import { gt, satisfies } from 'semver';
-import type { CommonOptions } from 'execa';
-import { execaCommand, execaCommandSync } from 'execa';
-import path from 'node:path';
-
-import { dedent } from 'ts-dedent';
 import { existsSync, readFileSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
+
+import chalk from 'chalk';
+import type { CommonOptions } from 'execa';
+import { execaCommand, execaCommandSync } from 'execa';
+import { gt, satisfies } from 'semver';
 import invariant from 'tiny-invariant';
-import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson';
-import storybookPackagesVersions from '../versions';
-import type { InstallationMetadata } from './types';
+import { dedent } from 'ts-dedent';
+
 import { HandledError } from '../utils/HandledError';
+import storybookPackagesVersions from '../versions';
+import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson';
+import type { InstallationMetadata } from './types';
 
 const logger = console;
 
@@ -98,7 +99,7 @@ export abstract class JsPackageManager {
       }
 
       // Move up to the parent directory
-      const parentDir = path.dirname(cwd);
+      const parentDir = dirname(cwd);
 
       // Check if we have reached the root of the filesystem
       if (parentDir === cwd) {
@@ -131,7 +132,7 @@ export abstract class JsPackageManager {
     if (!this.cwd) {
       throw new Error('Missing cwd');
     }
-    return path.resolve(this.cwd, 'package.json');
+    return resolve(this.cwd, 'package.json');
   }
 
   async readPackageJson(): Promise<PackageJson> {

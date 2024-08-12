@@ -1,5 +1,5 @@
-import * as t from '@babel/types';
 import * as babylon from '@babel/parser';
+import * as t from '@babel/types';
 
 export function valueToAST<T>(literal: T): any {
   if (literal === null) {

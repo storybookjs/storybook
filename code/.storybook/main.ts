@@ -1,10 +1,12 @@
-import path from 'path';
+import { join } from 'node:path';
+
 // eslint-disable-next-line @typescript-eslint/no-restricted-imports
 import { mergeConfig } from 'vite';
+
 import type { StorybookConfig } from '../frameworks/react-vite';
 
-const componentsPath = path.join(__dirname, '../core/src/components');
-const managerApiPath = path.join(__dirname, '../core/src/manager-api');
+const componentsPath = join(__dirname, '../core/src/components');
+const managerApiPath = join(__dirname, '../core/src/manager-api');
 
 const config: StorybookConfig = {
   stories: [

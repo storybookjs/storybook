@@ -2,7 +2,8 @@ import type {
   CompatibleString,
   StorybookConfig as StorybookConfigBase,
 } from 'storybook/internal/types';
-import type { StorybookConfigVite, BuilderOptions } from '@storybook/builder-vite';
+
+import type { BuilderOptions, StorybookConfigVite } from '@storybook/builder-vite';
 
 type FrameworkName = CompatibleString<'@storybook/svelte-vite'>;
 type BuilderName = CompatibleString<'@storybook/builder-vite'>;

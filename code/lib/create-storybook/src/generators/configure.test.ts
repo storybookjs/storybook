@@ -1,7 +1,10 @@
-import { describe, beforeAll, expect, vi, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
+
+import { SupportedLanguage } from 'storybook/internal/cli';
+
 import fse from 'fs-extra';
 import { dedent } from 'ts-dedent';
-import { SupportedLanguage } from 'storybook/internal/cli';
+
 import { configureMain, configurePreview } from './configure';
 
 vi.mock('fs-extra');
@@ -91,7 +94,7 @@ describe('configureMain', () => {
 
     expect(mainConfigPath).toEqual('./.storybook/main.js');
     expect(mainConfigContent).toMatchInlineSnapshot(`
-      "import path from 'path';
+      "import path from 'node:path';
 
       /** @type { import('@storybook/react-webpack5').StorybookConfig } */
       const config = {
@@ -202,8 +205,11 @@ describe('configurePreview', () => {
     expect(previewConfigPath).toEqual('./.storybook/preview.ts');
     expect(previewConfigContent).toMatchInlineSnapshot(`
       "import type { Preview } from '@storybook/angular';
+
       import { setCompodocJson } from '@storybook/addon-docs/angular';
+
       import docJson from '../documentation.json';
+
       setCompodocJson(docJson);
 
       const preview: Preview = {

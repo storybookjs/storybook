@@ -1,4 +1,5 @@
 import { addons } from 'storybook/internal/manager-api';
+
 import startCase from 'lodash/startCase.js';
 
 addons.setConfig({

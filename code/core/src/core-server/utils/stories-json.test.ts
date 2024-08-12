@@ -1,23 +1,26 @@
-import { describe, beforeEach, it, expect, vi } from 'vitest';
+import { join } from 'node:path';
 
-import type { Router, Request, Response } from 'express';
-import Watchpack from 'watchpack';
-import path from 'node:path';
-import debounce from 'lodash/debounce.js';
-import { STORY_INDEX_INVALIDATED } from '@storybook/core/core-events';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { normalizeStoriesEntry } from '@storybook/core/common';
 
-import { useStoriesJson, DEBOUNCE } from './stories-json';
-import type { ServerChannel } from './get-server-channel';
+import { STORY_INDEX_INVALIDATED } from '@storybook/core/core-events';
+
+import type { Request, Response, Router } from 'express';
+import debounce from 'lodash/debounce.js';
+import Watchpack from 'watchpack';
+
+import { csfIndexer } from '../presets/common-preset';
 import type { StoryIndexGeneratorOptions } from './StoryIndexGenerator';
 import { StoryIndexGenerator } from './StoryIndexGenerator';
-import { csfIndexer } from '../presets/common-preset';
+import type { ServerChannel } from './get-server-channel';
+import { DEBOUNCE, useStoriesJson } from './stories-json';
 
 vi.mock('watchpack');
 vi.mock('lodash/debounce');
 vi.mock('@storybook/core/node-logger');
 
-const workingDir = path.join(__dirname, '__mockdata__');
+const workingDir = join(__dirname, '__mockdata__');
 const normalizedStories = [
   normalizeStoriesEntry(
     {

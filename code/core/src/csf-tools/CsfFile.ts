@@ -1,26 +1,26 @@
 /* eslint-disable no-underscore-dangle */
 import { readFile, writeFile } from 'node:fs/promises';
-import { dedent } from 'ts-dedent';
 
-import * as t from '@babel/types';
-import bg, { type GeneratorOptions } from '@babel/generator';
-import bt from '@babel/traverse';
-
-import * as recast from 'recast';
-
-import { toId, isExportStory, storyNameFromExport } from '@storybook/csf';
 import type {
-  Tag,
-  StoryAnnotations,
   ComponentAnnotations,
-  IndexedCSFFile,
   IndexInput,
   IndexInputStats,
+  IndexedCSFFile,
+  StoryAnnotations,
+  Tag,
 } from '@storybook/core/types';
+import { isExportStory, storyNameFromExport, toId } from '@storybook/csf';
+
+import bg, { type GeneratorOptions } from '@babel/generator';
+import bt from '@babel/traverse';
+import * as t from '@babel/types';
+import * as recast from 'recast';
 import type { Options } from 'recast';
+import { dedent } from 'ts-dedent';
+
+import type { PrintResultType } from './PrintResultType';
 import { babelParse } from './babelParse';
 import { findVarInitialization } from './findVarInitialization';
-import type { PrintResultType } from './PrintResultType';
 
 // @ts-expect-error (needed due to it's use of `exports.default`)
 const traverse = (bt.default || bt) as typeof bt;

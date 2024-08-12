@@ -1,8 +1,10 @@
-import { describe, beforeEach, afterEach, it, expect, vi } from 'vitest';
-import { getPreviewHeadTemplate, getPreviewBodyTemplate } from '../template';
 import { dirname } from 'node:path';
 
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { vol } from 'memfs';
+
+import { getPreviewBodyTemplate, getPreviewHeadTemplate } from '../template';
 
 vi.mock('fs', async () => {
   const memfs = await vi.importActual('memfs');

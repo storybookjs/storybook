@@ -1,12 +1,13 @@
-import { describe, beforeEach, it, expect, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  SET_CURRENT_STORY,
   GLOBALS_UPDATED,
+  SET_CURRENT_STORY,
   UPDATE_QUERY_PARAMS,
 } from '@storybook/core/core-events';
 
 import EventEmitter from 'events';
+
 import { init as initURL } from '../modules/url';
 
 vi.mock('@storybook/core/client-logger');

@@ -1,5 +1,5 @@
-import type { ExecaChildProcess, Options } from 'execa';
 import chalk from 'chalk';
+import type { ExecaChildProcess, Options } from 'execa';
 import { execa } from 'execa';
 
 const logger = console;

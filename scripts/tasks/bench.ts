@@ -1,11 +1,9 @@
-/* eslint-disable import/extensions */
 import prettyBytes from 'pretty-bytes';
 import prettyTime from 'pretty-ms';
 
 import type { Task } from '../task';
-
-import { PORT as devPort, dev } from './dev';
-import { PORT as servePort, serve } from './serve';
+import { dev, PORT as devPort } from './dev';
+import { serve, PORT as servePort } from './serve';
 
 const logger = console;
 

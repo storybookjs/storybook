@@ -1,8 +1,9 @@
 import { join } from 'node:path';
-import findCacheDirectory from 'find-cache-dir';
+
 import { init, parse } from 'es-module-lexer';
-import MagicString from 'magic-string';
+import findCacheDirectory from 'find-cache-dir';
 import { ensureFile, writeFile } from 'fs-extra';
+import MagicString from 'magic-string';
 import type { Alias, Plugin } from 'vite';
 
 const escapeKeys = (key: string) => key.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');

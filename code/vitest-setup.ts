@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest';
-import { vi, expect } from 'vitest';
+import { expect, vi } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 

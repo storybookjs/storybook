@@ -1,13 +1,12 @@
 /* eslint-disable react/no-direct-mutation-state */
 
 /* eslint-disable react/sort-comp */
-
 import type { ReactElement } from 'react';
-import React, { cloneElement, Component } from 'react';
-import * as inputUsageTypes from './types/inputUsageTypes';
+import React, { Component, cloneElement } from 'react';
 
 import * as dataTypes from './types/dataTypes';
 import * as deltaTypes from './types/deltaTypes';
+import * as inputUsageTypes from './types/inputUsageTypes';
 import { getObjectType, isComponentWillChange } from './utils/objectTypes';
 
 interface JsonAddValueState {

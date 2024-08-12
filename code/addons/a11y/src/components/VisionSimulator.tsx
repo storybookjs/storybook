@@ -1,9 +1,8 @@
 import type { ReactNode } from 'react';
 import React, { useState, useEffect } from 'react';
 import ReactDOMServer from 'react-dom/server';
+import { IconButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
 import { Global, styled } from 'storybook/internal/theming';
-import { IconButton, WithTooltip, TooltipLinkList } from 'storybook/internal/components';
-
 import { AccessibilityIcon } from '@storybook/icons';
 import { Filters } from './ColorFilters';
 

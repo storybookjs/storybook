@@ -1,13 +1,14 @@
+import type { Channel } from '@storybook/core/channels';
+import { createBrowserChannel } from '@storybook/core/channels';
+import type { Addon_Config, Addon_Types } from '@storybook/core/types';
 import { global } from '@storybook/global';
 
-import type { Channel } from '@storybook/core/channels';
+import { CHANNEL_CREATED } from '@storybook/core/core-events';
 import type { AddonStore } from '@storybook/core/manager-api';
 import { addons } from '@storybook/core/manager-api';
-import type { Addon_Types, Addon_Config } from '@storybook/core/types';
-import { createBrowserChannel } from '@storybook/core/channels';
-import { CHANNEL_CREATED } from '@storybook/core/core-events';
-import Provider from './provider';
+
 import { renderStorybookUI } from './index';
+import Provider from './provider';
 
 class ReactProvider extends Provider {
   addons: AddonStore;

@@ -1,9 +1,9 @@
-import { dedent } from 'ts-dedent';
-
 import { writeConfig } from 'storybook/internal/csf-tools';
 
-import type { Fix } from '../types';
+import { dedent } from 'ts-dedent';
+
 import { updateMainConfig } from '../helpers/mainConfigFile';
+import type { Fix } from '../types';
 
 const logger = console;
 

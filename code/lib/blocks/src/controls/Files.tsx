@@ -1,10 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import type { ChangeEvent, FC } from 'react';
-import { styled } from 'storybook/internal/theming';
-import { Form } from 'storybook/internal/components';
 
-import type { ControlProps } from './types';
+import { Form } from 'storybook/internal/components';
+import { styled } from 'storybook/internal/theming';
+
 import { getControlId } from './helpers';
+import type { ControlProps } from './types';
 
 export interface FilesControlProps extends ControlProps<string[]> {
   /**

@@ -1,7 +1,9 @@
 import type { Meta } from '@storybook/vue3';
+
 import { h } from 'vue';
-import Reactivity from './Reactivity.vue';
+
 import * as ReactiveDecorators from './ReactiveDecorators.stories';
+import Reactivity from './Reactivity.vue';
 
 const meta = {
   ...ReactiveDecorators.default,

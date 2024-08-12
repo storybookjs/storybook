@@ -1,13 +1,13 @@
 import { useEffect } from 'storybook/internal/preview-api';
 import type {
   Renderer,
-  PartialStoryFn as StoryFunction,
   StoryContext,
+  PartialStoryFn as StoryFunction,
 } from 'storybook/internal/types';
 
 import { PARAM_KEY as KEY } from './constants';
-import { clearStyles, addBackgroundStyle, isReduceMotionEnabled, addGridStyle } from './utils';
 import type { Config, GridConfig } from './types';
+import { addBackgroundStyle, addGridStyle, clearStyles, isReduceMotionEnabled } from './utils';
 
 const defaultGrid: GridConfig = {
   cellSize: 100,

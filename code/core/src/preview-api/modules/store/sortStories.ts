@@ -1,5 +1,3 @@
-import { dedent } from 'ts-dedent';
-import { storySort } from './storySort';
 import type { IndexEntry, StoryIndexEntry } from '@storybook/core/types';
 import type {
   Addon_Comparator,
@@ -7,8 +5,12 @@ import type {
   Addon_StorySortParameterV7,
   IndexEntryLegacy,
 } from '@storybook/core/types';
-import type { Path, Renderer, Parameters } from '@storybook/core/types';
+import type { Parameters, Path, Renderer } from '@storybook/core/types';
 import type { PreparedStory } from '@storybook/core/types';
+
+import { dedent } from 'ts-dedent';
+
+import { storySort } from './storySort';
 
 const sortStoriesCommon = (
   stories: IndexEntry[],

@@ -1,0 +1,97 @@
+{
+  "name": "@storybook/experimental-addon-coverage",
+  "version": "8.3.0-alpha.4",
+  "description": "TODO",
+  "keywords": [
+    "addon",
+    "storybook"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/experimental-coverage",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/addons/experimental-coverage"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "node": "./dist/index.js"
+    },
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "import": "./dist/preview.mjs",
+      "require": "./dist/preview.js"
+    },
+    "./manager": "./dist/manager.js",
+    "./preset": "./dist/preset.js",
+    "./coverage-reporter": "./dist/coverage-reporter.js",
+    "./package.json": "./package.json"
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "*.js",
+    "*.d.ts",
+    "!src/**/*"
+  ],
+  "scripts": {
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
+  },
+  "dependencies": {
+    "istanbul-lib-report": "3.0.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.2"
+  },
+  "peerDependencies": {
+    "@vitest/coverage-istanbul": "^2.0.5",
+    "@vitest/coverage-v8": "^2.0.5",
+    "storybook": "workspace:^",
+    "vitest": "^2.0.5"
+  },
+  "peerDependenciesMeta": {
+    "@vitest/coverage-istanbul": {
+      "optional": true
+    },
+    "@vitest/coverage-v8": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "bundler": {
+    "exportEntries": [
+      "./src/index.ts"
+    ],
+    "managerEntries": [
+      "./src/manager.tsx"
+    ],
+    "previewEntries": [
+      "./src/preview.ts"
+    ],
+    "nodeEntries": [
+      "./src/preset.ts",
+      "./src/coverage-reporter.ts"
+    ]
+  },
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16",
+  "storybook": {
+    "displayName": "Viewport",
+    "icon": "https://user-images.githubusercontent.com/263385/101991678-48cdf300-3c7c-11eb-9764-f8af293c1b28.png"
+  }
+}

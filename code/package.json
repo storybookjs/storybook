@@ -124,6 +124,7 @@
     "@storybook/csf-plugin": "workspace:*",
     "@storybook/ember": "workspace:*",
     "@storybook/eslint-config-storybook": "^4.0.0",
+    "@storybook/experimental-addon-coverage": "workspace:*",
     "@storybook/experimental-addon-vitest": "workspace:*",
     "@storybook/global": "^5.0.0",
     "@storybook/html": "workspace:*",

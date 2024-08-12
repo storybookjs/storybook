@@ -96,6 +96,7 @@ const config: StorybookConfig = {
     '@storybook/experimental-addon-vitest',
     '@storybook/addon-a11y',
     '@chromatic-com/storybook',
+    '@storybook/experimental-addon-coverage',
   ],
   previewAnnotations: [
     './core/template/stories/preview.ts',

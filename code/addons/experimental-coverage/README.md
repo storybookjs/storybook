@@ -1,0 +1,1 @@
+# Storybook Coverage Addon

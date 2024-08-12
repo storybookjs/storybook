@@ -1,15 +1,18 @@
+import { join } from 'node:path';
+
 import type { Channel } from 'storybook/internal/channels';
 
-function reporter() {
-  console.log('report to Storybook');
-}
+import { REQUEST_EVENT } from './constants';
+import type { State } from './types';
+
+const state: State = {
+  current: null,
+};
 
 export async function exec(channel: Channel) {
   process.env.TEST = 'true';
   process.env.VITEST = 'true';
   process.env.NODE_ENV ??= 'test';
-
-  console.log('Inside of Vitest Exec', channel);
 
   const { createVitest } = await import('vitest/node');
 
@@ -24,7 +27,8 @@ export async function exec(channel: Channel) {
           [
             require.resolve('@storybook/experimental-addon-coverage/coverage-reporter'),
             {
-              foo: reporter,
+              channel,
+              state,
             },
           ],
         ],
@@ -49,11 +53,20 @@ export async function exec(channel: Channel) {
 
   await vitest.init();
 
-  await vitest.runFiles(
-    vitest.projects.map((project) => [
-      project,
-      '/Users/valentinpalkovic/Projects/storybook-next/code/core/src/components/components/Badge/Badge.stories.tsx',
-    ]),
-    false
+  channel.on(
+    REQUEST_EVENT,
+    async ({ importPath, componentPath }: { importPath: string; componentPath: string }) => {
+      const absoluteImportPath = join(process.cwd(), importPath);
+      const absoluteComponentPath = join(process.cwd(), componentPath);
+      state.current = absoluteComponentPath;
+
+      await vitest.runFiles(
+        vitest.projects
+          // eslint-disable-next-line no-underscore-dangle
+          .filter((project) => !!project.config.env?.__STORYBOOK_URL__)
+          .map((project) => [project, absoluteImportPath]),
+        false
+      );
+    }
   );
 }

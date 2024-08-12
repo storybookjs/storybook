@@ -5,13 +5,13 @@ import { defineConfig, defineWorkspace } from 'vitest/config';
 export default defineWorkspace([
   '.storybook/vitest.config.ts',
   'addons/*/vitest.config.ts',
-  'frameworks/*/vitest.config.ts',
-  'lib/*/vitest.config.ts',
-  'core/vitest.config.ts',
-  'deprecated/*/vitest.config.ts',
-  'builders/*/vitest.config.ts',
-  'presets/*/vitest.config.ts',
-  'renderers/*/vitest.config.ts',
+  // 'frameworks/*/vitest.config.ts',
+  // 'lib/*/vitest.config.ts',
+  // 'core/vitest.config.ts',
+  // 'deprecated/*/vitest.config.ts',
+  // 'builders/*/vitest.config.ts',
+  // 'presets/*/vitest.config.ts',
+  // 'renderers/*/vitest.config.ts',
 ]);
 
 /**

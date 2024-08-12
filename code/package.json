@@ -217,6 +217,9 @@
     "vitest": "^2.0.5",
     "wait-on": "^7.0.1"
   },
+  "devDependencies": {
+    "telejson": "^7.2.0"
+  },
   "dependenciesMeta": {
     "ejs": {
       "built": false

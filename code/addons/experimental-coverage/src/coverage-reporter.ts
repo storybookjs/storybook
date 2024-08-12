@@ -1,15 +1,26 @@
 // custom-reporter.cjs
+import type { Channel } from 'storybook/internal/channels';
+
 // @ts-expect-error no types
 import { ReportBase } from 'istanbul-lib-report';
 
+import { RESULT_EVENT } from './constants';
+import type { State } from './types';
+
 export default class CustomReporter extends ReportBase {
-  constructor(opts) {
+  channel: Channel;
+
+  state: State;
+
+  file: any;
+
+  constructor(options: { channel: Channel; file: any; state: State }) {
     super();
 
-    console.log({ opts: opts.foo });
-
+    this.channel = options.channel;
     // Options passed from configuration are available here
-    this.file = opts.file;
+    this.file = options.file;
+    this.state = options.state;
   }
 
   onStart(root, context) {
@@ -17,10 +28,12 @@ export default class CustomReporter extends ReportBase {
     // Establish a connection to the Storybook server
   }
 
-  onDetail(node, context) {
+  onDetail(node) {
     const fc = node.getFileCoverage();
-    console.log({ fc });
-    const key = fc.path;
+
+    if (fc.data.path === this.state.current) {
+      this.channel.emit(RESULT_EVENT, fc.data);
+    }
   }
 
   onEnd() {

@@ -6,6 +6,7 @@ export default {
   '@storybook/addon-controls': '8.3.0-alpha.4',
   '@storybook/addon-docs': '8.3.0-alpha.4',
   '@storybook/addon-essentials': '8.3.0-alpha.4',
+  '@storybook/experimental-addon-coverage': '8.3.0-alpha.4',
   '@storybook/addon-mdx-gfm': '8.3.0-alpha.4',
   '@storybook/addon-highlight': '8.3.0-alpha.4',
   '@storybook/addon-interactions': '8.3.0-alpha.4',

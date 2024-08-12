@@ -1,5 +1,6 @@
 import type { ComponentProps } from 'react';
 import React, { Children } from 'react';
+
 import { styled } from '@storybook/core/theming';
 
 import type { ScrollAreaProps } from '../ScrollArea/ScrollArea';

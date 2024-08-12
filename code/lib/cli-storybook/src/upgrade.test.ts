@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
+
 import * as sbcc from 'storybook/internal/common';
-import { UpgradeStorybookToLowerVersionError } from 'storybook/internal/server-errors';
-import { doUpgrade, getStorybookVersion } from './upgrade';
 import { logger } from 'storybook/internal/node-logger';
+import { UpgradeStorybookToLowerVersionError } from 'storybook/internal/server-errors';
+
+import { doUpgrade, getStorybookVersion } from './upgrade';
 
 const findInstallationsMock =
   vi.fn<(arg: string[]) => Promise<sbcc.InstallationMetadata | undefined>>();

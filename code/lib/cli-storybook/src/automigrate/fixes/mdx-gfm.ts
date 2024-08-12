@@ -1,10 +1,13 @@
-import { dedent } from 'ts-dedent';
-import { join } from 'path';
-import slash from 'slash';
+import { join } from 'node:path';
+
+import { getStorybookVersionSpecifier } from 'storybook/internal/cli';
 import { commonGlobOptions } from 'storybook/internal/common';
+
+import slash from 'slash';
+import { dedent } from 'ts-dedent';
+
 import { updateMainConfig } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
-import { getStorybookVersionSpecifier } from 'storybook/internal/cli';
 
 const logger = console;
 

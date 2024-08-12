@@ -1,30 +1,28 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
-
 import { watch } from 'node:fs';
 import { mkdir, rm } from 'node:fs/promises';
-import { join, dirname } from 'node:path';
+import { dirname, join } from 'node:path';
+
 import {
-  esbuild,
-  process,
-  merge,
-  measure,
   chalk,
-  prettyTime,
-  nodeInternals,
   dedent,
+  esbuild,
   globalExternals,
+  measure,
+  merge,
+  nodeInternals,
+  prettyTime,
+  process,
 } from '../../../scripts/prepare/tools';
-import { getBundles, getEntries, getFinals } from './entries';
-
-import { globalsModuleInfoMap } from '../src/manager/globals-module-info';
-
 import pkg from '../package.json';
-import { generateSourceFiles } from './helpers/sourcefiles';
-import { modifyThemeTypes } from './helpers/modifyThemeTypes';
+import { globalsModuleInfoMap } from '../src/manager/globals-module-info';
+import { getBundles, getEntries, getFinals } from './entries';
 import { generatePackageJsonFile } from './helpers/generatePackageJsonFile';
-import { generateTypesMapperFiles } from './helpers/generateTypesMapperFiles';
 import { generateTypesFiles } from './helpers/generateTypesFiles';
-import { isNode, noExternals, isBrowser } from './helpers/isEntryType';
+import { generateTypesMapperFiles } from './helpers/generateTypesMapperFiles';
+import { isBrowser, isNode, noExternals } from './helpers/isEntryType';
+import { modifyThemeTypes } from './helpers/modifyThemeTypes';
+import { generateSourceFiles } from './helpers/sourcefiles';
 
 async function run() {
   const flags = process.argv.slice(2);

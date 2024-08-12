@@ -1,7 +1,9 @@
-import { action } from '@storybook/addon-actions';
 import { CallStates } from '@storybook/instrumenter';
-import { Subnav } from './Subnav';
+
+import { action } from '@storybook/addon-actions';
+
 import { parameters } from '../preview';
+import { Subnav } from './Subnav';
 
 export default {
   title: 'Subnav',

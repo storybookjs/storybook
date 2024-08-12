@@ -1,21 +1,24 @@
-import * as fs from 'fs';
-import { findUpSync } from 'find-up';
-import semver from 'semver';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+import type { JsPackageManager, PackageJsonWithMaybeDeps } from '@storybook/core/common';
+import { HandledError, commandLog } from '@storybook/core/common';
+
 import { logger } from '@storybook/core/node-logger';
 
-import { resolve } from 'node:path';
+import { findUpSync } from 'find-up';
 import prompts from 'prompts';
+import semver from 'semver';
+
+import { isNxProject } from './helpers';
 import type { TemplateConfiguration, TemplateMatcher } from './project_types';
 import {
-  ProjectType,
-  supportedTemplates,
-  SupportedLanguage,
-  unsupportedTemplate,
   CoreBuilder,
+  ProjectType,
+  SupportedLanguage,
+  supportedTemplates,
+  unsupportedTemplate,
 } from './project_types';
-import { isNxProject } from './helpers';
-import type { JsPackageManager, PackageJsonWithMaybeDeps } from '@storybook/core/common';
-import { commandLog, HandledError } from '@storybook/core/common';
 
 const viteConfigFiles = ['vite.config.ts', 'vite.config.js', 'vite.config.mjs'];
 const webpackConfigFiles = ['webpack.config.js'];
@@ -87,7 +90,7 @@ const getFrameworkPreset = (
   }
 
   if (Array.isArray(files) && files.length > 0) {
-    matcher.files = files.map((name) => fs.existsSync(name));
+    matcher.files = files.map((name) => existsSync(name));
   }
 
   return matcherFunction(matcher) ? preset : null;
@@ -157,7 +160,7 @@ export async function detectBuilder(packageManager: JsPackageManager, projectTyp
 }
 
 export function isStorybookInstantiated(configDir = resolve(process.cwd(), '.storybook')) {
-  return fs.existsSync(configDir);
+  return existsSync(configDir);
 }
 
 export async function detectPnp() {
@@ -167,7 +170,7 @@ export async function detectPnp() {
 export async function detectLanguage(packageManager: JsPackageManager) {
   let language = SupportedLanguage.JAVASCRIPT;
 
-  if (fs.existsSync('jsconfig.json')) {
+  if (existsSync('jsconfig.json')) {
     return language;
   }
 

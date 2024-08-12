@@ -1,9 +1,11 @@
-import chalk from 'chalk';
-import { dedent } from 'ts-dedent';
-import semver from 'semver';
-import type { PackageJson } from 'storybook/internal/types';
-import type { Fix } from '../types';
 import type { PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
+import type { PackageJson } from 'storybook/internal/types';
+
+import chalk from 'chalk';
+import semver from 'semver';
+import { dedent } from 'ts-dedent';
+
+import type { Fix } from '../types';
 
 interface SbScriptsRunOptions {
   storybookScripts: Record<string, { before: string; after: string }>;

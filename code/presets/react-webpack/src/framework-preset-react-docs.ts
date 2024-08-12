@@ -1,8 +1,9 @@
 import { hasDocsOrControls } from 'storybook/internal/docs-tools';
 
 import type { Configuration } from 'webpack';
-import type { StorybookConfig } from './types';
+
 import { requirer } from './requirer';
+import type { StorybookConfig } from './types';
 
 export const webpackFinal: StorybookConfig['webpackFinal'] = async (
   config,

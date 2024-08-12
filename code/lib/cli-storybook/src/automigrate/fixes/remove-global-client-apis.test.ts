@@ -1,9 +1,12 @@
 /* eslint-disable no-underscore-dangle */
-import { describe, it, expect, vi } from 'vitest';
+import { join } from 'node:path';
 
-import path from 'path';
-import * as fsExtra from 'fs-extra';
+import { describe, expect, it, vi } from 'vitest';
+
 import type { JsPackageManager } from 'storybook/internal/common';
+
+import * as fsExtra from 'fs-extra';
+
 import { RemovedAPIs, removedGlobalClientAPIs as migration } from './remove-global-client-apis';
 
 vi.mock('fs-extra', async () => import('../../../../../__mocks__/fs-extra'));
@@ -11,7 +14,7 @@ vi.mock('fs-extra', async () => import('../../../../../__mocks__/fs-extra'));
 const check = async ({ contents, previewConfigPath }: any) => {
   if (contents) {
     vi.mocked<typeof import('../../../../../__mocks__/fs-extra')>(fsExtra as any).__setMockFiles({
-      [path.join('.storybook', 'preview.js')]: contents,
+      [join('.storybook', 'preview.js')]: contents,
     });
   }
   const packageManager = {
@@ -36,7 +39,7 @@ describe('removedGlobalClientAPIs fix', () => {
       export const parameters = {};
     `;
     await expect(
-      check({ contents, previewConfigPath: path.join('.storybook', 'preview.js') })
+      check({ contents, previewConfigPath: join('.storybook', 'preview.js') })
     ).resolves.toBeNull();
   });
   it('uses 1 removed API', async () => {
@@ -45,7 +48,7 @@ describe('removedGlobalClientAPIs fix', () => {
       addParameters({});
     `;
     await expect(
-      check({ contents, previewConfigPath: path.join('.storybook', 'preview.js') })
+      check({ contents, previewConfigPath: join('.storybook', 'preview.js') })
     ).resolves.toEqual(
       expect.objectContaining({
         usedAPIs: [RemovedAPIs.addParameters],
@@ -59,7 +62,7 @@ describe('removedGlobalClientAPIs fix', () => {
       addDecorator((storyFn) => storyFn());
     `;
     await expect(
-      check({ contents, previewConfigPath: path.join('.storybook', 'preview.js') })
+      check({ contents, previewConfigPath: join('.storybook', 'preview.js') })
     ).resolves.toEqual(
       expect.objectContaining({
         usedAPIs: expect.arrayContaining([RemovedAPIs.addParameters, RemovedAPIs.addDecorator]),

@@ -1,19 +1,21 @@
-import prompts from 'prompts';
-import path from 'path';
-import chalk from 'chalk';
-import boxen from 'boxen';
-import { dedent } from 'ts-dedent';
-import { downloadTemplate } from 'giget';
+import { isAbsolute, join } from 'node:path';
 
-import { existsSync, readdir } from 'fs-extra';
-import invariant from 'tiny-invariant';
-import { lt, prerelease } from 'semver';
-import type { Template, TemplateKey } from './sandbox-templates';
-import { allTemplates as TEMPLATES } from './sandbox-templates';
 import type { PackageManagerName } from 'storybook/internal/common';
 import { JsPackageManagerFactory } from 'storybook/internal/common';
 import { versions } from 'storybook/internal/common';
+
+import boxen from 'boxen';
+import chalk from 'chalk';
 import { initiate } from 'create-storybook';
+import { existsSync, readdir } from 'fs-extra';
+import { downloadTemplate } from 'giget';
+import prompts from 'prompts';
+import { lt, prerelease } from 'semver';
+import invariant from 'tiny-invariant';
+import { dedent } from 'ts-dedent';
+
+import type { Template, TemplateKey } from './sandbox-templates';
+import { allTemplates as TEMPLATES } from './sandbox-templates';
 
 const logger = console;
 
@@ -190,9 +192,9 @@ export const sandbox = async ({
   invariant(selectedDirectory);
 
   try {
-    const templateDestination = path.isAbsolute(selectedDirectory)
+    const templateDestination = isAbsolute(selectedDirectory)
       ? selectedDirectory
-      : path.join(process.cwd(), selectedDirectory);
+      : join(process.cwd(), selectedDirectory);
 
     logger.info(`🏃 Adding ${selectedConfig.name} into ${templateDestination}`);
 

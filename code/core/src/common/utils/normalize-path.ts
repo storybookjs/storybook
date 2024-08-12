@@ -1,4 +1,4 @@
-import path from 'node:path';
+import { posix } from 'node:path';
 
 /**
  * Normalize a path to use forward slashes and remove .. and .
@@ -10,5 +10,5 @@ import path from 'node:path';
  * normalizePath('path\\to\\file') // => 'path/to/file'
  */
 export function normalizePath(p: string) {
-  return path.posix.normalize(p.replace(/\\/g, '/'));
+  return posix.normalize(p.replace(/\\/g, '/'));
 }

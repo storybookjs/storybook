@@ -1,17 +1,19 @@
-import { useStorybookApi, useStorybookState, types } from '@storybook/core/manager-api';
-import { IconButton, TabBar, TabButton, ScrollArea } from '@storybook/core/components';
-import { Location, Route } from '@storybook/core/router';
-import { styled } from '@storybook/core/theming';
-import { global } from '@storybook/global';
 import type { FC, SyntheticEvent } from 'react';
 import React, { Fragment } from 'react';
 
+import { IconButton, ScrollArea, TabBar, TabButton } from '@storybook/core/components';
+import { Location, Route } from '@storybook/core/router';
+import { styled } from '@storybook/core/theming';
 import type { Addon_PageType } from '@storybook/core/types';
+import { global } from '@storybook/global';
 import { CloseIcon } from '@storybook/icons';
+
+import { types, useStorybookApi, useStorybookState } from '@storybook/core/manager-api';
+
+import { matchesKeyCode, matchesModifiers } from '../keybinding';
 import { AboutPage } from './AboutPage';
 import { ShortcutsPage } from './ShortcutsPage';
 import { WhatsNewPage } from './whats_new_page';
-import { matchesModifiers, matchesKeyCode } from '../keybinding';
 
 const { document } = global;
 

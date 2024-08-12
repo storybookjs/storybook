@@ -1,10 +1,13 @@
-import { afterEach, it, expect, vi, describe } from 'vitest';
-import { logger } from '@storybook/core/node-logger';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import type {
   CoreCommon_AddonEntry,
   CoreCommon_AddonInfo,
   CoreCommon_OptionsEntry,
 } from '@storybook/core/types';
+
+import { logger } from '@storybook/core/node-logger';
+
 import { checkAddonOrder } from '../check-addon-order';
 
 const configFile = './main.js';

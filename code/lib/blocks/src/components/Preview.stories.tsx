@@ -1,13 +1,16 @@
 import type { ComponentProps } from 'react';
 import React from 'react';
+
+import { Button, Spaced } from 'storybook/internal/components';
 import { styled } from 'storybook/internal/theming';
-import { global } from '@storybook/global';
-import { Spaced, Button } from 'storybook/internal/components';
 import type { DocsContextProps, ModuleExport } from 'storybook/internal/types';
-import { Preview, PreviewSkeleton } from './Preview';
-import { Story } from './Story';
-import * as sourceStories from './Source.stories';
+
+import { global } from '@storybook/global';
+
 import * as ButtonStories from '../examples/Button.stories';
+import { Preview, PreviewSkeleton } from './Preview';
+import * as sourceStories from './Source.stories';
+import { Story } from './Story';
 
 export default {
   component: Preview,

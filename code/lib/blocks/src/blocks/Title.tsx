@@ -1,6 +1,8 @@
-import type { ComponentTitle } from 'storybook/internal/types';
 import type { FunctionComponent, ReactNode } from 'react';
 import React from 'react';
+
+import type { ComponentTitle } from 'storybook/internal/types';
+
 import { Title as PureTitle } from '../components';
 import type { Of } from './useOf';
 import { useOf } from './useOf';

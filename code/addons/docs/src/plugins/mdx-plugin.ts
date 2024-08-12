@@ -1,9 +1,12 @@
+import { dirname, join } from 'node:path';
+
 import type { Options } from 'storybook/internal/types';
-import type { Plugin } from 'vite';
-import rehypeSlug from 'rehype-slug';
-import rehypeExternalLinks from 'rehype-external-links';
+
 import { createFilter } from '@rollup/pluginutils';
-import { dirname, join } from 'path';
+import rehypeExternalLinks from 'rehype-external-links';
+import rehypeSlug from 'rehype-slug';
+import type { Plugin } from 'vite';
+
 import type { CompileOptions } from '../compiler';
 import { compile } from '../compiler';
 

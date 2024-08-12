@@ -1,11 +1,13 @@
-import chalk from 'chalk';
+import { join } from 'node:path';
+
 import { setOutput } from '@actions/core';
-import path from 'path';
+import chalk from 'chalk';
 import { readJson } from 'fs-extra';
+
 import { esMain } from '../utils/esmain';
 
-const CODE_DIR_PATH = path.join(__dirname, '..', '..', 'code');
-const CODE_PACKAGE_JSON_PATH = path.join(CODE_DIR_PATH, 'package.json');
+const CODE_DIR_PATH = join(__dirname, '..', '..', 'code');
+const CODE_PACKAGE_JSON_PATH = join(CODE_DIR_PATH, 'package.json');
 
 export const getCurrentVersion = async () => {
   console.log(`📐 Reading current version of Storybook...`);

@@ -1,6 +1,8 @@
-import { describe, beforeEach, it, expect, vi } from 'vitest';
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import { join, sep } from 'node:path';
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { getReactScriptsPath } from './cra-config';
 
 vi.mock('fs', () => ({
@@ -9,7 +11,7 @@ vi.mock('fs', () => ({
   existsSync: vi.fn(() => true),
 }));
 
-const SCRIPT_PATH = path.join('.bin', 'react-scripts');
+const SCRIPT_PATH = join('.bin', 'react-scripts');
 
 describe('cra-config', () => {
   describe('when used with the default react-scripts package', () => {
@@ -21,7 +23,7 @@ describe('cra-config', () => {
 
     it('should locate the react-scripts package', () => {
       expect(getReactScriptsPath({ noCache: true })).toEqual(
-        path.join(path.sep, 'test-project', 'node_modules', 'react-scripts')
+        join(sep, 'test-project', 'node_modules', 'react-scripts')
       );
     });
   });
@@ -35,7 +37,7 @@ describe('cra-config', () => {
 
     it('should locate the react-scripts package', () => {
       expect(getReactScriptsPath({ noCache: true })).toEqual(
-        path.join(path.sep, 'test-project', 'node_modules', 'custom-react-scripts')
+        join(sep, 'test-project', 'node_modules', 'custom-react-scripts')
       );
     });
   });
@@ -67,7 +69,7 @@ exit $ret`
 
     it('should locate the react-scripts package', () => {
       expect(getReactScriptsPath({ noCache: true })).toEqual(
-        path.join(path.sep, 'test-project', 'node_modules', 'custom-react-scripts')
+        join(sep, 'test-project', 'node_modules', 'custom-react-scripts')
       );
     });
   });

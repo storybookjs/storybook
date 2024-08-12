@@ -1,8 +1,10 @@
 /* eslint-disable no-underscore-dangle */
-import { dedent } from 'ts-dedent';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
 import yaml from 'js-yaml';
-import { loadCsf, isModuleMock } from './CsfFile';
+import { dedent } from 'ts-dedent';
+
+import { isModuleMock, loadCsf } from './CsfFile';
 
 expect.addSnapshotSerializer({
   print: (val: any) => yaml.dump(val).trimEnd(),

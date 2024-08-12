@@ -1,7 +1,9 @@
-import { createBlocker } from './types';
-import { dedent } from 'ts-dedent';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
+
 import chalk from 'chalk';
+import { dedent } from 'ts-dedent';
+
+import { createBlocker } from './types';
 
 export const blocker = createBlocker({
   id: 'storyStoreV7removal',

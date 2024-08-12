@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { argsToTemplate, ArgsToTemplateOptions } from './argsToTemplate'; // adjust path
+
+import { ArgsToTemplateOptions, argsToTemplate } from './argsToTemplate';
+
+// adjust path
 
 describe('argsToTemplate', () => {
   it('should correctly convert args to template string and exclude undefined values', () => {

@@ -1,5 +1,5 @@
-import * as babelParser from '@babel/parser';
 import { types } from '@babel/core';
+import * as babelParser from '@babel/parser';
 
 import type { Parser, ParserResult } from './types';
 

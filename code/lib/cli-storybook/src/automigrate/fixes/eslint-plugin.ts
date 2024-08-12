@@ -1,12 +1,12 @@
-import chalk from 'chalk';
-import { dedent } from 'ts-dedent';
-
 import {
+  SUPPORTED_ESLINT_EXTENSIONS,
   configureEslintPlugin,
   extractEslintInfo,
   findEslintFile,
-  SUPPORTED_ESLINT_EXTENSIONS,
 } from 'storybook/internal/cli';
+
+import chalk from 'chalk';
+import { dedent } from 'ts-dedent';
 
 import type { Fix } from '../types';
 

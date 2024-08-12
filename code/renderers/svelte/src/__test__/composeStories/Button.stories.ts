@@ -1,13 +1,12 @@
 import { expect, fn, userEvent, within } from '@storybook/test';
-import type { Meta, StoryFn as CSF2Story, StoryObj } from '../..';
 
-import LoaderStoryComponent from './LoaderStoryComponent.svelte';
-import InputFilledStoryComponent from './InputFilledStoryComponent.svelte';
-import StoryWithLocaleComponent from './StoryWithLocaleComponent.svelte';
+import type { StoryFn as CSF2Story, Meta, StoryObj } from '../..';
 import AddWrapperDecorator from './AddWrapperDecorator.svelte';
-import CustomRenderComponent from './CustomRenderComponent.svelte';
-
 import Button from './Button.svelte';
+import CustomRenderComponent from './CustomRenderComponent.svelte';
+import InputFilledStoryComponent from './InputFilledStoryComponent.svelte';
+import LoaderStoryComponent from './LoaderStoryComponent.svelte';
+import StoryWithLocaleComponent from './StoryWithLocaleComponent.svelte';
 
 const meta = {
   title: 'Example/Button',

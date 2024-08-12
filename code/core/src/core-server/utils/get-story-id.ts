@@ -1,9 +1,13 @@
-import type { Options } from '@storybook/core/types';
-import { dedent } from 'ts-dedent';
+import { relative } from 'node:path';
+
 import { normalizeStories, normalizeStoryPath } from '@storybook/core/common';
-import path from 'node:path';
+import type { Options } from '@storybook/core/types';
 import { sanitize, storyNameFromExport, toId } from '@storybook/csf';
+
 import { userOrAutoTitleFromSpecifier } from '@storybook/core/preview-api';
+
+import { dedent } from 'ts-dedent';
+
 import { posix } from './posix';
 
 interface StoryIdData {
@@ -21,7 +25,7 @@ export async function getStoryId(data: StoryIdData, options: Options) {
     workingDir,
   });
 
-  const relativePath = path.relative(workingDir, data.storyFilePath);
+  const relativePath = relative(workingDir, data.storyFilePath);
   const importPath = posix(normalizeStoryPath(relativePath));
 
   const autoTitle = normalizedStories

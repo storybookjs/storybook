@@ -1,10 +1,10 @@
+import dirSize from 'fast-folder-size';
 import { pathExists, remove } from 'fs-extra';
-
 import { join } from 'path';
 import { promisify } from 'util';
-import dirSize from 'fast-folder-size';
-import type { Task } from '../task';
+
 import { now, saveBench } from '../bench/utils';
+import type { Task } from '../task';
 
 const logger = console;
 

@@ -1,8 +1,11 @@
-import { transparentize } from 'polished';
 import React from 'react';
-import { styled, keyframes } from '@storybook/core/theming';
-import { rotate360 } from '../shared/animation';
+
+import { keyframes, styled } from '@storybook/core/theming';
 import { LightningOffIcon } from '@storybook/icons';
+
+import { transparentize } from 'polished';
+
+import { rotate360 } from '../shared/animation';
 
 const LoaderWrapper = styled.div<{ size?: number }>(({ size = 32 }) => ({
   borderRadius: '50%',

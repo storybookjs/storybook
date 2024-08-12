@@ -1,28 +1,27 @@
+import { writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import * as process from 'node:process';
-import { glob } from 'glob';
-
-import slash from 'slash';
-import typescript from 'typescript';
-import sortPackageJson from 'sort-package-json';
-import * as tsup from 'tsup';
-import * as esbuild from 'esbuild';
-import type * as typefest from 'type-fest';
-import prettyTime from 'pretty-hrtime';
-import * as prettier from 'prettier';
-import chalk from 'chalk';
-import { dedent } from 'ts-dedent';
-import limit from 'p-limit';
-import { CODE_DIRECTORY } from '../utils/constants';
-import ts from 'typescript';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
-
-import * as rpd from 'rollup-plugin-dts';
-import * as rollup from 'rollup';
-import { writeFile } from 'node:fs/promises';
-import { readJson } from 'fs-extra';
+import chalk from 'chalk';
 import { spawn } from 'cross-spawn';
+import * as esbuild from 'esbuild';
+import { readJson } from 'fs-extra';
+import { glob } from 'glob';
+import limit from 'p-limit';
+import * as prettier from 'prettier';
+import prettyTime from 'pretty-hrtime';
+import * as rollup from 'rollup';
+import * as rpd from 'rollup-plugin-dts';
+import slash from 'slash';
+import sortPackageJson from 'sort-package-json';
+import { dedent } from 'ts-dedent';
+import * as tsup from 'tsup';
+import type * as typefest from 'type-fest';
+import typescript from 'typescript';
+import ts from 'typescript';
+
+import { CODE_DIRECTORY } from '../utils/constants';
 
 export { globalExternals };
 

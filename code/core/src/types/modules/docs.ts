@@ -1,13 +1,14 @@
 import type { Channel } from '@storybook/core/channels';
-import type { Renderer, StoryContext, StoryId, StoryName, Parameters } from './csf';
+
+import type { Parameters, Renderer, StoryContext, StoryId, StoryName } from './csf';
 import type {
+  CSFFile,
   ModuleExport,
   ModuleExports,
-  CSFFile,
-  PreparedStory,
   NormalizedProjectAnnotations,
-  RenderContext,
   PreparedMeta,
+  PreparedStory,
+  RenderContext,
 } from './story';
 
 export type RenderContextCallbacks<TRenderer extends Renderer> = Pick<

@@ -1,7 +1,9 @@
-import { addonPostCSS } from './addon-postcss';
-import type { StorybookConfig } from 'storybook/internal/types';
+import { describe, expect, it } from 'vitest';
+
 import type { JsPackageManager } from 'storybook/internal/common';
-import { expect, describe, it } from 'vitest';
+import type { StorybookConfig } from 'storybook/internal/types';
+
+import { addonPostCSS } from './addon-postcss';
 
 const checkAddonPostCSS = async ({
   packageManager,

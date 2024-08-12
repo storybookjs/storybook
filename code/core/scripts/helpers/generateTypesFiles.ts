@@ -1,6 +1,7 @@
 import { join, relative } from 'node:path';
+
 import { spawn } from '../../../../scripts/prepare/tools';
-import { process, chalk, limit } from '../../../../scripts/prepare/tools';
+import { chalk, limit, process } from '../../../../scripts/prepare/tools';
 import type { getEntries } from '../entries';
 
 export async function generateTypesFiles(

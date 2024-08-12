@@ -1,15 +1,14 @@
 import program from 'commander';
-import { dirname, join, relative } from 'path';
+import { execaCommand } from 'execa';
 import { existsSync } from 'fs';
 import { copy, emptyDir, remove, writeFile } from 'fs-extra';
-import { execaCommand } from 'execa';
-
-import { getTemplatesData, renderTemplate } from './utils/template';
-
-import { commitAllToGit } from './utils/git';
-import { REPROS_DIRECTORY } from '../utils/constants';
 import { glob } from 'glob';
+import { dirname, join, relative } from 'path';
+
 import { temporaryDirectory } from '../../code/core/src/common/utils/cli';
+import { REPROS_DIRECTORY } from '../utils/constants';
+import { commitAllToGit } from './utils/git';
+import { getTemplatesData, renderTemplate } from './utils/template';
 
 export const logger = console;
 

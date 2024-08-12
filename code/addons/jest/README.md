@@ -88,12 +88,9 @@ In your story file, add a [decorator](https://storybook.js.org/docs/react/writin
 
 ```js
 // MyComponent.stories.js|jsx
-
-import MyComponent from './MyComponent';
-
-import results from '../.jest-test-results.json';
-
 import { withTests } from '@storybook/addon-jest';
+import results from '../.jest-test-results.json';
+import MyComponent from './MyComponent';
 
 export default {
   component: MyComponent,
@@ -137,9 +134,7 @@ your [`.storybook/preview.js`](https://storybook.js.org/docs/react/configure/#co
 
 ```js
 // .storybook/preview.js
-
 import { withTests } from '@storybook/addon-jest';
-
 import results from '../.jest-test-results.json';
 
 export const decorators = [
@@ -181,7 +176,6 @@ You can disable the addon for a single story by setting the `jest` parameter to 
 
 ```js
 // MyComponent.stories.js|jsx
-
 import MyComponent from './MyComponent';
 
 export default {
@@ -209,9 +203,7 @@ Then, in your `.storybook/preview.js`, you'll need to add a decorator with the f
 
 ```js
 // .storybook/preview.js
-
 import { withTests } from '@storybook/addon-jest';
-
 import results from '../.jest-test-results.json';
 
 export const decorators = [
@@ -226,9 +218,7 @@ Finally, in your story, you'll need to include the following:
 
 ```ts
 // MyComponent.stories.ts
-
 import type { Meta, StoryFn } from '@storybook/angular';
-
 import MyComponent from './MyComponent.component';
 
 export default {

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-
 import type { FC, PropsWithChildren, ReactElement, ReactNode } from 'react';
+
 import type { RenderData as RouterData } from '../../router/types';
 import type { ThemeVars } from '../../theming/types';
 import type { API_SidebarOptions } from './api';
@@ -9,11 +9,11 @@ import type {
   ArgsStoryFn as ArgsStoryFnForFramework,
   DecoratorFunction as DecoratorFunctionForFramework,
   InputType,
-  Renderer,
   LegacyStoryFn as LegacyStoryFnForFramework,
   LoaderFunction as LoaderFunctionForFramework,
   Parameters,
   PartialStoryFn as PartialStoryFnForFramework,
+  Renderer,
   StoryContext as StoryContextForFramework,
   StoryFn as StoryFnForFramework,
   StoryId,

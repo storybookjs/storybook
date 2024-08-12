@@ -2506,7 +2506,7 @@ const meta: Meta = {
         // Extract all providers (and nested ones) from a ModuleWithProviders
         importProvidersFrom(SomeOtherModule.forRoot()),
       ],
-    }
+    }),
   ],
 };
 

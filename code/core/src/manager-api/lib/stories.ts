@@ -1,29 +1,30 @@
-import memoize from 'memoizerific';
-import { dedent } from 'ts-dedent';
+import type {
+  API_ComponentEntry,
+  API_DocsEntry,
+  API_GroupEntry,
+  API_HashEntry,
+  API_IndexHash,
+  API_PreparedStoryIndex,
+  API_Provider,
+  API_RootEntry,
+  API_StoryEntry,
+  DocsOptions,
+  IndexEntry,
+  Parameters,
+  SetStoriesPayload,
+  SetStoriesStoryData,
+  StoryId,
+  StoryIndexV2,
+  StoryIndexV3,
+} from '@storybook/core/types';
+import { sanitize } from '@storybook/csf';
+
 import countBy from 'lodash/countBy.js';
 import mapValues from 'lodash/mapValues.js';
-import { sanitize } from '@storybook/csf';
-import type {
-  StoryId,
-  Parameters,
-  DocsOptions,
-  API_Provider,
-  SetStoriesStoryData,
-  API_PreparedStoryIndex,
-  StoryIndexV3,
-  IndexEntry,
-  API_RootEntry,
-  API_GroupEntry,
-  API_ComponentEntry,
-  API_IndexHash,
-  API_DocsEntry,
-  API_StoryEntry,
-  API_HashEntry,
-  SetStoriesPayload,
-  StoryIndexV2,
-} from '@storybook/core/types';
+import memoize from 'memoizerific';
+import { dedent } from 'ts-dedent';
 
-import { type API, combineParameters, type State } from '../root';
+import { type API, type State, combineParameters } from '../root';
 import merge from './merge';
 
 const TITLE_PATH_SEPARATOR = /\s*\/\s*/;

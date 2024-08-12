@@ -1,12 +1,14 @@
-import { logger } from '@storybook/core/node-logger';
-import type { Options } from '@storybook/core/types';
+import { basename, isAbsolute, posix, resolve, sep, win32 } from 'node:path';
+
 import { getDirectoryFromWorkingDir } from '@storybook/core/common';
+import type { Options } from '@storybook/core/types';
+
+import { logger } from '@storybook/core/node-logger';
+
 import chalk from 'chalk';
 import type { Router } from 'express';
 import express from 'express';
 import { pathExists } from 'fs-extra';
-import path, { basename, isAbsolute } from 'node:path';
-
 import { dedent } from 'ts-dedent';
 
 export async function useStatics(router: Router, options: Options) {
@@ -52,16 +54,16 @@ export async function useStatics(router: Router, options: Options) {
 export const parseStaticDir = async (arg: string) => {
   // Split on last index of ':', for Windows compatibility (e.g. 'C:\some\dir:\foo')
   const lastColonIndex = arg.lastIndexOf(':');
-  const isWindowsAbsolute = path.win32.isAbsolute(arg);
+  const isWindowsAbsolute = win32.isAbsolute(arg);
   const isWindowsRawDirOnly = isWindowsAbsolute && lastColonIndex === 1; // e.g. 'C:\some\dir'
   const splitIndex = lastColonIndex !== -1 && !isWindowsRawDirOnly ? lastColonIndex : arg.length;
 
   const targetRaw = arg.substring(splitIndex + 1) || '/';
-  const target = targetRaw.split(path.sep).join(path.posix.sep); // Ensure target has forward-slash path
+  const target = targetRaw.split(sep).join(posix.sep); // Ensure target has forward-slash path
 
   const rawDir = arg.substring(0, splitIndex);
-  const staticDir = path.isAbsolute(rawDir) ? rawDir : `./${rawDir}`;
-  const staticPath = path.resolve(staticDir);
+  const staticDir = isAbsolute(rawDir) ? rawDir : `./${rawDir}`;
+  const staticPath = resolve(staticDir);
   const targetDir = target.replace(/^\/?/, './');
   const targetEndpoint = targetDir.substring(1);
 

@@ -1,10 +1,13 @@
-import type { Fix } from '../types';
-import * as fs from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
+
+import { babelParse } from 'storybook/internal/csf-tools';
+
 import * as babel from '@babel/core';
 import type { BabelFile, NodePath } from '@babel/core';
-import { babelParse } from 'storybook/internal/csf-tools';
-import { dedent } from 'ts-dedent';
 import chalk from 'chalk';
+import { dedent } from 'ts-dedent';
+
+import type { Fix } from '../types';
 
 export const removeArgtypesRegex: Fix<{ argTypesRegex: NodePath; previewConfigPath: string }> = {
   id: 'remove-argtypes-regex',
@@ -13,7 +16,7 @@ export const removeArgtypesRegex: Fix<{ argTypesRegex: NodePath; previewConfigPa
   async check({ previewConfigPath }) {
     if (!previewConfigPath) return null;
 
-    const previewFile = await fs.readFile(previewConfigPath, { encoding: 'utf-8' });
+    const previewFile = await readFile(previewConfigPath, { encoding: 'utf-8' });
 
     // @ts-expect-error File is not yet exposed, see https://github.com/babel/babel/issues/11350#issuecomment-644118606
     const file: BabelFile = new babel.File(

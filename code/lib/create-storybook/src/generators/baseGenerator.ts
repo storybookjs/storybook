@@ -1,19 +1,22 @@
-import path, { dirname } from 'path';
-import fse from 'fs-extra';
-import { dedent } from 'ts-dedent';
-import ora from 'ora';
-import invariant from 'tiny-invariant';
+import { dirname, join } from 'node:path';
+
+import type { NpmOptions } from 'storybook/internal/cli';
+import type { Builder, SupportedRenderers } from 'storybook/internal/cli';
+import { SupportedLanguage, externalFrameworks } from 'storybook/internal/cli';
+import { copyTemplateFiles } from 'storybook/internal/cli';
+import { configureEslintPlugin, extractEslintInfo } from 'storybook/internal/cli';
+import { detectBuilder } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { getPackageDetails, versions as packageVersions } from 'storybook/internal/common';
 import type { SupportedFrameworks } from 'storybook/internal/types';
-import type { NpmOptions } from 'storybook/internal/cli';
-import type { SupportedRenderers, Builder } from 'storybook/internal/cli';
-import { SupportedLanguage, externalFrameworks } from 'storybook/internal/cli';
-import { copyTemplateFiles } from 'storybook/internal/cli';
+
+import fse from 'fs-extra';
+import ora from 'ora';
+import invariant from 'tiny-invariant';
+import { dedent } from 'ts-dedent';
+
 import { configureMain, configurePreview } from './configure';
 import type { FrameworkOptions, GeneratorOptions } from './types';
-import { configureEslintPlugin, extractEslintInfo } from 'storybook/internal/cli';
-import { detectBuilder } from 'storybook/internal/cli';
 
 const logger = console;
 
@@ -359,7 +362,7 @@ export async function baseGenerator(
         : addons,
       extensions,
       language,
-      ...(staticDir ? { staticDirs: [path.join('..', staticDir)] } : null),
+      ...(staticDir ? { staticDirs: [join('..', staticDir)] } : null),
       ...extraMain,
       ...(type !== 'framework'
         ? {
@@ -394,7 +397,7 @@ export async function baseGenerator(
       packageManager,
       language,
       destination: componentsDestinationPath,
-      commonAssetsDir: path.join(getCliDir(), 'rendererAssets', 'common'),
+      commonAssetsDir: join(getCliDir(), 'rendererAssets', 'common'),
     });
   }
 }

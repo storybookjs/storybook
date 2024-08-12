@@ -1,8 +1,9 @@
 import type { FC } from 'react';
 import React from 'react';
+
+import { Markdown } from './Markdown';
 import type { Of } from './useOf';
 import { useOf } from './useOf';
-import { Markdown } from './Markdown';
 
 export enum DescriptionType {
   INFO = 'info',

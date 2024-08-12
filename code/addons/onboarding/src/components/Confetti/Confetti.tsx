@@ -1,8 +1,10 @@
-import ReactConfetti from 'react-confetti';
 import React, { useEffect } from 'react';
-import { styled } from 'storybook/internal/theming';
-import { createPortal } from 'react-dom';
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
+
+import { styled } from 'storybook/internal/theming';
+
+import ReactConfetti from 'react-confetti';
 
 interface ConfettiProps extends Omit<React.ComponentProps<typeof ReactConfetti>, 'drawShape'> {
   top?: number;

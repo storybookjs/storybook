@@ -1,8 +1,9 @@
 // @vitest-environment happy-dom
+import { describe, expect, it, vi } from 'vitest';
 
-import { describe, it, expect, vi } from 'vitest';
 import * as api from 'storybook/internal/manager-api';
 import type { Addon_BaseType } from 'storybook/internal/types';
+
 import { PANEL_ID } from './constants';
 import './manager';
 

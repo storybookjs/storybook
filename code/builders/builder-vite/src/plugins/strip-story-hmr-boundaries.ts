@@ -1,5 +1,5 @@
-import type { Plugin } from 'vite';
 import MagicString from 'magic-string';
+import type { Plugin } from 'vite';
 
 /**
  * This plugin removes HMR `accept` calls in story files.  Stories should not be treated

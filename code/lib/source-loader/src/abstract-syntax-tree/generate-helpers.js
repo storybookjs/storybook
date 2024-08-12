@@ -1,15 +1,17 @@
-import { storyNameFromExport, sanitize } from '@storybook/csf';
+import { sanitize, storyNameFromExport } from '@storybook/csf';
+
 import mapKeys from 'lodash/mapKeys.js';
+
+import { extractSource } from '../extract-source';
 import { patchNode } from './parse-helpers';
 import getParser from './parsers';
 import {
-  splitSTORYOF,
   findAddsMap,
-  splitExports,
-  popParametersObjectFromDefaultExport,
   findExportsMap as generateExportsMap,
+  popParametersObjectFromDefaultExport,
+  splitExports,
+  splitSTORYOF,
 } from './traverse-helpers';
-import { extractSource } from '../extract-source';
 
 export function sanitizeSource(source) {
   return JSON.stringify(source, null, 2)

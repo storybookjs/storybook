@@ -1,10 +1,11 @@
-import { Provider, importProvidersFrom } from '@angular/core';
-import { ApplicationConfig } from '@angular/platform-browser';
 import {
   Parameters as DefaultParameters,
   StoryContext as DefaultStoryContext,
   WebRenderer,
 } from 'storybook/internal/types';
+
+import { Provider, importProvidersFrom } from '@angular/core';
+import { ApplicationConfig } from '@angular/platform-browser';
 
 export interface NgModuleMetadata {
   /**

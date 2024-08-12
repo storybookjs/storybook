@@ -62,7 +62,7 @@ export class AttributeNotArrayError extends StorybookSvelteCSFError {
       return true;
     }
 
-    if (value.type === "ExpressionTag") {
+    if (value.type === 'ExpressionTag') {
       return value.expression.value;
     }
 
@@ -115,7 +115,7 @@ export class AttributeNotArrayOfStringsError extends StorybookSvelteCSFError {
       return true;
     }
 
-    if (value.type === "ExpressionTag") {
+    if (value.type === 'ExpressionTag') {
       return value.expression.value;
     }
 

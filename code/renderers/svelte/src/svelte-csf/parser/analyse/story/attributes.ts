@@ -25,7 +25,7 @@ export function getStringValueFromAttribute(params: Params) {
     throw new AttributeNotStringError({ filename, component, attribute: node });
   }
 
-  if (value.type === "ExpressionTag" && value.expression.type === "Literal") {
+  if (value.type === 'ExpressionTag' && value.expression.type === 'Literal') {
     return value.expression.value;
   }
 

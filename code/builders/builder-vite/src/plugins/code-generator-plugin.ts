@@ -15,6 +15,10 @@ import {
   virtualStoriesFile,
 } from '../virtual-file-names';
 
+function resolvedVirtualPath(path: string): string {
+  return `\0${path}`;
+}
+
 export function codeGeneratorPlugin(options: Options): Plugin {
   const iframePath = require.resolve('@storybook/builder-vite/input/iframe.html');
   let iframeId: string;
@@ -70,33 +74,33 @@ export function codeGeneratorPlugin(options: Options): Plugin {
     },
     resolveId(source) {
       if (source === virtualFileId) {
-        return virtualFileId;
+        return resolvedVirtualPath(virtualFileId);
       }
       if (source === iframePath) {
         return iframeId;
       }
       if (source === virtualStoriesFile) {
-        return virtualStoriesFile;
+        return resolvedVirtualPath(virtualStoriesFile);
       }
       if (source === virtualPreviewFile) {
         return virtualPreviewFile;
       }
       if (source === virtualAddonSetupFile) {
-        return virtualAddonSetupFile;
+        return resolvedVirtualPath(virtualAddonSetupFile);
       }
 
       return undefined;
     },
     async load(id, config) {
-      if (id === virtualStoriesFile) {
+      if (id === resolvedVirtualPath(virtualStoriesFile)) {
         return generateImportFnScriptCode(options);
       }
 
-      if (id === virtualAddonSetupFile) {
+      if (id === resolvedVirtualPath(virtualAddonSetupFile)) {
         return generateAddonSetupCode();
       }
 
-      if (id === virtualFileId) {
+      if (id === resolvedVirtualPath(virtualFileId)) {
         return generateModernIframeScriptCode(options, projectRoot);
       }
 

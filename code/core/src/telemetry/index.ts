@@ -15,6 +15,15 @@ export { getPrecedingUpgrade } from './event-cache';
 
 export { addToGlobalContext } from './telemetry';
 
+/**
+ * Is this story part of the CLI generated examples,
+ * including user-created stories in those files
+ */
+export const isExampleStoryId = (storyId: string) =>
+  storyId.startsWith('example-button--') ||
+  storyId.startsWith('example-header--') ||
+  storyId.startsWith('example-page--');
+
 export const telemetry = async (
   eventType: EventType,
   payload: Payload = {},

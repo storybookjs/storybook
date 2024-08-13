@@ -16,7 +16,7 @@ import { storyNameFromExport, toId } from '@storybook/csf';
 import { printCsf, readCsf } from '@storybook/core/csf-tools';
 import { logger } from '@storybook/core/node-logger';
 import type { CoreConfig, Options } from '@storybook/core/types';
-import { telemetry } from '@storybook/core/telemetry';
+import { isExampleStoryId, telemetry } from '@storybook/core/telemetry';
 
 import { basename, join } from 'node:path';
 import { updateArgsInCsfFile } from './update-args-in-csf-file';
@@ -120,7 +120,9 @@ export function initializeSaveStory(channel: Channel, options: Options, coreConf
         error: null,
       } satisfies ResponseData<SaveStoryResponsePayload>);
 
-      if (!coreConfig.disableTelemetry) {
+      // don't take credit for save-from-controls actions against CLI example stories
+      const isCLIExample = isExampleStoryId(newStoryId ?? csfId);
+      if (!coreConfig.disableTelemetry && !isCLIExample) {
         await telemetry('save-story', {
           action: name ? 'createStory' : 'updateStory',
           success: true,

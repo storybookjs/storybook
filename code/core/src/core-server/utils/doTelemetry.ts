@@ -1,5 +1,5 @@
 import invariant from 'tiny-invariant';
-import type { CoreConfig, Options, StoryIndex } from '@storybook/core/types';
+import type { CoreConfig, Options } from '@storybook/core/types';
 import { telemetry, getPrecedingUpgrade } from '@storybook/core/telemetry';
 import { useStorybookMetadata } from './metadata';
 import type { StoryIndexGenerator } from './StoryIndexGenerator';

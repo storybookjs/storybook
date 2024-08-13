@@ -1,6 +1,6 @@
 {
   "name": "@storybook/svelte",
-  "version": "8.2.8",
+  "version": "8.2.9",
   "description": "Storybook Svelte renderer",
   "keywords": [
     "storybook"

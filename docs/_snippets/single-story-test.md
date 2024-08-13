@@ -44,7 +44,7 @@ test('Validates form', () => {
 });
 ```
 
-```js filename="tests/Form.test.js" renderer="vue" language="js" tabTitle="3"
+```js filename="tests/Form.test.js" renderer="vue" language="js"
 import { fireEvent, render, screen } from '@testing-library/vue';
 
 import { composeStory } from '@storybook/testing-vue3';
@@ -67,7 +67,7 @@ test('Validates form', () => {
 });
 ```
 
-```ts filename="tests/Form.test.ts" renderer="vue" language="ts" tabTitle="3"
+```ts filename="tests/Form.test.ts" renderer="vue" language="ts"
 import { fireEvent, render, screen } from '@testing-library/vue';
 
 import { composeStory } from '@storybook/testing-vue3';
@@ -89,4 +89,3 @@ test('Validates form', () => {
   expect(isFormValid).not.toBeInTheDocument();
 });
 ```
-

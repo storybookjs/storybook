@@ -42,6 +42,19 @@ Start your Storybook with:
 
 {/* prettier-ignore-end */}
 
+<IfRenderer renderer="angular">
+
+Alternatively, if you're working with an Angular project, you can opt to start Storybook with the inbuilt builder:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-run-dev-builder.md" />
+
+{ /* prettier-ignore-end */}
+
+</IfRenderer>
+
+
 <Callout variant="info" icon="💡">
   Storybook's test runner requires either a locally running Storybook instance or a published Storybook to run all the existing tests.
 </Callout>
@@ -177,7 +190,9 @@ Listed below are the available hooks and an overview of how to use them.
 | `postVisit` | Executes after the story is is visited and fully rendered<br />`async postVisit(page, context) {}`               |
 
 <Callout variant="info" icon="💡">
+
   These test hooks are experimental and may be subject to breaking changes. We encourage you to test as much as possible within the story's [play function](../writing-stories/play-function.mdx).
+
 </Callout>
 
 To enable the hooks API, you'll need to add a new configuration file inside your Storybook directory and set them up as follows:
@@ -189,7 +204,9 @@ To enable the hooks API, you'll need to add a new configuration file inside your
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
+
   Except for the `setup` function, all other functions run asynchronously. Both `preVisit` and `postVisit` functions include two additional arguments, a [Playwright page](https://playwright.dev/docs/pages) and a context object which contains the `id`, `title`, and the `name` of the story.
+
 </Callout>
 
 When the test-runner executes, your existing tests will go through the following lifecycle:
@@ -242,7 +259,9 @@ To allow the test-runner only to run tests on a specific story or subset of stor
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="ℹ️">
+
   Applying tags for the component's stories should either be done at the component level (using `meta`) or at the story level. Importing tags across stories is not supported in Storybook and won't work as intended.
+
 </Callout>
 
 #### Skip tests
@@ -310,7 +329,9 @@ Suppose you run into a situation where the local and remote Storybooks appear ou
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
+
   The `index.json` mode is not compatible with the watch mode.
+  
 </Callout>
 
 If you need to disable it, use the `--no-index-json` flag:

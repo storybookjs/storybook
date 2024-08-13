@@ -5,7 +5,7 @@ import { Foo } from './Foo.component';
 
 const meta: Meta<Foo> = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Foo/Bar',
@@ -23,7 +23,7 @@ import { Foo } from './Foo';
 
 export default {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Foo/Bar',
@@ -41,7 +41,7 @@ import { Foo } from './Foo';
 
 const meta = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Foo/Bar',
@@ -62,7 +62,7 @@ import { Foo } from './Foo';
 
 const meta: Meta<typeof Foo> = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Foo/Bar',
@@ -74,4 +74,3 @@ type Story = StoryObj<typeof Foo>;
 
 export const Baz: Story = {};
 ```
-

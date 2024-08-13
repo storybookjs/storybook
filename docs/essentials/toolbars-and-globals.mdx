@@ -28,7 +28,9 @@ Storybook has a simple, declarative syntax for configuring toolbar menus. In you
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
+
   As globals are *global* you can *only* set `globalTypes` in [`.storybook/preview.js|ts`](../configure/index.mdx#configure-story-rendering).
+
 </Callout>
 
 When you start your Storybook, you should see a new dropdown with the `light` and `dark` options in your toolbar.
@@ -58,6 +60,7 @@ We have a `global` implemented. Let's wire it up! We can consume our new `theme`
 </IfRenderer>
 
 <IfRenderer renderer="angular">
+
   For example, suppose you are using [`Angular Material`](https://material.angular.io/). You can add a theme provider decorator to your [`.storybook/preview.js|ts`](../configure/index.mdx#configure-story-rendering) config:
 
   {/* prettier-ignore-start */}
@@ -76,6 +79,7 @@ We have a `global` implemented. Let's wire it up! We can consume our new `theme`
   <CodeSnippets path="storybook-preview-use-global-type.md" />
 
   {/* prettier-ignore-end */}
+
 </IfRenderer>
 
 ## Advanced usage
@@ -100,8 +104,7 @@ In your [`.storybook/preview.js|ts`](../configure/index.mdx#configure-story-rend
 
 <Callout variant="info" icon="💡">
 
-  The `@storybook/addon-toolbars` addon is required to use toolbars. The toolbars addon is included by default in
-  `@storybook/addon-essentials`.
+  The `@storybook/addon-toolbars` addon is required to use toolbars. The toolbars addon is included by default in `@storybook/addon-essentials`.
 
 </Callout>
 
@@ -110,7 +113,7 @@ By adding the configuration element `right`, the text will be displayed on the r
 Here's a list of the configuration options available.
 
 | MenuItem  |  Type  |                           Description                           | Required |
-| --------- | :----: | :-------------------------------------------------------------: | :------: |
+| --------- | ------ | --------------------------------------------------------------- | -------- |
 | **value** | String |    The string value of the menu that gets set in the globals    |   Yes    |
 | **title** | String |                   The main text of the title                    |   Yes    |
 | **left**  | String |      A string that gets shown on the left side of the menu      |    No    |
@@ -127,11 +130,12 @@ Using the example above, you can modify any story to retrieve the **Locale** `gl
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="my-component-story-use-globaltype.md" usesCsf3 csf2Path="essentials/toolbars-and-globals#snippet-my-component-story-use-globaltype" />
+<CodeSnippets path="my-component-story-use-globaltype.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
+
   In Storybook 6.0, if you set the global option `passArgsFirst: false` for backward compatibility, the story context is passed as the first argument:
 
   {/* prettier-ignore-start */}

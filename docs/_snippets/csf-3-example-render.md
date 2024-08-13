@@ -103,7 +103,7 @@ export const Default: Story = {
 };
 ```
 
-```js filename="CSF 3" renderer="web-components" language="js"
+```js filename="CSF 3 - explicit render function" renderer="web-components" language="js"
 // Other imports and story implementation
 
 export const Default = {
@@ -111,11 +111,10 @@ export const Default = {
 };
 ```
 
-```js filename="CSF 3" renderer="web-components" language="ts"
+```js filename="CSF 3 - explicit render function" renderer="web-components" language="ts"
 // Other imports and story implementation
 
 export const Default: Story = {
   render: (args) => html`<custom-button label="Hello" @click=${action('clicked')}></custom-button>`,
 };
 ```
-

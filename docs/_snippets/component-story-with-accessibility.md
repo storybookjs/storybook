@@ -614,4 +614,3 @@ export const Inaccessible: Story = {
   },
 };
 ```
-

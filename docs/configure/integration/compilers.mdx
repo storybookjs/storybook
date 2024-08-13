@@ -18,7 +18,9 @@ SWC is a fast, highly extensible tool for compiling and bundling modern JavaScri
 {/* prettier-ignore-end */}
 
 <Callout variant="info">
+
   Support for the SWC builder is currently experimental for Next.js projects, and it's not enabled by default. It requires you to opt in to use it. For more information on configuring SWC with the supported frameworks, see the [SWC API](../../api/main-config/main-config-swc.mdx) documentation.
+
 </Callout>
 
 ## Babel
@@ -26,7 +28,9 @@ SWC is a fast, highly extensible tool for compiling and bundling modern JavaScri
 Babel is a widely adopted JavaScript compiler providing a modular architecture and extensive plugin system to support a wide range of use cases, enabling access to the cutting-edge features of the tooling ecosystem. Storybook provides a seamless integration with Babel, allowing you to share a standard setup between your project and Storybook without any additional configuration.
 
 <Callout variant="info">
-  If you're not using Storybook 7, please reference the [previous documentation](../../../release-6-5/docs/configure/babel.mdx) for guidance on configuring your Babel setup.
+
+  If you're not using Storybook 7, please reference the [previous documentation](https://storybook.js.org/docs/6/configure/integration/babel) for guidance on configuring your Babel setup.
+  
 </Callout>
 
 ### Configure
@@ -115,7 +119,9 @@ When the command runs, it will prompt you to install additional packages and gen
 </details>
 
 <Callout variant="info">
+
   For custom project configurations such as monorepos, where you have multiple Storybook configurations, creating a `.babelrc.json` file in your project's current working directory may not be sufficient. In those cases, you can create a `babel.config.js` file to override Babel's configuration, and Storybook will automatically detect and use it. See the Babel [documentation](https://babeljs.io/docs/config-files) for more information.
+  
 </Callout>
 
 ### Working with Create React App

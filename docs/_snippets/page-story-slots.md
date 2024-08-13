@@ -171,26 +171,6 @@ export const CustomFooter: Story = {
 };
 ```
 
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* Page.stories.svelte */}
-
-<script>
-  import { Meta, Template, Story } from '@storybook/addon-svelte-csf';
-
-  import Page from './Page.svelte';
-</script>
-
-<meta title="Page" component="{Page}" />
-
-<template let:args>
-  <Page {...args}>
-    <footer>{args.footer}</footer>
-  </Page>
-</template>
-
-<Story name="CustomFooter" args={{ footer: 'Built with Storybook', }} />
-```
-
 ```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="2"
 import Page from './Page.vue';
 
@@ -429,4 +409,3 @@ export const CustomFooter: Story = {
   },
 };
 ```
-

@@ -9,4 +9,3 @@ pnpm add --save-dev @storybook/testing-vue3
 ```sh renderer="vue" language="js" packageManager="yarn"
 yarn add --dev @storybook/testing-vue3
 ```
-

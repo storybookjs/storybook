@@ -5,4 +5,3 @@ import options from './options';
 
 buildDev(options);
 ```
-

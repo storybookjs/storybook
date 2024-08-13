@@ -8,4 +8,3 @@ import * as projectAnnotations from './.storybook/preview';
 // Apply the global annotations from the Storybook preview file
 setProjectAnnotations(projectAnnotations);
 ```
-

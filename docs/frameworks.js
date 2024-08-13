@@ -1,5 +1,3 @@
-// Hi, João!
-
 module.exports = {
   coreFrameworks: ['react', 'vue', 'angular', 'web-components'],
   communityFrameworks: ['ember', 'html', 'svelte', 'preact', 'qwik', 'solid'],

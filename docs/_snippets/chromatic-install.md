@@ -5,4 +5,3 @@ npm install chromatic --save-dev
 ```shell renderer="common" language="js" packageManager="yarn"
 yarn add --dev chromatic
 ```
-

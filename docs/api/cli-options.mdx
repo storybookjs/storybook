@@ -8,7 +8,9 @@ sidebar:
 The Storybook command line interface (CLI) is the main tool you use to build and develop Storybook.
 
 <Callout variant="info">
+
   Storybook collects completely anonymous data to help us improve user experience. Participation is optional, and you may [opt-out](../configure/telemetry.mdx#how-to-opt-out) if you'd not like to share any information.
+
 </Callout>
 
 ## API commands
@@ -16,7 +18,9 @@ The Storybook command line interface (CLI) is the main tool you use to build and
 All of the following documentation is available in the CLI by running `storybook --help`.
 
 <Callout variant="info" icon="💡">
+
   Passing options to these commands works slightly differently if you're using npm instead of Yarn. You must prefix all of your options with `--`. For example, `npm run storybook build -- -o ./path/to/build --quiet`.
+
 </Callout>
 
 ### `dev`
@@ -51,7 +55,9 @@ Options include:
 | `--disable-telemetry`           | Disables Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx)<br />`storybook dev --disable-telemetry`                                             |
 
 <Callout variant="warning" id="static-dir-deprecation">
+
   Starting in 6.4 the `-s` flag is deprecated. Instead, use a configuration object in your `.storybook/main.js` file. See the [images and assets documentation](../configure/integration/images-and-assets.mdx#serving-static-files-via-storybook) for more information.
+  
 </Callout>
 
 ### `build`
@@ -83,7 +89,7 @@ Options include:
 
 ### `init`
 
-Installs and initializes the specified version (e.g., `@latest`, `@8`, `@next`) of Storybook into your project. Read more in the [installation guide](../index.mdx).
+Installs and initializes the specified version (e.g., `@latest`, `@8`, `@next`) of Storybook into your project. Read more in the [installation guide](../get-started/install.mdx).
 
 ```shell
 storybook[@version] init [options]
@@ -117,20 +123,6 @@ Options include:
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `--package-manager`        | Sets the package manager to use when installing the addon.<br /> Available package managers include `npm`, `yarn`, and `pnpm`<br />`storybook add [addon] --package-manager pnpm` |
 | `-s`, `--skip-postinstall` | Skips post-install configuration. Used only when you need to configure the addon yourself<br />`storybook add [addon] --skip-postinstall`                                         |
-
-### `remove`
-
-Deletes a Storybook addon from your project. Read more in the [addon installation guide](../addons/install-addons.mdx#removing-addons).
-
-```shell
-storybook remove [addon] [options]
-```
-
-Options include:
-
-| Option              | Description                                                                                                                                                                       |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `--package-manager` | Sets the package manager to use when removing the addon.<br />Available package managers include `npm`, `yarn`, and `pnpm`<br />`storybook remove  [addon]--package-manager pnpm` |
 
 ### `upgrade`
 
@@ -224,5 +216,7 @@ Options include:
 | `--no-init`                 | Generates a sandbox project without without initializing Storybook<br />`storybook sandbox --no-init` |
 
 <Callout variant="info">
+
   If you're looking for a hosted version of the available sandboxes, see [storybook.new](https://storybook.new).
+
 </Callout>

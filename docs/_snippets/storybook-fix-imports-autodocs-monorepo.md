@@ -7,7 +7,7 @@ import { MyComponent } from '@component-package/src/MyComponent';
 
 export default {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'MyComponent',
@@ -27,7 +27,7 @@ import { MyComponent } from '@component-package/src/MyComponent';
 
 const meta = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'MyComponent',
@@ -49,7 +49,7 @@ import { MyComponent } from '@component-package/src/MyComponent';
 
 const meta: Meta<typeof MyComponent> = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'MyComponent',
@@ -58,4 +58,3 @@ const meta: Meta<typeof MyComponent> = {
 
 export default meta;
 ```
-

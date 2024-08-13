@@ -9,9 +9,11 @@ Parameters are static metadata used to configure your [stories](../get-started/w
 
 ## Story parameters
 
-<div class="aside">
-  ℹ️ Parameters specified at the story level will [override](#parameter-inheritance) those specified at the project level and meta (component) level.
-</div>
+<Callout variant="info">
+
+  Parameters specified at the story level will [override](#parameter-inheritance) those specified at the project level and meta (component) level.
+
+</Callout>
 
 Parameters specified at the story level apply to that story only. They are defined in the `parameters` property of the story (named export):
 
@@ -23,9 +25,11 @@ Parameters specified at the story level apply to that story only. They are defin
 
 ## Meta parameters
 
-<div class="aside">
-  ℹ️ Parameters specified at the meta (component) level will [override](#parameter-inheritance) those specified at the project level.
-</div>
+<Callout variant="info">
+
+   Parameters specified at the meta (component) level will [override](#parameter-inheritance) those specified at the project level.
+
+</Callout>
 
 Parameter's specified in a [CSF](../writing-stories/index.mdx#component-story-format) file's meta configuration apply to all stories in that file. They are defined in the `parameters` property of the `meta` (default export):
 
@@ -72,7 +76,9 @@ Type:
 ```
 
 <Callout variant="warning">
+
   The `options` parameter can *only* be applied at the [project level](#project-parameters).
+
 </Callout>
 
 #### `options.storySort`
@@ -127,7 +133,6 @@ All other parameters are contributed by addons. The [essential addon's](../essen
 * [Backgrounds](../essentials/backgrounds.mdx#parameters)
 * [Controls](../essentials/controls.mdx#parameters)
 * [Highlight](../essentials/highlight.mdx#parameters)
-* [Interactions](../essentials/interactions.mdx#parameters)
 * [Measure & Outline](../essentials/measure-and-outline.mdx#parameters)
 * [Viewport](../essentials/viewport.mdx#parameters)
 
@@ -141,9 +146,11 @@ When specifying parameters, they are merged together in order of increasing spec
 2. Meta (component) parameters
 3. Story parameters
 
-<div class="aside">
-  ℹ️ Parameters are **merged**, so objects are deep-merged, but arrays and other properties are overwritten.
-</div>
+<Callout variant="info">
+
+  Parameters are **merged**, so objects are deep-merged, but arrays and other properties are overwritten.
+
+</Callout>
 
 In other words, the following specifications of parameters:
 

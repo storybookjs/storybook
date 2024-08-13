@@ -1,4 +1,4 @@
-```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="body"
+```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="preview-body"
 export default {
   previewBody: (body) => `
     ${body}
@@ -9,7 +9,7 @@ export default {
 };
 ```
 
-```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="body"
+```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="preview-body"
 // Replace your-framework with the framework you are using (e.g., react-webpack5, vue3-vite)
 import type { StorybookConfig } from '@storybook/your-framework';
 
@@ -25,7 +25,7 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="head"
+```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="preview-head"
 export default {
   previewHead: (head) => `
     ${head}
@@ -38,7 +38,7 @@ export default {
 };
 ```
 
-```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="head"
+```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="preview-head"
 // Replace your-framework with the framework you are using (e.g., react-webpack5, vue3-vite)
 import type { StorybookConfig } from '@storybook/your-framework';
 
@@ -55,4 +55,3 @@ const config: StorybookConfig = {
 
 export default config;
 ```
-

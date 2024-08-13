@@ -1,6 +1,4 @@
-```yml renderer="common" language="ts" tabTitle="yml"
-# .github/workflows/storybook-tests.yml
-
+```yml filename=".github/workflows/storybook-tests.yml" renderer="common" language="ts" tabTitle="yml"
 name: Storybook Tests
 on: deployment_status
 jobs:
@@ -22,4 +20,3 @@ jobs:
         env:
           TARGET_URL: '${{ github.event.deployment_status.target_url }}'
 ```
-

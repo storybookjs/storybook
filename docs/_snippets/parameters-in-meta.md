@@ -8,6 +8,7 @@ const meta: Meta<Button> = {
   //👇 Creates specific parameters for the story
   parameters: {
     backgrounds: {
+      default: 'dark',
       values: [
         { name: 'red', value: '#f00' },
         { name: 'green', value: '#0f0' },
@@ -29,6 +30,11 @@ export default {
   parameters: {
     backgrounds: {
       default: 'dark',
+      values: [
+        { name: 'red', value: '#f00' },
+        { name: 'green', value: '#0f0' },
+        { name: 'blue', value: '#00f' },
+      ],
     },
   },
 };
@@ -48,6 +54,11 @@ const meta = {
   parameters: {
     backgrounds: {
       default: 'dark',
+      values: [
+        { name: 'red', value: '#f00' },
+        { name: 'green', value: '#0f0' },
+        { name: 'blue', value: '#00f' },
+      ],
     },
   },
 } satisfies Meta<typeof Button>;
@@ -70,6 +81,11 @@ const meta: Meta<typeof Button> = {
   parameters: {
     backgrounds: {
       default: 'dark',
+      values: [
+        { name: 'red', value: '#f00' },
+        { name: 'green', value: '#0f0' },
+        { name: 'blue', value: '#00f' },
+      ],
     },
   },
 };
@@ -86,6 +102,7 @@ export default {
   //👇 Creates specific parameters for the story
   parameters: {
     backgrounds: {
+      default: 'dark',
       values: [
         { name: 'red', value: '#f00' },
         { name: 'green', value: '#0f0' },
@@ -104,6 +121,7 @@ const meta: Meta = {
   //👇 Creates specific parameters for the story
   parameters: {
     backgrounds: {
+      default: 'dark',
       values: [
         { name: 'red', value: '#f00' },
         { name: 'green', value: '#0f0' },
@@ -115,4 +133,3 @@ const meta: Meta = {
 
 export default meta;
 ```
-

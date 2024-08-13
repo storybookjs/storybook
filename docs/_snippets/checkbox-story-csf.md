@@ -71,26 +71,6 @@ export const Unchecked: Story = {
 };
 ```
 
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* Checkbox.stories.svelte */}
-
-<script>
-  import { Meta, Story } from '@storybook/addon-svelte-csf';
-
-  import Checkbox from './Checkbox.svelte';
-</script>
-
-<meta title="MDX/Checkbox" component="{Checkbox}" />
-
-<Story name="allCheckboxes">
-  <form>
-    <Checkbox id="Unchecked" label="Unchecked" />
-    <Checkbox id="Checked" label="Checked" {checked} />
-    <Checkbox appearance="secondary" id="second" label="Secondary" {checked} />
-  </form>
-</Story>
-```
-
 ```js filename="Checkbox.stories.js" renderer="web-components" language="js"
 export default {
   title: 'Checkbox',
@@ -120,4 +100,3 @@ export const Unchecked: Story = {
   },
 };
 ```
-

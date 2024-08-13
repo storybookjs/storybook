@@ -328,31 +328,6 @@ export const ExampleStory = {
 };
 ```
 
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* YourComponent.stories.svelte */}
-
-<script>
-  import { Meta, Template, Story } from '@storybook/addon-svelte-csf';
-
-  import YourComponent from './YourComponent.svelte';
-
-  //👇 Some function to demonstrate the behavior
-  function someFunction(valuePropertyA, valuePropertyB) {
-    // Makes some computations and returns something
-  }
-</script>
-
-{/*👇 Creates specific argTypes and automatically infers them when 'options' is defined */}
-
-<Meta title="YourComponent" component={YourComponent} argTypes={{ propertyA: { options: ['Item One',
-'Item Two', 'Item Three'], control: { type: 'select' }, }, propertyB: { options: ['Another Item
-One', 'Another Item Two', 'Another Item Three'], }, }} />
-
-<template let:args>
-  <YourComponent {...args} someProperty="{someFunction(args.propertyA," args.propertyB)} />
-</template>
-```
-
 ```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts-4-9"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
@@ -677,4 +652,3 @@ export const ExampleStory: Story = {
   },
 };
 ```
-

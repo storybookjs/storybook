@@ -249,9 +249,11 @@ The `argTypes` object uses the name of the arg as the key. By default, that key 
 {/* prettier-ignore-end */}
 
 <Callout variant="warning">
+
   Be careful renaming args in this way. Users of the component you're documenting will not be able to use the documented name as a property of your component and the actual name will not displayed.
 
   For this reason, the `name` property is best used when defining an `argType` that is only used for documentation purposes and not an actual property of the component. For example, when [providing argTypes for each property of an object](https://stackblitz.com/edit/github-uplqzp?file=src/stories/Button.stories.tsx).
+  
 </Callout>
 
 ### `options`

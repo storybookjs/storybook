@@ -150,18 +150,6 @@ export default {
 };
 ```
 
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* Button.stories.svelte */}
-
-<script>
-  import { Meta } from '@storybook/addon-svelte-csf';
-
-  import Button from './Button.svelte';
-</script>
-
-<Meta title="Button" component={Button} args={{ primary: true, }} />
-```
-
 ```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9"
 import type { Meta } from '@storybook/svelte';
 
@@ -291,4 +279,3 @@ const meta: Meta = {
 
 export default meta;
 ```
-

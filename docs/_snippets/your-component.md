@@ -24,7 +24,7 @@ import { createYourComponent } from './YourComponent';
 // 👇 This default export determines where your story goes in the story list
 export default {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'YourComponent',
@@ -32,7 +32,7 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const FirstStory = {
@@ -51,7 +51,7 @@ import { createYourComponent, ComponentProps } from './YourComponent';
 //👇 This default export determines where your story goes in the story list
 const meta: Meta<ComponentProps> = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'YourComponent',
@@ -62,7 +62,7 @@ type Story = StoryObj<ComponentProps>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const FirstStory: Story = {
@@ -86,7 +86,7 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const FirstStory = {
@@ -217,38 +217,14 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const FirstStory = {
-  render: (args) => ({
-    Component: YourComponent,
-    props: args,
-  }),
   args: {
     //👇 The args you need here will depend on your component
   },
 };
-```
-
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* YourComponent.stories.svelte */}
-
-<script>
-  import { Meta, Template, Story } from '@storybook/addon-svelte-csf';
-
-  import YourComponent from './YourComponent.svelte';
-</script>
-
-{/*👇 The title determines where your story goes in the story list */}
-<Meta title="YourComponent" component={YourComponent} argTypes={{ /* Customize your args here
-depending on your component */ }} />
-
-<template let:args>
-  <button {...args} />
-</template>
-
-<Story name="FirstStory" args={{ /* The args you need here will depend on your component */ }} />
 ```
 
 ```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts-4-9"
@@ -301,14 +277,14 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const FirstStory = {
   render: (args, { argTypes }) => ({
     components: { YourComponent },
     props: Object.keys(argTypes),
-    template: '<Button v-bind="$props" />',
+    template: '<YourComponent v-bind="$props" />',
   }),
   args: {
     //👇 The args you need here will depend on your component
@@ -331,7 +307,7 @@ type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const FirstStory: Story = {
@@ -361,7 +337,7 @@ type Story = StoryObj<typeof YourComponent>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const FirstStory: Story = {
@@ -386,7 +362,7 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const FirstStory = {
@@ -403,7 +379,7 @@ export const FirstStory = {
 };
 ```
 
-```ts filename="YourComponent.stories.js" renderer="vue" language="ts-4-9" tabTitle="3"
+```ts filename="YourComponent.stories.ts" renderer="vue" language="ts-4-9" tabTitle="3"
 import type { Meta, StoryObj } from '@storybook/vue3';
 
 import YourComponent from './YourComponent.vue';
@@ -418,7 +394,7 @@ type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary: Story = {
@@ -450,7 +426,7 @@ type Story = StoryObj<typeof YourComponent>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary: Story = {
@@ -497,4 +473,3 @@ export const FirstStory: Story = {
   },
 };
 ```
-

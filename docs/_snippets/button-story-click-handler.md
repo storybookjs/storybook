@@ -149,22 +149,6 @@ export const Text = {
 };
 ```
 
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* Button.stories.svelte */}
-
-<script>
-  import { Meta, Story } from '@storybook/addon-svelte-csf';
-
-  import { action } from '@storybook/addon-actions';
-
-  import Button from './Button.svelte';
-</script>
-
-<meta title="Button" component="{Button}" />
-
-<Story name="Text"> <Button text="Hello" on:click={action('clicked')}/> </Story>
-```
-
 ```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9"
 import type { Meta, StoryObj } from '@storybook/svelte';
 import { action } from '@storybook/addon-actions';
@@ -393,4 +377,3 @@ export const Text: Story = {
   render: () => html`<custom-button label="Hello" @click=${action('clicked')}></custom-button>`,
 };
 ```
-

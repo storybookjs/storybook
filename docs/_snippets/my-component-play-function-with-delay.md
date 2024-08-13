@@ -13,7 +13,7 @@ export default meta;
 type Story = StoryObj<MyComponent>;
 
 /*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const DelayedStory: Story = {
@@ -44,7 +44,7 @@ export default {
   component: MyComponent,
 };
 
-/* See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+/* See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const DelayedStory = {
@@ -81,7 +81,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/* See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+/* See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvasas
  * to learn more about using the canvasElement to query the DOM
  */
 export const DelayedStory: Story = {
@@ -118,7 +118,7 @@ const meta: Meta<typeof MyComponent> = {
 export default meta;
 type Story = StoryObj<typeof MyComponent>;
 
-/* See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+/* See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const DelayedStory: Story = {
@@ -147,7 +147,7 @@ export default {
   component: 'demo-my-component',
 };
 
-/* See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+/* See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const DelayedStory = {
@@ -180,7 +180,7 @@ const meta: Meta = {
 export default meta;
 type Story = StoryObj;
 
-/* See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+/* See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const DelayedStory: Story = {
@@ -201,4 +201,3 @@ export const DelayedStory: Story = {
   },
 };
 ```
-

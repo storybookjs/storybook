@@ -34,7 +34,7 @@ import { createList } from './List';
 
 export default {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loadingg
    * to learn how to generate automatic titles
    */
   title: 'List',
@@ -53,7 +53,7 @@ import { createList, ListArgs } from './List';
 
 const meta: Meta<ListArgs> = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'List',
@@ -156,26 +156,6 @@ type Story = StoryObj<typeof List>;
 export const Empty: Story = {};
 ```
 
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* List.stories.svelte */}
-
-<script>
-  import { Meta, Template, Story } from '@storybook/addon-svelte-csf';
-
-  import List from './List.svelte';
-</script>
-
-<meta title="List" component="{List}" />
-
-<template let:args>
-  <List {...args} />
-</template>
-
-<Story name="Empty">
-  <List {...args} />
-</Story>
-```
-
 ```js filename="List.stories.js" renderer="vue" language="js"
 import List from './ListComponent.vue';
 
@@ -264,4 +244,3 @@ export const Empty: Story = {
   render: () => html`<demo-list></demo-list>`,
 };
 ```
-

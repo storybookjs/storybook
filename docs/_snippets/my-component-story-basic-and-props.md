@@ -136,7 +136,7 @@ export const Basic = {};
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const WithProp = {
@@ -147,23 +147,6 @@ export const WithProp = {
     },
   }),
 };
-```
-
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* MyComponent.stories.svelte */}
-
-<script>
-  import { Meta, Story } from '@storybook/addon-svelte-csf';
-  import MyComponent from './MyComponent.svelte';
-</script>
-
-<Story name="Basic">
-  <MyComponent />
-</Story>
-
-<Story name="WithProp">
-  <MyComponent prop="value" />
-</Story>
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts-4-9"
@@ -182,7 +165,7 @@ export const Basic: Story = {};
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const WithProp: Story = {
@@ -211,7 +194,7 @@ export const Basic: Story = {};
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const WithProp: Story = {
@@ -335,4 +318,3 @@ export const WithProp: Story = {
   render: () => html`<my-component prop="value" />`,
 };
 ```
-

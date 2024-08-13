@@ -1,4 +1,4 @@
-```ts filename=".storybook/preview.ts" renderer="angular" language="ts"
+```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="theme-provider"
 import { componentWrapperDecorator } from '@storybook/angular';
 import type { Preview } from '@storybook/angular';
 
@@ -25,6 +25,10 @@ const preview: Preview = {
   ],
 };
 export default preview;
+```
+
+```ts filename="src/polyfills.ts" renderer="angular" language="ts" tabTitle="angular-localize-polyfill"
+import '@angular/localize/init';
 ```
 
 ```jsx filename=".storybook/preview.js" renderer="react" language="js"
@@ -106,3 +110,222 @@ const preview: Preview = {
 export default preview;
 ```
 
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="2-library"
+import Vue from 'vue';
+
+import Vuex from 'vuex';
+
+//👇 Storybook Vue app being extended and registering the library
+Vue.use(Vuex);
+
+export default {
+  decorators: [
+    (story) => ({
+      components: { story },
+      template: '<div style="margin: 3em;"><story /></div>',
+    }),
+  ],
+};
+```
+
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="2-library"
+import Vue from 'vue';
+
+import Vuex from 'vuex';
+
+import { Preview } from '@storybook/vue';
+
+//👇 Storybook Vue app being extended and registering the library
+Vue.use(Vuex);
+
+const preview: Preview = {
+  decorators: [
+    (story) => ({
+      components: { story },
+      template: '<div style="margin: 3em;"><story /></div>',
+    }),
+  ],
+};
+
+export default preview;
+```
+
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="3-library"
+import { setup } from '@storybook/vue3';
+
+import { createPinia } from 'pinia';
+
+setup((app) => {
+  //👇 Registers a global Pinia instance inside Storybook to be consumed by existing stories
+  app.use(createPinia());
+});
+
+export default {
+  decorators: [
+    (story) => ({
+      components: { story },
+      template: '<div style="margin: 3em;"><story /></div>',
+    }),
+  ],
+};
+```
+
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="3-library"
+import { setup, Preview } from '@storybook/vue3';
+
+import { createPinia } from 'pinia';
+
+setup((app) => {
+  //👇 Registers a global Pinia instance inside Storybook to be consumed by existing stories
+  app.use(createPinia());
+});
+
+const preview: Preview = {
+  decorators: [
+    (story) => ({
+      components: { story },
+      template: '<div style="margin: 3em;"><story /></div>',
+    }),
+  ],
+};
+
+export default preview;
+```
+
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="2-component"
+import Vue from 'vue';
+
+import { library } from '@fortawesome/fontawesome-svg-core';
+import { faPlusSquare as fasPlusSquare } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
+
+library.add(fasPlusSquare);
+
+//👇 Storybook Vue app being extended and registering the component
+Vue.component('font-awesome-icon', FontAwesomeIcon);
+
+export default {
+  decorators: [
+    (story) => ({
+      components: { story },
+      template: '<div style="margin: 3em;"><story /></div>',
+    }),
+  ],
+};
+```
+
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="2-component"
+import Vue from 'vue';
+
+import { Preview } from '@storybook/vue';
+
+import { library } from '@fortawesome/fontawesome-svg-core';
+import { faPlusSquare as fasPlusSquare } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
+
+library.add(fasPlusSquare);
+
+//👇 Storybook Vue app being extended and registering the component
+Vue.component('font-awesome-icon', FontAwesomeIcon);
+
+const preview: Preview = {
+  decorators: [
+    (story) => ({
+      components: { story },
+      template: '<div style="margin: 3em;"><story /></div>',
+    }),
+  ],
+};
+
+export default preview;
+```
+
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="3-component"
+import { setup } from '@storybook/vue3';
+
+import { library } from '@fortawesome/fontawesome-svg-core';
+import { faPlusSquare as fasPlusSquare } from '@fortawesome/free-solid-svg-icons';
+
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
+
+setup((app) => {
+  //👇 Adds the icon to the library so you can use it in your story.
+  library.add(fasPlusSquare);
+  app.component('font-awesome-icon', FontAwesomeIcon);
+});
+
+export default {
+  decorators: [
+    (story) => ({
+      components: { story },
+      template: '<div style="margin: 3em;"><story /></div>',
+    }),
+  ],
+};
+```
+
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="3-component"
+import { setup, Preview } from '@storybook/vue3';
+
+import { library } from '@fortawesome/fontawesome-svg-core';
+import { faPlusSquare as fasPlusSquare } from '@fortawesome/free-solid-svg-icons';
+
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
+
+setup((app) => {
+  //👇 Adds the icon to the library so you can use it in your story.
+  library.add(fasPlusSquare);
+  app.component('font-awesome-icon', FontAwesomeIcon);
+});
+
+const preview: Preview = {
+  decorators: [
+    (story) => ({
+      components: { story },
+      template: '<div style="margin: 3em;"><story /></div>',
+    }),
+  ],
+};
+
+export default preview;
+```
+
+```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="2-mixin"
+import Vue from 'vue';
+
+//👇 Storybook Vue app being extended and registering the mixin
+Vue.mixin({
+  // Your mixin code
+});
+
+export default {
+  decorators: [
+    (story) => ({
+      components: { story },
+      template: '<div style="margin: 3em;"><story /></div>',
+    }),
+  ],
+};
+```
+
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="2-mixin"
+import Vue from 'vue';
+
+import { Preview } from '@storybook/vue';
+
+//👇 Storybook Vue app being extended and registering the mixin
+Vue.mixin({
+  // Your mixin code
+});
+
+const preview: Preview = {
+  decorators: [
+    (story) => ({
+      components: { story },
+      template: '<div style="margin: 3em;"><story /></div>',
+    }),
+  ],
+};
+
+export default preview;
+```

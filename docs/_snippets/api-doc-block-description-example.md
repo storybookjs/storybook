@@ -211,4 +211,3 @@ export const Primary: Story = {
   },
 };
 ```
-

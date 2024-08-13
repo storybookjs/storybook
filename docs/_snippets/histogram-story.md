@@ -25,7 +25,7 @@ import { createHistogram } from './Histogram';
 
 export default {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Histogram',
@@ -33,7 +33,7 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Default = {
@@ -54,7 +54,7 @@ import { createHistogram, HistogramProps } from './Histogram';
 
 const meta: Meta<HistogramProps> = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Histogram',
@@ -65,7 +65,7 @@ type Story = StoryObj<HistogramProps>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Default: Story = {
@@ -91,7 +91,7 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Default = {
@@ -105,33 +105,6 @@ export const Default = {
 };
 ```
 
-```md renderer="preact" language="mdx"
-{/* Histogram.stories.mdx */}
-
-import { Canvas, Meta, Story } from '@storybook/addon-docs/';
-
-import { Histogram } from './Histogram';
-
-<Meta title="Histogram" component={Histogram} />
-
-{/*
- 👇 Render functions are a framework specific feature to allow you control on how the component renders.
-  See https://storybook.js.org/docs/api/csf
-  to learn how to use render functions.
-*/}
-
-<Canvas>
-  <Story 
-    name="Default"
-    args={{
-      dataType: 'latency',
-      showHistogramLabels: true,
-      histogramAccentColor: '#1EA7FD',
-      label: 'Latency distribution',
-    }}
-    render={(args) => <Histogram {...args} />} />
-</Canvas>
-```
 ```js filename="Histogram.stories.js|jsx" renderer="react" language="js"
 import { Histogram } from './Histogram';
 
@@ -263,7 +236,7 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Default = {
@@ -294,7 +267,7 @@ type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Default: Story = {
@@ -325,7 +298,7 @@ type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Default: Story = {
@@ -351,7 +324,7 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Default = {
@@ -383,7 +356,7 @@ type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Default: Story = {
@@ -415,7 +388,7 @@ type Story = StoryObj<typeof Histogram>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Default: Story = {
@@ -442,7 +415,7 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Default = {
@@ -476,7 +449,7 @@ type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Default: Story = {
@@ -510,7 +483,7 @@ type Story = StoryObj<typeof Histogram>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Default: Story = {
@@ -564,4 +537,3 @@ export const Default: Story = {
   },
 };
 ```
-

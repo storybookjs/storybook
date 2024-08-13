@@ -37,7 +37,9 @@ The *default* export metadata controls how Storybook lists your stories and prov
 {/* prettier-ignore-end */}
 
 <Callout variant="info">
+
   Starting with Storybook version 7.0, story titles are analyzed statically as part of the build process. The *default* export must contain a `title` property that can be read statically or a `component` property from which an automatic title can be computed. Using the `id` property to customize your story URL must also be statically readable.
+
 </Callout>
 
 ### Defining stories
@@ -46,7 +48,7 @@ Use the *named* exports of a CSF file to define your component’s stories. We r
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story.md" usesCsf3 csf2Path="writing-stories/#snippet-button-story" />
+<CodeSnippets path="button-story.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -58,7 +60,7 @@ Use the *named* exports of a CSF file to define your component’s stories. We r
 
   {/* prettier-ignore-start */}
 
-  <CodeSnippets path="button-story.md" usesCsf3 csf2Path="writing-stories/#snippet-button-story-with-hooks" />
+  <CodeSnippets path="button-story-with-hooks.md" usesCsf3 />
 
   {/* prettier-ignore-end */}
 
@@ -76,7 +78,7 @@ Use the *named* exports of a CSF file to define your component’s stories. We r
 
   {/* prettier-ignore-start */}
 
-  <CodeSnippets path="button-story.md" usesCsf3 csf2Path="writing-stories/#snippet-button-story-with-hooks" />
+  <CodeSnippets path="button-story-with-hooks.md" />
 
   {/* prettier-ignore-end */}
 
@@ -92,7 +94,7 @@ You can rename any particular story you need. For instance, to give it a more ac
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story-rename-story.md" usesCsf3 csf2Path="writing-stories/#snippet-button-story-rename-story" />
+<CodeSnippets path="button-story-rename-story.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -104,7 +106,7 @@ A story is a function that describes how to render a component. You can have mul
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story-with-emojis.md" usesCsf3 csf2Path="writing-stories/#snippet-button-story-with-emojis" />
+<CodeSnippets path="button-story-with-emojis.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -116,7 +118,7 @@ Refine this pattern by introducing `args` for your component's stories. It reduc
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story-using-args.md" usesCsf3 csf2Path="writing-stories/#snippet-button-story-using-args" />
+<CodeSnippets path="button-story-using-args.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -126,7 +128,7 @@ What’s more, you can import `args` to reuse when writing stories for other com
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-group-story.md" usesCsf3 csf2Path="writing-stories/#snippet-button-group-story" />
+<CodeSnippets path="button-group-story.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -146,7 +148,7 @@ Storybook's `play` function and the [`@storybook/addon-interactions`](https://st
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="login-form-with-play-function.md" usesCsf3 csf2Path="writing-stories/#snippet-login-form-with-play-function" />
+<CodeSnippets path="login-form-with-play-function.md" usesCsf3 />
 
 Without the help of the `play` function and the `@storybook/addon-interactions`, you had to write your own stories and manually interact with the component to test out each use case scenario possible.
 
@@ -186,7 +188,7 @@ When building design systems or component libraries, you may have two or more co
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="list-story-starter.md" usesCsf3 csf2Path="writing-stories/#snippet-list-story-starter" />
+<CodeSnippets path="list-story-starter.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -194,7 +196,7 @@ In such cases, it makes sense to render a different function for each story:
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="list-story-expanded.md" usesCsf3 csf2Path="writing-stories/#snippet-list-story-expanded" />
+<CodeSnippets path="list-story-expanded.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -202,7 +204,7 @@ You can also reuse stories from the child `ListItem` in your `List` component. T
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="list-story-reuse-data.md" usesCsf3 csf2Path="writing-stories/#snippet-list-story-reuse-data" />
+<CodeSnippets path="list-story-reuse-data.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 

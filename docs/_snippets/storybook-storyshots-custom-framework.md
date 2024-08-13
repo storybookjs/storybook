@@ -9,4 +9,3 @@ initStoryshots({
   // Other configurations
 });
 ```
-

@@ -10,7 +10,9 @@ sidebar:
 Component Story Format (CSF) is the recommended way to [write stories](../writing-stories/index.mdx). It's an [open standard](https://github.com/ComponentDriven/csf) based on ES6 modules that is portable beyond Storybook.
 
 <Callout variant="info" icon="💡">
+
   If you are writing stories in the older `storiesOf()` syntax, you can find documentation in an [advanced README](https://github.com/storybookjs/storybook/blob/release-7-6/code/lib/preview-api/docs/storiesOf.md).
+
 </Callout>
 
 In CSF, stories and component metadata are defined as ES Modules. Every component story file consists of a required [default export](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export#Using_the_default_export) and one or more [named exports](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export).
@@ -37,19 +39,19 @@ With CSF, every named export in the file represents a story object by default.
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="my-component-story-basic-and-props.md" usesCsf3 csf2Path="api/csf#snippet-my-component-story-basic-and-props" />
+<CodeSnippets path="my-component-story-basic-and-props.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
 The exported identifiers will be converted to "start case" using Lodash's [startCase](https://lodash.com/docs/#startCase) function. For example:
 
-| Identifier       |  Transformation   |
-| ---------------- | :---------------: |
-| name             |       Name        |
-| someName         |     Some Name     |
-| someNAME         |     Some NAME     |
+| Identifier         |  Transformation   |
+| ------------------ | ----------------- |
+| name               |       Name        |
+| someName           |     Some Name     |
+| someNAME           |     Some NAME     |
 | some\_custom\_NAME | Some Custom NAME  |
-| someName1234     | Some Name 1 2 3 4 |
+| someName1234       | Some Name 1 2 3 4 |
 
 We recommend that all export names to start with a capital letter.
 
@@ -59,7 +61,7 @@ Storybook's `name` configuration element is helpful in specific circumstances. C
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="my-component-story-with-storyname.md" usesCsf3 csf2Path="api/csf#snippet-my-component-story-with-storyname" />
+<CodeSnippets path="my-component-story-with-storyname.md" usesCsf3  />
 
 {/* prettier-ignore-end */}
 
@@ -71,7 +73,7 @@ Consider Storybook’s ["Button" example](../writing-stories/index.mdx#defining-
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story-click-handler.md" usesCsf3 csf2Path="api/csf#snippet-button-story-click-handler" />
+<CodeSnippets path="button-story-click-handler.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -79,7 +81,7 @@ Now consider the same example, re-written with args:
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story-click-handler-args.md" usesCsf3 csf2Path="api/csf#snippet-button-story-click-handler-args" />
+<CodeSnippets path="button-story-click-handler-args.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -87,7 +89,7 @@ Or even more simply:
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story-click-handler-simplificated.md" usesCsf3 csf2Path="api/csf#snippet-button-story-click-handler-simplificated" />
+<CodeSnippets path="button-story-click-handler-simplificated.md" usesCsf3  />
 
 {/* prettier-ignore-end */}
 
@@ -103,24 +105,26 @@ A good use case for the `play` function is a form component. With previous Story
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="login-form-with-play-function.md" usesCsf3 csf2Path="api/csf#snippet-login-form-with-play-function" />
+<CodeSnippets path="login-form-with-play-function.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
 When the story renders in the UI, Storybook executes each step defined in the `play` function and runs the assertions without the need for user interaction.
 
 <IfRenderer renderer={['angular', 'vue', 'web-components', 'ember', 'html', 'preact', 'qwik', 'solid' ]}>
+
   ## Custom render functions
 
   Starting in Storybook 6.4, you can write your stories as JavaScript objects, reducing the boilerplate code you need to generate to test your components, thus improving functionality and usability. `Render` functions are helpful methods to give you additional control over how the story renders. For example, if you were writing a story as an object and you wanted to specify how your component should render, you could write the following:
 
   {/* prettier-ignore-start */}
 
-  <CodeSnippets path="component-story-with-custom-render-function.md" usesCsf3 />
+  <CodeSnippets path="component-story-with-custom-render-function.md" />
 
   {/* prettier-ignore-end */}
 
   When Storybook loads this story, it will detect the existence of a `render` function and adjust the component rendering accordingly based on what's defined.
+
 </IfRenderer>
 
 ## Storybook export vs. name handling
@@ -154,7 +158,7 @@ Consider the following story file:
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="my-component-story-with-nonstory.md" usesCsf3 csf2Path="api/csf#snippet-my-component-story-with-nonstory" />
+<CodeSnippets path="my-component-story-with-nonstory.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -238,7 +242,9 @@ Now, let's rewrite it as a story object in CSF 3 with an explicit `render` funct
 <CodeSnippets path="csf-3-example-render.md" />
 
 <IfRenderer renderer={['angular', 'vue', 'web-components', 'ember', 'html', 'preact', 'qwik', 'solid' ]}>
+
   Learn more about [render functions](#custom-render-functions).
+
 </IfRenderer>
 
 {/* prettier-ignore-end */}
@@ -254,7 +260,9 @@ CSF 3 provides default render functions for each renderer. If all you're doing i
 {/* prettier-ignore-end */}
 
 <IfRenderer renderer={['angular', 'vue', 'web-components', 'ember', 'html', 'preact', 'qwik', 'solid' ]}>
+
   For more information, see the section on [custom render functions](#custom-render-functions).
+
 </IfRenderer>
 
 ### Generate titles automatically

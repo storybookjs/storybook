@@ -12,7 +12,7 @@ type Story = StoryObj<Button>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary: Story = {
@@ -28,7 +28,7 @@ export const Primary: Story = {
 ```js filename="Button.stories.js" renderer="html" language="js"
 export default {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Button',
@@ -36,7 +36,7 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary = {
@@ -60,7 +60,7 @@ import type { Meta, StoryObj } from '@storybook/html';
 
 const meta: Meta = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Button',
@@ -70,7 +70,7 @@ export default meta;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary: StoryObj = {
@@ -101,7 +101,7 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary = {
@@ -118,7 +118,7 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary = {
@@ -140,7 +140,7 @@ type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary: Story = {
@@ -162,120 +162,11 @@ type Story = StoryObj<typeof Button>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary: Story = {
   render: () => <Button primary label="Button" />,
-};
-```
-
-```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="with-hooks"
-import React, { useState } from 'react';
-
-import { Button } from './Button';
-
-export default {
-  component: Button,
-};
-
-/*
- * Example Button story with React Hooks.
- * See note below related to this example.
- */
-const ButtonWithHooks = () => {
-  // Sets the hooks for both the label and primary props
-  const [value, setValue] = useState('Secondary');
-  const [isPrimary, setIsPrimary] = useState(false);
-
-  // Sets a click handler to change the label's value
-  const handleOnChange = () => {
-    if (!isPrimary) {
-      setIsPrimary(true);
-      setValue('Primary');
-    }
-  };
-  return <Button primary={isPrimary} onClick={handleOnChange} label={value} />;
-};
-
-export const Primary = {
-  render: () => <ButtonWithHooks />,
-};
-```
-
-```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9" tabTitle="with-hooks"
-import React, { useState } from 'react';
-
-import { Meta, StoryObj } from '@storybook/react';
-
-import { Button } from './Button';
-
-const meta = {
-  component: Button,
-} satisfies Meta<typeof Button>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-/*
- * Example Button story with React Hooks.
- * See note below related to this example.
- */
-const ButtonWithHooks = () => {
-  // Sets the hooks for both the label and primary props
-  const [value, setValue] = useState('Secondary');
-  const [isPrimary, setIsPrimary] = useState(false);
-
-  // Sets a click handler to change the label's value
-  const handleOnChange = () => {
-    if (!isPrimary) {
-      setIsPrimary(true);
-      setValue('Primary');
-    }
-  };
-  return <Button primary={isPrimary} onClick={handleOnChange} label={value} />;
-};
-
-export const Primary = {
-  render: () => <ButtonWithHooks />,
-} satisfies Story;
-```
-
-```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="with-hooks"
-import React, { useState } from 'react';
-
-import { Meta, StoryObj } from '@storybook/react';
-
-import { Button } from './Button';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-};
-
-export default meta;
-type Story = StoryObj<typeof Button>;
-
-/*
- * Example Button story with React Hooks.
- * See note below related to this example.
- */
-const ButtonWithHooks = () => {
-  // Sets the hooks for both the label and primary props
-  const [value, setValue] = useState('Secondary');
-  const [isPrimary, setIsPrimary] = useState(false);
-
-  // Sets a click handler to change the label's value
-  const handleOnChange = () => {
-    if (!isPrimary) {
-      setIsPrimary(true);
-      setValue('Primary');
-    }
-  };
-  return <Button primary={isPrimary} onClick={handleOnChange} label={value} />;
-};
-
-export const Primary: Story = {
-  render: () => <ButtonWithHooks />,
 };
 ```
 
@@ -288,7 +179,7 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary = {
@@ -310,7 +201,7 @@ type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary: Story = {
@@ -332,120 +223,11 @@ type Story = StoryObj<typeof Button>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary: Story = {
   render: () => <Button primary label="Button" />,
-};
-```
-
-```js filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="with-hooks"
-import { createSignal } from 'solid-js';
-
-import { Button } from './Button';
-
-export default {
-  component: Button,
-};
-
-/*
- * Example Button story with Solid Hooks.
- * See note below related to this example.
- */
-const ButtonWithHooks = () => {
-  // Sets the hooks for both the label and primary props
-  const [value, setValue] = createSignal('Secondary');
-  const [isPrimary, setIsPrimary] = createSignal(false);
-
-  // Sets a click handler to change the label's value
-  const handleOnChange = () => {
-    if (!isPrimary()) {
-      setIsPrimary(true);
-      setValue('Primary');
-    }
-  };
-  return <Button primary={isPrimary()} onClick={handleOnChange} label={value()} />;
-};
-
-export const Primary = {
-  render: () => <ButtonWithHooks />,
-};
-```
-
-```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts-4-9" tabTitle="with-hooks"
-import type { Meta, StoryObj } from 'storybook-solidjs';
-
-import { createSignal } from 'solid-js';
-
-import { Button } from './Button';
-
-const meta = {
-  component: Button,
-} satisfies Meta<typeof Button>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-/*
- * Example Button story with Solid Hooks.
- * See note below related to this example.
- */
-const ButtonWithHooks = () => {
-  // Sets the hooks for both the label and primary props
-  const [value, setValue] = createSignal('Secondary');
-  const [isPrimary, setIsPrimary] = createSignal(false);
-
-  // Sets a click handler to change the label's value
-  const handleOnChange = () => {
-    if (!isPrimary()) {
-      setIsPrimary(true);
-      setValue('Primary');
-    }
-  };
-  return <Button primary={isPrimary()} onClick={handleOnChange} label={value()} />;
-};
-
-export const Primary = {
-  render: () => <ButtonWithHooks />,
-} satisfies Story;
-```
-
-```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="with-hooks"
-import type { Meta, StoryObj } from 'storybook-solidjs';
-
-import { createSignal } from 'solid-js';
-
-import { Button } from './Button';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-};
-
-export default meta;
-type Story = StoryObj<typeof Button>;
-
-/*
- * Example Button story with Solid Hooks.
- * See note below related to this example.
- */
-const ButtonWithHooks = () => {
-  // Sets the hooks for both the label and primary props
-  const [value, setValue] = createSignal('Secondary');
-  const [isPrimary, setIsPrimary] = createSignal(false);
-
-  // Sets a click handler to change the label's value
-  const handleOnChange = () => {
-    if (!isPrimary()) {
-      setIsPrimary(true);
-      setValue('Primary');
-    }
-  };
-  return <Button primary={isPrimary()} onClick={handleOnChange} label={value()} />;
-};
-
-export const Primary: Story = {
-  render: () => <ButtonWithHooks />,
 };
 ```
 
@@ -458,7 +240,7 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary = {
@@ -470,22 +252,6 @@ export const Primary = {
     },
   }),
 };
-```
-
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* Button.stories.svelte */}
-
-<script>
-  import { Meta, Story } from '@storybook/addon-svelte-csf';
-
-  import Button from './Button.svelte';
-</script>
-
-<meta title="Button" component="{Button}" />
-
-<Story name="Primary">
-  <button primary="true" label="Button" />
-</Story>
 ```
 
 ```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9"
@@ -502,7 +268,7 @@ type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary: Story = {
@@ -530,7 +296,7 @@ type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary: Story = {
@@ -553,7 +319,7 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary = {
@@ -579,7 +345,7 @@ type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary: Story = {
@@ -605,7 +371,7 @@ type Story = StoryObj<typeof Button>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary: Story = {
@@ -644,4 +410,3 @@ export const Primary: Story = {
   render: () => html`<demo-button primary></demo-button>`,
 };
 ```
-

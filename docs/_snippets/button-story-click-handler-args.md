@@ -450,4 +450,3 @@ export const Text: Story = {
   },
 };
 ```
-

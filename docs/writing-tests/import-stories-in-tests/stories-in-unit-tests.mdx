@@ -72,13 +72,15 @@ By default, Storybook offers a zero-config setup for React and other frameworks 
 </IfRenderer>
 
 <IfRenderer renderer="vue">
+
   Update your test configuration file (e.g., `vite.config.js|ts`) if you're using [Vitest](https://vitest.dev/), or your test script if you're using [Jest](https://jestjs.io/):
 
   {/* prettier-ignore-start */}
 
-  <CodeSnippets path="storybook-testing-addon-optional-config.md" />
+  <CodeSnippets path="storybook-testing-addon-optional-config-test-runners.md" />
 
   {/* prettier-ignore-end */}
+
 </IfRenderer>
 
 ### Override story properties
@@ -118,6 +120,7 @@ If you intend to test multiple stories in a single test, use the `composeStories
 Storybook provides community-led addons for other frameworks like [Vue 2](https://storybook.js.org/addons/@storybook/testing-vue) and [Angular](https://storybook.js.org/addons/@storybook/testing-angular). However, these addons still lack support for the latest stable Storybook release. If you're interested in helping out, we recommend reaching out to the maintainers using the default communication channels (GitHub and [Discord server](https://discord.com/channels/486522875931656193/839297503446695956)).
 
 <IfRenderer renderer="react">
+
   ### The args are not being passed to the test
 
   The components returned by `composeStories` or `composeStory` not only can be rendered as React components but also come with the combined properties from the story, meta, and global configuration. This means that if you want to access args or parameters, for instance, you can do so:
@@ -130,6 +133,7 @@ Storybook provides community-led addons for other frameworks like [Vue 2](https:
 </IfRenderer>
 
 <IfRenderer renderer="vue">
+
   ### The args are not being passed to the test
 
   When using the `composeStories` or `composeStory` functions, the components being rendered will have a combination of properties from the story, meta, and global configuration. Therefore, if you need to access the args or parameters, you can do so as follows:

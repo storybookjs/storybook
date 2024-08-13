@@ -1,6 +1,4 @@
-```md renderer="common" language="mdx"
-{/* ExampleStory.stories.mdx */}
-
+```md filename="ExampleStory.stories.mdx" renderer="common" language="mdx"
 import { Canvas, Meta } from '@storybook/addon-docs';
 
 import { ExampleComponent} from './ExampleComponent';

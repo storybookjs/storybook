@@ -19,4 +19,3 @@ yarn add --dev @storybook/preset-scss css-loader sass sass-loader style-loader
 # With pnpm
 pnpm add --save-dev @storybook/preset-scss css-loader sass sass-loader style-loader
 ```
-

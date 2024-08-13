@@ -1,7 +1,6 @@
-````md renderer="common" language="mdx"
-{/* MyComponent.mdx */}
-
+```mdx filename="MyComponent.mdx" renderer="common" language="mdx"
 import { Meta } from '@storybook/blocks';
+
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 
 <Meta title="A Storybook doc with a custom syntax highlight for SCSS" />
@@ -27,5 +26,4 @@ body {
 export const Component = () => {
   return <SyntaxHighlighter/>;
 };
-````
-
+```

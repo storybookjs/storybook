@@ -146,4 +146,3 @@ test('Checks if the form is valid', () => {
   expect(isFormValid).toBeInTheDocument();
 });
 ```
-

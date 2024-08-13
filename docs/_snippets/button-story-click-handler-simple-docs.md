@@ -11,4 +11,3 @@ export const Text = {
   render: ({ label, onClick }) => <Button label={label} onClick={onClick} />,
 };
 ```
-

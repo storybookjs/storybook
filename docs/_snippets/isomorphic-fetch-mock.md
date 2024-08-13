@@ -21,4 +21,3 @@ export function decorator(story, { parameters }) {
   return story();
 }
 ```
-

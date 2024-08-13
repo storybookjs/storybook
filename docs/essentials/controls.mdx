@@ -20,7 +20,9 @@ Controls do not require any modification to your components. Stories for control
 To use the Controls addon, you need to write your stories using [args](../writing-stories/args.mdx). Storybook will automatically generate UI controls based on your args and what it can infer about your component. Still, you can configure the controls further using [argTypes](../api/arg-types.mdx), see below.
 
 <Callout variant="info" icon="💡">
+
   If you have stories in the older pre-Storybook 6 style, check the [args & controls migration guide](https://medium.com/storybookjs/storybook-6-migration-guide-200346241bb5) to learn how to convert your existing stories for args.
+  
 </Callout>
 
 ## Choosing the control type
@@ -63,7 +65,9 @@ To use the Controls addon, you need to write your stories using [args](../writin
   <CodeSnippets path="button-story-default-export-with-component.md" />
 
   <Callout variant="info">
+
     If you're using a framework that doesn't support this feature, you'll need to define the `argTypes` for your component [manually](#fully-custom-args).
+
   </Callout>
 </IfRenderer>
 
@@ -71,7 +75,7 @@ For instance, suppose you have a `variant` arg on your story that should be `pri
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story-controls-primary-variant.md" usesCsf3 csf2Path="essentials/controls#snippet-button-story-controls-primary-variant" />
+<CodeSnippets path="button-story-controls-primary-variant.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -92,7 +96,9 @@ We can specify which controls get used by declaring a custom [argType](../api/ar
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
+
   ArgTypes are a powerful feature that can be used to customize the controls for your stories. For more information, see the documentation about [customizing controls](#annotation) with `argTypes` annotation.
+
 </Callout>
 
 This replaces the input with a radio group for a more intuitive experience.
@@ -104,8 +110,8 @@ This replaces the input with a radio group for a more intuitive experience.
 Controls can automatically be inferred from arg's name with [regex](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/RegExp), but currently only for the color picker and date picker controls. If you've used the Storybook CLI to setup your project, it should have automatically created the following defaults in `.storybook/preview.js`:
 
 |  Control  |              Default regex               |                        Description                        |
-| :-------: | :--------------------------------------: | :-------------------------------------------------------: |
-| **color** | <code>{`/(background\|color)$/i`}</code> | Will display a color picker UI for the args that match it      |
+| --------- | ---------------------------------------- | --------------------------------------------------------- |
+| **color** | <code>{`/(background\|color)$/i`}</code> | Will display a color picker UI for the args that match it |
 | **date**  |                `/Date$/`                 | Will display a date picker UI for the args that match it  |
 
 If you haven't used the CLI to set the configuration, or if you want to define your patterns, use the `matchers` property in the `controls` parameter:
@@ -125,7 +131,7 @@ If you haven't used the CLI to set the configuration, or if you want to define y
 
   {/* prettier-ignore-start */}
 
-  <CodeSnippets path="page-story-slots.md" usesCsf3 csf2Path="writing-stories/args#snippet-page-story-slots" />
+  <CodeSnippets path="page-story-slots.md" usesCsf3 />
 
   {/* prettier-ignore-end */}
 
@@ -136,6 +142,7 @@ If you haven't used the CLI to set the configuration, or if you want to define y
   * Appear in the list of args for your story.
 
   Using `argTypes`, you can change the display and behavior of each control.
+
 </IfRenderer>
 
 ### Dealing with complex values
@@ -146,7 +153,7 @@ One way to deal with this is to use primitive values (e.g., strings) as arg valu
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="component-story-custom-args-complex.md" usesCsf3 csf2Path="essentials/controls#snippet-component-story-custom-args-complex" />
+<CodeSnippets path="component-story-custom-args-complex.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -190,7 +197,9 @@ As shown above, you can configure individual controls with the “control" annot
 |             | `date`         | Provides a datepicker component to handle date selection. `argTypes: { startDate: { control: 'date' }}`                                                                                                                     |
 
 <Callout variant="info" icon="💡">
+
   The `date` control will convert the date into a UNIX timestamp when the value changes. It's a known limitation that will be fixed in a future release. If you need to represent the actual date, you'll need to update the story's implementation and convert the value into a date object.
+
 </Callout>
 
 {/* prettier-ignore-start */}
@@ -200,7 +209,9 @@ As shown above, you can configure individual controls with the “control" annot
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
+
   Numeric data types will default to a `number` control unless additional configuration is provided.
+
 </Callout>
 
 ### Parameters
@@ -245,7 +256,7 @@ Consider the following story snippets:
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="component-story-disable-controls-regex.md" usesCsf3 csf2Path="essentials/controls#snippet-component-story-disable-controls-regex" />
+<CodeSnippets path="component-story-disable-controls-regex.md" usesCsf3  />
 
 {/* prettier-ignore-end */}
 
@@ -267,7 +278,7 @@ If you don't plan to handle the control args inside your story, you can remove t
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story-hide-nocontrols-warning.md" usesCsf3 csf2Path="essentials/controls#snippet-button-story-hide-nocontrols-warning" />
+<CodeSnippets path="button-story-hide-nocontrols-warning.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -296,7 +307,9 @@ The previous example also removed the prop documentation from the table. In some
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
+
   As with other Storybook properties, such as [decorators](../writing-stories/decorators.mdx), you can apply the same pattern at a story level for more granular cases.
+
 </Callout>
 
 ### Conditional controls
@@ -338,6 +351,7 @@ It may also contain at most one of the following operators:
 If no operator is provided, that is equivalent to `{ truthy: true }`.
 
 <IfRenderer renderer="angular">
+
   ## Troubleshooting
 
   ### Controls are not automatically generated for my component
@@ -367,9 +381,11 @@ If no operator is provided, that is equivalent to `{ truthy: true }`.
   <CodeSnippets path="storybook-preview-compodoc-config.md" />
 
   {/* prettier-ignore-end */}
+
 </IfRenderer>
 
 <IfRenderer renderer="web-components">
+
   ## Troubleshooting
 
   ### Controls are not automatically generated for my component
@@ -381,9 +397,11 @@ If no operator is provided, that is equivalent to `{ truthy: true }`.
   <CodeSnippets path="storybook-preview-custom-elements-config.md" />
 
   {/* prettier-ignore-end */}
+
 </IfRenderer>
 
 <IfRenderer renderer="ember">
+
   ## Troubleshooting
 
   ### Controls are not automatically generated for my component
@@ -407,8 +425,11 @@ If no operator is provided, that is equivalent to `{ truthy: true }`.
   {/* prettier-ignore-end */}
 
   <Callout variant="info">
-    Enabling this feature will generate a `storybook-docgen/index.json` automatically with each build. For more information on how the metadata is generated, refer to [documentation](https://github.com/storybookjs/storybook/tree/next/code/frameworks/ember) for the Ember framework.
+
+    Enabling this feature will generate a `storybook-docgen/index.json` automatically with each build. For more information on how the metadata is generated, refer to [documentation](https://github.com/storybookjs/storybook/tree/release-7-6/code/frameworks/ember) for the Ember framework.
+
   </Callout>
+
 </IfRenderer>
 
 ## API

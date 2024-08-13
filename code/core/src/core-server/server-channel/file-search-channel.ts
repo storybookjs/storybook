@@ -1,15 +1,15 @@
-import type { CoreConfig, Options, SupportedRenderers } from '@storybook/core/types';
+import { readFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+
 import type { Channel } from '@storybook/core/channels';
 import {
   extractProperRendererNameFromFramework,
   getFrameworkName,
   getProjectRoot,
 } from '@storybook/core/common';
-import path from 'node:path';
-import fs from 'fs/promises';
+import { telemetry } from '@storybook/core/telemetry';
+import type { CoreConfig, Options, SupportedRenderers } from '@storybook/core/types';
 
-import { getParser } from '../utils/parser';
-import { searchFiles } from '../utils/search-files';
 import type {
   FileComponentSearchRequestPayload,
   FileComponentSearchResponsePayload,
@@ -20,8 +20,10 @@ import {
   FILE_COMPONENT_SEARCH_REQUEST,
   FILE_COMPONENT_SEARCH_RESPONSE,
 } from '@storybook/core/core-events';
+
 import { doesStoryFileExist, getStoryMetadata } from '../utils/get-new-story-file';
-import { telemetry } from '@storybook/core/telemetry';
+import { getParser } from '../utils/parser';
+import { searchFiles } from '../utils/search-files';
 
 export async function initFileSearchChannel(
   channel: Channel,
@@ -57,14 +59,11 @@ export async function initFileSearchChannel(
           const parser = getParser(rendererName);
 
           try {
-            const content = await fs.readFile(path.join(projectRoot, file), 'utf-8');
-            const { storyFileName } = getStoryMetadata(path.join(projectRoot, file));
-            const dirname = path.dirname(file);
+            const content = await readFile(join(projectRoot, file), 'utf-8');
+            const { storyFileName } = getStoryMetadata(join(projectRoot, file));
+            const dir = dirname(file);
 
-            const storyFileExists = doesStoryFileExist(
-              path.join(projectRoot, dirname),
-              storyFileName
-            );
+            const storyFileExists = doesStoryFileExist(join(projectRoot, dir), storyFileName);
 
             const info = await parser.parse(content);
 

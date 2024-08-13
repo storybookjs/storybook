@@ -1,4 +1,5 @@
 import { global } from '@storybook/global';
+
 import type { BrowserInfo } from 'browser-dtector';
 import BrowserDetector from 'browser-dtector';
 

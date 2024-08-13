@@ -1,4 +1,5 @@
 import { type API } from 'storybook/internal/manager-api';
+
 import { ADDON_ID } from './constants';
 import { initialGlobals as defaultGlobals } from './preview';
 

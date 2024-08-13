@@ -1,5 +1,5 @@
-import { join } from 'path';
 import { move, remove } from 'fs-extra';
+import { join } from 'path';
 
 import { runCommand } from '../generate';
 

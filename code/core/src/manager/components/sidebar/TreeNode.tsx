@@ -1,7 +1,10 @@
-import { styled } from '@storybook/core/theming';
-import { transparentize } from 'polished';
-import type { FC, ComponentProps } from 'react';
+import type { ComponentProps, FC } from 'react';
 import React from 'react';
+
+import { styled } from '@storybook/core/theming';
+
+import { transparentize } from 'polished';
+
 import { UseSymbol } from './IconSymbols';
 import { CollapseIcon } from './components/CollapseIcon';
 

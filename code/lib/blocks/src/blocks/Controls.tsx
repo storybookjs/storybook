@@ -1,17 +1,19 @@
 /* eslint-disable react/destructuring-assignment */
-import type { Renderer, Parameters, StrictArgTypes } from '@storybook/csf';
-import type { ModuleExports } from 'storybook/internal/types';
 import type { FC } from 'react';
 import React, { useContext } from 'react';
+
+import type { ArgTypesExtractor } from 'storybook/internal/docs-tools';
 import { filterArgTypes } from 'storybook/internal/preview-api';
 import type { PropDescriptor } from 'storybook/internal/preview-api';
-import type { ArgTypesExtractor } from 'storybook/internal/docs-tools';
+import type { ModuleExports } from 'storybook/internal/types';
+
+import type { Parameters, Renderer, StrictArgTypes } from '@storybook/csf';
 
 import type { SortType } from '../components';
-import { ArgsTable as PureArgsTable, ArgsTableError, TabbedArgsTable } from '../components';
+import { ArgsTableError, ArgsTable as PureArgsTable, TabbedArgsTable } from '../components';
 import { DocsContext } from './DocsContext';
-import { useGlobals } from './useGlobals';
 import { useArgs } from './useArgs';
+import { useGlobals } from './useGlobals';
 import { getComponentName } from './utils';
 
 type ControlsParameters = {

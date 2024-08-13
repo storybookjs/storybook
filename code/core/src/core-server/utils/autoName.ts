@@ -1,5 +1,6 @@
-import type { Path } from '@storybook/core/types';
 import { basename } from 'node:path';
+
+import type { Path } from '@storybook/core/types';
 
 /**
  * Calculate a name to use for a docs entry if not specified. The rule is:

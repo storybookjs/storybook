@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { styled } from '@storybook/core/theming';
 
 const Wrapper = styled.div(({ theme }) => ({

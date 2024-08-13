@@ -3,6 +3,7 @@ import type {
   StorybookConfig as StorybookConfigBase,
   TypescriptOptions as TypescriptOptionsWebComponents,
 } from 'storybook/internal/types';
+
 import type {
   BuilderOptions,
   StorybookConfigWebpack,

@@ -1,11 +1,13 @@
+import type { PreparedStory } from '@storybook/core/types';
 import { global } from '@storybook/global';
+
 import { logger } from '@storybook/core/client-logger';
+
 import AnsiToHtml from 'ansi-to-html';
-import { dedent } from 'ts-dedent';
 import qs from 'qs';
+import { dedent } from 'ts-dedent';
 
 import type { View } from './View';
-import type { PreparedStory } from '@storybook/core/types';
 
 const { document } = global;
 

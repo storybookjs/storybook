@@ -1,9 +1,10 @@
-import chalk from 'chalk';
 import assert from 'assert';
-import { esMain } from './utils/esmain';
-import { allTemplates } from '../code/lib/cli/src/sandbox-templates';
+import chalk from 'chalk';
+
 import versions from '../code/core/src/common/versions';
 import { oneWayHash } from '../code/core/src/telemetry/one-way-hash';
+import { allTemplates } from '../code/lib/cli-storybook/src/sandbox-templates';
+import { esMain } from './utils/esmain';
 
 const PORT = process.env.PORT || 6007;
 

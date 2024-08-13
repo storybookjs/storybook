@@ -1,9 +1,11 @@
+import { readFile } from 'node:fs/promises';
+import { basename } from 'node:path';
+
+import { logger } from 'storybook/internal/node-logger';
+
+import { preprocess } from 'svelte/compiler';
 import svelteDoc from 'sveltedoc-parser';
 import { dedent } from 'ts-dedent';
-import * as path from 'path';
-import * as fs from 'fs';
-import { preprocess } from 'svelte/compiler';
-import { logger } from 'storybook/internal/node-logger';
 
 /*
  * Patch sveltedoc-parser internal options.
@@ -71,7 +73,7 @@ export default async function svelteDocgen(this: any, source: string) {
 
   let docOptions;
   if (preprocessOptions) {
-    const src = fs.readFileSync(resource).toString();
+    const src = await readFile(resource).toString();
 
     const { code: fileContent } = await preprocess(src, preprocessOptions);
     docOptions = {
@@ -102,10 +104,10 @@ export default async function svelteDocgen(this: any, source: string) {
   }
 
   // get filename for source content
-  const file = path.basename(resource);
+  const file = basename(resource);
 
   // populate filename in docgen
-  componentDoc.name = path.basename(file);
+  componentDoc.name = basename(file);
 
   const componentName = getNameFromFilename(resource);
 

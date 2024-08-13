@@ -1,9 +1,10 @@
 import type { FC } from 'react';
 import React from 'react';
-import { styled } from '@storybook/core/theming';
 
 import { Button, Link, StorybookLogo } from '@storybook/core/components';
+import { styled } from '@storybook/core/theming';
 import { DocumentIcon, GithubIcon } from '@storybook/icons';
+
 import { UpgradeBlock } from '../components/upgrade/UpgradeBlock';
 
 const Container = styled.div({

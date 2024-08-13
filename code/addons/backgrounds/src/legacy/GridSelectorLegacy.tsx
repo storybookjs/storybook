@@ -1,10 +1,11 @@
 import type { FC } from 'react';
 import React, { memo } from 'react';
 
-import { useGlobals, useParameter } from 'storybook/internal/manager-api';
 import { IconButton } from 'storybook/internal/components';
+import { useGlobals, useParameter } from 'storybook/internal/manager-api';
 
 import { GridIcon } from '@storybook/icons';
+
 import { PARAM_KEY as BACKGROUNDS_PARAM_KEY } from '../constants';
 
 export const GridToolLegacy: FC = memo(function GridSelector() {

@@ -1,9 +1,10 @@
 /* eslint-disable no-underscore-dangle */
-import type { FileInfo } from 'jscodeshift';
 import { loadCsf } from '@storybook/core/csf-tools';
+
 import type { BabelFile } from '@babel/core';
 import * as babel from '@babel/core';
 import { isIdentifier, isObjectExpression, isObjectProperty } from '@babel/types';
+import type { FileInfo } from 'jscodeshift';
 
 function findImplicitSpies(path: babel.NodePath, file: string, keys: string[]) {
   path.traverse({

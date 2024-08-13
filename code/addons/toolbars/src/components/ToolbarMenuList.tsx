@@ -1,12 +1,14 @@
 import type { FC } from 'react';
-import React, { useState, useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
+
+import { TooltipLinkList, WithTooltip } from 'storybook/internal/components';
 import { useGlobals } from 'storybook/internal/manager-api';
-import { WithTooltip, TooltipLinkList } from 'storybook/internal/components';
-import { ToolbarMenuButton } from './ToolbarMenuButton';
+
 import type { WithKeyboardCycleProps } from '../hoc/withKeyboardCycle';
 import { withKeyboardCycle } from '../hoc/withKeyboardCycle';
-import { getSelectedIcon, getSelectedTitle } from '../utils/get-selected';
 import type { ToolbarMenuProps } from '../types';
+import { getSelectedIcon, getSelectedTitle } from '../utils/get-selected';
+import { ToolbarMenuButton } from './ToolbarMenuButton';
 import { ToolbarMenuListItem } from './ToolbarMenuListItem';
 
 type ToolbarMenuListProps = ToolbarMenuProps & WithKeyboardCycleProps;

@@ -1,9 +1,10 @@
 /* eslint-disable no-underscore-dangle */
-import type { FileInfo } from 'jscodeshift';
 import { loadCsf, printCsf } from '@storybook/core/csf-tools';
+
 import type { BabelFile } from '@babel/core';
 import * as babel from '@babel/core';
 import * as t from '@babel/types';
+import type { FileInfo } from 'jscodeshift';
 import prettier from 'prettier';
 
 export default async function transform(info: FileInfo) {

@@ -1,16 +1,18 @@
-import {
-  NAVIGATE_URL,
-  STORY_ARGS_UPDATED,
-  SET_CURRENT_STORY,
-  GLOBALS_UPDATED,
-  UPDATE_QUERY_PARAMS,
-} from '@storybook/core/core-events';
 import type { NavigateOptions } from '@storybook/core/router';
-import { queryFromLocation, buildArgsParam } from '@storybook/core/router';
-import { dequal as deepEqual } from 'dequal';
+import { buildArgsParam, queryFromLocation } from '@storybook/core/router';
+import type { API_Layout, API_UI, Args } from '@storybook/core/types';
 import { global } from '@storybook/global';
 
-import type { API_Layout, API_UI, Args } from '@storybook/core/types';
+import {
+  GLOBALS_UPDATED,
+  NAVIGATE_URL,
+  SET_CURRENT_STORY,
+  STORY_ARGS_UPDATED,
+  UPDATE_QUERY_PARAMS,
+} from '@storybook/core/core-events';
+
+import { dequal as deepEqual } from 'dequal';
+
 import type { ModuleArgs, ModuleFn } from '../lib/types';
 import { defaultLayoutState } from './layout';
 

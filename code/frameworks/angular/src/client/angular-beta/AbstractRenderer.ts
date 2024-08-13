@@ -1,14 +1,13 @@
-import { ApplicationRef, enableProdMode, NgModule } from '@angular/core';
+import { ApplicationRef, NgModule, enableProdMode } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
-
 import { BehaviorSubject, Subject } from 'rxjs';
 import { stringify } from 'telejson';
 
 import { ICollection, StoryFnAngularReturnType } from '../types';
 import { getApplication } from './StorybookModule';
 import { storyPropsProvider } from './StorybookProvider';
-import { PropertyExtractor } from './utils/PropertyExtractor';
 import { queueBootstrapping } from './utils/BootstrapQueue';
+import { PropertyExtractor } from './utils/PropertyExtractor';
 
 type StoryRenderInfo = {
   storyFnAngular: StoryFnAngularReturnType;

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+
 import type { Meta, StoryObj } from '@storybook/react';
-import { userEvent, waitFor, within, expect } from '@storybook/test';
+import { expect, userEvent, waitFor, within } from '@storybook/test';
 
 import { List } from './List';
 import { ListItem } from './ListItem/ListItem';

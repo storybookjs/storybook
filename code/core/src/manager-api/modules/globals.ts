@@ -1,16 +1,17 @@
-import { SET_GLOBALS, UPDATE_GLOBALS, GLOBALS_UPDATED } from '@storybook/core/core-events';
-import { logger } from '@storybook/core/client-logger';
-import { dequal as deepEqual } from 'dequal';
 import type {
-  SetGlobalsPayload,
-  Globals,
   GlobalTypes,
+  Globals,
   GlobalsUpdatedPayload,
+  SetGlobalsPayload,
 } from '@storybook/core/types';
 
-import type { ModuleFn } from '../lib/types';
+import { logger } from '@storybook/core/client-logger';
+import { GLOBALS_UPDATED, SET_GLOBALS, UPDATE_GLOBALS } from '@storybook/core/core-events';
+
+import { dequal as deepEqual } from 'dequal';
 
 import { getEventMetadata } from '../lib/events';
+import type { ModuleFn } from '../lib/types';
 
 export interface SubState {
   globals?: Globals;

@@ -3,7 +3,6 @@ const preview = {
   globalTypes: {
     locale: {
       description: 'Internationalization locale',
-      defaultValue: 'en',
       toolbar: {
         icon: 'globe',
         items: [
@@ -15,6 +14,9 @@ const preview = {
         ],
       },
     },
+  },
+  initialGlobals: {
+    locale: 'en',
   },
 };
 
@@ -29,7 +31,6 @@ const preview: Preview = {
   globalTypes: {
     locale: {
       description: 'Internationalization locale',
-      defaultValue: 'en',
       toolbar: {
         icon: 'globe',
         items: [
@@ -41,6 +42,9 @@ const preview: Preview = {
         ],
       },
     },
+  },
+  initialGlobals: {
+    locale: 'en',
   },
 };
 
@@ -55,7 +59,6 @@ const preview: Preview = {
   globalTypes: {
     locale: {
       description: 'Internationalization locale',
-      defaultValue: 'en',
       toolbar: {
         icon: 'globe',
         items: [
@@ -67,6 +70,9 @@ const preview: Preview = {
         ],
       },
     },
+  },
+  initialGlobals: {
+    locale: 'en',
   },
 };
 

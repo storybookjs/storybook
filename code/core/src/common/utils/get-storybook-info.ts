@@ -1,8 +1,11 @@
-import path from 'node:path';
-import { pathExistsSync } from 'fs-extra';
-import { getStorybookConfiguration } from './get-storybook-configuration';
+import { join } from 'node:path';
+
 import type { SupportedFrameworks } from '@storybook/core/types';
 import type { CoreCommon_StorybookInfo, PackageJson } from '@storybook/core/types';
+
+import { pathExistsSync } from 'fs-extra';
+
+import { getStorybookConfiguration } from './get-storybook-configuration';
 
 export const rendererPackages: Record<string, string> = {
   '@storybook/react': 'react',
@@ -88,7 +91,7 @@ const getRendererInfo = (packageJson: PackageJson) => {
 const validConfigExtensions = ['ts', 'js', 'tsx', 'jsx', 'mjs', 'cjs'];
 
 export const findConfigFile = (prefix: string, configDir: string) => {
-  const filePrefix = path.join(configDir, prefix);
+  const filePrefix = join(configDir, prefix);
   const extension = validConfigExtensions.find((ext: string) =>
     pathExistsSync(`${filePrefix}.${ext}`)
   );

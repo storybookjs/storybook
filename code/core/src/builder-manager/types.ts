@@ -1,8 +1,8 @@
 import type {
   Builder,
-  Builder_WithRequiredProperty,
   BuilderStats,
   Builder_Unpromise,
+  Builder_WithRequiredProperty,
 } from '@storybook/core/types';
 
 import type { BuildOptions, BuildResult } from 'esbuild';

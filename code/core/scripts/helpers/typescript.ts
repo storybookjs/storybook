@@ -1,4 +1,5 @@
 import { join } from 'node:path';
+
 import { typescript } from '../../../../scripts/prepare/tools';
 
 export function getTSDiagnostics(

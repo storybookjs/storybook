@@ -1,24 +1,27 @@
-import React, { useMemo } from 'react';
-import {
-  LayoutRouterContext,
-  AppRouterContext,
-  GlobalLayoutRouterContext,
-} from 'next/dist/shared/lib/app-router-context.shared-runtime';
-import {
-  PathnameContext,
-  SearchParamsContext,
-  PathParamsContext,
-} from 'next/dist/shared/lib/hooks-client-context.shared-runtime';
-import { type Params } from 'next/dist/shared/lib/router/utils/route-matcher';
-import { PAGE_SEGMENT_KEY } from 'next/dist/shared/lib/segment';
-import type { FlightRouterState } from 'next/dist/server/app-render/types';
-import type { RouteParams } from './types';
 // We need this import to be a singleton, and because it's used in multiple entrypoints
 // both in ESM and CJS, importing it via the package name instead of having a local import
 // is the only way to achieve it actually being a singleton
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore we must ignore types here as during compilation they are not generated yet
+import React, { useMemo } from 'react';
+
 import { getRouter } from '@storybook/nextjs/navigation.mock';
+
+import type { FlightRouterState } from 'next/dist/server/app-render/types';
+import {
+  AppRouterContext,
+  GlobalLayoutRouterContext,
+  LayoutRouterContext,
+} from 'next/dist/shared/lib/app-router-context.shared-runtime';
+import {
+  PathParamsContext,
+  PathnameContext,
+  SearchParamsContext,
+} from 'next/dist/shared/lib/hooks-client-context.shared-runtime';
+import { type Params } from 'next/dist/shared/lib/router/utils/route-matcher';
+import { PAGE_SEGMENT_KEY } from 'next/dist/shared/lib/segment';
+
+import type { RouteParams } from './types';
 
 type AppRouterProviderProps = {
   routeParams: RouteParams;

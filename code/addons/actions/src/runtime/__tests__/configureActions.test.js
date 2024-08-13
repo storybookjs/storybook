@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { config } from '../configureActions';
+import { describe, expect, it } from 'vitest';
+
 import { configureActions } from '../..';
+import { config } from '../configureActions';
 
 describe('Configure Actions', () => {
   it('can configure actions', () => {

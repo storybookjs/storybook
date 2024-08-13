@@ -1,4 +1,4 @@
-import { writeFile, ensureFile } from 'fs-extra';
+import { ensureFile, writeFile } from 'fs-extra';
 import { dedent } from 'ts-dedent';
 
 export const write = async (location: string, data: string) => {

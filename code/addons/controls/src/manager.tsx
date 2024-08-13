@@ -1,5 +1,5 @@
 import React from 'react';
-import { dequal as deepEqual } from 'dequal';
+
 import { AddonPanel, Badge, Spaced } from 'storybook/internal/components';
 import type {
   ResponseData,
@@ -14,9 +14,13 @@ import {
   useArgTypes,
 } from 'storybook/internal/manager-api';
 import { color } from 'storybook/internal/theming';
+
+import type { Args } from '@storybook/csf';
+
+import { dequal as deepEqual } from 'dequal';
+
 import { ControlsPanel } from './ControlsPanel';
 import { ADDON_ID, PARAM_KEY } from './constants';
-import type { Args } from '@storybook/csf';
 
 function Title() {
   const rows = useArgTypes();

@@ -1,7 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
 import { global } from '@storybook/global';
 
-import { pathToId, setPath, getSelectionSpecifierFromPath } from './UrlStore';
+import { getSelectionSpecifierFromPath, pathToId, setPath } from './UrlStore';
 
 const { history, document } = global;
 

@@ -1,4 +1,4 @@
-import * as path from 'path';
+import { relative } from 'node:path';
 
 import type { Options } from 'storybook/internal/types';
 
@@ -27,7 +27,7 @@ function toImportPath(relativePath: string) {
 async function toImportFn(stories: string[]) {
   const { normalizePath } = await import('vite');
   const objectEntries = stories.map((file) => {
-    const relativePath = normalizePath(path.relative(process.cwd(), file));
+    const relativePath = normalizePath(relative(process.cwd(), file));
 
     return `  '${toImportPath(relativePath)}': async () => import('/@fs/${file}')`;
   });

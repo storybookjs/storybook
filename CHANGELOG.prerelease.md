@@ -1,3 +1,26 @@
+## 8.3.0-alpha.5
+
+- Builder-Vite: Add null character prefix to virtual file IDs - [#28863](https://github.com/storybookjs/storybook/pull/28863), thanks @valentinpalkovic!
+- CLI: Fix `init --skip-install` - [#28853](https://github.com/storybookjs/storybook/pull/28853), thanks @ndelangen!
+- CLI: Parse more Yarn Berry errors - [#28816](https://github.com/storybookjs/storybook/pull/28816), thanks @yannbf!
+- Core: Make sure CJS build always has lowest prio - [#28829](https://github.com/storybookjs/storybook/pull/28829), thanks @kasperpeulen!
+- Maintenance: Add `node:`-prefix to node core-modules - [#28860](https://github.com/storybookjs/storybook/pull/28860), thanks @ndelangen!
+- Next.js: Add @storybook/nextjs-vite package - [#28800](https://github.com/storybookjs/storybook/pull/28800), thanks @valentinpalkovic!
+- React: Bundle in `lodash` - [#28609](https://github.com/storybookjs/storybook/pull/28609), thanks @ndelangen!
+- Telemetry: Add globals stats - [#28822](https://github.com/storybookjs/storybook/pull/28822), thanks @shilman!
+- Telemetry: Add portable stories - [#26764](https://github.com/storybookjs/storybook/pull/26764), thanks @shilman!
+- Telemetry: Disable save-from-controls logs for example stories - [#28870](https://github.com/storybookjs/storybook/pull/28870), thanks @shilman!
+- Test: Upgrade Vitest to v2 - [#28788](https://github.com/storybookjs/storybook/pull/28788), thanks @yannbf!
+
+## 8.3.0-alpha.4
+
+- CSF: Allow overridding globals at the story level - [#26654](https://github.com/storybookjs/storybook/pull/26654), thanks @tmeasday!
+- Core: Introduce run over play in portable stories, and revert back play changes of 8.2 - [#28764](https://github.com/storybookjs/storybook/pull/28764), thanks @kasperpeulen!
+- Core: Split Storybook CLI  - [#28519](https://github.com/storybookjs/storybook/pull/28519), thanks @kasperpeulen!
+- Fix: Invariant failed: Expected package.json#version to be defined in the "undefined" package - [#28752](https://github.com/storybookjs/storybook/pull/28752), thanks @abcdmku!
+- Next.js: Make RSC portable-stories compatible - [#28756](https://github.com/storybookjs/storybook/pull/28756), thanks @valentinpalkovic!
+- UI: Fix collapse/expand all functionality - [#28582](https://github.com/storybookjs/storybook/pull/28582), thanks @filipemelo2002!
+
 ## 8.3.0-alpha.3
 
 - Angular: Fix Angular template error for props with a circular reference - [#28498](https://github.com/storybookjs/storybook/pull/28498), thanks @Marklb!

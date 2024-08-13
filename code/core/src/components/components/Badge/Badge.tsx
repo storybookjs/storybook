@@ -1,5 +1,7 @@
 import React from 'react';
+
 import { styled } from '@storybook/core/theming';
+
 import { transparentize } from 'polished';
 
 const BadgeWrapper = styled.div<BadgeProps>(

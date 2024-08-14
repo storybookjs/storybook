@@ -75,12 +75,12 @@
     "defaults"
   ],
   "resolutions": {
-    "@playwright/test": "1.36.0",
+    "@playwright/test": "1.46.0",
     "@types/node": "^22.0.0",
     "@vitest/expect@npm:2.0.5": "patch:@vitest/expect@npm%3A2.0.5#~/.yarn/patches/@vitest-expect-npm-2.0.5-8933466cce.patch",
     "esbuild": "^0.23.0",
-    "playwright": "1.36.0",
-    "playwright-core": "1.36.0",
+    "playwright": "1.46.0",
+    "playwright-core": "1.46.0",
     "serialize-javascript": "^3.1.0",
     "type-fest": "~2.19"
   },
@@ -90,7 +90,7 @@
     "@nx/eslint": "18.0.6",
     "@nx/vite": "18.0.6",
     "@nx/workspace": "18.0.6",
-    "@playwright/test": "1.36.0",
+    "@playwright/test": "1.46.0",
     "@storybook/addon-a11y": "workspace:*",
     "@storybook/addon-actions": "workspace:*",
     "@storybook/addon-backgrounds": "workspace:*",
@@ -118,7 +118,7 @@
     "@storybook/codemod": "workspace:*",
     "@storybook/core": "workspace:*",
     "@storybook/core-webpack": "workspace:*",
-    "@storybook/csf": "^0.1.11",
+    "@storybook/csf": "0.1.11",
     "@storybook/csf-plugin": "workspace:*",
     "@storybook/ember": "workspace:*",
     "@storybook/eslint-config-storybook": "^4.0.0",

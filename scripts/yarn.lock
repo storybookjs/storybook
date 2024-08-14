@@ -1580,8 +1580,8 @@ __metadata:
     ora: "npm:^5.4.1"
     p-limit: "npm:^3.1.0"
     p-retry: "npm:^5.1.2"
-    playwright: "npm:1.36.0"
-    playwright-core: "npm:1.36.0"
+    playwright: "npm:1.46.0"
+    playwright-core: "npm:1.46.0"
     prettier: "npm:^3.3.2"
     pretty-bytes: "npm:^6.1.1"
     pretty-hrtime: "npm:^1.0.3"
@@ -6362,12 +6362,31 @@ __metadata:
   languageName: node
   linkType: hard
 
+"fsevents@npm:2.3.2":
+  version: 2.3.2
+  resolution: "fsevents@npm:2.3.2"
+  dependencies:
+    node-gyp: "npm:latest"
+  checksum: 10c0/be78a3efa3e181cda3cf7a4637cb527bcebb0bd0ea0440105a3bb45b86f9245b307dc10a2507e8f4498a7d4ec349d1910f4d73e4d4495b16103106e07eee735b
+  conditions: os=darwin
+  languageName: node
+  linkType: hard
+
 "fsevents@npm:~2.3.2, fsevents@npm:~2.3.3":
   version: 2.3.3
   resolution: "fsevents@npm:2.3.3"
   dependencies:
     node-gyp: "npm:latest"
   checksum: 10c0/a1f0c44595123ed717febbc478aa952e47adfc28e2092be66b8ab1635147254ca6cfe1df792a8997f22716d4cbafc73309899ff7bfac2ac3ad8cf2e4ecc3ec60
+  conditions: os=darwin
+  languageName: node
+  linkType: hard
+
+"fsevents@patch:fsevents@npm%3A2.3.2#optional!builtin<compat/fsevents>":
+  version: 2.3.2
+  resolution: "fsevents@patch:fsevents@npm%3A2.3.2#optional!builtin<compat/fsevents>::version=2.3.2&hash=df0bf1"
+  dependencies:
+    node-gyp: "npm:latest"
   conditions: os=darwin
   languageName: node
   linkType: hard
@@ -10777,23 +10796,27 @@ __metadata:
   languageName: node
   linkType: hard
 
-"playwright-core@npm:1.36.0":
-  version: 1.36.0
-  resolution: "playwright-core@npm:1.36.0"
+"playwright-core@npm:1.46.0":
+  version: 1.46.0
+  resolution: "playwright-core@npm:1.46.0"
   bin:
     playwright-core: cli.js
-  checksum: 10c0/5b5d32495e222ddd4351d1d8b116a25a7d93ea5f3439dceaceeb916d0abdce6d5b0b84f80df0b239168d55a100e7aecc9db4774ff20ba0210d8de027f258b544
+  checksum: 10c0/2d2d163dc22a424a86765b25c5523e932748f38d071f49ac6c41f14c8c10c0874b3854a290057e9988c5e876bb8be8aa52fe40ee8c57b3390b9c01593074e3df
   languageName: node
   linkType: hard
 
-"playwright@npm:1.36.0":
-  version: 1.36.0
-  resolution: "playwright@npm:1.36.0"
+"playwright@npm:1.46.0":
+  version: 1.46.0
+  resolution: "playwright@npm:1.46.0"
   dependencies:
-    playwright-core: "npm:1.36.0"
+    fsevents: "npm:2.3.2"
+    playwright-core: "npm:1.46.0"
+  dependenciesMeta:
+    fsevents:
+      optional: true
   bin:
     playwright: cli.js
-  checksum: 10c0/dc39eb6271b22901cb6219a8ecdd44736169edd789d2a8be5885ded5414ee2a9e2c73a19e24d55336ddbae6f9d69522b46f1fe92998740745f1cb78d58b6cb6e
+  checksum: 10c0/fa4192af99908c2c02ae20880e27f51efa6694348c2496d1c2818908eb394c4b21947edd0c5ce2a83f471f5399ac3f0cee8a7be8a35cd80d32d32875184962c7
   languageName: node
   linkType: hard
 

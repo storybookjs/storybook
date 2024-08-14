@@ -4688,19 +4688,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@playwright/test@npm:1.36.0":
-  version: 1.36.0
-  resolution: "@playwright/test@npm:1.36.0"
+"@playwright/test@npm:1.46.0":
+  version: 1.46.0
+  resolution: "@playwright/test@npm:1.46.0"
   dependencies:
-    "@types/node": "npm:*"
-    fsevents: "npm:2.3.2"
-    playwright-core: "npm:1.36.0"
-  dependenciesMeta:
-    fsevents:
-      optional: true
+    playwright: "npm:1.46.0"
   bin:
     playwright: cli.js
-  checksum: 10c0/9d06764f55ae10569981d518838d588d820678a4e6a8a1bbfab78b7b4b4245cf055e94a0dea90fe2ecf1ce4559d06e02986757270e7c54a52d0bdf1963cb03e6
+  checksum: 10c0/dced91081efc8b063267626059b37923f44f98132edba906f30281277d919de27c6acf6de082d390ad263112a983f856e7f4bf37722a33cc42f62c5be308bf87
   languageName: node
   linkType: hard
 
@@ -6136,21 +6131,21 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@storybook/csf@npm:0.1.11, @storybook/csf@npm:^0.1.11":
+  version: 0.1.11
+  resolution: "@storybook/csf@npm:0.1.11"
+  dependencies:
+    type-fest: "npm:^2.19.0"
+  checksum: 10c0/c5329fc13e7d762049b5c91df1bc1c0e510a1a898c401b72b68f1ff64139a85ab64a92f8e681d2fcb226c0a4a55d0f23b569b2bdb517e0f067bd05ea46228356
+  languageName: node
+  linkType: hard
+
 "@storybook/csf@npm:^0.0.1":
   version: 0.0.1
   resolution: "@storybook/csf@npm:0.0.1"
   dependencies:
     lodash: "npm:^4.17.15"
   checksum: 10c0/7b0f75763415f9147692a460b44417ee56ea9639433716a1fd4d1df4c8b0221cbc71b8da0fbed4dcecb3ccd6c7ed64be39f5c255c713539a6088a1d6488aaa24
-  languageName: node
-  linkType: hard
-
-"@storybook/csf@npm:^0.1.11":
-  version: 0.1.11
-  resolution: "@storybook/csf@npm:0.1.11"
-  dependencies:
-    type-fest: "npm:^2.19.0"
-  checksum: 10c0/c5329fc13e7d762049b5c91df1bc1c0e510a1a898c401b72b68f1ff64139a85ab64a92f8e681d2fcb226c0a4a55d0f23b569b2bdb517e0f067bd05ea46228356
   languageName: node
   linkType: hard
 
@@ -6748,7 +6743,7 @@ __metadata:
     "@nx/eslint": "npm:18.0.6"
     "@nx/vite": "npm:18.0.6"
     "@nx/workspace": "npm:18.0.6"
-    "@playwright/test": "npm:1.36.0"
+    "@playwright/test": "npm:1.46.0"
     "@storybook/addon-a11y": "workspace:*"
     "@storybook/addon-actions": "workspace:*"
     "@storybook/addon-backgrounds": "workspace:*"
@@ -6776,7 +6771,7 @@ __metadata:
     "@storybook/codemod": "workspace:*"
     "@storybook/core": "workspace:*"
     "@storybook/core-webpack": "workspace:*"
-    "@storybook/csf": "npm:^0.1.11"
+    "@storybook/csf": "npm:0.1.11"
     "@storybook/csf-plugin": "workspace:*"
     "@storybook/ember": "workspace:*"
     "@storybook/eslint-config-storybook": "npm:^4.0.0"
@@ -22455,23 +22450,27 @@ __metadata:
   languageName: node
   linkType: hard
 
-"playwright-core@npm:1.36.0":
-  version: 1.36.0
-  resolution: "playwright-core@npm:1.36.0"
+"playwright-core@npm:1.46.0":
+  version: 1.46.0
+  resolution: "playwright-core@npm:1.46.0"
   bin:
     playwright-core: cli.js
-  checksum: 10c0/5b5d32495e222ddd4351d1d8b116a25a7d93ea5f3439dceaceeb916d0abdce6d5b0b84f80df0b239168d55a100e7aecc9db4774ff20ba0210d8de027f258b544
+  checksum: 10c0/2d2d163dc22a424a86765b25c5523e932748f38d071f49ac6c41f14c8c10c0874b3854a290057e9988c5e876bb8be8aa52fe40ee8c57b3390b9c01593074e3df
   languageName: node
   linkType: hard
 
-"playwright@npm:1.36.0":
-  version: 1.36.0
-  resolution: "playwright@npm:1.36.0"
+"playwright@npm:1.46.0":
+  version: 1.46.0
+  resolution: "playwright@npm:1.46.0"
   dependencies:
-    playwright-core: "npm:1.36.0"
+    fsevents: "npm:2.3.2"
+    playwright-core: "npm:1.46.0"
+  dependenciesMeta:
+    fsevents:
+      optional: true
   bin:
     playwright: cli.js
-  checksum: 10c0/dc39eb6271b22901cb6219a8ecdd44736169edd789d2a8be5885ded5414ee2a9e2c73a19e24d55336ddbae6f9d69522b46f1fe92998740745f1cb78d58b6cb6e
+  checksum: 10c0/fa4192af99908c2c02ae20880e27f51efa6694348c2496d1c2818908eb394c4b21947edd0c5ce2a83f471f5399ac3f0cee8a7be8a35cd80d32d32875184962c7
   languageName: node
   linkType: hard
 

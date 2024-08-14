@@ -7154,7 +7154,6 @@ __metadata:
     serve-static: "npm:^1.14.1"
     storybook: "workspace:^"
     svelte: "npm:^5.0.0-next.65"
-    telejson: "npm:^7.2.0"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.4.3"
     util: "npm:^0.12.4"

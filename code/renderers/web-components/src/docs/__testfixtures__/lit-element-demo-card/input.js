@@ -1,6 +1,6 @@
 import { global } from '@storybook/global';
 
-import { LitElement, html, css } from 'lit-element';
+import { LitElement, css, html } from 'lit-element';
 
 const { CustomEvent } = global;
 

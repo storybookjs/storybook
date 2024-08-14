@@ -1,16 +1,16 @@
-import * as fs from 'fs-extra';
-import path, { dirname, join, relative } from 'path';
-import type { Options } from 'tsup';
-import type { PackageJson } from 'type-fest';
-import { build } from 'tsup';
 import aliasPlugin from 'esbuild-plugin-alias';
-import { dedent } from 'ts-dedent';
-import slash from 'slash';
-import { exec } from '../utils/exec';
-
-import { globalPackages as globalPreviewPackages } from '../../code/core/src/preview/globals/globals';
-import { globalPackages as globalManagerPackages } from '../../code/core/src/manager/globals/globals';
+import * as fs from 'fs-extra';
 import { glob } from 'glob';
+import { dirname, join, parse, posix, relative, sep } from 'path';
+import slash from 'slash';
+import { dedent } from 'ts-dedent';
+import type { Options } from 'tsup';
+import { build } from 'tsup';
+import type { PackageJson } from 'type-fest';
+
+import { globalPackages as globalManagerPackages } from '../../code/core/src/manager/globals/globals';
+import { globalPackages as globalPreviewPackages } from '../../code/core/src/preview/globals/globals';
+import { exec } from '../utils/exec';
 
 /* TYPES */
 
@@ -50,7 +50,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   } = (await fs.readJson(join(cwd, 'package.json'))) as PackageJsonWithBundlerConfig;
 
   if (pre) {
-    await exec(`bun ${pre}`, { cwd });
+    await exec(`jiti ${pre}`, { cwd });
   }
 
   const reset = hasFlag(flags, 'reset');
@@ -204,7 +204,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   );
 
   if (post) {
-    await exec(`bun ${post}`, { cwd }, { debug: true });
+    await exec(`jiti ${post}`, { cwd }, { debug: true });
   }
 
   console.log('done');
@@ -250,11 +250,11 @@ function getESBuildOptions(optimized: boolean) {
 }
 
 async function generateDTSMapperFile(file: string) {
-  const { name: entryName, dir } = path.parse(file);
+  const { name: entryName, dir } = parse(file);
 
   const pathName = join(process.cwd(), dir.replace('./src', 'dist'), `${entryName}.d.ts`);
   const srcName = join(process.cwd(), file);
-  const rel = relative(dirname(pathName), dirname(srcName)).split(path.sep).join(path.posix.sep);
+  const rel = relative(dirname(pathName), dirname(srcName)).split(sep).join(posix.sep);
 
   await fs.ensureFile(pathName);
   await fs.writeFile(

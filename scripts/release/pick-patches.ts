@@ -1,8 +1,9 @@
-import program from 'commander';
-import chalk from 'chalk';
-import ora from 'ora';
 import { setOutput } from '@actions/core';
+import chalk from 'chalk';
+import program from 'commander';
+import ora from 'ora';
 import invariant from 'tiny-invariant';
+
 import { esMain } from '../utils/esmain';
 import { git } from './utils/git-client';
 import { getUnpickedPRs } from './utils/github-client';

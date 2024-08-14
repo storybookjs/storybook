@@ -1,5 +1,7 @@
+import { describe, expect, it } from 'vitest';
+
 import { dedent } from 'ts-dedent';
-import { describe, it, expect } from 'vitest';
+
 import { loadConfig, printConfig } from './ConfigFile';
 import { babelPrint } from './babelParse';
 

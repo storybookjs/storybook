@@ -1,5 +1,7 @@
-import { describe, beforeEach, it, expect, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import os, { type NetworkInterfaceInfoIPv4 } from 'os';
+
 import { getServerAddresses } from '../server-address';
 
 vi.mock('os');

@@ -1,8 +1,10 @@
 import type { ReactElement } from 'react';
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+
+import { styled } from '@storybook/core/theming';
+
 import type { ResizeHandler } from 'use-resize-observer';
 import useResizeObserver from 'use-resize-observer';
-import { styled } from '@storybook/core/theming';
 
 const ZoomElementWrapper = styled.div<{ scale: number; elementHeight: number }>(
   ({ scale = 1, elementHeight }) => ({

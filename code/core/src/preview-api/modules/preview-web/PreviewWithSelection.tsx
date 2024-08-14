@@ -1,4 +1,8 @@
-import invariant from 'tiny-invariant';
+import type { DocsIndexEntry, StoryIndex } from '@storybook/core/types';
+import type { Args, Globals, Renderer, StoryId, ViewMode } from '@storybook/core/types';
+import type { ModuleImportFn, ProjectAnnotations } from '@storybook/core/types';
+
+import { logger } from '@storybook/core/client-logger';
 import {
   CURRENT_STORY_WAS_SET,
   DOCS_PREPARED,
@@ -16,27 +20,24 @@ import {
   STORY_UNCHANGED,
   UPDATE_QUERY_PARAMS,
 } from '@storybook/core/core-events';
-import { logger } from '@storybook/core/client-logger';
-
 import {
   CalledPreviewMethodBeforeInitializationError,
   EmptyIndexError,
   MdxFileWithNoCsfReferencesError,
   NoStoryMatchError,
 } from '@storybook/core/preview-errors';
+
+import invariant from 'tiny-invariant';
+
+import type { StorySpecifier } from '../store/StoryIndexStore';
 import type { MaybePromise } from './Preview';
 import { Preview } from './Preview';
-
-import { PREPARE_ABORTED } from './render/Render';
-import { StoryRender } from './render/StoryRender';
-import { CsfDocsRender } from './render/CsfDocsRender';
-import { MdxDocsRender } from './render/MdxDocsRender';
 import type { Selection, SelectionStore } from './SelectionStore';
 import type { View } from './View';
-import type { StorySpecifier } from '../store/StoryIndexStore';
-import type { DocsIndexEntry, StoryIndex } from '@storybook/core/types';
-import type { Args, Globals, Renderer, StoryId, ViewMode } from '@storybook/core/types';
-import type { ModuleImportFn, ProjectAnnotations } from '@storybook/core/types';
+import { CsfDocsRender } from './render/CsfDocsRender';
+import { MdxDocsRender } from './render/MdxDocsRender';
+import { PREPARE_ABORTED } from './render/Render';
+import { StoryRender } from './render/StoryRender';
 
 const globalWindow = globalThis;
 

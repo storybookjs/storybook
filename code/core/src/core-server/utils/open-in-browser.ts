@@ -1,7 +1,9 @@
 import { logger } from '@storybook/core/node-logger';
-import betterOpn from 'better-opn'; // betterOpn alias used because also loading open
-import open from 'open';
+
 import getDefaultBrowser from '@aw-web-design/x-default-browser';
+import betterOpn from 'better-opn';
+// betterOpn alias used because also loading open
+import open from 'open';
 import { dedent } from 'ts-dedent';
 
 export function openInBrowser(address: string) {

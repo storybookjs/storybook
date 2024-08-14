@@ -1,16 +1,18 @@
 import React from 'react';
-import { within, userEvent, expect, fn } from '@storybook/test';
-import type { StoryObj, Meta } from '@storybook/react';
+
+import type { Meta, StoryObj } from '@storybook/react';
+import { expect, fn, userEvent, within } from '@storybook/test';
+
 import { ManagerContext } from '@storybook/core/manager-api';
 
-import { index } from './mockdata.large';
+import { LayoutProvider } from '../layout/LayoutProvider';
+import { IconSymbols } from './IconSymbols';
 import { Search } from './Search';
 import { SearchResults } from './SearchResults';
 import { noResults } from './SearchResults.stories';
 import { DEFAULT_REF_ID } from './Sidebar';
+import { index } from './mockdata.large';
 import type { Selection } from './types';
-import { IconSymbols } from './IconSymbols';
-import { LayoutProvider } from '../layout/LayoutProvider';
 
 const refId = DEFAULT_REF_ID;
 const data = { [refId]: { id: refId, url: '/', index, previewInitialized: true } };

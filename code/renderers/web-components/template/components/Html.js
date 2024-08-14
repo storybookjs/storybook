@@ -1,4 +1,5 @@
 import { global as globalThis } from '@storybook/global';
+
 import { LitElement } from 'lit';
 
 const { customElements } = globalThis;

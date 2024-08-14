@@ -1,5 +1,6 @@
-import { addons } from '@storybook/core/manager-api';
 import { global } from '@storybook/global';
+
+import { addons } from '@storybook/core/manager-api';
 
 const STATIC_FILTER = 'static-filter';
 

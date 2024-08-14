@@ -1,15 +1,17 @@
 // @vitest-environment happy-dom
-
 /// <reference types="@testing-library/jest-dom" />;
-import { it, expect, vi, describe } from 'vitest';
 import { render, screen } from '@testing-library/vue';
+import { describe, expect, it, vi } from 'vitest';
+
 import { addons } from 'storybook/internal/preview-api';
-import { expectTypeOf } from 'expect-type';
+
 import type { Meta } from '@storybook/vue3';
 
+import { expectTypeOf } from 'expect-type';
+
+import { composeStories, composeStory, setProjectAnnotations } from '../../portable-stories';
 import * as stories from './Button.stories';
 import type Button from './Button.vue';
-import { composeStories, composeStory, setProjectAnnotations } from '../../portable-stories';
 
 setProjectAnnotations({ testingLibraryRender: render });
 

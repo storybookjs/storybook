@@ -1,22 +1,23 @@
-import React, { useState, Fragment, useEffect, type FC, useCallback } from 'react';
+import React, { type FC, Fragment, useCallback, useEffect, useState } from 'react';
 
+import { IconButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
+import { type API, useGlobals, useParameter } from 'storybook/internal/manager-api';
 import { Global } from 'storybook/internal/theming';
-import { IconButton, WithTooltip, TooltipLinkList } from 'storybook/internal/components';
-import { useGlobals, type API, useParameter } from 'storybook/internal/manager-api';
 
 import { GrowIcon, RefreshIcon, TransferIcon } from '@storybook/icons';
+
 import { PARAM_KEY as KEY } from '../constants';
-import { registerShortcuts } from '../shortcuts';
-import {
-  IconButtonWithLabel,
-  IconButtonLabel,
-  ActiveViewportSize,
-  ActiveViewportLabel,
-  iconsMap,
-  emptyViewportMap,
-} from '../utils';
 import { responsiveViewport } from '../responsiveViewport';
-import type { Config, Viewport, ViewportMap, GlobalState, GlobalStateUpdate } from '../types';
+import { registerShortcuts } from '../shortcuts';
+import type { Config, GlobalState, GlobalStateUpdate, Viewport, ViewportMap } from '../types';
+import {
+  ActiveViewportLabel,
+  ActiveViewportSize,
+  IconButtonLabel,
+  IconButtonWithLabel,
+  emptyViewportMap,
+  iconsMap,
+} from '../utils';
 
 interface PureProps {
   item: Viewport;

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
+
 import { ComponentA } from './ts-named-export/component';
 
 const meta = {

@@ -1,11 +1,11 @@
-import { global } from '@storybook/global';
-import semver from 'semver';
-import memoize from 'memoizerific';
-
 import type { API_UnknownEntries, API_Version, API_Versions } from '@storybook/core/types';
-import { version as currentVersion } from '../version';
+import { global } from '@storybook/global';
+
+import memoize from 'memoizerific';
+import semver from 'semver';
 
 import type { ModuleFn } from '../lib/types';
+import { version as currentVersion } from '../version';
 
 const { VERSIONCHECK } = global;
 

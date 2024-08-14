@@ -1,6 +1,7 @@
+import { isExampleStoryId } from '@storybook/core/telemetry';
 import type { IndexEntry, StoryIndex } from '@storybook/core/types';
 
-import { isMdxEntry, AUTODOCS_TAG, PLAY_FN_TAG } from './StoryIndexGenerator';
+import { AUTODOCS_TAG, PLAY_FN_TAG, isMdxEntry } from './StoryIndexGenerator';
 
 const PAGE_REGEX = /(page|screen)/i;
 
@@ -25,15 +26,6 @@ const isCLIExampleEntry = (entry: IndexEntry) =>
     'example-page--logged-out',
   ].includes(entry.id);
 
-/**
- * Is this story part of the CLI generated examples,
- * including user-created stories in those files
- */
-const isAnyExampleEntry = (entry: IndexEntry) =>
-  entry.id.startsWith('example-button--') ||
-  entry.id.startsWith('example-header--') ||
-  entry.id.startsWith('example-page--');
-
 export function summarizeIndex(storyIndex: StoryIndex) {
   let storyCount = 0;
   const componentTitles = new Set<string>();
@@ -49,7 +41,7 @@ export function summarizeIndex(storyIndex: StoryIndex) {
     if (isCLIExampleEntry(entry)) {
       if (entry.type === 'story') exampleStoryCount += 1;
       if (entry.type === 'docs') exampleDocsCount += 1;
-    } else if (isAnyExampleEntry(entry)) {
+    } else if (isExampleStoryId(entry.id)) {
       if (entry.type === 'story') onboardingStoryCount += 1;
       if (entry.type === 'docs') onboardingDocsCount += 1;
     } else if (entry.type === 'story') {

@@ -1,4 +1,5 @@
 import type { StoryObj } from '@storybook/vue3';
+
 import { defineComponent } from 'vue';
 
 const Button = defineComponent({

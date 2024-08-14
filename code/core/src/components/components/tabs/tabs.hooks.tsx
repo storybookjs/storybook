@@ -1,12 +1,15 @@
 import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
-import { sanitize } from '@storybook/csf';
+
 import { styled } from '@storybook/core/theming';
+import { sanitize } from '@storybook/csf';
+
 import useResizeObserver from 'use-resize-observer';
+
 import { TabButton } from '../bar/button';
 import { TooltipLinkList } from '../tooltip/TooltipLinkList';
+import type { Link } from '../tooltip/TooltipLinkList';
 import { WithTooltip } from '../tooltip/WithTooltip';
 import type { ChildrenListComplete } from './tabs.helpers';
-import type { Link } from '../tooltip/TooltipLinkList';
 
 const CollapseIcon = styled.span<{ isActive: boolean }>(({ theme, isActive }) => ({
   display: 'inline-block',

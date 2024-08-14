@@ -1,16 +1,15 @@
 import type { ComponentProps } from 'react';
 import React from 'react';
+
 import {
+  Bar,
   Button,
   IconButton,
-  Separator,
   P,
+  Separator,
   TooltipNote,
   WithTooltip,
-  Bar,
 } from 'storybook/internal/components';
-import type { Call, ControlStates } from '@storybook/instrumenter';
-import { CallStates } from '@storybook/instrumenter';
 import { styled } from 'storybook/internal/theming';
 
 import {
@@ -20,9 +19,11 @@ import {
   RewindIcon,
   SyncIcon,
 } from '@storybook/icons';
-import { StatusBadge } from './StatusBadge';
+import type { Call, ControlStates } from '@storybook/instrumenter';
+import { CallStates } from '@storybook/instrumenter';
 
 import type { Controls } from './InteractionsPanel';
+import { StatusBadge } from './StatusBadge';
 
 const SubnavWrapper = styled.div(({ theme }) => ({
   background: theme.background.app,

@@ -1,6 +1,6 @@
-import { userEvent, within, expect, fn } from '@storybook/test';
-import type { Meta, StoryFn as CSF2Story, StoryObj } from '../..';
+import { expect, fn, userEvent, within } from '@storybook/test';
 
+import type { StoryFn as CSF2Story, Meta, StoryObj } from '../..';
 import Button from './Button.vue';
 
 const meta = {

@@ -1,8 +1,8 @@
-import * as t from '@babel/types';
-import bt from '@babel/traverse';
 import bg from '@babel/generator';
-
+import bt from '@babel/traverse';
+import * as t from '@babel/types';
 import { dedent } from 'ts-dedent';
+
 import { babelParse } from './babelParse';
 import { findVarInitialization } from './findVarInitialization';
 

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { global } from '@storybook/global';
+
 import type {
   ArgsEnhancer,
   NormalizedComponentAnnotations,
@@ -10,12 +10,13 @@ import type {
   SBScalarType,
   StoryContext,
 } from '@storybook/core/types';
-import { addons, HooksContext } from '../../addons';
+import { global } from '@storybook/global';
 
+import { HooksContext, addons } from '../../addons';
 import { UNTARGETED } from '../args';
-import { prepareMeta, prepareStory as realPrepareStory, prepareContext } from './prepareStory';
 import { composeConfigs } from './composeConfigs';
 import { normalizeProjectAnnotations } from './normalizeProjectAnnotations';
+import { prepareContext, prepareMeta, prepareStory as realPrepareStory } from './prepareStory';
 
 vi.mock('@storybook/global', async (importOriginal) => ({
   global: {

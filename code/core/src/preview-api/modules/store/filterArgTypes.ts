@@ -1,4 +1,5 @@
 import type { StrictArgTypes } from '@storybook/core/types';
+
 import pickBy from 'lodash/pickBy.js';
 
 export type PropDescriptor = string[] | RegExp;

@@ -1,10 +1,11 @@
-import { pathExists, readJSON, writeJSON } from 'fs-extra';
-import path from 'path';
+import { join } from 'node:path';
 
-import type { TemplateKey } from '../get-template';
-import { exec } from './exec';
+import { pathExists, readJSON, writeJSON } from 'fs-extra';
+
 // TODO -- should we generate this file a second time outside of CLI?
 import storybookVersions from '../../code/core/src/common/versions';
+import type { TemplateKey } from '../get-template';
+import { exec } from './exec';
 import touch from './touch';
 
 export type YarnOptions = {
@@ -19,7 +20,7 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
   logger.info(`🔢 Adding package resolutions:`);
   if (dryRun) return;
 
-  const packageJsonPath = path.join(cwd, 'package.json');
+  const packageJsonPath = join(cwd, 'package.json');
   const packageJson = await readJSON(packageJsonPath);
   packageJson.resolutions = {
     ...packageJson.resolutions,
@@ -27,15 +28,15 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
     'enhanced-resolve': '~5.10.0', // TODO, remove this
     // this is for our CI test, ensure we use the same version as docker image, it should match version specified in `./code/package.json` and `.circleci/config.yml`
     '@swc/core': '1.5.7',
-    playwright: '1.36.0',
-    'playwright-core': '1.36.0',
-    '@playwright/test': '1.36.0',
+    playwright: '1.46.0',
+    'playwright-core': '1.46.0',
+    '@playwright/test': '1.46.0',
   };
   await writeJSON(packageJsonPath, packageJson, { spaces: 2 });
 };
 
 export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
-  const pnpApiExists = await pathExists(path.join(cwd, '.pnp.cjs'));
+  const pnpApiExists = await pathExists(join(cwd, '.pnp.cjs'));
 
   const command = [
     touch('yarn.lock'),
@@ -67,7 +68,7 @@ export const addWorkaroundResolutions = async ({ cwd, dryRun }: YarnOptions) => 
   logger.info(`🔢 Adding resolutions for workarounds`);
   if (dryRun) return;
 
-  const packageJsonPath = path.join(cwd, 'package.json');
+  const packageJsonPath = join(cwd, 'package.json');
   const packageJson = await readJSON(packageJsonPath);
   packageJson.resolutions = {
     ...packageJson.resolutions,

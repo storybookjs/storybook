@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react-webpack5",
-  "version": "8.3.0-alpha.3",
+  "version": "8.3.0-alpha.5",
   "description": "Storybook for React: Develop React Component in isolation with Hot Reloading.",
   "keywords": [
     "storybook"
@@ -43,14 +43,14 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/preset-react-webpack": "workspace:*",
     "@storybook/react": "workspace:*",
-    "@types/node": "^18.0.0"
+    "@types/node": "^22.0.0"
   },
   "peerDependencies": {
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",

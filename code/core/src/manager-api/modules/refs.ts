@@ -1,21 +1,21 @@
-import { global } from '@storybook/global';
-import { dedent } from 'ts-dedent';
 import type {
   API_ComposedRef,
   API_ComposedRefUpdate,
+  API_IndexHash,
   API_Refs,
   API_SetRefData,
-  SetStoriesStoryData,
-  API_IndexHash,
   API_StoryMapper,
+  SetStoriesStoryData,
   StoryIndex,
 } from '@storybook/core/types';
+import { global } from '@storybook/global';
+
+import { dedent } from 'ts-dedent';
 
 import {
   transformSetStoriesStoryDataToPreparedStoryIndex,
   transformStoryIndexToStoriesHash,
 } from '../lib/stories';
-
 import type { ModuleFn } from '../lib/types';
 
 const { location, fetch } = global;

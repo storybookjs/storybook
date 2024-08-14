@@ -1,9 +1,12 @@
 import type { ButtonHTMLAttributes, SyntheticEvent } from 'react';
 import React, { forwardRef, useEffect, useState } from 'react';
+
 import { isPropValid, styled } from '@storybook/core/theming';
-import { darken, lighten, rgba, transparentize } from 'polished';
-import { Slot } from '@radix-ui/react-slot';
+
 import { deprecate } from '@storybook/core/client-logger';
+
+import { Slot } from '@radix-ui/react-slot';
+import { darken, lighten, rgba, transparentize } from 'polished';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   asChild?: boolean;

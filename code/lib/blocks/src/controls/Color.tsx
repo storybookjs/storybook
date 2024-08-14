@@ -1,14 +1,17 @@
-import type { FC, ChangeEvent, FocusEvent } from 'react';
+import type { ChangeEvent, FC, FocusEvent } from 'react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { HexColorPicker, HslaStringColorPicker, RgbaStringColorPicker } from 'react-colorful';
+
+import { Form, TooltipNote, WithTooltip } from 'storybook/internal/components';
+import { styled } from 'storybook/internal/theming';
+
+import { MarkupIcon } from '@storybook/icons';
+
 import convert from 'color-convert';
 import debounce from 'lodash/debounce.js';
-import { styled } from 'storybook/internal/theming';
-import { TooltipNote, WithTooltip, Form } from 'storybook/internal/components';
+import { HexColorPicker, HslaStringColorPicker, RgbaStringColorPicker } from 'react-colorful';
 
-import type { ControlProps, ColorValue, ColorConfig, PresetColor } from './types';
 import { getControlId } from './helpers';
-import { MarkupIcon } from '@storybook/icons';
+import type { ColorConfig, ColorValue, ControlProps, PresetColor } from './types';
 
 const Wrapper = styled.div({
   position: 'relative',

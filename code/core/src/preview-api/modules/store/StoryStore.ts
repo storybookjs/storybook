@@ -1,33 +1,12 @@
-import memoize from 'memoizerific';
 import type {
-  Renderer,
   ComponentTitle,
   Parameters,
   Path,
+  Renderer,
   StoryContext,
   StoryContextForEnhancers,
   StoryId,
 } from '@storybook/core/types';
-import mapValues from 'lodash/mapValues.js';
-import pick from 'lodash/pick.js';
-
-import {
-  CalledExtractOnStoreError,
-  MissingStoryFromCsfFileError,
-} from '@storybook/core/preview-errors';
-import { deprecate } from '@storybook/core/client-logger';
-import { HooksContext } from '../addons';
-import { StoryIndexStore } from './StoryIndexStore';
-import { ArgsStore } from './ArgsStore';
-import { GlobalsStore } from './GlobalsStore';
-import {
-  processCSFFile,
-  prepareStory,
-  prepareMeta,
-  normalizeProjectAnnotations,
-  prepareContext,
-} from './csf';
-import type { Canvas, CleanupCallback } from '@storybook/csf';
 import type {
   BoundStory,
   CSFFile,
@@ -44,6 +23,29 @@ import type {
   StoryIndexV3,
   V3CompatIndexEntry,
 } from '@storybook/core/types';
+import type { Canvas, CleanupCallback } from '@storybook/csf';
+
+import { deprecate } from '@storybook/core/client-logger';
+import {
+  CalledExtractOnStoreError,
+  MissingStoryFromCsfFileError,
+} from '@storybook/core/preview-errors';
+
+import mapValues from 'lodash/mapValues.js';
+import pick from 'lodash/pick.js';
+import memoize from 'memoizerific';
+
+import { HooksContext } from '../addons';
+import { ArgsStore } from './ArgsStore';
+import { GlobalsStore } from './GlobalsStore';
+import { StoryIndexStore } from './StoryIndexStore';
+import {
+  normalizeProjectAnnotations,
+  prepareContext,
+  prepareMeta,
+  prepareStory,
+  processCSFFile,
+} from './csf';
 
 // TODO -- what are reasonable values for these?
 const CSF_CACHE_SIZE = 1000;

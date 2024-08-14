@@ -1,12 +1,14 @@
 import React, { useEffect, useLayoutEffect, useState } from 'react';
+
+import { Match } from '@storybook/core/router';
 import { styled } from '@storybook/core/theming';
 import type { API_Layout, API_ViewMode } from '@storybook/core/types';
-import { useDragging } from './useDragging';
-import { MobileNavigation } from '../mobile/navigation/MobileNavigation';
+
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
-import { useLayout } from './LayoutProvider';
 import { Notifications } from '../../container/Notifications';
-import { Match } from '@storybook/core/router';
+import { MobileNavigation } from '../mobile/navigation/MobileNavigation';
+import { useLayout } from './LayoutProvider';
+import { useDragging } from './useDragging';
 
 interface InternalLayoutState {
   isDragging: boolean;

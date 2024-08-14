@@ -1,9 +1,10 @@
 import React, { Fragment } from 'react';
 
-import { styled } from 'storybook/internal/theming';
 import { IconButton } from 'storybook/internal/components';
+import { styled } from 'storybook/internal/theming';
 
 import { BrowserIcon, MobileIcon, TabletIcon } from '@storybook/icons';
+
 import type { Viewport, ViewportMap } from './types';
 
 export const ActiveViewportSize = styled.div(() => ({

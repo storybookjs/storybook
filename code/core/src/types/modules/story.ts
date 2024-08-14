@@ -1,13 +1,13 @@
 import type {
-  Renderer,
+  BeforeAll,
+  Canvas,
+  CleanupCallback,
   ProjectAnnotations as CsfProjectAnnotations,
   DecoratorFunction,
-  LoaderFunction,
-  CleanupCallback,
-  StepRunner,
-  Canvas,
   Globals,
-  BeforeAll,
+  LoaderFunction,
+  Renderer,
+  StepRunner,
 } from '@storybook/csf';
 
 import type {

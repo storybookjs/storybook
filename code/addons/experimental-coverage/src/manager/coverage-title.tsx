@@ -29,8 +29,19 @@ export function CoverageTitle() {
     );
   }
 
-  if (coverage?.coverageSummary) {
-    const percentage = coverage.coverageSummary?.statements.pct;
+  const coverageSummary = coverage?.coverageSummary;
+
+  if (coverageSummary) {
+    const totalSum =
+      coverageSummary.statements.total +
+      coverageSummary.branches.total +
+      coverageSummary.functions.total;
+    const coveredSum =
+      coverageSummary.statements.covered +
+      coverageSummary.branches.covered +
+      coverageSummary.functions.covered;
+
+    const percentage = Math.round((coveredSum / totalSum) * 100);
 
     return (
       <div>

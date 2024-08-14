@@ -5,7 +5,7 @@ import { type API } from 'storybook/internal/manager-api';
 
 import type { CoverageItem } from '../types';
 import { useCoverage } from './coverage-panel.hooks';
-import { lineCoverage } from './coverage-panel.utils';
+import { getLineCoverage } from './coverage-panel.utils';
 
 type CoveragePanelProps = {
   active: boolean;
@@ -16,11 +16,14 @@ export function CoveragePanel({ active }: CoveragePanelProps) {
   const { coverage, fileContent } = useCoverage();
 
   const getLineProps = useCallback((covItem: CoverageItem) => {
-    const lineToMissing = lineCoverage(covItem);
-    return (lineNumber: number) =>
-      lineToMissing[lineNumber]
+    const lineCoverage = getLineCoverage(covItem);
+    return (lineNumber: number) => {
+      return lineCoverage[lineNumber] === 'statement' || lineCoverage[lineNumber] === 'branch'
         ? { style: { backgroundColor: '#ffcccc', borderLeft: '5px solid #f85151' } }
-        : { style: { borderLeft: '5px solid #95de95' } };
+        : lineCoverage[lineNumber] === 'partial-branch'
+          ? { style: { backgroundColor: '#FFAA', borderLeft: '5px solid #FFEA10' } }
+          : { style: { borderLeft: '5px solid #95de95' } };
+    };
   }, []);
 
   if (!active) {

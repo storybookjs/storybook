@@ -1,1 +1,1 @@
-module.exports = require('./dist/coverage-reporter');
+module.exports = require('./dist/node/coverage-reporter');

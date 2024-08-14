@@ -19,7 +19,11 @@ addons.register(ADDON_ID, (api) => {
   });
 
   const emitRequest = () => {
-    const { importPath, ...data } = api.getCurrentStoryData();
+    const { importPath, type, ...data } = api.getCurrentStoryData();
+    if (type === 'docs') {
+      return;
+    }
+
     api.emit(REQUEST_COVERAGE_EVENT, {
       importPath,
       componentPath: (data as any).componentPath as string,

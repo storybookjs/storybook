@@ -1,11 +1,12 @@
 // noinspection JSUnusedGlobalSymbols
+import { join, parse } from 'node:path';
+
 import { NoStatsForViteDevError } from 'storybook/internal/server-errors';
 import type { Options } from 'storybook/internal/types';
 
 import type { RequestHandler } from 'express';
 import express from 'express';
 import * as fs from 'fs-extra';
-import { join, parse } from 'path';
 import { corePath } from 'storybook/core-path';
 import type { ViteDevServer } from 'vite';
 

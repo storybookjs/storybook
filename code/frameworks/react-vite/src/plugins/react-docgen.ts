@@ -1,9 +1,10 @@
+import { relative } from 'node:path';
+
 import { logger } from 'storybook/internal/node-logger';
 
 import { createFilter } from '@rollup/pluginutils';
 import findUp from 'find-up';
 import MagicString from 'magic-string';
-import path from 'path';
 import type { Documentation } from 'react-docgen';
 import {
   ERROR_CODES,
@@ -59,7 +60,7 @@ export async function reactDocgen({
     name: 'storybook:react-docgen-plugin',
     enforce: 'pre',
     async transform(src: string, id: string) {
-      if (!filter(path.relative(cwd, id))) {
+      if (!filter(relative(cwd, id))) {
         return;
       }
 

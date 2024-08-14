@@ -1,6 +1,7 @@
 /* eslint-disable react/no-deprecated */
 import type { ReactElement } from 'react';
 import * as ReactDOM from 'react-dom';
+
 import { preventActChecks } from './preventActChecks';
 
 export const renderElement = async (node: ReactElement, el: Element) => {

@@ -1,7 +1,8 @@
+import { isAbsolute, relative, resolve } from 'node:path';
+
 import { stripAbsNodeModulesPath } from 'storybook/internal/common';
 import type { PreviewAnnotation } from 'storybook/internal/types';
 
-import { isAbsolute, relative, resolve } from 'path';
 import slash from 'slash';
 
 /**

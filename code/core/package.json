@@ -1,6 +1,6 @@
 {
   "name": "@storybook/core",
-  "version": "8.3.0-alpha.4",
+  "version": "8.3.0-alpha.5",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -397,6 +397,7 @@
     "require-from-string": "^2.0.2",
     "resolve-from": "^5.0.0",
     "slash": "^5.0.0",
+    "source-map": "^0.7.4",
     "store2": "^2.14.2",
     "strip-json-comments": "^5.0.1",
     "telejson": "^7.2.0",

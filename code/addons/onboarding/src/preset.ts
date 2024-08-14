@@ -1,8 +1,8 @@
+import { readFileSync } from 'node:fs';
+
 import type { Channel } from 'storybook/internal/channels';
 import { telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig, Options } from 'storybook/internal/types';
-
-import fs from 'fs';
 
 import { STORYBOOK_ADDON_ONBOARDING_CHANNEL } from './constants';
 
@@ -20,7 +20,7 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     const packageJsonPath = require.resolve('@storybook/addon-onboarding/package.json');
 
     const { version: addonVersion } = JSON.parse(
-      fs.readFileSync(packageJsonPath, { encoding: 'utf-8' })
+      readFileSync(packageJsonPath, { encoding: 'utf-8' })
     );
 
     channel.on(STORYBOOK_ADDON_ONBOARDING_CHANNEL, ({ type, ...event }: Event) => {

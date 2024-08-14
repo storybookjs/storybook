@@ -1,6 +1,6 @@
-import { checkAddonOrder, serverRequire } from 'storybook/internal/common';
+import { isAbsolute, join } from 'node:path';
 
-import path from 'path';
+import { checkAddonOrder, serverRequire } from 'storybook/internal/common';
 
 export const checkDocsLoaded = (configDir: string) => {
   checkAddonOrder({
@@ -12,9 +12,9 @@ export const checkDocsLoaded = (configDir: string) => {
       name: '@storybook/addon-controls',
       inEssentials: true,
     },
-    configFile: path.isAbsolute(configDir)
-      ? path.join(configDir, 'main')
-      : path.join(process.cwd(), configDir, 'main'),
+    configFile: isAbsolute(configDir)
+      ? join(configDir, 'main')
+      : join(process.cwd(), configDir, 'main'),
     getConfig: (configFile) => serverRequire(configFile),
   });
 };

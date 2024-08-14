@@ -1,12 +1,14 @@
-import {
-  useStorybookApi,
-  useStorybookState,
-  type API,
-  type State,
-} from '@storybook/core/manager-api';
+import React, { useCallback, useEffect } from 'react';
+
 import { styled } from '@storybook/core/theming';
 import type { API_FilterFunction } from '@storybook/types';
-import React, { useCallback, useEffect } from 'react';
+
+import {
+  type API,
+  type State,
+  useStorybookApi,
+  useStorybookState,
+} from '@storybook/core/manager-api';
 
 import { FilterToggle } from './FilterToggle';
 

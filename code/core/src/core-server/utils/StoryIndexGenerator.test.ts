@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-shadow */
-import path from 'node:path';
+import { join } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -38,8 +38,8 @@ const readCsfMock = vi.mocked(readCsf);
 const getStorySortParameterMock = vi.mocked(getStorySortParameter);
 
 const options: StoryIndexGeneratorOptions = {
-  configDir: path.join(__dirname, '__mockdata__'),
-  workingDir: path.join(__dirname, '__mockdata__'),
+  configDir: join(__dirname, '__mockdata__'),
+  workingDir: join(__dirname, '__mockdata__'),
   indexers: [csfIndexer],
   docs: { defaultName: 'docs', autodocs: false },
 };

@@ -1,4 +1,5 @@
-import React, { Fragment, useEffect } from 'react';
+import * as React from 'react';
+import { Fragment, useEffect } from 'react';
 
 import type { Channel } from 'storybook/internal/channels';
 import { DocsContext as DocsContextProps, useArgs } from 'storybook/internal/preview-api';
@@ -160,7 +161,7 @@ export const loaders = [
     }
     return { docsContext };
   },
-];
+] as Loader[];
 
 export const decorators = [
   // This decorator adds the DocsContext created in the loader above

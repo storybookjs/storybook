@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle */
-import type { BrowserPage } from '@vitest/browser/context';
+import { page } from '@vitest/browser/context';
 
 import { INITIAL_VIEWPORTS } from '../../../viewport/src/defaults';
 import type { ViewportMap, ViewportStyles } from '../../../viewport/src/types';
@@ -16,15 +16,7 @@ interface ViewportsParam {
 
 export const setViewport = async (viewportsParam: ViewportsParam = {} as ViewportsParam) => {
   const defaultViewport = viewportsParam.defaultViewport;
-  if (!defaultViewport || !globalThis.__vitest_browser__) return null;
-
-  let page: BrowserPage;
-  try {
-    const vitestContext = await import('@vitest/browser/context');
-    page = vitestContext.page;
-  } catch (e) {
-    return;
-  }
+  if (!page || !globalThis.__vitest_browser__ || !defaultViewport) return null;
 
   const viewports = {
     ...INITIAL_VIEWPORTS,
@@ -35,8 +27,8 @@ export const setViewport = async (viewportsParam: ViewportsParam = {} as Viewpor
     const styles = viewports[defaultViewport].styles as ViewportStyles;
     if (styles?.width && styles?.height) {
       const { width, height } = {
-        width: Number.parseInt(styles.width),
-        height: Number.parseInt(styles.height),
+        width: Number.parseInt(styles.width, 10),
+        height: Number.parseInt(styles.height, 10),
       };
       await page.viewport(width, height);
     }

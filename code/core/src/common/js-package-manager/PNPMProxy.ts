@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import path from 'node:path';
+import { join } from 'node:path';
 
 import { FindPackageVersionsError } from '@storybook/core/server-errors';
 
@@ -144,7 +144,7 @@ export class PNPMProxy extends JsPackageManager {
         const pkg = pnpApi.getPackageInformation(pkgLocator);
 
         const packageJSON = JSON.parse(
-          readFileSync(path.join(pkg.packageLocation, 'package.json'), 'utf-8')
+          readFileSync(join(pkg.packageLocation, 'package.json'), 'utf-8')
         );
 
         return packageJSON;
@@ -158,7 +158,7 @@ export class PNPMProxy extends JsPackageManager {
 
     const packageJsonPath = await findUpSync(
       (dir) => {
-        const possiblePath = path.join(dir, 'node_modules', packageName, 'package.json');
+        const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
         return existsSync(possiblePath) ? possiblePath : undefined;
       },
       { cwd: basePath }

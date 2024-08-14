@@ -1,4 +1,4 @@
-import path, { parse, relative } from 'node:path';
+import { basename, parse, relative } from 'node:path';
 
 import { sync as spawnSync } from 'cross-spawn';
 import { findUpSync } from 'find-up';
@@ -55,7 +55,7 @@ export class JsPackageManagerFactory {
     // Option 2: We try to infer the package manager from the closest lockfile
     const closestLockfilePath = lockFiles[0];
 
-    const closestLockfile = closestLockfilePath && path.basename(closestLockfilePath);
+    const closestLockfile = closestLockfilePath && basename(closestLockfilePath);
 
     const hasNPMCommand = hasNPM(cwd);
     const hasPNPMCommand = hasPNPM(cwd);

@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import process from 'process';
 
 import { SbPage } from './util';
@@ -68,5 +68,8 @@ test.describe('save-from-controls', () => {
     const notification2 = await sbPage.page.waitForSelector('[title="Story created"]');
     await notification2.isVisible();
     await notification2.click();
+
+    // Assert the Button components is rendered in the preview
+    await expect(sbPage.previewRoot()).toContainText('Button');
   });
 });

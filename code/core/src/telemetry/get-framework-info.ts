@@ -1,4 +1,4 @@
-import path from 'node:path';
+import { normalize } from 'node:path';
 
 import { frameworkPackages } from '@storybook/core/common';
 import type { PackageJson, StorybookConfig } from '@storybook/core/types';
@@ -36,7 +36,7 @@ function findMatchingPackage(packageJson: PackageJson, suffixes: string[]) {
 }
 
 export const getFrameworkPackageName = (packageNameOrPath: string) => {
-  const normalizedPath = path.normalize(packageNameOrPath).replace(new RegExp(/\\/, 'g'), '/');
+  const normalizedPath = normalize(packageNameOrPath).replace(new RegExp(/\\/, 'g'), '/');
 
   const knownFramework = Object.keys(frameworkPackages).find((pkg) => normalizedPath.endsWith(pkg));
 

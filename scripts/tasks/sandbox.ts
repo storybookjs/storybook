@@ -83,20 +83,15 @@ export const sandbox: Task = {
 
     const extraDeps = details.template.modifications?.extraDependencies ?? [];
     if (!details.template.skipTasks?.includes('vitest-integration')) {
-      const renderer = details.template.expected.renderer.replace('@storybook/', '');
-
-      // Remove numbers so that vue3 becomes vue
-      const testingLibraryPackage = `@testing-library/${renderer.replace(/\d/g, '')}`;
       extraDeps.push(
         'happy-dom',
         'vitest',
         'playwright',
         '@vitest/browser',
-        '@storybook/experimental-addon-vitest',
-        testingLibraryPackage
+        '@storybook/experimental-addon-vitest'
       );
 
-      if (details.template.expected.framework === '@storybook/nextjs') {
+      if (details.template.expected.framework.includes('nextjs')) {
         extraDeps.push('vite-plugin-storybook-nextjs', 'jsdom');
       }
 

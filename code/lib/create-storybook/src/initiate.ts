@@ -1,3 +1,5 @@
+import { appendFile, readFile } from 'node:fs/promises';
+
 import type { Builder, NpmOptions } from 'storybook/internal/cli';
 import { ProjectType, installableProjectTypes } from 'storybook/internal/cli';
 import { detect, detectLanguage, detectPnp, isStorybookInstantiated } from 'storybook/internal/cli';
@@ -17,7 +19,6 @@ import { telemetry } from 'storybook/internal/telemetry';
 import boxen from 'boxen';
 import chalk from 'chalk';
 import findUp from 'find-up';
-import { appendFile, readFile } from 'fs/promises';
 import prompts from 'prompts';
 import { lt, prerelease } from 'semver';
 import { dedent } from 'ts-dedent';

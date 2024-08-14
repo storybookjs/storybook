@@ -1,7 +1,8 @@
+import { readFile, stat } from 'node:fs/promises';
+import { dirname, join, parse, relative, resolve } from 'node:path';
+
 import findPackageJson from 'find-package-json';
-import fs from 'fs/promises';
 import MagicString from 'magic-string';
-import path from 'path';
 import type { PluginOption } from 'vite';
 import {
   type ComponentMeta,
@@ -151,7 +152,7 @@ async function createVueComponentMetaChecker(tsconfigPath = 'tsconfig.json') {
   };
 
   const projectRoot = getProjectRoot();
-  const projectTsConfigPath = path.join(projectRoot, tsconfigPath);
+  const projectTsConfigPath = join(projectRoot, tsconfigPath);
 
   const defaultChecker = createCheckerByJson(projectRoot, { include: ['**/*'] }, checkerOptions);
 
@@ -174,17 +175,17 @@ async function createVueComponentMetaChecker(tsconfigPath = 'tsconfig.json') {
 function getProjectRoot() {
   const projectRoot = findPackageJson().next().value?.path ?? '';
 
-  const currentFileDir = path.dirname(__filename);
-  const relativePathToProjectRoot = path.relative(currentFileDir, projectRoot);
+  const currentFileDir = dirname(__filename);
+  const relativePathToProjectRoot = relative(currentFileDir, projectRoot);
 
-  return path.resolve(currentFileDir, relativePathToProjectRoot);
+  return resolve(currentFileDir, relativePathToProjectRoot);
 }
 
 /**
  * Gets the filename without file extension.
  */
 function getFilenameWithoutExtension(filename: string) {
-  return path.parse(filename).name;
+  return parse(filename).name;
 }
 
 /**
@@ -199,7 +200,7 @@ function lowercaseFirstLetter(string: string) {
  */
 async function fileExists(fullPath: string) {
   try {
-    await fs.stat(fullPath);
+    await stat(fullPath);
     return true;
   } catch {
     return false;
@@ -250,13 +251,13 @@ async function applyTempFixForEventDescriptions(filename: string, componentMeta:
 }
 
 /**
- * Gets a list of tsconfig references for the given tsconfig path.
+ * Gets a list of tsconfig references for the given tsconfig
  * This is only needed for the temporary workaround/fix for:
  * https://github.com/vuejs/language-tools/issues/3896
  */
 async function getTsConfigReferences(tsConfigPath: string) {
   try {
-    const content = JSON.parse(await fs.readFile(tsConfigPath, 'utf-8'));
+    const content = JSON.parse(await readFile(tsConfigPath, 'utf-8'));
     if (!('references' in content) || !Array.isArray(content.references)) return [];
     return content.references as unknown[];
   } catch {

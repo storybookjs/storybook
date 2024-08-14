@@ -94,7 +94,7 @@ describe('configureMain', () => {
 
     expect(mainConfigPath).toEqual('./.storybook/main.js');
     expect(mainConfigContent).toMatchInlineSnapshot(`
-      "import path from 'path';
+      "import path from 'node:path';
 
       /** @type { import('@storybook/react-webpack5').StorybookConfig } */
       const config = {

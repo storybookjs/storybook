@@ -1,8 +1,9 @@
 /* eslint-disable no-underscore-dangle */
+import { join } from 'node:path';
+
 import { describe, expect, it, vi } from 'vitest';
 
 import * as fsExtraImp from 'fs-extra';
-import path from 'path';
 import * as simpleGitImp from 'simple-git';
 
 import type * as MockedFSExtra from '../../../code/__mocks__/fs-extra';
@@ -18,7 +19,7 @@ vi.mock('fs-extra', async () => import('../../../code/__mocks__/fs-extra'));
 const fsExtra = fsExtraImp as unknown as typeof MockedFSExtra;
 const simpleGit = simpleGitImp as unknown as typeof MockedSimpleGit;
 
-const CODE_PACKAGE_JSON_PATH = path.join(CODE_DIRECTORY, 'package.json');
+const CODE_PACKAGE_JSON_PATH = join(CODE_DIRECTORY, 'package.json');
 
 fsExtra.__setMockFiles({
   [CODE_PACKAGE_JSON_PATH]: JSON.stringify({ version: '1.0.0' }),

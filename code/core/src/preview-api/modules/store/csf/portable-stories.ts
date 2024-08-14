@@ -9,6 +9,7 @@ import type {
   ComposedStoryFn,
   LegacyStoryAnnotationsOrFn,
   NamedOrDefaultProjectAnnotations,
+  NormalizedProjectAnnotations,
   Parameters,
   PreparedStory,
   ProjectAnnotations,
@@ -35,12 +36,10 @@ import { prepareContext, prepareStory } from './prepareStory';
 // TODO we should get to the bottom of the singleton issues caused by dual ESM/CJS modules
 declare global {
   // eslint-disable-next-line no-var
-  var globalProjectAnnotations: ProjectAnnotations<any>;
+  var globalProjectAnnotations: NormalizedProjectAnnotations<any>;
   // eslint-disable-next-line no-var
   var defaultProjectAnnotations: ProjectAnnotations<any>;
 }
-
-globalThis.globalProjectAnnotations ??= {};
 
 export function setDefaultProjectAnnotations<TRenderer extends Renderer = Renderer>(
   _defaultProjectAnnotations: ProjectAnnotations<TRenderer>
@@ -67,7 +66,7 @@ export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
   projectAnnotations:
     | NamedOrDefaultProjectAnnotations<TRenderer>
     | NamedOrDefaultProjectAnnotations<TRenderer>[]
-): ProjectAnnotations<TRenderer> {
+): NormalizedProjectAnnotations<TRenderer> {
   const annotations = Array.isArray(projectAnnotations) ? projectAnnotations : [projectAnnotations];
   globalThis.globalProjectAnnotations = composeConfigs(annotations.map(extractAnnotation));
 
@@ -112,7 +111,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
       defaultConfig && Object.keys(defaultConfig).length > 0
         ? defaultConfig
         : globalThis.defaultProjectAnnotations ?? {},
-      globalThis.globalProjectAnnotations,
+      globalThis.globalProjectAnnotations ?? {},
       projectAnnotations ?? {},
     ])
   );

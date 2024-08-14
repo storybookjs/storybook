@@ -1,9 +1,10 @@
+import { join } from 'node:path';
+
 import chalk from 'chalk';
 import program from 'commander';
 import { execaCommand } from 'execa';
 import { readJson } from 'fs-extra';
 import pRetry from 'p-retry';
-import path from 'path';
 import semver from 'semver';
 import dedent from 'ts-dedent';
 import { z } from 'zod';
@@ -37,8 +38,8 @@ type Options = {
   dryRun?: boolean;
 };
 
-const CODE_DIR_PATH = path.join(__dirname, '..', '..', 'code');
-const CODE_PACKAGE_JSON_PATH = path.join(CODE_DIR_PATH, 'package.json');
+const CODE_DIR_PATH = join(__dirname, '..', '..', 'code');
+const CODE_PACKAGE_JSON_PATH = join(CODE_DIR_PATH, 'package.json');
 
 const validateOptions = (options: { [key: string]: any }): options is Options => {
   optionsSchema.parse(options);

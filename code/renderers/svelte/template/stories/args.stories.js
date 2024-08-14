@@ -11,6 +11,7 @@ import ButtonView from './views/ButtonJavaScript.svelte';
 
 export default {
   component: ButtonView,
+  tags: ['!vitest'],
 };
 
 export const RemountOnResetStoryArgs = {

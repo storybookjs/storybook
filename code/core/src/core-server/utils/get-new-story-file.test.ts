@@ -1,4 +1,4 @@
-import path from 'node:path';
+import { join } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
@@ -48,7 +48,7 @@ describe('get-new-story-file', () => {
 
       export const Default: Story = {};"
     `);
-    expect(storyFilePath).toBe(path.join(__dirname, 'src', 'components', 'Page.stories.tsx'));
+    expect(storyFilePath).toBe(join(__dirname, 'src', 'components', 'Page.stories.tsx'));
   });
 
   it('should create a new story file (JavaScript)', async () => {
@@ -82,6 +82,6 @@ describe('get-new-story-file', () => {
 
       export const Default = {};"
     `);
-    expect(storyFilePath).toBe(path.join(__dirname, 'src', 'components', 'Page.stories.jsx'));
+    expect(storyFilePath).toBe(join(__dirname, 'src', 'components', 'Page.stories.jsx'));
   });
 });

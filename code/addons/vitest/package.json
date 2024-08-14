@@ -1,6 +1,6 @@
 {
   "name": "@storybook/experimental-addon-vitest",
-  "version": "8.3.0-alpha.4",
+  "version": "8.3.0-alpha.5",
   "description": "Integrate Vitest with Storybook",
   "keywords": [
     "storybook-addons",
@@ -71,15 +71,14 @@
     "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
-    "magic-string": "^0.30.10",
-    "typescript": "^5.3.2"
+    "@storybook/csf": "^0.1.11"
   },
   "devDependencies": {
-    "ts-dedent": "^2.2.0",
-    "typescript": "^5.3.2",
+    "@vitest/browser": "^2.0.0",
     "vitest": "^2.0.0"
   },
   "peerDependencies": {
+    "@vitest/browser": "^2.0.0",
     "storybook": "workspace:^",
     "vitest": "^2.0.0"
   },

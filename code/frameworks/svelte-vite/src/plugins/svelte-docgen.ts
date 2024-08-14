@@ -1,8 +1,9 @@
+import { readFileSync } from 'node:fs';
+import { basename, relative } from 'node:path';
+
 import { logger } from 'storybook/internal/node-logger';
 
-import fs from 'fs';
 import MagicString from 'magic-string';
-import path from 'path';
 import { replace, typescript } from 'svelte-preprocess';
 import { preprocess } from 'svelte/compiler';
 import svelteDoc from 'sveltedoc-parser';
@@ -97,11 +98,11 @@ export async function svelteDocgen(svelteOptions: Record<string, any> = {}): Pro
         }
       }
 
-      const resource = path.relative(cwd, id);
+      const resource = relative(cwd, id);
 
       let docOptions;
       if (docPreprocessOptions) {
-        const rawSource = fs.readFileSync(resource).toString();
+        const rawSource = readFileSync(resource).toString();
 
         const { code: fileContent } = await preprocess(rawSource, docPreprocessOptions, {
           filename: resource,
@@ -133,9 +134,9 @@ export async function svelteDocgen(svelteOptions: Record<string, any> = {}): Pro
       }
 
       // get filename for source content
-      const file = path.basename(resource);
+      const file = basename(resource);
 
-      componentDoc.name = path.basename(file);
+      componentDoc.name = basename(file);
 
       const componentName = getNameFromFilename(resource);
       s.append(`;${componentName}.__docgen = ${JSON.stringify(componentDoc)}`);

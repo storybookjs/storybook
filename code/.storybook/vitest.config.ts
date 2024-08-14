@@ -1,5 +1,7 @@
+import { defaultExclude, defineProject, mergeConfig } from 'vitest/config';
+
 import Inspect from 'vite-plugin-inspect';
-import { mergeConfig, defaultExclude, defineProject } from 'vitest/config';
+
 import { vitestCommonConfig } from '../vitest.workspace';
 
 const extraPlugins: any[] = [];
@@ -31,7 +33,7 @@ export default mergeConfig(
       include: [
         // TODO: test all core and addon stories later
         // './core/**/components/**/*.{story,stories}.?(c|m)[jt]s?(x)',
-        '../addons/interactions/**/*.{story,stories}.?(c|m)[jt]s?(x)',
+        '../addons/interactions/src/**/*.{story,stories}.?(c|m)[jt]s?(x)',
       ],
       exclude: [
         ...defaultExclude,
@@ -45,7 +47,7 @@ export default mergeConfig(
         name: 'chromium',
         provider: 'playwright',
         headless: true,
-        screenshotFailures: true,
+        screenshotFailures: false,
       },
       setupFiles: ['./storybook.setup.ts'],
       environment: 'happy-dom',

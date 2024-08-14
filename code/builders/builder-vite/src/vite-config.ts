@@ -1,3 +1,5 @@
+import { resolve } from 'node:path';
+
 import {
   getBuilderOptions,
   getFrameworkName,
@@ -7,7 +9,6 @@ import {
 import { globalsNameReferenceMap } from 'storybook/internal/preview/globals';
 import type { Options } from 'storybook/internal/types';
 
-import * as path from 'path';
 import type {
   ConfigEnv,
   InlineConfig,
@@ -50,7 +51,7 @@ export async function commonConfig(
 
   const { viteConfigPath } = await getBuilderOptions<BuilderOptions>(options);
 
-  const projectRoot = path.resolve(options.configDir, '..');
+  const projectRoot = resolve(options.configDir, '..');
 
   // I destructure away the `build` property from the user's config object
   // I do this because I can contain config that breaks storybook, such as we had in a lit project.

@@ -1,6 +1,7 @@
+import { basename } from 'node:path';
+
 import chalk from 'chalk';
 import fse from 'fs-extra';
-import { basename } from 'path';
 import { dedent } from 'ts-dedent';
 
 import type { Fix } from '../types';

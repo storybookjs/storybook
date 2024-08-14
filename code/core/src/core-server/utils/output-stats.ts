@@ -1,4 +1,4 @@
-import path from 'node:path';
+import { join } from 'node:path';
 
 import type { Stats } from '@storybook/core/types';
 
@@ -20,7 +20,7 @@ export async function outputStats(directory: string, previewStats?: any, manager
 }
 
 export const writeStats = async (directory: string, name: string, stats: Stats) => {
-  const filePath = path.join(directory, `${name}-stats.json`);
+  const filePath = join(directory, `${name}-stats.json`);
   const { chunks, ...data } = stats.toJson(); // omit chunks, which is about half of the total data
   await new Promise((resolve, reject) => {
     stringifyStream(data, null, 2)

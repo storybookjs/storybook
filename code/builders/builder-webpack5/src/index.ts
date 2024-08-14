@@ -1,3 +1,5 @@
+import { join, parse } from 'node:path';
+
 import { PREVIEW_BUILDER_PROGRESS } from 'storybook/internal/core-events';
 import { logger } from 'storybook/internal/node-logger';
 import {
@@ -11,7 +13,6 @@ import { checkWebpackVersion } from '@storybook/core-webpack';
 
 import express from 'express';
 import fs from 'fs-extra';
-import { join, parse } from 'path';
 import prettyTime from 'pretty-hrtime';
 import { corePath } from 'storybook/core-path';
 import type { Configuration, Stats, StatsOptions } from 'webpack';

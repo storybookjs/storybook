@@ -10,6 +10,7 @@ import type {
   Args,
   ComposedStoryFn,
   NamedOrDefaultProjectAnnotations,
+  NormalizedProjectAnnotations,
   ProjectAnnotations,
   Store_CSFExports,
   StoriesWithPartialProps,
@@ -36,12 +37,12 @@ import type { ReactRenderer } from './types';
  * @param projectAnnotations - e.g. (import * as projectAnnotations from '../.storybook/preview')
  */
 export function setProjectAnnotations(
-  projectAnnotations:
-    | NamedOrDefaultProjectAnnotations<ReactRenderer>
-    | NamedOrDefaultProjectAnnotations<ReactRenderer>[]
-): ProjectAnnotations<ReactRenderer> {
+  projectAnnotations: NamedOrDefaultProjectAnnotations | NamedOrDefaultProjectAnnotations[]
+): NormalizedProjectAnnotations<ReactRenderer> {
   setDefaultProjectAnnotations(INTERNAL_DEFAULT_PROJECT_ANNOTATIONS);
-  return originalSetProjectAnnotations<ReactRenderer>(projectAnnotations);
+  return originalSetProjectAnnotations(
+    projectAnnotations
+  ) as NormalizedProjectAnnotations<ReactRenderer>;
 }
 
 // This will not be necessary once we have auto preset loading

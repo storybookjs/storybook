@@ -1,4 +1,5 @@
-import path from 'node:path';
+import { readFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 
 import type { Channel } from '@storybook/core/channels';
 import {
@@ -19,8 +20,6 @@ import {
   FILE_COMPONENT_SEARCH_REQUEST,
   FILE_COMPONENT_SEARCH_RESPONSE,
 } from '@storybook/core/core-events';
-
-import fs from 'fs/promises';
 
 import { doesStoryFileExist, getStoryMetadata } from '../utils/get-new-story-file';
 import { getParser } from '../utils/parser';
@@ -60,14 +59,11 @@ export async function initFileSearchChannel(
           const parser = getParser(rendererName);
 
           try {
-            const content = await fs.readFile(path.join(projectRoot, file), 'utf-8');
-            const { storyFileName } = getStoryMetadata(path.join(projectRoot, file));
-            const dirname = path.dirname(file);
+            const content = await readFile(join(projectRoot, file), 'utf-8');
+            const { storyFileName } = getStoryMetadata(join(projectRoot, file));
+            const dir = dirname(file);
 
-            const storyFileExists = doesStoryFileExist(
-              path.join(projectRoot, dirname),
-              storyFileName
-            );
+            const storyFileExists = doesStoryFileExist(join(projectRoot, dir), storyFileName);
 
             const info = await parser.parse(content);
 

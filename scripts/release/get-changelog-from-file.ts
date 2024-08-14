@@ -1,8 +1,9 @@
+import { join } from 'node:path';
+
 import { setOutput } from '@actions/core';
 import chalk from 'chalk';
 import { program } from 'commander';
 import { readFile } from 'fs-extra';
-import path from 'path';
 import semver from 'semver';
 import { dedent } from 'ts-dedent';
 
@@ -26,7 +27,7 @@ export const getChangelogFromFile = async (args: {
   const version = args.version || (await getCurrentVersion());
   const isPrerelease = semver.prerelease(version) !== null;
   const changelogFilename = isPrerelease ? 'CHANGELOG.prerelease.md' : 'CHANGELOG.md';
-  const changelogPath = path.join(__dirname, '..', '..', changelogFilename);
+  const changelogPath = join(__dirname, '..', '..', changelogFilename);
 
   console.log(`📝 Getting changelog from ${chalk.blue(changelogPath)}`);
 

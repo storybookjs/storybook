@@ -1,16 +1,15 @@
 /* eslint-disable no-underscore-dangle */
-import { spawn, type ChildProcess } from 'node:child_process';
-import { log } from './utils';
+import { type ChildProcess, spawn } from 'node:child_process';
 
 import type { GlobalSetupContext } from 'vitest/node';
+
+import { logger } from 'storybook/internal/node-logger';
 
 let storybookProcess: ChildProcess | null = null;
 
 const checkStorybookRunning = async (storybookUrl: string): Promise<boolean> => {
   try {
-    const response = await fetch(`${storybookUrl}/iframe.html`, {
-      method: 'HEAD',
-    });
+    const response = await fetch(`${storybookUrl}/iframe.html`, { method: 'HEAD' });
     return response.ok;
   } catch {
     return false;
@@ -24,11 +23,11 @@ const startStorybookIfNotRunning = async () => {
   const isRunning = await checkStorybookRunning(storybookUrl);
 
   if (isRunning) {
-    log('Storybook is already running');
+    logger.verbose('Storybook is already running');
     return;
   }
 
-  log(`Starting Storybook with command: ${storybookScript}`);
+  logger.verbose(`Starting Storybook with command: ${storybookScript}`);
 
   try {
     // We don't await the process because we don't want Vitest to hang while Storybook is starting
@@ -39,11 +38,11 @@ const startStorybookIfNotRunning = async () => {
     });
 
     storybookProcess.on('error', (error) => {
-      log('Failed to start Storybook:', error);
+      logger.verbose('Failed to start Storybook:' + error.message);
       throw error;
     });
   } catch (error: unknown) {
-    log('Failed to start Storybook:', error);
+    logger.verbose('Failed to start Storybook:' + (error as any).message);
     throw error;
   }
 };
@@ -64,7 +63,7 @@ export const setup = async ({ config }: GlobalSetupContext) => {
 
 export const teardown = async () => {
   if (storybookProcess) {
-    log('Stopping Storybook process');
+    logger.verbose('Stopping Storybook process');
     await killProcess(storybookProcess);
   }
 };

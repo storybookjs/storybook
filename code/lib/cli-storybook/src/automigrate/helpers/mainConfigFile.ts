@@ -1,3 +1,5 @@
+import { normalize } from 'node:path';
+
 import { frameworkToRenderer } from 'storybook/internal/cli';
 import {
   builderPackages,
@@ -14,7 +16,6 @@ import { readConfig, writeConfig as writeConfigFile } from 'storybook/internal/c
 import type { StorybookConfig, StorybookConfigRaw } from 'storybook/internal/types';
 
 import chalk from 'chalk';
-import path from 'path';
 import { dedent } from 'ts-dedent';
 
 const logger = console;
@@ -76,7 +77,7 @@ export const getBuilderPackageName = (mainConfig?: StorybookConfigRaw) => {
     return null;
   }
 
-  const normalizedPath = path.normalize(packageNameOrPath).replace(new RegExp(/\\/, 'g'), '/');
+  const normalizedPath = normalize(packageNameOrPath).replace(new RegExp(/\\/, 'g'), '/');
 
   return builderPackages.find((pkg) => normalizedPath.endsWith(pkg)) || packageNameOrPath;
 };

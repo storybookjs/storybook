@@ -1,4 +1,4 @@
-import { readFile } from 'fs/promises';
+import { readFile } from 'node:fs/promises';
 
 import { sanitizeSource } from './abstract-syntax-tree/generate-helpers';
 import { readStory } from './dependencies-lookup/readAsObject';

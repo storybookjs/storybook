@@ -1,13 +1,14 @@
+import { exec } from 'node:child_process';
+import { mkdir } from 'node:fs/promises';
+import http from 'node:http';
+import type { Server } from 'node:http';
+import { join, resolve as resolvePath } from 'node:path';
+
 import chalk from 'chalk';
-import { exec } from 'child_process';
 import program from 'commander';
 import { execa, execaSync } from 'execa';
 import { pathExists, readJSON, remove } from 'fs-extra';
-import { mkdir } from 'fs/promises';
-import http from 'http';
-import type { Server } from 'http';
 import pLimit from 'p-limit';
-import path from 'path';
 import { parseConfigFile, runServer } from 'verdaccio';
 
 import { maxConcurrentTasks } from './utils/concurrency';
@@ -22,7 +23,7 @@ program.parse(process.argv);
 
 const logger = console;
 
-const root = path.resolve(__dirname, '..');
+const root = resolvePath(__dirname, '..');
 
 const startVerdaccio = async () => {
   const ready = {
@@ -62,9 +63,9 @@ const startVerdaccio = async () => {
           resolve(verdaccioApp);
         }
       });
-      const cache = path.join(__dirname, '..', '.verdaccio-cache');
+      const cache = join(__dirname, '..', '.verdaccio-cache');
       const config = {
-        ...parseConfigFile(path.join(__dirname, 'verdaccio.yaml')),
+        ...parseConfigFile(join(__dirname, 'verdaccio.yaml')),
         self_path: cache,
       };
 
@@ -91,7 +92,7 @@ const startVerdaccio = async () => {
 };
 
 const currentVersion = async () => {
-  const { version } = await readJSON(path.join(__dirname, '..', 'code', 'package.json'));
+  const { version } = await readJSON(join(__dirname, '..', 'code', 'package.json'));
   return version;
 };
 
@@ -122,14 +123,11 @@ const publish = async (packages: { name: string; location: string }[], url: stri
         () =>
           new Promise((res, rej) => {
             logger.log(
-              `🛫 publishing ${name} (${location.replace(
-                path.resolve(path.join(__dirname, '..')),
-                '.'
-              )})`
+              `🛫 publishing ${name} (${location.replace(resolvePath(join(__dirname, '..')), '.')})`
             );
 
             const tarballFilename = `${name.replace('@', '').replace('/', '-')}.tgz`;
-            const command = `cd ${path.resolve(
+            const command = `cd ${resolvePath(
               '../code',
               location
             )} && yarn pack --out=${PACKS_DIRECTORY}/${tarballFilename} && cd ${PACKS_DIRECTORY} && npm publish ./${tarballFilename} --registry ${url} --force --ignore-scripts`;
@@ -156,7 +154,7 @@ const run = async () => {
 
   if (!process.env.CI) {
     // when running e2e locally, clear cache to avoid EPUBLISHCONFLICT errors
-    const verdaccioCache = path.resolve(__dirname, '..', '.verdaccio-cache');
+    const verdaccioCache = resolvePath(__dirname, '..', '.verdaccio-cache');
     if (await pathExists(verdaccioCache)) {
       logger.log(`🗑 cleaning up cache`);
       await remove(verdaccioCache);

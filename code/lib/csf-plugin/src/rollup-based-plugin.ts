@@ -1,7 +1,8 @@
+import { readFile } from 'node:fs/promises';
+
 import type { EnrichCsfOptions } from 'storybook/internal/csf-tools';
 import { enrichCsf, formatCsf, loadCsf } from 'storybook/internal/csf-tools';
 
-import fs from 'fs/promises';
 import type { RollupPlugin } from 'unplugin';
 
 import { STORIES_REGEX } from './constants';
@@ -16,7 +17,7 @@ export function rollupBasedPlugin(options: EnrichCsfOptions): Partial<RollupPlug
         return;
       }
 
-      const sourceCode = await fs.readFile(id, 'utf-8');
+      const sourceCode = await readFile(id, 'utf-8');
       try {
         const makeTitle = (userTitle: string) => userTitle || 'default';
         const csf = loadCsf(code, { makeTitle }).parse();

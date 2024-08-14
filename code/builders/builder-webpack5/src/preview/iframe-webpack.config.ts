@@ -1,3 +1,5 @@
+import { dirname, join, resolve } from 'node:path';
+
 import {
   getBuilderOptions,
   isPreservingSymlinks,
@@ -14,7 +16,6 @@ import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin';
 import type { TransformOptions as EsbuildOptions } from 'esbuild';
 import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
-import { dirname, join, resolve } from 'path';
 import TerserWebpackPlugin from 'terser-webpack-plugin';
 import { dedent } from 'ts-dedent';
 import { DefinePlugin, HotModuleReplacementPlugin, ProgressPlugin, ProvidePlugin } from 'webpack';

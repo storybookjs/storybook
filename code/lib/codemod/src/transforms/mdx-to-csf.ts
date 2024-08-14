@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment,@typescript-eslint/no-shadow */
-import * as fs from 'node:fs';
-import * as path from 'node:path';
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import { existsSync, renameSync, writeFileSync } from 'node:fs';
+import { basename, join, parse } from 'node:path';
 
 import { babelParse, babelParseExpression } from '@storybook/core/csf-tools';
 
@@ -30,23 +30,23 @@ const renameList: { original: string; baseName: string }[] = [];
 const brokenList: { original: string; baseName: string }[] = [];
 
 export default async function jscodeshift(info: FileInfo) {
-  const parsed = path.parse(info.path);
+  const parsed = parse(info.path);
 
-  let baseName = path.join(
+  let baseName = join(
     parsed.dir,
     parsed.name.replace('.mdx', '').replace('.stories', '').replace('.story', '')
   );
 
   // make sure the new csf file we are going to create exists
-  while (fs.existsSync(`${baseName}.stories.js`)) {
+  while (existsSync(`${baseName}.stories.js`)) {
     baseName += '_';
   }
 
   try {
-    const { csf, mdx } = await transform(info, path.basename(baseName));
+    const { csf, mdx } = await transform(info, basename(baseName));
 
     if (csf != null) {
-      fs.writeFileSync(`${baseName}.stories.js`, csf);
+      writeFileSync(`${baseName}.stories.js`, csf);
     }
 
     renameList.push({ original: info.path, baseName });
@@ -62,10 +62,10 @@ export default async function jscodeshift(info: FileInfo) {
 // This is a workaround to rename the files after the transformation, which we can remove after we switch from jscodeshift to another solution.
 process.on('exit', () => {
   renameList.forEach((file) => {
-    fs.renameSync(file.original, `${file.baseName}.mdx`);
+    renameSync(file.original, `${file.baseName}.mdx`);
   });
   brokenList.forEach((file) => {
-    fs.renameSync(file.original, `${file.original}.broken`);
+    renameSync(file.original, `${file.original}.broken`);
   });
 });
 

@@ -1,4 +1,4 @@
-import { addons, type API } from 'storybook/internal/manager-api';
+import { type API, addons } from 'storybook/internal/manager-api';
 
 import { ADDON_ID } from './constants';
 

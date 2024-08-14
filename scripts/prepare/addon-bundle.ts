@@ -2,7 +2,7 @@ import aliasPlugin from 'esbuild-plugin-alias';
 import * as fs from 'fs-extra';
 import { glob } from 'glob';
 import { builtinModules } from 'node:module';
-import path, { dirname, join, relative } from 'path';
+import { dirname, join, parse, posix, relative, sep } from 'path';
 import slash from 'slash';
 import { dedent } from 'ts-dedent';
 import type { Options } from 'tsup';
@@ -293,11 +293,11 @@ function getESBuildOptions(optimized: boolean) {
 }
 
 async function generateDTSMapperFile(file: string) {
-  const { name: entryName, dir } = path.parse(file);
+  const { name: entryName, dir } = parse(file);
 
   const pathName = join(process.cwd(), dir.replace('./src', 'dist'), `${entryName}.d.ts`);
   const srcName = join(process.cwd(), file);
-  const rel = relative(dirname(pathName), dirname(srcName)).split(path.sep).join(path.posix.sep);
+  const rel = relative(dirname(pathName), dirname(srcName)).split(sep).join(posix.sep);
 
   await fs.ensureFile(pathName);
   await fs.writeFile(

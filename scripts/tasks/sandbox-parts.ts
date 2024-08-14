@@ -365,7 +365,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
 
   const isSvelte = template.expected.renderer === '@storybook/svelte';
   const isVue = template.expected.renderer === '@storybook/vue3';
-  const isNextjs = template.expected.framework === '@storybook/nextjs';
+  const isNextjs = template.expected.framework.includes('nextjs');
   // const isAngular = template.expected.framework === '@storybook/angular';
   const storybookPackage = isNextjs ? template.expected.framework : template.expected.renderer;
 
@@ -383,6 +383,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
     ${isVue ? 'import * as vueAnnotations from "../src/stories/renderers/vue3/preview.js"' : ''}
 
     const annotations = setProjectAnnotations([
+      { tags: ['vitest'] },
       rendererDocsAnnotations,
       projectAnnotations,
       coreAnnotations,
@@ -402,7 +403,6 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
     import { storybookTest } from '@storybook/experimental-addon-vitest/plugin'
     ${!isNextjs ? "import viteConfig from '../vite.config'" : ''}
     ${isNextjs ? "import vitePluginNext from 'vite-plugin-storybook-nextjs'" : ''}
-    ${isSvelte ? "import { svelteTesting } from '@testing-library/svelte/vite'" : ''}
 
     export default mergeConfig(
       ${!isNextjs ? 'viteConfig' : '{}'},
@@ -415,9 +415,20 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
               include: ['vitest'],
             }
           }),
-          ${isSvelte ? 'svelteTesting(),' : ''}
           ${isNextjs ? "vitePluginNext({ dir: path.join(__dirname, '..') })," : ''}
         ],
+        ${
+          isNextjs
+            ? `optimizeDeps: {
+          include: [
+            "next/image",
+            "next/dist/compiled/react",
+            "sb-original/default-loader",
+            "sb-original/image-context",
+          ],
+        },`
+            : ''
+        }
         resolve: {
           preserveSymlinks: true,
           ${isVue ? "alias: { vue: 'vue/dist/vue.esm-bundler.js' }," : ''}
@@ -477,7 +488,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
 
   packageJson.scripts = {
     ...packageJson.scripts,
-    vitest: 'vitest',
+    vitest: 'vitest --pass-with-no-tests --reporter=default --reporter=hanging-process',
   };
 
   // This workaround is needed because Vitest seems to have issues in link mode

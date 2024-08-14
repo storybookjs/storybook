@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle */
-import path from 'node:path';
+import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
 
 import { commonGlobOptions, normalizeStoryPath } from '@storybook/core/common';
 import type {
@@ -72,12 +72,7 @@ export function isMdxEntry({ tags }: DocsIndexEntry) {
 
 const makeAbsolute = (otherImport: Path, normalizedPath: Path, workingDir: Path) =>
   otherImport.startsWith('.')
-    ? slash(
-        path.resolve(
-          workingDir,
-          normalizeStoryPath(path.join(path.dirname(normalizedPath), otherImport))
-        )
-      )
+    ? slash(resolve(workingDir, normalizeStoryPath(join(dirname(normalizedPath), otherImport))))
     : otherImport;
 
 /**
@@ -130,7 +125,7 @@ export class StoryIndexGenerator {
       this.specifiers.map(async (specifier) => {
         const pathToSubIndex = {} as SpecifierStoriesCache;
 
-        const fullGlob = slash(path.join(specifier.directory, specifier.files));
+        const fullGlob = slash(join(specifier.directory, specifier.files));
 
         // Dynamically import globby because it is a pure ESM module
         const { globby } = await import('globby');
@@ -144,15 +139,15 @@ export class StoryIndexGenerator {
         if (files.length === 0) {
           once.warn(
             `No story files found for the specified pattern: ${chalk.blue(
-              path.join(specifier.directory, specifier.files)
+              join(specifier.directory, specifier.files)
             )}`
           );
         }
 
         files.sort().forEach((absolutePath: Path) => {
-          const ext = path.extname(absolutePath);
+          const ext = extname(absolutePath);
           if (ext === '.storyshot') {
-            const relativePath = path.relative(this.options.workingDir, absolutePath);
+            const relativePath = relative(this.options.workingDir, absolutePath);
             logger.info(`Skipping ${ext} file ${relativePath}`);
             return;
           }
@@ -204,10 +199,7 @@ export class StoryIndexGenerator {
             try {
               entry[absolutePath] = await updater(specifier, absolutePath, entry[absolutePath]);
             } catch (err) {
-              const relativePath = `.${path.sep}${path.relative(
-                this.options.workingDir,
-                absolutePath
-              )}`;
+              const relativePath = `.${sep}${relative(this.options.workingDir, absolutePath)}`;
 
               entry[absolutePath] = {
                 type: 'error',
@@ -301,7 +293,7 @@ export class StoryIndexGenerator {
    * the same format as `importPath`. Respect tsconfig paths if available.
    *
    * If no such file exists, assume that the import is from a package and
-   * return the raw path.
+   * return the raw
    */
   resolveComponentPath(
     rawComponentPath: Path,
@@ -313,12 +305,12 @@ export class StoryIndexGenerator {
       rawPath = matchPath(rawPath) ?? rawPath;
     }
 
-    const absoluteComponentPath = path.resolve(path.dirname(absolutePath), rawPath);
+    const absoluteComponentPath = resolve(dirname(absolutePath), rawPath);
     const existing = ['', '.js', '.ts', '.jsx', '.tsx', '.mjs', '.mts']
       .map((ext) => `${absoluteComponentPath}${ext}`)
       .find((candidate) => fs.existsSync(candidate));
     if (existing) {
-      const relativePath = path.relative(this.options.workingDir, existing);
+      const relativePath = relative(this.options.workingDir, existing);
       return slash(normalizeStoryPath(relativePath));
     }
 
@@ -330,7 +322,7 @@ export class StoryIndexGenerator {
     absolutePath: Path,
     projectTags: Tag[] = []
   ): Promise<StoriesCacheEntry | DocsCacheEntry> {
-    const relativePath = path.relative(this.options.workingDir, absolutePath);
+    const relativePath = relative(this.options.workingDir, absolutePath);
     const importPath = slash(normalizeStoryPath(relativePath));
     const defaultMakeTitle = (userTitle?: string) => {
       const title = userOrAutoTitleFromSpecifier(importPath, specifier, userTitle);
@@ -419,7 +411,7 @@ export class StoryIndexGenerator {
     absolutePath: Path,
     projectTags: Tag[] = []
   ) {
-    const relativePath = path.relative(this.options.workingDir, absolutePath);
+    const relativePath = relative(this.options.workingDir, absolutePath);
     try {
       const normalizedPath = normalizeStoryPath(relativePath);
       const importPath = slash(normalizedPath);
@@ -455,9 +447,9 @@ export class StoryIndexGenerator {
             const first = dep.entries.find((e) => e.type !== 'docs') as StoryIndexEntryWithExtra;
 
             if (
-              path
-                .normalize(path.resolve(this.options.workingDir, first.importPath))
-                .startsWith(path.normalize(absoluteOf))
+              normalize(resolve(this.options.workingDir, first.importPath)).startsWith(
+                normalize(absoluteOf)
+              )
             ) {
               csfEntry = first;
             }
@@ -685,7 +677,7 @@ export class StoryIndexGenerator {
   }
 
   invalidate(specifier: NormalizedStoriesSpecifier, importPath: Path, removed: boolean) {
-    const absolutePath = slash(path.resolve(this.options.workingDir, importPath));
+    const absolutePath = slash(resolve(this.options.workingDir, importPath));
     const cache = this.specifierToCache.get(specifier);
     invariant(
       cache,
@@ -713,7 +705,7 @@ export class StoryIndexGenerator {
     if (removed) {
       if (cacheEntry && cacheEntry.type === 'docs') {
         const absoluteImports = cacheEntry.storiesImports.map((p) =>
-          path.resolve(this.options.workingDir, p)
+          resolve(this.options.workingDir, p)
         );
         const dependencies = this.findDependencies(absoluteImports);
         dependencies.forEach((dep) =>
@@ -730,7 +722,7 @@ export class StoryIndexGenerator {
 
   async getPreviewCode() {
     const previewFile = ['js', 'jsx', 'ts', 'tsx', 'mjs', 'cjs', 'mts']
-      .map((ext) => path.join(this.options.configDir, `preview.${ext}`))
+      .map((ext) => join(this.options.configDir, `preview.${ext}`))
       .find((fname) => fs.existsSync(fname));
 
     return previewFile && (await fs.readFile(previewFile, 'utf-8')).toString();

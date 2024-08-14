@@ -1,4 +1,4 @@
-import fs from 'node:fs';
+import { existsSync } from 'node:fs';
 
 import type { JsPackageManager } from '@storybook/core/common';
 import { paddedLog } from '@storybook/core/common';
@@ -17,7 +17,7 @@ const UNSUPPORTED_ESLINT_EXTENSIONS = ['yaml', 'yml'];
 export const findEslintFile = () => {
   const filePrefix = '.eslintrc';
   const unsupportedExtension = UNSUPPORTED_ESLINT_EXTENSIONS.find((ext: string) =>
-    fs.existsSync(`${filePrefix}.${ext}`)
+    existsSync(`${filePrefix}.${ext}`)
   );
 
   if (unsupportedExtension) {
@@ -25,7 +25,7 @@ export const findEslintFile = () => {
   }
 
   const extension = SUPPORTED_ESLINT_EXTENSIONS.find((ext: string) =>
-    fs.existsSync(`${filePrefix}.${ext}`)
+    existsSync(`${filePrefix}.${ext}`)
   );
   return extension ? `${filePrefix}.${extension}` : null;
 };

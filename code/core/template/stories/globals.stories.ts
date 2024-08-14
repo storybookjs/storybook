@@ -44,6 +44,7 @@ export const Events = {
     await channel.emit('updateGlobals', { globals: { foo: 'fooValue' } });
     await within(canvasElement).findByText('fooValue');
   },
+  tags: ['!vitest'],
 };
 
 export const Overrides1 = {

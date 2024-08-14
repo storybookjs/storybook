@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle */
-import path from 'node:path';
+import { join } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
@@ -18,11 +18,11 @@ vi.mock('@storybook/core/common', async (importOriginal) => {
 
 const checkMonorepoType = ({ monorepoConfigFile, isYarnWorkspace = false }: any) => {
   const mockFiles = {
-    [path.join('root', 'package.json')]: isYarnWorkspace ? '{ "workspaces": [] }' : '{}',
+    [join('root', 'package.json')]: isYarnWorkspace ? '{ "workspaces": [] }' : '{}',
   };
 
   if (monorepoConfigFile) {
-    mockFiles[path.join('root', monorepoConfigFile)] = '{}';
+    mockFiles[join('root', monorepoConfigFile)] = '{}';
   }
 
   vi.mocked<typeof import('../../../__mocks__/fs-extra')>(fsExtra as any).__setMockFiles(mockFiles);

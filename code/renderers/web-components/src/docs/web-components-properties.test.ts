@@ -1,9 +1,10 @@
 // @vitest-environment happy-dom
+import { readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { describe, expect, it, vi } from 'vitest';
 
 import { sync as spawnSync } from 'cross-spawn';
-import fs from 'fs';
-import path from 'path';
 import tmp from 'tmp';
 
 import { extractArgTypesFromElements } from './custom-elements';
@@ -16,14 +17,14 @@ const runWebComponentsAnalyzer = (inputPath: string) => {
   const { name: tmpDir, removeCallback } = tmp.dirSync();
   const customElementsFile = `${tmpDir}/custom-elements.json`;
   spawnSync(
-    path.join(__dirname, '../../../../node_modules/.bin/wca'),
+    join(__dirname, '../../../../node_modules/.bin/wca'),
     ['analyze', inputPath, '--outFile', customElementsFile],
     {
       stdio: 'ignore',
       shell: true,
     }
   );
-  const output = fs.readFileSync(customElementsFile, 'utf8');
+  const output = readFileSync(customElementsFile, 'utf8');
   try {
     removeCallback();
   } catch (e) {
@@ -39,14 +40,14 @@ describe('web-components component properties', () => {
   vi.mock('lit', () => ({ default: {} }));
   vi.mock('lit/directive-helpers.js', () => ({ default: {} }));
 
-  const fixturesDir = path.join(__dirname, '__testfixtures__');
-  fs.readdirSync(fixturesDir, { withFileTypes: true }).forEach((testEntry) => {
+  const fixturesDir = join(__dirname, '__testfixtures__');
+  readdirSync(fixturesDir, { withFileTypes: true }).forEach((testEntry) => {
     if (testEntry.isDirectory()) {
-      const testDir = path.join(fixturesDir, testEntry.name);
-      const testFile = fs.readdirSync(testDir).find((fileName) => inputRegExp.test(fileName));
+      const testDir = join(fixturesDir, testEntry.name);
+      const testFile = readdirSync(testDir).find((fileName) => inputRegExp.test(fileName));
       if (testFile) {
         it(`${testEntry.name}`, () => {
-          const inputPath = path.join(testDir, testFile);
+          const inputPath = join(testDir, testFile);
 
           // snapshot the output of wca
           const customElementsJson = runWebComponentsAnalyzer(inputPath);
@@ -54,13 +55,11 @@ describe('web-components component properties', () => {
           customElements.tags.forEach((tag: any) => {
             tag.path = 'dummy-path-to-component';
           });
-          expect(customElements).toMatchFileSnapshot(
-            path.join(testDir, 'custom-elements.snapshot')
-          );
+          expect(customElements).toMatchFileSnapshot(join(testDir, 'custom-elements.snapshot'));
 
           // snapshot the properties
           const properties = extractArgTypesFromElements('input', customElements);
-          expect(properties).toMatchFileSnapshot(path.join(testDir, 'properties.snapshot'));
+          expect(properties).toMatchFileSnapshot(join(testDir, 'properties.snapshot'));
         });
       }
     }

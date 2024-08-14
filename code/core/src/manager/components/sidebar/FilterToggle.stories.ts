@@ -1,4 +1,5 @@
 import { fn } from '@storybook/test';
+
 import { FilterToggle } from './FilterToggle';
 
 export default {

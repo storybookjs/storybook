@@ -12,17 +12,6 @@ export type UserOptions = {
    */
   storybookScript?: string;
   /**
-   *  Whether to skip running Storybook when running tests in watch mode.
-   *  Only relevant when `storybookScript` is provided.
-   *  @default false
-   */
-  skipRunningStorybook?: boolean;
-  /**
-   *  Whether to generate DOM snapshots for every story file.
-   *  @default false
-   */
-  snapshot?: boolean;
-  /**
    *  The URL where Storybook is hosted.
    *  This is used to provide a link to the story in the test output on failures.
    *  @default 'http://localhost:6006'

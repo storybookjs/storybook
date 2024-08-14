@@ -1,3 +1,5 @@
+import { join, resolve } from 'node:path';
+
 import {
   getBuilderOptions,
   handlebars,
@@ -9,7 +11,6 @@ import type { Options, PreviewAnnotation } from 'storybook/internal/types';
 
 import { toImportFn } from '@storybook/core-webpack';
 
-import { join, resolve } from 'path';
 import slash from 'slash';
 
 import type { BuilderOptions } from '../types';

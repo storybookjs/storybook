@@ -1,7 +1,8 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { Preset } from 'storybook/internal/types';
 
-import fs from 'fs';
-import * as path from 'path';
 import { Configuration } from 'webpack';
 
 import { AngularOptions } from '../types';
@@ -43,7 +44,7 @@ export const runNgcc = async () => {
     // should be async: true but does not work due to
     // https://github.com/storybookjs/storybook/pull/11157/files#r615413803
     async: false,
-    basePath: path.join(process.cwd(), 'node_modules'), // absolute path to node_modules
+    basePath: join(process.cwd(), 'node_modules'), // absolute path to node_modules
     createNewEntryPointFormats: true, // --create-ivy-entry-points
     compileAllFormats: false, // --first-only
   });
@@ -51,7 +52,7 @@ export const runNgcc = async () => {
 
 export const webpack = async (webpackConfig: Configuration, options: PresetOptions) => {
   const packageJsonPath = require.resolve('@angular/core/package.json');
-  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
   const VERSION = packageJson.version;
   const framework = await options.presets.apply<Preset>('framework');
   const angularOptions = (typeof framework === 'object' ? framework.options : {}) as AngularOptions;

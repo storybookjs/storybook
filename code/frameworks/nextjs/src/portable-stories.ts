@@ -9,6 +9,7 @@ import type {
   Args,
   ComposedStoryFn,
   NamedOrDefaultProjectAnnotations,
+  NormalizedProjectAnnotations,
   ProjectAnnotations,
   Store_CSFExports,
   StoriesWithPartialProps,
@@ -17,7 +18,6 @@ import type {
 
 import type { Meta, ReactRenderer } from '@storybook/react';
 
-import * as rscAnnotations from '../../../renderers/react/src/entry-preview-rsc';
 // ! ATTENTION: This needs to be a relative import so it gets prebundled. This is to avoid ESM issues in Nextjs + Jest setups
 import { INTERNAL_DEFAULT_PROJECT_ANNOTATIONS as reactAnnotations } from '../../../renderers/react/src/portable-stories';
 import * as nextJsAnnotations from './preview';
@@ -38,19 +38,17 @@ import * as nextJsAnnotations from './preview';
  * @param projectAnnotations - e.g. (import projectAnnotations from '../.storybook/preview')
  */
 export function setProjectAnnotations(
-  projectAnnotations:
-    | NamedOrDefaultProjectAnnotations<ReactRenderer>
-    | NamedOrDefaultProjectAnnotations<ReactRenderer>[]
-): ProjectAnnotations<ReactRenderer> {
+  projectAnnotations: NamedOrDefaultProjectAnnotations | NamedOrDefaultProjectAnnotations[]
+): NormalizedProjectAnnotations<ReactRenderer> {
   setDefaultProjectAnnotations(INTERNAL_DEFAULT_PROJECT_ANNOTATIONS);
-  return originalSetProjectAnnotations<ReactRenderer>(projectAnnotations);
+  return originalSetProjectAnnotations(
+    projectAnnotations
+  ) as NormalizedProjectAnnotations<ReactRenderer>;
 }
 
 // This will not be necessary once we have auto preset loading
 const INTERNAL_DEFAULT_PROJECT_ANNOTATIONS: ProjectAnnotations<ReactRenderer> = composeConfigs([
   reactAnnotations,
-  // we only provide the RSC decorator, but not the feature flag. Should be set by the user
-  { decorators: rscAnnotations.decorators },
   nextJsAnnotations,
 ]);
 

@@ -1,9 +1,10 @@
+import { dirname, resolve, sep } from 'node:path';
+
 import { getProjectRoot } from 'storybook/internal/common';
 
 import type { NextConfig } from 'next';
 import { PHASE_DEVELOPMENT_SERVER } from 'next/constants';
 import loadConfig from 'next/dist/server/config';
-import path from 'path';
 import { DefinePlugin } from 'webpack';
 import type { Configuration as WebpackConfig } from 'webpack';
 
@@ -22,7 +23,7 @@ export const resolveNextConfig = async ({
 }: {
   nextConfigPath?: string;
 }): Promise<NextConfig> => {
-  const dir = nextConfigPath ? path.dirname(nextConfigPath) : getProjectRoot();
+  const dir = nextConfigPath ? dirname(nextConfigPath) : getProjectRoot();
   return loadConfig(PHASE_DEVELOPMENT_SERVER, dir, undefined);
 };
 
@@ -65,13 +66,13 @@ export const scopedResolve = (id: string): string => {
 
   try {
     // TODO: Remove in next major release (SB 8.0) and use the statement in the catch block per default instead
-    scopedModulePath = require.resolve(id, { paths: [path.resolve()] });
+    scopedModulePath = require.resolve(id, { paths: [resolve()] });
   } catch (e) {
     scopedModulePath = require.resolve(id);
   }
 
   const moduleFolderStrPosition = scopedModulePath.lastIndexOf(
-    id.replace(/\//g /* all '/' occurances */, path.sep)
+    id.replace(/\//g /* all '/' occurances */, sep)
   );
   const beginningOfMainScriptPath = moduleFolderStrPosition + id.length;
   return scopedModulePath.substring(0, beginningOfMainScriptPath);

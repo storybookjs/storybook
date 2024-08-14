@@ -3,6 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ChannelTransport } from '@storybook/core/channels';
 import { Channel } from '@storybook/core/channels';
+import {
+  extractProperRendererNameFromFramework,
+  getFrameworkName,
+  getProjectRoot,
+} from '@storybook/core/common';
 
 import type { FileComponentSearchRequestPayload, RequestData } from '@storybook/core/core-events';
 import {
@@ -10,30 +15,22 @@ import {
   FILE_COMPONENT_SEARCH_RESPONSE,
 } from '@storybook/core/core-events';
 
+import { searchFiles } from '../utils/search-files';
 import { initFileSearchChannel } from './file-search-channel';
 
-const mocks = vi.hoisted(() => {
-  return {
-    searchFiles: vi.fn(),
-  };
-});
+vi.mock(import('../utils/search-files'), async (importOriginal) => ({
+  searchFiles: vi.fn((await importOriginal()).searchFiles),
+}));
 
-vi.mock('../utils/search-files', () => {
-  return {
-    searchFiles: mocks.searchFiles,
-  };
-});
+vi.mock('@storybook/core/common');
 
-vi.mock('@storybook/core/common', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@storybook/core/common')>();
-  return {
-    ...actual,
-    getFrameworkName: vi.fn().mockResolvedValue('@storybook/react'),
-    extractProperRendererNameFromFramework: vi.fn().mockResolvedValue('react'),
-    getProjectRoot: vi
-      .fn()
-      .mockReturnValue(require('path').join(__dirname, '..', 'utils', '__search-files-tests__')),
-  };
+beforeEach(() => {
+  vi.restoreAllMocks();
+  vi.mocked(getFrameworkName).mockResolvedValue('@storybook/react');
+  vi.mocked(extractProperRendererNameFromFramework).mockResolvedValue('react');
+  vi.mocked(getProjectRoot).mockReturnValue(
+    require('path').join(__dirname, '..', 'utils', '__search-files-tests__')
+  );
 });
 
 describe('file-search-channel', () => {
@@ -41,87 +38,12 @@ describe('file-search-channel', () => {
   const mockChannel = new Channel({ transport });
   const searchResultChannelListener = vi.fn();
 
-  beforeEach(() => {
-    transport.setHandler.mockClear();
-    transport.send.mockClear();
-    searchResultChannelListener.mockClear();
-  });
-
   describe('initFileSearchChannel', async () => {
-    it(
-      '@flaky should emit search result event with the search result',
-      async () => {
-        const mockOptions = {};
-        const data = { searchQuery: 'es-module' };
-
-        initFileSearchChannel(mockChannel, mockOptions as any, { disableTelemetry: true });
-
-        mockChannel.addListener(FILE_COMPONENT_SEARCH_RESPONSE, searchResultChannelListener);
-        mockChannel.emit(FILE_COMPONENT_SEARCH_REQUEST, {
-          id: data.searchQuery,
-          payload: {},
-        } satisfies RequestData<FileComponentSearchRequestPayload>);
-
-        mocks.searchFiles.mockImplementation(async (...args) => {
-          // @ts-expect-error Ignore type issue
-          return (await vi.importActual('../utils/search-files')).searchFiles(...args);
-        });
-
-        await vi.waitFor(
-          () => {
-            expect(searchResultChannelListener).toHaveBeenCalled();
-          },
-          { timeout: 2000 }
-        );
-
-        expect(searchResultChannelListener).toHaveBeenCalledWith({
-          id: data.searchQuery,
-          error: null,
-          payload: {
-            files: [
-              {
-                exportedComponents: [
-                  {
-                    default: false,
-                    name: 'p',
-                  },
-                  {
-                    default: false,
-                    name: 'q',
-                  },
-                  {
-                    default: false,
-                    name: 'C',
-                  },
-                  {
-                    default: false,
-                    name: 'externalName',
-                  },
-                  {
-                    default: false,
-                    name: 'ns',
-                  },
-                  {
-                    default: true,
-                    name: 'default',
-                  },
-                ],
-                filepath: 'src/es-module.js',
-                storyFileExists: true,
-              },
-            ],
-          },
-          success: true,
-        });
-      },
-      { retry: 3 }
-    );
-
-    it('should emit search result event with an empty search result', async () => {
+    it('should emit search result event with the search result', async () => {
       const mockOptions = {};
-      const data = { searchQuery: 'no-file-for-search-query' };
+      const data = { searchQuery: 'es-module' };
 
-      initFileSearchChannel(mockChannel, mockOptions as any, { disableTelemetry: true });
+      await initFileSearchChannel(mockChannel, mockOptions as any, { disableTelemetry: true });
 
       mockChannel.addListener(FILE_COMPONENT_SEARCH_RESPONSE, searchResultChannelListener);
       mockChannel.emit(FILE_COMPONENT_SEARCH_REQUEST, {
@@ -129,17 +51,66 @@ describe('file-search-channel', () => {
         payload: {},
       } satisfies RequestData<FileComponentSearchRequestPayload>);
 
-      mocks.searchFiles.mockImplementation(async (...args) => {
-        // @ts-expect-error Ignore type issue
-        return (await vi.importActual('../utils/search-files')).searchFiles(...args);
+      await vi.waitFor(() => expect(searchResultChannelListener).toHaveBeenCalled(), {
+        timeout: 2000,
       });
 
-      await vi.waitFor(
-        () => {
-          expect(searchResultChannelListener).toHaveBeenCalled();
+      expect(searchResultChannelListener).toHaveBeenCalledWith({
+        id: data.searchQuery,
+        error: null,
+        payload: {
+          files: [
+            {
+              exportedComponents: [
+                {
+                  default: false,
+                  name: 'p',
+                },
+                {
+                  default: false,
+                  name: 'q',
+                },
+                {
+                  default: false,
+                  name: 'C',
+                },
+                {
+                  default: false,
+                  name: 'externalName',
+                },
+                {
+                  default: false,
+                  name: 'ns',
+                },
+                {
+                  default: true,
+                  name: 'default',
+                },
+              ],
+              filepath: 'src/es-module.js',
+              storyFileExists: true,
+            },
+          ],
         },
-        { timeout: 2000 }
-      );
+        success: true,
+      });
+    });
+
+    it('should emit search result event with an empty search result', async () => {
+      const mockOptions = {};
+      const data = { searchQuery: 'no-file-for-search-query' };
+
+      await initFileSearchChannel(mockChannel, mockOptions as any, { disableTelemetry: true });
+
+      mockChannel.addListener(FILE_COMPONENT_SEARCH_RESPONSE, searchResultChannelListener);
+      mockChannel.emit(FILE_COMPONENT_SEARCH_REQUEST, {
+        id: data.searchQuery,
+        payload: {},
+      } satisfies RequestData<FileComponentSearchRequestPayload>);
+
+      await vi.waitFor(() => {
+        expect(searchResultChannelListener).toHaveBeenCalled();
+      });
 
       expect(searchResultChannelListener).toHaveBeenCalledWith({
         id: data.searchQuery,
@@ -152,23 +123,20 @@ describe('file-search-channel', () => {
     });
 
     it('should emit an error message if an error occurs while searching for components in the project', async () => {
-      const mockOptions = {};
+      const mockOptions = {} as any;
       const data = { searchQuery: 'commonjs' };
-
-      initFileSearchChannel(mockChannel, mockOptions as any, { disableTelemetry: true });
+      await initFileSearchChannel(mockChannel, mockOptions, { disableTelemetry: true });
 
       mockChannel.addListener(FILE_COMPONENT_SEARCH_RESPONSE, searchResultChannelListener);
 
       mockChannel.emit(FILE_COMPONENT_SEARCH_REQUEST, {
         id: data.searchQuery,
         payload: {},
-      } satisfies RequestData<FileComponentSearchRequestPayload>);
-
-      mocks.searchFiles.mockRejectedValue(new Error('ENOENT: no such file or directory'));
-
-      await vi.waitFor(() => {
-        expect(searchResultChannelListener).toHaveBeenCalled();
       });
+
+      vi.mocked(searchFiles).mockRejectedValue(new Error('ENOENT: no such file or directory'));
+
+      await vi.waitFor(() => expect(searchResultChannelListener).toHaveBeenCalled());
 
       expect(searchResultChannelListener).toHaveBeenCalledWith({
         id: data.searchQuery,

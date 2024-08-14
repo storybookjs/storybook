@@ -1,12 +1,13 @@
-import { vi, beforeAll, expect as vitestExpect } from 'vitest';
+import { beforeAll, vi, expect as vitestExpect } from 'vitest';
+
 import { setProjectAnnotations } from '@storybook/react';
-import * as projectAnnotations from './preview';
-import * as componentAnnotations from '../core/template/stories/preview';
+import { userEvent as storybookEvent, expect as storybookExpect } from '@storybook/test';
+
 import * as coreAnnotations from '../addons/toolbars/template/stories/preview';
+import * as componentAnnotations from '../core/template/stories/preview';
 // register global components used in many stories
 import '../renderers/react/template/components';
-
-import { userEvent as storybookEvent, expect as storybookExpect } from '@storybook/test';
+import * as projectAnnotations from './preview';
 
 vi.spyOn(console, 'warn').mockImplementation((...args) => console.log(...args));
 
@@ -34,4 +35,4 @@ const annotations = setProjectAnnotations([
   },
 ]);
 
-beforeAll(annotations.beforeAll!);
+beforeAll(annotations.beforeAll);

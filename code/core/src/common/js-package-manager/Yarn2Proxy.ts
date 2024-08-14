@@ -1,11 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs';
-import path from 'node:path';
+import { join } from 'node:path';
 
 import { FindPackageVersionsError } from '@storybook/core/server-errors';
 
 import { PosixFS, VirtualFS, ZipOpenFS } from '@yarnpkg/fslib';
 import { getLibzipSync } from '@yarnpkg/libzip';
-import { findUpSync } from 'find-up';
+import { findUp, findUpSync } from 'find-up';
 import { dedent } from 'ts-dedent';
 
 import { createLogStream } from '../utils/cli';
@@ -152,7 +152,7 @@ export class Yarn2Proxy extends JsPackageManager {
         const virtualFs = new VirtualFS({ baseFs: zipOpenFs });
         const crossFs = new PosixFS(virtualFs);
 
-        const virtualPath = path.join(pkg.packageLocation, 'package.json');
+        const virtualPath = join(pkg.packageLocation, 'package.json');
 
         return crossFs.readJsonSync(virtualPath);
       } catch (error: any) {
@@ -163,9 +163,9 @@ export class Yarn2Proxy extends JsPackageManager {
       }
     }
 
-    const packageJsonPath = await findUpSync(
+    const packageJsonPath = await findUp(
       (dir) => {
-        const possiblePath = path.join(dir, 'node_modules', packageName, 'package.json');
+        const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
         return existsSync(possiblePath) ? possiblePath : undefined;
       },
       { cwd: basePath }

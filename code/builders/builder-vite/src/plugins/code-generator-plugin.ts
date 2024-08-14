@@ -1,6 +1,7 @@
+import { readFileSync } from 'node:fs';
+
 import type { Options } from 'storybook/internal/types';
 
-import * as fs from 'fs';
 import type { Plugin } from 'vite';
 
 import { generateImportFnScriptCode } from '../codegen-importfn-script';
@@ -69,41 +70,38 @@ export function codeGeneratorPlugin(options: Options): Plugin {
     },
     resolveId(source) {
       if (source === virtualFileId) {
-        return virtualFileId;
+        return `${virtualFileId}`;
       }
       if (source === iframePath) {
         return iframeId;
       }
       if (source === virtualStoriesFile) {
-        return virtualStoriesFile;
+        return `${virtualStoriesFile}`;
       }
       if (source === virtualPreviewFile) {
         return virtualPreviewFile;
       }
       if (source === virtualAddonSetupFile) {
-        return virtualAddonSetupFile;
+        return `${virtualAddonSetupFile}`;
       }
 
       return undefined;
     },
     async load(id, config) {
-      if (id === virtualStoriesFile) {
+      if (id === `${virtualStoriesFile}`) {
         return generateImportFnScriptCode(options);
       }
 
-      if (id === virtualAddonSetupFile) {
+      if (id === `${virtualAddonSetupFile}`) {
         return generateAddonSetupCode();
       }
 
-      if (id === virtualFileId) {
+      if (id === `${virtualFileId}`) {
         return generateModernIframeScriptCode(options, projectRoot);
       }
 
       if (id === iframeId) {
-        return fs.readFileSync(
-          require.resolve('@storybook/builder-vite/input/iframe.html'),
-          'utf-8'
-        );
+        return readFileSync(require.resolve('@storybook/builder-vite/input/iframe.html'), 'utf-8');
       }
 
       return undefined;

@@ -3,6 +3,7 @@ import type { FC, ReactElement } from 'react';
 import * as React from 'react';
 import type { Root as ReactRoot, RootOptions } from 'react-dom/client';
 import * as ReactDOM from 'react-dom/client';
+
 import { preventActChecks } from './preventActChecks';
 
 // A map of all rendered React 18 nodes

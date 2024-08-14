@@ -1,4 +1,4 @@
-import fs, { move } from 'fs-extra';
+import { emptyDir, move, readJson } from 'fs-extra';
 import { globSync } from 'glob';
 import { join } from 'path';
 import * as ts from 'typescript';
@@ -10,7 +10,7 @@ const hasFlag = (flags: string[], name: string) => !!flags.find((s) => s.startsW
 const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   const {
     bundler: { pre, post, tsConfig: tsconfigPath = 'tsconfig.json' },
-  } = await fs.readJson(join(cwd, 'package.json'));
+  } = await readJson(join(cwd, 'package.json'));
 
   if (pre) {
     await exec(`jiti ${pre}`, { cwd });
@@ -21,7 +21,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   // const optimized = hasFlag(flags, 'optimized');
 
   if (reset) {
-    await fs.emptyDir(join(process.cwd(), 'dist'));
+    await emptyDir(join(process.cwd(), 'dist'));
   }
 
   const content = ts.readJsonConfigFile(tsconfigPath, ts.sys.readFile);

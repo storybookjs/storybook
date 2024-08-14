@@ -51,6 +51,6 @@ export const babelPrint = (ast: ASTNode): string => {
   }).code;
 };
 
-export const babelParseExpression = (code: string) => {
+export const babelParseExpression = (code: string): babelParser.ParseResult<t.Expression> => {
   return babelParser.parseExpression(code, parserOptions);
 };

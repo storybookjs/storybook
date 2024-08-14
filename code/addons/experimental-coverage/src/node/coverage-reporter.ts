@@ -23,7 +23,7 @@ export default class CustomReporter extends ReportBase {
     this.state = options.state;
   }
 
-  async onDetail(node) {
+  async onDetail(node: any) {
     const coverage = node.getFileCoverage();
     const coverageSummary = node.getCoverageSummary();
 

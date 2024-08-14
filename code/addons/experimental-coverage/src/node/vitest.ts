@@ -1,3 +1,4 @@
+import { createWriteStream } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
@@ -9,9 +10,10 @@ import type { Channel } from 'storybook/internal/channels';
 import {
   REQUEST_COVERAGE_EVENT,
   RESULT_FILE_CONTENT,
+  type RequestCoverageEventPayload,
   type ResultFileContentPayload,
-} from './constants';
-import type { State } from './types';
+} from '../constants';
+import type { State } from '../types';
 
 const state: State = {
   absoluteComponentPath: null,
@@ -34,10 +36,15 @@ export async function exec(channel: Channel) {
 
   channel.on(
     REQUEST_COVERAGE_EVENT,
-    async ({ importPath, componentPath }: { importPath: string; componentPath: string }) => {
+    async ({ importPath, componentPath, initialRequest }: RequestCoverageEventPayload) => {
+      if (!componentPath) {
+        return;
+      }
+
       const absoluteComponentPath = join(process.cwd(), componentPath);
 
-      if (state.absoluteComponentPath !== absoluteComponentPath) {
+      // Only restart the test runner if the story file path has changed
+      if (state.absoluteComponentPath !== absoluteComponentPath || initialRequest) {
         emitFileContent(absoluteComponentPath);
 
         const { createVitest } = await import('vitest/node');
@@ -46,7 +53,7 @@ export async function exec(channel: Channel) {
           await viteInstance.close();
         }
 
-        state.absoluteComponentPath = join(process.cwd(), componentPath);
+        state.absoluteComponentPath = absoluteComponentPath;
 
         viteInstance = await createVitest(
           // mode
@@ -55,11 +62,10 @@ export async function exec(channel: Channel) {
           {
             silent: true,
             watch: true,
+            passWithNoTests: true,
             coverage: {
               reportOnFailure: true,
               reporter: [
-                'text',
-                'text-summary',
                 [
                   require.resolve('@storybook/experimental-addon-coverage/coverage-reporter'),
                   {
@@ -85,9 +91,14 @@ export async function exec(channel: Channel) {
             },
           },
           // Vite Overrides
-          {},
+          {
+            logLevel: 'silent',
+            cacheDir: 'node_modules/.storybook-addon-coverage/.vite',
+          },
           // Vitest Options
-          {}
+          {
+            stdout: createWriteStream('/dev/null'),
+          }
         );
 
         if (!viteInstance || viteInstance.projects.length < 1) {

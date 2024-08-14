@@ -4,8 +4,8 @@ import type { Channel } from 'storybook/internal/channels';
 // @ts-expect-error no types
 import { ReportBase } from 'istanbul-lib-report';
 
-import { RESULT_COVERAGE_EVENT, type ResultCoverageEventPayload } from './constants';
-import type { State } from './types';
+import { RESULT_COVERAGE_EVENT, type ResultCoverageEventPayload } from '../constants';
+import type { State } from '../types';
 
 export default class CustomReporter extends ReportBase {
   channel: Channel;

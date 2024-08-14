@@ -1,3 +1,3 @@
 export type State = {
-  current: string | null;
+  absoluteComponentPath: string | null;
 };

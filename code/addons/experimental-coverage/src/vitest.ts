@@ -1,74 +1,107 @@
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+
+import { coverageConfigDefaults } from 'vitest/config';
+import type { Vitest } from 'vitest/node';
 
 import type { Channel } from 'storybook/internal/channels';
 
-import { REQUEST_EVENT } from './constants';
+import {
+  REQUEST_COVERAGE_EVENT,
+  RESULT_FILE_CONTENT,
+  type ResultFileContentPayload,
+} from './constants';
 import type { State } from './types';
 
 const state: State = {
-  current: null,
+  absoluteComponentPath: null,
 };
+
+let viteInstance: Vitest | null = null;
 
 export async function exec(channel: Channel) {
   process.env.TEST = 'true';
   process.env.VITEST = 'true';
   process.env.NODE_ENV ??= 'test';
 
-  const { createVitest } = await import('vitest/node');
-
-  const vitest = await createVitest(
-    // mode
-    'test',
-    // User Config
-    {
-      coverage: {
-        reportOnFailure: true,
-        reporter: [
-          'text',
-          'text-summary',
-          [
-            require.resolve('@storybook/experimental-addon-coverage/coverage-reporter'),
-            {
-              channel,
-              state,
-            },
-          ],
-        ],
-        provider: 'istanbul',
-        enabled: true,
-        // include: ["**/Header.tsx"],
-        // Can we declare include/exclude later programmatically?
-        exclude: ['**/*.stories.ts', '**/*.stories.tsx'],
-        cleanOnRerun: true,
-        all: false,
-      },
-    },
-    // Vite Overrides
-    {},
-    // Vitest Options
-    {}
-  );
-
-  if (!vitest || vitest.projects.length < 1) {
-    return;
+  function emitFileContent(absoluteComponentPath: string) {
+    readFile(absoluteComponentPath, 'utf8').then((content) => {
+      channel.emit(RESULT_FILE_CONTENT, {
+        content,
+      } satisfies ResultFileContentPayload);
+    });
   }
 
-  await vitest.init();
-
   channel.on(
-    REQUEST_EVENT,
+    REQUEST_COVERAGE_EVENT,
     async ({ importPath, componentPath }: { importPath: string; componentPath: string }) => {
-      const absoluteImportPath = join(process.cwd(), importPath);
       const absoluteComponentPath = join(process.cwd(), componentPath);
-      state.current = absoluteComponentPath;
 
-      await vitest.runFiles(
-        vitest.projects
-          // eslint-disable-next-line no-underscore-dangle
-          .filter((project) => !!project.config.env?.__STORYBOOK_URL__)
-          .map((project) => [project, absoluteImportPath]),
-        false
-      );
+      if (state.absoluteComponentPath !== absoluteComponentPath) {
+        emitFileContent(absoluteComponentPath);
+
+        const { createVitest } = await import('vitest/node');
+
+        if (viteInstance) {
+          await viteInstance.close();
+        }
+
+        state.absoluteComponentPath = join(process.cwd(), componentPath);
+
+        viteInstance = await createVitest(
+          // mode
+          'test',
+          // User Config
+          {
+            silent: true,
+            watch: true,
+            coverage: {
+              reportOnFailure: true,
+              reporter: [
+                'text',
+                'text-summary',
+                [
+                  require.resolve('@storybook/experimental-addon-coverage/coverage-reporter'),
+                  {
+                    channel,
+                    state,
+                  },
+                ],
+              ],
+              provider: 'istanbul',
+              enabled: true,
+              exclude: [
+                ...coverageConfigDefaults.exclude,
+                '**/*.stories.ts',
+                '**/*.stories.tsx',
+                '**/__mocks/**',
+                '**/dist/**',
+                'playwright.config.ts',
+                'vitest-setup.ts',
+                'vitest.helpers.ts',
+              ],
+              include: [`**/${componentPath.slice(2)}`],
+              all: false,
+            },
+          },
+          // Vite Overrides
+          {},
+          // Vitest Options
+          {}
+        );
+
+        if (!viteInstance || viteInstance.projects.length < 1) {
+          return;
+        }
+
+        await viteInstance.start([importPath]);
+
+        viteInstance.server.watcher.on('change', (file) => {
+          if (file === absoluteComponentPath) {
+            emitFileContent(absoluteComponentPath);
+          }
+        });
+      }
     }
   );
 }

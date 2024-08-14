@@ -1,12 +1,10 @@
 // custom-reporter.cjs
-import { readFile } from 'node:fs/promises';
-
 import type { Channel } from 'storybook/internal/channels';
 
 // @ts-expect-error no types
 import { ReportBase } from 'istanbul-lib-report';
 
-import { RESULT_EVENT, type ResultEventPayload } from './constants';
+import { RESULT_COVERAGE_EVENT, type ResultCoverageEventPayload } from './constants';
 import type { State } from './types';
 
 export default class CustomReporter extends ReportBase {
@@ -25,23 +23,15 @@ export default class CustomReporter extends ReportBase {
     this.state = options.state;
   }
 
-  onStart(root, context) {
-    // console.log("establish Storybook");
-    // Establish a connection to the Storybook server
-  }
-
   async onDetail(node) {
-    const fc = node.getFileCoverage();
-    const fc2 = node.getCoverageSummary();
+    const coverage = node.getFileCoverage();
+    const coverageSummary = node.getCoverageSummary();
 
-    if (fc.data.path === this.state.current) {
-      const content = await readFile(fc.data.path, 'utf8');
-      this.channel.emit(RESULT_EVENT, { data: fc2.lines, content } satisfies ResultEventPayload);
+    if (coverage.data.path === this.state.absoluteComponentPath) {
+      this.channel.emit(RESULT_COVERAGE_EVENT, {
+        coverage,
+        coverageSummary,
+      } satisfies ResultCoverageEventPayload);
     }
-  }
-
-  onEnd() {
-    // console.log("COVERAGE COLLECTED");
-    // Send to Storybook
   }
 }

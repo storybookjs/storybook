@@ -1,10 +1,10 @@
 import React from 'react';
 
-import { STORY_CHANGED } from 'storybook/internal/core-events';
+import { STORY_RENDERED } from 'storybook/internal/core-events';
 import { addons } from 'storybook/internal/manager-api';
 import { Addon_TypesEnum } from 'storybook/internal/types';
 
-import { ADDON_ID, REQUEST_EVENT } from './constants';
+import { ADDON_ID, REQUEST_COVERAGE_EVENT } from './constants';
 import { CoveragePanel } from './coverage-panel';
 
 addons.register(ADDON_ID, (api) => {
@@ -15,11 +15,13 @@ addons.register(ADDON_ID, (api) => {
     render: ({ active }) => <CoveragePanel active={!!active} api={api} />,
   });
 
-  api.on(STORY_CHANGED, () => {
+  const emitRequest = () => {
     const { importPath, ...data } = api.getCurrentStoryData();
-    api.emit(REQUEST_EVENT, {
+    api.emit(REQUEST_COVERAGE_EVENT, {
       importPath,
       componentPath: (data as any).componentPath as string,
     });
-  });
+  };
+
+  api.on(STORY_RENDERED, emitRequest);
 });

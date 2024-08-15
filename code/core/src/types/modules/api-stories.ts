@@ -46,6 +46,7 @@ export interface API_StoryEntry extends API_BaseEntry {
   parent: StoryId;
   title: ComponentTitle;
   importPath: Path;
+  componentPath: Path;
   tags: Tag[];
   prepared: boolean;
   parameters?: {

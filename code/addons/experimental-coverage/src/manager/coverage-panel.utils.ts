@@ -14,8 +14,8 @@ export function getLineCoverage(item: CoverageItem) {
     }
   });
 
-  Object.entries(item.b).forEach(([statementId, isCoveredArray]) => {
-    const branch = item.branchMap[statementId];
+  Object.entries(item.b).forEach(([branchId, isCoveredArray]) => {
+    const branch = item.branchMap[branchId];
     const isEveryBranchUncovered = isCoveredArray.every((cov) => cov === 0);
 
     if (isEveryBranchUncovered) {
@@ -25,7 +25,7 @@ export function getLineCoverage(item: CoverageItem) {
     }
 
     isCoveredArray.forEach((cov, index) => {
-      if (cov === 1) {
+      if (cov === 0) {
         for (
           let i: number = branch.locations[index].start.line;
           i <= branch.locations[index].end.line;

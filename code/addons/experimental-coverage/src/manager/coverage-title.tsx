@@ -29,9 +29,9 @@ export function CoverageTitle() {
     );
   }
 
-  const coverageSummary = coverage?.coverageSummary;
+  if ('summary' in coverage) {
+    const coverageSummary = coverage.summary;
 
-  if (coverageSummary) {
     const totalSum =
       coverageSummary.statements.total +
       coverageSummary.branches.total +
@@ -46,6 +46,12 @@ export function CoverageTitle() {
     return (
       <div>
         Coverage <Badge status={getStatus(percentage)}>{Math.round(percentage)} %</Badge>
+      </div>
+    );
+  } else {
+    return (
+      <div>
+        Coverage <Badge status="neutral">N/A</Badge>
       </div>
     );
   }

@@ -27,10 +27,29 @@ export default class CustomReporter extends ReportBase {
     const coverage = node.getFileCoverage();
     const coverageSummary = node.getCoverageSummary();
 
+    const executionTime = Math.round((performance.now() - this.state.timeStartTesting) * 100) / 100;
+
+    const existingCoverage = this.state.coverageResults.find(
+      (result) => result.stats.path === coverage.data.path
+    );
+
+    if (existingCoverage) {
+      existingCoverage.stats = coverage;
+      existingCoverage.summary = coverageSummary;
+      existingCoverage.executionTime = executionTime;
+    } else {
+      this.state.coverageResults.push({
+        stats: coverage,
+        summary: coverageSummary,
+        executionTime: Math.round((performance.now() - this.state.timeStartTesting) * 100) / 100,
+      });
+    }
+
     if (coverage.data.path === this.state.absoluteComponentPath) {
       this.channel.emit(RESULT_COVERAGE_EVENT, {
-        coverage,
-        coverageSummary,
+        stats: coverage,
+        summary: coverageSummary,
+        executionTime: Math.round((performance.now() - this.state.timeStartTesting) * 100) / 100,
       } satisfies ResultCoverageEventPayload);
     }
   }

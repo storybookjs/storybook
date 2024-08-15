@@ -1,5 +1,10 @@
+import type { ResultCoverageEventPayloadSuccess } from './constants';
+
 export type State = {
   absoluteComponentPath: string | null;
+  // performance.now() value when the testing started
+  timeStartTesting: number;
+  coverageResults: ResultCoverageEventPayloadSuccess[];
 };
 
 export interface CodeLocation {
@@ -36,3 +41,9 @@ export interface CoverageItem {
   f: Record<string, number>;
   b: Record<string, number[]>;
 }
+
+export type TestingMode = {
+  browser: boolean;
+  coverageProvider: 'istanbul' | 'v8';
+  coverageType: 'project-coverage' | 'component-coverage';
+};

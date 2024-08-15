@@ -4,6 +4,7 @@ import { SyntaxHighlighter } from 'storybook/internal/components';
 import { type API } from 'storybook/internal/manager-api';
 
 import type { CoverageItem } from '../types';
+import { CoveragePanelDev } from './coverage-panel-dev';
 import { useCoverage } from './coverage-panel.hooks';
 import { getLineCoverage } from './coverage-panel.utils';
 
@@ -35,20 +36,23 @@ export function CoveragePanel({ active }: CoveragePanelProps) {
   }
 
   return (
-    <SyntaxHighlighter
-      showLineNumbers
-      wrapLongLines
-      format={false}
-      copyable={false}
-      lineProps={
-        coverage
-          ? getLineProps(coverage.coverage)
-          : (line) => ({ style: { borderLeft: '5px solid gray' } })
-      }
-      padded
-      language="tsx"
-    >
-      {fileContent}
-    </SyntaxHighlighter>
+    <div>
+      <CoveragePanelDev coverage={coverage} />
+      <SyntaxHighlighter
+        showLineNumbers
+        wrapLongLines
+        format={false}
+        copyable={false}
+        lineProps={
+          coverage && 'stats' in coverage
+            ? getLineProps(coverage.stats)
+            : (line) => ({ style: { borderLeft: '5px solid gray' } })
+        }
+        padded
+        language="tsx"
+      >
+        {fileContent}
+      </SyntaxHighlighter>
+    </div>
   );
 }

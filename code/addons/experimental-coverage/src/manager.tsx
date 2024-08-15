@@ -7,6 +7,7 @@ import { Addon_TypesEnum } from 'storybook/internal/types';
 import { ADDON_ID, REQUEST_COVERAGE_EVENT, type RequestCoverageEventPayload } from './constants';
 import { CoveragePanel } from './manager/coverage-panel';
 import { CoverageTitle } from './manager/coverage-title';
+import type { TestingMode } from './types';
 
 let initialRequest = true;
 
@@ -20,6 +21,11 @@ addons.register(ADDON_ID, (api) => {
 
   const emitRequest = () => {
     const { importPath, type, ...data } = api.getCurrentStoryData();
+    // read from localstorage
+    const testSettings =
+      localStorage.getItem('testSettings') &&
+      (JSON.parse(localStorage.getItem('testSettings')!) as TestingMode | null);
+
     if (type === 'docs') {
       return;
     }
@@ -28,6 +34,7 @@ addons.register(ADDON_ID, (api) => {
       importPath,
       componentPath: (data as any).componentPath as string,
       initialRequest,
+      mode: testSettings || undefined,
     } satisfies RequestCoverageEventPayload);
 
     initialRequest = false;

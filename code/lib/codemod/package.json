@@ -1,6 +1,6 @@
 {
   "name": "@storybook/codemod",
-  "version": "8.2.0-alpha.10",
+  "version": "8.3.0-alpha.6",
   "description": "A collection of codemod scripts written with JSCodeshift",
   "keywords": [
     "storybook"
@@ -50,17 +50,15 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
     "@babel/core": "^7.24.4",
     "@babel/preset-env": "^7.24.4",
     "@babel/types": "^7.24.0",
-    "@storybook/csf": "^0.1.8",
-    "@storybook/csf-tools": "workspace:*",
-    "@storybook/node-logger": "workspace:*",
-    "@storybook/types": "workspace:*",
+    "@storybook/core": "workspace:*",
+    "@storybook/csf": "^0.1.11",
     "@types/cross-spawn": "^6.0.2",
     "cross-spawn": "^7.0.3",
     "globby": "^14.0.1",
@@ -72,7 +70,7 @@
   },
   "devDependencies": {
     "@types/jscodeshift": "^0.11.10",
-    "ansi-regex": "^5.0.1",
+    "ansi-regex": "^6.0.1",
     "mdast-util-mdx-jsx": "^3.0.0",
     "mdast-util-mdxjs-esm": "^2.0.1",
     "remark": "^15.0.1",

@@ -1,8 +1,11 @@
+import { hasDocsOrControls } from 'storybook/internal/docs-tools';
+
 import type { StorybookConfig } from '@storybook/core-webpack';
-import { hasDocsOrControls } from '@storybook/docs-tools';
 
 export const webpackFinal: StorybookConfig['webpackFinal'] = (config, options) => {
-  if (!hasDocsOrControls(options)) return config;
+  if (!hasDocsOrControls(options)) {
+    return config;
+  }
 
   let vueDocgenOptions = {};
 

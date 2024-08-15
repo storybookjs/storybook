@@ -1,28 +1,30 @@
-import * as path from 'path';
+import { resolve } from 'node:path';
+
+import {
+  getBuilderOptions,
+  getFrameworkName,
+  isPreservingSymlinks,
+  resolvePathInStorybookCache,
+} from 'storybook/internal/common';
+import { globalsNameReferenceMap } from 'storybook/internal/preview/globals';
+import type { Options } from 'storybook/internal/types';
+
 import type {
   ConfigEnv,
-  InlineConfig as ViteInlineConfig,
+  InlineConfig,
   PluginOption,
   UserConfig as ViteConfig,
-  InlineConfig,
+  InlineConfig as ViteInlineConfig,
 } from 'vite';
-import {
-  isPreservingSymlinks,
-  getFrameworkName,
-  getBuilderOptions,
-  resolvePathInStorybookCache,
-} from '@storybook/core-common';
-import { globalsNameReferenceMap } from '@storybook/preview/globals';
-import type { Options } from '@storybook/types';
+
 import {
   codeGeneratorPlugin,
   csfPlugin,
-  injectExportOrderPlugin,
-  stripStoryHMRBoundary,
   externalGlobalsPlugin,
+  injectExportOrderPlugin,
   pluginWebpackStats,
+  stripStoryHMRBoundary,
 } from './plugins';
-
 import type { BuilderOptions } from './types';
 
 export type PluginConfigType = 'build' | 'development';
@@ -49,7 +51,7 @@ export async function commonConfig(
 
   const { viteConfigPath } = await getBuilderOptions<BuilderOptions>(options);
 
-  const projectRoot = path.resolve(options.configDir, '..');
+  const projectRoot = resolve(options.configDir, '..');
 
   // I destructure away the `build` property from the user's config object
   // I do this because I can contain config that breaks storybook, such as we had in a lit project.

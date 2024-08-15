@@ -1,6 +1,6 @@
 {
   "name": "@storybook/preset-vue3-webpack",
-  "version": "8.2.0-alpha.10",
+  "version": "8.3.0-alpha.6",
   "description": "Storybook for Vue 3: Develop Vue 3 Components in isolation with Hot Reloading.",
   "keywords": [
     "storybook"
@@ -55,15 +55,14 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
     "@storybook/core-webpack": "workspace:*",
-    "@storybook/docs-tools": "workspace:*",
-    "@types/node": "^18.0.0",
+    "@types/node": "^22.0.0",
     "ts-loader": "^9.2.8",
-    "vue-docgen-api": "^4.46.0",
+    "vue-docgen-api": "^4.75.1",
     "vue-docgen-loader": "^1.5.1",
     "vue-loader": "^16.0.0",
     "webpack": "5"
@@ -75,6 +74,7 @@
   },
   "peerDependencies": {
     "@vue/compiler-sfc": "^3.0.0",
+    "storybook": "workspace:^",
     "vue": "^3.0.0"
   },
   "engines": {

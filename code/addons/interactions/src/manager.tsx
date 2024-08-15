@@ -1,11 +1,11 @@
 import React, { useCallback } from 'react';
-import type { Combo } from '@storybook/manager-api';
-import { addons, Consumer, types, useAddonState } from '@storybook/manager-api';
-import { AddonPanel, Badge, Spaced } from '@storybook/components';
-import { CallStates } from '@storybook/instrumenter';
-import { ADDON_ID, PANEL_ID } from './constants';
+
+import { AddonPanel, Badge, Spaced } from 'storybook/internal/components';
+import type { Combo } from 'storybook/internal/manager-api';
+import { Consumer, addons, types, useAddonState } from 'storybook/internal/manager-api';
+
 import { Panel } from './Panel';
-import { TabIcon } from './components/TabStatus';
+import { ADDON_ID, PANEL_ID } from './constants';
 
 function Title() {
   const [addonState = {}] = useAddonState(ADDON_ID);
@@ -18,7 +18,7 @@ function Title() {
         {interactionsCount && !hasException ? (
           <Badge status="neutral">{interactionsCount}</Badge>
         ) : null}
-        {hasException ? <TabIcon status={CallStates.ERROR} /> : null}
+        {hasException ? <Badge status="negative">{interactionsCount}</Badge> : null}
       </Spaced>
     </div>
   );

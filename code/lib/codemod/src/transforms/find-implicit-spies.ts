@@ -1,9 +1,10 @@
 /* eslint-disable no-underscore-dangle */
-import type { FileInfo } from 'jscodeshift';
-import { loadCsf } from '@storybook/csf-tools';
+import { loadCsf } from '@storybook/core/csf-tools';
+
 import type { BabelFile } from '@babel/core';
 import * as babel from '@babel/core';
 import { isIdentifier, isObjectExpression, isObjectProperty } from '@babel/types';
+import type { FileInfo } from 'jscodeshift';
 
 function findImplicitSpies(path: babel.NodePath, file: string, keys: string[]) {
   path.traverse({
@@ -22,10 +23,15 @@ function getAnnotationKeys(file: BabelFile, storyName: string, annotationName: s
     // CSF2 play function Story.args =
     AssignmentExpression: (path) => {
       const left = path.get('left');
-      if (!left.isMemberExpression()) return;
+
+      if (!left.isMemberExpression()) {
+        return;
+      }
       const object = left.get('object');
 
-      if (!(object.isIdentifier() && object.node.name === storyName)) return;
+      if (!(object.isIdentifier() && object.node.name === storyName)) {
+        return;
+      }
 
       const property = left.get('property');
       const right = path.get('right');
@@ -45,7 +51,10 @@ function getAnnotationKeys(file: BabelFile, storyName: string, annotationName: s
     VariableDeclarator: (path) => {
       const id = path.get('id');
       const init = path.get('init');
-      if (!(id.isIdentifier() && id.node.name === storyName) || !init.isObjectExpression()) return;
+
+      if (!(id.isIdentifier() && id.node.name === storyName) || !init.isObjectExpression()) {
+        return;
+      }
 
       const args = init
         .get('properties')
@@ -55,10 +64,14 @@ function getAnnotationKeys(file: BabelFile, storyName: string, annotationName: s
           return argKey.isIdentifier() && argKey.node.name === annotationName;
         });
 
-      if (!args) return;
+      if (!args) {
+        return;
+      }
       const argsValue = args.get('value');
 
-      if (!argsValue || !argsValue.isObjectExpression()) return;
+      if (!argsValue || !argsValue.isObjectExpression()) {
+        return;
+      }
       argKeys.push(
         ...argsValue.node.properties.flatMap((value) =>
           isObjectProperty(value) && isIdentifier(value.key) ? [value.key.name] : []
@@ -95,7 +108,9 @@ export default async function transform(info: FileInfo) {
   ];
 
   Object.entries(csf.stories).forEach(([key, { name }]) => {
-    if (!name) return;
+    if (!name) {
+      return;
+    }
     const allKeys = [
       ...metaKeys,
       ...getAnnotationKeys(file, name, 'args'),
@@ -106,10 +121,15 @@ export default async function transform(info: FileInfo) {
       // CSF2 play function Story.play =
       AssignmentExpression: (path) => {
         const left = path.get('left');
-        if (!left.isMemberExpression()) return;
+
+        if (!left.isMemberExpression()) {
+          return;
+        }
         const object = left.get('object');
 
-        if (!(object.isIdentifier() && object.node.name === name)) return;
+        if (!(object.isIdentifier() && object.node.name === name)) {
+          return;
+        }
 
         const property = left.get('property');
         if (property.isIdentifier() && property.node.name === 'play') {
@@ -121,7 +141,10 @@ export default async function transform(info: FileInfo) {
       VariableDeclarator: (path) => {
         const id = path.get('id');
         const init = path.get('init');
-        if (!(id.isIdentifier() && id.node.name === name) || !init.isObjectExpression()) return;
+
+        if (!(id.isIdentifier() && id.node.name === name) || !init.isObjectExpression()) {
+          return;
+        }
 
         const play = init
           .get('properties')

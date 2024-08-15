@@ -1,0 +1,275 @@
+---
+title: 'Viewport'
+sidebar:
+  order: 8
+  title: Viewport
+---
+
+<YouTubeCallout id="uydF1ltw7-g" title="Stop resizing your browser — Storybook viewport" />
+
+The Viewport toolbar item allows you to adjust the dimensions of the iframe your story is rendered in. It makes it easy to develop responsive UIs.
+
+<Video src="../_assets/essentials/addon-viewports-optimized.mp4" />
+
+## Configuration
+
+Out of the box, the Viewport addon offers you a standard set of viewports that you can use. If you want to change the default set of viewports, you can set the global `parameters.viewport` [parameter](../writing-stories/parameters.mdx) in your [`.storybook/preview.js`](../configure/index.mdx#configure-story-rendering):
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-preview-change-viewports.md" />
+
+{/* prettier-ignore-end */}
+
+The viewport parameter can take an object with the following keys:
+
+| Field                  | Type    | Description                                                                                                                                   | Default Value  |
+| ---------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| **defaultViewport**    | String  | Only available without the [globals API](#customizing-viewports-with-globals).<br/>Sets the default viewport                                  | `'responsive'` |
+| **defaultOrientation** | String  | Only available without the [globals API](#customizing-viewports-with-globals).<br/>Sets the default orientation (e.g., portrait or landscape) | `'portrait'`   |
+| **disabled**           | Boolean | Requires the [globals API](#customizing-viewports-with-globals).<br/>Disables the viewport<br/>                                               | N/A            |
+| **options**            | Object  | Requires the [globals API](#customizing-viewports-with-globals).<br/>The available list of viewports                                          | `{}`           |
+| **viewports**          | Object  | Only available without the [globals API](#customizing-viewports-with-globals).<br/> The configuration objects for the viewport                | `{}`           |
+
+
+Each viewports object needs the following keys:
+
+| Field      | Type   | Description                                           | Example values          |
+| ---------- | ------ | ----------------------------------------------------- | ----------------------- |
+| **name**   | String | Name for the viewport                                 | `'Responsive'`          |
+| **styles** | Object | Sets Inline styles to be applied to the story         | `{ width:0, height:0 }` |
+| **type**   | String | Type of the device (e.g., desktop, mobile, or tablet) | `desktop`               |
+
+
+### Customizing viewports with globals
+
+By default, the Viewport addon allows you to customize the viewport enabled for a story by selecting from the list of existing viewports in the toolbar. If you need, you can opt into the globals API to configure viewports to ensure that a story always uses a specific viewport regardless of the existing configuration.
+
+To enable it, you'll need to take some additional steps to set it up properly. Detailed below is our recommendation for configuring and using the globals API with the Viewports addon.
+
+Update your [`.storybook/main.js|ts`](../configure/index.mdx#configure-your-storybook-project) to include the [`viewportStoryGlobals`](../api/main-config/main-config-features.mdx#viewportstoryglobals) option within Storybok's `features` configuration.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="main-config-features-viewport-story-globals.md" />
+
+{/* prettier-ignore-end */}
+
+<Callout variant="info">
+
+Enabling this API will turn off the ability to change any options from the toolbar to ensure that the viewport is always set to the intended value for the story.
+
+</Callout>
+
+Replace the `viewports` parameter in your [`.storybook/preview.js|ts`](../configure/index.mdx#configure-story-rendering) with an `options` object to define your configuration.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-preview-migrate-viewports-globals.md" />
+
+{/* prettier-ignore-end */}
+
+Adjust your stories to opt-in to the new story globals API using the `global` configuration element to set the required viewport.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-addon-viewports-global-api.md" usesCsf3 />
+
+{/* prettier-ignore-end */}
+
+### Use a detailed set of devices
+
+The Viewport addon includes a selection of devices that you can use to test your components. Listed below are the available devices and examples of how to use them.
+| Device                     | Description                                                                                                                             | Value             | Dimensions<br />(<abbr title="width">w</abbr>×<abbr title="height">h</abbr>, px) |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | -------------------------------------------------------------------------------- |
+| iPhone 5                   | Configures the iPhone 5 as a device for the Viewport addon.                                                                             | `iphone5`         | 320 × 568                                                                        |
+| iPhone 6                   | Enables the iPhone 6 to be used with the Viewport addon.                                                                                | `iphone6`         | 375 × 667                                                                        |                                                                                  
+| iPhone 6 Plus              | Includes the iPhone 6 Plus as a device for the Viewport addon.                                                                          | `iphone6p`        | 414 × 736                                                                        |
+| iPhone 8 Plus              | Sets the iPhone 8 Plus as a device to be used by the Viewport addon.                                                                    | `iphone8p`        | 414 × 736                                                                        |
+| iPhone X                   | Configures the iPhone X as a device for the Viewport addon.                                                                             | `iphonex`         | 375 × 812                                                                        |
+| iPhone XR                  | Includes the iPhone XR as a device for the Viewport addon.                                                                              | `iphonexr`        | 414 × 896                                                                        |
+| iPhone XS Max              | Sets the iPhone XS Max as a device to be used by the Viewport addon.                                                                    | `iphonexsmax`     | 414 × 896                                                                        |
+| iPhone SE (2nd generation) | Configures the iPhone SE (2nd generation) as a device for the Viewport addon.                                                           | `iphonese2`       | 375 × 667                                                                        |
+| iPhone 12 mini             | Enables the iPhone 12 Mini to be used with the Viewport addon.                                                                          | `iphone12mini`    | 375 × 812                                                                        |
+| iPhone 12                  | Includes the iPhone 12 as a device for the Viewport addon.                                                                              | `iphone12`        | 390 × 844                                                                        |
+| iPhone 12 Pro Max          | Configures the iPhone 12 Pro Max as a device for the Viewport addon.                                                                    | `iphone12promax`  | 428 × 926                                                                        |
+| iPhone SE 3rd generation   | Enables the iPhone SE (3rd generation) to be used with the Viewport addon.                                                              | `iphoneSE3`       | 375 × 667                                                                        |
+| iPhone 13                  | Includes the iPhone 13 as a device for the Viewport addon.                                                                              | `iphone13`        | 390 × 844                                                                        |
+| iPhone 13 Pro              | Enables the iPhone 13 Pro to be used with the Viewport addon.                                                                           | `iphone13pro`     | 390 × 844                                                                        |
+| iPhone 13 Pro Max          | Configures the iPhone 13 Pro Max as a device to be used by the Viewport addon.                                                          | `iphone13promax`  | 428 × 926                                                                        |
+| iPhone 14                  | Enables the iPhone 14 to be used with the Viewport addon.                                                                               | `iphone14`        | 390 × 844                                                                        |
+| iPhone 14 Pro              | Includes the iPhone 14 Pro as a device for the Viewport addon.                                                                          | `iphone14pro`     | 393 × 852                                                                        |
+| iPhone 14 Pro Max          | Sets the iPhone 14 Pro Max as a device to be used by the Viewport addon.                                                                | `iphone14promax`  | 430 × 932                                                                        |
+| Galaxy S5                  | Configures the Galaxy S5 as a device for the Viewport addon.                                                                            | `galaxys5`        | 360 × 640                                                                        |
+| Galaxy S9                  | Enables the Galaxy S9 to be used with the Viewport addon.                                                                               | `galaxys9`        | 360 × 740                                                                        |
+| Nexus 5X                   | Includes the Nexus 5x as a device for the Viewport addon.                                                                               | `nexus5x`         | 412 × 668                                                                        |
+| Nexus 6P                   | Sets the Nexus 6P as a device to be used by the Viewport addon.                                                                         | `nexus6p`         | 412 × 732                                                                        |
+| Pixel                      | Configures the Pixel as a device for the Viewport addon.                                                                                | `pixel`           | 540 × 960                                                                        |
+| Pixel XL                   | Enables the Pixel XL to be used with the Viewport addon.                                                                                | `pixelxl`         | 720 × 1280                                                                       |
+| Small mobile               | Enabled by default.<br />Configures a small form factor generic mobile device to be used by the Viewport addon.                         | `mobile1`         | 320 × 568                                                                        |
+| Large mobile               | Enabled by default.<br />Configures a large form factor mobile device to be used by the Viewport addon.                                 | `mobile2`         | 414 × 896                                                                        |
+| iPad                       | Includes the iPad as a device for the Viewport addon.                                                                                   | `ipad`            | 768 × 1024                                                                       |
+| iPad Pro 10.5-in           | Enables the iPad Pro (10.5-inch) to be used with the Viewport addon.                                                                    | `ipad10p`         | 834 × 112                                                                        |
+| iPad Pro 11-in             | Configures the iPad Pro (11-inch) as a device for the Viewport addon.                                                                   | `ipad11p`         | 834 × 1194                                                                       |
+| iPad Pro 12.9-in           | Sets the iPad Pro (12.9-inch) as a device to be used by the Viewport addon.                                                             | `ipad12p`         | 1024 × 1366                                                                      |
+| Tablet                     | Enabled by default.<br />Configures a standard form factor tablet device to be used by the Viewport addon.                              | `tablet`          | 834 × 1112                                                                       |
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-preview-granular-viewports.md" />
+
+{/* prettier-ignore-end */}
+
+<Callout variant="info">
+
+ The generic devices are enabled by default as they are the most common for testing responsive UIs. You don't need to include them in your configuration if you want to use them. For the implementation details, see the [source code](https://github.com/storybookjs/storybook/tree/next/code/addons/viewport) for the Viewport addon.
+
+</Callout>
+
+### Add new devices
+
+If you have either a specific viewport or a list of viewports that you need to use, you can modify your [`.storybook/preview.js`](../configure/index.mdx#configure-story-rendering) file and include them:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-preview-viewport-add-devices.md" />
+
+{/* prettier-ignore-end */}
+
+Make the following changes to use them in your Storybook:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-preview-viewport-use-new-devices.md" />
+
+{/* prettier-ignore-end */}
+
+Once you start Storybook, you'll see your new viewports and devices.
+
+You can add these two to another list of viewports if needed.
+
+For instance, if you want to use these two with the minimal set of viewports, you can do it like so:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-preview-merge-viewports.md" />
+
+{/* prettier-ignore-end */}
+
+Both viewports (`Kindle Fire 2` and `Kindle Fire HD`) will feature in the list of devices by merging them into the [`MINIMAL_VIEWPORTS`](https://github.com/storybookjs/storybook/blob/next/code/addons/viewport/src/defaults.ts#L231).
+
+### Configuring per component or story
+
+In some cases, it's not practical for you to use a specific visual viewport on a global scale, and you need to adjust it to an individual story.
+
+Update your story through [parameters](../writing-stories/parameters.mdx) to include your viewports at a component level or for a specific story:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="my-component-story-configure-viewports.md" usesCsf3 />
+
+{/* prettier-ignore-end */}
+
+### Keyboard shortcuts
+
+* Previous viewport: <kbd>alt</kbd> + <kbd>shift</kbd> + <kbd>v</kbd>
+* Next viewport: <kbd>alt</kbd> + <kbd>v</kbd>
+* Reset viewport: <kbd>alt</kbd> + <kbd>control</kbd> + <kbd>v</kbd>
+
+If you need, you can edit them on the shortcuts page.
+
+## API
+
+### Parameters
+
+This addon contributes the following [parameters](../writing-stories/parameters.mdx) to Storybook, under the `viewport` namespace:
+
+#### `defaultOrientation`
+
+Type: `'portrait' | 'landscape'`
+
+Default: `'portrait'`
+
+Specifies the default orientation used when viewing a story. Only available if you haven't enabled the [globals API](#customizing-viewports-with-globals).
+
+#### `defaultViewport`
+
+Type: `string`
+
+Specifies the default viewport used when viewing a story. Must match a key in the [`viewports`](#viewports) object. Only available if you haven't enabled the [globals API](#customizing-viewports-with-globals).
+
+#### `disabled`
+
+Requires: [globals API](#customizing-viewports-with-globals)
+
+Type: `boolean`
+
+Turn off this addon's behavior. If you wish to turn off this addon for the entire Storybook, you should do so when registering `addon-essentials`. See the [essential addon's docs](../essentials/index.mdx#disabling-addons) for more information.
+
+This parameter is most useful to allow overriding at more specific levels. For example, if this parameter is set to `true` at the project level, it could be re-enabled by setting it to `false` at the meta (component) or story level.
+
+<Callout variant="info">
+
+The `disabled` parameter is only available with the globals API introduced in Storybook 8.3. If you're using a previous Storybook version, use the `disable` parameter instead.
+
+</Callout>
+
+#### `options`
+
+Requires: [globals API](#customizing-viewports-with-globals)
+
+Type:
+
+```ts
+{
+ Record<string, {
+ name: string,
+ styles: { height: string, width: string },
+ type: 'desktop' | 'mobile' | 'tablet' | 'other',
+ }>,
+};
+```
+
+Specify the available viewports. The key is used to reference the viewport, and the value is an object to define it. See [usage example](#add-new-devices) above. The `width` and `height` values must include the unit, e.g. `'320px'`.
+
+#### `viewports`
+
+Type:
+
+```ts
+{
+ [key: string]: {
+ name: string,
+ styles: { height: string, width: string },
+ type: 'desktop' | 'mobile' | 'tablet',
+ },
+};
+```
+
+Configures the viewports and options. This configuration element references the viewport, and the value is an object that defines it. See [usage example](#add-new-devices) above. The `width` and `height` values must include the unit, e.g., `'320px'`. Only available if you haven't enabled the [globals API](#customizing-viewports-with-globals).
+
+### Exports
+
+This addon contributes the following exports to Storybook:
+
+```js
+import { INITIAL_VIEWPORTS, MINIMAL_VIEWPORTS } from '@storybook/addon-viewport';
+```
+
+#### `INITIAL_VIEWPORTS`
+
+Type: `object`
+
+The default set of viewports provided by the Viewport addon [listed above](#use-a-detailed-set-of-devices).
+
+#### `MINIMAL_VIEWPORTS`
+
+Type: `object`
+
+A minimal set of viewports provided by the Viewport addon is listed below:
+
+| Device       | Description                  | Value     | Dimensions<br />(<abbr title="width">w</abbr>×<abbr title="height">h</abbr>, px)  |
+| ------------ | ---------------------------- | --------- | --------------------------------------------------------------------------------- |
+| Small mobile | A small mobile device size   | `mobile1` | 320 × 568                                                                         |
+| Large mobile | A large mobile device size   | `mobile2` | 414 × 896                                                                         |
+| Tablet       | A tablet device size         | `tablet`  | 834 × 1112                                                                        |

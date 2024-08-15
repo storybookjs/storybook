@@ -1,9 +1,10 @@
 /* eslint-disable no-underscore-dangle */
-import type { FileInfo } from 'jscodeshift';
-import { loadCsf, printCsf } from '@storybook/csf-tools';
+import { loadCsf, printCsf } from '@storybook/core/csf-tools';
+
 import type { BabelFile } from '@babel/core';
 import * as babel from '@babel/core';
 import * as t from '@babel/types';
+import type { FileInfo } from 'jscodeshift';
 import prettier from 'prettier';
 
 export default async function transform(info: FileInfo) {
@@ -25,7 +26,10 @@ export default async function transform(info: FileInfo) {
           path.get('specifiers').forEach((specifier) => {
             if (specifier.isImportSpecifier()) {
               const imported = specifier.get('imported');
-              if (!imported.isIdentifier()) return;
+
+              if (!imported.isIdentifier()) {
+                return;
+              }
               if (imported.node.name === 'jest') {
                 specifier.remove();
                 path.insertAfter(

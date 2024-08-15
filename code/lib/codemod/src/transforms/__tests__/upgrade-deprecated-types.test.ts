@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { dedent } from 'ts-dedent';
-import type { API } from 'jscodeshift';
+
 import ansiRegex from 'ansi-regex';
+import type { API } from 'jscodeshift';
+import { dedent } from 'ts-dedent';
+
 import _transform from '../upgrade-deprecated-types';
 
 expect.addSnapshotSerializer({

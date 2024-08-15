@@ -1,3 +1,148 @@
+## 8.2.9
+
+- CLI: Fix `init --skip-install` - [#28853](https://github.com/storybookjs/storybook/pull/28853), thanks @ndelangen!
+- Telemetry: Disable save-from-controls logs for example stories - [#28870](https://github.com/storybookjs/storybook/pull/28870), thanks @shilman!
+
+## 8.2.8
+
+- CLI: Parse more Yarn Berry errors - [#28816](https://github.com/storybookjs/storybook/pull/28816), thanks @yannbf!
+- Fix: Invariant failed: Expected package.json#version to be defined in the "undefined" package - [#28752](https://github.com/storybookjs/storybook/pull/28752), thanks @abcdmku!
+
+## 8.2.7
+
+- CPC: Fix type usage in renderers - [#28745](https://github.com/storybookjs/storybook/pull/28745), thanks @ndelangen!
+- Core: Introduce run over play in portable stories, and revert back play changes of 8.2 - [#28764](https://github.com/storybookjs/storybook/pull/28764), thanks @kasperpeulen!
+
+## 8.2.6
+
+- CPC: Fix missing exports for addon-kit - [#28691](https://github.com/storybookjs/storybook/pull/28691), thanks @ndelangen!
+
+## 8.2.5
+
+- CPC: Add the globals export for manager - [#28650](https://github.com/storybookjs/storybook/pull/28650), thanks @ndelangen!
+- CPC: Correct path to the `@storybook/theming/create` alias - [#28643](https://github.com/storybookjs/storybook/pull/28643), thanks @Averethel!
+- Components: Remove external overrides - [#28632](https://github.com/storybookjs/storybook/pull/28632), thanks @kasperpeulen!
+- Core: Fix header for MountMustBeDestructuredError message - [#28590](https://github.com/storybookjs/storybook/pull/28590), thanks @0916dhkim!
+- Onboarding: Fix code snippet when story name differs from export name - [#28649](https://github.com/storybookjs/storybook/pull/28649), thanks @ghengeveld!
+- Telemetry: Add mount, beforeEach, moduleMock stats - [#28624](https://github.com/storybookjs/storybook/pull/28624), thanks @shilman!
+- Telemetry: CSF feature usage - [#28622](https://github.com/storybookjs/storybook/pull/28622), thanks @shilman!
+
+## 8.2.4
+
+- CLI: Add diagnostic when the `storybook` package is missing - [#28604](https://github.com/storybookjs/storybook/pull/28604), thanks @kasperpeulen!
+- CLI: Make a few automigrations run on all version upgrades - [#28601](https://github.com/storybookjs/storybook/pull/28601), thanks @yannbf!
+- CPC: Direct dependencies on shim packages in renderers - [#28599](https://github.com/storybookjs/storybook/pull/28599), thanks @ndelangen!
+
+## 8.2.3
+
+- Bug: Fix invalid docs links in Configure.mdx template page - [#28560](https://github.com/storybookjs/storybook/pull/28560), thanks @kylegach!
+- CLI: Add "missing-storybook-dependencies" automigration - [#28579](https://github.com/storybookjs/storybook/pull/28579), thanks @yannbf!
+- CPC: Add `theming/create` aliases in docs preset - [#28570](https://github.com/storybookjs/storybook/pull/28570), thanks @ndelangen!
+- CPC: Fix incorrect re-export in `core-events` - [#28573](https://github.com/storybookjs/storybook/pull/28573), thanks @ndelangen!
+- CPC: Fix Vite builder had wrong conditions - [#28581](https://github.com/storybookjs/storybook/pull/28581), thanks @ndelangen!
+- CSF: Fix small typing issue - [#28587](https://github.com/storybookjs/storybook/pull/28587), thanks @valentinpalkovic!
+- Portable stories: Remove unused types - [#28548](https://github.com/storybookjs/storybook/pull/28548), thanks @kasperpeulen!
+- Webpack: Fix sourceMap generation in csf-tools - [#28585](https://github.com/storybookjs/storybook/pull/28585), thanks @valentinpalkovic!
+
+## 8.2.2
+
+- CPC: Add `ESM` export to `docs-tools` & `node-logger` packages - [#28539](https://github.com/storybookjs/storybook/pull/28539), thanks @ndelangen!
+- CPC: Fix missing dependency in `@storybook/addon-interactions` - [#28518](https://github.com/storybookjs/storybook/pull/28518), thanks @ndelangen!
+- CPC: Revert renames of panels, addon_ids - [#28524](https://github.com/storybookjs/storybook/pull/28524), thanks @ndelangen!
+
+## 8.2.1
+
+- CPC: Fix type generation - [#28507](https://github.com/storybookjs/storybook/pull/28507), thanks @ndelangen!
+- Types: Update type signatures of objects and functions - [#28503](https://github.com/storybookjs/storybook/pull/28503), thanks @valentinpalkovic!
+
+## 8.2.0
+
+Hold onto your hats! Storybook 8.2 has dropped, packed with a treasure trove of new features and bug fixes:
+
+- 🪝 New test hook `beforeAll`
+- 🕹️ Enhanced `play` function
+- 📦 Portable stories that let you use your stories in other testing tools
+- 🎁 Consolidated dependency to bring you better performance in a smaller package
+- ✨ Brand new onboarding experience to get you up to speed quicker
+- 💯 Hundreds more improvements
+
+<details>
+<summary>List of all updates</summary>
+
+- Addon Controls: Fix saving on Windows - [#28485](https://github.com/storybookjs/storybook/pull/28485), thanks @ghengeveld!
+- Addon Interactions: Use unique keys when rendering array nodes in panel - [#28423](https://github.com/storybookjs/storybook/pull/28423), thanks @yannbf!
+- Addon Onboarding: Add icons for dev/test/doc to the splash screen - [#28389](https://github.com/storybookjs/storybook/pull/28389), thanks @ghengeveld!
+- Addon Onboarding: New design and flow based on Save from Controls - [#28327](https://github.com/storybookjs/storybook/pull/28327), thanks @ghengeveld!
+- Addon Onboarding: Trigger onboarding during init for Vue and Angular projects - [#28482](https://github.com/storybookjs/storybook/pull/28482), thanks @ghengeveld!
+- Addon-A11y: Fix property default assignment - [#27224](https://github.com/storybookjs/storybook/pull/27224), thanks @valentinpalkovic!
+- Angular: Allow format configuration of custom source preview - [#28305](https://github.com/storybookjs/storybook/pull/28305), thanks @64BitAsura!
+- Angular: Allow outputPath object syntax - [#28144](https://github.com/storybookjs/storybook/pull/28144), thanks @valentinpalkovic!
+- Angular: Cleanup types - [#27189](https://github.com/storybookjs/storybook/pull/27189), thanks @valentinpalkovic!
+- Angular: Fix enableProdMode setting - [#28415](https://github.com/storybookjs/storybook/pull/28415), thanks @valentinpalkovic!
+- Angular: Fix wrong detection of standalone components - [#27353](https://github.com/storybookjs/storybook/pull/27353), thanks @dario-baumberger!
+- Angular: Introduce preserveSymlink builder option - [#28145](https://github.com/storybookjs/storybook/pull/28145), thanks @valentinpalkovic!
+- Angular: Update outputPath default value in angular-cli-webpack.js - [#28418](https://github.com/storybookjs/storybook/pull/28418), thanks @valentinpalkovic!
+- Babel: Ensure story files not transpiled earlier than ES2017 - [#28469](https://github.com/storybookjs/storybook/pull/28469), thanks @kasperpeulen!
+- Blocks: Fix reference to storybook core - [#28422](https://github.com/storybookjs/storybook/pull/28422), thanks @yannbf!
+- Blocks: Prebundle `tocbot` - [#28318](https://github.com/storybookjs/storybook/pull/28318), thanks @shilman!
+- Build: Change require/import order, so that import has higher prio if both are specified - [#27730](https://github.com/storybookjs/storybook/pull/27730), thanks @kasperpeulen!
+- Build: Ignore ts stories in cra/default-js sandbox - [#28354](https://github.com/storybookjs/storybook/pull/28354), thanks @valentinpalkovic!
+- CLI: Add `--no-dev` option to `init` - [#26918](https://github.com/storybookjs/storybook/pull/26918), thanks @fastfrwrd!
+- CLI: Add optional `--dev` and `--no-dev` options to `storybook init` CLI - [#26918](https://github.com/storybookjs/storybook/pull/26918), thanks @fastfrwrd!
+- CLI: Add support for Nuxt to project init - [#26884](https://github.com/storybookjs/storybook/pull/26884), thanks @tobiasdiez!
+- CLI: Fix CLI always asking all automigrations - [#28238](https://github.com/storybookjs/storybook/pull/28238), thanks @ndelangen!
+- CLI: Improve error message when fetching CLI version - [#28289](https://github.com/storybookjs/storybook/pull/28289), thanks @yannbf!
+- CLI: Include `@storybook/addon-svelte-csf` when initializing new projects - [#27070](https://github.com/storybookjs/storybook/pull/27070), thanks @benmccann!
+- CLI: Prebundle get-npm-tarball-url and @ndelangen/get-tarball - [#28481](https://github.com/storybookjs/storybook/pull/28481), thanks @ndelangen!
+- Config: Apply JavaScript-only story glob extensions for JavaScript projects - [#28338](https://github.com/storybookjs/storybook/pull/28338), thanks @valentinpalkovic!
+- Controls: Fix date picker control validation and assignment - [#26695](https://github.com/storybookjs/storybook/pull/26695), thanks @leeovictor!
+- Controls: Fix grouped Radio controls to have the same name - [#23374](https://github.com/storybookjs/storybook/pull/23374), thanks @srapilly!
+- Controls: Throttling makes Color control lagging - [#22615](https://github.com/storybookjs/storybook/pull/22615), thanks @gitstart!
+- Core: Add context as a property of the context (self-referencing) - [#28353](https://github.com/storybookjs/storybook/pull/28353), thanks @kasperpeulen!
+- Core: Add support for `beforeAll` hook - [#28255](https://github.com/storybookjs/storybook/pull/28255), thanks @ghengeveld!
+- Core: Fix startup hang caused by watchStorySpecifiers - [#27016](https://github.com/storybookjs/storybook/pull/27016), thanks @heyimalex!
+- Core: Make sure StorybookError message shows up in browser console and interactions panel - [#28464](https://github.com/storybookjs/storybook/pull/28464), thanks @kasperpeulen!
+- Core: Migrate from `pkg-dir` to `fd-package-json` - [#28270](https://github.com/storybookjs/storybook/pull/28270), thanks @43081j!
+- Core: Refactor phases to run in order `loading` -> `rendering` -> `playing` - [#28431](https://github.com/storybookjs/storybook/pull/28431), thanks @kasperpeulen!
+- Core: Remove more `.stories.mdx` handling - [#25973](https://github.com/storybookjs/storybook/pull/25973), thanks @JReinhold!
+- Core: Remove util dependency - [#28191](https://github.com/storybookjs/storybook/pull/28191), thanks @43081j!
+- CPC: Add `CJS` for `core/components` - [#28440](https://github.com/storybookjs/storybook/pull/28440), thanks @ndelangen!
+- CPC: Core Package Consolidation - [#27039](https://github.com/storybookjs/storybook/pull/27039), thanks @ndelangen!
+- CSF: Automatically extract componentPath - [#24396](https://github.com/storybookjs/storybook/pull/24396), thanks @shilman!
+- CSF: Rename `preview.js` `globals` to `initialGlobals` - [#27517](https://github.com/storybookjs/storybook/pull/27517), thanks @shilman!
+- Dependencies: Allow esbuild version 0.21.x - [#28245](https://github.com/storybookjs/storybook/pull/28245), thanks @edoardocavazza!
+- Dependency: bump `markdown-to-jsx` to v7.4.5 - [#26694](https://github.com/storybookjs/storybook/pull/26694), thanks @xyy94813!
+- Dependency: Bump Express.js - [#26680](https://github.com/storybookjs/storybook/pull/26680), thanks @valentinpalkovic!
+- Dependency: Remove node-fetch - [#28160](https://github.com/storybookjs/storybook/pull/28160), thanks @yk-kd!
+- Dependency: Upgrade `webpack-virtual-modules` to 0.6.0 - [#27102](https://github.com/storybookjs/storybook/pull/27102), thanks @fyodorovandrei!
+- Deps: Migrate from `read-pkg-up` to `fd-package-json` - [#28272](https://github.com/storybookjs/storybook/pull/28272), thanks @43081j!
+- Docs-tools: Replace `doctrine` with `jsdoc-type-pratt-parser` - [#26305](https://github.com/storybookjs/storybook/pull/26305), thanks @43081j!
+- Docs: Filter mount stories from `Stories` block, error when referenced in MDX - [#28434](https://github.com/storybookjs/storybook/pull/28434), thanks @kasperpeulen!
+- Docs: Fix `Typeset` Doc block `fontSizes` type - [#26475](https://github.com/storybookjs/storybook/pull/26475), thanks @noranda!
+- Index: Fix MDX to override project-level autodocs - [#28461](https://github.com/storybookjs/storybook/pull/28461), thanks @shilman!
+- Indexer: Improve locating stories with specials chars in path - [#22110](https://github.com/storybookjs/storybook/pull/22110), thanks @jankoritak!
+- Next: Set default targets for next babel config - [#28443](https://github.com/storybookjs/storybook/pull/28443), thanks @kasperpeulen!
+- Next.js: Set `env.bugfixes` in SWC so destructuring is never transpiled - [#28363](https://github.com/storybookjs/storybook/pull/28363), thanks @kasperpeulen!
+- React: Export ButtonProps and HeaderProps in CLI templates - [#28487](https://github.com/storybookjs/storybook/pull/28487), thanks @valentinpalkovic!
+- SWC: Set default targets for swc that align with our esbuild targets - [#28435](https://github.com/storybookjs/storybook/pull/28435), thanks @kasperpeulen!
+- Telemetry: Stop prompting about crash reports in CI - [#28433](https://github.com/storybookjs/storybook/pull/28433), thanks @yannbf!
+- Test: Add args to `mount` in react, svelte, and vue renderers - [#28385](https://github.com/storybookjs/storybook/pull/28385), thanks @kasperpeulen!
+- Test: Add mount property to the story context - [#28383](https://github.com/storybookjs/storybook/pull/28383), thanks @kasperpeulen!
+- Test: Enhance the context with canvas when the test package is used - [#28368](https://github.com/storybookjs/storybook/pull/28368), thanks @kasperpeulen!
+- Test: Improve MountMustBeDestructuredError error message - [#28468](https://github.com/storybookjs/storybook/pull/28468), thanks @kasperpeulen!
+- Test: Reactive spies preserve the this instance - [#28445](https://github.com/storybookjs/storybook/pull/28445), thanks @kasperpeulen!
+- Types: Fix type implementation for `CompatibleString` - [#27180](https://github.com/storybookjs/storybook/pull/27180), thanks @sni-J!
+- Vite: Fix asset warning by externalizing sb-common-assets font - [#27110](https://github.com/storybookjs/storybook/pull/27110), thanks @valentinpalkovic!
+- Vue3: Enable new hydration mismatch compile time flag - [#27192](https://github.com/storybookjs/storybook/pull/27192), thanks @Cherry!
+- Webpack5/Vite: Fix sourcemaps - [#27171](https://github.com/storybookjs/storybook/pull/27171), thanks @valentinpalkovic!
+
+</details>
+
+## 8.1.11
+
+- Telemetry: Detect Node version - [#28299](https://github.com/storybookjs/storybook/pull/28299), thanks @yannbf!
+- Test: Upgrade deps of @storybook/test - [#27862](https://github.com/storybookjs/storybook/pull/27862), thanks @kasperpeulen!
+
 ## 8.1.10
 
 - Addon-interactions: Fix deprecation warnings - [#28250](https://github.com/storybookjs/storybook/pull/28250), thanks @shilman!
@@ -257,20 +402,6 @@ It brings major improvements to Storybook's feature set for testing and document
 - 🙅‍♀️ No more React requirement in non-React projects
 
 Please checkout our [Migration Guide](https://storybook.js.org/docs/8.0/migration-guide) to upgrade from earlier versions of Storybook. To see a comprehensive list of changes that went into 8.0, you can refer to the [8.0 prerelease changelogs](https://github.com/storybookjs/storybook/blob/next/CHANGELOG.prerelease.md).
-
-## 7.6.20
-
-- Core: Replace ip function to address security concerns [#27529](https://github.com/storybookjs/storybook/pull/27529), thanks @tony19
-- Telemetry: Detect Node version [#28299](https://github.com/storybookjs/storybook/pull/28299), thanks @yannbf
-- Angular: Support v18 [#27237](https://github.com/storybookjs/storybook/pull/27237), thanks @valentinpalkovic
-
-## 7.6.19
-
-- Fix bad release in `7.6.18` thanks @jreinhold!
-
-## 7.6.18
-
-- Core: Fix addon bundling script [#26145](https://github.com/storybookjs/storybook/pull/26145), thanks @ndelangen!
 
 ## 7.6.17
 

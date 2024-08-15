@@ -1,8 +1,15 @@
+import {
+  RESET_STORY_ARGS,
+  STORY_ARGS_UPDATED,
+  UPDATE_STORY_ARGS,
+} from 'storybook/internal/core-events';
+
 import { global as globalThis } from '@storybook/global';
 import { userEvent, within } from '@storybook/test';
 import type { Meta, StoryObj } from '@storybook/vue3';
+
 import { h } from 'vue';
-import { RESET_STORY_ARGS, STORY_ARGS_UPDATED, UPDATE_STORY_ARGS } from '@storybook/core-events';
+
 import Reactivity from './Reactivity.vue';
 
 const meta = {
@@ -40,6 +47,7 @@ const meta = {
     });
     await new Promise((resolve) => channel.once(STORY_ARGS_UPDATED, resolve));
   },
+  tags: ['!vitest'],
 } satisfies Meta<typeof Reactivity>;
 
 export default meta;

@@ -1,23 +1,27 @@
-import { dirname, join, resolve } from 'path';
-import { DefinePlugin, HotModuleReplacementPlugin, ProgressPlugin, ProvidePlugin } from 'webpack';
-import type { Configuration } from 'webpack';
-import HtmlWebpackPlugin from 'html-webpack-plugin';
-// @ts-expect-error (I removed this on purpose, because it's incorrect)
-import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin';
-import TerserWebpackPlugin from 'terser-webpack-plugin';
-import VirtualModulePlugin from 'webpack-virtual-modules';
-import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
-import type { TransformOptions as EsbuildOptions } from 'esbuild';
-import type { Options } from '@storybook/types';
-import { globalsNameReferenceMap } from '@storybook/preview/globals';
+import { dirname, join, resolve } from 'node:path';
+
 import {
   getBuilderOptions,
-  stringifyProcessEnvs,
-  normalizeStories,
   isPreservingSymlinks,
-} from '@storybook/core-common';
+  normalizeStories,
+  stringifyProcessEnvs,
+} from 'storybook/internal/common';
+import { globalsNameReferenceMap } from 'storybook/internal/preview/globals';
+import type { Options } from 'storybook/internal/types';
+
 import { type BuilderOptions } from '@storybook/core-webpack';
+
+// @ts-expect-error (I removed this on purpose, because it's incorrect)
+import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin';
+import type { TransformOptions as EsbuildOptions } from 'esbuild';
+import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
+import HtmlWebpackPlugin from 'html-webpack-plugin';
+import TerserWebpackPlugin from 'terser-webpack-plugin';
 import { dedent } from 'ts-dedent';
+import { DefinePlugin, HotModuleReplacementPlugin, ProgressPlugin, ProvidePlugin } from 'webpack';
+import type { Configuration } from 'webpack';
+import VirtualModulePlugin from 'webpack-virtual-modules';
+
 import type { TypescriptOptions } from '../types';
 import { getVirtualModules } from './virtual-module-mapping';
 
@@ -31,25 +35,13 @@ const maybeGetAbsolutePath = <I extends string>(input: I): I | false => {
   }
 };
 
-const managerAPIPath = maybeGetAbsolutePath(`@storybook/manager-api`);
-const componentsPath = maybeGetAbsolutePath(`@storybook/components`);
 const globalPath = maybeGetAbsolutePath(`@storybook/global`);
-const routerPath = maybeGetAbsolutePath(`@storybook/router`);
-const themingPath = maybeGetAbsolutePath(`@storybook/theming`);
 
 // these packages are not pre-bundled because of react dependencies.
 // these are not dependencies of the builder anymore, thus resolving them can fail.
 // we should remove the aliases in 8.0, I'm not sure why they are here in the first place.
 const storybookPaths: Record<string, string> = {
-  ...(managerAPIPath
-    ? {
-        [`@storybook/manager-api`]: managerAPIPath,
-      }
-    : {}),
-  ...(componentsPath ? { [`@storybook/components`]: componentsPath } : {}),
   ...(globalPath ? { [`@storybook/global`]: globalPath } : {}),
-  ...(routerPath ? { [`@storybook/router`]: routerPath } : {}),
-  ...(themingPath ? { [`@storybook/theming`]: themingPath } : {}),
 };
 
 export default async (

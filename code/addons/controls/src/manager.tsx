@@ -1,17 +1,26 @@
 import React from 'react';
-import { dequal as deepEqual } from 'dequal';
-import { AddonPanel, Badge, Spaced } from '@storybook/components';
+
+import { AddonPanel, Badge, Spaced } from 'storybook/internal/components';
 import type {
   ResponseData,
   SaveStoryRequestPayload,
   SaveStoryResponsePayload,
-} from '@storybook/core-events';
-import { SAVE_STORY_REQUEST, SAVE_STORY_RESPONSE } from '@storybook/core-events';
-import { addons, experimental_requestResponse, types, useArgTypes } from '@storybook/manager-api';
-import { color } from '@storybook/theming';
+} from 'storybook/internal/core-events';
+import { SAVE_STORY_REQUEST, SAVE_STORY_RESPONSE } from 'storybook/internal/core-events';
+import {
+  addons,
+  experimental_requestResponse,
+  types,
+  useArgTypes,
+} from 'storybook/internal/manager-api';
+import { color } from 'storybook/internal/theming';
+
+import type { Args } from '@storybook/csf';
+
+import { dequal as deepEqual } from 'dequal';
+
 import { ControlsPanel } from './ControlsPanel';
 import { ADDON_ID, PARAM_KEY } from './constants';
-import type { Args } from '@storybook/csf';
 
 function Title() {
   const rows = useArgTypes();
@@ -32,7 +41,9 @@ function Title() {
 
 const stringifyArgs = (args: Record<string, any>) =>
   JSON.stringify(args, (_, value) => {
-    if (typeof value === 'function') return '__sb_empty_function_arg__';
+    if (typeof value === 'function') {
+      return '__sb_empty_function_arg__';
+    }
     return value;
   });
 
@@ -41,7 +52,10 @@ addons.register(ADDON_ID, (api) => {
 
   const saveStory = async () => {
     const data = api.getCurrentStoryData();
-    if (data.type !== 'story') throw new Error('Not a story');
+
+    if (data.type !== 'story') {
+      throw new Error('Not a story');
+    }
 
     try {
       const response = await experimental_requestResponse<
@@ -51,7 +65,9 @@ addons.register(ADDON_ID, (api) => {
         // Only send updated args
         args: stringifyArgs(
           Object.entries(data.args || {}).reduce<Args>((acc, [key, value]) => {
-            if (!deepEqual(value, data.initialArgs?.[key])) acc[key] = value;
+            if (!deepEqual(value, data.initialArgs?.[key])) {
+              acc[key] = value;
+            }
             return acc;
           }, {})
         ),
@@ -89,7 +105,10 @@ addons.register(ADDON_ID, (api) => {
 
   const createStory = async (name: string) => {
     const data = api.getCurrentStoryData();
-    if (data.type !== 'story') throw new Error('Not a story');
+
+    if (data.type !== 'story') {
+      throw new Error('Not a story');
+    }
 
     const response = await experimental_requestResponse<
       SaveStoryRequestPayload,
@@ -137,9 +156,14 @@ addons.register(ADDON_ID, (api) => {
   });
 
   channel.on(SAVE_STORY_RESPONSE, (data: ResponseData<SaveStoryResponsePayload>) => {
-    if (!data.success) return;
+    if (!data.success) {
+      return;
+    }
     const story = api.getCurrentStoryData();
-    if (story.type !== 'story') return;
+
+    if (story.type !== 'story') {
+      return;
+    }
 
     api.resetStoryArgs(story);
     if (data.payload.newStoryId) {

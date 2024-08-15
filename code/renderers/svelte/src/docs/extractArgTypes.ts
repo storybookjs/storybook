@@ -1,13 +1,13 @@
-import type { SBScalarType, StrictArgTypes } from '@storybook/types';
-import { logger } from '@storybook/client-logger';
-import type {
-  SvelteComponentDoc,
-  JSDocType,
-  JSDocKeyword,
-  JSDocTypeConst,
-} from 'sveltedoc-parser/typings';
+import { logger } from 'storybook/internal/client-logger';
+import type { ArgTypesExtractor } from 'storybook/internal/docs-tools';
+import type { SBScalarType, StrictArgTypes } from 'storybook/internal/types';
 
-import type { ArgTypesExtractor } from '@storybook/docs-tools';
+import type {
+  JSDocKeyword,
+  JSDocType,
+  JSDocTypeConst,
+  SvelteComponentDoc,
+} from 'sveltedoc-parser/typings';
 
 type ComponentWithDocgen = {
   __docgen: SvelteComponentDoc;
@@ -17,7 +17,9 @@ function hasKeyword(keyword: string, keywords: JSDocKeyword[]): boolean {
   return keywords ? keywords.find((k) => k.name === keyword) != null : false;
 }
 
-export const extractArgTypes: ArgTypesExtractor = (component: ComponentWithDocgen) => {
+export const extractArgTypes: ArgTypesExtractor = (
+  component: ComponentWithDocgen
+): StrictArgTypes | null => {
   try {
     // eslint-disable-next-line no-underscore-dangle
     const docgen = component.__docgen;
@@ -89,8 +91,9 @@ export const createArgTypes = (docgen: SvelteComponentDoc) => {
 
 /**
  * Function to convert the type from sveltedoc-parser to a storybook type
+ *
  * @param type
- * @returns string
+ * @returns String
  */
 const parseTypeToControl = (type: JSDocType | undefined): any => {
   if (!type) {

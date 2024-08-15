@@ -17,5 +17,5 @@ ember-output
 !.eslintrc.js
 !.eslintrc-markdown.js
 !.storybook
-lib/core-common/templates/base-preview-head.html
-lib/core-server/src/utils/__search-files-tests__
+core/assets
+core/src/core-server/utils/__search-files-tests__

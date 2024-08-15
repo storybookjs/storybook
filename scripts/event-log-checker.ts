@@ -1,10 +1,10 @@
-import chalk from 'chalk';
 import assert from 'assert';
-import fetch from 'node-fetch';
+import chalk from 'chalk';
+
+import versions from '../code/core/src/common/versions';
+import { oneWayHash } from '../code/core/src/telemetry/one-way-hash';
+import { allTemplates } from '../code/lib/cli-storybook/src/sandbox-templates';
 import { esMain } from './utils/esmain';
-import { allTemplates } from '../code/lib/cli/src/sandbox-templates';
-import versions from '../code/lib/core-common/src/versions';
-import { oneWayHash } from '../code/lib/telemetry/src/one-way-hash';
 
 const PORT = process.env.PORT || 6007;
 
@@ -30,10 +30,16 @@ async function run() {
     }
 
     const expectation = eventTypeExpectations[eventType as keyof typeof eventTypeExpectations];
-    if (!expectation) throw new Error(`Unexpected eventType '${eventType}'`);
+
+    if (!expectation) {
+      throw new Error(`Unexpected eventType '${eventType}'`);
+    }
 
     const template = allTemplates[templateName as keyof typeof allTemplates];
-    if (!template) throw new Error(`Unexpected template '${templateName}'`);
+
+    if (!template) {
+      throw new Error(`Unexpected template '${templateName}'`);
+    }
 
     const events = await (await fetch(`http://localhost:${PORT}/event-log`)).json();
 

@@ -1,4 +1,3 @@
-import { vi, describe, it, expect } from 'vitest';
 import { CommonModule } from '@angular/common';
 import { Component, Directive, Injectable, InjectionToken, NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
@@ -8,9 +7,11 @@ import {
   provideAnimations,
   provideNoopAnimations,
 } from '@angular/platform-browser/animations';
+import { describe, expect, it, vi } from 'vitest';
+
 import { NgModuleMetadata } from '../../types';
-import { PropertyExtractor } from './PropertyExtractor';
 import { WithOfficialModule } from '../__testfixtures__/test.module';
+import { PropertyExtractor } from './PropertyExtractor';
 
 const TEST_TOKEN = new InjectionToken('testToken');
 const TestTokenProvider = { provide: TEST_TOKEN, useValue: 123 };

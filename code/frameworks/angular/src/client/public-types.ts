@@ -10,11 +10,11 @@ import {
   StoryContext as GenericStoryContext,
   StrictArgs,
   ProjectAnnotations,
-} from '@storybook/types';
+} from 'storybook/internal/types';
 import * as AngularCore from '@angular/core';
 import { AngularRenderer } from './types';
 
-export type { Args, ArgTypes, Parameters, StrictArgs } from '@storybook/types';
+export type { Args, ArgTypes, Parameters, StrictArgs } from 'storybook/internal/types';
 export type { Parameters as AngularParameters } from './types';
 export type { AngularRenderer };
 

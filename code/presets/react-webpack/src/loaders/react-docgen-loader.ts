@@ -1,17 +1,18 @@
-import {
-  parse,
-  builtinResolvers as docgenResolver,
-  builtinHandlers as docgenHandlers,
-  makeFsImporter,
-  ERROR_CODES,
-  utils,
-} from 'react-docgen';
-import * as TsconfigPaths from 'tsconfig-paths';
+import { logger } from 'storybook/internal/node-logger';
+
 import findUp from 'find-up';
 import MagicString from 'magic-string';
+import {
+  ERROR_CODES,
+  builtinHandlers as docgenHandlers,
+  builtinResolvers as docgenResolver,
+  makeFsImporter,
+  parse,
+  utils,
+} from 'react-docgen';
+import type { Documentation, Handler, NodePath, babelTypes as t } from 'react-docgen';
+import * as TsconfigPaths from 'tsconfig-paths';
 import type { LoaderContext } from 'webpack';
-import type { Handler, NodePath, babelTypes as t, Documentation } from 'react-docgen';
-import { logger } from '@storybook/node-logger';
 
 import {
   RESOLVE_EXTENSIONS,

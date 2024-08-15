@@ -1,6 +1,7 @@
+import { toId } from '@storybook/csf';
+
 import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
-import { toId } from '@storybook/csf';
 
 export class SbPage {
   readonly page: Page;
@@ -23,9 +24,7 @@ export class SbPage {
     }
   }
 
-  /**
-   * Visit a story via the URL instead of selecting from the sidebar.
-   */
+  /** Visit a story via the URL instead of selecting from the sidebar. */
   async deepLinkToStory(baseURL: string, title: string, name: 'docs' | string) {
     const titleId = toId(title);
     const storyId = toId(name);
@@ -37,9 +36,7 @@ export class SbPage {
     await this.previewRoot();
   }
 
-  /**
-   * Visit a story by selecting it from the sidebar.
-   */
+  /** Visit a story by selecting it from the sidebar. */
   async navigateToStory(title: string, name: string, viewMode?: 'docs' | 'story') {
     await this.openComponent(title);
 
@@ -95,6 +92,17 @@ export class SbPage {
       };
       window.sessionStorage.setItem('@storybook/manager/store', JSON.stringify(storeState));
     }, {});
+
+    // disable all transitions to avoid flakiness
+    await this.page.addStyleTag({
+      content: `
+            *,
+            *::before,
+            *::after {
+              transition: none !important;
+            }
+          `,
+    });
     const root = this.previewRoot();
     const docsLoadingPage = root.locator('.sb-preparing-docs');
     const storyLoadingPage = root.locator('.sb-preparing-story');

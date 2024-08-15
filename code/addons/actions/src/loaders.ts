@@ -1,7 +1,9 @@
 /* eslint-disable no-underscore-dangle */
-import type { LoaderFunction } from '@storybook/types';
+import type { LoaderFunction } from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
 import type { onMockCall as onMockCallType } from '@storybook/test';
+
 import { action } from './runtime';
 
 let subscribed = false;
@@ -10,7 +12,10 @@ const logActionsWhenMockCalled: LoaderFunction = (context) => {
   const {
     parameters: { actions },
   } = context;
-  if (actions?.disable) return;
+
+  if (actions?.disable) {
+    return;
+  }
 
   if (
     !subscribed &&
@@ -20,7 +25,10 @@ const logActionsWhenMockCalled: LoaderFunction = (context) => {
     const onMockCall = global.__STORYBOOK_TEST_ON_MOCK_CALL__ as typeof onMockCallType;
     onMockCall((mock, args) => {
       const name = mock.getMockName();
-      if (name === 'spy') return;
+
+      if (name === 'spy') {
+        return;
+      }
 
       // TODO: Make this a configurable API in 8.2
       if (

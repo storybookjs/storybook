@@ -1,0 +1,44 @@
+{
+  "name": "@storybook/manager",
+  "version": "8.3.0-alpha.6",
+  "description": "Core Storybook UI",
+  "keywords": [
+    "storybook"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/deprecated/manager",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/deprecated/manager"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
+  "license": "MIT",
+  "sideEffects": false,
+  "type": "module",
+  "exports": {
+    "./globals": {
+      "type": "./globals.d.ts",
+      "import": "./globals.js",
+      "require": "./globals.cjs"
+    }
+  },
+  "files": [
+    "README.md",
+    "*.js",
+    "*.mjs",
+    "*.cjs",
+    "*.d.ts"
+  ],
+  "peerDependencies": {
+    "storybook": "workspace:^"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

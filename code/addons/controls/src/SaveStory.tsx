@@ -1,3 +1,5 @@
+import React from 'react';
+
 import {
   Bar as BaseBar,
   Button,
@@ -6,10 +8,10 @@ import {
   Modal,
   TooltipNote,
   WithTooltip,
-} from '@storybook/components';
+} from 'storybook/internal/components';
+import { keyframes, styled } from 'storybook/internal/theming';
+
 import { AddIcon, CheckIcon, UndoIcon } from '@storybook/icons';
-import { keyframes, styled } from '@storybook/theming';
-import React from 'react';
 
 const slideIn = keyframes({
   from: { transform: 'translateY(40px)' },
@@ -103,7 +105,9 @@ export const SaveStory = ({ saveStory, createStory, resetArgs }: SaveStoryProps)
   const [errorMessage, setErrorMessage] = React.useState(null);
 
   const onSaveStory = async () => {
-    if (saving) return;
+    if (saving) {
+      return;
+    }
     setSaving(true);
     await saveStory().catch(() => {});
     setSaving(false);
@@ -123,7 +127,10 @@ export const SaveStory = ({ saveStory, createStory, resetArgs }: SaveStoryProps)
   };
   const onSubmitForm = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (saving) return;
+
+    if (saving) {
+      return;
+    }
     try {
       setErrorMessage(null);
       setSaving(true);
@@ -137,7 +144,7 @@ export const SaveStory = ({ saveStory, createStory, resetArgs }: SaveStoryProps)
   };
 
   return (
-    <Container>
+    <Container id="save-from-controls">
       <Bar>
         <Actions>
           <WithTooltip
@@ -184,7 +191,7 @@ export const SaveStory = ({ saveStory, createStory, resetArgs }: SaveStoryProps)
         </Info>
 
         <Modal width={350} open={creating} onOpenChange={setCreating}>
-          <Form onSubmit={onSubmitForm}>
+          <Form onSubmit={onSubmitForm} id="create-new-story-form">
             <Modal.Content>
               <Modal.Header>
                 <Modal.Title>Create new story</Modal.Title>

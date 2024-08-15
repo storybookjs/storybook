@@ -1,24 +1,24 @@
 // noinspection JSUnusedGlobalSymbols
+import { join, parse } from 'node:path';
 
-import * as fs from 'fs-extra';
+import { NoStatsForViteDevError } from 'storybook/internal/server-errors';
+import type { Options } from 'storybook/internal/types';
+
 import type { RequestHandler } from 'express';
-import type { ViteDevServer } from 'vite';
 import express from 'express';
-import { dirname, join, parse } from 'path';
-import { NoStatsForViteDevError } from '@storybook/core-events/server-errors';
-import type { Options } from '@storybook/types';
-import { transformIframeHtml } from './transform-iframe-html';
-import { createViteServer } from './vite-server';
+import * as fs from 'fs-extra';
+import { corePath } from 'storybook/core-path';
+import type { ViteDevServer } from 'vite';
+
 import { build as viteBuild } from './build';
+import { transformIframeHtml } from './transform-iframe-html';
 import type { ViteBuilder } from './types';
+import { createViteServer } from './vite-server';
 
 export { withoutVitePlugins } from './utils/without-vite-plugins';
 export { hasVitePlugins } from './utils/has-vite-plugins';
 
 export * from './types';
-
-const getAbsolutePath = <I extends string>(input: I): I =>
-  dirname(require.resolve(join(input, 'package.json'))) as any;
 
 function iframeMiddleware(options: Options, server: ViteDevServer): RequestHandler {
   return async (req, res, next) => {
@@ -59,8 +59,8 @@ export const start: ViteBuilder['start'] = async ({
 }) => {
   server = await createViteServer(options as Options, devServer);
 
-  const previewResolvedDir = getAbsolutePath('@storybook/preview');
-  const previewDirOrigin = join(previewResolvedDir, 'dist');
+  const previewResolvedDir = join(corePath, 'dist/preview');
+  const previewDirOrigin = previewResolvedDir;
 
   router.use(`/sb-preview`, express.static(previewDirOrigin, { immutable: true, maxAge: '5m' }));
 
@@ -81,8 +81,8 @@ export const start: ViteBuilder['start'] = async ({
 export const build: ViteBuilder['build'] = async ({ options }) => {
   const viteCompilation = viteBuild(options as Options);
 
-  const previewResolvedDir = getAbsolutePath('@storybook/preview');
-  const previewDirOrigin = join(previewResolvedDir, 'dist');
+  const previewResolvedDir = join(corePath, 'dist/preview');
+  const previewDirOrigin = previewResolvedDir;
   const previewDirTarget = join(options.outputDir || '', `sb-preview`);
 
   const previewFiles = fs.copy(previewDirOrigin, previewDirTarget, {

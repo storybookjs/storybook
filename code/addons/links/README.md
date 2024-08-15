@@ -80,8 +80,8 @@ export const third = () => <LinkTo story="index">Go back</LinkTo>;
 If you want to get an URL for a particular story, you may use `hrefTo` function. It returns a promise, which resolves to string containing a relative URL:
 
 ```js
-import { hrefTo } from '@storybook/addon-links';
 import { action } from '@storybook/addon-actions';
+import { hrefTo } from '@storybook/addon-links';
 
 export default {
   title: 'Href',

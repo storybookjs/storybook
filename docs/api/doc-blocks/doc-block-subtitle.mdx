@@ -1,0 +1,46 @@
+---
+title: 'Subtitle'
+sidebar:
+  order: 13
+  title: Subtitle
+---
+
+<YouTubeCallout id="uAA1JvLcl-w" title="Avoid Documentation Nightmares with Storybook's Subtitle Doc Block" params="start=98" />
+
+The `Subtitle` block can serve as a secondary heading for your docs entry.
+
+![Screenshot of Subtitle block](../../_assets/api/doc-block-title-subtitle-description.png)
+
+{/* prettier-ignore-start */}
+
+```md
+{/* ButtonDocs.mdx */}
+
+import { Subtitle } from '@storybook/blocks';
+
+<Subtitle>This is the subtitle</Subtitle>
+```
+
+{/* prettier-ignore-end */}
+
+## Subtitle
+
+```js
+import { Subtitle } from '@storybook/blocks';
+```
+
+`Subtitle` is configured with the following props:
+
+### `children`
+
+Type: `JSX.Element | string`
+
+Default: `parameters.docs.subtitle`
+
+Provides the content.
+
+### `of`
+
+Type: CSF file exports
+
+Specifies which meta's subtitle is displayed.

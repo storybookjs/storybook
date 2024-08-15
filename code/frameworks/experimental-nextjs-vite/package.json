@@ -1,0 +1,143 @@
+{
+  "name": "@storybook/experimental-nextjs-vite",
+  "version": "8.3.0-alpha.6",
+  "description": "Storybook for Next.js and Vite",
+  "keywords": [
+    "storybook",
+    "nextjs",
+    "vite"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/frameworks/experimental-nextjs-vite",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/frameworks/nextjs"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "node": "./dist/index.js",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./preset": {
+      "types": "./dist/preset.d.ts",
+      "require": "./dist/preset.js"
+    },
+    "./dist/preview.mjs": "./dist/preview.mjs",
+    "./cache.mock": {
+      "types": "./dist/export-mocks/cache/index.d.ts",
+      "import": "./dist/export-mocks/cache/index.mjs",
+      "require": "./dist/export-mocks/cache/index.js"
+    },
+    "./headers.mock": {
+      "types": "./dist/export-mocks/headers/index.d.ts",
+      "import": "./dist/export-mocks/headers/index.mjs",
+      "require": "./dist/export-mocks/headers/index.js"
+    },
+    "./navigation.mock": {
+      "types": "./dist/export-mocks/navigation/index.d.ts",
+      "import": "./dist/export-mocks/navigation/index.mjs",
+      "require": "./dist/export-mocks/navigation/index.js"
+    },
+    "./router.mock": {
+      "types": "./dist/export-mocks/router/index.d.ts",
+      "import": "./dist/export-mocks/router/index.mjs",
+      "require": "./dist/export-mocks/router/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "dist/index.d.ts"
+      ],
+      "cache.mock": [
+        "dist/export-mocks/cache/index.d.ts"
+      ],
+      "headers.mock": [
+        "dist/export-mocks/headers/index.d.ts"
+      ],
+      "router.mock": [
+        "dist/export-mocks/router/index.d.ts"
+      ],
+      "navigation.mock": [
+        "dist/export-mocks/navigation/index.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "dist/**/*",
+    "template/cli/**/*",
+    "README.md",
+    "*.js",
+    "*.d.ts",
+    "!src/**/*"
+  ],
+  "scripts": {
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
+  },
+  "dependencies": {
+    "@storybook/builder-vite": "workspace:*",
+    "@storybook/react": "workspace:*",
+    "@storybook/test": "workspace:*",
+    "styled-jsx": "5.1.6"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "next": "^14.2.5",
+    "typescript": "^5.3.2",
+    "vite-plugin-storybook-nextjs": "^1.0.0"
+  },
+  "peerDependencies": {
+    "next": "^14.2.5",
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
+    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
+    "storybook": "workspace:^",
+    "vite": "^5.0.0",
+    "vite-plugin-storybook-nextjs": "^1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  },
+  "optionalDependencies": {
+    "sharp": "^0.33.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "bundler": {
+    "entries": [
+      "./src/index.ts",
+      "./src/preset.ts",
+      "./src/preview.tsx",
+      "./src/export-mocks/cache/index.ts",
+      "./src/export-mocks/headers/index.ts",
+      "./src/export-mocks/router/index.ts",
+      "./src/export-mocks/navigation/index.ts",
+      "./src/images/decorator.tsx"
+    ],
+    "externals": [
+      "sb-original/image-context"
+    ],
+    "platform": "node"
+  },
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+}

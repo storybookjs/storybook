@@ -1,12 +1,13 @@
 import React, { Component } from 'react';
+
+import { STORY_CHANGED } from 'storybook/internal/core-events';
+import type { API } from 'storybook/internal/manager-api';
+
 import { dequal as deepEqual } from 'dequal';
 
-import type { API } from '@storybook/manager-api';
-import { STORY_CHANGED } from '@storybook/core-events';
-
 import { ActionLogger as ActionLoggerComponent } from '../../components/ActionLogger';
-import type { ActionDisplay } from '../../models';
 import { CLEAR_ID, EVENT_ID } from '../../constants';
+import type { ActionDisplay } from '../../models';
 
 interface ActionLoggerProps {
   active: boolean;
@@ -26,7 +27,6 @@ const safeDeepEqual = (a: any, b: any): boolean => {
 };
 
 export default class ActionLogger extends Component<ActionLoggerProps, ActionLoggerState> {
-  // @ts-expect-error Unused, possibly remove, leaving, because it could be accessed even though it is private
   private mounted: boolean;
 
   constructor(props: ActionLoggerProps) {

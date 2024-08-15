@@ -1,10 +1,13 @@
-import { describe, it, expect, vi } from 'vitest';
-import * as api from '@storybook/manager-api';
-import type { Addon_BaseType } from '@storybook/types';
+// @vitest-environment happy-dom
+import { describe, expect, it, vi } from 'vitest';
+
+import * as api from 'storybook/internal/manager-api';
+import type { Addon_BaseType } from 'storybook/internal/types';
+
 import { PANEL_ID } from './constants';
 import './manager';
 
-vi.mock('@storybook/manager-api');
+vi.mock('storybook/internal/manager-api');
 const mockedApi = vi.mocked<api.API>(api as any);
 mockedApi.useAddonState = vi.fn();
 const mockedAddons = vi.mocked(api.addons);
@@ -54,7 +57,6 @@ describe('A11yManager', () => {
           >
             Accessibility
           </span>
-          
         </Spaced>
       </div>
     `);

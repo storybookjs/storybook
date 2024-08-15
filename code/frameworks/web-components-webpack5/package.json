@@ -1,6 +1,6 @@
 {
   "name": "@storybook/web-components-webpack5",
-  "version": "8.2.0-alpha.10",
+  "version": "8.3.0-alpha.6",
   "description": "Storybook for web-components: View web components snippets in isolation with Hot Reloading.",
   "keywords": [
     "lit",
@@ -46,22 +46,21 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
     "@storybook/builder-webpack5": "workspace:*",
-    "@storybook/core-common": "workspace:*",
-    "@storybook/types": "workspace:*",
     "@storybook/web-components": "workspace:*",
-    "@types/node": "^18.0.0"
+    "@types/node": "^22.0.0"
   },
   "devDependencies": {
     "lit": "2.3.1",
     "typescript": "^5.3.2"
   },
   "peerDependencies": {
-    "lit": "^2.0.0 || ^3.0.0"
+    "lit": "^2.0.0 || ^3.0.0",
+    "storybook": "workspace:^"
   },
   "engines": {
     "node": ">=18.0.0"

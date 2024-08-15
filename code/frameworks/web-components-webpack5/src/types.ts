@@ -2,7 +2,8 @@ import type {
   CompatibleString,
   StorybookConfig as StorybookConfigBase,
   TypescriptOptions as TypescriptOptionsWebComponents,
-} from '@storybook/types';
+} from 'storybook/internal/types';
+
 import type {
   BuilderOptions,
   StorybookConfigWebpack,
@@ -35,9 +36,7 @@ type StorybookConfigFramework = {
     StorybookConfigBase['typescript'];
 };
 
-/**
- * The interface for Storybook configuration in `main.ts` files.
- */
+/** The interface for Storybook configuration in `main.ts` files. */
 export type StorybookConfig = Omit<
   StorybookConfigBase,
   keyof StorybookConfigWebpack | keyof StorybookConfigFramework

@@ -1,11 +1,17 @@
-import NextHeader from './NextHeader';
+import { cookies, headers } from '@storybook/nextjs/headers.mock';
 import type { Meta } from '@storybook/react';
 import type { StoryObj } from '@storybook/react';
 import { expect, userEvent, within } from '@storybook/test';
-import { cookies, headers } from '@storybook/nextjs/headers.mock';
+
+import NextHeader from './NextHeader';
 
 export default {
   component: NextHeader,
+  parameters: {
+    react: {
+      rsc: true,
+    },
+  },
 } as Meta<typeof NextHeader>;
 
 type Story = StoryObj<typeof NextHeader>;

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/builder-vite",
-  "version": "8.2.0-alpha.10",
+  "version": "8.3.0-alpha.6",
   "description": "A plugin to run and build Storybooks with Vite",
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/builders/builder-vite/#readme",
   "bugs": {
@@ -39,19 +39,11 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/channels": "workspace:*",
-    "@storybook/client-logger": "workspace:*",
-    "@storybook/core-common": "workspace:*",
-    "@storybook/core-events": "workspace:*",
     "@storybook/csf-plugin": "workspace:*",
-    "@storybook/node-logger": "workspace:*",
-    "@storybook/preview": "workspace:*",
-    "@storybook/preview-api": "workspace:*",
-    "@storybook/types": "workspace:*",
     "@types/find-cache-dir": "^3.2.1",
     "browser-assert": "^1.2.1",
     "es-module-lexer": "^1.5.0",
@@ -63,7 +55,7 @@
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
-    "@types/node": "^18.0.0",
+    "@types/node": "^22.0.0",
     "glob": "^10.0.0",
     "slash": "^5.0.0",
     "typescript": "^5.3.2",
@@ -71,6 +63,7 @@
   },
   "peerDependencies": {
     "@preact/preset-vite": "*",
+    "storybook": "workspace:^",
     "typescript": ">= 4.3.x",
     "vite": "^4.0.0 || ^5.0.0",
     "vite-plugin-glimmerx": "*"

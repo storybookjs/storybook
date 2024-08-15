@@ -1,6 +1,8 @@
+// eslint-disable-next-line import/no-extraneous-dependencies
 import React from 'react';
-import { useMemo } from '@storybook/preview-api';
-import type { DecoratorFunction, Renderer } from '@storybook/types';
+
+import { useMemo } from 'storybook/internal/preview-api';
+import type { DecoratorFunction, Renderer } from 'storybook/internal/types';
 
 import { initializeThemeState, pluckThemeFromContext, useThemeParameters } from './helpers';
 
@@ -38,7 +40,7 @@ export const withThemeFromJSXProvider = <TRenderer extends Renderer = any>({
       const pairs = Object.entries(themes);
 
       return pairs.length === 1 ? pluckThemeFromKeyPairTuple(pairs[0]) : themes[selectedThemeName];
-    }, [themes, selected, themeOverride]);
+    }, [selected, themeOverride]);
 
     if (!Provider) {
       return (

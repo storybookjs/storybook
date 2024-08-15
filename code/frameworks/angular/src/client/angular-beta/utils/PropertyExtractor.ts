@@ -2,7 +2,6 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   Directive,
-  importProvidersFrom,
   Injectable,
   InjectionToken,
   Input,
@@ -11,6 +10,7 @@ import {
   Pipe,
   Provider,
   ɵReflectionCapabilities as ReflectionCapabilities,
+  importProvidersFrom,
 } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import {
@@ -19,7 +19,8 @@ import {
   provideAnimations,
   provideNoopAnimations,
 } from '@angular/platform-browser/animations';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
+
 import { NgModuleMetadata } from '../../types';
 import { isComponentAlreadyDeclared } from './NgModulesAnalyzer';
 
@@ -98,8 +99,6 @@ export class PropertyExtractor implements NgModuleMetadata {
    * - Removes Restricted Imports
    * - Extracts providers from ModuleWithProviders
    * - Returns a new NgModuleMetadata object
-   *
-   *
    */
   private analyzeMetadata = (metadata: NgModuleMetadata) => {
     const declarations = [...(metadata?.declarations || [])];

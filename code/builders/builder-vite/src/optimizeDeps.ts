@@ -1,6 +1,9 @@
-import * as path from 'path';
-import type { InlineConfig as ViteInlineConfig, UserConfig } from 'vite';
-import type { Options } from '@storybook/types';
+import { relative } from 'node:path';
+
+import type { Options } from 'storybook/internal/types';
+
+import type { UserConfig, InlineConfig as ViteInlineConfig } from 'vite';
+
 import { listStories } from './list-stories';
 
 // It ensures that vite converts cjs deps into esm without vite having to find them during startup and then having to log a message about them and restart
@@ -108,7 +111,8 @@ const INCLUDE_CANDIDATES = [
 ];
 
 /**
- * Helper function which allows us to `filter` with an async predicate.  Uses Promise.all for performance.
+ * Helper function which allows us to `filter` with an async predicate. Uses Promise.all for
+ * performance.
  */
 const asyncFilter = async (arr: string[], predicate: (val: string) => Promise<boolean>) =>
   Promise.all(arr.map(predicate)).then((results) => arr.filter((_v, index) => results[index]));
@@ -119,7 +123,7 @@ export async function getOptimizeDeps(config: ViteInlineConfig, options: Options
   const { root = process.cwd() } = config;
   const { normalizePath, resolveConfig } = await import('vite');
   const absoluteStories = await listStories(options);
-  const stories = absoluteStories.map((storyPath) => normalizePath(path.relative(root, storyPath)));
+  const stories = absoluteStories.map((storyPath) => normalizePath(relative(root, storyPath)));
   // TODO: check if resolveConfig takes a lot of time, possible optimizations here
   const resolvedConfig = await resolveConfig(config, 'serve', 'development');
 

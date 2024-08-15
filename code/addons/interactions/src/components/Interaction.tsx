@@ -1,16 +1,18 @@
 import * as React from 'react';
-import { IconButton, TooltipNote, WithTooltip } from '@storybook/components';
-import { type Call, CallStates, type ControlStates } from '@storybook/instrumenter';
-import { styled, typography } from '@storybook/theming';
-import { transparentize } from 'polished';
+
+import { IconButton, TooltipNote, WithTooltip } from 'storybook/internal/components';
+import { styled, typography } from 'storybook/internal/theming';
 
 import { ListUnorderedIcon } from '@storybook/icons';
+import { type Call, CallStates, type ControlStates } from '@storybook/instrumenter';
+
+import { transparentize } from 'polished';
+
+import { isChaiError, isJestError } from '../utils';
+import type { Controls } from './InteractionsPanel';
 import { MatcherResult } from './MatcherResult';
 import { MethodCall } from './MethodCall';
 import { StatusIcon } from './StatusIcon';
-
-import type { Controls } from './InteractionsPanel';
-import { isChaiError, isJestError } from '../utils';
 
 const MethodCallWrapper = styled.div(() => ({
   fontFamily: typography.fonts.mono,
@@ -163,7 +165,9 @@ export const Interaction = ({
   const [isHovered, setIsHovered] = React.useState(false);
   const isInteractive = !controlStates.goto || !call.interceptable || !!call.ancestors.length;
 
-  if (isHidden) return null;
+  if (isHidden) {
+    return null;
+  }
 
   return (
     <RowContainer call={call} pausedAt={pausedAt}>

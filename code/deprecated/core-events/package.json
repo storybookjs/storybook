@@ -1,0 +1,78 @@
+{
+  "name": "@storybook/core-events",
+  "version": "8.3.0-alpha.6",
+  "description": "Event names used in storybook core",
+  "keywords": [
+    "storybook"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/core-events",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/lib/core-events"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./shim.d.ts",
+      "import": "./shim.mjs",
+      "require": "./shim.js"
+    },
+    "./preview-errors": {
+      "types": "./preview-errors.d.ts",
+      "import": "./preview-errors.mjs",
+      "require": "./preview-errors.js"
+    },
+    "./manager-errors": {
+      "types": "./manager-errors.d.ts",
+      "import": "./manager-errors.mjs",
+      "require": "./manager-errors.js"
+    },
+    "./server-errors": {
+      "types": "./server-errors.d.ts",
+      "import": "./server-errors.mjs",
+      "require": "./server-errors.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./shim.js",
+  "module": "./shim.mjs",
+  "types": "./shim.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./shim.d.ts"
+      ],
+      "preview-errors": [
+        "./preview-errors.d.ts"
+      ],
+      "manager-errors": [
+        "./manager-errors.d.ts"
+      ],
+      "server-errors": [
+        "./server-errors.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "README.md",
+    "*.js",
+    "*.mjs",
+    "*.cjs",
+    "*.d.ts"
+  ],
+  "peerDependencies": {
+    "storybook": "workspace:^"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -1,10 +1,16 @@
-import { action } from '@storybook/addon-actions';
 import { CallStates } from '@storybook/instrumenter';
+
+import { action } from '@storybook/addon-actions';
+
+import { parameters } from '../preview';
 import { Subnav } from './Subnav';
 
 export default {
-  title: 'Addons/Interactions/Subnav',
+  title: 'Subnav',
   component: Subnav,
+  parameters: {
+    layout: 'fullscreen',
+  },
   args: {
     controls: {
       start: action('start'),

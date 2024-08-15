@@ -19,7 +19,7 @@ import './commands'
 
 import { mount } from 'cypress/react18'
 
-import type { ProjectAnnotations } from '@storybook/types';
+import type { ProjectAnnotations } from 'storybook/internal/types';
 import { ReactRenderer, setProjectAnnotations } from '@storybook/react';
 import sbAnnotations from '../../.storybook/preview';
 import * as addonInteractions from '@storybook/addon-interactions/preview';

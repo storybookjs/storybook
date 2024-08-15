@@ -1,13 +1,14 @@
-import type { Options } from '@storybook/types';
-import { logger } from '@storybook/node-logger';
-import dedent from 'ts-dedent';
+import { logger } from 'storybook/internal/node-logger';
+import type { Options } from 'storybook/internal/types';
 
-import { commonConfig } from './vite-config';
+import { dedent } from 'ts-dedent';
+import type { InlineConfig } from 'vite';
+
 import { sanitizeEnvVars } from './envs';
 import type { WebpackStatsPlugin } from './plugins';
-import type { InlineConfig } from 'vite';
 import { hasVitePlugins } from './utils/has-vite-plugins';
 import { withoutVitePlugins } from './utils/without-vite-plugins';
+import { commonConfig } from './vite-config';
 
 function findPlugin(config: InlineConfig, name: string) {
   return config.plugins?.find((p) => p && 'name' in p && p.name === name);

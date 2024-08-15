@@ -1,0 +1,104 @@
+{
+  "name": "@storybook/experimental-addon-vitest",
+  "version": "8.3.0-alpha.6",
+  "description": "Integrate Vitest with Storybook",
+  "keywords": [
+    "storybook-addons",
+    "addon-vitest",
+    "vitest",
+    "testing"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/vitest",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/addons/vitest"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "node": "./dist/index.cjs"
+    },
+    "./plugin": {
+      "types": "./dist/plugin/index.d.ts",
+      "import": "./dist/plugin/index.js",
+      "require": "./dist/plugin/index.cjs"
+    },
+    "./internal/global-setup": {
+      "types": "./dist/plugin/global-setup.d.ts",
+      "import": "./dist/plugin/global-setup.js",
+      "require": "./dist/plugin/global-setup.cjs"
+    },
+    "./internal/setup-file": {
+      "types": "./dist/plugin/setup-file.d.ts",
+      "import": "./dist/plugin/setup-file.js"
+    },
+    "./internal/test-utils": {
+      "types": "./dist/plugin/test-utils.d.ts",
+      "import": "./dist/plugin/test-utils.js",
+      "require": "./dist/plugin/test-utils.cjs"
+    },
+    "./manager": "./dist/manager.js",
+    "./preset": "./dist/preset.cjs",
+    "./postinstall": "./dist/postinstall.cjs",
+    "./package.json": "./package.json"
+  },
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "*.mjs",
+    "*.js",
+    "*.cjs",
+    "*.d.ts",
+    "!src/**/*"
+  ],
+  "scripts": {
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
+  },
+  "dependencies": {
+    "@storybook/csf": "^0.1.11"
+  },
+  "devDependencies": {
+    "@vitest/browser": "^2.0.0",
+    "vitest": "^2.0.0"
+  },
+  "peerDependencies": {
+    "@vitest/browser": "^2.0.0",
+    "storybook": "workspace:^",
+    "vitest": "^2.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "bundler": {
+    "exportEntries": [
+      "./src/index.ts",
+      "./src/plugin/test-utils.ts",
+      "./src/plugin/setup-file.ts"
+    ],
+    "managerEntries": [
+      "./src/manager.tsx"
+    ],
+    "nodeEntries": [
+      "./src/preset.ts",
+      "./src/plugin/index.ts",
+      "./src/plugin/global-setup.ts",
+      "./src/postinstall.ts"
+    ]
+  }
+}

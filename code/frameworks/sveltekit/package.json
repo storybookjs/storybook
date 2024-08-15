@@ -1,6 +1,6 @@
 {
   "name": "@storybook/sveltekit",
-  "version": "8.2.0-alpha.10",
+  "version": "8.3.0-alpha.6",
   "description": "Storybook for SvelteKit",
   "keywords": [
     "storybook",
@@ -49,22 +49,22 @@
     "src/mocks/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
     "@storybook/addon-actions": "workspace:*",
     "@storybook/builder-vite": "workspace:*",
     "@storybook/svelte": "workspace:*",
-    "@storybook/svelte-vite": "workspace:*",
-    "@storybook/types": "workspace:*"
+    "@storybook/svelte-vite": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^18.0.0",
+    "@types/node": "^22.0.0",
     "typescript": "^5.3.2",
     "vite": "^4.0.0"
   },
   "peerDependencies": {
+    "storybook": "workspace:^",
     "svelte": "^4.0.0 || ^5.0.0-next.65",
     "vite": "^4.0.0 || ^5.0.0"
   },

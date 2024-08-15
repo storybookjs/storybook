@@ -1,7 +1,8 @@
-import { loadPreviewOrConfigFile, getFrameworkName } from '@storybook/core-common';
-import type { Options, PreviewAnnotation } from '@storybook/types';
-import { virtualStoriesFile, virtualAddonSetupFile } from './virtual-file-names';
+import { getFrameworkName, loadPreviewOrConfigFile } from 'storybook/internal/common';
+import type { Options, PreviewAnnotation } from 'storybook/internal/types';
+
 import { processPreviewAnnotation } from './utils/process-preview-annotation';
+import { virtualAddonSetupFile, virtualStoriesFile } from './virtual-file-names';
 
 export async function generateModernIframeScriptCode(options: Options, projectRoot: string) {
   const { presets, configDir } = options;
@@ -58,13 +59,15 @@ export async function generateModernIframeScriptCode(options: Options, projectRo
   };
 
   /**
-   * This code is largely taken from https://github.com/storybookjs/storybook/blob/d1195cbd0c61687f1720fefdb772e2f490a46584/builders/builder-webpack4/src/preview/virtualModuleModernEntry.js.handlebars
-   * Some small tweaks were made to `getProjectAnnotations` (since `import()` needs to be resolved asynchronously)
-   * and the HMR implementation has been tweaked to work with Vite.
+   * This code is largely taken from
+   * https://github.com/storybookjs/storybook/blob/d1195cbd0c61687f1720fefdb772e2f490a46584/builders/builder-webpack4/src/preview/virtualModuleModernEntry.js.handlebars
+   * Some small tweaks were made to `getProjectAnnotations` (since `import()` needs to be resolved
+   * asynchronously) and the HMR implementation has been tweaked to work with Vite.
+   *
    * @todo Inline variable and remove `noinspection`
    */
   const code = `
-  import { composeConfigs, PreviewWeb, ClientApi } from '@storybook/preview-api';
+  import { composeConfigs, PreviewWeb, ClientApi } from 'storybook/internal/preview-api';
   import '${virtualAddonSetupFile}';
   import { importFn } from '${virtualStoriesFile}';
   

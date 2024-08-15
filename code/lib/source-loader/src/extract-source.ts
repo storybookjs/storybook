@@ -2,9 +2,7 @@ import type { SourceBlock } from './types';
 
 export * from './types';
 
-/**
- * given a location, extract the text from the full source
- */
+/** Given a location, extract the text from the full source */
 export function extractSource(location: SourceBlock, lines: string[]): string | null {
   const { startBody: start, endBody: end } = location;
   if (start.line === end.line && lines[start.line - 1] !== undefined) {

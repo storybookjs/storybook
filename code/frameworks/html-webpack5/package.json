@@ -1,6 +1,6 @@
 {
   "name": "@storybook/html-webpack5",
-  "version": "8.2.0-alpha.10",
+  "version": "8.3.0-alpha.6",
   "description": "Storybook for HTML: View HTML snippets in isolation with Hot Reloading.",
   "keywords": [
     "storybook"
@@ -43,20 +43,21 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
     "@storybook/builder-webpack5": "workspace:*",
-    "@storybook/core-common": "workspace:*",
     "@storybook/global": "^5.0.0",
     "@storybook/html": "workspace:*",
     "@storybook/preset-html-webpack": "workspace:*",
-    "@storybook/types": "workspace:*",
-    "@types/node": "^18.0.0"
+    "@types/node": "^22.0.0"
   },
   "devDependencies": {
     "typescript": "^5.3.2"
+  },
+  "peerDependencies": {
+    "storybook": "workspace:^"
   },
   "engines": {
     "node": ">=18.0.0"

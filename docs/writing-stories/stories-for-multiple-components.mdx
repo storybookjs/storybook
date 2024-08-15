@@ -1,0 +1,85 @@
+---
+title: 'Stories for multiple components'
+sidebar:
+  order: 10
+  title: Stories for multiple components
+---
+
+It's useful to write stories that [render two or more components](./index.mdx#stories-for-two-or-more-components) at once if those components are designed to work together. For example, `ButtonGroup`, `List`, and `Page` components.
+
+## Subcomponents
+
+When the components you're documenting have a parent-child relationship, you can use the `subcomponents` property to document them together. This is especially useful when the child component is not meant to be used on its own, but only as part of the parent component.
+
+Here's an example with `List` and `ListItem` components:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="list-story-with-subcomponents.md" usesCsf3 csf2Path="writing-stories/stories-for-multiple-components#snippet-list-story-with-subcomponents" />
+
+{/* prettier-ignore-end */}
+
+Note that by adding a `subcomponents` property to the default export, we get an extra panel on the [ArgTypes](../writing-docs/doc-blocks.mdx#argtypes) and [Controls](../essentials/controls.mdx#) tables, listing the props of `ListItem`:
+
+![Subcomponents in ArgTypes doc block](../_assets/writing-stories/doc-block-arg-types-subcomponents-for-list.png)
+
+Subcomponents are only intended for documentation purposes and have some limitations:
+
+1. The [argTypes](../api/arg-types.mdx) of subcomponents are [inferred (for the renderers that support that feature)](../api/arg-types.mdx#automatic-argtype-inference) and cannot be manually defined or overridden.
+2. The table for each documented subcomponent does *not* include [controls](../essentials/controls.mdx) to change the value of the props, because controls always apply to the main component's args.
+
+Let's talk about some techniques you can use to mitigate the above, which are especially useful in more complicated situations.
+
+## Reusing story definitions
+
+We can also reduce repetition in our stories by reusing story definitions. Here, we can reuse the `ListItem` stories' args in the story for `List`:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="list-story-reuse-data.md" usesCsf3 csf2Path="writing-stories/#snippet-list-story-reuse-data" />
+
+{/* prettier-ignore-end */}
+
+By rendering the `Unchecked` story with its args, we are able to reuse the input data from the `ListItem` stories in the `List`.
+
+<If renderer="react">
+  However, we still aren’t using args to control the `ListItem` stories, which means we cannot change them with controls and we cannot reuse them in other, more complex component stories.
+
+  ## Using children as an arg
+
+  One way we improve that situation is by pulling the rendered subcomponent out into a `children` arg:
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="list-story-with-unchecked-children.md" usesCsf3 csf2Path="writing-stories/stories-for-multiple-components#snippet-list-story-with-unchecked-children" />
+
+  {/* prettier-ignore-end */}
+
+  Now that `children` is an arg, we can potentially reuse it in another story.
+
+  However, there are some caveats when using this approach that you should be aware of.
+
+  The `children` arg, just like all args, needs to be JSON serializable. To avoid errors with your Storybook, you should:
+
+  * Avoid using empty values
+  * Use [mapping](../essentials/controls.mdx#dealing-with-complex-values) if you want to adjust the value with [controls](../essentials/controls.mdx)
+  * Use caution with components that include third party libraries
+
+  <Callout variant="info">
+    We're currently working on improving the overall experience for the children arg and allow you to edit children arg in a control and allow you to use other types of components in the near future. But for now you need to factor in this caveat when you're implementing your stories.
+  </Callout>
+
+  {/* End if react */}
+</If>
+
+## Creating a Template Component
+
+Another option that is more “data”-based is to create a special “story-generating” template component:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="list-story-template.md" usesCsf3 csf2Path="writing-stories/stories-for-multiple-components#snippet-list-story-template" />
+
+{/* prettier-ignore-end */}
+
+This approach is a little more complex to setup, but it means you can more easily reuse the `args` to each story in a composite component. It also means that you can alter the args to the component with the Controls addon.

@@ -1,0 +1,53 @@
+{
+  "name": "@storybook/router",
+  "version": "8.3.0-alpha.6",
+  "description": "Core Storybook Router",
+  "keywords": [
+    "storybook"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/router",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/lib/router"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./shim.d.ts",
+      "import": "./shim.mjs",
+      "require": "./shim.js",
+      "node": "./shim.js"
+    },
+    "./utils": {
+      "types": "./utils.d.ts",
+      "import": "./shim.mjs",
+      "require": "./utils.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./shim.js",
+  "module": "./shim.mjs",
+  "types": "./shim.d.ts",
+  "files": [
+    "README.md",
+    "*.js",
+    "*.mjs",
+    "*.cjs",
+    "*.d.ts"
+  ],
+  "peerDependencies": {
+    "storybook": "workspace:^"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

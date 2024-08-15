@@ -1,12 +1,14 @@
-import { join } from 'path';
 import { BigQuery } from '@google-cloud/bigquery';
-
 import { execaCommand } from 'execa';
+import { join } from 'path';
+
 import type { BenchResults } from './bench/types';
 import { loadBench } from './bench/utils';
 import { SANDBOX_DIRECTORY } from './utils/constants';
 
 const templateKey = process.argv[2];
+const prNumber = process.argv[3];
+const baseBranch = process.argv[4];
 
 const GCP_CREDENTIALS = JSON.parse(process.env.GCP_CREDENTIALS || '{}');
 const sandboxDir = process.env.SANDBOX_ROOT || SANDBOX_DIRECTORY;
@@ -63,12 +65,8 @@ const uploadBench = async () => {
 
   const row = {
     ...defaults,
-    branch:
-      process.env.CIRCLE_BRANCH ||
-      (await execaCommand('git rev-parse --abbrev-ref HEAD', { cleanup: true })).stdout,
-    commit:
-      process.env.CIRCLE_SHA1 ||
-      (await execaCommand('git rev-parse HEAD', { cleanup: true })).stdout,
+    branch: await getBranchName(),
+    commit: await getCommitHash(),
     timestamp: new Date().toISOString(),
     label: templateKey,
     ...results,
@@ -81,7 +79,40 @@ const uploadBench = async () => {
   const dataset = store.dataset('benchmark_results');
   const appTable = dataset.table('bench2');
 
-  await appTable.insert([row]);
+  async function uploadToGithub() {
+    if (
+      !prNumber ||
+      !baseBranch ||
+      prNumber === '0' ||
+      templateKey !== 'bench/react-vite-default-ts'
+    ) {
+      console.log('skip uploading results to github');
+      return;
+    }
+    const [base]: any[] = await appTable.query({
+      query: `SELECT * FROM \`storybook-benchmark.benchmark_results.bench2\` WHERE branch=@baseBranch AND label=@templateKey ORDER BY timestamp DESC LIMIT 20;`,
+      params: { baseBranch, templateKey },
+    });
+
+    return prNumber && prNumber !== '0'
+      ? fetch('https://storybook-benchmark-bot.vercel.app/description', {
+          method: 'POST',
+          body: JSON.stringify({
+            owner: 'storybookjs',
+            repo: 'storybook',
+            issueNumber: prNumber,
+            base: base.map((b: any) => ({ ...defaults, ...b })),
+            head: row,
+          }),
+        })
+      : Promise.resolve();
+  }
+
+  function uploadToBigQuery() {
+    return appTable.insert([row]);
+  }
+
+  await Promise.all([uploadToGithub(), uploadToBigQuery()]);
 };
 
 uploadBench()
@@ -97,3 +128,16 @@ uploadBench()
   .then(() => {
     console.log('done');
   });
+
+async function getCommitHash(): Promise<string> {
+  return (
+    process.env.CIRCLE_SHA1 || (await execaCommand('git rev-parse HEAD', { cleanup: true })).stdout
+  );
+}
+
+async function getBranchName(): Promise<string> {
+  return (
+    process.env.CIRCLE_BRANCH ||
+    (await execaCommand('git rev-parse --abbrev-ref HEAD', { cleanup: true })).stdout
+  );
+}

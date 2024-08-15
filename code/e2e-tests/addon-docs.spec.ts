@@ -1,6 +1,7 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import process from 'process';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
+
 import { SbPage } from './util';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';

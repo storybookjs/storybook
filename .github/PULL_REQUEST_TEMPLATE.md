@@ -72,3 +72,6 @@ This PR does not have a canary release associated. You can request a canary rele
 _core team members can create a canary release [here](https://github.com/storybookjs/storybook/actions/workflows/canary-release-pr.yml) or locally with `gh workflow run --repo storybookjs/storybook canary-release-pr.yml --field pr=<PR_NUMBER>`_
 
 <!-- CANARY_RELEASE_SECTION -->
+
+<!-- BENCHMARK_SECTION -->
+<!-- BENCHMARK_SECTION -->

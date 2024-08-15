@@ -1,5 +1,5 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { logger } from '@storybook/node-logger';
+import { logger } from 'storybook/internal/node-logger';
+
 import type { PluginOptions } from '../types';
 
 const incompatiblePresets = ['@storybook/preset-scss', '@storybook/preset-typescript'];

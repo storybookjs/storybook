@@ -106,6 +106,7 @@ And I can also embed arbitrary markdown & JSX in this file.
 import React from 'react';
 import { Button } from './Button';
 import mdx from './Button.mdx';
+
 export default {
   title: 'Demo/Button',
   parameters: {
@@ -184,7 +185,7 @@ The Storybook UI is a workshop for developing components in isolation. Storybook
 To address this, we’ve added a CLI flag to only export the docs. This flag is also available in dev mode:
 
 ```sh
-yarn build-storybook --docs
+yarn storybook build --docs
 ```
 
 ## Disabling docs stories

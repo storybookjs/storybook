@@ -1,16 +1,18 @@
-import { dirname, join, isAbsolute } from 'path';
-import rehypeSlug from 'rehype-slug';
-import rehypeExternalLinks from 'rehype-external-links';
+import { dirname, isAbsolute, join } from 'node:path';
 
-import type { DocsOptions, Options, PresetProperty } from '@storybook/types';
+import { logger } from 'storybook/internal/node-logger';
+import type { DocsOptions, Options, PresetProperty } from 'storybook/internal/types';
+
 import type { CsfPluginOptions } from '@storybook/csf-plugin';
-import { logger } from '@storybook/node-logger';
+
+import rehypeExternalLinks from 'rehype-external-links';
+import rehypeSlug from 'rehype-slug';
+
 import type { CompileOptions } from './compiler';
 
 /**
- * Get the resolvedReact preset, which points either to
- * the user's react dependencies or the react dependencies shipped with addon-docs
- * if the user has not installed react explicitly.
+ * Get the resolvedReact preset, which points either to the user's react dependencies or the react
+ * dependencies shipped with addon-docs if the user has not installed react explicitly.
  */
 const getResolvedReact = async (options: Options) => {
   const resolvedReact = (await options.presets.apply('resolvedReact', {})) as any;
@@ -62,6 +64,21 @@ async function webpack(
   const { react, reactDom, mdx } = await getResolvedReact(options);
 
   let alias;
+
+  /**
+   * Add aliases for `@storybook/addon-docs` & `@storybook/blocks` These must be singletons to avoid
+   * multiple instances of react & emotion being loaded, both would cause the components to fail to
+   * render.
+   *
+   * In the future the `@storybook/theming` and `@storybook/components` can be removed, as they
+   * should be singletons in the future due to the peerDependency on `storybook` package.
+   */
+  const cliPath = dirname(require.resolve('storybook/package.json'));
+  const themingPath = join(cliPath, 'core', 'theming', 'index.js');
+  const themingCreatePath = join(cliPath, 'core', 'theming', 'create.js');
+
+  const componentsPath = join(cliPath, 'core', 'components', 'index.js');
+  const blocksPath = dirname(require.resolve('@storybook/blocks/package.json'));
   if (Array.isArray(webpackConfig.resolve?.alias)) {
     alias = [...webpackConfig.resolve?.alias];
     alias.push(
@@ -76,12 +93,33 @@ async function webpack(
       {
         name: '@mdx-js/react',
         alias: mdx,
+      },
+      {
+        name: '@storybook/theming/create',
+        alias: themingCreatePath,
+      },
+      {
+        name: '@storybook/theming',
+        alias: themingPath,
+      },
+      {
+        name: '@storybook/components',
+        alias: componentsPath,
+      },
+      {
+        name: '@storybook/blocks',
+        alias: blocksPath,
       }
     );
   } else {
     alias = {
       ...webpackConfig.resolve?.alias,
       react,
+      '@storybook/theming/create': themingCreatePath,
+      '@storybook/theming': themingPath,
+      '@storybook/components': componentsPath,
+      '@storybook/blocks': blocksPath,
+
       'react-dom': reactDom,
       '@mdx-js/react': mdx,
     };
@@ -140,6 +178,12 @@ export const viteFinal = async (config: any, options: Options) => {
   // Use the resolvedReact preset to alias react and react-dom to either the users version or the version shipped with addon-docs
   const { react, reactDom, mdx } = await getResolvedReact(options);
 
+  const cliPath = dirname(require.resolve('storybook/package.json'));
+  const themingPath = join(cliPath, 'core', 'theming', 'index.js');
+  const themingCreatePath = join(cliPath, 'core', 'theming', 'create.js');
+  const componentsPath = join(cliPath, 'core', 'components', 'index.js');
+  const blocksPath = dirname(require.resolve('@storybook/blocks/package.json'));
+
   const packageDeduplicationPlugin = {
     name: 'storybook:package-deduplication',
     enforce: 'pre',
@@ -152,12 +196,18 @@ export const viteFinal = async (config: any, options: Options) => {
           'react-dom': reactDom,
           '@mdx-js/react': mdx,
           /**
-           * The following aliases are used to ensure a single instance of these packages are used in situations where they are duplicated
-           * The packages will be duplicated by the package manager when the user has react installed with another version than 18.2.0
+           * Add aliases for `@storybook/addon-docs` & `@storybook/blocks` These must be singletons
+           * to avoid multiple instances of react & emotion being loaded, both would cause the
+           * components to fail to render.
+           *
+           * In the future the `@storybook/theming` and `@storybook/components` can be removed, as
+           * they should be singletons in the future due to the peerDependency on `storybook`
+           * package.
            */
-          '@storybook/theming': dirname(require.resolve('@storybook/theming')),
-          '@storybook/components': dirname(require.resolve('@storybook/components')),
-          '@storybook/blocks': dirname(require.resolve('@storybook/blocks')),
+          '@storybook/theming/create': themingCreatePath,
+          '@storybook/theming': themingPath,
+          '@storybook/components': componentsPath,
+          '@storybook/blocks': blocksPath,
         },
       },
     }),
@@ -180,11 +230,10 @@ const webpackX = webpack as any;
 const docsX = docs as any;
 
 /**
- * If the user has not installed react explicitly in their project,
- * the resolvedReact preset will not be set.
- * We then set it here in addon-docs to use addon-docs's react version that always exists.
- * This is just a fallback that never overrides the existing preset,
- * but ensures that there is always a resolved react.
+ * If the user has not installed react explicitly in their project, the resolvedReact preset will
+ * not be set. We then set it here in addon-docs to use addon-docs's react version that always
+ * exists. This is just a fallback that never overrides the existing preset, but ensures that there
+ * is always a resolved react.
  */
 export const resolvedReact = async (existing: any) => ({
   react: existing?.react ?? dirname(require.resolve('react/package.json')),

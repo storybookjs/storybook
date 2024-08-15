@@ -21,7 +21,7 @@ import './commands'
 
 import { mount } from 'cypress/svelte'
 
-import type { ProjectAnnotations } from '@storybook/types';
+import type { ProjectAnnotations } from 'storybook/internal/types';
 import type { SvelteRenderer } from '@storybook/svelte';
 import { setProjectAnnotations } from '@storybook/svelte';
 import sbAnnotations from '../../.storybook/preview';

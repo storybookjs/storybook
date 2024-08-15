@@ -1,9 +1,4 @@
-import type { Addon_DecoratorFunction, Addon_LoaderFunction } from '@storybook/types';
-import './config/preview';
-import { ImageDecorator } from './images/decorator';
-import { RouterDecorator } from './routing/decorator';
-import { StyledJsxDecorator } from './styledJsx/decorator';
-import { HeadManagerDecorator } from './head-manager/decorator';
+import type { Addon_DecoratorFunction, Addon_LoaderFunction } from 'storybook/internal/types';
 
 // We need this import to be a singleton, and because it's used in multiple entrypoints
 // both in ESM and CJS, importing it via the package name instead of having a local import
@@ -13,11 +8,18 @@ import { HeadManagerDecorator } from './head-manager/decorator';
 import { cookies, headers } from '@storybook/nextjs/headers.mock';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore we must ignore types here as during compilation they are not generated yet
-import { createRouter } from '@storybook/nextjs/router.mock';
+import { createNavigation } from '@storybook/nextjs/navigation.mock';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore we must ignore types here as during compilation they are not generated yet
-import { createNavigation } from '@storybook/nextjs/navigation.mock';
+import { createRouter } from '@storybook/nextjs/router.mock';
+
 import { isNextRouterError } from 'next/dist/client/components/is-next-router-error';
+
+import './config/preview';
+import { HeadManagerDecorator } from './head-manager/decorator';
+import { ImageDecorator } from './images/decorator';
+import { RouterDecorator } from './routing/decorator';
+import { StyledJsxDecorator } from './styledJsx/decorator';
 
 function addNextHeadCount() {
   const meta = document.createElement('meta');
@@ -81,7 +83,9 @@ export const parameters = {
   react: {
     rootOptions: {
       onCaughtError(error: unknown) {
-        if (isNextRouterError(error)) return;
+        if (isNextRouterError(error)) {
+          return;
+        }
         console.error(error);
       },
     },

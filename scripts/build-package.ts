@@ -1,19 +1,27 @@
-import { resolve, posix, sep } from 'path';
-import { readJSON } from 'fs-extra';
-import prompts from 'prompts';
-import program from 'commander';
 import chalk from 'chalk';
-import windowSize from 'window-size';
+import program from 'commander';
 import { execaCommand } from 'execa';
+import { readJSON } from 'fs-extra';
+import { posix, resolve, sep } from 'path';
+import prompts from 'prompts';
+import windowSize from 'window-size';
+
 import { getWorkspaces } from './utils/workspace';
 
 async function run() {
   const packages = await getWorkspaces();
   const packageTasks = packages
     .map((pkg) => {
+      let suffix = pkg.name.replace('@storybook/', '');
+      if (pkg.name === '@storybook/cli') {
+        suffix = 'sb-cli';
+      }
+      if (pkg.name === 'storybook') {
+        suffix = 'cli';
+      }
       return {
         ...pkg,
-        suffix: pkg.name.replace('@storybook/', ''),
+        suffix,
         defaultValue: false,
         helpText: `build only the ${pkg.name} package`,
       };
@@ -121,9 +129,14 @@ async function run() {
   }
 
   selection?.filter(Boolean).forEach(async (v) => {
-    const command = (await readJSON(resolve('../code', v.location, 'package.json'))).scripts.prep
+    const command = (await readJSON(resolve('../code', v.location, 'package.json'))).scripts?.prep
       .split(posix.sep)
       .join(sep);
+
+    if (!command) {
+      console.log(`No prep script found for ${v.name}`);
+      return;
+    }
 
     const cwd = resolve(__dirname, '..', 'code', v.location);
     const sub = execaCommand(

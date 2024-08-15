@@ -1,6 +1,11 @@
 <h1>Migration</h1>
 
+- [From version 8.2.x to 8.3.x](#from-version-82x-to-83x)
+  - [Removed `experimental_SIDEBAR_BOTTOM` and deprecated `experimental_SIDEBAR_TOP` addon types](#removed-experimental_sidebar_bottom-and-deprecated-experimental_sidebar_top-addon-types)
+  - [New parameters format for addon backgrounds](#new-parameters-format-for-addon-backgrounds)
+  - [New parameters format for addon viewport](#new-parameters-format-for-addon-viewport)
 - [From version 8.1.x to 8.2.x](#from-version-81x-to-82x)
+  - [Failed to resolve import "@storybook/X" error](#failed-to-resolve-import-storybookx-error)
   - [Preview.js globals renamed to initialGlobals](#previewjs-globals-renamed-to-initialglobals)
 - [From version 8.0.x to 8.1.x](#from-version-80x-to-81x)
   - [Portable stories](#portable-stories)
@@ -413,7 +418,117 @@
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
+## From version 8.2.x to 8.3.x
+
+### Removed `experimental_SIDEBAR_BOTTOM` and deprecated `experimental_SIDEBAR_TOP` addon types
+
+The experimental SIDEBAR_BOTTOM addon type was removed in favor of a built-in filter UI. The enum type definition will remain available until Storybook 9.0 but will be ignored. Similarly the experimental SIDEBAR_TOP addon type is deprecated and will be removed in a future version.
+
+These APIs allowed addons to render arbitrary content in the Storybook sidebar. Due to potential conflicts between addons and challenges regarding styling, these APIs are/will be removed. In the future, Storybook will provide declarative API hooks to allow addons to add content to the sidebar without risk of conflicts or UI inconsistencies. One such API is `experimental_updateStatus` which allow addons to set a status for stories. The SIDEBAR_BOTTOM slot is now used to allow filtering stories with a given status.
+
+### New parameters format for addon backgrounds
+
+The `addon-backgrounds` addon now uses a new format for parameters. The `backgrounds` parameter is now an object with a `values` key that contains the background values.
+
+> ! You need to set the feature flag `backgroundsStoryGlobals` to `true` in your `.storybook/main.ts` to use the new format.
+
+```diff
+// .storybook/preview.js
+export const parameters = {
+  backgrounds: {
+-    values: [
+-      { name: 'twitter', value: '#00aced' },
+-      { name: 'facebook', value: '#3b5998' },
+-    ],
++    options: {
++      twitter: { name: 'twitter', value: '#00aced' },
++      facebook: { name: 'facebook', value: '#3b5998' },
++    },
+  },
+};
+```
+
+Setting an override value should now be done via a `globals` property on your component/meta or story itself:
+
+```ts
+// Button.stories.ts
+export default {
+  component: Button,
+  globals: {
+    backgrounds: { value: "twitter" },
+  },
+};
+```
+
+This locks that story to the `twitter` background, it cannot be changed by the addon UI.
+
+### New parameters format for addon viewport
+
+> ! You need to set the feature flag `viewportStoryGlobals` to `true` in your `.storybook/main.ts` to use the new format.
+
+The `addon-viewport` addon now uses a new format for parameters. The `viewport` parameter is now an object with a `viewports` key that contains the viewport values.
+
+```diff
+// .storybook/preview.js
+export const parameters = {
+  viewport: {
+-    viewports: {
+-      iphone5: {
+-        name: 'phone',
+-        styles: {
+-          width: '320px',
+-          height: '568px',
+-        },
+-      },
+-     },
++    options: {
++      iphone5: {
++        name: 'phone',
++        styles: {
++          width: '320px',
++          height: '568px',
++        },
++      },
++    },
+  },
+};
+```
+
+Setting an override value should now be done via a `globals` property on your component/meta or story itself:
+
+```ts
+// Button.stories.ts
+export default {
+  component: Button,
+  globals: {
+    viewport: { value: "phone" },
+  },
+};
+```
+
+This locks that story to the `phone` viewport, it cannot be changed by the addon UI.
+
 ## From version 8.1.x to 8.2.x
+
+### Failed to resolve import "@storybook/X" error
+
+Storybook's package structure changed in 8.2. It is a non-breaking change, but can expose missing project dependencies.
+
+This happens when `@storybook/X` is missing in your `package.json`, but your project references `@storybook/X` in your source code (typically in a story file or in a `.storybook` config file). This is a problem with your project, and if it worked in earlier versions of Storybook, it was purely accidental.
+
+Now in Storybook 8.2, that incorrect project configuration no longer works. The solution is to install `@storybook/X` as a dev dependency and re-run.
+
+Example errors:
+
+```sh
+Cannot find module @storybook/preview-api or its corresponding type declarations
+```
+
+```sh
+Internal server error: Failed to resolve import "@storybook/theming/create" from ".storybook/theme.ts". Does the file exist?
+```
+
+To protect your project from missing dependencies, try the `no-extraneous-dependencies` rule in [eslint-plugin-import](https://www.npmjs.com/package/eslint-plugin-import).
 
 ### Preview.js globals renamed to initialGlobals
 
@@ -423,7 +538,7 @@ Starting in 8.2 `preview.js` `globals` are deprecated and have been renamed to `
 // .storybook/preview.js
 export default {
 -  globals: [ a: 1, b: 2 ],
-+  initiaGlobals: [ a: 1, b: 2 ],
++  initialGlobals: [ a: 1, b: 2 ],
 }
 ```
 
@@ -1611,7 +1726,7 @@ export const Primary = {
 
 ## From version 6.5.x to 7.0.0
 
-A number of these changes can be made automatically by the Storybook CLI. To take advantage of these "automigrations", run `npx storybook@latest upgrade --prerelease` or `pnpx dlx storybook@latest upgrade --prerelease`.
+A number of these changes can be made automatically by the Storybook CLI. To take advantage of these "automigrations", run `npx storybook@7 upgrade` or `pnpx dlx storybook@7 upgrade`.
 
 ### 7.0 breaking changes
 
@@ -2303,8 +2418,8 @@ export default config;
 
 #### Vite builder uses Vite config automatically
 
-When using a [Vite-based framework](#framework-field-mandatory), Storybook will automatically use your `vite.config.(ctm)js` config file starting in 7.0.  
-Some settings will be overridden by Storybook so that it can function properly, and the merged settings can be modified using `viteFinal` in `.storybook/main.js` (see the [Storybook Vite configuration docs](https://storybook.js.org/docs/react/builders/vite#configuration)).  
+When using a [Vite-based framework](#framework-field-mandatory), Storybook will automatically use your `vite.config.(ctm)js` config file starting in 7.0.
+Some settings will be overridden by Storybook so that it can function properly, and the merged settings can be modified using `viteFinal` in `.storybook/main.js` (see the [Storybook Vite configuration docs](https://storybook.js.org/docs/react/builders/vite#configuration)).
 If you were using `viteFinal` in 6.5 to simply merge in your project's standard Vite config, you can now remove it.
 
 For Svelte projects this means that the `svelteOptions` property in the `main.js` config should be omitted, as it will be loaded automatically via the project's `vite.config.js`.
@@ -2398,7 +2513,7 @@ const meta: Meta = {
         // Extract all providers (and nested ones) from a ModuleWithProviders
         importProvidersFrom(SomeOtherModule.forRoot()),
       ],
-    }
+    }),
   ],
 };
 
@@ -5616,7 +5731,7 @@ Also, here's the error you'll get if you're running an older version of React:
 ```
 
 core.browser.esm.js:15 Uncaught TypeError: Object(...) is not a function
-at Module../node_modules/@emotion/core/dist/core.browser.esm.js (core.browser.esm.js:15)
+at Module../node_modules/@emotion/core/core.browser.esm.js (core.browser.esm.js:15)
 at **webpack_require** (bootstrap:724)
 at fn (bootstrap:101)
 at Module../node_modules/@emotion/styled-base/dist/styled-base.browser.esm.js (styled-base.browser.esm.js:1)

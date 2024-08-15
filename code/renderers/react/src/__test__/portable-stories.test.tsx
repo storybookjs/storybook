@@ -1,29 +1,39 @@
 // @vitest-environment happy-dom
 
 /* eslint-disable import/namespace */
+import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import React from 'react';
-import { vi, it, expect, afterEach, describe } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
-import { addons } from '@storybook/preview-api';
+
+import { addons } from 'storybook/internal/preview-api';
+
+import type { Meta } from '@storybook/react';
 
 import * as addonActionsPreview from '@storybook/addon-actions/preview';
-import type { Meta } from '@storybook/react';
+
 import { expectTypeOf } from 'expect-type';
 
-import { setProjectAnnotations, composeStories, composeStory } from '..';
+import { composeStories, composeStory, setProjectAnnotations } from '..';
 import type { Button } from './Button';
 import * as stories from './Button.stories';
 
+setProjectAnnotations([]);
+
 // example with composeStories, returns an object with all stories composed with args/decorators
-const { CSF3Primary, LoaderStory } = composeStories(stories);
+const { CSF3Primary, LoaderStory, MountInPlayFunction } = composeStories(stories);
+
+afterEach(() => {
+  cleanup();
+});
+
+declare const globalThis: {
+  IS_REACT_ACT_ENVIRONMENT?: boolean;
+};
 
 // example with composeStory, returns a single story composed with args/decorators
 const Secondary = composeStory(stories.CSF2Secondary, stories.default);
 describe('renders', () => {
-  afterEach(() => {
-    cleanup();
-  });
-
   it('renders primary button', () => {
     render(<CSF3Primary>Hello world</CSF3Primary>);
     const buttonElement = screen.getByText(/Hello world/i);
@@ -50,13 +60,20 @@ describe('renders', () => {
     expect(buttonElement).not.toBeNull();
   });
 
+  it('should render component mounted in play function', async () => {
+    await MountInPlayFunction.run();
+
+    expect(screen.getByTestId('spy-data').textContent).toEqual('mockFn return value');
+    expect(screen.getByTestId('loaded-data').textContent).toEqual('loaded data');
+  });
+
   it('should call and compose loaders data', async () => {
     await LoaderStory.load();
     const { getByTestId } = render(<LoaderStory />);
     expect(getByTestId('spy-data').textContent).toEqual('mockFn return value');
     expect(getByTestId('loaded-data').textContent).toEqual('loaded data');
     // spy assertions happen in the play function and should work
-    await LoaderStory.play!();
+    await LoaderStory.run!();
   });
 });
 
@@ -90,20 +107,6 @@ describe('projectAnnotations', () => {
     expect(buttonElement).not.toBeNull();
   });
 
-  it('explicit action are spies when the test loader is loaded', async () => {
-    const Story = composeStory(stories.WithActionArg, stories.default);
-    await Story.load();
-    expect(vi.mocked(Story.args.someActionArg!).mock).toBeDefined();
-
-    const { container } = render(<Story />);
-    expect(Story.args.someActionArg).toHaveBeenCalledOnce();
-    expect(Story.args.someActionArg).toHaveBeenCalledWith('in render');
-
-    await Story.play!({ canvasElement: container });
-    expect(Story.args.someActionArg).toHaveBeenCalledTimes(2);
-    expect(Story.args.someActionArg).toHaveBeenCalledWith('on click');
-  });
-
   it('has action arg from argTypes when addon-actions annotations are added', () => {
     //@ts-expect-error our tsconfig.jsn#moduleResulution is set to 'node', which doesn't support this import
     const Story = composeStory(stories.WithActionArgType, stories.default, addonActionsPreview);
@@ -112,10 +115,6 @@ describe('projectAnnotations', () => {
 });
 
 describe('CSF3', () => {
-  afterEach(() => {
-    cleanup();
-  });
-
   it('renders with inferred globalRender', () => {
     const Primary = composeStory(stories.CSF3Button, stories.default);
 
@@ -133,10 +132,7 @@ describe('CSF3', () => {
 
   it('renders with play function without canvas element', async () => {
     const CSF3InputFieldFilled = composeStory(stories.CSF3InputFieldFilled, stories.default);
-
-    render(<CSF3InputFieldFilled />);
-
-    await CSF3InputFieldFilled.play!();
+    await CSF3InputFieldFilled.run();
 
     const input = screen.getByTestId('input') as HTMLInputElement;
     expect(input.value).toEqual('Hello world!');
@@ -145,12 +141,27 @@ describe('CSF3', () => {
   it('renders with play function with canvas element', async () => {
     const CSF3InputFieldFilled = composeStory(stories.CSF3InputFieldFilled, stories.default);
 
-    const { container } = render(<CSF3InputFieldFilled />);
+    const div = document.createElement('div');
+    document.body.appendChild(div);
 
-    await CSF3InputFieldFilled.play!({ canvasElement: container });
+    await CSF3InputFieldFilled.run({ canvasElement: div });
 
     const input = screen.getByTestId('input') as HTMLInputElement;
     expect(input.value).toEqual('Hello world!');
+
+    document.body.removeChild(div);
+  });
+
+  it('renders with hooks', async () => {
+    // TODO find out why act is not working here
+    globalThis.IS_REACT_ACT_ENVIRONMENT = false;
+    const HooksStory = composeStory(stories.HooksStory, stories.default);
+
+    await HooksStory.run();
+
+    const input = screen.getByTestId('input') as HTMLInputElement;
+    expect(input.value).toEqual('Hello world!');
+    globalThis.IS_REACT_ACT_ENVIRONMENT = true;
   });
 });
 
@@ -191,16 +202,11 @@ const testCases = Object.values(composeStories(stories)).map(
   (Story) => [Story.storyName, Story] as [string, typeof Story]
 );
 it.each(testCases)('Renders %s story', async (_storyName, Story) => {
-  cleanup();
-
   if (_storyName === 'CSF2StoryWithLocale') {
     return;
   }
-
-  await Story.load();
-
-  const { baseElement } = await render(<Story />);
-
-  await Story.play?.();
-  expect(baseElement).toMatchSnapshot();
+  globalThis.IS_REACT_ACT_ENVIRONMENT = false;
+  await Story.run();
+  globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+  expect(document.body).toMatchSnapshot();
 });

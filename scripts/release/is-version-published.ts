@@ -1,7 +1,7 @@
+import { setOutput } from '@actions/core';
 import chalk from 'chalk';
 import program from 'commander';
-import { setOutput } from '@actions/core';
-import fetch from 'node-fetch';
+
 import { esMain } from '../utils/esmain';
 import { getCurrentVersion } from './get-current-version';
 
@@ -67,7 +67,7 @@ export const run = async (args: unknown[], options: unknown) => {
 
   const isAlreadyPublished = await isVersionPublished({
     version,
-    packageName: '@storybook/manager-api',
+    packageName: '@storybook/core',
     verbose,
   });
 

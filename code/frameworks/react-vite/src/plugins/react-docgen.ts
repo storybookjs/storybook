@@ -1,24 +1,27 @@
-import path from 'path';
+import { relative } from 'node:path';
+
+import { logger } from 'storybook/internal/node-logger';
+
 import { createFilter } from '@rollup/pluginutils';
+import findUp from 'find-up';
+import MagicString from 'magic-string';
 import type { Documentation } from 'react-docgen';
 import {
   ERROR_CODES,
-  parse,
   builtinHandlers as docgenHandlers,
   builtinResolvers as docgenResolver,
   makeFsImporter,
+  parse,
 } from 'react-docgen';
-import MagicString from 'magic-string';
-import type { PluginOption } from 'vite';
 import * as TsconfigPaths from 'tsconfig-paths';
-import findUp from 'find-up';
+import type { PluginOption } from 'vite';
+
 import actualNameHandler from './docgen-handlers/actualNameHandler';
 import {
   RESOLVE_EXTENSIONS,
   ReactDocgenResolveError,
   defaultLookupModule,
 } from './docgen-resolver';
-import { logger } from '@storybook/node-logger';
 
 type DocObj = Documentation & { actualName: string; definedInFile: string };
 
@@ -57,7 +60,7 @@ export async function reactDocgen({
     name: 'storybook:react-docgen-plugin',
     enforce: 'pre',
     async transform(src: string, id: string) {
-      if (!filter(path.relative(cwd, id))) {
+      if (!filter(relative(cwd, id))) {
         return;
       }
 

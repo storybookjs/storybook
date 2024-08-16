@@ -4,6 +4,7 @@ import { STORY_RENDERED } from 'storybook/internal/core-events';
 import { useChannel } from 'storybook/internal/manager-api';
 
 import {
+  COVERAGE_IN_PROGRESS,
   RESULT_COVERAGE_EVENT,
   RESULT_FILE_CONTENT,
   type ResultCoverageEventPayload,
@@ -21,6 +22,8 @@ export function useCoverage() {
     },
     [RESULT_FILE_CONTENT]: ({ content }: ResultFileContentPayload) => {
       setFileContent(content);
+    },
+    [COVERAGE_IN_PROGRESS]: () => {
       setCoverage(null);
     },
     [STORY_RENDERED]: (id) => {

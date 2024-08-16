@@ -12,7 +12,7 @@ import type { TestingMode } from '../types';
 
 interface RecentRun {
   coverageProvider: 'istanbul' | 'v8';
-  coverageType: 'component-coverage' | 'project-coverage';
+  coverageType: TestingMode['coverageType'];
   browser: boolean;
   executionTime: number;
 }
@@ -28,7 +28,7 @@ export function CoveragePanelDev({ coverage }: { coverage: ResultCoverageEventPa
     parsedCoverageState?.coverageProvider ?? 'istanbul'
   );
 
-  const [coverageType, setCoverageType] = useState<'component-coverage' | 'project-coverage'>(
+  const [coverageType, setCoverageType] = useState<TestingMode['coverageType']>(
     parsedCoverageState?.coverageType ?? 'component-coverage'
   );
 

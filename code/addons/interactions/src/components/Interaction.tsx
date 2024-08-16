@@ -178,7 +178,7 @@ export const Interaction = ({
           onMouseEnter={() => controlStates.goto && setIsHovered(true)}
           onMouseLeave={() => controlStates.goto && setIsHovered(false)}
         >
-          <StatusIcon status={isHovered ? CallStates.ACTIVE : call.status} />
+          <StatusIcon status={CallStates.ACTIVE} />
           <MethodCallWrapper style={{ marginLeft: 6, marginBottom: 1 }}>
             <MethodCall call={call} callsById={callsById} />
           </MethodCallWrapper>

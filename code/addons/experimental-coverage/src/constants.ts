@@ -5,8 +5,9 @@ export const PARAM_KEY = 'coverage';
 
 export const REQUEST_COVERAGE_EVENT = `${ADDON_ID}/request-coverage`;
 export const RESULT_COVERAGE_EVENT = `${ADDON_ID}/result-coverage`;
-export const HMR_COVERAGE_EVENT = `${ADDON_ID}/hmr-coverage`;
+export const COVERAGE_IN_PROGRESS = `${ADDON_ID}/coverage-in-progress`;
 export const RESULT_FILE_CONTENT = `${ADDON_ID}/result-file-content`;
+export const FILE_CHANGED_EVENT = `${ADDON_ID}/fileChanged`;
 
 export type RequestCoverageEventPayload = {
   importPath: string;

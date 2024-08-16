@@ -4,33 +4,54 @@ import type { Channel } from 'storybook/internal/channels';
 // @ts-expect-error no types
 import { ReportBase } from 'istanbul-lib-report';
 
-import { RESULT_COVERAGE_EVENT, type ResultCoverageEventPayload } from '../constants';
-import type { State } from '../types';
+import type { CoverageItem, CoverageState, CoverageSummary, ManagerState } from '../types';
+import { CoverageEmitter } from './coverage-emitter';
+import type { CoverageManager } from './coverage-manager';
 
-export default class CustomReporter extends ReportBase {
+type Node = {
+  getFileCoverage: () => {
+    data: CoverageItem;
+  };
+  getCoverageSummary: () => CoverageSummary;
+};
+
+export type CoverageReporterOptions = {
+  channel: Channel;
+  coverageManager: CoverageManager;
+  coverageState: CoverageState;
+};
+
+export default class CoverageReporter extends ReportBase {
   channel: Channel;
 
-  state: State;
+  coverageState: CoverageState;
 
   file: any;
 
-  constructor(options: { channel: Channel; file: any; state: State }) {
+  coverageEmitter: CoverageEmitter;
+
+  coverageManager: CoverageManager;
+
+  constructor(options: CoverageReporterOptions) {
     super();
 
     this.channel = options.channel;
-    // Options passed from configuration are available here
-    this.file = options.file;
-    this.state = options.state;
+    this.coverageState = options.coverageState;
+    this.coverageEmitter = new CoverageEmitter(this.channel, this.coverageState);
+    this.coverageManager = options.coverageManager;
   }
 
-  async onDetail(node: any) {
-    const coverage = node.getFileCoverage();
-    const coverageSummary = node.getCoverageSummary();
-
-    const executionTime = Math.round((performance.now() - this.state.timeStartTesting) * 100) / 100;
-
-    const existingCoverage = this.state.coverageResults.find(
-      (result) => result.stats.path === coverage.data.path
+  private updateCoverageResults({
+    coverage,
+    coverageSummary,
+    executionTime,
+  }: {
+    coverage: CoverageItem;
+    coverageSummary: CoverageSummary;
+    executionTime: number;
+  }) {
+    const existingCoverage = this.coverageState.coverageResults.find(
+      (result) => result.stats.path === coverage.path
     );
 
     if (existingCoverage) {
@@ -38,19 +59,35 @@ export default class CustomReporter extends ReportBase {
       existingCoverage.summary = coverageSummary;
       existingCoverage.executionTime = executionTime;
     } else {
-      this.state.coverageResults.push({
+      this.coverageState.coverageResults.push({
         stats: coverage,
         summary: coverageSummary,
-        executionTime: Math.round((performance.now() - this.state.timeStartTesting) * 100) / 100,
+        executionTime: executionTime,
       });
     }
+  }
 
-    if (coverage.data.path === this.state.absoluteComponentPath) {
-      this.channel.emit(RESULT_COVERAGE_EVENT, {
-        stats: coverage,
-        summary: coverageSummary,
-        executionTime: Math.round((performance.now() - this.state.timeStartTesting) * 100) / 100,
-      } satisfies ResultCoverageEventPayload);
-    }
+  private getExecutionTime(): number {
+    return Math.round((performance.now() - this.coverageState.timeStartTesting) * 100) / 100;
+  }
+
+  async onDetail(node: Node) {
+    const coverage = node.getFileCoverage();
+    const coverageSummary = node.getCoverageSummary();
+    const executionTime = this.getExecutionTime();
+
+    this.updateCoverageResults({ coverage: coverage.data, coverageSummary, executionTime });
+
+    const filesWithCoverage = this.coverageManager.getFilesWithCoverageInformation();
+
+    filesWithCoverage.forEach((file) => {
+      if (file === coverage.data.path) {
+        this.coverageEmitter.emitCoverage({
+          executionTime,
+          stats: coverage.data,
+          summary: coverageSummary,
+        });
+      }
+    });
   }
 }

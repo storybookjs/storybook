@@ -1,7 +1,12 @@
 import type { ResultCoverageEventPayloadSuccess } from './constants';
 
-export type State = {
+export type ManagerState = {
   absoluteComponentPath: string | null;
+  absoluteStoryPath: string | null;
+  coverageType: TestingMode['coverageType'];
+};
+
+export type CoverageState = {
   // performance.now() value when the testing started
   timeStartTesting: number;
   coverageResults: ResultCoverageEventPayloadSuccess[];
@@ -42,8 +47,22 @@ export interface CoverageItem {
   b: Record<string, number[]>;
 }
 
+type CoverageSummaryItem = {
+  total: number;
+  covered: number;
+  skipped: number;
+  pct: number;
+};
+
+export interface CoverageSummary {
+  lines: CoverageSummaryItem;
+  functions: CoverageSummaryItem;
+  branches: CoverageSummaryItem;
+  statements: CoverageSummaryItem;
+}
+
 export type TestingMode = {
   browser: boolean;
   coverageProvider: 'istanbul' | 'v8';
-  coverageType: 'project-coverage' | 'component-coverage';
+  coverageType: 'component-coverage' | 'project-coverage' | 'focused-project-coverage';
 };

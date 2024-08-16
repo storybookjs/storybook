@@ -48,6 +48,8 @@ export const frameworkPackages: Record<string, SupportedFrameworks> = {
   // community (outside of monorepo)
   'storybook-framework-qwik': 'qwik',
   'storybook-solidjs-vite': 'solid',
+  'storybook-react-rsbuild': 'react-rsbuild',
+  'storybook-vue3-rsbuild': 'vue3-rsbuild',
 };
 
 export const builderPackages = ['@storybook/builder-webpack5', '@storybook/builder-vite'];

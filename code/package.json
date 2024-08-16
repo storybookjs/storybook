@@ -48,7 +48,7 @@
     "storybook:ui": "NODE_OPTIONS=\"--preserve-symlinks --preserve-symlinks-main\" ./lib/cli/bin/index.cjs dev --port 6006 --config-dir ./.storybook",
     "storybook:ui:build": "NODE_OPTIONS=\"--preserve-symlinks --preserve-symlinks-main\" ./lib/cli/bin/index.cjs build --config-dir ./.storybook --webpack-stats-json",
     "storybook:ui:chromatic": "../scripts/node_modules/.bin/chromatic --build-script-name storybook:ui:build --storybook-base-dir ./ --exit-zero-on-changes --exit-once-uploaded",
-    "storybook:vitest": "yarn test --project storybook-ui",
+    "storybook:vitest": "yarn test:watch --project storybook-ui",
     "storybook:vitest:inspect": "INSPECT=true yarn test --project storybook-ui",
     "task": "yarn --cwd ../scripts task",
     "test": "NODE_OPTIONS=--max_old_space_size=4096 vitest run",

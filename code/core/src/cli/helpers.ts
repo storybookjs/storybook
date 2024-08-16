@@ -18,7 +18,7 @@ import stripJsonComments from 'strip-json-comments';
 import invariant from 'tiny-invariant';
 
 import { getRendererDir } from './dirs';
-import { CoreBuilder, SupportedLanguage } from './project_types';
+import { CommunityBuilder, CoreBuilder, SupportedLanguage } from './project_types';
 
 const logger = console;
 
@@ -144,7 +144,10 @@ type CopyTemplateFilesOptions = {
 /** @deprecated Please use `frameworkToRenderer` from `@storybook/core-common` instead */
 export const frameworkToRenderer = CoreFrameworkToRenderer;
 
-export const frameworkToDefaultBuilder: Record<SupportedFrameworks, CoreBuilder> = {
+export const frameworkToDefaultBuilder: Record<
+  SupportedFrameworks,
+  CoreBuilder | CommunityBuilder
+> = {
   angular: CoreBuilder.Webpack5,
   ember: CoreBuilder.Webpack5,
   'html-vite': CoreBuilder.Vite,
@@ -165,6 +168,9 @@ export const frameworkToDefaultBuilder: Record<SupportedFrameworks, CoreBuilder>
   'vue3-webpack5': CoreBuilder.Webpack5,
   'web-components-vite': CoreBuilder.Vite,
   'web-components-webpack5': CoreBuilder.Webpack5,
+  // Only to pass type checking, will never be used
+  'react-rsbuild': CommunityBuilder.Rsbuild,
+  'vue3-rsbuild': CommunityBuilder.Rsbuild,
 };
 
 export async function copyTemplateFiles({

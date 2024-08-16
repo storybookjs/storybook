@@ -19,4 +19,6 @@ export type SupportedFrameworks =
   | 'web-components-vite'
   | 'web-components-webpack5'
   | 'qwik'
-  | 'solid';
+  | 'solid'
+  | 'react-rsbuild'
+  | 'vue3-rsbuild';

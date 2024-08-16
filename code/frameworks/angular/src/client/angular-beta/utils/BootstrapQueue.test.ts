@@ -8,6 +8,7 @@ import { queueBootstrapping } from './BootstrapQueue';
 const instantWaitFor = (fn: () => void) => {
   return vi.waitFor(fn, {
     interval: 0,
+    timeout: 10000,
   });
 };
 

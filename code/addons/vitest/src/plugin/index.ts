@@ -81,6 +81,10 @@ export const storybookTest = (options?: UserOptions): Plugin => {
         __STORYBOOK_URL__: storybookUrl,
       };
 
+      if (config.test.browser) {
+        config.test.browser.screenshotFailures ??= false;
+      }
+
       config.resolve ??= {};
       config.resolve.conditions ??= [];
       config.resolve.conditions.push('storybook', 'stories', 'test');

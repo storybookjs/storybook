@@ -74,6 +74,10 @@ export enum CoreWebpackCompilers {
   SWC = 'swc',
 }
 
+export enum CommunityBuilder {
+  Rsbuild = 'rsbuild',
+}
+
 export const compilerNameToCoreCompiler: Record<string, CoreWebpackCompilers> = {
   '@storybook/addon-webpack5-compiler-babel': CoreWebpackCompilers.Babel,
   '@storybook/addon-webpack5-compiler-swc': CoreWebpackCompilers.SWC,

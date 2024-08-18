@@ -4,11 +4,10 @@ import { dedent } from 'ts-dedent';
 import { StorybookError } from './storybook-error';
 
 /**
- * If you can't find a suitable category for your error, create one
- * based on the package name/file path of which the error is thrown.
- * For instance:
- * If it's from @storybook/node-logger, then NODE-LOGGER
- * If it's from a package that is too broad, e.g. @storybook/cli in the init command, then use a combination like CLI_INIT
+ * If you can't find a suitable category for your error, create one based on the package name/file
+ * path of which the error is thrown. For instance: If it's from `@storybook/node-logger`, then
+ * NODE-LOGGER If it's from a package that is too broad, e.g. @storybook/cli in the init command,
+ * then use a combination like CLI_INIT
  */
 export enum Category {
   CLI = 'CLI',
@@ -379,16 +378,30 @@ export class MainFileESMOnlyImportError extends StorybookError {
 }
 
 export class MainFileMissingError extends StorybookError {
-  constructor(public data: { location: string }) {
+  constructor(public data: { location: string; source?: 'storybook' | 'vitest' }) {
+    const map = {
+      storybook: {
+        helperMessage:
+          'You can pass a --config-dir flag to tell Storybook, where your main.js file is located at.',
+        documentation: 'https://storybook.js.org/docs/configure',
+      },
+      vitest: {
+        helperMessage:
+          'You can pass a configDir plugin option to tell where your main.js file is located at.',
+        // TODO: add proper docs once available
+        documentation: 'https://storybook.js.org/docs/configure',
+      },
+    };
+    const { documentation, helperMessage } = map[data.source || 'storybook'];
     super({
       category: Category.CORE_SERVER,
       code: 6,
-      documentation: 'https://storybook.js.org/docs/configure',
+      documentation,
       message: dedent`
         No configuration files have been found in your configDir: ${chalk.yellow(data.location)}.
         Storybook needs a "main.js" file, please add it.
         
-        You can pass a --config-dir flag to tell Storybook, where your main.js file is located at).`,
+        ${helperMessage}`,
     });
   }
 }

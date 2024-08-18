@@ -26,7 +26,10 @@ const convertSig = (type: TSSigType) => {
 export const convert = (type: TSType): SBType | void => {
   const { name, raw } = type;
   const base: any = {};
-  if (typeof raw !== 'undefined') base.raw = raw;
+
+  if (typeof raw !== 'undefined') {
+    base.raw = raw;
+  }
   switch (type.name) {
     case 'string':
     case 'number':

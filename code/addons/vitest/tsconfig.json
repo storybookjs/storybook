@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "../../../",
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
+    "types": ["vitest"]
+  },
+  "include": ["src/**/*", "./typings.d.ts"]
+}

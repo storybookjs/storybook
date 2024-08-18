@@ -225,7 +225,10 @@ export const Search = React.memo(function Search({
   const getResults = useCallback(
     (input: string) => {
       const fuse = makeFuse();
-      if (!input) return [];
+
+      if (!input) {
+        return [];
+      }
 
       let results: DownshiftItem[] = [];
       const resultIds: Set<string> = new Set();
@@ -234,8 +237,9 @@ export const Search = React.memo(function Search({
           !(item.type === 'component' || item.type === 'docs' || item.type === 'story') ||
           // @ts-expect-error (non strict)
           resultIds.has(item.parent)
-        )
+        ) {
           return false;
+        }
         resultIds.add(item.id);
         return true;
       });

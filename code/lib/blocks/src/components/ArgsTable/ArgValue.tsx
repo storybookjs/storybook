@@ -114,7 +114,9 @@ const calculateDetailWidth = memoize(1000)((detail: string): string => {
 });
 
 const getSummaryItems = (summary: string) => {
-  if (!summary) return [summary];
+  if (!summary) {
+    return [summary];
+  }
   const splittedItems = summary.split('|');
   const summaryItems = splittedItems.map((value) => value.trim());
 
@@ -136,7 +138,11 @@ const ArgSummary: FC<ArgSummaryProps> = ({ value, initialExpandedArgs }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(initialExpandedArgs || false);
 
-  if (summary === undefined || summary === null) return null;
+  if (summary === undefined || summary === null) {
+    return null;
+  }
+  // summary is used for the default value
+  // below check fixes not displaying default values for boolean typescript vars
   // summary is used for the default value
   // below check fixes not displaying default values for boolean typescript vars
   const summaryAsString = typeof summary.toString === 'function' ? summary.toString() : summary;

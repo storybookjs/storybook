@@ -49,7 +49,10 @@ export function initializeWhatsNew(
   channel.on(REQUEST_WHATS_NEW_DATA, async () => {
     try {
       const post = (await fetch(WHATS_NEW_URL).then(async (response) => {
-        if (response.ok) return response.json();
+        if (response.ok) {
+          return response.json();
+        }
+
         // eslint-disable-next-line @typescript-eslint/no-throw-literal
         throw response;
       })) as WhatsNewResponse;

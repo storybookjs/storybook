@@ -21,6 +21,7 @@ interface EslintPluginRunOptions {
  * Does the user not have eslint-plugin-storybook installed?
  *
  * If so:
+ *
  * - Install it, and if possible configure it
  */
 export const eslintPlugin: Fix<EslintPluginRunOptions> = {

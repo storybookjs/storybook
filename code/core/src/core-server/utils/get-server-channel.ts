@@ -7,8 +7,10 @@ import WebSocket, { WebSocketServer } from 'ws';
 type Server = NonNullable<NonNullable<ConstructorParameters<typeof WebSocketServer>[0]>['server']>;
 
 /**
- * This class represents a channel transport that allows for a one-to-many relationship between the server and clients.
- * Unlike other channels such as the postmessage and websocket channel implementations, this channel will receive from many clients and any events emitted will be sent out to all connected clients.
+ * This class represents a channel transport that allows for a one-to-many relationship between the
+ * server and clients. Unlike other channels such as the postmessage and websocket channel
+ * implementations, this channel will receive from many clients and any events emitted will be sent
+ * out to all connected clients.
  */
 export class ServerChannelTransport {
   private socket: WebSocketServer;

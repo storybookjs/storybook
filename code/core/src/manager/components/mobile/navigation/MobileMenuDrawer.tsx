@@ -81,10 +81,21 @@ const Container = styled.div<{ state: TransitionStatus }>(({ theme, state }) => 
   transition: `all ${MOBILE_TRANSITION_DURATION}ms ease-in-out`,
   overflow: 'hidden',
   transform: `${(() => {
-    if (state === 'entering') return 'translateY(0)';
-    if (state === 'entered') return 'translateY(0)';
-    if (state === 'exiting') return 'translateY(100%)';
-    if (state === 'exited') return 'translateY(100%)';
+    if (state === 'entering') {
+      return 'translateY(0)';
+    }
+
+    if (state === 'entered') {
+      return 'translateY(0)';
+    }
+
+    if (state === 'exiting') {
+      return 'translateY(100%)';
+    }
+
+    if (state === 'exited') {
+      return 'translateY(100%)';
+    }
     return 'translateY(0)';
   })()}`,
 }));
@@ -99,10 +110,21 @@ const SidebarContainer = styled.div<{ state: TransitionStatus }>(({ theme, state
   transition: `all ${MOBILE_TRANSITION_DURATION}ms ease-in-out`,
   overflow: 'hidden',
   opacity: `${(() => {
-    if (state === 'entered') return 1;
-    if (state === 'entering') return 1;
-    if (state === 'exiting') return 0;
-    if (state === 'exited') return 0;
+    if (state === 'entered') {
+      return 1;
+    }
+
+    if (state === 'entering') {
+      return 1;
+    }
+
+    if (state === 'exiting') {
+      return 0;
+    }
+
+    if (state === 'exited') {
+      return 0;
+    }
     return 1;
   })()}`,
   transform: `${(() => {

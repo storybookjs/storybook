@@ -25,7 +25,10 @@ function prepare(
   if (story === null) {
     return null;
   }
-  if (typeof story === 'function') return story; // we don't need to wrap a functional component nor to convert it to a component options
+
+  if (typeof story === 'function') {
+    return story;
+  } // we don't need to wrap a functional component nor to convert it to a component options // we don't need to wrap a functional component nor to convert it to a component options
   if (innerStory) {
     return {
       // Normalize so we can always spread an object
@@ -52,12 +55,18 @@ export function decorateStory(
       const decoratedStory: VueRenderer['storyResult'] = decorator((update) => {
         const sanitizedUpdate = sanitizeStoryContextUpdate(update);
         // update the args in a reactive way
-        if (update) sanitizedUpdate.args = Object.assign(context.args, sanitizedUpdate.args);
+
+        // update the args in a reactive way
+        if (update) {
+          sanitizedUpdate.args = Object.assign(context.args, sanitizedUpdate.args);
+        }
         story = decorated({ ...context, ...sanitizedUpdate });
         return story;
       }, context);
 
-      if (!story) story = decorated(context);
+      if (!story) {
+        story = decorated(context);
+      }
 
       if (decoratedStory === story) {
         return story;

@@ -15,7 +15,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * There are no argTypes or args, so this story won't show any controls in the docs page.
- * In the control addon it will show a UI how to set up controls.
+ * There are no argTypes or args, so this story won't show any controls in the docs page. In the
+ * control addon it will show a UI how to set up controls.
  */
 export const Default: Story = {};

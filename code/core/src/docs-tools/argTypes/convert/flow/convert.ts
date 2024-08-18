@@ -28,7 +28,10 @@ const convertSig = (type: FlowSigType) => {
 export const convert = (type: FlowType): SBType | void => {
   const { name, raw } = type;
   const base: any = {};
-  if (typeof raw !== 'undefined') base.raw = raw;
+
+  if (typeof raw !== 'undefined') {
+    base.raw = raw;
+  }
   switch (type.name) {
     case 'literal':
       return { ...base, name: 'other', value: type.value };

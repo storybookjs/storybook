@@ -106,8 +106,8 @@ export const bail: WebpackBuilder['bail'] = async () => {
 };
 
 /**
- * This function is a generator so that we can abort it mid process
- * in case of failure coming from other processes e.g. preview builder
+ * This function is a generator so that we can abort it mid process in case of failure coming from
+ * other processes e.g. preview builder
  *
  * I am sorry for making you read about generators today :')
  */
@@ -231,8 +231,8 @@ function getWebpackStats({ config, stats }: { config: Configuration; stats: Stat
 }
 
 /**
- * This function is a generator so that we can abort it mid process
- * in case of failure coming from other processes e.g. manager builder
+ * This function is a generator so that we can abort it mid process in case of failure coming from
+ * other processes e.g. manager builder
  *
  * I am sorry for making you read about generators today :')
  */

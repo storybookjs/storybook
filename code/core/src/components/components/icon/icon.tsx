@@ -29,9 +29,9 @@ export interface IconsProps extends ComponentProps<typeof Svg> {
 }
 
 /**
- * @deprecated No longer used, will be removed in Storybook 9.0
- * Please use the `@storybook/icons` package instead.
- * */
+ * @deprecated No longer used, will be removed in Storybook 9.0 Please use the `@storybook/icons`
+ *   package instead.
+ */
 export const Icons = ({
   icon,
   useSymbol,
@@ -66,9 +66,9 @@ export interface SymbolsProps {
 }
 
 /**
- * @deprecated No longer used, will be removed in Storybook 9.0
- * Please use the `@storybook/icons` package instead.
- * */
+ * @deprecated No longer used, will be removed in Storybook 9.0 Please use the `@storybook/icons`
+ *   package instead.
+ */
 export const Symbols = memo<SymbolsProps>(function Symbols({ icons: keys = Object.keys(icons) }) {
   return (
     <Svg

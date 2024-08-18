@@ -107,8 +107,8 @@ export function detectFrameworkPreset(
 }
 
 /**
- * Attempts to detect which builder to use, by searching for a vite config file or webpack installation.
- * If neither are found it will choose the default builder based on the project type.
+ * Attempts to detect which builder to use, by searching for a vite config file or webpack
+ * installation. If neither are found it will choose the default builder based on the project type.
  *
  * @returns CoreBuilder
  */

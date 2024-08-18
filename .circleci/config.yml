@@ -233,7 +233,7 @@ jobs:
           name: Run tests
           command: |
             cd scripts
-            yarn test --coverage --coverage.all=false
+            yarn test --coverage
       - store_test_results:
           path: scripts/junit.xml
       - report-workflow-on-failure
@@ -241,7 +241,7 @@ jobs:
   unit-tests:
     executor:
       class: xlarge
-      name: sb_node_22_browsers
+      name: sb_playwright
     steps:
       - git-shallow-clone/checkout_advanced:
           clone_options: "--depth 1 --verbose"
@@ -251,7 +251,7 @@ jobs:
           name: Test
           command: |
             cd code
-            yarn test --coverage --coverage.all=false
+            yarn test --coverage
       - store_test_results:
           path: code/junit.xml
       - persist_to_workspace:
@@ -396,6 +396,26 @@ jobs:
           command: yarn task --task test-runner --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner) --no-link --start-from=never --junit
       - report-workflow-on-failure:
           template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner)
+      - store_test_results:
+          path: test-results
+  vitest-integration:
+    parameters:
+      parallelism:
+        type: integer
+    executor:
+      class: large
+      name: sb_playwright
+    parallelism: << parameters.parallelism >>
+    steps:
+      - git-shallow-clone/checkout_advanced:
+          clone_options: "--depth 1 --verbose"
+      - attach_workspace:
+          at: .
+      - run:
+          name: Running story tests in Vitest
+          command: yarn task --task vitest-integration --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task vitest-integration) --no-link --start-from=never --junit
+      - report-workflow-on-failure:
+          template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task vitest-integration)
       - store_test_results:
           path: test-results
   test-runner-dev:
@@ -679,19 +699,19 @@ workflows:
           requires:
             - unit-tests
       - create-sandboxes:
-          parallelism: 13
+          parallelism: 14
           requires:
             - build
       - build-sandboxes:
-          parallelism: 13
+          parallelism: 14
           requires:
             - create-sandboxes
       - chromatic-sandboxes:
-          parallelism: 10
+          parallelism: 11
           requires:
             - build-sandboxes
       - e2e-production:
-          parallelism: 8
+          parallelism: 9
           requires:
             - build-sandboxes
       - e2e-dev:
@@ -699,9 +719,13 @@ workflows:
           requires:
             - create-sandboxes
       - test-runner-production:
-          parallelism: 8
+          parallelism: 9
           requires:
             - build-sandboxes
+      - vitest-integration:
+          parallelism: 4
+          requires:
+            - create-sandboxes
       - bench:
           parallelism: 5
           requires:
@@ -741,19 +765,19 @@ workflows:
           requires:
             - unit-tests
       - create-sandboxes:
-          parallelism: 19
+          parallelism: 20
           requires:
             - build
       - build-sandboxes:
-          parallelism: 19
+          parallelism: 20
           requires:
             - create-sandboxes
       - chromatic-sandboxes:
-          parallelism: 16
+          parallelism: 17
           requires:
             - build-sandboxes
       - e2e-production:
-          parallelism: 14
+          parallelism: 15
           requires:
             - build-sandboxes
       - e2e-dev:
@@ -761,9 +785,13 @@ workflows:
           requires:
             - create-sandboxes
       - test-runner-production:
-          parallelism: 14
+          parallelism: 15
           requires:
             - build-sandboxes
+      - vitest-integration:
+          parallelism: 4
+          requires:
+            - create-sandboxes
       - test-portable-stories:
           requires:
             - build
@@ -827,6 +855,10 @@ workflows:
           parallelism: 33
           requires:
             - build-sandboxes
+      - vitest-integration:
+          parallelism: 8
+          requires:
+            - create-sandboxes
       - test-portable-stories:
           requires:
             - build

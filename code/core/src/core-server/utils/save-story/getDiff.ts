@@ -2,10 +2,9 @@ import { diffLines } from 'diff';
 
 /**
  * Get a diff between two strings
- * @param before The original string
- * @param after The new string
- * @returns The diff as a string
+ *
  * @example
+ *
  * ```ts
  * const before = 'foo\nbar\nbaz';
  * const after = 'foo\nbaz';
@@ -15,6 +14,10 @@ import { diffLines } from 'diff';
  * // - bar
  * //   baz
  * ```
+ *
+ * @param before The original string
+ * @param after The new string
+ * @returns The diff as a string
  */
 export function getDiff(before: string, after: string): string {
   const context = 4;

@@ -3,13 +3,12 @@ import { dedent } from 'ts-dedent';
 import { StorybookError } from './storybook-error';
 
 /**
- * If you can't find a suitable category for your error, create one
- * based on the package name/file path of which the error is thrown.
- * For instance:
- * If it's from @storybook/client-logger, then CLIENT-LOGGER
+ * If you can't find a suitable category for your error, create one based on the package name/file
+ * path of which the error is thrown. For instance: If it's from `@storybook/client-logger`, then
+ * CLIENT-LOGGER
  *
- * Categories are prefixed by a logical grouping, e.g. PREVIEW_ or FRAMEWORK_
- * to prevent manager and preview errors from having the same category and error code.
+ * Categories are prefixed by a logical grouping, e.g. PREVIEW_ or FRAMEWORK_ to prevent manager and
+ * preview errors from having the same category and error code.
  */
 export enum Category {
   BLOCKS = 'BLOCKS',
@@ -232,42 +231,6 @@ export class MountMustBeDestructuredError extends StorybookError {
       
       Received the following play function:
       ${data.playFunction}`,
-    });
-  }
-}
-
-export class TestingLibraryMustBeConfiguredError extends StorybookError {
-  constructor() {
-    super({
-      category: Category.PREVIEW_API,
-      code: 13,
-      message: dedent`
-        You must configure testingLibraryRender to use play in portable stories.
-        
-        import { render } from '@testing-library/[renderer]';
-        
-        setProjectAnnotations({
-          testingLibraryRender: render,
-        });
-        
-        For other testing renderers, you can configure \`renderToCanvas\` like so:
-        
-        import { render } from 'your-test-renderer';
-        
-        setProjectAnnotations({
-          renderToCanvas: ({ storyFn }) => {
-            const Story = storyFn();
-            
-            // Svelte
-            render(Story.Component, Story.props);
-            
-            // Vue
-            render(Story);
-            
-            // or for React
-            render(<Story/>);
-          },
-        });`,
     });
   }
 }

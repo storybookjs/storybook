@@ -8,8 +8,6 @@ import * as previewAnnotations from './.storybook/preview';
 const annotations = setProjectAnnotations([
   previewAnnotations,
   addonAnnotations,
-  // You MUST provide this option to use portable stories with vitest
-  { testingLibraryRender },
 ]);
 
 // Supports beforeAll hook from Storybook
@@ -26,8 +24,6 @@ import * as previewAnnotations from './.storybook/preview';
 const annotations = setProjectAnnotations([
   previewAnnotations,
   addonAnnotations,
-  // You MUST provide this option to use portable stories with vitest
-  { testingLibraryRender },
 ]);
 
 // Supports beforeAll hook from Storybook

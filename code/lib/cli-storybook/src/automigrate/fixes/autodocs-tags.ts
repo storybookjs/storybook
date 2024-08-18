@@ -18,14 +18,15 @@ interface Options {
   previewConfigPath?: string;
 }
 
-/**
- */
 export const autodocsTags: Fix<Options> = {
   id: 'autodocs-tags',
   versionRange: ['*.*.*', '>=8.0.*'],
   async check({ mainConfig, mainConfigPath, previewConfigPath }) {
     const autodocs = mainConfig?.docs?.autodocs;
-    if (autodocs === undefined) return null;
+
+    if (autodocs === undefined) {
+      return null;
+    }
 
     if (autodocs === true && !previewConfigPath) {
       throw Error(dedent`

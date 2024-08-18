@@ -1,4 +1,4 @@
-import type { SyntheticEvent } from 'react';
+import type { ComponentProps, SyntheticEvent } from 'react';
 import React, { useCallback } from 'react';
 
 import { styled } from '@storybook/core/theming';
@@ -20,54 +20,38 @@ const List = styled.div(
 
 export interface Link extends Omit<ListItemProps, 'onClick'> {
   id: string;
-  isGatsby?: boolean;
-  onClick?: (event: SyntheticEvent, item: ListItemProps) => void;
+  onClick?: (
+    event: SyntheticEvent,
+    item: Pick<ListItemProps, 'id' | 'active' | 'disabled' | 'title'>
+  ) => void;
 }
 
 interface ItemProps extends Link {
   isIndented?: boolean;
 }
 
-const Item = (props: ItemProps) => {
-  const { LinkWrapper, onClick: onClickFromProps, id, isIndented, ...rest } = props;
-  const { title, href, active } = rest;
-  const onClick = useCallback(
-    (event: SyntheticEvent) => {
-      // @ts-expect-error (non strict)
-      onClickFromProps(event, rest);
-    },
-    [onClickFromProps]
+const Item = ({ id, onClick, ...rest }: ItemProps) => {
+  const { active, disabled, title } = rest;
+
+  const handleClick = useCallback(
+    (event: SyntheticEvent) => onClick?.(event, { id, active, disabled, title }),
+    [onClick, id, active, disabled, title]
   );
 
-  const hasOnClick = !!onClickFromProps;
-
-  return (
-    <ListItem
-      title={title}
-      active={active}
-      href={href}
-      id={`list-item-${id}`}
-      LinkWrapper={LinkWrapper}
-      isIndented={isIndented}
-      {...rest}
-      {...(hasOnClick ? { onClick } : {})}
-    />
-  );
+  return <ListItem id={`list-item-${id}`} {...rest} {...(onClick && { onClick: handleClick })} />;
 };
 
-export interface TooltipLinkListProps {
+export interface TooltipLinkListProps extends ComponentProps<typeof List> {
   links: Link[];
   LinkWrapper?: LinkWrapperType;
 }
 
-// @ts-expect-error (non strict)
-export const TooltipLinkList = ({ links, LinkWrapper = null }: TooltipLinkListProps) => {
-  const hasIcon = links.some((link) => link.icon);
+export const TooltipLinkList = ({ links, LinkWrapper, ...props }: TooltipLinkListProps) => {
+  const isIndented = links.some((link) => link.icon);
   return (
-    <List>
-      {links.map(({ isGatsby, ...p }) => (
-        // @ts-expect-error (non strict)
-        <Item key={p.id} LinkWrapper={isGatsby ? LinkWrapper : null} isIndented={hasIcon} {...p} />
+    <List {...props}>
+      {links.map((link) => (
+        <Item key={link.id} isIndented={isIndented} LinkWrapper={LinkWrapper} {...link} />
       ))}
     </List>
   );

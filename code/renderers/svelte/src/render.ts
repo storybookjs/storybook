@@ -28,13 +28,13 @@ export function renderToCanvas(
 }
 
 /**
- * This is a workaround for the issue that when resetting args,
- * the story needs to be remounted completely to revert to the component's default props.
- * This is because Svelte does not itself revert to defaults when a prop is undefined.
- * See https://github.com/storybookjs/storybook/issues/21470#issuecomment-1467056479
+ * This is a workaround for the issue that when resetting args, the story needs to be remounted
+ * completely to revert to the component's default props. This is because Svelte does not itself
+ * revert to defaults when a prop is undefined. See
+ * https://github.com/storybookjs/storybook/issues/21470#issuecomment-1467056479
  *
- * We listen for the RESET_STORY_ARGS event and store the storyId to be reset
- * We then use this in the renderToCanvas function to force remount the story
+ * We listen for the `RESET_STORY_ARGS` event and store the storyId to be reset We then use this in
+ * the renderToCanvas function to force remount the story
  */
 const storyIdsToRemountFromResetArgsEvent = new Set<string>();
 addons.getChannel().on(RESET_STORY_ARGS, ({ storyId }) => {
@@ -79,7 +79,6 @@ function renderToCanvasV4(
     const mountedComponent = new PreviewRender({
       target: canvasElement,
       props: {
-        svelteVersion: 4,
         storyFn,
         storyContext,
         name,
@@ -151,7 +150,6 @@ function renderToCanvasV5(
       name,
       title,
       showError,
-      svelteVersion: 5,
     });
     const mountedComponent = svelte.mount(PreviewRender, {
       target: canvasElement,

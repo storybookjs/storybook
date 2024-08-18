@@ -139,12 +139,12 @@ export function generateSvelteSource(
 /**
  * Check if the story component is a wrapper to the real component.
  *
- * A component can be annotated with @wrapper to indicate that
- * it's just a wrapper for the real tested component. If it's the case
- * then the code generated references the real component, not the wrapper.
+ * A component can be annotated with `@wrapper` to indicate that it's just a wrapper for the real
+ * tested component. If it's the case then the code generated references the real component, not the
+ * wrapper.
  *
- * moreover, a wrapper can annotate a property with @slot : this property
- * is then assumed to be an alias to the default slot.
+ * Moreover, a wrapper can annotate a property with `@slot` : this property is then assumed to be an
+ * alias to the default slot.
  *
  * @param component Component
  */
@@ -172,8 +172,9 @@ function getWrapperProperties(
 
 /**
  * Svelte source decorator.
+ *
  * @param storyFn Fn
- * @param context  StoryContext
+ * @param context StoryContext
  */
 export const sourceDecorator: DecoratorFunction<SvelteRenderer> = (storyFn, context) => {
   const channel = addons.getChannel();

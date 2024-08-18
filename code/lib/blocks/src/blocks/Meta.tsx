@@ -9,8 +9,8 @@ import { DocsContext } from './DocsContext';
 type MetaProps = BaseAnnotations & { of?: ModuleExports; title?: string };
 
 /**
- * This component is used to declare component metadata in docs
- * and gets transformed into a default export underneath the hood.
+ * This component is used to declare component metadata in docs and gets transformed into a default
+ * export underneath the hood.
  */
 export const Meta: FC<MetaProps> = ({ of }) => {
   const context = useContext(DocsContext);

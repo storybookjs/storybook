@@ -1,4 +1,3 @@
-const ignore = 0;
 
 module.exports = {
   overrides: [
@@ -8,13 +7,11 @@ module.exports = {
         browser: true,
       },
       rules: {
-        'react/no-this-in-sfc': ignore,
-        'import/no-unresolved': ignore,
-        'react/react-in-jsx-scope': ignore,
-        'import/no-extraneous-dependencies': ignore,
-        'global-require': ignore,
-        'no-redeclare': ignore,
-        'react/prop-types': ignore,
+        'react/no-this-in-sfc': "off",
+        'react/react-in-jsx-scope': "off",
+        'global-require': "off",
+        'no-redeclare': "off",
+        'react/prop-types': "off",
       },
     },
     {
@@ -23,13 +20,11 @@ module.exports = {
         browser: true,
       },
       rules: {
-        'jsx-a11y/anchor-is-valid': ignore,
-        'import/no-unresolved': ignore,
-        'react/prop-types': ignore,
-        'react/react-in-jsx-scope': ignore,
-        'import/no-extraneous-dependencies': ignore,
-        'import/extensions': ignore,
-        'import/named': ignore,
+        'jsx-a11y/anchor-is-valid': "off",
+        'react/prop-types': "off",
+        'react/react-in-jsx-scope': "off",
+        'import/extensions': "off",
+        'import/named': "off",
       },
     },
   ],

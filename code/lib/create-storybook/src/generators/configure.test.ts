@@ -30,7 +30,7 @@ describe('configureMain', () => {
 
     expect(mainConfigPath).toEqual('./.storybook/main.js');
     expect(mainConfigContent).toMatchInlineSnapshot(`
-      "/** @type { import('@storybook/react-vite').StorybookConfig } */
+      "/** @type {import('@storybook/react-vite').StorybookConfig} */
       const config = {
         stories: ['../stories/**/*.mdx', '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
         addons: [],
@@ -96,7 +96,7 @@ describe('configureMain', () => {
     expect(mainConfigContent).toMatchInlineSnapshot(`
       "import path from 'node:path';
 
-      /** @type { import('@storybook/react-webpack5').StorybookConfig } */
+      /** @type {import('@storybook/react-webpack5').StorybookConfig} */
       const config = {
         stories: ['../stories/**/*.mdx', '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
         addons: [
@@ -128,7 +128,7 @@ describe('configurePreview', () => {
 
     expect(previewConfigPath).toEqual('./.storybook/preview.js');
     expect(previewConfigContent).toMatchInlineSnapshot(`
-      "/** @type { import('@storybook/react').Preview } */
+      "/** @type {import('@storybook/react').Preview} */
       const preview = {
         parameters: {
           controls: {

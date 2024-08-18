@@ -163,8 +163,8 @@ const processLineNumber = (row: any) => {
 };
 
 /**
- * A custom renderer for handling `span.linenumber` element in each line of code,
- * which is enabled by default if no renderer is passed in from the parent component
+ * A custom renderer for handling `span.linenumber` element in each line of code, which is enabled
+ * by default if no renderer is passed in from the parent component
  */
 const defaultRenderer: SyntaxHighlighterRenderer = ({ rows, stylesheet, useInlineStyles }) => {
   return rows.map((node: any, i: number) => {

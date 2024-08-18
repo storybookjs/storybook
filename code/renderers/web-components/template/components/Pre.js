@@ -5,10 +5,7 @@ import { styleMap } from 'lit/directives/style-map.js';
 
 const { customElements } = globalThis;
 
-/**
- *
- * @tag sb-pre
- */
+/** @tag sb-pre */
 export class SbPre extends LitElement {
   // Currently TS decorators are not reflected so we have to use static `properties` function
   // https://github.com/Polymer/lit-html/issues/1476

@@ -51,7 +51,9 @@ export const ArgControl: FC<ArgControlProps> = ({ row, arg, updateArgs, isHovere
   const [boxedValue, setBoxedValue] = useState({ value: arg });
 
   useEffect(() => {
-    if (!isFocused) setBoxedValue({ value: arg });
+    if (!isFocused) {
+      setBoxedValue({ value: arg });
+    }
   }, [isFocused, arg]);
 
   const onChange = useCallback(

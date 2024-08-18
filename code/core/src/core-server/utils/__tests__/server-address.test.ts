@@ -1,10 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import os, { type NetworkInterfaceInfoIPv4 } from 'node:os';
 
-import os, { type NetworkInterfaceInfoIPv4 } from 'os';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getServerAddresses } from '../server-address';
 
-vi.mock('os');
+vi.mock('node:os');
 const mockedOs = vi.mocked(os);
 
 describe('getServerAddresses', () => {

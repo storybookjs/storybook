@@ -1,4 +1,5 @@
 import { global as globalThis } from '@storybook/global';
+import { expect } from '@storybook/test';
 
 import { MINIMAL_VIEWPORTS } from '@storybook/addon-viewport';
 
@@ -30,6 +31,21 @@ export const Selected = {
       defaultViewport: first,
     },
   },
+  play: async () => {
+    const viewportStyles = MINIMAL_VIEWPORTS[first].styles;
+    const viewportDimensions = {
+      width: typeof viewportStyles === 'object' && Number.parseInt(viewportStyles!.width, 10),
+      height: typeof viewportStyles === 'object' && Number.parseInt(viewportStyles!.height, 10),
+    };
+
+    const windowDimensions = {
+      width: window.innerWidth,
+      height: window.innerHeight,
+    };
+
+    await expect(viewportDimensions).toEqual(windowDimensions);
+  },
+  tags: ['!test'],
 };
 
 export const Orientation = {

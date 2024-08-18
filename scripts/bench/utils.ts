@@ -35,9 +35,8 @@ export const loadBench = async (options: SaveBenchOptions): Promise<Partial<Benc
 
 export async function getPreviewPage(page: Page) {
   /**
-   * Fix flakiness in preview iframe retrieval
-   * Sometimes the iframe is not yet available when we try to access it,
-   * even after waiting for the readyState to be complete.
+   * Fix flakiness in preview iframe retrieval Sometimes the iframe is not yet available when we try
+   * to access it, even after waiting for the readyState to be complete.
    *
    * This loop will keep trying to access the iframe until it's available.
    */

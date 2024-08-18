@@ -18,7 +18,10 @@ const logger = console;
 
 export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
   logger.info(`🔢 Adding package resolutions:`);
-  if (dryRun) return;
+
+  if (dryRun) {
+    return;
+  }
 
   const packageJsonPath = join(cwd, 'package.json');
   const packageJson = await readJSON(packageJsonPath);
@@ -66,7 +69,10 @@ export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
 
 export const addWorkaroundResolutions = async ({ cwd, dryRun }: YarnOptions) => {
   logger.info(`🔢 Adding resolutions for workarounds`);
-  if (dryRun) return;
+
+  if (dryRun) {
+    return;
+  }
 
   const packageJsonPath = join(cwd, 'package.json');
   const packageJson = await readJSON(packageJsonPath);

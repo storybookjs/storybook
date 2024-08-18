@@ -32,12 +32,11 @@ export const moduleMetadata =
   };
 
 /**
- * Decorator to set the config options which are available during the application bootstrap operation
+ * Decorator to set the config options which are available during the application bootstrap
+ * operation
  */
 export function applicationConfig<TArgs = any>(
-  /**
-   * Set of config options available during the application bootstrap operation.
-   */
+  /** Set of config options available during the application bootstrap operation. */
   config: ApplicationConfig
 ): DecoratorFunction<AngularRenderer, TArgs> {
   return (storyFn) => {

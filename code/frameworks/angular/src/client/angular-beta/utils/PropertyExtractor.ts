@@ -99,8 +99,6 @@ export class PropertyExtractor implements NgModuleMetadata {
    * - Removes Restricted Imports
    * - Extracts providers from ModuleWithProviders
    * - Returns a new NgModuleMetadata object
-   *
-   *
    */
   private analyzeMetadata = (metadata: NgModuleMetadata) => {
     const declarations = [...(metadata?.declarations || [])];

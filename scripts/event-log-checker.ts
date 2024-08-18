@@ -30,10 +30,16 @@ async function run() {
     }
 
     const expectation = eventTypeExpectations[eventType as keyof typeof eventTypeExpectations];
-    if (!expectation) throw new Error(`Unexpected eventType '${eventType}'`);
+
+    if (!expectation) {
+      throw new Error(`Unexpected eventType '${eventType}'`);
+    }
 
     const template = allTemplates[templateName as keyof typeof allTemplates];
-    if (!template) throw new Error(`Unexpected template '${templateName}'`);
+
+    if (!template) {
+      throw new Error(`Unexpected template '${templateName}'`);
+    }
 
     const events = await (await fetch(`http://localhost:${PORT}/event-log`)).json();
 

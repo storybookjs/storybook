@@ -9,13 +9,19 @@ const skipTest = process.env.STORYBOOK_TEMPLATE_NAME !== 'react-vite/default-ts'
 
 test.describe('composition', () => {
   test.beforeEach(async ({ page }) => {
-    if (skipTest) return;
+    if (skipTest) {
+      return;
+    }
     await page.goto(storybookUrl);
     await new SbPage(page).waitUntilLoaded();
   });
 
   test('should correctly filter composed stories', async ({ page }) => {
-    if (skipTest) return;
+    if (skipTest) {
+      return;
+    }
+
+    // Expect that composed Storybooks are visible
 
     // Expect that composed Storybooks are visible
     await expect(await page.getByTitle('Storybook 8.0.0')).toBeVisible();

@@ -80,6 +80,7 @@ export class AddonStore {
 
   /**
    * Adds an addon to the addon store.
+   *
    * @param {string} id - The id of the addon.
    * @param {Addon_Type} addon - The addon to add.
    * @returns {void}

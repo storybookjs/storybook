@@ -1,13 +1,11 @@
 import React from 'react';
 
-import { Button, IconButton } from '@storybook/core/components';
-import type { Addon_SidebarTopType } from '@storybook/core/types';
-import { FaceHappyIcon } from '@storybook/icons';
+import type { API_StatusState, Addon_SidebarTopType } from '@storybook/core/types';
 import type { Meta, StoryObj } from '@storybook/react';
 import { expect, fn, userEvent, within } from '@storybook/test';
 
 import type { IndexHash, State } from '@storybook/core/manager-api';
-import { ManagerContext, types } from '@storybook/core/manager-api';
+import { ManagerContext } from '@storybook/core/manager-api';
 
 import { LayoutProvider } from '../layout/LayoutProvider';
 import { standardData as standardHeaderData } from './Heading.stories';
@@ -28,6 +26,28 @@ const storyId = 'root-1-child-a2--grandchild-a1-1';
 export const simpleData = { menu, index, storyId };
 export const loadingData = { menu };
 
+const managerContext: any = {
+  state: {
+    docsOptions: {
+      defaultName: 'Docs',
+      autodocs: 'tag',
+      docsMode: false,
+    },
+  },
+  api: {
+    emit: fn().mockName('api::emit'),
+    on: fn().mockName('api::on'),
+    off: fn().mockName('api::off'),
+    getShortcutKeys: fn(() => ({ search: ['control', 'shift', 's'] })).mockName(
+      'api::getShortcutKeys'
+    ),
+    selectStory: fn().mockName('api::selectStory'),
+    experimental_setFilter: fn().mockName('api::experimental_setFilter'),
+    setQueryParams: fn().mockName('api::setQueryParams'),
+    getQueryParams: fn().mockName('api::getQueryParams'),
+  },
+};
+
 const meta = {
   component: Sidebar,
   title: 'Sidebar/Sidebar',
@@ -46,30 +66,7 @@ const meta = {
   },
   decorators: [
     (storyFn) => (
-      <ManagerContext.Provider
-        value={
-          {
-            state: {
-              docsOptions: {
-                defaultName: 'Docs',
-                autodocs: 'tag',
-                docsMode: false,
-              },
-            },
-            api: {
-              emit: fn().mockName('api::emit'),
-              on: fn().mockName('api::on'),
-              off: fn().mockName('api::off'),
-              getShortcutKeys: fn(() => ({ search: ['control', 'shift', 's'] })).mockName(
-                'api::getShortcutKeys'
-              ),
-              selectStory: fn().mockName('api::selectStory'),
-              setQueryParams: fn().mockName('api::setQueryParams'),
-              getQueryParams: fn().mockName('api::getQueryParams'),
-            },
-          } as any
-        }
-      >
+      <ManagerContext.Provider value={managerContext}>
         <LayoutProvider>
           <IconSymbols />
           {storyFn()}
@@ -231,49 +228,38 @@ export const Searching: Story = {
 };
 
 export const Bottom: Story = {
-  args: {
-    bottom: [
-      {
-        id: '1',
-        type: types.experimental_SIDEBAR_BOTTOM,
-        render: () => (
-          <Button>
-            <FaceHappyIcon />
-            Custom addon A
-          </Button>
-        ),
-      },
-      {
-        id: '2',
-        type: types.experimental_SIDEBAR_BOTTOM,
-        render: () => (
-          <Button>
-            {' '}
-            <FaceHappyIcon />
-            Custom addon B
-          </Button>
-        ),
-      },
-      {
-        id: '3',
-        type: types.experimental_SIDEBAR_BOTTOM,
-        render: () => (
-          <IconButton>
-            {' '}
-            <FaceHappyIcon />
-          </IconButton>
-        ),
-      },
-    ],
-  },
+  decorators: [
+    (storyFn) => (
+      <ManagerContext.Provider
+        value={{
+          ...managerContext,
+          state: {
+            ...managerContext.state,
+            status: {
+              [storyId]: {
+                vitest: { status: 'warn', title: '', description: '' },
+                vta: { status: 'error', title: '', description: '' },
+              },
+              'root-1-child-a2--grandchild-a1-2': {
+                vitest: { status: 'warn', title: '', description: '' },
+              },
+            } satisfies API_StatusState,
+          },
+        }}
+      >
+        {storyFn()}
+      </ManagerContext.Provider>
+    ),
+  ],
 };
 
 /**
  * Given the following sequence of events:
+ *
  * 1. Story is selected at the top of the sidebar
  * 2. The sidebar is scrolled to the bottom
- * 3. Some re-rendering happens because of a changed state/prop
- * The sidebar should remain scrolled to the bottom
+ * 3. Some re-rendering happens because of a changed state/prop The sidebar should remain scrolled to
+ *    the bottom
  */
 export const Scrolled: Story = {
   parameters: {

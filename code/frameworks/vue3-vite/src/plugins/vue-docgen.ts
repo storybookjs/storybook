@@ -11,7 +11,9 @@ export async function vueDocgen(): Promise<PluginOption> {
   return {
     name: 'storybook:vue-docgen-plugin',
     async transform(src, id) {
-      if (!filter(id)) return undefined;
+      if (!filter(id)) {
+        return undefined;
+      }
 
       const metaData = await parse(id);
 

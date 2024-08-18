@@ -9,14 +9,12 @@ import { useOf } from './useOf';
 
 interface TitleProps {
   /**
-   * Specify where to get the title from. Must be a CSF file's default export.
-   * If not specified, the title will be read from children, or extracted from the meta of the attached CSF file.
+   * Specify where to get the title from. Must be a CSF file's default export. If not specified, the
+   * title will be read from children, or extracted from the meta of the attached CSF file.
    */
   of?: Of;
 
-  /**
-   * Specify content to display as the title.
-   */
+  /** Specify content to display as the title. */
   children?: ReactNode;
 }
 

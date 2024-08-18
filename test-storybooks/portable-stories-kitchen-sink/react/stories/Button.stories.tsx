@@ -1,10 +1,8 @@
-import { expect, within, userEvent, fn, screen } from '@storybook/test';
-import type { StoryFn as CSF2Story, StoryObj as CSF3Story, Meta } from '@storybook/react';
+import { expect, fn } from '@storybook/test';
+import type { Meta, StoryFn as CSF2Story, StoryObj as CSF3Story } from '@storybook/react';
 
 import type { ButtonProps } from './Button';
 import { Button } from './Button';
-import { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
 
 const meta = {
   title: 'Example/Button',
@@ -43,10 +41,12 @@ const getCaptionForLocale = (locale: string) => {
 
 export const CSF2StoryWithLocale: CSF2Story = (args, { globals: { locale } }) => {
   const caption = getCaptionForLocale(locale);
-  return <>
-    <p>locale: {locale}</p>
-    <Button>{caption}</Button>
-  </>
+  return (
+    <>
+      <p>locale: {locale}</p>
+      <Button>{caption}</Button>
+    </>
+  );
 };
 CSF2StoryWithLocale.storyName = 'WithLocale';
 
@@ -83,33 +83,6 @@ export const CSF3ButtonWithRender: CSF3Story<ButtonProps> = {
   ),
 };
 
-export const CSF3InputFieldFilled: CSF3Story = {
-  render: function Component() {
-    const [isClicked, setClicked] = useState(false);
-    return (
-      <>
-        <input data-testid="input" />
-        <br />
-        <button onClick={() => setClicked(!isClicked)}>
-          I am {isClicked ? 'clicked' : 'not clicked'}
-        </button>
-      </>
-    );
-  },
-  play: async ({ canvasElement, step }) => {
-    console.log('start of play function');
-    const canvas = within(canvasElement);
-    await step('Step label', async () => {
-      const inputEl = canvas.getByTestId('input');
-      const buttonEl = canvas.getByRole('button');
-      await userEvent.click(buttonEl);
-      await userEvent.type(inputEl, 'Hello world!');
-      await expect(inputEl).toHaveValue('Hello world!');
-    });
-    console.log('end of play function');
-  },
-};
-
 const mockFn = fn();
 export const WithLoader: CSF3Story<{ mockFn: (val: string) => string }> = {
   args: {
@@ -134,66 +107,5 @@ export const WithLoader: CSF3Story<{ mockFn: (val: string) => string }> = {
   },
   play: async () => {
     expect(mockFn).toHaveBeenCalledWith('render');
-  },
-};
-
-export const Modal: CSF3Story = {
-  render: function Component() {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [modalContainer] = useState(() => {
-      const div = document.createElement('div');
-      div.id = 'modal-root';
-      return div;
-    });
-
-    useEffect(() => {
-      document.body.appendChild(modalContainer);
-      return () => {
-        document.body.removeChild(modalContainer);
-      };
-    }, [modalContainer]);
-
-    const handleOpenModal = () => setIsModalOpen(true);
-    const handleCloseModal = () => setIsModalOpen(false);
-
-    const modalContent = isModalOpen
-      ? createPortal(
-          <div
-            role="dialog"
-            style={{
-              position: 'fixed',
-              top: '20%',
-              left: '50%',
-              transform: 'translate(-50%, -20%)',
-              backgroundColor: 'white',
-              padding: '20px',
-              zIndex: 1000,
-              border: '2px solid black',
-              borderRadius: '5px',
-            }}
-          >
-            <div style={{ marginBottom: '10px' }}>
-              <p>This is a modal!</p>
-            </div>
-            <button onClick={handleCloseModal}>Close</button>
-          </div>,
-          modalContainer
-        )
-      : null;
-
-    return (
-      <>
-        <button id="openModalButton" onClick={handleOpenModal}>
-          Open Modal
-        </button>
-        {modalContent}
-      </>
-    );
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const openModalButton = await canvas.getByRole('button', { name: /open modal/i });
-    await userEvent.click(openModalButton);
-    await expect(screen.getByRole('dialog')).toBeInTheDocument();
   },
 };

@@ -1,3 +1,5 @@
+import { builtinModules } from 'node:module';
+
 import aliasPlugin from 'esbuild-plugin-alias';
 import * as fs from 'fs-extra';
 import { glob } from 'glob';
@@ -31,6 +33,12 @@ type PackageJsonWithBundlerConfig = PackageJson & {
 type DtsConfigSection = Pick<Options, 'dts' | 'tsconfig'>;
 
 /* MAIN */
+
+export const nodeInternals = [
+  'module',
+  'node:module',
+  ...builtinModules.flatMap((m: string) => [m, `node:${m}`]),
+];
 
 const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   const {
@@ -174,6 +182,11 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   }
 
   if (nodeEntries.length > 0) {
+    const { dtsConfig, tsConfigExists } = await getDTSConfigs({
+      formats: ['esm'],
+      entries: nodeEntries,
+      optimized,
+    });
     tasks.push(
       build({
         ...commonOptions,
@@ -188,6 +201,37 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         },
       })
     );
+    tasks.push(
+      build({
+        ...commonOptions,
+        ...(optimized ? dtsConfig : {}),
+        entry: nodeEntries.map((e: string) => slash(join(cwd, e))),
+        format: ['esm'],
+        target: 'node18',
+        platform: 'neutral',
+        banner: {
+          js: dedent`
+            import ESM_COMPAT_Module from "node:module";
+            import { fileURLToPath as ESM_COMPAT_fileURLToPath } from 'node:url';
+            import { dirname as ESM_COMPAT_dirname } from 'node:path';
+            const __filename = ESM_COMPAT_fileURLToPath(import.meta.url);
+            const __dirname = ESM_COMPAT_dirname(__filename);
+            const require = ESM_COMPAT_Module.createRequire(import.meta.url);
+          `,
+        },
+        external: [...commonExternals, ...nodeInternals],
+        esbuildOptions: (c) => {
+          c.mainFields = ['main', 'module', 'node'];
+          c.conditions = ['node', 'module', 'import', 'require'];
+          c.platform = 'neutral';
+          Object.assign(c, getESBuildOptions(optimized));
+        },
+      })
+    );
+
+    if (tsConfigExists && !optimized) {
+      tasks.push(...nodeEntries.map(generateDTSMapperFile));
+    }
   }
 
   await Promise.all(tasks);

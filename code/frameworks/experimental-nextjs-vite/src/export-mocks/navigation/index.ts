@@ -18,9 +18,10 @@ let navigationAPI: {
 
 /**
  * Creates a next/navigation router API mock. Used internally.
+ *
  * @ignore
  * @internal
- * */
+ */
 export const createNavigation = (overrides: any) => {
   const navigationActions = {
     push: fn().mockName('next/navigation::useRouter().push'),

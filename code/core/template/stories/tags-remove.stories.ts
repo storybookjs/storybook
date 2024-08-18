@@ -16,7 +16,7 @@ export default {
 };
 
 export const Inheritance = {
-  tags: ['story-one'],
+  tags: ['story-one', '!vitest'],
   play: async ({ canvasElement }: PlayFunctionContext<any>) => {
     const canvas = within(canvasElement);
     await expect(JSON.parse(canvas.getByTestId('pre').innerText)).toEqual({

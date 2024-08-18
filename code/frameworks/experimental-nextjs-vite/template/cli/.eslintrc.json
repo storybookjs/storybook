@@ -1,6 +1,5 @@
 {
   "rules": {
-    "import/no-extraneous-dependencies": "off",
     "import/extensions": "off",
     "react/no-unknown-property": "off"
   }

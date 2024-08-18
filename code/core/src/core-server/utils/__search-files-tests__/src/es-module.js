@@ -1,4 +1,3 @@
-/* eslint-disable import/no-unresolved */
 import * as ns from 'external2';
 
 export var p = 5;

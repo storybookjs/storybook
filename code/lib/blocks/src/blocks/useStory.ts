@@ -39,7 +39,9 @@ export function useStories<TRenderer extends Renderer = Renderer>(
   });
 
   return storyIds.map((storyId) => {
-    if (storiesById[storyId]) return storiesById[storyId];
+    if (storiesById[storyId]) {
+      return storiesById[storyId];
+    }
 
     try {
       // If we are allowed to load this story id synchonously, this will work

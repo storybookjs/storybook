@@ -91,8 +91,9 @@ export const createArgTypes = (docgen: SvelteComponentDoc) => {
 
 /**
  * Function to convert the type from sveltedoc-parser to a storybook type
+ *
  * @param type
- * @returns string
+ * @returns String
  */
 const parseTypeToControl = (type: JSDocType | undefined): any => {
   if (!type) {

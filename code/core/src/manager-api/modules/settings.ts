@@ -7,16 +7,22 @@ export interface SubAPI {
   retrieveSelection: () => StoryId;
   /**
    * Changes the active settings tab.
-   * @param path - The path of the settings page to navigate to. The path NOT should include the `/settings` prefix.
-   * @example  changeSettingsTab(`about`).
+   *
+   * @example
+   *
+   * ```ts
+   * changeSettingsTab(`about`);
+   * ```
+   *
+   * @param path - The path of the settings page to navigate to. The path NOT should include the
+   *   `/settings` prefix.
    */
   changeSettingsTab: (path: string) => void;
-  /**
-   * Closes the settings screen and returns to the last tracked story or the first story.
-   */
+  /** Closes the settings screen and returns to the last tracked story or the first story. */
   closeSettings: () => void;
   /**
    * Checks if the settings screen is currently active.
+   *
    * @returns A boolean indicating whether the settings screen is active.
    */
   isSettingsScreenActive: () => boolean;

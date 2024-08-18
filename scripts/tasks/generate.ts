@@ -1,4 +1,3 @@
-/* eslint-disable import/extensions */
 import { pathExists, remove } from 'fs-extra';
 import { join } from 'path';
 

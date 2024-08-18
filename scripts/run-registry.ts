@@ -32,12 +32,15 @@ const startVerdaccio = async () => {
   };
   return Promise.race([
     new Promise((resolve) => {
-      /** The proxy server will sit in front of verdaccio and tunnel traffic to either verdaccio or the actual npm global registry
-       * We do this because tunneling all traffic through verdaccio is slow (this might get fixed in verdaccio)
-       * With this heuristic we get the best of both worlds:
-       * - verdaccio for storybook packages (including unscoped packages such as `storybook` and `sb`)
-       * - npm global registry for all other packages
-       * - the best performance for both
+      /**
+       * The proxy server will sit in front of verdaccio and tunnel traffic to either verdaccio or
+       * the actual npm global registry We do this because tunneling all traffic through verdaccio
+       * is slow (this might get fixed in verdaccio) With this heuristic we get the best of both
+       * worlds:
+       *
+       * - Verdaccio for storybook packages (including unscoped packages such as `storybook` and `sb`)
+       * - Npm global registry for all other packages
+       * - The best performance for both
        *
        * The proxy server listens on port 6001 and verdaccio on port 6002
        *
@@ -103,17 +106,18 @@ const publish = async (packages: { name: string; location: string }[], url: stri
   let i = 0;
 
   /**
-   * We need to "pack" our packages before publishing to npm because our package.json files contain yarn specific version "ranges".
-   * such as "workspace:*"
+   * We need to "pack" our packages before publishing to npm because our package.json files contain
+   * yarn specific version "ranges". such as "workspace:*"
    *
-   * We can't publish to npm if the package.json contains these ranges. So with `yarn pack` we create a tarball that we can publish.
+   * We can't publish to npm if the package.json contains these ranges. So with `yarn pack` we
+   * create a tarball that we can publish.
    *
-   * However this bug exists in NPM: https://github.com/npm/cli/issues/4533!
-   * Which causes the NPM CLI to disregard the tarball CLI argument and instead re-create a tarball.
-   * But NPM doesn't replace the yarn version ranges.
+   * However this bug exists in NPM: https://github.com/npm/cli/issues/4533! Which causes the NPM
+   * CLI to disregard the tarball CLI argument and instead re-create a tarball. But NPM doesn't
+   * replace the yarn version ranges.
    *
-   * So we create the tarball ourselves and move it to another location on the FS.
-   * Then we change-directory to that directory and publish the tarball from there.
+   * So we create the tarball ourselves and move it to another location on the FS. Then we
+   * change-directory to that directory and publish the tarball from there.
    */
   await mkdir(PACKS_DIRECTORY, { recursive: true }).catch(() => {});
 

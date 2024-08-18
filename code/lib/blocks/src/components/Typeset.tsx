@@ -44,8 +44,8 @@ export interface TypesetProps {
 }
 
 /**
- * Convenient styleguide documentation showing examples of type
- * with different sizes and weights and configurable sample text.
+ * Convenient styleguide documentation showing examples of type with different sizes and weights and
+ * configurable sample text.
  */
 export const Typeset: FC<TypesetProps> = ({
   fontFamily,

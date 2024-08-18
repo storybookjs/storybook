@@ -59,9 +59,11 @@ export async function generateModernIframeScriptCode(options: Options, projectRo
   };
 
   /**
-   * This code is largely taken from https://github.com/storybookjs/storybook/blob/d1195cbd0c61687f1720fefdb772e2f490a46584/builders/builder-webpack4/src/preview/virtualModuleModernEntry.js.handlebars
-   * Some small tweaks were made to `getProjectAnnotations` (since `import()` needs to be resolved asynchronously)
-   * and the HMR implementation has been tweaked to work with Vite.
+   * This code is largely taken from
+   * https://github.com/storybookjs/storybook/blob/d1195cbd0c61687f1720fefdb772e2f490a46584/builders/builder-webpack4/src/preview/virtualModuleModernEntry.js.handlebars
+   * Some small tweaks were made to `getProjectAnnotations` (since `import()` needs to be resolved
+   * asynchronously) and the HMR implementation has been tweaked to work with Vite.
+   *
    * @todo Inline variable and remove `noinspection`
    */
   const code = `

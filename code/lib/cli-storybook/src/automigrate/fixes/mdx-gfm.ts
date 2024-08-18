@@ -15,8 +15,6 @@ interface Options {
   value?: boolean;
 }
 
-/**
- */
 export const mdxgfm: Fix<Options> = {
   id: 'github-flavored-markdown-mdx',
 

@@ -5,6 +5,11 @@ import { Nested, RSC } from './RSC';
 export default {
   component: RSC,
   args: { label: 'label' },
+  parameters: {
+    react: {
+      rsc: true,
+    },
+  },
 };
 
 export const Default = {};

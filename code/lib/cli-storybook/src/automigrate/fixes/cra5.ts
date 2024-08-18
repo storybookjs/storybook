@@ -16,6 +16,7 @@ interface CRA5RunOptions {
  * Is the user upgrading from CRA4 to CRA5?
  *
  * If so:
+ *
  * - Run webpack5 fix
  */
 export const cra5: Fix<CRA5RunOptions> = {

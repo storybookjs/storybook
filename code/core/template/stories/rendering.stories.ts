@@ -14,14 +14,16 @@ export default {
   args: {
     label: 'Click me',
   },
+  tags: ['!vitest'],
 };
 
 export const ForceRemount = {
   /**
-   * This play function runs in an infinite loop, because the final FORCE_REMOUNT event retriggers the function
-   * Because of this, it is disabled in both Chromatic and the test runner.
-   * To test it manually, inspect that the button alternates being focused and blurred every 3 seconds.
-   * If the button ALWAYS has focus it means the renderer didn't correctly remount the tree at the FORCE_REMOUNT event
+   * This play function runs in an infinite loop, because the final FORCE_REMOUNT event retriggers
+   * the function Because of this, it is disabled in both Chromatic and the test runner. To test it
+   * manually, inspect that the button alternates being focused and blurred every 3 seconds. If the
+   * button ALWAYS has focus it means the renderer didn't correctly remount the tree at the
+   * FORCE_REMOUNT event
    */
   parameters: { chromatic: { disableSnapshot: true } },
   play: async ({ canvasElement, id }: PlayFunctionContext<any>) => {
@@ -37,7 +39,7 @@ export const ForceRemount = {
     // By forcing the component to remount, we reset the focus state
     await channel.emit(FORCE_REMOUNT, { storyId: id });
   },
-  tags: ['!test'],
+  tags: ['!test', '!vitest'],
 };
 
 export const ChangeArgs = {
@@ -56,7 +58,14 @@ export const ChangeArgs = {
     // Web-components: https://github.com/storybookjs/storybook/issues/19415
     // Preact: https://github.com/storybookjs/storybook/issues/19504
 
-    if (['web-components', 'html', 'preact'].includes(globalThis.storybookRenderer)) return;
+    // Web-components: https://github.com/storybookjs/storybook/issues/19415
+    // Preact: https://github.com/storybookjs/storybook/issues/19504
+
+    if (['web-components', 'html', 'preact'].includes(globalThis.storybookRenderer)) {
+      return;
+    }
+
+    // When we change the args to the button, it should not remount
 
     // When we change the args to the button, it should not remount
     await channel.emit(UPDATE_STORY_ARGS, { storyId: id, updatedArgs: { label: 'New Text' } });
@@ -69,10 +78,11 @@ export const ChangeArgs = {
 let loadedLabel = 'Initial';
 
 /**
- * This story demonstrates what happens when rendering (loaders) have side effects, and can possibly interleave with each other
- * Triggering multiple force remounts quickly should only result in a single remount in the end
- * and the label should be 'Loaded. Click Me' at the end. If loaders are interleaving it would result in a label of 'Error: Interleaved loaders. Click Me'
- * Similarly, changing args rapidly should only cause one rerender at a time, producing the same result.
+ * This story demonstrates what happens when rendering (loaders) have side effects, and can possibly
+ * interleave with each other Triggering multiple force remounts quickly should only result in a
+ * single remount in the end and the label should be 'Loaded. Click Me' at the end. If loaders are
+ * interleaving it would result in a label of 'Error: Interleaved loaders. Click Me' Similarly,
+ * changing args rapidly should only cause one rerender at a time, producing the same result.
  */
 export const SlowLoader = {
   parameters: {

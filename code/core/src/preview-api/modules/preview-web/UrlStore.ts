@@ -38,7 +38,9 @@ const getQueryString = ({
 };
 
 export const setPath = (selection?: Selection) => {
-  if (!selection) return;
+  if (!selection) {
+    return;
+  }
   const query = getQueryString({ selection });
   const { hash = '' } = document.location;
   document.title = selection.storyId;

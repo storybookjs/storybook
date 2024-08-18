@@ -4,10 +4,7 @@ import { LitElement } from 'lit';
 
 const { customElements } = globalThis;
 
-/**
- *
- * @tag sb-html
- */
+/** @tag sb-html */
 export class SbHtml extends LitElement {
   static get properties() {
     return {

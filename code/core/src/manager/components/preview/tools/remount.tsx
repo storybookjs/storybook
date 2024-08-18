@@ -42,7 +42,9 @@ export const remountTool: Addon_BaseType = {
       {({ remount, storyId, api }) => {
         const [isAnimating, setIsAnimating] = useState(false);
         const remountComponent = () => {
-          if (!storyId) return;
+          if (!storyId) {
+            return;
+          }
           remount();
         };
 

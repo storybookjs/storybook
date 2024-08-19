@@ -4,7 +4,6 @@ import type { Channel } from 'storybook/internal/channels';
 
 import { REQUEST_COVERAGE_EVENT, type RequestCoverageEventPayload } from '../constants';
 import type { CoverageState } from '../types';
-import { CoverageEmitter } from './coverage-emitter';
 import { CoverageManager } from './coverage-manager';
 import CoverageReporter from './coverage-reporter';
 
@@ -37,16 +36,12 @@ describe('CustomReporter', () => {
     // Mock dependencies
     const coverageState: CoverageState = {
       timeStartTesting: performance.now(),
-      coverageResults: [],
     };
 
     // Mock CoverageEmitter
     const mockCoverageEmitter = {
       emitCoverage: vi.fn(),
     };
-    vi.spyOn(CoverageEmitter.prototype, 'emitCoverage').mockImplementation(
-      mockCoverageEmitter.emitCoverage
-    );
 
     coverageManager.coverageState = coverageState;
 
@@ -69,10 +64,6 @@ describe('CustomReporter', () => {
 
     // Call onDetail
     await reporter.onDetail(mockNode);
-
-    // Verify state update
-    expect(coverageState.coverageResults).toHaveLength(1);
-    expect(coverageState.coverageResults[0].stats.path).toBe('/path/to/component.tsx');
 
     // Verify emitter call
     expect(mockCoverageEmitter.emitCoverage).toHaveBeenCalledWith({

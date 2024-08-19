@@ -9,7 +9,6 @@ export type ManagerState = {
 export type CoverageState = {
   // performance.now() value when the testing started
   timeStartTesting: number;
-  coverageResults: ResultCoverageEventPayloadSuccess[];
 };
 
 export interface CodeLocation {
@@ -64,5 +63,5 @@ export interface CoverageSummary {
 export type TestingMode = {
   browser: boolean;
   coverageProvider: 'istanbul' | 'v8';
-  coverageType: 'component-coverage' | 'project-coverage' | 'focused-project-coverage';
+  coverageType: 'component-coverage' | 'project-coverage';
 };

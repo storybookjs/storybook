@@ -73,26 +73,6 @@ describe('CoverageManager', () => {
       expect(readFile).toHaveBeenCalledWith('some/component/path', 'utf8');
       expect(channel.emit).toHaveBeenCalledWith(RESULT_FILE_CONTENT, { content: 'file content' });
     });
-
-    it('should emit previous coverage if shouldEmitPreviousCoverage returns true', async () => {
-      const payload: RequestCoverageEventPayload = {
-        importPath: 'some/import/path',
-        componentPath: 'some/component/path',
-        initialRequest: false,
-        mode: { browser: true, coverageProvider: 'istanbul', coverageType: 'component-coverage' },
-      };
-
-      vi.mocked(readFile).mockResolvedValue('file content');
-      vi.spyOn(coverageManager, 'shouldEmitPreviousCoverage').mockReturnValue(true);
-      const emitPreviousCoverage = vi.spyOn(
-        coverageManager.coverageEmitter,
-        'emitPreviousCoverage'
-      );
-
-      await coverageManager.handleRequestCoverage(payload);
-
-      expect(emitPreviousCoverage).toHaveBeenCalledWith('some/component/path');
-    });
   });
 
   describe('emitFileContent', () => {

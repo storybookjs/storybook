@@ -11,7 +11,6 @@ import {
   type ResultFileContentPayload,
 } from '../constants';
 import type { CoverageState, ManagerState, TestingMode } from '../types';
-import { CoverageEmitter } from './coverage-emitter';
 import { VitestManager } from './vitest-manager';
 
 export class CoverageManager {
@@ -25,42 +24,18 @@ export class CoverageManager {
 
   coverageState: CoverageState = {
     timeStartTesting: 0,
-    coverageResults: [],
   };
 
   private vitestManager: VitestManager;
 
-  coverageEmitter: CoverageEmitter;
-
   constructor(private channel: Channel) {
-    this.coverageEmitter = new CoverageEmitter(channel, this.coverageState);
-    this.vitestManager = new VitestManager(
-      channel,
-      this.state,
-      this.coverageState,
-      this.coverageEmitter,
-      this
-    );
+    this.vitestManager = new VitestManager(channel, this.state, this.coverageState, this);
 
     this.channel.on(REQUEST_COVERAGE_EVENT, async (options: RequestCoverageEventPayload) => {
       await this.handleRequestCoverage(options);
       this.setPreviousState();
     });
     this.channel.on(FILE_CHANGED_EVENT, this.emitFileContent.bind(this));
-  }
-
-  shouldEmitPreviousCoverage(mode: TestingMode): boolean {
-    const isVitestRunning = this.vitestManager.isVitestRunning();
-
-    const isPrevProjectCoverage =
-      mode.coverageType === 'project-coverage' &&
-      this.previousState?.coverageType === 'project-coverage';
-
-    const isPrevFocusedProjectCoverage =
-      mode.coverageType === 'focused-project-coverage' &&
-      this.previousState?.coverageType === 'focused-project-coverage';
-
-    return isVitestRunning && (isPrevProjectCoverage || isPrevFocusedProjectCoverage);
   }
 
   setPreviousState() {
@@ -79,22 +54,22 @@ export class CoverageManager {
     this.state.absoluteStoryPath = join(process.cwd(), importPath);
     this.state.coverageType = mode.coverageType;
 
-    if (!componentPath) {
-      return;
+    if (!componentPath) return;
+
+    const hasComponentPathChanged =
+      this.previousState &&
+      this.previousState.absoluteComponentPath !== this.state.absoluteComponentPath;
+
+    if (initialRequest || hasComponentPathChanged) {
+      await this.emitFileContent(this.state.absoluteComponentPath);
     }
 
-    await this.emitFileContent(this.state.absoluteComponentPath);
+    const changedCoverageType =
+      this.previousState && this.state.coverageType !== this.previousState.coverageType;
+    const changedComponentPath =
+      this.state.coverageType === 'component-coverage' && hasComponentPathChanged;
 
-    if (this.shouldEmitPreviousCoverage(mode)) {
-      this.coverageEmitter.emitPreviousCoverage(this.state.absoluteComponentPath);
-      return;
-    }
-
-    if (
-      this.previousState?.absoluteComponentPath !== this.state.absoluteComponentPath ||
-      initialRequest
-    ) {
-      this.coverageState.coverageResults = [];
+    if (initialRequest || changedCoverageType || changedComponentPath) {
       await this.vitestManager.closeVitest();
       await this.vitestManager.initVitest({
         importPath,
@@ -102,6 +77,9 @@ export class CoverageManager {
         absoluteComponentPath: this.state.absoluteComponentPath,
         mode,
       });
+    } else if (this.state.coverageType === 'project-coverage' && hasComponentPathChanged) {
+      this.coverageState.timeStartTesting = performance.now();
+      await this.vitestManager.runAffectedTests(this.state.absoluteComponentPath);
     }
   }
 

@@ -4,8 +4,8 @@ import type { Channel } from 'storybook/internal/channels';
 // @ts-expect-error no types
 import { ReportBase } from 'istanbul-lib-report';
 
+import { RESULT_COVERAGE_EVENT, type ResultCoverageEventPayload } from '../constants';
 import type { CoverageItem, CoverageState, CoverageSummary, ManagerState } from '../types';
-import { CoverageEmitter } from './coverage-emitter';
 import type { CoverageManager } from './coverage-manager';
 
 type Node = {
@@ -28,8 +28,6 @@ export default class CoverageReporter extends ReportBase {
 
   file: any;
 
-  coverageEmitter: CoverageEmitter;
-
   coverageManager: CoverageManager;
 
   constructor(options: CoverageReporterOptions) {
@@ -37,34 +35,7 @@ export default class CoverageReporter extends ReportBase {
 
     this.channel = options.channel;
     this.coverageState = options.coverageState;
-    this.coverageEmitter = new CoverageEmitter(this.channel, this.coverageState);
     this.coverageManager = options.coverageManager;
-  }
-
-  private updateCoverageResults({
-    coverage,
-    coverageSummary,
-    executionTime,
-  }: {
-    coverage: CoverageItem;
-    coverageSummary: CoverageSummary;
-    executionTime: number;
-  }) {
-    const existingCoverage = this.coverageState.coverageResults.find(
-      (result) => result.stats.path === coverage.path
-    );
-
-    if (existingCoverage) {
-      existingCoverage.stats = coverage;
-      existingCoverage.summary = coverageSummary;
-      existingCoverage.executionTime = executionTime;
-    } else {
-      this.coverageState.coverageResults.push({
-        stats: coverage,
-        summary: coverageSummary,
-        executionTime: executionTime,
-      });
-    }
   }
 
   private getExecutionTime(): number {
@@ -76,17 +47,15 @@ export default class CoverageReporter extends ReportBase {
     const coverageSummary = node.getCoverageSummary();
     const executionTime = this.getExecutionTime();
 
-    this.updateCoverageResults({ coverage: coverage.data, coverageSummary, executionTime });
-
     const filesWithCoverage = this.coverageManager.getFilesWithCoverageInformation();
 
     filesWithCoverage.forEach((file) => {
       if (file === coverage.data.path) {
-        this.coverageEmitter.emitCoverage({
+        this.channel.emit(RESULT_COVERAGE_EVENT, {
           executionTime,
           stats: coverage.data,
           summary: coverageSummary,
-        });
+        } satisfies ResultCoverageEventPayload);
       }
     });
   }

@@ -1,33 +1,12 @@
-import memoize from 'memoizerific';
 import type {
-  Renderer,
   ComponentTitle,
   Parameters,
   Path,
+  Renderer,
   StoryContext,
   StoryContextForEnhancers,
   StoryId,
 } from '@storybook/core/types';
-import mapValues from 'lodash/mapValues.js';
-import pick from 'lodash/pick.js';
-
-import {
-  CalledExtractOnStoreError,
-  MissingStoryFromCsfFileError,
-} from '@storybook/core/preview-errors';
-import { deprecate } from '@storybook/core/client-logger';
-import { HooksContext } from '../addons';
-import { StoryIndexStore } from './StoryIndexStore';
-import { ArgsStore } from './ArgsStore';
-import { GlobalsStore } from './GlobalsStore';
-import {
-  processCSFFile,
-  prepareStory,
-  prepareMeta,
-  normalizeProjectAnnotations,
-  prepareContext,
-} from './csf';
-import type { Canvas, CleanupCallback } from '@storybook/csf';
 import type {
   BoundStory,
   CSFFile,
@@ -44,6 +23,29 @@ import type {
   StoryIndexV3,
   V3CompatIndexEntry,
 } from '@storybook/core/types';
+import type { Canvas, CleanupCallback } from '@storybook/csf';
+
+import { deprecate } from '@storybook/core/client-logger';
+import {
+  CalledExtractOnStoreError,
+  MissingStoryFromCsfFileError,
+} from '@storybook/core/preview-errors';
+
+import mapValues from 'lodash/mapValues.js';
+import pick from 'lodash/pick.js';
+import memoize from 'memoizerific';
+
+import { HooksContext } from '../addons';
+import { ArgsStore } from './ArgsStore';
+import { GlobalsStore } from './GlobalsStore';
+import { StoryIndexStore } from './StoryIndexStore';
+import {
+  normalizeProjectAnnotations,
+  prepareContext,
+  prepareMeta,
+  prepareStory,
+  processCSFFile,
+} from './csf';
 
 // TODO -- what are reasonable values for these?
 const CSF_CACHE_SIZE = 1000;
@@ -54,7 +56,7 @@ export class StoryStore<TRenderer extends Renderer> {
 
   projectAnnotations: NormalizedProjectAnnotations<TRenderer>;
 
-  globals: GlobalsStore;
+  userGlobals: GlobalsStore;
 
   args: ArgsStore;
 
@@ -83,7 +85,7 @@ export class StoryStore<TRenderer extends Renderer> {
     const { initialGlobals, globalTypes } = this.projectAnnotations;
 
     this.args = new ArgsStore();
-    this.globals = new GlobalsStore({ globals: initialGlobals, globalTypes });
+    this.userGlobals = new GlobalsStore({ globals: initialGlobals, globalTypes });
     this.hooks = {};
     this.cleanupCallbacks = {};
 
@@ -99,7 +101,7 @@ export class StoryStore<TRenderer extends Renderer> {
     // By changing `this.projectAnnotations, we implicitly invalidate the `prepareStoryWithCache`
     this.projectAnnotations = normalizeProjectAnnotations(projectAnnotations);
     const { initialGlobals, globalTypes } = projectAnnotations;
-    this.globals.set({ globals: initialGlobals, globalTypes });
+    this.userGlobals.set({ globals: initialGlobals, globalTypes });
   }
 
   // This means that one of the CSF files has changed.
@@ -113,10 +115,20 @@ export class StoryStore<TRenderer extends Renderer> {
     importFn?: ModuleImportFn;
     storyIndex?: StoryIndex;
   }) {
-    if (importFn) this.importFn = importFn;
+    if (importFn) {
+      this.importFn = importFn;
+    }
     // The index will always be set before the initialization promise returns
-    if (storyIndex) this.storyIndex.entries = storyIndex.entries;
-    if (this.cachedCSFFiles) await this.cacheAllCSFFiles();
+    // The index will always be set before the initialization promise returns
+
+    // The index will always be set before the initialization promise returns
+    if (storyIndex) {
+      this.storyIndex.entries = storyIndex.entries;
+    }
+
+    if (this.cachedCSFFiles) {
+      await this.cacheAllCSFFiles();
+    }
   }
 
   // Get an entry from the index, waiting on initialization if necessary
@@ -186,7 +198,10 @@ export class StoryStore<TRenderer extends Renderer> {
     csfFile: CSFFile<TRenderer>;
   }): PreparedStory<TRenderer> {
     const storyAnnotations = csfFile.stories[storyId];
-    if (!storyAnnotations) throw new MissingStoryFromCsfFileError({ storyId });
+
+    if (!storyAnnotations) {
+      throw new MissingStoryFromCsfFileError({ storyId });
+    }
 
     const componentAnnotations = csfFile.meta;
 
@@ -230,10 +245,18 @@ export class StoryStore<TRenderer extends Renderer> {
   // A prepared story does not include args, globals or hooks. These are stored in the story store
   // and updated separtely to the (immutable) story.
   getStoryContext(story: PreparedStory<TRenderer>, { forceInitialArgs = false } = {}) {
+    const userGlobals = this.userGlobals.get();
+    const { initialGlobals } = this.userGlobals;
     return prepareContext({
       ...story,
       args: forceInitialArgs ? story.initialArgs : this.args.get(story.id),
-      globals: this.globals.get(),
+      initialGlobals,
+      globalTypes: this.projectAnnotations.globalTypes,
+      userGlobals,
+      globals: {
+        ...userGlobals,
+        ...story.storyGlobals,
+      },
       hooks: this.hooks[story.id] as unknown,
     });
   }
@@ -246,7 +269,12 @@ export class StoryStore<TRenderer extends Renderer> {
     this.hooks[story.id].clean();
 
     const callbacks = this.cleanupCallbacks[story.id];
-    if (callbacks) for (const callback of [...callbacks].reverse()) await callback();
+
+    if (callbacks) {
+      for (const callback of [...callbacks].reverse()) {
+        await callback();
+      }
+    }
 
     delete this.cleanupCallbacks[story.id];
   }
@@ -255,11 +283,16 @@ export class StoryStore<TRenderer extends Renderer> {
     options: { includeDocsOnly?: boolean } = { includeDocsOnly: false }
   ): Record<StoryId, StoryContextForEnhancers<TRenderer>> {
     const { cachedCSFFiles } = this;
-    if (!cachedCSFFiles) throw new CalledExtractOnStoreError();
+
+    if (!cachedCSFFiles) {
+      throw new CalledExtractOnStoreError();
+    }
 
     return Object.entries(this.storyIndex.entries).reduce(
       (acc, [storyId, { type, importPath }]) => {
-        if (type === 'docs') return acc;
+        if (type === 'docs') {
+          return acc;
+        }
 
         const csfFile = cachedCSFFiles[importPath];
         const story = this.storyFromCSFFile({ storyId, csfFile });
@@ -270,7 +303,9 @@ export class StoryStore<TRenderer extends Renderer> {
 
         acc[storyId] = Object.entries(story).reduce(
           (storyAcc, [key, value]) => {
-            if (key === 'moduleExport') return storyAcc;
+            if (key === 'moduleExport') {
+              return storyAcc;
+            }
             if (typeof value === 'function') {
               return storyAcc;
             }
@@ -287,6 +322,7 @@ export class StoryStore<TRenderer extends Renderer> {
     );
   }
 
+  // TODO: Remove in 9.0
   getSetStoriesPayload() {
     const stories = this.extract({ includeDocsOnly: true });
 
@@ -300,13 +336,14 @@ export class StoryStore<TRenderer extends Renderer> {
 
     return {
       v: 2,
-      globals: this.globals.get(),
+      globals: this.userGlobals.get(),
       globalParameters: {},
       kindParameters,
       stories,
     };
   }
 
+  // TODO: Remove in 9.0
   // NOTE: this is legacy `stories.json` data for the `extract` script.
   // It is used to allow v7 Storybooks to be composed in v6 Storybooks, which expect a
   // `stories.json` file with legacy fields (`kind` etc).
@@ -352,9 +389,12 @@ export class StoryStore<TRenderer extends Renderer> {
     );
 
     // Deprecated so won't make a proper error for this
-    if (!this.cachedCSFFiles)
+
+    // Deprecated so won't make a proper error for this
+    if (!this.cachedCSFFiles) {
       // eslint-disable-next-line local-rules/no-uncategorized-errors
       throw new Error('Cannot call fromId/raw() unless you call cacheAllCSFFiles() first.');
+    }
 
     let importPath;
     try {

@@ -1,13 +1,14 @@
+import { setOutput } from '@actions/core';
 import chalk from 'chalk';
 import program from 'commander';
-import { z } from 'zod';
-import { dedent } from 'ts-dedent';
 import semver from 'semver';
-import { setOutput } from '@actions/core';
+import { dedent } from 'ts-dedent';
+import { z } from 'zod';
+
 import { esMain } from '../utils/esmain';
-import type { Change } from './utils/get-changes';
-import { getChanges, LABELS_BY_IMPORTANCE, RELEASED_LABELS } from './utils/get-changes';
 import { getCurrentVersion } from './get-current-version';
+import type { Change } from './utils/get-changes';
+import { LABELS_BY_IMPORTANCE, RELEASED_LABELS, getChanges } from './utils/get-changes';
 import type { PullRequestInfo } from './utils/get-github-info';
 
 program

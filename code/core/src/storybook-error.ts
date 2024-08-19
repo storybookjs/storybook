@@ -7,41 +7,36 @@ function parseErrorCode({
 }
 
 export abstract class StorybookError extends Error {
-  /**
-   * Category of the error. Used to classify the type of error, e.g., 'PREVIEW_API'.
-   */
+  /** Category of the error. Used to classify the type of error, e.g., 'PREVIEW_API'. */
   public readonly category: string;
 
-  /**
-   * Code representing the error. Used to uniquely identify the error, e.g., 1.
-   */
+  /** Code representing the error. Used to uniquely identify the error, e.g., 1. */
   public readonly code: number;
 
   /**
-   * Data associated with the error. Used to provide additional information in the error message or to be passed to telemetry.
+   * Data associated with the error. Used to provide additional information in the error message or
+   * to be passed to telemetry.
    */
   public readonly data = {};
 
   /**
    * Specifies the documentation for the error.
-   * - If `true`, links to a documentation page on the Storybook website (make sure it exists before enabling) – This is not implemented yet.
+   *
+   * - If `true`, links to a documentation page on the Storybook website (make sure it exists before
+   *   enabling) – This is not implemented yet.
    * - If a string, uses the provided URL for documentation (external or FAQ links).
    * - If `false` (default), no documentation link is added.
    */
   public readonly documentation: boolean | string | string[];
 
-  /**
-   * Flag used to easily determine if the error originates from Storybook.
-   */
+  /** Flag used to easily determine if the error originates from Storybook. */
   readonly fromStorybook: true = true as const;
 
   get fullErrorCode() {
     return parseErrorCode({ code: this.code, category: this.category });
   }
 
-  /**
-   * Overrides the default `Error.name` property in the format: SB_<CATEGORY>_<CODE>.
-   */
+  /** Overrides the default `Error.name` property in the format: SB_<CATEGORY>_<CODE>. */
   get name() {
     const errorName = this.constructor.name;
 
@@ -60,9 +55,7 @@ export abstract class StorybookError extends Error {
     this.code = props.code;
   }
 
-  /**
-   * Generates the error message along with additional documentation link (if applicable).
-   */
+  /** Generates the error message along with additional documentation link (if applicable). */
   static getFullMessage({
     documentation,
     code,

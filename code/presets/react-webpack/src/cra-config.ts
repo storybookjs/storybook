@@ -1,18 +1,20 @@
-import fs from 'fs';
-import path from 'path';
-import semver from 'semver';
+import { existsSync, readFileSync, realpathSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { logger } from 'storybook/internal/node-logger';
 
-const appDirectory = fs.realpathSync(process.cwd());
+import semver from 'semver';
+
+const appDirectory = realpathSync(process.cwd());
 
 let reactScriptsPath: string;
 
 export function getReactScriptsPath({ noCache }: { noCache?: boolean } = {}) {
-  if (reactScriptsPath && !noCache) return reactScriptsPath;
+  if (reactScriptsPath && !noCache) {
+    return reactScriptsPath;
+  }
 
-  let reactScriptsScriptPath = fs.realpathSync(
-    path.join(appDirectory, '/node_modules/.bin/react-scripts')
-  );
+  let reactScriptsScriptPath = realpathSync(join(appDirectory, '/node_modules/.bin/react-scripts'));
 
   try {
     // Note: Since there is no symlink for .bin/react-scripts on Windows
@@ -24,27 +26,23 @@ export function getReactScriptsPath({ noCache }: { noCache?: boolean } = {}) {
     );
 
     if (pathIsNotResolved) {
-      const content = fs.readFileSync(reactScriptsScriptPath, 'utf8');
+      const content = readFileSync(reactScriptsScriptPath, 'utf8');
       const packagePathMatch = content.match(
         /"\$basedir[\\/]([^\s]+?[\\/]bin[\\/]react-scripts\.js")/i
       );
 
       if (packagePathMatch && packagePathMatch.length > 1) {
-        reactScriptsScriptPath = path.join(
-          appDirectory,
-          '/node_modules/.bin/',
-          packagePathMatch[1]
-        );
+        reactScriptsScriptPath = join(appDirectory, '/node_modules/.bin/', packagePathMatch[1]);
       }
     }
   } catch (e) {
     logger.warn(`Error occurred during react-scripts package path resolving: ${e}`);
   }
 
-  reactScriptsPath = path.join(reactScriptsScriptPath, '../..');
-  const scriptsPkgJson = path.join(reactScriptsPath, 'package.json');
+  reactScriptsPath = join(reactScriptsScriptPath, '../..');
+  const scriptsPkgJson = join(reactScriptsPath, 'package.json');
 
-  if (!fs.existsSync(scriptsPkgJson)) {
+  if (!existsSync(scriptsPkgJson)) {
     reactScriptsPath = 'react-scripts';
   }
 
@@ -53,7 +51,7 @@ export function getReactScriptsPath({ noCache }: { noCache?: boolean } = {}) {
 
 export function isReactScriptsInstalled(requiredVersion = '2.0.0') {
   try {
-    const reactScriptsJson = require(path.join(getReactScriptsPath(), 'package.json'));
+    const reactScriptsJson = require(join(getReactScriptsPath(), 'package.json'));
     return !semver.gtr(requiredVersion, reactScriptsJson.version);
   } catch (e) {
     return false;

@@ -1,8 +1,8 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
 import React from 'react';
 
 /**
  * ReactFunctionalComponent component
+ *
  * @param {object} props
  * @param {string} props.label
  */
@@ -24,6 +24,7 @@ export const ReactFunctionalComponent = ({ label }) => {
 
 /**
  * ReactClassComponent component
+ *
  * @param {object} props
  * @param {string} props.label
  */

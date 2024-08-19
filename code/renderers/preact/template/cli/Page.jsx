@@ -1,10 +1,9 @@
 import { useState } from 'preact/hooks';
+
 import { Header } from './Header';
 import './page.css';
 
-/**
- * Simple page component
- */
+/** Simple page component */
 export const Page = () => {
   const [user, setUser] = useState();
 

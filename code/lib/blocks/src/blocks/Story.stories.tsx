@@ -1,15 +1,17 @@
 import React from 'react';
+
 import type { Meta, StoryObj } from '@storybook/react';
 import { expect, waitFor } from '@storybook/test';
 
-import { Story as StoryBlock } from './Story';
-import * as ButtonStories from '../examples/Button.stories';
 import * as StoryComponentStories from '../components/Story.stories';
+import * as ButtonStories from '../examples/Button.stories';
 import * as StoryParametersStories from '../examples/StoryParameters.stories';
+import { Story as StoryBlock } from './Story';
 
 const meta: Meta<typeof StoryBlock> = {
   component: StoryBlock,
   parameters: {
+    layout: 'fullscreen',
     relativeCsfPaths: ['../examples/Button.stories', '../examples/StoryParameters.stories'],
     docsStyles: true,
   },
@@ -54,7 +56,7 @@ export const OfUndefined: Story = {
     of: ButtonStories.NotDefined,
   },
   parameters: { chromatic: { disableSnapshot: true } },
-  decorators: [(s) => (window?.navigator.userAgent.match(/StorybookTestRunner/) ? <div /> : s())],
+  tags: ['!test'],
 };
 
 export const Inline: Story = {

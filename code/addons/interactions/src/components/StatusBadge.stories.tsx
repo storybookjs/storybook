@@ -1,4 +1,5 @@
 import { CallStates } from '@storybook/instrumenter';
+
 import { StatusBadge } from './StatusBadge';
 
 export default {

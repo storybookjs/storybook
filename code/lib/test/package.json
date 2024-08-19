@@ -1,6 +1,6 @@
 {
   "name": "@storybook/test",
-  "version": "8.3.0-alpha.2",
+  "version": "8.3.0-alpha.7",
   "description": "",
   "keywords": [
     "storybook"
@@ -40,22 +40,23 @@
     "*.d.ts"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
     "@storybook/csf": "^0.1.11",
+    "@storybook/global": "^5.0.0",
     "@storybook/instrumenter": "workspace:*",
-    "@testing-library/dom": "10.1.0",
-    "@testing-library/jest-dom": "6.4.5",
+    "@testing-library/dom": "10.4.0",
+    "@testing-library/jest-dom": "6.4.8",
     "@testing-library/user-event": "14.5.2",
-    "@vitest/expect": "1.6.0",
-    "@vitest/spy": "1.6.0",
+    "@vitest/expect": "2.0.5",
+    "@vitest/spy": "2.0.5",
     "util": "^0.12.4"
   },
   "devDependencies": {
-    "chai": "^4.4.1",
-    "tinyspy": "^2.2.0",
+    "chai": "^5.1.1",
+    "tinyspy": "^3.0.0",
     "ts-dedent": "^2.2.0",
     "type-fest": "~2.19",
     "typescript": "^5.3.2"

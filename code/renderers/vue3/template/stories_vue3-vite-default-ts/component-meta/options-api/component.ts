@@ -1,13 +1,9 @@
 import { defineComponent, h } from 'vue';
 
 interface SubmitPayload {
-  /**
-   * email of user
-   */
+  /** Email of user */
   email: string;
-  /**
-   * password of same user
-   */
+  /** Password of same user */
   password: string;
 }
 
@@ -23,32 +19,24 @@ export default defineComponent({
     },
   },
   props: {
-    /**
-     * Number prop with default
-     */
+    /** Number prop with default */
     numberDefault: {
       type: Number,
       default: 42,
     },
-    /**
-     * Object prop with default
-     */
+    /** Object prop with default */
     objectDefault: {
       type: Object,
       default: () => ({
         foo: 'bar',
       }),
     },
-    /**
-     * Array prop with default
-     */
+    /** Array prop with default */
     arrayDefault: {
       type: Array,
       default: () => [1, 2, 3],
     },
-    /**
-     * Default function more complex
-     */
+    /** Default function more complex */
     complexDefault: {
       type: Array,
       default: (props: any) => {

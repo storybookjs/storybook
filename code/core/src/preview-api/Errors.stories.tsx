@@ -1,4 +1,5 @@
 import React from 'react';
+
 import AnsiToHtml from 'ansi-to-html';
 import { dedent } from 'ts-dedent';
 
@@ -39,8 +40,8 @@ export default {
   component: Component,
   parameters: {
     layout: 'fullscreen',
-    theme: 'light',
   },
+  globals: { sb_theme: 'light' },
   title: 'Errors',
   args: {
     id: 'sb-errordisplay',

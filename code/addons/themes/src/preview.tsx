@@ -1,7 +1,7 @@
-import type { Renderer, ProjectAnnotations } from 'storybook/internal/types';
-import { GLOBAL_KEY } from './constants';
+import type { ProjectAnnotations, Renderer } from 'storybook/internal/types';
 
-export const globals: ProjectAnnotations<Renderer>['globals'] = {
-  // Required to make sure SB picks this up from URL params
-  [GLOBAL_KEY]: '',
+import { GLOBAL_KEY as KEY } from './constants';
+
+export const initialGlobals: ProjectAnnotations<Renderer>['initialGlobals'] = {
+  [KEY]: '',
 };

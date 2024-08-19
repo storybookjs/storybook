@@ -1,14 +1,16 @@
-import { action } from '@storybook/addon-actions';
 import type { FC, PropsWithChildren } from 'react';
 import React, { useState } from 'react';
 
+import { LocationProvider } from '@storybook/core/router';
 import { styled } from '@storybook/core/theming';
 import type { Meta, StoryObj } from '@storybook/react';
 import { fn } from '@storybook/test';
+
+import { action } from '@storybook/addon-actions';
+
+import MobileNavigationStoriesMeta from '../mobile/navigation/MobileNavigation.stories';
 import { Layout } from './Layout';
 import { LayoutProvider } from './LayoutProvider';
-import { LocationProvider } from '@storybook/core/router';
-import MobileNavigationStoriesMeta from '../mobile/navigation/MobileNavigation.stories';
 
 const PlaceholderBlock = styled.div({
   width: '100%',
@@ -63,10 +65,8 @@ const meta = {
     setManagerLayoutState: fn(),
     hasTab: false,
   },
-  parameters: {
-    theme: 'light',
-    layout: 'fullscreen',
-  },
+  globals: { sb_theme: 'light' },
+  parameters: { layout: 'fullscreen' },
   decorators: [
     MobileNavigationStoriesMeta.decorators[0] as any,
     (storyFn) => (
@@ -97,7 +97,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Desktop: Story = {};
 export const Dark: Story = {
-  parameters: { theme: 'dark' },
+  globals: { sb_theme: 'dark' },
 };
 export const DesktopHorizontal: Story = {
   args: {
@@ -127,10 +127,7 @@ export const Mobile = {
 };
 export const MobileDark = {
   ...Mobile,
-  parameters: {
-    ...Mobile.parameters,
-    theme: 'dark',
-  },
+  globals: { sb_theme: 'dark' },
 };
 
 export const MobileDocs = {

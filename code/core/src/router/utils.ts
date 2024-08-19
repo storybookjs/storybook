@@ -1,4 +1,5 @@
 import { once } from '@storybook/core/client-logger';
+
 import { dequal as deepEqual } from 'dequal';
 import isPlainObject from 'lodash/isPlainObject.js';
 import memoize from 'memoizerific';
@@ -42,15 +43,26 @@ interface Args {
 
 export const DEEPLY_EQUAL = Symbol('Deeply equal');
 export const deepDiff = (value: any, update: any): any => {
-  if (typeof value !== typeof update) return update;
-  if (deepEqual(value, update)) return DEEPLY_EQUAL;
+  if (typeof value !== typeof update) {
+    return update;
+  }
+
+  if (deepEqual(value, update)) {
+    return DEEPLY_EQUAL;
+  }
   if (Array.isArray(value) && Array.isArray(update)) {
     const res = update.reduce((acc, upd, index) => {
       const diff = deepDiff(value[index], upd);
-      if (diff !== DEEPLY_EQUAL) acc[index] = diff;
+
+      if (diff !== DEEPLY_EQUAL) {
+        acc[index] = diff;
+      }
       return acc;
     }, new Array(update.length));
-    if (update.length >= value.length) return res;
+
+    if (update.length >= value.length) {
+      return res;
+    }
     return res.concat(new Array(value.length - update.length).fill(undefined));
   }
   if (isPlainObject(value) && isPlainObject(update)) {
@@ -69,11 +81,27 @@ const HEX_REGEXP = /^#([a-f0-9]{3,4}|[a-f0-9]{6}|[a-f0-9]{8})$/i;
 const COLOR_REGEXP =
   /^(rgba?|hsla?)\(([0-9]{1,3}),\s?([0-9]{1,3})%?,\s?([0-9]{1,3})%?,?\s?([0-9](\.[0-9]{1,2})?)?\)$/i;
 const validateArgs = (key = '', value: unknown): boolean => {
-  if (key === null) return false;
-  if (key === '' || !VALIDATION_REGEXP.test(key)) return false;
-  if (value === null || value === undefined) return true; // encoded as `!null` or `!undefined`
-  if (value instanceof Date) return true; // encoded as modified ISO string
-  if (typeof value === 'number' || typeof value === 'boolean') return true;
+  if (key === null) {
+    return false;
+  }
+
+  if (key === '' || !VALIDATION_REGEXP.test(key)) {
+    return false;
+  }
+
+  if (value === null || value === undefined) {
+    return true;
+  } // encoded as `!null` or `!undefined` // encoded as `!null` or `!undefined`
+
+  // encoded as `!null` or `!undefined`
+  if (value instanceof Date) {
+    return true;
+  } // encoded as modified ISO string // encoded as modified ISO string
+
+  // encoded as modified ISO string
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return true;
+  }
   if (typeof value === 'string') {
     return (
       VALIDATION_REGEXP.test(value) ||
@@ -93,11 +121,21 @@ const validateArgs = (key = '', value: unknown): boolean => {
 };
 
 const encodeSpecialValues = (value: unknown): any => {
-  if (value === undefined) return '!undefined';
-  if (value === null) return '!null';
+  if (value === undefined) {
+    return '!undefined';
+  }
+
+  if (value === null) {
+    return '!null';
+  }
   if (typeof value === 'string') {
-    if (HEX_REGEXP.test(value)) return `!hex(${value.slice(1)})`;
-    if (COLOR_REGEXP.test(value)) return `!${value.replace(/[\s%]/g, '')}`;
+    if (HEX_REGEXP.test(value)) {
+      return `!hex(${value.slice(1)})`;
+    }
+
+    if (COLOR_REGEXP.test(value)) {
+      return `!${value.replace(/[\s%]/g, '')}`;
+    }
     return value;
   }
 
@@ -105,7 +143,9 @@ const encodeSpecialValues = (value: unknown): any => {
     return `!${value}`;
   }
 
-  if (Array.isArray(value)) return value.map(encodeSpecialValues);
+  if (Array.isArray(value)) {
+    return value.map(encodeSpecialValues);
+  }
   if (isPlainObject(value)) {
     return Object.entries(value as Record<string, any>).reduce(
       (acc, [key, val]) => Object.assign(acc, { [key]: encodeSpecialValues(val) }),
@@ -124,10 +164,15 @@ const QS_OPTIONS: IStringifyOptions = {
 };
 export const buildArgsParam = (initialArgs: Args | undefined, args: Args): string => {
   const update = deepDiff(initialArgs, args);
-  if (!update || update === DEEPLY_EQUAL) return '';
+
+  if (!update || update === DEEPLY_EQUAL) {
+    return '';
+  }
 
   const object = Object.entries(update).reduce((acc, [key, value]) => {
-    if (validateArgs(key, value)) return Object.assign(acc, { [key]: value });
+    if (validateArgs(key, value)) {
+      return Object.assign(acc, { [key]: value });
+    }
     once.warn(dedent`
       Omitted potentially unsafe URL args.
 

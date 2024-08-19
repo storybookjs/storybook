@@ -1,9 +1,12 @@
 import type { FC } from 'react';
 import React, { useEffect } from 'react';
-import type { Step, TooltipRenderProps } from 'react-joyride';
+
 import { IconButton } from 'storybook/internal/components';
+import { color, styled } from 'storybook/internal/theming';
+
 import { CloseAltIcon } from '@storybook/icons';
-import { styled, color } from 'storybook/internal/theming';
+
+import type { Step, TooltipRenderProps } from 'react-joyride';
 
 import { Button } from '../../components/Button/Button';
 
@@ -114,7 +117,10 @@ export const Tooltip: FC<TooltipProps> = ({
     document.head.appendChild(style);
     return () => {
       const styleElement = document.querySelector('#sb-onboarding-arrow-style');
-      if (styleElement) styleElement.remove();
+
+      if (styleElement) {
+        styleElement.remove();
+      }
     };
   }, []);
 

@@ -1,7 +1,7 @@
 import React from 'react';
-import { styled, withTheme } from '@storybook/core/theming';
 
 import { StorybookLogo } from '@storybook/core/components';
+import { styled, withTheme } from '@storybook/core/theming';
 
 export const StorybookLogoStyled = styled(StorybookLogo)(({ theme }) => ({
   width: 'auto',
@@ -38,9 +38,13 @@ export const Brand = withTheme(({ theme }) => {
 
   // When image is explicitly set to null, enable custom HTML support
   if (image === null) {
-    if (title === null) return null;
+    if (title === null) {
+      return null;
+    }
 
-    if (!url) return <div dangerouslySetInnerHTML={{ __html: title }} />;
+    if (!url) {
+      return <div dangerouslySetInnerHTML={{ __html: title }} />;
+    }
     return <LogoLink href={url} target={targetValue} dangerouslySetInnerHTML={{ __html: title }} />;
   }
 

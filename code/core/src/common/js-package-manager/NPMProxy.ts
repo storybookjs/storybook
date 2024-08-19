@@ -1,16 +1,18 @@
-import sort from 'semver/functions/sort';
-import { platform } from 'os';
-import dedent from 'ts-dedent';
-import { findUpSync } from 'find-up';
 import { existsSync, readFileSync } from 'node:fs';
-import path from 'node:path';
+import { platform } from 'node:os';
+import { join } from 'node:path';
+
 import { logger } from '@storybook/core/node-logger';
 import { FindPackageVersionsError } from '@storybook/core/server-errors';
 
+import { findUp } from 'find-up';
+import sort from 'semver/functions/sort.js';
+import dedent from 'ts-dedent';
+
+import { createLogStream } from '../utils/cli';
 import { JsPackageManager } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
 import type { InstallationMetadata, PackageMetadata } from './types';
-import { createLogStream } from '../utils/cli';
 
 type NpmDependency = {
   version: string;
@@ -87,9 +89,9 @@ export class NPMProxy extends JsPackageManager {
     packageName: string,
     basePath = this.cwd
   ): Promise<PackageJson | null> {
-    const packageJsonPath = await findUpSync(
+    const packageJsonPath = await findUp(
       (dir) => {
-        const possiblePath = path.join(dir, 'node_modules', packageName, 'package.json');
+        const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
         return existsSync(possiblePath) ? possiblePath : undefined;
       },
       { cwd: basePath }
@@ -262,7 +264,6 @@ export class NPMProxy extends JsPackageManager {
   }
 
   /**
-   *
    * @param input The output of `npm ls --json`
    * @param pattern A list of package names to filter the result. * can be used as a placeholder
    */

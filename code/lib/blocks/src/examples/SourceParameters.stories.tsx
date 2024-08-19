@@ -1,9 +1,10 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { SourceType } from 'storybook/internal/docs-tools';
-
 import type { StoryContext } from 'storybook/internal/types';
 
+import type { Meta, StoryObj } from '@storybook/react';
+
 import { dedent } from 'ts-dedent';
+
 import { EmptyExample } from './EmptyExample';
 
 const code = `query HeroNameAndFriends($episode: Episode) {

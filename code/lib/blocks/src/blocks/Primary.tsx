@@ -1,14 +1,13 @@
 import type { FC } from 'react';
 import React, { useContext } from 'react';
+
+import { DocsContext } from './DocsContext';
+import { DocsStory } from './DocsStory';
 import type { Of } from './useOf';
 import { useOf } from './useOf';
-import { DocsStory } from './DocsStory';
-import { DocsContext } from './DocsContext';
 
 interface PrimaryProps {
-  /**
-   * Specify where to get the primary story from.
-   */
+  /** Specify where to get the primary story from. */
   of?: Of;
 }
 

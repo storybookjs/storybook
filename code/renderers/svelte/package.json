@@ -1,6 +1,6 @@
 {
   "name": "@storybook/svelte",
-  "version": "8.3.0-alpha.2",
+  "version": "8.3.0-alpha.7",
   "description": "Storybook Svelte renderer",
   "keywords": [
     "storybook"
@@ -54,7 +54,7 @@
   ],
   "scripts": {
     "check": "svelte-check",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
     "@storybook/components": "workspace:^",

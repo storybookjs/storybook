@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react",
-  "version": "8.3.0-alpha.2",
+  "version": "8.3.0-alpha.7",
   "description": "Storybook React renderer",
   "keywords": [
     "storybook"
@@ -22,15 +22,15 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "require": "./dist/index.js",
+      "node": "./dist/index.js"
     },
     "./experimental-playwright": {
       "types": "./dist/playwright.d.ts",
-      "node": "./dist/playwright.js",
       "import": "./dist/playwright.mjs",
-      "require": "./dist/playwright.js"
+      "require": "./dist/playwright.js",
+      "node": "./dist/playwright.js"
     },
     "./preset": "./preset.js",
     "./dist/entry-preview.mjs": "./dist/entry-preview.mjs",
@@ -60,8 +60,8 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
     "@storybook/components": "workspace:^",
@@ -72,13 +72,12 @@
     "@storybook/theming": "workspace:^",
     "@types/escodegen": "^0.0.6",
     "@types/estree": "^0.0.51",
-    "@types/node": "^18.0.0",
+    "@types/node": "^22.0.0",
     "acorn": "^7.4.1",
     "acorn-jsx": "^5.3.1",
     "acorn-walk": "^7.2.0",
     "escodegen": "^2.1.0",
     "html-tags": "^3.1.0",
-    "lodash": "^4.17.21",
     "prop-types": "^15.7.2",
     "react-element-to-jsx-string": "^15.0.0",
     "semver": "^7.3.7",
@@ -93,6 +92,7 @@
     "@types/util-deprecate": "^1.0.0",
     "babel-plugin-react-docgen": "^4.2.1",
     "expect-type": "^0.15.0",
+    "lodash": "^4.17.21",
     "require-from-string": "^2.0.2"
   },
   "peerDependencies": {
@@ -116,7 +116,7 @@
     "entries": [
       "./src/index.ts",
       "./src/preset.ts",
-      "./src/entry-preview.ts",
+      "./src/entry-preview.tsx",
       "./src/entry-preview-docs.ts",
       "./src/entry-preview-rsc.tsx",
       "./src/playwright.ts"

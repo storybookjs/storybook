@@ -1,5 +1,6 @@
 import type { FC } from 'react';
 import React, { Fragment } from 'react';
+
 import { styled } from '@storybook/core/theming';
 
 const LOADER_SEQUENCE = [0, 0, 1, 1, 2, 3, 3, 3, 1, 1, 1, 2, 2, 2, 3];
@@ -35,8 +36,8 @@ export const Contained = styled.div({
 
 interface LoaderProps {
   /**
-   * The number of lines to display in the loader.
-   * These are indented according to a pre-defined sequence of depths.
+   * The number of lines to display in the loader. These are indented according to a pre-defined
+   * sequence of depths.
    */
   size: number;
 }

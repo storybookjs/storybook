@@ -1,17 +1,18 @@
-import { global as globalThis } from '@storybook/global';
 import type {
   ArgsStoryFn,
   PartialStoryFn,
   PlayFunctionContext,
   StoryContext,
 } from '@storybook/core/types';
-import { within, expect } from '@storybook/test';
-import { useEffect } from '@storybook/core/preview-api';
+import { global as globalThis } from '@storybook/global';
+import { expect, within } from '@storybook/test';
+
 import {
+  RESET_STORY_ARGS,
   STORY_ARGS_UPDATED,
   UPDATE_STORY_ARGS,
-  RESET_STORY_ARGS,
 } from '@storybook/core/core-events';
+import { useEffect } from '@storybook/core/preview-api';
 
 export default {
   component: globalThis.Components.Pre,
@@ -66,4 +67,5 @@ export const Hooks = {
     });
     await new Promise((resolve) => channel.once(STORY_ARGS_UPDATED, resolve));
   },
+  tags: ['!vitest'],
 };

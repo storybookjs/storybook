@@ -1,16 +1,18 @@
 import React from 'react';
-import type { Meta, StoryObj } from '@storybook/react';
 
-import { ArgTypes } from './ArgTypes';
+import type { PlayFunctionContext } from '@storybook/csf';
+import type { Meta, StoryObj } from '@storybook/react';
+import { within } from '@storybook/test';
+
 import * as ExampleStories from '../examples/ArgTypesParameters.stories';
 import * as SubcomponentsExampleStories from '../examples/ArgTypesWithSubcomponentsParameters.stories';
-import { within } from '@storybook/test';
-import type { PlayFunctionContext } from '@storybook/csf';
+import { ArgTypes } from './ArgTypes';
 
 const meta: Meta<typeof ArgTypes> = {
   title: 'Blocks/ArgTypes',
   component: ArgTypes,
   parameters: {
+    layout: 'fullscreen',
     relativeCsfPaths: [
       '../examples/ArgTypesParameters.stories',
       '../examples/ArgTypesWithSubcomponentsParameters.stories',
@@ -49,7 +51,7 @@ export const OfUndefined: Story = {
     of: ExampleStories.NotDefined,
   },
   parameters: { chromatic: { disableSnapshot: true } },
-  decorators: [(s) => (window?.navigator.userAgent.match(/StorybookTestRunner/) ? <div /> : s())],
+  tags: ['!test'],
 };
 
 export const OfStoryUnattached: Story = {

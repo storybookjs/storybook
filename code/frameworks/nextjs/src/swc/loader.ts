@@ -1,8 +1,11 @@
+import { join } from 'node:path';
+
 import { getProjectRoot } from 'storybook/internal/common';
-import { getVirtualModules } from '@storybook/builder-webpack5';
 import type { Options } from 'storybook/internal/types';
+
+import { getVirtualModules } from '@storybook/builder-webpack5';
+
 import type { NextConfig } from 'next';
-import path from 'path';
 import loadJsConfig from 'next/dist/build/load-jsconfig';
 import type { Configuration as WebpackConfig } from 'webpack';
 
@@ -47,7 +50,7 @@ export const configureSWCLoader = async (
           dir,
           isDevelopment
         ),
-        swcCacheDir: path.join(dir, nextConfig?.distDir ?? '.next', 'cache', 'swc'),
+        swcCacheDir: join(dir, nextConfig?.distDir ?? '.next', 'cache', 'swc'),
         bundleTarget: 'default',
       },
     },

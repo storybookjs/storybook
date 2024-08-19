@@ -1,24 +1,22 @@
 import type { FC } from 'react';
 import React from 'react';
 
+import type { ControlProps, Options, OptionsConfig, OptionsSelection } from '../types';
 import { CheckboxControl } from './Checkbox';
-
 import { RadioControl } from './Radio';
-
 import { SelectControl } from './Select';
-
-import type { ControlProps, OptionsSelection, OptionsConfig, Options } from '../types';
 
 /**
  * Options can accept `options` in two formats:
- * - array: ['a', 'b', 'c'] OR
- * - object: { a: 1, b: 2, c: 3 } (deprecated)
  *
- * We always normalize to the more generalized object format and ONLY handle
- * the object format in the underlying control implementations.
+ * - Array: ['a', 'b', 'c'] OR
+ * - Object: { a: 1, b: 2, c: 3 } (deprecated)
  *
- * While non-primitive values are deprecated, they might still not be valid
- * object keys, so the resulting object is a Label -> Value mapping.
+ * We always normalize to the more generalized object format and ONLY handle the object format in
+ * the underlying control implementations.
+ *
+ * While non-primitive values are deprecated, they might still not be valid object keys, so the
+ * resulting object is a Label -> Value mapping.
  */
 const normalizeOptions = (options: Options, labels?: Record<any, string>) => {
   if (Array.isArray(options)) {

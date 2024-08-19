@@ -1,11 +1,13 @@
 /* eslint-disable no-underscore-dangle */
-import { describe, it, expect, vi } from 'vitest';
-import path from 'path';
-import * as fsExtraImp from 'fs-extra';
+import { join } from 'node:path';
+
+import { describe, expect, it, vi } from 'vitest';
+
 import { execaCommand } from 'execa';
-import { run as version } from '../version';
+import * as fsExtraImp from 'fs-extra';
 
 import type * as MockedFSToExtra from '../../../code/__mocks__/fs-extra';
+import { run as version } from '../version';
 
 vi.mock('fs-extra', async () => import('../../../code/__mocks__/fs-extra'));
 const fsExtra = fsExtraImp as unknown as typeof MockedFSToExtra;
@@ -30,17 +32,11 @@ vi.spyOn(console, 'warn').mockImplementation(() => {});
 vi.spyOn(console, 'error').mockImplementation(() => {});
 
 describe('Version', () => {
-  const CODE_DIR_PATH = path.join(__dirname, '..', '..', '..', 'code');
-  const CODE_PACKAGE_JSON_PATH = path.join(CODE_DIR_PATH, 'package.json');
-  const MANAGER_API_VERSION_PATH = path.join(
-    CODE_DIR_PATH,
-    'core',
-    'src',
-    'manager-api',
-    'version.ts'
-  );
-  const VERSIONS_PATH = path.join(CODE_DIR_PATH, 'core', 'src', 'common', 'versions.ts');
-  const A11Y_PACKAGE_JSON_PATH = path.join(CODE_DIR_PATH, 'addons', 'a11y', 'package.json');
+  const CODE_DIR_PATH = join(__dirname, '..', '..', '..', 'code');
+  const CODE_PACKAGE_JSON_PATH = join(CODE_DIR_PATH, 'package.json');
+  const MANAGER_API_VERSION_PATH = join(CODE_DIR_PATH, 'core', 'src', 'manager-api', 'version.ts');
+  const VERSIONS_PATH = join(CODE_DIR_PATH, 'core', 'src', 'common', 'versions.ts');
+  const A11Y_PACKAGE_JSON_PATH = join(CODE_DIR_PATH, 'addons', 'a11y', 'package.json');
 
   it('should throw when release type is invalid', async () => {
     fsExtra.__setMockFiles({
@@ -284,7 +280,7 @@ describe('Version', () => {
         { spaces: 2 }
       );
       expect(execaCommand).toHaveBeenCalledWith('yarn install --mode=update-lockfile', {
-        cwd: path.join(CODE_DIR_PATH),
+        cwd: join(CODE_DIR_PATH),
         cleanup: true,
         stdio: undefined,
       });

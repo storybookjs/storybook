@@ -1,23 +1,24 @@
-import { global } from '@storybook/global';
-
 import type { Channel } from '@storybook/core/channels';
-import { SET_CONFIG } from '@storybook/core/core-events';
 import type {
+  Addon_BaseType,
   Addon_Collection,
   Addon_Config,
   Addon_Elements,
   Addon_Loaders,
-  Addon_Type,
-  Addon_BaseType,
   Addon_PageType,
+  Addon_SidebarBottomType,
+  Addon_SidebarTopType,
+  Addon_Type,
   Addon_Types,
   Addon_TypesMapping,
   Addon_WrapperType,
-  Addon_SidebarBottomType,
-  Addon_SidebarTopType,
 } from '@storybook/core/types';
 import { Addon_TypesEnum } from '@storybook/core/types';
+import { global } from '@storybook/global';
+
 import { logger } from '@storybook/core/client-logger';
+import { SET_CONFIG } from '@storybook/core/core-events';
+
 import type { API } from '../root';
 import { mockChannel } from './storybook-channel-mock';
 
@@ -79,6 +80,7 @@ export class AddonStore {
 
   /**
    * Adds an addon to the addon store.
+   *
    * @param {string} id - The id of the addon.
    * @param {Addon_Type} addon - The addon to add.
    * @returns {void}

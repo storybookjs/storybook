@@ -1,14 +1,19 @@
-import mapValues from 'lodash/mapValues.js';
 import type { SBType } from '@storybook/core/types';
-import type { PTType } from './types';
+
+import mapValues from 'lodash/mapValues.js';
+
 import { parseLiteral } from '../utils';
+import type { PTType } from './types';
 
 const SIGNATURE_REGEXP = /^\(.*\) => /;
 
 export const convert = (type: PTType): SBType | any => {
   const { name, raw, computed, value } = type;
   const base: any = {};
-  if (typeof raw !== 'undefined') base.raw = raw;
+
+  if (typeof raw !== 'undefined') {
+    base.raw = raw;
+  }
 
   switch (name) {
     case 'enum': {

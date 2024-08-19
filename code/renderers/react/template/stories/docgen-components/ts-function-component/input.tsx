@@ -10,9 +10,7 @@ import styles from '../imported.module.css';
 const local = 'local-value';
 
 interface PropsWriterProps {
-  /**
-   * Description
-   */
+  /** Description */
   numberRequired: number;
   numberOptional?: number;
   stringRequired: string;
@@ -34,9 +32,7 @@ interface PropsWriterProps {
   myClass: typeof styles.foo;
 }
 
-/**
- * A component that renders its props
- */
+/** A component that renders its props */
 export const PropsWriter: React.FC<PropsWriterProps> = (props: PropsWriterProps) => (
   <pre>{JSON.stringify(props)}</pre>
 );

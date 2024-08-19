@@ -1,12 +1,12 @@
-import type { FC, ChangeEvent } from 'react';
-import React, { useState, useEffect } from 'react';
-import { styled } from 'storybook/internal/theming';
+import type { ChangeEvent, FC } from 'react';
+import React, { useEffect, useState } from 'react';
+
 import { logger } from 'storybook/internal/client-logger';
+import { styled } from 'storybook/internal/theming';
 
-import type { ControlProps, OptionsMultiSelection, NormalizedOptionsConfig } from '../types';
-
-import { selectedKeys, selectedValues } from './helpers';
 import { getControlId } from '../helpers';
+import type { ControlProps, NormalizedOptionsConfig, OptionsMultiSelection } from '../types';
+import { selectedKeys, selectedValues } from './helpers';
 
 const Wrapper = styled.div<{ isInline: boolean }>(
   ({ isInline }) =>

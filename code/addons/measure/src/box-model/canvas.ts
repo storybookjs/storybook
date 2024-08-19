@@ -1,4 +1,5 @@
 import { global } from '@storybook/global';
+
 import invariant from 'tiny-invariant';
 
 interface Size {

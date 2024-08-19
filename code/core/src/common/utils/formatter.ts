@@ -36,8 +36,9 @@ const getPrettier = async (): Promise<
 };
 
 /**
- * Format the content of a file using prettier.
- * If prettier is not available in the user's project, it will fallback to use editorconfig settings if available and formats the file by a prettier-fallback.
+ * Format the content of a file using prettier. If prettier is not available in the user's project,
+ * it will fallback to use editorconfig settings if available and formats the file by a
+ * prettier-fallback.
  */
 export async function formatFileContent(filePath: string, content: string): Promise<string> {
   try {

@@ -1,11 +1,13 @@
 import type { ComponentProps, ReactNode } from 'react';
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
+
 import { styled } from '@storybook/core/theming';
 import { global } from '@storybook/global';
 
-import type { Config as ReactPopperTooltipConfig, PopperOptions } from 'react-popper-tooltip';
+import type { PopperOptions, Config as ReactPopperTooltipConfig } from 'react-popper-tooltip';
 import { usePopperTooltip } from 'react-popper-tooltip';
+
 import { Tooltip } from './Tooltip';
 
 const { document } = global;
@@ -40,6 +42,7 @@ export interface WithTooltipPureProps
   onDoubleClick?: () => void;
   /**
    * If `true`, a click outside the trigger element closes the tooltip
+   *
    * @default false
    */
   closeOnOutsideClick?: boolean;
@@ -155,7 +158,9 @@ const WithToolTipState = ({
   const [tooltipShown, setTooltipShown] = useState(startOpen);
   const onVisibilityChange = useCallback(
     (visibility: boolean) => {
-      if (onChange && onChange(visibility) === false) return;
+      if (onChange && onChange(visibility) === false) {
+        return;
+      }
       setTooltipShown(visibility);
     },
     [onChange]

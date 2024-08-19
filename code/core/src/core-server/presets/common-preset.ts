@@ -1,6 +1,6 @@
-import { pathExists, readFile } from 'fs-extra';
-import { logger } from '@storybook/core/node-logger';
-import { telemetry } from '@storybook/core/telemetry';
+import { dirname, isAbsolute, join } from 'node:path';
+
+import type { Channel } from '@storybook/core/channels';
 import {
   getDirectoryFromWorkingDir,
   getPreviewBodyTemplate,
@@ -8,24 +8,28 @@ import {
   loadEnvs,
   removeAddon as removeAddonBase,
 } from '@storybook/core/common';
+import { telemetry } from '@storybook/core/telemetry';
 import type {
   CLIOptions,
   CoreConfig,
   Indexer,
   Options,
-  PresetPropertyFn,
   PresetProperty,
+  PresetPropertyFn,
 } from '@storybook/core/types';
+
 import { readCsf } from '@storybook/core/csf-tools';
-import { join, dirname, isAbsolute } from 'node:path';
+import { logger } from '@storybook/core/node-logger';
+
+import { pathExists, readFile } from 'fs-extra';
 import { dedent } from 'ts-dedent';
-import type { Channel } from '@storybook/core/channels';
-import { parseStaticDir } from '../utils/server-statics';
-import { defaultStaticDirs } from '../utils/constants';
-import { initializeWhatsNew, type OptionsWithRequiredCache } from '../utils/whats-new';
-import { initializeSaveStory } from '../utils/save-story/save-story';
-import { initFileSearchChannel } from '../server-channel/file-search-channel';
+
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
+import { initFileSearchChannel } from '../server-channel/file-search-channel';
+import { defaultStaticDirs } from '../utils/constants';
+import { initializeSaveStory } from '../utils/save-story/save-story';
+import { parseStaticDir } from '../utils/server-statics';
+import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new';
 
 const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);
@@ -197,10 +201,10 @@ export const experimental_serverAPI = (extension: Record<string, Function>, opti
 };
 
 /**
- * If for some reason this config is not applied, the reason is that
- * likely there is an addon that does `export core = () => ({ someConfig })`,
- * instead of `export core = (existing) => ({ ...existing, someConfig })`,
- * just overwriting everything and not merging with the existing values.
+ * If for some reason this config is not applied, the reason is that likely there is an addon that
+ * does `export core = () => ({ someConfig })`, instead of `export core = (existing) => ({
+ * ...existing, someConfig })`, just overwriting everything and not merging with the existing
+ * values.
  */
 export const core = async (existing: CoreConfig, options: Options): Promise<CoreConfig> => ({
   ...existing,
@@ -279,10 +283,10 @@ export const experimental_serverChannel = async (
 };
 
 /**
- * Try to resolve react and react-dom from the root node_modules of the project
- * addon-docs uses this to alias react and react-dom to the project's version when possible
- * If the user doesn't have an explicit dependency on react this will return the existing values
- * Which will be the versions shipped with addon-docs
+ * Try to resolve react and react-dom from the root node_modules of the project addon-docs uses this
+ * to alias react and react-dom to the project's version when possible If the user doesn't have an
+ * explicit dependency on react this will return the existing values Which will be the versions
+ * shipped with addon-docs
  */
 export const resolvedReact = async (existing: any) => {
   try {
@@ -296,9 +300,7 @@ export const resolvedReact = async (existing: any) => {
   }
 };
 
-/**
- * Set up `dev-only`, `docs-only`, `test-only` tags out of the box
- */
+/** Set up `dev-only`, `docs-only`, `test-only` tags out of the box */
 export const tags = async (existing: any) => {
   return {
     ...existing,

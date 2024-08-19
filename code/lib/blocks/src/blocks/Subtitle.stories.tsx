@@ -1,14 +1,17 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import React from 'react';
-import { Subtitle } from './Subtitle';
+
+import type { Meta, StoryObj } from '@storybook/react';
+
 import * as DefaultButtonStories from '../examples/Button.stories';
 import * as ButtonStoriesWithMetaSubtitleAsBoth from '../examples/ButtonWithMetaSubtitleAsBoth.stories';
 import * as ButtonStoriesWithMetaSubtitleAsComponentSubtitle from '../examples/ButtonWithMetaSubtitleAsComponentSubtitle.stories';
 import * as ButtonStoriesWithMetaSubtitleAsDocsSubtitle from '../examples/ButtonWithMetaSubtitleAsDocsSubtitle.stories';
+import { Subtitle } from './Subtitle';
 
 const meta: Meta<typeof Subtitle> = {
   component: Subtitle,
   parameters: {
+    layout: 'fullscreen',
     controls: {
       include: [],
       hideNoControlsWarning: true,
@@ -89,7 +92,7 @@ export const OfUndefinedAttached: Story = {
     relativeCsfPaths: ['../examples/Button.stories'],
     attached: true,
   },
-  decorators: [(s) => (window?.navigator.userAgent.match(/StorybookTestRunner/) ? <div /> : s())],
+  tags: ['!test'],
 };
 export const OfStringMetaAttached: Story = {
   name: 'Of "meta" Attached',

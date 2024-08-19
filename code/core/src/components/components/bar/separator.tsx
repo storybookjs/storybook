@@ -1,4 +1,5 @@
 import React, { Fragment } from 'react';
+
 import { styled } from '@storybook/core/theming';
 
 export interface SeparatorProps {

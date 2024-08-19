@@ -1,15 +1,17 @@
-import { global } from '@storybook/global';
 import type { Dispatch, SetStateAction } from 'react';
 import React, { Fragment, memo, useEffect, useMemo, useRef, useState } from 'react';
-import { useAddonState, useChannel, useParameter } from 'storybook/internal/manager-api';
+
 import {
   FORCE_REMOUNT,
+  PLAY_FUNCTION_THREW_EXCEPTION,
   STORY_RENDER_PHASE_CHANGED,
   STORY_THREW_EXCEPTION,
-  PLAY_FUNCTION_THREW_EXCEPTION,
   UNHANDLED_ERRORS_WHILE_PLAYING,
 } from 'storybook/internal/core-events';
-import { EVENTS, type Call, CallStates, type LogItem } from '@storybook/instrumenter';
+import { useAddonState, useChannel, useParameter } from 'storybook/internal/manager-api';
+
+import { global } from '@storybook/global';
+import { type Call, CallStates, EVENTS, type LogItem } from '@storybook/instrumenter';
 
 import { InteractionsPanel } from './components/InteractionsPanel';
 import { ADDON_ID } from './constants';
@@ -121,7 +123,10 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
         ([end]: any) => setScrollTarget(end.isIntersecting ? undefined : end.target),
         { root: global.document.querySelector('#panel-tab-content') }
       );
-      if (endRef.current) observer.observe(endRef.current);
+
+      if (endRef.current) {
+        observer.observe(endRef.current);
+      }
     }
     return () => observer?.disconnect();
   }, []);

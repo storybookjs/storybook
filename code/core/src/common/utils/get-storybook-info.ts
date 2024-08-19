@@ -1,8 +1,11 @@
-import path from 'node:path';
-import { pathExistsSync } from 'fs-extra';
-import { getStorybookConfiguration } from './get-storybook-configuration';
+import { join } from 'node:path';
+
 import type { SupportedFrameworks } from '@storybook/core/types';
 import type { CoreCommon_StorybookInfo, PackageJson } from '@storybook/core/types';
+
+import { pathExistsSync } from 'fs-extra';
+
+import { getStorybookConfiguration } from './get-storybook-configuration';
 
 export const rendererPackages: Record<string, string> = {
   '@storybook/react': 'react',
@@ -20,9 +23,7 @@ export const rendererPackages: Record<string, string> = {
   'storybook-framework-qwik': 'qwik',
   'storybook-solidjs': 'solid',
 
-  /**
-   * @deprecated This is deprecated.
-   */
+  /** @deprecated This is deprecated. */
   '@storybook/vue': 'vue',
 };
 
@@ -47,6 +48,8 @@ export const frameworkPackages: Record<string, SupportedFrameworks> = {
   // community (outside of monorepo)
   'storybook-framework-qwik': 'qwik',
   'storybook-solidjs-vite': 'solid',
+  'storybook-react-rsbuild': 'react-rsbuild',
+  'storybook-vue3-rsbuild': 'vue3-rsbuild',
 };
 
 export const builderPackages = ['@storybook/builder-webpack5', '@storybook/builder-vite'];
@@ -88,7 +91,7 @@ const getRendererInfo = (packageJson: PackageJson) => {
 const validConfigExtensions = ['ts', 'js', 'tsx', 'jsx', 'mjs', 'cjs'];
 
 export const findConfigFile = (prefix: string, configDir: string) => {
-  const filePrefix = path.join(configDir, prefix);
+  const filePrefix = join(configDir, prefix);
   const extension = validConfigExtensions.find((ext: string) =>
     pathExistsSync(`${filePrefix}.${ext}`)
   );
@@ -100,7 +103,10 @@ export const getConfigInfo = (packageJson: PackageJson, configDir?: string) => {
   const storybookScript = packageJson.scripts?.storybook;
   if (storybookScript && !configDir) {
     const configParam = getStorybookConfiguration(storybookScript, '-c', '--config-dir');
-    if (configParam) storybookConfigDir = configParam;
+
+    if (configParam) {
+      storybookConfigDir = configParam;
+    }
   }
 
   return {

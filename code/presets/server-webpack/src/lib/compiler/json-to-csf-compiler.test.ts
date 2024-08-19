@@ -1,7 +1,10 @@
-import { describe, it, expect } from 'vitest';
-import path from 'path';
+import { join } from 'node:path';
+
+import { describe, expect, it } from 'vitest';
+
 import fs from 'fs-extra';
 import YAML from 'yaml';
+
 import { compileCsfModule } from '.';
 
 async function generate(filePath: string) {
@@ -14,12 +17,12 @@ async function generate(filePath: string) {
   const inputRegExp = new RegExp(`.${fileType}$`);
 
   describe(`${fileType}-to-csf-compiler`, () => {
-    const transformFixturesDir = path.join(__dirname, '__testfixtures__');
+    const transformFixturesDir = join(__dirname, '__testfixtures__');
     fs.readdirSync(transformFixturesDir)
       .filter((fileName: string) => inputRegExp.test(fileName))
       .forEach((fixtureFile: string) => {
         it(`${fixtureFile}`, async () => {
-          const inputPath = path.join(transformFixturesDir, fixtureFile);
+          const inputPath = join(transformFixturesDir, fixtureFile);
           const code = await generate(inputPath);
           expect(code).toMatchFileSnapshot(inputPath.replace(inputRegExp, '.snapshot'));
         });

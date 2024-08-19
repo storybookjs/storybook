@@ -1,15 +1,15 @@
 /* eslint-disable no-underscore-dangle */
+
 /* eslint-disable @typescript-eslint/naming-convention */
-import { type CleanupCallback, isExportStory } from '@storybook/csf';
-import { dedent } from 'ts-dedent';
 import type {
   Args,
   Canvas,
   ComponentAnnotations,
-  ComposedStoryFn,
   ComposeStoryFn,
+  ComposedStoryFn,
   LegacyStoryAnnotationsOrFn,
   NamedOrDefaultProjectAnnotations,
+  NormalizedProjectAnnotations,
   Parameters,
   PreparedStory,
   ProjectAnnotations,
@@ -19,17 +19,34 @@ import type {
   StoryContext,
   StrictArgTypes,
 } from '@storybook/core/types';
+import { type CleanupCallback, isExportStory } from '@storybook/csf';
+
+import { MountMustBeDestructuredError } from '@storybook/core/preview-errors';
+
+import { dedent } from 'ts-dedent';
 
 import { HooksContext } from '../../../addons';
 import { composeConfigs } from './composeConfigs';
-import { prepareContext, prepareStory } from './prepareStory';
-import { normalizeStory } from './normalizeStory';
-import { normalizeComponentAnnotations } from './normalizeComponentAnnotations';
 import { getValuesFromArgTypes } from './getValuesFromArgTypes';
+import { normalizeComponentAnnotations } from './normalizeComponentAnnotations';
 import { normalizeProjectAnnotations } from './normalizeProjectAnnotations';
-import { MountMustBeDestructuredError } from '@storybook/core/preview-errors';
+import { normalizeStory } from './normalizeStory';
+import { prepareContext, prepareStory } from './prepareStory';
 
-let globalProjectAnnotations: ProjectAnnotations<any> = {};
+// TODO we should get to the bottom of the singleton issues caused by dual ESM/CJS modules
+declare global {
+  // eslint-disable-next-line no-var
+  var globalProjectAnnotations: NormalizedProjectAnnotations<any>;
+  // eslint-disable-next-line no-var
+  var defaultProjectAnnotations: ProjectAnnotations<any>;
+}
+
+export function setDefaultProjectAnnotations<TRenderer extends Renderer = Renderer>(
+  _defaultProjectAnnotations: ProjectAnnotations<TRenderer>
+) {
+  // Use a variable once we figure out the ESM/CJS issues
+  globalThis.defaultProjectAnnotations = _defaultProjectAnnotations;
+}
 
 const DEFAULT_STORY_TITLE = 'ComposedStory';
 const DEFAULT_STORY_NAME = 'Unnamed Story';
@@ -37,7 +54,13 @@ const DEFAULT_STORY_NAME = 'Unnamed Story';
 function extractAnnotation<TRenderer extends Renderer = Renderer>(
   annotation: NamedOrDefaultProjectAnnotations<TRenderer>
 ) {
-  if (!annotation) return {};
+  if (!annotation) {
+    return {};
+  }
+  // support imports such as
+  // import * as annotations from '.storybook/preview'
+  // import annotations from '.storybook/preview'
+  // in both cases: 1 - the file has a default export; 2 - named exports only
   // support imports such as
   // import * as annotations from '.storybook/preview'
   // import annotations from '.storybook/preview'
@@ -49,11 +72,11 @@ export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
   projectAnnotations:
     | NamedOrDefaultProjectAnnotations<TRenderer>
     | NamedOrDefaultProjectAnnotations<TRenderer>[]
-): ProjectAnnotations<TRenderer> {
+): NormalizedProjectAnnotations<TRenderer> {
   const annotations = Array.isArray(projectAnnotations) ? projectAnnotations : [projectAnnotations];
-  globalProjectAnnotations = composeConfigs(annotations.map(extractAnnotation));
+  globalThis.globalProjectAnnotations = composeConfigs(annotations.map(extractAnnotation));
 
-  return globalProjectAnnotations;
+  return globalThis.globalProjectAnnotations;
 }
 
 const cleanups: CleanupCallback[] = [];
@@ -89,23 +112,12 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
     normalizedComponentAnnotations
   );
 
-  // TODO: Remove this in 9.0
-  // We can only use the renderToCanvas definition of the default config when testingLibraryRender is set
-  // This makes sure, that when the user doesn't do this, and doesn't provide its own renderToCanvas definition,
-  // we fall back to the < 8.1 behavior of the play function.
-
-  const fallback =
-    defaultConfig &&
-    !globalProjectAnnotations?.testingLibraryRender &&
-    !projectAnnotations?.testingLibraryRender;
-
   const normalizedProjectAnnotations = normalizeProjectAnnotations<TRenderer>(
     composeConfigs([
-      {
-        ...defaultConfig,
-        renderToCanvas: fallback ? undefined : defaultConfig?.renderToCanvas,
-      },
-      globalProjectAnnotations,
+      defaultConfig && Object.keys(defaultConfig).length > 0
+        ? defaultConfig
+        : globalThis.defaultProjectAnnotations ?? {},
+      globalThis.globalProjectAnnotations ?? {},
       projectAnnotations ?? {},
     ])
   );
@@ -122,16 +134,19 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
     const context: StoryContext<TRenderer> = prepareContext({
       hooks: new HooksContext(),
       globals: {
+        // TODO: remove loading from globalTypes in 9.0
         ...globalsFromGlobalTypes,
         ...normalizedProjectAnnotations.initialGlobals,
+        ...story.storyGlobals,
       },
       args: { ...story.initialArgs },
       viewMode: 'story',
       loaded: {},
       abortSignal: new AbortController().signal,
       step: (label, play) => story.runStep(label, play, context),
-      canvasElement: globalThis?.document?.body,
+      canvasElement: null!,
       canvas: {} as Canvas,
+      globalTypes: normalizedProjectAnnotations.globalTypes,
       ...story,
       context: null!,
       mount: null!,
@@ -149,6 +164,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
             id: story.id,
             name: story.name,
             tags: story.tags,
+            showMain: () => {},
             showError: (error) => {},
             showException: (error) => {},
             forceRemount: true,
@@ -171,28 +187,23 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
 
   let loadedContext: StoryContext<TRenderer> | undefined;
 
-  // TODO: Remove in 9.0
-  const backwardsCompatiblePlay = async (
-    extraContext?: Partial<StoryContext<TRenderer, Partial<TArgs>>>
-  ) => {
+  const play = async (extraContext?: Partial<StoryContext<TRenderer, Partial<TArgs>>>) => {
     const context = initializeContext();
+    context.canvasElement ??= globalThis?.document?.body;
     if (loadedContext) {
       context.loaded = loadedContext.loaded;
     }
     Object.assign(context, extraContext);
     return story.playFunction!(context);
   };
-  const newPlay = (extraContext?: Partial<StoryContext<TRenderer, Partial<TArgs>>>) => {
+
+  const run = (extraContext?: Partial<StoryContext<TRenderer, Partial<TArgs>>>) => {
     const context = initializeContext();
     Object.assign(context, extraContext);
-    return playStory(story, context);
+    return runStory(story, context);
   };
-  const playFunction =
-    !story.renderToCanvas && story.playFunction
-      ? backwardsCompatiblePlay
-      : !story.renderToCanvas && !story.playFunction
-        ? undefined
-        : newPlay;
+
+  const playFunction = story.playFunction ? play : undefined;
 
   const composedStory: ComposedStoryFn<TRenderer, Partial<TArgs>> = Object.assign(
     function storyFn(extraArgs?: Partial<TArgs>) {
@@ -211,7 +222,11 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
       storyName,
       load: async () => {
         // First run any registered cleanup function
-        for (const callback of [...cleanups].reverse()) await callback();
+
+        // First run any registered cleanup function
+        for (const callback of [...cleanups].reverse()) {
+          await callback();
+        }
         cleanups.length = 0;
 
         const context = initializeContext();
@@ -226,6 +241,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
       parameters: story.parameters as Parameters,
       argTypes: story.argTypes as StrictArgTypes<TArgs>,
       play: playFunction!,
+      run,
       tags: story.tags,
     }
   );
@@ -233,10 +249,13 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
   return composedStory;
 }
 
+const defaultComposeStory: ComposeStoryFn = (story, component, project, exportsName) =>
+  composeStory(story, component, project, {}, exportsName);
+
 export function composeStories<TModule extends Store_CSFExports>(
   storiesImport: TModule,
   globalConfig: ProjectAnnotations<Renderer>,
-  composeStoryFn: ComposeStoryFn
+  composeStoryFn: ComposeStoryFn = defaultComposeStory
 ) {
   const { default: meta, __esModule, __namedExportsOrder, ...stories } = storiesImport;
   const composedStories = Object.entries(stories).reduce((storiesMap, [exportsName, story]) => {
@@ -325,15 +344,31 @@ export function createPlaywrightTest<TFixture extends { extend: any }>(
 
 // TODO At some point this function should live in prepareStory and become the core of StoryRender.render as well.
 // Will make a follow up PR for that
-async function playStory<TRenderer extends Renderer>(
+async function runStory<TRenderer extends Renderer>(
   story: PreparedStory<TRenderer>,
   context: StoryContext<TRenderer>
 ) {
-  for (const callback of [...cleanups].reverse()) await callback();
+  for (const callback of [...cleanups].reverse()) {
+    await callback();
+  }
   cleanups.length = 0;
 
+  if (!context.canvasElement) {
+    const container = document.createElement('div');
+    globalThis?.document?.body?.appendChild(container);
+    context.canvasElement = container;
+    cleanups.push(() => {
+      if (globalThis?.document?.body?.contains(container)) {
+        globalThis?.document?.body?.removeChild(container);
+      }
+    });
+  }
+
   context.loaded = await story.applyLoaders(context);
-  if (context.abortSignal.aborted) return;
+
+  if (context.abortSignal.aborted) {
+    return;
+  }
 
   cleanups.push(...(await story.applyBeforeEach(context)).filter(Boolean));
 
@@ -345,7 +380,9 @@ async function playStory<TRenderer extends Renderer>(
     await context.mount();
   }
 
-  if (context.abortSignal.aborted) return;
+  if (context.abortSignal.aborted) {
+    return;
+  }
 
   if (playFunction) {
     if (!isMountDestructured) {

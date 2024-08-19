@@ -1,27 +1,31 @@
-import { global } from '@storybook/global';
-import React, { Fragment, useEffect } from 'react';
-import { isChromatic } from './isChromatic';
+import * as React from 'react';
+import { Fragment, useEffect } from 'react';
+
+import type { Channel } from 'storybook/internal/channels';
+import { DocsContext as DocsContextProps, useArgs } from 'storybook/internal/preview-api';
+import type { PreviewWeb } from 'storybook/internal/preview-api';
 import {
   Global,
   ThemeProvider,
-  themes,
-  createReset,
   convert,
+  createReset,
   styled,
+  themes,
   useTheme,
 } from 'storybook/internal/theming';
-import { useArgs, DocsContext as DocsContextProps } from 'storybook/internal/preview-api';
-import type { PreviewWeb } from 'storybook/internal/preview-api';
-import type { ReactRenderer } from '@storybook/react';
-import type { Channel } from 'storybook/internal/channels';
 
 import { DocsContext } from '@storybook/blocks';
+import { global } from '@storybook/global';
+import type { Decorator, Loader, ReactRenderer } from '@storybook/react';
+
+import { MINIMAL_VIEWPORTS } from '@storybook/addon-viewport';
 
 import { DocsPageWrapper } from '../lib/blocks/src/components';
+import { isChromatic } from './isChromatic';
 
 const { document } = global;
 
-const ThemeBlock = styled.div<{ side: 'left' | 'right' }>(
+const ThemeBlock = styled.div<{ side: 'left' | 'right'; layout: string }>(
   {
     position: 'absolute',
     top: 0,
@@ -31,8 +35,10 @@ const ThemeBlock = styled.div<{ side: 'left' | 'right' }>(
     height: '100vh',
     bottom: 0,
     overflow: 'auto',
-    padding: 10,
   },
+  ({ layout }) => ({
+    padding: layout === 'fullscreen' ? 0 : '1rem',
+  }),
   ({ theme }) => ({
     background: theme.background.content,
     color: theme.color.defaultText,
@@ -49,14 +55,17 @@ const ThemeBlock = styled.div<{ side: 'left' | 'right' }>(
         }
 );
 
-const ThemeStack = styled.div(
+const ThemeStack = styled.div<{ layout: string }>(
   {
     position: 'relative',
-    minHeight: 'calc(50vh - 15px)',
+    flex: 1,
   },
   ({ theme }) => ({
     background: theme.background.content,
     color: theme.color.defaultText,
+  }),
+  ({ layout }) => ({
+    padding: layout === 'fullscreen' ? 0 : '1rem',
   })
 );
 
@@ -80,6 +89,24 @@ const PlayFnNotice = styled.div(
   })
 );
 
+const StackContainer = ({ children, layout }) => (
+  <div
+    style={{
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+    }}
+  >
+    <style dangerouslySetInnerHTML={{ __html: 'html, body, #storybook-root { height: 100%; }' }} />
+    {layout === 'fullscreen' ? null : (
+      <style
+        dangerouslySetInnerHTML={{ __html: 'html, body { padding: 0!important; margin: 0; }' }}
+      />
+    )}
+    {children}
+  </div>
+);
+
 const ThemedSetRoot = () => {
   const theme = useTheme();
 
@@ -96,15 +123,21 @@ const preview = (window as any).__STORYBOOK_PREVIEW__ as PreviewWeb<ReactRendere
 const channel = (window as any).__STORYBOOK_ADDONS_CHANNEL__ as Channel;
 export const loaders = [
   /**
-   * This loader adds a DocsContext to the story, which is required for the most Blocks to work.
-   * A story will specify which stories they need in the index with:
+   * This loader adds a DocsContext to the story, which is required for the most Blocks to work. A
+   * story will specify which stories they need in the index with:
+   *
+   * ```ts
    * parameters: {
-   *  relativeCsfPaths: ['../stories/MyStory.stories.tsx'], // relative to the story
+   *   relativeCsfPaths: ['../stories/MyStory.stories.tsx'], // relative to the story
    * }
+   * ```
+   *
    * The DocsContext will then be added via the decorator below.
    */
   async ({ parameters: { relativeCsfPaths, attached = true } }) => {
-    if (!relativeCsfPaths) return {};
+    if (!relativeCsfPaths) {
+      return {};
+    }
     const csfFiles = await Promise.all(
       (relativeCsfPaths as string[]).map(async (blocksRelativePath) => {
         const projectRelativePath = `./lib/blocks/src/${blocksRelativePath.replace(
@@ -133,7 +166,7 @@ export const loaders = [
     }
     return { docsContext };
   },
-];
+] as Loader[];
 
 export const decorators = [
   // This decorator adds the DocsContext created in the loader above
@@ -157,12 +190,23 @@ export const decorators = [
       <Story />
     ),
   /**
-   * This decorator renders the stories side-by-side, stacked or default based on the theme switcher in the toolbar
+   * This decorator renders the stories side-by-side, stacked or default based on the theme switcher
+   * in the toolbar
    */
-  (StoryFn, { globals, parameters, playFunction, args }) => {
-    const defaultTheme =
-      isChromatic() && !playFunction && args.autoplay !== true ? 'stacked' : 'light';
-    const theme = globals.theme || parameters.theme || defaultTheme;
+  (StoryFn, { globals, playFunction, args, storyGlobals, parameters }) => {
+    let theme = globals.sb_theme;
+    let showPlayFnNotice = false;
+
+    // this makes the decorator be out of 'phase' with the actually selected theme in the toolbar
+    // but this is acceptable, I guess
+    // we need to ensure only a single rendering in chromatic
+    // a more 'correct' approach would be to set a specific theme global on every story that has a playFunction
+    if (playFunction && args.autoplay !== false && !(theme === 'light' || theme === 'dark')) {
+      theme = 'light';
+      showPlayFnNotice = true;
+    } else if (isChromatic() && !storyGlobals.sb_theme && !playFunction) {
+      theme = 'stacked';
+    }
 
     switch (theme) {
       case 'side-by-side': {
@@ -172,12 +216,12 @@ export const decorators = [
               <Global styles={createReset} />
             </ThemeProvider>
             <ThemeProvider theme={convert(themes.light)}>
-              <ThemeBlock side="left" data-side="left">
+              <ThemeBlock side="left" data-side="left" layout={parameters.layout}>
                 <StoryFn />
               </ThemeBlock>
             </ThemeProvider>
             <ThemeProvider theme={convert(themes.dark)}>
-              <ThemeBlock side="right" data-side="right">
+              <ThemeBlock side="right" data-side="right" layout={parameters.layout}>
                 <StoryFn />
               </ThemeBlock>
             </ThemeProvider>
@@ -190,16 +234,18 @@ export const decorators = [
             <ThemeProvider theme={convert(themes.light)}>
               <Global styles={createReset} />
             </ThemeProvider>
-            <ThemeProvider theme={convert(themes.light)}>
-              <ThemeStack data-side="left">
-                <StoryFn />
-              </ThemeStack>
-            </ThemeProvider>
-            <ThemeProvider theme={convert(themes.dark)}>
-              <ThemeStack data-side="right">
-                <StoryFn />
-              </ThemeStack>
-            </ThemeProvider>
+            <StackContainer layout={parameters.layout}>
+              <ThemeProvider theme={convert(themes.light)}>
+                <ThemeStack data-side="left" layout={parameters.layout}>
+                  <StoryFn />
+                </ThemeStack>
+              </ThemeProvider>
+              <ThemeProvider theme={convert(themes.dark)}>
+                <ThemeStack data-side="right" layout={parameters.layout}>
+                  <StoryFn />
+                </ThemeStack>
+              </ThemeProvider>
+            </StackContainer>
           </Fragment>
         );
       }
@@ -209,7 +255,7 @@ export const decorators = [
           <ThemeProvider theme={convert(themes[theme])}>
             <Global styles={createReset} />
             <ThemedSetRoot />
-            {!parameters.theme && isChromatic() && playFunction && (
+            {showPlayFnNotice && (
               <>
                 <PlayFnNotice>
                   <span>
@@ -227,13 +273,13 @@ export const decorators = [
     }
   },
   /**
-   * This decorator shows the current state of the arg named in the
-   * parameters.withRawArg property, by updating the arg in the onChange function
-   * this also means that the arg will sync with the control panel
+   * This decorator shows the current state of the arg named in the parameters.withRawArg property,
+   * by updating the arg in the onChange function this also means that the arg will sync with the
+   * control panel
    *
    * If parameters.withRawArg is not set, this decorator will do nothing
    */
-  (StoryFn, { parameters, args, hooks }) => {
+  (StoryFn, { parameters, args }) => {
     const [, updateArgs] = useArgs();
     if (!parameters.withRawArg) {
       return <StoryFn />;
@@ -246,6 +292,7 @@ export const decorators = [
             ...args,
             onChange: (newValue) => {
               updateArgs({ [parameters.withRawArg]: newValue });
+              // @ts-expect-error onChange is not a valid arg
               args.onChange?.(newValue);
             },
           }}
@@ -257,7 +304,7 @@ export const decorators = [
       </>
     );
   },
-];
+] satisfies Decorator[];
 
 export const parameters = {
   options: {
@@ -294,5 +341,23 @@ export const parameters = {
       'HSLA(240,11%,91%,0.5)',
       'slategray',
     ],
+  },
+  viewport: {
+    options: MINIMAL_VIEWPORTS,
+  },
+  themes: {
+    disable: true,
+  },
+  backgrounds: {
+    options: {
+      light: { name: 'light', value: '#edecec' },
+      dark: { name: 'dark', value: '#262424' },
+      blue: { name: 'blue', value: '#1b1a2c' },
+    },
+    grid: {
+      cellSize: 15,
+      cellAmount: 10,
+      opacity: 0.4,
+    },
   },
 };

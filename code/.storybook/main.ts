@@ -1,10 +1,9 @@
-import path from 'path';
-// eslint-disable-next-line @typescript-eslint/no-restricted-imports
-import { mergeConfig } from 'vite';
+import { join } from 'node:path';
+
 import type { StorybookConfig } from '../frameworks/react-vite';
 
-const componentsPath = path.join(__dirname, '../core/src/components');
-const managerApiPath = path.join(__dirname, '../core/src/manager-api');
+const componentsPath = join(__dirname, '../core/src/components');
+const managerApiPath = join(__dirname, '../core/src/manager-api');
 
 const config: StorybookConfig = {
   stories: [
@@ -69,6 +68,10 @@ const config: StorybookConfig = {
       titlePrefix: 'addons/toolbars',
     },
     {
+      directory: '../addons/themes/template/stories',
+      titlePrefix: 'addons/themes',
+    },
+    {
       directory: '../addons/onboarding/src',
       titlePrefix: 'addons/onboarding',
     },
@@ -83,10 +86,12 @@ const config: StorybookConfig = {
   ],
   addons: [
     '@storybook/addon-links',
+    '@storybook/addon-themes',
     '@storybook/addon-essentials',
     '@storybook/addon-interactions',
     '@storybook/addon-storysource',
     '@storybook/addon-designs',
+    '@storybook/experimental-addon-vitest',
     '@storybook/addon-a11y',
     '@chromatic-com/storybook',
   ],
@@ -119,11 +124,12 @@ const config: StorybookConfig = {
   },
   features: {
     viewportStoryGlobals: true,
-    themesStoryGlobals: true,
     backgroundsStoryGlobals: true,
   },
-  viteFinal: (viteConfig, { configType }) =>
-    mergeConfig(viteConfig, {
+  viteFinal: async (viteConfig, { configType }) => {
+    const { mergeConfig } = await import('vite');
+
+    return mergeConfig(viteConfig, {
       resolve: {
         alias: {
           ...(configType === 'DEVELOPMENT'
@@ -136,12 +142,16 @@ const config: StorybookConfig = {
             : {}),
         },
       },
-      optimizeDeps: { force: true },
+      optimizeDeps: {
+        force: true,
+        include: ['@storybook/blocks'],
+      },
       build: {
         // disable sourcemaps in CI to not run out of memory
         sourcemap: process.env.CI !== 'true',
       },
-    }),
+    } satisfies typeof viteConfig);
+  },
   // logLevel: 'debug',
 };
 

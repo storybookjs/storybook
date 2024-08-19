@@ -1,4 +1,5 @@
 import { type API } from 'storybook/internal/manager-api';
+
 import { ADDON_ID } from './constants';
 import { initialGlobals as defaultGlobals } from './preview';
 
@@ -21,7 +22,7 @@ const getPreviousViewport = (viewportsKeys: string[], current: string): string =
 
 export const registerShortcuts = async (
   api: API,
-  globals: any,
+  viewport: any,
   updateGlobals: any,
   viewportsKeys: string[]
 ) => {
@@ -31,7 +32,7 @@ export const registerShortcuts = async (
     actionName: 'previous',
     action: () => {
       updateGlobals({
-        viewport: getPreviousViewport(viewportsKeys, globals.viewport),
+        viewport: getPreviousViewport(viewportsKeys, viewport),
       });
     },
   });
@@ -42,7 +43,7 @@ export const registerShortcuts = async (
     actionName: 'next',
     action: () => {
       updateGlobals({
-        viewport: getNextViewport(viewportsKeys, globals.viewport),
+        viewport: getNextViewport(viewportsKeys, viewport),
       });
     },
   });

@@ -434,7 +434,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
           },
           test: {
             name: "storybook",
-            // pool: "threads",
+            pool: "threads",
             include: [
               // we need to set the path like this because svelte-kit overrides the root path so this makes it work in all sandboxes
               "src/**/*.{story,stories}.?(c|m)[jt]s?(x)",
@@ -480,8 +480,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
 
   packageJson.scripts = {
     ...packageJson.scripts,
-    vitest:
-      'vitest --pass-with-no-tests --reporter=verbose --reporter=hanging-process --test-timeout=5000',
+    vitest: 'vitest --pass-with-no-tests --reporter=default --reporter=hanging-process',
   };
 
   // This workaround is needed because Vitest seems to have issues in link mode

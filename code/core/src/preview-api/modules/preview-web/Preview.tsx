@@ -4,6 +4,7 @@ import type {
   Globals,
   GlobalsUpdatedPayload,
   ModuleImportFn,
+  Path,
   PreparedStory,
   ProjectAnnotations,
   RenderContextCallbacks,
@@ -81,6 +82,8 @@ export class Preview<TRenderer extends Renderer> {
 
   protected rejectStoreInitializationPromise!: (err: Error) => void;
 
+  protected unrenderedComponentPaths: Set<Path> = new Set();
+
   constructor(
     public importFn: ModuleImportFn,
 
@@ -148,6 +151,7 @@ export class Preview<TRenderer extends Renderer> {
     this.channel.on(ARGTYPES_INFO_REQUEST, this.onRequestArgTypesInfo.bind(this));
     this.channel.on(RESET_STORY_ARGS, this.onResetArgs.bind(this));
     this.channel.on(FORCE_RE_RENDER, this.onForceReRender.bind(this));
+    this.channel.on(FORCE_REMOUNT, this.onForceRemount.bind(this));
     this.channel.on(FORCE_REMOUNT, this.onForceRemount.bind(this));
   }
 
@@ -270,7 +274,15 @@ export class Preview<TRenderer extends Renderer> {
     }
 
     try {
+      const oldStoryIndex = this.storyStoreValue?.storyIndex.entries;
+
       const storyIndex = await this.getStoryIndexFromServer();
+
+      // TODO
+      const { importPath } = findNewComponentEntry(storyIndex, oldStoryIndex);
+      if (importPath) {
+        this.unrenderedComponentPaths.add(importPath);
+      }
 
       // We've been waiting for the index to resolve, now it has, so we can continue
       if (this.projectAnnotationsBeforeInitialization) {
@@ -444,7 +456,20 @@ export class Preview<TRenderer extends Renderer> {
       this.channel,
       this.storyStoreValue,
       this.renderToCanvas,
-      callbacks,
+      {
+        showMain: () => {
+          callbacks.showMain();
+          this.onStoryRendered(story.id);
+        },
+        showError: (err) => {
+          callbacks.showError(err);
+          this.onStoryRendered(story.id, err);
+        },
+        showException: (err) => {
+          callbacks.showException(err);
+          this.onStoryRendered(story.id, err);
+        },
+      },
       story.id,
       'docs',
       options,
@@ -505,5 +530,16 @@ export class Preview<TRenderer extends Renderer> {
     logger.error(reason);
     logger.error(err);
     this.channel.emit(CONFIG_ERROR, err);
+  }
+
+  onStoryRendered(storyId, err?: any) {
+    const { importPath } = this.storyStoreValue.storyIndex.storyIdToEntry(storyId);
+    const isNewComponent = this.unrenderedComponentPaths.has(importPath);
+
+    if (isNewComponent) {
+      this.unrenderedComponentPaths.delete(importPath);
+
+      global.sendComponentFirstRender(importPath, { err, fromStorybook: err.fromStorybook });
+    }
   }
 }

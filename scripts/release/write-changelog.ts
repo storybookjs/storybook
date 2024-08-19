@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 
 import chalk from 'chalk';
-import program from 'commander';
+import { program } from 'commander';
 import { readFile, writeFile, writeJson } from 'fs-extra';
 import semver from 'semver';
 import { z } from 'zod';

@@ -2,7 +2,7 @@
 // without having to build dts files for all packages in the monorepo.
 // It is not implemented yet for angular, svelte and vue.
 import chalk from 'chalk';
-import program from 'commander';
+import { program } from 'commander';
 import { execaCommand } from 'execa';
 import { readJSON } from 'fs-extra';
 import { resolve } from 'path';
@@ -60,9 +60,10 @@ async function run() {
     .parse(process.argv);
 
   Object.keys(tasks).forEach((key) => {
+    const opts = program.opts();
     // checks if a flag is passed e.g. yarn check --@storybook/addon-docs --watch
-    const containsFlag = program.rawArgs.includes(tasks[key].suffix);
-    tasks[key].value = containsFlag || program.all;
+    const containsFlag = program.args.includes(tasks[key].suffix);
+    tasks[key].value = containsFlag || opts.all;
   });
 
   let selection;

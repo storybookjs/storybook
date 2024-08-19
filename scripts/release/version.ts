@@ -2,7 +2,7 @@ import { join } from 'node:path';
 
 import { setOutput } from '@actions/core';
 import chalk from 'chalk';
-import program from 'commander';
+import { program } from 'commander';
 import { execaCommand } from 'execa';
 import { readFile, readJson, writeFile, writeJson } from 'fs-extra';
 import semver from 'semver';

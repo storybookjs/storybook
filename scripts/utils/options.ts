@@ -1,6 +1,6 @@
 /** Use commander and prompts to gather a list of options for a script */
 import chalk from 'chalk';
-import program from 'commander';
+import { type Command, type Option as CommanderOption, program } from 'commander';
 // eslint-disable-next-line import/extensions
 import kebabCase from 'lodash/kebabCase.js';
 import prompts from 'prompts';
@@ -102,8 +102,14 @@ function longFlag(key: OptionId, option: Option) {
   return inverse ? `no-${kebabCase(key)}` : kebabCase(key);
 }
 
-function optionFlags(key: OptionId, option: Option) {
-  const base = `-${shortFlag(key, option)}, --${longFlag(key, option)}`;
+function optionFlags(key: OptionId, option: Option, existingOptions: CommanderOption[]) {
+  const optionShortFlag = `-${shortFlag(key, option)}`;
+  let base;
+  if (existingOptions.some((opt) => opt.short === optionShortFlag)) {
+    base = `--${longFlag(key, option)}`;
+  } else {
+    base = `${optionShortFlag}, --${longFlag(key, option)}`;
+  }
   if (option.type === 'string' || option.type === 'string[]') {
     return `${base} <${key}>`;
   }
@@ -111,13 +117,13 @@ function optionFlags(key: OptionId, option: Option) {
 }
 
 export function getOptions<TOptions extends OptionSpecifier>(
-  command: program.Command,
+  command: Command,
   options: TOptions,
   argv: string[]
 ): MaybeOptionValues<TOptions> {
   Object.entries(options)
     .reduce((acc, [key, option]) => {
-      const flags = optionFlags(key, option);
+      const flags = optionFlags(key, option, acc.options as any);
 
       if (option.type === 'boolean') {
         return acc.option(flags, option.description, !!option.inverse);

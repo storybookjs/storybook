@@ -41,7 +41,7 @@ export const DocsContainer: FC<PropsWithChildren<DocsContainerProps>> = ({
     try {
       url = new URL(globalWindow.parent.location.toString());
       if (url.hash) {
-        const element = document.getElementById(url.hash.substring(1));
+        const element = document.getElementById(decodeURIComponent(url.hash.substring(1)));
         if (element) {
           // Introducing a delay to ensure scrolling works when it's a full refresh.
           setTimeout(() => {

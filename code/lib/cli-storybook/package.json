@@ -45,7 +45,7 @@
     "@storybook/codemod": "workspace:*",
     "@types/semver": "^7.3.4",
     "chalk": "^4.1.0",
-    "commander": "^6.2.1",
+    "commander": "^12.1.0",
     "create-storybook": "workspace:*",
     "cross-spawn": "^7.0.3",
     "envinfo": "^7.7.3",

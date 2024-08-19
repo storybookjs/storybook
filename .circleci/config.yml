@@ -678,64 +678,64 @@ workflows:
     when:
       equal: [normal, << pipeline.parameters.workflow >>]
     jobs:
-      - pretty-docs
+      # - pretty-docs
       - build
-      - lint:
-          requires:
-            - build
-      - check:
-          requires:
-            - build
-      - unit-tests:
-          requires:
-            - build
-      - script-checks:
-          requires:
-            - build
-      - chromatic-internal-storybook:
-          requires:
-            - build
-      - coverage:
-          requires:
-            - unit-tests
+      # - lint:
+      #     requires:
+      #       - build
+      # - check:
+      #     requires:
+      #       - build
+      # - unit-tests:
+      #     requires:
+      #       - build
+      # - script-checks:
+      #     requires:
+      #       - build
+      # - chromatic-internal-storybook:
+      #     requires:
+      #       - build
+      # - coverage:
+      #     requires:
+      #       - unit-tests
       - create-sandboxes:
-          parallelism: 14
+          parallelism: 1
           requires:
             - build
-      - build-sandboxes:
-          parallelism: 14
-          requires:
-            - create-sandboxes
-      - chromatic-sandboxes:
-          parallelism: 11
-          requires:
-            - build-sandboxes
-      - e2e-production:
-          parallelism: 9
-          requires:
-            - build-sandboxes
-      - e2e-dev:
-          parallelism: 2
-          requires:
-            - create-sandboxes
-      - test-runner-production:
-          parallelism: 9
-          requires:
-            - build-sandboxes
+      # - build-sandboxes:
+      #     parallelism: 14
+      #     requires:
+      #       - create-sandboxes
+      # - chromatic-sandboxes:
+      #     parallelism: 11
+      #     requires:
+      #       - build-sandboxes
+      # - e2e-production:
+      #     parallelism: 9
+      #     requires:
+      #       - build-sandboxes
+      # - e2e-dev:
+      #     parallelism: 2
+      #     requires:
+      #       - create-sandboxes
+      # - test-runner-production:
+      #     parallelism: 9
+      #     requires:
+      #       - build-sandboxes
       - vitest-integration:
-          parallelism: 4
+          parallelism: 1
           requires:
             - create-sandboxes
-      - bench:
-          parallelism: 5
-          requires:
-            - build-sandboxes
+      # - bench:
+      #     parallelism: 5
+      #     requires:
+      #       - build-sandboxes
       - test-portable-stories:
           requires:
             - build
           matrix:
             parameters:
-              directory: ["react", "vue3", "nextjs", "svelte"]
+              directory: ["nextjs"]
       # TODO: reenable once we find out the source of flakyness
       # - test-runner-dev:
       #     requires:

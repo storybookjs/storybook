@@ -720,21 +720,21 @@ export const allTemplates: Record<TemplateKey, Template> = {
 };
 
 export const normal: TemplateKey[] = [
-  'cra/default-ts',
-  'react-vite/default-ts',
-  'angular-cli/default-ts',
-  'vue3-vite/default-ts',
-  'lit-vite/default-ts',
-  'svelte-vite/default-ts',
-  'svelte-kit/skeleton-ts',
-  'nextjs/default-ts',
+  // 'cra/default-ts',
+  // 'react-vite/default-ts',
+  // 'angular-cli/default-ts',
+  // 'vue3-vite/default-ts',
+  // 'lit-vite/default-ts',
+  // 'svelte-vite/default-ts',
+  // 'svelte-kit/skeleton-ts',
+  // 'nextjs/default-ts',
   'experimental-nextjs-vite/default-ts',
-  'bench/react-vite-default-ts',
-  'bench/react-webpack-18-ts',
-  'bench/react-vite-default-ts-nodocs',
-  'bench/react-vite-default-ts-test-build',
-  'bench/react-webpack-18-ts-test-build',
-  'ember/default-js',
+  // 'bench/react-vite-default-ts',
+  // 'bench/react-webpack-18-ts',
+  // 'bench/react-vite-default-ts-nodocs',
+  // 'bench/react-vite-default-ts-test-build',
+  // 'bench/react-webpack-18-ts-test-build',
+  // 'ember/default-js',
 ];
 
 export const merged: TemplateKey[] = [

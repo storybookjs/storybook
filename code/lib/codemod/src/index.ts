@@ -58,7 +58,10 @@ export async function runCodemod(
   if (!parser) {
     const extension = extname(glob).slice(1);
     const knownParser = jscodeshiftToPrettierParser(extension);
-    if (knownParser !== 'babel') inferredParser = extension;
+
+    if (knownParser !== 'babel') {
+      inferredParser = extension;
+    }
   }
 
   // Dynamically import globby because it is a pure ESM module

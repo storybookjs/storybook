@@ -19,6 +19,10 @@ const GROUP_ID = 'icon--group';
 const COMPONENT_ID = 'icon--component';
 const DOCUMENT_ID = 'icon--document';
 const STORY_ID = 'icon--story';
+const SUCCESS_ID = 'icon--success';
+const ERROR_ID = 'icon--error';
+const WARNING_ID = 'icon--warning';
+const DOT_ID = 'icon--dot';
 
 export const IconSymbols: FC = () => {
   return (
@@ -63,14 +67,70 @@ export const IconSymbols: FC = () => {
           fill="currentColor"
         />
       </symbol>
+      <symbol id={SUCCESS_ID}>
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M10.854 4.146a.5.5 0 010 .708l-5 5a.5.5 0 01-.708 0l-2-2a.5.5 0 11.708-.708L5.5 8.793l4.646-4.647a.5.5 0 01.708 0z"
+          fill="currentColor"
+        />
+      </symbol>
+      <symbol id={ERROR_ID}>
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M7 4a3 3 0 100 6 3 3 0 000-6zM3 7a4 4 0 118 0 4 4 0 01-8 0z"
+          fill="currentColor"
+        />
+      </symbol>
+      <symbol id={WARNING_ID}>
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M7.206 3.044a.498.498 0 01.23.212l3.492 5.985a.494.494 0 01.006.507.497.497 0 01-.443.252H3.51a.499.499 0 01-.437-.76l3.492-5.984a.497.497 0 01.642-.212zM7 4.492L4.37 9h5.26L7 4.492z"
+          fill="currentColor"
+        />
+      </symbol>
+      <symbol id={DOT_ID}>
+        <circle cx="3" cy="3" r="3" fill="currentColor" />
+      </symbol>
     </Svg>
   );
 };
 
-export const UseSymbol: FC<{ type: 'group' | 'component' | 'document' | 'story' }> = ({ type }) => {
-  if (type === 'group') return <use xlinkHref={`#${GROUP_ID}`} />;
-  if (type === 'component') return <use xlinkHref={`#${COMPONENT_ID}`} />;
-  if (type === 'document') return <use xlinkHref={`#${DOCUMENT_ID}`} />;
-  if (type === 'story') return <use xlinkHref={`#${STORY_ID}`} />;
+export const UseSymbol: FC<{
+  type: 'group' | 'component' | 'document' | 'story' | 'success' | 'error' | 'warning' | 'dot';
+}> = ({ type }) => {
+  if (type === 'group') {
+    return <use xlinkHref={`#${GROUP_ID}`} />;
+  }
+
+  if (type === 'component') {
+    return <use xlinkHref={`#${COMPONENT_ID}`} />;
+  }
+
+  if (type === 'document') {
+    return <use xlinkHref={`#${DOCUMENT_ID}`} />;
+  }
+
+  if (type === 'story') {
+    return <use xlinkHref={`#${STORY_ID}`} />;
+  }
+
+  if (type === 'success') {
+    return <use xlinkHref={`#${SUCCESS_ID}`} />;
+  }
+
+  if (type === 'error') {
+    return <use xlinkHref={`#${ERROR_ID}`} />;
+  }
+
+  if (type === 'warning') {
+    return <use xlinkHref={`#${WARNING_ID}`} />;
+  }
+
+  if (type === 'dot') {
+    return <use xlinkHref={`#${DOT_ID}`} />;
+  }
   return null;
 };

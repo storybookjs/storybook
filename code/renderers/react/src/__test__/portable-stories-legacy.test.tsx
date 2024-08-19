@@ -196,6 +196,7 @@ describe('Legacy Portable Stories API', () => {
   const testCases = Object.values(composeStories(stories)).map(
     (Story) => [Story.storyName, Story] as [string, typeof Story]
   );
+
   it.each(testCases)('Renders %s story', async (_storyName, Story) => {
     cleanup();
 
@@ -207,7 +208,14 @@ describe('Legacy Portable Stories API', () => {
 
     const { baseElement } = await render(<Story />);
 
+    globalThis.IS_REACT_ACT_ENVIRONMENT = false;
     await Story.play?.();
+    globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+
     expect(baseElement).toMatchSnapshot();
   });
 });
+
+declare const globalThis: {
+  IS_REACT_ACT_ENVIRONMENT?: boolean;
+};

@@ -47,7 +47,9 @@ export const fullScreenTool: Addon_BaseType = {
   render: () => {
     const { isMobile } = useLayout();
 
-    if (isMobile) return null;
+    if (isMobile) {
+      return null;
+    }
 
     return (
       <Consumer filter={fullScreenMapper}>

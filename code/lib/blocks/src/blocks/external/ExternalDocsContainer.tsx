@@ -11,7 +11,9 @@ let preview: ExternalPreview<Renderer>;
 export const ExternalDocsContainer: React.FC<
   React.PropsWithChildren<{ projectAnnotations: any }>
 > = ({ projectAnnotations, children }) => {
-  if (!preview) preview = new ExternalPreview(projectAnnotations);
+  if (!preview) {
+    preview = new ExternalPreview(projectAnnotations);
+  }
 
   return (
     <DocsContext.Provider value={preview.docsContext()}>

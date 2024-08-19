@@ -9,14 +9,14 @@ import { AngularOptions } from '../types';
 import { PresetOptions } from './preset-options';
 
 /**
- * Source : https://github.com/angular/angular-cli/blob/ebccb5de4a455af813c5e82483db6af20666bdbd/packages/angular_devkit/build_angular/src/utils/load-esm.ts#L23
- * This uses a dynamic import to load a module which may be ESM.
- * CommonJS code can load ESM code via a dynamic import. Unfortunately, TypeScript
- * will currently, unconditionally downlevel dynamic import into a require call.
- * require calls cannot load ESM code and will result in a runtime error. To workaround
- * this, a Function constructor is used to prevent TypeScript from changing the dynamic import.
- * Once TypeScript provides support for keeping the dynamic import this workaround can
- * be dropped.
+ * Source :
+ * https://github.com/angular/angular-cli/blob/ebccb5de4a455af813c5e82483db6af20666bdbd/packages/angular_devkit/build_angular/src/utils/load-esm.ts#L23
+ * This uses a dynamic import to load a module which may be ESM. CommonJS code can load ESM code via
+ * a dynamic import. Unfortunately, TypeScript will currently, unconditionally downlevel dynamic
+ * import into a require call. require calls cannot load ESM code and will result in a runtime
+ * error. To workaround this, a Function constructor is used to prevent TypeScript from changing the
+ * dynamic import. Once TypeScript provides support for keeping the dynamic import this workaround
+ * can be dropped.
  *
  * @param modulePath The path of the module to load.
  * @returns A Promise that resolves to the dynamically imported module.
@@ -27,8 +27,8 @@ function loadEsmModule<T>(modulePath: string): Promise<T> {
 }
 
 /**
- * Run ngcc for converting modules to ivy format before starting storybook
- * This step is needed in order to support Ivy in storybook
+ * Run ngcc for converting modules to ivy format before starting storybook This step is needed in
+ * order to support Ivy in storybook
  *
  * Information about Ivy can be found here https://angular.io/guide/ivy
  */

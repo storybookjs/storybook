@@ -83,6 +83,7 @@ const tasksMap = {
   'test-runner': 'test-runner-production',
   // 'test-runner-dev', TODO: bring this back when the task is enabled again
   bench: 'bench',
+  'vitest-integration': 'vitest-integration',
 } as const;
 
 type TaskKey = keyof typeof tasksMap;
@@ -182,7 +183,9 @@ async function run({ cadence, task, check }: RunOptions) {
     return;
   }
 
-  if (!cadence) throw new Error('Need to supply cadence to get template script');
+  if (!cadence) {
+    throw new Error('Need to supply cadence to get template script');
+  }
 
   const { CIRCLE_NODE_INDEX = 0, CIRCLE_NODE_TOTAL = 1 } = process.env;
 

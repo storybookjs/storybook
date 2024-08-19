@@ -117,7 +117,10 @@ export const Tooltip: FC<TooltipProps> = ({
     document.head.appendChild(style);
     return () => {
       const styleElement = document.querySelector('#sb-onboarding-arrow-style');
-      if (styleElement) styleElement.remove();
+
+      if (styleElement) {
+        styleElement.remove();
+      }
     };
   }, []);
 

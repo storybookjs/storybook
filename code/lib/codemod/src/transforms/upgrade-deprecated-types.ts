@@ -18,7 +18,9 @@ const deprecatedTypes = [
 ];
 
 function migrateType(oldType: string) {
-  if (oldType === 'Story' || oldType === 'ComponentStory') return 'StoryFn';
+  if (oldType === 'Story' || oldType === 'ComponentStory') {
+    return 'StoryFn';
+  }
   return oldType.replace('Component', '');
 }
 
@@ -70,15 +72,26 @@ export function upgradeDeprecatedTypes(file: BabelFile) {
       );
 
       const source = path.node.source.value;
-      if (!source.startsWith('@storybook')) return;
+
+      if (!source.startsWith('@storybook')) {
+        return;
+      }
 
       path.get('specifiers').forEach((specifier) => {
         if (specifier.isImportNamespaceSpecifier()) {
           importedNamespaces.add(specifier.node.local.name);
         }
-        if (!specifier.isImportSpecifier()) return;
+
+        if (!specifier.isImportSpecifier()) {
+          return;
+        }
         const imported = specifier.get('imported');
-        if (!imported.isIdentifier()) return;
+
+        if (!imported.isIdentifier()) {
+          return;
+        }
+
+        // if we find a deprecated import
 
         // if we find a deprecated import
         if (deprecatedTypes.includes(imported.node.name)) {

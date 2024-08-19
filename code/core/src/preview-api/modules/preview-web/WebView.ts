@@ -153,7 +153,9 @@ export class WebView implements View<HTMLElement> {
   }
 
   showNoPreview() {
-    if (this.testing) return;
+    if (this.testing) {
+      return;
+    }
 
     this.showMode(Mode.NOPREVIEW);
 

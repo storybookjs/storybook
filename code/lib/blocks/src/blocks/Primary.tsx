@@ -7,9 +7,7 @@ import type { Of } from './useOf';
 import { useOf } from './useOf';
 
 interface PrimaryProps {
-  /**
-   * Specify where to get the primary story from.
-   */
+  /** Specify where to get the primary story from. */
   of?: Of;
 }
 

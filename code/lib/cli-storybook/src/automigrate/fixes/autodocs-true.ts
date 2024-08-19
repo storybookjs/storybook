@@ -10,9 +10,7 @@ interface AutodocsTrueFrameworkRunOptions {
   value?: boolean | 'tag';
 }
 
-/**
- * Set the docs.autodocs option to true if it isn't already set
- */
+/** Set the `docs.autodocs` option to true if it isn't already set */
 export const autodocsTrue: Fix<AutodocsTrueFrameworkRunOptions> = {
   id: 'autodocsTrue',
 

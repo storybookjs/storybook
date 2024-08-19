@@ -2,9 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 
 import { ControlsParameters, SubcomponentA, SubcomponentB } from './ControlsParameters';
 
-/**
- * Reference stories to be used by the Controls stories
- */
+/** Reference stories to be used by the Controls stories */
 const meta = {
   title: 'examples/Stories for the Controls Block with Subcomponents',
   component: ControlsParameters,

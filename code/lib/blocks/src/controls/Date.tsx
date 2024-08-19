@@ -84,23 +84,33 @@ export const DateControl: FC<DateProps> = ({ name, value, onChange, onFocus, onB
   }, [value]);
 
   const onDateChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.value) return onChange();
+    if (!e.target.value) {
+      return onChange();
+    }
     const parsed = parseDate(e.target.value);
     const result = new Date(value);
     result.setFullYear(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
     const time = result.getTime();
-    if (time) onChange(time);
+
+    if (time) {
+      onChange(time);
+    }
     setValid(!!time);
   };
 
   const onTimeChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.value) return onChange();
+    if (!e.target.value) {
+      return onChange();
+    }
     const parsed = parseTime(e.target.value);
     const result = new Date(value);
     result.setHours(parsed.getHours());
     result.setMinutes(parsed.getMinutes());
     const time = result.getTime();
-    if (time) onChange(time);
+
+    if (time) {
+      onChange(time);
+    }
     setValid(!!time);
   };
 

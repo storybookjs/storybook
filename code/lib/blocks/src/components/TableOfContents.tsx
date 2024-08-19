@@ -10,9 +10,8 @@ export interface TocParameters {
   contentsSelector?: string;
 
   /**
-   * When true, hide the TOC. We still show the empty container
-   * (as opposed to showing nothing at all) because it affects the
-   * page layout and we want to preserve the layout across pages.
+   * When true, hide the TOC. We still show the empty container (as opposed to showing nothing at
+   * all) because it affects the page layout and we want to preserve the layout across pages.
    */
   disable?: boolean;
 
@@ -27,6 +26,7 @@ export interface TocParameters {
 
   /**
    * TocBot options, not guaranteed to be available in future versions.
+   *
    * @see tocbot docs {@link https://tscanlin.github.io/tocbot/#usage}
    */
   unsafeTocbotOptions?: tocbot.IStaticOptions;
@@ -144,25 +144,17 @@ export const TableOfContents = ({
       tocSelector: '.toc-wrapper',
       contentSelector: contentsSelector ?? '.sbdocs-content',
       headingSelector: headingSelector ?? 'h3',
-      /**
-       * Ignore headings that did not
-       * come from the main markdown code.
-       */
+      /** Ignore headings that did not come from the main markdown code. */
       ignoreSelector: ignoreSelector ?? '.docs-story *, .skip-toc',
       headingsOffset: 40,
       scrollSmoothOffset: -40,
       orderedList: false,
-      /**
-       * Prevent default linking behavior,
-       * leaving only the smooth scrolling.
-       */
+      /** Prevent default linking behavior, leaving only the smooth scrolling. */
       onClick: () => false,
       ...unsafeTocbotOptions,
     };
 
-    /**
-     * Wait for the DOM to be ready.
-     */
+    /** Wait for the DOM to be ready. */
     const timeout = setTimeout(() => tocbot.init(configuration), 100);
     return () => {
       clearTimeout(timeout);

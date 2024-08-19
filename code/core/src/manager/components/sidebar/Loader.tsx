@@ -36,8 +36,8 @@ export const Contained = styled.div({
 
 interface LoaderProps {
   /**
-   * The number of lines to display in the loader.
-   * These are indented according to a pre-defined sequence of depths.
+   * The number of lines to display in the loader. These are indented according to a pre-defined
+   * sequence of depths.
    */
   size: number;
 }

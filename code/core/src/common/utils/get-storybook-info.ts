@@ -23,9 +23,7 @@ export const rendererPackages: Record<string, string> = {
   'storybook-framework-qwik': 'qwik',
   'storybook-solidjs': 'solid',
 
-  /**
-   * @deprecated This is deprecated.
-   */
+  /** @deprecated This is deprecated. */
   '@storybook/vue': 'vue',
 };
 
@@ -50,6 +48,8 @@ export const frameworkPackages: Record<string, SupportedFrameworks> = {
   // community (outside of monorepo)
   'storybook-framework-qwik': 'qwik',
   'storybook-solidjs-vite': 'solid',
+  'storybook-react-rsbuild': 'react-rsbuild',
+  'storybook-vue3-rsbuild': 'vue3-rsbuild',
 };
 
 export const builderPackages = ['@storybook/builder-webpack5', '@storybook/builder-vite'];
@@ -103,7 +103,10 @@ export const getConfigInfo = (packageJson: PackageJson, configDir?: string) => {
   const storybookScript = packageJson.scripts?.storybook;
   if (storybookScript && !configDir) {
     const configParam = getStorybookConfiguration(storybookScript, '-c', '--config-dir');
-    if (configParam) storybookConfigDir = configParam;
+
+    if (configParam) {
+      storybookConfigDir = configParam;
+    }
   }
 
   return {

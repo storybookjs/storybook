@@ -35,9 +35,10 @@ let routerAPI: {
 
 /**
  * Creates a next/router router API mock. Used internally.
+ *
  * @ignore
  * @internal
- * */
+ */
 export const createRouter = (overrides: Partial<NextRouter>) => {
   const routerActions: Partial<NextRouter> = {
     push: fn((..._args: any[]) => {

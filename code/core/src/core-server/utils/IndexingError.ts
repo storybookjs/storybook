@@ -29,7 +29,9 @@ export class MultipleIndexingError extends Error {
   constructor(public indexingErrors: IndexingError[]) {
     super();
 
-    if (this.indexingErrors.length === 0) throw new Error('Unexpected empty error list');
+    if (this.indexingErrors.length === 0) {
+      throw new Error('Unexpected empty error list');
+    }
 
     if (this.indexingErrors.length === 1) {
       const [err] = this.indexingErrors;

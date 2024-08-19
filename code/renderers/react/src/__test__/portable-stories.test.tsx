@@ -18,7 +18,7 @@ import { composeStories, composeStory, setProjectAnnotations } from '..';
 import type { Button } from './Button';
 import * as stories from './Button.stories';
 
-setProjectAnnotations([{ testingLibraryRender: render }]);
+setProjectAnnotations([]);
 
 // example with composeStories, returns an object with all stories composed with args/decorators
 const { CSF3Primary, LoaderStory, MountInPlayFunction } = composeStories(stories);
@@ -26,6 +26,10 @@ const { CSF3Primary, LoaderStory, MountInPlayFunction } = composeStories(stories
 afterEach(() => {
   cleanup();
 });
+
+declare const globalThis: {
+  IS_REACT_ACT_ENVIRONMENT?: boolean;
+};
 
 // example with composeStory, returns a single story composed with args/decorators
 const Secondary = composeStory(stories.CSF2Secondary, stories.default);
@@ -81,7 +85,6 @@ describe('projectAnnotations', () => {
   it('renders with default projectAnnotations', () => {
     setProjectAnnotations([
       {
-        testingLibraryRender: render,
         parameters: { injected: true },
         globalTypes: {
           locale: { defaultValue: 'en' },
@@ -148,6 +151,18 @@ describe('CSF3', () => {
 
     document.body.removeChild(div);
   });
+
+  it('renders with hooks', async () => {
+    // TODO find out why act is not working here
+    globalThis.IS_REACT_ACT_ENVIRONMENT = false;
+    const HooksStory = composeStory(stories.HooksStory, stories.default);
+
+    await HooksStory.run();
+
+    const input = screen.getByTestId('input') as HTMLInputElement;
+    expect(input.value).toEqual('Hello world!');
+    globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+  });
 });
 
 // common in addons that need to communicate between manager and preview
@@ -187,7 +202,11 @@ const testCases = Object.values(composeStories(stories)).map(
   (Story) => [Story.storyName, Story] as [string, typeof Story]
 );
 it.each(testCases)('Renders %s story', async (_storyName, Story) => {
-  if (_storyName === 'CSF2StoryWithLocale') return;
+  if (_storyName === 'CSF2StoryWithLocale') {
+    return;
+  }
+  globalThis.IS_REACT_ACT_ENVIRONMENT = false;
   await Story.run();
+  globalThis.IS_REACT_ACT_ENVIRONMENT = true;
   expect(document.body).toMatchSnapshot();
 });

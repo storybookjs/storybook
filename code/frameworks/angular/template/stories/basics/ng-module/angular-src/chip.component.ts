@@ -5,20 +5,20 @@ import { CHIP_COLOR } from './chip-color.token';
   selector: 'storybook-chip',
   template: `
     <span class="text">{{ displayText | chipText }}</span>
-    <div class="remove" (click)="removeClicked.emit()">
-      <span class="x">✕</span>
-    </div>
+<div class="remove" (click)="removeClicked.emit()">
+  <span class="x">✕</span>
+</div>
   `,
   styles: [
     `
       :host {
         display: inline-flex;
-        cursor: default;
-        align-items: center;
         justify-content: center;
-        padding: 0.2rem 0.5rem;
-        border-radius: 1rem;
+        align-items: center;
+        cursor: default;
         border: solid 0.1rem transparent;
+        border-radius: 1rem;
+        padding: 0.2rem 0.5rem;
       }
       :host:hover {
         border-color: black;
@@ -28,8 +28,8 @@ import { CHIP_COLOR } from './chip-color.token';
       }
       .remove {
         margin-left: 1rem;
-        background-color: lightgrey;
         border-radius: 50%;
+        background-color: lightgrey;
         width: 1rem;
         height: 1rem;
         text-align: center;
@@ -39,10 +39,10 @@ import { CHIP_COLOR } from './chip-color.token';
       }
       .x {
         display: inline-block;
-        color: #eeeeee;
-        text-align: center;
         vertical-align: baseline;
+        color: #eeeeee;
         line-height: 1rem;
+        text-align: center;
       }
     `,
   ],

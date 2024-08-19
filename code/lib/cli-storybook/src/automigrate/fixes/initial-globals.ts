@@ -17,18 +17,21 @@ interface Options {
   globals: Expression;
 }
 
-/**
- * Rename preview.js globals to initialGlobals
- */
+/** Rename preview.js globals to initialGlobals */
 export const initialGlobals: Fix<Options> = {
   id: 'initial-globals',
   versionRange: ['*.*.*', '>=8.0.*'],
   async check({ previewConfigPath }) {
-    if (!previewConfigPath) return null;
+    if (!previewConfigPath) {
+      return null;
+    }
 
     const previewConfig = loadConfig((await readFile(previewConfigPath)).toString()).parse();
     const globals = previewConfig.getFieldNode(['globals']) as Expression;
-    if (!globals) return null;
+
+    if (!globals) {
+      return null;
+    }
 
     return { globals, previewConfig, previewConfigPath };
   },

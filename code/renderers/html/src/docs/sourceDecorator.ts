@@ -36,7 +36,10 @@ export const sourceDecorator: DecoratorFunction<HtmlRenderer> = (storyFn, contex
   }
   useEffect(() => {
     const { id, unmappedArgs } = context;
-    if (source) addons.getChannel().emit(SNIPPET_RENDERED, { id, args: unmappedArgs, source });
+
+    if (source) {
+      addons.getChannel().emit(SNIPPET_RENDERED, { id, args: unmappedArgs, source });
+    }
   });
 
   return story;

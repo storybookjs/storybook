@@ -16,7 +16,9 @@ export function removeAnsiEscapeCodes(input = ''): string {
 }
 
 export function cleanPaths(str: string, separator: string = path.sep): string {
-  if (!str) return str;
+  if (!str) {
+    return str;
+  }
 
   const stack = process.cwd().split(separator);
 

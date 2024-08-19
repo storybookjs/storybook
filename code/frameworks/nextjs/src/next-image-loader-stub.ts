@@ -1,9 +1,10 @@
+import { cpus } from 'node:os';
+
 import { NextJsSharpError } from 'storybook/internal/preview-errors';
 
 import imageSizeOf from 'image-size';
 import { interpolateName } from 'loader-utils';
 import type { NextConfig } from 'next';
-import { cpus } from 'os';
 import type { RawLoaderDefinition } from 'webpack';
 
 interface LoaderOptions {

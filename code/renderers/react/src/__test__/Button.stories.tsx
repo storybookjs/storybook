@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
-import { expect, fn, userEvent, within } from '@storybook/test';
-import { mocked } from '@storybook/test';
+import { expect, fn, mocked, userEvent, within } from '@storybook/test';
 
 import type { HandlerFunction } from '@storybook/addon-actions';
 import { action } from '@storybook/addon-actions';
@@ -87,6 +87,34 @@ export const CSF3ButtonWithRender: CSF3Story<ButtonProps> = {
       <Button {...args} />
     </div>
   ),
+};
+
+export const HooksStory: CSF3Story = {
+  render: function Component() {
+    const [isClicked, setClicked] = useState(false);
+    return (
+      <>
+        <input data-testid="input" />
+        <br />
+        <button onClick={() => setClicked(!isClicked)}>
+          I am {isClicked ? 'clicked' : 'not clicked'}
+        </button>
+      </>
+    );
+  },
+  play: async ({ canvasElement, step }) => {
+    console.log('start of play function');
+    const canvas = within(canvasElement);
+    await step('Step label', async () => {
+      const inputEl = canvas.getByTestId('input');
+      const buttonEl = canvas.getByRole('button');
+      await userEvent.click(buttonEl);
+      await userEvent.type(inputEl, 'Hello world!');
+
+      await expect(inputEl).toHaveValue('Hello world!');
+    });
+    console.log('end of play function');
+  },
 };
 
 export const CSF3InputFieldFilled: CSF3Story = {
@@ -183,5 +211,66 @@ export const WithActionArgType: CSF3Story<{ someActionArg: HandlerFunction }> = 
   },
   render: () => {
     return <div>nothing</div>;
+  },
+};
+
+export const Modal: CSF3Story = {
+  render: function Component() {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalContainer] = useState(() => {
+      const div = document.createElement('div');
+      div.id = 'modal-root';
+      return div;
+    });
+
+    useEffect(() => {
+      document.body.appendChild(modalContainer);
+      return () => {
+        document.body.removeChild(modalContainer);
+      };
+    }, [modalContainer]);
+
+    const handleOpenModal = () => setIsModalOpen(true);
+    const handleCloseModal = () => setIsModalOpen(false);
+
+    const modalContent = isModalOpen
+      ? createPortal(
+          <div
+            role="dialog"
+            style={{
+              position: 'fixed',
+              top: '20%',
+              left: '50%',
+              transform: 'translate(-50%, -20%)',
+              backgroundColor: 'white',
+              padding: '20px',
+              zIndex: 1000,
+              border: '2px solid black',
+              borderRadius: '5px',
+            }}
+          >
+            <div style={{ marginBottom: '10px' }}>
+              <p>This is a modal!</p>
+            </div>
+            <button onClick={handleCloseModal}>Close</button>
+          </div>,
+          modalContainer
+        )
+      : null;
+
+    return (
+      <>
+        <button id="openModalButton" onClick={handleOpenModal}>
+          Open Modal
+        </button>
+        {modalContent}
+      </>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const openModalButton = await canvas.getByRole('button', { name: /open modal/i });
+    await userEvent.click(openModalButton);
+    await expect(within(document.body).getByRole('dialog')).toBeInTheDocument();
   },
 };

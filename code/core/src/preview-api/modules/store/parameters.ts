@@ -4,10 +4,9 @@ import type { Parameters } from '@storybook/core/types';
 import isPlainObject from 'lodash/isPlainObject.js';
 
 /**
- * Safely combine parameters recursively. Only copy objects when needed.
- * Algorithm = always overwrite the existing value UNLESS both values
- * are plain objects. In this case flag the key as "special" and handle
- * it with a heuristic.
+ * Safely combine parameters recursively. Only copy objects when needed. Algorithm = always
+ * overwrite the existing value UNLESS both values are plain objects. In this case flag the key as
+ * "special" and handle it with a heuristic.
  */
 export const combineParameters = (...parameterSets: (Parameters | undefined)[]) => {
   const mergeKeys: Record<string, boolean> = {};

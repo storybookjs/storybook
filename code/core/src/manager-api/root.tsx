@@ -105,17 +105,11 @@ export type API = addons.SubAPI &
   Other;
 
 interface DeprecatedState {
-  /**
-   * @deprecated use index
-   */
+  /** @deprecated Use index */
   storiesHash: API_IndexHash;
-  /**
-   * @deprecated use previewInitialized
-   */
+  /** @deprecated Use previewInitialized */
   storiesConfigured: boolean;
-  /**
-   * @deprecated use indexError
-   */
+  /** @deprecated Use indexError */
   storiesFailed?: Error;
 }
 
@@ -137,7 +131,9 @@ export type ManagerProviderProps = RouterData &
 export const combineParameters = (...parameterSets: Parameters[]) =>
   mergeWith({}, ...parameterSets, (objValue: any, srcValue: any) => {
     // Treat arrays as scalars:
-    if (Array.isArray(srcValue)) return srcValue;
+    if (Array.isArray(srcValue)) {
+      return srcValue;
+    }
 
     return undefined;
   });
@@ -337,7 +333,7 @@ export function useStorybookApi(): API {
 }
 
 export type {
-  /** @deprecated now IndexHash */
+  /** @deprecated Now IndexHash */
   API_IndexHash as StoriesHash,
   API_IndexHash as IndexHash,
   API_RootEntry as RootEntry,

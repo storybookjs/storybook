@@ -2,11 +2,7 @@ import React, { useMemo } from 'react';
 
 import { ScrollArea, Spaced } from '@storybook/core/components';
 import { styled } from '@storybook/core/theming';
-import type {
-  API_LoadedRefData,
-  Addon_SidebarBottomType,
-  Addon_SidebarTopType,
-} from '@storybook/core/types';
+import type { API_LoadedRefData, Addon_SidebarTopType } from '@storybook/core/types';
 
 import type { State } from '@storybook/core/manager-api';
 
@@ -16,6 +12,7 @@ import type { HeadingProps } from './Heading';
 import { Heading } from './Heading';
 import { Search } from './Search';
 import { SearchResults } from './SearchResults';
+import { SidebarBottom } from './SidebarBottom';
 import type { CombinedDataset, Selection } from './types';
 import { useLastViewed } from './useLastViewed';
 
@@ -107,7 +104,6 @@ export interface SidebarProps extends API_LoadedRefData {
   status: State['status'];
   menu: any[];
   extra: Addon_SidebarTopType[];
-  bottom?: Addon_SidebarBottomType[];
   storyId?: string;
   refId?: string;
   menuHighlighted?: boolean;
@@ -126,7 +122,6 @@ export const Sidebar = React.memo(function Sidebar({
   previewInitialized,
   menu,
   extra,
-  bottom = [],
   menuHighlighted = false,
   enableShortcuts = true,
   refs = {},
@@ -192,9 +187,7 @@ export const Sidebar = React.memo(function Sidebar({
       </ScrollArea>
       {isLoading ? null : (
         <Bottom className="sb-bar">
-          {bottom.map(({ id, render: Render }) => (
-            <Render key={id} />
-          ))}
+          <SidebarBottom />
         </Bottom>
       )}
     </Container>

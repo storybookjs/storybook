@@ -10,7 +10,9 @@ const appDirectory = realpathSync(process.cwd());
 let reactScriptsPath: string;
 
 export function getReactScriptsPath({ noCache }: { noCache?: boolean } = {}) {
-  if (reactScriptsPath && !noCache) return reactScriptsPath;
+  if (reactScriptsPath && !noCache) {
+    return reactScriptsPath;
+  }
 
   let reactScriptsScriptPath = realpathSync(join(appDirectory, '/node_modules/.bin/react-scripts'));
 

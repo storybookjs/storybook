@@ -123,7 +123,10 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
         ([end]: any) => setScrollTarget(end.isIntersecting ? undefined : end.target),
         { root: global.document.querySelector('#panel-tab-content') }
       );
-      if (endRef.current) observer.observe(endRef.current);
+
+      if (endRef.current) {
+        observer.observe(endRef.current);
+      }
     }
     return () => observer?.disconnect();
   }, []);

@@ -14,8 +14,8 @@ export enum DescriptionType {
 
 interface DescriptionProps {
   /**
-   * Specify where to get the description from. Can be a component, a CSF file or a story.
-   * If not specified, the description will be extracted from the meta of the attached CSF file.
+   * Specify where to get the description from. Can be a component, a CSF file or a story. If not
+   * specified, the description will be extracted from the meta of the attached CSF file.
    */
   of?: Of;
 }

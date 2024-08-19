@@ -146,7 +146,10 @@ export async function transform(
         );
         if (typeof nameAttribute?.value === 'string') {
           let name = nameToValidExport(nameAttribute.value);
-          while (variableNameExists(name)) name += '_';
+
+          while (variableNameExists(name)) {
+            name += '_';
+          }
 
           storiesMap.set(name, {
             type: 'value',
@@ -274,7 +277,9 @@ export async function transform(
   function mapChildrenToRender(children: (MdxJsxFlowElement | MdxJsxTextElement)['children']) {
     const child = children[0];
 
-    if (!child) return undefined;
+    if (!child) {
+      return undefined;
+    }
 
     if (child.type === 'text') {
       return t.arrowFunctionExpression([], t.stringLiteral(child.value));
@@ -307,7 +312,10 @@ export async function transform(
     file.path.traverse({
       VariableDeclarator: (path) => {
         const lVal = path.node.id;
-        if (t.isIdentifier(lVal) && lVal.name === name) found = true;
+
+        if (t.isIdentifier(lVal) && lVal.name === name) {
+          found = true;
+        }
       },
     });
     return found;
@@ -315,7 +323,9 @@ export async function transform(
 
   newStatements.push(
     ...[...storiesMap].flatMap(([key, value]) => {
-      if (value.type === 'id') return [];
+      if (value.type === 'id') {
+        return [];
+      }
       if (value.type === 'reference') {
         return [
           t.exportNamedDeclaration(null, [t.exportSpecifier(t.identifier(key), t.identifier(key))]),

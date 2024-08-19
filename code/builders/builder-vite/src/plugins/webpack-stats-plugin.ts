@@ -25,15 +25,14 @@ type WebpackStatsPluginOptions = {
 };
 
 /**
- * Strips off query params added by rollup/vite to ids, to make paths compatible for comparison with git.
+ * Strips off query params added by rollup/vite to ids, to make paths compatible for comparison with
+ * git.
  */
 function stripQueryParams(filePath: string): string {
   return filePath.split('?')[0];
 }
 
-/**
- * We only care about user code, not node_modules, vite files, or (most) virtual files.
- */
+/** We only care about user code, not node_modules, vite files, or (most) virtual files. */
 function isUserCode(moduleName: string) {
   return Boolean(
     moduleName &&
@@ -48,9 +47,7 @@ function isUserCode(moduleName: string) {
 export type WebpackStatsPlugin = Plugin & { storybookGetStats: () => BuilderStats };
 
 export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): WebpackStatsPlugin {
-  /**
-   * Convert an absolute path name to a path relative to the vite root, with a starting `./`
-   */
+  /** Convert an absolute path name to a path relative to the vite root, with a starting `./` */
   function normalize(filename: string) {
     // Do not try to resolve virtual files
     if (filename.startsWith('/virtual:')) {
@@ -64,16 +61,12 @@ export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): W
     }
   }
 
-  /**
-   * Helper to create Reason objects out of a list of string paths
-   */
+  /** Helper to create Reason objects out of a list of string paths */
   function createReasons(importers?: readonly string[]): Reason[] {
     return (importers || []).map((i) => ({ moduleName: normalize(i) }));
   }
 
-  /**
-   * Helper function to build a `Module` given a filename and list of files that import it
-   */
+  /** Helper function to build a `Module` given a filename and list of files that import it */
   function createStatsMapModule(filename: string, importers?: readonly string[]): Module {
     return {
       id: filename,

@@ -3,12 +3,11 @@ import * as babelParser from '@babel/parser';
 
 import type { Parser, ParserResult } from './types';
 
-/**
- * A generic parser that can parse both ES and CJS modules.
- */
+/** A generic parser that can parse both ES and CJS modules. */
 export class GenericParser implements Parser {
   /**
    * Parse the content of a file and return the exports
+   *
    * @param content The content of the file
    * @returns The exports of the file
    */

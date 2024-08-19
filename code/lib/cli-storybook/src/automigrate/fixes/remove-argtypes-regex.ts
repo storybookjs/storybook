@@ -14,7 +14,9 @@ export const removeArgtypesRegex: Fix<{ argTypesRegex: NodePath; previewConfigPa
   promptType: 'manual',
   versionRange: ['<8.0.0-alpha.0', '>=8.0.0-alpha.0'],
   async check({ previewConfigPath }) {
-    if (!previewConfigPath) return null;
+    if (!previewConfigPath) {
+      return null;
+    }
 
     const previewFile = await readFile(previewConfigPath, { encoding: 'utf-8' });
 

@@ -19,6 +19,7 @@ const logger = console;
  * Does the user not have storybook dependency?
  *
  * If so:
+ *
  * - Add storybook dependency
  * - If they are using sb dependency, remove it
  */

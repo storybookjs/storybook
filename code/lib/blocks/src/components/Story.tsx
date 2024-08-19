@@ -114,10 +114,7 @@ const IFrameStory: FunctionComponent<IFrameStoryProps> = ({ story, height = '500
   </div>
 );
 
-/**
- * A story element, either rendered inline or in an iframe,
- * with configurable height.
- */
+/** A story element, either rendered inline or in an iframe, with configurable height. */
 
 const ErrorMessage = styled.strong(({ theme }) => ({
   color: theme.color.orange,

@@ -83,8 +83,9 @@ export async function executeCLIStep<TOptions extends OptionSpecifier>(
     debug: boolean;
   }
 ) {
-  if (cliStep.hasArgument && !options.argument)
+  if (cliStep.hasArgument && !options.argument) {
     throw new Error(`Argument required for ${cliStep.command} command.`);
+  }
 
   const cliCommand = cliStep.command;
 

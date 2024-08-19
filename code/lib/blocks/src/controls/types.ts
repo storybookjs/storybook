@@ -19,6 +19,7 @@ export interface ColorConfig {
   presetColors?: PresetColor[];
   /**
    * Whether the color picker should be open by default when rendered.
+   *
    * @default false
    */
   startOpen?: boolean;

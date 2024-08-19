@@ -19,15 +19,13 @@ const applicationRefs = new Map<HTMLElement, ApplicationRef>();
 /**
  * Attribute name for the story UID that may be written to the targetDOMNode.
  *
- * If a target DOM node has a story UID attribute, it will be used as part of
- * the selector for the Angular component.
+ * If a target DOM node has a story UID attribute, it will be used as part of the selector for the
+ * Angular component.
  */
 export const STORY_UID_ATTRIBUTE = 'data-sb-story-uid';
 
 export abstract class AbstractRenderer {
-  /**
-   * Wait and destroy the platform
-   */
+  /** Wait and destroy the platform */
   public static resetApplications(domNode?: HTMLElement) {
     applicationRefs.forEach((appRef, appDOMNode) => {
       if (!appRef.destroyed && (!domNode || appDOMNode === domNode)) {
@@ -48,8 +46,12 @@ export abstract class AbstractRenderer {
    *
    * @param storyFnAngular {StoryFnAngularReturnType}
    * @param forced {boolean} If :
-   * - true render will only use the StoryFn `props' in storyProps observable that will update sotry's component/template properties. Improves performance without reloading the whole module&component if props changes
-   * - false fully recharges or initializes angular module & component
+   *
+   *   - True render will only use the StoryFn `props' in storyProps observable that will update sotry's
+   *       component/template properties. Improves performance without reloading the whole
+   *       module&component if props changes
+   *   - False fully recharges or initializes angular module & component
+   *
    * @param component {Component}
    */
   public async render({
@@ -123,16 +125,17 @@ export abstract class AbstractRenderer {
   }
 
   /**
-   * Only ASCII alphanumerics can be used as HTML tag name.
-   * https://html.spec.whatwg.org/#elements-2
+   * Only ASCII alphanumerics can be used as HTML tag name. https://html.spec.whatwg.org/#elements-2
    *
    * Therefore, stories break when non-ASCII alphanumerics are included in target selector.
    * https://github.com/storybookjs/storybook/issues/15147
    *
-   * This method returns storyId when it doesn't contain any non-ASCII alphanumerics.
-   * Otherwise, it generates a valid HTML tag name from storyId by removing non-ASCII alphanumerics from storyId, prefixing "sb-", and suffixing "-component"
-   * @protected
+   * This method returns storyId when it doesn't contain any non-ASCII alphanumerics. Otherwise, it
+   * generates a valid HTML tag name from storyId by removing non-ASCII alphanumerics from storyId,
+   * prefixing "sb-", and suffixing "-component"
+   *
    * @memberof AbstractRenderer
+   * @protected
    */
   protected generateTargetSelectorFromStoryId(id: string) {
     const invalidHtmlTag = /[^A-Za-z0-9-]/g;
@@ -140,9 +143,7 @@ export abstract class AbstractRenderer {
     return storyIdIsInvalidHtmlTagName ? `sb-${id.replace(invalidHtmlTag, '')}-component` : id;
   }
 
-  /**
-   * Adds DOM element that angular will use as bootstrap component.
-   */
+  /** Adds DOM element that angular will use as bootstrap component. */
   protected initAngularRootElement(targetDOMNode: HTMLElement, targetSelector: string) {
     targetDOMNode.innerHTML = '';
     targetDOMNode.appendChild(document.createElement(targetSelector));

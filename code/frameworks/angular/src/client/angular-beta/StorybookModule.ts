@@ -22,9 +22,7 @@ export const getApplication = ({
     template = computesTemplateFromComponent(component, props, '');
   }
 
-  /**
-   * Create a component that wraps generated template and gives it props
-   */
+  /** Create a component that wraps generated template and gives it props */
   return createStorybookWrapperComponent({
     moduleMetadata,
     selector: targetSelector,

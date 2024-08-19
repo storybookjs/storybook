@@ -100,7 +100,7 @@
     "chalk": "^4.1.0",
     "chromatic": "^11.5.5",
     "codecov": "^3.8.1",
-    "commander": "^6.2.1",
+    "commander": "^12.1.0",
     "cross-env": "^7.0.3",
     "cross-spawn": "^7.0.3",
     "danger": "^12.3.3",
@@ -143,9 +143,14 @@
     "ora": "^5.4.1",
     "p-limit": "^3.1.0",
     "p-retry": "^5.1.2",
-    "playwright": "1.36.0",
-    "playwright-core": "1.36.0",
+    "playwright": "1.46.0",
+    "playwright-core": "1.46.0",
     "prettier": "^3.3.2",
+    "prettier-plugin-brace-style": "^0.6.2",
+    "prettier-plugin-css-order": "^2.1.2",
+    "prettier-plugin-curly": "^0.2.2",
+    "prettier-plugin-jsdoc": "^1.3.0",
+    "prettier-plugin-merge": "^0.7.0",
     "pretty-bytes": "^6.1.1",
     "pretty-hrtime": "^1.0.3",
     "pretty-ms": "^8.0.0",
@@ -188,6 +193,7 @@
     "verdaccio": "^5.31.1",
     "verdaccio-auth-memory": "^10.2.2"
   },
+  "packageManager": "yarn@4.4.0+sha512.91d93b445d9284e7ed52931369bc89a663414e5582d00eea45c67ddc459a2582919eece27c412d6ffd1bd0793ff35399381cb229326b961798ce4f4cc60ddfdb",
   "engines": {
     "node": ">=22.0.0"
   }

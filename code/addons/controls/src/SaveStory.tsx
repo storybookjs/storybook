@@ -105,7 +105,9 @@ export const SaveStory = ({ saveStory, createStory, resetArgs }: SaveStoryProps)
   const [errorMessage, setErrorMessage] = React.useState(null);
 
   const onSaveStory = async () => {
-    if (saving) return;
+    if (saving) {
+      return;
+    }
     setSaving(true);
     await saveStory().catch(() => {});
     setSaving(false);
@@ -125,7 +127,10 @@ export const SaveStory = ({ saveStory, createStory, resetArgs }: SaveStoryProps)
   };
   const onSubmitForm = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (saving) return;
+
+    if (saving) {
+      return;
+    }
     try {
       setErrorMessage(null);
       setSaving(true);

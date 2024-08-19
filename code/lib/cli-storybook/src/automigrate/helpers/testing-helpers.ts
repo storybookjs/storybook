@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/no-extraneous-dependencies
 import { vi } from 'vitest';
 
 import type { JsPackageManager, PackageJson } from 'storybook/internal/common';

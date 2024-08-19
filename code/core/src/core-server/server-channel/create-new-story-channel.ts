@@ -3,6 +3,7 @@ import { writeFile } from 'node:fs/promises';
 import { relative } from 'node:path';
 
 import type { Channel } from '@storybook/core/channels';
+import { getStoryId } from '@storybook/core/common';
 import { telemetry } from '@storybook/core/telemetry';
 import type { CoreConfig, Options } from '@storybook/core/types';
 
@@ -19,16 +20,13 @@ import {
 } from '@storybook/core/core-events';
 
 import { getNewStoryFile } from '../utils/get-new-story-file';
-import { getStoryId } from '../utils/get-story-id';
 
 export function initCreateNewStoryChannel(
   channel: Channel,
   options: Options,
   coreOptions: CoreConfig
 ) {
-  /**
-   * Listens for events to create a new storyfile
-   */
+  /** Listens for events to create a new storyfile */
   channel.on(
     CREATE_NEW_STORYFILE_REQUEST,
     async (data: RequestData<CreateNewStoryRequestPayload>) => {

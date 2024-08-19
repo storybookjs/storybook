@@ -1,9 +1,9 @@
 /**
- * This script cancels all running preparation workflows in GitHub.
- * It will fetch all active runs for the preparation workflows, and cancel them.
+ * This script cancels all running preparation workflows in GitHub. It will fetch all active runs
+ * for the preparation workflows, and cancel them.
  */
 import chalk from 'chalk';
-import program from 'commander';
+import { program } from 'commander';
 import { dedent } from 'ts-dedent';
 
 import { esMain } from '../utils/esmain';

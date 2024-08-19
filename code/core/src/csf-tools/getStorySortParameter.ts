@@ -106,7 +106,9 @@ const parseDefault = (defaultExpr: t.Expression, program: t.Program): t.Expressi
 
 export const getStorySortParameter = (previewCode: string) => {
   // don't even try to process the file
-  if (!previewCode.includes('storySort')) return undefined;
+  if (!previewCode.includes('storySort')) {
+    return undefined;
+  }
 
   let storySort: t.Expression | undefined;
   const ast = babelParse(previewCode);
@@ -148,7 +150,9 @@ export const getStorySortParameter = (previewCode: string) => {
     },
   });
 
-  if (!storySort) return undefined;
+  if (!storySort) {
+    return undefined;
+  }
 
   if (t.isArrowFunctionExpression(storySort)) {
     const { code: sortCode } = generate(storySort, {});

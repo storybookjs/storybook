@@ -23,9 +23,7 @@ interface SupportedProject {
   createScript: Record<CoercedPackageManagerName, string>;
 }
 
-/**
- * The supported projects.
- */
+/** The supported projects. */
 const SUPPORTED_PROJECTS: Record<string, SupportedProject> = {
   'react-vite-ts': {
     displayName: {

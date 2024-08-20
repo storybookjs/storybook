@@ -12,7 +12,7 @@ import type { CoverageManager } from './coverage-manager';
 import type { CoverageReporterOptions } from './coverage-reporter';
 
 export class VitestManager {
-  private vitest: Vitest | null = null;
+  vitest: Vitest | null = null;
 
   constructor(
     private channel: Channel,

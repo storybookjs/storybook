@@ -2,74 +2,78 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Channel } from 'storybook/internal/channels';
 
-import { REQUEST_COVERAGE_EVENT, type RequestCoverageEventPayload } from '../constants';
-import type { CoverageState } from '../types';
-import { CoverageManager } from './coverage-manager';
-import CoverageReporter from './coverage-reporter';
+import { RESULT_COVERAGE_EVENT, type ResultCoverageEventPayload } from '../constants';
+import type { CoverageItem, CoverageState, CoverageSummary } from '../types';
+import type { CoverageManager } from './coverage-manager';
+import CoverageReporter, { type CoverageReporterOptions } from './coverage-reporter';
 
-describe('CustomReporter', () => {
-  let mockChannel: Channel;
-  let channelListener: Record<string, (options: any) => any> = {};
+describe('CoverageReporter', () => {
+  let channel: Channel;
   let coverageManager: CoverageManager;
+  let coverageState: CoverageState;
+  let coverageReporter: CoverageReporter;
 
   beforeEach(() => {
-    channelListener = {};
-    mockChannel = {
-      on: vi.fn((event, listener) => {
-        channelListener[event] = listener;
-      }),
-      emit: vi.fn((event, options) => {
-        channelListener[event](options);
-      }),
+    channel = {
+      emit: vi.fn(),
     } as unknown as Channel;
-    coverageManager = new CoverageManager(mockChannel);
 
-    mockChannel.emit(REQUEST_COVERAGE_EVENT, {
-      componentPath: 'some/component/path',
-      importPath: 'some/import/path',
-      initialRequest: false,
-      mode: { browser: true, coverageProvider: 'istanbul', coverageType: 'component-coverage' },
-    } as RequestCoverageEventPayload);
+    coverageManager = {
+      getFilesWithCoverageInformation: vi.fn().mockReturnValue(['some/file/path']),
+    } as unknown as CoverageManager;
+
+    coverageState = {
+      timeStartTesting: performance.now(),
+    } as CoverageState;
+
+    const options: CoverageReporterOptions = {
+      channel,
+      coverageManager,
+      coverageState,
+    };
+
+    coverageReporter = new CoverageReporter(options);
   });
 
-  it('should update state and emit coverage on onDetail', async () => {
-    // Mock dependencies
-    const coverageState: CoverageState = {
-      timeStartTesting: performance.now(),
-    };
-
-    // Mock CoverageEmitter
-    const mockCoverageEmitter = {
-      emitCoverage: vi.fn(),
-    };
-
-    coverageManager.coverageState = coverageState;
-
-    // Instantiate CustomReporter
-    const reporter = new CoverageReporter({
-      channel: mockChannel,
-      coverageState: coverageState,
-      coverageManager: coverageManager,
-    });
-
-    // Mock node object
-    const mockNode = {
+  it('should emit RESULT_COVERAGE_EVENT with correct payload', async () => {
+    const node = {
       getFileCoverage: vi.fn().mockReturnValue({
         data: {
-          path: '/path/to/component.tsx',
-        },
+          path: 'some/file/path',
+          // other coverage data
+        } as CoverageItem,
       }),
-      getCoverageSummary: vi.fn().mockReturnValue({}),
+      getCoverageSummary: vi.fn().mockReturnValue({
+        // summary data
+      } as CoverageSummary),
     };
 
-    // Call onDetail
-    await reporter.onDetail(mockNode);
+    await coverageReporter.onDetail(node as any);
 
-    // Verify emitter call
-    expect(mockCoverageEmitter.emitCoverage).toHaveBeenCalledWith({
-      executionTime: expect.any(Number),
-      stats: expect.any(Object),
-      summary: expect.any(Object),
-    });
+    expect(channel.emit).toHaveBeenCalledWith(
+      RESULT_COVERAGE_EVENT,
+      expect.objectContaining({
+        stats: expect.objectContaining({
+          path: 'some/file/path',
+        }),
+        summary: expect.any(Object),
+        executionTime: expect.any(Number),
+      } as ResultCoverageEventPayload)
+    );
+  });
+
+  it('should not emit RESULT_COVERAGE_EVENT if file is not in coverage information', async () => {
+    const node = {
+      getFileCoverage: vi.fn().mockReturnValue({
+        data: {
+          path: 'another/file/path',
+        } as CoverageItem,
+      }),
+      getCoverageSummary: vi.fn().mockReturnValue({} as CoverageSummary),
+    };
+
+    await coverageReporter.onDetail(node as any);
+
+    expect(channel.emit).not.toHaveBeenCalled();
   });
 });

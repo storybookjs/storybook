@@ -42,10 +42,15 @@ export const extractArgTypes: ArgTypesExtractor = (component): StrictArgTypes | 
         argType = extractFromVueComponentMeta(docgenInfo, section);
       }
 
-      // skip duplicate and global props
+      // skip if the argType is not defined
+      if (!argType) {
+        return;
+      }
+
+      const argKey = section === 'slots' ? `${section}.${argType.name}` : argType.name;
 
       // skip duplicate and global props
-      if (!argType || argTypes[argType.name]) {
+      if (argTypes[argKey]) {
         return;
       }
 
@@ -57,7 +62,7 @@ export const extractArgTypes: ArgTypesExtractor = (component): StrictArgTypes | 
         argType.control = { disable: true };
       }
 
-      argTypes[argType.name] = argType;
+      argTypes[argKey] = argType;
     });
   });
 

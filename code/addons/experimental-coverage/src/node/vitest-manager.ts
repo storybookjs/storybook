@@ -101,15 +101,6 @@ export class VitestManager {
       },
       {
         cacheDir: 'node_modules/.storybook-addon-coverage/.vite',
-        test: {
-          browser: {
-            name: 'chromium',
-            enabled: mode.browser,
-            provider: 'playwright',
-            headless: true,
-            screenshotFailures: false,
-          },
-        },
       }
     );
 

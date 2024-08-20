@@ -100,7 +100,6 @@ export function CoveragePanelDev({ coverage }: { coverage: ResultCoverageEventPa
                 <tr>
                   <th>Provider</th>
                   <th>Type</th>
-                  <th>Browser</th>
                   <th>Time (in ms)</th>
                   <th>Run</th>
                 </tr>
@@ -110,14 +109,7 @@ export function CoveragePanelDev({ coverage }: { coverage: ResultCoverageEventPa
                   <td>
                     <select
                       value={coverageProvider}
-                      disabled
                       onChange={(e) => {
-                        if (e.target.value === 'v8' && browserMode === true) {
-                          setBrowserMode(false);
-                          alert(
-                            'v8 is not supported in browser mode. Switching to non-browser mode'
-                          );
-                        }
                         setCoverageProvider(e.target.value as 'istanbul' | 'v8');
                       }}
                     >
@@ -134,23 +126,6 @@ export function CoveragePanelDev({ coverage }: { coverage: ResultCoverageEventPa
                     >
                       <option value="component-coverage">Component Coverage</option>
                       <option value="project-coverage">Project Coverage</option>
-                    </select>
-                  </td>
-                  <td>
-                    <select
-                      value={browserMode === true ? 'true' : 'false'}
-                      onChange={(e) => {
-                        if (coverageProvider === 'v8') {
-                          alert(
-                            'v8 is not supported in browser mode. Switching the provider to Istanbul'
-                          );
-                          setCoverageProvider('istanbul');
-                        }
-                        setBrowserMode(e.target.value === 'true');
-                      }}
-                    >
-                      <option value="true">true</option>
-                      <option value="false">false</option>
                     </select>
                   </td>
                   <td>

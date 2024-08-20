@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 
 import { coverageConfigDefaults } from 'vitest/config';
-import type { Vitest, WorkspaceSpec } from 'vitest/node';
+import type { Vitest, WorkspaceProject, WorkspaceSpec } from 'vitest/node';
 import { slash } from 'vitest/utils';
 
 import type { Channel } from 'storybook/internal/channels';
@@ -60,18 +60,11 @@ export class VitestManager {
     return deps;
   }
 
-  async initVitest({
-    importPath,
-    componentPath,
-    absoluteComponentPath,
-    mode,
-  }: {
-    importPath: string;
-    componentPath: string;
-    absoluteComponentPath: string;
-    mode: TestingMode;
-  }) {
+  async startVitest() {
     const { createVitest } = await import('vitest/node');
+    const start = performance.now();
+
+    const mode = this.managerState.mode!;
 
     this.vitest = await createVitest(
       'test',
@@ -103,10 +96,6 @@ export class VitestManager {
             'vitest-setup.ts',
             'vitest.helpers.ts',
           ],
-          include:
-            mode.coverageType === 'component-coverage'
-              ? [`**/${componentPath.slice(2)}`]
-              : undefined,
           all: false,
         },
       },
@@ -128,16 +117,13 @@ export class VitestManager {
       return;
     }
 
-    this.emitCoverageStart();
-    // If we're running project coverage, we need to cancel the current run and
-    // only run the affected tests for the component we're interested in.
-    if (mode.coverageType === 'component-coverage') {
-      await this.vitest.start([importPath]);
-    } else {
-      await this.vitest.init();
-      await this.setupWatchers();
-      await this.runAffectedTests(absoluteComponentPath);
-    }
+    this.emitCoverageStart(start);
+
+    const absoluteComponentPath = this.managerState.absoluteComponentPath!;
+
+    await this.vitest.init();
+    await this.setupWatchers();
+    await this.runAffectedTests();
 
     this.vitest.server.watcher.on('change', (file) => {
       if (file === absoluteComponentPath) {
@@ -146,41 +132,72 @@ export class VitestManager {
     });
   }
 
-  async runAffectedTests(absoluteComponentPath: string, trigger?: string) {
+  getStorybookProjects() {
+    return this.vitest?.projects.filter((project) => this.isStorybookProject(project)) ?? [];
+  }
+
+  isStorybookProject(project: WorkspaceProject) {
+    // eslint-disable-next-line no-underscore-dangle
+    return !!project.config.env?.__STORYBOOK_URL__;
+  }
+
+  async runAffectedTests(trigger?: string) {
     if (!this.vitest) return;
+    const start = performance.now();
 
-    const globTestFiles = await this.vitest.globTestFiles();
-    const testGraphs = await Promise.all(
-      globTestFiles
-        // eslint-disable-next-line no-underscore-dangle
-        .filter(([project]) => project.config.env?.__STORYBOOK_URL__)
-        .map(async (spec) => {
-          const deps = await this.getTestDependencies(spec);
-          return [spec, deps] as const;
-        })
-    );
-    const runningTests: WorkspaceSpec[] = [];
+    const absoluteStoryPath = this.managerState.absoluteStoryPath!;
+    const absoluteComponentPath = this.managerState.absoluteComponentPath!;
 
-    let shouldRerunTests = !trigger;
+    // Component Coverage mode
+    if (this.managerState.mode?.coverageType === 'component-coverage') {
+      const isTriggerRelated =
+        absoluteStoryPath.includes(trigger!) || absoluteComponentPath.includes(trigger!);
 
-    for (const [filepath, deps] of testGraphs) {
-      if (trigger && (filepath[1] === trigger || deps.has(trigger))) {
-        shouldRerunTests = true;
+      if (!trigger || isTriggerRelated) {
+        const storybookProjects = this.getStorybookProjects();
+
+        const testFiles: WorkspaceSpec[] = storybookProjects.map((project) => [
+          project,
+          absoluteStoryPath,
+        ]);
+
+        this.emitCoverageStart(start);
+        await this.vitest.runFiles(testFiles, true);
+      }
+      // Project Coverage mode
+    } else {
+      const globTestFiles = await this.vitest.globTestFiles();
+      const testGraphs = await Promise.all(
+        globTestFiles
+          .filter(([project]) => this.isStorybookProject(project))
+          .map(async (spec) => {
+            const deps = await this.getTestDependencies(spec);
+            return [spec, deps] as const;
+          })
+      );
+      const runningTests: WorkspaceSpec[] = [];
+
+      let shouldRerunTests = !trigger;
+
+      for (const [filepath, deps] of testGraphs) {
+        if (trigger && (filepath[1] === trigger || deps.has(trigger))) {
+          shouldRerunTests = true;
+        }
+
+        if (absoluteComponentPath === filepath[1] || deps.has(absoluteComponentPath)) {
+          runningTests.push(filepath);
+        }
       }
 
-      if (absoluteComponentPath === filepath[1] || deps.has(absoluteComponentPath)) {
-        runningTests.push(filepath);
+      if (shouldRerunTests) {
+        this.emitCoverageStart(start);
+        await this.vitest.runFiles(runningTests, true);
       }
-    }
-
-    if (shouldRerunTests) {
-      this.emitCoverageStart();
-      await this.vitest.runFiles(runningTests, true);
     }
   }
 
-  private emitCoverageStart() {
-    this.coverageState.timeStartTesting = performance.now();
+  private emitCoverageStart(time = performance.now()) {
+    this.coverageState.timeStartTesting = time;
     this.channel.emit(COVERAGE_IN_PROGRESS);
   }
 
@@ -202,16 +219,7 @@ export class VitestManager {
     this.vitest?.logger.clearHighlightCache(id);
     this.updateLastChanged(id);
 
-    const isProjectCoverage = this.managerState.coverageType === 'project-coverage';
-
-    if (isProjectCoverage) {
-      const hasComponentChanged = this.managerState.absoluteComponentPath === file;
-
-      if (this.managerState.absoluteComponentPath && !hasComponentChanged) {
-        await this.runAffectedTests(this.managerState.absoluteComponentPath, file);
-        return;
-      }
-    }
+    await this.runAffectedTests(file);
   }
 
   async setupWatchers() {

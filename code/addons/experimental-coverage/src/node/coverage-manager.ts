@@ -19,7 +19,7 @@ export class CoverageManager {
   state: ManagerState = {
     absoluteComponentPath: null,
     absoluteStoryPath: null,
-    coverageType: 'component-coverage',
+    mode: null,
   };
 
   coverageState: CoverageState = {
@@ -50,41 +50,34 @@ export class CoverageManager {
     initialRequest,
     mode = { browser: true, coverageProvider: 'istanbul', coverageType: 'component-coverage' },
   }: RequestCoverageEventPayload) {
+    if (!componentPath) return;
+
     this.state.absoluteComponentPath = join(process.cwd(), componentPath);
     this.state.absoluteStoryPath = join(process.cwd(), importPath);
-    this.state.coverageType = mode.coverageType;
-
-    if (!componentPath) return;
+    this.state.mode = mode;
 
     const hasComponentPathChanged =
       this.previousState &&
       this.previousState.absoluteComponentPath !== this.state.absoluteComponentPath;
 
     if (initialRequest || hasComponentPathChanged) {
-      await this.emitFileContent(this.state.absoluteComponentPath);
+      await this.emitFileContent();
     }
 
     const changedCoverageType =
-      this.previousState && this.state.coverageType !== this.previousState.coverageType;
-    const changedComponentPath =
-      this.state.coverageType === 'component-coverage' && hasComponentPathChanged;
+      this.previousState && this.state.mode.coverageType !== this.previousState.mode?.coverageType;
 
-    if (initialRequest || changedCoverageType || changedComponentPath) {
+    if (initialRequest || changedCoverageType) {
       await this.vitestManager.closeVitest();
-      await this.vitestManager.initVitest({
-        importPath,
-        componentPath,
-        absoluteComponentPath: this.state.absoluteComponentPath,
-        mode,
-      });
-    } else if (this.state.coverageType === 'project-coverage' && hasComponentPathChanged) {
+      await this.vitestManager.startVitest();
+    } else if (hasComponentPathChanged) {
       this.coverageState.timeStartTesting = performance.now();
-      await this.vitestManager.runAffectedTests(this.state.absoluteComponentPath);
+      await this.vitestManager.runAffectedTests();
     }
   }
 
-  async emitFileContent(absoluteComponentPath: string) {
-    const content = await readFile(absoluteComponentPath, 'utf8');
+  async emitFileContent() {
+    const content = await readFile(this.state.absoluteComponentPath!, 'utf8');
     this.channel.emit(RESULT_FILE_CONTENT, {
       content,
     } satisfies ResultFileContentPayload);

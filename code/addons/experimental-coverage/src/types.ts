@@ -3,7 +3,7 @@ import type { ResultCoverageEventPayloadSuccess } from './constants';
 export type ManagerState = {
   absoluteComponentPath: string | null;
   absoluteStoryPath: string | null;
-  coverageType: TestingMode['coverageType'];
+  mode: TestingMode | null;
 };
 
 export type CoverageState = {

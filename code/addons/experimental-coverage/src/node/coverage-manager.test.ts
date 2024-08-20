@@ -115,14 +115,12 @@ describe('CoverageManager', () => {
       vi.mocked(readFile).mockResolvedValue('file content');
 
       coverageManager.setPreviousState();
-      coverageManager.previousState!.coverageType = 'project-coverage';
+      coverageManager.previousState!.mode = {
+        ...coverageManager.previousState!.mode!,
+        coverageType: 'project-coverage',
+      };
       await coverageManager.handleRequestCoverage(payload);
-      expect(VitestManager.prototype.initVitest).toHaveBeenCalledWith({
-        absoluteComponentPath: 'some/component/path',
-        componentPath: payload.componentPath,
-        importPath: payload.importPath,
-        mode: payload.mode,
-      });
+      expect(VitestManager.prototype.startVitest).toHaveBeenCalled();
     });
 
     it('should reinitialize VitestManager when component path was changed', async () => {
@@ -138,12 +136,7 @@ describe('CoverageManager', () => {
       coverageManager.setPreviousState();
       coverageManager.previousState!.absoluteComponentPath = join(process.cwd(), 'some/other/path');
       await coverageManager.handleRequestCoverage(payload);
-      expect(VitestManager.prototype.initVitest).toHaveBeenCalledWith({
-        absoluteComponentPath: 'some/component/path',
-        componentPath: payload.componentPath,
-        importPath: payload.importPath,
-        mode: payload.mode,
-      });
+      expect(VitestManager.prototype.startVitest).toHaveBeenCalled();
     });
 
     it('should reinitialize VitestManager when coverageType was changed', async () => {
@@ -157,14 +150,12 @@ describe('CoverageManager', () => {
       vi.mocked(readFile).mockResolvedValue('file content');
 
       coverageManager.setPreviousState();
-      coverageManager.previousState!.coverageType = 'project-coverage';
+      coverageManager.previousState!.mode! = {
+        ...coverageManager.previousState!.mode!,
+        coverageType: 'project-coverage',
+      };
       await coverageManager.handleRequestCoverage(payload);
-      expect(VitestManager.prototype.initVitest).toHaveBeenCalledWith({
-        absoluteComponentPath: 'some/component/path',
-        componentPath: payload.componentPath,
-        importPath: payload.importPath,
-        mode: payload.mode,
-      });
+      expect(VitestManager.prototype.startVitest).toHaveBeenCalledWith();
     });
 
     it('should run affected tests when coverage type is project-coverage and the component-path has changed', async () => {
@@ -198,7 +189,7 @@ describe('CoverageManager', () => {
 
       await coverageManager.handleRequestCoverage(payload);
 
-      expect(VitestManager.prototype.runAffectedTests).toHaveBeenCalledWith('some/component/path');
+      expect(VitestManager.prototype.runAffectedTests).toHaveBeenCalled();
     });
   });
 
@@ -207,9 +198,8 @@ describe('CoverageManager', () => {
       const absoluteComponentPath = 'absolute/component/path';
       vi.mocked(readFile).mockResolvedValue('file content');
 
-      await coverageManager.emitFileContent(absoluteComponentPath);
+      await coverageManager.emitFileContent();
 
-      expect(readFile).toHaveBeenCalledWith(absoluteComponentPath, 'utf8');
       expect(channel.emit).toHaveBeenCalledWith(RESULT_FILE_CONTENT, { content: 'file content' });
     });
   });

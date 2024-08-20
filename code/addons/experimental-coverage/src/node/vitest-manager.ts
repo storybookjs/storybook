@@ -139,51 +139,47 @@ export class VitestManager {
     const absoluteStoryPath = this.managerState.absoluteStoryPath!;
     const absoluteComponentPath = this.managerState.absoluteComponentPath!;
 
-    // Component Coverage mode
+    const globTestFiles = await this.vitest.globTestFiles();
+    const testGraphs = await Promise.all(
+      globTestFiles
+        .filter(([project]) => this.isStorybookProject(project))
+        .map(async (spec) => {
+          const deps = await this.getTestDependencies(spec);
+          return [spec, deps] as const;
+        })
+    );
+    const componentAffectedTests: WorkspaceSpec[] = [];
+    const triggerAffectedTests: WorkspaceSpec[] = [];
+
     if (this.managerState.mode?.coverageType === 'component-coverage') {
-      const isTriggerRelated =
-        absoluteStoryPath.includes(trigger!) || absoluteComponentPath.includes(trigger!);
-
-      if (!trigger || isTriggerRelated) {
-        const storybookProjects = this.getStorybookProjects();
-
-        const testFiles: WorkspaceSpec[] = storybookProjects.map((project) => [
-          project,
-          absoluteStoryPath,
-        ]);
-
-        this.emitCoverageStart(start);
-        await this.vitest.runFiles(testFiles, true);
+      for (const project of this.getStorybookProjects()) {
+        componentAffectedTests.push([project, absoluteStoryPath] as const);
       }
-      // Project Coverage mode
-    } else {
-      const globTestFiles = await this.vitest.globTestFiles();
-      const testGraphs = await Promise.all(
-        globTestFiles
-          .filter(([project]) => this.isStorybookProject(project))
-          .map(async (spec) => {
-            const deps = await this.getTestDependencies(spec);
-            return [spec, deps] as const;
-          })
-      );
-      const runningTests: WorkspaceSpec[] = [];
-
-      let shouldRerunTests = !trigger;
 
       for (const [filepath, deps] of testGraphs) {
-        if (trigger && (filepath[1] === trigger || deps.has(trigger))) {
-          shouldRerunTests = true;
+        if (trigger && (trigger === filepath[1] || deps.has(trigger))) {
+          triggerAffectedTests.push(filepath);
         }
-
+      }
+    } else {
+      for (const [filepath, deps] of testGraphs) {
         if (absoluteComponentPath === filepath[1] || deps.has(absoluteComponentPath)) {
-          runningTests.push(filepath);
+          componentAffectedTests.push(filepath);
+        }
+        if (trigger && (trigger === filepath[1] || deps.has(trigger))) {
+          triggerAffectedTests.push(filepath);
         }
       }
+    }
 
-      if (shouldRerunTests) {
-        this.emitCoverageStart(start);
-        await this.vitest.runFiles(runningTests, true);
-      }
+    const hasTriggerEffectOnTests = triggerAffectedTests.some(
+      ([_, path]) => path === absoluteStoryPath
+    );
+
+    if (!trigger || hasTriggerEffectOnTests) {
+      this.emitCoverageStart(start);
+      await this.vitest.cancelCurrentRun('keyboard-input');
+      await this.vitest.runFiles(componentAffectedTests, true);
     }
   }
 

@@ -5422,7 +5422,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/addon-docs@workspace:addons/docs"
   dependencies:
-    "@babel/core": "npm:^7.24.4"
     "@mdx-js/mdx": "npm:^3.0.0"
     "@mdx-js/react": "npm:^3.0.0"
     "@rollup/pluginutils": "npm:^5.0.2"

@@ -32,7 +32,7 @@ import * as nextJsAnnotations from './preview';
  * Example:
  *
  * ```jsx
- * // setup.js (for jest)
+ * // setup-file.js
  * import { setProjectAnnotations } from '@storybook/nextjs';
  * import projectAnnotations from './.storybook/preview';
  *

@@ -49,7 +49,7 @@ type MapToComposed<TModule> = {
  * Example:
  *
  * ```jsx
- * // setup.js (for jest)
+ * // setup-file.js
  * import { setProjectAnnotations } from '@storybook/svelte';
  * import projectAnnotations from './.storybook/preview';
  *

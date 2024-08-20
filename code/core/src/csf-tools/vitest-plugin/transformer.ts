@@ -2,7 +2,8 @@
 
 /* eslint-disable no-underscore-dangle */
 import { getStoryTitle } from '@storybook/core/common';
-import type { StoriesEntry } from '@storybook/core/types';
+import type { StoriesEntry, Tag } from '@storybook/core/types';
+import { combineTags } from '@storybook/csf';
 
 import * as t from '@babel/types';
 import { dedent } from 'ts-dedent';
@@ -11,22 +12,34 @@ import { formatCsf, loadCsf } from '../CsfFile';
 
 const logger = console;
 
+type TagsFilter = {
+  include: string[];
+  exclude: string[];
+  skip: string[];
+};
+
+const isValidTest = (storyTags: string[], tagsFilter: TagsFilter) => {
+  const isIncluded =
+    tagsFilter?.include.length === 0 || tagsFilter?.include.some((tag) => storyTags.includes(tag));
+  const isNotExcluded = tagsFilter?.exclude.every((tag) => !storyTags.includes(tag));
+
+  return isIncluded && isNotExcluded;
+};
+
 export async function vitestTransform({
   code,
   fileName,
   configDir,
   stories,
   tagsFilter,
+  previewLevelTags = [],
 }: {
   code: string;
   fileName: string;
   configDir: string;
-  tagsFilter: {
-    include: string[];
-    exclude: string[];
-    skip: string[];
-  };
+  tagsFilter: TagsFilter;
   stories: StoriesEntry[];
+  previewLevelTags: Tag[];
 }) {
   const isStoryFile = /\.stor(y|ies)\./.test(fileName);
   if (!isStoryFile) {
@@ -81,90 +94,171 @@ export async function vitestTransform({
     );
   }
 
-  const vitestTestId = parsed._file.path.scope.generateUidIdentifier('test');
-  const composeStoryId = parsed._file.path.scope.generateUidIdentifier('composeStory');
-  const testStoryId = parsed._file.path.scope.generateUidIdentifier('testStory');
-  const isValidTestId = parsed._file.path.scope.generateUidIdentifier('isValidTest');
-
-  const tagsFilterId = t.identifier(JSON.stringify(tagsFilter));
-
-  const getTestStatementForStory = ({ exportName, node }: { exportName: string; node: t.Node }) => {
-    const composedStoryId = parsed._file.path.scope.generateUidIdentifier(`composed${exportName}`);
-
-    const composeStoryCall = t.variableDeclaration('const', [
-      t.variableDeclarator(
-        composedStoryId,
-        t.callExpression(composeStoryId, [
-          t.identifier(exportName),
-          t.identifier(metaExportName),
-          t.identifier('undefined'),
-          t.identifier('undefined'),
-          t.stringLiteral(exportName),
-        ])
-      ),
-    ]);
-
-    // Preserve sourcemaps location
-    composeStoryCall.loc = node.loc;
-
-    const isValidTestCall = t.ifStatement(
-      t.callExpression(isValidTestId, [
-        t.memberExpression(composedStoryId, t.identifier('tags')),
-        tagsFilterId,
-      ]),
-      t.blockStatement([
-        t.expressionStatement(
-          t.callExpression(vitestTestId, [
-            t.stringLiteral(exportName),
-            t.callExpression(testStoryId, [composedStoryId, tagsFilterId]),
-          ])
-        ),
-      ])
+  // Filter out stories based on the passed tags filter
+  const validStories: (typeof parsed)['_storyStatements'] = {};
+  Object.keys(parsed._stories).map((key) => {
+    const finalTags = combineTags(
+      'test',
+      'dev',
+      ...previewLevelTags,
+      ...(parsed.meta?.tags || []),
+      ...(parsed._stories[key].tags || [])
     );
-    // Preserve sourcemaps location
-    isValidTestCall.loc = node.loc;
 
-    return [composeStoryCall, isValidTestCall];
-  };
-
-  Object.entries(parsed._storyStatements).forEach(([exportName, node]) => {
-    if (node === null) {
-      logger.warn(
-        dedent`
-          [Storybook]: Could not transform "${exportName}" story into test at "${fileName}".
-          Please make sure to define stories in the same file and not re-export stories coming from other files".
-        `
-      );
-      return;
+    if (isValidTest(finalTags, tagsFilter)) {
+      validStories[key] = parsed._storyStatements[key];
     }
-
-    ast.program.body.push(
-      ...getTestStatementForStory({
-        exportName,
-        node,
-      })
-    );
   });
 
-  const imports = [
-    t.importDeclaration(
-      [t.importSpecifier(vitestTestId, t.identifier('test'))],
-      t.stringLiteral('vitest')
-    ),
-    t.importDeclaration(
-      [t.importSpecifier(composeStoryId, t.identifier('composeStory'))],
-      t.stringLiteral('storybook/internal/preview-api')
-    ),
-    t.importDeclaration(
-      [
-        t.importSpecifier(testStoryId, t.identifier('testStory')),
-        t.importSpecifier(isValidTestId, t.identifier('isValidTest')),
-      ],
-      t.stringLiteral('@storybook/experimental-addon-vitest/internal/test-utils')
-    ),
-  ];
+  const vitestTestId = parsed._file.path.scope.generateUidIdentifier('test');
+  const vitestDescribeId = parsed._file.path.scope.generateUidIdentifier('describe');
 
-  ast.program.body.unshift(...imports);
+  // if no valid stories are found, we just add describe.skip() to the file to avoid empty test files
+  if (Object.keys(validStories).length === 0) {
+    const describeSkipBlock = t.expressionStatement(
+      t.callExpression(t.memberExpression(vitestDescribeId, t.identifier('skip')), [
+        t.stringLiteral('No valid tests found'),
+      ])
+    );
+
+    ast.program.body.push(describeSkipBlock);
+    const imports = [
+      t.importDeclaration(
+        [
+          t.importSpecifier(vitestTestId, t.identifier('test')),
+          t.importSpecifier(vitestDescribeId, t.identifier('describe')),
+        ],
+        t.stringLiteral('vitest')
+      ),
+    ];
+
+    ast.program.body.unshift(...imports);
+  } else {
+    const vitestExpectId = parsed._file.path.scope.generateUidIdentifier('expect');
+    const testStoryId = parsed._file.path.scope.generateUidIdentifier('testStory');
+    const skipTagsId = t.identifier(JSON.stringify(tagsFilter.skip));
+
+    /**
+     * In Storybook users might be importing stories from other story files. As a side effect, tests
+     * can get re-triggered. To avoid this, we add a guard to only run tests if the current file is
+     * the one running the test.
+     *
+     * Const isRunningFromThisFile = import.meta.url.includes(expect.getState().testPath ??
+     * globalThis.**vitest_worker**.filepath) if(isRunningFromThisFile) { ... }
+     */
+    function getTestGuardDeclaration() {
+      const isRunningFromThisFileId =
+        parsed._file.path.scope.generateUidIdentifier('isRunningFromThisFile');
+
+      // expect.getState().testPath
+      const testPathProperty = t.memberExpression(
+        t.callExpression(t.memberExpression(vitestExpectId, t.identifier('getState')), []),
+        t.identifier('testPath')
+      );
+
+      // There is a bug in Vitest where expect.getState().testPath is undefined when called outside of a test function so we add this fallback in the meantime
+      // https://github.com/vitest-dev/vitest/issues/6367
+      // globalThis.__vitest_worker__.filepath
+      const filePathProperty = t.memberExpression(
+        t.memberExpression(t.identifier('globalThis'), t.identifier('__vitest_worker__')),
+        t.identifier('filepath')
+      );
+
+      // Combine testPath and filepath using the ?? operator
+      const nullishCoalescingExpression = t.logicalExpression(
+        '??',
+        testPathProperty,
+        filePathProperty
+      );
+
+      // Create the final expression: import.meta.url.includes(...)
+      const includesCall = t.callExpression(
+        t.memberExpression(
+          t.memberExpression(
+            t.memberExpression(t.identifier('import'), t.identifier('meta')),
+            t.identifier('url')
+          ),
+          t.identifier('includes')
+        ),
+        [nullishCoalescingExpression]
+      );
+
+      const isRunningFromThisFileDeclaration = t.variableDeclaration('const', [
+        t.variableDeclarator(isRunningFromThisFileId, includesCall),
+      ]);
+      return { isRunningFromThisFileDeclaration, isRunningFromThisFileId };
+    }
+
+    const { isRunningFromThisFileDeclaration, isRunningFromThisFileId } = getTestGuardDeclaration();
+
+    ast.program.body.push(isRunningFromThisFileDeclaration);
+
+    const getTestStatementForStory = ({
+      exportName,
+      node,
+    }: {
+      exportName: string;
+      node: t.Node;
+    }) => {
+      // Create the _test expression directly using the exportName identifier
+      const testStoryCall = t.expressionStatement(
+        t.callExpression(vitestTestId, [
+          t.stringLiteral(exportName),
+          t.callExpression(testStoryId, [
+            t.stringLiteral(exportName),
+            t.identifier(exportName),
+            t.identifier(metaExportName),
+            skipTagsId,
+          ]),
+        ])
+      );
+
+      // Preserve sourcemaps location
+      testStoryCall.loc = node.loc;
+
+      // Return just the testStoryCall as composeStoryCall is not needed
+      return testStoryCall;
+    };
+
+    const storyTestStatements = Object.entries(validStories)
+      .map(([exportName, node]) => {
+        if (node === null) {
+          logger.warn(
+            dedent`
+            [Storybook]: Could not transform "${exportName}" story into test at "${fileName}".
+            Please make sure to define stories in the same file and not re-export stories coming from other files".
+          `
+          );
+          return;
+        }
+
+        return getTestStatementForStory({
+          exportName,
+          node,
+        });
+      })
+      .filter((st) => !!st) as t.ExpressionStatement[];
+
+    const testBlock = t.ifStatement(isRunningFromThisFileId, t.blockStatement(storyTestStatements));
+
+    ast.program.body.push(testBlock);
+
+    const imports = [
+      t.importDeclaration(
+        [
+          t.importSpecifier(vitestTestId, t.identifier('test')),
+          t.importSpecifier(vitestExpectId, t.identifier('expect')),
+        ],
+        t.stringLiteral('vitest')
+      ),
+      t.importDeclaration(
+        [t.importSpecifier(testStoryId, t.identifier('testStory'))],
+        t.stringLiteral('@storybook/experimental-addon-vitest/internal/test-utils')
+      ),
+    ];
+
+    ast.program.body.unshift(...imports);
+  }
 
   return formatCsf(parsed, { sourceMaps: true, sourceFileName: fileName }, code);
 }

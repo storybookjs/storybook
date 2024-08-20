@@ -98,7 +98,6 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@babel/core": "^7.24.4",
     "@mdx-js/react": "^3.0.0",
     "@storybook/blocks": "workspace:*",
     "@storybook/csf-plugin": "workspace:*",

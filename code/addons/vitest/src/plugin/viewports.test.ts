@@ -34,7 +34,10 @@ describe('setViewport', () => {
     };
 
     await setViewport(viewportsParam);
-    expect(page.viewport).toHaveBeenCalledWith(1200, 900);
+    expect(page.viewport).toHaveBeenCalledWith(
+      DEFAULT_VIEWPORT_DIMENSIONS.width,
+      DEFAULT_VIEWPORT_DIMENSIONS.height
+    );
   });
 
   it('should set the dimensions of viewport from INITIAL_VIEWPORTS', async () => {

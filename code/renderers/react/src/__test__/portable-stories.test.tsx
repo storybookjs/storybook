@@ -202,7 +202,9 @@ const testCases = Object.values(composeStories(stories)).map(
   (Story) => [Story.storyName, Story] as [string, typeof Story]
 );
 it.each(testCases)('Renders %s story', async (_storyName, Story) => {
-  if (_storyName === 'CSF2StoryWithLocale') return;
+  if (_storyName === 'CSF2StoryWithLocale') {
+    return;
+  }
   globalThis.IS_REACT_ACT_ENVIRONMENT = false;
   await Story.run();
   globalThis.IS_REACT_ACT_ENVIRONMENT = true;

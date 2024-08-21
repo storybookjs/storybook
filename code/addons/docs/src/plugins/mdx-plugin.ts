@@ -28,7 +28,9 @@ export async function mdxPlugin(options: Options): Promise<Plugin> {
     name: 'storybook:mdx-plugin',
     enforce: 'pre',
     async transform(src, id) {
-      if (!filter(id)) return undefined;
+      if (!filter(id)) {
+        return undefined;
+      }
 
       const mdxLoaderOptions: CompileOptions = await presets.apply('mdxLoaderOptions', {
         ...mdxPluginOptions,

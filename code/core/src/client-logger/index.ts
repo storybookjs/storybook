@@ -57,7 +57,9 @@ const logged = new Set();
 export const once =
   (type: keyof typeof logger) =>
   (message: any, ...rest: any[]) => {
-    if (logged.has(message)) return undefined;
+    if (logged.has(message)) {
+      return undefined;
+    }
     logged.add(message);
     return logger[type](message, ...rest);
   };

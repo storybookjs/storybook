@@ -28,34 +28,26 @@ export interface SubState {
 }
 
 export interface SubAPI {
-  /**
-   * Returns the current shortcuts.
-   */
+  /** Returns the current shortcuts. */
   getShortcutKeys(): API_Shortcuts;
-  /**
-   * Returns the default shortcuts.
-   */
+  /** Returns the default shortcuts. */
   getDefaultShortcuts(): API_Shortcuts | API_AddonShortcutDefaults;
-  /**
-   * Returns the shortcuts for addons.
-   */
+  /** Returns the shortcuts for addons. */
   getAddonsShortcuts(): API_AddonShortcuts;
-  /**
-   * Returns the labels for addon shortcuts.
-   */
+  /** Returns the labels for addon shortcuts. */
   getAddonsShortcutLabels(): API_AddonShortcutLabels;
-  /**
-   * Returns the default shortcuts for addons.
-   */
+  /** Returns the default shortcuts for addons. */
   getAddonsShortcutDefaults(): API_AddonShortcutDefaults;
   /**
    * Sets the shortcuts to the given value.
+   *
    * @param shortcuts The new shortcuts to set.
    * @returns A promise that resolves to the new shortcuts.
    */
   setShortcuts(shortcuts: API_Shortcuts): Promise<API_Shortcuts>;
   /**
    * Sets the shortcut for the given action to the given value.
+   *
    * @param action The action to set the shortcut for.
    * @param value The new shortcut to set.
    * @returns A promise that resolves to the new shortcut.
@@ -63,6 +55,7 @@ export interface SubAPI {
   setShortcut(action: API_Action, value: API_KeyCollection): Promise<API_KeyCollection>;
   /**
    * Sets the shortcut for the given addon to the given value.
+   *
    * @param addon The addon to set the shortcut for.
    * @param shortcut The new shortcut to set.
    * @returns A promise that resolves to the new addon shortcut.
@@ -70,22 +63,26 @@ export interface SubAPI {
   setAddonShortcut(addon: string, shortcut: API_AddonShortcut): Promise<API_AddonShortcut>;
   /**
    * Restores all default shortcuts.
+   *
    * @returns A promise that resolves to the new shortcuts.
    */
   restoreAllDefaultShortcuts(): Promise<API_Shortcuts>;
   /**
    * Restores the default shortcut for the given action.
+   *
    * @param action The action to restore the default shortcut for.
    * @returns A promise that resolves to the new shortcut.
    */
   restoreDefaultShortcut(action: API_Action): Promise<API_KeyCollection>;
   /**
    * Handles a keydown event.
+   *
    * @param event The event to handle.
    */
   handleKeydownEvent(event: KeyboardEventLike): void;
   /**
    * Handles a shortcut feature.
+   *
    * @param feature The feature to handle.
    * @param event The event to handle.
    */
@@ -237,8 +234,11 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
       if (!enableShortcuts) {
         return;
       }
+
       // Event.prototype.preventDefault is missing when received from the MessageChannel.
-      if (event?.preventDefault) event.preventDefault();
+      if (event?.preventDefault) {
+        event.preventDefault();
+      }
       switch (feature) {
         case 'escape': {
           if (fullAPI.getIsFullscreen()) {

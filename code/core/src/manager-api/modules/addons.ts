@@ -18,10 +18,12 @@ export interface SubState {
 export interface SubAPI {
   /**
    * Returns a collection of elements of a specific type.
-   * @protected This is used internally in storybook's manager.
+   *
    * @template T - The type of the elements in the collection.
-   * @param {Addon_Types | Addon_TypesEnum.experimental_PAGE} type - The type of the elements to retrieve.
+   * @param {Addon_Types | Addon_TypesEnum.experimental_PAGE} type - The type of the elements to
+   *   retrieve.
    * @returns {Addon_Collection<T>} - A collection of elements of the specified type.
+   * @protected This is used internally in storybook's manager.
    */
   getElements: <
     T extends
@@ -34,22 +36,26 @@ export interface SubAPI {
   ) => Addon_Collection<Addon_TypesMapping[T]>;
   /**
    * Returns the id of the currently selected panel.
+   *
    * @returns {string} - The ID of the currently selected panel.
    */
   getSelectedPanel: () => string;
   /**
    * Sets the currently selected panel via it's ID.
+   *
    * @param {string} panelName - The ID of the panel to select.
    * @returns {void}
    */
   setSelectedPanel: (panelName: string) => void;
   /**
    * Sets the state of an addon with the given ID.
+   *
+   * @deprecated This API might get dropped, if you are using this, please file an issue.
    * @template S - The type of the addon state.
    * @param {string} addonId - The ID of the addon to set the state for.
-   * @param {S | API_StateMerger<S>} newStateOrMerger - The new state to set, or a function which receives the current state and returns the new state.
+   * @param {S | API_StateMerger<S>} newStateOrMerger - The new state to set, or a function which
+   *   receives the current state and returns the new state.
    * @param {Options} [options] - Optional options for the state update.
-   * @deprecated This API might get dropped, if you are using this, please file an issue.
    * @returns {Promise<S>} - A promise that resolves with the new state after it has been set.
    */
   setAddonState<S>(
@@ -59,9 +65,10 @@ export interface SubAPI {
   ): Promise<S>;
   /**
    * Returns the state of an addon with the given ID.
+   *
+   * @deprecated This API might get dropped, if you are using this, please file an issue.
    * @template S - The type of the addon state.
    * @param {string} addonId - The ID of the addon to get the state for.
-   * @deprecated This API might get dropped, if you are using this, please file an issue.
    * @returns {S} - The state of the addon with the given ID.
    */
   getAddonState<S>(addonId: string): S;

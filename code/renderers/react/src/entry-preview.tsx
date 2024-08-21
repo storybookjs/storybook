@@ -11,7 +11,9 @@ export { mount } from './mount';
 
 export const decorators: Decorator[] = [
   (Story, context) => {
-    if (!context.parameters?.react?.rsc) return <Story />;
+    if (!context.parameters?.react?.rsc) {
+      return <Story />;
+    }
 
     const major = semver.major(React.version);
     const minor = semver.minor(React.version);

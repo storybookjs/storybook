@@ -253,10 +253,11 @@ export const Bottom: Story = {
 
 /**
  * Given the following sequence of events:
+ *
  * 1. Story is selected at the top of the sidebar
  * 2. The sidebar is scrolled to the bottom
- * 3. Some re-rendering happens because of a changed state/prop
- * The sidebar should remain scrolled to the bottom
+ * 3. Some re-rendering happens because of a changed state/prop The sidebar should remain scrolled to
+ *    the bottom
  */
 export const Scrolled: Story = {
   parameters: {

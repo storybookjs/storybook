@@ -1,6 +1,6 @@
 {
   "name": "@storybook/cli",
-  "version": "8.3.0-alpha.5",
+  "version": "8.3.0-alpha.8",
   "description": "Storybook CLI",
   "keywords": [
     "storybook"
@@ -45,7 +45,7 @@
     "@storybook/codemod": "workspace:*",
     "@types/semver": "^7.3.4",
     "chalk": "^4.1.0",
-    "commander": "^6.2.1",
+    "commander": "^12.1.0",
     "create-storybook": "workspace:*",
     "cross-spawn": "^7.0.3",
     "envinfo": "^7.7.3",
@@ -53,6 +53,7 @@
     "find-up": "^5.0.0",
     "fs-extra": "^11.1.0",
     "giget": "^1.0.0",
+    "glob": "^10.0.0",
     "globby": "^14.0.1",
     "jscodeshift": "^0.15.1",
     "leven": "^3.1.0",

@@ -6,7 +6,10 @@ export const composeBeforeAllHooks = (hooks: BeforeAll[]): BeforeAll => {
     const cleanups: CleanupCallback[] = [];
     for (const hook of hooks) {
       const cleanup = await hook();
-      if (cleanup) cleanups.unshift(cleanup);
+
+      if (cleanup) {
+        cleanups.unshift(cleanup);
+      }
     }
     return async () => {
       for (const cleanup of cleanups) {

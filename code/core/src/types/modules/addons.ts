@@ -175,18 +175,22 @@ export interface Addon_BaseAnnotations<
 > {
   /**
    * Dynamic data that are provided (and possibly updated by) Storybook and its addons.
+   *
    * @see [Arg story inputs](https://storybook.js.org/docs/react/api/csf#args-story-inputs)
    */
   args?: Partial<TArgs>;
 
   /**
-   * ArgTypes encode basic metadata for args, such as `name`, `description`, `defaultValue` for an arg. These get automatically filled in by Storybook Docs.
+   * ArgTypes encode basic metadata for args, such as `name`, `description`, `defaultValue` for an
+   * arg. These get automatically filled in by Storybook Docs.
+   *
    * @see [Arg types](https://storybook.js.org/docs/react/api/arg-types)
    */
   argTypes?: Addons_ArgTypes<TArgs>;
 
   /**
    * Custom metadata for a story.
+   *
    * @see [Parameters](https://storybook.js.org/docs/react/writing-stories/parameters)
    */
   parameters?: Parameters;
@@ -195,38 +199,48 @@ export interface Addon_BaseAnnotations<
    * Wrapper components or Storybook decorators that wrap a story.
    *
    * Decorators defined in Meta will be applied to every story variation.
+   *
    * @see [Decorators](https://storybook.js.org/docs/addons/#1-decorators)
    */
   decorators?: Addon_BaseDecorators<StoryFnReturnType>;
 
   /**
-   * Define a custom render function for the story(ies). If not passed, a default render function by the framework will be used.
+   * Define a custom render function for the story(ies). If not passed, a default render function by
+   * the framework will be used.
    */
   render?: (args: TArgs, context: Addon_StoryContext<TRenderer>) => StoryFnReturnType;
 
-  /**
-   * Function that is executed after the story is rendered.
-   */
+  /** Function that is executed after the story is rendered. */
   play?: (context: Addon_StoryContext<TRenderer>) => Promise<void> | void;
 }
 
 export interface Addon_Annotations<TArgs, StoryFnReturnType>
   extends Addon_BaseAnnotations<TArgs, StoryFnReturnType> {
   /**
-   * Used to only include certain named exports as stories. Useful when you want to have non-story exports such as mock data or ignore a few stories.
+   * Used to only include certain named exports as stories. Useful when you want to have non-story
+   * exports such as mock data or ignore a few stories.
+   *
    * @example
-   * includeStories: ['SimpleStory', 'ComplexStory']
-   * includeStories: /.*Story$/
+   *
+   * ```ts
+   * includeStories: ['SimpleStory', 'ComplexStory'];
+   * includeStories: /.*Story$/;
+   * ```
    *
    * @see [Non-story exports](https://storybook.js.org/docs/formats/component-story-format/#non-story-exports)
    */
   includeStories?: string[] | RegExp;
 
   /**
-   * Used to exclude certain named exports. Useful when you want to have non-story exports such as mock data or ignore a few stories.
+   * Used to exclude certain named exports. Useful when you want to have non-story exports such as
+   * mock data or ignore a few stories.
+   *
    * @example
-   * excludeStories: ['simpleData', 'complexData']
-   * excludeStories: /.*Data$/
+   *
+   * ```ts
+   * excludeStories: ['simpleData', 'complexData'];
+   * excludeStories: /.*Data$/;
+   * ```
    *
    * @see [Non-story exports](https://storybook.js.org/docs/formats/component-story-format/#non-story-exports)
    */
@@ -242,19 +256,21 @@ export interface Addon_BaseMeta<ComponentType> {
    * Since CSF 3.0 this property is optional.
    *
    * @example
-   * export default {
-   *   ...
-   *   title: 'Design System/Atoms/Button'
-   * }
+   *
+   * ```ts
+   * export default { title: 'Design System/Atoms/Button' };
+   * ```
    *
    * @see [Story Hierarchy](https://storybook.js.org/docs/basics/writing-stories/#story-hierarchy)
    */
   title?: string;
 
   /**
-   * Manually set the id of a story, which in particular is useful if you want to rename stories without breaking permalinks.
+   * Manually set the id of a story, which in particular is useful if you want to rename stories
+   * without breaking permalinks.
    *
-   * Storybook will prioritize the id over the title for ID generation, if provided, and will prioritize the story.storyName over the export key for display.
+   * Storybook will prioritize the id over the title for ID generation, if provided, and will
+   * prioritize the story.storyName over the export key for display.
    *
    * @see [Sidebar and URLs](https://storybook.js.org/docs/react/configure/sidebar-and-urls#permalinking-to-stories)
    */
@@ -268,29 +284,28 @@ export interface Addon_BaseMeta<ComponentType> {
   component?: ComponentType;
 
   /**
-   * Auxiliary subcomponents that are part of the stories.
+   * Auxiliary sub-components that are part of the stories.
    *
    * Used by addons for automatic prop table generation and display of other component metadata.
    *
+   * @deprecated
    * @example
+   *
+   * ```ts
    * import { Button, ButtonGroup } from './components';
    *
    * export default {
-   *   ...
-   *   subcomponents: { Button, ButtonGroup }
-   * }
+   *   subcomponents: { Button, ButtonGroup },
+   * };
+   * ```
    *
    * By defining them each component will have its tab in the args table.
-   *
-   * @deprecated
    */
   subcomponents?: Record<string, ComponentType>;
 }
 
 export type Addon_BaseStoryObject<TArgs, StoryFnReturnType> = {
-  /**
-   * Override the display name in the UI
-   */
+  /** Override the display name in the UI */
   storyName?: string;
 };
 
@@ -314,13 +329,18 @@ export type Addon_Type =
   | Addon_SidebarTopType;
 export interface Addon_BaseType {
   /**
-   * The title of the addon.
-   * This can be a simple string, but it can also be a React.FunctionComponent or a React.ReactElement.
+   * The title of the addon. This can be a simple string, but it can also be a
+   * React.FunctionComponent or a React.ReactElement.
    */
   title: FC | ReactNode | (() => string);
   /**
    * The type of the addon.
-   * @example Addon_TypesEnum.PANEL
+   *
+   * @example
+   *
+   * ```ts
+   * Addon_TypesEnum.PANEL;
+   * ```
    */
   type: Exclude<
     Addon_Types,
@@ -331,13 +351,14 @@ export interface Addon_BaseType {
   >;
   /**
    * The unique id of the addon.
+   *
+   * @example 'my-org-name/my-addon-name';
+   *
    * @warn This will become non-optional in 8.0
    *
    * This needs to be globally unique, so we recommend prefixing it with your org name or npm package name.
    *
    * Do not prefix with `storybook`, this is reserved for core storybook feature and core addons.
-   *
-   * @example 'my-org-name/my-addon-name'
    */
   id?: string;
   /**
@@ -345,18 +366,17 @@ export interface Addon_BaseType {
    *
    * With it you can determine if you want your addon to be rendered or not.
    *
-   * This is to facilitate addons keeping state, and keep listening for events even when they are not currently on screen/rendered.
+   * This is to facilitate addons keeping state, and keep listening for events even when they are
+   * not currently on screen/rendered.
    */
   route?: (routeOptions: RouterData) => string;
-  /**
-   * This will determine the value of `active` prop of your render function.
-   */
+  /** This will determine the value of `active` prop of your render function. */
   match?: (matchOptions: RouterData & { tabId?: string }) => boolean;
   /**
    * The actual contents of your addon.
    *
-   * This is called as a function, so if you want to use hooks,
-   * your function needs to return a JSX.Element within which components are rendered
+   * This is called as a function, so if you want to use hooks, your function needs to return a
+   * JSX.Element within which components are rendered
    */
   render: (props: Partial<Addon_RenderOptions>) => ReturnType<FC<Partial<Addon_RenderOptions>>>;
   // TODO: for Storybook 9 I'd like to change this to be:
@@ -364,58 +384,49 @@ export interface Addon_BaseType {
   // This would bring it in line with how every other addon is set up.
   // We'd need to change how the render function is called in the manager:
   // https://github.com/storybookjs/storybook/blob/4e6fc0dde0842841d99cb3cf5148ca293a950301/code/ui/manager/src/components/preview/Preview.tsx#L105
-  /**
-   * @unstable
-   */
+  /** @unstable */
   paramKey?: string;
-  /**
-   * @unstable
-   */
+  /** @unstable */
   disabled?: boolean;
-  /**
-   * @unstable
-   */
+  /** @unstable */
   hidden?: boolean;
 }
 
 export interface Addon_PageType {
   type: Addon_TypesEnum.experimental_PAGE;
-  /**
-   * The unique id of the page.
-   */
+  /** The unique id of the page. */
   id: string;
-  /**
-   * The URL to navigate to when Storybook needs to navigate to this page.
-   */
+  /** The URL to navigate to when Storybook needs to navigate to this page. */
   url: string;
-  /**
-   * The title is used in mobile mode to represent the page in the navigation.
-   */
+  /** The title is used in mobile mode to represent the page in the navigation. */
   title: FC | string | ReactElement | ReactNode;
   /**
-   * The main content of the addon, a function component without any props.
-   * Storybook will render your component always.
+   * The main content of the addon, a function component without any props. Storybook will render
+   * your component always.
    *
    * If you want to render your component only when the URL matches, use the `Route` component.
+   *
    * @example
+   *
+   * ```jsx
    * import { Route } from '@storybook/core/router';
    *
-   * render: () => {
+   * Render: () => {
    *   return (
    *     <Route path="/my-addon">
-   *       <MyAddonContent />
+   *       {' '}
+   *       <MyAddonContent />{' '}
    *     </Route>
    *   );
    * };
+   * ```
    */
   render: FC;
 }
 
 export interface Addon_WrapperType {
   type: Addon_TypesEnum.PREVIEW;
-  /**
-   * The unique id of the page.
-   */
+  /** The unique id of the page. */
   id: string;
   /**
    * A React.FunctionComponent that wraps the story.
@@ -432,33 +443,21 @@ export interface Addon_WrapperType {
   >;
 }
 
-/**
- * @deprecated This doesn't do anything anymore and will be removed in Storybook 9.0.
- */
+/** @deprecated This doesn't do anything anymore and will be removed in Storybook 9.0. */
 export interface Addon_SidebarBottomType {
   type: Addon_TypesEnum.experimental_SIDEBAR_BOTTOM;
-  /**
-   * The unique id of the tool.
-   */
+  /** The unique id of the tool. */
   id: string;
-  /**
-   * A React.FunctionComponent.
-   */
+  /** A React.FunctionComponent. */
   render: FC;
 }
 
-/**
- * @deprecated This will be removed in Storybook 9.0.
- */
+/** @deprecated This will be removed in Storybook 9.0. */
 export interface Addon_SidebarTopType {
   type: Addon_TypesEnum.experimental_SIDEBAR_TOP;
-  /**
-   * The unique id of the tool.
-   */
+  /** The unique id of the tool. */
   id: string;
-  /**
-   * A React.FunctionComponent.
-   */
+  /** A React.FunctionComponent. */
   render: FC;
 }
 
@@ -502,39 +501,39 @@ export interface Addon_Config {
 
 export enum Addon_TypesEnum {
   /**
-   * This API is used to create a tab the toolbar above the canvas, This API might be removed in the future.
+   * This API is used to create a tab the toolbar above the canvas, This API might be removed in the
+   * future.
+   *
    * @unstable
    */
   TAB = 'tab',
-  /**
-   * This adds panels to the addons side panel.
-   */
+  /** This adds panels to the addons side panel. */
   PANEL = 'panel',
-  /**
-   * This adds items in the toolbar above the canvas - on the left side.
-   */
+  /** This adds items in the toolbar above the canvas - on the left side. */
   TOOL = 'tool',
-  /**
-   * This adds items in the toolbar above the canvas - on the right side.
-   */
+  /** This adds items in the toolbar above the canvas - on the right side. */
   TOOLEXTRA = 'toolextra',
   /**
    * This adds wrapper components around the canvas/iframe component storybook renders.
+   *
    * @unstable this API is not stable yet, and is likely to change in 8.0.
    */
   PREVIEW = 'preview',
   /**
    * This adds pages that render instead of the canvas.
+   *
    * @unstable
    */
   experimental_PAGE = 'page',
   /**
    * This adds items in the bottom of the sidebar.
+   *
    * @deprecated This doesn't do anything anymore and will be removed in Storybook 9.0.
    */
   experimental_SIDEBAR_BOTTOM = 'sidebar-bottom',
   /**
    * This adds items in the top of the sidebar.
+   *
    * @deprecated This will be removed in Storybook 9.0.
    */
   experimental_SIDEBAR_TOP = 'sidebar-top',

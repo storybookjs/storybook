@@ -61,16 +61,21 @@ export const ControlsPanel = ({ saveStory, createStory }: ControlsPanelProps) =>
   // If the story is prepared, then show the args table
   // and reset the loading states
   useEffect(() => {
-    if (previewInitialized) setIsLoading(false);
+    if (previewInitialized) {
+      setIsLoading(false);
+    }
   }, [previewInitialized]);
 
   const hasControls = Object.values(rows).some((arg) => arg?.control);
 
   const withPresetColors = Object.entries(rows).reduce((acc, [key, arg]) => {
     const control = arg?.control;
-    if (typeof control !== 'object' || control?.type !== 'color' || control?.presetColors)
+
+    if (typeof control !== 'object' || control?.type !== 'color' || control?.presetColors) {
       acc[key] = arg;
-    else acc[key] = { ...arg, control: { ...control, presetColors } };
+    } else {
+      acc[key] = { ...arg, control: { ...control, presetColors } };
+    }
     return acc;
   }, {} as ArgTypes);
 

@@ -15,7 +15,7 @@
     "vitest": "echo 'Vitest tests are implemented in the renderer directory instead!'"
   },
   "resolutions": {
-    "@playwright/test": "1.42.1",
+    "@playwright/test": "1.46.0",
     "@storybook/addon-a11y": "file:../../../code/addons/a11y",
     "@storybook/addon-actions": "file:../../../code/addons/actions",
     "@storybook/addon-backgrounds": "file:../../../code/addons/backgrounds",
@@ -78,14 +78,14 @@
     "@storybook/web-components": "file:../../../code/renderers/web-components",
     "@storybook/web-components-vite": "file:../../../code/frameworks/web-components-vite",
     "@storybook/web-components-webpack5": "file:../../../code/frameworks/web-components-webpack5",
-    "playwright": "1.42.1",
+    "playwright": "1.46.0",
     "storybook": "file:../../../code/lib/cli"
   },
   "dependencies": {
     "vue": "^3.4.19"
   },
   "devDependencies": {
-    "@playwright/experimental-ct-vue": "1.42.1",
+    "@playwright/experimental-ct-vue": "1.46.0",
     "@storybook/addon-essentials": "^8.0.0",
     "@storybook/addon-interactions": "^8.0.0",
     "@storybook/test": "^8.0.0",

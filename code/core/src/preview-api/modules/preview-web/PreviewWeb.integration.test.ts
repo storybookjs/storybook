@@ -101,8 +101,8 @@ beforeEach(() => {
 });
 
 /**
- * Skipping this test, because it causes a cyclical dependency error, where core depends on docs & blocks
- * This was done to avoid a conflict in the CPC work, we should revisit this.
+ * Skipping this test, because it causes a cyclical dependency error, where core depends on docs &
+ * blocks This was done to avoid a conflict in the CPC work, we should revisit this.
  */
 describe.skip(
   'PreviewWeb',

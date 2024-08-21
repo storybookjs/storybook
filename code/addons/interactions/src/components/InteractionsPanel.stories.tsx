@@ -60,7 +60,9 @@ export const Passing: Story = {
     interactions: getInteractions(CallStates.DONE),
   },
   play: async ({ args, canvasElement }) => {
-    if (isChromatic()) return;
+    if (isChromatic()) {
+      return;
+    }
     const canvas = within(canvasElement);
 
     await waitFor(async () => {

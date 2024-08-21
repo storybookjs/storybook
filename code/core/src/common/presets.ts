@@ -68,17 +68,12 @@ function resolvePresetFunction<T = any>(
  * Parse an addon into either a managerEntries or a preset. Throw on invalid input.
  *
  * Valid inputs:
- * - '@storybook/addon-actions/manager'
- *   =>  { type: 'virtual', item }
  *
- * - '@storybook/addon-docs/preset'
- *   =>  { type: 'presets', item }
- *
- * - '@storybook/addon-docs'
- *   =>  { type: 'presets', item: '@storybook/addon-docs/preset' }
- *
- * - { name: '@storybook/addon-docs(/preset)?', options: { ... } }
- *   =>  { type: 'presets', item: { name: '@storybook/addon-docs/preset', options } }
+ * - `'@storybook/addon-actions/manager' => { type: 'virtual', item }`
+ * - `'@storybook/addon-docs/preset' => { type: 'presets', item }`
+ * - `'@storybook/addon-docs' => { type: 'presets', item: '@storybook/addon-docs/preset' }`
+ * - `{ name: '@storybook/addon-docs(/preset)?', options: { } } => { type: 'presets', item: { name:
+ *   '@storybook/addon-docs/preset', options } }`
  */
 
 export const resolveAddonName = (
@@ -111,16 +106,19 @@ export const resolveAddonName = (
   }
 
   const checkExists = (exportName: string) => {
-    if (resolve(`${name}${exportName}`)) return `${name}${exportName}`;
+    if (resolve(`${name}${exportName}`)) {
+      return `${name}${exportName}`;
+    }
     return undefined;
   };
 
-  // This is used to maintain back-compat with community addons that do not
-  // re-export their sub-addons but reference the sub-addon name directly.
-  //  We need to turn it into an absolute path so that webpack can
-  // serve it up correctly  when yarn pnp or pnpm is being used.
-  // Vite will be broken in such cases, because it does not process absolute paths,
-  // and it will try to import from the bare import, breaking in pnp/pnpm.
+  /**
+   * This is used to maintain back-compat with community addons that do not re-export their
+   * sub-addons but reference the sub-addon name directly. We need to turn it into an absolute path
+   * so that webpack can serve it up correctly when yarn pnp or pnpm is being used. Vite will be
+   * broken in such cases, because it does not process absolute paths, and it will try to import
+   * from the bare import, breaking in pnp/pnpm.
+   */
   const absolutizeExport = (exportName: string, preferMJS: boolean) => {
     const found = resolve(`${name}${exportName}`);
 

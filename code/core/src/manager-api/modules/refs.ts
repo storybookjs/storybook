@@ -27,12 +27,14 @@ export interface SubState {
 export interface SubAPI {
   /**
    * Finds a composed ref by its source.
+   *
    * @param {string} source - The source/URL of the composed ref.
    * @returns {API_ComposedRef} - The composed ref object.
    */
   findRef: (source: string) => API_ComposedRef;
   /**
    * Sets a composed ref by its ID and data.
+   *
    * @param {string} id - The ID of the composed ref.
    * @param {API_SetRefData} data - The data to set for the composed ref.
    * @param {boolean} [ready] - Whether the composed ref is ready.
@@ -40,29 +42,34 @@ export interface SubAPI {
   setRef: (id: string, data: API_SetRefData, ready?: boolean) => void;
   /**
    * Updates a composed ref by its ID and update object.
+   *
    * @param {string} id - The ID of the composed ref.
    * @param {API_ComposedRefUpdate} ref - The update object for the composed ref.
    */
   updateRef: (id: string, ref: API_ComposedRefUpdate) => Promise<void>;
   /**
    * Gets all composed refs.
+   *
    * @returns {API_Refs} - The composed refs object.
    */
   getRefs: () => API_Refs;
   /**
    * Checks if a composed ref is valid.
+   *
    * @param {API_SetRefData} ref - The composed ref to check.
    * @returns {Promise<void>} - A promise that resolves when the check is complete.
    */
   checkRef: (ref: API_SetRefData) => Promise<void>;
   /**
    * Changes the version of a composed ref by its ID and URL.
+   *
    * @param {string} id - The ID of the composed ref.
    * @param {string} url - The new URL for the composed ref.
    */
   changeRefVersion: (id: string, url: string) => Promise<void>;
   /**
    * Changes the state of a composed ref by its ID and previewInitialized flag.
+   *
    * @param {string} id - The ID of the composed ref.
    * @param {boolean} previewInitialized - The new previewInitialized flag for the composed ref.
    */
@@ -100,7 +107,9 @@ const addRefIds = (input: API_IndexHash, ref: API_ComposedRef): API_IndexHash =>
 async function handleRequest(
   request: Response | Promise<Response | boolean> | boolean
 ): Promise<API_SetRefData> {
-  if (!request) return {};
+  if (!request) {
+    return {};
+  }
 
   try {
     const response = await request;

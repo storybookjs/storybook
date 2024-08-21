@@ -15,8 +15,9 @@ export default defineWorkspace([
 ]);
 
 /**
- * CircleCI reports the wrong number of threads to Node.js, so we need to set it manually.
- * Unit tests are running with the xlarge resource class, which has 8 vCPUs.
+ * CircleCI reports the wrong number of threads to Node.js, so we need to set it manually. Unit
+ * tests are running with the xlarge resource class, which has 8 vCPUs.
+ *
  * @see https://jahed.dev/2022/11/20/fixing-node-js-multi-threading-on-circleci/
  * @see https://vitest.dev/config/#pooloptions-threads-maxthreads
  * @see https://circleci.com/docs/configuration-reference/#x86

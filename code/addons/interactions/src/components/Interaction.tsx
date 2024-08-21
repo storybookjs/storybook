@@ -165,7 +165,9 @@ export const Interaction = ({
   const [isHovered, setIsHovered] = React.useState(false);
   const isInteractive = !controlStates.goto || !call.interceptable || !!call.ancestors.length;
 
-  if (isHidden) return null;
+  if (isHidden) {
+    return null;
+  }
 
   return (
     <RowContainer call={call} pausedAt={pausedAt}>

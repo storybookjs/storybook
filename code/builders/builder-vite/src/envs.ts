@@ -16,8 +16,8 @@ const allowedEnvVariables = [
 ];
 
 /**
- * Customized version of stringifyProcessEnvs from @storybook/core-common which
- * uses import.meta.env instead of process.env and checks for allowed variables.
+ * Customized version of stringifyProcessEnvs from @storybook/core-common which uses import.meta.env
+ * instead of process.env and checks for allowed variables.
  */
 export function stringifyProcessEnvs(raw: Builder_EnvsRaw, envPrefix: ViteConfig['envPrefix']) {
   const updatedRaw: Builder_EnvsRaw = {};

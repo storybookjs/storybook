@@ -3,25 +3,15 @@ import React from 'react';
 import { styled } from 'storybook/internal/theming';
 
 interface ButtonProps {
-  /**
-   * Is this the principal call to action on the page?
-   */
+  /** Is this the principal call to action on the page? */
   primary?: boolean;
-  /**
-   * What background color to use
-   */
+  /** What background color to use */
   backgroundColor?: string;
-  /**
-   * How large should the button be?
-   */
+  /** How large should the button be? */
   size?: 'small' | 'medium' | 'large';
-  /**
-   * Button contents
-   */
+  /** Button contents */
   label: string;
-  /**
-   * Optional click handler
-   */
+  /** Optional click handler */
   onClick?: () => void;
 }
 
@@ -68,6 +58,7 @@ const StyledButton = styled.button<Omit<ButtonProps, 'label' | 'onClick'>>(
 
 /**
  * ## Example button component
+ *
  * Comes in three sizes: `small`, `medium`, and `large`.
  *
  * Can be primary or secondary.

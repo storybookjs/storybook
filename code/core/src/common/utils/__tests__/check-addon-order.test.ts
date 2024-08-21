@@ -25,7 +25,9 @@ const essentialAddons = [
 
 const pkgName = (entry: CoreCommon_AddonEntry): string => {
   if (typeof entry === 'string') {
-    if (entry.includes('node_modules')) return entry;
+    if (entry.includes('node_modules')) {
+      return entry;
+    }
     return `@storybook/addon-${entry}`;
   }
   return (entry as CoreCommon_OptionsEntry).name;

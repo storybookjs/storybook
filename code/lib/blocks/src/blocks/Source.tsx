@@ -12,20 +12,14 @@ import type { SourceContextProps, SourceItem } from './SourceContainer';
 import { SourceContext, UNKNOWN_ARGS_HASH, argsHash } from './SourceContainer';
 
 type SourceParameters = SourceCodeProps & {
-  /**
-   * Where to read the source code from, see `SourceType`
-   */
+  /** Where to read the source code from, see `SourceType` */
   type?: SourceType;
-  /**
-   * Transform the detected source for display
-   */
+  /** Transform the detected source for display */
   transform?: (
     code: string,
     storyContext: ReturnType<DocsContextProps['getStoryContext']>
   ) => string;
-  /**
-   * Internal: set by our CSF loader (`enrichCsf` in `@storybook/csf-tools`).
-   */
+  /** Internal: set by our CSF loader (`enrichCsf` in `@storybook/csf-tools`). */
   originalSource?: string;
 };
 
@@ -37,14 +31,12 @@ export type SourceProps = SourceParameters & {
    * import { Source } from '@storybook/blocks';
    * import * as ButtonStories from './Button.stories';
    *
-   * <Source of={ButtonStories.Primary} />
+   * <Source of={ButtonStories.Primary} />;
    * ```
    */
   of?: ModuleExport;
 
-  /**
-   * Internal prop to control if a story re-renders on args updates
-   */
+  /** Internal prop to control if a story re-renders on args updates */
   __forceInitialArgs?: boolean;
 };
 
@@ -167,9 +159,8 @@ export const useSourceProps = (
 };
 
 /**
- * Story source doc block renders source code if provided,
- * or the source for a story if `storyId` is provided, or
- * the source for the current story if nothing is provided.
+ * Story source doc block renders source code if provided, or the source for a story if `storyId` is
+ * provided, or the source for the current story if nothing is provided.
  */
 export const Source: FC<SourceProps> = (props) => {
   const sourceContext = useContext(SourceContext);

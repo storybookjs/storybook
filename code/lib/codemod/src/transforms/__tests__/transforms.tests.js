@@ -12,7 +12,11 @@ const inputRegExp = /\.input\.js$/;
 const fixturesDir = resolve(__dirname, '../__testfixtures__');
 readdirSync(fixturesDir).forEach((transformName) => {
   // FIXME: delete after https://github.com/storybookjs/storybook/issues/19497
-  if (transformName === 'mdx-to-csf') return;
+
+  // FIXME: delete after https://github.com/storybookjs/storybook/issues/19497
+  if (transformName === 'mdx-to-csf') {
+    return;
+  }
 
   const transformFixturesDir = join(fixturesDir, transformName);
   describe(`${transformName}`, () => {

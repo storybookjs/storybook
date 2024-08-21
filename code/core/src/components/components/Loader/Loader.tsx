@@ -119,7 +119,10 @@ export const Loader = ({ progress, error, size, ...props }: LoaderProps) => {
   if (progress) {
     const { value, modules } = progress;
     let { message } = progress;
-    if (modules) message += ` ${modules.complete} / ${modules.total} modules`;
+
+    if (modules) {
+      message += ` ${modules.complete} / ${modules.total} modules`;
+    }
     return (
       <ProgressWrapper
         aria-label="Content is loading..."

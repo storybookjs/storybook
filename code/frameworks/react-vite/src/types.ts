@@ -16,9 +16,11 @@ export type FrameworkOptions = {
   strictMode?: boolean;
   /**
    * Use React's legacy root API to mount components
-   * @description
-   * React has introduced a new root API with React 18.x to enable a whole set of new features (e.g. concurrent features)
-   * If this flag is true, the legacy Root API is used to mount components to make it easier to migrate step by step to React 18.
+   *
+   * React has introduced a new root API with React 18.x to enable a whole set of new features (e.g.
+   * concurrent features) If this flag is true, the legacy Root API is used to mount components to
+   * make it easier to migrate step by step to React 18.
+   *
    * @default false
    */
   legacyRootApi?: boolean;
@@ -48,15 +50,11 @@ type TypescriptOptions = TypescriptOptionsBase & {
    * @default `'react-docgen'`
    */
   reactDocgen: 'react-docgen-typescript' | 'react-docgen' | false;
-  /**
-   * Configures `@joshwooding/vite-plugin-react-docgen-typescript`
-   */
+  /** Configures `@joshwooding/vite-plugin-react-docgen-typescript` */
   reactDocgenTypescriptOptions: Parameters<typeof docgenTypescript>[0];
 };
 
-/**
- * The interface for Storybook configuration in `main.ts` files.
- */
+/** The interface for Storybook configuration in `main.ts` files. */
 export type StorybookConfig = Omit<
   StorybookConfigBase,
   keyof StorybookConfigVite | keyof StorybookConfigFramework | 'typescript'

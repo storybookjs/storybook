@@ -50,7 +50,9 @@ export const Empty: FC<EmptyProps> = ({ inAddonPanel }) => {
     return () => clearTimeout(load);
   }, []);
 
-  if (isLoading) return null;
+  if (isLoading) {
+    return null;
+  }
 
   return (
     <Wrapper inAddonPanel={inAddonPanel}>

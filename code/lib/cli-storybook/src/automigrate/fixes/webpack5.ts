@@ -16,8 +16,7 @@ interface Webpack5RunOptions {
 /**
  * Is the user using webpack5 in their project?
  *
- * If the user is using a version of SB >= 6.3,
- * prompt them to upgrade to webpack5.
+ * If the user is using a version of SB >= 6.3, prompt them to upgrade to webpack5.
  *
  * - Add manager-webpack5 builder-webpack5 as dev dependencies
  * - Add core.builder = 'webpack5' to main.js
@@ -35,8 +34,9 @@ export const webpack5 = {
       !webpackVersion ||
       semver.lt(webpackVersion, '5.0.0') ||
       semver.gte(webpackVersion, '6.0.0')
-    )
+    ) {
       return null;
+    }
 
     const builderInfo = await checkWebpack5Builder({ mainConfig, storybookVersion });
     return builderInfo ? { webpackVersion, ...builderInfo } : null;

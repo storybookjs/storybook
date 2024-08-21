@@ -23,7 +23,9 @@ export async function doTelemetry(
       } catch (err) {
         // If we fail to get the index, treat it as a recoverable error, but send it up to telemetry
         // as if we crashed. In the future we will revisit this to send a distinct error
-        if (!(err instanceof Error)) throw new Error('encountered a non-recoverable error');
+        if (!(err instanceof Error)) {
+          throw new Error('encountered a non-recoverable error');
+        }
         sendTelemetryError(err, 'dev', {
           cliOptions: options,
           presetOptions: { ...options, corePresets: [], overridePresets: [] },

@@ -1,8 +1,5 @@
 import { join } from 'node:path';
 
-// eslint-disable-next-line @typescript-eslint/no-restricted-imports
-import { mergeConfig } from 'vite';
-
 import type { StorybookConfig } from '../frameworks/react-vite';
 
 const componentsPath = join(__dirname, '../core/src/components');
@@ -130,8 +127,10 @@ const config: StorybookConfig = {
     viewportStoryGlobals: true,
     backgroundsStoryGlobals: true,
   },
-  viteFinal: (viteConfig, { configType }) =>
-    mergeConfig(viteConfig, {
+  viteFinal: async (viteConfig, { configType }) => {
+    const { mergeConfig } = await import('vite');
+
+    return mergeConfig(viteConfig, {
       resolve: {
         alias: {
           ...(configType === 'DEVELOPMENT'
@@ -144,12 +143,16 @@ const config: StorybookConfig = {
             : {}),
         },
       },
-      optimizeDeps: { force: true },
+      optimizeDeps: {
+        force: true,
+        include: ['@storybook/blocks'],
+      },
       build: {
         // disable sourcemaps in CI to not run out of memory
         sourcemap: process.env.CI !== 'true',
       },
-    }),
+    } satisfies typeof viteConfig);
+  },
   // logLevel: 'debug',
 };
 

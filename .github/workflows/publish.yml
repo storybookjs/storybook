@@ -159,8 +159,8 @@ jobs:
         run: |
           git checkout next
           git pull
-          git push --force origin latest-release
-          git push --force origin main
+          git push origin --force next:latest-release
+          git push origin --force next:main
 
       - name: Sync CHANGELOG.md from `main` to `next`
         if: steps.target.outputs.target == 'main'
@@ -174,6 +174,7 @@ jobs:
           git commit -m "Update CHANGELOG.md for v${{ steps.version.outputs.current-version }} [skip ci]" || true
           git push origin next
 
+      # TODO: remove this step - @JReinhold
       - name: Sync version JSONs from `next-release` to `main`
         if: github.ref_name == 'next-release'
         working-directory: .

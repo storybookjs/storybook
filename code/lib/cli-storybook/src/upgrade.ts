@@ -33,9 +33,14 @@ type Package = {
 
 const versionRegex = /(@storybook\/[^@]+)@(\S+)/;
 export const getStorybookVersion = (line: string) => {
-  if (line.startsWith('npm ')) return null;
+  if (line.startsWith('npm ')) {
+    return null;
+  }
   const match = versionRegex.exec(line);
-  if (!match || !clean(match[2])) return null;
+
+  if (!match || !clean(match[2])) {
+    return null;
+  }
   return {
     package: match[1],
     version: match[2],

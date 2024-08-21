@@ -42,19 +42,23 @@ interface NewFrameworkRunOptions {
 }
 
 /**
- * Does the user have separate framework and builders (e.g. @storybook/react + core.builder -> webpack5)?
+ * Does the user have separate framework and builders (e.g. @storybook/react + core.builder ->
+ * webpack5)?
  *
  * If so:
- * - Remove the dependencies (@storybook/react + @storybook/builder-webpack5 + @storybook/manager-webpack5)
+ *
+ * - Remove the dependencies (@storybook/react + @storybook/builder-webpack5 +
+ *
+ * @storybook/manager-webpack5)
  * - Install the correct new package e.g. (@storybook/react-webpack5)
- * - Update the main config to use the new framework
- * -- moving core.builder into framework.options.builder
- * -- moving renderer options (e.g. reactOptions) into framework.options
- * -- removing the now unnecessary fields in main.js
+ * - Update the main config to use the new framework:
+ * - - moving `core.builder` into `framework.options.builder`
+ * - - moving renderer options (e.g. `reactOptions`) into `framework.options`
+ * - - removing the now unnecessary fields in `main.ts`
  *
  * Extra step:
- * -- after figuring out a candidate framework, e.g. @storybook/react-webpack5, check if the user has a supported metaframework (e.g. Next.js or SvelteKit)
- * -- if so, override the framework with the supporting metaframework package e.g. @storybook/nextjs
+ * - after figuring out a candidate framework, e.g. `@storybook/react-webpack5`, check if the user has a supported meta-framework (e.g. Next.js or SvelteKit)
+ * - if so, override the framework with the supporting meta-framework package e.g. `@storybook/nextjs`
  */
 export const newFrameworks: Fix<NewFrameworkRunOptions> = {
   id: 'new-frameworks',

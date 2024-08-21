@@ -35,7 +35,9 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
   return {
     name: 'storybook:vue-component-meta-plugin',
     async transform(src, id) {
-      if (!filter(id)) return undefined;
+      if (!filter(id)) {
+        return undefined;
+      }
 
       try {
         const exportNames = checker.getExportNames(id);
@@ -48,7 +50,10 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
           // filter out empty meta
           const isEmpty =
             !meta.props.length && !meta.events.length && !meta.slots.length && !meta.exposed.length;
-          if (isEmpty || meta.type === TypeMeta.Unknown) return;
+
+          if (isEmpty || meta.type === TypeMeta.Unknown) {
+            return;
+          }
 
           const exportName = exportNames[index];
 
@@ -98,7 +103,11 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
         });
 
         // if there is no component meta, return undefined
-        if (metaSources.length === 0) return undefined;
+
+        // if there is no component meta, return undefined
+        if (metaSources.length === 0) {
+          return undefined;
+        }
 
         const s = new MagicString(src);
 
@@ -141,8 +150,8 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
 }
 
 /**
- * Creates the `vue-component-meta` checker to use for extracting component meta/docs.
- * Considers the given tsconfig file (will use a fallback checker if it does not exist or is not supported).
+ * Creates the `vue-component-meta` checker to use for extracting component meta/docs. Considers the
+ * given tsconfig file (will use a fallback checker if it does not exist or is not supported).
  */
 async function createVueComponentMetaChecker(tsconfigPath = 'tsconfig.json') {
   const checkerOptions: MetaCheckerOptions = {
@@ -162,16 +171,17 @@ async function createVueComponentMetaChecker(tsconfigPath = 'tsconfig.json') {
     // so we will return the defaultChecker if references are used.
     // Otherwise vue-component-meta might not work at all for the Storybook docgen.
     const references = await getTsConfigReferences(projectTsConfigPath);
-    if (references.length > 0) return defaultChecker;
+
+    if (references.length > 0) {
+      return defaultChecker;
+    }
     return createChecker(projectTsConfigPath, checkerOptions);
   }
 
   return defaultChecker;
 }
 
-/**
- * Gets the absolute path to the project root.
- */
+/** Gets the absolute path to the project root. */
 function getProjectRoot() {
   const projectRoot = findPackageJson().next().value?.path ?? '';
 
@@ -181,23 +191,17 @@ function getProjectRoot() {
   return resolve(currentFileDir, relativePathToProjectRoot);
 }
 
-/**
- * Gets the filename without file extension.
- */
+/** Gets the filename without file extension. */
 function getFilenameWithoutExtension(filename: string) {
   return parse(filename).name;
 }
 
-/**
- * Lowercases the first letter.
- */
+/** Lowercases the first letter. */
 function lowercaseFirstLetter(string: string) {
   return string.charAt(0).toLowerCase() + string.slice(1);
 }
 
-/**
- * Checks whether the given file path exists.
- */
+/** Checks whether the given file path exists. */
 async function fileExists(fullPath: string) {
   try {
     await stat(fullPath);
@@ -208,22 +212,25 @@ async function fileExists(fullPath: string) {
 }
 
 /**
- * Applies a temporary workaround/fix for missing event descriptions because
- * Volar is currently not able to extract them.
- * Will modify the events of the passed meta.
- * Performance note: Based on some quick tests, calling "parseMulti" only takes a few milliseconds (8-20ms)
- * so it should not decrease performance that much. Especially because it is only execute if the component actually
+ * Applies a temporary workaround/fix for missing event descriptions because Volar is currently not
+ * able to extract them. Will modify the events of the passed meta. Performance note: Based on some
+ * quick tests, calling "parseMulti" only takes a few milliseconds (8-20ms) so it should not
+ * decrease performance that much. Especially because it is only execute if the component actually
  * has events.
  *
- * Check status of this Volar issue: https://github.com/vuejs/language-tools/issues/3893
- * and update/remove this workaround once Volar supports it:
- * - delete this function
- * - uninstall vue-docgen-api dependency
+ * Check status of this Volar issue: https://github.com/vuejs/language-tools/issues/3893 and
+ * update/remove this workaround once Volar supports it:
+ *
+ * - Delete this function
+ * - Uninstall vue-docgen-api dependency
  */
 async function applyTempFixForEventDescriptions(filename: string, componentMeta: ComponentMeta[]) {
   // do not apply temp fix if no events exist for performance reasons
   const hasEvents = componentMeta.some((meta) => meta.events.length);
-  if (!hasEvents) return componentMeta;
+
+  if (!hasEvents) {
+    return componentMeta;
+  }
 
   try {
     const parsedComponentDocs = await parseMulti(filename);
@@ -231,7 +238,10 @@ async function applyTempFixForEventDescriptions(filename: string, componentMeta:
     // add event descriptions to the existing Volar meta if available
     componentMeta.map((meta, index) => {
       const eventsWithDescription = parsedComponentDocs[index].events;
-      if (!meta.events.length || !eventsWithDescription?.length) return meta;
+
+      if (!meta.events.length || !eventsWithDescription?.length) {
+        return meta;
+      }
 
       meta.events = meta.events.map((event) => {
         const description = eventsWithDescription.find((i) => i.name === event.name)?.description;
@@ -251,14 +261,16 @@ async function applyTempFixForEventDescriptions(filename: string, componentMeta:
 }
 
 /**
- * Gets a list of tsconfig references for the given tsconfig
- * This is only needed for the temporary workaround/fix for:
- * https://github.com/vuejs/language-tools/issues/3896
+ * Gets a list of tsconfig references for the given tsconfig This is only needed for the temporary
+ * workaround/fix for: https://github.com/vuejs/language-tools/issues/3896
  */
 async function getTsConfigReferences(tsConfigPath: string) {
   try {
     const content = JSON.parse(await readFile(tsConfigPath, 'utf-8'));
-    if (!('references' in content) || !Array.isArray(content.references)) return [];
+
+    if (!('references' in content) || !Array.isArray(content.references)) {
+      return [];
+    }
     return content.references as unknown[];
   } catch {
     // invalid project tsconfig
@@ -268,9 +280,12 @@ async function getTsConfigReferences(tsConfigPath: string) {
 
 /**
  * Removes any nested schemas from the given main schema (e.g. from a prop, event, slot or exposed).
- * Useful to drastically reduce build size and prevent out of memory issues when large schemas (e.g. HTMLElement, MouseEvent) are used.
+ * Useful to drastically reduce build size and prevent out of memory issues when large schemas (e.g.
+ * HTMLElement, MouseEvent) are used.
  */
 function removeNestedSchemas(schema: PropertyMetaSchema) {
-  if (typeof schema !== 'object') return;
+  if (typeof schema !== 'object') {
+    return;
+  }
   delete schema.schema;
 }

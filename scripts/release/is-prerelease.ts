@@ -1,6 +1,6 @@
 import { setOutput } from '@actions/core';
 import chalk from 'chalk';
-import program from 'commander';
+import { program } from 'commander';
 import semver from 'semver';
 
 import { esMain } from '../utils/esmain';

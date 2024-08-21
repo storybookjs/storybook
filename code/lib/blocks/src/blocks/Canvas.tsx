@@ -34,33 +34,29 @@ type CanvasProps = Pick<PurePreviewProps, 'withToolbar' | 'additionalActions' | 
    * import { Canvas } from '@storybook/blocks';
    * import * as ButtonStories from './Button.stories';
    *
-   * <Canvas of={ButtonStories.Primary} meta={ButtonStories} />
+   * <Canvas of={ButtonStories.Primary} meta={ButtonStories} />;
    * ```
    */
   meta?: ModuleExports;
   /**
-   * Specify the initial state of the source panel
-   * hidden: the source panel is hidden by default
-   * shown: the source panel is shown by default
-   * none: the source panel is not available and the button to show it is hidden
+   * Specify the initial state of the source panel hidden: the source panel is hidden by default
+   * shown: the source panel is shown by default none: the source panel is not available and the
+   * button to show it is hidden
+   *
    * @default 'hidden'
    */
   sourceState?: 'hidden' | 'shown' | 'none';
   /**
-   * how to layout the story within the canvas
-   * padded: the story has padding within the canvas
-   * fullscreen: the story is rendered edge to edge within the canvas
-   * centered: the story is centered within the canvas
+   * How to layout the story within the canvas padded: the story has padding within the canvas
+   * fullscreen: the story is rendered edge to edge within the canvas centered: the story is
+   * centered within the canvas
+   *
    * @default 'padded'
    */
   layout?: Layout;
-  /**
-   * @see {SourceProps}
-   */
+  /** @see {SourceProps} */
   source?: Omit<SourceProps, 'dark'>;
-  /**
-   * @see {StoryProps}
-   */
+  /** @see {StoryProps} */
   story?: Pick<StoryProps, 'inline' | 'height' | 'autoplay' | '__forceInitialArgs' | '__primary'>;
 };
 

@@ -10,8 +10,8 @@ import { useOf } from './useOf';
 interface SubtitleProps {
   children?: ReactNode;
   /**
-   * Specify where to get the subtitle from.
-   * If not specified, the subtitle will be extracted from the meta of the attached CSF file.
+   * Specify where to get the subtitle from. If not specified, the subtitle will be extracted from
+   * the meta of the attached CSF file.
    */
   of?: Of;
 }

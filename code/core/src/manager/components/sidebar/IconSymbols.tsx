@@ -101,13 +101,36 @@ export const IconSymbols: FC = () => {
 export const UseSymbol: FC<{
   type: 'group' | 'component' | 'document' | 'story' | 'success' | 'error' | 'warning' | 'dot';
 }> = ({ type }) => {
-  if (type === 'group') return <use xlinkHref={`#${GROUP_ID}`} />;
-  if (type === 'component') return <use xlinkHref={`#${COMPONENT_ID}`} />;
-  if (type === 'document') return <use xlinkHref={`#${DOCUMENT_ID}`} />;
-  if (type === 'story') return <use xlinkHref={`#${STORY_ID}`} />;
-  if (type === 'success') return <use xlinkHref={`#${SUCCESS_ID}`} />;
-  if (type === 'error') return <use xlinkHref={`#${ERROR_ID}`} />;
-  if (type === 'warning') return <use xlinkHref={`#${WARNING_ID}`} />;
-  if (type === 'dot') return <use xlinkHref={`#${DOT_ID}`} />;
+  if (type === 'group') {
+    return <use xlinkHref={`#${GROUP_ID}`} />;
+  }
+
+  if (type === 'component') {
+    return <use xlinkHref={`#${COMPONENT_ID}`} />;
+  }
+
+  if (type === 'document') {
+    return <use xlinkHref={`#${DOCUMENT_ID}`} />;
+  }
+
+  if (type === 'story') {
+    return <use xlinkHref={`#${STORY_ID}`} />;
+  }
+
+  if (type === 'success') {
+    return <use xlinkHref={`#${SUCCESS_ID}`} />;
+  }
+
+  if (type === 'error') {
+    return <use xlinkHref={`#${ERROR_ID}`} />;
+  }
+
+  if (type === 'warning') {
+    return <use xlinkHref={`#${WARNING_ID}`} />;
+  }
+
+  if (type === 'dot') {
+    return <use xlinkHref={`#${DOT_ID}`} />;
+  }
   return null;
 };

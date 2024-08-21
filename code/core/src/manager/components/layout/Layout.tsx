@@ -39,10 +39,9 @@ const layoutStateIsEqual = (state: ManagerLayoutState, other: ManagerLayoutState
   state.panelPosition === other.panelPosition;
 
 /**
- * Manages the internal state of panels while dragging, and syncs it with the
- * layout state in the global manager store when the user is done dragging.
- * Also syncs the layout state from the global manager store to the internal state
- * here when necessary
+ * Manages the internal state of panels while dragging, and syncs it with the layout state in the
+ * global manager store when the user is done dragging. Also syncs the layout state from the global
+ * manager store to the internal state here when necessary
  */
 const useLayoutSyncingState = ({
   managerLayoutState,
@@ -63,9 +62,7 @@ const useLayoutSyncingState = ({
     isDragging: false,
   });
 
-  /**
-   * Sync FROM managerLayoutState to internalDraggingState if user is not dragging
-   */
+  /** Sync FROM managerLayoutState to internalDraggingState if user is not dragging */
   useEffect(() => {
     if (
       internalDraggingSizeState.isDragging || // don't interrupt user's drag
@@ -77,9 +74,7 @@ const useLayoutSyncingState = ({
     setInternalDraggingSizeState((state) => ({ ...state, ...managerLayoutState }));
   }, [internalDraggingSizeState.isDragging, managerLayoutState, setInternalDraggingSizeState]);
 
-  /**
-   * Sync size changes TO managerLayoutState when drag is done
-   */
+  /** Sync size changes TO managerLayoutState when drag is done */
   useLayoutEffect(() => {
     if (
       internalDraggingSizeState.isDragging || // wait with syncing managerLayoutState until user is done dragging

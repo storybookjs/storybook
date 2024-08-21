@@ -1,7 +1,7 @@
 import { versions } from 'storybook/internal/common';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 
-import program from 'commander';
+import { program } from 'commander';
 import { findPackageSync } from 'fd-package-json';
 import invariant from 'tiny-invariant';
 

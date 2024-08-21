@@ -36,21 +36,13 @@ export enum SourceError {
 }
 
 export interface SourceCodeProps {
-  /**
-   * The language the syntax highlighter uses for your story’s code
-   */
+  /** The language the syntax highlighter uses for your story’s code */
   language?: SupportedLanguage;
-  /**
-   * Use this to override the content of the source block.
-   */
+  /** Use this to override the content of the source block. */
   code?: string;
-  /**
-   * The (prettier) formatter the syntax highlighter uses for your story’s code.
-   */
+  /** The (prettier) formatter the syntax highlighter uses for your story’s code. */
   format?: ComponentProps<typeof SyntaxHighlighter>['format'];
-  /**
-   * Display the source snippet in a dark mode.
-   */
+  /** Display the source snippet in a dark mode. */
   dark?: boolean;
 }
 
@@ -90,9 +82,7 @@ const SourceSkeleton = () => (
   </SourceSkeletonWrapper>
 );
 
-/**
- * Syntax-highlighted source code for a component (or anything!)
- */
+/** Syntax-highlighted source code for a component (or anything!) */
 const Source: FunctionComponent<SourceProps> = ({
   isLoading,
   error,

@@ -1,7 +1,7 @@
 import React, { type ComponentProps } from 'react';
 
-import { Badge as BaseBadge, IconButton } from '@storybook/components';
-import { css, styled } from '@storybook/theming';
+import { Badge as BaseBadge, IconButton } from '@storybook/core/components';
+import { css, styled } from '@storybook/core/theming';
 
 const Badge = styled(BaseBadge)(({ theme }) => ({
   padding: '4px 8px',

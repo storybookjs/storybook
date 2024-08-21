@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-controls",
-  "version": "8.3.0-alpha.5",
+  "version": "8.3.0-alpha.8",
   "description": "Interact with component inputs dynamically in the Storybook UI",
   "keywords": [
     "addon",
@@ -51,6 +51,7 @@
     "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
+    "@storybook/global": "^5.0.0",
     "dequal": "^2.0.2",
     "lodash": "^4.17.21",
     "ts-dedent": "^2.0.0"

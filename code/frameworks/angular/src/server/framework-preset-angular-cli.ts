@@ -30,10 +30,7 @@ export async function webpackFinal(baseConfig: webpack.Configuration, options: P
   });
 }
 
-/**
- * Get Builder Context
- * If storybook is not start by angular builder create dumb BuilderContext
- */
+/** Get Builder Context If storybook is not start by angular builder create dumb BuilderContext */
 function getBuilderContext(options: PresetOptions): BuilderContext {
   return (
     options.angularBuilderContext ??
@@ -47,17 +44,12 @@ function getBuilderContext(options: PresetOptions): BuilderContext {
   );
 }
 
-/**
- * Get builder options
- * Merge target options from browser target and from storybook options
- */
+/** Get builder options Merge target options from browser target and from storybook options */
 async function getBuilderOptions(
   options: PresetOptions,
   builderContext: BuilderContext
 ): Promise<JsonObject> {
-  /**
-   * Get Browser Target options
-   */
+  /** Get Browser Target options */
   let browserTargetOptions: JsonObject = {};
   if (options.angularBrowserTarget) {
     const browserTarget = targetFromTargetString(options.angularBrowserTarget);
@@ -70,9 +62,7 @@ async function getBuilderOptions(
     browserTargetOptions = await builderContext.getTargetOptions(browserTarget);
   }
 
-  /**
-   * Merge target options from browser target options and from storybook options
-   */
+  /** Merge target options from browser target options and from storybook options */
   const builderOptions = {
     ...browserTargetOptions,
     ...(options.angularBuilderOptions as JsonObject),
@@ -87,7 +77,8 @@ async function getBuilderOptions(
 }
 
 /**
- * Checks if using legacy configuration that doesn't use builder and logs message referring to migration docs.
+ * Checks if using legacy configuration that doesn't use builder and logs message referring to
+ * migration docs.
  */
 function checkForLegacyBuildOptions(options: PresetOptions) {
   if (options.angularBrowserTarget !== undefined) {

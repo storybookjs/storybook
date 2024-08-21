@@ -17,7 +17,7 @@ const highlightStyle = (color = '#FF4785', style: OutlineStyle = 'dashed') => `
 `;
 
 interface HighlightInfo {
-  /** html selector of the element */
+  /** HTML selector of the element */
   elements: string[];
   color: string;
   style: OutlineStyle;

@@ -17,12 +17,12 @@ describe('StorybookModule', () => {
         selector: 'foo',
         template: `
           <p id="input">{{ input }}</p>
-          <p id="inputBindingPropertyName">{{ localPropertyName }}</p>
-          <p id="setterCallNb">{{ setterCallNb }}</p>
-          <p id="localProperty">{{ localProperty }}</p>
-          <p id="localFunction">{{ localFunction() }}</p>
-          <p id="output" (click)="output.emit('outputEmitted')"></p>
-          <p id="outputBindingPropertyName" (click)="localOutput.emit('outputEmitted')"></p>
+<p id="inputBindingPropertyName">{{ localPropertyName }}</p>
+<p id="setterCallNb">{{ setterCallNb }}</p>
+<p id="localProperty">{{ localProperty }}</p>
+<p id="localFunction">{{ localFunction() }}</p>
+<p id="output" (click)="output.emit('outputEmitted')"></p>
+<p id="outputBindingPropertyName" (click)="localOutput.emit('outputEmitted')"></p>
         `,
       })
       class FooComponent {

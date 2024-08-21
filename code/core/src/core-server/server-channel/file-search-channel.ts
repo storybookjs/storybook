@@ -30,9 +30,7 @@ export async function initFileSearchChannel(
   options: Options,
   coreOptions: CoreConfig
 ) {
-  /**
-   * Listens for a search query event and searches for files in the project
-   */
+  /** Listens for a search query event and searches for files in the project */
   channel.on(
     FILE_COMPONENT_SEARCH_REQUEST,
     async (data: RequestData<FileComponentSearchRequestPayload>) => {
@@ -106,9 +104,7 @@ export async function initFileSearchChannel(
           error: null,
         } satisfies ResponseData<FileComponentSearchResponsePayload>);
       } catch (e: any) {
-        /**
-         * Emits the search result event with an error message
-         */
+        /** Emits the search result event with an error message */
         channel.emit(FILE_COMPONENT_SEARCH_RESPONSE, {
           success: false,
           id: searchQuery ?? '',

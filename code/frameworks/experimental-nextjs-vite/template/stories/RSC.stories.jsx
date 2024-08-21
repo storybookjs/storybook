@@ -5,6 +5,11 @@ import { Nested, RSC } from './RSC';
 export default {
   component: RSC,
   args: { label: 'label' },
+  parameters: {
+    react: {
+      rsc: true,
+    },
+  },
 };
 
 export const Default = {};
@@ -18,7 +23,7 @@ export const DisableRSC = {
 };
 
 export const Error = {
-  tags: ['!test'],
+  tags: ['!test', '!vitest'],
   parameters: {
     chromatic: { disable: true },
   },

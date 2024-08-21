@@ -47,9 +47,18 @@ function generateSourceWithoutUglyComments(source, { comments, uglyCommentsRegex
 function prettifyCode(source, { prettierConfig, parser, filepath }) {
   let config = prettierConfig;
   let foundParser = null;
-  if (parser === 'flow') foundParser = 'flow';
-  if (parser === 'javascript' || /jsx?/.test(parser)) foundParser = 'javascript';
-  if (parser === 'typescript' || /tsx?/.test(parser)) foundParser = 'typescript';
+
+  if (parser === 'flow') {
+    foundParser = 'flow';
+  }
+
+  if (parser === 'javascript' || /jsx?/.test(parser)) {
+    foundParser = 'javascript';
+  }
+
+  if (parser === 'typescript' || /tsx?/.test(parser)) {
+    foundParser = 'typescript';
+  }
 
   if (!config.parser) {
     config = {
@@ -147,7 +156,9 @@ export function generateStorySource({ source, ...options }) {
 }
 
 function transformLocationMapToIds(parameters) {
-  if (!parameters?.locationsMap) return parameters;
+  if (!parameters?.locationsMap) {
+    return parameters;
+  }
   const locationsMap = mapKeys(parameters.locationsMap, (_value, key) => {
     return sanitize(storyNameFromExport(key));
   });

@@ -1,3 +1,25 @@
+## 8.3.0-alpha.8
+
+- Addon Vitest: Improve transformation logic to avoid duplicate tests - [#28929](https://github.com/storybookjs/storybook/pull/28929), thanks @yannbf!
+- Addon Vitest: Set default viewport if applicable - [#28905](https://github.com/storybookjs/storybook/pull/28905), thanks @yannbf!
+- Addon-docs: Remove babel dependency - [#28915](https://github.com/storybookjs/storybook/pull/28915), thanks @shilman!
+- Blocks: Fix scroll to non-ascii anchors - [#28826](https://github.com/storybookjs/storybook/pull/28826), thanks @SkReD!
+- Core: Introduce setProjectAnnotations API to more renderers and frameworks - [#28907](https://github.com/storybookjs/storybook/pull/28907), thanks @yannbf!
+- Dependencies: Upgrade `commander` - [#28857](https://github.com/storybookjs/storybook/pull/28857), thanks @43081j!
+- SvelteKit: Introduce portable stories support - [#28918](https://github.com/storybookjs/storybook/pull/28918), thanks @yannbf!
+
+## 8.3.0-alpha.7
+
+- Addon Vitest: Set screenshotFailures to false by default - [#28908](https://github.com/storybookjs/storybook/pull/28908), thanks @yannbf!
+- Addon Vitest: Fix error message logic in set up file - [#28906](https://github.com/storybookjs/storybook/pull/28906), thanks @yannbf!
+- Core: Add Rsbuild frameworks to known frameworks - [#28694](https://github.com/storybookjs/storybook/pull/28694), thanks @fi3ework!
+- Test: Fix support for TS < 4.7 - [#28887](https://github.com/storybookjs/storybook/pull/28887), thanks @ndelangen!
+
+## 8.3.0-alpha.6
+
+- Addon Vitest: Add experimental vitest integration - [#28768](https://github.com/storybookjs/storybook/pull/28768), thanks @kasperpeulen!
+- Vite: Fix HMR - [#28876](https://github.com/storybookjs/storybook/pull/28876), thanks @ndelangen!
+
 ## 8.3.0-alpha.5
 
 - Builder-Vite: Add null character prefix to virtual file IDs - [#28863](https://github.com/storybookjs/storybook/pull/28863), thanks @valentinpalkovic!
@@ -16,7 +38,7 @@
 
 - CSF: Allow overridding globals at the story level - [#26654](https://github.com/storybookjs/storybook/pull/26654), thanks @tmeasday!
 - Core: Introduce run over play in portable stories, and revert back play changes of 8.2 - [#28764](https://github.com/storybookjs/storybook/pull/28764), thanks @kasperpeulen!
-- Core: Split Storybook CLI  - [#28519](https://github.com/storybookjs/storybook/pull/28519), thanks @kasperpeulen!
+- Core: Split Storybook CLI - [#28519](https://github.com/storybookjs/storybook/pull/28519), thanks @kasperpeulen!
 - Fix: Invariant failed: Expected package.json#version to be defined in the "undefined" package - [#28752](https://github.com/storybookjs/storybook/pull/28752), thanks @abcdmku!
 - Next.js: Make RSC portable-stories compatible - [#28756](https://github.com/storybookjs/storybook/pull/28756), thanks @valentinpalkovic!
 - UI: Fix collapse/expand all functionality - [#28582](https://github.com/storybookjs/storybook/pull/28582), thanks @filipemelo2002!
@@ -65,7 +87,6 @@
 - Webpack: Fix sourceMap generation in csf-tools - [#28585](https://github.com/storybookjs/storybook/pull/28585), thanks @valentinpalkovic!
 
 ## 8.3.0-alpha.0
-
 
 ## 8.2.0-beta.3
 
@@ -208,7 +229,6 @@
 
 ## 8.2.0-alpha.0
 
-
 ## 8.1.0-beta.1
 
 - API: Add API access to sidebar renderLabel - [#27099](https://github.com/storybookjs/storybook/pull/27099), thanks @shilman!
@@ -254,7 +274,7 @@
 - Portable Stories: Warn when rendering stories without cleaning up first - [#27008](https://github.com/storybookjs/storybook/pull/27008), thanks @JReinhold!
 - React: Support v19 in `react-dom-shim` - [#26898](https://github.com/storybookjs/storybook/pull/26898), thanks @Tobbe!
 - Test: Remove chai as dependency of @storybook/test - [#26852](https://github.com/storybookjs/storybook/pull/26852), thanks @kasperpeulen!
-- Test: Support module mocking with conditional subpath imports in `package.json`  - [#26688](https://github.com/storybookjs/storybook/pull/26688), thanks @kasperpeulen!
+- Test: Support module mocking with conditional subpath imports in `package.json` - [#26688](https://github.com/storybookjs/storybook/pull/26688), thanks @kasperpeulen!
 - UI: Fix not re-rendering tabs on state change - [#26899](https://github.com/storybookjs/storybook/pull/26899), thanks @lifeiscontent!
 - UI: Fix sidebar search hanging when selecting a story in touch mode - [#26807](https://github.com/storybookjs/storybook/pull/26807), thanks @JReinhold!
 - Vite: Merge assetsInclude property with Storybook default values - [#26860](https://github.com/storybookjs/storybook/pull/26860), thanks @yuemori!
@@ -328,10 +348,9 @@
 
 ## 8.1.0-alpha.1
 
-- Maintenance: Fix performance regressions  - [#26411](https://github.com/storybookjs/storybook/pull/26411), thanks @kasperpeulen!
+- Maintenance: Fix performance regressions - [#26411](https://github.com/storybookjs/storybook/pull/26411), thanks @kasperpeulen!
 
 ## 8.1.0-alpha.0
-
 
 ## 8.0.0-rc.5
 
@@ -343,7 +362,7 @@
 - CLI: Add explicit actions to header story - [#26352](https://github.com/storybookjs/storybook/pull/26352), thanks @kasperpeulen!
 - CLI: Automigration for upgrading storybook related dependencies - [#26377](https://github.com/storybookjs/storybook/pull/26377), thanks @ndelangen!
 - CLI: Fix doctor compatibility check - [#26363](https://github.com/storybookjs/storybook/pull/26363), thanks @yannbf!
-- CLI: Fix fn reference in preact templates  - [#26384](https://github.com/storybookjs/storybook/pull/26384), thanks @kasperpeulen!
+- CLI: Fix fn reference in preact templates - [#26384](https://github.com/storybookjs/storybook/pull/26384), thanks @kasperpeulen!
 - CLI: Remove duplicated dependency warning - [#26385](https://github.com/storybookjs/storybook/pull/26385), thanks @yannbf!
 - CLI: Vite migration link (shorter) - [#26379](https://github.com/storybookjs/storybook/pull/26379), thanks @ndelangen!
 - Composition: Fix refs not loading when there's multiple - [#26356](https://github.com/storybookjs/storybook/pull/26356), thanks @ndelangen!

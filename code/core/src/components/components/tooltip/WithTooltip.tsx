@@ -42,6 +42,7 @@ export interface WithTooltipPureProps
   onDoubleClick?: () => void;
   /**
    * If `true`, a click outside the trigger element closes the tooltip
+   *
    * @default false
    */
   closeOnOutsideClick?: boolean;
@@ -157,7 +158,9 @@ const WithToolTipState = ({
   const [tooltipShown, setTooltipShown] = useState(startOpen);
   const onVisibilityChange = useCallback(
     (visibility: boolean) => {
-      if (onChange && onChange(visibility) === false) return;
+      if (onChange && onChange(visibility) === false) {
+        return;
+      }
       setTooltipShown(visibility);
     },
     [onChange]

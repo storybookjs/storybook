@@ -105,7 +105,9 @@ export const A11yContextProvider: React.FC<React.PropsWithChildren<A11yContextPr
     }
   }, [active, handleClearHighlights, emit, storyEntry]);
 
-  if (!active) return null;
+  if (!active) {
+    return null;
+  }
 
   return (
     <A11yContext.Provider

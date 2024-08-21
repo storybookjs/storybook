@@ -21,9 +21,17 @@ const filterBoth: API_FilterFunction = ({ status = {} }) =>
   Object.values(status).some((value) => value?.status === 'warn' || value?.status === 'error');
 
 const getFilter = (showWarnings = false, showErrors = false) => {
-  if (showWarnings && showErrors) return filterBoth;
-  if (showWarnings) return filterWarn;
-  if (showErrors) return filterError;
+  if (showWarnings && showErrors) {
+    return filterBoth;
+  }
+
+  if (showWarnings) {
+    return filterWarn;
+  }
+
+  if (showErrors) {
+    return filterError;
+  }
   return filterNone;
 };
 
@@ -58,7 +66,9 @@ export const SidebarBottomBase = ({ api, status = {} }: SidebarBottomProps) => {
     api.experimental_setFilter('sidebar-bottom-filter', filter);
   }, [api, hasWarnings, hasErrors, showWarnings, showErrors]);
 
-  if (!hasWarnings && !hasErrors) return null;
+  if (!hasWarnings && !hasErrors) {
+    return null;
+  }
 
   return (
     <Wrapper id="sidebar-bottom-wrapper">

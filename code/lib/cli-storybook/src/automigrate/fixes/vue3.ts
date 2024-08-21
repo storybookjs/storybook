@@ -15,6 +15,7 @@ interface Vue3RunOptions {
  * Is the user upgrading to Vue3?
  *
  * If so:
+ *
  * - Run webpack5 fix
  */
 export const vue3: Fix<Vue3RunOptions> = {

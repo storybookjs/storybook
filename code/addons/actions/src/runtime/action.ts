@@ -14,7 +14,10 @@ import { config } from './configureActions';
 type SyntheticEvent = any; // import('react').SyntheticEvent;
 const findProto = (obj: unknown, callback: (proto: any) => boolean): Function | null => {
   const proto = Object.getPrototypeOf(obj);
-  if (!proto || callback(proto)) return proto;
+
+  if (!proto || callback(proto)) {
+    return proto;
+  }
   return findProto(proto, callback);
 };
 const isReactSyntheticEvent = (e: unknown): e is SyntheticEvent =>

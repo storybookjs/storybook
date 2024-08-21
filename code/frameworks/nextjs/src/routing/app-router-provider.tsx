@@ -36,7 +36,12 @@ function getSelectedParams(currentTree: FlightRouterState, params: Params = {}):
     const segment = parallelRoute[0];
     const isDynamicParameter = Array.isArray(segment);
     const segmentValue = isDynamicParameter ? segment[1] : segment;
-    if (!segmentValue || segmentValue.startsWith(PAGE_SEGMENT_KEY)) continue;
+
+    if (!segmentValue || segmentValue.startsWith(PAGE_SEGMENT_KEY)) {
+      continue;
+    }
+
+    // Ensure catchAll and optional catchall are turned into an array
 
     // Ensure catchAll and optional catchall are turned into an array
     const isCatchAll = isDynamicParameter && (segment[2] === 'c' || segment[2] === 'oc');
@@ -101,6 +106,7 @@ export const AppRouterProvider: React.FC<React.PropsWithChildren<AppRouterProvid
                   childNodes: new Map(),
                   tree,
                   url: pathname,
+                  loading: null,
                 }}
               >
                 {children}

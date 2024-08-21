@@ -19,27 +19,23 @@ export type Cadence = keyof typeof templatesByCadence;
 
 export type Template = {
   /**
-   * Readable name for the template, which will be used for feedback and the status page
-   * Follows the naming scheme when it makes sense:
-   * <framework> <"v"version|"Latest"|"Prerelease"> (<"Webpack"|"Vite"> | <"JavaScript"|"TypeScript">)
-   * React Latest - Webpack (TS)
-   * Next.js v12 (JS)
+   * Readable name for the template, which will be used for feedback and the status page Follows the
+   * naming scheme when it makes sense: <framework> <"v"version|"Latest"|"Prerelease">
+   * (<"Webpack"|"Vite"> | <"JavaScript"|"TypeScript">) React Latest - Webpack (TS) Next.js v12 (JS)
    * Angular CLI Prerelease
    */
   name: string;
   /**
-   * Script used to generate the base project of a template.
-   * The Storybook CLI will then initialize Storybook on top of that template.
-   * This is used to generate projects which are pushed to https://github.com/storybookjs/sandboxes
+   * Script used to generate the base project of a template. The Storybook CLI will then initialize
+   * Storybook on top of that template. This is used to generate projects which are pushed to
+   * https://github.com/storybookjs/sandboxes
    */
   script: string;
-  /**
-   * Environment variables to set when running the script.
-   */
+  /** Environment variables to set when running the script. */
   env?: Record<string, unknown>;
   /**
-   * Used to assert various things about the generated template.
-   * If the template is generated with a different expected framework, it will fail, detecting a possible regression.
+   * Used to assert various things about the generated template. If the template is generated with a
+   * different expected framework, it will fail, detecting a possible regression.
    */
   expected: {
     framework: string;
@@ -57,18 +53,18 @@ export type Template = {
     issues: string[];
   }>;
   /**
-   * Some sandboxes might not work properly in specific tasks temporarily, but we might
-   * still want to run the other tasks. Set the ones to skip in this property.
+   * Some sandboxes might not work properly in specific tasks temporarily, but we might still want
+   * to run the other tasks. Set the ones to skip in this property.
    */
   skipTasks?: SkippableTask[];
   /**
-   * Set this only while developing a newly created framework, to avoid using it in CI.
-   * NOTE: Make sure to always add a TODO comment to remove this flag in a subsequent PR.
+   * Set this only while developing a newly created framework, to avoid using it in CI. NOTE: Make
+   * sure to always add a TODO comment to remove this flag in a subsequent PR.
    */
   inDevelopment?: boolean;
   /**
-   * Some sandboxes might need extra modifications in the initialized Storybook,
-   * such as extend main.js, for setting specific feature flags.
+   * Some sandboxes might need extra modifications in the initialized Storybook, such as extend
+   * main.js, for setting specific feature flags.
    */
   modifications?: {
     skipTemplateStories?: boolean;
@@ -81,9 +77,10 @@ export type Template = {
     editAddons?: (addons: string[]) => string[];
   };
   /**
-   * Flag to indicate that this template is a secondary template, which is used mainly to test rather specific features.
-   * This means the template might be hidden from the Storybook status page or the repro CLI command.
-   * */
+   * Flag to indicate that this template is a secondary template, which is used mainly to test
+   * rather specific features. This means the template might be hidden from the Storybook status
+   * page or the repro CLI command.
+   */
   isInternal?: boolean;
 };
 
@@ -186,7 +183,7 @@ const baseTemplates = {
       },
       extraDependencies: ['server-only'],
     },
-    skipTasks: ['e2e-tests-dev', 'bench'],
+    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'nextjs/prerelease': {
     name: 'Next.js Prerelease (Webpack | TypeScript)',
@@ -203,7 +200,7 @@ const baseTemplates = {
         features: { experimentalRSC: true },
       },
     },
-    skipTasks: ['e2e-tests-dev', 'bench'],
+    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'experimental-nextjs-vite/default-ts': {
     name: 'Next.js Latest (Vite | TypeScript)',
@@ -253,7 +250,8 @@ const baseTemplates = {
     /**
      * 1. Create a Vite project with the React template
      * 2. Add React beta versions
-     * 3. Add resolutions for @types/react and @types/react-dom, see https://react.dev/blog/2024/04/25/react-19-upgrade-guide#installing
+     * 3. Add resolutions for @types/react and @types/react-dom, see
+     *    https://react.dev/blog/2024/04/25/react-19-upgrade-guide#installing
      * 4. Add @types/react and @types/react-dom pointing to the beta packages
      */
     script: `
@@ -295,8 +293,9 @@ const baseTemplates = {
     name: 'React Prerelease (Webpack | TypeScript)',
     /**
      * 1. Create a Webpack project with React beta versions
-     * 3. Add resolutions for @types/react and @types/react-dom, see https://react.dev/blog/2024/04/25/react-19-upgrade-guide#installing
-     * 4. Add @types/react and @types/react-dom pointing to the beta packages
+     * 2. Add resolutions for @types/react and @types/react-dom, see
+     *    https://react.dev/blog/2024/04/25/react-19-upgrade-guide#installing
+     * 3. Add @types/react and @types/react-dom pointing to the beta packages
      */
     script: `
       yarn create webpack5-react {{beforeDir}} --version-react="beta" --version-react-dom="beta" && \
@@ -573,9 +572,9 @@ const baseTemplates = {
 } satisfies Record<string, BaseTemplates>;
 
 /**
- * Internal templates reuse config from other templates and add extra config on top.
- * They must contain an id that starts with 'internal/' and contain "isInternal: true".
- * They will be hidden by default in the Storybook status page.
+ * Internal templates reuse config from other templates and add extra config on top. They must
+ * contain an id that starts with 'internal/' and contain "isInternal: true". They will be hidden by
+ * default in the Storybook status page.
  */
 const internalTemplates = {
   'internal/react18-webpack-babel': {
@@ -727,6 +726,7 @@ export const normal: TemplateKey[] = [
   'svelte-vite/default-ts',
   'svelte-kit/skeleton-ts',
   'nextjs/default-ts',
+  'experimental-nextjs-vite/default-ts',
   'bench/react-vite-default-ts',
   'bench/react-webpack-18-ts',
   'bench/react-vite-default-ts-nodocs',
@@ -749,7 +749,6 @@ export const daily: TemplateKey[] = [
   ...merged,
   'angular-cli/prerelease',
   'cra/default-js',
-  'experimental-nextjs-vite/default-ts',
   'react-vite/default-js',
   'react-vite/prerelease-ts',
   'react-webpack/prerelease-ts',

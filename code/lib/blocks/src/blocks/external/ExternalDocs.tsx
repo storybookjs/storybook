@@ -15,7 +15,10 @@ function usePreview<TRenderer extends Renderer = Renderer>(
   projectAnnotations: ProjectAnnotations<TRenderer>
 ) {
   const previewRef = useRef<ExternalPreview<TRenderer>>();
-  if (!previewRef.current) previewRef.current = new ExternalPreview<TRenderer>(projectAnnotations);
+
+  if (!previewRef.current) {
+    previewRef.current = new ExternalPreview<TRenderer>(projectAnnotations);
+  }
   return previewRef.current;
 }
 

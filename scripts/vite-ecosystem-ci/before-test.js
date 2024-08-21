@@ -1,7 +1,8 @@
 /**
- * This script is used to copy the resolutions from the root package.json to the sandbox package.json.
- * This is necessary because the sandbox package.json is used to run the tests and the resolutions are needed to run the tests.
- * The vite-ecosystem-ci, though, sets the resolutions in the root package.json.
+ * This script is used to copy the resolutions from the root package.json to the sandbox
+ * package.json. This is necessary because the sandbox package.json is used to run the tests and the
+ * resolutions are needed to run the tests. The vite-ecosystem-ci, though, sets the resolutions in
+ * the root package.json.
  */
 import { readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';

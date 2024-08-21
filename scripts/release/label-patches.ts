@@ -1,4 +1,4 @@
-import program from 'commander';
+import { program } from 'commander';
 import ora from 'ora';
 import { v4 as uuidv4 } from 'uuid';
 

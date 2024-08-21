@@ -1,7 +1,5 @@
 import React from 'react';
-/**
- * This message should show up in the Docs panel if everything works fine.
- */
+/** This message should show up in the Docs panel if everything works fine. */
 export const EmpireAlert = ({
   title = 'Code Yellow',
   message

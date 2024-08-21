@@ -1,4 +1,4 @@
-import program from 'commander';
+import { program } from 'commander';
 import { execaCommand } from 'execa';
 import { existsSync } from 'fs';
 import { copy, emptyDir, remove, writeFile } from 'fs-extra';

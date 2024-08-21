@@ -4,11 +4,10 @@ import { dedent } from 'ts-dedent';
 import { StorybookError } from './storybook-error';
 
 /**
- * If you can't find a suitable category for your error, create one
- * based on the package name/file path of which the error is thrown.
- * For instance:
- * If it's from @storybook/node-logger, then NODE-LOGGER
- * If it's from a package that is too broad, e.g. @storybook/cli in the init command, then use a combination like CLI_INIT
+ * If you can't find a suitable category for your error, create one based on the package name/file
+ * path of which the error is thrown. For instance: If it's from `@storybook/node-logger`, then
+ * NODE-LOGGER If it's from a package that is too broad, e.g. @storybook/cli in the init command,
+ * then use a combination like CLI_INIT
  */
 export enum Category {
   CLI = 'CLI',

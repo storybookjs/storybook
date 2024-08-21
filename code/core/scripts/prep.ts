@@ -312,9 +312,10 @@ async function run() {
           await context.dispose();
 
           /**
-           * I'm leaving this in place, because I want to start utilizing it in the future.
-           * I'm imagining a github action that shows the bundle analysis in the PR.
-           * I didn't have the project-scope to make that happen now, but I want expose this very rich useful data accessible, for the next person investigating bundle size issues.
+           * I'm leaving this in place, because I want to start utilizing it in the future. I'm
+           * imagining a github action that shows the bundle analysis in the PR. I didn't have the
+           * project-scope to make that happen now, but I want expose this very rich useful data
+           * accessible, for the next person investigating bundle size issues.
            */
 
           // if (out.metafile) {

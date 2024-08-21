@@ -17,7 +17,10 @@ export type MonorepoType = keyof typeof monorepoConfigs | 'Workspaces' | undefin
 
 export const getMonorepoType = (): MonorepoType => {
   const projectRootPath = getProjectRoot();
-  if (!projectRootPath) return undefined;
+
+  if (!projectRootPath) {
+    return undefined;
+  }
 
   const keys = Object.keys(monorepoConfigs) as (keyof typeof monorepoConfigs)[];
   const monorepoType: MonorepoType = keys.find((monorepo) => {

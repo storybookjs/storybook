@@ -54,7 +54,13 @@ const DEFAULT_STORY_NAME = 'Unnamed Story';
 function extractAnnotation<TRenderer extends Renderer = Renderer>(
   annotation: NamedOrDefaultProjectAnnotations<TRenderer>
 ) {
-  if (!annotation) return {};
+  if (!annotation) {
+    return {};
+  }
+  // support imports such as
+  // import * as annotations from '.storybook/preview'
+  // import annotations from '.storybook/preview'
+  // in both cases: 1 - the file has a default export; 2 - named exports only
   // support imports such as
   // import * as annotations from '.storybook/preview'
   // import annotations from '.storybook/preview'
@@ -216,7 +222,11 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
       storyName,
       load: async () => {
         // First run any registered cleanup function
-        for (const callback of [...cleanups].reverse()) await callback();
+
+        // First run any registered cleanup function
+        for (const callback of [...cleanups].reverse()) {
+          await callback();
+        }
         cleanups.length = 0;
 
         const context = initializeContext();
@@ -338,7 +348,9 @@ async function runStory<TRenderer extends Renderer>(
   story: PreparedStory<TRenderer>,
   context: StoryContext<TRenderer>
 ) {
-  for (const callback of [...cleanups].reverse()) await callback();
+  for (const callback of [...cleanups].reverse()) {
+    await callback();
+  }
   cleanups.length = 0;
 
   if (!context.canvasElement) {
@@ -353,7 +365,10 @@ async function runStory<TRenderer extends Renderer>(
   }
 
   context.loaded = await story.applyLoaders(context);
-  if (context.abortSignal.aborted) return;
+
+  if (context.abortSignal.aborted) {
+    return;
+  }
 
   cleanups.push(...(await story.applyBeforeEach(context)).filter(Boolean));
 
@@ -365,7 +380,9 @@ async function runStory<TRenderer extends Renderer>(
     await context.mount();
   }
 
-  if (context.abortSignal.aborted) return;
+  if (context.abortSignal.aborted) {
+    return;
+  }
 
   if (playFunction) {
     if (!isMountDestructured) {

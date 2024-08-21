@@ -1,8 +1,6 @@
 /// <reference path="../typings.d.ts" />
 
-/**
- * HOOKS API
- */
+/** HOOKS API */
 export {
   useArgs,
   useCallback,
@@ -19,25 +17,20 @@ export {
   HooksContext,
 } from './addons';
 
-/**
- * DECORATORS API
- */
+/** DECORATORS API */
 export { makeDecorator } from './addons';
 
 /**
  * ADDON API
+ *
  * @deprecated
  */
 export { addons, mockChannel } from './addons';
 
-/**
- * DOCS API
- */
+/** DOCS API */
 export { DocsContext } from './preview-web';
 
-/**
- * SIMULATION API
- */
+/** SIMULATION API */
 export { simulatePageLoad, simulateDOMContentLoaded } from './preview-web';
 
 export {
@@ -66,9 +59,7 @@ export { createPlaywrightTest } from './modules/store/csf/portable-stories';
 
 export type { PropDescriptor } from './store';
 
-/**
- * STORIES API
- */
+/** STORIES API */
 export { StoryStore } from './store';
 export { Preview, PreviewWeb, PreviewWithSelection, UrlStore, WebView } from './preview-web';
 export type { SelectionStore, View } from './preview-web';

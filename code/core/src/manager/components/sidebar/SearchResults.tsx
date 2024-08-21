@@ -112,7 +112,9 @@ const Highlight: FC<PropsWithChildren<{ match?: Match }>> = React.memo(function 
   children,
   match,
 }) {
-  if (!match) return children;
+  if (!match) {
+    return children;
+  }
   const { value, indices } = match;
   const { nodes: result } = indices.reduce<{ cursor: number; nodes: ReactNode[] }>(
     ({ cursor, nodes }, [start, end], index, { length }) => {
@@ -250,10 +252,15 @@ export const SearchResults: FC<{
   const api = useStorybookApi();
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
-      if (!enableShortcuts || isLoading || event.repeat) return;
+      if (!enableShortcuts || isLoading || event.repeat) {
+        return;
+      }
       if (matchesModifiers(false, event) && matchesKeyCode('Escape', event)) {
         const target = event.target as Element;
-        if (target?.id === 'storybook-explorer-searchfield') return; // handled by downshift
+
+        if (target?.id === 'storybook-explorer-searchfield') {
+          return; // handled by downshift
+        }
         event.preventDefault();
         closeMenu();
       }

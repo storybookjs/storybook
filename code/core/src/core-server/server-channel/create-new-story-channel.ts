@@ -26,9 +26,7 @@ export function initCreateNewStoryChannel(
   options: Options,
   coreOptions: CoreConfig
 ) {
-  /**
-   * Listens for events to create a new storyfile
-   */
+  /** Listens for events to create a new storyfile */
   channel.on(
     CREATE_NEW_STORYFILE_REQUEST,
     async (data: RequestData<CreateNewStoryRequestPayload>) => {

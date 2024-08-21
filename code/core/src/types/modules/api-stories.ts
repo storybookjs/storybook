@@ -66,10 +66,9 @@ export type API_HashEntry =
   | API_StoryEntry;
 
 /**
- * The `IndexHash` is our manager-side representation of the `StoryIndex`.
- * We create entries in the hash not only for each story or docs entry, but
- * also for each "group" of the component (split on '/'), as that's how things
- * are manipulated in the manager (i.e. in the sidebar)
+ * The `IndexHash` is our manager-side representation of the `StoryIndex`. We create entries in the
+ * hash not only for each story or docs entry, but also for each "group" of the component (split on
+ * '/'), as that's how things are manipulated in the manager (i.e. in the sidebar)
  */
 export interface API_IndexHash {
   [id: string]: API_HashEntry;

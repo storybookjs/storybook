@@ -43,9 +43,7 @@ const nestedCustomPropType = {
 };
 
 const SOME_INLINE_PROP_TYPES = {
-  /**
-   * Hey Hey!
-   */
+  /** Hey Hey! */
   inlineString: PropTypes.string,
   inlineBool: PropTypes.bool,
   inlineNumber: PropTypes.number,
@@ -155,9 +153,7 @@ PropTypesProps.propTypes = {
   veryLongFuncWithJsDoc: PropTypes.func,
   namedDefaultFunc: PropTypes.func,
   number: PropTypes.number,
-  /**
-   * Plain object propType (use shape!!)
-   */
+  /** Plain object propType (use shape!!) */
   obj: PropTypes.object,
   symbol: PropTypes.symbol,
   node: PropTypes.node,
@@ -171,13 +167,9 @@ PropTypesProps.propTypes = {
   functionalElementType: PropTypes.elementType,
   classElementType: PropTypes.elementType,
   elementWithProps: PropTypes.elementType,
-  /**
-   * `instanceOf` is also supported and the custom type will be shown instead of `instanceOf`
-   */
+  /** `instanceOf` is also supported and the custom type will be shown instead of `instanceOf` */
   instanceOf: PropTypes.instanceOf(Set),
-  /**
-   * `oneOf` is basically an Enum which is also supported but can be pretty big.
-   */
+  /** `oneOf` is basically an Enum which is also supported but can be pretty big. */
   oneOfString: PropTypes.oneOf(['News', 'Photos']),
   oneOfNumeric: PropTypes.oneOf([0, 1, 2, 3]),
   oneOfShapes: PropTypes.oneOf([
@@ -187,22 +179,16 @@ PropTypesProps.propTypes = {
   oneOfComplexShapes: PropTypes.oneOf([
     PropTypes.shape({
       /**
-       *  Just an internal propType for a shape.
-       *  It's also required, and as you can see it supports multi-line comments!
+       * Just an internal propType for a shape. It's also required, and as you can see it supports
+       * multi-line comments!
        */
       id: PropTypes.number.isRequired,
-      /**
-       *  A simple non-required function
-       */
+      /** A simple non-required function */
       func: PropTypes.func,
-      /**
-       * An `arrayOf` shape
-       */
+      /** An `arrayOf` shape */
       arr: PropTypes.arrayOf(
         PropTypes.shape({
-          /**
-           * 5-level deep propType definition and still works.
-           */
+          /** 5-level deep propType definition and still works. */
           index: PropTypes.number.isRequired,
         })
       ),
@@ -223,13 +209,9 @@ PropTypesProps.propTypes = {
     'News',
     [{ nested: PropTypes.shape({ foo: PropTypes.string }) }],
   ]),
-  /**
-   *  A multi-type prop is also valid and is displayed as `Union<String|Message>`
-   */
+  /** A multi-type prop is also valid and is displayed as `Union<String|Message>` */
   oneOfType: PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(Set)]),
-  /**
-   * array of a primitive type
-   */
+  /** Array of a primitive type */
   arrayOfPrimitive: PropTypes.arrayOf(PropTypes.number),
   arrayOfNamedObject: PropTypes.arrayOf(NAMED_OBJECT),
   arrayOfShortInlineObject: PropTypes.arrayOf({
@@ -255,31 +237,23 @@ PropTypesProps.propTypes = {
   arrayOfComplexShape: PropTypes.arrayOf(
     PropTypes.shape({
       /**
-       *  Just an internal propType for a shape.
-       *  It's also required, and as you can see it supports multi-line comments!
+       * Just an internal propType for a shape. It's also required, and as you can see it supports
+       * multi-line comments!
        */
       id: PropTypes.number.isRequired,
-      /**
-       *  A simple non-required function
-       */
+      /** A simple non-required function */
       func: PropTypes.func,
-      /**
-       * An `arrayOf` shape
-       */
+      /** An `arrayOf` shape */
       arr: PropTypes.arrayOf(
         PropTypes.shape({
-          /**
-           * 5-level deep propType definition and still works.
-           */
+          /** 5-level deep propType definition and still works. */
           index: PropTypes.number.isRequired,
         })
       ),
     })
   ),
   arrayExternalShape: PropTypes.arrayOf(PropTypes.shape(PRESET_SHAPE)),
-  /**
-   *  A simple `objectOf` propType.
-   */
+  /** A simple `objectOf` propType. */
   simpleObjectOf: PropTypes.objectOf(PropTypes.number),
   objectOfShortInlineObject: PropTypes.objectOf({
     foo: PropTypes.string,
@@ -294,28 +268,20 @@ PropTypesProps.propTypes = {
       foo: string,
     })
   ),
-  /**
-   *  A very complex `objectOf` propType.
-   */
+  /** A very complex `objectOf` propType. */
   objectOfComplexShape: PropTypes.objectOf(
     PropTypes.shape({
       /**
-       *  Just an internal propType for a shape.
-       *  It's also required, and as you can see it supports multi-line comments!
+       * Just an internal propType for a shape. It's also required, and as you can see it supports
+       * multi-line comments!
        */
       id: PropTypes.number.isRequired,
-      /**
-       *  A simple non-required function
-       */
+      /** A simple non-required function */
       func: PropTypes.func,
-      /**
-       * An `arrayOf` shape
-       */
+      /** An `arrayOf` shape */
       arr: PropTypes.arrayOf(
         PropTypes.shape({
-          /**
-           * 5-level deep propType definition and still works.
-           */
+          /** 5-level deep propType definition and still works. */
           index: PropTypes.number.isRequired,
         })
       ),
@@ -336,28 +302,22 @@ PropTypesProps.propTypes = {
     prop7: string,
   }),
   /**
-   * propType for shape with nested arrayOf
+   * PropType for shape with nested arrayOf
    *
    * Also, multi-line description
    */
   shapeComplex: PropTypes.shape({
     /**
-     *  Just an internal propType for a shape.
-     *  It's also required, and as you can see it supports multi-line comments!
+     * Just an internal propType for a shape. It's also required, and as you can see it supports
+     * multi-line comments!
      */
     id: PropTypes.number.isRequired,
-    /**
-     *  A simple non-required function
-     */
+    /** A simple non-required function */
     func: PropTypes.func,
-    /**
-     * An `arrayOf` shape
-     */
+    /** An `arrayOf` shape */
     arr: PropTypes.arrayOf(
       PropTypes.shape({
-        /**
-         * 5-level deep propType definition and still works.
-         */
+        /** 5-level deep propType definition and still works. */
         index: PropTypes.number.isRequired,
       })
     ),
@@ -379,11 +339,7 @@ PropTypesProps.propTypes = {
     quantity: PropTypes.number,
   }),
   namedExact: PropTypes.exact(NAMED_OBJECT),
-  /**
-   * test string with a comment that has
-   * two identical lines
-   * two identical lines
-   */
+  /** Test string with a comment that has two identical lines two identical lines */
   optionalString: PropTypes.string,
   requiredString: PropTypes.string.isRequired,
   nullDefaultValue: PropTypes.string,

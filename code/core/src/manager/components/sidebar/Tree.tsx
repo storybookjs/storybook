@@ -187,7 +187,10 @@ const Node = React.memo<NodeProps>(function Node({
           onClick={(event) => {
             event.preventDefault();
             onSelectStoryId(item.id);
-            if (isMobile) setMobileMenuOpen(false);
+
+            if (isMobile) {
+              setMobileMenuOpen(false);
+            }
           }}
           {...(item.type === 'docs' && { docsMode })}
         >
@@ -341,7 +344,10 @@ const Node = React.memo<NodeProps>(function Node({
           onClick={(event) => {
             event.preventDefault();
             setExpanded({ ids: [item.id], value: !isExpanded });
-            if (item.type === 'component' && !isExpanded && isDesktop) onSelectStoryId(item.id);
+
+            if (item.type === 'component' && !isExpanded && isDesktop) {
+              onSelectStoryId(item.id);
+            }
           }}
           onMouseEnter={() => {
             if (item.type === 'component') {
@@ -428,9 +434,16 @@ export const Tree = React.memo<{
       Object.keys(data).reduce<[string[], string[], ExpandedState]>(
         (acc, id) => {
           const item = data[id];
-          if (item.type === 'root') acc[0].push(id);
-          else if (!item.parent) acc[1].push(id);
-          if (item.type === 'root' && item.startCollapsed) acc[2][id] = false;
+
+          if (item.type === 'root') {
+            acc[0].push(id);
+          } else if (!item.parent) {
+            acc[1].push(id);
+          }
+
+          if (item.type === 'root' && item.startCollapsed) {
+            acc[2][id] = false;
+          }
           return acc;
         },
         [[], [], {}]
@@ -459,15 +472,26 @@ export const Tree = React.memo<{
   const singleStoryComponentIds = useMemo(() => {
     return Object.keys(data).filter((id) => {
       const entry = data[id];
-      if (entry.type !== 'component') return false;
+
+      if (entry.type !== 'component') {
+        return false;
+      }
 
       const { children = [], name } = entry;
-      if (children.length !== 1) return false;
+
+      if (children.length !== 1) {
+        return false;
+      }
 
       const onlyChild = data[children[0]];
 
-      if (onlyChild.type === 'docs') return true;
-      if (onlyChild.type === 'story') return isStoryHoistable(onlyChild.name, name);
+      if (onlyChild.type === 'docs') {
+        return true;
+      }
+
+      if (onlyChild.type === 'story') {
+        return isStoryHoistable(onlyChild.name, name);
+      }
       return false;
     });
   }, [data]);

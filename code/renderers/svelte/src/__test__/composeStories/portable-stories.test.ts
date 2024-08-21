@@ -155,9 +155,9 @@ describe('ComposeStories types', () => {
       ...stories,
 
       /**
-       * Types of property 'argTypes' are incompatible.
-       * Type '{ backgroundColor: { control: string; }; size: { control: { type: string; }; options: string[]; }; }'
-       * has no properties in common with type 'Partial<ArgTypes<ComponentType>>'.
+       * Types of property 'argTypes' are incompatible. Type '{ backgroundColor: { control: string;
+       * }; size: { control: { type: string; }; options: string[]; }; }' has no properties in common
+       * with type 'Partial<ArgTypes<ComponentType>>'.
        */
       // @ts-expect-error fix this later
       default: stories.default satisfies Meta<typeof Button>,
@@ -170,7 +170,9 @@ const testCases = Object.values(composeStories(stories)).map(
   (Story) => [Story.storyName, Story] as [string, typeof Story]
 );
 it.each(testCases)('Renders %s story', async (_storyName, Story) => {
-  if (_storyName === 'CSF2StoryWithLocale') return;
+  if (_storyName === 'CSF2StoryWithLocale') {
+    return;
+  }
   await Story.run();
   expect(document.body).toMatchSnapshot();
 });

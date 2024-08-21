@@ -69,12 +69,10 @@ export const configureCss = (baseConfig: WebpackConfig, nextConfig: NextConfig):
 };
 
 /**
- * webpack v4-v6 api
- * https://webpack.js.org/loaders/css-loader/#url
+ * Webpack v4-v6 api https://webpack.js.org/loaders/css-loader/#url
  * https://webpack.js.org/loaders/css-loader/#import
  *
- * webpack v3 api
- * https://webpack-3.cdn.bcebos.com/loaders/css-loader/#url
+ * Webpack v3 api https://webpack-3.cdn.bcebos.com/loaders/css-loader/#url
  * https://webpack-3.cdn.bcebos.com/loaders/css-loader/#import
  */
 const getImportAndUrlCssLoaderOptions = (nextConfig: NextConfig) =>
@@ -110,9 +108,8 @@ const isCssLoaderV6 = () => {
     return semver.gte(cssLoaderVersion, '6.0.0');
   } catch {
     /**
-     *  css-loader isn't a resolvable dependency
-     *  thus storybook webpack 5 manager will
-     *  resolve to use its version which is v5
+     * Css-loader isn't a resolvable dependency thus storybook webpack 5 manager will resolve to use
+     * its version which is v5
      */
     return false;
   }

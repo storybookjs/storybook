@@ -10,7 +10,10 @@ const SIGNATURE_REGEXP = /^\(.*\) => /;
 export const convert = (type: PTType): SBType | any => {
   const { name, raw, computed, value } = type;
   const base: any = {};
-  if (typeof raw !== 'undefined') base.raw = raw;
+
+  if (typeof raw !== 'undefined') {
+    base.raw = raw;
+  }
 
   switch (name) {
     case 'enum': {

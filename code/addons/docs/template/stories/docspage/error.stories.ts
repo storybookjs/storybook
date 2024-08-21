@@ -7,9 +7,7 @@ export default {
   parameters: { chromatic: { disable: true } },
 };
 
-/**
- * A story that throws
- */
+/** A story that throws */
 export const ErrorStory = {
   decorators: [
     () => {

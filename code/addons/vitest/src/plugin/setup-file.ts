@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
 /* eslint-disable no-underscore-dangle */
-import { afterAll, vi } from 'vitest';
-import type { RunnerTask, TaskMeta } from 'vitest';
+import { afterEach, vi } from 'vitest';
+import type { RunnerTask } from 'vitest';
 
 import { Channel } from 'storybook/internal/channels';
 
@@ -13,28 +13,26 @@ declare global {
   var __STORYBOOK_ADDONS_CHANNEL__: Channel;
 }
 
-type ExtendedMeta = TaskMeta & { storyId: string; hasPlayFunction: boolean };
+export type Task = Partial<RunnerTask> & {
+  meta: Record<string, any>;
+};
 
 const transport = { setHandler: vi.fn(), send: vi.fn() };
-globalThis.__STORYBOOK_ADDONS_CHANNEL__ = new Channel({ transport });
+globalThis.__STORYBOOK_ADDONS_CHANNEL__ ??= new Channel({ transport });
 
-// The purpose of this set up file is to modify the error message of failed tests
-// and inject a link to the story in Storybook
-const modifyErrorMessage = (currentTask: RunnerTask) => {
-  const meta = currentTask.meta as ExtendedMeta;
+export const modifyErrorMessage = ({ task }: { task: Task }) => {
+  const meta = task.meta;
   if (
-    currentTask.type === 'test' &&
-    currentTask.result?.state === 'fail' &&
+    task.type === 'test' &&
+    task.result?.state === 'fail' &&
     meta.storyId &&
-    currentTask.result.errors?.[0]
+    task.result.errors?.[0]
   ) {
-    const currentError = currentTask.result.errors[0];
+    const currentError = task.result.errors[0];
     const storybookUrl = import.meta.env.__STORYBOOK_URL__;
     const storyUrl = `${storybookUrl}/?path=/story/${meta.storyId}&addonPanel=storybook/interactions/panel`;
     currentError.message = `\n\x1B[34mClick to debug the error directly in Storybook: ${storyUrl}\x1B[39m\n\n${currentError.message}`;
   }
 };
 
-afterAll((suite) => {
-  suite.tasks.forEach(modifyErrorMessage);
-});
+afterEach(modifyErrorMessage);

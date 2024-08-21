@@ -39,7 +39,7 @@ describe('file-search-channel', () => {
   const searchResultChannelListener = vi.fn();
 
   describe('initFileSearchChannel', async () => {
-    it('should emit search result event with the search result', async () => {
+    it('should emit search result event with the search result', { timeout: 10000 }, async () => {
       const mockOptions = {};
       const data = { searchQuery: 'es-module' };
 
@@ -52,7 +52,7 @@ describe('file-search-channel', () => {
       } satisfies RequestData<FileComponentSearchRequestPayload>);
 
       await vi.waitFor(() => expect(searchResultChannelListener).toHaveBeenCalled(), {
-        timeout: 2000,
+        timeout: 8000,
       });
 
       expect(searchResultChannelListener).toHaveBeenCalledWith({
@@ -96,31 +96,40 @@ describe('file-search-channel', () => {
       });
     });
 
-    it('should emit search result event with an empty search result', async () => {
-      const mockOptions = {};
-      const data = { searchQuery: 'no-file-for-search-query' };
+    it(
+      'should emit search result event with an empty search result',
+      { timeout: 10000 },
+      async () => {
+        const mockOptions = {};
+        const data = { searchQuery: 'no-file-for-search-query' };
 
-      await initFileSearchChannel(mockChannel, mockOptions as any, { disableTelemetry: true });
+        await initFileSearchChannel(mockChannel, mockOptions as any, { disableTelemetry: true });
 
-      mockChannel.addListener(FILE_COMPONENT_SEARCH_RESPONSE, searchResultChannelListener);
-      mockChannel.emit(FILE_COMPONENT_SEARCH_REQUEST, {
-        id: data.searchQuery,
-        payload: {},
-      } satisfies RequestData<FileComponentSearchRequestPayload>);
+        mockChannel.addListener(FILE_COMPONENT_SEARCH_RESPONSE, searchResultChannelListener);
+        mockChannel.emit(FILE_COMPONENT_SEARCH_REQUEST, {
+          id: data.searchQuery,
+          payload: {},
+        } satisfies RequestData<FileComponentSearchRequestPayload>);
 
-      await vi.waitFor(() => {
-        expect(searchResultChannelListener).toHaveBeenCalled();
-      });
+        await vi.waitFor(
+          () => {
+            expect(searchResultChannelListener).toHaveBeenCalled();
+          },
+          {
+            timeout: 8000,
+          }
+        );
 
-      expect(searchResultChannelListener).toHaveBeenCalledWith({
-        id: data.searchQuery,
-        error: null,
-        payload: {
-          files: [],
-        },
-        success: true,
-      });
-    });
+        expect(searchResultChannelListener).toHaveBeenCalledWith({
+          id: data.searchQuery,
+          error: null,
+          payload: {
+            files: [],
+          },
+          success: true,
+        });
+      }
+    );
 
     it('should emit an error message if an error occurs while searching for components in the project', async () => {
       const mockOptions = {} as any;

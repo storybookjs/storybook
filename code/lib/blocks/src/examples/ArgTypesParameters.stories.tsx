@@ -2,9 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 
 import { ArgTypesParameters } from './ArgTypesParameters';
 
-/**
- * Reference stories to be used by the ArgTypes stories
- */
+/** Reference stories to be used by the ArgTypes stories */
 const meta = {
   title: 'examples/Stories for the ArgTypes Block',
   component: ArgTypesParameters,

@@ -63,7 +63,10 @@ export const syncDocs: Task = {
       // Syncs update file
       copyFile(srcFilePath, targetFilePath, (err) => {
         logger.info(`Updated ${filename}.`);
-        if (err) throw err;
+
+        if (err) {
+          throw err;
+        }
       });
     });
   },

@@ -48,10 +48,18 @@ const isObject = (o: unknown): o is object =>
 const isModule = (o: unknown): o is NodeModule =>
   Object.prototype.toString.call(o) === '[object Module]';
 const isInstrumentable = (o: unknown) => {
-  if (!isObject(o) && !isModule(o)) return false;
-  if (o.constructor === undefined) return true;
+  if (!isObject(o) && !isModule(o)) {
+    return false;
+  }
+
+  if (o.constructor === undefined) {
+    return true;
+  }
   const proto = o.constructor.prototype;
-  if (!isObject(proto)) return false;
+
+  if (!isObject(proto)) {
+    return false;
+  }
   return true;
 };
 
@@ -81,16 +89,17 @@ const getInitialState = (): State => ({
 
 const getRetainedState = (state: State, isDebugging = false) => {
   const calls = (isDebugging ? state.shadowCalls : state.calls).filter((call) => call.retain);
-  if (!calls.length) return undefined;
+
+  if (!calls.length) {
+    return undefined;
+  }
   const callRefsByResult = new Map(
     Array.from(state.callRefsByResult.entries()).filter(([, ref]) => ref.retain)
   );
   return { cursor: calls.length, calls, callRefsByResult };
 };
 
-/**
- * This class is not supposed to be used directly. Use the `instrument` function below instead.
- */
+/** This class is not supposed to be used directly. Use the `instrument` function below instead. */
 export class Instrumenter {
   channel: Channel;
 
@@ -159,8 +168,11 @@ export class Instrumenter {
 
     // Trash non-retained state and clear the log when switching stories, but not on initial boot.
     this.channel.on(SET_CURRENT_STORY, () => {
-      if (this.initialized) this.cleanup();
-      else this.initialized = true;
+      if (this.initialized) {
+        this.cleanup();
+      } else {
+        this.initialized = true;
+      }
     });
 
     const start = ({ storyId, playUntil }: { storyId: string; playUntil?: Call['id'] }) => {
@@ -176,7 +188,9 @@ export class Instrumenter {
 
       const log = this.getLog(storyId);
       this.setState(storyId, ({ shadowCalls }) => {
-        if (playUntil || !log.length) return { playUntil };
+        if (playUntil || !log.length) {
+          return { playUntil };
+        }
         const firstRowIndex = shadowCalls.findIndex((call) => call.id === log[0].callId);
         return {
           playUntil: shadowCalls
@@ -193,7 +207,9 @@ export class Instrumenter {
     const back = ({ storyId }: { storyId: string }) => {
       const log = this.getLog(storyId).filter((call) => !call.ancestors.length);
       const last = log.reduceRight((res, item, index) => {
-        if (res >= 0 || item.status === CallStates.WAITING) return res;
+        if (res >= 0 || item.status === CallStates.WAITING) {
+          return res;
+        }
         return index;
       }, -1);
       start({ storyId, playUntil: log[last - 1]?.callId });
@@ -205,7 +221,10 @@ export class Instrumenter {
       const shadowCall = shadowCalls.find(({ id }) => id === callId);
       if (!call && shadowCall && Object.values(resolvers).length > 0) {
         const nextId = this.getLog(storyId).find((c) => c.status === CallStates.WAITING)?.callId;
-        if (shadowCall.id !== nextId) this.setState(storyId, { playUntil: shadowCall.id });
+
+        if (shadowCall.id !== nextId) {
+          this.setState(storyId, { playUntil: shadowCall.id });
+        }
         Object.values(resolvers).forEach((resolve) => resolve());
       } else {
         start({ storyId, playUntil: callId });
@@ -218,8 +237,12 @@ export class Instrumenter {
         Object.values(resolvers).forEach((resolve) => resolve());
       } else {
         const nextId = this.getLog(storyId).find((c) => c.status === CallStates.WAITING)?.callId;
-        if (nextId) start({ storyId, playUntil: nextId });
-        else end({ storyId });
+
+        if (nextId) {
+          start({ storyId, playUntil: nextId });
+        } else {
+          end({ storyId });
+        }
       }
     };
 
@@ -255,7 +278,10 @@ export class Instrumenter {
     this.state = Object.entries(this.state).reduce(
       (acc, [storyId, state]) => {
         const retainedState = getRetainedState(state);
-        if (!retainedState) return acc;
+
+        if (!retainedState) {
+          return acc;
+        }
         acc[storyId] = Object.assign(getInitialState(), retainedState);
         return acc;
       },
@@ -304,7 +330,9 @@ export class Instrumenter {
     options: Options,
     depth = 0
   ): PatchedObj<TObj> {
-    if (!isInstrumentable(obj)) return obj as PatchedObj<TObj>;
+    if (!isInstrumentable(obj)) {
+      return obj as PatchedObj<TObj>;
+    }
 
     const { mutate = false, path = [] } = options;
 
@@ -418,10 +446,14 @@ export class Instrumenter {
     // Keeping this function here, as removing it means we need to refactor the deserializing that happens in addon-interactions
     const maximumDepth = 25; // mimicks the max depth of telejson
     const serializeValues = (value: any, depth: number, seen: unknown[]): any => {
-      if (seen.includes(value)) return '[Circular]';
+      if (seen.includes(value)) {
+        return '[Circular]';
+      }
       seen = [...seen, value];
 
-      if (depth > maximumDepth) return '...';
+      if (depth > maximumDepth) {
+        return '...';
+      }
 
       if (callRefsByResult.has(value)) {
         return callRefsByResult.get(value);
@@ -530,7 +562,11 @@ export class Instrumenter {
       // This is picked up in the `track` function and used for call metadata.
       const finalArgs = actualArgs.map((arg: any) => {
         // We only want to wrap plain functions, not objects.
-        if (typeof arg !== 'function' || Object.keys(arg).length) return arg;
+
+        // We only want to wrap plain functions, not objects.
+        if (typeof arg !== 'function' || Object.keys(arg).length) {
+          return arg;
+        }
 
         return (...args: any) => {
           // Set the cursor and ancestors for calls that happen inside the callback.
@@ -549,7 +585,9 @@ export class Instrumenter {
             }
             return res;
           } finally {
-            if (!willRestore) restore();
+            if (!willRestore) {
+              restore();
+            }
           }
         };
       });
@@ -644,10 +682,10 @@ export class Instrumenter {
 }
 
 /**
- * Instruments an object or module by traversing its properties, patching any functions (methods)
- * to enable debugging. Patched functions will emit a `call` event when invoked.
- * When intercept = true, patched functions will return a Promise when the debugger stops before
- * this function. As such, "interceptable" functions will have to be `await`-ed.
+ * Instruments an object or module by traversing its properties, patching any functions (methods) to
+ * enable debugging. Patched functions will emit a `call` event when invoked. When intercept = true,
+ * patched functions will return a Promise when the debugger stops before this function. As such,
+ * "interceptable" functions will have to be `await`-ed.
  */
 export function instrument<TObj extends Record<string, any>>(
   obj: TObj,

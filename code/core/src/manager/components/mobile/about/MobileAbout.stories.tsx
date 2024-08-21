@@ -8,9 +8,7 @@ import { ManagerContext } from '@storybook/core/manager-api';
 import { LayoutProvider, useLayout } from '../../layout/LayoutProvider';
 import { MobileAbout } from './MobileAbout';
 
-/**
- * A helper component to open the about page via the MobileLayoutContext
- */
+/** A helper component to open the about page via the MobileLayoutContext */
 const OpenAboutHelper = ({ children }: { children: any }) => {
   const { setMobileAboutOpen } = useLayout();
   useEffect(() => {

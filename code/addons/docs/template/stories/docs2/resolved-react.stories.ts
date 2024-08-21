@@ -5,15 +5,18 @@ import * as ReactDomServer from 'react-dom/server';
 import { expect, within } from '@storybook/test';
 
 /**
- * This component is used to display the resolved version of React and its related packages.
- * As long as `@storybook/addon-docs` is installed, `react` and `react-dom` should be available to import from and should resolve to the same version.
+ * This component is used to display the resolved version of React and its related packages. As long
+ * as `@storybook/addon-docs` is installed, `react` and `react-dom` should be available to import
+ * from and should resolve to the same version.
  *
  * The autodocs here ensures that it also works in the generated documentation.
  *
  * - See the [MDX docs](/docs/addons-docs-docs2-resolvedreact--mdx) for how it resolves in MDX.
- * - See the [Story](/story/addons-docs-docs2-resolvedreact--story) for how it resolves in the actual story.
+ * - See the [Story](/story/addons-docs-docs2-resolvedreact--story) for how it resolves in the actual
+ *   story.
  *
- * **Note: There appears to be a bug in the _production_ build of `react-dom`, where it reports version `18.2.0-next-9e3b772b8-20220608` while in fact version `18.2.0` is installed.**
+ * **Note: There appears to be a bug in the _production_ build of `react-dom`, where it reports
+ * version `18.2.0-next-9e3b772b8-20220608` while in fact version `18.2.0` is installed.**
  */
 export default {
   title: 'Docs2/ResolvedReact',

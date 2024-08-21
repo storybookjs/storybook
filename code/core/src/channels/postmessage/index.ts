@@ -58,8 +58,9 @@ export class PostMessageTransport implements ChannelTransport {
   }
 
   /**
-   * Sends `event` to the associated window. If the window does not yet exist
-   * the event will be stored in a buffer and sent when the window exists.
+   * Sends `event` to the associated window. If the window does not yet exist the event will be
+   * stored in a buffer and sent when the window exists.
+   *
    * @param event
    */
   send(event: ChannelEvent, options?: any): Promise<any> {

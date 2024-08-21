@@ -19,8 +19,9 @@ export const skipSourceRender = (context: StoryContext) => {
 
 /**
  * Angular source decorator.
+ *
  * @param storyFn Fn
- * @param context  StoryContext
+ * @param context StoryContext
  */
 export const sourceDecorator = (
   storyFn: PartialStoryFn<AngularRenderer>,

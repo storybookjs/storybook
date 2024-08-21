@@ -360,17 +360,48 @@ async function linkPackageStories(
   );
 }
 
+const getVitestPluginInfo = (details: TemplateDetails) => {
+  let frameworkPluginImport = '';
+  let frameworkPluginCall = '';
+
+  const framework = details.template.expected.framework;
+  const isNextjs = framework.includes('nextjs');
+  const isSveltekit = framework.includes('sveltekit');
+
+  if (isNextjs) {
+    frameworkPluginImport = "import vitePluginNext from 'vite-plugin-storybook-nextjs'";
+    frameworkPluginCall = 'vitePluginNext()';
+  }
+
+  if (isSveltekit) {
+    frameworkPluginImport = "import { storybookSveltekitPlugin } from '@storybook/sveltekit/vite'";
+    frameworkPluginCall = 'storybookSveltekitPlugin()';
+  }
+
+  return { frameworkPluginImport, frameworkPluginCall };
+};
+
 export async function setupVitest(details: TemplateDetails, options: PassedOptionValues) {
   const { sandboxDir, template } = details;
 
-  const isSvelte = template.expected.renderer === '@storybook/svelte';
   const isVue = template.expected.renderer === '@storybook/vue3';
   const isNextjs = template.expected.framework.includes('nextjs');
+  const { frameworkPluginCall, frameworkPluginImport } = getVitestPluginInfo(details);
   // const isAngular = template.expected.framework === '@storybook/angular';
-  const storybookPackage = isNextjs ? template.expected.framework : template.expected.renderer;
+
+  const portableStoriesFrameworks = [
+    '@storybook/nextjs',
+    '@storybook/experimental-nextjs-vite',
+    '@storybook/sveltekit',
+    // TODO: add angular once we enable their sandboxes
+  ];
+  const storybookPackage = portableStoriesFrameworks.includes(template.expected.framework)
+    ? template.expected.framework
+    : template.expected.renderer;
+  const viteConfigPath = template.name.includes('JavaScript') ? 'vite.config.js' : 'vite.config.ts';
 
   await writeFile(
-    join(sandboxDir, '.storybook/setupTests.ts'),
+    join(sandboxDir, '.storybook/vitest.setup.ts'),
     dedent`import { beforeAll } from 'vitest'
     import { setProjectAnnotations } from '${storybookPackage}'
     import * as rendererDocsAnnotations from '${template.expected.renderer}/dist/entry-preview-docs.mjs'
@@ -397,89 +428,73 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   );
 
   await writeFile(
-    join(sandboxDir, '.storybook/vitest.config.mts'),
-    dedent`import path from 'node:path'
-    import { defineConfig, mergeConfig, defaultExclude } from 'vitest/config'
-    import { storybookTest } from '@storybook/experimental-addon-vitest/plugin'
-    ${!isNextjs ? "import viteConfig from '../vite.config'" : ''}
-    ${isNextjs ? "import vitePluginNext from 'vite-plugin-storybook-nextjs'" : ''}
-
-    export default mergeConfig(
-      ${!isNextjs ? 'viteConfig' : '{}'},
-      defineConfig({
-        plugins: [
-          storybookTest({
-            configDir: process.cwd(),
-            storybookScript: 'yarn storybook --ci',
-            tags: {
-              include: ['vitest'],
-            }
-          }),
-          ${isNextjs ? "vitePluginNext({ dir: path.join(__dirname, '..') })," : ''}
-        ],
-        ${
-          isNextjs
-            ? `optimizeDeps: {
-          include: [
-            "next/image",
-            "next/dist/compiled/react",
-            "sb-original/default-loader",
-            "sb-original/image-context",
-          ],
-        },`
-            : ''
-        }
-        resolve: {
-          preserveSymlinks: true,
-          ${isVue ? "alias: { vue: 'vue/dist/vue.esm-bundler.js' }," : ''}
-        },
-        test: {
-          name: 'storybook',
-          include: [
-           // we need to set the path like this because svelte-kit overrides the root path so this makes it work in all sandboxes
-            path.join(__dirname, '../src/**/*.{story,stories}.?(c|m)[jt]s?(x)'),
-            path.join(__dirname, '../template-stories/**/*.{story,stories}.?(c|m)[jt]s?(x)'),
-          ],
-          exclude: [
-            ...defaultExclude,
-            // TODO: investigate TypeError: Cannot read properties of null (reading 'useContext')
-            path.join(__dirname, '../**/*argtypes*'),
-            // TODO (SVELTEKIT): Failures related to missing framework annotations
-            path.join(__dirname, '../**/frameworks/sveltekit_svelte-kit-skeleton-ts/navigation.stories*'),
-            path.join(__dirname, '../**/frameworks/sveltekit_svelte-kit-skeleton-ts/hrefs.stories*'),
-            // TODO (SVELTEKIT): Investigate Error: use:enhance can only be used on <form> fields with method="POST"
-            path.join(__dirname, '../**/frameworks/sveltekit_svelte-kit-skeleton-ts/forms.stories*'),
-            // TODO (SVELTE|SVELTEKIT): Typescript preprocessor issue
-            path.join(__dirname, '../**/frameworks/svelte-vite_svelte-vite-default-ts/ts-docs.stories.*'),
-            path.join(__dirname, '../**/frameworks/sveltekit_svelte-kit-skeleton-ts/ts-docs.stories.*'),
-            ${isSvelte ? "path.join(__dirname, '../**/stories/(Button|Header|Page).stories.ts')," : ''}
-          ],
-          /**
-           * TODO: Either fix or acknowledge limitation of:
-           * - @storybook/core/preview-api hooks:
-           * -- UseState
-           */
-          testNamePattern: /^(?!.*(UseState)).*$/,
-          browser: {
-            enabled: true,
-            name: 'chromium',
-            provider: 'playwright',
-            headless: true,
-            screenshotFailures: false,
-          },
-          setupFiles: ['./.storybook/setupTests.ts'],
-          environment: 'happy-dom',
-        },
-      })
-    )`
-  );
-
-  await writeFile(
     join(sandboxDir, 'vitest.workspace.ts'),
     dedent`
-      import { defineWorkspace } from 'vitest/config'
+      import { defineWorkspace, defaultExclude } from "vitest/config";
+      import { storybookTest } from "@storybook/experimental-addon-vitest/plugin";
+      ${frameworkPluginImport}
 
-      export default defineWorkspace(['.storybook'])
+      export default defineWorkspace([
+        {
+          ${!isNextjs ? `extends: "${viteConfigPath}",` : ''}
+          plugins: [
+            storybookTest({
+              storybookScript: "yarn storybook --ci",
+              tags: {
+                include: ["vitest"],
+              },
+            }),
+           ${frameworkPluginCall}
+          ],
+          ${
+            isNextjs
+              ? `optimizeDeps: {
+            include: [
+              "next/image",
+              "next/legacy/image",
+              "next/dist/compiled/react",
+              "sb-original/default-loader",
+              "sb-original/image-context",
+            ],
+          },`
+              : ''
+          }
+          resolve: {
+            preserveSymlinks: true,
+            ${isVue ? "alias: { vue: 'vue/dist/vue.esm-bundler.js' }," : ''}
+          },
+          test: {
+            name: "storybook",
+            pool: "threads",
+            include: [
+              // we need to set the path like this because svelte-kit overrides the root path so this makes it work in all sandboxes
+              "src/**/*.{story,stories}.?(c|m)[jt]s?(x)",
+              "template-stories/**/*.{story,stories}.?(c|m)[jt]s?(x)",
+            ],
+            exclude: [
+              ...defaultExclude,
+              // TODO: investigate TypeError: Cannot read properties of null (reading 'useContext')
+              "**/*argtypes*",
+            ],
+            /**
+             * TODO: Either fix or acknowledge limitation of:
+             * - @storybook/core/preview-api hooks:
+             * -- UseState
+             */
+            // @ts-expect-error this type does not exist but the property does!
+            testNamePattern: /^(?!.*(UseState)).*$/,
+            browser: {
+              enabled: true,
+              name: "chromium",
+              provider: "playwright",
+              headless: true,
+              screenshotFailures: false,
+            },
+            setupFiles: ["./.storybook/vitest.setup.ts"],
+            environment: "happy-dom",
+          },
+        },
+      ]);
   `
   );
 
@@ -488,7 +503,8 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
 
   packageJson.scripts = {
     ...packageJson.scripts,
-    vitest: 'vitest --pass-with-no-tests --reporter=default --reporter=hanging-process',
+    vitest:
+      'vitest --pass-with-no-tests --reporter=default --reporter=hanging-process --test-timeout=5000',
   };
 
   // This workaround is needed because Vitest seems to have issues in link mode
@@ -516,14 +532,22 @@ export async function addExtraDependencies({
   extraDeps?: string[];
 }) {
   const extraDevDeps = ['@storybook/test-runner@next'];
-  if (debug) logger.log('🎁 Adding extra dev deps', extraDevDeps);
-  if (dryRun) return;
+
+  if (debug) {
+    logger.log('\uD83C\uDF81 Adding extra dev deps', extraDevDeps);
+  }
+
+  if (dryRun) {
+    return;
+  }
 
   const packageManager = JsPackageManagerFactory.getPackageManager({}, cwd);
   await packageManager.addDependencies({ installAsDevDependencies: true }, extraDevDeps);
 
   if (extraDeps) {
-    if (debug) logger.log('🎁 Adding extra deps', extraDeps);
+    if (debug) {
+      logger.log('\uD83C\uDF81 Adding extra deps', extraDeps);
+    }
     await packageManager.addDependencies({ installAsDevDependencies: true }, extraDeps);
   }
   await packageManager.installDependencies();
@@ -642,7 +666,10 @@ export const addStories: Task['run'] = async (
     (acc: string[], addon: any) => {
       const name = typeof addon === 'string' ? addon : addon.name;
       const match = /@storybook\/addon-(.*)/.exec(name);
-      if (!match) return acc;
+
+      if (!match) {
+        return acc;
+      }
       const suffix = match[1];
       if (suffix === 'essentials') {
         const essentials = disableDocs
@@ -753,7 +780,9 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
     mainConfig.setFieldValue(['stories'], updatedStories);
   }
 
-  if (template.expected.builder === '@storybook/builder-vite') setSandboxViteFinal(mainConfig);
+  if (template.expected.builder === '@storybook/builder-vite') {
+    setSandboxViteFinal(mainConfig);
+  }
   await writeConfig(mainConfig);
 };
 
@@ -775,16 +804,16 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
 
   Object.keys(angularJson.projects).forEach((projectName: string) => {
     /**
-     * Sets compodoc option in angular.json projects to false. We have to generate compodoc
-     * manually to avoid symlink issues related to the template-stories folder.
-     * In a second step a docs:json script is placed into the package.json to generate the
-     * Compodoc documentation.json, which respects symlinks
+     * Sets compodoc option in angular.json projects to false. We have to generate compodoc manually
+     * to avoid symlink issues related to the template-stories folder. In a second step a docs:json
+     * script is placed into the package.json to generate the Compodoc documentation.json, which
+     * respects symlinks
      */
     angularJson.projects[projectName].architect.storybook.options.compodoc = false;
     angularJson.projects[projectName].architect['build-storybook'].options.compodoc = false;
     /**
-     * Sets preserveSymlinks option in angular.json projects to true. This is necessary to
-     * respect symlinks so that Angular doesn't complain about wrong types in @storybook/* packages
+     * Sets preserveSymlinks option in angular.json projects to true. This is necessary to respect
+     * symlinks so that Angular doesn't complain about wrong types in @storybook/* packages
      */
     angularJson.projects[projectName].architect.storybook.options.preserveSymlinks = true;
     angularJson.projects[projectName].architect['build-storybook'].options.preserveSymlinks = true;

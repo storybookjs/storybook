@@ -26,7 +26,10 @@ export default async function transform(info: FileInfo) {
           path.get('specifiers').forEach((specifier) => {
             if (specifier.isImportSpecifier()) {
               const imported = specifier.get('imported');
-              if (!imported.isIdentifier()) return;
+
+              if (!imported.isIdentifier()) {
+                return;
+              }
               if (imported.node.name === 'jest') {
                 specifier.remove();
                 path.insertAfter(

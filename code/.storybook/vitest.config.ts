@@ -33,7 +33,7 @@ export default mergeConfig(
       include: [
         // TODO: test all core and addon stories later
         // './core/**/components/**/*.{story,stories}.?(c|m)[jt]s?(x)',
-        '../addons/interactions/src/**/*.{story,stories}.?(c|m)[jt]s?(x)',
+        '../addons/**/src/**/*.{story,stories}.?(c|m)[jt]s?(x)',
       ],
       exclude: [
         ...defaultExclude,

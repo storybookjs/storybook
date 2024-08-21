@@ -1,18 +1,20 @@
 import { existsSync } from 'node:fs';
 
 import { coverageConfigDefaults } from 'vitest/config';
-import type { Vitest, WorkspaceProject, WorkspaceSpec } from 'vitest/node';
+import type { TestProject, Vitest, WorkspaceProject, WorkspaceSpec } from 'vitest/node';
 import { slash } from 'vitest/utils';
 
 import type { Channel } from 'storybook/internal/channels';
 
 import { COVERAGE_IN_PROGRESS, FILE_CHANGED_EVENT } from '../constants';
-import type { CoverageState, ManagerState, TestingMode } from '../types';
+import type { CoverageState, ManagerState } from '../types';
 import type { CoverageManager } from './coverage-manager';
 import type { CoverageReporterOptions } from './coverage-reporter';
 
 export class VitestManager {
   vitest: Vitest | null = null;
+
+  vitestStartupCounter = 0;
 
   constructor(
     private channel: Channel,
@@ -21,9 +23,8 @@ export class VitestManager {
     private coverageManager: CoverageManager
   ) {}
 
-  private async getTestDependencies(filepath: WorkspaceSpec, deps = new Set<string>()) {
-    // eslint-disable-next-line @typescript-eslint/no-shadow
-    const addImports = async ([project, filepath]: WorkspaceSpec) => {
+  private async getTestDependencies(spec: WorkspaceSpec, deps = new Set<string>()) {
+    const addImports = async (project: WorkspaceProject, filepath: string) => {
       if (deps.has(filepath)) {
         return;
       }
@@ -38,9 +39,7 @@ export class VitestManager {
       const dependencies = [...(transformed.deps || []), ...(transformed.dynamicDeps || [])];
       await Promise.all(
         dependencies.map(async (dep) => {
-          const path = await project.server?.pluginContainer.resolveId(dep, filepath, {
-            ssr: true,
-          });
+          const path = await project.server.pluginContainer.resolveId(dep, filepath, { ssr: true });
           const fsPath = path && !path.external && path.id.split('?')[0];
           if (
             fsPath &&
@@ -48,14 +47,14 @@ export class VitestManager {
             !deps.has(fsPath) &&
             existsSync(fsPath)
           ) {
-            await addImports([project, fsPath]);
+            await addImports(project, fsPath);
           }
         })
       );
     };
 
-    await addImports(filepath);
-    deps.delete(filepath[1]);
+    await addImports(spec.project.workspaceProject, spec.moduleId);
+    deps.delete(spec.moduleId);
 
     return deps;
   }
@@ -123,11 +122,13 @@ export class VitestManager {
     });
   }
 
-  getStorybookProjects() {
-    return this.vitest?.projects.filter((project) => this.isStorybookProject(project)) ?? [];
+  getStorybookProjects(workspaceSpecs: WorkspaceSpec[] = []) {
+    return (
+      workspaceSpecs.filter((workspaceSpec) => this.isStorybookProject(workspaceSpec.project)) ?? []
+    );
   }
 
-  isStorybookProject(project: WorkspaceProject) {
+  isStorybookProject(project: TestProject | WorkspaceProject) {
     // eslint-disable-next-line no-underscore-dangle
     return !!project.config.env?.__STORYBOOK_URL__;
   }
@@ -141,10 +142,10 @@ export class VitestManager {
     const absoluteStoryPath = this.managerState.absoluteStoryPath!;
     const absoluteComponentPath = this.managerState.absoluteComponentPath!;
 
-    const globTestFiles = await this.vitest.globTestFiles();
+    const globTestFiles = await this.vitest.globTestSpecs();
     const testGraphs = await Promise.all(
       globTestFiles
-        .filter(([project]) => this.isStorybookProject(project))
+        .filter((workspace) => this.isStorybookProject(workspace.project))
         .map(async (spec) => {
           const deps = await this.getTestDependencies(spec);
           return [spec, deps] as const;
@@ -154,8 +155,10 @@ export class VitestManager {
     const triggerAffectedTests: WorkspaceSpec[] = [];
 
     if (this.managerState.mode?.coverageType === 'component-coverage') {
-      for (const project of this.getStorybookProjects()) {
-        componentAffectedTests.push([project, absoluteStoryPath] as const);
+      for (const project of this.getStorybookProjects(globTestFiles)) {
+        if (project.moduleId === absoluteStoryPath) {
+          componentAffectedTests.push(project);
+        }
       }
 
       for (const [filepath, deps] of testGraphs) {
@@ -164,12 +167,12 @@ export class VitestManager {
         }
       }
     } else {
-      for (const [filepath, deps] of testGraphs) {
-        if (absoluteComponentPath === filepath[1] || deps.has(absoluteComponentPath)) {
-          componentAffectedTests.push(filepath);
+      for (const [workspaceSpec, deps] of testGraphs) {
+        if (absoluteComponentPath === workspaceSpec[1] || deps.has(absoluteComponentPath)) {
+          componentAffectedTests.push(workspaceSpec);
         }
-        if (trigger && (trigger === filepath[1] || deps.has(trigger))) {
-          triggerAffectedTests.push(filepath);
+        if (trigger && (trigger === workspaceSpec[1] || deps.has(trigger))) {
+          triggerAffectedTests.push(workspaceSpec);
         }
       }
     }
@@ -181,6 +184,7 @@ export class VitestManager {
     if (!trigger || hasTriggerEffectOnTests) {
       this.emitCoverageStart(start);
       await this.vitest.cancelCurrentRun('keyboard-input');
+      await this.vitest.runningPromise;
       await this.vitest.runFiles(componentAffectedTests, true);
     }
   }

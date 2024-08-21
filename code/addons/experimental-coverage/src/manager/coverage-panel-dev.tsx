@@ -13,7 +13,6 @@ import type { TestingMode } from '../types';
 interface RecentRun {
   coverageProvider: 'istanbul' | 'v8';
   coverageType: TestingMode['coverageType'];
-  browser: boolean;
   executionTime: number;
 }
 
@@ -23,7 +22,6 @@ export function CoveragePanelDev({ coverage }: { coverage: ResultCoverageEventPa
     ? JSON.parse(savedCoverageState)
     : null;
 
-  const [browserMode, setBrowserMode] = useState(parsedCoverageState?.browser ?? true);
   const [coverageProvider, setCoverageProvider] = useState<'istanbul' | 'v8'>(
     parsedCoverageState?.coverageProvider ?? 'istanbul'
   );
@@ -47,13 +45,14 @@ export function CoveragePanelDev({ coverage }: { coverage: ResultCoverageEventPa
     const newRun: RecentRun = {
       coverageProvider,
       coverageType,
-      browser: browserMode,
       executionTime: coverage && 'stats' in coverage ? coverage.executionTime : 0,
     };
 
-    const updatedRuns = [newRun, ...recentRuns].slice(0, 5);
-    setRecentRuns(updatedRuns);
-    localStorage.setItem('recentRuns', JSON.stringify(updatedRuns));
+    if (newRun.executionTime !== 0) {
+      const updatedRuns = [newRun, ...recentRuns].slice(0, 5);
+      setRecentRuns(updatedRuns);
+      localStorage.setItem('recentRuns', JSON.stringify(updatedRuns));
+    }
   }, [coverage]);
 
   useEffect(() => {
@@ -63,10 +62,9 @@ export function CoveragePanelDev({ coverage }: { coverage: ResultCoverageEventPa
       JSON.stringify({
         coverageProvider,
         coverageType,
-        browser: browserMode,
       } satisfies TestingMode)
     );
-  }, [coverageProvider, coverageType, browserMode]);
+  }, [coverageProvider, coverageType]);
 
   return (
     <div style={{ position: 'relative' }}>
@@ -145,7 +143,6 @@ export function CoveragePanelDev({ coverage }: { coverage: ResultCoverageEventPa
                           componentPath: (currentStory as any).componentPath,
                           initialRequest: true,
                           mode: {
-                            browser: browserMode,
                             coverageProvider,
                             coverageType,
                           },
@@ -164,14 +161,12 @@ export function CoveragePanelDev({ coverage }: { coverage: ResultCoverageEventPa
             <div style={{ marginTop: '1em' }}>
               <h3>Recent runs</h3>
               <ul>
-                {recentRuns
-                  .filter((run) => run.executionTime !== 0)
-                  .map((run, index) => (
-                    <li key={index}>
-                      Provider: {run.coverageProvider}, Type: {run.coverageType}, Browser:{' '}
-                      {run.browser ? 'true' : 'false'}, Time: {run.executionTime} ms
-                    </li>
-                  ))}
+                {recentRuns.map((run, index) => (
+                  <li key={index}>
+                    Provider: {run.coverageProvider}, Type: {run.coverageType}, Time:{' '}
+                    {run.executionTime} ms
+                  </li>
+                ))}
               </ul>
             </div>
           </div>

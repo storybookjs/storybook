@@ -61,7 +61,6 @@ export interface CoverageSummary {
 }
 
 export type TestingMode = {
-  browser: boolean;
   coverageProvider: 'istanbul' | 'v8';
   coverageType: 'component-coverage' | 'project-coverage';
 };

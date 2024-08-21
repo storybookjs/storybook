@@ -60,10 +60,10 @@
     "typescript": "^5.3.2"
   },
   "peerDependencies": {
-    "@vitest/coverage-istanbul": "^2.0.5",
-    "@vitest/coverage-v8": "^2.0.5",
+    "@vitest/coverage-istanbul": "2.1.0-beta.6",
+    "@vitest/coverage-v8": "2.1.0-beta.6",
     "storybook": "workspace:^",
-    "vitest": "^2.0.5"
+    "vitest": "2.1.0-beta.6"
   },
   "peerDependenciesMeta": {
     "@vitest/coverage-istanbul": {

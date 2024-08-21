@@ -43,20 +43,25 @@ export default class CoverageReporter extends ReportBase {
   }
 
   async onDetail(node: Node) {
-    const coverage = node.getFileCoverage();
-    const coverageSummary = node.getCoverageSummary();
-    const executionTime = this.getExecutionTime();
+    try {
+      const coverage = node.getFileCoverage();
+      const coverageSummary = node.getCoverageSummary();
+      const executionTime = this.getExecutionTime();
 
-    const filesWithCoverage = this.coverageManager.getFilesWithCoverageInformation();
+      const filesWithCoverage = this.coverageManager.getFilesWithCoverageInformation();
 
-    filesWithCoverage.forEach((file) => {
-      if (file === coverage.data.path) {
-        this.channel.emit(RESULT_COVERAGE_EVENT, {
-          executionTime,
-          stats: coverage.data,
-          summary: coverageSummary,
-        } satisfies ResultCoverageEventPayload);
-      }
-    });
+      filesWithCoverage.forEach((file) => {
+        if (file === coverage.data.path) {
+          this.channel.emit(RESULT_COVERAGE_EVENT, {
+            executionTime,
+            stats: coverage.data,
+            summary: coverageSummary,
+          } satisfies ResultCoverageEventPayload);
+        }
+      });
+    } catch (e) {
+      // TODO: Properly handle error
+      console.error(e);
+    }
   }
 }

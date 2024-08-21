@@ -179,9 +179,9 @@
     "@typescript-eslint/parser": "^6.18.1",
     "@vitejs/plugin-react": "^3.0.1",
     "@vitejs/plugin-vue": "^4.4.0",
-    "@vitest/browser": "^2.0.5",
-    "@vitest/coverage-istanbul": "^2.0.5",
-    "@vitest/coverage-v8": "^2.0.5",
+    "@vitest/browser": "2.1.0-beta.6",
+    "@vitest/coverage-istanbul": "2.1.0-beta.6",
+    "@vitest/coverage-v8": "2.1.0-beta.6",
     "create-storybook": "workspace:*",
     "cross-env": "^7.0.3",
     "danger": "^12.3.3",
@@ -221,7 +221,7 @@
     "util": "^0.12.4",
     "vite": "^4.0.0",
     "vite-plugin-inspect": "^0.8.5",
-    "vitest": "^2.0.5",
+    "vitest": "2.1.0-beta.6",
     "wait-on": "^7.0.1"
   },
   "dependenciesMeta": {

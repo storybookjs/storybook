@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
@@ -10,7 +11,7 @@ import {
   type RequestCoverageEventPayload,
   type ResultFileContentPayload,
 } from '../constants';
-import type { CoverageState, ManagerState, TestingMode } from '../types';
+import type { CoverageState, ManagerState } from '../types';
 import { VitestManager } from './vitest-manager';
 
 export class CoverageManager {
@@ -32,7 +33,12 @@ export class CoverageManager {
     this.vitestManager = new VitestManager(channel, this.state, this.coverageState, this);
 
     this.channel.on(REQUEST_COVERAGE_EVENT, async (options: RequestCoverageEventPayload) => {
-      await this.handleRequestCoverage(options);
+      try {
+        await this.handleRequestCoverage(options);
+      } catch (e) {
+        // TODO: Properly handle error
+        console.error(e);
+      }
       this.setPreviousState();
     });
     this.channel.on(FILE_CHANGED_EVENT, this.emitFileContent.bind(this));
@@ -48,7 +54,7 @@ export class CoverageManager {
     importPath,
     componentPath,
     initialRequest,
-    mode = { browser: true, coverageProvider: 'istanbul', coverageType: 'component-coverage' },
+    mode = { coverageProvider: 'istanbul', coverageType: 'component-coverage' },
   }: RequestCoverageEventPayload) {
     if (!componentPath) {
       return;
@@ -79,10 +85,13 @@ export class CoverageManager {
   }
 
   async emitFileContent() {
-    const content = await readFile(this.state.absoluteComponentPath!, 'utf8');
-    this.channel.emit(RESULT_FILE_CONTENT, {
-      content,
-    } satisfies ResultFileContentPayload);
+    const absoluteComponentPath = this.state.absoluteComponentPath;
+    if (absoluteComponentPath && existsSync(absoluteComponentPath)) {
+      const content = await readFile(this.state.absoluteComponentPath!, 'utf8');
+      this.channel.emit(RESULT_FILE_CONTENT, {
+        content,
+      } satisfies ResultFileContentPayload);
+    }
   }
 
   getFilesWithCoverageInformation() {

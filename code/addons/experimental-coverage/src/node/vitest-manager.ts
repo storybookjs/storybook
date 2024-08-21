@@ -133,7 +133,9 @@ export class VitestManager {
   }
 
   async runAffectedTests(trigger?: string) {
-    if (!this.vitest) return;
+    if (!this.vitest) {
+      return;
+    }
     const start = performance.now();
 
     const absoluteStoryPath = this.managerState.absoluteStoryPath!;

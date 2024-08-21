@@ -55,6 +55,8 @@
     "istanbul-lib-report": "3.0.1"
   },
   "devDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "typescript": "^5.3.2"
   },
   "peerDependencies": {

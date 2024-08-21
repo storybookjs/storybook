@@ -50,7 +50,9 @@ export class CoverageManager {
     initialRequest,
     mode = { browser: true, coverageProvider: 'istanbul', coverageType: 'component-coverage' },
   }: RequestCoverageEventPayload) {
-    if (!componentPath) return;
+    if (!componentPath) {
+      return;
+    }
 
     this.state.absoluteComponentPath = join(process.cwd(), componentPath);
     this.state.absoluteStoryPath = join(process.cwd(), importPath);

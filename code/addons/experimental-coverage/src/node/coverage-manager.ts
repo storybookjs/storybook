@@ -10,7 +10,7 @@ import {
   type RequestCoverageEventPayload,
   type ResultFileContentPayload,
 } from '../constants';
-import type { CoverageState, ManagerState, TestingMode } from '../types';
+import type { CoverageState, ManagerState } from '../types';
 import { VitestManager } from './vitest-manager';
 
 export class CoverageManager {

@@ -21,8 +21,12 @@ export function getStringValueFromAttribute(params: Params) {
 
   const { value } = node;
 
-  if (value === true || value.length !== 1) {
+  if (value === true) {
     throw new AttributeNotStringError({ filename, component, attribute: node });
+  }
+
+  if (value.type === 'ExpressionTag' && value.expression.type === 'Literal') {
+    return value.expression.value;
   }
 
   if (value[0].type === 'Text') {
@@ -51,9 +55,8 @@ export function getArrayOfStringsValueFromAttribute(params: Params) {
 
   if (
     value === true ||
-    value.length !== 1 ||
-    value[0].type !== 'ExpressionTag' ||
-    value[0].expression.type !== 'ArrayExpression'
+    value.type !== 'ExpressionTag' ||
+    value.expression.type !== 'ArrayExpression'
   ) {
     throw new AttributeNotArrayError({
       component,
@@ -64,7 +67,7 @@ export function getArrayOfStringsValueFromAttribute(params: Params) {
 
   const arrayOfStrings: string[] = [];
 
-  for (const element of value[0].expression.elements) {
+  for (const element of value.expression.elements) {
     if (element?.type !== 'Literal' || typeof element.value !== 'string') {
       throw new AttributeNotArrayOfStringsError({
         filename,

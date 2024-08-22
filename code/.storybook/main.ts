@@ -1,5 +1,4 @@
 import { join } from 'node:path';
-
 import type { StorybookConfig } from '../frameworks/react-vite';
 
 const componentsPath = join(__dirname, '../core/src/components');
@@ -48,10 +47,6 @@ const config: StorybookConfig = {
       titlePrefix: 'addons/controls',
     },
     {
-      directory: '../addons/controls/template/stories',
-      titlePrefix: 'addons/controls',
-    },
-    {
       directory: '../addons/docs/template/stories',
       titlePrefix: 'addons/docs',
     },
@@ -79,20 +74,15 @@ const config: StorybookConfig = {
       directory: '../addons/interactions/src',
       titlePrefix: 'addons/interactions',
     },
-    // {
-    //   directory: '../addons/interactions/template/stories',
-    //   titlePrefix: 'addons/interactions',
-    // },
   ],
   addons: [
-    '@storybook/addon-links',
-    '@storybook/addon-themes',
     '@storybook/addon-essentials',
     '@storybook/addon-interactions',
+    '@storybook/addon-links',
+    '@storybook/addon-a11y',
     '@storybook/addon-storysource',
     '@storybook/addon-designs',
     '@storybook/experimental-addon-vitest',
-    '@storybook/addon-a11y',
     '@chromatic-com/storybook',
   ],
   previewAnnotations: [
@@ -102,9 +92,7 @@ const config: StorybookConfig = {
   ],
   build: {
     test: {
-      // we have stories for the blocks here, we can't exclude them
       disableBlocks: false,
-      // some stories in blocks (ArgTypes, Controls) depends on argTypes inference
       disableDocgen: false,
     },
   },
@@ -131,28 +119,22 @@ const config: StorybookConfig = {
 
     return mergeConfig(viteConfig, {
       resolve: {
-        alias: {
-          ...(configType === 'DEVELOPMENT'
-            ? {
-                '@storybook/components': componentsPath,
-                'storybook/internal/components': componentsPath,
-                '@storybook/manager-api': managerApiPath,
-                'storybook/internal/manager-api': managerApiPath,
-              }
-            : {}),
-        },
+        alias: configType === 'DEVELOPMENT' ? {
+          '@storybook/components': componentsPath,
+          'storybook/internal/components': componentsPath,
+          '@storybook/manager-api': managerApiPath,
+          'storybook/internal/manager-api': managerApiPath,
+        } : {},
       },
       optimizeDeps: {
         force: true,
         include: ['@storybook/blocks'],
       },
       build: {
-        // disable sourcemaps in CI to not run out of memory
         sourcemap: process.env.CI !== 'true',
       },
     } satisfies typeof viteConfig);
   },
-  // logLevel: 'debug',
 };
 
 export default config;

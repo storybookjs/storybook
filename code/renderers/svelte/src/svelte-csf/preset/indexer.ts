@@ -14,7 +14,7 @@ export async function readStories(fileName: string) {
   /**
    * loadedSvelteOptions can be {default: {...}, configFile: '...path'}
    */
-  const svelteOptions = loadedSvelteOptions.default ? loadedSvelteOptions.default : loadedSvelteOptions;
+  const svelteOptions = loadedSvelteOptions?.default ? loadedSvelteOptions.default : loadedSvelteOptions;
 
   if (svelteOptions && svelteOptions.preprocess) {
     code = (await svelte.preprocess(code, svelteOptions.preprocess, { filename: fileName })).code;

@@ -1,3 +1,16 @@
+# v4.1.6 (Thu Aug 22 2024)
+
+#### 🐛 Bug Fix
+
+- Update indexer.ts [#193](https://github.com/storybookjs/addon-svelte-csf/pull/193) ([@bichikim](https://github.com/bichikim) [@JReinhold](https://github.com/JReinhold))
+
+#### Authors: 2
+
+- Bichi Kim ([@bichikim](https://github.com/bichikim))
+- Jeppe Reinhold ([@JReinhold](https://github.com/JReinhold))
+
+---
+
 # v4.1.5 (Tue Aug 06 2024)
 
 #### 🐛 Bug Fix

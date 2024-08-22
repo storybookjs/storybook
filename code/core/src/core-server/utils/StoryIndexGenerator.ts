@@ -23,7 +23,8 @@ import { sortStoriesV7, userOrAutoTitleFromSpecifier } from '@storybook/core/pre
 
 import chalk from 'chalk';
 import { findUp } from 'find-up';
-import fs from 'fs-extra';
+import fs, { readJson } from 'fs-extra';
+import { resolveImports } from 'resolve-pkg-maps';
 import slash from 'slash';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
@@ -353,8 +354,12 @@ export class StoryIndexGenerator {
 
     invariant(indexer, `No matching indexer found for ${absolutePath}`);
 
-    const indexInputs = await indexer.createIndex(absolutePath, { makeTitle: defaultMakeTitle });
-    const tsconfigPath = await findUp('tsconfig.json', { cwd: this.options.workingDir });
+    const [indexInputs, tsconfigPath, packageJson] = await Promise.all([
+      indexer.createIndex(absolutePath, { makeTitle: defaultMakeTitle }),
+      findUp('tsconfig.json', { cwd: this.options.workingDir }),
+      findUp('package.json', { cwd: this.options.workingDir }).then((p) => p && readJson(p)),
+    ]);
+
     const tsconfig = TsconfigPaths.loadConfig(tsconfigPath);
     let matchPath: TsconfigPaths.MatchPath | undefined;
     if (tsconfig.resultType === 'success') {
@@ -368,9 +373,24 @@ export class StoryIndexGenerator {
     const entries: ((StoryIndexEntryWithExtra | DocsCacheEntry) & { tags: Tag[] })[] =
       indexInputs.map((input) => {
         const name = input.name ?? storyNameFromExport(input.exportName);
-        const componentPath =
-          input.rawComponentPath &&
-          this.resolveComponentPath(input.rawComponentPath, absolutePath, matchPath);
+        let componentPath;
+        if (input.rawComponentPath?.startsWith('#')) {
+          const resolvedPaths = input.rawComponentPath
+            ? resolveImports(packageJson.imports, input.rawComponentPath, [
+                'storybook',
+                'node',
+                'import',
+              ])
+            : [];
+          componentPath = resolvedPaths[0];
+        }
+        if (!componentPath && input.rawComponentPath) {
+          componentPath = this.resolveComponentPath(
+            input.rawComponentPath,
+            absolutePath,
+            matchPath
+          );
+        }
         const title = input.title ?? defaultMakeTitle();
 
         const id = input.__id ?? toId(input.metaId ?? title, storyNameFromExport(input.exportName));

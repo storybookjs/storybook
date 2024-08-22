@@ -6089,6 +6089,7 @@ __metadata:
     recast: "npm:^0.23.5"
     require-from-string: "npm:^2.0.2"
     resolve-from: "npm:^5.0.0"
+    resolve-pkg-maps: "npm:^1.0.0"
     semver: "npm:^7.6.2"
     slash: "npm:^5.0.0"
     source-map: "npm:^0.7.4"

@@ -397,6 +397,7 @@
     "react-transition-group": "^4.4.5",
     "require-from-string": "^2.0.2",
     "resolve-from": "^5.0.0",
+    "resolve-pkg-maps": "^1.0.0",
     "slash": "^5.0.0",
     "source-map": "^0.7.4",
     "store2": "^2.14.2",

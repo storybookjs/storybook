@@ -545,10 +545,11 @@ export async function addExtraDependencies({
   await packageManager.addDependencies({ installAsDevDependencies: true }, extraDevDeps);
 
   if (extraDeps) {
+    const versionedExtraDeps = await packageManager.getVersionedPackages(extraDeps);
     if (debug) {
-      logger.log('\uD83C\uDF81 Adding extra deps', extraDeps);
+      logger.log('\uD83C\uDF81 Adding extra deps', versionedExtraDeps);
     }
-    await packageManager.addDependencies({ installAsDevDependencies: true }, extraDeps);
+    await packageManager.addDependencies({ installAsDevDependencies: true }, versionedExtraDeps);
   }
   await packageManager.installDependencies();
 }

@@ -1,6 +1,8 @@
 /* eslint-disable no-underscore-dangle */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { INITIAL_VIEWPORTS } from '@storybook/addon-viewport';
+
 import { page } from '@vitest/browser/context';
 
 import { DEFAULT_VIEWPORT_DIMENSIONS, type ViewportsParam, setViewport } from './viewports';
@@ -42,6 +44,7 @@ describe('setViewport', () => {
 
   it('should set the dimensions of viewport from INITIAL_VIEWPORTS', async () => {
     const viewportsParam: any = {
+      viewports: INITIAL_VIEWPORTS,
       // supported by default in addon viewports
       defaultViewport: 'ipad',
     };

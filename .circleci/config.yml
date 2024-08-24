@@ -403,7 +403,7 @@ jobs:
       parallelism:
         type: integer
     executor:
-      class: large
+      class: xlarge
       name: sb_playwright
     parallelism: << parameters.parallelism >>
     steps:
@@ -723,7 +723,7 @@ workflows:
           requires:
             - build-sandboxes
       - vitest-integration:
-          parallelism: 4
+          parallelism: 5
           requires:
             - create-sandboxes
       - bench:
@@ -789,7 +789,7 @@ workflows:
           requires:
             - build-sandboxes
       - vitest-integration:
-          parallelism: 4
+          parallelism: 5
           requires:
             - create-sandboxes
       - test-portable-stories:
@@ -856,7 +856,7 @@ workflows:
           requires:
             - build-sandboxes
       - vitest-integration:
-          parallelism: 8
+          parallelism: 11
           requires:
             - create-sandboxes
       - test-portable-stories:

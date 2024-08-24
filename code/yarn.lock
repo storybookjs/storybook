@@ -5378,7 +5378,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/addon-docs@workspace:addons/docs"
   dependencies:
-    "@babel/core": "npm:^7.24.4"
     "@mdx-js/mdx": "npm:^3.0.0"
     "@mdx-js/react": "npm:^3.0.0"
     "@rollup/pluginutils": "npm:^5.0.2"
@@ -5840,7 +5839,7 @@ __metadata:
     "@types/semver": "npm:^7.3.4"
     boxen: "npm:^7.1.1"
     chalk: "npm:^4.1.0"
-    commander: "npm:^6.2.1"
+    commander: "npm:^12.1.0"
     create-storybook: "workspace:*"
     cross-spawn: "npm:^7.0.3"
     envinfo: "npm:^7.7.3"
@@ -6016,7 +6015,7 @@ __metadata:
     chai: "npm:^4.4.1"
     chalk: "npm:^5.3.0"
     cli-table3: "npm:^0.6.1"
-    commander: "npm:^6.2.1"
+    commander: "npm:^12.1.0"
     comment-parser: "npm:^1.4.1"
     compression: "npm:^1.7.4"
     copy-to-clipboard: "npm:^3.3.1"
@@ -6190,6 +6189,9 @@ __metadata:
   dependencies:
     "@storybook/csf": "npm:^0.1.11"
     "@vitest/browser": "npm:^2.0.0"
+    find-up: "npm:^7.0.0"
+    tinyrainbow: "npm:^1.2.0"
+    ts-dedent: "npm:^2.2.0"
     vitest: "npm:^2.0.0"
   peerDependencies:
     "@vitest/browser": ^2.0.0
@@ -12008,6 +12010,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"commander@npm:^12.1.0":
+  version: 12.1.0
+  resolution: "commander@npm:12.1.0"
+  checksum: 10c0/6e1996680c083b3b897bfc1cfe1c58dfbcd9842fd43e1aaf8a795fbc237f65efcc860a3ef457b318e73f29a4f4a28f6403c3d653d021d960e4632dd45bde54a9
+  languageName: node
+  linkType: hard
+
 "commander@npm:^2.18.0, commander@npm:^2.19.0, commander@npm:^2.20.0":
   version: 2.20.3
   resolution: "commander@npm:2.20.3"
@@ -12019,13 +12028,6 @@ __metadata:
   version: 5.1.0
   resolution: "commander@npm:5.1.0"
   checksum: 10c0/da9d71dbe4ce039faf1fe9eac3771dca8c11d66963341f62602f7b66e36d2a3f8883407af4f9a37b1db1a55c59c0c1325f186425764c2e963dc1d67aec2a4b6d
-  languageName: node
-  linkType: hard
-
-"commander@npm:^6.2.1":
-  version: 6.2.1
-  resolution: "commander@npm:6.2.1"
-  checksum: 10c0/85748abd9d18c8bc88febed58b98f66b7c591d9b5017cad459565761d7b29ca13b7783ea2ee5ce84bf235897333706c4ce29adf1ce15c8252780e7000e2ce9ea
   languageName: node
   linkType: hard
 
@@ -12424,7 +12426,7 @@ __metadata:
     "@types/util-deprecate": "npm:^1.0.0"
     boxen: "npm:^7.1.1"
     chalk: "npm:^4.1.0"
-    commander: "npm:^6.2.1"
+    commander: "npm:^12.1.0"
     execa: "npm:^5.0.0"
     fd-package-json: "npm:^1.2.0"
     find-up: "npm:^5.0.0"

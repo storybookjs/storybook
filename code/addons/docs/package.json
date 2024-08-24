@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-docs",
-  "version": "8.3.0-alpha.7",
+  "version": "8.3.0-alpha.9",
   "description": "Document component usage and properties in Markdown",
   "keywords": [
     "addon",
@@ -98,7 +98,6 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@babel/core": "^7.24.4",
     "@mdx-js/react": "^3.0.0",
     "@storybook/blocks": "workspace:*",
     "@storybook/csf-plugin": "workspace:*",

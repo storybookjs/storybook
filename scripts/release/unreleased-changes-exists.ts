@@ -1,6 +1,6 @@
 import { setOutput } from '@actions/core';
 import chalk from 'chalk';
-import program from 'commander';
+import { program } from 'commander';
 import { intersection } from 'lodash';
 import { z } from 'zod';
 

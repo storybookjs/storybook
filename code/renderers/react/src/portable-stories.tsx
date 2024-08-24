@@ -31,7 +31,7 @@ import type { ReactRenderer } from './types';
  * Example:
  *
  * ```jsx
- * // setup.js (for jest)
+ * // setup-file.js
  * import { setProjectAnnotations } from '@storybook/react';
  * import projectAnnotations from './.storybook/preview';
  *

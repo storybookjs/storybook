@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 
 import chalk from 'chalk';
-import program from 'commander';
+import { program } from 'commander';
 import { execaCommand } from 'execa';
 import { readJson } from 'fs-extra';
 import pRetry from 'p-retry';

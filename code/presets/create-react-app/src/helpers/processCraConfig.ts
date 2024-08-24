@@ -39,7 +39,7 @@ export const processCraConfig = async (
    *
    * See: https://github.com/storybookjs/storybook/pull/9157
    */
-  const storybookVersion = semver.coerce(options.packageJson.version) || '';
+  const storybookVersion = semver.coerce(options.packageJson?.version) || '';
   const isStorybook530 = semver.gte(storybookVersion, '5.3.0');
   const babelOptions = await options.presets.apply('babel');
 

@@ -5,7 +5,7 @@ import type { Server } from 'node:http';
 import { join, resolve as resolvePath } from 'node:path';
 
 import chalk from 'chalk';
-import program from 'commander';
+import { program } from 'commander';
 import { execa, execaSync } from 'execa';
 import { pathExists, readJSON, remove } from 'fs-extra';
 import pLimit from 'p-limit';
@@ -24,6 +24,8 @@ program.parse(process.argv);
 const logger = console;
 
 const root = resolvePath(__dirname, '..');
+
+const opts = program.opts();
 
 const startVerdaccio = async () => {
   const ready = {
@@ -197,13 +199,13 @@ const run = async () => {
 
   logger.log(`📦 found ${packages.length} storybook packages at version ${chalk.blue(version)}`);
 
-  if (program.publish) {
+  if (opts.publish) {
     await publish(packages, 'http://localhost:6002');
   }
 
   await execa('npx', ['rimraf', '.npmrc'], { cwd: root });
 
-  if (!program.open) {
+  if (!opts.open) {
     verdaccioServer.close();
     process.exit(0);
   }

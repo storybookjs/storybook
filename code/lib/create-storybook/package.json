@@ -1,6 +1,6 @@
 {
   "name": "create-storybook",
-  "version": "8.3.0-alpha.7",
+  "version": "8.3.0-alpha.9",
   "description": "Initialize Storybook into your project",
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/create-storybook",
   "bugs": {
@@ -57,7 +57,7 @@
   "dependencies": {
     "@types/semver": "^7.3.4",
     "chalk": "^4.1.0",
-    "commander": "^6.2.1",
+    "commander": "^12.1.0",
     "execa": "^5.0.0",
     "fd-package-json": "^1.2.0",
     "find-up": "^5.0.0",

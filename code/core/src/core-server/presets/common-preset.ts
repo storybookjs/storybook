@@ -141,7 +141,7 @@ export const babel = async (_: unknown, options: Options) => {
 };
 
 export const title = (previous: string, options: Options) =>
-  previous || options.packageJson.name || false;
+  previous || options.packageJson?.name || false;
 
 export const logLevel = (previous: any, options: Options) => previous || options.loglevel || 'info';
 

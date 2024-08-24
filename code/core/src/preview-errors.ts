@@ -30,6 +30,7 @@ export enum Category {
   RENDERER_VUE3 = 'RENDERER_VUE3',
   RENDERER_WEB_COMPONENTS = 'RENDERER_WEB-COMPONENTS',
   FRAMEWORK_NEXTJS = 'FRAMEWORK_NEXTJS',
+  ADDON_VITEST = 'ADDON_VITEST',
 }
 
 export class MissingStoryAfterHmrError extends StorybookError {
@@ -313,6 +314,25 @@ export class UnknownArgTypesError extends StorybookError {
 
         This type is either not supported or it is a bug in the docgen generation in Storybook.
         If you think this is a bug, please detail it as much as possible in the Github issue.
+      `,
+    });
+  }
+}
+
+export class UnsupportedViewportDimensionError extends StorybookError {
+  constructor(public data: { dimension: string; value: string }) {
+    super({
+      category: Category.ADDON_VITEST,
+      code: 1,
+      // TODO: Add documentation about viewports support
+      // documentation: '',
+      message: dedent`
+        Encountered an unsupported value "${data.value}" when setting the viewport ${data.dimension} dimension.
+        
+        The Storybook plugin only supports values in the following units:
+        - px, vh, vw, em, rem and %.
+        
+        You can either change the viewport for this story to use one of the supported units or skip the test by adding '!test' to the story's tags per https://storybook.js.org/docs/writing-stories/tags
       `,
     });
   }

@@ -151,7 +151,7 @@ export type PackageJson = PackageJsonFromTypeFest & Record<string, any>;
 // TODO: This could be exported to the outside world and used in `options.ts` file of each `@storybook/APP`
 // like it's described in docs/api/new-frameworks.md
 export interface LoadOptions {
-  packageJson: PackageJson;
+  packageJson?: PackageJson;
   outputDir?: string;
   configDir?: string;
   cacheKey?: string;

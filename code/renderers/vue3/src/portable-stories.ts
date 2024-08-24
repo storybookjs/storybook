@@ -39,7 +39,7 @@ type MapToJSXAble<T> = {
  * Example:
  *
  * ```jsx
- * // setup.js (for jest)
+ * // setup-file.js
  * import { setProjectAnnotations } from '@storybook/vue3';
  * import projectAnnotations from './.storybook/preview';
  *

@@ -2,7 +2,7 @@ import { join } from 'node:path';
 
 import { setOutput } from '@actions/core';
 import chalk from 'chalk';
-import program from 'commander';
+import { program } from 'commander';
 import { readJson } from 'fs-extra';
 
 import { esMain } from '../utils/esmain';

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/experimental-addon-vitest",
-  "version": "8.3.0-alpha.7",
+  "version": "8.3.0-alpha.9",
   "description": "Integrate Vitest with Storybook",
   "keywords": [
     "storybook-addons",
@@ -75,6 +75,9 @@
   },
   "devDependencies": {
     "@vitest/browser": "^2.0.0",
+    "find-up": "^7.0.0",
+    "tinyrainbow": "^1.2.0",
+    "ts-dedent": "^2.2.0",
     "vitest": "^2.0.0"
   },
   "peerDependencies": {

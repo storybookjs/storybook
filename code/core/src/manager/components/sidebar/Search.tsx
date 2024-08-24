@@ -29,7 +29,7 @@ import type {
 } from './types';
 import { isExpandType, isSearchResult } from './types';
 
-const { document } = global;
+const { document } = globalThis;
 
 const DEFAULT_MAX_SEARCH_RESULTS = 50;
 
@@ -285,16 +285,6 @@ export const Search = React.memo(function Search({
       api.setQueryParams({
         [FILTER_KEY]: isBrowsing ? undefined : inputValue,
       });
-      const params = new URLSearchParams(window.location.search);
-      if (window.history.replaceState) {
-        if (inputValue) {
-          params.set(FILTER_KEY, inputValue);
-        } else {
-          params.delete(FILTER_KEY);
-        }
-        const paramsString = params.size > 0 ? `?${params.toString()}` : '';
-        window.history.replaceState({}, '', paramsString);
-      }
     },
     []
   );

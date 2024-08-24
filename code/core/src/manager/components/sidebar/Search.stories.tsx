@@ -34,9 +34,6 @@ const meta = {
     getLastViewed: (): Selection[] => [],
     children: () => <SearchResults {...noResults} />,
   },
-  render: ({ children, ...args }) => {
-    return <Search {...args}>{children}</Search>;
-  },
   globals: { sb_theme: 'side-by-side' },
   decorators: [
     (storyFn) => (
@@ -117,6 +114,6 @@ export const Clearing: Story = {
     const clearIcon = await canvas.findByTitle('Clear search');
     await userEvent.click(clearIcon);
 
-    expect(setQueryParams).toHaveBeenCalledWith({ search: null });
+    expect(setQueryParams).toHaveBeenCalledWith({ search: undefined });
   },
 };

@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
+
 import * as sbcc from 'storybook/internal/common';
-import { UpgradeStorybookToLowerVersionError } from 'storybook/internal/server-errors';
-import { doUpgrade, getStorybookVersion } from './upgrade';
 import { logger } from 'storybook/internal/node-logger';
+import { UpgradeStorybookToLowerVersionError } from 'storybook/internal/server-errors';
+
+import { doUpgrade, getStorybookVersion } from './upgrade';
 
 const findInstallationsMock =
   vi.fn<(arg: string[]) => Promise<sbcc.InstallationMetadata | undefined>>();
@@ -84,8 +86,7 @@ describe('Upgrade errors', () => {
     });
 
     // Mock as a throw, so that we don't have to mock the content of the doUpgrade fn that comes after it
-    vi.spyOn(logger, 'warn').mockImplementation((error) => {
-      // eslint-disable-next-line @typescript-eslint/no-throw-literal
+    vi.spyOn(logger, 'warn').mockImplementation((error: any) => {
       throw error;
     });
 

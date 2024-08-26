@@ -1,8 +1,10 @@
-import fse from 'fs-extra';
-import path from 'path';
-import { sync as spawnSync, spawn as spawnAsync } from 'cross-spawn';
+import { basename, extname, join } from 'node:path';
+
 import { logger } from 'storybook/internal/node-logger';
+
 import chalk from 'chalk';
+import { spawn as spawnAsync, sync as spawnSync } from 'cross-spawn';
+import fse from 'fs-extra';
 
 type ExecOptions = Parameters<typeof spawnAsync>[2];
 
@@ -22,7 +24,9 @@ export const exec = async (
     dryRun,
   }: { startMessage?: string; errorMessage?: string; dryRun?: boolean } = {}
 ) => {
-  if (startMessage) logger.info(startMessage);
+  if (startMessage) {
+    logger.info(startMessage);
+  }
 
   if (dryRun) {
     logger.info(`\n> ${command}\n`);
@@ -66,21 +70,21 @@ export const link = async ({ target, local, start }: LinkOptions) => {
   }
 
   let reproDir = target;
-  let reproName = path.basename(target);
+  let reproName = basename(target);
 
   if (!local) {
-    const reprosDir = path.join(storybookDir, '../storybook-repros');
+    const reprosDir = join(storybookDir, '../storybook-repros');
     logger.info(`Ensuring directory ${reprosDir}`);
     await fse.ensureDir(reprosDir);
 
     logger.info(`Cloning ${target}`);
     await exec(`git clone ${target}`, { cwd: reprosDir });
     // Extract a repro name from url given as input (take the last part of the path and remove the extension)
-    reproName = path.basename(target, path.extname(target));
-    reproDir = path.join(reprosDir, reproName);
+    reproName = basename(target, extname(target));
+    reproDir = join(reprosDir, reproName);
   }
 
-  const reproPackageJson = await fse.readJSON(path.join(reproDir, 'package.json'));
+  const reproPackageJson = await fse.readJSON(join(reproDir, 'package.json'));
 
   const version = spawnSync('yarn', ['--version'], {
     cwd: reproDir,

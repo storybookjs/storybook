@@ -1,17 +1,18 @@
 /* eslint-disable @typescript-eslint/no-shadow */
+import { join } from 'node:path';
 
-import { describe, beforeEach, it, expect, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import path from 'node:path';
 import { normalizeStoriesEntry } from '@storybook/core/common';
 import type { NormalizedStoriesSpecifier, StoryIndexEntry } from '@storybook/core/types';
-import { readCsf, getStorySortParameter } from '@storybook/core/csf-tools';
 import { toId } from '@storybook/csf';
+
+import { getStorySortParameter, readCsf } from '@storybook/core/csf-tools';
 import { logger, once } from '@storybook/core/node-logger';
 
+import { csfIndexer } from '../presets/common-preset';
 import type { StoryIndexGeneratorOptions } from './StoryIndexGenerator';
 import { StoryIndexGenerator } from './StoryIndexGenerator';
-import { csfIndexer } from '../presets/common-preset';
 
 vi.mock('@storybook/csf', async (importOriginal) => {
   const csf = await importOriginal<typeof import('@storybook/csf')>();
@@ -37,8 +38,8 @@ const readCsfMock = vi.mocked(readCsf);
 const getStorySortParameterMock = vi.mocked(getStorySortParameter);
 
 const options: StoryIndexGeneratorOptions = {
-  configDir: path.join(__dirname, '__mockdata__'),
-  workingDir: path.join(__dirname, '__mockdata__'),
+  configDir: join(__dirname, '__mockdata__'),
+  workingDir: join(__dirname, '__mockdata__'),
   indexers: [csfIndexer],
   docs: { defaultName: 'docs', autodocs: false },
 };

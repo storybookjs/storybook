@@ -64,20 +64,7 @@ executors:
         default: "small"
     working_directory: /tmp/storybook
     docker:
-      - image: mcr.microsoft.com/playwright:v1.36.0-focal
-        environment:
-          NODE_OPTIONS: --max_old_space_size=6144
-    resource_class: <<parameters.class>>
-  sb_playwright_component_testing:
-    parameters:
-      class:
-        description: The Resource class
-        type: enum
-        enum: ["small", "medium", "medium+", "large", "xlarge"]
-        default: "small"
-    working_directory: /tmp/storybook
-    docker:
-      - image: mcr.microsoft.com/playwright:v1.42.1-jammy
+      - image: mcr.microsoft.com/playwright:v1.46.0-jammy
         environment:
           NODE_OPTIONS: --max_old_space_size=6144
     resource_class: <<parameters.class>>
@@ -246,7 +233,7 @@ jobs:
           name: Run tests
           command: |
             cd scripts
-            yarn test --coverage --coverage.all=false
+            yarn test --coverage
       - store_test_results:
           path: scripts/junit.xml
       - report-workflow-on-failure
@@ -254,7 +241,7 @@ jobs:
   unit-tests:
     executor:
       class: xlarge
-      name: sb_node_22_browsers
+      name: sb_playwright
     steps:
       - git-shallow-clone/checkout_advanced:
           clone_options: "--depth 1 --verbose"
@@ -264,7 +251,7 @@ jobs:
           name: Test
           command: |
             cd code
-            yarn test --coverage --coverage.all=false
+            yarn test --coverage
       - store_test_results:
           path: code/junit.xml
       - persist_to_workspace:
@@ -409,6 +396,26 @@ jobs:
           command: yarn task --task test-runner --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner) --no-link --start-from=never --junit
       - report-workflow-on-failure:
           template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner)
+      - store_test_results:
+          path: test-results
+  vitest-integration:
+    parameters:
+      parallelism:
+        type: integer
+    executor:
+      class: xlarge
+      name: sb_playwright
+    parallelism: << parameters.parallelism >>
+    steps:
+      - git-shallow-clone/checkout_advanced:
+          clone_options: "--depth 1 --verbose"
+      - attach_workspace:
+          at: .
+      - run:
+          name: Running story tests in Vitest
+          command: yarn task --task vitest-integration --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task vitest-integration) --no-link --start-from=never --junit
+      - report-workflow-on-failure:
+          template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task vitest-integration)
       - store_test_results:
           path: test-results
   test-runner-dev:
@@ -608,13 +615,30 @@ jobs:
                   IN_STORYBOOK_SANDBOX: true
                   STORYBOOK_INIT_EMPTY_TYPE: << parameters.template >>
                   STORYBOOK_DISABLE_TELEMETRY: true
+      - when:
+          condition:
+            equal: ["react-vite-ts", << parameters.template >>]
+          steps:
+            - run:
+                name: Storybook init from empty directory (--skip-install)
+                command: |
+                  cd code
+                  yarn local-registry --open &
+                  cd ../../
+                  mkdir empty-<< parameters.template >>-no-install
+                  cd empty-<< parameters.template >>-no-install
+                  npx storybook init --yes --skip-install
+                environment:
+                  IN_STORYBOOK_SANDBOX: true
+                  STORYBOOK_INIT_EMPTY_TYPE: << parameters.template >>
+                  STORYBOOK_DISABLE_TELEMETRY: true
       - report-workflow-on-failure
   test-portable-stories:
     parameters:
       directory:
         type: string
     executor:
-      name: sb_playwright_component_testing
+      name: sb_playwright
       class: medium
     steps:
       - git-shallow-clone/checkout_advanced:
@@ -675,19 +699,19 @@ workflows:
           requires:
             - unit-tests
       - create-sandboxes:
-          parallelism: 13
+          parallelism: 14
           requires:
             - build
       - build-sandboxes:
-          parallelism: 13
+          parallelism: 14
           requires:
             - create-sandboxes
       - chromatic-sandboxes:
-          parallelism: 10
+          parallelism: 11
           requires:
             - build-sandboxes
       - e2e-production:
-          parallelism: 8
+          parallelism: 9
           requires:
             - build-sandboxes
       - e2e-dev:
@@ -695,9 +719,13 @@ workflows:
           requires:
             - create-sandboxes
       - test-runner-production:
-          parallelism: 8
+          parallelism: 9
           requires:
             - build-sandboxes
+      - vitest-integration:
+          parallelism: 5
+          requires:
+            - create-sandboxes
       - bench:
           parallelism: 5
           requires:
@@ -737,19 +765,19 @@ workflows:
           requires:
             - unit-tests
       - create-sandboxes:
-          parallelism: 19
+          parallelism: 20
           requires:
             - build
       - build-sandboxes:
-          parallelism: 19
+          parallelism: 20
           requires:
             - create-sandboxes
       - chromatic-sandboxes:
-          parallelism: 16
+          parallelism: 17
           requires:
             - build-sandboxes
       - e2e-production:
-          parallelism: 14
+          parallelism: 15
           requires:
             - build-sandboxes
       - e2e-dev:
@@ -757,9 +785,13 @@ workflows:
           requires:
             - create-sandboxes
       - test-runner-production:
-          parallelism: 14
+          parallelism: 15
           requires:
             - build-sandboxes
+      - vitest-integration:
+          parallelism: 5
+          requires:
+            - create-sandboxes
       - test-portable-stories:
           requires:
             - build
@@ -797,22 +829,22 @@ workflows:
           requires:
             - build
       - create-sandboxes:
-          parallelism: 37
+          parallelism: 38
           requires:
             - build
       # - smoke-test-sandboxes: # disabled for now
       #     requires:
       #       - create-sandboxes
       - build-sandboxes:
-          parallelism: 37
+          parallelism: 38
           requires:
             - create-sandboxes
       - chromatic-sandboxes:
-          parallelism: 34
+          parallelism: 35
           requires:
             - build-sandboxes
       - e2e-production:
-          parallelism: 32
+          parallelism: 33
           requires:
             - build-sandboxes
       - e2e-dev:
@@ -820,9 +852,13 @@ workflows:
           requires:
             - create-sandboxes
       - test-runner-production:
-          parallelism: 32
+          parallelism: 33
           requires:
             - build-sandboxes
+      - vitest-integration:
+          parallelism: 11
+          requires:
+            - create-sandboxes
       - test-portable-stories:
           requires:
             - build

@@ -1,8 +1,10 @@
 import type { AnchorHTMLAttributes, MouseEvent } from 'react';
 import React from 'react';
+
 import { styled } from '@storybook/core/theming';
-import { darken } from 'polished';
 import { ChevronRightIcon } from '@storybook/icons';
+
+import { darken } from 'polished';
 
 // Cmd/Ctrl/Shift/Alt + Click should trigger default browser behavior. Same applies to non-left clicks
 const LEFT_BUTTON = 0;

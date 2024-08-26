@@ -24,5 +24,9 @@ jobs:
 
       - name: install and compile
         run: yarn task --task compile --start-from=auto
+
+      - name: Install Playwright Dependencies
+        run: cd code && yarn exec playwright install chromium --with-deps
+
       - name: test
         run: yarn test

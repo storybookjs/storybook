@@ -1,10 +1,10 @@
+import dirSize from 'fast-folder-size';
 import { pathExists, remove } from 'fs-extra';
-
 import { join } from 'path';
 import { promisify } from 'util';
-import dirSize from 'fast-folder-size';
-import type { Task } from '../task';
+
 import { now, saveBench } from '../bench/utils';
+import type { Task } from '../task';
 
 const logger = console;
 
@@ -37,8 +37,16 @@ export const sandbox: Task = {
       await remove(details.sandboxDir);
     }
 
-    const { create, install, addStories, extendMain, init, addExtraDependencies, setImportMap } =
-      await import('./sandbox-parts');
+    const {
+      create,
+      install,
+      addStories,
+      extendMain,
+      init,
+      addExtraDependencies,
+      setImportMap,
+      setupVitest,
+    } = await import('./sandbox-parts');
 
     let startTime = now();
     await create(details, options);
@@ -73,11 +81,41 @@ export const sandbox: Task = {
       await addStories(details, options);
     }
 
+    const extraDeps = [
+      ...(details.template.modifications?.extraDependencies ?? []),
+      // The storybook package forwards some CLI commands to @storybook/cli with npx.
+      // Adding the dep makes sure that even npx will use the linked workspace version.
+      '@storybook/cli',
+    ];
+    if (!details.template.skipTasks?.includes('vitest-integration')) {
+      extraDeps.push(
+        'happy-dom',
+        'vitest',
+        'playwright',
+        '@vitest/browser',
+        '@storybook/experimental-addon-vitest'
+      );
+
+      if (details.template.expected.framework.includes('nextjs')) {
+        extraDeps.push('vite-plugin-storybook-nextjs', 'jsdom');
+      }
+
+      // if (details.template.expected.renderer === '@storybook/svelte') {
+      //   extraDeps.push(`@testing-library/svelte`);
+      // }
+      //
+      // if (details.template.expected.framework === '@storybook/angular') {
+      //   extraDeps.push('@testing-library/angular', '@analogjs/vitest-angular');
+      // }
+
+      await setupVitest(details, options);
+    }
+
     await addExtraDependencies({
       cwd: details.sandboxDir,
       debug: options.debug,
       dryRun: options.dryRun,
-      extraDeps: details.template.modifications?.extraDependencies,
+      extraDeps,
     });
 
     await extendMain(details, options);

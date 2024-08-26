@@ -1,27 +1,36 @@
+import { isAbsolute, join } from 'node:path';
+
 import {
+  JsPackageManagerFactory,
+  type PackageManagerName,
+  getCoercedStorybookVersion,
   getStorybookInfo,
   serverRequire,
-  JsPackageManagerFactory,
-  getCoercedStorybookVersion,
-  type PackageManagerName,
   versions,
 } from 'storybook/internal/common';
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
-import { isAbsolute, join } from 'path';
+
 import SemVer from 'semver';
 import { dedent } from 'ts-dedent';
+
 import { postinstallAddon } from './postinstallAddon';
 
 export interface PostinstallOptions {
   packageManager: PackageManagerName;
+  configDir: string;
 }
 
 /**
  * Extract the addon name and version specifier from the input string
- * @param addon - the input string
- * @returns [addonName, versionSpecifier]
+ *
  * @example
+ *
+ * ```ts
  * getVersionSpecifier('@storybook/addon-docs@7.0.1') => ['@storybook/addon-docs', '7.0.1']
+ * ```
+ *
+ * @param addon - The input string
+ * @returns {undefined} AddonName, versionSpecifier
  */
 export const getVersionSpecifier = (addon: string) => {
   const groups = /^(@{0,1}[^@]+)(?:@(.+))?$/.exec(addon);
@@ -57,13 +66,15 @@ type CLIOptions = {
 /**
  * Install the given addon package and add it to main.js
  *
- * Usage:
- * - sb add @storybook/addon-docs
- * - sb add @storybook/addon-interactions@7.0.1
+ * @example
  *
- * If there is no version specifier and it's a storybook addon,
- * it will try to use the version specifier matching your current
- * Storybook install version.
+ * ```sh
+ * sb add "@storybook/addon-docs"
+ * sb add "@storybook/addon-interactions@7.0.1"
+ * ```
+ *
+ * If there is no version specifier and it's a storybook addon, it will try to use the version
+ * specifier matching your current Storybook install version.
  */
 export async function add(
   addon: string,
@@ -129,7 +140,7 @@ export async function add(
   await writeConfig(main);
 
   if (!skipPostinstall && isCoreAddon(addonName)) {
-    await postinstallAddon(addonName, { packageManager: packageManager.type });
+    await postinstallAddon(addonName, { packageManager: packageManager.type, configDir });
   }
 }
 function isValidVersion(version: string) {

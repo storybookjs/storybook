@@ -1,9 +1,6 @@
 import type { PluginOption } from 'vite';
 
-/**
- * Recursively removes all plugins with the names given
- * Resolves async plugins
- */
+/** Recursively removes all plugins with the names given Resolves async plugins */
 export const withoutVitePlugins = async (
   plugins: PluginOption[] = [],
   namesToRemove: string[]

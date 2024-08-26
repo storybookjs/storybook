@@ -3,12 +3,10 @@ import { DummyService } from './dummy.service';
 
 @Component({
   selector: 'storybook-simple-service-component',
-  template: `
-    <p>{{ name }}:</p>
-    <ul>
-      <li *ngFor="let item of items">{{ item }}</li>
-    </ul>
-  `,
+  template: `<p>{{ name }}:</p>
+<ul>
+  <li *ngFor="let item of items">{{ item }}</li>
+</ul>`,
 })
 export class ServiceComponent implements OnInit {
   items?: {};

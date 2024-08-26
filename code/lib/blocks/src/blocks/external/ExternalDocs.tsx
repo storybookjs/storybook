@@ -1,7 +1,8 @@
 import type { PropsWithChildren } from 'react';
 import React, { useRef } from 'react';
-import type { Renderer, ProjectAnnotations } from 'storybook/internal/types';
+
 import { composeConfigs } from 'storybook/internal/preview-api';
+import type { ProjectAnnotations, Renderer } from 'storybook/internal/types';
 
 import { Docs } from '../Docs';
 import { ExternalPreview } from './ExternalPreview';
@@ -14,7 +15,10 @@ function usePreview<TRenderer extends Renderer = Renderer>(
   projectAnnotations: ProjectAnnotations<TRenderer>
 ) {
   const previewRef = useRef<ExternalPreview<TRenderer>>();
-  if (!previewRef.current) previewRef.current = new ExternalPreview<TRenderer>(projectAnnotations);
+
+  if (!previewRef.current) {
+    previewRef.current = new ExternalPreview<TRenderer>(projectAnnotations);
+  }
   return previewRef.current;
 }
 

@@ -1,8 +1,10 @@
-import fse from 'fs-extra';
-import path from 'path';
-import { dedent } from 'ts-dedent';
+import { resolve } from 'node:path';
+
+import { SupportedLanguage, externalFrameworks } from 'storybook/internal/cli';
 import { logger } from 'storybook/internal/node-logger';
-import { externalFrameworks, SupportedLanguage } from 'storybook/internal/cli';
+
+import fse from 'fs-extra';
+import { dedent } from 'ts-dedent';
 
 interface ConfigureMainOptions {
   addons: string[];
@@ -14,11 +16,10 @@ interface ConfigureMainOptions {
   /**
    * Extra values for main.js
    *
-   * In order to provide non-serializable data like functions, you can use
-   * { value: '%%yourFunctionCall()%%' }
+   * In order to provide non-serializable data like functions, you can use `{ value:
+   * '%%yourFunctionCall()%%' }`
    *
-   * '%% and %%' will be replaced.
-   *
+   * `%%` and `%%` will be replaced.
    */
   [key: string]: any;
 }
@@ -35,10 +36,10 @@ interface ConfigurePreviewOptions {
 }
 
 /**
- * We need to clean up the paths in case of pnp
- * input: "path.dirname(require.resolve(path.join('@storybook/react-webpack5', 'package.json')))"
- * output: "@storybook/react-webpack5"
- * */
+ * We need to clean up the paths in case of pnp input:
+ * `path.dirname(require.resolve(path.join('@storybook/react-webpack5', 'package.json')))` output:
+ * `@storybook/react-webpack5`
+ */
 const sanitizeFramework = (framework: string) => {
   // extract either @storybook/<framework> or storybook-<framework>
   const matches = framework.match(/(@storybook\/\w+(?:-\w+)*)|(storybook-(\w+(?:-\w+)*))/g);
@@ -57,7 +58,7 @@ export async function configureMain({
   prefixes = [],
   ...custom
 }: ConfigureMainOptions) {
-  const srcPath = path.resolve(storybookConfigFolder, '../src');
+  const srcPath = resolve(storybookConfigFolder, '../src');
   const prefix = (await fse.pathExists(srcPath)) ? '../src' : '../stories';
   const config = {
     stories: [`${prefix}/**/*.mdx`, `${prefix}/**/*.stories.@(${extensions.join('|')})`],
@@ -86,7 +87,7 @@ export async function configureMain({
   const finalPrefixes = [...prefixes];
 
   if (custom.framework?.name.includes('path.dirname(')) {
-    imports.push(`import path from 'path';`);
+    imports.push(`import path from 'node:path';`);
   }
 
   if (isTypescript) {

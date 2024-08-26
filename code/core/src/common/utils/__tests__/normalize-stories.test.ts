@@ -1,8 +1,10 @@
 /// <reference types="@testing-library/jest-dom" />;
-import { describe, it, expect, vi } from 'vitest';
 import { sep } from 'node:path';
 
+import { describe, expect, it, vi } from 'vitest';
+
 import { InvalidStoriesEntryError } from '@storybook/core/server-errors';
+
 import {
   getDirectoryFromWorkingDir,
   normalizeStories,

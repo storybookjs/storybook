@@ -1,7 +1,9 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
-import type { Meta, StoryObj } from '@storybook/react';
-import { within, fireEvent, expect } from '@storybook/test';
 import React from 'react';
+
+import type { Meta, StoryObj } from '@storybook/react';
+import { expect, fireEvent, within } from '@storybook/test';
+
 import { Button } from './Button';
 
 const meta = {
@@ -56,8 +58,8 @@ _this description was written as a string in \`parameters.docs.description.story
 };
 
 /**
- * This is the large button
- * _this description was written as a comment above the story, and should never be shown because it should be overridden by the description in the parameters_
+ * This is the large button _this description was written as a comment above the story, and should
+ * never be shown because it should be overridden by the description in the parameters_
  */
 export const Large: Story = {
   args: {

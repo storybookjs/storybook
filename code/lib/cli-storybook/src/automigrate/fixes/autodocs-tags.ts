@@ -1,7 +1,9 @@
-import { dedent } from 'ts-dedent';
-import chalk from 'chalk';
-import type { DocsOptions } from 'storybook/internal/types';
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
+import type { DocsOptions } from 'storybook/internal/types';
+
+import chalk from 'chalk';
+import { dedent } from 'ts-dedent';
+
 import { updateMainConfig } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
 
@@ -16,14 +18,15 @@ interface Options {
   previewConfigPath?: string;
 }
 
-/**
- */
 export const autodocsTags: Fix<Options> = {
   id: 'autodocs-tags',
   versionRange: ['*.*.*', '>=8.0.*'],
   async check({ mainConfig, mainConfigPath, previewConfigPath }) {
     const autodocs = mainConfig?.docs?.autodocs;
-    if (autodocs === undefined) return null;
+
+    if (autodocs === undefined) {
+      return null;
+    }
 
     if (autodocs === true && !previewConfigPath) {
       throw Error(dedent`

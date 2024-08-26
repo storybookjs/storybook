@@ -1,25 +1,27 @@
 import type { Channel } from '@storybook/core/channels';
-import { DOCS_RENDERED } from '@storybook/core/core-events';
-import type { StoryStore } from '../../store';
-
-import type { Render, RenderType } from './Render';
-import { PREPARE_ABORTED } from './Render';
-import type { DocsContextProps } from '../docs-context/DocsContextProps';
-import type { DocsRenderFunction } from '../docs-context/DocsRenderFunction';
-import { DocsContext } from '../docs-context/DocsContext';
 import type { Renderer, StoryId } from '@storybook/core/types';
 import type { CSFFile, ModuleExports } from '@storybook/core/types';
 import type { IndexEntry } from '@storybook/core/types';
 import type { RenderContextCallbacks } from '@storybook/core/types';
 
+import { DOCS_RENDERED } from '@storybook/core/core-events';
+
+import type { StoryStore } from '../../store';
+import { DocsContext } from '../docs-context/DocsContext';
+import type { DocsContextProps } from '../docs-context/DocsContextProps';
+import type { DocsRenderFunction } from '../docs-context/DocsRenderFunction';
+import type { Render, RenderType } from './Render';
+import { PREPARE_ABORTED } from './Render';
+
 /**
- * A MdxDocsRender is a render of a docs entry that comes from a true MDX file,
- * that is a `.mdx` file that doesn't get compiled to a CSF file.
+ * A MdxDocsRender is a render of a docs entry that comes from a true MDX file, that is a `.mdx`
+ * file that doesn't get compiled to a CSF file.
  *
  * A MDX render can reference (import) zero or more CSF files that contain stories.
  *
  * Use cases:
- *  - *.mdx file that may or may not reference a specific CSF file with `<Meta of={} />`
+ *
+ * - *.mdx file that may or may not reference a specific CSF file with `<Meta of={} />`
  */
 
 export class MdxDocsRender<TRenderer extends Renderer> implements Render<TRenderer> {
@@ -59,7 +61,10 @@ export class MdxDocsRender<TRenderer extends Renderer> implements Render<TRender
   async prepare() {
     this.preparing = true;
     const { entryExports, csfFiles = [] } = await this.store.loadEntry(this.id);
-    if (this.torndown) throw PREPARE_ABORTED;
+
+    if (this.torndown) {
+      throw PREPARE_ABORTED;
+    }
 
     this.csfFiles = csfFiles;
     this.exports = entryExports;
@@ -76,7 +81,9 @@ export class MdxDocsRender<TRenderer extends Renderer> implements Render<TRender
   }
 
   docsContext(renderStoryToElement: DocsContextProps<TRenderer>['renderStoryToElement']) {
-    if (!this.csfFiles) throw new Error('Cannot render docs before preparing');
+    if (!this.csfFiles) {
+      throw new Error('Cannot render docs before preparing');
+    }
 
     // NOTE we do *not* attach any CSF file yet. We wait for `referenceMeta(..., true)`
     // ie the CSF file is attached via `<Meta of={} />`
@@ -92,16 +99,19 @@ export class MdxDocsRender<TRenderer extends Renderer> implements Render<TRender
     canvasElement: TRenderer['canvasElement'],
     renderStoryToElement: DocsContextProps<TRenderer>['renderStoryToElement']
   ) {
-    if (!this.exports || !this.csfFiles || !this.store.projectAnnotations)
+    if (!this.exports || !this.csfFiles || !this.store.projectAnnotations) {
       throw new Error('Cannot render docs before preparing');
+    }
 
     const docsContext = this.docsContext(renderStoryToElement);
 
     const { docs } = this.store.projectAnnotations.parameters || {};
-    if (!docs)
+
+    if (!docs) {
       throw new Error(
         `Cannot render a story in viewMode=docs if \`@storybook/addon-docs\` is not installed`
       );
+    }
 
     const docsParameter = { ...docs, page: this.exports.default };
     const renderer = await docs.renderer();
@@ -118,7 +128,9 @@ export class MdxDocsRender<TRenderer extends Renderer> implements Render<TRender
 
     this.rerender = async () => renderDocs();
     this.teardownRender = async ({ viewModeChanged }: { viewModeChanged?: boolean } = {}) => {
-      if (!viewModeChanged || !canvasElement) return;
+      if (!viewModeChanged || !canvasElement) {
+        return;
+      }
       renderer.unmount(canvasElement);
       this.torndown = true;
     };

@@ -1,8 +1,12 @@
-import mockRequire from 'mock-require';
-import { describe, beforeEach, afterEach, it, expect, vi } from 'vitest';
-import path from 'node:path';
+import { normalize } from 'node:path';
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { logger } from '@storybook/core/node-logger';
-import { getPresets, resolveAddonName, loadPreset } from './presets';
+
+import mockRequire from 'mock-require';
+
+import { getPresets, loadPreset, resolveAddonName } from './presets';
 
 function wrapPreset(basePresets: any): { babel: Function; webpack: Function } {
   return {
@@ -410,7 +414,7 @@ describe('resolveAddonName', () => {
   it('should resolve managerEntries', () => {
     expect(resolveAddonName({} as any, '@storybook/addon-actions/register.js', {})).toEqual({
       name: '@storybook/addon-actions/register.js',
-      managerEntries: [path.normalize('@storybook/addon-actions/register')],
+      managerEntries: [normalize('@storybook/addon-actions/register')],
       type: 'virtual',
     });
   });
@@ -418,7 +422,7 @@ describe('resolveAddonName', () => {
   it('should resolve managerEntries from new /manager path', () => {
     expect(resolveAddonName({} as any, '@storybook/addon-actions/manager', {})).toEqual({
       name: '@storybook/addon-actions/manager',
-      managerEntries: [path.normalize('@storybook/addon-actions/manager')],
+      managerEntries: [normalize('@storybook/addon-actions/manager')],
       type: 'virtual',
     });
   });
@@ -545,14 +549,14 @@ describe('loadPreset', () => {
         name: '@storybook/addon-actions/register.js',
         options: {},
         preset: {
-          managerEntries: [path.normalize('@storybook/addon-actions/register')],
+          managerEntries: [normalize('@storybook/addon-actions/register')],
         },
       },
       {
         name: 'addon-foo/register.js',
         options: {},
         preset: {
-          managerEntries: [path.normalize('addon-foo/register')],
+          managerEntries: [normalize('addon-foo/register')],
         },
       },
       {
@@ -574,14 +578,14 @@ describe('loadPreset', () => {
         name: 'addon-baz/register.js',
         options: {},
         preset: {
-          managerEntries: [path.normalize('addon-baz/register')],
+          managerEntries: [normalize('addon-baz/register')],
         },
       },
       {
         name: '@storybook/addon-notes/register-panel',
         options: {},
         preset: {
-          managerEntries: [path.normalize('@storybook/addon-notes/register-panel')],
+          managerEntries: [normalize('@storybook/addon-notes/register-panel')],
         },
       },
       {

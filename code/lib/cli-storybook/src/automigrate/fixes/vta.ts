@@ -1,5 +1,6 @@
-import { dedent } from 'ts-dedent';
 import chalk from 'chalk';
+import { dedent } from 'ts-dedent';
+
 import { getAddonNames, updateMainConfig } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
 
@@ -7,8 +8,6 @@ const logger = console;
 
 interface Options {}
 
-/**
- */
 export const vta: Fix<Options> = {
   id: 'visual-tests-addon',
 

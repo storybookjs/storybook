@@ -1,10 +1,14 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import React from 'react';
-import { ManagerContext } from '@storybook/core/manager-api';
+
+import type { Meta, StoryObj } from '@storybook/react';
 import { within } from '@storybook/test';
+
+import { ManagerContext } from '@storybook/core/manager-api';
+
 import { startCase } from 'lodash';
-import { MobileNavigation } from './MobileNavigation';
+
 import { LayoutProvider, useLayout } from '../../layout/LayoutProvider';
+import { MobileNavigation } from './MobileNavigation';
 
 const MockPanel = () => {
   const { setMobilePanelOpen } = useLayout();

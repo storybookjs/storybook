@@ -134,6 +134,7 @@ For example:
 
 ```js
 import { Button } from './Button';
+
 storiesOf('Button', module).add('story', () => <Button label="The Button" />);
 ```
 
@@ -141,6 +142,7 @@ Becomes:
 
 ```js
 import { Button } from './Button';
+
 storiesOf('Button', module)
   .addParameters({ component: Button })
   .add('story', () => <Button label="The Button" />);

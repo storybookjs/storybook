@@ -1,8 +1,9 @@
-import { minVersion, validRange } from 'semver';
 import type {
-  SupportedFrameworks,
   SupportedRenderers as CoreSupportedFrameworks,
+  SupportedFrameworks,
 } from '@storybook/core/types';
+
+import { minVersion, validRange } from 'semver';
 
 function eqMajor(versionRange: string, major: number) {
   // Uses validRange to avoid a throw from minVersion if an invalid range gets passed
@@ -25,9 +26,7 @@ export const externalFrameworks: ExternalFramework[] = [
   { name: 'solid', frameworks: ['storybook-solidjs-vite'], renderer: 'storybook-solidjs' },
 ];
 
-/**
- * @deprecated Please use `SupportedFrameworks` from `@storybook/types` instead
- */
+/** @deprecated Please use `SupportedFrameworks` from `@storybook/types` instead */
 export type SupportedRenderers = CoreSupportedFrameworks;
 
 export const SUPPORTED_RENDERERS: SupportedRenderers[] = [
@@ -75,6 +74,10 @@ export enum CoreWebpackCompilers {
   SWC = 'swc',
 }
 
+export enum CommunityBuilder {
+  Rsbuild = 'rsbuild',
+}
+
 export const compilerNameToCoreCompiler: Record<string, CoreWebpackCompilers> = {
   '@storybook/addon-webpack5-compiler-babel': CoreWebpackCompilers.Babel,
   '@storybook/addon-webpack5-compiler-swc': CoreWebpackCompilers.SWC,
@@ -102,7 +105,7 @@ export type TemplateMatcher = {
 
 export type TemplateConfiguration = {
   preset: ProjectType;
-  /** will be checked both against dependencies and devDependencies */
+  /** Will be checked both against dependencies and devDependencies */
   dependencies?: string[] | { [dependency: string]: (version: string) => boolean };
   peerDependencies?: string[] | { [dependency: string]: (version: string) => boolean };
   files?: string[];
@@ -112,9 +115,9 @@ export type TemplateConfiguration = {
 /**
  * Configuration to match a storybook preset template.
  *
- * This has to be an array sorted in order of specificity/priority.
- * Reason: both REACT and WEBPACK_REACT have react as dependency,
- * therefore WEBPACK_REACT has to come first, as it's more specific.
+ * This has to be an array sorted in order of specificity/priority. Reason: both REACT and
+ * WEBPACK_REACT have react as dependency, therefore WEBPACK_REACT has to come first, as it's more
+ * specific.
  */
 export const supportedTemplates: TemplateConfiguration[] = [
   {

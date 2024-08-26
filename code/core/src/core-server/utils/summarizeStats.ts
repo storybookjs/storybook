@@ -5,7 +5,10 @@ export type IndexStatsSummary = Record<keyof IndexInputStats, number>;
 export const addStats = (stat: IndexInputStats, acc: IndexStatsSummary) => {
   Object.entries(stat).forEach(([key, value]) => {
     const statsKey = key as keyof IndexInputStats;
-    if (!acc[statsKey]) acc[statsKey] = 0;
+
+    if (!acc[statsKey]) {
+      acc[statsKey] = 0;
+    }
     acc[statsKey] += value ? 1 : 0;
   });
 };

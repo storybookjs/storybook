@@ -1,8 +1,9 @@
 import type { FC } from 'react';
 import React from 'react';
+
+import { Markdown } from './Markdown';
 import type { Of } from './useOf';
 import { useOf } from './useOf';
-import { Markdown } from './Markdown';
 
 export enum DescriptionType {
   INFO = 'info',
@@ -13,8 +14,8 @@ export enum DescriptionType {
 
 interface DescriptionProps {
   /**
-   * Specify where to get the description from. Can be a component, a CSF file or a story.
-   * If not specified, the description will be extracted from the meta of the attached CSF file.
+   * Specify where to get the description from. Can be a component, a CSF file or a story. If not
+   * specified, the description will be extracted from the meta of the attached CSF file.
    */
   of?: Of;
 }

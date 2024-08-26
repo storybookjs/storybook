@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-jest",
-  "version": "8.3.0-alpha.4",
+  "version": "8.3.0-alpha.9",
   "description": "React storybook addon that show component jest report",
   "keywords": [
     "addon",
@@ -59,7 +59,7 @@
     "upath": "^2.0.1"
   },
   "devDependencies": {
-    "@storybook/icons": "^1.2.5",
+    "@storybook/icons": "^1.2.10",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-resize-detector": "^7.1.2",

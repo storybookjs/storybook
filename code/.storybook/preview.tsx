@@ -1,24 +1,27 @@
-import { global } from '@storybook/global';
-import React, { Fragment, useEffect } from 'react';
-import { isChromatic } from './isChromatic';
+import * as React from 'react';
+import { Fragment, useEffect } from 'react';
+
+import type { Channel } from 'storybook/internal/channels';
+import { DocsContext as DocsContextProps, useArgs } from 'storybook/internal/preview-api';
+import type { PreviewWeb } from 'storybook/internal/preview-api';
 import {
   Global,
   ThemeProvider,
-  themes,
-  createReset,
   convert,
+  createReset,
   styled,
+  themes,
   useTheme,
 } from 'storybook/internal/theming';
-import { useArgs, DocsContext as DocsContextProps } from 'storybook/internal/preview-api';
-import type { PreviewWeb } from 'storybook/internal/preview-api';
-import type { ReactRenderer, Decorator } from '@storybook/react';
-import type { Channel } from 'storybook/internal/channels';
 
 import { DocsContext } from '@storybook/blocks';
+import { global } from '@storybook/global';
+import type { Decorator, Loader, ReactRenderer } from '@storybook/react';
+
 import { MINIMAL_VIEWPORTS } from '@storybook/addon-viewport';
 
 import { DocsPageWrapper } from '../lib/blocks/src/components';
+import { isChromatic } from './isChromatic';
 
 const { document } = global;
 
@@ -92,7 +95,6 @@ const StackContainer = ({ children, layout }) => (
       height: '100%',
       display: 'flex',
       flexDirection: 'column',
-      // margin: layout === 'fullscreen' ? 0 : '-1rem',
     }}
   >
     <style dangerouslySetInnerHTML={{ __html: 'html, body, #storybook-root { height: 100%; }' }} />
@@ -121,15 +123,21 @@ const preview = (window as any).__STORYBOOK_PREVIEW__ as PreviewWeb<ReactRendere
 const channel = (window as any).__STORYBOOK_ADDONS_CHANNEL__ as Channel;
 export const loaders = [
   /**
-   * This loader adds a DocsContext to the story, which is required for the most Blocks to work.
-   * A story will specify which stories they need in the index with:
+   * This loader adds a DocsContext to the story, which is required for the most Blocks to work. A
+   * story will specify which stories they need in the index with:
+   *
+   * ```ts
    * parameters: {
-   *  relativeCsfPaths: ['../stories/MyStory.stories.tsx'], // relative to the story
+   *   relativeCsfPaths: ['../stories/MyStory.stories.tsx'], // relative to the story
    * }
+   * ```
+   *
    * The DocsContext will then be added via the decorator below.
    */
   async ({ parameters: { relativeCsfPaths, attached = true } }) => {
-    if (!relativeCsfPaths) return {};
+    if (!relativeCsfPaths) {
+      return {};
+    }
     const csfFiles = await Promise.all(
       (relativeCsfPaths as string[]).map(async (blocksRelativePath) => {
         const projectRelativePath = `./lib/blocks/src/${blocksRelativePath.replace(
@@ -158,7 +166,7 @@ export const loaders = [
     }
     return { docsContext };
   },
-];
+] as Loader[];
 
 export const decorators = [
   // This decorator adds the DocsContext created in the loader above
@@ -182,7 +190,8 @@ export const decorators = [
       <Story />
     ),
   /**
-   * This decorator renders the stories side-by-side, stacked or default based on the theme switcher in the toolbar
+   * This decorator renders the stories side-by-side, stacked or default based on the theme switcher
+   * in the toolbar
    */
   (StoryFn, { globals, playFunction, args, storyGlobals, parameters }) => {
     let theme = globals.sb_theme;
@@ -264,9 +273,9 @@ export const decorators = [
     }
   },
   /**
-   * This decorator shows the current state of the arg named in the
-   * parameters.withRawArg property, by updating the arg in the onChange function
-   * this also means that the arg will sync with the control panel
+   * This decorator shows the current state of the arg named in the parameters.withRawArg property,
+   * by updating the arg in the onChange function this also means that the arg will sync with the
+   * control panel
    *
    * If parameters.withRawArg is not set, this decorator will do nothing
    */
@@ -332,9 +341,6 @@ export const parameters = {
       'HSLA(240,11%,91%,0.5)',
       'slategray',
     ],
-  },
-  viewport: {
-    options: MINIMAL_VIEWPORTS,
   },
   themes: {
     disable: true,

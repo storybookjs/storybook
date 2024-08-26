@@ -46,14 +46,25 @@ function insertScript($script: any, callback: any, $scriptRoot: any) {
   }
 
   // re-insert the script tag so it executes.
-  if ($scriptRoot) $scriptRoot.appendChild(scriptEl);
-  else document.head.appendChild(scriptEl);
+
+  // re-insert the script tag so it executes.
+  if ($scriptRoot) {
+    $scriptRoot.appendChild(scriptEl);
+  } else {
+    document.head.appendChild(scriptEl);
+  }
+
+  // clean-up
 
   // clean-up
   $script.parentNode.removeChild($script);
 
   // run the callback immediately for inline scripts
-  if (!$script.src) callback();
+
+  // run the callback immediately for inline scripts
+  if (!$script.src) {
+    callback();
+  }
 }
 
 // runs an array of async functions in sequential order

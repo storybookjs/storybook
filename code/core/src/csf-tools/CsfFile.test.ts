@@ -1,8 +1,10 @@
 /* eslint-disable no-underscore-dangle */
-import { dedent } from 'ts-dedent';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
 import yaml from 'js-yaml';
-import { loadCsf, isModuleMock } from './CsfFile';
+import { dedent } from 'ts-dedent';
+
+import { type CsfOptions, formatCsf, isModuleMock, loadCsf } from './CsfFile';
 
 expect.addSnapshotSerializer({
   print: (val: any) => yaml.dump(val).trimEnd(),
@@ -19,52 +21,46 @@ const parse = (code: string, includeParameters?: boolean) => {
   return { meta, stories: filtered };
 };
 
-//
+const transform = (code: string, options: Partial<CsfOptions> = { makeTitle }) => {
+  const parsed = loadCsf(code, { ...options, makeTitle }).parse();
+  return formatCsf(parsed);
+};
 
 describe('CsfFile', () => {
   describe('basic', () => {
-    it('args stories', () => {
+    it('filters out non-story exports', () => {
+      const code = `
+        export default { title: 'foo/bar', excludeStories: ['invalidStory'] };
+        export const invalidStory = {};
+        export const validStory = {};
+      `;
+      const parsed = loadCsf(code, { makeTitle }).parse();
+      expect(Object.keys(parsed._stories)).toEqual(['validStory']);
+    });
+    it('filters out non-story exports', () => {
+      const code = `
+        export default { title: 'foo/bar', excludeStories: ['invalidStory'] };
+        export const invalidStory = {};
+        export const A = {}
+        const B = {};
+        export { B };
+      `;
+      const parsed = loadCsf(code, { makeTitle }).parse();
+      expect(Object.keys(parsed._stories)).toEqual(['A', 'B']);
+    });
+    it('transforms inline default exports to constant declarations', () => {
       expect(
-        parse(
+        transform(
           dedent`
           export default { title: 'foo/bar' };
-          export const A = () => {};
-          export const B = (args) => {};
         `,
-          true
+          { transformInlineMeta: true }
         )
       ).toMatchInlineSnapshot(`
-        meta:
-          title: foo/bar
-        stories:
-          - id: foo-bar--a
-            name: A
-            parameters:
-              __isArgsStory: false
-              __id: foo-bar--a
-            __stats:
-              play: false
-              render: false
-              loaders: false
-              beforeEach: false
-              globals: false
-              storyFn: true
-              mount: false
-              moduleMock: false
-          - id: foo-bar--b
-            name: B
-            parameters:
-              __isArgsStory: true
-              __id: foo-bar--b
-            __stats:
-              play: false
-              render: false
-              loaders: false
-              beforeEach: false
-              globals: false
-              storyFn: true
-              mount: false
-              moduleMock: false
+        "const _meta = {
+          title: 'foo/bar'
+        };
+        export default _meta;"
       `);
     });
 

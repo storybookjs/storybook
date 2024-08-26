@@ -1,28 +1,31 @@
-import { useStorybookApi, shortcutToHumanString } from '@storybook/core/manager-api';
+import React, { useCallback, useRef, useState } from 'react';
+
+import { IconButton, TooltipNote, WithTooltip } from '@storybook/core/components';
 import { styled } from '@storybook/core/theming';
+import { global } from '@storybook/global';
+import { CloseIcon, PlusIcon, SearchIcon } from '@storybook/icons';
+
+import { shortcutToHumanString, useStorybookApi } from '@storybook/core/manager-api';
+
 import type { DownshiftState, StateChangeOptions } from 'downshift';
 import Downshift from 'downshift';
 import type { FuseOptions } from 'fuse.js';
 import Fuse from 'fuse.js';
-import { global } from '@storybook/global';
-import React, { useRef, useState, useCallback } from 'react';
-import { CloseIcon, PlusIcon, SearchIcon } from '@storybook/icons';
-import { IconButton, TooltipNote, WithTooltip } from '@storybook/core/components';
+
+import { getGroupStatus, getHighestStatus } from '../../utils/status';
+import { scrollIntoView, searchItem } from '../../utils/tree';
+import { useLayout } from '../layout/LayoutProvider';
+import { CreateNewStoryFileModal } from './CreateNewStoryFileModal';
 import { DEFAULT_REF_ID } from './Sidebar';
 import type {
   CombinedDataset,
-  SearchItem,
-  SearchResult,
   DownshiftItem,
   SearchChildrenFn,
+  SearchItem,
+  SearchResult,
   Selection,
 } from './types';
-import { isSearchResult, isExpandType } from './types';
-
-import { scrollIntoView, searchItem } from '../../utils/tree';
-import { getGroupStatus, getHighestStatus } from '../../utils/status';
-import { useLayout } from '../layout/LayoutProvider';
-import { CreateNewStoryFileModal } from './CreateNewStoryFileModal';
+import { isExpandType, isSearchResult } from './types';
 
 const { document } = global;
 
@@ -216,7 +219,10 @@ export const Search = React.memo<{
   const getResults = useCallback(
     (input: string) => {
       const fuse = makeFuse();
-      if (!input) return [];
+
+      if (!input) {
+        return [];
+      }
 
       let results: DownshiftItem[] = [];
       const resultIds: Set<string> = new Set();
@@ -225,8 +231,9 @@ export const Search = React.memo<{
           !(item.type === 'component' || item.type === 'docs' || item.type === 'story') ||
           // @ts-expect-error (non strict)
           resultIds.has(item.parent)
-        )
+        ) {
           return false;
+        }
         resultIds.add(item.id);
         return true;
       });

@@ -1,8 +1,8 @@
 import chalk from 'chalk';
 import { dedent } from 'ts-dedent';
 
-import type { Fix } from '../types';
 import { updateMainConfig } from '../helpers/mainConfigFile';
+import type { Fix } from '../types';
 
 const logger = console;
 
@@ -10,9 +10,7 @@ interface AutodocsTrueFrameworkRunOptions {
   value?: boolean | 'tag';
 }
 
-/**
- * Set the docs.autodocs option to true if it isn't already set
- */
+/** Set the `docs.autodocs` option to true if it isn't already set */
 export const autodocsTrue: Fix<AutodocsTrueFrameworkRunOptions> = {
   id: 'autodocsTrue',
 

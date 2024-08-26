@@ -1,4 +1,5 @@
-import { it, expect } from 'vitest';
+import { expect, it } from 'vitest';
+
 import { getChromaticVersionSpecifier } from './get-chromatic-version';
 
 it('works for dependencies', () => {

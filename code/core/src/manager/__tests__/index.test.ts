@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
+import { describe, expect, it } from 'vitest';
 
-import { describe, it, expect } from 'vitest';
 import { renderStorybookUI } from '..';
 
 describe('Main API', () => {

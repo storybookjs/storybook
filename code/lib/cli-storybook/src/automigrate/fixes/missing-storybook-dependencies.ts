@@ -1,10 +1,13 @@
-import chalk from 'chalk';
 import { readFile } from 'node:fs/promises';
+
+import { getStorybookVersionSpecifier } from 'storybook/internal/cli';
+
+import type { InstallationMetadata, JsPackageManager } from '@storybook/core/common';
+
+import chalk from 'chalk';
 import { dedent } from 'ts-dedent';
 
 import type { Fix } from '../types';
-import { getStorybookVersionSpecifier } from 'storybook/internal/cli';
-import type { InstallationMetadata, JsPackageManager } from '@storybook/core/common';
 
 const logger = console;
 
@@ -59,9 +62,7 @@ async function checkInstallations(
   return result;
 }
 
-/**
- * Find usage of Storybook packages in the project files which are not present in the dependencies.
- */
+/** Find usage of Storybook packages in the project files which are not present in the dependencies. */
 export const missingStorybookDependencies: Fix<MissingStorybookDependenciesOptions> = {
   id: 'missingStorybookDependencies',
   promptType: 'auto',
@@ -135,13 +136,11 @@ export const missingStorybookDependencies: Fix<MissingStorybookDependenciesOptio
       const versionToInstallWithoutModifiers = versionToInstall?.replace(/[\^~]/, '');
 
       /**
-       * WORKAROUND: necessary for the following scenario:
-       * Storybook latest is currently at 8.2.2
-       * User has all Storybook deps at ^8.2.1
-       * We run e.g. npm install with the dependency@^8.2.1
-       * The package.json will have ^8.2.1 but install 8.2.2
-       * So we first install the exact version, then run code again
-       * to write to package.json to add the caret back, but without running install
+       * WORKAROUND: necessary for the following scenario: Storybook latest is currently at 8.2.2
+       * User has all Storybook deps at ^8.2.1 We run e.g. npm install with the dependency@^8.2.1
+       * The package.json will have ^8.2.1 but install 8.2.2 So we first install the exact version,
+       * then run code again to write to package.json to add the caret back, but without running
+       * install
        */
       await packageManager.addDependencies(
         { installAsDevDependencies: true },

@@ -1,9 +1,11 @@
-import chalk from 'chalk';
-import { dedent } from 'ts-dedent';
-import semver from 'semver';
-import type { PackageJson } from 'storybook/internal/types';
-import type { Fix } from '../types';
 import type { PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
+import type { PackageJson } from 'storybook/internal/types';
+
+import chalk from 'chalk';
+import semver from 'semver';
+import { dedent } from 'ts-dedent';
+
+import type { Fix } from '../types';
 
 interface SbScriptsRunOptions {
   storybookScripts: Record<string, { before: string; after: string }>;
@@ -14,10 +16,10 @@ interface SbScriptsRunOptions {
 const logger = console;
 
 /**
- * Slightly big function because JS regex doesn't have proper full-word boundary.
- * This goes through all the words in each script, and only return the scripts
- * that do contain the actual sb binary, and not something like "npm run start-storybook"
- * which could actually be a custom script even though the name matches the legacy binary name
+ * Slightly big function because JS regex doesn't have proper full-word boundary. This goes through
+ * all the words in each script, and only return the scripts that do contain the actual sb binary,
+ * and not something like "npm run start-storybook" which could actually be a custom script even
+ * though the name matches the legacy binary name
  */
 export const getStorybookScripts = (allScripts: NonNullable<PackageJson['scripts']>) => {
   return Object.keys(allScripts).reduce(
@@ -72,6 +74,7 @@ export const getStorybookScripts = (allScripts: NonNullable<PackageJson['scripts
  * Is the user using start-storybook or build-storybook in its scripts
  *
  * If so:
+ *
  * - Change start-storybook and build-storybook scripts to storybook dev and storybook build
  * - Change sb to storybook if they are using sb
  */

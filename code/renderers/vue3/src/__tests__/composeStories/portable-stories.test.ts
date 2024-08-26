@@ -1,17 +1,19 @@
 // @vitest-environment happy-dom
-
 /// <reference types="@testing-library/jest-dom" />;
-import { it, expect, vi, describe } from 'vitest';
 import { render, screen } from '@testing-library/vue';
+import { describe, expect, it, vi } from 'vitest';
+
 import { addons } from 'storybook/internal/preview-api';
-import { expectTypeOf } from 'expect-type';
+
 import type { Meta } from '@storybook/vue3';
 
+import { expectTypeOf } from 'expect-type';
+
+import { composeStories, composeStory, setProjectAnnotations } from '../../portable-stories';
 import * as stories from './Button.stories';
 import type Button from './Button.vue';
-import { composeStories, composeStory, setProjectAnnotations } from '../../portable-stories';
 
-setProjectAnnotations({ testingLibraryRender: render });
+setProjectAnnotations([]);
 
 // example with composeStories, returns an object with all stories composed with args/decorators
 const { CSF3Primary, LoaderStory } = composeStories(stories);
@@ -60,7 +62,6 @@ describe('projectAnnotations', () => {
   it('renders with default projectAnnotations', () => {
     setProjectAnnotations([
       {
-        testingLibraryRender: render,
         parameters: { injected: true },
         globalTypes: {
           locale: { defaultValue: 'en' },
@@ -144,7 +145,9 @@ describe('ComposeStories types', () => {
 // Batch snapshot testing
 const testCases = Object.values(composeStories(stories)).map((Story) => [Story.storyName, Story]);
 it.each(testCases)('Renders %s story', async (_storyName, Story) => {
-  if (typeof Story === 'string' || _storyName === 'CSF2StoryWithLocale') return;
+  if (typeof Story === 'string' || _storyName === 'CSF2StoryWithLocale') {
+    return;
+  }
   await Story.run();
   await new Promise((resolve) => setTimeout(resolve, 0));
   expect(document.body).toMatchSnapshot();

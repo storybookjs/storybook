@@ -1,7 +1,7 @@
 import { dedent } from 'ts-dedent';
-import { Markdown as MarkdownComponent } from './Markdown';
 
 import mdContent from '../examples/Markdown-content.md?raw';
+import { Markdown as MarkdownComponent } from './Markdown';
 
 export default {
   component: MarkdownComponent,
@@ -62,10 +62,9 @@ export const Markdown = {
 };
 
 /**
- * The Markdown component won't know the difference between getting a raw string
- * and something imported from a .md file.
- * So this story doesn't actually test the component, but rather the import
- * at the top of the CSF file
+ * The Markdown component won't know the difference between getting a raw string and something
+ * imported from a .md file. So this story doesn't actually test the component, but rather the
+ * import at the top of the CSF file
  */
 export const ImportedMDFile = {
   name: 'Imported .md file',

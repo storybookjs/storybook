@@ -1,13 +1,15 @@
-import fse, { readFile, readJson, writeJson } from 'fs-extra';
-import { dedent } from 'ts-dedent';
-import detectIndent from 'detect-indent';
-import prompts from 'prompts';
-import chalk from 'chalk';
+import { existsSync } from 'node:fs';
 
-import { readConfig, writeConfig } from '@storybook/core/csf-tools';
 import type { JsPackageManager } from '@storybook/core/common';
 import { paddedLog } from '@storybook/core/common';
-import fs from 'node:fs';
+
+import { readConfig, writeConfig } from '@storybook/core/csf-tools';
+
+import chalk from 'chalk';
+import detectIndent from 'detect-indent';
+import { readFile, readJson, writeJson } from 'fs-extra';
+import prompts from 'prompts';
+import { dedent } from 'ts-dedent';
 
 export const SUPPORTED_ESLINT_EXTENSIONS = ['js', 'cjs', 'json'];
 const UNSUPPORTED_ESLINT_EXTENSIONS = ['yaml', 'yml'];
@@ -15,7 +17,7 @@ const UNSUPPORTED_ESLINT_EXTENSIONS = ['yaml', 'yml'];
 export const findEslintFile = () => {
   const filePrefix = '.eslintrc';
   const unsupportedExtension = UNSUPPORTED_ESLINT_EXTENSIONS.find((ext: string) =>
-    fs.existsSync(`${filePrefix}.${ext}`)
+    existsSync(`${filePrefix}.${ext}`)
   );
 
   if (unsupportedExtension) {
@@ -23,7 +25,7 @@ export const findEslintFile = () => {
   }
 
   const extension = SUPPORTED_ESLINT_EXTENSIONS.find((ext: string) =>
-    fs.existsSync(`${filePrefix}.${ext}`)
+    existsSync(`${filePrefix}.${ext}`)
   );
   return extension ? `${filePrefix}.${extension}` : null;
 };
@@ -49,9 +51,17 @@ export async function extractEslintInfo(packageManager: JsPackageManager): Promi
 }
 
 export const normalizeExtends = (existingExtends: any): string[] => {
-  if (!existingExtends) return [];
-  if (typeof existingExtends === 'string') return [existingExtends];
-  if (Array.isArray(existingExtends)) return existingExtends;
+  if (!existingExtends) {
+    return [];
+  }
+
+  if (typeof existingExtends === 'string') {
+    return [existingExtends];
+  }
+
+  if (Array.isArray(existingExtends)) {
+    return existingExtends;
+  }
   throw new Error(`Invalid eslint extends ${existingExtends}`);
 };
 

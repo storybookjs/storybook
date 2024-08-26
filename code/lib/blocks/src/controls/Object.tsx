@@ -1,13 +1,17 @@
+import type { ComponentProps, FC, FocusEvent, SyntheticEvent } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+import { Button, Form, IconButton } from 'storybook/internal/components';
+import { type Theme, styled, useTheme } from 'storybook/internal/theming';
+
 import { global } from '@storybook/global';
-import cloneDeep from 'lodash/cloneDeep.js';
-import type { ComponentProps, SyntheticEvent, FC, FocusEvent } from 'react';
-import React, { useCallback, useMemo, useState, useEffect, useRef } from 'react';
-import { styled, useTheme, type Theme } from 'storybook/internal/theming';
-import { Form, IconButton, Button } from 'storybook/internal/components';
 import { AddIcon, EyeCloseIcon, EyeIcon, SubtractIcon } from '@storybook/icons';
-import { JsonTree } from './react-editable-json-tree';
+
+import cloneDeep from 'lodash/cloneDeep.js';
+
 import { getControlId, getControlSetterButtonId } from './helpers';
-import type { ControlProps, ObjectValue, ObjectConfig } from './types';
+import { JsonTree } from './react-editable-json-tree';
+import type { ControlProps, ObjectConfig, ObjectValue } from './types';
 
 const { window: globalWindow } = global;
 

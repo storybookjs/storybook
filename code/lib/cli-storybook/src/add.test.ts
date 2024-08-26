@@ -1,4 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
+
 import { add, getVersionSpecifier } from './add';
 
 const MockedConfig = vi.hoisted(() => {
@@ -143,6 +144,7 @@ describe('add (extra)', () => {
 
     expect(MockedPostInstall.postinstallAddon).toHaveBeenCalledWith('@storybook/addon-docs', {
       packageManager: 'npm',
+      configDir: '.storybook',
     });
   });
 });

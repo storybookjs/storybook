@@ -1,13 +1,14 @@
-import { listCodemods, runCodemod } from '@storybook/codemod';
+import { getStorybookVersionSpecifier } from 'storybook/internal/cli';
 import {
   JsPackageManagerFactory,
   getCoercedStorybookVersion,
   getStorybookInfo,
 } from 'storybook/internal/common';
 
+import { listCodemods, runCodemod } from '@storybook/codemod';
+
 import { runFixes } from './automigrate';
 import { mdxToCSF } from './automigrate/fixes/mdx-to-csf';
-import { getStorybookVersionSpecifier } from 'storybook/internal/cli';
 
 const logger = console;
 
@@ -16,13 +17,9 @@ type CLIOptions = {
   configDir?: string;
   dryRun?: boolean;
   list?: string[];
-  /**
-   * Rename suffix of matching files after codemod has been applied, e.g. ".js:.ts"
-   */
+  /** Rename suffix of matching files after codemod has been applied, e.g. `".js:.ts"` */
   rename?: string;
-  /**
-   * jscodeshift parser
-   */
+  /** `jscodeshift` parser */
   parser?: 'babel' | 'babylon' | 'flow' | 'ts' | 'tsx';
 };
 

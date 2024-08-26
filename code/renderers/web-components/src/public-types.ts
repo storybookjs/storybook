@@ -3,12 +3,13 @@ import type {
   Args,
   ComponentAnnotations,
   DecoratorFunction,
-  LoaderFunction,
-  StoryAnnotations,
   StoryContext as GenericStoryContext,
-  StrictArgs,
+  LoaderFunction,
   ProjectAnnotations,
+  StoryAnnotations,
+  StrictArgs,
 } from 'storybook/internal/types';
+
 import type { WebComponentsRenderer } from './types';
 
 export type { Args, ArgTypes, Parameters, StrictArgs } from 'storybook/internal/types';

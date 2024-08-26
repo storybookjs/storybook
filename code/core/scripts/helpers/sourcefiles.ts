@@ -1,9 +1,10 @@
-import { join } from 'node:path';
 import { readdir, writeFile } from 'node:fs/promises';
-import { dedent, prettier, getWorkspace, esbuild } from '../../../../scripts/prepare/tools';
-import { temporaryFile } from '../../src/common/utils/cli';
+import { join } from 'node:path';
 
 import { GlobalRegistrator } from '@happy-dom/global-registrator';
+
+import { dedent, esbuild, getWorkspace, prettier } from '../../../../scripts/prepare/tools';
+import { temporaryFile } from '../../src/common/utils/cli';
 
 GlobalRegistrator.register({ url: 'http://localhost:3000', width: 1920, height: 1080 });
 
@@ -54,7 +55,7 @@ async function generateVersionsFile(prettierConfig: prettier.Options | null): Pr
 }
 
 async function generateFrameworksFile(prettierConfig: prettier.Options | null): Promise<void> {
-  const thirdPartyFrameworks = ['qwik', 'solid'];
+  const thirdPartyFrameworks = ['qwik', 'solid', 'react-rsbuild', 'vue3-rsbuild'];
   const location = join(__dirname, '..', '..', 'src', 'types', 'modules', 'frameworks.ts');
   const frameworksDirectory = join(__dirname, '..', '..', '..', 'frameworks');
 

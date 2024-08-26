@@ -1,8 +1,8 @@
 import { global as globalThis } from '@storybook/global';
 import {
   expect,
-  fn,
   fireEvent,
+  fn,
   userEvent,
   waitFor,
   waitForElementToBeRemoved,
@@ -100,7 +100,7 @@ export const WithLoaders = {
   },
 };
 
-export const UserEventSetup = {
+const UserEventSetup = {
   play: async (context) => {
     const { args, canvasElement, step } = context;
     const user = userEvent.setup();
@@ -123,3 +123,5 @@ export const UserEventSetup = {
     });
   },
 };
+
+export { UserEventSetup };

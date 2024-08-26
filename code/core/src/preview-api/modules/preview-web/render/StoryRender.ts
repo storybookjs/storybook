@@ -1,27 +1,28 @@
 import type { Channel } from '@storybook/core/channels';
-import {
-  STORY_RENDER_PHASE_CHANGED,
-  STORY_RENDERED,
-  PLAY_FUNCTION_THREW_EXCEPTION,
-  UNHANDLED_ERRORS_WHILE_PLAYING,
-} from '@storybook/core/core-events';
-import type { StoryStore } from '../../store';
-import type { Render, RenderType } from './Render';
-import { PREPARE_ABORTED } from './Render';
-import { MountMustBeDestructuredError, NoStoryMountedError } from '@storybook/core/preview-errors';
-
 import type {
   Canvas,
   PreparedStory,
   RenderContext,
   RenderContextCallbacks,
-  Renderer,
   RenderToCanvas,
+  Renderer,
   StoryContext,
   StoryId,
   StoryRenderOptions,
   TeardownRenderToCanvas,
 } from '@storybook/core/types';
+
+import {
+  PLAY_FUNCTION_THREW_EXCEPTION,
+  STORY_RENDERED,
+  STORY_RENDER_PHASE_CHANGED,
+  UNHANDLED_ERRORS_WHILE_PLAYING,
+} from '@storybook/core/core-events';
+import { MountMustBeDestructuredError, NoStoryMountedError } from '@storybook/core/preview-errors';
+
+import type { StoryStore } from '../../store';
+import type { Render, RenderType } from './Render';
+import { PREPARE_ABORTED } from './Render';
 
 const { AbortController } = globalThis;
 
@@ -146,7 +147,9 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   }
 
   private storyContext() {
-    if (!this.story) throw new Error(`Cannot call storyContext before preparing`);
+    if (!this.story) {
+      throw new Error(`Cannot call storyContext before preparing`);
+    }
     const { forceInitialArgs } = this.renderOptions;
     return this.store.getStoryContext(this.story, { forceInitialArgs });
   }
@@ -159,9 +162,15 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     forceRemount?: boolean;
   } = {}) {
     const { canvasElement } = this;
-    if (!this.story) throw new Error('cannot render when not prepared');
+
+    if (!this.story) {
+      throw new Error('cannot render when not prepared');
+    }
     const story = this.story;
-    if (!canvasElement) throw new Error('cannot render when canvasElement is unset');
+
+    if (!canvasElement) {
+      throw new Error('cannot render when canvasElement is unset');
+    }
 
     const {
       id,
@@ -218,8 +227,11 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
           await this.runPhase(abortSignal, 'rendering', async () => {
             mountReturn = await story.mount(context)(...args);
           });
+
           // start playing phase if mount is used inside a play function
-          if (isMountDestructured) await this.runPhase(abortSignal, 'playing');
+          if (isMountDestructured) {
+            await this.runPhase(abortSignal, 'playing');
+          }
           return mountReturn;
         },
       };
@@ -252,19 +264,26 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         context.loaded = await applyLoaders(context);
       });
 
-      if (abortSignal.aborted) return;
+      if (abortSignal.aborted) {
+        return;
+      }
 
       const cleanupCallbacks = await applyBeforeEach(context);
       this.store.addCleanupCallbacks(story, cleanupCallbacks);
 
-      if (this.checkIfAborted(abortSignal)) return;
+      if (this.checkIfAborted(abortSignal)) {
+        return;
+      }
 
       if (!mounted && !isMountDestructured) {
         await context.mount();
       }
 
       this.notYetRendered = false;
-      if (abortSignal.aborted) return;
+
+      if (abortSignal.aborted) {
+        return;
+      }
 
       const ignoreUnhandledErrors =
         this.story.parameters?.test?.dangerouslyIgnoreUnhandledErrors === true;
@@ -306,7 +325,10 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
           await this.runPhase(abortSignal, 'errored', async () => {
             this.channel.emit(PLAY_FUNCTION_THREW_EXCEPTION, serializeError(error));
           });
-          if (this.story.parameters.throwPlayFunctionExceptions !== false) throw error;
+
+          if (this.story.parameters.throwPlayFunctionExceptions !== false) {
+            throw error;
+          }
           console.error(error);
         }
         if (!ignoreUnhandledErrors && unhandledErrors.size > 0) {
@@ -318,7 +340,10 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         this.disableKeyListeners = false;
         window.removeEventListener('unhandledrejection', onError);
         window.removeEventListener('error', onError);
-        if (abortSignal.aborted) return;
+
+        if (abortSignal.aborted) {
+          return;
+        }
       }
 
       await this.runPhase(abortSignal, 'completed', async () =>
@@ -337,11 +362,10 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   }
 
   /**
-   * Rerender the story.
-   * If the story is currently pending (loading/rendering), the rerender will be enqueued,
-   * and will be executed after the current render is completed.
-   * Rerendering while playing will not be enqueued, and will be executed immediately, to support
-   * rendering args changes while playing.
+   * Rerender the story. If the story is currently pending (loading/rendering), the rerender will be
+   * enqueued, and will be executed after the current render is completed. Rerendering while playing
+   * will not be enqueued, and will be executed immediately, to support rendering args changes while
+   * playing.
    */
   async rerender() {
     if (this.isPending() && this.phase !== 'playing') {

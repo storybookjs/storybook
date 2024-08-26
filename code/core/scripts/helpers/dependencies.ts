@@ -1,5 +1,6 @@
-import { readJson } from 'fs-extra';
 import { join } from 'node:path';
+
+import { readJson } from 'fs-extra';
 
 export async function flattenDependencies(
   list: string[],

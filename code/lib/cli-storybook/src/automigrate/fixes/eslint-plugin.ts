@@ -1,12 +1,12 @@
-import chalk from 'chalk';
-import { dedent } from 'ts-dedent';
-
 import {
+  SUPPORTED_ESLINT_EXTENSIONS,
   configureEslintPlugin,
   extractEslintInfo,
   findEslintFile,
-  SUPPORTED_ESLINT_EXTENSIONS,
 } from 'storybook/internal/cli';
+
+import chalk from 'chalk';
+import { dedent } from 'ts-dedent';
 
 import type { Fix } from '../types';
 
@@ -21,6 +21,7 @@ interface EslintPluginRunOptions {
  * Does the user not have eslint-plugin-storybook installed?
  *
  * If so:
+ *
  * - Install it, and if possible configure it
  */
 export const eslintPlugin: Fix<EslintPluginRunOptions> = {

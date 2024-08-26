@@ -1,6 +1,8 @@
-import path from 'node:path';
-import { execSync } from 'child_process';
+import { relative } from 'node:path';
+
 import { getProjectRoot } from '@storybook/core/common';
+
+import { execSync } from 'child_process';
 
 import { oneWayHash } from './one-way-hash';
 
@@ -27,7 +29,7 @@ export const getAnonymousProjectId = () => {
   try {
     const projectRoot = getProjectRoot();
 
-    const projectRootPath = path.relative(projectRoot, process.cwd());
+    const projectRootPath = relative(projectRoot, process.cwd());
 
     const originBuffer = execSync(`git config --local --get remote.origin.url`, {
       timeout: 1000,

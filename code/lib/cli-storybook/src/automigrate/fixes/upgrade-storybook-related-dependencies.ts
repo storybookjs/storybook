@@ -1,10 +1,12 @@
-import { dedent } from 'ts-dedent';
-import { cyan, yellow } from 'chalk';
-import { gt } from 'semver';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { isCorePackage } from 'storybook/internal/common';
-import type { Fix } from '../types';
+
+import { cyan, yellow } from 'chalk';
+import { gt } from 'semver';
+import { dedent } from 'ts-dedent';
+
 import { getIncompatibleStorybookPackages } from '../../doctor/getIncompatibleStorybookPackages';
+import type { Fix } from '../types';
 
 type PackageMetadata = {
   packageName: string;
@@ -30,13 +32,13 @@ async function getLatestVersions(
 }
 
 /**
- * Is the user upgrading to the `latest` version of Storybook?
- * Let's try to pull along some of the storybook related dependencies to `latest` as well!
+ * Is the user upgrading to the `latest` version of Storybook? Let's try to pull along some of the
+ * storybook related dependencies to `latest` as well!
  *
- * We communicate clearly that this migration is a helping hand, but not a complete solution.
- * The user should still manually check for other dependencies that might be incompatible.
+ * We communicate clearly that this migration is a helping hand, but not a complete solution. The
+ * user should still manually check for other dependencies that might be incompatible.
  *
- * see: https://github.com/storybookjs/storybook/issues/25731#issuecomment-1977346398
+ * See: https://github.com/storybookjs/storybook/issues/25731#issuecomment-1977346398
  */
 export const upgradeStorybookRelatedDependencies = {
   id: 'upgradeStorybookRelatedDependencies',

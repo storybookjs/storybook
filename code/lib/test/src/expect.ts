@@ -1,23 +1,25 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import * as chai from 'chai';
+import * as matchers from '@testing-library/jest-dom/matchers';
+import type { TestingLibraryMatchers } from '@testing-library/jest-dom/matchers';
+
 import type {
   AsymmetricMatchersContaining,
   ExpectStatic,
   JestAssertion,
-  MatchersObject,
   MatcherState,
+  MatchersObject,
 } from '@vitest/expect';
 import {
-  getState,
   GLOBAL_EXPECT,
   JestAsymmetricMatchers,
   JestChaiExpect,
   JestExtend,
+  getState,
   setState,
 } from '@vitest/expect';
-import * as matchers from '@testing-library/jest-dom/matchers';
+import * as chai from 'chai';
+
 import type { PromisifyObject } from './utils';
-import type { TestingLibraryMatchers } from '@testing-library/jest-dom/matchers';
 
 type Matchers<T> = PromisifyObject<JestAssertion<T>> &
   TestingLibraryMatchers<ReturnType<ExpectStatic['stringContaining']>, Promise<void>>;
@@ -88,8 +90,10 @@ export function createExpect() {
           expect.getState().assertionCalls
         }`
       );
-    if ('captureStackTrace' in Error && typeof Error.captureStackTrace === 'function')
+
+    if ('captureStackTrace' in Error && typeof Error.captureStackTrace === 'function') {
       Error.captureStackTrace(errorGen(), assertions);
+    }
 
     expect.setState({
       expectedAssertionsNumber: expected,
@@ -99,8 +103,10 @@ export function createExpect() {
 
   function hasAssertions() {
     const error = new Error('expected any number of assertion, but got none');
-    if ('captureStackTrace' in Error && typeof Error.captureStackTrace === 'function')
+
+    if ('captureStackTrace' in Error && typeof Error.captureStackTrace === 'function') {
       Error.captureStackTrace(error, hasAssertions);
+    }
 
     expect.setState({
       isExpectingAssertions: true,

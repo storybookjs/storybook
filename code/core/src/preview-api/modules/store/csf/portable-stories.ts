@@ -1,15 +1,15 @@
 /* eslint-disable no-underscore-dangle */
+
 /* eslint-disable @typescript-eslint/naming-convention */
-import { type CleanupCallback, isExportStory } from '@storybook/csf';
-import { dedent } from 'ts-dedent';
 import type {
   Args,
   Canvas,
   ComponentAnnotations,
-  ComposedStoryFn,
   ComposeStoryFn,
+  ComposedStoryFn,
   LegacyStoryAnnotationsOrFn,
   NamedOrDefaultProjectAnnotations,
+  NormalizedProjectAnnotations,
   Parameters,
   PreparedStory,
   ProjectAnnotations,
@@ -19,17 +19,34 @@ import type {
   StoryContext,
   StrictArgTypes,
 } from '@storybook/core/types';
+import { type CleanupCallback, isExportStory } from '@storybook/csf';
+
+import { MountMustBeDestructuredError } from '@storybook/core/preview-errors';
+
+import { dedent } from 'ts-dedent';
 
 import { HooksContext } from '../../../addons';
 import { composeConfigs } from './composeConfigs';
-import { prepareContext, prepareStory } from './prepareStory';
-import { normalizeStory } from './normalizeStory';
-import { normalizeComponentAnnotations } from './normalizeComponentAnnotations';
 import { getValuesFromArgTypes } from './getValuesFromArgTypes';
+import { normalizeComponentAnnotations } from './normalizeComponentAnnotations';
 import { normalizeProjectAnnotations } from './normalizeProjectAnnotations';
-import { MountMustBeDestructuredError } from '@storybook/core/preview-errors';
+import { normalizeStory } from './normalizeStory';
+import { prepareContext, prepareStory } from './prepareStory';
 
-let globalProjectAnnotations: ProjectAnnotations<any> = {};
+// TODO we should get to the bottom of the singleton issues caused by dual ESM/CJS modules
+declare global {
+  // eslint-disable-next-line no-var
+  var globalProjectAnnotations: NormalizedProjectAnnotations<any>;
+  // eslint-disable-next-line no-var
+  var defaultProjectAnnotations: ProjectAnnotations<any>;
+}
+
+export function setDefaultProjectAnnotations<TRenderer extends Renderer = Renderer>(
+  _defaultProjectAnnotations: ProjectAnnotations<TRenderer>
+) {
+  // Use a variable once we figure out the ESM/CJS issues
+  globalThis.defaultProjectAnnotations = _defaultProjectAnnotations;
+}
 
 const DEFAULT_STORY_TITLE = 'ComposedStory';
 const DEFAULT_STORY_NAME = 'Unnamed Story';
@@ -37,7 +54,13 @@ const DEFAULT_STORY_NAME = 'Unnamed Story';
 function extractAnnotation<TRenderer extends Renderer = Renderer>(
   annotation: NamedOrDefaultProjectAnnotations<TRenderer>
 ) {
-  if (!annotation) return {};
+  if (!annotation) {
+    return {};
+  }
+  // support imports such as
+  // import * as annotations from '.storybook/preview'
+  // import annotations from '.storybook/preview'
+  // in both cases: 1 - the file has a default export; 2 - named exports only
   // support imports such as
   // import * as annotations from '.storybook/preview'
   // import annotations from '.storybook/preview'
@@ -49,11 +72,11 @@ export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
   projectAnnotations:
     | NamedOrDefaultProjectAnnotations<TRenderer>
     | NamedOrDefaultProjectAnnotations<TRenderer>[]
-): ProjectAnnotations<TRenderer> {
+): NormalizedProjectAnnotations<TRenderer> {
   const annotations = Array.isArray(projectAnnotations) ? projectAnnotations : [projectAnnotations];
-  globalProjectAnnotations = composeConfigs(annotations.map(extractAnnotation));
+  globalThis.globalProjectAnnotations = composeConfigs(annotations.map(extractAnnotation));
 
-  return globalProjectAnnotations;
+  return globalThis.globalProjectAnnotations;
 }
 
 const cleanups: CleanupCallback[] = [];
@@ -90,7 +113,13 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
   );
 
   const normalizedProjectAnnotations = normalizeProjectAnnotations<TRenderer>(
-    composeConfigs([defaultConfig ?? {}, globalProjectAnnotations, projectAnnotations ?? {}])
+    composeConfigs([
+      defaultConfig && Object.keys(defaultConfig).length > 0
+        ? defaultConfig
+        : globalThis.defaultProjectAnnotations ?? {},
+      globalThis.globalProjectAnnotations ?? {},
+      projectAnnotations ?? {},
+    ])
   );
 
   const story = prepareStory<TRenderer>(
@@ -136,8 +165,12 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
             name: story.name,
             tags: story.tags,
             showMain: () => {},
-            showError: (error) => {},
-            showException: (error) => {},
+            showError: (error): void => {
+              throw new Error(`${error.title}\n${error.description}`);
+            },
+            showException: (error): void => {
+              throw error;
+            },
             forceRemount: true,
             storyContext: context,
             storyFn: () => story.unboundStoryFn(context),
@@ -193,7 +226,11 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
       storyName,
       load: async () => {
         // First run any registered cleanup function
-        for (const callback of [...cleanups].reverse()) await callback();
+
+        // First run any registered cleanup function
+        for (const callback of [...cleanups].reverse()) {
+          await callback();
+        }
         cleanups.length = 0;
 
         const context = initializeContext();
@@ -216,10 +253,13 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
   return composedStory;
 }
 
+const defaultComposeStory: ComposeStoryFn = (story, component, project, exportsName) =>
+  composeStory(story, component, project, {}, exportsName);
+
 export function composeStories<TModule extends Store_CSFExports>(
   storiesImport: TModule,
   globalConfig: ProjectAnnotations<Renderer>,
-  composeStoryFn: ComposeStoryFn
+  composeStoryFn: ComposeStoryFn = defaultComposeStory
 ) {
   const { default: meta, __esModule, __namedExportsOrder, ...stories } = storiesImport;
   const composedStories = Object.entries(stories).reduce((storiesMap, [exportsName, story]) => {
@@ -312,7 +352,9 @@ async function runStory<TRenderer extends Renderer>(
   story: PreparedStory<TRenderer>,
   context: StoryContext<TRenderer>
 ) {
-  for (const callback of [...cleanups].reverse()) await callback();
+  for (const callback of [...cleanups].reverse()) {
+    await callback();
+  }
   cleanups.length = 0;
 
   if (!context.canvasElement) {
@@ -327,7 +369,10 @@ async function runStory<TRenderer extends Renderer>(
   }
 
   context.loaded = await story.applyLoaders(context);
-  if (context.abortSignal.aborted) return;
+
+  if (context.abortSignal.aborted) {
+    return;
+  }
 
   cleanups.push(...(await story.applyBeforeEach(context)).filter(Boolean));
 
@@ -339,7 +384,9 @@ async function runStory<TRenderer extends Renderer>(
     await context.mount();
   }
 
-  if (context.abortSignal.aborted) return;
+  if (context.abortSignal.aborted) {
+    return;
+  }
 
   if (playFunction) {
     if (!isMountDestructured) {

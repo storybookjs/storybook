@@ -1,17 +1,18 @@
 import { Parser } from 'acorn';
 import jsx from 'acorn-jsx';
-import type estree from 'estree';
 import * as acornWalk from 'acorn-walk';
+import type estree from 'estree';
+
 import type {
-  InspectionLiteral,
+  InspectionArray,
+  InspectionClass,
   InspectionElement,
   InspectionFunction,
-  InspectionClass,
+  InspectionIdentifier,
+  InspectionInferedType,
+  InspectionLiteral,
   InspectionObject,
   InspectionUnknown,
-  InspectionIdentifier,
-  InspectionArray,
-  InspectionInferedType,
 } from './types';
 import { InspectionType } from './types';
 

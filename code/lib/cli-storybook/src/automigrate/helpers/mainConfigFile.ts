@@ -1,25 +1,28 @@
+import { normalize } from 'node:path';
+
+import { frameworkToRenderer } from 'storybook/internal/cli';
 import {
+  builderPackages,
+  extractProperFrameworkName,
+  frameworkPackages,
   getStorybookInfo,
   loadMainConfig,
   rendererPackages,
-  frameworkPackages,
-  builderPackages,
-  extractProperFrameworkName,
 } from 'storybook/internal/common';
-import type { StorybookConfigRaw, StorybookConfig } from 'storybook/internal/types';
-import type { ConfigFile } from 'storybook/internal/csf-tools';
-import { readConfig, writeConfig as writeConfigFile } from 'storybook/internal/csf-tools';
-import chalk from 'chalk';
-import { dedent } from 'ts-dedent';
-import path from 'path';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { getCoercedStorybookVersion } from 'storybook/internal/common';
-import { frameworkToRenderer } from 'storybook/internal/cli';
+import type { ConfigFile } from 'storybook/internal/csf-tools';
+import { readConfig, writeConfig as writeConfigFile } from 'storybook/internal/csf-tools';
+import type { StorybookConfig, StorybookConfigRaw } from 'storybook/internal/types';
+
+import chalk from 'chalk';
+import { dedent } from 'ts-dedent';
 
 const logger = console;
 
 /**
  * Given a Storybook configuration object, retrieves the package name or file path of the framework.
+ *
  * @param mainConfig - The main Storybook configuration object to lookup.
  * @returns - The package name of the framework. If not found, returns null.
  */
@@ -36,6 +39,7 @@ export const getFrameworkPackageName = (mainConfig?: StorybookConfigRaw) => {
 
 /**
  * Given a Storybook configuration object, retrieves the inferred renderer name from the framework.
+ *
  * @param mainConfig - The main Storybook configuration object to lookup.
  * @returns - The renderer name. If not found, returns null.
  */
@@ -53,6 +57,7 @@ export const getRendererName = (mainConfig?: StorybookConfigRaw) => {
 
 /**
  * Given a Storybook configuration object, retrieves the package name or file path of the builder.
+ *
  * @param mainConfig - The main Storybook configuration object to lookup.
  * @returns - The package name of the builder. If not found, returns null.
  */
@@ -75,13 +80,14 @@ export const getBuilderPackageName = (mainConfig?: StorybookConfigRaw) => {
     return null;
   }
 
-  const normalizedPath = path.normalize(packageNameOrPath).replace(new RegExp(/\\/, 'g'), '/');
+  const normalizedPath = normalize(packageNameOrPath).replace(new RegExp(/\\/, 'g'), '/');
 
   return builderPackages.find((pkg) => normalizedPath.endsWith(pkg)) || packageNameOrPath;
 };
 
 /**
  * Given a Storybook configuration object, retrieves the configuration for the framework.
+ *
  * @param mainConfig - The main Storybook configuration object to lookup.
  * @returns - The configuration for the framework. If not found, returns null.
  */
@@ -93,6 +99,7 @@ export const getFrameworkOptions = (
 
 /**
  * Returns a renderer package name given a framework package name.
+ *
  * @param frameworkPackageName - The package name of the framework to lookup.
  * @returns - The corresponding package name in `rendererPackages`. If not found, returns null.
  */
@@ -153,16 +160,18 @@ export const getStorybookData = async ({
 export type GetStorybookData = typeof getStorybookData;
 
 /**
- * A helper function to safely read and write the main config file. At the end of the callback, main.js will be overwritten.
- * If it fails, it will handle the error and log a message to the user explaining what to do.
+ * A helper function to safely read and write the main config file. At the end of the callback,
+ * main.js will be overwritten. If it fails, it will handle the error and log a message to the user
+ * explaining what to do.
  *
- * It receives a mainConfigPath and a callback
- * which will have access to utilities to manipulate main.js.
+ * It receives a mainConfigPath and a callback which will have access to utilities to manipulate
+ * main.js.
  *
  * @example
+ *
  * ```ts
  * await safeWriteMain({ mainConfigPath, dryRun }, async ({ main }) => {
- *  // manipulate main.js here
+ *   // manipulate main.js here
  * });
  * ```
  */

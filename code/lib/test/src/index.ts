@@ -1,7 +1,11 @@
-import { instrument } from '@storybook/instrumenter';
+import type { BoundFunctions } from '@testing-library/dom';
+
 import type { LoaderFunction } from '@storybook/csf';
-import * as chai from 'chai';
 import { global } from '@storybook/global';
+import { instrument } from '@storybook/instrumenter';
+
+import * as chai from 'chai';
+
 import { expect as rawExpect } from './expect';
 import {
   clearAllMocks,
@@ -15,7 +19,7 @@ import { type queries, within } from './testing-library';
 
 export * from './spy';
 
-type Queries = ReturnType<typeof within<typeof queries>>;
+type Queries = BoundFunctions<typeof queries>;
 
 declare module '@storybook/csf' {
   interface Canvas extends Queries {}
@@ -56,11 +60,22 @@ const resetAllMocksLoader: LoaderFunction = ({ parameters }) => {
 
 export const traverseArgs = (value: unknown, depth = 0, key?: string): unknown => {
   // Make sure to not get in infinite loops with self referencing args
-  if (depth > 5) return value;
-  if (value == null) return value;
+
+  // Make sure to not get in infinite loops with self referencing args
+  if (depth > 5) {
+    return value;
+  }
+
+  if (value == null) {
+    return value;
+  }
   if (isMockFunction(value)) {
     // Makes sure we get the arg name in the interactions panel
-    if (key) value.mockName(key);
+
+    // Makes sure we get the arg name in the interactions panel
+    if (key) {
+      value.mockName(key);
+    }
     return value;
   }
 
@@ -72,7 +87,10 @@ export const traverseArgs = (value: unknown, depth = 0, key?: string): unknown =
     !('implicit' in value && value.implicit)
   ) {
     const mock = fn(value as any);
-    if (key) mock.mockName(key);
+
+    if (key) {
+      mock.mockName(key);
+    }
     return mock;
   }
 

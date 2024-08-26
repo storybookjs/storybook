@@ -1,5 +1,7 @@
 import { expect, test } from 'vitest';
+
 import { h } from 'vue';
+
 import type { SourceCodeGeneratorContext } from './sourceDecorator';
 import {
   generatePropsSourceCode,

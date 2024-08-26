@@ -1,11 +1,10 @@
 import type { FC } from 'react';
 import React, { useRef } from 'react';
 
+import { HighlightStyles } from './HighlightStyles';
 import { Ref } from './Refs';
 import type { CombinedDataset, Selection } from './types';
-
 import { useHighlighted } from './useHighlighted';
-import { HighlightStyles } from './HighlightStyles';
 
 export interface ExplorerProps {
   isLoading: boolean;

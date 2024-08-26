@@ -1,7 +1,9 @@
-import { resolve } from 'path';
+import { resolve } from 'node:path';
+
 import { defineConfig, defineWorkspace } from 'vitest/config';
 
 export default defineWorkspace([
+  '.storybook/vitest.config.ts',
   'addons/*/vitest.config.ts',
   'frameworks/*/vitest.config.ts',
   'lib/*/vitest.config.ts',
@@ -13,8 +15,9 @@ export default defineWorkspace([
 ]);
 
 /**
- * CircleCI reports the wrong number of threads to Node.js, so we need to set it manually.
- * Unit tests are running with the xlarge resource class, which has 8 vCPUs.
+ * CircleCI reports the wrong number of threads to Node.js, so we need to set it manually. Unit
+ * tests are running with the xlarge resource class, which has 8 vCPUs.
+ *
  * @see https://jahed.dev/2022/11/20/fixing-node-js-multi-threading-on-circleci/
  * @see https://vitest.dev/config/#pooloptions-threads-maxthreads
  * @see https://circleci.com/docs/configuration-reference/#x86

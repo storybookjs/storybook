@@ -1,14 +1,14 @@
 import type { FC } from 'react';
 import React from 'react';
-import { useGlobalTypes } from 'storybook/internal/manager-api';
-import { Separator } from 'storybook/internal/components';
-import { ToolbarMenuList } from './ToolbarMenuList';
-import { normalizeArgType } from '../utils/normalize-toolbar-arg-type';
-import type { ToolbarArgType } from '../types';
 
-/**
- * A smart component for handling manager-preview interactions.
- */
+import { Separator } from 'storybook/internal/components';
+import { useGlobalTypes } from 'storybook/internal/manager-api';
+
+import type { ToolbarArgType } from '../types';
+import { normalizeArgType } from '../utils/normalize-toolbar-arg-type';
+import { ToolbarMenuList } from './ToolbarMenuList';
+
+/** A smart component for handling manager-preview interactions. */
 export const ToolbarManager: FC = () => {
   const globalTypes = useGlobalTypes();
   const globalIds = Object.keys(globalTypes).filter((id) => !!globalTypes[id].toolbar);

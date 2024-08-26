@@ -1,9 +1,10 @@
 import chalk from 'chalk';
-import { dedent } from 'ts-dedent';
 import semver from 'semver';
+import { dedent } from 'ts-dedent';
+
+import { checkWebpack5Builder } from '../helpers/checkWebpack5Builder';
 import type { Fix } from '../types';
 import { webpack5 } from './webpack5';
-import { checkWebpack5Builder } from '../helpers/checkWebpack5Builder';
 
 interface CRA5RunOptions {
   craVersion: string;
@@ -15,6 +16,7 @@ interface CRA5RunOptions {
  * Is the user upgrading from CRA4 to CRA5?
  *
  * If so:
+ *
  * - Run webpack5 fix
  */
 export const cra5: Fix<CRA5RunOptions> = {

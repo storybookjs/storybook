@@ -1,20 +1,22 @@
 import type { FC } from 'react';
 import React from 'react';
-import pickBy from 'lodash/pickBy.js';
-import { styled } from 'storybook/internal/theming';
-import { transparentize } from 'polished';
-import { includeConditionalArg } from '@storybook/csf';
-import { once } from 'storybook/internal/client-logger';
-import { IconButton, ResetWrapper, Link } from 'storybook/internal/components';
 
+import { once } from 'storybook/internal/client-logger';
+import { IconButton, Link, ResetWrapper } from 'storybook/internal/components';
+import { styled } from 'storybook/internal/theming';
+
+import { includeConditionalArg } from '@storybook/csf';
 import { DocumentIcon, UndoIcon } from '@storybook/icons';
-import { ArgRow } from './ArgRow';
-import { SectionRow } from './SectionRow';
-import type { ArgType, ArgTypes, Args, Globals } from './types';
+
+import pickBy from 'lodash/pickBy.js';
+import { transparentize } from 'polished';
 
 import { EmptyBlock } from '..';
-import { Skeleton } from './Skeleton';
+import { ArgRow } from './ArgRow';
 import { Empty } from './Empty';
+import { SectionRow } from './SectionRow';
+import { Skeleton } from './Skeleton';
+import type { ArgType, ArgTypes, Args, Globals } from './types';
 
 export const TableWrapper = styled.table<{
   compact?: boolean;
@@ -230,7 +232,10 @@ type Sections = {
 
 const groupRows = (rows: ArgType, sort: SortType) => {
   const sections: Sections = { ungrouped: [], ungroupedSubsections: {}, sections: {} };
-  if (!rows) return sections;
+
+  if (!rows) {
+    return sections;
+  }
 
   Object.entries(rows).forEach(([key, row]) => {
     const { category, subcategory } = row?.table || {};
@@ -257,7 +262,9 @@ const groupRows = (rows: ArgType, sort: SortType) => {
   const sortFn = sortFns[sort];
 
   const sortSubsection = (record: Record<string, Subsection>) => {
-    if (!sortFn) return record;
+    if (!sortFn) {
+      return record;
+    }
     return Object.keys(record).reduce<Record<string, Subsection>>(
       (acc, cur) => ({
         ...acc,
@@ -286,11 +293,10 @@ const groupRows = (rows: ArgType, sort: SortType) => {
 };
 
 /**
- * Wrap CSF's `includeConditionalArg` in a try catch so that invalid
- * conditionals don't break the entire UI. We can safely swallow the
- * error because `includeConditionalArg` is also called in the preview
- * in `prepareStory`, and that exception will be bubbled up into the
- * UI in a red screen. Nevertheless, we log the error here just in case.
+ * Wrap CSF's `includeConditionalArg` in a try catch so that invalid conditionals don't break the
+ * entire UI. We can safely swallow the error because `includeConditionalArg` is also called in the
+ * preview in `prepareStory`, and that exception will be bubbled up into the UI in a red screen.
+ * Nevertheless, we log the error here just in case.
  */
 const safeIncludeConditionalArg = (row: ArgType, args: Args, globals: Globals) => {
   try {
@@ -302,8 +308,8 @@ const safeIncludeConditionalArg = (row: ArgType, args: Args, globals: Globals) =
 };
 
 /**
- * Display the props for a component as a props table. Each row is a collection of
- * ArgDefs, usually derived from docgen info for the component.
+ * Display the props for a component as a props table. Each row is a collection of ArgDefs, usually
+ * derived from docgen info for the component.
  */
 export const ArgsTable: FC<ArgsTableProps> = (props) => {
   const {
@@ -330,7 +336,12 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
 
   // If the story is loading, show a skeleton
   // This happen when you load the manager and the story is not yet loaded
-  if (isLoading) return <Skeleton />;
+
+  // If the story is loading, show a skeleton
+  // This happen when you load the manager and the story is not yet loaded
+  if (isLoading) {
+    return <Skeleton />;
+  }
 
   const { rows, args, globals } = 'rows' in props && props;
   const groups = groupRows(
@@ -345,12 +356,20 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
   const hasNoUngrouped = groups.ungrouped.length === 0;
   const hasNoSections = Object.entries(groups.sections).length === 0;
   const hasNoUngroupedSubsections = Object.entries(groups.ungroupedSubsections).length === 0;
-  if (hasNoUngrouped && hasNoSections && hasNoUngroupedSubsections)
+
+  if (hasNoUngrouped && hasNoSections && hasNoUngroupedSubsections) {
     return <Empty inAddonPanel={inAddonPanel} />;
+  }
 
   let colSpan = 1;
-  if (updateArgs) colSpan += 1;
-  if (!compact) colSpan += 2;
+
+  if (updateArgs) {
+    colSpan += 1;
+  }
+
+  if (!compact) {
+    colSpan += 2;
+  }
   const expandable = Object.keys(groups.sections).length > 0;
 
   const common = { updateArgs, compact, inAddonPanel, initialExpandedArgs };

@@ -4,6 +4,8 @@ export class HandledError extends Error {
   constructor(error: unknown) {
     super(String(error));
 
-    if (typeof error !== 'string') this.cause = error;
+    if (typeof error !== 'string') {
+      this.cause = error;
+    }
   }
 }

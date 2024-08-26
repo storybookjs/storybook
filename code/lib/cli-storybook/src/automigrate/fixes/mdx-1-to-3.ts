@@ -1,7 +1,9 @@
+import { basename } from 'node:path';
+
 import chalk from 'chalk';
-import { dedent } from 'ts-dedent';
-import { basename } from 'path';
 import fse from 'fs-extra';
+import { dedent } from 'ts-dedent';
+
 import type { Fix } from '../types';
 
 const MDX1_STYLE_START = /<style>{`/g;
@@ -38,6 +40,7 @@ interface Mdx1to3Options {
  * Does the user have `.stories.mdx` files?
  *
  * If so:
+ *
  * - Assume they might be MDX1
  * - Offer to help migrate to MDX3
  */

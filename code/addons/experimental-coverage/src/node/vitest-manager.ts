@@ -153,6 +153,7 @@ export class VitestManager {
     );
     const componentAffectedTests: WorkspaceSpec[] = [];
     const triggerAffectedTests: WorkspaceSpec[] = [];
+    let hasTriggerEffectOnTests = false;
 
     if (this.managerState.mode?.coverageType === 'component-coverage') {
       for (const project of this.getStorybookProjects(globTestFiles)) {
@@ -166,6 +167,9 @@ export class VitestManager {
           triggerAffectedTests.push(filepath);
         }
       }
+      hasTriggerEffectOnTests = triggerAffectedTests.some(
+        ({ moduleId }) => moduleId === absoluteStoryPath
+      );
     } else {
       for (const [workspaceSpec, deps] of testGraphs) {
         if (absoluteComponentPath === workspaceSpec[1] || deps.has(absoluteComponentPath)) {
@@ -175,11 +179,10 @@ export class VitestManager {
           triggerAffectedTests.push(workspaceSpec);
         }
       }
+      hasTriggerEffectOnTests = triggerAffectedTests.some(({ moduleId }) =>
+        componentAffectedTests.some(({ moduleId: compModuleId }) => compModuleId === moduleId)
+      );
     }
-
-    const hasTriggerEffectOnTests = triggerAffectedTests.some(
-      ([_, path]) => path === absoluteStoryPath
-    );
 
     if (!trigger || hasTriggerEffectOnTests) {
       this.emitCoverageStart(start);

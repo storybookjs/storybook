@@ -165,8 +165,12 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
             name: story.name,
             tags: story.tags,
             showMain: () => {},
-            showError: (error) => {},
-            showException: (error) => {},
+            showError: (error): void => {
+              throw new Error(`${error.title}\n${error.description}`);
+            },
+            showException: (error): void => {
+              throw error;
+            },
             forceRemount: true,
             storyContext: context,
             storyFn: () => story.unboundStoryFn(context),

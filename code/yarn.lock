@@ -5321,7 +5321,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/addon-docs@workspace:addons/docs"
   dependencies:
-    "@babel/core": "npm:^7.24.4"
     "@mdx-js/mdx": "npm:^3.0.0"
     "@mdx-js/react": "npm:^3.0.0"
     "@rollup/pluginutils": "npm:^5.0.2"
@@ -6133,6 +6132,9 @@ __metadata:
   dependencies:
     "@storybook/csf": "npm:^0.1.11"
     "@vitest/browser": "npm:^2.0.0"
+    find-up: "npm:^7.0.0"
+    tinyrainbow: "npm:^1.2.0"
+    ts-dedent: "npm:^2.2.0"
     vitest: "npm:^2.0.0"
   peerDependencies:
     "@vitest/browser": ^2.0.0

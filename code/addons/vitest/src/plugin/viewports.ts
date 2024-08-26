@@ -3,7 +3,7 @@ import { UnsupportedViewportDimensionError } from 'storybook/internal/preview-er
 
 import { page } from '@vitest/browser/context';
 
-import { INITIAL_VIEWPORTS } from '../../../viewport/src/defaults';
+import { MINIMAL_VIEWPORTS } from '../../../viewport/src/defaults';
 import type { ViewportMap, ViewportStyles } from '../../../viewport/src/types';
 
 declare global {
@@ -50,12 +50,12 @@ const parseDimension = (value: string, dimension: 'width' | 'height') => {
 export const setViewport = async (viewportsParam: ViewportsParam = {} as ViewportsParam) => {
   const defaultViewport = viewportsParam.defaultViewport;
 
-  if (!page || !globalThis.__vitest_browser__ || !defaultViewport) {
+  if (!page || !globalThis.__vitest_browser__) {
     return;
   }
 
   const viewports = {
-    ...INITIAL_VIEWPORTS,
+    ...MINIMAL_VIEWPORTS,
     ...viewportsParam.viewports,
   };
 

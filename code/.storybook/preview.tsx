@@ -342,9 +342,6 @@ export const parameters = {
       'slategray',
     ],
   },
-  viewport: {
-    options: MINIMAL_VIEWPORTS,
-  },
   themes: {
     disable: true,
   },

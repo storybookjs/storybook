@@ -144,6 +144,7 @@ describe('add (extra)', () => {
 
     expect(MockedPostInstall.postinstallAddon).toHaveBeenCalledWith('@storybook/addon-docs', {
       packageManager: 'npm',
+      configDir: '.storybook',
     });
   });
 });

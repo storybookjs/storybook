@@ -17,6 +17,7 @@ import { postinstallAddon } from './postinstallAddon';
 
 export interface PostinstallOptions {
   packageManager: PackageManagerName;
+  configDir: string;
 }
 
 /**
@@ -139,7 +140,7 @@ export async function add(
   await writeConfig(main);
 
   if (!skipPostinstall && isCoreAddon(addonName)) {
-    await postinstallAddon(addonName, { packageManager: packageManager.type });
+    await postinstallAddon(addonName, { packageManager: packageManager.type, configDir });
   }
 }
 function isValidVersion(version: string) {

@@ -3,8 +3,12 @@ import { join, resolve } from 'node:path';
 
 import type { Plugin } from 'vitest/config';
 
-import { loadAllPresets, validateConfigurationFiles } from 'storybook/internal/common';
-import { vitestTransform } from 'storybook/internal/csf-tools';
+import {
+  getInterpretedFile,
+  loadAllPresets,
+  validateConfigurationFiles,
+} from 'storybook/internal/common';
+import { readConfig, vitestTransform } from 'storybook/internal/csf-tools';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
 import type { StoriesEntry } from 'storybook/internal/types';
 
@@ -14,6 +18,16 @@ const defaultOptions: UserOptions = {
   storybookScript: undefined,
   configDir: undefined,
   storybookUrl: 'http://localhost:6006',
+};
+
+const extractTagsFromPreview = async (configDir: string) => {
+  const previewConfigPath = getInterpretedFile(join(resolve(configDir), 'preview'));
+
+  if (!previewConfigPath) {
+    return [];
+  }
+  const previewConfig = await readConfig(previewConfigPath);
+  return previewConfig.getFieldValue(['tags']) ?? [];
 };
 
 export const storybookTest = (options?: UserOptions): Plugin => {
@@ -45,27 +59,33 @@ export const storybookTest = (options?: UserOptions): Plugin => {
     finalOptions.configDir = resolve(process.cwd(), finalOptions.configDir);
   }
 
+  let previewLevelTags: string[];
+
   return {
     name: 'vite-plugin-storybook-test',
     enforce: 'pre',
     async buildStart() {
+      // evaluate main.js and preview.js so we can extract
+      // stories for autotitle support and tags for tags filtering support
+      const configDir = finalOptions.configDir;
       try {
-        await validateConfigurationFiles(finalOptions.configDir);
+        await validateConfigurationFiles(configDir);
       } catch (err) {
         throw new MainFileMissingError({
-          location: finalOptions.configDir,
+          location: configDir,
           source: 'vitest',
         });
       }
 
       const presets = await loadAllPresets({
-        configDir: finalOptions.configDir,
+        configDir,
         corePresets: [],
         overridePresets: [],
         packageJson: {},
       });
 
       stories = await presets.apply('stories', []);
+      previewLevelTags = await extractTagsFromPreview(configDir);
     },
     async config(config) {
       // If we end up needing to know if we are running in browser mode later
@@ -123,6 +143,7 @@ export const storybookTest = (options?: UserOptions): Plugin => {
           configDir: finalOptions.configDir,
           tagsFilter: finalOptions.tags,
           stories,
+          previewLevelTags,
         });
       }
     },

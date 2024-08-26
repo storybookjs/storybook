@@ -171,8 +171,8 @@ const ClearIcon = styled.div(({ theme }) => ({
 
 const FocusContainer = styled.div({ outline: 0 });
 
-const isDevelopment = global.CONFIG_TYPE === 'DEVELOPMENT';
-const isRendererReact = global.STORYBOOK_RENDERER === 'react';
+const isDevelopment = globalThis.CONFIG_TYPE === 'DEVELOPMENT';
+const isRendererReact = globalThis.STORYBOOK_RENDERER === 'react';
 
 export interface SearchProps {
   children: SearchChildrenFn;

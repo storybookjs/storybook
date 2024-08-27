@@ -1,3 +1,84 @@
+# v1.0.7 (Thu Aug 08 2024)
+
+#### ⚠️ Pushed to `main`
+
+- Support CJS and ESM properly ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
+# v1.0.6 (Thu Aug 08 2024)
+
+#### ⚠️ Pushed to `main`
+
+- Fix compiler options forwarding ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
+# v1.0.5 (Wed Aug 07 2024)
+
+#### 🐛 Bug Fix
+
+- Prose tweaks and other improvements for README [#12](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/12) ([@kylegach](https://github.com/kylegach) [@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### ⚠️ Pushed to `main`
+
+- Support react-dom/server ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 2
+
+- Kyle Gach ([@kylegach](https://github.com/kylegach))
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
+# v1.0.4 (Wed Aug 07 2024)
+
+#### ⚠️ Pushed to `main`
+
+- Fix proper handling of require in ESM environments ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
+# v1.0.3 (Tue Aug 06 2024)
+
+#### ⚠️ Pushed to `main`
+
+- fix: Do not transform node_modules ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
+# v1.0.2 (Tue Aug 06 2024)
+
+#### 🐛 Bug Fix
+
+- chore: Setup Chromatic [#10](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/10) ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### ⚠️ Pushed to `main`
+
+- Support @storybook/experimental-nextjs-vite ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
 # v1.0.1 (Mon Aug 05 2024)
 
 #### ⚠️ Pushed to `main`

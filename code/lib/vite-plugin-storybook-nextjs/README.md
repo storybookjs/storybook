@@ -1,16 +1,16 @@
 # vite-plugin-storybook-nextjs
 
-This is a Vite plugin that allows you to use Next.js features in Vite. It is the basis for `@storybook/nextjs-vite` and should be used when running portable stories in Vitest.
+This is a Vite plugin that allows you to use Next.js features in Vite. It is the basis for `@storybook/experimental-nextjs-vite` and should be used when running portable stories in Vitest.
 
 ## Features
 
 - **Next.js Integration**: Seamlessly integrate Next.js features into your Vite project.
-- **Storybook Compatibility**: Acts as the foundation for `@storybook/nextjs-vite`, enabling you to use Storybook with Next.js in a Vite environment.
+- **Storybook Compatibility**: Acts as the foundation for [the `@storybook/experimental-nextjs-vite` framework](https://storybook.js.org/docs/get-started/frameworks/nextjs#with-vite), enabling you to use Storybook with Next.js in a Vite environment.
 - **Portable Stories**: Ideal for running portable stories in Vitest, ensuring your components are tested in an environment that closely mirrors production.
 
 ## Installation
 
-To install the plugin, use your package manager of choice:
+Install the plugin using your preferred package manager:
 
 ```sh
 npm install vite-plugin-storybook-nextjs
@@ -22,11 +22,11 @@ pnpm add vite-plugin-storybook-nextjs
 
 ## Usage
 
-### Setup Vitest
+### Set up Vitest
 
-To use the plugin, you need to set up Vitest in your project. You can do this by following the instructions in the [Vitest documentation](https://vitest.dev/guide/)
+To use the plugin, you need to set up Vitest in your project. You can do this by following the instructions in the [Vitest documentation](https://vitest.dev/guide/).
 
-### Add the plugin to your vitest configuration
+### Add the plugin to your Vitest configuration
 
 Add the plugin to your Vitest configuration file. This ensures that Vitest is aware of the Next.js features provided by the plugin.
 
@@ -39,16 +39,6 @@ export default defineConfig({
   plugins: [nextjs()],
 });
 ```
-
-### Usage with portable stories
-
-[Portable stories](https://storybook.js.org/docs/api/portable-stories/portable-stories-vitest) are Storybook stories which can be used in external environments, such as Vitest.
-
-This plugin is necessary to run portable stories in Vitest, as it provides the necessary Next.js features to ensure that your components are tested in an environment that closely mirrors production.
-
-#### Experimental @storybook/experimental-addon-vitest
-
-The experimental `@storybook/experimental-addon-vitest` can be used to automatically transform your stories at Vitest runtime to in-memory test files. This allows you to run your stories in a Vitest environment without needing to manually transform your stories. Please visit https://github.com/storybookjs/vitest-plugin for more information.
 
 ## Configuration Options
 
@@ -64,39 +54,66 @@ type VitePluginOptions = {
 };
 ```
 
+## Usage with portable stories
+
+[Portable stories](https://storybook.js.org/docs/api/portable-stories/portable-stories-vitest) are Storybook stories which can be used in external environments, such as Vitest.
+
+This plugin is necessary to run portable stories in Vitest, as it provides the necessary Next.js features to ensure that your components are tested in an environment that closely mirrors production.
+
+## Automatic story transformation
+
+(⚠️ **Experimental**)
+
+The experimental `@storybook/experimental-addon-vitest` can be used to automatically transform your stories at Vitest runtime to in-memory test files. This allows you to run your stories in a Vitest environment without needing to manually transform your stories. Please visit https://storybook.js.org/docs/8.3/writing-tests/test-runner-with-vitest for more information.
+
 ## Limitations and differences to the Webpack5-based integration of Next.js in Storybook
 
-### next/font staticDir mapping obsolete
+### `next/font` `staticDir` mapping obsolete
 
-You don't need to map your custom font directory in Storybook's staticDir configuration. Vite will automatically serve the files in the public directory and provide assets during production build.
+You don't need to map your custom font directory in Storybook's `staticDir` configuration. Instead, Vite will automatically serve the files in the `public` directory and provide assets during production builds.
 
 ### CSS/SASS
 
-The `sassOptions` in `next.config.js` is not supported. Please use Vite's configuration options to configure the Sass compiler:
+The `sassOptions` property in `next.config.js` is not supported. Please use Vite's configuration options to configure the Sass compiler:
 
 ```js
 css: {
-    preprocessorOptions: {
-        scss: {
-            quietDeps: true
-        },
-    }
+  preprocessorOptions: {
+    scss: {
+      quietDeps: true
+    },
+  }
 },
 ```
 
 ### Next.js: Server Actions
 
-When using components that rely on Next.js Server Actions, there are some limitations to be aware of. Specifically, you need to ensure that your story files are set up to use the jsdom environment in Vitest for the case that your default Virtual DOM environment is set to happy-dom. This can be done by adding a special comment at the top of your story files:
+When testing components that rely on Next.js Server Actions, you need to ensure that your story files are [set up to use the `jsdom` environment in Vitest](https://vitest.dev/config/#environment). This can be done in two ways:
 
-```js
-// @vitest-environment jsdom
-```
+1. To apply it to individual story files, add a special comment at the top of each file:
 
-This comment ensures that the components using Next.js Server Actions are properly handled in a jsdom environment, which is necessary for them to function correctly in Vitest.
+   ```js
+   // @vitest-environment jsdom
+   ```
 
-## SWC Mode
+2. To apply it to all tests, adjust your Vitest configuration:
 
-Only Next.js in SWC mode is supported. If you were forced to opt out of Babel for some reason, you will very likely encounter issues with this plugin (e.g., emotion support in SWC is still lacking behind).
+   ```ts
+   // vitest.config.ts
+   import { defineConfig } from "vite";
+   import nextjs from "vite-plugin-storybook-nextjs";
+
+   export default defineConfig({
+     plugins: [nextjs()],
+     vitest: {
+       environment: "jsdom", // 👈 Add this
+     },
+   });
+   ```
+
+### SWC Mode
+
+Only [Next.js in SWC mode](https://nextjs.org/docs/architecture/nextjs-compiler) is supported. If your project was forced to opt out of Babel for some reason, you will very likely encounter issues with this plugin (e.g., Emotion support in SWC is still lagging behind).
 
 ## License
 

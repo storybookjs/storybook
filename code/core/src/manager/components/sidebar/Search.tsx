@@ -282,7 +282,7 @@ export const Search = React.memo(function Search({
     (inputValue: string, stateAndHelpers: ControllerStateAndHelpers<DownshiftItem>) => {
       showAllComponents(false);
       const isBrowsing = !stateAndHelpers.isOpen && document.activeElement !== inputRef.current;
-      api.setQueryParams({
+      api.applyQueryParams({
         [FILTER_KEY]: isBrowsing ? undefined : inputValue,
       });
     },

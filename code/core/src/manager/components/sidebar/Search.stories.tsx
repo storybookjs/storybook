@@ -22,8 +22,7 @@ const getLastViewed = () =>
     .filter((item, i) => item.type === 'component' && item.parent && i % 20 === 0)
     .map((component) => ({ storyId: component.id, refId }));
 
-const setQueryParams = fn().mockName('setQueryParams');
-const getQueryParams = fn().mockName('setQueryParams');
+const applyQueryParams = fn().mockName('applyQueryParams');
 
 const meta = {
   component: Search,
@@ -47,8 +46,7 @@ const meta = {
               off: () => {},
               getShortcutKeys: () => ({ search: ['control', 'shift', 's'] }),
               selectStory: () => {},
-              setQueryParams,
-              getQueryParams,
+              applyQueryParams,
             },
           } as any
         }
@@ -98,7 +96,7 @@ export const Searching: Story = {
     const search = await canvas.findByPlaceholderText('Find components');
     await userEvent.clear(search);
     await userEvent.type(search, 'foo');
-    expect(setQueryParams).toHaveBeenCalledWith({
+    expect(applyQueryParams).toHaveBeenCalledWith({
       search: 'foo',
     });
   },
@@ -114,6 +112,6 @@ export const Clearing: Story = {
     const clearIcon = await canvas.findByTitle('Clear search');
     await userEvent.click(clearIcon);
 
-    expect(setQueryParams).toHaveBeenCalledWith({ search: undefined });
+    expect(applyQueryParams).toHaveBeenCalledWith({ search: undefined });
   },
 };

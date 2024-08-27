@@ -90,8 +90,7 @@ export const getParametersPropertyValue = (
         Property:
         ${JSON.stringify(property, null, 2)}
     `);
-
-    // TODO: this is unsafe. If this happens, we'll just have an error later on. we want to skip instead.
+    // NOTE: We're emitting a warning when it happens
     return undefined as never;
   }
 
@@ -132,6 +131,7 @@ export const getDocsPropertyValue = (options: Omit<FindPropertyOptions, 'name'>)
         Property:
         ${JSON.stringify(property, null, 2)}
     `);
+    // NOTE: We're emitting a warning when it happens
     return undefined as never;
   }
 
@@ -167,6 +167,7 @@ export const getDescriptionPropertyValue = (options: Omit<FindPropertyOptions, '
         Property:
         ${JSON.stringify(property, null, 2)}
     `);
+    // NOTE: We're emitting a warning when it happens
     return undefined as never;
   }
 

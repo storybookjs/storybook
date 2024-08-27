@@ -1,5 +1,11 @@
 import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
-import type { Identifier, ImportDeclaration, Program, VariableDeclaration } from 'estree';
+import type {
+  Identifier,
+  ImportDeclaration,
+  ObjectExpression,
+  Program,
+  VariableDeclaration,
+} from 'estree';
 import type { Comment, Fragment, Root, Script, SvelteNode } from 'svelte/compiler';
 
 import { transformComponentMetaToDefineMeta } from '#compiler/pre-transform/codemods/component-meta-to-define-meta';
@@ -112,12 +118,10 @@ export async function codemodLegacyNodes(params: Params): Promise<Root> {
           state.defineMetaFromExportConstMeta = transformed;
         }
 
-        const { init } = declaration.declarations[0];
-
-        if (init?.type !== 'ObjectExpression') {
-          // TODO: Document it?
-          throw new Error('Invalid syntax in legacy story...');
-        }
+        // NOTE:
+        // Type assertion because we already ran transform codemod function by this point (`transformed`).
+        // So the possible issue is on our side, not user.
+        const { init } = declaration.declarations[0] as ObjectExpression;
 
         const { properties } = init;
 

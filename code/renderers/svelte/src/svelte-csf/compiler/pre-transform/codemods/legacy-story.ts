@@ -16,7 +16,6 @@ import {
   createASTProperty,
 } from '#parser/ast';
 import { InvalidTemplateAttribute } from '#utils/error/codemod/index';
-import { storyNameToExportName } from '#utils/identifier-utils';
 
 interface Params {
   node: Component;
@@ -197,8 +196,6 @@ function transformSource(params: InsertSourceParams): void {
     ((parameters.value as ExpressionTag[])[0].expression as ObjectExpression).properties.push(
       docsProperty
     );
-  } else {
-    // TODO: Create a warning?
   }
 
   newAttributes.push(parameters);

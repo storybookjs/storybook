@@ -133,7 +133,6 @@ describe(transformLegacyStory.name, () => {
   it("transforms 'template' prop to 'children' and text expression becomes expression tag with identifier to snippet", async ({
     expect,
   }) => {
-    // TODO: Check if warning was emitted?
     const code = `
       <script context="module">
         import { Story } from "@storybook/addon-svelte-csf";
@@ -151,7 +150,6 @@ describe(transformLegacyStory.name, () => {
   it("when directive 'let:args' is used then it wraps Story fragment with 'children' snippet block", async ({
     expect,
   }) => {
-    // TODO: Check if warning was emitted?
     const code = `
       <script context="module">
         import { Story } from "@storybook/addon-svelte-csf";
@@ -175,7 +173,6 @@ describe(transformLegacyStory.name, () => {
   it("when directive 'let:context' is used then it wraps Story fragment with 'children' snippet block", async ({
     expect,
   }) => {
-    // TODO: Check if warning was emitted?
     const code = `
       <script context="module">
         import { Story } from "@storybook/addon-svelte-csf";

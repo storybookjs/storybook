@@ -31,13 +31,13 @@ export function defineMeta<
 
 export type Args<TStoryCmp> =
   TStoryCmp extends StoryCmp<infer _TOverrideArgs, infer TCmpOrArgs, infer TMeta>
-  ? NonNullable<StoryAnnotations<TCmpOrArgs, TMeta>['args']>
-  : never;
+    ? NonNullable<StoryAnnotations<TCmpOrArgs, TMeta>['args']>
+    : never;
 
 export type StoryContext<TStoryCmp> =
   TStoryCmp extends StoryCmp<infer _TOverrideArgs, infer TCmpOrArgs, infer TMeta>
-  ? BaseStoryContext<TCmpOrArgs, TMeta>
-  : never;
+    ? BaseStoryContext<TCmpOrArgs, TMeta>
+    : never;
 
 // TODO: Remove in next major release
 export {

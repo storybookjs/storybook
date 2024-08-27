@@ -22,7 +22,9 @@ export function transformExportMetaToDefineMeta(
 ): VariableDeclaration {
   const { declaration, leadingComments, start, end } = exportMeta;
   if (!declaration || declaration.type !== 'VariableDeclaration') {
-    throw new Error("Invalid syntax - 'export meta' declaration was empty or not a variable declaration");
+    throw new Error(
+      "Invalid syntax - 'export meta' declaration was empty or not a variable declaration"
+    );
   }
   const { declarations } = declaration;
   const { init } = declarations[0];

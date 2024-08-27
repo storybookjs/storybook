@@ -1,4 +1,4 @@
-import type { PlayFunctionContext } from '@storybook/types';
+import type { PlayFunctionContext } from 'storybook/internal/types';
 import type { ComponentProps, Snippet } from 'svelte';
 import type { EmptyObject, Primitive } from 'type-fest';
 import { describe, expectTypeOf, it } from 'vitest';

@@ -1,5 +1,5 @@
 import { combineTags } from '@storybook/csf';
-import type { IndexInput, Indexer } from '@storybook/types';
+import type { IndexInput, Indexer } from 'storybook/internal/types';
 
 import { parseForIndexer } from '#indexer/parser';
 import {

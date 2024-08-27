@@ -1,4 +1,4 @@
-import type { Args } from '@storybook/types';
+import type { Args } from 'storybook/internal/types';
 import { getContext, hasContext, setContext, type ComponentProps } from 'svelte';
 
 import type { Cmp, Meta, StoryCmp } from '#types';

@@ -64,7 +64,7 @@ This plugin is necessary to run portable stories in Vitest, as it provides the n
 
 (⚠️ **Experimental**)
 
-The experimental `@storybook/experimental-vitest-plugin` can be used to automatically transform your stories at Vitest runtime to in-memory test files. This allows you to run your stories in a Vitest environment without needing to manually transform your stories. Please visit https://github.com/storybookjs/vitest-plugin for more information.
+The experimental `@storybook/experimental-addon-vitest` can be used to automatically transform your stories at Vitest runtime to in-memory test files. This allows you to run your stories in a Vitest environment without needing to manually transform your stories. Please visit https://storybook.js.org/docs/8.3/writing-tests/test-runner-with-vitest for more information.
 
 ## Limitations and differences to the Webpack5-based integration of Next.js in Storybook
 
@@ -95,8 +95,9 @@ When testing components that rely on Next.js Server Actions, you need to ensure 
    ```js
    // @vitest-environment jsdom
    ```
+
 2. To apply it to all tests, adjust your Vitest configuration:
-   
+
    ```ts
    // vitest.config.ts
    import { defineConfig } from "vite";

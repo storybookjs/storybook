@@ -112,29 +112,35 @@ export abstract class StorybookSvelteCSFError extends Error {
   // WARN: I had to duplicate logic. We already have functions for it.
   // But we can't import it, because it would create a cyclic-dependency.
   protected get storyNameFromAttribute() {
-    if (this.component) {
-      for (const attribute of this.component?.attributes) {
-        if (
-          attribute.type === 'Attribute' &&
-          attribute.name === 'name' &&
-          attribute.value !== true
-        ) {
-          if (attribute.value[0].type === 'Text') {
-            return attribute.value[0].data;
-          }
+    if (!this.component) {
+      return '<UnnamedComponent>';
+    }
 
-          if (
-            attribute.value[0].type === 'ExpressionTag' &&
-            attribute.value[0].expression.type === 'Literal' &&
-            typeof attribute.value[0].expression.value === 'string'
-          ) {
-            return attribute.value[0].expression.value;
-          }
+    const { attributes } = this.component;
+
+    for (const attribute of attributes) {
+      if (attribute.type === 'Attribute' && attribute.name === 'name' && attribute.value !== true) {
+        if (attribute.value.type === 'ExpressionTag') {
+          return attribute.value.expression.value;
+        }
+
+        if (attribute.value[0].type === 'Text') {
+          return attribute.value[0].data;
+        }
+
+        if (attribute.value[0].type === 'Text') {
+          return attribute.value[0].data;
+        }
+
+        if (
+          attribute.value[0].type === 'ExpressionTag' &&
+          attribute.value[0].expression.type === 'Literal' &&
+          typeof attribute.value[0].expression.value === 'string'
+        ) {
+          return attribute.value[0].expression.value;
         }
       }
     }
-
-    return '<unspecified Story name>';
   }
 
   public get filepathURL() {

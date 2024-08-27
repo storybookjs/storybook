@@ -1,7 +1,3 @@
-import { dequal as deepEqual } from 'dequal';
-import { once } from '@storybook/core/client-logger';
-import isPlainObject from 'lodash/isPlainObject.js';
-import { dedent } from 'ts-dedent';
 import type {
   ArgTypes,
   Args,
@@ -11,10 +7,19 @@ import type {
   StoryContext,
 } from '@storybook/core/types';
 
+import { once } from '@storybook/core/client-logger';
+
+import { dequal as deepEqual } from 'dequal';
+import isPlainObject from 'lodash/isPlainObject.js';
+import { dedent } from 'ts-dedent';
+
 const INCOMPATIBLE = Symbol('incompatible');
 const map = (arg: unknown, argType: InputType): any => {
   const type = argType.type as SBType;
-  if (arg === undefined || arg === null || !type) return arg;
+
+  if (arg === undefined || arg === null || !type) {
+    return arg;
+  }
   if (argType.mapping) {
     return arg;
   }
@@ -28,15 +33,25 @@ const map = (arg: unknown, argType: InputType): any => {
     case 'boolean':
       return String(arg) === 'true';
     case 'array':
-      if (!type.value || !Array.isArray(arg)) return INCOMPATIBLE;
+      if (!type.value || !Array.isArray(arg)) {
+        return INCOMPATIBLE;
+      }
       return arg.reduce((acc, item, index) => {
         const mapped = map(item, { type: type.value });
-        if (mapped !== INCOMPATIBLE) acc[index] = mapped;
+
+        if (mapped !== INCOMPATIBLE) {
+          acc[index] = mapped;
+        }
         return acc;
       }, new Array(arg.length));
     case 'object':
-      if (typeof arg === 'string' || typeof arg === 'number') return arg;
-      if (!type.value || typeof arg !== 'object') return INCOMPATIBLE;
+      if (typeof arg === 'string' || typeof arg === 'number') {
+        return arg;
+      }
+
+      if (!type.value || typeof arg !== 'object') {
+        return INCOMPATIBLE;
+      }
       return Object.entries(arg).reduce((acc, [key, val]) => {
         const mapped = map(val, { type: type.value[key] });
         return mapped === INCOMPATIBLE ? acc : Object.assign(acc, { [key]: mapped });
@@ -48,7 +63,9 @@ const map = (arg: unknown, argType: InputType): any => {
 
 export const mapArgsToTypes = (args: Args, argTypes: ArgTypes): Args => {
   return Object.entries(args).reduce((acc, [key, value]) => {
-    if (!argTypes[key]) return acc;
+    if (!argTypes[key]) {
+      return acc;
+    }
     const mapped = map(value, argTypes[key]);
     return mapped === INCOMPATIBLE ? acc : Object.assign(acc, { [key]: mapped });
   }, {});
@@ -66,11 +83,17 @@ export const combineArgs = (value: any, update: any): Args => {
       )
       .filter((v: any) => v !== undefined);
   }
-  if (!isPlainObject(value) || !isPlainObject(update)) return update;
+
+  if (!isPlainObject(value) || !isPlainObject(update)) {
+    return update;
+  }
   return Object.keys({ ...value, ...update }).reduce((acc, key) => {
     if (key in update) {
       const combined = combineArgs(value[key], update[key]);
-      if (combined !== undefined) acc[key] = combined;
+
+      if (combined !== undefined) {
+        acc[key] = combined;
+      }
     } else {
       acc[key] = value[key];
     }
@@ -90,7 +113,9 @@ export const validateOptions = (args: Args, argTypes: ArgTypes): Args => {
       return acc;
     }
 
-    if (!options) return allowArg();
+    if (!options) {
+      return allowArg();
+    }
 
     if (!Array.isArray(options)) {
       once.error(dedent`
@@ -131,15 +156,26 @@ export const validateOptions = (args: Args, argTypes: ArgTypes): Args => {
 // TODO -- copied from router, needs to be in a shared location
 export const DEEPLY_EQUAL = Symbol('Deeply equal');
 export const deepDiff = (value: any, update: any): any => {
-  if (typeof value !== typeof update) return update;
-  if (deepEqual(value, update)) return DEEPLY_EQUAL;
+  if (typeof value !== typeof update) {
+    return update;
+  }
+
+  if (deepEqual(value, update)) {
+    return DEEPLY_EQUAL;
+  }
   if (Array.isArray(value) && Array.isArray(update)) {
     const res = update.reduce((acc, upd, index) => {
       const diff = deepDiff(value[index], upd);
-      if (diff !== DEEPLY_EQUAL) acc[index] = diff;
+
+      if (diff !== DEEPLY_EQUAL) {
+        acc[index] = diff;
+      }
       return acc;
     }, new Array(update.length));
-    if (update.length >= value.length) return res;
+
+    if (update.length >= value.length) {
+      return res;
+    }
     return res.concat(new Array(value.length - update.length).fill(undefined));
   }
   if (isPlainObject(value) && isPlainObject(update)) {

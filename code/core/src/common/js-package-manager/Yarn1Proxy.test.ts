@@ -1,5 +1,7 @@
-import { describe, beforeEach, it, expect, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { dedent } from 'ts-dedent';
+
 import { Yarn1Proxy } from './Yarn1Proxy';
 
 describe('Yarn 1 Proxy', () => {
@@ -21,21 +23,6 @@ describe('Yarn 1 Proxy', () => {
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({ command: 'yarn', args: ['init', '-y'] })
-      );
-    });
-  });
-
-  describe('setRegistryUrl', () => {
-    it('should run `yarn config set npmRegistryServer https://foo.bar`', async () => {
-      const executeCommandSpy = vi.spyOn(yarn1Proxy, 'executeCommand').mockResolvedValueOnce('');
-
-      await yarn1Proxy.setRegistryURL('https://foo.bar');
-
-      expect(executeCommandSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          command: 'npm',
-          args: ['config', 'set', 'registry', 'https://foo.bar'],
-        })
       );
     });
   });

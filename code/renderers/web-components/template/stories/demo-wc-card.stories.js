@@ -1,4 +1,5 @@
 import { html } from 'lit';
+
 import './demo-wc-card';
 
 export default {

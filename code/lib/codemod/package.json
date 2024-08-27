@@ -1,6 +1,6 @@
 {
   "name": "@storybook/codemod",
-  "version": "8.3.0-alpha.2",
+  "version": "8.3.0-alpha.9",
   "description": "A collection of codemod scripts written with JSCodeshift",
   "keywords": [
     "storybook"
@@ -50,15 +50,15 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
     "@babel/core": "^7.24.4",
     "@babel/preset-env": "^7.24.4",
     "@babel/types": "^7.24.0",
     "@storybook/core": "workspace:*",
-    "@storybook/csf": "0.1.11",
+    "@storybook/csf": "^0.1.11",
     "@types/cross-spawn": "^6.0.2",
     "cross-spawn": "^7.0.3",
     "globby": "^14.0.1",

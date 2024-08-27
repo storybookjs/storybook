@@ -1,17 +1,19 @@
 import React from 'react';
+
 import type { StoriesHash } from '@storybook/core/manager-api';
 
-import { mockDataset } from './mockdata';
-import { SearchResults } from './SearchResults';
-import type { CombinedDataset, Refs, SearchItem } from './types';
 import { searchItem } from '../../utils/tree';
 import { IconSymbols } from './IconSymbols';
+import { SearchResults } from './SearchResults';
+import { mockDataset } from './mockdata';
+import type { CombinedDataset, Refs, SearchItem } from './types';
 
 export default {
   component: SearchResults,
   title: 'Sidebar/SearchResults',
   includeStories: /^[A-Z]/,
   parameters: { layout: 'fullscreen' },
+  globals: { sb_theme: 'side-by-side' },
   decorators: [
     (storyFn: any) => (
       <div style={{ padding: '0 20px', maxWidth: '230px' }}>

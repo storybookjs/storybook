@@ -1,21 +1,16 @@
-import type { StoryId, ComponentTitle, StoryName, Parameters, Tag, Path } from './csf';
+import type { ComponentTitle, Parameters, Path, StoryId, StoryName, Tag } from './csf';
 
 type ExportName = string;
 type MetaId = string;
 
 export interface StoriesSpecifier {
-  /**
-   * When auto-titling, what to prefix all generated titles with (default: '')
-   */
+  /** When auto-titling, what to prefix all generated titles with (default: '') */
   titlePrefix?: string;
-  /**
-   * Where to start looking for story files
-   */
+  /** Where to start looking for story files */
   directory: string;
   /**
-   * What does the filename of a story file look like?
-   * (a glob, relative to directory, no leading `./`)
-   * If unset, we use `** / *.@(mdx|stories.@(mdx|js|jsx|mjs|ts|tsx))` (no spaces)
+   * What does the filename of a story file look like? (a glob, relative to directory, no leading
+   * `./`) If unset, we use `** / *.@(mdx|stories.@(mdx|js|jsx|mjs|ts|tsx))` (no spaces)
    */
   files?: string;
 }
@@ -46,22 +41,22 @@ export interface IndexedCSFFile {
 }
 
 /**
- * FIXME: This is a temporary type to allow us to deprecate the old indexer API.
- * We should remove this type and the deprecated indexer API in 8.0.
+ * FIXME: This is a temporary type to allow us to deprecate the old indexer API. We should remove
+ * this type and the deprecated indexer API in 8.0.
  */
 type BaseIndexer = {
-  /**
-   * A regular expression that should match all files to be handled by this indexer
-   */
+  /** A regular expression that should match all files to be handled by this indexer */
   test: RegExp;
 };
 
 /**
- * An indexer describes which filenames it handles, and how to index each individual file - turning it into an entry in the index.
+ * An indexer describes which filenames it handles, and how to index each individual file - turning
+ * it into an entry in the index.
  */
 export type Indexer = BaseIndexer & {
   /**
    * Indexes a file containing stories or docs.
+   *
    * @param fileName The name of the file to index.
    * @param options {@link IndexerOptions} for indexing the file.
    * @returns A promise that resolves to an array of {@link IndexInput} objects.
@@ -95,11 +90,10 @@ export interface IndexInputStats {
   mount?: boolean;
   beforeEach?: boolean;
   moduleMock?: boolean;
+  globals?: boolean;
 }
 
-/**
- * The base input for indexing a story or docs entry.
- */
+/** The base input for indexing a story or docs entry. */
 export type BaseIndexInput = {
   /** The file to import from e.g. the story file. */
   importPath: Path;
@@ -112,35 +106,31 @@ export type BaseIndexInput = {
   /** The location in the sidebar, auto-generated from {@link importPath} if unspecified. */
   title?: ComponentTitle;
   /**
-   * The custom id optionally set at `meta.id` if it needs to differ from the id generated via {@link title}.
-   * If unspecified, the meta id will be auto-generated from {@link title}.
-   * If specified, the meta in the CSF file _must_ have a matching id set at `meta.id`, to be correctly matched.
+   * The custom id optionally set at `meta.id` if it needs to differ from the id generated via
+   * {@link title}. If unspecified, the meta id will be auto-generated from {@link title}. If
+   * specified, the meta in the CSF file _must_ have a matching id set at `meta.id`, to be correctly
+   * matched.
    */
   metaId?: MetaId;
   /** Tags for filtering entries in Storybook and its tools. */
   tags?: Tag[];
   /**
-   * The id of the entry, auto-generated from {@link title}/{@link metaId} and {@link exportName} if unspecified.
-   * If specified, the story in the CSF file _must_ have a matching id set at `parameters.__id`, to be correctly matched.
-   * Only use this if you need to override the auto-generated id.
+   * The id of the entry, auto-generated from {@link title}/{@link metaId} and {@link exportName} if
+   * unspecified. If specified, the story in the CSF file _must_ have a matching id set at
+   * `parameters.__id`, to be correctly matched. Only use this if you need to override the
+   * auto-generated id.
    */
   __id?: StoryId;
-  /**
-   * Stats about language feature usage that the indexer can optionally report
-   */
+  /** Stats about language feature usage that the indexer can optionally report */
   __stats?: IndexInputStats;
 };
 
-/**
- * The input for indexing a story entry.
- */
+/** The input for indexing a story entry. */
 export type StoryIndexInput = BaseIndexInput & {
   type: 'story';
 };
 
-/**
- * The input for indexing a docs entry.
- */
+/** The input for indexing a docs entry. */
 export type DocsIndexInput = BaseIndexInput & {
   type: 'docs';
   /** Paths to story files that must be pre-loaded for this docs entry. */

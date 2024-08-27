@@ -1,11 +1,12 @@
-import { describe, it, expect, vi } from 'vitest';
-import type { Renderer, ProjectAnnotations, StoryIndex } from '@storybook/core/types';
+import { describe, expect, it, vi } from 'vitest';
 
+import type { ProjectAnnotations, Renderer, StoryIndex } from '@storybook/core/types';
+
+import { StoryStore } from './StoryStore';
+import { composeConfigs } from './csf/composeConfigs';
 import { prepareStory } from './csf/prepareStory';
 import { processCSFFile } from './csf/processCSFFile';
-import { StoryStore } from './StoryStore';
 import type { HooksContext } from './hooks';
-import { composeConfigs } from './csf/composeConfigs';
 
 // Spy on prepareStory/processCSFFile
 vi.mock('./csf/prepareStory', async (importOriginal) => {
@@ -313,6 +314,7 @@ describe('StoryStore', () => {
             "playFunction": undefined,
             "renderToCanvas": undefined,
             "story": "A",
+            "storyGlobals": {},
             "subcomponents": undefined,
             "tags": [
               "dev",
@@ -374,7 +376,7 @@ describe('StoryStore', () => {
       const story = await store.loadStory({ storyId: 'component-one--a' });
 
       store.args.update(story.id, { foo: 'bar' });
-      store.globals!.update({ a: 'c' });
+      store.userGlobals!.update({ a: 'c' });
 
       expect(store.getStoryContext(story)).toMatchObject({
         args: { foo: 'bar' },
@@ -482,6 +484,7 @@ describe('StoryStore', () => {
             "playFunction": undefined,
             "renderToCanvas": undefined,
             "story": "A",
+            "storyGlobals": {},
             "subcomponents": undefined,
             "tags": [
               "dev",
@@ -524,6 +527,7 @@ describe('StoryStore', () => {
             "playFunction": undefined,
             "renderToCanvas": undefined,
             "story": "B",
+            "storyGlobals": {},
             "subcomponents": undefined,
             "tags": [
               "dev",
@@ -566,6 +570,7 @@ describe('StoryStore', () => {
             "playFunction": undefined,
             "renderToCanvas": undefined,
             "story": "C",
+            "storyGlobals": {},
             "subcomponents": undefined,
             "tags": [
               "dev",
@@ -680,6 +685,7 @@ describe('StoryStore', () => {
             "runStep": [Function],
             "story": "A",
             "storyFn": [Function],
+            "storyGlobals": {},
             "subcomponents": undefined,
             "tags": [
               "dev",
@@ -732,6 +738,7 @@ describe('StoryStore', () => {
             "runStep": [Function],
             "story": "B",
             "storyFn": [Function],
+            "storyGlobals": {},
             "subcomponents": undefined,
             "tags": [
               "dev",
@@ -784,6 +791,7 @@ describe('StoryStore', () => {
             "runStep": [Function],
             "story": "C",
             "storyFn": [Function],
+            "storyGlobals": {},
             "subcomponents": undefined,
             "tags": [
               "dev",
@@ -849,6 +857,7 @@ describe('StoryStore', () => {
               "playFunction": undefined,
               "renderToCanvas": undefined,
               "story": "A",
+              "storyGlobals": {},
               "subcomponents": undefined,
               "tags": [
                 "dev",
@@ -891,6 +900,7 @@ describe('StoryStore', () => {
               "playFunction": undefined,
               "renderToCanvas": undefined,
               "story": "B",
+              "storyGlobals": {},
               "subcomponents": undefined,
               "tags": [
                 "dev",
@@ -933,6 +943,7 @@ describe('StoryStore', () => {
               "playFunction": undefined,
               "renderToCanvas": undefined,
               "story": "C",
+              "storyGlobals": {},
               "subcomponents": undefined,
               "tags": [
                 "dev",

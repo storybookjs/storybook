@@ -1,4 +1,4 @@
-import { getTSFilesAndConfig, getTSProgramAndHost, getTSDiagnostics } from './helpers/typescript';
+import { getTSDiagnostics, getTSFilesAndConfig, getTSProgramAndHost } from './helpers/typescript';
 
 const tsconfigPath = 'tsconfig.json';
 

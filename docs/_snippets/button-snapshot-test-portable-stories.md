@@ -5,7 +5,7 @@ import * as stories from '../stories/Button.stories';
 
 const { Primary } = composeStories(stories);
 test('Button snapshot', async () => {
-  await Primary.play();
+  await Primary.run();
   expect(document.body.firstChild).toMatchSnapshot();
 });
 ```
@@ -21,7 +21,7 @@ import * as stories from '../stories/Button.stories';
 
 const { Primary } = composeStories(stories);
 test('Button snapshot', async () => {
-  await Primary.play();
+  await Primary.run();
   expect(document.body.firstChild).toMatchSnapshot();
 });
 ```
@@ -37,7 +37,7 @@ import * as stories from '../stories/Button.stories';
 
 const { Primary } = composeStories(stories);
 test('Button snapshot', async () => {
-  await Primary.play();
+  await Primary.run();
   expect(document.body.firstChild).toMatchSnapshot();
 });
 ```
@@ -53,7 +53,7 @@ import * as stories from '../stories/Button.stories';
 
 const { Primary } = composeStories(stories);
 test('Button snapshot', async () => {
-  await Primary.play();
+  await Primary.run();
   expect(document.body.firstChild).toMatchSnapshot();
 });
 ```

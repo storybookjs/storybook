@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-onboarding",
-  "version": "8.3.0-alpha.2",
+  "version": "8.3.0-alpha.9",
   "description": "Storybook Addon Onboarding - Introduces a new onboarding experience",
   "keywords": [
     "storybook-addons",
@@ -23,9 +23,9 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "require": "./dist/index.js",
+      "node": "./dist/index.js"
     },
     "./manager": "./dist/manager.js",
     "./preset": "./dist/preset.js",
@@ -42,15 +42,15 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/addon-bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
     "react-confetti": "^6.1.0"
   },
   "devDependencies": {
     "@radix-ui/react-dialog": "^1.0.5",
-    "@storybook/icons": "^1.2.5",
+    "@storybook/icons": "^1.2.10",
     "@storybook/react": "workspace:*",
     "framer-motion": "^11.0.3",
     "react": "^18.2.0",

@@ -1,10 +1,11 @@
-import type { FC, ChangeEvent, RefObject } from 'react';
-import React, { useState, useRef, useEffect } from 'react';
-import { styled } from 'storybook/internal/theming';
-import { Form } from 'storybook/internal/components';
+import type { ChangeEvent, FC, RefObject } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
-import type { ControlProps, DateValue, DateConfig } from './types';
+import { Form } from 'storybook/internal/components';
+import { styled } from 'storybook/internal/theming';
+
 import { getControlId } from './helpers';
+import type { ControlProps, DateConfig, DateValue } from './types';
 
 export const parseDate = (value: string) => {
   const [year, month, day] = value.split('-');
@@ -83,23 +84,33 @@ export const DateControl: FC<DateProps> = ({ name, value, onChange, onFocus, onB
   }, [value]);
 
   const onDateChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.value) return onChange();
+    if (!e.target.value) {
+      return onChange();
+    }
     const parsed = parseDate(e.target.value);
     const result = new Date(value);
     result.setFullYear(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
     const time = result.getTime();
-    if (time) onChange(time);
+
+    if (time) {
+      onChange(time);
+    }
     setValid(!!time);
   };
 
   const onTimeChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.value) return onChange();
+    if (!e.target.value) {
+      return onChange();
+    }
     const parsed = parseTime(e.target.value);
     const result = new Date(value);
     result.setHours(parsed.getHours());
     result.setMinutes(parsed.getMinutes());
     const time = result.getTime();
-    if (time) onChange(time);
+
+    if (time) {
+      onChange(time);
+    }
     setValid(!!time);
   };
 

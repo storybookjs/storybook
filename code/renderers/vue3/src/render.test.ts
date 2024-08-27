@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { expectTypeOf } from 'expect-type';
 
+import { expectTypeOf } from 'expect-type';
 import { reactive } from 'vue';
+
 import { updateArgs } from './render';
 
 describe('Render Story', () => {

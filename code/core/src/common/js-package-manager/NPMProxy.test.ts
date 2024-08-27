@@ -1,4 +1,5 @@
-import { describe, beforeEach, it, expect, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { NPMProxy } from './NPMProxy';
 
 // mock createLogStream
@@ -30,21 +31,6 @@ describe('NPM Proxy', () => {
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({ command: 'npm', args: ['init', '-y'] })
-      );
-    });
-  });
-
-  describe('setRegistryUrl', () => {
-    it('should run `npm config set registry https://foo.bar`', async () => {
-      const executeCommandSpy = vi.spyOn(npmProxy, 'executeCommand').mockResolvedValueOnce('');
-
-      await npmProxy.setRegistryURL('https://foo.bar');
-
-      expect(executeCommandSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          command: 'npm',
-          args: ['config', 'set', 'registry', 'https://foo.bar'],
-        })
       );
     });
   });

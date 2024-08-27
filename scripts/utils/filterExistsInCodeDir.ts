@@ -1,5 +1,7 @@
-import path from 'path';
+import { join, resolve } from 'node:path';
+
 import { pathExists } from 'fs-extra';
+
 import { CODE_DIRECTORY } from './constants';
 
 // packageDirs of the form `lib/preview-api`
@@ -8,7 +10,7 @@ export const filterExistsInCodeDir = async (packageDirs: string[], pathToCheck: 
   (
     await Promise.all(
       packageDirs.map(async (p) =>
-        (await pathExists(path.resolve(CODE_DIRECTORY, path.join(p, pathToCheck)))) ? p : null
+        (await pathExists(resolve(CODE_DIRECTORY, join(p, pathToCheck)))) ? p : null
       )
     )
   ).filter(Boolean);

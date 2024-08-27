@@ -1,8 +1,11 @@
 import type { MockInstance } from 'vitest';
-import { describe, it, beforeEach, expect, vi } from 'vitest';
-import { nanoid } from 'nanoid';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { cache } from '@storybook/core/common';
-import { resetSessionIdForTest, getSessionId, SESSION_TIMEOUT } from './session-id';
+
+import { nanoid } from 'nanoid';
+
+import { SESSION_TIMEOUT, getSessionId, resetSessionIdForTest } from './session-id';
 
 vi.mock('@storybook/core/common', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@storybook/core/common')>()),

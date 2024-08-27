@@ -1,5 +1,7 @@
-import type { BuilderOptions, CLIOptions, LoadOptions, Options } from '@storybook/core/types';
+import { join, relative, resolve } from 'node:path';
+
 import {
+  getConfigInfo,
   getProjectRoot,
   loadAllPresets,
   loadMainConfig,
@@ -7,40 +9,58 @@ import {
   resolvePathInStorybookCache,
   serverResolve,
   validateFrameworkName,
+  versions,
 } from '@storybook/core/common';
+import { oneWayHash, telemetry } from '@storybook/core/telemetry';
+import type { BuilderOptions, CLIOptions, LoadOptions, Options } from '@storybook/core/types';
+import { global } from '@storybook/global';
+
+import { deprecate } from '@storybook/core/node-logger';
+import { MissingBuilderError, NoStatsForViteDevError } from '@storybook/core/server-errors';
+
+import { readFile } from 'fs-extra';
 import prompts from 'prompts';
 import invariant from 'tiny-invariant';
-import { global } from '@storybook/global';
-import { oneWayHash, telemetry } from '@storybook/core/telemetry';
-
-import { join, relative, resolve } from 'node:path';
-import { deprecate } from '@storybook/core/node-logger';
 import { dedent } from 'ts-dedent';
-import { readFile } from 'fs-extra';
-import { MissingBuilderError, NoStatsForViteDevError } from '@storybook/core/server-errors';
+
 import { storybookDevServer } from './dev-server';
-import { outputStats } from './utils/output-stats';
-import { outputStartupInformation } from './utils/output-startup-information';
-import { updateCheck } from './utils/update-check';
-import { getServerChannelUrl, getServerPort } from './utils/server-address';
+import { buildOrThrow } from './utils/build-or-throw';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
+import { outputStartupInformation } from './utils/output-startup-information';
+import { outputStats } from './utils/output-stats';
+import { getServerChannelUrl, getServerPort } from './utils/server-address';
+import { updateCheck } from './utils/update-check';
 import { warnOnIncompatibleAddons } from './utils/warnOnIncompatibleAddons';
 import { warnWhenUsingArgTypesRegex } from './utils/warnWhenUsingArgTypesRegex';
-import { buildOrThrow } from './utils/build-or-throw';
 
 export async function buildDevStandalone(
-  options: CLIOptions & LoadOptions & BuilderOptions
+  options: CLIOptions &
+    LoadOptions &
+    BuilderOptions & {
+      storybookVersion?: string;
+      previewConfigPath?: string;
+    }
 ): Promise<{ port: number; address: string; networkAddress: string }> {
   const { packageJson, versionUpdates } = options;
-  invariant(
-    packageJson.version !== undefined,
-    `Expected package.json#version to be defined in the "${packageJson.name}" package}`
-  );
+  let { storybookVersion, previewConfigPath } = options;
+  const configDir = resolve(options.configDir);
+  if (packageJson) {
+    invariant(
+      packageJson.version !== undefined,
+      `Expected package.json#version to be defined in the "${packageJson.name}" package}`
+    );
+    storybookVersion = packageJson.version;
+    previewConfigPath = getConfigInfo(packageJson, configDir).previewConfig ?? undefined;
+  } else {
+    if (!storybookVersion) {
+      storybookVersion = versions.storybook;
+    }
+  }
   // updateInfo are cached, so this is typically pretty fast
   const [port, versionCheck] = await Promise.all([
     getServerPort(options.port, { exactPort: options.exactPort }),
     versionUpdates
-      ? updateCheck(packageJson.version)
+      ? updateCheck(storybookVersion)
       : Promise.resolve({ success: false, cached: false, data: {}, time: Date.now() }),
   ]);
 
@@ -57,7 +77,6 @@ export async function buildDevStandalone(
   }
 
   const rootDir = getProjectRoot();
-  const configDir = resolve(options.configDir);
   const cacheKey = oneWayHash(relative(rootDir, configDir));
 
   const cacheOutputDir = resolvePathInStorybookCache('public', cacheKey);
@@ -89,13 +108,13 @@ export async function buildDevStandalone(
   frameworkName = frameworkName || 'custom';
 
   try {
-    await warnOnIncompatibleAddons(packageJson.version);
+    await warnOnIncompatibleAddons(storybookVersion);
   } catch (e) {
     console.warn('Storybook failed to check addon compatibility', e);
   }
 
   try {
-    await warnWhenUsingArgTypesRegex(packageJson, configDir, config);
+    await warnWhenUsingArgTypesRegex(previewConfigPath, config);
   } catch (e) {}
 
   // Load first pass: We need to determine the builder
@@ -221,7 +240,7 @@ export async function buildDevStandalone(
     if (!options.quiet) {
       outputStartupInformation({
         updateInfo: versionCheck,
-        version: packageJson.version,
+        version: storybookVersion,
         name,
         address,
         networkAddress,

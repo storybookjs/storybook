@@ -1,8 +1,7 @@
 /// <reference types="node" />
-
+import chalk from 'chalk';
 import npmLog from 'npmlog';
 import prettyTime from 'pretty-hrtime';
-import chalk from 'chalk';
 
 // The default is stderr, which can cause some tools (like rush.js) to think
 // there are issues with the build: https://github.com/storybookjs/storybook/issues/14621
@@ -52,7 +51,9 @@ export { npmLog as instance };
 
 const logged = new Set();
 export const once = (type: 'verbose' | 'info' | 'warn' | 'error') => (message: string) => {
-  if (logged.has(message)) return undefined;
+  if (logged.has(message)) {
+    return undefined;
+  }
   logged.add(message);
   return logger[type](message);
 };

@@ -1,8 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`storiesof-to-csf transforms correctly using "parameters-as-var.input.js" data 1`] = `
-"/* eslint-disable import/no-extraneous-dependencies */
-import React from 'react';
+"import React from 'react';
 import Canvas from './Canvas';
 
 const CHROMATIC_DELAY = { chromatic: { delay: 500 } };

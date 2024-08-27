@@ -1,4 +1,5 @@
-import { it, expect } from 'vitest';
+import { expect, it } from 'vitest';
+
 import { autoName } from '../autoName';
 
 it('pulls name from named MDX files', () => {

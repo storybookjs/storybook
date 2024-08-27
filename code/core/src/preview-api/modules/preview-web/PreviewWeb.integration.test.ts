@@ -1,23 +1,24 @@
 // @vitest-environment happy-dom
-import { describe, beforeEach, it, expect, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import React from 'react';
-import { global } from '@storybook/global';
-import type { RenderContext } from '@storybook/core/types';
-import { addons } from '../addons';
 
+import type { RenderContext } from '@storybook/core/types';
+import { global } from '@storybook/global';
+
+import { addons } from '../addons';
 import { PreviewWeb } from './PreviewWeb';
-import { WebView } from './WebView';
 import {
   componentOneExports,
-  importFn,
-  projectAnnotations,
-  getProjectAnnotations,
   emitter,
+  getProjectAnnotations,
+  importFn,
   mockChannel,
-  waitForRender,
   storyIndex as mockStoryIndex,
+  projectAnnotations,
+  waitForRender,
 } from './PreviewWeb.mockdata';
+import { WebView } from './WebView';
 
 // PreviewWeb.test mocks out all rendering
 //   - ie. from`renderToCanvas()` (stories) or`ReactDOM.render()` (docs) in.
@@ -100,8 +101,8 @@ beforeEach(() => {
 });
 
 /**
- * Skipping this test, because it causes a cyclical dependency error, where core depends on docs & blocks
- * This was done to avoid a conflict in the CPC work, we should revisit this.
+ * Skipping this test, because it causes a cyclical dependency error, where core depends on docs &
+ * blocks This was done to avoid a conflict in the CPC work, we should revisit this.
  */
 describe.skip(
   'PreviewWeb',

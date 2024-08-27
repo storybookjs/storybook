@@ -1,8 +1,11 @@
 import type { FC } from 'react';
 import React from 'react';
-import { transparentize } from 'polished';
-import { styled } from 'storybook/internal/theming';
+
 import { withReset } from 'storybook/internal/components';
+import { styled } from 'storybook/internal/theming';
+
+import { transparentize } from 'polished';
+
 import { getBlockBackgroundStyle } from './BlockBackgroundStyles';
 
 const Label = styled.div(({ theme }) => ({
@@ -41,8 +44,8 @@ export interface TypesetProps {
 }
 
 /**
- * Convenient styleguide documentation showing examples of type
- * with different sizes and weights and configurable sample text.
+ * Convenient styleguide documentation showing examples of type with different sizes and weights and
+ * configurable sample text.
  */
 export const Typeset: FC<TypesetProps> = ({
   fontFamily,

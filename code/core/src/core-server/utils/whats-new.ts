@@ -1,19 +1,22 @@
-import fs from 'fs-extra';
-import { logger } from '@storybook/core/node-logger';
-import { telemetry } from '@storybook/core/telemetry';
-import { findConfigFile } from '@storybook/core/common';
-import type { CoreConfig, Options } from '@storybook/core/types';
-import { printConfig, readConfig } from '@storybook/core/csf-tools';
 import type { Channel } from '@storybook/core/channels';
+import { findConfigFile } from '@storybook/core/common';
+import { telemetry } from '@storybook/core/telemetry';
+import type { CoreConfig, Options } from '@storybook/core/types';
+
 import type { WhatsNewCache, WhatsNewData } from '@storybook/core/core-events';
 import {
   REQUEST_WHATS_NEW_DATA,
   RESULT_WHATS_NEW_DATA,
-  TELEMETRY_ERROR,
   SET_WHATS_NEW_CACHE,
+  TELEMETRY_ERROR,
   TOGGLE_WHATS_NEW_NOTIFICATIONS,
 } from '@storybook/core/core-events';
+import { printConfig, readConfig } from '@storybook/core/csf-tools';
+import { logger } from '@storybook/core/node-logger';
+
+import fs from 'fs-extra';
 import invariant from 'tiny-invariant';
+
 import { sendTelemetryError } from '../withTelemetry';
 
 export type OptionsWithRequiredCache = Exclude<Options, 'cache'> & Required<Pick<Options, 'cache'>>;
@@ -46,7 +49,10 @@ export function initializeWhatsNew(
   channel.on(REQUEST_WHATS_NEW_DATA, async () => {
     try {
       const post = (await fetch(WHATS_NEW_URL).then(async (response) => {
-        if (response.ok) return response.json();
+        if (response.ok) {
+          return response.json();
+        }
+
         // eslint-disable-next-line @typescript-eslint/no-throw-literal
         throw response;
       })) as WhatsNewResponse;

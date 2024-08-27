@@ -1,10 +1,13 @@
 import { createRequire } from 'module';
+
+import { exec } from './exec';
 import type { OptionSpecifier, OptionValues } from './options';
 import { createOptions, getCommand } from './options';
-import { exec } from './exec';
 
 const require = createRequire(import.meta.url);
 const cliExecutable = require.resolve('../../code/lib/cli/bin/index.cjs');
+const toolboxExecutable = require.resolve('../../code/lib/cli-storybook/bin/index.cjs');
+const createStorybookExecutable = require.resolve('../../code/lib/create-storybook/bin/index.cjs');
 
 export type CLIStep<TOptions extends OptionSpecifier> = {
   command: string;
@@ -80,10 +83,17 @@ export async function executeCLIStep<TOptions extends OptionSpecifier>(
     debug: boolean;
   }
 ) {
-  if (cliStep.hasArgument && !options.argument)
+  if (cliStep.hasArgument && !options.argument) {
     throw new Error(`Argument required for ${cliStep.command} command.`);
+  }
 
-  const prefix = `node ${cliExecutable} ${cliStep.command}`;
+  const cliCommand = cliStep.command;
+
+  const prefix = ['dev', 'build'].includes(cliCommand)
+    ? `node ${cliExecutable} ${cliCommand}`
+    : cliCommand === 'init'
+      ? `node ${createStorybookExecutable} ${cliCommand}`
+      : `node ${toolboxExecutable} ${cliCommand}`;
   const command = getCommand(
     cliStep.hasArgument ? `${prefix} ${options.argument}` : prefix,
     cliStep.options,

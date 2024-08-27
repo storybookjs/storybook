@@ -1,13 +1,16 @@
 import type { FC } from 'react';
-import React, { useRef, Fragment } from 'react';
-import type { Combo } from '@storybook/core/manager-api';
-import { Consumer } from '@storybook/core/manager-api';
+import React, { Fragment, useRef } from 'react';
+
 import { Button, getStoryHref } from '@storybook/core/components';
 import { Global, styled } from '@storybook/core/theming';
 import type { CSSObject } from '@storybook/core/theming';
+
+import type { Combo } from '@storybook/core/manager-api';
+import { Consumer } from '@storybook/core/manager-api';
+
 import { IFrame } from './Iframe';
-import type { FramesRendererProps } from './utils/types';
 import { stringifyQueryParams } from './utils/stringifyQueryParams';
+import type { FramesRendererProps } from './utils/types';
 
 const getActive = (refId: FramesRendererProps['refId'], refs: FramesRendererProps['refs']) => {
   if (refId && refs[refId]) {

@@ -1,8 +1,6 @@
 export type SearchResult = Array<string>;
 
-/**
- * File extensions that should be searched for
- */
+/** File extensions that should be searched for */
 const FILE_EXTENSIONS = ['js', 'mjs', 'cjs', 'jsx', 'mts', 'ts', 'tsx', 'cts'];
 
 const IGNORED_FILES = [
@@ -15,6 +13,7 @@ const IGNORED_FILES = [
 
 /**
  * Search for files in a directory that match the search query
+ *
  * @param searchQuery The search query. This can be a glob pattern
  * @param cwd The directory to search in
  * @param renderer The renderer to use for parsing the files

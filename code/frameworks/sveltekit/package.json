@@ -1,6 +1,6 @@
 {
   "name": "@storybook/sveltekit",
-  "version": "8.3.0-alpha.2",
+  "version": "8.3.0-alpha.9",
   "description": "Storybook for SvelteKit",
   "keywords": [
     "storybook",
@@ -25,8 +25,8 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
       "import": "./dist/index.mjs",
+      "node": "./dist/index.js",
       "require": "./dist/index.js"
     },
     "./dist/preview.mjs": {
@@ -35,6 +35,11 @@
     "./preset": {
       "types": "./dist/preset.d.ts",
       "require": "./dist/preset.js"
+    },
+    "./vite": {
+      "types": "./dist/vite.d.ts",
+      "require": "./dist/vite.js",
+      "import": "./dist/vite.mjs"
     },
     "./package.json": "./package.json"
   },
@@ -49,8 +54,8 @@
     "src/mocks/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
     "@storybook/addon-actions": "workspace:*",
@@ -59,7 +64,7 @@
     "@storybook/svelte-vite": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^18.0.0",
+    "@types/node": "^22.0.0",
     "typescript": "^5.3.2",
     "vite": "^4.0.0"
   },
@@ -78,7 +83,8 @@
     "entries": [
       "./src/index.ts",
       "./src/preview.ts",
-      "./src/preset.ts"
+      "./src/preset.ts",
+      "./src/vite.ts"
     ],
     "platform": "node"
   },

@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import type { StoryId, Renderer, PreparedStory } from 'storybook/internal/types';
+import { useEffect, useState } from 'react';
+
+import type { PreparedStory, Renderer, StoryId } from 'storybook/internal/types';
 
 import type { DocsContextProps } from './DocsContext';
 
@@ -38,7 +39,9 @@ export function useStories<TRenderer extends Renderer = Renderer>(
   });
 
   return storyIds.map((storyId) => {
-    if (storiesById[storyId]) return storiesById[storyId];
+    if (storiesById[storyId]) {
+      return storiesById[storyId];
+    }
 
     try {
       // If we are allowed to load this story id synchonously, this will work

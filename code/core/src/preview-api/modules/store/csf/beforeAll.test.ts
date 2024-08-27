@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+
 import { composeBeforeAllHooks } from './beforeAll';
 
 const calls: string[] = [];

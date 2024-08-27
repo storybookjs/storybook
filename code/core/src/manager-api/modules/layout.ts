@@ -1,14 +1,16 @@
-import { global } from '@storybook/global';
-import pick from 'lodash/pick.js';
-import { dequal as deepEqual } from 'dequal';
-import { create } from '@storybook/core/theming/create';
-import { SET_CONFIG } from '@storybook/core/core-events';
 import type { ThemeVars } from '@storybook/core/theming';
-
+import { create } from '@storybook/core/theming/create';
 import type { API_Layout, API_PanelPositions, API_UI } from '@storybook/core/types';
+import { global } from '@storybook/global';
+
+import { SET_CONFIG } from '@storybook/core/core-events';
+
+import { dequal as deepEqual } from 'dequal';
+import pick from 'lodash/pick.js';
+
 import merge from '../lib/merge';
-import type { State } from '../root';
 import type { ModuleFn } from '../lib/types';
+import type { State } from '../root';
 
 const { document } = global;
 
@@ -28,51 +30,54 @@ export interface SubState {
 export interface SubAPI {
   /**
    * Toggles the fullscreen mode of the Storybook UI.
-   * @param toggled - Optional boolean value to set the fullscreen mode to. If not provided, it will toggle the current state.
+   *
+   * @param toggled - Optional boolean value to set the fullscreen mode to. If not provided, it will
+   *   toggle the current state.
    */
   toggleFullscreen: (toggled?: boolean) => void;
   /**
    * Toggles the visibility of the panel in the Storybook UI.
-   * @param toggled - Optional boolean value to set the panel visibility to. If not provided, it will toggle the current state.
+   *
+   * @param toggled - Optional boolean value to set the panel visibility to. If not provided, it
+   *   will toggle the current state.
    */
   togglePanel: (toggled?: boolean) => void;
   /**
    * Toggles the position of the panel in the Storybook UI.
-   * @param position - Optional string value to set the panel position to. If not provided, it will toggle between 'bottom' and 'right'.
+   *
+   * @param position - Optional string value to set the panel position to. If not provided, it will
+   *   toggle between 'bottom' and 'right'.
    */
   togglePanelPosition: (position?: API_PanelPositions) => void;
   /**
    * Toggles the visibility of the navigation bar in the Storybook UI.
-   * @param toggled - Optional boolean value to set the navigation bar visibility to. If not provided, it will toggle the current state.
+   *
+   * @param toggled - Optional boolean value to set the navigation bar visibility to. If not
+   *   provided, it will toggle the current state.
    */
   toggleNav: (toggled?: boolean) => void;
   /**
    * Toggles the visibility of the toolbar in the Storybook UI.
-   * @param toggled - Optional boolean value to set the toolbar visibility to. If not provided, it will toggle the current state.
+   *
+   * @param toggled - Optional boolean value to set the toolbar visibility to. If not provided, it
+   *   will toggle the current state.
    */
   toggleToolbar: (toggled?: boolean) => void;
   /**
    * Sets the options for the Storybook UI.
+   *
    * @param options - An object containing the options to set.
    */
   setOptions: (options: any) => void;
-  /**
-   * Sets the sizes of the resizable elements in the layout.
-   */
+  /** Sets the sizes of the resizable elements in the layout. */
   setSizes: (
     options: Partial<Pick<API_Layout, 'navSize' | 'bottomPanelHeight' | 'rightPanelWidth'>>
   ) => void;
-  /**
-   * getIsFullscreen - Returns the current fullscreen mode of the Storybook UI.
-   */
+  /** GetIsFullscreen - Returns the current fullscreen mode of the Storybook UI. */
   getIsFullscreen: () => boolean;
-  /**
-   * getIsPanelShown - Returns the current visibility of the panel in the Storybook UI.
-   */
+  /** GetIsPanelShown - Returns the current visibility of the panel in the Storybook UI. */
   getIsPanelShown: () => boolean;
-  /**
-   * getIsNavShown - Returns the current visibility of the navigation bar in the Storybook UI.
-   */
+  /** GetIsNavShown - Returns the current visibility of the navigation bar in the Storybook UI. */
   getIsNavShown: () => boolean;
 }
 

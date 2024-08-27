@@ -1,9 +1,10 @@
+import { readdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { readdir } from 'node:fs/promises';
-import { dedent, prettier, getWorkspace, esbuild } from '../../../../scripts/prepare/tools';
-import { temporaryFile } from '../../src/common/utils/cli';
 
 import { GlobalRegistrator } from '@happy-dom/global-registrator';
+
+import { dedent, esbuild, getWorkspace, prettier } from '../../../../scripts/prepare/tools';
+import { temporaryFile } from '../../src/common/utils/cli';
 
 GlobalRegistrator.register({ url: 'http://localhost:3000', width: 1920, height: 1080 });
 
@@ -11,7 +12,7 @@ GlobalRegistrator.register({ url: 'http://localhost:3000', width: 1920, height: 
 // save this list into ./code/core/src/types/frameworks.ts and export it as a union type.
 // The name of the type is `SupportedFrameworks`. Add additionally 'qwik' and `solid` to that list.
 export const generateSourceFiles = async () => {
-  const location = join(import.meta.dirname, '..', '..', 'src');
+  const location = join(__dirname, '..', '..', 'src');
   const prettierConfig = await prettier.resolveConfig(location);
 
   await Promise.all([
@@ -23,7 +24,7 @@ export const generateSourceFiles = async () => {
 };
 
 async function generateVersionsFile(prettierConfig: prettier.Options | null): Promise<void> {
-  const location = join(import.meta.dirname, '..', '..', 'src', 'common', 'versions.ts');
+  const location = join(__dirname, '..', '..', 'src', 'common', 'versions.ts');
 
   const workspace = await getWorkspace();
 
@@ -38,7 +39,7 @@ async function generateVersionsFile(prettierConfig: prettier.Options | null): Pr
       }, {})
   );
 
-  await Bun.write(
+  await writeFile(
     location,
     await prettier.format(
       dedent`
@@ -54,24 +55,16 @@ async function generateVersionsFile(prettierConfig: prettier.Options | null): Pr
 }
 
 async function generateFrameworksFile(prettierConfig: prettier.Options | null): Promise<void> {
-  const thirdPartyFrameworks = ['qwik', 'solid'];
-  const location = join(
-    import.meta.dirname,
-    '..',
-    '..',
-    'src',
-    'types',
-    'modules',
-    'frameworks.ts'
-  );
-  const frameworksDirectory = join(import.meta.dirname, '..', '..', '..', 'frameworks');
+  const thirdPartyFrameworks = ['qwik', 'solid', 'react-rsbuild', 'vue3-rsbuild'];
+  const location = join(__dirname, '..', '..', 'src', 'types', 'modules', 'frameworks.ts');
+  const frameworksDirectory = join(__dirname, '..', '..', '..', 'frameworks');
 
   const readFrameworks = await readdir(frameworksDirectory);
   const frameworks = [...readFrameworks.sort(), ...thirdPartyFrameworks]
     .map((framework) => `'${framework}'`)
     .join(' | ');
 
-  await Bun.write(
+  await writeFile(
     location,
     await prettier.format(
       dedent`
@@ -87,25 +80,17 @@ async function generateFrameworksFile(prettierConfig: prettier.Options | null): 
 }
 
 const localAlias = {
-  '@storybook/core': join(import.meta.dirname, '..', '..', 'src'),
-  storybook: join(import.meta.dirname, '..', '..', 'src'),
+  '@storybook/core': join(__dirname, '..', '..', 'src'),
+  storybook: join(__dirname, '..', '..', 'src'),
 };
 async function generateExportsFile(prettierConfig: prettier.Options | null): Promise<void> {
   function removeDefault(input: string) {
     return input !== 'default';
   }
 
-  const location = join(import.meta.dirname, '..', '..', 'src', 'manager', 'globals', 'exports.ts');
+  const location = join(__dirname, '..', '..', 'src', 'manager', 'globals', 'exports.ts');
 
-  const entryFile = join(
-    import.meta.dirname,
-    '..',
-    '..',
-    'src',
-    'manager',
-    'globals',
-    'runtime.ts'
-  );
+  const entryFile = join(__dirname, '..', '..', 'src', 'manager', 'globals', 'runtime.ts');
   const outFile = await temporaryFile({ extension: 'js' });
 
   await esbuild.build({
@@ -133,7 +118,7 @@ async function generateExportsFile(prettierConfig: prettier.Options | null): Pro
     }
   }
 
-  await Bun.write(
+  await writeFile(
     location,
     await prettier.format(
       dedent`

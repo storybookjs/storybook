@@ -1,14 +1,16 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+import { FindPackageVersionsError } from '@storybook/core/server-errors';
+
+import { findUpSync } from 'find-up';
 import { pathExistsSync } from 'fs-extra';
 import dedent from 'ts-dedent';
-import { existsSync, readFileSync } from 'node:fs';
-import { findUpSync } from 'find-up';
-import path from 'node:path';
-import { FindPackageVersionsError } from '@storybook/core-events/server-errors';
 
+import { createLogStream } from '../utils/cli';
 import { JsPackageManager } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
 import type { InstallationMetadata, PackageMetadata } from './types';
-import { createLogStream } from '../utils/cli';
 
 type PnpmDependency = {
   from: string;
@@ -90,6 +92,15 @@ export class PNPMProxy extends JsPackageManager {
     });
   }
 
+  public async getRegistryURL() {
+    const res = await this.executeCommand({
+      command: 'pnpm',
+      args: ['config', 'get', 'registry'],
+    });
+    const url = res.trim();
+    return url === 'undefined' ? undefined : url;
+  }
+
   async runPackageCommand(command: string, args: string[], cwd?: string): Promise<string> {
     return this.executeCommand({
       command: 'pnpm',
@@ -133,7 +144,7 @@ export class PNPMProxy extends JsPackageManager {
         const pkg = pnpApi.getPackageInformation(pkgLocator);
 
         const packageJSON = JSON.parse(
-          readFileSync(path.join(pkg.packageLocation, 'package.json'), 'utf-8')
+          readFileSync(join(pkg.packageLocation, 'package.json'), 'utf-8')
         );
 
         return packageJSON;
@@ -147,7 +158,7 @@ export class PNPMProxy extends JsPackageManager {
 
     const packageJsonPath = await findUpSync(
       (dir) => {
-        const possiblePath = path.join(dir, 'node_modules', packageName, 'package.json');
+        const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
         return existsSync(possiblePath) ? possiblePath : undefined;
       },
       { cwd: basePath }

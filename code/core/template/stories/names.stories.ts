@@ -1,6 +1,6 @@
+import type { PlayFunctionContext } from '@storybook/core/types';
 import { global as globalThis } from '@storybook/global';
 import { expect } from '@storybook/test';
-import type { PlayFunctionContext } from '@storybook/core/types';
 
 export default {
   component: globalThis.Components.Pre,

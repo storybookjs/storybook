@@ -1,9 +1,10 @@
+import type { ViewMode } from '@storybook/core/types';
 import { global } from '@storybook/global';
+
 import qs from 'qs';
 
+import type { Selection, SelectionSpecifier, SelectionStore } from './SelectionStore';
 import { parseArgsParam } from './parseArgsParam';
-import type { SelectionSpecifier, SelectionStore, Selection } from './SelectionStore';
-import type { ViewMode } from '@storybook/core/types';
 
 const { history, document } = global;
 
@@ -37,7 +38,9 @@ const getQueryString = ({
 };
 
 export const setPath = (selection?: Selection) => {
-  if (!selection) return;
+  if (!selection) {
+    return;
+  }
   const query = getQueryString({ selection });
   const { hash = '' } = document.location;
   document.title = selection.storyId;

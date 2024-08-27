@@ -1,9 +1,13 @@
 import * as React from 'react';
-import { themes, convert } from 'storybook/internal/theming';
-import type { Result } from 'axe-core';
-import { useChannel, useAddonState, useStorybookApi } from 'storybook/internal/manager-api';
+
 import { STORY_CHANGED, STORY_RENDERED } from 'storybook/internal/core-events';
+import { useAddonState, useChannel, useStorybookApi } from 'storybook/internal/manager-api';
+import { convert, themes } from 'storybook/internal/theming';
+
 import { HIGHLIGHT } from '@storybook/addon-highlight';
+
+import type { Result } from 'axe-core';
+
 import { ADDON_ID, EVENTS } from '../constants';
 
 export interface Results {
@@ -101,7 +105,9 @@ export const A11yContextProvider: React.FC<React.PropsWithChildren<A11yContextPr
     }
   }, [active, handleClearHighlights, emit, storyEntry]);
 
-  if (!active) return null;
+  if (!active) {
+    return null;
+  }
 
   return (
     <A11yContext.Provider

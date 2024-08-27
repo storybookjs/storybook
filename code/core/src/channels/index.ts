@@ -1,6 +1,6 @@
 /// <reference path="../typings.d.ts" />
-
 import { global } from '@storybook/global';
+
 import { Channel } from './main';
 import { PostMessageTransport } from './postmessage';
 import type { ChannelTransport, Config } from './types';
@@ -21,9 +21,11 @@ type Options = Config & {
 
 /**
  * Creates a new browser channel instance.
+ *
  * @param {Options} options - The options object.
- * @param {Page} options.page - page identifier.
- * @param {ChannelTransport[]} [options.extraTransports=[]] - An optional array of extra channel transports.
+ * @param {Page} options.page - Page identifier.
+ * @param {ChannelTransport[]} [options.extraTransports=[]] - An optional array of extra channel
+ *   transports. Default is `[]`
  * @returns {Channel} - The new channel instance.
  */
 export function createBrowserChannel({ page, extraTransports = [] }: Options): Channel {

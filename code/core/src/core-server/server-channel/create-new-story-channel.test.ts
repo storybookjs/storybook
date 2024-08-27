@@ -1,13 +1,17 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { initCreateNewStoryChannel } from './create-new-story-channel';
-import path from 'node:path';
+import { join } from 'node:path';
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { ChannelTransport } from '@storybook/core/channels';
 import { Channel } from '@storybook/core/channels';
+
 import type { CreateNewStoryRequestPayload, RequestData } from '@storybook/core/core-events';
 import {
   CREATE_NEW_STORYFILE_REQUEST,
   CREATE_NEW_STORYFILE_RESPONSE,
 } from '@storybook/core/core-events';
+
+import { initCreateNewStoryChannel } from './create-new-story-channel';
 
 vi.mock('@storybook/core/common', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@storybook/core/common')>();
@@ -52,7 +56,7 @@ describe(
         initCreateNewStoryChannel(
           mockChannel,
           {
-            configDir: path.join(cwd, '.storybook'),
+            configDir: join(cwd, '.storybook'),
             presets: {
               apply: (val: string) => {
                 if (val === 'framework') {
@@ -85,7 +89,7 @@ describe(
           id: 'components-page--default',
           payload: {
             storyId: 'components-page--default',
-            storyFilePath: path.join('src', 'components', 'Page.stories.jsx'),
+            storyFilePath: join('src', 'components', 'Page.stories.jsx'),
             exportedStoryName: 'Default',
           },
           success: true,
@@ -103,7 +107,7 @@ describe(
         initCreateNewStoryChannel(
           mockChannel,
           {
-            configDir: path.join(cwd, '.storybook'),
+            configDir: join(cwd, '.storybook'),
             presets: {
               apply: (val: string) => {
                 if (val === 'framework') {

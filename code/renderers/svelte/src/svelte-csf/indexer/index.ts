@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 
 import { combineTags } from '@storybook/csf';
-import type { IndexInput, Indexer } from '@storybook/types';
+import type { IndexInput, Indexer } from 'storybook/internal/types';
 import { preprocess } from 'svelte/compiler';
 
 import { getSvelteAST } from '#parser/ast';

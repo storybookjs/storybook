@@ -5,14 +5,19 @@ import { Button } from './button.component';
 
 const meta: Meta<Button> = {
   component: Button,
+  globals: {
+    // 👇 Set background value for all component stories
+    backgrounds: { value: 'gray', grid: false },
+  },
 };
 
 export default meta;
 type Story = StoryObj<Button>;
 
-export const Large: Story = {
-  global: {
-    viewport: { value: 'phone', isRotated: false },
+export const OnDark: Story = {
+  globals: {
+    // 👇 Override background value for this story
+    backgrounds: { value: 'dark' },
   },
 };
 ```
@@ -22,11 +27,16 @@ import { Button } from './Button';
 
 export default {
   component: Button,
+  globals: {
+    // 👇 Set background value for all component stories
+    backgrounds: { value: 'gray', grid: false },
+  },
 };
 
-export const Large = {
-  global: {
-    viewport: { value: 'phone', isRotated: false },
+export const OnDark = {
+  globals: {
+    // 👇 Override background value for this story
+    backgrounds: { value: 'dark' },
   },
 };
 ```
@@ -39,14 +49,19 @@ import { Button } from './Button';
 
 const meta = {
   component: Button,
+  globals: {
+    // 👇 Set background value for all component stories
+    backgrounds: { value: 'gray', grid: false },
+  },
 } satisfies Meta<typeof Button>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Large: Story = {
-  global: {
-    viewport: { value: 'phone', isRotated: false },
+export const OnDark: Story = {
+  globals: {
+    // 👇 Override background value for this story
+    backgrounds: { value: 'dark' },
   },
 };
 ```
@@ -59,14 +74,19 @@ import { Button } from './Button';
 
 const meta: Meta<typeof Button> = {
   component: Button,
+  globals: {
+    // 👇 Set background value for all component stories
+    backgrounds: { value: 'gray', grid: false },
+  },
 };
 
 export default meta;
 type Story = StoryObj<typeof Button>;
 
-export const Large: Story = {
-  global: {
-    viewport: { value: 'phone', isRotated: false },
+export const OnDark: Story = {
+  globals: {
+    // 👇 Override background value for this story
+    backgrounds: { value: 'dark' },
   },
 };
 ```
@@ -74,11 +94,16 @@ export const Large: Story = {
 ```js filename="Button.stories.js" renderer="web-components" language="js"
 export default {
   component: 'demo-button',
+  globals: {
+    // 👇 Set background value for all component stories
+    backgrounds: { value: 'gray', grid: false },
+  },
 };
 
-export const Large = {
-  global: {
-    viewport: { value: 'phone', isRotated: false },
+export const OnDark = {
+  globals: {
+    // 👇 Override background value for this story
+    backgrounds: { value: 'dark' },
   },
 };
 ```
@@ -88,14 +113,19 @@ import type { Meta, StoryObj } from '@storybook/web-components';
 
 const meta: Meta = {
   component: 'demo-button',
+  globals: {
+    // 👇 Set background value for all component stories
+    backgrounds: { value: 'gray', grid: false },
+  },
 };
 
 export default meta;
 type Story = StoryObj;
 
-export const Large: Story = {
-  global: {
-    viewport: { value: 'phone', isRotated: false },
+export const OnDark: Story = {
+  globals: {
+    // 👇 Override background value for this story
+    backgrounds: { value: 'dark' },
   },
 };
 ```

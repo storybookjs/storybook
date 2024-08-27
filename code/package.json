@@ -161,7 +161,7 @@
     "@storybook/web-components-vite": "workspace:*",
     "@storybook/web-components-webpack5": "workspace:*",
     "@testing-library/dom": "^10.4.0",
-    "@testing-library/jest-dom": "^6.4.8",
+    "@testing-library/jest-dom": "^6.5.0",
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.5.2",
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",

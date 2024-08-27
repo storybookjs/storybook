@@ -1,7 +1,7 @@
-```js filename=".storybook/preview.js" renderer="common" language="js" tabTitle="globals-api"
+```js filename=".storybook/preview.js" renderer="common" language="js" tabTitle="Without globals API"
 import { MINIMAL_VIEWPORTS } from '@storybook/addon-viewport';
 
-const customViewports = {
+const kindleViewports = {
   kindleFire2: {
     name: 'Kindle Fire 2',
     styles: {
@@ -21,22 +21,21 @@ const customViewports = {
 export default {
   parameters: {
     viewport: {
-      options: {
+      viewports: {
         ...MINIMAL_VIEWPORTS,
-        ...customViewports,
+        ...kindleViewports,
       },
     },
   },
 };
 ```
 
-```ts filename=".storybook/preview.ts" renderer="common" language="ts" tabTitle="globals-api"
-// Replace your-framework with the framework you are using (e.g., react, vue3)
-import { Preview } from '@storybook/your-framework';
-
+```ts filename=".storybook/preview.ts" renderer="common" language="ts" tabTitle="Without globals API"
+// Replace your-renderer with the renderer you are using (e.g., react, vue3, angular, etc.)
+import { Preview } from '@storybook/your-renderer';
 import { MINIMAL_VIEWPORTS } from '@storybook/addon-viewport';
 
-const customViewports = {
+const kindleViewports = {
   kindleFire2: {
     name: 'Kindle Fire 2',
     styles: {
@@ -56,9 +55,9 @@ const customViewports = {
 const preview: Preview = {
   parameters: {
     viewport: {
-      options: {
+      viewports: {
         ...MINIMAL_VIEWPORTS,
-        ...customViewports,
+        ...kindleViewports,
       },
     },
   },
@@ -67,10 +66,10 @@ const preview: Preview = {
 export default preview;
 ```
 
-```js filename=".storybook/preview.js" renderer="common" language="js" tabTitle="without-globals"
+```js filename=".storybook/preview.js" renderer="common" language="js" tabTitle="With globals API"
 import { MINIMAL_VIEWPORTS } from '@storybook/addon-viewport';
 
-const customViewports = {
+const kindleViewports = {
   kindleFire2: {
     name: 'Kindle Fire 2',
     styles: {
@@ -90,22 +89,21 @@ const customViewports = {
 export default {
   parameters: {
     viewport: {
-      viewports: {
+      options: {
         ...MINIMAL_VIEWPORTS,
-        ...customViewports,
+        ...kindleViewports,
       },
     },
   },
 };
 ```
 
-```ts filename=".storybook/preview.ts" renderer="common" language="ts" tabTitle="without-globals"
-// Replace your-framework with the framework you are using (e.g., react, vue3)
-import { Preview } from '@storybook/your-framework';
-
+```ts filename=".storybook/preview.ts" renderer="common" language="ts" tabTitle="With globals API"
+// Replace your-renderer with the renderer you are using (e.g., react, vue3, angular, etc.)
+import { Preview } from '@storybook/your-renderer';
 import { MINIMAL_VIEWPORTS } from '@storybook/addon-viewport';
 
-const customViewports = {
+const kindleViewports = {
   kindleFire2: {
     name: 'Kindle Fire 2',
     styles: {
@@ -125,9 +123,9 @@ const customViewports = {
 const preview: Preview = {
   parameters: {
     viewport: {
-      viewports: {
+      options: {
         ...MINIMAL_VIEWPORTS,
-        ...customViewports,
+        ...kindleViewports,
       },
     },
   },

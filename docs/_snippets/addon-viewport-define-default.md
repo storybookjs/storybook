@@ -5,18 +5,19 @@ import { Button } from './button.component';
 
 const meta: Meta<Button> = {
   component: Button,
+  parameters: {
+    // 👇 Set default viewport for all component stories
+    viewport: { defaultViewport: 'tablet' },
+  },
 };
 
 export default meta;
 type Story = StoryObj<Button>;
 
-export const Large: Story = {
+export const OnPhone: Story = {
   parameters: {
-    backgrounds: {
-      grid: {
-        disable: true,
-      },
-    },
+    // 👇 Override default viewport for this story
+    viewport: { defaultViewport: 'mobile1' },
   },
 };
 ```
@@ -26,15 +27,16 @@ import { Button } from './Button';
 
 export default {
   component: Button,
+  parameters: {
+    // 👇 Set default viewport for all component stories
+    viewport: { defaultViewport: 'tablet' },
+  },
 };
 
-export const Large = {
+export const OnPhone = {
   parameters: {
-    backgrounds: {
-      grid: {
-        disable: true,
-      },
-    },
+    // 👇 Override default viewport for this story
+    viewport: { defaultViewport: 'mobile1' },
   },
 };
 ```
@@ -47,18 +49,19 @@ import { Button } from './Button';
 
 const meta = {
   component: Button,
+  parameters: {
+    // 👇 Set default viewport for all component stories
+    viewport: { defaultViewport: 'tablet' },
+  },
 } satisfies Meta<typeof Button>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Large: Story = {
+export const OnPhone: Story = {
   parameters: {
-    backgrounds: {
-      grid: {
-        disable: true,
-      },
-    },
+    // 👇 Override default viewport for this story
+    viewport: { defaultViewport: 'mobile1' },
   },
 };
 ```
@@ -71,18 +74,19 @@ import { Button } from './Button';
 
 const meta: Meta<typeof Button> = {
   component: Button,
+  parameters: {
+    // 👇 Set default viewport for all component stories
+    viewport: { defaultViewport: 'tablet' },
+  },
 };
 
 export default meta;
 type Story = StoryObj<typeof Button>;
 
-export const Large: Story = {
+export const OnPhone: Story = {
   parameters: {
-    backgrounds: {
-      grid: {
-        disable: true,
-      },
-    },
+    // 👇 Override default viewport for this story
+    viewport: { defaultViewport: 'mobile1' },
   },
 };
 ```
@@ -90,15 +94,16 @@ export const Large: Story = {
 ```js filename="Button.stories.js" renderer="web-components" language="js"
 export default {
   component: 'demo-button',
+  parameters: {
+    // 👇 Set default viewport for all component stories
+    viewport: { defaultViewport: 'tablet' },
+  },
 };
 
-export const Large = {
+export const OnPhone = {
   parameters: {
-    backgrounds: {
-      grid: {
-        disable: true,
-      },
-    },
+    // 👇 Override default viewport for this story
+    viewport: { defaultViewport: 'mobile1' },
   },
 };
 ```
@@ -108,19 +113,19 @@ import type { Meta, StoryObj } from '@storybook/web-components';
 
 const meta: Meta = {
   component: 'demo-button',
+  parameters: {
+    // 👇 Set default viewport for all component stories
+    viewport: { defaultViewport: 'tablet' },
+  },
 };
 
 export default meta;
 type Story = StoryObj;
 
-export const Large: Story = {
+export const OnPhone: Story = {
   parameters: {
-    backgrounds: {
-      grid: {
-        disable: true,
-      },
-    },
+    // 👇 Override default viewport for this story
+    viewport: { defaultViewport: 'mobile1' },
   },
 };
 ```
-

@@ -83,7 +83,7 @@ export const indexer: Indexer = {
         exportName,
         name,
         title: metaTitle,
-        tags: combineTags(...metaTags, ...tags),
+        tags: [...metaTags, ...tags],
       } satisfies IndexInput;
     });
   },

@@ -1,8 +1,9 @@
 // This file requires many imports from `../code`, which requires both an install and bootstrap of
 // the repo to work properly. So we load it async in the task runner *after* those steps.
 import { existsSync, readFileSync } from 'node:fs';
+import { writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
-import { join, resolve, sep } from 'node:path';
+import { join, relative, resolve, sep } from 'node:path';
 
 import {
   copy,
@@ -10,7 +11,6 @@ import {
   ensureSymlink,
   pathExists,
   readJson,
-  writeFile,
   writeJson,
 } from '@ndelangen/fs-extra-unified';
 import JSON5 from 'json5';

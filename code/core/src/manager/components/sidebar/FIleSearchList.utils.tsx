@@ -9,9 +9,7 @@ interface UseArrowKeyNavigationProps {
   selectedItem: number | null;
 }
 
-/**
- * Hook to navigate through the list of items and subitems using the arrow keys
- */
+/** Hook to navigate through the list of items and subitems using the arrow keys */
 export const useArrowKeyNavigation = ({
   parentRef,
   rowVirtualizer,

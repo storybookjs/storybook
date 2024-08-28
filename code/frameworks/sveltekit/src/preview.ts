@@ -60,14 +60,15 @@ export const decorators: Decorator[] = [
       };
 
       /**
-       * Function that create and add listeners for the event that are emitted by
-       * the mocked functions. The event name is based on the function name
+       * Function that create and add listeners for the event that are emitted by the mocked
+       * functions. The event name is based on the function name
        *
-       * eg. storybook:goto, storybook:invalidateAll
-       * @param baseModule the base module where the function lives (navigation|forms)
-       * @param functions the list of functions in that module that emit events
-       * @param {boolean} [defaultToAction] the list of functions in that module that emit events
-       * @returns a function to remove all the listener added
+       * Eg. storybook:goto, storybook:invalidateAll
+       *
+       * @param baseModule The base module where the function lives (navigation|forms)
+       * @param functions The list of functions in that module that emit events
+       * @param {boolean} [defaultToAction] The list of functions in that module that emit events
+       * @returns A function to remove all the listener added
        */
       function createListeners(
         baseModule: keyof SvelteKitParameters,

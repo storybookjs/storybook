@@ -24,7 +24,9 @@ export const exec = async (
     dryRun,
   }: { startMessage?: string; errorMessage?: string; dryRun?: boolean } = {}
 ) => {
-  if (startMessage) logger.info(startMessage);
+  if (startMessage) {
+    logger.info(startMessage);
+  }
 
   if (dryRun) {
     logger.info(`\n> ${command}\n`);

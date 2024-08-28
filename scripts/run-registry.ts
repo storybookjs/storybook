@@ -6,7 +6,7 @@ import { join, resolve as resolvePath } from 'node:path';
 
 import { pathExists, readJSON, remove } from '@ndelangen/fs-extra-unified';
 import chalk from 'chalk';
-import program from 'commander';
+import { program } from 'commander';
 import { execa, execaSync } from 'execa';
 import pLimit from 'p-limit';
 import { parseConfigFile, runServer } from 'verdaccio';
@@ -24,6 +24,8 @@ program.parse(process.argv);
 const logger = console;
 
 const root = resolvePath(__dirname, '..');
+
+const opts = program.opts();
 
 const startVerdaccio = async () => {
   const ready = {
@@ -103,17 +105,18 @@ const publish = async (packages: { name: string; location: string }[], url: stri
   let i = 0;
 
   /**
-   * We need to "pack" our packages before publishing to npm because our package.json files contain yarn specific version "ranges".
-   * such as "workspace:*"
+   * We need to "pack" our packages before publishing to npm because our package.json files contain
+   * yarn specific version "ranges". such as "workspace:*"
    *
-   * We can't publish to npm if the package.json contains these ranges. So with `yarn pack` we create a tarball that we can publish.
+   * We can't publish to npm if the package.json contains these ranges. So with `yarn pack` we
+   * create a tarball that we can publish.
    *
-   * However this bug exists in NPM: https://github.com/npm/cli/issues/4533!
-   * Which causes the NPM CLI to disregard the tarball CLI argument and instead re-create a tarball.
-   * But NPM doesn't replace the yarn version ranges.
+   * However this bug exists in NPM: https://github.com/npm/cli/issues/4533! Which causes the NPM
+   * CLI to disregard the tarball CLI argument and instead re-create a tarball. But NPM doesn't
+   * replace the yarn version ranges.
    *
-   * So we create the tarball ourselves and move it to another location on the FS.
-   * Then we change-directory to that directory and publish the tarball from there.
+   * So we create the tarball ourselves and move it to another location on the FS. Then we
+   * change-directory to that directory and publish the tarball from there.
    */
   await mkdir(PACKS_DIRECTORY, { recursive: true }).catch(() => {});
 
@@ -193,13 +196,13 @@ const run = async () => {
 
   logger.log(`📦 found ${packages.length} storybook packages at version ${chalk.blue(version)}`);
 
-  if (program.publish) {
+  if (opts.publish) {
     await publish(packages, 'http://localhost:6002');
   }
 
   await execa('npx', ['rimraf', '.npmrc'], { cwd: root });
 
-  if (!program.open) {
+  if (!opts.open) {
     verdaccioServer.close();
     process.exit(0);
   }

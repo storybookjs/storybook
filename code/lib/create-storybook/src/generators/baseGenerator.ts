@@ -97,8 +97,10 @@ const getFrameworkPackage = (framework: string | undefined, renderer: string, bu
 
 const getRendererPackage = (framework: string | undefined, renderer: string) => {
   const externalFramework = getExternalFramework(framework);
-  if (externalFramework !== undefined)
+
+  if (externalFramework !== undefined) {
     return externalFramework.renderer || externalFramework.packageName;
+  }
 
   return `@storybook/${renderer}`;
 };

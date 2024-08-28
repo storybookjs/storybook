@@ -13,7 +13,11 @@ export async function runRegistry({ dryRun, debug }: { dryRun?: boolean; debug?:
     { dryRun, debug, signal: controller.signal }
   ).catch((err) => {
     // If aborted, we want to make sure the rejection is handled.
-    if (!err.killed) throw err;
+
+    // If aborted, we want to make sure the rejection is handled.
+    if (!err.killed) {
+      throw err;
+    }
   });
   await exec('yarn wait-on tcp:127.0.0.1:6001', { cwd: CODE_DIRECTORY }, { dryRun, debug });
 

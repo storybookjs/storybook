@@ -136,8 +136,13 @@ export function splitExports(ast, source) {
     },
   });
 
-  if (source.length > lastIndex + 1) parts.push({ source: source.substring(lastIndex + 1) });
-  if (parts.length === 1) return [source];
+  if (source.length > lastIndex + 1) {
+    parts.push({ source: source.substring(lastIndex + 1) });
+  }
+
+  if (parts.length === 1) {
+    return [source];
+  }
   return parts;
 }
 

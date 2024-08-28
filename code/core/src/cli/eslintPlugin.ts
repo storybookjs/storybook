@@ -52,9 +52,17 @@ export async function extractEslintInfo(packageManager: JsPackageManager): Promi
 }
 
 export const normalizeExtends = (existingExtends: any): string[] => {
-  if (!existingExtends) return [];
-  if (typeof existingExtends === 'string') return [existingExtends];
-  if (Array.isArray(existingExtends)) return existingExtends;
+  if (!existingExtends) {
+    return [];
+  }
+
+  if (typeof existingExtends === 'string') {
+    return [existingExtends];
+  }
+
+  if (Array.isArray(existingExtends)) {
+    return existingExtends;
+  }
   throw new Error(`Invalid eslint extends ${existingExtends}`);
 };
 

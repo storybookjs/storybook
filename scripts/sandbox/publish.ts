@@ -3,7 +3,7 @@ import { writeFile } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
 
 import { copy, emptyDir, remove } from '@ndelangen/fs-extra-unified';
-import program from 'commander';
+import { program } from 'commander';
 import { execaCommand } from 'execa';
 import { glob } from 'glob';
 

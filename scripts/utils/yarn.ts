@@ -18,7 +18,10 @@ const logger = console;
 
 export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
   logger.info(`🔢 Adding package resolutions:`);
-  if (dryRun) return;
+
+  if (dryRun) {
+    return;
+  }
 
   const packageJsonPath = join(cwd, 'package.json');
   const packageJson = await readJSON(packageJsonPath);
@@ -28,9 +31,9 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
     'enhanced-resolve': '~5.10.0', // TODO, remove this
     // this is for our CI test, ensure we use the same version as docker image, it should match version specified in `./code/package.json` and `.circleci/config.yml`
     '@swc/core': '1.5.7',
-    playwright: '1.36.0',
-    'playwright-core': '1.36.0',
-    '@playwright/test': '1.36.0',
+    playwright: '1.46.0',
+    'playwright-core': '1.46.0',
+    '@playwright/test': '1.46.0',
   };
   await writeJSON(packageJsonPath, packageJson, { spaces: 2 });
 };
@@ -66,7 +69,10 @@ export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
 
 export const addWorkaroundResolutions = async ({ cwd, dryRun }: YarnOptions) => {
   logger.info(`🔢 Adding resolutions for workarounds`);
-  if (dryRun) return;
+
+  if (dryRun) {
+    return;
+  }
 
   const packageJsonPath = join(cwd, 'package.json');
   const packageJson = await readJSON(packageJsonPath);
@@ -77,7 +83,7 @@ export const addWorkaroundResolutions = async ({ cwd, dryRun }: YarnOptions) => 
     '@sveltejs/vite-plugin-svelte': '3.0.1',
     '@vitejs/plugin-vue': '4.5.0',
     '@testing-library/dom': '^9.3.4',
-    '@testing-library/jest-dom': '^6.4.2',
+    '@testing-library/jest-dom': '^6.5.0',
     '@testing-library/user-event': '^14.5.2',
     // TODO: Remove as soon as @storybook/csf@0.1.10 is released
     '@storybook/csf': '0.1.10--canary.d841bb4.0',

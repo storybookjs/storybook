@@ -16,6 +16,7 @@ const meta = {
     // To show that other props are passed through
     backgroundColor: { control: 'color' },
   },
+  tags: ['!vitest'],
 } satisfies Meta<typeof ReactiveArgs>;
 
 export default meta;

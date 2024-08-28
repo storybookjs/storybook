@@ -167,7 +167,9 @@ export function pitch(this: any) {
 
     return null;
   })().then((r) => {
-    if (r) return callback(null, ...r);
+    if (r) {
+      return callback(null, ...r);
+    }
     callback();
     return null;
   }, callback);

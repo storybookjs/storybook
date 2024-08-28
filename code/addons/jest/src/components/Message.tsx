@@ -73,7 +73,9 @@ const colorizeText: (msg: string, type: string) => MsgElement[] = (msg: string, 
 const getConvertedText: (msg: string) => MsgElement[] = (msg: string) => {
   let elementArray: MsgElement[] = [];
 
-  if (!msg) return elementArray;
+  if (!msg) {
+    return elementArray;
+  }
 
   const splitText = msg.split(/\[2m/).join('').split(/\[22m/);
 

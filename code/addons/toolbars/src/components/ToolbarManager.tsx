@@ -8,9 +8,7 @@ import type { ToolbarArgType } from '../types';
 import { normalizeArgType } from '../utils/normalize-toolbar-arg-type';
 import { ToolbarMenuList } from './ToolbarMenuList';
 
-/**
- * A smart component for handling manager-preview interactions.
- */
+/** A smart component for handling manager-preview interactions. */
 export const ToolbarManager: FC = () => {
   const globalTypes = useGlobalTypes();
   const globalIds = Object.keys(globalTypes).filter((id) => !!globalTypes[id].toolbar);

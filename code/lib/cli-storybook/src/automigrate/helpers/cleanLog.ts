@@ -1,4 +1,4 @@
-import { EOL } from 'os';
+import { EOL } from 'node:os';
 
 // copied from https://github.com/chalk/ansi-regex
 // the package is ESM only so not compatible with jest

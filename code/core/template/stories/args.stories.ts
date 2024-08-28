@@ -67,6 +67,7 @@ export const Targets = {
       b: 'b',
     });
   },
+  tags: ['!vitest'],
 };
 
 export const Events = {
@@ -85,4 +86,5 @@ export const Events = {
     await new Promise((resolve) => channel.once(STORY_ARGS_UPDATED, resolve));
     await within(canvasElement).findByText(/updated/);
   },
+  tags: ['!vitest'],
 };

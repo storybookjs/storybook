@@ -4,7 +4,7 @@ import detectPort from 'detect-port';
 
 import { getServerAddresses, getServerChannelUrl, getServerPort } from './server-address';
 
-vi.mock('os', () => ({
+vi.mock('node:os', () => ({
   default: { release: () => '' },
 }));
 vi.mock('detect-port');

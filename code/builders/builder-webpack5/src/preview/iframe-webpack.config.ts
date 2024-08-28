@@ -165,7 +165,7 @@ export default async (
         inject: false,
         template,
         templateParameters: {
-          version: packageJson.version,
+          version: packageJson?.version,
           globals: {
             CONFIG_TYPE: configType,
             LOGLEVEL: logLevel,

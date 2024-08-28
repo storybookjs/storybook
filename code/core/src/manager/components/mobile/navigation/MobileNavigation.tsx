@@ -18,14 +18,17 @@ interface MobileNavigationProps {
 }
 
 /**
- * walks the tree from the current story to combine story+component+folder names into a single string
+ * Walks the tree from the current story to combine story+component+folder names into a single
+ * string
  */
 const useFullStoryName = () => {
   const { index } = useStorybookState();
   const api = useStorybookApi();
   const currentStory = api.getCurrentStoryData();
 
-  if (!currentStory) return '';
+  if (!currentStory) {
+    return '';
+  }
 
   let fullStoryName = currentStory.renderLabel?.(currentStory, api) || currentStory.name;
   // @ts-expect-error (non strict)

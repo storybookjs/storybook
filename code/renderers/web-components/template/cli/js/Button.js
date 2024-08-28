@@ -3,9 +3,7 @@ import { styleMap } from 'lit/directives/style-map.js';
 
 import './button.css';
 
-/**
- * Primary UI component for user interaction
- */
+/** Primary UI component for user interaction */
 export const Button = ({ primary, backgroundColor = null, size, label, onClick }) => {
   const mode = primary ? 'storybook-button--primary' : 'storybook-button--secondary';
 

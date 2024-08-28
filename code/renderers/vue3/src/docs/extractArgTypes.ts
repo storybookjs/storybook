@@ -43,7 +43,13 @@ export const extractArgTypes: ArgTypesExtractor = (component): StrictArgTypes | 
       }
 
       // skip duplicate and global props
-      if (!argType || argTypes[argType.name]) return;
+
+      // skip duplicate and global props
+      if (!argType || argTypes[argType.name]) {
+        return;
+      }
+
+      // disable controls for events and exposed since they can not be controlled
 
       // disable controls for events and exposed since they can not be controlled
       const sectionsToDisableControls: (typeof section)[] = ['events', 'expose', 'exposed'];
@@ -115,12 +121,15 @@ export const extractFromVueDocgenApi = (
         type = `${arrayElements}[]`;
       }
 
-      if (type === 'union') type = elements.join(' | ');
-      else if (type === 'intersection') type = elements.join(' & ');
+      if (type === 'union') {
+        type = elements.join(' | ');
+      } else if (type === 'intersection') {
+        type = elements.join(' & ');
+      }
     }
   }
 
-  const required = 'required' in docgenInfo ? docgenInfo.required ?? false : false;
+  const required = 'required' in docgenInfo ? (docgenInfo.required ?? false) : false;
 
   return {
     name: docgenInfo.name,
@@ -137,7 +146,7 @@ export const extractFromVueDocgenApi = (
 
 /**
  * Extracts the argType for a prop/event/slot/exposed generated with "vue-component-meta".
-
+ *
  * @param docgenInfo __docgenInfo from "vue-component-meta"
  * @param section Whether the arg is a prop, event, slot or exposed
  */
@@ -146,7 +155,11 @@ export const extractFromVueComponentMeta = (
   section: (typeof ARG_TYPE_SECTIONS)[number]
 ): StrictInputType | undefined => {
   // ignore global props
-  if ('global' in docgenInfo && docgenInfo.global) return;
+
+  // ignore global props
+  if ('global' in docgenInfo && docgenInfo.global) {
+    return;
+  }
 
   const tableType = { summary: docgenInfo.type.replace(' | undefined', '') };
 
@@ -175,9 +188,7 @@ export const extractFromVueComponentMeta = (
   }
 };
 
-/**
- * Converts the given prop info that was generated with "vue-component-meta" into a SBType.
- */
+/** Converts the given prop info that was generated with "vue-component-meta" into a SBType. */
 export const convertVueComponentMetaProp = (
   propInfo: Pick<VueDocgenInfoEntry<'vue-component-meta', 'props'>, 'schema' | 'required' | 'type'>
 ): SBType => {
@@ -251,7 +262,10 @@ export const convertVueComponentMetaProp = (
     case 'array': {
       // filter out empty or "undefined" for optional props
       const definedSchemas = schema.schema?.filter((item) => item !== 'undefined') ?? [];
-      if (definedSchemas.length === 0) return fallbackSbType;
+
+      if (definedSchemas.length === 0) {
+        return fallbackSbType;
+      }
 
       if (definedSchemas.length === 1) {
         return {
@@ -298,14 +312,14 @@ export const convertVueComponentMetaProp = (
   }
 };
 
-/**
- * Adds the descriptions for the given tags if available.
- */
+/** Adds the descriptions for the given tags if available. */
 const formatDescriptionWithTags = (
   description: string,
   tags: VueDocgenInfoEntry<'vue-component-meta', 'props'>['tags']
 ): string => {
-  if (!tags?.length || !description) return description ?? '';
+  if (!tags?.length || !description) {
+    return description ?? '';
+  }
   const tagDescriptions = tags.map((tag) => `@${tag.name}: ${tag.text}`).join('<br>');
   return `${tagDescriptions}<br><br>${description}`;
 };
@@ -313,7 +327,7 @@ const formatDescriptionWithTags = (
 /**
  * Checks whether the given schemas are all literal union schemas.
  *
- * @example "foo" | "bar" | "baz"
+ * @example Foo | "bar" | "baz"
  */
 const isLiteralUnionSchema = (schemas: PropertyMetaSchema[]): schemas is `"${string}"`[] => {
   return schemas.every(
@@ -324,7 +338,7 @@ const isLiteralUnionSchema = (schemas: PropertyMetaSchema[]): schemas is `"${str
 /**
  * Checks whether the given schemas are all enums.
  *
- * @example [MyEnum.Foo, MyEnum.Bar]
+ * @example MyEnum.Foo, MyEnum.Bar
  */
 const isEnumSchema = (schemas: PropertyMetaSchema[]): schemas is string[] => {
   return schemas.every((schema) => typeof schema === 'string' && schema.includes('.'));
@@ -333,7 +347,11 @@ const isEnumSchema = (schemas: PropertyMetaSchema[]): schemas is string[] => {
 /**
  * Checks whether the given schemas are representing a boolean.
  *
- * @example [true, false]
+ * @example
+ *
+ * ```
+ * true, false;
+ * ```
  */
 const isBooleanSchema = (
   schemas: PropertyMetaSchema[]

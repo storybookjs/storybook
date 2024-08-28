@@ -70,7 +70,9 @@ const Pages: FC<{
 }> = ({ changeTab, onClose, enableShortcuts = true, enableWhatsNew }) => {
   React.useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
-      if (!enableShortcuts || event.repeat) return;
+      if (!enableShortcuts || event.repeat) {
+        return;
+      }
       if (matchesModifiers(false, event) && matchesKeyCode('Escape', event)) {
         event.preventDefault();
         onClose();

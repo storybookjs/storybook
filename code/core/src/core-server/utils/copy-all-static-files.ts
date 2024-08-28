@@ -32,7 +32,9 @@ export async function copyAllStaticFiles(staticDirs: any[] | undefined, outputDi
             filter: (_, dest) => !skipPaths.includes(dest),
           });
         } catch (e) {
-          if (e instanceof Error) logger.error(e.message);
+          if (e instanceof Error) {
+            logger.error(e.message);
+          }
           process.exit(-1);
         }
       })

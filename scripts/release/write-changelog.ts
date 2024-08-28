@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { writeJson } from '@ndelangen/fs-extra-unified';
 import chalk from 'chalk';
-import program from 'commander';
+import { program } from 'commander';
 import semver from 'semver';
 import { z } from 'zod';
 

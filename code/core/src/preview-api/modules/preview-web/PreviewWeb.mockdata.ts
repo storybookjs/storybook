@@ -185,7 +185,9 @@ export const waitForEvents = (
 
   return new Promise((resolve, reject) => {
     const listener = (...args: any[]) => {
-      if (!predicate(...args)) return;
+      if (!predicate(...args)) {
+        return;
+      }
       events.forEach((event) => mockChannel.off(event, listener));
       resolve(null);
     };

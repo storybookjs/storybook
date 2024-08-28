@@ -142,7 +142,7 @@ export const babel = async (_: unknown, options: Options) => {
 };
 
 export const title = (previous: string, options: Options) =>
-  previous || options.packageJson.name || false;
+  previous || options.packageJson?.name || false;
 
 export const logLevel = (previous: any, options: Options) => previous || options.loglevel || 'info';
 
@@ -202,10 +202,10 @@ export const experimental_serverAPI = (extension: Record<string, Function>, opti
 };
 
 /**
- * If for some reason this config is not applied, the reason is that
- * likely there is an addon that does `export core = () => ({ someConfig })`,
- * instead of `export core = (existing) => ({ ...existing, someConfig })`,
- * just overwriting everything and not merging with the existing values.
+ * If for some reason this config is not applied, the reason is that likely there is an addon that
+ * does `export core = () => ({ someConfig })`, instead of `export core = (existing) => ({
+ * ...existing, someConfig })`, just overwriting everything and not merging with the existing
+ * values.
  */
 export const core = async (existing: CoreConfig, options: Options): Promise<CoreConfig> => ({
   ...existing,
@@ -284,10 +284,10 @@ export const experimental_serverChannel = async (
 };
 
 /**
- * Try to resolve react and react-dom from the root node_modules of the project
- * addon-docs uses this to alias react and react-dom to the project's version when possible
- * If the user doesn't have an explicit dependency on react this will return the existing values
- * Which will be the versions shipped with addon-docs
+ * Try to resolve react and react-dom from the root node_modules of the project addon-docs uses this
+ * to alias react and react-dom to the project's version when possible If the user doesn't have an
+ * explicit dependency on react this will return the existing values Which will be the versions
+ * shipped with addon-docs
  */
 export const resolvedReact = async (existing: any) => {
   try {
@@ -301,9 +301,7 @@ export const resolvedReact = async (existing: any) => {
   }
 };
 
-/**
- * Set up `dev-only`, `docs-only`, `test-only` tags out of the box
- */
+/** Set up `dev-only`, `docs-only`, `test-only` tags out of the box */
 export const tags = async (existing: any) => {
   return {
     ...existing,

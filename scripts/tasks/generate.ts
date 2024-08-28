@@ -29,8 +29,7 @@ export const generate: Task = {
     }
 
     // This uses an async import as it depends on `lib/cli` which requires `code` to be installed.
-    // @ts-expect-error Default import required for dynamic import processed by esbuild
-    const { generate: generateRepro } = (await import('../sandbox/generate.ts')).default;
+    const { generate: generateRepro } = await import('../sandbox/generate');
 
     await generateRepro({
       templates: [details.key],

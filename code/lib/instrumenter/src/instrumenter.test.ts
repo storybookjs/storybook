@@ -139,7 +139,9 @@ describe('Instrumenter', () => {
       },
       {
         get(target, prop, receiver) {
-          if (prop === 'name') return `${target[prop]}!`;
+          if (prop === 'name') {
+            return `${target[prop]}!`;
+          }
           return Reflect.get(target, prop, receiver);
         },
       }

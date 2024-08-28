@@ -146,10 +146,7 @@ const IconButtonSkeletonWrapper = styled.div(() => ({
   height: 28,
 }));
 
-/**
- * @deprecated
- * This component will be removed in Storybook 9.0
- * */
+/** @deprecated This component will be removed in Storybook 9.0 */
 export const IconButtonSkeleton = () => (
   <IconButtonSkeletonWrapper>
     <IconPlaceholder />

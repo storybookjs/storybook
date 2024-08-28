@@ -8,7 +8,7 @@ import { logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext, telemetry } from 'storybook/internal/telemetry';
 
 import chalk from 'chalk';
-import program from 'commander';
+import { program } from 'commander';
 import envinfo from 'envinfo';
 import { findPackageSync } from 'fd-package-json';
 import leven from 'leven';
@@ -188,8 +188,7 @@ program.on('command:*', ([invalidCmd]) => {
     ' Invalid command: %s.\n See --help for a list of available commands.',
     invalidCmd
   );
-  // eslint-disable-next-line no-underscore-dangle
-  const availableCommands = program.commands.map((cmd) => cmd._name);
+  const availableCommands = program.commands.map((cmd) => cmd.name());
   const suggestion = availableCommands.find((cmd) => leven(cmd, invalidCmd) < 3);
   if (suggestion) {
     consoleLogger.info(`\n Did you mean ${suggestion}?`);

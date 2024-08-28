@@ -2,7 +2,7 @@ import { join } from 'node:path';
 
 import { readJson } from '@ndelangen/fs-extra-unified';
 import chalk from 'chalk';
-import program from 'commander';
+import { program } from 'commander';
 import { execaCommand } from 'execa';
 import pRetry from 'p-retry';
 import semver from 'semver';
@@ -138,10 +138,11 @@ const publishAllPackages = async ({
   }
 
   /**
-   * 'yarn npm publish' will fail if just one package fails to publish.
-   * But it will continue through with all the other packages, and --tolerate-republish makes it okay to publish the same version again.
-   * So we can safely retry the whole publishing process if it fails.
-   * It's not uncommon for the registry to fail often, which Yarn catches by checking the registry after a package has been published.
+   * 'yarn npm publish' will fail if just one package fails to publish. But it will continue through
+   * with all the other packages, and --tolerate-republish makes it okay to publish the same version
+   * again. So we can safely retry the whole publishing process if it fails. It's not uncommon for
+   * the registry to fail often, which Yarn catches by checking the registry after a package has
+   * been published.
    */
   await pRetry(
     () =>

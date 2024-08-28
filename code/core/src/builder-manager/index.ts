@@ -117,8 +117,8 @@ export const executor = {
 };
 
 /**
- * This function is a generator so that we can abort it mid process
- * in case of failure coming from other processes e.g. preview builder
+ * This function is a generator so that we can abort it mid process in case of failure coming from
+ * other processes e.g. preview builder
  *
  * I am sorry for making you read about generators today :')
  */
@@ -215,8 +215,8 @@ const starter: StarterFunction = async function* starterGeneratorFn({
 };
 
 /**
- * This function is a generator so that we can abort it mid process
- * in case of failure coming from other processes e.g. preview builder
+ * This function is a generator so that we can abort it mid process in case of failure coming from
+ * other processes e.g. preview builder
  *
  * I am sorry for making you read about generators today :')
  */

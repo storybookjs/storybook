@@ -14,11 +14,21 @@ export const TypeIcon = styled.svg<{ type: 'component' | 'story' | 'group' | 'do
     height: 14,
     flex: '0 0 auto',
     color: (() => {
-      if (type === 'group')
+      if (type === 'group') {
         return theme.base === 'dark' ? theme.color.primary : theme.color.ultraviolet;
-      if (type === 'component') return theme.color.secondary;
-      if (type === 'document') return theme.base === 'dark' ? theme.color.gold : '#ff8300';
-      if (type === 'story') return theme.color.seafoam;
+      }
+
+      if (type === 'component') {
+        return theme.color.secondary;
+      }
+
+      if (type === 'document') {
+        return theme.base === 'dark' ? theme.color.gold : '#ff8300';
+      }
+
+      if (type === 'story') {
+        return theme.color.seafoam;
+      }
       return 'currentColor';
     })(),
   })
@@ -46,14 +56,10 @@ const BranchNode = styled.button<{
   gap: 6,
   paddingTop: 5,
   paddingBottom: 4,
-
-  '&:hover, &:focus': {
-    background: transparentize(0.93, theme.color.secondary),
-    outline: 'none',
-  },
 }));
 
 const LeafNode = styled.a<{ depth?: number }>(({ theme, depth = 0 }) => ({
+  width: '100%',
   cursor: 'pointer',
   color: 'inherit',
   display: 'flex',

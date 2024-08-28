@@ -40,6 +40,7 @@ interface Mdx1to3Options {
  * Does the user have `.stories.mdx` files?
  *
  * If so:
+ *
  * - Assume they might be MDX1
  * - Offer to help migrate to MDX3
  */

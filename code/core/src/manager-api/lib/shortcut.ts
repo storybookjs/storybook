@@ -80,9 +80,18 @@ export const shortcutMatchesShortcut = (
   inputShortcut: (string | string[])[],
   shortcut: API_KeyCollection
 ): boolean => {
-  if (!inputShortcut || !shortcut) return false;
-  if (inputShortcut.join('').startsWith('shift/')) inputShortcut.shift(); // shift is optional for `/`
-  if (inputShortcut.length !== shortcut.length) return false;
+  if (!inputShortcut || !shortcut) {
+    return false;
+  }
+
+  if (inputShortcut.join('').startsWith('shift/')) {
+    // shift is optional for `/`
+    inputShortcut.shift();
+  }
+
+  if (inputShortcut.length !== shortcut.length) {
+    return false;
+  }
   return !inputShortcut.find((input, i) =>
     Array.isArray(input) ? !input.includes(shortcut[i]) : input !== shortcut[i]
   );

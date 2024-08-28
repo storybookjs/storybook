@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "8.3.0-alpha.4",
+  "version": "8.3.0-alpha.10",
   "description": "Storybook's CLI - install, dev, build, upgrade, and more",
   "keywords": [
     "cli",
@@ -178,6 +178,11 @@
       "types": "./core/manager/globals.d.ts",
       "import": "./core/manager/globals.js",
       "require": "./core/manager/globals.cjs"
+    },
+    "./internal/babel": {
+      "types": "./core/babel/index.d.ts",
+      "import": "./core/babel/index.js",
+      "require": "./core/babel/index.cjs"
     }
   },
   "main": "dist/index.cjs",
@@ -187,6 +192,9 @@
     "*": {
       "internal/*": [
         "./core/index.d.ts"
+      ],
+      "internal/babel": [
+        "./core/babel/index.d.ts"
       ],
       "internal/builder-manager": [
         "./core/builder-manager/index.d.ts"

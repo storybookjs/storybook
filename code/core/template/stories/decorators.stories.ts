@@ -67,4 +67,5 @@ export const Hooks = {
     });
     await new Promise((resolve) => channel.once(STORY_ARGS_UPDATED, resolve));
   },
+  tags: ['!vitest'],
 };

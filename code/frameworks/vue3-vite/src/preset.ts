@@ -21,7 +21,7 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
 
   const framework = await options.presets.apply('framework');
   const frameworkOptions: FrameworkOptions =
-    typeof framework === 'string' ? {} : framework.options ?? {};
+    typeof framework === 'string' ? {} : (framework.options ?? {});
 
   const docgen = resolveDocgenOptions(frameworkOptions.docgen);
 
@@ -43,13 +43,16 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
   });
 };
 
-/**
- * Resolves the docgen framework option.
- */
+/** Resolves the docgen framework option. */
 const resolveDocgenOptions = (
   docgen?: FrameworkOptions['docgen']
 ): { plugin: VueDocgenPlugin; tsconfig?: string } => {
-  if (!docgen) return { plugin: 'vue-docgen-api' };
-  if (typeof docgen === 'string') return { plugin: docgen };
+  if (!docgen) {
+    return { plugin: 'vue-docgen-api' };
+  }
+
+  if (typeof docgen === 'string') {
+    return { plugin: docgen };
+  }
   return docgen;
 };

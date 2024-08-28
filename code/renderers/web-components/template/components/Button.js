@@ -5,14 +5,12 @@ import { LitElement, html } from 'lit';
 const { CustomEvent, customElements } = globalThis;
 
 /**
+ * @property {boolean} primary - Set button in primary mode
  * @attr {string} label - Label of the button
  * @attr {string} size - Size of the button, can be "small", "medium" or "large"; default is "medium".
  * @attr {string} backgroundColor - Color of the button's background
  *
- * @cssprop [--sb-primary-color=#1ea7fd] - Controls the color of bar
- *
- * @prop {boolean} primary - Set button in primary mode
- *
+ * @cssprop [--sb-primary-color=#1ea7fd] - Controls the color of bar. Default is `#1ea7fd`
  * @event {CustomEvent} sb-button:click - Custom event send when the button is clicked
  *
  * @summary This is a simple Storybook Button

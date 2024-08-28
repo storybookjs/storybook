@@ -62,9 +62,7 @@ export const useNavigate = () => {
   }, []);
 };
 
-/**
- *  A component that will navigate to a new location/path when clicked
- */
+/** A component that will navigate to a new location/path when clicked */
 export const Link = ({ to, children, ...rest }: LinkProps) => (
   <R.Link to={`${getBase()}path=${to}`} {...rest}>
     {children}
@@ -73,8 +71,8 @@ export const Link = ({ to, children, ...rest }: LinkProps) => (
 Link.displayName = 'QueryLink';
 
 /**
- * A render-prop component where children is called with a location
- * and will be called whenever it changes when it changes
+ * A render-prop component where children is called with a location and will be called whenever it
+ * changes when it changes
  */
 export const Location = ({ children }: LocationProps) => {
   const location = R.useLocation();
@@ -97,9 +95,9 @@ export const Location = ({ children }: LocationProps) => {
 Location.displayName = 'QueryLocation';
 
 /**
- * A render-prop component for rendering when a certain path is hit.
- * It's immensely similar to `Location` but it receives an addition data property: `match`.
- * match has a truthy value when the path is hit.
+ * A render-prop component for rendering when a certain path is hit. It's immensely similar to
+ * `Location` but it receives an addition data property: `match`. match has a truthy value when the
+ * path is hit.
  */
 function Match(props: MatchPropsStartsWith): ReactElement;
 function Match(props: MatchPropsDefault): ReactElement;
@@ -121,9 +119,7 @@ function Match({
 }
 Match.displayName = 'QueryMatch';
 
-/**
- *  A component to conditionally render children based on matching a target path
- */
+/** A component to conditionally render children based on matching a target path */
 function Route(props: RoutePropsDefault): ReactElement;
 function Route(props: RoutePropsStartsWith): ReactElement;
 function Route(input: RoutePropsDefault | RoutePropsStartsWith) {

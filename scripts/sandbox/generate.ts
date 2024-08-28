@@ -182,8 +182,12 @@ const runGenerators = async (
         const beforeDir = join(baseDir, BEFORE_DIR_NAME);
         try {
           let flags: string[] = ['--no-dev'];
-          if (expected.renderer === '@storybook/html') flags = ['--type html'];
-          else if (expected.renderer === '@storybook/server') flags = ['--type server'];
+
+          if (expected.renderer === '@storybook/html') {
+            flags = ['--type html'];
+          } else if (expected.renderer === '@storybook/server') {
+            flags = ['--type server'];
+          }
 
           const time = process.hrtime();
           console.log(`🧬 Generating ${name} (${dirName})`);

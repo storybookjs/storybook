@@ -75,8 +75,8 @@ class Person {
 }
 
 /**
- * We show a class collapsed as it might contain many methods.
- * It is read-only as we can not construct the class.
+ * We show a class collapsed as it might contain many methods. It is read-only as we can not
+ * construct the class.
  */
 export const Class: Story = {
   args: {
@@ -85,8 +85,8 @@ export const Class: Story = {
 };
 
 /**
- * We show a function collapsed. Even if it is "object" like, such as "fn".
- * It is read-only as we can not construct a function.
+ * We show a function collapsed. Even if it is "object" like, such as "fn". It is read-only as we
+ * can not construct a function.
  */
 export const Function: Story = {
   args: {

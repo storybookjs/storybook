@@ -2,7 +2,7 @@ import { posix, resolve, sep } from 'node:path';
 
 import { readJSON } from '@ndelangen/fs-extra-unified';
 import chalk from 'chalk';
-import program from 'commander';
+import { program } from 'commander';
 import { execaCommand } from 'execa';
 import prompts from 'prompts';
 import windowSize from 'window-size';
@@ -71,9 +71,10 @@ async function run() {
     .parse(process.argv);
 
   Object.keys(tasks).forEach((key) => {
+    const opts = program.opts();
     // checks if a flag is passed e.g. yarn build --@storybook/addon-docs --watch
-    const containsFlag = program.rawArgs.includes(tasks[key].suffix);
-    tasks[key].value = containsFlag || program.all;
+    const containsFlag = program.args.includes(tasks[key].suffix);
+    tasks[key].value = containsFlag || opts.all;
   });
 
   let selection;

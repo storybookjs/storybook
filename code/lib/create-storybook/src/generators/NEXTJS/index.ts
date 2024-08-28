@@ -8,7 +8,10 @@ import type { Generator } from '../types';
 
 const generator: Generator = async (packageManager, npmOptions, options) => {
   let staticDir;
-  if (existsSync(join(process.cwd(), 'public'))) staticDir = 'public';
+
+  if (existsSync(join(process.cwd(), 'public'))) {
+    staticDir = 'public';
+  }
 
   await baseGenerator(
     packageManager,

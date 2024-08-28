@@ -42,7 +42,9 @@ export async function useStatics(router: Router, options: Options) {
 
           router.use(targetEndpoint, express.static(staticPath, { index: false }));
         } catch (e) {
-          if (e instanceof Error) logger.warn(e.message);
+          if (e instanceof Error) {
+            logger.warn(e.message);
+          }
         }
       })
     );

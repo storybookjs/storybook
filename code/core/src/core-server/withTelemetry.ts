@@ -38,10 +38,14 @@ export async function getErrorLevel({
   presetOptions,
   skipPrompt,
 }: TelemetryOptions): Promise<ErrorLevel> {
-  if (cliOptions.disableTelemetry) return 'none';
+  if (cliOptions.disableTelemetry) {
+    return 'none';
+  }
 
   // If we are running init or similar, we just have to go with true here
-  if (!presetOptions) return 'full';
+  if (!presetOptions) {
+    return 'full';
+  }
 
   // should we load the preset?
   const presets = await loadAllPresets(presetOptions);
@@ -49,20 +53,32 @@ export async function getErrorLevel({
   // If the user has chosen to enable/disable crash reports in main.js
   // or disabled telemetry, we can return that
   const core = await presets.apply('core');
-  if (core?.enableCrashReports !== undefined) return core.enableCrashReports ? 'full' : 'error';
-  if (core?.disableTelemetry) return 'none';
+
+  if (core?.enableCrashReports !== undefined) {
+    return core.enableCrashReports ? 'full' : 'error';
+  }
+
+  if (core?.disableTelemetry) {
+    return 'none';
+  }
 
   // Deal with typo, remove in future version (7.1?)
   const valueFromCache =
     (await cache.get('enableCrashReports')) ?? (await cache.get('enableCrashreports'));
-  if (valueFromCache !== undefined) return valueFromCache ? 'full' : 'error';
+
+  if (valueFromCache !== undefined) {
+    return valueFromCache ? 'full' : 'error';
+  }
 
   if (skipPrompt) {
     return 'error';
   }
 
   const valueFromPrompt = await promptCrashReports();
-  if (valueFromPrompt !== undefined) return valueFromPrompt ? 'full' : 'error';
+
+  if (valueFromPrompt !== undefined) {
+    return valueFromPrompt ? 'full' : 'error';
+  }
 
   return 'full';
 }
@@ -142,7 +158,9 @@ export async function withTelemetry<T>(
     process.on('SIGINT', cancelTelemetry);
   }
 
-  if (enableTelemetry) telemetry('boot', { eventType }, { stripMetadata: true });
+  if (enableTelemetry) {
+    telemetry('boot', { eventType }, { stripMetadata: true });
+  }
 
   try {
     return await run();
@@ -154,7 +172,9 @@ export async function withTelemetry<T>(
     const { printError = logger.error } = options;
     printError(error);
 
-    if (enableTelemetry) await sendTelemetryError(error, eventType, options);
+    if (enableTelemetry) {
+      await sendTelemetryError(error, eventType, options);
+    }
 
     throw error;
   } finally {

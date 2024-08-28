@@ -8,8 +8,6 @@ const logger = console;
 
 interface Options {}
 
-/**
- */
 export const vta: Fix<Options> = {
   id: 'visual-tests-addon',
 

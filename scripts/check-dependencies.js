@@ -1,6 +1,6 @@
 /**
- * This file needs to be run before any other script to ensure dependencies are installed
- * Therefore, we cannot transform this file to Typescript, because it would require esbuild to be installed
+ * This file needs to be run before any other script to ensure dependencies are installed Therefore,
+ * we cannot transform this file to Typescript, because it would require esbuild to be installed
  */
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';

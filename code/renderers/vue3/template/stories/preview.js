@@ -1,5 +1,4 @@
 import { global as globalThis } from '@storybook/global';
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { setup } from '@storybook/vue3';
 
 const somePlugin = {

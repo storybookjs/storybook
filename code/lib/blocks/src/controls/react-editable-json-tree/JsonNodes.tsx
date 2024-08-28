@@ -48,7 +48,9 @@ export class JsonAddValue extends Component<JsonAddValueProps, JsonAddValueState
   }
 
   onKeydown(event: KeyboardEvent) {
-    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) return;
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) {
+      return;
+    }
     if (event.code === 'Enter' || event.key === 'Enter') {
       event.preventDefault();
       this.onSubmit();
@@ -542,7 +544,9 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
   }
 
   onKeydown(event: KeyboardEvent) {
-    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) return;
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) {
+      return;
+    }
     if (event.code === 'Enter' || event.key === 'Enter') {
       event.preventDefault();
       this.handleEdit();
@@ -556,7 +560,10 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
   handleEdit() {
     const { handleUpdateValue, originalValue, logger, onSubmitValueParser, keyPath } = this.props;
     const { inputRef, name, deep } = this.state;
-    if (!inputRef) return;
+
+    if (!inputRef) {
+      return;
+    }
 
     const newValue = onSubmitValueParser(true, keyPath, deep, name, inputRef.value);
 
@@ -1437,7 +1444,9 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
   }
 
   onKeydown(event: KeyboardEvent) {
-    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) return;
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) {
+      return;
+    }
     if (event.code === 'Enter' || event.key === 'Enter') {
       event.preventDefault();
       this.handleEdit();
@@ -1451,7 +1460,10 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
   handleEdit() {
     const { handleUpdateValue, originalValue, logger, onSubmitValueParser, keyPath } = this.props;
     const { inputRef, name, deep } = this.state;
-    if (!inputRef) return;
+
+    if (!inputRef) {
+      return;
+    }
 
     const newValue = onSubmitValueParser(true, keyPath, deep, name, inputRef.value);
 

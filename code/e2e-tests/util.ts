@@ -24,9 +24,7 @@ export class SbPage {
     }
   }
 
-  /**
-   * Visit a story via the URL instead of selecting from the sidebar.
-   */
+  /** Visit a story via the URL instead of selecting from the sidebar. */
   async deepLinkToStory(baseURL: string, title: string, name: 'docs' | string) {
     const titleId = toId(title);
     const storyId = toId(name);
@@ -38,9 +36,7 @@ export class SbPage {
     await this.previewRoot();
   }
 
-  /**
-   * Visit a story by selecting it from the sidebar.
-   */
+  /** Visit a story by selecting it from the sidebar. */
   async navigateToStory(title: string, name: string, viewMode?: 'docs' | 'story') {
     await this.openComponent(title);
 
@@ -53,7 +49,7 @@ export class SbPage {
 
     await this.page.waitForURL((url) =>
       url.search.includes(
-        `path=/${viewMode ?? name === 'docs' ? 'docs' : 'story'}/${titleId}--${storyId}`
+        `path=/${(viewMode ?? name === 'docs') ? 'docs' : 'story'}/${titleId}--${storyId}`
       )
     );
 

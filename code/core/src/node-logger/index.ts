@@ -51,7 +51,9 @@ export { npmLog as instance };
 
 const logged = new Set();
 export const once = (type: 'verbose' | 'info' | 'warn' | 'error') => (message: string) => {
-  if (logged.has(message)) return undefined;
+  if (logged.has(message)) {
+    return undefined;
+  }
   logged.add(message);
   return logger[type](message);
 };

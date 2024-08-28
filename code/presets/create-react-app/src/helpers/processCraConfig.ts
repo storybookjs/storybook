@@ -15,7 +15,9 @@ const isString = (value: string | unknown): value is string => typeof value === 
 
 // This handles arrays in Webpack rule tests.
 const testMatch = (rule: RuleSetRule, string: string): boolean => {
-  if (!rule.test) return false;
+  if (!rule.test) {
+    return false;
+  }
   return Array.isArray(rule.test)
     ? rule.test.some((test) => isRegExp(test) && test.test(string))
     : isRegExp(rule.test) && rule.test.test(string);
@@ -37,11 +39,13 @@ export const processCraConfig = async (
    *
    * See: https://github.com/storybookjs/storybook/pull/9157
    */
-  const storybookVersion = semver.coerce(options.packageJson.version) || '';
+  const storybookVersion = semver.coerce(options.packageJson?.version) || '';
   const isStorybook530 = semver.gte(storybookVersion, '5.3.0');
   const babelOptions = await options.presets.apply('babel');
 
-  if (!craWebpackConfig?.module?.rules) return [];
+  if (!craWebpackConfig?.module?.rules) {
+    return [];
+  }
 
   return craWebpackConfig.module.rules.reduce((rules, rule): RuleSetRule[] => {
     const { oneOf, include } = rule as RuleSetRule;

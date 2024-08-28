@@ -15,6 +15,8 @@
     props = {},
     /** @type {{[string]: () => {}}} Attach svelte event handlers */
     on,
+    /** @type {any} whether this level of the decorator chain is the last, ie. the actual story */
+    argTypes,
   } = storyFn();
 
   let firstTime = true;
@@ -29,20 +31,16 @@
         Component,
         props,
         on,
+        argTypes,
       };
     }
     return storyFn();
   }
 
   // reactive, re-render on storyFn change
-  $: ({ Component, props = {}, on } = getStoryFnValue(storyFn));
+  $: ({ Component, props = {}, on, argTypes } = getStoryFnValue(storyFn));
 
-  const eventsFromArgTypes = Object.fromEntries(
-    Object.entries(storyContext.argTypes)
-      .filter(([k, v]) => v.action && props[k] != null)
-      .map(([k, v]) => [v.action, props[k]])
-  );
-
+  // set the argTypes context, read by the last SlotDecorator that renders the original story
   if (!Component) {
     showError({
       title: `Expecting a Svelte component from the story: "${name}" of "${title}".`,
@@ -55,4 +53,4 @@
   }
 </script>
 
-<SlotDecorator {Component} {props} on={{ ...eventsFromArgTypes, ...on }} />
+<SlotDecorator {Component} {props} {on} {argTypes} />

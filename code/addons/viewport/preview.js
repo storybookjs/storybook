@@ -1,1 +1,1 @@
-export { globals } from './dist/preview';
+export * from './dist/preview';

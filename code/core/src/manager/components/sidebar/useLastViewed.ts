@@ -10,8 +10,14 @@ const save = debounce((value) => store.set('lastViewedStoryIds', value), 1000);
 export const useLastViewed = (selection: Selection) => {
   const initialLastViewedStoryIds = useMemo((): StoryRef[] => {
     const items = store.get('lastViewedStoryIds');
-    if (!items || !Array.isArray(items)) return [];
-    if (!items.some((item) => typeof item === 'object' && item.storyId && item.refId)) return [];
+
+    if (!items || !Array.isArray(items)) {
+      return [];
+    }
+
+    if (!items.some((item) => typeof item === 'object' && item.storyId && item.refId)) {
+      return [];
+    }
     return items;
   }, [store]);
 
@@ -23,7 +29,10 @@ export const useLastViewed = (selection: Selection) => {
       const index = items.findIndex(
         ({ storyId, refId }) => storyId === story.storyId && refId === story.refId
       );
-      if (index === 0) return;
+
+      if (index === 0) {
+        return;
+      }
       if (index === -1) {
         lastViewedRef.current = [story, ...items];
       } else {
@@ -35,7 +44,9 @@ export const useLastViewed = (selection: Selection) => {
   );
 
   useEffect(() => {
-    if (selection) updateLastViewed(selection);
+    if (selection) {
+      updateLastViewed(selection);
+    }
   }, [selection]);
 
   return {

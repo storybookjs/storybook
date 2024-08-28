@@ -5,7 +5,6 @@ import type { ThemeParameters } from '../constants';
 import { DEFAULT_THEME_PARAMETERS, GLOBAL_KEY, PARAM_KEY, THEMING_EVENTS } from '../constants';
 
 /**
- *
  * @param StoryContext
  * @returns The global theme name set for your stories
  */

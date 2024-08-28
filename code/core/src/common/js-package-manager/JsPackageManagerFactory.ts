@@ -88,9 +88,7 @@ export class JsPackageManagerFactory {
     throw new Error('Unable to find a usable package manager within NPM, PNPM, Yarn and Yarn 2');
   }
 
-  /**
-   * Look up map of package manager proxies by name
-   */
+  /** Look up map of package manager proxies by name */
   private static PROXY_MAP: Record<PackageManagerName, PackageManagerProxy> = {
     npm: NPMProxy,
     pnpm: PNPMProxy,
@@ -99,8 +97,8 @@ export class JsPackageManagerFactory {
   };
 
   /**
-   * Infer the package manager based on the command the user is running.
-   * Each package manager sets the `npm_config_user_agent` environment variable with its name and version e.g. "npm/7.24.0"
+   * Infer the package manager based on the command the user is running. Each package manager sets
+   * the `npm_config_user_agent` environment variable with its name and version e.g. "npm/7.24.0"
    * Which is really useful when invoking commands via npx/pnpx/yarn create/etc.
    */
   private static inferPackageManagerFromUserAgent(): PackageManagerName | undefined {

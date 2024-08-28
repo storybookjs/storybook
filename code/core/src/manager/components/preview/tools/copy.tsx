@@ -18,7 +18,10 @@ const copyMapper = ({ state }: Combo) => {
   // @ts-expect-error (non strict)
   const ref = refs[refId];
   let baseUrl = `${location.origin}${location.pathname}`;
-  if (!baseUrl.endsWith('/')) baseUrl += '/';
+
+  if (!baseUrl.endsWith('/')) {
+    baseUrl += '/';
+  }
 
   return {
     refId,

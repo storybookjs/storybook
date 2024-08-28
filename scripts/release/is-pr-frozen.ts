@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { setOutput } from '@actions/core';
 import { readJson } from '@ndelangen/fs-extra-unified';
 import chalk from 'chalk';
-import program from 'commander';
+import { program } from 'commander';
 
 import { esMain } from '../utils/esmain';
 import { getPullInfoFromCommit } from './utils/get-github-info';

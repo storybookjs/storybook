@@ -1,9 +1,7 @@
 import React from 'react';
 
 interface FooProps {
-  /**
-   * The size (replaces width)
-   */
+  /** The size (replaces width) */
   size: { width: number; height: number };
 }
 

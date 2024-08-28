@@ -9,11 +9,12 @@ const cache = createFileSystemCache({
 });
 
 export const getPortableStoriesFileCountUncached = async (path?: string) => {
-  const command = `git grep -m1 -c composeStor` + (path ? ` -- ${path}` : '');
+  const command = `git grep -l composeStor` + (path ? ` -- ${path}` : '');
   const { stdout } = await execaCommand(command, {
     cwd: process.cwd(),
     shell: true,
   });
+
   return stdout.split('\n').filter(Boolean).length;
 };
 

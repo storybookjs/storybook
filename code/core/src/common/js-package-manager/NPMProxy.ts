@@ -1,13 +1,13 @@
 import { existsSync, readFileSync } from 'node:fs';
+import { platform } from 'node:os';
 import { join } from 'node:path';
 
 import { logger } from '@storybook/core/node-logger';
 import { FindPackageVersionsError } from '@storybook/core/server-errors';
 
 import { findUp } from 'find-up';
-import { platform } from 'os';
 import sort from 'semver/functions/sort.js';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
 import { createLogStream } from '../utils/cli';
 import { JsPackageManager } from './JsPackageManager';
@@ -264,7 +264,6 @@ export class NPMProxy extends JsPackageManager {
   }
 
   /**
-   *
    * @param input The output of `npm ls --json`
    * @param pattern A list of package names to filter the result. * can be used as a placeholder
    */

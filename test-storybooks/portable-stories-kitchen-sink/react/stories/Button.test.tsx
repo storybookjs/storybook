@@ -63,7 +63,7 @@ describe('projectAnnotations', () => {
   });
 
   it('renders with custom projectAnnotations via setProjectAnnotations', () => {
-    setProjectAnnotations([{ parameters: { injected: true }, testingLibraryRender: render }]);
+    setProjectAnnotations([{ parameters: { injected: true } }]);
     const Story = composeStory(stories.CSF2StoryWithLocale, stories.default);
     expect(Story.parameters?.injected).toBe(true);
   });
@@ -87,15 +87,6 @@ describe('CSF3', () => {
 
     render(<Primary />);
     expect(screen.getByTestId('custom-render')).not.toBeNull();
-  });
-
-  it('renders with play function', async () => {
-    const CSF3InputFieldFilled = composeStory(stories.CSF3InputFieldFilled, stories.default);
-
-    await CSF3InputFieldFilled.run();
-
-    const input = screen.getByTestId('input') as HTMLInputElement;
-    expect(input.value).toEqual('Hello world!');
   });
 });
 

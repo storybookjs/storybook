@@ -27,7 +27,9 @@ let hasRendered = false;
 let isRendering = false;
 
 function render(options: OptionsArgs, el: EmberRenderer['canvasElement']) {
-  if (isRendering) return;
+  if (isRendering) {
+    return;
+  }
   isRendering = true;
 
   const { template, context = {}, element } = options;

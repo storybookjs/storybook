@@ -79,7 +79,9 @@ const StyledTd = styled.td<{ expandable: boolean }>(({ theme, expandable }) => (
 }));
 
 const toSummary = (value: any) => {
-  if (!value) return value;
+  if (!value) {
+    return value;
+  }
   const val = typeof value === 'string' ? value : value.name;
   return { summary: val };
 };

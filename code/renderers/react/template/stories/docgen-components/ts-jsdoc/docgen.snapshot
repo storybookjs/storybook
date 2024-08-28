@@ -1,7 +1,5 @@
 import React from 'react';
-/**
- * Button functional component (React.FC)
- */
+/** Button functional component (React.FC) */
 const TypeScriptProps = ({
   case1,
   case2

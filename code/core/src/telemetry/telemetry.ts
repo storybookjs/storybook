@@ -1,7 +1,8 @@
 /// <reference types="node" />
+import * as os from 'node:os';
+
 import retry from 'fetch-retry';
 import { nanoid } from 'nanoid';
-import * as os from 'os';
 
 import { getAnonymousProjectId } from './anonymous-id';
 import { set as saveToCache } from './event-cache';

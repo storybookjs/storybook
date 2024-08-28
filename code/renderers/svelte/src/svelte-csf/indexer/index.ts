@@ -1,4 +1,3 @@
-import { combineTags } from '@storybook/csf';
 import type { IndexInput, Indexer } from 'storybook/internal/types';
 
 import { parseForIndexer } from '#indexer/parser';
@@ -24,7 +23,7 @@ export const createIndexer = (legacyTemplate: boolean): Indexer => ({
           exportName: story.exportName,
           name: story.name,
           title: makeTitle(meta.title),
-          tags: combineTags(...(meta.tags ?? []), ...(story.tags ?? [])),
+          tags: [...(meta.tags ?? []), ...(story.tags ?? [])],
         } satisfies IndexInput;
       });
     } catch (error) {

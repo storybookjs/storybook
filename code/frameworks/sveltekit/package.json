@@ -82,11 +82,10 @@
   "bundler": {
     "entries": [
       "./src/index.ts",
-      "./src/preview.ts",
-      "./src/preset.ts",
-      "./src/vite.ts"
+      "./src/preview.ts"
     ],
     "nodeEntries": [
+      "./src/vite.ts",
       "./src/preset.ts"
     ]
   },

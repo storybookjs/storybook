@@ -17,6 +17,7 @@ export const writeFile = vi.fn(async (filePath: string, content: string) => {
 });
 export const readFile = vi.fn(async (filePath: string) => mockFiles[filePath]);
 export const readFileSync = vi.fn((filePath = '') => mockFiles[filePath]);
+export const realpathSync = vi.fn((filePath = '') => filePath);
 export const existsSync = vi.fn((filePath: string) => !!mockFiles[filePath]);
 export const readJson = vi.fn((filePath = '') => JSON.parse(mockFiles[filePath]));
 export const readJsonSync = vi.fn((filePath = '') => JSON.parse(mockFiles[filePath]));

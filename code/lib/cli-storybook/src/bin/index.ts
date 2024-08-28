@@ -22,8 +22,6 @@ import { migrate } from '../migrate';
 import { sandbox } from '../sandbox';
 import { type UpgradeOptions, upgrade } from '../upgrade';
 
-console.log('HAHAHAHA');
-
 addToGlobalContext('cliVersion', versions.storybook);
 
 const pkg = findPackageSync(__dirname);

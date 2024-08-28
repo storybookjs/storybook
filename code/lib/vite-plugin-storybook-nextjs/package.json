@@ -54,7 +54,7 @@
   },
   "peerDependencies": {
     "@storybook/test": "^8.3.0-alpha.3",
-    "next": "^14.2.5",
+    "next": "^14.1.0",
     "storybook": "^8.3.0-alpha.3",
     "vite": "^5.0.0"
   },

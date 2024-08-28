@@ -1,9 +1,8 @@
 import { readFile, writeFile } from 'node:fs/promises';
-import { dirname, join, parse, posix, relative, sep } from 'node:path';
 import { builtinModules } from 'node:module';
+import { dirname, join, parse, posix, relative, sep } from 'node:path';
 
 import { emptyDir, ensureFile, pathExists, readJson } from '@ndelangen/fs-extra-unified';
-
 import aliasPlugin from 'esbuild-plugin-alias';
 import { glob } from 'glob';
 import slash from 'slash';

@@ -1,4 +1,3 @@
-/* eslint-disable import/extensions */
 import { join } from 'node:path';
 
 import { pathExists, remove } from '@ndelangen/fs-extra-unified';

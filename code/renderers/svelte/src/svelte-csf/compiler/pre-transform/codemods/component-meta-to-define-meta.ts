@@ -116,12 +116,15 @@ function attributeValueToPropertyValue(value: Attribute['value']): Property['val
     };
   }
 
-  if (value[0].type === 'Text') {
+  if (Array.isArray(value) && value[0].type === 'Text') {
     return {
       type: 'Literal',
       value: value[0].raw,
     };
   }
 
-  return value[0].expression;
+  // WARN: I can't find a case where it would be expression tag within an array.
+  // Leaving it in case it's a problem - will be good for us to learn about it.
+
+  return value.expression;
 }

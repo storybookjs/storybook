@@ -60,14 +60,14 @@ export function transformLegacyStory(params: Params): Component {
     if (attribute.type === 'Attribute' && attribute.name === 'parameters') {
       const { value } = attribute;
 
-      if (value === true || value[0].type === 'Text') continue; // WARN: Invalid syntax (shorthand or text expression), but lets move on
+      if (value === true || (Array.isArray(value) && value[0].type === 'Text')) continue; // WARN: Invalid syntax (shorthand or text expression), but lets move on
       parameters = attribute;
       continue;
     }
 
     if (attribute.type === 'Attribute' && attribute.name === 'tags') {
       const { value } = attribute;
-      if (value === true || value[0].type === 'Text') continue; // WARN: Invalid syntax (shorthand or text expression), but lets move on
+      if (value === true || (Array.isArray(value) && value[0].type === 'Text')) continue; // WARN: Invalid syntax (shorthand or text expression), but lets move on
       tags = attribute;
       continue;
     }
@@ -123,12 +123,13 @@ function transformAutodocs(params: InsertAutodocsParams): void {
   }
 
   if (!tags) {
-    tags = createASTAttribute('tags', [
+    tags = createASTAttribute(
+      'tags',
       createASTExpressionTag({
         type: 'ArrayExpression',
         elements: [],
-      }),
-    ]);
+      })
+    );
   }
 
   const autodocsLiteral = {
@@ -136,9 +137,8 @@ function transformAutodocs(params: InsertAutodocsParams): void {
     value: 'autodocs',
   } satisfies Literal;
 
-  ((tags?.value as ExpressionTag[])[0].expression as ArrayExpression).elements.push(
-    autodocsLiteral
-  );
+  ((tags?.value as ExpressionTag).expression as ArrayExpression).elements.push(autodocsLiteral);
+
   newAttributes.push(tags);
 }
 
@@ -162,13 +162,14 @@ function transformSource(params: InsertSourceParams): void {
   } satisfies Literal;
 
   if (!parameters) {
-    parameters = createASTAttribute('parameters', [
-      createASTExpressionTag(createASTObjectExpression()),
-    ]);
+    parameters = createASTAttribute(
+      'parameters',
+      createASTExpressionTag(createASTObjectExpression())
+    );
   }
 
   let docsProperty = (
-    (parameters.value as ExpressionTag[])[0].expression as ObjectExpression
+    (parameters.value as ExpressionTag).expression as ObjectExpression
   ).properties.find(
     (property) => property.type === 'Property' && (property.key as Identifier).name === 'docs'
   );
@@ -193,7 +194,7 @@ function transformSource(params: InsertSourceParams): void {
     codeProperty = createASTProperty('code', codeLiteralValue);
     (sourceProperty.value as ObjectExpression).properties.push(codeProperty);
     (docsProperty.value as ObjectExpression).properties.push(sourceProperty);
-    ((parameters.value as ExpressionTag[])[0].expression as ObjectExpression).properties.push(
+    ((parameters.value as ExpressionTag).expression as ObjectExpression).properties.push(
       docsProperty
     );
   }
@@ -204,8 +205,8 @@ function transformSource(params: InsertSourceParams): void {
 function getSourceValue(attribute: Attribute): string | undefined {
   const { value } = attribute;
 
-  if (value[0].type === 'ExpressionTag' && value[0].expression.type === 'Literal') {
-    return value[0].expression.value as string;
+  if (value.type === 'ExpressionTag' && value.expression.type === 'Literal') {
+    return value.expression.value as string;
   }
 
   if (value[0].type === 'Text') {

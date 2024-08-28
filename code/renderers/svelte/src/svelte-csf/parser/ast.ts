@@ -33,6 +33,7 @@ export function createASTAttribute(name: string, value: Attribute['value'] = tru
     value,
     // NOTE: Those are useless at this point, but I needed TypeScript to 🤫
     parent: null,
+    // TODO: Remove once this issue is resolved: https://github.com/sveltejs/svelte/issues/12292
     metadata: {
       delegated: null,
       dynamic: false,
@@ -51,6 +52,7 @@ export function createASTExpressionTag(expression: ExpressionTag['expression']):
     type: 'ExpressionTag',
     expression,
     // NOTE: Those are useless at this point, but I needed TypeScript to 🤫
+    // TODO: Remove once this issue is resolved: https://github.com/sveltejs/svelte/issues/12292
     metadata: {
       contains_call_expression: false,
       dynamic: false,

@@ -3,7 +3,7 @@ import { watch } from 'node:fs';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
-import { ensureDir } from 'fs-extra';
+import { ensureDir } from '@ndelangen/fs-extra-unified';
 
 import {
   chalk,

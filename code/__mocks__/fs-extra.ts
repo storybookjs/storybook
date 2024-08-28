@@ -15,6 +15,9 @@ export function __setMockFiles(newMockFiles: Record<string, string | null>) {
 export const writeFile = vi.fn(async (filePath: string, content: string) => {
   mockFiles[filePath] = content;
 });
+export const readlinkSync = vi.fn(async (filePath: string) => []);
+export const readdirSync = vi.fn(async (filePath: string) => []);
+export const readdir = vi.fn(async (filePath: string) => []);
 export const readFile = vi.fn(async (filePath: string) => mockFiles[filePath]);
 export const readFileSync = vi.fn((filePath = '') => mockFiles[filePath]);
 export const realpathSync = vi.fn((filePath = '') => filePath);
@@ -24,9 +27,14 @@ export const readJsonSync = vi.fn((filePath = '') => JSON.parse(mockFiles[filePa
 export const lstatSync = vi.fn((filePath: string) => ({
   isFile: () => !!mockFiles[filePath],
 }));
+export const lstat = vi.fn((filePath: string) => ({
+  isFile: () => !!mockFiles[filePath],
+}));
 export const writeJson = vi.fn((filePath, json, { spaces } = {}) => {
   mockFiles[filePath] = JSON.stringify(json, null, spaces);
 });
+export const readlink = vi.fn(async (filePath: string) => []);
+export const realpath = vi.fn(async (filePath: string) => filePath);
 
 export default {
   __setMockFiles,
@@ -38,4 +46,10 @@ export default {
   readJsonSync,
   lstatSync,
   writeJson,
+  readdirSync,
+  readdir,
+  readlinkSync,
+  lstat,
+  readlink,
+  realpath,
 };

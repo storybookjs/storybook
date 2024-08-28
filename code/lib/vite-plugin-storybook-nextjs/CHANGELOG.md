@@ -1,3 +1,19 @@
+# v1.0.8 (Wed Aug 28 2024)
+
+#### 🐛 Bug Fix
+
+- Widen Next.js version requirement [#14](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/14) ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### 📝 Documentation
+
+- Update Readme.md related to addon-vitest [#11](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/11) ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
 # v1.0.7 (Thu Aug 08 2024)
 
 #### ⚠️ Pushed to `main`

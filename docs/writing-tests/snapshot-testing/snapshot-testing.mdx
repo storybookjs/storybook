@@ -1,5 +1,5 @@
 ---
-title: 'Write snapshot tests'
+title: 'Snapshot tests'
 ---
 
 Snapshot tests compare the rendered markup of every story against known baselines. It’s a way to identify markup changes that trigger rendering errors and warnings.
@@ -14,7 +14,7 @@ Storybook is a helpful tool for snapshot testing because every story is essentia
 
 ## Automate snapshot tests with the test-runner
 
-Storybook test-runner turns all of your stories into executable tests. Powered by [Jest](https://jestjs.io/) and [Playwright](https://playwright.dev/). It's a standalone, framework-agnostic utility that runs parallel to your Storybook. It enables you to run multiple testing patterns in a multi-browser environment, including interaction testing with the [play function](../interaction-testing.mdx), DOM snapshot, and [accessibility testing](../accessibility-testing.mdx).
+Storybook test-runner turns all of your stories into executable tests. Powered by [Jest](https://jestjs.io/) and [Playwright](https://playwright.dev/). It's a standalone, framework-agnostic utility that runs parallel to your Storybook. It enables you to run multiple testing patterns in a multi-browser environment, including component testing with the [play function](../component-testing.mdx), DOM snapshot, and [accessibility testing](../accessibility-testing.mdx).
 
 ### Setup
 
@@ -130,11 +130,11 @@ Visual tests capture images of stories and compare them against image baselines.
 
 #### Learn about other UI tests
 
-* [Test runner](../test-runner.mdx) to automate test execution
+* [Component tests](../component-testing.mdx) for user behavior simulation
 * [Visual tests](../visual-testing.mdx) for appearance
 * [Accessibility tests](../accessibility-testing.mdx) for accessibility
-* [Interaction tests](../interaction-testing.mdx) for user behavior simulation
-* [Coverage tests](../test-coverage.mdx) for measuring code coverage
 * Snapshot tests for rendering errors and warnings
+* [Test runner](../test-runner.mdx) to automate test execution
+* [Test coverage](../test-coverage.mdx) for measuring code coverage
 * [End-to-end tests](../import-stories-in-tests/stories-in-end-to-end-tests.mdx) for simulating real user scenarios
 * [Unit tests](../import-stories-in-tests/stories-in-unit-tests.mdx) for functionality

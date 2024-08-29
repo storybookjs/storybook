@@ -13,7 +13,7 @@ Stories are a practical starting point for UI testing. Import stories into tools
 
 ## Write a test with Testing Library
 
-[Testing Library](https://testing-library.com/) is a suite of helper libraries for browser-based interaction tests. With [Component Story Format](../../api/csf.mdx), your stories are reusable with Testing Library. Each named export (story) is renderable within your testing setup. For example, if you were working on a login component and wanted to test the invalid credentials scenario, here's how you could write your test:
+[Testing Library](https://testing-library.com/) is a suite of helper libraries for browser-based component tests. With [Component Story Format](../../api/csf.mdx), your stories are reusable with Testing Library. Each named export (story) is renderable within your testing setup. For example, if you were working on a login component and wanted to test the invalid credentials scenario, here's how you could write your test:
 
 Storybook provides a [`composeStories`](../../api/portable-stories/portable-stories-vitest.mdx#composestories) utility that helps convert stories from a test file into renderable elements that can be reused in your Node tests with JSDOM. It also allows you to apply other Storybook features that you have enabled your project (e.g., [decorators](../../writing-stories/decorators.mdx), [args](../../writing-stories/args.mdx)) into your tests, enabling you to reuse your stories in your testing environment of choice (e.g., [Jest](https://jestjs.io/), [Vitest](https://vitest.dev/)), ensuring your tests are always in sync with your stories without having to rewrite them. This is what we refer to as portable stories in Storybook.
 
@@ -95,11 +95,11 @@ Storybook provides community-led addons for other frameworks like [Vue 2](https:
 
 **Learn about other UI tests**
 
-* [Test runner](../test-runner.mdx) to automate test execution
+* [Component tests](../component-testing.mdx) for user behavior simulation
 * [Visual tests](../visual-testing.mdx) for appearance
 * [Accessibility tests](../accessibility-testing.mdx) for accessibility
-* [Interaction tests](../interaction-testing.mdx) for user behavior simulation
-* [Coverage tests](../test-coverage.mdx) for measuring code coverage
 * [Snapshot tests](../snapshot-testing/snapshot-testing.mdx) for rendering errors and warnings
+* [Test runner](../test-runner.mdx) to automate test execution
+* [Test coverage](../test-coverage.mdx) for measuring code coverage
 * [End-to-end tests](./stories-in-end-to-end-tests.mdx) for simulating real user scenarios
 * Unit tests for functionality

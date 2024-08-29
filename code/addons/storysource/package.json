@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-storysource",
-  "version": "8.3.0-alpha.9",
+  "version": "8.3.0-alpha.10",
   "description": "View a story’s source code to see how it works and paste into your app",
   "keywords": [
     "addon",
@@ -25,8 +25,7 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "node": "./dist/index.js"
+      "require": "./dist/index.js"
     },
     "./preset": "./dist/preset.js",
     "./manager": "./dist/manager.js",

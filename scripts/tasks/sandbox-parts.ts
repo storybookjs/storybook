@@ -18,12 +18,12 @@ import { join, relative, resolve, sep } from 'path';
 import slash from 'slash';
 import dedent from 'ts-dedent';
 
+import { babelParse } from '../../code/core/src/babel/babelParse';
 import { detectLanguage } from '../../code/core/src/cli/detect';
 import { SupportedLanguage } from '../../code/core/src/cli/project_types';
 import { JsPackageManagerFactory, versions as storybookPackages } from '../../code/core/src/common';
 import type { ConfigFile } from '../../code/core/src/csf-tools';
 import { writeConfig } from '../../code/core/src/csf-tools';
-import { babelParse } from '../../code/core/src/csf-tools/babelParse';
 import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
 import type { PassedOptionValues, Task, TemplateDetails } from '../task';
 import { executeCLIStep, steps } from '../utils/cli-step';

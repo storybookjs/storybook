@@ -1,15 +1,13 @@
-import * as babelParser from '@babel/parser';
+import * as parser from '@babel/parser';
 import type { ParserOptions } from '@babel/parser';
 import type * as t from '@babel/types';
 import * as recast from 'recast';
 
-function parseWithFlowOrTypescript(source: string, parserOptions: babelParser.ParserOptions) {
+function parseWithFlowOrTypescript(source: string, parserOptions: parser.ParserOptions) {
   const flowCommentPattern = /^\s*\/\/\s*@flow/;
   const useFlowPlugin = flowCommentPattern.test(source);
 
-  const parserPlugins: babelParser.ParserOptions['plugins'] = useFlowPlugin
-    ? ['flow']
-    : ['typescript'];
+  const parserPlugins: parser.ParserOptions['plugins'] = useFlowPlugin ? ['flow'] : ['typescript'];
 
   // Merge the provided parserOptions with the custom parser plugins
   const mergedParserOptions = {
@@ -17,7 +15,7 @@ function parseWithFlowOrTypescript(source: string, parserOptions: babelParser.Pa
     plugins: [...(parserOptions.plugins ?? []), ...parserPlugins],
   };
 
-  return babelParser.parse(source, mergedParserOptions);
+  return parser.parse(source, mergedParserOptions);
 }
 
 export const parserOptions: ParserOptions = {
@@ -52,5 +50,5 @@ export const babelPrint = (ast: ASTNode): string => {
 };
 
 export const babelParseExpression = (code: string) => {
-  return babelParser.parseExpression(code, parserOptions);
+  return parser.parseExpression(code, parserOptions);
 };

@@ -1,1 +1,1 @@
-module.exports = require('./dist/postinstall.js');
+module.exports = require('./dist/postinstall.cjs');

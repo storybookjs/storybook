@@ -1,6 +1,6 @@
 {
   "name": "@storybook/experimental-addon-vitest",
-  "version": "8.3.0-alpha.9",
+  "version": "8.3.0-alpha.10",
   "description": "Integrate Vitest with Storybook",
   "keywords": [
     "storybook-addons",
@@ -27,8 +27,7 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
-      "node": "./dist/index.cjs"
+      "require": "./dist/index.cjs"
     },
     "./plugin": {
       "types": "./dist/plugin/index.d.ts",

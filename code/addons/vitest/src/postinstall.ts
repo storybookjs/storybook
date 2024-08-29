@@ -19,7 +19,7 @@ import dedent from 'ts-dedent';
 
 import { type PostinstallOptions } from '../../../lib/cli-storybook/src/add';
 
-const extensions = ['.ts', '.mts', '.cts', '.js', '.mjs', '.cjs'];
+const extensions = ['.js', '.jsx', '.ts', '.tsx', '.cts', '.mts', '.cjs', '.mjs'];
 
 export default async function postInstall(options: PostinstallOptions) {
   const packageManager = JsPackageManagerFactory.getPackageManager({
@@ -60,16 +60,16 @@ export default async function postInstall(options: PostinstallOptions) {
 
   const packages = ['vitest@latest', '@vitest/browser@latest', 'playwright@latest'];
 
-  logger.info(
-    dedent`
-      We detected that you're using Next.js. 
-      We will configure the vite-plugin-storybook-nextjs plugin to allow you to run tests in Vitest.
-    `
-  );
-
   if (info.frameworkPackageName === '@storybook/nextjs') {
+    logger.info(
+      dedent`
+        We detected that you're using Next.js.
+        We will configure the vite-plugin-storybook-nextjs plugin to allow you to run tests in Vitest.
+      `
+    );
     packages.push('vite-plugin-storybook-nextjs@latest');
   }
+
   logger.info(c.bold('Installing packages...'));
   logger.info(packages.join(', '));
   await packageManager.addDependencies({ installAsDevDependencies: true }, packages);
@@ -83,7 +83,7 @@ export default async function postInstall(options: PostinstallOptions) {
   logger.info(c.bold('Writing .storybook/vitest.setup.ts file...'));
 
   const previewExists = extensions
-    .map((ext) => path.resolve(path.join(options.configDir, `preview${ext}`)))
+    .map((ext) => path.resolve(options.configDir, `preview${ext}`))
     .some((config) => existsSync(config));
 
   await writeFile(
@@ -92,21 +92,22 @@ export default async function postInstall(options: PostinstallOptions) {
       import { beforeAll } from 'vitest'
       import { setProjectAnnotations } from '${annotationsImport}'
       ${previewExists ? `import * as projectAnnotations from './preview'` : ''}
-      
+
       const project = setProjectAnnotations(${previewExists ? 'projectAnnotations' : '[]'})
-      
+
       beforeAll(project.beforeAll)
     `
   );
 
-  const configFiles = extensions.map((ext) => 'vitest.config' + ext);
-
-  const rootConfig = await findUp(configFiles, {
-    cwd: process.cwd(),
-  });
+  // Check for an existing config file. Can be from Vitest (preferred) or Vite (with `test` option).
+  const viteConfigFiles = extensions.map((ext) => 'vite.config' + ext);
+  const viteConfig = await findUp(viteConfigFiles, { cwd: process.cwd() });
+  const vitestConfigFiles = extensions.map((ext) => 'vitest.config' + ext);
+  const rootConfig = (await findUp(vitestConfigFiles, { cwd: process.cwd() })) || viteConfig;
 
   if (rootConfig) {
-    const extname = rootConfig ? path.extname(rootConfig) : '.ts';
+    // If there's an existing config, we create a workspace file so we can run Storybook tests alongside.
+    const extname = path.extname(rootConfig);
     const browserWorkspaceFile = resolve(dirname(rootConfig), `vitest.workspace${extname}`);
     if (existsSync(browserWorkspaceFile)) {
       logger.info(
@@ -121,66 +122,62 @@ export default async function postInstall(options: PostinstallOptions) {
       await writeFile(
         browserWorkspaceFile,
         dedent`
-        import { defineWorkspace } from 'vitest/config';
-        import { storybookTest } from '@storybook/experimental-addon-vitest/plugin';
-        ${vitestInfo.frameworkPluginImport ? vitestInfo.frameworkPluginImport + '\n' : ''}
-        export default defineWorkspace([
-          '${relative(dirname(browserWorkspaceFile), rootConfig)}',
-          {
-            plugins: [
-              storybookTest(),${vitestInfo.frameworkPluginCall ? '\n' + vitestInfo.frameworkPluginCall : ''}
-            ],
-            test: {
-              include: ['**/*.stories.?(m)[jt]s?(x)'],
-              browser: {
-                enabled: true,
-                name: 'chromium',
-                provider: 'playwright',
-                headless: true,
+          import { defineWorkspace } from 'vitest/config';
+          import { storybookTest } from '@storybook/experimental-addon-vitest/plugin';
+          ${vitestInfo.frameworkPluginImport ? vitestInfo.frameworkPluginImport + '\n' : ''}
+          export default defineWorkspace([
+            '${relative(dirname(browserWorkspaceFile), rootConfig)}',
+            {
+              extends: '${viteConfig ? relative(dirname(browserWorkspaceFile), viteConfig) : ''}',
+              plugins: [
+                storybookTest(),${vitestInfo.frameworkPluginCall ? '\n' + vitestInfo.frameworkPluginCall : ''}
+              ],
+              test: {
+                browser: {
+                  enabled: true,
+                  headless: true,
+                  name: 'chromium',
+                  provider: 'playwright',
+                },
+                include: ['**/*.stories.?(m)[jt]s?(x)'],
+                setupFiles: ['./.storybook/vitest.setup.ts'],
               },
-              // Disabling isolation is faster and is similar to how tests are isolated in storybook itself.
-              // Consider removing this if you are seeing problems with your tests.
-              isolate: false,
-              setupFiles: ['./.storybook/vitest.setup.ts'],
             },
-          },
-        ]);
-      `
+          ]);
+        `.replace(/\s+extends: '',/, '')
       );
     }
   } else {
+    // If there's no existing Vitest/Vite config, we create a new Vitest config file.
     logger.info(c.bold('Writing vitest.config.ts file...'));
     await writeFile(
       resolve('vitest.config.ts'),
       dedent`
-      import { defineConfig } from "vitest/config";
-      import { storybookTest } from "@storybook/experimental-addon-vitest/plugin";
-      ${vitestInfo.frameworkPluginImport ? vitestInfo.frameworkPluginImport + '\n' : ''}
-      export default defineConfig({
-        plugins: [
-          storybookTest(),${vitestInfo.frameworkPluginCall ? '\n' + vitestInfo.frameworkPluginCall : ''}
-        ],
-        test: {
-          include: ['**/*.stories.?(m)[jt]s?(x)'],
-          browser: {
-            enabled: true,
-            name: 'chromium',
-            provider: 'playwright',
-            headless: true,
+        import { defineConfig } from "vitest/config";
+        import { storybookTest } from "@storybook/experimental-addon-vitest/plugin";
+        ${vitestInfo.frameworkPluginImport ? vitestInfo.frameworkPluginImport + '\n' : ''}
+        export default defineConfig({
+          plugins: [
+            storybookTest(),${vitestInfo.frameworkPluginCall ? '\n' + vitestInfo.frameworkPluginCall : ''}
+          ],
+          test: {
+            browser: {
+              enabled: true,
+              headless: true,
+              name: 'chromium',
+              provider: 'playwright',
+            },
+            include: ['**/*.stories.?(m)[jt]s?(x)'],
+            setupFiles: ['./.storybook/vitest.setup.ts'],
           },
-          // Disabling isolation is faster and is similar to how tests are isolated in storybook itself.
-          // Consider removing this, if you have flaky tests.
-          isolate: false,
-          setupFiles: ['./.storybook/vitest.setup.ts'],
-        },
-      });
-    `
+        });
+      `
     );
   }
 
   logger.info(
     dedent`
-      The Vitest addon is now configured and you're ready to run your tests! 
+      The Vitest addon is now configured and you're ready to run your tests!
       Check the documentation for more information about its features and options at:
       https://storybook.js.org/docs/writing-tests/test-runner-with-vitest
     `
@@ -215,7 +212,6 @@ async function getFrameworkInfo({ configDir, packageManager: pkgMgr }: Postinsta
   validateFrameworkName(frameworkName);
   const frameworkPackageName = extractProperFrameworkName(frameworkName);
 
-  console.log(configDir);
   const presets = await loadAllPresets({
     corePresets: [join(frameworkName, 'preset')],
     overridePresets: [

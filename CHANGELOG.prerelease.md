@@ -1,3 +1,10 @@
+## 8.3.0-alpha.10
+
+- Addon Vitest: Fix postinstall file types - [#28978](https://github.com/storybookjs/storybook/pull/28978), thanks @shilman!
+- CLI: Fix dedent import in package managers - [#28980](https://github.com/storybookjs/storybook/pull/28980), thanks @shilman!
+- Core: De-duplicate babel use in core - [#28972](https://github.com/storybookjs/storybook/pull/28972), thanks @ndelangen!
+- Vitest: Fix add command - [#28975](https://github.com/storybookjs/storybook/pull/28975), thanks @ghengeveld!
+
 ## 8.3.0-alpha.9
 
 - Addon Viewport: Add default options via parameters - [#28944](https://github.com/storybookjs/storybook/pull/28944), thanks @ndelangen!

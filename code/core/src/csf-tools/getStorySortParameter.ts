@@ -1,15 +1,8 @@
-import bg from '@babel/generator';
-import bt from '@babel/traverse';
-import * as t from '@babel/types';
+import { babelParse, generate, types as t, traverse } from '@storybook/core/babel';
+
 import { dedent } from 'ts-dedent';
 
-import { babelParse } from './babelParse';
 import { findVarInitialization } from './findVarInitialization';
-
-// @ts-expect-error (needed due to it's use of `exports.default`)
-const traverse = (bt.default || bt) as typeof bt;
-// @ts-expect-error (needed due to it's use of `exports.default`)
-const generate = (bg.default || bg) as typeof bg;
 
 const logger = console;
 

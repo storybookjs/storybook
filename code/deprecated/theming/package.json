@@ -1,6 +1,6 @@
 {
   "name": "@storybook/theming",
-  "version": "8.3.0-alpha.9",
+  "version": "8.3.0-alpha.10",
   "description": "Core Storybook Components",
   "keywords": [
     "storybook"
@@ -24,8 +24,7 @@
     ".": {
       "types": "./shim.d.ts",
       "import": "./shim.mjs",
-      "require": "./shim.js",
-      "node": "./shim.js"
+      "require": "./shim.js"
     },
     "./create": {
       "types": "./create.d.ts",

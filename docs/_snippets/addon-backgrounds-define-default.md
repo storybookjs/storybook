@@ -7,9 +7,8 @@ const meta: Meta<Button> = {
   component: Button,
   parameters: {
     backgrounds: {
-      options: {
-        maroon: { name: 'Maroon', value: '#400' },
-      },
+      // 👇 Set default background value for all component stories
+      default: 'Gray',
     },
   },
 };
@@ -17,9 +16,12 @@ const meta: Meta<Button> = {
 export default meta;
 type Story = StoryObj<Button>;
 
-export const Large: Story = {
-  global: {
-    backgrounds: { value: 'maroon', grid: false },
+export const OnDark: Story = {
+  parameters: {
+    backgrounds: {
+      // 👇 Override default background value for this story
+      default: 'Dark',
+    },
   },
 };
 ```
@@ -31,16 +33,18 @@ export default {
   component: Button,
   parameters: {
     backgrounds: {
-      options: {
-        maroon: { name: 'Maroon', value: '#400' },
-      },
+      // 👇 Set default background value for all component stories
+      default: 'Gray',
     },
   },
 };
 
-export const Large = {
-  global: {
-    backgrounds: { value: 'maroon', grid: false },
+export const OnDark = {
+  parameters: {
+    backgrounds: {
+      // 👇 Override default background value for this story
+      default: 'Dark',
+    },
   },
 };
 ```
@@ -55,9 +59,8 @@ const meta = {
   component: Button,
   parameters: {
     backgrounds: {
-      options: {
-        maroon: { name: 'Maroon', value: '#400' },
-      },
+      // 👇 Set default background value for all component stories
+      default: 'Gray',
     },
   },
 } satisfies Meta<typeof Button>;
@@ -65,9 +68,12 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Large: Story = {
-  global: {
-    backgrounds: { value: 'maroon', grid: false },
+export const OnDark: Story = {
+  parameters: {
+    backgrounds: {
+      // 👇 Override default background value for this story
+      default: 'Dark',
+    },
   },
 };
 ```
@@ -82,9 +88,8 @@ const meta: Meta<typeof Button> = {
   component: Button,
   parameters: {
     backgrounds: {
-      options: {
-        maroon: { name: 'Maroon', value: '#400' },
-      },
+      // 👇 Set default background value for all component stories
+      default: 'Gray',
     },
   },
 };
@@ -92,9 +97,12 @@ const meta: Meta<typeof Button> = {
 export default meta;
 type Story = StoryObj<typeof Button>;
 
-export const Large: Story = {
-  global: {
-    backgrounds: { value: 'maroon', grid: false },
+export const OnDark: Story = {
+  parameters: {
+    backgrounds: {
+      // 👇 Override default background value for this story
+      default: 'Dark',
+    },
   },
 };
 ```
@@ -104,16 +112,18 @@ export default {
   component: 'demo-button',
   parameters: {
     backgrounds: {
-      options: {
-        maroon: { name: 'Maroon', value: '#400' },
-      },
+      // 👇 Set default background value for all component stories
+      default: 'Gray',
     },
   },
 };
 
-export const Large = {
-  global: {
-    backgrounds: { value: 'maroon', grid: false },
+export const OnDark = {
+  parameters: {
+    backgrounds: {
+      // 👇 Override default background value for this story
+      default: 'Dark',
+    },
   },
 };
 ```
@@ -125,9 +135,8 @@ const meta: Meta = {
   component: 'demo-button',
   parameters: {
     backgrounds: {
-      options: {
-        maroon: { name: 'Maroon', value: '#400' },
-      },
+      // 👇 Set default background value for all component stories
+      default: 'Gray',
     },
   },
 };
@@ -135,9 +144,12 @@ const meta: Meta = {
 export default meta;
 type Story = StoryObj;
 
-export const Large: Story = {
-  global: {
-    backgrounds: { value: 'maroon', grid: false },
+export const OnDark: Story = {
+  parameters: {
+    backgrounds: {
+      // 👇 Override default background value for this story
+      default: 'Dark',
+    },
   },
 };
 ```

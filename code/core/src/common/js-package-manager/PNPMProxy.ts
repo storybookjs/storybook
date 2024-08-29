@@ -5,7 +5,7 @@ import { FindPackageVersionsError } from '@storybook/core/server-errors';
 
 import { findUpSync } from 'find-up';
 import { pathExistsSync } from 'fs-extra';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
 import { createLogStream } from '../utils/cli';
 import { JsPackageManager } from './JsPackageManager';

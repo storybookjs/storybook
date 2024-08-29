@@ -80,7 +80,7 @@ describe('transformer', () => {
         };
         export default _meta;
         export const Story = {};
-        const _isRunningFromThisFile = import.meta.url.includes(_expect.getState().testPath ?? globalThis.__vitest_worker__.filepath);
+        const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
         if (_isRunningFromThisFile) {
           _test("Story", _testStory("Story", Story, _meta, []));
         }
@@ -109,7 +109,7 @@ describe('transformer', () => {
         };
         export default _meta;
         export const Story = {};
-        const _isRunningFromThisFile = import.meta.url.includes(_expect.getState().testPath ?? globalThis.__vitest_worker__.filepath);
+        const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
         if (_isRunningFromThisFile) {
           _test("Story", _testStory("Story", Story, _meta, []));
         }
@@ -139,7 +139,7 @@ describe('transformer', () => {
         };
         export default meta;
         export const Story = {};
-        const _isRunningFromThisFile = import.meta.url.includes(_expect.getState().testPath ?? globalThis.__vitest_worker__.filepath);
+        const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
         if (_isRunningFromThisFile) {
           _test("Story", _testStory("Story", Story, meta, []));
         }
@@ -170,7 +170,7 @@ describe('transformer', () => {
         };
         export default meta;
         export const Story = {};
-        const _isRunningFromThisFile = import.meta.url.includes(_expect.getState().testPath ?? globalThis.__vitest_worker__.filepath);
+        const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
         if (_isRunningFromThisFile) {
           _test("Story", _testStory("Story", Story, meta, []));
         }
@@ -206,7 +206,7 @@ describe('transformer', () => {
             label: 'Primary Button'
           }
         };
-        const _isRunningFromThisFile = import.meta.url.includes(_expect.getState().testPath ?? globalThis.__vitest_worker__.filepath);
+        const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
         if (_isRunningFromThisFile) {
           _test("Primary", _testStory("Primary", Primary, _meta, []));
         }
@@ -240,7 +240,7 @@ describe('transformer', () => {
           }
         };
         export { Primary };
-        const _isRunningFromThisFile = import.meta.url.includes(_expect.getState().testPath ?? globalThis.__vitest_worker__.filepath);
+        const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
         if (_isRunningFromThisFile) {
           _test("Primary", _testStory("Primary", Primary, _meta, []));
         }
@@ -276,7 +276,7 @@ describe('transformer', () => {
         };
         export const Secondary = {};
         export { Primary };
-        const _isRunningFromThisFile = import.meta.url.includes(_expect.getState().testPath ?? globalThis.__vitest_worker__.filepath);
+        const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
         if (_isRunningFromThisFile) {
           _test("Secondary", _testStory("Secondary", Secondary, _meta, []));
           _test("Primary", _testStory("Primary", Primary, _meta, []));
@@ -308,7 +308,7 @@ describe('transformer', () => {
         export default _meta;
         export const Story = {};
         export const nonStory = 123;
-        const _isRunningFromThisFile = import.meta.url.includes(_expect.getState().testPath ?? globalThis.__vitest_worker__.filepath);
+        const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
         if (_isRunningFromThisFile) {
           _test("Story", _testStory("Story", Story, _meta, []));
         }
@@ -365,7 +365,7 @@ describe('transformer', () => {
           tags: ['include-me']
         };
         export const NotIncluded = {};
-        const _isRunningFromThisFile = import.meta.url.includes(_expect.getState().testPath ?? globalThis.__vitest_worker__.filepath);
+        const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
         if (_isRunningFromThisFile) {
           _test("Included", _testStory("Included", Included, _meta, []));
         }
@@ -396,7 +396,7 @@ describe('transformer', () => {
         export const NotIncluded = {
           tags: ['exclude-me']
         };
-        const _isRunningFromThisFile = import.meta.url.includes(_expect.getState().testPath ?? globalThis.__vitest_worker__.filepath);
+        const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
         if (_isRunningFromThisFile) {
           _test("Included", _testStory("Included", Included, _meta, []));
         }
@@ -424,7 +424,7 @@ describe('transformer', () => {
         export const Skipped = {
           tags: ['skip-me']
         };
-        const _isRunningFromThisFile = import.meta.url.includes(_expect.getState().testPath ?? globalThis.__vitest_worker__.filepath);
+        const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
         if (_isRunningFromThisFile) {
           _test("Skipped", _testStory("Skipped", Skipped, _meta, ["skip-me"]));
         }
@@ -456,7 +456,7 @@ describe('transformer', () => {
         };
         export default meta;
         export const Primary = {};
-        const _isRunningFromThisFile = import.meta.url.includes(_expect.getState().testPath ?? globalThis.__vitest_worker__.filepath);
+        const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
         if (_isRunningFromThisFile) {
           _test("Primary", _testStory("Primary", Primary, meta, []));
         }

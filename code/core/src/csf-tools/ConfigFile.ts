@@ -1,20 +1,18 @@
 /* eslint-disable no-underscore-dangle */
 import { readFile, writeFile } from 'node:fs/promises';
 
-import bg from '@babel/generator';
-import bt from '@babel/traverse';
-import * as t from '@babel/types';
-import type { Options } from 'recast';
-import * as recast from 'recast';
+import {
+  type RecastOptions,
+  babelParse,
+  generate,
+  recast,
+  types as t,
+  traverse,
+} from '@storybook/core/babel';
+
 import { dedent } from 'ts-dedent';
 
 import type { PrintResultType } from './PrintResultType';
-import { babelParse } from './babelParse';
-
-// @ts-expect-error (needed due to it's use of `exports.default`)
-const traverse = (bt.default || bt) as typeof bt;
-// @ts-expect-error (needed due to it's use of `exports.default`)
-const generate = (bg.default || bg) as typeof bg;
 
 const logger = console;
 
@@ -323,7 +321,7 @@ export class ConfigFile {
     return _getPath(rest, exported);
   }
 
-  getFieldProperties(path: string[]) {
+  getFieldProperties(path: string[]): ReturnType<typeof _getPathProperties> {
     const [root, ...rest] = path;
     const exported = this._exports[root];
 
@@ -365,7 +363,7 @@ export class ConfigFile {
       const decl = this._exportDecls[path[0]];
       decl.init = _makeObjectExpression([], expr);
     } else if (this.hasDefaultExport) {
-      // This means the main.js of the user has a default export that is not an object expression, therefore we can't change the AST.
+      // This means the main.js of the user has a default export that is not an object expression, therefore we can'types change the AST.
       throw new Error(
         `Could not set the "${path.join(
           '.'
@@ -499,7 +497,7 @@ export class ConfigFile {
         properties.splice(index, 1);
       }
     };
-    // the structure of this._exports doesn't work for this use case
+    // the structure of this._exports doesn'types work for this use case
     // so we have to manually bypass it here
     if (path.length === 1) {
       let removedRootProperty = false;
@@ -624,10 +622,10 @@ export class ConfigFile {
     return this._quotes;
   }
 
-  valueToNode(value: any) {
+  valueToNode(value: any): t.Expression | undefined {
     const quotes = this._inferQuotes();
     let valueNode;
-    // we do this rather than t.valueToNode because apparently
+    // we do this rather than types.valueToNode because apparently
     // babel only preserves quotes if they are parsed from the original code.
     if (quotes === 'single') {
       const { code } = generate(t.valueToNode(value), { jsescOption: { quotes } });
@@ -661,7 +659,7 @@ export class ConfigFile {
     this.setFieldNode(path, valueNode);
   }
 
-  getBodyDeclarations() {
+  getBodyDeclarations(): t.Statement[] {
     return this._ast.program.body;
   }
 
@@ -750,10 +748,10 @@ export class ConfigFile {
 
       if (requireDeclaration) {
         if (!hasDefaultRequireSpecifier(requireDeclaration, importSpecifier)) {
-          // If the import declaration hasn't the specified default identifier, we add a new variable declaration
+          // If the import declaration hasn'types the specified default identifier, we add a new variable declaration
           addDefaultRequireSpecifier();
         }
-        // If the import declaration with the given source doesn't exist
+        // If the import declaration with the given source doesn'types exist
       } else {
         // Add the import declaration to the top of the file
         addDefaultRequireSpecifier();
@@ -846,12 +844,12 @@ export class ConfigFile {
       // If the import declaration with the given source exists
       if (importDeclaration) {
         if (!hasDefaultImportSpecifier(importDeclaration, importSpecifier)) {
-          // If the import declaration hasn't a default specifier, we add it
+          // If the import declaration hasn'types a default specifier, we add it
           importDeclaration.specifiers.push(
             t.importDefaultSpecifier(t.identifier(importSpecifier))
           );
         }
-        // If the import declaration with the given source doesn't exist
+        // If the import declaration with the given source doesn'types exist
       } else {
         // Add the import declaration to the top of the file
         this._ast.program.body.unshift(
@@ -890,7 +888,7 @@ export const formatConfig = (config: ConfigFile): string => {
   return printConfig(config).code;
 };
 
-export const printConfig = (config: ConfigFile, options: Options = {}): PrintResultType => {
+export const printConfig = (config: ConfigFile, options: RecastOptions = {}): PrintResultType => {
   return recast.print(config._ast, options);
 };
 

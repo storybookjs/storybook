@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
-import { transformSync } from '@babel/core';
+import { transformSync } from '@storybook/core/babel';
+
 import mapValues from 'lodash/mapValues.js';
 import requireFromString from 'require-from-string';
 

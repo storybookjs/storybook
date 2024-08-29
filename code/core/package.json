@@ -1,6 +1,6 @@
 {
   "name": "@storybook/core",
-  "version": "8.3.0-alpha.9",
+  "version": "8.3.0-alpha.10",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -157,6 +157,11 @@
       "import": "./dist/cli/index.js",
       "require": "./dist/cli/index.cjs"
     },
+    "./babel": {
+      "types": "./dist/babel/index.d.ts",
+      "import": "./dist/babel/index.js",
+      "require": "./dist/babel/index.cjs"
+    },
     "./cli/bin": {
       "types": "./dist/cli/bin/index.d.ts",
       "import": "./dist/cli/bin/index.js",
@@ -252,6 +257,9 @@
       ],
       "cli": [
         "./dist/cli/index.d.ts"
+      ],
+      "babel": [
+        "./dist/babel/index.d.ts"
       ],
       "cli/bin": [
         "./dist/cli/bin/index.d.ts"

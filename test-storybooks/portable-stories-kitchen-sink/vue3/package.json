@@ -91,7 +91,7 @@
     "@storybook/test": "^8.0.0",
     "@storybook/vue3": "^8.0.0",
     "@storybook/vue3-vite": "^8.0.0",
-    "@testing-library/jest-dom": "6.4.5",
+    "@testing-library/jest-dom": "6.5.0",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "@vitejs/plugin-vue": "^5.0.4",

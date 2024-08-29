@@ -1,6 +1,6 @@
 {
   "name": "@storybook/experimental-nextjs-vite",
-  "version": "8.3.0-alpha.10",
+  "version": "8.3.0-alpha.11",
   "description": "Storybook for Next.js and Vite",
   "keywords": [
     "storybook",
@@ -102,12 +102,12 @@
     "vite-plugin-storybook-nextjs": "^1.0.0"
   },
   "peerDependencies": {
-    "next": "^14.2.5",
+    "next": "^14.1.0",
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
     "storybook": "workspace:^",
     "vite": "^5.0.0",
-    "vite-plugin-storybook-nextjs": "^1.0.0"
+    "vite-plugin-storybook-nextjs": "^1.0.8"
   },
   "peerDependenciesMeta": {
     "typescript": {

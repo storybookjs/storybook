@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react",
-  "version": "8.3.0-alpha.10",
+  "version": "8.3.0-alpha.11",
   "description": "Storybook React renderer",
   "keywords": [
     "storybook"
@@ -23,14 +23,12 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "node": "./dist/index.js"
+      "require": "./dist/index.js"
     },
     "./experimental-playwright": {
       "types": "./dist/playwright.d.ts",
       "import": "./dist/playwright.mjs",
-      "require": "./dist/playwright.js",
-      "node": "./dist/playwright.js"
+      "require": "./dist/playwright.js"
     },
     "./preset": "./preset.js",
     "./dist/entry-preview.mjs": "./dist/entry-preview.mjs",

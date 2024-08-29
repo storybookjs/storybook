@@ -19,7 +19,7 @@ if (['dev', 'build'].includes(args[0])) {
       ? [`create-storybook@${versions.storybook}`, ...args.slice(1)]
       : [`@storybook/cli@${versions.storybook}`, ...args];
   const command = ['npx', '--yes', ...proxiedArgs];
-  const child = spawn(command[0], command.slice(1), { stdio: 'inherit' });
+  const child = spawn(command[0], command.slice(1), { stdio: 'inherit', shell: true });
   child.on('exit', (code) => {
     if (code != null) {
       process.exit(code);

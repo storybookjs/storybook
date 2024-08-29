@@ -129,7 +129,7 @@ Add a new [configuration file](./test-runner.mdx#test-hook-api) inside your Stor
   `preVisit` and `postVisit` are convenient hooks that allow you to extend the test runner's default configuration. Read more about them [here](./test-runner.mdx#test-hook-api).
 </Callout>
 
-When you execute the test runner (for example, with `yarn test-storybook`), it will run the accessibility audit and any [interaction tests](./interaction-testing.mdx) you might have configured for each component story.
+When you execute the test runner (for example, with `yarn test-storybook`), it will run the accessibility audit and any [component tests](./component-testing.mdx) you might have configured for each component story.
 
 It starts checking for issues by traversing the DOM tree starting from the story's root element and generates a detailed report based on the issues it encountered.
 
@@ -163,11 +163,11 @@ Browser-based accessibility tests, like those found in Storybook, evaluate the r
 
 **Learn about other UI tests**
 
-* [Test runner](./test-runner.mdx) to automate test execution
+* [Component tests](./component-testing.mdx) for user behavior simulation
 * [Visual tests](./visual-testing.mdx) for appearance
 * Accessibility tests for accessibility
-* [Interaction tests](./interaction-testing.mdx) for user behavior simulation
-* [Coverage tests](./test-coverage.mdx) for measuring code coverage
 * [Snapshot tests](./snapshot-testing/snapshot-testing.mdx) for rendering errors and warnings
+* [Test runner](./test-runner.mdx) to automate test execution
+* [Test coverage](./test-coverage.mdx) for measuring code coverage
 * [End-to-end tests](./import-stories-in-tests/stories-in-end-to-end-tests.mdx) for simulating real user scenarios
 * [Unit tests](./import-stories-in-tests/stories-in-unit-tests.mdx) for functionality

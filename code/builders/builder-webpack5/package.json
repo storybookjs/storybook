@@ -63,9 +63,7 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@ndelangen/fs-extra-unified": "^1.0.4",
     "@storybook/core-webpack": "workspace:*",
-    "@types/fs-extra": "^11.0.4",
     "@types/node": "^22.0.0",
     "@types/semver": "^7.3.4",
     "browser-assert": "^1.2.1",
@@ -76,7 +74,6 @@
     "es-module-lexer": "^1.5.0",
     "express": "^4.19.2",
     "fork-ts-checker-webpack-plugin": "^8.0.0",
-    "fs-extra": "^11.1.0",
     "html-webpack-plugin": "^5.5.0",
     "magic-string": "^0.30.5",
     "path-browserify": "^1.0.1",
@@ -94,9 +91,12 @@
     "webpack-virtual-modules": "^0.6.0"
   },
   "devDependencies": {
+    "@ndelangen/fs-extra-unified": "^1.0.4",
+    "@types/fs-extra": "^11.0.4",
     "@types/pretty-hrtime": "^1.0.0",
     "@types/terser-webpack-plugin": "^5.2.0",
     "@types/webpack-hot-middleware": "^2.25.6",
+    "fs-extra": "^11.1.0",
     "pretty-hrtime": "^1.0.3",
     "slash": "^5.0.0",
     "typescript": "^5.3.2"

@@ -1,6 +1,6 @@
 {
   "name": "create-storybook",
-  "version": "8.3.0-alpha.11",
+  "version": "8.3.0-beta.0",
   "description": "Initialize Storybook into your project",
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/create-storybook",
   "bugs": {

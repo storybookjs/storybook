@@ -1,3 +1,7 @@
+## 8.3.0-beta.0
+
+Empty release identical to `v8.3.0-alpha.11`
+
 ## 8.3.0-alpha.11
 
 - Addon Vitest: Fix tests potentially not existing in non-isolate mode - [#28993](https://github.com/storybookjs/storybook/pull/28993), thanks @yannbf!

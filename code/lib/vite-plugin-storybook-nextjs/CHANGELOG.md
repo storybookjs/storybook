@@ -1,3 +1,15 @@
+# v1.0.9 (Thu Aug 29 2024)
+
+#### 🐛 Bug Fix
+
+- fix: Do not fail if pages/apps dir cannot be found [#15](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/15) ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
 # v1.0.8 (Wed Aug 28 2024)
 
 #### 🐛 Bug Fix

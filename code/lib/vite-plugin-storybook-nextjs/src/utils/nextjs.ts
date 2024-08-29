@@ -1,11 +1,12 @@
 import fs from "node:fs";
-import { join } from "node:path";
+import path, { join } from "node:path";
 import * as nextEnv from "@next/env";
 import Log from "next/dist/build/output/log.js";
 import {
   loadBindings,
   lockfilePatchPromise,
 } from "next/dist/build/swc/index.js";
+import { findPagesDir } from "next/dist/lib/find-pages-dir.js";
 import type { NextConfigComplete } from "next/dist/server/config-shared.js";
 
 const nextDistPath =
@@ -58,5 +59,18 @@ export async function loadClosestPackageJson(dir: string, attempts = 1) {
     return JSON.parse(file);
   } catch (e) {
     return loadClosestPackageJson(dir, attempts + 1);
+  }
+}
+
+export function findNextDirectories(
+  dir: string,
+): ReturnType<typeof findPagesDir> {
+  try {
+    return findPagesDir(dir);
+  } catch (e) {
+    return {
+      appDir: path.join(dir, "app"),
+      pagesDir: path.join(dir, "pages"),
+    };
   }
 }

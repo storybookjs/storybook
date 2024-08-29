@@ -1,7 +1,6 @@
 import { resolve } from "node:path";
 import nextLoadJsConfig from "next/dist/build/load-jsconfig.js";
 import { transform } from "next/dist/build/swc/index.js";
-import { findPagesDir } from "next/dist/lib/find-pages-dir.js";
 import type { NextConfigComplete } from "next/dist/server/config-shared.js";
 import { type Plugin, createFilter } from "vite";
 
@@ -23,7 +22,7 @@ export function vitePluginNextSwc(
   nextConfigResolver: PromiseWithResolvers<NextConfigComplete>,
 ) {
   let loadedJSConfig: Awaited<ReturnType<typeof loadJsConfig>>;
-  let nextDirectories: ReturnType<typeof findPagesDir>;
+  let nextDirectories: ReturnType<typeof NextUtils.findNextDirectories>;
   let isServerEnvironment: boolean;
   let isDev: boolean;
   let isEsmProject: boolean;
@@ -37,7 +36,7 @@ export function vitePluginNextSwc(
     enforce: "pre" as const,
     async config(config, env) {
       const nextConfig = await nextConfigResolver.promise;
-      nextDirectories = findPagesDir(resolvedDir);
+      nextDirectories = NextUtils.findNextDirectories(resolvedDir);
       loadedJSConfig = await loadJsConfig(resolvedDir, nextConfig);
       isDev = env.mode !== "production";
       packageJson = await NextUtils.loadClosestPackageJson(resolvedDir);

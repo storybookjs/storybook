@@ -62,7 +62,7 @@ export async function createIndex(
       exportName: id,
       name: story.name,
       title: makeTitle(defs.meta.title),
-      tags: defs.meta.tags,
+      tags: [...(defs.meta.tags ?? []), ...story.tags],
       metaTags: defs.meta.tags,
     }));
 }

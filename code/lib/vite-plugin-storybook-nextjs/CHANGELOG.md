@@ -1,3 +1,15 @@
+# v1.0.10 (Fri Aug 30 2024)
+
+#### 🐛 Bug Fix
+
+- fix: Type declaration exports [#16](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/16) ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
 # v1.0.9 (Thu Aug 29 2024)
 
 #### 🐛 Bug Fix

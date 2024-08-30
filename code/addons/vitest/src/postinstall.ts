@@ -14,6 +14,7 @@ import {
 import { logger } from 'storybook/internal/node-logger';
 
 import { findUp } from 'find-up';
+import { satisfies } from 'semver';
 import c from 'tinyrainbow';
 import dedent from 'ts-dedent';
 
@@ -58,21 +59,70 @@ export default async function postInstall(options: PostinstallOptions) {
 
   const vitestInfo = getVitestPluginInfo(info.frameworkPackageName);
 
-  const packages = ['vitest@latest', '@vitest/browser@latest', 'playwright@latest'];
+  const packages = ['vitest', '@vitest/browser', 'playwright'];
 
-  if (info.frameworkPackageName === '@storybook/nextjs') {
-    logger.info(
+  const vitestVersion = await packageManager.getInstalledVersion('vitest');
+  if (vitestVersion && !satisfies(vitestVersion, '>=2.0.0')) {
+    logger.error(
       dedent`
-        We detected that you're using Next.js.
-        We will configure the vite-plugin-storybook-nextjs plugin to allow you to run tests in Vitest.
+        The Vitest addon requires Vitest 2.0.0 or later.
+        Please update your "vitest" dependency and try again.
       `
     );
-    packages.push('vite-plugin-storybook-nextjs@latest');
+    return;
+  }
+
+  if (info.frameworkPackageName === '@storybook/nextjs') {
+    const nextVersion = await packageManager.getInstalledVersion('next');
+    if (!nextVersion) {
+      logger.warn(
+        dedent`
+          It seems like you are using @storybook/nextjs without having "next" installed.
+          Please install "next" or use a different Storybook framework integration and try again.
+        `
+      );
+      return;
+    }
+    if (!satisfies(nextVersion, '>=14.1.0')) {
+      logger.error(
+        dedent`
+          The Vite plugin for Next.js requires Next.js 14.1.0 or later.
+          Please update your "next" dependency and try again.
+        `
+      );
+      return;
+    }
+
+    logger.info(
+      dedent`
+        We detected that you're using Storybook for Next.js.
+        We will add "vite-plugin-storybook-nextjs" to allow you to run tests in Vitest.
+      `
+    );
+    packages.push('vite-plugin-storybook-nextjs');
+  }
+
+  const depRanges = await packageManager.getAllDependencies();
+  const latestVersions = await packageManager.getVersions(...packages);
+  const latestPackages = packages.map((pkg, index) => [pkg, latestVersions[index]] as const);
+  for (const [pkg, latestVersion] of latestPackages) {
+    if (depRanges[pkg] && !satisfies(latestVersion, depRanges[pkg])) {
+      logger.error(
+        dedent`
+          The package ${pkg} is already installed and cannot be updated to ${latestVersion} because it would not satisfy ${depRanges[pkg]}.
+          Update your dependencies and try again, or manually install the Vitest addon.
+        `
+      );
+      return;
+    }
   }
 
   logger.info(c.bold('Installing packages...'));
   logger.info(packages.join(', '));
-  await packageManager.addDependencies({ installAsDevDependencies: true }, packages);
+  await packageManager.addDependencies(
+    { installAsDevDependencies: true },
+    packages.map((p) => `${p}@latest`)
+  );
 
   logger.info(c.bold('Executing npx playwright install chromium --with-deps ...'));
   await packageManager.executeCommand({

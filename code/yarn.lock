@@ -6131,8 +6131,10 @@ __metadata:
   resolution: "@storybook/experimental-addon-vitest@workspace:addons/vitest"
   dependencies:
     "@storybook/csf": "npm:^0.1.11"
+    "@types/semver": "npm:^7"
     "@vitest/browser": "npm:^2.0.0"
     find-up: "npm:^7.0.0"
+    semver: "npm:^7.6.3"
     tinyrainbow: "npm:^1.2.0"
     ts-dedent: "npm:^2.2.0"
     vitest: "npm:^2.0.0"
@@ -8175,7 +8177,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/semver@npm:^7.3.12, @types/semver@npm:^7.3.4, @types/semver@npm:^7.5.0, @types/semver@npm:^7.5.6, @types/semver@npm:^7.5.8":
+"@types/semver@npm:^7, @types/semver@npm:^7.3.12, @types/semver@npm:^7.3.4, @types/semver@npm:^7.5.0, @types/semver@npm:^7.5.6, @types/semver@npm:^7.5.8":
   version: 7.5.8
   resolution: "@types/semver@npm:7.5.8"
   checksum: 10c0/8663ff927234d1c5fcc04b33062cb2b9fcfbe0f5f351ed26c4d1e1581657deebd506b41ff7fdf89e787e3d33ce05854bc01686379b89e9c49b564c4cfa988efa
@@ -25317,6 +25319,15 @@ __metadata:
   bin:
     semver: bin/semver.js
   checksum: 10c0/97d3441e97ace8be4b1976433d1c32658f6afaff09f143e52c593bae7eef33de19e3e369c88bd985ce1042c6f441c80c6803078d1de2a9988080b66684cbb30c
+  languageName: node
+  linkType: hard
+
+"semver@npm:^7.6.3":
+  version: 7.6.3
+  resolution: "semver@npm:7.6.3"
+  bin:
+    semver: bin/semver.js
+  checksum: 10c0/88f33e148b210c153873cb08cfe1e281d518aaa9a666d4d148add6560db5cd3c582f3a08ccb91f38d5f379ead256da9931234ed122057f40bb5766e65e58adaf
   languageName: node
   linkType: hard
 

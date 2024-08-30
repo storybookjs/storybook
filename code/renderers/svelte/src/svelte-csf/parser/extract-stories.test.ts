@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 import { extractStories } from './extract-stories.js';
 
-describe('extractSource', () => {
+describe('extractStories', () => {
   test('Simple Story', () => {
     expect(
       extractStories(`
@@ -26,6 +26,7 @@ describe('extractSource', () => {
             "hasArgs": false,
             "name": "MyStory",
             "source": "<div>a story</div>",
+            "tags": [],
             "template": false,
           },
         },
@@ -55,6 +56,7 @@ describe('extractSource', () => {
             "hasArgs": false,
             "name": "MyStory",
             "source": "<div>a story</div>",
+            "tags": [],
             "template": false,
           },
         },
@@ -84,6 +86,7 @@ describe('extractSource', () => {
             "hasArgs": true,
             "name": "MyStory",
             "source": "<div>a story</div>",
+            "tags": [],
             "template": false,
           },
         },
@@ -113,6 +116,7 @@ describe('extractSource', () => {
             "hasArgs": false,
             "name": "MyTemplate",
             "source": "<div>a template</div>",
+            "tags": [],
             "template": true,
           },
         },
@@ -142,6 +146,7 @@ describe('extractSource', () => {
             "hasArgs": false,
             "name": "default",
             "source": "<div>a template</div>",
+            "tags": [],
             "template": true,
           },
         },
@@ -174,12 +179,14 @@ describe('extractSource', () => {
             "hasArgs": false,
             "name": "Story1",
             "source": "<div>story 1</div>",
+            "tags": [],
             "template": false,
           },
           "Story2": {
             "hasArgs": false,
             "name": "Story2",
             "source": "<div>story 2</div>",
+            "tags": [],
             "template": false,
           },
         },
@@ -215,6 +222,7 @@ describe('extractSource', () => {
             "hasArgs": false,
             "name": "Story1",
             "source": "<div>story 1</div>",
+            "tags": [],
             "template": false,
           },
         },
@@ -253,13 +261,14 @@ describe('extractSource', () => {
             "hasArgs": false,
             "name": "Story1",
             "source": "<div>story 1</div>",
+            "tags": [],
             "template": false,
           },
         },
       }
     `);
   });
-  test('Add tags', () => {
+  test('Meta tags', () => {
     expect(
       extractStories(`
         <script>
@@ -292,13 +301,14 @@ describe('extractSource', () => {
             "hasArgs": false,
             "name": "Story1",
             "source": "<div>story 1</div>",
+            "tags": [],
             "template": false,
           },
         },
       }
     `);
   });
-  test('Add Only one tag', () => {
+  test('Only one meta tag', () => {
     expect(
       extractStories(`
         <script>
@@ -330,6 +340,131 @@ describe('extractSource', () => {
             "hasArgs": false,
             "name": "Story1",
             "source": "<div>story 1</div>",
+            "tags": [],
+            "template": false,
+          },
+        },
+      }
+    `);
+  });
+  test('Story tags', () => {
+    expect(
+      extractStories(`
+        <script>
+          import { Story, Meta } from '@storybook/addon-svelte-csf';
+        </script>
+
+        <Meta title='test'/>
+
+        <Story name="Story1" tags={["first", "second"]} >
+          <div>story 1</div>
+        </Story>
+        `)
+    ).toMatchInlineSnapshot(`
+      {
+        "allocatedIds": [
+          "default",
+          "Story",
+          "Meta",
+        ],
+        "meta": {
+          "id": undefined,
+          "title": "test",
+        },
+        "stories": {
+          "Story1": {
+            "hasArgs": false,
+            "name": "Story1",
+            "source": "<div>story 1</div>",
+            "tags": [
+              "first",
+              "second",
+            ],
+            "template": false,
+          },
+        },
+      }
+    `);
+  });
+  test('Only one story tag', () => {
+    expect(
+      extractStories(`
+        <script>
+          import { Story, Meta } from '@storybook/addon-svelte-csf';
+        </script>
+
+        <Meta title='test'/>
+
+        <Story name="Story1" tags="single" >
+          <div>story 1</div>
+        </Story>
+        `)
+    ).toMatchInlineSnapshot(`
+      {
+        "allocatedIds": [
+          "default",
+          "Story",
+          "Meta",
+        ],
+        "meta": {
+          "id": undefined,
+          "title": "test",
+        },
+        "stories": {
+          "Story1": {
+            "hasArgs": false,
+            "name": "Story1",
+            "source": "<div>story 1</div>",
+            "tags": [
+              "single",
+            ],
+            "template": false,
+          },
+        },
+      }
+    `);
+  });
+  test('Story and meta tags', () => {
+    expect(
+      extractStories(`
+        <script>
+          import { Story, Meta } from '@storybook/addon-svelte-csf';
+        </script>
+
+        <Meta title='test' tags={["firstMeta", "secondMeta", "both", "overridden"]}/>
+
+        <Story name="Story1" tags={["firstStory", "secondStory", "both", "!overridden"]} >
+          <div>story 1</div>
+        </Story>
+        `)
+    ).toMatchInlineSnapshot(`
+      {
+        "allocatedIds": [
+          "default",
+          "Story",
+          "Meta",
+        ],
+        "meta": {
+          "id": undefined,
+          "tags": [
+            "firstMeta",
+            "secondMeta",
+            "both",
+            "overridden",
+          ],
+          "title": "test",
+        },
+        "stories": {
+          "Story1": {
+            "hasArgs": false,
+            "name": "Story1",
+            "source": "<div>story 1</div>",
+            "tags": [
+              "firstStory",
+              "secondStory",
+              "both",
+              "!overridden",
+            ],
             "template": false,
           },
         },
@@ -417,6 +552,7 @@ describe('extractSource', () => {
             "hasArgs": false,
             "name": "Button",
             "source": "<div>a story</div>",
+            "tags": [],
             "template": false,
           },
         },
@@ -478,6 +614,7 @@ describe('extractSource', () => {
             "hasArgs": false,
             "name": "Desc",
             "source": "<div>a story</div>",
+            "tags": [],
             "template": false,
           },
         },
@@ -518,6 +655,7 @@ describe('extractSource', () => {
             "hasArgs": false,
             "name": "Desc",
             "source": "<div>a story</div>",
+            "tags": [],
             "template": false,
           },
         },
@@ -540,23 +678,24 @@ describe('extractSource', () => {
           </Story>
           `)
     ).toMatchInlineSnapshot(`
-        {
-          "allocatedIds": [
-            "default",
-            "Story",
-            "Button",
-          ],
-          "meta": {},
-          "stories": {
-            "Desc": {
-              "hasArgs": false,
-              "name": "Desc",
-              "source": "<div>a story</div>",
-              "template": false,
-            },
+      {
+        "allocatedIds": [
+          "default",
+          "Story",
+          "Button",
+        ],
+        "meta": {},
+        "stories": {
+          "Desc": {
+            "hasArgs": false,
+            "name": "Desc",
+            "source": "<div>a story</div>",
+            "tags": [],
+            "template": false,
           },
-        }
-      `);
+        },
+      }
+    `);
   });
   test('With unrelated description', () => {
     expect(
@@ -573,22 +712,23 @@ describe('extractSource', () => {
           </Story>
           `)
     ).toMatchInlineSnapshot(`
-        {
-          "allocatedIds": [
-            "default",
-            "Story",
-            "Button",
-          ],
-          "meta": {},
-          "stories": {
-            "Desc": {
-              "hasArgs": false,
-              "name": "Desc",
-              "source": "<div>a story</div>",
-              "template": false,
-            },
+      {
+        "allocatedIds": [
+          "default",
+          "Story",
+          "Button",
+        ],
+        "meta": {},
+        "stories": {
+          "Desc": {
+            "hasArgs": false,
+            "name": "Desc",
+            "source": "<div>a story</div>",
+            "tags": [],
+            "template": false,
           },
-        }
-      `);
+        },
+      }
+    `);
   });
 });

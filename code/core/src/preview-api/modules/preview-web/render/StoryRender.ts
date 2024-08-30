@@ -302,10 +302,14 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
             context.mount = async () => {
               throw new MountMustBeDestructuredError({ playFunction: playFunction.toString() });
             };
-            await this.runPhase(abortSignal, 'playing', async () => playFunction(context));
+            if (!initial || window?.localStorage.getItem('disableInteractions') !== 'true') {
+              await this.runPhase(abortSignal, 'playing', async () => playFunction(context));
+            }
           } else {
-            // when mount is used the playing phase will start later, right after mount is called in the play function
-            await playFunction(context);
+            if (!initial || window?.localStorage.getItem('disableInteractions') !== 'true') {
+              // when mount is used the playing phase will start later, right after mount is called in the play function
+              await playFunction(context);
+            }
           }
 
           if (!mounted) {

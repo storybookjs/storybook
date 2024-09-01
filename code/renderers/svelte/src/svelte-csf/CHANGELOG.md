@@ -1,3 +1,15 @@
+# v4.1.7 (Sun Sep 01 2024)
+
+#### 🐛 Bug Fix
+
+- Add support for story-level tags [#207](https://github.com/storybookjs/addon-svelte-csf/pull/207) ([@JReinhold](https://github.com/JReinhold))
+
+#### Authors: 1
+
+- Jeppe Reinhold ([@JReinhold](https://github.com/JReinhold))
+
+---
+
 # v4.1.6 (Thu Aug 22 2024)
 
 #### 🐛 Bug Fix

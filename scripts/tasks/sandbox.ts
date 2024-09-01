@@ -82,23 +82,24 @@ export const sandbox: Task = {
       await addStories(details, options);
     }
 
-    const extraDeps = [
+    const extraDeps = new Set([
       ...(details.template.modifications?.extraDependencies ?? []),
       // The storybook package forwards some CLI commands to @storybook/cli with npx.
       // Adding the dep makes sure that even npx will use the linked workspace version.
       '@storybook/cli',
-    ];
+    ]);
     if (!details.template.skipTasks?.includes('vitest-integration')) {
-      extraDeps.push(
+      [
         'happy-dom',
         'vitest',
         'playwright',
         '@vitest/browser',
-        '@storybook/experimental-addon-test'
-      );
+        '@storybook/experimental-addon-test',
+      ].forEach((dep) => extraDeps.add(dep));
 
       if (details.template.expected.framework.includes('nextjs')) {
-        extraDeps.push('@storybook/experimental-nextjs-vite', 'jsdom');
+        extraDeps.add('@storybook/experimental-nextjs-vite');
+        extraDeps.add('jsdom');
       }
 
       // if (details.template.expected.renderer === '@storybook/svelte') {
@@ -116,7 +117,7 @@ export const sandbox: Task = {
       cwd: details.sandboxDir,
       debug: options.debug,
       dryRun: options.dryRun,
-      extraDeps,
+      extraDeps: Array.from(extraDeps),
     });
 
     await extendMain(details, options);

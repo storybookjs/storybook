@@ -32,7 +32,15 @@ interface StoryProps extends BaseAnnotations<any, DecoratorReturnType, WebRender
      * If source is true, then the source of the story will be used instead.
      * If source is a string, it replaces the source of the story.
      */
-    source?: boolean | string
+    source?: boolean | string;
+    /**
+     * List of tags to add to the story.
+     * 
+     * It must be a static array of strings.
+     * 
+     * @example tags={['!dev', 'autodocs']}
+     */
+    tags?: string[];
 }
 
 interface TemplateProps extends BaseAnnotations<any, DecoratorReturnType> {
@@ -54,9 +62,9 @@ interface MetaProps extends BaseMeta<any>, BaseAnnotations<any, DecoratorReturnT
     /**
      * List of tags to add to the stories.
      * 
-     * It should be a static array of strings.
+     * It must be a static array of strings.
      * 
-     * @example tags={['autodocs']}
+     * @example tags={['!dev', 'autodocs']}
      */
     tags?: string[];
 }

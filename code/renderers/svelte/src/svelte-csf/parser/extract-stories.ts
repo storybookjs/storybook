@@ -51,7 +51,7 @@ function getStaticBooleanAttribute(name: string, attributes: any[]): boolean | u
   throw new Error(`Attribute ${name} is not a static boolean`);
 }
 
-function getMetaTags(attributes: any[]): string[] {
+function getTags(attributes: any[]): string[] {
 
   const finalTags = getStaticBooleanAttribute('autodocs', attributes) ? ["autodocs"] : [];
 
@@ -93,7 +93,7 @@ function getMetaTags(attributes: any[]): string[] {
 function fillMetaFromAttributes(meta: MetaDef, attributes: any[]) {
   meta.title = getStaticAttribute('title', attributes);
   meta.id = getStaticAttribute('id', attributes);
-  const tags = getMetaTags(attributes);
+  const tags = getTags(attributes);
   if (tags.length > 0) {
     meta.tags = tags;
   }
@@ -201,6 +201,8 @@ export function extractStories(component: string): StoriesDef {
           isTemplate ? undefined : allocatedIds
         );
 
+        const tags = getTags(node.attributes);
+
         if (name && id) {
           // ignore stories without children
           let source: string = '';
@@ -216,6 +218,7 @@ export function extractStories(component: string): StoriesDef {
             name,
             template: isTemplate,
             source,
+            tags,
             hasArgs: node.attributes.find((att: any) => att.type === 'Let') != null,
           };
           if (!isTemplate && latestComment) {

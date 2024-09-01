@@ -7,6 +7,7 @@ export interface StoryDef {
   source: string;
   description?: string;
   hasArgs: boolean;
+  tags: string[];
 }
 
 /**

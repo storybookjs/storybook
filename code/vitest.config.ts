@@ -2,6 +2,7 @@ import { coverageConfigDefaults, defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
+    reporters: ['default', '@storybook/experimental-addon-vitest/reporter'],
     coverage: {
       all: false,
       provider: 'istanbul',

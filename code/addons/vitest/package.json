@@ -34,6 +34,11 @@
       "import": "./dist/plugin/index.js",
       "require": "./dist/plugin/index.cjs"
     },
+    "./reporter": {
+      "types": "./dist/plugin/reporter.d.ts",
+      "import": "./dist/plugin/reporter.js",
+      "require": "./dist/plugin/reporter.cjs"
+    },
     "./internal/global-setup": {
       "types": "./dist/plugin/global-setup.d.ts",
       "import": "./dist/plugin/global-setup.js",
@@ -99,6 +104,7 @@
     "nodeEntries": [
       "./src/preset.ts",
       "./src/plugin/index.ts",
+      "./src/plugin/reporter.ts",
       "./src/plugin/global-setup.ts",
       "./src/postinstall.ts"
     ]

@@ -26,6 +26,7 @@ import { PREPARE_ABORTED } from './Render';
 
 const { AbortController } = globalThis;
 
+export const INTERACTION_STORAGE_KEY = 'disableInteractions';
 export type RenderPhase =
   | 'preparing'
   | 'loading'
@@ -302,11 +303,11 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
             context.mount = async () => {
               throw new MountMustBeDestructuredError({ playFunction: playFunction.toString() });
             };
-            if (!initial || window?.localStorage.getItem('disableInteractions') !== 'true') {
+            if (window?.localStorage.getItem(INTERACTION_STORAGE_KEY) !== 'true') {
               await this.runPhase(abortSignal, 'playing', async () => playFunction(context));
             }
           } else {
-            if (!initial || window?.localStorage.getItem('disableInteractions') !== 'true') {
+            if (window?.localStorage.getItem(INTERACTION_STORAGE_KEY) !== 'true') {
               // when mount is used the playing phase will start later, right after mount is called in the play function
               await playFunction(context);
             }

@@ -21,7 +21,7 @@ import dedent from 'ts-dedent';
 import { type PostinstallOptions } from '../../../lib/cli-storybook/src/add';
 import { printError, printInfo, printSuccess, step } from './postinstall-logger';
 
-const addonName = '@storybook/experimental-addon-vitest';
+const addonName = '@storybook/experimental-addon-test';
 const dependencies = ['vitest', '@vitest/browser', 'playwright'];
 const optionalDependencies = ['@vitest/coverage-istanbul', '@vitest/coverage-v8'];
 const extensions = ['.js', '.jsx', '.ts', '.tsx', '.cts', '.mts', '.cjs', '.mjs'];
@@ -55,6 +55,8 @@ export default async function postInstall(options: PostinstallOptions) {
       ? info.rendererPackageName
       : null;
 
+  const vitestVersion = await packageManager.getInstalledVersion('vitest');
+
   const prerequisiteCheck = async () => {
     const reasons = [];
 
@@ -73,42 +75,11 @@ export default async function postInstall(options: PostinstallOptions) {
       `);
     }
 
-    const vitestVersion = await packageManager.getInstalledVersion('vitest');
     if (vitestVersion && !satisfies(vitestVersion, '>=2.0.0')) {
       reasons.push(`
         The Vitest addon requires Vitest 2.0.0 or later.
         Please update your ${colors.pink.bold('vitest')} dependency and try again.
       `);
-    } else {
-      const depRanges = await packageManager.getAllDependencies();
-      const checkDependencies = [...dependencies, ...optionalDependencies];
-      const latestVersions = await packageManager.getVersions(...checkDependencies);
-      const latestPackages = checkDependencies.map(
-        (pkg, index) => [pkg, latestVersions[index].replace('^', '')] as const
-      );
-
-      let hasInconsistentPackageVersions = false;
-      for (const [pkg, latestVersion] of latestPackages) {
-        if (depRanges[pkg]) {
-          if (!dependencies.includes(pkg)) {
-            // Add found optional dependency so it will be updated to the latest version
-            dependencies.push(pkg);
-          }
-
-          if (!satisfies(latestVersion, depRanges[pkg])) {
-            hasInconsistentPackageVersions = true;
-            reasons.push(dedent`
-              The package ${colors.pink.bold(pkg)} is already installed and cannot be updated to ${colors.pink.bold(latestVersion)} because it would not satisfy "${colors.pink.bold(depRanges[pkg])}".
-            `);
-          }
-        }
-      }
-
-      if (hasInconsistentPackageVersions) {
-        reasons.push(
-          'Update your dependencies and try again, or manually install the Vitest addon.'
-        );
-      }
     }
 
     if (info.frameworkPackageName === '@storybook/nextjs') {
@@ -151,6 +122,13 @@ export default async function postInstall(options: PostinstallOptions) {
     return;
   }
 
+  const allDeps = await packageManager.getAllDependencies();
+  optionalDependencies.forEach((dep) => {
+    if (allDeps[dep]) {
+      dependencies.push(dep);
+    }
+  });
+
   const vitestInfo = getVitestPluginInfo(info.frameworkPackageName);
 
   if (info.frameworkPackageName === '@storybook/nextjs') {
@@ -173,12 +151,12 @@ export default async function postInstall(options: PostinstallOptions) {
   }
 
   logger.line(1);
-  logger.plain(`${step} Installing dependencies:`);
+  logger.plain(`${step} Installing/updating dependencies:`);
   logger.plain(colors.gray('  ' + dependencies.join(', ')));
 
   await packageManager.addDependencies(
     { installAsDevDependencies: true },
-    dependencies.map((p) => `${p}@latest`)
+    dependencies.map((p) => `${p}@${p.includes('vitest') ? vitestVersion : 'latest'}`)
   );
 
   logger.line(1);
@@ -206,6 +184,7 @@ export default async function postInstall(options: PostinstallOptions) {
       import { setProjectAnnotations } from '${annotationsImport}'
       ${previewExists ? `import * as projectAnnotations from './preview'` : ''}
 
+      // This is an important step to apply the right configuration when testing your stories.
       // More info at: https://storybook.js.org/docs/api/portable-stories/portable-stories-vitest#setprojectannotations
       const project = setProjectAnnotations(${previewExists ? 'projectAnnotations' : '[]'})
 
@@ -230,7 +209,8 @@ export default async function postInstall(options: PostinstallOptions) {
           Found an existing Vitest workspace file:
           ${colors.gray(browserWorkspaceFile)}
 
-          I cannot safely extend your existing workspace file automatically, you must do it yourself.
+          I was able to configure most of the addon but could not safely extend 
+          your existing workspace file automatically, you must do it yourself. This was the last step.
 
           Please refer to the documentation to complete the setup manually:
           ${c.cyan`https://storybook.js.org/docs/writing-tests/test-runner-with-vitest#manual`}
@@ -247,8 +227,7 @@ export default async function postInstall(options: PostinstallOptions) {
         browserWorkspaceFile,
         dedent`
           import { defineWorkspace } from 'vitest/config';
-          import { storybookTest } from '@storybook/experimental-addon-test/vite-plugin';
-          ${vitestInfo.frameworkPluginImport ? vitestInfo.frameworkPluginImport + '\n' : ''}
+          import { storybookTest } from '@storybook/experimental-addon-test/vite-plugin';${vitestInfo.frameworkPluginImport}
 
           // More info at: https://storybook.js.org/docs/writing-tests/test-runner-with-vitest
           export default defineWorkspace([
@@ -256,7 +235,7 @@ export default async function postInstall(options: PostinstallOptions) {
             {
               extends: '${viteConfig ? relative(dirname(browserWorkspaceFile), viteConfig) : ''}',
               plugins: [
-                storybookTest(),${vitestInfo.frameworkPluginCall ? '\n      ' + vitestInfo.frameworkPluginDocs + vitestInfo.frameworkPluginCall : ''}
+                storybookTest(),${vitestInfo.frameworkPluginDocs + vitestInfo.frameworkPluginCall}
               ],
               test: {
                 name: 'storybook',
@@ -266,6 +245,7 @@ export default async function postInstall(options: PostinstallOptions) {
                   name: 'chromium',
                   provider: 'playwright',
                 },
+                // Make sure to adjust this pattern to match your stories files.
                 include: ['**/*.stories.?(m)[jt]s?(x)'],
                 setupFiles: ['./.storybook/vitest.setup.ts'],
               },
@@ -284,21 +264,22 @@ export default async function postInstall(options: PostinstallOptions) {
       'vitest.config.ts',
       dedent`
         import { defineConfig } from "vitest/config";
-        import { storybookTest } from "@storybook/experimental-addon-test/vite-plugin";
-        ${vitestInfo.frameworkPluginImport ? vitestInfo.frameworkPluginImport + '\n' : ''}
+        import { storybookTest } from "@storybook/experimental-addon-test/vite-plugin";${vitestInfo.frameworkPluginImport}
 
         // More info at: https://storybook.js.org/docs/writing-tests/test-runner-with-vitest
         export default defineConfig({
           plugins: [
-            storybookTest(),${vitestInfo.frameworkPluginCall ? '\n      ' + vitestInfo.frameworkPluginDocs + vitestInfo.frameworkPluginCall : ''}
+            storybookTest(),${vitestInfo.frameworkPluginDocs + vitestInfo.frameworkPluginCall}
           ],
           test: {
+            name: 'storybook',
             browser: {
               enabled: true,
               headless: true,
               name: 'chromium',
               provider: 'playwright',
             },
+            // Make sure to adjust this pattern to match your stories files.
             include: ['**/*.stories.?(m)[jt]s?(x)'],
             setupFiles: ['./.storybook/vitest.setup.ts'],
           },
@@ -329,7 +310,7 @@ const getVitestPluginInfo = (framework: string) => {
       "import { storybookNextJsPlugin } from '@storybook/experimental-nextjs-vite/vite-plugin'";
     frameworkPluginCall = 'storybookNextJsPlugin()';
     frameworkPluginDocs =
-      '// More info at: https://github.com/storybookjs/vite-plugin-storybook-nextjs\n      ';
+      '// More info at: https://github.com/storybookjs/vite-plugin-storybook-nextjs\n';
   }
 
   if (framework === '@storybook/sveltekit') {
@@ -342,6 +323,11 @@ const getVitestPluginInfo = (framework: string) => {
     frameworkPluginImport = "import { storybookVuePlugin } from '@storybook/vue3-vite/vite-plugin'";
     frameworkPluginCall = 'storybookVuePlugin()';
   }
+
+  // spaces for file identation
+  frameworkPluginImport = `\n${frameworkPluginImport}`;
+  frameworkPluginDocs = frameworkPluginDocs ? `\n      ${frameworkPluginDocs}` : '';
+  frameworkPluginCall = frameworkPluginCall ? `\n      ${frameworkPluginCall},` : '';
 
   return { frameworkPluginImport, frameworkPluginCall, frameworkPluginDocs };
 };

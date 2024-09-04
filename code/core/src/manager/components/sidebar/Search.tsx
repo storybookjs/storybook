@@ -43,8 +43,9 @@ const options = {
   maxPatternLength: 32,
   minMatchCharLength: 1,
   keys: [
-    { name: 'name', weight: 0.7 },
+    { name: 'name', weight: 0.6 },
     { name: 'path', weight: 0.3 },
+    { name: 'headings', weight: 0.1 },
   ],
 } as FuseOptions<SearchItem>;
 
@@ -210,6 +211,9 @@ export const Search = React.memo<{
             };
           })
         );
+        // if(item.headings) {
+        //   tems.headings.
+        // }
       }
       return acc;
     }, []);
@@ -219,6 +223,7 @@ export const Search = React.memo<{
   const getResults = useCallback(
     (input: string) => {
       const fuse = makeFuse();
+      console.log({ fuse });
 
       if (!input) {
         return [];
@@ -226,7 +231,8 @@ export const Search = React.memo<{
 
       let results: DownshiftItem[] = [];
       const resultIds: Set<string> = new Set();
-      const distinctResults = (fuse.search(input) as SearchResult[]).filter(({ item }) => {
+      const allResults = fuse.search(input) as SearchResult[];
+      const distinctResults = allResults.filter(({ item }) => {
         if (
           !(item.type === 'component' || item.type === 'docs' || item.type === 'story') ||
           // @ts-expect-error (non strict)
@@ -237,7 +243,6 @@ export const Search = React.memo<{
         resultIds.add(item.id);
         return true;
       });
-
       if (distinctResults.length) {
         results = distinctResults.slice(0, allComponents ? 1000 : DEFAULT_MAX_SEARCH_RESULTS);
         if (distinctResults.length > DEFAULT_MAX_SEARCH_RESULTS && !allComponents) {

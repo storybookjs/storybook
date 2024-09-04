@@ -8,31 +8,35 @@ import { transparentize } from 'polished';
 import { UseSymbol } from './IconSymbols';
 import { CollapseIcon } from './components/CollapseIcon';
 
-export const TypeIcon = styled.svg<{ type: 'component' | 'story' | 'group' | 'document' }>(
-  ({ theme, type }) => ({
-    width: 14,
-    height: 14,
-    flex: '0 0 auto',
-    color: (() => {
-      if (type === 'group') {
-        return theme.base === 'dark' ? theme.color.primary : theme.color.ultraviolet;
-      }
+export const TypeIcon = styled.svg<{
+  type: 'component' | 'story' | 'group' | 'document' | 'heading';
+}>(({ theme, type }) => ({
+  width: 14,
+  height: 14,
+  flex: '0 0 auto',
+  color: (() => {
+    if (type === 'group') {
+      return theme.base === 'dark' ? theme.color.primary : theme.color.ultraviolet;
+    }
 
-      if (type === 'component') {
-        return theme.color.secondary;
-      }
+    if (type === 'component') {
+      return theme.color.secondary;
+    }
 
-      if (type === 'document') {
-        return theme.base === 'dark' ? theme.color.gold : '#ff8300';
-      }
+    if (type === 'document') {
+      return theme.base === 'dark' ? theme.color.gold : '#ff8300';
+    }
 
-      if (type === 'story') {
-        return theme.color.seafoam;
-      }
-      return 'currentColor';
-    })(),
-  })
-);
+    if (type === 'story') {
+      return theme.color.seafoam;
+    }
+
+    if (type === 'heading') {
+      return theme.color.secondary;
+    }
+    return 'currentColor';
+  })(),
+}));
 
 const BranchNode = styled.button<{
   depth?: number;
@@ -138,6 +142,7 @@ export const ComponentNode: FC<ComponentProps<typeof BranchNode>> = React.memo(
 
 export const DocumentNode: FC<ComponentProps<typeof LeafNode> & { docsMode: boolean }> = React.memo(
   function DocumentNode({ theme, children, docsMode, ...props }) {
+    console.log({ props });
     return (
       <LeafNode tabIndex={-1} {...props}>
         <Wrapper>

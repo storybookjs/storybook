@@ -45,7 +45,12 @@ export interface ExpandType {
   moreCount: number;
 }
 
-export type SearchItem = Item & { refId: string; path: string[]; status?: API_StatusValue };
+export type SearchItem = Item & {
+  refId: string;
+  path: string[];
+  status?: API_StatusValue;
+  heading?: string;
+};
 
 export type SearchResult = Fuse.FuseResultWithMatches<SearchItem> &
   Fuse.FuseResultWithScore<SearchItem>;

@@ -190,6 +190,10 @@ const Result: FC<
 
   const [icon] = item.status ? statusMapping[item.status] : [];
 
+  const heading = item.heading && ` ${item.heading}`;
+  console.log('Result', item);
+
+  // FIXME: result.heading ? 'heading' : 'document'
   return (
     <ResultRow {...props} onClick={click}>
       <IconWrapper>
@@ -204,14 +208,17 @@ const Result: FC<
           </TypeIcon>
         )}
         {!(item.type === 'component' || item.type === 'story') && (
-          <TypeIcon viewBox="0 0 14 14" width="14" height="14" type="document">
+          <TypeIcon viewBox="0 0 14 14" width="14" height="14" type={'document'}>
             <UseSymbol type="document" />
           </TypeIcon>
         )}
       </IconWrapper>
       <ResultRowContent className="search-result-item--label">
         <Title>
-          <Highlight match={nameMatch}>{item.name}</Highlight>
+          <Highlight match={nameMatch}>
+            {item.name}
+            {heading}
+          </Highlight>
         </Title>
         <Path>
           {item.path.map((group, index) => (

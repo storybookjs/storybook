@@ -59,7 +59,22 @@ const results = stories
   .filter(({ name }) => name.includes('A2'))
   .map((item) => {
     const i = item.name.indexOf('A2');
-    return { item, matches: [{ value: item.name, indices: [[i, i + 1]] }], score: 0 };
+    return {
+      item,
+      matches: [{ value: item.name, indices: [[i, i + 1]] }],
+      score: 0,
+    };
+  });
+
+const headingResults = stories
+  .filter(({ name }) => name.includes('A2'))
+  .map((item, index) => {
+    const i = item.name.indexOf('A2');
+    return {
+      item: { ...item, type: 'docs', headings: [`Heading ${index}`] },
+      matches: [{ value: item.name, indices: [[i, i + 1]], key: 'headings', arrayIndex: 0 }],
+      score: 0,
+    };
   });
 
 const recents = stories
@@ -77,6 +92,10 @@ export const searching = {
   getItemProps: passKey,
   highlightedIndex: 0,
 };
+const headings = {
+  ...searching,
+  results: headingResults,
+};
 export const noResults = {
   ...searching,
   results: [] as any,
@@ -91,6 +110,8 @@ export const lastViewed = {
 };
 
 export const Searching = () => <SearchResults {...searching} />;
+
+export const DocsHeadings = () => <SearchResults {...headings} />;
 
 export const NoResults = () => <SearchResults {...noResults} />;
 

@@ -1,3 +1,5 @@
+/* eslint-disable playwright/expect-expect */
+
 /* eslint-disable no-underscore-dangle */
 import { promises as fs } from 'node:fs';
 import { join } from 'node:path';

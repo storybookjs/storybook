@@ -23,14 +23,14 @@ test.describe('Manager UI', () => {
 
       // toggle with keyboard shortcut
       await sbPage.page.locator('html').press('Alt+s');
-      await expect(sbPage.page.locator('.sidebar-container')).not.toBeVisible();
+      await expect(sbPage.page.locator('.sidebar-container')).toBeHidden();
       await sbPage.page.locator('html').press('Alt+s');
       await expect(sbPage.page.locator('.sidebar-container')).toBeVisible();
 
       // toggle with menu item
       await sbPage.page.locator('[aria-label="Shortcuts"]').click();
       await sbPage.page.locator('#list-item-S').click();
-      await expect(sbPage.page.locator('.sidebar-container')).not.toBeVisible();
+      await expect(sbPage.page.locator('.sidebar-container')).toBeHidden();
 
       // toggle with "show sidebar" button
       await sbPage.page.locator('[aria-label="Show sidebar"]').click();
@@ -40,8 +40,8 @@ test.describe('Manager UI', () => {
     test('Toolbar toggling', async ({ page }) => {
       const sbPage = new SbPage(page);
       const expectToolbarVisibility = async (visible: boolean) => {
-        expect(async () => {
-          const toolbar = await sbPage.page.locator(`[data-test-id="sb-preview-toolbar"]`);
+        await expect(async () => {
+          const toolbar = sbPage.page.locator(`[data-test-id="sb-preview-toolbar"]`);
           const marginTop = await toolbar.evaluate(
             (element) => window.getComputedStyle(element).marginTop
           );
@@ -73,13 +73,13 @@ test.describe('Manager UI', () => {
         // navigate to docs to hide panel
         await sbPage.navigateToStory('example/button', 'docs');
 
-        await expect(sbPage.page.locator('#storybook-panel-root')).not.toBeVisible();
+        await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
 
         // toggle with keyboard shortcut
         await sbPage.page.locator('html').press('Alt+a');
-        await expect(sbPage.page.locator('#storybook-panel-root')).not.toBeVisible();
+        await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
         await sbPage.page.locator('html').press('Alt+a');
-        await expect(sbPage.page.locator('#storybook-panel-root')).not.toBeVisible();
+        await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
       });
 
       test('Toggling', async ({ page }) => {
@@ -92,14 +92,14 @@ test.describe('Manager UI', () => {
 
         // toggle with keyboard shortcut
         await sbPage.page.locator('html').press('Alt+a');
-        await expect(sbPage.page.locator('#storybook-panel-root')).not.toBeVisible();
+        await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
         await sbPage.page.locator('html').press('Alt+a');
         await expect(sbPage.page.locator('#storybook-panel-root')).toBeVisible();
 
         // toggle with menu item
         await sbPage.page.locator('[aria-label="Shortcuts"]').click();
         await sbPage.page.locator('#list-item-A').click();
-        await expect(sbPage.page.locator('#storybook-panel-root')).not.toBeVisible();
+        await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
 
         // toggle with "show addons" button
         await sbPage.page.locator('[aria-label="Show addons"]').click();
@@ -121,7 +121,7 @@ test.describe('Manager UI', () => {
 
         // hide with keyboard shortcut
         await sbPage.page.locator('html').press('Alt+a');
-        await expect(sbPage.page.locator('#storybook-panel-root')).not.toBeVisible();
+        await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
 
         // toggling position should also show the panel again
         await sbPage.page.locator('html').press('Alt+d');
@@ -140,8 +140,8 @@ test.describe('Manager UI', () => {
 
       // toggle with keyboard shortcut
       await sbPage.page.locator('html').press('Alt+f');
-      await expect(sbPage.page.locator('#storybook-panel-root')).not.toBeVisible();
-      await expect(sbPage.page.locator('.sidebar-container')).not.toBeVisible();
+      await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
+      await expect(sbPage.page.locator('.sidebar-container')).toBeHidden();
 
       await sbPage.page.locator('html').press('Alt+f');
       await expect(sbPage.page.locator('#storybook-panel-root')).toBeVisible();
@@ -150,8 +150,8 @@ test.describe('Manager UI', () => {
       // toggle with menu item
       await sbPage.page.locator('[aria-label="Shortcuts"]').click();
       await sbPage.page.locator('#list-item-F').click();
-      await expect(sbPage.page.locator('.sidebar-container')).not.toBeVisible();
-      await expect(sbPage.page.locator('#storybook-panel-root')).not.toBeVisible();
+      await expect(sbPage.page.locator('.sidebar-container')).toBeHidden();
+      await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
 
       // toggle with "go/exit fullscreen" button
       await sbPage.page.locator('[aria-label="Exit full screen"]').click();
@@ -159,20 +159,20 @@ test.describe('Manager UI', () => {
       await expect(sbPage.page.locator('.sidebar-container')).toBeVisible();
 
       await sbPage.page.locator('[aria-label="Go full screen"]').click();
-      await expect(sbPage.page.locator('#storybook-panel-root')).not.toBeVisible();
-      await expect(sbPage.page.locator('.sidebar-container')).not.toBeVisible();
+      await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
+      await expect(sbPage.page.locator('.sidebar-container')).toBeHidden();
 
       // go fullscreen when sidebar is shown but panel is hidden
       await sbPage.page.locator('[aria-label="Show sidebar"]').click();
       await sbPage.page.locator('[aria-label="Go full screen"]').click();
-      await expect(sbPage.page.locator('#storybook-panel-root')).not.toBeVisible();
-      await expect(sbPage.page.locator('.sidebar-container')).not.toBeVisible();
+      await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
+      await expect(sbPage.page.locator('.sidebar-container')).toBeHidden();
 
       // go fullscreen when panel is shown but sidebar is hidden
       await sbPage.page.locator('[aria-label="Show addons"]').click();
       await sbPage.page.locator('[aria-label="Go full screen"]').click();
-      await expect(sbPage.page.locator('#storybook-panel-root')).not.toBeVisible();
-      await expect(sbPage.page.locator('.sidebar-container')).not.toBeVisible();
+      await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
+      await expect(sbPage.page.locator('.sidebar-container')).toBeHidden();
     });
 
     test('Settings page', async ({ page }) => {
@@ -182,7 +182,7 @@ test.describe('Manager UI', () => {
 
       await expect(sbPage.page.url()).toContain('/settings/about');
 
-      await expect(sbPage.page.locator('#storybook-panel-root')).not.toBeVisible();
+      await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
 
       await sbPage.page.locator('[title="Close settings page"]').click();
       await expect(sbPage.page.url()).not.toContain('/settings/about');
@@ -202,12 +202,12 @@ test.describe('Manager UI', () => {
     test('Navigate to story', async ({ page }) => {
       const sbPage = new SbPage(page);
 
-      const closeNavigationButton = await sbPage.page.locator('[title="Close navigation menu"]');
-      const mobileNavigationHeading = await sbPage.page.locator('[title="Open navigation menu"]');
+      const closeNavigationButton = sbPage.page.locator('[title="Close navigation menu"]');
+      const mobileNavigationHeading = sbPage.page.locator('[title="Open navigation menu"]');
 
       // navigation menu is closed
-      await expect(closeNavigationButton).not.toBeVisible();
-      await expect(sbPage.page.locator('#storybook-explorer-menu')).not.toBeVisible();
+      await expect(closeNavigationButton).toBeHidden();
+      await expect(sbPage.page.locator('#storybook-explorer-menu')).toBeHidden();
 
       // open navigation menu
       await mobileNavigationHeading.click();
@@ -223,7 +223,7 @@ test.describe('Manager UI', () => {
 
       // navigation menu is closed
       await expect(mobileNavigationHeading).toHaveText('Example/Button/Secondary');
-      await expect(sbPage.page.locator('#storybook-explorer-menu')).not.toBeVisible();
+      await expect(sbPage.page.locator('#storybook-explorer-menu')).toBeHidden();
       // story has changed
       await expect(sbPage.page.url()).toContain('example-button--secondary');
     });
@@ -231,13 +231,13 @@ test.describe('Manager UI', () => {
     test('Open and close addon panel', async ({ page }) => {
       const sbPage = new SbPage(page);
 
-      const mobileNavigationHeading = await sbPage.page.locator('[title="Open navigation menu"]');
+      const mobileNavigationHeading = sbPage.page.locator('[title="Open navigation menu"]');
       await mobileNavigationHeading.click();
       await sbPage.navigateToStory('Example/Button', 'Secondary');
 
       // panel is closed
       await expect(mobileNavigationHeading).toHaveText('Example/Button/Secondary');
-      await expect(sbPage.page.locator('#tabbutton-addon-controls')).not.toBeVisible();
+      await expect(sbPage.page.locator('#tabbutton-addon-controls')).toBeHidden();
 
       // open panel
       await sbPage.page.locator('[title="Open addon panel"]').click();
@@ -250,7 +250,7 @@ test.describe('Manager UI', () => {
 
       // panel is closed
       await expect(mobileNavigationHeading).toHaveText('Example/Button/Secondary');
-      await expect(sbPage.page.locator('#tabbutton-addon-controls')).not.toBeVisible();
+      await expect(sbPage.page.locator('#tabbutton-addon-controls')).toBeHidden();
     });
   });
 });

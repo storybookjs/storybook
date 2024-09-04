@@ -113,7 +113,7 @@ export const storybookTest = (options?: UserOptions): Plugin => {
       if (typeof config.test.setupFiles === 'string') {
         config.test.setupFiles = [config.test.setupFiles];
       }
-      config.test.setupFiles.push('@storybook/experimental-addon-vitest/internal/setup-file');
+      config.test.setupFiles.push('@storybook/experimental-addon-test/internal/setup-file');
 
       // when a Storybook script is provided, we spawn Storybook for the user when in watch mode
       if (finalOptions.storybookScript) {
@@ -121,14 +121,14 @@ export const storybookTest = (options?: UserOptions): Plugin => {
         if (typeof config.test.globalSetup === 'string') {
           config.test.globalSetup = [config.test.globalSetup];
         }
-        config.test.globalSetup.push('@storybook/experimental-addon-vitest/internal/global-setup');
+        config.test.globalSetup.push('@storybook/experimental-addon-test/internal/global-setup');
       }
 
       config.test.server ??= {};
       config.test.server.deps ??= {};
       config.test.server.deps.inline ??= [];
       if (Array.isArray(config.test.server.deps.inline)) {
-        config.test.server.deps.inline.push('@storybook/experimental-addon-vitest');
+        config.test.server.deps.inline.push('@storybook/experimental-addon-test');
       }
     },
     async transform(code, id) {

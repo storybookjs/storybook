@@ -13,6 +13,10 @@ import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 import SemVer from 'semver';
 import { dedent } from 'ts-dedent';
 
+import {
+  getRequireWrapperName,
+  wrapValueWithRequireWrapper,
+} from './automigrate/fixes/wrap-require-utils';
 import { postinstallAddon } from './postinstallAddon';
 
 export interface PostinstallOptions {
@@ -136,7 +140,16 @@ export async function add(
   await packageManager.addDependencies({ installAsDevDependencies: true }, [addonWithVersion]);
 
   logger.log(`Adding '${addon}' to main.js addons field.`);
-  main.appendValueToArray(['addons'], addonName);
+
+  const mainConfigAddons = main.getFieldNode(['addons']);
+  if (mainConfigAddons && getRequireWrapperName(main) !== null) {
+    const addonNode = main.valueToNode(addonName);
+    main.appendNodeToArray(['addons'], addonNode as any);
+    wrapValueWithRequireWrapper(main, addonNode as any);
+  } else {
+    main.appendValueToArray(['addons'], addonName);
+  }
+
   await writeConfig(main);
 
   if (!skipPostinstall && isCoreAddon(addonName)) {

@@ -1,21 +1,21 @@
 {
-  "name": "@storybook/experimental-addon-vitest",
-  "version": "8.3.0-beta.1",
+  "name": "@storybook/experimental-addon-test",
+  "version": "8.3.0-beta.2",
   "description": "Integrate Vitest with Storybook",
   "keywords": [
     "storybook-addons",
-    "addon-vitest",
+    "addon-test",
     "vitest",
     "testing"
   ],
-  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/vitest",
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/test",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/storybookjs/storybook.git",
-    "directory": "code/addons/vitest"
+    "directory": "code/addons/test"
   },
   "funding": {
     "type": "opencollective",
@@ -29,7 +29,7 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
-    "./plugin": {
+    "./vite-plugin": {
       "types": "./dist/plugin/index.d.ts",
       "import": "./dist/plugin/index.js",
       "require": "./dist/plugin/index.cjs"

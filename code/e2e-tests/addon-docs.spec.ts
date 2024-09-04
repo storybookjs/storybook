@@ -1,3 +1,6 @@
+/* eslint-disable playwright/no-conditional-expect */
+
+/* eslint-disable playwright/no-conditional-in-test */
 import { expect, test } from '@playwright/test';
 import process from 'process';
 import { dedent } from 'ts-dedent';
@@ -94,14 +97,14 @@ test.describe('addon-docs', () => {
 
     const toggleCount = await toggles.count();
     for (let i = 0; i < toggleCount; i += 1) {
-      const toggle = await toggles.nth(i);
-      await toggle.click({ force: true });
+      const toggle = toggles.nth(i);
+      await toggle.click();
     }
 
     const codes = root.locator('pre.prismjs');
     const codeCount = await codes.count();
     for (let i = 0; i < codeCount; i += 1) {
-      const code = await codes.nth(i);
+      const code = codes.nth(i);
       const text = await code.innerText();
       await expect(text).not.toMatch(/^\(args\) => /);
     }
@@ -132,13 +135,13 @@ test.describe('addon-docs', () => {
     const toggles = root.locator('.docblock-code-toggle');
 
     // Open up the first and second code toggle (i.e the "Basic" story outside and inside the Stories block)
-    await (await toggles.nth(0)).click({ force: true });
-    await (await toggles.nth(1)).click({ force: true });
+    await toggles.nth(0).click();
+    await toggles.nth(1).click();
 
     // Check they both say "Basic"
     const codes = root.locator('pre.prismjs');
-    const primaryCode = await codes.nth(0);
-    const storiesCode = await codes.nth(1);
+    const primaryCode = codes.nth(0);
+    const storiesCode = codes.nth(1);
     await expect(primaryCode).toContainText('Basic');
     await expect(storiesCode).toContainText('Basic');
 
@@ -179,7 +182,7 @@ test.describe('addon-docs', () => {
     const root = sbPage.previewRoot();
     const stories = root.locator('.sb-story button');
 
-    await expect(await stories.count()).toBe(3);
+    await expect(stories).toHaveCount(3);
     await expect(stories.first()).toHaveText('Basic');
     await expect(stories.nth(1)).toHaveText('Basic');
     await expect(stories.last()).toHaveText('Another');
@@ -210,12 +213,12 @@ test.describe('addon-docs', () => {
     }
 
     // Arrange - Get the actual versions
-    const mdxReactVersion = await root.getByTestId('mdx-react');
-    const mdxReactDomVersion = await root.getByTestId('mdx-react-dom');
-    const mdxReactDomServerVersion = await root.getByTestId('mdx-react-dom-server');
-    const componentReactVersion = await root.getByTestId('component-react');
-    const componentReactDomVersion = await root.getByTestId('component-react-dom');
-    const componentReactDomServerVersion = await root.getByTestId('component-react-dom-server');
+    const mdxReactVersion = root.getByTestId('mdx-react');
+    const mdxReactDomVersion = root.getByTestId('mdx-react-dom');
+    const mdxReactDomServerVersion = root.getByTestId('mdx-react-dom-server');
+    const componentReactVersion = root.getByTestId('component-react');
+    const componentReactDomVersion = root.getByTestId('component-react-dom');
+    const componentReactDomServerVersion = root.getByTestId('component-react-dom-server');
 
     // Assert - The versions are in the expected range
     await expect(mdxReactVersion).toHaveText(expectedReactVersionRange);
@@ -232,9 +235,9 @@ test.describe('addon-docs', () => {
     await sbPage.navigateToStory('addons/docs/docs2/resolvedreact', 'docs');
 
     // Arrange - Get the actual versions
-    const autodocsReactVersion = await root.getByTestId('react');
-    const autodocsReactDomVersion = await root.getByTestId('react-dom');
-    const autodocsReactDomServerVersion = await root.getByTestId('react-dom-server');
+    const autodocsReactVersion = root.getByTestId('react');
+    const autodocsReactDomVersion = root.getByTestId('react-dom');
+    const autodocsReactDomServerVersion = root.getByTestId('react-dom-server');
 
     // Assert - The versions are in the expected range
     await expect(autodocsReactVersion).toHaveText(expectedReactVersionRange);
@@ -247,9 +250,9 @@ test.describe('addon-docs', () => {
     await sbPage.navigateToStory('addons/docs/docs2/resolvedreact', 'story');
 
     // Arrange - Get the actual versions
-    const storyReactVersion = await root.getByTestId('react');
-    const storyReactDomVersion = await root.getByTestId('react-dom');
-    const storyReactDomServerVersion = await root.getByTestId('react-dom-server');
+    const storyReactVersion = root.getByTestId('react');
+    const storyReactDomVersion = root.getByTestId('react-dom');
+    const storyReactDomServerVersion = root.getByTestId('react-dom-server');
 
     // Assert - The versions are in the expected range
     await expect(storyReactVersion).toHaveText(expectedReactVersionRange);
@@ -265,12 +268,14 @@ test.describe('addon-docs', () => {
     const root = sbPage.previewRoot();
 
     const storyHeadings = root.locator('.sb-anchor > h3');
-    await expect(await storyHeadings.count()).toBe(6);
-    await expect(storyHeadings.nth(0)).toHaveText('Default A');
-    await expect(storyHeadings.nth(1)).toHaveText('Span Content');
-    await expect(storyHeadings.nth(2)).toHaveText('Code Content');
-    await expect(storyHeadings.nth(3)).toHaveText('Default B');
-    await expect(storyHeadings.nth(4)).toHaveText('H 1 Content');
-    await expect(storyHeadings.nth(5)).toHaveText('H 2 Content');
+    await expect(storyHeadings).toHaveCount(6);
+    await expect(storyHeadings).toHaveText([
+      'Default A',
+      'Span Content',
+      'Code Content',
+      'Default B',
+      'H 1 Content',
+      'H 2 Content',
+    ]);
   });
 });

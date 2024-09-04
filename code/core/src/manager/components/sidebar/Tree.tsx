@@ -153,6 +153,7 @@ const Node = React.memo<NodeProps>(function Node({
 }) {
   const { isDesktop, isMobile, setMobileMenuOpen } = useLayout();
   const theme = useTheme();
+  const { counts, statuses } = useStatusSummary(item);
 
   if (!isDisplayed) {
     return null;
@@ -283,8 +284,6 @@ const Node = React.memo<NodeProps>(function Node({
   }
 
   if (item.type === 'component' || item.type === 'group') {
-    const { counts, statuses } = useStatusSummary(item);
-
     const itemStatus = groupStatus?.[item.id];
     const color = itemStatus ? statusMapping[itemStatus][1] : null;
     const BranchNode = item.type === 'component' ? ComponentNode : GroupNode;

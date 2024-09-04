@@ -64,10 +64,19 @@ export default async function postInstall(options: PostinstallOptions) {
     logger.info(
       dedent`
         We detected that you're using Next.js.
-        We will configure the vite-plugin-storybook-nextjs plugin to allow you to run tests in Vitest.
+        We will configure the @storybook/experimental-nextjs-vite/vite-plugin to allow you to run tests in Vitest.
       `
     );
-    packages.push('vite-plugin-storybook-nextjs@latest');
+
+    try {
+      const storybookVersion = await packageManager.getInstalledVersion('storybook');
+
+      packages.push(`@storybook/experimental-nextjs-vite@^${storybookVersion}`);
+    } catch (e) {
+      console.error(
+        'Failed to install @storybook/experimental-nextjs-vite. Please install it manually'
+      );
+    }
   }
 
   logger.info(c.bold('Installing packages...'));
@@ -123,14 +132,14 @@ export default async function postInstall(options: PostinstallOptions) {
         browserWorkspaceFile,
         dedent`
           import { defineWorkspace } from 'vitest/config';
-          import { storybookTest } from '@storybook/experimental-addon-vitest/plugin';
+          import { storybookTest } from '@storybook/experimental-addon-test/vite-plugin';
           ${vitestInfo.frameworkPluginImport ? vitestInfo.frameworkPluginImport + '\n' : ''}
           export default defineWorkspace([
             '${relative(dirname(browserWorkspaceFile), rootConfig)}',
             {
               extends: '${viteConfig ? relative(dirname(browserWorkspaceFile), viteConfig) : ''}',
               plugins: [
-                storybookTest(),${vitestInfo.frameworkPluginCall ? '\n' + vitestInfo.frameworkPluginCall : ''}
+                storybookTest(),${vitestInfo.frameworkPluginCall ? '\n      ' + vitestInfo.frameworkPluginCall : ''}
               ],
               test: {
                 browser: {
@@ -154,7 +163,7 @@ export default async function postInstall(options: PostinstallOptions) {
       resolve('vitest.config.ts'),
       dedent`
         import { defineConfig } from "vitest/config";
-        import { storybookTest } from "@storybook/experimental-addon-vitest/plugin";
+        import { storybookTest } from "@storybook/experimental-addon-test/vite-plugin";
         ${vitestInfo.frameworkPluginImport ? vitestInfo.frameworkPluginImport + '\n' : ''}
         export default defineConfig({
           plugins: [
@@ -189,17 +198,19 @@ const getVitestPluginInfo = (framework: string) => {
   let frameworkPluginCall = '';
 
   if (framework === '@storybook/nextjs') {
-    frameworkPluginImport = "import vitePluginNext from 'vite-plugin-storybook-nextjs'";
-    frameworkPluginCall = 'vitePluginNext()';
+    frameworkPluginImport =
+      "import { storybookNextJsPlugin } from '@storybook/experimental-nextjs-vite/vite-plugin'";
+    frameworkPluginCall = 'storybookNextJsPlugin()';
   }
 
   if (framework === '@storybook/sveltekit') {
-    frameworkPluginImport = "import { storybookSveltekitPlugin } from '@storybook/sveltekit/vite'";
+    frameworkPluginImport =
+      "import { storybookSveltekitPlugin } from '@storybook/sveltekit/vite-plugin'";
     frameworkPluginCall = 'storybookSveltekitPlugin()';
   }
 
   if (framework === '@storybook/vue3-vite') {
-    frameworkPluginImport = "import { storybookVuePlugin } from '@storybook/vue3-vite/vite'";
+    frameworkPluginImport = "import { storybookVuePlugin } from '@storybook/vue3-vite/vite-plugin'";
     frameworkPluginCall = 'storybookVuePlugin()';
   }
 

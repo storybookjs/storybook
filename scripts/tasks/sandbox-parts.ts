@@ -207,7 +207,7 @@ function addEsbuildLoaderToStories(mainConfig: ConfigFile) {
           },
         },
         // Handle MDX files per the addon-docs presets (ish)
-        {        
+        {
           test: /template-stories\\/.*\\.mdx$/,
           exclude: /\\.stories\\.mdx$/,
           use: [
@@ -369,17 +369,19 @@ const getVitestPluginInfo = (details: TemplateDetails) => {
   const isSveltekit = framework.includes('sveltekit');
 
   if (isNextjs) {
-    frameworkPluginImport = "import vitePluginNext from 'vite-plugin-storybook-nextjs'";
-    frameworkPluginCall = 'vitePluginNext()';
+    frameworkPluginImport =
+      "import { storybookNextJsPlugin } from '@storybook/experimental-nextjs-vite/vite-plugin'";
+    frameworkPluginCall = 'storybookNextJsPlugin()';
   }
 
   if (isSveltekit) {
-    frameworkPluginImport = "import { storybookSveltekitPlugin } from '@storybook/sveltekit/vite'";
+    frameworkPluginImport =
+      "import { storybookSveltekitPlugin } from '@storybook/sveltekit/vite-plugin'";
     frameworkPluginCall = 'storybookSveltekitPlugin()';
   }
 
   if (framework === '@storybook/vue3-vite') {
-    frameworkPluginImport = "import { storybookVuePlugin } from '@storybook/vue3-vite/vite'";
+    frameworkPluginImport = "import { storybookVuePlugin } from '@storybook/vue3-vite/vite-plugin'";
     frameworkPluginCall = 'storybookVuePlugin()';
   }
 
@@ -435,7 +437,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
     join(sandboxDir, 'vitest.workspace.ts'),
     dedent`
       import { defineWorkspace, defaultExclude } from "vitest/config";
-      import { storybookTest } from "@storybook/experimental-addon-vitest/plugin";
+      import { storybookTest } from "@storybook/experimental-addon-test/vite-plugin";
       ${frameworkPluginImport}
 
       export default defineWorkspace([
@@ -510,10 +512,10 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   // This workaround is needed because Vitest seems to have issues in link mode
   // so the /setup-file and /global-setup files from the vitest addon won't work in portal protocol
   if (options.link) {
-    const vitestAddonPath = relative(sandboxDir, join(CODE_DIRECTORY, 'addons', 'vitest'));
+    const vitestAddonPath = relative(sandboxDir, join(CODE_DIRECTORY, 'addons', 'test'));
     packageJson.resolutions = {
       ...packageJson.resolutions,
-      '@storybook/experimental-addon-vitest': `file:${vitestAddonPath}`,
+      '@storybook/experimental-addon-test': `file:${vitestAddonPath}`,
     };
   }
 

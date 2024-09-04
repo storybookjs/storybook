@@ -26,6 +26,9 @@ const ScrollAreaRoot = styled(ScrollAreaPrimitive.Root)<{ scrollbarsize: number;
 const ScrollAreaViewport = styled(ScrollAreaPrimitive.Viewport)({
   width: '100%',
   height: '100%',
+  '& > div': {
+    display: 'block !important',
+  },
 });
 
 const ScrollAreaScrollbar = styled(ScrollAreaPrimitive.Scrollbar)<{

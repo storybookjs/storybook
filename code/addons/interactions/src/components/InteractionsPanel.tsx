@@ -1,13 +1,15 @@
 import * as React from 'react';
+
+import { styled } from 'storybook/internal/theming';
+
 import { type Call, CallStates, type ControlStates } from '@storybook/instrumenter';
-import { styled } from '@storybook/theming';
+
 import { transparentize } from 'polished';
 
-import { Subnav } from './Subnav';
-
-import { Interaction } from './Interaction';
 import { isTestAssertionError } from '../utils';
 import { Empty } from './EmptyState';
+import { Interaction } from './Interaction';
+import { Subnav } from './Subnav';
 
 export interface Controls {
   start: (args: any) => void;

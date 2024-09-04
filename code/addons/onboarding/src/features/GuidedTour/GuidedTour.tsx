@@ -1,183 +1,75 @@
-import type { ComponentProps } from 'react';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+
+import { useTheme } from 'storybook/internal/theming';
+
 import type { CallBackProps } from 'react-joyride';
-import Joyride, { STATUS } from 'react-joyride';
-import type { API } from '@storybook/manager-api';
-import { UPDATE_STORY_ARGS } from '@storybook/core-events';
-import { useTheme } from '@storybook/theming';
+import Joyride, { ACTIONS } from 'react-joyride';
 
-import { PulsatingEffect } from '../../components/PulsatingEffect/PulsatingEffect';
-import { Confetti } from '../../components/Confetti/Confetti';
+import type { StepDefinition, StepKey } from '../../Onboarding';
 import { Tooltip } from './Tooltip';
-import { SpanHighlight } from '../WriteStoriesModal/WriteStoriesModal.styled';
-import type { CodeSnippets } from '../WriteStoriesModal/code/types';
-
-type GuidedTourStep = ComponentProps<typeof Tooltip>['step'];
 
 export function GuidedTour({
-  api,
-  isFinalStep,
-  onFirstTourDone,
-  onLastTourDone,
-  codeSnippets,
+  step,
+  steps,
+  onClose,
+  onComplete,
 }: {
-  api: API;
-  isFinalStep?: boolean;
-  codeSnippets?: CodeSnippets;
-  onFirstTourDone: () => void;
-  onLastTourDone: () => void;
+  step: StepKey;
+  steps: StepDefinition[];
+  onClose: () => void;
+  onComplete: () => void;
 }) {
-  const [stepIndex, setStepIndex] = useState<number>();
+  const [stepIndex, setStepIndex] = useState<number | null>(null);
   const theme = useTheme();
 
   useEffect(() => {
-    api.once(UPDATE_STORY_ARGS, () => {
-      setStepIndex(3);
+    let timeout: NodeJS.Timeout;
+    setStepIndex((current) => {
+      const index = steps.findIndex(({ key }) => key === step);
+
+      if (index === -1) {
+        return null;
+      }
+
+      if (index === current) {
+        return current;
+      }
+      timeout = setTimeout(setStepIndex, 500, index);
+      return null;
     });
-  }, []);
+    return () => clearTimeout(timeout);
+  }, [step, steps]);
 
-  const storyPlaygroundElement = useMemo(() => {
-    return (document.querySelector('#root div[role=main]') ||
-      document.querySelector('#storybook-panel-root')) as HTMLElement;
-  }, []);
-
-  const steps: GuidedTourStep[] = isFinalStep
-    ? [
-        {
-          target: '#example-button--warning',
-          title: 'Congratulations!',
-          content: (
-            <>
-              You just created your first story. Continue setting up your project to write stories
-              for your own components.
-            </>
-          ),
-          placement: 'right',
-          disableOverlay: true,
-          disableBeacon: true,
-          floaterProps: {
-            disableAnimation: true,
-          },
-          onNextButtonClick() {
-            onLastTourDone();
-          },
-        },
-      ]
-    : [
-        {
-          target: '#storybook-explorer-tree > div',
-          title: 'Storybook is built from stories',
-          content: (
-            <>
-              Storybook stories represent the key states of each of your components.
-              <br />
-              <br />
-              {codeSnippets?.filename && (
-                <>
-                  We automatically added four stories for this Button component in this example
-                  file:
-                  <br />
-                  <SpanHighlight>{codeSnippets.filename}</SpanHighlight>
-                </>
-              )}
-            </>
-          ),
-          placement: 'right',
-          disableBeacon: true,
-          styles: {
-            spotlight: {
-              transform: 'translateY(30px)',
-            },
-          },
-          floaterProps: {
-            disableAnimation: true,
-          },
-        },
-        {
-          target: '#storybook-preview-iframe',
-          title: 'Storybook previews are interactive',
-          content:
-            'Whenever you modify code or stories, Storybook automatically updates how it previews your components.',
-          placement: 'bottom',
-          styles: {
-            spotlight: {
-              borderRadius: 0,
-            },
-          },
-        },
-        {
-          target: storyPlaygroundElement,
-          title: 'Interactive story playground',
-          content: (
-            <>
-              See how a story renders with different data and state without touching code.
-              <br />
-              <br />
-              Try it out by pressing this button.
-              <PulsatingEffect targetSelector="#control-primary" />
-            </>
-          ),
-          placement: 'right',
-          spotlightClicks: true,
-          floaterProps: {
-            target: '#control-primary',
-            options: {
-              preventOverflow: {
-                boundariesElement: 'window',
-              },
-            },
-          },
-          hideNextButton: true,
-        },
-        {
-          target: '#control-primary',
-          title: 'Congratulations!',
-          content: (
-            <>
-              You learned how to control your stories interactively. Now let's explore how to write
-              your first story.
-              <Confetti numberOfPieces={800} recycle={false} tweenDuration={20000} />
-            </>
-          ),
-          placement: 'right',
-          floaterProps: {
-            options: {
-              preventOverflow: {
-                boundariesElement: 'window',
-              },
-            },
-          },
-          disableOverlay: true,
-        },
-      ];
+  if (stepIndex === null) {
+    return null;
+  }
 
   return (
     <Joyride
-      steps={steps}
       continuous
+      steps={steps}
       stepIndex={stepIndex}
       spotlightPadding={0}
-      hideBackButton
       disableCloseOnEsc
       disableOverlayClose
       disableScrolling
-      hideCloseButton
       callback={(data: CallBackProps) => {
-        if (!isFinalStep && data.status === STATUS.FINISHED) {
-          onFirstTourDone();
+        if (data.action === ACTIONS.CLOSE) {
+          onClose();
+        }
+
+        if (data.action === ACTIONS.NEXT && data.index === data.size - 1) {
+          onComplete();
         }
       }}
       floaterProps={{
-        options: {
-          offset: {
-            offset: '0, 6',
-          },
-        },
+        disableAnimation: true,
         styles: {
+          arrow: {
+            length: 20,
+            spread: 2,
+          },
           floater: {
-            padding: 0,
-            paddingLeft: 8,
-            paddingTop: 8,
             filter:
               theme.base === 'light'
                 ? 'drop-shadow(0px 5px 5px rgba(0,0,0,0.05)) drop-shadow(0 1px 3px rgba(0,0,0,0.1))'
@@ -189,17 +81,22 @@ export function GuidedTour({
       styles={{
         overlay: {
           mixBlendMode: 'unset',
-          backgroundColor: 'none',
+          backgroundColor: steps[stepIndex]?.target === 'body' ? 'rgba(27, 28, 29, 0.2)' : 'none',
         },
         spotlight: {
           backgroundColor: 'none',
           border: `solid 2px ${theme.color.secondary}`,
-          boxShadow: '0px 0px 0px 9999px rgba(0,0,0,0.4)',
+          boxShadow: '0px 0px 0px 9999px rgba(27, 28, 29, 0.2)',
+        },
+        tooltip: {
+          width: 280,
+          color: theme.color.lightest,
+          background: theme.color.secondary,
         },
         options: {
-          zIndex: 10000,
+          zIndex: 9998,
           primaryColor: theme.color.secondary,
-          arrowColor: theme.base === 'dark' ? '#292A2C' : theme.color.lightest,
+          arrowColor: theme.color.secondary,
         },
       }}
     />

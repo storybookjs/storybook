@@ -1,7 +1,12 @@
+import {
+  RESET_STORY_ARGS,
+  STORY_ARGS_UPDATED,
+  UPDATE_STORY_ARGS,
+} from 'storybook/internal/core-events';
+
 import { global as globalThis } from '@storybook/global';
-import type { Meta, StoryObj, StoryFn } from '@storybook/vue3';
-import { within, userEvent, expect } from '@storybook/test';
-import { UPDATE_STORY_ARGS, STORY_ARGS_UPDATED, RESET_STORY_ARGS } from '@storybook/core-events';
+import { expect, userEvent, within } from '@storybook/test';
+import type { Meta, StoryFn, StoryObj } from '@storybook/vue3';
 
 import ReactiveArgs from './ReactiveArgs.vue';
 
@@ -11,6 +16,7 @@ const meta = {
     // To show that other props are passed through
     backgroundColor: { control: 'color' },
   },
+  tags: ['!vitest'],
 } satisfies Meta<typeof ReactiveArgs>;
 
 export default meta;

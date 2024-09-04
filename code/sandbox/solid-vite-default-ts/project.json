@@ -1,0 +1,20 @@
+{
+  "name": "solid-vite/default-ts",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "implicitDependencies": [
+    "cli",
+    "core",
+    "essentials",
+    "interactions",
+    "links",
+    "onboarding",
+    "blocks"
+  ],
+  "targets": {
+    "sandbox": {},
+    "sb:dev": {},
+    "sb:build": {}
+  },
+  "tags": []
+}

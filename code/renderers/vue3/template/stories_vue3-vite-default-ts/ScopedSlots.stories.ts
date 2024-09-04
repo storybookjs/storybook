@@ -1,9 +1,14 @@
-import { global as globalThis } from '@storybook/global';
-import type { Channel } from '@storybook/channels';
-import { within, expect } from '@storybook/test';
-import { UPDATE_STORY_ARGS, STORY_ARGS_UPDATED, RESET_STORY_ARGS } from '@storybook/core-events';
+import type { Channel } from 'storybook/internal/channels';
+import {
+  RESET_STORY_ARGS,
+  STORY_ARGS_UPDATED,
+  UPDATE_STORY_ARGS,
+} from 'storybook/internal/core-events';
 
+import { global as globalThis } from '@storybook/global';
+import { expect, within } from '@storybook/test';
 import type { Meta, StoryObj } from '@storybook/vue3';
+
 import MySlotComponent from './MySlotComponent.vue';
 
 declare global {
@@ -18,7 +23,7 @@ const meta = {
     year: 2022,
     default: ({ text, year }) => `${text}, ${year}`,
   },
-  tags: ['autodocs'],
+  tags: ['autodocs', '!vitest'],
 } satisfies Meta<typeof MySlotComponent>;
 
 export default meta;

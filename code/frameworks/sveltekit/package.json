@@ -1,6 +1,6 @@
 {
   "name": "@storybook/sveltekit",
-  "version": "8.1.0-alpha.1",
+  "version": "8.3.0-beta.2",
   "description": "Storybook for SvelteKit",
   "keywords": [
     "storybook",
@@ -25,9 +25,9 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "require": "./dist/index.js"
     },
     "./dist/preview.mjs": {
       "import": "./dist/preview.mjs"
@@ -35,6 +35,11 @@
     "./preset": {
       "types": "./dist/preset.d.ts",
       "require": "./dist/preset.js"
+    },
+    "./vite-plugin": {
+      "types": "./dist/vite-plugin.d.ts",
+      "require": "./dist/vite-plugin.js",
+      "import": "./dist/vite-plugin.mjs"
     },
     "./package.json": "./package.json"
   },
@@ -49,8 +54,8 @@
     "src/mocks/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
     "@storybook/addon-actions": "workspace:*",
@@ -59,11 +64,12 @@
     "@storybook/svelte-vite": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^18.0.0",
+    "@types/node": "^22.0.0",
     "typescript": "^5.3.2",
     "vite": "^4.0.0"
   },
   "peerDependencies": {
+    "storybook": "workspace:^",
     "svelte": "^4.0.0 || ^5.0.0-next.65",
     "vite": "^4.0.0 || ^5.0.0"
   },
@@ -77,9 +83,10 @@
     "entries": [
       "./src/index.ts",
       "./src/preview.ts",
-      "./src/preset.ts"
+      "./src/preset.ts",
+      "./src/vite-plugin.ts"
     ],
     "platform": "node"
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae17"
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

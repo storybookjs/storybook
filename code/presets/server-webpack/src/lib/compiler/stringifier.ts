@@ -1,5 +1,6 @@
 import { dedent } from 'ts-dedent';
-import type { StorybookStory, StorybookSection } from './types';
+
+import type { StorybookSection, StorybookStory } from './types';
 
 const { identifier } = require('safe-identifier');
 
@@ -11,7 +12,10 @@ export function stringifyObject(object: any, level = 0, excludeOuterParams = fal
   if (Array.isArray(object)) {
     const arrayStrings: string[] = object.map((item: any) => stringifyObject(item, level + 1));
     const arrayString = arrayStrings.join(`,\n${indent}  `);
-    if (excludeOuterParams) return arrayString;
+
+    if (excludeOuterParams) {
+      return arrayString;
+    }
     return `[\n${indent}  ${arrayString}\n${indent}]`;
   }
   if (typeof object === 'object') {
@@ -23,8 +27,14 @@ export function stringifyObject(object: any, level = 0, excludeOuterParams = fal
       });
       objectString = objectStrings.join(',');
     }
-    if (excludeOuterParams) return objectString;
-    if (objectString.length === 0) return '{}';
+
+    if (excludeOuterParams) {
+      return objectString;
+    }
+
+    if (objectString.length === 0) {
+      return '{}';
+    }
     return `{${objectString}\n${indent}}`;
   }
 
@@ -32,7 +42,9 @@ export function stringifyObject(object: any, level = 0, excludeOuterParams = fal
 }
 
 export function stringifyImports(imports: Record<string, string[]>): string {
-  if (Object.keys(imports).length === 0) return '';
+  if (Object.keys(imports).length === 0) {
+    return '';
+  }
   return Object.entries(imports)
     .map(([module, names]) => `import { ${names.sort().join(', ')} } from '${module}';\n`)
     .join('');

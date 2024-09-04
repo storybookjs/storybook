@@ -1,11 +1,15 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import { once } from '@storybook/client-logger';
-import { instrument } from '@storybook/instrumenter';
 import * as domTestingLibrary from '@testing-library/dom';
-import _userEvent from '@testing-library/user-event';
-import dedent from 'ts-dedent';
 import type { FireFunction, FireObject } from '@testing-library/dom/types/events';
+import _userEvent from '@testing-library/user-event';
+
+import { once } from 'storybook/internal/client-logger';
+
+import { instrument } from '@storybook/instrumenter';
+
+import dedent from 'ts-dedent';
 import type { Writable } from 'type-fest';
+
 import type { Promisify, PromisifyObject } from './utils';
 
 type TestingLibraryDom = typeof domTestingLibrary;

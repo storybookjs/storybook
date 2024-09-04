@@ -1,9 +1,12 @@
-import { v4 as uuidv4 } from 'uuid';
-import type { PreviewWeb } from '@storybook/preview-api';
-import { addons } from '@storybook/preview-api';
-import type { Renderer } from '@storybook/types';
+import type { PreviewWeb } from 'storybook/internal/preview-api';
+import { addons } from 'storybook/internal/preview-api';
+import { ImplicitActionsDuringRendering } from 'storybook/internal/preview-errors';
+import type { Renderer } from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
-import { ImplicitActionsDuringRendering } from '@storybook/core-events/preview-errors';
+
+import { v4 as uuidv4 } from 'uuid';
+
 import { EVENT_ID } from '../constants';
 import type { ActionDisplay, ActionOptions, HandlerFunction } from '../models';
 import { config } from './configureActions';
@@ -11,7 +14,10 @@ import { config } from './configureActions';
 type SyntheticEvent = any; // import('react').SyntheticEvent;
 const findProto = (obj: unknown, callback: (proto: any) => boolean): Function | null => {
   const proto = Object.getPrototypeOf(obj);
-  if (!proto || callback(proto)) return proto;
+
+  if (!proto || callback(proto)) {
+    return proto;
+  }
   return findProto(proto, callback);
 };
 const isReactSyntheticEvent = (e: unknown): e is SyntheticEvent =>
@@ -83,7 +89,7 @@ export function action(name: string, options: ActionOptions = {}): HandlerFuncti
     }
 
     const channel = addons.getChannel();
-    // this makes sure that in js enviroments like react native you can still get an id
+    // this makes sure that in js environments like react native you can still get an id
     const id = generateId();
     const minDepth = 5; // anything less is really just storybook internals
     const serializedArgs = args.map(serializeArg);

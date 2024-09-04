@@ -1,5 +1,6 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import process from 'process';
+
 import { SbPage } from './util';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:6006';
@@ -41,7 +42,7 @@ test.describe('Svelte', () => {
     await showCodeButton.click();
     const sourceCode = root.locator('pre.prismjs');
     const expectedSource = '<ButtonJavaScript primary/>';
-    await expect(sourceCode.textContent()).resolves.toContain(expectedSource);
+    await expect(sourceCode).toHaveText(expectedSource);
   });
 
   test('Decorators runs only once', async ({ page }) => {

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-essentials",
-  "version": "8.1.0-alpha.1",
+  "version": "8.3.0-beta.2",
   "description": "Curated addons to bring out the best of Storybook",
   "keywords": [
     "addon",
@@ -23,27 +23,54 @@
   "license": "MIT",
   "exports": {
     ".": {
-      "node": "./dist/index.js",
       "types": "./dist/index.d.ts",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
-    "./actions/preview": "./dist/actions/preview.js",
+    "./actions/preview": {
+      "types": "./dist/actions/preview.d.ts",
+      "import": "./dist/actions/preview.mjs",
+      "require": "./dist/actions/preview.js"
+    },
     "./actions/manager": "./dist/actions/manager.js",
-    "./backgrounds/preview": "./dist/backgrounds/preview.js",
+    "./backgrounds/preview": {
+      "types": "./dist/backgrounds/preview.d.ts",
+      "import": "./dist/backgrounds/preview.mjs",
+      "require": "./dist/backgrounds/preview.js"
+    },
     "./backgrounds/manager": "./dist/backgrounds/manager.js",
     "./controls/manager": "./dist/controls/manager.js",
-    "./docs/preview": "./dist/docs/preview.js",
+    "./docs/preview": {
+      "types": "./dist/docs/preview.d.ts",
+      "import": "./dist/docs/preview.mjs",
+      "require": "./dist/docs/preview.js"
+    },
     "./docs/preset": "./dist/docs/preset.js",
     "./docs/mdx-react-shim": "./dist/docs/mdx-react-shim.js",
-    "./highlight/preview": "./dist/highlight/preview.js",
-    "./measure/preview": "./dist/measure/preview.js",
+    "./highlight/preview": {
+      "types": "./dist/highlight/preview.d.ts",
+      "import": "./dist/highlight/preview.mjs",
+      "require": "./dist/highlight/preview.js"
+    },
+    "./measure/preview": {
+      "types": "./dist/measure/preview.d.ts",
+      "import": "./dist/measure/preview.mjs",
+      "require": "./dist/measure/preview.js"
+    },
     "./measure/manager": "./dist/measure/manager.js",
-    "./outline/preview": "./dist/outline/preview.js",
+    "./outline/preview": {
+      "types": "./dist/outline/preview.d.ts",
+      "import": "./dist/outline/preview.mjs",
+      "require": "./dist/outline/preview.js"
+    },
     "./outline/manager": "./dist/outline/manager.js",
     "./toolbars/manager": "./dist/toolbars/manager.js",
     "./viewport/manager": "./dist/viewport/manager.js",
-    "./viewport/preview": "./dist/viewport/preview.js",
+    "./viewport/preview": {
+      "types": "./dist/viewport/preview.d.ts",
+      "import": "./dist/viewport/preview.mjs",
+      "require": "./dist/viewport/preview.js"
+    },
     "./package.json": "./package.json"
   },
   "main": "dist/index.js",
@@ -57,8 +84,8 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/addon-bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
     "@storybook/addon-actions": "workspace:*",
@@ -70,14 +97,13 @@
     "@storybook/addon-outline": "workspace:*",
     "@storybook/addon-toolbars": "workspace:*",
     "@storybook/addon-viewport": "workspace:*",
-    "@storybook/core-common": "workspace:*",
-    "@storybook/manager-api": "workspace:*",
-    "@storybook/node-logger": "workspace:*",
-    "@storybook/preview-api": "workspace:*",
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
     "typescript": "^5.3.2"
+  },
+  "peerDependencies": {
+    "storybook": "workspace:^"
   },
   "publishConfig": {
     "access": "public"
@@ -107,5 +133,5 @@
       "./src/viewport/preview.ts"
     ]
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae17"
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

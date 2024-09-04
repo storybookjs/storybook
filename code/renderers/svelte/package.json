@@ -1,6 +1,6 @@
 {
   "name": "@storybook/svelte",
-  "version": "8.1.0-alpha.1",
+  "version": "8.3.0-beta.2",
   "description": "Storybook Svelte renderer",
   "keywords": [
     "storybook"
@@ -22,9 +22,13 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./experimental-playwright": {
+      "types": "./dist/playwright.d.ts",
+      "import": "./dist/playwright.mjs",
+      "require": "./dist/playwright.js"
     },
     "./preset": "./preset.js",
     "./dist/entry-preview.mjs": "./dist/entry-preview.mjs",
@@ -32,6 +36,7 @@
     "./package.json": "./package.json",
     "./internal/PreviewRender.svelte": "./dist/components/PreviewRender.svelte",
     "./internal/SlotDecorator.svelte": "./dist/components/SlotDecorator.svelte",
+    "./internal/AddStorybookIdDecorator.svelte": "./dist/components/AddStorybookIdDecorator.svelte",
     "./internal/createSvelte5Props": "./dist/createSvelte5Props.svelte.js"
   },
   "main": "dist/index.js",
@@ -47,21 +52,21 @@
   ],
   "scripts": {
     "check": "svelte-check",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/client-logger": "workspace:*",
-    "@storybook/core-events": "workspace:*",
-    "@storybook/docs-tools": "workspace:*",
+    "@storybook/components": "workspace:^",
     "@storybook/global": "^5.0.0",
-    "@storybook/preview-api": "workspace:*",
-    "@storybook/types": "workspace:*",
+    "@storybook/manager-api": "workspace:^",
+    "@storybook/preview-api": "workspace:^",
+    "@storybook/theming": "workspace:^",
     "sveltedoc-parser": "^4.2.1",
     "ts-dedent": "^2.0.0",
     "type-fest": "~2.19"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^3.0.2",
+    "@testing-library/svelte": "patch:@testing-library/svelte@npm%3A4.1.0#~/.yarn/patches/@testing-library-svelte-npm-4.1.0-34b7037bc0.patch",
     "expect-type": "^0.15.0",
     "fs-extra": "^11.1.0",
     "svelte": "^5.0.0-next.65",
@@ -69,6 +74,7 @@
     "typescript": "^5.3.2"
   },
   "peerDependencies": {
+    "storybook": "workspace:^",
     "svelte": "^4.0.0 || ^5.0.0-next.65"
   },
   "engines": {
@@ -83,9 +89,10 @@
       "./src/index.ts",
       "./src/preset.ts",
       "./src/entry-preview.ts",
-      "./src/entry-preview-docs.ts"
+      "./src/entry-preview-docs.ts",
+      "./src/playwright.ts"
     ],
     "platform": "browser"
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae17"
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

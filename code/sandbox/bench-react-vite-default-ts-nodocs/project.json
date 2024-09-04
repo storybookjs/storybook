@@ -1,0 +1,21 @@
+{
+  "name": "bench/react-vite-default-ts-nodocs",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "implicitDependencies": [
+    "cli",
+    "core",
+    "essentials",
+    "interactions",
+    "links",
+    "onboarding",
+    "blocks",
+    "react-vite"
+  ],
+  "targets": {
+    "sandbox": {},
+    "sb:dev": {},
+    "sb:build": {}
+  },
+  "tags": ["ci:normal", "ci:merged", "ci:daily"]
+}

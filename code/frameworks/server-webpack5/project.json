@@ -1,6 +1,8 @@
 {
-  "name": "@storybook/server-webpack5",
+  "name": "server-webpack5",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "implicitDependencies": [],
-  "type": "library"
+  "projectType": "library",
+  "targets": {
+    "build": {}
+  }
 }

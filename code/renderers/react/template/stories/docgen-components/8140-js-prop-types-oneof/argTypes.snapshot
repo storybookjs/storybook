@@ -6,7 +6,7 @@
     "description": "No background or border if static alert",
     "name": "blank",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": undefined,
       "type": {
         "detail": undefined,
@@ -25,7 +25,7 @@
     "description": "Allows icon override, accepts material icon name",
     "name": "icon",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": undefined,
       "type": {
         "detail": undefined,
@@ -44,7 +44,7 @@
     "description": "",
     "name": "message",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": undefined,
       "type": {
         "detail": undefined,

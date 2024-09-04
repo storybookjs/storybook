@@ -1,0 +1,90 @@
+{
+  "name": "@storybook/blocks",
+  "version": "8.3.0-beta.2",
+  "description": "Storybook Doc Blocks",
+  "keywords": [
+    "storybook"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/blocks",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/lib/blocks"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "*.js",
+    "*.d.ts",
+    "!src/**/*"
+  ],
+  "scripts": {
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
+  },
+  "dependencies": {
+    "@storybook/csf": "^0.1.11",
+    "@storybook/global": "^5.0.0",
+    "@storybook/icons": "^1.2.10",
+    "@types/lodash": "^4.14.167",
+    "color-convert": "^2.0.1",
+    "dequal": "^2.0.2",
+    "lodash": "^4.17.21",
+    "markdown-to-jsx": "^7.4.5",
+    "memoizerific": "^1.11.3",
+    "polished": "^4.2.2",
+    "react-colorful": "^5.1.2",
+    "telejson": "^7.2.0",
+    "ts-dedent": "^2.0.0",
+    "util-deprecate": "^1.0.2"
+  },
+  "devDependencies": {
+    "@storybook/addon-actions": "workspace:*",
+    "@storybook/react": "workspace:*",
+    "@storybook/test": "workspace:*",
+    "@types/color-convert": "^2.0.0",
+    "tocbot": "^4.20.1"
+  },
+  "peerDependencies": {
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
+    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
+    "storybook": "workspace:^"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "bundler": {
+    "entries": [
+      "./src/index.ts"
+    ]
+  },
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+}

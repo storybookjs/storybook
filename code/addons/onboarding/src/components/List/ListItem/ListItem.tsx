@@ -1,6 +1,8 @@
 import React from 'react';
-import { ListItemContentWrapper, ListItemIndexWrapper, ListItemWrapper } from './ListItem.styled';
+
 import { CheckIcon } from '@storybook/icons';
+
+import { ListItemContentWrapper, ListItemIndexWrapper, ListItemWrapper } from './ListItem.styled';
 
 interface ListItemProps {
   children: React.ReactNode;

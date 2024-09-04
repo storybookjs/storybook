@@ -1,5 +1,7 @@
 storage: .verdaccio-cache
 
+max_body_size: 60mb
+
 auth:
   auth-memory:
     users:
@@ -120,6 +122,10 @@ packages:
     publish: $all
 
   'sb':
+    access: $all
+    publish: $all
+
+  'create-storybook':
     access: $all
     publish: $all
 

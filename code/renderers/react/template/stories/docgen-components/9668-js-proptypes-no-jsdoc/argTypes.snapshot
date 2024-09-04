@@ -6,7 +6,7 @@
     "description": "",
     "name": "heads",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": undefined,
       "type": {
         "detail": undefined,
@@ -23,7 +23,7 @@
     "description": "",
     "name": "onAddClick",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": undefined,
       "type": {
         "detail": undefined,

@@ -1,6 +1,7 @@
 {
-  "name": "@storybook/addon-themes",
+  "name": "themes",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "implicitDependencies": [],
-  "type": "library"
+  "targets": {
+    "build": {}
+  }
 }

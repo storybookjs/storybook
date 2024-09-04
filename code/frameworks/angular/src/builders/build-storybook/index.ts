@@ -1,3 +1,8 @@
+import { getEnvConfig, versions } from 'storybook/internal/common';
+import { buildStaticStandalone, withTelemetry } from 'storybook/internal/core-server';
+import { addToGlobalContext } from 'storybook/internal/telemetry';
+import { CLIOptions } from 'storybook/internal/types';
+
 import {
   BuilderContext,
   BuilderHandlerFn,
@@ -7,26 +12,21 @@ import {
   createBuilder,
   targetFromTargetString,
 } from '@angular-devkit/architect';
-import { JsonObject } from '@angular-devkit/core';
-import { from, of, throwError } from 'rxjs';
-import { catchError, map, mapTo, switchMap } from 'rxjs/operators';
-import { sync as findUpSync } from 'find-up';
-import { sync as readUpSync } from 'read-pkg-up';
 import { BrowserBuilderOptions, StylePreprocessorOptions } from '@angular-devkit/build-angular';
-
-import { CLIOptions } from '@storybook/types';
-import { getEnvConfig, versions } from '@storybook/core-common';
-import { addToGlobalContext } from '@storybook/telemetry';
-
-import { buildStaticStandalone, withTelemetry } from '@storybook/core-server';
 import {
   AssetPattern,
   SourceMapUnion,
   StyleElement,
 } from '@angular-devkit/build-angular/src/builders/browser/schema';
-import { StandaloneOptions } from '../utils/standalone-options';
-import { runCompodoc } from '../utils/run-compodoc';
+import { JsonObject } from '@angular-devkit/core';
+import { findPackageSync } from 'fd-package-json';
+import { sync as findUpSync } from 'find-up';
+import { from, of, throwError } from 'rxjs';
+import { catchError, map, mapTo, switchMap } from 'rxjs/operators';
+
 import { errorSummary, printErrorDetails } from '../utils/error-handler';
+import { runCompodoc } from '../utils/run-compodoc';
+import { StandaloneOptions } from '../utils/standalone-options';
 
 addToGlobalContext('cliVersion', versions.storybook);
 
@@ -40,6 +40,7 @@ export type StorybookBuilderOptions = JsonObject & {
   enableProdMode?: boolean;
   styles?: StyleElement[];
   stylePreprocessorOptions?: StylePreprocessorOptions;
+  preserveSymlinks?: boolean;
   assets?: AssetPattern[];
   sourceMap?: SourceMapUnion;
 } & Pick<
@@ -102,10 +103,11 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
         assets,
         previewUrl,
         sourceMap = false,
+        preserveSymlinks = false,
       } = options;
 
       const standaloneOptions: StandaloneBuildOptions = {
-        packageJson: readUpSync({ cwd: __dirname }).packageJson,
+        packageJson: findPackageSync(__dirname),
         configDir,
         ...(docs ? { docs } : {}),
         loglevel,
@@ -121,6 +123,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
           ...(styles ? { styles } : {}),
           ...(assets ? { assets } : {}),
           sourceMap,
+          preserveSymlinks,
         },
         tsConfig,
         webpackStatsJson,

@@ -6,7 +6,7 @@
     "description": "",
     "name": "aProperty",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": undefined,
       "type": {
         "detail": undefined,

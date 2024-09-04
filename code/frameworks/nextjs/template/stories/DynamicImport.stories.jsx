@@ -1,5 +1,6 @@
-import dynamic from 'next/dynamic';
 import React, { Suspense } from 'react';
+
+import dynamic from 'next/dynamic';
 
 const DynamicComponent = dynamic(() => import('./dynamic-component'), {
   ssr: false,

@@ -1,0 +1,196 @@
+---
+title: 'Portable stories in Playwright CT'
+sidebar:
+  title: Playwright
+  order: 2
+---
+
+(⚠️ **Experimental**)
+
+<If notRenderer={['react', 'vue']}>
+  <Callout variant="info">
+    Portable stories are currently only supported in [React](?renderer=react) and [Vue](?renderer=vue) projects.
+  </Callout>
+
+  {/* End non-supported renderers */}
+</If>
+
+<If renderer={['react', 'vue']}>
+  <Callout variant="info">
+    The portable stories API for Playwright CT is experimental. Playwright CT itself is also experimental. Breaking changes might occur in either library in upcoming releases.
+  </Callout>
+
+  Portable stories are Storybook [stories](../../writing-stories/index.mdx) which can be used in external environments, such as [Playwright Component Tests (CT)](https://playwright.dev/docs/test-components).
+
+  Normally, Storybook composes a story and its [annotations](#annotations) automatically, as part of the [story pipeline](#story-pipeline). When using stories in Playwright CT, you can use the [`createTest`](#createtest) function, which extends Playwright's test functionality to add a custom `mount` mechanism, to take care of the story pipeline for you.
+
+  <If renderer="react">
+    <Callout variant="warning">
+      Your project must be using React 18+ to use the portable stories API with Playwright CT.
+
+      **Using `Next.js`?** The portable stories API is not yet supported in Next.js with Playwright CT.
+    </Callout>
+  </If>
+
+  <If renderer="vue">
+    <Callout variant="info">
+      If your stories use template-based Vue components, you may need to [alias the `vue` module](https://vuejs.org/guide/scaling-up/tooling#note-on-in-browser-template-compilation) to resolve correctly in the Playwright CT environment. You can do this via the [`ctViteConfig` property](https://playwright.dev/docs/test-components#i-have-a-project-that-already-uses-vite-can-i-reuse-the-config):
+
+      <details>
+        <summary>Example Playwright configuration</summary>
+
+        ```ts
+        // playwright-config.ts
+        import { defineConfig } from '@playwright/experimental-ct-vue';
+
+        export default defineConfig({
+          ctViteConfig: {
+            resolve: {
+              alias: {
+                vue: 'vue/dist/vue.esm-bundler.js',
+              },
+            },
+          },
+        });
+        ```
+      </details>
+    </Callout>
+  </If>
+
+  ## createTest
+
+  (⚠️ **Experimental**)
+
+  Instead of using Playwright's own `test` function, you can use Storybook's special `createTest` function to [extend Playwright's base fixture](https://playwright.dev/docs/test-fixtures#creating-a-fixture) and override the `mount` function to load, render, and play the story. This function is experimental and is subject to changes.
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="portable-stories-playwright-ct.md" />
+
+  {/* prettier-ignore-end */}
+
+  <Callout icon="ℹ️">
+    The code which you write in your Playwright test file is transformed and orchestrated by Playwright, where part of the code executes in Node, while other parts execute in the browser.
+
+    Because of this, you have to compose the stories *in a separate file than your own test file*:
+
+    ```ts
+    // Button.stories.portable.ts
+    // Replace your-renderer with the renderer you are using (e.g. react, vue3)
+    import { composeStories } from '@storybook/your-renderer';
+
+    import * as stories from './Button.stories';
+
+    // This function will be executed in the browser
+    // and compose all stories, exporting them in a single object
+    export default composeStories(stories);
+    ```
+
+    You can then import the composed stories in your Playwright test file, as in the example above.
+  </Callout>
+
+  ### Type
+
+  ```ts
+  createTest(
+    baseTest: PlaywrightFixture
+  ) => PlaywrightFixture
+  ```
+
+  ### Parameters
+
+  #### `baseTest`
+
+  (**Required**)
+
+  Type: `PlaywrightFixture`
+
+  The base test function to use, e.g. `test` from Playwright.
+
+  ### Return
+
+  Type: `PlaywrightFixture`
+
+  A Storybook-specific test function with the custom `mount` mechanism.
+
+  ## setProjectAnnotations
+
+  This API should be called once, before the tests run, in [`playwright/index.ts`](https://playwright.dev/docs/test-components#step-1-install-playwright-test-for-components-for-your-respective-framework). This will make sure that when `mount` is called, the project annotations are taken into account as well.
+
+  These are the configurations needed in the setup file:
+  - preview annotations: those defined in `.storybook/preview.ts`
+  - addon annotations (optional): those exported by addons
+  - beforeAll: code that runs before all tests ([more info](../../writing-tests/component-testing.mdx#beforeall))
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="portable-stories-playwright-ct-compose-stories.md" />
+
+  {/* prettier-ignore-end */}
+
+  Sometimes a story can require an addon's [decorator](../../writing-stories/decorators.mdx) or [loader](../../writing-stories/loaders.mdx) to render properly. For example, an addon can apply a decorator that wraps your story in the necessary router context. In this case, you must include that addon's `preview` export in the project annotations set. See `addonAnnotations` in the example above.
+
+  Note: If the addon doesn't automatically apply the decorator or loader itself, but instead exports them for you to apply manually in `.storybook/preview.js|ts` (e.g. using `withThemeFromJSXProvider` from [@storybook/addon-themes](https://github.com/storybookjs/storybook/blob/next/code/addons/themes/docs/api.md#withthemefromjsxprovider)), then you do not need to do anything else. They are already included in the `previewAnnotations` in the example above.
+
+  ### Type
+
+  ```ts
+  (projectAnnotations: ProjectAnnotation | ProjectAnnotation[]) => ProjectAnnotation
+  ```
+
+  ### Parameters
+
+  #### `projectAnnotations`
+
+  (**Required**)
+
+  Type: `ProjectAnnotation | ProjectAnnotation[]`
+
+  A set of project [annotations](#annotations) (those defined in `.storybook/preview.js|ts`) or an array of sets of project annotations, which will be applied to all composed stories.
+
+  ## Annotations
+
+  Annotations are the metadata applied to a story, like [args](../../writing-stories/args.mdx), [decorators](../../writing-stories/decorators.mdx), [loaders](../../writing-stories/loaders.mdx), and [play functions](../../writing-stories/play-function.mdx). They can be defined for a specific story, all stories for a component, or all stories in the project.
+
+  <Callout variant="info">
+    [Read more about Playwright's component testing](https://playwright.dev/docs/test-components#test-stories).
+  </Callout>
+
+  ## Story pipeline
+
+  To preview your stories, Storybook runs a story pipeline, which includes applying project annotations, loading data, rendering the story, and playing interactions. This is a simplified version of the pipeline:
+
+  ![A flow diagram of the story pipeline. First, set project annotations. Collect annotations (decorators, args, etc) which are exported by addons and the preview file. Second, compose story. Create renderable elements based on the stories passed onto the API. Third, render story. Load, mount, and execute the play function as part of the portable stories API.](../../_assets/api/story-pipeline-playwright.png)
+
+  When you want to reuse a story in a different environment, however, it's crucial to understand that all these steps make a story. The portable stories API provides you with the mechanism to recreate that story pipeline in your external environment:
+
+  ### 1. Apply project-level annotations
+
+  [Annotations](#annotations) come from the story itself, that story's component, and the project. The project-level annotations are those defined in your `.storybook/preview.js` file and by addons you're using. In portable stories, these annotations are not applied automatically — you must apply them yourself.
+
+  👉 For this, you use the [`setProjectAnnotations`](#setprojectannotations) API.
+
+  ### 2. Prepare, load, render, and play
+
+  The story pipeline includes preparing the story, [loading data](../../writing-stories/loaders.mdx), rendering the story, and [playing interactions](../../essentials/interactions.mdx#play-function-for-interactions). In portable stories within Playwright CT, the `mount` function takes care of these steps for you.
+
+  👉 For this, you use the [`createTest`](#createtest) API.
+
+  <Callout variant="info">
+    If your play function contains assertions (e.g. `expect` calls), your test will fail when those assertions fail.
+  </Callout>
+
+  ## Overriding globals
+
+  If your stories behave differently based on [globals](../../essentials/toolbars-and-globals.mdx#globals) (e.g. rendering text in English or Spanish), you can define those global values in portable stories by overriding project annotations when composing a story:
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="portable-stories-playwright-ct-override-globals.md" />
+
+  You can then use those composed stories in your Playwright test file using the [`createTest`](#createtest) function.
+
+  {/* prettier-ignore-end */}
+
+  {/* End supported renderers */}
+</If>

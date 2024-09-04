@@ -5,8 +5,8 @@ import { Component } from '@angular/core';
   selector: 'component-with-whitespace',
   preserveWhitespaces: true,
   template: ` <div>
-    <p>Some content</p>
-  </div>`,
+  <p>Some content</p>
+</div>`,
 })
 class ComponentWithWhitespace {}
 

@@ -1,8 +1,8 @@
 /* eslint-disable react/prop-types */
+import React from 'react';
+
 import { Rubik_Puddles } from 'next/font/google';
 import localFont from 'next/font/local';
-
-import React from 'react';
 
 const rubik = Rubik_Puddles({
   subsets: ['latin'],

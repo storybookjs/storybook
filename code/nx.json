@@ -1,10 +1,30 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
-  "pluginsConfig": {
-    "@nrwl/js": {
-      "analyzeSourceFiles": false
-    }
+  "extends": "nx/presets/npm.json",
+  "cacheDirectory": "../.nx/cache",
+  "nxCloudAccessToken": "NGVmYTkxMmItYzY3OS00MjkxLTk1ZDktZDFmYTFmNmVlNGY4fHJlYWQ=",
+  "defaultBase": "next",
+  "parallel": 8,
+  "affected": {
+    "defaultBase": "next"
   },
+  "cli": {
+    "packageManager": "yarn"
+  },
+  "plugins": [
+    {
+      "plugin": "@nx/vite/plugin",
+      "options": {
+        "testTargetName": "test"
+      }
+    },
+    {
+      "plugin": "@nx/eslint/plugin",
+      "options": {
+        "targetName": "lint"
+      }
+    }
+  ],
   "tasksRunnerOptions": {
     "default": {
       "options": {
@@ -13,49 +33,116 @@
       }
     }
   },
-  "affected": {
-    "defaultBase": "next"
-  },
   "targetDefaults": {
     "build": {
-      "dependsOn": [
-        {
-          "target": "build",
-          "dependencies": true
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "yarn prep",
+        "args": "--reset"
+      },
+      "configurations": {
+        "production": {
+          "args": "--reset --optimized"
         }
-      ]
-    },
-    "package": {
-      "dependsOn": [
-        {
-          "target": "package",
-          "dependencies": true
-        }
-      ]
-    },
-    "prep": {
-      "dependsOn": [
-        {
-          "target": "prep",
-          "params": "forward",
-          "dependencies": true
-        }
+      },
+      "inputs": [
+        "production",
+        "^production",
+        "{workspaceRoot}/../scripts/prepare/{bundle,addon-bundle,esm-bundle}.ts"
       ],
-      "outputs": [
-        "{projectRoot}/dist"
+      "dependsOn": ["^build"],
+      "outputs": ["{projectRoot}/dist"],
+      "cache": true
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{workspaceRoot}",
+        "command": "yarn vitest watch --project={projectName}"
+      },
+      "dependsOn": ["build"],
+      "inputs": [
+        "default",
+        "^production",
+        "{workspaceRoot}/{vitest.workspace.ts,vitest.helpers.ts,vitest-setup.ts}"
       ],
       "cache": true
+    },
+    "check": {
+      "configurations": {
+        "production": {}
+      },
+      "inputs": ["default", "^production", "{workspaceRoot}/../scripts/prepare/check.ts"],
+      "dependsOn": ["build"],
+      "cache": true
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{workspaceRoot}",
+        "command": "yarn lint:js:cmd {projectRoot}",
+        "args": "--quiet"
+      },
+      "dependsOn": ["build"],
+      "inputs": ["default", "{workspaceRoot}/{.eslintignore,.eslintrc.js}"],
+      "cache": true
+    },
+    "sandbox": {
+      "executor": "nx:run-commands",
+      "inputs": [
+        {
+          "runtime": "storybook --version"
+        }
+      ],
+      "outputs": ["{workspaceRoot}/../{projectRoot}"],
+      "options": {
+        "cwd": "{workspaceRoot}",
+        "command": "yarn task sandbox -s sandbox --template={projectName}"
+      },
+      "dependsOn": ["^build"],
+      "cache": true
+    },
+    "sb:dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{workspaceRoot}/../{projectRoot}",
+        "command": "yarn storybook",
+        "args": "--ci"
+      },
+      "dependsOn": ["sandbox"]
+    },
+    "sb:build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{workspaceRoot}/../{projectRoot}",
+        "command": "yarn build-storybook"
+      },
+      "inputs": ["^production"],
+      "outputs": ["{workspaceRoot}/../{projectRoot}/storybook-static"],
+      "cache": true,
+      "dependsOn": ["sandbox"]
+    },
+    "sb:serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{workspaceRoot}",
+        "command": "yarn http-server ../{projectRoot}/storybook-static",
+        "args": "--port 8001"
+      },
+      "dependsOn": ["sb:build"]
     }
   },
-  "nxCloudAccessToken": "NGVmYTkxMmItYzY3OS00MjkxLTk1ZDktZDFmYTFmNmVlNGY4fHJlYWQ=",
   "namedInputs": {
-    "default": [
-      "{projectRoot}/**/*",
-      "sharedGlobals"
-    ],
-    "sharedGlobals": [],
+    "default": ["{projectRoot}/**/*", "sharedGlobals"],
+    "sharedGlobals": ["{workspaceRoot}/tsconfig.json"],
     "production": [
-      "default"
+      "default",
+      "!{projectRoot}/src/**/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap),",
+      "!{projectRoot}/vitest.config.[jt]s",
+      "!{projectRoot}/README.md",
+      "!{projectRoot}/.eslintrc.{json,js}",
+      "!{projectRoot}/src/test-setup.[jt]s"
     ]
   }
 }

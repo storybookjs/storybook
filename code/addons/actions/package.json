@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-actions",
-  "version": "8.1.0-alpha.1",
+  "version": "8.3.0-beta.2",
   "description": "Get UI feedback when an action is performed on an interactive element",
   "keywords": [
     "storybook",
@@ -24,17 +24,20 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./decorator": {
       "types": "./dist/decorator.d.ts",
-      "require": "./dist/decorator.js",
-      "import": "./dist/decorator.mjs"
+      "import": "./dist/decorator.mjs",
+      "require": "./dist/decorator.js"
+    },
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "import": "./dist/preview.mjs",
+      "require": "./dist/preview.js"
     },
     "./manager": "./dist/manager.js",
-    "./preview": "./dist/preview.js",
     "./register.js": "./dist/manager.js",
     "./package.json": "./package.json"
   },
@@ -60,11 +63,10 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/addon-bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
-    "@storybook/core-events": "workspace:*",
     "@storybook/global": "^5.0.0",
     "@types/uuid": "^9.0.1",
     "dequal": "^2.0.2",
@@ -72,17 +74,15 @@
     "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "@storybook/client-logger": "workspace:*",
-    "@storybook/components": "workspace:*",
-    "@storybook/manager-api": "workspace:*",
-    "@storybook/preview-api": "workspace:*",
-    "@storybook/theming": "workspace:*",
-    "@storybook/types": "workspace:*",
+    "@storybook/test": "workspace:*",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-inspector": "^6.0.0",
     "telejson": "^7.2.0",
     "typescript": "^5.3.2"
+  },
+  "peerDependencies": {
+    "storybook": "workspace:^"
   },
   "publishConfig": {
     "access": "public"
@@ -99,7 +99,7 @@
       "./src/preview.ts"
     ]
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae17",
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16",
   "storybook": {
     "displayName": "Actions",
     "unsupportedFrameworks": [

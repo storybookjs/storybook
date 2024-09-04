@@ -1,17 +1,18 @@
-#!/usr/bin/env ../../node_modules/.bin/ts-node
+import { builtinModules } from 'node:module';
 
-import * as fs from 'fs-extra';
-import path, { dirname, join, relative } from 'path';
-import type { Options } from 'tsup';
-import type { PackageJson } from 'type-fest';
-import { build } from 'tsup';
 import aliasPlugin from 'esbuild-plugin-alias';
-import dedent from 'ts-dedent';
+import * as fs from 'fs-extra';
+import { glob } from 'glob';
+import { dirname, join, parse, posix, relative, sep } from 'path';
 import slash from 'slash';
-import { exec } from '../utils/exec';
+import { dedent } from 'ts-dedent';
+import type { Options } from 'tsup';
+import { build } from 'tsup';
+import type { PackageJson } from 'type-fest';
 
-import { globalPackages as globalPreviewPackages } from '../../code/lib/preview/src/globals/globals';
-import { globalPackages as globalManagerPackages } from '../../code/ui/manager/src/globals/globals';
+import { globalPackages as globalManagerPackages } from '../../code/core/src/manager/globals/globals';
+import { globalPackages as globalPreviewPackages } from '../../code/core/src/preview/globals/globals';
+import { exec } from '../utils/exec';
 
 /* TYPES */
 
@@ -33,6 +34,12 @@ type DtsConfigSection = Pick<Options, 'dts' | 'tsconfig'>;
 
 /* MAIN */
 
+export const nodeInternals = [
+  'module',
+  'node:module',
+  ...builtinModules.flatMap((m: string) => [m, `node:${m}`]),
+];
+
 const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   const {
     name,
@@ -51,7 +58,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   } = (await fs.readJson(join(cwd, 'package.json'))) as PackageJsonWithBundlerConfig;
 
   if (pre) {
-    await exec(`node -r ${__dirname}/../node_modules/esbuild-register/register.js ${pre}`, { cwd });
+    await exec(`jiti ${pre}`, { cwd });
   }
 
   const reset = hasFlag(flags, 'reset');
@@ -64,8 +71,9 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
 
   const tasks: Promise<any>[] = [];
 
+  const outDir = join(process.cwd(), 'dist');
   const commonOptions: Options = {
-    outDir: join(process.cwd(), 'dist'),
+    outDir,
     silent: true,
     treeshake: true,
     shims: false,
@@ -150,20 +158,35 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
       })
     );
   }
+
   if (previewEntries.length > 0) {
+    const { dtsConfig, tsConfigExists } = await getDTSConfigs({
+      formats,
+      entries: previewEntries,
+      optimized,
+    });
     tasks.push(
       build({
         ...commonOptions,
+        ...(optimized ? dtsConfig : {}),
         ...browserOptions,
+        format: ['esm', 'cjs'],
         entry: previewEntries.map((e: string) => slash(join(cwd, e))),
-        outExtension: () => ({
-          js: '.js',
-        }),
         external: [...commonExternals, ...globalPreviewPackages],
       })
     );
+
+    if (tsConfigExists && !optimized) {
+      tasks.push(...previewEntries.map(generateDTSMapperFile));
+    }
   }
+
   if (nodeEntries.length > 0) {
+    const { dtsConfig, tsConfigExists } = await getDTSConfigs({
+      formats: ['esm'],
+      entries: nodeEntries,
+      optimized,
+    });
     tasks.push(
       build({
         ...commonOptions,
@@ -178,16 +201,54 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         },
       })
     );
+    tasks.push(
+      build({
+        ...commonOptions,
+        ...(optimized ? dtsConfig : {}),
+        entry: nodeEntries.map((e: string) => slash(join(cwd, e))),
+        format: ['esm'],
+        target: 'node18',
+        platform: 'neutral',
+        banner: {
+          js: dedent`
+            import ESM_COMPAT_Module from "node:module";
+            import { fileURLToPath as ESM_COMPAT_fileURLToPath } from 'node:url';
+            import { dirname as ESM_COMPAT_dirname } from 'node:path';
+            const __filename = ESM_COMPAT_fileURLToPath(import.meta.url);
+            const __dirname = ESM_COMPAT_dirname(__filename);
+            const require = ESM_COMPAT_Module.createRequire(import.meta.url);
+          `,
+        },
+        external: [...commonExternals, ...nodeInternals],
+        esbuildOptions: (c) => {
+          c.mainFields = ['main', 'module', 'node'];
+          c.conditions = ['node', 'module', 'import', 'require'];
+          c.platform = 'neutral';
+          Object.assign(c, getESBuildOptions(optimized));
+        },
+      })
+    );
+
+    if (tsConfigExists && !optimized) {
+      tasks.push(...nodeEntries.map(generateDTSMapperFile));
+    }
   }
 
   await Promise.all(tasks);
 
+  const dtsFiles = await glob(outDir + '/**/*.d.ts');
+  await Promise.all(
+    dtsFiles.map(async (file) => {
+      const content = await fs.readFile(file, 'utf-8');
+      await fs.writeFile(
+        file,
+        content.replace(/from \'core\/dist\/(.*)\'/g, `from 'storybook/internal/$1'`)
+      );
+    })
+  );
+
   if (post) {
-    await exec(
-      `node -r ${__dirname}/../node_modules/esbuild-register/register.js ${post}`,
-      { cwd },
-      { debug: true }
-    );
+    await exec(`jiti ${post}`, { cwd }, { debug: true });
   }
 
   console.log('done');
@@ -233,11 +294,11 @@ function getESBuildOptions(optimized: boolean) {
 }
 
 async function generateDTSMapperFile(file: string) {
-  const { name: entryName, dir } = path.parse(file);
+  const { name: entryName, dir } = parse(file);
 
   const pathName = join(process.cwd(), dir.replace('./src', 'dist'), `${entryName}.d.ts`);
   const srcName = join(process.cwd(), file);
-  const rel = relative(dirname(pathName), dirname(srcName)).split(path.sep).join(path.posix.sep);
+  const rel = relative(dirname(pathName), dirname(srcName)).split(sep).join(posix.sep);
 
   await fs.ensureFile(pathName);
   await fs.writeFile(

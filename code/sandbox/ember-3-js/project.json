@@ -1,0 +1,21 @@
+{
+  "name": "ember/3-js",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "implicitDependencies": [
+    "cli",
+    "core",
+    "essentials",
+    "interactions",
+    "links",
+    "onboarding",
+    "blocks",
+    "ember"
+  ],
+  "targets": {
+    "sandbox": {},
+    "sb:dev": {},
+    "sb:build": {}
+  },
+  "tags": []
+}

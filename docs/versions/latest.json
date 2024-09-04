@@ -1,1 +1,1 @@
-{"version":"7.5.0","info":{"plain":"- 💃🏼 Now supports Lit 3.0 and Vite 5 \n- 👻 storiesOf and storyStoreV6 officially deprecated \n- 🔨 Fix Webpack5 build errors not being propagated \n- 🀄 Support rename font import for Next.js \n- ⬆️ Upgrade react-docgen to 6.0.x and improve argTypes \n- ✨ Many Angular improvements such as introducing argsToTemplate , new schema debugging options, support for standalone directives, etc."}}
+{"version":"8.2.0","info":{"plain":""}}

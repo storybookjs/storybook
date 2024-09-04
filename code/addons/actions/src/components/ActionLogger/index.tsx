@@ -1,22 +1,24 @@
-import type { FC, PropsWithChildren } from 'react';
-import React, { Fragment } from 'react';
-import { styled, withTheme } from '@storybook/theming';
-import type { Theme } from '@storybook/theming';
+import type { ElementRef, ReactNode } from 'react';
+import React, { Fragment, forwardRef, useEffect, useRef } from 'react';
+
+import { ActionBar, ScrollArea } from 'storybook/internal/components';
+import type { Theme } from 'storybook/internal/theming';
+import { styled, withTheme } from 'storybook/internal/theming';
 
 import { Inspector } from 'react-inspector';
-import { ActionBar, ScrollArea } from '@storybook/components';
 
-import { Action, InspectorContainer, Counter } from './style';
 import type { ActionDisplay } from '../../models';
+import { Action, Counter, InspectorContainer } from './style';
 
-const UnstyledWrapped: FC<PropsWithChildren<{ className?: string }>> = ({
-  children,
-  className,
-}) => (
-  <ScrollArea horizontal vertical className={className}>
-    {children}
-  </ScrollArea>
+const UnstyledWrapped = forwardRef<HTMLDivElement, { children: ReactNode; className?: string }>(
+  ({ children, className }, ref) => (
+    <ScrollArea ref={ref} horizontal vertical className={className}>
+      {children}
+    </ScrollArea>
+  )
 );
+UnstyledWrapped.displayName = 'UnstyledWrapped';
+
 export const Wrapper = styled(UnstyledWrapped)({
   margin: 0,
   padding: '10px 5px 20px',
@@ -39,24 +41,38 @@ interface ActionLoggerProps {
   onClear: () => void;
 }
 
-export const ActionLogger = ({ actions, onClear }: ActionLoggerProps) => (
-  <Fragment>
-    <Wrapper>
-      {actions.map((action: ActionDisplay) => (
-        <Action key={action.id}>
-          {action.count > 1 && <Counter>{action.count}</Counter>}
-          <InspectorContainer>
-            <ThemedInspector
-              sortObjectKeys
-              showNonenumerable={false}
-              name={action.data.name}
-              data={action.data.args || action.data}
-            />
-          </InspectorContainer>
-        </Action>
-      ))}
-    </Wrapper>
+export const ActionLogger = ({ actions, onClear }: ActionLoggerProps) => {
+  const wrapperRef = useRef<ElementRef<typeof Wrapper>>(null);
+  const wrapper = wrapperRef.current;
+  const wasAtBottom = wrapper && wrapper.scrollHeight - wrapper.scrollTop === wrapper.clientHeight;
 
-    <ActionBar actionItems={[{ title: 'Clear', onClick: onClear }]} />
-  </Fragment>
-);
+  useEffect(() => {
+    // Scroll to bottom, when the action panel was already scrolled down
+
+    // Scroll to bottom, when the action panel was already scrolled down
+    if (wasAtBottom) {
+      wrapperRef.current.scrollTop = wrapperRef.current.scrollHeight;
+    }
+  }, [wasAtBottom, actions.length]);
+
+  return (
+    <Fragment>
+      <Wrapper ref={wrapperRef}>
+        {actions.map((action: ActionDisplay) => (
+          <Action key={action.id}>
+            {action.count > 1 && <Counter>{action.count}</Counter>}
+            <InspectorContainer>
+              <ThemedInspector
+                sortObjectKeys
+                showNonenumerable={false}
+                name={action.data.name}
+                data={action.data.args ?? action.data}
+              />
+            </InspectorContainer>
+          </Action>
+        ))}
+      </Wrapper>
+      <ActionBar actionItems={[{ title: 'Clear', onClick: onClear }]} />
+    </Fragment>
+  );
+};

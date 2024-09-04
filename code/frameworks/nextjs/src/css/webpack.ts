@@ -1,8 +1,9 @@
 import type { NextConfig } from 'next';
-import { getCssModuleLocalIdent } from 'next/dist/build/webpack/config/blocks/css/loaders/getCssModuleLocalIdent';
 import { cssFileResolve } from 'next/dist/build/webpack/config/blocks/css/loaders/file-resolve';
-import type { Configuration as WebpackConfig } from 'webpack';
+import { getCssModuleLocalIdent } from 'next/dist/build/webpack/config/blocks/css/loaders/getCssModuleLocalIdent';
 import semver from 'semver';
+import type { Configuration as WebpackConfig } from 'webpack';
+
 import { scopedResolve } from '../utils';
 
 // This tries to follow nextjs's css config, please refer to this file for more info:
@@ -36,7 +37,7 @@ export const configureCss = (baseConfig: WebpackConfig, nextConfig: NextConfig):
         ],
         // We transform the "target.css" files from next.js into Javascript
         // for Next.js to support fonts, so it should be ignored by the css-loader.
-        exclude: /next\/.*\/target.css$/,
+        exclude: /next(\\|\/|\\\\).*(\\|\/|\\\\)target\.css$/,
       };
     }
   });
@@ -68,12 +69,10 @@ export const configureCss = (baseConfig: WebpackConfig, nextConfig: NextConfig):
 };
 
 /**
- * webpack v4-v6 api
- * https://webpack.js.org/loaders/css-loader/#url
+ * Webpack v4-v6 api https://webpack.js.org/loaders/css-loader/#url
  * https://webpack.js.org/loaders/css-loader/#import
  *
- * webpack v3 api
- * https://webpack-3.cdn.bcebos.com/loaders/css-loader/#url
+ * Webpack v3 api https://webpack-3.cdn.bcebos.com/loaders/css-loader/#url
  * https://webpack-3.cdn.bcebos.com/loaders/css-loader/#import
  */
 const getImportAndUrlCssLoaderOptions = (nextConfig: NextConfig) =>
@@ -109,9 +108,8 @@ const isCssLoaderV6 = () => {
     return semver.gte(cssLoaderVersion, '6.0.0');
   } catch {
     /**
-     *  css-loader isn't a resolvable dependency
-     *  thus storybook webpack 5 manager will
-     *  resolve to use its version which is v5
+     * Css-loader isn't a resolvable dependency thus storybook webpack 5 manager will resolve to use
+     * its version which is v5
      */
     return false;
   }

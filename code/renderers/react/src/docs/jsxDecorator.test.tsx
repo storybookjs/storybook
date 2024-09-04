@@ -1,14 +1,18 @@
 /* eslint-disable no-underscore-dangle */
-import type { FC, PropsWithChildren } from 'react';
-import React, { StrictMode, createElement, Profiler } from 'react';
 import type { Mock } from 'vitest';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import PropTypes from 'prop-types';
-import { addons, useEffect } from '@storybook/preview-api';
-import { SNIPPET_RENDERED } from '@storybook/docs-tools';
-import { renderJsx, jsxDecorator, getReactSymbolName } from './jsxDecorator';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@storybook/preview-api');
+import type { FC, PropsWithChildren } from 'react';
+import React, { Profiler, StrictMode, createElement } from 'react';
+
+import { SNIPPET_RENDERED } from 'storybook/internal/docs-tools';
+import { addons, useEffect } from 'storybook/internal/preview-api';
+
+import PropTypes from 'prop-types';
+
+import { getReactSymbolName, jsxDecorator, renderJsx } from './jsxDecorator';
+
+vi.mock('storybook/internal/preview-api');
 const mockedAddons = vi.mocked(addons);
 const mockedUseEffect = vi.mocked(useEffect);
 
@@ -123,19 +127,55 @@ describe('renderJsx', () => {
     `);
   });
 
-  it('forwardRef component', () => {
-    const MyExoticComponentRef = React.forwardRef<FC, PropsWithChildren>(
-      function MyExoticComponent(props, _ref) {
-        return <div>{props.children}</div>;
-      }
-    );
+  describe('forwardRef component', () => {
+    it('with no displayName', () => {
+      const MyExoticComponentRef = React.forwardRef<FC, PropsWithChildren>(
+        function MyExoticComponent(props, _ref) {
+          return <div>{props.children}</div>;
+        }
+      );
 
-    expect(renderJsx(createElement(MyExoticComponentRef, {}, 'I am forwardRef!'), {}))
-      .toMatchInlineSnapshot(`
-        <MyExoticComponent>
+      expect(renderJsx(<MyExoticComponentRef>I am forwardRef!</MyExoticComponentRef>))
+        .toMatchInlineSnapshot(`
+          <React.ForwardRef>
+            I am forwardRef!
+          </React.ForwardRef>
+        `);
+    });
+
+    it('with displayName coming from docgen', () => {
+      const MyExoticComponentRef = React.forwardRef<FC, PropsWithChildren>(
+        function MyExoticComponent(props, _ref) {
+          return <div>{props.children}</div>;
+        }
+      );
+      (MyExoticComponentRef as any).__docgenInfo = {
+        displayName: 'ExoticComponent',
+      };
+      expect(renderJsx(<MyExoticComponentRef>I am forwardRef!</MyExoticComponentRef>))
+        .toMatchInlineSnapshot(`
+          <ExoticComponent>
+            I am forwardRef!
+          </ExoticComponent>
+        `);
+    });
+
+    it('with displayName coming from forwarded render function', () => {
+      const MyExoticComponentRef = React.forwardRef<FC, PropsWithChildren>(
+        Object.assign(
+          function MyExoticComponent(props: any, _ref: any) {
+            return <div>{props.children}</div>;
+          },
+          { displayName: 'ExoticComponent' }
+        )
+      );
+      expect(renderJsx(<MyExoticComponentRef>I am forwardRef!</MyExoticComponentRef>))
+        .toMatchInlineSnapshot(`
+        <ExoticComponent>
           I am forwardRef!
-        </MyExoticComponent>
+        </ExoticComponent>
       `);
+    });
   });
 
   it('memo component', () => {
@@ -143,11 +183,20 @@ describe('renderJsx', () => {
       return <div>{props.children}</div>;
     });
 
-    expect(renderJsx(createElement(MyMemoComponentRef, {}, 'I am memo!'), {}))
-      .toMatchInlineSnapshot(`
-      <MyMemoComponent>
+    expect(renderJsx(<MyMemoComponentRef>I am memo!</MyMemoComponentRef>)).toMatchInlineSnapshot(`
+      <React.Memo>
         I am memo!
-      </MyMemoComponent>
+      </React.Memo>
+    `);
+
+    // if docgenInfo is present, it should use the displayName from there
+    (MyMemoComponentRef as any).__docgenInfo = {
+      displayName: 'MyMemoComponentRef',
+    };
+    expect(renderJsx(<MyMemoComponentRef>I am memo!</MyMemoComponentRef>)).toMatchInlineSnapshot(`
+      <MyMemoComponentRef>
+        I am memo!
+      </MyMemoComponentRef>
     `);
   });
 

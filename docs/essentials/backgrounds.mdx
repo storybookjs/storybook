@@ -1,0 +1,278 @@
+---
+title: 'Backgrounds'
+sidebar:
+  order: 2
+  title: Backgrounds
+---
+
+The backgrounds toolbar addon allows you to set the background color on which the story renders in the UI:
+
+<Video src="../_assets/essentials/addon-backgrounds-optimized.mp4" />
+
+<Callout variant="warning" icon="🆕" id="globals-api">
+  **`globals` API**
+
+  This addon has been updated to use the `globals` API when the [`backgroundsStoryGlobals` feature flag](../api/main-config/main-config-features.mdx#backgroundsstoryglobals) is enabled. With `globals`, when you specify a background value for a story, it cannot be overridden from the toolbar, which ensures a consistent experience while navigating between stories. This will be the default behavior and API in Storybook 9.
+</Callout>
+
+## Configuration
+
+By default, the backgrounds toolbar includes a light and dark background.
+
+But you're not restricted to these backgrounds. You can configure your own set of colors with the `backgrounds` [parameter](../writing-stories/parameters.mdx) in your [`.storybook/preview.js`](../configure/index.mdx#configure-story-rendering).
+
+You can define the available background colors using the [`values` property](#values) and set the initial background color using the [`default` property](#default):
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="addon-backgrounds-values-in-preview.md" />
+
+{/* prettier-ignore-end */}
+
+<Callout variant="warning" icon="🆕">
+
+  **With the [`globals` API](#globals-api)**
+
+  When using the `globals` API, you must define the available background colors using the [`options` property](#options). The initial background color can be set using the `initialGlobals` property, which accepts the same object properties as the [`globals`](#globals) for this addon.
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="addon-backgrounds-options-in-preview.md" />
+
+  {/* prettier-ignore-end */}
+
+</Callout>
+
+## Defining the background for a story
+
+The Backgrounds addon enables you to change the background color applied to a story by selecting from the list of predefined background colors in the toolbar. If needed, you can set a story to default to a specific background color, by using the `parameters.backgrounds.default` parameter:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="addon-backgrounds-define-default.md" usesCsf3 />
+
+{/* prettier-ignore-end */}
+
+As implied by the name, this method only sets the default background color for a story. You can still change the background color using the toolbar when viewing the story.
+
+<Callout variant="warning" icon="🆕">
+
+  **With the [`globals` API](#globals-api)**
+
+  When you specify a background color for a story (or a component's stories) using `globals`, the background color is applied and cannot be changed using the toolbar. This is useful when you want to ensure that a story is always rendered on a specific background color.
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="addon-backgrounds-define-globals.md" usesCsf3 />
+
+  {/* prettier-ignore-end */}
+
+</Callout>
+
+## Extending the configuration
+
+You can also configure backgrounds on a per-component or per-story basis through [parameter inheritance](../writing-stories/parameters.mdx#component-parameters).
+
+To set the available background colors, use the [`values` property](#values). In this example, we'll adjust the colors for all of the Button component's stories:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="addon-backgrounds-values-in-meta.md" />
+
+{/* prettier-ignore-end */}
+
+<Callout variant="warning" icon="🆕">
+
+  **With the [`globals` API](#globals-api)**
+
+  The available background colors are defined using the [`options` property](#options). In this example, we'll adjust the colors for all of the Button component's stories:
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="addon-backgrounds-options-in-meta.md" />
+
+  {/* prettier-ignore-end */}
+
+</Callout>
+
+## Disable backgrounds
+
+If you want to turn off backgrounds in a story, you can do so by configuring the `backgrounds` parameter like so:
+
+<Callout variant="warning" icon="🆕">
+
+  **With the [`globals` API](#globals-api)**
+
+  Note that the property has been renamed to `disabled`.
+
+</Callout>
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="addon-backgrounds-disabled.md" usesCsf3/>
+
+{/* prettier-ignore-end */}
+
+## Grid
+
+The Backgrounds toolbar also includes a Grid selector, which allows you to quickly see if your components are aligned.
+
+You don't need additional configuration to get started. But its properties are fully customizable; if you don't supply any value to any of its properties, they'll default to the following values:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="addon-backgrounds-grid.md" />
+
+{/* prettier-ignore-end */}
+
+## API
+
+<Callout variant="warning" icon="🆕">
+
+  **With the [`globals` API](#globals-api)**
+
+  ### Globals
+
+  This addon contributes the following globals to Storybook, under the `backgrounds` namespace:
+
+  #### `grid`
+
+  Type: `boolean`
+
+  Whether the [grid](#grid) is displayed.
+
+  #### `value`
+
+  Type: `string`
+
+  When set, the background color is applied and cannot be changed using the toolbar. Must match the key of one of the [available colors](#options).
+
+</Callout>
+
+### Parameters
+
+This addon contributes the following [parameters](../writing-stories/parameters.mdx) to Storybook, under the `backgrounds` namespace:
+
+#### `default`
+
+Type: `string`
+
+Required: See description
+
+Default background color. Must match the `name` property of one of the available colors defined in the [`values`](#values) (or [`options`](#options)) property.
+
+#### `disable`
+
+<Callout variant="warning" icon="🆕">
+
+  **With the [`globals` API](#globals-api)**
+
+  Note that the property has been renamed to `disabled`.
+
+</Callout>
+
+Type: `boolean`
+
+Turn off this addon's behavior. If you wish to turn off this addon for the entire Storybook, you should do so when registering `addon-essentials`. See the [essential addon's docs](../essentials/index.mdx#disabling-addons) for more information.
+
+This parameter is most useful to allow overriding at more specific levels. For example, if this parameter is set to `true` at the project level, it could be re-enabled by setting it to `false` at the meta (component) or story level.
+
+#### `grid`
+
+Type:
+
+```ts
+{
+  cellAmount?: number;
+  cellSize?: number;
+  disable?: boolean;
+  offsetX?: number;
+  offsetY?: number;
+  opacity?: number;
+}
+```
+
+Configuration for the [background grid](#grid).
+
+##### `grid.cellAmount`
+
+Type: `number`
+
+Default: `5`
+
+Specify the size of the minor grid lines.
+
+##### `grid.cellSize`
+
+Type: `number`
+
+Default: `20`
+
+Specify the size of the major grid lines.
+
+##### `grid.disable`
+
+Type: `boolean`
+
+Turn off the grid.
+
+##### `grid.offsetX`
+
+Type: `number`
+
+Default: `0` if [story layout](../api/parameters.mdx#layout) is `'fullscreen'`; `16` if story layout is `'padded'`
+
+Horizontal offset of the grid.
+
+##### `grid.offsetY`
+
+Type: `number`
+
+Default: `0` if [story layout](../api/parameters.mdx#layout) is `'fullscreen'`; `16` if story layout is `'padded'`
+
+Vertical offset of the grid.
+
+##### `grid.opacity`
+
+Type: `number`
+
+Default: `0.5`
+
+The opacity of the grid lines.
+
+#### `values`
+
+(Required, see description)
+
+Type: `{ name: string; value: string }[]`
+
+Available background colors. See above for a [usage example](#configuration).
+
+When defining the `backgrounds` parameter at the project level (in `.storybook/preview.js|ts`), you _must_ define the `values` property.
+
+<Callout variant="warning" icon="🆕">
+
+  **With the [`globals` API](#globals-api)**
+
+  #### `options`
+
+  (Required, see description)
+
+  Type:
+
+  ```ts
+  {
+    [key: string]: {
+      name: string;
+      value: string;
+    };
+  }
+  ```
+
+  Replaces: [`values`](#values)
+
+  Available background colors. See above for a [usage example](#configuration).
+
+  When defining the `backgrounds` parameter at the project level (in `.storybook/preview.js|ts`), you _must_ define the `options` property.
+
+</Callout>

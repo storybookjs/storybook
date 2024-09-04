@@ -1,6 +1,8 @@
 {
-  "name": "@storybook/addon-interactions",
+  "name": "interactions",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "implicitDependencies": [],
-  "type": "library"
+  "projectType": "library",
+  "targets": {
+    "build": {}
+  }
 }

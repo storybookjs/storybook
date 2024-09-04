@@ -1,10 +1,9 @@
-/* eslint-disable no-console */
-/* eslint-disable no-await-in-loop */
-import program from 'commander';
-import chalk from 'chalk';
-import ora from 'ora';
 import { setOutput } from '@actions/core';
+import chalk from 'chalk';
+import { program } from 'commander';
+import ora from 'ora';
 import invariant from 'tiny-invariant';
+
 import { esMain } from '../utils/esmain';
 import { git } from './utils/git-client';
 import { getUnpickedPRs } from './utils/github-client';
@@ -51,7 +50,6 @@ export const run = async (_: unknown) => {
 
   const failedCherryPicks: string[] = [];
 
-  // eslint-disable-next-line no-restricted-syntax
   for (const pr of patchPRs) {
     const prSpinner = ora(`Cherry picking #${pr.number}`).start();
 

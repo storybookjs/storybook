@@ -1,6 +1,6 @@
 {
   "name": "@storybook/nextjs",
-  "version": "8.1.0-alpha.1",
+  "version": "8.3.0-beta.2",
   "description": "Storybook for Next.js",
   "keywords": [
     "storybook",
@@ -24,13 +24,13 @@
     ".": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./dist/image-context": {
       "types": "./dist/image-context.d.ts",
-      "require": "./dist/image-context.js",
-      "import": "./dist/image-context.mjs"
+      "import": "./dist/image-context.mjs",
+      "require": "./dist/image-context.js"
     },
     "./preset": {
       "types": "./dist/preset.d.ts",
@@ -38,14 +38,49 @@
     },
     "./font/webpack/loader/storybook-nextjs-font-loader": {
       "types": "./dist/font/webpack/loader/storybook-nextjs-font-loader.d.ts",
-      "require": "./dist/font/webpack/loader/storybook-nextjs-font-loader.js",
-      "import": "./dist/font/webpack/loader/storybook-nextjs-font-loader.mjs"
+      "import": "./dist/font/webpack/loader/storybook-nextjs-font-loader.mjs",
+      "require": "./dist/font/webpack/loader/storybook-nextjs-font-loader.js"
     },
     "./dist/preview.mjs": "./dist/preview.mjs",
     "./next-image-loader-stub.js": {
       "types": "./dist/next-image-loader-stub.d.ts",
-      "require": "./dist/next-image-loader-stub.js",
-      "import": "./dist/next-image-loader-stub.mjs"
+      "import": "./dist/next-image-loader-stub.mjs",
+      "require": "./dist/next-image-loader-stub.js"
+    },
+    "./dist/compatibility/segment.compat": {
+      "types": "./dist/compatibility/segment.compat.d.ts",
+      "import": "./dist/compatibility/segment.compat.mjs",
+      "require": "./dist/compatibility/segment.compat.js"
+    },
+    "./dist/compatibility/redirect-status-code.compat": {
+      "types": "./dist/compatibility/redirect-status-code.compat.d.ts",
+      "import": "./dist/compatibility/redirect-status-code.compat.mjs",
+      "require": "./dist/compatibility/redirect-status-code.compat.js"
+    },
+    "./export-mocks": {
+      "types": "./dist/export-mocks/index.d.ts",
+      "import": "./dist/export-mocks/index.mjs",
+      "require": "./dist/export-mocks/index.js"
+    },
+    "./cache.mock": {
+      "types": "./dist/export-mocks/cache/index.d.ts",
+      "import": "./dist/export-mocks/cache/index.mjs",
+      "require": "./dist/export-mocks/cache/index.js"
+    },
+    "./headers.mock": {
+      "types": "./dist/export-mocks/headers/index.d.ts",
+      "import": "./dist/export-mocks/headers/index.mjs",
+      "require": "./dist/export-mocks/headers/index.js"
+    },
+    "./navigation.mock": {
+      "types": "./dist/export-mocks/navigation/index.d.ts",
+      "import": "./dist/export-mocks/navigation/index.mjs",
+      "require": "./dist/export-mocks/navigation/index.js"
+    },
+    "./router.mock": {
+      "types": "./dist/export-mocks/router/index.d.ts",
+      "import": "./dist/export-mocks/router/index.mjs",
+      "require": "./dist/export-mocks/router/index.js"
     },
     "./package.json": "./package.json"
   },
@@ -59,6 +94,21 @@
       ],
       "dist/image-context": [
         "dist/image-context.d.ts"
+      ],
+      "export-mocks": [
+        "dist/export-mocks/index.d.ts"
+      ],
+      "cache.mock": [
+        "dist/export-mocks/cache/index.d.ts"
+      ],
+      "headers.mock": [
+        "dist/export-mocks/headers/index.d.ts"
+      ],
+      "router.mock": [
+        "dist/export-mocks/router/index.d.ts"
+      ],
+      "navigation.mock": [
+        "dist/export-mocks/navigation/index.d.ts"
       ]
     }
   },
@@ -71,34 +121,29 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@babel/core": "^7.23.2",
+    "@babel/core": "^7.24.4",
     "@babel/plugin-syntax-bigint": "^7.8.3",
     "@babel/plugin-syntax-dynamic-import": "^7.8.3",
-    "@babel/plugin-syntax-import-assertions": "^7.22.5",
-    "@babel/plugin-transform-class-properties": "^7.22.5",
-    "@babel/plugin-transform-export-namespace-from": "^7.22.11",
-    "@babel/plugin-transform-numeric-separator": "^7.22.11",
-    "@babel/plugin-transform-object-rest-spread": "^7.22.15",
-    "@babel/plugin-transform-runtime": "^7.23.2",
-    "@babel/preset-env": "^7.23.2",
-    "@babel/preset-react": "^7.22.15",
-    "@babel/preset-typescript": "^7.23.2",
-    "@babel/runtime": "^7.23.2",
+    "@babel/plugin-syntax-import-assertions": "^7.24.1",
+    "@babel/plugin-transform-class-properties": "^7.24.1",
+    "@babel/plugin-transform-export-namespace-from": "^7.24.1",
+    "@babel/plugin-transform-numeric-separator": "^7.24.1",
+    "@babel/plugin-transform-object-rest-spread": "^7.24.1",
+    "@babel/plugin-transform-runtime": "^7.24.3",
+    "@babel/preset-env": "^7.24.4",
+    "@babel/preset-react": "^7.24.1",
+    "@babel/preset-typescript": "^7.24.1",
+    "@babel/runtime": "^7.24.4",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.11",
-    "@storybook/addon-actions": "workspace:*",
     "@storybook/builder-webpack5": "workspace:*",
-    "@storybook/core-common": "workspace:*",
-    "@storybook/core-events": "workspace:*",
-    "@storybook/node-logger": "workspace:*",
     "@storybook/preset-react-webpack": "workspace:*",
-    "@storybook/preview-api": "workspace:*",
     "@storybook/react": "workspace:*",
-    "@storybook/types": "workspace:*",
-    "@types/node": "^18.0.0",
+    "@storybook/test": "workspace:*",
+    "@types/node": "^22.0.0",
     "@types/semver": "^7.3.4",
     "babel-loader": "^9.1.3",
     "css-loader": "^6.7.3",
@@ -108,13 +153,12 @@
     "loader-utils": "^3.2.1",
     "node-polyfill-webpack-plugin": "^2.0.1",
     "pnp-webpack-plugin": "^1.7.0",
-    "postcss": "^8.4.21",
-    "postcss-loader": "^7.0.2",
+    "postcss": "^8.4.38",
+    "postcss-loader": "^8.1.1",
     "react-refresh": "^0.14.0",
     "resolve-url-loader": "^5.0.0",
     "sass-loader": "^12.4.0",
     "semver": "^7.3.5",
-    "sharp": "^0.32.6",
     "style-loader": "^3.3.1",
     "styled-jsx": "5.1.1",
     "ts-dedent": "^2.0.0",
@@ -122,7 +166,7 @@
     "tsconfig-paths-webpack-plugin": "^4.0.1"
   },
   "devDependencies": {
-    "@babel/types": "^7.23.0",
+    "@babel/types": "^7.24.0",
     "@types/babel__core": "^7",
     "@types/babel__plugin-transform-runtime": "^7",
     "@types/babel__preset-env": "^7",
@@ -134,8 +178,9 @@
   },
   "peerDependencies": {
     "next": "^13.5.0 || ^14.0.0",
-    "react": "^16.8.0 || ^17.0.0 || ^18.0.0",
-    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0",
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
+    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
+    "storybook": "workspace:^",
     "webpack": "^5.0.0"
   },
   "peerDependenciesMeta": {
@@ -145,6 +190,9 @@
     "webpack": {
       "optional": true
     }
+  },
+  "optionalDependencies": {
+    "sharp": "^0.33.3"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -158,6 +206,13 @@
       "./src/index.ts",
       "./src/preset.ts",
       "./src/preview.tsx",
+      "./src/export-mocks/index.ts",
+      "./src/export-mocks/cache/index.ts",
+      "./src/export-mocks/headers/index.ts",
+      "./src/export-mocks/router/index.ts",
+      "./src/export-mocks/navigation/index.ts",
+      "./src/compatibility/segment.compat.ts",
+      "./src/compatibility/redirect-status-code.compat.ts",
       "./src/next-image-loader-stub.ts",
       "./src/images/decorator.tsx",
       "./src/images/next-legacy-image.tsx",
@@ -173,5 +228,5 @@
     ],
     "platform": "node"
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae17"
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

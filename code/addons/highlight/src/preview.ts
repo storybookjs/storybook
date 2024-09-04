@@ -1,27 +1,23 @@
 /* eslint-env browser */
+import { STORY_CHANGED } from 'storybook/internal/core-events';
+import { addons } from 'storybook/internal/preview-api';
+
 import { global } from '@storybook/global';
-import { addons } from '@storybook/preview-api';
-import { STORY_CHANGED } from '@storybook/core-events';
-import { HIGHLIGHT, RESET_HIGHLIGHT, HIGHLIGHT_STYLE_ID } from './constants';
+
+import { HIGHLIGHT, HIGHLIGHT_STYLE_ID, RESET_HIGHLIGHT } from './constants';
 
 const { document } = global;
 
 type OutlineStyle = 'dotted' | 'dashed' | 'solid' | 'double';
 
-export const highlightStyle = (color = '#FF4785', style: OutlineStyle = 'dashed') => `
+const highlightStyle = (color = '#FF4785', style: OutlineStyle = 'dashed') => `
   outline: 2px ${style} ${color};
   outline-offset: 2px;
   box-shadow: 0 0 0 6px rgba(255,255,255,0.6);
 `;
 
-export const highlightObject = (color: string) => ({
-  outline: `2px dashed ${color}`,
-  outlineOffset: 2,
-  boxShadow: '0 0 0 6px rgba(255,255,255,0.6)',
-});
-
 interface HighlightInfo {
-  /** html selector of the element */
+  /** HTML selector of the element */
   elements: string[];
   color: string;
   style: OutlineStyle;

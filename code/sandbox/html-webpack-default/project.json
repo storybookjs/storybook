@@ -1,0 +1,21 @@
+{
+  "name": "html-webpack/default",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "implicitDependencies": [
+    "cli",
+    "core",
+    "essentials",
+    "interactions",
+    "links",
+    "onboarding",
+    "blocks",
+    "html-webpack5"
+  ],
+  "targets": {
+    "sandbox": {},
+    "sb:dev": {},
+    "sb:build": {}
+  },
+  "tags": ["ci:merged", "ci:daily"]
+}

@@ -1,8 +1,9 @@
 import { join } from 'node:path';
-import findCacheDirectory from 'find-cache-dir';
+
 import { init, parse } from 'es-module-lexer';
-import MagicString from 'magic-string';
+import findCacheDirectory from 'find-cache-dir';
 import { ensureFile, writeFile } from 'fs-extra';
+import MagicString from 'magic-string';
 import type { Alias, Plugin } from 'vite';
 
 const escapeKeys = (key: string) => key.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
@@ -17,23 +18,24 @@ const replacementMap = new Map([
 ]);
 
 /**
- * This plugin swaps out imports of pre-bundled storybook preview modules for destructured from global
- * variables that are added in runtime.js.
+ * This plugin swaps out imports of pre-bundled storybook preview modules for destructured from
+ * global variables that are added in runtime.js.
  *
- * For instance:
+ * @example
  *
  * ```js
- * import { useMemo as useMemo2, useEffect as useEffect2 } from "@storybook/preview-api";
+ * import { useMemo as useMemo2, useEffect as useEffect2 } from '@storybook/preview-api';
  * ```
  *
- * becomes
+ * Becomes
  *
  * ```js
  * const { useMemo: useMemo2, useEffect: useEffect2 } = __STORYBOOK_MODULE_PREVIEW_API__;
  * ```
  *
- * It is based on existing plugins like https://github.com/crcong/vite-plugin-externals
- * and https://github.com/eight04/rollup-plugin-external-globals, but simplified to meet our simple needs.
+ * It is based on existing plugins like https://github.com/crcong/vite-plugin-externals and
+ * https://github.com/eight04/rollup-plugin-external-globals, but simplified to meet our simple
+ * needs.
  */
 export async function externalGlobalsPlugin(externals: Record<string, string>) {
   await init;
@@ -71,7 +73,10 @@ export async function externalGlobalsPlugin(externals: Record<string, string>) {
     // Replace imports with variables destructured from global scope
     async transform(code: string, id: string) {
       const globalsList = Object.keys(externals);
-      if (globalsList.every((glob) => !code.includes(glob))) return undefined;
+
+      if (globalsList.every((glob) => !code.includes(glob))) {
+        return undefined;
+      }
 
       const [imports] = parse(code);
       const src = new MagicString(code);
@@ -88,7 +93,6 @@ export async function externalGlobalsPlugin(externals: Record<string, string>) {
         code: src.toString(),
         map: src.generateMap({
           source: id,
-          includeContent: true,
           hires: true,
         }),
       };

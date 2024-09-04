@@ -1,6 +1,6 @@
 {
   "name": "@storybook/preact",
-  "version": "8.1.0-alpha.1",
+  "version": "8.3.0-beta.2",
   "description": "Storybook Preact renderer",
   "keywords": [
     "storybook"
@@ -22,9 +22,8 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./preset": "./preset.js",
     "./dist/entry-preview.mjs": "./dist/entry-preview.mjs",
@@ -43,13 +42,15 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
+    "@storybook/components": "workspace:^",
     "@storybook/global": "^5.0.0",
-    "@storybook/preview-api": "workspace:*",
-    "@storybook/types": "workspace:*",
+    "@storybook/manager-api": "workspace:^",
+    "@storybook/preview-api": "workspace:^",
+    "@storybook/theming": "workspace:^",
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
@@ -57,7 +58,8 @@
     "typescript": "^5.3.2"
   },
   "peerDependencies": {
-    "preact": "^8.0.0||^10.0.0"
+    "preact": "^8.0.0||^10.0.0",
+    "storybook": "workspace:^"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -74,5 +76,5 @@
     ],
     "platform": "browser"
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae17"
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

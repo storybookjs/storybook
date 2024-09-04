@@ -13,11 +13,11 @@ export const testRunnerBuild: Task & { port: number } = {
   async run({ sandboxDir, junitFilename }, { dryRun, debug }) {
     const execOptions = { cwd: sandboxDir };
     const flags = [
-      `--url http://localhost:${this.port}`,
+      `--url http://127.0.0.1:${this.port}`,
       '--junit',
       '--maxWorkers=2',
       '--failOnConsole',
-      '--skipTags="test-skip"',
+      '--index-json',
     ];
 
     await exec(

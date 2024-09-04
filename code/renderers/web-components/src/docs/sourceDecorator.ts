@@ -1,8 +1,9 @@
 /* eslint-disable no-underscore-dangle */
+import { SNIPPET_RENDERED, SourceType } from 'storybook/internal/docs-tools';
+import { addons, useEffect } from 'storybook/internal/preview-api';
+import type { ArgsStoryFn, PartialStoryFn, StoryContext } from 'storybook/internal/types';
+
 import { render } from 'lit';
-import type { ArgsStoryFn, PartialStoryFn, StoryContext } from '@storybook/types';
-import { addons, useEffect } from '@storybook/preview-api';
-import { SNIPPET_RENDERED, SourceType } from '@storybook/docs-tools';
 
 import type { WebComponentsRenderer } from '../types';
 
@@ -36,7 +37,10 @@ export function sourceDecorator(
 
   useEffect(() => {
     const { id, unmappedArgs } = context;
-    if (source) addons.getChannel().emit(SNIPPET_RENDERED, { id, source, args: unmappedArgs });
+
+    if (source) {
+      addons.getChannel().emit(SNIPPET_RENDERED, { id, source, args: unmappedArgs });
+    }
   });
   if (!skipSourceRender(context)) {
     const container = window.document.createElement('div');

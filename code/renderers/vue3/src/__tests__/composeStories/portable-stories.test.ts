@@ -1,13 +1,19 @@
+// @vitest-environment happy-dom
 /// <reference types="@testing-library/jest-dom" />;
-import { it, expect, vi, describe } from 'vitest';
 import { render, screen } from '@testing-library/vue';
-import { addons } from '@storybook/preview-api';
-import { expectTypeOf } from 'expect-type';
+import { describe, expect, it, vi } from 'vitest';
+
+import { addons } from 'storybook/internal/preview-api';
+
 import type { Meta } from '@storybook/vue3';
 
+import { expectTypeOf } from 'expect-type';
+
+import { composeStories, composeStory, setProjectAnnotations } from '../../portable-stories';
 import * as stories from './Button.stories';
 import type Button from './Button.vue';
-import { composeStories, composeStory, setProjectAnnotations } from '../../portable-stories';
+
+setProjectAnnotations([]);
 
 // example with composeStories, returns an object with all stories composed with args/decorators
 const { CSF3Primary, LoaderStory } = composeStories(stories);
@@ -48,7 +54,7 @@ describe('renders', () => {
     expect(getByTestId('spy-data').textContent).toEqual('mockFn return value');
     expect(getByTestId('loaded-data').textContent).toEqual('loaded data');
     // spy assertions happen in the play function and should work
-    await LoaderStory.play!();
+    await LoaderStory.run!();
   });
 });
 
@@ -66,21 +72,16 @@ describe('projectAnnotations', () => {
     const { getByText } = render(WithEnglishText);
     const buttonElement = getByText('Hello!');
     expect(buttonElement).toBeInTheDocument();
+    expect(WithEnglishText.parameters?.injected).toBe(true);
   });
 
   it('renders with custom projectAnnotations via composeStory params', () => {
     const WithPortugueseText = composeStory(stories.CSF2StoryWithLocale, stories.default, {
-      globals: { locale: 'pt' },
+      initialGlobals: { locale: 'pt' },
     });
     const { getByText } = render(WithPortugueseText);
     const buttonElement = getByText('Olá!');
     expect(buttonElement).toBeInTheDocument();
-  });
-
-  it('renders with custom projectAnnotations via setProjectAnnotations', () => {
-    setProjectAnnotations([{ parameters: { injected: true } }]);
-    const Story = composeStory(stories.CSF2StoryWithLocale, stories.default);
-    expect(Story.parameters?.injected).toBe(true);
   });
 });
 
@@ -103,9 +104,7 @@ describe('CSF3', () => {
   it('renders with play function', async () => {
     const CSF3InputFieldFilled = composeStory(stories.CSF3InputFieldFilled, stories.default);
 
-    render(CSF3InputFieldFilled);
-
-    await CSF3InputFieldFilled.play!();
+    await CSF3InputFieldFilled.run();
 
     const input = screen.getByTestId('input') as HTMLInputElement;
     expect(input.value).toEqual('Hello world!');
@@ -149,11 +148,7 @@ it.each(testCases)('Renders %s story', async (_storyName, Story) => {
   if (typeof Story === 'string' || _storyName === 'CSF2StoryWithLocale') {
     return;
   }
-
-  await Story.load();
-  const { baseElement } = await render(Story);
-  await Story.play?.();
+  await Story.run();
   await new Promise((resolve) => setTimeout(resolve, 0));
-
-  expect(baseElement).toMatchSnapshot();
+  expect(document.body).toMatchSnapshot();
 });

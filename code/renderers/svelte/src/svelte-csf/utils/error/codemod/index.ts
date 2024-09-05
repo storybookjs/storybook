@@ -4,7 +4,7 @@ import dedent from 'dedent';
 import type { Attribute } from 'svelte/compiler';
 
 export class InvalidTemplateAttribute extends StorybookSvelteCSFError {
-  readonly category = StorybookSvelteCSFError.CATEGORY.codemod;
+  readonly category = StorybookSvelteCSFError.CATEGORY.legacyAPI;
   readonly code = 1;
   public documentation = true;
 
@@ -31,7 +31,7 @@ export class InvalidTemplateAttribute extends StorybookSvelteCSFError {
 }
 
 export class LegacyTemplateNotEnabledError extends StorybookSvelteCSFError {
-  readonly category = StorybookSvelteCSFError.CATEGORY.codemod;
+  readonly category = StorybookSvelteCSFError.CATEGORY.legacyAPI;
   readonly code = 2;
   public documentation = true;
 

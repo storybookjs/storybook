@@ -331,9 +331,9 @@ You can fix this collision by providing a unique `exportName` prop with`<Story e
 
 See more in [the `exportName` API docs](./README.md#custom-export-name).
 
-## `CODEMOD`
+## `LEGACY_API`
 
-### `SB_SVELTE_CSF_CODEMOD_0001`
+### `SB_SVELTE_CSF_LEGACY_API_0001`
 
 `<Story/>` component prop `template` value must be a text with string reference to existing `<Template />`'s `id` prop.
 
@@ -347,7 +347,7 @@ It cannot be a shorthand or a dynamic value.
 />
 ```
 
-### `SB_SVELTE_CSF_CODEMOD_0002`
+### `SB_SVELTE_CSF_LEGACY_API_0002`
 
 You are using legacy template API, with deprecated components.\
 To enable support for legacy API, tweak this addon options in your _(`./.storybook/main.(j|t)s`)_ file:

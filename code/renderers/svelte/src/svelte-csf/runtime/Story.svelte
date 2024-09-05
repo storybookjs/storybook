@@ -5,7 +5,7 @@
   lang="ts"
   generics="const TOverrideArgs extends Args, const TCmp extends Cmp, TMeta extends Meta<TCmp>"
 >
-  import type { Args } from 'storybook/internal/types';
+  import type { Args } from '@storybook/types';
   import type { Snippet } from 'svelte';
 
   import { useStoriesExtractor } from '#runtime/contexts/extractor.svelte';

@@ -1,4 +1,4 @@
-import type { Args as BaseArgs } from 'storybook/internal/types';
+import type { Args as BaseArgs } from '@storybook/types';
 import type { EmptyObject } from 'type-fest';
 
 import type {

@@ -1,3 +1,15 @@
+# v1.0.11 (Thu Sep 05 2024)
+
+#### 🐛 Bug Fix
+
+- fix: Support react-dom/test-utils [#17](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/17) ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
 # v1.0.10 (Fri Aug 30 2024)
 
 #### 🐛 Bug Fix

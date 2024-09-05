@@ -1,11 +1,10 @@
 import fs from 'node:fs/promises';
 
 import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
+import { preprocess } from 'svelte/compiler';
 import type { IndexInput } from '@storybook/types';
-import type { Identifier, ImportSpecifier, Property } from 'estree';
-import { preprocess, type Script, type SvelteNode } from 'svelte/compiler';
 
-import { getSvelteAST } from '#parser/ast';
+import { getSvelteAST, type ESTreeAST, type SvelteAST } from '#parser/ast';
 import { extractStoryAttributesNodes } from '#parser/extract/svelte/story/attributes';
 import { getStoryIdentifiers } from '#parser/analyse/story/attributes/identifiers';
 import {
@@ -53,10 +52,10 @@ export async function parseForIndexer(
 
   const svelteAST = getSvelteAST({ code, filename });
   let results: Results & {
-    defineMetaImport?: ImportSpecifier;
-    legacyMetaImport?: ImportSpecifier;
-    legacyStoryImport?: ImportSpecifier;
-    defineMetaStory?: Identifier;
+    defineMetaImport?: ESTreeAST.ImportSpecifier;
+    legacyMetaImport?: ESTreeAST.ImportSpecifier;
+    legacyStoryImport?: ESTreeAST.ImportSpecifier;
+    defineMetaStory?: ESTreeAST.Identifier;
   } = {
     meta: {},
     stories: [],
@@ -64,7 +63,7 @@ export async function parseForIndexer(
 
   let foundMeta = false;
 
-  walk(svelteAST as SvelteNode | Script, results, {
+  walk(svelteAST as SvelteAST.SvelteNode | SvelteAST.Script, results, {
     _(_node, context) {
       const { next, state } = context;
       next(state);
@@ -174,7 +173,7 @@ export async function parseForIndexer(
               property.type === 'Property' &&
               property.key.type === 'Identifier' &&
               property.key.name === 'Story'
-          ) as Property | undefined;
+          ) as ESTreeAST.Property | undefined;
 
           if (!destructuredStoryIdentifier) {
             throw new NoStoryComponentDestructuredError({
@@ -183,7 +182,7 @@ export async function parseForIndexer(
             });
           }
 
-          state.defineMetaStory = destructuredStoryIdentifier.value as Identifier;
+          state.defineMetaStory = destructuredStoryIdentifier.value as ESTreeAST.Identifier;
 
           if (arguments_[0].type !== 'ObjectExpression') {
             throw new GetDefineMetaFirstArgumentError({
@@ -229,10 +228,10 @@ export async function parseForIndexer(
     },
 
     // NOTE: We assume these properties are from 'meta' _(from `defineMeta` or `export const meta`)_ object expression
-    Property(node: Property, context) {
-      const { key } = node as Property;
+    Property(node: ESTreeAST.Property, context) {
+      const { key } = node as ESTreeAST.Property;
       const { state } = context;
-      const { name } = key as Identifier;
+      const { name } = key as ESTreeAST.Identifier;
 
       if (name === 'title') {
         state.meta.title = getPropertyStringValue({ node, filename });

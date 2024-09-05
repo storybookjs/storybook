@@ -1,10 +1,10 @@
 import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
-import type { Component } from 'svelte/compiler';
 import { print } from 'svelte-ast-print';
 import { describe, it } from 'vitest';
 
 import { transformTemplateToSnippet } from './template-to-snippet';
 
+import type { SvelteAST } from '#parser/ast';
 import { parseAndExtractSvelteNode } from '#tests/extractor';
 
 describe(transformTemplateToSnippet.name, () => {
@@ -18,7 +18,7 @@ describe(transformTemplateToSnippet.name, () => {
         <Button {...args} variant="primary" />
       </Template>
     `;
-    const node = await parseAndExtractSvelteNode<Component>(code, 'Component');
+    const node = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
 
     expect(print(transformTemplateToSnippet(node))).toMatchInlineSnapshot(`
 			"{#snippet children(args)}
@@ -37,7 +37,7 @@ describe(transformTemplateToSnippet.name, () => {
         <Button {...args} variant="primary" />
       </Template>
     `;
-    const node = await parseAndExtractSvelteNode<Component>(code, 'Component');
+    const node = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
 
     expect(print(transformTemplateToSnippet(node))).toMatchInlineSnapshot(`
 			"{#snippet coolTemplate(args)}
@@ -56,7 +56,7 @@ describe(transformTemplateToSnippet.name, () => {
         <p>{context.args}</p>
       </Template>
     `;
-    const node = await parseAndExtractSvelteNode<Component>(code, 'Component');
+    const node = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
 
     expect(print(transformTemplateToSnippet(node))).toMatchInlineSnapshot(`
 			"{#snippet children(_args, context)}

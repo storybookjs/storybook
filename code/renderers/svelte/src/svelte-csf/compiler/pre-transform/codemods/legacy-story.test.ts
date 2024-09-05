@@ -1,9 +1,9 @@
-import type { Component } from 'svelte/compiler';
 import { print } from 'svelte-ast-print';
 import { describe, it } from 'vitest';
 
 import { transformLegacyStory } from './legacy-story';
 
+import type { SvelteAST } from '#parser/ast';
 import { parseAndExtractSvelteNode } from '#tests/extractor';
 
 describe(transformLegacyStory.name, () => {
@@ -15,7 +15,7 @@ describe(transformLegacyStory.name, () => {
 
       <Story name="Default" autodocs />
     `;
-    const node = await parseAndExtractSvelteNode<Component>(code, 'Component');
+    const node = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
 
     expect(print(transformLegacyStory({ node }))).toMatchInlineSnapshot(
       `"<Story name="Default" tags={["autodocs"]} />"`
@@ -30,7 +30,7 @@ describe(transformLegacyStory.name, () => {
 
       <Story name="Default" autodocs tags={["!dev"]} />
     `;
-    const node = await parseAndExtractSvelteNode<Component>(code, 'Component');
+    const node = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
 
     expect(print(transformLegacyStory({ node }))).toMatchInlineSnapshot(
       `"<Story name="Default" tags={["!dev", "autodocs"]} />"`
@@ -45,7 +45,7 @@ describe(transformLegacyStory.name, () => {
 
       <Story name="Default" source />
     `;
-    const node = await parseAndExtractSvelteNode<Component>(code, 'Component');
+    const node = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
 
     expect(print(transformLegacyStory({ node }))).toMatchInlineSnapshot(
       `"<Story name="Default" />"`
@@ -62,7 +62,7 @@ describe(transformLegacyStory.name, () => {
 
       <Story name="Default" source="'<Button primary />'" />
     `;
-    const node = await parseAndExtractSvelteNode<Component>(code, 'Component');
+    const node = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
 
     expect(print(transformLegacyStory({ node }))).toMatchInlineSnapshot(
       `
@@ -85,7 +85,7 @@ describe(transformLegacyStory.name, () => {
         <LegacyStory>{'Hi'}</LegacyStory>
       </Story>
     `;
-    const node = await parseAndExtractSvelteNode<Component>(code, 'Component');
+    const node = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
 
     expect(print(transformLegacyStory({ node }))).toMatchInlineSnapshot(
       `
@@ -117,7 +117,7 @@ describe(transformLegacyStory.name, () => {
         }}
       />
     `;
-    const node = await parseAndExtractSvelteNode<Component>(code, 'Component');
+    const node = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
 
     expect(print(transformLegacyStory({ node }))).toMatchInlineSnapshot(
       `
@@ -140,7 +140,7 @@ describe(transformLegacyStory.name, () => {
 
       <Story name="Default" template="someTemplate" />
     `;
-    const node = await parseAndExtractSvelteNode<Component>(code, 'Component');
+    const node = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
 
     expect(print(transformLegacyStory({ node }))).toMatchInlineSnapshot(
       `"<Story name="Default" children={someTemplate} />"`
@@ -159,7 +159,7 @@ describe(transformLegacyStory.name, () => {
         <Button {...args} />
       </Story>
     `;
-    const node = await parseAndExtractSvelteNode<Component>(code, 'Component');
+    const node = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
 
     expect(print(transformLegacyStory({ node }))).toMatchInlineSnapshot(`
 			"<Story name="Default">
@@ -182,7 +182,7 @@ describe(transformLegacyStory.name, () => {
         <p>{context.id}</p>
       </Story>
     `;
-    const node = await parseAndExtractSvelteNode<Component>(code, 'Component');
+    const node = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
 
     expect(print(transformLegacyStory({ node }))).toMatchInlineSnapshot(`
 			"<Story name="Default">
@@ -206,7 +206,7 @@ describe(transformLegacyStory.name, () => {
         <p>{context.id}</p>
       </Story>
     `;
-    const node = await parseAndExtractSvelteNode<Component>(code, 'Component');
+    const node = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
 
     expect(print(transformLegacyStory({ node }))).toMatchInlineSnapshot(`
       "<Story name="Default">

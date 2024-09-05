@@ -1,5 +1,4 @@
-import type { Identifier } from 'estree';
-
+import type { ESTreeAST } from '#parser/ast';
 import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
 import {
   NoDestructuredDefineMetaCallError,
@@ -11,7 +10,7 @@ interface Params {
   filename?: string;
 }
 
-export function getMetaIdentifier(params: Params): Identifier {
+export function getMetaIdentifier(params: Params): ESTreeAST.Identifier {
   const { node, filename } = params;
   const { declarations } = node;
   const { id } = declarations[0];

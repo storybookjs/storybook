@@ -1,15 +1,15 @@
 import { logger } from '@storybook/node-logger';
 import dedent from 'dedent';
-import type { ObjectExpression, Property } from 'estree';
-import type { Component } from 'svelte/compiler';
+
+import type { ESTreeAST, SvelteAST } from '#parser/ast';
 
 import { createASTObjectExpression } from '#parser/ast';
 
 interface FindPropertyOptions {
   name: string;
-  node: ObjectExpression;
+  node: ESTreeAST.ObjectExpression;
   filename?: string;
-  component?: Component;
+  component?: SvelteAST.Component;
 }
 
 /**
@@ -35,12 +35,12 @@ export const findPropertyParametersIndex = (options: Omit<FindPropertyOptions, '
 export const getParametersProperty = (options: Omit<FindPropertyOptions, 'name'>) => {
   const { node } = options;
 
-  return node.properties[findPropertyParametersIndex(options)] as Property;
+  return node.properties[findPropertyParametersIndex(options)] as ESTreeAST.Property;
 };
 
 export const getParametersPropertyValue = (
   options: Omit<FindPropertyOptions, 'name'>
-): ObjectExpression => {
+): ESTreeAST.ObjectExpression => {
   const { filename, component } = options;
   let property = getParametersProperty(options);
 
@@ -68,7 +68,7 @@ export const getParametersPropertyValue = (
     property.value.type === 'FunctionExpression' &&
     property.value.body.body[0].type === 'ReturnStatement'
   ) {
-    const properties: ObjectExpression['properties'] = [];
+    const properties: ESTreeAST.ObjectExpression['properties'] = [];
     if (property.value.body.body[0].argument) {
       properties.push({
         type: 'SpreadElement',
@@ -113,7 +113,9 @@ export const findPropertyDocsIndex = (options: Omit<FindPropertyOptions, 'name'>
 };
 
 export const getDocsProperty = (options: Omit<FindPropertyOptions, 'name'>) => {
-  return getParametersPropertyValue(options).properties[findPropertyDocsIndex(options)] as Property;
+  return getParametersPropertyValue(options).properties[
+    findPropertyDocsIndex(options)
+  ] as ESTreeAST.Property;
 };
 
 export const getDocsPropertyValue = (options: Omit<FindPropertyOptions, 'name'>) => {
@@ -149,7 +151,7 @@ export const findPropertyDescriptionIndex = (options: Omit<FindPropertyOptions, 
 export const getDescriptionProperty = (options: Omit<FindPropertyOptions, 'name'>) => {
   return getDocsPropertyValue(options).properties[
     findPropertyDescriptionIndex(options)
-  ] as Property;
+  ] as ESTreeAST.Property;
 };
 
 export const getDescriptionPropertyValue = (options: Omit<FindPropertyOptions, 'name'>) => {

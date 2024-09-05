@@ -1,9 +1,8 @@
-import type { Identifier, ObjectExpression, Property, VariableDeclaration } from 'estree';
-import type { Attribute, Comment, Component } from 'svelte/compiler';
+import type { ESTreeAST, SvelteAST } from '#parser/ast';
 
 interface Params {
-  component: Component;
-  comment?: Comment;
+  component: SvelteAST.Component;
+  comment?: SvelteAST.Comment;
 }
 
 /**
@@ -19,11 +18,11 @@ interface Params {
  * + });
  * ```
  */
-export function transformComponentMetaToDefineMeta(params: Params): VariableDeclaration {
+export function transformComponentMetaToDefineMeta(params: Params): ESTreeAST.VariableDeclaration {
   const { component, comment } = params;
   const { attributes, start, end } = component;
 
-  let properties: ObjectExpression['properties'] = [];
+  let properties: ESTreeAST.ObjectExpression['properties'] = [];
 
   for (const attribute of attributes) {
     if (attribute.type === 'Attribute') {
@@ -34,12 +33,12 @@ export function transformComponentMetaToDefineMeta(params: Params): VariableDecl
   const firstArgument = {
     type: 'ObjectExpression',
     properties,
-  } satisfies ObjectExpression;
+  } satisfies ESTreeAST.ObjectExpression;
 
   const key = {
     type: 'Identifier',
     name: 'Story',
-  } satisfies Identifier;
+  } satisfies ESTreeAST.Identifier;
 
   return {
     type: 'VariableDeclaration',
@@ -80,7 +79,7 @@ export function transformComponentMetaToDefineMeta(params: Params): VariableDecl
 
 function transformMetaCommentToBlockComment(
   comment: NonNullable<Params['comment']>
-): NonNullable<NonNullable<VariableDeclaration['leadingComments']>[number]> {
+): NonNullable<NonNullable<ESTreeAST.VariableDeclaration['leadingComments']>[number]> {
   const { data } = comment;
 
   return {
@@ -89,13 +88,13 @@ function transformMetaCommentToBlockComment(
   };
 }
 
-function attributeToObjectExpressionProperty(attribute: Attribute): Property {
+function attributeToObjectExpressionProperty(attribute: SvelteAST.Attribute): ESTreeAST.Property {
   const { name } = attribute;
 
   const key = {
     type: 'Identifier',
     name,
-  } satisfies Identifier;
+  } satisfies ESTreeAST.Identifier;
 
   return {
     type: 'Property',
@@ -108,7 +107,9 @@ function attributeToObjectExpressionProperty(attribute: Attribute): Property {
   };
 }
 
-function attributeValueToPropertyValue(value: Attribute['value']): Property['value'] {
+function attributeValueToPropertyValue(
+  value: SvelteAST.Attribute['value']
+): ESTreeAST.Property['value'] {
   if (value === true) {
     return {
       type: 'Literal',
@@ -116,15 +117,16 @@ function attributeValueToPropertyValue(value: Attribute['value']): Property['val
     };
   }
 
-  if (Array.isArray(value) && value[0].type === 'Text') {
+  if (!Array.isArray(value)) {
+    return value.expression;
+  }
+
+  if (value[0].type === 'Text') {
     return {
       type: 'Literal',
       value: value[0].raw,
     };
   }
 
-  // WARN: I can't find a case where it would be expression tag within an array.
-  // Leaving it in case it's a problem - will be good for us to learn about it.
-
-  return value.expression;
+  return value[0].expression;
 }

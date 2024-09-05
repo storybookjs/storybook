@@ -1,7 +1,5 @@
-import type { Attribute, Component } from 'svelte/compiler';
-
-import { getStringValueFromAttribute } from '../attributes';
-
+import { getStringValueFromAttribute } from '#parser/analyse/story/attributes';
+import type { SvelteAST } from '#parser/ast';
 import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
 import { extractStoryAttributesNodes } from '#parser/extract/svelte/story/attributes';
 import { isValidVariableName, storyNameToExportName } from '#utils/identifier-utils';
@@ -17,10 +15,10 @@ type StoryIdentifiers = {
 };
 
 interface GetIdentifiersParams {
-  nameNode?: Attribute | undefined;
-  exportNameNode?: Attribute | undefined;
+  nameNode?: SvelteAST.Attribute | undefined;
+  exportNameNode?: SvelteAST.Attribute | undefined;
   filename?: string;
-  component: Component;
+  component: SvelteAST.Component;
 }
 
 export function getStoryIdentifiers(options: GetIdentifiersParams): StoryIdentifiers {

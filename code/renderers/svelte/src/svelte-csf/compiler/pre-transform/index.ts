@@ -1,44 +1,36 @@
 import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
-import type {
-  Identifier,
-  ImportDeclaration,
-  ObjectExpression,
-  Program,
-  VariableDeclaration,
-} from 'estree';
-import type { Comment, Fragment, Root, Script, SvelteNode } from 'svelte/compiler';
 
 import { transformComponentMetaToDefineMeta } from '#compiler/pre-transform/codemods/component-meta-to-define-meta';
 import { transformExportMetaToDefineMeta } from '#compiler/pre-transform/codemods/export-const-to-define-meta';
 import { transformImportDeclaration } from '#compiler/pre-transform/codemods/import-declaration';
 import { transformLegacyStory } from '#compiler/pre-transform/codemods/legacy-story';
 import { transformTemplateToSnippet } from '#compiler/pre-transform/codemods/template-to-snippet';
-import { createASTScript } from '#parser/ast';
+import { createASTScript, type ESTreeAST, type SvelteAST } from '#parser/ast';
 
 interface Params {
-  ast: Root;
+  ast: SvelteAST.Root;
   filename?: string;
 }
 
-export async function codemodLegacyNodes(params: Params): Promise<Root> {
+export async function codemodLegacyNodes(params: Params): Promise<SvelteAST.Root> {
   const { walk } = await import('zimmerframe');
 
   const { ast, filename } = params;
 
   interface State {
     componentIdentifierName: ComponentIdentifierName;
-    componentMetaHtmlComment?: Comment;
-    defineMetaFromExportConstMeta?: VariableDeclaration;
-    defineMetaFromComponentMeta?: VariableDeclaration;
+    componentMetaHtmlComment?: SvelteAST.Comment;
+    defineMetaFromExportConstMeta?: ESTreeAST.VariableDeclaration;
+    defineMetaFromComponentMeta?: ESTreeAST.VariableDeclaration;
     currentScript?: 'instance' | 'module';
-    pkgImportDeclaration?: ImportDeclaration;
-    storiesComponentIdentifier?: Identifier;
-    storiesComponentImportDeclaration?: ImportDeclaration;
+    pkgImportDeclaration?: ESTreeAST.ImportDeclaration;
+    storiesComponentIdentifier?: ESTreeAST.Identifier;
+    storiesComponentImportDeclaration?: ESTreeAST.ImportDeclaration;
   }
   const state: State = {
     componentIdentifierName: {},
   };
-  let transformedAst = walk(ast as SvelteNode | Script, state, {
+  let transformedAst = walk(ast as SvelteAST.SvelteNode | SvelteAST.Script, state, {
     _(_node, context) {
       const { next, state } = context;
 
@@ -50,10 +42,12 @@ export async function codemodLegacyNodes(params: Params): Promise<Root> {
       const { state, visit } = context;
 
       // NOTE: We walk on instance first to see if the package import declaration is there or `export const meta`
-      const transformedInstance = (instance ? visit(instance, state) : null) as Script | null;
+      const transformedInstance = (
+        instance ? visit(instance, state) : null
+      ) as SvelteAST.Script | null;
       // NOTE: We will create in 'clean-up' walk if it wasn't there
-      const transformedModule = module ? (visit(module, state) as Script) : null;
-      const transformedFragment = visit(fragment, state) as Fragment;
+      const transformedModule = module ? (visit(module, state) as SvelteAST.Script) : null;
+      const transformedFragment = visit(fragment, state) as SvelteAST.Fragment;
 
       return {
         ...rest,
@@ -122,12 +116,11 @@ export async function codemodLegacyNodes(params: Params): Promise<Root> {
         state.defineMetaFromExportConstMeta = transformed;
       }
 
+      const { init } = declaration.declarations[0];
       // NOTE:
       // Type assertion because we already ran transform codemod function by this point (`transformed`).
       // So the possible issue is on our side, not user.
-      const { init } = declaration.declarations[0] as ObjectExpression;
-
-      const { properties } = init;
+      const { properties } = init as ESTreeAST.ObjectExpression;
 
       for (const property of properties) {
         if (
@@ -188,7 +181,7 @@ export async function codemodLegacyNodes(params: Params): Promise<Root> {
       const { state, visit } = context;
 
       // NOTE: At this point, we decide for walker where it should walk first instead of using `next(state)`
-      instance = instance ? (visit(instance, state) as Script) : null;
+      instance = instance ? (visit(instance, state) as SvelteAST.Script) : null;
 
       if (!module) {
         const {
@@ -197,7 +190,7 @@ export async function codemodLegacyNodes(params: Params): Promise<Root> {
           storiesComponentImportDeclaration,
         } = state;
 
-        let body: Program['body'] = [];
+        let body: ESTreeAST.Program['body'] = [];
 
         // WARN: This scope is bug prone
 
@@ -225,7 +218,7 @@ export async function codemodLegacyNodes(params: Params): Promise<Root> {
 
       visit(module, state);
 
-      fragment = visit(fragment, state) as Fragment;
+      fragment = visit(fragment, state) as SvelteAST.Fragment;
 
       // NOTE: Remove if body is empty
       if (instance && instance.content.body.length === 0) {
@@ -246,7 +239,7 @@ export async function codemodLegacyNodes(params: Params): Promise<Root> {
 
       state.currentScript = scriptContext === 'module' ? 'module' : 'instance';
 
-      content = visit(content, state) as Program;
+      content = visit(content, state) as ESTreeAST.Program;
 
       return { ...rest, content, context: scriptContext };
     },
@@ -256,7 +249,7 @@ export async function codemodLegacyNodes(params: Params): Promise<Root> {
       const { currentScript, pkgImportDeclaration } = state;
 
       if (pkgImportDeclaration && currentScript === 'instance') {
-        let instanceBody: Program['body'] = [];
+        let instanceBody: ESTreeAST.Program['body'] = [];
 
         for (const declaration of body) {
           if (declaration.type === 'ImportDeclaration') {
@@ -338,7 +331,7 @@ export async function codemodLegacyNodes(params: Params): Promise<Root> {
     },
   });
 
-  return transformedAst as Root;
+  return transformedAst as SvelteAST.Root;
 }
 
 interface ComponentIdentifierName {
@@ -347,7 +340,7 @@ interface ComponentIdentifierName {
   Template?: string;
 }
 function getComponentsIdentifiersNames(
-  specifiers: ImportDeclaration['specifiers']
+  specifiers: ESTreeAST.ImportDeclaration['specifiers']
 ): ComponentIdentifierName {
   let results: ComponentIdentifierName = {};
 

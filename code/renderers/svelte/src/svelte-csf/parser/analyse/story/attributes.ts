@@ -1,5 +1,4 @@
-import type { Attribute, Component } from 'svelte/compiler';
-
+import type { SvelteAST } from '#parser/ast';
 import {
   AttributeNotArrayError,
   AttributeNotArrayOfStringsError,
@@ -7,9 +6,9 @@ import {
 } from '#utils/error/parser/analyse/story';
 
 interface Params {
-  node: Attribute | undefined;
+  node: SvelteAST.Attribute | undefined;
   filename?: string;
-  component: Component;
+  component: SvelteAST.Component;
 }
 
 export function getStringValueFromAttribute(params: Params) {
@@ -25,7 +24,11 @@ export function getStringValueFromAttribute(params: Params) {
     throw new AttributeNotStringError({ filename, component, attribute: node });
   }
 
-  if (value.type === 'ExpressionTag' && value.expression.type === 'Literal') {
+  if (
+    !Array.isArray(value) &&
+    value.type === 'ExpressionTag' &&
+    value.expression.type === 'Literal'
+  ) {
     return value.expression.value;
   }
 
@@ -53,11 +56,44 @@ export function getArrayOfStringsValueFromAttribute(params: Params) {
 
   const { value } = node;
 
-  if (
-    value === true ||
-    value.type !== 'ExpressionTag' ||
-    value.expression.type !== 'ArrayExpression'
-  ) {
+  if (value === true) {
+    throw new AttributeNotArrayError({
+      component,
+      filename,
+      attribute: node,
+    });
+  }
+
+  // value is SvelteAST.ExpressionTag
+  if (!Array.isArray(value)) {
+    if (value.expression.type !== 'ArrayExpression') {
+      throw new AttributeNotArrayError({
+        component,
+        filename,
+        attribute: node,
+      });
+    }
+
+    let arrayOfStrings: string[] = [];
+
+    for (const element of value.expression.elements) {
+      if (element?.type !== 'Literal' || typeof element.value !== 'string') {
+        throw new AttributeNotArrayOfStringsError({
+          filename,
+          component,
+          attribute: node,
+          element,
+        });
+      }
+
+      arrayOfStrings.push(element.value);
+    }
+
+    return arrayOfStrings;
+  }
+
+  // value is Array<SvelteAST.ExpressionTag | SvelteAST.Text> - I haven't figured out when it would happen
+  if (value[0].type !== 'ExpressionTag' || value[0].expression.type !== 'ArrayExpression') {
     throw new AttributeNotArrayError({
       component,
       filename,
@@ -67,7 +103,7 @@ export function getArrayOfStringsValueFromAttribute(params: Params) {
 
   const arrayOfStrings: string[] = [];
 
-  for (const element of value.expression.elements) {
+  for (const element of value[0].expression.elements) {
     if (element?.type !== 'Literal' || typeof element.value !== 'string') {
       throw new AttributeNotArrayOfStringsError({
         filename,

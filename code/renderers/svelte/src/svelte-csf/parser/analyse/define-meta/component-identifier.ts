@@ -1,5 +1,4 @@
-import type { Identifier } from 'estree';
-
+import type { ESTreeAST } from '#parser/ast';
 import { extractDefineMetaPropertiesNodes } from '#parser/extract/svelte/define-meta';
 import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
 import { InvalidComponentValueError } from '#utils/error/parser/analyse/define-meta';
@@ -9,7 +8,7 @@ interface Params {
   filename?: string;
 }
 
-export function getDefineMetaComponentValue(params: Params): Identifier | undefined {
+export function getDefineMetaComponentValue(params: Params): ESTreeAST.Identifier | undefined {
   const { nodes, filename } = params;
   const { component } = extractDefineMetaPropertiesNodes({
     nodes,

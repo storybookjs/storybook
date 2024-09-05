@@ -1,5 +1,4 @@
 import { logger } from '@storybook/node-logger';
-import type { Comment } from 'estree';
 
 import {
   findASTPropertyIndex,
@@ -10,8 +9,7 @@ import {
   getDocsPropertyValue,
   getParametersPropertyValue,
 } from '#compiler/post-transform/shared/description';
-
-import { createASTProperty, createASTObjectExpression } from '#parser/ast';
+import { createASTObjectExpression, createASTProperty, type ESTreeAST } from '#parser/ast';
 import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
 import type { CompiledASTNodes } from '#parser/extract/compiled/nodes';
 import { getDefineMetaFirstArgumentObjectExpression } from '#parser/extract/svelte/define-meta';
@@ -130,7 +128,7 @@ export function insertDefineMetaJSDocCommentAsDescription(params: Params): void 
  * Adopted from: https://github.com/storybookjs/storybook/blob/next/code/lib/csf-tools/src/enrichCsf.ts/#L148-L164
  * Adjusted for this addon, because here we use AST format from `estree`, not `babel`.
  */
-function extractDescription(leadingComments: Comment[]) {
+function extractDescription(leadingComments: ESTreeAST.Comment[]) {
   const comments = leadingComments
     .map((comment) => {
       if (

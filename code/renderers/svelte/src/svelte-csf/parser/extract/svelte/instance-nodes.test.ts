@@ -1,10 +1,9 @@
-import type { Identifier } from 'estree';
 import { describe, expect, it } from 'vitest';
 
 import { extractInstanceNodes } from './instance-nodes';
 import { extractModuleNodes } from './module-nodes';
 
-import { getSvelteAST } from '#parser/ast';
+import { getSvelteAST, type ESTreeAST } from '#parser/ast';
 
 describe(extractInstanceNodes.name, () => {
   it("extract 'setTemplateCall' correctly when used", async () => {
@@ -29,7 +28,9 @@ describe(extractInstanceNodes.name, () => {
     expect(instanceNodes).toHaveProperty('setTemplateCall');
     expect(instanceNodes.setTemplateCall).toBeDefined();
     expect(instanceNodes.setTemplateCall?.arguments).toHaveLength(1);
-    expect((instanceNodes.setTemplateCall?.arguments[0] as Identifier).name).toBe('render');
+    expect((instanceNodes.setTemplateCall?.arguments[0] as ESTreeAST.Identifier).name).toBe(
+      'render'
+    );
   });
 
   it("extract 'setTemplateCall' correctly when NOT used", async () => {

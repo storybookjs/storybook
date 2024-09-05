@@ -1,10 +1,10 @@
-import { getSvelteAST } from '#parser/ast';
 import dedent from 'dedent';
-import type { Script, SvelteNode } from 'svelte/compiler';
 import { type Context } from 'zimmerframe';
 
-export async function extractSvelteNode<TNode extends SvelteNode | Script>(
-  parsed: SvelteNode | Script,
+import { getSvelteAST, type SvelteAST } from '#parser/ast';
+
+export async function extractSvelteNode<TNode extends SvelteAST.SvelteNode | SvelteAST.Script>(
+  parsed: SvelteAST.SvelteNode | SvelteAST.Script,
   name: TNode['type']
 ): Promise<TNode> {
   const { walk } = await import('zimmerframe');
@@ -26,10 +26,9 @@ export async function extractSvelteNode<TNode extends SvelteNode | Script>(
   return target;
 }
 
-export async function parseAndExtractSvelteNode<TNode extends SvelteNode | Script>(
-  code: string,
-  name: TNode['type']
-): Promise<TNode> {
+export async function parseAndExtractSvelteNode<
+  TNode extends SvelteAST.SvelteNode | SvelteAST.Script,
+>(code: string, name: TNode['type']): Promise<TNode> {
   const parsed = getSvelteAST({ code: dedent(code) });
-  return await extractSvelteNode(parsed as SvelteNode | Script, name);
+  return await extractSvelteNode(parsed as SvelteAST.SvelteNode | SvelteAST.Script, name);
 }

@@ -1,6 +1,6 @@
-import type { ExportNamedDeclaration, Identifier } from 'estree';
-
 import type { createVariableFromRuntimeStoriesCall } from './create-variable-from-runtime-stories-call';
+
+import type { ESTreeAST } from '#parser/ast';
 
 interface Params {
   exportName: string;
@@ -8,7 +8,7 @@ interface Params {
   node: ReturnType<typeof createVariableFromRuntimeStoriesCall>;
 }
 
-export function createNamedExportStory(params: Params): ExportNamedDeclaration {
+export function createNamedExportStory(params: Params): ESTreeAST.ExportNamedDeclaration {
   const { exportName, node } = params;
 
   const exported = {
@@ -49,5 +49,5 @@ export function createNamedExportStory(params: Params): ExportNamedDeclaration {
 }
 
 function getNameFromVariable(node: Params['node']): string {
-  return (node.declarations[0].id as Identifier).name;
+  return (node.declarations[0].id as ESTreeAST.Identifier).name;
 }

@@ -1,4 +1,4 @@
-import type { ExportNamedDeclaration, Identifier, VariableDeclaration } from 'estree';
+import type { ESTreeAST } from '#parser/ast';
 
 /**
  * Codemod to transform AST node of `export const meta` export named declaration to `defineMeta` variable declaration.
@@ -18,8 +18,8 @@ import type { ExportNamedDeclaration, Identifier, VariableDeclaration } from 'es
  * ```
  */
 export function transformExportMetaToDefineMeta(
-  exportMeta: ExportNamedDeclaration
-): VariableDeclaration {
+  exportMeta: ESTreeAST.ExportNamedDeclaration
+): ESTreeAST.VariableDeclaration {
   const { declaration, leadingComments, start, end } = exportMeta;
   if (!declaration || declaration.type !== 'VariableDeclaration') {
     throw new Error(
@@ -36,7 +36,7 @@ export function transformExportMetaToDefineMeta(
   const key = {
     type: 'Identifier',
     name: 'Story',
-  } satisfies Identifier;
+  } satisfies ESTreeAST.Identifier;
 
   return {
     type: 'VariableDeclaration',

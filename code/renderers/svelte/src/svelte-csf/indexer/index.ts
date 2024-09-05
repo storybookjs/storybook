@@ -1,3 +1,5 @@
+import fs from 'node:fs/promises';
+
 import type { IndexInput, Indexer } from '@storybook/types';
 
 import { parseForIndexer } from '#indexer/parser';

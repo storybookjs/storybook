@@ -1,5 +1,4 @@
-import type { ObjectExpression } from 'estree';
-
+import type { ESTreeAST } from '#parser/ast';
 import type { extractStoriesNodesFromExportDefaultFn } from '#parser/extract/compiled/stories';
 import { NoCompiledStoryPropsObjectExpression } from '#utils/error/parser/extract/compiled';
 
@@ -25,7 +24,7 @@ interface Params {
  *   Story(node_1, { props })
  *   ```
  */
-export function getStoryPropsObjectExpression(params: Params): ObjectExpression {
+export function getStoryPropsObjectExpression(params: Params): ESTreeAST.ObjectExpression {
   const { node, filename } = params;
   if (node.type === 'CallExpression' && node.arguments[1].type === 'ObjectExpression') {
     return node.arguments[1];

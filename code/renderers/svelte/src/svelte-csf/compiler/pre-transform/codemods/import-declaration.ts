@@ -1,8 +1,8 @@
+import type { ESTreeAST } from '#parser/ast';
 import { DefaultOrNamespaceImportUsedError } from '#utils/error/parser/extract/svelte';
-import type { Identifier, ImportDeclaration } from 'estree';
 
 interface Params {
-  node: ImportDeclaration;
+  node: ESTreeAST.ImportDeclaration;
   filename?: string;
 }
 
@@ -19,7 +19,7 @@ interface Params {
  * } from "@storybook/addon-svelte-csf";
  * ```
  */
-export function transformImportDeclaration(params: Params): ImportDeclaration {
+export function transformImportDeclaration(params: Params): ESTreeAST.ImportDeclaration {
   const { node, filename } = params;
   let { specifiers, ...rest } = node;
 
@@ -41,7 +41,7 @@ export function transformImportDeclaration(params: Params): ImportDeclaration {
     const imported = {
       type: 'Identifier',
       name: 'defineMeta',
-    } satisfies Identifier;
+    } satisfies ESTreeAST.Identifier;
 
     newSpecifiers.push({
       type: 'ImportSpecifier',

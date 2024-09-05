@@ -1,10 +1,10 @@
 import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
-import type { ExportNamedDeclaration } from 'estree';
 import { print } from 'svelte-ast-print';
 import { describe, it } from 'vitest';
 
 import { transformExportMetaToDefineMeta } from './export-const-to-define-meta';
 
+import type { ESTreeAST } from '#parser/ast';
 import { parseAndExtractSvelteNode } from '#tests/extractor';
 
 describe(transformExportMetaToDefineMeta.name, () => {
@@ -31,7 +31,7 @@ describe(transformExportMetaToDefineMeta.name, () => {
         } satisfies Meta<Button>;
       </script>
     `;
-    const node = await parseAndExtractSvelteNode<ExportNamedDeclaration>(
+    const node = await parseAndExtractSvelteNode<ESTreeAST.ExportNamedDeclaration>(
       code,
       'ExportNamedDeclaration'
     );
@@ -66,7 +66,7 @@ describe(transformExportMetaToDefineMeta.name, () => {
         };
       </script>
     `;
-    const node = await parseAndExtractSvelteNode<ExportNamedDeclaration>(
+    const node = await parseAndExtractSvelteNode<ESTreeAST.ExportNamedDeclaration>(
       code,
       'ExportNamedDeclaration'
     );

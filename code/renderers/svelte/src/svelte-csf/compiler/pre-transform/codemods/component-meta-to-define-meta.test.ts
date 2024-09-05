@@ -1,9 +1,9 @@
-import type { Comment, Component } from 'svelte/compiler';
 import { print } from 'svelte-ast-print';
 import { describe, it } from 'vitest';
 
 import { transformComponentMetaToDefineMeta } from './component-meta-to-define-meta';
 
+import type { SvelteAST } from '#parser/ast';
 import { parseAndExtractSvelteNode } from '#tests/extractor';
 
 describe(transformComponentMetaToDefineMeta.name, () => {
@@ -15,7 +15,7 @@ describe(transformComponentMetaToDefineMeta.name, () => {
 
       <Meta title="Atoms/Button" component={Button} />
     `;
-    const node = await parseAndExtractSvelteNode<Component>(code, 'Component');
+    const node = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
 
     expect(
       print(
@@ -38,8 +38,8 @@ describe(transformComponentMetaToDefineMeta.name, () => {
       <Meta title="Atoms/Button" component={Button} />
     `;
     const [comment, component] = await Promise.all([
-      parseAndExtractSvelteNode<Comment>(code, 'Comment'),
-      parseAndExtractSvelteNode<Component>(code, 'Component'),
+      parseAndExtractSvelteNode<SvelteAST.Comment>(code, 'Comment'),
+      parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component'),
     ]);
 
     expect(
@@ -71,7 +71,7 @@ describe(transformComponentMetaToDefineMeta.name, () => {
           }
         }} />
     `;
-    const component = await parseAndExtractSvelteNode<Component>(code, 'Component');
+    const component = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
 
     expect(print(transformComponentMetaToDefineMeta({ component }))).toMatchInlineSnapshot(`
       "const { Story } = defineMeta({
@@ -99,7 +99,7 @@ describe(transformComponentMetaToDefineMeta.name, () => {
 
       <Meta component={WithParameters} parameters={{ ...parameters, baz: 'yes'}} />
     `;
-    const component = await parseAndExtractSvelteNode<Component>(code, 'Component');
+    const component = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
 
     expect(print(transformComponentMetaToDefineMeta({ component }))).toMatchInlineSnapshot(`
       "const { Story } = defineMeta({

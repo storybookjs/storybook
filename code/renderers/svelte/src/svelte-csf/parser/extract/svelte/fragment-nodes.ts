@@ -1,15 +1,16 @@
-import type { Comment, Component, Fragment, SnippetBlock, SvelteNode } from 'svelte/compiler';
 import type { Visitors } from 'zimmerframe';
 
 import type { extractModuleNodes } from './module-nodes';
 import type { extractInstanceNodes } from './instance-nodes';
 
+import type { SvelteAST } from '#parser/ast';
+
 interface Result {
   storyComponents: Array<{
     /** Leading HTML comment as AST nodes which can be used as description for the story. */
-    comment?: Comment;
+    comment?: SvelteAST.Comment;
     /** '<Story>' component AST node. */
-    component: Component;
+    component: SvelteAST.Component;
   }>;
   /**
    * "First level" _(at the root of fragment)_ snippet blocks AST nodes, which can be used for further transformation.
@@ -19,11 +20,11 @@ interface Result {
    * Based on either `setTemplate` call,
    * or by passing `children` as prop from the outer Svelte snippet block definition - e.g. `Story children={template1} />`.
    */
-  snippetBlocks: SnippetBlock[];
+  snippetBlocks: SvelteAST.SnippetBlock[];
 }
 
 interface Params {
-  fragment: Fragment;
+  fragment: SvelteAST.Fragment;
   filename?: string;
   instanceNodes: Awaited<ReturnType<typeof extractInstanceNodes>>;
   moduleNodes: Awaited<ReturnType<typeof extractModuleNodes>>;
@@ -40,14 +41,14 @@ export async function extractFragmentNodes(params: Params): Promise<Result> {
   const { fragment, moduleNodes } = params;
   const { storyIdentifier } = moduleNodes;
 
-  let latestComment: Comment | undefined;
+  let latestComment: SvelteAST.Comment | undefined;
 
   const state: Result = {
     storyComponents: [],
     snippetBlocks: [],
   };
 
-  const visitors: Visitors<SvelteNode, typeof state> = {
+  const visitors: Visitors<SvelteAST.SvelteNode, typeof state> = {
     Comment(node, { next }) {
       latestComment = node;
       next();

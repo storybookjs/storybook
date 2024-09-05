@@ -1,5 +1,4 @@
-import type { Component, SnippetBlock } from 'svelte/compiler';
-
+import type { SvelteAST } from '#parser/ast';
 import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
 import { extractStoryAttributesNodes } from '#parser/extract/svelte/story/attributes';
 
@@ -17,7 +16,6 @@ import {
  * {#snippet myTemplate()}
  *   <SomeComponent color="red" />
  * {/snippet}
- *
  * <Story children={myTemplate} />
  * ```
  *
@@ -25,7 +23,7 @@ import {
  * which was referenced by the attribute `children`. Following example above - it would be snippet `myTemplate`.
  */
 export function findStoryAttributeChildrenSnippetBlock(options: {
-  component: Component;
+  component: SvelteAST.Component;
   nodes: SvelteASTNodes;
   filename?: string;
 }) {
@@ -41,7 +39,32 @@ export function findStoryAttributeChildrenSnippetBlock(options: {
 
   const { value } = children;
 
-  if (value === true || value.type !== 'ExpressionTag' || value.expression.type !== 'Identifier') {
+  if (value === true) {
+    throw new InvalidStoryChildrenAttributeError({
+      component: component,
+      childrenAttribute: children,
+      filename,
+    });
+  }
+
+  // value is SvelteAST.ExpressionTag
+  if (!Array.isArray(value)) {
+    if (value.expression.type !== 'Identifier') {
+      throw new InvalidStoryChildrenAttributeError({
+        component: component,
+        childrenAttribute: children,
+        filename,
+      });
+    }
+
+    return findSnippetBlockByName({
+      name: value.expression.name,
+      nodes: nodes,
+    });
+  }
+
+  // value is Array<SvelteAST.ExpressionTag | SvelteAST.Text> - I haven't figured out when it would happen
+  if (value[0].type !== 'ExpressionTag') {
     throw new InvalidStoryChildrenAttributeError({
       component: component,
       childrenAttribute: children,
@@ -50,7 +73,7 @@ export function findStoryAttributeChildrenSnippetBlock(options: {
   }
 
   return findSnippetBlockByName({
-    name: value.expression.name,
+    name: value[0].expression.name,
     nodes: nodes,
   });
 }
@@ -73,7 +96,7 @@ export function findStoryAttributeChildrenSnippetBlock(options: {
 export function findSetTemplateSnippetBlock(options: {
   nodes: SvelteASTNodes;
   filename?: string;
-}): SnippetBlock | undefined {
+}): SvelteAST.SnippetBlock | undefined {
   const { nodes, filename } = options;
   const { setTemplateCall } = nodes;
 
@@ -106,7 +129,7 @@ function findSnippetBlockByName(options: {
    */
   name: string;
   nodes: SvelteASTNodes;
-}): SnippetBlock | undefined {
+}): SvelteAST.SnippetBlock | undefined {
   const { name, nodes } = options;
   const { snippetBlocks } = nodes;
 

@@ -1,6 +1,6 @@
 import dedent from 'dedent';
-import type { Attribute } from 'svelte/compiler';
 
+import type { SvelteAST } from '#parser/ast';
 import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
 import { StorybookSvelteCSFError } from '#utils/error';
 
@@ -154,7 +154,7 @@ export class InvalidStoryChildrenAttributeError extends StorybookSvelteCSFError 
   readonly code = 7;
   public documentation = true;
 
-  public childrenAttribute: Attribute;
+  public childrenAttribute: SvelteAST.Attribute;
 
   constructor({
     filename,

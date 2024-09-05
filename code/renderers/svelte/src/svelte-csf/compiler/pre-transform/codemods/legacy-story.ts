@@ -1,12 +1,3 @@
-import type { ArrayExpression, Identifier, Literal, ObjectExpression } from 'estree';
-import type {
-  Attribute,
-  Component,
-  ExpressionTag,
-  Fragment,
-  LetDirective,
-  SnippetBlock,
-} from 'svelte/compiler';
 import { camelCase } from 'es-toolkit/string';
 
 import {
@@ -14,25 +5,27 @@ import {
   createASTExpressionTag,
   createASTObjectExpression,
   createASTProperty,
+  type ESTreeAST,
+  type SvelteAST,
 } from '#parser/ast';
 import { InvalidTemplateAttribute } from '#utils/error/codemod/index';
 
 interface Params {
-  node: Component;
+  node: SvelteAST.Component;
   filename?: string;
 }
 
-export function transformLegacyStory(params: Params): Component {
+export function transformLegacyStory(params: Params): SvelteAST.Component {
   const { node, filename } = params;
   let { attributes, fragment, ...rest } = node;
 
-  let newAttributes: Component['attributes'] = [];
-  let autodocs: Attribute | undefined;
-  let source: Attribute | undefined;
-  let parameters: Attribute | undefined;
-  let tags: Attribute | undefined;
-  let letDirectiveArgs: LetDirective | undefined;
-  let letDirectiveContext: LetDirective | undefined;
+  let newAttributes: SvelteAST.Component['attributes'] = [];
+  let autodocs: SvelteAST.Attribute | undefined;
+  let source: SvelteAST.Attribute | undefined;
+  let parameters: SvelteAST.Attribute | undefined;
+  let tags: SvelteAST.Attribute | undefined;
+  let letDirectiveArgs: SvelteAST.LetDirective | undefined;
+  let letDirectiveContext: SvelteAST.LetDirective | undefined;
 
   for (let attribute of attributes) {
     if (attribute.type === 'LetDirective' && attribute.name === 'args') {
@@ -111,9 +104,9 @@ export function transformLegacyStory(params: Params): Component {
 }
 
 interface InsertAutodocsParams {
-  autodocs?: Attribute;
-  tags?: Attribute;
-  newAttributes: Component['attributes'];
+  autodocs?: SvelteAST.Attribute;
+  tags?: SvelteAST.Attribute;
+  newAttributes: SvelteAST.Component['attributes'];
 }
 function transformAutodocs(params: InsertAutodocsParams): void {
   let { autodocs, tags, newAttributes } = params;
@@ -135,17 +128,19 @@ function transformAutodocs(params: InsertAutodocsParams): void {
   const autodocsLiteral = {
     type: 'Literal',
     value: 'autodocs',
-  } satisfies Literal;
+  } satisfies ESTreeAST.Literal;
 
-  ((tags?.value as ExpressionTag).expression as ArrayExpression).elements.push(autodocsLiteral);
+  ((tags?.value as SvelteAST.ExpressionTag).expression as ESTreeAST.ArrayExpression).elements.push(
+    autodocsLiteral
+  );
 
   newAttributes.push(tags);
 }
 
 interface InsertSourceParams {
-  source?: Attribute;
-  parameters?: Attribute;
-  newAttributes: Component['attributes'];
+  source?: SvelteAST.Attribute;
+  parameters?: SvelteAST.Attribute;
+  newAttributes: SvelteAST.Component['attributes'];
 }
 function transformSource(params: InsertSourceParams): void {
   let { source, parameters, newAttributes } = params;
@@ -159,7 +154,7 @@ function transformSource(params: InsertSourceParams): void {
   const codeLiteralValue = {
     type: 'Literal',
     value,
-  } satisfies Literal;
+  } satisfies ESTreeAST.Literal;
 
   if (!parameters) {
     parameters = createASTAttribute(
@@ -169,43 +164,50 @@ function transformSource(params: InsertSourceParams): void {
   }
 
   let docsProperty = (
-    (parameters.value as ExpressionTag).expression as ObjectExpression
+    (parameters.value as SvelteAST.ExpressionTag).expression as ESTreeAST.ObjectExpression
   ).properties.find(
-    (property) => property.type === 'Property' && (property.key as Identifier).name === 'docs'
+    (property) =>
+      property.type === 'Property' && (property.key as ESTreeAST.Identifier).name === 'docs'
   );
 
   if (!docsProperty) {
     docsProperty = createASTProperty('docs', createASTObjectExpression());
   }
 
-  let sourceProperty = (docsProperty.value as ObjectExpression).properties.find(
-    (property) => property.type === 'Property' && (property.key as Identifier).name === 'source'
+  let sourceProperty = (docsProperty.value as ESTreeAST.ObjectExpression).properties.find(
+    (property) =>
+      property.type === 'Property' && (property.key as ESTreeAST.Identifier).name === 'source'
   );
 
   if (!sourceProperty) {
     sourceProperty = createASTProperty('source', createASTObjectExpression());
   }
 
-  let codeProperty = (sourceProperty.value as ObjectExpression).properties.find(
-    (property) => property.type === 'Property' && (property.key as Identifier).name === 'code'
+  let codeProperty = (sourceProperty.value as ESTreeAST.ObjectExpression).properties.find(
+    (property) =>
+      property.type === 'Property' && (property.key as ESTreeAST.Identifier).name === 'code'
   );
 
   if (!codeProperty) {
     codeProperty = createASTProperty('code', codeLiteralValue);
-    (sourceProperty.value as ObjectExpression).properties.push(codeProperty);
-    (docsProperty.value as ObjectExpression).properties.push(sourceProperty);
-    ((parameters.value as ExpressionTag).expression as ObjectExpression).properties.push(
-      docsProperty
-    );
+    (sourceProperty.value as ESTreeAST.ObjectExpression).properties.push(codeProperty);
+    (docsProperty.value as ESTreeAST.ObjectExpression).properties.push(sourceProperty);
+    (
+      (parameters.value as SvelteAST.ExpressionTag).expression as ESTreeAST.ObjectExpression
+    ).properties.push(docsProperty);
   }
 
   newAttributes.push(parameters);
 }
 
-function getSourceValue(attribute: Attribute): string | undefined {
+function getSourceValue(attribute: SvelteAST.Attribute): string | undefined {
   const { value } = attribute;
 
-  if (value.type === 'ExpressionTag' && value.expression.type === 'Literal') {
+  if (value === true) {
+    return;
+  }
+
+  if (!Array.isArray(value) && value.expression.type === 'Literal') {
     return value.expression.value as string;
   }
 
@@ -214,7 +216,10 @@ function getSourceValue(attribute: Attribute): string | undefined {
   }
 }
 
-function templateToChildren(attribute: Attribute, filename?: string): Attribute {
+function templateToChildren(
+  attribute: SvelteAST.Attribute,
+  filename?: string
+): SvelteAST.Attribute {
   const { name, value, ...rest } = attribute;
 
   if (value === true) {
@@ -230,7 +235,7 @@ function templateToChildren(attribute: Attribute, filename?: string): Attribute 
         name: camelCase(
           value[0].type === 'Text'
             ? value[0].data
-            : ((value[0].expression as Literal).value as string)
+            : ((value[0].expression as ESTreeAST.Literal).value as string)
         ),
       }),
     ],
@@ -238,14 +243,14 @@ function templateToChildren(attribute: Attribute, filename?: string): Attribute 
 }
 
 interface TransformTemplateParams {
-  letDirectiveArgs?: LetDirective;
-  letDirectiveContext?: LetDirective;
-  fragment: Fragment;
+  letDirectiveArgs?: SvelteAST.LetDirective;
+  letDirectiveContext?: SvelteAST.LetDirective;
+  fragment: SvelteAST.Fragment;
 }
-function transformFragment(params: TransformTemplateParams): Fragment {
+function transformFragment(params: TransformTemplateParams): SvelteAST.Fragment {
   let { letDirectiveArgs, letDirectiveContext, fragment } = params;
 
-  let parameters: SnippetBlock['parameters'] = [
+  let parameters: SvelteAST.SnippetBlock['parameters'] = [
     {
       type: 'Identifier',
       name: letDirectiveArgs ? 'args' : '_args',
@@ -267,12 +272,7 @@ function transformFragment(params: TransformTemplateParams): Fragment {
       name: 'children',
     },
     parameters,
-    // TODO: Those are useless at this point, but I needed TypeScript to 🤫
-    // Reference: https://github.com/sveltejs/svelte/issues/12292
-    start: 0,
-    end: 0,
-    parent: null,
-  } satisfies SnippetBlock;
+  } satisfies SvelteAST.SnippetBlock;
 
   return {
     ...fragment,

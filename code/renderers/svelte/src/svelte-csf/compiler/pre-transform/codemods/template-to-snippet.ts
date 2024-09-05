@@ -1,5 +1,5 @@
 import { getStringValueFromAttribute } from '#parser/analyse/story/attributes';
-import type { Attribute, Component, LetDirective, SnippetBlock } from 'svelte/compiler';
+import type { SvelteAST } from '#parser/ast';
 
 /**
  *
@@ -25,12 +25,12 @@ import type { Attribute, Component, LetDirective, SnippetBlock } from 'svelte/co
  * - </Template>
  * ```
  */
-export function transformTemplateToSnippet(component: Component): SnippetBlock {
-  const { attributes, fragment, parent, start, end } = component;
+export function transformTemplateToSnippet(component: SvelteAST.Component): SvelteAST.SnippetBlock {
+  const { attributes, fragment } = component;
 
   const attributeId = attributes.find((attr) => {
     return attr.type === 'Attribute' && attr.name === 'id';
-  }) as Attribute | undefined;
+  }) as SvelteAST.Attribute | undefined;
 
   const id = getStringValueFromAttribute({
     node: attributeId,
@@ -39,13 +39,13 @@ export function transformTemplateToSnippet(component: Component): SnippetBlock {
 
   const letDirectiveArgs = attributes.find((attr) => {
     return attr.type === 'LetDirective' && attr.name === 'args';
-  }) as LetDirective | undefined;
+  }) as SvelteAST.LetDirective | undefined;
 
   const letDirectiveContext = attributes.find((attr) => {
     return attr.type === 'LetDirective' && attr.name === 'context';
-  }) as LetDirective | undefined;
+  }) as SvelteAST.LetDirective | undefined;
 
-  let parameters: SnippetBlock['parameters'] = [];
+  let parameters: SvelteAST.SnippetBlock['parameters'] = [];
 
   if (letDirectiveArgs || letDirectiveContext) {
     parameters.push({
@@ -69,8 +69,5 @@ export function transformTemplateToSnippet(component: Component): SnippetBlock {
     },
     parameters,
     body: fragment,
-    start,
-    parent,
-    end,
   };
 }

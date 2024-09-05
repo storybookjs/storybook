@@ -1,9 +1,9 @@
-import type { ImportDeclaration } from 'estree';
 import { print } from 'svelte-ast-print';
 import { describe, it } from 'vitest';
 
 import { transformImportDeclaration } from './import-declaration';
 
+import type { ESTreeAST } from '#parser/ast';
 import { parseAndExtractSvelteNode } from '#tests/extractor';
 
 describe(transformImportDeclaration.name, () => {
@@ -13,7 +13,10 @@ describe(transformImportDeclaration.name, () => {
         import { Story, Template } from "@storybook/addon-svelte-csf";
       </script>
     `;
-    const node = await parseAndExtractSvelteNode<ImportDeclaration>(code, 'ImportDeclaration');
+    const node = await parseAndExtractSvelteNode<ESTreeAST.ImportDeclaration>(
+      code,
+      'ImportDeclaration'
+    );
 
     expect(print(transformImportDeclaration({ node }))).toMatchInlineSnapshot(
       `"import { defineMeta } from "@storybook/addon-svelte-csf";"`
@@ -26,7 +29,10 @@ describe(transformImportDeclaration.name, () => {
         import { Story, Template, defineMeta } from "@storybook/addon-svelte-csf";
       </script>
     `;
-    const node = await parseAndExtractSvelteNode<ImportDeclaration>(code, 'ImportDeclaration');
+    const node = await parseAndExtractSvelteNode<ESTreeAST.ImportDeclaration>(
+      code,
+      'ImportDeclaration'
+    );
 
     expect(print(transformImportDeclaration({ node }))).toMatchInlineSnapshot(
       `"import { defineMeta } from "@storybook/addon-svelte-csf";"`
@@ -39,7 +45,10 @@ describe(transformImportDeclaration.name, () => {
         import { defineMeta, setTemplate } from "@storybook/addon-svelte-csf";
       </script>
     `;
-    const node = await parseAndExtractSvelteNode<ImportDeclaration>(code, 'ImportDeclaration');
+    const node = await parseAndExtractSvelteNode<ESTreeAST.ImportDeclaration>(
+      code,
+      'ImportDeclaration'
+    );
 
     expect(print(transformImportDeclaration({ node }))).toMatchInlineSnapshot(
       `"import { defineMeta, setTemplate } from "@storybook/addon-svelte-csf";"`

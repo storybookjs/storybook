@@ -73,7 +73,7 @@ describe(transformLegacyStory.name, () => {
     );
   });
 
-  it("'source' prop when is a text expression gets moved to 'parameters' prop", async ({
+  it("'source' prop when is a text expression and Story has children, gets moved to 'parameters' prop", async ({
     expect,
   }) => {
     const code = `

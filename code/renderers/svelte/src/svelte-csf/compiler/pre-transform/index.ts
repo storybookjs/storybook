@@ -67,7 +67,7 @@ export async function codemodLegacyNodes(params: Params): Promise<Root> {
     Script(node, context) {
       const { next, state } = context;
 
-      state.currentScript = state.currentScript = node.context === 'module' ? 'module' : 'instance';
+      state.currentScript = node.context === 'module' ? 'module' : 'instance';
 
       next(state);
     },
@@ -104,13 +104,15 @@ export async function codemodLegacyNodes(params: Params): Promise<Root> {
       const { declaration } = node;
       const { state } = context;
 
-      if (
+      if (!(
         declaration &&
         declaration.type === 'VariableDeclaration' &&
         declaration.declarations[0].type === 'VariableDeclarator' &&
         declaration.declarations[0].id.type === 'Identifier' &&
         declaration.declarations[0].id.name === 'meta'
-      ) {
+      )) {
+        return;
+      }
         const transformed = transformExportMetaToDefineMeta(node);
         const { currentScript } = state;
 

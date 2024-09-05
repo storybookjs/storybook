@@ -192,4 +192,29 @@ describe(transformLegacyStory.name, () => {
 			</Story>"
 		`);
   });
+
+  it("when both directives 'let:args' and 'let:context' is used then it wraps Story fragment with 'children' snippet block", async ({
+    expect,
+  }) => {
+    const code = `
+      <script context="module">
+        import { Story } from "@storybook/addon-svelte-csf";
+      </script>
+
+      <Story name="Default" let:args let:context>
+        <h1>{args.title}</h1>
+        <p>{context.id}</p>
+      </Story>
+    `;
+    const node = await parseAndExtractSvelteNode<Component>(code, 'Component');
+
+    expect(print(transformLegacyStory({ node }))).toMatchInlineSnapshot(`
+      "<Story name="Default">
+      	{#snippet children(args, context)}
+      		<h1>{args.title}</h1>
+      		<p>{context.id}</p>
+      	{/snippet}
+      </Story>"
+    `);
+  });
 });

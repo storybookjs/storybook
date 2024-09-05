@@ -1,14 +1,17 @@
 import path from "node:path";
-import { storybookTest } from "@storybook/experimental-vitest-plugin";
+import url from "node:url";
+import { storybookTest } from "@storybook/experimental-addon-test/vite-plugin";
+import { storybookNextJsPlugin } from "@storybook/experimental-nextjs-vite/vite-plugin";
 import Inspect from "vite-plugin-inspect";
-import vitePluginNext from "vite-plugin-storybook-nextjs";
 import { defineConfig } from "vitest/config";
+
+const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
 export default defineConfig({
   plugins: [
-    vitePluginNext({ dir: path.join(__dirname, "..") }),
+    storybookNextJsPlugin({ dir: path.join(__dirname, "..") }),
     storybookTest({
-      renderer: "react",
+      configDir: __dirname,
     }),
     Inspect({ build: true, outputDir: ".vite-inspect" }),
   ],

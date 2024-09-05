@@ -1,4 +1,4 @@
-import { setProjectAnnotations } from "@storybook/nextjs-vite";
+import { setProjectAnnotations } from "@storybook/experimental-nextjs-vite";
 import { beforeAll, beforeEach } from "vitest";
 
 import * as addonActionsAnnotations from "@storybook/addon-actions/preview";

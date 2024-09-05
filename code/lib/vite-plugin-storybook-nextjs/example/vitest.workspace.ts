@@ -4,5 +4,5 @@ export default defineWorkspace([
   // Next.js tests (non-storybook ones), run in isolation via `pnpm run test`
   "./vitest.config.mts",
   // Storybook portable stories test, run in isolation via `pnpm run test:storybook`
-  "./.storybook",
+  "./.storybook/vitest.config.mts",
 ]);

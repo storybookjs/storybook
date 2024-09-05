@@ -55,10 +55,40 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin[] {
         return {
           ...(!isVitestEnv && {
             resolve: {
-              alias: {
-                react: "next/dist/compiled/react",
-                "react-dom": "next/dist/compiled/react-dom",
-              },
+              alias: [
+                {
+                  find: /^react$/,
+                  replacement: "next/dist/compiled/react",
+                },
+                {
+                  find: /^react-dom$/,
+                  replacement: "next/dist/compiled/react-dom",
+                },
+                {
+                  find: /^react-dom\/server$/,
+                  replacement: require.resolve(
+                    "next/dist/compiled/react-dom/server.browser.js",
+                  ),
+                },
+                {
+                  find: /^react-dom\/test-utils$/,
+                  replacement: require.resolve(
+                    "next/dist/compiled/react-dom/cjs/react-dom-test-utils.production.js",
+                  ),
+                },
+                {
+                  find: /^react-dom\/client$/,
+                  replacement: require.resolve(
+                    "next/dist/compiled/react-dom/client.js",
+                  ),
+                },
+                {
+                  find: /^react-dom\/cjs\/react-dom\.development\.js$/,
+                  replacement: require.resolve(
+                    "next/dist/compiled/react-dom/cjs/react-dom.development.js",
+                  ),
+                },
+              ],
             },
           }),
           test: {
@@ -96,7 +126,7 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin[] {
         };
       },
       configResolved(config) {
-        if (!config.test?.browser?.enabled) {
+        if (isVitestEnv && !config.test?.browser?.enabled) {
           // biome-ignore lint/style/noNonNullAssertion: test is available in the config
           config.test!.setupFiles = [
             require.resolve("./mocks/storybook.global.js"),

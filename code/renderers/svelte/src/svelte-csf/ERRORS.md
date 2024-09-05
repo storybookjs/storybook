@@ -352,6 +352,8 @@ It cannot be a shorthand or a dynamic value.
 You are using legacy template API, with deprecated components.\
 To enable support for legacy API, tweak this addon options in your _(`./.storybook/main.(j|t)s`)_ file:
 
+See [the Legacy API section](./README.md#legacy-api) for more details.
+
 ```diff
 addons: [
     // ... other addons

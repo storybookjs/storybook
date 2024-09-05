@@ -61,8 +61,9 @@ export class AttributeNotArrayError extends StorybookSvelteCSFError {
       return true;
     }
 
-    if (value.type === 'ExpressionTag') {
-      return value.expression.value;
+    // value is SvelteAST.ExpressionTag
+    if (!Array.isArray(value)) {
+      return (value.expression as ESTreeAST.Literal).value;
     }
 
     if (value[0].type === 'Text') {
@@ -114,8 +115,8 @@ export class AttributeNotArrayOfStringsError extends StorybookSvelteCSFError {
       return true;
     }
 
-    if (value.type === 'ExpressionTag') {
-      return value.expression.value;
+    if (!Array.isArray(value)) {
+      return (value.expression as ESTreeAST.Literal).value;
     }
 
     if (value[0].type === 'Text') {

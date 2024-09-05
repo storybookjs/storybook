@@ -16,7 +16,6 @@ import {
  * {#snippet myTemplate()}
  *   <SomeComponent color="red" />
  * {/snippet}
- *
  * <Story children={myTemplate} />
  * ```
  *
@@ -40,7 +39,32 @@ export function findStoryAttributeChildrenSnippetBlock(options: {
 
   const { value } = children;
 
-  if (value === true || value.type !== 'ExpressionTag' || value.expression.type !== 'Identifier') {
+  if (value === true) {
+    throw new InvalidStoryChildrenAttributeError({
+      component: component,
+      childrenAttribute: children,
+      filename,
+    });
+  }
+
+  // value is SvelteAST.ExpressionTag
+  if (!Array.isArray(value)) {
+    if (value.expression.type !== 'Identifier') {
+      throw new InvalidStoryChildrenAttributeError({
+        component: component,
+        childrenAttribute: children,
+        filename,
+      });
+    }
+
+    return findSnippetBlockByName({
+      name: value.expression.name,
+      nodes: nodes,
+    });
+  }
+
+  // value is Array<SvelteAST.ExpressionTag | SvelteAST.Text> - I haven't figured out when it would happen
+  if (value[0].type !== 'ExpressionTag') {
     throw new InvalidStoryChildrenAttributeError({
       component: component,
       childrenAttribute: children,
@@ -49,7 +73,7 @@ export function findStoryAttributeChildrenSnippetBlock(options: {
   }
 
   return findSnippetBlockByName({
-    name: value.expression.name,
+    name: value[0].expression.name,
     nodes: nodes,
   });
 }

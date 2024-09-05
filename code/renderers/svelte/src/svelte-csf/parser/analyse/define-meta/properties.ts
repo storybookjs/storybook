@@ -1,5 +1,4 @@
-import type { Property } from 'estree';
-
+import type { ESTreeAST } from '#parser/ast';
 import {
   ArrayElementNotStringError,
   NoArrayExpressionError,
@@ -7,7 +6,7 @@ import {
 } from '#utils/error/parser/analyse/define-meta';
 
 interface GetStringOptions {
-  node: Property;
+  node: ESTreeAST.Property;
   filename: string;
 }
 
@@ -28,7 +27,7 @@ export function getPropertyStringValue(options: GetStringOptions) {
 }
 
 interface GetArrayOfStringOptions {
-  node: Property;
+  node: ESTreeAST.Property;
   filename: string;
 }
 

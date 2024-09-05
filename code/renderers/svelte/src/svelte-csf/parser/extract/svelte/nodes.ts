@@ -1,8 +1,8 @@
-import type { Root } from 'svelte/compiler';
-
 import { extractModuleNodes } from './module-nodes';
 import { extractFragmentNodes } from './fragment-nodes';
 import { extractInstanceNodes } from './instance-nodes';
+
+import type { SvelteAST } from '#parser/ast';
 
 /**
  * Selected nodes extracted from the Svelte AST via `svelte.compile`,
@@ -13,7 +13,7 @@ export type SvelteASTNodes = Awaited<ReturnType<typeof extractModuleNodes>> &
   Awaited<ReturnType<typeof extractInstanceNodes>>;
 
 interface Params {
-  ast: Root;
+  ast: SvelteAST.Root;
   filename?: string;
 }
 

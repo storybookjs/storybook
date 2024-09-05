@@ -1,7 +1,8 @@
 import url from 'node:url';
 
 import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
-import type { Component } from 'svelte/compiler';
+
+import type { SvelteAST } from '#parser/ast';
 
 /**
  * Adopted from: {@link https://github.com/storybookjs/storybook/blob/next/code/lib/core-events/src/errors/storybook-error.ts}
@@ -93,7 +94,7 @@ export abstract class StorybookSvelteCSFError extends Error {
   /**
    * Name of the `<Story name=">...<" />` component which caused the error.
    */
-  readonly component?: Component;
+  readonly component?: SvelteAST.Component;
 
   constructor({
     filename,
@@ -118,26 +119,30 @@ export abstract class StorybookSvelteCSFError extends Error {
     const { attributes } = this.component;
 
     for (const attribute of attributes) {
-      if (attribute.type === 'Attribute' && attribute.name === 'name' && attribute.value !== true) {
-        if (attribute.value.type === 'ExpressionTag') {
-          return attribute.value.expression.value;
-        }
+      if (attribute.type !== 'Attribute') {
+        // NOTE: Nothing to do with this case - invalid tbh
+        continue;
+      }
 
-        if (attribute.value[0].type === 'Text') {
-          return attribute.value[0].data;
-        }
+      if (attribute.value === true) {
+        // NOTE: Nothing to do with this case - invalid tbh
+        continue;
+      }
 
-        if (attribute.value[0].type === 'Text') {
-          return attribute.value[0].data;
-        }
+      // value is SvelteAST.ExpressionTag
+      if (!Array.isArray(attribute.value)) {
+        return attribute.value.expression.value;
+      }
 
-        if (
-          attribute.value[0].type === 'ExpressionTag' &&
-          attribute.value[0].expression.type === 'Literal' &&
-          typeof attribute.value[0].expression.value === 'string'
-        ) {
-          return attribute.value[0].expression.value;
-        }
+      if (attribute.value[0].type === 'Text') {
+        return attribute.value[0].data;
+      }
+
+      if (
+        attribute.value[0].expression.type === 'Literal' &&
+        typeof attribute.value[0].expression.value === 'string'
+      ) {
+        return attribute.value[0].expression.value;
       }
     }
   }

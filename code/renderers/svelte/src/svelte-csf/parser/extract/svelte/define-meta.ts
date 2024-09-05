@@ -1,5 +1,4 @@
-import type { ObjectExpression, Property } from 'estree';
-
+import type { ESTreeAST } from '#parser/ast';
 import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
 import type { CompiledASTNodes } from '#parser/extract/compiled/nodes';
 
@@ -13,7 +12,7 @@ interface Options<Properties extends Array<keyof Meta<Cmp>>> {
 }
 
 type Result<Properties extends Array<keyof Meta<Cmp>>> = Partial<{
-  [Key in Properties[number]]: Property;
+  [Key in Properties[number]]: ESTreeAST.Property;
 }>;
 
 /**
@@ -47,7 +46,7 @@ export function extractDefineMetaPropertiesNodes<const Properties extends Array<
  */
 export function getDefineMetaFirstArgumentObjectExpression(
   options: Pick<Options<Array<keyof Meta<Cmp>>>, 'filename' | 'nodes'>
-): ObjectExpression {
+): ESTreeAST.ObjectExpression {
   const { nodes, filename } = options;
   const { defineMetaVariableDeclaration, defineMetaImport } = nodes;
   const { declarations } = defineMetaVariableDeclaration;

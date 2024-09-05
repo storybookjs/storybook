@@ -1,19 +1,19 @@
-import type { Attribute, Component } from 'svelte/compiler';
 import type { ComponentProps } from 'svelte';
 import type { EmptyObject } from 'type-fest';
 
+import type { SvelteAST } from '#parser/ast';
 import type { Cmp, Meta, StoryCmp } from '#types';
 
 type StoryAttributes = Array<keyof ComponentProps<StoryCmp<EmptyObject, Cmp, Meta<Cmp>>>>;
 
 interface Options<Attributes extends StoryAttributes> {
-  component: Component;
+  component: SvelteAST.Component;
   filename?: string;
   attributes: Attributes;
 }
 
 type Result<Attributes extends StoryAttributes> = Partial<{
-  [Key in Attributes[number]]: Attribute;
+  [Key in Attributes[number]]: SvelteAST.Attribute;
 }>;
 
 export function extractStoryAttributesNodes<const Attributes extends StoryAttributes>(

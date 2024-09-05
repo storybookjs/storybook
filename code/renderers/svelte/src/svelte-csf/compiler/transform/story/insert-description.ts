@@ -13,10 +13,10 @@ import {
   getDescriptionPropertyValue,
 } from '#compiler/transform/shared/description';
 
+import type { ESTreeAST } from '#parser/ast';
 import type { extractStoriesNodesFromExportDefaultFn } from '#parser/extract/compiled/stories';
 import { getStoryPropsObjectExpression } from '#parser/extract/compiled/story';
 import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
-import type { Literal, Property } from 'estree';
 
 interface Params {
   nodes: {
@@ -98,8 +98,8 @@ export function insertStoryHTMLCommentAsDescription(params: Params) {
   ) {
     const propertyName = storyPropsObjectExpression.properties.find(
       (p) => p.type === 'Property' && p.key.type === 'Literal' && p.key.value === 'name'
-    ) as Property;
-    const name = (propertyName.value as Literal).value;
+    ) as ESTreeAST.Property;
+    const name = (propertyName.value as ESTreeAST.Literal).value;
     logger.warn(
       dedent`
         Svelte CSF:

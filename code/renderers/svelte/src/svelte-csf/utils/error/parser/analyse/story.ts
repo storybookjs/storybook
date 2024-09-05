@@ -1,16 +1,15 @@
 import dedent from 'dedent';
-import type { Attribute } from 'svelte/compiler';
 
-import { StorybookSvelteCSFError } from '#utils/error';
-import type { ArrayExpression, Literal } from 'estree';
 import type { getStoryIdentifiers } from '#parser/analyse/story/attributes/identifiers';
+import type { ESTreeAST, SvelteAST } from '#parser/ast';
+import { StorybookSvelteCSFError } from '#utils/error';
 
 export class AttributeNotStringError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseStory;
   readonly code = 1;
   public documentation = true;
 
-  public attribute: Attribute;
+  public attribute: SvelteAST.Attribute;
 
   constructor({
     filename,
@@ -39,7 +38,7 @@ export class AttributeNotArrayError extends StorybookSvelteCSFError {
   readonly code = 2;
   public documentation = true;
 
-  public attribute: Attribute;
+  public attribute: SvelteAST.Attribute;
 
   constructor({
     filename,
@@ -62,15 +61,16 @@ export class AttributeNotArrayError extends StorybookSvelteCSFError {
       return true;
     }
 
-    if (value.type === 'ExpressionTag') {
-      return value.expression.value;
+    // value is SvelteAST.ExpressionTag
+    if (!Array.isArray(value)) {
+      return (value.expression as ESTreeAST.Literal).value;
     }
 
     if (value[0].type === 'Text') {
       return value[0].data;
     }
 
-    return (value[0].expression as Literal).value;
+    return (value[0].expression as ESTreeAST.Literal).value;
   }
 
   template(): string {
@@ -88,8 +88,8 @@ export class AttributeNotArrayOfStringsError extends StorybookSvelteCSFError {
   readonly code = 3;
   public documentation = true;
 
-  public attribute: Attribute;
-  public element: ArrayExpression['elements'][number];
+  public attribute: SvelteAST.Attribute;
+  public element: ESTreeAST.ArrayExpression['elements'][number];
 
   constructor({
     filename,
@@ -115,15 +115,15 @@ export class AttributeNotArrayOfStringsError extends StorybookSvelteCSFError {
       return true;
     }
 
-    if (value.type === 'ExpressionTag') {
-      return value.expression.value;
+    if (!Array.isArray(value)) {
+      return (value.expression as ESTreeAST.Literal).value;
     }
 
     if (value[0].type === 'Text') {
       return value[0].data;
     }
 
-    return (value[0].expression as Literal).value;
+    return (value[0].expression as ESTreeAST.Literal).value;
   }
 
   template(): string {

@@ -1,14 +1,15 @@
-import type { FunctionDeclaration, VariableDeclaration } from 'estree';
-
 import type { getMetaIdentifier } from '#parser/analyse/define-meta/meta-identifier';
+import type { ESTreeAST } from '#parser/ast';
 
 interface Params {
-  storiesFunctionDeclaration: FunctionDeclaration;
+  storiesFunctionDeclaration: ESTreeAST.FunctionDeclaration;
   metaIdentifier: ReturnType<typeof getMetaIdentifier>;
   filename?: string;
 }
 
-export function createVariableFromRuntimeStoriesCall(params: Params): VariableDeclaration {
+export function createVariableFromRuntimeStoriesCall(
+  params: Params
+): ESTreeAST.VariableDeclaration {
   const { storiesFunctionDeclaration, metaIdentifier } = params;
 
   return {

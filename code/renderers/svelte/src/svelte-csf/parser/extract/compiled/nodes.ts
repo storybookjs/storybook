@@ -1,17 +1,8 @@
 import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
-import type {
-  Comment,
-  ExportDefaultDeclaration,
-  FunctionDeclaration,
-  Identifier,
-  ImportSpecifier,
-  Node,
-  Program,
-  VariableDeclaration,
-} from 'estree';
 import type { ProgramNode } from 'rollup';
 import type { Visitors } from 'zimmerframe';
 
+import type { ESTreeAST } from '#parser/ast';
 import {
   MissingDefineMetaVariableDeclarationError,
   MissingImportedDefineMetaError,
@@ -31,26 +22,26 @@ export interface CompiledASTNodes {
    * Import specifier for `defineMeta` imported from this addon package.
    * Could be renamed - e.g. `import { defineMeta } from "@storybook/addon-svelte-csf"`
    */
-  defineMetaImport: ImportSpecifier;
+  defineMetaImport: ESTreeAST.ImportSpecifier;
   /**
    * Variable declaration: `const { Story } = defineMeta({ })`
    * Could be destructured with rename - e.g. `const { Story: S } = defineMeta({ ... })`
    */
-  defineMetaVariableDeclaration: VariableDeclaration;
+  defineMetaVariableDeclaration: ESTreeAST.VariableDeclaration;
   /**
    * Store the `export default declaration`, we will need to remove it later.
    * Why? Storybook expects `export default meta`, instead of what `@sveltejs/vite-plugin-svelte` will produce.
    */
-  exportDefault: ExportDefaultDeclaration;
+  exportDefault: ESTreeAST.ExportDefaultDeclaration;
   /**
    * An identifier for the addon's component `<Story />`.
    * It could be destructured with rename - e.g. `const { Story: S } = defineMeta({ ... })`
    */
-  storyIdentifier: Identifier;
+  storyIdentifier: ESTreeAST.Identifier;
   /**
    * A function declaration for the main Svelte component which is the `*.stories.svelte` file.
    */
-  storiesFunctionDeclaration: FunctionDeclaration;
+  storiesFunctionDeclaration: ESTreeAST.FunctionDeclaration;
 }
 
 const AST_NODES_NAMES = {
@@ -59,7 +50,7 @@ const AST_NODES_NAMES = {
 } as const;
 
 interface Params {
-  ast: Program | ProgramNode;
+  ast: ESTreeAST.Program | ProgramNode;
   filename?: string;
 }
 
@@ -73,9 +64,9 @@ export async function extractCompiledASTNodes(params: Params): Promise<CompiledA
   const { walk } = await import('zimmerframe');
 
   const state: Partial<CompiledASTNodes> & {
-    potentialStoriesFunctionDeclaration: FunctionDeclaration[];
+    potentialStoriesFunctionDeclaration: ESTreeAST.FunctionDeclaration[];
   } = { potentialStoriesFunctionDeclaration: [] };
-  const visitors: Visitors<Node | Comment, typeof state> = {
+  const visitors: Visitors<ESTreeAST.Node | ESTreeAST.Comment, typeof state> = {
     ImportDeclaration(node, { state, visit }) {
       const { source, specifiers } = node;
 
@@ -133,14 +124,14 @@ export async function extractCompiledASTNodes(params: Params): Promise<CompiledA
         In production, Svelte will compile the component to:
         export default COMPONENT_NAME () {...}
         */
-        state.storiesFunctionDeclaration = node.declaration as FunctionDeclaration;
+        state.storiesFunctionDeclaration = node.declaration as ESTreeAST.FunctionDeclaration;
       } else if (node.declaration.type === 'Identifier') {
         /*
         In development, Svelte will compile the component to:
         function COMPONENT_NAME () {...}
         export default COMPONENT_NAME;
         */
-        const { name } = node.declaration as Identifier;
+        const { name } = node.declaration as ESTreeAST.Identifier;
         state.storiesFunctionDeclaration = state.potentialStoriesFunctionDeclaration?.find(
           (potential) => potential.id.name === name
         );
@@ -148,7 +139,7 @@ export async function extractCompiledASTNodes(params: Params): Promise<CompiledA
     },
   };
 
-  walk(ast as Program, state, visitors);
+  walk(ast as ESTreeAST.Program, state, visitors);
 
   const {
     defineMetaImport,

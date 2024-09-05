@@ -1,6 +1,6 @@
-import type { Component, SnippetBlock } from 'svelte/compiler';
+import type { SvelteAST } from '#parser/ast';
 
-type Result = SnippetBlock | undefined;
+type Result = SvelteAST.SnippetBlock | undefined;
 
 /**
  * Extract the {@link SnippetBlock}  of the individual `<Story />` if exists.
@@ -8,7 +8,7 @@ type Result = SnippetBlock | undefined;
  * This AST node will help us in the further transformation of the `parameters.docs.source.code` on the compiled code,
  * and at runtime.
  */
-export function extractStoryChildrenSnippetBlock(component: Component): Result {
+export function extractStoryChildrenSnippetBlock(component: SvelteAST.Component): Result {
   const { fragment } = component;
   const { nodes } = fragment;
 

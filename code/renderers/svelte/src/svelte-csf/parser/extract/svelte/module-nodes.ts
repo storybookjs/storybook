@@ -1,8 +1,7 @@
 import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
-import type { Identifier, ImportSpecifier, VariableDeclaration } from 'estree';
-import type { Root, SvelteNode } from 'svelte/compiler';
 import type { Visitors } from 'zimmerframe';
 
+import type { ESTreeAST, SvelteAST } from '#parser/ast';
 import {
   DefaultOrNamespaceImportUsedError,
   MissingDefineMetaImportError,
@@ -22,26 +21,26 @@ interface Result {
    * Import specifier for `defineMeta` imported from this addon package.
    * Could be renamed - e.g. `import { defineMeta as df } from "@storybook/addon-svelte-csf"`
    */
-  defineMetaImport: ImportSpecifier;
+  defineMetaImport: ESTreeAST.ImportSpecifier;
   /**
    * Import specifier for `setTemplate` imported from this addon package.
    * Could be renamed - e.g. `import { setTemplate as st } from "@storybook/addon-svelte-csf"`
    */
-  setTemplateImport: ImportSpecifier | undefined;
+  setTemplateImport: ESTreeAST.ImportSpecifier | undefined;
   /**
    * Variable declaration: `const { Story } = defineMeta({ })`
    * Could be destructured with rename - e.g. `const { Story: S } = defineMeta({ ... })`
    */
-  defineMetaVariableDeclaration: VariableDeclaration;
+  defineMetaVariableDeclaration: ESTreeAST.VariableDeclaration;
   /**
    * An identifier for the addon's component `<Story />`.
    * It could be destructured with rename - e.g. `const { Story: S } = defineMeta({ ... })`
    */
-  storyIdentifier: Identifier;
+  storyIdentifier: ESTreeAST.Identifier;
 }
 
 interface Params {
-  module: Root['module'];
+  module: SvelteAST.Root['module'];
   filename?: string;
 }
 
@@ -60,7 +59,7 @@ export async function extractModuleNodes(options: Params): Promise<Result> {
   const { walk } = await import('zimmerframe');
 
   const state: Partial<Result> = {};
-  const visitors: Visitors<SvelteNode, typeof state> = {
+  const visitors: Visitors<SvelteAST.SvelteNode, typeof state> = {
     ImportDeclaration(node, { state, visit }) {
       const { source, specifiers } = node;
 

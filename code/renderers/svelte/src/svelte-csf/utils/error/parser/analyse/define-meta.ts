@@ -1,13 +1,13 @@
 import { StorybookSvelteCSFError } from '#utils/error';
 import dedent from 'dedent';
-import type { ArrayExpression, Identifier, Property, VariableDeclarator } from 'estree';
+import type * as ESTreeAST from 'estree';
 
 export class InvalidComponentValueError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseDefineMeta;
   readonly code = 1;
   public documentation = true;
 
-  public componentProperty: Property;
+  public componentProperty: ESTreeAST.Property;
 
   constructor({
     filename,
@@ -35,7 +35,7 @@ export class NoDestructuredDefineMetaCallError extends StorybookSvelteCSFError {
   readonly code = 2;
   public documentation = true;
 
-  public defineMetaVariableDeclarator: VariableDeclarator;
+  public defineMetaVariableDeclarator: ESTreeAST.VariableDeclarator;
 
   constructor({
     filename,
@@ -80,7 +80,7 @@ export class NoStringLiteralError extends StorybookSvelteCSFError {
   readonly code = 4;
   public documentation = true;
 
-  readonly property: Property;
+  readonly property: ESTreeAST.Property;
 
   constructor({
     filename,
@@ -95,7 +95,7 @@ export class NoStringLiteralError extends StorybookSvelteCSFError {
 
   template(): string {
     return dedent`
-      The '${(this.property.key as Identifier).name}' passed to 'defineMeta()' must be a static string literal.
+      The '${(this.property.key as ESTreeAST.Identifier).name}' passed to 'defineMeta()' must be a static string literal.
       But it is of type '${this.property.value.type}'.
 
       This issue occurred in stories file: ${this.filepathURL}
@@ -108,7 +108,7 @@ export class NoArrayExpressionError extends StorybookSvelteCSFError {
   readonly code = 5;
   public documentation = true;
 
-  readonly property: Property;
+  readonly property: ESTreeAST.Property;
 
   constructor({
     filename,
@@ -123,7 +123,7 @@ export class NoArrayExpressionError extends StorybookSvelteCSFError {
 
   template(): string {
     return dedent`
-      The '${(this.property.key as Identifier).name}' passed to 'defineMeta()' must be a static array.
+      The '${(this.property.key as ESTreeAST.Identifier).name}' passed to 'defineMeta()' must be a static array.
       But it is of type '${this.property.value.type}'.
 
       This issue occurred in stories file: ${this.filepathURL}
@@ -136,8 +136,8 @@ export class ArrayElementNotStringError extends StorybookSvelteCSFError {
   readonly code = 6;
   public documentation = true;
 
-  readonly property: Property;
-  readonly element: ArrayExpression['elements'][number];
+  readonly property: ESTreeAST.Property;
+  readonly element: ESTreeAST.ArrayExpression['elements'][number];
 
   constructor({
     filename,
@@ -155,7 +155,7 @@ export class ArrayElementNotStringError extends StorybookSvelteCSFError {
 
   template(): string {
     return dedent`
-      All entries in the '${(this.property.key as Identifier).name}' property passed to 'defineMeta()' must be static strings.
+      All entries in the '${(this.property.key as ESTreeAST.Identifier).name}' property passed to 'defineMeta()' must be static strings.
       One of the elements is not a string but is instead of type '${this.element?.type}'.
 
       This issue occurred in stories file: ${this.filepathURL}

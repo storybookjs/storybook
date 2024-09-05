@@ -1,5 +1,4 @@
-import type { Attribute, Component } from 'svelte/compiler';
-
+import type { SvelteAST } from '#parser/ast';
 import {
   AttributeNotArrayError,
   AttributeNotArrayOfStringsError,
@@ -7,9 +6,9 @@ import {
 } from '#utils/error/parser/analyse/story';
 
 interface Params {
-  node: Attribute | undefined;
+  node: SvelteAST.Attribute | undefined;
   filename?: string;
-  component: Component;
+  component: SvelteAST.Component;
 }
 
 export function getStringValueFromAttribute(params: Params) {

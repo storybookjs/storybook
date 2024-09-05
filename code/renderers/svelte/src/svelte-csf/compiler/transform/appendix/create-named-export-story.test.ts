@@ -1,9 +1,10 @@
-import type { Program } from 'estree';
 import { print } from 'esrap';
 import { describe, it } from 'vitest';
 
 import { createNamedExportStory } from './create-named-export-story';
 import { createVariableFromRuntimeStoriesCall } from './create-variable-from-runtime-stories-call';
+
+import type { ESTreeAST } from '#parser/ast';
 
 describe(createNamedExportStory.name, () => {
   it('correctly creates a variable with named exports order', ({ expect }) => {
@@ -28,7 +29,7 @@ describe(createNamedExportStory.name, () => {
             params: [],
           },
         }),
-      }) as unknown as Program
+      }) as unknown as ESTreeAST.Program
     ).code;
 
     expect(stringified).toMatchInlineSnapshot(`"export const Default = __stories["Default"];"`);

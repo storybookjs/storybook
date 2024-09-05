@@ -1,6 +1,7 @@
 import dedent from 'dedent';
-import type { Component, SnippetBlock } from 'svelte/compiler';
 
+import { getDefineMetaComponentValue } from '#parser/analyse/define-meta/component-identifier';
+import type { SvelteAST } from '#parser/ast';
 import type { extractSvelteASTNodes } from '#parser/extract/svelte/nodes';
 import { extractStoryChildrenSnippetBlock } from '#parser/extract/svelte/story/children';
 import {
@@ -8,11 +9,9 @@ import {
   findStoryAttributeChildrenSnippetBlock,
 } from '#parser/extract/svelte/snippet-block';
 
-import { getDefineMetaComponentValue } from '#parser/analyse/define-meta/component-identifier';
-
 interface Params {
   nodes: {
-    component: Component;
+    component: SvelteAST.Component;
     svelte: Awaited<ReturnType<typeof extractSvelteASTNodes>>;
   };
   originalCode: string;
@@ -148,7 +147,7 @@ export function getStoryChildrenRawCode(params: Params): string {
  * <Component {...args } />
  * ```
  */
-function getSnippetBlockBodyRawCode(originalCode: string, node: SnippetBlock) {
+function getSnippetBlockBodyRawCode(originalCode: string, node: SvelteAST.SnippetBlock) {
   const { body } = node;
   const { nodes } = body;
   const firstNode = nodes[0];

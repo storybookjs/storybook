@@ -1,8 +1,9 @@
-import type { Program } from 'estree';
 import { print } from 'esrap';
 import { describe, it } from 'vitest';
 
 import { createExportDefaultMeta } from './create-export-default';
+
+import type { ESTreeAST } from '#parser/ast';
 
 describe(createExportDefaultMeta.name, () => {
   it('creates a new export default correctly', ({ expect }) => {
@@ -12,7 +13,7 @@ describe(createExportDefaultMeta.name, () => {
           type: 'Identifier',
           name: 'meta',
         },
-      }) as unknown as Program
+      }) as unknown as ESTreeAST.Program
     ).code;
 
     expect(stringified).toMatchInlineSnapshot(`"export default meta;"`);
@@ -25,7 +26,7 @@ describe(createExportDefaultMeta.name, () => {
           type: 'Identifier',
           name: '__renamed_meta',
         },
-      }) as unknown as Program
+      }) as unknown as ESTreeAST.Program
     ).code;
 
     expect(stringified).toMatchInlineSnapshot(`"export default __renamed_meta;"`);

@@ -1,7 +1,8 @@
 import url from 'node:url';
 
 import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
-import type { Component } from 'svelte/compiler';
+
+import type { SvelteAST } from '#parser/ast';
 
 /**
  * Adopted from: {@link https://github.com/storybookjs/storybook/blob/next/code/lib/core-events/src/errors/storybook-error.ts}
@@ -93,7 +94,7 @@ export abstract class StorybookSvelteCSFError extends Error {
   /**
    * Name of the `<Story name=">...<" />` component which caused the error.
    */
-  readonly component?: Component;
+  readonly component?: SvelteAST.Component;
 
   constructor({
     filename,

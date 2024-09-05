@@ -1,5 +1,4 @@
-import type { Component, SnippetBlock } from 'svelte/compiler';
-
+import type { SvelteAST } from '#parser/ast';
 import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
 import { extractStoryAttributesNodes } from '#parser/extract/svelte/story/attributes';
 
@@ -25,7 +24,7 @@ import {
  * which was referenced by the attribute `children`. Following example above - it would be snippet `myTemplate`.
  */
 export function findStoryAttributeChildrenSnippetBlock(options: {
-  component: Component;
+  component: SvelteAST.Component;
   nodes: SvelteASTNodes;
   filename?: string;
 }) {
@@ -73,7 +72,7 @@ export function findStoryAttributeChildrenSnippetBlock(options: {
 export function findSetTemplateSnippetBlock(options: {
   nodes: SvelteASTNodes;
   filename?: string;
-}): SnippetBlock | undefined {
+}): SvelteAST.SnippetBlock | undefined {
   const { nodes, filename } = options;
   const { setTemplateCall } = nodes;
 
@@ -106,7 +105,7 @@ function findSnippetBlockByName(options: {
    */
   name: string;
   nodes: SvelteASTNodes;
-}): SnippetBlock | undefined {
+}): SvelteAST.SnippetBlock | undefined {
   const { name, nodes } = options;
   const { snippetBlocks } = nodes;
 

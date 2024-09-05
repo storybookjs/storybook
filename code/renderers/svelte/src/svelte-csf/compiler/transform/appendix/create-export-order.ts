@@ -1,13 +1,12 @@
-import type { ExportNamedDeclaration } from 'estree';
-
 import type { getStoriesIdentifiers } from '#parser/analyse/story/attributes/identifiers';
+import type { ESTreeAST } from '#parser/ast';
 
 interface Params {
   storyIdentifiers: ReturnType<typeof getStoriesIdentifiers>;
   filename?: string;
 }
 
-export function createExportOrderVariable(params: Params): ExportNamedDeclaration {
+export function createExportOrderVariable(params: Params): ESTreeAST.ExportNamedDeclaration {
   const { storyIdentifiers } = params;
 
   const exported = {

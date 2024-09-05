@@ -1,14 +1,15 @@
-import type { CallExpression, ExpressionStatement, Node } from 'estree';
 import type { Visitors } from 'zimmerframe';
 
 import type { CompiledASTNodes } from './nodes';
+
+import type { ESTreeAST } from '#parser/ast';
 
 interface Params {
   nodes: CompiledASTNodes;
   filename?: string;
 }
 
-type Result = (CallExpression | ExpressionStatement)[];
+type Result = (ESTreeAST.CallExpression | ESTreeAST.ExpressionStatement)[];
 
 export async function extractStoriesNodesFromExportDefaultFn(params: Params) {
   const { walk } = await import('zimmerframe');
@@ -16,7 +17,7 @@ export async function extractStoriesNodesFromExportDefaultFn(params: Params) {
   const { nodes } = params;
   const { storiesFunctionDeclaration, storyIdentifier } = nodes;
   const state: Result = [];
-  const visitors: Visitors<Node, typeof state> = {
+  const visitors: Visitors<ESTreeAST.Node, typeof state> = {
     CallExpression(node, context) {
       const { state } = context;
 

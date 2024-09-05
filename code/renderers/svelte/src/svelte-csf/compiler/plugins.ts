@@ -29,7 +29,7 @@ export async function preTransformPlugin(): Promise<Plugin> {
   const filter = createFilter(include);
 
   return {
-    name: 'storybook:addon-svelte-csf-plugin-pre',
+    name: 'storybook:addon-svelte-csf-legacy-api-support',
     enforce: 'pre',
     async transform(code, id) {
       if (!filter(id)) return undefined;

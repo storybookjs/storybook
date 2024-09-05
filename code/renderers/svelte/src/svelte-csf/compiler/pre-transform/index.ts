@@ -104,13 +104,15 @@ export async function codemodLegacyNodes(params: Params): Promise<Root> {
       const { declaration } = node;
       const { state } = context;
 
-      if (!(
-        declaration &&
-        declaration.type === 'VariableDeclaration' &&
-        declaration.declarations[0].type === 'VariableDeclarator' &&
-        declaration.declarations[0].id.type === 'Identifier' &&
-        declaration.declarations[0].id.name === 'meta'
-      )) {
+      if (
+        !(
+          declaration &&
+          declaration.type === 'VariableDeclaration' &&
+          declaration.declarations[0].type === 'VariableDeclarator' &&
+          declaration.declarations[0].id.type === 'Identifier' &&
+          declaration.declarations[0].id.name === 'meta'
+        )
+      ) {
         return;
       }
       const transformed = transformExportMetaToDefineMeta(node);

@@ -113,32 +113,31 @@ export async function codemodLegacyNodes(params: Params): Promise<Root> {
       )) {
         return;
       }
-        const transformed = transformExportMetaToDefineMeta(node);
-        const { currentScript } = state;
+      const transformed = transformExportMetaToDefineMeta(node);
+      const { currentScript } = state;
 
-        if (currentScript === 'instance') {
-          state.defineMetaFromExportConstMeta = transformed;
-        }
-
-        // NOTE:
-        // Type assertion because we already ran transform codemod function by this point (`transformed`).
-        // So the possible issue is on our side, not user.
-        const { init } = declaration.declarations[0] as ObjectExpression;
-
-        const { properties } = init;
-
-        for (const property of properties) {
-          if (
-            property.type === 'Property' &&
-            property.key.name === 'component' &&
-            property.value.type === 'Identifier'
-          ) {
-            state.storiesComponentIdentifier = property.value;
-          }
-        }
-
-        return transformed;
+      if (currentScript === 'instance') {
+        state.defineMetaFromExportConstMeta = transformed;
       }
+
+      // NOTE:
+      // Type assertion because we already ran transform codemod function by this point (`transformed`).
+      // So the possible issue is on our side, not user.
+      const { init } = declaration.declarations[0] as ObjectExpression;
+
+      const { properties } = init;
+
+      for (const property of properties) {
+        if (
+          property.type === 'Property' &&
+          property.key.name === 'component' &&
+          property.value.type === 'Identifier'
+        ) {
+          state.storiesComponentIdentifier = property.value;
+        }
+      }
+
+      return transformed;
     },
 
     Fragment(_node, context) {

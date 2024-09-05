@@ -44,6 +44,18 @@ export default defineConfig({
 });
 ```
 
+If you are using `@storybook/experimental-nextjs-vite` you don't have to install `vite-plugin-storybook-nextjs`, since `@storybook/experimental-nextjs-vite` already re-exports it.
+
+```ts
+// vitest.config.ts
+import { defineConfig } from "vite";
+import { storybookNextJsPlugin } from "@storybook/experimental-nextjs-vite/vite-plugin";
+
+export default defineConfig({
+  plugins: [storybookNextJsPlugin()],
+});
+```
+
 ## Configuration Options
 
 You can configure the plugin using the following options:
@@ -68,7 +80,7 @@ This plugin is necessary to run portable stories in Vitest, as it provides the n
 
 (⚠️ **Experimental**)
 
-The experimental `@storybook/experimental-addon-vitest` can be used to automatically transform your stories at Vitest runtime to in-memory test files. This allows you to run your stories in a Vitest environment without needing to manually transform your stories. Please visit https://storybook.js.org/docs/8.3/writing-tests/test-runner-with-vitest for more information.
+The experimental `@storybook/experimental-addon-test` can be used to automatically transform your stories at Vitest runtime to in-memory test files. This allows you to run your stories in a Vitest environment without needing to manually transform your stories. Please visit https://storybook.js.org/docs/8.3/writing-tests/test-runner-with-vitest for more information.
 
 ## Limitations and differences to the Webpack5-based integration of Next.js in Storybook
 

@@ -108,4 +108,38 @@ describe(transformComponentMetaToDefineMeta.name, () => {
       });"
     `);
   });
+
+  it("transforms singular expresion tag with literal string on 'tags' attribute to array expression", async ({
+    expect,
+  }) => {
+    const code = `
+      <script context="module">
+        import { Story } from "@storybook/addon-svelte-csf";
+      </script>
+
+      <Meta tags={"autodocs"} />
+    `;
+    const component = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
+
+    expect(print(transformComponentMetaToDefineMeta({ component }))).toMatchInlineSnapshot(
+      `"const { Story } = defineMeta({ tags: ["autodocs"] });"`
+    );
+  });
+
+  it("transforms singular text value on 'tags' attribute to array expression", async ({
+    expect,
+  }) => {
+    const code = `
+      <script context="module">
+        import { Story } from "@storybook/addon-svelte-csf";
+      </script>
+
+      <Meta tags="!dev" />
+    `;
+    const component = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
+
+    expect(print(transformComponentMetaToDefineMeta({ component }))).toMatchInlineSnapshot(
+      `"const { Story } = defineMeta({ tags: ["!dev"] });"`
+    );
+  });
 });

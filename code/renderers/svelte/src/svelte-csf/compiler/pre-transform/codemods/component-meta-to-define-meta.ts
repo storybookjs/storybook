@@ -1,4 +1,9 @@
-import type { ESTreeAST, SvelteAST } from '#parser/ast';
+import {
+  createASTArrayExpression,
+  createASTExpressionTag,
+  type ESTreeAST,
+  type SvelteAST,
+} from '#parser/ast';
 
 interface Params {
   component: SvelteAST.Component;
@@ -91,6 +96,10 @@ function transformMetaCommentToBlockComment(
 function attributeToObjectExpressionProperty(attribute: SvelteAST.Attribute): ESTreeAST.Property {
   const { name } = attribute;
 
+  if (name === 'tags') {
+    transformTags(attribute);
+  }
+
   const key = {
     type: 'Identifier',
     name,
@@ -129,4 +138,58 @@ function attributeValueToPropertyValue(
   }
 
   return value[0].expression;
+}
+
+function transformTags(tags: SvelteAST.Attribute): void {
+  if (tags.value === true) {
+    // NOTE: The error on invalid type (boolean) is likely visible
+    // 1. via TypeScript
+    // 2. and thrown by storybook internal, right?
+    return;
+  }
+
+  // tags.value is SvelteAST.ExpressionTag
+  if (!Array.isArray(tags.value)) {
+    if (typeof tags.value.expression.value !== 'string') {
+      // NOTE: The error on invalid type (not a string) is likely visible
+      // 1. via TypeScript
+      // 2. and thrown by storybook internal, right?
+      return;
+    }
+    // NOTE: This is the only case so far where
+    // we need to transform tags from singular string literal to an array expression - to align with CSF3 format
+    tags.value.expression = createASTArrayExpression([tags.value.expression]);
+    return;
+  }
+
+  if (tags.value[0].type === 'ExpressionTag' && tags.value[0].expression.type === 'Literal') {
+    if (typeof tags.value[0].expression.value !== 'string') {
+      // NOTE: The error on invalid type (not a string) is likely visible
+      // 1. via TypeScript
+      // 2. and thrown by storybook internal, right?
+      return;
+    }
+    // NOTE: This is the only case so far where
+    // we need to transform tags from singular string literal to an array expression - to align with CSF3 format
+    tags.value = createASTExpressionTag(
+      createASTArrayExpression([
+        {
+          type: 'Literal',
+          value: tags.value[0].data,
+        },
+      ])
+    );
+    return;
+  }
+
+  if (tags.value[0].type === 'Text') {
+    tags.value = createASTExpressionTag(
+      createASTArrayExpression([
+        {
+          type: 'Literal',
+          value: tags.value[0].data,
+        },
+      ])
+    );
+  }
 }

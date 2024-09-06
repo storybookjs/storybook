@@ -47,9 +47,8 @@ describe('InteractionToggle', () => {
     };
 
     vi.stubGlobal('localStorage', localStorageMock);
-    await waitFor(() =>
-      userEvent.click(screen.getByRole('button', { name: 'Disable Interactions' }))
-    );
+    userEvent.click(screen.getByRole('button', { name: 'Disable Interactions' }));
+
     await waitFor(() => expect(localStorageMock.setItem).toHaveBeenCalled());
   });
 });

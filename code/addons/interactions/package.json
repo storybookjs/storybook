@@ -53,6 +53,7 @@
   },
   "dependencies": {
     "@storybook/global": "^5.0.0",
+    "@storybook/icons": "^1.2.10",
     "@storybook/instrumenter": "workspace:*",
     "@storybook/test": "workspace:*",
     "polished": "^4.2.2",

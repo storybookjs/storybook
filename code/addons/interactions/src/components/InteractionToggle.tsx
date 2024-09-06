@@ -22,8 +22,7 @@ export const InteractionToggle = () => {
   return (
     <IconButton
       key={TOOL_ID}
-      aria-label={`${disableInteractions ? 'Enable' : 'Disable'} Interactions`}
-      title={`${disableInteractions ? 'Enable' : 'Disable'} Interactions`}
+      aria-label="Disable Interactions"
       onClick={toggleMyTool}
       defaultChecked={disableInteractions}
       aria-pressed={disableInteractions}

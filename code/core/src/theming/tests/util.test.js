@@ -113,7 +113,7 @@ describe('utils', () => {
     it('should return unmodifed color when invalid color string is passed', () => {
       const color = 'var(--bar)';
 
-      const result = darken(0.1, color);
+      const result = lighten(0.1, color);
 
       expect(result).toEqual(color);
     });

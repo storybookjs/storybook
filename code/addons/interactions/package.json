@@ -53,7 +53,6 @@
   },
   "dependencies": {
     "@storybook/global": "^5.0.0",
-    "@storybook/icons": "^1.2.10",
     "@storybook/instrumenter": "workspace:*",
     "@storybook/test": "workspace:*",
     "polished": "^4.2.2",
@@ -61,7 +60,7 @@
   },
   "devDependencies": {
     "@devtools-ds/object-inspector": "^1.1.2",
-    "@storybook/icons": "^1.2.5",
+    "@storybook/icons": "^1.2.10",
     "@types/node": "^22.0.0",
     "formik": "^2.2.9",
     "react": "^18.2.0",

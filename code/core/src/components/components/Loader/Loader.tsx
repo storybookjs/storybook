@@ -1,9 +1,7 @@
 import React from 'react';
 
-import { keyframes, styled } from '@storybook/core/theming';
+import { keyframes, styled, transparentize } from '@storybook/core/theming';
 import { LightningOffIcon } from '@storybook/icons';
-
-import { transparentize } from 'polished';
 
 import { rotate360 } from '../shared/animation';
 

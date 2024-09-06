@@ -2,7 +2,7 @@ import type { ComponentProps, MutableRefObject } from 'react';
 import React, { useCallback, useMemo, useRef } from 'react';
 
 import { Button, IconButton, TooltipLinkList, WithTooltip } from '@storybook/core/components';
-import { styled, useTheme } from '@storybook/core/theming';
+import { styled, transparentize, useTheme } from '@storybook/core/theming';
 import {
   CollapseIcon as CollapseIconSvg,
   ExpandAltIcon,
@@ -23,8 +23,6 @@ import type {
   StoryEntry,
 } from '@storybook/core/manager-api';
 import { useStorybookApi } from '@storybook/core/manager-api';
-
-import { transparentize } from 'polished';
 
 import { getGroupStatus, getHighestStatus, statusMapping } from '../../utils/status';
 import {

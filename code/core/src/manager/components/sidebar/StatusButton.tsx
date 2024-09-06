@@ -1,9 +1,8 @@
 import { IconButton } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
+import { styled, transparentize } from '@storybook/core/theming';
 import type { API_StatusValue } from '@storybook/types';
 
 import type { Theme } from '@emotion/react';
-import { transparentize } from 'polished';
 
 const withStatusColor = ({ theme, status }: { theme: Theme; status: API_StatusValue }) => {
   const defaultColor =

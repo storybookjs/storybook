@@ -3,10 +3,9 @@ import React, { useState } from 'react';
 
 import { codeCommon } from 'storybook/internal/components';
 import type { CSSObject } from 'storybook/internal/theming';
-import { styled } from 'storybook/internal/theming';
+import { styled, transparentize } from 'storybook/internal/theming';
 
 import Markdown from 'markdown-to-jsx';
-import { transparentize } from 'polished';
 
 import type { ArgControlProps } from './ArgControl';
 import { ArgControl } from './ArgControl';

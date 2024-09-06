@@ -1,11 +1,9 @@
-import { opacify } from 'polished';
-
 import { animation, easing } from './animation';
 import { background, color, typography } from './base';
 import { themes } from './create';
 import { chromeDark, chromeLight, create as createSyntax } from './modules/syntax';
 import type { Color, StorybookTheme, ThemeVars, ThemeVarsColors } from './types';
-import { getPreferredColorScheme } from './utils';
+import { getPreferredColorScheme, opacify } from './utils';
 
 const lightSyntaxColors = {
   green1: '#008000',

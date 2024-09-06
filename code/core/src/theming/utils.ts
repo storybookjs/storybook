@@ -2,7 +2,13 @@ import { global } from '@storybook/global';
 
 import { logger } from '@storybook/core/client-logger';
 
-import { darken, lighten, rgba } from 'polished';
+import {
+  darken,
+  lighten,
+  opacify as polishedOpacify,
+  transparentize as polishedTransparentize,
+  rgba,
+} from 'polished';
 
 const { window: globalWindow } = global;
 
@@ -29,19 +35,7 @@ const isValidColorForPolished = (color: string) => {
   return !/(gradient|var|calc)/.test(color);
 };
 
-const applyPolished = (type: string, color: string) => {
-  if (type === 'darken') {
-    return rgba(`${darken(1, color)}`, 0.95);
-  }
-
-  if (type === 'lighten') {
-    return rgba(`${lighten(1, color)}`, 0.95);
-  }
-
-  return color;
-};
-
-const colorFactory = (type: string) => (color: string) => {
+const safelyRunPolished = (color: string, f: () => string): string => {
   if (!isColorString(color)) {
     return color;
   }
@@ -50,16 +44,94 @@ const colorFactory = (type: string) => (color: string) => {
     return color;
   }
 
-  // Guard anything that is not working with polished.
   try {
-    return applyPolished(type, color);
-  } catch (error) {
+    return f();
+  } catch (_error) {
     return color;
   }
 };
 
-export const lightenColor = colorFactory('lighten');
-export const darkenColor = colorFactory('darken');
+/**
+ * Returns a string value for the lighted color.
+ *
+ * This wrapper function calls `lighten` function imported from "polished". Differences from the
+ * imported function:
+ *
+ * - Does not support curried usage.
+ * - Does not throw when `color` is not valid color string.
+ *
+ * @param amount - Between 0 to 1.
+ */
+export function lightenColor(amount: number | string, color: string): string;
+/**
+ * Returns a lighted and slightly translucent color.
+ *
+ * This overload is kept for compatibility reasons. Use another overload signature instead.
+ */
+export function lightenColor(color: string): string;
+export function lightenColor(...args: [number | string, string] | [string]): string {
+  if (args.length === 1) {
+    return safelyRunPolished(args[0], () => rgba(`${lighten(1, args[0])}`, 0.95));
+  }
+
+  return safelyRunPolished(args[1], () => lighten(args[0], args[1]));
+}
+
+/**
+ * Returns a string value for the darkened color.
+ *
+ * This wrapper function calls `darken` function imported from "polished". Differences from the
+ * imported function:
+ *
+ * - Does not support curried usage.
+ * - Does not throw when `color` is not valid color string.
+ *
+ * @param amount - Between 0 to 1.
+ */
+export function darkenColor(amount: number | string, color: string): string;
+/**
+ * Returns a darkened and slightly translucent color.
+ *
+ * This overload is kept for compatibility reasons. Use another overload signature instead.
+ */
+export function darkenColor(color: string): string;
+export function darkenColor(...args: [number | string, string] | [string]): string {
+  if (args.length === 1) {
+    return safelyRunPolished(args[0], () => rgba(`${darken(1, args[0])}`, 0.95));
+  }
+
+  return safelyRunPolished(args[1], () => darken(args[0], args[1]));
+}
+
+/**
+ * Decrease the opacity of a color.
+ *
+ * This wrapper function calls `transparentize` function imported from "polished". Differences from
+ * the imported function:
+ *
+ * - Does not support curried usage.
+ * - Does not throw when `color` is not valid color string.
+ *
+ * @param amount - Between 0 to 1.
+ */
+export const transparentize = (amount: number | string, color: string): string => {
+  return safelyRunPolished(color, () => polishedTransparentize(amount, color));
+};
+
+/**
+ * Increase the opacity of a color.
+ *
+ * This wrapper function calls `opacify` function imported from "polished". Differences from the
+ * imported function:
+ *
+ * - Does not support curried usage.
+ * - Does not throw when `color` is not valid color string.
+ *
+ * @param amount - Between 0 to 1.
+ */
+export const opacify = (amount: number | string, color: string): string => {
+  return safelyRunPolished(color, () => polishedOpacify(amount, color));
+};
 
 // The default color scheme is light so unless the preferred color
 // scheme is set to dark we always want to use the light theme

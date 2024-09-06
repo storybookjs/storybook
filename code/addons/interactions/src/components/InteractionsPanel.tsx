@@ -1,10 +1,8 @@
 import * as React from 'react';
 
-import { styled } from 'storybook/internal/theming';
+import { styled, transparentize } from 'storybook/internal/theming';
 
 import { type Call, CallStates, type ControlStates } from '@storybook/instrumenter';
-
-import { transparentize } from 'polished';
 
 import { isTestAssertionError } from '../utils';
 import { Empty } from './EmptyState';

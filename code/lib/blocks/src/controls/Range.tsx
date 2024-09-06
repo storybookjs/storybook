@@ -1,9 +1,9 @@
 import type { ChangeEvent, FC } from 'react';
 import React, { useMemo } from 'react';
 
-import { styled } from 'storybook/internal/theming';
+import { darken, lighten, styled } from 'storybook/internal/theming';
 
-import { darken, lighten, rgba } from 'polished';
+import { rgba } from 'polished';
 
 import { parse } from './Number';
 import { getControlId } from './helpers';

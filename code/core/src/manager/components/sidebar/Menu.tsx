@@ -3,10 +3,8 @@ import React, { useMemo, useState } from 'react';
 
 import type { Button, TooltipLinkListLink } from '@storybook/core/components';
 import { IconButton, TooltipLinkList, WithTooltip } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
+import { styled, transparentize } from '@storybook/core/theming';
 import { CloseIcon, CogIcon } from '@storybook/icons';
-
-import { transparentize } from 'polished';
 
 import { useLayout } from '../layout/LayoutProvider';
 

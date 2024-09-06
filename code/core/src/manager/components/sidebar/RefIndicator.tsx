@@ -3,7 +3,7 @@ import React, { forwardRef, useCallback, useMemo } from 'react';
 
 import type { TooltipLinkListLink } from '@storybook/core/components';
 import { Spaced, TooltipLinkList, WithTooltip } from '@storybook/core/components';
-import { styled, useTheme } from '@storybook/core/theming';
+import { styled, transparentize, useTheme } from '@storybook/core/theming';
 import { global } from '@storybook/global';
 import {
   AlertIcon,
@@ -17,8 +17,6 @@ import {
 } from '@storybook/icons';
 
 import { useStorybookApi } from '@storybook/core/manager-api';
-
-import { transparentize } from 'polished';
 
 import type { getStateType } from '../../utils/tree';
 import type { RefType } from './types';

@@ -3,13 +3,12 @@ import React from 'react';
 
 import { once } from 'storybook/internal/client-logger';
 import { IconButton, Link, ResetWrapper } from 'storybook/internal/components';
-import { styled } from 'storybook/internal/theming';
+import { styled, transparentize } from 'storybook/internal/theming';
 
 import { includeConditionalArg } from '@storybook/csf';
 import { DocumentIcon, UndoIcon } from '@storybook/icons';
 
 import pickBy from 'lodash/pickBy.js';
-import { transparentize } from 'polished';
 
 import { EmptyBlock } from '..';
 import { ArgRow } from './ArgRow';

@@ -1,6 +1,4 @@
-import { styled } from 'storybook/internal/theming';
-
-import { opacify } from 'polished';
+import { opacify, styled } from 'storybook/internal/theming';
 
 export const Action = styled.div({
   display: 'flex',

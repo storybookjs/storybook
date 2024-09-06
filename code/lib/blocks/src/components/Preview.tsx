@@ -3,11 +3,9 @@ import React, { Children, useCallback, useState } from 'react';
 
 import { ActionBar, Zoom } from 'storybook/internal/components';
 import type { ActionItem } from 'storybook/internal/components';
-import { styled } from 'storybook/internal/theming';
+import { darken, styled } from 'storybook/internal/theming';
 
 import { global } from '@storybook/global';
-
-import { darken } from 'polished';
 
 import type { SourceProps } from '.';
 import { Source } from '.';

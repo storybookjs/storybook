@@ -1,4 +1,4 @@
-import { transparentize } from 'polished';
+import { transparentize } from './utils';
 
 export const color = {
   // Official color palette

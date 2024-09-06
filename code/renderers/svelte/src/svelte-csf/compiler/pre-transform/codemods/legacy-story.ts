@@ -1,6 +1,7 @@
 import { camelCase } from 'es-toolkit/string';
 
 import {
+  createASTArrayExpression,
   createASTAttribute,
   createASTExpressionTag,
   createASTObjectExpression,
@@ -18,7 +19,6 @@ interface Params {
 export function transformLegacyStory(params: Params): SvelteAST.Component {
   const { node, filename } = params;
   let { attributes, fragment, ...rest } = node;
-
   let newAttributes: SvelteAST.Component['attributes'] = [];
   let autodocs: SvelteAST.Attribute | undefined;
   let source: SvelteAST.Attribute | undefined;
@@ -32,6 +32,7 @@ export function transformLegacyStory(params: Params): SvelteAST.Component {
       letDirectiveArgs = attribute;
       continue;
     }
+
     if (attribute.type === 'LetDirective' && attribute.name === 'context') {
       letDirectiveContext = attribute;
       continue;
@@ -43,24 +44,16 @@ export function transformLegacyStory(params: Params): SvelteAST.Component {
     }
 
     if (attribute.type === 'Attribute' && attribute.name === 'source') {
-      const { value } = attribute;
-
-      if (value === true) continue;
       source = attribute;
       continue;
     }
 
     if (attribute.type === 'Attribute' && attribute.name === 'parameters') {
-      const { value } = attribute;
-
-      if (value === true || (Array.isArray(value) && value[0].type === 'Text')) continue; // WARN: Invalid syntax (shorthand or text expression), but lets move on
       parameters = attribute;
       continue;
     }
 
     if (attribute.type === 'Attribute' && attribute.name === 'tags') {
-      const { value } = attribute;
-      if (value === true || (Array.isArray(value) && value[0].type === 'Text')) continue; // WARN: Invalid syntax (shorthand or text expression), but lets move on
       tags = attribute;
       continue;
     }
@@ -96,6 +89,10 @@ export function transformLegacyStory(params: Params): SvelteAST.Component {
     });
   }
 
+  if (tags) {
+    newAttributes.push(tags);
+  }
+
   return {
     ...rest,
     attributes: newAttributes,
@@ -116,13 +113,7 @@ function transformAutodocs(params: InsertAutodocsParams): void {
   }
 
   if (!tags) {
-    tags = createASTAttribute(
-      'tags',
-      createASTExpressionTag({
-        type: 'ArrayExpression',
-        elements: [],
-      })
-    );
+    tags = createASTAttribute('tags', createASTExpressionTag(createASTArrayExpression()));
   }
 
   const autodocsLiteral = {
@@ -130,7 +121,7 @@ function transformAutodocs(params: InsertAutodocsParams): void {
     value: 'autodocs',
   } satisfies ESTreeAST.Literal;
 
-  ((tags?.value as SvelteAST.ExpressionTag).expression as ESTreeAST.ArrayExpression).elements.push(
+  ((tags.value as SvelteAST.ExpressionTag).expression as ESTreeAST.ArrayExpression).elements.push(
     autodocsLiteral
   );
 

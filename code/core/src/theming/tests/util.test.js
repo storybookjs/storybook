@@ -127,6 +127,32 @@ describe('utils', () => {
 
       expect(result).not.toEqual(input);
     });
+
+    it('should return unmodifed color when invalid color string is passed', () => {
+      const color = 'var(--baz)';
+
+      const result = transparentize(0.1, color);
+
+      expect(result).toEqual(color);
+    });
+  });
+
+  describe('opacify', () => {
+    it('should call function imported from polished', () => {
+      const input = '#fffa';
+
+      const result = opacify(0.1, input);
+
+      expect(result).not.toEqual(input);
+    });
+
+    it('should return unmodifed color when invalid color string is passed', () => {
+      const color = 'var(--qux)';
+
+      const result = opacify(0.1, color);
+
+      expect(result).toEqual(color);
+    });
   });
 
   describe('getPreferredColorScheme', () => {

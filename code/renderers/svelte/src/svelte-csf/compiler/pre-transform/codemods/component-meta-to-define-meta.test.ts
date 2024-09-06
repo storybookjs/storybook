@@ -134,12 +134,27 @@ describe(transformComponentMetaToDefineMeta.name, () => {
         import { Story } from "@storybook/addon-svelte-csf";
       </script>
 
-      <Meta tags="!dev" />
+      <Meta tags="singular" />
     `;
     const component = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
 
     expect(print(transformComponentMetaToDefineMeta({ component }))).toMatchInlineSnapshot(
-      `"const { Story } = defineMeta({ tags: ["!dev"] });"`
+      `"const { Story } = defineMeta({ tags: ["singular"] });"`
+    );
+  });
+
+  it('tags with an array expression are left as-is', async ({ expect }) => {
+    const code = `
+      <script context="module">
+        import { Story } from "@storybook/addon-svelte-csf";
+      </script>
+
+      <Meta tags={["autodocs", "!dev"]} />
+    `;
+    const component = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
+
+    expect(print(transformComponentMetaToDefineMeta({ component }))).toMatchInlineSnapshot(
+      `"const { Story } = defineMeta({ tags: ["autodocs", "!dev"] });"`
     );
   });
 });

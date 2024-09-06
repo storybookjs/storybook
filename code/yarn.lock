@@ -5380,7 +5380,7 @@ __metadata:
   dependencies:
     "@devtools-ds/object-inspector": "npm:^1.1.2"
     "@storybook/global": "npm:^5.0.0"
-    "@storybook/icons": "npm:^1.2.5"
+    "@storybook/icons": "npm:^1.2.10"
     "@storybook/instrumenter": "workspace:*"
     "@storybook/test": "workspace:*"
     "@types/node": "npm:^22.0.0"
@@ -6224,7 +6224,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/icons@npm:^1.2.10, @storybook/icons@npm:^1.2.5":
+"@storybook/icons@npm:^1.2.10":
   version: 1.2.10
   resolution: "@storybook/icons@npm:1.2.10"
   peerDependencies:

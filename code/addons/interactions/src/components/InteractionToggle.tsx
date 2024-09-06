@@ -11,11 +11,11 @@ export const INTERACTION_STORAGE_KEY = 'disableInteractions';
 
 export const InteractionToggle = () => {
   const [disableInteractions, setDisableInteractions] = React.useState(
-    window?.localStorage.getItem('INTERACTION_STORAGE_KEY') === 'true'
+    window?.localStorage.getItem(INTERACTION_STORAGE_KEY) === 'true'
   );
 
   const toggleMyTool = useCallback(() => {
-    window?.localStorage?.setItem('INTERACTION_STORAGE_KEY', `${!disableInteractions}`);
+    window?.localStorage?.setItem(INTERACTION_STORAGE_KEY, `${!disableInteractions}`);
     setDisableInteractions(!disableInteractions);
   }, [disableInteractions, setDisableInteractions]);
 

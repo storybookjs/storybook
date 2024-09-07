@@ -11,14 +11,17 @@ import {
 } from '#parser/ast';
 import { InvalidTemplateAttribute } from '#utils/error/codemod/index';
 
+import type { State } from '..';
+
 interface Params {
-  node: SvelteAST.Component;
+  component: SvelteAST.Component;
   filename?: string;
+  state: State;
 }
 
 export function transformLegacyStory(params: Params): SvelteAST.Component {
-  const { node, filename } = params;
-  let { attributes, fragment, ...rest } = node;
+  const { component, filename, state } = params;
+  let { attributes, fragment, ...rest } = component;
   let newAttributes: SvelteAST.Component['attributes'] = [];
   let autodocs: SvelteAST.Attribute | undefined;
   let source: SvelteAST.Attribute | undefined;
@@ -26,6 +29,7 @@ export function transformLegacyStory(params: Params): SvelteAST.Component {
   let tags: SvelteAST.Attribute | undefined;
   let letDirectiveArgs: SvelteAST.LetDirective | undefined;
   let letDirectiveContext: SvelteAST.LetDirective | undefined;
+  let hasTemplateAttribute = false;
 
   for (let attribute of attributes) {
     if (attribute.type === 'LetDirective' && attribute.name === 'args') {
@@ -60,9 +64,23 @@ export function transformLegacyStory(params: Params): SvelteAST.Component {
 
     if (attribute.type === 'Attribute' && attribute.name === 'template') {
       attribute = templateToChildren(attribute, filename);
+      hasTemplateAttribute = true;
     }
 
     newAttributes.push(attribute);
+  }
+
+  // NOTE: is self-closing AND has no template attribute AND there are existing <Template> components in stories file
+  if (fragment.nodes.length === 0 && !hasTemplateAttribute && state.templateComponents.length > 0) {
+    newAttributes.push(
+      createASTAttribute(
+        'children',
+        createASTExpressionTag({
+          type: 'Identifier',
+          name: `sb_default_template_${state.templateComponents.length}`,
+        })
+      )
+    );
   }
 
   if (autodocs) {
@@ -233,12 +251,12 @@ function templateToChildren(
   };
 }
 
-interface TransformTemplateParams {
+interface TransformFragmentParams {
   letDirectiveArgs?: SvelteAST.LetDirective;
   letDirectiveContext?: SvelteAST.LetDirective;
   fragment: SvelteAST.Fragment;
 }
-function transformFragment(params: TransformTemplateParams): SvelteAST.Fragment {
+function transformFragment(params: TransformFragmentParams): SvelteAST.Fragment {
   let { letDirectiveArgs, letDirectiveContext, fragment } = params;
 
   let parameters: SvelteAST.SnippetBlock['parameters'] = [

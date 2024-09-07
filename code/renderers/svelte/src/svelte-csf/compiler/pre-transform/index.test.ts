@@ -14,13 +14,13 @@ describe(codemodLegacyNodes.name, () => {
         import { Story } from "${pkg.name}";
 
         /** This is a description for the **Button** component stories. */
-				export const meta = {
+  		export const meta = {
           title: "Atoms/Button",
           component: Button,
         };
       </script>
 
-			<!-- This is a description for **default** Button. -->
+  	<!-- This is a description for **default** Button. -->
       <Story name="Default" />
     `);
     const ast = getSvelteAST({ code });
@@ -45,7 +45,7 @@ describe(codemodLegacyNodes.name, () => {
         import { Meta, Template } from "${pkg.name}";
       </script>
 
-			<!-- This is a description for the **Button** component stories. -->
+  	<!-- This is a description for the **Button** component stories. -->
       <Meta title="Atoms/Button" component={Button} />
     `);
     const ast = getSvelteAST({ code });
@@ -65,11 +65,11 @@ describe(codemodLegacyNodes.name, () => {
 
   it("replaces 'Template' with snippet block", async ({ expect }) => {
     const code = dedent(`
-      <script context="module">
+      <script>
         import { Meta, Template } from "${pkg.name}";
       </script>
 
-			<!-- This is a description for the **Button** component stories. -->
+  	<!-- This is a description for the **Button** component stories. -->
       <Meta title="Atoms/Button" component={Button} />
 
       <Template let:args>
@@ -82,18 +82,18 @@ describe(codemodLegacyNodes.name, () => {
     const transformed = await codemodLegacyNodes({ ast });
 
     expect(print(transformed)).toMatchInlineSnapshot(`
-			"<script context="module">
-				import { defineMeta } from "@storybook/addon-svelte-csf";
+      "<script context="module">
+      	import { defineMeta } from "@storybook/addon-svelte-csf";
 
-				/** This is a description for the **Button** component stories. */
-				const { Story } = defineMeta({ title: "Atoms/Button", component: Button });
-			</script>
+      	/** This is a description for the **Button** component stories. */
+      	const { Story } = defineMeta({ title: "Atoms/Button", component: Button });
+      </script>
 
-			{#snippet children(args)}
-				<Button {...args} />
-			{/snippet}
-			<Story name="Default" />"
-		`);
+      {#snippet sb_default_template_1(args)}
+      	<Button {...args} />
+      {/snippet}
+      <Story name="Default" />"
+    `);
   });
 
   it('transforms legacy syntax correctly', async ({ expect }) => {
@@ -102,7 +102,7 @@ describe(codemodLegacyNodes.name, () => {
         import { Meta, Story, Template } from "${pkg.name}";
       </script>
 
-			<!-- This is a description for the **Button** component stories. -->
+  	  <!-- This is a description for the **Button** component stories. -->
       <Meta title="Atoms/Button" component={Button} />
 
       <Template id="sample" let:args let:context>
@@ -129,13 +129,14 @@ describe(codemodLegacyNodes.name, () => {
       {#snippet sample(args, context)}
       	<p>{context.id}</p>
       	<Button {...args} />
-      {/snippet}
-      <Story name="Default" children={sample} tags={["autodocs"]} parameters={{
+       
+      {/snippet} <Story name="Default" children={sample} tags={["autodocs"]} parameters={{
       	docs: { source: { code: "<Button {...args} />" } }
       }}>
       	{#snippet children(args, context)}
       		<p>{context.id}</p>
       		<Button {...args} />
+       
       	{/snippet}
       </Story>"
     `);
@@ -216,6 +217,43 @@ describe(codemodLegacyNodes.name, () => {
       		tags: ["autodocs"]
       	});
       </script>"
+    `);
+  });
+
+  it('handles multiple id-less Template components', async ({ expect }) => {
+    const code = `
+      <script context="module" lang="ts">
+        import { Story, Template } from "${pkg.name}";
+      </script>
+
+      <Template let:context>
+        <p>{context.args}</p>
+      </Template>
+
+      <Story name="Default" />
+
+      <Template let:args>
+        <Button {...args} />
+      </Template>
+
+      <Story name="NextOne" />
+    `;
+    const ast = getSvelteAST({ code });
+    const transformed = await codemodLegacyNodes({ ast });
+
+    expect(print(transformed)).toMatchInlineSnapshot(`
+      "<script context="module" lang="ts">
+      	import { defineMeta } from "@storybook/addon-svelte-csf";
+      </script>
+
+      {#snippet sb_default_template_1(_args, context)}
+      	<p>{context.args}</p>
+      {/snippet}
+      <Story name="Default" children={sb_default_template_1} />
+      {#snippet sb_default_template_2(args)}
+      	<Button {...args} />
+      {/snippet}
+      <Story name="NextOne" children={sb_default_template_2} />"
     `);
   });
 });

@@ -12,23 +12,26 @@ interface Params {
   filename?: string;
 }
 
+export interface State {
+  componentIdentifierName: ComponentIdentifierName;
+  componentMetaHtmlComment?: SvelteAST.Comment;
+  defineMetaFromExportConstMeta?: ESTreeAST.VariableDeclaration;
+  defineMetaFromComponentMeta?: ESTreeAST.VariableDeclaration;
+  currentScript?: 'instance' | 'module';
+  pkgImportDeclaration?: ESTreeAST.ImportDeclaration;
+  storiesComponentIdentifier?: ESTreeAST.Identifier;
+  storiesComponentImportDeclaration?: ESTreeAST.ImportDeclaration;
+  templateComponents: SvelteAST.Component[];
+}
+
 export async function codemodLegacyNodes(params: Params): Promise<SvelteAST.Root> {
   const { walk } = await import('zimmerframe');
 
   const { ast, filename } = params;
 
-  interface State {
-    componentIdentifierName: ComponentIdentifierName;
-    componentMetaHtmlComment?: SvelteAST.Comment;
-    defineMetaFromExportConstMeta?: ESTreeAST.VariableDeclaration;
-    defineMetaFromComponentMeta?: ESTreeAST.VariableDeclaration;
-    currentScript?: 'instance' | 'module';
-    pkgImportDeclaration?: ESTreeAST.ImportDeclaration;
-    storiesComponentIdentifier?: ESTreeAST.Identifier;
-    storiesComponentImportDeclaration?: ESTreeAST.ImportDeclaration;
-  }
   const state: State = {
     componentIdentifierName: {},
+    templateComponents: [],
   };
   let transformedAst = walk(ast as SvelteAST.SvelteNode | SvelteAST.Script, state, {
     _(_node, context) {
@@ -161,12 +164,13 @@ export async function codemodLegacyNodes(params: Params): Promise<SvelteAST.Root
 
       if (name === componentIdentifierName?.Story) {
         state.componentMetaHtmlComment = undefined;
-        return transformLegacyStory({ node, filename });
+        return transformLegacyStory({ component: node, filename, state });
       }
 
       if (name === componentIdentifierName?.Template) {
         state.componentMetaHtmlComment = undefined;
-        return transformTemplateToSnippet(node);
+        state.templateComponents.push(node);
+        return transformTemplateToSnippet({ component: node, state });
       }
     },
   });

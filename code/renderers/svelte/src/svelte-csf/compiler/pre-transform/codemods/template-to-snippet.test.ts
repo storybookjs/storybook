@@ -18,13 +18,20 @@ describe(transformTemplateToSnippet.name, () => {
         <Button {...args} variant="primary" />
       </Template>
     `;
-    const node = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
+    const component = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
 
-    expect(print(transformTemplateToSnippet(node))).toMatchInlineSnapshot(`
-			"{#snippet children(args)}
-				<Button {...args} variant="primary" />
-			{/snippet}"
-		`);
+    expect(
+      print(
+        transformTemplateToSnippet({
+          component,
+          state: { componentIdentifierName: {}, templateComponents: [] },
+        })
+      )
+    ).toMatchInlineSnapshot(`
+      "{#snippet sb_default_template_0(args)}
+      	<Button {...args} variant="primary" />
+      {/snippet}"
+    `);
   });
 
   it("covers a case with provided prop 'id'", async ({ expect }) => {
@@ -37,9 +44,16 @@ describe(transformTemplateToSnippet.name, () => {
         <Button {...args} variant="primary" />
       </Template>
     `;
-    const node = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
+    const component = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
 
-    expect(print(transformTemplateToSnippet(node))).toMatchInlineSnapshot(`
+    expect(
+      print(
+        transformTemplateToSnippet({
+          component,
+          state: { componentIdentifierName: {}, templateComponents: [] },
+        })
+      )
+    ).toMatchInlineSnapshot(`
 			"{#snippet coolTemplate(args)}
 				<Button {...args} variant="primary" />
 			{/snippet}"
@@ -56,12 +70,19 @@ describe(transformTemplateToSnippet.name, () => {
         <p>{context.args}</p>
       </Template>
     `;
-    const node = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
+    const component = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
 
-    expect(print(transformTemplateToSnippet(node))).toMatchInlineSnapshot(`
-			"{#snippet children(_args, context)}
-				<p>{context.args}</p>
-			{/snippet}"
-		`);
+    expect(
+      print(
+        transformTemplateToSnippet({
+          component,
+          state: { componentIdentifierName: {}, templateComponents: [] },
+        })
+      )
+    ).toMatchInlineSnapshot(`
+      "{#snippet sb_default_template_0(_args, context)}
+      	<p>{context.args}</p>
+      {/snippet}"
+    `);
   });
 });

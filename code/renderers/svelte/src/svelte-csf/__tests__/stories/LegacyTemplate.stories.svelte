@@ -33,11 +33,11 @@
   <LegacyTemplate {...args} onclick={handleClick} />
 </Template>
 
+<Story name="Default" />
+
 <Template id="rounded" let:args>
   <p>Using rounded template</p>
   <LegacyTemplate {...args} onclick={handleClick} rounded />
 </Template>
-
-<Story name="Default" />
 
 <Story name="Rounded" template="rounded" />

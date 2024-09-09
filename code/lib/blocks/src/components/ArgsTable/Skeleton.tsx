@@ -34,7 +34,7 @@ const SkeletonText = styled.div<{ width?: number | string; height?: number }>(
 const columnWidth = [2, 4, 2, 2];
 
 export const Skeleton: FC = () => (
-  <>
+  <div>
     <Row>
       <Column numColumn={columnWidth[0]}>
         <SkeletonText width="60%" />
@@ -94,5 +94,5 @@ export const Skeleton: FC = () => (
         <SkeletonText width="60%" />
       </Column>
     </Row>
-  </>
+  </div>
 );

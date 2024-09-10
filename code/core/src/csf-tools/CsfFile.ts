@@ -1,6 +1,16 @@
 /* eslint-disable no-underscore-dangle */
 import { readFile, writeFile } from 'node:fs/promises';
 
+import {
+  BabelFileClass,
+  type GeneratorOptions,
+  type RecastOptions,
+  babelParse,
+  generate,
+  recast,
+  types as t,
+  traverse,
+} from '@storybook/core/babel';
 import type {
   ComponentAnnotations,
   IndexInput,
@@ -11,23 +21,10 @@ import type {
 } from '@storybook/core/types';
 import { isExportStory, storyNameFromExport, toId } from '@storybook/csf';
 
-// @ts-expect-error File is not yet exposed, see https://github.com/babel/babel/issues/11350#issuecomment-644118606
-import { File as BabelFileClass } from '@babel/core';
-import bg, { type GeneratorOptions } from '@babel/generator';
-import bt from '@babel/traverse';
-import * as t from '@babel/types';
-import * as recast from 'recast';
-import type { Options } from 'recast';
 import { dedent } from 'ts-dedent';
 
 import type { PrintResultType } from './PrintResultType';
-import { babelParse } from './babelParse';
 import { findVarInitialization } from './findVarInitialization';
-
-// @ts-expect-error (needed due to it's use of `exports.default`)
-const traverse = (bt.default || bt) as typeof bt;
-// @ts-expect-error (needed due to it's use of `exports.default`)
-const generate = (bg.default || bg) as typeof bg;
 
 const logger = console;
 
@@ -734,7 +731,7 @@ export const formatCsf = (
   csf: CsfFile,
   options: GeneratorOptions & { inputSourceMap?: any } = { sourceMaps: false },
   code?: string
-) => {
+): ReturnType<typeof generate> | string => {
   const result = generate(csf._ast, options, code);
   if (options.sourceMaps) {
     return result;
@@ -743,7 +740,7 @@ export const formatCsf = (
 };
 
 /** Use this function, if you want to preserve styles. Uses recast under the hood. */
-export const printCsf = (csf: CsfFile, options: Options = {}): PrintResultType => {
+export const printCsf = (csf: CsfFile, options: RecastOptions = {}): PrintResultType => {
   return recast.print(csf._ast, options);
 };
 

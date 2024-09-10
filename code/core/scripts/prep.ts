@@ -1,7 +1,9 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
 import { watch } from 'node:fs';
-import { mkdir, rm } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
+
+import { ensureDir } from 'fs-extra';
 
 import {
   chalk,
@@ -307,25 +309,24 @@ async function run() {
       });
     } else {
       await Promise.all(
-        compile.map(async (context) => {
+        compile.map(async (context, index) => {
           const out = await context.rebuild();
           await context.dispose();
 
-          /**
-           * I'm leaving this in place, because I want to start utilizing it in the future. I'm
-           * imagining a github action that shows the bundle analysis in the PR. I didn't have the
-           * project-scope to make that happen now, but I want expose this very rich useful data
-           * accessible, for the next person investigating bundle size issues.
-           */
+          if (out.metafile) {
+            const { outputs } = out.metafile;
+            const keys = Object.keys(outputs);
+            const format = keys.every((key) => key.endsWith('.js')) ? 'esm' : 'cjs';
+            const outName =
+              keys.length === 1 ? dirname(keys[0]).replace('dist/', '') : `meta-${format}-${index}`;
 
-          // if (out.metafile) {
-          //   await writeFile('report/meta.json', JSON.stringify(out.metafile, null, 2));
-          //   await writeFile(
-          //     'report/meta.txt',
-          //     await esbuild.analyzeMetafile(out.metafile, { color: false, verbose: false })
-          //   );
-          //   console.log(await esbuild.analyzeMetafile(out.metafile, { color: true }));
-          // }
+            await ensureDir('report');
+            await writeFile(`report/${outName}.json`, JSON.stringify(out.metafile, null, 2));
+            await writeFile(
+              `report/${outName}.txt`,
+              await esbuild.analyzeMetafile(out.metafile, { color: false, verbose: false })
+            );
+          }
         })
       );
     }

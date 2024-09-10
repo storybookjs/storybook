@@ -1,6 +1,5 @@
+import { types as t } from 'storybook/internal/babel';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
-
-import * as t from '@babel/types';
 
 const defaultRequireWrapperName = 'getAbsolutePath';
 

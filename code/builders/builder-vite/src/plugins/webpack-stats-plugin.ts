@@ -6,6 +6,12 @@ import type { BuilderStats } from 'storybook/internal/types';
 import slash from 'slash';
 import type { Plugin } from 'vite';
 
+import {
+  SB_VIRTUAL_FILES,
+  getOriginalVirtualModuleId,
+  getResolvedVirtualModuleId,
+} from '../virtual-file-names';
+
 /*
  * Reason, Module are copied from chromatic types
  * https://github.com/chromaui/chromatic-cli/blob/145a5e295dde21042e96396c7e004f250d842182/bin-src/types.ts#L265-L276
@@ -34,11 +40,18 @@ function stripQueryParams(filePath: string): string {
 
 /** We only care about user code, not node_modules, vite files, or (most) virtual files. */
 function isUserCode(moduleName: string) {
+  if (!moduleName) {
+    return false;
+  }
+
+  // keep Storybook's virtual files because they import the story files, so they are essential to the module graph
+  if (Object.values(SB_VIRTUAL_FILES).includes(getOriginalVirtualModuleId(moduleName))) {
+    return true;
+  }
+
   return Boolean(
-    moduleName &&
-      !moduleName.startsWith('vite/') &&
-      !moduleName.startsWith('\x00') &&
-      !moduleName.startsWith('\u0000') &&
+    !moduleName.startsWith('vite/') &&
+      !moduleName.startsWith('\0') &&
       moduleName !== 'react/jsx-runtime' &&
       !moduleName.match(/node_modules\//)
   );
@@ -53,6 +66,14 @@ export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): W
     if (filename.startsWith('/virtual:')) {
       return filename;
     }
+    // ! Maintain backwards compatibility with the old virtual file names
+    // ! to ensure that the stats file doesn't change between the versions
+    // ! Turbosnap is also only compatible with the old virtual file names
+    // ! the old virtual file names did not start with the obligatory \0 character
+    if (Object.values(SB_VIRTUAL_FILES).includes(getOriginalVirtualModuleId(filename))) {
+      return getOriginalVirtualModuleId(filename);
+    }
+
     // Otherwise, we need them in the format `./path/to/file.js`.
     else {
       const relativePath = relative(workingDir, stripQueryParams(filename));
@@ -82,25 +103,27 @@ export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): W
     // We want this to run after the vite build plugins (https://vitejs.dev/guide/api-plugin.html#plugin-ordering)
     enforce: 'post',
     moduleParsed: function (mod) {
-      if (isUserCode(mod.id)) {
-        mod.importedIds
-          .concat(mod.dynamicallyImportedIds)
-          .filter((name) => isUserCode(name))
-          .forEach((depIdUnsafe) => {
-            const depId = normalize(depIdUnsafe);
-            if (statsMap.has(depId)) {
-              const m = statsMap.get(depId);
-              if (m) {
-                m.reasons = (m.reasons ?? [])
-                  .concat(createReasons([mod.id]))
-                  .filter((r) => r.moduleName !== depId);
-                statsMap.set(depId, m);
-              }
-            } else {
-              statsMap.set(depId, createStatsMapModule(depId, [mod.id]));
-            }
-          });
+      if (!isUserCode(mod.id)) {
+        return;
       }
+      mod.importedIds
+        .concat(mod.dynamicallyImportedIds)
+        .filter((name) => isUserCode(name))
+        .forEach((depIdUnsafe) => {
+          const depId = normalize(depIdUnsafe);
+          if (!statsMap.has(depId)) {
+            statsMap.set(depId, createStatsMapModule(depId, [mod.id]));
+            return;
+          }
+          const m = statsMap.get(depId);
+          if (!m) {
+            return;
+          }
+          m.reasons = (m.reasons ?? [])
+            .concat(createReasons([mod.id]))
+            .filter((r) => r.moduleName !== depId);
+          statsMap.set(depId, m);
+        });
     },
 
     storybookGetStats() {

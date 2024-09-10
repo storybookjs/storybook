@@ -26,7 +26,7 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
 
   // exclude stories, virtual modules and storybook internals
   const exclude =
-    /\.stories\.(ts|tsx|js|jsx)$|^\/virtual:|^\/sb-preview\/|\.storybook\/.*\.(ts|js)$/;
+    /\.stories\.(ts|tsx|js|jsx)$|^\0\/virtual:|^\/virtual:|^\/sb-preview\/|\.storybook\/.*\.(ts|js)$/;
   const include = /\.(vue|ts|js|tsx|jsx)$/;
   const filter = createFilter(include, exclude);
 

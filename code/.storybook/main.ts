@@ -91,7 +91,7 @@ const config: StorybookConfig = {
     '@storybook/addon-interactions',
     '@storybook/addon-storysource',
     '@storybook/addon-designs',
-    '@storybook/experimental-addon-vitest',
+    '@storybook/experimental-addon-test',
     '@storybook/addon-a11y',
     '@chromatic-com/storybook',
   ],

@@ -91,10 +91,7 @@ export async function externalGlobalsPlugin(externals: Record<string, string>) {
 
       return {
         code: src.toString(),
-        map: src.generateMap({
-          source: id,
-          hires: true,
-        }),
+        map: null,
       };
     },
   } satisfies Plugin;

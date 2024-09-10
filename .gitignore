@@ -57,3 +57,4 @@ code/.nx/cache
 code/.vite-inspect
 .nx/cache
 !**/fixtures/**/yarn.lock
+code/core/report

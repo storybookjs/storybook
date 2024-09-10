@@ -25,7 +25,7 @@ export const isRequired = (item: Property): boolean => {
   return item.hasOwnProperty('required') && item.required;
 };
 
-export const setRequiredProperty = (property: Property): object => {
+export const setRequiredProperty = (property: Property) => {
   return isRequired(property) ? { required: true } : {};
 };
 
@@ -254,7 +254,7 @@ export const extractArgTypesFromData = (componentData: Class | Directive | Injec
           ? { name: 'other', value: 'void' }
           : extractType(item as Property, defaultValue);
       const action = section === 'outputs' ? { action: item.name } : {};
-      const argType = {
+      const argType: InputType = {
         name: item.name,
         description: item.rawdescription || item.description,
         type,
@@ -263,7 +263,6 @@ export const extractArgTypesFromData = (componentData: Class | Directive | Injec
           category: section,
           type: {
             summary: isMethod(item) ? displaySignature(item) : item.type,
-            required: isMethod(item) ? false : item.required,
           },
           defaultValue: { summary: defaultValue },
         },

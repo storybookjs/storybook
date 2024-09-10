@@ -5,6 +5,8 @@ import { codeCommon } from 'storybook/internal/components';
 import type { CSSObject } from 'storybook/internal/theming';
 import { styled } from 'storybook/internal/theming';
 
+import type { InputType, SBType, StrictInputType } from '@storybook/csf';
+
 import Markdown from 'markdown-to-jsx';
 import { transparentize } from 'polished';
 
@@ -12,10 +14,10 @@ import type { ArgControlProps } from './ArgControl';
 import { ArgControl } from './ArgControl';
 import { ArgJsDoc } from './ArgJsDoc';
 import { ArgValue } from './ArgValue';
-import type { ArgType, Args, TableAnnotation } from './types';
+import type { Args } from './types';
 
 interface ArgRowProps {
-  row: ArgType;
+  row: StrictInputType;
   arg: any;
   updateArgs?: (args: Args) => void;
   compact?: boolean;
@@ -78,9 +80,9 @@ const StyledTd = styled.td<{ expandable: boolean }>(({ theme, expandable }) => (
   paddingLeft: expandable ? '40px !important' : '20px !important',
 }));
 
-const toSummary = (value: any) => {
+const toSummary = (value: SBType): { summary: string } => {
   if (!value) {
-    return value;
+    return value as any;
   }
   const val = typeof value === 'string' ? value : value.name;
   return { summary: val };
@@ -90,8 +92,8 @@ export const ArgRow: FC<ArgRowProps> = (props) => {
   const [isHovered, setIsHovered] = useState(false);
   const { row, updateArgs, compact, expandable, initialExpandedArgs } = props;
   const { name, description } = row;
-  const table = (row.table || {}) as TableAnnotation;
-  const type = table.type || toSummary(row.type);
+  const table = row.table || {};
+  const tableType = table.type || toSummary(row.type);
   const defaultValue = table.defaultValue || row.defaultValue;
   const required = row.type?.required;
   const hasDescription = description != null && description !== '';
@@ -112,13 +114,13 @@ export const ArgRow: FC<ArgRowProps> = (props) => {
           {table.jsDocTags != null ? (
             <>
               <TypeWithJsDoc hasDescription={hasDescription}>
-                <ArgValue value={type} initialExpandedArgs={initialExpandedArgs} />
+                <ArgValue value={tableType} initialExpandedArgs={initialExpandedArgs} />
               </TypeWithJsDoc>
               <ArgJsDoc tags={table.jsDocTags} />
             </>
           ) : (
             <Type hasDescription={hasDescription}>
-              <ArgValue value={type} initialExpandedArgs={initialExpandedArgs} />
+              <ArgValue value={tableType} initialExpandedArgs={initialExpandedArgs} />
             </Type>
           )}
         </td>

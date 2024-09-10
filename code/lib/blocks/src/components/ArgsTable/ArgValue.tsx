@@ -4,15 +4,14 @@ import React, { useState } from 'react';
 import { SyntaxHighlighter, WithTooltipPure, codeCommon } from 'storybook/internal/components';
 import { styled } from 'storybook/internal/theming';
 
+import type { InputType, SBType } from '@storybook/csf';
 import { ChevronSmallDownIcon, ChevronSmallUpIcon } from '@storybook/icons';
 
 import uniq from 'lodash/uniq.js';
 import memoize from 'memoizerific';
 
-import type { PropSummaryValue } from './types';
-
 interface ArgValueProps {
-  value?: PropSummaryValue;
+  value?: InputType['table']['type'];
   initialExpandedArgs?: boolean;
 }
 
@@ -22,7 +21,7 @@ interface ArgTextProps {
 }
 
 interface ArgSummaryProps {
-  value: PropSummaryValue;
+  value: InputType['table']['type'];
   initialExpandedArgs?: boolean;
 }
 

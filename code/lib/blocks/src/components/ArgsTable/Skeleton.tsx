@@ -33,66 +33,32 @@ const SkeletonText = styled.div<{ width?: number | string; height?: number }>(
 
 const columnWidth = [2, 4, 2, 2];
 
+/**
+ * The structure of the Skeleton
+ *
+ * - First dimension: Rows
+ * - Second dimension: Columns
+ * - Third dimension: SkeletonText widths
+ */
+const contentStructure = [
+  [[60], [30], [60], [60]],
+  [[60], [80, 30], [60], [60]],
+  [[60], [80, 30], [60], [60]],
+  [[60], [80, 30], [60], [60]],
+];
+
 export const Skeleton: FC = () => (
   <div>
-    <Row>
-      <Column numColumn={columnWidth[0]}>
-        <SkeletonText width="60%" />
-      </Column>
-      <Column numColumn={columnWidth[1]}>
-        <SkeletonText width="30%" />
-      </Column>
-      <Column numColumn={columnWidth[2]}>
-        <SkeletonText width="60%" />
-      </Column>
-      <Column numColumn={columnWidth[3]}>
-        <SkeletonText width="60%" />
-      </Column>
-    </Row>
-    <Row>
-      <Column numColumn={columnWidth[0]}>
-        <SkeletonText width="60%" />
-      </Column>
-      <Column numColumn={columnWidth[1]}>
-        <SkeletonText width="80%" />
-        <SkeletonText width="30%" />
-      </Column>
-      <Column numColumn={columnWidth[2]}>
-        <SkeletonText width="60%" />
-      </Column>
-      <Column numColumn={columnWidth[3]}>
-        <SkeletonText width="60%" />
-      </Column>
-    </Row>
-    <Row>
-      <Column numColumn={columnWidth[0]}>
-        <SkeletonText width="60%" />
-      </Column>
-      <Column numColumn={columnWidth[1]}>
-        <SkeletonText width="80%" />
-        <SkeletonText width="30%" />
-      </Column>
-      <Column numColumn={columnWidth[2]}>
-        <SkeletonText width="60%" />
-      </Column>
-      <Column numColumn={columnWidth[3]}>
-        <SkeletonText width="60%" />
-      </Column>
-    </Row>
-    <Row>
-      <Column numColumn={columnWidth[0]}>
-        <SkeletonText width="60%" />
-      </Column>
-      <Column numColumn={columnWidth[1]}>
-        <SkeletonText width="80%" />
-        <SkeletonText width="30%" />
-      </Column>
-      <Column numColumn={columnWidth[2]}>
-        <SkeletonText width="60%" />
-      </Column>
-      <Column numColumn={columnWidth[3]}>
-        <SkeletonText width="60%" />
-      </Column>
-    </Row>
+    {contentStructure.map((row, i) => (
+      <Row key={i}>
+        {row.map((col, j) => (
+          <Column key={j} numColumn={columnWidth[j]}>
+            {col.map((width, k) => (
+              <SkeletonText key={k} width={width} />
+            ))}
+          </Column>
+        ))}
+      </Row>
+    ))}
   </div>
 );

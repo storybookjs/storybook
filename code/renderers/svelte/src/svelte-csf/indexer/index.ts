@@ -7,7 +7,7 @@ import {
   MissingModuleTagError,
   NoStoryComponentDestructuredError,
 } from '#utils/error/parser/extract/svelte';
-import { LegacyTemplateNotEnabledError } from '#utils/error/codemod/index';
+import { LegacyTemplateNotEnabledError } from '#utils/error/legacy-api/index';
 import { NoDestructuredDefineMetaCallError } from '#utils/error/parser/analyse/define-meta';
 
 export const createIndexer = (legacyTemplate: boolean): Indexer => ({

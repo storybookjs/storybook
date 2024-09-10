@@ -9,7 +9,7 @@ import {
   type ESTreeAST,
   type SvelteAST,
 } from '#parser/ast';
-import { InvalidTemplateAttribute } from '#utils/error/codemod/index';
+import { InvalidTemplateAttribute } from '#utils/error/legacy-api/index';
 
 import type { State } from '..';
 

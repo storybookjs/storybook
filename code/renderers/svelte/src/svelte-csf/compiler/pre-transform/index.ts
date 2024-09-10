@@ -6,7 +6,7 @@ import { transformImportDeclaration } from '#compiler/pre-transform/codemods/imp
 import { transformLegacyStory } from '#compiler/pre-transform/codemods/legacy-story';
 import { transformTemplateToSnippet } from '#compiler/pre-transform/codemods/template-to-snippet';
 import { createASTScript, type ESTreeAST, type SvelteAST } from '#parser/ast';
-import { DuplicatedUnidentifiedTemplateError } from '#utils/error/codemod/index';
+import { DuplicatedUnidentifiedTemplateError } from '#utils/error/legacy-api/index';
 
 interface Params {
   ast: SvelteAST.Root;

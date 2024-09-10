@@ -40,7 +40,7 @@ const columnWidth = [2, 4, 2, 2];
  * - Second dimension: Columns
  * - Third dimension: SkeletonText widths
  */
-const contentStructure = [
+const skeletonLayout = [
   [[60], [30], [60], [60]],
   [[60], [80, 30], [60], [60]],
   [[60], [80, 30], [60], [60]],
@@ -49,7 +49,7 @@ const contentStructure = [
 
 export const Skeleton: FC = () => (
   <div>
-    {contentStructure.map((row, i) => (
+    {skeletonLayout.map((row, i) => (
       <Row key={i}>
         {row.map((col, j) => (
           <Column key={j} numColumn={columnWidth[j]}>

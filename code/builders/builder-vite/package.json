@@ -47,7 +47,7 @@
     "@types/find-cache-dir": "^3.2.1",
     "browser-assert": "^1.2.1",
     "es-module-lexer": "^1.5.0",
-    "express": "^4.19.2",
+    "express": "^4.20.0",
     "find-cache-dir": "^3.0.0",
     "fs-extra": "^11.1.0",
     "magic-string": "^0.30.0",

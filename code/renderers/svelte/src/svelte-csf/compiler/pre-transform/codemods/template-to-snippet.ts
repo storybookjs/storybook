@@ -1,11 +1,8 @@
 import { getStringValueFromAttribute } from '#parser/analyse/story/attributes';
 import type { SvelteAST } from '#parser/ast';
 
-import type { State } from '..';
-
 interface Params {
   component: SvelteAST.Component;
-  state: State;
 }
 
 /**
@@ -33,7 +30,7 @@ interface Params {
  * ```
  */
 export function transformTemplateToSnippet(params: Params): SvelteAST.SnippetBlock {
-  const { component, state } = params;
+  const { component } = params;
   const { attributes, fragment } = component;
 
   const attributeId = attributes.find((attr) => {
@@ -73,7 +70,7 @@ export function transformTemplateToSnippet(params: Params): SvelteAST.SnippetBlo
     type: 'SnippetBlock',
     expression: {
       type: 'Identifier',
-      name: id ?? `sb_default_template_${state.templateComponents.length}`,
+      name: id ?? 'sb_default_template',
     },
     parameters,
     body: fragment,

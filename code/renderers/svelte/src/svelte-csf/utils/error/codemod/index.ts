@@ -49,3 +49,23 @@ export class LegacyTemplateNotEnabledError extends StorybookSvelteCSFError {
     `;
   }
 }
+
+export class DuplicatedUnidentifiedTemplateError extends StorybookSvelteCSFError {
+  readonly category = StorybookSvelteCSFError.CATEGORY.legacyAPI;
+  readonly code = 3;
+  public documentation = true;
+
+  constructor(filename?: string) {
+    super({ filename });
+  }
+
+  template(): string {
+    return dedent`
+      Stories file: ${this.filename}
+      has two '<Template />' components without provided prop 'id'. This leads to unwanted runtime behavior.
+
+      Please provide an 'id' to one of them.
+      And for the '<Story />' component(s) which are supposed to use it, add the 'template' prop with the same 'id' value.
+    `;
+  }
+}

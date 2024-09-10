@@ -6,6 +6,7 @@ import { transformImportDeclaration } from '#compiler/pre-transform/codemods/imp
 import { transformLegacyStory } from '#compiler/pre-transform/codemods/legacy-story';
 import { transformTemplateToSnippet } from '#compiler/pre-transform/codemods/template-to-snippet';
 import { createASTScript, type ESTreeAST, type SvelteAST } from '#parser/ast';
+import { DuplicatedUnidentifiedTemplateError } from '#utils/error/codemod/index';
 
 interface Params {
   ast: SvelteAST.Root;
@@ -21,7 +22,11 @@ export interface State {
   pkgImportDeclaration?: ESTreeAST.ImportDeclaration;
   storiesComponentIdentifier?: ESTreeAST.Identifier;
   storiesComponentImportDeclaration?: ESTreeAST.ImportDeclaration;
-  templateComponents: SvelteAST.Component[];
+  /**
+   * There can be only one `<Template />` component without id aka *id-less*.
+   * We store it to ensure there's no more than one - we will throw error if there's more.
+   */
+  unidentifiedTemplateComponent?: SvelteAST.Component;
 }
 
 export async function codemodLegacyNodes(params: Params): Promise<SvelteAST.Root> {
@@ -31,7 +36,6 @@ export async function codemodLegacyNodes(params: Params): Promise<SvelteAST.Root
 
   const state: State = {
     componentIdentifierName: {},
-    templateComponents: [],
   };
   let transformedAst = walk(ast as SvelteAST.SvelteNode | SvelteAST.Script, state, {
     _(_node, context) {
@@ -169,8 +173,20 @@ export async function codemodLegacyNodes(params: Params): Promise<SvelteAST.Root
 
       if (name === componentIdentifierName?.Template) {
         state.componentMetaHtmlComment = undefined;
-        state.templateComponents.push(node);
-        return transformTemplateToSnippet({ component: node, state });
+
+        const isIdentifiedTemplate = node.attributes.some(
+          (attr) => attr.type === 'Attribute' && attr.name === 'id'
+        );
+
+        if (!isIdentifiedTemplate) {
+          // NOTE: Stories file already have one idless 'Template' component.
+          if (state.unidentifiedTemplateComponent) {
+            throw new DuplicatedUnidentifiedTemplateError(filename);
+          }
+          state.unidentifiedTemplateComponent = node;
+        }
+
+        return transformTemplateToSnippet({ component: node });
       }
     },
   });

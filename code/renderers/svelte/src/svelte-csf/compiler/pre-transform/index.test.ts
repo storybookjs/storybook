@@ -89,7 +89,7 @@ describe(codemodLegacyNodes.name, () => {
       	const { Story } = defineMeta({ title: "Atoms/Button", component: Button });
       </script>
 
-      {#snippet sb_default_template_1(args)}
+      {#snippet sb_default_template(args)}
       	<Button {...args} />
       {/snippet}
       <Story name="Default" />"
@@ -220,7 +220,7 @@ describe(codemodLegacyNodes.name, () => {
     `);
   });
 
-  it('handles multiple id-less Template components', async ({ expect }) => {
+  it('throws error on more than one unidentified <Template> components', async ({ expect }) => {
     const code = `
       <script context="module" lang="ts">
         import { Story, Template } from "${pkg.name}";
@@ -239,21 +239,15 @@ describe(codemodLegacyNodes.name, () => {
       <Story name="NextOne" />
     `;
     const ast = getSvelteAST({ code });
-    const transformed = await codemodLegacyNodes({ ast });
+    expect(codemodLegacyNodes({ ast })).rejects.toThrowErrorMatchingInlineSnapshot(`
+      [SB_SVELTE_CSF_LEGACY_API_0003 (DuplicatedUnidentifiedTemplateError): Stories file: undefined
+      has two '<Template />' components without provided prop 'id'. This leads to unwanted runtime behavior.
 
-    expect(print(transformed)).toMatchInlineSnapshot(`
-      "<script context="module" lang="ts">
-      	import { defineMeta } from "@storybook/addon-svelte-csf";
-      </script>
+      Please provide an 'id' to one of them.
+      And for the '<Story />' component(s) which are supposed to use it, add the 'template' prop with the same 'id' value.
 
-      {#snippet sb_default_template_1(_args, context)}
-      	<p>{context.args}</p>
-      {/snippet}
-      <Story name="Default" children={sb_default_template_1} />
-      {#snippet sb_default_template_2(args)}
-      	<Button {...args} />
-      {/snippet}
-      <Story name="NextOne" children={sb_default_template_2} />"
+      More info: https://github.com/storybookjs/addon-svelte-csf/blob/v4.1.2/ERRORS.md#SB_SVELTE_CSF_LEGACY_API_0003
+      ]
     `);
   });
 });

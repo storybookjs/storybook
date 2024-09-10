@@ -21,7 +21,7 @@ describe(transformLegacyStory.name, () => {
       print(
         transformLegacyStory({
           component,
-          state: { componentIdentifierName: {}, templateComponents: [] },
+          state: { componentIdentifierName: {} },
         })
       )
     ).toMatchInlineSnapshot(`"<Story name="Default" tags={["autodocs"]} />"`);
@@ -41,7 +41,7 @@ describe(transformLegacyStory.name, () => {
       print(
         transformLegacyStory({
           component,
-          state: { componentIdentifierName: {}, templateComponents: [] },
+          state: { componentIdentifierName: {} },
         })
       )
     ).toMatchInlineSnapshot(`"<Story name="Default" tags={["!dev", "autodocs"]} />"`);
@@ -61,7 +61,7 @@ describe(transformLegacyStory.name, () => {
       print(
         transformLegacyStory({
           component,
-          state: { componentIdentifierName: {}, templateComponents: [] },
+          state: { componentIdentifierName: {} },
         })
       )
     ).toMatchInlineSnapshot(`"<Story name="Default" />"`);
@@ -83,7 +83,7 @@ describe(transformLegacyStory.name, () => {
       print(
         transformLegacyStory({
           component,
-          state: { componentIdentifierName: {}, templateComponents: [] },
+          state: { componentIdentifierName: {} },
         })
       )
     ).toMatchInlineSnapshot(
@@ -113,7 +113,7 @@ describe(transformLegacyStory.name, () => {
       print(
         transformLegacyStory({
           component,
-          state: { componentIdentifierName: {}, templateComponents: [] },
+          state: { componentIdentifierName: {} },
         })
       )
     ).toMatchInlineSnapshot(
@@ -152,7 +152,7 @@ describe(transformLegacyStory.name, () => {
       print(
         transformLegacyStory({
           component,
-          state: { componentIdentifierName: {}, templateComponents: [] },
+          state: { componentIdentifierName: {} },
         })
       )
     ).toMatchInlineSnapshot(
@@ -182,7 +182,7 @@ describe(transformLegacyStory.name, () => {
       print(
         transformLegacyStory({
           component,
-          state: { componentIdentifierName: {}, templateComponents: [] },
+          state: { componentIdentifierName: {} },
         })
       )
     ).toMatchInlineSnapshot(`"<Story name="Default" children={someTemplate} />"`);
@@ -206,7 +206,7 @@ describe(transformLegacyStory.name, () => {
       print(
         transformLegacyStory({
           component,
-          state: { componentIdentifierName: {}, templateComponents: [] },
+          state: { componentIdentifierName: {} },
         })
       )
     ).toMatchInlineSnapshot(`
@@ -236,7 +236,7 @@ describe(transformLegacyStory.name, () => {
       print(
         transformLegacyStory({
           component,
-          state: { componentIdentifierName: {}, templateComponents: [] },
+          state: { componentIdentifierName: {} },
         })
       )
     ).toMatchInlineSnapshot(`
@@ -267,7 +267,7 @@ describe(transformLegacyStory.name, () => {
       print(
         transformLegacyStory({
           component,
-          state: { componentIdentifierName: {}, templateComponents: [] },
+          state: { componentIdentifierName: {} },
         })
       )
     ).toMatchInlineSnapshot(`

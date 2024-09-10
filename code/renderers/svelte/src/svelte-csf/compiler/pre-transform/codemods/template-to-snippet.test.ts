@@ -22,13 +22,10 @@ describe(transformTemplateToSnippet.name, () => {
 
     expect(
       print(
-        transformTemplateToSnippet({
-          component,
-          state: { componentIdentifierName: {}, templateComponents: [] },
-        })
+        transformTemplateToSnippet({ component })
       )
     ).toMatchInlineSnapshot(`
-      "{#snippet sb_default_template_0(args)}
+      "{#snippet sb_default_template(args)}
       	<Button {...args} variant="primary" />
       {/snippet}"
     `);
@@ -48,10 +45,7 @@ describe(transformTemplateToSnippet.name, () => {
 
     expect(
       print(
-        transformTemplateToSnippet({
-          component,
-          state: { componentIdentifierName: {}, templateComponents: [] },
-        })
+        transformTemplateToSnippet({ component })
       )
     ).toMatchInlineSnapshot(`
 			"{#snippet coolTemplate(args)}
@@ -74,13 +68,10 @@ describe(transformTemplateToSnippet.name, () => {
 
     expect(
       print(
-        transformTemplateToSnippet({
-          component,
-          state: { componentIdentifierName: {}, templateComponents: [] },
-        })
+        transformTemplateToSnippet({ component })
       )
     ).toMatchInlineSnapshot(`
-      "{#snippet sb_default_template_0(_args, context)}
+      "{#snippet sb_default_template(_args, context)}
       	<p>{context.args}</p>
       {/snippet}"
     `);

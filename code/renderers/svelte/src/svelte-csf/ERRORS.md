@@ -366,3 +366,22 @@ addons: [
 +   },
 ],
 ```
+
+### `SB_SVELTE_CSF_LEGACY_API_0003`
+
+You have more than one unidentified `<Template>` components _(without an `id` prop)_ in your stories file.
+This leads to unwanted behaviour at runtime.
+
+To solve this issue, assign an `id` prop to the other `<Template>`(s) components.
+
+```diff
+- <Template>
++ <Template id="template-1">
+```
+
+And for the stories `<Story />` component(s) which are supposed to use this template, use the `template` prop with id as string reference.
+
+```diff
+- <Story>
++ <Story template="template-1">
+```

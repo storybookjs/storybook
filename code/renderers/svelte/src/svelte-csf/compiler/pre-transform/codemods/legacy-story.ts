@@ -70,14 +70,16 @@ export function transformLegacyStory(params: Params): SvelteAST.Component {
     newAttributes.push(attribute);
   }
 
-  // NOTE: is self-closing AND has no template attribute AND there are existing <Template> components in stories file
-  if (fragment.nodes.length === 0 && !hasTemplateAttribute && state.templateComponents.length > 0) {
+  // NOTE: is self-closing
+  // AND has no template attribute
+  // AND there is an existing unidentified <Template> components in the stories file
+  if (fragment.nodes.length === 0 && !hasTemplateAttribute && state.unidentifiedTemplateComponent) {
     newAttributes.push(
       createASTAttribute(
         'children',
         createASTExpressionTag({
           type: 'Identifier',
-          name: `sb_default_template_${state.templateComponents.length}`,
+          name: 'sb_default_template',
         })
       )
     );

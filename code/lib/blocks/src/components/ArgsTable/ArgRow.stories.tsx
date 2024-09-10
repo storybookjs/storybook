@@ -2,6 +2,8 @@ import React from 'react';
 
 import { ResetWrapper } from 'storybook/internal/components';
 
+import type { InputType } from '@storybook/csf';
+
 import { ArgRow } from './ArgRow';
 import { TableWrapper } from './ArgsTable';
 
@@ -31,6 +33,7 @@ export const String = {
       description: 'someString description',
       type: {
         required: true,
+        name: 'string',
       },
       control: {
         type: 'text',
@@ -43,7 +46,7 @@ export const String = {
           summary: 'reallylongstringnospaces',
         },
       },
-    },
+    } satisfies InputType,
   },
 };
 
@@ -127,6 +130,7 @@ export const Number = {
       description: 'someNumber description',
       type: {
         required: false,
+        name: 'number',
       },
       table: {
         type: {
@@ -139,7 +143,7 @@ export const Number = {
       control: {
         type: 'number',
       },
-    },
+    } satisfies InputType,
   },
 };
 

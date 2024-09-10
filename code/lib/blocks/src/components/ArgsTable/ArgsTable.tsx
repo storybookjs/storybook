@@ -5,7 +5,7 @@ import { once } from 'storybook/internal/client-logger';
 import { IconButton, Link, ResetWrapper } from 'storybook/internal/components';
 import { styled } from 'storybook/internal/theming';
 
-import { type StrictInputType, includeConditionalArg } from '@storybook/csf';
+import { type InputType, includeConditionalArg } from '@storybook/csf';
 import { DocumentIcon, UndoIcon } from '@storybook/icons';
 
 import pickBy from 'lodash/pickBy.js';
@@ -182,12 +182,18 @@ export enum ArgsTableError {
 }
 
 export type SortType = 'alpha' | 'requiredFirst' | 'none';
-type SortFn = (a: StrictInputType, b: StrictInputType) => number;
+type SortFn = (a: InputType, b: InputType) => number;
 
 const sortFns: Record<SortType, SortFn | null> = {
-  alpha: (a: StrictInputType, b: StrictInputType) => a.name.localeCompare(b.name),
-  requiredFirst: (a: StrictInputType, b: StrictInputType) =>
-    Number(!!b.type?.required) - Number(!!a.type?.required) || a.name.localeCompare(b.name),
+  alpha: (a: InputType, b: InputType) => a.name.localeCompare(b.name),
+  requiredFirst: (a: InputType, b: InputType) => {
+    const bType = b.type;
+    const aType = a.type;
+    const isBTypeRequired = !!(typeof bType !== 'string' && bType.required);
+    const isATypeRequired = !!(typeof aType !== 'string' && aType.required);
+
+    return Number(isBTypeRequired) - Number(isATypeRequired) || a.name.localeCompare(b.name);
+  },
   none: undefined,
 };
 
@@ -203,7 +209,7 @@ export interface ArgsTableOptionProps {
 }
 interface ArgsTableDataProps {
   rows: {
-    [key: string]: StrictInputType;
+    [key: string]: InputType;
   };
   args?: Args;
   globals?: Globals;
@@ -220,7 +226,7 @@ export interface ArgsTableLoadingProps {
 export type ArgsTableProps = ArgsTableOptionProps &
   (ArgsTableDataProps | ArgsTableErrorProps | ArgsTableLoadingProps);
 
-type Rows = StrictInputType[];
+type Rows = InputType[];
 type Subsection = Rows;
 type Section = {
   ungrouped: Rows;
@@ -232,7 +238,7 @@ type Sections = {
   sections: Record<string, Section>;
 };
 
-const groupRows = (rows: { [key: string]: StrictInputType }, sort: SortType) => {
+const groupRows = (rows: { [key: string]: InputType }, sort: SortType) => {
   const sections: Sections = { ungrouped: [], ungroupedSubsections: {}, sections: {} };
 
   if (!rows) {
@@ -300,7 +306,7 @@ const groupRows = (rows: { [key: string]: StrictInputType }, sort: SortType) => 
  * preview in `prepareStory`, and that exception will be bubbled up into the UI in a red screen.
  * Nevertheless, we log the error here just in case.
  */
-const safeIncludeConditionalArg = (row: StrictInputType, args: Args, globals: Globals) => {
+const safeIncludeConditionalArg = (row: InputType, args: Args, globals: Globals) => {
   try {
     return includeConditionalArg(row, args, globals);
   } catch (err) {

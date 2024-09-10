@@ -1,10 +1,10 @@
-import type { StrictInputType } from '@storybook/csf';
+import type { InputType } from '@storybook/csf';
 
 export interface ControlProps<T> {
   name: string;
   value?: T;
   defaultValue?: T;
-  argType?: StrictInputType;
+  argType?: InputType;
   onChange: (value?: T) => T | void;
   onFocus?: (evt: any) => void;
   onBlur?: (evt: any) => void;

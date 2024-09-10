@@ -79,7 +79,7 @@ export const Object: Story = {
   name: 'DEPRECATED: Object',
   args: {
     value: [objectOptions.B],
-    argType: { options: objectOptions },
+    argType: { options: [objectOptions] },
   },
   argTypes: { value: { control: { type: 'object' } } },
 };
@@ -89,7 +89,7 @@ export const ObjectInline: Story = {
   args: {
     type: 'inline-check',
     value: [objectOptions.A, objectOptions.C],
-    argType: { options: objectOptions },
+    argType: { options: objectOptions as any },
   },
   argTypes: { value: { control: { type: 'object' } } },
 };
@@ -98,7 +98,7 @@ export const ObjectUndefined: Story = {
   name: 'DEPRECATED: Object Undefined',
   args: {
     value: undefined,
-    argType: { options: objectOptions },
+    argType: { options: objectOptions as any },
   },
   argTypes: { value: { control: { type: 'object' } } },
 };

@@ -5,7 +5,7 @@ import { codeCommon } from 'storybook/internal/components';
 import type { CSSObject } from 'storybook/internal/theming';
 import { styled } from 'storybook/internal/theming';
 
-import type { InputType, SBType, StrictInputType } from '@storybook/csf';
+import type { InputType, SBType } from '@storybook/csf';
 
 import Markdown from 'markdown-to-jsx';
 import { transparentize } from 'polished';
@@ -17,7 +17,7 @@ import { ArgValue } from './ArgValue';
 import type { Args } from './types';
 
 interface ArgRowProps {
-  row: StrictInputType;
+  row: InputType;
   arg: any;
   updateArgs?: (args: Args) => void;
   compact?: boolean;
@@ -80,7 +80,7 @@ const StyledTd = styled.td<{ expandable: boolean }>(({ theme, expandable }) => (
   paddingLeft: expandable ? '40px !important' : '20px !important',
 }));
 
-const toSummary = (value: SBType): { summary: string } => {
+const toSummary = (value: InputType['type']): { summary: string } => {
   if (!value) {
     return value as any;
   }
@@ -95,7 +95,7 @@ export const ArgRow: FC<ArgRowProps> = (props) => {
   const table = row.table || {};
   const tableType = table.type || toSummary(row.type);
   const defaultValue = table.defaultValue || row.defaultValue;
-  const required = row.type?.required;
+  const required = typeof row.type === 'string' ? false : row.type?.required;
   const hasDescription = description != null && description !== '';
 
   return (

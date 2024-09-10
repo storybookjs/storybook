@@ -90,4 +90,4 @@ export type Control =
   | TextConfig;
 
 export const isControlObject = (control: Control): control is Control & object =>
-  typeof control === 'object';
+  typeof control === 'object' && control !== null && control !== undefined;

@@ -34,7 +34,7 @@ export class ButtonComponent {
    * @required
    */
   @Input({ required: true })
-  label = 'Button';
+  label: string;
 
   /** Optional click handler */
   @Output()

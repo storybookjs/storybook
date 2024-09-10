@@ -32,7 +32,7 @@ export default class FrameworkButtonComponent {
    * @required
    */
   @Input({ required: true })
-  label = 'Button';
+  label: string;
 
   /** Optional click handler */
   @Output()

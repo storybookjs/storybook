@@ -75,7 +75,7 @@
     "react": "^18",
     "rollup": "^4.18.0",
     "sharp": "^0.33.4",
-    "storybook": "8.3.0-alpha.3",
+    "storybook": "^8.3.0",
     "tsup": "^8.1.0",
     "typescript": "^5.0.0",
     "vite": "^5.0.0",

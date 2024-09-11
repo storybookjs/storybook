@@ -1,1 +1,1 @@
-{"version":"8.3.0-beta.5","info":{"plain":"- Portable Stories: Improve Handling of React Updates and Errors - [#29044](https://github.com/storybookjs/storybook/pull/29044), thanks @valentinpalkovic!\n- Vite: Fix missing source map warning - [#28984](https://github.com/storybookjs/storybook/pull/28984), thanks @valentinpalkovic!\n- Vue: Add missing prop controls when using `vue-component-meta` docgen plugin - [#28760](https://github.com/storybookjs/storybook/pull/28760), thanks @larsrickert!"}}
+{"version":"8.4.0-alpha.0","info":{"plain":""}}

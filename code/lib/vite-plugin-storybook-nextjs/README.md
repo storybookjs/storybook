@@ -121,7 +121,7 @@ When testing components that rely on Next.js Server Actions, you need to ensure 
 
    export default defineConfig({
      plugins: [nextjs()],
-     vitest: {
+     test: {
        environment: "jsdom", // 👈 Add this
      },
    });

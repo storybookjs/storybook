@@ -1,1 +1,1 @@
-{"version":"8.2.9","info":{"plain":"- CLI: Fix `init --skip-install` - [#28853](https://github.com/storybookjs/storybook/pull/28853), thanks @ndelangen!\n- Telemetry: Disable save-from-controls logs for example stories - [#28870](https://github.com/storybookjs/storybook/pull/28870), thanks @shilman!"}}
+{"version":"8.2.10","info":{"plain":"- Test: Fix support for TS < 4.7 - [#28887](https://github.com/storybookjs/storybook/pull/28887), thanks @ndelangen!"}}

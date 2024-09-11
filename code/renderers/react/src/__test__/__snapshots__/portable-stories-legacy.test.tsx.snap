@@ -147,6 +147,40 @@ exports[`Legacy Portable Stories API > Renders Modal story 1`] = `
 </body>
 `;
 
+exports[`Legacy Portable Stories API > Renders MountInPlayFunction story 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="loaded-data"
+    >
+      loaded data
+    </div>
+    <div
+      data-testid="spy-data"
+    >
+      mockFn return value
+    </div>
+  </div>
+</body>
+`;
+
+exports[`Legacy Portable Stories API > Renders MountInPlayFunctionThrow story 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="loaded-data"
+    >
+      loaded data
+    </div>
+    <div
+      data-testid="spy-data"
+    >
+      mockFn return value
+    </div>
+  </div>
+</body>
+`;
+
 exports[`Legacy Portable Stories API > Renders WithActionArg story 1`] = `
 <body>
   <div>

@@ -99,7 +99,7 @@
     "@storybook/react": "workspace:*",
     "@storybook/test": "workspace:*",
     "styled-jsx": "5.1.6",
-    "vite-plugin-storybook-nextjs": "^1.0.10"
+    "vite-plugin-storybook-nextjs": "^1.0.11"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",

@@ -94,12 +94,16 @@
     "require-from-string": "^2.0.2"
   },
   "peerDependencies": {
+    "@storybook/test": "workspace:*",
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
     "storybook": "workspace:^",
     "typescript": ">= 4.2.x"
   },
   "peerDependenciesMeta": {
+    "@storybook/test": {
+      "optional": true
+    },
     "typescript": {
       "optional": true
     }

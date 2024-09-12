@@ -124,7 +124,7 @@
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-storybook": "^0.8.0",
     "execa": "^6.1.0",
-    "express": "^4.20.0",
+    "express": "^4.21.0",
     "fast-folder-size": "^2.2.0",
     "fast-glob": "^3.3.2",
     "find-up": "^5.0.0",

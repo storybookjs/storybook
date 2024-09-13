@@ -95,7 +95,7 @@
     "rxjs": "^6.0.0 || ^7.4.0",
     "storybook": "workspace:^",
     "typescript": "^4.0.0 || ^5.0.0",
-    "zone.js": ">= 0.11.1 < 1.0.0"
+    "zone.js": ">= 0.14.2 < 1.0.0"
   },
   "peerDependenciesMeta": {
     "@angular/cli": {

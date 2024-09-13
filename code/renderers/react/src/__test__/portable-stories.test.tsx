@@ -8,7 +8,8 @@ import React from 'react';
 
 import { addons } from 'storybook/internal/preview-api';
 
-import type { Meta } from '@storybook/react';
+import type { ProjectAnnotations } from '@storybook/csf';
+import type { Meta, ReactRenderer } from '@storybook/react';
 
 import * as addonActionsPreview from '@storybook/addon-actions/preview';
 
@@ -124,7 +125,7 @@ describe('projectAnnotations', () => {
     const Story = composeStory(
       ButtonStories.WithActionArgType,
       ButtonStories.default,
-      addonActionsPreview
+      addonActionsPreview as ProjectAnnotations<ReactRenderer>
     );
     expect(Story.args.someActionArg).toHaveProperty('isAction', true);
   });

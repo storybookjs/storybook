@@ -5492,6 +5492,7 @@ __metadata:
     "@storybook/instrumenter": "workspace:*"
     "@storybook/test": "workspace:*"
     "@types/node": "npm:^22.0.0"
+    ansi-to-html: "npm:^0.7.2"
     formik: "npm:^2.2.9"
     polished: "npm:^4.2.2"
     react: "npm:^18.2.0"

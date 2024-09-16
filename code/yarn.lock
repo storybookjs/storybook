@@ -6444,7 +6444,7 @@ __metadata:
     postcss-loader: "npm:^8.1.1"
     react-refresh: "npm:^0.14.0"
     resolve-url-loader: "npm:^5.0.0"
-    sass-loader: "npm:^12.4.0"
+    sass-loader: "npm:^13.2.0"
     semver: "npm:^7.3.5"
     sharp: "npm:^0.33.3"
     style-loader: "npm:^3.3.1"
@@ -25304,15 +25304,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sass-loader@npm:^12.4.0":
-  version: 12.6.0
-  resolution: "sass-loader@npm:12.6.0"
+"sass-loader@npm:^13.2.0":
+  version: 13.3.3
+  resolution: "sass-loader@npm:13.3.3"
   dependencies:
-    klona: "npm:^2.0.4"
     neo-async: "npm:^2.6.2"
   peerDependencies:
     fibers: ">= 3.1.0"
-    node-sass: ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
+    node-sass: ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0 || ^9.0.0
     sass: ^1.3.0
     sass-embedded: "*"
     webpack: ^5.0.0
@@ -25325,7 +25324,7 @@ __metadata:
       optional: true
     sass-embedded:
       optional: true
-  checksum: 10c0/e1ef655f3898cc4c45f02b3c627f8baf998139993a9a79c524153a80814282bfe20d8d8d703b8cf1d05457c1930940b65e2156d11285ed0861f9a1016f993e53
+  checksum: 10c0/5e955a4ffce35ee0a46fce677ce51eaa69587fb5371978588c83af00f49e7edc36dcf3bb559cbae27681c5e24a71284463ebe03a1fb65e6ecafa1db0620e3fc8
   languageName: node
   linkType: hard
 

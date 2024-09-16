@@ -1,6 +1,6 @@
 {
   "name": "@storybook/nextjs",
-  "version": "8.3.0-beta.4",
+  "version": "8.4.0-alpha.0",
   "description": "Storybook for Next.js",
   "keywords": [
     "storybook",
@@ -157,7 +157,7 @@
     "postcss-loader": "^8.1.1",
     "react-refresh": "^0.14.0",
     "resolve-url-loader": "^5.0.0",
-    "sass-loader": "^12.4.0",
+    "sass-loader": "^13.2.0",
     "semver": "^7.3.5",
     "style-loader": "^3.3.1",
     "styled-jsx": "^5.1.6",

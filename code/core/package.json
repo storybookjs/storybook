@@ -279,6 +279,7 @@
   "dependencies": {
     "@storybook/csf": "^0.1.11",
     "@types/express": "^4.17.21",
+    "better-opn": "^3.0.2",
     "browser-assert": "^1.2.1",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0",
     "esbuild-register": "^3.5.0",
@@ -341,7 +342,6 @@
     "ansi-to-html": "^0.7.2",
     "assert": "^2.1.0",
     "babel-plugin-react-docgen": "4.2.1",
-    "better-opn": "^3.0.2",
     "boxen": "^7.1.1",
     "browser-dtector": "^3.4.0",
     "camelcase": "^8.0.0",

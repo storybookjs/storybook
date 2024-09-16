@@ -2,7 +2,7 @@
 title: 'Portable stories in Jest'
 sidebar:
   title: Jest
-  order: 1
+  order: 2
 ---
 
 <If notRenderer={['react', 'vue']}>
@@ -168,7 +168,7 @@ sidebar:
   These are the configurations needed in the setup file:
   - preview annotations: those defined in `.storybook/preview.ts`
   - addon annotations (optional): those exported by addons
-  - beforeAll: code that runs before all tests ([more info](../../writing-tests/interaction-testing.mdx#beforeall))
+  - beforeAll: code that runs before all tests ([more info](../../writing-tests/component-testing.mdx#beforeall))
 
   {/* prettier-ignore-start */}
 
@@ -222,7 +222,7 @@ sidebar:
 
   ### 3. Run
 
-  Finally, stories can prepare data they need (e.g. setting up some mocks or fetching data) before rendering by defining [loaders](../../writing-stories/loaders.mdx), [beforeEach](../../writing-tests/interaction-testing.mdx#run-code-before-each-story) or by having all the story code in the play function when using the [mount](../../writing-tests/interaction-testing.mdx#run-code-before-the-component-gets-rendered). In portable stories, all of these steps will be executed when you call the `run` method of the composed story.
+  Finally, stories can prepare data they need (e.g. setting up some mocks or fetching data) before rendering by defining [loaders](../../writing-stories/loaders.mdx), [beforeEach](../../writing-tests/component-testing.mdx#run-code-before-each-story) or by having all the story code in the play function when using the [mount](../../writing-tests/component-testing.mdx#run-code-before-the-component-gets-rendered). In portable stories, all of these steps will be executed when you call the `run` method of the composed story.
 
   👉 For this, you use the [`composeStories`](#composestories) or [`composeStory`](#composestory) API. The composed story will return a `run` method to be called.
 

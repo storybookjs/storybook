@@ -51,6 +51,13 @@ const propKey = (p: t.ObjectProperty) => {
   return null;
 };
 
+const unwrap = (node: t.Node | undefined | null): any => {
+  if (t.isTSAsExpression(node) || t.isTSSatisfiesExpression(node)) {
+    return unwrap(node.expression);
+  }
+  return node;
+};
+
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const _getPath = (path: string[], node: t.Node): t.Node | undefined => {
   if (path.length === 0) {
@@ -191,9 +198,7 @@ export class ConfigFile {
               ? _findVarInitialization(node.declaration.name, parent)
               : node.declaration;
 
-          if (t.isTSAsExpression(decl) || t.isTSSatisfiesExpression(decl)) {
-            decl = decl.expression;
-          }
+          decl = unwrap(decl);
 
           if (t.isObjectExpression(decl)) {
             self._exportsObject = decl;
@@ -275,9 +280,7 @@ export class ConfigFile {
                 exportObject = _findVarInitialization(right.name, parent as t.Program) as any;
               }
 
-              if (t.isTSAsExpression(exportObject) || t.isTSSatisfiesExpression(exportObject)) {
-                exportObject = exportObject.expression;
-              }
+              exportObject = unwrap(exportObject);
 
               if (t.isObjectExpression(exportObject)) {
                 self._exportsObject = exportObject;
@@ -517,9 +520,8 @@ export class ConfigFile {
           if (t.isIdentifier(decl)) {
             decl = _findVarInitialization(decl.name, this._ast.program);
           }
-          if (t.isTSAsExpression(decl) || t.isTSSatisfiesExpression(decl)) {
-            decl = decl.expression;
-          }
+
+          decl = unwrap(decl);
           if (t.isObjectExpression(decl)) {
             const properties = decl.properties as t.ObjectProperty[];
             removeProperty(properties, path[0]);

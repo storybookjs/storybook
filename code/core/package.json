@@ -1,6 +1,6 @@
 {
   "name": "@storybook/core",
-  "version": "8.3.0-alpha.10",
+  "version": "8.4.0-alpha.0",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -279,13 +279,16 @@
   "dependencies": {
     "@storybook/csf": "^0.1.11",
     "@types/express": "^4.17.21",
+    "better-opn": "^3.0.2",
     "browser-assert": "^1.2.1",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0",
     "esbuild-register": "^3.5.0",
     "express": "^4.19.2",
+    "jsdoc-type-pratt-parser": "^4.0.0",
     "process": "^0.11.10",
     "recast": "^0.23.5",
     "semver": "^7.6.2",
+    "util": "^0.12.5",
     "ws": "^8.2.3"
   },
   "devDependencies": {
@@ -306,7 +309,7 @@
     "@ndelangen/get-tarball": "^3.0.7",
     "@popperjs/core": "^2.6.0",
     "@radix-ui/react-dialog": "^1.0.5",
-    "@radix-ui/react-scroll-area": "^1.0.5",
+    "@radix-ui/react-scroll-area": "1.2.0-rc.7",
     "@radix-ui/react-slot": "^1.0.2",
     "@storybook/docs-mdx": "4.0.0-next.1",
     "@storybook/global": "^5.0.0",
@@ -339,7 +342,6 @@
     "ansi-to-html": "^0.7.2",
     "assert": "^2.1.0",
     "babel-plugin-react-docgen": "4.2.1",
-    "better-opn": "^3.0.2",
     "boxen": "^7.1.1",
     "browser-dtector": "^3.4.0",
     "camelcase": "^8.0.0",
@@ -377,7 +379,6 @@
     "globby": "^14.0.1",
     "handlebars": "^4.7.7",
     "js-yaml": "^4.1.0",
-    "jsdoc-type-pratt-parser": "^4.0.0",
     "lazy-universal-dotenv": "^4.0.0",
     "leven": "^4.0.0",
     "lodash": "^4.17.21",
@@ -418,7 +419,6 @@
     "typescript": "^5.3.2",
     "unique-string": "^3.0.0",
     "use-resize-observer": "^9.1.0",
-    "util": "^0.12.4",
     "watchpack": "^2.2.0"
   },
   "publishConfig": {

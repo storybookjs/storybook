@@ -430,8 +430,12 @@ These APIs allowed addons to render arbitrary content in the Storybook sidebar. 
 
 > [!NOTE]
 > You need to set the feature flag `backgroundsStoryGlobals` to `true` in your `.storybook/main.ts` to use the new format and set the value with `globals`.
+> 
+> See here how to set feature flags: https://storybook.js.org/docs/api/main-config/main-config-features
 
-The `addon-backgrounds` addon now uses a new format for parameters. The `backgrounds` parameter is now an object with an `options` property that is assigned to an object of background values, where the key is used when setting the global value.
+The `addon-backgrounds` addon now uses a new format for configuring its list of selectable backgrounds.
+The `backgrounds` parameter is now an object with an `options` property.
+This `options` object is a key-value pair where the key is used when setting the global value, the value is an object with a `name` and `value` property.
 
 ```diff
 // .storybook/preview.js
@@ -472,8 +476,13 @@ This locks that story to the `twitter` background, it cannot be changed by the a
 
 > [!NOTE]
 > You need to set the feature flag `viewportStoryGlobals` to `true` in your `.storybook/main.ts` to use the new format and set the value with `globals`.
+> 
+> See here how to set feature flags: https://storybook.js.org/docs/api/main-config/main-config-features
 
-The `addon-viewport` addon now uses a new format for parameters. The `viewport` parameter is now an object with an `options` property that is assigned to an object of viewport values, where the key is used when setting the global value.
+The `addon-viewport` addon now uses a new format for configuring its list of selectable viewports.
+The `viewport` parameter is now an object with an `options` property.
+This `options` object is a key-value pair where the key is used when setting the global value, the value is an object with a `name` and `styles` property.
+The `styles` property is an object with a `width` and a `height` property.
 
 ```diff
 // .storybook/preview.js
@@ -501,7 +510,8 @@ export const parameters = {
 };
 ```
 
-Setting an override value should now be done via a `globals` property on your component/meta or story itself. Also note the change from `defaultOrientation: "landscape"` to `isRotated: true`.
+Setting an override value should now be done via a `globals` property on your component/meta or story itself.
+Also note the change from `defaultOrientation: "landscape"` to `isRotated: true`.
 
 ```diff
 // Button.stories.ts

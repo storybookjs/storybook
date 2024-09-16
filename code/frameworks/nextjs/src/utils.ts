@@ -27,23 +27,27 @@ export const resolveNextConfig = async ({
   return loadConfig(PHASE_DEVELOPMENT_SERVER, dir, undefined);
 };
 
-// This is to help the addon in development
-// Without it, webpack resolves packages in its node_modules instead of the example's node_modules
-export const addScopedAlias = (baseConfig: WebpackConfig, name: string, alias?: string): void => {
+export function setAlias(baseConfig: WebpackConfig, name: string, alias: string) {
   baseConfig.resolve ??= {};
   baseConfig.resolve.alias ??= {};
   const aliasConfig = baseConfig.resolve.alias;
 
-  const scopedAlias = scopedResolve(`${alias ?? name}`);
-
   if (Array.isArray(aliasConfig)) {
     aliasConfig.push({
       name,
-      alias: scopedAlias,
+      alias,
     });
   } else {
-    aliasConfig[name] = scopedAlias;
+    aliasConfig[name] = alias;
   }
+}
+
+// This is to help the addon in development
+// Without it, webpack resolves packages in its node_modules instead of the example's node_modules
+export const addScopedAlias = (baseConfig: WebpackConfig, name: string, alias?: string): void => {
+  const scopedAlias = scopedResolve(`${alias ?? name}`);
+
+  setAlias(baseConfig, name, scopedAlias);
 };
 
 /**
@@ -64,7 +68,7 @@ export const scopedResolve = (id: string): string => {
   let scopedModulePath;
 
   try {
-    // TODO: Remove in next major release (SB 8.0) and use the statement in the catch block per default instead
+    // TODO: Remove in next major release (SB 9.0) and use the statement in the catch block per default instead
     scopedModulePath = require.resolve(id, { paths: [resolve()] });
   } catch (e) {
     scopedModulePath = require.resolve(id);

@@ -795,6 +795,26 @@ describe('ConfigFile', () => {
           export default preview;
         `);
       });
+
+      it('root globals as const satisfies as variable', () => {
+        expect(
+          removeField(
+            ['globals'],
+            dedent`
+              const preview = {
+                globals: { a: 1 },
+                bar: { a: 1 }
+              } as const satisfies Foo;
+              export default preview;
+            `
+          )
+        ).toMatchInlineSnapshot(`
+          const preview = {
+            bar: { a: 1 }
+          } as const satisfies Foo;
+          export default preview;
+        `);
+      });
     });
 
     describe('quotes', () => {

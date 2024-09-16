@@ -143,6 +143,42 @@ export const WithRefs: Story = {
   },
 };
 
+export const WithRefsNarrow: Story = {
+  args: {
+    refs: {
+      wide: {
+        ...refs.optimized,
+        title: 'This is a ref with a very long title',
+      },
+    },
+  },
+  parameters: {
+    viewport: {
+      options: {
+        narrow: {
+          name: 'narrow',
+          styles: {
+            width: '400px',
+            height: '800px',
+          },
+        },
+      },
+    },
+    chromatic: {
+      modes: {
+        narrow: {
+          viewport: 400,
+        },
+      },
+    },
+  },
+  globals: {
+    viewport: {
+      value: 'narrow',
+    },
+  },
+};
+
 export const LoadingWithRefs: Story = {
   args: {
     ...Loading.args,

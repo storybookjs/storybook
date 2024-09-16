@@ -1,11 +1,11 @@
 ---
-title: 'Interaction tests'
+title: 'Component tests'
 sidebar:
-  order: 4
-  title: Interaction tests
+  order: 1
+  title: Component tests
 ---
 
-As you build more complex UIs like pages, components become responsible for more than just rendering the UI. They fetch data and manage state. Interaction tests allow you to verify these functional aspects of UIs.
+As you build more complex UIs like pages, components become responsible for more than just rendering the UI. They fetch data and manage state. Component tests allow you to verify these functional aspects of UIs.
 
 In a nutshell, you start by supplying the appropriate props for the initial state of a component. Then simulate user behavior such as clicks and form entries. Finally, check whether the UI and component state update correctly.
 
@@ -15,16 +15,17 @@ In Storybook, this familiar workflow happens in your browser. That makes it easi
 
 ## How does component testing in Storybook work?
 
-You start by writing a [**story**](../writing-stories/index.mdx) to set up the component's initial state. Then simulate user behavior using the **play** function. Finally, use the **test-runner** to confirm that the component renders correctly and that your interaction tests with the **play** function pass. Additionally, you can automate test execution via the [command line](./test-runner.mdx#cli-options) or in your [CI environment](./test-runner.mdx#set-up-ci-to-run-tests).
+You start by writing a [**story**](../writing-stories/index.mdx) to set up the component's initial state. Then simulate user behavior using the **play** function. Finally, use the **test-runner** to confirm that the component renders correctly and that your component tests with the **play** function pass. The test runner can run via the command line or in CI.
 
 * The [`play`](../writing-stories/play-function.mdx) function is a small snippet of code that runs after a story finishes rendering. You can use this to test user workflows.
 * The test is written using Storybook-instrumented versions of [Vitest](https://vitest.dev/) and [Testing Library](https://testing-library.com/) coming from the [`@storybook/test`](https://npmjs.com/package/@storybook/test) package.
 * [`@storybook/addon-interactions`](https://storybook.js.org/addons/@storybook/addon-interactions/) visualizes the test in Storybook and provides a playback interface for convenient browser-based debugging.
 * [`@storybook/test-runner`](https://github.com/storybookjs/test-runner) is a standalone utility—powered by [Jest](https://jestjs.io/) and [Playwright](https://playwright.dev/)—that executes all of your interactions tests and catches broken stories.
+    * The experimental [Vitest plugin](./vitest-plugin.mdx) is also available, which transforms your stories into Vitest tests and runs them in a browser.
 
 ## Set up the interactions addon
 
-To enable interaction testing with Storybook, you'll need to take additional steps to set it up properly. We recommend you go through the [test runner documentation](./test-runner.mdx) before proceeding with the rest of the required configuration.
+To enable the full component testing experience with Storybook, you'll need to take additional steps to set it up properly. We recommend you go through the [test runner documentation](./test-runner.mdx) before proceeding with the rest of the required configuration.
 
 Run the following command to install the interactions addon and related dependencies.
 
@@ -42,9 +43,9 @@ Update your Storybook configuration (in `.storybook/main.js|ts`) to include the 
 
 {/* prettier-ignore-end */}
 
-## Write an interaction test
+## Write a component test
 
-The test itself is defined inside a `play` function connected to a story. Here's an example of how to set up an interaction test with Storybook and the `play` function:
+The test itself is defined inside a `play` function connected to a story. Here's an example of how to set up a component test with Storybook and the `play` function:
 
 {/* prettier-ignore-start */}
 
@@ -198,7 +199,7 @@ Below is an abridged API for user-event. For more, check out the [official user-
 
 ### Assert tests with Vitest's APIs
 
-Storybook’s `@storybook/test` also provides APIs from [Vitest](https://vitest.dev/), such as [`expect`](https://vitest.dev/api/expect.html#expect) and [`vi.fn`](https://vitest.dev/api/vi.html#vi-fn). These APIs improve your testing experience, helping you assert whether a function has been called, if an element exists in the DOM, and much more. If you are used to `expect` from testing packages such as [Jest](https://jestjs.io/) or [Vitest](https://vitest.dev/), you can write interaction tests in much the same way.
+Storybook’s `@storybook/test` also provides APIs from [Vitest](https://vitest.dev/), such as [`expect`](https://vitest.dev/api/expect.html#expect) and [`vi.fn`](https://vitest.dev/api/vi.html#vi-fn). These APIs improve your testing experience, helping you assert whether a function has been called, if an element exists in the DOM, and much more. If you are used to `expect` from testing packages such as [Jest](https://jestjs.io/) or [Vitest](https://vitest.dev/), you can write component tests in much the same way.
 
 {/* prettier-ignore-start */}
 
@@ -218,7 +219,7 @@ For complex flows, it can be worthwhile to group sets of related interactions to
 
 This will show your interactions nested in a collapsible group:
 
-![Interaction testing with labeled steps](../_assets/writing-tests/storybook-addon-interactions-steps.png)
+![Component testing with labeled steps](../_assets/writing-tests/storybook-addon-interactions-steps.png)
 
 ### Mocked modules
 
@@ -244,13 +245,13 @@ The `play` function is executed after the story is rendered. If there’s an err
 
 Since Storybook is a webapp, anyone with the URL can reproduce the error with the same detailed information without any additional environment configuration or tooling required.
 
-![Interaction testing with a component](../_assets/writing-tests/storybook-addon-interactions-error-optimized.png)
+![Component testing with an error](../_assets/writing-tests/storybook-addon-interactions-error-optimized.png)
 
-Streamline interaction testing further by automatically [publishing Storybook](../sharing/publish-storybook.mdx) in pull requests. That gives teams a universal reference point to test and debug stories.
+Streamline component testing further by automatically [publishing Storybook](../sharing/publish-storybook.mdx) in pull requests. That gives teams a universal reference point to test and debug stories.
 
 ## Execute tests with the test-runner
 
-Storybook only runs the interaction test when you're viewing a story. Therefore, you'd have to go through each story to run all your checks. As your Storybook grows, it becomes unrealistic to review each change manually. Storybook [test-runner](https://github.com/storybookjs/test-runner) automates the process by running all tests for you. To execute the test-runner, open a new terminal window and run the following command:
+Storybook only runs the component test when you're viewing a story. Therefore, you'd have to go through each story to run all your checks. As your Storybook grows, it becomes unrealistic to review each change manually. Storybook [test-runner](https://github.com/storybookjs/test-runner) automates the process by running all tests for you. To execute the test-runner, open a new terminal window and run the following command:
 
 {/* prettier-ignore-start */}
 
@@ -258,7 +259,7 @@ Storybook only runs the interaction test when you're viewing a story. Therefore,
 
 {/* prettier-ignore-end */}
 
-![Interaction test with test runner](../_assets/writing-tests/storybook-interaction-test-runner-loginform-optimized.png)
+![Component test with test runner](../_assets/writing-tests/storybook-interaction-test-runner-loginform-optimized.png)
 
 <Callout variant="info" icon="💡">
   If you need, you can provide additional flags to the test-runner. Read the [documentation](./test-runner.mdx#cli-options) to learn more.
@@ -270,21 +271,21 @@ Once you're ready to push your code into a pull request, you'll want to automati
 
 ## Troubleshooting
 
-#### What’s the difference between interaction tests and visual tests?
+#### What’s the difference between component tests and visual tests?
 
-Interaction tests can be expensive to maintain when applied wholesale to every component. We recommend combining them with other methods like visual testing for comprehensive coverage with less maintenance work.
+Component tests can be expensive to maintain when applied wholesale to every component. We recommend combining them with other methods like visual testing for comprehensive coverage with less maintenance work.
 
-#### What's the difference between interaction tests and using Jest + Testing Library alone?
+#### What's the difference between component tests and using Jest + Testing Library alone?
 
-Interaction tests integrate Jest and Testing Library into Storybook. The biggest benefit is the ability to view the component you're testing in a real browser. That helps you debug visually, instead of getting a dump of the (fake) DOM in the command line or hitting the limitations of how JSDOM mocks browser functionality. It's also more convenient to keep stories and tests together in one file than having them spread across files.
+Component tests integrate Jest and Testing Library into Storybook. The biggest benefit is the ability to view the component you're testing in a real browser. That helps you debug visually, instead of getting a dump of the (fake) DOM in the command line or hitting the limitations of how JSDOM mocks browser functionality. It's also more convenient to keep stories and tests together in one file than having them spread across files.
 
 **Learn about other UI tests**
 
-* [Test runner](./test-runner.mdx) to automate test execution
+* Component tests for user behavior simulation
 * [Visual tests](./visual-testing.mdx) for appearance
 * [Accessibility tests](./accessibility-testing.mdx) for accessibility
-* Interaction tests for user behavior simulation
-* [Coverage tests](./test-coverage.mdx) for measuring code coverage
 * [Snapshot tests](./snapshot-testing/snapshot-testing.mdx) for rendering errors and warnings
+* [Test runner](./test-runner.mdx) to automate test execution
+* [Test coverage](./test-coverage.mdx) for measuring code coverage
 * [End-to-end tests](./import-stories-in-tests/stories-in-end-to-end-tests.mdx) for simulating real user scenarios
 * [Unit tests](./import-stories-in-tests/stories-in-unit-tests.mdx) for functionality

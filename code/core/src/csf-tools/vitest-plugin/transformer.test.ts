@@ -73,7 +73,7 @@ describe('transformer', () => {
 
       expect(result.code).toMatchInlineSnapshot(`
         import { test as _test, expect as _expect } from "vitest";
-        import { testStory as _testStory } from "@storybook/experimental-addon-vitest/internal/test-utils";
+        import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
         const _meta = {
           component: Button,
           title: "automatic/calculated/title"
@@ -102,7 +102,7 @@ describe('transformer', () => {
 
       expect(result.code).toMatchInlineSnapshot(`
         import { test as _test, expect as _expect } from "vitest";
-        import { testStory as _testStory } from "@storybook/experimental-addon-vitest/internal/test-utils";
+        import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
         const _meta = {
           title: "automatic/calculated/title",
           component: Button
@@ -132,7 +132,7 @@ describe('transformer', () => {
 
       expect(result.code).toMatchInlineSnapshot(`
         import { test as _test, expect as _expect } from "vitest";
-        import { testStory as _testStory } from "@storybook/experimental-addon-vitest/internal/test-utils";
+        import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
         const meta = {
           component: Button,
           title: "automatic/calculated/title"
@@ -163,7 +163,7 @@ describe('transformer', () => {
 
       expect(result.code).toMatchInlineSnapshot(`
         import { test as _test, expect as _expect } from "vitest";
-        import { testStory as _testStory } from "@storybook/experimental-addon-vitest/internal/test-utils";
+        import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
         const meta = {
           title: "automatic/calculated/title",
           component: Button
@@ -195,7 +195,7 @@ describe('transformer', () => {
 
       expect(result.code).toMatchInlineSnapshot(`
         import { test as _test, expect as _expect } from "vitest";
-        import { testStory as _testStory } from "@storybook/experimental-addon-vitest/internal/test-utils";
+        import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
         const _meta = {
           component: Button,
           title: "automatic/calculated/title"
@@ -229,7 +229,7 @@ describe('transformer', () => {
 
       expect(result.code).toMatchInlineSnapshot(`
         import { test as _test, expect as _expect } from "vitest";
-        import { testStory as _testStory } from "@storybook/experimental-addon-vitest/internal/test-utils";
+        import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
         const _meta = {
           title: "automatic/calculated/title"
         };
@@ -264,7 +264,7 @@ describe('transformer', () => {
       const result = await transform({ code });
       expect(result.code).toMatchInlineSnapshot(`
         import { test as _test, expect as _expect } from "vitest";
-        import { testStory as _testStory } from "@storybook/experimental-addon-vitest/internal/test-utils";
+        import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
         const _meta = {
           title: "automatic/calculated/title"
         };
@@ -299,7 +299,7 @@ describe('transformer', () => {
 
       expect(result.code).toMatchInlineSnapshot(`
         import { test as _test, expect as _expect } from "vitest";
-        import { testStory as _testStory } from "@storybook/experimental-addon-vitest/internal/test-utils";
+        import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
         const _meta = {
           title: "automatic/calculated/title",
           component: Button,
@@ -356,7 +356,7 @@ describe('transformer', () => {
 
       expect(result.code).toMatchInlineSnapshot(`
         import { test as _test, expect as _expect } from "vitest";
-        import { testStory as _testStory } from "@storybook/experimental-addon-vitest/internal/test-utils";
+        import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
         const _meta = {
           title: "automatic/calculated/title"
         };
@@ -387,7 +387,7 @@ describe('transformer', () => {
 
       expect(result.code).toMatchInlineSnapshot(`
         import { test as _test, expect as _expect } from "vitest";
-        import { testStory as _testStory } from "@storybook/experimental-addon-vitest/internal/test-utils";
+        import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
         const _meta = {
           title: "automatic/calculated/title"
         };
@@ -416,7 +416,7 @@ describe('transformer', () => {
 
       expect(result.code).toMatchInlineSnapshot(`
         import { test as _test, expect as _expect } from "vitest";
-        import { testStory as _testStory } from "@storybook/experimental-addon-vitest/internal/test-utils";
+        import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
         const _meta = {
           title: "automatic/calculated/title"
         };
@@ -449,7 +449,7 @@ describe('transformer', () => {
 
       expect(transformedCode).toMatchInlineSnapshot(`
         import { test as _test, expect as _expect } from "vitest";
-        import { testStory as _testStory } from "@storybook/experimental-addon-vitest/internal/test-utils";
+        import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
         const meta = {
           title: "automatic/calculated/title",
           component: Button

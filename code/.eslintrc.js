@@ -177,5 +177,28 @@ module.exports = {
         'local-rules/no-duplicated-error-codes': 'error',
       },
     },
+    {
+      files: ['./e2e-tests/*.ts'],
+      extends: ['plugin:playwright/recommended'],
+      rules: {
+        'playwright/no-skipped-test': [
+          'warn',
+          {
+            allowConditional: true,
+          },
+        ],
+        'playwright/no-raw-locators': 'off', // TODO: enable this, requires the UI to actually be accessible
+        'playwright/prefer-comparison-matcher': 'error',
+        'playwright/prefer-equality-matcher': 'error',
+        'playwright/prefer-hooks-on-top': 'error',
+        'playwright/prefer-strict-equal': 'error',
+        'playwright/prefer-to-be': 'error',
+        'playwright/prefer-to-contain': 'error',
+        'playwright/prefer-to-have-count': 'error',
+        'playwright/prefer-to-have-length': 'error',
+        'playwright/require-to-throw-message': 'error',
+        'playwright/require-top-level-describe': 'error',
+      },
+    },
   ],
 };

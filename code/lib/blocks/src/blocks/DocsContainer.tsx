@@ -1,15 +1,18 @@
 import type { FC, PropsWithChildren } from 'react';
 import React, { useEffect } from 'react';
-import { global } from '@storybook/global';
+
 import type { ThemeVars } from 'storybook/internal/theming';
 import { ThemeProvider, ensure as ensureTheme } from 'storybook/internal/theming';
 import type { Renderer } from 'storybook/internal/types';
+
+import { global } from '@storybook/global';
+
 import { DocsPageWrapper } from '../components';
+import { TableOfContents } from '../components/TableOfContents';
 import type { DocsContextProps } from './DocsContext';
 import { DocsContext } from './DocsContext';
 import { SourceContainer } from './SourceContainer';
 import { scrollToElement } from './utils';
-import { TableOfContents } from '../components/TableOfContents';
 
 const { document, window: globalWindow } = global;
 
@@ -38,7 +41,7 @@ export const DocsContainer: FC<PropsWithChildren<DocsContainerProps>> = ({
     try {
       url = new URL(globalWindow.parent.location.toString());
       if (url.hash) {
-        const element = document.getElementById(url.hash.substring(1));
+        const element = document.getElementById(decodeURIComponent(url.hash.substring(1)));
         if (element) {
           // Introducing a delay to ensure scrolling works when it's a full refresh.
           setTimeout(() => {

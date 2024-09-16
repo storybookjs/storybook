@@ -1,13 +1,14 @@
+import type { CompatibleString } from 'storybook/internal/types';
+
+import type {
+  BuilderOptions,
+  StorybookConfigWebpack,
+  TypescriptOptions as TypescriptOptionsBuilder,
+} from '@storybook/builder-webpack5';
 import type {
   StorybookConfig as StorybookConfigBase,
   TypescriptOptions as TypescriptOptionsReact,
 } from '@storybook/preset-vue3-webpack';
-import type {
-  StorybookConfigWebpack,
-  BuilderOptions,
-  TypescriptOptions as TypescriptOptionsBuilder,
-} from '@storybook/builder-webpack5';
-import type { CompatibleString } from 'storybook/internal/types';
 
 type FrameworkName = CompatibleString<'@storybook/vue3-webpack5'>;
 type BuilderName = CompatibleString<'@storybook/builder-webpack5'>;
@@ -35,9 +36,7 @@ type StorybookConfigFramework = {
     StorybookConfigBase['typescript'];
 };
 
-/**
- * The interface for Storybook configuration in `main.ts` files.
- */
+/** The interface for Storybook configuration in `main.ts` files. */
 export type StorybookConfig = Omit<
   StorybookConfigBase,
   keyof StorybookConfigWebpack | keyof StorybookConfigFramework

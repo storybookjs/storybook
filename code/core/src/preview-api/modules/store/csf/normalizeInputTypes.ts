@@ -6,6 +6,7 @@ import type {
   StrictGlobalTypes,
   StrictInputType,
 } from '@storybook/core/types';
+
 import mapValues from 'lodash/mapValues.js';
 
 const normalizeType = (type: InputType['type']): StrictInputType['type'] => {
@@ -21,7 +22,10 @@ export const normalizeInputType = (inputType: InputType, key: string): StrictInp
     name: key,
     ...rest,
   };
-  if (type) normalized.type = normalizeType(type);
+
+  if (type) {
+    normalized.type = normalizeType(type);
+  }
   if (control) {
     normalized.control = normalizeControl(control);
   } else if (control === false) {

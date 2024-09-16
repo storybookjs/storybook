@@ -1,12 +1,14 @@
-import type { PluginOption } from 'vite';
 import type { Options } from 'storybook/internal/types';
-import { dedent } from 'ts-dedent';
+
 import { hasVitePlugins } from '@storybook/builder-vite';
 
+import { dedent } from 'ts-dedent';
+import type { PluginOption } from 'vite';
+
 /**
- * A migration step that ensures the svelte-vite framework still supports SvelteKit,
- * but warns the user that they should use the sveltekit framework instead.
- * Should be removed when we decide to remove support completely for SvelteKit in svelte-vite
+ * A migration step that ensures the svelte-vite framework still supports SvelteKit, but warns the
+ * user that they should use the sveltekit framework instead. Should be removed when we decide to
+ * remove support completely for SvelteKit in svelte-vite
  */
 export async function handleSvelteKit(plugins: PluginOption[], options: Options) {
   /*

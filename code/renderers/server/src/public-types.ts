@@ -2,13 +2,14 @@ import type {
   AnnotatedStoryFn,
   Args,
   ComponentAnnotations,
-  StoryAnnotations,
-  StoryContext as GenericStoryContext,
   DecoratorFunction,
+  StoryContext as GenericStoryContext,
   LoaderFunction,
-  StrictArgs,
   ProjectAnnotations,
+  StoryAnnotations,
+  StrictArgs,
 } from 'storybook/internal/types';
+
 import type { ServerRenderer } from './types';
 
 export type { Args, ArgTypes, Parameters, StrictArgs } from 'storybook/internal/types';

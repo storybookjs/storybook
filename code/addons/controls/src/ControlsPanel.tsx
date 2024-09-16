@@ -1,19 +1,22 @@
-import { dequal as deepEqual } from 'dequal';
 import React, { useEffect, useMemo, useState } from 'react';
-import { global } from '@storybook/global';
+
 import {
+  useArgTypes,
   useArgs,
   useGlobals,
-  useArgTypes,
   useParameter,
   useStorybookState,
 } from 'storybook/internal/manager-api';
-import { PureArgsTable as ArgsTable, type PresetColor, type SortType } from '@storybook/blocks';
 import { styled } from 'storybook/internal/theming';
 import type { ArgTypes } from 'storybook/internal/types';
 
-import { PARAM_KEY } from './constants';
+import { PureArgsTable as ArgsTable, type PresetColor, type SortType } from '@storybook/blocks';
+import { global } from '@storybook/global';
+
+import { dequal as deepEqual } from 'dequal';
+
 import { SaveStory } from './SaveStory';
+import { PARAM_KEY } from './constants';
 
 // Remove undefined values (top-level only)
 const clean = (obj: { [key: string]: any }) =>
@@ -58,16 +61,21 @@ export const ControlsPanel = ({ saveStory, createStory }: ControlsPanelProps) =>
   // If the story is prepared, then show the args table
   // and reset the loading states
   useEffect(() => {
-    if (previewInitialized) setIsLoading(false);
+    if (previewInitialized) {
+      setIsLoading(false);
+    }
   }, [previewInitialized]);
 
   const hasControls = Object.values(rows).some((arg) => arg?.control);
 
   const withPresetColors = Object.entries(rows).reduce((acc, [key, arg]) => {
     const control = arg?.control;
-    if (typeof control !== 'object' || control?.type !== 'color' || control?.presetColors)
+
+    if (typeof control !== 'object' || control?.type !== 'color' || control?.presetColors) {
       acc[key] = arg;
-    else acc[key] = { ...arg, control: { ...control, presetColors } };
+    } else {
+      acc[key] = { ...arg, control: { ...control, presetColors } };
+    }
     return acc;
   }, {} as ArgTypes);
 

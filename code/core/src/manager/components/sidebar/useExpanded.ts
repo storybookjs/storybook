@@ -1,14 +1,17 @@
-import type { StoriesHash } from '@storybook/core/manager-api';
-import { useStorybookApi } from '@storybook/core/manager-api';
-import { STORIES_COLLAPSE_ALL, STORIES_EXPAND_ALL } from '@storybook/core/core-events';
-import { global } from '@storybook/global';
-import throttle from 'lodash/throttle.js';
 import type { Dispatch, MutableRefObject, Reducer } from 'react';
 import { useCallback, useEffect, useReducer } from 'react';
-import { matchesKeyCode, matchesModifiers } from '../../keybinding';
-import type { Highlight } from './types';
 
-import { isAncestor, getAncestorIds, getDescendantIds, scrollIntoView } from '../../utils/tree';
+import { global } from '@storybook/global';
+
+import { STORIES_COLLAPSE_ALL, STORIES_EXPAND_ALL } from '@storybook/core/core-events';
+import type { StoriesHash } from '@storybook/core/manager-api';
+import { useStorybookApi } from '@storybook/core/manager-api';
+
+import throttle from 'lodash/throttle.js';
+
+import { matchesKeyCode, matchesModifiers } from '../../keybinding';
+import { getAncestorIds, getDescendantIds, isAncestor, scrollIntoView } from '../../utils/tree';
+import type { Highlight } from './types';
 
 const { document } = global;
 
@@ -113,7 +116,10 @@ export const useExpanded = ({
         const element = containerRef.current?.querySelector(
           `[data-item-id="${ids[0]}"][data-ref-id="${refId}"]`
         );
-        if (element) highlightElement(element);
+
+        if (element) {
+          highlightElement(element);
+        }
       }
     },
     [containerRef, highlightElement, refId]
@@ -137,7 +143,9 @@ export const useExpanded = ({
   }, [data]);
 
   useEffect(() => {
-    if (!api) return noop;
+    if (!api) {
+      return noop;
+    }
 
     api.on(STORIES_COLLAPSE_ALL, collapseAll);
     api.on(STORIES_EXPAND_ALL, expandAll);
@@ -156,23 +164,40 @@ export const useExpanded = ({
     const navigateTree = throttle((event: KeyboardEvent) => {
       const highlightedItemId =
         highlightedRef.current?.refId === refId && highlightedRef.current?.itemId;
-      if (!isBrowsing || !containerRef.current || !highlightedItemId || event.repeat) return;
-      if (!matchesModifiers(false, event)) return;
+
+      if (!isBrowsing || !containerRef.current || !highlightedItemId || event.repeat) {
+        return;
+      }
+
+      if (!matchesModifiers(false, event)) {
+        return;
+      }
 
       const isEnter = matchesKeyCode('Enter', event);
       const isSpace = matchesKeyCode('Space', event);
       const isArrowLeft = matchesKeyCode('ArrowLeft', event);
       const isArrowRight = matchesKeyCode('ArrowRight', event);
-      if (!(isEnter || isSpace || isArrowLeft || isArrowRight)) return;
+
+      if (!(isEnter || isSpace || isArrowLeft || isArrowRight)) {
+        return;
+      }
 
       const highlightedElement = getElementByDataItemId(highlightedItemId);
-      if (!highlightedElement || highlightedElement.getAttribute('data-ref-id') !== refId) return;
+
+      if (!highlightedElement || highlightedElement.getAttribute('data-ref-id') !== refId) {
+        return;
+      }
 
       const target = event.target as Element;
+
       // @ts-expect-error (non strict)
-      if (!isAncestor(menuElement, target) && !isAncestor(target, menuElement)) return;
+      if (!isAncestor(menuElement, target) && !isAncestor(target, menuElement)) {
+        return;
+      }
       if (target.hasAttribute('data-action')) {
-        if (isEnter || isSpace) return;
+        if (isEnter || isSpace) {
+          return;
+        }
         (target as HTMLButtonElement).blur();
       }
 

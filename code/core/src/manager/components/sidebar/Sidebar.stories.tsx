@@ -1,18 +1,18 @@
 import React from 'react';
 
+import type { API_StatusState, Addon_SidebarTopType } from '@storybook/core/types';
+import type { Meta, StoryObj } from '@storybook/react';
+import { expect, fn, userEvent, within } from '@storybook/test';
+
 import type { IndexHash, State } from '@storybook/core/manager-api';
-import { ManagerContext, types } from '@storybook/core/manager-api';
-import type { StoryObj, Meta } from '@storybook/react';
-import { within, userEvent, expect, fn } from '@storybook/test';
-import type { Addon_SidebarTopType } from '@storybook/core/types';
-import { Button, IconButton } from '@storybook/core/components';
-import { FaceHappyIcon } from '@storybook/icons';
-import { Sidebar, DEFAULT_REF_ID } from './Sidebar';
+import { ManagerContext } from '@storybook/core/manager-api';
+
+import { LayoutProvider } from '../layout/LayoutProvider';
 import { standardData as standardHeaderData } from './Heading.stories';
+import { IconSymbols } from './IconSymbols';
+import { DEFAULT_REF_ID, Sidebar } from './Sidebar';
 import { mockDataset } from './mockdata';
 import type { RefType } from './types';
-import { LayoutProvider } from '../layout/LayoutProvider';
-import { IconSymbols } from './IconSymbols';
 
 const wait = (ms: number) =>
   new Promise<void>((resolve) => {
@@ -25,6 +25,26 @@ const storyId = 'root-1-child-a2--grandchild-a1-1';
 
 export const simpleData = { menu, index, storyId };
 export const loadingData = { menu };
+
+const managerContext: any = {
+  state: {
+    docsOptions: {
+      defaultName: 'Docs',
+      autodocs: 'tag',
+      docsMode: false,
+    },
+  },
+  api: {
+    emit: fn().mockName('api::emit'),
+    on: fn().mockName('api::on'),
+    off: fn().mockName('api::off'),
+    getShortcutKeys: fn(() => ({ search: ['control', 'shift', 's'] })).mockName(
+      'api::getShortcutKeys'
+    ),
+    selectStory: fn().mockName('api::selectStory'),
+    experimental_setFilter: fn().mockName('api::experimental_setFilter'),
+  },
+};
 
 const meta = {
   component: Sidebar,
@@ -44,28 +64,7 @@ const meta = {
   },
   decorators: [
     (storyFn) => (
-      <ManagerContext.Provider
-        value={
-          {
-            state: {
-              docsOptions: {
-                defaultName: 'Docs',
-                autodocs: 'tag',
-                docsMode: false,
-              },
-            },
-            api: {
-              emit: fn().mockName('api::emit'),
-              on: fn().mockName('api::on'),
-              off: fn().mockName('api::off'),
-              getShortcutKeys: fn(() => ({ search: ['control', 'shift', 's'] })).mockName(
-                'api::getShortcutKeys'
-              ),
-              selectStory: fn().mockName('api::selectStory'),
-            },
-          } as any
-        }
-      >
+      <ManagerContext.Provider value={managerContext}>
         <LayoutProvider>
           <IconSymbols />
           {storyFn()}
@@ -73,6 +72,7 @@ const meta = {
       </ManagerContext.Provider>
     ),
   ],
+  globals: { sb_theme: 'side-by-side' },
 } satisfies Meta<typeof Sidebar>;
 
 export default meta;
@@ -143,6 +143,42 @@ export const WithRefs: Story = {
   },
 };
 
+export const WithRefsNarrow: Story = {
+  args: {
+    refs: {
+      wide: {
+        ...refs.optimized,
+        title: 'This is a ref with a very long title',
+      },
+    },
+  },
+  parameters: {
+    viewport: {
+      options: {
+        narrow: {
+          name: 'narrow',
+          styles: {
+            width: '400px',
+            height: '800px',
+          },
+        },
+      },
+    },
+    chromatic: {
+      modes: {
+        narrow: {
+          viewport: 400,
+        },
+      },
+    },
+  },
+  globals: {
+    viewport: {
+      value: 'narrow',
+    },
+  },
+};
+
 export const LoadingWithRefs: Story = {
   args: {
     ...Loading.args,
@@ -208,6 +244,14 @@ export const StatusesOpen: Story = {
 export const Searching: Story = {
   ...StatusesOpen,
   parameters: { chromatic: { delay: 2200 } },
+  globals: { sb_theme: 'light' },
+  decorators: [
+    (StoryFn) => (
+      <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
+        <StoryFn />
+      </div>
+    ),
+  ],
   play: async ({ canvasElement, step }) => {
     await step('wait 2000ms', () => wait(2000));
     const canvas = await within(canvasElement);
@@ -218,49 +262,38 @@ export const Searching: Story = {
 };
 
 export const Bottom: Story = {
-  args: {
-    bottom: [
-      {
-        id: '1',
-        type: types.experimental_SIDEBAR_BOTTOM,
-        render: () => (
-          <Button>
-            <FaceHappyIcon />
-            Custom addon A
-          </Button>
-        ),
-      },
-      {
-        id: '2',
-        type: types.experimental_SIDEBAR_BOTTOM,
-        render: () => (
-          <Button>
-            {' '}
-            <FaceHappyIcon />
-            Custom addon B
-          </Button>
-        ),
-      },
-      {
-        id: '3',
-        type: types.experimental_SIDEBAR_BOTTOM,
-        render: () => (
-          <IconButton>
-            {' '}
-            <FaceHappyIcon />
-          </IconButton>
-        ),
-      },
-    ],
-  },
+  decorators: [
+    (storyFn) => (
+      <ManagerContext.Provider
+        value={{
+          ...managerContext,
+          state: {
+            ...managerContext.state,
+            status: {
+              [storyId]: {
+                vitest: { status: 'warn', title: '', description: '' },
+                vta: { status: 'error', title: '', description: '' },
+              },
+              'root-1-child-a2--grandchild-a1-2': {
+                vitest: { status: 'warn', title: '', description: '' },
+              },
+            } satisfies API_StatusState,
+          },
+        }}
+      >
+        {storyFn()}
+      </ManagerContext.Provider>
+    ),
+  ],
 };
 
 /**
  * Given the following sequence of events:
+ *
  * 1. Story is selected at the top of the sidebar
  * 2. The sidebar is scrolled to the bottom
- * 3. Some re-rendering happens because of a changed state/prop
- * The sidebar should remain scrolled to the bottom
+ * 3. Some re-rendering happens because of a changed state/prop The sidebar should remain scrolled to
+ *    the bottom
  */
 export const Scrolled: Story = {
   parameters: {
@@ -273,12 +306,21 @@ export const Scrolled: Story = {
   args: {
     storyId: 'group-1--child-b1',
   },
+  globals: { sb_theme: 'light' },
+  decorators: [
+    (StoryFn) => (
+      <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
+        <StoryFn />
+      </div>
+    ),
+  ],
+
   render: (args) => {
     const [, setState] = React.useState(0);
     return (
       <>
         <button
-          style={{ position: 'absolute', zIndex: 10 }}
+          style={{ position: 'absolute', zIndex: 10, bottom: 0, right: 0 }}
           onClick={() => setState(() => Math.random())}
         >
           Change state

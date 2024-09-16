@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-viewport",
-  "version": "8.3.0-alpha.3",
+  "version": "8.4.0-alpha.0",
   "description": "Build responsive components by adjusting Storybook’s viewport size and orientation",
   "keywords": [
     "addon",
@@ -25,7 +25,6 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
@@ -48,15 +47,15 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/addon-bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
     "memoizerific": "^1.11.3"
   },
   "devDependencies": {
     "@storybook/global": "^5.0.0",
-    "@storybook/icons": "^1.2.5",
+    "@storybook/icons": "^1.2.10",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "typescript": "^5.3.2"
@@ -69,7 +68,6 @@
   },
   "bundler": {
     "exportEntries": [
-      "./src/models/index.ts",
       "./src/index.ts"
     ],
     "managerEntries": [

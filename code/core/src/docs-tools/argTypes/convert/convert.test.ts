@@ -1,11 +1,14 @@
-import { describe, it, expect } from 'vitest';
-import mapValues from 'lodash/mapValues.js';
-import { transformSync } from '@babel/core';
-import requireFromString from 'require-from-string';
-import fs from 'node:fs';
+import { readFileSync } from 'node:fs';
 
-import { convert } from './index';
+import { describe, expect, it } from 'vitest';
+
+import { transformSync } from '@storybook/core/babel';
+
+import mapValues from 'lodash/mapValues.js';
+import requireFromString from 'require-from-string';
+
 import { normalizeNewlines } from '../utils';
+import { convert } from './index';
 
 expect.addSnapshotSerializer({
   print: (val: any) => JSON.stringify(val, null, 2),
@@ -508,6 +511,7 @@ describe('storybook type system', () => {
       const input = readFixture('proptypes/scalars.js');
       expect(input).toMatchInlineSnapshot(`
         "import React from 'react';
+
         import PropTypes from 'prop-types';
 
         export const Component = (props) => <>JSON.stringify(props)</>;
@@ -544,6 +548,7 @@ describe('storybook type system', () => {
       const input = readFixture('proptypes/arrays.js');
       expect(input).toMatchInlineSnapshot(`
         "import React from 'react';
+
         import PropTypes from 'prop-types';
 
         export const Component = (props) => <>JSON.stringify(props)</>;
@@ -587,6 +592,7 @@ describe('storybook type system', () => {
       const input = readFixture('proptypes/enums.js');
       expect(input).toMatchInlineSnapshot(`
         "import React from 'react';
+
         import PropTypes from 'prop-types';
 
         export const Component = (props) => <>JSON.stringify(props)</>;
@@ -638,6 +644,7 @@ describe('storybook type system', () => {
       const input = readFixture('proptypes/misc.js');
       expect(input).toMatchInlineSnapshot(`
         "import React from 'react';
+
         import PropTypes from 'prop-types';
 
         export const Component = (props) => <>JSON.stringify(props)</>;
@@ -686,6 +693,7 @@ describe('storybook type system', () => {
       const input = readFixture('proptypes/objects.js');
       expect(input).toMatchInlineSnapshot(`
         "import React from 'react';
+
         import PropTypes from 'prop-types';
 
         export const Component = (props) => <>JSON.stringify(props)</>;
@@ -743,6 +751,7 @@ describe('storybook type system', () => {
       const input = readFixture('proptypes/react.js');
       expect(input).toMatchInlineSnapshot(`
         "import React from 'react';
+
         import PropTypes from 'prop-types';
 
         export const Component = (props) => <>JSON.stringify(props)</>;
@@ -778,7 +787,7 @@ describe('storybook type system', () => {
 });
 
 const readFixture = (fixture: string) =>
-  fs.readFileSync(`${__dirname}/__testfixtures__/${fixture}`).toString();
+  readFileSync(`${__dirname}/__testfixtures__/${fixture}`).toString();
 
 const transformToModule = (inputCode: string) => {
   const options = {

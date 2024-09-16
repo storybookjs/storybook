@@ -1,8 +1,12 @@
+import { join, relative } from 'node:path';
+
+import { getDirectoryFromWorkingDir } from '@storybook/core/common';
+
+import { logger } from '@storybook/core/node-logger';
+
 import chalk from 'chalk';
 import fs from 'fs-extra';
-import { join, relative } from 'node:path';
-import { logger } from '@storybook/core/node-logger';
-import { getDirectoryFromWorkingDir } from '@storybook/core/common';
+
 import { parseStaticDir } from './server-statics';
 
 export async function copyAllStaticFiles(staticDirs: any[] | undefined, outputDir: string) {
@@ -28,7 +32,9 @@ export async function copyAllStaticFiles(staticDirs: any[] | undefined, outputDi
             filter: (_, dest) => !skipPaths.includes(dest),
           });
         } catch (e) {
-          if (e instanceof Error) logger.error(e.message);
+          if (e instanceof Error) {
+            logger.error(e.message);
+          }
           process.exit(-1);
         }
       })

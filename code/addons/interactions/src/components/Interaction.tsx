@@ -1,16 +1,18 @@
 import * as React from 'react';
+
 import { IconButton, TooltipNote, WithTooltip } from 'storybook/internal/components';
-import { type Call, CallStates, type ControlStates } from '@storybook/instrumenter';
 import { styled, typography } from 'storybook/internal/theming';
-import { transparentize } from 'polished';
 
 import { ListUnorderedIcon } from '@storybook/icons';
+import { type Call, CallStates, type ControlStates } from '@storybook/instrumenter';
+
+import { transparentize } from 'polished';
+
+import { isChaiError, isJestError, useAnsiToHtmlFilter } from '../utils';
+import type { Controls } from './InteractionsPanel';
 import { MatcherResult } from './MatcherResult';
 import { MethodCall } from './MethodCall';
 import { StatusIcon } from './StatusIcon';
-
-import type { Controls } from './InteractionsPanel';
-import { isChaiError, isJestError } from '../utils';
 
 const MethodCallWrapper = styled.div(() => ({
   fontFamily: typography.fonts.mono,
@@ -114,6 +116,7 @@ const RowMessage = styled('div')(({ theme }) => ({
 }));
 
 export const Exception = ({ exception }: { exception: Call['exception'] }) => {
+  const filter = useAnsiToHtmlFilter();
   if (isJestError(exception)) {
     return <MatcherResult {...exception} />;
   }
@@ -133,7 +136,7 @@ export const Exception = ({ exception }: { exception: Call['exception'] }) => {
   const more = paragraphs.length > 1;
   return (
     <RowMessage>
-      <pre>{paragraphs[0]}</pre>
+      <pre dangerouslySetInnerHTML={{ __html: filter.toHtml(paragraphs[0]) }}></pre>
       {more && <p>See the full stack trace in the browser console.</p>}
     </RowMessage>
   );
@@ -163,7 +166,9 @@ export const Interaction = ({
   const [isHovered, setIsHovered] = React.useState(false);
   const isInteractive = !controlStates.goto || !call.interceptable || !!call.ancestors.length;
 
-  if (isHidden) return null;
+  if (isHidden) {
+    return null;
+  }
 
   return (
     <RowContainer call={call} pausedAt={pausedAt}>

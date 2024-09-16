@@ -1,4 +1,5 @@
 import { cache } from '@storybook/core/common';
+
 import type { EventType } from './types';
 
 interface UpgradeSummary {
@@ -53,7 +54,9 @@ export const getPrecedingUpgrade = async (events: any = undefined) => {
   const lastUpgradeEvent = lastEvent(lastEvents, UPGRADE_EVENTS);
   const lastRunEvent = lastEvent(lastEvents, RUN_EVENTS);
 
-  if (!lastUpgradeEvent) return undefined;
+  if (!lastUpgradeEvent) {
+    return undefined;
+  }
 
   return !lastRunEvent?.timestamp || lastUpgradeEvent.timestamp > lastRunEvent.timestamp
     ? upgradeFields(lastUpgradeEvent)

@@ -1,15 +1,17 @@
-import { storyNameFromExport, sanitize } from '@storybook/csf';
+import { sanitize, storyNameFromExport } from '@storybook/csf';
+
 import mapKeys from 'lodash/mapKeys.js';
+
+import { extractSource } from '../extract-source';
 import { patchNode } from './parse-helpers';
 import getParser from './parsers';
 import {
-  splitSTORYOF,
   findAddsMap,
-  splitExports,
-  popParametersObjectFromDefaultExport,
   findExportsMap as generateExportsMap,
+  popParametersObjectFromDefaultExport,
+  splitExports,
+  splitSTORYOF,
 } from './traverse-helpers';
-import { extractSource } from '../extract-source';
 
 export function sanitizeSource(source) {
   return JSON.stringify(source, null, 2)
@@ -45,9 +47,18 @@ function generateSourceWithoutUglyComments(source, { comments, uglyCommentsRegex
 function prettifyCode(source, { prettierConfig, parser, filepath }) {
   let config = prettierConfig;
   let foundParser = null;
-  if (parser === 'flow') foundParser = 'flow';
-  if (parser === 'javascript' || /jsx?/.test(parser)) foundParser = 'javascript';
-  if (parser === 'typescript' || /tsx?/.test(parser)) foundParser = 'typescript';
+
+  if (parser === 'flow') {
+    foundParser = 'flow';
+  }
+
+  if (parser === 'javascript' || /jsx?/.test(parser)) {
+    foundParser = 'javascript';
+  }
+
+  if (parser === 'typescript' || /tsx?/.test(parser)) {
+    foundParser = 'typescript';
+  }
 
   if (!config.parser) {
     config = {
@@ -145,7 +156,9 @@ export function generateStorySource({ source, ...options }) {
 }
 
 function transformLocationMapToIds(parameters) {
-  if (!parameters?.locationsMap) return parameters;
+  if (!parameters?.locationsMap) {
+    return parameters;
+  }
   const locationsMap = mapKeys(parameters.locationsMap, (_value, key) => {
     return sanitize(storyNameFromExport(key));
   });

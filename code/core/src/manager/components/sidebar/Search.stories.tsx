@@ -1,16 +1,19 @@
 import React from 'react';
-import type { StoryFn, Meta } from '@storybook/react';
+
+import type { Meta, StoryFn } from '@storybook/react';
+
 import type { API } from '@storybook/core/manager-api';
 import { ManagerContext } from '@storybook/core/manager-api';
+
 import { action } from '@storybook/addon-actions';
 
-import { index } from './mockdata.large';
+import { IconSymbols } from './IconSymbols';
 import { Search } from './Search';
 import { SearchResults } from './SearchResults';
 import { noResults } from './SearchResults.stories';
 import { DEFAULT_REF_ID } from './Sidebar';
+import { index } from './mockdata.large';
 import type { Selection } from './types';
-import { IconSymbols } from './IconSymbols';
 
 const refId = DEFAULT_REF_ID;
 const data = { [refId]: { id: refId, url: '/', index, previewInitialized: true } };
@@ -24,6 +27,7 @@ const meta = {
   component: Search,
   title: 'Sidebar/Search',
   parameters: { layout: 'fullscreen' },
+  globals: { sb_theme: 'side-by-side' },
   decorators: [
     (storyFn: any) => (
       <div style={{ padding: 20, maxWidth: '230px' }}>

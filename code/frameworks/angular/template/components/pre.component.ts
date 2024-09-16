@@ -5,21 +5,15 @@ import { Component, Input } from '@angular/core';
   template: `<pre data-testid="pre" [ngStyle]="style">{{ finalText }}</pre>`,
 })
 export default class PreComponent {
-  /**
-   * Styles to apply to the component
-   */
+  /** Styles to apply to the component */
   @Input()
   style?: Object;
 
-  /**
-   * An object to render
-   */
+  /** An object to render */
   @Input()
   object?: Object;
 
-  /**
-   * The code to render
-   */
+  /** The code to render */
   @Input()
   text?: string;
 

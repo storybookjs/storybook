@@ -1,9 +1,12 @@
-import { stringifyStream } from '@discoveryjs/json-ext';
-import { logger } from '@storybook/core/node-logger';
+import { join } from 'node:path';
+
 import type { Stats } from '@storybook/core/types';
+
+import { logger } from '@storybook/core/node-logger';
+
+import { stringifyStream } from '@discoveryjs/json-ext';
 import chalk from 'chalk';
 import fs from 'fs-extra';
-import path from 'node:path';
 
 export async function outputStats(directory: string, previewStats?: any, managerStats?: any) {
   if (previewStats) {
@@ -17,7 +20,7 @@ export async function outputStats(directory: string, previewStats?: any, manager
 }
 
 export const writeStats = async (directory: string, name: string, stats: Stats) => {
-  const filePath = path.join(directory, `${name}-stats.json`);
+  const filePath = join(directory, `${name}-stats.json`);
   const { chunks, ...data } = stats.toJson(); // omit chunks, which is about half of the total data
   await new Promise((resolve, reject) => {
     stringifyStream(data, null, 2)

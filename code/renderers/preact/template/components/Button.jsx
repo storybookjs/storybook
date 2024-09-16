@@ -1,5 +1,6 @@
 /**
  * Button component
+ *
  * @param {object} props
  * @param {string} props.label
  * @param {function} props.onClick

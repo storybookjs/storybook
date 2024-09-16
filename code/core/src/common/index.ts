@@ -1,3 +1,5 @@
+import versions from './versions';
+
 /// <reference types="@types/compression" />
 
 export * from './presets';
@@ -38,9 +40,10 @@ export * from './utils/validate-configuration-files';
 export * from './utils/satisfies';
 export * from './utils/strip-abs-node-modules-path';
 export * from './utils/formatter';
+export * from './utils/get-story-id';
+export * from './utils/posix';
 export * from './js-package-manager';
 
-import versions from './versions';
 export { versions };
 
 export { createFileSystemCache } from './utils/file-cache';

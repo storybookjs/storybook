@@ -1,13 +1,10 @@
-import { global } from '@storybook/global';
 import type { FC, MouseEventHandler } from 'react';
-import React, { useMemo, useCallback, forwardRef } from 'react';
+import React, { forwardRef, useCallback, useMemo } from 'react';
 
 import type { TooltipLinkListLink } from '@storybook/core/components';
-import { WithTooltip, Spaced, TooltipLinkList } from '@storybook/core/components';
+import { Spaced, TooltipLinkList, WithTooltip } from '@storybook/core/components';
 import { styled, useTheme } from '@storybook/core/theming';
-import { transparentize } from 'polished';
-import { useStorybookApi } from '@storybook/core/manager-api';
-
+import { global } from '@storybook/global';
 import {
   AlertIcon,
   ChevronDownIcon,
@@ -18,9 +15,13 @@ import {
   MarkupIcon,
   TimeIcon,
 } from '@storybook/icons';
-import type { RefType } from './types';
+
+import { useStorybookApi } from '@storybook/core/manager-api';
+
+import { transparentize } from 'polished';
 
 import type { getStateType } from '../../utils/tree';
+import type { RefType } from './types';
 
 const { document, window: globalWindow } = global;
 

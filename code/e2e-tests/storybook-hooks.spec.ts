@@ -1,7 +1,11 @@
+/* eslint-disable playwright/expect-expect */
+
 /* eslint-disable no-underscore-dangle */
-import { join } from 'node:path';
 import { promises as fs } from 'node:fs';
+import { join } from 'node:path';
+
 import { test } from '@playwright/test';
+
 import { SbPage } from './util';
 
 declare global {

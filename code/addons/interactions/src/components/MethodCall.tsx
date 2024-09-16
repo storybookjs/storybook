@@ -1,8 +1,11 @@
-import { ObjectInspector } from '@devtools-ds/object-inspector';
-import type { Call, CallRef, ElementRef } from '@storybook/instrumenter';
-import { useTheme } from 'storybook/internal/theming';
 import type { ReactElement } from 'react';
 import React, { Fragment } from 'react';
+
+import { useTheme } from 'storybook/internal/theming';
+
+import type { Call, CallRef, ElementRef } from '@storybook/instrumenter';
+
+import { ObjectInspector } from '@devtools-ds/object-inspector';
 
 const colorsLight = {
   base: '#444',
@@ -66,7 +69,9 @@ const useThemeColors = () => {
 const special = /[^A-Z0-9]/i;
 const trimEnd = /[\s.,…]+$/gm;
 const ellipsize = (string: string, maxlength: number): string => {
-  if (string.length <= maxlength) return string;
+  if (string.length <= maxlength) {
+    return string;
+  }
   for (let i = maxlength - 1; i >= 0; i -= 1) {
     if (special.test(string[i]) && i > 10) {
       return `${string.slice(0, i).replace(trimEnd, '')}…`;
@@ -99,10 +104,7 @@ export const Node = ({
 }: {
   value: any;
   nested?: boolean;
-  /**
-   * Shows an object inspector instead of just printing the object.
-   * Only available for Objects
-   */
+  /** Shows an object inspector instead of just printing the object. Only available for Objects */
   showObjectInspector?: boolean;
   callsById?: Map<Call['id'], Call>;
   [props: string]: any;
@@ -419,7 +421,9 @@ export const MethodCall = ({
   callsById: Map<Call['id'], Call>;
 }) => {
   // Call might be undefined during initial render, can be safely ignored.
-  if (!call) return null;
+  if (!call) {
+    return null;
+  }
 
   if (call.method === 'step' && call.path.length === 0) {
     return <StepNode label={call.args[0]} />;

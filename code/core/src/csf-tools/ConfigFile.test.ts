@@ -1,7 +1,10 @@
+import { describe, expect, it } from 'vitest';
+
+import { babelPrint } from '@storybook/core/babel';
+
 import { dedent } from 'ts-dedent';
-import { describe, it, expect } from 'vitest';
+
 import { loadConfig, printConfig } from './ConfigFile';
-import { babelPrint } from './babelParse';
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),
@@ -789,6 +792,26 @@ describe('ConfigFile', () => {
           const preview = {
             bar: { a: 1 }
           } satisfies Foo;
+          export default preview;
+        `);
+      });
+
+      it('root globals as const satisfies as variable', () => {
+        expect(
+          removeField(
+            ['globals'],
+            dedent`
+              const preview = {
+                globals: { a: 1 },
+                bar: { a: 1 }
+              } as const satisfies Foo;
+              export default preview;
+            `
+          )
+        ).toMatchInlineSnapshot(`
+          const preview = {
+            bar: { a: 1 }
+          } as const satisfies Foo;
           export default preview;
         `);
       });

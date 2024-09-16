@@ -1,12 +1,13 @@
 import type {
-  Renderer,
+  BeforeAll,
+  Canvas,
+  CleanupCallback,
   ProjectAnnotations as CsfProjectAnnotations,
   DecoratorFunction,
+  Globals,
   LoaderFunction,
-  CleanupCallback,
+  Renderer,
   StepRunner,
-  Canvas,
-  BeforeAll,
 } from '@storybook/csf';
 
 import type {
@@ -114,6 +115,7 @@ export type PreparedStory<TRenderer extends Renderer = Renderer> =
     testingLibraryRender?: (...args: never[]) => unknown;
     renderToCanvas?: ProjectAnnotations<TRenderer>['renderToCanvas'];
     usesMount: boolean;
+    storyGlobals: Globals;
   };
 
 export type PreparedMeta<TRenderer extends Renderer = Renderer> = Omit<

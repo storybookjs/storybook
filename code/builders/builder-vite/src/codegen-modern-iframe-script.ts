@@ -1,7 +1,8 @@
-import { loadPreviewOrConfigFile, getFrameworkName } from 'storybook/internal/common';
+import { getFrameworkName, loadPreviewOrConfigFile } from 'storybook/internal/common';
 import type { Options, PreviewAnnotation } from 'storybook/internal/types';
-import { virtualStoriesFile, virtualAddonSetupFile } from './virtual-file-names';
+
 import { processPreviewAnnotation } from './utils/process-preview-annotation';
+import { SB_VIRTUAL_FILES, getResolvedVirtualModuleId } from './virtual-file-names';
 
 export async function generateModernIframeScriptCode(options: Options, projectRoot: string) {
   const { presets, configDir } = options;
@@ -44,7 +45,7 @@ export async function generateModernIframeScriptCode(options: Options, projectRo
 
     return `
     if (import.meta.hot) {
-      import.meta.hot.accept('${virtualStoriesFile}', (newModule) => {
+      import.meta.hot.accept('${getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE)}', (newModule) => {
       // importFn has changed so we need to patch the new one in
       window.__STORYBOOK_PREVIEW__.onStoriesChanged({ importFn: newModule.importFn });
       });
@@ -58,15 +59,17 @@ export async function generateModernIframeScriptCode(options: Options, projectRo
   };
 
   /**
-   * This code is largely taken from https://github.com/storybookjs/storybook/blob/d1195cbd0c61687f1720fefdb772e2f490a46584/builders/builder-webpack4/src/preview/virtualModuleModernEntry.js.handlebars
-   * Some small tweaks were made to `getProjectAnnotations` (since `import()` needs to be resolved asynchronously)
-   * and the HMR implementation has been tweaked to work with Vite.
+   * This code is largely taken from
+   * https://github.com/storybookjs/storybook/blob/d1195cbd0c61687f1720fefdb772e2f490a46584/builders/builder-webpack4/src/preview/virtualModuleModernEntry.js.handlebars
+   * Some small tweaks were made to `getProjectAnnotations` (since `import()` needs to be resolved
+   * asynchronously) and the HMR implementation has been tweaked to work with Vite.
+   *
    * @todo Inline variable and remove `noinspection`
    */
   const code = `
   import { composeConfigs, PreviewWeb, ClientApi } from 'storybook/internal/preview-api';
-  import '${virtualAddonSetupFile}';
-  import { importFn } from '${virtualStoriesFile}';
+  import '${SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE}';
+  import { importFn } from '${SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE}';
   
     ${getPreviewAnnotationsFunction}
 

@@ -1,10 +1,13 @@
-import chalk from 'chalk';
+import type { VersionCheck } from '@storybook/core/types';
+
 import { colors } from '@storybook/core/node-logger';
+
 import boxen from 'boxen';
-import { dedent } from 'ts-dedent';
+import chalk from 'chalk';
 import Table from 'cli-table3';
 import prettyTime from 'pretty-hrtime';
-import type { VersionCheck } from '@storybook/core/types';
+import { dedent } from 'ts-dedent';
+
 import { createUpdateMessage } from './update-check';
 
 export function outputStartupInformation(options: {

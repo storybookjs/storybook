@@ -6,8 +6,8 @@ export const WITHOUT_SELECTOR_DATA = new InjectionToken<{ color: string; name: s
 
 @Component({
   template: `My name in color :
-    <div [style.color]="color">{{ name }}</div>
-    <ng-content></ng-content> <ng-content></ng-content>`,
+<div [style.color]="color">{{ name }}</div>
+<ng-content></ng-content> <ng-content></ng-content>`,
 })
 export class WithoutSelectorComponent {
   color = '#1e88e5';

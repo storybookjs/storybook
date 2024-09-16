@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-
 import type {
   ProjectAnnotations,
   Renderer,
@@ -26,9 +25,7 @@ export type Store_CSFExports<TRenderer extends Renderer = Renderer, TArgs extend
   __namedExportsOrder?: string[];
 };
 
-/**
- * A story function with partial args, used internally by composeStory
- */
+/** A story function with partial args, used internally by composeStory */
 export type PartialArgsStoryFn<TRenderer extends Renderer = Renderer, TArgs = Args> = (
   args?: TArgs
 ) => (TRenderer & {
@@ -36,7 +33,8 @@ export type PartialArgsStoryFn<TRenderer extends Renderer = Renderer, TArgs = Ar
 })['storyResult'];
 
 /**
- * A story that got recomposed for portable stories, containing all the necessary data to be rendered in external environments
+ * A story that got recomposed for portable stories, containing all the necessary data to be
+ * rendered in external environments
  */
 export type ComposedStoryFn<
   TRenderer extends Renderer = Renderer,
@@ -44,7 +42,8 @@ export type ComposedStoryFn<
 > = PartialArgsStoryFn<TRenderer, TArgs> & {
   args: TArgs;
   id: StoryId;
-  play: (context?: Partial<StoryContext<TRenderer, Partial<TArgs>>>) => Promise<void>;
+  play?: (context?: Partial<StoryContext<TRenderer, Partial<TArgs>>>) => Promise<void>;
+  run: (context?: Partial<StoryContext<TRenderer, Partial<TArgs>>>) => Promise<void>;
   load: () => Promise<void>;
   storyName: string;
   parameters: Parameters;
@@ -52,8 +51,8 @@ export type ComposedStoryFn<
   tags: Tag[];
 };
 /**
- * Based on a module of stories, it returns all stories within it, filtering non-stories
- * Each story will have partial props, as their props should be handled when composing stories
+ * Based on a module of stories, it returns all stories within it, filtering non-stories Each story
+ * will have partial props, as their props should be handled when composing stories
  */
 export type StoriesWithPartialProps<TRenderer extends Renderer, TModule> = {
   // T represents the whole ES module of a stories file. K of T means named exports (basically the Story type)
@@ -68,7 +67,8 @@ export type StoriesWithPartialProps<TRenderer extends Renderer, TModule> = {
 };
 
 /**
- * Type used for integrators of portable stories, as reference when creating their own composeStory function
+ * Type used for integrators of portable stories, as reference when creating their own composeStory
+ * function
  */
 export interface ComposeStoryFn<TRenderer extends Renderer = Renderer, TArgs extends Args = Args> {
   (

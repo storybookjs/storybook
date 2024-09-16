@@ -125,6 +125,10 @@ packages:
     access: $all
     publish: $all
 
+  'create-storybook':
+    access: $all
+    publish: $all
+
   'storybook':
     access: $all
     publish: $all

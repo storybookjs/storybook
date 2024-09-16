@@ -82,6 +82,21 @@ exports[`Legacy Portable Stories API > Renders CSF3Primary story 1`] = `
 </body>
 `;
 
+exports[`Legacy Portable Stories API > Renders HooksStory story 1`] = `
+<body>
+  <div>
+    <input
+      data-testid="input"
+    />
+    <br />
+    <button>
+      I am 
+      clicked
+    </button>
+  </div>
+</body>
+`;
+
 exports[`Legacy Portable Stories API > Renders LoaderStory story 1`] = `
 <body>
   <div>
@@ -96,6 +111,71 @@ exports[`Legacy Portable Stories API > Renders LoaderStory story 1`] = `
       >
         mockFn return value
       </div>
+    </div>
+  </div>
+</body>
+`;
+
+exports[`Legacy Portable Stories API > Renders Modal story 1`] = `
+<body>
+  <div>
+    <button
+      id="openModalButton"
+    >
+      Open Modal
+    </button>
+  </div>
+  <div
+    id="modal-root"
+  >
+    <div
+      role="dialog"
+      style="position: fixed; top: 20%; left: 50%; transform: translate(-50%, -20%); background-color: white; padding: 20px; z-index: 1000; border: 2px solid black; border-radius: 5px;"
+    >
+      <div
+        style="margin-bottom: 10px;"
+      >
+        <p>
+          This is a modal!
+        </p>
+      </div>
+      <button>
+        Close
+      </button>
+    </div>
+  </div>
+</body>
+`;
+
+exports[`Legacy Portable Stories API > Renders MountInPlayFunction story 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="loaded-data"
+    >
+      loaded data
+    </div>
+    <div
+      data-testid="spy-data"
+    >
+      mockFn return value
+    </div>
+  </div>
+</body>
+`;
+
+exports[`Legacy Portable Stories API > Renders MountInPlayFunctionThrow story 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="loaded-data"
+    >
+      loaded data
+    </div>
+    <div
+      data-testid="spy-data"
+    >
+      mockFn return value
     </div>
   </div>
 </body>

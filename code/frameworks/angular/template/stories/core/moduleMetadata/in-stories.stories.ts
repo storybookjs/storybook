@@ -1,5 +1,6 @@
 import { Meta, StoryFn } from '@storybook/angular';
-import { TokenComponent, ITEMS, DEFAULT_NAME } from './angular-src/token.component';
+
+import { DEFAULT_NAME, ITEMS, TokenComponent } from './angular-src/token.component';
 
 export const Individual1: StoryFn = () => ({
   template: `<storybook-simple-token-component [name]="name"></storybook-simple-token-component>`,

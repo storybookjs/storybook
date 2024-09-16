@@ -1,6 +1,7 @@
+import { toId } from '@storybook/csf';
+
 import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
-import { toId } from '@storybook/csf';
 
 export class SbPage {
   readonly page: Page;
@@ -23,9 +24,7 @@ export class SbPage {
     }
   }
 
-  /**
-   * Visit a story via the URL instead of selecting from the sidebar.
-   */
+  /** Visit a story via the URL instead of selecting from the sidebar. */
   async deepLinkToStory(baseURL: string, title: string, name: 'docs' | string) {
     const titleId = toId(title);
     const storyId = toId(name);
@@ -37,18 +36,16 @@ export class SbPage {
     await this.previewRoot();
   }
 
-  /**
-   * Visit a story by selecting it from the sidebar.
-   */
+  /** Visit a story by selecting it from the sidebar. */
   async navigateToStory(title: string, name: string, viewMode?: 'docs' | 'story') {
     await this.openComponent(title);
 
     const titleId = toId(title);
     const storyId = toId(name);
     const storyLinkId = `#${titleId}--${storyId}`;
-    await this.page.waitForSelector(storyLinkId);
+    await this.page.locator(storyLinkId).waitFor();
     const storyLink = this.page.locator('*', { has: this.page.locator(`> ${storyLinkId}`) });
-    await storyLink.click({ force: true });
+    await storyLink.click();
 
     await this.page.waitForURL((url) =>
       url.search.includes(
@@ -56,8 +53,8 @@ export class SbPage {
       )
     );
 
-    const selected = await storyLink.getAttribute('data-selected');
-    await expect(selected).toBe('true');
+    const selected = storyLink;
+    await expect(selected).toHaveAttribute('data-selected', 'true');
 
     await this.previewRoot();
   }
@@ -68,16 +65,16 @@ export class SbPage {
     const titleId = toId(title);
     const storyId = toId(name);
     const storyLinkId = `#${titleId}-${storyId}--docs`;
-    await this.page.waitForSelector(storyLinkId);
+    await this.page.locator(storyLinkId).waitFor();
     const storyLink = this.page.locator('*', { has: this.page.locator(`> ${storyLinkId}`) });
-    await storyLink.click({ force: true });
+    await storyLink.click();
 
     await this.page.waitForURL((url) =>
       url.search.includes(`path=/docs/${titleId}-${storyId}--docs`)
     );
 
-    const selected = await storyLink.getAttribute('data-selected');
-    await expect(selected).toBe('true');
+    const selected = storyLink;
+    await expect(selected).toHaveAttribute('data-selected', 'true');
 
     await this.previewRoot();
   }
@@ -95,6 +92,17 @@ export class SbPage {
       };
       window.sessionStorage.setItem('@storybook/manager/store', JSON.stringify(storeState));
     }, {});
+
+    // disable all transitions to avoid flakiness
+    await this.page.addStyleTag({
+      content: `
+            *,
+            *::before,
+            *::after {
+              transition: none !important;
+            }
+          `,
+    });
     const root = this.previewRoot();
     const docsLoadingPage = root.locator('.sb-preparing-docs');
     const storyLoadingPage = root.locator('.sb-preparing-story');
@@ -116,7 +124,7 @@ export class SbPage {
   }
 
   async viewAddonPanel(name: string) {
-    const tabs = await this.page.locator('[role=tablist] button[role=tab]');
+    const tabs = this.page.locator('[role=tablist] button[role=tab]');
     const tab = tabs.locator(`text=/^${name}/`);
     await tab.click();
   }

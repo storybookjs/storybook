@@ -4,7 +4,7 @@ import { Meta, StoryObj } from '@storybook/angular';
 @Component({
   selector: 'on-destroy',
   template: `Current time: {{ time }} <br />
-    📝 The current time in console should no longer display after a change of story`,
+📝 The current time in console should no longer display after a change of story`,
 })
 class OnDestroyComponent implements OnInit, OnDestroy {
   time?: string;

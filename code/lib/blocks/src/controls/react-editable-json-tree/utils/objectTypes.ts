@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-type-constraint */
 /**
  * Get Object type.
+ *
  * @param obj {*} object to get type
- * @returns {*}
+ * @returns {any}
  */
 export function getObjectType(obj: any) {
   if (
@@ -18,9 +19,10 @@ export function getObjectType(obj: any) {
 
 /**
  * Is Component will change ?
+ *
  * @param oldValue {*} old value
  * @param newValue {*} new value
- * @returns {boolean} result
+ * @returns {boolean} Result
  */
 export function isComponentWillChange<T extends unknown>(oldValue: T, newValue: T): boolean {
   const oldType = getObjectType(oldValue);

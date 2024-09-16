@@ -1,9 +1,11 @@
 import React from 'react';
-import { actions as makeActions } from '@storybook/addon-actions';
 
 import type { Decorator } from '@storybook/react';
-import { ShortcutsScreen } from './shortcuts';
+
+import { actions as makeActions } from '@storybook/addon-actions';
+
 import { defaultShortcuts } from './defaultShortcuts';
+import { ShortcutsScreen } from './shortcuts';
 
 const actions = makeActions(
   'setShortcut',

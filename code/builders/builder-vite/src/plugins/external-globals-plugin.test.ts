@@ -1,4 +1,5 @@
-import { it, expect } from 'vitest';
+import { expect, it } from 'vitest';
+
 import { rewriteImport } from './external-globals-plugin';
 
 const packageName = '@storybook/package';
@@ -10,6 +11,22 @@ const cases = [
     packageName,
     input: `import { Rain, Jour as Day, Nuit as Night, Sun } from "${packageName}"`,
     output: `const { Rain, Jour: Day, Nuit: Night, Sun } = ${globals[packageName]}`,
+  },
+  {
+    globals,
+    packageName,
+    input: `import {
+      Rain,
+      Jour as Day,
+      Nuit as Night,
+      Sun
+    } from "${packageName}"`,
+    output: `const {
+      Rain,
+      Jour: Day,
+      Nuit: Night,
+      Sun
+    } = ${globals[packageName]}`,
   },
   {
     globals,

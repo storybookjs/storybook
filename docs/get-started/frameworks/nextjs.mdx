@@ -82,6 +82,42 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   {/* prettier-ignore-end */}
 
+  #### With Vite
+
+  (⚠️ **Experimental**)
+
+  You can use our freshly baked, experimental `@storybook/experimental-nextjs-vite` framework, which is based on Vite and removes the need for Webpack and Babel. It supports all of the features documented here.
+
+  <Callout variant="info">
+    Using the Next.js framework with Vite requires Next.js 14.1.0 or later.
+  </Callout>
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="nextjs-vite-install.md" />
+
+  {/* prettier-ignore-end */}
+
+  Then, update your `.storybook/main.js|ts` to change the framework property:
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="nextjs-vite-add-framework.md" />
+
+  {/* prettier-ignore-end */}
+
+  <Callout variant="info">
+    If your Storybook configuration contains custom Webpack operations in [`webpackFinal`](../../api/main-config/main-config-webpack-final.mdx), you will likely need to create equivalents in [`viteFinal`]((../../api/main-config/main-config-vite-final.mdx)).
+  </Callout>
+
+  Finally, if you were using Storybook plugins to integrate with Next.js, those are no longer necessary when using this framework and can be removed:
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="nextjs-vite-remove-addons.md" />
+
+  {/* prettier-ignore-end */}
+
   ## Run the Setup Wizard
 
   If all goes well, you should see a setup wizard that will help you get started with Storybook introducing you to the main concepts and features, including how the UI is organized, how to write your first story, and how to test your components' response to various inputs utilizing [controls](../../essentials/controls.mdx).
@@ -161,6 +197,12 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   const localRubikStorm = localFont({ src: './fonts/RubikStorm-Regular.ttf' });
   ```
+
+  #### `staticDir` mapping
+
+  <Callout variant="info">
+    You can safely skip this section if you are using [`@storybook/experimental-nextjs-vite`](#with-vite) instead of `@storybook/nextjs`. The Vite-based framework takes care of the mapping automatically.
+  </Callout>
 
   You have to tell Storybook where the `fonts` directory is located, via the [`staticDirs` configuration](../../api/main-config/main-config-static-dirs.mdx#with-configuration-objects). The `from` value is relative to the `.storybook` directory. The `to` value is relative to the execution context of Storybook. Very likely it is the root of your project.
 
@@ -714,6 +756,11 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   ## Custom Webpack config
 
+  <Callout variant="info">
+    You can safely skip this section if you are using `@storybook/experimental-nextjs-vite` instead of `@storybook/nextjs`.
+    The Vite-based Next.js framework does not support Webpack settings.
+  </Callout>
+
   Next.js comes with a lot of things for free out of the box like Sass support, but sometimes you add [custom Webpack config modifications to Next.js](https://nextjs.org/docs/pages/api-reference/next-config-js/webpack). This framework takes care of most of the Webpack modifications you would want to add. If Next.js supports a feature out of the box, then that feature will work out of the box in Storybook. If Next.js doesn't support something out of the box, but makes it easy to configure, then this framework will do the same for that thing for Storybook.
 
   Any Webpack modifications desired for Storybook should be made in [`.storybook/main.js|ts`](../../builders/webpack.mdx#extending-storybooks-webpack-config).
@@ -860,7 +907,7 @@ Storybook for Next.js is a [framework](../../contribute/framework.mdx) that make
 
   ### What if I'm using the Vite builder?
 
-  The `@storybook/nextjs` package abstracts the Webpack 5 builder and provides all the necessary Webpack configuration needed (and used internally) by Next.js. Webpack is currently the official builder in Next.js, and Next.js does not support Vite, therefore it is not possible to use Vite with `@storybook/nextjs`. You can use `@storybook/react-vite` framework instead, but at the cost of having a degraded experience, and we won't be able to provide you official support.
+  We have introduced experimental Vite builder support. Just install the experimental framework package `@storybook/experimental-nextjs-vite` and replace all instances of `@storybook/nextjs` with `@storybook/experimental-nextjs-vite`.
 
   ### Error: You are importing avif images, but you don't have sharp installed. You have to install sharp in order to use image optimization features in Next.js.
 

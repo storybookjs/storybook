@@ -1,11 +1,9 @@
 /* eslint-disable no-underscore-dangle */
-import type { CsfFile } from '@storybook/core/csf-tools';
-import * as t from '@babel/types';
-import bt from '@babel/traverse';
-import { SaveStoryError } from './utils';
+import { types as t, traverse } from '@storybook/core/babel';
 
-// @ts-expect-error (needed due to it's use of `exports.default`)
-const traverse = (bt.default || bt) as typeof bt;
+import type { CsfFile } from '@storybook/core/csf-tools';
+
+import { SaveStoryError } from './utils';
 
 type In = ReturnType<CsfFile['parse']>;
 

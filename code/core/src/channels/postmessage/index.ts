@@ -1,16 +1,18 @@
 /// <reference path="../../typings.d.ts" />
-
 import { global } from '@storybook/global';
-import * as EVENTS from '@storybook/core/core-events';
+
 import { logger, pretty } from '@storybook/core/client-logger';
+import * as EVENTS from '@storybook/core/core-events';
+
 import { isJSON, parse, stringify } from 'telejson';
 import invariant from 'tiny-invariant';
+
 import type {
-  ChannelTransport,
   BufferedEvent,
-  ChannelHandler,
-  Config,
   ChannelEvent,
+  ChannelHandler,
+  ChannelTransport,
+  Config,
 } from '../types';
 import { getEventSourceUrl } from './getEventSourceUrl';
 
@@ -56,8 +58,9 @@ export class PostMessageTransport implements ChannelTransport {
   }
 
   /**
-   * Sends `event` to the associated window. If the window does not yet exist
-   * the event will be stored in a buffer and sent when the window exists.
+   * Sends `event` to the associated window. If the window does not yet exist the event will be
+   * stored in a buffer and sent when the window exists.
+   *
    * @param event
    */
   send(event: ChannelEvent, options?: any): Promise<any> {

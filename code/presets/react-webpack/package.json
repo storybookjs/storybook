@@ -1,6 +1,6 @@
 {
   "name": "@storybook/preset-react-webpack",
-  "version": "8.3.0-alpha.3",
+  "version": "8.4.0-alpha.0",
   "description": "Storybook for React: Develop React Component in isolation with Hot Reloading",
   "keywords": [
     "storybook"
@@ -60,14 +60,14 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
     "@storybook/core-webpack": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/react-docgen-typescript-plugin": "1.0.6--canary.9.0c3f3b7.0",
-    "@types/node": "^18.0.0",
+    "@types/node": "^22.0.0",
     "@types/semver": "^7.3.4",
     "find-up": "^5.0.0",
     "fs-extra": "^11.1.0",

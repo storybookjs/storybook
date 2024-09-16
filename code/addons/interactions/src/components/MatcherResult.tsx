@@ -2,6 +2,7 @@ import React from 'react';
 
 import { styled, typography } from 'storybook/internal/theming';
 
+import { useAnsiToHtmlFilter } from '../utils';
 import { Node } from './MethodCall';
 
 const getParams = (line: string, fromIndex = 0): string => {
@@ -59,6 +60,7 @@ export const MatcherResult = ({
   message: string;
   style?: React.CSSProperties;
 }) => {
+  const filter = useAnsiToHtmlFilter();
   const lines = message.split('\n');
   return (
     <pre
@@ -131,7 +133,13 @@ export const MatcherResult = ({
           ];
         }
 
-        return [<span key={line + index}>{line}</span>, <br key={`br${index}`} />];
+        return [
+          <span
+            key={line + index}
+            dangerouslySetInnerHTML={{ __html: filter.toHtml(line) }}
+          ></span>,
+          <br key={`br${index}`} />,
+        ];
       })}
     </pre>
   );

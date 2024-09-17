@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join } from 'node:path';
 
 import type { Channel } from '@storybook/core/channels';
@@ -21,7 +23,6 @@ import type {
 import { readCsf } from '@storybook/core/csf-tools';
 import { logger } from '@storybook/core/node-logger';
 
-import { pathExists, readFile } from 'fs-extra';
 import { dedent } from 'ts-dedent';
 
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
@@ -75,14 +76,14 @@ export const favicon = async (
         if (targetEndpoint === '/') {
           const url = 'favicon.svg';
           const path = join(staticPath, url);
-          if (await pathExists(path)) {
+          if (existsSync(path)) {
             results.push(path);
           }
         }
         if (targetEndpoint === '/') {
           const url = 'favicon.ico';
           const path = join(staticPath, url);
-          if (await pathExists(path)) {
+          if (existsSync(path)) {
             results.push(path);
           }
         }
@@ -256,8 +257,8 @@ export const docs: PresetProperty<'docs'> = (docsOptions, { docs: docsMode }: CL
 
 export const managerHead = async (_: any, options: Options) => {
   const location = join(options.configDir, 'manager-head.html');
-  if (await pathExists(location)) {
-    const contents = readFile(location, 'utf-8');
+  if (existsSync(location)) {
+    const contents = readFile(location, { encoding: 'utf8' });
     const interpolations = options.presets.apply<Record<string, string>>('env');
 
     return interpolate(await contents, await interpolations);

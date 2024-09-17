@@ -1,5 +1,6 @@
+import { readFile } from 'node:fs/promises';
+
 import chalk from 'chalk';
-import { readFile } from 'fs-extra';
 import { dedent } from 'ts-dedent';
 
 import type { Fix } from '../types';
@@ -26,7 +27,7 @@ export const removedGlobalClientAPIs: Fix<GlobalClientAPIOptions> = {
 
   async check({ previewConfigPath }) {
     if (previewConfigPath) {
-      const contents = await readFile(previewConfigPath, 'utf8');
+      const contents = await readFile(previewConfigPath, { encoding: 'utf8' });
 
       const usedAPIs = Object.values(RemovedAPIs).reduce((acc, item) => {
         if (contents.includes(item)) {

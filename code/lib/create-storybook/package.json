@@ -61,7 +61,6 @@
     "execa": "^5.0.0",
     "fd-package-json": "^1.2.0",
     "find-up": "^5.0.0",
-    "fs-extra": "^11.1.0",
     "ora": "^5.4.1",
     "prettier": "^3.1.1",
     "prompts": "^2.4.0",

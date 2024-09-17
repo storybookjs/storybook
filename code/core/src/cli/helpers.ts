@@ -1,4 +1,5 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { cp, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
 import {
@@ -12,7 +13,6 @@ import type { SupportedFrameworks, SupportedRenderers } from '@storybook/core/ty
 
 import chalk from 'chalk';
 import { findUpSync } from 'find-up';
-import { copy, copySync, pathExists, readFile, writeFile } from 'fs-extra';
 import { coerce, satisfies } from 'semver';
 import stripJsonComments from 'strip-json-comments';
 import invariant from 'tiny-invariant';
@@ -130,7 +130,7 @@ export function copyTemplate(templateRoot: string, destination = '.') {
     throw new Error(`Couldn't find template dir`);
   }
 
-  copySync(templateDir, destination, { overwrite: true });
+  cpSync(templateDir, destination, { recursive: true });
 }
 
 type CopyTemplateFilesOptions = {
@@ -197,30 +197,30 @@ export async function copyTemplateFiles({
     const assetsTS38 = join(assetsDir, languageFolderMapping[SupportedLanguage.TYPESCRIPT_3_8]);
 
     // Ideally use the assets that match the language & version.
-    if (await pathExists(assetsLanguage)) {
+    if (existsSync(assetsLanguage)) {
       return assetsLanguage;
     }
     // Use fallback typescript 3.8 assets if new ones aren't available
-    if (language === SupportedLanguage.TYPESCRIPT_4_9 && (await pathExists(assetsTS38))) {
+    if (language === SupportedLanguage.TYPESCRIPT_4_9 && existsSync(assetsTS38)) {
       return assetsTS38;
     }
     // Fallback further to TS (for backwards compatibility purposes)
-    if (await pathExists(assetsTS)) {
+    if (existsSync(assetsTS)) {
       return assetsTS;
     }
     // Fallback further to JS
-    if (await pathExists(assetsJS)) {
+    if (existsSync(assetsJS)) {
       return assetsJS;
     }
     // As a last resort, look for the root of the asset directory
-    if (await pathExists(assetsDir)) {
+    if (existsSync(assetsDir)) {
       return assetsDir;
     }
     throw new Error(`Unsupported renderer: ${renderer} (${baseDir})`);
   };
 
   const targetPath = async () => {
-    if (await pathExists('./src')) {
+    if (existsSync('./src')) {
       return './src/stories';
     }
     return './stories';
@@ -228,11 +228,11 @@ export async function copyTemplateFiles({
 
   const destinationPath = destination ?? (await targetPath());
   if (commonAssetsDir) {
-    await copy(commonAssetsDir, destinationPath, {
-      overwrite: true,
+    await cp(commonAssetsDir, destinationPath, {
+      recursive: true,
     });
   }
-  await copy(await templatePath(), destinationPath, { overwrite: true });
+  await cp(await templatePath(), destinationPath, { recursive: true });
 
   if (commonAssetsDir) {
     let rendererType = frameworkToRenderer[renderer] || 'react';
@@ -248,7 +248,7 @@ export async function copyTemplateFiles({
 export async function adjustTemplate(templatePath: string, templateData: Record<string, any>) {
   // for now, we're just doing a simple string replace
   // in the future we might replace this with a proper templating engine
-  let template = await readFile(templatePath, 'utf8');
+  let template = await readFile(templatePath, { encoding: 'utf8' });
 
   Object.keys(templateData).forEach((key) => {
     template = template.replaceAll(`{{${key}}}`, `${templateData[key]}`);

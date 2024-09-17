@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+import { readFile, writeFile } from 'node:fs/promises';
 
 import type { JsPackageManager } from '@storybook/core/common';
 import { paddedLog } from '@storybook/core/common';
@@ -7,7 +8,6 @@ import { readConfig, writeConfig } from '@storybook/core/csf-tools';
 
 import chalk from 'chalk';
 import detectIndent from 'detect-indent';
-import { readFile, readJson, writeJson } from 'fs-extra';
 import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
 
@@ -72,13 +72,15 @@ export async function configureEslintPlugin(
   if (eslintFile) {
     paddedLog(`Configuring Storybook ESLint plugin at ${eslintFile}`);
     if (eslintFile.endsWith('json')) {
-      const eslintConfig = (await readJson(eslintFile)) as { extends?: string[] };
+      const eslintConfig = JSON.parse(await readFile(eslintFile, { encoding: 'utf8' })) as {
+        extends?: string[];
+      };
       const existingExtends = normalizeExtends(eslintConfig.extends).filter(Boolean);
       eslintConfig.extends = [...existingExtends, 'plugin:storybook/recommended'] as string[];
 
-      const eslintFileContents = await readFile(eslintFile, 'utf8');
+      const eslintFileContents = await readFile(eslintFile, { encoding: 'utf8' });
       const spaces = detectIndent(eslintFileContents).amount || 2;
-      await writeJson(eslintFile, eslintConfig, { spaces });
+      await writeFile(eslintFile, JSON.stringify(eslintConfig, undefined, spaces));
     } else {
       const eslint = await readConfig(eslintFile);
       const existingExtends = normalizeExtends(eslint.getFieldValue(['extends'])).filter(Boolean);

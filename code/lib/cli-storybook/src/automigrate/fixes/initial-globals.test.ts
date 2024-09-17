@@ -1,17 +1,16 @@
 /* eslint-disable no-underscore-dangle */
+import * as fsp from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { expect, it, vi } from 'vitest';
 
-import * as fsExtra from 'fs-extra';
-
 import { initialGlobals } from './initial-globals';
 
-vi.mock('fs-extra', async () => import('../../../../../__mocks__/fs-extra'));
+vi.mock('node:fs/promises', async () => import('../../../../../__mocks__/fs/promises'));
 
 const previewConfigPath = join('.storybook', 'preview.js');
 const check = async (previewContents: string) => {
-  vi.mocked<typeof import('../../../../../__mocks__/fs-extra')>(fsExtra as any).__setMockFiles({
+  vi.mocked<typeof import('../../../../../__mocks__/fs/promises')>(fsp as any).__setMockFiles({
     [previewConfigPath]: previewContents,
   });
   return initialGlobals.check({

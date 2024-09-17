@@ -74,7 +74,6 @@
     "es-module-lexer": "^1.5.0",
     "express": "^4.21.0",
     "fork-ts-checker-webpack-plugin": "^8.0.0",
-    "fs-extra": "^11.1.0",
     "html-webpack-plugin": "^5.5.0",
     "magic-string": "^0.30.5",
     "path-browserify": "^1.0.1",

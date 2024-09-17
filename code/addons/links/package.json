@@ -71,7 +71,6 @@
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
-    "fs-extra": "^11.1.0",
     "typescript": "^5.3.2"
   },
   "peerDependencies": {

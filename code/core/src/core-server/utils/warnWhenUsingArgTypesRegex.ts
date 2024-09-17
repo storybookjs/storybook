@@ -1,17 +1,20 @@
+import { readFile } from 'node:fs/promises';
+
 import { type BabelFile, core } from '@storybook/core/babel';
 import type { StorybookConfig } from '@storybook/core/types';
 
 import { babelParse } from '@storybook/core/csf-tools';
 
 import chalk from 'chalk';
-import { readFile } from 'fs-extra';
 import { dedent } from 'ts-dedent';
 
 export async function warnWhenUsingArgTypesRegex(
   previewConfigPath: string | undefined,
   config: StorybookConfig
 ) {
-  const previewContent = previewConfigPath ? await readFile(previewConfigPath, 'utf8') : '';
+  const previewContent = previewConfigPath
+    ? await readFile(previewConfigPath, { encoding: 'utf8' })
+    : '';
 
   const hasVisualTestAddon =
     config?.addons?.some((it) =>

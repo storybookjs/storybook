@@ -628,6 +628,8 @@ jobs:
                   mkdir empty-<< parameters.template >>-no-install
                   cd empty-<< parameters.template >>-no-install
                   npx storybook init --yes --skip-install
+                  npm install
+                  npm run build-storybook
                 environment:
                   IN_STORYBOOK_SANDBOX: true
                   STORYBOOK_INIT_EMPTY_TYPE: << parameters.template >>

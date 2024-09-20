@@ -75,6 +75,7 @@ export type Template = {
     disableDocs?: boolean;
     extraDependencies?: string[];
     editAddons?: (addons: string[]) => string[];
+    minimize?: boolean;
   };
   /**
    * Flag to indicate that this template is a secondary template, which is used mainly to test
@@ -634,6 +635,7 @@ const benchTemplates = {
     isInternal: true,
     modifications: {
       skipTemplateStories: true,
+      minimize: true,
     },
     skipTasks: [
       'e2e-tests-dev',
@@ -650,6 +652,7 @@ const benchTemplates = {
     isInternal: true,
     modifications: {
       skipTemplateStories: true,
+      minimize: true,
     },
     skipTasks: [
       'e2e-tests-dev',
@@ -667,6 +670,7 @@ const benchTemplates = {
     modifications: {
       skipTemplateStories: true,
       disableDocs: true,
+      minimize: true,
     },
     skipTasks: [
       'e2e-tests-dev',
@@ -684,6 +688,7 @@ const benchTemplates = {
     modifications: {
       skipTemplateStories: true,
       testBuild: true,
+      minimize: true,
     },
     skipTasks: [
       'e2e-tests-dev',
@@ -700,6 +705,7 @@ const benchTemplates = {
     modifications: {
       skipTemplateStories: true,
       testBuild: true,
+      minimize: true,
     },
     skipTasks: [
       'e2e-tests-dev',

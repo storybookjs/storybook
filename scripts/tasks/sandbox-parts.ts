@@ -24,7 +24,7 @@ import { JsPackageManagerFactory, versions as storybookPackages } from '../../co
 import type { ConfigFile } from '../../code/core/src/csf-tools';
 import { writeConfig } from '../../code/core/src/csf-tools';
 import { babelParse } from '../../code/core/src/csf-tools/babelParse';
-import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
+import type { Template, TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
 import type { PassedOptionValues, Task, TemplateDetails } from '../task';
 import { executeCLIStep, steps } from '../utils/cli-step';
 import { CODE_DIRECTORY, REPROS_DIRECTORY } from '../utils/constants';
@@ -237,19 +237,39 @@ function addEsbuildLoaderToStories(mainConfig: ConfigFile) {
   And allow source directories to complement any existing allow patterns
   (".storybook" is already being allowed by builder-vite)
 */
-function setSandboxViteFinal(mainConfig: ConfigFile) {
+function setSandboxViteFinal(template: Template, mainConfig: ConfigFile) {
   const viteFinalCode = `
-  (config) => ({
-    ...config,
-    optimizeDeps: { ...config.optimizeDeps, force: true },
-    server: {
-      ...config.server,
-      fs: {
-        ...config.server?.fs,
-        allow: ['stories', 'src', 'template-stories', 'node_modules', ...(config.server?.fs?.allow || [])],
+  async (config) => {
+    const { mergeConfig } = await import('vite');
+    return mergeConfig(config, {
+      optimizeDeps: { ...config.optimizeDeps, force: true },
+      server: {
+        ...config.server,
+        fs: {
+          ...config.server?.fs,
+          allow: ['stories', 'src', 'template-stories', 'node_modules', ...(config.server?.fs?.allow || [])],
+        },
       },
-    },
-  })`;
+      ${
+        template.modifications?.minimize
+          ? `
+      build: {
+        minify: 'esbuild',
+        sourcemap: false,
+        rollupOptions: {
+          external: ['lodash', './sb-preview/runtime.js'],
+        }
+      },
+      esbuild: {
+        minifyIdentifiers: true,
+        minifySyntax: true,
+        minifyWhitespace: true,
+        minify: true,
+      },`
+          : ''
+      }
+    })
+  }`;
   // @ts-expect-error (Property 'expression' does not exist on type 'BlockStatement')
   mainConfig.setFieldNode(['viteFinal'], babelParse(viteFinalCode).program.body[0].expression);
 }
@@ -579,7 +599,7 @@ export const addStories: Task['run'] = async (
   const sandboxSpecificStoriesFolder = key.replaceAll('/', '-');
   const storiesVariantFolder = getStoriesFolderWithVariant(sandboxSpecificStoriesFolder);
 
-  if (isCoreRenderer) {
+  if (isCoreRenderer && storiesPath) {
     // Link in the template/components/index.js from preview-api, the renderer and the addons
     const rendererPath = await workspacePath('renderer', template.expected.renderer);
     await ensureSymlink(
@@ -782,7 +802,7 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
   }
 
   if (template.expected.builder === '@storybook/builder-vite') {
-    setSandboxViteFinal(mainConfig);
+    setSandboxViteFinal(template, mainConfig);
   }
   await writeConfig(mainConfig);
 };

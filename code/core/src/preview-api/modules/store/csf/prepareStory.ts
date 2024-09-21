@@ -27,6 +27,7 @@ import { NoRenderFunctionError } from '@storybook/core/preview-errors';
 import { applyHooks } from '../../addons';
 import { mountDestructured } from '../../preview-web/render/mount-utils';
 import { UNTARGETED, groupArgsByTarget } from '../args';
+import { combineArgTypes } from '../combineArgTypes';
 import { defaultDecorateStory } from '../decorators';
 import { combineParameters } from '../parameters';
 import { normalizeArrays } from './normalizeArrays';
@@ -198,11 +199,11 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
   // Currently it is only possible to set these globally
   const { argTypesEnhancers = [], argsEnhancers = [] } = projectAnnotations;
 
-  const passedArgTypes: StrictArgTypes = combineParameters(
+  const passedArgTypes: StrictArgTypes = combineArgTypes(
     projectAnnotations.argTypes,
     componentAnnotations.argTypes,
     storyAnnotations?.argTypes
-  ) as StrictArgTypes;
+  );
 
   if (storyAnnotations) {
     // The render function on annotations *has* to be an `ArgsStoryFn`, so when we normalize

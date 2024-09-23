@@ -1,15 +1,21 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-type-constraint */
-import type { FC, ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import * as React from 'react';
 import type { Root as ReactRoot, RootOptions } from 'react-dom/client';
 import * as ReactDOM from 'react-dom/client';
 
-import { preventActChecks } from './preventActChecks';
-
 // A map of all rendered React 18 nodes
 const nodes = new Map<Element, ReactRoot>();
 
-const WithCallback: FC<{ callback: () => void; children: ReactElement }> = ({
+declare const globalThis: {
+  IS_REACT_ACT_ENVIRONMENT: boolean;
+};
+
+function getIsReactActEnvironment() {
+  return globalThis.IS_REACT_ACT_ENVIRONMENT;
+}
+
+const WithCallback: React.FC<{ callback: () => void; children: ReactElement }> = ({
   callback,
   children,
 }) => {
@@ -43,8 +49,13 @@ export const renderElement = async (node: ReactElement, el: Element, rootOptions
   // Create Root Element conditionally for new React 18 Root Api
   const root = await getReactRoot(el, rootOptions);
 
+  if (getIsReactActEnvironment()) {
+    root.render(node);
+    return;
+  }
+
   const { promise, resolve } = Promise.withResolvers<void>();
-  preventActChecks(() => root.render(<WithCallback callback={resolve}>{node}</WithCallback>));
+  root.render(<WithCallback callback={resolve}>{node}</WithCallback>);
   return promise;
 };
 
@@ -52,7 +63,7 @@ export const unmountElement = (el: Element, shouldUseNewRootApi?: boolean) => {
   const root = nodes.get(el);
 
   if (root) {
-    preventActChecks(() => root.unmount());
+    root.unmount();
     nodes.delete(el);
   }
 };

@@ -5,6 +5,7 @@ import type { RenderContext } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
+import { getReactActEnvironment } from './act-compat';
 import type { ReactRenderer, StoryContext } from './types';
 
 const { FRAMEWORK_OPTIONS } = global;
@@ -57,7 +58,11 @@ export async function renderToCanvas(
   const { renderElement, unmountElement } = await import('@storybook/react-dom-shim');
   const Story = unboundStoryFn as FC<StoryContext<ReactRenderer>>;
 
-  const content = (
+  const isActEnabled = getReactActEnvironment();
+
+  const content = isActEnabled ? (
+    <Story {...storyContext} />
+  ) : (
     <ErrorBoundary showMain={showMain} showException={showException}>
       <Story {...storyContext} />
     </ErrorBoundary>

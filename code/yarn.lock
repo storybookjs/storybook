@@ -3677,9 +3677,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@joshwooding/vite-plugin-react-docgen-typescript@npm:0.3.1":
-  version: 0.3.1
-  resolution: "@joshwooding/vite-plugin-react-docgen-typescript@npm:0.3.1"
+"@joshwooding/vite-plugin-react-docgen-typescript@npm:0.3.0":
+  version: 0.3.0
+  resolution: "@joshwooding/vite-plugin-react-docgen-typescript@npm:0.3.0"
   dependencies:
     glob: "npm:^7.2.0"
     glob-promise: "npm:^4.2.0"
@@ -3691,7 +3691,7 @@ __metadata:
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 10c0/a9c7a03d7d1daf5bd64949255516ba64c88d5600366c8c74dcdb6f37c2a6099daaec02860b7587d2220e61afa47a0b2de17ef70d723c2db02f24e0890edfd9f3
+  checksum: 10c0/31098ad8fcc2440437534599c111d9f2951dd74821e8ba46c521b969bae4c918d830b7bb0484efbad29a51711bb62d3bc623d5a1ed5b1695b5b5594ea9dd4ca0
   languageName: node
   linkType: hard
 
@@ -5437,7 +5437,6 @@ __metadata:
     "@storybook/global": "npm:^5.0.0"
     "@storybook/react-dom-shim": "workspace:*"
     "@types/react": "npm:^16.8.0 || ^17.0.0 || ^18.0.0"
-    fs-extra: "npm:^11.1.0"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
     rehype-external-links: "npm:^3.0.0"
@@ -5492,6 +5491,7 @@ __metadata:
     "@storybook/instrumenter": "workspace:*"
     "@storybook/test": "workspace:*"
     "@types/node": "npm:^22.0.0"
+    ansi-to-html: "npm:^0.7.2"
     formik: "npm:^2.2.9"
     polished: "npm:^4.2.2"
     react: "npm:^18.2.0"
@@ -5527,7 +5527,6 @@ __metadata:
   dependencies:
     "@storybook/csf": "npm:^0.1.11"
     "@storybook/global": "npm:^5.0.0"
-    fs-extra: "npm:^11.1.0"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.3.2"
   peerDependencies:
@@ -5802,7 +5801,6 @@ __metadata:
     es-module-lexer: "npm:^1.5.0"
     express: "npm:^4.19.2"
     find-cache-dir: "npm:^3.0.0"
-    fs-extra: "npm:^11.1.0"
     glob: "npm:^10.0.0"
     magic-string: "npm:^0.30.0"
     slash: "npm:^5.0.0"
@@ -5843,7 +5841,6 @@ __metadata:
     es-module-lexer: "npm:^1.5.0"
     express: "npm:^4.19.2"
     fork-ts-checker-webpack-plugin: "npm:^8.0.0"
-    fs-extra: "npm:^11.1.0"
     html-webpack-plugin: "npm:^5.5.0"
     magic-string: "npm:^0.30.5"
     path-browserify: "npm:^1.0.1"
@@ -5896,7 +5893,6 @@ __metadata:
     envinfo: "npm:^7.7.3"
     fd-package-json: "npm:^1.2.0"
     find-up: "npm:^5.0.0"
-    fs-extra: "npm:^11.1.0"
     giget: "npm:^1.0.0"
     glob: "npm:^10.0.0"
     globby: "npm:^14.0.1"
@@ -6038,7 +6034,6 @@ __metadata:
     "@types/ejs": "npm:^3.1.1"
     "@types/express": "npm:^4.17.21"
     "@types/find-cache-dir": "npm:^5.0.0"
-    "@types/fs-extra": "npm:^11.0.1"
     "@types/js-yaml": "npm:^4.0.5"
     "@types/lodash": "npm:^4.14.167"
     "@types/node": "npm:^22.0.0"
@@ -6091,7 +6086,6 @@ __metadata:
     find-cache-dir: "npm:^5.0.0"
     find-up: "npm:^7.0.0"
     flush-promises: "npm:^1.0.2"
-    fs-extra: "npm:^11.1.0"
     fuse.js: "npm:^3.6.1"
     get-npm-tarball-url: "npm:^2.0.3"
     glob: "npm:^10.0.0"
@@ -6266,7 +6260,7 @@ __metadata:
     sharp: "npm:^0.33.3"
     styled-jsx: "npm:5.1.6"
     typescript: "npm:^5.3.2"
-    vite-plugin-storybook-nextjs: "npm:^1.0.10"
+    vite-plugin-storybook-nextjs: "npm:^1.0.11"
   peerDependencies:
     "@storybook/test": "workspace:*"
     next: ^14.1.0
@@ -6434,7 +6428,6 @@ __metadata:
     babel-loader: "npm:^9.1.3"
     css-loader: "npm:^6.7.3"
     find-up: "npm:^5.0.0"
-    fs-extra: "npm:^11.1.0"
     image-size: "npm:^1.0.0"
     loader-utils: "npm:^3.2.1"
     next: "npm:^14.1.0"
@@ -6444,7 +6437,7 @@ __metadata:
     postcss-loader: "npm:^8.1.1"
     react-refresh: "npm:^0.14.0"
     resolve-url-loader: "npm:^5.0.0"
-    sass-loader: "npm:^12.4.0"
+    sass-loader: "npm:^13.2.0"
     semver: "npm:^7.3.5"
     sharp: "npm:^0.33.3"
     style-loader: "npm:^3.3.1"
@@ -6583,7 +6576,6 @@ __metadata:
     "@types/node": "npm:^22.0.0"
     "@types/semver": "npm:^7.3.4"
     find-up: "npm:^5.0.0"
-    fs-extra: "npm:^11.1.0"
     magic-string: "npm:^0.30.5"
     react-docgen: "npm:^7.0.0"
     resolve: "npm:^1.22.8"
@@ -6609,7 +6601,6 @@ __metadata:
     "@storybook/global": "npm:^5.0.0"
     "@storybook/server": "workspace:*"
     "@types/node": "npm:^22.0.0"
-    fs-extra: "npm:^11.1.0"
     safe-identifier: "npm:^0.4.1"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.3.2"
@@ -6708,7 +6699,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/react-vite@workspace:frameworks/react-vite"
   dependencies:
-    "@joshwooding/vite-plugin-react-docgen-typescript": "npm:0.3.1"
+    "@joshwooding/vite-plugin-react-docgen-typescript": "npm:0.3.0"
     "@rollup/pluginutils": "npm:^5.0.2"
     "@storybook/builder-vite": "workspace:*"
     "@storybook/react": "workspace:*"
@@ -6780,11 +6771,14 @@ __metadata:
     type-fest: "npm:~2.19"
     util-deprecate: "npm:^1.0.2"
   peerDependencies:
+    "@storybook/test": "workspace:*"
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
     storybook: "workspace:^"
     typescript: ">= 4.2.x"
   peerDependenciesMeta:
+    "@storybook/test":
+      optional: true
     typescript:
       optional: true
   languageName: unknown
@@ -6873,7 +6867,6 @@ __metadata:
     "@testing-library/user-event": "npm:^14.5.2"
     "@trivago/prettier-plugin-sort-imports": "npm:^4.3.0"
     "@types/express": "npm:^4.17.21"
-    "@types/fs-extra": "npm:^11.0.1"
     "@types/lodash": "npm:^4.14.167"
     "@types/mock-require": "npm:^2.0.3"
     "@types/node": "npm:^22.0.0"
@@ -6899,7 +6892,6 @@ __metadata:
     eslint-plugin-local-rules: "portal:../scripts/eslint-plugin-local-rules"
     eslint-plugin-playwright: "npm:^1.6.2"
     eslint-plugin-storybook: "npm:^0.8.0"
-    fs-extra: "npm:^11.1.0"
     github-release-from-changelog: "npm:^2.1.1"
     glob: "npm:^10.0.0"
     happy-dom: "npm:^14.12.0"
@@ -6981,8 +6973,6 @@ __metadata:
     "@storybook/manager-api": "workspace:^"
     "@storybook/preview-api": "workspace:^"
     "@storybook/theming": "workspace:^"
-    "@types/fs-extra": "npm:^11.0.1"
-    fs-extra: "npm:^11.1.0"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.3.2"
     yaml: "npm:^2.3.1"
@@ -7057,7 +7047,6 @@ __metadata:
     "@sveltejs/vite-plugin-svelte": "npm:^3.0.2"
     "@testing-library/svelte": "patch:@testing-library/svelte@npm%3A4.1.0#~/.yarn/patches/@testing-library-svelte-npm-4.1.0-34b7037bc0.patch"
     expect-type: "npm:^0.15.0"
-    fs-extra: "npm:^11.1.0"
     svelte: "npm:^5.0.0-next.65"
     svelte-check: "npm:^3.6.4"
     sveltedoc-parser: "npm:^4.2.1"
@@ -7862,16 +7851,6 @@ __metadata:
     "@types/jsonfile": "npm:*"
     "@types/node": "npm:*"
   checksum: 10c0/a65f1fae47849fe1a17441dcabc9400390303405972ff3cbb3578746cea8916b23d5e7652bf57a87767f75a9b2f37caac499b78b5230ae08fef0ba58b34c3a85
-  languageName: node
-  linkType: hard
-
-"@types/fs-extra@npm:^11.0.1":
-  version: 11.0.4
-  resolution: "@types/fs-extra@npm:11.0.4"
-  dependencies:
-    "@types/jsonfile": "npm:*"
-    "@types/node": "npm:*"
-  checksum: 10c0/9e34f9b24ea464f3c0b18c3f8a82aefc36dc524cc720fc2b886e5465abc66486ff4e439ea3fb2c0acebf91f6d3f74e514f9983b1f02d4243706bdbb7511796ad
   languageName: node
   linkType: hard
 
@@ -12498,7 +12477,6 @@ __metadata:
     execa: "npm:^5.0.0"
     fd-package-json: "npm:^1.2.0"
     find-up: "npm:^5.0.0"
-    fs-extra: "npm:^11.1.0"
     ora: "npm:^5.4.1"
     prettier: "npm:^3.1.1"
     prompts: "npm:^2.4.0"
@@ -25301,15 +25279,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sass-loader@npm:^12.4.0":
-  version: 12.6.0
-  resolution: "sass-loader@npm:12.6.0"
+"sass-loader@npm:^13.2.0":
+  version: 13.3.3
+  resolution: "sass-loader@npm:13.3.3"
   dependencies:
-    klona: "npm:^2.0.4"
     neo-async: "npm:^2.6.2"
   peerDependencies:
     fibers: ">= 3.1.0"
-    node-sass: ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
+    node-sass: ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0 || ^9.0.0
     sass: ^1.3.0
     sass-embedded: "*"
     webpack: ^5.0.0
@@ -25322,7 +25299,7 @@ __metadata:
       optional: true
     sass-embedded:
       optional: true
-  checksum: 10c0/e1ef655f3898cc4c45f02b3c627f8baf998139993a9a79c524153a80814282bfe20d8d8d703b8cf1d05457c1930940b65e2156d11285ed0861f9a1016f993e53
+  checksum: 10c0/5e955a4ffce35ee0a46fce677ce51eaa69587fb5371978588c83af00f49e7edc36dcf3bb559cbae27681c5e24a71284463ebe03a1fb65e6ecafa1db0620e3fc8
   languageName: node
   linkType: hard
 
@@ -28551,9 +28528,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite-plugin-storybook-nextjs@npm:^1.0.10":
-  version: 1.0.10
-  resolution: "vite-plugin-storybook-nextjs@npm:1.0.10"
+"vite-plugin-storybook-nextjs@npm:^1.0.11":
+  version: 1.0.11
+  resolution: "vite-plugin-storybook-nextjs@npm:1.0.11"
   dependencies:
     "@next/env": "npm:^14.2.5"
     image-size: "npm:^1.1.1"
@@ -28569,7 +28546,7 @@ __metadata:
   dependenciesMeta:
     sharp:
       optional: true
-  checksum: 10c0/e0e373ef94e1761b871b2cc846c205a846901d93c7e61f9d9ee3c69740681e42e6403a7d61109c59f2d98d5829476c3e6d4e9d5a329c4bd51e758b763fa8ea9e
+  checksum: 10c0/9652b76c13a682b688d9a4f617b1a66263f25f395a99af8e258bedef4f3b3ce1c856ec1ff66cc0359d6aedc96adee9750fd6b0432514dd575ad7896cd1de70df
   languageName: node
   linkType: hard
 

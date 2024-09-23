@@ -1,9 +1,7 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
-import { watch } from 'node:fs';
+import { existsSync, mkdirSync, watch } from 'node:fs';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-
-import { ensureDir } from 'fs-extra';
 
 import {
   chalk,
@@ -320,7 +318,9 @@ async function run() {
             const outName =
               keys.length === 1 ? dirname(keys[0]).replace('dist/', '') : `meta-${format}-${index}`;
 
-            await ensureDir('report');
+            if (!existsSync('report')) {
+              mkdirSync('report');
+            }
             await writeFile(`report/${outName}.json`, JSON.stringify(out.metafile, null, 2));
             await writeFile(
               `report/${outName}.txt`,

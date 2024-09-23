@@ -1,10 +1,10 @@
+import { mkdir, readFile } from 'node:fs/promises';
 import { basename, extname, join } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
 
 import chalk from 'chalk';
 import { spawn as spawnAsync, sync as spawnSync } from 'cross-spawn';
-import fse from 'fs-extra';
 
 type ExecOptions = Parameters<typeof spawnAsync>[2];
 
@@ -61,7 +61,7 @@ export const exec = async (
 export const link = async ({ target, local, start }: LinkOptions) => {
   const storybookDir = process.cwd();
   try {
-    const packageJson = await fse.readJSON('package.json');
+    const packageJson = JSON.parse(await readFile('package.json', { encoding: 'utf8' }));
     if (packageJson.name !== '@storybook/root') {
       throw new Error();
     }
@@ -75,7 +75,9 @@ export const link = async ({ target, local, start }: LinkOptions) => {
   if (!local) {
     const reprosDir = join(storybookDir, '../storybook-repros');
     logger.info(`Ensuring directory ${reprosDir}`);
-    await fse.ensureDir(reprosDir);
+    // Passing `recursive: true` ensures that the method doesn't throw when
+    // the directory already exists.
+    await mkdir(reprosDir, { recursive: true });
 
     logger.info(`Cloning ${target}`);
     await exec(`git clone ${target}`, { cwd: reprosDir });
@@ -84,7 +86,9 @@ export const link = async ({ target, local, start }: LinkOptions) => {
     reproDir = join(reprosDir, reproName);
   }
 
-  const reproPackageJson = await fse.readJSON(join(reproDir, 'package.json'));
+  const reproPackageJson = JSON.parse(
+    await readFile(join(reproDir, 'package.json'), { encoding: 'utf8' })
+  );
 
   const version = spawnSync('yarn', ['--version'], {
     cwd: reproDir,

@@ -2,7 +2,7 @@ import { getFrameworkName, loadPreviewOrConfigFile } from 'storybook/internal/co
 import type { Options, PreviewAnnotation } from 'storybook/internal/types';
 
 import { processPreviewAnnotation } from './utils/process-preview-annotation';
-import { virtualAddonSetupFile, virtualStoriesFile } from './virtual-file-names';
+import { SB_VIRTUAL_FILES, getResolvedVirtualModuleId } from './virtual-file-names';
 
 export async function generateModernIframeScriptCode(options: Options, projectRoot: string) {
   const { presets, configDir } = options;
@@ -45,7 +45,7 @@ export async function generateModernIframeScriptCode(options: Options, projectRo
 
     return `
     if (import.meta.hot) {
-      import.meta.hot.accept('${virtualStoriesFile}', (newModule) => {
+      import.meta.hot.accept('${getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE)}', (newModule) => {
       // importFn has changed so we need to patch the new one in
       window.__STORYBOOK_PREVIEW__.onStoriesChanged({ importFn: newModule.importFn });
       });
@@ -68,8 +68,8 @@ export async function generateModernIframeScriptCode(options: Options, projectRo
    */
   const code = `
   import { composeConfigs, PreviewWeb, ClientApi } from 'storybook/internal/preview-api';
-  import '${virtualAddonSetupFile}';
-  import { importFn } from '${virtualStoriesFile}';
+  import '${SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE}';
+  import { importFn } from '${SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE}';
   
     ${getPreviewAnnotationsFunction}
 

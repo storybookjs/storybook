@@ -114,14 +114,14 @@ export default async function postInstall(options: PostinstallOptions) {
         reasons.push(
           dedent`
             Please check the documentation for more information about its requirements and installation:
-            ${c.cyan`https://storybook.js.org/docs/writing-tests/test-runner-with-vitest`}
+            ${c.cyan`https://storybook.js.org/docs/writing-tests/vitest-plugin`}
           `
         );
       } else {
         reasons.push(
           dedent`
             Fear not, however, you can follow the manual installation process instead at:
-            ${c.cyan`https://storybook.js.org/docs/writing-tests/test-runner-with-vitest#manual`}
+            ${c.cyan`https://storybook.js.org/docs/writing-tests/vitest-plugin#manual`}
           `
         );
       }
@@ -197,7 +197,7 @@ export default async function postInstall(options: PostinstallOptions) {
         ${colors.gray(vitestSetupFile)}
 
         Please refer to the documentation to complete the setup manually:
-        ${c.cyan`https://storybook.js.org/docs/writing-tests/test-runner-with-vitest#manual`}
+        ${c.cyan`https://storybook.js.org/docs/writing-tests/vitest-plugin#manual`}
       `
     );
     logger.line(1);
@@ -240,7 +240,7 @@ export default async function postInstall(options: PostinstallOptions) {
         your existing workspace file automatically, you must do it yourself. This was the last step.
 
         Please refer to the documentation to complete the setup manually:
-        ${c.cyan`https://storybook.js.org/docs/writing-tests/test-runner-with-vitest#manual`}
+        ${c.cyan`https://storybook.js.org/docs/writing-tests/vitest-plugin#manual`}
       `
     );
     logger.line(1);
@@ -262,7 +262,7 @@ export default async function postInstall(options: PostinstallOptions) {
           your existing workspace file automatically, you must do it yourself. This was the last step.
 
           Please refer to the documentation to complete the setup manually:
-          ${c.cyan`https://storybook.js.org/docs/writing-tests/test-runner-with-vitest#manual`}
+          ${c.cyan`https://storybook.js.org/docs/writing-tests/vitest-plugin#manual`}
         `
       );
       logger.line(1);
@@ -288,13 +288,13 @@ export default async function postInstall(options: PostinstallOptions) {
         import { defineWorkspace } from 'vitest/config';
         import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';${vitestInfo.frameworkPluginImport}
 
-        // More info at: https://storybook.js.org/docs/writing-tests/test-runner-with-vitest
+        // More info at: https://storybook.js.org/docs/writing-tests/vitest-plugin
         export default defineWorkspace([
           '${relative(dirname(browserWorkspaceFile), rootConfig)}',
           {
             extends: '${viteConfigFile ? relative(dirname(browserWorkspaceFile), viteConfigFile) : ''}',
             plugins: [
-              // See options at: https://storybook.js.org/docs/writing-tests/test-runner-with-vitest#storybooktest
+              // See options at: https://storybook.js.org/docs/writing-tests/vitest-plugin#storybooktest
               storybookTest(),${vitestInfo.frameworkPluginDocs + vitestInfo.frameworkPluginCall}
             ],
             test: {
@@ -327,10 +327,10 @@ export default async function postInstall(options: PostinstallOptions) {
         import { defineConfig } from 'vitest/config';
         import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';${vitestInfo.frameworkPluginImport}
 
-        // More info at: https://storybook.js.org/docs/writing-tests/test-runner-with-vitest
+        // More info at: https://storybook.js.org/docs/writing-tests/vitest-plugin
         export default defineConfig({
           plugins: [
-            // See options at: https://storybook.js.org/docs/writing-tests/test-runner-with-vitest#storybooktest
+            // See options at: https://storybook.js.org/docs/writing-tests/vitest-plugin#storybooktest
             storybookTest(),${vitestInfo.frameworkPluginDocs + vitestInfo.frameworkPluginCall}
           ],
           test: {
@@ -362,7 +362,7 @@ export default async function postInstall(options: PostinstallOptions) {
       • When using the Vitest extension in your editor, all of your stories will be shown as tests!
 
       Check the documentation for more information about its features and options at:
-      ${c.cyan`https://storybook.js.org/docs/writing-tests/test-runner-with-vitest`}
+      ${c.cyan`https://storybook.js.org/docs/writing-tests/vitest-plugin`}
     `
   );
   logger.line(1);

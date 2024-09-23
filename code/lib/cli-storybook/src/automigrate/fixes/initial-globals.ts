@@ -1,9 +1,10 @@
+import { readFile, writeFile } from 'node:fs/promises';
+
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 
 import type { Expression } from '@babel/types';
 import chalk from 'chalk';
-import { readFile, writeFile } from 'fs-extra';
 import { dedent } from 'ts-dedent';
 
 import type { Fix } from '../types';

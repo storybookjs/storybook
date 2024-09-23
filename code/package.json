@@ -1,6 +1,6 @@
 {
   "name": "@storybook/root",
-  "version": "8.3.0-beta.4",
+  "version": "8.4.0-alpha.0",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -168,7 +168,6 @@
     "@testing-library/user-event": "^14.5.2",
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "@types/express": "^4.17.21",
-    "@types/fs-extra": "^11.0.1",
     "@types/lodash": "^4.14.167",
     "@types/mock-require": "^2.0.3",
     "@types/node": "^22.0.0",
@@ -194,7 +193,6 @@
     "eslint-plugin-local-rules": "portal:../scripts/eslint-plugin-local-rules",
     "eslint-plugin-playwright": "^1.6.2",
     "eslint-plugin-storybook": "^0.8.0",
-    "fs-extra": "^11.1.0",
     "github-release-from-changelog": "^2.1.1",
     "glob": "^10.0.0",
     "happy-dom": "^14.12.0",

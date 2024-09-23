@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { readdir } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 
 import type { PackageManagerName } from 'storybook/internal/common';
@@ -7,7 +9,6 @@ import { versions } from 'storybook/internal/common';
 import boxen from 'boxen';
 import chalk from 'chalk';
 import { initiate } from 'create-storybook';
-import { existsSync, readdir } from 'fs-extra';
 import { downloadTemplate } from 'giget';
 import prompts from 'prompts';
 import { lt, prerelease } from 'semver';
@@ -206,7 +207,7 @@ export const sandbox = async ({
         force: true,
         dir: templateDestination,
       });
-      // throw an error if templateDestination is an empty directory using fs-extra
+      // throw an error if templateDestination is an empty directory
       if ((await readdir(templateDestination)).length === 0) {
         const selected = chalk.yellow(templateId);
         throw new Error(dedent`

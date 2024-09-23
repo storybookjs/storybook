@@ -1,4 +1,7 @@
-import { formatPropInTemplate } from './angular-beta/ComputesTemplateFromComponent';
+import {
+  formatPropInTemplate,
+  createAngularInputProperty,
+} from './angular-beta/ComputesTemplateFromComponent';
 
 /**
  * Options for controlling the behavior of the argsToTemplate function.
@@ -17,6 +20,12 @@ export interface ArgsToTemplateOptions<T> {
    * omitted from the output. This option is ignored if the `include` option is also provided
    */
   exclude?: Array<T>;
+  /** Toggle between showing current value or variable name for template bindings. */
+  bindVariableNames?: boolean;
+  /** Toogle between sorting properties by name */
+  sort?: boolean;
+  /** Object of key:value pairs. When values are set to default the bindings will not appear. */
+  defaultValues?: { [key: string]: any };
 }
 
 /**
@@ -62,18 +71,31 @@ export function argsToTemplate<A extends Record<string, any>>(
 ) {
   const includeSet = options.include ? new Set(options.include) : null;
   const excludeSet = options.exclude ? new Set(options.exclude) : null;
+  const defaultValues = { ...options.defaultValues };
 
   return Object.entries(args)
-    .filter(([key]) => args[key] !== undefined)
+    .filter(
+      ([key]) =>
+        args[key] !== undefined && (options.bindVariableNames || args[key] !== defaultValues[key])
+    )
     .filter(([key]) => {
       if (includeSet) return includeSet.has(key);
       if (excludeSet) return !excludeSet.has(key);
       return true;
     })
+    .sort((a, b) => {
+      const aIsFn = typeof a[1] === 'function';
+      const bIsFn = typeof b[1] === 'function';
+      if (aIsFn && !bIsFn) return 1;
+      if (!aIsFn && bIsFn) return -1;
+      return options.sort ? a[0].localeCompare(b[0]) : 0;
+    })
     .map(([key, value]) =>
       typeof value === 'function'
         ? `(${key})="${formatPropInTemplate(key)}($event)"`
-        : `[${key}]="${formatPropInTemplate(key)}"`
+        : options.bindVariableNames
+          ? `[${key}]="${formatPropInTemplate(key)}"`
+          : createAngularInputProperty({ propertyName: key, value: args[key] })
     )
     .join(' ');
 }

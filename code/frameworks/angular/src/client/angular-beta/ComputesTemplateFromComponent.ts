@@ -96,7 +96,7 @@ function stringifyCircular(obj: any) {
   });
 }
 
-const createAngularInputProperty = ({
+export const createAngularInputProperty = ({
   propertyName,
   value,
   argType,

@@ -116,7 +116,7 @@ describe('argsToTemplate', () => {
       prop2: undefined,
       prop3: 'value3',
     };
-    const options: ArgsToTemplateOptions<keyof typeof args> = { bindVariableNames: true };
+    const options: ArgsToTemplateOptions<keyof typeof args> = { useVariableNames: true };
     const result = argsToTemplate(args, options);
     expect(result).toBe('[prop1]="prop1" [prop3]="prop3"');
   });
@@ -129,7 +129,7 @@ describe('argsToTemplate', () => {
     };
     const options: ArgsToTemplateOptions<keyof typeof args> = {
       include: ['prop1', 'prop3'],
-      bindVariableNames: true,
+      useVariableNames: true,
     };
     const result = argsToTemplate(args, options);
     expect(result).toBe('[prop1]="prop1" [prop3]="prop3"');
@@ -143,7 +143,7 @@ describe('argsToTemplate', () => {
     };
     const options: ArgsToTemplateOptions<keyof typeof args> = {
       include: ['prop1', 'prop3'],
-      bindVariableNames: true,
+      useVariableNames: true,
     };
     const result = argsToTemplate(args, options);
     expect(result).toBe('[prop1]="prop1"');
@@ -157,7 +157,7 @@ describe('argsToTemplate', () => {
     };
     const options: ArgsToTemplateOptions<keyof typeof args> = {
       exclude: ['prop2'],
-      bindVariableNames: true,
+      useVariableNames: true,
     };
     const result = argsToTemplate(args, options);
     expect(result).toBe('[prop1]="prop1" [prop3]="prop3"');
@@ -171,7 +171,7 @@ describe('argsToTemplate', () => {
     };
     const options: ArgsToTemplateOptions<keyof typeof args> = {
       exclude: ['prop2'],
-      bindVariableNames: true,
+      useVariableNames: true,
     };
     const result = argsToTemplate(args, options);
     expect(result).toBe('[prop1]="prop1"');
@@ -186,7 +186,7 @@ describe('argsToTemplate', () => {
     const options: ArgsToTemplateOptions<keyof typeof args> = {
       include: ['prop1', 'prop2'],
       exclude: ['prop2', 'prop3'],
-      bindVariableNames: true,
+      useVariableNames: true,
     };
     const result = argsToTemplate(args, options);
     expect(result).toBe('[prop1]="prop1" [prop2]="prop2"');
@@ -197,26 +197,26 @@ describe('argsToTemplate', () => {
       prop1: 'value1',
       prop2: 'value2',
     };
-    const options: ArgsToTemplateOptions<keyof typeof args> = { bindVariableNames: true };
+    const options: ArgsToTemplateOptions<keyof typeof args> = { useVariableNames: true };
     const result = argsToTemplate(args, options);
     expect(result).toBe('[prop1]="prop1" [prop2]="prop2"');
   });
 
   it('should bind events correctly when variable binding', () => {
     const args = { event1: () => {}, event2: () => {} };
-    const result = argsToTemplate(args, { bindVariableNames: true });
+    const result = argsToTemplate(args, { useVariableNames: true });
     expect(result).toEqual('(event1)="event1($event)" (event2)="event2($event)"');
   });
 
   it('should mix properties and events correctly when variable binding', () => {
     const args = { input: 'Value1', event1: () => {} };
-    const result = argsToTemplate(args, { bindVariableNames: true });
+    const result = argsToTemplate(args, { useVariableNames: true });
     expect(result).toEqual('[input]="input" (event1)="event1($event)"');
   });
 
   it('should format for non dot notation when variable binding', () => {
     const args = { 'non-dot': 'Value1', 'dash-out': () => {} };
-    const result = argsToTemplate(args, { bindVariableNames: true });
+    const result = argsToTemplate(args, { useVariableNames: true });
     expect(result).toEqual('[non-dot]="this[\'non-dot\']" (dash-out)="this[\'dash-out\']($event)"');
   });
 

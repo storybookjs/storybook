@@ -21,8 +21,8 @@ export interface ArgsToTemplateOptions<T> {
    */
   exclude?: Array<T>;
   /** Toggle between showing current value or variable name for template bindings. */
-  bindVariableNames?: boolean;
-  /** Toogle between sorting properties by name */
+  useVariableNames?: boolean;
+  /** Toggle between sorting properties by name */
   sort?: boolean;
   /** Object of key:value pairs. When values are set to default the bindings will not appear. */
   defaultValues?: { [key: string]: any };
@@ -76,7 +76,7 @@ export function argsToTemplate<A extends Record<string, any>>(
   return Object.entries(args)
     .filter(
       ([key]) =>
-        args[key] !== undefined && (options.bindVariableNames || args[key] !== defaultValues[key])
+        args[key] !== undefined && (options.useVariableNames || args[key] !== defaultValues[key])
     )
     .filter(([key]) => {
       if (includeSet) return includeSet.has(key);
@@ -93,7 +93,7 @@ export function argsToTemplate<A extends Record<string, any>>(
     .map(([key, value]) =>
       typeof value === 'function'
         ? `(${key})="${formatPropInTemplate(key)}($event)"`
-        : options.bindVariableNames
+        : options.useVariableNames
           ? `[${key}]="${formatPropInTemplate(key)}"`
           : createAngularInputProperty({ propertyName: key, value: args[key] })
     )

@@ -47,7 +47,7 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@joshwooding/vite-plugin-react-docgen-typescript": "0.3.1",
+    "@joshwooding/vite-plugin-react-docgen-typescript": "0.3.0",
     "@rollup/pluginutils": "^5.0.2",
     "@storybook/builder-vite": "workspace:*",
     "@storybook/react": "workspace:*",

@@ -1,9 +1,9 @@
-import * as jitithing from 'jiti';
+import { createJiti } from 'jiti';
 
 import { getInterpretedFileWithExt } from './interpret-files';
 
 export function interopRequireDefault(filePath: string) {
-  const jiti = jitithing.createJiti(__filename, {});
+  const jiti = createJiti(__filename, {});
 
   const result = jiti(filePath);
 

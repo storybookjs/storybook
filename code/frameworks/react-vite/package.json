@@ -30,6 +30,11 @@
       "types": "./dist/preset.d.ts",
       "require": "./dist/preset.js"
     },
+    "./dist/plugins/react-docgen": {
+      "types": "./dist/plugins/react-docgen.d.ts",
+      "import": "./dist/plugins/react-docgen.mjs",
+      "require": "./dist/plugins/react-docgen.js"
+    },
     "./package.json": "./package.json"
   },
   "main": "dist/index.js",
@@ -77,6 +82,7 @@
   "bundler": {
     "entries": [
       "./src/index.ts",
+      "./src/plugins/react-docgen.ts",
       "./src/preset.ts"
     ],
     "platform": "node"

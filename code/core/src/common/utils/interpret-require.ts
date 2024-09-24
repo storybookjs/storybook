@@ -1,31 +1,11 @@
+import * as jitithing from 'jiti';
+
 import { getInterpretedFileWithExt } from './interpret-files';
 
-let registered = false;
-
 export function interopRequireDefault(filePath: string) {
-  // eslint-disable-next-line no-underscore-dangle
-  const hasEsbuildBeenRegistered = !!require('module')._extensions['.ts'];
+  const jiti = jitithing.createJiti(__filename, {});
 
-  if (registered === false && !hasEsbuildBeenRegistered) {
-    const { register } = require('esbuild-register/dist/node');
-    registered = true;
-    register({
-      target: `node${process.version.slice(1)}`,
-      format: 'cjs',
-      hookIgnoreNodeModules: true,
-      // Some frameworks, like Stylus, rely on the 'name' property of classes or functions
-      // https://github.com/storybookjs/storybook/issues/19049
-      keepNames: true,
-      tsconfigRaw: `{
-      "compilerOptions": {
-        "strict": false,
-        "skipLibCheck": true,
-      },
-    }`,
-    });
-  }
-
-  const result = require(filePath);
+  const result = jiti(filePath);
 
   const isES6DefaultExported =
     typeof result === 'object' && result !== null && typeof result.default !== 'undefined';

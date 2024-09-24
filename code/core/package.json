@@ -273,8 +273,8 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "jiti ./scripts/check.ts",
-    "prep": "jiti ./scripts/prep.ts"
+    "check": "../node_modules/.bin/jiti ./scripts/check.ts",
+    "prep": "../node_modules/.bin/jiti ./scripts/prep.ts"
   },
   "dependencies": {
     "@storybook/csf": "^0.1.11",
@@ -282,8 +282,8 @@
     "better-opn": "^3.0.2",
     "browser-assert": "^1.2.1",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0",
-    "esbuild-register": "^3.5.0",
     "express": "^4.19.2",
+    "jiti": "^2.0.0-rc.1",
     "jsdoc-type-pratt-parser": "^4.0.0",
     "process": "^0.11.10",
     "recast": "^0.23.5",

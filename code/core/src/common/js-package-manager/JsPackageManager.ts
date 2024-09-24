@@ -418,7 +418,7 @@ export abstract class JsPackageManager {
       .find((version) => satisfies(version, constraint));
     invariant(
       latestVersionSatisfyingTheConstraint != null,
-      'No version satisfying the constraint.'
+      `No version satisfying the constraint: ${packageName}${constraint}`
     );
     return latestVersionSatisfyingTheConstraint;
   }

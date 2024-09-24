@@ -1,11 +1,12 @@
-import type { ExtractedProp } from '@storybook/docs-tools';
+import type { ExtractedProp } from 'storybook/internal/docs-tools';
 import {
+  type ArgTypesExtractor,
   convert,
   extractComponentProps,
   hasDocgen,
-  type ArgTypesExtractor,
-} from '@storybook/docs-tools';
-import type { SBType, StrictArgTypes, StrictInputType } from '@storybook/types';
+} from 'storybook/internal/docs-tools';
+import type { SBType, StrictArgTypes, StrictInputType } from 'storybook/internal/types';
+
 import type { VueDocgenInfo, VueDocgenInfoEntry, VueDocgenPlugin } from '@storybook/vue3-vite';
 
 type PropertyMetaSchema = VueDocgenInfoEntry<'vue-component-meta', 'props'>['schema'];
@@ -13,7 +14,7 @@ type PropertyMetaSchema = VueDocgenInfoEntry<'vue-component-meta', 'props'>['sch
 // "exposed" is used by the vue-component-meta plugin while "expose" is used by vue-docgen-api
 const ARG_TYPE_SECTIONS = ['props', 'events', 'slots', 'exposed', 'expose'] as const;
 
-export const extractArgTypes: ArgTypesExtractor = (component) => {
+export const extractArgTypes: ArgTypesExtractor = (component): StrictArgTypes | null => {
   if (!hasDocgen<VueDocgenInfo<VueDocgenPlugin>>(component)) {
     return null;
   }
@@ -42,7 +43,13 @@ export const extractArgTypes: ArgTypesExtractor = (component) => {
       }
 
       // skip duplicate and global props
-      if (!argType || argTypes[argType.name]) return;
+
+      // skip duplicate and global props
+      if (!argType || argTypes[argType.name]) {
+        return;
+      }
+
+      // disable controls for events and exposed since they can not be controlled
 
       // disable controls for events and exposed since they can not be controlled
       const sectionsToDisableControls: (typeof section)[] = ['events', 'expose', 'exposed'];
@@ -114,8 +121,11 @@ export const extractFromVueDocgenApi = (
         type = `${arrayElements}[]`;
       }
 
-      if (type === 'union') type = elements.join(' | ');
-      else if (type === 'intersection') type = elements.join(' & ');
+      if (type === 'union') {
+        type = elements.join(' | ');
+      } else if (type === 'intersection') {
+        type = elements.join(' & ');
+      }
     }
   }
 
@@ -136,7 +146,7 @@ export const extractFromVueDocgenApi = (
 
 /**
  * Extracts the argType for a prop/event/slot/exposed generated with "vue-component-meta".
-
+ *
  * @param docgenInfo __docgenInfo from "vue-component-meta"
  * @param section Whether the arg is a prop, event, slot or exposed
  */
@@ -145,7 +155,11 @@ export const extractFromVueComponentMeta = (
   section: (typeof ARG_TYPE_SECTIONS)[number]
 ): StrictInputType | undefined => {
   // ignore global props
-  if ('global' in docgenInfo && docgenInfo.global) return;
+
+  // ignore global props
+  if ('global' in docgenInfo && docgenInfo.global) {
+    return;
+  }
 
   const tableType = { summary: docgenInfo.type.replace(' | undefined', '') };
 
@@ -174,9 +188,7 @@ export const extractFromVueComponentMeta = (
   }
 };
 
-/**
- * Converts the given prop info that was generated with "vue-component-meta" into a SBType.
- */
+/** Converts the given prop info that was generated with "vue-component-meta" into a SBType. */
 export const convertVueComponentMetaProp = (
   propInfo: Pick<VueDocgenInfoEntry<'vue-component-meta', 'props'>, 'schema' | 'required' | 'type'>
 ): SBType => {
@@ -250,7 +262,10 @@ export const convertVueComponentMetaProp = (
     case 'array': {
       // filter out empty or "undefined" for optional props
       const definedSchemas = schema.schema?.filter((item) => item !== 'undefined') ?? [];
-      if (definedSchemas.length === 0) return fallbackSbType;
+
+      if (definedSchemas.length === 0) {
+        return fallbackSbType;
+      }
 
       if (definedSchemas.length === 1) {
         return {
@@ -283,17 +298,12 @@ export const convertVueComponentMetaProp = (
       };
     }
 
-    // recursively/deeply convert all properties of the object
     case 'object':
       return {
         name: 'object',
-        value: Object.entries(schema.schema ?? {}).reduce<Record<string, SBType>>(
-          (obj, [propName, propSchema]) => {
-            obj[propName] = convertVueComponentMetaProp(propSchema);
-            return obj;
-          },
-          {}
-        ),
+        // while Storybook generates simple JSON object controls, nested schemas don't have specialized controls
+        // so we don't need to recursively map the object schema here
+        value: {},
         required,
       };
 
@@ -302,14 +312,14 @@ export const convertVueComponentMetaProp = (
   }
 };
 
-/**
- * Adds the descriptions for the given tags if available.
- */
+/** Adds the descriptions for the given tags if available. */
 const formatDescriptionWithTags = (
   description: string,
   tags: VueDocgenInfoEntry<'vue-component-meta', 'props'>['tags']
 ): string => {
-  if (!tags?.length || !description) return description ?? '';
+  if (!tags?.length || !description) {
+    return description ?? '';
+  }
   const tagDescriptions = tags.map((tag) => `@${tag.name}: ${tag.text}`).join('<br>');
   return `${tagDescriptions}<br><br>${description}`;
 };
@@ -317,7 +327,7 @@ const formatDescriptionWithTags = (
 /**
  * Checks whether the given schemas are all literal union schemas.
  *
- * @example "foo" | "bar" | "baz"
+ * @example Foo | "bar" | "baz"
  */
 const isLiteralUnionSchema = (schemas: PropertyMetaSchema[]): schemas is `"${string}"`[] => {
   return schemas.every(
@@ -328,7 +338,7 @@ const isLiteralUnionSchema = (schemas: PropertyMetaSchema[]): schemas is `"${str
 /**
  * Checks whether the given schemas are all enums.
  *
- * @example [MyEnum.Foo, MyEnum.Bar]
+ * @example MyEnum.Foo, MyEnum.Bar
  */
 const isEnumSchema = (schemas: PropertyMetaSchema[]): schemas is string[] => {
   return schemas.every((schema) => typeof schema === 'string' && schema.includes('.'));
@@ -337,7 +347,11 @@ const isEnumSchema = (schemas: PropertyMetaSchema[]): schemas is string[] => {
 /**
  * Checks whether the given schemas are representing a boolean.
  *
- * @example [true, false]
+ * @example
+ *
+ * ```
+ * true, false;
+ * ```
  */
 const isBooleanSchema = (
   schemas: PropertyMetaSchema[]

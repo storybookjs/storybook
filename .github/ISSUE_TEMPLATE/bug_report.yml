@@ -1,7 +1,7 @@
 name: Bug report 🐞
 description: >-
   Something is broken and you have a reliable reproduction? Let us know here.
-  For questions, please use "Question" below.
+  For questions, please post in GitHub Discussion.
 title: '[Bug]: '
 labels:
   - needs triage
@@ -14,16 +14,26 @@ body:
       description: A clear and concise description of what the bug is
     validations:
       required: true
-  - type: textarea
-    id: reproduce
+  - type: input
+    id: repro-link
     attributes:
-      label: To Reproduce
+      label: Reproduction link
       description: >-
-        Due to the high volume of reports we receive, we can only prioritize bug reports that include a clear reproduction of the problem. Please use [storybook.new](https://storybook.new) to create one, and consult our [documentation](https://storybook.js.org/docs/react/contribute/how-to-reproduce) for guidance. Thank you for your understanding!
-      placeholder: >-
-        Please provide a link to your reproduction here. If creating a reproduction really isn't feasible, let us know and be sure to include as much detail as you can to help us understand the issue. 
+        Please provide a link to a reproduction of the issue. We accept reproductions hosted on GitHub, CodeSandbox, and StackBlitz. Due to the high volume of reports, we prioritize those with clear reproductions. The easiest way to create a reproduction is to use [storybook.new](https://storybook.new). For detailed guidance, please refer to our [documentation](https://storybook.js.org/docs/react/contribute/how-to-reproduce).
+
+        Important: If the provided URL is invalid (e.g., 404 error or private repository), we may close the issue. Thank you for your understanding!
     validations:
       required: true
+  - type: textarea
+    id: repro-steps
+    attributes:
+      label: Reproduction steps
+      description: >-
+        Include the steps to reproduce the issue using the provided link. Additionally, provide a clear and concise description of what you expected to happen.
+      placeholder: >-
+        1. Go to above link
+        2. Click on '....'
+        3. ...
   - type: textarea
     id: system
     attributes:

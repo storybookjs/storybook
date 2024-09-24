@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-interactions",
-  "version": "8.1.0-alpha.7",
+  "version": "8.4.0-alpha.0",
   "description": "Automate, test and debug user interactions",
   "keywords": [
     "storybook-addons",
@@ -24,14 +24,13 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./preview": {
       "types": "./dist/preview.d.ts",
-      "require": "./dist/preview.js",
-      "import": "./dist/preview.mjs"
+      "import": "./dist/preview.mjs",
+      "require": "./dist/preview.js"
     },
     "./manager": "./dist/manager.js",
     "./preset": "./dist/preset.js",
@@ -49,32 +48,28 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/addon-bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
     "@storybook/global": "^5.0.0",
     "@storybook/instrumenter": "workspace:*",
     "@storybook/test": "workspace:*",
-    "@storybook/types": "workspace:*",
     "polished": "^4.2.2",
     "ts-dedent": "^2.2.0"
   },
   "devDependencies": {
     "@devtools-ds/object-inspector": "^1.1.2",
-    "@storybook/client-logger": "workspace:*",
-    "@storybook/components": "workspace:*",
-    "@storybook/core-common": "workspace:*",
-    "@storybook/core-events": "workspace:*",
     "@storybook/icons": "^1.2.5",
-    "@storybook/manager-api": "workspace:*",
-    "@storybook/preview-api": "workspace:*",
-    "@storybook/theming": "workspace:*",
-    "@types/node": "^18.0.0",
+    "@types/node": "^22.0.0",
+    "ansi-to-html": "^0.7.2",
     "formik": "^2.2.9",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "typescript": "^5.3.2"
+  },
+  "peerDependencies": {
+    "storybook": "workspace:^"
   },
   "publishConfig": {
     "access": "public"
@@ -93,7 +88,7 @@
       "./src/preset.ts"
     ]
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae17",
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16",
   "storybook": {
     "displayName": "Interactions",
     "unsupportedFrameworks": [

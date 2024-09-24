@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react-vite",
-  "version": "8.1.0-alpha.7",
+  "version": "8.4.0-alpha.0",
   "description": "Storybook for React and Vite: Develop React components in isolation with Hot Reloading.",
   "keywords": [
     "storybook"
@@ -23,8 +23,8 @@
     ".": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./preset": {
       "types": "./dist/preset.d.ts",
@@ -43,14 +43,13 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
     "@joshwooding/vite-plugin-react-docgen-typescript": "0.3.0",
     "@rollup/pluginutils": "^5.0.2",
     "@storybook/builder-vite": "workspace:*",
-    "@storybook/node-logger": "workspace:*",
     "@storybook/react": "workspace:*",
     "find-up": "^5.0.0",
     "magic-string": "^0.30.0",
@@ -59,13 +58,14 @@
     "tsconfig-paths": "^4.2.0"
   },
   "devDependencies": {
-    "@types/node": "^18.0.0",
+    "@types/node": "^22.0.0",
     "typescript": "^5.3.2",
     "vite": "^4.0.0"
   },
   "peerDependencies": {
-    "react": "^16.8.0 || ^17.0.0 || ^18.0.0",
-    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0",
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
+    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
+    "storybook": "workspace:^",
     "vite": "^4.0.0 || ^5.0.0"
   },
   "engines": {
@@ -81,5 +81,5 @@
     ],
     "platform": "node"
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae17"
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

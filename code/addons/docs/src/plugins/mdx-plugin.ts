@@ -1,9 +1,12 @@
-import type { Options } from '@storybook/types';
-import type { Plugin } from 'vite';
-import rehypeSlug from 'rehype-slug';
-import rehypeExternalLinks from 'rehype-external-links';
+import { dirname, join } from 'node:path';
+
+import type { Options } from 'storybook/internal/types';
+
 import { createFilter } from '@rollup/pluginutils';
-import { dirname, join } from 'path';
+import rehypeExternalLinks from 'rehype-external-links';
+import rehypeSlug from 'rehype-slug';
+import type { Plugin } from 'vite';
+
 import type { CompileOptions } from '../compiler';
 import { compile } from '../compiler';
 
@@ -25,14 +28,16 @@ export async function mdxPlugin(options: Options): Promise<Plugin> {
     name: 'storybook:mdx-plugin',
     enforce: 'pre',
     async transform(src, id) {
-      if (!filter(id)) return undefined;
+      if (!filter(id)) {
+        return undefined;
+      }
 
       const mdxLoaderOptions: CompileOptions = await presets.apply('mdxLoaderOptions', {
         ...mdxPluginOptions,
         mdxCompileOptions: {
           providerImportSource: join(
             dirname(require.resolve('@storybook/addon-docs/package.json')),
-            '/dist/shims/mdx-react-shim'
+            '/dist/shims/mdx-react-shim.mjs'
           ),
           ...mdxPluginOptions?.mdxCompileOptions,
           rehypePlugins: [

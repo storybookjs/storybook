@@ -1,4 +1,5 @@
-import type { Preset } from '@storybook/types';
+import type { Preset } from 'storybook/internal/types';
+
 import type { StorybookConfig, SvelteOptions } from './types';
 
 export const webpack: StorybookConfig['webpack'] = async (config, { presets }) => {

@@ -1,11 +1,11 @@
 import {
-  Type,
   Component,
   Directive,
   Input,
   Output,
   Pipe,
   ɵReflectionCapabilities as ReflectionCapabilities,
+  Type,
 } from '@angular/core';
 
 const reflectionCapabilities = new ReflectionCapabilities();
@@ -21,9 +21,7 @@ export type ComponentInputsOutputs = {
   }[];
 };
 
-/**
- * Returns component Inputs / Outputs by browsing these properties and decorator
- */
+/** Returns component Inputs / Outputs by browsing these properties and decorator */
 export const getComponentInputsOutputs = (component: any): ComponentInputsOutputs => {
   const componentMetadata = getComponentDecoratorMetadata(component);
   const componentPropsMetadata = getComponentPropsDecoratorMetadata(component);
@@ -124,17 +122,12 @@ export const isStandaloneComponent = (component: any): component is Type<unknown
   );
 };
 
-/**
- * Returns all component decorator properties
- * is used to get all `@Input` and `@Output` Decorator
- */
+/** Returns all component decorator properties is used to get all `@Input` and `@Output` Decorator */
 export const getComponentPropsDecoratorMetadata = (component: any) => {
   return reflectionCapabilities.propMetadata(component);
 };
 
-/**
- * Returns component decorator `@Component`
- */
+/** Returns component decorator `@Component` */
 export const getComponentDecoratorMetadata = (component: any): Component | undefined => {
   const decorators = reflectionCapabilities.annotations(component);
 

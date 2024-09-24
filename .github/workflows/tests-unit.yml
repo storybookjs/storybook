@@ -21,7 +21,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version-file: ".nvmrc"
+
       - name: install and compile
-        run: yarn task --task compile --start-from=auto --no-link
+        run: yarn task --task compile --start-from=auto
+
+      - name: Install Playwright Dependencies
+        run: cd code && yarn exec playwright install chromium --with-deps
+
       - name: test
         run: yarn test

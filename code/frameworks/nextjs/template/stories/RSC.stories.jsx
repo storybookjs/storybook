@@ -1,15 +1,21 @@
 import React from 'react';
-import { RSC, Nested } from './RSC';
+
+import { Nested, RSC } from './RSC';
 
 export default {
   component: RSC,
   args: { label: 'label' },
+  parameters: {
+    react: {
+      rsc: true,
+    },
+  },
 };
 
 export const Default = {};
 
 export const DisableRSC = {
-  tags: ['test-skip'],
+  tags: ['!test'],
   parameters: {
     chromatic: { disable: true },
     nextjs: { rsc: false },
@@ -17,7 +23,7 @@ export const DisableRSC = {
 };
 
 export const Error = {
-  tags: ['test-skip'],
+  tags: ['!test'],
   parameters: {
     chromatic: { disable: true },
   },

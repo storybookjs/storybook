@@ -1,5 +1,6 @@
 import React from 'react';
-import { addons, types } from '@storybook/manager-api';
+
+import { addons, types } from 'storybook/internal/manager-api';
 
 import { StoryPanel } from './StoryPanel';
 import { ADDON_ID, PANEL_ID } from './index';

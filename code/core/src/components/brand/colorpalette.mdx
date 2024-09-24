@@ -1,0 +1,125 @@
+import { Meta, ColorPalette, ColorItem } from '@storybook/blocks';
+
+import { themes, ThemeProvider, convert, ensure } from '@storybook/core/theming';
+
+import { SideBySide } from './SideBySide';
+
+<Meta title="ColorPalette" />
+
+<SideBySide>
+  <div style={{background: '#202020' }}>
+<ThemeProvider theme={ensure(themes.dark)}>
+
+Dark theme Colors
+
+<ColorPalette>
+  {Object.entries(convert(themes.dark).color).map(([k, v]) => {
+    if (typeof v === 'string' && (v.match(/^#/) || v.match(/^rgb/) || k.match(/color/i))) {
+      return <ColorItem key={k} title={k} colors={{ [k]: v }} />;
+    } else if (typeof v === 'object') {
+      return (
+        <ColorItem
+          key={k}
+          title={k}
+          colors={Object.entries(v).reduce(
+            (acc, [key, value]) =>
+              typeof value === 'string' &&
+              (value.match(/^#/) || value.match(/^rgb/) || key.match(/color/i))
+                ? { ...acc, [key]: value }
+                : acc,
+            {}
+          )}
+        />
+      );
+    }
+    return null;
+  })}
+</ColorPalette>
+
+Dark theme Backgrounds
+
+<ColorPalette>
+  {Object.entries(convert(themes.dark).background).map(([k,v]) => {
+    if(k === 'color'){
+      return null
+    }
+    if (typeof v === 'string' && (v.match(/^#/) || v.match(/^rgb/) || k.match(/color/i))) {
+      return (
+        <ColorItem
+          key={k}
+          title={k}
+          colors={{ [k]: v }}
+        />
+      );
+    } else if (typeof v === 'object') {
+      const colors = Object.entries(v).reduce((acc, [key, value]) => (typeof value === 'string' && (value.match(/^#/) || value.match(/^rgb/) || key.match(/color/i))) ? {...acc, [key]: value} : acc, {});
+      return (
+        <ColorItem
+          key={k}
+          title={k}
+          colors={colors}
+        />
+      );
+    }
+    return null;
+  })}
+</ColorPalette>
+  </ThemeProvider></div>
+  <div styles={{ background: '#eeeeee'}}>
+
+Light theme Colors
+
+<ColorPalette>
+  {Object.entries(convert(themes.light).color).map(([k, v]) => {
+    if (typeof v === 'string' && (v.match(/^#/) || v.match(/^rgb/) || k.match(/color/i))) {
+      return <ColorItem key={k} title={k} colors={{ [k]: v }} />;
+    } else if (typeof v === 'object') {
+      return (
+        <ColorItem
+          key={k}
+          title={k}
+          colors={Object.entries(v).reduce(
+            (acc, [key, value]) =>
+              typeof value === 'string' &&
+              (value.match(/^#/) || value.match(/^rgb/) || key.match(/color/i))
+                ? { ...acc, [key]: value }
+                : acc,
+            {}
+          )}
+        />
+      );
+    }
+    return null;
+  })}
+</ColorPalette>
+
+Light theme Backgrounds
+
+<ColorPalette>
+  {Object.entries(convert(themes.light).background).map(([k,v]) => {
+    if(k === 'color'){
+      return null
+    }
+    if (typeof v === 'string' && (v.match(/^#/) || v.match(/^rgb/) || k.match(/color/i))) {
+      return (
+        <ColorItem
+          key={k}
+          title={k}
+          colors={{ [k]: v }}
+        />
+      );
+    } else if (typeof v === 'object') {
+      const colors = Object.entries(v).reduce((acc, [key, value]) => (typeof value === 'string' && (value.match(/^#/) || value.match(/^rgb/) || key.match(/color/i))) ? {...acc, [key]: value} : acc, {});
+      return (
+        <ColorItem
+          key={k}
+          title={k}
+          colors={colors}
+        />
+      );
+    }
+    return null;
+  })}
+</ColorPalette>
+  </div>
+</SideBySide>

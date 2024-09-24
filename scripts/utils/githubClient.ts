@@ -1,5 +1,3 @@
-import fetch from 'node-fetch';
-
 const GITHUB_API = 'https://api.github.com/graphql';
 
 export const githubClient = (apiKey: string) => {

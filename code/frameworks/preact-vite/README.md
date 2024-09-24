@@ -15,7 +15,7 @@ Follow the prompts after running this command in your Preact project's root dire
 npx storybook@latest init
 ```
 
-[More on getting started with Storybook](https://storybook.js.org/docs/preact/get-started/install)
+[More on getting started with Storybook](https://storybook.js.org/docs/get-started/install?renderer=preact)
 
 ### In a project with Storybook
 

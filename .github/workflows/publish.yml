@@ -154,17 +154,13 @@ jobs:
           git merge ${{ github.ref_name }}
           git push origin ${{ steps.target.outputs.target }}
 
-      - name: Ensure `next` is a minor version ahead of `main`
-        if: steps.target.outputs.target == 'main'
+      - name: Force push from 'next' to 'latest-release' and 'main' on minor/major releases
+        if: github.ref_name == 'next-release' && steps.is-prerelease.outputs.prerelease == 'false'
         run: |
           git checkout next
           git pull
-
-          yarn release:ensure-next-ahead --main-version "${{ steps.version.outputs.current-version }}"
-
-          git add ..
-          git diff --staged --quiet || git commit -m "Bump next to be one minor ahead of main [skip ci]"
-          git push origin next
+          git push origin --force next:latest-release
+          git push origin --force next:main
 
       - name: Sync CHANGELOG.md from `main` to `next`
         if: steps.target.outputs.target == 'main'
@@ -178,6 +174,7 @@ jobs:
           git commit -m "Update CHANGELOG.md for v${{ steps.version.outputs.current-version }} [skip ci]" || true
           git push origin next
 
+      # TODO: remove this step - @JReinhold
       - name: Sync version JSONs from `next-release` to `main`
         if: github.ref_name == 'next-release'
         working-directory: .

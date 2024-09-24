@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react-webpack5",
-  "version": "8.1.0-alpha.7",
+  "version": "8.4.0-alpha.0",
   "description": "Storybook for React: Develop React Component in isolation with Hot Reloading.",
   "keywords": [
     "storybook"
@@ -23,8 +23,8 @@
     ".": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./preset": {
       "types": "./dist/preset.d.ts",
@@ -43,18 +43,19 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/preset-react-webpack": "workspace:*",
     "@storybook/react": "workspace:*",
-    "@types/node": "^18.0.0"
+    "@types/node": "^22.0.0"
   },
   "peerDependencies": {
-    "react": "^16.8.0 || ^17.0.0 || ^18.0.0",
-    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0",
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
+    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
+    "storybook": "workspace:^",
     "typescript": ">= 4.2.x"
   },
   "peerDependenciesMeta": {
@@ -75,5 +76,5 @@
     ],
     "platform": "node"
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae17"
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

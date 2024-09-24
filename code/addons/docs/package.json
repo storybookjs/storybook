@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-docs",
-  "version": "8.1.0-alpha.7",
+  "version": "8.4.0-alpha.0",
   "description": "Document component usage and properties in Markdown",
   "keywords": [
     "addon",
@@ -26,30 +26,29 @@
   "license": "MIT",
   "exports": {
     ".": {
-      "node": "./dist/index.js",
       "types": "./dist/index.d.ts",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./preview": {
       "types": "./dist/preview.d.ts",
-      "require": "./dist/preview.js",
-      "import": "./dist/preview.mjs"
+      "import": "./dist/preview.mjs",
+      "require": "./dist/preview.js"
     },
     "./preset": {
       "types": "./dist/preset.d.ts",
-      "require": "./dist/preset.js",
-      "import": "./dist/preset.js"
+      "import": "./dist/preset.js",
+      "require": "./dist/preset.js"
     },
     "./blocks": {
       "types": "./dist/blocks.d.ts",
-      "require": "./dist/blocks.js",
-      "import": "./dist/blocks.mjs"
+      "import": "./dist/blocks.mjs",
+      "require": "./dist/blocks.js"
     },
     "./dist/preview": {
       "types": "./dist/preview.d.ts",
-      "require": "./dist/preview.js",
-      "import": "./dist/preview.mjs"
+      "import": "./dist/preview.mjs",
+      "require": "./dist/preview.js"
     },
     "./dist/preset": {
       "types": "./dist/preset.d.ts",
@@ -57,13 +56,13 @@
     },
     "./dist/shims/mdx-react-shim": {
       "types": "./dist/shims/mdx-react-shim.d.ts",
-      "require": "./dist/shims/mdx-react-shim.js",
-      "import": "./dist/shims/mdx-react-shim.mjs"
+      "import": "./dist/shims/mdx-react-shim.mjs",
+      "require": "./dist/shims/mdx-react-shim.js"
     },
     "./mdx-react-shim": {
       "types": "./dist/shims/mdx-react-shim.d.ts",
-      "require": "./dist/shims/mdx-react-shim.js",
-      "import": "./dist/shims/mdx-react-shim.mjs"
+      "import": "./dist/shims/mdx-react-shim.mjs",
+      "require": "./dist/shims/mdx-react-shim.js"
     },
     "./mdx-loader": "./dist/mdx-loader.js",
     "./svelte/HOC.svelte": "./svelte/HOC.svelte",
@@ -94,25 +93,16 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@babel/core": "^7.12.3",
     "@mdx-js/react": "^3.0.0",
     "@storybook/blocks": "workspace:*",
-    "@storybook/client-logger": "workspace:*",
-    "@storybook/components": "workspace:*",
     "@storybook/csf-plugin": "workspace:*",
-    "@storybook/csf-tools": "workspace:*",
     "@storybook/global": "^5.0.0",
-    "@storybook/node-logger": "workspace:*",
-    "@storybook/preview-api": "workspace:*",
     "@storybook/react-dom-shim": "workspace:*",
-    "@storybook/theming": "workspace:*",
-    "@storybook/types": "workspace:*",
     "@types/react": "^16.8.0 || ^17.0.0 || ^18.0.0",
-    "fs-extra": "^11.1.0",
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0",
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0",
     "rehype-external-links": "^3.0.0",
@@ -122,11 +112,13 @@
   "devDependencies": {
     "@mdx-js/mdx": "^3.0.0",
     "@rollup/pluginutils": "^5.0.2",
-    "@storybook/test": "workspace:*",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "typescript": "^5.3.2",
     "vite": "^4.0.4"
+  },
+  "peerDependencies": {
+    "storybook": "workspace:^"
   },
   "publishConfig": {
     "access": "public"
@@ -141,7 +133,7 @@
       "./src/mdx-loader.ts"
     ]
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae17",
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16",
   "storybook": {
     "displayName": "Docs",
     "icon": "https://user-images.githubusercontent.com/263385/101991672-48355c80-3c7c-11eb-82d9-95fa12438f64.png",

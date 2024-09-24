@@ -43,17 +43,15 @@ const getAngularWebpackUtils = () => {
 };
 
 /**
- * Extract webpack config from angular-cli 13.x.x
- * ⚠️ This file is in JavaScript to not use TypeScript. Because current storybook TypeScript version is not compatible with Angular CLI.
+ * Extract webpack config from angular-cli 13.x.x ⚠️ This file is in JavaScript to not use
+ * TypeScript. Because current storybook TypeScript version is not compatible with Angular CLI.
  * FIXME: Try another way with TypeScript on future storybook version (7 maybe 🤞)
  *
- * @param {*} baseConfig Previous webpack config from storybook
- * @param {*} options { builderOptions, builderContext }
+ * @param {any} baseConfig Previous webpack config from storybook
+ * @param {any} options { builderOptions, builderContext }
  */
 exports.getWebpackConfig = async (baseConfig, { builderOptions, builderContext }) => {
-  /**
-   * Get angular-cli Webpack config
-   */
+  /** Get angular-cli Webpack config */
   const { getCommonConfig, getStylesConfig, getDevServerConfig, getTypeScriptConfig } =
     getAngularWebpackUtils();
   const { config: cliConfig } = await generateI18nBrowserWebpackConfigFromContext(
@@ -61,13 +59,16 @@ exports.getWebpackConfig = async (baseConfig, { builderOptions, builderContext }
       // Default options
       index: 'noop-index',
       main: 'noop-main',
-      outputPath: 'noop-out',
 
       // Options provided by user
       ...builderOptions,
       styles: builderOptions.styles
         ?.map((style) => (typeof style === 'string' ? style : style.input))
         .filter((style) => typeof style === 'string' || style.inject !== false),
+      outputPath:
+        typeof builderOptions.outputPath === 'string'
+          ? builderOptions.outputPath
+          : builderOptions.outputPath?.base ?? 'noop-out',
 
       // Fixed options
       optimization: false,
@@ -84,9 +85,7 @@ exports.getWebpackConfig = async (baseConfig, { builderOptions, builderContext }
     ]
   );
 
-  /**
-   * Merge baseConfig Webpack with angular-cli Webpack
-   */
+  /** Merge baseConfig Webpack with angular-cli Webpack */
   const entry = [
     ...baseConfig.entry,
     ...(cliConfig.entry.styles ?? []),

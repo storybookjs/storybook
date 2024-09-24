@@ -1,3 +1,5 @@
+import type { ComponentProps, ComponentType } from 'react';
+
 import type {
   AnnotatedStoryFn,
   Args,
@@ -5,17 +7,18 @@ import type {
   ArgsStoryFn,
   ComponentAnnotations,
   DecoratorFunction,
-  LoaderFunction,
-  StoryAnnotations,
   StoryContext as GenericStoryContext,
-  StrictArgs,
+  LoaderFunction,
   ProjectAnnotations,
-} from '@storybook/types';
-import type { ComponentProps, ComponentType } from 'react';
+  StoryAnnotations,
+  StrictArgs,
+} from 'storybook/internal/types';
+
 import type { SetOptional, Simplify } from 'type-fest';
+
 import type { ReactRenderer } from './types';
 
-export type { Args, ArgTypes, Parameters, StrictArgs } from '@storybook/types';
+export type { Args, ArgTypes, Parameters, StrictArgs } from 'storybook/internal/types';
 export type { ReactRenderer };
 
 /**

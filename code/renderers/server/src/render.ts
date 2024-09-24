@@ -1,9 +1,11 @@
+import { simulateDOMContentLoaded, simulatePageLoad } from 'storybook/internal/preview-api';
+import type { RenderContext } from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
 
 import { dedent } from 'ts-dedent';
-import type { RenderContext } from '@storybook/types';
-import { simulatePageLoad, simulateDOMContentLoaded } from '@storybook/preview-api';
-import type { StoryFn, Args, ArgTypes } from './public-types';
+
+import type { ArgTypes, Args, StoryFn } from './public-types';
 import type { FetchStoryHtmlType, ServerRenderer } from './types';
 
 const { fetch, Node } = global;

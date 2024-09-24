@@ -1,0 +1,98 @@
+---
+title: Mocking network requests
+sidebar:
+  order: 2
+  title: Network requests
+---
+
+For components that make network requests (e.g. fetching data from a REST or GraphQL API), you can mock those requests using a tool like [Mock Service Worker (MSW)](https://mswjs.io/). MSW is an API mocking library, which relies on service workers to capture network requests and provides mocked data in response.
+
+The [MSW addon](https://storybook.js.org/addons/msw-storybook-addon/) brings this functionality into Storybook, allowing you to mock API requests in your stories. Below is an overview of how to set up and use the addon.
+
+## Set up the MSW addon
+
+First, if necessary, run this command to install MSW and the MSW addon:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="msw-addon-install.md" />
+
+{/* prettier-ignore-end */}
+
+If you're not already using MSW, generate the service worker file necessary for MSW to work:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="msw-generate-service-worker.md" />
+
+{/* prettier-ignore-end */}
+
+<If renderer="angular">
+  <Callout variant="info" icon="💡">
+    Angular projects will likely need to adjust the command to save the mock service worker file in a different directory (e.g., `src`).
+  </Callout>
+</If>
+
+Then ensure the [`staticDirs`](../../api/main-config/main-config-static-dirs.mdx) property in your Storybook configuration will include the generated service worker file (in `/public`, by default):
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="main-config-static-dirs.md" />
+
+{/* prettier-ignore-end */}
+
+Finally, initialize the addon and apply it to all stories with a [project-level loader](../loaders.mdx#global-loaders):
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="msw-addon-initialize.md" />
+
+{/* prettier-ignore-end */}
+
+## Mocking REST requests
+
+If your component fetches data from a REST API, you can use MSW to mock those requests in Storybook. As an example, consider this document screen component:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="document-screen-fetch.md" />
+
+{/* prettier-ignore-end */}
+
+<Callout variant="info">
+  This example uses the [`fetch` API](https://developer.mozilla.org/en-US/docs/Web/API/fetch) to make network requests. If you're using a different library (e.g. [`axios`](https://axios-http.com/)), you can apply the same principles to mock network requests in Storybook.
+</Callout>
+
+With the MSW addon, we can write stories that use MSW to mock the REST requests. Here's an example of two stories for the document screen component: one that fetches data successfully and another that fails.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="msw-addon-configure-handlers-http.md" usesCsf3 csf2Path="writing-stories/build-pages-with-storybook#snippet-documentscreen-story-msw-rest-request" />
+
+{/* prettier-ignore-end */}
+
+## Mocking GraphQL requests
+
+GraphQL is another common way to fetch data in components. You can use MSW to mock GraphQL requests in Storybook. Here's an example of a document screen component that fetches data from a GraphQL API:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="document-screen-with-graphql.md" />
+
+{/* prettier-ignore-end */}
+
+<Callout variant="info">
+  This example uses GraphQL with [Apollo Client](https://www.apollographql.com/docs/) to make network requests. If you're using a different library (e.g. [URQL](https://formidable.com/open-source/urql/) or [React Query](https://react-query.tanstack.com/)), you can apply the same principles to mock network requests in Storybook.
+</Callout>
+
+The MSW addon allows you to write stories that use MSW to mock the GraphQL requests. Here's an example demonstrating two stories for the document screen component. The first story fetches data successfully, while the second story fails.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="msw-addon-configure-handlers-graphql.md" usesCsf3 csf2Path="writing-stories/build-pages-with-storybook#snippet-documentscreen-story-msw-graphql-query" />
+
+{/* prettier-ignore-end */}
+
+## Configuring MSW for stories
+
+In the examples above, note how each story is configured with `parameters.msw` to define the request handlers for the mock server. Because it uses parameters in this way, it can also be configured at the [component](../parameters.mdx#component-parameters) or even [project](../parameters.mdx#global-parameters) level, allowing you to share the same mock server configuration across multiple stories.

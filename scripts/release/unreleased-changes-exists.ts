@@ -1,13 +1,13 @@
-/* eslint-disable no-console */
-import chalk from 'chalk';
-import program from 'commander';
-import { z } from 'zod';
 import { setOutput } from '@actions/core';
+import chalk from 'chalk';
+import { program } from 'commander';
 import { intersection } from 'lodash';
+import { z } from 'zod';
+
 import { esMain } from '../utils/esmain';
+import { getCurrentVersion } from './get-current-version';
 import type { Change } from './utils/get-changes';
 import { RELEASED_LABELS, getChanges } from './utils/get-changes';
-import { getCurrentVersion } from './get-current-version';
 
 program
   .name('are-changes-unreleased')

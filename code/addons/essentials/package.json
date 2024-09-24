@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-essentials",
-  "version": "8.1.0-alpha.7",
+  "version": "8.4.0-alpha.0",
   "description": "Curated addons to bring out the best of Storybook",
   "keywords": [
     "addon",
@@ -23,10 +23,9 @@
   "license": "MIT",
   "exports": {
     ".": {
-      "node": "./dist/index.js",
       "types": "./dist/index.d.ts",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./actions/preview": {
       "types": "./dist/actions/preview.d.ts",
@@ -85,8 +84,8 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/addon-bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
     "@storybook/addon-actions": "workspace:*",
@@ -98,14 +97,13 @@
     "@storybook/addon-outline": "workspace:*",
     "@storybook/addon-toolbars": "workspace:*",
     "@storybook/addon-viewport": "workspace:*",
-    "@storybook/core-common": "workspace:*",
-    "@storybook/manager-api": "workspace:*",
-    "@storybook/node-logger": "workspace:*",
-    "@storybook/preview-api": "workspace:*",
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
     "typescript": "^5.3.2"
+  },
+  "peerDependencies": {
+    "storybook": "workspace:^"
   },
   "publishConfig": {
     "access": "public"
@@ -135,5 +133,5 @@
       "./src/viewport/preview.ts"
     ]
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae17"
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

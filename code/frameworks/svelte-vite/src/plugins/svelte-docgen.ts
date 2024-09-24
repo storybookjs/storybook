@@ -1,12 +1,14 @@
-import type { PluginOption } from 'vite';
+import { readFileSync } from 'node:fs';
+import { basename, relative } from 'node:path';
+
+import { logger } from 'storybook/internal/node-logger';
+
 import MagicString from 'magic-string';
-import path from 'path';
-import fs from 'fs';
+import { replace, typescript } from 'svelte-preprocess';
+import { preprocess } from 'svelte/compiler';
 import svelteDoc from 'sveltedoc-parser';
 import type { SvelteComponentDoc, SvelteParserOptions } from 'sveltedoc-parser';
-import { logger } from '@storybook/node-logger';
-import { preprocess } from 'svelte/compiler';
-import { replace, typescript } from 'svelte-preprocess';
+import type { PluginOption } from 'vite';
 
 /*
  * Patch sveltedoc-parser internal options.
@@ -30,7 +32,9 @@ svelteDocParserOptions.getAstDefaultOptions = () => ({
 // From https://github.com/sveltejs/svelte/blob/8db3e8d0297e052556f0b6dde310ef6e197b8d18/src/compiler/compile/utils/get_name_from_filename.ts
 // Copied because it is not exported from the compiler
 function getNameFromFilename(filename: string) {
-  if (!filename) return null;
+  if (!filename) {
+    return null;
+  }
 
   const parts = filename.split(/[/\\]/).map(encodeURI);
 
@@ -71,7 +75,9 @@ export async function svelteDocgen(svelteOptions: Record<string, any> = {}): Pro
   return {
     name: 'storybook:svelte-docgen-plugin',
     async transform(src: string, id: string) {
-      if (!filter(id)) return undefined;
+      if (!filter(id)) {
+        return undefined;
+      }
 
       if (preprocessOptions && !docPreprocessOptions) {
         /*
@@ -96,11 +102,11 @@ export async function svelteDocgen(svelteOptions: Record<string, any> = {}): Pro
         }
       }
 
-      const resource = path.relative(cwd, id);
+      const resource = relative(cwd, id);
 
       let docOptions;
       if (docPreprocessOptions) {
-        const rawSource = fs.readFileSync(resource).toString();
+        const rawSource = readFileSync(resource).toString();
 
         const { code: fileContent } = await preprocess(rawSource, docPreprocessOptions, {
           filename: resource,
@@ -132,9 +138,9 @@ export async function svelteDocgen(svelteOptions: Record<string, any> = {}): Pro
       }
 
       // get filename for source content
-      const file = path.basename(resource);
+      const file = basename(resource);
 
-      componentDoc.name = path.basename(file);
+      componentDoc.name = basename(file);
 
       const componentName = getNameFromFilename(resource);
       s.append(`;${componentName}.__docgen = ${JSON.stringify(componentDoc)}`);

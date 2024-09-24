@@ -15,6 +15,7 @@ export const DEFAULT_ADDON_STATE: ThemeAddonState = {
 
 export interface ThemeParameters {
   themeOverride?: string;
+  disable?: boolean;
 }
 
 export const DEFAULT_THEME_PARAMETERS: ThemeParameters = {};

@@ -1,10 +1,10 @@
-// auto-generated from scripts/create-nx-sandbox-projects.ts
 {
   "name": "ember/default-js",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "implicitDependencies": [
     "cli",
-    "test",
+    "core",
     "essentials",
     "interactions",
     "links",

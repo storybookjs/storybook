@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "module": "esnext",
+    "paths": {
+      "storybook/internal/*": ["../../lib/cli/core/*"]
+    },
+    "strict": false
+  },
+  "extends": "../../tsconfig.json",
+  "include": ["src/**/*"]
+}

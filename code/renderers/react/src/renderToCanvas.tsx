@@ -1,10 +1,11 @@
-import { global } from '@storybook/global';
 import type { FC } from 'react';
-import React, { Component as ReactComponent, StrictMode, Fragment } from 'react';
-import { renderElement, unmountElement } from '@storybook/react-dom-shim';
+import React, { Fragment, Component as ReactComponent, StrictMode } from 'react';
 
-import type { RenderContext } from '@storybook/types';
+import type { RenderContext } from 'storybook/internal/types';
 
+import { global } from '@storybook/global';
+
+import { getReactActEnvironment } from './act-compat';
 import type { ReactRenderer, StoryContext } from './types';
 
 const { FRAMEWORK_OPTIONS } = global;
@@ -54,9 +55,14 @@ export async function renderToCanvas(
   }: RenderContext<ReactRenderer>,
   canvasElement: ReactRenderer['canvasElement']
 ) {
+  const { renderElement, unmountElement } = await import('@storybook/react-dom-shim');
   const Story = unboundStoryFn as FC<StoryContext<ReactRenderer>>;
 
-  const content = (
+  const isActEnabled = getReactActEnvironment();
+
+  const content = isActEnabled ? (
+    <Story {...storyContext} />
+  ) : (
     <ErrorBoundary showMain={showMain} showException={showException}>
       <Story {...storyContext} />
     </ErrorBoundary>
@@ -74,7 +80,7 @@ export async function renderToCanvas(
     unmountElement(canvasElement);
   }
 
-  await renderElement(element, canvasElement);
+  await renderElement(element, canvasElement, storyContext?.parameters?.react?.rootOptions);
 
   return () => unmountElement(canvasElement);
 }

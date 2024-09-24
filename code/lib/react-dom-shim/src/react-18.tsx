@@ -1,19 +1,30 @@
-import type { FC, ReactElement } from 'react';
-import type { Root as ReactRoot } from 'react-dom/client';
-import React, { useLayoutEffect, useRef } from 'react';
-import ReactDOM from 'react-dom/client';
+/* eslint-disable @typescript-eslint/no-unnecessary-type-constraint */
+import type { ReactElement } from 'react';
+import * as React from 'react';
+import type { Root as ReactRoot, RootOptions } from 'react-dom/client';
+import * as ReactDOM from 'react-dom/client';
 
 // A map of all rendered React 18 nodes
 const nodes = new Map<Element, ReactRoot>();
 
-const WithCallback: FC<{ callback: () => void; children: ReactElement }> = ({
+declare const globalThis: {
+  IS_REACT_ACT_ENVIRONMENT: boolean;
+};
+
+function getIsReactActEnvironment() {
+  return globalThis.IS_REACT_ACT_ENVIRONMENT;
+}
+
+const WithCallback: React.FC<{ callback: () => void; children: ReactElement }> = ({
   callback,
   children,
 }) => {
   // See https://github.com/reactwg/react-18/discussions/5#discussioncomment-2276079
-  const once = useRef<() => void>();
-  useLayoutEffect(() => {
-    if (once.current === callback) return;
+  const once = React.useRef<() => void>();
+  React.useLayoutEffect(() => {
+    if (once.current === callback) {
+      return;
+    }
     once.current = callback;
     callback();
   }, [callback]);
@@ -21,13 +32,31 @@ const WithCallback: FC<{ callback: () => void; children: ReactElement }> = ({
   return children;
 };
 
-export const renderElement = async (node: ReactElement, el: Element) => {
-  // Create Root Element conditionally for new React 18 Root Api
-  const root = await getReactRoot(el);
+// pony-fill
+if (typeof Promise.withResolvers === 'undefined') {
+  Promise.withResolvers = <T extends unknown>() => {
+    let resolve: PromiseWithResolvers<T>['resolve'] = null!;
+    let reject: PromiseWithResolvers<T>['reject'] = null!;
+    const promise = new Promise<T>((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
+    return { promise, resolve, reject };
+  };
+}
 
-  return new Promise((resolve) => {
-    root.render(<WithCallback callback={() => resolve(null)}>{node}</WithCallback>);
-  });
+export const renderElement = async (node: ReactElement, el: Element, rootOptions?: RootOptions) => {
+  // Create Root Element conditionally for new React 18 Root Api
+  const root = await getReactRoot(el, rootOptions);
+
+  if (getIsReactActEnvironment()) {
+    root.render(node);
+    return;
+  }
+
+  const { promise, resolve } = Promise.withResolvers<void>();
+  root.render(<WithCallback callback={resolve}>{node}</WithCallback>);
+  return promise;
 };
 
 export const unmountElement = (el: Element, shouldUseNewRootApi?: boolean) => {
@@ -39,11 +68,11 @@ export const unmountElement = (el: Element, shouldUseNewRootApi?: boolean) => {
   }
 };
 
-const getReactRoot = async (el: Element): Promise<ReactRoot> => {
+const getReactRoot = async (el: Element, rootOptions?: RootOptions): Promise<ReactRoot> => {
   let root = nodes.get(el);
 
   if (!root) {
-    root = ReactDOM.createRoot(el);
+    root = ReactDOM.createRoot(el, rootOptions);
     nodes.set(el, root);
   }
 

@@ -1,7 +1,9 @@
-import semver from 'semver';
-import type { Configuration as WebpackConfig, RuleSetRule } from 'webpack';
+import { resolve as resolvePath } from 'node:path';
+
 import type { NextConfig } from 'next';
-import path from 'path';
+import semver from 'semver';
+import type { RuleSetRule, Configuration as WebpackConfig } from 'webpack';
+
 import { getNextjsVersion } from '../utils';
 
 export const configureImages = (baseConfig: WebpackConfig, nextConfig: NextConfig): void => {
@@ -17,21 +19,24 @@ const configureImageDefaults = (baseConfig: WebpackConfig): void => {
   resolve.alias = {
     ...resolve.alias,
     'sb-original/next/image': require.resolve('next/image'),
-    'next/image': path.resolve(__dirname, './images/next-image'),
+    'next/image': resolvePath(__dirname, './images/next-image'),
   };
 
   if (semver.satisfies(version, '>=13.0.0')) {
     resolve.alias = {
       ...resolve.alias,
       'sb-original/next/legacy/image': require.resolve('next/legacy/image'),
-      'next/legacy/image': path.resolve(__dirname, './images/next-legacy-image'),
+      'next/legacy/image': resolvePath(__dirname, './images/next-legacy-image'),
     };
   }
 };
 
 const configureStaticImageImport = (baseConfig: WebpackConfig, nextConfig: NextConfig): void => {
   const version = getNextjsVersion();
-  if (semver.lt(version, '11.0.0')) return;
+
+  if (semver.lt(version, '11.0.0')) {
+    return;
+  }
 
   const rules = baseConfig.module?.rules;
 

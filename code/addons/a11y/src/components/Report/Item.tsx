@@ -1,16 +1,16 @@
 import React, { Fragment, useState } from 'react';
 
-import { styled } from '@storybook/theming';
+import { styled } from 'storybook/internal/theming';
+
+import { ChevronSmallDownIcon } from '@storybook/icons';
 
 import type { Result } from 'axe-core';
-import { Info } from './Info';
-
-import { Elements } from './Elements';
-import { Tags } from './Tags';
 
 import type { RuleType } from '../A11YPanel';
+import { Elements } from './Elements';
 import HighlightToggle from './HighlightToggle';
-import { ChevronSmallDownIcon } from '@storybook/icons';
+import { Info } from './Info';
+import { Tags } from './Tags';
 
 const Wrapper = styled.div(({ theme }) => ({
   display: 'flex',

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/svelte';
-import { within, userEvent, expect } from '@storybook/test';
+import { expect, userEvent, waitFor, within } from '@storybook/test';
 
 import Page from './Page.svelte';
 
@@ -24,7 +24,7 @@ export const LoggedIn: Story = {
     const loginButton = canvas.getByRole('button', { name: /Log in/i });
     await expect(loginButton).toBeInTheDocument();
     await userEvent.click(loginButton);
-    await expect(loginButton).not.toBeInTheDocument();
+    await waitFor(() => expect(loginButton).not.toBeInTheDocument());
 
     const logoutButton = canvas.getByRole('button', { name: /Log out/i });
     await expect(logoutButton).toBeInTheDocument();

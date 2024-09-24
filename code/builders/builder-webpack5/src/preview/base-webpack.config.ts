@@ -1,5 +1,6 @@
-import { logger } from '@storybook/node-logger';
-import type { Options } from '@storybook/types';
+import { logger } from 'storybook/internal/node-logger';
+import type { Options } from 'storybook/internal/types';
+
 import type { Configuration } from 'webpack';
 
 export async function createDefaultWebpackConfig(
@@ -85,6 +86,14 @@ export async function createDefaultWebpackConfig(
     },
     resolve: {
       ...storybookBaseConfig.resolve,
+      // see https://github.com/webpack/webpack/issues/17692#issuecomment-1866272674 for the docs
+      conditionNames: [
+        ...(storybookBaseConfig.resolve?.conditionNames ?? []),
+        'storybook',
+        'stories',
+        'test',
+        '...',
+      ],
       fallback: {
         crypto: false,
         assert: false,

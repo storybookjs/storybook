@@ -1,13 +1,17 @@
-import { html, render } from 'lit';
+// @vitest-environment happy-dom
 import type { Mock } from 'vitest';
-import { describe, beforeEach, it, vi, expect } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { SNIPPET_RENDERED } from 'storybook/internal/docs-tools';
+import { addons, useEffect } from 'storybook/internal/preview-api';
+
+import { html, render } from 'lit';
 import { styleMap } from 'lit/directives/style-map.js';
-import { addons, useEffect } from '@storybook/preview-api';
-import { SNIPPET_RENDERED } from '@storybook/docs-tools';
+
 import type { StoryContext } from '../types';
 import { sourceDecorator } from './sourceDecorator';
 
-vi.mock('@storybook/preview-api');
+vi.mock('storybook/internal/preview-api');
 const mockedAddons = vi.mocked(addons);
 const mockedUseEffect = vi.mocked(useEffect);
 

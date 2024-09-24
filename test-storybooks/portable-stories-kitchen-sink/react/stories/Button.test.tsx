@@ -1,8 +1,12 @@
 import { render, screen, cleanup } from '@testing-library/react';
-import { addons } from '@storybook/preview-api';
+import { addons } from 'storybook/internal/preview-api';
 
 import { setProjectAnnotations, composeStories, composeStory } from '@storybook/react';
 import * as stories from './Button.stories';
+
+afterEach(() => {
+  cleanup();
+});
 
 // example with composeStories, returns an object with all stories composed with args/decorators
 const { CSF3Primary } = composeStories(stories);
@@ -10,10 +14,6 @@ const { CSF3Primary } = composeStories(stories);
 // // example with composeStory, returns a single story composed with args/decorators
 const Secondary = composeStory(stories.CSF2Secondary, stories.default);
 describe('renders', () => {
-  afterEach(() => {
-    cleanup();
-  });
-
   it('renders primary button', () => {
     render(<CSF3Primary>Hello world</CSF3Primary>);
     const buttonElement = screen.getByText(/Hello world/i);
@@ -46,10 +46,6 @@ describe('renders', () => {
 });
 
 describe('projectAnnotations', () => {
-  afterEach(() => {
-    cleanup();
-  });
-
   it('renders with default projectAnnotations', () => {
     const WithEnglishText = composeStory(stories.CSF2StoryWithLocale, stories.default);
     const { getByText } = render(<WithEnglishText />);
@@ -92,17 +88,6 @@ describe('CSF3', () => {
     render(<Primary />);
     expect(screen.getByTestId('custom-render')).not.toBeNull();
   });
-
-  it('renders with play function', async () => {
-    const CSF3InputFieldFilled = composeStory(stories.CSF3InputFieldFilled, stories.default);
-
-    const { container } = render(<CSF3InputFieldFilled />);
-
-    await CSF3InputFieldFilled.play({ canvasElement: container });
-
-    const input = screen.getByTestId('input') as HTMLInputElement;
-    expect(input.value).toEqual('Hello world!');
-  });
 });
 
 // common in addons that need to communicate between manager and preview
@@ -123,9 +108,6 @@ it('should pass with decorators that need addons channel', () => {
 // Batch snapshot testing
 const testCases = Object.values(composeStories(stories)).map((Story) => [Story.storyName, Story]);
 it.each(testCases)('Renders %s story', async (_storyName, Story) => {
-  cleanup();
-  await Story.load();
-  const { baseElement } = await render(<Story />);
-  await Story.play?.();
-  expect(baseElement).toMatchSnapshot();
+  await Story.run();
+  expect(document.body).toMatchSnapshot();
 });

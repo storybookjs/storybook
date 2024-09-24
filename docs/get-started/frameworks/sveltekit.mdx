@@ -1,0 +1,306 @@
+---
+title: Storybook for SvelteKit
+sidebar:
+  order: 5
+  title: SvelteKit
+---
+
+Storybook for SvelteKit is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for [SvelteKit](https://kit.svelte.dev/) applications. It includes:
+
+* 🪄 Zero config
+* 🧩 Easily mock many Kit modules
+* 🔗 Automatic link handling
+* 💫 and more!
+
+<If notRenderer={'svelte'}>
+  <Callout variant="info">
+    Storybook for SvelteKit is only supported in [Svelte](?renderer=svelte) projects.
+  </Callout>
+
+  {/* End non-supported renderers */}
+</If>
+
+<If renderer={'svelte'}>
+  ## Requirements
+
+  * SvelteKit ≥ 1.0
+  * Storybook ≥ 8.0
+
+  ## Getting started
+
+  ### In a project without Storybook
+
+  Follow the prompts after running this command in your Sveltekit project's root directory:
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="init-command.md" />
+
+  {/* prettier-ignore-end */}
+
+  [More on getting started with Storybook.](../install.mdx)
+
+  ### In a project with Storybook
+
+  This framework is designed to work with Storybook 7+. If you’re not already using v7, upgrade with this command:
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="storybook-upgrade.md" />
+
+  {/* prettier-ignore-end */}
+
+  #### Automatic migration
+
+  When running the `upgrade` command above, you should get a prompt asking you to migrate to `@storybook/sveltekit`, which should handle everything for you. In case that auto-migration does not work for your project, refer to the manual migration below.
+
+  #### Manual migration
+
+  First, install the framework:
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="sveltekit-install.md" />
+
+  {/* prettier-ignore-end */}
+
+  Then, update your `.storybook/main.js|ts` to change the framework property:
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="sveltekit-add-framework.md" />
+
+  {/* prettier-ignore-end */}
+
+  Finally, these packages are now either obsolete or part of `@storybook/sveltekit`, so you no longer need to depend on them directly. You can remove them (`npm uninstall`, `yarn remove`, `pnpm remove`) from your project:
+
+  * `@storybook/svelte-vite`
+  * `@storybook/svelte-webpack5`
+  * `storybook-builder-vite`
+  * `@storybook/builder-vite`
+
+  ## Supported features
+
+  All Svelte language features are supported out of the box, as the Storybook framework uses the Svelte compiler directly.
+  However, SvelteKit has some [Kit-specific modules](https://kit.svelte.dev/docs/modules) that aren't supported. Here's a breakdown of what will and will not work within Storybook:
+
+  | Module                                                                             | Status                 | Note                                                                                                                                    |
+  | ---------------------------------------------------------------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+  | [`$app/environment`](https://kit.svelte.dev/docs/modules#$app-environment)         | ✅ Supported           | `version` is always empty in Storybook.                                                                                                 |
+  | [`$app/forms`](https://kit.svelte.dev/docs/modules#$app-forms)                     | ⚠️ **Experimental**    | See [How to mock](#how-to-mock).                                                                                                         |
+  | [`$app/navigation`](https://kit.svelte.dev/docs/modules#$app-navigation)           | ⚠️ **Experimental**    | See [How to mock](#how-to-mock).                                                                                                         |
+  | [`$app/paths`](https://kit.svelte.dev/docs/modules#$app-paths)                     | ✅ Supported           | Requires SvelteKit 1.4.0 or newer.                                                                                                      |
+  | [`$app/stores`](https://kit.svelte.dev/docs/modules#$app-stores)                   | ⚠️ **Experimental**    | See [How to mock](#how-to-mock).                                                                                                         |
+  | [`$env/dynamic/public`](https://kit.svelte.dev/docs/modules#$env-dynamic-public)   | 🚧 Partially supported | Only supported in development mode. Storybook is built as a static app with no server-side API, so it cannot dynamically serve content. |
+  | [`$env/static/public`](https://kit.svelte.dev/docs/modules#$env-static-public)     | ✅ Supported           |                                                                                                                                         |
+  | [`$lib`](https://kit.svelte.dev/docs/modules#$lib)                                 | ✅ Supported           |                                                                                                                                         |
+  | [`@sveltejs/kit/*`](https://kit.svelte.dev/docs/modules#sveltejs-kit)              | ✅ Supported           |                                                                                                                                         |
+  | [`$env/dynamic/private`](https://kit.svelte.dev/docs/modules#$env-dynamic-private) | ⛔ Not supported       | This is a server-side feature, and Storybook renders all components on the client.                                                      |
+  | [`$env/static/private`](https://kit.svelte.dev/docs/modules#$env-static-private)   | ⛔ Not supported       | This is a server-side feature, and Storybook renders all components on the client.                                                      |
+  | [`$service-worker`](https://kit.svelte.dev/docs/modules#$service-worker)           | ⛔ Not supported       | This is a service worker feature, which does not apply to Storybook.                                                                    |
+
+  ## How to mock
+
+  To mock a SvelteKit import you can define it within `parameters.sveltekit_experimental`:
+
+  ```ts
+  // MyComponent.stories.svelte
+  export const MyStory = {
+    parameters: {
+      sveltekit_experimental: {
+        stores: {
+          page: {
+            data: {
+              test: 'passed',
+            },
+          },
+          navigating: {
+            route: {
+              id: '/storybook',
+            },
+          },
+          updated: true,
+        },
+      },
+    },
+  };
+  ```
+
+  The [available parameters](#parameters) are documented in the API section, below.
+
+  ### Mocking links
+
+  The default link-handling behavior (e.g. when clicking an `<a href="..." />` element) is to log an action to the [Actions panel](../../essentials/actions.mdx).
+
+  You can override this by assigning an object to `parameters.sveltekit_experimental.hrefs`, where the keys are strings representing an href and the values define your mock. For example:
+
+  ```ts
+  // MyComponent.stories.svelte
+  export const MyStory = {
+    parameters: {
+      sveltekit_experimental: {
+        hrefs: {
+          '/basic-href': (to, event) => {
+            console.log(to, event);
+          },
+          '/root.*': {
+            callback: (to, event) => {
+              console.log(to, event);
+            },
+            asRegex: true,
+          },
+        },
+      },
+    },
+  };
+  ```
+
+  See the [API reference](#hrefs) for more information.
+
+  ## Writing native Svelte stories
+
+  Storybook provides a Svelte addon maintained by the community, enabling you to write stories for your Svelte components using the template syntax. You'll need to take some additional steps to enable this feature.
+
+  Run the following command to install the addon.
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="svelte-csf-addon-install.md" />
+
+  {/* prettier-ignore-end */}
+
+  <Callout variant="info">
+    The community actively maintains the Svelte CSF addon but still lacks some features currently available in the official Storybook Svelte framework support. For more information, see [the addon's documentation](https://github.com/storybookjs/addon-svelte-csf).
+  </Callout>
+
+  ## API
+
+  ### Parameters
+
+  This framework contributes the following [parameters](../../writing-stories/parameters.mdx) to Storybook, under the `sveltekit_experimental` namespace:
+
+  #### `forms`
+
+  Type: `{ enhance: () => void }`
+
+  Provides mocks for the [`$app/forms`](https://kit.svelte.dev/docs/modules#$app-forms) module.
+
+  ##### `forms.enhance`
+
+  Type: `() => void`
+
+  A callback that will be called when a form with [`use:enhance`](https://kit.svelte.dev/docs/form-actions#progressive-enhancement-use-enhance) is submitted.
+
+  #### `hrefs`
+
+  Type: `Record<[path: string], (to: string, event: MouseEvent) => void | { callback: (to: string, event: MouseEvent) => void, asRegex?: boolean }>`
+
+  If you have an `<a />` tag inside your code with the `href` attribute that matches one or more of the links defined (treated as regex based if the `asRegex` property is `true`) the corresponding `callback` will be called. If no matching `hrefs` are defined, an action will be logged to the [Actions panel](../../essentials/actions.mdx). See [Mocking links](#mocking-links) for an example.
+
+  #### `navigation`
+
+  Type: See [SvelteKit docs](https://kit.svelte.dev/docs/modules#$app-navigation)
+
+  Provides mocks for the [`$app/navigation`](https://kit.svelte.dev/docs/modules#$app-navigation) module.
+
+  ##### `navigation.goto`
+
+  Type: See [SvelteKit docs](https://kit.svelte.dev/docs/modules#$app-navigation-goto)
+
+  A callback that will be called whenever [`goto`](https://kit.svelte.dev/docs/modules#$app-navigation-goto) is called. If no function is provided, an action will be logged to the [Actions panel](../../essentials/actions.mdx).
+
+  ##### `navigation.pushState`
+
+  Type: See [SvelteKit docs](https://kit.svelte.dev/docs/modules#$app-navigation-pushstate)
+
+  A callback that will be called whenever [`pushState`](https://kit.svelte.dev/docs/modules#$app-navigation-pushstate) is called. If no function is provided, an action will be logged to the [Actions panel](../../essentials/actions.mdx).
+
+  ##### `navigation.replaceState`
+
+  Type: See [SvelteKit docs](https://kit.svelte.dev/docs/modules#$app-navigation-replacestate)
+
+  A callback that will be called whenever [`replaceState`](https://kit.svelte.dev/docs/modules#$app-navigation-replacestate) is called. If no function is provided, an action will be logged to the [Actions panel](../../essentials/actions.mdx).
+
+  ##### `navigation.invalidate`
+
+  Type: See [SvelteKit docs](https://kit.svelte.dev/docs/modules#$app-navigation-invalidate)
+
+  A callback that will be called whenever [`invalidate`](https://kit.svelte.dev/docs/modules#$app-navigation-invalidate) is called. If no function is provided, an action will be logged to the [Actions panel](../../essentials/actions.mdx).
+
+  ##### `navigation.invalidateAll`
+
+  Type: See [SvelteKit docs](https://kit.svelte.dev/docs/modules#$app-navigation-invalidateall)
+
+  A callback that will be called whenever [`invalidateAll`](https://kit.svelte.dev/docs/modules#$app-navigation-invalidateall) is called. If no function is provided, an action will be logged to the [Actions panel](../../essentials/actions.mdx).
+
+  ##### `navigation.afterNavigate`
+
+  Type: See [SvelteKit docs](https://kit.svelte.dev/docs/modules#$app-navigation-afternavigate)
+
+  An object that will be passed to the [`afterNavigate`](https://kit.svelte.dev/docs/modules#$app-navigation-afternavigate) function, which will be invoked when the `onMount` event fires.
+
+  #### `stores`
+
+  Type: See [SvelteKit docs](https://kit.svelte.dev/docs/modules#$app-stores)
+
+  Provides mocks for the [`$app/stores`](https://kit.svelte.dev/docs/modules#$app-stores) module.
+
+  ##### `stores.navigating`
+
+  Type: See [SvelteKit docs](https://kit.svelte.dev/docs/modules#$app-stores-navigating)
+
+  A partial version of the [`navigating`](https://kit.svelte.dev/docs/modules#$app-stores-navigating) store.
+
+  ##### `stores.page`
+
+  Type: See [SvelteKit docs](https://kit.svelte.dev/docs/modules#$app-stores-page)
+
+  A partial version of the [`page`](https://kit.svelte.dev/docs/modules#$app-stores-page) store.
+
+  ##### `stores.updated`
+
+  Type: boolean
+
+  A boolean representing the value of [`updated`](https://kit.svelte.dev/docs/modules#$app-stores-updated) (you can also access `updated.check()` which will be a no-op).
+
+  ### Options
+
+  You can pass an options object for additional configuration if needed:
+
+  ```js
+  // .storybook/main.js
+  import * as path from 'path';
+
+  export default {
+    // ...
+    framework: {
+      name: '@storybook/sveltekit',
+      options: {
+        // ...
+      },
+    },
+  };
+  ```
+
+  The available options are:
+
+  #### `builder`
+
+  Type: `Record<string, any>`
+
+  Configure options for the [framework's builder](../../api/main-config/main-config-framework.mdx#optionsbuilder). For Sveltekit, available options can be found in the [Vite builder docs](../../builders/vite.mdx).
+
+  ## Troubleshooting
+
+  ### Error when starting Storybook
+
+  When starting Storybook after upgrading to v7.0, it may quit with the following error:
+
+  ```sh
+  ERR! SyntaxError: Identifier '__esbuild_register_import_meta_url__' has already been declared
+  ```
+
+  This can occur when manually upgrading from 6.5 to 7.0. To resolve it, you'll need to remove the `svelteOptions` property in `.storybook/main.js`, as that is not supported (and no longer necessary) in Storybook 7+ with SvelteKit.
+
+  {/* End supported renderers */}
+</If>

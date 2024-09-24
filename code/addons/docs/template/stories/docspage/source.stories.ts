@@ -1,6 +1,8 @@
+import type { StoryContext } from 'storybook/internal/types';
+
 import { global as globalThis } from '@storybook/global';
-import type { StoryContext } from '@storybook/types';
-import dedent from 'ts-dedent';
+
+import { dedent } from 'ts-dedent';
 
 export default {
   component: globalThis.Components.Button,

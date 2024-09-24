@@ -19,6 +19,11 @@
       "type": "string",
       "description": "The full path for the TypeScript configuration file, relative to the current workspace."
     },
+    "preserveSymlinks": {
+      "type": "boolean",
+      "description": "Do not use the real path when resolving modules. If true, symlinks are resolved to their real path, if false, symlinks are resolved to their symlinked path.",
+      "default": false
+    },
     "port": {
       "type": "number",
       "description": "Port to listen on.",

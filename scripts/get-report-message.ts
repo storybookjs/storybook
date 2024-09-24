@@ -1,9 +1,9 @@
-/* eslint-disable no-console */
+import { execaCommand } from 'execa';
 import { readJson } from 'fs-extra';
 import { join } from 'path';
-import { execaCommand } from 'execa';
-import { esMain } from './utils/esmain';
+
 import { CODE_DIRECTORY } from './utils/constants';
+import { esMain } from './utils/esmain';
 
 type Branch = 'main' | 'next' | 'alpha' | 'next-release' | 'latest-release';
 type Workflow = 'merged' | 'daily';

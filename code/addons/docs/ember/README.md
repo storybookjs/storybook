@@ -52,6 +52,7 @@ Next, add the following to your `.storybook/preview.js` to load the generated js
 ```js
 import { setJSONDoc } from '@storybook/addon-docs/ember';
 import docJson from '../dist/storybook-docgen/index.json';
+
 setJSONDoc(docJson);
 ```
 

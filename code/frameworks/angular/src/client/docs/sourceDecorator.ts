@@ -1,8 +1,9 @@
-import { addons, useEffect } from '@storybook/preview-api';
-import { PartialStoryFn } from '@storybook/types';
-import { SNIPPET_RENDERED, SourceType } from '@storybook/docs-tools';
-import { StoryContext, AngularRenderer } from '../types';
+import { SNIPPET_RENDERED, SourceType } from 'storybook/internal/docs-tools';
+import { addons, useEffect } from 'storybook/internal/preview-api';
+import { ArgsStoryFn, PartialStoryFn } from 'storybook/internal/types';
+
 import { computesTemplateSourceFromComponent } from '../../renderer';
+import { AngularRenderer, StoryContext } from '../types';
 
 export const skipSourceRender = (context: StoryContext) => {
   const sourceParams = context?.parameters.docs?.source;
@@ -18,8 +19,9 @@ export const skipSourceRender = (context: StoryContext) => {
 
 /**
  * Angular source decorator.
+ *
  * @param storyFn Fn
- * @param context  StoryContext
+ * @param context StoryContext
  */
 export const sourceDecorator = (
   storyFn: PartialStoryFn<AngularRenderer>,
@@ -30,16 +32,24 @@ export const sourceDecorator = (
     return story;
   }
   const channel = addons.getChannel();
-  const { props, template, userDefinedTemplate } = story;
-
-  const { component, argTypes } = context;
+  const { props, userDefinedTemplate } = story;
+  const { component, argTypes, parameters } = context;
+  const template: string = parameters.docs?.source?.excludeDecorators
+    ? (context.originalStoryFn as ArgsStoryFn<AngularRenderer>)(context.args, context).template
+    : story.template;
 
   let toEmit: string;
 
   useEffect(() => {
     if (toEmit) {
       const { id, unmappedArgs } = context;
-      channel.emit(SNIPPET_RENDERED, { id, args: unmappedArgs, source: toEmit, format: 'angular' });
+      const format = parameters?.docs?.source?.format ?? true;
+      channel.emit(SNIPPET_RENDERED, {
+        id,
+        args: unmappedArgs,
+        source: toEmit,
+        format: format === true ? 'angular' : format,
+      });
     }
   });
 

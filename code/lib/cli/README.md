@@ -1,4 +1,6 @@
-# Storybook CLI
+# Storybook
+
+## CLI
 
 Storybook CLI (_Command Line Interface_) is the easiest way to add [Storybook](https://github.com/storybookjs/storybook) to your project.
 
@@ -8,63 +10,40 @@ Go to your project and run:
 
 ```sh
 cd my-app
-npx sb init
+npx sb@latest init
 ```
 
 In addition to `init`, the CLI also has other commands:
 
 - `add` - add an addon and register it
 - `info` - print out system information for bug reports
+- `upgrade` - upgrade to the latest version of Storybook (or a specific version)
 - `migrate` - run codemods to migrate your code
 
-See the command-line help with `-h` for details.
+See the command-line help with `-h` (including other useful commands) for details.
 
----
+## Core APIs
 
-## [Yarn](https://github.com/yarnpkg/yarn) support
+This package has multiple sub-exports to can be used to gain access to storybook's APIs.
 
-The CLI supports yarn. If you have installed yarn in your system and your project has a `yarn.lock` file, it'll detect it and use `yarn` to install dependencies.
+### `storybook/components`
 
-If you don't want to use `yarn` always you can use the `--package-manager` option like this:
+This export contains a list of components very useful for building out addons.
+We recommend addon-authors to use these components to ensure a consistent look and feel, and to reduce the amount of code they need to write.
 
-```sh
-npx sb init --package-manager=npm
-```
+### `storybook/theming`
 
-If you would like to force a particular version of yarn, you can use the `--package-manager` flag with a value of `yarn1` or `yarn2`.
+This export exposes a few utility functions to help writing components that automatically adapt to the current theme.
+Useful for addon authors who want to make their addons theme-aware.
 
----
+### `storybook/preview-api`
 
-## [PNPM](https://pnpm.io/) support
+This export contains the API that is available in the preview iframe.
 
-The CLI supports pnpm. If you have installed pnpm in your system and your project has a `pnpm-lock.yaml` file, it'll detect it and use `pnpm` to install dependencies.
+### `storybook/manager-api`
 
-If you don't have a lock file and would like to force pnpm to be used, you can use the `--package-manager` option like this:
+This export contains the API that is available in the manager iframe.
 
-```sh
-npx sb init --package-manager=pnpm
-```
+### `storybook/types`
 
----
-
-## [Flow](https://flow.org/) support
-
-It also supports flow files. By default, [jscodeshift](https://github.com/facebook/jscodeshift), the tool used to transform the source files, uses babel to read the files. To be able to transform any flow annotated file, you need to use the flow parser.
-
-```sh
-npx sb init --parser flow
-```
-
-For more information visit: [storybook.js.org](https://storybook.js.org)
-
----
-
-## Manually specify project type
-
-If the CLI cannot detect your project type, it will ask you. You can also force it to use a particular project type:
-
-```sh
-npx sb init --type <type>
-```
-
-Where type is one of the project types defined in [project_types.ts](https://github.com/storybookjs/storybook/blob/next/code/lib/cli/src/project_types.ts)
+This export exposes a lot of TypeScript interfaces used throughout storybook, including for storybook configuration, addons etc.

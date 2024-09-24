@@ -1,14 +1,14 @@
-/* eslint-disable no-console */
+import { join } from 'node:path';
+
 import chalk from 'chalk';
-import path from 'path';
-import program from 'commander';
-import semver from 'semver';
-import { z } from 'zod';
-import { readJson } from 'fs-extra';
-import fetch from 'node-fetch';
-import dedent from 'ts-dedent';
-import pRetry from 'p-retry';
+import { program } from 'commander';
 import { execaCommand } from 'execa';
+import { readJson } from 'fs-extra';
+import pRetry from 'p-retry';
+import semver from 'semver';
+import dedent from 'ts-dedent';
+import { z } from 'zod';
+
 import { esMain } from '../utils/esmain';
 
 program
@@ -38,8 +38,8 @@ type Options = {
   dryRun?: boolean;
 };
 
-const CODE_DIR_PATH = path.join(__dirname, '..', '..', 'code');
-const CODE_PACKAGE_JSON_PATH = path.join(CODE_DIR_PATH, 'package.json');
+const CODE_DIR_PATH = join(__dirname, '..', '..', 'code');
+const CODE_PACKAGE_JSON_PATH = join(CODE_DIR_PATH, 'package.json');
 
 const validateOptions = (options: { [key: string]: any }): options is Options => {
   optionsSchema.parse(options);
@@ -138,10 +138,11 @@ const publishAllPackages = async ({
   }
 
   /**
-   * 'yarn npm publish' will fail if just one package fails to publish.
-   * But it will continue through with all the other packages, and --tolerate-republish makes it okay to publish the same version again.
-   * So we can safely retry the whole publishing process if it fails.
-   * It's not uncommon for the registry to fail often, which Yarn catches by checking the registry after a package has been published.
+   * 'yarn npm publish' will fail if just one package fails to publish. But it will continue through
+   * with all the other packages, and --tolerate-republish makes it okay to publish the same version
+   * again. So we can safely retry the whole publishing process if it fails. It's not uncommon for
+   * the registry to fail often, which Yarn catches by checking the registry after a package has
+   * been published.
    */
   await pRetry(
     () =>
@@ -174,7 +175,7 @@ export const run = async (options: unknown) => {
   const currentVersion = await getCurrentVersion(verbose);
   const isAlreadyPublished = await isCurrentVersionPublished({
     currentVersion,
-    packageName: '@storybook/manager-api',
+    packageName: '@storybook/core',
     verbose,
   });
   if (isAlreadyPublished) {

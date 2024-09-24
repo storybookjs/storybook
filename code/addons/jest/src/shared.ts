@@ -1,5 +1,6 @@
+import type { StorybookInternalParameters } from 'storybook/internal/types';
+
 import invariant from 'tiny-invariant';
-import type { StorybookInternalParameters } from '@storybook/types';
 
 // addons, panels and events get unique names using a prefix
 export const PARAM_KEY = 'test';

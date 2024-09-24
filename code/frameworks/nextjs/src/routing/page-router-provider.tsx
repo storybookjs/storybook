@@ -1,69 +1,15 @@
-import type { Globals } from '@storybook/csf';
-import { RouterContext } from 'next/dist/shared/lib/router-context.shared-runtime';
+// We need this import to be a singleton, and because it's used in multiple entrypoints
+// both in ESM and CJS, importing it via the package name instead of having a local import
+// is the only way to achieve it actually being a singleton
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore we must ignore types here as during compilation they are not generated yet
 import type { PropsWithChildren } from 'react';
 import React from 'react';
-import type { RouteParams } from './types';
 
-type PageRouterProviderProps = {
-  action: (name: string) => (...args: any[]) => void;
-  routeParams: RouteParams;
-  globals: Globals;
-};
+import { getRouter } from '@storybook/nextjs/router.mock';
 
-export const PageRouterProvider: React.FC<PropsWithChildren<PageRouterProviderProps>> = ({
-  children,
-  action,
-  routeParams,
-  globals,
-}) => (
-  <RouterContext.Provider
-    value={{
-      push(...args) {
-        action('nextRouter.push')(...args);
-        return Promise.resolve(true);
-      },
-      replace(...args) {
-        action('nextRouter.replace')(...args);
-        return Promise.resolve(true);
-      },
-      reload(...args) {
-        action('nextRouter.reload')(...args);
-      },
-      back(...args) {
-        action('nextRouter.back')(...args);
-      },
-      forward() {
-        action('nextRouter.forward')();
-      },
-      prefetch(...args) {
-        action('nextRouter.prefetch')(...args);
-        return Promise.resolve();
-      },
-      beforePopState(...args) {
-        action('nextRouter.beforePopState')(...args);
-      },
-      events: {
-        on(...args) {
-          action('nextRouter.events.on')(...args);
-        },
-        off(...args) {
-          action('nextRouter.events.off')(...args);
-        },
-        emit(...args) {
-          action('nextRouter.events.emit')(...args);
-        },
-      },
-      locale: globals?.locale,
-      route: '/',
-      asPath: '/',
-      basePath: '/',
-      isFallback: false,
-      isLocaleDomain: false,
-      isReady: true,
-      isPreview: false,
-      ...routeParams,
-    }}
-  >
-    {children}
-  </RouterContext.Provider>
+import { RouterContext } from 'next/dist/shared/lib/router-context.shared-runtime';
+
+export const PageRouterProvider: React.FC<PropsWithChildren> = ({ children }) => (
+  <RouterContext.Provider value={getRouter()}>{children}</RouterContext.Provider>
 );

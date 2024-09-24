@@ -1,12 +1,12 @@
 // Compodoc does not follow symlinks (it ignores them and their contents entirely)
 // So, we need to run a separate compodoc process on every symlink inside the project,
 // then combine the results into one large documentation.json
-
-import { join, resolve } from 'path';
-import { realpath, readFile, writeFile, lstat } from 'fs-extra';
-import { globSync } from 'glob';
-import { directory } from 'tempy';
 import { execaCommand } from 'execa';
+import { lstat, readFile, realpath, writeFile } from 'fs-extra';
+import { globSync } from 'glob';
+import { join, resolve } from 'path';
+
+import { temporaryDirectory } from '../code/core/src/common/utils/cli';
 import { esMain } from './utils/esmain';
 
 const logger = console;
@@ -36,7 +36,7 @@ async function run(cwd: string) {
 
   const docsArray: Record<string, any>[] = await Promise.all(
     dirs.map(async (dir) => {
-      const outputDir = directory();
+      const outputDir = await temporaryDirectory();
       const resolvedDir = await realpath(dir);
       await execaCommand(
         `yarn compodoc ${resolvedDir} -p ./tsconfig.json -e json -d ${outputDir}`,

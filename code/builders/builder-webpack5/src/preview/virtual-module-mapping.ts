@@ -1,14 +1,18 @@
-import type { Options, PreviewAnnotation } from '@storybook/types';
-import { join, resolve } from 'path';
+import { join, resolve } from 'node:path';
+
 import {
   getBuilderOptions,
   handlebars,
   loadPreviewOrConfigFile,
   normalizeStories,
   readTemplate,
-} from '@storybook/core-common';
-import slash from 'slash';
+} from 'storybook/internal/common';
+import type { Options, PreviewAnnotation } from 'storybook/internal/types';
+
 import { toImportFn } from '@storybook/core-webpack';
+
+import slash from 'slash';
+
 import type { BuilderOptions } from '../types';
 
 export const getVirtualModules = async (options: Options) => {

@@ -3,8 +3,8 @@ import { ComponentFactoryResolver, ElementRef, Component } from '@angular/core';
 @Component({
   selector: 'storybook-class-selector.foo, storybook-class-selector.bar',
   template: `<h3>Class selector</h3>
-    Selector: {{ selectors }} <br />
-    Generated template: {{ generatedTemplate }}`,
+Selector: {{ selectors }} <br />
+Generated template: {{ generatedTemplate }}`,
 })
 export class ClassSelectorComponent {
   generatedTemplate!: string;

@@ -1,8 +1,9 @@
 import React from 'react';
-import { addons, types } from '@storybook/manager-api';
 
-import { ADDON_ID } from './constants';
+import { addons, types } from 'storybook/internal/manager-api';
+
 import { OutlineSelector } from './OutlineSelector';
+import { ADDON_ID } from './constants';
 
 addons.register(ADDON_ID, () => {
   addons.add(ADDON_ID, {

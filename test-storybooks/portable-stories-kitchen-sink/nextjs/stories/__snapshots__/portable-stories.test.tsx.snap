@@ -8,6 +8,9 @@ exports[`renders dynamicImportStories stories renders Default 1`] = `
     >
       Global Decorator
       <br />
+      <div>
+        I am a dynamically loaded component
+      </div>
     </div>
   </div>
 </body>
@@ -659,6 +662,12 @@ exports[`renders navigationStories stories renders Default 1`] = `
           /hello
         </div>
         <div>
+          segment: 
+        </div>
+        <div>
+          segments: 
+        </div>
+        <div>
           searchparams:
            
           <ul>
@@ -666,6 +675,216 @@ exports[`renders navigationStories stories renders Default 1`] = `
               foo
               : 
               bar
+            </li>
+          </ul>
+        </div>
+        <div>
+          params:
+           
+          <ul />
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Go back
+          </button>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Go forward
+          </button>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Prefetch
+          </button>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Push HTML
+          </button>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Refresh
+          </button>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Replace
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+`;
+
+exports[`renders navigationStories stories renders WithSegmentDefined 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="global-decorator"
+    >
+      Global Decorator
+      <br />
+      <div>
+        <div>
+          pathname: 
+          /hello
+        </div>
+        <div>
+          segment: 
+          dashboard
+        </div>
+        <div>
+          segments: 
+          dashboard,settings
+        </div>
+        <div>
+          searchparams:
+           
+          <ul>
+            <li>
+              foo
+              : 
+              bar
+            </li>
+          </ul>
+        </div>
+        <div>
+          params:
+           
+          <ul />
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Go back
+          </button>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Go forward
+          </button>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Prefetch
+          </button>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Push HTML
+          </button>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Refresh
+          </button>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Replace
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+`;
+
+exports[`renders navigationStories stories renders WithSegmentDefinedForParams 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="global-decorator"
+    >
+      Global Decorator
+      <br />
+      <div>
+        <div>
+          pathname: 
+          /hello
+        </div>
+        <div>
+          segment: 
+          hello
+        </div>
+        <div>
+          segments: 
+          hello,nextjs
+        </div>
+        <div>
+          searchparams:
+           
+          <ul>
+            <li>
+              foo
+              : 
+              bar
+            </li>
+          </ul>
+        </div>
+        <div>
+          params:
+           
+          <ul>
+            <li>
+              slug
+              : 
+              hello
+            </li>
+            <li>
+              framework
+              : 
+              nextjs
             </li>
           </ul>
         </div>
@@ -729,6 +948,100 @@ exports[`renders navigationStories stories renders Default 1`] = `
 </body>
 `;
 
+exports[`renders nextHeaderStories stories renders Default 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="global-decorator"
+    >
+      Global Decorator
+      <br />
+      <h3>
+        Cookies:
+      </h3>
+      <p
+        style="display: flex; flex-direction: row; gap: 8px;"
+      >
+        <strong>
+          Name:
+        </strong>
+         
+        <span>
+          firstName
+        </span>
+        <strong>
+          Value:
+        </strong>
+         
+        <span>
+          Jane
+        </span>
+      </p>
+      <p
+        style="display: flex; flex-direction: row; gap: 8px;"
+      >
+        <strong>
+          Name:
+        </strong>
+         
+        <span>
+          lastName
+        </span>
+        <strong>
+          Value:
+        </strong>
+         
+        <span>
+          Doe
+        </span>
+      </p>
+      <h3>
+        Headers:
+      </h3>
+      <p
+        style="display: flex; flex-direction: row; gap: 8px;"
+      >
+        <strong>
+          Name:
+        </strong>
+         
+        <span>
+          cookie
+        </span>
+        <strong>
+          Value:
+        </strong>
+         
+        <span>
+          firstName=Jane; lastName=Doe
+        </span>
+      </p>
+      <p
+        style="display: flex; flex-direction: row; gap: 8px;"
+      >
+        <strong>
+          Name:
+        </strong>
+         
+        <span>
+          timezone
+        </span>
+        <strong>
+          Value:
+        </strong>
+         
+        <span>
+          Central European Summer Time
+        </span>
+      </p>
+      <button>
+        add user-id cookie
+      </button>
+    </div>
+  </div>
+</body>
+`;
+
 exports[`renders routerStories stories renders Default 1`] = `
 <body>
   <div>
@@ -738,6 +1051,10 @@ exports[`renders routerStories stories renders Default 1`] = `
       Global Decorator
       <br />
       <div>
+        <div>
+          Router pathname: 
+          /hello
+        </div>
         <div>
           pathname: 
           /hello

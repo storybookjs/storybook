@@ -1,12 +1,13 @@
-/* eslint-disable no-console */
+import { join } from 'node:path';
+
 import { setOutput } from '@actions/core';
-import { readFile, readJson, writeFile, writeJson } from 'fs-extra';
 import chalk from 'chalk';
-import path from 'path';
-import program from 'commander';
+import { program } from 'commander';
+import { execaCommand } from 'execa';
+import { readFile, readJson, writeFile, writeJson } from 'fs-extra';
 import semver from 'semver';
 import { z } from 'zod';
-import { execaCommand } from 'execa';
+
 import { esMain } from '../utils/esmain';
 import type { Workspace } from '../utils/workspace';
 import { getWorkspaces } from '../utils/workspace';
@@ -18,7 +19,10 @@ program
     '-R, --release-type <major|minor|patch|prerelease>',
     'Which release type to use to bump the version'
   )
-  .option('-P, --pre-id <id>', 'Which prerelease identifier to change to, eg. "alpha", "beta", "rc"')
+  .option(
+    '-P, --pre-id <id>',
+    'Which prerelease identifier to change to, eg. "alpha", "beta", "rc"'
+  )
   .option(
     '-E, --exact <version>',
     'Use exact version instead of calculating from current version, eg. "7.2.0-canary.123". Can not be combined with --release-type or --pre-id'
@@ -97,8 +101,8 @@ type ApplyOptions = BaseOptions & {
 };
 type Options = BumpOptions | ExactOptions | ApplyOptions;
 
-const CODE_DIR_PATH = path.join(__dirname, '..', '..', 'code');
-const CODE_PACKAGE_JSON_PATH = path.join(CODE_DIR_PATH, 'package.json');
+const CODE_DIR_PATH = join(__dirname, '..', '..', 'code');
+const CODE_PACKAGE_JSON_PATH = join(CODE_DIR_PATH, 'package.json');
 
 const validateOptions = (options: { [key: string]: any }): options is Options => {
   optionsSchema.parse(options);
@@ -124,8 +128,8 @@ const bumpCodeVersion = async (nextVersion: string) => {
 
 const bumpVersionSources = async (currentVersion: string, nextVersion: string) => {
   const filesToUpdate = [
-    path.join(CODE_DIR_PATH, 'lib', 'manager-api', 'src', 'version.ts'),
-    path.join(CODE_DIR_PATH, 'lib', 'core-common', 'src', 'versions.ts'),
+    join(CODE_DIR_PATH, 'core', 'src', 'manager-api', 'version.ts'),
+    join(CODE_DIR_PATH, 'core', 'src', 'common', 'versions.ts'),
   ];
   console.log(`🤜 Bumping versions in...:\n  ${chalk.cyan(filesToUpdate.join('\n  '))}`);
 
@@ -158,7 +162,7 @@ const bumpAllPackageJsons = async ({
   await Promise.all(
     packages.map(async (pkg) => {
       // 2. get the package.json
-      const packageJsonPath = path.join(CODE_DIR_PATH, pkg.location, 'package.json');
+      const packageJsonPath = join(CODE_DIR_PATH, pkg.location, 'package.json');
       const packageJson: {
         version: string;
         [key: string]: any;
@@ -282,7 +286,7 @@ export const run = async (options: unknown) => {
 
     console.log(`⬆️ Updating lock file with ${chalk.blue('yarn install --mode=update-lockfile')}`);
     await execaCommand(`yarn install --mode=update-lockfile`, {
-      cwd: path.join(CODE_DIR_PATH),
+      cwd: join(CODE_DIR_PATH),
       stdio: verbose ? 'inherit' : undefined,
       cleanup: true,
     });

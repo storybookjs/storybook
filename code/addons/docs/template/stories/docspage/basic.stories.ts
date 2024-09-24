@@ -8,24 +8,18 @@ export default {
   parameters: { chromatic: { disable: true } },
 };
 
-/**
- * A basic button
- */
+/** A basic button */
 export const Basic = {
   args: { label: 'Basic' },
 };
 
-/**
- * Won't show up in DocsPage
- */
+/** Won't show up in DocsPage */
 export const Disabled = {
   args: { label: 'Disabled in DocsPage' },
   parameters: { docs: { disable: true } },
 };
 
-/**
- * Another button, just to show multiple stories
- */
+/** Another button, just to show multiple stories */
 export const Another = {
   args: { label: 'Another' },
   parameters: {

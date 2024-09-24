@@ -1,12 +1,21 @@
 import React from 'react';
-import { styled, typography } from '@storybook/theming';
+
+import { styled, typography } from 'storybook/internal/theming';
+
+import { useAnsiToHtmlFilter } from '../utils';
 import { Node } from './MethodCall';
 
 const getParams = (line: string, fromIndex = 0): string => {
   for (let i = fromIndex, depth = 1; i < line.length; i += 1) {
-    if (line[i] === '(') depth += 1;
-    else if (line[i] === ')') depth -= 1;
-    if (depth === 0) return line.slice(fromIndex, i);
+    if (line[i] === '(') {
+      depth += 1;
+    } else if (line[i] === ')') {
+      depth -= 1;
+    }
+
+    if (depth === 0) {
+      return line.slice(fromIndex, i);
+    }
   }
   return '';
 };
@@ -51,6 +60,7 @@ export const MatcherResult = ({
   message: string;
   style?: React.CSSProperties;
 }) => {
+  const filter = useAnsiToHtmlFilter();
   const lines = message.split('\n');
   return (
     <pre
@@ -85,7 +95,7 @@ export const MatcherResult = ({
         if (line.match(/^\s*- /)) {
           return [<Expected key={line + index} value={line} />, <br key={`br${index}`} />];
         }
-        if (line.match(/^\s*\+ /)) {
+        if (line.match(/^\s*\+ /) || line.match(/^Received: $/)) {
           return [<Received key={line + index} value={line} />, <br key={`br${index}`} />];
         }
 
@@ -123,7 +133,13 @@ export const MatcherResult = ({
           ];
         }
 
-        return [<span key={line + index}>{line}</span>, <br key={`br${index}`} />];
+        return [
+          <span
+            key={line + index}
+            dangerouslySetInnerHTML={{ __html: filter.toHtml(line) }}
+          ></span>,
+          <br key={`br${index}`} />,
+        ];
       })}
     </pre>
   );

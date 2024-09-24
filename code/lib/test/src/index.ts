@@ -1,7 +1,11 @@
-import { instrument } from '@storybook/instrumenter';
-import { type LoaderFunction } from '@storybook/csf';
-import chai from 'chai';
+import type { BoundFunctions } from '@testing-library/dom';
+
+import type { LoaderFunction } from '@storybook/csf';
 import { global } from '@storybook/global';
+import { instrument } from '@storybook/instrumenter';
+
+import * as chai from 'chai';
+
 import { expect as rawExpect } from './expect';
 import {
   clearAllMocks,
@@ -11,9 +15,19 @@ import {
   resetAllMocks,
   restoreAllMocks,
 } from './spy';
-import type { Renderer } from '@storybook/types';
+import { type queries, within } from './testing-library';
 
 export * from './spy';
+
+type Queries = BoundFunctions<typeof queries>;
+
+declare module '@storybook/csf' {
+  interface Canvas extends Queries {}
+  interface StoryContext {
+    // TODO enable this in a later PR, once we have time to QA this properly
+    //   userEvent: ReturnType<typeof userEvent.setup>;
+  }
+}
 
 export const { expect } = instrument(
   { expect: rawExpect },
@@ -46,11 +60,22 @@ const resetAllMocksLoader: LoaderFunction = ({ parameters }) => {
 
 export const traverseArgs = (value: unknown, depth = 0, key?: string): unknown => {
   // Make sure to not get in infinite loops with self referencing args
-  if (depth > 5) return value;
-  if (value == null) return value;
+
+  // Make sure to not get in infinite loops with self referencing args
+  if (depth > 5) {
+    return value;
+  }
+
+  if (value == null) {
+    return value;
+  }
   if (isMockFunction(value)) {
     // Makes sure we get the arg name in the interactions panel
-    if (key) value.mockName(key);
+
+    // Makes sure we get the arg name in the interactions panel
+    if (key) {
+      value.mockName(key);
+    }
     return value;
   }
 
@@ -62,7 +87,10 @@ export const traverseArgs = (value: unknown, depth = 0, key?: string): unknown =
     !('implicit' in value && value.implicit)
   ) {
     const mock = fn(value as any);
-    if (key) mock.mockName(key);
+
+    if (key) {
+      mock.mockName(key);
+    }
     return mock;
   }
 
@@ -84,12 +112,24 @@ export const traverseArgs = (value: unknown, depth = 0, key?: string): unknown =
   return value;
 };
 
-const nameSpiesAndWrapActionsInSpies: LoaderFunction<Renderer> = ({ initialArgs }) => {
+const nameSpiesAndWrapActionsInSpies: LoaderFunction = ({ initialArgs }) => {
   traverseArgs(initialArgs);
+};
+
+const enhanceContext: LoaderFunction = (context) => {
+  if (globalThis.HTMLElement && context.canvasElement instanceof globalThis.HTMLElement) {
+    context.canvas = within(context.canvasElement);
+    // TODO enable this in a later PR, once we have time to QA this properly
+    // context.userEvent = userEvent.setup();
+  }
 };
 
 // We are using this as a default Storybook loader, when the test package is used. This avoids the need for optional peer dependency workarounds.
 // eslint-disable-next-line no-underscore-dangle
-(global as any).__STORYBOOK_TEST_LOADERS__ = [resetAllMocksLoader, nameSpiesAndWrapActionsInSpies];
+(global as any).__STORYBOOK_TEST_LOADERS__ = [
+  resetAllMocksLoader,
+  nameSpiesAndWrapActionsInSpies,
+  enhanceContext,
+];
 // eslint-disable-next-line no-underscore-dangle
 (global as any).__STORYBOOK_TEST_ON_MOCK_CALL__ = onMockCall;

@@ -1,4 +1,5 @@
-import type { API } from '@storybook/manager-api';
+import type { API } from 'storybook/internal/manager-api';
+
 import { ADDON_ID } from '../constants';
 import type { ToolbarShortcutConfig } from '../types';
 

@@ -4,9 +4,7 @@
  *
  * The only modification is that it also returns the PR title and labels
  */
-
 import DataLoader from 'dataloader';
-import fetch from 'node-fetch';
 
 const validRepoNameRegex = /^[\w.-]+\/[\w.-]+$/;
 

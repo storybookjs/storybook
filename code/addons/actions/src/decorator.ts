@@ -1,9 +1,10 @@
+import { makeDecorator, useEffect } from 'storybook/internal/preview-api';
+import type { PartialStoryFn, Renderer } from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
-import { useEffect, makeDecorator } from '@storybook/preview-api';
-import type { PartialStoryFn, Renderer } from '@storybook/types';
-import { actions } from './runtime/actions';
 
 import { PARAM_KEY } from './constants';
+import { actions } from './runtime/actions';
 
 const { document, Element } = global;
 
@@ -62,8 +63,8 @@ export const withActions: <T extends Renderer>(storyFn: PartialStoryFn<T>) => T[
     parameterName: PARAM_KEY,
     skipIfNoParametersOrOptions: true,
     wrapper: (getStory, context, { parameters }) => {
-      if (parameters?.['handles']) {
-        applyEventHandlers(actions, ...parameters['handles']);
+      if (parameters?.handles) {
+        applyEventHandlers(actions, ...parameters.handles);
       }
 
       return getStory(context);

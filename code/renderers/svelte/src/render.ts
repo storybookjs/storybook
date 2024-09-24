@@ -1,5 +1,7 @@
-import type { RenderContext, ArgsStoryFn } from '@storybook/types';
-import { RESET_STORY_ARGS } from '@storybook/core-events';
+import { RESET_STORY_ARGS } from 'storybook/internal/core-events';
+import { addons } from 'storybook/internal/preview-api';
+import type { ArgsStoryFn, RenderContext } from 'storybook/internal/types';
+
 /*
 ! DO NOT change these PreviewRender and createSvelte5Props imports to relative paths, it will break them.
 ! Relative imports will be compiled at build time by tsup, but we need Svelte to compile them
@@ -9,8 +11,8 @@ import PreviewRender from '@storybook/svelte/internal/PreviewRender.svelte';
 // @ts-expect-error Don't know why TS doesn't pick up the types export here
 import { createSvelte5Props } from '@storybook/svelte/internal/createSvelte5Props';
 
-import { addons } from '@storybook/preview-api';
 import * as svelte from 'svelte';
+
 import type { SvelteRenderer } from './types';
 import { IS_SVELTE_V4 } from './utils';
 
@@ -26,13 +28,13 @@ export function renderToCanvas(
 }
 
 /**
- * This is a workaround for the issue that when resetting args,
- * the story needs to be remounted completely to revert to the component's default props.
- * This is because Svelte does not itself revert to defaults when a prop is undefined.
- * See https://github.com/storybookjs/storybook/issues/21470#issuecomment-1467056479
+ * This is a workaround for the issue that when resetting args, the story needs to be remounted
+ * completely to revert to the component's default props. This is because Svelte does not itself
+ * revert to defaults when a prop is undefined. See
+ * https://github.com/storybookjs/storybook/issues/21470#issuecomment-1467056479
  *
- * We listen for the RESET_STORY_ARGS event and store the storyId to be reset
- * We then use this in the renderToCanvas function to force remount the story
+ * We listen for the `RESET_STORY_ARGS` event and store the storyId to be reset We then use this in
+ * the renderToCanvas function to force remount the story
  */
 const storyIdsToRemountFromResetArgsEvent = new Set<string>();
 addons.getChannel().on(RESET_STORY_ARGS, ({ storyId }) => {

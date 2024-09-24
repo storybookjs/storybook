@@ -1,4 +1,3 @@
-import { vi, describe, it, expect } from 'vitest';
 import { CommonModule } from '@angular/common';
 import { Component, Directive, Injectable, InjectionToken, NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
@@ -8,9 +7,11 @@ import {
   provideAnimations,
   provideNoopAnimations,
 } from '@angular/platform-browser/animations';
+import { describe, expect, it, vi } from 'vitest';
+
 import { NgModuleMetadata } from '../../types';
-import { PropertyExtractor } from './PropertyExtractor';
 import { WithOfficialModule } from '../__testfixtures__/test.module';
+import { PropertyExtractor } from './PropertyExtractor';
 
 const TEST_TOKEN = new InjectionToken('testToken');
 const TestTokenProvider = { provide: TEST_TOKEN, useValue: 123 };
@@ -19,6 +20,11 @@ const TestComponent1 = Component({})(class {});
 const TestComponent2 = Component({})(class {});
 const StandaloneTestComponent = Component({ standalone: true })(class {});
 const StandaloneTestDirective = Directive({ standalone: true })(class {});
+const MixedTestComponent1 = Component({ standalone: true })(
+  class extends StandaloneTestComponent {}
+);
+const MixedTestComponent2 = Component({})(class extends MixedTestComponent1 {});
+const MixedTestComponent3 = Component({ standalone: true })(class extends MixedTestComponent2 {});
 const TestModuleWithDeclarations = NgModule({ declarations: [TestComponent1] })(class {});
 const TestModuleWithImportsAndProviders = NgModule({
   imports: [TestModuleWithDeclarations],
@@ -150,6 +156,21 @@ describe('PropertyExtractor', () => {
 
     it('isStandalone should be true', () => {
       const { isStandalone } = PropertyExtractor.analyzeDecorators(StandaloneTestComponent);
+      expect(isStandalone).toBe(true);
+    });
+
+    it('isStandalone should be true', () => {
+      const { isStandalone } = PropertyExtractor.analyzeDecorators(MixedTestComponent1);
+      expect(isStandalone).toBe(true);
+    });
+
+    it('isStandalone should be false', () => {
+      const { isStandalone } = PropertyExtractor.analyzeDecorators(MixedTestComponent2);
+      expect(isStandalone).toBe(false);
+    });
+
+    it('isStandalone should be true', () => {
+      const { isStandalone } = PropertyExtractor.analyzeDecorators(MixedTestComponent3);
       expect(isStandalone).toBe(true);
     });
   });

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import process from 'process';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
@@ -11,7 +11,7 @@ test.describe('JSON files', () => {
   test('should have index.json', async ({ page }) => {
     const json = await page.evaluate(() => fetch('/index.json').then((res) => res.json()));
 
-    expect(json).toEqual({
+    expect(json).toStrictEqual({
       v: expect.any(Number),
       entries: expect.objectContaining({
         'example-button--primary': expect.objectContaining({

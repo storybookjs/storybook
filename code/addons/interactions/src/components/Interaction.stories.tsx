@@ -1,15 +1,15 @@
-import type { StoryObj, Meta } from '@storybook/react';
 import { CallStates } from '@storybook/instrumenter';
-import { userEvent, within, expect } from '@storybook/test';
-import { getCalls } from '../mocks';
+import type { Meta, StoryObj } from '@storybook/react';
+import { expect, userEvent, within } from '@storybook/test';
 
+import { getCalls } from '../mocks';
 import { Interaction } from './Interaction';
 import SubnavStories from './Subnav.stories';
 
 type Story = StoryObj<typeof Interaction>;
 
 export default {
-  title: 'Addons/Interactions/Interaction',
+  title: 'Interaction',
   component: Interaction,
   args: {
     callsById: new Map(getCalls(CallStates.DONE).map((call) => [call.id, call])),
@@ -54,10 +54,7 @@ export const Disabled: Story = {
 
 export const Hovered: Story = {
   ...Done,
-  parameters: {
-    // Set light theme to avoid stacked theme in chromatic
-    theme: 'light',
-  },
+  globals: { sb_theme: 'light' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.hover(canvas.getByRole('button'));

@@ -12,7 +12,7 @@
    */
   export let text = '';
 
-  const finalText = object ? JSON.stringify(object, null, 2) : text;
+  $: finalText = object ? JSON.stringify(object, null, 2) : text;
 </script>
 
 <pre data-testid="pre" {style}>{finalText}</pre>

@@ -1,12 +1,12 @@
 import {
+  type PropDefaultValue,
   createSummaryValue,
   isTooLongForDefaultValueSummary,
-  type PropDefaultValue,
-} from '@storybook/docs-tools';
+} from 'storybook/internal/docs-tools';
 
 import { OBJECT_CAPTION } from '../captions';
-import type { InspectionResult, InspectionArray } from '../inspection';
 import { generateObjectCode } from '../generateCode';
+import type { InspectionArray, InspectionResult } from '../inspection';
 
 export function generateObject({ inferredType, ast }: InspectionResult): PropDefaultValue {
   const { depth } = inferredType as InspectionArray;

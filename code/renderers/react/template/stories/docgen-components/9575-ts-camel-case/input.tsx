@@ -1,11 +1,10 @@
-import PropTypes from 'prop-types';
 import type { FC } from 'react';
 import React from 'react';
 
+import PropTypes from 'prop-types';
+
 export interface IProps {
-  /**
-   * button color
-   */
+  /** Button color */
   color?: string;
 }
 

@@ -1,24 +1,29 @@
+// @vitest-environment happy-dom
 /// <reference types="@testing-library/jest-dom" />;
-import { it, expect, vi, describe, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/svelte';
+import { cleanup, render, screen } from '@testing-library/svelte';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
 // import '@testing-library/svelte/vitest';
 import { expectTypeOf } from 'expect-type';
+
 import type { Meta } from '../..';
+import { composeStories, composeStory, setProjectAnnotations } from '../../portable-stories';
 import * as stories from './Button.stories';
 // import type Button from './Button.svelte';
 import type Button from './Button.svelte';
-import { composeStories, composeStory, setProjectAnnotations } from '../../portable-stories';
+
+setProjectAnnotations([]);
 
 // example with composeStories, returns an object with all stories composed with args/decorators
 const { CSF3Primary, LoaderStory } = composeStories(stories);
 
+afterEach(() => {
+  cleanup();
+});
+
 // example with composeStory, returns a single story composed with args/decorators
 const Secondary = composeStory(stories.CSF2Secondary, stories.default);
 describe('renders', () => {
-  afterEach(() => {
-    cleanup();
-  });
-
   it('renders primary button with custom props via composeStory', () => {
     // We unfortunately can't do the following:
     // render(CSF3Primary.Component, { ...CSF3Primary.props, label: 'Hello world' });
@@ -66,15 +71,11 @@ describe('renders', () => {
     expect(getByTestId('spy-data').textContent).toEqual('mockFn return value');
     expect(getByTestId('loaded-data').textContent).toEqual('loaded data');
     // spy assertions happen in the play function and should work
-    await LoaderStory.play!();
+    await LoaderStory.run!();
   });
 });
 
 describe('projectAnnotations', () => {
-  afterEach(() => {
-    cleanup();
-  });
-
   it('renders with default projectAnnotations', () => {
     setProjectAnnotations([
       {
@@ -93,7 +94,7 @@ describe('projectAnnotations', () => {
 
   it('renders with custom projectAnnotations via composeStory params', () => {
     const WithPortugueseText = composeStory(stories.CSF2StoryWithLocale, stories.default, {
-      globals: { locale: 'pt' },
+      initialGlobals: { locale: 'pt' },
     });
     const { getByText } = render(WithPortugueseText.Component, WithPortugueseText.props);
     const buttonElement = getByText('Olá!');
@@ -102,10 +103,6 @@ describe('projectAnnotations', () => {
 });
 
 describe('CSF3', () => {
-  afterEach(() => {
-    cleanup();
-  });
-
   it('renders with inferred globalRender', () => {
     const Primary = composeStory(stories.CSF3Button, stories.default);
     render(Primary.Component, Primary.props);
@@ -123,9 +120,7 @@ describe('CSF3', () => {
   it('renders with play function without canvas element', async () => {
     const CSF3InputFieldFilled = composeStory(stories.CSF3InputFieldFilled, stories.default);
 
-    render(CSF3InputFieldFilled.Component, CSF3InputFieldFilled.props);
-
-    await CSF3InputFieldFilled.play!();
+    await CSF3InputFieldFilled.run();
 
     const input = screen.getByTestId('input') as HTMLInputElement;
     expect(input.value).toEqual('Hello world!');
@@ -134,12 +129,15 @@ describe('CSF3', () => {
   it('renders with play function with canvas element', async () => {
     const CSF3InputFieldFilled = composeStory(stories.CSF3InputFieldFilled, stories.default);
 
-    const { container } = render(CSF3InputFieldFilled.Component, CSF3InputFieldFilled.props);
+    const div = document.createElement('div');
+    document.body.appendChild(div);
 
-    await CSF3InputFieldFilled.play!({ canvasElement: container });
+    await CSF3InputFieldFilled.run({ canvasElement: div });
 
     const input = screen.getByTestId('input') as HTMLInputElement;
     expect(input.value).toEqual('Hello world!');
+
+    document.body.removeChild(div);
   });
 });
 
@@ -157,9 +155,9 @@ describe('ComposeStories types', () => {
       ...stories,
 
       /**
-       * Types of property 'argTypes' are incompatible.
-       * Type '{ backgroundColor: { control: string; }; size: { control: { type: string; }; options: string[]; }; }'
-       * has no properties in common with type 'Partial<ArgTypes<ComponentType>>'.
+       * Types of property 'argTypes' are incompatible. Type '{ backgroundColor: { control: string;
+       * }; size: { control: { type: string; }; options: string[]; }; }' has no properties in common
+       * with type 'Partial<ArgTypes<ComponentType>>'.
        */
       // @ts-expect-error fix this later
       default: stories.default satisfies Meta<typeof Button>,
@@ -172,16 +170,9 @@ const testCases = Object.values(composeStories(stories)).map(
   (Story) => [Story.storyName, Story] as [string, typeof Story]
 );
 it.each(testCases)('Renders %s story', async (_storyName, Story) => {
-  cleanup();
-
   if (_storyName === 'CSF2StoryWithLocale') {
     return;
   }
-
-  await Story.load();
-
-  const { container } = await render(Story.Component, Story.props);
-
-  await Story.play?.({ canvasElement: container });
-  expect(container).toMatchSnapshot();
+  await Story.run();
+  expect(document.body).toMatchSnapshot();
 });

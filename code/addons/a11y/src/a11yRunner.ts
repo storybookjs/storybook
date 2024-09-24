@@ -1,5 +1,7 @@
+import { addons } from 'storybook/internal/preview-api';
+
 import { global } from '@storybook/global';
-import { addons } from '@storybook/preview-api';
+
 import { EVENTS } from './constants';
 import type { A11yParameters } from './params';
 
@@ -13,13 +15,10 @@ let activeStoryId: string | undefined;
 
 const defaultParameters = { config: {}, options: {} };
 
-/**
- * Handle A11yContext events.
- * Because the event are sent without manual check, we split calls
- */
-const handleRequest = async (storyId: string, input: A11yParameters = defaultParameters) => {
+/** Handle A11yContext events. Because the event are sent without manual check, we split calls */
+const handleRequest = async (storyId: string, input: A11yParameters | null) => {
   if (!input?.manual) {
-    await run(storyId, input);
+    await run(storyId, input ?? defaultParameters);
   }
 };
 
@@ -29,7 +28,7 @@ const run = async (storyId: string, input: A11yParameters = defaultParameters) =
     if (!active) {
       active = true;
       channel.emit(EVENTS.RUNNING);
-      const axe = (await import('axe-core')).default;
+      const { default: axe } = await import('axe-core');
 
       const { element = '#storybook-root', config, options = {} } = input;
       const htmlElement = document.querySelector(element as string);

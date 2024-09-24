@@ -1,8 +1,10 @@
-import type { PresetProperty } from '@storybook/types';
-import { dirname, join } from 'path';
+import { dirname, join } from 'node:path';
+
+import type { PresetProperty } from 'storybook/internal/types';
+
+import { svelteDocgen } from './plugins/svelte-docgen';
 import type { StorybookConfig } from './types';
 import { handleSvelteKit } from './utils';
-import { svelteDocgen } from './plugins/svelte-docgen';
 
 const getAbsolutePath = <I extends string>(input: I): I =>
   dirname(require.resolve(join(input, 'package.json'))) as any;
@@ -15,7 +17,7 @@ export const core: PresetProperty<'core'> = {
 export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (config, options) => {
   const { plugins = [] } = config;
   // TODO: set up eslint import to use typescript resolver
-  // eslint-disable-next-line import/no-unresolved
+
   const { loadSvelteConfig } = await import('@sveltejs/vite-plugin-svelte');
   const svelteConfig = await loadSvelteConfig();
 

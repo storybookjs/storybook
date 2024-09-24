@@ -1,8 +1,15 @@
+import {
+  type PropDef,
+  TypeSystem,
+  extractComponentProps,
+  hasDocgen,
+} from 'storybook/internal/docs-tools';
+
 import PropTypes from 'prop-types';
-import { type PropDef, hasDocgen, extractComponentProps, TypeSystem } from '@storybook/docs-tools';
+
+import { isMemo } from './lib';
 import { enhancePropTypesProps } from './propTypes/handleProp';
 import { enhanceTypeScriptProps } from './typeScript/handleProp';
-import { isMemo } from './lib';
 
 // FIXME
 type Component = any;

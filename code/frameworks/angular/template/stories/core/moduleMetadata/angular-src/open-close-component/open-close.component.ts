@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { trigger, state, style, transition, animate } from '@angular/animations';
 
 @Component({

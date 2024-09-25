@@ -1,6 +1,21 @@
 {
-  "name": "@storybook/vue3",
+  "name": "vue3",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "implicitDependencies": [],
-  "type": "library"
+  "projectType": "library",
+  "targets": {
+    "build": {},
+    "check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "echo '\"nx check vue3\" can only run with the parameter \"-c production\"'",
+        "description": "We need to expand code/storybook/storybook/scripts/prepare/check.ts"
+      },
+      "configurations": {
+        "production": {
+          "cwd": "{projectRoot}",
+          "command": "yarn check"
+        }
+      }
+    }
+  }
 }

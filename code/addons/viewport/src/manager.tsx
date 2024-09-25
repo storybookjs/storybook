@@ -1,15 +1,17 @@
 import * as React from 'react';
-import { addons, types } from '@storybook/manager-api';
 
+import { addons, types } from 'storybook/internal/manager-api';
+
+import { ViewportTool } from './components/Tool';
 import { ADDON_ID } from './constants';
+import { ViewportToolLegacy } from './legacy/ToolLegacy';
 
-import { ViewportTool } from './Tool';
-
-addons.register(ADDON_ID, () => {
+addons.register(ADDON_ID, (api) => {
   addons.add(ADDON_ID, {
     title: 'viewport / media-queries',
     type: types.TOOL,
-    match: ({ viewMode }) => viewMode === 'story',
-    render: () => <ViewportTool />,
+    match: ({ viewMode, tabId }) => viewMode === 'story' && !tabId,
+    render: () =>
+      FEATURES?.viewportStoryGlobals ? <ViewportTool api={api} /> : <ViewportToolLegacy />,
   });
 });

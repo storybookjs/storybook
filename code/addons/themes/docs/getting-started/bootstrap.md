@@ -2,9 +2,7 @@
 
 ## 📦 Install addon
 
-<!-- **NOTE:** As of Storybook 7.2, `@storybook/addon-themes` ships in `@storybook/addon-essentials`. If you're using Storybook >= 7.2, skip to ["Import Bootstrap"](#🥾-import-bootstrap). -->
-
-To get started, **install the package** as a dev dependency
+To get started, **install the package** as a dev dependency.
 
 yarn:
 
@@ -29,14 +27,11 @@ pnpm add -D @storybook/addon-themes
 Now, **include the addon** in your `.storybook/main.js` file.
 
 ```diff
-module.exports = {
-  stories: [
-    "../stories/**/*.stories.mdx",
-    "../stories/**/*.stories.@(js|jsx|ts|tsx)",
-  ],
+export default {
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|ts|tsx)'],
   addons: [
-    "@storybook/addon-essentials",
-+   "@storybook/addon-themes"
+    '@storybook/addon-essentials',
++   '@storybook/addon-themes',
   ],
 };
 ```
@@ -46,10 +41,10 @@ module.exports = {
 To give your stories access to Bootstrap's styles and JavaScript, import them into your `.storybook/preview.js` file.
 
 ```diff
-import { Preview } from "@storybook/your-renderer";
+import { Preview } from '@storybook/your-renderer';
 
-+import "bootstrap/dist/css/bootstrap.min.css";
-+import "bootstrap/dist/js/bootstrap.bundle";
++import 'bootstrap/dist/css/bootstrap.min.css';
++import 'bootstrap/dist/js/bootstrap.bundle';
 
 const preview: Preview = {
   parameters: { /* ... */ },
@@ -65,23 +60,23 @@ Bootstrap now supports light and dark color modes out of the box as well as the 
 To enable switching between these modes in a click for your stories, use our `withThemeByDataAttribute` decorator by adding the following code to your `.storybook/preview.js` file.
 
 ```diff
--import { Preview } from "@storybook/your-renderer";
-+import { Preview, Renderer } from "@storybook/your-renderer";
-+import { withThemeByDataAttribute } from "@storybook/addon-themes";
+-import { Preview } from '@storybook/your-renderer';
++import { Preview, Renderer } from '@storybook/your-renderer';
++import { withThemeByDataAttribute } from '@storybook/addon-themes';
 
-import "bootstrap/dist/css/bootstrap.min.css";
-import "bootstrap/dist/js/bootstrap.bundle";
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap/dist/js/bootstrap.bundle';
 
 const preview: Preview = {
   parameters: { /* ... */ },
 + decorators: [
 +  withThemeByDataAttribute<Renderer>({
 +    themes: {
-+      light: "light",
-+      dark: "dark",
++      light: 'light',
++      dark: 'dark',
 +    },
-+    defaultTheme: "light",
-+    attributeName: "data-bs-theme",
++    defaultTheme: 'light',
++    attributeName: 'data-bs-theme',
 +  }),
 + ]
 };

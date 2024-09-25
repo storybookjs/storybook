@@ -1,3 +1,4 @@
+import { fn } from '@storybook/test';
 import type { Meta, StoryObj } from '@storybook/vue3';
 
 import MyHeader from './Header.vue';
@@ -21,6 +22,11 @@ const meta: Meta<typeof MyHeader> = {
     layout: 'fullscreen',
   },
   // This component will have an automatically generated docsPage entry: https://storybook.js.org/docs/writing-docs/autodocs
+  args: {
+    onLogin: fn(),
+    onLogout: fn(),
+    onCreateAccount: fn(),
+  },
   tags: ['autodocs'],
 };
 

@@ -1,6 +1,7 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { it, expect } from 'vitest';
+import { expect, it } from 'vitest';
+
 import { transform } from '@babel/core';
+
 import TransformFontImports from '.';
 
 const example = `

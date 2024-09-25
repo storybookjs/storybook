@@ -13,7 +13,7 @@ Storybook Docs [provides basic support for all non-RN Storybook view layers](../
 
 Your framework might need framework-specific configuration. This could include adding extra webpack loaders or global decorators/story parameters.
 
-Addon-docs handles this kind of customization by file naming convention. Its [common preset](https://github.com/storybookjs/storybook/blob/next/addons/docs/src/frameworks/common/preset.ts) does this by looking for files `../<framework>/{preset,config}.[tj]sx?`, where `<framework>` is the framework identifier, e.g. `vue`, `angular`, `react`, etc.
+Addon-docs handles this kind of customization by file naming convention. Its [common preset](https://github.com/storybookjs/storybook/blob/next/addons/docs/src/frameworks/common/preset.ts) does this by looking for files `../<framework>/{preset,config}.[tj]sx?`, where `<framework>` is the framework identifier, e.g. `vue3`, `angular`, `react`, etc.
 
 For example, consider Storybook Docs for Vue, which needs `vue-docgen-loader` in its webpack config, and also has custom extraction functions for [props tables](#props-tables) and [component descriptions](#component-descriptions).
 
@@ -113,7 +113,7 @@ This dynamic rendering is framework-specific, meaning it needs a custom implemen
 Let's take a look at the React framework implementation of `dynamic` snippets as a reference for implementing this feature in other frameworks:
 
 ```tsx
-import { addons, StoryContext } from '@storybook/preview-api';
+import { StoryContext, addons } from '@storybook/preview-api';
 import { SNIPPET_RENDERED } from '../../shared';
 
 export const jsxDecorator = (storyFn: any, context: StoryContext) => {
@@ -150,6 +150,7 @@ Now we need a way to configure how it's displayed in the UI:
 
 ```tsx
 import { jsxDecorator } from './jsxDecorator';
+
 export const decorators = [jsxDecorator];
 ```
 
@@ -162,6 +163,6 @@ This configures the `jsxDecorator` to be run on every story.
 ## More resources
 
 - References: [README](../README.md) / [DocsPage](docspage.md) / [MDX](mdx.md) / [FAQ](faq.md) / [Recipes](recipes.md) / [Theming](theming.md) / [Props](props-tables.md)
-- Framework-specific docs: [React](../react/README.md) / [Vue](../vue/README.md) / [Angular](../angular/README.md) / [Web components](../web-components/README.md) / [Ember](../ember/README.md)
+- Framework-specific docs: [React](../react/README.md) / [Vue 3](../vue3/README.md) / [Angular](../angular/README.md) / [Web components](../web-components/README.md) / [Ember](../ember/README.md)
 - Announcements: [Vision](https://medium.com/storybookjs/storybook-docs-sneak-peak-5be78445094a) / [DocsPage](https://medium.com/storybookjs/storybook-docspage-e185bc3622bf) / [MDX](https://medium.com/storybookjs/rich-docs-with-storybook-mdx-61bc145ae7bc) / [Framework support](https://medium.com/storybookjs/storybook-docs-for-new-frameworks-b1f6090ee0ea)
 - Example: [Storybook Design System](https://github.com/storybookjs/design-system)

@@ -1,41 +1,21 @@
-/* eslint-disable no-underscore-dangle */
-import type {
-  Args,
-  LoaderFunction,
-  PlayFunction,
-  PlayFunctionContext,
-  StepLabel,
-} from '@storybook/types';
+import type { PlayFunction, StepLabel, StoryContext } from 'storybook/internal/types';
+
 import { instrument } from '@storybook/instrumenter';
+// This makes sure that storybook test loaders are always loaded when addon-interactions is used
+// For 9.0 we want to merge storybook/test and addon-interactions into one addon.
+import '@storybook/test';
 
 export const { step: runStep } = instrument(
   {
-    step: (label: StepLabel, play: PlayFunction, context: PlayFunctionContext<any>) =>
-      play(context),
+    // It seems like the label is unused, but the instrumenter has access to it
+    // The context will be bounded later in StoryRender, so that the user can write just:
+    // await step("label", (context) => {
+    //   // labeled step
+    // });
+    step: (label: StepLabel, play: PlayFunction, context: StoryContext) => play(context),
   },
   { intercept: true }
 );
-
-const instrumentSpies: LoaderFunction = ({ initialArgs }) => {
-  const argTypesWithAction = Object.entries(initialArgs).filter(
-    ([, value]) =>
-      typeof value === 'function' &&
-      '_isMockFunction' in value &&
-      value._isMockFunction &&
-      !value._instrumented
-  );
-
-  return argTypesWithAction.reduce((acc, [key, value]) => {
-    const instrumented = instrument({ [key]: () => value }, { retain: true })[key];
-    acc[key] = instrumented();
-    // this enhancer is being called multiple times
-    // eslint-disable-next-line no-param-reassign
-    value._instrumented = true;
-    return acc;
-  }, {} as Args);
-};
-
-export const argsEnhancers = [instrumentSpies];
 
 export const parameters = {
   throwPlayFunctionExceptions: false,

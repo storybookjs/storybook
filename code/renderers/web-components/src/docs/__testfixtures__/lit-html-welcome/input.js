@@ -57,5 +57,4 @@ export const Welcome = () => html`
   </style>
 `;
 
-// eslint-disable-next-line no-undef
 customElements.define('input', Welcome);

@@ -31,12 +31,7 @@ const getNonInputsOutputsProps = (
   return Object.keys(props).filter((k) => ![...inputs, ...outputs].includes(k));
 };
 
-// component modules cache
-export const componentNgModules = new Map<any, Type<any>>();
-
-/**
- * Wraps the story template into a component
- */
+/** Wraps the story template into a component */
 export const createStorybookWrapperComponent = ({
   selector,
   template,
@@ -60,23 +55,12 @@ export const createStorybookWrapperComponent = ({
 
   const { imports, declarations, providers } = analyzedMetadata;
 
-  // Only create a new module if it doesn't already exist
-  // This is to prevent the module from being recreated on every story change
-  // Declarations & Imports are only added once
-  // Providers are added on every story change to allow for story-specific providers
-  let ngModule = componentNgModules.get(storyComponent);
-
-  if (!ngModule) {
-    @NgModule({
-      declarations,
-      imports,
-      exports: [...declarations, ...imports],
-    })
-    class StorybookComponentModule {}
-
-    componentNgModules.set(storyComponent, StorybookComponentModule);
-    ngModule = componentNgModules.get(storyComponent);
-  }
+  @NgModule({
+    declarations,
+    imports,
+    exports: [...declarations, ...imports],
+  })
+  class StorybookComponentModule {}
 
   PropertyExtractor.warnImportsModuleWithProviders(analyzedMetadata);
 
@@ -84,7 +68,7 @@ export const createStorybookWrapperComponent = ({
     selector,
     template,
     standalone: true,
-    imports: [ngModule],
+    imports: [StorybookComponentModule],
     providers,
     styles,
     schemas: moduleMetadata.schemas,

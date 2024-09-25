@@ -15,7 +15,7 @@
   /**
    * Displays the count
    */
-  export let count = 0;
+  let count = 0;
 
   /**
    * Button text

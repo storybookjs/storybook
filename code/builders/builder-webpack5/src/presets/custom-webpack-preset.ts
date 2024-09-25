@@ -1,15 +1,33 @@
-import * as webpackReal from 'webpack';
-import { logger } from '@storybook/node-logger';
-import type { Options } from '@storybook/types';
-import type { Configuration } from 'webpack';
-import deprecate from 'util-deprecate';
-import { dedent } from 'ts-dedent';
+import { logger } from 'storybook/internal/node-logger';
+import type { Options, PresetProperty } from 'storybook/internal/types';
+
 import { loadCustomWebpackConfig } from '@storybook/core-webpack';
+
+import * as webpackReal from 'webpack';
+import type { Configuration } from 'webpack';
+
 import { createDefaultWebpackConfig } from '../preview/base-webpack.config';
 
+export const swc: PresetProperty<'swc'> = (config: Record<string, any>): Record<string, any> => {
+  return {
+    ...config,
+    env: {
+      ...(config?.env ?? {}),
+      targets: config?.env?.targets ?? {
+        chrome: 100,
+        safari: 15,
+        firefox: 91,
+      },
+      // Transpiles the broken syntax to the closest non-broken modern syntax.
+      // E.g. it won't transpile parameter destructuring in Safari
+      // which would break how we detect if the mount context property is used in the play function.
+      bugfixes: config?.env?.bugfixes ?? true,
+    },
+  };
+};
+
 export async function webpack(config: Configuration, options: Options) {
-  // @ts-expect-error (Converted from ts-ignore)
-  const { configDir, configType, presets, webpackConfig } = options;
+  const { configDir, configType, presets } = options;
 
   const coreOptions = await presets.apply('core');
 
@@ -19,16 +37,6 @@ export async function webpack(config: Configuration, options: Options) {
   }
 
   const finalDefaultConfig = await presets.apply('webpackFinal', defaultConfig, options);
-
-  // through standalone webpackConfig option
-  if (webpackConfig) {
-    return deprecate(
-      webpackConfig,
-      dedent`
-      You've provided a webpack config directly in CallOptions, this is not recommended. Please use presets instead. This feature will be removed in 7.0
-      `
-    )(finalDefaultConfig);
-  }
 
   // Check whether user has a custom webpack config file and
   // return the (extended) base configuration if it's not available.

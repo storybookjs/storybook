@@ -1,10 +1,10 @@
 /* eslint-disable no-underscore-dangle */
-import prettier from 'prettier';
+import { type BabelFile, type NodePath, core as babel, types as t } from '@storybook/core/babel';
+
+import { loadCsf, printCsf } from '@storybook/core/csf-tools';
+
 import type { API, FileInfo } from 'jscodeshift';
-import type { BabelFile, NodePath } from '@babel/core';
-import * as babel from '@babel/core';
-import { loadCsf, printCsf } from '@storybook/csf-tools';
-import * as t from '@babel/types';
+import prettier from 'prettier';
 
 const logger = console;
 
@@ -17,11 +17,13 @@ const deprecatedTypes = [
 ];
 
 function migrateType(oldType: string) {
-  if (oldType === 'Story' || oldType === 'ComponentStory') return 'StoryFn';
+  if (oldType === 'Story' || oldType === 'ComponentStory') {
+    return 'StoryFn';
+  }
   return oldType.replace('Component', '');
 }
 
-export default function transform(info: FileInfo, api: API, options: { parser?: string }) {
+export default async function transform(info: FileInfo, api: API, options: { parser?: string }) {
   // TODO what do I need to with the title?
   const csf = loadCsf(info.source, { makeTitle: (title) => title });
   const fileNode = csf._ast;
@@ -36,15 +38,10 @@ export default function transform(info: FileInfo, api: API, options: { parser?: 
   let output = printCsf(csf).code;
 
   try {
-    const prettierConfig = prettier.resolveConfig.sync('.', { editorconfig: true }) || {
-      printWidth: 100,
-      tabWidth: 2,
-      bracketSpacing: true,
-      trailingComma: 'es5',
-      singleQuote: true,
-    };
-
-    output = prettier.format(output, { ...prettierConfig, filepath: info.path });
+    output = await prettier.format(output, {
+      ...(await prettier.resolveConfig(info.path)),
+      filepath: info.path,
+    });
   } catch (e) {
     logger.log(`Failed applying prettier to ${info.path}.`);
   }
@@ -74,15 +71,26 @@ export function upgradeDeprecatedTypes(file: BabelFile) {
       );
 
       const source = path.node.source.value;
-      if (!source.startsWith('@storybook')) return;
+
+      if (!source.startsWith('@storybook')) {
+        return;
+      }
 
       path.get('specifiers').forEach((specifier) => {
         if (specifier.isImportNamespaceSpecifier()) {
           importedNamespaces.add(specifier.node.local.name);
         }
-        if (!specifier.isImportSpecifier()) return;
+
+        if (!specifier.isImportSpecifier()) {
+          return;
+        }
         const imported = specifier.get('imported');
-        if (!imported.isIdentifier()) return;
+
+        if (!imported.isIdentifier()) {
+          return;
+        }
+
+        // if we find a deprecated import
 
         // if we find a deprecated import
         if (deprecatedTypes.includes(imported.node.name)) {

@@ -1,7 +1,9 @@
-import { dirname, join } from 'path';
-import { PresetProperty } from '@storybook/types';
-import { StorybookConfig } from './types';
+import { PresetProperty } from 'storybook/internal/types';
+
+import { dirname, join } from 'node:path';
+
 import { StandaloneOptions } from './builders/utils/standalone-options';
+import { StorybookConfig } from './types';
 
 const getAbsolutePath = <I extends string>(input: I): I =>
   dirname(require.resolve(join(input, 'package.json'))) as any;
@@ -22,7 +24,7 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entries
   return annotations;
 };
 
-export const core: PresetProperty<'core', StorybookConfig> = async (config, options) => {
+export const core: PresetProperty<'core'> = async (config, options) => {
   const framework = await options.presets.apply('framework');
 
   return {
@@ -34,10 +36,9 @@ export const core: PresetProperty<'core', StorybookConfig> = async (config, opti
   };
 };
 
-export const typescript: PresetProperty<'typescript', StorybookConfig> = async (config) => {
+export const typescript: PresetProperty<'typescript'> = async (config) => {
   return {
     ...config,
-    skipBabel: true,
     skipCompiler: true,
   };
 };

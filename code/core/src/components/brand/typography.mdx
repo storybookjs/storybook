@@ -1,0 +1,75 @@
+import { typography } from '@storybook/core/theming';
+import { Meta, Typeset } from '@storybook/blocks';
+
+export const fontSizes = ['l3', 'l2', 'l1', 'm3', 'm2', 'm1', 's3', 's2', 's1'].map(
+  (size) => `${typography.size[size]}px`
+);
+
+export const sampleText =
+  'Storybook is an open source tool for building UI components and pages in isolation. It streamlines UI development, testing, and documentation.';
+
+<Meta title="Typography" />
+
+## Sans-serif
+
+```
+font-family:
+  "Nunito Sans",
+  -apple-system,
+  ".SFNSText-Regular",
+  "San Francisco",
+  BlinkMacSystemFont,
+  "Segoe UI",
+  "Helvetica Neue",
+  Helvetica,
+  Arial,
+  sans-serif;
+```
+
+<Typeset
+  fontFamily={typography.fonts.base}
+  fontSizes={fontSizes}
+  fontWeight={typography.weight.regular}
+  sampleText={sampleText}
+/>
+<Typeset
+  fontFamily={typography.fonts.base}
+  fontSizes={fontSizes}
+  fontWeight={typography.weight.bold}
+  sampleText={sampleText}
+/>
+<Typeset
+  fontFamily={typography.fonts.base}
+  fontSizes={fontSizes}
+  fontWeight={typography.weight.bold}
+  sampleText={sampleText}
+/>
+
+## Monospace
+
+```
+font-family:
+  ui-monospace,
+  Menlo,
+  Monaco,
+  "Roboto Mono",
+  "Oxygen Mono",
+  "Ubuntu Monospace",
+  "Source Code Pro",
+  "Droid Sans Mono",
+  "Courier New",
+  monospace;
+```
+
+<Typeset
+  fontFamily={typography.fonts.mono}
+  fontSizes={fontSizes}
+  fontWeight={typography.weight.regular}
+  sampleText={sampleText}
+/>
+<Typeset
+  fontFamily={typography.fonts.mono}
+  fontSizes={fontSizes}
+  fontWeight={typography.weight.bold}
+  sampleText={sampleText}
+/>

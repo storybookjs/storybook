@@ -6,31 +6,25 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
   standalone: true,
   imports: [CommonModule],
   template: ` <button
-    type="button"
-    (click)="onClick.emit($event)"
-    [ngClass]="classes"
-    [ngStyle]="{ 'background-color': backgroundColor }"
-  >
-    {{ label }}
-  </button>`,
+  type="button"
+  (click)="onClick.emit($event)"
+  [ngClass]="classes"
+  [ngStyle]="{ 'background-color': backgroundColor }"
+>
+  {{ label }}
+</button>`,
   styleUrls: ['./button.css'],
 })
 export class ButtonComponent {
-  /**
-   * Is this the principal call to action on the page?
-   */
+  /** Is this the principal call to action on the page? */
   @Input()
   primary = false;
 
-  /**
-   * What background color to use
-   */
+  /** What background color to use */
   @Input()
   backgroundColor?: string;
 
-  /**
-   * How large should the button be?
-   */
+  /** How large should the button be? */
   @Input()
   size: 'small' | 'medium' | 'large' = 'medium';
 
@@ -42,9 +36,7 @@ export class ButtonComponent {
   @Input()
   label = 'Button';
 
-  /**
-   * Optional click handler
-   */
+  /** Optional click handler */
   @Output()
   onClick = new EventEmitter<Event>();
 

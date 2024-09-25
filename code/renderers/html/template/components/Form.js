@@ -1,4 +1,3 @@
-/* eslint-disable no-undef */
 export const Form = ({ onSuccess }) => {
   const container = document.createElement('div');
 

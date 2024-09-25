@@ -1,5 +1,6 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import process from 'process';
+
 import { SbPage } from './util';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
@@ -48,17 +49,6 @@ test.describe('addon-backgrounds', () => {
     });
 
     test('button should appear for unattached .mdx files', async ({ page }) => {
-      // SSv6 does not support .mdx files. There is a unattached stories.mdx file
-      // at /docs/addons-docs-stories-mdx-unattached--docs, but these are functionally
-      // really attached
-
-      // eslint-disable-next-line jest/no-disabled-tests
-      test.skip(
-        // eslint-disable-next-line jest/valid-title
-        templateName.includes('ssv6'),
-        'Only run this test for Sandboxes with StoryStoreV7 enabled'
-      );
-
       const sbPage = new SbPage(page);
 
       // We start on the introduction page by default.

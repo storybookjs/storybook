@@ -1,9 +1,13 @@
-import { describe, it, expect, afterEach, vi } from 'vitest';
+// @vitest-environment happy-dom
+import { cleanup, fireEvent, render } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import React from 'react';
-import { render, fireEvent, cleanup } from '@testing-library/react';
+
 import type { NodeResult } from 'axe-core';
-import HighlightToggle from './HighlightToggle';
+
 import { A11yContext } from '../A11yContext';
+import HighlightToggle from './HighlightToggle';
 
 const nodeResult = (target: string): NodeResult => ({
   html: '',

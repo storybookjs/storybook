@@ -1,0 +1,21 @@
+{
+  "name": "svelte-vite/default-ts",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "implicitDependencies": [
+    "cli",
+    "core",
+    "essentials",
+    "interactions",
+    "links",
+    "onboarding",
+    "blocks",
+    "svelte-vite"
+  ],
+  "targets": {
+    "sandbox": {},
+    "sb:dev": {},
+    "sb:build": {}
+  },
+  "tags": ["ci:normal", "ci:merged", "ci:daily"]
+}

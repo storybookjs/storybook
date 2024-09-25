@@ -1,6 +1,8 @@
-import { expect, describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import { dedent } from 'ts-dedent';
-import { compileSync, compile } from './index';
+
+import { compile, compileSync } from './index';
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),
@@ -523,7 +525,7 @@ describe('docs-mdx-compiler-plugin', () => {
             "import { Meta, Story } from '@storybook/addon-docs';",
             "import { titleFunction } from '../title-generators';",
             '',
-            // eslint-disable-next-line no-template-curly-in-string
+
             "<Meta title={`${titleFunction('template')}`} />",
           ].join('\n')
         )

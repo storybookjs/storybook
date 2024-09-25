@@ -1,13 +1,16 @@
 import React from 'react';
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore (js import not supported in TS)
 import { imported } from '../imported';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore (css import not supported in TS)
+import styles from '../imported.module.css';
 
 const local = 'local-value';
 
 interface PropsWriterProps {
-  /**
-   * Description
-   */
+  /** Description */
   numberRequired: number;
   numberOptional?: number;
   stringRequired: string;
@@ -26,11 +29,10 @@ interface PropsWriterProps {
   importedReference?: string;
   globalReference?: any;
   stringGlobalName?: string;
+  myClass: typeof styles.foo;
 }
 
-/**
- * A component that renders its props
- */
+/** A component that renders its props */
 export const PropsWriter: React.FC<PropsWriterProps> = (props: PropsWriterProps) => (
   <pre>{JSON.stringify(props)}</pre>
 );
@@ -47,6 +49,7 @@ PropsWriter.defaultProps = {
   importedReference: imported,
   globalReference: Date,
   stringGlobalName: 'top',
+  myClass: styles.foo,
 };
 
 export const component = PropsWriter;

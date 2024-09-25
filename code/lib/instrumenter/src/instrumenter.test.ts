@@ -1,17 +1,21 @@
+// @vitest-environment happy-dom
+
 /* eslint-disable no-underscore-dangle */
-import { addons, mockChannel } from '@storybook/preview-api';
-import { describe, beforeEach, afterEach, it, expect, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import {
   FORCE_REMOUNT,
   SET_CURRENT_STORY,
   STORY_RENDER_PHASE_CHANGED,
-} from '@storybook/core-events';
+} from 'storybook/internal/core-events';
+import { addons, mockChannel } from 'storybook/internal/preview-api';
+
 import { global } from '@storybook/global';
 
 import { EVENTS, Instrumenter } from './instrumenter';
 import type { Options } from './types';
 
-vi.mock('@storybook/client-logger');
+vi.mock('storybook/internal/client-logger');
 
 const callSpy = vi.fn();
 const syncSpy = vi.fn();
@@ -135,7 +139,9 @@ describe('Instrumenter', () => {
       },
       {
         get(target, prop, receiver) {
-          if (prop === 'name') return `${target[prop]}!`;
+          if (prop === 'name') {
+            return `${target[prop]}!`;
+          }
           return Reflect.get(target, prop, receiver);
         },
       }
@@ -171,6 +177,27 @@ describe('Instrumenter', () => {
         args: ['baz'],
       })
     );
+  });
+
+  it('handles circular references', () => {
+    const { fn } = instrument({ fn: (...args: any) => {} });
+    const obj = { key: 'value', obj: {}, array: [] as any[] };
+    obj.obj = obj;
+    obj.array = [obj];
+
+    expect(() => fn(obj)).not.toThrow();
+
+    expect(callSpy.mock.calls[0][0].args).toMatchInlineSnapshot(`
+      [
+        {
+          "array": [
+            "[Circular]",
+          ],
+          "key": "value",
+          "obj": "[Circular]",
+        },
+      ]
+    `);
   });
 
   it('provides metadata about the call in the event', () => {

@@ -1,9 +1,7 @@
-/* eslint-disable no-console */
 import { CommonModule } from '@angular/common';
 import {
   Component,
   Directive,
-  importProvidersFrom,
   Injectable,
   InjectionToken,
   Input,
@@ -12,6 +10,7 @@ import {
   Pipe,
   Provider,
   ɵReflectionCapabilities as ReflectionCapabilities,
+  importProvidersFrom,
 } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import {
@@ -20,7 +19,8 @@ import {
   provideAnimations,
   provideNoopAnimations,
 } from '@angular/platform-browser/animations';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
+
 import { NgModuleMetadata } from '../../types';
 import { isComponentAlreadyDeclared } from './NgModulesAnalyzer';
 
@@ -41,7 +41,10 @@ export class PropertyExtractor implements NgModuleMetadata {
   applicationProviders?: Array<Provider | ReturnType<typeof importProvidersFrom>>;
   /* eslint-enable @typescript-eslint/lines-between-class-members */
 
-  constructor(private metadata: NgModuleMetadata, private component?: any) {
+  constructor(
+    private metadata: NgModuleMetadata,
+    private component?: any
+  ) {
     this.init();
   }
 
@@ -96,8 +99,6 @@ export class PropertyExtractor implements NgModuleMetadata {
    * - Removes Restricted Imports
    * - Extracts providers from ModuleWithProviders
    * - Returns a new NgModuleMetadata object
-   *
-   *
    */
   private analyzeMetadata = (metadata: NgModuleMetadata) => {
     const declarations = [...(metadata?.declarations || [])];
@@ -173,7 +174,17 @@ export class PropertyExtractor implements NgModuleMetadata {
     const isPipe = decorators.some((d) => this.isDecoratorInstanceOf(d, 'Pipe'));
 
     const isDeclarable = isComponent || isDirective || isPipe;
-    const isStandalone = (isComponent || isDirective) && decorators.some((d) => d.standalone);
+
+    // Check if the hierarchically lowest Component or Directive decorator (the only relevant for importing dependencies) is standalone.
+    const isStandalone = !!(
+      (isComponent || isDirective) &&
+      [...decorators]
+        .reverse() // reflectionCapabilities returns decorators in a hierarchically top-down order
+        .find(
+          (d) =>
+            this.isDecoratorInstanceOf(d, 'Component') || this.isDecoratorInstanceOf(d, 'Directive')
+        )?.standalone
+    );
 
     return { isDeclarable, isStandalone };
   };

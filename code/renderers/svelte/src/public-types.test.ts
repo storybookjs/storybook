@@ -1,18 +1,19 @@
 // this file tests Typescript types that's why there are no assertions
-/* eslint-disable jest/expect-expect */
 import { describe, it } from 'vitest';
-import { satisfies } from '@storybook/core-common';
-import type { ComponentAnnotations, StoryAnnotations } from '@storybook/types';
-import { expectTypeOf } from 'expect-type';
-import type { ComponentProps, SvelteComponentTyped } from 'svelte';
-import Button from './__test__/Button.svelte';
-import Decorator1 from './__test__/Decorator.svelte';
-import Decorator2 from './__test__/Decorator2.svelte';
 
+import { satisfies } from 'storybook/internal/common';
+import type { Canvas, ComponentAnnotations, StoryAnnotations } from 'storybook/internal/types';
+
+import { expectTypeOf } from 'expect-type';
+import type { ComponentProps, SvelteComponent } from 'svelte';
+
+import Button from './__test__/Button.svelte';
+import Decorator2 from './__test__/Decorator2.svelte';
+import Decorator1 from './__test__/Decorator.svelte';
 import type { Decorator, Meta, StoryObj } from './public-types';
 import type { SvelteRenderer } from './types';
 
-type SvelteStory<Component extends SvelteComponentTyped, Args, RequiredArgs> = StoryAnnotations<
+type SvelteStory<Component extends SvelteComponent, Args, RequiredArgs> = StoryAnnotations<
   SvelteRenderer<Component>,
   Args,
   RequiredArgs
@@ -231,4 +232,14 @@ describe('Story args can be inferred', () => {
     >;
     expectTypeOf(Basic).toEqualTypeOf<Expected>();
   });
+});
+
+it('mount accepts a Component and props', () => {
+  const Basic: StoryObj<Button> = {
+    async play({ mount }) {
+      const canvas = await mount(Button, { props: { label: 'label', disabled: true } });
+      expectTypeOf(canvas).toEqualTypeOf<Canvas>();
+    },
+  };
+  expectTypeOf(Basic).toEqualTypeOf<StoryObj<Button>>();
 });

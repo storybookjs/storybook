@@ -1,6 +1,7 @@
-import type { API } from '@storybook/manager-api';
+import { type API } from 'storybook/internal/manager-api';
+
 import { ADDON_ID } from './constants';
-import { globals as defaultGlobals } from './preview';
+import { initialGlobals as defaultGlobals } from './preview';
 
 const getCurrentViewportIndex = (viewportsKeys: string[], current: string): number =>
   viewportsKeys.indexOf(current);
@@ -21,35 +22,35 @@ const getPreviousViewport = (viewportsKeys: string[], current: string): string =
 
 export const registerShortcuts = async (
   api: API,
-  globals: any,
+  viewport: any,
   updateGlobals: any,
   viewportsKeys: string[]
 ) => {
   await api.setAddonShortcut(ADDON_ID, {
     label: 'Previous viewport',
-    defaultShortcut: ['shift', 'V'],
+    defaultShortcut: ['alt', 'shift', 'V'],
     actionName: 'previous',
     action: () => {
       updateGlobals({
-        viewport: getPreviousViewport(viewportsKeys, globals.viewport),
+        viewport: getPreviousViewport(viewportsKeys, viewport),
       });
     },
   });
 
   await api.setAddonShortcut(ADDON_ID, {
     label: 'Next viewport',
-    defaultShortcut: ['V'],
+    defaultShortcut: ['alt', 'V'],
     actionName: 'next',
     action: () => {
       updateGlobals({
-        viewport: getNextViewport(viewportsKeys, globals.viewport),
+        viewport: getNextViewport(viewportsKeys, viewport),
       });
     },
   });
 
   await api.setAddonShortcut(ADDON_ID, {
     label: 'Reset viewport',
-    defaultShortcut: ['alt', 'V'],
+    defaultShortcut: ['alt', 'control', 'V'],
     actionName: 'reset',
     action: () => {
       updateGlobals(defaultGlobals);

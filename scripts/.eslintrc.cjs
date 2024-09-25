@@ -7,9 +7,6 @@ module.exports = {
   },
   rules: {
     // remove as shared eslint has jest rules removed
-    'jest/no-standalone-expect': 'off',
-    'jest/no-done-callback': 'off',
-    'jest/no-deprecated-functions': 'off',
     '@typescript-eslint/ban-ts-comment': 'error',
     '@typescript-eslint/consistent-type-imports': ['error', { disallowTypeAnnotations: false }],
     'no-use-before-define': 'off',

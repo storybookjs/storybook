@@ -1,26 +1,28 @@
-import { dirname, join, resolve } from 'path';
-import { DefinePlugin, HotModuleReplacementPlugin, ProgressPlugin, ProvidePlugin } from 'webpack';
-import type { Configuration } from 'webpack';
-import HtmlWebpackPlugin from 'html-webpack-plugin';
-// @ts-expect-error (I removed this on purpose, because it's incorrect)
-import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin';
-import TerserWebpackPlugin from 'terser-webpack-plugin';
-import VirtualModulePlugin from 'webpack-virtual-modules';
-import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
-import type { TransformOptions as EsbuildOptions } from 'esbuild';
-import type { JsMinifyOptions as SwcOptions } from '@swc/core';
-import type { Options } from '@storybook/types';
-import { globalsNameReferenceMap } from '@storybook/preview/globals';
+import { dirname, join, resolve } from 'node:path';
+
 import {
   getBuilderOptions,
-  stringifyProcessEnvs,
-  normalizeStories,
   isPreservingSymlinks,
-} from '@storybook/core-common';
+  normalizeStories,
+  stringifyProcessEnvs,
+} from 'storybook/internal/common';
+import { globalsNameReferenceMap } from 'storybook/internal/preview/globals';
+import type { Options } from 'storybook/internal/types';
+
 import { type BuilderOptions } from '@storybook/core-webpack';
+
+// @ts-expect-error (I removed this on purpose, because it's incorrect)
+import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin';
+import type { TransformOptions as EsbuildOptions } from 'esbuild';
+import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
+import HtmlWebpackPlugin from 'html-webpack-plugin';
+import TerserWebpackPlugin from 'terser-webpack-plugin';
 import { dedent } from 'ts-dedent';
+import { DefinePlugin, HotModuleReplacementPlugin, ProgressPlugin, ProvidePlugin } from 'webpack';
+import type { Configuration } from 'webpack';
+import VirtualModulePlugin from 'webpack-virtual-modules';
+
 import type { TypescriptOptions } from '../types';
-import { createBabelLoader, createSWCLoader } from './loaders';
 import { getVirtualModules } from './virtual-module-mapping';
 
 const getAbsolutePath = <I extends string>(input: I): I =>
@@ -33,25 +35,13 @@ const maybeGetAbsolutePath = <I extends string>(input: I): I | false => {
   }
 };
 
-const managerAPIPath = maybeGetAbsolutePath(`@storybook/manager-api`);
-const componentsPath = maybeGetAbsolutePath(`@storybook/components`);
 const globalPath = maybeGetAbsolutePath(`@storybook/global`);
-const routerPath = maybeGetAbsolutePath(`@storybook/router`);
-const themingPath = maybeGetAbsolutePath(`@storybook/theming`);
 
 // these packages are not pre-bundled because of react dependencies.
 // these are not dependencies of the builder anymore, thus resolving them can fail.
 // we should remove the aliases in 8.0, I'm not sure why they are here in the first place.
 const storybookPaths: Record<string, string> = {
-  ...(managerAPIPath
-    ? {
-        [`@storybook/manager-api`]: managerAPIPath,
-      }
-    : {}),
-  ...(componentsPath ? { [`@storybook/components`]: componentsPath } : {}),
   ...(globalPath ? { [`@storybook/global`]: globalPath } : {}),
-  ...(routerPath ? { [`@storybook/router`]: routerPath } : {}),
-  ...(themingPath ? { [`@storybook/theming`]: themingPath } : {}),
 };
 
 export default async (
@@ -84,6 +74,7 @@ export default async (
     nonNormalizedStories,
     modulesCount = 1000,
     build,
+    tagsOptions,
   ] = await Promise.all([
     presets.apply('core'),
     presets.apply('frameworkOptions'),
@@ -97,6 +88,7 @@ export default async (
     presets.apply('stories', []),
     options.cache?.get('modulesCount').catch(() => {}),
     options.presets.apply('build'),
+    presets.apply('tags', {}),
   ]);
 
   const stories = normalizeStories(nonNormalizedStories, {
@@ -106,8 +98,7 @@ export default async (
 
   const builderOptions = await getBuilderOptions<BuilderOptions>(options);
 
-  const shouldCheckTs =
-    typescriptOptions.check && !typescriptOptions.skipBabel && !typescriptOptions.skipCompiler;
+  const shouldCheckTs = typescriptOptions.check && !typescriptOptions.skipCompiler;
   const tsCheckOptions = typescriptOptions.checkOptions || {};
 
   const cacheConfig = builderOptions.fsCache ? { cache: { type: 'filesystem' as const } } : {};
@@ -132,9 +123,8 @@ export default async (
     externals['@storybook/blocks'] = '__STORYBOOK_BLOCKS_EMPTY_MODULE__';
   }
 
-  const { virtualModules: virtualModuleMapping, entries: dynamicEntries } = await getVirtualModules(
-    options
-  );
+  const { virtualModules: virtualModuleMapping, entries: dynamicEntries } =
+    await getVirtualModules(options);
 
   return {
     name: 'preview',
@@ -175,7 +165,7 @@ export default async (
         inject: false,
         template,
         templateParameters: {
-          version: packageJson.version,
+          version: packageJson?.version,
           globals: {
             CONFIG_TYPE: configType,
             LOGLEVEL: logLevel,
@@ -188,6 +178,7 @@ export default async (
               importPathMatcher: specifier.importPathMatcher.source,
             })),
             DOCS_OPTIONS: docsOptions,
+            TAGS_OPTIONS: tagsOptions,
             ...(build?.test?.disableBlocks ? { __STORYBOOK_BLOCKS_EMPTY_MODULE__: {} } : {}),
           },
           headHtmlSnippet,
@@ -218,6 +209,7 @@ export default async (
       rules: [
         {
           test: /\.stories\.([tj])sx?$|(stories|story)\.mdx$/,
+          exclude: /node_modules/,
           enforce: 'post',
           use: [
             {
@@ -235,9 +227,6 @@ export default async (
             fullySpecified: false,
           },
         },
-        builderOptions.useSWC
-          ? await createSWCLoader(Object.keys(virtualModuleMapping), options)
-          : await createBabelLoader(options, typescriptOptions, Object.keys(virtualModuleMapping)),
         {
           test: /\.md$/,
           type: 'asset/source',
@@ -273,7 +262,6 @@ export default async (
       ...(isProd
         ? {
             minimize: true,
-            // eslint-disable-next-line no-nested-ternary
             minimizer: options.build?.test?.esbuildMinify
               ? [
                   new TerserWebpackPlugin<EsbuildOptions>({
@@ -282,17 +270,6 @@ export default async (
                     terserOptions: {
                       sourcemap: !options.build?.test?.disableSourcemaps,
                       treeShaking: !options.build?.test?.disableTreeShaking,
-                    },
-                  }),
-                ]
-              : builderOptions.useSWC
-              ? [
-                  new TerserWebpackPlugin<SwcOptions>({
-                    minify: TerserWebpackPlugin.swcMinify,
-                    terserOptions: {
-                      sourceMap: !options.build?.test?.disableSourcemaps,
-                      mangle: false,
-                      keep_fnames: true,
                     },
                   }),
                 ]

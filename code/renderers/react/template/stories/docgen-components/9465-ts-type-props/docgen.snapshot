@@ -2,10 +2,7 @@ import React from 'react';
 const Component = ({
   disabled = false,
   children
-}) =>
-/*#__PURE__*/
-// eslint-disable-next-line react/button-has-type
-React.createElement("button", {
+}) => /*#__PURE__*/React.createElement("button", {
   disabled: disabled
 }, children);
 export const component = Component;

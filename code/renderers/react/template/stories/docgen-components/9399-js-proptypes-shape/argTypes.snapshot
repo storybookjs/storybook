@@ -6,7 +6,7 @@
     "description": "",
     "name": "areas",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": undefined,
       "type": {
         "detail": "[object]",

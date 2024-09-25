@@ -1,4 +1,8 @@
-import { argsToTemplate, ArgsToTemplateOptions } from './argsToTemplate'; // adjust path
+import { describe, expect, it } from 'vitest';
+
+import { ArgsToTemplateOptions, argsToTemplate } from './argsToTemplate';
+
+// adjust path
 
 describe('argsToTemplate', () => {
   it('should correctly convert args to template string and exclude undefined values', () => {
@@ -98,5 +102,11 @@ describe('argsToTemplate', () => {
     const args = { input: 'Value1', event1: () => {} };
     const result = argsToTemplate(args, {});
     expect(result).toEqual('[input]="input" (event1)="event1($event)"');
+  });
+
+  it('should format for non dot notation', () => {
+    const args = { 'non-dot': 'Value1', 'dash-out': () => {} };
+    const result = argsToTemplate(args, {});
+    expect(result).toEqual('[non-dot]="this[\'non-dot\']" (dash-out)="this[\'dash-out\']($event)"');
   });
 });

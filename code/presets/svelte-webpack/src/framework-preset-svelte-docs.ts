@@ -1,4 +1,5 @@
 import type { Preset } from '@storybook/core-webpack';
+
 import type { StorybookConfig, SvelteOptions } from './types';
 
 export const webpackFinal: StorybookConfig['webpackFinal'] = async (config, { presets }) => {
@@ -15,9 +16,8 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (config, { pr
     },
   ];
 
-  // eslint-disable-next-line no-param-reassign
   config.module = config.module || {};
-  // eslint-disable-next-line no-param-reassign
+
   config.module.rules = rules;
 
   return config;

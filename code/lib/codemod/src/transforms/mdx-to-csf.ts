@@ -1,11 +1,19 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment,no-param-reassign,@typescript-eslint/no-shadow */
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import { existsSync, renameSync, writeFileSync } from 'node:fs';
+import { basename, join, parse } from 'node:path';
+
+import {
+  type BabelFile,
+  core as babel,
+  babelParse,
+  babelParseExpression,
+  recast,
+  types as t,
+} from '@storybook/core/babel';
+
 import type { FileInfo } from 'jscodeshift';
-import { babelParse, babelParseExpression } from '@storybook/csf-tools';
-import { remark } from 'remark';
-import type { Root } from 'remark-mdx';
-import remarkMdx from 'remark-mdx';
-import { SKIP, visit } from 'unist-util-visit';
-import { is } from 'unist-util-is';
+import camelCase from 'lodash/camelCase';
+import type { MdxFlowExpression } from 'mdast-util-mdx-expression';
 import type {
   MdxJsxAttribute,
   MdxJsxExpressionAttribute,
@@ -13,44 +21,62 @@ import type {
   MdxJsxTextElement,
 } from 'mdast-util-mdx-jsx';
 import type { MdxjsEsm } from 'mdast-util-mdxjs-esm';
-import * as t from '@babel/types';
-import type { BabelFile } from '@babel/core';
-import * as babel from '@babel/core';
-import * as recast from 'recast';
-import * as path from 'node:path';
 import prettier from 'prettier';
-import * as fs from 'node:fs';
-import camelCase from 'lodash/camelCase';
-import type { MdxFlowExpression } from 'mdast-util-mdx-expression';
+import { remark } from 'remark';
+import remarkMdx from 'remark-mdx';
+import { is } from 'unist-util-is';
+import { SKIP, visit } from 'unist-util-visit';
 
 const mdxProcessor = remark().use(remarkMdx) as ReturnType<typeof remark>;
 
-export default function jscodeshift(info: FileInfo) {
-  const parsed = path.parse(info.path);
+const renameList: { original: string; baseName: string }[] = [];
+const brokenList: { original: string; baseName: string }[] = [];
 
-  let baseName = path.join(
+export default async function jscodeshift(info: FileInfo) {
+  const parsed = parse(info.path);
+
+  let baseName = join(
     parsed.dir,
     parsed.name.replace('.mdx', '').replace('.stories', '').replace('.story', '')
   );
 
   // make sure the new csf file we are going to create exists
-  while (fs.existsSync(`${baseName}.stories.js`)) {
+  while (existsSync(`${baseName}.stories.js`)) {
     baseName += '_';
   }
 
-  const result = transform(info.source, path.basename(baseName));
+  try {
+    const { csf, mdx } = await transform(info, basename(baseName));
 
-  const [mdx, csf] = result;
+    if (csf != null) {
+      writeFileSync(`${baseName}.stories.js`, csf);
+    }
 
-  if (csf != null) {
-    fs.writeFileSync(`${baseName}.stories.js`, csf);
+    renameList.push({ original: info.path, baseName });
+
+    return mdx;
+  } catch (e) {
+    brokenList.push({ original: info.path, baseName });
+    throw e;
   }
-
-  return mdx;
 }
 
-export function transform(source: string, baseName: string): [string, string] {
-  const root = mdxProcessor.parse(source);
+// The JSCodeshift CLI doesn't return a list of files that were transformed or skipped.
+// This is a workaround to rename the files after the transformation, which we can remove after we switch from jscodeshift to another solution.
+process.on('exit', () => {
+  renameList.forEach((file) => {
+    renameSync(file.original, `${file.baseName}.mdx`);
+  });
+  brokenList.forEach((file) => {
+    renameSync(file.original, `${file.original}.broken`);
+  });
+});
+
+export async function transform(
+  info: FileInfo,
+  baseName: string
+): Promise<{ mdx: string; csf: string | null }> {
+  const root = mdxProcessor.parse(info.source);
   const storyNamespaceName = nameToValidExport(`${baseName}Stories`);
 
   const metaAttributes: Array<MdxJsxAttribute | MdxJsxExpressionAttribute> = [];
@@ -75,28 +101,42 @@ export function transform(source: string, baseName: string): [string, string] {
     node.value = node.value
       .replaceAll('@storybook/addon-docs/blocks', '@storybook/blocks')
       .replaceAll('@storybook/addon-docs', '@storybook/blocks');
+
+    if (node.value.includes('@storybook/blocks')) {
+      // @ts-ignore
+      const file: BabelFile = new babel.File(
+        { filename: 'info.path' },
+        { code: node.value, ast: babelParse(node.value) }
+      );
+
+      file.path.traverse({
+        ImportDeclaration(path) {
+          if (path.node.source.value === '@storybook/blocks') {
+            path.get('specifiers').forEach((specifier) => {
+              if (specifier.isImportSpecifier()) {
+                const imported = specifier.get('imported');
+                if (imported.isIdentifier() && imported.node.name === 'ArgsTable') {
+                  imported.node.name = 'Controls';
+                }
+              }
+            });
+          }
+        },
+      });
+
+      node.value = recast.print(file.ast).code;
+    }
   });
 
   const file = getEsmAst(root);
 
-  // @ts-ignore
-  visit(
-    root,
-    ['mdxJsxFlowElement', 'mdxJsxTextElement'],
-    (node: MdxJsxFlowElement | MdxJsxTextElement, index, parent) => {
-      if (is(node, { name: 'Meta' })) {
-        metaAttributes.push(...node.attributes);
-        node.attributes = [
-          {
-            type: 'mdxJsxAttribute',
-            name: 'of',
-            value: {
-              type: 'mdxJsxAttributeValueExpression',
-              value: storyNamespaceName,
-            },
-          },
-        ];
+  visit(root, ['mdxJsxFlowElement', 'mdxJsxTextElement'], (node, index, parent) => {
+    if (node.type === 'mdxJsxFlowElement' || node.type === 'mdxJsxTextElement') {
+      if (is(node, { name: 'ArgsTable' })) {
+        node.name = 'Controls';
+        node.attributes = [];
       }
+
       if (is(node, { name: 'Story' })) {
         const nameAttribute = node.attributes.find(
           (it) => it.type === 'mdxJsxAttribute' && it.name === 'name'
@@ -109,7 +149,10 @@ export function transform(source: string, baseName: string): [string, string] {
         );
         if (typeof nameAttribute?.value === 'string') {
           let name = nameToValidExport(nameAttribute.value);
-          while (variableNameExists(name)) name += '_';
+
+          while (variableNameExists(name)) {
+            name += '_';
+          }
 
           storiesMap.set(name, {
             type: 'value',
@@ -136,7 +179,6 @@ export function transform(source: string, baseName: string): [string, string] {
             value: `/* ${nodeString} is deprecated, please migrate it to <Story of={referenceToStory} /> see: https://storybook.js.org/migration-guides/7.0 */`,
           };
           storiesMap.set(idAttribute.value as string, { type: 'id' });
-          // @ts-expect-error issue with mdast types
           parent?.children.splice(index as number, 0, newNode);
           // current index is the new comment, and index + 1 is current node
           // SKIP traversing current node, and continue with the node after that
@@ -168,23 +210,8 @@ export function transform(source: string, baseName: string): [string, string] {
           return [SKIP, index];
         }
       }
-      return undefined;
     }
-  );
-
-  const metaProperties = metaAttributes.flatMap((attribute) => {
-    if (attribute.type === 'mdxJsxAttribute') {
-      if (typeof attribute.value === 'string') {
-        return [t.objectProperty(t.identifier(attribute.name), t.stringLiteral(attribute.value))];
-      }
-      return [
-        t.objectProperty(
-          t.identifier(attribute.name),
-          babelParseExpression(attribute.value?.value ?? '') as any as t.Expression
-        ),
-      ];
-    }
-    return [];
+    return undefined;
   });
 
   file.path.traverse({
@@ -201,10 +228,48 @@ export function transform(source: string, baseName: string): [string, string] {
     },
   });
 
-  if (storiesMap.size === 0 && metaAttributes.length === 0) {
+  if (storiesMap.size === 0) {
     // A CSF file must have at least one story, so skip migrating if this is the case.
-    return [mdxProcessor.stringify(root), ''];
+    return {
+      csf: null,
+      mdx: mdxProcessor.stringify(root),
+    };
   }
+
+  // Rewrites the Meta tag to use the new story namespace
+  visit(root, ['mdxJsxFlowElement', 'mdxJsxTextElement'], (node, index, parent) => {
+    if (
+      (node.type === 'mdxJsxFlowElement' || node.type === 'mdxJsxTextElement') &&
+      is(node, { name: 'Meta' })
+    ) {
+      metaAttributes.push(...node.attributes);
+      node.attributes = [
+        {
+          type: 'mdxJsxAttribute',
+          name: 'of',
+          value: {
+            type: 'mdxJsxAttributeValueExpression',
+            value: storyNamespaceName,
+          },
+        },
+      ];
+    }
+  });
+
+  const metaProperties = metaAttributes.flatMap((attribute) => {
+    if (attribute.type === 'mdxJsxAttribute') {
+      if (typeof attribute.value === 'string') {
+        return [t.objectProperty(t.identifier(attribute.name), t.stringLiteral(attribute.value))];
+      }
+      return [
+        t.objectProperty(
+          t.identifier(attribute.name),
+          babelParseExpression(attribute.value?.value ?? '') as any as t.Expression
+        ),
+      ];
+    }
+    return [];
+  });
 
   addStoriesImport(root, baseName, storyNamespaceName);
 
@@ -215,7 +280,9 @@ export function transform(source: string, baseName: string): [string, string] {
   function mapChildrenToRender(children: (MdxJsxFlowElement | MdxJsxTextElement)['children']) {
     const child = children[0];
 
-    if (!child) return undefined;
+    if (!child) {
+      return undefined;
+    }
 
     if (child.type === 'text') {
       return t.arrowFunctionExpression([], t.stringLiteral(child.value));
@@ -248,7 +315,10 @@ export function transform(source: string, baseName: string): [string, string] {
     file.path.traverse({
       VariableDeclarator: (path) => {
         const lVal = path.node.id;
-        if (t.isIdentifier(lVal) && lVal.name === name) found = true;
+
+        if (t.isIdentifier(lVal) && lVal.name === name) {
+          found = true;
+        }
       },
     });
     return found;
@@ -256,7 +326,9 @@ export function transform(source: string, baseName: string): [string, string] {
 
   newStatements.push(
     ...[...storiesMap].flatMap(([key, value]) => {
-      if (value.type === 'id') return [];
+      if (value.type === 'id') {
+        return [];
+      }
       if (value.type === 'reference') {
         return [
           t.exportNamedDeclaration(null, [t.exportSpecifier(t.identifier(key), t.identifier(key))]),
@@ -296,23 +368,21 @@ export function transform(source: string, baseName: string): [string, string] {
   const newMdx = mdxProcessor.stringify(root);
   let output = recast.print(file.path.node).code;
 
-  const prettierConfig = prettier.resolveConfig.sync('.', { editorconfig: true }) || {
-    printWidth: 100,
-    tabWidth: 2,
-    bracketSpacing: true,
-    trailingComma: 'es5',
-    singleQuote: true,
+  const path = `${info.path}.jsx`;
+  output = await prettier.format(output.trim(), {
+    ...(await prettier.resolveConfig(path)),
+    filepath: path,
+  });
+
+  return {
+    csf: output,
+    mdx: newMdx,
   };
-
-  output = prettier.format(output, { ...prettierConfig, filepath: `file.jsx` });
-
-  return [newMdx, output];
 }
 
-function getEsmAst(root: Root) {
+function getEsmAst(root: ReturnType<typeof mdxProcessor.parse>) {
   const esm: string[] = [];
-  // @ts-expect-error (not valid BuildVisitor)
-  visit(root, ['mdxjsEsm'], (node: MdxjsEsm) => {
+  visit(root, 'mdxjsEsm', (node) => {
     esm.push(node.value);
   });
   const esmSource = `${esm.join('\n\n')}`;
@@ -325,10 +395,13 @@ function getEsmAst(root: Root) {
   return file;
 }
 
-function addStoriesImport(root: Root, baseName: string, storyNamespaceName: string): void {
+function addStoriesImport(
+  root: ReturnType<typeof mdxProcessor.parse>,
+  baseName: string,
+  storyNamespaceName: string
+): void {
   let found = false;
-  // @ts-expect-error (not valid BuildVisitor)
-  visit(root, ['mdxjsEsm'], (node: MdxjsEsm) => {
+  visit(root, 'mdxjsEsm', (node) => {
     if (!found) {
       node.value += `\nimport * as ${storyNamespaceName} from './${baseName}.stories';`;
       found = true;

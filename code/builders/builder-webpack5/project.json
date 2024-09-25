@@ -1,6 +1,8 @@
 {
-  "name": "@storybook/builder-webpack5",
+  "name": "builder-webpack5",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "implicitDependencies": [],
-  "type": "library"
+  "projectType": "library",
+  "targets": {
+    "build": {}
+  }
 }

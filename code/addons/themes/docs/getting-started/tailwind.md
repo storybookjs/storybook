@@ -2,9 +2,7 @@
 
 ## 📦 Install addon
 
-<!-- **NOTE:** As of Storybook 7.2, `@storybook/addon-themes` ships in `@storybook/addon-essentials`. If you're using Storybook >= 7.2, skip to ["Import your css"](#🥾-import-your-css). -->
-
-To get started, **install the package** as a dev dependency
+To get started, **install the package** as a dev dependency.
 
 yarn:
 
@@ -29,14 +27,11 @@ pnpm add -D @storybook/addon-themes
 Now, **include the addon** in your `.storybook/main.js` file.
 
 ```diff
-module.exports = {
-  stories: [
-    "../stories/**/*.stories.mdx",
-    "../stories/**/*.stories.@(js|jsx|ts|tsx)",
-  ],
+export default {
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   addons: [
-    "@storybook/addon-essentials",
-+   "@storybook/addon-themes"
+    '@storybook/addon-essentials',
++   '@storybook/addon-themes',
   ],
 };
 ```
@@ -46,9 +41,9 @@ module.exports = {
 To give your stories access to Tailwind styles, import them into your `.storybook/preview.js` file.
 
 ```diff
-import { Preview } from "@storybook/your-renderer";
+import { Preview } from '@storybook/your-renderer';
 
-+import "../src/index.css";
++import '../src/index.css';
 
 const preview: Preview = {
   parameters: { /* ... */ },
@@ -64,11 +59,11 @@ Tailwind supports light and dark color modes out of the box. These modes can be 
 To enable switching between these modes in a click for your stories, use our `withThemeByClassName` decorator by adding the following code to your `.storybook/preview.js` file.
 
 ```diff
--import { Preview } from "@storybook/your-renderer";
-+import { Preview, Renderer } from "@storybook/your-renderer";
-+import { withThemeByClassName } from "@storybook/addon-themes";
+-import { Preview } from '@storybook/your-renderer';
++import { Preview, Renderer } from '@storybook/your-renderer';
++import { withThemeByClassName } from '@storybook/addon-themes';
 
-import "../src/index.css";
+import '../src/index.css';
 
 
 const preview: Preview = {
@@ -76,10 +71,10 @@ const preview: Preview = {
 + decorators: [
 +  withThemeByClassName<Renderer>({
 +    themes: {
-+      light: "",
-+      dark: "dark",
++      light: '',
++      dark: 'dark',
 +    },
-+    defaultTheme: "light",
++    defaultTheme: 'light',
 +  }),
 + ]
 };
@@ -92,11 +87,11 @@ export default preview;
 If you've configured Tailwind to toggle themes with a data attribute, use our `withThemeByDataAttribute` decorator by adding the following code to your `.storybook/preview.js` file.
 
 ```diff
--import { Preview } from "@storybook/your-renderer";
-+import { Preview, Renderer } from "@storybook/your-renderer";
-+import { withThemeByDataAttribute } from "@storybook/addon-themes";
+-import { Preview } from '@storybook/your-renderer';
++import { Preview, Renderer } from '@storybook/your-renderer';
++import { withThemeByDataAttribute } from '@storybook/addon-themes';
 
-import "../src/index.css";
+import '../src/index.css';
 
 
 const preview: Preview = {
@@ -104,11 +99,11 @@ const preview: Preview = {
 + decorators: [
 +  withThemeByDataAttribute<Renderer>({
 +    themes: {
-+      light: "light",
-+      dark: "dark",
++      light: 'light',
++      dark: 'dark',
 +    },
-+    defaultTheme: "light",
-+    attributeName: "data-theme",
++    defaultTheme: 'light',
++    attributeName: 'data-theme',
 +  }),
 + ]
 };

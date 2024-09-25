@@ -1,7 +1,9 @@
 import type { FC } from 'react';
 import React from 'react';
-import { styled } from '@storybook/theming';
-import { Badge } from '@storybook/components';
+
+import { Badge } from 'storybook/internal/components';
+import { styled } from 'storybook/internal/theming';
+
 import type { CheckResult } from 'axe-core';
 import { useResizeDetector } from 'react-resize-detector';
 
@@ -91,7 +93,6 @@ export const Rules: FC<RulesProps> = ({ rules }) => {
   return (
     <List>
       {rules.map((rule, index) => (
-        // eslint-disable-next-line react/no-array-index-key
         <Rule rule={rule} key={index} />
       ))}
     </List>

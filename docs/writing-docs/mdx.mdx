@@ -1,0 +1,321 @@
+---
+title: 'MDX'
+sidebar:
+  order: 2
+  title: MDX
+---
+
+<YouTubeCallout id="YeIvFke5_5Y" title="MDX Storybook Quick Tips" />
+
+[MDX](https://mdxjs.com/) files mix Markdown and Javascript/JSX to create rich interactive documentation. You can use Markdown’s readable syntax (such as `# heading`) for your documentation, include stories defined in [Component Story Format (CSF)](../api/csf.mdx), and freely embed JSX component blocks at any point in the file. All at once.
+
+In addition, you can write pure documentation pages in MDX and add them to Storybook alongside your stories.
+
+![MDX simple example result](../_assets/writing-docs/mdx-hero.png)
+
+<Callout variant="info">
+
+  Writing stories directly in MDX was removed in Storybook 8, and we're no longer supporting it. Please reference the [previous documentation](../../../release-6-5/docs/writing-docs/mdx.mdx) for guidance on that feature or [migrate](../migration-guide/index.mdx#storiesmdx-to-mdxcsf) to the new format.
+  
+</Callout>
+
+## Basic example
+
+Let's start with an example, `Checkbox.mdx`, combining Markdown with a single story.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="checkbox-story.md" />
+
+{/* prettier-ignore-end */}
+
+This MDX file references a story file, `Checkbox.stories.js|ts`, that is written in [Component Story Format (CSF)](../api/csf.mdx):
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="checkbox-story-csf.md" usesCsf3 csf2Path="writing-docs/mdx#snippet-checkbox-story-csf" />
+
+{/* prettier-ignore-end */}
+
+And here's how that's rendered in Storybook:
+
+![MDX simple example result](../_assets/writing-docs/mdx-simple.png)
+
+There’s a lot going on here. We're writing Markdown, we're writing JSX, and we're also defining and referencing Storybook stories that are drop-in compatible with the entire Storybook ecosystem.
+
+Let’s break it down.
+
+### MDX and CSF
+
+The first thing you'll notice is that the component documentation is divided into distinct formats: one for writing component stories describing each possible component state and the second one for documenting how to use them. This split leverages the best qualities of each format:
+
+* **CSF** is great for succinctly defining stories (component examples). If you use TypeScript, it also provides type safety and auto-completion.
+* **MDX** is great for writing structured documentation and composing it with interactive JSX elements.
+
+### Anatomy of MDX
+
+Assuming you’re already familiar with writing stories with [CSF](../writing-stories/index.mdx), we can dissect the MDX side of things in greater detail.
+
+The document consists of a number of blocks separated by blank lines. Since MDX mixes a few different languages together, it uses those blank lines to help distinguish where one starts, and the next begins. Failing to separate blocks by whitespace can cause (sometimes cryptic) parse errors.
+
+Going through the code blocks in sequence:
+
+{/* prettier-ignore-start */}
+
+```mdx
+{ /* Checkbox.mdx */ }
+```
+
+{/* prettier-ignore-end */}
+
+Comments in MDX are JSX blocks that contain JS comments.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-auto-docs-mdx-docs-imports.md" />
+
+{/* prettier-ignore-end */}
+
+Imports the components and stories that will be used in the JSX throughout the rest of the file.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-auto-docs-mdx-docs-meta-block.md" />
+
+{/* prettier-ignore-end */}
+
+<Callout variant="info">
+  When providing the `of` prop to the `Meta` block, make sure that you're referencing the [**default export**](../api/csf.mdx#default-export) of the story file and not the component itself to prevent render issues with the generated documentation.
+</Callout>
+
+The `Meta` block defines where the document will be placed in the sidebar. In this case, it is adjacent to the Checkbox’s stories. By default, the docs sidebar node is titled `"Docs"`, but this can be customized by passing a `name` prop (e.g., `<Meta of={CheckboxStories} name="Info" />`). If you want to place a docs node at an arbitrary point in the navigation hierarchy, you can use the `title` prop (e.g., `<Meta title="path/to/node" />`).
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-auto-docs-mdx-docs-definition.md" />
+
+{/* prettier-ignore-end */}
+
+MDX supports standard markdown (["commonmark"](https://commonmark.org/)) by default and can be extended to support [GitHub Flavored Markdown (GFM)](https://github.github.com/gfm/) and other extensions (see the [Troubleshooting section](#troubleshooting) to learn more about some of the current limitations).
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-auto-docs-mdx-docs-story.md" />
+
+{/* prettier-ignore-end */}
+
+Finally, MDX supports blocks of arbitrary JSX.
+
+In this case, we are leveraging “Doc Blocks”, a library of documentation components designed to work with Storybook stories to show your stories, your component APIs & controls for interacting with your components inside your documentation, among other utilities.
+
+In addition to Doc Blocks, MDX can incorporate arbitrary React components, making it a very flexible documentation system. Suppose you want a stylized list of “dos and don’ts” for your component; you can use off-the-shelf components or write your own.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-auto-docs-mdx-docs-dos-donts.md" />
+
+{/* prettier-ignore-end */}
+
+### Known limitations
+
+While MDX supports a variety of runtimes ([React](https://mdxjs.com/packages/react/), [Preact](https://mdxjs.com/packages/preact/), [Vue](https://mdxjs.com/packages/vue/)), Storybook’s implementation is React-only. That means your documentation is rendered in React, while your stories render in the runtime of your choice (React, Vue, Angular, Web Components, Svelte, etc.).
+
+## Setup custom documentation
+
+In addition, to document your components with MDX, you can also extend it to write other types of content, such as guidelines or best practices on how to use them. To enable custom documentation for your stories with this format, start by updating your Storybook configuration file (i.e., `.storybook/main.js|ts|cjs`).
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-auto-docs-main-mdx-config.md" />
+
+{/* prettier-ignore-end */}
+
+Create an MDX file to add your custom documentation. Depending on how you want your documentation to render in the UI, you'll need to consider the following use cases.
+
+### Using the `Meta` Doc Block
+
+If you need to match the component documentation to an existing story, you can configure the [`Meta`](../api/doc-blocks/doc-block-meta.mdx) Doc Block to control how the documentation gets rendered. Out of the box, it allows you to define a custom title or a reference to the story you need to document (i.e., via the `of` prop). For example:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-auto-docs-baseline-example.md" />
+
+{/* prettier-ignore-end */}
+
+### Writing unattached documentation
+
+Suppose you're documenting an existing component and only provide the `Meta` Doc Block without additional props or other blocks. In that case, Storybook will consider it as "unattached" documentation, or in other words, a "documentation-only" page, and it will render it differently in the sidebar navigation menu:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-auto-docs-mdx-docs-docs-only-page.md" />
+
+{/* prettier-ignore-end */}
+
+![MDX docs only story](../_assets/writing-docs/mdx-documentation-only.png)
+
+### Using the File System
+
+However, providing the `Meta` Doc Block may not be required for certain use cases, such as standalone pages or even as guidelines for testing your components. In that case, you can safely omit it. Storybook will instead rely on the file's physical location to place the documentation in the sidebar, overriding any pre-existent [auto-generated](./autodocs.mdx) documentation with your own. For example:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-auto-docs-custom-file.md" />
+
+{/* prettier-ignore-end */}
+
+<Callout variant="info" icon="💡">
+
+  If you're overriding an existing auto-generated documentation page enabled via [`tags`](./autodocs.mdx#setup-automated-docs) configuration property, we recommend removing it to avoid errors.
+  
+</Callout>
+
+Once the custom MDX documentation is loaded, Storybook will infer the title and location using the same heuristic rules to generate [auto-title stories](../configure/user-interface/sidebar-and-urls.mdx#csf-30-auto-titles) and render it in the sidebar as a `Docs` entry.
+
+#### Working with standalone documentation pages
+
+Writing standalone documentation pages is a common use case that applies not only on a per-component but also on a per-project basis. For example, you might want to document your project's onboarding process with instructions on using it. To do so, you can create a new MDX file containing your documentation using a similar structure and content:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-auto-docs-standalone-page.md" />
+
+{/* prettier-ignore-end */}
+
+![MDX guidelines page](../_assets/writing-docs/mdx-standalone-page.png)
+
+When Storybook loads the documentation, it will infer the placement of the page in the sidebar navigation menu using the file's physical location and render it as a `Docs` entry.
+
+### Fully control custom documentation
+
+Documentation can be expensive to maintain and keep up to date when applied to every project component. To help simplify this process, Storybook provides a set of useful UI components (i.e., Doc Blocks) to help cover more advanced cases. If you need additional content, use them to help create your custom documentation.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-auto-docs-starter-example.md" />
+
+{/* prettier-ignore-end */}
+
+### Working with multiple components
+
+If you need to document multiple components in a single documentation page, you can reference them directly inside your MDX file. Internally, Storybook looks for the story metadata and composes it alongside your existing documentation. For example:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-auto-docs-mdx-file.md" />
+
+{/* prettier-ignore-end */}
+
+### Generate documentation from Markdown
+
+If you need to extend your documentation with additional content written in Markdown, you can use the `Markdown` Doc Block to import the available content, and Storybook will render it alongside your existing documentation. For example, if you have a `CHANGELOG.md` file, you can import it and render it in your documentation page as follows:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-custom-docs-markdown.md" />
+
+{/* prettier-ignore-end */}
+
+<Callout variant="info">
+  The `Markdown` Doc Block provides additional configuration options to customize the rendering of your documentation. For more information, refer to the [API documentation](../api/doc-blocks/doc-block-markdown.mdx).
+</Callout>
+
+![Changelog markdown in an MDX story](../_assets/writing-docs/mdx-markdown-docs-import.png)
+
+### Linking to other stories and pages
+
+Another way to improve documentation is by linking to other stories and pages. Suppose you already have a component story with the following unique identifier, `some--id`, and you want to link it to your documentation page. In that case, you can use the `path` query string to redirect to the documentation entry related to the story:
+
+```md
+[Go to specific documentation page](?path=/docs/some--id)
+```
+
+Instead, if you need to target a specific documentation section, you can adjust the link to point at it. For example:
+
+```md
+[Go to the conclusion of the documentation page](?path=/docs/some--id#conclusion)
+```
+
+However, cross-linking documentation isn't restricted to documentation pages. You can adjust the `path` query and supply the story's unique identifier if you need to reference a specific one. For example:
+
+{/*This redirects to the **Canvas** tab of the story: */}
+
+```md
+[Go to specific story canvas](?path=/story/some--id)
+```
+
+{/*You can also use anchors to target a specific section of a page: */}
+
+<Callout variant="info" icon="💡">
+  By applying this pattern with the Controls addon, all anchors will be ignored in Canvas based on how Storybook handles URLs to track the args values.
+</Callout>
+
+## Troubleshooting
+
+### Markdown tables aren't rendering correctly
+
+If you're extending your documentation to include specific features (e.g., tables, footnotes), you may run into some issues rendering them correctly using the current MDX version supported by Storybook. We recommend enabling the [`remark-gfm`](https://github.com/remarkjs/remark-gfm) plugin in your configuration file (i.e., [`.storybook/main.js|ts`](../configure/index.mdx)) to render them correctly.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-main-config-remark-options.md" />
+
+{/* prettier-ignore-end */}
+
+<Callout variant="info" icon="💡">
+  The [`remark-gfm`](https://github.com/remarkjs/remark-gfm) package is not included by default with Storybook and must be installed separately as a development dependency. To learn more about how to use it and the other breaking changes introduced by MDX, refer to the [GFM guide](https://mdxjs.com/guides/gfm/) and the [migration guide](https://mdxjs.com/migrating/v2/) provided by the MDX team for more information.
+</Callout>
+
+### The MDX documentation doesn't render in my environment
+
+As Storybook relies on [MDX 3](https://mdxjs.com/) to render documentation, some technical limitations may prevent you from migrating to this version. If that's the case, we've prepared a set of instructions to help you transition to this new version.
+
+#### Storybook doesn't create documentation for my component stories
+
+If you run into a situation where Storybook is not able to detect and render the documentation for your component stories, it may be due to a misconfiguration in your Storybook. Check your configuration file (i.e., `.storybook/main.js|ts`) and ensure the `stories` configuration element provides the correct path to your stories location (e.g., `../src/**/*.stories.@(js|jsx|mjs|ts|tsx)`).
+
+### The migration seems flaky and keeps failing
+
+By default, running the [migration](../configure/upgrading.mdx) command will prompt you to update the existing MDX files in your project according to the MDX version supported by Storybook. However, this might be a disruptive process, specifically if you're upgrading from a previous version of Storybook where you were using the legacy MDX format. To help you troubleshoot those issues, we've prepared some recommendations that might help you.
+
+Start by running the following command inside your project directory:
+
+```shell
+npx @hipster/mdx2-issue-checker
+```
+
+<Callout variant="info" icon="💡">
+  Depending on the volume, you may be required to run the command multiple times to fix all the issues.
+</Callout>
+
+When it finishes, it will output the list of files causing issues. You can then use this information to fix the problems manually.
+
+Additionally, if you're working with VSCode, you can add the [MDX extension](https://marketplace.visualstudio.com/items?itemName=unifiedjs.vscode-mdx) and enable MDX experimental support for linting, type checking, and auto-completion by adding the following to your user settings:
+
+```json
+{
+  "mdx.experimentalLanguageServer": true
+}
+```
+
+If you're still encountering issues, we recommend reaching out to the community using the default communication channels (e.g., [GitHub discussions](https://github.com/storybookjs/storybook/discussions/new?category=help)).
+
+### The controls are not updating the story within the MDX documentation page
+
+If you turned off inline rendering for your stories via the [`inline`](../api/doc-blocks/doc-block-story.mdx#inline) configuration option, you would run into a situation where the associated controls are not updating the story within the documentation page. This is a known limitation of the current implementation and will be addressed in a future release.
+
+### The React version used is unexpected
+
+For most projects, Storybook's addon-docs uses the React version listed in your project's dependencies. If it does not find one, it will use React 18.2.0. There are two exceptions to this:
+
+* Preact projects will always use React 17
+* Next.js projects will always use the canary version that comes with the Next.js version installed, regardless of which React version is listed in the project’s dependencies.
+
+If you're having issues with the React version used, you may need to re-create your project's `node_modules` folder to ensure the correct version is used.
+
+**Learn more about Storybook documentation**
+
+* [Autodocs](./autodocs.mdx) for creating documentation for your stories
+* MDX for customizing your documentation
+* [Doc Blocks](./doc-blocks.mdx) for authoring your documentation
+* [Publishing docs](./build-documentation.mdx) to automate the process of publishing your documentation

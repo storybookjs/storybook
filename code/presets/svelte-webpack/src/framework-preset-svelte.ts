@@ -1,4 +1,5 @@
-import type { Preset, PresetProperty } from '@storybook/types';
+import type { Preset } from 'storybook/internal/types';
+
 import type { StorybookConfig, SvelteOptions } from './types';
 
 export const webpack: StorybookConfig['webpack'] = async (config, { presets }) => {
@@ -26,13 +27,5 @@ export const webpack: StorybookConfig['webpack'] = async (config, { presets }) =
       alias: config.resolve?.alias,
       mainFields: ['svelte', ...mainFields],
     },
-  };
-};
-
-export const babelDefault: PresetProperty<'babelDefault'> = (config) => {
-  return {
-    ...config,
-    presets: [...(config?.presets || [])],
-    plugins: [...(config?.plugins || [])],
   };
 };

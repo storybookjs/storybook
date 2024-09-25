@@ -1,4 +1,7 @@
+import { fn } from '@storybook/test';
+
 import type { Meta, StoryObj } from '@storybook/web-components';
+
 import type { ButtonProps } from './Button';
 import { Button } from './Button';
 
@@ -9,12 +12,12 @@ const meta: Meta<ButtonProps> = {
   render: (args) => Button(args),
   argTypes: {
     backgroundColor: { control: 'color' },
-    onClick: { action: 'onClick' },
     size: {
       control: { type: 'select' },
       options: ['small', 'medium', 'large'],
     },
   },
+  args: { onClick: fn() },
 };
 
 export default meta;

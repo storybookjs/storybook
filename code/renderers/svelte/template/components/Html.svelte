@@ -5,4 +5,4 @@
   export let content = '';
 </script>
 
-<div>{@html content}></div>
+<div>{@html content}</div>

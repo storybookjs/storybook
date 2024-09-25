@@ -1,15 +1,18 @@
 import { render } from 'ejs';
 import { readFile } from 'fs-extra';
-import { format } from 'prettier';
+import prettier from 'prettier';
+
+import { allTemplates as sandboxTemplates } from '../../../code/lib/cli-storybook/src/sandbox-templates';
 import type { GeneratorConfig } from './types';
-import { allTemplates as sandboxTemplates } from '../../../code/lib/cli/src/sandbox-templates';
 
 export async function renderTemplate(templatePath: string, templateData: Record<string, any>) {
   const template = await readFile(templatePath, 'utf8');
 
-  const output = format(render(template, templateData), {
-    parser: 'html',
-  })
+  const output = (
+    await prettier.format(render(template, templateData), {
+      parser: 'html',
+    })
+  )
     // overly complicated regex replacements to fix prettier's bad formatting
     .replace(new RegExp('</li>\\n\\n', 'g'), '</li>\n')
     .replace(new RegExp('<a\\n', 'g'), '<a')

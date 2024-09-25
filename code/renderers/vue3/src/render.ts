@@ -1,10 +1,10 @@
 /* eslint-disable local-rules/no-uncategorized-errors,no-underscore-dangle */
-/* eslint-disable no-param-reassign */
+import type { PreviewWeb } from 'storybook/internal/preview-api';
+import type { Args, ArgsStoryFn, RenderContext, StoryContext } from 'storybook/internal/types';
+
 import type { App } from 'vue';
 import { createApp, h, isReactive, isVNode, reactive } from 'vue';
-import type { ArgsStoryFn, RenderContext } from '@storybook/types';
-import type { Args, StoryContext } from '@storybook/csf';
-import type { PreviewWeb } from '@storybook/preview-api';
+
 import type { StoryFnVueReturnType, StoryID, VueRenderer } from './types';
 
 export const render: ArgsStoryFn<VueRenderer> = (props, context) => {
@@ -27,8 +27,9 @@ const runSetupFunctions = async (
   app: App,
   storyContext: StoryContext<VueRenderer>
 ): Promise<void> => {
-  if (globalThis && globalThis.PLUGINS_SETUP_FUNCTIONS)
+  if (globalThis && globalThis.PLUGINS_SETUP_FUNCTIONS) {
     await Promise.all([...globalThis.PLUGINS_SETUP_FUNCTIONS].map((fn) => fn(app, storyContext)));
+  }
 };
 
 const map = new Map<
@@ -58,7 +59,12 @@ export async function renderToCanvas(
       teardown(existingApp.vueApp, canvasElement);
     };
   }
-  if (existingApp && forceRemount) teardown(existingApp.vueApp, canvasElement);
+
+  if (existingApp && forceRemount) {
+    teardown(existingApp.vueApp, canvasElement);
+  }
+
+  // create vue app for the story
 
   // create vue app for the story
   const vueApp = createApp({
@@ -105,9 +111,7 @@ export async function renderToCanvas(
   };
 }
 
-/**
- * generate slots for default story without render function template
- */
+/** Generate slots for default story without render function template */
 function getSlots(props: Args, context: StoryContext<VueRenderer, Args>) {
   const { argTypes } = context;
   const slots = Object.entries(props)
@@ -118,9 +122,10 @@ function getSlots(props: Args, context: StoryContext<VueRenderer, Args>) {
 }
 
 /**
- * get the args from the root element props if it is a vnode otherwise from the context
- * @param element is the root element of the story
- * @param storyContext is the story context
+ * Get the args from the root element props if it is a vnode otherwise from the context
+ *
+ * @param element Is the root element of the story
+ * @param storyContext Is the story context
  */
 
 function getArgs(element: StoryFnVueReturnType, storyContext: StoryContext<VueRenderer, Args>) {
@@ -128,13 +133,16 @@ function getArgs(element: StoryFnVueReturnType, storyContext: StoryContext<VueRe
 }
 
 /**
- *  update the reactive args
+ * Update the reactive args
+ *
  * @param reactiveArgs
  * @param nextArgs
  * @returns
  */
 export function updateArgs(reactiveArgs: Args, nextArgs: Args) {
-  if (Object.keys(nextArgs).length === 0) return;
+  if (Object.keys(nextArgs).length === 0) {
+    return;
+  }
   const currentArgs = isReactive(reactiveArgs) ? reactiveArgs : reactive(reactiveArgs);
   // delete all args in currentArgs that are not in nextArgs
   Object.keys(currentArgs).forEach((key) => {
@@ -147,17 +155,21 @@ export function updateArgs(reactiveArgs: Args, nextArgs: Args) {
 }
 
 /**
- * unmount the vue app
+ * Unmount the vue app
+ *
+ * @private
  * @param storybookApp
  * @param canvasElement
- * @returns void
- * @private
- * */
+ * @returns Void
+ */
 
 function teardown(
   storybookApp: ReturnType<typeof createApp>,
   canvasElement: VueRenderer['canvasElement']
 ) {
   storybookApp?.unmount();
-  if (map.has(canvasElement)) map.delete(canvasElement);
+
+  if (map.has(canvasElement)) {
+    map.delete(canvasElement);
+  }
 }

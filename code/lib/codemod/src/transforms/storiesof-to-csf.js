@@ -1,7 +1,10 @@
-import prettier from 'prettier';
-import { logger } from '@storybook/node-logger';
 import { storyNameFromExport } from '@storybook/csf';
-import { sanitizeName, jscodeshiftToPrettierParser } from '../lib/utils';
+
+import { logger } from '@storybook/core/node-logger';
+
+import prettier from 'prettier';
+
+import { jscodeshiftToPrettierParser, sanitizeName } from '../lib/utils';
 
 /**
  * Convert a legacy story API to component story format
@@ -23,8 +26,9 @@ import { sanitizeName, jscodeshiftToPrettierParser } from '../lib/utils';
  * export const story = () => <Button label="The Button" />;
  *
  * NOTES: only support chained storiesOf() calls
+ * ```
  */
-export default function transformer(file, api, options) {
+export default async function transformer(file, api, options) {
   const LITERAL = ['ts', 'tsx'].includes(options.parser) ? 'StringLiteral' : 'Literal';
 
   const j = api.jscodeshift;
@@ -262,16 +266,17 @@ export default function transformer(file, api, options) {
     return source;
   }
 
-  const prettierConfig = prettier.resolveConfig.sync('.', { editorconfig: true }) || {
-    printWidth: 100,
-    tabWidth: 2,
-    bracketSpacing: true,
-    trailingComma: 'es5',
-    singleQuote: true,
-  };
+  let output = source;
 
-  return prettier.format(source, {
-    ...prettierConfig,
-    parser: jscodeshiftToPrettierParser(options.parser),
-  });
+  try {
+    const prettierConfig = await prettier.resolveConfig(file.path);
+    output = prettier.format(source, {
+      ...prettierConfig,
+      parser: jscodeshiftToPrettierParser(options.parser),
+    });
+  } catch (e) {
+    logger.warn(`Failed to format ${file.path} with prettier`);
+  }
+
+  return output;
 }

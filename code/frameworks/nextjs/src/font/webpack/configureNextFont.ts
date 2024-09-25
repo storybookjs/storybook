@@ -7,7 +7,7 @@ export function configureNextFont(baseConfig: Configuration, isSWC?: boolean) {
 
   if (isSWC) {
     baseConfig.module?.rules?.push({
-      test: /next\/.*\/target.css$/,
+      test: /next(\\|\/|\\\\).*(\\|\/|\\\\)target\.css$/,
       loader: fontLoaderPath,
     });
   } else {

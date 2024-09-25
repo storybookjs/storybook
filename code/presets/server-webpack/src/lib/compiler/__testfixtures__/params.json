@@ -2,7 +2,8 @@
   "title": "Params",
   "parameters": {
     "server": {
-      "params": { "color": "red" }
+      "params": { "color": "red" },
+      "1200x600": { "viewport": { "width": 1200, "height": 600 } }
     }
   },
   "stories": [

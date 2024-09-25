@@ -1,21 +1,14 @@
-/* eslint-disable no-param-reassign */
+import { readFileSync } from 'node:fs';
 
-import * as fs from 'fs';
+import type { Options } from 'storybook/internal/types';
+
 import type { Plugin } from 'vite';
-import type { Options } from '@storybook/types';
-import { transformIframeHtml } from '../transform-iframe-html';
-import { generateIframeScriptCode } from '../codegen-iframe-script';
-import { generateModernIframeScriptCode } from '../codegen-modern-iframe-script';
-import { generateImportFnScriptCode } from '../codegen-importfn-script';
-import { generateVirtualStoryEntryCode, generatePreviewEntryCode } from '../codegen-entries';
-import { generateAddonSetupCode } from '../codegen-set-addon-channel';
 
-import {
-  virtualAddonSetupFile,
-  virtualFileId,
-  virtualPreviewFile,
-  virtualStoriesFile,
-} from '../virtual-file-names';
+import { generateImportFnScriptCode } from '../codegen-importfn-script';
+import { generateModernIframeScriptCode } from '../codegen-modern-iframe-script';
+import { generateAddonSetupCode } from '../codegen-set-addon-channel';
+import { transformIframeHtml } from '../transform-iframe-html';
+import { SB_VIRTUAL_FILES, getResolvedVirtualModuleId } from '../virtual-file-names';
 
 export function codeGeneratorPlugin(options: Options): Plugin {
   const iframePath = require.resolve('@storybook/builder-vite/input/iframe.html');
@@ -30,11 +23,15 @@ export function codeGeneratorPlugin(options: Options): Plugin {
       // invalidate the whole vite-app.js script on every file change.
       // (this might be a little too aggressive?)
       server.watcher.on('change', () => {
-        const appModule = server.moduleGraph.getModuleById(virtualFileId);
+        const appModule = server.moduleGraph.getModuleById(
+          getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_APP_FILE)
+        );
         if (appModule) {
           server.moduleGraph.invalidateModule(appModule);
         }
-        const storiesModule = server.moduleGraph.getModuleById(virtualStoriesFile);
+        const storiesModule = server.moduleGraph.getModuleById(
+          getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE)
+        );
         if (storiesModule) {
           server.moduleGraph.invalidateModule(storiesModule);
         }
@@ -47,7 +44,7 @@ export function codeGeneratorPlugin(options: Options): Plugin {
         // TODO maybe use the stories declaration in main
         if (/\.stories\.([tj])sx?$/.test(path) || /\.mdx$/.test(path)) {
           // We need to emit a change event to trigger HMR
-          server.watcher.emit('change', virtualStoriesFile);
+          server.watcher.emit('change', SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE);
         }
       });
     },
@@ -71,53 +68,39 @@ export function codeGeneratorPlugin(options: Options): Plugin {
       iframeId = `${config.root}/iframe.html`;
     },
     resolveId(source) {
-      if (source === virtualFileId) {
-        return virtualFileId;
+      if (source === SB_VIRTUAL_FILES.VIRTUAL_APP_FILE) {
+        return getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_APP_FILE);
       }
       if (source === iframePath) {
         return iframeId;
       }
-      if (source === virtualStoriesFile) {
-        return virtualStoriesFile;
+      if (source === SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE) {
+        return getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE);
       }
-      if (source === virtualPreviewFile) {
-        return virtualPreviewFile;
+      if (source === SB_VIRTUAL_FILES.VIRTUAL_PREVIEW_FILE) {
+        return getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_PREVIEW_FILE);
       }
-      if (source === virtualAddonSetupFile) {
-        return virtualAddonSetupFile;
+      if (source === SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE) {
+        return getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE);
       }
 
       return undefined;
     },
     async load(id, config) {
-      const storyStoreV7 = options.features?.storyStoreV7;
-      if (id === virtualStoriesFile) {
-        if (storyStoreV7) {
-          return generateImportFnScriptCode(options);
-        }
-        return generateVirtualStoryEntryCode(options);
+      if (id === getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE)) {
+        return generateImportFnScriptCode(options);
       }
 
-      if (id === virtualAddonSetupFile) {
+      if (id === getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE)) {
         return generateAddonSetupCode();
       }
 
-      if (id === virtualPreviewFile && !storyStoreV7) {
-        return generatePreviewEntryCode(options);
-      }
-
-      if (id === virtualFileId) {
-        if (storyStoreV7) {
-          return generateModernIframeScriptCode(options, projectRoot);
-        }
-        return generateIframeScriptCode(options, projectRoot);
+      if (id === getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_APP_FILE)) {
+        return generateModernIframeScriptCode(options, projectRoot);
       }
 
       if (id === iframeId) {
-        return fs.readFileSync(
-          require.resolve('@storybook/builder-vite/input/iframe.html'),
-          'utf-8'
-        );
+        return readFileSync(require.resolve('@storybook/builder-vite/input/iframe.html'), 'utf-8');
       }
 
       return undefined;

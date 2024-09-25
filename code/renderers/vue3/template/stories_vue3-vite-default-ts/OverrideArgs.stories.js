@@ -25,7 +25,7 @@ const meta = {
   render: (args) => {
     // Individual properties can be overridden by spreading the args
     // and the replacing the key-values that need to be updated
-    args = { ...args, icon: icons[args.icon || 'Primary'] }; // eslint-disable-line no-param-reassign
+    args = { ...args, icon: icons[args.icon || 'Primary'] };
     return {
       // Components used in your story `template` are defined in the `components` object
       components: { OverrideArgs },

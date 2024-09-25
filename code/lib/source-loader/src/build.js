@@ -1,6 +1,7 @@
-import { readFile } from 'fs/promises';
-import { readStory } from './dependencies-lookup/readAsObject';
+import { readFile } from 'node:fs/promises';
+
 import { sanitizeSource } from './abstract-syntax-tree/generate-helpers';
+import { readStory } from './dependencies-lookup/readAsObject';
 
 export async function transform(inputSource) {
   const sourceObject = await readStory(this, inputSource);

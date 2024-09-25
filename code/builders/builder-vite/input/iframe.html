@@ -1,43 +1,70 @@
-<!DOCTYPE html>
+<!doctype html>
 <!--suppress HtmlUnknownTarget -->
 <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Storybook</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<head>
-  <meta charset="utf-8" />
-  <title>Storybook</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      @font-face {
+        font-family: 'Nunito Sans';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url('./sb-common-assets/nunito-sans-regular.woff2') format('woff2');
+      }
 
-  <link rel="prefetch" href="./sb-common-assets/nunito-sans-regular.woff2" as="font" type="font/woff2" crossorigin />
-  <link rel="prefetch" href="./sb-common-assets/nunito-sans-italic.woff2" as="font" type="font/woff2" crossorigin />
-  <link rel="prefetch" href="./sb-common-assets/nunito-sans-bold.woff2" as="font" type="font/woff2" crossorigin />
-  <link rel="prefetch" href="./sb-common-assets/nunito-sans-bold-italic.woff2" as="font" type="font/woff2" crossorigin />
-  <link rel="stylesheet" href="./sb-common-assets/fonts.css" />
+      @font-face {
+        font-family: 'Nunito Sans';
+        font-style: italic;
+        font-weight: 400;
+        font-display: swap;
+        src: url('./sb-common-assets/nunito-sans-italic.woff2') format('woff2');
+      }
 
-  <script>
-    window.CONFIG_TYPE = '[CONFIG_TYPE HERE]';
-    window.LOGLEVEL = '[LOGLEVEL HERE]';
-    window.FRAMEWORK_OPTIONS = '[FRAMEWORK_OPTIONS HERE]';
-    window.CHANNEL_OPTIONS = '[CHANNEL_OPTIONS HERE]';
-    window.FEATURES = '[FEATURES HERE]';
-    window.STORIES = '[STORIES HERE]';
-    window.DOCS_OPTIONS = '[DOCS_OPTIONS HERE]';
+      @font-face {
+        font-family: 'Nunito Sans';
+        font-style: normal;
+        font-weight: 700;
+        font-display: swap;
+        src: url('./sb-common-assets/nunito-sans-bold.woff2') format('woff2');
+      }
 
-    ('OTHER_GLOBLALS HERE');
+      @font-face {
+        font-family: 'Nunito Sans';
+        font-style: italic;
+        font-weight: 700;
+        font-display: swap;
+        src: url('./sb-common-assets/nunito-sans-bold-italic.woff2') format('woff2');
+      }
+    </style>
 
-    // We do this so that "module && module.hot" etc. in Storybook source code
-    // doesn't fail (it will simply be disabled)
-    window.module = undefined;
-    window.global = window;
-  </script>
-  <!-- [HEAD HTML SNIPPET HERE] -->
-</head>
+    <script>
+      window.CONFIG_TYPE = '[CONFIG_TYPE HERE]';
+      window.LOGLEVEL = '[LOGLEVEL HERE]';
+      window.FRAMEWORK_OPTIONS = '[FRAMEWORK_OPTIONS HERE]';
+      window.CHANNEL_OPTIONS = '[CHANNEL_OPTIONS HERE]';
+      window.FEATURES = '[FEATURES HERE]';
+      window.STORIES = '[STORIES HERE]';
+      window.DOCS_OPTIONS = '[DOCS_OPTIONS HERE]';
+      window.TAGS_OPTIONS = '[TAGS_OPTIONS HERE]';
 
-<body>
-  <!-- [BODY HTML SNIPPET HERE] -->
-  <div id="storybook-root"></div>
-  <div id="storybook-docs"></div>
-  <script type="module" src="./sb-preview/runtime.js"></script>
-  <script type="module" src="/virtual:/@storybook/builder-vite/vite-app.js"></script>
-</body>
+      ('OTHER_GLOBLALS HERE');
 
+      // We do this so that "module && module.hot" etc. in Storybook source code
+      // doesn't fail (it will simply be disabled)
+      window.module = undefined;
+      window.global = window;
+    </script>
+    <!-- [HEAD HTML SNIPPET HERE] -->
+  </head>
+
+  <body>
+    <!-- [BODY HTML SNIPPET HERE] -->
+    <div id="storybook-root"></div>
+    <div id="storybook-docs"></div>
+    <script type="module" src="./sb-preview/runtime.js"></script>
+    <script type="module" src="/virtual:/@storybook/builder-vite/vite-app.js"></script>
+  </body>
 </html>

@@ -1,36 +1,55 @@
-import React, { Fragment, useMemo } from 'react';
-import { useAddonState, useChannel, useGlobals, useParameter } from '@storybook/manager-api';
-import { styled } from '@storybook/theming';
-import { IconButton, WithTooltip, TooltipLinkList } from '@storybook/components';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import React from 'react';
+
+import { IconButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
+import {
+  addons,
+  useAddonState,
+  useChannel,
+  useGlobals,
+  useParameter,
+} from 'storybook/internal/manager-api';
+import { styled } from 'storybook/internal/theming';
 
 import { PaintBrushIcon } from '@storybook/icons';
+
 import type { ThemeAddonState, ThemeParameters } from './constants';
 import {
+  DEFAULT_ADDON_STATE,
+  DEFAULT_THEME_PARAMETERS,
+  GLOBAL_KEY as KEY,
   PARAM_KEY,
   THEME_SWITCHER_ID,
   THEMING_EVENTS,
-  DEFAULT_ADDON_STATE,
-  DEFAULT_THEME_PARAMETERS,
 } from './constants';
 
 const IconButtonLabel = styled.div(({ theme }) => ({
   fontSize: theme.typography.size.s2 - 1,
-  marginLeft: 10,
 }));
 
 const hasMultipleThemes = (themesList: ThemeAddonState['themesList']) => themesList.length > 1;
+const hasTwoThemes = (themesList: ThemeAddonState['themesList']) => themesList.length === 2;
 
-export const ThemeSwitcher = () => {
-  const { themeOverride } = useParameter<ThemeParameters>(
+export const ThemeSwitcher = React.memo(function ThemeSwitcher() {
+  const { themeOverride, disable } = useParameter<ThemeParameters>(
     PARAM_KEY,
     DEFAULT_THEME_PARAMETERS
   ) as ThemeParameters;
-  const [{ theme: selected }, updateGlobals] = useGlobals();
+  const [{ theme: selected }, updateGlobals, storyGlobals] = useGlobals();
+
+  const channel = addons.getChannel();
+  const fromLast = channel.last(THEMING_EVENTS.REGISTER_THEMES);
+  const initializeThemeState = Object.assign({}, DEFAULT_ADDON_STATE, {
+    themesList: fromLast?.[0]?.themes || [],
+    themeDefault: fromLast?.[0]?.defaultTheme || '',
+  });
 
   const [{ themesList, themeDefault }, updateState] = useAddonState<ThemeAddonState>(
     THEME_SWITCHER_ID,
-    DEFAULT_ADDON_STATE
+    initializeThemeState
   );
+
+  const isLocked = KEY in storyGlobals || !!themeOverride;
 
   useChannel({
     [THEMING_EVENTS.REGISTER_THEMES]: ({ themes, defaultTheme }) => {
@@ -42,18 +61,39 @@ export const ThemeSwitcher = () => {
     },
   });
 
-  const label = useMemo(() => {
-    if (themeOverride) {
-      return <>Story override</>;
-    }
+  const themeName = selected || themeDefault;
+  let label = '';
+  if (isLocked) {
+    label = 'Story override';
+  } else if (themeName) {
+    label = `${themeName} theme`;
+  }
 
-    const themeName = selected || themeDefault;
+  if (disable) {
+    return null;
+  }
 
-    return themeName && <>{`${themeName} theme`}</>;
-  }, [themeOverride, themeDefault, selected]);
+  if (hasTwoThemes(themesList)) {
+    const currentTheme = selected || themeDefault;
+    const alternateTheme = themesList.find((theme) => theme !== currentTheme);
+    return (
+      <IconButton
+        disabled={isLocked}
+        key={THEME_SWITCHER_ID}
+        active={!themeOverride}
+        title="Theme"
+        onClick={() => {
+          updateGlobals({ theme: alternateTheme });
+        }}
+      >
+        <PaintBrushIcon />
+        {label ? <IconButtonLabel>{label}</IconButtonLabel> : null}
+      </IconButton>
+    );
+  }
 
-  return hasMultipleThemes(themesList) ? (
-    <Fragment>
+  if (hasMultipleThemes(themesList)) {
+    return (
       <WithTooltip
         placement="top"
         trigger="click"
@@ -74,11 +114,18 @@ export const ThemeSwitcher = () => {
           );
         }}
       >
-        <IconButton key={THEME_SWITCHER_ID} active={!themeOverride} title="Theme">
+        <IconButton
+          key={THEME_SWITCHER_ID}
+          active={!themeOverride}
+          title="Theme"
+          disabled={isLocked}
+        >
           <PaintBrushIcon />
           {label && <IconButtonLabel>{label}</IconButtonLabel>}
         </IconButton>
       </WithTooltip>
-    </Fragment>
-  ) : null;
-};
+    );
+  }
+
+  return null;
+});

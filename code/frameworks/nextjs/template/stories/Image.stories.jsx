@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
+
 import Image from 'next/image';
-import { waitFor } from '@storybook/testing-library';
 
 import Accessibility from '../../assets/accessibility.svg';
 import AvifImage from '../../assets/avif-test-image.avif';

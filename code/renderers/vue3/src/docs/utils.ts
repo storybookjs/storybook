@@ -1,8 +1,10 @@
-import type { Args } from '@storybook/types';
+import type { Args } from 'storybook/internal/types';
+
 import type { FunctionalComponent } from 'vue';
 
 /**
- *  omit event args
+ * Omit event args
+ *
  * @param args
  */
 const omitEvent = (args: Args): Args =>
@@ -16,7 +18,10 @@ const displayObject = (obj: any): string | boolean | number => {
       .map((key) => `${key}:${displayObject(obj[key])}`)
       .join(',')}}`;
   }
-  if (typeof obj === 'string') return `'${obj}'`;
+
+  if (typeof obj === 'string') {
+    return `'${obj}'`;
+  }
   return obj?.toString();
 };
 const htmlEventAttributeToVueEventAttribute = (key: string) => {
@@ -24,9 +29,9 @@ const htmlEventAttributeToVueEventAttribute = (key: string) => {
 };
 
 const directiveSource = (key: string, value: unknown) =>
-  key.includes('on')
+  key.toLowerCase().startsWith('on')
     ? `${htmlEventAttributeToVueEventAttribute(key)}='()=>({})'`
-    : `${key}="${value}"`;
+    : `${key}="${value || ''}"`;
 
 const attributeSource = (key: string, value: unknown, dynamic?: boolean) =>
   // convert html event key to vue event key
@@ -37,8 +42,10 @@ const attributeSource = (key: string, value: unknown, dynamic?: boolean) =>
 
 const evalExp = (argExpValue: any, args: Args): any => {
   let evalVal = argExpValue;
-  if (evalVal && /v-bind="(\w+)"/.test(evalVal))
+
+  if (evalVal && /v-bind="(\w+)"/.test(evalVal)) {
     return evalVal.replace(/"(\w+)"/g, `"${displayObject(args)}"`);
+  }
 
   Object.keys(args).forEach((akey) => {
     const regexMatch = new RegExp(`(\\w+)\\.${akey}`, 'g');
@@ -64,12 +71,12 @@ const replaceValueWithRef = (source: string, args: Args, ref: string) => {
 };
 
 /**
- *
- * replace function curly brackets and return with empty string ex: () => { return `${text} , ${year}` } => `${text} , ${year}`
+ * Replace function curly brackets and return with empty string ex: () => { return `${text} ,
+ * ${year}` } => `${text} , ${year}`
  *
  * @param slot
  * @returns
- *  */
+ */
 
 function generateExpression(slot: FunctionalComponent): string {
   let body = slot.toString().split('=>')[1].trim().replace('return', '').trim();

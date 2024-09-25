@@ -1,20 +1,36 @@
-/* eslint-disable jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events */
-import type { FC, PropsWithChildren } from 'react';
-import React, { StrictMode, createElement, Profiler } from 'react';
+/* eslint-disable no-underscore-dangle */
 import type { Mock } from 'vitest';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import PropTypes from 'prop-types';
-import { addons, useEffect } from '@storybook/preview-api';
-import { SNIPPET_RENDERED } from '@storybook/docs-tools';
-import { renderJsx, jsxDecorator } from './jsxDecorator';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@storybook/preview-api');
+import type { FC, PropsWithChildren } from 'react';
+import React, { Profiler, StrictMode, createElement } from 'react';
+
+import { SNIPPET_RENDERED } from 'storybook/internal/docs-tools';
+import { addons, useEffect } from 'storybook/internal/preview-api';
+
+import PropTypes from 'prop-types';
+
+import { getReactSymbolName, jsxDecorator, renderJsx } from './jsxDecorator';
+
+vi.mock('storybook/internal/preview-api');
 const mockedAddons = vi.mocked(addons);
 const mockedUseEffect = vi.mocked(useEffect);
 
 expect.addSnapshotSerializer({
   print: (val: any) => val,
   test: (val) => typeof val === 'string',
+});
+
+describe('converts React Symbol to displayName string', () => {
+  const symbolCases = [
+    ['react.suspense', 'React.Suspense'],
+    ['react.strict_mode', 'React.StrictMode'],
+    ['react.server_context.defaultValue', 'React.ServerContext.DefaultValue'],
+  ];
+
+  it.each(symbolCases)('"%s" to "%s"', (symbol, expectedValue) => {
+    expect(getReactSymbolName(Symbol(symbol))).toEqual(expectedValue);
+  });
 });
 
 describe('renderJsx', () => {
@@ -26,7 +42,6 @@ describe('renderJsx', () => {
     `);
   });
   it('functions', () => {
-    // eslint-disable-next-line no-console
     const onClick = () => console.log('onClick');
     expect(renderJsx(<div onClick={onClick}>hello</div>, {})).toMatchInlineSnapshot(`
       <div onClick={() => {}}>
@@ -112,20 +127,55 @@ describe('renderJsx', () => {
     `);
   });
 
-  it('forwardRef component', () => {
-    const MyExoticComponentRef = React.forwardRef<FC, PropsWithChildren>(function MyExoticComponent(
-      props,
-      _ref
-    ) {
-      return <div>{props.children}</div>;
+  describe('forwardRef component', () => {
+    it('with no displayName', () => {
+      const MyExoticComponentRef = React.forwardRef<FC, PropsWithChildren>(
+        function MyExoticComponent(props, _ref) {
+          return <div>{props.children}</div>;
+        }
+      );
+
+      expect(renderJsx(<MyExoticComponentRef>I am forwardRef!</MyExoticComponentRef>))
+        .toMatchInlineSnapshot(`
+          <React.ForwardRef>
+            I am forwardRef!
+          </React.ForwardRef>
+        `);
     });
 
-    expect(renderJsx(createElement(MyExoticComponentRef, {}, 'I am forwardRef!'), {}))
-      .toMatchInlineSnapshot(`
-        <MyExoticComponent>
+    it('with displayName coming from docgen', () => {
+      const MyExoticComponentRef = React.forwardRef<FC, PropsWithChildren>(
+        function MyExoticComponent(props, _ref) {
+          return <div>{props.children}</div>;
+        }
+      );
+      (MyExoticComponentRef as any).__docgenInfo = {
+        displayName: 'ExoticComponent',
+      };
+      expect(renderJsx(<MyExoticComponentRef>I am forwardRef!</MyExoticComponentRef>))
+        .toMatchInlineSnapshot(`
+          <ExoticComponent>
+            I am forwardRef!
+          </ExoticComponent>
+        `);
+    });
+
+    it('with displayName coming from forwarded render function', () => {
+      const MyExoticComponentRef = React.forwardRef<FC, PropsWithChildren>(
+        Object.assign(
+          function MyExoticComponent(props: any, _ref: any) {
+            return <div>{props.children}</div>;
+          },
+          { displayName: 'ExoticComponent' }
+        )
+      );
+      expect(renderJsx(<MyExoticComponentRef>I am forwardRef!</MyExoticComponentRef>))
+        .toMatchInlineSnapshot(`
+        <ExoticComponent>
           I am forwardRef!
-        </MyExoticComponent>
+        </ExoticComponent>
       `);
+    });
   });
 
   it('memo component', () => {
@@ -133,62 +183,89 @@ describe('renderJsx', () => {
       return <div>{props.children}</div>;
     });
 
-    expect(renderJsx(createElement(MyMemoComponentRef, {}, 'I am memo!'), {}))
-      .toMatchInlineSnapshot(`
-      <MyMemoComponent>
+    expect(renderJsx(<MyMemoComponentRef>I am memo!</MyMemoComponentRef>)).toMatchInlineSnapshot(`
+      <React.Memo>
         I am memo!
-      </MyMemoComponent>
+      </React.Memo>
+    `);
+
+    // if docgenInfo is present, it should use the displayName from there
+    (MyMemoComponentRef as any).__docgenInfo = {
+      displayName: 'MyMemoComponentRef',
+    };
+    expect(renderJsx(<MyMemoComponentRef>I am memo!</MyMemoComponentRef>)).toMatchInlineSnapshot(`
+      <MyMemoComponentRef>
+        I am memo!
+      </MyMemoComponentRef>
     `);
   });
 
   it('Profiler', () => {
-    function ProfilerComponent({ children }: any) {
-      return (
+    expect(
+      renderJsx(
         <Profiler id="profiler-test" onRender={() => {}}>
-          <div>{children}</div>
-        </Profiler>
-      );
-    }
-
-    expect(renderJsx(createElement(ProfilerComponent, {}, 'I am Profiler'), {}))
-      .toMatchInlineSnapshot(`
-        <ProfilerComponent>
-          I am Profiler
-        </ProfilerComponent>
+          <div>I am in a Profiler</div>
+        </Profiler>,
+        {}
+      )
+    ).toMatchInlineSnapshot(`
+      <React.Profiler
+        id="profiler-test"
+        onRender={() => {}}
+      >
+        <div>
+          I am in a Profiler
+        </div>
+      </React.Profiler>
     `);
   });
 
   it('StrictMode', () => {
-    function StrictModeComponent({ children }: any) {
-      return (
-        <StrictMode>
-          <div>{children}</div>
-        </StrictMode>
-      );
-    }
+    expect(renderJsx(<StrictMode>I am StrictMode</StrictMode>, {})).toMatchInlineSnapshot(`
+      <React.StrictMode>
+        I am StrictMode
+      </React.StrictMode>
+    `);
+  });
 
-    expect(renderJsx(createElement(StrictModeComponent, {}, 'I am StrictMode'), {}))
-      .toMatchInlineSnapshot(`
-        <StrictModeComponent>
-          I am StrictMode
-        </StrictModeComponent>
-      `);
+  it('displayName coming from docgenInfo', () => {
+    function BasicComponent({ label }: any) {
+      return <button>{label}</button>;
+    }
+    BasicComponent.__docgenInfo = {
+      description: 'Some description',
+      methods: [],
+      displayName: 'Button',
+      props: {},
+    };
+
+    expect(
+      renderJsx(
+        createElement(
+          BasicComponent,
+          {
+            label: <p>Abcd</p>,
+          },
+          undefined
+        )
+      )
+    ).toMatchInlineSnapshot(`<Button label={<p>Abcd</p>} />`);
   });
 
   it('Suspense', () => {
-    function SuspenseComponent({ children }: any) {
-      return (
+    expect(
+      renderJsx(
         <React.Suspense fallback={null}>
-          <div>{children}</div>
-        </React.Suspense>
-      );
-    }
-
-    expect(renderJsx(createElement(SuspenseComponent, {}, 'I am Suspense'), {}))
-      .toMatchInlineSnapshot(`
-      <SuspenseComponent>
-        I am Suspense
-      </SuspenseComponent>
+          <div>I am in Suspense</div>
+        </React.Suspense>,
+        {}
+      )
+    ).toMatchInlineSnapshot(`
+      <React.Suspense fallback={null}>
+        <div>
+          I am in Suspense
+        </div>
+      </React.Suspense>
     `);
   });
 

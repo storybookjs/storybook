@@ -1,8 +1,10 @@
 import { global as globalThis } from '@storybook/global';
+
 import { linkTo } from '@storybook/addon-links';
 
 export default {
   component: globalThis.Components.Button,
+  title: 'linkTo',
   args: {
     label: 'Click Me!',
   },
@@ -11,34 +13,69 @@ export default {
   },
 };
 
-export const ID = {
+export const Target = {
   args: {
-    onClick: linkTo('addons-links-parameters--basic'),
+    label: 'This is just a story to target with the links',
+  },
+  parameters: {
+    chromatic: { disable: true },
   },
 };
-export const Title = {
+
+export const Id = {
   args: {
-    onClick: linkTo('addons-links-parameters'),
+    onClick: linkTo('addons-links-linkto--target'),
+    label: 'addons-links-linkto--target',
   },
 };
-export const Basic = {
+
+export const TitleOnly = {
   args: {
-    onClick: linkTo('addons-links-parameters', 'basic'),
+    onClick: linkTo('addons/links/linkTo'),
+    label: 'addons/links/linkTo',
   },
 };
-export const Other = {
+
+export const NormalizedTitleOnly = {
   args: {
-    onClick: linkTo('addons-links-parameters', 'basic'),
+    onClick: linkTo('addons-links-linkto'),
+    label: 'addons-links-linkto',
   },
 };
-export const Third = {
+
+export const TitleAndName = {
   args: {
-    onClick: linkTo('addons-links-parameters', 'other'),
+    onClick: linkTo('addons/links/linkTo', 'Target'),
+    label: 'addons/links/linkTo, Target',
+  },
+};
+
+export const NormalizedTitleAndName = {
+  args: {
+    onClick: linkTo('addons-links-linkto', 'target'),
+    label: 'addons-links-linkto, target',
   },
 };
 
 export const Callback = {
   args: {
-    onClick: linkTo('addons-links-parameters', (event: Event) => 'basic'),
+    onClick: linkTo(
+      (event: Event) => 'addons-links-linkto',
+      (event: Event) => 'target'
+    ),
+  },
+};
+
+export const ToMDXDocs = {
+  args: {
+    onClick: linkTo('Configure Your Project'),
+    label: 'Configure Your Project',
+  },
+};
+
+export const ToAutodocs = {
+  args: {
+    onClick: linkTo('Example Button', 'Docs'),
+    label: 'Example Button, Docs',
   },
 };

@@ -1,14 +1,14 @@
-import program from 'commander';
-import { join } from 'path';
-import { existsSync } from 'fs';
-import * as tempy from 'tempy';
-import { copy, emptyDir, readdir, remove, stat, writeFile } from 'fs-extra';
+import { program } from 'commander';
 import { execaCommand } from 'execa';
+import { existsSync } from 'fs';
+import { copy, emptyDir, remove, writeFile } from 'fs-extra';
+import { glob } from 'glob';
+import { dirname, join, relative } from 'path';
 
-import { getTemplatesData, renderTemplate } from './utils/template';
-// eslint-disable-next-line import/no-cycle
-import { commitAllToGit } from './utils/git';
+import { temporaryDirectory } from '../../code/core/src/common/utils/cli';
 import { REPROS_DIRECTORY } from '../utils/constants';
+import { commitAllToGit } from './utils/git';
+import { getTemplatesData, renderTemplate } from './utils/template';
 
 export const logger = console;
 
@@ -31,15 +31,21 @@ const publish = async (options: PublishOptions & { tmpFolder: string }) => {
 
   // otherwise old files will stick around and result inconsistent states
   logger.log(`🗑 Delete existing template dirs from clone`);
-  const files = await Promise.all(
-    (
-      await readdir(REPROS_DIRECTORY)
-    ).map(async (f) => ({ path: f, stats: await stat(join(REPROS_DIRECTORY, f)) }))
-  );
+
+  // empty all existing directories for sandboxes that have a successful after-storybook directory
   await Promise.all(
-    files
-      .filter(({ stats, path }) => stats.isDirectory && !path.startsWith('.'))
-      .map(async ({ path }) => emptyDir(join(tmpFolder, path)))
+    // find all successfully generated after-storybook/README.md files
+    // eg. /home/repros/react-vite/default-ts/after-storybook/README.md
+    // README.md being the last file generated, thus representing a successful generation
+    (await glob(join(REPROS_DIRECTORY, '**', 'after-storybook/README.md'))).map((readmePath) => {
+      // get the after-storybook path relative to the source 'repros' directory
+      // eg. ./react-vite/default-ts/after-storybook
+      const pathRelativeToSource = relative(REPROS_DIRECTORY, dirname(readmePath));
+      // get the actual path to the corresponding sandbox directory in the clone
+      // eg. /home/sandboxes-clone/react-vite/default-ts
+      const sandboxDirectoryToEmpty = join(tmpFolder, pathRelativeToSource, '..');
+      return emptyDir(sandboxDirectoryToEmpty);
+    })
   );
 
   logger.log(`🚚 Moving template files into the repository`);
@@ -92,17 +98,21 @@ if (!existsSync(REPROS_DIRECTORY)) {
   throw Error("Couldn't find sandbox directory. Did you forget to run generate-sandboxes?");
 }
 
-const tmpFolder = tempy.directory();
-logger.log(`⏱ Created tmp folder: ${tmpFolder}`);
+async function main() {
+  const tmpFolder = await temporaryDirectory();
+  logger.log(`⏱ Created tmp folder: ${tmpFolder}`);
 
-const options = program.opts() as PublishOptions;
+  const options = program.opts() as PublishOptions;
 
-publish({ ...options, tmpFolder }).catch(async (e) => {
-  logger.error(e);
+  publish({ ...options, tmpFolder }).catch(async (e) => {
+    logger.error(e);
 
-  if (existsSync(tmpFolder)) {
-    logger.log('🚮 Removing the temporary folder..');
-    await remove(tmpFolder);
-  }
-  process.exit(1);
-});
+    if (existsSync(tmpFolder)) {
+      logger.log('🚮 Removing the temporary folder..');
+      await remove(tmpFolder);
+    }
+    process.exit(1);
+  });
+}
+
+main();

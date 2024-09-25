@@ -14,6 +14,7 @@ test-results
 /bench
 .verdaccio-cache
 .next
+/.npmrc
 
 # Yarn stuff
 /**/.yarn/*
@@ -53,3 +54,7 @@ code/bench-results/
 
 /packs
 code/.nx/cache
+code/.vite-inspect
+.nx/cache
+!**/fixtures/**/yarn.lock
+code/core/report

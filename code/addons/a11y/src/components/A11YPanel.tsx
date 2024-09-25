@@ -1,20 +1,23 @@
 import React, { useCallback, useMemo, useState } from 'react';
 
-import { styled } from '@storybook/theming';
+import { ActionBar, ScrollArea } from 'storybook/internal/components';
+import {
+  useChannel,
+  useParameter,
+  useStorybookApi,
+  useStorybookState,
+} from 'storybook/internal/manager-api';
+import { styled } from 'storybook/internal/theming';
 
-import { ActionBar, ScrollArea } from '@storybook/components';
-import { SyncIcon, CheckIcon } from '@storybook/icons';
+import { CheckIcon, SyncIcon } from '@storybook/icons';
 
 import type { AxeResults } from 'axe-core';
-import { useChannel, useParameter, useStorybookState } from '@storybook/manager-api';
 
-import { Report } from './Report';
-
-import { Tabs } from './Tabs';
-
-import { useA11yContext } from './A11yContext';
 import { EVENTS } from '../constants';
 import type { A11yParameters } from '../params';
+import { useA11yContext } from './A11yContext';
+import { Report } from './Report';
+import { Tabs } from './Tabs';
 
 export enum RuleType {
   VIOLATION,
@@ -59,6 +62,7 @@ export const A11YPanel: React.FC = () => {
   const [error, setError] = React.useState<unknown>(undefined);
   const { setResults, results } = useA11yContext();
   const { storyId } = useStorybookState();
+  const api = useStorybookApi();
 
   React.useEffect(() => {
     setStatus(manual ? 'manual' : 'initial');
@@ -92,7 +96,7 @@ export const A11YPanel: React.FC = () => {
 
   const handleManual = useCallback(() => {
     setStatus('running');
-    emit(EVENTS.MANUAL, storyId);
+    emit(EVENTS.MANUAL, storyId, api.getParameters(storyId, 'a11y'));
   }, [storyId]);
 
   const manualActionItems = useMemo(

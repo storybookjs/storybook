@@ -1,3 +1,2 @@
-declare module '@storybook/svelte/templates/SlotDecorator.svelte';
-declare module '@storybook/svelte/templates/PreviewRender.svelte';
-declare module '@storybook/svelte/templates/HOC.svelte';
+declare module '@storybook/svelte/internal/SlotDecorator.svelte';
+declare module '@storybook/svelte/internal/PreviewRender.svelte';

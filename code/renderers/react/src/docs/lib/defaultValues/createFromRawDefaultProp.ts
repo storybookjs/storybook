@@ -1,22 +1,23 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import isPlainObject from 'lodash/isPlainObject.js';
-import isFunction from 'lodash/isFunction.js';
-import isString from 'lodash/isString.js';
-import reactElementToJSXString from 'react-element-to-jsx-string';
 import {
   type PropDef,
+  type PropDefaultValue,
   createSummaryValue,
   isTooLongForDefaultValueSummary,
-  type PropDefaultValue,
-} from '@storybook/docs-tools';
+} from 'storybook/internal/docs-tools';
 
+import isFunction from 'lodash/isFunction.js';
+import isPlainObject from 'lodash/isPlainObject.js';
+import isString from 'lodash/isString.js';
+import reactElementToJSXString from 'react-element-to-jsx-string';
+
+import { ELEMENT_CAPTION, FUNCTION_CAPTION, OBJECT_CAPTION } from '../captions';
 import type { InspectionFunction } from '../inspection';
 import { inspectValue } from '../inspection';
-import { generateObject } from './generateObject';
-import { generateArray } from './generateArray';
-import { getPrettyElementIdentifier, getPrettyFuncIdentifier } from './prettyIdentifier';
-import { OBJECT_CAPTION, FUNCTION_CAPTION, ELEMENT_CAPTION } from '../captions';
 import { isHtmlTag } from '../isHtmlTag';
+import { generateArray } from './generateArray';
+import { generateObject } from './generateObject';
+import { getPrettyElementIdentifier, getPrettyFuncIdentifier } from './prettyIdentifier';
 
 export type TypeResolver = (rawDefaultProp: any, propDef: PropDef) => PropDefaultValue;
 
@@ -189,7 +190,6 @@ export function createDefaultValueFromRawDefaultProp(
         return typeResolvers.default(rawDefaultProp, propDef);
     }
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.error(e);
   }
 

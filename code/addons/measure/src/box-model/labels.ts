@@ -1,5 +1,3 @@
-/* eslint-disable operator-assignment */
-/* eslint-disable no-param-reassign */
 type LabelType = 'margin' | 'padding' | 'border' | 'content';
 type LabelPosition = 'top' | 'right' | 'bottom' | 'left' | 'center';
 type Direction = 'top' | 'right' | 'bottom' | 'left';
@@ -42,8 +40,13 @@ function roundedRect(context: CanvasRenderingContext2D, { x, y, w, h, r }: Round
   x = x - w / 2;
   y = y - h / 2;
 
-  if (w < 2 * r) r = w / 2;
-  if (h < 2 * r) r = h / 2;
+  if (w < 2 * r) {
+    r = w / 2;
+  }
+
+  if (h < 2 * r) {
+    r = h / 2;
+  }
 
   context.beginPath();
   context.moveTo(x + r, y);
@@ -83,10 +86,8 @@ function positionCoordinate(
 }
 
 /**
- * Offset the label based on how many layers appear before it
- * For example:
- * margin labels will shift further outwards if there are
- * padding labels
+ * Offset the label based on how many layers appear before it For example: margin labels will shift
+ * further outwards if there are padding labels
  */
 function offset(
   type: LabelType,

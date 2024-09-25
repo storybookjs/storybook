@@ -106,6 +106,7 @@ And I can also embed arbitrary markdown & JSX in this file.
 import React from 'react';
 import { Button } from './Button';
 import mdx from './Button.mdx';
+
 export default {
   title: 'Demo/Button',
   parameters: {
@@ -184,7 +185,7 @@ The Storybook UI is a workshop for developing components in isolation. Storybook
 To address this, we’ve added a CLI flag to only export the docs. This flag is also available in dev mode:
 
 ```sh
-yarn build-storybook --docs
+yarn storybook build --docs
 ```
 
 ## Disabling docs stories
@@ -259,15 +260,17 @@ Example.parameters = {
 };
 ```
 
-Alternatively, you can provide a function in the `docs.transformSource` parameter. For example, the following snippet in `.storybook/preview.js` globally removes the arrow at the beginning of a function that returns a string:
+Alternatively, you can provide a function in the `docs.source.transform` parameter. For example, the following snippet in `.storybook/preview.js` globally removes the arrow at the beginning of a function that returns a string:
 
 ```js
 const SOURCE_REGEX = /^\(\) => `(.*)`$/;
 export const parameters = {
   docs: {
-    transformSource: (src, storyContext) => {
-      const match = SOURCE_REGEX.exec(src);
-      return match ? match[1] : src;
+    source: {
+      transform: (src, storyContext) => {
+        const match = SOURCE_REGEX.exec(src);
+        return match ? match[1] : src;
+      },
     },
   },
 };
@@ -352,6 +355,6 @@ There is also an webpack loader package that extracts descriptions from jsdoc co
 ## More resources
 
 - References: [README](../README.md) / [DocsPage](docspage.md) / [MDX](mdx.md) / [FAQ](faq.md) / [Recipes](recipes.md) / [Theming](theming.md) / [Props](props-tables.md)
-- Framework-specific docs: [React](../react/README.md) / [Vue](../vue/README.md) / [Angular](../angular/README.md) / [Web components](../web-components/README.md) / [Ember](../ember/README.md)
+- Framework-specific docs: [React](../react/README.md) / [Vue 3](../vue3/README.md) / [Angular](../angular/README.md) / [Web components](../web-components/README.md) / [Ember](../ember/README.md)
 - Announcements: [Vision](https://medium.com/storybookjs/storybook-docs-sneak-peak-5be78445094a) / [DocsPage](https://medium.com/storybookjs/storybook-docspage-e185bc3622bf) / [MDX](https://medium.com/storybookjs/rich-docs-with-storybook-mdx-61bc145ae7bc) / [Framework support](https://medium.com/storybookjs/storybook-docs-for-new-frameworks-b1f6090ee0ea)
 - Example: [Storybook Design System](https://github.com/storybookjs/design-system)

@@ -2,7 +2,6 @@ import { global as globalThis } from '@storybook/global';
 
 export default {
   component: globalThis.Components.Button,
-  // FIXME: remove array subcomponents in 7.0?
   subcomponents: {
     Pre: globalThis.Components.Pre,
   },

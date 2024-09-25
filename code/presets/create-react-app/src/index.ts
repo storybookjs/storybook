@@ -1,15 +1,15 @@
-/* eslint-disable import/no-extraneous-dependencies */
-import { join, relative, dirname } from 'path';
-import type { Configuration, RuleSetRule, WebpackPluginInstance } from 'webpack';
-import semver from 'semver';
-import { logger } from '@storybook/node-logger';
+import { dirname, join, relative } from 'node:path';
+
+import { logger } from 'storybook/internal/node-logger';
+
 import PnpWebpackPlugin from 'pnp-webpack-plugin';
-import ReactDocgenTypescriptPlugin from '@storybook/react-docgen-typescript-plugin';
-import { mergePlugins } from './helpers/mergePlugins';
-import { getReactScriptsPath } from './helpers/getReactScriptsPath';
-import { processCraConfig } from './helpers/processCraConfig';
+import type { Configuration, RuleSetRule, WebpackPluginInstance } from 'webpack';
+
 import { checkPresets } from './helpers/checkPresets';
 import { getModulePath } from './helpers/getModulePath';
+import { getReactScriptsPath } from './helpers/getReactScriptsPath';
+import { mergePlugins } from './helpers/mergePlugins';
+import { processCraConfig } from './helpers/processCraConfig';
 import type { PluginOptions } from './types';
 
 const CWD = process.cwd();
@@ -36,12 +36,6 @@ const resolveLoader: ResolveLoader = {
 const core = (existing: { disableWebpackDefaults: boolean }) => ({
   ...existing,
   disableWebpackDefaults: true,
-});
-
-// Don't use Storybook's default Babel config.
-const babelDefault = (): Record<string, (string | [string, object])[]> => ({
-  presets: [],
-  plugins: [],
 });
 
 // Update the core Webpack config.
@@ -88,25 +82,12 @@ const webpack = async (
 
   // Require the CRA config and set the appropriate mode.
   const craWebpackConfigPath = join(scriptsPath, 'config', 'webpack.config');
-  // eslint-disable-next-line global-require, import/no-dynamic-require
+
   const craWebpackConfig = require(craWebpackConfigPath)(webpackConfig.mode) as Configuration;
 
   // Select the relevant CRA rules and add the Storybook config directory.
   logger.info(`=> Modifying Create React App rules.`);
   const craRules = await processCraConfig(craWebpackConfig, options);
-
-  // NOTE: These are set by default in Storybook 6.
-  const isStorybook6 = semver.gte(options.packageJson.version || '', '6.0.0');
-  const {
-    typescriptOptions = {
-      reactDocgen: 'react-docgen-typescript',
-      reactDocgenTypescriptOptions: {},
-    },
-  } = options;
-  const tsDocgenPlugin =
-    !isStorybook6 && typescriptOptions.reactDocgen === 'react-docgen-typescript'
-      ? [new ReactDocgenTypescriptPlugin(typescriptOptions.reactDocgenTypescriptOptions)]
-      : [];
 
   // NOTE: This is code replicated from
   //   https://github.com/storybookjs/storybook/blob/89830ad76384faeaeb0c19df3cb44232cdde261b/builders/builder-webpack5/src/preview/base-webpack.config.ts#L45-L53
@@ -136,8 +117,7 @@ const webpack = async (
     // when there are duplicates between SB and CRA
     plugins: mergePlugins(
       ...((webpackConfig.plugins ?? []) as WebpackPluginInstance[]),
-      ...((craWebpackConfig.plugins ?? []) as WebpackPluginInstance[]),
-      ...tsDocgenPlugin
+      ...((craWebpackConfig.plugins ?? []) as WebpackPluginInstance[])
     ),
     resolve: {
       ...webpackConfig.resolve,
@@ -148,6 +128,14 @@ const webpack = async (
         ...getModulePath(CWD),
       ],
       plugins: [PnpWebpackPlugin as any],
+      // manual copy from builder-webpack because defaults are disabled in this CRA preset
+      conditionNames: [
+        ...(webpackConfig.resolve?.conditionNames ?? []),
+        'storybook',
+        'stories',
+        'test',
+        '...',
+      ],
     },
     resolveLoader,
   } as Configuration;
@@ -156,6 +144,5 @@ const webpack = async (
 // we do not care of the typings exported from this package
 const exportedCore = core as any;
 const exportedWebpack = webpack as any;
-const exportedBabelDefault = babelDefault as any;
 
-export { exportedCore as core, exportedWebpack as webpack, exportedBabelDefault as babelDefault };
+export { exportedCore as core, exportedWebpack as webpack };

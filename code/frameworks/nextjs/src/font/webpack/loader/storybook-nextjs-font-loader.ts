@@ -1,3 +1,5 @@
+import { sep } from 'node:path';
+
 import { getFontFaceDeclarations as getGoogleFontFaceDeclarations } from './google/get-font-face-declarations';
 import { getFontFaceDeclarations as getLocalFontFaceDeclarations } from './local/get-font-face-declarations';
 import type { LoaderOptions } from './types';
@@ -39,11 +41,19 @@ export default async function storybookNextjsFontLoader(this: any) {
 
   let fontFaceDeclaration: FontFaceDeclaration | undefined;
 
-  if (options.source.endsWith('next/font/google') || options.source.endsWith('@next/font/google')) {
+  const pathSep = sep;
+
+  if (
+    options.source.endsWith(`next${pathSep}font${pathSep}google`) ||
+    options.source.endsWith(`@next${pathSep}font${pathSep}google`)
+  ) {
     fontFaceDeclaration = await getGoogleFontFaceDeclarations(options);
   }
 
-  if (options.source.endsWith('next/font/local') || options.source.endsWith('@next/font/local')) {
+  if (
+    options.source.endsWith(`next${pathSep}font${pathSep}local`) ||
+    options.source.endsWith(`@next${pathSep}font${pathSep}local`)
+  ) {
     fontFaceDeclaration = await getLocalFontFaceDeclarations(options, rootCtx, swcMode);
   }
 

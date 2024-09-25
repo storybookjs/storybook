@@ -1,8 +1,15 @@
+import {
+  type PropDef,
+  TypeSystem,
+  extractComponentProps,
+  hasDocgen,
+} from 'storybook/internal/docs-tools';
+
 import PropTypes from 'prop-types';
-import { type PropDef, hasDocgen, extractComponentProps, TypeSystem } from '@storybook/docs-tools';
+
+import { isMemo } from './lib';
 import { enhancePropTypesProps } from './propTypes/handleProp';
 import { enhanceTypeScriptProps } from './typeScript/handleProp';
-import { isMemo } from './lib';
 
 // FIXME
 type Component = any;
@@ -24,7 +31,6 @@ Object.keys(PropTypes).forEach((typeName) => {
 function getPropDefs(component: Component, section: string): PropDef[] {
   let processedComponent = component;
 
-  // eslint-disable-next-line react/forbid-foreign-prop-types
   if (!hasDocgen(component) && !component.propTypes && isMemo(component)) {
     processedComponent = component.type;
   }

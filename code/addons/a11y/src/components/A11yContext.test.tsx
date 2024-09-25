@@ -1,15 +1,20 @@
-import { describe, beforeEach, afterEach, it, expect, vi } from 'vitest';
+// @vitest-environment happy-dom
+import { act, cleanup, render } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import * as React from 'react';
-import type { AxeResults } from 'axe-core';
-import { render, act, cleanup } from '@testing-library/react';
-import * as api from '@storybook/manager-api';
-import { STORY_CHANGED } from '@storybook/core-events';
+
+import { STORY_CHANGED } from 'storybook/internal/core-events';
+import * as api from 'storybook/internal/manager-api';
+
 import { HIGHLIGHT } from '@storybook/addon-highlight';
 
-import { A11yContextProvider, useA11yContext } from './A11yContext';
-import { EVENTS } from '../constants';
+import type { AxeResults } from 'axe-core';
 
-vi.mock('@storybook/manager-api');
+import { EVENTS } from '../constants';
+import { A11yContextProvider, useA11yContext } from './A11yContext';
+
+vi.mock('storybook/internal/manager-api');
 const mockedApi = vi.mocked(api);
 
 const storyId = 'jest';
@@ -57,6 +62,7 @@ describe('A11YPanel', () => {
   });
 
   const getCurrentStoryData = vi.fn();
+  const getParameters = vi.fn();
   beforeEach(() => {
     mockedApi.useChannel.mockReset();
     mockedApi.useStorybookApi.mockReset();
@@ -65,7 +71,8 @@ describe('A11YPanel', () => {
     mockedApi.useAddonState.mockImplementation((_, defaultState) => React.useState(defaultState));
     mockedApi.useChannel.mockReturnValue(vi.fn());
     getCurrentStoryData.mockReset().mockReturnValue({ id: storyId, type: 'story' });
-    mockedApi.useStorybookApi.mockReturnValue({ getCurrentStoryData } as any);
+    getParameters.mockReturnValue({});
+    mockedApi.useStorybookApi.mockReturnValue({ getCurrentStoryData, getParameters } as any);
   });
 
   it('should render children', () => {
@@ -94,7 +101,7 @@ describe('A11YPanel', () => {
     mockedApi.useChannel.mockReturnValue(emit);
     const { rerender } = render(<A11yContextProvider active={false} />);
     rerender(<A11yContextProvider active />);
-    expect(emit).toHaveBeenLastCalledWith(EVENTS.REQUEST, storyId);
+    expect(emit).toHaveBeenLastCalledWith(EVENTS.REQUEST, storyId, {});
   });
 
   it('should emit highlight with no values when inactive', () => {

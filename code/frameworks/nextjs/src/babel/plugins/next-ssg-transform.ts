@@ -1,11 +1,10 @@
 /* eslint-disable @typescript-eslint/no-loop-func */
-/* eslint-disable no-plusplus */
-/* eslint-disable func-names */
-/* eslint-disable no-nested-ternary */
+
 /**
- * Source: https://github.com/vercel/next.js/blob/canary/packages/next/src/build/babel/plugins/next-ssg-transform.ts
+ * Source:
+ * https://github.com/vercel/next.js/blob/canary/packages/next/src/build/babel/plugins/next-ssg-transform.ts
  */
-import type { NodePath, PluginObj, types as BabelTypes } from '@babel/core';
+import type { types as BabelTypes, NodePath, PluginObj } from '@babel/core';
 import { SERVER_PROPS_ID, STATIC_PROPS_ID } from 'next/constants';
 
 export const EXPORT_NAME_GET_STATIC_PROPS = 'getStaticProps';
@@ -198,10 +197,10 @@ export default function nextTransformSsg({
                       p.node.type === 'ObjectProperty'
                         ? 'value'
                         : p.node.type === 'RestElement'
-                        ? 'argument'
-                        : (function () {
-                            throw new Error('invariant');
-                          })()
+                          ? 'argument'
+                          : (function () {
+                              throw new Error('invariant');
+                            })()
                     ) as NodePath<BabelTypes.Identifier>;
                     if (isIdentifierReferenced(local)) {
                       variableState.refs.add(local);
@@ -360,10 +359,10 @@ export default function nextTransformSsg({
                       p.node.type === 'ObjectProperty'
                         ? 'value'
                         : p.node.type === 'RestElement'
-                        ? 'argument'
-                        : (function () {
-                            throw new Error('invariant');
-                          })()
+                          ? 'argument'
+                          : (function () {
+                              throw new Error('invariant');
+                            })()
                     ) as NodePath<BabelTypes.Identifier>;
 
                     if (refs.has(local) && !isIdentifierReferenced(local)) {

@@ -1,7 +1,8 @@
-import { expect } from '@storybook/jest';
+import { expect, within } from '@storybook/test';
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { within } from '@storybook/testing-library';
+
 import { inject } from 'vue';
+
 import GlobalSetup from './GlobalSetup.vue';
 
 const meta: Meta = {

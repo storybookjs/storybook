@@ -1,11 +1,10 @@
 import { global as globalThis } from '@storybook/global';
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { setup } from '@storybook/vue3';
 
 const somePlugin = {
   install: (app, options) => {
     // inject a globally available $greetingText() method
-    // eslint-disable-next-line no-param-reassign
+
     app.config.globalProperties.$greetingMessage = (key) => {
       // retrieve a nested property in `options`
       // using `key`

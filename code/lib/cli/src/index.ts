@@ -1,6 +1,5 @@
-import versions from './versions';
+import { deprecate } from '@storybook/core/node-logger';
 
-export { versions };
-
-export * from './js-package-manager';
-export * from './utils';
+deprecate(
+  'Exports from @storybook/cli are removed. Please import from @storybook/core-common instead.'
+);

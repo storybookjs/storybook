@@ -1,7 +1,9 @@
-import { describe, it, expect } from 'vitest';
-import { dedent } from 'ts-dedent';
-import type { API } from 'jscodeshift';
+import { describe, expect, it } from 'vitest';
+
 import ansiRegex from 'ansi-regex';
+import type { API } from 'jscodeshift';
+import { dedent } from 'ts-dedent';
+
 import _transform from '../csf-2-to-3';
 
 expect.addSnapshotSerializer({
@@ -9,21 +11,25 @@ expect.addSnapshotSerializer({
   test: () => true,
 });
 
-const jsTransform = (source: string) =>
-  _transform({ source, path: 'Component.stories.js' }, {} as API, {}).trim();
-const tsTransform = (source: string) =>
-  _transform({ source, path: 'Component.stories.ts' }, {} as API, { parser: 'tsx' }).trim();
+const jsTransform = async (source: string) =>
+  (await _transform({ source, path: 'Component.stories.jsx' }, {} as API, {})).trim();
+const tsTransform = async (source: string) =>
+  (
+    await _transform({ source, path: 'Component.stories.tsx' }, {} as API, {
+      parser: 'tsx',
+    })
+  ).trim();
 
 describe('csf-2-to-3', () => {
   describe('javascript', () => {
-    it('should replace non-simple function exports with objects', () => {
-      expect(
+    it('should replace non-simple function exports with objects', async () => {
+      await expect(
         jsTransform(dedent`
           export default { title: 'Cat' };
           export const A = () => <Cat />;
           export const B = (args) => <Button {...args} />;
         `)
-      ).toMatchInlineSnapshot(`
+      ).resolves.toMatchInlineSnapshot(`
         export default { title: 'Cat' };
         export const A = () => <Cat />;
         export const B = {
@@ -32,8 +38,8 @@ describe('csf-2-to-3', () => {
       `);
     });
 
-    it('should move annotations into story objects', () => {
-      expect(
+    it('should move annotations into story objects', async () => {
+      await expect(
         jsTransform(dedent`
           export default { title: 'Cat' };
 
@@ -42,7 +48,7 @@ describe('csf-2-to-3', () => {
           A.parameters = { bar: 2 };
           A.play = () => {};
         `)
-      ).toMatchInlineSnapshot(`
+      ).resolves.toMatchInlineSnapshot(`
         export default { title: 'Cat' };
 
         export const A = {
@@ -54,8 +60,8 @@ describe('csf-2-to-3', () => {
       `);
     });
 
-    it('should ignore non-story exports, statements', () => {
-      expect(
+    it('should ignore non-story exports, statements', async () => {
+      await expect(
         jsTransform(dedent`
           export default { title: 'components/Fruit', includeStories: ['A'] };
 
@@ -65,7 +71,7 @@ describe('csf-2-to-3', () => {
 
           const C = (args) => <Cherry {...args} />;
         `)
-      ).toMatchInlineSnapshot(`
+      ).resolves.toMatchInlineSnapshot(`
         export default { title: 'components/Fruit', includeStories: ['A'] };
 
         export const A = {
@@ -78,28 +84,28 @@ describe('csf-2-to-3', () => {
       `);
     });
 
-    it('should do nothing when there is no meta', () => {
-      expect(
+    it('should do nothing when there is no meta', async () => {
+      await expect(
         jsTransform(dedent`
           export const A = () => <Apple />;
 
           export const B = (args) => <Banana {...args} />;
         `)
-      ).toMatchInlineSnapshot(`
+      ).resolves.toMatchInlineSnapshot(`
         export const A = () => <Apple />;
 
         export const B = (args) => <Banana {...args} />;
       `);
     });
 
-    it('should remove implicit global render function (react)', () => {
-      expect(
+    it('should remove implicit global render function (react)', async () => {
+      await expect(
         jsTransform(dedent`
           export default { title: 'Cat', component: Cat };
           export const A = (args) => <Cat {...args} />;
           export const B = (args) => <Banana {...args} />;
         `)
-      ).toMatchInlineSnapshot(`
+      ).resolves.toMatchInlineSnapshot(`
         export default { title: 'Cat', component: Cat };
         export const A = {};
         export const B = {
@@ -108,8 +114,8 @@ describe('csf-2-to-3', () => {
       `);
     });
 
-    it('should ignore object exports', () => {
-      expect(
+    it('should ignore object exports', async () => {
+      await expect(
         jsTransform(dedent`
           export default { title: 'Cat', component: Cat };
 
@@ -117,7 +123,7 @@ describe('csf-2-to-3', () => {
             render: (args) => <Cat {...args} />
           };
         `)
-      ).toMatchInlineSnapshot(`
+      ).resolves.toMatchInlineSnapshot(`
         export default { title: 'Cat', component: Cat };
 
         export const A = {
@@ -126,15 +132,15 @@ describe('csf-2-to-3', () => {
       `);
     });
 
-    it('should hoist template.bind (if there is only one)', () => {
-      expect(
+    it('should hoist template.bind (if there is only one)', async () => {
+      await expect(
         jsTransform(dedent`
           export default { title: 'Cat' };
           const Template = (args) => <Cat {...args} />;
           export const A = Template.bind({});
           A.args = { isPrimary: false };
         `)
-      ).toMatchInlineSnapshot(`
+      ).resolves.toMatchInlineSnapshot(`
         export default { title: 'Cat' };
         const Template = (args) => <Cat {...args} />;
 
@@ -145,8 +151,8 @@ describe('csf-2-to-3', () => {
       `);
     });
 
-    it('should reuse the template when there are multiple Template.bind references but no component defined', () => {
-      expect(
+    it('should reuse the template when there are multiple Template.bind references but no component defined', async () => {
+      await expect(
         jsTransform(dedent`
           export default { title: 'Cat' };
           const Template = (args) => <Cat {...args} />;
@@ -164,7 +170,7 @@ describe('csf-2-to-3', () => {
           export const D = Template.bind({});
           D.args = { bla: false };
         `)
-      ).toMatchInlineSnapshot(`
+      ).resolves.toMatchInlineSnapshot(`
         export default { title: 'Cat' };
         const Template = (args) => <Cat {...args} />;
 
@@ -190,8 +196,8 @@ describe('csf-2-to-3', () => {
       `);
     });
 
-    it('should remove implicit global render for template.bind', () => {
-      expect(
+    it('should remove implicit global render for template.bind', async () => {
+      await expect(
         jsTransform(dedent`
           export default { title: 'Cat', component: Cat };
 
@@ -205,7 +211,7 @@ describe('csf-2-to-3', () => {
           export const B = Template2.bind({});
           B.args = { isPrimary: true };
         `)
-      ).toMatchInlineSnapshot(`
+      ).resolves.toMatchInlineSnapshot(`
         export default { title: 'Cat', component: Cat };
 
         export const A = {
@@ -221,8 +227,8 @@ describe('csf-2-to-3', () => {
       `);
     });
 
-    it('should ignore no-arg stories without annotations', () => {
-      expect(
+    it('should ignore no-arg stories without annotations', async () => {
+      await expect(
         jsTransform(dedent`
           export default { title: 'Cat', component: Cat };
 
@@ -231,7 +237,7 @@ describe('csf-2-to-3', () => {
           export const C = () => <Cat name="fluffy" />;
           C.parameters = { foo: 2 };
         `)
-      ).toMatchInlineSnapshot(`
+      ).resolves.toMatchInlineSnapshot(`
         export default { title: 'Cat', component: Cat };
 
         export const A = {};
@@ -244,8 +250,8 @@ describe('csf-2-to-3', () => {
       `);
     });
 
-    it('should work for v1-style annotations', () => {
-      expect(
+    it('should work for v1-style annotations', async () => {
+      await expect(
         jsTransform(dedent`
           export default { title: 'Cat' };
           export const A = (args) => <Cat {...args} />;
@@ -253,7 +259,7 @@ describe('csf-2-to-3', () => {
             parameters: { foo: 2 }
           };
         `)
-      ).toMatchInlineSnapshot(`
+      ).resolves.toMatchInlineSnapshot(`
         export default { title: 'Cat' };
 
         export const A = {
@@ -265,15 +271,15 @@ describe('csf-2-to-3', () => {
   });
 
   describe('typescript', () => {
-    it('should error with namespace imports', () => {
-      expect.addSnapshotSerializer({
+    it('should error with namespace imports', async () => {
+      await expect.addSnapshotSerializer({
         serialize: (value) => {
           const stringVal = typeof value === 'string' ? value : value.toString();
           return stringVal.replace(ansiRegex(), '');
         },
         test: () => true,
       });
-      expect(() =>
+      await expect(() =>
         tsTransform(dedent`
           import * as SB from '@storybook/react';
           import { CatProps } from './Cat';
@@ -283,13 +289,13 @@ describe('csf-2-to-3', () => {
 
           export const A: SB.StoryFn<CatProps> = () => <Cat />;
         `)
-      ).toThrowErrorMatchingInlineSnapshot(dedent`
+      ).rejects.toThrowErrorMatchingInlineSnapshot(dedent`
         Error: This codemod does not support namespace imports for a @storybook/react package.
         Replace the namespace import with named imports and try again.
       `);
     });
-    it('should keep local names', () => {
-      expect(
+    it('should keep local names', async () => {
+      await expect(
         tsTransform(dedent`
           import { Meta, StoryObj as CSF3, StoryFn as CSF2 } from '@storybook/react';
           import { CatProps } from './Cat';
@@ -308,8 +314,9 @@ describe('csf-2-to-3', () => {
             name: "Fluffy"
           };
         `)
-      ).toMatchInlineSnapshot(`
-        import { Meta, StoryObj as CSF3, StoryFn as CSF2 } from '@storybook/react';
+      ).resolves.toMatchInlineSnapshot(`
+        import { StoryFn as CSF2, StoryObj as CSF3, Meta } from '@storybook/react';
+
         import { CatProps } from './Cat';
 
         const meta = { title: 'Cat', component: Cat } satisfies Meta<CatProps>;
@@ -329,8 +336,8 @@ describe('csf-2-to-3', () => {
       `);
     });
 
-    it('should replace function exports with objects and update type', () => {
-      expect(
+    it('should replace function exports with objects and update type', async () => {
+      await expect(
         tsTransform(dedent`
           import { Story, StoryFn, ComponentStory, ComponentStoryObj } from '@storybook/react';
 
@@ -367,8 +374,8 @@ describe('csf-2-to-3', () => {
             },
           };
         `)
-      ).toMatchInlineSnapshot(`
-        import { StoryObj, StoryFn } from '@storybook/react';
+      ).resolves.toMatchInlineSnapshot(`
+        import { StoryFn, StoryObj } from '@storybook/react';
 
         // some extra whitespace to test
 
@@ -411,8 +418,8 @@ describe('csf-2-to-3', () => {
       `);
     });
 
-    it('migrate Story type to StoryFn when used in an not exported Template function', () => {
-      expect(
+    it('migrate Story type to StoryFn when used in an not exported Template function', async () => {
+      await expect(
         tsTransform(dedent`
           import { Story, Meta } from '@storybook/react'
           
@@ -424,8 +431,8 @@ describe('csf-2-to-3', () => {
           
           export const Default = Template.bind({})
         `)
-      ).toMatchInlineSnapshot(`
-        import { StoryFn, Meta } from '@storybook/react';
+      ).resolves.toMatchInlineSnapshot(`
+        import { Meta, StoryFn } from '@storybook/react';
 
         export default {
           component: Cat,

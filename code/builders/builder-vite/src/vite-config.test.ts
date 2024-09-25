@@ -1,7 +1,10 @@
-import { describe, it, expect, vi } from 'vitest';
-import type { Options, Presets } from '@storybook/types';
+import { describe, expect, it, vi } from 'vitest';
+
+import type { Options, Presets } from 'storybook/internal/types';
+
 // eslint-disable-next-line @typescript-eslint/no-restricted-imports
 import { loadConfigFromFile } from 'vite';
+
 import { commonConfig } from './vite-config';
 
 vi.mock('vite', async (importOriginal) => ({
@@ -25,7 +28,7 @@ const dummyOptions: Options = {
           builder: {},
         },
         options: {},
-      }[key]),
+      })[key],
   } as Presets,
   presetsList: [],
 };

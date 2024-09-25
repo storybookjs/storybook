@@ -1,227 +1,246 @@
-/* eslint-disable react/require-default-props, react/no-unused-prop-types */
 import React from 'react';
 import PropTypes from 'prop-types';
 const JsDocProps = () => /*#__PURE__*/React.createElement("div", null, "JSDoc with PropTypes!");
 JsDocProps.propTypes = {
   /**
-   * should not be visible since it's ignored.
+   * Should not be visible since it's ignored.
+   *
    * @ignore
    */
   case0: PropTypes.string,
-  /**
-   * simple description.
-   */
+  /** Simple description. */
   case1: PropTypes.string,
-  /**
-   * multi
-   * lines
-   * description
-   */
+  /** Multi lines description */
   case2: PropTypes.string,
-  /**
-   * *description* **with** `formatting`
-   */
+  /** _description_ **with** `formatting` */
   case3: PropTypes.string,
   /**
-   * simple description and dummy JSDoc tag.
+   * Simple description and dummy JSDoc tag.
+   *
    * @param event
    */
   case4: PropTypes.string,
-  /**
-   * @param event
-   */
+  /** @param event */
   case5: PropTypes.string,
-  /**
-   * simple description with a @.
-   */
+  /** Simple description with a @. */
   case6: PropTypes.string,
   case7: PropTypes.func,
-  /**
-   * func with a simple description.
-   */
+  /** Func with a simple description. */
   case8: PropTypes.func,
-  /**
-   * @param event
-   */
+  /** @param event */
   case9: PropTypes.func,
   /**
-   * param with name
+   * Param with name
+   *
    * @param event
    */
   case10: PropTypes.func,
   /**
-   * param with name & type
+   * Param with name & type
+   *
    * @param {SyntheticEvent} event
    */
   case11: PropTypes.func,
   /**
-   * param with name, type & description
+   * Param with name, type & description
+   *
    * @param {SyntheticEvent} event - React's original event
    */
   case12: PropTypes.func,
   /**
-   * param with type
+   * Param with type
+   *
    * @param {SyntheticEvent}
    */
   case13: PropTypes.func,
   /**
-   * param with type & description
+   * Param with type & description
+   *
    * @param {SyntheticEvent} - React's original event
    */
   case14: PropTypes.func,
   /**
-   * param with name & description
+   * Param with name & description
+   *
    * @param event - React's original event
    */
   case15: PropTypes.func,
   /**
-   * autofix event-
+   * Autofix event-
+   *
    * @param event- React's original event
    */
   case16: PropTypes.func,
   /**
-   * autofix event.
+   * Autofix event.
+   *
    * @param event.
    * @returns {string}
    */
   case17: PropTypes.func,
   /**
-   * with an empty param.
+   * With an empty param.
+   *
    * @param
    */
   case18: PropTypes.func,
   /**
-   * with multiple empty params.
+   * With multiple empty params.
+   *
    * @param
    * @param
    * @param
    */
   case19: PropTypes.func,
   /**
-   * with arg alias.
-   * @arg event
+   * With arg alias.
+   *
+   * @param event
    */
   case20: PropTypes.func,
   /**
-   * with argument alias.
-   * @argument event
+   * With argument alias.
+   *
+   * @param event
    */
   case21: PropTypes.func,
   /**
-   * with multiple params.
+   * With multiple params.
+   *
    * @param {SyntheticEvent} event
    * @param {string} stringValue
    * @param {number} numberValue
    */
   case22: PropTypes.func,
   /**
-   * with an empty returns
+   * With an empty returns
+   *
    * @returns
    */
   case23: PropTypes.func,
   /**
-   * with a returns with a type
+   * With a returns with a type
+   *
    * @returns {SyntheticEvent}
    */
   case24: PropTypes.func,
   /**
-   * with a returns with a type & description
+   * With a returns with a type & description
+   *
    * @returns {SyntheticEvent} - React's original event
    */
   case25: PropTypes.func,
   /**
-   * single param and a returns
+   * Single param and a returns
+   *
    * @param {string} stringValue
    * @returns {SyntheticEvent} - React's original event
    */
   case26: PropTypes.func,
   /**
-   * multiple params and a returns
+   * Multiple params and a returns
+   *
    * @param {string} stringValue
    * @param {number} numberValue
    * @returns {SyntheticEvent} - React's original event
    */
   case27: PropTypes.func,
   /**
-   * multiple returns
+   * Multiple returns
+   *
    * @returns {SyntheticEvent} - React's original event
    * @returns {string} - Second returns
    */
   case28: PropTypes.func,
   /**
-   * param with unsupported JSDoc tags
-   * @param {SyntheticEvent} event - React's original event
-   * @type {number}
+   * Param with unsupported JSDoc tags
+   *
    * @version 2
+   * @type {number}
+   * @param {SyntheticEvent} event - React's original event
    */
   case29: PropTypes.func,
   /**
-   * param record type
-   * @param {{a: number, b: string}} myType
+   * Param record type
+   *
+   * @param {{ a: number; b: string }} myType
    */
   case30: PropTypes.func,
   /**
-   * param array type
+   * Param array type
+   *
    * @param {string[]} myType
    */
   case31: PropTypes.func,
   /**
-   * param union type
-   * @param {(number|boolean)} myType
+   * Param union type
+   *
+   * @param {number | boolean} myType
    */
   case32: PropTypes.func,
   /**
-   * param any type
-   * @param {*} myType
+   * Param any type
+   *
+   * @param {any} myType
    */
   case33: PropTypes.func,
   /**
-   * param repeatable type
+   * Param repeatable type
+   *
    * @param {...number} myType
    */
   case34: PropTypes.func,
   /**
-   * optional param
+   * Optional param
+   *
    * @param {number} [myType]
    */
   case35: PropTypes.func,
   /**
-   * optional param
+   * Optional param
+   *
    * @param {number} [myType]
    */
   case36: PropTypes.func,
   /**
-   * dot in param name
+   * Dot in param name
+   *
    * @param {number} my.type
    */
   case37: PropTypes.func,
   /**
-   * returns record type
-   * @returns {{a: number, b: string}}
+   * Returns record type
+   *
+   * @returns {{ a: number; b: string }}
    */
   case38: PropTypes.func,
   /**
-   * returns array type
+   * Returns array type
+   *
    * @returns {string[]}
    */
   case39: PropTypes.func,
   /**
-   * returns union type
-   * @returns {(number|boolean)}
+   * Returns union type
+   *
+   * @returns {number | boolean}
    */
   case40: PropTypes.func,
   /**
-   * returns any type
-   * @returns {*}
+   * Returns any type
+   *
+   * @returns {any}
    */
   case41: PropTypes.func,
   /**
-   * returns primitive
+   * Returns primitive
+   *
    * @returns {string}
    */
   case42: PropTypes.func,
   /**
-   * returns void
+   * Returns void
+   *
    * @returns {void}
    */
   case43: PropTypes.func
@@ -233,35 +252,35 @@ JsDocProps.__docgenInfo = {
   "displayName": "JsDocProps",
   "props": {
     "case0": {
-      "description": "should not be visible since it's ignored.\n@ignore",
+      "description": "Should not be visible since it's ignored.\n\n@ignore",
       "type": {
         "name": "string"
       },
       "required": false
     },
     "case1": {
-      "description": "simple description.",
+      "description": "Simple description.",
       "type": {
         "name": "string"
       },
       "required": false
     },
     "case2": {
-      "description": "multi\nlines\ndescription",
+      "description": "Multi lines description",
       "type": {
         "name": "string"
       },
       "required": false
     },
     "case3": {
-      "description": "*description* **with** `formatting`",
+      "description": "_description_ **with** `formatting`",
       "type": {
         "name": "string"
       },
       "required": false
     },
     "case4": {
-      "description": "simple description and dummy JSDoc tag.\n@param event",
+      "description": "Simple description and dummy JSDoc tag.\n\n@param event",
       "type": {
         "name": "string"
       },
@@ -275,7 +294,7 @@ JsDocProps.__docgenInfo = {
       "required": false
     },
     "case6": {
-      "description": "simple description with a @.",
+      "description": "Simple description with a @.",
       "type": {
         "name": "string"
       },
@@ -289,7 +308,7 @@ JsDocProps.__docgenInfo = {
       "required": false
     },
     "case8": {
-      "description": "func with a simple description.",
+      "description": "Func with a simple description.",
       "type": {
         "name": "func"
       },
@@ -303,238 +322,238 @@ JsDocProps.__docgenInfo = {
       "required": false
     },
     "case10": {
-      "description": "param with name\n@param event",
+      "description": "Param with name\n\n@param event",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case11": {
-      "description": "param with name & type\n@param {SyntheticEvent} event",
+      "description": "Param with name & type\n\n@param {SyntheticEvent} event",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case12": {
-      "description": "param with name, type & description\n@param {SyntheticEvent} event - React's original event",
+      "description": "Param with name, type & description\n\n@param {SyntheticEvent} event - React's original event",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case13": {
-      "description": "param with type\n@param {SyntheticEvent}",
+      "description": "Param with type\n\n@param {SyntheticEvent}",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case14": {
-      "description": "param with type & description\n@param {SyntheticEvent} - React's original event",
+      "description": "Param with type & description\n\n@param {SyntheticEvent} - React's original event",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case15": {
-      "description": "param with name & description\n@param event - React's original event",
+      "description": "Param with name & description\n\n@param event - React's original event",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case16": {
-      "description": "autofix event-\n@param event- React's original event",
+      "description": "Autofix event-\n\n@param event- React's original event",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case17": {
-      "description": "autofix event.\n@param event.\n@returns {string}",
+      "description": "Autofix event.\n\n@param event.\n@returns {string}",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case18": {
-      "description": "with an empty param.\n@param",
+      "description": "With an empty param.\n\n@param",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case19": {
-      "description": "with multiple empty params.\n@param\n@param\n@param",
+      "description": "With multiple empty params.\n\n@param\n@param\n@param",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case20": {
-      "description": "with arg alias.\n@arg event",
+      "description": "With arg alias.\n\n@param event",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case21": {
-      "description": "with argument alias.\n@argument event",
+      "description": "With argument alias.\n\n@param event",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case22": {
-      "description": "with multiple params.\n@param {SyntheticEvent} event\n@param {string} stringValue\n@param {number} numberValue",
+      "description": "With multiple params.\n\n@param {SyntheticEvent} event\n@param {string} stringValue\n@param {number} numberValue",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case23": {
-      "description": "with an empty returns\n@returns",
+      "description": "With an empty returns\n\n@returns",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case24": {
-      "description": "with a returns with a type\n@returns {SyntheticEvent}",
+      "description": "With a returns with a type\n\n@returns {SyntheticEvent}",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case25": {
-      "description": "with a returns with a type & description\n@returns {SyntheticEvent} - React's original event",
+      "description": "With a returns with a type & description\n\n@returns {SyntheticEvent} - React's original event",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case26": {
-      "description": "single param and a returns\n@param {string} stringValue\n@returns {SyntheticEvent} - React's original event",
+      "description": "Single param and a returns\n\n@param {string} stringValue\n@returns {SyntheticEvent} - React's original event",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case27": {
-      "description": "multiple params and a returns\n@param {string} stringValue\n@param {number} numberValue\n@returns {SyntheticEvent} - React's original event",
+      "description": "Multiple params and a returns\n\n@param {string} stringValue\n@param {number} numberValue\n@returns {SyntheticEvent} - React's original event",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case28": {
-      "description": "multiple returns\n@returns {SyntheticEvent} - React's original event\n@returns {string} - Second returns",
+      "description": "Multiple returns\n\n@returns {SyntheticEvent} - React's original event\n@returns {string} - Second returns",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case29": {
-      "description": "param with unsupported JSDoc tags\n@param {SyntheticEvent} event - React's original event\n@type {number}\n@version 2",
+      "description": "Param with unsupported JSDoc tags\n\n@version 2\n@type {number}\n@param {SyntheticEvent} event - React's original event",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case30": {
-      "description": "param record type\n@param {{a: number, b: string}} myType",
+      "description": "Param record type\n\n@param {{ a: number; b: string }} myType",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case31": {
-      "description": "param array type\n@param {string[]} myType",
+      "description": "Param array type\n\n@param {string[]} myType",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case32": {
-      "description": "param union type\n@param {(number|boolean)} myType",
+      "description": "Param union type\n\n@param {number | boolean} myType",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case33": {
-      "description": "param any type\n@param {*} myType",
+      "description": "Param any type\n\n@param {any} myType",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case34": {
-      "description": "param repeatable type\n@param {...number} myType",
+      "description": "Param repeatable type\n\n@param {...number} myType",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case35": {
-      "description": "optional param\n@param {number} [myType]",
+      "description": "Optional param\n\n@param {number} [myType]",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case36": {
-      "description": "optional param\n@param {number} [myType]",
+      "description": "Optional param\n\n@param {number} [myType]",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case37": {
-      "description": "dot in param name\n@param {number} my.type",
+      "description": "Dot in param name\n\n@param {number} my.type",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case38": {
-      "description": "returns record type\n@returns {{a: number, b: string}}",
+      "description": "Returns record type\n\n@returns {{ a: number; b: string }}",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case39": {
-      "description": "returns array type\n@returns {string[]}",
+      "description": "Returns array type\n\n@returns {string[]}",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case40": {
-      "description": "returns union type\n@returns {(number|boolean)}",
+      "description": "Returns union type\n\n@returns {number | boolean}",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case41": {
-      "description": "returns any type\n@returns {*}",
+      "description": "Returns any type\n\n@returns {any}",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case42": {
-      "description": "returns primitive\n@returns {string}",
+      "description": "Returns primitive\n\n@returns {string}",
       "type": {
         "name": "func"
       },
       "required": false
     },
     "case43": {
-      "description": "returns void\n@returns {void}",
+      "description": "Returns void\n\n@returns {void}",
       "type": {
         "name": "func"
       },

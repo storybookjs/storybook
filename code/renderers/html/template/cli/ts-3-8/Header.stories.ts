@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/html';
+import { fn } from '@storybook/test';
+
 import type { HeaderProps } from './Header';
 import { createHeader } from './Header';
 
@@ -12,10 +14,10 @@ const meta: Meta<HeaderProps> = {
     layout: 'fullscreen',
   },
   // More on argTypes: https://storybook.js.org/docs/api/argtypes
-  argTypes: {
-    onLogin: { action: 'onLogin' },
-    onLogout: { action: 'onLogout' },
-    onCreateAccount: { action: 'onCreateAccount' },
+  args: {
+    onLogin: fn(),
+    onLogout: fn(),
+    onCreateAccount: fn(),
   },
 };
 

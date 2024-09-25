@@ -23,7 +23,7 @@ Like `addon-info`, `DocsPage` provides sensible defaults, meaning it adds docume
 
 However, `DocsPage` brings the following improvements:
 
-- It supports all frameworks that Storybook supports, including React, Vue, Angular and [many others](../README.md#framework-support).
+- It supports all frameworks that Storybook supports, including React, Vue 3, Angular and [many others](../README.md#framework-support).
 - It generates better documentation that can be used as a standalone docs site, independently of Storybook.
 - It supports better configuration, so you can capture project specific information with ease.
 - It's built to work with [`MDX`](./mdx.md) when you need more control of your documentation.
@@ -70,6 +70,7 @@ You can replace DocsPage at any level by overriding the `docs.page` parameter:
 
 ```js
 import { addParameters } from '@storybook/react';
+
 addParameters({ docs: { page: null } });
 ```
 
@@ -77,6 +78,7 @@ addParameters({ docs: { page: null } });
 
 ```js
 import { Button } from './Button';
+
 export default {
   title: 'Demo/Button',
   component: Button,
@@ -101,7 +103,7 @@ Here's an example of rebuilding `DocsPage` out of doc blocks:
 
 ```js
 import React from 'react';
-import { Title, Subtitle, Description, Primary, ArgsTable, Stories } from '@storybook/addon-docs';
+import { ArgsTable, Description, Primary, Stories, Subtitle, Title } from '@storybook/addon-docs';
 import { DocgenButton } from '../../components/DocgenButton';
 
 export default {
@@ -141,8 +143,8 @@ That being said, there is a system in place to remove the necessity of this trad
 ```js
 import React from 'react';
 import { render } from 'react-dom';
-import toReact from '@egoist/vue-to-react';
 import { addParameters } from '@storybook/vue';
+import toReact from '@egoist/vue-to-react';
 
 addParameters({
   docs: {
@@ -165,8 +167,8 @@ You can override this default behavior in `.storybook/preview.js` (or in any of 
 ```js
 export const parameters = {
   docs: {
-    source: {
-      state: 'open',
+    canvas: {
+      sourceState: 'shown',
     },
   },
 };

@@ -1,5 +1,6 @@
 /**
  * Pre component
+ *
  * @param {object} props
  * @param {object} [props.style]
  * @param {object} [props.object]

@@ -1,6 +1,8 @@
-import { describe, it, expect } from 'vitest';
-import path from 'path';
-import { normalizeStoriesEntry } from '@storybook/core-common';
+import { relative } from 'node:path';
+
+import { describe, expect, it } from 'vitest';
+
+import { normalizeStoriesEntry } from 'storybook/internal/common';
 
 import { toRequireContext } from './to-require-context';
 
@@ -61,21 +63,21 @@ const testCases = [
   },
   // INVALID GLOB
   {
-    glob: '../src/stories/**/*.stories.(js|mdx)',
+    glob: '../src/stories/**/*.stories.(js|ts)',
     recursive: true,
     validPaths: [
       '../src/stories/components/Icon.stories.js',
       '../src/stories/Icon.stories.js',
-      '../src/stories/Icon.stories.mdx',
+      '../src/stories/Icon.stories.ts',
       '../src/stories/components/Icon/Icon.stories.js',
-      '../src/stories/components/Icon.stories/Icon.stories.mdx',
+      '../src/stories/components/Icon.stories/Icon.stories.ts',
     ],
     invalidPaths: [
       './stories.js',
       './src/stories/Icon.stories.js',
       './Icon.stories.js',
-      '../src/Icon.stories.mdx',
-      '../src/stories/components/Icon/Icon.stories.ts',
+      '../src/Icon.stories.ts',
+      '../src/stories/components/Icon/Icon.stories.tsx',
       '../src/stories/components/Icon/Icon.mdx',
     ],
   },
@@ -89,59 +91,59 @@ const testCases = [
     invalidPaths: ['./dirname/../stories.js', './dirname/../App.stories.js'],
   },
   {
-    glob: '../src/stories/**/@(*.stories.js|*.stories.mdx)',
+    glob: '../src/stories/**/@(*.stories.js|*.stories.ts)',
     recursive: true,
     validPaths: [
       '../src/stories/components/Icon.stories.js',
       '../src/stories/Icon.stories.js',
-      '../src/stories/Icon.stories.mdx',
+      '../src/stories/Icon.stories.ts',
       '../src/stories/components/Icon/Icon.stories.js',
-      '../src/stories/components/Icon.stories/Icon.stories.mdx',
+      '../src/stories/components/Icon.stories/Icon.stories.ts',
     ],
     invalidPaths: [
       './stories.js',
       './src/stories/Icon.stories.js',
       './Icon.stories.js',
-      '../src/Icon.stories.mdx',
-      '../src/stories/components/Icon/Icon.stories.ts',
+      '../src/Icon.stories.ts',
+      '../src/stories/components/Icon/Icon.stories.tsx',
       '../src/stories/components/Icon/Icon.mdx',
     ],
   },
   {
-    glob: '../src/stories/**/*.stories.+(js|mdx)',
+    glob: '../src/stories/**/*.stories.+(js|ts)',
     recursive: true,
     validPaths: [
       '../src/stories/components/Icon.stories.js',
       '../src/stories/Icon.stories.js',
-      '../src/stories/Icon.stories.mdx',
+      '../src/stories/Icon.stories.ts',
       '../src/stories/components/Icon/Icon.stories.js',
-      '../src/stories/components/Icon.stories/Icon.stories.mdx',
+      '../src/stories/components/Icon.stories/Icon.stories.ts',
     ],
     invalidPaths: [
       './stories.js',
       './src/stories/Icon.stories.js',
       './Icon.stories.js',
-      '../src/Icon.stories.mdx',
-      '../src/stories/components/Icon/Icon.stories.ts',
+      '../src/Icon.stories.tsx',
+      '../src/stories/components/Icon/Icon.stories.tsx',
       '../src/stories/components/Icon/Icon.mdx',
     ],
   },
   {
-    glob: '../src/stories/**/*.stories.*(js|mdx)',
+    glob: '../src/stories/**/*.stories.*(js|ts)',
     recursive: true,
     validPaths: [
       '../src/stories/components/Icon.stories.js',
       '../src/stories/Icon.stories.js',
-      '../src/stories/Icon.stories.mdx',
+      '../src/stories/Icon.stories.ts',
       '../src/stories/components/Icon/Icon.stories.js',
-      '../src/stories/components/Icon.stories/Icon.stories.mdx',
+      '../src/stories/components/Icon.stories/Icon.stories.ts',
     ],
     invalidPaths: [
       './stories.js',
       './src/stories/Icon.stories.js',
       './Icon.stories.js',
-      '../src/Icon.stories.mdx',
-      '../src/stories/components/Icon/Icon.stories.ts',
+      '../src/Icon.stories.ts',
+      '../src/stories/components/Icon/Icon.stories.tsx',
       '../src/stories/components/Icon/Icon.mdx',
     ],
   },
@@ -150,13 +152,13 @@ const testCases = [
     recursive: false,
     validPaths: ['../src/stories/components/Icon.stories.js'],
     invalidPaths: [
-      '../src/Icon.stories.mdx',
-      '../src/stories/components/Icon.stories/Icon.stories.mdx',
+      '../src/Icon.stories.tsx',
+      '../src/stories/components/Icon.stories/Icon.stories.tsx',
       '../src/stories/components/Icon/Icon.mdx',
       '../src/stories/components/Icon/Icon.stories.js',
       '../src/stories/components/Icon/Icon.stories.ts',
       '../src/stories/Icon.stories.js',
-      '../src/stories/Icon.stories.mdx',
+      '../src/stories/Icon.stories.tsx',
       './Icon.stories.js',
       './src/stories/Icon.stories.js',
       './stories.js',
@@ -191,7 +193,7 @@ const testCases = [
       './stories.js',
       './src/stories/Icon.stories.js',
       './Icon.stories.js',
-      '../src/Icon.stories.mdx',
+      '../src/Icon.stories.tsx',
       '../src/stories/components/Icon/Icon.stories.ts',
       '../src/stories/components/Icon/Icon.mdx',
     ],
@@ -205,7 +207,7 @@ const testCases = [
       './stories.js',
       './src/stories/Icon.stories.js',
       './Icon.stories.js',
-      '../src/Icon.stories.mdx',
+      '../src/Icon.stories.tsx',
       '../src/stories/components/Icon/Icon.stories.ts',
       '../src/stories/components/Icon/Icon.mdx',
     ],
@@ -219,7 +221,7 @@ const testCases = [
       './stories.js',
       './src/stories/Icon.stories.js',
       './Icon.stories.js',
-      '../src/Icon.stories.mdx',
+      '../src/Icon.stories.tsx',
       '../components/icon/Icon.stories.js',
       '../components/basics/simple/icon/Icon.stories.js',
       '../src/stories/components/Icon/Icon.stories.ts',
@@ -235,7 +237,7 @@ const testCases = [
       './stories.js',
       './src/stories/Icon.stories.js',
       './Icon.stories.js',
-      '../src/Icon.stories.mdx',
+      '../src/Icon.stories.tsx',
       '../src/stories/components/Icon/Icon.stories.ts',
       '../src/stories/components/Icon/Icon.mdx',
     ],
@@ -271,7 +273,7 @@ describe('toRequireContext', () => {
       const regex = new RegExp(match);
 
       function isMatched(filePath: string) {
-        const relativePath = `./${path.relative(base, filePath)}`;
+        const relativePath = `./${relative(base, filePath)}`;
 
         const baseIncluded = filePath.includes(base);
         const matched = regex.test(relativePath);

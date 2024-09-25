@@ -1,17 +1,16 @@
 import type { ComponentProps } from 'react';
 import React from 'react';
+
 import {
+  Bar,
   Button,
   IconButton,
-  Separator,
   P,
+  Separator,
   TooltipNote,
   WithTooltip,
-  Bar,
-} from '@storybook/components';
-import type { Call, ControlStates } from '@storybook/instrumenter';
-import { CallStates } from '@storybook/instrumenter';
-import { styled } from '@storybook/theming';
+} from 'storybook/internal/components';
+import { styled } from 'storybook/internal/theming';
 
 import {
   FastForwardIcon,
@@ -20,9 +19,11 @@ import {
   RewindIcon,
   SyncIcon,
 } from '@storybook/icons';
-import { StatusBadge } from './StatusBadge';
+import type { Call, ControlStates } from '@storybook/instrumenter';
+import { CallStates } from '@storybook/instrumenter';
 
 import type { Controls } from './InteractionsPanel';
+import { StatusBadge } from './StatusBadge';
 
 const SubnavWrapper = styled.div(({ theme }) => ({
   background: theme.background.app,
@@ -137,7 +138,6 @@ export const Subnav: React.FC<SubnavProps> = ({
             <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Go to start" />}>
               <RewindButton
                 aria-label="Go to start"
-                containsIcon
                 onClick={controls.start}
                 disabled={!controlStates.start}
               >
@@ -148,7 +148,6 @@ export const Subnav: React.FC<SubnavProps> = ({
             <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Go back" />}>
               <StyledIconButton
                 aria-label="Go back"
-                containsIcon
                 onClick={controls.back}
                 disabled={!controlStates.back}
               >
@@ -159,7 +158,6 @@ export const Subnav: React.FC<SubnavProps> = ({
             <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Go forward" />}>
               <StyledIconButton
                 aria-label="Go forward"
-                containsIcon
                 onClick={controls.next}
                 disabled={!controlStates.next}
               >
@@ -170,7 +168,6 @@ export const Subnav: React.FC<SubnavProps> = ({
             <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Go to end" />}>
               <StyledIconButton
                 aria-label="Go to end"
-                containsIcon
                 onClick={controls.end}
                 disabled={!controlStates.end}
               >
@@ -179,7 +176,7 @@ export const Subnav: React.FC<SubnavProps> = ({
             </WithTooltip>
 
             <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Rerun" />}>
-              <RerunButton aria-label="Rerun" containsIcon onClick={controls.rerun}>
+              <RerunButton aria-label="Rerun" onClick={controls.rerun}>
                 <SyncIcon />
               </RerunButton>
             </WithTooltip>

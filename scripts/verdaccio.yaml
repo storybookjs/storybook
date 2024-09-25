@@ -1,5 +1,7 @@
 storage: .verdaccio-cache
 
+max_body_size: 60mb
+
 auth:
   auth-memory:
     users:
@@ -83,23 +85,11 @@ packages:
     access: $all
     publish: $all
     proxy: npmjs
-  '@storybook/addon-onboarding':
-    access: $all
-    publish: $all
-    proxy: npmjs
   '@storybook/expect':
     access: $all
     publish: $all
     proxy: npmjs
-  '@storybook/jest':
-    access: $all
-    publish: $all
-    proxy: npmjs
   '@storybook/docs-mdx':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/babel-plugin-require-context-hook':
     access: $all
     publish: $all
     proxy: npmjs
@@ -116,6 +106,14 @@ packages:
     access: $all
     publish: $all
     proxy: npmjs
+  '@storybook/addon-webpack5-compiler-swc':
+    access: $all
+    publish: $all
+    proxy: npmjs
+  '@storybook/addon-webpack5-compiler-babel':
+    access: $all
+    publish: $all
+    proxy: npmjs
 
   # storybook packages are NOT proxied to global registry
   # allowing us to republish any version during tests
@@ -124,6 +122,10 @@ packages:
     publish: $all
 
   'sb':
+    access: $all
+    publish: $all
+
+  'create-storybook':
     access: $all
     publish: $all
 

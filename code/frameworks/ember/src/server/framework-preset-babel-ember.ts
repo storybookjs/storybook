@@ -1,5 +1,8 @@
+import type { PresetProperty, PresetPropertyFn } from 'storybook/internal/types';
+
+import type { TransformOptions } from '@babel/core';
 import { precompile } from 'ember-source/dist/ember-template-compiler';
-import type { PresetProperty } from '@storybook/types';
+
 import { findDistFile } from '../util';
 
 let emberOptions: any;
@@ -13,13 +16,12 @@ function precompileWithPlugins(string: string, options: any) {
   return precompile(string, precompileOptions);
 }
 
-export const babel: PresetProperty<'babel'> = (config, options) => {
+export const babel: PresetPropertyFn<'babel'> = (config: TransformOptions, options) => {
   if (options && options.presetsList) {
     options.presetsList.forEach((e: any, index: number) => {
       if (e.preset && e.preset.emberOptions) {
         emberOptions = e.preset.emberOptions;
         if (options.presetsList) {
-          // eslint-disable-next-line no-param-reassign
           delete options.presetsList[index].preset.emberOptions;
         }
       }

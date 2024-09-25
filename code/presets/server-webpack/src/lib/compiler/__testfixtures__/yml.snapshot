@@ -1,36 +1,31 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`ya?ml-to-csf-compiler yml.yml 1`] = `
-"
 export default {
-  title: \\"Demo YML\\",
+  title: "Demo YML",
 };
 
 export const Heading = {
-  name: \\"Heading\\",
+  name: "Heading",
   parameters: {
     server: {
-      id: \\"yaml/heading\\"
+      id: "yaml/heading"
     }
   }
 };
 
 export const Headings = {
-  name: \\"Headings\\",
+  name: "Headings",
   parameters: {
     server: {
-      id: \\"yaml/headings\\"
+      id: "yaml/headings"
     }
   }
 };
 
 export const Button = {
-  name: \\"Button\\",
+  name: "Button",
   parameters: {
     server: {
-      id: \\"yaml/button\\"
+      id: "yaml/button"
     }
   }
 };
-"
-`;

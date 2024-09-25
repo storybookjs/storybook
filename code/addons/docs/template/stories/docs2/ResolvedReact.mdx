@@ -1,13 +1,29 @@
-import { version as reactVersion } from 'react';
-import { version as reactDomVersion } from 'react-dom';
-import { ResolvedReactVersion } from './ResolvedReactVersion';
+import { Meta } from '@storybook/blocks';
+import * as ReactExport from 'react';
+import * as ReactDom from 'react-dom';
+import * as ReactDomServer from 'react-dom/server';
+import { ResolvedReact } from './ResolvedReact';
+
+<Meta title="docs2/ResolvedReact" name="MDX"/>
+
+This doc is used to display the resolved version of React and its related packages.
+As long as `@storybook/addon-docs` is installed, `react` and `react-dom` should be available to import from and should resolve to the same version.
+
+The MDX here ensures that it works in an MDX file.
+
+- See the [autodocs](/docs/addons-docs-docs2-resolvedreact--docs) for how it resolves in autodocs.
+- See the [Story](/story/addons-docs-docs2-resolvedreact--story) for how it resolves in the actual story.
+
+**Note: There appears to be a bug in the _production_ build of `react-dom`, where it reports version `18.2.0-next-9e3b772b8-20220608` while in fact version `18.2.0` is installed.**
 
 ## In MDX
 
-<code>react</code>: <code data-testid="mdx-react">{reactVersion}</code>
+<code>react</code>: <code data-testid="mdx-react">{ReactExport.version ?? 'no version export found'}</code>
 
-<code>react-dom</code>: <code data-testid="mdx-react-dom">{reactDomVersion}</code>
+<code>react-dom</code>: <code data-testid="mdx-react-dom">{ReactDom.version ?? 'no version export found'}</code>
 
-## In `ResolvedReactVersion` component
+<code>react-dom/server</code>: <code data-testid="mdx-react-dom-server">{ReactDomServer.version ?? 'no version export found'}</code>
 
-<ResolvedReactVersion />
+## In `ResolvedReact` component
+
+<ResolvedReact />

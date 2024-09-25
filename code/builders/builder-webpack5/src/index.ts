@@ -1,21 +1,24 @@
-import type { Stats, Configuration, StatsOptions } from 'webpack';
-import webpack, { ProgressPlugin } from 'webpack';
-import webpackDevMiddleware from 'webpack-dev-middleware';
-import webpackHotMiddleware from 'webpack-hot-middleware';
-import { logger } from '@storybook/node-logger';
-import type { Builder, Options } from '@storybook/types';
-import { checkWebpackVersion } from '@storybook/core-webpack';
-import { dirname, join, parse } from 'path';
-import express from 'express';
-import fs from 'fs-extra';
-import { PREVIEW_BUILDER_PROGRESS } from '@storybook/core-events';
+import { cp } from 'node:fs/promises';
+import { join, parse } from 'node:path';
+
+import { PREVIEW_BUILDER_PROGRESS } from 'storybook/internal/core-events';
+import { logger } from 'storybook/internal/node-logger';
 import {
   WebpackCompilationError,
   WebpackInvocationError,
   WebpackMissingStatsError,
-} from '@storybook/core-events/server-errors';
+} from 'storybook/internal/server-errors';
+import type { Builder, Options } from 'storybook/internal/types';
 
+import { checkWebpackVersion } from '@storybook/core-webpack';
+
+import express from 'express';
 import prettyTime from 'pretty-hrtime';
+import { corePath } from 'storybook/core-path';
+import type { Configuration, Stats, StatsOptions } from 'webpack';
+import webpack, { ProgressPlugin } from 'webpack';
+import webpackDevMiddleware from 'webpack-dev-middleware';
+import webpackHotMiddleware from 'webpack-hot-middleware';
 
 export * from './types';
 export * from './preview/virtual-module-mapping';
@@ -25,9 +28,6 @@ export const printDuration = (startTime: [number, number]) =>
     .replace(' ms', ' milliseconds')
     .replace(' s', ' seconds')
     .replace(' m', ' minutes');
-
-const getAbsolutePath = <I extends string>(input: I): I =>
-  dirname(require.resolve(join(input, 'package.json'))) as any;
 
 let compilation: ReturnType<typeof webpackDevMiddleware> | undefined;
 let reject: (reason?: any) => void;
@@ -106,8 +106,8 @@ export const bail: WebpackBuilder['bail'] = async () => {
 };
 
 /**
- * This function is a generator so that we can abort it mid process
- * in case of failure coming from other processes e.g. preview builder
+ * This function is a generator so that we can abort it mid process in case of failure coming from
+ * other processes e.g. preview builder
  *
  * I am sorry for making you read about generators today :')
  */
@@ -179,8 +179,8 @@ const starter: StarterFunction = async function* starterGeneratorFn({
 
   compilation = webpackDevMiddleware(compiler, middlewareOptions);
 
-  const previewResolvedDir = getAbsolutePath('@storybook/preview');
-  const previewDirOrigin = join(previewResolvedDir, 'dist');
+  const previewResolvedDir = join(corePath, 'dist/preview');
+  const previewDirOrigin = previewResolvedDir;
 
   router.use(`/sb-preview`, express.static(previewDirOrigin, { immutable: true, maxAge: '5m' }));
 
@@ -231,8 +231,8 @@ function getWebpackStats({ config, stats }: { config: Configuration; stats: Stat
 }
 
 /**
- * This function is a generator so that we can abort it mid process
- * in case of failure coming from other processes e.g. manager builder
+ * This function is a generator so that we can abort it mid process in case of failure coming from
+ * other processes e.g. manager builder
  *
  * I am sorry for making you read about generators today :')
  */
@@ -288,11 +288,11 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
     });
   });
 
-  const previewResolvedDir = getAbsolutePath('@storybook/preview');
-  const previewDirOrigin = join(previewResolvedDir, 'dist');
+  const previewResolvedDir = join(corePath, 'dist/preview');
+  const previewDirOrigin = previewResolvedDir;
   const previewDirTarget = join(options.outputDir || '', `sb-preview`);
 
-  const previewFiles = fs.copy(previewDirOrigin, previewDirTarget, {
+  const previewFiles = cp(previewDirOrigin, previewDirTarget, {
     filter: (src) => {
       const { ext } = parse(src);
       if (ext) {
@@ -300,6 +300,7 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
       }
       return true;
     },
+    recursive: true,
   });
 
   const [webpackCompilationOutput] = await Promise.all([webpackCompilation, previewFiles]);
@@ -312,7 +313,6 @@ export const start = async (options: BuilderStartOptions) => {
   let result;
 
   do {
-    // eslint-disable-next-line no-await-in-loop
     result = await asyncIterator.next();
   } while (!result.done);
 
@@ -324,7 +324,6 @@ export const build = async (options: BuilderStartOptions) => {
   let result;
 
   do {
-    // eslint-disable-next-line no-await-in-loop
     result = await asyncIterator.next();
   } while (!result.done);
 

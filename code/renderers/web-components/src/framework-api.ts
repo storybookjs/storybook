@@ -1,5 +1,4 @@
 /* eslint-disable no-underscore-dangle */
-
 import { global } from '@storybook/global';
 
 export function isValidComponent(tagName: string) {
@@ -27,9 +26,7 @@ export function isValidMetaData(customElements: any) {
     See the readme of addon-docs for web components for more details.`);
 }
 
-/**
- * @param customElements any for now as spec is not super stable yet
- */
+/** @param customElements `any` for now as spec is not super stable yet */
 export function setCustomElements(customElements: any) {
   global.__STORYBOOK_CUSTOM_ELEMENTS__ = customElements;
 }

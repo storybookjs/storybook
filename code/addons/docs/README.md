@@ -12,7 +12,7 @@ Storybook Docs transforms your Storybook stories into world-class component docu
 
 **MDX.** If you want more control, `MDX` allows you to write long-form markdown documentation and include stories in one file. You can also use it to write pure documentation pages and embed them inside your Storybook alongside your stories.
 
-Just like Storybook, Docs supports every major view layer including React, Vue, Angular, HTML, Web components, Svelte, and many more.
+Just like Storybook, Docs supports every major view layer including React, Vue 3, Angular, HTML, Web components, Svelte, and many more.
 
 Read on to learn more:
 
@@ -113,7 +113,7 @@ export default {
 ### Be sure to check framework specific installation needs
 
 - [React](https://github.com/storybookjs/storybook/tree/next/code/addons/docs/react) (covered here)
-- [Vue](https://github.com/storybookjs/storybook/tree/next/code/addons/docs/vue)
+- [Vue 3](https://github.com/storybookjs/storybook/blob/next/code/addons/docs/vue3)
 - [Angular](https://github.com/storybookjs/storybook/tree/next/code/addons/docs/angular)
 - [Ember](https://github.com/storybookjs/storybook/tree/next/code/addons/docs/ember)
 - [Web Components](https://github.com/storybookjs/storybook/tree/next/code/addons/docs/web-components)

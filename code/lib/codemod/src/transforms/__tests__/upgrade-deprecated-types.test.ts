@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { dedent } from 'ts-dedent';
-import type { API } from 'jscodeshift';
+
 import ansiRegex from 'ansi-regex';
+import type { API } from 'jscodeshift';
+import { dedent } from 'ts-dedent';
+
 import _transform from '../upgrade-deprecated-types';
 
 expect.addSnapshotSerializer({
@@ -9,13 +11,17 @@ expect.addSnapshotSerializer({
   test: () => true,
 });
 
-const tsTransform = (source: string) =>
-  _transform({ source, path: 'Component.stories.ts' }, {} as API, { parser: 'tsx' }).trim();
+const tsTransform = async (source: string) =>
+  (
+    await _transform({ source, path: 'Component.stories.tsx' }, {} as API, {
+      parser: 'tsx',
+    })
+  ).trim();
 
 describe('upgrade-deprecated-types', () => {
   describe('typescript', () => {
-    it('upgrade regular imports', () => {
-      expect(
+    it('upgrade regular imports', async () => {
+      await expect(
         tsTransform(dedent`
           import { Story, ComponentMeta, Meta, ComponentStory, ComponentStoryObj, ComponentStoryFn } from '@storybook/react';
           import { Cat, CatProps } from './Cat';
@@ -34,11 +40,11 @@ describe('upgrade-deprecated-types', () => {
           };
           export const E: Story<CatProps> = (args) => <Cat {...args} />;
         `)
-      ).toMatchSnapshot();
+      ).resolves.toMatchSnapshot();
     });
 
-    it('upgrade imports with local names', () => {
-      expect(
+    it('upgrade imports with local names', async () => {
+      await expect(
         tsTransform(dedent`
           import { Story as Story_, ComponentMeta as ComponentMeta_, ComponentStory as Story__, ComponentStoryObj as ComponentStoryObj_, ComponentStoryFn as StoryFn_ } from '@storybook/react';
           import { Cat } from './Cat';
@@ -57,11 +63,11 @@ describe('upgrade-deprecated-types', () => {
           };
           export const E: Story_<CatProps> = (args) => <Cat {...args} />;
         `)
-      ).toMatchSnapshot();
+      ).resolves.toMatchSnapshot();
     });
 
-    it('upgrade imports with conflicting local names', () => {
-      expect.addSnapshotSerializer({
+    it('upgrade imports with conflicting local names', async () => {
+      await expect.addSnapshotSerializer({
         serialize: (value) => {
           const stringVal = typeof value === 'string' ? value : value.toString();
           return stringVal.replace(ansiRegex(), '');
@@ -69,7 +75,7 @@ describe('upgrade-deprecated-types', () => {
         test: () => true,
       });
 
-      expect(() =>
+      await expect(() =>
         tsTransform(dedent`
           import { ComponentMeta as Meta, ComponentStory as StoryFn } from '@storybook/react';
           import { Cat } from './Cat';
@@ -80,11 +86,11 @@ describe('upgrade-deprecated-types', () => {
           export const A: StoryFn<typeof Cat> = (args) => <Cat {...args} />;
          
         `)
-      ).toThrowErrorMatchingSnapshot();
+      ).rejects.toThrowErrorMatchingSnapshot();
     });
 
-    it('upgrade namespaces', () => {
-      expect(
+    it('upgrade namespaces', async () => {
+      await expect(
         tsTransform(dedent`
           import * as SB from '@storybook/react';
           import { Cat, CatProps } from './Cat';
@@ -104,7 +110,7 @@ describe('upgrade-deprecated-types', () => {
           export const E: SB.Story<CatProps> = (args) => <Cat {...args} />;
           
         `)
-      ).toMatchSnapshot();
+      ).resolves.toMatchSnapshot();
     });
   });
 });

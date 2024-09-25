@@ -12,14 +12,13 @@ Storybook Docs automatically generates props tables for components in supported 
 - [Controls](#controls)
 - [Customization](#customization)
   - [Customizing ArgTypes](#customizing-argtypes)
-  - [Custom ArgTypes in MDX](#custom-argtypes-in-mdx)
 - [Reporting a bug](#reporting-a-bug)
 - [Known limitations](#known-limitations)
 - [More resources](#more-resources)
 
 ## Usage
 
-For framework-specific setup instructions, see the framework's README: [React](../react/README.md), [Vue](../vue/README.md), [Angular](../angular/README.md), [Web Components](../web-components/README.md), [Ember](../ember/README.md).
+For framework-specific setup instructions, see the framework's README: [React](../react/README.md), [Vue3 ](../vue3/README.md), [Angular](../angular/README.md), [Web Components](../web-components/README.md), [Ember](../ember/README.md).
 
 ### DocsPage
 
@@ -60,7 +59,7 @@ Starting in SB 6.0, the `ArgsTable` block has built-in `Controls` (formerly know
 
 <br/>
 
-These controls are implemented appear automatically in the props table when your story accepts [Storybook Args](https://storybook.js.org/docs/react/api/csf#args-story-inputs) as its input. This is done slightly differently depending on whether you're using `DocsPage` or `MDX`.
+These controls are implemented to appear automatically in the props table when your story accepts [Storybook Args](https://storybook.js.org/docs/react/api/csf#args-story-inputs) as its input. This is done slightly differently depending on whether you're using `DocsPage` or `MDX`.
 
 **DocsPage.** In [DocsPage](./docspage.md), simply write your story to consume args and the auto-generated props table will display controls in the right-most column:
 
@@ -105,6 +104,7 @@ Consider the following input:
 // Button.js
 import React from 'react';
 import PropTypes from 'prop-types';
+
 export const Button = ({ label }) => <button>{label}</button>;
 Button.propTypes = {
   /** demo description */
@@ -202,32 +202,6 @@ Here are the possible customizations for the rest of the prop table:
 | `table.defaultValue.detail`  | A longer version of the default value (if it's a complex value)                                      |
 | `control`                    | See [`addon-controls` README](https://storybook.js.org/docs/react/essentials/controls#configuration) |
 
-### Custom ArgTypes in MDX
-
-To do the equivalent of the above customization [in MDX](./mdx.md), use the following.
-
-Overriding at the component level:
-
-```jsx
-<Meta
-  title="MyComponent"
-  component={MyComponent}
-  argTypes={{
-    label: { name: 'label' /* ... */ },
-  }}
-/>
-```
-
-And at the story level:
-
-```jsx
-<Story name="some story" argTypes={{
-  label: { name: 'label', ... }
-}}>
-  {/* story contents */}
-</Story>
-```
-
 ## Reporting a bug
 
 Extracting component properties from source is a tricky problem with thousands of corner cases. We've designed this package and its tests to accurately isolate problems, since the cause could either be in this package or (likely) one of the packages it depends on.
@@ -255,7 +229,7 @@ This package relies on a variety of sub-packages to extract property information
 | Framework      | Underlying library                       | Docs                                             | Open issues                                                                                                                                                        |
 | -------------- | ---------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | React          | `react-docgen` `react-docgen-typescript` | [Docs](../react/README.md#props-tables)          | [Open issues](https://github.com/storybookjs/storybook/issues?q=is%3Aopen+is%3Aissue+label%3A%22block%3A+props%22+label%3Abug+label%3A%22app%3A+react%22)          |
-| Vue            | `vue-docgen-api`                         | [Docs](../vue/README.md#props-tables)            | [Open issues](https://github.com/storybookjs/storybook/issues?q=is%3Aopen+is%3Aissue+label%3A%22block%3A+props%22+label%3Abug+label%3A%22app%3A+vue%22)            |
+| Vue 3          | `vue-docgen-api`                         | [Docs](../vue3/README.md#props-tables)           | [Open issues](https://github.com/storybookjs/storybook/issues?q=is%3Aopen+is%3Aissue+label%3A%22block%3A+props%22+label%3Abug+label%3A%22vue3%22)                  |
 | Angular        | `compodoc`                               | [Docs](../angular/README.md#props-tables)        | [Open issues](https://github.com/storybookjs/storybook/issues?q=is%3Aopen+is%3Aissue+label%3A%22block%3A+props%22+label%3Abug+label%3A%22app%3A+angular%22)        |
 | Web-components | `custom-elements.json`                   | [Docs](../web-components/README.md#props-tables) | [Open issues](https://github.com/storybookjs/storybook/issues?q=is%3Aopen+is%3Aissue+label%3A%22block%3A+props%22+label%3Abug+label%3A%22app%3A+web-components%22) |
 | Ember          | `yui-doc`                                | [Docs](../ember/README.md#props-tables)          | [Open issues](https://github.com/storybookjs/storybook/issues?q=is%3Aopen+is%3Aissue+label%3A%22block%3A+props%22+label%3Abug+label%3A%22app%3A+ember%22)          |
@@ -263,6 +237,6 @@ This package relies on a variety of sub-packages to extract property information
 ## More resources
 
 - References: [README](../README.md) / [DocsPage](docspage.md) / [MDX](mdx.md) / [FAQ](faq.md) / [Recipes](recipes.md) / [Theming](theming.md) / [Props](props-tables.md)
-- Framework-specific docs: [React](../react/README.md) / [Vue](../vue/README.md) / [Angular](../angular/README.md) / [Web components](../web-components/README.md) / [Ember](../ember/README.md)
+- Framework-specific docs: [React](../react/README.md) / [Vue 3](../vue3/README.md) / [Angular](../angular/README.md) / [Web components](../web-components/README.md) / [Ember](../ember/README.md)
 - Announcements: [Vision](https://medium.com/storybookjs/storybook-docs-sneak-peak-5be78445094a) / [DocsPage](https://medium.com/storybookjs/storybook-docspage-e185bc3622bf) / [MDX](https://medium.com/storybookjs/rich-docs-with-storybook-mdx-61bc145ae7bc) / [Framework support](https://medium.com/storybookjs/storybook-docs-for-new-frameworks-b1f6090ee0ea)
 - Example: [Storybook Design System](https://github.com/storybookjs/design-system)

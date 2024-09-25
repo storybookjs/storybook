@@ -27,7 +27,7 @@ When installing Storybook, use the `--builder=vite` flag if you do not have a `v
 
 The builder supports both development mode in Storybook and building a static production version.
 
-Your `vite.config` file will be used by Storybook. If you need to customize the vite config for Storybook, you have two choices:
+Your `vite.config` file will be used by Storybook. If you need to customize the Vite config for Storybook, you have two choices:
 
 1. Set values in your `vite.config` conditionally, based on an environment variable, for example.
 2. Add a `viteFinal` config to your `.storybook/main.js` file. See [Customize Vite config](#customize-vite-config) for details.
@@ -44,12 +44,12 @@ npx storybook@latest init --builder vite && npm run storybook
 ### Migration from webpack / CRA
 
 1. Install `vite` and `@storybook/builder-vite`
-2. Remove any explicit project dependencies on `webpack`, `react-scripts`, and any other webpack plugins or loaders.
+2. Remove any explicit project dependencies on `webpack`, `react-scripts`, and any other Webpack plugins or loaders.
 3. If you were previously using `@storybook/manager-webpack5`, you can remove it. Also remove `@storybook/builder-webpack5` or `@storybook/builder-webpack4` if they are installed.
-4. Choose a vite-based Storybook "framework" to set in the `framework` option of your `.storybook/main.js` file.
-5. Remove storybook webpack cache (`rm -rf node_modules/.cache`)
-6. Update your `/public/index.html` file for vite (be sure there are no `%PUBLIC_URL%` inside it, which is a CRA variable)
-7. Be sure that any files containing JSX syntax use a `.jsx` or `.tsx` file extension, which [vite requires](https://vitejs.dev/guide/features.html#jsx). This includes `.storybook/preview.jsx` if it contains JSX syntax.
+4. Choose a Vite-based Storybook "framework" to set in the `framework` option of your `.storybook/main.js` file.
+5. Remove Storybook Webpack cache (`rm -rf node_modules/.cache`)
+6. Update your `/public/index.html` file for Vite (be sure there are no `%PUBLIC_URL%` inside it, which is a CRA variable)
+7. Be sure that any files containing JSX syntax use a `.jsx` or `.tsx` file extension, which [Vite requires](https://vitejs.dev/guide/features.html#jsx). This includes `.storybook/preview.jsx` if it contains JSX syntax.
 8. If you are using `@storybook/addon-interactions`, for now you'll need to add a [workaround](https://github.com/storybookjs/storybook/issues/18399) for jest-mock relying on the node `global` variable by creating a `.storybook/preview-head.html` file containing the following:
 
 ```html
@@ -58,9 +58,9 @@ npx storybook@latest init --builder vite && npm run storybook
 </script>
 ```
 
-9.  Start up your storybook using the same `yarn storybook` or `npm run storybook` commands you are used to.
+9.  Start up your Storybook using the same `yarn storybook` or `npm run storybook` commands you are used to.
 
-For other details about the differences between vite and webpack projects, be sure to read through the [vite documentation](https://vitejs.dev/).
+For other details about the differences between Vite and Webpack projects, be sure to read through the [Vite documentation](https://vitejs.dev/).
 
 ### Customize Vite config
 
@@ -105,7 +105,7 @@ const config = {
 export default config;
 ```
 
-The `viteFinal` function will give you `config` which is the combination of your project's vite config and the builder's own Vite config.
+The `viteFinal` function will give you `config` which is the combination of your project's Vite config and the builder's own Vite config.
 You can tweak this as you want, for example to set up aliases, add new plugins etc.
 
 The `configType` variable will be either `"DEVELOPMENT"` or `"PRODUCTION"`.
@@ -117,7 +117,9 @@ The function should return the updated Vite configuration.
 Configure your `.storybook/main.ts` to use TypeScript:
 
 ```typescript
-import type { StorybookConfig } from '@storybook/react-vite'; // (or whatever framework you are using)
+import type { StorybookConfig } from '@storybook/react-vite';
+
+// (or whatever framework you are using)
 
 const config: StorybookConfig = {
   // other storybook options...,
@@ -133,7 +135,7 @@ See [Customize Vite config](#customize-vite-config) for details about using `vit
 
 ### React Docgen
 
-Docgen is used in Storybook to populate the props table in docs view, the controls panel, and for several other addons. Docgen is supported in Svelte, Vue, and React, and there are two docgen options when using react, `react-docgen` and `react-docgen-typescript`. You can learn more about the pros/cons of each in [this gist](https://gist.github.com/shilman/036313ffa3af52ca986b375d90ea46b0). By default, if we find a `typescript` dependency in your `package.json` file, we will assume you're using typescript and will choose `react-docgen-typescript`. You can change this by setting the `typescript.reactDocgen` option in your `.storybook/main.js` file:
+Docgen is used in Storybook to populate the props table in docs view, the controls panel, and for several other addons. Docgen is supported in Svelte, Vue 3, and React. React docgen is configurable via the [`typescript.reactDocgen`](https://storybook.js.org/docs/api/main-config-typescript#reactdocgen) setting in `.storybook/main.js`.
 
 ```javascript
 export default {
@@ -149,7 +151,7 @@ If you're using TypeScript, we encourage you to experiment and see which option 
 
 The builder will by default enable Vite's [server.fs.strict](https://vitejs.dev/config/#server-fs-strict)
 option, for increased security. The default project `root` is set to the parent directory of the
-storybook configuration directory. This can be overridden in viteFinal.
+Storybook configuration directory. This can be overridden in [viteFinal](https://storybook.js.org/docs/api/main-config-vite-final).
 
 ## Known issues
 
@@ -158,7 +160,8 @@ storybook configuration directory. This can be overridden in viteFinal.
 ## Contributing
 
 The Vite builder cannot build itself.
-Are you willing to contribute? We are especially looking for Vue and Svelte experts, as the current maintainers are react users.
+
+Are you willing to contribute? We are especially looking for Vue and Svelte experts, as the current maintainers are React users.
 
 Have a look at the GitHub issues with the `vite` label for known bugs. If you find any new bugs,
 feel free to create an issue or send a pull request!

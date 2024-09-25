@@ -15,14 +15,14 @@ Follow the prompts after running this command in your Preact project's root dire
 npx storybook@latest init
 ```
 
-[More on getting started with Storybook](https://storybook.js.org/docs/preact/get-started/install)
+[More on getting started with Storybook](https://storybook.js.org/docs/get-started/install?renderer=preact)
 
 ### In a project with Storybook
 
 This framework is designed to work with Storybook 7. If you’re not already using v7, upgrade with this command:
 
 ```bash
-npx storybook@latest upgrade --prerelease
+npx storybook@latest upgrade
 ```
 
 #### Manual migration

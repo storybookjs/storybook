@@ -1,8 +1,10 @@
-import { global } from '@storybook/global';
-import { addons, makeDecorator } from '@storybook/preview-api';
-import { STORY_CHANGED, SELECT_STORY } from '@storybook/core-events';
-import type { StoryId, StoryName, ComponentTitle, StoryKind } from '@storybook/types';
+import { SELECT_STORY, STORY_CHANGED } from 'storybook/internal/core-events';
+import { addons, makeDecorator } from 'storybook/internal/preview-api';
+import type { ComponentTitle, StoryId, StoryKind, StoryName } from 'storybook/internal/types';
+
 import { toId } from '@storybook/csf';
+import { global } from '@storybook/global';
+
 import { PARAM_KEY } from './constants';
 
 const { document, HTMLElement } = global;
@@ -23,7 +25,6 @@ function parseQuery(queryString: string) {
     .split('&')
     .filter(Boolean);
 
-  // eslint-disable-next-line no-plusplus
   for (let i = 0; i < pairs.length; i++) {
     const pair = pairs[i].split('=');
     query[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '');
@@ -38,9 +39,7 @@ export const hrefTo = (title: ComponentTitle, name: StoryName): Promise<string> 
   return new Promise((resolve) => {
     const { location } = document;
     const query = parseQuery(location.search);
-    // @ts-expect-error (Converted from ts-ignore)
-    const existingId = [].concat(query.id)[0];
-    // @ts-expect-error (Converted from ts-ignore)
+    const existingId = query.id;
     const titleToLink = title || existingId.split('--', 2)[0];
     const id = toId(titleToLink, name);
     const path = `/story/${id}`;

@@ -1,4 +1,3 @@
-/* eslint-disable no-undef */
 export const Pre = (args) => {
   const pre = document.createElement('pre');
 

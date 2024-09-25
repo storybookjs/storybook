@@ -14,14 +14,12 @@ export function patchNode(node) {
   if (node.range && node.range.length === 2 && node.start === undefined && node.end === undefined) {
     const [start, end] = node.range;
 
-    // eslint-disable-next-line no-param-reassign
     node.start = start;
-    // eslint-disable-next-line no-param-reassign
+
     node.end = end;
   }
 
   if (!node.range && node.start !== undefined && node.end !== undefined) {
-    // eslint-disable-next-line no-param-reassign
     node.range = [node.start, node.end];
   }
 

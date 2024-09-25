@@ -1,6 +1,6 @@
 {
   "name": "@storybook/preset-react-webpack",
-  "version": "8.0.0-alpha.8",
+  "version": "8.4.0-alpha.1",
   "description": "Storybook for React: Develop React Component in isolation with Hot Reloading",
   "keywords": [
     "storybook"
@@ -23,34 +23,29 @@
     ".": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./preset": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./dist/framework-preset-cra": {
       "types": "./dist/framework-preset-cra.d.ts",
-      "require": "./dist/framework-preset-cra.js",
-      "import": "./dist/framework-preset-cra.mjs"
+      "import": "./dist/framework-preset-cra.mjs",
+      "require": "./dist/framework-preset-cra.js"
     },
     "./dist/framework-preset-react-docs": {
       "types": "./dist/framework-preset-react-docs.d.ts",
-      "require": "./dist/framework-preset-react-docs.js",
-      "import": "./dist/framework-preset-react-docs.mjs"
-    },
-    "./dist/framework-preset-react": {
-      "types": "./dist/framework-preset-react.d.ts",
-      "require": "./dist/framework-preset-react.js",
-      "import": "./dist/framework-preset-react.mjs"
+      "import": "./dist/framework-preset-react-docs.mjs",
+      "require": "./dist/framework-preset-react-docs.js"
     },
     "./dist/loaders/react-docgen-loader": {
       "types": "./dist/loaders/react-docgen-loader.d.ts",
-      "require": "./dist/loaders/react-docgen-loader.js",
-      "import": "./dist/loaders/react-docgen-loader.mjs"
+      "import": "./dist/loaders/react-docgen-loader.mjs",
+      "require": "./dist/loaders/react-docgen-loader.js"
     },
     "./package.json": "./package.json"
   },
@@ -65,40 +60,32 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@babel/preset-flow": "^7.22.15",
-    "@babel/preset-react": "^7.22.15",
-    "@pmmmwh/react-refresh-webpack-plugin": "^0.5.11",
     "@storybook/core-webpack": "workspace:*",
-    "@storybook/docs-tools": "workspace:*",
-    "@storybook/node-logger": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/react-docgen-typescript-plugin": "1.0.6--canary.9.0c3f3b7.0",
-    "@types/node": "^18.0.0",
+    "@types/node": "^22.0.0",
     "@types/semver": "^7.3.4",
-    "babel-plugin-add-react-displayname": "^0.0.5",
-    "fs-extra": "^11.1.0",
+    "find-up": "^5.0.0",
     "magic-string": "^0.30.5",
     "react-docgen": "^7.0.0",
-    "react-refresh": "^0.14.0",
+    "resolve": "^1.22.8",
     "semver": "^7.3.7",
+    "tsconfig-paths": "^4.2.0",
     "webpack": "5"
   },
   "devDependencies": {
     "typescript": "^5.3.2"
   },
   "peerDependencies": {
-    "@babel/core": "^7.22.0",
-    "react": "^16.8.0 || ^17.0.0 || ^18.0.0",
-    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0"
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
+    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
+    "storybook": "workspace:^"
   },
   "peerDependenciesMeta": {
-    "@babel/core": {
-      "optional": true
-    },
     "typescript": {
       "optional": true
     }
@@ -114,10 +101,9 @@
       "./src/index.ts",
       "./src/framework-preset-cra.ts",
       "./src/framework-preset-react-docs.ts",
-      "./src/framework-preset-react.ts",
       "./src/loaders/react-docgen-loader.ts"
     ],
     "platform": "node"
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae17"
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

@@ -1,6 +1,6 @@
 import { global } from '@storybook/global';
 
-import { LitElement, html, css } from 'lit-element';
+import { LitElement, css, html } from 'lit-element';
 
 const { CustomEvent } = global;
 
@@ -103,8 +103,8 @@ const demoWcCardStyle = css`
 /**
  * This is a container looking like a card with a back and front side you can switch
  *
- * @slot - This is an unnamed slot (the default slot)
  * @fires side-changed - Fires whenever it switches between front/back
+ * @slot - This is an unnamed slot (the default slot)
  * @cssprop --demo-wc-card-header-font-size - Header font size
  * @cssprop --demo-wc-card-front-color - Font color for front
  * @cssprop --demo-wc-card-back-color - Font color for back
@@ -131,19 +131,13 @@ export class DemoWcCard extends LitElement {
   constructor() {
     super();
 
-    /**
-     * Indicates that the back of the card is shown
-     */
+    /** Indicates that the back of the card is shown */
     this.backSide = false;
 
-    /**
-     * Header message
-     */
+    /** Header message */
     this.header = 'Your Message';
 
-    /**
-     * Data rows
-     */
+    /** Data rows */
     this.rows = [];
   }
 
@@ -195,5 +189,4 @@ export class DemoWcCard extends LitElement {
   }
 }
 
-// eslint-disable-next-line no-undef
 customElements.define('input', DemoWcCard);

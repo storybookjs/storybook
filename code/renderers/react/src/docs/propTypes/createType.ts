@@ -1,23 +1,24 @@
-import type { ExtractedProp, DocgenPropType, PropType } from '@storybook/docs-tools';
-import { createSummaryValue, isTooLongForTypeSummary } from '@storybook/docs-tools';
+import type { DocgenPropType, ExtractedProp, PropType } from 'storybook/internal/docs-tools';
+import { createSummaryValue, isTooLongForTypeSummary } from 'storybook/internal/docs-tools';
+
+import {
+  ARRAY_CAPTION,
+  CLASS_CAPTION,
+  CUSTOM_CAPTION,
+  ELEMENT_CAPTION,
+  FUNCTION_CAPTION,
+  OBJECT_CAPTION,
+  generateCode,
+  generateObjectCode,
+  isHtmlTag,
+} from '../lib';
+import type { InspectionArray, InspectionElement, InspectionObject } from '../lib/inspection';
+import { InspectionType, inspectValue } from '../lib/inspection';
 import {
   generateFuncSignature,
   generateShortFuncSignature,
   toMultilineSignature,
 } from './generateFuncSignature';
-import {
-  OBJECT_CAPTION,
-  ARRAY_CAPTION,
-  CLASS_CAPTION,
-  FUNCTION_CAPTION,
-  ELEMENT_CAPTION,
-  CUSTOM_CAPTION,
-  isHtmlTag,
-  generateObjectCode,
-  generateCode,
-} from '../lib';
-import type { InspectionElement, InspectionObject, InspectionArray } from '../lib/inspection';
-import { InspectionType, inspectValue } from '../lib/inspection';
 
 const MAX_FUNC_LENGTH = 150;
 
@@ -349,7 +350,6 @@ function generateType(type: DocgenPropType, extractedProp: ExtractedProp): TypeD
         return createTypeDef({ name: type.name, short: type.name, compact: type.name });
     }
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.error(e);
   }
 
@@ -401,7 +401,6 @@ export function createType(extractedProp: ExtractedProp): PropType | null {
         return null;
     }
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.error(e);
   }
 

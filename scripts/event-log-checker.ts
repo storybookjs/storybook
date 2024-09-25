@@ -1,11 +1,10 @@
-/* eslint-disable jest/no-export, jest/expect-expect, no-console */
-import chalk from 'chalk';
 import assert from 'assert';
-import fetch from 'node-fetch';
+import chalk from 'chalk';
+
+import versions from '../code/core/src/common/versions';
+import { oneWayHash } from '../code/core/src/telemetry/one-way-hash';
+import { allTemplates } from '../code/lib/cli-storybook/src/sandbox-templates';
 import { esMain } from './utils/esmain';
-import { allTemplates } from '../code/lib/cli/src/sandbox-templates';
-import versions from '../code/lib/cli/src/versions';
-import { oneWayHash } from '../code/lib/telemetry/src/one-way-hash';
 
 const PORT = process.env.PORT || 6007;
 
@@ -31,10 +30,16 @@ async function run() {
     }
 
     const expectation = eventTypeExpectations[eventType as keyof typeof eventTypeExpectations];
-    if (!expectation) throw new Error(`Unexpected eventType '${eventType}'`);
+
+    if (!expectation) {
+      throw new Error(`Unexpected eventType '${eventType}'`);
+    }
 
     const template = allTemplates[templateName as keyof typeof allTemplates];
-    if (!template) throw new Error(`Unexpected template '${templateName}'`);
+
+    if (!template) {
+      throw new Error(`Unexpected template '${templateName}'`);
+    }
 
     const events = await (await fetch(`http://localhost:${PORT}/event-log`)).json();
 
@@ -60,27 +65,6 @@ async function run() {
       assert.equal(bootEvent.eventType, 'boot');
       assert.equal(bootEvent.payload?.eventType, eventType);
     });
-
-    // Test only StoryStoreV7 projects, as ssv6 does not support the storyIndex
-    if (template.modifications?.mainConfig?.features?.storyStoreV7 !== false) {
-      const { exampleStoryCount, exampleDocsCount } = mainEvent.payload?.storyIndex || {};
-      if (['build', 'dev'].includes(eventType)) {
-        test(`${eventType} event should contain 8 stories and 3 docs entries`, () => {
-          assert.equal(
-            exampleStoryCount,
-            8,
-            `Expected 8 stories but received ${exampleStoryCount} instead.`
-          );
-          const expectedDocsCount =
-            template.modifications?.disableDocs || template.modifications?.testBuild ? 0 : 3;
-          assert.equal(
-            exampleDocsCount,
-            expectedDocsCount,
-            `Expected ${expectedDocsCount} docs entries but received ${exampleDocsCount} instead.`
-          );
-        });
-      }
-    }
 
     test(`main event should be ${eventType} and contain correct id and session id`, () => {
       assert.equal(mainEvent.eventType, eventType);

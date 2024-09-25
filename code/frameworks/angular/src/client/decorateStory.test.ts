@@ -1,5 +1,6 @@
 import { Component, Input, Output } from '@angular/core';
-import { DecoratorFunction, StoryContext } from '@storybook/types';
+import { DecoratorFunction, StoryContext } from 'storybook/internal/types';
+import { describe, expect, it } from 'vitest';
 import { componentWrapperDecorator } from './decorators';
 
 import decorateStory from './decorateStory';

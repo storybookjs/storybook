@@ -1,4 +1,4 @@
-import parseTs from 'prettier/parser-typescript';
+import parseTs from 'prettier/plugins/typescript';
 
 function parse(source) {
   try {

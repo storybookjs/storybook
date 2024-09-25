@@ -1,6 +1,8 @@
 import React, { Fragment, useState } from 'react';
-import { styled, themes, convert } from '@storybook/theming';
-import { Icons, type IconsProps } from '@storybook/components';
+
+import { convert, styled, themes } from 'storybook/internal/theming';
+
+import { ChevronSmallDownIcon } from '@storybook/icons';
 
 const ListWrapper = styled.ul({
   listStyle: 'none',
@@ -18,10 +20,7 @@ const Wrapper = styled.div({
   },
 });
 
-const Icon = styled(Icons)<IconsProps>({
-  height: 10,
-  width: 10,
-  minWidth: 10,
+const Icon = styled(ChevronSmallDownIcon)({
   color: convert(themes.light).textMutedColor,
   marginRight: 10,
   transition: 'transform 0.1s ease-in-out',
@@ -68,7 +67,6 @@ export const ListItem: React.FC<ListItemProps> = ({ item }) => {
       <Wrapper>
         <HeaderBar onClick={() => onToggle(!open)} role="button">
           <Icon
-            icon="arrowdown"
             color={convert(themes.light).appBorderColor}
             style={{
               transform: `rotate(${open ? 0 : -90}deg)`,

@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /* eslint-disable no-underscore-dangle */
 import {
   Component,
@@ -30,9 +29,8 @@ export enum ButtonAccent {
  * This is a simple button that demonstrates various JSDoc handling in Storybook Docs for Angular.
  *
  * It supports [markdown](https://en.wikipedia.org/wiki/Markdown), so you can embed formatted text,
- * like **bold**, _italic_, and `inline code`.
- *
- * > How you like dem apples?! It's never been easier to document all your components.
+ * like **bold**, _italic_, and `inline code`.> How you like dem apples?! It's never been easier to
+ * document all your components.
  *
  * @string Hello world
  * @link [Example](http://example.com)
@@ -53,8 +51,9 @@ export class DocButtonComponent<T> {
 
   /**
    * Setting default value here because compodoc won't get the default value for accessors
+   *
    * @default Another default value
-   * */
+   */
   @Input()
   get anotherDefaultValue() {
     return this._anotherDefaultValue;
@@ -90,7 +89,10 @@ export class DocButtonComponent<T> {
   @Input()
   public accent: ButtonAccent = ButtonAccent.Normal;
 
-  /** Specifies some arbitrary object. This comment is to test certain chars like apostrophes - it's working */
+  /**
+   * Specifies some arbitrary object. This comment is to test certain chars like apostrophes - it's
+   * working
+   */
   @Input() public someDataObject!: ISomeInterface;
 
   /**
@@ -122,7 +124,8 @@ export class DocButtonComponent<T> {
   public onClick = new EventEmitter<Event>();
 
   /**
-   * This is an internal method that we don't want to document and have added the `ignore` annotation to.
+   * This is an internal method that we don't want to document and have added the `ignore`
+   * annotation to.
    *
    * @ignore
    */
@@ -166,9 +169,7 @@ export class DocButtonComponent<T> {
       .map((_class) => `btn-${_class}`);
   }
 
-  /**
-   * @ignore
-   */
+  /** @ignore */
   public ignoredProperty = 'Ignore me';
 
   /** Public value. */
@@ -191,7 +192,8 @@ export class DocButtonComponent<T> {
    * An internal calculation method which adds `x` and `y` together.
    *
    * @param x Some number you'd like to use.
-   * @param y Some other number or string you'd like to use, will have `parseInt()` applied before calculation.
+   * @param y Some other number or string you'd like to use, will have `parseInt()` applied before
+   *   calculation.
    */
   public calc(x: number, y: string | number): number {
     return x + parseInt(`${y}`, 10);

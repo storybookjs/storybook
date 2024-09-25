@@ -1,0 +1,1148 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`renders dynamicImportStories stories renders Default 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="global-decorator"
+    >
+      Global Decorator
+      <br />
+      <div>
+        I am a dynamically loaded component
+      </div>
+    </div>
+  </div>
+</body>
+`;
+
+exports[`renders fontStories stories renders WithClassName 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="global-decorator"
+    >
+      Global Decorator
+      <br />
+      <div>
+        <h1
+          class="className"
+        >
+          Google Rubik Puddles
+        </h1>
+        <h1
+          class="className"
+        >
+          Google Local Rubik Storm
+        </h1>
+      </div>
+    </div>
+  </div>
+</body>
+`;
+
+exports[`renders fontStories stories renders WithStyle 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="global-decorator"
+    >
+      Global Decorator
+      <br />
+      <div>
+        <h1
+          style="font-family: fontFamily;"
+        >
+          Google Rubik Puddles
+        </h1>
+        <h1
+          style="font-family: fontFamily;"
+        >
+          Google Local Rubik Storm
+        </h1>
+      </div>
+    </div>
+  </div>
+</body>
+`;
+
+exports[`renders fontStories stories renders WithVariable 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="global-decorator"
+    >
+      Global Decorator
+      <br />
+      <div>
+        <div
+          class="variable"
+        >
+          <h1
+            style="font-family: var(--font-latin-rubik);"
+          >
+            Google Rubik Puddles
+          </h1>
+        </div>
+        <div
+          class="variable"
+        >
+          <h1
+            style="font-family: var(--font-rubik-storm);"
+          >
+            Google Local Rubik Storm
+          </h1>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+`;
+
+exports[`renders getImagePropsStories stories renders Default 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="global-decorator"
+    >
+      Global Decorator
+      <br />
+      <picture>
+        <source
+          media="(prefers-color-scheme: dark)"
+          srcset="/_next/image?url=%2Fimg.jpg&w=48&q=75 1x, /_next/image?url=%2Fimg.jpg&w=96&q=75 2x"
+        />
+        <source
+          media="(prefers-color-scheme: light)"
+          srcset="/_next/image?url=%2Fimg.jpg&w=48&q=75 1x, /_next/image?url=%2Fimg.jpg&w=96&q=75 2x"
+        />
+        <img
+          alt="getImageProps Example"
+          decoding="async"
+          height="40"
+          loading="lazy"
+          src="/_next/image?url=%2Fimg.jpg&w=96&q=75"
+          style="color: transparent;"
+          width="40"
+        />
+      </picture>
+    </div>
+  </div>
+</body>
+`;
+
+exports[`renders headStories stories renders Default 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="global-decorator"
+    >
+      Global Decorator
+      <br />
+      <div>
+        <p>
+          Hello world!
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+`;
+
+exports[`renders imageLegacyStories stories renders BlurredAbsolutePlaceholder 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="global-decorator"
+    >
+      Global Decorator
+      <br />
+      <span
+        style="box-sizing: border-box; display: inline-block; overflow: hidden; background: none; opacity: 1; border: 0px; margin: 0px; padding: 0px; position: relative; max-width: 100%;"
+      >
+        <span
+          style="box-sizing: border-box; display: block; background: none; opacity: 1; border: 0px; margin: 0px; padding: 0px; max-width: 100%;"
+        >
+          <img
+            alt=""
+            aria-hidden="true"
+            src="data:image/svg+xml,%3csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20version=%271.1%27%20width=%2750%27%20height=%2750%27/%3e"
+            style="display: block; max-width: 100%; background: none; opacity: 1; border: 0px; margin: 0px; padding: 0px;"
+          />
+        </span>
+        <img
+          alt="Accessibility"
+          data-nimg="intrinsic"
+          decoding="async"
+          src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+          style="position: absolute; top: 0px; left: 0px; bottom: 0px; right: 0px; box-sizing: border-box; padding: 0px; margin: auto; display: block; width: 0px; height: 0px; min-width: 100%; max-width: 100%; min-height: 100%; max-height: 100%; background-size: cover; background-position: 0% 0%; filter: blur(20px); background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAABP5JREFUWEeNlwtz2zgMhEGKsv/k9XFp82xe11763yOJVGcXC4m2czM3GYa0E2s/LACSTi+vv1czM/7CvPpqxY/ejPeS3khmFiPHOiVLHKaZi4ux4j18GpMlS6cALupEQBCKQM4BdnGzjIcJgs//QBxAPQAem55f3yL4PWJIdyCyhlMfPdYZot0cwj3Ayg/5JwHA13paen7pADphxr/n5VI8JQsHCCGQ3gVGLLsxQ3h/LYSn5383B05rwNOws3Z576LOTOduvwfrOd5FtVat4akx0uPTrw8BNuUz23vLsY7hmg7i4ipqM2saiAdruNuirh4ff0bNdb3Qy3vkvfAQwrkHoDxTTZtDCOKrC1bMEkdnsQh/PLyetOGHkXeRAgQAQ84efQcBdUhvFofoulpdm9WGGTA+AJEe7l+i37a2c371tCFKs5zzJjxQNBMi1im7OCudP2aNghJuzZaGdSMEZjpwf/t0UgNdg9DOyLGLnY0BUHlzwVtNDkgEQhBeKkb1tUDgQrq7frwAiIJi5BKAeIFgHk5mOpPzvgltOfcoK0Rrs7lWHwsgqtXarK3N0u23h5Ne8+3Cqxn5RYSMfHCAMgDAx4CBWlA9RAGw0GA/ol0gvFB4WjAvBAFUa83SzdUdAbYMqp28uHpxCRefxwAYhksAFBlthxCiXig+zT4TYqkC+Hq7OdAfJv8lPpZiZShWBBIuRP+jspDb2lwcDkzz7OLzbO/zvAHAoXTz5eYMQL0t2yHAiCFcfPY1QDwNFylA5bPoFpsV9fsEiMl8dhcc4PP1CYD3drYcBYdIKQrx0cbRxd2JHSDcQ297/vvoZ5smRC+AyV2AQ+nm03evge08Tyy4jGqXzWWEoIvTgXHU38pWiNgH4ixB/ukAcy/xycXfp4kwdAAAt399W+OCgMjxILQacxvRQ3gEwHgKUIr/rz53CuDFNyP/Eob4+/vEWkBq6AAA/HIi62n/Lk67Q7wDYQ0UpQB7hc54T4E6gACLTYxeAwB0YKZL6U4ATEGIBwCs7qPfQJCCHkCnoK50noJKcXcAojsEAJZZKXhgCoziGKxqWV8IMNp4kP2aC+oB0TMFvhGxDQHQfIPhDrilwKOm/YCZASAHfgBABQjr3f7CyAkA0cPB03AQULRhKd4xAIjzHymo2Gp7gN0FAMAVOoA2fPz03a9ssh/RM7Iz8QKIzYF9HyB0XEZ1xJ4DzNoDOAfAslhDDTyjDfv8A2AcBeCiu/jBHQEgxnYW6Kp6BlCVAkQM8VnieF2Xyr0ivXy+XvsCzKOihwNHCCryw8HrQXVB8dgFeRfAVQiXjMbIIgXINQYB2H7Kf5wF/2Ar7h0AgKKGuAP4zOjhzlkLbpcRXKRZhNUjxG6HIQDOjN47gCn4+fWW3xVS9urPESEEwwHMo9IhAGxS2ISiA1iEnQOoA4hXRAwItp7WzL9Ow18ESJaw/ar4NgeOR49cAHCAnaH8swBhv+6CBGjeBSxEOUAI7HyKHkD4O9xKb3/feQouAI4uLBciHRRHmgbfA7h/xFc9AngNBADthvii1sMOiPwDAFeyt6s7FSFS4PmnA1v0vQvqDqQKAAPE/weAUuEgsj8c+H11Twdw/AKANXA82EDr5cJBEEzB3oI4Mb0AdR3nNw8vQnegWuvqAABwJFJEBwDgNdA7IOs3gL0LhuJdwBY8c4BfNnDdVgooHiOqn/b7JoSW/QODjTHXhU7hMQAAAABJRU5ErkJggg==);"
+        />
+        <noscript />
+      </span>
+    </div>
+  </div>
+</body>
+`;
+
+exports[`renders imageLegacyStories stories renders BlurredPlaceholder 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="global-decorator"
+    >
+      Global Decorator
+      <br />
+      <span
+        style="box-sizing: border-box; display: inline-block; overflow: hidden; background: none; opacity: 1; border: 0px; margin: 0px; padding: 0px; position: relative; max-width: 100%;"
+      >
+        <span
+          style="box-sizing: border-box; display: block; background: none; opacity: 1; border: 0px; margin: 0px; padding: 0px; max-width: 100%;"
+        >
+          <img
+            alt=""
+            aria-hidden="true"
+            src="data:image/svg+xml,%3csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20version=%271.1%27%20width=%2740%27%20height=%2740%27/%3e"
+            style="display: block; max-width: 100%; background: none; opacity: 1; border: 0px; margin: 0px; padding: 0px;"
+          />
+        </span>
+        <img
+          alt="Accessibility"
+          data-nimg="intrinsic"
+          decoding="async"
+          src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+          style="position: absolute; top: 0px; left: 0px; bottom: 0px; right: 0px; box-sizing: border-box; padding: 0px; margin: auto; display: block; width: 0px; height: 0px; min-width: 100%; max-width: 100%; min-height: 100%; max-height: 100%; background-size: cover; background-position: 0% 0%; filter: blur(20px); background-image: url(data:image/png;base64,imagedata);"
+        />
+        <noscript />
+      </span>
+    </div>
+  </div>
+</body>
+`;
+
+exports[`renders imageLegacyStories stories renders Default 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="global-decorator"
+    >
+      Global Decorator
+      <br />
+      <span
+        style="box-sizing: border-box; display: inline-block; overflow: hidden; background: none; opacity: 1; border: 0px; margin: 0px; padding: 0px; position: relative; max-width: 100%;"
+      >
+        <span
+          style="box-sizing: border-box; display: block; background: none; opacity: 1; border: 0px; margin: 0px; padding: 0px; max-width: 100%;"
+        >
+          <img
+            alt=""
+            aria-hidden="true"
+            src="data:image/svg+xml,%3csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20version=%271.1%27%20width=%2740%27%20height=%2740%27/%3e"
+            style="display: block; max-width: 100%; background: none; opacity: 1; border: 0px; margin: 0px; padding: 0px;"
+          />
+        </span>
+        <img
+          alt="Accessibility"
+          data-nimg="intrinsic"
+          decoding="async"
+          src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+          style="position: absolute; top: 0px; left: 0px; bottom: 0px; right: 0px; box-sizing: border-box; padding: 0px; margin: auto; display: block; width: 0px; height: 0px; min-width: 100%; max-width: 100%; min-height: 100%; max-height: 100%;"
+        />
+        <noscript />
+      </span>
+    </div>
+  </div>
+</body>
+`;
+
+exports[`renders imageStories stories renders Avif 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="global-decorator"
+    >
+      Global Decorator
+      <br />
+      <img
+        alt="Avif Test Image"
+        data-nimg="1"
+        decoding="async"
+        height="40"
+        loading="lazy"
+        src="/_next/image?url=%2Fimg.jpg&w=96&q=75"
+        srcset="/_next/image?url=%2Fimg.jpg&w=48&q=75 1x, /_next/image?url=%2Fimg.jpg&w=96&q=75 2x"
+        style="color: transparent;"
+        width="40"
+      />
+    </div>
+  </div>
+</body>
+`;
+
+exports[`renders imageStories stories renders BlurredAbsolutePlaceholder 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="global-decorator"
+    >
+      Global Decorator
+      <br />
+      <img
+        alt="Accessibility"
+        data-nimg="1"
+        decoding="async"
+        height="50"
+        loading="lazy"
+        src="/_next/image?url=https%3A%2F%2Fstorybook.js.org%2Fimages%2Fplaceholders%2F50x50.png&w=128&q=75"
+        srcset="/_next/image?url=https%3A%2F%2Fstorybook.js.org%2Fimages%2Fplaceholders%2F50x50.png&w=64&q=75 1x, /_next/image?url=https%3A%2F%2Fstorybook.js.org%2Fimages%2Fplaceholders%2F50x50.png&w=128&q=75 2x"
+        style="color: transparent; background-size: cover; background-position: 50% 50%; background-repeat: no-repeat;"
+        width="50"
+      />
+    </div>
+  </div>
+</body>
+`;
+
+exports[`renders imageStories stories renders BlurredPlaceholder 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="global-decorator"
+    >
+      Global Decorator
+      <br />
+      <img
+        alt="Accessibility"
+        data-nimg="1"
+        decoding="async"
+        height="40"
+        loading="lazy"
+        src="/_next/image?url=%2Fimg.jpg&w=96&q=75"
+        srcset="/_next/image?url=%2Fimg.jpg&w=48&q=75 1x, /_next/image?url=%2Fimg.jpg&w=96&q=75 2x"
+        style="color: transparent; background-size: cover; background-position: 50% 50%; background-repeat: no-repeat;"
+        width="40"
+      />
+    </div>
+  </div>
+</body>
+`;
+
+exports[`renders imageStories stories renders Default 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="global-decorator"
+    >
+      Global Decorator
+      <br />
+      <img
+        alt="Accessibility"
+        data-nimg="1"
+        decoding="async"
+        height="40"
+        loading="lazy"
+        src="/_next/image?url=%2Fimg.jpg&w=96&q=75"
+        srcset="/_next/image?url=%2Fimg.jpg&w=48&q=75 1x, /_next/image?url=%2Fimg.jpg&w=96&q=75 2x"
+        style="color: transparent;"
+        width="40"
+      />
+    </div>
+  </div>
+</body>
+`;
+
+exports[`renders imageStories stories renders Eager 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="global-decorator"
+    >
+      Global Decorator
+      <br />
+      <div
+        style="height: 200vh;"
+      />
+      <img
+        alt="Accessibility"
+        data-nimg="1"
+        decoding="async"
+        height="50"
+        loading="lazy"
+        src="/_next/image?url=https%3A%2F%2Fstorybook.js.org%2Fimages%2Fplaceholders%2F50x50.png&w=128&q=75"
+        srcset="/_next/image?url=https%3A%2F%2Fstorybook.js.org%2Fimages%2Fplaceholders%2F50x50.png&w=64&q=75 1x, /_next/image?url=https%3A%2F%2Fstorybook.js.org%2Fimages%2Fplaceholders%2F50x50.png&w=128&q=75 2x"
+        style="color: transparent;"
+        width="50"
+      />
+    </div>
+  </div>
+</body>
+`;
+
+exports[`renders imageStories stories renders FilledParent 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="global-decorator"
+    >
+      Global Decorator
+      <br />
+      <div
+        style="width: 500px; height: 500px; position: relative;"
+      >
+        <img
+          alt="Accessibility"
+          data-nimg="fill"
+          decoding="async"
+          loading="lazy"
+          sizes="100vw"
+          src="/_next/image?url=%2Fimg.jpg&w=3840&q=75"
+          srcset="/_next/image?url=%2Fimg.jpg&w=640&q=75 640w, /_next/image?url=%2Fimg.jpg&w=750&q=75 750w, /_next/image?url=%2Fimg.jpg&w=828&q=75 828w, /_next/image?url=%2Fimg.jpg&w=1080&q=75 1080w, /_next/image?url=%2Fimg.jpg&w=1200&q=75 1200w, /_next/image?url=%2Fimg.jpg&w=1920&q=75 1920w, /_next/image?url=%2Fimg.jpg&w=2048&q=75 2048w, /_next/image?url=%2Fimg.jpg&w=3840&q=75 3840w"
+          style="position: absolute; height: 100%; width: 100%; left: 0px; top: 0px; right: 0px; bottom: 0px; color: transparent;"
+        />
+      </div>
+    </div>
+  </div>
+</body>
+`;
+
+exports[`renders imageStories stories renders Lazy 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="global-decorator"
+    >
+      Global Decorator
+      <br />
+      <div
+        style="height: 200vh;"
+      />
+      <img
+        alt="Accessibility"
+        data-nimg="1"
+        decoding="async"
+        height="50"
+        loading="lazy"
+        src="/_next/image?url=https%3A%2F%2Fstorybook.js.org%2Fimages%2Fplaceholders%2F50x50.png&w=128&q=75"
+        srcset="/_next/image?url=https%3A%2F%2Fstorybook.js.org%2Fimages%2Fplaceholders%2F50x50.png&w=64&q=75 1x, /_next/image?url=https%3A%2F%2Fstorybook.js.org%2Fimages%2Fplaceholders%2F50x50.png&w=128&q=75 2x"
+        style="color: transparent;"
+        width="50"
+      />
+    </div>
+  </div>
+</body>
+`;
+
+exports[`renders imageStories stories renders Sized 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="global-decorator"
+    >
+      Global Decorator
+      <br />
+      <div
+        style="width: 800px; height: 800px; position: relative;"
+      >
+        <img
+          alt="Accessibility"
+          data-nimg="fill"
+          decoding="async"
+          loading="lazy"
+          sizes="(max-width: 600px) 100vw, 600px"
+          src="/_next/image?url=%2Fimg.jpg&w=3840&q=75"
+          srcset="/_next/image?url=%2Fimg.jpg&w=640&q=75 640w, /_next/image?url=%2Fimg.jpg&w=750&q=75 750w, /_next/image?url=%2Fimg.jpg&w=828&q=75 828w, /_next/image?url=%2Fimg.jpg&w=1080&q=75 1080w, /_next/image?url=%2Fimg.jpg&w=1200&q=75 1200w, /_next/image?url=%2Fimg.jpg&w=1920&q=75 1920w, /_next/image?url=%2Fimg.jpg&w=2048&q=75 2048w, /_next/image?url=%2Fimg.jpg&w=3840&q=75 3840w"
+          style="position: absolute; height: 100%; width: 100%; left: 0px; top: 0px; right: 0px; bottom: 0px; color: transparent;"
+        />
+      </div>
+    </div>
+  </div>
+</body>
+`;
+
+exports[`renders imageStories stories renders WithRef 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="global-decorator"
+    >
+      Global Decorator
+      <br />
+      <div>
+        <img
+          alt="Accessibility"
+          data-nimg="1"
+          decoding="async"
+          height="40"
+          loading="lazy"
+          src="/_next/image?url=%2Fimg.jpg&w=96&q=75"
+          srcset="/_next/image?url=%2Fimg.jpg&w=48&q=75 1x, /_next/image?url=%2Fimg.jpg&w=96&q=75 2x"
+          style="color: transparent;"
+          width="40"
+        />
+        <p>
+          Alt attribute of image: 
+          Accessibility
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+`;
+
+exports[`renders linkStories stories renders Default 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="global-decorator"
+    >
+      Global Decorator
+      <br />
+      <ul>
+        <li>
+          <a
+            href="/"
+          >
+            Normal Link
+          </a>
+        </li>
+        <li>
+          <a
+            href="/with-url-object?name=test"
+          >
+            With URL Object
+          </a>
+        </li>
+        <li>
+          <a
+            href="/replace-url"
+          >
+            Replace the URL instead of push
+          </a>
+        </li>
+        <li>
+          <a
+            href="/legacy-behaviour"
+          >
+            Legacy behavior
+          </a>
+        </li>
+        <li>
+          <a
+            href="/child-is-functional-component"
+          >
+            child is a functional component
+          </a>
+        </li>
+        <li>
+          <a
+            href="/#hashid"
+          >
+            Disables scrolling to the top
+          </a>
+        </li>
+        <li>
+          <a
+            href="/no-prefetch"
+          >
+            No Prefetching
+          </a>
+        </li>
+        <li>
+          <a
+            href="/with-style"
+            style="color: red;"
+          >
+            With style
+          </a>
+        </li>
+        <li>
+          <a
+            class="link"
+            href="/with-classname"
+          >
+            With className
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</body>
+`;
+
+exports[`renders linkStories stories renders InAppDir 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="global-decorator"
+    >
+      Global Decorator
+      <br />
+      <ul>
+        <li>
+          <a
+            href="/"
+          >
+            Normal Link
+          </a>
+        </li>
+        <li>
+          <a
+            href="/with-url-object?name=test"
+          >
+            With URL Object
+          </a>
+        </li>
+        <li>
+          <a
+            href="/replace-url"
+          >
+            Replace the URL instead of push
+          </a>
+        </li>
+        <li>
+          <a
+            href="/legacy-behaviour"
+          >
+            Legacy behavior
+          </a>
+        </li>
+        <li>
+          <a
+            href="/child-is-functional-component"
+          >
+            child is a functional component
+          </a>
+        </li>
+        <li>
+          <a
+            href="/#hashid"
+          >
+            Disables scrolling to the top
+          </a>
+        </li>
+        <li>
+          <a
+            href="/no-prefetch"
+          >
+            No Prefetching
+          </a>
+        </li>
+        <li>
+          <a
+            href="/with-style"
+            style="color: red;"
+          >
+            With style
+          </a>
+        </li>
+        <li>
+          <a
+            class="link"
+            href="/with-classname"
+          >
+            With className
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</body>
+`;
+
+exports[`renders navigationStories stories renders Default 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="global-decorator"
+    >
+      Global Decorator
+      <br />
+      <div>
+        <div>
+          pathname: 
+          /hello
+        </div>
+        <div>
+          segment: 
+        </div>
+        <div>
+          segments: 
+        </div>
+        <div>
+          searchparams:
+           
+          <ul>
+            <li>
+              foo
+              : 
+              bar
+            </li>
+          </ul>
+        </div>
+        <div>
+          params:
+           
+          <ul />
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Go back
+          </button>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Go forward
+          </button>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Prefetch
+          </button>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Push HTML
+          </button>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Refresh
+          </button>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Replace
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+`;
+
+exports[`renders navigationStories stories renders WithSegmentDefined 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="global-decorator"
+    >
+      Global Decorator
+      <br />
+      <div>
+        <div>
+          pathname: 
+          /hello
+        </div>
+        <div>
+          segment: 
+          dashboard
+        </div>
+        <div>
+          segments: 
+          dashboard,settings
+        </div>
+        <div>
+          searchparams:
+           
+          <ul>
+            <li>
+              foo
+              : 
+              bar
+            </li>
+          </ul>
+        </div>
+        <div>
+          params:
+           
+          <ul />
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Go back
+          </button>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Go forward
+          </button>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Prefetch
+          </button>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Push HTML
+          </button>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Refresh
+          </button>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Replace
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+`;
+
+exports[`renders navigationStories stories renders WithSegmentDefinedForParams 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="global-decorator"
+    >
+      Global Decorator
+      <br />
+      <div>
+        <div>
+          pathname: 
+          /hello
+        </div>
+        <div>
+          segment: 
+          hello
+        </div>
+        <div>
+          segments: 
+          hello,nextjs
+        </div>
+        <div>
+          searchparams:
+           
+          <ul>
+            <li>
+              foo
+              : 
+              bar
+            </li>
+          </ul>
+        </div>
+        <div>
+          params:
+           
+          <ul>
+            <li>
+              slug
+              : 
+              hello
+            </li>
+            <li>
+              framework
+              : 
+              nextjs
+            </li>
+          </ul>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Go back
+          </button>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Go forward
+          </button>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Prefetch
+          </button>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Push HTML
+          </button>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Refresh
+          </button>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Replace
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+`;
+
+exports[`renders nextHeaderStories stories renders Default 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="global-decorator"
+    >
+      Global Decorator
+      <br />
+      <h3>
+        Cookies:
+      </h3>
+      <p
+        style="display: flex; flex-direction: row; gap: 8px;"
+      >
+        <strong>
+          Name:
+        </strong>
+         
+        <span>
+          firstName
+        </span>
+        <strong>
+          Value:
+        </strong>
+         
+        <span>
+          Jane
+        </span>
+      </p>
+      <p
+        style="display: flex; flex-direction: row; gap: 8px;"
+      >
+        <strong>
+          Name:
+        </strong>
+         
+        <span>
+          lastName
+        </span>
+        <strong>
+          Value:
+        </strong>
+         
+        <span>
+          Doe
+        </span>
+      </p>
+      <h3>
+        Headers:
+      </h3>
+      <p
+        style="display: flex; flex-direction: row; gap: 8px;"
+      >
+        <strong>
+          Name:
+        </strong>
+         
+        <span>
+          cookie
+        </span>
+        <strong>
+          Value:
+        </strong>
+         
+        <span>
+          firstName=Jane; lastName=Doe
+        </span>
+      </p>
+      <p
+        style="display: flex; flex-direction: row; gap: 8px;"
+      >
+        <strong>
+          Name:
+        </strong>
+         
+        <span>
+          timezone
+        </span>
+        <strong>
+          Value:
+        </strong>
+         
+        <span>
+          Central European Summer Time
+        </span>
+      </p>
+      <button>
+        add user-id cookie
+      </button>
+    </div>
+  </div>
+</body>
+`;
+
+exports[`renders routerStories stories renders Default 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="global-decorator"
+    >
+      Global Decorator
+      <br />
+      <div>
+        <div>
+          Router pathname: 
+          /hello
+        </div>
+        <div>
+          pathname: 
+          /hello
+        </div>
+        <div>
+          searchparams:
+           
+          <ul>
+            <li>
+              foo
+              : 
+              bar
+            </li>
+          </ul>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Go back
+          </button>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Go forward
+          </button>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Prefetch
+          </button>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Push HTML
+          </button>
+        </div>
+        <div
+          style="margin-bottom: 1em;"
+        >
+          <button
+            type="button"
+          >
+            Replace
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+`;
+
+exports[`renders styledJsxStories stories renders Default 1`] = `
+<body>
+  <div>
+    <div
+      data-testid="global-decorator"
+    >
+      Global Decorator
+      <br />
+      <div
+        class="jsx-56e68ef07a3a21f4"
+      >
+        <main
+          class="jsx-56e68ef07a3a21f4 main"
+        >
+          <p
+            class="jsx-56e68ef07a3a21f4"
+          >
+            This is styled using Styled JSX
+          </p>
+        </main>
+      </div>
+    </div>
+  </div>
+</body>
+`;

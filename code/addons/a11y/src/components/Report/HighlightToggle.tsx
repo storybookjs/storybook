@@ -1,7 +1,9 @@
 import React from 'react';
-import { styled } from '@storybook/theming';
+
+import { styled } from 'storybook/internal/theming';
 
 import type { NodeResult } from 'axe-core';
+
 import { useA11yContext } from '../A11yContext';
 
 interface ToggleProps {
@@ -27,12 +29,11 @@ function areAllRequiredElementsHighlighted(
     highlighted.includes(item.target[0] as any)
   ).length;
 
-  // eslint-disable-next-line no-nested-ternary
   return highlightedCount === 0
     ? CheckBoxStates.UNCHECKED
     : highlightedCount === elementsToHighlight.length
-    ? CheckBoxStates.CHECKED
-    : CheckBoxStates.INDETERMINATE;
+      ? CheckBoxStates.CHECKED
+      : CheckBoxStates.INDETERMINATE;
 }
 
 const HighlightToggle: React.FC<ToggleProps> = ({ toggleId, elementsToHighlight = [] }) => {

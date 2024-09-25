@@ -1,8 +1,9 @@
 import { Meta, StoryObj } from '@storybook/angular';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { within, userEvent } from '@storybook/testing-library';
-import { expect } from '@storybook/jest';
+import { expect, userEvent, within } from '@storybook/test';
+
 import { importProvidersFrom } from '@angular/core';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+
 import { OpenCloseComponent } from '../moduleMetadata/angular-src/open-close-component/open-close.component';
 
 const meta: Meta = {

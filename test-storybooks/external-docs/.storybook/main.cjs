@@ -20,8 +20,6 @@ const config = {
     channelOptions: { allowFunction: false, maxDepth: 10 },
   },
   features: {
-    storyStoreV7: !global.navigator?.userAgent?.match?.('jsdom'),
-    buildStoriesJson: true,
     warnOnLegacyHierarchySeparator: false,
     previewMdx2: true,
   },

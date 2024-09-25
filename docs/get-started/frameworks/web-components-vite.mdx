@@ -1,0 +1,100 @@
+---
+title: Storybook for Web components & Vite
+sidebar:
+  order: 10
+  title: Web components & Vite
+---
+
+Storybook for Web components & Vite is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for applications using [Web components](https://www.webcomponents.org/introduction) built with [Vite](https://vitejs.dev/).
+
+<If notRenderer={'web-components'}>
+  <Callout variant="info">
+    Storybook for Web components & Vite is only supported in [Web components](?renderer=web-components) projects.
+  </Callout>
+
+  {/* End non-supported renderers */}
+</If>
+
+<If renderer={'web-components'}>
+  ## Requirements
+
+  * Vite ≥ 4.0
+  * Storybook ≥ 8.0
+
+  ## Getting started
+
+  ### In a project without Storybook
+
+  Follow the prompts after running this command in your Web components project's root directory:
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="init-command.md" />
+
+  {/* prettier-ignore-end */}
+
+  [More on getting started with Storybook.](../install.mdx)
+
+  ### In a project with Storybook
+
+  This framework is designed to work with Storybook 7+. If you’re not already using v7, upgrade with this command:
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="storybook-upgrade.md" />
+
+  {/* prettier-ignore-end */}
+
+  #### Automatic migration
+
+  When running the `upgrade` command above, you should get a prompt asking you to migrate to `@storybook/web-components-vite`, which should handle everything for you. In case that auto-migration does not work for your project, refer to the manual migration below.
+
+  #### Manual migration
+
+  First, install the framework:
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="web-components-vite-install.md" />
+
+  {/* prettier-ignore-end */}
+
+  Then, update your `.storybook/main.js|ts` to change the framework property:
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="web-components-vite-add-framework.md" />
+
+  {/* prettier-ignore-end */}
+
+  ## API
+
+  ### Options
+
+  You can pass an options object for additional configuration if needed:
+
+  ```js
+  // .storybook/main.js
+  import * as path from 'path';
+
+  export default {
+    // ...
+    framework: {
+      name: '@storybook/web-components-vite',
+      options: {
+        // ...
+      },
+    },
+  };
+  ```
+
+  The available options are:
+
+  #### `builder`
+
+  Type: `Record<string, any>`
+
+  Configure options for the [framework's builder](../../api/main-config/main-config-framework.mdx#optionsbuilder). For this framework, available options can be found in the [Vite builder docs](../../builders/vite.mdx).
+
+  {/* End supported renderers */}
+</If>

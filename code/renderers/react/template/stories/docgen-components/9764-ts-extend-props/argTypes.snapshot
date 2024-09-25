@@ -6,7 +6,7 @@
     "description": "",
     "name": "checked",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": undefined,
       "type": {
         "detail": undefined,
@@ -25,7 +25,7 @@
     "description": "",
     "name": "defaultChecked",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": undefined,
       "type": {
         "detail": undefined,
@@ -44,7 +44,7 @@
     "description": "The input content value",
     "name": "value",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": undefined,
       "type": {
         "detail": undefined,

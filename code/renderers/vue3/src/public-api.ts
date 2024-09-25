@@ -1,1 +1,0 @@
-export { setup } from './render';

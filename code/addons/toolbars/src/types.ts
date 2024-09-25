@@ -1,5 +1,5 @@
-import type { IconsProps } from '@storybook/components';
-import type { InputType } from '@storybook/types';
+import type { IconsProps } from 'storybook/internal/components';
+import type { InputType } from 'storybook/internal/types';
 
 export type ToolbarShortcutType = 'next' | 'previous' | 'reset';
 
@@ -15,7 +15,6 @@ export type ToolbarShortcuts = Record<ToolbarShortcutType, ToolbarShortcutConfig
 export interface ToolbarItem {
   value?: string;
   icon?: IconsProps['icon'];
-  left?: string;
   right?: string;
   title?: string;
   hideIcon?: boolean;

@@ -1,8 +1,6 @@
-/* eslint-disable operator-assignment */
-/**
- * Based on https://gist.github.com/awestbro/e668c12662ad354f02a413205b65fce7
- */
+/** Based on https://gist.github.com/awestbro/e668c12662ad354f02a413205b65fce7 */
 import { global } from '@storybook/global';
+
 import { draw } from './canvas';
 import type { Label, LabelStack } from './labels';
 import { labelStacks } from './labels';

@@ -1,11 +1,11 @@
 name: Publish canary release of PR
-run-name: 'Canary release: PR #${{ inputs.pr }}, triggered by ${{ github.triggering_actor }}'
+run-name: "Canary release: PR #${{ inputs.pr }}, triggered by ${{ github.triggering_actor }}"
 
 on:
   workflow_dispatch:
     inputs:
       pr:
-        description: 'Pull request number to create a canary release for'
+        description: "Pull request number to create a canary release for"
         required: true
         type: number
 
@@ -49,18 +49,19 @@ jobs:
           echo "timestamp=$(date +%s)" >> $GITHUB_OUTPUT
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: ${{ steps.info.outputs.isFork == 'true' && steps.info.outputs.repository || null }}
           ref: ${{ steps.info.outputs.sha }}
           token: ${{ secrets.GH_TOKEN }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
+          node-version-file: ".nvmrc"
+
       - name: Cache dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.yarn/berry/cache
@@ -91,16 +92,16 @@ jobs:
         with:
           githubToken: ${{ secrets.GH_TOKEN }}
           prNumber: ${{ inputs.pr }}
-          find: 'CANARY_RELEASE_SECTION'
+          find: "CANARY_RELEASE_SECTION"
           isHtmlCommentTag: true
           replace: |
-            This pull request has been released as version [`${{ steps.version.outputs.next-version }}`](https://npmjs.com/package/@storybook/cli/v/${{ steps.version.outputs.next-version }}). Install it by pinning all your Storybook dependencies to that version.
+            This pull request has been released as version `${{ steps.version.outputs.next-version }}`. Try it out in a new sandbox by running `npx storybook@${{ steps.version.outputs.next-version }} sandbox` or in an existing project with `npx storybook@${{ steps.version.outputs.next-version }} upgrade`.
             <details>
             <summary>More information</summary>
 
             | | |
             | --- | --- |
-            | **Published version** | [`${{ steps.version.outputs.next-version }}`](https://npmjs.com/package/@storybook/cli/v/${{ steps.version.outputs.next-version }}) |
+            | **Published version** | [`${{ steps.version.outputs.next-version }}`](https://npmjs.com/package/storybook/v/${{ steps.version.outputs.next-version }}) |
             | **Triggered by** | @${{ github.triggering_actor }} |
             | **Repository** | [${{ steps.info.outputs.repository }}](https://github.com/${{ steps.info.outputs.repository }}) |
             | **Branch** | [`${{ steps.info.outputs.branch }}`](https://github.com/${{ steps.info.outputs.repository }}/tree/${{ steps.info.outputs.branch }}) |

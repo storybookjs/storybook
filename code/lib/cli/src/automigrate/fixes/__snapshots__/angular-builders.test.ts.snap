@@ -1,6 +1,0 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
-
-exports[`is not Nx project > angular builders > Angular < 15.0.0 > should throw an Error 1`] = `
-[Error: ❌ Your project uses Angular < 15.0.0. Storybook 8.0 for Angular requires Angular 15.0.0 or higher. 
-Please upgrade your Angular version to at least version 15.0.0 to use Storybook 8.0 in your project.]
-`;

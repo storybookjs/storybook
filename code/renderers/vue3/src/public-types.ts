@@ -5,18 +5,20 @@ import type {
   ArgsStoryFn,
   ComponentAnnotations,
   DecoratorFunction,
+  StoryContext as GenericStoryContext,
   LoaderFunction,
   ProjectAnnotations,
   StoryAnnotations,
-  StoryContext as GenericStoryContext,
   StrictArgs,
-} from '@storybook/types';
+} from 'storybook/internal/types';
+
 import type { Constructor, RemoveIndexSignature, SetOptional, Simplify } from 'type-fest';
 import type { FunctionalComponent, VNodeChild } from 'vue';
 import type { ComponentProps, ComponentSlots } from 'vue-component-type-helpers';
+
 import type { VueRenderer } from './types';
 
-export type { Args, ArgTypes, Parameters, StrictArgs } from '@storybook/types';
+export type { Args, ArgTypes, Parameters, StrictArgs } from 'storybook/internal/types';
 export type { VueRenderer };
 
 /**
@@ -68,11 +70,12 @@ type AllowNonFunctionSlots<Slots> = {
 
 export type ComponentPropsAndSlots<C> = ComponentProps<C> & ExtractSlots<C>;
 
-type ComponentPropsOrProps<TCmpOrArgs> = TCmpOrArgs extends Constructor<any>
-  ? ComponentPropsAndSlots<TCmpOrArgs>
-  : TCmpOrArgs extends FunctionalComponent<any>
-  ? ComponentPropsAndSlots<TCmpOrArgs>
-  : TCmpOrArgs;
+type ComponentPropsOrProps<TCmpOrArgs> =
+  TCmpOrArgs extends Constructor<any>
+    ? ComponentPropsAndSlots<TCmpOrArgs>
+    : TCmpOrArgs extends FunctionalComponent<any>
+      ? ComponentPropsAndSlots<TCmpOrArgs>
+      : TCmpOrArgs;
 
 export type Decorator<TArgs = StrictArgs> = DecoratorFunction<VueRenderer, TArgs>;
 export type Loader<TArgs = StrictArgs> = LoaderFunction<VueRenderer, TArgs>;

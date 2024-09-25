@@ -1,3 +1,5 @@
+import type { ComponentProps, ComponentType } from 'react';
+
 import type {
   AnnotatedStoryFn,
   Args,
@@ -5,17 +7,18 @@ import type {
   ArgsStoryFn,
   ComponentAnnotations,
   DecoratorFunction,
-  LoaderFunction,
-  StoryAnnotations,
   StoryContext as GenericStoryContext,
-  StrictArgs,
+  LoaderFunction,
   ProjectAnnotations,
-} from '@storybook/types';
-import type { ComponentProps, ComponentType } from 'react';
+  StoryAnnotations,
+  StrictArgs,
+} from 'storybook/internal/types';
+
 import type { SetOptional, Simplify } from 'type-fest';
+
 import type { ReactRenderer } from './types';
 
-export type { Args, ArgTypes, Parameters, StrictArgs } from '@storybook/types';
+export type { Args, ArgTypes, Parameters, StrictArgs } from 'storybook/internal/types';
 export type { ReactRenderer };
 
 /**
@@ -46,7 +49,7 @@ export type StoryObj<TMetaOrCmpOrArgs = Args> = [TMetaOrCmpOrArgs] extends [
     render?: ArgsStoryFn<ReactRenderer, any>;
     component?: infer Component;
     args?: infer DefaultArgs;
-  }
+  },
 ]
   ? Simplify<
       (Component extends ComponentType<any> ? ComponentProps<Component> : unknown) &
@@ -59,8 +62,8 @@ export type StoryObj<TMetaOrCmpOrArgs = Args> = [TMetaOrCmpOrArgs] extends [
       >
     : never
   : TMetaOrCmpOrArgs extends ComponentType<any>
-  ? StoryAnnotations<ReactRenderer, ComponentProps<TMetaOrCmpOrArgs>>
-  : StoryAnnotations<ReactRenderer, TMetaOrCmpOrArgs>;
+    ? StoryAnnotations<ReactRenderer, ComponentProps<TMetaOrCmpOrArgs>>
+    : StoryAnnotations<ReactRenderer, TMetaOrCmpOrArgs>;
 
 // This performs a downcast to function types that are mocks, when a mock fn is given to meta args.
 type AddMocks<TArgs, DefaultArgs> = Simplify<{

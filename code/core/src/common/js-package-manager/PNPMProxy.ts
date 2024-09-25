@@ -4,7 +4,6 @@ import { join } from 'node:path';
 import { FindPackageVersionsError } from '@storybook/core/server-errors';
 
 import { findUpSync } from 'find-up';
-import { pathExistsSync } from 'fs-extra';
 import { dedent } from 'ts-dedent';
 
 import { createLogStream } from '../utils/cli';
@@ -42,7 +41,7 @@ export class PNPMProxy extends JsPackageManager {
     const CWD = process.cwd();
 
     const pnpmWorkspaceYaml = `${CWD}/pnpm-workspace.yaml`;
-    return pathExistsSync(pnpmWorkspaceYaml);
+    return existsSync(pnpmWorkspaceYaml);
   }
 
   async initPackageJson() {

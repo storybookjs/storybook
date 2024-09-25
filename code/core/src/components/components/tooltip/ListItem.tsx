@@ -169,7 +169,7 @@ const getItemProps = memoize(100)((onClick, href, LinkWrapper) => ({
 
 export type LinkWrapperType = (props: any) => ReactNode;
 
-export interface ListItemProps extends Omit<ComponentProps<typeof Item>, 'href' | 'title'> {
+export interface ListItemProps extends Omit<ComponentProps<typeof Item>, 'title'> {
   loading?: boolean;
   title?: ReactNode;
   center?: ReactNode;

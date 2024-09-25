@@ -21,7 +21,7 @@ export default mergeConfig(
   vitestCommonConfig,
   defineProject({
     plugins: [
-      import('@storybook/experimental-addon-test/vite-plugin').then(({ storybookTest }) =>
+      import('@storybook/experimental-addon-test/vitest-plugin').then(({ storybookTest }) =>
         storybookTest({
           configDir: process.cwd(),
         })

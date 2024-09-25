@@ -1,9 +1,8 @@
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 import type { SupportedFrameworks } from '@storybook/core/types';
 import type { CoreCommon_StorybookInfo, PackageJson } from '@storybook/core/types';
-
-import { pathExistsSync } from 'fs-extra';
 
 import { getStorybookConfiguration } from './get-storybook-configuration';
 
@@ -92,9 +91,7 @@ const validConfigExtensions = ['ts', 'js', 'tsx', 'jsx', 'mjs', 'cjs'];
 
 export const findConfigFile = (prefix: string, configDir: string) => {
   const filePrefix = join(configDir, prefix);
-  const extension = validConfigExtensions.find((ext: string) =>
-    pathExistsSync(`${filePrefix}.${ext}`)
-  );
+  const extension = validConfigExtensions.find((ext: string) => existsSync(`${filePrefix}.${ext}`));
   return extension ? `${filePrefix}.${extension}` : null;
 };
 

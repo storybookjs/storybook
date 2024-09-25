@@ -1,3 +1,5 @@
+import { createWriteStream } from 'node:fs';
+import { rename, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import {
@@ -10,7 +12,6 @@ import {
 
 import boxen from 'boxen';
 import chalk from 'chalk';
-import { createWriteStream, move, remove } from 'fs-extra';
 import prompts from 'prompts';
 import semver from 'semver';
 import invariant from 'tiny-invariant';
@@ -182,9 +183,9 @@ export const automigrate = async ({
 
   // if migration failed, display a log file in the users cwd
   if (hasFailures) {
-    await move(TEMP_LOG_FILE_PATH, join(process.cwd(), LOG_FILE_NAME), { overwrite: true });
+    await rename(TEMP_LOG_FILE_PATH, join(process.cwd(), LOG_FILE_NAME));
   } else {
-    await remove(TEMP_LOG_FILE_PATH);
+    await rm(TEMP_LOG_FILE_PATH, { recursive: true, force: true });
   }
 
   if (!hideMigrationSummary) {

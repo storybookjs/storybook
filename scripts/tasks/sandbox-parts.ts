@@ -437,7 +437,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
     join(sandboxDir, 'vitest.workspace.ts'),
     dedent`
       import { defineWorkspace, defaultExclude } from "vitest/config";
-      import { storybookTest } from "@storybook/experimental-addon-test/vite-plugin";
+      import { storybookTest } from "@storybook/experimental-addon-test/vitest-plugin";
       ${frameworkPluginImport}
 
       export default defineWorkspace([

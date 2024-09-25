@@ -375,7 +375,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   if (foundGitIgnoreFile && foundGitIgnoreFile.includes(rootDirectory)) {
     const contents = await readFile(foundGitIgnoreFile, 'utf-8');
     if (!contents.includes('*storybook.log')) {
-      await appendFile(foundGitIgnoreFile, '\n*storybook.log');
+      await appendFile(foundGitIgnoreFile, '\n*storybook.log\n');
     }
   }
 

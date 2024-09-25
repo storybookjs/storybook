@@ -1,3 +1,4 @@
+import { mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
 import type { NpmOptions } from 'storybook/internal/cli';
@@ -10,7 +11,6 @@ import type { JsPackageManager } from 'storybook/internal/common';
 import { getPackageDetails, versions as packageVersions } from 'storybook/internal/common';
 import type { SupportedFrameworks } from 'storybook/internal/types';
 
-import fse from 'fs-extra';
 import ora from 'ora';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
@@ -328,7 +328,9 @@ export async function baseGenerator(
     addDependenciesSpinner.succeed();
   }
 
-  await fse.ensureDir(`./${storybookConfigFolder}`);
+  // Passing `recursive: true` ensures that the method doesn't throw when
+  // the directory already exists.
+  await mkdir(`./${storybookConfigFolder}`, { recursive: true });
 
   if (addMainFile) {
     const prefixes = shouldApplyRequireWrapperOnPackageNames

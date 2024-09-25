@@ -1,6 +1,6 @@
 {
   "name": "@storybook/experimental-nextjs-vite",
-  "version": "8.3.0-beta.2",
+  "version": "8.4.0-alpha.1",
   "description": "Storybook for Next.js and Vite",
   "keywords": [
     "storybook",
@@ -55,8 +55,8 @@
     },
     "./vite-plugin": {
       "types": "./dist/vite-plugin/index.d.ts",
-      "import": "./dist/vite-plugin/index.js",
-      "require": "./dist/vite-plugin/index.cjs"
+      "import": "./dist/vite-plugin/index.mjs",
+      "require": "./dist/vite-plugin/index.js"
     },
     "./package.json": "./package.json"
   },
@@ -99,7 +99,7 @@
     "@storybook/react": "workspace:*",
     "@storybook/test": "workspace:*",
     "styled-jsx": "5.1.6",
-    "vite-plugin-storybook-nextjs": "^1.0.10"
+    "vite-plugin-storybook-nextjs": "^1.0.11"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",
@@ -107,6 +107,7 @@
     "typescript": "^5.3.2"
   },
   "peerDependencies": {
+    "@storybook/test": "workspace:*",
     "next": "^14.1.0",
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",

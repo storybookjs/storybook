@@ -337,13 +337,13 @@ export abstract class JsPackageManager {
         const k = packageName as keyof typeof storybookPackagesVersions;
         const currentVersion = storybookPackagesVersions[k];
 
-        if (currentVersion === latestInRange) {
-          return `${packageName}`;
+        const isLatestStableRelease = currentVersion === latestInRange;
+
+        if (isLatestStableRelease || !currentVersion) {
+          return `${packageName}@^${latestInRange}`;
         }
-        if (currentVersion) {
-          return `${packageName}@${currentVersion}`;
-        }
-        return `${packageName}@^${latestInRange}`;
+
+        return `${packageName}@${currentVersion}`;
       })
     );
   }
@@ -418,7 +418,7 @@ export abstract class JsPackageManager {
       .find((version) => satisfies(version, constraint));
     invariant(
       latestVersionSatisfyingTheConstraint != null,
-      'No version satisfying the constraint.'
+      `No version satisfying the constraint: ${packageName}${constraint}`
     );
     return latestVersionSatisfyingTheConstraint;
   }

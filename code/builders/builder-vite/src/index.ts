@@ -1,4 +1,5 @@
 // noinspection JSUnusedGlobalSymbols
+import { cp, readFile } from 'node:fs/promises';
 import { join, parse } from 'node:path';
 
 import { NoStatsForViteDevError } from 'storybook/internal/server-errors';
@@ -6,7 +7,6 @@ import type { Options } from 'storybook/internal/types';
 
 import type { RequestHandler } from 'express';
 import express from 'express';
-import * as fs from 'fs-extra';
 import { corePath } from 'storybook/core-path';
 import type { ViteDevServer } from 'vite';
 
@@ -34,10 +34,9 @@ function iframeMiddleware(options: Options, server: ViteDevServer): RequestHandl
       return;
     }
 
-    const indexHtml = await fs.readFile(
-      require.resolve('@storybook/builder-vite/input/iframe.html'),
-      'utf-8'
-    );
+    const indexHtml = await readFile(require.resolve('@storybook/builder-vite/input/iframe.html'), {
+      encoding: 'utf8',
+    });
     const generated = await transformIframeHtml(indexHtml, options);
     const transformed = await server.transformIndexHtml('/iframe.html', generated);
     res.setHeader('Content-Type', 'text/html');
@@ -85,7 +84,7 @@ export const build: ViteBuilder['build'] = async ({ options }) => {
   const previewDirOrigin = previewResolvedDir;
   const previewDirTarget = join(options.outputDir || '', `sb-preview`);
 
-  const previewFiles = fs.copy(previewDirOrigin, previewDirTarget, {
+  const previewFiles = cp(previewDirOrigin, previewDirTarget, {
     filter: (src) => {
       const { ext } = parse(src);
       if (ext) {
@@ -93,6 +92,7 @@ export const build: ViteBuilder['build'] = async ({ options }) => {
       }
       return true;
     },
+    recursive: true,
   });
 
   const [out] = await Promise.all([viteCompilation, previewFiles]);

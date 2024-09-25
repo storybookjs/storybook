@@ -1,3 +1,5 @@
+import { createWriteStream } from 'node:fs';
+import { rename, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { JsPackageManagerFactory, temporaryFile } from 'storybook/internal/common';
@@ -5,7 +7,6 @@ import type { PackageManagerName } from 'storybook/internal/common';
 
 import boxen from 'boxen';
 import chalk from 'chalk';
-import { createWriteStream, move, remove } from 'fs-extra';
 import { dedent } from 'ts-dedent';
 
 import { cleanLog } from '../automigrate/helpers/cleanLog';
@@ -161,11 +162,11 @@ export const doctor = async ({
 
     logger.info(`Full logs are available in ${chalk.cyan(LOG_FILE_PATH)}`);
 
-    await move(TEMP_LOG_FILE_PATH, join(process.cwd(), LOG_FILE_NAME), { overwrite: true });
+    await rename(TEMP_LOG_FILE_PATH, join(process.cwd(), LOG_FILE_NAME));
   } else {
     logger.info(`🥳 Your Storybook project looks good!`);
     logger.info(commandMessage);
-    await remove(TEMP_LOG_FILE_PATH);
+    await rm(TEMP_LOG_FILE_PATH, { recursive: true, force: true });
   }
   logger.info();
 

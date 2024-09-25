@@ -191,7 +191,6 @@ const Result: FC<
   const [icon] = item.status ? statusMapping[item.status] : [];
 
   const heading = item.heading && ` ${item.heading}`;
-  console.log('Result', item);
 
   // FIXME: result.heading ? 'heading' : 'document'
   return (

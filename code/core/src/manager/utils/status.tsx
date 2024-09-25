@@ -57,6 +57,8 @@ export function getGroupStatus(
   collapsedData: {
     [x: string]: Partial<API_HashEntry>;
   },
+  // TODO does this also need to allow "| undefined" since it is treated as optional in the function body?
+  //  the consumer of this function has to use @ts-expect-error because of the missing "| undefined"
   status: API_StatusState
 ): Record<string, API_StatusValue> {
   return Object.values(collapsedData).reduce<Record<string, API_StatusValue>>((acc, item) => {

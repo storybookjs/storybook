@@ -48,7 +48,8 @@ export interface ExpandType {
 export type SearchItem = Item & {
   refId: string;
   path: string[];
-  status?: API_StatusValue;
+  // TODO should allow null, check for side-effects or if undefined can be removed
+  status?: API_StatusValue | null;
   heading?: string;
 };
 

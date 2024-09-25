@@ -64,9 +64,7 @@ export function getPath(item: Item, ref: RefType): string[] {
 }
 
 export const searchItem = (item: Item, ref: RefType): SearchItem => {
-  // @ts-expect-error fix types
-  const name = item.name + ' ' + item.headings?.join(' ');
-  return { ...item, refId: ref.id, name, path: getPath(item, ref) };
+  return { ...item, refId: ref.id, name: item.name, path: getPath(item, ref) };
 };
 
 export function cycle<T>(array: T[], index: number, delta: number): number {

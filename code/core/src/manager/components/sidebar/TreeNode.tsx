@@ -142,7 +142,6 @@ export const ComponentNode: FC<ComponentProps<typeof BranchNode>> = React.memo(
 
 export const DocumentNode: FC<ComponentProps<typeof LeafNode> & { docsMode: boolean }> = React.memo(
   function DocumentNode({ theme, children, docsMode, ...props }) {
-    console.log({ props });
     return (
       <LeafNode tabIndex={-1} {...props}>
         <Wrapper>

@@ -12,6 +12,7 @@ import Downshift from 'downshift';
 import type { FuseOptions } from 'fuse.js';
 import Fuse from 'fuse.js';
 
+import type { API_HashEntry, API_StatusValue } from '../../../types';
 import { getGroupStatus, getHighestStatus } from '../../utils/status';
 import { scrollIntoView, searchItem } from '../../utils/tree';
 import { useLayout } from '../layout/LayoutProvider';
@@ -194,36 +195,52 @@ export const Search = React.memo<{
   const [isFileSearchModalOpen, setIsFileSearchModalOpen] = useState(false);
 
   const makeFuse = useCallback(() => {
-    const list = dataset.entries.reduce<SearchItem[]>((acc, [refId, { index, status }]) => {
+    const list: SearchItem[] = [];
+
+    for (const [refId, { index, status }] of dataset.entries) {
+      if (!index) {
+        continue;
+      }
+
       // @ts-expect-error (non strict)
       const groupStatus = getGroupStatus(index || {}, status);
+      const datasetValues: API_HashEntry[] = Object.values(index);
 
-      if (index) {
-        acc.push(
-          ...Object.values(index).map((item) => {
-            const statusValue =
-              status && status[item.id]
-                ? getHighestStatus(Object.values(status[item.id] || {}).map((s) => s.status))
-                : null;
-            return {
-              ...searchItem(item, dataset.hash[refId]),
-              status: statusValue || groupStatus[item.id] || null,
-            };
-          })
-        );
-        // if(item.headings) {
-        //   tems.headings.
-        // }
+      for (const datasetValue of datasetValues) {
+        const statusValue: API_StatusValue | null = status?.[datasetValue.id]
+          ? getHighestStatus(Object.values(status[datasetValue.id] || {}).map((s) => s.status))
+          : null;
+
+        list.push({
+          ...searchItem(datasetValue, dataset.hash[refId]),
+          status: statusValue || groupStatus[datasetValue.id] || null,
+        });
+
+        // Narrow type down to give typescript a chance to infer datasetValue as API_DocsEntry
+        if (datasetValue.type !== 'docs') {
+          continue;
+        }
+
+        const headings = datasetValue.headings ?? [];
+        headings.forEach((heading: string) => {
+          list.push({
+            ...searchItem(datasetValue, dataset.hash[refId]),
+            // TODO set "#" to a proper id value that can be scrolled into view when selected
+            id: `${datasetValue.id}#${heading}`,
+            name: `${datasetValue.name} / ${heading}`,
+            status: statusValue || groupStatus[datasetValue.id] || null,
+          });
+        });
       }
-      return acc;
-    }, []);
+    }
+
     return new Fuse(list, options);
   }, [dataset]);
 
   const getResults = useCallback(
     (input: string) => {
       const fuse = makeFuse();
-      console.log({ fuse });
+      // console.log({ fuse });
 
       if (!input) {
         return [];

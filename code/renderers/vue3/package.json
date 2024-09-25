@@ -1,6 +1,6 @@
 {
   "name": "@storybook/vue3",
-  "version": "8.4.0-alpha.0",
+  "version": "8.4.0-alpha.1",
   "description": "Storybook Vue 3 renderer",
   "keywords": [
     "storybook"

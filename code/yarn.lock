@@ -6090,7 +6090,7 @@ __metadata:
     glob: "npm:^10.0.0"
     globby: "npm:^14.0.1"
     handlebars: "npm:^4.7.7"
-    jiti: "npm:^2.0.0-rc.1"
+    jiti: "npm:^1.21.6"
     js-yaml: "npm:^4.1.0"
     jsdoc-type-pratt-parser: "npm:^4.0.0"
     lazy-universal-dotenv: "npm:^4.0.0"
@@ -18320,15 +18320,6 @@ __metadata:
   bin:
     jiti: bin/jiti.js
   checksum: 10c0/05b9ed58cd30d0c3ccd3c98209339e74f50abd9a17e716f65db46b6a35812103f6bde6e134be7124d01745586bca8cc5dae1d0d952267c3ebe55171949c32e56
-  languageName: node
-  linkType: hard
-
-"jiti@npm:^2.0.0-rc.1":
-  version: 2.0.0-rc.1
-  resolution: "jiti@npm:2.0.0-rc.1"
-  bin:
-    jiti: lib/jiti-cli.mjs
-  checksum: 10c0/30161c177e0dc800a67f362b697770d4cf0327032819eef0b3657f967bebf5f010cd2b7f250fbc5dc9c7a5a7cf673baf579ae5cdf5d4be38ab2dec61fa12b072
   languageName: node
   linkType: hard
 

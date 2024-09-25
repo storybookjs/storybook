@@ -1,6 +1,6 @@
 {
   "name": "@storybook/core",
-  "version": "8.4.0-alpha.0",
+  "version": "8.4.0-alpha.1",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -376,6 +376,7 @@
     "glob": "^10.0.0",
     "globby": "^14.0.1",
     "handlebars": "^4.7.7",
+    "jiti": "^1.21.6",
     "js-yaml": "^4.1.0",
     "lazy-universal-dotenv": "^4.0.0",
     "leven": "^4.0.0",

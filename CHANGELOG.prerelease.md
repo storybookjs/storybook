@@ -1,3 +1,22 @@
+## 8.4.0-alpha.1
+
+- Addon Test: Support story name as test description - [#29147](https://github.com/storybookjs/storybook/pull/29147), thanks @InfiniteXyy!
+- Addon-Interactions: Use ansi-to-html for colored test errors - [#29110](https://github.com/storybookjs/storybook/pull/29110), thanks @kasperpeulen!
+- Angular: Fix sourceDecorator to apply excludeDecorators flag - [#29069](https://github.com/storybookjs/storybook/pull/29069), thanks @JSMike!
+- Builder-vite: Replace .at() call with [] in codegen - [#29048](https://github.com/storybookjs/storybook/pull/29048), thanks @Chudesnov!
+- CLI: Ensure `.gitignore` updated via CLI ends with a newline - [#29124](https://github.com/storybookjs/storybook/pull/29124), thanks @3w36zj6!
+- CLI: Fix skip-install for stable latest releases - [#29133](https://github.com/storybookjs/storybook/pull/29133), thanks @valentinpalkovic!
+- CLI: Show constraints in error when getting depndencies - [#29187](https://github.com/storybookjs/storybook/pull/29187), thanks @andrasczeh!
+- Core: Do not add packageManager field to package.json during `storybook dev` - [#29152](https://github.com/storybookjs/storybook/pull/29152), thanks @valentinpalkovic!
+- Core: Do not prebundle better-opn - [#29137](https://github.com/storybookjs/storybook/pull/29137), thanks @valentinpalkovic!
+- Core: Do not prebundle jsdoc-type-pratt-parser - [#29134](https://github.com/storybookjs/storybook/pull/29134), thanks @valentinpalkovic!
+- Core: Replace `fs-extra` with the native APIs - [#29126](https://github.com/storybookjs/storybook/pull/29126), thanks @ziebam!
+- Next.js: Upgrade sass-loader from ^12 to ^13 - [#29040](https://github.com/storybookjs/storybook/pull/29040), thanks @HoncharenkoZhenya!
+- React-Vite: Downgrade react-docgen-typescript plugin - [#29184](https://github.com/storybookjs/storybook/pull/29184), thanks @shilman!
+- UI: Fix composed storybook TooltipLinkList bug where href isn't passed forward - [#29175](https://github.com/storybookjs/storybook/pull/29175), thanks @JSMike!
+- Viewport-addon: Add InitialViewportKeys type to viewport addon - [#29182](https://github.com/storybookjs/storybook/pull/29182), thanks @hyeongrok7874!
+- Vite: Add jsdoc-type-pratt-parser to `optimizeDeps` - [#29179](https://github.com/storybookjs/storybook/pull/29179), thanks @tobiasdiez!
+
 ## 8.4.0-alpha.0
 
 

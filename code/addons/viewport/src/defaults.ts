@@ -1,6 +1,6 @@
 import type { ViewportMap } from './types';
 
-export const INITIAL_VIEWPORTS: ViewportMap = {
+const INITIAL_VIEWPORTS_DATA = {
   iphone5: {
     name: 'iPhone 5',
     styles: {
@@ -225,7 +225,12 @@ export const INITIAL_VIEWPORTS: ViewportMap = {
     },
     type: 'mobile',
   },
-};
+} as const;
+
+export type InitialViewportKeys = keyof typeof INITIAL_VIEWPORTS_DATA;
+
+export const INITIAL_VIEWPORTS: ViewportMap = INITIAL_VIEWPORTS_DATA;
+
 export const DEFAULT_VIEWPORT = 'responsive';
 
 export const MINIMAL_VIEWPORTS: ViewportMap = {

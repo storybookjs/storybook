@@ -85,7 +85,6 @@ const config: StorybookConfig = {
     // },
   ],
   addons: [
-    '@storybook/addon-links',
     '@storybook/addon-themes',
     '@storybook/addon-essentials',
     '@storybook/addon-interactions',

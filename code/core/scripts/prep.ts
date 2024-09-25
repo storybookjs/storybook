@@ -191,6 +191,14 @@ async function run() {
                 '@storybook/core': join(cwd, 'src'),
                 react: dirname(require.resolve('react/package.json')),
                 'react-dom': dirname(require.resolve('react-dom/package.json')),
+                'react-dom/client': join(
+                  dirname(require.resolve('react-dom/package.json')),
+                  'client'
+                ),
+              },
+              define: {
+                // This should set react in prod mode for the manager
+                'process.env.NODE_ENV': JSON.stringify('production'),
               },
               external: [],
             })

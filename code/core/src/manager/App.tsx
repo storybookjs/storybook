@@ -12,7 +12,7 @@ import { useLayout } from './components/layout/LayoutProvider';
 import Panel from './container/Panel';
 import Preview from './container/Preview';
 import Sidebar from './container/Sidebar';
-import { convertThemeV1intoV2, isThemeDifferentFromDefaultTheme } from './theme-v1-to-v2';
+import { checkThemeVersion, convertThemeV1intoV2 } from './utils/theme-v1-to-v2';
 
 type Props = {
   managerLayoutState: ComponentProps<typeof Layout>['managerLayoutState'];
@@ -27,20 +27,20 @@ export const App = ({ managerLayoutState, setManagerLayoutState, pages, theme, h
 
   // This is to check if we are using the old theme format.
   // TODO: Remove this check when we stop supporting the old theming format.
-  const isUsingLightThemeV1 = isThemeDifferentFromDefaultTheme('light', theme);
-  const isUsingDarkThemeV1 = isThemeDifferentFromDefaultTheme('dark', theme);
-  const isThemeV1 = isUsingLightThemeV1 || isUsingDarkThemeV1;
+  const themeVersion = checkThemeVersion(theme);
 
-  if (isThemeV1) {
+  if (themeVersion === 1) {
     deprecate('Use of deprecated theme format detected. Please migrate to the new format.');
   }
+
+  console.log('themeVersion', themeVersion);
 
   return (
     <>
       <Global styles={createGlobal} />
 
       {/* Convert theme v1 into CSS variables */}
-      {isThemeV1 && <Global styles={convertThemeV1intoV2(theme)} />}
+      {themeVersion === 1 && <Global styles={convertThemeV1intoV2(theme)} />}
 
       <Layout
         hasTab={hasTab}

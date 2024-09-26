@@ -78,7 +78,6 @@ const Main: FC<{ provider: Provider }> = ({ provider }) => {
                     }}
                     hasTab={!!api.getQueryParam('tab')}
                     setManagerLayoutState={setManagerLayoutState}
-                    theme={state.theme}
                   />
                 </LayoutProvider>
               </ThemeProvider>

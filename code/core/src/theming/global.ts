@@ -1,16 +1,17 @@
+import { deprecate } from '@storybook/core/client-logger';
+
 import memoize from 'memoizerific';
 
-import type { Background, Color, Typography } from './types';
+import { checkThemeVersion } from '../manager/utils/theme-v1-to-v2';
+import type { Typography } from './types';
 
 type Value = string | number;
-interface Return {
-  [key: string]: {
-    [key: string]: Value;
-  };
+interface StyleObject {
+  [key: string]: Value | StyleObject;
 }
 
 export const createReset = memoize(1)(
-  ({ typography }: { typography: Typography }): Return => ({
+  ({ typography }: { typography: Typography }): StyleObject => ({
     body: {
       fontFamily: typography.fonts.base,
       fontSize: typography.size.s3,
@@ -85,28 +86,38 @@ export const createReset = memoize(1)(
   })
 );
 
-export const createGlobal = memoize(1)(({
-  color,
-  background,
-  typography,
-}: {
-  color: Color;
-  background: Background;
-  typography: Typography;
-}): Return => {
-  const resetStyles = createReset({ typography });
+export const createGlobal = memoize(1)((theme): StyleObject => {
+  const themeVersion = checkThemeVersion(theme);
+  const resetStyles: StyleObject = createReset({ typography: theme.typography });
+
+  if (themeVersion === 1) {
+    deprecate('Use of deprecated theme format detected. Please migrate to the new format.');
+  }
+
   return {
     ...resetStyles,
+
+    '@layer storybook': {
+      ':root': {
+        '--sb-accent': themeVersion === 1 ? theme.color.secondary : '#029cfd',
+      },
+      '@media (prefers-color-scheme: dark)': {
+        ':root': {
+          '--sb-accent': themeVersion === 1 ? theme.color.secondary : '#150a8d',
+        },
+      },
+    },
+
     body: {
-      ...resetStyles.body,
-      color: color.defaultText,
-      background: background.app,
+      ...(resetStyles.body as StyleObject),
+      color: theme.color.defaultText,
+      background: theme.background.app,
       overflow: 'hidden',
     },
 
     hr: {
-      ...resetStyles.hr,
-      borderTop: `1px solid ${color.border}`,
+      ...(resetStyles.hr as StyleObject),
+      borderTop: `1px solid ${theme.color.border}`,
     },
   };
 });

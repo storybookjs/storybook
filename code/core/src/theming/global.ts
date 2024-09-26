@@ -1,9 +1,10 @@
+import { convert, css, themes } from '@storybook/core/theming';
+
 import { deprecate } from '@storybook/core/client-logger';
 
 import memoize from 'memoizerific';
 
-import { checkThemeVersion } from '../manager/utils/theme-v1-to-v2';
-import type { Typography } from './types';
+import type { ThemeVars, Typography } from './types';
 
 type Value = string | number;
 interface StyleObject {
@@ -85,6 +86,19 @@ export const createReset = memoize(1)(
     },
   })
 );
+
+const checkThemeVersion = (theme: ThemeVars): 1 | 2 => {
+  if (!theme || theme.base === 'dark') {
+    return 1;
+  }
+
+  const defaultTheme = themes[theme.base];
+  const defaultThemeConverted = convert(defaultTheme);
+
+  // We are checking if the theme is different from the default theme
+  // If it is, this mean that the user is using the V1 theme
+  return JSON.stringify(theme) !== JSON.stringify(defaultThemeConverted) ? 1 : 2;
+};
 
 export const createGlobal = memoize(1)((theme): StyleObject => {
   const themeVersion = checkThemeVersion(theme);

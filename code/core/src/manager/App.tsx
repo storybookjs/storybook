@@ -33,8 +33,6 @@ export const App = ({ managerLayoutState, setManagerLayoutState, pages, theme, h
     deprecate('Use of deprecated theme format detected. Please migrate to the new format.');
   }
 
-  console.log('themeVersion', themeVersion);
-
   return (
     <>
       <Global styles={createGlobal} />

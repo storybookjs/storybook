@@ -1,22 +1,18 @@
 import { css, themes } from '@storybook/core/theming';
 import type { ThemeVars } from '@storybook/core/theming';
 
-export const isThemeDifferentFromDefaultTheme = (base: 'light' | 'dark', theme: ThemeVars) => {
-  if (!theme) {
-    return false;
+export const checkThemeVersion = (theme: ThemeVars): 1 | 2 => {
+  if (!theme || theme.base === 'dark') {
+    return 1;
   }
 
-  const defaultTheme = themes[base];
+  const defaultTheme = themes[theme.base];
   const themeKeys = Object.keys(theme) as (keyof ThemeVars)[];
+  const isThemeDifferentFromDefaultTheme = themeKeys.some(
+    (key) => theme[key] !== defaultTheme[key]
+  );
 
-  return themeKeys.some((key) => theme[key] !== defaultTheme[key]);
-};
-
-export const checkThemeVersion = (theme: ThemeVars): 1 | 2 => {
-  const isUsingLightThemeV1 = isThemeDifferentFromDefaultTheme('light', theme);
-  const isUsingDarkThemeV1 = isThemeDifferentFromDefaultTheme('dark', theme);
-
-  return isUsingLightThemeV1 || isUsingDarkThemeV1 ? 1 : 2;
+  return isThemeDifferentFromDefaultTheme ? 1 : 2;
 };
 
 export const convertThemeV1intoV2 = (theme: ThemeVars) => {

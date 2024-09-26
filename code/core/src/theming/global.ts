@@ -1,4 +1,4 @@
-import { convert, css, themes } from '@storybook/core/theming';
+import { convert, themes } from '@storybook/core/theming';
 
 import { deprecate } from '@storybook/core/client-logger';
 

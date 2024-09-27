@@ -76,7 +76,6 @@
     "@testing-library/vue": "^8.0.0",
     "@types/prettier": "^3.0.0",
     "@vitejs/plugin-vue": "^4.4.0",
-    "lodash": "^4.17.21",
     "typescript": "^5.3.2",
     "vue": "^3.2.47",
     "vue-tsc": "latest"

@@ -12,6 +12,7 @@ test-results
 /repros
 /sandbox
 /bench
+/code/bench
 .verdaccio-cache
 .next
 /.npmrc

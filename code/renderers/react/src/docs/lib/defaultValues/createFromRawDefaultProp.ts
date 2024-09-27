@@ -6,9 +6,7 @@ import {
   isTooLongForDefaultValueSummary,
 } from 'storybook/internal/docs-tools';
 
-import isFunction from 'lodash/isFunction.js';
-import isPlainObject from 'lodash/isPlainObject.js';
-import isString from 'lodash/isString.js';
+import { isFunction, isPlainObject, isString } from 'es-toolkit/compat';
 import reactElementToJSXString from 'react-element-to-jsx-string';
 
 import { ELEMENT_CAPTION, FUNCTION_CAPTION, OBJECT_CAPTION } from '../captions';

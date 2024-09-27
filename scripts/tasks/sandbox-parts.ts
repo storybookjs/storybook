@@ -1,5 +1,6 @@
 // This file requires many imports from `../code`, which requires both an install and bootstrap of
 // the repo to work properly. So we load it async in the task runner *after* those steps.
+import { isFunction } from 'es-toolkit';
 import {
   copy,
   ensureDir,
@@ -12,7 +13,6 @@ import {
   writeJson,
 } from 'fs-extra';
 import JSON5 from 'json5';
-import { isFunction } from 'lodash';
 import { createRequire } from 'module';
 import { join, relative, resolve, sep } from 'path';
 import slash from 'slash';
@@ -717,7 +717,7 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
     addRefs(mainConfig);
   }
 
-  const templateConfig = isFunction(template.modifications?.mainConfig)
+  const templateConfig: any = isFunction(template.modifications?.mainConfig)
     ? template.modifications?.mainConfig(mainConfig)
     : template.modifications?.mainConfig || {};
   const configToAdd = {

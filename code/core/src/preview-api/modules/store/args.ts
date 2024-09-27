@@ -9,8 +9,7 @@ import type {
 
 import { once } from '@storybook/core/client-logger';
 
-import { dequal as deepEqual } from 'dequal';
-import isPlainObject from 'lodash/isPlainObject.js';
+import { isEqual as deepEqual, isPlainObject } from 'es-toolkit';
 import { dedent } from 'ts-dedent';
 
 const INCOMPATIBLE = Symbol('incompatible');

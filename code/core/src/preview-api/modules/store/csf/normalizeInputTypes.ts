@@ -7,7 +7,7 @@ import type {
   StrictInputType,
 } from '@storybook/core/types';
 
-import mapValues from 'lodash/mapValues.js';
+import { mapValues } from 'es-toolkit';
 
 const normalizeType = (type: InputType['type']): StrictInputType['type'] => {
   return typeof type === 'string' ? { name: type } : type;

@@ -1529,7 +1529,6 @@ __metadata:
     "@types/fs-extra": "npm:^11.0.4"
     "@types/http-server": "npm:^0.12.4"
     "@types/jest": "npm:^29.5.12"
-    "@types/lodash": "npm:^4.17.6"
     "@types/node": "npm:^22.0.0"
     "@types/prettier": "npm:^3.0.0"
     "@types/pretty-hrtime": "npm:^1.0.3"
@@ -1559,6 +1558,7 @@ __metadata:
     detect-port: "npm:^1.6.1"
     ejs: "npm:^3.1.10"
     ejs-lint: "npm:^2.0.0"
+    es-toolkit: "npm:^1.21.0"
     esbuild: "npm:^0.23.0"
     esbuild-plugin-alias: "npm:^0.2.1"
     eslint: "npm:^8.57.0"
@@ -1588,7 +1588,6 @@ __metadata:
     json5: "npm:^2.2.3"
     junit-xml: "npm:^1.2.0"
     lint-staged: "npm:^15.2.7"
-    lodash: "npm:^4.17.21"
     memoizerific: "npm:^1.11.3"
     node-gyp: "npm:^9.3.1"
     nx: "npm:18.0.6"
@@ -1973,7 +1972,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/lodash@npm:^4.14.175, @types/lodash@npm:^4.17.6":
+"@types/lodash@npm:^4.14.175":
   version: 4.17.6
   resolution: "@types/lodash@npm:4.17.6"
   checksum: 10c0/3b197ac47af9443fee8c4719c5ffde527d7febc018b827d44a6bc2523c728c7adfdd25196fdcfe3eed827993e0c41a917d0da6e78938b18b2be94164789f1117
@@ -5269,6 +5268,13 @@ __metadata:
     is-date-object: "npm:^1.0.1"
     is-symbol: "npm:^1.0.2"
   checksum: 10c0/0886572b8dc075cb10e50c0af62a03d03a68e1e69c388bd4f10c0649ee41b1fbb24840a1b7e590b393011b5cdbe0144b776da316762653685432df37d6de60f1
+  languageName: node
+  linkType: hard
+
+"es-toolkit@npm:^1.21.0":
+  version: 1.21.0
+  resolution: "es-toolkit@npm:1.21.0"
+  checksum: 10c0/894a63f8ce5b2e5c1be242c8e8eace6364ea1212d01cdf89594d2cc582c5e1574114ad2ee7022ad5206561c4d5170511d83b38853257249860e56178768854ea
   languageName: node
   linkType: hard
 

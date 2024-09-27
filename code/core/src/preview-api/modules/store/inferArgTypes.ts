@@ -2,7 +2,7 @@ import type { ArgTypesEnhancer, Renderer, SBType } from '@storybook/core/types';
 
 import { logger } from '@storybook/core/client-logger';
 
-import mapValues from 'lodash/mapValues.js';
+import { mapValues } from 'es-toolkit';
 import { dedent } from 'ts-dedent';
 
 import { combineParameters } from './parameters';

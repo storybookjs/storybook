@@ -154,6 +154,8 @@ jobs:
             cd code
             yarn local-registry --publish
       - report-workflow-on-failure
+      - store_artifacts: 
+          path: code/bench/esbuild-metafiles
       - save_cache:
           name: Save Yarn cache
           key: build-yarn-2-cache-v4--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
@@ -164,6 +166,7 @@ jobs:
           paths:
             - code/node_modules
             - scripts/node_modules
+            - code/bench
             - code/examples
             - code/node_modules
             - code/addons

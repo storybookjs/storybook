@@ -6,8 +6,8 @@ import { normalizeStoriesEntry } from '@storybook/core/common';
 
 import { STORY_INDEX_INVALIDATED } from '@storybook/core/core-events';
 
+import { debounce } from 'es-toolkit/compat';
 import type { Request, Response, Router } from 'express';
-import debounce from 'lodash/debounce.js';
 import Watchpack from 'watchpack';
 
 import { csfIndexer } from '../presets/common-preset';
@@ -17,7 +17,7 @@ import type { ServerChannel } from './get-server-channel';
 import { DEBOUNCE, useStoriesJson } from './stories-json';
 
 vi.mock('watchpack');
-vi.mock('lodash/debounce');
+vi.mock('es-toolkit/compat');
 vi.mock('@storybook/core/node-logger');
 
 const workingDir = join(__dirname, '__mockdata__');
@@ -471,8 +471,7 @@ describe('useStoriesJson', () => {
 
     it('debounces invalidation events', async () => {
       vi.mocked(debounce).mockImplementation(
-        // @ts-expect-error it doesn't think default exists
-        (await vi.importActual<typeof import('lodash/debounce.js')>('lodash/debounce.js')).default
+        (await vi.importActual<typeof import('es-toolkit/compat')>('es-toolkit/compat')).debounce
       );
 
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;

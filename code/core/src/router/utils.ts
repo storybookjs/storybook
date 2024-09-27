@@ -1,7 +1,6 @@
 import { once } from '@storybook/core/client-logger';
 
-import { dequal as deepEqual } from 'dequal';
-import isPlainObject from 'lodash/isPlainObject.js';
+import { isEqual as deepEqual, isPlainObject } from 'es-toolkit';
 import memoize from 'memoizerific';
 import type { IStringifyOptions } from 'qs';
 import qs from 'qs';

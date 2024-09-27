@@ -1,5 +1,5 @@
 {
-  "name": "addon-test",
+  "name": "experimental-addon-test",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
   "targets": {

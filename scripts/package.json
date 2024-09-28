@@ -135,6 +135,7 @@
     "husky": "^4.3.7",
     "json5": "^2.2.3",
     "junit-xml": "^1.2.0",
+    "knip": "^5.30.1",
     "lint-staged": "^15.2.7",
     "memoizerific": "^1.11.3",
     "node-gyp": "^9.3.1",

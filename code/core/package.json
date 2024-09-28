@@ -1,6 +1,6 @@
 {
   "name": "@storybook/core",
-  "version": "8.4.0-alpha.1",
+  "version": "8.4.0-alpha.2",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -375,7 +375,6 @@
     "get-npm-tarball-url": "^2.0.3",
     "glob": "^10.0.0",
     "globby": "^14.0.1",
-    "handlebars": "^4.7.7",
     "jiti": "^1.21.6",
     "js-yaml": "^4.1.0",
     "lazy-universal-dotenv": "^4.0.0",
@@ -418,6 +417,14 @@
     "unique-string": "^3.0.0",
     "use-resize-observer": "^9.1.0",
     "watchpack": "^2.2.0"
+  },
+  "peerDependencies": {
+    "prettier": "^2 || ^3"
+  },
+  "peerDependenciesMeta": {
+    "prettier": {
+      "optional": true
+    }
   },
   "publishConfig": {
     "access": "public"

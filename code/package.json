@@ -1,6 +1,6 @@
 {
   "name": "@storybook/root",
-  "version": "8.4.0-alpha.1",
+  "version": "8.4.0-alpha.2",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -36,6 +36,7 @@
     "generate-sandboxes": "yarn --cwd ../scripts generate-sandboxes",
     "github-release": "github-release-from-changelog",
     "i": "yarn --cwd .. i",
+    "knip": "VITE_CJS_IGNORE_WARNING=1 ../scripts/node_modules/.bin/knip --config ../scripts/knip.config.ts",
     "lint": "yarn lint:js && yarn lint:md",
     "lint:ejs": "ejslint **/*.ejs",
     "lint:js": "yarn lint:js:cmd .  --quiet",

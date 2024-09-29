@@ -49,9 +49,7 @@ export const ActionButton = styled.button<{ disabled: boolean }>(
 
     '@media (forced-colors: active)': {
       '&:focus': {
-        outlineColor: 'transparent',
-        outlineWidth: '1px',
-        outlineStyle: 'solid',
+        outline: '1px solid highlight',
       },
     },
   }),

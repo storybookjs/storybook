@@ -45,6 +45,13 @@ const Label = styled.label(({ theme }) => ({
       outline: 'none',
       boxShadow: `${theme.color.secondary} 0 0 0 1px inset !important`,
     },
+    '@media (forced-colors: active)': {
+      '&:focus': {
+        outlineColor: 'transparent',
+        outlineWidth: '1px',
+        outlineStyle: 'solid',
+      },
+    },
   },
 
   span: {
@@ -87,6 +94,11 @@ const Label = styled.label(({ theme }) => ({
         : `${theme.appBorderColor} 0 0 0 1px`,
     color: theme.color.defaultText,
     padding: '7px 15px',
+  },
+  '@media (forced-colors: active)': {
+    'input:checked ~ span:last-of-type, input:not(:checked) ~ span:first-of-type': {
+      textDecoration: 'underline',
+    },
   },
 }));
 

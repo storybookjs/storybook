@@ -47,9 +47,7 @@ const Label = styled.label(({ theme }) => ({
     },
     '@media (forced-colors: active)': {
       '&:focus': {
-        outlineColor: 'transparent',
-        outlineWidth: '1px',
-        outlineStyle: 'solid',
+        outline: '1px solid highlight',
       },
     },
   },

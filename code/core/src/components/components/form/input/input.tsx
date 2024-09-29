@@ -63,7 +63,7 @@ const styles = (({ theme }: { theme: StorybookTheme }) => ({
   },
   '@media (forced-colors: active)': {
     '&:focus': {
-      border: '1px solid transparent',
+      outline: '1px solid highlight',
     },
   },
   '&[disabled]': {

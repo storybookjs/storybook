@@ -46,6 +46,14 @@ export const ActionButton = styled.button<{ disabled: boolean }>(
       boxShadow: `${theme.color.secondary} 0 -3px 0 0 inset`,
       outline: '0 none',
     },
+
+    '@media (forced-colors: active)': {
+      '&:focus': {
+        outlineColor: 'transparent',
+        outlineWidth: '1px',
+        outlineStyle: 'solid',
+      },
+    },
   }),
   ({ disabled }) =>
     disabled && {

@@ -61,6 +61,11 @@ const styles = (({ theme }: { theme: StorybookTheme }) => ({
     boxShadow: `${theme.color.secondary} 0 0 0 1px inset`,
     outline: 'none',
   },
+  '@media (forced-colors: active)': {
+    '&:focus': {
+      border: '1px solid transparent',
+    },
+  },
   '&[disabled]': {
     cursor: 'not-allowed',
     opacity: 0.5,

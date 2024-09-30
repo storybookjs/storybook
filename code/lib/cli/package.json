@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "8.4.0-alpha.0",
+  "version": "8.4.0-alpha.2",
   "description": "Storybook's CLI - install, dev, build, upgrade, and more",
   "keywords": [
     "cli",
@@ -321,6 +321,14 @@
   },
   "devDependencies": {
     "typescript": "^5.3.2"
+  },
+  "peerDependencies": {
+    "prettier": "^2 || ^3"
+  },
+  "peerDependenciesMeta": {
+    "prettier": {
+      "optional": true
+    }
   },
   "publishConfig": {
     "access": "public"

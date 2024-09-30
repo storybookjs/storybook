@@ -6,7 +6,7 @@ import { styled } from 'storybook/internal/theming';
 
 import { ChevronSmallDownIcon, ChevronSmallUpIcon } from '@storybook/icons';
 
-import uniq from 'lodash/uniq.js';
+import { uniq } from 'es-toolkit/compat';
 import memoize from 'memoizerific';
 
 import type { PropSummaryValue } from './types';

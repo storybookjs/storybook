@@ -1,6 +1,6 @@
 {
   "name": "@storybook/builder-webpack5",
-  "version": "8.4.0-alpha.0",
+  "version": "8.4.0-alpha.2",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -41,7 +41,7 @@
       "node": "./dist/loaders/export-order-loader.js",
       "require": "./dist/loaders/export-order-loader.js"
     },
-    "./templates/virtualModuleModernEntry.js.handlebars": "./templates/virtualModuleModernEntry.js.handlebars",
+    "./templates/virtualModuleModernEntry.js": "./templates/virtualModuleModernEntry.js",
     "./templates/preview.ejs": "./templates/preview.ejs",
     "./templates/virtualModuleEntry.template.js": "./templates/virtualModuleEntry.template.js",
     "./templates/virtualModuleStory.template.js": "./templates/virtualModuleStory.template.js",

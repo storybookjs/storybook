@@ -154,6 +154,8 @@ jobs:
             cd code
             yarn local-registry --publish
       - report-workflow-on-failure
+      - store_artifacts: 
+          path: code/bench/esbuild-metafiles
       - save_cache:
           name: Save Yarn cache
           key: build-yarn-2-cache-v4--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
@@ -164,6 +166,7 @@ jobs:
           paths:
             - code/node_modules
             - scripts/node_modules
+            - code/bench
             - code/examples
             - code/node_modules
             - code/addons
@@ -190,6 +193,22 @@ jobs:
           command: |
             cd code
             yarn lint
+      - report-workflow-on-failure
+      - cancel-workflow-on-failure
+  knip:
+    executor:
+      class: large
+      name: sb_node_22_classic
+    steps:
+      - git-shallow-clone/checkout_advanced:
+          clone_options: "--depth 1 --verbose"
+      - attach_workspace:
+          at: .
+      - run:
+          name: Knip
+          command: |
+            cd code
+            yarn knip --no-exit-code
       - report-workflow-on-failure
       - cancel-workflow-on-failure
   check:
@@ -685,6 +704,9 @@ workflows:
       - lint:
           requires:
             - build
+      - knip:
+          requires:
+            - build
       - check:
           requires:
             - build
@@ -749,6 +771,9 @@ workflows:
       - pretty-docs
       - build
       - lint:
+          requires:
+            - build
+      - knip:
           requires:
             - build
       - check:
@@ -816,6 +841,9 @@ workflows:
       - pretty-docs
       - build
       - lint:
+          requires:
+            - build
+      - knip:
           requires:
             - build
       - check:

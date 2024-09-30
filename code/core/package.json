@@ -1,6 +1,6 @@
 {
   "name": "@storybook/core",
-  "version": "8.4.0-alpha.0",
+  "version": "8.4.0-alpha.2",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -323,7 +323,6 @@
     "@types/ejs": "^3.1.1",
     "@types/find-cache-dir": "^5.0.0",
     "@types/js-yaml": "^4.0.5",
-    "@types/lodash": "^4.14.167",
     "@types/node": "^22.0.0",
     "@types/npmlog": "^7.0.0",
     "@types/picomatch": "^2.3.0",
@@ -361,6 +360,7 @@
     "diff": "^5.2.0",
     "downshift": "^9.0.4",
     "ejs": "^3.1.10",
+    "es-toolkit": "^1.21.0",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0",
     "esbuild-plugin-alias": "^0.2.1",
     "execa": "^8.0.1",
@@ -375,11 +375,10 @@
     "get-npm-tarball-url": "^2.0.3",
     "glob": "^10.0.0",
     "globby": "^14.0.1",
-    "handlebars": "^4.7.7",
+    "jiti": "^1.21.6",
     "js-yaml": "^4.1.0",
     "lazy-universal-dotenv": "^4.0.0",
     "leven": "^4.0.0",
-    "lodash": "^4.17.21",
     "markdown-to-jsx": "^7.4.5",
     "memfs": "^4.11.1",
     "memoizerific": "^1.11.3",
@@ -418,6 +417,14 @@
     "unique-string": "^3.0.0",
     "use-resize-observer": "^9.1.0",
     "watchpack": "^2.2.0"
+  },
+  "peerDependencies": {
+    "prettier": "^2 || ^3"
+  },
+  "peerDependenciesMeta": {
+    "prettier": {
+      "optional": true
+    }
   },
   "publishConfig": {
     "access": "public"

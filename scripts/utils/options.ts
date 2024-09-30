@@ -2,7 +2,7 @@
 import chalk from 'chalk';
 import { type Command, type Option as CommanderOption, program } from 'commander';
 // eslint-disable-next-line import/extensions
-import kebabCase from 'lodash/kebabCase.js';
+import { kebabCase } from 'es-toolkit/compat';
 import prompts from 'prompts';
 import type { Falsy, PrevCaller, PromptObject, PromptType } from 'prompts';
 import { dedent } from 'ts-dedent';

@@ -81,7 +81,6 @@ describe('configureMain', () => {
       language: SupportedLanguage.JAVASCRIPT,
       prefixes: [],
       addons: [
-        "%%path.dirname(require.resolve(path.join('@storybook/addon-links', 'package.json')))%%",
         "%%path.dirname(require.resolve(path.join('@storybook/addon-essentials', 'package.json')))%%",
         "%%path.dirname(require.resolve(path.join('@storybook/preset-create-react-app', 'package.json')))%%",
         "%%path.dirname(require.resolve(path.join('@storybook/addon-interactions', 'package.json')))%%",
@@ -103,7 +102,6 @@ describe('configureMain', () => {
       const config = {
         stories: ['../stories/**/*.mdx', '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
         addons: [
-          path.dirname(require.resolve(path.join('@storybook/addon-links', 'package.json'))),
           path.dirname(require.resolve(path.join('@storybook/addon-essentials', 'package.json'))),
           path.dirname(require.resolve(path.join('@storybook/preset-create-react-app', 'package.json'))),
           path.dirname(require.resolve(path.join('@storybook/addon-interactions', 'package.json'))),

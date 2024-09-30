@@ -1,10 +1,9 @@
 {
   "name": "@storybook/addon-links",
-  "version": "8.4.0-alpha.0",
+  "version": "8.4.0-alpha.2",
   "description": "Link stories together to build demos and prototypes with your UI components",
   "keywords": [
-    "addon",
-    "storybook",
+    "storybook-addons",
     "organize"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/links",

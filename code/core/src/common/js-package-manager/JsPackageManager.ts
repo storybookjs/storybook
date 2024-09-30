@@ -60,7 +60,7 @@ export abstract class JsPackageManager {
   /** Get the INSTALLED version of a package from the package.json file */
   async getPackageVersion(packageName: string, basePath = this.cwd): Promise<string | null> {
     const packageJSON = await this.getPackageJSON(packageName, basePath);
-    return packageJSON ? packageJSON.version ?? null : null;
+    return packageJSON ? (packageJSON.version ?? null) : null;
   }
 
   constructor(options?: JsPackageManagerOptions) {
@@ -418,7 +418,7 @@ export abstract class JsPackageManager {
       .find((version) => satisfies(version, constraint));
     invariant(
       latestVersionSatisfyingTheConstraint != null,
-      'No version satisfying the constraint.'
+      `No version satisfying the constraint: ${packageName}${constraint}`
     );
     return latestVersionSatisfyingTheConstraint;
   }

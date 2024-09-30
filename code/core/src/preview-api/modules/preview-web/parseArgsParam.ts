@@ -2,7 +2,7 @@ import type { Args } from '@storybook/core/types';
 
 import { once } from '@storybook/core/client-logger';
 
-import isPlainObject from 'lodash/isPlainObject.js';
+import { isPlainObject } from 'es-toolkit';
 import qs from 'qs';
 import { dedent } from 'ts-dedent';
 

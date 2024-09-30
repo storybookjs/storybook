@@ -1,7 +1,7 @@
 import { setOutput } from '@actions/core';
 import chalk from 'chalk';
 import { program } from 'commander';
-import { intersection } from 'lodash';
+import { intersection } from 'es-toolkit';
 import { z } from 'zod';
 
 import { esMain } from '../utils/esmain';

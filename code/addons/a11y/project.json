@@ -1,5 +1,5 @@
 {
-  "name": "a11y",
+  "name": "addon-a11y",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
   "targets": {

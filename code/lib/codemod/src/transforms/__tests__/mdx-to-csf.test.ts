@@ -7,7 +7,7 @@ import { dedent } from 'ts-dedent';
 import jscodeshift, { nameToValidExport } from '../mdx-to-csf';
 
 expect.addSnapshotSerializer({
-  print: (val: any) => (typeof val === 'string' ? val : JSON.stringify(val, null, 2) ?? ''),
+  print: (val: any) => (typeof val === 'string' ? val : (JSON.stringify(val, null, 2) ?? '')),
   test: () => true,
 });
 

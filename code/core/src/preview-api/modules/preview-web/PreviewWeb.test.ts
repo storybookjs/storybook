@@ -31,7 +31,7 @@ import {
   UPDATE_STORY_ARGS,
 } from '@storybook/core/core-events';
 
-import merge from 'lodash/merge.js';
+import { merge, toMerged } from 'es-toolkit';
 
 import { addons } from '../addons';
 import type { StoryStore } from '../store';
@@ -308,7 +308,7 @@ describe('PreviewWeb', () => {
         expect(mockChannel.emit).toHaveBeenCalledWith(STORY_MISSING, 'component-one--missing');
 
         mockChannel.emit.mockClear();
-        const newComponentOneExports = merge({}, componentOneExports, {
+        const newComponentOneExports = toMerged(componentOneExports, {
           d: { args: { foo: 'd' }, play: vi.fn() },
         });
         const newImportFn = vi.fn(async (path) => {
@@ -362,7 +362,7 @@ describe('PreviewWeb', () => {
           });
           await waitForSetCurrentStory();
 
-          const newComponentOneExports = merge({}, componentOneExports, {
+          const newComponentOneExports = toMerged(componentOneExports, {
             d: { args: { foo: 'd' }, play: vi.fn() },
           });
           const newImportFn = vi.fn(async (path) => {
@@ -2927,7 +2927,7 @@ describe('PreviewWeb', () => {
     });
 
     describe('when the current story changes', () => {
-      const newComponentOneExports = merge({}, componentOneExports, {
+      const newComponentOneExports = toMerged(componentOneExports, {
         a: { args: { foo: 'edited' } },
       });
       const newImportFn = vi.fn(async (path) => {
@@ -3282,7 +3282,7 @@ describe('PreviewWeb', () => {
       afterEach(() => {
         vi.useRealTimers();
       });
-      const newComponentOneExports = merge({}, componentOneExports, {
+      const newComponentOneExports = toMerged(componentOneExports, {
         a: { args: { bar: 'edited' }, argTypes: { bar: { type: { name: 'string' } } } },
       });
       const newImportFn = vi.fn(async (path) => {

@@ -17,8 +17,8 @@ import { NxProjectDetectedError } from 'storybook/internal/server-errors';
 import { telemetry } from 'storybook/internal/telemetry';
 
 import boxen from 'boxen';
-import chalk from 'chalk';
 import findUp from 'find-up';
+import picocolors from 'picocolors';
 import prompts from 'prompts';
 import { lt, prerelease } from 'semver';
 import { dedent } from 'ts-dedent';
@@ -185,7 +185,7 @@ const installStorybook = async <Project extends ProjectType>(
     return await runGenerator();
   } catch (err: any) {
     if (err?.message !== 'Canceled by the user' && err?.stack) {
-      logger.error(`\n     ${chalk.red(err.stack)}`);
+      logger.error(`\n     ${picocolors.red(err.stack)}`);
     }
     throw new HandledError(err);
   }
@@ -250,15 +250,15 @@ export async function doInitiate(options: CommandOptions): Promise<
   const borderColor = isOutdated ? '#FC521F' : '#F1618C';
 
   const messages = {
-    welcome: `Adding Storybook version ${chalk.bold(currentVersion)} to your project..`,
-    notLatest: chalk.red(dedent`
-      This version is behind the latest release, which is: ${chalk.bold(latestVersion)}!
+    welcome: `Adding Storybook version ${picocolors.bold(currentVersion)} to your project..`,
+    notLatest: picocolors.red(dedent`
+      This version is behind the latest release, which is: ${picocolors.bold(latestVersion)}!
       You likely ran the init command through npx, which can use a locally cached version, to get the latest please run:
-      ${chalk.bold('npx storybook@latest init')}
+      ${picocolors.bold('npx storybook@latest init')}
       
       You may want to CTRL+C to stop, and run with the latest version instead.
     `),
-    prelease: chalk.yellow('This is a pre-release version.'),
+    prelease: picocolors.yellow('This is a pre-release version.'),
   };
 
   logger.log(
@@ -348,22 +348,22 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   if (projectType === ProjectType.REACT_NATIVE) {
     logger.log(dedent`
-      ${chalk.yellow('NOTE: installation is not 100% automated.')}
+      ${picocolors.yellow('NOTE: installation is not 100% automated.')}
 
       To run Storybook, you will need to:
 
       1. Replace the contents of your app entry with the following
       
-      ${chalk.inverse(' ' + "export {default} from './.storybook';" + ' ')}
+      ${picocolors.inverse(' ' + "export {default} from './.storybook';" + ' ')}
       
       2. Enable transformer.unstable_allowRequireContext in your metro config
       
       For a more detailed guide go to:
-      ${chalk.cyan('https://github.com/storybookjs/react-native#existing-project')}
+      ${picocolors.cyan('https://github.com/storybookjs/react-native#existing-project')}
       
       Then to run your Storybook, type:
 
-      ${chalk.inverse(' ' + packageManager.getRunCommand('start') + ' ')}
+      ${picocolors.inverse(' ' + packageManager.getRunCommand('start') + ' ')}
 
     `);
 
@@ -375,7 +375,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   if (foundGitIgnoreFile && foundGitIgnoreFile.includes(rootDirectory)) {
     const contents = await readFile(foundGitIgnoreFile, 'utf-8');
     if (!contents.includes('*storybook.log')) {
-      await appendFile(foundGitIgnoreFile, '\n*storybook.log');
+      await appendFile(foundGitIgnoreFile, '\n*storybook.log\n');
     }
   }
 
@@ -388,12 +388,14 @@ export async function doInitiate(options: CommandOptions): Promise<
     boxen(
       dedent`
           Storybook was successfully installed in your project! 🎉
-          To run Storybook manually, run ${chalk.yellow(
-            chalk.bold(storybookCommand)
+          To run Storybook manually, run ${picocolors.yellow(
+            picocolors.bold(storybookCommand)
           )}. CTRL+C to stop.
           
-          Wanna know more about Storybook? Check out ${chalk.cyan('https://storybook.js.org/')}
-          Having trouble or want to chat? Join us at ${chalk.cyan('https://discord.gg/storybook/')}
+          Wanna know more about Storybook? Check out ${picocolors.cyan('https://storybook.js.org/')}
+          Having trouble or want to chat? Join us at ${picocolors.cyan(
+            'https://discord.gg/storybook/'
+          )}
         `,
       { borderStyle: 'round', padding: 1, borderColor: '#F1618C' }
     )

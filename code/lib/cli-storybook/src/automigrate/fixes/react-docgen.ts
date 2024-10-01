@@ -1,4 +1,4 @@
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import { getRendererName, updateMainConfig } from '../helpers/mainConfigFile';
@@ -47,25 +47,25 @@ export const reactDocgen: Fix<Options> = {
     `;
     } else {
       return dedent`
-      Since Storybook 8.0, ${chalk.cyan(
+      Since Storybook 8.0, ${picocolors.cyan(
         'react-docgen'
-      )} is now the default for generating component controls, replacing ${chalk.cyan(
+      )} is now the default for generating component controls, replacing ${picocolors.cyan(
         'react-docgen-typescript'
       )}. 
       This offers better performance and suits most cases. 
       However, for complex TypeScript types or specific type features, the generated controls might not be as precise.
       
       For more on this change, check the migration guide: 
-      ${chalk.yellow(
+      ${picocolors.yellow(
         'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#react-docgen-component-analysis-by-default'
       )}
       
       For known "react-docgen" limitations, see: 
-      ${chalk.yellow('https://github.com/storybookjs/storybook/issues/26606')}
+      ${picocolors.yellow('https://github.com/storybookjs/storybook/issues/26606')}
       
-      Press Y to revert to ${chalk.cyan('react-docgen-typescript')}, press N to use ${chalk.cyan(
-        'react-docgen'
-      )}
+      Press Y to revert to ${picocolors.cyan(
+        'react-docgen-typescript'
+      )}, press N to use ${picocolors.cyan('react-docgen')}
     `;
     }
   },

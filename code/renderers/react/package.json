@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react",
-  "version": "8.4.0-alpha.0",
+  "version": "8.4.0-alpha.2",
   "description": "Storybook React renderer",
   "keywords": [
     "storybook"
@@ -89,8 +89,8 @@
     "@types/semver": "^7.3.4",
     "@types/util-deprecate": "^1.0.0",
     "babel-plugin-react-docgen": "^4.2.1",
+    "es-toolkit": "^1.21.0",
     "expect-type": "^0.15.0",
-    "lodash": "^4.17.21",
     "require-from-string": "^2.0.2"
   },
   "peerDependencies": {

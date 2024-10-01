@@ -1,3 +1,6 @@
+import { existsSync } from 'node:fs';
+import { cp, mkdir, readdir } from 'node:fs/promises';
+import { rm } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
 
 import {
@@ -13,8 +16,7 @@ import { global } from '@storybook/global';
 
 import { logger } from '@storybook/core/node-logger';
 
-import chalk from 'chalk';
-import { copy, emptyDir, ensureDir } from 'fs-extra';
+import picocolors from 'picocolors';
 
 import { StoryIndexGenerator } from './utils/StoryIndexGenerator';
 import { buildOrThrow } from './utils/build-or-throw';
@@ -39,12 +41,28 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   options.outputDir = resolve(options.outputDir);
   options.configDir = resolve(options.configDir);
 
-  logger.info(`=> Cleaning outputDir: ${chalk.cyan(relative(process.cwd(), options.outputDir))}`);
+  logger.info(
+    `=> Cleaning outputDir: ${picocolors.cyan(relative(process.cwd(), options.outputDir))}`
+  );
   if (options.outputDir === '/') {
     throw new Error("Won't remove directory '/'. Check your outputDir!");
   }
-  await emptyDir(options.outputDir);
-  await ensureDir(options.outputDir);
+
+  try {
+    const outputDirFiles = await readdir(options.outputDir);
+    for (const file of outputDirFiles) {
+      await rm(file, { recursive: true, force: true });
+    }
+  } catch {
+    await mkdir(options.outputDir, { recursive: true });
+  }
+
+  if (!existsSync(options.outputDir)) {
+    await mkdir(options.outputDir, { recursive: true });
+  } else if ((await readdir(options.outputDir)).length > 0) {
+    await rm(options.outputDir, { recursive: true, force: true });
+    await mkdir(options.outputDir, { recursive: true });
+  }
 
   const config = await loadMainConfig(options);
   const { framework } = config;
@@ -127,7 +145,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     dirname(require.resolve('@storybook/core/package.json')),
     'assets/browser'
   );
-  effects.push(copy(coreServerPublicDir, options.outputDir));
+  effects.push(cp(coreServerPublicDir, options.outputDir, { recursive: true }));
 
   let initializedStoryIndexGenerator: Promise<StoryIndexGenerator | undefined> =
     Promise.resolve(undefined);

@@ -8,7 +8,7 @@ import { styled } from 'storybook/internal/theming';
 import { includeConditionalArg } from '@storybook/csf';
 import { DocumentIcon, UndoIcon } from '@storybook/icons';
 
-import pickBy from 'lodash/pickBy.js';
+import { pickBy } from 'es-toolkit/compat';
 import { transparentize } from 'polished';
 
 import { EmptyBlock } from '..';
@@ -346,7 +346,7 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
   const { rows, args, globals } = 'rows' in props && props;
   const groups = groupRows(
     pickBy(
-      rows,
+      rows || {},
       (row) => !row?.table?.disable && safeIncludeConditionalArg(row, args || {}, globals || {})
     ),
     sort

@@ -125,17 +125,35 @@ export class JsPackageManagerFactory {
 }
 
 function hasNPM(cwd?: string) {
-  const npmVersionCommand = spawnSync('npm', ['--version'], { cwd, shell: true });
+  const npmVersionCommand = spawnSync('npm', ['--version'], {
+    cwd,
+    shell: true,
+    env: {
+      COREPACK_ENABLE_STRICT: '0',
+    },
+  });
   return npmVersionCommand.status === 0;
 }
 
 function hasPNPM(cwd?: string) {
-  const pnpmVersionCommand = spawnSync('pnpm', ['--version'], { cwd, shell: true });
+  const pnpmVersionCommand = spawnSync('pnpm', ['--version'], {
+    cwd,
+    shell: true,
+    env: {
+      COREPACK_ENABLE_STRICT: '0',
+    },
+  });
   return pnpmVersionCommand.status === 0;
 }
 
 function getYarnVersion(cwd?: string): 1 | 2 | undefined {
-  const yarnVersionCommand = spawnSync('yarn', ['--version'], { cwd, shell: true });
+  const yarnVersionCommand = spawnSync('yarn', ['--version'], {
+    cwd,
+    shell: true,
+    env: {
+      COREPACK_ENABLE_STRICT: '0',
+    },
+  });
 
   if (yarnVersionCommand.status !== 0) {
     return undefined;

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/blocks",
-  "version": "8.4.0-alpha.0",
+  "version": "8.4.0-alpha.2",
   "description": "Storybook Doc Blocks",
   "keywords": [
     "storybook"
@@ -46,10 +46,9 @@
     "@storybook/csf": "^0.1.11",
     "@storybook/global": "^5.0.0",
     "@storybook/icons": "^1.2.10",
-    "@types/lodash": "^4.14.167",
     "color-convert": "^2.0.1",
     "dequal": "^2.0.2",
-    "lodash": "^4.17.21",
+    "es-toolkit": "^1.21.0",
     "markdown-to-jsx": "^7.4.5",
     "memoizerific": "^1.11.3",
     "polished": "^4.2.2",

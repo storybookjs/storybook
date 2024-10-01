@@ -3,12 +3,7 @@ export default {
   // Replace your-framework with the framework you are using (e.g., react-webpack5, vue3-vite)
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  addons: [
-    '@storybook/addon-links',
-    '@storybook/addon-essentials',
-    '@storybook/addon-interactions',
-    '@storybook/addon-a11y',
-  ],
+  addons: ['@storybook/addon-essentials', '@storybook/addon-interactions', '@storybook/addon-a11y'],
   build: {
     test: {
       disabledAddons: ['@storybook/addon-a11y'],
@@ -24,12 +19,7 @@ import type { StorybookConfig } from '@storybook/your-framework';
 const config: StorybookConfig = {
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  addons: [
-    '@storybook/addon-links',
-    '@storybook/addon-essentials',
-    '@storybook/addon-interactions',
-    '@storybook/addon-a11y',
-  ],
+  addons: ['@storybook/addon-essentials', '@storybook/addon-interactions', '@storybook/addon-a11y'],
   build: {
     test: {
       disabledAddons: ['@storybook/addon-a11y'],
@@ -39,4 +29,3 @@ const config: StorybookConfig = {
 
 export default config;
 ```
-

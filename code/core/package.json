@@ -1,6 +1,6 @@
 {
   "name": "@storybook/core",
-  "version": "8.4.0-alpha.0",
+  "version": "8.4.0-alpha.2",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -322,16 +322,13 @@
     "@types/diff": "^5.0.9",
     "@types/ejs": "^3.1.1",
     "@types/find-cache-dir": "^5.0.0",
-    "@types/fs-extra": "^11.0.1",
     "@types/js-yaml": "^4.0.5",
-    "@types/lodash": "^4.14.167",
     "@types/node": "^22.0.0",
     "@types/npmlog": "^7.0.0",
     "@types/picomatch": "^2.3.0",
     "@types/prettier": "^3.0.0",
     "@types/pretty-hrtime": "^1.0.0",
     "@types/prompts": "^2.0.9",
-    "@types/qs": "^6",
     "@types/react-syntax-highlighter": "11.0.5",
     "@types/react-transition-group": "^4",
     "@types/semver": "^7.5.8",
@@ -346,7 +343,6 @@
     "browser-dtector": "^3.4.0",
     "camelcase": "^8.0.0",
     "chai": "^4.4.1",
-    "chalk": "^5.3.0",
     "cli-table3": "^0.6.1",
     "commander": "^12.1.0",
     "comment-parser": "^1.4.1",
@@ -362,6 +358,7 @@
     "diff": "^5.2.0",
     "downshift": "^9.0.4",
     "ejs": "^3.1.10",
+    "es-toolkit": "^1.21.0",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0",
     "esbuild-plugin-alias": "^0.2.1",
     "execa": "^8.0.1",
@@ -372,28 +369,27 @@
     "find-cache-dir": "^5.0.0",
     "find-up": "^7.0.0",
     "flush-promises": "^1.0.2",
-    "fs-extra": "^11.1.0",
     "fuse.js": "^3.6.1",
     "get-npm-tarball-url": "^2.0.3",
     "glob": "^10.0.0",
     "globby": "^14.0.1",
-    "handlebars": "^4.7.7",
+    "jiti": "^1.21.6",
     "js-yaml": "^4.1.0",
     "lazy-universal-dotenv": "^4.0.0",
     "leven": "^4.0.0",
-    "lodash": "^4.17.21",
     "markdown-to-jsx": "^7.4.5",
     "memfs": "^4.11.1",
     "memoizerific": "^1.11.3",
     "nanoid": "^4.0.2",
     "npmlog": "^7.0.0",
     "open": "^8.4.0",
+    "picocolors": "^1.1.0",
     "picomatch": "^2.3.0",
+    "picoquery": "^1.4.0",
     "polished": "^4.2.2",
     "prettier": "^3.2.5",
     "pretty-hrtime": "^1.0.3",
     "prompts": "^2.4.0",
-    "qs": "^6.10.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-draggable": "^4.4.5",
@@ -420,6 +416,14 @@
     "unique-string": "^3.0.0",
     "use-resize-observer": "^9.1.0",
     "watchpack": "^2.2.0"
+  },
+  "peerDependencies": {
+    "prettier": "^2 || ^3"
+  },
+  "peerDependenciesMeta": {
+    "prettier": {
+      "optional": true
+    }
   },
   "publishConfig": {
     "access": "public"

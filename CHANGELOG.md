@@ -1,3 +1,26 @@
+## 8.3.4
+
+- Addon Test: Support story name as test description - [#29147](https://github.com/storybookjs/storybook/pull/29147), thanks @InfiniteXyy!
+- Addon-Interactions: Use ansi-to-html for colored test errors - [#29110](https://github.com/storybookjs/storybook/pull/29110), thanks @kasperpeulen!
+
+## 8.3.3
+
+- CLI: Show constraints in error when getting depndencies - [#29187](https://github.com/storybookjs/storybook/pull/29187), thanks @andrasczeh!
+- React-Vite: Downgrade react-docgen-typescript plugin - [#29184](https://github.com/storybookjs/storybook/pull/29184), thanks @shilman!
+- UI: Fix composed storybook TooltipLinkList bug where href isn't passed forward - [#29175](https://github.com/storybookjs/storybook/pull/29175), thanks @JSMike!
+
+## 8.3.2
+
+- CLI: Fix skip-install for stable latest releases - [#29133](https://github.com/storybookjs/storybook/pull/29133), thanks @valentinpalkovic!
+- Core: Do not add packageManager field to package.json during `storybook dev` - [#29152](https://github.com/storybookjs/storybook/pull/29152), thanks @valentinpalkovic!
+
+## 8.3.1
+
+- Angular: Fix sourceDecorator to apply excludeDecorators flag - [#29069](https://github.com/storybookjs/storybook/pull/29069), thanks @JSMike!
+- Core: Do not prebundle better-opn - [#29137](https://github.com/storybookjs/storybook/pull/29137), thanks @valentinpalkovic!
+- Core: Do not prebundle jsdoc-type-pratt-parser - [#29134](https://github.com/storybookjs/storybook/pull/29134), thanks @valentinpalkovic!
+- Next.js: Upgrade sass-loader from ^12 to ^13 - [#29040](https://github.com/storybookjs/storybook/pull/29040), thanks @HoncharenkoZhenya!
+
 ## 8.3.0
 
 Fresh out of the oven! Storybook 8.3 brings you:

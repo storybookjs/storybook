@@ -1,5 +1,6 @@
-import chalk from 'chalk';
-import { readFile } from 'fs-extra';
+import { readFile } from 'node:fs/promises';
+
+import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import type { Fix } from '../types';
@@ -26,7 +27,7 @@ export const removedGlobalClientAPIs: Fix<GlobalClientAPIOptions> = {
 
   async check({ previewConfigPath }) {
     if (previewConfigPath) {
-      const contents = await readFile(previewConfigPath, 'utf8');
+      const contents = await readFile(previewConfigPath, { encoding: 'utf8' });
 
       const usedAPIs = Object.values(RemovedAPIs).reduce((acc, item) => {
         if (contents.includes(item)) {
@@ -47,16 +48,18 @@ export const removedGlobalClientAPIs: Fix<GlobalClientAPIOptions> = {
   },
   prompt({ usedAPIs, previewPath }) {
     return dedent`
-      ${chalk.bold(
-        chalk.red('Attention')
+      ${picocolors.bold(
+        picocolors.red('Attention')
       )}: We could not automatically make this change. You'll need to do it manually.
 
-      The following APIs (used in "${chalk.yellow(previewPath)}") have been removed from Storybook:
+      The following APIs (used in "${picocolors.yellow(
+        previewPath
+      )}") have been removed from Storybook:
       
-      ${usedAPIs.map((api) => `- ${chalk.cyan(api)}`).join('\n')}
+      ${usedAPIs.map((api) => `- ${picocolors.cyan(api)}`).join('\n')}
 
       Please see the migration guide for more information:
-      ${chalk.yellow(
+      ${picocolors.yellow(
         'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#removed-global-client-apis'
       )}
     `;

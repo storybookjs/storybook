@@ -7,7 +7,7 @@ import { STORIES_COLLAPSE_ALL, STORIES_EXPAND_ALL } from '@storybook/core/core-e
 import type { StoriesHash } from '@storybook/core/manager-api';
 import { useStorybookApi } from '@storybook/core/manager-api';
 
-import throttle from 'lodash/throttle.js';
+import { throttle } from 'es-toolkit';
 
 import { matchesKeyCode, matchesModifiers } from '../../keybinding';
 import { getAncestorIds, getDescendantIds, isAncestor, scrollIntoView } from '../../utils/tree';

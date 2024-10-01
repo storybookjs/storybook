@@ -1,6 +1,5 @@
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-
-import { readJSON } from 'fs-extra';
 
 import { sortPackageJson } from '../../../../scripts/node_modules/sort-package-json';
 import { generateMapperContent, mapCoreExportToSelf, write } from './utils';
@@ -22,8 +21,12 @@ import { generateMapperContent, mapCoreExportToSelf, write } from './utils';
  * remove those manually here.
  */
 async function run() {
-  const selfPackageJson = await readJSON(join(__dirname, '../package.json'));
-  const corePackageJson = await readJSON(join(__dirname, '../../../core/package.json'));
+  const selfPackageJson = JSON.parse(
+    await readFile(join(__dirname, '../package.json'), { encoding: 'utf8' })
+  );
+  const corePackageJson = await JSON.parse(
+    await readFile(join(__dirname, '../../../core/package.json'), { encoding: 'utf8' })
+  );
 
   await Promise.all(
     Object.entries<Record<string, string>>(corePackageJson.exports)

@@ -1,9 +1,9 @@
 import { join } from 'node:path';
 
 import { setOutput } from '@actions/core';
-import chalk from 'chalk';
 import { program } from 'commander';
 import { readJson } from 'fs-extra';
+import picocolors from 'picocolors';
 
 import { esMain } from '../utils/esmain';
 import { getPullInfoFromCommit } from './utils/get-github-info';
@@ -39,7 +39,7 @@ const getRepo = async (verbose?: boolean): Promise<string> => {
   const pushUrl = originRemote.refs.push;
   const repo = pushUrl.replace(/\.git$/, '').replace(/.*:(\/\/github\.com\/)*/, '');
   if (verbose) {
-    console.log(`📦 Extracted repo: ${chalk.blue(repo)}`);
+    console.log(`📦 Extracted repo: ${picocolors.blue(repo)}`);
   }
   return repo;
 };
@@ -50,7 +50,7 @@ export const run = async (options: unknown) => {
   const version = await getCurrentVersion();
   const branch = `version-${patch ? 'patch' : 'non-patch'}-from-${version}`;
 
-  console.log(`💬 Determining if pull request from branch '${chalk.blue(branch)}' is frozen`);
+  console.log(`💬 Determining if pull request from branch '${picocolors.blue(branch)}' is frozen`);
 
   console.log(`⬇️ Fetching remote 'origin/${branch}'...`);
   try {

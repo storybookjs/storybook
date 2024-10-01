@@ -11,8 +11,8 @@ import {
   types as t,
 } from '@storybook/core/babel';
 
+import { camelCase } from 'es-toolkit';
 import type { FileInfo } from 'jscodeshift';
-import camelCase from 'lodash/camelCase';
 import type { MdxFlowExpression } from 'mdast-util-mdx-expression';
 import type {
   MdxJsxAttribute,
@@ -410,7 +410,7 @@ function addStoriesImport(
 }
 
 export function nameToValidExport(name: string) {
-  const [first, ...rest] = Array.from(camelCase(name));
+  const [first, ...rest] = Array.from(camelCase(name).replace(/\s/g, ''));
 
   return `${first.match(/[a-zA-Z_$]/) ? first.toUpperCase() : `$${first}`}${rest.join('')}`;
 }

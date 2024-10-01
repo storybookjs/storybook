@@ -41,11 +41,12 @@ import {
   STORY_CHANGED,
 } from '@storybook/core/core-events';
 
-import mergeWith from 'lodash/mergeWith.js';
+import { mergeWith } from 'es-toolkit';
 
 import { createContext } from './context';
 import getInitialState from './initial-state';
 import { types } from './lib/addons';
+import { noArrayMerge } from './lib/merge';
 import type { ModuleFn } from './lib/types';
 import * as addons from './modules/addons';
 import * as channel from './modules/channel';
@@ -129,14 +130,7 @@ export type ManagerProviderProps = RouterData &
 
 // This is duplicated from @storybook/preview-api for the reasons mentioned in lib-addons/types.js
 export const combineParameters = (...parameterSets: Parameters[]) =>
-  mergeWith({}, ...parameterSets, (objValue: any, srcValue: any) => {
-    // Treat arrays as scalars:
-    if (Array.isArray(srcValue)) {
-      return srcValue;
-    }
-
-    return undefined;
-  });
+  noArrayMerge({}, ...parameterSets);
 
 class ManagerProvider extends Component<ManagerProviderProps, State> {
   api: API = {} as API;

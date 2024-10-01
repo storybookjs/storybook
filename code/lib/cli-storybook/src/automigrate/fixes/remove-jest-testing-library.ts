@@ -2,7 +2,7 @@ import { getStorybookVersionSpecifier } from 'storybook/internal/cli';
 
 import { runCodemod } from '@storybook/codemod';
 
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
 
@@ -24,13 +24,13 @@ export const removeJestTestingLibrary: Fix<{ incompatiblePackages: string[] }> =
   },
   prompt({ incompatiblePackages }) {
     return dedent`
-      ${chalk.bold(
+      ${picocolors.bold(
         'Attention'
       )}: We've detected that you're using the following packages which are known to be incompatible since Storybook 8:
 
-      ${incompatiblePackages.map((name) => `- ${chalk.cyan(`${name}`)}`).join('\n')}
+      ${incompatiblePackages.map((name) => `- ${picocolors.cyan(`${name}`)}`).join('\n')}
       
-      We will uninstall them for you and install ${chalk.cyan('@storybook/test')} instead.
+      We will uninstall them for you and install ${picocolors.cyan('@storybook/test')} instead.
 
       Also, we can help you migrate your stories to use the new package.
     `;

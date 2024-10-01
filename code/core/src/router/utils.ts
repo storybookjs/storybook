@@ -1,10 +1,9 @@
 import { once } from '@storybook/core/client-logger';
 
-import { dequal as deepEqual } from 'dequal';
-import isPlainObject from 'lodash/isPlainObject.js';
+import { isEqual as deepEqual, isPlainObject } from 'es-toolkit';
 import memoize from 'memoizerific';
-import type { IStringifyOptions } from 'qs';
-import qs from 'qs';
+import type { Options as QueryOptions } from 'picoquery';
+import { parse, stringify } from 'picoquery';
 import { dedent } from 'ts-dedent';
 
 export interface StoryData {
@@ -120,6 +119,9 @@ const validateArgs = (key = '', value: unknown): boolean => {
   return false;
 };
 
+// Note this isn't a picoquery serializer because pq will turn any object
+// into a nested key internally. So we need to deal witth things like `Date`
+// up front.
 const encodeSpecialValues = (value: unknown): any => {
   if (value === undefined) {
     return '!undefined';
@@ -143,9 +145,14 @@ const encodeSpecialValues = (value: unknown): any => {
     return `!${value}`;
   }
 
+  if (value instanceof Date) {
+    return `!date(${value.toISOString()})`;
+  }
+
   if (Array.isArray(value)) {
     return value.map(encodeSpecialValues);
   }
+
   if (isPlainObject(value)) {
     return Object.entries(value as Record<string, any>).reduce(
       (acc, [key, val]) => Object.assign(acc, { [key]: encodeSpecialValues(val) }),
@@ -155,13 +162,27 @@ const encodeSpecialValues = (value: unknown): any => {
   return value;
 };
 
-const QS_OPTIONS: IStringifyOptions = {
-  encode: false, // we handle URL encoding ourselves
-  delimiter: ';', // we don't actually create multiple query params
-  allowDots: true, // encode objects using dot notation: obj.key=val
-  format: 'RFC1738', // encode spaces using the + sign
-  serializeDate: (date: Date) => `!date(${date.toISOString()})`,
+// Replaces some url-encoded characters with their decoded equivalents.
+// The URI RFC specifies these should be encoded, but all browsers will
+// tolerate them being decoded, so we opt to go with it for cleaner looking
+// URIs.
+const decodeKnownQueryChar = (chr: string) => {
+  switch (chr) {
+    case '%20':
+      return '+';
+    case '%5B':
+      return '[';
+    case '%5D':
+      return ']';
+    case '%2C':
+      return ',';
+    case '%3A':
+      return ':';
+  }
+  return chr;
 };
+const knownQueryChar = /%[0-9A-F]{2}/g;
+
 export const buildArgsParam = (initialArgs: Args | undefined, args: Args): string => {
   const update = deepDiff(initialArgs, args);
 
@@ -181,9 +202,12 @@ export const buildArgsParam = (initialArgs: Args | undefined, args: Args): strin
     return acc;
   }, {} as Args);
 
-  return qs
-    .stringify(encodeSpecialValues(object), QS_OPTIONS)
-    .replace(/ /g, '+')
+  return stringify(encodeSpecialValues(object), {
+    delimiter: ';', // we don't actually create multiple query params
+    nesting: true,
+    nestingSyntax: 'js', // encode objects using dot notation: obj.key=val
+  })
+    .replace(knownQueryChar, decodeKnownQueryChar)
     .split(';')
     .map((part: string) => part.replace('=', ':'))
     .join(';');
@@ -193,12 +217,16 @@ interface Query {
   [key: string]: any;
 }
 
-export const queryFromString = memoize(1000)(
-  (s?: string): Query => (s !== undefined ? qs.parse(s, { ignoreQueryPrefix: true }) : {})
-);
-export const queryFromLocation = (location: Partial<Location>) => queryFromString(location.search);
-export const stringifyQuery = (query: Query) =>
-  qs.stringify(query, { addQueryPrefix: true, encode: false });
+const queryFromString = memoize(1000)((s?: string): Query => (s !== undefined ? parse(s) : {}));
+
+export const queryFromLocation = (location: Partial<Location>) => {
+  return queryFromString(location.search ? location.search.slice(1) : '');
+};
+
+export const stringifyQuery = (query: Query) => {
+  const queryStr = stringify(query);
+  return queryStr ? '?' + queryStr : '';
+};
 
 type Match = { path: string };
 

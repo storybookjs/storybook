@@ -1,6 +1,6 @@
 {
   "name": "@storybook/nextjs",
-  "version": "8.4.0-alpha.0",
+  "version": "8.4.0-alpha.2",
   "description": "Storybook for Next.js",
   "keywords": [
     "storybook",
@@ -148,7 +148,6 @@
     "babel-loader": "^9.1.3",
     "css-loader": "^6.7.3",
     "find-up": "^5.0.0",
-    "fs-extra": "^11.1.0",
     "image-size": "^1.0.0",
     "loader-utils": "^3.2.1",
     "node-polyfill-webpack-plugin": "^2.0.1",

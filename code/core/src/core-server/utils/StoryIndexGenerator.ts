@@ -1,4 +1,6 @@
 /* eslint-disable no-underscore-dangle */
+import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
 
 import { commonGlobOptions, normalizeStoryPath } from '@storybook/core/common';
@@ -21,9 +23,8 @@ import { getStorySortParameter, loadConfig } from '@storybook/core/csf-tools';
 import { logger, once } from '@storybook/core/node-logger';
 import { sortStoriesV7, userOrAutoTitleFromSpecifier } from '@storybook/core/preview-api';
 
-import chalk from 'chalk';
 import { findUp } from 'find-up';
-import fs from 'fs-extra';
+import picocolors from 'picocolors';
 import slash from 'slash';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
@@ -139,7 +140,7 @@ export class StoryIndexGenerator {
 
         if (files.length === 0) {
           once.warn(
-            `No story files found for the specified pattern: ${chalk.blue(
+            `No story files found for the specified pattern: ${picocolors.blue(
               join(specifier.directory, specifier.files)
             )}`
           );
@@ -324,7 +325,7 @@ export class StoryIndexGenerator {
     const absoluteComponentPath = resolve(dirname(absolutePath), rawPath);
     const existing = ['', '.js', '.ts', '.jsx', '.tsx', '.mjs', '.mts']
       .map((ext) => `${absoluteComponentPath}${ext}`)
-      .find((candidate) => fs.existsSync(candidate));
+      .find((candidate) => existsSync(candidate));
     if (existing) {
       const relativePath = relative(this.options.workingDir, existing);
       return slash(normalizeStoryPath(relativePath));
@@ -432,7 +433,7 @@ export class StoryIndexGenerator {
       const normalizedPath = normalizeStoryPath(relativePath);
       const importPath = slash(normalizedPath);
 
-      const content = await fs.readFile(absolutePath, 'utf8');
+      const content = await readFile(absolutePath, { encoding: 'utf8' });
 
       const { analyze } = await import('@storybook/docs-mdx');
       const result = await analyze(content);
@@ -526,7 +527,7 @@ export class StoryIndexGenerator {
     } catch (err) {
       if (err && (err as { source: any }).source?.match(/mdast-util-mdx-jsx/g)) {
         logger.warn(
-          `💡 This seems to be an MDX2 syntax error. Please refer to the MDX section in the following resource for assistance on how to fix this: ${chalk.yellow(
+          `💡 This seems to be an MDX2 syntax error. Please refer to the MDX section in the following resource for assistance on how to fix this: ${picocolors.yellow(
             'https://storybook.js.org/migration-guides/7.0'
           )}`
         );
@@ -753,9 +754,9 @@ export class StoryIndexGenerator {
   async getPreviewCode() {
     const previewFile = ['js', 'jsx', 'ts', 'tsx', 'mjs', 'cjs', 'mts']
       .map((ext) => join(this.options.configDir, `preview.${ext}`))
-      .find((fname) => fs.existsSync(fname));
+      .find((fname) => existsSync(fname));
 
-    return previewFile && (await fs.readFile(previewFile, 'utf-8')).toString();
+    return previewFile && (await readFile(previewFile, { encoding: 'utf8' })).toString();
   }
 
   getProjectTags(previewCode?: string) {

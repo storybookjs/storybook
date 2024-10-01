@@ -1,4 +1,4 @@
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import { lt } from 'semver';
 import { dedent } from 'ts-dedent';
 
@@ -52,7 +52,7 @@ export const blocker = createBlocker({
         return dedent`
           Support for react-script < 5.0.0 has been removed.
           Please see the migration guide for more information:
-          ${chalk.yellow(
+          ${picocolors.yellow(
             'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#create-react-app-dropped-cra4-support'
           )}
           
@@ -62,7 +62,7 @@ export const blocker = createBlocker({
         return dedent`
           Support for Vue 2 has been removed.
           Please see the migration guide for more information:
-          ${chalk.yellow('https://v3-migration.vuejs.org/')}
+          ${picocolors.yellow('https://v3-migration.vuejs.org/')}
 
           Please upgrade to the latest version of Vue.
         `;
@@ -70,7 +70,7 @@ export const blocker = createBlocker({
         return dedent`
           Support for Angular < 15 has been removed.
           Please see the migration guide for more information:
-          ${chalk.yellow('https://angular.io/guide/update-to-version-15')}
+          ${picocolors.yellow('https://angular.io/guide/update-to-version-15')}
 
           Please upgrade to the latest version of Angular.
         `;
@@ -78,7 +78,7 @@ export const blocker = createBlocker({
         return dedent`
           Support for Next.js < 13.5 has been removed.
           Please see the migration guide for more information:
-          ${chalk.yellow(
+          ${picocolors.yellow(
             'https://nextjs.org/docs/pages/building-your-application/upgrading/version-13'
           )}
 

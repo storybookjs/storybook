@@ -36,8 +36,8 @@ vi.mock('prompts', () => {
   };
 });
 
-// mock chalk yellow and cyan
-vi.mock('chalk', () => {
+// mock picocolors yellow and cyan
+vi.mock('picocolors', () => {
   return {
     default: {
       yellow: (str: string) => str,

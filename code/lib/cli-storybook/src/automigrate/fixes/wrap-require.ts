@@ -1,7 +1,7 @@
 import { detectPnp } from 'storybook/internal/cli';
 import { readConfig } from 'storybook/internal/csf-tools';
 
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import { updateMainConfig } from '../helpers/mainConfigFile';
@@ -50,7 +50,7 @@ export const wrapRequire: Fix<WrapRequireRunOptions> = {
   },
 
   prompt({ storybookVersion, isStorybookInMonorepo }) {
-    const sbFormatted = chalk.cyan(`Storybook ${storybookVersion}`);
+    const sbFormatted = picocolors.cyan(`Storybook ${storybookVersion}`);
 
     return dedent`We have detected that you're using ${sbFormatted} in a ${
       isStorybookInMonorepo ? 'monorepo' : 'PnP'

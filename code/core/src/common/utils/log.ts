@@ -1,15 +1,15 @@
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 
 const logger = console;
 
 export const commandLog = (message: string) => {
-  process.stdout.write(chalk.cyan(' • ') + message);
+  process.stdout.write(picocolors.cyan(' • ') + message);
 
   // Need `void` to be able to use this function in a then of a Promise<void>
   return (errorMessage?: string | void, errorInfo?: string) => {
     if (errorMessage) {
-      process.stdout.write(`. ${chalk.red('✖')}\n`);
-      logger.error(`\n     ${chalk.red(errorMessage)}`);
+      process.stdout.write(`. ${picocolors.red('✖')}\n`);
+      logger.error(`\n     ${picocolors.red(errorMessage)}`);
 
       if (!errorInfo) {
         return;
@@ -17,13 +17,13 @@ export const commandLog = (message: string) => {
 
       const newErrorInfo = errorInfo
         .split('\n')
-        .map((line) => `     ${chalk.dim(line)}`)
+        .map((line) => `     ${picocolors.dim(line)}`)
         .join('\n');
       logger.error(`${newErrorInfo}\n`);
       return;
     }
 
-    process.stdout.write(`. ${chalk.green('✓')}\n`);
+    process.stdout.write(`. ${picocolors.green('✓')}\n`);
   };
 };
 
@@ -56,7 +56,7 @@ export function codeLog(codeLines: string[], leftPadAmount?: number) {
     .map((line) => {
       const rightPadAmount = maxLength - line.length;
       let newLine = line + getChars(' ', rightPadAmount);
-      newLine = getChars(' ', leftPadAmount || 2) + chalk.inverse(` ${newLine} `);
+      newLine = getChars(' ', leftPadAmount || 2) + picocolors.inverse(` ${newLine} `);
       return newLine;
     })
     .join('\n');

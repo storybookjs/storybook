@@ -4,7 +4,7 @@ import type { ConfigFile } from 'storybook/internal/csf-tools';
 import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 
 import type { Expression } from '@babel/types';
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import type { Fix } from '../types';
@@ -39,12 +39,14 @@ export const initialGlobals: Fix<Options> = {
 
   prompt({ previewConfigPath }) {
     return dedent`
-      The ${chalk.cyan('globals')} setting in ${chalk.cyan(previewConfigPath)} is deprecated
-      and has been renamed to ${chalk.cyan('initialGlobals')}.
+      The ${picocolors.cyan('globals')} setting in ${picocolors.cyan(
+        previewConfigPath
+      )} is deprecated
+      and has been renamed to ${picocolors.cyan('initialGlobals')}.
         
-      Learn more: ${chalk.yellow(MIGRATION)}
+      Learn more: ${picocolors.yellow(MIGRATION)}
       
-      Rename ${chalk.cyan('globals')} to ${chalk.cyan('initalGlobals')}?
+      Rename ${picocolors.cyan('globals')} to ${picocolors.cyan('initalGlobals')}?
     `;
   },
 

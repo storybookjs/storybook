@@ -6,13 +6,13 @@ import { dirname, join } from 'node:path';
 import type { Metafile } from 'esbuild';
 
 import {
-  chalk,
   dedent,
   esbuild,
   globalExternals,
   measure,
   merge,
   nodeInternals,
+  picocolors,
   prettyTime,
   process,
 } from '../../../scripts/prepare/tools';
@@ -77,12 +77,15 @@ async function run() {
     types,
   ]);
 
-  console.log('Files generated in', chalk.yellow(prettyTime(filesTime)));
-  console.log('Package.json generated in', chalk.yellow(prettyTime(packageJsonTime)));
-  console.log(isWatch ? 'Watcher started in' : 'Bundled in', chalk.yellow(prettyTime(distTime)));
+  console.log('Files generated in', picocolors.yellow(prettyTime(filesTime)));
+  console.log('Package.json generated in', picocolors.yellow(prettyTime(packageJsonTime)));
+  console.log(
+    isWatch ? 'Watcher started in' : 'Bundled in',
+    picocolors.yellow(prettyTime(distTime))
+  );
   console.log(
     isOptimized ? 'Generated types in' : 'Generated type mappers in',
-    chalk.yellow(prettyTime(typesTime))
+    picocolors.yellow(prettyTime(typesTime))
   );
 
   async function generateDistFiles() {
@@ -313,7 +316,7 @@ async function run() {
 
       // show a log message when a file is compiled
       watch(join(cwd, 'dist'), { recursive: true }, (event, filename) => {
-        console.log(`compiled ${chalk.cyan(filename)}`);
+        console.log(`compiled ${picocolors.cyan(filename)}`);
       });
     } else {
       // repo root/bench/esbuild-metafiles/core

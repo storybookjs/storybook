@@ -1,7 +1,7 @@
 import { type InstallationMetadata } from 'storybook/internal/common';
 
 import boxen from 'boxen';
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import type { FixSummary } from '../types';
@@ -17,34 +17,36 @@ function getGlossaryMessages(
 ) {
   const messages = [];
   if (fixSummary.succeeded.length > 0) {
-    messages.push(chalk.bold('Successful migrations:'));
-    messages.push(fixSummary.succeeded.map((m) => chalk.green(m)).join(', '));
+    messages.push(picocolors.bold('Successful migrations:'));
+    messages.push(fixSummary.succeeded.map((m) => picocolors.green(m)).join(', '));
   }
 
   if (Object.keys(fixSummary.failed).length > 0) {
-    messages.push(chalk.bold('Failed migrations:'));
+    messages.push(picocolors.bold('Failed migrations:'));
     messages.push(
       Object.entries(fixSummary.failed)
         .map(([id, error]) => {
-          return `${chalk.redBright(id)}:\n${error}`;
+          return `${picocolors.bold(picocolors.red(id))}:\n${error}`;
         })
         .join('\n')
     );
-    messages.push(`You can find the full logs in ${chalk.cyan(logFile)}`);
+    messages.push(`You can find the full logs in ${picocolors.cyan(logFile)}`);
   }
 
   if (fixSummary.manual.length > 0) {
-    messages.push(chalk.bold('Manual migrations:'));
+    messages.push(picocolors.bold('Manual migrations:'));
     messages.push(
       fixSummary.manual
-        .map((m) => (fixResults[m] === FixStatus.MANUAL_SUCCEEDED ? chalk.green(m) : chalk.blue(m)))
+        .map((m) =>
+          fixResults[m] === FixStatus.MANUAL_SUCCEEDED ? picocolors.green(m) : picocolors.blue(m)
+        )
         .join(', ')
     );
   }
 
   if (fixSummary.skipped.length > 0) {
-    messages.push(chalk.bold('Skipped migrations:'));
-    messages.push(fixSummary.skipped.map((m) => chalk.cyan(m)).join(', '));
+    messages.push(picocolors.bold('Skipped migrations:'));
+    messages.push(fixSummary.skipped.map((m) => picocolors.cyan(m)).join(', '));
   }
 
   return messages;
@@ -64,16 +66,16 @@ export function getMigrationSummary({
   const messages = [];
   messages.push(getGlossaryMessages(fixSummary, fixResults, logFile).join(messageDivider));
 
-  messages.push(dedent`If you'd like to run the migrations again, you can do so by running '${chalk.cyan(
+  messages.push(dedent`If you'd like to run the migrations again, you can do so by running '${picocolors.cyan(
     'npx storybook automigrate'
   )}'
     
     The automigrations try to migrate common patterns in your project, but might not contain everything needed to migrate to the latest version of Storybook.
     
-    Please check the changelog and migration guide for manual migrations and more information: ${chalk.yellow(
+    Please check the changelog and migration guide for manual migrations and more information: ${picocolors.yellow(
       'https://storybook.js.org/docs/8.0/migration-guide'
     )}
-    And reach out on Discord if you need help: ${chalk.yellow('https://discord.gg/storybook')}
+    And reach out on Discord if you need help: ${picocolors.yellow('https://discord.gg/storybook')}
   `);
 
   const hasNoFixes = Object.values(fixResults).every((r) => r === FixStatus.UNNECESSARY);

@@ -5883,7 +5883,6 @@ __metadata:
     "@types/prompts": "npm:^2.0.9"
     "@types/semver": "npm:^7.3.4"
     boxen: "npm:^7.1.1"
-    chalk: "npm:^4.1.0"
     commander: "npm:^12.1.0"
     create-storybook: "workspace:*"
     cross-spawn: "npm:^7.0.3"
@@ -5895,6 +5894,7 @@ __metadata:
     globby: "npm:^14.0.1"
     jscodeshift: "npm:^0.15.1"
     leven: "npm:^3.1.0"
+    picocolors: "npm:^1.1.0"
     prompts: "npm:^2.4.0"
     semver: "npm:^7.3.7"
     slash: "npm:^5.0.0"
@@ -6039,7 +6039,6 @@ __metadata:
     "@types/prettier": "npm:^3.0.0"
     "@types/pretty-hrtime": "npm:^1.0.0"
     "@types/prompts": "npm:^2.0.9"
-    "@types/qs": "npm:^6"
     "@types/react-syntax-highlighter": "npm:11.0.5"
     "@types/react-transition-group": "npm:^4"
     "@types/semver": "npm:^7.5.8"
@@ -6056,7 +6055,6 @@ __metadata:
     browser-dtector: "npm:^3.4.0"
     camelcase: "npm:^8.0.0"
     chai: "npm:^4.4.1"
-    chalk: "npm:^5.3.0"
     cli-table3: "npm:^0.6.1"
     commander: "npm:^12.1.0"
     comment-parser: "npm:^1.4.1"
@@ -6099,13 +6097,14 @@ __metadata:
     nanoid: "npm:^4.0.2"
     npmlog: "npm:^7.0.0"
     open: "npm:^8.4.0"
+    picocolors: "npm:^1.1.0"
     picomatch: "npm:^2.3.0"
+    picoquery: "npm:^1.4.0"
     polished: "npm:^4.2.2"
     prettier: "npm:^3.2.5"
     pretty-hrtime: "npm:^1.0.3"
     process: "npm:^0.11.10"
     prompts: "npm:^2.4.0"
-    qs: "npm:^6.10.0"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
     react-draggable: "npm:^4.4.5"
@@ -6239,6 +6238,7 @@ __metadata:
     "@vitest/browser": "npm:^2.0.0"
     boxen: "npm:^8.0.1"
     find-up: "npm:^7.0.0"
+    picocolors: "npm:^1.1.0"
     semver: "npm:^7.6.3"
     tinyrainbow: "npm:^1.2.0"
     ts-dedent: "npm:^2.2.0"
@@ -8157,7 +8157,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/qs@npm:*, @types/qs@npm:^6":
+"@types/qs@npm:*":
   version: 6.9.10
   resolution: "@types/qs@npm:6.9.10"
   checksum: 10c0/6be12e5f062d1b41eb037d59bf9cb65bc9410cedd5e6da832dfd7c8e2b3f4c91e81c9b90b51811140770e5052c6c4e8361181bd9437ddcd4515dc128b7c00353
@@ -12465,12 +12465,12 @@ __metadata:
     "@types/semver": "npm:^7.3.4"
     "@types/util-deprecate": "npm:^1.0.0"
     boxen: "npm:^7.1.1"
-    chalk: "npm:^4.1.0"
     commander: "npm:^12.1.0"
     execa: "npm:^5.0.0"
     fd-package-json: "npm:^1.2.0"
     find-up: "npm:^5.0.0"
     ora: "npm:^5.4.1"
+    picocolors: "npm:^1.1.0"
     prettier: "npm:^3.1.1"
     prompts: "npm:^2.4.0"
     semver: "npm:^7.3.7"
@@ -15098,6 +15098,13 @@ __metadata:
     snapdragon: "npm:^0.8.1"
     to-regex: "npm:^3.0.1"
   checksum: 10c0/e1a891342e2010d046143016c6c03d58455c2c96c30bf5570ea07929984ee7d48fad86b363aee08f7a8a638f5c3a66906429b21ecb19bc8e90df56a001cd282c
+  languageName: node
+  linkType: hard
+
+"fast-decode-uri-component@npm:^1.0.1":
+  version: 1.0.1
+  resolution: "fast-decode-uri-component@npm:1.0.1"
+  checksum: 10c0/039d50c2e99d64f999c3f2126c23fbf75a04a4117e218a149ca0b1d2aeb8c834b7b19d643b9d35d4eabce357189a6a94085f78cf48869e6e26cc59b036284bc3
   languageName: node
   linkType: hard
 
@@ -22622,10 +22629,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"picocolors@npm:^1.0.0, picocolors@npm:^1.0.1":
-  version: 1.0.1
-  resolution: "picocolors@npm:1.0.1"
-  checksum: 10c0/c63cdad2bf812ef0d66c8db29583802355d4ca67b9285d846f390cc15c2f6ccb94e8cb7eb6a6e97fc5990a6d3ad4ae42d86c84d3146e667c739a4234ed50d400
+"picocolors@npm:^1.0.0, picocolors@npm:^1.0.1, picocolors@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "picocolors@npm:1.1.0"
+  checksum: 10c0/86946f6032148801ef09c051c6fb13b5cf942eaf147e30ea79edb91dd32d700934edebe782a1078ff859fb2b816792e97ef4dab03d7f0b804f6b01a0df35e023
   languageName: node
   linkType: hard
 
@@ -22640,6 +22647,15 @@ __metadata:
   version: 2.3.1
   resolution: "picomatch@npm:2.3.1"
   checksum: 10c0/26c02b8d06f03206fc2ab8d16f19960f2ff9e81a658f831ecb656d8f17d9edc799e8364b1f4a7873e89d9702dff96204be0fa26fe4181f6843f040f819dac4be
+  languageName: node
+  linkType: hard
+
+"picoquery@npm:^1.4.0":
+  version: 1.4.0
+  resolution: "picoquery@npm:1.4.0"
+  dependencies:
+    fast-decode-uri-component: "npm:^1.0.1"
+  checksum: 10c0/8c2bdb85eabb51ce1534d0a70ac288dac8d241a32e5d1ee960ee1ed7c5f522752db23cdc63318ac69ce892bdbcc465f4e2d25a5b970b7a29ffa36455cc2d022c
   languageName: node
   linkType: hard
 
@@ -23541,7 +23557,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"qs@npm:^6.10.0, qs@npm:^6.11.1, qs@npm:^6.11.2, qs@npm:^6.4.0":
+"qs@npm:^6.11.1, qs@npm:^6.11.2, qs@npm:^6.4.0":
   version: 6.12.3
   resolution: "qs@npm:6.12.3"
   dependencies:

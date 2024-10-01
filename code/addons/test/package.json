@@ -77,6 +77,7 @@
     "@vitest/browser": "^2.0.0",
     "boxen": "^8.0.1",
     "find-up": "^7.0.0",
+    "picocolors": "^1.1.0",
     "semver": "^7.6.3",
     "tinyrainbow": "^1.2.0",
     "ts-dedent": "^2.2.0",

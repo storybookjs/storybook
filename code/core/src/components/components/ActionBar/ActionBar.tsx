@@ -45,10 +45,8 @@ export const ActionButton = styled.button<{ disabled: boolean }>(
     '&:focus': {
       boxShadow: `${theme.color.secondary} 0 -3px 0 0 inset`,
       outline: '0 none',
-    },
 
-    '@media (forced-colors: active)': {
-      '&:focus': {
+      '@media (forced-colors: active)': {
         outline: '1px solid highlight',
       },
     },

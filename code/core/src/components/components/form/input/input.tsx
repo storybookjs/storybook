@@ -60,12 +60,11 @@ const styles = (({ theme }: { theme: StorybookTheme }) => ({
   '&:focus': {
     boxShadow: `${theme.color.secondary} 0 0 0 1px inset`,
     outline: 'none',
-  },
-  '@media (forced-colors: active)': {
-    '&:focus': {
+    '@media (forced-colors: active)': {
       outline: '1px solid highlight',
     },
   },
+
   '&[disabled]': {
     cursor: 'not-allowed',
     opacity: 0.5,

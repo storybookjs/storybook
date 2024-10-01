@@ -6,8 +6,8 @@ import { paddedLog } from '@storybook/core/common';
 
 import { readConfig, writeConfig } from '@storybook/core/csf-tools';
 
-import chalk from 'chalk';
 import detectIndent from 'detect-indent';
+import picocolors from 'picocolors';
 import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
 
@@ -108,7 +108,7 @@ export const suggestESLintPlugin = async (): Promise<boolean> => {
     type: 'confirm',
     name: 'shouldInstall',
     message: dedent`
-        We have detected that you're using ESLint. Storybook provides a plugin that gives the best experience with Storybook and helps follow best practices: ${chalk.yellow(
+        We have detected that you're using ESLint. Storybook provides a plugin that gives the best experience with Storybook and helps follow best practices: ${picocolors.yellow(
           'https://github.com/storybookjs/eslint-plugin-storybook#readme'
         )}
 

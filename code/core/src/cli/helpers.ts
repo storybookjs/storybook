@@ -11,8 +11,8 @@ import {
 import { versions as storybookMonorepoPackages } from '@storybook/core/common';
 import type { SupportedFrameworks, SupportedRenderers } from '@storybook/core/types';
 
-import chalk from 'chalk';
 import { findUpSync } from 'find-up';
+import picocolors from 'picocolors';
 import { coerce, satisfies } from 'semver';
 import stripJsonComments from 'strip-json-comments';
 import invariant from 'tiny-invariant';
@@ -34,7 +34,7 @@ export function readFileAsJson(jsonPath: string, allowComments?: boolean) {
   try {
     return JSON.parse(jsonContent);
   } catch (e) {
-    logger.error(chalk.red(`Invalid json in file: ${filePath}`));
+    logger.error(picocolors.red(`Invalid json in file: ${filePath}`));
     throw e;
   }
 }

@@ -3,12 +3,12 @@ import { dirname, join } from 'node:path';
 import * as process from 'node:process';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
-import chalk from 'chalk';
 import { spawn } from 'cross-spawn';
 import * as esbuild from 'esbuild';
 import { readJson } from 'fs-extra';
 import { glob } from 'glob';
 import limit from 'p-limit';
+import picocolors from 'picocolors';
 import * as prettier from 'prettier';
 import prettyTime from 'pretty-hrtime';
 import * as rollup from 'rollup';
@@ -103,7 +103,7 @@ export {
   process,
   esbuild,
   prettyTime,
-  chalk,
+  picocolors,
   dedent,
   limit,
   sortPackageJson,

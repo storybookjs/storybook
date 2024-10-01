@@ -6,7 +6,7 @@ import { JsPackageManagerFactory, temporaryFile } from 'storybook/internal/commo
 import type { PackageManagerName } from 'storybook/internal/common';
 
 import boxen from 'boxen';
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import { cleanLog } from '../automigrate/helpers/cleanLog';
@@ -84,7 +84,7 @@ export const doctor = async ({
   } catch (err: any) {
     if (err.message.includes('No configuration files have been found')) {
       logger.info(
-        dedent`[Storybook doctor] Could not find or evaluate your Storybook main.js config directory at ${chalk.blue(
+        dedent`[Storybook doctor] Could not find or evaluate your Storybook main.js config directory at ${picocolors.blue(
           userSpecifiedConfigDir || '.storybook'
         )} so the doctor command cannot proceed. You might be running this command in a monorepo or a non-standard project structure. If that is the case, please rerun this command by specifying the path to your Storybook config directory via the --config-dir option.`
       );
@@ -109,10 +109,10 @@ export const doctor = async ({
 
   if (!('storybook' in allDependencies)) {
     logDiagnostic(
-      `Package ${chalk.cyan('storybook')} not found`,
+      `Package ${picocolors.cyan('storybook')} not found`,
       dedent`
-        The ${chalk.cyan('storybook')} package was not found in your package.json.
-        Installing ${chalk.cyan('storybook')} as a direct dev dependency in your package.json is required. 
+        The ${picocolors.cyan('storybook')} package was not found in your package.json.
+        Installing ${picocolors.cyan('storybook')} as a direct dev dependency in your package.json is required. 
       `
     );
   }
@@ -151,7 +151,7 @@ export const doctor = async ({
     }
   }
 
-  const commandMessage = `You can always recheck the health of your project by running:\n${chalk.cyan(
+  const commandMessage = `You can always recheck the health of your project by running:\n${picocolors.cyan(
     'npx storybook doctor'
   )}`;
   logger.info();
@@ -160,7 +160,7 @@ export const doctor = async ({
     logger.info(commandMessage);
     logger.info();
 
-    logger.info(`Full logs are available in ${chalk.cyan(LOG_FILE_PATH)}`);
+    logger.info(`Full logs are available in ${picocolors.cyan(LOG_FILE_PATH)}`);
 
     await rename(TEMP_LOG_FILE_PATH, join(process.cwd(), LOG_FILE_NAME));
   } else {

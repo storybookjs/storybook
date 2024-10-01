@@ -1,11 +1,11 @@
 // This script makes sure that we can support type checking,
 // without having to build dts files for all packages in the monorepo.
 // It is not implemented yet for angular, svelte and vue.
-import chalk from 'chalk';
 import { program } from 'commander';
 import { execaCommand } from 'execa';
 import { readJSON } from 'fs-extra';
 import { resolve } from 'path';
+import picocolors from 'picocolors';
 import prompts from 'prompts';
 import windowSize from 'window-size';
 
@@ -53,7 +53,9 @@ async function run() {
     ...packageTasks,
   };
 
-  const main = program.version('5.0.0').option('--all', `check everything ${chalk.gray('(all)')}`);
+  const main = program
+    .version('5.0.0')
+    .option('--all', `check everything ${picocolors.gray('(all)')}`);
 
   Object.keys(tasks)
     .reduce((acc, key) => acc.option(tasks[key].suffix, tasks[key].helpText), main)
@@ -122,10 +124,10 @@ async function run() {
     });
 
     sub.stdout.on('data', (data) => {
-      process.stdout.write(`${chalk.cyan(v.name)}:\n${data}`);
+      process.stdout.write(`${picocolors.cyan(v.name)}:\n${data}`);
     });
     sub.stderr.on('data', (data) => {
-      process.stderr.write(`${chalk.red(v.name)}:\n${data}`);
+      process.stderr.write(`${picocolors.red(v.name)}:\n${data}`);
     });
   });
 }

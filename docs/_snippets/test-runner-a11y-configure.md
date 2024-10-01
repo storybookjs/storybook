@@ -20,7 +20,8 @@ module.exports = {
       rules: storyContext.parameters?.a11y?.config?.rules,
     });
 
-    await checkA11y(page, '#storybook-root', {
+    const element = storyContext.parameters?.a11y?.element ?? '#storybook-root';
+    await checkA11y(page, element, {
       detailedReport: true,
       detailedReportOptions: {
         html: true,
@@ -53,7 +54,8 @@ const config: TestRunnerConfig = {
       rules: storyContext.parameters?.a11y?.config?.rules,
     });
 
-    await checkA11y(page, '#storybook-root', {
+    const element = storyContext.parameters?.a11y?.element ?? '#storybook-root';
+    await checkA11y(page, element, {
       detailedReport: true,
       detailedReportOptions: {
         html: true,
@@ -64,4 +66,3 @@ const config: TestRunnerConfig = {
 
 export default config;
 ```
-

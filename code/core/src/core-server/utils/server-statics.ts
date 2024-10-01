@@ -6,9 +6,9 @@ import type { Options } from '@storybook/core/types';
 
 import { logger } from '@storybook/core/node-logger';
 
-import chalk from 'chalk';
 import type { Router } from 'express';
 import express from 'express';
+import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 export async function useStatics(router: Router, options: Options) {
@@ -36,7 +36,7 @@ export async function useStatics(router: Router, options: Options) {
           // Don't log for the internal static dir
           if (!targetEndpoint.startsWith('/sb-')) {
             logger.info(
-              `=> Serving static files from ${chalk.cyan(staticDir)} at ${chalk.cyan(targetEndpoint)}`
+              `=> Serving static files from ${picocolors.cyan(staticDir)} at ${picocolors.cyan(targetEndpoint)}`
             );
           }
 
@@ -72,7 +72,7 @@ export const parseStaticDir = async (arg: string) => {
   if (!existsSync(staticPath)) {
     throw new Error(
       dedent`
-        Failed to load static files, no such directory: ${chalk.cyan(staticPath)}
+        Failed to load static files, no such directory: ${picocolors.cyan(staticPath)}
         Make sure this directory exists.
       `
     );

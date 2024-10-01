@@ -1,8 +1,7 @@
 /** Use commander and prompts to gather a list of options for a script */
-import chalk from 'chalk';
 import { type Command, type Option as CommanderOption, program } from 'commander';
-// eslint-disable-next-line import/extensions
 import { kebabCase } from 'es-toolkit/compat';
+import picocolors from 'picocolors';
 import prompts from 'prompts';
 import type { Falsy, PrevCaller, PromptObject, PromptType } from 'prompts';
 import { dedent } from 'ts-dedent';
@@ -131,9 +130,9 @@ export function getOptions<TOptions extends OptionSpecifier>(
 
       const checkStringValue = (raw: string) => {
         if (option.values && !option.values.includes(raw)) {
-          const possibleOptions = chalk.cyan(option.values.join('\n'));
+          const possibleOptions = picocolors.cyan(option.values.join('\n'));
           throw new Error(
-            dedent`Unexpected value '${chalk.yellow(raw)}' for option '${chalk.magenta(key)}'.
+            dedent`Unexpected value '${picocolors.yellow(raw)}' for option '${picocolors.magenta(key)}'.
             
             These are the possible options:
               ${possibleOptions}\n\n`

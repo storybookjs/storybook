@@ -3,8 +3,8 @@ import { basename, extname, join } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
 
-import chalk from 'chalk';
 import { spawn as spawnAsync, sync as spawnSync } from 'cross-spawn';
+import picocolors from 'picocolors';
 
 type ExecOptions = Parameters<typeof spawnAsync>[2];
 
@@ -48,7 +48,7 @@ export const exec = async (
       if (code === 0) {
         resolve(undefined);
       } else {
-        logger.error(chalk.red(`An error occurred while executing: \`${command}\``));
+        logger.error(picocolors.red(`An error occurred while executing: \`${command}\``));
         if (errorMessage) {
           logger.info(errorMessage);
         }

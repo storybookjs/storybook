@@ -1,8 +1,8 @@
 import { join } from 'node:path';
 
-import chalk from 'chalk';
 import { program } from 'commander';
 import { readFile, writeFile, writeJson } from 'fs-extra';
+import picocolors from 'picocolors';
 import semver from 'semver';
 import { z } from 'zod';
 
@@ -47,7 +47,7 @@ const validateOptions = (args: unknown[], options: { [key: string]: any }): opti
   optionsSchema.parse(options);
   if (args.length !== 1 || !semver.valid(args[0] as string)) {
     console.error(
-      `🚨 Invalid arguments, expected a single argument with the version to generate changelog for, eg. ${chalk.green(
+      `🚨 Invalid arguments, expected a single argument with the version to generate changelog for, eg. ${picocolors.green(
         '7.1.0-beta.8'
       )}`
     );
@@ -70,7 +70,7 @@ const writeToChangelogFile = async ({
   const changelogPath = join(__dirname, '..', '..', changelogFilename);
 
   if (verbose) {
-    console.log(`📝 Writing changelog to ${chalk.blue(changelogPath)}`);
+    console.log(`📝 Writing changelog to ${picocolors.blue(changelogPath)}`);
   }
 
   const currentChangelog = await readFile(changelogPath, 'utf-8');
@@ -93,7 +93,7 @@ const writeToDocsVersionFile = async ({
   const filepath = join(__dirname, '..', '..', 'docs', 'versions', filename);
 
   if (verbose) {
-    console.log(`📝 Writing changelog to ${chalk.blue(filepath)}`);
+    console.log(`📝 Writing changelog to ${picocolors.blue(filepath)}`);
   }
 
   const textWithoutHeading = changelogText.split('\n').slice(2).join('\n').replaceAll('"', '\\"');
@@ -116,9 +116,9 @@ export const run = async (args: unknown[], options: unknown) => {
   const version = args[0] as string;
 
   console.log(
-    `💬 Generating changelog for ${chalk.blue(version)} between ${chalk.green(
+    `💬 Generating changelog for ${picocolors.blue(version)} between ${picocolors.green(
       from || 'latest'
-    )} and ${chalk.green(to || 'HEAD')}`
+    )} and ${picocolors.green(to || 'HEAD')}`
   );
 
   const { changelogText } = await getChanges({ version, from, to, unpickedPatches, verbose });

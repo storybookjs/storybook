@@ -24,7 +24,6 @@ addons.register(ADDON_ID, (api) => {
       useChannel({
         [SNIPPET_RENDERED]: ({ source, format }) => {
           setSourceCode({ source, format: format ?? 'html' });
-          console.log('SOURCE CODE CHANGED', codeSnippet.source);
         },
       });
 

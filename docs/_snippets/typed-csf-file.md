@@ -8,7 +8,7 @@ const meta: Meta<Button> = {
 };
 export default meta;
 
-type Story = StoryObj<Button>;
+type Story = StoryObj<meta>;
 
 export const Basic: Story = {};
 
@@ -52,7 +52,7 @@ const meta: Meta<typeof Button> = {
 };
 export default meta;
 
-type Story = StoryObj<typeof Button>;
+type Story = StoryObj<typeof meta>;
 
 export const Basic: Story = {};
 

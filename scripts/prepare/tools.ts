@@ -123,7 +123,9 @@ export const getWorkspace = async () => {
   } = codePackage;
 
   const workspaces = await Promise.all(
-    (patterns as string[]).map(async (pattern: string) => glob(pattern, { cwd: CODE_DIRECTORY }))
+    (patterns as string[]).map(async (pattern: string) =>
+      glob(pattern, { cwd: CODE_DIRECTORY, onlyDirectories: true, expandDirectories: false })
+    )
   );
 
   return Promise.all(

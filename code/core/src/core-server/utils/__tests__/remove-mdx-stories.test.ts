@@ -5,15 +5,15 @@ import { describe, expect, it, vi } from 'vitest';
 import { normalizeStoriesEntry } from '@storybook/core/common';
 import { type StoriesEntry } from '@storybook/core/types';
 
-import { glob as globOriginal } from 'glob';
 import slash from 'slash';
+import { glob as globOriginal } from 'tinyglobby';
 
 import { removeMDXEntries } from '../remove-mdx-entries';
 
 const configDir = '/configDir/';
 const workingDir = '/';
 
-vi.mock('glob', () => ({ glob: vi.fn() }));
+vi.mock('tinyglobby', () => ({ glob: vi.fn() }));
 const glob = vi.mocked(globOriginal);
 
 const createList = (list: { entry: StoriesEntry; result: string[] }[]) => {
@@ -30,8 +30,8 @@ const createList = (list: { entry: StoriesEntry; result: string[] }[]) => {
   );
 };
 
-const createGlobMock = (input: ReturnType<typeof createList>) => {
-  return async (k: string | string[]) => {
+const createGlobMock = (input: ReturnType<typeof createList>): typeof globOriginal => {
+  return (async (k: string | string[]) => {
     if (Array.isArray(k)) {
       throw new Error('do not pass an array to glob during tests');
     }
@@ -40,7 +40,7 @@ const createGlobMock = (input: ReturnType<typeof createList>) => {
     }
 
     throw new Error('can not find key in input');
-  };
+  }) as typeof globOriginal;
 };
 
 describe('remove-mdx-stories', () => {

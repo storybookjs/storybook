@@ -2,9 +2,9 @@ import type { StoriesEntry } from 'storybook/internal/types';
 
 import { runCodemod } from '@storybook/codemod';
 
-import { glob } from 'glob';
 import picocolors from 'picocolors';
 import { prompt } from 'prompts';
+import { glob } from 'tinyglobby';
 import { dedent } from 'ts-dedent';
 
 import { updateMainConfig } from '../helpers/mainConfigFile';

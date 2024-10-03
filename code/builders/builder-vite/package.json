@@ -55,8 +55,8 @@
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/node": "^22.0.0",
-    "glob": "^10.0.0",
     "slash": "^5.0.0",
+    "tinyglobby": "^0.2.9",
     "typescript": "^5.3.2",
     "vite": "^4.0.4"
   },

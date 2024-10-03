@@ -3,8 +3,8 @@
 // then combine the results into one large documentation.json
 import { execaCommand } from 'execa';
 import { lstat, readFile, realpath, writeFile } from 'fs-extra';
-import { globSync } from 'glob';
 import { join, resolve } from 'path';
+import { glob } from 'tinyglobby';
 
 import { temporaryDirectory } from '../code/core/src/common/utils/cli';
 import { esMain } from './utils/esmain';
@@ -13,7 +13,7 @@ const logger = console;
 
 // Find all symlinks in a directory. There may be more efficient ways to do this, but this works.
 async function findSymlinks(dir: string) {
-  const potentialDirs = await globSync(`${dir}/**/*/`);
+  const potentialDirs = await glob(`${dir}/**/*/`);
 
   return (
     await Promise.all(

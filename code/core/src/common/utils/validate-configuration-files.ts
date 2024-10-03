@@ -3,8 +3,8 @@ import { resolve } from 'node:path';
 import { once } from '@storybook/core/node-logger';
 import { MainFileMissingError } from '@storybook/core/server-errors';
 
-import { glob } from 'glob';
 import slash from 'slash';
+import { glob } from 'tinyglobby';
 import { dedent } from 'ts-dedent';
 
 import { boost } from './interpret-files';

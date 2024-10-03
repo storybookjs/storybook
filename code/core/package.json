@@ -371,7 +371,6 @@
     "flush-promises": "^1.0.2",
     "fuse.js": "^3.6.1",
     "get-npm-tarball-url": "^2.0.3",
-    "glob": "^10.0.0",
     "jiti": "^1.21.6",
     "js-yaml": "^4.1.0",
     "lazy-universal-dotenv": "^4.0.0",

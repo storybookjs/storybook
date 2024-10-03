@@ -1,6 +1,6 @@
 import { emptyDir, move, readJson } from 'fs-extra';
-import { globSync } from 'glob';
 import { join } from 'path';
+import { glob } from 'tinyglobby';
 import * as ts from 'typescript';
 
 import { exec } from '../utils/exec';
@@ -57,7 +57,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
       options: { ...compilerOptions, module: ts.ModuleKind.ES2020, declaration: false },
     }).emit();
 
-    const files = globSync(join(process.cwd(), 'dist', '*.js'));
+    const files = await glob(join(process.cwd(), 'dist', '*.js'));
     await Promise.all(files.map((file) => move(file, file.replace('.js', '.mjs'), {})));
 
     ts.createProgram({

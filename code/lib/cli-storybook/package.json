@@ -51,7 +51,6 @@
     "fd-package-json": "^1.2.0",
     "find-up": "^5.0.0",
     "giget": "^1.0.0",
-    "glob": "^10.0.0",
     "jscodeshift": "^0.15.1",
     "leven": "^3.1.0",
     "prompts": "^2.4.0",

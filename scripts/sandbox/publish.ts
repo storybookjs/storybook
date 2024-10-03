@@ -2,8 +2,8 @@ import { program } from 'commander';
 import { execaCommand } from 'execa';
 import { existsSync } from 'fs';
 import { copy, emptyDir, remove, writeFile } from 'fs-extra';
-import { glob } from 'glob';
 import { dirname, join, relative } from 'path';
+import { glob } from 'tinyglobby';
 
 import { temporaryDirectory } from '../../code/core/src/common/utils/cli';
 import { REPROS_DIRECTORY } from '../utils/constants';

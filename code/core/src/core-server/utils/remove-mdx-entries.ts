@@ -3,8 +3,8 @@ import { isAbsolute, join, relative } from 'node:path';
 import { commonGlobOptions, normalizeStories } from '@storybook/core/common';
 import type { Options, StoriesEntry } from '@storybook/core/types';
 
-import { glob } from 'glob';
 import slash from 'slash';
+import { glob } from 'tinyglobby';
 
 export async function removeMDXEntries(
   entries: StoriesEntry[],
@@ -28,7 +28,7 @@ export async function removeMDXEntries(
           files: (
             await glob(slash(absolutePattern), {
               ...commonGlobOptions(absolutePattern),
-              follow: true,
+              followSymbolicLinks: true,
             })
           ).map((f) => relative(absoluteDirectory, f)),
           directory,

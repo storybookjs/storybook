@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { JsPackageManager } from 'storybook/internal/common';
 import type { StorybookConfig } from 'storybook/internal/types';
 
-import { glob } from 'glob';
+import { glob } from 'tinyglobby';
 
 import { removeReactDependency } from './prompt-remove-react';
 
@@ -28,7 +28,7 @@ const check = async ({
   });
 };
 
-vi.mock('glob', () => ({ glob: vi.fn(() => []) }));
+vi.mock('tinyglobby', () => ({ glob: vi.fn(() => []) }));
 
 describe('early exits', () => {
   it('cancel if no react deps', async () => {

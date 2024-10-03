@@ -3,8 +3,8 @@ import { isAbsolute, join } from 'node:path';
 import { commonGlobOptions, normalizeStories } from 'storybook/internal/common';
 import type { Options } from 'storybook/internal/types';
 
-import { glob } from 'glob';
 import slash from 'slash';
+import { glob } from 'tinyglobby';
 
 export async function listStories(options: Options) {
   const { normalizePath } = await import('vite');
@@ -21,7 +21,7 @@ export async function listStories(options: Options) {
 
           return glob(slash(absolutePattern), {
             ...commonGlobOptions(absolutePattern),
-            follow: true,
+            followSymbolicLinks: true,
           });
         })
       )

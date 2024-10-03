@@ -32,6 +32,9 @@ export async function searchFiles({
 }): Promise<SearchResult> {
   // Dynamically import glob because it is a pure ESM module
   const { glob, isDynamicPattern } = await import('tinyglobby');
+  if (searchQuery.startsWith('..')) {
+    throw new Error('Invalid search query');
+  }
 
   const hasSearchSpecialGlobChars = isDynamicPattern(searchQuery);
 
@@ -50,7 +53,9 @@ export async function searchFiles({
 
   const entries = await glob(globbedSearchQuery, {
     ignore: ignoredFiles,
+    dot: false,
     caseSensitiveMatch: false,
+    expandDirectories: false,
     cwd,
   });
 

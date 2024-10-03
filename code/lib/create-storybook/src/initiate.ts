@@ -356,10 +356,13 @@ export async function doInitiate(options: CommandOptions): Promise<
       
       ${chalk.inverse(' ' + "export {default} from './.storybook';" + ' ')}
       
-      2. Enable transformer.unstable_allowRequireContext in your metro config
+      2. Wrap your metro config with the withStorybook enhancer function like this: 
       
-      For a more detailed guide go to:
-      ${chalk.cyan('https://github.com/storybookjs/react-native#existing-project')}
+      ${chalk.inverse(' ' + "const withStorybook = require('@storybook/react-native/metro/withStorybook');" + ' ')}
+      ${chalk.inverse(' ' + 'module.exports = withStorybook(defaultConfig);' + ' ')}
+
+      For more details go to:
+      ${chalk.cyan('https://github.com/storybookjs/react-native#getting-started')}
       
       Then to run your Storybook, type:
 

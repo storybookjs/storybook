@@ -65,7 +65,7 @@ export async function runCodemod(
   }
 
   // Dynamically import globby because it is a pure ESM module
-  const { globby } = await import('globby');
+  const { glob: globby } = await import('tinyglobby');
 
   const files = await globby([glob, '!**/node_modules', '!**/dist']);
   const extensions = new Set(files.map((file) => extname(file).slice(1)));

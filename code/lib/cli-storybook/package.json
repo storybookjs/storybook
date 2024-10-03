@@ -52,13 +52,13 @@
     "find-up": "^5.0.0",
     "giget": "^1.0.0",
     "glob": "^10.0.0",
-    "globby": "^14.0.1",
     "jscodeshift": "^0.15.1",
     "leven": "^3.1.0",
     "prompts": "^2.4.0",
     "semver": "^7.3.7",
     "storybook": "workspace:*",
     "tiny-invariant": "^1.3.1",
+    "tinyglobby": "^0.2.9",
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {

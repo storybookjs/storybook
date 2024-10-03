@@ -6,10 +6,10 @@ interface Options {
 
 export const warn = async ({ hasTSDependency }: Options) => {
   if (!hasTSDependency) {
-    // Dynamically import globby because it is a pure ESM module
-    const { globby } = await import('globby');
+    // Dynamically import glob because it is a pure ESM module
+    const { glob } = await import('tinyglobby');
 
-    const files = await globby(['**/*.@(ts|tsx)', '!**/node_modules', '!**/*.d.ts']);
+    const files = await glob(['**/*.@(ts|tsx)', '!**/node_modules', '!**/*.d.ts']);
 
     const hasTSFiles = !!files.length;
 

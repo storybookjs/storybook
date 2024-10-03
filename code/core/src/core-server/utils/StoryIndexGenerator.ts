@@ -129,10 +129,10 @@ export class StoryIndexGenerator {
 
         const fullGlob = slash(join(specifier.directory, specifier.files));
 
-        // Dynamically import globby because it is a pure ESM module
-        const { globby } = await import('globby');
+        // Dynamically import glob because it is a pure ESM module
+        const { glob } = await import('tinyglobby');
 
-        const files = await globby(fullGlob, {
+        const files = await glob(fullGlob, {
           absolute: true,
           cwd: this.options.workingDir,
           ...commonGlobOptions(fullGlob),

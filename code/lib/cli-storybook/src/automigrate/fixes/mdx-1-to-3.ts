@@ -50,10 +50,10 @@ export const mdx1to3: Fix<Mdx1to3Options> = {
   versionRange: ['<7.0.0', '>=8.0.0-alpha.0'],
 
   async check() {
-    // Dynamically import globby because it is a pure ESM module
-    const { globby } = await import('globby');
+    // Dynamically import glob because it is a pure ESM module
+    const { glob } = await import('tinyglobby');
 
-    const storiesMdxFiles = await globby('./!(node_modules)**/*.(story|stories).mdx');
+    const storiesMdxFiles = await glob('./!(node_modules)**/*.(story|stories).mdx');
     return storiesMdxFiles.length ? { storiesMdxFiles } : null;
   },
 

@@ -30,10 +30,10 @@ export async function searchFiles({
   ignoredFiles?: string[];
   fileExtensions?: string[];
 }): Promise<SearchResult> {
-  // Dynamically import globby because it is a pure ESM module
-  const { globby, isDynamicPattern } = await import('globby');
+  // Dynamically import glob because it is a pure ESM module
+  const { glob, isDynamicPattern } = await import('tinyglobby');
 
-  const hasSearchSpecialGlobChars = isDynamicPattern(searchQuery, { cwd });
+  const hasSearchSpecialGlobChars = isDynamicPattern(searchQuery);
 
   const hasFileExtensionRegex = /(\.[a-z]+)$/i;
   const searchQueryHasExtension = hasFileExtensionRegex.test(searchQuery);
@@ -48,15 +48,11 @@ export async function searchFiles({
           `**/*${searchQuery}*/**/*.${fileExtensionsPattern}`,
         ];
 
-  const entries = await globby(globbedSearchQuery, {
+  const entries = await glob(globbedSearchQuery, {
     ignore: ignoredFiles,
-    gitignore: true,
     caseSensitiveMatch: false,
     cwd,
-    objectMode: true,
   });
 
-  return entries
-    .map((entry) => entry.path)
-    .filter((entry) => fileExtensions.some((ext) => entry.endsWith(`.${ext}`)));
+  return entries.filter((entry) => fileExtensions.some((ext) => entry.endsWith(`.${ext}`)));
 }

@@ -62,11 +62,11 @@
     "@types/cross-spawn": "^6.0.2",
     "cross-spawn": "^7.0.3",
     "es-toolkit": "^1.21.0",
-    "globby": "^14.0.1",
     "jscodeshift": "^0.15.1",
     "prettier": "^3.1.1",
     "recast": "^0.23.5",
-    "tiny-invariant": "^1.3.1"
+    "tiny-invariant": "^1.3.1",
+    "tinyglobby": "^0.2.9"
   },
   "devDependencies": {
     "@types/jscodeshift": "^0.11.10",

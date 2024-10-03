@@ -6,9 +6,9 @@ import stripAnsi from 'strip-ansi';
 
 import { missingStorybookDependencies } from './missing-storybook-dependencies';
 
-vi.mock('globby', () => ({
+vi.mock('tinyglobby', () => ({
   __esModule: true,
-  globby: vi.fn().mockResolvedValue(['.storybook/manager.ts', 'path/to/file.stories.tsx']),
+  glob: vi.fn().mockResolvedValue(['.storybook/manager.ts', 'path/to/file.stories.tsx']),
 }));
 
 vi.mock('node:fs/promises', async (importOriginal) => {

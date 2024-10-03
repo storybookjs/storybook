@@ -69,8 +69,8 @@ export const missingStorybookDependencies: Fix<MissingStorybookDependenciesOptio
   versionRange: ['<8.2', '>=8.2'],
 
   async check({ packageManager }) {
-    // Dynamically import globby because it is a pure ESM module
-    const { globby } = await import('globby');
+    // Dynamically import glob because it is a pure ESM module
+    const { glob } = await import('tinyglobby');
 
     const result = await checkInstallations(packageManager, consolidatedPackages);
     if (!result) {
@@ -84,7 +84,7 @@ export const missingStorybookDependencies: Fix<MissingStorybookDependenciesOptio
 
     const patterns = ['**/.storybook/*', '**/*.stories.*', '**/*.story.*'];
 
-    const files = await globby(patterns, {
+    const files = await glob(patterns, {
       ignore: ['**/node_modules/**'],
     });
     const packageUsage: PackageUsage = {};

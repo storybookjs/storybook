@@ -96,11 +96,11 @@ export function watchStorySpecifiers(
               basename(specifier.files)
             );
 
-            // Dynamically import globby because it is a pure ESM module
-            const { globby } = await import('globby');
+            // Dynamically import glob because it is a pure ESM module
+            const { glob } = await import('tinyglobby');
 
             // glob only supports forward slashes
-            const addedFiles = await globby(slash(dirGlob), commonGlobOptions(dirGlob));
+            const addedFiles = await glob(slash(dirGlob), commonGlobOptions(dirGlob));
 
             addedFiles.forEach((filePath: Path) => {
               const fileImportPath = toImportPath(filePath);

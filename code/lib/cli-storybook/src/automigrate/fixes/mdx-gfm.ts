@@ -46,10 +46,10 @@ export const mdxgfm: Fix<Options> = {
         return false;
       }
 
-      // Dynamically import globby because it is a pure ESM module
-      const { globby } = await import('globby');
+      // Dynamically import glob because it is a pure ESM module
+      const { glob } = await import('tinyglobby');
 
-      const files = await globby(pattern, commonGlobOptions(pattern));
+      const files = await glob(pattern, commonGlobOptions(pattern));
 
       return files.some((f) => f.endsWith('.mdx'));
     }, Promise.resolve(false));

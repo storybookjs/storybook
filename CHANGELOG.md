@@ -1,3 +1,8 @@
+## 8.3.5
+
+- CLI: Update the React Native init to include v8 dependencies - [#29273](https://github.com/storybookjs/storybook/pull/29273), thanks @dannyhw!
+- Vitest plugin: Fix renamed export stories - [#29250](https://github.com/storybookjs/storybook/pull/29250), thanks @shilman!
+
 ## 8.3.4
 
 - Addon Test: Support story name as test description - [#29147](https://github.com/storybookjs/storybook/pull/29147), thanks @InfiniteXyy!

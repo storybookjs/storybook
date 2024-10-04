@@ -190,6 +190,7 @@ export interface StaticMeta
 
 export interface StaticStory extends Pick<StoryAnnotations, 'name' | 'parameters' | 'tags'> {
   id: string;
+  localName?: string;
   __stats: IndexInputStats;
 }
 
@@ -488,6 +489,7 @@ export class CsfFile {
             node.specifiers.forEach((specifier) => {
               if (t.isExportSpecifier(specifier) && t.isIdentifier(specifier.exported)) {
                 const { name: exportName } = specifier.exported;
+                const { name: localName } = specifier.local;
                 const decl = t.isProgram(parent)
                   ? findVarInitialization(specifier.local.name, parent)
                   : specifier.local;
@@ -515,6 +517,7 @@ export class CsfFile {
                   self._stories[exportName] = {
                     id: 'FIXME',
                     name: exportName,
+                    localName,
                     parameters: {},
                     __stats: {},
                   };

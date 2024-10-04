@@ -1,1 +1,1 @@
-{"version":"8.4.0-alpha.0","info":{"plain":""}}
+{"version":"8.4.0-alpha.3","info":{"plain":"- CLI: Migrate from `chalk` to `picocolors` - [#28262](https://github.com/storybookjs/storybook/pull/28262), thanks @43081j!\n- Core: Migrate from `qs` to `picoquery` - [#28315](https://github.com/storybookjs/storybook/pull/28315), thanks @43081j!\n- UI: Brand image css class conflict causes image to resize on hot reloads - [#29129](https://github.com/storybookjs/storybook/pull/29129), thanks @ShreySinha02!"}}

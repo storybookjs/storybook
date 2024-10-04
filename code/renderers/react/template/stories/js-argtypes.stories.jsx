@@ -5,7 +5,7 @@ import { ThemeProvider, convert, themes } from 'storybook/internal/theming';
 
 import { PureArgsTable as ArgsTable } from '@storybook/blocks';
 
-import mapValues from 'lodash/mapValues.js';
+import { mapValues } from 'es-toolkit/compat';
 import PropTypes from 'prop-types';
 
 // import { component as JsStyledDocgenComponent } from './__testfixtures__/8279-js-styled-docgen/input';

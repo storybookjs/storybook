@@ -216,12 +216,7 @@ const baseTemplates = {
         framework: '@storybook/experimental-nextjs-vite',
         features: { experimentalRSC: true },
       },
-      extraDependencies: [
-        'server-only',
-        'vite-plugin-storybook-nextjs',
-        '@storybook/experimental-nextjs-vite',
-        'vite',
-      ],
+      extraDependencies: ['server-only', '@storybook/experimental-nextjs-vite', 'vite'],
     },
     skipTasks: ['e2e-tests-dev', 'bench'],
   },

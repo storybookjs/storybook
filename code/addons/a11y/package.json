@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-a11y",
-  "version": "8.3.0-beta.0",
+  "version": "8.4.0-alpha.4",
   "description": "Test component compliance with web accessibility standards",
   "keywords": [
     "a11y",
@@ -62,7 +62,6 @@
     "@storybook/global": "^5.0.0",
     "@storybook/icons": "^1.2.10",
     "@testing-library/react": "^14.0.0",
-    "lodash": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-resize-detector": "^7.1.2",

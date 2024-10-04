@@ -7,7 +7,7 @@ import type { Args, Parameters, StoryContext } from 'storybook/internal/types';
 import { PureArgsTable as ArgsTable } from '@storybook/blocks';
 import type { StoryObj } from '@storybook/react';
 
-import mapValues from 'lodash/mapValues.js';
+import { mapValues } from 'es-toolkit/compat';
 
 import { component as TsImportedTypesComponent } from './docgen-components/8143-ts-imported-types/input';
 import { component as TsReactFcGenericsComponent } from './docgen-components/8143-ts-react-fc-generics/input';

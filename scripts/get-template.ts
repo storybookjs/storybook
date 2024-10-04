@@ -1,7 +1,7 @@
-import chalk from 'chalk';
 import { program } from 'commander';
 import { pathExists, readFile } from 'fs-extra';
 import { readdir } from 'fs/promises';
+import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 import yaml from 'yaml';
 
@@ -103,7 +103,7 @@ async function checkParallelism(cadence?: Cadence, scriptName?: TaskKey) {
   let isIncorrect = false;
 
   cadences.forEach((cad) => {
-    summary.push(`\n${chalk.bold(cad)}`);
+    summary.push(`\n${picocolors.bold(cad)}`);
     const cadenceTemplates = Object.entries(allTemplates).filter(([key]) =>
       templatesByCadence[cad].includes(key as TemplateKey)
     );
@@ -129,7 +129,7 @@ async function checkParallelism(cadence?: Cadence, scriptName?: TaskKey) {
 
         if (newParallelism !== currentParallelism) {
           summary.push(
-            `-- ❌ ${tasksMap[script]} - parallelism: ${currentParallelism} ${chalk.bgRed(
+            `-- ❌ ${tasksMap[script]} - parallelism: ${currentParallelism} ${picocolors.bgRed(
               `(should be ${newParallelism})`
             )}`
           );

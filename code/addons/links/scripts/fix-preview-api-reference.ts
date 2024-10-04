@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'fs-extra';
+import { readFile, writeFile } from 'node:fs/promises';
 
 /* I wish this wasn't needed..
  * There seems to be some bug in tsup / the unlaying lib that does DTS bundling

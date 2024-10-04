@@ -7,7 +7,7 @@ import { type Theme, styled, useTheme } from 'storybook/internal/theming';
 import { global } from '@storybook/global';
 import { AddIcon, EyeCloseIcon, EyeIcon, SubtractIcon } from '@storybook/icons';
 
-import cloneDeep from 'lodash/cloneDeep.js';
+import { cloneDeep } from 'es-toolkit/compat';
 
 import { getControlId, getControlSetterButtonId } from './helpers';
 import { JsonTree } from './react-editable-json-tree';

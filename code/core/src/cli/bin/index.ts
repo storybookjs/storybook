@@ -3,10 +3,10 @@ import { addToGlobalContext } from '@storybook/core/telemetry';
 
 import { logger } from '@storybook/core/node-logger';
 
-import chalk from 'chalk';
 import { program } from 'commander';
 import { findPackageSync } from 'fd-package-json';
 import leven from 'leven';
+import picocolors from 'picocolors';
 import invariant from 'tiny-invariant';
 
 import { build } from '../build';
@@ -70,7 +70,7 @@ command('dev')
   )
   .action(async (options) => {
     logger.setLevel(options.loglevel);
-    consoleLogger.log(chalk.bold(`${pkg.name} v${pkg.version}`) + chalk.reset('\n'));
+    consoleLogger.log(picocolors.bold(`${pkg.name} v${pkg.version}`) + picocolors.reset('\n'));
 
     // The key is the field created in `options` variable for
     // each command line argument. Value is the env variable.
@@ -110,7 +110,7 @@ command('build')
   .action(async (options) => {
     process.env.NODE_ENV = process.env.NODE_ENV || 'production';
     logger.setLevel(options.loglevel);
-    consoleLogger.log(chalk.bold(`${pkg.name} v${pkg.version}\n`));
+    consoleLogger.log(picocolors.bold(`${pkg.name} v${pkg.version}\n`));
 
     // The key is the field created in `options` variable for
     // each command line argument. Value is the env variable.

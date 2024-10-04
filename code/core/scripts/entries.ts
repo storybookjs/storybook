@@ -28,7 +28,13 @@ export const getEntries = (cwd: string) => {
     define('src/preview-api/index.ts', ['browser', 'node'], true),
     define('src/manager-api/index.ts', ['browser', 'node'], true, ['react']),
     define('src/router/index.ts', ['browser', 'node'], true, ['react']),
-    define('src/components/index.ts', ['browser', 'node'], true, ['react', 'react-dom']),
+    define(
+      'src/components/index.ts',
+      ['browser', 'node'],
+      true,
+      ['react', 'react-dom'],
+      ['prettier'] // the syntax highlighter uses prettier/standalone to format the code
+    ),
     define('src/theming/index.ts', ['browser', 'node'], true, ['react']),
     define('src/theming/create.ts', ['browser', 'node'], true, ['react']),
     define('src/docs-tools/index.ts', ['browser', 'node'], true),

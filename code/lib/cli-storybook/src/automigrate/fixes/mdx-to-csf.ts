@@ -2,8 +2,8 @@ import type { StoriesEntry } from 'storybook/internal/types';
 
 import { runCodemod } from '@storybook/codemod';
 
-import chalk from 'chalk';
 import { glob } from 'glob';
+import picocolors from 'picocolors';
 import { prompt } from 'prompts';
 import { dedent } from 'ts-dedent';
 
@@ -43,9 +43,9 @@ export const mdxToCSF: Fix<BareMdxStoriesGlobRunOptions> = {
 
     if (!existingStoriesEntries) {
       throw new Error(dedent`
-        ❌ Unable to determine Storybook stories globs in ${chalk.blue(
-          mainConfig
-        )}, skipping ${chalk.cyan(this.id)} fix.
+        ❌ Unable to determine Storybook stories globs in ${picocolors.blue(
+          JSON.stringify(mainConfig, null, 2)
+        )}, skipping ${picocolors.cyan(this.id)} fix.
         
         In Storybook 7, we have deprecated defining stories in MDX files, and consequently have changed the suffix to simply .mdx.
 
@@ -53,7 +53,7 @@ export const mdxToCSF: Fix<BareMdxStoriesGlobRunOptions> = {
 
         We were unable to automatically migrate your 'stories' config to include any .mdx file instead of just .stories.mdx.
         We suggest you make this change manually.
-        To learn more about this change, see: ${chalk.yellow(
+        To learn more about this change, see: ${picocolors.yellow(
           'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#mdx-docs-files'
         )}
       `);
@@ -97,7 +97,7 @@ export const mdxToCSF: Fix<BareMdxStoriesGlobRunOptions> = {
       .join('\n');
     return dedent`
       We've detected your project has one or more globs in your 'stories' config that matches .stories.mdx files:
-        ${chalk.cyan(prettyExistingStoriesEntries)}
+        ${picocolors.cyan(prettyExistingStoriesEntries)}
       
       In Storybook 7, we have deprecated defining stories in MDX files, and consequently have changed the suffix to simply .mdx. Since Storybook 8, we have removed the support of story definition in MDX files entirely. Therefore '.stories.mdx' files aren't supported anymore.
 
@@ -105,11 +105,11 @@ export const mdxToCSF: Fix<BareMdxStoriesGlobRunOptions> = {
 
       We can automatically migrate your 'stories' config to include any .mdx file instead of just .stories.mdx.
       That would result in the following 'stories' config:
-        ${chalk.cyan(prettyNextStoriesEntries)}
+        ${picocolors.cyan(prettyNextStoriesEntries)}
 
       Additionally, we will run the 'mdx-to-csf' codemod for you, which tries to transform '*.stories.mdx' files to '*.stories.js' and '*.mdx' files.
 
-      To learn more about this change, see: ${chalk.yellow(
+      To learn more about this change, see: ${picocolors.yellow(
         'https://storybook.js.org/docs/migration-guide#storiesmdx-to-mdxcsf'
       )}
     `;

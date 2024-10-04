@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-docs",
-  "version": "8.3.0-beta.0",
+  "version": "8.4.0-alpha.4",
   "description": "Document component usage and properties in Markdown",
   "keywords": [
     "addon",
@@ -103,7 +103,6 @@
     "@storybook/global": "^5.0.0",
     "@storybook/react-dom-shim": "workspace:*",
     "@types/react": "^16.8.0 || ^17.0.0 || ^18.0.0",
-    "fs-extra": "^11.1.0",
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0",
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0",
     "rehype-external-links": "^3.0.0",

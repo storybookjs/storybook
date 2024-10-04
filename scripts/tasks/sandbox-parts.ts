@@ -1,5 +1,6 @@
 // This file requires many imports from `../code`, which requires both an install and bootstrap of
 // the repo to work properly. So we load it async in the task runner *after* those steps.
+import { isFunction } from 'es-toolkit';
 import {
   copy,
   ensureDir,
@@ -12,7 +13,6 @@ import {
   writeJson,
 } from 'fs-extra';
 import JSON5 from 'json5';
-import { isFunction } from 'lodash';
 import { createRequire } from 'module';
 import { join, relative, resolve, sep } from 'path';
 import slash from 'slash';
@@ -207,7 +207,7 @@ function addEsbuildLoaderToStories(mainConfig: ConfigFile) {
           },
         },
         // Handle MDX files per the addon-docs presets (ish)
-        {        
+        {
           test: /template-stories\\/.*\\.mdx$/,
           exclude: /\\.stories\\.mdx$/,
           use: [
@@ -369,17 +369,19 @@ const getVitestPluginInfo = (details: TemplateDetails) => {
   const isSveltekit = framework.includes('sveltekit');
 
   if (isNextjs) {
-    frameworkPluginImport = "import vitePluginNext from 'vite-plugin-storybook-nextjs'";
-    frameworkPluginCall = 'vitePluginNext()';
+    frameworkPluginImport =
+      "import { storybookNextJsPlugin } from '@storybook/experimental-nextjs-vite/vite-plugin'";
+    frameworkPluginCall = 'storybookNextJsPlugin()';
   }
 
   if (isSveltekit) {
-    frameworkPluginImport = "import { storybookSveltekitPlugin } from '@storybook/sveltekit/vite'";
+    frameworkPluginImport =
+      "import { storybookSveltekitPlugin } from '@storybook/sveltekit/vite-plugin'";
     frameworkPluginCall = 'storybookSveltekitPlugin()';
   }
 
   if (framework === '@storybook/vue3-vite') {
-    frameworkPluginImport = "import { storybookVuePlugin } from '@storybook/vue3-vite/vite'";
+    frameworkPluginImport = "import { storybookVuePlugin } from '@storybook/vue3-vite/vite-plugin'";
     frameworkPluginCall = 'storybookVuePlugin()';
   }
 
@@ -435,7 +437,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
     join(sandboxDir, 'vitest.workspace.ts'),
     dedent`
       import { defineWorkspace, defaultExclude } from "vitest/config";
-      import { storybookTest } from "@storybook/experimental-addon-vitest/plugin";
+      import { storybookTest } from "@storybook/experimental-addon-test/vitest-plugin";
       ${frameworkPluginImport}
 
       export default defineWorkspace([
@@ -510,10 +512,10 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   // This workaround is needed because Vitest seems to have issues in link mode
   // so the /setup-file and /global-setup files from the vitest addon won't work in portal protocol
   if (options.link) {
-    const vitestAddonPath = relative(sandboxDir, join(CODE_DIRECTORY, 'addons', 'vitest'));
+    const vitestAddonPath = relative(sandboxDir, join(CODE_DIRECTORY, 'addons', 'test'));
     packageJson.resolutions = {
       ...packageJson.resolutions,
-      '@storybook/experimental-addon-vitest': `file:${vitestAddonPath}`,
+      '@storybook/experimental-addon-test': `file:${vitestAddonPath}`,
     };
   }
 
@@ -715,7 +717,7 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
     addRefs(mainConfig);
   }
 
-  const templateConfig = isFunction(template.modifications?.mainConfig)
+  const templateConfig: any = isFunction(template.modifications?.mainConfig)
     ? template.modifications?.mainConfig(mainConfig)
     : template.modifications?.mainConfig || {};
   const configToAdd = {

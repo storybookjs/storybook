@@ -94,11 +94,11 @@ export const sandbox: Task = {
         'vitest',
         'playwright',
         '@vitest/browser',
-        '@storybook/experimental-addon-vitest'
+        '@storybook/experimental-addon-test'
       );
 
       if (details.template.expected.framework.includes('nextjs')) {
-        extraDeps.push('vite-plugin-storybook-nextjs', 'jsdom');
+        extraDeps.push('@storybook/experimental-nextjs-vite', 'jsdom');
       }
 
       // if (details.template.expected.renderer === '@storybook/svelte') {

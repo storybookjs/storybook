@@ -2,7 +2,6 @@ import { join, resolve } from 'node:path';
 
 import {
   getBuilderOptions,
-  handlebars,
   loadPreviewOrConfigFile,
   normalizeStories,
   readTemplate,
@@ -51,18 +50,28 @@ export const getVirtualModules = async (options: Options) => {
   const needPipelinedImport = !!builderOptions.lazyCompilation && !isProd;
   virtualModules[storiesPath] = toImportFn(stories, { needPipelinedImport });
   const configEntryPath = resolve(join(workingDir, 'storybook-config-entry.js'));
-  virtualModules[configEntryPath] = handlebars(
+  virtualModules[configEntryPath] = (
     await readTemplate(
-      require.resolve(
-        '@storybook/builder-webpack5/templates/virtualModuleModernEntry.js.handlebars'
-      )
-    ),
-    {
-      storiesFilename,
-      previewAnnotations,
-    }
+      require.resolve('@storybook/builder-webpack5/templates/virtualModuleModernEntry.js')
+    )
+  )
+    .replaceAll(`'{{storiesFilename}}'`, `'./${storiesFilename}'`)
+    .replaceAll(
+      `'{{previewAnnotations}}'`,
+      previewAnnotations
+        .filter(Boolean)
+        .map((entry) => `'${entry}'`)
+        .join(',')
+    )
+    .replaceAll(
+      `'{{previewAnnotations_requires}}'`,
+      previewAnnotations
+        .filter(Boolean)
+        .map((entry) => `require('${entry}')`)
+        .join(',')
+    )
     // We need to double escape `\` for webpack. We may have some in windows paths
-  ).replace(/\\/g, '\\\\');
+    .replace(/\\/g, '\\\\');
   entries.push(configEntryPath);
 
   return {

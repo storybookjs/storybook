@@ -1,21 +1,21 @@
 {
-  "name": "@storybook/experimental-addon-vitest",
-  "version": "8.3.0-beta.0",
+  "name": "@storybook/experimental-addon-test",
+  "version": "8.4.0-alpha.4",
   "description": "Integrate Vitest with Storybook",
   "keywords": [
     "storybook-addons",
-    "addon-vitest",
+    "addon-test",
     "vitest",
     "testing"
   ],
-  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/vitest",
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/test",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/storybookjs/storybook.git",
-    "directory": "code/addons/vitest"
+    "directory": "code/addons/test"
   },
   "funding": {
     "type": "opencollective",
@@ -29,24 +29,24 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
-    "./plugin": {
-      "types": "./dist/plugin/index.d.ts",
-      "import": "./dist/plugin/index.js",
-      "require": "./dist/plugin/index.cjs"
+    "./vitest-plugin": {
+      "types": "./dist/vitest-plugin/index.d.ts",
+      "import": "./dist/vitest-plugin/index.js",
+      "require": "./dist/vitest-plugin/index.cjs"
     },
     "./internal/global-setup": {
-      "types": "./dist/plugin/global-setup.d.ts",
-      "import": "./dist/plugin/global-setup.js",
-      "require": "./dist/plugin/global-setup.cjs"
+      "types": "./dist/vitest-plugin/global-setup.d.ts",
+      "import": "./dist/vitest-plugin/global-setup.js",
+      "require": "./dist/vitest-plugin/global-setup.cjs"
     },
     "./internal/setup-file": {
-      "types": "./dist/plugin/setup-file.d.ts",
-      "import": "./dist/plugin/setup-file.js"
+      "types": "./dist/vitest-plugin/setup-file.d.ts",
+      "import": "./dist/vitest-plugin/setup-file.js"
     },
     "./internal/test-utils": {
-      "types": "./dist/plugin/test-utils.d.ts",
-      "import": "./dist/plugin/test-utils.js",
-      "require": "./dist/plugin/test-utils.cjs"
+      "types": "./dist/vitest-plugin/test-utils.d.ts",
+      "import": "./dist/vitest-plugin/test-utils.js",
+      "require": "./dist/vitest-plugin/test-utils.cjs"
     },
     "./manager": "./dist/manager.js",
     "./preset": "./dist/preset.cjs",
@@ -73,8 +73,12 @@
     "@storybook/csf": "^0.1.11"
   },
   "devDependencies": {
+    "@types/semver": "^7",
     "@vitest/browser": "^2.0.0",
+    "boxen": "^8.0.1",
     "find-up": "^7.0.0",
+    "picocolors": "^1.1.0",
+    "semver": "^7.6.3",
     "tinyrainbow": "^1.2.0",
     "ts-dedent": "^2.2.0",
     "vitest": "^2.0.0"
@@ -90,16 +94,16 @@
   "bundler": {
     "exportEntries": [
       "./src/index.ts",
-      "./src/plugin/test-utils.ts",
-      "./src/plugin/setup-file.ts"
+      "./src/vitest-plugin/test-utils.ts",
+      "./src/vitest-plugin/setup-file.ts"
     ],
     "managerEntries": [
       "./src/manager.tsx"
     ],
     "nodeEntries": [
       "./src/preset.ts",
-      "./src/plugin/index.ts",
-      "./src/plugin/global-setup.ts",
+      "./src/vitest-plugin/index.ts",
+      "./src/vitest-plugin/global-setup.ts",
       "./src/postinstall.ts"
     ]
   }

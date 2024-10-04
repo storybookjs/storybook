@@ -43,18 +43,18 @@ export class SbPage {
     const titleId = toId(title);
     const storyId = toId(name);
     const storyLinkId = `#${titleId}--${storyId}`;
-    await this.page.waitForSelector(storyLinkId);
+    await this.page.locator(storyLinkId).waitFor();
     const storyLink = this.page.locator('*', { has: this.page.locator(`> ${storyLinkId}`) });
-    await storyLink.click({ force: true });
+    await storyLink.click();
 
     await this.page.waitForURL((url) =>
       url.search.includes(
-        `path=/${viewMode ?? name === 'docs' ? 'docs' : 'story'}/${titleId}--${storyId}`
+        `path=/${(viewMode ?? name === 'docs') ? 'docs' : 'story'}/${titleId}--${storyId}`
       )
     );
 
-    const selected = await storyLink.getAttribute('data-selected');
-    await expect(selected).toBe('true');
+    const selected = storyLink;
+    await expect(selected).toHaveAttribute('data-selected', 'true');
 
     await this.previewRoot();
   }
@@ -65,16 +65,16 @@ export class SbPage {
     const titleId = toId(title);
     const storyId = toId(name);
     const storyLinkId = `#${titleId}-${storyId}--docs`;
-    await this.page.waitForSelector(storyLinkId);
+    await this.page.locator(storyLinkId).waitFor();
     const storyLink = this.page.locator('*', { has: this.page.locator(`> ${storyLinkId}`) });
-    await storyLink.click({ force: true });
+    await storyLink.click();
 
     await this.page.waitForURL((url) =>
       url.search.includes(`path=/docs/${titleId}-${storyId}--docs`)
     );
 
-    const selected = await storyLink.getAttribute('data-selected');
-    await expect(selected).toBe('true');
+    const selected = storyLink;
+    await expect(selected).toHaveAttribute('data-selected', 'true');
 
     await this.previewRoot();
   }
@@ -124,7 +124,7 @@ export class SbPage {
   }
 
   async viewAddonPanel(name: string) {
-    const tabs = await this.page.locator('[role=tablist] button[role=tab]');
+    const tabs = this.page.locator('[role=tablist] button[role=tab]');
     const tab = tabs.locator(`text=/^${name}/`);
     await tab.click();
   }

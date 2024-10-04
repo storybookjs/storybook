@@ -26,10 +26,6 @@ vi.mock('fs', () => ({
   default: vi.fn(),
 }));
 
-vi.mock('fs-extra', () => ({
-  pathExistsSync: vi.fn(() => true),
-}));
-
 vi.mock('@storybook/core/node-logger');
 
 const MOCK_FRAMEWORK_FILES: {

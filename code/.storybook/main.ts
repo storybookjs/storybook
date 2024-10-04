@@ -7,6 +7,7 @@ const managerApiPath = join(__dirname, '../core/src/manager-api');
 
 const config: StorybookConfig = {
   stories: [
+    './*.stories.@(js|jsx|ts|tsx)',
     {
       directory: '../core/template/stories',
       titlePrefix: 'core',
@@ -85,13 +86,12 @@ const config: StorybookConfig = {
     // },
   ],
   addons: [
-    '@storybook/addon-links',
     '@storybook/addon-themes',
     '@storybook/addon-essentials',
     '@storybook/addon-interactions',
     '@storybook/addon-storysource',
     '@storybook/addon-designs',
-    '@storybook/experimental-addon-vitest',
+    '@storybook/experimental-addon-test',
     '@storybook/addon-a11y',
     '@chromatic-com/storybook',
   ],

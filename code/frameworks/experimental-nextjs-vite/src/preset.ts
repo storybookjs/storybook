@@ -6,7 +6,6 @@ import type { PresetProperty } from 'storybook/internal/types';
 import type { StorybookConfigVite } from '@storybook/builder-vite';
 
 import { dirname, join } from 'path';
-// @ts-expect-error - tsconfig settings have to be moduleResolution=Bundler and module=Preserve
 import vitePluginStorybookNextjs from 'vite-plugin-storybook-nextjs';
 
 import type { FrameworkOptions } from './types';

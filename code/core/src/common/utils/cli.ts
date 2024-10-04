@@ -1,9 +1,9 @@
-import { realpath } from 'node:fs/promises';
+import type { WriteStream } from 'node:fs';
+import { createWriteStream, mkdirSync } from 'node:fs';
+import { readFile, realpath, rename, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import { join } from 'node:path';
 
-import type { WriteStream } from 'fs-extra';
-import { createWriteStream, mkdirSync, move, readFile, remove, writeFile } from 'fs-extra';
 import { type MergeExclusive } from 'type-fest';
 import uniqueString from 'unique-string';
 
@@ -17,7 +17,7 @@ const getPath = async (prefix = '') => join(await tempDir(), prefix + uniqueStri
 
 export async function temporaryDirectory({ prefix = '' } = {}) {
   const directory = await getPath(prefix);
-  await mkdirSync(directory);
+  mkdirSync(directory);
   return directory;
 }
 
@@ -146,12 +146,10 @@ export const createLogStream = async (
 
   return new Promise((resolve, reject) => {
     logStream.once('open', () => {
-      const moveLogFile = async () => move(temporaryLogPath, finalLogPath, { overwrite: true });
+      const moveLogFile = async () => rename(temporaryLogPath, finalLogPath);
       const clearLogFile = async () => writeFile(temporaryLogPath, '');
-      const removeLogFile = async () => remove(temporaryLogPath);
-      const readLogFile = async () => {
-        return readFile(temporaryLogPath, 'utf8');
-      };
+      const removeLogFile = async () => rm(temporaryLogPath, { recursive: true, force: true });
+      const readLogFile = async () => readFile(temporaryLogPath, { encoding: 'utf8' });
       resolve({ logStream, moveLogFile, clearLogFile, removeLogFile, readLogFile });
     });
     logStream.once('error', reject);

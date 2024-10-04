@@ -2,7 +2,8 @@ import { createContext, useContext } from 'react';
 
 import type { API_StatusObject, API_StatusState, API_StatusValue, StoryId } from '@storybook/types';
 
-import type { ComponentEntry, GroupEntry, StoriesHash } from '../../../manager-api';
+import type { StoriesHash } from '../../../manager-api';
+import type { Item } from '../../container/Sidebar';
 import { getDescendantIds } from '../../utils/tree';
 
 export const StatusContext = createContext<{
@@ -11,7 +12,7 @@ export const StatusContext = createContext<{
   groupStatus?: Record<StoryId, API_StatusValue>;
 }>({});
 
-export const useStatusSummary = (item: GroupEntry | ComponentEntry) => {
+export const useStatusSummary = (item: Item) => {
   const { data, status, groupStatus } = useContext(StatusContext);
   const summary: {
     counts: Record<API_StatusValue, number>;

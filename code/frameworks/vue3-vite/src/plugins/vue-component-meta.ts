@@ -26,7 +26,7 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
 
   // exclude stories, virtual modules and storybook internals
   const exclude =
-    /\.stories\.(ts|tsx|js|jsx)$|^\/virtual:|^\/sb-preview\/|\.storybook\/.*\.(ts|js)$/;
+    /\.stories\.(ts|tsx|js|jsx)$|^\0\/virtual:|^\/virtual:|^\/sb-preview\/|\.storybook\/.*\.(ts|js)$/;
   const include = /\.(vue|ts|js|tsx|jsx)$/;
   const filter = createFilter(include, exclude);
 
@@ -285,6 +285,12 @@ async function getTsConfigReferences(tsConfigPath: string) {
  */
 function removeNestedSchemas(schema: PropertyMetaSchema) {
   if (typeof schema !== 'object') {
+    return;
+  }
+  if (schema.kind === 'enum') {
+    // for enum types, we do not want to remove the schemas because otherwise the controls will be missing
+    // instead we remove the nested schemas for the enum entries to prevent out of memory errors for types like "HTMLElement | MouseEvent"
+    schema.schema?.forEach((enumSchema) => removeNestedSchemas(enumSchema));
     return;
   }
   delete schema.schema;

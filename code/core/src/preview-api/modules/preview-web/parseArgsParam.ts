@@ -2,8 +2,8 @@ import type { Args } from '@storybook/core/types';
 
 import { once } from '@storybook/core/client-logger';
 
-import isPlainObject from 'lodash/isPlainObject.js';
-import qs from 'qs';
+import { isPlainObject } from 'es-toolkit';
+import { type Options, parse } from 'picoquery';
 import { dedent } from 'ts-dedent';
 
 // Keep this in sync with validateArgs in router/src/utils.ts
@@ -53,17 +53,14 @@ const validateArgs = (key = '', value: unknown): boolean => {
   return false;
 };
 
-const QS_OPTIONS = {
+const QUERY_OPTIONS: Partial<Options> = {
   delimiter: ';', // we're parsing a single query param
-  allowDots: true, // objects are encoded using dot notation
-  allowSparse: true, // arrays will be merged on top of their initial value
-  decoder(
-    str: string,
-    defaultDecoder: (str: string, decoder?: any, charset?: string) => string,
-    charset: string,
-    type: 'key' | 'value'
-  ) {
-    if (type === 'value' && str.startsWith('!')) {
+  nesting: true,
+  arrayRepeat: true,
+  arrayRepeatSyntax: 'bracket',
+  nestingSyntax: 'js', // objects are encoded using dot notation
+  valueDeserializer(str: string) {
+    if (str.startsWith('!')) {
       if (str === '!undefined') {
         return undefined;
       }
@@ -81,7 +78,7 @@ const QS_OPTIONS = {
       }
 
       if (str.startsWith('!date(') && str.endsWith(')')) {
-        return new Date(str.slice(6, -1));
+        return new Date(str.replaceAll(' ', '+').slice(6, -1));
       }
 
       if (str.startsWith('!hex(') && str.endsWith(')')) {
@@ -90,28 +87,28 @@ const QS_OPTIONS = {
 
       const color = str.slice(1).match(COLOR_REGEXP);
       if (color) {
-        if (str.startsWith('!rgba')) {
+        if (str.startsWith('!rgba') || str.startsWith('!RGBA')) {
           return `${color[1]}(${color[2]}, ${color[3]}, ${color[4]}, ${color[5]})`;
         }
 
-        if (str.startsWith('!hsla')) {
+        if (str.startsWith('!hsla') || str.startsWith('!HSLA')) {
           return `${color[1]}(${color[2]}, ${color[3]}%, ${color[4]}%, ${color[5]})`;
         }
-        return str.startsWith('!rgb')
+        return str.startsWith('!rgb') || str.startsWith('!RGB')
           ? `${color[1]}(${color[2]}, ${color[3]}, ${color[4]})`
           : `${color[1]}(${color[2]}, ${color[3]}%, ${color[4]}%)`;
       }
     }
 
-    if (type === 'value' && NUMBER_REGEXP.test(str)) {
+    if (NUMBER_REGEXP.test(str)) {
       return Number(str);
     }
-    return defaultDecoder(str, defaultDecoder, charset);
+    return str;
   },
 };
 export const parseArgsParam = (argsString: string): Args => {
   const parts = argsString.split(';').map((part) => part.replace('=', '~').replace(':', '='));
-  return Object.entries(qs.parse(parts.join(';'), QS_OPTIONS)).reduce((acc, [key, value]) => {
+  return Object.entries(parse(parts.join(';'), QUERY_OPTIONS)).reduce((acc, [key, value]) => {
     if (validateArgs(key, value)) {
       return Object.assign(acc, { [key]: value });
     }

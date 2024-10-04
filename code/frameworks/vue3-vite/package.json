@@ -1,6 +1,6 @@
 {
   "name": "@storybook/vue3-vite",
-  "version": "8.3.0-beta.0",
+  "version": "8.4.0-alpha.4",
   "description": "Storybook for Vue3 and Vite: Develop Vue3 components in isolation with Hot Reloading.",
   "keywords": [
     "storybook"
@@ -30,10 +30,10 @@
       "types": "./dist/preset.d.ts",
       "require": "./dist/preset.js"
     },
-    "./vite": {
-      "types": "./dist/vite.d.ts",
-      "require": "./dist/vite.js",
-      "import": "./dist/vite.mjs"
+    "./vite-plugin": {
+      "types": "./dist/vite-plugin.d.ts",
+      "require": "./dist/vite-plugin.js",
+      "import": "./dist/vite-plugin.mjs"
     },
     "./package.json": "./package.json"
   },
@@ -80,7 +80,7 @@
     "entries": [
       "./src/index.ts",
       "./src/preset.ts",
-      "./src/vite.ts"
+      "./src/vite-plugin.ts"
     ],
     "platform": "node"
   },

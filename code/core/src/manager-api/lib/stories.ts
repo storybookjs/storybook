@@ -19,8 +19,7 @@ import type {
 } from '@storybook/core/types';
 import { sanitize } from '@storybook/csf';
 
-import countBy from 'lodash/countBy.js';
-import mapValues from 'lodash/mapValues.js';
+import { countBy, mapValues } from 'es-toolkit';
 import memoize from 'memoizerific';
 import { dedent } from 'ts-dedent';
 
@@ -41,7 +40,7 @@ export const denormalizeStoryParameters = ({
       kindParameters[storyData.kind],
       storyData.parameters as unknown as Parameters
     ),
-  }));
+  })) as SetStoriesStoryData;
 };
 
 export const transformSetStoriesStoryDataToStoriesHash = (
@@ -112,7 +111,7 @@ export const transformStoryIndexV2toV3 = (index: StoryIndexV2): StoryIndexV3 => 
 };
 
 export const transformStoryIndexV3toV4 = (index: StoryIndexV3): API_PreparedStoryIndex => {
-  const countByTitle = countBy(Object.values(index.stories), 'title');
+  const countByTitle = countBy(Object.values(index.stories), (item) => item.title);
   return {
     v: 4,
     entries: Object.values(index.stories).reduce(

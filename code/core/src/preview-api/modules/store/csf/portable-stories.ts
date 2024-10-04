@@ -76,7 +76,17 @@ export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
   const annotations = Array.isArray(projectAnnotations) ? projectAnnotations : [projectAnnotations];
   globalThis.globalProjectAnnotations = composeConfigs(annotations.map(extractAnnotation));
 
-  return globalThis.globalProjectAnnotations;
+  /*
+    We must return the composition of default and global annotations here
+    To ensure that the user has the full project annotations, eg. when running
+
+    const projectAnnotations = setProjectAnnotations(...);
+    beforeAll(projectAnnotations.beforeAll)
+  */
+  return composeConfigs([
+    globalThis.defaultProjectAnnotations ?? {},
+    globalThis.globalProjectAnnotations ?? {},
+  ]);
 }
 
 const cleanups: CleanupCallback[] = [];
@@ -116,7 +126,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
     composeConfigs([
       defaultConfig && Object.keys(defaultConfig).length > 0
         ? defaultConfig
-        : globalThis.defaultProjectAnnotations ?? {},
+        : (globalThis.defaultProjectAnnotations ?? {}),
       globalThis.globalProjectAnnotations ?? {},
       projectAnnotations ?? {},
     ])

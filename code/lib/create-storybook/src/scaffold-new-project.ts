@@ -1,12 +1,14 @@
+import { readdirSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
+
 import type { PackageManagerName } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { GenerateNewProjectOnInitError } from 'storybook/internal/server-errors';
 import { telemetry } from 'storybook/internal/telemetry';
 
 import boxen from 'boxen';
-import chalk from 'chalk';
 import execa from 'execa';
-import { readdirSync, remove } from 'fs-extra';
+import picocolors from 'picocolors';
 import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
 
@@ -100,7 +102,7 @@ const packageManagerToCoercedName = (
 
 const buildProjectDisplayNameForPrint = ({ displayName }: SupportedProject) => {
   const { type, builder, language } = displayName;
-  return `${chalk.bold.blue(type)} ${builder ? `+ ${builder} ` : ''}(${language})`;
+  return `${picocolors.bold(picocolors.blue(type))} ${builder ? `+ ${builder} ` : ''}(${language})`;
 };
 
 /**
@@ -119,14 +121,14 @@ export const scaffoldNewProject = async (
       dedent`
         Would you like to generate a new project from the following list?
 
-        ${chalk.bold('Note:')}
+        ${picocolors.bold('Note:')}
         Storybook supports many more frameworks and bundlers than listed below. If you don't see your
         preferred setup, you can still generate a project then rerun this command to add Storybook.
 
-        ${chalk.bold('Press ^C at any time to quit.')}
+        ${picocolors.bold('Press ^C at any time to quit.')}
       `,
       {
-        title: chalk.bold('🔎 Empty directory detected'),
+        title: picocolors.bold('🔎 Empty directory detected'),
         padding: 1,
         borderStyle: 'double',
         borderColor: 'yellow',
@@ -164,7 +166,7 @@ export const scaffoldNewProject = async (
 
   logger.line(1);
   logger.plain(
-    `Creating a new "${projectDisplayName}" project with ${chalk.bold(packageManagerName)}...`
+    `Creating a new "${projectDisplayName}" project with ${picocolors.bold(packageManagerName)}...`
   );
   logger.line(1);
 
@@ -173,7 +175,7 @@ export const scaffoldNewProject = async (
   try {
     // If target directory has a .cache folder, remove it
     // so that it does not block the creation of the new project
-    await remove(`${targetDir}/.cache`);
+    await rm(`${targetDir}/.cache`, { recursive: true, force: true });
 
     // Create new project in temp directory
     await execa.command(createScript, {
@@ -200,12 +202,14 @@ export const scaffoldNewProject = async (
   logger.plain(
     boxen(
       dedent`
-      "${projectDisplayName}" project with ${chalk.bold(packageManagerName)} created successfully!
+      "${projectDisplayName}" project with ${picocolors.bold(
+        packageManagerName
+      )} created successfully!
 
       Continuing with Storybook installation...
     `,
       {
-        title: chalk.bold('✅ Success!'),
+        title: picocolors.bold('✅ Success!'),
         padding: 1,
         borderStyle: 'double',
         borderColor: 'green',

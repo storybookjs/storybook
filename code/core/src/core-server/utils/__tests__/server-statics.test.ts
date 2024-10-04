@@ -1,19 +1,17 @@
+import fs from 'node:fs';
 import { resolve } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import fs from 'fs-extra';
-
 import { onlyWindows, skipWindows } from '../../../../../vitest.helpers';
 import { parseStaticDir } from '../server-statics';
 
-vi.mock('fs-extra');
-const pathExistsMock = vi.mocked(fs.pathExists);
+vi.mock('node:fs');
+const existsSyncMock = vi.mocked(fs.existsSync);
 
 describe('parseStaticDir', () => {
   beforeEach(() => {
-    // @ts-expect-error for some reason vitest does not match the return type with one of the overloads from pathExists
-    pathExistsMock.mockResolvedValue(true);
+    existsSyncMock.mockReturnValue(true);
   });
 
   it('returns the static dir/path and default target', async () => {
@@ -57,8 +55,7 @@ describe('parseStaticDir', () => {
   });
 
   it('checks that the path exists', async () => {
-    // @ts-expect-error for some reason vitest does not match the return type with one of the overloads from pathExists
-    pathExistsMock.mockResolvedValue(false);
+    existsSyncMock.mockReturnValueOnce(false);
     await expect(parseStaticDir('nonexistent')).rejects.toThrow(resolve('nonexistent'));
   });
 

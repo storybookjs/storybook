@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { transformSync } from '@storybook/core/babel';
 
-import mapValues from 'lodash/mapValues.js';
+import { mapValues } from 'es-toolkit';
 import requireFromString from 'require-from-string';
 
 import { normalizeNewlines } from '../utils';

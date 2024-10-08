@@ -126,6 +126,9 @@ const config: StorybookConfig = {
     viewportStoryGlobals: true,
     backgroundsStoryGlobals: true,
   },
+  typescript: {
+    // reactDocgen: 'react-docgen',
+  },
   viteFinal: async (viteConfig, { configType }) => {
     const { mergeConfig } = await import('vite');
 

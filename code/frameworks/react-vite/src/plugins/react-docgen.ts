@@ -13,7 +13,7 @@ import {
   makeFsImporter,
   parse,
 } from 'react-docgen';
-import * as TsconfigPaths from 'tsconfig-paths';
+import * as TsconfigPaths from 'tsconfig-paths/src/index';
 import type { PluginOption } from 'vite';
 
 import actualNameHandler from './docgen-handlers/actualNameHandler';

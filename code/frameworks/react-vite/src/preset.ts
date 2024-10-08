@@ -31,7 +31,9 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, { presets 
 
   if (reactDocgenOption === 'react-docgen-typescript' && typescriptPresent) {
     plugins.push(
-      require('@joshwooding/vite-plugin-react-docgen-typescript')({
+      await (
+        await import('@joshwooding/vite-plugin-react-docgen-typescript')
+      ).default({
         ...reactDocgenTypescriptOptions,
         // We *need* this set so that RDT returns default values in the same format as react-docgen
         savePropValueAsString: true,

@@ -6706,6 +6706,7 @@ __metadata:
     "@storybook/react": "workspace:*"
     "@types/node": "npm:^22.0.0"
     find-up: "npm:^5.0.0"
+    json5: "npm:^2.2.3"
     magic-string: "npm:^0.30.0"
     react-docgen: "npm:^7.0.0"
     resolve: "npm:^1.22.8"

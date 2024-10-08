@@ -2,7 +2,6 @@ import { relative } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
 
-import { createFilter } from '@rollup/pluginutils';
 import findUp from 'find-up';
 import MagicString from 'magic-string';
 import type { Documentation } from 'react-docgen';
@@ -40,6 +39,7 @@ export async function reactDocgen({
   exclude = [/node_modules\/.*/],
 }: Options = {}): Promise<PluginOption> {
   const cwd = process.cwd();
+  const { createFilter } = await import('vite');
   const filter = createFilter(include, exclude);
 
   const tsconfigPath = await findUp('tsconfig.json', { cwd });

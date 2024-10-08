@@ -53,7 +53,6 @@
   },
   "devDependencies": {
     "@joshwooding/vite-plugin-react-docgen-typescript": "0.3.0",
-    "@rollup/pluginutils": "^5.0.2",
     "@types/node": "^22.0.0",
     "find-up": "^5.0.0",
     "magic-string": "^0.30.0",

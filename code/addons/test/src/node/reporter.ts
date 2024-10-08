@@ -9,6 +9,7 @@ import type {
   TestingModuleRunTestResultPayload,
 } from 'storybook/internal/core-events';
 
+import type { State as InstrumentedState } from '@storybook/instrumenter';
 import type { API_StatusUpdate } from '@storybook/types';
 
 import type { Suite } from '@vitest/runner';
@@ -21,6 +22,7 @@ import { getTests } from '@vitest/runner/utils';
 import throttle from 'lodash/throttle.js';
 
 import { TEST_PROVIDER_ID } from '../constants';
+import { sanitizeInstrumentedState } from '../sanitize-instrumented-state';
 import type { TestManager } from './test-manager';
 
 type Status = 'passed' | 'failed' | 'skipped' | 'pending' | 'todo' | 'disabled';
@@ -97,21 +99,29 @@ export class StorybookReporter implements Reporter {
           ancestorTitles.reverse();
 
           const status = StatusMap[t.result?.state || t.mode] || 'skipped';
+          const storyId = (t.meta as any).storyId;
+          const instrumenterData = (t.meta as any).instrumenterState;
+          const instrumenterState = instrumenterData?.[storyId];
+          // const instrumenterState = sanitizeInstrumentedState(instrumenterData?.[storyId]);
+
+          const metadata: Omit<TestingModuleRunAssertionResultPayload, 'status'> = {
+            duration: t.result?.duration || 0,
+            storyId,
+            data: { instrumenterState },
+          };
 
           if (status === 'passed' || status === 'pending') {
             return {
               status,
-              duration: t.result?.duration || 0,
-              storyId: (t.meta as any).storyId,
+              ...metadata,
             };
           }
 
           if (status === 'failed') {
             return {
               status,
-              duration: t.result?.duration || 0,
               failureMessages: t.result?.errors?.map((e) => e.stack || e.message) || [],
-              storyId: (t.meta as any).storyId,
+              ...metadata,
             };
           }
 

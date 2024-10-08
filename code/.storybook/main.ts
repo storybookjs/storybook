@@ -7,92 +7,98 @@ const managerApiPath = join(__dirname, '../core/src/manager-api');
 
 const config: StorybookConfig = {
   stories: [
-    './*.stories.@(js|jsx|ts|tsx)',
-    {
-      directory: '../core/template/stories',
-      titlePrefix: 'core',
-    },
-    {
-      directory: '../core/src/manager',
-      titlePrefix: 'manager',
-    },
-    {
-      directory: '../core/src/preview-api',
-      titlePrefix: 'preview',
-    },
-    {
-      directory: '../core/src/components/brand',
-      titlePrefix: 'brand',
-    },
-    {
-      directory: '../core/src/components/components',
-      titlePrefix: 'components',
-    },
-    {
-      directory: '../lib/blocks/src',
-      titlePrefix: 'blocks',
-    },
-    {
-      directory: '../addons/a11y/template/stories',
-      titlePrefix: 'addons/a11y',
-    },
-    {
-      directory: '../addons/actions/template/stories',
-      titlePrefix: 'addons/actions',
-    },
-    {
-      directory: '../addons/backgrounds/template/stories',
-      titlePrefix: 'addons/backgrounds',
-    },
-    {
-      directory: '../addons/controls/src',
-      titlePrefix: 'addons/controls',
-    },
-    {
-      directory: '../addons/controls/template/stories',
-      titlePrefix: 'addons/controls',
-    },
-    {
-      directory: '../addons/docs/template/stories',
-      titlePrefix: 'addons/docs',
-    },
-    {
-      directory: '../addons/links/template/stories',
-      titlePrefix: 'addons/links',
-    },
-    {
-      directory: '../addons/viewport/template/stories',
-      titlePrefix: 'addons/viewport',
-    },
-    {
-      directory: '../addons/toolbars/template/stories',
-      titlePrefix: 'addons/toolbars',
-    },
-    {
-      directory: '../addons/themes/template/stories',
-      titlePrefix: 'addons/themes',
-    },
-    {
-      directory: '../addons/onboarding/src',
-      titlePrefix: 'addons/onboarding',
-    },
-    {
-      directory: '../addons/interactions/src',
-      titlePrefix: 'addons/interactions',
-    },
-    {
-      directory: '../addons/interactions/template/stories',
-      titlePrefix: 'addons/interactions/tests',
-    },
-    {
-      directory: '../addons/test/template/stories',
-      titlePrefix: 'addons/test',
-    },
+    // './*.stories.@(js|jsx|ts|tsx)',
+    // {
+    //   directory: '../core/template/stories',
+    //   titlePrefix: 'core',
+    // },
+    // {
+    //   directory: '../core/src/manager',
+    //   titlePrefix: 'manager',
+    // },
+    // {
+    //   directory: '../core/src/preview-api',
+    //   titlePrefix: 'preview',
+    // },
+    // {
+    //   directory: '../core/src/components/brand',
+    //   titlePrefix: 'brand',
+    // },
+    // {
+    //   directory: '../core/src/components/components',
+    //   titlePrefix: 'components',
+    // },
+    // {
+    //   directory: '../lib/blocks/src',
+    //   titlePrefix: 'blocks',
+    // },
+    // {
+    //   directory: '../addons/a11y/template/stories',
+    //   titlePrefix: 'addons/a11y',
+    // },
+    // {
+    //   directory: '../addons/actions/template/stories',
+    //   titlePrefix: 'addons/actions',
+    // },
+    // {
+    //   directory: '../addons/backgrounds/template/stories',
+    //   titlePrefix: 'addons/backgrounds',
+    // },
+    // {
+    //   directory: '../addons/controls/src',
+    //   titlePrefix: 'addons/controls',
+    // },
+    // {
+    //   directory: '../addons/controls/template/stories',
+    //   titlePrefix: 'addons/controls',
+    // },
+    // {
+    //   directory: '../addons/docs/template/stories',
+    //   titlePrefix: 'addons/docs',
+    // },
+    // {
+    //   directory: '../addons/links/template/stories',
+    //   titlePrefix: 'addons/links',
+    // },
+    // {
+    //   directory: '../addons/viewport/template/stories',
+    //   titlePrefix: 'addons/viewport',
+    // },
+    // {
+    //   directory: '../addons/toolbars/template/stories',
+    //   titlePrefix: 'addons/toolbars',
+    // },
+    // {
+    //   directory: '../addons/themes/template/stories',
+    //   titlePrefix: 'addons/themes',
+    // },
+    // {
+    //   directory: '../addons/onboarding/src',
+    //   titlePrefix: 'addons/onboarding',
+    // },
+    // {
+    //   directory: '../addons/interactions/src',
+    //   titlePrefix: 'addons/interactions',
+    // },
+    // {
+    //   directory: '../addons/interactions/template/stories',
+    //   titlePrefix: 'addons/interactions/tests',
+    // },
+    // {
+    //   directory: '../addons/test/src',
+    //   titlePrefix: 'addons/test',
+    // },
+    // {
+    //   directory: '../addons/test/template/stories',
+    //   titlePrefix: 'addons/test',
+    // },
+    // '../addons/test/src/components/InteractionsPanel.stories.tsx',
+    '../addons/test/template/stories/basics.stories.ts',
   ],
   addons: [
     '@storybook/addon-themes',
     '@storybook/addon-essentials',
-    '@storybook/addon-interactions',
+    // '@storybook/addon-interactions',
     '@storybook/addon-storysource',
     '@storybook/addon-designs',
     '@storybook/experimental-addon-test',

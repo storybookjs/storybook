@@ -58,12 +58,14 @@ export type TestingModuleRunAssertionResultPayload =
       status: 'success' | 'pending';
       duration: number;
       storyId: string;
+      data: any;
     }
   | {
       status: 'failed';
       duration: number;
       failureMessages: string[];
       storyId: string;
+      data: any;
     };
 
 export type Status = 'success' | 'failed' | 'pending';

@@ -86,12 +86,13 @@ function processTestReport(payload: TestingModuleRunResponsePayload) {
   const result: API_StatusUpdate = {};
 
   payload.testResults.forEach((testResult: any) => {
-    testResult.results.forEach(({ storyId, status, failureMessages }: any) => {
+    testResult.results.forEach(({ storyId, status, failureMessages, data = {} }: any) => {
       if (storyId) {
         result[storyId] = {
           title: 'Vitest',
           status: statusMap[status],
           description: failureMessages?.length ? failureMessages.join('\n') : '',
+          data,
         };
       }
     });

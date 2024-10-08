@@ -261,6 +261,23 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
     );
   }, [testRunStatus, storyStatus]);
 
+  if (interactions.length > 0) {
+    console.log({
+      storyStatuses,
+      storyStatus,
+      testRunStatus,
+      calls,
+      interactions,
+    });
+
+    console.log({
+      originalCalls: calls,
+      vitestCalls: new Map(
+        storyStatus.data.instrumenterState.calls.map((call: any) => [call.id, call])
+      ),
+    });
+  }
+
   if (isErrored) {
     return <Fragment key="component-tests" />;
   }

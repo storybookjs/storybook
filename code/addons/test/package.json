@@ -80,6 +80,7 @@
     "@storybook/icons": "^1.2.12",
     "@storybook/instrumenter": "workspace:*",
     "@storybook/test": "workspace:*",
+    "@storybook/theming": "workspace:*",
     "polished": "^4.2.2",
     "ts-dedent": "^2.2.0"
   },

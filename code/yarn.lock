@@ -6239,6 +6239,7 @@ __metadata:
     "@storybook/icons": "npm:^1.2.12"
     "@storybook/instrumenter": "workspace:*"
     "@storybook/test": "workspace:*"
+    "@storybook/theming": "workspace:*"
     "@types/node": "npm:^22.0.0"
     "@types/semver": "npm:^7"
     "@vitest/browser": "npm:^2.1.1"

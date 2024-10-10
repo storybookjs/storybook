@@ -23,4 +23,7 @@ process.once('uncaughtException', (error) => {
   throw error;
 });
 
-require('../dist/proxy.cjs');
+import('../dist/proxy.js').catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

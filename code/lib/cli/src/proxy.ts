@@ -5,7 +5,10 @@ import { spawn } from 'child_process';
 const args = process.argv.slice(2);
 
 if (['dev', 'build'].includes(args[0])) {
-  require('@storybook/core/cli/bin');
+  import('@storybook/core/cli/bin').catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
 } else {
   const proxiedArgs =
     args[0] === 'init'

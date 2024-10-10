@@ -41,8 +41,7 @@
     "./package.json": "./package.json",
     "./core": {
       "types": "./core/index.d.ts",
-      "import": "./core/index.js",
-      "require": "./core/index.cjs"
+      "import": "./core/index.js"
     },
     "./internal/node-logger": {
       "types": "./core/node-logger/index.d.ts",

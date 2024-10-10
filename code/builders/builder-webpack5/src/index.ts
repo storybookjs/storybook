@@ -14,7 +14,6 @@ import { checkWebpackVersion } from '@storybook/core-webpack';
 
 import prettyTime from 'pretty-hrtime';
 import sirv from 'sirv';
-import { corePath } from 'storybook/core-path';
 import type { Configuration, Stats, StatsOptions } from 'webpack';
 import webpack, { ProgressPlugin } from 'webpack';
 import webpackDevMiddleware from 'webpack-dev-middleware';
@@ -179,7 +178,7 @@ const starter: StarterFunction = async function* starterGeneratorFn({
 
   compilation = webpackDevMiddleware(compiler, middlewareOptions);
 
-  const previewResolvedDir = join(corePath, 'dist/preview');
+  const previewResolvedDir = join((await import('storybook/core-path')).corePath, 'dist/preview');
   router.use(
     '/sb-preview',
     sirv(previewResolvedDir, {
@@ -292,7 +291,7 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
     });
   });
 
-  const previewResolvedDir = join(corePath, 'dist/preview');
+  const previewResolvedDir = join((await import('storybook/core-path')).corePath, 'dist/preview');
   const previewDirTarget = join(options.outputDir || '', `sb-preview`);
   const previewFiles = cp(previewResolvedDir, previewDirTarget, {
     filter: (src) => {

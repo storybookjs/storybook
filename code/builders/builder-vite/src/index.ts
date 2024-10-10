@@ -6,7 +6,6 @@ import { NoStatsForViteDevError } from 'storybook/internal/server-errors';
 import type { Middleware, Options } from 'storybook/internal/types';
 
 import sirv from 'sirv';
-import { corePath } from 'storybook/core-path';
 import type { ViteDevServer } from 'vite';
 
 import { build as viteBuild } from './build';
@@ -61,7 +60,7 @@ export const start: ViteBuilder['start'] = async ({
 }) => {
   server = await createViteServer(options as Options, devServer);
 
-  const previewResolvedDir = join(corePath, 'dist/preview');
+  const previewResolvedDir = join((await import('storybook/core-path')).corePath, 'dist/preview');
   router.use(
     '/sb-preview',
     sirv(previewResolvedDir, {
@@ -87,7 +86,7 @@ export const start: ViteBuilder['start'] = async ({
 export const build: ViteBuilder['build'] = async ({ options }) => {
   const viteCompilation = viteBuild(options as Options);
 
-  const previewResolvedDir = join(corePath, 'dist/preview');
+  const previewResolvedDir = join((await import('storybook/core-path')).corePath, 'dist/preview');
   const previewDirTarget = join(options.outputDir || '', `sb-preview`);
   const previewFiles = cp(previewResolvedDir, previewDirTarget, {
     filter: (src) => {

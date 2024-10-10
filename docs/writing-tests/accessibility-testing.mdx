@@ -19,23 +19,19 @@ Storybook provides an official [a11y addon](https://storybook.js.org/addons/@sto
 
 ### Set up the a11y addon
 
-If you want to check accessibility for your stories using the [addon](https://storybook.js.org/addons/@storybook/addon-a11y/), you'll need to install it and add it to your Storybook.
-
-Run the following command to install the addon.
+If you want to check accessibility for your stories using the [addon](https://storybook.js.org/addons/@storybook/addon-a11y/), you'll need to add it to your Storybook. You can do this by running the following command:
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="storybook-a11y-install.md" />
+<CodeSnippets path="storybook-a11y-add.md" />
 
 {/* prettier-ignore-end */}
 
-Update your Storybook configuration (in `.storybook/main.js|ts`) to include the accessibility addon.
+<Callout variant="info">
 
-{/* prettier-ignore-start */}
+The CLI's [`add`](../api/cli-options.mdx#add) command automates the addon's installation and setup. To install it manually, see our [documentation](../addons/install-addons.mdx#manual-installation) on how to install addons.
 
-<CodeSnippets path="storybook-a11y-register.md" />
-
-{/* prettier-ignore-end */}
+</Callout>
 
 Start your Storybook, and you will see some noticeable differences in the UI. A new toolbar icon and the accessibility panel where you can inspect the results of the tests.
 

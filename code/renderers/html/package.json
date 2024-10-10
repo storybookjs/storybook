@@ -1,6 +1,6 @@
 {
   "name": "@storybook/html",
-  "version": "8.4.0-alpha.4",
+  "version": "8.4.0-alpha.6",
   "description": "Storybook HTML renderer",
   "keywords": [
     "storybook"

@@ -31,6 +31,7 @@ export async function searchFiles({
   fileExtensions?: string[];
 }): Promise<SearchResult> {
   // Dynamically import globby because it is a pure ESM module
+  // eslint-disable-next-line depend/ban-dependencies
   const { globby, isDynamicPattern } = await import('globby');
 
   const hasSearchSpecialGlobChars = isDynamicPattern(searchQuery, { cwd });

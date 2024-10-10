@@ -1,6 +1,6 @@
 {
   "name": "@storybook/builder-vite",
-  "version": "8.4.0-alpha.4",
+  "version": "8.4.0-alpha.6",
   "description": "A plugin to run and build Storybooks with Vite",
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/builders/builder-vite/#readme",
   "bugs": {
@@ -44,39 +44,24 @@
   },
   "dependencies": {
     "@storybook/csf-plugin": "workspace:*",
-    "@types/find-cache-dir": "^3.2.1",
     "browser-assert": "^1.2.1",
-    "es-module-lexer": "^1.5.0",
-    "express": "^4.19.2",
-    "find-cache-dir": "^3.0.0",
-    "magic-string": "^0.30.0",
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
-    "@types/express": "^4.17.21",
+    "@types/find-cache-dir": "^3.2.1",
     "@types/node": "^22.0.0",
+    "es-module-lexer": "^1.5.0",
+    "find-cache-dir": "^3.0.0",
     "glob": "^10.0.0",
+    "magic-string": "^0.30.0",
+    "polka": "^1.0.0-next.28",
+    "sirv": "^2.0.4",
     "slash": "^5.0.0",
-    "typescript": "^5.3.2",
     "vite": "^4.0.4"
   },
   "peerDependencies": {
-    "@preact/preset-vite": "*",
     "storybook": "workspace:^",
-    "typescript": ">= 4.3.x",
-    "vite": "^4.0.0 || ^5.0.0",
-    "vite-plugin-glimmerx": "*"
-  },
-  "peerDependenciesMeta": {
-    "@preact/preset-vite": {
-      "optional": true
-    },
-    "typescript": {
-      "optional": true
-    },
-    "vite-plugin-glimmerx": {
-      "optional": true
-    }
+    "vite": "^4.0.0 || ^5.0.0"
   },
   "publishConfig": {
     "access": "public"

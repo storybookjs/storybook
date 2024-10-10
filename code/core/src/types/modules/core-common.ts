@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import type { Router } from 'express';
-import type { FileSystemCache } from 'file-system-cache';
 // should be node:http, but that caused the ui/manager to fail to build, might be able to switch this back once ui/manager is in the core
-import type { Server } from 'http';
-import type * as telejson from 'telejson';
+import type { Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
+import type { Server as NetServer } from 'net';
+import type { Options as TelejsonOptions } from 'telejson';
 import type { PackageJson as PackageJsonFromTypeFest } from 'type-fest';
 
+import type { FileSystemCache } from '../../common/utils/file-cache';
 import type { Indexer, StoriesEntry } from './indexer';
 
 /** ⚠️ This file contains internal WIP types they MUST NOT be exported outside this package for now! */
@@ -26,7 +26,7 @@ export interface CoreConfig {
       };
   renderer?: RendererName;
   disableWebpackDefaults?: boolean;
-  channelOptions?: Partial<telejson.Options>;
+  channelOptions?: Partial<TelejsonOptions>;
   /** Disables the generation of project.json, a file containing Storybook metadata */
   disableProjectJson?: boolean;
   /**
@@ -156,7 +156,7 @@ export interface LoadOptions {
   configDir?: string;
   cacheKey?: string;
   ignorePreview?: boolean;
-  extendServer?: (server: Server) => void;
+  extendServer?: (server: HttpServer) => void;
 }
 
 export interface CLIOptions {
@@ -211,13 +211,37 @@ export type Options = LoadOptions &
   CLIOptions &
   BuilderOptions & { build?: TestBuildConfig };
 
+// A minimal version of Polka's interface to avoid exposing internal implementation details
+export type Middleware<T extends IncomingMessage = IncomingMessage> = (
+  req: T & IncomingMessage,
+  res: ServerResponse,
+  next: (err?: string | Error) => Promise<void> | void
+) => Promise<void> | void;
+
+interface ServerApp<T extends IncomingMessage = IncomingMessage> {
+  server: NetServer;
+
+  use(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
+  use(...handlers: Middleware<T>[]): this;
+
+  get(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
+  post(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
+  put(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
+  patch(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
+  delete(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
+  head(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
+  options(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
+  connect(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
+  trace(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
+}
+
 export interface Builder<Config, BuilderStats extends Stats = Stats> {
   getConfig: (options: Options) => Promise<Config>;
   start: (args: {
     options: Options;
     startTime: ReturnType<typeof process.hrtime>;
-    router: Router;
-    server: Server;
+    router: ServerApp;
+    server: HttpServer;
     channel: ServerChannel;
   }) => Promise<void | {
     stats?: BuilderStats;

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/builder-webpack5",
-  "version": "8.4.0-alpha.4",
+  "version": "8.4.0-alpha.6",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -72,7 +72,6 @@
     "constants-browserify": "^1.0.0",
     "css-loader": "^6.7.1",
     "es-module-lexer": "^1.5.0",
-    "express": "^4.19.2",
     "fork-ts-checker-webpack-plugin": "^8.0.0",
     "html-webpack-plugin": "^5.5.0",
     "magic-string": "^0.30.5",
@@ -95,6 +94,7 @@
     "@types/terser-webpack-plugin": "^5.2.0",
     "@types/webpack-hot-middleware": "^2.25.6",
     "pretty-hrtime": "^1.0.3",
+    "sirv": "^2.0.4",
     "slash": "^5.0.0",
     "typescript": "^5.3.2"
   },

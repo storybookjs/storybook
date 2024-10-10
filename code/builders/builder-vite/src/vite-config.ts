@@ -119,11 +119,5 @@ export async function pluginConfig(options: Options) {
     pluginWebpackStats({ workingDir: process.cwd() }),
   ] as PluginOption[];
 
-  // TODO: framework doesn't exist, should move into framework when/if built
-  if (frameworkName === '@storybook/glimmerx-vite') {
-    const plugin = require('vite-plugin-glimmerx/index.cjs');
-    plugins.push(plugin.default());
-  }
-
   return plugins;
 }

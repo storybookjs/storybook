@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import { appendFile, writeFileSync } from 'node:fs';
 
+// eslint-disable-next-line depend/ban-dependencies
 import { remove } from 'fs-extra';
 import trash from 'trash';
 

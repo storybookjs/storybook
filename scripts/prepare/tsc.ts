@@ -1,4 +1,6 @@
+// eslint-disable-next-line depend/ban-dependencies
 import { emptyDir, move, readJson } from 'fs-extra';
+// eslint-disable-next-line depend/ban-dependencies
 import { globSync } from 'glob';
 import { join } from 'path';
 import * as ts from 'typescript';

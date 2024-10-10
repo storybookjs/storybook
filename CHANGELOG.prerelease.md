@@ -1,3 +1,14 @@
+## 8.4.0-alpha.6
+
+- Addon-docs, blocks: Prebundle dependencies - [#29301](https://github.com/storybookjs/storybook/pull/29301), thanks @JReinhold!
+- React: Prebundle all of `renderers/react`'s dependencies - [#29298](https://github.com/storybookjs/storybook/pull/29298), thanks @ndelangen!
+- Vite: Cleanup and prebundle dependencies - [#29302](https://github.com/storybookjs/storybook/pull/29302), thanks @JReinhold!
+
+## 8.4.0-alpha.5
+
+- Core: Migrate from `express` to `polka` - [#29230](https://github.com/storybookjs/storybook/pull/29230), thanks @43081j!
+- Core: Remove dependence on `file-system-cache` - [#29256](https://github.com/storybookjs/storybook/pull/29256), thanks @ndelangen!
+
 ## 8.4.0-alpha.4
 
 - Blocks: Prebundle `es-toolkit` - [#29259](https://github.com/storybookjs/storybook/pull/29259), thanks @JReinhold!

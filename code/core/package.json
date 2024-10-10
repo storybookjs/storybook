@@ -152,15 +152,15 @@
       "import": "./dist/preview/globals.js",
       "require": "./dist/preview/globals.cjs"
     },
-    "./cli": {
-      "types": "./dist/cli/index.d.ts",
-      "import": "./dist/cli/index.js",
-      "require": "./dist/cli/index.cjs"
-    },
     "./babel": {
       "types": "./dist/babel/index.d.ts",
       "import": "./dist/babel/index.js",
       "require": "./dist/babel/index.cjs"
+    },
+    "./cli": {
+      "types": "./dist/cli/index.d.ts",
+      "import": "./dist/cli/index.js",
+      "require": "./dist/cli/index.cjs"
     },
     "./cli/bin": {
       "types": "./dist/cli/bin/index.d.ts",
@@ -255,11 +255,11 @@
       "preview/globals": [
         "./dist/preview/globals.d.ts"
       ],
-      "cli": [
-        "./dist/cli/index.d.ts"
-      ],
       "babel": [
         "./dist/babel/index.d.ts"
+      ],
+      "cli": [
+        "./dist/cli/index.d.ts"
       ],
       "cli/bin": [
         "./dist/cli/bin/index.d.ts"

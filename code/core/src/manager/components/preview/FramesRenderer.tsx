@@ -73,8 +73,8 @@ export const FramesRenderer: FC<FramesRendererProps> = ({
     return ref.type === 'auto-inject' || ref.id === refId;
   }, {});
 
-  if (!frames['storybook-preview-iframe']) {
-    frames['storybook-preview-iframe'] = getStoryHref(baseUrl, storyId, {
+  if (!frames[active]) {
+    frames[active] = getStoryHref(baseUrl, storyId, {
       ...queryParams,
       ...(version && { version }),
       viewMode,

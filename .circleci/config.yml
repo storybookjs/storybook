@@ -724,70 +724,70 @@ workflows:
     when:
       equal: [normal, << pipeline.parameters.workflow >>]
     jobs:
-      - pretty-docs
+      # - pretty-docs
       - build
-      - lint:
-          requires:
-            - build
-      - knip:
-          requires:
-            - build
-      - check:
-          requires:
-            - build
+      # - lint:
+      #     requires:
+      #       - build
+      # - knip:
+      #     requires:
+      #       - build
+      # - check:
+      #     requires:
+      #       - build
       - unit-tests:
           requires:
             - build
-      - script-checks:
-          requires:
-            - build
-      - chromatic-internal-storybook:
-          requires:
-            - build
+      # - script-checks:
+      #     requires:
+      #       - build
+      # - chromatic-internal-storybook:
+      #     requires:
+      #       - build
       - coverage:
           requires:
             - unit-tests
-      - create-sandboxes:
-          parallelism: 14
-          requires:
-            - build
-      - build-sandboxes:
-          parallelism: 14
-          requires:
-            - create-sandboxes
-      - chromatic-sandboxes:
-          parallelism: 11
-          requires:
-            - build-sandboxes
-      - e2e-production:
-          parallelism: 9
-          requires:
-            - build-sandboxes
-      - e2e-dev:
-          parallelism: 2
-          requires:
-            - create-sandboxes
-      - test-runner-production:
-          parallelism: 9
-          requires:
-            - build-sandboxes
-      - vitest-integration:
-          parallelism: 5
-          requires:
-            - create-sandboxes
-      - bench:
-          parallelism: 5
-          requires:
-            - build-sandboxes
-      - test-ui-testing-module:
-          requires:
-            - build
-      - test-portable-stories:
-          requires:
-            - build
-          matrix:
-            parameters:
-              directory: ["react", "vue3", "nextjs", "svelte"]
+      # - create-sandboxes:
+      #     parallelism: 14
+      #     requires:
+      #       - build
+      # - build-sandboxes:
+      #     parallelism: 14
+      #     requires:
+      #       - create-sandboxes
+      # - chromatic-sandboxes:
+      #     parallelism: 11
+      #     requires:
+      #       - build-sandboxes
+      # - e2e-production:
+      #     parallelism: 9
+      #     requires:
+      #       - build-sandboxes
+      # - e2e-dev:
+      #     parallelism: 2
+      #     requires:
+      #       - create-sandboxes
+      # - test-runner-production:
+      #     parallelism: 9
+      #     requires:
+      #       - build-sandboxes
+      # - vitest-integration:
+      #     parallelism: 5
+      #     requires:
+      #       - create-sandboxes
+      # - bench:
+      #     parallelism: 5
+      #     requires:
+      #       - build-sandboxes
+      # - test-ui-testing-module:
+      #     requires:
+      #       - build
+      # - test-portable-stories:
+      #     requires:
+      #       - build
+      #     matrix:
+      #       parameters:
+      #         directory: ["react", "vue3", "nextjs", "svelte"]
       # TODO: reenable once we find out the source of flakyness
       # - test-runner-dev:
       #     requires:

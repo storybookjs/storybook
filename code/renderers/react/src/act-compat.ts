@@ -8,9 +8,14 @@ declare const globalThis: {
   IS_REACT_ACT_ENVIRONMENT: boolean;
 };
 
+// We need to spread React to avoid
+// export 'act' (imported as 'React4') was not found in 'react' errors in webpack
+// We do check if act exists, but webpack will still throw an error on compile time
+const clonedReact = { ...React };
+
 const reactAct =
   // @ts-expect-error act might not be available in some versions of React
-  typeof React.act === 'function' ? React.act : DeprecatedReactTestUtils.act;
+  typeof clonedReact.act === 'function' ? clonedReact.act : DeprecatedReactTestUtils.act;
 
 export function setReactActEnvironment(isReactActEnvironment: boolean) {
   globalThis.IS_REACT_ACT_ENVIRONMENT = isReactActEnvironment;

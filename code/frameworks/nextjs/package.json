@@ -202,17 +202,17 @@
   "bundler": {
     "exportEntries": [
       "./src/image-context.ts",
-      "./src/export-mocks/index.ts",
-      "./src/export-mocks/cache/index.ts",
-      "./src/export-mocks/headers/index.ts",
-      "./src/export-mocks/router/index.ts",
-      "./src/export-mocks/navigation/index.ts",
       "./src/index.ts"
     ],
     "previewEntries": [
       "./src/preview.tsx"
     ],
     "nodeEntries": [
+      "./src/export-mocks/index.ts",
+      "./src/export-mocks/cache/index.ts",
+      "./src/export-mocks/headers/index.ts",
+      "./src/export-mocks/router/index.ts",
+      "./src/export-mocks/navigation/index.ts",
       "./src/preset.ts",
       "./src/compatibility/segment.compat.ts",
       "./src/compatibility/redirect-status-code.compat.ts",

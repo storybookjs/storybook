@@ -84,7 +84,7 @@
       "./src/index.ts"
     ],
     "previewEntries": [
-      "./src/preview.tsx"
+      "./src/preview.ts"
     ],
     "nodeEntries": [
       "./src/preset.ts",

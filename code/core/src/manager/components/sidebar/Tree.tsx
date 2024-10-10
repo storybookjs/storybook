@@ -6,14 +6,21 @@ import { styled, useTheme } from '@storybook/core/theming';
 import {
   CollapseIcon as CollapseIconSvg,
   ExpandAltIcon,
+  PlayIcon,
   StatusFailIcon,
   StatusPassIcon,
   StatusWarnIcon,
   SyncIcon,
 } from '@storybook/icons';
-import type { API_StatusValue, StoryId } from '@storybook/types';
+import type { API_HashEntry, API_StatusValue, StoryId } from '@storybook/types';
 
-import { PRELOAD_ENTRIES } from '@storybook/core/core-events';
+import {
+  PRELOAD_ENTRIES,
+  TESTING_MODULE_RUN_REQUEST,
+  type TestingModuleRunRequestPayload,
+  type TestingModuleRunRequestStories,
+} from '@storybook/core/core-events';
+import { useStorybookApi } from '@storybook/core/manager-api';
 import type {
   API,
   ComponentEntry,
@@ -22,7 +29,6 @@ import type {
   StoriesHash,
   StoryEntry,
 } from '@storybook/core/manager-api';
-import { useStorybookApi } from '@storybook/core/manager-api';
 
 import { transparentize } from 'polished';
 
@@ -43,6 +49,9 @@ import { CollapseIcon } from './components/CollapseIcon';
 import type { Highlight, Item } from './types';
 import type { ExpandAction, ExpandedState } from './useExpanded';
 import { useExpanded } from './useExpanded';
+
+export const TEST_ADDON_ID = 'storybook/test';
+export const TEST_PROVIDER_ID = `${TEST_ADDON_ID}/test-provider`;
 
 const Container = styled.div<{ hasOrphans: boolean }>((props) => ({
   marginTop: props.hasOrphans ? 20 : 0,
@@ -133,6 +142,7 @@ interface NodeProps {
   status: State['status'][keyof State['status']];
   groupStatus: Record<StoryId, API_StatusValue>;
   api: API;
+  collapsedData: Record<string, API_HashEntry>;
 }
 
 const Node = React.memo<NodeProps>(function Node({
@@ -149,6 +159,7 @@ const Node = React.memo<NodeProps>(function Node({
   isExpanded,
   setExpanded,
   onSelectStoryId,
+  collapsedData,
   api,
 }) {
   const { isDesktop, isMobile, setMobileMenuOpen } = useLayout();
@@ -218,6 +229,7 @@ const Node = React.memo<NodeProps>(function Node({
                     id: addonId,
                     title: value.title,
                     description: value.description,
+                    'aria-label': `Test status for ${value.title}: ${value.status}`,
                     icon: {
                       success: <StatusPassIcon color={theme.color.positive} />,
                       error: <StatusFailIcon color={theme.color.negative} />,
@@ -233,7 +245,13 @@ const Node = React.memo<NodeProps>(function Node({
               />
             )}
           >
-            <StatusButton type="button" status={statusValue} selectedItem={isSelected}>
+            <StatusButton
+              aria-label={`Test status: ${statusValue}`}
+              role="status"
+              type="button"
+              status={statusValue}
+              selectedItem={isSelected}
+            >
               {icon}
             </StatusButton>
           </WithTooltip>
@@ -264,21 +282,64 @@ const Node = React.memo<NodeProps>(function Node({
           <CollapseIcon isExpanded={isExpanded} />
           {item.renderLabel?.(item, api) || item.name}
         </CollapseButton>
-        {isExpanded && (
+        <div>
+          {isExpanded && (
+            <IconButton
+              className="sidebar-subheading-action"
+              aria-label={isFullyExpanded ? 'Expand' : 'Collapse'}
+              data-action="expand-all"
+              data-expanded={isFullyExpanded}
+              onClick={(event) => {
+                event.preventDefault();
+                // @ts-expect-error (non strict)
+                setFullyExpanded();
+              }}
+            >
+              {isFullyExpanded ? <CollapseIconSvg /> : <ExpandAltIcon />}
+            </IconButton>
+          )}
           <IconButton
-            className="sidebar-subheading-action"
-            aria-label={isFullyExpanded ? 'Expand' : 'Collapse'}
-            data-action="expand-all"
-            data-expanded={isFullyExpanded}
-            onClick={(event) => {
-              event.preventDefault();
-              // @ts-expect-error (non strict)
-              setFullyExpanded();
+            onClick={() => {
+              type ImportPath = string;
+              type ComponentPath = string;
+
+              const importPathMap = new Map<ImportPath, ComponentPath>();
+              const storyFilesMap = new Map<ImportPath, TestingModuleRunRequestStories[]>();
+
+              const traverseChildren = (children: string[]) => {
+                children.forEach((childId) => {
+                  const child = collapsedData[childId];
+                  if (child.type === 'story') {
+                    const componentPath = (child as any).componentPath;
+                    const importPath = child.importPath;
+                    const storyFile = storyFilesMap.get(importPath) || [];
+
+                    storyFile.push({ id: child.id, name: child.name });
+                    storyFilesMap.set(importPath, storyFile);
+                    importPathMap.set(importPath, componentPath);
+                  } else if (child.type !== 'docs') {
+                    traverseChildren(child.children);
+                  }
+                });
+              };
+
+              traverseChildren(item.children);
+
+              const testingModuleRunRequestPayload: TestingModuleRunRequestPayload = {
+                providerId: TEST_PROVIDER_ID,
+                payload: Array.from(importPathMap.entries()).map(([importPath, componentPath]) => ({
+                  importPath,
+                  componentPath,
+                  stories: storyFilesMap.get(importPath) ?? [],
+                })),
+              };
+
+              api.emit(TESTING_MODULE_RUN_REQUEST, testingModuleRunRequestPayload);
             }}
           >
-            {isFullyExpanded ? <CollapseIconSvg /> : <ExpandAltIcon />}
+            <PlayIcon />
           </IconButton>
-        )}
+        </div>
       </RootNode>
     );
   }
@@ -560,9 +621,11 @@ export const Tree = React.memo<{
         return (
           // @ts-expect-error (TODO)
           <Root
+            api={api}
             key={id}
             item={item}
             refId={refId}
+            collapsedData={collapsedData}
             isOrphan={false}
             isDisplayed
             isSelected={selectedStoryId === itemId}
@@ -580,6 +643,7 @@ export const Tree = React.memo<{
       return (
         <Node
           api={api}
+          collapsedData={collapsedData}
           key={id}
           item={item}
           // @ts-expect-error (non strict)

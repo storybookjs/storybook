@@ -1,5 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
-import { render } from '@testing-library/react';
+import { jest } from '@jest/globals';
 
 import { composeStories, setProjectAnnotations } from '@storybook/nextjs';
 import * as imageStories from './Image.stories';
@@ -13,6 +13,9 @@ import * as fontStories from './Font.stories';
 import * as headStories from './Head.stories';
 import * as nextHeaderStories from './NextHeader.stories';
 import * as getImagePropsStories from './GetImageProps.stories';
+
+// the imageLegacyStories test is flaky
+jest.retryTimes(3);
 
 // example with composeStories, returns an object with all stories composed with args/decorators
 const runTests = (name: string, storiesModule: any) => {

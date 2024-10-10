@@ -10,14 +10,14 @@ test.describe('Manager UI', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(storybookUrl);
 
-    await new SbPage(page).waitUntilLoaded();
+    await new SbPage(page, expect).waitUntilLoaded();
   });
 
   test.describe('Desktop', () => {
     // TODO: test dragging and resizing
 
     test('Sidebar toggling', async ({ page }) => {
-      const sbPage = new SbPage(page);
+      const sbPage = new SbPage(page, expect);
 
       await expect(sbPage.page.locator('.sidebar-container')).toBeVisible();
 
@@ -38,7 +38,7 @@ test.describe('Manager UI', () => {
     });
 
     test('Toolbar toggling', async ({ page }) => {
-      const sbPage = new SbPage(page);
+      const sbPage = new SbPage(page, expect);
       const expectToolbarVisibility = async (visible: boolean) => {
         await expect(async () => {
           const toolbar = sbPage.page.locator(`[data-test-id="sb-preview-toolbar"]`);
@@ -68,7 +68,7 @@ test.describe('Manager UI', () => {
 
     test.describe('Panel', () => {
       test('Hidden in docs view', async ({ page }) => {
-        const sbPage = new SbPage(page);
+        const sbPage = new SbPage(page, expect);
 
         // navigate to docs to hide panel
         await sbPage.navigateToStory('example/button', 'docs');
@@ -83,7 +83,7 @@ test.describe('Manager UI', () => {
       });
 
       test('Toggling', async ({ page }) => {
-        const sbPage = new SbPage(page);
+        const sbPage = new SbPage(page, expect);
 
         // navigate to story to show panel
         await sbPage.navigateToStory('example/button', 'primary');
@@ -107,7 +107,7 @@ test.describe('Manager UI', () => {
       });
 
       test('Positioning', async ({ page }) => {
-        const sbPage = new SbPage(page);
+        const sbPage = new SbPage(page, expect);
 
         // navigate to story to show panel
         await sbPage.navigateToStory('example/button', 'primary');
@@ -130,7 +130,7 @@ test.describe('Manager UI', () => {
     });
 
     test('Fullscreen toggling', async ({ page }) => {
-      const sbPage = new SbPage(page);
+      const sbPage = new SbPage(page, expect);
 
       // navigate to story to show panel
       await sbPage.navigateToStory('example/button', 'primary');
@@ -176,7 +176,7 @@ test.describe('Manager UI', () => {
     });
 
     test('Settings page', async ({ page }) => {
-      const sbPage = new SbPage(page);
+      const sbPage = new SbPage(page, expect);
       await sbPage.page.locator('[aria-label="Shortcuts"]').click();
       await sbPage.page.locator('#list-item-about').click();
 
@@ -200,7 +200,7 @@ test.describe('Manager UI', () => {
     test.use({ viewport: { width: 390, height: 844 } });
 
     test('Navigate to story', async ({ page }) => {
-      const sbPage = new SbPage(page);
+      const sbPage = new SbPage(page, expect);
 
       const closeNavigationButton = sbPage.page.locator('[title="Close navigation menu"]');
       const mobileNavigationHeading = sbPage.page.locator('[title="Open navigation menu"]');
@@ -229,7 +229,7 @@ test.describe('Manager UI', () => {
     });
 
     test('Open and close addon panel', async ({ page }) => {
-      const sbPage = new SbPage(page);
+      const sbPage = new SbPage(page, expect);
 
       const mobileNavigationHeading = sbPage.page.locator('[title="Open navigation menu"]');
       await mobileNavigationHeading.click();

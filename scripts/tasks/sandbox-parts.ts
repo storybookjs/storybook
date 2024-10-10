@@ -517,6 +517,9 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
     packageJson.resolutions = {
       ...packageJson.resolutions,
       '@storybook/experimental-addon-test': `file:${vitestAddonPath}`,
+      // TODO VITEST INTEGRATION: remove this once Vitest 2.1.x is released with a fix that supports symlinks
+      vitest: '2.1.0-beta.6',
+      '@vitest/browser': '2.1.0-beta.6',
     };
   }
 
@@ -664,6 +667,15 @@ export const addStories: Task['run'] = async (
       cwd,
       disableDocs,
     });
+
+    await linkPackageStories(
+      await workspacePath('addon test package', '@storybook/experimental-addon-test'),
+      {
+        mainConfig,
+        cwd,
+        disableDocs,
+      }
+    );
   }
 
   const mainAddons = (mainConfig.getSafeFieldValue(['addons']) || []).reduce(
@@ -783,6 +795,9 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
     updatedStories = updatedStories.filter((specifier) => !specifier.endsWith('.mdx'));
     mainConfig.setFieldValue(['stories'], updatedStories);
   }
+
+  const addons = mainConfig.getFieldValue(['addons']);
+  mainConfig.setFieldValue(['addons'], [...addons, '@storybook/experimental-addon-test']);
 
   if (template.expected.builder === '@storybook/builder-vite') {
     setSandboxViteFinal(mainConfig);

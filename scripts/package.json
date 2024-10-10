@@ -106,7 +106,7 @@
     "detect-port": "^1.6.1",
     "ejs": "^3.1.10",
     "ejs-lint": "^2.0.0",
-    "es-toolkit": "^1.21.0",
+    "es-toolkit": "^1.22.0",
     "esbuild": "^0.24.0",
     "esbuild-plugin-alias": "^0.2.1",
     "eslint": "^8.57.0",

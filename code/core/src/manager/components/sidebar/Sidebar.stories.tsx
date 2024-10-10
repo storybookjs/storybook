@@ -41,6 +41,8 @@ const managerContext: any = {
     getShortcutKeys: fn(() => ({ search: ['control', 'shift', 's'] })).mockName(
       'api::getShortcutKeys'
     ),
+    getChannel: fn().mockName('api::getChannel'),
+    getElements: fn(() => ({})),
     selectStory: fn().mockName('api::selectStory'),
     experimental_setFilter: fn().mockName('api::experimental_setFilter'),
   },
@@ -177,6 +179,8 @@ export const WithRefsNarrow: Story = {
       value: 'narrow',
     },
   },
+  // TODO VITEST INTEGRATION: remove this when we support new viewport global format in the vitest integration
+  tags: ['!vitest'],
 };
 
 export const LoadingWithRefs: Story = {

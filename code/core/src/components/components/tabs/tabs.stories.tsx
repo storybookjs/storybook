@@ -178,13 +178,15 @@ const customViewports = {
 };
 
 export const StatefulDynamicWithOpenTooltip = {
+  // TODO VITEST INTEGRATION: remove this when we support new viewport global format in the vitest integration
+  tags: ['!vitest'],
   parameters: {
     viewport: {
-      viewports: customViewports,
+      options: customViewports,
     },
     chromatic: { viewports: [380] },
   },
-  globals: { sb_theme: 'light', viewport: 'sized' },
+  globals: { sb_theme: 'light', viewport: { value: 'sized' } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
@@ -222,6 +224,8 @@ export const StatefulDynamicWithOpenTooltip = {
 
 export const StatefulDynamicWithSelectedAddon = {
   ...StatefulDynamicWithOpenTooltip,
+  // TODO VITEST INTEGRATION: remove this when we support new viewport global format in the vitest integration
+  tags: ['!vitest'],
   play: async (context) => {
     await StatefulDynamicWithOpenTooltip.play(context);
     const canvas = within(context.canvasElement);

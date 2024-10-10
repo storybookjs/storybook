@@ -1584,7 +1584,7 @@ __metadata:
     detect-port: "npm:^1.6.1"
     ejs: "npm:^3.1.10"
     ejs-lint: "npm:^2.0.0"
-    es-toolkit: "npm:^1.21.0"
+    es-toolkit: "npm:^1.22.0"
     esbuild: "npm:^0.24.0"
     esbuild-plugin-alias: "npm:^0.2.1"
     eslint: "npm:^8.57.0"
@@ -5276,10 +5276,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"es-toolkit@npm:^1.21.0":
-  version: 1.21.0
-  resolution: "es-toolkit@npm:1.21.0"
-  checksum: 10c0/894a63f8ce5b2e5c1be242c8e8eace6364ea1212d01cdf89594d2cc582c5e1574114ad2ee7022ad5206561c4d5170511d83b38853257249860e56178768854ea
+"es-toolkit@npm:^1.22.0":
+  version: 1.22.0
+  resolution: "es-toolkit@npm:1.22.0"
+  checksum: 10c0/a167789f727437d435071af74e22c0c4a5a557aa61a5013a1656d24b1c8636c88d6b74f12ad0c3966b74d3f56e432d8e8d1989e5c10c10fda8eba5752783af18
   languageName: node
   linkType: hard
 
@@ -7330,7 +7330,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ignore@npm:^5.0.0, ignore@npm:^5.0.4, ignore@npm:^5.0.5, ignore@npm:^5.1.1, ignore@npm:^5.1.8, ignore@npm:^5.2.0, ignore@npm:^5.2.4, ignore@npm:^5.3.1":
+"ignore@npm:^5.0.0, ignore@npm:^5.0.4, ignore@npm:^5.0.5, ignore@npm:^5.1.1, ignore@npm:^5.2.0, ignore@npm:^5.2.4, ignore@npm:^5.3.1":
+  version: 5.3.1
+  resolution: "ignore@npm:5.3.1"
+  checksum: 10c0/703f7f45ffb2a27fb2c5a8db0c32e7dee66b33a225d28e8db4e1be6474795f606686a6e3bcc50e1aa12f2042db4c9d4a7d60af3250511de74620fbed052ea4cd
+  languageName: node
+  linkType: hard
+
+"ignore@npm:^5.1.8":
   version: 5.3.2
   resolution: "ignore@npm:5.3.2"
   checksum: 10c0/f9f652c957983634ded1e7f02da3b559a0d4cc210fca3792cb67f1b153623c9c42efdc1c4121af171e295444459fc4a9201101fb041b1104a3c000bccb188337

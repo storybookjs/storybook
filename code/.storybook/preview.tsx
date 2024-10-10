@@ -135,7 +135,9 @@ export const loaders = [
    * The DocsContext will then be added via the decorator below.
    */
   async ({ parameters: { relativeCsfPaths, attached = true } }) => {
-    if (!relativeCsfPaths) {
+    // TODO bring a better way to skip tests when running as part of the vitest plugin instead of __STORYBOOK_URL__
+    // eslint-disable-next-line no-underscore-dangle
+    if (!relativeCsfPaths || (import.meta as any).env?.__STORYBOOK_URL__) {
       return {};
     }
     const csfFiles = await Promise.all(
@@ -358,3 +360,5 @@ export const parameters = {
     },
   },
 };
+
+export const tags = ['test', 'vitest'];

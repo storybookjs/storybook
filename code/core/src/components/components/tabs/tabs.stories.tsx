@@ -178,8 +178,6 @@ const customViewports = {
 };
 
 export const StatefulDynamicWithOpenTooltip = {
-  // TODO VITEST INTEGRATION: remove this when we support new viewport global format in the vitest integration
-  tags: ['!vitest'],
   parameters: {
     viewport: {
       options: customViewports,
@@ -224,8 +222,6 @@ export const StatefulDynamicWithOpenTooltip = {
 
 export const StatefulDynamicWithSelectedAddon = {
   ...StatefulDynamicWithOpenTooltip,
-  // TODO VITEST INTEGRATION: remove this when we support new viewport global format in the vitest integration
-  tags: ['!vitest'],
   play: async (context) => {
     await StatefulDynamicWithOpenTooltip.play(context);
     const canvas = within(context.canvasElement);

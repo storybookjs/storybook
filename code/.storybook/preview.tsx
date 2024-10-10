@@ -18,8 +18,6 @@ import { DocsContext } from '@storybook/blocks';
 import { global } from '@storybook/global';
 import type { Decorator, Loader, ReactRenderer } from '@storybook/react';
 
-import { MINIMAL_VIEWPORTS } from '@storybook/addon-viewport';
-
 import { DocsPageWrapper } from '../lib/blocks/src/components';
 import { isChromatic } from './isChromatic';
 

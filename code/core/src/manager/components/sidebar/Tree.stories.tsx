@@ -208,7 +208,21 @@ export const DocsOnlySingleStoryComponents = {
 export const SkipToCanvasLinkFocused: Story = {
   ...DocsOnlySingleStoryComponents,
   parameters: {
-    chromatic: { disable: true },
+    chromatic: { viewports: [1280] },
+    viewport: {
+      options: {
+        desktop: {
+          name: 'Desktop',
+          styles: {
+            width: '100%',
+            height: '100%',
+          },
+        },
+      },
+    },
+  },
+  globals: {
+    viewport: { value: 'desktop' },
   },
   play: async ({ canvasElement }) => {
     const screen = await within(canvasElement);

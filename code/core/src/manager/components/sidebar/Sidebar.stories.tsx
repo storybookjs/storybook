@@ -179,8 +179,6 @@ export const WithRefsNarrow: Story = {
       value: 'narrow',
     },
   },
-  // TODO VITEST INTEGRATION: remove this when we support new viewport global format in the vitest integration
-  tags: ['!vitest'],
 };
 
 export const LoadingWithRefs: Story = {

@@ -164,13 +164,13 @@ async function run() {
         merge<EsbuildContextOptions>(nodeEsbuildOptions, {
           banner: {
             js: dedent`
-            import ESM_COMPAT_Module from "node:module";
-            import { fileURLToPath as ESM_COMPAT_fileURLToPath } from 'node:url';
-            import { dirname as ESM_COMPAT_dirname } from 'node:path';
-            const __filename = ESM_COMPAT_fileURLToPath(import.meta.url);
-            const __dirname = ESM_COMPAT_dirname(__filename);
-            const require = ESM_COMPAT_Module.createRequire(import.meta.url);
-          `,
+              import ESM_COMPAT_Module from "node:module";
+              import { fileURLToPath as ESM_COMPAT_fileURLToPath } from 'node:url';
+              import { dirname as ESM_COMPAT_dirname } from 'node:path';
+              const __filename = ESM_COMPAT_fileURLToPath(import.meta.url);
+              const __dirname = ESM_COMPAT_dirname(__filename);
+              const require = ESM_COMPAT_Module.createRequire(import.meta.url);
+            `,
           },
           entryPoints: entries
             .filter(isNode)

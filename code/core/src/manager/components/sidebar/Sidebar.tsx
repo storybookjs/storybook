@@ -2,14 +2,15 @@ import React, { useMemo } from 'react';
 
 import { ScrollArea, Spaced } from '@storybook/core/components';
 import { styled } from '@storybook/core/theming';
-import type { API_LoadedRefData, Addon_SidebarTopType } from '@storybook/core/types';
+import type { API_LoadedRefData, Addon_SidebarTopType, StoryIndex } from '@storybook/core/types';
 
-import type { State } from '@storybook/core/manager-api';
+import { useStorybookApi, type State } from '@storybook/core/manager-api';
 
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
 import { Explorer } from './Explorer';
 import type { HeadingProps } from './Heading';
 import { Heading } from './Heading';
+import { TagsFilter } from './TagsFilter';
 import { Search } from './Search';
 import { SearchResults } from './SearchResults';
 import { SidebarBottom } from './SidebarBottom';
@@ -99,6 +100,17 @@ const useCombination = (
   return useMemo(() => ({ hash, entries: Object.entries(hash) }), [hash]);
 };
 
+const updateQueryParams = (params: Record<string, string>) => {
+  const url = new URL(window.location.href);
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) {
+      url.searchParams.set(key, value);
+    } else {
+      url.searchParams.delete(key);
+    }
+  });
+  window.history.pushState({}, '', url);
+};
 export interface SidebarProps extends API_LoadedRefData {
   refs: State['refs'];
   status: State['status'];
@@ -110,6 +122,7 @@ export interface SidebarProps extends API_LoadedRefData {
   enableShortcuts?: boolean;
   onMenuClick?: HeadingProps['onMenuClick'];
   showCreateStoryButton?: boolean;
+  indexJson?: StoryIndex;
 }
 
 export const Sidebar = React.memo(function Sidebar({
@@ -117,6 +130,7 @@ export const Sidebar = React.memo(function Sidebar({
   storyId = null,
   refId = DEFAULT_REF_ID,
   index,
+  indexJson,
   indexError,
   status,
   previewInitialized,
@@ -133,6 +147,7 @@ export const Sidebar = React.memo(function Sidebar({
   const dataset = useCombination(index, indexError, previewInitialized, status, refs);
   const isLoading = !index && !indexError;
   const lastViewedProps = useLastViewed(selected);
+  const api = useStorybookApi();
 
   return (
     <Container className="container sidebar-container">
@@ -147,6 +162,9 @@ export const Sidebar = React.memo(function Sidebar({
             isLoading={isLoading}
             onMenuClick={onMenuClick}
           />
+          {index && (
+            <TagsFilter api={api} indexJson={indexJson} updateQueryParams={updateQueryParams} />
+          )}
           <Search
             dataset={dataset}
             enableShortcuts={enableShortcuts}

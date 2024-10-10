@@ -2,7 +2,7 @@ import { join } from 'node:path';
 
 import { dts, nodeInternals, process } from '../../../scripts/prepare/tools';
 import pkg from '../package.json';
-import { getEntries } from './entries';
+import { getEntries, getModernEntries } from './entries';
 
 async function run() {
   const cwd = process.cwd();
@@ -11,7 +11,7 @@ async function run() {
 
   const selection = flags[0] || 'all';
 
-  const entries = getEntries(cwd);
+  const entries = [...getEntries(cwd), ...getModernEntries(cwd)];
   const external = [
     ...Object.keys((pkg as any).dependencies || {}),
     ...Object.keys((pkg as any).peerDependencies || {}),

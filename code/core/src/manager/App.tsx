@@ -3,6 +3,7 @@ import React from 'react';
 
 import { Global, createGlobal } from '@storybook/core/theming';
 import type { Addon_PageType } from '@storybook/core/types';
+import type { ThemeVars } from '@storybook/theming';
 
 import { Layout } from './components/layout/Layout';
 import { useLayout } from './components/layout/LayoutProvider';
@@ -23,6 +24,7 @@ export const App = ({ managerLayoutState, setManagerLayoutState, pages, hasTab }
   return (
     <>
       <Global styles={createGlobal} />
+
       <Layout
         hasTab={hasTab}
         managerLayoutState={managerLayoutState}

@@ -73,8 +73,8 @@ export const FramesRenderer: FC<FramesRendererProps> = ({
     return ref.type === 'auto-inject' || ref.id === refId;
   }, {});
 
-  if (!frames[active]) {
-    frames[active] = getStoryHref(baseUrl, storyId, {
+  if (!frames['storybook-preview-iframe']) {
+    frames['storybook-preview-iframe'] = getStoryHref(baseUrl, storyId, {
       ...queryParams,
       ...(version && { version }),
       viewMode,
@@ -84,7 +84,7 @@ export const FramesRenderer: FC<FramesRendererProps> = ({
   refsToLoad.forEach((ref) => {
     const id = `storybook-ref-${ref.id}`;
     const existingUrl = frames[id]?.split('/iframe.html')[0];
-    if (!existingUrl || ref.url !== existingUrl) {
+    if (!existingUrl || ref.url !== existingUrl || !frames[id].includes(stringifiedQueryParams)) {
       const newUrl = `${ref.url}/iframe.html?id=${storyId}&viewMode=${viewMode}&refId=${ref.id}${stringifiedQueryParams}`;
       frames[id] = newUrl;
     }

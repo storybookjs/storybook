@@ -270,7 +270,7 @@ jobs:
           name: Test
           command: |
             cd code
-            yarn test --coverage
+            DEBUG="vitest:browser:pool" yarn test --coverage
       - store_test_results:
           path: code/junit.xml
       - persist_to_workspace:

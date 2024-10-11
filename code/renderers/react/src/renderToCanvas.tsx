@@ -59,7 +59,6 @@ export async function renderToCanvas(
   const Story = unboundStoryFn as FC<StoryContext<ReactRenderer>>;
 
   const isActEnabled = getReactActEnvironment();
-  console.log({ isActEnabled });
 
   const content = isActEnabled ? (
     <Story {...storyContext} />

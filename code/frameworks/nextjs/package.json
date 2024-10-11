@@ -122,7 +122,7 @@
   ],
   "scripts": {
     "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
+    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
     "@babel/core": "^7.24.4",
@@ -200,22 +200,26 @@
     "access": "public"
   },
   "bundler": {
-    "entries": [
+    "exportEntries": [
       "./src/image-context.ts",
       "./src/index.ts",
-      "./src/preset.ts",
-      "./src/preview.tsx",
-      "./src/export-mocks/index.ts",
       "./src/export-mocks/cache/index.ts",
       "./src/export-mocks/headers/index.ts",
       "./src/export-mocks/router/index.ts",
       "./src/export-mocks/navigation/index.ts",
-      "./src/compatibility/segment.compat.ts",
-      "./src/compatibility/redirect-status-code.compat.ts",
-      "./src/next-image-loader-stub.ts",
       "./src/images/decorator.tsx",
       "./src/images/next-legacy-image.tsx",
       "./src/images/next-image.tsx",
+      "./src/compatibility/segment.compat.ts",
+      "./src/compatibility/redirect-status-code.compat.ts"
+    ],
+    "previewEntries": [
+      "./src/preview.tsx"
+    ],
+    "nodeEntries": [
+      "./src/next-image-loader-stub.ts",
+      "./src/export-mocks/index.ts",
+      "./src/preset.ts",
       "./src/font/webpack/loader/storybook-nextjs-font-loader.ts",
       "./src/rsc/server-only.ts",
       "./src/swc/next-swc-loader-patch.ts"
@@ -224,8 +228,7 @@
       "sb-original/next/image",
       "sb-original/next/future/image",
       "sb-original/next/legacy/image"
-    ],
-    "platform": "node"
+    ]
   },
   "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

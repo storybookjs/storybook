@@ -55,7 +55,7 @@
   ],
   "scripts": {
     "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
+    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
     "@storybook/addon-actions": "workspace:*",
@@ -80,9 +80,13 @@
     "access": "public"
   },
   "bundler": {
-    "entries": [
-      "./src/index.ts",
-      "./src/preview.ts",
+    "exportEntries": [
+      "./src/index.ts"
+    ],
+    "previewEntries": [
+      "./src/preview.ts"
+    ],
+    "nodeEntries": [
       "./src/preset.ts",
       "./src/vite-plugin.ts"
     ],

@@ -165,7 +165,8 @@ export async function buildDevStandalone(
     }
   }
 
-  const resolvedRenderer = renderer && resolveAddonName(options.configDir, renderer, options);
+  const resolvedRenderer =
+    renderer && (await resolveAddonName(options.configDir, renderer, options));
 
   // Load second pass: all presets are applied in order
   presets = await loadAllPresets({

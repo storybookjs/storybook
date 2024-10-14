@@ -1,6 +1,6 @@
 import path from "node:path";
 import url from "node:url";
-import { storybookTest } from "@storybook/experimental-addon-test/vite-plugin";
+import { storybookTest } from "@storybook/experimental-addon-test/vitest-plugin";
 import { storybookNextJsPlugin } from "@storybook/experimental-nextjs-vite/vite-plugin";
 import Inspect from "vite-plugin-inspect";
 import { defineConfig } from "vitest/config";
@@ -9,10 +9,10 @@ const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
 export default defineConfig({
   plugins: [
-    storybookNextJsPlugin({ dir: path.join(__dirname, "..") }),
     storybookTest({
       configDir: __dirname,
     }),
+    storybookNextJsPlugin({ dir: path.join(__dirname, "..") }),
     Inspect({ build: true, outputDir: ".vite-inspect" }),
   ],
   test: {

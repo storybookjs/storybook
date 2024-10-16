@@ -17,7 +17,7 @@ import { CriticalPresetLoadError } from '@storybook/core/server-errors';
 
 import { dedent } from 'ts-dedent';
 
-import { interopRequireDefault } from './utils/interpret-require';
+import { interopImport } from './utils/interpret-require';
 import { loadCustomPresets } from './utils/load-custom-presets';
 import { safeResolve, safeResolveFrom } from './utils/safeResolve';
 import { stripAbsNodeModulesPath } from './utils/strip-abs-node-modules-path';
@@ -222,7 +222,7 @@ async function getContent(input: any) {
   }
   const name = input.name ? input.name : input;
 
-  return interopRequireDefault(name);
+  return interopImport(name);
 }
 
 export async function loadPreset(

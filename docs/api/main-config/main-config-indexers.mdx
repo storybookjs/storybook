@@ -349,3 +349,27 @@ Some example usages of custom indexers include:
 
   Custom indexers can be used for an advanced purpose: defining stories in any language, including template languages, and converting the files to CSF. To see examples of this in action, you can refer to [`@storybook/addon-svelte-csf`](https://github.com/storybookjs/addon-svelte-csf) for Svelte template syntax and [`storybook-vue-addon`](https://github.com/tobiasdiez/storybook-vue-addon) for Vue template syntax.
 </details>
+
+<details>
+  <summary>Adding sidebar links from a collection of URLs</summary>
+
+  The Indexer API is flexible enough to let you process arbitrary content, so long as your framework tooling is able to transform the exports in that content into actual stories it can run. In this advanced example, we have an EcmaScript module that contains URLs as named exports:
+
+  ```ts
+  // src/stories/MyLinks.url.js
+  export default {};
+
+  export const DesignTokens = 'https://www.designtokens.org/';
+  export const CobaltUI = 'https://cobalt-ui.pages.dev/';
+  export const MiseEnMode = 'https://mode.place/';
+  export const IndexerAPI = 'https://github.com/storybookjs/storybook/discussions/23176';
+  ```
+
+  We'll write an indexer in `main.ts` that generates story entries for each URL. We'll use the export name as a story title, and we'll store the URL in the story ID so we can find it later.
+
+  Because strings aren't valid stories, we'll complement the indexer with a Vite plugin in our `vite.config.ts` that transforms the file into actual stories. We'll use a Svelte framework, and replace each URL with a Svelte component that redirects to the previous page (so that the story loading is cancelled and so that loading the story feels like clicking an actual external link).
+
+  In parallel to loading valid stories, we'll add a `renderLabel` function in `manager.ts` to customise the links in the sidebar, and make them actually open the URL in a new tab when clicked. The URL is fetched from the story ID. We'll add some CSS in `manager-head.html` to make those sidebar entries look unique.
+
+  The code and live demo for this proof-of-concept are [available on StackBlitz](https://stackblitz.com/~/github.com/Sidnioulz/storybook-sidebar-urls).
+</details>

@@ -46,7 +46,10 @@ type InferArgs<TCmpOrArgs extends CmpOrArgs> = MapSnippetsToAcceptPrimitives<
   TCmpOrArgs extends Cmp ? ComponentProps<TCmpOrArgs> : TCmpOrArgs
 >;
 
-export type StoryContext<TCmp extends Cmp, TMeta extends Meta<TCmp>> = BaseStoryContext<
+export type StoryContext<
+  TCmp extends Cmp = Cmp,
+  TMeta extends Meta<TCmp> = Meta<TCmp>,
+> = BaseStoryContext<
   // Renderer
   SvelteRenderer<TCmp>,
   // Args
@@ -54,9 +57,9 @@ export type StoryContext<TCmp extends Cmp, TMeta extends Meta<TCmp>> = BaseStory
 >;
 
 export type StoryCmp<
-  TOverrideArgs extends Args,
-  TCmp extends Cmp,
-  TMeta extends Meta<TCmp>,
+  TOverrideArgs extends Args = Args,
+  TCmp extends Cmp = Cmp,
+  TMeta extends Meta<TCmp> = Meta<TCmp>,
 > = typeof Story<TOverrideArgs, TCmp, TMeta>;
 
 export type StoryAnnotations<TCmp extends Cmp, TMeta extends Meta<TCmp>> = BaseStoryAnnotations<

@@ -1,8 +1,6 @@
 import { logger } from '@storybook/node-logger';
 
 import {
-  createASTObjectExpression,
-  createASTProperty,
   findASTPropertyIndex,
   findPropertyDescriptionIndex,
   findPropertyDocsIndex,
@@ -10,8 +8,8 @@ import {
   getDescriptionPropertyValue,
   getDocsPropertyValue,
   getParametersPropertyValue,
-} from '#compiler/transform/shared/description';
-import type { ESTreeAST } from '#parser/ast';
+} from '#compiler/post-transform/shared/description';
+import { createASTObjectExpression, createASTProperty, type ESTreeAST } from '#parser/ast';
 import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
 import type { CompiledASTNodes } from '#parser/extract/compiled/nodes';
 import { getDefineMetaFirstArgumentObjectExpression } from '#parser/extract/svelte/define-meta';

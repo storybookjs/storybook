@@ -94,8 +94,8 @@
   {:else if template}
     {@render template(renderer.args, renderer.storyContext)}
   {:else if renderer.storyContext.component}
-    <svelte:component this={renderer.storyContext.component} {...renderer.args} />
+    <renderer.storyContext.component {...renderer.args} />
   {:else}
-    <p>Warning: no story rendered. improve this message</p>
+    <p>No story rendered. See <a href="https://github.com/storybookjs/addon-svelte-csf#defining-stories" target="_blank">the docs</a> on how to define stories.</p>
   {/if}
 {/if}

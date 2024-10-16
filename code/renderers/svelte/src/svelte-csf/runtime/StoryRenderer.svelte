@@ -32,4 +32,4 @@
   });
 </script>
 
-<svelte:component this={Stories} />
+<Stories />

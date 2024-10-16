@@ -212,3 +212,20 @@ export class InvalidSetTemplateFirstArgumentError extends StorybookSvelteCSFErro
     `;
   }
 }
+
+export class IndexerParseError extends StorybookSvelteCSFError {
+  readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractSvelte;
+  readonly code = 9;
+  public documentation = true;
+
+  constructor() {
+    super({});
+  }
+
+  template() {
+    return dedent`
+      Storybook stories indexer parser threw an unrecognized error.
+      If you see this error, please report it on the issue tracker on GitHub.
+    `;
+  }
+}

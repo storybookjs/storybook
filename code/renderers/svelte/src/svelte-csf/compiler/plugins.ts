@@ -14,13 +14,50 @@ import MagicString from 'magic-string';
 import { preprocess } from 'svelte/compiler';
 import type { Plugin } from 'vite';
 
-import { transformStoriesCode } from './transform';
-
+import { codemodLegacyNodes } from '#compiler/pre-transform/index';
+import { transformStoriesCode } from '#compiler/post-transform/index';
 import { getSvelteAST } from '#parser/ast';
 import { extractCompiledASTNodes } from '#parser/extract/compiled/nodes';
 import { extractSvelteASTNodes } from '#parser/extract/svelte/nodes';
 
-export async function plugin(): Promise<Plugin> {
+export async function preTransformPlugin(): Promise<Plugin> {
+  const [{ createFilter }, { print }] = await Promise.all([
+    import('vite'),
+    import('svelte-ast-print'),
+  ]);
+  const include = /\.stories\.svelte$/;
+  const filter = createFilter(include);
+
+  return {
+    name: 'storybook:addon-svelte-csf-legacy-api-support',
+    enforce: 'pre',
+    async transform(code, id) {
+      if (!filter(id)) return undefined;
+
+      const svelteAST = getSvelteAST({ code, filename: id });
+      const transformedSvelteAST = await codemodLegacyNodes({
+        ast: svelteAST,
+        filename: id,
+      });
+
+      let magicCode = new MagicString(code);
+
+      magicCode.overwrite(0, code.length - 1, print(transformedSvelteAST));
+
+      const stringifiedMagicCode = magicCode.toString();
+
+      return {
+        code: stringifiedMagicCode,
+        map: magicCode.generateMap({ hires: true, source: id }),
+        meta: {
+          _storybook_csf_pre_transform: stringifiedMagicCode,
+        },
+      };
+    },
+  };
+}
+
+export async function postTransformPlugin(): Promise<Plugin> {
   const [{ createFilter }, { loadSvelteConfig }] = await Promise.all([
     import('vite'),
     import('@sveltejs/vite-plugin-svelte'),
@@ -38,10 +75,9 @@ export async function plugin(): Promise<Plugin> {
 
       const compiledAST = this.parse(compiledCode);
       let magicCompiledCode = new MagicString(compiledCode);
-
-      // @ts-expect-error FIXME: `this.originalCode` exists at runtime in the development mode only.
-      // Need to research if its documented somewhere
-      let rawCode = this.originalCode ?? fs.readFileSync(id).toString();
+      let rawCode =
+        (this.getModuleInfo(id)?.meta._storybook_csf_pre_transform as string | undefined) ??
+        fs.readFileSync(id).toString();
 
       if (svelteConfig?.preprocess) {
         const processed = await preprocess(rawCode, svelteConfig.preprocess, {

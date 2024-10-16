@@ -2,8 +2,6 @@ import { logger } from '@storybook/node-logger';
 import dedent from 'dedent';
 
 import {
-  createASTObjectExpression,
-  createASTProperty,
   findASTPropertyIndex,
   findPropertyDescriptionIndex,
   findPropertyDocsIndex,
@@ -11,7 +9,8 @@ import {
   getParametersPropertyValue,
   getDocsPropertyValue,
   getDescriptionPropertyValue,
-} from '#compiler/transform/shared/description';
+} from '#compiler/post-transform/shared/description';
+import { createASTObjectExpression, createASTProperty } from '#parser/ast';
 
 import type { ESTreeAST } from '#parser/ast';
 import type { extractStoriesNodesFromExportDefaultFn } from '#parser/extract/compiled/stories';

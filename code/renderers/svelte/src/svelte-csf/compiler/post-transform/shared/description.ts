@@ -3,39 +3,7 @@ import dedent from 'dedent';
 
 import type { ESTreeAST, SvelteAST } from '#parser/ast';
 
-/**
- * Create ESTree compliant AST node for {@link ESTReeAST.Property}
- */
-export function createASTProperty(
-  name: string,
-  value: ESTreeAST.Property['value']
-): ESTreeAST.Property {
-  return {
-    type: 'Property',
-    kind: 'init',
-    computed: false,
-    method: false,
-    shorthand: false,
-    key: {
-      type: 'Identifier',
-      name,
-    },
-    value,
-  };
-}
-
-/**
- * Create ESTree compliant AST node for {@link ESTreeAST.ObjectExpression} with optional array of properties.
- * By default it will create an enpty object.
- */
-export function createASTObjectExpression(
-  properties: ESTreeAST.ObjectExpression['properties'] = []
-): ESTreeAST.ObjectExpression {
-  return {
-    type: 'ObjectExpression',
-    properties,
-  };
-}
+import { createASTObjectExpression } from '#parser/ast';
 
 interface FindPropertyOptions {
   name: string;
@@ -122,8 +90,7 @@ export const getParametersPropertyValue = (
         Property:
         ${JSON.stringify(property, null, 2)}
     `);
-
-    // TODO: this is unsafe. If this happens, we'll just have an error later on. we want to skip instead.
+    // NOTE: We're emitting a warning when it happens
     return undefined as never;
   }
 
@@ -166,6 +133,7 @@ export const getDocsPropertyValue = (options: Omit<FindPropertyOptions, 'name'>)
         Property:
         ${JSON.stringify(property, null, 2)}
     `);
+    // NOTE: We're emitting a warning when it happens
     return undefined as never;
   }
 
@@ -201,6 +169,7 @@ export const getDescriptionPropertyValue = (options: Omit<FindPropertyOptions, '
         Property:
         ${JSON.stringify(property, null, 2)}
     `);
+    // NOTE: We're emitting a warning when it happens
     return undefined as never;
   }
 

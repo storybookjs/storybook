@@ -19,4 +19,4 @@
   createStoriesExtractorContext(repository());
 </script>
 
-<svelte:component this={Stories} />
+<Stories />

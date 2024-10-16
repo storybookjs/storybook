@@ -1,14 +1,13 @@
 import {
-  createASTObjectExpression,
-  createASTProperty,
   findPropertyParametersIndex,
   getParametersPropertyValue,
-} from '#compiler/transform/shared/description';
+} from '#compiler/post-transform/shared/description';
 
 import type { extractStoriesNodesFromExportDefaultFn } from '#parser/extract/compiled/stories';
 import { getStoryPropsObjectExpression } from '#parser/extract/compiled/story';
 import type { SvelteASTNodes, extractSvelteASTNodes } from '#parser/extract/svelte/nodes';
 import { getStoryChildrenRawCode } from '#parser/analyse/story/children';
+import { createASTObjectExpression, createASTProperty } from '#parser/ast';
 
 interface Params {
   nodes: {

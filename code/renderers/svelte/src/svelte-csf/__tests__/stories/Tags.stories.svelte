@@ -15,7 +15,6 @@
   });
 </script>
 
-
 <Story name="With Autodocs" tags={['autodocs']}>With autodocs</Story>
 
 <Story name="With Dev" tags={['dev']}>With dev</Story>

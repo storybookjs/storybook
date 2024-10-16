@@ -39,9 +39,9 @@ function buildContext<TOverrideArgs extends Args, TCmp extends Cmp, TMeta extend
 }
 
 export type StoryRendererContext<
-  TOverrideArgs extends Args,
-  TCmp extends Cmp,
-  TMeta extends Meta<TCmp>,
+  TOverrideArgs extends Args = Args,
+  TCmp extends Cmp = Cmp,
+  TMeta extends Meta<TCmp> = Meta<TCmp>,
 > = ReturnType<typeof buildContext<TOverrideArgs, TCmp, TMeta>>;
 
 function createStoryRendererContext<

@@ -1,5 +1,4 @@
 import type { Args as BaseArgs } from '@storybook/types';
-import dedent from 'dedent';
 import type { EmptyObject } from 'type-fest';
 
 import type {
@@ -11,6 +10,12 @@ import type {
 } from '#types';
 
 import StoryComponent from './runtime/Story.svelte';
+// TODO: Remove in next major release
+import LegacyMetaComponent from './runtime/LegacyMeta.svelte';
+// TODO: Remove in next major release
+import LegacyStoryComponent from './runtime/LegacyStory.svelte';
+// TODO: Remove in next major release
+import LegacyTemplateComponent from './runtime/LegacyTemplate.svelte';
 
 export { setTemplate } from './runtime/contexts/template.svelte';
 
@@ -34,35 +39,21 @@ export type StoryContext<TStoryCmp> =
     ? BaseStoryContext<TCmpOrArgs, TMeta>
     : never;
 
-/**
- * @deprecated Use `defineMeta` instead
- * @see {@link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#meta-component-removed-in-favor-of-definemeta}
- */
-export const Meta = () => {
-  throw new Error(dedent`
-    The Meta component has been removed in favor of the defineMeta function.
-    For more details, see: @link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#meta-component-removed-in-favor-of-definemeta
-  `);
-};
-
-/**
- * @deprecated Use `Story` component returned from `defineMeta` instead
- * @see {@link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#export-meta-removed-in-favor-of-definemeta}
- */
-export const Story = () => {
-  throw new Error(dedent`
-    The Story component can not be imported anymore, but must be desctructured from the defineMeta() call.
-    For more details, see: https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#export-meta-removed-in-favor-of-definemeta
-  `);
-};
-
-/**
- * @deprecated Use snippets instead
- * @see {@link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#template-component-removed}
- */
-export const Template = () => {
-  throw new Error(dedent`
-    The Template component has been removed in favor of the snippets syntax.
-    see: https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#template-component-removed
-  `);
+// TODO: Remove in next major release
+export {
+  /**
+   * @deprecated Use `defineMeta` instead
+   * @see {@link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#meta-component-removed-in-favor-of-definemeta}
+   */
+  LegacyMetaComponent as Meta,
+  /**
+   * @deprecated Use `Story` component returned from `defineMeta` instead
+   * @see {@link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#export-meta-removed-in-favor-of-definemeta}
+   */
+  LegacyStoryComponent as Story,
+  /**
+   * @deprecated Use snippets instead
+   * @see {@link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#template-component-removed}
+   */
+  LegacyTemplateComponent as Template,
 };

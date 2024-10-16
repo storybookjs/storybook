@@ -2,6 +2,7 @@ import type { MouseEventHandler, PropsWithChildren, SyntheticEvent } from 'react
 import React, { Component, createContext, memo, useCallback } from 'react';
 
 import { IconButton, Separator } from '@storybook/core/components';
+import { styled } from '@storybook/core/theming';
 import type { Addon_BaseType } from '@storybook/core/types';
 import { ZoomIcon, ZoomOutIcon, ZoomResetIcon } from '@storybook/icons';
 
@@ -41,20 +42,26 @@ const Zoom = memo<{
   reset: MouseEventHandler;
 }>(function Zoom({ zoomIn, zoomOut, reset }) {
   return (
-    <>
-      {/* @ts-expect-error (non strict) */}
-      <IconButton key="zoomin" onClick={zoomIn} title="Zoom in">
-        <ZoomIcon />
-      </IconButton>
-      {/* @ts-expect-error (non strict) */}
-      <IconButton key="zoomout" onClick={zoomOut} title="Zoom out">
-        <ZoomOutIcon />
-      </IconButton>
-      {/* @ts-expect-error (non strict) */}
-      <IconButton key="zoomreset" onClick={reset} title="Reset zoom">
-        <ZoomResetIcon />
-      </IconButton>
-    </>
+    <ToolList>
+      <li>
+        {/* @ts-expect-error (non strict) */}
+        <IconButton key="zoomin" onClick={zoomIn} title="Zoom in">
+          <ZoomIcon />
+        </IconButton>
+      </li>
+      <li>
+        {/* @ts-expect-error (non strict) */}
+        <IconButton key="zoomout" onClick={zoomOut} title="Zoom out">
+          <ZoomOutIcon />
+        </IconButton>
+      </li>
+      <li>
+        {/* @ts-expect-error (non strict) */}
+        <IconButton key="zoomreset" onClick={reset} title="Reset zoom">
+          <ZoomResetIcon />
+        </IconButton>
+      </li>
+    </ToolList>
   );
 });
 
@@ -104,3 +111,12 @@ export const zoomTool: Addon_BaseType = {
   match: ({ viewMode, tabId }) => viewMode === 'story' && !tabId,
   render: ZoomToolRenderer,
 };
+
+const ToolList = styled.ul({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 6,
+  listStyle: 'none',
+  padding: 0,
+  margin: 0,
+});

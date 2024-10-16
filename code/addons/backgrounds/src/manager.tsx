@@ -1,6 +1,7 @@
-import React, { Fragment } from 'react';
+import React from 'react';
 
 import { addons, types } from 'storybook/internal/manager-api';
+import { styled } from 'storybook/internal/theming';
 
 import { BackgroundTool } from './components/Tool';
 import { ADDON_ID } from './constants';
@@ -16,10 +17,23 @@ addons.register(ADDON_ID, () => {
       FEATURES?.backgroundsStoryGlobals ? (
         <BackgroundTool />
       ) : (
-        <Fragment>
-          <BackgroundToolLegacy />
-          <GridToolLegacy />
-        </Fragment>
+        <ToolList>
+          <li>
+            <BackgroundToolLegacy />
+          </li>
+          <li>
+            <GridToolLegacy />
+          </li>
+        </ToolList>
       ),
   });
+});
+
+const ToolList = styled.ul({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 6,
+  listStyle: 'none',
+  padding: 0,
+  margin: 0,
 });

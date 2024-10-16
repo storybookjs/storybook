@@ -1,0 +1,23 @@
+{
+  "name": "transform-nextjs",
+  "version": "1.0.0",
+  "description": "",
+  "author": "Charles de Dreuille",
+  "license": "ISC",
+  "dependencies": {
+    "@mdx-js/mdx": "^3.0.1",
+    "chalk": "^5.3.0",
+    "path": "^0.12.7",
+    "prompts": "^2.4.2",
+    "remark-frontmatter": "^5.0.0",
+    "remark-mdx": "^3.0.1",
+    "remark-parse": "^11.0.0",
+    "remark-stringify": "^11.0.0",
+    "to-vfile": "^8.0.0",
+    "unified": "^11.0.4",
+    "unist-util-visit": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.17"
+  }
+}

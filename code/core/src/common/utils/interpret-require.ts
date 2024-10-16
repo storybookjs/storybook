@@ -79,9 +79,7 @@ export async function interopImport<T>(
   // console.log({ resolved });
 
   if (resolved.includes('node_modules')) {
-    const result = unwrapModule(await import(resolved));
-    // console.log({ result });
-    return result;
+    return unwrapModule(await import(resolved));
   }
 
   // console.log(`bundling ${inputPath}!!!`);

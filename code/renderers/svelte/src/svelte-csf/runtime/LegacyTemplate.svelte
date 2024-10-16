@@ -9,6 +9,8 @@
   import { type StoryRendererContext } from './contexts/renderer.svelte';
 
   export let id: string = 'default';
+  // silents the Svelte warning about 'id' being unused. It's only here for typing purposes.
+  const silentWarningAboutId = id;
 
   let args: StoryRendererContext['storyContext'];
   let context: StoryRendererContext['args'];

@@ -94,7 +94,7 @@
   {:else if template}
     {@render template(renderer.args, renderer.storyContext)}
   {:else if renderer.storyContext.component}
-    <svelte:component this={renderer.storyContext.component} {...renderer.args} />
+    <renderer.storyContext.component {...renderer.args} />
   {:else}
     <p>Warning: no story rendered. improve this message</p>
   {/if}

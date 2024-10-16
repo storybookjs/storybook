@@ -25,11 +25,11 @@ const meta = {
     csf: { table: { disable: true } },
   },
   tags: ['autodocs', '!dev'],
-} satisfies Meta<Comparison>;
+} satisfies Meta<typeof Comparison>;
 
 export default meta;
 
-type Story = StoryObj<Comparison>;
+type Story = StoryObj<typeof Comparison>;
 
 export const Default: Story = {
   args: { csf: 'regular' },

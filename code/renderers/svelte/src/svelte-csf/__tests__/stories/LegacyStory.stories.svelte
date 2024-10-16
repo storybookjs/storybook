@@ -17,7 +17,7 @@
     title: 'LegacyStory',
     component: LegacyStory,
     tags: ['autodocs'],
-  } satisfies Meta<LegacyStory>;
+  } satisfies Meta<typeof LegacyStory>;
 
   let count = 0;
 

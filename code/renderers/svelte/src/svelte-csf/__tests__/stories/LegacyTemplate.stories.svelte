@@ -17,7 +17,7 @@
     title: 'LegacyTemplate',
     component: LegacyTemplate,
     tags: ['autodocs'],
-  } satisfies Meta<LegacyTemplate>;
+  } satisfies Meta<typeof LegacyTemplate>;
 </script>
 
 <script lang="ts">

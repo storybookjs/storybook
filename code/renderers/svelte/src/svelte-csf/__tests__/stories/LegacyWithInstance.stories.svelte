@@ -17,7 +17,7 @@
     title: 'LegacyTemplateWithInstance',
     component: LegacyTemplate,
     tags: ['autodocs'],
-  } satisfies Meta<LegacyTemplate>;
+  } satisfies Meta<typeof LegacyTemplate>;
 
   let count = $state(0);
 

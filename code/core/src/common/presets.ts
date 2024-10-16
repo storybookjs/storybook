@@ -393,6 +393,8 @@ export async function getPresets(
 ): Promise<Presets> {
   const loadedPresets: LoadedPreset[] = await loadPresets(presets, 0, storybookOptions);
 
+  // console.log({loadedPresets})
+
   return {
     apply: async (extension: string, config: any, args = {}) =>
       applyPresets(loadedPresets, extension, config, args, storybookOptions),

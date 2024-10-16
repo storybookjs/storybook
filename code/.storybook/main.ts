@@ -155,4 +155,8 @@ const config: StorybookConfig = {
   // logLevel: 'debug',
 };
 
+// console.log({__filename, __dirname});
+
+// console.log(require.resolve('./main.ts'))
+
 export default config;

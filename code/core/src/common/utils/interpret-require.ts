@@ -1,9 +1,10 @@
-import { mkdir, readFile } from 'node:fs/promises';
-import { builtinModules } from 'node:module';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { readFile } from 'node:fs/promises';
+import { builtinModules, createRequire } from 'node:module';
+import { basename, dirname, isAbsolute, join } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { findUp } from 'find-up';
+import resolveFrom from 'resolve-from';
 import { dedent } from 'ts-dedent';
 import type { PackageJson } from 'type-fest';
 
@@ -15,8 +16,9 @@ import { getInterpretedFileWithExt } from './interpret-files';
 
 let registered = false;
 
+const requireFromCWD = createRequire(pathToFileURL(process.cwd()));
+
 const defaultCacheMap = new Map<string, string>();
-const defaultOutDirectory = join(process.cwd(), 'node_modules', '.cache', Date.now().toString());
 
 function unwrapModule<T>(result: any): T {
   return typeof result === 'object' && result !== null && typeof result.default !== 'undefined'
@@ -32,9 +34,8 @@ function unwrapModule<T>(result: any): T {
  * @param options.cache - A cache to store the imported modules
  * @param options.cwd - The current working directory
  * @param options.out - The directory to store the bundled files
- * @returns The imported module
- *
- *   When the module has a default export, the default export will be returned
+ * @returns The imported module. When the module has a default export, the default export will be
+ *   returned
  * @summery Import a file in Node
  *
  * @variation local
@@ -47,12 +48,43 @@ function unwrapModule<T>(result: any): T {
  */
 export async function interopImport<T>(
   inputPath: string,
-  { cache = defaultCacheMap, cwd = process.cwd(), out: outDirectory = defaultOutDirectory } = {}
+  { cache = defaultCacheMap, cwd = process.cwd() } = {}
 ): Promise<T> {
   // TODO: this is a heuristic, we should find a better way
-  if (inputPath.includes('node_modules')) {
-    return unwrapModule(await import(inputPath));
+  // console.log({ inputPath });
+
+  let resolved = inputPath;
+  if (!isAbsolute(inputPath)) {
+    // console.log('not absolute');
+    resolved = '';
+
+    if (resolved === '') {
+      try {
+        resolved = fileURLToPath(import.meta.resolve(inputPath));
+      } catch (e) {}
+    }
+
+    if (resolved === '') {
+      try {
+        resolved = requireFromCWD.resolve(inputPath);
+      } catch (e) {}
+    }
+
+    if (resolved === '') {
+      try {
+        resolved = resolveFrom(process.cwd(), inputPath);
+      } catch (e) {}
+    }
   }
+  // console.log({ resolved });
+
+  if (resolved.includes('node_modules')) {
+    const result = unwrapModule(await import(resolved));
+    // console.log({ result });
+    return result;
+  }
+
+  // console.log(`bundling ${inputPath}!!!`);
 
   const cached = cache.get(inputPath);
 
@@ -60,15 +92,16 @@ export async function interopImport<T>(
     return unwrapModule(await import(cached));
   }
 
+  const targetDirectory = dirname(inputPath);
+
   const [{ build }, { dependencies, devDependencies, peerDependencies }] = await Promise.all([
     import('esbuild'),
-    findUp('package.json', { cwd }).then(
+    findUp('package.json', { cwd: targetDirectory }).then(
       async (a) => (a ? JSON.parse(await readFile(a, { encoding: 'utf-8' })) : {}) as PackageJson
     ),
-    mkdir(outDirectory, { recursive: true }),
   ]);
 
-  const outPath = join(outDirectory, `${cache.size.toString()}.mjs`);
+  const outPath = join(targetDirectory, `${basename(inputPath)}.${cache.size.toString()}.mjs`);
 
   cache.set(inputPath, outPath);
 
@@ -84,6 +117,12 @@ export async function interopImport<T>(
     ...Object.keys(corePeerDependencies || {}),
   ];
 
+  const dirnameVarName = '__sb_injected_original_dirname';
+  const filenameVarName = '__sb_injected_original_filename';
+  const importMetaUrlVarName = '__sb_injected_original_import_meta_url';
+
+  // console.log('NICE');
+
   await build({
     entryPoints: [inputPath],
     bundle: true,
@@ -98,6 +137,13 @@ export async function interopImport<T>(
     format: 'esm',
     target: `node${process.version.slice(1)}`,
     logLevel: 'silent',
+    define: {
+      __dirname: dirnameVarName,
+      __filename: filenameVarName,
+      'import.meta.url': importMetaUrlVarName,
+      'import.meta.dirname': dirnameVarName,
+      'import.meta.filename': filenameVarName,
+    },
     banner: {
       js: dedent`
         /* experimental interopImport generated */
@@ -105,13 +151,29 @@ export async function interopImport<T>(
         /* to ${outPath} */
 
         import ESM_COMPAT_Module from "node:module";
-        import { fileURLToPath as ESM_COMPAT_fileURLToPath } from 'node:url';
-        import { dirname as ESM_COMPAT_dirname } from 'node:path';
-        const __filename = "${inputPath}";
-        const __dirname = ESM_COMPAT_dirname(__filename);
         const require = ESM_COMPAT_Module.createRequire(import.meta.url);
       `,
     },
+    plugins: [
+      {
+        name: 'inject-file-scope-variables',
+        setup(b) {
+          b.onLoad({ filter: /\.[cm]?[jt]s$/ }, async (args) => {
+            const contents = await readFile(args.path, 'utf-8');
+            const injectValues =
+              `const ${dirnameVarName} = ${JSON.stringify(dirname(args.path))};` +
+              `const ${filenameVarName} = ${JSON.stringify(args.path)};` +
+              `const ${importMetaUrlVarName} = ${JSON.stringify(pathToFileURL(args.path).href)};`;
+
+            return {
+              loader: args.path.endsWith('ts') ? 'ts' : 'js',
+              contents: injectValues + contents.replace('', ''),
+            };
+          });
+        },
+      },
+    ],
+
     treeShaking: true,
     outfile: outPath,
     absWorkingDir: cwd,
@@ -168,6 +230,8 @@ function getCandidate(paths: string[]) {
 
 export function serverRequire(filePath: string | string[]) {
   const candidatePath = serverResolve(filePath);
+
+  console.error(`serverRequire called from ${filePath}`);
 
   if (!candidatePath) {
     return null;

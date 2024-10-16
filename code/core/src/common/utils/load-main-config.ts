@@ -5,7 +5,7 @@ import type { StorybookConfig } from '@storybook/core/types';
 
 import { MainFileESMOnlyImportError, MainFileEvaluationError } from '@storybook/core/server-errors';
 
-import { serverRequire, serverResolve } from './interpret-require';
+import { interopImport, serverResolve } from './interpret-require';
 import { validateConfigurationFiles } from './validate-configuration-files';
 
 export async function loadMainConfig({
@@ -24,8 +24,7 @@ export async function loadMainConfig({
   }
 
   try {
-    const out = await serverRequire(mainJsPath);
-    return out;
+    return await interopImport(mainJsPath);
   } catch (e) {
     if (!(e instanceof Error)) {
       throw e;

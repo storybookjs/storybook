@@ -26,4 +26,4 @@ You should now be able to see the viewport addon icon in the toolbar at the top 
 
 ## Usage
 
-The usage is documented in the [documentation](https://storybook.js.org/docs/react/essentials/viewport).
+The usage is documented in the [documentation](https://storybook.js.org/docs/essentials/viewport).

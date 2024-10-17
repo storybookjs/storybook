@@ -28,7 +28,7 @@ export default {
 
 ## Usage
 
-The usage is documented in the [documentation](https://storybook.js.org/docs/react/essentials/toolbars-and-globals).
+The usage is documented in the [documentation](https://storybook.js.org/docs/essentials/toolbars-and-globals).
 
 ## FAQs
 
@@ -40,6 +40,6 @@ The primary difference between the two packages is that `addon-toolbars` makes u
 
 - **Standardization**. Args are built into Storybook in 6.x. Since `addon-toolbars` is based on args, you don't need to learn any addon-specific APIs to use it.
 
-- **Ergonomics**. Global args are easy to consume [in stories](https://storybook.js.org/docs/react/essentials/toolbars-and-globals#consuming-globals-from-within-a-story), in [Storybook Docs](https://github.com/storybookjs/storybook/tree/next/code/addons/docs), or even in other addons.
+- **Ergonomics**. Global args are easy to consume [in stories](https://storybook.js.org/docs/essentials/toolbars-and-globals#consuming-globals-from-within-a-story), in [Storybook Docs](https://github.com/storybookjs/storybook/tree/next/code/addons/docs), or even in other addons.
 
 * **Framework compatibility**. Args are completely framework-independent, so `addon-toolbars` is compatible with React, Vue 3, Angular, etc. out of the box with no framework logic needed in the addon.

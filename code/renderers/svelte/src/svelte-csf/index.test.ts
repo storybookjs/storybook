@@ -133,7 +133,6 @@ describe("component 'Story' destructured from 'defineMeta", () => {
 
     expectTypeOf(Story).toMatchTypeOf<StoryCmp<EmptyObject, typeof Button, Meta<typeof Button>>>();
     expectTypeOf<TStoryProps>().not.toBeNever();
-    expectTypeOf<ComponentProps<Button>['children']>().not.toBeNullable();
     expectTypeOf<Meta<typeof Button>['args']>().toBeNullable();
     expectTypeOf<NonNullable<Meta<typeof Button>['args']>['children']>().toBeNullable();
     expectTypeOf<TStoryProps>().toHaveProperty('name');

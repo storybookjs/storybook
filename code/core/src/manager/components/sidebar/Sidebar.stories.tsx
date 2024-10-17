@@ -43,6 +43,14 @@ const managerContext: any = {
     ),
     selectStory: fn().mockName('api::selectStory'),
     experimental_setFilter: fn().mockName('api::experimental_setFilter'),
+    getDocsUrl: () => 'https://storybook.js.org/docs/',
+    getUrlState: () => ({
+      queryParams: {},
+      path: '',
+      viewMode: 'story',
+      url: 'http://localhost:6006/',
+    }),
+    applyQueryParams: fn().mockName('api::applyQueryParams'),
   },
 };
 
@@ -56,6 +64,7 @@ const meta = {
     menu,
     extra: [] as Addon_SidebarTopType[],
     index: index,
+    indexJson: { entries: {}, v: 6 },
     storyId,
     refId: DEFAULT_REF_ID,
     refs: {},

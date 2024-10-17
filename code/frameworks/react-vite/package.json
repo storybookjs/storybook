@@ -28,8 +28,7 @@
     },
     "./preset": {
       "types": "./dist/preset.d.ts",
-      "require": "./dist/preset.js",
-      "import": "./dist/preset.mjs"
+      "require": "./dist/preset.js"
     },
     "./package.json": "./package.json"
   },

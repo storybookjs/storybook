@@ -5,6 +5,7 @@ import { Addon_TypesEnum } from '@storybook/core/types';
 import type { Combo, StoriesHash } from '@storybook/core/manager-api';
 import { Consumer } from '@storybook/core/manager-api';
 
+import { FILTER_KEY } from '../components/sidebar/Search';
 import type { SidebarProps as SidebarComponentProps } from '../components/sidebar/Sidebar';
 import { Sidebar as SidebarComponent } from '../components/sidebar/Sidebar';
 import { useMenu } from './Menu';
@@ -62,6 +63,7 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
       menuHighlighted: whatsNewNotificationsEnabled && api.isWhatsNewUnread(),
       enableShortcuts,
       extra: top,
+      initialQuery: api.getQueryParam(FILTER_KEY),
     };
   };
 

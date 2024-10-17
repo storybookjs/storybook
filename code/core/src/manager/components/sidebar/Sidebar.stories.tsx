@@ -43,6 +43,8 @@ const managerContext: any = {
     ),
     selectStory: fn().mockName('api::selectStory'),
     experimental_setFilter: fn().mockName('api::experimental_setFilter'),
+    setQueryParams: fn().mockName('api::setQueryParams'),
+    getQueryParams: fn().mockName('api::getQueryParams'),
   },
 };
 

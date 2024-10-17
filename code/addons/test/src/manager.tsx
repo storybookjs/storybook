@@ -85,6 +85,7 @@ addons.register(ADDON_ID, (api) => {
     runnable: true,
     watchable: true,
 
+    name: 'Component tests',
     title: ({ crashed }) => (crashed ? "Component tests didn't complete" : 'Component tests'),
     description: ({ failed, running, watching, progress, crashed, details }) => {
       const [isModalOpen, setIsModalOpen] = useState(false);

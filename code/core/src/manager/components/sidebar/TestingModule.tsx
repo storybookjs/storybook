@@ -241,7 +241,7 @@ export const TestingModule = ({
                 <Actions>
                   {state.watchable && (
                     <Button
-                      aria-label="Toggle watch mode"
+                      aria-label={`${state.watching ? 'Disable' : 'Enable'} watch mode for ${state.name}`}
                       variant="ghost"
                       padding="small"
                       active={state.watching}
@@ -255,7 +255,7 @@ export const TestingModule = ({
                     <>
                       {state.running && state.cancellable ? (
                         <Button
-                          aria-label={`Cancel tests`}
+                          aria-label={`Stop ${state.name}`}
                           variant="ghost"
                           padding="small"
                           onClick={() => onCancelTests(state.id)}
@@ -265,7 +265,7 @@ export const TestingModule = ({
                         </Button>
                       ) : (
                         <Button
-                          aria-label={`Run ${state.title}`}
+                          aria-label={`Start ${state.name}`}
                           variant="ghost"
                           padding="small"
                           onClick={() => onRunTests(state.id)}

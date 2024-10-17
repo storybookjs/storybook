@@ -471,6 +471,7 @@ export interface Addon_TestProviderType<
   type: Addon_TypesEnum.experimental_TEST_PROVIDER;
   /** The unique id of the test provider. */
   id: string;
+  name: string;
   title: (state: Addon_TestProviderState<Details>) => ReactNode;
   description: (state: Addon_TestProviderState<Details>) => ReactNode;
   mapStatusUpdate?: (state: Addon_TestProviderState<Details>) => API_StatusUpdate;

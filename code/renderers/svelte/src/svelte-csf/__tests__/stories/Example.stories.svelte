@@ -40,7 +40,11 @@
   setTemplate(render);
 </script>
 
-{#snippet render(args: Args<typeof Story>, context: StoryContext<typeof Story>)}
+<!--
+  FIXME: Temporary workaround.
+  Need to find a way on how to convert children type from `Snippet | Primitive` to `Snippet | undefined`
+-->
+{#snippet render({ children: _, ...args }: Args<typeof Story>, context: StoryContext<typeof Story>)}
   <Example {...args} onclick={handleClick}>
     <p>{args.id}</p>
     <p>{context.name}</p>

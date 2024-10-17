@@ -30,7 +30,7 @@ export const modifyErrorMessage = ({ task }: { task: Task }) => {
   ) {
     const currentError = task.result.errors[0];
     const storybookUrl = import.meta.env.__STORYBOOK_URL__;
-    const storyUrl = `${storybookUrl}/?path=/story/${meta.storyId}&addonPanel=storybook/interactions/panel`;
+    const storyUrl = `${storybookUrl}/?path=/story/${meta.storyId}&addonPanel=storybook/test/panel`;
     currentError.message = `\n\x1B[34mClick to debug the error directly in Storybook: ${storyUrl}\x1B[39m\n\n${currentError.message}`;
   }
 };

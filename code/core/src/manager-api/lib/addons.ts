@@ -8,6 +8,7 @@ import type {
   Addon_PageType,
   Addon_SidebarBottomType,
   Addon_SidebarTopType,
+  Addon_TestProviderType,
   Addon_Type,
   Addon_Types,
   Addon_TypesMapping,
@@ -70,7 +71,8 @@ export class AddonStore {
       | Addon_Types
       | Addon_TypesEnum.experimental_PAGE
       | Addon_TypesEnum.experimental_SIDEBAR_BOTTOM
-      | Addon_TypesEnum.experimental_SIDEBAR_TOP,
+      | Addon_TypesEnum.experimental_SIDEBAR_TOP
+      | Addon_TypesEnum.experimental_TEST_PROVIDER,
   >(type: T): Addon_Collection<Addon_TypesMapping[T]> | any {
     if (!this.elements[type]) {
       this.elements[type] = {};
@@ -91,6 +93,7 @@ export class AddonStore {
       | Addon_BaseType
       | Omit<Addon_SidebarTopType, 'id'>
       | Omit<Addon_SidebarBottomType, 'id'>
+      | Omit<Addon_TestProviderType, 'id'>
       | Omit<Addon_PageType, 'id'>
       | Omit<Addon_WrapperType, 'id'>
   ): void {

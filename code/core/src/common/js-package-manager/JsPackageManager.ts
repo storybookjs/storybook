@@ -50,6 +50,8 @@ export abstract class JsPackageManager {
 
   public abstract getRunCommand(command: string): string;
 
+  public abstract getRemoteRunCommand(): string;
+
   public readonly cwd?: string;
 
   public abstract getPackageJSON(

@@ -7,9 +7,14 @@ const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 
 test.describe('addon-interactions', () => {
+  // TODO: fix the skip statement below when we introduce a sandbox that tests interactions
+  test.skip(
+    templateName !== 'todo-sandbox-with-addon-interactions',
+    `Skipping ${templateName}, which does not have addon-interactions set up.`
+  );
   test.beforeEach(async ({ page }) => {
     await page.goto(storybookUrl);
-    await new SbPage(page).waitUntilLoaded();
+    await new SbPage(page, expect).waitUntilLoaded();
   });
 
   test('should have interactions', async ({ page }) => {
@@ -19,7 +24,7 @@ test.describe('addon-interactions', () => {
       `Skipping ${templateName}, which does not support addon-interactions`
     );
 
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
 
     await sbPage.navigateToStory('example/page', 'logged-in');
     await sbPage.viewAddonPanel('Interactions');
@@ -51,7 +56,7 @@ test.describe('addon-interactions', () => {
       `Skipping on FIreFox, which has trouble with "initial value"`
     );
 
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
 
     await sbPage.deepLinkToStory(storybookUrl, 'addons/interactions/basics', 'type-and-clear');
     await sbPage.viewAddonPanel('Interactions');
@@ -127,7 +132,7 @@ test.describe('addon-interactions', () => {
     // We trigger the implicit action error here, but angular works a bit different with implicit actions.
     test.skip(/^(angular)/i.test(`${templateName}`));
 
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
 
     await sbPage.deepLinkToStory(storybookUrl, 'addons/interactions/unhandled-errors', 'default');
     await sbPage.viewAddonPanel('Interactions');

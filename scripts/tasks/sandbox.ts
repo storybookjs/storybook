@@ -88,15 +88,10 @@ export const sandbox: Task = {
       // The storybook package forwards some CLI commands to @storybook/cli with npx.
       // Adding the dep makes sure that even npx will use the linked workspace version.
       '@storybook/cli',
+      '@storybook/experimental-addon-test',
     ];
     if (!details.template.skipTasks?.includes('vitest-integration')) {
-      extraDeps.push(
-        'happy-dom',
-        'vitest',
-        'playwright',
-        '@vitest/browser',
-        '@storybook/experimental-addon-test'
-      );
+      extraDeps.push('happy-dom', 'vitest', 'playwright', '@vitest/browser');
 
       if (details.template.expected.framework.includes('nextjs')) {
         extraDeps.push('@storybook/experimental-nextjs-vite', 'jsdom');

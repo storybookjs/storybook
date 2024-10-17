@@ -24,6 +24,7 @@ import memoize from 'memoizerific';
 import { dedent } from 'ts-dedent';
 
 import { type API, type State, combineParameters } from '../root';
+import intersect from './intersect';
 import merge from './merge';
 
 const TITLE_PATH_SEPARATOR = /\s*\/\s*/;
@@ -273,6 +274,9 @@ export const transformStoryIndexToStoriesHash = (
             children: [childId],
           }),
         });
+        // merge computes a union of arrays but we want an intersection on this
+        // specific array property, so it's easier to add it after the merge.
+        acc[id].tags = intersect(acc[id]?.tags ?? item.tags, item.tags);
       } else {
         acc[id] = merge<API_GroupEntry>((acc[id] || {}) as API_GroupEntry, {
           type: 'group',

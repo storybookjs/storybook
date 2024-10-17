@@ -26,4 +26,4 @@ export default {
 
 ## Usage
 
-The usage is documented in the [documentation](https://storybook.js.org/docs/react/essentials/backgrounds).
+The usage is documented in the [documentation](https://storybook.js.org/docs/essentials/backgrounds).

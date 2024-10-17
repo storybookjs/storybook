@@ -13,7 +13,7 @@ import type { SupportedFrameworks, SupportedRenderers } from '@storybook/core/ty
 import chalk from 'chalk';
 import { findUpSync } from 'find-up';
 import { copy, copySync, pathExists, readFile, writeFile } from 'fs-extra';
-import { coerce, satisfies } from 'semver';
+import { coerce, major, satisfies } from 'semver';
 import stripJsonComments from 'strip-json-comments';
 import invariant from 'tiny-invariant';
 
@@ -173,6 +173,26 @@ export const frameworkToDefaultBuilder: Record<
   'vue3-rsbuild': CommunityBuilder.Rsbuild,
 };
 
+/**
+ * Return the installed version of a package, or the coerced version specifier from package.json if
+ * it's a dependency but not installed (e.g. in a fresh project)
+ */
+export async function getVersionSafe(packageManager: JsPackageManager, packageName: string) {
+  try {
+    let version = await packageManager.getInstalledVersion(packageName);
+    if (!version) {
+      const deps = await packageManager.getAllDependencies();
+      const versionSpecifier = deps[packageName];
+      version = versionSpecifier ?? '';
+    }
+    const coerced = coerce(version, { includePrerelease: true });
+    return coerced?.toString();
+  } catch (err) {
+    // fall back to no version
+  }
+  return undefined;
+}
+
 export async function copyTemplateFiles({
   packageManager,
   renderer,
@@ -180,13 +200,26 @@ export async function copyTemplateFiles({
   destination,
   commonAssetsDir,
 }: CopyTemplateFilesOptions) {
-  const languageFolderMapping: Record<SupportedLanguage | 'typescript', string> = {
+  let languageFolderMapping: Record<SupportedLanguage | 'typescript', string> = {
     // keeping this for backwards compatibility in case community packages are using it
     typescript: 'ts',
     [SupportedLanguage.JAVASCRIPT]: 'js',
     [SupportedLanguage.TYPESCRIPT_3_8]: 'ts-3-8',
     [SupportedLanguage.TYPESCRIPT_4_9]: 'ts-4-9',
   };
+  // FIXME: remove after 9.0
+  if (renderer === 'svelte') {
+    const svelteVersion = await getVersionSafe(packageManager, 'svelte');
+    if (svelteVersion && major(svelteVersion) >= 5) {
+      languageFolderMapping = {
+        // keeping this for backwards compatibility in case community packages are using it
+        typescript: 'ts',
+        [SupportedLanguage.JAVASCRIPT]: 'svelte-5-js',
+        [SupportedLanguage.TYPESCRIPT_3_8]: 'svelte-5-ts-3-8',
+        [SupportedLanguage.TYPESCRIPT_4_9]: 'svelte-5-ts-4-9',
+      };
+    }
+  }
   const templatePath = async () => {
     const baseDir = await getRendererDir(packageManager, renderer);
     const assetsDir = join(baseDir, 'template', 'cli');

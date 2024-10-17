@@ -46,7 +46,9 @@ export type TestingModuleProgressReportPayload =
 
 export type TestingModuleCrashReportPayload = {
   providerId: TestProviderId;
-  message: string;
+  error: {
+    message: string;
+  };
 };
 
 export type TestingModuleProgressReportProgress = {

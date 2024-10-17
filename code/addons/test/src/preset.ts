@@ -4,11 +4,9 @@ import { isAbsolute, join } from 'node:path';
 import type { Channel } from 'storybook/internal/channels';
 import { checkAddonOrder, getFrameworkName, serverRequire } from 'storybook/internal/common';
 import {
-  TESTING_MODULE_PROGRESS_REPORT,
   TESTING_MODULE_RUN_ALL_REQUEST,
   TESTING_MODULE_RUN_REQUEST,
   TESTING_MODULE_WATCH_MODE_REQUEST,
-  type TestingModuleProgressReportPayload,
 } from 'storybook/internal/core-events';
 import { oneWayHash, telemetry } from 'storybook/internal/telemetry';
 import type { Options, StoryId } from 'storybook/internal/types';

@@ -32,7 +32,9 @@ const bootTestRunner = async (channel: Channel, initEvent?: string, initArgs?: a
   function reportFatalError(e: any) {
     channel.emit(TESTING_MODULE_CRASH_REPORT, {
       providerId: TEST_PROVIDER_ID,
-      message: String(e),
+      error: {
+        message: String(e),
+      },
     } as TestingModuleCrashReportPayload);
   }
 

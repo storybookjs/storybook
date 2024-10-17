@@ -4,11 +4,10 @@ import { isAbsolute, join } from 'node:path';
 import type { Channel } from 'storybook/internal/channels';
 import { checkAddonOrder, getFrameworkName, serverRequire } from 'storybook/internal/common';
 import {
-  TESTING_MODULE_PROGRESS_REPORT,
+  TESTING_MODULE_BOOT_REQUEST,
   TESTING_MODULE_RUN_ALL_REQUEST,
   TESTING_MODULE_RUN_REQUEST,
   TESTING_MODULE_WATCH_MODE_REQUEST,
-  type TestingModuleProgressReportPayload,
 } from 'storybook/internal/core-events';
 import { oneWayHash, telemetry } from 'storybook/internal/telemetry';
 import type { Options, StoryId } from 'storybook/internal/types';
@@ -66,11 +65,12 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
   }
 
   const execute =
-    (eventName: string) =>
+    (eventName?: string) =>
     (...args: any[]) => {
       runTestRunner(channel, eventName, args);
     };
 
+  channel.on(TESTING_MODULE_BOOT_REQUEST, execute());
   channel.on(TESTING_MODULE_RUN_ALL_REQUEST, execute(TESTING_MODULE_RUN_ALL_REQUEST));
   channel.on(TESTING_MODULE_RUN_REQUEST, execute(TESTING_MODULE_RUN_REQUEST));
   channel.on(TESTING_MODULE_WATCH_MODE_REQUEST, (payload) => {

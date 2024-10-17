@@ -4,6 +4,7 @@ import { styled } from '@storybook/core/theming';
 import { type API_FilterFunction, Addon_TypesEnum } from '@storybook/core/types';
 
 import {
+  TESTING_MODULE_BOOT_REQUEST,
   TESTING_MODULE_CANCEL_TEST_RUN_REQUEST,
   TESTING_MODULE_CRASH_REPORT,
   TESTING_MODULE_PROGRESS_REPORT,
@@ -113,6 +114,8 @@ export const SidebarBottomBase = ({ api, notifications = [], status = {} }: Side
   const hasWarnings = warnings.length > 0;
   const hasErrors = errors.length > 0;
 
+  const bootTestProviders = useCallback(() => api.emit(TESTING_MODULE_BOOT_REQUEST), [api]);
+
   const updateTestProvider = useCallback(
     (id: TestProviderId, update: Partial<TestProviderState>) =>
       setTestProviders((state) => ({ ...state, [id]: { ...state[id], ...update } })),
@@ -216,7 +219,7 @@ export const SidebarBottomBase = ({ api, notifications = [], status = {} }: Side
 
   return (
     <div id={SIDEBAR_BOTTOM_SPACER_ID} ref={spacerRef}>
-      <Content id={SIDEBAR_BOTTOM_WRAPPER_ID} ref={wrapperRef}>
+      <Content id={SIDEBAR_BOTTOM_WRAPPER_ID} onMouseEnter={bootTestProviders} ref={wrapperRef}>
         <NotificationList notifications={notifications} clearNotification={api.clearNotification} />
         <TestingModule
           {...{

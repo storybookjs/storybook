@@ -67,17 +67,17 @@
     "@storybook/preview-api": "workspace:^",
     "@storybook/theming": "workspace:^",
     "@vue/compiler-core": "^3.0.0",
-    "ts-dedent": "^2.0.0",
-    "type-fest": "~2.19",
-    "vue-component-type-helpers": "latest"
+    "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
     "@digitak/esrun": "^3.2.2",
     "@testing-library/vue": "^8.0.0",
     "@types/prettier": "^3.0.0",
     "@vitejs/plugin-vue": "^4.4.0",
+    "type-fest": "~2.19",
     "typescript": "^5.3.2",
     "vue": "^3.2.47",
+    "vue-component-type-helpers": "latest",
     "vue-tsc": "latest"
   },
   "peerDependencies": {

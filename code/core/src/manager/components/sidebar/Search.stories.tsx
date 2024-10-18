@@ -1,12 +1,11 @@
 import React from 'react';
 
-import type { Meta, StoryFn } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react';
+import { expect, fn, userEvent, within } from '@storybook/test';
 
-import type { API } from '@storybook/core/manager-api';
 import { ManagerContext } from '@storybook/core/manager-api';
 
-import { action } from '@storybook/addon-actions';
-
+import { LayoutProvider } from '../layout/LayoutProvider';
 import { IconSymbols } from './IconSymbols';
 import { Search } from './Search';
 import { SearchResults } from './SearchResults';
@@ -23,77 +22,96 @@ const getLastViewed = () =>
     .filter((item, i) => item.type === 'component' && item.parent && i % 20 === 0)
     .map((component) => ({ storyId: component.id, refId }));
 
+const applyQueryParams = fn().mockName('applyQueryParams');
+
 const meta = {
   component: Search,
   title: 'Sidebar/Search',
   parameters: { layout: 'fullscreen' },
+  args: {
+    dataset,
+    getLastViewed: (): Selection[] => [],
+    children: () => <SearchResults {...noResults} />,
+  },
   globals: { sb_theme: 'side-by-side' },
   decorators: [
-    (storyFn: any) => (
-      <div style={{ padding: 20, maxWidth: '230px' }}>
-        <IconSymbols />
-        {storyFn()}
-      </div>
+    (storyFn) => (
+      <ManagerContext.Provider
+        value={
+          {
+            state: {},
+            api: {
+              emit: () => {},
+              on: () => {},
+              off: () => {},
+              getShortcutKeys: () => ({ search: ['control', 'shift', 's'] }),
+              selectStory: () => {},
+              applyQueryParams,
+            },
+          } as any
+        }
+      >
+        <LayoutProvider>
+          <IconSymbols />
+          {storyFn()}
+        </LayoutProvider>
+      </ManagerContext.Provider>
     ),
   ],
 } satisfies Meta<typeof Search>;
+
 export default meta;
 
-const baseProps = {
-  dataset,
-  clearLastViewed: action('clear'),
-  getLastViewed: () => [] as Selection[],
+type Story = StoryObj<typeof meta>;
+
+export const Simple: Story = {};
+
+export const SimpleWithCreateButton: Story = {
+  args: {
+    showCreateStoryButton: true,
+  },
 };
 
-export const Simple: StoryFn = () => <Search {...baseProps}>{() => null}</Search>;
+export const FilledIn: Story = {
+  args: {
+    initialQuery: 'Search query',
+  },
+};
 
-export const SimpleWithCreateButton: StoryFn = () => (
-  <Search {...baseProps} showCreateStoryButton={true}>
-    {() => null}
-  </Search>
-);
+export const LastViewed: Story = {
+  args: {
+    getLastViewed,
+  },
+};
 
-export const FilledIn: StoryFn = () => (
-  <Search {...baseProps} initialQuery="Search query">
-    {() => <SearchResults {...noResults} />}
-  </Search>
-);
+export const ShortcutsDisabled: Story = {
+  args: {
+    enableShortcuts: false,
+  },
+};
 
-export const LastViewed: StoryFn = () => (
-  <Search {...baseProps} getLastViewed={getLastViewed}>
-    {({ query, results, closeMenu, getMenuProps, getItemProps, highlightedIndex }) => (
-      <SearchResults
-        query={query}
-        results={results}
-        closeMenu={closeMenu}
-        getMenuProps={getMenuProps}
-        getItemProps={getItemProps}
-        highlightedIndex={highlightedIndex}
-      />
-    )}
-  </Search>
-);
+export const Searching: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = await within(canvasElement);
+    const search = await canvas.findByPlaceholderText('Find components');
+    await userEvent.clear(search);
+    await userEvent.type(search, 'foo');
+    expect(applyQueryParams).toHaveBeenCalledWith({
+      search: 'foo',
+    });
+  },
+};
 
-export const ShortcutsDisabled: StoryFn = () => (
-  <Search {...baseProps} enableShortcuts={false}>
-    {() => null}
-  </Search>
-);
+export const Clearing: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = await within(canvasElement);
+    const search = await canvas.findByPlaceholderText('Find components');
+    await userEvent.clear(search);
+    await userEvent.type(search, 'foo');
 
-export const CustomShortcuts: StoryFn = () => <Search {...baseProps}>{() => null}</Search>;
+    const clearIcon = await canvas.findByTitle('Clear search');
+    await userEvent.click(clearIcon);
 
-CustomShortcuts.decorators = [
-  (storyFn) => (
-    <ManagerContext.Provider
-      value={
-        {
-          api: {
-            getShortcutKeys: () => ({ search: ['control', 'shift', 's'] }),
-          } as API,
-        } as any
-      }
-    >
-      {storyFn()}
-    </ManagerContext.Provider>
-  ),
-];
+    expect(applyQueryParams).toHaveBeenCalledWith({ search: undefined });
+  },
+};

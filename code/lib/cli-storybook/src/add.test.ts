@@ -171,7 +171,7 @@ describe('add (extra)', () => {
 
     expect(MockedConsole.warn).toHaveBeenCalledWith(
       expect.stringContaining(
-        `The version of @storybook/addon-docs you are installing is not the same as the version of Storybook you are using. This may lead to unexpected behavior.`
+        `The version of @storybook/addon-docs (2.0.0) you are installing is not the same as the version of Storybook you are using (8.0.0). This may lead to unexpected behavior.`
       )
     );
   });

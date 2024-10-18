@@ -10,7 +10,7 @@ test.describe('navigating', () => {
     // this is purposefully not using the SbPage class, and the URL is a partial (it does not contain the full storyId)
     await page.goto(`${storybookUrl}?path=/story/example-button`);
 
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
 
     await sbPage.waitUntilLoaded();
 

@@ -7,11 +7,11 @@ const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 test.describe('tags', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(storybookUrl);
-    await new SbPage(page).waitUntilLoaded();
+    await new SbPage(page, expect).waitUntilLoaded();
   });
 
   test('should correctly filter dev-only, docs-only, test-only stories', async ({ page }) => {
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
 
     await sbPage.navigateToStory('core/tags-config', 'docs');
 
@@ -29,7 +29,7 @@ test.describe('tags', () => {
   });
 
   test('should correctly add dev, autodocs, test stories', async ({ page }) => {
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
 
     await sbPage.navigateToStory('core/tags-add', 'docs');
 
@@ -48,7 +48,7 @@ test.describe('tags', () => {
   });
 
   test('should correctly remove dev, autodocs, test stories', async ({ page }) => {
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
 
     await sbPage.navigateToStory('core/tags-remove', 'docs');
 

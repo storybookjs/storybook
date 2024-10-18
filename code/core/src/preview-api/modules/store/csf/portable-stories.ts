@@ -139,16 +139,17 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
   );
 
   const globalsFromGlobalTypes = getValuesFromArgTypes(normalizedProjectAnnotations.globalTypes);
+  const globals = {
+    // TODO: remove loading from globalTypes in 9.0
+    ...globalsFromGlobalTypes,
+    ...normalizedProjectAnnotations.initialGlobals,
+    ...story.storyGlobals,
+  };
 
   const initializeContext = () => {
     const context: StoryContext<TRenderer> = prepareContext({
       hooks: new HooksContext(),
-      globals: {
-        // TODO: remove loading from globalTypes in 9.0
-        ...globalsFromGlobalTypes,
-        ...normalizedProjectAnnotations.initialGlobals,
-        ...story.storyGlobals,
-      },
+      globals,
       args: { ...story.initialArgs },
       viewMode: 'story',
       loaded: {},
@@ -251,6 +252,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
 
         loadedContext = context;
       },
+      globals,
       args: story.initialArgs as Partial<TArgs>,
       parameters: story.parameters as Parameters,
       argTypes: story.argTypes as StrictArgTypes<TArgs>,

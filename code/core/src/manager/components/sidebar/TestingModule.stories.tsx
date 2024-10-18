@@ -22,6 +22,7 @@ const testProviders: TestProviders[keyof TestProviders][] = [
   {
     type: Addon_TypesEnum.experimental_TEST_PROVIDER,
     id: 'component-tests',
+    name: 'Component tests',
     title: () => 'Component tests',
     description: () => 'Ran 2 seconds ago',
     runnable: true,
@@ -31,6 +32,7 @@ const testProviders: TestProviders[keyof TestProviders][] = [
   {
     type: Addon_TypesEnum.experimental_TEST_PROVIDER,
     id: 'visual-tests',
+    name: 'Visual tests',
     title: () => 'Visual tests',
     description: () => 'Not run',
     runnable: true,
@@ -39,6 +41,7 @@ const testProviders: TestProviders[keyof TestProviders][] = [
   {
     type: Addon_TypesEnum.experimental_TEST_PROVIDER,
     id: 'linting',
+    name: 'Linting',
     title: () => 'Linting',
     description: () => 'Watching for changes',
     ...baseState,

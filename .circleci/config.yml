@@ -85,7 +85,7 @@ commands:
           name: Cancel current workflow
           when: on_fail
           command: |
-            echo "Canceling workflow as previous step resulted in failure."
+            echo "Canceling workflow as previous step resulted in failure. "
             echo "To execute all checks locally, please run yarn ci-tests"
             curl -X POST --header "Content-Type: application/json" "https://circleci.com/api/v2/workflow/${CIRCLE_WORKFLOW_ID}/cancel?circle-token=${WORKFLOW_CANCELER}"
   report-workflow-on-failure:

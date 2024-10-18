@@ -5,6 +5,7 @@ import type { Combo } from 'storybook/internal/manager-api';
 import { Consumer, addons, types, useAddonState } from 'storybook/internal/manager-api';
 
 import { Panel } from './Panel';
+import { InteractionToggle } from './components/InteractionToggle';
 import { ADDON_ID, PANEL_ID } from './constants';
 
 function Title() {
@@ -25,6 +26,13 @@ function Title() {
 }
 
 addons.register(ADDON_ID, (api) => {
+  addons.add(PANEL_ID, {
+    title: '',
+    type: types.TOOL,
+    match: ({ viewMode, tabId }) => viewMode === 'story' && !tabId,
+    render: () => <InteractionToggle />,
+  });
+
   addons.add(PANEL_ID, {
     type: types.PANEL,
     title: Title,

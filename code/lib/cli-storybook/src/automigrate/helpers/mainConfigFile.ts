@@ -94,7 +94,9 @@ export const getBuilderPackageName = (mainConfig?: StorybookConfigRaw) => {
 export const getFrameworkOptions = (
   mainConfig?: StorybookConfigRaw
 ): Record<string, any> | null => {
-  return typeof mainConfig?.framework === 'string' ? null : mainConfig?.framework?.options ?? null;
+  return typeof mainConfig?.framework === 'string'
+    ? null
+    : (mainConfig?.framework?.options ?? null);
 };
 
 /**

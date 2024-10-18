@@ -217,7 +217,7 @@
     "serve-static": "^1.14.1",
     "slash": "^5.0.0",
     "storybook": "workspace:^",
-    "svelte": "^5.0.0-next.65",
+    "svelte": "^5.0.0-next.268",
     "ts-dedent": "^2.0.0",
     "typescript": "^5.4.3",
     "util": "^0.12.4",
@@ -295,5 +295,6 @@
         "Dependency Upgrades"
       ]
     ]
-  }
+  },
+  "deferredNextVersion": "8.3.6"
 }

@@ -40,7 +40,7 @@ export * from './create';
 export * from './convert';
 export * from './ensure';
 
-export { lightenColor as lighten, darkenColor as darken } from './utils';
+export { lightenColor as lighten, darkenColor as darken, getPreferredColorScheme } from './utils';
 
 export const ignoreSsrWarning =
   '/* emotion-disable-server-rendering-unsafe-selector-warning-please-do-not-use-this-the-warning-exists-for-a-reason */';

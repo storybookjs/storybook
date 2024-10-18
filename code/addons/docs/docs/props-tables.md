@@ -82,7 +82,7 @@ export const WithControls = (args) => <MyComponent {...args} />;
 <ArgsTable story="Controls" />
 ```
 
-For a very detailed walkthrough of how to write stories that use controls, read the [documentation](https://storybook.js.org/docs/react/essentials/controls).
+For a very detailed walkthrough of how to write stories that use controls, read the [documentation](https://storybook.js.org/docs/essentials/controls).
 
 ## Customization
 
@@ -187,7 +187,7 @@ This would render a row with a modified description, a type display with a dropd
 > - `type: 'number'` is shorthand for `type: { name: 'number' }`
 > - `control: 'radio'` is shorthand for `control: { type: 'radio' }`
 
-Controls customization has an entire section in the [documentation](https://storybook.js.org/docs/react/essentials/controls#configuration).
+Controls customization has an entire section in the [documentation](https://storybook.js.org/docs/essentials/controls#configuration).
 
 Here are the possible customizations for the rest of the prop table:
 
@@ -200,7 +200,7 @@ Here are the possible customizations for the rest of the prop table:
 | `table.type.detail`          | A longer version of the type (if it's a complex type)                                                |
 | `table.defaultValue.summary` | A short version of the default value                                                                 |
 | `table.defaultValue.detail`  | A longer version of the default value (if it's a complex value)                                      |
-| `control`                    | See [`addon-controls` README](https://storybook.js.org/docs/react/essentials/controls#configuration) |
+| `control`                    | See [`addon-controls` README](https://storybook.js.org/docs/essentials/controls#configuration) |
 
 ## Reporting a bug
 

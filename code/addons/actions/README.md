@@ -24,4 +24,4 @@ export default {
 
 ## Usage
 
-The basic usage is documented in the [documentation](https://storybook.js.org/docs/react/essentials/actions). For legacy usage, see the [advanced README](./ADVANCED.md).
+The basic usage is documented in the [documentation](https://storybook.js.org/docs/essentials/actions). For legacy usage, see the [advanced README](./ADVANCED.md).

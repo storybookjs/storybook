@@ -71,11 +71,7 @@ export const ArgControl: FC<ArgControlProps> = ({ row, arg, updateArgs, isHovere
   if (!control || control.disable) {
     const canBeSetup = control?.disable !== true && row?.type?.name !== 'function';
     return isHovered && canBeSetup ? (
-      <Link
-        href="https://storybook.js.org/docs/essentials/controls"
-        target="_blank"
-        withArrow
-      >
+      <Link href="https://storybook.js.org/docs/essentials/controls" target="_blank" withArrow>
         Setup controls
       </Link>
     ) : (

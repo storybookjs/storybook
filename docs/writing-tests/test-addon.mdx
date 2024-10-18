@@ -29,7 +29,7 @@ Stories are tested in two ways: a smoke test to ensure it renders and, if a [pla
 
 If a test fails, it will be marked as such in the sidebar and you can click on the story to see the failure. You can also run tests in watch mode, which will automatically re-run tests when you make changes to your components or stories.
 
-[TK - Overview video]
+<Video src="../_assets/writing-tests/addon-test-overview.mp4" />
 
 ## Install and set up
 
@@ -202,23 +202,23 @@ There are multiple ways to run tests using the addon:
 
 The easiest way to run tests is through the Storybook UI. To run all tests for your components, press the Run tests button in the test module at the bottom of the sidebar.
 
-[TK - video of test module, collapsed, press Run tests, watch until completion]
+<Video src="../_assets/writing-tests/addon-test-run-all-tests.mp4" />
 
 Alternatively, you can expand the test module to run specific types of tests individually. For those test types which have a watch mode (which will automatically re-run relevant tests upon code changes), you can toggle that on or off.
 
-[TK - screenshot of test module, expanded, Component tests play button hovered]
+![Screenshot of test module, expanded, showing test types and watch mode toggle](../_assets/writing-tests/addon-test-module-expanded.png)
 
 <Callout variant="info" icon="ℹ️">
 
 If you have the [Visual tests addon](./visual-testing.mdx) installed, you'll see an option to run Visual tests alongside [Component tests](./component-testing.mdx).
+
+![Screenshot of test module, expanded, showing Visual tests](../_assets/writing-tests/addon-test-module-expanded-with-vta.png)
 
 Other addons may also provide test types that can be run from the test module and affect the status indicators on stories and components.
 
 </Callout>
 
 After running your tests, you will now see status indicators on stories and components for their pass, fail, or error state. You can press on these indicators to see more details and jump straight to the failure in the Component tests addon panel. That panel provides an interactive debugger for your component test, allowing you to step through each simulated behavior or assertion.
-
-[TK - video of addon panel, with failure, stepping through back-and-forth]
 
 <Callout variant="info" icon="ℹ️">
 
@@ -228,7 +228,7 @@ The Component tests addon panel replaces the [Interactions addon panel](../essen
 
 The test module will also show you the total number of tests run, the number of tests that passed, and the number of tests that failed or errored. You can press the failure number to filter the sidebar to only those stories that failed.
 
-[TK - video of test module, collapsed, with failures, press failure number, watch sidebar filter]
+<Video src="../_assets/writing-tests/addon-test-filter-sidebar.mp4" />
 
 ### CLI
 
@@ -376,17 +376,13 @@ Finally, because of the simpler architecture and the use of Vitest, this plugin 
 
 Sometimes tests can fail because of errors within Vitest itself. When this happens, the test module in the Storybook UI will alert you to the error, and you can click a link to see more details. The error will also be logged to the console.
 
-[TK - screenshot of test module with Vitest error]
+{/* TODO: screenshot of test module with Vitest error */}
 
 Vitest offers [troubleshooting help for common errors](https://vitest.dev/guide/common-errors.html).
-
-TK - Can we offer more help?
 
 ### What happens when there are different test results in multiple environments?
 
 When you run tests with this addon, they are run as Vitest tests with whatever configuration you have set up in your project. By default, they will run in browser mode, using Playwright's Chromium browser. Sometimes, tests will fail when run in the addon (or via CLI), but then pass when viewed in the Component tests addon panel (or vice-versa). This can happen because the tests are run in different environments, which can have different behaviors.
-
-TK - More here
 
 ### How do I debug my CLI tests in Storybook?
 

@@ -58,11 +58,11 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin[] {
               alias: [
                 {
                   find: /^react$/,
-                  replacement: "next/dist/compiled/react",
+                  replacement: require.resolve("next/dist/compiled/react"),
                 },
                 {
                   find: /^react-dom$/,
-                  replacement: "next/dist/compiled/react-dom",
+                  replacement: require.resolve("next/dist/compiled/react-dom"),
                 },
                 {
                   find: /^react-dom\/server$/,

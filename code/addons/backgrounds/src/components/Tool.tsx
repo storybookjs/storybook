@@ -2,6 +2,7 @@ import React, { Fragment, memo, useCallback, useState } from 'react';
 
 import { IconButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
 import { useGlobals, useParameter } from 'storybook/internal/manager-api';
+import { styled } from 'storybook/internal/theming';
 
 import { CircleIcon, GridIcon, PhotoIcon, RefreshIcon } from '@storybook/icons';
 
@@ -81,65 +82,78 @@ const Pure = memo(function PureTool(props: PureProps) {
   );
 
   return (
-    <Fragment>
-      <IconButton
-        key="grid"
-        active={isGrid}
-        disabled={isLocked}
-        title="Apply a grid to the preview"
-        onClick={() => update({ value: backgroundName, grid: !isGrid })}
-      >
-        <GridIcon />
-      </IconButton>
+    <ToolList>
+      <li>
+        <IconButton
+          key="grid"
+          active={isGrid}
+          disabled={isLocked}
+          title="Apply a grid to the preview"
+          onClick={() => update({ value: backgroundName, grid: !isGrid })}
+        >
+          <GridIcon />
+        </IconButton>
+      </li>
 
       {length > 0 ? (
-        <WithTooltip
-          key="background"
-          placement="top"
-          closeOnOutsideClick
-          tooltip={({ onHide }) => {
-            return (
-              <TooltipLinkList
-                links={[
-                  ...(!!item
-                    ? [
-                        {
-                          id: 'reset',
-                          title: 'Reset background',
-                          icon: <RefreshIcon />,
-                          onClick: () => {
-                            update({ value: undefined, grid: isGrid });
-                            onHide();
-                          },
-                        },
-                      ]
-                    : []),
-                  ...Object.entries(backgroundMap).map<Link>(([k, value]) => ({
-                    id: k,
-                    title: value.name,
-                    icon: <CircleIcon color={value?.value || 'grey'} />,
-                    active: k === backgroundName,
-                    onClick: () => {
-                      update({ value: k, grid: isGrid });
-                      onHide();
-                    },
-                  })),
-                ]}
-              />
-            );
-          }}
-          onVisibleChange={setIsTooltipVisible}
-        >
-          <IconButton
-            disabled={isLocked}
+        <li>
+          <WithTooltip
             key="background"
-            title="Change the background of the preview"
-            active={!!item || isTooltipVisible}
+            placement="top"
+            closeOnOutsideClick
+            tooltip={({ onHide }) => {
+              return (
+                <TooltipLinkList
+                  links={[
+                    ...(!!item
+                      ? [
+                          {
+                            id: 'reset',
+                            title: 'Reset background',
+                            icon: <RefreshIcon />,
+                            onClick: () => {
+                              update({ value: undefined, grid: isGrid });
+                              onHide();
+                            },
+                          },
+                        ]
+                      : []),
+                    ...Object.entries(backgroundMap).map<Link>(([k, value]) => ({
+                      id: k,
+                      title: value.name,
+                      icon: <CircleIcon color={value?.value || 'grey'} />,
+                      active: k === backgroundName,
+                      onClick: () => {
+                        update({ value: k, grid: isGrid });
+                        onHide();
+                      },
+                    })),
+                  ]}
+                />
+              );
+            }}
+            onVisibleChange={setIsTooltipVisible}
           >
-            <PhotoIcon />
-          </IconButton>
-        </WithTooltip>
+            <IconButton
+              disabled={isLocked}
+              key="background"
+              title="Change the background of the preview"
+              active={!!item || isTooltipVisible}
+            >
+              <PhotoIcon />
+            </IconButton>
+          </WithTooltip>
+        </li>
       ) : null}
-    </Fragment>
+    </ToolList>
   );
+});
+
+const ToolList = styled.ul({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 6,
+  listStyle: 'none',
+  padding: 0,
+  margin: 0,
 });

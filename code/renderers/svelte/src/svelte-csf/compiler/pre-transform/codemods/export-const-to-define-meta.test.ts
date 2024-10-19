@@ -10,7 +10,7 @@ import { parseAndExtractSvelteNode } from '#tests/extractor';
 describe(transformExportMetaToDefineMeta.name, () => {
   it('works with advanced example', async ({ expect }) => {
     const code = `
-      <script context="module" lang="ts">
+      <script module lang="ts">
         import { Story, Template } from "${pkg.name}";
 
         export const meta = {
@@ -55,7 +55,7 @@ describe(transformExportMetaToDefineMeta.name, () => {
 
   it('leading comments are included', async ({ expect }) => {
     const code = `
-      <script context="module">
+      <script module>
         import { Story, Template } from "${pkg.name}";
 
         /**

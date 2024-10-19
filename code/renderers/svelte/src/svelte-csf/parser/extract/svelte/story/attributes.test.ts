@@ -9,7 +9,7 @@ describe(extractStoryAttributesNodes.name, () => {
   it("extracts '<Story />' attributes correctly", async () => {
     const ast = getSvelteAST({
       code: `
-        <script context="module">
+        <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf"
           const { Story } = defineMeta();
         </script>
@@ -32,7 +32,7 @@ describe(extractStoryAttributesNodes.name, () => {
   it('it ignores the attributes of <Story> children components', async () => {
     const ast = getSvelteAST({
       code: `
-        <script context="module">
+        <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf"
           const { Story } = defineMeta();
         </script>

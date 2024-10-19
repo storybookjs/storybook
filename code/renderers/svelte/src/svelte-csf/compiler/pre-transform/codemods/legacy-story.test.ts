@@ -9,7 +9,7 @@ import { parseAndExtractSvelteNode } from '#tests/extractor';
 describe(transformLegacyStory.name, () => {
   it("it moves 'autodocs' prop to 'tags' correctly", async ({ expect }) => {
     const code = `
-      <script context="module">
+      <script module>
         import { Story } from "@storybook/addon-svelte-csf";
       </script>
 
@@ -29,7 +29,7 @@ describe(transformLegacyStory.name, () => {
 
   it("moving 'autodocs' prop doesn't break with existing 'tags' prop", async ({ expect }) => {
     const code = `
-      <script context="module">
+      <script module>
         import { Story } from "@storybook/addon-svelte-csf";
       </script>
 
@@ -49,7 +49,7 @@ describe(transformLegacyStory.name, () => {
 
   it("'source' prop when is a shorthand gets removed", async ({ expect }) => {
     const code = `
-      <script context="module">
+      <script module>
         import { Story } from "@storybook/addon-svelte-csf";
       </script>
 
@@ -71,7 +71,7 @@ describe(transformLegacyStory.name, () => {
     expect,
   }) => {
     const code = `
-      <script context="module">
+      <script module>
         import { Story } from "@storybook/addon-svelte-csf";
       </script>
 
@@ -99,7 +99,7 @@ describe(transformLegacyStory.name, () => {
     expect,
   }) => {
     const code = `
-      <script context="module">
+      <script module>
         import { Story } from "@storybook/addon-svelte-csf";
       </script>
 
@@ -133,7 +133,7 @@ describe(transformLegacyStory.name, () => {
     expect,
   }) => {
     const code = `
-      <script context="module">
+      <script module>
         import { Story } from "@storybook/addon-svelte-csf";
       </script>
 
@@ -170,7 +170,7 @@ describe(transformLegacyStory.name, () => {
     expect,
   }) => {
     const code = `
-      <script context="module">
+      <script module>
         import { Story } from "@storybook/addon-svelte-csf";
       </script>
 
@@ -192,7 +192,7 @@ describe(transformLegacyStory.name, () => {
     expect,
   }) => {
     const code = `
-      <script context="module">
+      <script module>
         import { Story } from "@storybook/addon-svelte-csf";
       </script>
 
@@ -222,7 +222,7 @@ describe(transformLegacyStory.name, () => {
     expect,
   }) => {
     const code = `
-      <script context="module">
+      <script module>
         import { Story } from "@storybook/addon-svelte-csf";
       </script>
 
@@ -252,7 +252,7 @@ describe(transformLegacyStory.name, () => {
     expect,
   }) => {
     const code = `
-      <script context="module">
+      <script module>
         import { Story } from "@storybook/addon-svelte-csf";
       </script>
 

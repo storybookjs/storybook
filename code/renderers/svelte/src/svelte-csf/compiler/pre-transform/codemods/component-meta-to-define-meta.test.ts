@@ -9,7 +9,7 @@ import { parseAndExtractSvelteNode } from '#tests/extractor';
 describe(transformComponentMetaToDefineMeta.name, () => {
   it('works with a simple example', async ({ expect }) => {
     const code = `
-      <script context="module">
+      <script module>
         import { Meta } from "@storybook/addon-svelte-csf";
       </script>
 
@@ -30,7 +30,7 @@ describe(transformComponentMetaToDefineMeta.name, () => {
 
   it('leading comments are included', async ({ expect }) => {
     const code = `
-      <script context="module">
+      <script module>
         import { Meta } from "@storybook/addon-svelte-csf";
       </script>
 
@@ -56,7 +56,7 @@ describe(transformComponentMetaToDefineMeta.name, () => {
 
   it('supports <Meta> parameters with functions', async ({ expect }) => {
     const code = `
-      <script context="module">
+      <script module>
         import { Meta } from "@storybook/addon-svelte-csf";
         import WithParameters from './WithParameters.svelte';
       </script>
@@ -113,7 +113,7 @@ describe(transformComponentMetaToDefineMeta.name, () => {
     expect,
   }) => {
     const code = `
-      <script context="module">
+      <script module>
         import { Story } from "@storybook/addon-svelte-csf";
       </script>
 
@@ -130,7 +130,7 @@ describe(transformComponentMetaToDefineMeta.name, () => {
     expect,
   }) => {
     const code = `
-      <script context="module">
+      <script module>
         import { Story } from "@storybook/addon-svelte-csf";
       </script>
 
@@ -145,7 +145,7 @@ describe(transformComponentMetaToDefineMeta.name, () => {
 
   it('tags with an array expression are left as-is', async ({ expect }) => {
     const code = `
-      <script context="module">
+      <script module>
         import { Story } from "@storybook/addon-svelte-csf";
       </script>
 

@@ -1,4 +1,4 @@
-<script context="module" lang="ts">
+<script module lang="ts">
   import { action } from '@storybook/addon-actions';
   import {
     defineMeta,

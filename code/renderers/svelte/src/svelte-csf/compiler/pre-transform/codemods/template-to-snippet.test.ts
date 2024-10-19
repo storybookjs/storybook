@@ -10,7 +10,7 @@ import { parseAndExtractSvelteNode } from '#tests/extractor';
 describe(transformTemplateToSnippet.name, () => {
   it("covers a case without provided prop 'id'", async ({ expect }) => {
     const code = `
-      <script context="module" lang="ts">
+      <script module lang="ts">
         import { Template } from "${pkg.name}";
       </script>
 
@@ -33,7 +33,7 @@ describe(transformTemplateToSnippet.name, () => {
 
   it("covers a case with provided prop 'id'", async ({ expect }) => {
     const code = `
-      <script context="module" lang="ts">
+      <script module lang="ts">
         import { Template } from "${pkg.name}";
       </script>
 
@@ -56,7 +56,7 @@ describe(transformTemplateToSnippet.name, () => {
 
   it("works with 'let:context' directive", async ({ expect }) => {
     const code = `
-      <script context="module" lang="ts">
+      <script module lang="ts">
         import { Template } from "${pkg.name}";
       </script>
 

@@ -10,7 +10,7 @@ describe(extractFragmentNodes.name, () => {
   it("extracts '<Story />' AST nodes correctly", async () => {
     const ast = getSvelteAST({
       code: `
-        <script context="module">
+        <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf"
           const { Story } = defineMeta();
         </script>
@@ -42,7 +42,7 @@ describe(extractFragmentNodes.name, () => {
   it("extracts '<Story />' leading HTML comments correctly", async () => {
     const ast = getSvelteAST({
       code: `
-        <script context="module">
+        <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf"
           const { Story } = defineMeta();
         </script>
@@ -78,7 +78,7 @@ describe(extractFragmentNodes.name, () => {
   it('extracts first level snippet blocks (at the root of fragment) correctly', async () => {
     const ast = getSvelteAST({
       code: `
-        <script context="module">
+        <script module>
           import { defineMeta, setTemplate } from "@storybook/addon-svelte-csf"
           const { Story } = defineMeta();
         </script>

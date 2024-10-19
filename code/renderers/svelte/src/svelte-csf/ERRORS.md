@@ -8,12 +8,12 @@ This document is a list of known errors that this addon throws.
 
 No **[module context]** was found in the stories file.
 
-This often happens if you call `defineMeta(...)` in a regular instance script (`<script>`) and not in a module script (`<script context="module">`), which is required.
+This often happens if you call `defineMeta(...)` in a regular instance script (`<script>`) and not in a module script (`<script module>`), which is required.
 
 Ensure the stories file which caused this error has the following initial code:
 
 ```svelte
-<script context="module">
+<script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
   const { Story } = defineMeta({
@@ -42,7 +42,7 @@ No import of `defineMeta` from this addon package was found in the **[module con
 You might have forgotten to import it:
 
 ```diff
-<script context="module">
+<script module>
 + import { defineMeta } from "@storybook/addon-svelte-csf";
   ...
 </script>
@@ -53,7 +53,7 @@ You might have forgotten to import it:
 No variable declaration from the `defineMeta()` call was found. While you might have called `defineMeta()`, its result needs to be assigned to a variable:
 
 ```diff
-<script context="module">
+<script module>
   import { defineMeta } from "@storybook/addon-svelte-csf";
 
 - defineMeta(...);
@@ -70,7 +70,7 @@ No **destructured** `Story` component was found in the variable declaration with
 The `Story` component might have been incorrectly created:
 
 ```diff
-<script context="module">
+<script module>
 - const Story = defineMeta({
 + const { Story } = defineMeta({
     // define your stories meta here
@@ -84,7 +84,7 @@ The **first argument** to the `defineMeta()` call was invalid.
 It must be a valid **object expression** with the same structure as [the Default export in CSF](https://storybook.js.org/docs/api/csf#default-export).
 
 ```diff
-<script context="module">
+<script module>
 - const { Story } = defineMeta();
 + const { Story } = defineMeta({
 +   title: 'Path/To/MyComponent',
@@ -193,7 +193,7 @@ It expected an identifier to a Svelte component but got something else.
 Ensure you're using the correct syntax, following the example below:
 
 ```svelte
-<script context="module">
+<script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
   import Button from './Button.svelte';

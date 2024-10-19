@@ -38,7 +38,7 @@ Before:
 After:
 
 ```svelte
-<script context="module">
+<script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
   import Button from './Button.svelte';
@@ -57,7 +57,7 @@ Difference:
 
 ```diff
 - <script>
-+ <script context="module">
++ <script module>
 -  import { Meta } from "@storybook/addon-svelte-csf";
 +  import { defineMeta } from "@storybook/addon-svelte-csf";
 
@@ -82,7 +82,7 @@ Difference:
 Before:
 
 ```svelte
-<script context="module">
+<script module>
   import { Story } from '@storybook/addon-svelte-csf';
 
   import Button from './Button.svelte';
@@ -102,7 +102,7 @@ Before:
 After:
 
 ```svelte
-<script context="module">
+<script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
   import Button from './Button.svelte';
@@ -120,7 +120,7 @@ After:
 Difference:
 
 ```diff
-<script context="module">
+<script module>
 -   import { Story } from "@storybook/addon-svelte-csf";
 +   import { defineMeta } from "@storybook/addon-svelte-csf";
 

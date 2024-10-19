@@ -9,7 +9,7 @@ import { parseAndExtractSvelteNode } from '#tests/extractor';
 describe(transformImportDeclaration.name, () => {
   it("removes legacy components and add 'defineMeta'", async ({ expect }) => {
     const code = `
-      <script context="module" lang="ts">
+      <script module lang="ts">
         import { Story, Template } from "@storybook/addon-svelte-csf";
       </script>
     `;
@@ -25,7 +25,7 @@ describe(transformImportDeclaration.name, () => {
 
   it("it doesn't remove existing 'defineMeta'", async ({ expect }) => {
     const code = `
-      <script context="module" lang="ts">
+      <script module lang="ts">
         import { Story, Template, defineMeta } from "@storybook/addon-svelte-csf";
       </script>
     `;
@@ -41,7 +41,7 @@ describe(transformImportDeclaration.name, () => {
 
   it("it doesn't remove existing 'setTemplate'", async ({ expect }) => {
     const code = `
-      <script context="module" lang="ts">
+      <script module lang="ts">
         import { defineMeta, setTemplate } from "@storybook/addon-svelte-csf";
       </script>
     `;

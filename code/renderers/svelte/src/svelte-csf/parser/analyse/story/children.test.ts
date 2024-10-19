@@ -11,7 +11,7 @@ describe(getStoryChildrenRawCode.name, () => {
       expect,
     }) => {
       const code = `
-        <script context="module">
+        <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf";
 
           import SampleComponent from "./SampleComponent.svelte";
@@ -44,7 +44,7 @@ describe(getStoryChildrenRawCode.name, () => {
 
     it('works when `setTemplate` was used correctly in the instance tag', async ({ expect }) => {
       const code = `
-        <script context="module">
+        <script module>
           import { defineMeta, setTemplate } from "@storybook/addon-svelte-csf";
 
           import SampleComponent from "./SampleComponent.svelte";
@@ -83,7 +83,7 @@ describe(getStoryChildrenRawCode.name, () => {
       expect,
     }) => {
       const code = `
-        <script context="module">
+        <script module>
           import { defineMeta, setTemplate } from "@storybook/addon-svelte-csf";
 
           import SampleComponent from "./SampleComponent.svelte";
@@ -124,7 +124,7 @@ describe(getStoryChildrenRawCode.name, () => {
 
     it('works when no `setTemplate`, no `children` attribute, just a story', async ({ expect }) => {
       const code = `
-        <script context="module">
+        <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf";
 
           import SampleComponent from "./SampleComponent.svelte";
@@ -155,7 +155,7 @@ describe(getStoryChildrenRawCode.name, () => {
   describe('When a `<Story />` is NOT a self-closing tag...', () => {
     it('works when a static children content provided', async ({ expect }) => {
       const code = `
-        <script context="module">
+        <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf";
 
           import SampleComponent from "./SampleComponent.svelte";
@@ -186,7 +186,7 @@ describe(getStoryChildrenRawCode.name, () => {
 
     it("works when a `children` svelte's snippet block used inside", async ({ expect }) => {
       const code = `
-        <script context="module">
+        <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf";
 
           import SampleComponent from "./SampleComponent.svelte";
@@ -221,7 +221,7 @@ describe(getStoryChildrenRawCode.name, () => {
       expect,
     }) => {
       const code = `
-        <script context="module">
+        <script module>
           import { defineMeta, setTemplate } from "@storybook/addon-svelte-csf";
 
           import SampleComponent from "./SampleComponent.svelte";

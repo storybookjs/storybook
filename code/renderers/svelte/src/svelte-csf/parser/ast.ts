@@ -100,19 +100,7 @@ export function createASTScript(options: ASTScriptOptions): SvelteAST.Script {
   const attributes: SvelteAST.Attribute[] = [];
 
   if (module) {
-    attributes.push(
-      createASTAttribute('context', [
-        {
-          type: 'Text',
-          data: 'module',
-          raw: 'module',
-          // NOTE: Those are useless at this point, but I needed TypeScript to 🤫
-          parent: null,
-          start: 0,
-          end: 0,
-        },
-      ])
-    );
+    attributes.push(createASTAttribute('module'));
   }
 
   return {

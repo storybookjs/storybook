@@ -1,4 +1,4 @@
-<script module>
+<script context="module">
   import { Meta, Story, Template } from '@storybook/addon-svelte-csf';
 
   import LegacyMeta from './LegacyMeta.svelte';

@@ -1,4 +1,4 @@
-<script module lang="ts">
+<script context="module" lang="ts">
   import { Story, Template } from '@storybook/addon-svelte-csf';
   import type { Meta } from '@storybook/svelte';
 

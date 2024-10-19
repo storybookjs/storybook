@@ -1,7 +1,10 @@
-import program from 'commander';
+import { program } from 'commander';
+// eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
 import { existsSync } from 'fs';
+// eslint-disable-next-line depend/ban-dependencies
 import { copy, emptyDir, remove, writeFile } from 'fs-extra';
+// eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';
 import { dirname, join, relative } from 'path';
 

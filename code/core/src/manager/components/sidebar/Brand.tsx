@@ -12,7 +12,7 @@ export const StorybookLogoStyled = styled(StorybookLogo)(({ theme }) => ({
 
 export const Img = styled.img({
   display: 'block',
-  maxWidth: '150px',
+  maxWidth: '150px !important',
   maxHeight: '100px',
 });
 
@@ -38,9 +38,13 @@ export const Brand = withTheme(({ theme }) => {
 
   // When image is explicitly set to null, enable custom HTML support
   if (image === null) {
-    if (title === null) return null;
+    if (title === null) {
+      return null;
+    }
 
-    if (!url) return <div dangerouslySetInnerHTML={{ __html: title }} />;
+    if (!url) {
+      return <div dangerouslySetInnerHTML={{ __html: title }} />;
+    }
     return <LogoLink href={url} target={targetValue} dangerouslySetInnerHTML={{ __html: title }} />;
   }
 

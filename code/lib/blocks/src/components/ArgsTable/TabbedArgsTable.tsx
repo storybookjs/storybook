@@ -31,9 +31,10 @@ export const TabbedArgsTable: FC<TabbedArgsTableProps> = ({ tabs, ...props }) =>
         >;
 
         /**
-         * The first tab is the main component, controllable if in the Controls block
-         * All other tabs are subcomponents, never controllable, so we filter out the props indicating controllability
-         * Essentially all subcomponents always behave like ArgTypes, never Controls
+         * The first tab is the main component, controllable if in the Controls block All other tabs
+         * are subcomponents, never controllable, so we filter out the props indicating
+         * controllability Essentially all subcomponents always behave like ArgTypes, never
+         * Controls
          */
         const argsTableProps = index === 0 ? props : { sort: props.sort };
 

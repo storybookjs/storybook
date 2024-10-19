@@ -1,7 +1,7 @@
 ---
 title: 'Test runner'
 sidebar:
-  order: 1
+  order: 5
   title: Test runner
 ---
 
@@ -150,12 +150,12 @@ You can use your CI provider (for example, [GitHub Actions](https://github.com/f
 
 The test-runner is a generic testing tool that can run locally or on CI and be configured or extended to run all kinds of tests.
 
-[Chromatic](https://www.chromatic.com/?utm_source=storybook_website\&utm_medium=link\&utm_campaign=storybook) is a cloud-based service that runs [visual](./visual-testing.mdx) and [interaction tests](./interaction-testing.mdx) (and soon accessibility tests) without setting up the test runner. It also syncs with your git provider and manages access control for private projects.
+[Chromatic](https://www.chromatic.com/?utm_source=storybook_website\&utm_medium=link\&utm_campaign=storybook) is a cloud-based service that runs [visual](./visual-testing.mdx) and [component tests](./component-testing.mdx) (and soon accessibility tests) without setting up the test runner. It also syncs with your git provider and manages access control for private projects.
 
 However, you might want to pair the test runner and Chromatic in some cases.
 
 * Use it locally and Chromatic on your CI.
-* Use Chromatic for visual and interaction tests and run other custom tests using the test runner.
+* Use Chromatic for visual and component tests and run other custom tests using the test runner.
 
 ## Advanced configuration
 
@@ -368,11 +368,11 @@ This is due to the test-runner using the community-maintained package [jest-play
 
 **Learn about other UI tests**
 
-* Test runner to automate test execution
+* [Component tests](./component-testing.mdx) for user behavior simulation
 * [Visual tests](./visual-testing.mdx) for appearance
 * [Accessibility tests](./accessibility-testing.mdx) for accessibility
-* [Interaction tests](./interaction-testing.mdx) for user behavior simulation
-* [Coverage tests](./test-coverage.mdx) for measuring code coverage
 * [Snapshot tests](./snapshot-testing/snapshot-testing.mdx) for rendering errors and warnings
+* Test runner to automate test execution
+* [Test coverage](./test-coverage.mdx) for measuring code coverage
 * [End-to-end tests](./import-stories-in-tests/stories-in-end-to-end-tests.mdx) for simulating real user scenarios
 * [Unit tests](./import-stories-in-tests/stories-in-unit-tests.mdx) for functionality

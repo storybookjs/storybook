@@ -46,7 +46,7 @@ export default {
       },
     },
   },
-  tags: ['!test'],
+  tags: ['!test', '!vitest'],
 } as Meta;
 
 export const SingletonStateGetsInvalidatedAfterRedirecting: StoryObj = {

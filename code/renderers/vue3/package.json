@@ -1,6 +1,6 @@
 {
   "name": "@storybook/vue3",
-  "version": "8.3.0-alpha.5",
+  "version": "8.4.0-alpha.7",
   "description": "Storybook Vue 3 renderer",
   "keywords": [
     "storybook"
@@ -22,15 +22,13 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
     "./experimental-playwright": {
       "types": "./dist/playwright.d.ts",
       "import": "./dist/playwright.mjs",
-      "require": "./dist/playwright.js",
-      "node": "./dist/playwright.js"
+      "require": "./dist/playwright.js"
     },
     "./preset": "./preset.js",
     "./dist/entry-preview.mjs": "./dist/entry-preview.mjs",
@@ -78,7 +76,6 @@
     "@testing-library/vue": "^8.0.0",
     "@types/prettier": "^3.0.0",
     "@vitejs/plugin-vue": "^4.4.0",
-    "lodash": "^4.17.21",
     "typescript": "^5.3.2",
     "vue": "^3.2.47",
     "vue-tsc": "latest"

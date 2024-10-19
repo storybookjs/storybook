@@ -31,8 +31,7 @@ import {
   MissingStoryFromCsfFileError,
 } from '@storybook/core/preview-errors';
 
-import mapValues from 'lodash/mapValues.js';
-import pick from 'lodash/pick.js';
+import { mapValues, omitBy, pick, toMerged } from 'es-toolkit';
 import memoize from 'memoizerific';
 
 import { HooksContext } from '../addons';
@@ -46,6 +45,13 @@ import {
   prepareStory,
   processCSFFile,
 } from './csf';
+
+export function picky<T extends Record<string, any>, K extends keyof T>(
+  obj: T,
+  keys: K[]
+): Partial<Pick<T, K>> {
+  return omitBy(pick(obj, keys), (v) => v === undefined);
+}
 
 // TODO -- what are reasonable values for these?
 const CSF_CACHE_SIZE = 1000;
@@ -115,10 +121,20 @@ export class StoryStore<TRenderer extends Renderer> {
     importFn?: ModuleImportFn;
     storyIndex?: StoryIndex;
   }) {
-    if (importFn) this.importFn = importFn;
+    if (importFn) {
+      this.importFn = importFn;
+    }
     // The index will always be set before the initialization promise returns
-    if (storyIndex) this.storyIndex.entries = storyIndex.entries;
-    if (this.cachedCSFFiles) await this.cacheAllCSFFiles();
+    // The index will always be set before the initialization promise returns
+
+    // The index will always be set before the initialization promise returns
+    if (storyIndex) {
+      this.storyIndex.entries = storyIndex.entries;
+    }
+
+    if (this.cachedCSFFiles) {
+      await this.cacheAllCSFFiles();
+    }
   }
 
   // Get an entry from the index, waiting on initialization if necessary
@@ -188,7 +204,10 @@ export class StoryStore<TRenderer extends Renderer> {
     csfFile: CSFFile<TRenderer>;
   }): PreparedStory<TRenderer> {
     const storyAnnotations = csfFile.stories[storyId];
-    if (!storyAnnotations) throw new MissingStoryFromCsfFileError({ storyId });
+
+    if (!storyAnnotations) {
+      throw new MissingStoryFromCsfFileError({ storyId });
+    }
 
     const componentAnnotations = csfFile.meta;
 
@@ -256,7 +275,12 @@ export class StoryStore<TRenderer extends Renderer> {
     this.hooks[story.id].clean();
 
     const callbacks = this.cleanupCallbacks[story.id];
-    if (callbacks) for (const callback of [...callbacks].reverse()) await callback();
+
+    if (callbacks) {
+      for (const callback of [...callbacks].reverse()) {
+        await callback();
+      }
+    }
 
     delete this.cleanupCallbacks[story.id];
   }
@@ -265,11 +289,16 @@ export class StoryStore<TRenderer extends Renderer> {
     options: { includeDocsOnly?: boolean } = { includeDocsOnly: false }
   ): Record<StoryId, StoryContextForEnhancers<TRenderer>> {
     const { cachedCSFFiles } = this;
-    if (!cachedCSFFiles) throw new CalledExtractOnStoreError();
+
+    if (!cachedCSFFiles) {
+      throw new CalledExtractOnStoreError();
+    }
 
     return Object.entries(this.storyIndex.entries).reduce(
       (acc, [storyId, { type, importPath }]) => {
-        if (type === 'docs') return acc;
+        if (type === 'docs') {
+          return acc;
+        }
 
         const csfFile = cachedCSFFiles[importPath];
         const story = this.storyFromCSFFile({ storyId, csfFile });
@@ -280,7 +309,9 @@ export class StoryStore<TRenderer extends Renderer> {
 
         acc[storyId] = Object.entries(story).reduce(
           (storyAcc, [key, value]) => {
-            if (key === 'moduleExport') return storyAcc;
+            if (key === 'moduleExport') {
+              return storyAcc;
+            }
             if (typeof value === 'function') {
               return storyAcc;
             }
@@ -329,7 +360,7 @@ export class StoryStore<TRenderer extends Renderer> {
     const stories: Record<StoryId, V3CompatIndexEntry> = mapValues(value.stories, (story) => {
       const { importPath } = this.storyIndex.entries[story.id];
       return {
-        ...pick(story, ['id', 'name', 'title']),
+        ...picky(story, ['id', 'name', 'title']),
         importPath,
         // These 3 fields were going to be dropped in v7, but instead we will keep them for the
         // 7.x cycle so that v7 Storybooks can be composed successfully in v6 Storybook.
@@ -337,10 +368,10 @@ export class StoryStore<TRenderer extends Renderer> {
         kind: story.title,
         story: story.name,
         parameters: {
-          ...pick(story.parameters, allowedParameters),
+          ...picky(story.parameters, allowedParameters),
           fileName: importPath,
         },
-      };
+      } as V3CompatIndexEntry;
     });
 
     return {
@@ -364,9 +395,12 @@ export class StoryStore<TRenderer extends Renderer> {
     );
 
     // Deprecated so won't make a proper error for this
-    if (!this.cachedCSFFiles)
+
+    // Deprecated so won't make a proper error for this
+    if (!this.cachedCSFFiles) {
       // eslint-disable-next-line local-rules/no-uncategorized-errors
       throw new Error('Cannot call fromId/raw() unless you call cacheAllCSFFiles() first.');
+    }
 
     let importPath;
     try {

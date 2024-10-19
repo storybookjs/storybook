@@ -32,6 +32,7 @@ const INCLUDE_CANDIDATES = [
   'fast-deep-equal',
   'html-tags',
   'isobject',
+  'jsdoc-type-pratt-parser', // TODO: Remove this once it's converted to ESM: https://github.com/jsdoc-type-pratt-parser/jsdoc-type-pratt-parser/issues/173
   'loader-utils',
   'lodash/camelCase.js',
   'lodash/camelCase',
@@ -111,7 +112,8 @@ const INCLUDE_CANDIDATES = [
 ];
 
 /**
- * Helper function which allows us to `filter` with an async predicate.  Uses Promise.all for performance.
+ * Helper function which allows us to `filter` with an async predicate. Uses Promise.all for
+ * performance.
  */
 const asyncFilter = async (arr: string[], predicate: (val: string) => Promise<boolean>) =>
   Promise.all(arr.map(predicate)).then((results) => arr.filter((_v, index) => results[index]));

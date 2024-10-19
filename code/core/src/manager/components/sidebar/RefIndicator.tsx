@@ -7,6 +7,7 @@ import { styled, useTheme } from '@storybook/core/theming';
 import { global } from '@storybook/global';
 import {
   AlertIcon,
+  CheckIcon,
   ChevronDownIcon,
   DocumentIcon,
   GlobeIcon,
@@ -216,7 +217,7 @@ export const RefIndicator = React.memo(
                 <TooltipLinkList
                   // @ts-expect-error (non strict)
                   links={Object.entries(ref.versions).map(([id, href]) => ({
-                    icon: href === ref.url ? 'check' : undefined,
+                    icon: href === ref.url ? <CheckIcon /> : undefined,
                     id,
                     title: id,
                     href,

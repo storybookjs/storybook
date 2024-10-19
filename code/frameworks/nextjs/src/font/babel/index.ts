@@ -11,25 +11,20 @@ type Babel = typeof BabelCoreNamespace;
 
 /**
  * Transforms "next/font" imports and usages to a webpack loader friendly format with parameters
- * @example
- * // src/example.js
- * // Turns this code:
- * import { Inter, Roboto } from 'next/font/google'
+ *
+ * @example // src/example.js // Turns this code: import { Inter, Roboto } from 'next/font/google'
  * import localFont from 'next/font/local'
  *
- * const myFont = localFont({ src: './my-font.woff2' })
- * const roboto = Roboto({
- *   weight: '400',
- * })
+ * Const myFont = localFont({ src: './my-font.woff2' }) const roboto = Roboto({ weight: '400', })
  *
- * const inter = Inter({
- *   subsets: ['latin'],
- * });
+ * Const inter = Inter({ subsets: ['latin'], });
  *
- * // Into this code:
- * import inter from 'storybook-nextjs-font-loader?{filename: "src/example.js", source: "next/font/google", fontFamily: "Inter", props: {"subsets":["latin"]}}!next/font/google'
- * import roboto from 'storybook-nextjs-font-loader?{filename: "src/example.js", source: "next/font/google", fontFamily: "Roboto", props: {"weight": "400"}}!next/font/google'
- * import myFont from 'storybook-nextjs-font-loader?{filename: "src/example.js", source: "next/font/local", props: {"src": "./my-font.woff2"}}!next/font/local'
+ * // Into this code: import inter from 'storybook-nextjs-font-loader?{filename: "src/example.js",
+ * source: "next/font/google", fontFamily: "Inter", props: {"subsets":["latin"]}}!next/font/google'
+ * import roboto from 'storybook-nextjs-font-loader?{filename: "src/example.js", source:
+ * "next/font/google", fontFamily: "Roboto", props: {"weight": "400"}}!next/font/google' import
+ * myFont from 'storybook-nextjs-font-loader?{filename: "src/example.js", source: "next/font/local",
+ * props: {"src": "./my-font.woff2"}}!next/font/local'
  *
  * This Plugin tries to adopt the functionality which is provided by the nextjs swc plugin
  * https://github.com/vercel/next.js/pull/40221

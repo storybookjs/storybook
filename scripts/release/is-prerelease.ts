@@ -1,6 +1,6 @@
 import { setOutput } from '@actions/core';
-import chalk from 'chalk';
-import program from 'commander';
+import { program } from 'commander';
+import picocolors from 'picocolors';
 import semver from 'semver';
 
 import { esMain } from '../utils/esmain';
@@ -17,10 +17,10 @@ program
 export const isPrerelease = async (args: { version?: string; verbose?: boolean }) => {
   if (args.verbose) {
     if (args.version) {
-      console.log(`📦 Checking if version ${chalk.blue(args.version)} is a prerelease`);
+      console.log(`📦 Checking if version ${picocolors.blue(args.version)} is a prerelease`);
     } else {
       console.log(
-        `📦 Checking if current version in ${chalk.blue('code/package.json')} is a prerelease`
+        `📦 Checking if current version in ${picocolors.blue('code/package.json')} is a prerelease`
       );
     }
   }
@@ -31,8 +31,8 @@ export const isPrerelease = async (args: { version?: string; verbose?: boolean }
     setOutput('prerelease', result);
   }
   console.log(
-    `📦 Version ${chalk.blue(version)} ${
-      result ? chalk.green('IS') : chalk.red('IS NOT')
+    `📦 Version ${picocolors.blue(version)} ${
+      result ? picocolors.green('IS') : picocolors.red('IS NOT')
     } a prerelease`
   );
 

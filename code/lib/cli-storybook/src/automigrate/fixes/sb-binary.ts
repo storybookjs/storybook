@@ -1,7 +1,7 @@
 import { getStorybookVersionSpecifier } from 'storybook/internal/cli';
 import type { PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
 
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import type { Fix } from '../types';
@@ -19,6 +19,7 @@ const logger = console;
  * Does the user not have storybook dependency?
  *
  * If so:
+ *
  * - Add storybook dependency
  * - If they are using sb dependency, remove it
  */
@@ -49,10 +50,10 @@ export const sbBinary: Fix<SbBinaryRunOptions> = {
   },
 
   prompt({ storybookVersion, hasSbBinary, hasStorybookBinary }) {
-    const sbFormatted = chalk.cyan(`Storybook ${storybookVersion}`);
+    const sbFormatted = picocolors.cyan(`Storybook ${storybookVersion}`);
 
     const storybookBinaryMessage = !hasStorybookBinary
-      ? `We've detected you are using ${sbFormatted} without Storybook's ${chalk.magenta(
+      ? `We've detected you are using ${sbFormatted} without Storybook's ${picocolors.magenta(
           'storybook'
         )} binary. Starting in Storybook 7.0, it has to be installed.`
       : '';
@@ -65,7 +66,7 @@ export const sbBinary: Fix<SbBinaryRunOptions> = {
       ${storybookBinaryMessage}
       ${extraMessage}
 
-      More info: ${chalk.yellow(
+      More info: ${picocolors.yellow(
         'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#start-storybook--build-storybook-binaries-removed'
       )}
       `;

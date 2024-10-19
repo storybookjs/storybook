@@ -5,7 +5,7 @@ import { within } from '@storybook/test';
 
 import { ManagerContext } from '@storybook/core/manager-api';
 
-import { startCase } from 'lodash';
+import { startCase } from 'es-toolkit';
 
 import { LayoutProvider, useLayout } from '../../layout/LayoutProvider';
 import { MobileNavigation } from './MobileNavigation';

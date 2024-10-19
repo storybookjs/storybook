@@ -1,6 +1,6 @@
 import { SNIPPET_RENDERED, SourceType } from 'storybook/internal/docs-tools';
 import { addons, useEffect } from 'storybook/internal/preview-api';
-import { PartialStoryFn } from 'storybook/internal/types';
+import { ArgsStoryFn, PartialStoryFn } from 'storybook/internal/types';
 
 import { computesTemplateSourceFromComponent } from '../../renderer';
 import { AngularRenderer, StoryContext } from '../types';
@@ -19,8 +19,9 @@ export const skipSourceRender = (context: StoryContext) => {
 
 /**
  * Angular source decorator.
+ *
  * @param storyFn Fn
- * @param context  StoryContext
+ * @param context StoryContext
  */
 export const sourceDecorator = (
   storyFn: PartialStoryFn<AngularRenderer>,
@@ -31,9 +32,11 @@ export const sourceDecorator = (
     return story;
   }
   const channel = addons.getChannel();
-  const { props, template, userDefinedTemplate } = story;
-
+  const { props, userDefinedTemplate } = story;
   const { component, argTypes, parameters } = context;
+  const template: string = parameters.docs?.source?.excludeDecorators
+    ? (context.originalStoryFn as ArgsStoryFn<AngularRenderer>)(context.args, context).template
+    : story.template;
 
   let toEmit: string;
 

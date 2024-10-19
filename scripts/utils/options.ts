@@ -1,10 +1,7 @@
-/**
- * Use commander and prompts to gather a list of options for a script
- */
-import chalk from 'chalk';
-import program from 'commander';
-// eslint-disable-next-line import/extensions
-import kebabCase from 'lodash/kebabCase.js';
+/** Use commander and prompts to gather a list of options for a script */
+import { type Command, type Option as CommanderOption, program } from 'commander';
+import { kebabCase } from 'es-toolkit/compat';
+import picocolors from 'picocolors';
 import prompts from 'prompts';
 import type { Falsy, PrevCaller, PromptObject, PromptType } from 'prompts';
 import { dedent } from 'ts-dedent';
@@ -17,49 +14,37 @@ export type BaseOption = {
   description?: string;
   /**
    * By default the one-char version of the option key will be used as short flag. Override here,
-   *   e.g. `shortFlag: 'c'`
+   * e.g. `shortFlag: 'c'`
    */
   shortFlag?: string;
-  /**
-   * What type of prompt to use? (return false to skip, true for default)
-   */
+  /** What type of prompt to use? (return false to skip, true for default) */
   promptType?: PromptType | Falsy | PrevCaller<string, PromptType | boolean>;
 };
 
 export type BooleanOption = BaseOption & {
   type: 'boolean';
   /**
-   * If this option is set to true and the option value is false or undefined, the flag `--no-option` will be set.
-   * If the option value is true, the flag `--no-option` is not set.
+   * If this option is set to true and the option value is false or undefined, the flag
+   * `--no-option` will be set. If the option value is true, the flag `--no-option` is not set.
    */
   inverse?: boolean;
 };
 
 export type StringOption = BaseOption & {
   type: 'string';
-  /**
-   * What values are allowed for this option?
-   */
+  /** What values are allowed for this option? */
   values?: readonly string[];
-  /**
-   * How to describe the values when selecting them
-   */
+  /** How to describe the values when selecting them */
   valueDescriptions?: readonly string[];
-  /**
-   * Is a value required for this option?
-   */
+  /** Is a value required for this option? */
   required?: boolean | ((previous: Record<string, any>) => boolean);
 };
 
 export type StringArrayOption = BaseOption & {
   type: 'string[]';
-  /**
-   * What values are allowed for this option?
-   */
+  /** What values are allowed for this option? */
   values?: readonly string[];
-  /**
-   * How to describe the values when selecting them
-   */
+  /** How to describe the values when selecting them */
   valueDescriptions?: readonly string[];
 };
 
@@ -116,8 +101,14 @@ function longFlag(key: OptionId, option: Option) {
   return inverse ? `no-${kebabCase(key)}` : kebabCase(key);
 }
 
-function optionFlags(key: OptionId, option: Option) {
-  const base = `-${shortFlag(key, option)}, --${longFlag(key, option)}`;
+function optionFlags(key: OptionId, option: Option, existingOptions: CommanderOption[]) {
+  const optionShortFlag = `-${shortFlag(key, option)}`;
+  let base;
+  if (existingOptions.some((opt) => opt.short === optionShortFlag)) {
+    base = `--${longFlag(key, option)}`;
+  } else {
+    base = `${optionShortFlag}, --${longFlag(key, option)}`;
+  }
   if (option.type === 'string' || option.type === 'string[]') {
     return `${base} <${key}>`;
   }
@@ -125,13 +116,13 @@ function optionFlags(key: OptionId, option: Option) {
 }
 
 export function getOptions<TOptions extends OptionSpecifier>(
-  command: program.Command,
+  command: Command,
   options: TOptions,
   argv: string[]
 ): MaybeOptionValues<TOptions> {
   Object.entries(options)
     .reduce((acc, [key, option]) => {
-      const flags = optionFlags(key, option);
+      const flags = optionFlags(key, option, acc.options as any);
 
       if (option.type === 'boolean') {
         return acc.option(flags, option.description, !!option.inverse);
@@ -139,9 +130,9 @@ export function getOptions<TOptions extends OptionSpecifier>(
 
       const checkStringValue = (raw: string) => {
         if (option.values && !option.values.includes(raw)) {
-          const possibleOptions = chalk.cyan(option.values.join('\n'));
+          const possibleOptions = picocolors.cyan(option.values.join('\n'));
           throw new Error(
-            dedent`Unexpected value '${chalk.yellow(raw)}' for option '${chalk.magenta(key)}'.
+            dedent`Unexpected value '${picocolors.yellow(raw)}' for option '${picocolors.magenta(key)}'.
             
             These are the possible options:
               ${possibleOptions}\n\n`
@@ -187,8 +178,13 @@ export function getDefaults<TOptions extends OptionSpecifier>(options: TOptions)
     Object.entries(options)
       .filter(([, { type }]) => type === 'boolean' || type === 'string[]')
       .map(([key, option]) => {
-        if (option.type === 'boolean') return [key, !!option.inverse];
-        if (option.type === 'string[]') return [key, []];
+        if (option.type === 'boolean') {
+          return [key, !!option.inverse];
+        }
+
+        if (option.type === 'string[]') {
+          return [key, []];
+        }
         throw new Error('Not reachable');
       })
   );
@@ -198,9 +194,13 @@ function checkRequired<TOptions extends OptionSpecifier>(
   option: TOptions[keyof TOptions],
   values: MaybeOptionValues<TOptions>
 ) {
-  if (option.type !== 'string' || !option.required) return false;
+  if (option.type !== 'string' || !option.required) {
+    return false;
+  }
 
-  if (typeof option.required === 'boolean') return option.required;
+  if (typeof option.required === 'boolean') {
+    return option.required;
+  }
 
   return option.required(values);
 }
@@ -327,8 +327,9 @@ export async function getOptionsOrPrompt<TOptions extends OptionSpecifier>(
     return cliValues as OptionValues<TOptions>;
   }
 
-  if (process.env.CI)
+  if (process.env.CI) {
     throw new Error(`${commandPrefix} needed to prompt for options, this is not possible in CI!`);
+  }
 
   const finalValues = await promptOptions(options, cliValues);
 

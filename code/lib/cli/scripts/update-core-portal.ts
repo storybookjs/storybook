@@ -1,24 +1,32 @@
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-
-import { readJSON } from 'fs-extra';
 
 import { sortPackageJson } from '../../../../scripts/node_modules/sort-package-json';
 import { generateMapperContent, mapCoreExportToSelf, write } from './utils';
 
-/** Update the `storybook` package's `exports` and `typesVersion` fields to expose all things exposed from `@storybook/core`
- * We do this to ensure that users that import `storybook/theming` will get the code located at `@storybook/theming` (note the `@` symbol!)
+/**
+ * Update the `storybook` package's `exports` and `typesVersion` fields to expose all things exposed
+ * from `@storybook/core` We do this to ensure that users that import `storybook/theming` will get
+ * the code located at `@storybook/theming` (note the `@` symbol!)
  *
  * For every entry in `core/package.json`'s `exports` field, we:
- * - Update the `exports` field in `package.json` to map the entry to the corresponding entry in `core`
+ *
+ * - Update the `exports` field in `package.json` to map the entry to the corresponding entry in
+ *   `core`
  * - Write a new file in `core/X` that re-exports the entry from `@storybook/core/X`
  *
  * By reading from `core/package.json`, we ensure that we always have the correct exports.
  *
- * Removal is not handled here, so if entries are ever removed from `@storybook/core` we'll have to remove those manually here.
+ * Removal is not handled here, so if entries are ever removed from `@storybook/core` we'll have to
+ * remove those manually here.
  */
 async function run() {
-  const selfPackageJson = await readJSON(join(__dirname, '../package.json'));
-  const corePackageJson = await readJSON(join(__dirname, '../../../core/package.json'));
+  const selfPackageJson = JSON.parse(
+    await readFile(join(__dirname, '../package.json'), { encoding: 'utf8' })
+  );
+  const corePackageJson = await JSON.parse(
+    await readFile(join(__dirname, '../../../core/package.json'), { encoding: 'utf8' })
+  );
 
   await Promise.all(
     Object.entries<Record<string, string>>(corePackageJson.exports)

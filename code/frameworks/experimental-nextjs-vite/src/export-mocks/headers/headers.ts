@@ -29,7 +29,9 @@ class HeadersAdapterMock extends HeadersAdapter {
 let headersAdapterMock: HeadersAdapterMock;
 
 export const headers = () => {
-  if (!headersAdapterMock) headersAdapterMock = new HeadersAdapterMock();
+  if (!headersAdapterMock) {
+    headersAdapterMock = new HeadersAdapterMock();
+  }
   return headersAdapterMock;
 };
 

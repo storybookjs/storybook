@@ -64,7 +64,9 @@ export function prepareStory<TRenderer extends Renderer>(
       normalizeArrays(componentAnnotations.loaders),
       normalizeArrays(storyAnnotations.loaders),
     ]) {
-      if (context.abortSignal.aborted) return loaded;
+      if (context.abortSignal.aborted) {
+        return loaded;
+      }
       const loadResults = await Promise.all(loaders.map((loader) => loader(context)));
       Object.assign(loaded, ...loadResults);
     }
@@ -78,9 +80,14 @@ export function prepareStory<TRenderer extends Renderer>(
       ...normalizeArrays(componentAnnotations.beforeEach),
       ...normalizeArrays(storyAnnotations.beforeEach),
     ]) {
-      if (context.abortSignal.aborted) return cleanupCallbacks;
+      if (context.abortSignal.aborted) {
+        return cleanupCallbacks;
+      }
       const cleanup = await beforeEach(context);
-      if (cleanup) cleanupCallbacks.push(cleanup);
+
+      if (cleanup) {
+        cleanupCallbacks.push(cleanup);
+      }
     }
     return cleanupCallbacks;
   };
@@ -308,7 +315,10 @@ export function prepareContext<
 
   const includedArgs = Object.entries(mappedArgs).reduce((acc, [key, val]) => {
     const argType = targetedContext.argTypes[key] || {};
-    if (includeConditionalArg(argType, mappedArgs, targetedContext.globals)) acc[key] = val;
+
+    if (includeConditionalArg(argType, mappedArgs, targetedContext.globals)) {
+      acc[key] = val;
+    }
     return acc;
   }, {} as Args);
 

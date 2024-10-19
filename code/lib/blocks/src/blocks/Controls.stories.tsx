@@ -148,7 +148,8 @@ export const SubcomponentsSortProp: Story = {
 };
 
 /**
- * When a story is defined without any argTypes or args, the Docs UI should not display the control component.
+ * When a story is defined without any argTypes or args, the Docs UI should not display the control
+ * component.
  */
 export const EmptyArgTypes: Story = {
   args: {

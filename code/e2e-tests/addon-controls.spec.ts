@@ -21,9 +21,7 @@ test.describe('addon-controls', () => {
     await expect(sbPage.previewRoot().locator('button')).toContainText('Hello world');
 
     // Args in URL
-    await page.waitForTimeout(300);
-    const url = await page.url();
-    await expect(url).toContain('args=label:Hello+world');
+    await page.waitForURL((url) => url.search.includes('args=label:Hello+world'));
 
     // Boolean toggle: Primary/secondary
     await expect(sbPage.previewRoot().locator('button')).toHaveCSS(
@@ -72,8 +70,8 @@ test.describe('addon-controls', () => {
     await expect(sbPage.previewRoot().locator('button')).toContainText('Hello world');
 
     await sbPage.viewAddonPanel('Controls');
-    const label = await sbPage.panelContent().locator('textarea[name=label]').inputValue();
-    await expect(label).toEqual('Hello world');
+    const label = sbPage.panelContent().locator('textarea[name=label]');
+    await expect(label).toHaveValue('Hello world');
   });
 
   test('should set select option when value contains double spaces', async ({ page }) => {

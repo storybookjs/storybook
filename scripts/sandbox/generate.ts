@@ -1,7 +1,10 @@
 import * as ghActions from '@actions/core';
 import { program } from 'commander';
+// eslint-disable-next-line depend/ban-dependencies
 import type { Options as ExecaOptions } from 'execa';
+// eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
+// eslint-disable-next-line depend/ban-dependencies
 import { copy, emptyDir, ensureDir, move, remove, rename, writeFile } from 'fs-extra';
 import pLimit from 'p-limit';
 import { join, relative } from 'path';
@@ -180,8 +183,12 @@ const runGenerators = async (
         const beforeDir = join(baseDir, BEFORE_DIR_NAME);
         try {
           let flags: string[] = ['--no-dev'];
-          if (expected.renderer === '@storybook/html') flags = ['--type html'];
-          else if (expected.renderer === '@storybook/server') flags = ['--type server'];
+
+          if (expected.renderer === '@storybook/html') {
+            flags = ['--type html'];
+          } else if (expected.renderer === '@storybook/server') {
+            flags = ['--type server'];
+          }
 
           const time = process.hrtime();
           console.log(`🧬 Generating ${name} (${dirName})`);

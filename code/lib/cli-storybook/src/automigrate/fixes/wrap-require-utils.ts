@@ -1,14 +1,17 @@
+import { types as t } from 'storybook/internal/babel';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
-
-import * as t from '@babel/types';
 
 const defaultRequireWrapperName = 'getAbsolutePath';
 
 /**
  * Checks if the following node declarations exists in the main config file.
+ *
  * @example
+ *
+ * ```ts
  * const <name> = () => {};
  * function <name>() {}
+ * ```
  */
 function doesVariableOrFunctionDeclarationExist(node: t.Node, name: string) {
   return (
@@ -23,12 +26,20 @@ function doesVariableOrFunctionDeclarationExist(node: t.Node, name: string) {
 
 /**
  * Wrap a value with require wrapper.
+ *
  * @example
+ *
+ * ```ts
  * // Before
- * { framework: 'react' }
+ * {
+ *   framework: 'react';
+ * }
  *
  * // After
- * { framework: wrapForPnp('react') }
+ * {
+ *   framework: wrapForPnp('react');
+ * }
+ * ```
  */
 function getReferenceToRequireWrapper(config: ConfigFile, value: string) {
   return t.callExpression(
@@ -39,6 +50,7 @@ function getReferenceToRequireWrapper(config: ConfigFile, value: string) {
 
 /**
  * Returns the name of the require wrapper function if it exists in the main config file.
+ *
  * @returns Name of the require wrapper function.
  */
 export function getRequireWrapperName(config: ConfigFile) {
@@ -59,9 +71,7 @@ export function getRequireWrapperName(config: ConfigFile) {
   return null;
 }
 
-/**
- * Check if the node needs to be wrapped with require wrapper.
- */
+/** Check if the node needs to be wrapped with require wrapper. */
 export function isRequireWrapperNecessary(
   node: t.Node,
   cb: (node: t.StringLiteral | t.ObjectProperty | t.ArrayExpression) => void = () => {}
@@ -97,6 +107,7 @@ export function isRequireWrapperNecessary(
 
 /**
  * Get all fields that need to be wrapped with require wrapper.
+ *
  * @returns Array of fields that need to be wrapped with require wrapper.
  */
 export function getFieldsForRequireWrapper(config: ConfigFile): t.Node[] {
@@ -117,10 +128,14 @@ export function getFieldsForRequireWrapper(config: ConfigFile): t.Node[] {
 
 /**
  * Returns AST for the following function
+ *
  * @example
+ *
+ * ```ts
  * function getAbsolutePath(value) {
- *  return dirname(require.resolve(join(value, 'package.json')))
+ *   return dirname(require.resolve(join(value, 'package.json')));
  * }
+ * ```
  */
 export function getRequireWrapperAsCallExpression(
   isConfigTypescript: boolean

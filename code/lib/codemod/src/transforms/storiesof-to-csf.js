@@ -26,6 +26,7 @@ import { jscodeshiftToPrettierParser, sanitizeName } from '../lib/utils';
  * export const story = () => <Button label="The Button" />;
  *
  * NOTES: only support chained storiesOf() calls
+ * ```
  */
 export default async function transformer(file, api, options) {
   const LITERAL = ['ts', 'tsx'].includes(options.parser) ? 'StringLiteral' : 'Literal';

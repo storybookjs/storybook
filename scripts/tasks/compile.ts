@@ -1,3 +1,4 @@
+// eslint-disable-next-line depend/ban-dependencies
 import { readFile } from 'fs-extra';
 import { resolve } from 'path';
 
@@ -27,7 +28,10 @@ export const compile: Task = {
         'utf8'
       );
       const isLinkedContents = contents.indexOf(linkedContents) !== -1;
-      if (link) return isLinkedContents;
+
+      if (link) {
+        return isLinkedContents;
+      }
       return !isLinkedContents;
     } catch (err) {
       return false;

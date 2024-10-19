@@ -1,4 +1,5 @@
 import { PARAM_KEY as KEY } from './constants';
+import { MINIMAL_VIEWPORTS } from './defaults';
 import type { GlobalState } from './types';
 
 const modern: Record<string, GlobalState> = {

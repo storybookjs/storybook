@@ -1,6 +1,6 @@
 {
   "name": "@storybook/router",
-  "version": "8.3.0-alpha.5",
+  "version": "8.4.0-alpha.7",
   "description": "Core Storybook Router",
   "keywords": [
     "storybook"
@@ -24,8 +24,7 @@
     ".": {
       "types": "./shim.d.ts",
       "import": "./shim.mjs",
-      "require": "./shim.js",
-      "node": "./shim.js"
+      "require": "./shim.js"
     },
     "./utils": {
       "types": "./utils.d.ts",

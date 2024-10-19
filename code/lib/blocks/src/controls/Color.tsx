@@ -7,7 +7,7 @@ import { styled } from 'storybook/internal/theming';
 import { MarkupIcon } from '@storybook/icons';
 
 import convert from 'color-convert';
-import debounce from 'lodash/debounce.js';
+import { debounce } from 'es-toolkit/compat';
 import { HexColorPicker, HslaStringColorPicker, RgbaStringColorPicker } from 'react-colorful';
 
 import { getControlId } from './helpers';
@@ -134,13 +134,18 @@ const fallbackColor = {
 
 const stringToArgs = (value: string) => {
   const match = value?.match(COLOR_REGEXP);
-  if (!match) return [0, 0, 0, 1];
+
+  if (!match) {
+    return [0, 0, 0, 1];
+  }
   const [, x, y, z, a = 1] = match;
   return [x, y, z, a].map(Number);
 };
 
 const parseValue = (value: string): ParsedColor | undefined => {
-  if (!value) return undefined;
+  if (!value) {
+    return undefined;
+  }
   let valid = true;
 
   if (RGB_REGEXP.test(value)) {
@@ -176,8 +181,12 @@ const parseValue = (value: string): ParsedColor | undefined => {
   const hsl = convert.rgb.hsl(rgb);
 
   let mapped = value;
-  if (/[^#a-f0-9]/i.test(value)) mapped = plain;
-  else if (HEX_REGEXP.test(value)) mapped = `#${plain}`;
+
+  if (/[^#a-f0-9]/i.test(value)) {
+    mapped = plain;
+  } else if (HEX_REGEXP.test(value)) {
+    mapped = `#${plain}`;
+  }
 
   if (mapped.startsWith('#')) {
     valid = HEX_REGEXP.test(mapped);
@@ -201,8 +210,13 @@ const parseValue = (value: string): ParsedColor | undefined => {
 };
 
 const getRealValue = (value: string, color: ParsedColor, colorSpace: ColorSpace) => {
-  if (!value || !color?.valid) return fallbackColor[colorSpace];
-  if (colorSpace !== ColorSpace.HEX) return color?.[colorSpace] || fallbackColor[colorSpace];
+  if (!value || !color?.valid) {
+    return fallbackColor[colorSpace];
+  }
+
+  if (colorSpace !== ColorSpace.HEX) {
+    return color?.[colorSpace] || fallbackColor[colorSpace];
+  }
   if (!color.hex.startsWith('#')) {
     try {
       return `#${convert.keyword.hex(color.hex as any)}`;
@@ -211,7 +225,10 @@ const getRealValue = (value: string, color: ParsedColor, colorSpace: ColorSpace)
     }
   }
   const short = color.hex.match(SHORTHEX_REGEXP);
-  if (!short) return HEX_REGEXP.test(color.hex) ? color.hex : fallbackColor.hex;
+
+  if (!short) {
+    return HEX_REGEXP.test(color.hex) ? color.hex : fallbackColor.hex;
+  }
   const [r, g, b] = short[1].split('');
   return `#${r}${r}${g}${g}${b}${b}`;
 };
@@ -263,7 +280,10 @@ const useColorInput = (
 
   const cycleColorSpace = useCallback(() => {
     let next = COLOR_SPACES.indexOf(colorSpace) + 1;
-    if (next >= COLOR_SPACES.length) next = 0;
+
+    if (next >= COLOR_SPACES.length) {
+      next = 0;
+    }
     setColorSpace(COLOR_SPACES[next]);
     const update = color?.[COLOR_SPACES[next]] || '';
     setValue(update);
@@ -284,14 +304,21 @@ const usePresets = (
 
   // Reset state when currentColor becomes undefined (when resetting controls)
   useEffect(() => {
-    if (currentColor !== undefined) return;
+    if (currentColor !== undefined) {
+      return;
+    }
     setSelectedColors([]);
   }, [currentColor]);
 
   const presets = useMemo(() => {
     const initialPresets = (presetColors || []).map((preset) => {
-      if (typeof preset === 'string') return parseValue(preset);
-      if (preset.title) return { ...parseValue(preset.color), keyword: preset.title };
+      if (typeof preset === 'string') {
+        return parseValue(preset);
+      }
+
+      if (preset.title) {
+        return { ...parseValue(preset.color), keyword: preset.title };
+      }
       return parseValue(preset.color);
     });
     return initialPresets.concat(selectedColors).filter(Boolean).slice(-27);
@@ -299,8 +326,13 @@ const usePresets = (
 
   const addPreset: (color: ParsedColor) => void = useCallback(
     (color) => {
-      if (!color?.valid) return;
-      if (presets.some((preset) => id(preset[colorSpace]) === id(color[colorSpace]))) return;
+      if (!color?.valid) {
+        return;
+      }
+
+      if (presets.some((preset) => id(preset[colorSpace]) === id(color[colorSpace]))) {
+        return;
+      }
       setSelectedColors((arr) => arr.concat(color));
     },
     [colorSpace, presets]

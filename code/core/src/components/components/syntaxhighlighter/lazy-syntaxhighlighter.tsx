@@ -16,7 +16,9 @@ const LazySyntaxHighlighter = lazy(async () => {
     languages = [];
   }
 
-  if (Comp === null) Comp = SyntaxHighlighter;
+  if (Comp === null) {
+    Comp = SyntaxHighlighter;
+  }
 
   return {
     default: (props: ComponentProps<typeof SyntaxHighlighter>) => <SyntaxHighlighter {...props} />,

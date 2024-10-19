@@ -178,7 +178,9 @@ const WhatsNewScreen: FC = () => {
     return () => clearTimeout(timer);
   }, [isLoaded]);
 
-  if (whatsNewData?.status !== 'SUCCESS') return null;
+  if (whatsNewData?.status !== 'SUCCESS') {
+    return null;
+  }
 
   const isNotificationsEnabled = !whatsNewData.disableWhatsNewNotifications;
 

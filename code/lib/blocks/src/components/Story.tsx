@@ -6,12 +6,10 @@ import { ErrorFormatter, Loader, getStoryHref } from 'storybook/internal/compone
 import { styled } from 'storybook/internal/theming';
 import type { DocsContextProps, PreparedStory } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { IFrame } from './IFrame';
 import { ZoomContext } from './ZoomContext';
 
-const { PREVIEW_URL } = global;
+const { PREVIEW_URL } = globalThis;
 const BASE_URL = PREVIEW_URL || 'iframe.html';
 
 interface CommonProps {
@@ -114,10 +112,7 @@ const IFrameStory: FunctionComponent<IFrameStoryProps> = ({ story, height = '500
   </div>
 );
 
-/**
- * A story element, either rendered inline or in an iframe,
- * with configurable height.
- */
+/** A story element, either rendered inline or in an iframe, with configurable height. */
 
 const ErrorMessage = styled.strong(({ theme }) => ({
   color: theme.color.orange,

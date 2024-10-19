@@ -1,7 +1,7 @@
 import React from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react';
-import { expect, within } from '@storybook/test';
+import { expect, waitFor, within } from '@storybook/test';
 
 import { HighlightElement } from './HighlightElement';
 
@@ -38,7 +38,7 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement.parentElement!);
     const button = canvas.getByRole('button');
-    await expect(button).toHaveStyle('box-shadow: rgba(2,156,253,1) 0 0 2px 1px');
+    await waitFor(() => expect(button).toHaveStyle('box-shadow: rgba(2,156,253,1) 0 0 2px 1px'));
   },
 };
 

@@ -4,9 +4,7 @@ import PropTypes from 'prop-types';
 
 export default class Test extends React.Component {
   static propTypes = {
-    /**
-     * Please work...
-     */
+    /** Please work... */
     test: PropTypes.string,
   };
 

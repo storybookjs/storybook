@@ -26,15 +26,23 @@ export function GuidedTour({
     let timeout: NodeJS.Timeout;
     setStepIndex((current) => {
       const index = steps.findIndex(({ key }) => key === step);
-      if (index === -1) return null;
-      if (index === current) return current;
+
+      if (index === -1) {
+        return null;
+      }
+
+      if (index === current) {
+        return current;
+      }
       timeout = setTimeout(setStepIndex, 500, index);
       return null;
     });
     return () => clearTimeout(timeout);
   }, [step, steps]);
 
-  if (stepIndex === null) return null;
+  if (stepIndex === null) {
+    return null;
+  }
 
   return (
     <Joyride
@@ -46,8 +54,13 @@ export function GuidedTour({
       disableOverlayClose
       disableScrolling
       callback={(data: CallBackProps) => {
-        if (data.action === ACTIONS.CLOSE) onClose();
-        if (data.action === ACTIONS.NEXT && data.index === data.size - 1) onComplete();
+        if (data.action === ACTIONS.CLOSE) {
+          onClose();
+        }
+
+        if (data.action === ACTIONS.NEXT && data.index === data.size - 1) {
+          onComplete();
+        }
       }}
       floaterProps={{
         disableAnimation: true,

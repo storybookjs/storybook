@@ -12,6 +12,7 @@ test-results
 /repros
 /sandbox
 /bench
+/code/bench
 .verdaccio-cache
 .next
 /.npmrc
@@ -54,4 +55,9 @@ code/bench-results/
 
 /packs
 code/.nx/cache
+code/.vite-inspect
+.nx/cache
 !**/fixtures/**/yarn.lock
+code/core/report
+
+*storybook.log

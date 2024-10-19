@@ -1,4 +1,5 @@
 import dirSize from 'fast-folder-size';
+// eslint-disable-next-line depend/ban-dependencies
 import { pathExists } from 'fs-extra';
 import { join } from 'path';
 import { promisify } from 'util';

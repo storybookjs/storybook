@@ -7,11 +7,11 @@ import { withTelemetry } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext, telemetry } from 'storybook/internal/telemetry';
 
-import chalk from 'chalk';
-import program from 'commander';
+import { program } from 'commander';
 import envinfo from 'envinfo';
 import { findPackageSync } from 'fd-package-json';
 import leven from 'leven';
+import picocolors from 'picocolors';
 import invariant from 'tiny-invariant';
 
 import { add } from '../add';
@@ -81,7 +81,7 @@ command('upgrade')
 command('info')
   .description('Prints debugging information about the local environment')
   .action(async () => {
-    consoleLogger.log(chalk.bold('\nStorybook Environment Info:'));
+    consoleLogger.log(picocolors.bold('\nStorybook Environment Info:'));
     const pkgManager = await JsPackageManagerFactory.getPackageManager();
     const activePackageManager = pkgManager.type.replace(/\d/, ''); // 'yarn1' -> 'yarn'
     const output = await envinfo.run({
@@ -95,7 +95,7 @@ command('info')
     consoleLogger.log(
       output.replace(
         activePackageManagerLine,
-        chalk.bold(`${activePackageManagerLine} <----- active`)
+        picocolors.bold(`${activePackageManagerLine} <----- active`)
       )
     );
   });
@@ -186,8 +186,7 @@ program.on('command:*', ([invalidCmd]) => {
     ' Invalid command: %s.\n See --help for a list of available commands.',
     invalidCmd
   );
-  // eslint-disable-next-line no-underscore-dangle
-  const availableCommands = program.commands.map((cmd) => cmd._name);
+  const availableCommands = program.commands.map((cmd) => cmd.name());
   const suggestion = availableCommands.find((cmd) => leven(cmd, invalidCmd) < 3);
   if (suggestion) {
     consoleLogger.info(`\n Did you mean ${suggestion}?`);

@@ -50,7 +50,9 @@ export const Stories: FC<StoriesProps> = ({ title = 'Stories', includePrimary = 
     stories = stories.filter((story) => story.tags?.includes('autodocs') && !story.usesMount);
   }
 
-  if (!includePrimary) stories = stories.slice(1);
+  if (!includePrimary) {
+    stories = stories.slice(1);
+  }
 
   if (!stories || stories.length === 0) {
     return null;

@@ -1,4 +1,5 @@
-import program from 'commander';
+import { program } from 'commander';
+// eslint-disable-next-line depend/ban-dependencies
 import ora from 'ora';
 import { v4 as uuidv4 } from 'uuid';
 

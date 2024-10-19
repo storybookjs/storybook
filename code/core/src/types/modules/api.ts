@@ -38,9 +38,7 @@ export interface API_ProviderData<API> {
 
 export interface API_Provider<API> {
   channel?: Channel;
-  /**
-   * @deprecated will be removed in 8.0, please use channel instead
-   */
+  /** @deprecated Will be removed in 8.0, please use channel instead */
   serverChannel?: Channel;
   renderPreview?: API_IframeRenderer;
   handleAPI(api: API): void;
@@ -79,9 +77,8 @@ export interface API_Layout {
   bottomPanelHeight: number;
   rightPanelWidth: number;
   /**
-   * the sizes of the panels when they were last visible
-   * used to restore the sizes when the panels are shown again
-   * eg. when toggling fullscreen, panels, etc.
+   * The sizes of the panels when they were last visible used to restore the sizes when the panels
+   * are shown again eg. when toggling fullscreen, panels, etc.
    */
   recentVisibleSizes: {
     navSize: number;
@@ -91,9 +88,7 @@ export interface API_Layout {
   panelPosition: API_PanelPositions;
   showTabs: boolean;
   showToolbar: boolean;
-  /**
-   * @deprecated, will be removed in 8.0 - this API no longer works
-   */
+  /** @deprecated, will be removed in 8.0 - this API no longer works */
   isToolshown?: boolean;
 }
 
@@ -114,20 +109,14 @@ export interface API_SidebarOptions<API = any> {
 }
 
 interface OnClearOptions {
-  /**
-   *  True when the user manually dismissed the notification.
-   */
+  /** `true` when the user manually dismissed the notification. */
   dismissed: boolean;
-  /**
-   *  True when the notification timed out after the set duration.
-   */
+  /** `true` when the notification timed out after the set duration. */
   timeout: boolean;
 }
 
 interface OnClickOptions {
-  /**
-   *  Function to dismiss the notification.
-   */
+  /** Function to dismiss the notification. */
   onDismiss: () => void;
 }
 

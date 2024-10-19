@@ -1,12 +1,11 @@
 // noinspection JSUnusedGlobalSymbols
+import { cp, readFile } from 'node:fs/promises';
 import { join, parse } from 'node:path';
 
 import { NoStatsForViteDevError } from 'storybook/internal/server-errors';
-import type { Options } from 'storybook/internal/types';
+import type { Middleware, Options } from 'storybook/internal/types';
 
-import type { RequestHandler } from 'express';
-import express from 'express';
-import * as fs from 'fs-extra';
+import sirv from 'sirv';
 import { corePath } from 'storybook/core-path';
 import type { ViteDevServer } from 'vite';
 
@@ -20,28 +19,31 @@ export { hasVitePlugins } from './utils/has-vite-plugins';
 
 export * from './types';
 
-function iframeMiddleware(options: Options, server: ViteDevServer): RequestHandler {
+function iframeMiddleware(options: Options, server: ViteDevServer): Middleware {
   return async (req, res, next) => {
-    if (!req.url.match(/^\/iframe\.html($|\?)/)) {
+    if (!req.url || !req.url.match(/^\/iframe\.html($|\?)/)) {
       next();
       return;
     }
+    // the base isn't used for anything, but it's required by the URL constructor
+    const url = new URL(req.url, 'http://localhost:6006');
 
     // We need to handle `html-proxy` params for style tag HMR https://github.com/storybookjs/builder-vite/issues/266#issuecomment-1055677865
     // e.g. /iframe.html?html-proxy&index=0.css
-    if (req.query['html-proxy'] !== undefined) {
+    if (url.searchParams.has('html-proxy')) {
       next();
       return;
     }
 
-    const indexHtml = await fs.readFile(
-      require.resolve('@storybook/builder-vite/input/iframe.html'),
-      'utf-8'
-    );
+    const indexHtml = await readFile(require.resolve('@storybook/builder-vite/input/iframe.html'), {
+      encoding: 'utf8',
+    });
     const generated = await transformIframeHtml(indexHtml, options);
     const transformed = await server.transformIndexHtml('/iframe.html', generated);
     res.setHeader('Content-Type', 'text/html');
-    res.status(200).send(transformed);
+    res.statusCode = 200;
+    res.write(transformed);
+    res.end();
   };
 }
 
@@ -60,10 +62,14 @@ export const start: ViteBuilder['start'] = async ({
   server = await createViteServer(options as Options, devServer);
 
   const previewResolvedDir = join(corePath, 'dist/preview');
-  const previewDirOrigin = previewResolvedDir;
-
-  router.use(`/sb-preview`, express.static(previewDirOrigin, { immutable: true, maxAge: '5m' }));
-
+  router.use(
+    '/sb-preview',
+    sirv(previewResolvedDir, {
+      maxAge: 300000,
+      dev: true,
+      immutable: true,
+    })
+  );
   router.use(iframeMiddleware(options as Options, server));
   router.use(server.middlewares);
 
@@ -82,10 +88,8 @@ export const build: ViteBuilder['build'] = async ({ options }) => {
   const viteCompilation = viteBuild(options as Options);
 
   const previewResolvedDir = join(corePath, 'dist/preview');
-  const previewDirOrigin = previewResolvedDir;
   const previewDirTarget = join(options.outputDir || '', `sb-preview`);
-
-  const previewFiles = fs.copy(previewDirOrigin, previewDirTarget, {
+  const previewFiles = cp(previewResolvedDir, previewDirTarget, {
     filter: (src) => {
       const { ext } = parse(src);
       if (ext) {
@@ -93,6 +97,7 @@ export const build: ViteBuilder['build'] = async ({ options }) => {
       }
       return true;
     },
+    recursive: true,
   });
 
   const [out] = await Promise.all([viteCompilation, previewFiles]);

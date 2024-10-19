@@ -159,7 +159,10 @@ describe('Preview hooks', () => {
         useEffect(() => {
           setCounter((prevCounter) => prevCounter + 1);
         }, [counter]);
-        if (counter % 2 === 1) storyFn();
+
+        if (counter % 2 === 1) {
+          storyFn();
+        }
         return 'placeholder while waiting';
       };
       run(story, [decorator]);

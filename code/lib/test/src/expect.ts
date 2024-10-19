@@ -90,8 +90,10 @@ export function createExpect() {
           expect.getState().assertionCalls
         }`
       );
-    if ('captureStackTrace' in Error && typeof Error.captureStackTrace === 'function')
+
+    if ('captureStackTrace' in Error && typeof Error.captureStackTrace === 'function') {
       Error.captureStackTrace(errorGen(), assertions);
+    }
 
     expect.setState({
       expectedAssertionsNumber: expected,
@@ -101,8 +103,10 @@ export function createExpect() {
 
   function hasAssertions() {
     const error = new Error('expected any number of assertion, but got none');
-    if ('captureStackTrace' in Error && typeof Error.captureStackTrace === 'function')
+
+    if ('captureStackTrace' in Error && typeof Error.captureStackTrace === 'function') {
       Error.captureStackTrace(error, hasAssertions);
+    }
 
     expect.setState({
       isExpectingAssertions: true,

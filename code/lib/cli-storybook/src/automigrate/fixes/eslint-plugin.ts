@@ -5,7 +5,7 @@ import {
   findEslintFile,
 } from 'storybook/internal/cli';
 
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import type { Fix } from '../types';
@@ -21,6 +21,7 @@ interface EslintPluginRunOptions {
  * Does the user not have eslint-plugin-storybook installed?
  *
  * If so:
+ *
  * - Install it, and if possible configure it
  */
 export const eslintPlugin: Fix<EslintPluginRunOptions> = {
@@ -57,7 +58,9 @@ export const eslintPlugin: Fix<EslintPluginRunOptions> = {
 
       In order to have the best experience with Storybook and follow best practices, we advise you to install eslint-plugin-storybook.
 
-      More info: ${chalk.yellow('https://github.com/storybookjs/eslint-plugin-storybook#readme')}
+      More info: ${picocolors.yellow(
+        'https://github.com/storybookjs/eslint-plugin-storybook#readme'
+      )}
     `;
   },
 

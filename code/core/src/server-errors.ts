@@ -1,14 +1,13 @@
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import { StorybookError } from './storybook-error';
 
 /**
- * If you can't find a suitable category for your error, create one
- * based on the package name/file path of which the error is thrown.
- * For instance:
- * If it's from @storybook/node-logger, then NODE-LOGGER
- * If it's from a package that is too broad, e.g. @storybook/cli in the init command, then use a combination like CLI_INIT
+ * If you can't find a suitable category for your error, create one based on the package name/file
+ * path of which the error is thrown. For instance: If it's from `@storybook/node-logger`, then
+ * NODE-LOGGER If it's from a package that is too broad, e.g. @storybook/cli in the init command,
+ * then use a combination like CLI_INIT
  */
 export enum Category {
   CLI = 'CLI',
@@ -350,21 +349,21 @@ export class MainFileESMOnlyImportError extends StorybookError {
     ];
     if (data.line) {
       message.push(
-        chalk.white(
-          `In your ${chalk.yellow(data.location)} file, line ${chalk.bold.cyan(
-            data.num
+        picocolors.white(
+          `In your ${picocolors.yellow(data.location)} file, line ${picocolors.bold(
+            picocolors.cyan(data.num)
           )} threw an error:`
         ),
-        chalk.grey(data.line)
+        picocolors.gray(data.line)
       );
     }
 
     message.push(
       '',
-      chalk.white(
-        `Convert the static import to a dynamic import ${chalk.underline('where they are used')}.`
+      picocolors.white(
+        `Convert the static import to a dynamic import ${picocolors.underline('where they are used')}.`
       ),
-      chalk.white(`Example:`) + ' ' + chalk.gray(`await import(<your ESM only module>);`),
+      picocolors.white(`Example:`) + ' ' + picocolors.gray(`await import(<your ESM only module>);`),
       ''
     );
 
@@ -379,23 +378,37 @@ export class MainFileESMOnlyImportError extends StorybookError {
 }
 
 export class MainFileMissingError extends StorybookError {
-  constructor(public data: { location: string }) {
+  constructor(public data: { location: string; source?: 'storybook' | 'vitest' }) {
+    const map = {
+      storybook: {
+        helperMessage:
+          'You can pass a --config-dir flag to tell Storybook, where your main.js file is located at.',
+        documentation: 'https://storybook.js.org/docs/configure',
+      },
+      vitest: {
+        helperMessage:
+          'You can pass a configDir plugin option to tell where your main.js file is located at.',
+        // TODO: add proper docs once available
+        documentation: 'https://storybook.js.org/docs/configure',
+      },
+    };
+    const { documentation, helperMessage } = map[data.source || 'storybook'];
     super({
       category: Category.CORE_SERVER,
       code: 6,
-      documentation: 'https://storybook.js.org/docs/configure',
+      documentation,
       message: dedent`
-        No configuration files have been found in your configDir: ${chalk.yellow(data.location)}.
+        No configuration files have been found in your configDir: ${picocolors.yellow(data.location)}.
         Storybook needs a "main.js" file, please add it.
         
-        You can pass a --config-dir flag to tell Storybook, where your main.js file is located at).`,
+        ${helperMessage}`,
     });
   }
 }
 
 export class MainFileEvaluationError extends StorybookError {
   constructor(public data: { location: string; error: Error }) {
-    const errorText = chalk.white(
+    const errorText = picocolors.white(
       (data.error.stack || data.error.message).replaceAll(process.cwd(), '')
     );
 
@@ -403,7 +416,7 @@ export class MainFileEvaluationError extends StorybookError {
       category: Category.CORE_SERVER,
       code: 7,
       message: dedent`
-        Storybook couldn't evaluate your ${chalk.yellow(data.location)} file.
+        Storybook couldn't evaluate your ${picocolors.yellow(data.location)} file.
         
         Original error:
         ${errorText}`,

@@ -4,6 +4,8 @@ export default {
   bracketSpacing: true,
   trailingComma: 'es5',
   singleQuote: true,
+  arrowParens: 'always',
+
   overrides: [
     {
       files: '*.html',
@@ -25,8 +27,16 @@ export default {
       },
     },
   ],
-  plugins: ['@trivago/prettier-plugin-sort-imports'],
+  plugins: [
+    '@trivago/prettier-plugin-sort-imports',
+    'prettier-plugin-brace-style',
+    'prettier-plugin-curly',
+    'prettier-plugin-jsdoc',
+    'prettier-plugin-css-order',
+    'prettier-plugin-merge',
+  ],
 
+  // @trivago/prettier-plugin-sort-imports
   importOrder: [
     '^node:',
     '^(vitest|@testing-library)',
@@ -41,5 +51,10 @@ export default {
   importOrderSeparation: true,
   importOrderSortSpecifiers: true,
 
-  arrowParens: 'always',
+  // prettier-plugin-jsdoc
+  jsdocPreferCodeFences: true,
+  tsdoc: true,
+
+  // prettier-plugin-brace-style
+  braceStyle: '1tbs',
 };

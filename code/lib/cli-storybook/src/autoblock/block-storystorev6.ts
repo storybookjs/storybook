@@ -1,6 +1,6 @@
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import { createBlocker } from './types';
@@ -22,7 +22,7 @@ export const blocker = createBlocker({
       StoryStoreV7 feature must be removed from your Storybook configuration.
       This feature was removed in Storybook 8.0.0.
       Please see the migration guide for more information:
-      ${chalk.yellow(
+      ${picocolors.yellow(
         'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storystorev6-and-storiesof-is-deprecated'
       )}
       
@@ -30,7 +30,7 @@ export const blocker = createBlocker({
 
       export default = {
           features: {
-              ${chalk.cyan(`storyStoreV7: false`)}, <--- ${chalk.bold('remove this line')}
+              ${picocolors.cyan(`storyStoreV7: false`)}, <--- ${picocolors.bold('remove this line')}
           },
       };
 

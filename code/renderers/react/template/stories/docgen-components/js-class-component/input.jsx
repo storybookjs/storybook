@@ -6,9 +6,7 @@ import { imported } from '../imported';
 
 const local = 'local-value';
 
-/**
- * A component that renders its props
- */
+/** A component that renders its props */
 
 class PropsWriter extends React.Component {
   render() {

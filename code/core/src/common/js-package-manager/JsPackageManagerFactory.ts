@@ -88,9 +88,7 @@ export class JsPackageManagerFactory {
     throw new Error('Unable to find a usable package manager within NPM, PNPM, Yarn and Yarn 2');
   }
 
-  /**
-   * Look up map of package manager proxies by name
-   */
+  /** Look up map of package manager proxies by name */
   private static PROXY_MAP: Record<PackageManagerName, PackageManagerProxy> = {
     npm: NPMProxy,
     pnpm: PNPMProxy,
@@ -99,8 +97,8 @@ export class JsPackageManagerFactory {
   };
 
   /**
-   * Infer the package manager based on the command the user is running.
-   * Each package manager sets the `npm_config_user_agent` environment variable with its name and version e.g. "npm/7.24.0"
+   * Infer the package manager based on the command the user is running. Each package manager sets
+   * the `npm_config_user_agent` environment variable with its name and version e.g. "npm/7.24.0"
    * Which is really useful when invoking commands via npx/pnpx/yarn create/etc.
    */
   private static inferPackageManagerFromUserAgent(): PackageManagerName | undefined {
@@ -127,17 +125,35 @@ export class JsPackageManagerFactory {
 }
 
 function hasNPM(cwd?: string) {
-  const npmVersionCommand = spawnSync('npm', ['--version'], { cwd, shell: true });
+  const npmVersionCommand = spawnSync('npm', ['--version'], {
+    cwd,
+    shell: true,
+    env: {
+      COREPACK_ENABLE_STRICT: '0',
+    },
+  });
   return npmVersionCommand.status === 0;
 }
 
 function hasPNPM(cwd?: string) {
-  const pnpmVersionCommand = spawnSync('pnpm', ['--version'], { cwd, shell: true });
+  const pnpmVersionCommand = spawnSync('pnpm', ['--version'], {
+    cwd,
+    shell: true,
+    env: {
+      COREPACK_ENABLE_STRICT: '0',
+    },
+  });
   return pnpmVersionCommand.status === 0;
 }
 
 function getYarnVersion(cwd?: string): 1 | 2 | undefined {
-  const yarnVersionCommand = spawnSync('yarn', ['--version'], { cwd, shell: true });
+  const yarnVersionCommand = spawnSync('yarn', ['--version'], {
+    cwd,
+    shell: true,
+    env: {
+      COREPACK_ENABLE_STRICT: '0',
+    },
+  });
 
   if (yarnVersionCommand.status !== 0) {
     return undefined;

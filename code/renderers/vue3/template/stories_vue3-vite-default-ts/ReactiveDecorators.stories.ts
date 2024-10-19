@@ -47,6 +47,7 @@ const meta = {
     });
     await new Promise((resolve) => channel.once(STORY_ARGS_UPDATED, resolve));
   },
+  tags: ['!vitest'],
 } satisfies Meta<typeof Reactivity>;
 
 export default meta;

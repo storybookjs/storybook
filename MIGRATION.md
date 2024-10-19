@@ -1,6 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 8.2.x to 8.3.x](#from-version-82x-to-83x)
+  - [Removed `experimental_SIDEBAR_BOTTOM` and deprecated `experimental_SIDEBAR_TOP` addon types](#removed-experimental_sidebar_bottom-and-deprecated-experimental_sidebar_top-addon-types)
   - [New parameters format for addon backgrounds](#new-parameters-format-for-addon-backgrounds)
   - [New parameters format for addon viewport](#new-parameters-format-for-addon-viewport)
 - [From version 8.1.x to 8.2.x](#from-version-81x-to-82x)
@@ -419,37 +420,53 @@
 
 ## From version 8.2.x to 8.3.x
 
+### Removed `experimental_SIDEBAR_BOTTOM` and deprecated `experimental_SIDEBAR_TOP` addon types
+
+The experimental SIDEBAR_BOTTOM addon type was removed in favor of a built-in filter UI. The enum type definition will remain available until Storybook 9.0 but will be ignored. Similarly the experimental SIDEBAR_TOP addon type is deprecated and will be removed in a future version.
+
+These APIs allowed addons to render arbitrary content in the Storybook sidebar. Due to potential conflicts between addons and challenges regarding styling, these APIs are/will be removed. In the future, Storybook will provide declarative API hooks to allow addons to add content to the sidebar without risk of conflicts or UI inconsistencies. One such API is `experimental_updateStatus` which allow addons to set a status for stories. The SIDEBAR_BOTTOM slot is now used to allow filtering stories with a given status.
+
 ### New parameters format for addon backgrounds
 
-The `addon-backgrounds` addon now uses a new format for parameters. The `backgrounds` parameter is now an object with a `values` key that contains the background values.
+> [!NOTE]
+> You need to set the feature flag `backgroundsStoryGlobals` to `true` in your `.storybook/main.ts` to use the new format and set the value with `globals`.
+> 
+> See here how to set feature flags: https://storybook.js.org/docs/api/main-config/main-config-features
 
-> ! You need to set the feature flag `backgroundsStoryGlobals` to `true` in your `.storybook/main.ts` to use the new format.
+The `addon-backgrounds` addon now uses a new format for configuring its list of selectable backgrounds.
+The `backgrounds` parameter is now an object with an `options` property.
+This `options` object is a key-value pair where the key is used when setting the global value, the value is an object with a `name` and `value` property.
 
 ```diff
 // .storybook/preview.js
 export const parameters = {
   backgrounds: {
--    values: [
--      { name: 'twitter', value: '#00aced' },
--      { name: 'facebook', value: '#3b5998' },
--    ],
-+    options: {
-+      twitter: { name: 'twitter', value: '#00aced' },
-+      facebook: { name: 'facebook', value: '#3b5998' },
-+    },
+-   values: [
+-     { name: 'twitter', value: '#00aced' },
+-     { name: 'facebook', value: '#3b5998' },
+-   ],
++   options: {
++     twitter: { name: 'Twitter', value: '#00aced' },
++     facebook: { name: 'Facebook', value: '#3b5998' },
++   },
   },
 };
 ```
 
 Setting an override value should now be done via a `globals` property on your component/meta or story itself:
 
-```ts
+```diff
 // Button.stories.ts
 export default {
   component: Button,
-  globals: {
-    backgrounds: { value: 'twitter' },
-  },
+- parameters: {
+-   backgrounds: {
+-     default: "twitter",
+-   },
+- },
++ globals: {
++   backgrounds: { value: "twitter" },
++ },
 };
 ```
 
@@ -457,49 +474,65 @@ This locks that story to the `twitter` background, it cannot be changed by the a
 
 ### New parameters format for addon viewport
 
-> ! You need to set the feature flag `viewportStoryGlobals` to `true` in your `.storybook/main.ts` to use the new format.
+> [!NOTE]
+> You need to set the feature flag `viewportStoryGlobals` to `true` in your `.storybook/main.ts` to use the new format and set the value with `globals`.
+> 
+> See here how to set feature flags: https://storybook.js.org/docs/api/main-config/main-config-features
 
-The `addon-viewport` addon now uses a new format for parameters. The `viewport` parameter is now an object with a `viewports` key that contains the viewport values.
+The `addon-viewport` addon now uses a new format for configuring its list of selectable viewports.
+The `viewport` parameter is now an object with an `options` property.
+This `options` object is a key-value pair where the key is used when setting the global value, the value is an object with a `name` and `styles` property.
+The `styles` property is an object with a `width` and a `height` property.
 
 ```diff
 // .storybook/preview.js
 export const parameters = {
   viewport: {
--    viewports: {
--      iphone5: {
--        name: 'phone',
--        styles: {
--          width: '320px',
--          height: '568px',
--        },
--      },
+-   viewports: {
+-     iphone5: {
+-       name: 'phone',
+-       styles: {
+-         width: '320px',
+-         height: '568px',
+-       },
 -     },
-+    options: {
-+      iphone5: {
-+        name: 'phone',
-+        styles: {
-+          width: '320px',
-+          height: '568px',
-+        },
-+      },
-+    },
+-    },
++   options: {
++     iphone5: {
++       name: 'phone',
++       styles: {
++         width: '320px',
++         height: '568px',
++       },
++     },
++   },
   },
 };
 ```
 
-Setting an override value should now be done via a `globals` property on your component/meta or story itself:
+Setting an override value should now be done via a `globals` property on your component/meta or story itself.
+Also note the change from `defaultOrientation: "landscape"` to `isRotated: true`.
 
-```ts
+```diff
 // Button.stories.ts
 export default {
   component: Button,
-  globals: {
-    viewport: { value: 'phone' },
-  },
+- parameters: {
+-   viewport: {
+-     defaultViewport: "iphone5",
+-     defaultOrientation: "landscape",
+-   },
+- },
++ globals: {
++   viewport: {
++     value: "iphone5",
++     isRotated: true,
++   },
++ },
 };
 ```
 
-This locks that story to the `phone` viewport, it cannot be changed by the addon UI.
+This locks that story to the `iphone5` viewport in landscape orientation, it cannot be changed by the addon UI.
 
 ## From version 8.1.x to 8.2.x
 
@@ -2411,8 +2444,8 @@ export default config;
 
 #### Vite builder uses Vite config automatically
 
-When using a [Vite-based framework](#framework-field-mandatory), Storybook will automatically use your `vite.config.(ctm)js` config file starting in 7.0.  
-Some settings will be overridden by Storybook so that it can function properly, and the merged settings can be modified using `viteFinal` in `.storybook/main.js` (see the [Storybook Vite configuration docs](https://storybook.js.org/docs/react/builders/vite#configuration)).  
+When using a [Vite-based framework](#framework-field-mandatory), Storybook will automatically use your `vite.config.(ctm)js` config file starting in 7.0.
+Some settings will be overridden by Storybook so that it can function properly, and the merged settings can be modified using `viteFinal` in `.storybook/main.js` (see the [Storybook Vite configuration docs](https://storybook.js.org/docs/react/builders/vite#configuration)).
 If you were using `viteFinal` in 6.5 to simply merge in your project's standard Vite config, you can now remove it.
 
 For Svelte projects this means that the `svelteOptions` property in the `main.js` config should be omitted, as it will be loaded automatically via the project's `vite.config.js`.
@@ -2490,13 +2523,13 @@ This means also, that there is no root ngModule anymore. Previously you were abl
 For example, if you want to configure BrowserAnimationModule in your stories, please extract the necessary providers the following way and provide them via the `applicationConfig` decorator:
 
 ```js
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { importProvidersFrom } from '@angular/core';
-import { applicationConfig, Meta, StoryObj } from '@storybook/angular';
-import {ExampleComponent} from './example.component';
+import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
+import { importProvidersFrom } from "@angular/core";
+import { applicationConfig, Meta, StoryObj } from "@storybook/angular";
+import { ExampleComponent } from "./example.component";
 
 const meta: Meta = {
-  title: 'Example',
+  title: "Example",
   component: ExampleComponent,
   decorators: [
     // Define application-wide providers with the applicationConfig decorator
@@ -2512,14 +2545,14 @@ const meta: Meta = {
 
 export default meta;
 
-type Story = StoryObj<typeof ExampleComponent>
+type Story = StoryObj<typeof ExampleComponent>;
 
 export const Default: Story = {
   render: () => ({
     // Define application-wide providers directly in the render function
     applicationConfig: {
       providers: [importProvidersFrom(BrowserAnimationsModule)],
-    }
+    },
   }),
 };
 ```

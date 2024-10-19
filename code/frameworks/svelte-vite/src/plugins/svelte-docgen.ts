@@ -32,7 +32,9 @@ svelteDocParserOptions.getAstDefaultOptions = () => ({
 // From https://github.com/sveltejs/svelte/blob/8db3e8d0297e052556f0b6dde310ef6e197b8d18/src/compiler/compile/utils/get_name_from_filename.ts
 // Copied because it is not exported from the compiler
 function getNameFromFilename(filename: string) {
-  if (!filename) return null;
+  if (!filename) {
+    return null;
+  }
 
   const parts = filename.split(/[/\\]/).map(encodeURI);
 
@@ -73,7 +75,9 @@ export async function svelteDocgen(svelteOptions: Record<string, any> = {}): Pro
   return {
     name: 'storybook:svelte-docgen-plugin',
     async transform(src: string, id: string) {
-      if (!filter(id)) return undefined;
+      if (!filter(id)) {
+        return undefined;
+      }
 
       if (preprocessOptions && !docPreprocessOptions) {
         /*

@@ -40,7 +40,9 @@ export const Empty = () => {
     return () => clearTimeout(load);
   }, []);
 
-  if (isLoading) return null;
+  if (isLoading) {
+    return null;
+  }
 
   return (
     <EmptyTabContent

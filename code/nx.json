@@ -1,6 +1,7 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "extends": "nx/presets/npm.json",
+  "cacheDirectory": "../.nx/cache",
   "nxCloudAccessToken": "NGVmYTkxMmItYzY3OS00MjkxLTk1ZDktZDFmYTFmNmVlNGY4fHJlYWQ=",
   "defaultBase": "next",
   "parallel": 8,
@@ -51,7 +52,7 @@
         "{workspaceRoot}/../scripts/prepare/{bundle,addon-bundle,esm-bundle}.ts"
       ],
       "dependsOn": ["^build"],
-      "outputs": ["{projectRoot}/dist"],
+      "outputs": ["{projectRoot}/dist", "{workspaceRoot}/bench/esbuild-metafiles/{projectName}"],
       "cache": true
     },
     "test": {

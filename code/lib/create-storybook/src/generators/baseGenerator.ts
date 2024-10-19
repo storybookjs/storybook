@@ -1,3 +1,4 @@
+import { mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
 import type { NpmOptions } from 'storybook/internal/cli';
@@ -10,7 +11,7 @@ import type { JsPackageManager } from 'storybook/internal/common';
 import { getPackageDetails, versions as packageVersions } from 'storybook/internal/common';
 import type { SupportedFrameworks } from 'storybook/internal/types';
 
-import fse from 'fs-extra';
+// eslint-disable-next-line depend/ban-dependencies
 import ora from 'ora';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
@@ -92,8 +93,10 @@ const getFrameworkPackage = (framework: string | undefined, renderer: string, bu
 
 const getRendererPackage = (framework: string | undefined, renderer: string) => {
   const externalFramework = getExternalFramework(framework);
-  if (externalFramework !== undefined)
+
+  if (externalFramework !== undefined) {
     return externalFramework.renderer || externalFramework.packageName;
+  }
 
   return `@storybook/${renderer}`;
 };
@@ -226,11 +229,7 @@ export async function baseGenerator(
         })
       : extraAddonPackages;
 
-  extraAddonsToInstall.push(
-    '@storybook/addon-links',
-    '@storybook/addon-essentials',
-    '@chromatic-com/storybook@^1'
-  );
+  extraAddonsToInstall.push('@storybook/addon-essentials', '@chromatic-com/storybook@^1');
 
   // added to main.js
   const addons = [
@@ -326,7 +325,9 @@ export async function baseGenerator(
     addDependenciesSpinner.succeed();
   }
 
-  await fse.ensureDir(`./${storybookConfigFolder}`);
+  // Passing `recursive: true` ensures that the method doesn't throw when
+  // the directory already exists.
+  await mkdir(`./${storybookConfigFolder}`, { recursive: true });
 
   if (addMainFile) {
     const prefixes = shouldApplyRequireWrapperOnPackageNames

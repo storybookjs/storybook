@@ -6,6 +6,7 @@ import type { PluginOption } from 'vite';
 
 import { vueComponentMeta } from './plugins/vue-component-meta';
 import { vueDocgen } from './plugins/vue-docgen';
+import { templateCompilation } from './plugins/vue-template';
 import type { FrameworkOptions, StorybookConfig, VueDocgenPlugin } from './types';
 
 const getAbsolutePath = <I extends string>(input: I): I =>
@@ -17,11 +18,11 @@ export const core: PresetProperty<'core'> = {
 };
 
 export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) => {
-  const plugins: PluginOption[] = [];
+  const plugins: PluginOption[] = [templateCompilation()];
 
   const framework = await options.presets.apply('framework');
   const frameworkOptions: FrameworkOptions =
-    typeof framework === 'string' ? {} : framework.options ?? {};
+    typeof framework === 'string' ? {} : (framework.options ?? {});
 
   const docgen = resolveDocgenOptions(frameworkOptions.docgen);
 
@@ -35,21 +36,19 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
   const { mergeConfig } = await import('vite');
   return mergeConfig(config, {
     plugins,
-    resolve: {
-      alias: {
-        vue: 'vue/dist/vue.esm-bundler.js',
-      },
-    },
   });
 };
 
-/**
- * Resolves the docgen framework option.
- */
+/** Resolves the docgen framework option. */
 const resolveDocgenOptions = (
   docgen?: FrameworkOptions['docgen']
 ): { plugin: VueDocgenPlugin; tsconfig?: string } => {
-  if (!docgen) return { plugin: 'vue-docgen-api' };
-  if (typeof docgen === 'string') return { plugin: docgen };
+  if (!docgen) {
+    return { plugin: 'vue-docgen-api' };
+  }
+
+  if (typeof docgen === 'string') {
+    return { plugin: docgen };
+  }
   return docgen;
 };

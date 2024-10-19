@@ -8,7 +8,7 @@ import { type Call, CallStates, type ControlStates } from '@storybook/instrument
 
 import { transparentize } from 'polished';
 
-import { isChaiError, isJestError } from '../utils';
+import { isChaiError, isJestError, useAnsiToHtmlFilter } from '../utils';
 import type { Controls } from './InteractionsPanel';
 import { MatcherResult } from './MatcherResult';
 import { MethodCall } from './MethodCall';
@@ -116,6 +116,7 @@ const RowMessage = styled('div')(({ theme }) => ({
 }));
 
 export const Exception = ({ exception }: { exception: Call['exception'] }) => {
+  const filter = useAnsiToHtmlFilter();
   if (isJestError(exception)) {
     return <MatcherResult {...exception} />;
   }
@@ -135,7 +136,7 @@ export const Exception = ({ exception }: { exception: Call['exception'] }) => {
   const more = paragraphs.length > 1;
   return (
     <RowMessage>
-      <pre>{paragraphs[0]}</pre>
+      <pre dangerouslySetInnerHTML={{ __html: filter.toHtml(paragraphs[0]) }}></pre>
       {more && <p>See the full stack trace in the browser console.</p>}
     </RowMessage>
   );
@@ -165,7 +166,9 @@ export const Interaction = ({
   const [isHovered, setIsHovered] = React.useState(false);
   const isInteractive = !controlStates.goto || !call.interceptable || !!call.ancestors.length;
 
-  if (isHidden) return null;
+  if (isHidden) {
+    return null;
+  }
 
   return (
     <RowContainer call={call} pausedAt={pausedAt}>

@@ -2,7 +2,7 @@ import { getStorybookVersionSpecifier } from 'storybook/internal/cli';
 import { frameworkPackages, rendererPackages } from 'storybook/internal/common';
 import type { Preset } from 'storybook/internal/types';
 
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import semver from 'semver';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
@@ -42,19 +42,23 @@ interface NewFrameworkRunOptions {
 }
 
 /**
- * Does the user have separate framework and builders (e.g. @storybook/react + core.builder -> webpack5)?
+ * Does the user have separate framework and builders (e.g. @storybook/react + core.builder ->
+ * webpack5)?
  *
  * If so:
- * - Remove the dependencies (@storybook/react + @storybook/builder-webpack5 + @storybook/manager-webpack5)
+ *
+ * - Remove the dependencies (@storybook/react + @storybook/builder-webpack5 +
+ *
+ * @storybook/manager-webpack5)
  * - Install the correct new package e.g. (@storybook/react-webpack5)
- * - Update the main config to use the new framework
- * -- moving core.builder into framework.options.builder
- * -- moving renderer options (e.g. reactOptions) into framework.options
- * -- removing the now unnecessary fields in main.js
+ * - Update the main config to use the new framework:
+ * - - moving `core.builder` into `framework.options.builder`
+ * - - moving renderer options (e.g. `reactOptions`) into `framework.options`
+ * - - removing the now unnecessary fields in `main.ts`
  *
  * Extra step:
- * -- after figuring out a candidate framework, e.g. @storybook/react-webpack5, check if the user has a supported metaframework (e.g. Next.js or SvelteKit)
- * -- if so, override the framework with the supporting metaframework package e.g. @storybook/nextjs
+ * - after figuring out a candidate framework, e.g. `@storybook/react-webpack5`, check if the user has a supported meta-framework (e.g. Next.js or SvelteKit)
+ * - if so, override the framework with the supporting meta-framework package e.g. `@storybook/nextjs`
  */
 export const newFrameworks: Fix<NewFrameworkRunOptions> = {
   id: 'new-frameworks',
@@ -207,13 +211,13 @@ export const newFrameworks: Fix<NewFrameworkRunOptions> = {
 
     if (viteVersion && semver.lt(viteVersion, '3.0.0')) {
       throw new Error(dedent`
-        ❌ Your project should be upgraded to use the framework package ${chalk.bold(
+        ❌ Your project should be upgraded to use the framework package ${picocolors.bold(
           newFrameworkPackage
-        )}, but we detected that you are using Vite ${chalk.bold(
+        )}, but we detected that you are using Vite ${picocolors.bold(
           viteVersion
-        )}, which is unsupported since ${chalk.bold(
+        )}, which is unsupported since ${picocolors.bold(
           'Storybook 7.0'
-        )}. Please upgrade Vite to ${chalk.bold('3.0.0 or higher')} and rerun this migration.
+        )}. Please upgrade Vite to ${picocolors.bold('3.0.0 or higher')} and rerun this migration.
       `);
     }
 
@@ -259,41 +263,47 @@ export const newFrameworks: Fix<NewFrameworkRunOptions> = {
 
     if (dependenciesToRemove.length > 0) {
       migrationSteps += `- Remove the following dependencies:
-      ${dependenciesToRemove.map((dep) => `- * ${chalk.cyan(dep)}`).join('\n')}\n`;
+      ${dependenciesToRemove.map((dep) => `- * ${picocolors.cyan(dep)}`).join('\n')}\n`;
     }
 
     if (dependenciesToAdd.length > 0) {
       migrationSteps += `- Add the following dependencies: 
-      ${dependenciesToAdd.map((dep) => `- * ${chalk.cyan(dep)}`).join('\n')}\n`;
+      ${dependenciesToAdd.map((dep) => `- * ${picocolors.cyan(dep)}`).join('\n')}\n`;
     }
 
     if (!hasFrameworkInMainConfig) {
-      migrationSteps += `- Update or specify the ${chalk.yellow('framework')} field in ${chalk.blue(
-        mainConfigPath
-      )} with the value of "${chalk.cyan(frameworkPackage)}".\n`;
+      migrationSteps += `- Update or specify the ${picocolors.yellow(
+        'framework'
+      )} field in ${picocolors.blue(mainConfigPath)} with the value of "${picocolors.cyan(
+        frameworkPackage
+      )}".\n`;
     }
 
     if (Object.keys(rendererOptions).length > 0) {
-      migrationSteps += `- Move the ${chalk.yellow(`${renderer}Options`)} field in ${chalk.blue(
-        mainConfigPath
-      )} to ${chalk.yellow('framework.options')}, and remove that field entirely.
-      More info: ${chalk.yellow(
+      migrationSteps += `- Move the ${picocolors.yellow(
+        `${renderer}Options`
+      )} field in ${picocolors.blue(mainConfigPath)} to ${picocolors.yellow(
+        'framework.options'
+      )}, and remove that field entirely.
+      More info: ${picocolors.yellow(
         'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#frameworkoptions-renamed'
       )}\n`;
     }
 
     if (addonsToRemove.length > 0) {
-      migrationSteps += `- Remove the following addons from your ${chalk.blue(
+      migrationSteps += `- Remove the following addons from your ${picocolors.blue(
         mainConfigPath
       )}, as the new framework also supports features provided by them:
-      ${addonsToRemove.map((dep) => `- * ${chalk.cyan(dep)}`).join('\n')}
+      ${addonsToRemove.map((dep) => `- * ${picocolors.cyan(dep)}`).join('\n')}
       `;
     }
 
     if (Object.keys(addonOptions).length > 0) {
-      migrationSteps += `- Move the addon options "${chalk.yellow(
+      migrationSteps += `- Move the addon options "${picocolors.yellow(
         Object.keys(addonOptions).join(', ')
-      )}" in ${chalk.blue(mainConfigPath)} to the ${chalk.yellow('framework.options')} field.\n`;
+      )}" in ${picocolors.blue(mainConfigPath)} to the ${picocolors.yellow(
+        'framework.options'
+      )} field.\n`;
     }
 
     if (builderConfig) {
@@ -301,14 +311,16 @@ export const newFrameworks: Fix<NewFrameworkRunOptions> = {
         typeof builderConfig === 'object' &&
         Object.keys(builderConfig.options || {}).length > 0
       ) {
-        migrationSteps += `- Move the ${chalk.yellow('core.builder.options')} field in ${chalk.blue(
-          mainConfigPath
-        )} to ${chalk.yellow('framework.options.builder')}\n`;
+        migrationSteps += `- Move the ${picocolors.yellow(
+          'core.builder.options'
+        )} field in ${picocolors.blue(mainConfigPath)} to ${picocolors.yellow(
+          'framework.options.builder'
+        )}\n`;
       }
 
-      migrationSteps += `- Remove the ${chalk.yellow('core.builder')} field in ${chalk.blue(
-        mainConfigPath
-      )}.\n`;
+      migrationSteps += `- Remove the ${picocolors.yellow(
+        'core.builder'
+      )} field in ${picocolors.blue(mainConfigPath)}.\n`;
     }
 
     if (
@@ -316,47 +328,49 @@ export const newFrameworks: Fix<NewFrameworkRunOptions> = {
       dependenciesToRemove.includes('@storybook/manager-webpack4')
     ) {
       disclaimer = dedent`\n\n
-      ${chalk.underline(chalk.bold(chalk.cyan('Webpack 4 users')))}
+      ${picocolors.underline(picocolors.bold(picocolors.cyan('Webpack 4 users')))}
 
       Unless you're using Storybook's Vite builder, this automigration will install a Webpack 5 based framework.
       
       Given you were using Storybook's Webpack 4 builder (default in 6.x, discontinued in 7.0), this could be a breaking change -- especially if your project has a custom webpack configuration.
       
-      To learn more about migrating from Webpack4, see: ${chalk.yellow(
+      To learn more about migrating from Webpack4, see: ${picocolors.yellow(
         'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#webpack4-support-discontinued'
       )}`;
     }
 
     if (metaFramework === 'nextjs') {
       if (dependenciesToRemove.includes('storybook-addon-next-router')) {
-        migrationSteps += `- Migrate the usage of the ${chalk.cyan(
+        migrationSteps += `- Migrate the usage of the ${picocolors.cyan(
           'storybook-addon-next-router'
-        )} addon to use the APIs from the ${chalk.magenta(
+        )} addon to use the APIs from the ${picocolors.magenta(
           '@storybook/nextjs'
         )} framework package instead. Follow the instructions below.`;
       }
 
       if (frameworkPackage === '@storybook/react-vite') {
         disclaimer = dedent`\n\n
-          ${chalk.bold('Important')}: We've detected you are using Storybook in a Next.js project.
+          ${picocolors.bold(
+            'Important'
+          )}: We've detected you are using Storybook in a Next.js project.
   
-          This migration is set to update your project to use the ${chalk.magenta(
+          This migration is set to update your project to use the ${picocolors.magenta(
             '@storybook/react-vite'
-          )} framework, but Storybook provides a framework package specifically for Next.js projects: ${chalk.magenta(
+          )} framework, but Storybook provides a framework package specifically for Next.js projects: ${picocolors.magenta(
             '@storybook/nextjs'
           )}.
   
           This package provides a better, out of the box experience for Next.js users, however it is only compatible with the Webpack 5 builder, so we can't automigrate for you, as you are using the Vite builder. If you switch this project to use Webpack 5 and rerun this migration, we can update your project.
           
-          If you are interested in using this package, see: ${chalk.yellow(
+          If you are interested in using this package, see: ${picocolors.yellow(
             'https://github.com/storybookjs/storybook/blob/next/code/frameworks/nextjs/README.md'
           )}
         `;
       } else if (frameworkPackage === '@storybook/nextjs') {
         disclaimer = dedent`\n\n
-        The ${chalk.magenta(
+        The ${picocolors.magenta(
           '@storybook/nextjs'
-        )} package provides great user experience for Next.js users, and we highly recommend you to read more about it at ${chalk.yellow(
+        )} package provides great user experience for Next.js users, and we highly recommend you to read more about it at ${picocolors.yellow(
           'https://github.com/storybookjs/storybook/blob/next/code/frameworks/nextjs/README.md'
         )}
         `;
@@ -366,31 +380,33 @@ export const newFrameworks: Fix<NewFrameworkRunOptions> = {
     if (metaFramework === 'sveltekit') {
       if (frameworkPackage === '@storybook/svelte-webpack5') {
         disclaimer = dedent`\n\n
-          ${chalk.bold('Important')}: We've detected you are using Storybook in a SvelteKit project.
+          ${picocolors.bold(
+            'Important'
+          )}: We've detected you are using Storybook in a SvelteKit project.
   
-          This migration is set to update your project to use the ${chalk.magenta(
+          This migration is set to update your project to use the ${picocolors.magenta(
             '@storybook/svelte-webpack5'
-          )} framework, but Storybook provides a framework package specifically for SvelteKit projects: ${chalk.magenta(
+          )} framework, but Storybook provides a framework package specifically for SvelteKit projects: ${picocolors.magenta(
             '@storybook/sveltekit'
           )}.
   
           This package provides a better experience for SvelteKit users, however it is only compatible with the Vite builder, so we can't automigrate for you, as you are using the Webpack builder.
           
-          If you are interested in using this package, see: ${chalk.yellow(
+          If you are interested in using this package, see: ${picocolors.yellow(
             'https://github.com/storybookjs/storybook/blob/next/code/frameworks/sveltekit/README.md'
           )}
         `;
       } else {
-        migrationSteps += `- Remove the ${chalk.yellow(
+        migrationSteps += `- Remove the ${picocolors.yellow(
           `${renderer}Options`
-        )} field from ${chalk.blue(mainConfigPath)}.
-        More info: ${chalk.yellow(
+        )} field from ${picocolors.blue(mainConfigPath)}.
+        More info: ${picocolors.yellow(
           'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vite-builder-uses-vite-config-automatically'
         )}\n`;
         disclaimer = dedent`\n\n
-        The ${chalk.magenta(
+        The ${picocolors.magenta(
           '@storybook/sveltekit'
-        )} package provides great user experience for SvelteKit users, and we highly recommend you to read more about it at ${chalk.yellow(
+        )} package provides great user experience for SvelteKit users, and we highly recommend you to read more about it at ${picocolors.yellow(
           'https://github.com/storybookjs/storybook/blob/next/code/frameworks/sveltekit/README.md'
         )}
         `;
@@ -402,14 +418,14 @@ export const newFrameworks: Fix<NewFrameworkRunOptions> = {
 
       Storybook 7 introduced the concept of frameworks, which abstracts configuration for renderers (e.g. React, Vue), builders (e.g. Webpack, Vite) and defaults to make integrations easier.
 
-      Your project should be updated to use Storybook's framework: ${chalk.magenta(
+      Your project should be updated to use Storybook's framework: ${picocolors.magenta(
         frameworkPackage
       )}. We can attempt to do this for you automatically.
 
       Here are the steps this migration will do to migrate your project:
       ${migrationSteps}
 
-      To learn more about the new framework format, see: ${chalk.yellow(
+      To learn more about the new framework format, see: ${picocolors.yellow(
         'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#new-framework-api'
       )}${disclaimer}
     `;

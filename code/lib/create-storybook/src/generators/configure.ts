@@ -1,9 +1,9 @@
+import { stat, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import { SupportedLanguage, externalFrameworks } from 'storybook/internal/cli';
 import { logger } from 'storybook/internal/node-logger';
 
-import fse from 'fs-extra';
 import { dedent } from 'ts-dedent';
 
 interface ConfigureMainOptions {
@@ -16,11 +16,10 @@ interface ConfigureMainOptions {
   /**
    * Extra values for main.js
    *
-   * In order to provide non-serializable data like functions, you can use
-   * { value: '%%yourFunctionCall()%%' }
+   * In order to provide non-serializable data like functions, you can use `{ value:
+   * '%%yourFunctionCall()%%' }`
    *
-   * '%% and %%' will be replaced.
-   *
+   * `%%` and `%%` will be replaced.
    */
   [key: string]: any;
 }
@@ -36,11 +35,17 @@ interface ConfigurePreviewOptions {
   rendererId: string;
 }
 
+const pathExists = async (path: string) => {
+  return stat(path)
+    .then(() => true)
+    .catch(() => false);
+};
+
 /**
- * We need to clean up the paths in case of pnp
- * input: "path.dirname(require.resolve(path.join('@storybook/react-webpack5', 'package.json')))"
- * output: "@storybook/react-webpack5"
- * */
+ * We need to clean up the paths in case of pnp input:
+ * `path.dirname(require.resolve(path.join('@storybook/react-webpack5', 'package.json')))` output:
+ * `@storybook/react-webpack5`
+ */
 const sanitizeFramework = (framework: string) => {
   // extract either @storybook/<framework> or storybook-<framework>
   const matches = framework.match(/(@storybook\/\w+(?:-\w+)*)|(storybook-(\w+(?:-\w+)*))/g);
@@ -60,7 +65,7 @@ export async function configureMain({
   ...custom
 }: ConfigureMainOptions) {
   const srcPath = resolve(storybookConfigFolder, '../src');
-  const prefix = (await fse.pathExists(srcPath)) ? '../src' : '../stories';
+  const prefix = (await pathExists(srcPath)) ? '../src' : '../stories';
   const config = {
     stories: [`${prefix}/**/*.mdx`, `${prefix}/**/*.stories.@(${extensions.join('|')})`],
     addons,
@@ -115,7 +120,7 @@ export async function configureMain({
     logger.verbose(`Failed to prettify ${mainPath}`);
   }
 
-  await fse.writeFile(mainPath, mainJsContents, { encoding: 'utf8' });
+  await writeFile(mainPath, mainJsContents, { encoding: 'utf8' });
 }
 
 export async function configurePreview(options: ConfigurePreviewOptions) {
@@ -135,7 +140,7 @@ export async function configurePreview(options: ConfigurePreviewOptions) {
   const previewPath = `./${options.storybookConfigFolder}/preview.${isTypescript ? 'ts' : 'js'}`;
 
   // If the framework template included a preview then we have nothing to do
-  if (await fse.pathExists(previewPath)) {
+  if (await pathExists(previewPath)) {
     return;
   }
 
@@ -178,5 +183,5 @@ export async function configurePreview(options: ConfigurePreviewOptions) {
     logger.verbose(`Failed to prettify ${previewPath}`);
   }
 
-  await fse.writeFile(previewPath, preview, { encoding: 'utf8' });
+  await writeFile(previewPath, preview, { encoding: 'utf8' });
 }

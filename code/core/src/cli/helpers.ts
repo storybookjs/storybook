@@ -1,4 +1,5 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { cp, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
 import {
@@ -10,15 +11,14 @@ import {
 import { versions as storybookMonorepoPackages } from '@storybook/core/common';
 import type { SupportedFrameworks, SupportedRenderers } from '@storybook/core/types';
 
-import chalk from 'chalk';
 import { findUpSync } from 'find-up';
-import { copy, copySync, pathExists, readFile, writeFile } from 'fs-extra';
-import { coerce, satisfies } from 'semver';
+import picocolors from 'picocolors';
+import { coerce, major, satisfies } from 'semver';
 import stripJsonComments from 'strip-json-comments';
 import invariant from 'tiny-invariant';
 
 import { getRendererDir } from './dirs';
-import { CoreBuilder, SupportedLanguage } from './project_types';
+import { CommunityBuilder, CoreBuilder, SupportedLanguage } from './project_types';
 
 const logger = console;
 
@@ -34,7 +34,7 @@ export function readFileAsJson(jsonPath: string, allowComments?: boolean) {
   try {
     return JSON.parse(jsonContent);
   } catch (e) {
-    logger.error(chalk.red(`Invalid json in file: ${filePath}`));
+    logger.error(picocolors.red(`Invalid json in file: ${filePath}`));
     throw e;
   }
 }
@@ -50,17 +50,25 @@ export const writeFileAsJson = (jsonPath: string, content: unknown) => {
 };
 
 /**
- * Detect if any babel dependencies need to be added to the project
- * This is currently used by react-native generator
- * @param {Object} packageJson The current package.json so we can inspect its contents
- * @returns {Array} Contains the packages and versions that need to be installed
+ * Detect if any babel dependencies need to be added to the project This is currently used by
+ * react-native generator
+ *
  * @example
- * const babelDependencies = await getBabelDependencies(packageManager, npmOptions, packageJson);
- * // you can then spread the result when using installDependencies
+ *
+ * ```ts
+ * const babelDependencies = await getBabelDependencies(
+ *   packageManager,
+ *   npmOptions,
+ *   packageJson
+ * ); // you can then spread the result when using installDependencies
  * installDependencies(npmOptions, [
  *   `@storybook/react@${storybookVersion}`,
  *   ...babelDependencies,
  * ]);
+ * ```
+ *
+ * @param {Object} packageJson The current package.json so we can inspect its contents
+ * @returns {Array} Contains the packages and versions that need to be installed
  */
 export async function getBabelDependencies(
   packageManager: JsPackageManager,
@@ -122,7 +130,7 @@ export function copyTemplate(templateRoot: string, destination = '.') {
     throw new Error(`Couldn't find template dir`);
   }
 
-  copySync(templateDir, destination, { overwrite: true });
+  cpSync(templateDir, destination, { recursive: true });
 }
 
 type CopyTemplateFilesOptions = {
@@ -133,12 +141,13 @@ type CopyTemplateFilesOptions = {
   destination?: string;
 };
 
-/**
- * @deprecated Please use `frameworkToRenderer` from `@storybook/core-common` instead
- */
+/** @deprecated Please use `frameworkToRenderer` from `@storybook/core-common` instead */
 export const frameworkToRenderer = CoreFrameworkToRenderer;
 
-export const frameworkToDefaultBuilder: Record<SupportedFrameworks, CoreBuilder> = {
+export const frameworkToDefaultBuilder: Record<
+  SupportedFrameworks,
+  CoreBuilder | CommunityBuilder
+> = {
   angular: CoreBuilder.Webpack5,
   ember: CoreBuilder.Webpack5,
   'html-vite': CoreBuilder.Vite,
@@ -159,7 +168,30 @@ export const frameworkToDefaultBuilder: Record<SupportedFrameworks, CoreBuilder>
   'vue3-webpack5': CoreBuilder.Webpack5,
   'web-components-vite': CoreBuilder.Vite,
   'web-components-webpack5': CoreBuilder.Webpack5,
+  // Only to pass type checking, will never be used
+  'react-rsbuild': CommunityBuilder.Rsbuild,
+  'vue3-rsbuild': CommunityBuilder.Rsbuild,
 };
+
+/**
+ * Return the installed version of a package, or the coerced version specifier from package.json if
+ * it's a dependency but not installed (e.g. in a fresh project)
+ */
+export async function getVersionSafe(packageManager: JsPackageManager, packageName: string) {
+  try {
+    let version = await packageManager.getInstalledVersion(packageName);
+    if (!version) {
+      const deps = await packageManager.getAllDependencies();
+      const versionSpecifier = deps[packageName];
+      version = versionSpecifier ?? '';
+    }
+    const coerced = coerce(version, { includePrerelease: true });
+    return coerced?.toString();
+  } catch (err) {
+    // fall back to no version
+  }
+  return undefined;
+}
 
 export async function copyTemplateFiles({
   packageManager,
@@ -168,13 +200,26 @@ export async function copyTemplateFiles({
   destination,
   commonAssetsDir,
 }: CopyTemplateFilesOptions) {
-  const languageFolderMapping: Record<SupportedLanguage | 'typescript', string> = {
+  let languageFolderMapping: Record<SupportedLanguage | 'typescript', string> = {
     // keeping this for backwards compatibility in case community packages are using it
     typescript: 'ts',
     [SupportedLanguage.JAVASCRIPT]: 'js',
     [SupportedLanguage.TYPESCRIPT_3_8]: 'ts-3-8',
     [SupportedLanguage.TYPESCRIPT_4_9]: 'ts-4-9',
   };
+  // FIXME: remove after 9.0
+  if (renderer === 'svelte') {
+    const svelteVersion = await getVersionSafe(packageManager, 'svelte');
+    if (svelteVersion && major(svelteVersion) >= 5) {
+      languageFolderMapping = {
+        // keeping this for backwards compatibility in case community packages are using it
+        typescript: 'ts',
+        [SupportedLanguage.JAVASCRIPT]: 'svelte-5-js',
+        [SupportedLanguage.TYPESCRIPT_3_8]: 'svelte-5-ts-3-8',
+        [SupportedLanguage.TYPESCRIPT_4_9]: 'svelte-5-ts-4-9',
+      };
+    }
+  }
   const templatePath = async () => {
     const baseDir = await getRendererDir(packageManager, renderer);
     const assetsDir = join(baseDir, 'template', 'cli');
@@ -185,30 +230,30 @@ export async function copyTemplateFiles({
     const assetsTS38 = join(assetsDir, languageFolderMapping[SupportedLanguage.TYPESCRIPT_3_8]);
 
     // Ideally use the assets that match the language & version.
-    if (await pathExists(assetsLanguage)) {
+    if (existsSync(assetsLanguage)) {
       return assetsLanguage;
     }
     // Use fallback typescript 3.8 assets if new ones aren't available
-    if (language === SupportedLanguage.TYPESCRIPT_4_9 && (await pathExists(assetsTS38))) {
+    if (language === SupportedLanguage.TYPESCRIPT_4_9 && existsSync(assetsTS38)) {
       return assetsTS38;
     }
     // Fallback further to TS (for backwards compatibility purposes)
-    if (await pathExists(assetsTS)) {
+    if (existsSync(assetsTS)) {
       return assetsTS;
     }
     // Fallback further to JS
-    if (await pathExists(assetsJS)) {
+    if (existsSync(assetsJS)) {
       return assetsJS;
     }
     // As a last resort, look for the root of the asset directory
-    if (await pathExists(assetsDir)) {
+    if (existsSync(assetsDir)) {
       return assetsDir;
     }
     throw new Error(`Unsupported renderer: ${renderer} (${baseDir})`);
   };
 
   const targetPath = async () => {
-    if (await pathExists('./src')) {
+    if (existsSync('./src')) {
       return './src/stories';
     }
     return './stories';
@@ -216,16 +261,19 @@ export async function copyTemplateFiles({
 
   const destinationPath = destination ?? (await targetPath());
   if (commonAssetsDir) {
-    await copy(commonAssetsDir, destinationPath, {
-      overwrite: true,
+    await cp(commonAssetsDir, destinationPath, {
+      recursive: true,
     });
   }
-  await copy(await templatePath(), destinationPath, { overwrite: true });
+  await cp(await templatePath(), destinationPath, { recursive: true });
 
   if (commonAssetsDir) {
     let rendererType = frameworkToRenderer[renderer] || 'react';
+
     // This is only used for docs links and the docs site uses `vue` for both `vue` & `vue3` renderers
-    if (rendererType === 'vue3') rendererType = 'vue';
+    if (rendererType === 'vue3') {
+      rendererType = 'vue';
+    }
     await adjustTemplate(join(destinationPath, 'Configure.mdx'), { renderer: rendererType });
   }
 }
@@ -233,7 +281,7 @@ export async function copyTemplateFiles({
 export async function adjustTemplate(templatePath: string, templateData: Record<string, any>) {
   // for now, we're just doing a simple string replace
   // in the future we might replace this with a proper templating engine
-  let template = await readFile(templatePath, 'utf8');
+  let template = await readFile(templatePath, { encoding: 'utf8' });
 
   Object.keys(templateData).forEach((key) => {
     template = template.replaceAll(`{{${key}}}`, `${templateData[key]}`);

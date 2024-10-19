@@ -1,7 +1,7 @@
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 import type { DocsOptions } from 'storybook/internal/types';
 
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import { updateMainConfig } from '../helpers/mainConfigFile';
@@ -18,24 +18,25 @@ interface Options {
   previewConfigPath?: string;
 }
 
-/**
- */
 export const autodocsTags: Fix<Options> = {
   id: 'autodocs-tags',
   versionRange: ['*.*.*', '>=8.0.*'],
   async check({ mainConfig, mainConfigPath, previewConfigPath }) {
     const autodocs = mainConfig?.docs?.autodocs;
-    if (autodocs === undefined) return null;
+
+    if (autodocs === undefined) {
+      return null;
+    }
 
     if (autodocs === true && !previewConfigPath) {
       throw Error(dedent`
-        ❌ Failed to remove the deprecated ${chalk.cyan('docs.autodocs')} setting from ${chalk.cyan(
-          mainConfigPath
-        )}.
+        ❌ Failed to remove the deprecated ${picocolors.cyan(
+          'docs.autodocs'
+        )} setting from ${picocolors.cyan(mainConfigPath)}.
         
-        There is no preview config file in which to add the ${chalk.cyan('autodocs')} tag.
+        There is no preview config file in which to add the ${picocolors.cyan('autodocs')} tag.
 
-        Please perform the migration by hand: ${chalk.yellow(MIGRATION)}
+        Please perform the migration by hand: ${picocolors.yellow(MIGRATION)}
       `);
       return null;
     }
@@ -51,21 +52,23 @@ export const autodocsTags: Fix<Options> = {
       falseMessage = dedent`
 
 
-        There is no ${chalk.cyan('docs.autodocs = false')} equivalent.
-        You'll need to check your stories to ensure none are tagged with ${chalk.cyan('autodocs')}.
+        There is no ${picocolors.cyan('docs.autodocs = false')} equivalent.
+        You'll need to check your stories to ensure none are tagged with ${picocolors.cyan(
+          'autodocs'
+        )}.
       `;
     } else if (autodocs === true) {
-      trueMessage = ` and update ${chalk.cyan(previewConfigPath)}`;
+      trueMessage = ` and update ${picocolors.cyan(previewConfigPath)}`;
     }
 
     return dedent`
-      The ${chalk.cyan('docs.autodocs')} setting in ${chalk.cyan(
+      The ${picocolors.cyan('docs.autodocs')} setting in ${picocolors.cyan(
         mainConfigPath
       )} is deprecated.${falseMessage}
         
-      Learn more: ${chalk.yellow(MIGRATION)}
+      Learn more: ${picocolors.yellow(MIGRATION)}
       
-      Remove ${chalk.cyan('docs.autodocs')}${trueMessage}?
+      Remove ${picocolors.cyan('docs.autodocs')}${trueMessage}?
     `;
   },
 

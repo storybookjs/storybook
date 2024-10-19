@@ -1,6 +1,6 @@
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import semver from 'semver';
 import { dedent } from 'ts-dedent';
 
@@ -22,11 +22,11 @@ export const checkWebpack5Builder = async ({
 
         To upgrade to the latest stable release, run this from your project directory:
 
-        ${chalk.cyan('npx storybook@latest upgrade')}
+        ${picocolors.cyan('npx storybook@latest upgrade')}
 
         To upgrade to the latest pre-release, run this from your project directory:
 
-        ${chalk.cyan('npx storybook@next upgrade')}
+        ${picocolors.cyan('npx storybook@next upgrade')}
       `.trim()
     );
     return null;

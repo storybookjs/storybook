@@ -37,9 +37,7 @@ type StorybookConfigFramework = {
     StorybookConfigBase['typescript'];
 };
 
-/**
- * The interface for Storybook configuration in `main.ts` files.
- */
+/** The interface for Storybook configuration in `main.ts` files. */
 export type StorybookConfig = Omit<
   StorybookConfigBase,
   keyof StorybookConfigWebpack | keyof StorybookConfigFramework

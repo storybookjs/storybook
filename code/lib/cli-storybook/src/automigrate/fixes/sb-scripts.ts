@@ -1,7 +1,7 @@
 import type { PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
 import type { PackageJson } from 'storybook/internal/types';
 
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import semver from 'semver';
 import { dedent } from 'ts-dedent';
 
@@ -16,10 +16,10 @@ interface SbScriptsRunOptions {
 const logger = console;
 
 /**
- * Slightly big function because JS regex doesn't have proper full-word boundary.
- * This goes through all the words in each script, and only return the scripts
- * that do contain the actual sb binary, and not something like "npm run start-storybook"
- * which could actually be a custom script even though the name matches the legacy binary name
+ * Slightly big function because JS regex doesn't have proper full-word boundary. This goes through
+ * all the words in each script, and only return the scripts that do contain the actual sb binary,
+ * and not something like "npm run start-storybook" which could actually be a custom script even
+ * though the name matches the legacy binary name
  */
 export const getStorybookScripts = (allScripts: NonNullable<PackageJson['scripts']>) => {
   return Object.keys(allScripts).reduce(
@@ -74,6 +74,7 @@ export const getStorybookScripts = (allScripts: NonNullable<PackageJson['scripts
  * Is the user using start-storybook or build-storybook in its scripts
  *
  * If so:
+ *
  * - Change start-storybook and build-storybook scripts to storybook dev and storybook build
  * - Change sb to storybook if they are using sb
  */
@@ -100,16 +101,16 @@ export const sbScripts: Fix<SbScriptsRunOptions> = {
   },
 
   prompt({ storybookVersion, storybookScripts }) {
-    const sbFormatted = chalk.cyan(`Storybook ${storybookVersion}`);
+    const sbFormatted = picocolors.cyan(`Storybook ${storybookVersion}`);
 
     const newScriptsMessage = Object.keys(storybookScripts).reduce((acc: string[], scriptKey) => {
       acc.push(
         [
-          chalk.bold(scriptKey),
+          picocolors.bold(scriptKey),
           'from:',
-          chalk.cyan(storybookScripts[scriptKey].before),
+          picocolors.cyan(storybookScripts[scriptKey].before),
           'to:',
-          chalk.cyan(storybookScripts[scriptKey].after),
+          picocolors.cyan(storybookScripts[scriptKey].after),
         ].join('\n')
       );
       return acc;
@@ -117,16 +118,16 @@ export const sbScripts: Fix<SbScriptsRunOptions> = {
 
     return dedent`
       We've detected you are using ${sbFormatted} with scripts from previous versions of Storybook.
-      Starting in Storybook 7, the ${chalk.yellow('start-storybook')} and ${chalk.yellow(
+      Starting in Storybook 7, the ${picocolors.yellow('start-storybook')} and ${picocolors.yellow(
         'build-storybook'
-      )} binaries have changed to ${chalk.magenta('storybook dev')} and ${chalk.magenta(
+      )} binaries have changed to ${picocolors.magenta('storybook dev')} and ${picocolors.magenta(
         'storybook build'
       )} respectively.
       In order to work with ${sbFormatted}, your storybook scripts have to be adjusted to use the binary. We can adjust them for you:
 
       ${newScriptsMessage.join('\n\n')}
 
-      In case this migration did not cover all of your scripts, or you'd like more info: ${chalk.yellow(
+      In case this migration did not cover all of your scripts, or you'd like more info: ${picocolors.yellow(
         'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#start-storybook--build-storybook-binaries-removed'
       )}
       `;

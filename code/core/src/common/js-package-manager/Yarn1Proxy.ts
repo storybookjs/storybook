@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { FindPackageVersionsError } from '@storybook/core/server-errors';
 
 import { findUp } from 'find-up';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
 import { createLogStream } from '../utils/cli';
 import { JsPackageManager } from './JsPackageManager';

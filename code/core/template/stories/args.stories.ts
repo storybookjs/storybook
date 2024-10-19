@@ -8,7 +8,13 @@ import {
   UPDATE_STORY_ARGS,
 } from '@storybook/core/core-events';
 
-import pick from 'lodash/pick';
+function pick(obj, keys) {
+  const result = {};
+  for (const key of keys) {
+    result[key] = obj[key];
+  }
+  return result;
+}
 
 export default {
   component: globalThis.Components.Pre,
@@ -67,6 +73,7 @@ export const Targets = {
       b: 'b',
     });
   },
+  tags: ['!vitest'],
 };
 
 export const Events = {
@@ -85,4 +92,5 @@ export const Events = {
     await new Promise((resolve) => channel.once(STORY_ARGS_UPDATED, resolve));
     await within(canvasElement).findByText(/updated/);
   },
+  tags: ['!vitest'],
 };

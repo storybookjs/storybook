@@ -6,13 +6,13 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
   styles: [
     `
       button {
+        cursor: pointer;
+        margin: 10px;
         border: 1px solid #eee;
         border-radius: 3px;
         background-color: #ffffff;
-        cursor: pointer;
-        font-size: 15px;
         padding: 3px 10px;
-        margin: 10px;
+        font-size: 15px;
       }
     `,
   ],

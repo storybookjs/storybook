@@ -1,7 +1,6 @@
-import { writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 
-import { readJSON } from 'fs-extra';
 import slash from 'slash';
 
 import { sortPackageJson } from '../../../../scripts/prepare/tools';
@@ -11,10 +10,12 @@ const cwd = process.cwd();
 
 export async function generatePackageJsonFile(entries: ReturnType<typeof getEntries>) {
   const location = join(cwd, 'package.json');
-  const pkgJson = await readJSON(location);
+  const pkgJson = JSON.parse(await readFile(location, { encoding: 'utf8' }));
 
-  /** Re-create the `exports` field in `code/core/package.json`
-   * This way we only need to update the `./scripts/entries.ts` file to ensure all things we create actually exist and are mapped to the correct path.
+  /**
+   * Re-create the `exports` field in `code/core/package.json` This way we only need to update the
+   * `./scripts/entries.ts` file to ensure all things we create actually exist and are mapped to the
+   * correct path.
    */
   pkgJson.exports = entries.reduce<Record<string, Record<string, string>>>((acc, entry) => {
     let main = './' + slash(relative(cwd, entry.file).replace('src', 'dist'));
@@ -47,8 +48,11 @@ export async function generatePackageJsonFile(entries: ReturnType<typeof getEntr
   // Add the package.json file to the exports, so we can use it to `require.resolve` the package's root easily
   pkgJson.exports['./package.json'] = './package.json';
 
-  /** Add the `typesVersion` field to `code/core/package.json`, to make typescript respect and find the correct type annotation files, even when not configured with `"moduleResolution": "Bundler"`
-   * If we even decide to only support `"moduleResolution": "Bundler"`, we should be able to remove this part, but that would be a breaking change.
+  /**
+   * Add the `typesVersion` field to `code/core/package.json`, to make typescript respect and find
+   * the correct type annotation files, even when not configured with `"moduleResolution":
+   * "Bundler"` If we even decide to only support `"moduleResolution": "Bundler"`, we should be able
+   * to remove this part, but that would be a breaking change.
    */
   pkgJson.typesVersions = {
     '*': {

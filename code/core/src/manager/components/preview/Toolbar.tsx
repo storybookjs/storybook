@@ -47,7 +47,9 @@ export const fullScreenTool: Addon_BaseType = {
   render: () => {
     const { isMobile } = useLayout();
 
-    if (isMobile) return null;
+    if (isMobile) {
+      return null;
+    }
 
     return (
       <Consumer filter={fullScreenMapper}>
@@ -186,7 +188,10 @@ function toolbarItemHasBeenExcluded(item: Partial<Addon_BaseType>, entry: LeafEn
   const toolbarItemsFromStoryParameters = 'toolbar' in parameters ? parameters.toolbar : undefined;
   const { toolbar: toolbarItemsFromAddonsConfig } = addons.getConfig();
 
-  const toolbarItems = merge(toolbarItemsFromAddonsConfig, toolbarItemsFromStoryParameters);
+  const toolbarItems = merge(
+    toolbarItemsFromAddonsConfig || {},
+    toolbarItemsFromStoryParameters || {}
+  );
 
   // @ts-expect-error (non strict)
   return toolbarItems ? !!toolbarItems[item?.id]?.hidden : false;

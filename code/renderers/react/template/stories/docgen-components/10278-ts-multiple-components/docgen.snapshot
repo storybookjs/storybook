@@ -1,15 +1,11 @@
 /* eslint-disable react/destructuring-assignment */
 import React from 'react';
-/**
- * A component
- */
+/** A component */
 const A = props => {
   return /*#__PURE__*/React.createElement(React.Fragment, null, "Hi ", props.aProperty);
 };
 
-/**
- * B component
- */
+/** B component */
 const B = props => {
   return /*#__PURE__*/React.createElement(React.Fragment, null, "Hi ", props.bProperty);
 };

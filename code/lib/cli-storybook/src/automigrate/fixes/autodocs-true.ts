@@ -1,4 +1,4 @@
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import { updateMainConfig } from '../helpers/mainConfigFile';
@@ -10,9 +10,7 @@ interface AutodocsTrueFrameworkRunOptions {
   value?: boolean | 'tag';
 }
 
-/**
- * Set the docs.autodocs option to true if it isn't already set
- */
+/** Set the `docs.autodocs` option to true if it isn't already set */
 export const autodocsTrue: Fix<AutodocsTrueFrameworkRunOptions> = {
   id: 'autodocsTrue',
 
@@ -44,7 +42,9 @@ export const autodocsTrue: Fix<AutodocsTrueFrameworkRunOptions> = {
   },
 
   prompt({ value }) {
-    const autodocsFormatted = chalk.cyan(`docs: { autodocs: ${JSON.stringify(value ?? true)} }`);
+    const autodocsFormatted = picocolors.cyan(
+      `docs: { autodocs: ${JSON.stringify(value ?? true)} }`
+    );
     const tagWarning = dedent`
       NOTE: if you're upgrading from an older 7.0-beta using the 'docsPage' tag,
       please update your story files to use the 'autodocs' tag instead.
@@ -61,7 +61,7 @@ export const autodocsTrue: Fix<AutodocsTrueFrameworkRunOptions> = {
 
       ${autodocsFormatted}
       ${value === 'tag' ? tagWarning : ''}
-      More info: ${chalk.yellow(
+      More info: ${picocolors.yellow(
         'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#autodocs-changes'
       )}
     `;
@@ -74,7 +74,7 @@ export const autodocsTrue: Fix<AutodocsTrueFrameworkRunOptions> = {
 
       ${autodocsFormatted}
 
-      More info: ${chalk.yellow(
+      More info: ${picocolors.yellow(
         'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#autodocs-changes'
       )}
     `;

@@ -26,6 +26,8 @@ export const frameworkToRenderer: Record<
   'vue3-webpack5': 'vue3',
   'web-components-vite': 'web-components',
   'web-components-webpack5': 'web-components',
+  'react-rsbuild': 'react',
+  'vue3-rsbuild': 'vue3',
   // renderers
   html: 'html',
   preact: 'preact',

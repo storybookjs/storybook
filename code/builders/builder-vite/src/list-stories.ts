@@ -3,6 +3,7 @@ import { isAbsolute, join } from 'node:path';
 import { commonGlobOptions, normalizeStories } from 'storybook/internal/common';
 import type { Options } from 'storybook/internal/types';
 
+// eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';
 import slash from 'slash';
 

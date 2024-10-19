@@ -6,7 +6,7 @@ import { type Call, CallStates, type ControlStates } from '@storybook/instrument
 
 import { transparentize } from 'polished';
 
-import { isTestAssertionError } from '../utils';
+import { isTestAssertionError, useAnsiToHtmlFilter } from '../utils';
 import { Empty } from './EmptyState';
 import { Interaction } from './Interaction';
 import { Subnav } from './Subnav';
@@ -97,6 +97,7 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
     onScrollToEnd,
     endRef,
   }) {
+    const filter = useAnsiToHtmlFilter();
     return (
       <Container>
         {(interactions.length > 0 || hasException) && (
@@ -131,9 +132,12 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
             <CaughtExceptionTitle>
               Caught exception in <CaughtExceptionCode>play</CaughtExceptionCode> function
             </CaughtExceptionTitle>
-            <CaughtExceptionStack data-chromatic="ignore">
-              {printSerializedError(caughtException)}
-            </CaughtExceptionStack>
+            <CaughtExceptionStack
+              data-chromatic="ignore"
+              dangerouslySetInnerHTML={{
+                __html: filter.toHtml(printSerializedError(caughtException)),
+              }}
+            ></CaughtExceptionStack>
           </CaughtException>
         )}
         {unhandledErrors && (

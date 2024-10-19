@@ -27,45 +27,48 @@ export const resolveNextConfig = async ({
   return loadConfig(PHASE_DEVELOPMENT_SERVER, dir, undefined);
 };
 
-// This is to help the addon in development
-// Without it, webpack resolves packages in its node_modules instead of the example's node_modules
-export const addScopedAlias = (baseConfig: WebpackConfig, name: string, alias?: string): void => {
+export function setAlias(baseConfig: WebpackConfig, name: string, alias: string) {
   baseConfig.resolve ??= {};
   baseConfig.resolve.alias ??= {};
   const aliasConfig = baseConfig.resolve.alias;
 
-  const scopedAlias = scopedResolve(`${alias ?? name}`);
-
   if (Array.isArray(aliasConfig)) {
     aliasConfig.push({
       name,
-      alias: scopedAlias,
+      alias,
     });
   } else {
-    aliasConfig[name] = scopedAlias;
+    aliasConfig[name] = alias;
   }
+}
+
+// This is to help the addon in development
+// Without it, webpack resolves packages in its node_modules instead of the example's node_modules
+export const addScopedAlias = (baseConfig: WebpackConfig, name: string, alias?: string): void => {
+  const scopedAlias = scopedResolve(`${alias ?? name}`);
+
+  setAlias(baseConfig, name, scopedAlias);
 };
 
 /**
+ * @example // before main script path truncation require.resolve('styled-jsx') ===
+ * '/some/path/node_modules/styled-jsx/index.js // after main script path truncation
+ * scopedResolve('styled-jsx') === '/some/path/node_modules/styled-jsx'
  *
- * @param id the module id
- * @returns a path to the module id scoped to the project folder without the main script path at the end
+ * @param id The module id
+ * @returns A path to the module id scoped to the project folder without the main script path at the
+ *   end
  * @summary
  * This is to help the addon in development.
  * Without it, the addon resolves packages in its node_modules instead of the example's node_modules.
  * Because require.resolve will also include the main script as part of the path, this function strips
  * that to just include the path to the module folder
- * @example
- * // before main script path truncation
- * require.resolve('styled-jsx') === '/some/path/node_modules/styled-jsx/index.js
- * // after main script path truncation
- * scopedResolve('styled-jsx') === '/some/path/node_modules/styled-jsx'
  */
 export const scopedResolve = (id: string): string => {
   let scopedModulePath;
 
   try {
-    // TODO: Remove in next major release (SB 8.0) and use the statement in the catch block per default instead
+    // TODO: Remove in next major release (SB 9.0) and use the statement in the catch block per default instead
     scopedModulePath = require.resolve(id, { paths: [resolve()] });
   } catch (e) {
     scopedModulePath = require.resolve(id);

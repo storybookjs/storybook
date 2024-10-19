@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/ban-types */
-import { platform } from 'os';
+import { platform } from 'node:os';
 
 const WINDOWS_PLATFORM = 'win32';
 // Implement these whenever needed...

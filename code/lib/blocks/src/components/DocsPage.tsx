@@ -12,11 +12,12 @@ import { transparentize } from 'polished';
  * :where(div:not(.sb-unstyled, .sb-anchor, .sb-unstyled div, .sb-unstyled div))
  *
  * 1. ':where': ensures this has a specificity of 0, making it easier to override.
- * 3. 'div:not(...)': selects all div elements that are not...
- * 4. '.sb-anchor': Ensures anchors are not styled, which would have led to inheritable styles bleeding all the way down to stories
- * 5. '.sb-unstyled, .sb-unstyled div': any element with sb-unstyled class, or descendants thereof
- * 6. .sb-unstyled is an escape hatch that allows the user to opt-out of the default styles
- *    by wrapping their content in an element with the 'sb-unstyled' class or the <Unstyled /> block.
+ * 2. 'div:not(...)': selects all div elements that are not...
+ * 3. '.sb-anchor': Ensures anchors are not styled, which would have led to inheritable styles bleeding
+ *    all the way down to stories
+ * 4. '.sb-unstyled, .sb-unstyled div': any element with sb-unstyled class, or descendants thereof
+ * 5. .sb-unstyled is an escape hatch that allows the user to opt-out of the default styles by wrapping
+ *    their content in an element with the 'sb-unstyled' class or the <Unstyled /> block.
  *
  * Most Storybook doc blocks has the sb-unstyled class to opt-out of the default styles.
  */

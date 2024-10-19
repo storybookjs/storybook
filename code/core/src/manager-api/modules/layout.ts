@@ -5,8 +5,7 @@ import { global } from '@storybook/global';
 
 import { SET_CONFIG } from '@storybook/core/core-events';
 
-import { dequal as deepEqual } from 'dequal';
-import pick from 'lodash/pick.js';
+import { isEqual as deepEqual, pick, toMerged } from 'es-toolkit';
 
 import merge from '../lib/merge';
 import type { ModuleFn } from '../lib/types';
@@ -30,51 +29,54 @@ export interface SubState {
 export interface SubAPI {
   /**
    * Toggles the fullscreen mode of the Storybook UI.
-   * @param toggled - Optional boolean value to set the fullscreen mode to. If not provided, it will toggle the current state.
+   *
+   * @param toggled - Optional boolean value to set the fullscreen mode to. If not provided, it will
+   *   toggle the current state.
    */
   toggleFullscreen: (toggled?: boolean) => void;
   /**
    * Toggles the visibility of the panel in the Storybook UI.
-   * @param toggled - Optional boolean value to set the panel visibility to. If not provided, it will toggle the current state.
+   *
+   * @param toggled - Optional boolean value to set the panel visibility to. If not provided, it
+   *   will toggle the current state.
    */
   togglePanel: (toggled?: boolean) => void;
   /**
    * Toggles the position of the panel in the Storybook UI.
-   * @param position - Optional string value to set the panel position to. If not provided, it will toggle between 'bottom' and 'right'.
+   *
+   * @param position - Optional string value to set the panel position to. If not provided, it will
+   *   toggle between 'bottom' and 'right'.
    */
   togglePanelPosition: (position?: API_PanelPositions) => void;
   /**
    * Toggles the visibility of the navigation bar in the Storybook UI.
-   * @param toggled - Optional boolean value to set the navigation bar visibility to. If not provided, it will toggle the current state.
+   *
+   * @param toggled - Optional boolean value to set the navigation bar visibility to. If not
+   *   provided, it will toggle the current state.
    */
   toggleNav: (toggled?: boolean) => void;
   /**
    * Toggles the visibility of the toolbar in the Storybook UI.
-   * @param toggled - Optional boolean value to set the toolbar visibility to. If not provided, it will toggle the current state.
+   *
+   * @param toggled - Optional boolean value to set the toolbar visibility to. If not provided, it
+   *   will toggle the current state.
    */
   toggleToolbar: (toggled?: boolean) => void;
   /**
    * Sets the options for the Storybook UI.
+   *
    * @param options - An object containing the options to set.
    */
   setOptions: (options: any) => void;
-  /**
-   * Sets the sizes of the resizable elements in the layout.
-   */
+  /** Sets the sizes of the resizable elements in the layout. */
   setSizes: (
     options: Partial<Pick<API_Layout, 'navSize' | 'bottomPanelHeight' | 'rightPanelWidth'>>
   ) => void;
-  /**
-   * getIsFullscreen - Returns the current fullscreen mode of the Storybook UI.
-   */
+  /** GetIsFullscreen - Returns the current fullscreen mode of the Storybook UI. */
   getIsFullscreen: () => boolean;
-  /**
-   * getIsPanelShown - Returns the current visibility of the panel in the Storybook UI.
-   */
+  /** GetIsPanelShown - Returns the current visibility of the panel in the Storybook UI. */
   getIsPanelShown: () => boolean;
-  /**
-   * getIsNavShown - Returns the current visibility of the navigation bar in the Storybook UI.
-   */
+  /** GetIsNavShown - Returns the current visibility of the navigation bar in the Storybook UI. */
   getIsNavShown: () => boolean;
 }
 
@@ -316,14 +318,13 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
       return {
         ...defaultLayoutState,
         layout: {
-          ...defaultLayoutState.layout,
-          ...pick(options, Object.keys(defaultLayoutState.layout)),
+          ...toMerged(
+            defaultLayoutState.layout,
+            pick(options, Object.keys(defaultLayoutState.layout))
+          ),
           ...(singleStory && { navSize: 0 }),
         },
-        ui: {
-          ...defaultLayoutState.ui,
-          ...pick(options, Object.keys(defaultLayoutState.ui)),
-        },
+        ui: toMerged(defaultLayoutState.ui, pick(options, Object.keys(defaultLayoutState.ui))),
         selectedPanel: selectedPanel || defaultLayoutState.selectedPanel,
         theme: theme || defaultLayoutState.theme,
       };
@@ -348,7 +349,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
 
       const updatedLayout = {
         ...layout,
-        ...options.layout,
+        ...(options.layout || {}),
         ...pick(options, Object.keys(layout)),
         ...(singleStory && { navSize: 0 }),
       };
@@ -356,7 +357,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
       const updatedUi = {
         ...ui,
         ...options.ui,
-        ...pick(options, Object.keys(ui)),
+        ...toMerged(options.ui || {}, pick(options, Object.keys(ui))),
       };
 
       const updatedTheme = {
@@ -385,7 +386,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
     },
   };
 
-  const persisted = pick(store.getState(), 'layout', 'selectedPanel');
+  const persisted = pick(store.getState(), ['layout', 'selectedPanel']);
 
   provider.channel?.on(SET_CONFIG, () => {
     api.setOptions(merge(api.getInitialOptions(), persisted));

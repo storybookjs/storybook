@@ -58,10 +58,14 @@ export async function runCodemod(
   if (!parser) {
     const extension = extname(glob).slice(1);
     const knownParser = jscodeshiftToPrettierParser(extension);
-    if (knownParser !== 'babel') inferredParser = extension;
+
+    if (knownParser !== 'babel') {
+      inferredParser = extension;
+    }
   }
 
   // Dynamically import globby because it is a pure ESM module
+  // eslint-disable-next-line depend/ban-dependencies
   const { globby } = await import('globby');
 
   const files = await globby([glob, '!**/node_modules', '!**/dist']);

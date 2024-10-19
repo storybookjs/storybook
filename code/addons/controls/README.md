@@ -24,7 +24,7 @@ export default {
 
 ## Usage
 
-The usage is documented in the [documentation](https://storybook.js.org/docs/react/essentials/controls).
+The usage is documented in the [documentation](https://storybook.js.org/docs/essentials/controls).
 
 ## FAQs
 
@@ -92,7 +92,7 @@ export const Reflow = () => {
 };
 ```
 
-And again, as above, this can be rewritten using [fully custom args](https://storybook.js.org/docs/react/essentials/controls#fully-custom-args):
+And again, as above, this can be rewritten using [fully custom args](https://storybook.js.org/docs/essentials/controls#fully-custom-args):
 
 ```jsx
 export const Reflow = ({ count, label, ...args }) => (
@@ -147,7 +147,7 @@ Basic.args = {
 };
 ```
 
-The `argTypes` annotation (which can also be applied to individual stories if needed), gives Storybook the hints it needs to generate controls in these unsupported cases. See [control annotations](https://storybook.js.org/docs/react/essentials/controls#annotation) for a full list of control types.
+The `argTypes` annotation (which can also be applied to individual stories if needed), gives Storybook the hints it needs to generate controls in these unsupported cases. See [control annotations](https://storybook.js.org/docs/essentials/controls#annotation) for a full list of control types.
 
 It's also possible that your Storybook is misconfigured. If you think this might be the case, please search through Storybook's [Github issues](https://github.com/storybookjs/storybook/issues), and file a new issue if you don't find one that matches your use case.
 

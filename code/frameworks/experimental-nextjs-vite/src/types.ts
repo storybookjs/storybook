@@ -9,11 +9,8 @@ type FrameworkName = CompatibleString<'@storybook/experimental-nextjs-vite'>;
 type BuilderName = CompatibleString<'@storybook/builder-vite'>;
 
 export type FrameworkOptions = {
-  /**
-   * The directory where the Next.js app is located.
-   * @default process.cwd()
-   */
-  nextAppDir?: string;
+  /** The path to the Next.js configuration file. */
+  nextConfigPath?: string;
   builder?: BuilderOptions;
 };
 
@@ -34,9 +31,7 @@ type StorybookConfigFramework = {
   };
 };
 
-/**
- * The interface for Storybook configuration in `main.ts` files.
- */
+/** The interface for Storybook configuration in `main.ts` files. */
 export type StorybookConfig = Omit<
   StorybookConfigBase,
   keyof StorybookConfigVite | keyof StorybookConfigFramework

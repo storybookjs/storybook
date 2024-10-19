@@ -2,13 +2,14 @@
 
 /* eslint-disable import/namespace */
 import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import React from 'react';
 
 import { addons } from 'storybook/internal/preview-api';
 
-import type { Meta } from '@storybook/react';
+import type { ProjectAnnotations } from '@storybook/csf';
+import type { Meta, ReactRenderer } from '@storybook/react';
 
 import * as addonActionsPreview from '@storybook/addon-actions/preview';
 
@@ -16,19 +17,28 @@ import { expectTypeOf } from 'expect-type';
 
 import { composeStories, composeStory, setProjectAnnotations } from '..';
 import type { Button } from './Button';
-import * as stories from './Button.stories';
+import * as ButtonStories from './Button.stories';
+import * as ComponentWithErrorStories from './ComponentWithError.stories';
 
-setProjectAnnotations([{ testingLibraryRender: render }]);
+const HooksStory = composeStory(ButtonStories.HooksStory, ButtonStories.default);
+
+const projectAnnotations = setProjectAnnotations([]);
 
 // example with composeStories, returns an object with all stories composed with args/decorators
-const { CSF3Primary, LoaderStory, MountInPlayFunction } = composeStories(stories);
+const { CSF3Primary, LoaderStory, MountInPlayFunction, MountInPlayFunctionThrow } =
+  composeStories(ButtonStories);
+const { ThrowsError } = composeStories(ComponentWithErrorStories);
+
+beforeAll(async () => {
+  await projectAnnotations.beforeAll?.();
+});
 
 afterEach(() => {
   cleanup();
 });
 
 // example with composeStory, returns a single story composed with args/decorators
-const Secondary = composeStory(stories.CSF2Secondary, stories.default);
+const Secondary = composeStory(ButtonStories.CSF2Secondary, ButtonStories.default);
 describe('renders', () => {
   it('renders primary button', () => {
     render(<CSF3Primary>Hello world</CSF3Primary>);
@@ -56,11 +66,19 @@ describe('renders', () => {
     expect(buttonElement).not.toBeNull();
   });
 
+  it('should throw error when rendering a component with a render error', async () => {
+    await expect(() => ThrowsError.run()).rejects.toThrowError('Error in render');
+  });
+
   it('should render component mounted in play function', async () => {
     await MountInPlayFunction.run();
 
     expect(screen.getByTestId('spy-data').textContent).toEqual('mockFn return value');
     expect(screen.getByTestId('loaded-data').textContent).toEqual('loaded data');
+  });
+
+  it('should throw an error in play function', () => {
+    expect(() => MountInPlayFunctionThrow.run()).rejects.toThrowError('Error thrown in play');
   });
 
   it('should call and compose loaders data', async () => {
@@ -74,21 +92,16 @@ describe('renders', () => {
 });
 
 describe('projectAnnotations', () => {
-  afterEach(() => {
-    cleanup();
-  });
-
   it('renders with default projectAnnotations', () => {
     setProjectAnnotations([
       {
-        testingLibraryRender: render,
         parameters: { injected: true },
         globalTypes: {
           locale: { defaultValue: 'en' },
         },
       },
     ]);
-    const WithEnglishText = composeStory(stories.CSF2StoryWithLocale, stories.default);
+    const WithEnglishText = composeStory(ButtonStories.CSF2StoryWithLocale, ButtonStories.default);
     const { getByText } = render(<WithEnglishText />);
     const buttonElement = getByText('Hello!');
     expect(buttonElement).not.toBeNull();
@@ -96,24 +109,31 @@ describe('projectAnnotations', () => {
   });
 
   it('renders with custom projectAnnotations via composeStory params', () => {
-    const WithPortugueseText = composeStory(stories.CSF2StoryWithLocale, stories.default, {
-      initialGlobals: { locale: 'pt' },
-    });
+    const WithPortugueseText = composeStory(
+      ButtonStories.CSF2StoryWithLocale,
+      ButtonStories.default,
+      {
+        initialGlobals: { locale: 'pt' },
+      }
+    );
     const { getByText } = render(<WithPortugueseText />);
     const buttonElement = getByText('Olá!');
     expect(buttonElement).not.toBeNull();
   });
 
   it('has action arg from argTypes when addon-actions annotations are added', () => {
-    //@ts-expect-error our tsconfig.jsn#moduleResulution is set to 'node', which doesn't support this import
-    const Story = composeStory(stories.WithActionArgType, stories.default, addonActionsPreview);
+    const Story = composeStory(
+      ButtonStories.WithActionArgType,
+      ButtonStories.default,
+      addonActionsPreview as ProjectAnnotations<ReactRenderer>
+    );
     expect(Story.args.someActionArg).toHaveProperty('isAction', true);
   });
 });
 
 describe('CSF3', () => {
   it('renders with inferred globalRender', () => {
-    const Primary = composeStory(stories.CSF3Button, stories.default);
+    const Primary = composeStory(ButtonStories.CSF3Button, ButtonStories.default);
 
     render(<Primary>Hello world</Primary>);
     const buttonElement = screen.getByText(/Hello world/i);
@@ -121,14 +141,17 @@ describe('CSF3', () => {
   });
 
   it('renders with custom render function', () => {
-    const Primary = composeStory(stories.CSF3ButtonWithRender, stories.default);
+    const Primary = composeStory(ButtonStories.CSF3ButtonWithRender, ButtonStories.default);
 
     render(<Primary />);
     expect(screen.getByTestId('custom-render')).not.toBeNull();
   });
 
   it('renders with play function without canvas element', async () => {
-    const CSF3InputFieldFilled = composeStory(stories.CSF3InputFieldFilled, stories.default);
+    const CSF3InputFieldFilled = composeStory(
+      ButtonStories.CSF3InputFieldFilled,
+      ButtonStories.default
+    );
     await CSF3InputFieldFilled.run();
 
     const input = screen.getByTestId('input') as HTMLInputElement;
@@ -136,7 +159,10 @@ describe('CSF3', () => {
   });
 
   it('renders with play function with canvas element', async () => {
-    const CSF3InputFieldFilled = composeStory(stories.CSF3InputFieldFilled, stories.default);
+    const CSF3InputFieldFilled = composeStory(
+      ButtonStories.CSF3InputFieldFilled,
+      ButtonStories.default
+    );
 
     const div = document.createElement('div');
     document.body.appendChild(div);
@@ -148,11 +174,18 @@ describe('CSF3', () => {
 
     document.body.removeChild(div);
   });
+
+  it('renders with hooks', async () => {
+    await HooksStory.run();
+
+    const input = screen.getByTestId('input') as HTMLInputElement;
+    expect(input.value).toEqual('Hello world!');
+  });
 });
 
 // common in addons that need to communicate between manager and preview
 it('should pass with decorators that need addons channel', () => {
-  const PrimaryWithChannels = composeStory(stories.CSF3Primary, stories.default, {
+  const PrimaryWithChannels = composeStory(ButtonStories.CSF3Primary, ButtonStories.default, {
     decorators: [
       (StoryFn: any) => {
         addons.getChannel();
@@ -171,23 +204,24 @@ describe('ComposeStories types', () => {
     type ComposeStoriesParam = Parameters<typeof composeStories>[0];
 
     expectTypeOf({
-      ...stories,
-      default: stories.default as Meta<typeof Button>,
+      ...ButtonStories,
+      default: ButtonStories.default as Meta<typeof Button>,
     }).toMatchTypeOf<ComposeStoriesParam>();
 
     expectTypeOf({
-      ...stories,
-      default: stories.default satisfies Meta<typeof Button>,
+      ...ButtonStories,
+      default: ButtonStories.default satisfies Meta<typeof Button>,
     }).toMatchTypeOf<ComposeStoriesParam>();
   });
 });
 
-// Batch snapshot testing
-const testCases = Object.values(composeStories(stories)).map(
+const testCases = Object.values(composeStories(ButtonStories)).map(
   (Story) => [Story.storyName, Story] as [string, typeof Story]
 );
 it.each(testCases)('Renders %s story', async (_storyName, Story) => {
-  if (_storyName === 'CSF2StoryWithLocale') return;
+  if (_storyName === 'CSF2StoryWithLocale' || _storyName === 'MountInPlayFunctionThrow') {
+    return;
+  }
   await Story.run();
   expect(document.body).toMatchSnapshot();
 });

@@ -1,8 +1,10 @@
+import fs from 'node:fs';
+import fsp from 'node:fs/promises';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from '@storybook/core/common';
 
-import fse from 'fs-extra';
 import { sep } from 'path';
 
 import { IS_WINDOWS } from '../../../vitest.helpers';
@@ -13,21 +15,18 @@ import { SupportedLanguage } from './project_types';
 const normalizePath = (path: string) => (IS_WINDOWS ? path.replace(/\//g, sep) : path);
 
 const fsMocks = vi.hoisted(() => ({
+  cpSync: vi.fn(() => ({})),
   existsSync: vi.fn(),
 }));
 
-const fseMocks = vi.hoisted(() => ({
-  copySync: vi.fn(() => ({})),
-  copy: vi.fn(() => ({})),
-  ensureDir: vi.fn(() => {}),
-  existsSync: vi.fn(),
-  pathExists: vi.fn(),
+const fspMocks = vi.hoisted(() => ({
+  cp: vi.fn(() => ({})),
   readFile: vi.fn(() => ''),
   writeFile: vi.fn(),
 }));
 
-vi.mock('fs', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('fs')>();
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs')>();
   return {
     ...actual,
     ...fsMocks,
@@ -42,14 +41,14 @@ vi.mock('./dirs', () => ({
     normalizePath(`@storybook/${renderer}`),
 }));
 
-vi.mock('fs-extra', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('fs-extra')>();
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs/promises')>();
   return {
     ...actual,
-    ...fseMocks,
+    ...fspMocks,
     default: {
       ...actual,
-      ...fseMocks,
+      ...fspMocks,
     },
   };
 });
@@ -76,6 +75,47 @@ describe('Helpers', () => {
     vi.clearAllMocks();
   });
 
+  describe('getVersionSafe', () => {
+    describe('installed', () => {
+      it.each([
+        ['3.0.0', '3.0.0'],
+        ['5.0.0-next.0', '5.0.0-next.0'],
+        [
+          '4.2.19::__archiveUrl=https%3A%2F%2Fregistry.npmjs.org%2Fsvelte%2F-%2Fsvelte-4.2.19.tgz',
+          '4.2.19',
+        ],
+      ])('svelte %s => %s', async (svelteVersion, expectedAddonSpecifier) => {
+        const packageManager = {
+          getInstalledVersion: async (pkg: string) =>
+            pkg === 'svelte' ? svelteVersion : undefined,
+          getAllDependencies: async () => ({ svelte: `^${svelteVersion}` }),
+        } as any as JsPackageManager;
+        await expect(helpers.getVersionSafe(packageManager, 'svelte')).resolves.toBe(
+          expectedAddonSpecifier
+        );
+      });
+    });
+
+    describe('uninstalled', () => {
+      it.each([
+        ['^3', '3.0.0'],
+        ['^5.0.0-next.0', '5.0.0-next.0'],
+        [
+          '4.2.19::__archiveUrl=https%3A%2F%2Fregistry.npmjs.org%2Fsvelte%2F-%2Fsvelte-4.2.19.tgz',
+          '4.2.19',
+        ],
+      ])('svelte %s => %s', async (svelteSpecifier, expectedAddonSpecifier) => {
+        const packageManager = {
+          getInstalledVersion: async (pkg: string) => undefined,
+          getAllDependencies: async () => ({ svelte: svelteSpecifier }),
+        } as any as JsPackageManager;
+        await expect(helpers.getVersionSafe(packageManager, 'svelte')).resolves.toBe(
+          expectedAddonSpecifier
+        );
+      });
+    });
+  });
+
   describe('copyTemplate', () => {
     it(`should copy template files when directory is present`, () => {
       const csfDirectory = /template-csf\/$/;
@@ -83,7 +123,7 @@ describe('Helpers', () => {
 
       helpers.copyTemplate('');
 
-      expect(fse.copySync).toHaveBeenCalledWith(
+      expect(fs.cpSync).toHaveBeenCalledWith(
         expect.stringMatching(csfDirectory),
         expect.anything(),
         expect.anything()
@@ -115,7 +155,7 @@ describe('Helpers', () => {
       const componentsDirectory = exists.map((folder: string) =>
         normalizePath(`@storybook/react/template/cli/${folder}`)
       );
-      fseMocks.pathExists.mockImplementation(
+      fsMocks.existsSync.mockImplementation(
         (filePath) =>
           componentsDirectory.includes(filePath) ||
           filePath === normalizePath('@storybook/react/template/cli')
@@ -127,7 +167,7 @@ describe('Helpers', () => {
         commonAssetsDir: normalizePath('create-storybook/rendererAssets/common'),
       });
 
-      expect(fse.copy).toHaveBeenNthCalledWith(
+      expect(fsp.cp).toHaveBeenNthCalledWith(
         1,
         normalizePath('create-storybook/rendererAssets/common'),
         './stories',
@@ -135,17 +175,12 @@ describe('Helpers', () => {
       );
 
       const expectedDirectory = normalizePath(`@storybook/react/template/cli${expected}`);
-      expect(fse.copy).toHaveBeenNthCalledWith(
-        2,
-        expectedDirectory,
-        './stories',
-        expect.anything()
-      );
+      expect(fsp.cp).toHaveBeenNthCalledWith(2, expectedDirectory, './stories', expect.anything());
     }
   );
 
   it(`should copy to src folder when exists`, async () => {
-    vi.mocked(fse.pathExists).mockImplementation((filePath) => {
+    vi.mocked(fs.existsSync).mockImplementation((filePath) => {
       return filePath === normalizePath('@storybook/react/template/cli') || filePath === './src';
     });
     await helpers.copyTemplateFiles({
@@ -153,11 +188,11 @@ describe('Helpers', () => {
       language: SupportedLanguage.JAVASCRIPT,
       packageManager: packageManagerMock,
     });
-    expect(fse.copy).toHaveBeenCalledWith(expect.anything(), './src/stories', expect.anything());
+    expect(fsp.cp).toHaveBeenCalledWith(expect.anything(), './src/stories', expect.anything());
   });
 
   it(`should copy to root folder when src doesn't exist`, async () => {
-    vi.mocked(fse.pathExists).mockImplementation((filePath) => {
+    vi.mocked(fs.existsSync).mockImplementation((filePath) => {
       return filePath === normalizePath('@storybook/react/template/cli');
     });
     await helpers.copyTemplateFiles({
@@ -165,7 +200,7 @@ describe('Helpers', () => {
       language: SupportedLanguage.JAVASCRIPT,
       packageManager: packageManagerMock,
     });
-    expect(fse.copy).toHaveBeenCalledWith(expect.anything(), './stories', expect.anything());
+    expect(fsp.cp).toHaveBeenCalledWith(expect.anything(), './stories', expect.anything());
   });
 
   it(`should throw an error for unsupported renderer`, async () => {

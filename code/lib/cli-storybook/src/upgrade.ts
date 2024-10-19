@@ -18,8 +18,8 @@ import {
 import { telemetry } from 'storybook/internal/telemetry';
 
 import boxen from 'boxen';
-import chalk from 'chalk';
 import { sync as spawnSync } from 'cross-spawn';
+import picocolors from 'picocolors';
 import semver, { clean, eq, lt, prerelease } from 'semver';
 import { dedent } from 'ts-dedent';
 
@@ -33,9 +33,14 @@ type Package = {
 
 const versionRegex = /(@storybook\/[^@]+)@(\S+)/;
 export const getStorybookVersion = (line: string) => {
-  if (line.startsWith('npm ')) return null;
+  if (line.startsWith('npm ')) {
+    return null;
+  }
   const match = versionRegex.exec(line);
-  if (!match || !clean(match[2])) return null;
+
+  if (!match || !clean(match[2])) {
+    return null;
+  }
   return {
     package: match[1],
     version: match[2],
@@ -166,17 +171,19 @@ export const doUpgrade = async ({
   const borderColor = isCLIOutdated ? '#FC521F' : '#F1618C';
 
   const messages = {
-    welcome: `Upgrading Storybook from version ${chalk.bold(beforeVersion)} to version ${chalk.bold(
-      currentCLIVersion
-    )}..`,
-    notLatest: chalk.red(dedent`
-      This version is behind the latest release, which is: ${chalk.bold(latestCLIVersionOnNPM)}!
+    welcome: `Upgrading Storybook from version ${picocolors.bold(
+      beforeVersion
+    )} to version ${picocolors.bold(currentCLIVersion)}..`,
+    notLatest: picocolors.red(dedent`
+      This version is behind the latest release, which is: ${picocolors.bold(
+        latestCLIVersionOnNPM
+      )}!
       You likely ran the upgrade command through npx, which can use a locally cached version, to upgrade to the latest version please run:
-      ${chalk.bold('npx storybook@latest upgrade')}
+      ${picocolors.bold('npx storybook@latest upgrade')}
       
       You may want to CTRL+C to stop, and run with the latest version instead.
     `),
-    prerelease: chalk.yellow('This is a pre-release version.'),
+    prerelease: picocolors.yellow('This is a pre-release version.'),
   };
 
   logger.plain(
@@ -247,7 +254,7 @@ export const doUpgrade = async ({
     const upgradedDependencies = toUpgradedDependencies(packageJson.dependencies);
     const upgradedDevDependencies = toUpgradedDependencies(packageJson.devDependencies);
 
-    logger.info(`Updating dependencies in ${chalk.cyan('package.json')}..`);
+    logger.info(`Updating dependencies in ${picocolors.cyan('package.json')}..`);
     if (upgradedDependencies.length > 0) {
       await packageManager.addDependencies(
         { installAsDevDependencies: false, skipInstall: true, packageJson },

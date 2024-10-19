@@ -1,4 +1,4 @@
-/* eslint-disable import/extensions */
+// eslint-disable-next-line depend/ban-dependencies
 import { pathExists, remove } from 'fs-extra';
 import { join } from 'path';
 

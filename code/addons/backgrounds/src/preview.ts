@@ -2,6 +2,7 @@ import type { Addon_DecoratorFunction } from 'storybook/internal/types';
 
 import { PARAM_KEY as KEY } from './constants';
 import { withBackgroundAndGrid } from './decorator';
+import { DEFAULT_BACKGROUNDS } from './defaults';
 import { withBackground } from './legacy/withBackgroundLegacy';
 import { withGrid } from './legacy/withGridLegacy';
 import type { Config, GlobalState } from './types';
@@ -18,20 +19,10 @@ export const parameters = {
       cellAmount: 5,
     },
     disable: false,
-    ...(FEATURES?.backgroundsStoryGlobals
-      ? {
-          options: {
-            light: { name: 'light', value: '#F8F8F8' },
-            dark: { name: 'dark', value: '#333' },
-          },
-        }
-      : {
-          // TODO: remove in 9.0
-          values: [
-            { name: 'light', value: '#F8F8F8' },
-            { name: 'dark', value: '#333333' },
-          ],
-        }),
+    // TODO: remove in 9.0
+    ...(!FEATURES?.backgroundsStoryGlobals && {
+      values: Object.values(DEFAULT_BACKGROUNDS),
+    }),
   } satisfies Partial<Config>,
 };
 

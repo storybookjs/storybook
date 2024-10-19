@@ -1,8 +1,9 @@
 /**
- * This postbuild fix is needed to add a ts-ignore to the generated public-types.d.ts file.
- * The AngularCore.InputSignal and AngularCore.InputSignalWithTransform types do not exist in Angular
- * versions < 17.2. In these versions, the unresolved types will error and prevent Storybook from starting/building.
- * This postbuild script adds a ts-ignore statement above the unresolved types to prevent the errors.
+ * This postbuild fix is needed to add a ts-ignore to the generated public-types.d.ts file. The
+ * AngularCore.InputSignal and AngularCore.InputSignalWithTransform types do not exist in Angular
+ * versions < 17.2. In these versions, the unresolved types will error and prevent Storybook from
+ * starting/building. This postbuild script adds a ts-ignore statement above the unresolved types to
+ * prevent the errors.
  */
 
 const fs = require('fs');

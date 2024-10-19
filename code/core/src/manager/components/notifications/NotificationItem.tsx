@@ -187,12 +187,17 @@ const NotificationItem: FC<{
 }) => {
   const onTimeout = useCallback(() => {
     onDismissNotification(id);
-    if (onClear) onClear({ dismissed: false, timeout: true });
+
+    if (onClear) {
+      onClear({ dismissed: false, timeout: true });
+    }
   }, [onDismissNotification, onClear]);
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    if (!duration) return;
+    if (!duration) {
+      return;
+    }
     timer.current = setTimeout(onTimeout, duration);
     // @ts-expect-error (non strict)
     return () => clearTimeout(timer.current);
@@ -202,7 +207,10 @@ const NotificationItem: FC<{
     // @ts-expect-error (non strict)
     clearTimeout(timer.current);
     onDismissNotification(id);
-    if (onClear) onClear({ dismissed: true, timeout: false });
+
+    if (onClear) {
+      onClear({ dismissed: true, timeout: false });
+    }
   }, [onDismissNotification, onClear]);
 
   if (link) {

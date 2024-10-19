@@ -2,7 +2,7 @@
 title: 'Portable stories in Vitest'
 sidebar:
   title: Vitest
-  order: 0
+  order: 1
 ---
 
 <If notRenderer={['react', 'vue', 'svelte']}>
@@ -28,7 +28,7 @@ sidebar:
 
   <If renderer="react">
     <Callout variant="warning">
-      **Using `Next.js`?** You can test your Next.js stories with Vitest by installing and setting up the [`vite-plugin-storybook-nextjs`](https://github.com/storybookjs/vite-plugin-storybook-nextjs) package. 
+      **Using `Next.js`?** You can test your Next.js stories with Vitest by installing and setting up the `@storybook/experimental-nextjs-vite` which re-exports [vite-plugin-storybook-nextjs](https://github.com/storybookjs/vite-plugin-storybook-nextjs) package. 
     </Callout>
   </If>
 
@@ -170,24 +170,17 @@ sidebar:
   ## setProjectAnnotations
 
   This API should be called once, before the tests run, typically in a [setup file](https://vitest.dev/config/#setupfiles). This will make sure that whenever `composeStories` or `composeStory` are called, the project annotations are taken into account as well.
-  
+
   These are the configurations needed in the setup file:
   - preview annotations: those defined in `.storybook/preview.ts`
   - addon annotations (optional): those exported by addons
-  - beforeAll: code that runs before all tests ([more info](../../writing-tests/interaction-testing.mdx#beforeall))
-  - testingLibraryRender: the render function from Testing Library
+  - beforeAll: code that runs before all tests ([more info](../../writing-tests/component-testing.mdx#beforeall))
 
   {/* prettier-ignore-start */}
 
   <CodeSnippets path="portable-stories-vitest-set-project-annotations.md" />
 
   {/* prettier-ignore-end */}
-
-  <Callout variant="warning">
-
-  You **must** provide `testingLibraryRenderer` to use portable stories with Vitest.
-
-  </Callout>
 
   {/* TODO: Create issue for interest in non-Testing Library render option, with recipe, and mention here (Jest, too) */}
 
@@ -237,7 +230,7 @@ sidebar:
 
   ### 3. Run
 
-  Finally, stories can prepare data they need (e.g. setting up some mocks or fetching data) before rendering by defining [loaders](../../writing-stories/loaders.mdx), [beforeEach](../../writing-tests/interaction-testing.mdx#run-code-before-each-story) or by having all the story code in the play function when using the [mount](../../writing-tests/interaction-testing.mdx#run-code-before-the-component-gets-rendered). In portable stories, all of these steps will be executed when you call the `run` method of the composed story.
+  Finally, stories can prepare data they need (e.g. setting up some mocks or fetching data) before rendering by defining [loaders](../../writing-stories/loaders.mdx), [beforeEach](../../writing-tests/component-testing.mdx#run-code-before-each-story) or by having all the story code in the play function when using the [mount](../../writing-tests/component-testing.mdx#run-code-before-the-component-gets-rendered). In portable stories, all of these steps will be executed when you call the `run` method of the composed story.
 
   👉 For this, you use the [`composeStories`](#composestories) or [`composeStory`](#composestory) API. The composed story will return a `run` method to be called.
 

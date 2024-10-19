@@ -9,7 +9,9 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (
   config,
   options
 ): Promise<Configuration> => {
-  if (!hasDocsOrControls(options)) return config;
+  if (!hasDocsOrControls(options)) {
+    return config;
+  }
 
   const typescriptOptions = await options.presets.apply('typescript', {} as any);
   const debug = options.loglevel === 'debug';

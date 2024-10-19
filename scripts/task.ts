@@ -1,3 +1,4 @@
+// eslint-disable-next-line depend/ban-dependencies
 import { outputFile, pathExists, readFile } from 'fs-extra';
 import type { TestCase } from 'junit-xml';
 import { getJunitXml } from 'junit-xml';
@@ -30,6 +31,7 @@ import { smokeTest } from './tasks/smoke-test';
 import { syncDocs } from './tasks/sync-docs';
 import { testRunnerBuild } from './tasks/test-runner-build';
 import { testRunnerDev } from './tasks/test-runner-dev';
+import { vitestTests } from './tasks/vitest-test';
 import { CODE_DIRECTORY, JUNIT_DIRECTORY, SANDBOX_DIRECTORY } from './utils/constants';
 import type { OptionValues } from './utils/options';
 import { createOptions, getCommand, getOptionsOrPrompt } from './utils/options';
@@ -52,36 +54,26 @@ export type TemplateDetails = {
 type MaybePromise<T> = T | Promise<T>;
 
 export type Task = {
-  /**
-   * A description of the task for a prompt
-   */
+  /** A description of the task for a prompt */
   description: string;
   /**
    * Does this task represent a service for another task?
    *
-   * Unlink other tasks, if a service is not ready, it doesn't mean the subsequent tasks
-   * must be out of date. As such, services will never be reset back to, although they
-   * will be started if dependent tasks are.
+   * Unlink other tasks, if a service is not ready, it doesn't mean the subsequent tasks must be out
+   * of date. As such, services will never be reset back to, although they will be started if
+   * dependent tasks are.
    */
   service?: boolean;
-  /**
-   * Which tasks must be ready before this task can run
-   */
+  /** Which tasks must be ready before this task can run */
   dependsOn?: TaskKey[] | ((details: TemplateDetails, options: PassedOptionValues) => TaskKey[]);
-  /**
-   * Is this task already "ready", and potentially not required?
-   */
+  /** Is this task already "ready", and potentially not required? */
   ready: (details: TemplateDetails, options?: PassedOptionValues) => MaybePromise<boolean>;
-  /**
-   * Run the task
-   */
+  /** Run the task */
   run: (
     details: TemplateDetails,
     options: PassedOptionValues
   ) => MaybePromise<void | AbortController>;
-  /**
-   * Does this task handle its own junit results?
-   */
+  /** Does this task handle its own junit results? */
   junit?: boolean;
 };
 
@@ -107,6 +99,7 @@ export const tasks = {
   'e2e-tests': e2eTestsBuild,
   'e2e-tests-dev': e2eTestsDev,
   bench,
+  'vitest-integration': vitestTests,
 };
 type TaskKey = keyof typeof tasks;
 
@@ -186,7 +179,7 @@ export const options = createOptions({
   },
 });
 
-type PassedOptionValues = Omit<OptionValues<typeof options>, 'task' | 'startFrom' | 'junit'>;
+export type PassedOptionValues = Omit<OptionValues<typeof options>, 'task' | 'startFrom' | 'junit'>;
 
 const logger = console;
 
@@ -228,11 +221,7 @@ function getTaskKey(task: Task): TaskKey {
   return (Object.entries(tasks) as [TaskKey, Task][]).find(([_, t]) => t === task)[0];
 }
 
-/**
- *
- * Get a list of tasks that need to be (possibly) run, in order, to
- * be able to run `finalTask`.
- */
+/** Get a list of tasks that need to be (possibly) run, in order, to be able to run `finalTask`. */
 function getTaskList(finalTask: Task, details: TemplateDetails, optionValues: PassedOptionValues) {
   const taskDeps = new Map<Task, Task[]>();
   // Which tasks depend on a given task
@@ -240,7 +229,9 @@ function getTaskList(finalTask: Task, details: TemplateDetails, optionValues: Pa
 
   const addTask = (task: Task, dependent?: Task) => {
     if (tasksThatDepend.has(task)) {
-      if (!dependent) throw new Error('Unexpected task without dependent seen a second time');
+      if (!dependent) {
+        throw new Error('Unexpected task without dependent seen a second time');
+      }
       tasksThatDepend.set(task, tasksThatDepend.get(task).concat(dependent));
       return;
     }
@@ -266,14 +257,20 @@ function getTaskList(finalTask: Task, details: TemplateDetails, optionValues: Pa
 
   while (taskDeps.size !== sortedTasks.length) {
     const task = tasksWithoutDependencies.pop();
-    if (!task) throw new Error('Topological sort failed, is there a cyclic task dependency?');
+
+    if (!task) {
+      throw new Error('Topological sort failed, is there a cyclic task dependency?');
+    }
 
     sortedTasks.unshift(task);
     taskDeps.get(task).forEach((depTask) => {
       const remainingTasksThatDepend = tasksThatDepend
         .get(depTask)
         .filter((t) => !sortedTasks.includes(t));
-      if (remainingTasksThatDepend.length === 0) tasksWithoutDependencies.push(depTask);
+
+      if (remainingTasksThatDepend.length === 0) {
+        tasksWithoutDependencies.push(depTask);
+      }
     });
   }
 
@@ -319,7 +316,9 @@ async function runTask(task: Task, details: TemplateDetails, optionValues: Passe
     }
     const controller = await task.run(details, updatedOptions);
 
-    if (junitFilename && !task.junit) await writeJunitXml(getTaskKey(task), details.key, startTime);
+    if (junitFilename && !task.junit) {
+      await writeJunitXml(getTaskKey(task), details.key, startTime);
+    }
 
     return controller;
   } catch (err) {
@@ -390,7 +389,12 @@ async function run() {
   function setUnready(task: Task) {
     // If the task is a service we don't need to set it unready but we still need to do so for
     // it's dependencies
-    if (!task.service) statuses.set(task, 'unready');
+
+    // If the task is a service we don't need to set it unready but we still need to do so for
+    // it's dependencies
+    if (!task.service) {
+      statuses.set(task, 'unready');
+    }
     tasksThatDepend
       .get(task)
       .filter((t) => !t.service)
@@ -403,9 +407,13 @@ async function run() {
   if (startFrom === 'auto') {
     // Don't reset anything!
   } else if (startFrom === 'never') {
-    if (!firstUnready) throw new Error(`Task ${taskKey} is ready`);
-    if (firstUnready !== finalTask)
+    if (!firstUnready) {
+      throw new Error(`Task ${taskKey} is ready`);
+    }
+
+    if (firstUnready !== finalTask) {
       throw new Error(`Task ${getTaskKey(firstUnready)} was not ready`);
+    }
   } else if (startFrom) {
     // set to reset back to a specific task
     if (firstUnready && sortedTasks.indexOf(tasks[startFrom]) > sortedTasks.indexOf(firstUnready)) {
@@ -468,7 +476,10 @@ async function run() {
           // Always debug the final task so we can see it's output fully
           debug: task === finalTask ? true : optionValues.debug,
         });
-        if (controller) controllers.push(controller);
+
+        if (controller) {
+          controllers.push(controller);
+        }
       } catch (err) {
         invariant(err instanceof Error);
         logger.error(`Error running task ${getTaskKey(task)}:`);

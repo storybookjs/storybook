@@ -14,7 +14,7 @@ import { build } from 'tsup';
 import type { PackageJson } from 'type-fest';
 
 import { exec } from '../utils/exec';
-import { esbuild } from './tools';
+import { esbuild, nodeInternals } from './tools';
 
 /* TYPES */
 
@@ -97,6 +97,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
    * TSUP generated code will then have a `require` polyfill/guard in the ESM files, which causes issues for webpack.
    */
   const nonPresetEntries = allEntries.filter((f) => !parse(f).name.includes('preset'));
+  const presetEntries = allEntries.filter((f) => parse(f).name.includes('preset'));
 
   const noExternal = [...extraNoExternal];
 
@@ -151,30 +152,68 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
     );
   }
 
-  if (formats.includes('cjs')) {
+  if (presetEntries.length > 0) {
     tasks.push(
       build({
         noExternal,
         silent: true,
-        entry: allEntries,
+        treeshake: true,
+        entry: presetEntries,
+        shims: false,
         watch,
         outDir: OUT_DIR,
         sourcemap: false,
         metafile: true,
-        format: ['cjs'],
-        target: 'node18',
-        ...(dtsBuild === 'cjs' ? dtsConfig : {}),
-        platform: 'node',
+        format: ['esm'],
+        target: ['node18'],
         clean: false,
-        external: externals,
+        ...(dtsBuild === 'esm' ? dtsConfig : {}),
+        platform: 'neutral',
+        external: [...externals, ...nodeInternals],
+
+        banner: {
+          js: dedent`
+          import ESM_COMPAT_Module from "node:module";
+          import { fileURLToPath as ESM_COMPAT_fileURLToPath } from 'node:url';
+          import { dirname as ESM_COMPAT_dirname } from 'node:path';
+          const __filename = ESM_COMPAT_fileURLToPath(import.meta.url);
+          const __dirname = ESM_COMPAT_dirname(__filename);
+          const require = ESM_COMPAT_Module.createRequire(import.meta.url);
+        `,
+        },
 
         esbuildOptions: (c) => {
-          c.platform = 'node';
+          c.conditions = ['module'];
           Object.assign(c, getESBuildOptions(optimized));
         },
       })
     );
   }
+
+  // if (formats.includes('cjs')) {
+  //   tasks.push(
+  //     build({
+  //       noExternal,
+  //       silent: true,
+  //       entry: allEntries,
+  //       watch,
+  //       outDir: OUT_DIR,
+  //       sourcemap: false,
+  //       metafile: true,
+  //       format: ['cjs'],
+  //       target: 'node18',
+  //       ...(dtsBuild === 'cjs' ? dtsConfig : {}),
+  //       platform: 'node',
+  //       clean: false,
+  //       external: externals,
+
+  //       esbuildOptions: (c) => {
+  //         c.platform = 'node';
+  //         Object.assign(c, getESBuildOptions(optimized));
+  //       },
+  //     })
+  //   );
+  // }
 
   if (tsConfigExists && !optimized) {
     tasks.push(...entries.map(generateDTSMapperFile));
@@ -276,12 +315,16 @@ async function saveMetafiles({
 
   await Promise.all(
     formats.map(async (format) => {
-      const fromFilename = `metafile-${format}.json`;
-      const currentMetafile = await fs.readJson(join(OUT_DIR, fromFilename));
-      metafile.inputs = { ...metafile.inputs, ...currentMetafile.inputs };
-      metafile.outputs = { ...metafile.outputs, ...currentMetafile.outputs };
+      try {
+        const fromFilename = `metafile-${format}.json`;
+        const currentMetafile = await fs.readJson(join(OUT_DIR, fromFilename));
+        metafile.inputs = { ...metafile.inputs, ...currentMetafile.inputs };
+        metafile.outputs = { ...metafile.outputs, ...currentMetafile.outputs };
 
-      await fs.rm(join(OUT_DIR, fromFilename));
+        await fs.rm(join(OUT_DIR, fromFilename));
+      } catch (e) {
+        //
+      }
     })
   );
 

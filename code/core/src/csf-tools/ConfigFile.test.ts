@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle */
 import { describe, expect, it } from 'vitest';
 
 import { babelPrint } from '@storybook/core/babel';
@@ -1080,7 +1081,6 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.setImport('path', 'path');
 
-      // eslint-disable-next-line no-underscore-dangle
       const parsed = babelPrint(config._ast);
 
       expect(parsed).toMatchInlineSnapshot(`
@@ -1099,7 +1099,6 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.setImport('path', 'path');
 
-      // eslint-disable-next-line no-underscore-dangle
       const parsed = babelPrint(config._ast);
 
       expect(parsed).toMatchInlineSnapshot(`
@@ -1118,7 +1117,6 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.setImport(['dirname'], 'path');
 
-      // eslint-disable-next-line no-underscore-dangle
       const parsed = babelPrint(config._ast);
 
       expect(parsed).toMatchInlineSnapshot(`
@@ -1139,7 +1137,6 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.setImport(['dirname'], 'path');
 
-      // eslint-disable-next-line no-underscore-dangle
       const parsed = babelPrint(config._ast);
 
       expect(parsed).toMatchInlineSnapshot(`
@@ -1161,7 +1158,6 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.setRequireImport('path', 'path');
 
-      // eslint-disable-next-line no-underscore-dangle
       const parsed = babelPrint(config._ast);
 
       expect(parsed).toMatchInlineSnapshot(`
@@ -1181,7 +1177,6 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.setRequireImport('path', 'path');
 
-      // eslint-disable-next-line no-underscore-dangle
       const parsed = babelPrint(config._ast);
 
       expect(parsed).toMatchInlineSnapshot(`
@@ -1200,7 +1195,6 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.setRequireImport(['dirname'], 'path');
 
-      // eslint-disable-next-line no-underscore-dangle
       const parsed = babelPrint(config._ast);
 
       expect(parsed).toMatchInlineSnapshot(`
@@ -1224,7 +1218,6 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.setRequireImport(['dirname', 'basename'], 'path');
 
-      // eslint-disable-next-line no-underscore-dangle
       const parsed = babelPrint(config._ast);
 
       expect(parsed).toMatchInlineSnapshot(`
@@ -1306,6 +1299,33 @@ describe('ConfigFile', () => {
       expect(() => config.removeEntryFromArray(['addons'], 'x')).toThrowErrorMatchingInlineSnapshot(
         `Error: Expected array at 'addons', got 'ObjectExpression'`
       );
+    });
+  });
+
+  describe('parse', () => {
+    it("export { X } with X is import { X } from 'another-file'", () => {
+      const source = dedent`
+          import type { StorybookConfig } from '@storybook/react-webpack5';
+          import { path } from 'path';
+
+          export { path };
+
+          const config: StorybookConfig = {
+            addons: [
+              'foo',
+              { name: 'bar', options: {} },
+            ],
+            "otherField": [
+              "foo",
+              { "name": 'bar', options: {} },
+            ],
+          }
+          export default config;
+        `;
+      const config = loadConfig(source).parse();
+
+      expect(config._exportDecls['path']).toBe(undefined);
+      expect(config._exports['path']).toBe(undefined);
     });
   });
 });

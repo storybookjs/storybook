@@ -25,6 +25,15 @@ import { logger } from '@storybook/core/node-logger';
 
 import { dedent } from 'ts-dedent';
 
+import {
+  TESTING_MODULE_CRASH_REPORT,
+  TESTING_MODULE_PROGRESS_REPORT,
+  TESTING_MODULE_WATCH_MODE_REQUEST,
+  type TestingModuleCrashReportPayload,
+  type TestingModuleProgressReportPayload,
+  type TestingModuleWatchModeRequestPayload,
+} from '../../core-events';
+import { cleanPaths, sanitizeError } from '../../telemetry/sanitize';
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
 import { initFileSearchChannel } from '../server-channel/file-search-channel';
 import { defaultStaticDirs } from '../utils/constants';
@@ -279,6 +288,56 @@ export const experimental_serverChannel = async (
 
   initFileSearchChannel(channel, options, coreOptions);
   initCreateNewStoryChannel(channel, options, coreOptions);
+
+  if (!options.disableTelemetry) {
+    channel.on(
+      TESTING_MODULE_WATCH_MODE_REQUEST,
+      async (request: TestingModuleWatchModeRequestPayload) => {
+        await telemetry('testing-module-watch-mode', {
+          provider: request.providerId,
+          watchMode: request.watchMode,
+        });
+      }
+    );
+
+    channel.on(
+      TESTING_MODULE_PROGRESS_REPORT,
+      async (payload: TestingModuleProgressReportPayload) => {
+        if (
+          (payload.status === 'success' || payload.status === 'cancelled') &&
+          payload.progress?.finishedAt
+        ) {
+          await telemetry('testing-module-completed-report', {
+            provider: payload.providerId,
+            duration: payload.progress.finishedAt - payload.progress.startedAt,
+            numTotalTests: payload.progress.numTotalTests,
+            numFailedTests: payload.progress.numFailedTests,
+            numPassedTests: payload.progress.numPassedTests,
+            status: payload.status,
+          });
+        }
+
+        if (payload.status === 'failed') {
+          await telemetry('testing-module-completed-report', {
+            provider: payload.providerId,
+            status: 'failed',
+            ...(options.enableCrashReports && {
+              error: sanitizeError(payload.error),
+            }),
+          });
+        }
+      }
+    );
+
+    channel.on(TESTING_MODULE_CRASH_REPORT, async (payload: TestingModuleCrashReportPayload) => {
+      await telemetry('testing-module-crash-report', {
+        provider: payload.providerId,
+        ...(options.enableCrashReports && {
+          error: cleanPaths(payload.error.message),
+        }),
+      });
+    });
+  }
 
   return channel;
 };

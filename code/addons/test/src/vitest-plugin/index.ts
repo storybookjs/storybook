@@ -64,9 +64,7 @@ export const storybookTest = (options?: UserOptions): Plugin => {
   return {
     name: 'vite-plugin-storybook-test',
     enforce: 'pre',
-    async buildStart() {
-      // evaluate main.js and preview.js so we can extract
-      // stories for autotitle support and tags for tags filtering support
+    async config(config) {
       const configDir = finalOptions.configDir;
       try {
         await validateConfigurationFiles(configDir);
@@ -86,8 +84,10 @@ export const storybookTest = (options?: UserOptions): Plugin => {
 
       stories = await presets.apply('stories', []);
       previewLevelTags = await extractTagsFromPreview(configDir);
-    },
-    async config(config) {
+
+      const framework = await presets.apply('framework', undefined);
+      const frameworkName = typeof framework === 'string' ? framework : framework.name;
+
       // If we end up needing to know if we are running in browser mode later
       // const isRunningInBrowserMode = config.plugins.find((plugin: Plugin) =>
       //   plugin.name?.startsWith('vitest:browser')
@@ -129,6 +129,11 @@ export const storybookTest = (options?: UserOptions): Plugin => {
       config.test.server.deps.inline ??= [];
       if (Array.isArray(config.test.server.deps.inline)) {
         config.test.server.deps.inline.push('@storybook/experimental-addon-test');
+      }
+
+      if (frameworkName?.includes('vue3')) {
+        config.define ??= {};
+        config.define.__VUE_PROD_HYDRATION_MISMATCH_DETAILS__ = 'false';
       }
     },
     async transform(code, id) {

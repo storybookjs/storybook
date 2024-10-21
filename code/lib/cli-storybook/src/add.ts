@@ -23,6 +23,7 @@ import { postinstallAddon } from './postinstallAddon';
 export interface PostinstallOptions {
   packageManager: PackageManagerName;
   configDir: string;
+  yes?: boolean;
 }
 
 /**
@@ -66,6 +67,7 @@ type CLIOptions = {
   packageManager?: PackageManagerName;
   configDir?: string;
   skipPostinstall: boolean;
+  yes?: boolean;
 };
 
 /**
@@ -83,7 +85,7 @@ type CLIOptions = {
  */
 export async function add(
   addon: string,
-  { packageManager: pkgMgr, skipPostinstall, configDir: userSpecifiedConfigDir }: CLIOptions,
+  { packageManager: pkgMgr, skipPostinstall, configDir: userSpecifiedConfigDir, yes }: CLIOptions,
   logger = console
 ) {
   const [addonName, inputVersion] = getVersionSpecifier(addon);
@@ -138,7 +140,7 @@ export async function add(
 
   if (isCoreAddon(addonName) && version !== storybookVersion) {
     logger.warn(
-      `The version of ${addonName} you are installing is not the same as the version of Storybook you are using. This may lead to unexpected behavior.`
+      `The version of ${addonName} (${version}) you are installing is not the same as the version of Storybook you are using (${storybookVersion}). This may lead to unexpected behavior.`
     );
   }
 
@@ -165,7 +167,7 @@ export async function add(
   }
 
   if (!skipPostinstall && isCoreAddon(addonName)) {
-    await postinstallAddon(addonName, { packageManager: packageManager.type, configDir });
+    await postinstallAddon(addonName, { packageManager: packageManager.type, configDir, yes });
   }
 }
 function isValidVersion(version: string) {

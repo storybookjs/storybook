@@ -9,11 +9,11 @@ test.describe('module-mocking', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(storybookUrl);
 
-    await new SbPage(page).waitUntilLoaded();
+    await new SbPage(page, expect).waitUntilLoaded();
   });
 
   test('should assert story lifecycle order', async ({ page }) => {
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
 
     await sbPage.navigateToStory('lib/test/before-each', 'before-each-order');
 
@@ -37,7 +37,7 @@ test.describe('module-mocking', () => {
   });
 
   test('should assert that utils import is mocked', async ({ page }) => {
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
 
     await sbPage.navigateToStory('lib/test/module-mocking', 'basic');
 

@@ -19,7 +19,7 @@ test.describe('save-from-controls', () => {
     test.skip(browserName !== 'chromium', `Skipping save-from-controls tests for ${browserName}`);
 
     await page.goto(storybookUrl);
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.waitUntilLoaded();
 
     await sbPage.navigateToStory('example/button', 'primary');

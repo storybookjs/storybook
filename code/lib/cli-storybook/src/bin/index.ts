@@ -48,6 +48,7 @@ command('add <addon>')
   )
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
   .option('-s --skip-postinstall', 'Skip package specific postinstall config modifications')
+  .option('-y --yes', 'Skip prompting the user')
   .action((addonName: string, options: any) => add(addonName, options));
 
 command('remove <addon>')
@@ -56,6 +57,7 @@ command('remove <addon>')
     '--package-manager <npm|pnpm|yarn1|yarn2>',
     'Force package manager for installing dependencies'
   )
+  .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
   .action((addonName: string, options: any) =>
     withTelemetry('remove', { cliOptions: options }, async () => {
       await remove(addonName, options);

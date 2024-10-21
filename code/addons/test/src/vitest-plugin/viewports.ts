@@ -1,6 +1,8 @@
 /* eslint-disable no-underscore-dangle */
 import { UnsupportedViewportDimensionError } from 'storybook/internal/preview-errors';
 
+import type { Globals, Parameters } from '@storybook/csf';
+
 import { MINIMAL_VIEWPORTS } from '../../../viewport/src/defaults';
 import type { ViewportMap, ViewportStyles } from '../../../viewport/src/types';
 
@@ -10,8 +12,16 @@ declare global {
 }
 
 export interface ViewportsParam {
-  defaultViewport: string;
-  viewports: ViewportMap;
+  defaultViewport?: string;
+  viewports?: ViewportMap;
+  options?: ViewportMap;
+  disable?: boolean;
+  disabled?: boolean;
+}
+
+export interface ViewportsGlobal {
+  value?: string;
+  disable?: boolean;
 }
 
 export const DEFAULT_VIEWPORT_DIMENSIONS = {
@@ -45,8 +55,18 @@ const parseDimension = (value: string, dimension: 'width' | 'height') => {
   }
 };
 
-export const setViewport = async (viewportsParam: ViewportsParam = {} as ViewportsParam) => {
-  const defaultViewport = viewportsParam.defaultViewport;
+export const setViewport = async (parameters: Parameters = {}, globals: Globals = {}) => {
+  let defaultViewport;
+  const viewportsParam: ViewportsParam = parameters.viewport ?? {};
+  const viewportsGlobal: ViewportsGlobal = globals.viewport ?? {};
+  const isDisabled = viewportsParam.disable || viewportsParam.disabled;
+
+  // Support new setting from globals, else use the one from parameters
+  if (viewportsGlobal.value && !isDisabled) {
+    defaultViewport = viewportsGlobal.value;
+  } else if (!isDisabled) {
+    defaultViewport = viewportsParam.defaultViewport;
+  }
 
   const { page } = await import('@vitest/browser/context').catch(() => ({
     page: null,
@@ -59,6 +79,7 @@ export const setViewport = async (viewportsParam: ViewportsParam = {} as Viewpor
   const viewports = {
     ...MINIMAL_VIEWPORTS,
     ...viewportsParam.viewports,
+    ...viewportsParam.options,
   };
 
   let viewportWidth = DEFAULT_VIEWPORT_DIMENSIONS.width;

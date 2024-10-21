@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import type {
+  Globals,
   ProjectAnnotations,
   Renderer,
   StoryContext,
@@ -49,6 +50,7 @@ export type ComposedStoryFn<
   parameters: Parameters;
   argTypes: StrictArgTypes<TArgs>;
   tags: Tag[];
+  globals: Globals;
 };
 /**
  * Based on a module of stories, it returns all stories within it, filtering non-stories Each story

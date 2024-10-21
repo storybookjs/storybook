@@ -83,6 +83,7 @@ export const Toggling: Story = {
       });
     });
   },
+  tags: ['!vitest'],
 };
 
 export const TogglingInDocs: Story = {
@@ -95,6 +96,7 @@ export const TogglingInDocs: Story = {
       autoplay: true,
     },
   },
+  tags: ['!vitest'],
 };
 
 export const Readonly: Story = {

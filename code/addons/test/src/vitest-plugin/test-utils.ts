@@ -25,7 +25,7 @@ export const testStory = (
     const _task = context.task as RunnerTask & { meta: TaskMeta & { storyId: string } };
     _task.meta.storyId = composedStory.id;
 
-    await setViewport(composedStory.parameters.viewport);
+    await setViewport(composedStory.parameters, composedStory.globals);
     await composedStory.run();
   };
 };

@@ -116,7 +116,7 @@ export class ConflictingStaticDirConfigError extends StorybookError {
       category: Category.CORE_SERVER,
       code: 1,
       documentation:
-        'https://storybook.js.org/docs/react/configure/images-and-assets#serving-static-files-via-storybook-configuration',
+        'https://storybook.js.org/docs/configure/integration/images-and-assets#serving-static-files-via-storybook-configuration',
       message: dedent`
         Storybook encountered a conflict when trying to serve statics. You have configured both:
         * Storybook's option in the config file: 'staticDirs'
@@ -133,7 +133,7 @@ export class InvalidStoriesEntryError extends StorybookError {
       category: Category.CORE_COMMON,
       code: 4,
       documentation:
-        'https://storybook.js.org/docs/react/faq#can-i-have-a-storybook-with-no-local-stories',
+        'https://storybook.js.org/docs/faq#can-i-have-a-storybook-with-no-local-stories',
       message: dedent`
         Storybook could not index your stories.
         Your main configuration somehow does not contain a 'stories' field, or it resolved to an empty array.
@@ -150,7 +150,7 @@ export class WebpackMissingStatsError extends StorybookError {
       code: 1,
       documentation: [
         'https://webpack.js.org/configuration/stats/',
-        'https://storybook.js.org/docs/react/builders/webpack#configure',
+        'https://storybook.js.org/docs/builders/webpack#configure',
       ],
       message: dedent`
         No Webpack stats found. Did you turn off stats reporting in your Webpack config?
@@ -217,7 +217,7 @@ export class MissingAngularJsonError extends StorybookError {
     super({
       category: Category.CLI_INIT,
       code: 2,
-      documentation: 'https://storybook.js.org/docs/angular/faq#error-no-angularjson-file-found',
+      documentation: 'https://storybook.js.org/docs/faq#error-no-angularjson-file-found',
       message: dedent`
         An angular.json file was not found in the current working directory: ${data.path}
         Storybook needs it to work properly, so please rerun the command at the root of your project, where the angular.json file is located.`,

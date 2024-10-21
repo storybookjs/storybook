@@ -73,7 +73,7 @@ export function getMigrationSummary({
     The automigrations try to migrate common patterns in your project, but might not contain everything needed to migrate to the latest version of Storybook.
     
     Please check the changelog and migration guide for manual migrations and more information: ${picocolors.yellow(
-      'https://storybook.js.org/docs/8.0/migration-guide'
+      'https://storybook.js.org/docs/migration-guide'
     )}
     And reach out on Discord if you need help: ${picocolors.yellow('https://discord.gg/storybook')}
   `);

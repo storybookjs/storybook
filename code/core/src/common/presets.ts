@@ -198,7 +198,7 @@ const map =
       resolved = resolveAddonName(configDir, name, options);
     } catch (err) {
       logger.error(
-        `Addon value should end in /manager or /preview or /register OR it should be a valid preset https://storybook.js.org/docs/react/addons/writing-presets/\n${item}`
+        `Addon value should end in /manager or /preview or /register OR it should be a valid preset https://storybook.js.org/docs/addons/writing-presets/\n${item}`
       );
       return undefined;
     }

@@ -135,19 +135,19 @@ async function run() {
     };
 
     const compile = await Promise.all([
-      esbuild.context(
-        merge<EsbuildContextOptions>(nodeEsbuildOptions, {
-          entryPoints: entries
-            .filter(isNode)
-            .filter(noExternals)
-            .map((e) => e.file),
-          external: [...nodeInternals, ...esbuildDefaultOptions.external],
-          format: 'cjs',
-          outExtension: {
-            '.js': '.cjs',
-          },
-        })
-      ),
+      // esbuild.context(
+      //   merge<EsbuildContextOptions>(nodeEsbuildOptions, {
+      //     entryPoints: entries
+      //       .filter(isNode)
+      //       .filter(noExternals)
+      //       .map((e) => e.file),
+      //     external: [...nodeInternals, ...esbuildDefaultOptions.external],
+      //     format: 'cjs',
+      //     outExtension: {
+      //       '.js': '.cjs',
+      //     },
+      //   })
+      // ),
       esbuild.context(
         merge<EsbuildContextOptions>(browserEsbuildOptions, {
           alias: browserAliases,
@@ -276,23 +276,23 @@ async function run() {
         .flatMap((entry) => {
           const results = [];
           if (entry.node) {
-            results.push(
-              esbuild.context(
-                merge<EsbuildContextOptions>(nodeEsbuildOptions, {
-                  entryPoints: [entry.file],
-                  external: [
-                    ...nodeInternals,
-                    ...esbuildDefaultOptions.external,
-                    ...entry.externals,
-                  ].filter((e) => !entry.internals.includes(e)),
-                  format: 'cjs',
-                  outdir: dirname(entry.file).replace('src', 'dist'),
-                  outExtension: {
-                    '.js': '.cjs',
-                  },
-                })
-              )
-            );
+            // results.push(
+            //   esbuild.context(
+            //     merge<EsbuildContextOptions>(nodeEsbuildOptions, {
+            //       entryPoints: [entry.file],
+            //       external: [
+            //         ...nodeInternals,
+            //         ...esbuildDefaultOptions.external,
+            //         ...entry.externals,
+            //       ].filter((e) => !entry.internals.includes(e)),
+            //       format: 'cjs',
+            //       outdir: dirname(entry.file).replace('src', 'dist'),
+            //       outExtension: {
+            //         '.js': '.cjs',
+            //       },
+            //     })
+            //   )
+            // );
           }
           if (entry.browser) {
             results.push(

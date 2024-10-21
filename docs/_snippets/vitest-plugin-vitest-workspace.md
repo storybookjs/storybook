@@ -1,4 +1,4 @@
-```ts title="vitest.workspace.ts" renderer="react"
+```ts filename="vitest.workspace.ts" renderer="react"
 import { defineWorkspace } from 'vitest/config';
 import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';
 // 👇 If you're using Next.js, apply this framework plugin as well

@@ -9,7 +9,9 @@ import {
   TESTING_MODULE_WATCH_MODE_REQUEST,
 } from 'storybook/internal/core-events';
 import { oneWayHash, telemetry } from 'storybook/internal/telemetry';
-import type { Options, StoryId } from 'storybook/internal/types';
+import type { Options, PresetProperty, StoryId } from 'storybook/internal/types';
+
+import { dedent } from 'ts-dedent';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
@@ -98,4 +100,35 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
   }
 
   return channel;
+};
+
+export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
+  entry = [],
+  options
+) => {
+  checkActionsLoaded(options.configDir);
+  return entry;
+};
+
+export const managerEntries: PresetProperty<'managerEntries'> = async (entry = [], options) => {
+  // Throw an error when addon-interactions is used.
+  // This is done by reading an annotation defined in addon-interactions, which although not ideal,
+  // is a way to handle addon conflict without having to worry about the order of which they are registered
+  const annotation = await options.presets.apply('ADDON_INTERACTIONS_IN_USE', false);
+  if (annotation) {
+    // eslint-disable-next-line local-rules/no-uncategorized-errors
+    const error = new Error(
+      dedent`
+      You have both addon-interactions and addon-test enabled, which is not allowed.
+
+      addon-test is a replacement for addon-interactions, please uninstall and remove addon-interactions from the addons list in your main config at ${options.configDir}.
+      `
+    );
+    error.name = 'AddonConflictError';
+
+    throw error;
+  }
+
+  // for whatever reason seems like the return type of managerEntries is not correct (it expects never instead of string[])
+  return entry as never;
 };

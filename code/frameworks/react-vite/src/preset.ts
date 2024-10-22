@@ -1,6 +1,6 @@
-import type { PresetProperty } from 'storybook/internal/types';
+import { fileURLToPath } from 'node:url';
 
-import { fileURLToPath } from 'url';
+import type { PresetProperty } from 'storybook/internal/types';
 
 import type { StorybookConfig } from './types';
 
@@ -8,8 +8,6 @@ export const core: PresetProperty<'core'> = {
   builder: fileURLToPath(import.meta.resolve('@storybook/builder-vite')),
   renderer: fileURLToPath(import.meta.resolve('@storybook/react/preset')),
 };
-
-console.log({ core });
 
 export const viteFinal: StorybookConfig['viteFinal'] = async (config, { presets }) => {
   const { plugins = [] } = config;

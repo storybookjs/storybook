@@ -108,10 +108,10 @@
     "vitest": "^2.1.3"
   },
   "peerDependencies": {
-    "@vitest/browser": "^2.1.1",
-    "@vitest/runner": "^2.1.1",
+    "@vitest/browser": "*",
+    "@vitest/runner": "*",
     "storybook": "workspace:^",
-    "vitest": "^2.1.1"
+    "vitest": "*"
   },
   "peerDependenciesMeta": {
     "@vitest/browser": {

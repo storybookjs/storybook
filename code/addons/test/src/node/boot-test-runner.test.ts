@@ -46,17 +46,12 @@ vi.mock('../logger', () => ({
   log: vi.fn(),
 }));
 
-beforeEach(() => {
-  vi.useFakeTimers();
-  killTestRunner();
-});
-
-afterEach(() => {
-  vi.useRealTimers();
-});
-
 const transport = { setHandler: vi.fn(), send: vi.fn() } satisfies ChannelTransport;
 const mockChannel = new Channel({ transport });
+
+beforeEach(() => {
+  killTestRunner(mockChannel);
+});
 
 describe('bootTestRunner', () => {
   it('should execute vitest.js', async () => {
@@ -84,14 +79,17 @@ describe('bootTestRunner', () => {
   });
 
   it('should abort if vitest doesn’t become ready in time', async () => {
+    vi.useFakeTimers();
     const promise = runTestRunner(mockChannel);
     vi.advanceTimersByTime(30001);
     await expect(promise).rejects.toThrow();
+    vi.useRealTimers();
   });
 
   it('should forward channel events', async () => {
     runTestRunner(mockChannel);
     message({ type: 'ready' });
+    await new Promise((resolve) => setTimeout(resolve));
 
     message({ type: TESTING_MODULE_PROGRESS_REPORT, args: ['foo'] });
     expect(mockChannel.last(TESTING_MODULE_PROGRESS_REPORT)).toEqual(['foo']);
@@ -128,6 +126,8 @@ describe('bootTestRunner', () => {
   it('should resend init event', async () => {
     runTestRunner(mockChannel, 'init', ['foo']);
     message({ type: 'ready' });
+    await new Promise((resolve) => setTimeout(resolve));
+
     expect(child.send).toHaveBeenCalledWith({
       args: ['foo'],
       from: 'server',

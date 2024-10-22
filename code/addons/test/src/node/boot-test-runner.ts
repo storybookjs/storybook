@@ -24,9 +24,36 @@ const MAX_START_TIME = 30000;
 const vitestModulePath = join(__dirname, 'node', 'vitest.mjs');
 
 let child: null | ChildProcess;
+let queue: [string, any[]][] = [];
 let ready = false;
 
-const bootTestRunner = async (channel: Channel, initEvent?: string, initArgs?: any[]) => {
+const enqueue = (type: string, args: any[]) => queue.push([type, args]);
+const dequeue = () => {
+  if (queue.length) {
+    const [type, args] = queue.shift();
+    child.send({ args, from: 'server', type });
+  }
+};
+const forwardOrEnqueue =
+  (type: string) =>
+  (...args: any[]) =>
+    ready ? child.send({ args, from: 'server', type }) : enqueue(type, args);
+
+const forwardRun = forwardOrEnqueue(TESTING_MODULE_RUN_REQUEST);
+const forwardRunAll = forwardOrEnqueue(TESTING_MODULE_RUN_ALL_REQUEST);
+const forwardWatchMode = forwardOrEnqueue(TESTING_MODULE_WATCH_MODE_REQUEST);
+const forwardCancel = forwardOrEnqueue(TESTING_MODULE_CANCEL_TEST_RUN_REQUEST);
+
+export const killTestRunner = (channel: Channel) => {
+  channel.off(TESTING_MODULE_RUN_REQUEST, forwardRun);
+  channel.off(TESTING_MODULE_RUN_ALL_REQUEST, forwardRunAll);
+  channel.off(TESTING_MODULE_WATCH_MODE_REQUEST, forwardWatchMode);
+  channel.off(TESTING_MODULE_CANCEL_TEST_RUN_REQUEST, forwardCancel);
+  child?.kill();
+  child = null;
+};
+
+const bootTestRunner = async (channel: Channel) => {
   let stderr: string[] = [];
 
   function reportFatalError(e: any) {
@@ -36,26 +63,13 @@ const bootTestRunner = async (channel: Channel, initEvent?: string, initArgs?: a
     } as TestingModuleCrashReportPayload);
   }
 
-  const forwardRun = (...args: any[]) =>
-    child?.send({ args, from: 'server', type: TESTING_MODULE_RUN_REQUEST });
-  const forwardRunAll = (...args: any[]) =>
-    child?.send({ args, from: 'server', type: TESTING_MODULE_RUN_ALL_REQUEST });
-  const forwardWatchMode = (...args: any[]) =>
-    child?.send({ args, from: 'server', type: TESTING_MODULE_WATCH_MODE_REQUEST });
-  const forwardCancel = (...args: any[]) =>
-    child?.send({ args, from: 'server', type: TESTING_MODULE_CANCEL_TEST_RUN_REQUEST });
-
-  const killChild = () => {
-    channel.off(TESTING_MODULE_RUN_REQUEST, forwardRun);
-    channel.off(TESTING_MODULE_RUN_ALL_REQUEST, forwardRunAll);
-    channel.off(TESTING_MODULE_WATCH_MODE_REQUEST, forwardWatchMode);
-    channel.off(TESTING_MODULE_CANCEL_TEST_RUN_REQUEST, forwardCancel);
-    child?.kill();
-    child = null;
-  };
+  channel.on(TESTING_MODULE_RUN_REQUEST, forwardRun);
+  channel.on(TESTING_MODULE_RUN_ALL_REQUEST, forwardRunAll);
+  channel.on(TESTING_MODULE_WATCH_MODE_REQUEST, forwardWatchMode);
+  channel.on(TESTING_MODULE_CANCEL_TEST_RUN_REQUEST, forwardCancel);
 
   const exit = (code = 0) => {
-    killChild();
+    killTestRunner(channel);
     process.exit(code);
   };
 
@@ -79,26 +93,15 @@ const bootTestRunner = async (channel: Channel, initEvent?: string, initArgs?: a
 
       child.on('message', (result: any) => {
         if (result.type === 'ready') {
-          // Resend the event that triggered the boot sequence, now that the child is ready to handle it
-          if (initEvent && initArgs) {
-            child?.send({ type: initEvent, args: initArgs, from: 'server' });
-          }
-
-          // Forward all events from the channel to the child process
-          channel.on(TESTING_MODULE_RUN_REQUEST, forwardRun);
-          channel.on(TESTING_MODULE_RUN_ALL_REQUEST, forwardRunAll);
-          channel.on(TESTING_MODULE_WATCH_MODE_REQUEST, forwardWatchMode);
-          channel.on(TESTING_MODULE_CANCEL_TEST_RUN_REQUEST, forwardCancel);
-
           resolve();
         } else if (result.type === 'error') {
-          killChild();
           log(result.message);
           log(result.error);
           // Reject if the child process reports an error before it's ready
           if (!ready) {
             reject(new Error(`${result.message}\n${result.error}`));
           } else {
+            killTestRunner(channel);
             reportFatalError(result.error);
           }
         } else {
@@ -119,6 +122,7 @@ const bootTestRunner = async (channel: Channel, initEvent?: string, initArgs?: a
   );
 
   await Promise.race([startChildProcess(), timeout]).catch((e) => {
+    killTestRunner(channel);
     reportFatalError(e);
     throw e;
   });
@@ -126,15 +130,15 @@ const bootTestRunner = async (channel: Channel, initEvent?: string, initArgs?: a
 
 export const runTestRunner = async (channel: Channel, initEvent?: string, initArgs?: any[]) => {
   if (!child) {
+    queue = [];
     ready = false;
-    await bootTestRunner(channel, initEvent, initArgs);
-    ready = true;
-  }
-};
+    await bootTestRunner(channel);
 
-export const killTestRunner = () => {
-  if (child) {
-    child.kill();
-    child = null;
+    // Resend any events that happened while booting, now that the child is ready to handle it
+    if (initEvent && initArgs) {
+      child.send({ type: initEvent, args: initArgs, from: 'server' });
+    }
+    dequeue();
+    ready = true;
   }
 };

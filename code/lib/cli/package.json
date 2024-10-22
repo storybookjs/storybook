@@ -41,148 +41,116 @@
     "./package.json": "./package.json",
     "./core": {
       "types": "./core/index.d.ts",
-      "import": "./core/index.js",
-      "require": "./core/index.cjs"
+      "node": "./core/index.node.js",
+      "default": "./core/index.js"
     },
     "./internal/node-logger": {
       "types": "./core/node-logger/index.d.ts",
-      "import": "./core/node-logger/index.js",
-      "require": "./core/node-logger/index.cjs"
+      "default": "./core/node-logger/index.node.js"
     },
     "./internal/client-logger": {
       "types": "./core/client-logger/index.d.ts",
-      "import": "./core/client-logger/index.js",
-      "require": "./core/client-logger/index.cjs"
+      "default": "./core/client-logger/index.js"
     },
     "./internal/core-server": {
       "types": "./core/core-server/index.d.ts",
-      "import": "./core/core-server/index.js",
-      "require": "./core/core-server/index.cjs"
+      "default": "./core/core-server/index.node.js"
     },
-    "./internal/core-server/presets/common-preset": {
-      "import": "./core/core-server/presets/common-preset.js",
-      "require": "./core/core-server/presets/common-preset.cjs"
-    },
-    "./internal/core-server/presets/common-manager": {
-      "import": "./core/core-server/presets/common-manager.js"
-    },
-    "./internal/core-server/presets/common-override-preset": {
-      "import": "./core/core-server/presets/common-override-preset.js",
-      "require": "./core/core-server/presets/common-override-preset.cjs"
-    },
+    "./internal/core-server/presets/common-preset": "./core/core-server/presets/common-preset.node.js",
+    "./internal/core-server/presets/common-manager": "./core/core-server/presets/common-manager.js",
+    "./internal/core-server/presets/common-override-preset": "./core/core-server/presets/common-override-preset.node.js",
     "./internal/core-events": {
       "types": "./core/core-events/index.d.ts",
-      "import": "./core/core-events/index.js",
-      "require": "./core/core-events/index.cjs"
+      "node": "./core/core-events/index.node.js",
+      "default": "./core/core-events/index.js"
     },
     "./internal/manager-errors": {
       "types": "./core/manager-errors.d.ts",
-      "import": "./core/manager-errors.js"
+      "default": "./core/manager-errors.js"
     },
     "./internal/preview-errors": {
       "types": "./core/preview-errors.d.ts",
-      "import": "./core/preview-errors.js",
-      "require": "./core/preview-errors.cjs"
+      "default": "./core/preview-errors.js"
     },
     "./internal/server-errors": {
       "types": "./core/server-errors.d.ts",
-      "import": "./core/server-errors.js",
-      "require": "./core/server-errors.cjs"
+      "default": "./core/server-errors.node.js"
     },
     "./internal/channels": {
       "types": "./core/channels/index.d.ts",
-      "import": "./core/channels/index.js",
-      "require": "./core/channels/index.cjs"
+      "default": "./core/channels/index.js"
     },
     "./internal/types": {
       "types": "./core/types/index.d.ts",
-      "import": "./core/types/index.js",
-      "require": "./core/types/index.cjs"
+      "default": "./core/types/index.js"
     },
     "./internal/csf-tools": {
       "types": "./core/csf-tools/index.d.ts",
-      "import": "./core/csf-tools/index.js",
-      "require": "./core/csf-tools/index.cjs"
+      "default": "./core/csf-tools/index.node.js"
     },
     "./internal/common": {
       "types": "./core/common/index.d.ts",
-      "import": "./core/common/index.js",
-      "require": "./core/common/index.cjs"
+      "default": "./core/common/index.node.js"
     },
     "./internal/builder-manager": {
       "types": "./core/builder-manager/index.d.ts",
-      "import": "./core/builder-manager/index.js",
-      "require": "./core/builder-manager/index.cjs"
+      "default": "./core/builder-manager/index.node.js"
     },
     "./internal/telemetry": {
       "types": "./core/telemetry/index.d.ts",
-      "import": "./core/telemetry/index.js",
-      "require": "./core/telemetry/index.cjs"
+      "default": "./core/telemetry/index.node.js"
     },
     "./internal/preview-api": {
       "types": "./core/preview-api/index.d.ts",
-      "import": "./core/preview-api/index.js",
-      "require": "./core/preview-api/index.cjs"
+      "default": "./core/preview-api/index.js"
     },
     "./internal/manager-api": {
       "types": "./core/manager-api/index.d.ts",
-      "import": "./core/manager-api/index.js",
-      "require": "./core/manager-api/index.cjs"
+      "default": "./core/manager-api/index.js"
     },
     "./internal/router": {
       "types": "./core/router/index.d.ts",
-      "import": "./core/router/index.js",
-      "require": "./core/router/index.cjs"
+      "default": "./core/router/index.js"
     },
     "./internal/components": {
       "types": "./core/components/index.d.ts",
-      "import": "./core/components/index.js",
-      "require": "./core/components/index.cjs"
+      "default": "./core/components/index.js"
     },
     "./internal/theming": {
       "types": "./core/theming/index.d.ts",
-      "import": "./core/theming/index.js",
-      "require": "./core/theming/index.cjs"
+      "default": "./core/theming/index.js"
     },
     "./internal/theming/create": {
       "types": "./core/theming/create.d.ts",
-      "import": "./core/theming/create.js",
-      "require": "./core/theming/create.cjs"
+      "default": "./core/theming/create.js"
     },
     "./internal/docs-tools": {
       "types": "./core/docs-tools/index.d.ts",
-      "import": "./core/docs-tools/index.js",
-      "require": "./core/docs-tools/index.cjs"
+      "default": "./core/docs-tools/index.js"
     },
     "./internal/manager/globals-module-info": {
       "types": "./core/manager/globals-module-info.d.ts",
-      "import": "./core/manager/globals-module-info.js",
-      "require": "./core/manager/globals-module-info.cjs"
+      "default": "./core/manager/globals-module-info.node.js"
     },
     "./internal/preview/globals": {
       "types": "./core/preview/globals.d.ts",
-      "import": "./core/preview/globals.js",
-      "require": "./core/preview/globals.cjs"
+      "default": "./core/preview/globals.node.js"
     },
     "./internal/cli": {
       "types": "./core/cli/index.d.ts",
-      "import": "./core/cli/index.js",
-      "require": "./core/cli/index.cjs"
+      "default": "./core/cli/index.node.js"
     },
     "./internal/cli/bin": {
       "types": "./core/cli/bin/index.d.ts",
-      "import": "./core/cli/bin/index.js",
-      "require": "./core/cli/bin/index.cjs"
+      "default": "./core/cli/bin/index.node.js"
     },
     "./internal/manager/globals": {
       "types": "./core/manager/globals.d.ts",
-      "import": "./core/manager/globals.js",
-      "require": "./core/manager/globals.cjs"
+      "default": "./core/manager/globals.node.js"
     },
     "./internal/babel": {
       "types": "./core/babel/index.d.ts",
-      "import": "./core/babel/index.js",
-      "require": "./core/babel/index.cjs"
+      "default": "./core/babel/index.node.js"
     }
   },
   "main": "dist/index.cjs",

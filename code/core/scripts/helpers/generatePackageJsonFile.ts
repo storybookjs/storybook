@@ -17,33 +17,41 @@ export async function generatePackageJsonFile(entries: ReturnType<typeof getEntr
    * `./scripts/entries.ts` file to ensure all things we create actually exist and are mapped to the
    * correct path.
    */
-  pkgJson.exports = entries.reduce<Record<string, Record<string, string>>>((acc, entry) => {
-    let main = './' + slash(relative(cwd, entry.file).replace('src', 'dist'));
+  pkgJson.exports = entries.reduce<Record<string, string | Record<string, string>>>(
+    (acc, entry) => {
+      let main = './' + slash(relative(cwd, entry.file).replace('src', 'dist'));
 
-    const content: Record<string, string> = {};
-    if (entry.dts) {
-      content.types = main.replace(/\.tsx?/, '.d.ts');
-    }
-    if (entry.browser) {
-      content.import = main.replace(/\.tsx?/, '.js');
-    }
-    if (entry.node && !entry.browser) {
-      content.import = main.replace(/\.tsx?/, '.js');
-    }
-    if (entry.node) {
-      content.require = main.replace(/\.tsx?/, '.cjs');
-    }
-    if (main === './dist/index.ts' || main === './dist/index.tsx') {
-      main = '.';
-    }
-    acc[
-      main
-        .replace(/\/index\.tsx?/, '')
-        .replace(/\.tsx?/, '')
-        .replace('dist/', '')
-    ] = content;
-    return acc;
-  }, {});
+      let content: Record<string, string> | string = {};
+      if (entry.dts) {
+        content.types = main.replace(/\.tsx?/, '.d.ts');
+      }
+      if (entry.node && entry.browser) {
+        content.node = main.replace(/\.tsx?/, '.node.js');
+      }
+      if (entry.node && !entry.browser) {
+        content.default = main.replace(/\.tsx?/, '.node.js');
+      }
+      if (entry.browser) {
+        content.default = main.replace(/\.tsx?/, '.js');
+      }
+
+      if (Object.keys(content).length === 1) {
+        content = content.default;
+      }
+
+      if (main === './dist/index.ts' || main === './dist/index.tsx') {
+        main = '.';
+      }
+      acc[
+        main
+          .replace(/\/index\.tsx?/, '')
+          .replace(/\.tsx?/, '')
+          .replace('dist/', '')
+      ] = content;
+      return acc;
+    },
+    {}
+  );
 
   // Add the package.json file to the exports, so we can use it to `require.resolve` the package's root easily
   pkgJson.exports['./package.json'] = './package.json';

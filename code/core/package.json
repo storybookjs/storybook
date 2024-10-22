@@ -24,148 +24,116 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "node": "./dist/index.node.js",
+      "default": "./dist/index.js"
     },
     "./node-logger": {
       "types": "./dist/node-logger/index.d.ts",
-      "import": "./dist/node-logger/index.js",
-      "require": "./dist/node-logger/index.cjs"
+      "default": "./dist/node-logger/index.node.js"
     },
     "./client-logger": {
       "types": "./dist/client-logger/index.d.ts",
-      "import": "./dist/client-logger/index.js",
-      "require": "./dist/client-logger/index.cjs"
+      "default": "./dist/client-logger/index.js"
     },
     "./core-server": {
       "types": "./dist/core-server/index.d.ts",
-      "import": "./dist/core-server/index.js",
-      "require": "./dist/core-server/index.cjs"
+      "default": "./dist/core-server/index.node.js"
     },
-    "./core-server/presets/common-preset": {
-      "import": "./dist/core-server/presets/common-preset.js",
-      "require": "./dist/core-server/presets/common-preset.cjs"
-    },
-    "./core-server/presets/common-manager": {
-      "import": "./dist/core-server/presets/common-manager.js"
-    },
-    "./core-server/presets/common-override-preset": {
-      "import": "./dist/core-server/presets/common-override-preset.js",
-      "require": "./dist/core-server/presets/common-override-preset.cjs"
-    },
+    "./core-server/presets/common-preset": "./dist/core-server/presets/common-preset.node.js",
+    "./core-server/presets/common-manager": "./dist/core-server/presets/common-manager.js",
+    "./core-server/presets/common-override-preset": "./dist/core-server/presets/common-override-preset.node.js",
     "./core-events": {
       "types": "./dist/core-events/index.d.ts",
-      "import": "./dist/core-events/index.js",
-      "require": "./dist/core-events/index.cjs"
+      "node": "./dist/core-events/index.node.js",
+      "default": "./dist/core-events/index.js"
     },
     "./manager-errors": {
       "types": "./dist/manager-errors.d.ts",
-      "import": "./dist/manager-errors.js"
+      "default": "./dist/manager-errors.js"
     },
     "./preview-errors": {
       "types": "./dist/preview-errors.d.ts",
-      "import": "./dist/preview-errors.js",
-      "require": "./dist/preview-errors.cjs"
+      "default": "./dist/preview-errors.js"
     },
     "./server-errors": {
       "types": "./dist/server-errors.d.ts",
-      "import": "./dist/server-errors.js",
-      "require": "./dist/server-errors.cjs"
+      "default": "./dist/server-errors.node.js"
     },
     "./channels": {
       "types": "./dist/channels/index.d.ts",
-      "import": "./dist/channels/index.js",
-      "require": "./dist/channels/index.cjs"
+      "default": "./dist/channels/index.js"
     },
     "./types": {
       "types": "./dist/types/index.d.ts",
-      "import": "./dist/types/index.js",
-      "require": "./dist/types/index.cjs"
+      "default": "./dist/types/index.js"
     },
     "./csf-tools": {
       "types": "./dist/csf-tools/index.d.ts",
-      "import": "./dist/csf-tools/index.js",
-      "require": "./dist/csf-tools/index.cjs"
+      "default": "./dist/csf-tools/index.node.js"
     },
     "./common": {
       "types": "./dist/common/index.d.ts",
-      "import": "./dist/common/index.js",
-      "require": "./dist/common/index.cjs"
+      "default": "./dist/common/index.node.js"
     },
     "./builder-manager": {
       "types": "./dist/builder-manager/index.d.ts",
-      "import": "./dist/builder-manager/index.js",
-      "require": "./dist/builder-manager/index.cjs"
+      "default": "./dist/builder-manager/index.node.js"
     },
     "./telemetry": {
       "types": "./dist/telemetry/index.d.ts",
-      "import": "./dist/telemetry/index.js",
-      "require": "./dist/telemetry/index.cjs"
+      "default": "./dist/telemetry/index.node.js"
     },
     "./preview-api": {
       "types": "./dist/preview-api/index.d.ts",
-      "import": "./dist/preview-api/index.js",
-      "require": "./dist/preview-api/index.cjs"
+      "default": "./dist/preview-api/index.js"
     },
     "./manager-api": {
       "types": "./dist/manager-api/index.d.ts",
-      "import": "./dist/manager-api/index.js",
-      "require": "./dist/manager-api/index.cjs"
+      "default": "./dist/manager-api/index.js"
     },
     "./router": {
       "types": "./dist/router/index.d.ts",
-      "import": "./dist/router/index.js",
-      "require": "./dist/router/index.cjs"
+      "default": "./dist/router/index.js"
     },
     "./components": {
       "types": "./dist/components/index.d.ts",
-      "import": "./dist/components/index.js",
-      "require": "./dist/components/index.cjs"
+      "default": "./dist/components/index.js"
     },
     "./theming": {
       "types": "./dist/theming/index.d.ts",
-      "import": "./dist/theming/index.js",
-      "require": "./dist/theming/index.cjs"
+      "default": "./dist/theming/index.js"
     },
     "./theming/create": {
       "types": "./dist/theming/create.d.ts",
-      "import": "./dist/theming/create.js",
-      "require": "./dist/theming/create.cjs"
+      "default": "./dist/theming/create.js"
     },
     "./docs-tools": {
       "types": "./dist/docs-tools/index.d.ts",
-      "import": "./dist/docs-tools/index.js",
-      "require": "./dist/docs-tools/index.cjs"
+      "default": "./dist/docs-tools/index.js"
     },
     "./manager/globals-module-info": {
       "types": "./dist/manager/globals-module-info.d.ts",
-      "import": "./dist/manager/globals-module-info.js",
-      "require": "./dist/manager/globals-module-info.cjs"
+      "default": "./dist/manager/globals-module-info.node.js"
     },
     "./manager/globals": {
       "types": "./dist/manager/globals.d.ts",
-      "import": "./dist/manager/globals.js",
-      "require": "./dist/manager/globals.cjs"
+      "default": "./dist/manager/globals.node.js"
     },
     "./preview/globals": {
       "types": "./dist/preview/globals.d.ts",
-      "import": "./dist/preview/globals.js",
-      "require": "./dist/preview/globals.cjs"
+      "default": "./dist/preview/globals.node.js"
     },
     "./babel": {
       "types": "./dist/babel/index.d.ts",
-      "import": "./dist/babel/index.js",
-      "require": "./dist/babel/index.cjs"
+      "default": "./dist/babel/index.node.js"
     },
     "./cli": {
       "types": "./dist/cli/index.d.ts",
-      "import": "./dist/cli/index.js",
-      "require": "./dist/cli/index.cjs"
+      "default": "./dist/cli/index.node.js"
     },
     "./cli/bin": {
       "types": "./dist/cli/bin/index.d.ts",
-      "import": "./dist/cli/bin/index.js",
-      "require": "./dist/cli/bin/index.cjs"
+      "default": "./dist/cli/bin/index.node.js"
     },
     "./package.json": "./package.json"
   },

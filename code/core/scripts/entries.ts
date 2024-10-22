@@ -7,7 +7,7 @@ export const getEntries = (cwd: string) => {
     define('src/index.ts', ['node', 'browser'], true),
 
     define('src/node-logger/index.ts', ['node'], true),
-    define('src/client-logger/index.ts', ['browser', 'node'], true),
+    define('src/client-logger/index.ts', ['browser'], true),
 
     define('src/core-server/index.ts', ['node'], true),
     define('src/core-server/presets/common-preset.ts', ['node'], false),
@@ -16,28 +16,28 @@ export const getEntries = (cwd: string) => {
 
     define('src/core-events/index.ts', ['browser', 'node'], true),
     define('src/manager-errors.ts', ['browser'], true),
-    define('src/preview-errors.ts', ['browser', 'node'], true),
+    define('src/preview-errors.ts', ['browser'], true),
     define('src/server-errors.ts', ['node'], true),
 
-    define('src/channels/index.ts', ['browser', 'node'], true),
-    define('src/types/index.ts', ['browser', 'node'], true, ['react']),
+    define('src/channels/index.ts', ['browser'], true),
+    define('src/types/index.ts', ['browser'], true, ['react']),
     define('src/csf-tools/index.ts', ['node'], true),
     define('src/common/index.ts', ['node'], true),
     define('src/builder-manager/index.ts', ['node'], true),
     define('src/telemetry/index.ts', ['node'], true),
-    define('src/preview-api/index.ts', ['browser', 'node'], true),
-    define('src/manager-api/index.ts', ['browser', 'node'], true, ['react']),
-    define('src/router/index.ts', ['browser', 'node'], true, ['react']),
+    define('src/preview-api/index.ts', ['browser'], true),
+    define('src/manager-api/index.ts', ['browser'], true, ['react']),
+    define('src/router/index.ts', ['browser'], true, ['react']),
     define(
       'src/components/index.ts',
-      ['browser', 'node'],
+      ['browser'],
       true,
       ['react', 'react-dom'],
       ['prettier'] // the syntax highlighter uses prettier/standalone to format the code
     ),
-    define('src/theming/index.ts', ['browser', 'node'], true, ['react']),
-    define('src/theming/create.ts', ['browser', 'node'], true, ['react']),
-    define('src/docs-tools/index.ts', ['browser', 'node'], true),
+    define('src/theming/index.ts', ['browser'], true, ['react']),
+    define('src/theming/create.ts', ['browser'], true, ['react']),
+    define('src/docs-tools/index.ts', ['browser'], true),
 
     define('src/manager/globals-module-info.ts', ['node'], true),
     define('src/manager/globals.ts', ['node'], true),

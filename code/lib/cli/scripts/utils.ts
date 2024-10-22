@@ -12,7 +12,10 @@ export const write = async (location: string, data: string) => {
   return writeFile(location, data);
 };
 
-export const mapCoreExportToSelf = (map: Record<string, string>) => {
+export const mapCoreExportToSelf = (map: string | Record<string, string>) => {
+  if (typeof map === 'string') {
+    return map.replace('./dist/', './core/');
+  }
   return Object.entries(map).reduce<Record<string, string>>((acc, [key, input]) => {
     const value = input.replace('./dist/', './core/');
     acc[key] = value;
@@ -32,9 +35,9 @@ export const generateMapperContent = (input: string) => {
   if (input.endsWith('.js')) {
     return `export * from '@storybook/core/${value}';\n`;
   }
-  if (input.endsWith('.cjs')) {
-    return `module.exports = require('@storybook/core/${value}');\n`;
-  }
+  // if (input.endsWith('.cjs')) {
+  //   return `module.exports = require('@storybook/core/${value}');\n`;
+  // }
   if (input.endsWith('.d.ts')) {
     return dedent`
       export * from '@storybook/core/${value}';

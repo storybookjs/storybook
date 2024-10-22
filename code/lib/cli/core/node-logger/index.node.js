@@ -1,1 +1,1 @@
-export * from '@storybook/core/node-logger.node';
+export * from '@storybook/core/node-logger';

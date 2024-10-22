@@ -1,1 +1,1 @@
-export * from '@storybook/core/csf-tools.node';
+export * from '@storybook/core/csf-tools';

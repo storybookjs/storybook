@@ -24,52 +24,44 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.mjs"
     },
     "./actions/preview": {
       "types": "./dist/actions/preview.d.ts",
-      "import": "./dist/actions/preview.mjs",
-      "require": "./dist/actions/preview.js"
+      "default": "./dist/actions/preview.mjs"
     },
     "./actions/manager": "./dist/actions/manager.js",
     "./backgrounds/preview": {
       "types": "./dist/backgrounds/preview.d.ts",
-      "import": "./dist/backgrounds/preview.mjs",
-      "require": "./dist/backgrounds/preview.js"
+      "default": "./dist/backgrounds/preview.mjs"
     },
     "./backgrounds/manager": "./dist/backgrounds/manager.js",
     "./controls/manager": "./dist/controls/manager.js",
     "./docs/preview": {
       "types": "./dist/docs/preview.d.ts",
-      "import": "./dist/docs/preview.mjs",
-      "require": "./dist/docs/preview.js"
+      "default": "./dist/docs/preview.mjs"
     },
     "./docs/preset": "./dist/docs/preset.js",
     "./docs/mdx-react-shim": "./dist/docs/mdx-react-shim.js",
     "./highlight/preview": {
       "types": "./dist/highlight/preview.d.ts",
-      "import": "./dist/highlight/preview.mjs",
-      "require": "./dist/highlight/preview.js"
+      "default": "./dist/highlight/preview.mjs"
     },
     "./measure/preview": {
       "types": "./dist/measure/preview.d.ts",
-      "import": "./dist/measure/preview.mjs",
-      "require": "./dist/measure/preview.js"
+      "default": "./dist/measure/preview.mjs"
     },
     "./measure/manager": "./dist/measure/manager.js",
     "./outline/preview": {
       "types": "./dist/outline/preview.d.ts",
-      "import": "./dist/outline/preview.mjs",
-      "require": "./dist/outline/preview.js"
+      "default": "./dist/outline/preview.mjs"
     },
     "./outline/manager": "./dist/outline/manager.js",
     "./toolbars/manager": "./dist/toolbars/manager.js",
     "./viewport/manager": "./dist/viewport/manager.js",
     "./viewport/preview": {
       "types": "./dist/viewport/preview.d.ts",
-      "import": "./dist/viewport/preview.mjs",
-      "require": "./dist/viewport/preview.js"
+      "default": "./dist/viewport/preview.mjs"
     },
     "./package.json": "./package.json"
   },

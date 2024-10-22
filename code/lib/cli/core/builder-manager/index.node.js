@@ -1,1 +1,1 @@
-export * from '@storybook/core/builder-manager.node';
+export * from '@storybook/core/builder-manager';

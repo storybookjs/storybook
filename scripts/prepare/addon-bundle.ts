@@ -144,22 +144,22 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
           entry: exportEntries,
           external: [...commonExternals, ...globalManagerPackages, ...globalPreviewPackages],
         }),
-        build({
-          ...commonOptions,
-          ...(optimized ? dtsConfig : {}),
-          entry: exportEntries,
-          format: ['cjs'],
-          target: browserOptions.target,
-          platform: 'neutral',
-          external: [...commonExternals, ...globalManagerPackages, ...globalPreviewPackages],
-          esbuildOptions: (options) => {
-            options.platform = 'neutral';
-            Object.assign(options, getESBuildOptions(optimized));
-          },
-        }),
+        // build({
+        //   ...commonOptions,
+        //   ...(optimized ? dtsConfig : {}),
+        //   entry: exportEntries,
+        //   format: ['esm'],
+        //   target: browserOptions.target,
+        //   platform: 'neutral',
+        //   external: [...commonExternals, ...globalManagerPackages, ...globalPreviewPackages],
+        //   esbuildOptions: (options) => {
+        //     options.platform = 'neutral';
+        //     Object.assign(options, getESBuildOptions(optimized));
+        //   },
+        // }),
       ]);
       if (!watch) {
-        await readMetafiles({ formats: ['esm', 'cjs'] });
+        await readMetafiles({ formats: ['esm'] });
       }
     });
 
@@ -196,12 +196,12 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         ...commonOptions,
         ...(optimized ? dtsConfig : {}),
         ...browserOptions,
-        format: ['esm', 'cjs'],
+        format: ['esm'],
         entry: previewEntries.map((e: string) => slash(join(cwd, e))),
         external: [...commonExternals, ...globalPreviewPackages],
       });
       if (!watch) {
-        await readMetafiles({ formats: ['esm', 'cjs'] });
+        await readMetafiles({ formats: ['esm'] });
       }
     });
 
@@ -218,18 +218,6 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
     });
     tasks.push(async () => {
       await Promise.all([
-        build({
-          ...commonOptions,
-          entry: nodeEntries.map((e: string) => slash(join(cwd, e))),
-          format: ['cjs'],
-          target: 'node18',
-          platform: 'node',
-          external: commonExternals,
-          esbuildOptions: (c) => {
-            c.platform = 'node';
-            Object.assign(c, getESBuildOptions(optimized));
-          },
-        }),
         build({
           ...commonOptions,
           ...(optimized ? dtsConfig : {}),
@@ -257,7 +245,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         }),
       ]);
       if (!watch) {
-        await readMetafiles({ formats: ['esm', 'cjs'] });
+        await readMetafiles({ formats: ['esm'] });
       }
     });
 
@@ -354,16 +342,16 @@ const metafile: Metafile = {
 };
 
 async function readMetafiles({ formats }: { formats: Formats[] }) {
-  await Promise.all(
-    formats.map(async (format) => {
-      const fromFilename = `metafile-${format}.json`;
-      const currentMetafile = await fs.readJson(join(OUT_DIR, fromFilename));
-      metafile.inputs = { ...metafile.inputs, ...currentMetafile.inputs };
-      metafile.outputs = { ...metafile.outputs, ...currentMetafile.outputs };
+  const fromFilename = `metafile.json`;
+  try {
+    const currentMetafile = await fs.readJson(join(OUT_DIR, fromFilename));
+    metafile.inputs = { ...metafile.inputs, ...currentMetafile.inputs };
+    metafile.outputs = { ...metafile.outputs, ...currentMetafile.outputs };
 
-      await fs.rm(join(OUT_DIR, fromFilename));
-    })
-  );
+    // await fs.rm(join(OUT_DIR, fromFilename));
+  } catch (e) {
+    //
+  }
 }
 
 async function saveMetafiles({ metafilesDir }: { metafilesDir: string }) {

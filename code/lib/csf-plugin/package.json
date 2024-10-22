@@ -20,18 +20,15 @@
   },
   "license": "MIT",
   "sideEffects": false,
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
     "./dist/webpack-loader": {
       "types": "./dist/webpack-loader.d.ts",
-      "node": "./dist/webpack-loader.js",
-      "import": "./dist/webpack-loader.mjs",
-      "require": "./dist/webpack-loader.js"
+      "default": "./dist/webpack-loader.js"
     },
     "./package.json": "./package.json"
   },

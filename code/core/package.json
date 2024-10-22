@@ -44,7 +44,6 @@
     "./core-server/presets/common-override-preset": "./dist/core-server/presets/common-override-preset.node.js",
     "./core-events": {
       "types": "./dist/core-events/index.d.ts",
-      "node": "./dist/core-events/index.node.js",
       "default": "./dist/core-events/index.js"
     },
     "./manager-errors": {

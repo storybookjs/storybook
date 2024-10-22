@@ -27,6 +27,7 @@ export const mapCoreExportToSelf = (map: string | Record<string, string>) => {
 export const generateMapperContent = (input: string) => {
   const value = input
     .replace('./core/', '')
+    .replace('.node', '')
     .replace('/index', '')
     .replace('.cjs', '')
     .replace('.d.ts', '')

@@ -1,1 +1,1 @@
-export * from '@storybook/core/server-errors.node';
+export * from '@storybook/core/server-errors';

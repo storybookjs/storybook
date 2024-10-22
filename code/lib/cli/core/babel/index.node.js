@@ -1,1 +1,1 @@
-export * from '@storybook/core/babel.node';
+export * from '@storybook/core/babel';

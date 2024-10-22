@@ -14,7 +14,7 @@ export const getEntries = (cwd: string) => {
     define('src/core-server/presets/common-manager.ts', ['browser'], false),
     define('src/core-server/presets/common-override-preset.ts', ['node'], false),
 
-    define('src/core-events/index.ts', ['browser', 'node'], true),
+    define('src/core-events/index.ts', ['browser'], true),
     define('src/manager-errors.ts', ['browser'], true),
     define('src/preview-errors.ts', ['browser'], true),
     define('src/server-errors.ts', ['node'], true),

@@ -1,1 +1,1 @@
-export * from '@storybook/core/telemetry.node';
+export * from '@storybook/core/telemetry';

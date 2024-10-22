@@ -1,1 +1,1 @@
-export * from '@storybook/core/core-server/presets/common-preset.node';
+export * from '@storybook/core/core-server/presets/common-preset';

@@ -1,1 +1,1 @@
-export * from '@storybook/core/cli/bin.node';
+export * from '@storybook/core/cli/bin';

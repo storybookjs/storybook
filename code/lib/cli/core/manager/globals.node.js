@@ -1,1 +1,1 @@
-export * from '@storybook/core/manager/globals.node';
+export * from '@storybook/core/manager/globals';

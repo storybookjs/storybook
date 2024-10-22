@@ -1,1 +1,1 @@
-export * from '@storybook/core/common.node';
+export * from '@storybook/core/common';

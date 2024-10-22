@@ -1,1 +1,1 @@
-export * from '@storybook/core/core-server/presets/common-override-preset.node';
+export * from '@storybook/core/core-server/presets/common-override-preset';

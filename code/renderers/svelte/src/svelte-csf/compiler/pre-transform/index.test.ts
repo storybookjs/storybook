@@ -208,7 +208,6 @@ describe(codemodLegacyNodes.name, () => {
 
     expect(print(transformed)).toMatchInlineSnapshot(`
       "<script context="module">
-      	import Button from "./Button.svelte";
       	import { defineMeta } from "@storybook/addon-svelte-csf";
       	import Button from "./Button.svelte";
 
@@ -273,6 +272,7 @@ describe(codemodLegacyNodes.name, () => {
 
     expect(print(transformed)).toMatchInlineSnapshot(`
       "<script context="module" lang="ts">
+      	import { defineMeta } from "@storybook/addon-svelte-csf";
       	import Button from "./Button.svelte";
 
       	const { Story } = defineMeta({ component: Button });

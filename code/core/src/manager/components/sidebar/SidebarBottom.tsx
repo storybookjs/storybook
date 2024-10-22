@@ -13,6 +13,7 @@ import {
   type TestProviderId,
   type TestProviderState,
   type TestProviders,
+  type TestingModuleCrashReportPayload,
   type TestingModuleProgressReportPayload,
 } from '@storybook/core/core-events';
 import {
@@ -182,15 +183,15 @@ export const SidebarBottomBase = ({ api, notifications = [], status = {} }: Side
   }, [api, hasWarnings, hasErrors, warningsActive, errorsActive]);
 
   useEffect(() => {
-    const onCrashReport = ({ providerId, ...details }: { providerId: string }) => {
+    const onCrashReport = ({ providerId, ...details }: TestingModuleCrashReportPayload) => {
       updateTestProvider(providerId, { details, running: false, crashed: true, watching: false });
     };
 
-    const onProgressReport = ({ providerId, ...payload }: TestingModuleProgressReportPayload) => {
-      if (payload.status === 'failed') {
-        updateTestProvider(providerId, { running: false, failed: true });
+    const onProgressReport = ({ providerId, ...details }: TestingModuleProgressReportPayload) => {
+      if (details.status === 'failed') {
+        updateTestProvider(providerId, { details, running: false, failed: true });
       } else {
-        const update = { ...payload, running: payload.status === 'pending' };
+        const update = { ...details, running: details.status === 'pending' };
         updateTestProvider(providerId, update);
 
         const { mapStatusUpdate, ...state } = testProviders[providerId];

@@ -86,9 +86,12 @@ addons.register(ADDON_ID, (api) => {
     watchable: true,
 
     name: 'Component tests',
-    title: ({ crashed }) => (crashed ? "Component tests didn't complete" : 'Component tests'),
+    title: ({ crashed, failed }) =>
+      crashed || failed ? 'Component tests failed' : 'Component tests',
     description: ({ failed, running, watching, progress, crashed, details }) => {
       const [isModalOpen, setIsModalOpen] = useState(false);
+
+      const errorMessage = details?.error?.message;
 
       let message: string | React.ReactNode = 'Not run';
 
@@ -96,9 +99,9 @@ addons.register(ADDON_ID, (api) => {
         message = progress
           ? `Testing... ${progress.numPassedTests}/${progress.numTotalTests}`
           : 'Starting...';
-      } else if (failed) {
+      } else if (failed && !errorMessage) {
         message = 'Component tests failed';
-      } else if (crashed) {
+      } else if (crashed || (failed && errorMessage)) {
         message = (
           <>
             <LinkComponent
@@ -107,7 +110,7 @@ addons.register(ADDON_ID, (api) => {
                 setIsModalOpen(true);
               }}
             >
-              View full error
+              {details?.error?.name || 'View full error'}
             </LinkComponent>
           </>
         );
@@ -126,7 +129,7 @@ addons.register(ADDON_ID, (api) => {
         <>
           {message}
           <GlobalErrorModal
-            error={details?.message}
+            error={errorMessage}
             open={isModalOpen}
             onClose={() => {
               setIsModalOpen(false);
@@ -165,7 +168,10 @@ addons.register(ADDON_ID, (api) => {
             .filter(Boolean)
         )
       ),
-  } as Addon_TestProviderType<{ testResults: TestResult[]; message: string }>);
+  } as Addon_TestProviderType<{
+    testResults: TestResult[];
+    error?: { message: string; name: string };
+  }>);
 
   addons.add(PANEL_ID, {
     type: types.PANEL,

@@ -163,7 +163,7 @@ test.describe("component testing", () => {
       .getByRole("button", { name: "test" });
     await expect(storyElement).toBeVisible({ timeout: 10000 });
 
-    await page.getByLabel("Toggle watch mode").click();
+    await page.getByLabel("Enable watch mode for Component tests").click();
 
     // We shouldn't have to do an arbitrary wait, but because there is no UI for loading state yet, we have to
     await page.waitForTimeout(8000);

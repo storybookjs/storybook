@@ -12,7 +12,7 @@ export const { step: runStep } = instrument(
     // await step("label", (context) => {
     //   // labeled step
     // });
-    step: (label: StepLabel, play: PlayFunction, context: StoryContext) => play(context),
+    step: async (label: StepLabel, play: PlayFunction, context: StoryContext) => play(context),
   },
   { intercept: true }
 );

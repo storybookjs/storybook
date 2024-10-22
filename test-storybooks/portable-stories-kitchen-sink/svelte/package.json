@@ -14,7 +14,7 @@
     "vitest": "vitest"
   },
   "resolutions": {
-    "@playwright/test": "1.46.0",
+    "@playwright/test": "1.48.1",
     "@storybook/addon-a11y": "portal:../../../code/addons/a11y",
     "@storybook/addon-actions": "portal:../../../code/addons/actions",
     "@storybook/addon-backgrounds": "portal:../../../code/addons/backgrounds",
@@ -77,11 +77,11 @@
     "@storybook/web-components": "portal:../../../code/renderers/web-components",
     "@storybook/web-components-vite": "portal:../../../code/frameworks/web-components-vite",
     "@storybook/web-components-webpack5": "portal:../../../code/frameworks/web-components-webpack5",
-    "playwright": "1.46.0",
+    "playwright": "1.48.1",
     "storybook": "portal:../../../code/lib/cli"
   },
   "devDependencies": {
-    "@playwright/experimental-ct-svelte": "1.46.0",
+    "@playwright/experimental-ct-svelte": "1.48.1",
     "@storybook/addon-essentials": "8.0.0-rc.2",
     "@storybook/addon-interactions": "8.0.0-rc.2",
     "@storybook/svelte": "8.0.0-rc.2",

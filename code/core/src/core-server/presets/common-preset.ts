@@ -333,7 +333,7 @@ export const experimental_serverChannel = async (
       await telemetry('testing-module-crash-report', {
         provider: payload.providerId,
         ...(options.enableCrashReports && {
-          error: cleanPaths(payload.message),
+          error: cleanPaths(payload.error.message),
         }),
       });
     });

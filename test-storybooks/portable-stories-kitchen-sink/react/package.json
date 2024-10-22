@@ -16,7 +16,7 @@
     "vitest": "echo 'not running'"
   },
   "resolutions": {
-    "@playwright/test": "1.46.0",
+    "@playwright/test": "1.48.1",
     "@storybook/addon-a11y": "portal:../../../code/addons/a11y",
     "@storybook/addon-actions": "portal:../../../code/addons/actions",
     "@storybook/addon-backgrounds": "portal:../../../code/addons/backgrounds",
@@ -80,7 +80,7 @@
     "@storybook/web-components": "portal:../../../code/renderers/web-components",
     "@storybook/web-components-vite": "portal:../../../code/frameworks/web-components-vite",
     "@storybook/web-components-webpack5": "portal:../../../code/frameworks/web-components-webpack5",
-    "playwright": "1.46.0",
+    "playwright": "1.48.1",
     "storybook": "portal:../../../code/lib/cli"
   },
   "dependencies": {
@@ -88,8 +88,8 @@
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@playwright/experimental-ct-react": "1.46.0",
-    "@playwright/test": "1.46.0",
+    "@playwright/experimental-ct-react": "1.48.1",
+    "@playwright/test": "1.48.1",
     "@storybook/addon-actions": "^8.0.0",
     "@storybook/addon-controls": "^8.0.0",
     "@storybook/addon-essentials": "^8.0.0",

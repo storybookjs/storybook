@@ -135,7 +135,7 @@ export class StorybookReporter implements Reporter {
         startTime,
         endTime,
         status: file.result?.state === 'fail' || hasFailedTests ? 'failed' : 'passed',
-        message: file.result?.errors?.[0]?.message,
+        message: file.result?.errors?.[0]?.stack || file.result?.errors?.[0]?.message,
       });
     }
 
@@ -197,11 +197,44 @@ export class StorybookReporter implements Reporter {
       );
     } else {
       const isCancelled = this.ctx.isCancelling;
-      this.sendReport({
-        providerId: TEST_PROVIDER_ID,
-        status: isCancelled ? 'cancelled' : 'success',
-        ...this.getProgressReport(Date.now()),
+      const report = this.getProgressReport(Date.now());
+
+      const testSuiteFailures = report.details.testResults.filter(
+        (t) => t.status === 'failed' && t.results.length === 0
+      );
+
+      const reducedTestSuiteFailures = new Set<string>();
+
+      testSuiteFailures.forEach((t) => {
+        reducedTestSuiteFailures.add(t.message);
       });
+
+      if (isCancelled) {
+        this.sendReport({
+          providerId: TEST_PROVIDER_ID,
+          status: 'cancelled',
+          ...report,
+        });
+      } else if (reducedTestSuiteFailures.size > 0) {
+        const message = Array.from(reducedTestSuiteFailures).reduce(
+          (acc, curr) => `${acc}\n${curr}`,
+          ''
+        );
+        this.sendReport({
+          providerId: TEST_PROVIDER_ID,
+          status: 'failed',
+          error: {
+            name: `${reducedTestSuiteFailures.size} component ${reducedTestSuiteFailures.size === 1 ? 'test' : 'tests'} failed`,
+            message: message,
+          },
+        });
+      } else {
+        this.sendReport({
+          providerId: TEST_PROVIDER_ID,
+          status: 'success',
+          ...report,
+        });
+      }
     }
 
     this.clearVitestState();

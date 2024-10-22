@@ -52,8 +52,9 @@ const Outline = styled.div<{ crashed: boolean; failed: boolean; running: boolean
       width: 'max(100vw, 100vh)',
       animation: `${spin} 3s linear infinite`,
       background: failed
-        ? `conic-gradient(transparent 90deg, ${theme.color.orange} 150deg, ${theme.color.gold} 210deg, transparent 270deg)`
-        : `conic-gradient(transparent 90deg, ${theme.color.secondary} 150deg, ${theme.color.seafoam} 210deg, transparent 270deg)`,
+        ? // Hardcoded colors to prevent themes from messing with them (orange+gold, secondary+seafoam)
+          `conic-gradient(transparent 90deg, #FC521F 150deg, #FFAE00 210deg, transparent 270deg)`
+        : `conic-gradient(transparent 90deg, #029CFD 150deg, #37D5D3 210deg, transparent 270deg)`,
       opacity: 1,
       willChange: 'auto',
     },

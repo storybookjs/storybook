@@ -3,8 +3,6 @@ import { UnsupportedViewportDimensionError } from 'storybook/internal/preview-er
 
 import type { Globals, Parameters } from '@storybook/csf';
 
-import { page } from '@vitest/browser/context';
-
 import { MINIMAL_VIEWPORTS } from '../../../viewport/src/defaults';
 import type { ViewportMap, ViewportStyles } from '../../../viewport/src/types';
 
@@ -69,6 +67,10 @@ export const setViewport = async (parameters: Parameters = {}, globals: Globals 
   } else if (!isDisabled) {
     defaultViewport = viewportsParam.defaultViewport;
   }
+
+  const { page } = await import('@vitest/browser/context').catch(() => ({
+    page: null,
+  }));
 
   if (!page || !globalThis.__vitest_browser__) {
     return;

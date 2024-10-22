@@ -26,8 +26,6 @@
     "./input/iframe.html": "./input/iframe.html",
     "./package.json": "./package.json"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",

@@ -152,8 +152,6 @@
       "default": "./core/babel/index.node.js"
     }
   },
-  "main": "dist/index.cjs",
-  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "typesVersions": {
     "*": {

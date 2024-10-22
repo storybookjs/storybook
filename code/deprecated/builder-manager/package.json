@@ -32,7 +32,6 @@
   "files": [
     "README.md",
     "*.js",
-    "*.cjs",
     "*.d.ts"
   ],
   "peerDependencies": {

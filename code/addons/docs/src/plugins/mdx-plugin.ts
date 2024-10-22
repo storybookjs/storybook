@@ -37,7 +37,7 @@ export async function mdxPlugin(options: Options): Promise<Plugin> {
         mdxCompileOptions: {
           providerImportSource: join(
             dirname(require.resolve('@storybook/addon-docs/package.json')),
-            '/dist/shims/mdx-react-shim.mjs'
+            '/dist/shims/mdx-react-shim.js'
           ),
           ...mdxPluginOptions?.mdxCompileOptions,
           rehypePlugins: [

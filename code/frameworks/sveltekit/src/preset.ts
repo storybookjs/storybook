@@ -19,7 +19,7 @@ export const core: PresetProperty<'core'> = {
 };
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry = []) => [
   ...entry,
-  join(dirname(require.resolve('@storybook/sveltekit/package.json')), 'dist/preview.mjs'),
+  join(dirname(require.resolve('@storybook/sveltekit/package.json')), 'dist/preview.js'),
 ];
 
 export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (config, options) => {

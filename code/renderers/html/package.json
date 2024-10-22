@@ -26,8 +26,8 @@
       "require": "./dist/index.js"
     },
     "./preset": "./preset.js",
-    "./dist/entry-preview.mjs": "./dist/entry-preview.mjs",
-    "./dist/entry-preview-docs.mjs": "./dist/entry-preview-docs.mjs",
+    "./dist/entry-preview.js": "./dist/entry-preview.js",
+    "./dist/entry-preview-docs.js": "./dist/entry-preview-docs.js",
     "./package.json": "./package.json"
   },
   "types": "dist/index.d.ts",

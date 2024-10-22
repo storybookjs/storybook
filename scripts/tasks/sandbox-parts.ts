@@ -412,7 +412,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
     join(sandboxDir, '.storybook/vitest.setup.ts'),
     dedent`import { beforeAll } from 'vitest'
     import { setProjectAnnotations } from '${storybookPackage}'
-    import * as rendererDocsAnnotations from '${template.expected.renderer}/dist/entry-preview-docs.mjs'
+    import * as rendererDocsAnnotations from '${template.expected.renderer}/dist/entry-preview-docs.js'
     import * as addonActionsAnnotations from '@storybook/addon-actions/preview'
     import * as addonInteractionsAnnotations from '@storybook/addon-interactions/preview'
     import '../src/stories/components'

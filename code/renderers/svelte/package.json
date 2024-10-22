@@ -29,7 +29,7 @@
       "types": "./dist/playwright.d.ts",
       "default": "./dist/playwright.js"
     },
-    "./preset": "./preset.js",
+    "./preset": "./dist/preset.js",
     "./dist/entry-preview.js": "./dist/entry-preview.js",
     "./dist/entry-preview-docs.js": "./dist/entry-preview-docs.js",
     "./package.json": "./package.json",

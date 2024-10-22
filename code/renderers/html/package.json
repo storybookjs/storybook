@@ -25,7 +25,7 @@
       "types": "./dist/index.d.ts",
       "require": "./dist/index.js"
     },
-    "./preset": "./preset.js",
+    "./preset": "./dist/preset.js",
     "./dist/entry-preview.js": "./dist/entry-preview.js",
     "./dist/entry-preview-docs.js": "./dist/entry-preview-docs.js",
     "./package.json": "./package.json"

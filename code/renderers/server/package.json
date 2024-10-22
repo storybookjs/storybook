@@ -24,7 +24,7 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./preset": "./preset.js",
+    "./preset": "./dist/preset.js",
     "./dist/entry-preview.js": "./dist/entry-preview.js",
     "./package.json": "./package.json"
   },

@@ -80,25 +80,23 @@ export async function codemodLegacyNodes(params: Params): Promise<SvelteAST.Root
     },
 
     ImportDeclaration(node, context) {
-      const { source, specifiers } = node;
       const { state } = context;
-      const { value } = source;
 
-      if (value === pkg.name) {
-        const { currentScript } = state;
+      if (node.source.value === pkg.name) {
+        state.componentIdentifierName = getComponentsIdentifiersNames(node.specifiers);
 
-        state.componentIdentifierName = getComponentsIdentifiersNames(specifiers);
+        const transformed = transformImportDeclaration({ node, filename });
 
-        const transformedImportDeclaration = transformImportDeclaration({ node, filename });
-
-        if (currentScript !== 'module') {
+        if (state.currentScript !== 'module') {
           // NOTE: We store current node in AST walker state.
           // And will remove it from instance & append it to module in the "clean-up" walk after this one.
-          state.pkgImportDeclaration = transformedImportDeclaration;
+          state.pkgImportDeclaration = transformed;
         }
 
-        return transformedImportDeclaration;
+        return transformed;
       }
+
+      return node;
     },
 
     ExportNamedDeclaration(node, context) {
@@ -204,33 +202,11 @@ export async function codemodLegacyNodes(params: Params): Promise<SvelteAST.Root
       instance = instance ? (visit(instance, state) as SvelteAST.Script) : null;
 
       if (!module) {
-        const {
-          pkgImportDeclaration,
-          defineMetaFromExportConstMeta,
-          storiesComponentImportDeclaration,
-        } = state;
-
-        let body: ESTreeAST.Program['body'] = [];
-
-        // WARN: This scope is bug prone
-
-        if (pkgImportDeclaration) {
-          body.push(pkgImportDeclaration);
-        }
-
-        if (storiesComponentImportDeclaration) {
-          body.push(storiesComponentImportDeclaration);
-        }
-
-        if (defineMetaFromExportConstMeta) {
-          body.push(defineMetaFromExportConstMeta);
-        }
-
         module = createASTScript({
           module: true,
           content: {
             type: 'Program',
-            body,
+            body: [],
             sourceType: 'module',
           },
         });
@@ -264,27 +240,23 @@ export async function codemodLegacyNodes(params: Params): Promise<SvelteAST.Root
       return { ...rest, content, context: scriptContext };
     },
 
-    Program(node, _context) {
-      let { body, ...rest } = node;
-      const { currentScript, pkgImportDeclaration } = state;
-
-      if (pkgImportDeclaration && currentScript === 'instance') {
+    Program(node, context) {
+      if (context.state.pkgImportDeclaration && context.state.currentScript === 'instance') {
         let instanceBody: ESTreeAST.Program['body'] = [];
 
-        for (const declaration of body) {
+        for (const declaration of node.body) {
           if (declaration.type === 'ImportDeclaration') {
-            const { specifiers, source } = declaration;
-
-            if (source.value === pkg.name) {
+            if (declaration.source.value === pkg.name) {
               continue;
             }
 
-            const { storiesComponentIdentifier } = state;
-            const storiesComponentSpecifier = specifiers.find(
+            const { storiesComponentIdentifier } = context.state;
+            const storiesComponentSpecifier = declaration.specifiers.find(
               (s) => s.local.name === storiesComponentIdentifier?.name
             );
 
             if (storiesComponentSpecifier) {
+              // NOTE: We are storing it in the state, so later we will move from instance tag to module tag
               state.storiesComponentImportDeclaration = declaration;
               continue;
             }
@@ -301,18 +273,28 @@ export async function codemodLegacyNodes(params: Params): Promise<SvelteAST.Root
           instanceBody.push(declaration);
         }
 
-        body = instanceBody;
+        node.body = instanceBody;
       }
 
-      if (currentScript === 'module') {
-        const { defineMetaFromComponentMeta } = state;
+      if (state.currentScript === 'module') {
+        if (state.storiesComponentImportDeclaration) {
+          node.body.unshift(state.storiesComponentImportDeclaration);
+        }
 
-        if (defineMetaFromComponentMeta) {
-          body.push(defineMetaFromComponentMeta);
+        if (state.pkgImportDeclaration) {
+          node.body.unshift(state.pkgImportDeclaration);
+        }
+
+        if (state.defineMetaFromExportConstMeta) {
+          node.body.push(state.defineMetaFromExportConstMeta);
+        }
+
+        if (state.defineMetaFromComponentMeta) {
+          node.body.push(state.defineMetaFromComponentMeta);
         }
       }
 
-      return { ...rest, body };
+      return { ...node, body: node.body };
     },
 
     Fragment(node, context) {

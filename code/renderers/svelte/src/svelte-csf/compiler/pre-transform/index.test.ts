@@ -250,4 +250,33 @@ describe(codemodLegacyNodes.name, () => {
       ]
     `);
   });
+
+  it('moves import declaration of stories target component from instance tag to module tag', async ({
+    expect,
+  }) => {
+    const code = `
+      <script context="module" lang="ts">
+        export const meta: Meta<Button> = {
+          component: Button,
+        };
+      </script>
+
+      <script>
+        import { Story } from "${pkg.name}";
+        import Button from "./Button.svelte";
+      </script>
+    `;
+
+    const ast = getSvelteAST({ code });
+    const transformed = await codemodLegacyNodes({ ast });
+
+    expect(print(transformed)).toMatchInlineSnapshot(`
+      "<script context="module" lang="ts">
+      	import { defineMeta } from "@storybook/addon-svelte-csf";
+      	import Button from "./Button.svelte";
+
+      	const { Story } = defineMeta({ component: Button });
+      </script>"
+    `);
+  });
 });

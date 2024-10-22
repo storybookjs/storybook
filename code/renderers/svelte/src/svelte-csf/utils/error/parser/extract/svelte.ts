@@ -5,7 +5,7 @@ import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
 import { StorybookSvelteCSFError } from '#utils/error';
 
 const BASE_INITIAL_SNIPPET = dedent`
-<script context="module">
+<script module>
   import { defineMeta } from "@storybook/addon-svelte-csf";
   
   const { Story } = defineMeta({});
@@ -24,7 +24,7 @@ export class MissingModuleTagError extends StorybookSvelteCSFError {
   template() {
     return dedent`
       The file '${this.filepathURL}'
-      does not have a module context (<script context="module"> ... </script>).
+      does not have a module context (<script module> ... </script>).
 
       defineMeta(...) should be called inside a module script tag, like so:
 

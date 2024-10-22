@@ -9,7 +9,7 @@ describe(extractInstanceNodes.name, () => {
   it("extract 'setTemplateCall' correctly when used", async () => {
     const ast = getSvelteAST({
       code: `
-        <script context="module">
+        <script module>
           import { defineMeta, setTemplate } from "@storybook/addon-svelte-csf"
           const { Story } = defineMeta();
         </script>
@@ -36,7 +36,7 @@ describe(extractInstanceNodes.name, () => {
   it("extract 'setTemplateCall' correctly when NOT used", async () => {
     const ast = getSvelteAST({
       code: `
-        <script context="module">
+        <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf"
           const { Story } = defineMeta();
         </script>

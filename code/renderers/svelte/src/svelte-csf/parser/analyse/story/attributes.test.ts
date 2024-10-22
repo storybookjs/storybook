@@ -12,7 +12,7 @@ describe(getStringValueFromAttribute.name, () => {
     expect,
   }) => {
     const code = `
-        <script context="module">
+        <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf";
 
           import SampleComponent from "./SampleComponent.svelte";
@@ -50,7 +50,7 @@ describe(getArrayOfStringsValueFromAttribute.name, () => {
     expect,
   }) => {
     const code = `
-        <script context="module">
+        <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf";
 
           import SampleComponent from "./SampleComponent.svelte";
@@ -90,7 +90,7 @@ describe(getArrayOfStringsValueFromAttribute.name, () => {
     expect,
   }) => {
     const code = `
-        <script context="module">
+        <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf";
 
           import SampleComponent from "./SampleComponent.svelte";
@@ -129,7 +129,7 @@ describe(getArrayOfStringsValueFromAttribute.name, () => {
   it("extracts 'tags' attribute when is a correct type - array of strings", async ({ expect }) => {
     const ast = getSvelteAST({
       code: `
-        <script context="module">
+        <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf"
           const { Story } = defineMeta();
         </script>
@@ -154,7 +154,7 @@ describe(getArrayOfStringsValueFromAttribute.name, () => {
   it("returns empty array when 'tags' attribute is not provided", async ({ expect }) => {
     const ast = getSvelteAST({
       code: `
-        <script context="module">
+        <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf"
           const { Story } = defineMeta();
         </script>

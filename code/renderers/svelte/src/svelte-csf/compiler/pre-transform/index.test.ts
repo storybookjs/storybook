@@ -82,7 +82,7 @@ describe(codemodLegacyNodes.name, () => {
     const transformed = await codemodLegacyNodes({ ast });
 
     expect(print(transformed)).toMatchInlineSnapshot(`
-      "<script context="module">
+      "<script module>
       	import { defineMeta } from "@storybook/addon-svelte-csf";
 
       	/** This is a description for the **Button** component stories. */
@@ -152,7 +152,7 @@ describe(codemodLegacyNodes.name, () => {
     const transformed = await codemodLegacyNodes({ ast });
 
     expect(print(transformed)).toMatchInlineSnapshot(`
-      "<script context="module">
+      "<script module>
       	import { defineMeta } from "@storybook/addon-svelte-csf";
       </script>"
     `);
@@ -175,7 +175,7 @@ describe(codemodLegacyNodes.name, () => {
     const transformed = await codemodLegacyNodes({ ast });
 
     expect(print(transformed)).toMatchInlineSnapshot(`
-      "<script context="module">
+      "<script module>
       	import { defineMeta } from "@storybook/addon-svelte-csf";
 
       	const { Story } = defineMeta({
@@ -207,7 +207,7 @@ describe(codemodLegacyNodes.name, () => {
     const transformed = await codemodLegacyNodes({ ast });
 
     expect(print(transformed)).toMatchInlineSnapshot(`
-      "<script context="module">
+      "<script module>
       	import { defineMeta } from "@storybook/addon-svelte-csf";
       	import Button from "./Button.svelte";
 
@@ -222,7 +222,7 @@ describe(codemodLegacyNodes.name, () => {
 
   it('throws error on more than one unidentified <Template> components', async ({ expect }) => {
     const code = `
-      <script context="module" lang="ts">
+      <script module lang="ts">
         import { Story, Template } from "${pkg.name}";
       </script>
 

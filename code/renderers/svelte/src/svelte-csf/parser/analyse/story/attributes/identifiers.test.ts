@@ -11,7 +11,7 @@ describe(getStoryIdentifiers.name, () => {
   it("extracts 'exportName' attribute when is a Text string", async () => {
     const ast = getSvelteAST({
       code: `
-        <script context="module">
+        <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf"
           const { Story } = defineMeta();
         </script>
@@ -40,7 +40,7 @@ describe(getStoryIdentifiers.name, () => {
   it("extracts 'exportName' attribute when is an expression with literal", async () => {
     const ast = getSvelteAST({
       code: `
-        <script context="module">
+        <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf"
           const { Story } = defineMeta();
         </script>
@@ -69,7 +69,7 @@ describe(getStoryIdentifiers.name, () => {
   it("throws when '<Story />' doesn't provide an 'exportName' or 'name' attribute prop", async () => {
     const ast = getSvelteAST({
       code: `
-        <script context="module">
+        <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf"
           const { Story } = defineMeta();
         </script>
@@ -104,7 +104,7 @@ describe(getStoryIdentifiers.name, () => {
   it("it ignores the 'exportName' attribute of '<Story>'s children component", async () => {
     const ast = getSvelteAST({
       code: `
-        <script context="module">
+        <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf"
           const { Story } = defineMeta();
         </script>
@@ -135,7 +135,7 @@ describe(getStoryIdentifiers.name, () => {
   it("extracts both 'exportName' and 'name' attributes", async () => {
     const ast = getSvelteAST({
       code: `
-        <script context="module">
+        <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf"
           const { Story } = defineMeta();
         </script>
@@ -164,7 +164,7 @@ describe(getStoryIdentifiers.name, () => {
   it("derives 'exportName' from 'name' attribute when 'exportName' attribute is missing", async () => {
     const ast = getSvelteAST({
       code: `
-        <script context="module">
+        <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf"
           const { Story } = defineMeta();
         </script>
@@ -193,7 +193,7 @@ describe(getStoryIdentifiers.name, () => {
   it("throws when 'exportName' is not a valid JavaScript variable name", async () => {
     const ast = getSvelteAST({
       code: `
-        <script context="module">
+        <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf"
           const { Story } = defineMeta();
         </script>
@@ -233,7 +233,7 @@ describe(getStoriesIdentifiers.name, () => {
   it('extracts multiple <Story /> components identifiers', async () => {
     const ast = getSvelteAST({
       code: `
-        <script context="module">
+        <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf"
           const { Story } = defineMeta();
         </script>
@@ -270,7 +270,7 @@ describe(getStoriesIdentifiers.name, () => {
   it("throws on identical 'exportName' attributes", async () => {
     const ast = getSvelteAST({
       code: `
-        <script context="module">
+        <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf"
           const { Story } = defineMeta();
         </script>
@@ -307,7 +307,7 @@ describe(getStoriesIdentifiers.name, () => {
   it("throws on identical 'exportName' attributes when deriving from 'name' attributes", async () => {
     const ast = getSvelteAST({
       code: `
-        <script context="module">
+        <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf"
           const { Story } = defineMeta();
         </script>

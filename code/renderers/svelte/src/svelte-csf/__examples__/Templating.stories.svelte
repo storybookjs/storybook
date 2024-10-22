@@ -1,4 +1,4 @@
-<script context="module" lang="ts">
+<script module lang="ts">
   import { defineMeta, setTemplate, type Args } from '@storybook/addon-svelte-csf';
   import { expect, within } from '@storybook/test';
 

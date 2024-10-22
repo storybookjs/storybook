@@ -16,7 +16,7 @@ interface Params {
 
 /**
  * Extract Svelte AST nodes via `svelte.compile`,
- * and from the instance tag - `<script>` _(without `context="module"`)_.
+ * and from the instance tag - `<script>` _(without `module`)_.
  * They are needed for further code analysis/transformation.
   // NOTE: Is optional for the `*.stories.svelte` files to have this tag.
  */

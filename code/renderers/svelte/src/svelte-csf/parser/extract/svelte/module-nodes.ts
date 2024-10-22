@@ -46,7 +46,7 @@ interface Params {
 
 /**
  * Extract Svelte AST nodes via `svelte.compile`,
- * and from the module tag - `<script context=module>`.
+ * and from the module tag - `<script module>`.
  * They are needed for further code analysis/transformation.
  */
 export async function extractModuleNodes(options: Params): Promise<Result> {

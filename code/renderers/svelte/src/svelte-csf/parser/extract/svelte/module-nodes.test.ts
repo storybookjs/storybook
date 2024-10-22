@@ -13,11 +13,11 @@ describe(extractModuleNodes.name, () => {
 
     expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
       [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0001 (MissingModuleTagError): The file '<path not specified>'
-      does not have a module context (<script context="module"> ... </script>).
+      does not have a module context (<script module> ... </script>).
 
       defineMeta(...) should be called inside a module script tag, like so:
 
-      <script context="module">
+      <script module>
       import { defineMeta } from "@storybook/addon-svelte-csf";
 
       const { Story } = defineMeta({});
@@ -30,7 +30,7 @@ describe(extractModuleNodes.name, () => {
 
   it("fails when 'defineMeta' not imported", ({ expect }) => {
     const { module } = getSvelteAST({
-      code: `<script context="module"></script>`,
+      code: `<script module></script>`,
     });
 
     expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
@@ -39,7 +39,7 @@ describe(extractModuleNodes.name, () => {
 
       Make sure to import defineMeta from the package and use it inside the module context like so:
 
-      <script context="module">
+      <script module>
       import { defineMeta } from "@storybook/addon-svelte-csf";
 
       const { Story } = defineMeta({});
@@ -53,7 +53,7 @@ describe(extractModuleNodes.name, () => {
   it("fails when 'defineMeta' not used", ({ expect }) => {
     const { module } = getSvelteAST({
       code: `
-        <script context="module">
+        <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf";
         </script>
       `,
@@ -64,7 +64,7 @@ describe(extractModuleNodes.name, () => {
       does not store the result of calling defineMeta(). While defineMeta() might have been called,
       it's return value needs to be stored and destructured for the parsing to succeed, eg.:
 
-      <script context="module">
+      <script module>
       import { defineMeta } from "@storybook/addon-svelte-csf";
 
       const { Story } = defineMeta({});
@@ -78,7 +78,7 @@ describe(extractModuleNodes.name, () => {
   it("fails when 'Story' is not destructured", ({ expect }) => {
     const { module } = getSvelteAST({
       code: `
-        <script context="module">
+        <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf"
           defineMeta();
         </script>`,
@@ -89,7 +89,7 @@ describe(extractModuleNodes.name, () => {
       does not store the result of calling defineMeta(). While defineMeta() might have been called,
       it's return value needs to be stored and destructured for the parsing to succeed, eg.:
 
-      <script context="module">
+      <script module>
       import { defineMeta } from "@storybook/addon-svelte-csf";
 
       const { Story } = defineMeta({});
@@ -103,7 +103,7 @@ describe(extractModuleNodes.name, () => {
   it('works when it has valid required entry snippet', ({ expect }) => {
     const { module } = getSvelteAST({
       code: `
-        <script context="module">
+        <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf"
           const { Story } = defineMeta();
         </script>`,
@@ -115,7 +115,7 @@ describe(extractModuleNodes.name, () => {
   it('works when meta was destructured too', ({ expect }) => {
     const { module } = getSvelteAST({
       code: `
-        <script context="module">
+        <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf"
           const { Story, meta } = defineMeta();
         </script>
@@ -128,7 +128,7 @@ describe(extractModuleNodes.name, () => {
   it("works when 'setTemplate' is used in stories", async ({ expect }) => {
     const { module } = getSvelteAST({
       code: `
-        <script context="module">
+        <script module>
           import { defineMeta, setTemplate } from "@storybook/addon-svelte-csf"
           const { Story } = defineMeta();
         </script>
@@ -149,7 +149,7 @@ describe(extractModuleNodes.name, () => {
   it("works when 'setTemplate' is NOT used in stories", async ({ expect }) => {
     const { module } = getSvelteAST({
       code: `
-        <script context="module">
+        <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf"
           const { Story } = defineMeta();
         </script>
@@ -167,7 +167,7 @@ describe(extractModuleNodes.name, () => {
   it('works on renamed identifiers', async ({ expect }) => {
     const { module } = getSvelteAST({
       code: `
-        <script context="module">
+        <script module>
           import { defineMeta as dm, setTemplate as st } from "@storybook/addon-svelte-csf"
           const { Story: S, meta: m } = dm();
         </script>

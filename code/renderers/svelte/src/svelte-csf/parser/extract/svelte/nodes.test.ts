@@ -8,7 +8,7 @@ describe(extractSvelteASTNodes.name, () => {
   it('works with a simple example', ({ expect }) => {
     const ast = getSvelteAST({
       code: `
-        <script context="module">
+        <script module>
           import { defineMeta } from "@storybook/addon-svelte-csf"
 
           import Button from "./Button.svelte";

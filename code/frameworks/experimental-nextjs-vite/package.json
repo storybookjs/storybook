@@ -21,47 +21,39 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
     "./preset": {
       "types": "./dist/preset.d.ts",
-      "require": "./dist/preset.js"
+      "default": "./dist/preset.js"
     },
-    "./dist/preview.mjs": "./dist/preview.mjs",
+    "./dist/preview.js": "./dist/preview.js",
     "./cache.mock": {
       "types": "./dist/export-mocks/cache/index.d.ts",
-      "import": "./dist/export-mocks/cache/index.mjs",
-      "require": "./dist/export-mocks/cache/index.js"
+      "default": "./dist/export-mocks/cache/index.js"
     },
     "./headers.mock": {
       "types": "./dist/export-mocks/headers/index.d.ts",
-      "import": "./dist/export-mocks/headers/index.mjs",
-      "require": "./dist/export-mocks/headers/index.js"
+      "default": "./dist/export-mocks/headers/index.js"
     },
     "./navigation.mock": {
       "types": "./dist/export-mocks/navigation/index.d.ts",
-      "import": "./dist/export-mocks/navigation/index.mjs",
-      "require": "./dist/export-mocks/navigation/index.js"
+      "default": "./dist/export-mocks/navigation/index.js"
     },
     "./router.mock": {
       "types": "./dist/export-mocks/router/index.d.ts",
-      "import": "./dist/export-mocks/router/index.mjs",
-      "require": "./dist/export-mocks/router/index.js"
+      "default": "./dist/export-mocks/router/index.js"
     },
     "./vite-plugin": {
       "types": "./dist/vite-plugin/index.d.ts",
-      "import": "./dist/vite-plugin/index.mjs",
-      "require": "./dist/vite-plugin/index.js"
+      "default": "./dist/vite-plugin/index.js"
     },
     "./package.json": "./package.json"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "typesVersions": {
     "*": {

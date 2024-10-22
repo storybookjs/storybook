@@ -20,27 +20,22 @@
   },
   "license": "MIT",
   "sideEffects": false,
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/react-18.d.ts",
-      "import": "./dist/react-18.mjs",
-      "require": "./dist/react-18.js",
-      "node": "./dist/react-18.js"
+      "default": "./dist/react-18.js"
     },
     "./dist/react-16": {
       "types": "./dist/react-16.d.ts",
-      "import": "./dist/react-16.mjs",
-      "require": "./dist/react-16.js",
-      "node": "./dist/react-16.js"
+      "default": "./dist/react-16.js"
     },
     "./dist/preset": {
       "types": "./dist/preset.d.ts",
-      "require": "./dist/preset.js"
+      "default": "./dist/preset.js"
     },
     "./package.json": "./package.json"
   },
-  "main": "dist/react-18.js",
-  "module": "dist/react-18.mjs",
   "types": "dist/react-18.d.ts",
   "files": [
     "dist/**/*",

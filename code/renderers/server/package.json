@@ -22,15 +22,12 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
     "./preset": "./preset.js",
-    "./dist/entry-preview.mjs": "./dist/entry-preview.mjs",
+    "./dist/entry-preview.js": "./dist/entry-preview.js",
     "./package.json": "./package.json"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",

@@ -31,12 +31,10 @@
     },
     "./preview": {
       "types": "./dist/preview.d.ts",
-      "default": "./dist/preview.mjs"
+      "default": "./dist/preview.js"
     },
     "./package.json": "./package.json"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",

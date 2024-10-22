@@ -20,72 +20,59 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
     "./dist/image-context": {
       "types": "./dist/image-context.d.ts",
-      "import": "./dist/image-context.mjs",
-      "require": "./dist/image-context.js"
+      "default": "./dist/image-context.js"
     },
     "./preset": {
       "types": "./dist/preset.d.ts",
-      "require": "./dist/preset.js"
+      "default": "./dist/preset.js"
     },
     "./font/webpack/loader/storybook-nextjs-font-loader": {
       "types": "./dist/font/webpack/loader/storybook-nextjs-font-loader.d.ts",
-      "import": "./dist/font/webpack/loader/storybook-nextjs-font-loader.mjs",
-      "require": "./dist/font/webpack/loader/storybook-nextjs-font-loader.js"
+      "default": "./dist/font/webpack/loader/storybook-nextjs-font-loader.js"
     },
-    "./dist/preview.mjs": "./dist/preview.mjs",
+    "./dist/preview.js": "./dist/preview.js",
     "./next-image-loader-stub.js": {
       "types": "./dist/next-image-loader-stub.d.ts",
-      "import": "./dist/next-image-loader-stub.mjs",
-      "require": "./dist/next-image-loader-stub.js"
+      "default": "./dist/next-image-loader-stub.js"
     },
     "./dist/compatibility/segment.compat": {
       "types": "./dist/compatibility/segment.compat.d.ts",
-      "import": "./dist/compatibility/segment.compat.mjs",
-      "require": "./dist/compatibility/segment.compat.js"
+      "default": "./dist/compatibility/segment.compat.js"
     },
     "./dist/compatibility/redirect-status-code.compat": {
       "types": "./dist/compatibility/redirect-status-code.compat.d.ts",
-      "import": "./dist/compatibility/redirect-status-code.compat.mjs",
-      "require": "./dist/compatibility/redirect-status-code.compat.js"
+      "default": "./dist/compatibility/redirect-status-code.compat.js"
     },
     "./export-mocks": {
       "types": "./dist/export-mocks/index.d.ts",
-      "import": "./dist/export-mocks/index.mjs",
-      "require": "./dist/export-mocks/index.js"
+      "default": "./dist/export-mocks/index.js"
     },
     "./cache.mock": {
       "types": "./dist/export-mocks/cache/index.d.ts",
-      "import": "./dist/export-mocks/cache/index.mjs",
-      "require": "./dist/export-mocks/cache/index.js"
+      "default": "./dist/export-mocks/cache/index.js"
     },
     "./headers.mock": {
       "types": "./dist/export-mocks/headers/index.d.ts",
-      "import": "./dist/export-mocks/headers/index.mjs",
-      "require": "./dist/export-mocks/headers/index.js"
+      "default": "./dist/export-mocks/headers/index.js"
     },
     "./navigation.mock": {
       "types": "./dist/export-mocks/navigation/index.d.ts",
-      "import": "./dist/export-mocks/navigation/index.mjs",
-      "require": "./dist/export-mocks/navigation/index.js"
+      "default": "./dist/export-mocks/navigation/index.js"
     },
     "./router.mock": {
       "types": "./dist/export-mocks/router/index.d.ts",
-      "import": "./dist/export-mocks/router/index.mjs",
-      "require": "./dist/export-mocks/router/index.js"
+      "default": "./dist/export-mocks/router/index.js"
     },
     "./package.json": "./package.json"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "typesVersions": {
     "*": {

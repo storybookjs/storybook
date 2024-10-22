@@ -26,23 +26,20 @@
   },
   "license": "MIT",
   "author": "Shaun Evening",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
     "./preview": {
       "types": "./dist/preview.d.ts",
-      "import": "./dist/preview.mjs",
-      "require": "./dist/preview.js"
+      "default": "./dist/preview.js"
     },
     "./manager": "./dist/manager.js",
     "./package.json": "./package.json",
     "./postinstall": "./postinstall.js"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",

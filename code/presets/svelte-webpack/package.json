@@ -19,38 +19,30 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
     "./preset": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
     "./dist/framework-preset-svelte-docs": {
       "types": "./dist/framework-preset-svelte-docs.d.ts",
-      "import": "./dist/framework-preset-svelte-docs.mjs",
-      "require": "./dist/framework-preset-svelte-docs.js"
+      "default": "./dist/framework-preset-svelte-docs.js"
     },
     "./dist/framework-preset-svelte": {
       "types": "./dist/framework-preset-svelte.d.ts",
-      "import": "./dist/framework-preset-svelte.mjs",
-      "require": "./dist/framework-preset-svelte.js"
+      "default": "./dist/framework-preset-svelte.js"
     },
     "./dist/svelte-docgen-loader": {
       "types": "./dist/svelte-docgen-loader.d.ts",
-      "import": "./dist/svelte-docgen-loader.mjs",
-      "require": "./dist/svelte-docgen-loader.js"
+      "default": "./dist/svelte-docgen-loader.js"
     },
     "./package.json": "./package.json"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",

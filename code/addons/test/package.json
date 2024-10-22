@@ -26,40 +26,33 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "default": "./dist/index.js"
     },
     "./vitest-plugin": {
       "types": "./dist/vitest-plugin/index.d.ts",
-      "import": "./dist/vitest-plugin/index.js",
-      "require": "./dist/vitest-plugin/index.cjs"
+      "default": "./dist/vitest-plugin/index.js"
     },
     "./internal/global-setup": {
       "types": "./dist/vitest-plugin/global-setup.d.ts",
-      "import": "./dist/vitest-plugin/global-setup.js",
-      "require": "./dist/vitest-plugin/global-setup.cjs"
+      "default": "./dist/vitest-plugin/global-setup.js"
     },
     "./internal/setup-file": {
       "types": "./dist/vitest-plugin/setup-file.d.ts",
-      "import": "./dist/vitest-plugin/setup-file.js"
+      "default": "./dist/vitest-plugin/setup-file.js"
     },
     "./internal/test-utils": {
       "types": "./dist/vitest-plugin/test-utils.d.ts",
-      "import": "./dist/vitest-plugin/test-utils.js",
-      "require": "./dist/vitest-plugin/test-utils.cjs"
+      "default": "./dist/vitest-plugin/test-utils.js"
     },
     "./manager": "./dist/manager.js",
-    "./preset": "./dist/preset.cjs",
-    "./postinstall": "./dist/postinstall.cjs",
+    "./preset": "./dist/preset.js",
+    "./postinstall": "./dist/postinstall.js",
     "./package.json": "./package.json"
   },
-  "main": "dist/index.cjs",
-  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
     "README.md",
-    "*.mjs",
     "*.js",
     "*.cjs",
     "*.d.ts",

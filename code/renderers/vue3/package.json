@@ -22,21 +22,17 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
     "./experimental-playwright": {
       "types": "./dist/playwright.d.ts",
-      "import": "./dist/playwright.mjs",
-      "require": "./dist/playwright.js"
+      "default": "./dist/playwright.js"
     },
     "./preset": "./preset.js",
-    "./dist/entry-preview.mjs": "./dist/entry-preview.mjs",
-    "./dist/entry-preview-docs.mjs": "./dist/entry-preview-docs.mjs",
+    "./dist/entry-preview.js": "./dist/entry-preview.js",
+    "./dist/entry-preview-docs.js": "./dist/entry-preview-docs.js",
     "./package.json": "./package.json"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "typesVersions": {
     "*": {

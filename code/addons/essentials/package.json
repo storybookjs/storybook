@@ -21,52 +21,51 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "default": "./dist/index.mjs"
+      "default": "./dist/index.js"
     },
     "./actions/preview": {
       "types": "./dist/actions/preview.d.ts",
-      "default": "./dist/actions/preview.mjs"
+      "default": "./dist/actions/preview.js"
     },
     "./actions/manager": "./dist/actions/manager.js",
     "./backgrounds/preview": {
       "types": "./dist/backgrounds/preview.d.ts",
-      "default": "./dist/backgrounds/preview.mjs"
+      "default": "./dist/backgrounds/preview.js"
     },
     "./backgrounds/manager": "./dist/backgrounds/manager.js",
     "./controls/manager": "./dist/controls/manager.js",
     "./docs/preview": {
       "types": "./dist/docs/preview.d.ts",
-      "default": "./dist/docs/preview.mjs"
+      "default": "./dist/docs/preview.js"
     },
     "./docs/preset": "./dist/docs/preset.js",
     "./docs/mdx-react-shim": "./dist/docs/mdx-react-shim.js",
     "./highlight/preview": {
       "types": "./dist/highlight/preview.d.ts",
-      "default": "./dist/highlight/preview.mjs"
+      "default": "./dist/highlight/preview.js"
     },
     "./measure/preview": {
       "types": "./dist/measure/preview.d.ts",
-      "default": "./dist/measure/preview.mjs"
+      "default": "./dist/measure/preview.js"
     },
     "./measure/manager": "./dist/measure/manager.js",
     "./outline/preview": {
       "types": "./dist/outline/preview.d.ts",
-      "default": "./dist/outline/preview.mjs"
+      "default": "./dist/outline/preview.js"
     },
     "./outline/manager": "./dist/outline/manager.js",
     "./toolbars/manager": "./dist/toolbars/manager.js",
     "./viewport/manager": "./dist/viewport/manager.js",
     "./viewport/preview": {
       "types": "./dist/viewport/preview.d.ts",
-      "default": "./dist/viewport/preview.mjs"
+      "default": "./dist/viewport/preview.js"
     },
     "./package.json": "./package.json"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",

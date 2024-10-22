@@ -19,38 +19,30 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
     "./preset": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
     "./dist/framework-preset-cra": {
       "types": "./dist/framework-preset-cra.d.ts",
-      "import": "./dist/framework-preset-cra.mjs",
-      "require": "./dist/framework-preset-cra.js"
+      "default": "./dist/framework-preset-cra.js"
     },
     "./dist/framework-preset-react-docs": {
       "types": "./dist/framework-preset-react-docs.d.ts",
-      "import": "./dist/framework-preset-react-docs.mjs",
-      "require": "./dist/framework-preset-react-docs.js"
+      "default": "./dist/framework-preset-react-docs.js"
     },
     "./dist/loaders/react-docgen-loader": {
       "types": "./dist/loaders/react-docgen-loader.d.ts",
-      "import": "./dist/loaders/react-docgen-loader.mjs",
-      "require": "./dist/loaders/react-docgen-loader.js"
+      "default": "./dist/loaders/react-docgen-loader.js"
     },
     "./package.json": "./package.json"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",

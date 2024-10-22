@@ -19,28 +19,23 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
     "./preset": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
     "./dist/framework-preset-vue3-docs": {
       "types": "./dist/framework-preset-vue3-docs.d.ts",
-      "import": "./dist/framework-preset-vue3-docs.mjs",
-      "require": "./dist/framework-preset-vue3-docs.js"
+      "default": "./dist/framework-preset-vue3-docs.js"
     },
     "./dist/framework-preset-vue3": {
       "types": "./dist/framework-preset-vue3.d.ts",
-      "import": "./dist/framework-preset-vue3.mjs",
-      "require": "./dist/framework-preset-vue3.js"
+      "default": "./dist/framework-preset-vue3.js"
     },
     "./package.json": "./package.json"
   },

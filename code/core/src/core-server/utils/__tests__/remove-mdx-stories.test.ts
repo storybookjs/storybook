@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { normalizeStoriesEntry } from '@storybook/core/common';
 import { type StoriesEntry } from '@storybook/core/types';
 
+// eslint-disable-next-line depend/ban-dependencies
 import { glob as globOriginal } from 'glob';
 import slash from 'slash';
 

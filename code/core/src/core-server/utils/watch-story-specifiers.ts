@@ -97,6 +97,7 @@ export function watchStorySpecifiers(
             );
 
             // Dynamically import globby because it is a pure ESM module
+            // eslint-disable-next-line depend/ban-dependencies
             const { globby } = await import('globby');
 
             // glob only supports forward slashes

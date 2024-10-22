@@ -2,6 +2,7 @@ import type { StoriesEntry } from 'storybook/internal/types';
 
 import { runCodemod } from '@storybook/codemod';
 
+// eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';
 import picocolors from 'picocolors';
 import { prompt } from 'prompts';

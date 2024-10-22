@@ -51,6 +51,7 @@ export const mdx1to3: Fix<Mdx1to3Options> = {
 
   async check() {
     // Dynamically import globby because it is a pure ESM module
+    // eslint-disable-next-line depend/ban-dependencies
     const { globby } = await import('globby');
 
     const storiesMdxFiles = await globby('./!(node_modules)**/*.(story|stories).mdx');

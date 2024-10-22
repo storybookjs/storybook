@@ -6,22 +6,19 @@ import type { Options } from '@storybook/core/types';
 
 import { logger } from '@storybook/core/node-logger';
 
-import type { Router } from 'express';
-import express from 'express';
 import picocolors from 'picocolors';
+import type Polka from 'polka';
+import sirv from 'sirv';
 import { dedent } from 'ts-dedent';
 
-export async function useStatics(router: Router, options: Options) {
+export async function useStatics(app: Polka.Polka, options: Options): Promise<void> {
   const staticDirs = (await options.presets.apply('staticDirs')) ?? [];
   const faviconPath = await options.presets.apply<string>('favicon');
 
-  const statics = [
-    ...staticDirs.map((dir) => (typeof dir === 'string' ? dir : `${dir.from}:${dir.to}`)),
-  ];
-
-  if (statics && statics.length > 0) {
-    await Promise.all(
-      statics.map(async (dir) => {
+  await Promise.all(
+    staticDirs
+      .map((dir) => (typeof dir === 'string' ? dir : `${dir.from}:${dir.to}`))
+      .map(async (dir) => {
         try {
           const normalizedDir =
             staticDirs && !isAbsolute(dir)
@@ -40,17 +37,30 @@ export async function useStatics(router: Router, options: Options) {
             );
           }
 
-          router.use(targetEndpoint, express.static(staticPath, { index: false }));
+          app.use(
+            targetEndpoint,
+            sirv(staticPath, {
+              dev: true,
+              etag: true,
+              extensions: [],
+            })
+          );
         } catch (e) {
           if (e instanceof Error) {
             logger.warn(e.message);
           }
         }
       })
-    );
-  }
+  );
 
-  router.get(`/${basename(faviconPath)}`, (req, res) => res.sendFile(faviconPath));
+  app.get(
+    `/${basename(faviconPath)}`,
+    sirv(faviconPath, {
+      dev: true,
+      etag: true,
+      extensions: [],
+    })
+  );
 }
 
 export const parseStaticDir = async (arg: string) => {

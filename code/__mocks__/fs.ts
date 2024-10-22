@@ -19,6 +19,7 @@ export const realpathSync = vi.fn();
 export const readdir = vi.fn();
 export const readdirSync = vi.fn();
 export const readlinkSync = vi.fn();
+export const mkdirSync = vi.fn();
 
 export default {
   __setMockFiles,
@@ -29,4 +30,5 @@ export default {
   readdir,
   readdirSync,
   readlinkSync,
+  mkdirSync,
 };

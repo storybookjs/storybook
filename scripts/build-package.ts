@@ -1,5 +1,7 @@
 import { program } from 'commander';
+// eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
+// eslint-disable-next-line depend/ban-dependencies
 import { readJSON } from 'fs-extra';
 import { posix, resolve, sep } from 'path';
 import picocolors from 'picocolors';
@@ -9,7 +11,7 @@ import windowSize from 'window-size';
 import { getWorkspaces } from './utils/workspace';
 
 async function run() {
-  const packages = await getWorkspaces();
+  const packages = (await getWorkspaces()).filter(({ name }) => name !== '@storybook/root');
   const packageTasks = packages
     .map((pkg) => {
       let suffix = pkg.name.replace('@storybook/', '');

@@ -2,6 +2,7 @@ import { join } from 'node:path';
 
 import { setOutput } from '@actions/core';
 import { program } from 'commander';
+// eslint-disable-next-line depend/ban-dependencies
 import { readJson } from 'fs-extra';
 import picocolors from 'picocolors';
 

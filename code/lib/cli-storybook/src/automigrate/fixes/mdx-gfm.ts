@@ -47,6 +47,7 @@ export const mdxgfm: Fix<Options> = {
       }
 
       // Dynamically import globby because it is a pure ESM module
+      // eslint-disable-next-line depend/ban-dependencies
       const { globby } = await import('globby');
 
       const files = await globby(pattern, commonGlobOptions(pattern));

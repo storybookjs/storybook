@@ -81,6 +81,7 @@ describe('CsfFile', () => {
         stories:
           - id: foo-bar--a
             name: A
+            localName: A
             parameters:
               __id: foo-bar--a
             __stats:
@@ -94,6 +95,7 @@ describe('CsfFile', () => {
               moduleMock: false
           - id: foo-bar--b
             name: B
+            localName: B
             parameters:
               __id: foo-bar--b
             __stats:
@@ -790,6 +792,7 @@ describe('CsfFile', () => {
         stories:
           - id: foo-bar--a
             name: A
+            localName: default
             __stats:
               play: false
               render: false
@@ -801,6 +804,7 @@ describe('CsfFile', () => {
               moduleMock: false
           - id: foo-bar--b
             name: B
+            localName: B
             __stats:
               play: false
               render: false
@@ -878,6 +882,7 @@ describe('CsfFile', () => {
         stories:
           - id: foo-bar--a
             name: A
+            localName: A
             parameters:
               __id: foo-bar--a
             __stats:

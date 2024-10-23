@@ -31,6 +31,7 @@
       "types": "./dist/preset.d.ts",
       "default": "./dist/preset.js"
     },
+    "./preview": "./dist/preview.js",
     "./dist/preview.js": "./dist/preview.js",
     "./cache.mock": {
       "types": "./dist/export-mocks/cache/index.d.ts",

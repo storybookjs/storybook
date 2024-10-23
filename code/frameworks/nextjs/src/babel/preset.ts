@@ -1,6 +1,10 @@
+import { createRequire } from 'node:module';
 import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import type { PluginItem } from '@babel/core';
+
+const require = createRequire(import.meta.url);
 
 const isLoadIntentTest = process.env.NODE_ENV === 'test';
 const isLoadIntentDevelopment = process.env.NODE_ENV === 'development';
@@ -26,10 +30,10 @@ function styledJsxOptions(options: StyledJsxBabelOptions) {
   options.plugins = options.plugins.map((plugin: StyledJsxPlugin): StyledJsxPlugin => {
     if (Array.isArray(plugin)) {
       const [name, pluginOptions] = plugin;
-      return [require.resolve(name), pluginOptions];
+      return [fileURLToPath(import.meta.resolve(name)), pluginOptions];
     }
 
-    return require.resolve(plugin);
+    return fileURLToPath(import.meta.resolve(plugin));
   });
 
   return options;
@@ -127,7 +131,7 @@ export default (api: any, options: NextBabelPresetOptions = {}): BabelPreset => 
       ],
     ],
     plugins: [
-      isDevelopment && require.resolve('react-refresh/babel'),
+      isDevelopment && fileURLToPath(import.meta.resolve('react-refresh/babel')),
       !useJsxRuntime && [
         require('./plugins/jsx-pragma'),
         {

@@ -3,6 +3,7 @@ import * as fs from 'node:fs/promises';
 import { writeFile } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
 import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
   JsPackageManagerFactory,
@@ -416,7 +417,9 @@ async function getFrameworkInfo({ configDir, packageManager: pkgMgr }: Postinsta
   const presets = await loadAllPresets({
     corePresets: [join(frameworkName, 'preset')],
     overridePresets: [
-      require.resolve('@storybook/core/core-server/presets/common-override-preset'),
+      fileURLToPath(
+        import.meta.resolve('@storybook/core/core-server/presets/common-override-preset')
+      ),
     ],
     configDir,
     packageJson,

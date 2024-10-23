@@ -93,7 +93,7 @@ export async function svelteDocgen(svelteOptions: Record<string, any> = {}): Pro
         docPreprocessOptions = [replace([[/<style.+<\/style>/gims, '']])];
 
         try {
-          const ts = require.resolve('typescript');
+          const ts = import.meta.resolve('typescript');
           if (ts) {
             docPreprocessOptions.unshift(typescript());
           }

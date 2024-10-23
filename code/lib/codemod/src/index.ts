@@ -1,11 +1,14 @@
 /* eslint import/prefer-default-export: "off" */
 import { readdirSync } from 'node:fs';
 import { rename as renameAsync } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import { extname } from 'node:path';
 
 import { sync as spawnSync } from 'cross-spawn';
 
 import { jscodeshiftToPrettierParser } from './lib/utils';
+
+const require = createRequire(import.meta.url);
 
 export {
   default as updateOrganisationName,

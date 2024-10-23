@@ -1,4 +1,5 @@
 import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import type { Options } from 'storybook/internal/types';
 
@@ -35,9 +36,8 @@ export async function mdxPlugin(options: Options): Promise<Plugin> {
       const mdxLoaderOptions: CompileOptions = await presets.apply('mdxLoaderOptions', {
         ...mdxPluginOptions,
         mdxCompileOptions: {
-          providerImportSource: join(
-            dirname(require.resolve('@storybook/addon-docs/package.json')),
-            '/dist/shims/mdx-react-shim.js'
+          providerImportSource: fileURLToPath(
+            import.meta.resolve('@storybook/addon-docs/mdx-react-shim')
           ),
           ...mdxPluginOptions?.mdxCompileOptions,
           rehypePlugins: [

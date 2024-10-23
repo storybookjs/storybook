@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
 import type { Options } from 'storybook/internal/types';
 
@@ -15,7 +17,7 @@ export const configureBabelLoader = async (baseConfig: any, options: Options) =>
       test: typescriptOptions.skipCompiler ? /\.((c|m)?jsx?)$/ : /\.((c|m)?(j|t)sx?)$/,
       use: [
         {
-          loader: require.resolve('babel-loader'),
+          loader: fileURLToPath(import.meta.resolve('babel-loader')),
           options: {
             cacheDirectory: resolvePathInStorybookCache('babel'),
             ...babelOptions,

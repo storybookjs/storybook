@@ -1,11 +1,11 @@
-import { dirname, join } from 'node:path';
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import type { PresetProperty } from 'storybook/internal/types';
 
-const getAbsolutePath = <I extends string>(input: I): I =>
-  dirname(require.resolve(join(input, 'package.json'))) as any;
-
-export const addons: PresetProperty<'addons'> = [getAbsolutePath('@storybook/preset-html-webpack')];
+export const addons: PresetProperty<'addons'> = [
+  dirname(fileURLToPath(import.meta.resolve('@storybook/preset-html-webpack/package.json'))),
+];
 
 export const core: PresetProperty<'core'> = async (config, options) => {
   const framework = await options.presets.apply('framework');
@@ -13,9 +13,9 @@ export const core: PresetProperty<'core'> = async (config, options) => {
   return {
     ...config,
     builder: {
-      name: getAbsolutePath('@storybook/builder-webpack5'),
+      name: fileURLToPath(import.meta.resolve('@storybook/builder-webpack5')),
       options: typeof framework === 'string' ? {} : framework.options.builder || {},
     },
-    renderer: getAbsolutePath('@storybook/html'),
+    renderer: fileURLToPath(import.meta.resolve('@storybook/html/preset')),
   };
 };

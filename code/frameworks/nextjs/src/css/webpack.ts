@@ -1,3 +1,6 @@
+import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
+
 import type { NextConfig } from 'next';
 import { cssFileResolve } from 'next/dist/build/webpack/config/blocks/css/loaders/file-resolve';
 import { getCssModuleLocalIdent } from 'next/dist/build/webpack/config/blocks/css/loaders/getCssModuleLocalIdent';
@@ -21,9 +24,9 @@ export const configureCss = (baseConfig: WebpackConfig, nextConfig: NextConfig):
       rules[i] = {
         test: /\.css$/,
         use: [
-          require.resolve('style-loader'),
+          fileURLToPath(import.meta.resolve('style-loader')),
           {
-            loader: require.resolve('css-loader'),
+            loader: fileURLToPath(import.meta.resolve('css-loader')),
             options: {
               importLoaders: 1,
               ...getImportAndUrlCssLoaderOptions(nextConfig),
@@ -33,7 +36,7 @@ export const configureCss = (baseConfig: WebpackConfig, nextConfig: NextConfig):
               },
             },
           },
-          require.resolve('postcss-loader'),
+          fileURLToPath(import.meta.resolve('postcss-loader')),
         ],
         // We transform the "target.css" files from next.js into Javascript
         // for Next.js to support fonts, so it should be ignored by the css-loader.
@@ -44,19 +47,19 @@ export const configureCss = (baseConfig: WebpackConfig, nextConfig: NextConfig):
   rules?.push({
     test: /\.(scss|sass)$/,
     use: [
-      require.resolve('style-loader'),
+      fileURLToPath(import.meta.resolve('style-loader')),
       {
-        loader: require.resolve('css-loader'),
+        loader: fileURLToPath(import.meta.resolve('css-loader')),
         options: {
           importLoaders: 3,
           ...getImportAndUrlCssLoaderOptions(nextConfig),
           modules: { auto: true, getLocalIdent: getCssModuleLocalIdent },
         },
       },
-      require.resolve('postcss-loader'),
-      require.resolve('resolve-url-loader'),
+      fileURLToPath(import.meta.resolve('postcss-loader')),
+      fileURLToPath(import.meta.resolve('resolve-url-loader')),
       {
-        loader: require.resolve('sass-loader'),
+        loader: fileURLToPath(import.meta.resolve('sass-loader')),
         options: {
           sourceMap: true,
           sassOptions: nextConfig.sassOptions,
@@ -104,6 +107,7 @@ const getImportResolver =
 
 const isCssLoaderV6 = () => {
   try {
+    const require = createRequire(import.meta.url);
     const cssLoaderVersion = require(scopedResolve('css-loader/package.json')).version;
     return semver.gte(cssLoaderVersion, '6.0.0');
   } catch {

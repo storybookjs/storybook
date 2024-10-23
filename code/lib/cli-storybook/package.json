@@ -24,7 +24,7 @@
   "exports": {
     "./bin/index.cjs": {
       "node": "./bin/index.cjs",
-      "require": "./bin/index.cjs"
+      "default": "./bin/index.cjs"
     },
     "./package.json": "./package.json"
   },

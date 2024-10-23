@@ -1,4 +1,5 @@
 import { resolve as resolvePath } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import type { NextConfig } from 'next';
 import semver from 'semver';
@@ -18,14 +19,14 @@ const configureImageDefaults = (baseConfig: WebpackConfig): void => {
   const resolve = baseConfig.resolve ?? {};
   resolve.alias = {
     ...resolve.alias,
-    'sb-original/next/image': require.resolve('next/image'),
+    'sb-original/next/image': fileURLToPath(import.meta.resolve('next/image')),
     'next/image': resolvePath(__dirname, './images/next-image'),
   };
 
   if (semver.satisfies(version, '>=13.0.0')) {
     resolve.alias = {
       ...resolve.alias,
-      'sb-original/next/legacy/image': require.resolve('next/legacy/image'),
+      'sb-original/next/legacy/image': fileURLToPath(import.meta.resolve('next/legacy/image')),
       'next/legacy/image': resolvePath(__dirname, './images/next-legacy-image'),
     };
   }
@@ -56,7 +57,7 @@ const configureStaticImageImport = (baseConfig: WebpackConfig, nextConfig: NextC
     issuer: { not: /\.(css|scss|sass)$/ },
     use: [
       {
-        loader: require.resolve('@storybook/nextjs/next-image-loader-stub.js'),
+        loader: fileURLToPath(import.meta.resolve('@storybook/nextjs/next-image-loader-stub.js')),
         options: {
           filename: assetRule.generator?.filename ?? fallbackFilename,
           nextConfig,

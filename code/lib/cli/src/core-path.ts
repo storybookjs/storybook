@@ -1,6 +1,4 @@
-import ESM_COMPAT_ModuleA from 'node:module';
 import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const require = ESM_COMPAT_ModuleA.createRequire(import.meta.url);
-
-export const corePath = dirname(require.resolve('@storybook/core/package.json'));
+export const corePath = dirname(fileURLToPath(import.meta.resolve('@storybook/core/package.json')));

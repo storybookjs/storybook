@@ -1,4 +1,5 @@
 import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
   getBuilderOptions,
@@ -197,7 +198,7 @@ export default async (
         ...stringifyProcessEnvs(envs),
         NODE_ENV: JSON.stringify(process.env.NODE_ENV),
       }),
-      new ProvidePlugin({ process: require.resolve('process/browser.js') }),
+      new ProvidePlugin({ process: fileURLToPath(import.meta.resolve('process/browser.js')) }),
       isProd ? null : new HotModuleReplacementPlugin(),
       new CaseSensitivePathsPlugin(),
       quiet ? null : new ProgressPlugin({ modulesCount }),
@@ -213,7 +214,9 @@ export default async (
           enforce: 'post',
           use: [
             {
-              loader: require.resolve('@storybook/builder-webpack5/loaders/export-order-loader'),
+              loader: fileURLToPath(
+                import.meta.resolve('@storybook/builder-webpack5/loaders/export-order-loader')
+              ),
             },
           ],
         },
@@ -240,12 +243,12 @@ export default async (
       alias: storybookPaths,
       fallback: {
         stream: false,
-        path: require.resolve('path-browserify'),
-        assert: require.resolve('browser-assert'),
-        util: require.resolve('util'),
-        url: require.resolve('url'),
+        path: fileURLToPath(import.meta.resolve('path-browserify')),
+        assert: fileURLToPath(import.meta.resolve('browser-assert')),
+        util: fileURLToPath(import.meta.resolve('util')),
+        url: fileURLToPath(import.meta.resolve('url')),
         fs: false,
-        constants: require.resolve('constants-browserify'),
+        constants: fileURLToPath(import.meta.resolve('constants-browserify')),
       },
       // Set webpack to resolve symlinks based on whether the user has asked node to.
       // This feels like it should be default out-of-the-box in webpack :shrug:

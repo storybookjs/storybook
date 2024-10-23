@@ -1,5 +1,6 @@
 // https://storybook.js.org/docs/react/addons/writing-presets
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import type { PresetProperty } from 'storybook/internal/types';
 
@@ -16,21 +17,20 @@ export const core: PresetProperty<'core'> = async (config, options) => {
   return {
     ...config,
     builder: {
-      name: dirname(
-        require.resolve(join('@storybook/builder-vite', 'package.json'))
-      ) as '@storybook/builder-vite',
+      name: fileURLToPath(import.meta.resolve('@storybook/builder-vite')),
       options: {
         ...(typeof framework === 'string' ? {} : framework.options.builder || {}),
       },
     },
-    renderer: dirname(require.resolve(join('@storybook/react', 'package.json'))),
+    renderer: fileURLToPath(import.meta.resolve('@storybook/react/preset')),
   };
 };
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry = []) => {
-  const nextDir = dirname(require.resolve('@storybook/experimental-nextjs-vite/package.json'));
-  const result = [...entry, join(nextDir, 'dist/preview.js')];
-  return result;
+  return [
+    ...entry,
+    fileURLToPath(import.meta.resolve('@storybook/experimental-nextjs-vite/preview')),
+  ];
 };
 
 export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, options) => {

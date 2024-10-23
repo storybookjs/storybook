@@ -1,4 +1,5 @@
 import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import type { Configuration as WebpackConfig } from 'webpack';
 
@@ -18,9 +19,10 @@ const mapping = {
 
 // Utility that assists in adding aliases to the Webpack configuration
 // and also doubles as alias solution for portable stories in Jest/Vitest/etc.
-export const getPackageAliases = ({ useESM = false }: { useESM?: boolean } = {}) => {
-  const extension = useESM ? 'mjs' : 'js';
-  const packageLocation = dirname(require.resolve('@storybook/nextjs/package.json'));
+export const getPackageAliases = () => {
+  const packageLocation = dirname(
+    fileURLToPath(import.meta.resolve('@storybook/nextjs/package.json'))
+  );
 
   const getFullPath = (path: string) =>
     join(packageLocation, path.replace('@storybook/nextjs', ''));
@@ -30,7 +32,7 @@ export const getPackageAliases = ({ useESM = false }: { useESM?: boolean } = {})
       originalPath,
       // Use paths for both next/xyz and @storybook/nextjs/xyz imports
       // to make sure they all serve the MJS/CJS version of the file
-      getFullPath(`${aliasedPath}.${extension}`),
+      getFullPath(`${aliasedPath}.js`),
     ])
   );
 
@@ -42,6 +44,6 @@ export const configureNextExportMocks = (baseConfig: WebpackConfig): void => {
 
   resolve.alias = {
     ...resolve.alias,
-    ...getPackageAliases({ useESM: true }),
+    ...getPackageAliases(),
   };
 };

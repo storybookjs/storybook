@@ -1,4 +1,5 @@
 import { dirname, isAbsolute, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { logger } from 'storybook/internal/node-logger';
 import type { DocsOptions, Options, PresetProperty } from 'storybook/internal/types';
@@ -18,14 +19,18 @@ const getResolvedReact = async (options: Options) => {
   const resolvedReact = (await options.presets.apply('resolvedReact', {})) as any;
   // resolvedReact should always be set by the time we get here, but just in case, we'll default to addon-docs's react dependencies
   return {
-    react: resolvedReact.react ?? dirname(require.resolve('react/package.json')),
-    reactDom: resolvedReact.reactDom ?? dirname(require.resolve('react-dom/package.json')),
+    react: resolvedReact.react ?? dirname(fileURLToPath(import.meta.resolve('react/package.json'))),
+    reactDom:
+      resolvedReact.reactDom ??
+      dirname(fileURLToPath(import.meta.resolve('react-dom/package.json'))),
     // In Webpack, symlinked MDX files will cause @mdx-js/react to not be resolvable if it is not hoisted
     // This happens for the SB monorepo's template stories when a sandbox has a different react version than
     // addon-docs, causing addon-docs's dependencies not to be hoisted.
     // This might also affect regular users who have a similar setup.
     // Explicitly alias @mdx-js/react to avoid this issue.
-    mdx: resolvedReact.mdx ?? dirname(require.resolve('@mdx-js/react')),
+    mdx:
+      resolvedReact.mdx ??
+      dirname(fileURLToPath(import.meta.resolve('@mdx-js/react/package.json'))),
   };
 };
 
@@ -45,9 +50,8 @@ async function webpack(
   const mdxLoaderOptions: CompileOptions = await options.presets.apply('mdxLoaderOptions', {
     ...mdxPluginOptions,
     mdxCompileOptions: {
-      providerImportSource: join(
-        dirname(require.resolve('@storybook/addon-docs/package.json')),
-        '/dist/shims/mdx-react-shim.js'
+      providerImportSource: fileURLToPath(
+        import.meta.resolve('@storybook/addon-docs/mdx-react-shim')
       ),
       ...mdxPluginOptions.mdxCompileOptions,
       rehypePlugins: [
@@ -73,12 +77,12 @@ async function webpack(
    * In the future the `@storybook/theming` and `@storybook/components` can be removed, as they
    * should be singletons in the future due to the peerDependency on `storybook` package.
    */
-  const cliPath = dirname(require.resolve('storybook/package.json'));
+  const cliPath = dirname(fileURLToPath(import.meta.resolve('storybook/package.json')));
   const themingPath = join(cliPath, 'core', 'theming', 'index.js');
   const themingCreatePath = join(cliPath, 'core', 'theming', 'create.js');
 
   const componentsPath = join(cliPath, 'core', 'components', 'index.js');
-  const blocksPath = dirname(require.resolve('@storybook/blocks/package.json'));
+  const blocksPath = dirname(fileURLToPath(import.meta.resolve('@storybook/blocks/package.json')));
   if (Array.isArray(webpackConfig.resolve?.alias)) {
     alias = [...webpackConfig.resolve?.alias];
     alias.push(
@@ -147,7 +151,7 @@ async function webpack(
           exclude: /(stories|story)\.mdx$/,
           use: [
             {
-              loader: require.resolve('./mdx-loader'),
+              loader: fileURLToPath(import.meta.resolve('./mdx-loader')),
               options: mdxLoaderOptions,
             },
           ],
@@ -168,7 +172,7 @@ const docs = (docsOptions: DocsOptions) => {
 };
 
 export const addons: PresetProperty<'addons'> = [
-  require.resolve('@storybook/react-dom-shim/dist/preset'),
+  fileURLToPath(import.meta.resolve('@storybook/react-dom-shim/preset')),
 ];
 
 export const viteFinal = async (config: any, options: Options) => {
@@ -178,11 +182,11 @@ export const viteFinal = async (config: any, options: Options) => {
   // Use the resolvedReact preset to alias react and react-dom to either the users version or the version shipped with addon-docs
   const { react, reactDom, mdx } = await getResolvedReact(options);
 
-  const cliPath = dirname(require.resolve('storybook/package.json'));
+  const cliPath = dirname(fileURLToPath(import.meta.resolve('storybook/package.json')));
   const themingPath = join(cliPath, 'core', 'theming', 'index.js');
   const themingCreatePath = join(cliPath, 'core', 'theming', 'create.js');
   const componentsPath = join(cliPath, 'core', 'components', 'index.js');
-  const blocksPath = dirname(require.resolve('@storybook/blocks/package.json'));
+  const blocksPath = dirname(fileURLToPath(import.meta.resolve('@storybook/blocks/package.json')));
 
   const packageDeduplicationPlugin = {
     name: 'storybook:package-deduplication',
@@ -236,16 +240,17 @@ const docsX = docs as any;
  * is always a resolved react.
  */
 export const resolvedReact = async (existing: any) => ({
-  react: existing?.react ?? dirname(require.resolve('react/package.json')),
-  reactDom: existing?.reactDom ?? dirname(require.resolve('react-dom/package.json')),
-  mdx: existing?.mdx ?? dirname(require.resolve('@mdx-js/react')),
+  react: existing?.react ?? dirname(fileURLToPath(import.meta.resolve('react/package.json'))),
+  reactDom:
+    existing?.reactDom ?? dirname(fileURLToPath(import.meta.resolve('react-dom/package.json'))),
+  mdx: existing?.mdx ?? dirname(fileURLToPath(import.meta.resolve('@mdx-js/react/package.json'))),
 });
 
 const optimizeViteDeps = [
   '@mdx-js/react',
   '@storybook/addon-docs > acorn-jsx',
   '@storybook/addon-docs',
-  '@storybook/addon-essentials/docs/mdx-react-shim',
+  '@storybook/addon-docs/mdx-react-shim',
   'markdown-to-jsx',
 ];
 

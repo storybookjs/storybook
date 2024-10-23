@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 import type { EnrichCsfOptions } from 'storybook/internal/csf-tools';
 
 import { createUnplugin } from 'unplugin';
@@ -23,7 +25,7 @@ export const unplugin = createUnplugin<CsfPluginOptions>((options) => {
         enforce: 'post',
         use: {
           options,
-          loader: require.resolve('@storybook/csf-plugin/dist/webpack-loader'),
+          loader: fileURLToPath(import.meta.resolve('@storybook/csf-plugin/dist/webpack-loader')),
         },
       });
     },
@@ -33,7 +35,7 @@ export const unplugin = createUnplugin<CsfPluginOptions>((options) => {
         enforce: 'post',
         use: {
           options,
-          loader: require.resolve('@storybook/csf-plugin/dist/webpack-loader'),
+          loader: fileURLToPath(import.meta.resolve('@storybook/csf-plugin/dist/webpack-loader')),
         },
       });
     },

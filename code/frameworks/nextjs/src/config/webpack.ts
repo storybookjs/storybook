@@ -1,3 +1,5 @@
+import { createRequire } from 'node:module';
+
 import type { NextConfig } from 'next';
 import type { Configuration as WebpackConfig } from 'webpack';
 import { DefinePlugin } from 'webpack';
@@ -6,10 +8,17 @@ import { addScopedAlias, resolveNextConfig, setAlias } from '../utils';
 
 const tryResolve = (path: string) => {
   try {
+    return import.meta.resolve(path);
+  } catch (err) {
+    //
+  }
+  try {
+    const require = createRequire(import.meta.url);
     return require.resolve(path);
   } catch (err) {
-    return false;
+    //
   }
+  return false;
 };
 
 export const configureConfig = async ({

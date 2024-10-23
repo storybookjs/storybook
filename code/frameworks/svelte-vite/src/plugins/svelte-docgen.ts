@@ -4,7 +4,8 @@ import { basename, relative } from 'node:path';
 import { logger } from 'storybook/internal/node-logger';
 
 import MagicString from 'magic-string';
-import { replace, typescript } from 'svelte-preprocess';
+import replace from 'svelte-preprocess/dist/processors/replace';
+import typescript from 'svelte-preprocess/dist/processors/typescript';
 import { preprocess } from 'svelte/compiler';
 import svelteDoc from 'sveltedoc-parser';
 import type { SvelteComponentDoc, SvelteParserOptions } from 'sveltedoc-parser';

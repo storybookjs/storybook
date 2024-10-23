@@ -162,7 +162,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         // }),
       ]);
       if (!watch) {
-        await readMetafiles({ formats: ['esm'] });
+        await readMetafiles();
       }
     });
 
@@ -183,7 +183,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         external: [...commonExternals, ...globalManagerPackages],
       });
       if (!watch) {
-        await readMetafiles({ formats: ['esm'] });
+        await readMetafiles();
       }
     });
   }
@@ -204,7 +204,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         external: [...commonExternals, ...globalPreviewPackages],
       });
       if (!watch) {
-        await readMetafiles({ formats: ['esm'] });
+        await readMetafiles();
       }
     });
 
@@ -248,7 +248,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         }),
       ]);
       if (!watch) {
-        await readMetafiles({ formats: ['esm'] });
+        await readMetafiles();
       }
     });
 
@@ -344,14 +344,14 @@ const metafile: Metafile = {
   outputs: {},
 };
 
-async function readMetafiles({ formats }: { formats: Formats[] }) {
+async function readMetafiles() {
   const fromFilename = `metafile.json`;
   try {
     const currentMetafile = await fs.readJson(join(OUT_DIR, fromFilename));
     metafile.inputs = { ...metafile.inputs, ...currentMetafile.inputs };
     metafile.outputs = { ...metafile.outputs, ...currentMetafile.outputs };
 
-    // await fs.rm(join(OUT_DIR, fromFilename));
+    await fs.rm(join(OUT_DIR, fromFilename));
   } catch (e) {
     //
   }

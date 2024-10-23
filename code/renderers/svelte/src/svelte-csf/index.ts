@@ -1,6 +1,3 @@
-import type { Args as BaseArgs } from '@storybook/types';
-import type { EmptyObject } from 'type-fest';
-
 import type {
   Meta as MetaType,
   StoryCmp,
@@ -20,24 +17,23 @@ import LegacyTemplateComponent from './runtime/LegacyTemplate.svelte';
 export { setTemplate } from './runtime/contexts/template.svelte';
 
 export function defineMeta<
-  const TOverrideArgs extends BaseArgs = EmptyObject,
   const TCmp extends Cmp = Cmp,
 >(meta: MetaType<TCmp>) {
   return {
-    Story: StoryComponent as StoryCmp<EmptyObject, TCmp, typeof meta>,
+    Story: StoryComponent as StoryCmp<TCmp, typeof meta>,
     meta,
   };
 }
 
 export type Args<TStoryCmp> =
-  TStoryCmp extends StoryCmp<infer _TOverrideArgs, infer TCmpOrArgs, infer TMeta>
-    ? NonNullable<StoryAnnotations<TCmpOrArgs, TMeta>['args']>
-    : never;
+  TStoryCmp extends StoryCmp<infer TCmpOrArgs, infer TMeta>
+  ? NonNullable<StoryAnnotations<TCmpOrArgs, TMeta>['args']>
+  : never;
 
 export type StoryContext<TStoryCmp> =
-  TStoryCmp extends StoryCmp<infer _TOverrideArgs, infer TCmpOrArgs, infer TMeta>
-    ? BaseStoryContext<TCmpOrArgs, TMeta>
-    : never;
+  TStoryCmp extends StoryCmp<infer TCmpOrArgs, infer TMeta>
+  ? BaseStoryContext<TCmpOrArgs, TMeta>
+  : never;
 
 // TODO: Remove in next major release
 export {

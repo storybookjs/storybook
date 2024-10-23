@@ -1,11 +1,4 @@
-<!-- // TODO: Finish this implementation - to be specific - using TOverrideArgs somewhere in annotations? -->
-<!-- // args?: SnippetsToPrimitives<Omit<StoryObj<TMeta>['args'], keyof TOverrideArgs> & TOverrideArgs>; -->
-
-<script
-  lang="ts"
-  generics="const TOverrideArgs extends Args, const TCmp extends Cmp, TMeta extends Meta<TCmp>"
->
-  import type { Args } from '@storybook/types';
+<script lang="ts" generics="const TCmp extends Cmp, TMeta extends Meta<TCmp>">
   import type { Snippet } from 'svelte';
 
   import { useStoriesExtractor } from '#runtime/contexts/extractor.svelte';
@@ -24,10 +17,8 @@
      *
      */
     children?: Snippet<
-      [
-        StoryRendererContext<TOverrideArgs, TCmp, TMeta>['args'],
-        StoryRendererContext<TOverrideArgs, TCmp, TMeta>['storyContext'],
-      ]
+      /* prettier ignore */
+      [StoryRendererContext<TCmp, TMeta>['args'], StoryRendererContext<TCmp, TMeta>['storyContext']]
     >;
     /**
      * Name of the story. Can be omitted if `exportName` is provided.
@@ -58,9 +49,9 @@
   const { children, name, exportName: exportNameProp, play, ...restProps }: Props = $props();
   const exportName = exportNameProp ?? storyNameToExportName(name!);
 
-  const extractor = useStoriesExtractor<TOverrideArgs, TCmp, TMeta>();
-  const renderer = useStoryRenderer<TOverrideArgs, TCmp, TMeta>();
-  const template = useStoriesTemplate<TOverrideArgs, TCmp, TMeta>();
+  const extractor = useStoriesExtractor<TCmp, TMeta>();
+  const renderer = useStoryRenderer<TCmp, TMeta>();
+  const template = useStoriesTemplate<TCmp, TMeta>();
 
   const isCurrentlyViewed = $derived(
     !extractor.isExtracting && renderer.currentStoryExportName === exportName
@@ -96,6 +87,11 @@
   {:else if renderer.storyContext.component}
     <renderer.storyContext.component {...renderer.args} />
   {:else}
-    <p>No story rendered. See <a href="https://github.com/storybookjs/addon-svelte-csf#defining-stories" target="_blank">the docs</a> on how to define stories.</p>
+    <p>
+      No story rendered. See <a
+        href="https://github.com/storybookjs/addon-svelte-csf#defining-stories"
+        target="_blank">the docs</a
+      > on how to define stories.
+    </p>
   {/if}
 {/if}

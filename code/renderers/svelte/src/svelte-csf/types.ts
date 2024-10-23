@@ -57,10 +57,9 @@ export type StoryContext<
 >;
 
 export type StoryCmp<
-  TOverrideArgs extends Args = Args,
   TCmp extends Cmp = Cmp,
   TMeta extends Meta<TCmp> = Meta<TCmp>,
-> = typeof Story<TOverrideArgs, TCmp, TMeta>;
+> = typeof Story<TCmp, TMeta>;
 
 export type StoryAnnotations<TCmp extends Cmp, TMeta extends Meta<TCmp>> = BaseStoryAnnotations<
   // Renderer
@@ -73,7 +72,7 @@ export type StoryAnnotations<TCmp extends Cmp, TMeta extends Meta<TCmp>> = BaseS
       InferArgs<TCmp>,
       // FIXME: Supposed to be `keyof TMeta['args'], but doesn't work
       keyof InferArgs<TCmp>
-      // keyof TMeta['args']
+    // keyof TMeta['args']
     >
   >
 >;

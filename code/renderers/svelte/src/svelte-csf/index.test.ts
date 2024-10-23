@@ -16,25 +16,6 @@ import type {
 import Button from '../examples/components/Button.svelte';
 
 describe(defineMeta.name, () => {
-  // it('works when no meta entry "component" is provided', () => {
-  //   const { Story, meta } = defineMeta({
-  //     args: {
-  //       sample: 0,
-  //     },
-  //     play(context) {
-  //       expectTypeOf(context).not.toBeAny();
-  //       expectTypeOf(context).toMatchTypeOf<
-  //         PlayFunctionContext<SvelteRenderer<Component<{ sample: 0 }>>>
-  //       >();
-  //       expectTypeOf(context.args).not.toBeAny();
-  //       expectTypeOf(context.args).toMatchTypeOf<MapSnippetsToAcceptPrimitives<{ sample: 0 }>>();
-  //     },
-  //   });
-
-  //   expectTypeOf(Story).toMatchTypeOf<StoryCmp<EmptyObject, { sample: 0 }, Meta<{ sample: 0 }>>>();
-  //   expectTypeOf(meta).toMatchTypeOf<Meta<Component<{ sample: 0 }>>>();
-  // });
-
   it('works with provided meta entry "component" entry', () => {
     const { Story, meta } = defineMeta({
       component: Button,
@@ -131,7 +112,7 @@ describe("component 'Story' destructured from 'defineMeta", () => {
 
     type TStoryProps = ComponentProps<typeof Story>;
 
-    expectTypeOf(Story).toMatchTypeOf<StoryCmp<EmptyObject, typeof Button, Meta<typeof Button>>>();
+    expectTypeOf(Story).toMatchTypeOf<StoryCmp<typeof Button, Meta<typeof Button>>>();
     expectTypeOf<TStoryProps>().not.toBeNever();
     expectTypeOf<Meta<typeof Button>['args']>().toBeNullable();
     expectTypeOf<NonNullable<Meta<typeof Button>['args']>['children']>().toBeNullable();

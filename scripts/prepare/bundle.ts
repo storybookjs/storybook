@@ -146,6 +146,8 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         esbuildOptions: (c) => {
           c.conditions = ['module'];
           c.platform = platform || 'browser';
+          c.minifyWhitespace = false;
+          c.lineLimit = 140;
           Object.assign(c, getESBuildOptions(optimized));
         },
       })
@@ -184,6 +186,9 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
 
         esbuildOptions: (c) => {
           c.conditions = ['module'];
+          c.minifyWhitespace = false;
+          c.lineLimit = 140;
+
           Object.assign(c, getESBuildOptions(optimized));
         },
       })
@@ -276,7 +281,9 @@ function getESBuildOptions(optimized: boolean) {
   return {
     logLevel: 'error',
     legalComments: 'none',
-    minifyWhitespace: optimized,
+    keepNames: true,
+    lineLimit: 140,
+    minifyWhitespace: false,
     minifyIdentifiers: false,
     minifySyntax: optimized,
   };

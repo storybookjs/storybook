@@ -113,6 +113,9 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
     esbuildOptions: (options) => {
       options.conditions = ['module'];
       options.platform = 'browser';
+      options.minifyWhitespace = false;
+      options.lineLimit = 140;
+
       options.loader = {
         ...options.loader,
         '.png': 'dataurl',

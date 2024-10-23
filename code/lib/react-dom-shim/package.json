@@ -30,6 +30,10 @@
       "types": "./dist/react-16.d.ts",
       "default": "./dist/react-16.js"
     },
+    "./preset": {
+      "types": "./dist/preset.d.ts",
+      "default": "./dist/preset.js"
+    },
     "./dist/preset": {
       "types": "./dist/preset.d.ts",
       "default": "./dist/preset.js"

@@ -28,9 +28,7 @@ const getResolvedReact = async (options: Options) => {
     // addon-docs, causing addon-docs's dependencies not to be hoisted.
     // This might also affect regular users who have a similar setup.
     // Explicitly alias @mdx-js/react to avoid this issue.
-    mdx:
-      resolvedReact.mdx ??
-      dirname(fileURLToPath(import.meta.resolve('@mdx-js/react/package.json'))),
+    mdx: resolvedReact.mdx ?? dirname(fileURLToPath(import.meta.resolve('@mdx-js/react'))),
   };
 };
 
@@ -243,7 +241,7 @@ export const resolvedReact = async (existing: any) => ({
   react: existing?.react ?? dirname(fileURLToPath(import.meta.resolve('react/package.json'))),
   reactDom:
     existing?.reactDom ?? dirname(fileURLToPath(import.meta.resolve('react-dom/package.json'))),
-  mdx: existing?.mdx ?? dirname(fileURLToPath(import.meta.resolve('@mdx-js/react/package.json'))),
+  mdx: existing?.mdx ?? dirname(fileURLToPath(import.meta.resolve('@mdx-js/react'))),
 });
 
 const optimizeViteDeps = [

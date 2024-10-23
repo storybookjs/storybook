@@ -1,9 +1,10 @@
 import type { ComponentProps } from 'svelte';
 
 import type { SvelteAST } from '#parser/ast';
-import type { Cmp, Meta, StoryCmp } from '#types';
+import type { CmpOrArgs } from '#types';
+import type Story from '#runtime/Story.svelte';
 
-type StoryAttributes = Array<keyof ComponentProps<StoryCmp<Cmp, Meta<Cmp>>>>;
+type StoryAttributes = Array<keyof ComponentProps<typeof Story<CmpOrArgs>>>;
 
 interface Options<Attributes extends StoryAttributes> {
   component: SvelteAST.Component;

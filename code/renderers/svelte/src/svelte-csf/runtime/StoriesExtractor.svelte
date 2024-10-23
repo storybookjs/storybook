@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Component } from 'svelte';
 
-  import type { Cmp, Meta } from '#types';
+  import type { CmpOrArgs } from '#types';
 
   import {
     type StoriesRepository,
@@ -10,7 +10,7 @@
 
   interface Props {
     Stories: Component;
-    repository: () => StoriesRepository<Cmp, Meta<Cmp>>;
+    repository: () => StoriesRepository<CmpOrArgs>;
   }
 
   const { Stories, repository }: Props = $props();

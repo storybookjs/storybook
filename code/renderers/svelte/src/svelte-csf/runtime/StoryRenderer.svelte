@@ -4,18 +4,18 @@
   import { useStoryRenderer } from '#runtime/contexts/renderer.svelte';
   import { emitCode } from '#runtime/emit-code';
 
-  import type { Cmp, Meta, StoryAnnotations, StoryContext } from '#types';
+  import type { CmpOrArgs, StoryAnnotations, StoryContext } from '#types';
 
   type Props = {
     Stories: Component;
     exportName: string;
-    args: NonNullable<StoryAnnotations<Cmp, Meta<Cmp>>['args']>;
-    storyContext: StoryContext<Cmp, Meta<Cmp>>;
+    args: NonNullable<StoryAnnotations<CmpOrArgs>['args']>;
+    storyContext: StoryContext<CmpOrArgs>;
   };
 
   let { Stories, exportName, args, storyContext }: Props = $props();
 
-  const context = useStoryRenderer<Cmp, Meta<Cmp>>();
+  const context = useStoryRenderer<CmpOrArgs>();
 
   $effect(() => {
     context.set({

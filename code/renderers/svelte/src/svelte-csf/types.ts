@@ -8,7 +8,6 @@ import type {
 import type { Component, ComponentProps, Snippet } from 'svelte';
 import type { Primitive, SetOptional, Simplify } from 'type-fest';
 
-import type Story from './runtime/Story.svelte';
 
 export type Cmp = Component<any>;
 export type CmpOrArgs = Cmp | Args;
@@ -18,13 +17,14 @@ export type CmpOrArgs = Cmp | Args;
  *
  * @see [Default export](https://storybook.js.org/docs/formats/component-story-format/#default-export)
  */
-export type Meta<TCmp extends Cmp> = ComponentAnnotations<TCmp>;
+export type Meta<TCmpOrArgs extends CmpOrArgs> = ComponentAnnotations<TCmpOrArgs>;
 
 export type ComponentAnnotations<TCmpOrArgs extends CmpOrArgs> = BaseComponentAnnotations<
   // Renderer
   SvelteRenderer<TCmpOrArgs>,
-  // Args
-  InferArgs<TCmpOrArgs>
+  // Args FIXME: REVERT IT
+  // InferArgs<TCmpOrArgs>
+  TCmpOrArgs extends Cmp ? ComponentProps<TCmpOrArgs> : TCmpOrArgs
 >;
 
 export interface SvelteRenderer<TCmpOrArgs extends CmpOrArgs> extends WebRenderer {
@@ -42,37 +42,39 @@ export type MapSnippetsToAcceptPrimitives<Props extends Args> = {
   [ArgKey in keyof Props]: Props[ArgKey] extends Snippet ? Snippet | Primitive : Props[ArgKey];
 };
 
-type InferArgs<TCmpOrArgs extends CmpOrArgs> = MapSnippetsToAcceptPrimitives<
-  TCmpOrArgs extends Cmp ? ComponentProps<TCmpOrArgs> : TCmpOrArgs
->;
+// FIXME: REVERT IT
+// type InferArgs<TCmpOrArgs extends CmpOrArgs> = MapSnippetsToAcceptPrimitives<
+//   TCmpOrArgs extends Cmp ? ComponentProps<TCmpOrArgs> : TCmpOrArgs
+// >;
 
 export type StoryContext<
-  TCmp extends Cmp = Cmp,
-  TMeta extends Meta<TCmp> = Meta<TCmp>,
+  TCmpOrArgs extends CmpOrArgs = CmpOrArgs,
 > = BaseStoryContext<
   // Renderer
-  SvelteRenderer<TCmp>,
+  SvelteRenderer<TCmpOrArgs>,
   // Args
-  Simplify<TCmp extends Cmp ? ComponentProps<TCmp> : TCmp>
+  Simplify<TCmpOrArgs extends Cmp ? ComponentProps<TCmpOrArgs> : TCmpOrArgs>
 >;
 
-export type StoryCmp<
-  TCmp extends Cmp = Cmp,
-  TMeta extends Meta<TCmp> = Meta<TCmp>,
-> = typeof Story<TCmp, TMeta>;
+// export type StoryCmp<
+//   TMeta extends Meta<CmpOrArgs>,
+// > = typeof Story<TMeta>;
 
-export type StoryAnnotations<TCmp extends Cmp, TMeta extends Meta<TCmp>> = BaseStoryAnnotations<
+export type StoryAnnotations<TCmpOrArgs extends CmpOrArgs> = BaseStoryAnnotations<
   // Renderer
-  SvelteRenderer<TCmp>,
+  SvelteRenderer<TCmpOrArgs>,
   // All of the args - combining the component props and the ones from meta - defineMeta
-  InferArgs<TCmp>,
-  // Set all of the args specified in 'defineMeta' to be optional for Story
+  // FIXME: REVERT IT
+  // InferArgs<TCmpOrArgs>,
+  TCmpOrArgs extends Cmp ? ComponentProps<TCmpOrArgs> : TCmpOrArgs,
+  // NOTE: This is supposed to set all of the args specified in 'defineMeta' to be optional for Story
   Simplify<
     SetOptional<
-      InferArgs<TCmp>,
-      // FIXME: Supposed to be `keyof TMeta['args'], but doesn't work
-      keyof InferArgs<TCmp>
-    // keyof TMeta['args']
+      TCmpOrArgs extends Cmp ? ComponentProps<TCmpOrArgs> : TCmpOrArgs,
+      // FIXME: REVERT IT
+      // InferArgs<TCmpOrArgs>,
+      TCmpOrArgs extends Cmp ? ComponentProps<TCmpOrArgs> : TCmpOrArgs
+    // keyof Meta<TCmpOrArgs>
     >
   >
 >;

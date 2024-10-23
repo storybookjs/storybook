@@ -1,23 +1,23 @@
 import { getContext, hasContext, setContext } from 'svelte';
 
-import type { Cmp, Meta, StoryAnnotations, StoryContext } from '#types';
+import type { CmpOrArgs, StoryAnnotations, StoryContext } from '#types';
 
 const CONTEXT_KEY = 'storybook-story-renderer-context';
 
-interface ContextProps<TCmp extends Cmp, TMeta extends Meta<TCmp>> {
+interface ContextProps<TCmpOrArgs extends CmpOrArgs> {
   currentStoryExportName: string | undefined;
-  args: NonNullable<StoryAnnotations<TCmp, TMeta>['args']>;
-  storyContext: StoryContext<TCmp, TMeta>;
+  args: NonNullable<StoryAnnotations<TCmpOrArgs>['args']>;
+  storyContext: StoryContext<TCmpOrArgs>;
 }
 
-function buildContext<TCmp extends Cmp, TMeta extends Meta<TCmp>>(
-  props: ContextProps<TCmp, TMeta>
+function buildContext<TCmpOrArgs extends CmpOrArgs>(
+  props: ContextProps<TCmpOrArgs>
 ) {
   let currentStoryExportName = $state(props.currentStoryExportName);
   let args = $state(props.args);
   let storyContext = $state(props.storyContext);
 
-  function set(props: ContextProps<TCmp, TMeta>) {
+  function set(props: ContextProps<TCmpOrArgs>) {
     currentStoryExportName = props.currentStoryExportName;
     args = props.args;
     storyContext = props.storyContext;
@@ -38,15 +38,13 @@ function buildContext<TCmp extends Cmp, TMeta extends Meta<TCmp>>(
 }
 
 export type StoryRendererContext<
-  TCmp extends Cmp = Cmp,
-  TMeta extends Meta<TCmp> = Meta<TCmp>,
-> = ReturnType<typeof buildContext<TCmp, TMeta>>;
+  TCmpOrArgs extends CmpOrArgs = CmpOrArgs,
+> = ReturnType<typeof buildContext<TCmpOrArgs>>;
 
 function createStoryRendererContext<
-  TCmp extends Cmp,
-  TMeta extends Meta<TCmp>,
+  TCmpOrArgs extends CmpOrArgs,
 >(): void {
-  const ctx = buildContext<TCmp, TMeta>({
+  const ctx = buildContext<TCmpOrArgs>({
     currentStoryExportName: undefined,
     // @ts-expect-error FIXME: I don't know how to satisfy this one
     args: {},
@@ -58,12 +56,11 @@ function createStoryRendererContext<
 }
 
 export function useStoryRenderer<
-  TCmp extends Cmp,
-  TMeta extends Meta<TCmp>,
+  TCmpOrArgs extends CmpOrArgs,
 >() {
   if (!hasContext(CONTEXT_KEY)) {
-    createStoryRendererContext<TCmp, TMeta>();
+    createStoryRendererContext<TCmpOrArgs>();
   }
 
-  return getContext<StoryRendererContext<TCmp, TMeta>>(CONTEXT_KEY);
+  return getContext<StoryRendererContext<TCmpOrArgs>>(CONTEXT_KEY);
 }

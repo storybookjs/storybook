@@ -1,4 +1,4 @@
-<script lang="ts" generics="const TCmp extends Cmp, TMeta extends Meta<TCmp>">
+<script lang="ts" generics="const TCmpOrArgs extends CmpOrArgs">
   import type { Snippet } from 'svelte';
 
   import { useStoriesExtractor } from '#runtime/contexts/extractor.svelte';
@@ -6,9 +6,9 @@
   import { useStoriesTemplate } from '#runtime/contexts/template.svelte';
 
   import { storyNameToExportName } from '#utils/identifier-utils';
-  import type { Cmp, Meta, StoryAnnotations } from '#types';
+  import type { CmpOrArgs, StoryAnnotations } from '#types';
 
-  type Props = Partial<StoryAnnotations<TCmp, TMeta>> & {
+  type Props = Partial<StoryAnnotations<TCmpOrArgs>> & {
     /**
      * The content to render in the story, either as:
      * 1. A snippet taking args and storyContext as parameters
@@ -18,7 +18,7 @@
      */
     children?: Snippet<
       /* prettier ignore */
-      [StoryRendererContext<TCmp, TMeta>['args'], StoryRendererContext<TCmp, TMeta>['storyContext']]
+      [StoryRendererContext<TCmpOrArgs>['args'], StoryRendererContext<TCmpOrArgs>['storyContext']]
     >;
     /**
      * Name of the story. Can be omitted if `exportName` is provided.
@@ -49,9 +49,9 @@
   const { children, name, exportName: exportNameProp, play, ...restProps }: Props = $props();
   const exportName = exportNameProp ?? storyNameToExportName(name!);
 
-  const extractor = useStoriesExtractor<TCmp, TMeta>();
-  const renderer = useStoryRenderer<TCmp, TMeta>();
-  const template = useStoriesTemplate<TCmp, TMeta>();
+  const extractor = useStoriesExtractor<TCmpOrArgs>();
+  const renderer = useStoryRenderer<TCmpOrArgs>();
+  const template = useStoriesTemplate<TCmpOrArgs>();
 
   const isCurrentlyViewed = $derived(
     !extractor.isExtracting && renderer.currentStoryExportName === exportName

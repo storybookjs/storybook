@@ -1,11 +1,12 @@
 import { getContext, hasContext, setContext, type ComponentProps } from 'svelte';
 
-import type { Cmp, Meta, StoryCmp } from '#types';
+import type Story from '#runtime/Story.svelte';
+import type { CmpOrArgs } from '#types';
 
 const CONTEXT_KEYS = 'storybook-stories-template-snippet-context';
 
-function buildContext<TCmp extends Cmp, TMeta extends Meta<TCmp>>() {
-  let template = $state<ComponentProps<StoryCmp<TCmp, TMeta>>['children']>();
+function buildContext<TCmpOrArgs extends CmpOrArgs>() {
+  let template = $state<ComponentProps<typeof Story<TCmpOrArgs>>['children']>();
 
   function set(snippet?: typeof template) {
     template = snippet;
@@ -20,29 +21,27 @@ function buildContext<TCmp extends Cmp, TMeta extends Meta<TCmp>>() {
 }
 
 type StoriesTemplateContext<
-  TCmp extends Cmp,
-  TMeta extends Meta<TCmp>,
-> = ReturnType<typeof buildContext<TCmp, TMeta>>;
+  TCmpOrArgs extends CmpOrArgs,
+> = ReturnType<typeof buildContext<TCmpOrArgs>>;
 
 export function useStoriesTemplate<
-  TCmp extends Cmp,
-  TMeta extends Meta<TCmp>,
+  TCmpOrArgs extends CmpOrArgs,
 >() {
   if (!hasContext(CONTEXT_KEYS)) {
-    setContext(CONTEXT_KEYS, buildContext<TCmp, TMeta>());
+    setContext(CONTEXT_KEYS, buildContext<TCmpOrArgs>());
   }
 
-  return getContext<StoriesTemplateContext<TCmp, TMeta>>(CONTEXT_KEYS).template;
+  return getContext<StoriesTemplateContext<TCmpOrArgs>>(CONTEXT_KEYS).template;
 }
 
-export function setTemplate<TCmp extends Cmp, TMeta extends Meta<TCmp>>(
-  snippet?: StoriesTemplateContext<TCmp, TMeta>['template']
+export function setTemplate<TCmpOrArgs extends CmpOrArgs>(
+  snippet?: StoriesTemplateContext<TCmpOrArgs>['template']
 ): void {
   if (!hasContext(CONTEXT_KEYS)) {
-    setContext(CONTEXT_KEYS, buildContext<TCmp, TMeta>());
+    setContext(CONTEXT_KEYS, buildContext<TCmpOrArgs>());
   }
 
-  const ctx = getContext<StoriesTemplateContext<TCmp, TMeta>>(CONTEXT_KEYS);
+  const ctx = getContext<StoriesTemplateContext<TCmpOrArgs>>(CONTEXT_KEYS);
 
   ctx.set(snippet);
 }

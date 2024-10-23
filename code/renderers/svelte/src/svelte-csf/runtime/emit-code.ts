@@ -5,11 +5,12 @@ import type { StoryObj } from '@storybook/svelte';
 import { get } from 'es-toolkit/compat';
 import type { ComponentProps } from 'svelte';
 
-import type { Cmp, Meta, StoryCmp, StoryContext } from '#types';
+import type Story from '#runtime/Story.svelte';
+import type { CmpOrArgs, StoryContext } from '#types';
 
 type Params = {
-  args: ComponentProps<StoryCmp<Cmp, Meta<Cmp>>>['args'];
-  storyContext: StoryContext<Cmp, Meta<Cmp>>;
+  args: ComponentProps<Story<CmpOrArgs>>['args'];
+  storyContext: StoryContext<CmpOrArgs>;
 };
 
 const channel: ReturnType<(typeof addons)['getChannel']> | undefined = addons.getChannel();

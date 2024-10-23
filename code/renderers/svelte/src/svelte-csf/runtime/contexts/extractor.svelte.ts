@@ -1,20 +1,20 @@
 import { getContext, hasContext, setContext, type ComponentProps } from 'svelte';
 
+import type Story from '#runtime/Story.svelte';
+import type { CmpOrArgs } from '#types';
 import { storyNameToExportName } from '#utils/identifier-utils';
-import type { Cmp, Meta, StoryCmp } from '#types';
 
 const CONTEXT_KEY = 'storybook-stories-extractor-context';
 
 export interface StoriesExtractorContextProps<
-  TCmp extends Cmp,
-  TMeta extends Meta<TCmp>,
+  TCmpOrArgs extends CmpOrArgs,
 > {
   isExtracting: boolean;
-  register: (storyCmpProps: ComponentProps<StoryCmp<TCmp, TMeta>>) => void;
+  register: (storyCmpProps: ComponentProps<typeof Story<TCmpOrArgs>>) => void;
 }
 
-function buildContext<TCmp extends Cmp, TMeta extends Meta<TCmp>>(
-  storyCmpProps: StoriesExtractorContextProps<TCmp, TMeta>
+function buildContext<TCmp extends CmpOrArgs>(
+  storyCmpProps: StoriesExtractorContextProps<TCmp>
 ) {
   let isExtracting = $state(storyCmpProps.isExtracting);
   let register = $state(storyCmpProps.register);
@@ -30,24 +30,21 @@ function buildContext<TCmp extends Cmp, TMeta extends Meta<TCmp>>(
 }
 
 export type StoriesExtractorContext<
-  TCmp extends Cmp,
-  TMeta extends Meta<TCmp>,
-> = ReturnType<typeof buildContext<TCmp, TMeta>>;
+  TCmpOrArgs extends CmpOrArgs,
+> = ReturnType<typeof buildContext<TCmpOrArgs>>;
 
 export type StoriesRepository<
-  TCmp extends Cmp,
-  TMeta extends Meta<TCmp>,
+  TCmpOrArgs extends CmpOrArgs,
 > = {
-  stories: Map<string, ComponentProps<StoryCmp<TCmp, TMeta>>>;
+  stories: Map<string, ComponentProps<typeof Story<TCmpOrArgs>>>;
 };
 
 export function createStoriesExtractorContext<
-  TCmp extends Cmp,
-  TMeta extends Meta<TCmp>,
->(repository: StoriesRepository<TCmp, TMeta>): void {
+  TCmpOrArgs extends CmpOrArgs,
+>(repository: StoriesRepository<TCmpOrArgs>): void {
   const { stories } = repository;
 
-  const ctx = buildContext<TCmp, TMeta>({
+  const ctx = buildContext<TCmpOrArgs>({
     isExtracting: true,
     register: (s) => {
       stories.set(s.exportName ?? storyNameToExportName(s.name!), s);
@@ -58,18 +55,17 @@ export function createStoriesExtractorContext<
 }
 
 export function useStoriesExtractor<
-  TCmp extends Cmp,
-  TMeta extends Meta<TCmp>,
+  TCmpOrArgs extends CmpOrArgs,
 >() {
   if (!hasContext(CONTEXT_KEY)) {
     setContext(
       CONTEXT_KEY,
-      buildContext<TCmp, TMeta>({
+      buildContext<TCmpOrArgs>({
         isExtracting: false,
         register: () => { },
       })
     );
   }
 
-  return getContext<StoriesExtractorContext<TCmp, TMeta>>(CONTEXT_KEY);
+  return getContext<StoriesExtractorContext<TCmpOrArgs>>(CONTEXT_KEY);
 }

@@ -2,7 +2,9 @@ import { join } from 'node:path';
 
 import { setOutput } from '@actions/core';
 import { program } from 'commander';
+// eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
+// eslint-disable-next-line depend/ban-dependencies
 import { readFile, readJson, writeFile, writeJson } from 'fs-extra';
 import picocolors from 'picocolors';
 import semver from 'semver';

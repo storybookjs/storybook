@@ -47,22 +47,8 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   if (options.outputDir === '/') {
     throw new Error("Won't remove directory '/'. Check your outputDir!");
   }
-
-  try {
-    const outputDirFiles = await readdir(options.outputDir);
-    for (const file of outputDirFiles) {
-      await rm(file, { recursive: true, force: true });
-    }
-  } catch {
-    await mkdir(options.outputDir, { recursive: true });
-  }
-
-  if (!existsSync(options.outputDir)) {
-    await mkdir(options.outputDir, { recursive: true });
-  } else if ((await readdir(options.outputDir)).length > 0) {
-    await rm(options.outputDir, { recursive: true, force: true });
-    await mkdir(options.outputDir, { recursive: true });
-  }
+  await rm(options.outputDir, { recursive: true, force: true }).catch(() => {});
+  await mkdir(options.outputDir, { recursive: true });
 
   const config = await loadMainConfig(options);
   const { framework } = config;

@@ -79,7 +79,7 @@ Some Storybook frameworks require additional setup to enable the framework's fea
   ```js title="vitest.config.ts"
   import { defineConfig, mergeConfig } from 'vitest/config';
   import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';
-  import { storybookNextjsPlugin } from '@storybook/experimental-nextjs-vite/vite-plugin';
+  import { storybookNextJsPlugin } from '@storybook/experimental-nextjs-vite/vite-plugin';
 
   import viteConfig from './vite.config';
 
@@ -88,7 +88,7 @@ Some Storybook frameworks require additional setup to enable the framework's fea
     defineConfig({
       plugins: [
         storybookTest(),
-        storybookNextjsPlugin(), // 👈 Apply the framework plugin here
+        storybookNextJsPlugin(), // 👈 Apply the framework plugin here
       ],
       // ...
     })

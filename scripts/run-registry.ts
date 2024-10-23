@@ -5,7 +5,9 @@ import type { Server } from 'node:http';
 import { join, resolve as resolvePath } from 'node:path';
 
 import { program } from 'commander';
+// eslint-disable-next-line depend/ban-dependencies
 import { execa, execaSync } from 'execa';
+// eslint-disable-next-line depend/ban-dependencies
 import { pathExists, readJSON, remove } from 'fs-extra';
 import pLimit from 'p-limit';
 import picocolors from 'picocolors';

@@ -7,6 +7,7 @@ import { GenerateNewProjectOnInitError } from 'storybook/internal/server-errors'
 import { telemetry } from 'storybook/internal/telemetry';
 
 import boxen from 'boxen';
+// eslint-disable-next-line depend/ban-dependencies
 import execa from 'execa';
 import picocolors from 'picocolors';
 import prompts from 'prompts';

@@ -1,3 +1,4 @@
+// eslint-disable-next-line depend/ban-dependencies
 import { outputFile, pathExists, readFile } from 'fs-extra';
 import type { TestCase } from 'junit-xml';
 import { getJunitXml } from 'junit-xml';

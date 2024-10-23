@@ -59,6 +59,7 @@ const generateStories = ({ title, refId }: { title: string; refId?: string }): A
       name: componentName,
       children: [docsId],
       parent: rootId,
+      tags: [],
     },
     // @ts-expect-error the missing fields are deprecated and replaced by the type prop
     {

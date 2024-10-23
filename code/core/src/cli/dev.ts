@@ -44,14 +44,16 @@ export const dev = async (cliOptions: CLIOptions) => {
 
   const packageJson = await findPackage(__dirname);
   invariant(packageJson, 'Failed to find the closest package.json file.');
+  type Options = Parameters<typeof buildDevStandalone>[0];
+
   const options = {
     ...cliOptions,
     configDir: cliOptions.configDir || './.storybook',
     configType: 'DEVELOPMENT',
     ignorePreview: !!cliOptions.previewUrl && !cliOptions.forceBuildPreview,
-    cache,
+    cache: cache as any,
     packageJson,
-  } as Parameters<typeof buildDevStandalone>[0];
+  } as Options;
 
   await withTelemetry(
     'dev',

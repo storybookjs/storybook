@@ -70,6 +70,7 @@ export const missingStorybookDependencies: Fix<MissingStorybookDependenciesOptio
 
   async check({ packageManager }) {
     // Dynamically import globby because it is a pure ESM module
+    // eslint-disable-next-line depend/ban-dependencies
     const { globby } = await import('globby');
 
     const result = await checkInstallations(packageManager, consolidatedPackages);

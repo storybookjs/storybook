@@ -1,6 +1,7 @@
 import { join } from 'node:path';
 
 import { setOutput } from '@actions/core';
+// eslint-disable-next-line depend/ban-dependencies
 import { readJson } from 'fs-extra';
 import picocolors from 'picocolors';
 

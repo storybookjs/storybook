@@ -1,8 +1,6 @@
 /* eslint-disable no-underscore-dangle */
 import { UnsupportedViewportDimensionError } from 'storybook/internal/preview-errors';
 
-import { page } from '@vitest/browser/context';
-
 import { MINIMAL_VIEWPORTS } from '../../../viewport/src/defaults';
 import type { ViewportMap, ViewportStyles } from '../../../viewport/src/types';
 
@@ -49,6 +47,10 @@ const parseDimension = (value: string, dimension: 'width' | 'height') => {
 
 export const setViewport = async (viewportsParam: ViewportsParam = {} as ViewportsParam) => {
   const defaultViewport = viewportsParam.defaultViewport;
+
+  const { page } = await import('@vitest/browser/context').catch(() => ({
+    page: null,
+  }));
 
   if (!page || !globalThis.__vitest_browser__) {
     return;

@@ -11,6 +11,7 @@ import type { JsPackageManager } from 'storybook/internal/common';
 import { getPackageDetails, versions as packageVersions } from 'storybook/internal/common';
 import type { SupportedFrameworks } from 'storybook/internal/types';
 
+// eslint-disable-next-line depend/ban-dependencies
 import ora from 'ora';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';

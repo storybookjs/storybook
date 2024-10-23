@@ -1,5 +1,6 @@
 import { join } from 'node:path';
 
+// eslint-disable-next-line depend/ban-dependencies
 import { pathExists, readJSON, writeJSON } from 'fs-extra';
 
 // TODO -- should we generate this file a second time outside of CLI?

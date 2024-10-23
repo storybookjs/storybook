@@ -1,7 +1,9 @@
 import { join } from 'node:path';
 
 import { program } from 'commander';
+// eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
+// eslint-disable-next-line depend/ban-dependencies
 import { readJson } from 'fs-extra';
 import pRetry from 'p-retry';
 import picocolors from 'picocolors';

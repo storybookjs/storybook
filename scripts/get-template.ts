@@ -1,4 +1,5 @@
 import { program } from 'commander';
+// eslint-disable-next-line depend/ban-dependencies
 import { pathExists, readFile } from 'fs-extra';
 import { readdir } from 'fs/promises';
 import picocolors from 'picocolors';

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/blocks",
-  "version": "8.4.0-alpha.4",
+  "version": "8.4.0-alpha.8",
   "description": "Storybook Doc Blocks",
   "keywords": [
     "storybook"
@@ -44,24 +44,21 @@
   },
   "dependencies": {
     "@storybook/csf": "^0.1.11",
-    "@storybook/global": "^5.0.0",
     "@storybook/icons": "^1.2.10",
-    "color-convert": "^2.0.1",
-    "dequal": "^2.0.2",
-    "markdown-to-jsx": "^7.4.5",
-    "memoizerific": "^1.11.3",
-    "polished": "^4.2.2",
-    "react-colorful": "^5.1.2",
-    "telejson": "^7.2.0",
-    "ts-dedent": "^2.0.0",
-    "util-deprecate": "^1.0.2"
+    "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
     "@storybook/addon-actions": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/test": "workspace:*",
     "@types/color-convert": "^2.0.0",
+    "color-convert": "^2.0.1",
     "es-toolkit": "^1.21.0",
+    "markdown-to-jsx": "^7.4.5",
+    "memoizerific": "^1.11.3",
+    "polished": "^4.2.2",
+    "react-colorful": "^5.1.2",
+    "telejson": "^7.2.0",
     "tocbot": "^4.20.1"
   },
   "peerDependencies": {

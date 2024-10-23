@@ -213,7 +213,7 @@ function addEsbuildLoaderToStories(mainConfig: ConfigFile) {
           exclude: /\\.stories\\.mdx$/,
           use: [
             {
-              loader: require.resolve('@storybook/addon-docs/mdx-loader'),
+              loader: fileURLToPath(import.meta.resolve('@storybook/addon-docs/mdx-loader')),
             },
           ],
         },

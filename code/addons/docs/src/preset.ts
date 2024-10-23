@@ -149,7 +149,7 @@ async function webpack(
           exclude: /(stories|story)\.mdx$/,
           use: [
             {
-              loader: fileURLToPath(import.meta.resolve('./mdx-loader')),
+              loader: fileURLToPath(import.meta.resolve('@storybook/addon-docs/mdx-loader')),
               options: mdxLoaderOptions,
             },
           ],

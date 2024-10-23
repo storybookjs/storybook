@@ -80,7 +80,7 @@ async function webpack(
   const themingCreatePath = join(cliPath, 'core', 'theming', 'create.js');
 
   const componentsPath = join(cliPath, 'core', 'components', 'index.js');
-  const blocksPath = dirname(fileURLToPath(import.meta.resolve('@storybook/blocks/package.json')));
+  const blocksPath = fileURLToPath(import.meta.resolve('@storybook/blocks'));
   if (Array.isArray(webpackConfig.resolve?.alias)) {
     alias = [...webpackConfig.resolve?.alias];
     alias.push(

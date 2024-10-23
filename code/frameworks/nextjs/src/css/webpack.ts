@@ -2,8 +2,8 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
 import type { NextConfig } from 'next';
-import { cssFileResolve } from 'next/dist/build/webpack/config/blocks/css/loaders/file-resolve';
-import { getCssModuleLocalIdent } from 'next/dist/build/webpack/config/blocks/css/loaders/getCssModuleLocalIdent';
+import { cssFileResolve } from 'next/dist/build/webpack/config/blocks/css/loaders/file-resolve.js';
+import { getCssModuleLocalIdent } from 'next/dist/build/webpack/config/blocks/css/loaders/getCssModuleLocalIdent.js';
 import semver from 'semver';
 import type { Configuration as WebpackConfig } from 'webpack';
 

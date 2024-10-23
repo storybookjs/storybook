@@ -28,7 +28,10 @@ type ResolveLoader = Configuration['resolveLoader'];
 // This loader is shared by both the `managerWebpack` and `webpack` functions.
 const resolveLoader: ResolveLoader = {
   modules: ['node_modules', join(REACT_SCRIPTS_PATH, 'node_modules')],
-  plugins: [PnpWebpackPlugin.moduleLoader(module)],
+  plugins: [
+    // TODO
+    // PnpWebpackPlugin.moduleLoader(module)
+  ],
 };
 
 // TODO: Replace with exported type from Storybook.

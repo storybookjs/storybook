@@ -19,7 +19,7 @@ import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import TerserWebpackPlugin from 'terser-webpack-plugin';
 import { dedent } from 'ts-dedent';
-import { DefinePlugin, HotModuleReplacementPlugin, ProgressPlugin, ProvidePlugin } from 'webpack';
+import webpack from 'webpack';
 import type { Configuration } from 'webpack';
 import VirtualModulePlugin from 'webpack-virtual-modules';
 
@@ -194,14 +194,16 @@ export default async (
           useShortDoctype: true,
         },
       }),
-      new DefinePlugin({
+      new webpack.DefinePlugin({
         ...stringifyProcessEnvs(envs),
         NODE_ENV: JSON.stringify(process.env.NODE_ENV),
       }),
-      new ProvidePlugin({ process: fileURLToPath(import.meta.resolve('process/browser.js')) }),
-      isProd ? null : new HotModuleReplacementPlugin(),
+      new webpack.ProvidePlugin({
+        process: fileURLToPath(import.meta.resolve('process/browser.js')),
+      }),
+      isProd ? null : new webpack.HotModuleReplacementPlugin(),
       new CaseSensitivePathsPlugin(),
-      quiet ? null : new ProgressPlugin({ modulesCount }),
+      quiet ? null : new webpack.ProgressPlugin({ modulesCount }),
       shouldCheckTs ? new ForkTsCheckerWebpackPlugin(tsCheckOptions) : null,
     ].filter(Boolean),
     module: {
@@ -245,8 +247,9 @@ export default async (
         stream: false,
         path: fileURLToPath(import.meta.resolve('path-browserify')),
         assert: fileURLToPath(import.meta.resolve('browser-assert')),
-        util: fileURLToPath(import.meta.resolve('util')),
-        url: fileURLToPath(import.meta.resolve('url')),
+        util: fileURLToPath(import.meta.resolve('util/util.js')),
+        // TODO
+        url: false,
         fs: false,
         constants: fileURLToPath(import.meta.resolve('constants-browserify')),
       },

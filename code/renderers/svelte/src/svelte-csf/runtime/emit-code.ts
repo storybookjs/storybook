@@ -4,12 +4,11 @@ import { addons } from '@storybook/preview-api';
 import type { StoryObj } from '@storybook/svelte';
 import { get } from 'es-toolkit/compat';
 import type { ComponentProps } from 'svelte';
-import type { EmptyObject } from 'type-fest';
 
 import type { Cmp, Meta, StoryCmp, StoryContext } from '#types';
 
 type Params = {
-  args: ComponentProps<StoryCmp<EmptyObject, Cmp, Meta<Cmp>>>['args'];
+  args: ComponentProps<StoryCmp<Cmp, Meta<Cmp>>>['args'];
   storyContext: StoryContext<Cmp, Meta<Cmp>>;
 };
 

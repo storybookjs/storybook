@@ -5,7 +5,6 @@
   import { emitCode } from '#runtime/emit-code';
 
   import type { Cmp, Meta, StoryAnnotations, StoryContext } from '#types';
-  import type { EmptyObject } from 'type-fest';
 
   type Props = {
     Stories: Component;
@@ -16,7 +15,7 @@
 
   let { Stories, exportName, args, storyContext }: Props = $props();
 
-  const context = useStoryRenderer<EmptyObject, Cmp, Meta<Cmp>>();
+  const context = useStoryRenderer<Cmp, Meta<Cmp>>();
 
   $effect(() => {
     context.set({

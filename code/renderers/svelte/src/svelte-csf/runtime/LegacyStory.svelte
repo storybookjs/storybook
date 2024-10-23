@@ -6,14 +6,13 @@
    * Vite pre-transform hook does codemod where this component gets transformed into new `Story` component destrucutred from `defineMeta`.
    */
   import type { Component, ComponentProps } from 'svelte';
-  import type { EmptyObject } from 'type-fest';
 
   import type Story from './Story.svelte';
 
   import { type StoryRendererContext } from '#runtime/contexts/renderer.svelte';
   import type { Meta } from '#types';
 
-  type Props = ComponentProps<Story<EmptyObject, Component, Meta<Component>>> & {
+  type Props = ComponentProps<Story<Component, Meta<Component>>> & {
     /**
      * Which one of `<Template>` id should be used for rendering this story children?
      */

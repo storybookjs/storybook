@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { basename, relative } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
@@ -10,6 +11,8 @@ import { preprocess } from 'svelte/compiler';
 import svelteDoc from 'sveltedoc-parser';
 import type { SvelteComponentDoc, SvelteParserOptions } from 'sveltedoc-parser';
 import type { PluginOption } from 'vite';
+
+const require = createRequire(import.meta.url);
 
 /*
  * Patch sveltedoc-parser internal options.

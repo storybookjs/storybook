@@ -23,7 +23,7 @@ const meta = {
       </LocationProvider>
     ),
     (Story) => (
-      <div style={{ width: '240px', margin: '1rem' }}>
+      <div style={{ width: '240px' }}>
         <Story />
       </div>
     ),

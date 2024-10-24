@@ -11,6 +11,8 @@ const meta: Meta<WithPipeComponent> = {
       declarations: [CustomPipePipe],
     }),
   ],
+  tags: ['!test', '!vitest'],
+  parameters: { chromatic: { disable: true } },
 };
 
 export default meta;

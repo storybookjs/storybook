@@ -80,7 +80,7 @@
     "acorn-jsx": "^5.3.1",
     "acorn-walk": "^7.2.0",
     "babel-plugin-react-docgen": "^4.2.1",
-    "es-toolkit": "^1.21.0",
+    "es-toolkit": "^1.22.0",
     "escodegen": "^2.1.0",
     "expect-type": "^0.15.0",
     "html-tags": "^3.1.0",

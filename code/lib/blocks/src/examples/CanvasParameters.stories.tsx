@@ -30,10 +30,7 @@ export const AdditionalActions: Story = {
           {
             title: 'Go to documentation',
             onClick: () => {
-              window.open(
-                'https://storybook.js.org/docs/react/essentials/controls#annotation',
-                '_blank'
-              );
+              window.open('https://storybook.js.org/docs/essentials/controls#annotation', '_blank');
             },
           },
         ],

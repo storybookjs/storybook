@@ -281,6 +281,57 @@ describe('stories API', () => {
         name: '1',
       });
     });
+    it('intersects story/docs tags to compute tags for component entries', () => {
+      const moduleArgs = createMockModuleArgs({});
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store } = moduleArgs;
+      api.setIndex({
+        v: 5,
+        entries: {
+          'a--1': {
+            type: 'story',
+            id: 'a--1',
+            title: 'a',
+            name: '1',
+            tags: ['shared', 'one-specific'],
+            importPath: './a.ts',
+          },
+          'a--2': {
+            type: 'story',
+            id: 'a--2',
+            title: 'a',
+            name: '2',
+            tags: ['shared', 'two-specific'],
+            importPath: './a.ts',
+          },
+        },
+      });
+      const { index } = store.getState();
+      // We need exact key ordering, even if in theory JS doesn't guarantee it
+      expect(Object.keys(index!)).toEqual(['a', 'a--1', 'a--2']);
+      expect(index!.a).toMatchObject({
+        type: 'component',
+        id: 'a',
+        tags: ['shared'],
+        children: ['a--1', 'a--2'],
+      });
+      expect(index!['a--1']).toMatchObject({
+        type: 'story',
+        id: 'a--1',
+        parent: 'a',
+        title: 'a',
+        name: '1',
+        tags: ['shared', 'one-specific'],
+      });
+      expect(index!['a--2']).toMatchObject({
+        type: 'story',
+        id: 'a--2',
+        parent: 'a',
+        title: 'a',
+        name: '2',
+        tags: ['shared', 'two-specific'],
+      });
+    });
     // Stories can get out of order for a few reasons -- see reproductions on
     //   https://github.com/storybookjs/storybook/issues/5518
     it('does the right thing for out of order stories', async () => {
@@ -1453,6 +1504,7 @@ describe('stories API', () => {
             "name": "a",
             "parent": undefined,
             "renderLabel": undefined,
+            "tags": [],
             "type": "component",
           },
           "a--1": {
@@ -1518,6 +1570,7 @@ describe('stories API', () => {
             "name": "a",
             "parent": undefined,
             "renderLabel": undefined,
+            "tags": [],
             "type": "component",
           },
           "a--1": {
@@ -1559,6 +1612,7 @@ describe('stories API', () => {
             "name": "a",
             "parent": undefined,
             "renderLabel": undefined,
+            "tags": [],
             "type": "component",
           },
           "a--1": {

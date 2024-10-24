@@ -159,7 +159,7 @@ const baseTemplates = {
   'nextjs/default-js': {
     name: 'Next.js Latest (Webpack | JavaScript)',
     script:
-      'npx create-next-app@^14 {{beforeDir}} --typescript --eslint --tailwind --app --import-alias="@/*" --src-dir',
+      'npx create-next-app@^14 {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
     expected: {
       framework: '@storybook/nextjs',
       renderer: '@storybook/react',

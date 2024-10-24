@@ -97,6 +97,7 @@ export const viteConfigFile = {
     return null;
   },
 
+  // TODO: This is a temporary fix to prevent a 500 error when running the migration and the user clicks the link in the prompt to preview the docs. We'll probably need to account for future releases.
   prompt({ existed, plugins }) {
     if (existed) {
       return dedent`
@@ -108,7 +109,7 @@ export const viteConfigFile = {
         If you already have these plugins, you can ignore this message.
 
         You can find more information on how to do this here:
-        https://storybook.js.org/docs/8.0/migration-guide/#missing-viteconfigjs-file
+        https://storybook.js.org/docs/8.0/migration-guide#missing-viteconfigjs-file
 
         This change was necessary to support newer versions of Vite.
       `;
@@ -118,7 +119,7 @@ export const viteConfigFile = {
       Please add a vite.config.js file to your project root.
 
       You can find more information on how to do this here:
-      https://storybook.js.org/docs/8.0/migration-guide/#missing-viteconfigjs-file
+      https://storybook.js.org/docs/8.0/migration-guide#missing-viteconfigjs-file
 
       This change was necessary to support newer versions of Vite.
     `;

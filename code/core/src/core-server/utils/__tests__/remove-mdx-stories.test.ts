@@ -56,7 +56,7 @@ Your main configuration somehow does not contain a 'stories' field, or it resolv
 
 Please check your main configuration file and make sure it exports a 'stories' field that is not an empty array.
 
-More info: https://storybook.js.org/docs/react/faq#can-i-have-a-storybook-with-no-local-stories
+More info: https://storybook.js.org/docs/faq#can-i-have-a-storybook-with-no-local-stories
 ]
 `);
   });

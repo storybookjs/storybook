@@ -6,7 +6,7 @@ import type { NormalizedStoriesSpecifier, StoryIndex } from '@storybook/core/typ
 import { STORY_INDEX_INVALIDATED } from '@storybook/core/core-events';
 
 import { debounce } from 'es-toolkit/compat';
-import type Polka from 'polka';
+import type { Polka } from 'polka';
 
 import type { StoryIndexGenerator } from './StoryIndexGenerator';
 import type { ServerChannel } from './get-server-channel';
@@ -33,7 +33,7 @@ export function useStoriesJson({
   serverChannel,
   normalizedStories,
 }: {
-  app: Polka.Polka;
+  app: Polka;
   initializedStoryIndexGenerator: Promise<StoryIndexGenerator>;
   serverChannel: ServerChannel;
   workingDir?: string;

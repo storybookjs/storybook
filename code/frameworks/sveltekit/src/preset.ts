@@ -1,10 +1,8 @@
-import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { PresetProperty } from 'storybook/internal/types';
 
 import { withoutVitePlugins } from '@storybook/builder-vite';
-// @ts-expect-error -- TS picks up the type from preset.js instead of dist/preset.d.ts
 import { viteFinal as svelteViteFinal } from '@storybook/svelte-vite/preset';
 
 import { configOverrides } from './plugins/config-overrides';

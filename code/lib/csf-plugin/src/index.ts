@@ -25,7 +25,7 @@ export const unplugin = createUnplugin<CsfPluginOptions>((options) => {
         enforce: 'post',
         use: {
           options,
-          loader: fileURLToPath(import.meta.resolve('@storybook/csf-plugin/dist/webpack-loader')),
+          loader: fileURLToPath(import.meta.resolve('@storybook/csf-plugin/webpack-loader')),
         },
       });
     },
@@ -35,7 +35,7 @@ export const unplugin = createUnplugin<CsfPluginOptions>((options) => {
         enforce: 'post',
         use: {
           options,
-          loader: fileURLToPath(import.meta.resolve('@storybook/csf-plugin/dist/webpack-loader')),
+          loader: fileURLToPath(import.meta.resolve('@storybook/csf-plugin/webpack-loader')),
         },
       });
     },

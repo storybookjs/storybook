@@ -42,7 +42,7 @@
   ],
   "scripts": {
     "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
+    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
     "unplugin": "^1.3.1"
@@ -57,7 +57,7 @@
     "access": "public"
   },
   "bundler": {
-    "entries": [
+    "nodeEntries": [
       "./src/index.ts",
       "./src/webpack-loader.ts"
     ],
@@ -66,8 +66,7 @@
       "vite",
       "rollup",
       "esbuild"
-    ],
-    "platform": "node"
+    ]
   },
   "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

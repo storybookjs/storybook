@@ -55,7 +55,7 @@
   ],
   "scripts": {
     "check": "vue-tsc --noEmit",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
+    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
     "@storybook/components": "workspace:^",
@@ -88,14 +88,17 @@
     "access": "public"
   },
   "bundler": {
-    "entries": [
+    "exportEntries": [
       "./src/index.ts",
-      "./src/preset.ts",
-      "./src/entry-preview.ts",
-      "./src/entry-preview-docs.ts",
       "./src/playwright.ts"
     ],
-    "platform": "browser"
+    "nodeEntries": [
+      "./src/preset.ts"
+    ],
+    "previewEntries": [
+      "./src/entry-preview.ts",
+      "./src/entry-preview-docs.ts"
+    ]
   },
   "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

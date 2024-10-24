@@ -38,7 +38,7 @@
   ],
   "scripts": {
     "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
+    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
     "@storybook/global": "^5.0.0",
@@ -55,7 +55,7 @@
     "access": "public"
   },
   "bundler": {
-    "entries": [
+    "exportEntries": [
       "./src/index.ts"
     ],
     "noExternal": [

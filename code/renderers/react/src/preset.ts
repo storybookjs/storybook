@@ -1,10 +1,10 @@
-import { dirname, join } from 'node:path';
+import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { PresetProperty } from 'storybook/internal/types';
 
 export const addons: PresetProperty<'addons'> = [
-  fileURLToPath(import.meta.resolve('@storybook/react-dom-shim/dist/preset')),
+  fileURLToPath(import.meta.resolve('@storybook/react-dom-shim/preset')),
 ];
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
@@ -18,9 +18,17 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
 
   return result
     .concat(input)
-    .concat([join(__dirname, 'entry-preview.js')])
-    .concat(docsEnabled ? [join(__dirname, 'entry-preview-docs.js')] : [])
-    .concat(features?.experimentalRSC ? [join(__dirname, 'entry-preview-rsc.js')] : []);
+    .concat([fileURLToPath(import.meta.resolve('@storybook/react/entry-preview.js'))])
+    .concat(
+      docsEnabled
+        ? [fileURLToPath(import.meta.resolve('@storybook/react/entry-preview-docs.js'))]
+        : []
+    )
+    .concat(
+      features?.experimentalRSC
+        ? [fileURLToPath(import.meta.resolve('@storybook/react/entry-preview-rsc.js'))]
+        : []
+    );
 };
 
 /**

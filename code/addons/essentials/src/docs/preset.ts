@@ -1,7 +1,6 @@
-import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export * from '@storybook/addon-docs/dist/preset';
+export * from '@storybook/addon-docs/preset';
 
 export const mdxLoaderOptions = async (config: any) => {
   config.mdxCompileOptions.providerImportSource = fileURLToPath(

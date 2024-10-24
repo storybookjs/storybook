@@ -26,7 +26,15 @@
       "types": "./dist/react-18.d.ts",
       "default": "./dist/react-18.js"
     },
+    "./react-18": {
+      "types": "./dist/react-18.d.ts",
+      "default": "./dist/react-18.js"
+    },
     "./dist/react-16": {
+      "types": "./dist/react-16.d.ts",
+      "default": "./dist/react-16.js"
+    },
+    "./react-16": {
       "types": "./dist/react-16.d.ts",
       "default": "./dist/react-16.js"
     },
@@ -50,7 +58,7 @@
   ],
   "scripts": {
     "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
+    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "devDependencies": {
     "typescript": "^5.3.2"
@@ -64,8 +72,10 @@
     "access": "public"
   },
   "bundler": {
-    "entries": [
-      "./src/preset.ts",
+    "nodeEntries": [
+      "./src/preset.ts"
+    ],
+    "exportEntries": [
       "./src/react-16.tsx",
       "./src/react-18.tsx"
     ]

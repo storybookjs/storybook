@@ -26,6 +26,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./image-context": {
+      "types": "./dist/image-context.d.ts",
+      "default": "./dist/image-context.js"
+    },
     "./dist/image-context": {
       "types": "./dist/image-context.d.ts",
       "default": "./dist/image-context.js"

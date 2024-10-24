@@ -29,6 +29,18 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./framework-preset-cra": {
+      "types": "./dist/framework-preset-cra.d.ts",
+      "default": "./dist/framework-preset-cra.js"
+    },
+    "./framework-preset-react-docs": {
+      "types": "./dist/framework-preset-react-docs.d.ts",
+      "default": "./dist/framework-preset-react-docs.js"
+    },
+    "./loaders/react-docgen-loader": {
+      "types": "./dist/loaders/react-docgen-loader.d.ts",
+      "default": "./dist/loaders/react-docgen-loader.js"
+    },
     "./dist/framework-preset-cra": {
       "types": "./dist/framework-preset-cra.d.ts",
       "default": "./dist/framework-preset-cra.js"
@@ -53,7 +65,7 @@
   ],
   "scripts": {
     "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
+    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
     "@storybook/core-webpack": "workspace:*",
@@ -89,13 +101,12 @@
     "access": "public"
   },
   "bundler": {
-    "entries": [
+    "nodeEntries": [
       "./src/index.ts",
       "./src/framework-preset-cra.ts",
       "./src/framework-preset-react-docs.ts",
       "./src/loaders/react-docgen-loader.ts"
-    ],
-    "platform": "node"
+    ]
   },
   "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

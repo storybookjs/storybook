@@ -86,7 +86,7 @@
   ],
   "scripts": {
     "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
+    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
     "@mdx-js/react": "^3.0.0",
@@ -115,12 +115,16 @@
     "access": "public"
   },
   "bundler": {
-    "entries": [
+    "previewEntries": [
+      "./src/preview.ts"
+    ],
+    "exportEntries": [
       "./src/index.ts",
-      "./src/preset.ts",
-      "./src/preview.ts",
       "./src/blocks.ts",
-      "./src/shims/mdx-react-shim.ts",
+      "./src/shims/mdx-react-shim.ts"
+    ],
+    "nodeEntries": [
+      "./src/preset.ts",
       "./src/mdx-loader.ts"
     ]
   },

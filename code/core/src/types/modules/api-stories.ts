@@ -27,6 +27,7 @@ export interface API_ComponentEntry extends API_BaseEntry {
   type: 'component';
   parent?: StoryId;
   children: StoryId[];
+  tags: Tag[];
 }
 
 export interface API_DocsEntry extends API_BaseEntry {

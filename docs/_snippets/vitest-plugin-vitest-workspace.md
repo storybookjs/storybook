@@ -2,7 +2,7 @@
 import { defineWorkspace } from 'vitest/config';
 import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';
 // 👇 If you're using Next.js, apply this framework plugin as well
-// import { storybookNextjsPlugin } from '@storybook/experimental-nextjs-vite/vite-plugin';
+// import { storybookNextJsPlugin } from '@storybook/experimental-nextjs-vite/vite-plugin';
 
 export default defineWorkspace([
   // This is the path to your existing Vitest config file
@@ -16,7 +16,7 @@ export default defineWorkspace([
         // The --ci flag will skip prompts and not open a browser
         storybookScript: 'yarn storybook --ci',
       }),
-      // storybookNextjsPlugin(),
+      // storybookNextJsPlugin(),
     ],
     test: {
       name: 'storybook',
@@ -87,7 +87,7 @@ export default defineWorkspace([
 import { defineConfig, mergeConfig } from 'vitest/config';
 import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';
 // 👇 If you're using Sveltekit, apply this framework plugin as well
-// import { storybookNextjsPlugin } from '@storybook/sveltekit/vite-plugin';
+// import { storybookSveltekitPlugin } from '@storybook/sveltekit/vite-plugin';
 
 import viteConfig from './vite.config';
 

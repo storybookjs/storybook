@@ -1,6 +1,6 @@
 {
   "name": "@storybook/core",
-  "version": "8.4.0-alpha.6",
+  "version": "8.4.0-alpha.8",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -340,7 +340,6 @@
     "boxen": "^7.1.1",
     "browser-dtector": "^3.4.0",
     "camelcase": "^8.0.0",
-    "chai": "^4.4.1",
     "cli-table3": "^0.6.1",
     "commander": "^12.1.0",
     "comment-parser": "^1.4.1",

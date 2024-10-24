@@ -22,7 +22,11 @@ import dedent from 'ts-dedent';
 import { babelParse } from '../../code/core/src/babel/babelParse';
 import { detectLanguage } from '../../code/core/src/cli/detect';
 import { SupportedLanguage } from '../../code/core/src/cli/project_types';
-import { JsPackageManagerFactory, versions as storybookPackages } from '../../code/core/src/common';
+import {
+  JsPackageManagerFactory,
+  removeAddon,
+  versions as storybookPackages,
+} from '../../code/core/src/common';
 import type { ConfigFile } from '../../code/core/src/csf-tools';
 import { writeConfig } from '../../code/core/src/csf-tools';
 import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
@@ -391,6 +395,32 @@ const getVitestPluginInfo = (details: TemplateDetails) => {
 
 export async function setupVitest(details: TemplateDetails, options: PassedOptionValues) {
   const { sandboxDir, template } = details;
+  // Remove interactions addon to avoid issues with Vitest
+  // TODO: add an if statement when we introduce a sandbox that tests interactions
+  await removeAddon('@storybook/addon-interactions', {
+    cwd: details.sandboxDir,
+    configDir: join(details.sandboxDir, '.storybook'),
+  });
+
+  const packageJsonPath = join(sandboxDir, 'package.json');
+  const packageJson = await readJson(packageJsonPath);
+
+  packageJson.scripts = {
+    ...packageJson.scripts,
+    vitest: 'vitest --reporter=default --reporter=hanging-process --test-timeout=5000',
+  };
+
+  // This workaround is needed because Vitest seems to have issues in link mode
+  // so the /setup-file and /global-setup files from the vitest addon won't work in portal protocol
+  if (options.link) {
+    const vitestAddonPath = relative(sandboxDir, join(CODE_DIRECTORY, 'addons', 'test'));
+    packageJson.resolutions = {
+      ...packageJson.resolutions,
+      '@storybook/experimental-addon-test': `file:${vitestAddonPath}`,
+    };
+  }
+
+  await writeJson(packageJsonPath, packageJson, { spaces: 2 });
 
   const isVue = template.expected.renderer === '@storybook/vue3';
   const isNextjs = template.expected.framework.includes('nextjs');
@@ -414,7 +444,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
     import { setProjectAnnotations } from '${storybookPackage}'
     import * as rendererDocsAnnotations from '${template.expected.renderer}/dist/entry-preview-docs.js'
     import * as addonActionsAnnotations from '@storybook/addon-actions/preview'
-    import * as addonInteractionsAnnotations from '@storybook/addon-interactions/preview'
+    import * as addonTestAnnotations from '@storybook/experimental-addon-test/preview'
     import '../src/stories/components'
     import * as coreAnnotations from '../template-stories/core/preview'
     import * as toolbarAnnotations from '../template-stories/addons/toolbars/preview'
@@ -427,7 +457,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
       coreAnnotations,
       toolbarAnnotations,
       addonActionsAnnotations,
-      addonInteractionsAnnotations,
+      addonTestAnnotations,
       ${isVue ? 'vueAnnotations,' : ''}
     ])
 
@@ -501,26 +531,6 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
       ]);
   `
   );
-
-  const packageJsonPath = join(sandboxDir, 'package.json');
-  const packageJson = await readJson(packageJsonPath);
-
-  packageJson.scripts = {
-    ...packageJson.scripts,
-    vitest: 'vitest --reporter=default --reporter=hanging-process --test-timeout=5000',
-  };
-
-  // This workaround is needed because Vitest seems to have issues in link mode
-  // so the /setup-file and /global-setup files from the vitest addon won't work in portal protocol
-  if (options.link) {
-    const vitestAddonPath = relative(sandboxDir, join(CODE_DIRECTORY, 'addons', 'test'));
-    packageJson.resolutions = {
-      ...packageJson.resolutions,
-      '@storybook/experimental-addon-test': `file:${vitestAddonPath}`,
-    };
-  }
-
-  await writeJson(packageJsonPath, packageJson, { spaces: 2 });
 }
 
 export async function addExtraDependencies({
@@ -664,6 +674,15 @@ export const addStories: Task['run'] = async (
       cwd,
       disableDocs,
     });
+
+    await linkPackageStories(
+      await workspacePath('addon test package', '@storybook/experimental-addon-test'),
+      {
+        mainConfig,
+        cwd,
+        disableDocs,
+      }
+    );
   }
 
   const mainAddons = (mainConfig.getSafeFieldValue(['addons']) || []).reduce(
@@ -783,6 +802,9 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
     updatedStories = updatedStories.filter((specifier) => !specifier.endsWith('.mdx'));
     mainConfig.setFieldValue(['stories'], updatedStories);
   }
+
+  const addons = mainConfig.getFieldValue(['addons']);
+  mainConfig.setFieldValue(['addons'], [...addons, '@storybook/experimental-addon-test']);
 
   if (template.expected.builder === '@storybook/builder-vite') {
     setSandboxViteFinal(mainConfig);

@@ -81,6 +81,10 @@ export class NPMProxy extends JsPackageManager {
     return `npm run ${command}`;
   }
 
+  getRemoteRunCommand(): string {
+    return 'npx';
+  }
+
   async getNpmVersion(): Promise<string> {
     return this.executeCommand({ command: 'npm', args: ['--version'] });
   }

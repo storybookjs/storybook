@@ -14,10 +14,12 @@ import {
 } from 'storybook/internal/common';
 import { colors, logger } from 'storybook/internal/node-logger';
 
+// eslint-disable-next-line depend/ban-dependencies
+import { execa } from 'execa';
 import { findUp } from 'find-up';
 import picocolors from 'picocolors';
+import prompts from 'prompts';
 import { coerce, satisfies } from 'semver';
-import c from 'tinyrainbow';
 import { dedent } from 'ts-dedent';
 
 import { type PostinstallOptions } from '../../../lib/cli-storybook/src/add';
@@ -42,7 +44,7 @@ export default async function postInstall(options: PostinstallOptions) {
     force: options.packageManager,
   });
 
-  const info = await getFrameworkInfo(options);
+  const info = await getStorybookInfo(options);
   const allDeps = await packageManager.getAllDependencies();
   // only install these dependencies if they are not already installed
   const dependencies = ['vitest', '@vitest/browser', 'playwright'].filter((p) => !allDeps[p]);
@@ -52,6 +54,43 @@ export default async function postInstall(options: PostinstallOptions) {
   // if Vitest is installed, we use the same version to keep consistency across Vitest packages
   const vitestVersionToInstall = vitestVersionSpecifier ?? 'latest';
 
+  const addonInteractionsName = '@storybook/addon-interactions';
+  const interactionsAddon = info.addons.find((addon: string | { name: string }) => {
+    // account for addons as objects, as well as addons with PnP paths
+    const addonName = typeof addon === 'string' ? addon : addon.name;
+    return addonName.includes(addonInteractionsName);
+  });
+
+  if (!!interactionsAddon) {
+    let shouldUninstall = options.yes;
+    if (!options.yes) {
+      logger.plain(dedent`
+        We have detected that you're using ${addonInteractionsName}.
+        The Storybook test addon is a replacement for the interactions addon, so you must uninstall and unregister it in order to use the test addon correctly. This can be done automatically.
+
+        More info: ${picocolors.yellow('https://storybook.js.org/docs/writing-tests/test-addon')}
+      `);
+
+      const response = await prompts({
+        type: 'confirm',
+        name: 'shouldUninstall',
+        message: `Would you like me to remove and unregister ${addonInteractionsName}?`,
+        initial: true,
+      });
+
+      shouldUninstall = response.shouldUninstall;
+    }
+
+    if (shouldUninstall) {
+      await execa(
+        packageManager.getRemoteRunCommand(),
+        ['storybook', 'remove', addonInteractionsName, '--package-manager', options.packageManager],
+        {
+          shell: true,
+        }
+      );
+    }
+  }
   const annotationsImport = [
     '@storybook/nextjs',
     '@storybook/experimental-nextjs-vite',
@@ -116,14 +155,14 @@ export default async function postInstall(options: PostinstallOptions) {
         reasons.push(
           dedent`
             Please check the documentation for more information about its requirements and installation:
-            ${c.cyan`https://storybook.js.org/docs/writing-tests/vitest-plugin`}
+            ${picocolors.cyan(`https://storybook.js.org/docs/writing-tests/vitest-plugin`)}
           `
         );
       } else {
         reasons.push(
           dedent`
             Fear not, however, you can follow the manual installation process instead at:
-            ${c.cyan`https://storybook.js.org/docs/writing-tests/vitest-plugin#manual`}
+            ${picocolors.cyan(`https://storybook.js.org/docs/writing-tests/vitest-plugin#manual`)}
           `
         );
       }
@@ -152,7 +191,7 @@ export default async function postInstall(options: PostinstallOptions) {
 
         Adding ${picocolors.bold(colors.pink(`@storybook/experimental-nextjs-vite/vite-plugin`))} so you can use it with Vitest.
 
-        More info about the plugin at: ${c.cyan`https://github.com/storybookjs/vite-plugin-storybook-nextjs`}
+        More info about the plugin at: ${picocolors.cyan(`https://github.com/storybookjs/vite-plugin-storybook-nextjs`)}
       `
     );
     try {
@@ -199,7 +238,7 @@ export default async function postInstall(options: PostinstallOptions) {
         ${colors.gray(vitestSetupFile)}
 
         Please refer to the documentation to complete the setup manually:
-        ${c.cyan`https://storybook.js.org/docs/writing-tests/vitest-plugin#manual`}
+        ${picocolors.cyan(`https://storybook.js.org/docs/writing-tests/vitest-plugin#manual`)}
       `
     );
     logger.line(1);
@@ -242,7 +281,7 @@ export default async function postInstall(options: PostinstallOptions) {
         your existing workspace file automatically, you must do it yourself. This was the last step.
 
         Please refer to the documentation to complete the setup manually:
-        ${c.cyan`https://storybook.js.org/docs/writing-tests/vitest-plugin#manual`}
+        ${picocolors.cyan(`https://storybook.js.org/docs/writing-tests/vitest-plugin#manual`)}
       `
     );
     logger.line(1);
@@ -264,7 +303,7 @@ export default async function postInstall(options: PostinstallOptions) {
           your existing workspace file automatically, you must do it yourself. This was the last step.
 
           Please refer to the documentation to complete the setup manually:
-          ${c.cyan`https://storybook.js.org/docs/writing-tests/vitest-plugin#manual`}
+          ${picocolors.cyan(`https://storybook.js.org/docs/writing-tests/vitest-plugin#manual`)}
         `
       );
       logger.line(1);
@@ -364,7 +403,7 @@ export default async function postInstall(options: PostinstallOptions) {
       • When using the Vitest extension in your editor, all of your stories will be shown as tests!
 
       Check the documentation for more information about its features and options at:
-      ${c.cyan`https://storybook.js.org/docs/writing-tests/vitest-plugin`}
+      ${picocolors.cyan(`https://storybook.js.org/docs/writing-tests/vitest-plugin`)}
     `
   );
   logger.line(1);
@@ -403,7 +442,7 @@ const getVitestPluginInfo = (framework: string) => {
   return { frameworkPluginImport, frameworkPluginCall, frameworkPluginDocs };
 };
 
-async function getFrameworkInfo({ configDir, packageManager: pkgMgr }: PostinstallOptions) {
+async function getStorybookInfo({ configDir, packageManager: pkgMgr }: PostinstallOptions) {
   const packageManager = JsPackageManagerFactory.getPackageManager({ force: pkgMgr });
   const packageJson = await packageManager.retrievePackageJson();
 
@@ -450,5 +489,6 @@ async function getFrameworkInfo({ configDir, packageManager: pkgMgr }: Postinsta
     frameworkPackageName,
     builderPackageName,
     rendererPackageName,
+    addons: config.addons,
   };
 }

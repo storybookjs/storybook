@@ -115,10 +115,17 @@ const UserEventSetup = {
         { keys: '[TouchA>]', target: canvas.getByRole('textbox') },
         { keys: '[/TouchA]' },
       ]);
-      await user.tab();
-      await user.keyboard('{enter}');
       const submitButton = await canvas.findByRole('button');
-      await expect(submitButton).toHaveFocus();
+
+      if (navigator.userAgent.toLowerCase().includes('firefox')) {
+        // user event has a few issues on firefox, therefore we do it differently
+        await fireEvent.click(submitButton);
+      } else {
+        await user.tab();
+        await user.keyboard('{enter}');
+        await expect(submitButton).toHaveFocus();
+      }
+
       await expect(args.onSuccess).toHaveBeenCalled();
     });
   },

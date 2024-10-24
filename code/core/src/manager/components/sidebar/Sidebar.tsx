@@ -15,6 +15,7 @@ import { PlusIcon } from '@storybook/icons';
 import { type State, useStorybookApi } from '@storybook/core/manager-api';
 
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
+import { useLayout } from '../layout/LayoutProvider';
 import { CreateNewStoryFileModal } from './CreateNewStoryFileModal';
 import { Explorer } from './Explorer';
 import type { HeadingProps } from './Heading';
@@ -23,6 +24,7 @@ import { Search } from './Search';
 import { SearchResults } from './SearchResults';
 import { SidebarBottom } from './SidebarBottom';
 import { TagsFilter } from './TagsFilter';
+import { TEST_PROVIDER_ID } from './Tree';
 import type { CombinedDataset, Selection } from './types';
 import { useLastViewed } from './useLastViewed';
 
@@ -53,19 +55,6 @@ const Top = styled(Spaced)({
   paddingTop: 16,
   flex: 1,
 });
-
-const Bottom = styled.div(({ theme }) => ({
-  borderTop: `1px solid ${theme.appBorderColor}`,
-  padding: theme.layoutMargin / 2,
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: theme.layoutMargin / 2,
-  backgroundColor: theme.barBg,
-
-  '&:empty': {
-    display: 'none',
-  },
-}));
 
 const TooltipNoteWrapper = styled(TooltipNote)({
   margin: 0,
@@ -159,6 +148,7 @@ export const Sidebar = React.memo(function Sidebar({
   const dataset = useCombination(index, indexError, previewInitialized, status, refs);
   const isLoading = !index && !indexError;
   const lastViewedProps = useLastViewed(selected);
+  const { isMobile } = useLayout();
   const api = useStorybookApi();
 
   return (
@@ -239,12 +229,8 @@ export const Sidebar = React.memo(function Sidebar({
             )}
           </Search>
         </Top>
+        {isMobile || isLoading ? null : <SidebarBottom />}
       </ScrollArea>
-      {isLoading ? null : (
-        <Bottom className="sb-bar">
-          <SidebarBottom />
-        </Bottom>
-      )}
     </Container>
   );
 });

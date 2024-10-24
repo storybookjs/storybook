@@ -47,7 +47,9 @@ export const steps = {
     description: 'Adding addon',
     icon: '+',
     hasArgument: true,
-    options: createOptions({}),
+    options: createOptions({
+      yes: { type: 'boolean' },
+    }),
   },
   link: {
     command: 'link',

@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import type { FC, PropsWithChildren, ReactElement, ReactNode } from 'react';
 
+import type { TestingModuleProgressReportProgress } from '../../core-events';
 import type { RenderData as RouterData } from '../../router/types';
 import type { ThemeVars } from '../../theming/types';
 import type { API_SidebarOptions } from './api';
+import type { API_StatusState, API_StatusUpdate } from './api-stories';
 import type {
   Args,
   ArgsStoryFn as ArgsStoryFnForFramework,
@@ -326,7 +328,8 @@ export type Addon_Type =
   | Addon_PageType
   | Addon_WrapperType
   | Addon_SidebarBottomType
-  | Addon_SidebarTopType;
+  | Addon_SidebarTopType
+  | Addon_TestProviderType;
 export interface Addon_BaseType {
   /**
    * The title of the addon. This can be a simple string, but it can also be a
@@ -348,6 +351,7 @@ export interface Addon_BaseType {
     | Addon_TypesEnum.experimental_PAGE
     | Addon_TypesEnum.experimental_SIDEBAR_BOTTOM
     | Addon_TypesEnum.experimental_SIDEBAR_TOP
+    | Addon_TypesEnum.experimental_TEST_PROVIDER
   >;
   /**
    * The unique id of the addon.
@@ -461,12 +465,39 @@ export interface Addon_SidebarTopType {
   render: FC;
 }
 
+export interface Addon_TestProviderType<
+  Details extends { [key: string]: any } = NonNullable<unknown>,
+> {
+  type: Addon_TypesEnum.experimental_TEST_PROVIDER;
+  /** The unique id of the test provider. */
+  id: string;
+  name: string;
+  title: (state: Addon_TestProviderState<Details>) => ReactNode;
+  description: (state: Addon_TestProviderState<Details>) => ReactNode;
+  mapStatusUpdate?: (state: Addon_TestProviderState<Details>) => API_StatusUpdate;
+  runnable?: boolean;
+  watchable?: boolean;
+}
+
+export type Addon_TestProviderState<Details extends { [key: string]: any } = NonNullable<unknown>> =
+  Pick<Addon_TestProviderType, 'runnable' | 'watchable'> & {
+    progress?: TestingModuleProgressReportProgress;
+    details: Details;
+    cancellable: boolean;
+    cancelling: boolean;
+    running: boolean;
+    watching: boolean;
+    failed: boolean;
+    crashed: boolean;
+  };
+
 type Addon_TypeBaseNames = Exclude<
   Addon_TypesEnum,
   | Addon_TypesEnum.PREVIEW
   | Addon_TypesEnum.experimental_PAGE
   | Addon_TypesEnum.experimental_SIDEBAR_BOTTOM
   | Addon_TypesEnum.experimental_SIDEBAR_TOP
+  | Addon_TypesEnum.experimental_TEST_PROVIDER
 >;
 
 export interface Addon_TypesMapping extends Record<Addon_TypeBaseNames, Addon_BaseType> {
@@ -474,6 +505,7 @@ export interface Addon_TypesMapping extends Record<Addon_TypeBaseNames, Addon_Ba
   [Addon_TypesEnum.experimental_PAGE]: Addon_PageType;
   [Addon_TypesEnum.experimental_SIDEBAR_BOTTOM]: Addon_SidebarBottomType;
   [Addon_TypesEnum.experimental_SIDEBAR_TOP]: Addon_SidebarTopType;
+  [Addon_TypesEnum.experimental_TEST_PROVIDER]: Addon_TestProviderType;
 }
 
 export type Addon_Loader<API> = (api: API) => void;
@@ -537,4 +569,6 @@ export enum Addon_TypesEnum {
    * @deprecated This will be removed in Storybook 9.0.
    */
   experimental_SIDEBAR_TOP = 'sidebar-top',
+  /** This adds items to the Testing Module in the sidebar. */
+  experimental_TEST_PROVIDER = 'test-provider',
 }

@@ -46,9 +46,10 @@ const SUPPORTED_PROJECTS: Record<string, SupportedProject> = {
       language: 'TS',
     },
     createScript: {
-      npm: 'npm create next-app . -- --typescript --use-npm --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
-      yarn: 'yarn create next-app . --typescript --use-yarn --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
-      pnpm: 'pnpm create next-app . --typescript --use-pnpm --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
+      npm: 'npm create next-app@^14 . -- --typescript --use-npm --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
+      // yarn doesn't support version ranges, so we have to use npx
+      yarn: 'npx create-next-app@^14 . --typescript --use-yarn --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
+      pnpm: 'pnpm create next-app^14 . --typescript --use-pnpm --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
     },
   },
   'vue-vite-ts': {

@@ -13,7 +13,7 @@ test.describe('addon-actions', () => {
       'Svelte 5 prerelase does not support automatic actions with our current example components yet'
     );
     await page.goto(storybookUrl);
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     sbPage.waitUntilLoaded();
 
     await sbPage.navigateToStory('example/button', 'primary');
@@ -34,7 +34,7 @@ test.describe('addon-actions', () => {
       'Svelte 5 prerelase does not support automatic actions with our current example components yet'
     );
     await page.goto(storybookUrl);
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     sbPage.waitUntilLoaded();
 
     await sbPage.navigateToStory('addons/actions/spies', 'show-spy-on-in-actions');

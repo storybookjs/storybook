@@ -1,3 +1,4 @@
+import { Addon_TypesEnum } from '@storybook/core/types';
 import { fn } from '@storybook/test';
 
 import { SidebarBottomBase } from './SidebarBottom';
@@ -6,8 +7,27 @@ export default {
   component: SidebarBottomBase,
   args: {
     api: {
-      experimental_setFilter: fn(),
+      clearNotification: fn(),
       emit: fn(),
+      experimental_setFilter: fn(),
+      getChannel: fn(),
+      getElements: fn(() => ({
+        'component-tests': {
+          type: Addon_TypesEnum.experimental_TEST_PROVIDER,
+          id: 'component-tests',
+          title: () => 'Component tests',
+          description: () => 'Ran 2 seconds ago',
+          runnable: true,
+          watchable: true,
+        },
+        'visual-tests': {
+          type: Addon_TypesEnum.experimental_TEST_PROVIDER,
+          id: 'visual-tests',
+          title: () => 'Visual tests',
+          description: () => 'Not run',
+          runnable: true,
+        },
+      })),
     },
   },
 };

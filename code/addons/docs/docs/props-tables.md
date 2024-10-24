@@ -191,16 +191,16 @@ Controls customization has an entire section in the [documentation](https://stor
 
 Here are the possible customizations for the rest of the prop table:
 
-| Field                        | Description                                                                                          |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `name`                       | The name of the property                                                                             |
-| `type.required`              | Whether or not the property is required                                                              |
-| `description`                | A markdown description for the property                                                              |
-| `table.type.summary`         | A short version of the type                                                                          |
-| `table.type.detail`          | A longer version of the type (if it's a complex type)                                                |
-| `table.defaultValue.summary` | A short version of the default value                                                                 |
-| `table.defaultValue.detail`  | A longer version of the default value (if it's a complex value)                                      |
-| `control`                    | See [`addon-controls` README](https://storybook.js.org/docs/essentials/controls#configuration)       |
+| Field                        | Description                                                                                    |
+| ---------------------------- | ---------------------------------------------------------------------------------------------- |
+| `name`                       | The name of the property                                                                       |
+| `type.required`              | Whether or not the property is required                                                        |
+| `description`                | A markdown description for the property                                                        |
+| `table.type.summary`         | A short version of the type                                                                    |
+| `table.type.detail`          | A longer version of the type (if it's a complex type)                                          |
+| `table.defaultValue.summary` | A short version of the default value                                                           |
+| `table.defaultValue.detail`  | A longer version of the default value (if it's a complex value)                                |
+| `control`                    | See [`addon-controls` README](https://storybook.js.org/docs/essentials/controls#configuration) |
 
 ## Reporting a bug
 

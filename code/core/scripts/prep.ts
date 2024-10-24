@@ -1,5 +1,5 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
-import { existsSync, mkdirSync, watch } from 'node:fs';
+import { existsSync, watch } from 'node:fs';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
@@ -18,7 +18,7 @@ import {
 } from '../../../scripts/prepare/tools';
 import pkg from '../package.json';
 import { globalsModuleInfoMap } from '../src/manager/globals-module-info';
-import { getBundles, getEntries, getFinals } from './entries';
+import { getBundles, getEntries, getFinals, getModernEntries } from './entries';
 import { generatePackageJsonFile } from './helpers/generatePackageJsonFile';
 import { generateTypesFiles } from './helpers/generateTypesFiles';
 import { generateTypesMapperFiles } from './helpers/generateTypesMapperFiles';
@@ -53,17 +53,18 @@ async function run() {
   const entries = getEntries(cwd);
   const bundles = getBundles(cwd);
   const finals = getFinals(cwd);
+  const modernEntries = getModernEntries(cwd);
 
   type EsbuildContextOptions = Parameters<(typeof esbuild)['context']>[0];
 
   console.log(isWatch ? 'Watching...' : 'Bundling...');
 
   const files = measure(generateSourceFiles);
-  const packageJson = measure(() => generatePackageJsonFile(entries));
+  const packageJson = measure(() => generatePackageJsonFile([...entries, ...modernEntries]));
   const dist = files.then(() => measure(generateDistFiles));
   const types = files.then(() =>
     measure(async () => {
-      await generateTypesMapperFiles(entries);
+      await generateTypesMapperFiles([...entries, ...modernEntries]);
       await modifyThemeTypes();
       await generateTypesFiles(entries, isOptimized, cwd);
       await modifyThemeTypes();
@@ -183,6 +184,33 @@ async function run() {
           },
         })
       ),
+      ...modernEntries.map((entry) => {
+        return esbuild.context(
+          merge<EsbuildContextOptions>(nodeEsbuildOptions, {
+            banner: {
+              js: dedent`
+                  import ESM_COMPAT_Module from "node:module";
+                  import { fileURLToPath as ESM_COMPAT_fileURLToPath } from 'node:url';
+                  import { dirname as ESM_COMPAT_dirname } from 'node:path';
+                  const __filename = ESM_COMPAT_fileURLToPath(import.meta.url);
+                  const __dirname = ESM_COMPAT_dirname(__filename);
+                  const require = ESM_COMPAT_Module.createRequire(import.meta.url);
+                `,
+            },
+            entryPoints: [entry.file],
+            format: 'esm',
+            external: [
+              ...nodeInternals,
+              ...esbuildDefaultOptions.external,
+              ...entry.externals,
+            ].filter((e) => !entry.internals.includes(e)),
+            outdir: dirname(entry.file).replace('src', 'dist'),
+            outExtension: {
+              '.js': '.js',
+            },
+          })
+        );
+      }),
       ...bundles.flatMap((entry) => {
         const results = [];
         results.push(
@@ -363,6 +391,7 @@ async function run() {
 
       await Promise.all(
         Object.entries(metafileByModule).map(async ([moduleName, metafile]) => {
+          await mkdir(join(metafilesDir, moduleName), { recursive: true });
           await writeFile(
             join(metafilesDir, `${moduleName}.json`),
             JSON.stringify(metafile, null, 2)

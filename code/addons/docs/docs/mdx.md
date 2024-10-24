@@ -149,7 +149,7 @@ You can also use the rest of the MDX features in conjunction with embedding. Tha
 
 ## Decorators and parameters
 
-To add [decorators](https://storybook.js.org/docs/react/writing-stories/decorators) and [parameters](https://storybook.js.org/docs/react/writing-stories/parameters) in MDX:
+To add [decorators](https://storybook.js.org/docs/writing-stories/decorators) and [parameters](https://storybook.js.org/docs/writing-stories/parameters) in MDX:
 
 ```md
 <Meta

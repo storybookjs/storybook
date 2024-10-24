@@ -34,7 +34,7 @@ However, `DocsPage` brings the following improvements:
 
 Storybook uses `component` to extract the component's description and props, and will rely on it further in future releases. We encourage you to add it to existing stories and use it in all new stories.
 
-Here's how to set the component in [Component Story Format (CSF)](https://storybook.js.org/docs/react/api/csf):
+Here's how to set the component in [Component Story Format (CSF)](https://storybook.js.org/docs/api/csf):
 
 ```js
 import { Badge } from './Badge';

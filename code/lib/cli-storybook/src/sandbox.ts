@@ -183,7 +183,7 @@ export const sandbox = async ({
       },
       {
         onCancel: () => {
-          logger.log('Command cancelled by the user. Exiting...');
+          logger.log('Command canceled by the user. Exiting...');
           process.exit(1);
         },
       }
@@ -278,7 +278,7 @@ async function promptSelectedTemplate(choices: Choice[]): Promise<Choice | null>
     },
     {
       onCancel: () => {
-        logger.log('Command cancelled by the user. Exiting...');
+        logger.log('Command canceled by the user. Exiting...');
         process.exit(1);
       },
     }

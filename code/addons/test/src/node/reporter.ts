@@ -196,7 +196,7 @@ export class StorybookReporter implements Reporter {
         unhandledErrors[0]
       );
     } else {
-      const isCancelled = this.ctx.isCancelling;
+      const isCanceled = this.ctx.isCancelling;
       const report = this.getProgressReport(Date.now());
 
       const testSuiteFailures = report.details.testResults.filter(
@@ -209,10 +209,10 @@ export class StorybookReporter implements Reporter {
         reducedTestSuiteFailures.add(t.message);
       });
 
-      if (isCancelled) {
+      if (isCanceled) {
         this.sendReport({
           providerId: TEST_PROVIDER_ID,
-          status: 'cancelled',
+          status: 'canceled',
           ...report,
         });
       } else if (reducedTestSuiteFailures.size > 0) {

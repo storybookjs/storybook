@@ -24,15 +24,12 @@
   "exports": {
     "./globals": {
       "type": "./globals.d.ts",
-      "import": "./globals.js",
-      "require": "./globals.cjs"
+      "default": "./globals.cjs"
     }
   },
   "files": [
     "README.md",
     "*.js",
-    "*.mjs",
-    "*.cjs",
     "*.d.ts"
   ],
   "peerDependencies": {

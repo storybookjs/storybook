@@ -22,29 +22,21 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "node": "./dist/index.js",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
-    "./dist/preview.mjs": {
-      "import": "./dist/preview.mjs"
-    },
-    "./preset": {
-      "types": "./dist/preset.d.ts",
-      "require": "./dist/preset.js"
-    },
+    "./preview": "./dist/preview.js",
+    "./dist/preview.js": "./dist/preview.js",
+    "./preset": "./dist/preset.js",
     "./vite-plugin": {
       "types": "./dist/vite-plugin.d.ts",
-      "require": "./dist/vite-plugin.js",
-      "import": "./dist/vite-plugin.mjs"
+      "default": "./dist/vite-plugin.js"
     },
     "./package.json": "./package.json"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",

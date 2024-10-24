@@ -1,1 +1,1 @@
-module.exports = require('storybook/internal/theming');
+export * from 'storybook/internal/theming';

@@ -1,1 +1,1 @@
-export * from '@storybook/addon-docs/dist/shims/mdx-react-shim';
+export * from '@storybook/addon-docs/mdx-react-shim';

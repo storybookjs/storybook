@@ -19,25 +19,22 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
     "./experimental-playwright": {
       "types": "./dist/playwright.d.ts",
-      "import": "./dist/playwright.mjs",
-      "require": "./dist/playwright.js"
+      "default": "./dist/playwright.js"
     },
-    "./preset": "./preset.js",
-    "./dist/entry-preview.mjs": "./dist/entry-preview.mjs",
-    "./dist/entry-preview-docs.mjs": "./dist/entry-preview-docs.mjs",
-    "./dist/entry-preview-rsc.mjs": "./dist/entry-preview-rsc.mjs",
+    "./preset": "./dist/preset.js",
+    "./dist/entry-preview.js": "./dist/entry-preview.js",
+    "./dist/entry-preview-docs.js": "./dist/entry-preview-docs.js",
+    "./dist/entry-preview-rsc.js": "./dist/entry-preview-rsc.js",
     "./package.json": "./package.json"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "typesVersions": {
     "*": {
@@ -59,7 +56,7 @@
   ],
   "scripts": {
     "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
+    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
     "@storybook/components": "workspace:^",
@@ -113,15 +110,17 @@
     "access": "public"
   },
   "bundler": {
-    "entries": [
-      "./src/index.ts",
-      "./src/preset.ts",
+    "nodeEntries": [
+      "./src/preset.ts"
+    ],
+    "previewEntries": [
       "./src/entry-preview.tsx",
       "./src/entry-preview-docs.ts",
-      "./src/entry-preview-rsc.tsx",
-      "./src/playwright.ts"
+      "./src/entry-preview-rsc.tsx"
     ],
-    "platform": "browser"
+    "exportEntries": [
+      "./src/index.ts"
+    ]
   },
   "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

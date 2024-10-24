@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import type { Options } from 'storybook/internal/types';
 
@@ -16,7 +17,8 @@ const getIsReactVersion18or19 = async (options: Options) => {
   }
 
   const resolvedReact = await options.presets.apply<{ reactDom?: string }>('resolvedReact', {});
-  const reactDom = resolvedReact.reactDom || dirname(require.resolve('react-dom/package.json'));
+  const reactDom =
+    resolvedReact.reactDom || dirname(fileURLToPath(import.meta.resolve('react-dom/package.json')));
 
   if (!isAbsolute(reactDom)) {
     // if react-dom is not resolved to a file we can't be sure if the version in package.json is correct or even if package.json exists
@@ -40,7 +42,7 @@ export const webpackFinal = async (config: any, options: Options) => {
       ...config.resolve,
       alias: {
         ...config.resolve?.alias,
-        '@storybook/react-dom-shim': '@storybook/react-dom-shim/dist/react-16',
+        '@storybook/react-dom-shim': '@storybook/react-dom-shim/react-16',
       },
     },
   };
@@ -55,11 +57,11 @@ export const viteFinal = async (config: any, options: Options) => {
   const alias = Array.isArray(config.resolve?.alias)
     ? config.resolve.alias.concat({
         find: /^@storybook\/react-dom-shim$/,
-        replacement: '@storybook/react-dom-shim/dist/react-16',
+        replacement: '@storybook/react-dom-shim/react-16',
       })
     : {
         ...config.resolve?.alias,
-        '@storybook/react-dom-shim': '@storybook/react-dom-shim/dist/react-16',
+        '@storybook/react-dom-shim': '@storybook/react-dom-shim/react-16',
       };
 
   return {

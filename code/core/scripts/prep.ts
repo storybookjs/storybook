@@ -141,10 +141,21 @@ async function run() {
             .filter(isNode)
             .filter(noExternals)
             .map((e) => e.file),
+          banner: {
+            js: dedent`
+              import ESM_COMPAT_Module from "node:module";
+              import { fileURLToPath as ESM_COMPAT_fileURLToPath } from 'node:url';
+              import { dirname as ESM_COMPAT_dirname } from 'node:path';
+              const __filename = ESM_COMPAT_fileURLToPath(import.meta.url);
+              const __dirname = ESM_COMPAT_dirname(__filename);
+              const require = ESM_COMPAT_Module.createRequire(import.meta.url);
+            `,
+          },
+
           external: [...nodeInternals, ...esbuildDefaultOptions.external],
-          format: 'cjs',
+          format: 'esm',
           outExtension: {
-            '.js': '.cjs',
+            '.js': '.node.js',
           },
         })
       ),
@@ -180,7 +191,7 @@ async function run() {
           external: [...nodeInternals, ...esbuildDefaultOptions.external],
           format: 'esm',
           outExtension: {
-            '.js': '.js',
+            '.js': '.node.js',
           },
         })
       ),
@@ -189,13 +200,13 @@ async function run() {
           merge<EsbuildContextOptions>(nodeEsbuildOptions, {
             banner: {
               js: dedent`
-                  import ESM_COMPAT_Module from "node:module";
-                  import { fileURLToPath as ESM_COMPAT_fileURLToPath } from 'node:url';
-                  import { dirname as ESM_COMPAT_dirname } from 'node:path';
-                  const __filename = ESM_COMPAT_fileURLToPath(import.meta.url);
-                  const __dirname = ESM_COMPAT_dirname(__filename);
-                  const require = ESM_COMPAT_Module.createRequire(import.meta.url);
-                `,
+                import ESM_COMPAT_Module from "node:module";
+                import { fileURLToPath as ESM_COMPAT_fileURLToPath } from 'node:url';
+                import { dirname as ESM_COMPAT_dirname } from 'node:path';
+                const __filename = ESM_COMPAT_fileURLToPath(import.meta.url);
+                const __dirname = ESM_COMPAT_dirname(__filename);
+                const require = ESM_COMPAT_Module.createRequire(import.meta.url);
+              `,
             },
             entryPoints: [entry.file],
             format: 'esm',
@@ -206,7 +217,7 @@ async function run() {
             ].filter((e) => !entry.internals.includes(e)),
             outdir: dirname(entry.file).replace('src', 'dist'),
             outExtension: {
-              '.js': '.js',
+              '.js': '.node.js',
             },
           })
         );
@@ -275,25 +286,7 @@ async function run() {
         .filter((entry) => !noExternals(entry))
         .flatMap((entry) => {
           const results = [];
-          if (entry.node) {
-            results.push(
-              esbuild.context(
-                merge<EsbuildContextOptions>(nodeEsbuildOptions, {
-                  entryPoints: [entry.file],
-                  external: [
-                    ...nodeInternals,
-                    ...esbuildDefaultOptions.external,
-                    ...entry.externals,
-                  ].filter((e) => !entry.internals.includes(e)),
-                  format: 'cjs',
-                  outdir: dirname(entry.file).replace('src', 'dist'),
-                  outExtension: {
-                    '.js': '.cjs',
-                  },
-                })
-              )
-            );
-          }
+
           if (entry.browser) {
             results.push(
               esbuild.context(
@@ -311,11 +304,23 @@ async function run() {
                 })
               )
             );
-          } else if (entry.node) {
+          }
+          if (entry.node) {
             results.push(
               esbuild.context(
                 merge<EsbuildContextOptions>(nodeEsbuildOptions, {
                   entryPoints: [entry.file],
+                  banner: {
+                    js: dedent`
+                      import ESM_COMPAT_Module from "node:module";
+                      import { fileURLToPath as ESM_COMPAT_fileURLToPath } from 'node:url';
+                      import { dirname as ESM_COMPAT_dirname } from 'node:path';
+                      const __filename = ESM_COMPAT_fileURLToPath(import.meta.url);
+                      const __dirname = ESM_COMPAT_dirname(__filename);
+                      const require = ESM_COMPAT_Module.createRequire(import.meta.url);
+                    `,
+                  },
+
                   external: [
                     ...nodeInternals,
                     ...esbuildDefaultOptions.external,
@@ -324,7 +329,7 @@ async function run() {
                   format: 'esm',
                   outdir: dirname(entry.file).replace('src', 'dist'),
                   outExtension: {
-                    '.js': '.js',
+                    '.js': '.node.js',
                   },
                 })
               )

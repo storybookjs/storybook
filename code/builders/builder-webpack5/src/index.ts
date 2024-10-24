@@ -1,5 +1,6 @@
 import { cp } from 'node:fs/promises';
 import { join, parse } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { PREVIEW_BUILDER_PROGRESS } from 'storybook/internal/core-events';
 import { logger } from 'storybook/internal/node-logger';
@@ -15,7 +16,7 @@ import { checkWebpackVersion } from '@storybook/core-webpack';
 import prettyTime from 'pretty-hrtime';
 import sirv from 'sirv';
 import type { Configuration, Stats, StatsOptions } from 'webpack';
-import webpack, { ProgressPlugin } from 'webpack';
+import webpack from 'webpack';
 import webpackDevMiddleware from 'webpack-dev-middleware';
 import webpackHotMiddleware from 'webpack-hot-middleware';
 
@@ -140,7 +141,7 @@ const starter: StarterFunction = async function* starterGeneratorFn({
   let totalModules: number;
   let value = 0;
 
-  new ProgressPlugin({
+  new webpack.ProgressPlugin({
     handler: (newValue, message, arg3) => {
       value = Math.max(newValue, value); // never go backwards
       const progress = { value, message: message.charAt(0).toUpperCase() + message.slice(1) };
@@ -331,5 +332,9 @@ export const build = async (options: BuilderStartOptions) => {
   return result.value;
 };
 
-export const corePresets = [join(__dirname, 'presets/preview-preset.js')];
-export const overridePresets = [join(__dirname, './presets/custom-webpack-preset.js')];
+export const corePresets = [
+  fileURLToPath(import.meta.resolve('@storybook/builder-webpack5/presets/preview-preset')),
+];
+export const overridePresets = [
+  fileURLToPath(import.meta.resolve('@storybook/builder-webpack5/presets/custom-webpack-preset')),
+];

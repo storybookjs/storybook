@@ -34,7 +34,7 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (
             enforce: 'pre',
             loader: requirer(
               require.resolve,
-              '@storybook/preset-react-webpack/dist/loaders/react-docgen-loader'
+              '@storybook/preset-react-webpack/loaders/react-docgen-loader'
             ),
             options: {
               debug,
@@ -59,7 +59,7 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (
           enforce: 'pre',
           loader: requirer(
             require.resolve,
-            '@storybook/preset-react-webpack/dist/loaders/react-docgen-loader'
+            '@storybook/preset-react-webpack/loaders/react-docgen-loader'
           ),
           options: {
             debug,

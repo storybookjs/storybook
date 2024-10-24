@@ -1,15 +1,24 @@
+import { createRequire } from 'node:module';
+
 import type { NextConfig } from 'next';
 import type { Configuration as WebpackConfig } from 'webpack';
-import { DefinePlugin } from 'webpack';
+import webpack from 'webpack';
 
 import { addScopedAlias, resolveNextConfig, setAlias } from '../utils';
 
 const tryResolve = (path: string) => {
   try {
+    return import.meta.resolve(path);
+  } catch (err) {
+    //
+  }
+  try {
+    const require = createRequire(import.meta.url);
     return require.resolve(path);
   } catch (err) {
-    return false;
+    //
   }
+  return false;
 };
 
 export const configureConfig = async ({
@@ -67,5 +76,5 @@ const setupRuntimeConfig = (baseConfig: WebpackConfig, nextConfig: NextConfig): 
 
   definePluginConfig['process.env.__NEXT_NEW_LINK_BEHAVIOR'] = newNextLinkBehavior;
 
-  baseConfig.plugins?.push(new DefinePlugin(definePluginConfig));
+  baseConfig.plugins?.push(new webpack.DefinePlugin(definePluginConfig));
 };

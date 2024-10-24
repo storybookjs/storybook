@@ -1,7 +1,7 @@
 import type { StorybookConfig } from '@storybook/core-webpack';
 
 import { VueLoaderPlugin } from 'vue-loader';
-import { DefinePlugin } from 'webpack';
+import wp from 'webpack';
 
 export const webpack: StorybookConfig['webpack'] = (config) => {
   return {
@@ -9,7 +9,7 @@ export const webpack: StorybookConfig['webpack'] = (config) => {
     plugins: [
       ...(config.plugins ?? []),
       new VueLoaderPlugin(),
-      new DefinePlugin({
+      new wp.DefinePlugin({
         __VUE_OPTIONS_API__: JSON.stringify(true),
         __VUE_PROD_DEVTOOLS__: JSON.stringify(true),
         __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: JSON.stringify(true),

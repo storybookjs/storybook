@@ -72,4 +72,4 @@ const nextImageLoaderStub: RawLoaderDefinition<LoaderOptions> = async function N
 
 nextImageLoaderStub.raw = true;
 
-export = nextImageLoaderStub;
+export default nextImageLoaderStub;

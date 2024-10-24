@@ -10,7 +10,7 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (config, { pr
     ...(config.module?.rules || []),
     {
       test: /\.svelte$/,
-      loader: require.resolve(`@storybook/preset-svelte-webpack/dist/svelte-docgen-loader`),
+      loader: require.resolve(`@storybook/preset-svelte-webpack/svelte-docgen-loader`),
       enforce: 'post',
       options: svelteOptions,
     },

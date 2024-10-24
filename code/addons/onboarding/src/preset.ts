@@ -17,7 +17,7 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
   const { disableTelemetry } = await options.presets.apply<CoreConfig>('core', {});
 
   if (!disableTelemetry) {
-    const packageJsonPath = require.resolve('@storybook/addon-onboarding/package.json');
+    const packageJsonPath = import.meta.resolve('@storybook/addon-onboarding/package.json');
 
     const { version: addonVersion } = JSON.parse(
       readFileSync(packageJsonPath, { encoding: 'utf-8' })

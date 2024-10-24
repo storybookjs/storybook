@@ -217,7 +217,7 @@ function addEsbuildLoaderToStories(mainConfig: ConfigFile) {
           exclude: /\\.stories\\.mdx$/,
           use: [
             {
-              loader: require.resolve('@storybook/addon-docs/mdx-loader'),
+              loader: fileURLToPath(import.meta.resolve('@storybook/addon-docs/mdx-loader')),
             },
           ],
         },
@@ -442,7 +442,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
     join(sandboxDir, '.storybook/vitest.setup.ts'),
     dedent`import { beforeAll } from 'vitest'
     import { setProjectAnnotations } from '${storybookPackage}'
-    import * as rendererDocsAnnotations from '${template.expected.renderer}/dist/entry-preview-docs.mjs'
+    import * as rendererDocsAnnotations from '${template.expected.renderer}/dist/entry-preview-docs.js'
     import * as addonActionsAnnotations from '@storybook/addon-actions/preview'
     import * as addonTestAnnotations from '@storybook/experimental-addon-test/preview'
     import '../src/stories/components'

@@ -24,13 +24,12 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": "./dist/index.js",
     "./preset": "./dist/index.js",
     "./package.json": "./package.json"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",

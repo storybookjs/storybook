@@ -7,11 +7,11 @@ import type { Options } from '@storybook/core/types';
 import { logger } from '@storybook/core/node-logger';
 
 import picocolors from 'picocolors';
-import type Polka from 'polka';
+import type { Polka } from 'polka';
 import sirv from 'sirv';
 import { dedent } from 'ts-dedent';
 
-export async function useStatics(app: Polka.Polka, options: Options): Promise<void> {
+export async function useStatics(app: Polka, options: Options): Promise<void> {
   const staticDirs = (await options.presets.apply('staticDirs')) ?? [];
   const faviconPath = await options.presets.apply<string>('favicon');
 

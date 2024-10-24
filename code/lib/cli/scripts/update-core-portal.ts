@@ -42,18 +42,26 @@ async function run() {
         if (key === '.') {
           selfPackageJson.exports['./core'] = value;
 
-          await Promise.all(
-            Object.values(value).map(async (v) => {
-              await write(join(__dirname, '..', v), generateMapperContent(v));
-            })
-          );
+          if (typeof value === 'string') {
+            await write(join(__dirname, '..', value), generateMapperContent(value));
+          } else {
+            await Promise.all(
+              Object.values(value).map(async (v) => {
+                await write(join(__dirname, '..', v), generateMapperContent(v));
+              })
+            );
+          }
         } else {
           selfPackageJson.exports[key.replace('./', './internal/')] = value;
-          await Promise.all(
-            Object.values(value).map(async (v) => {
-              await write(join(__dirname, '..', v), generateMapperContent(v));
-            })
-          );
+          if (typeof value === 'string') {
+            await write(join(__dirname, '..', value), generateMapperContent(value));
+          } else {
+            await Promise.all(
+              Object.values(value).map(async (v) => {
+                await write(join(__dirname, '..', v), generateMapperContent(v));
+              })
+            );
+          }
         }
       })
   );

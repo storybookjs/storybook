@@ -1,6 +1,7 @@
 // https://storybook.js.org/docs/react/addons/writing-presets
 import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { getProjectRoot } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
@@ -30,7 +31,7 @@ import type { FrameworkOptions, StorybookConfig } from './types';
 import { configureRuntimeNextjsVersionResolution, getNextjsVersion } from './utils';
 
 export const addons: PresetProperty<'addons'> = [
-  dirname(require.resolve(join('@storybook/preset-react-webpack', 'package.json'))),
+  dirname(fileURLToPath(import.meta.resolve('@storybook/preset-react-webpack/package.json'))),
 ];
 
 export const core: PresetProperty<'core'> = async (config, options) => {
@@ -39,22 +40,17 @@ export const core: PresetProperty<'core'> = async (config, options) => {
   return {
     ...config,
     builder: {
-      name: dirname(
-        require.resolve(join('@storybook/builder-webpack5', 'package.json'))
-      ) as '@storybook/builder-webpack5',
+      name: fileURLToPath(import.meta.resolve('@storybook/builder-webpack5')),
       options: {
         ...(typeof framework === 'string' ? {} : framework.options.builder || {}),
       },
     },
-    renderer: dirname(require.resolve(join('@storybook/react', 'package.json'))),
+    renderer: fileURLToPath(import.meta.resolve('@storybook/react/preset')),
   };
 };
 
-export const previewAnnotations: PresetProperty<'previewAnnotations'> = (
-  entry = [],
-  { features }
-) => {
-  const nextDir = dirname(require.resolve('@storybook/nextjs/package.json'));
+export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry = []) => {
+  const nextDir = dirname(fileURLToPath(import.meta.resolve('@storybook/nextjs/package.json')));
   const result = [...entry, join(nextDir, 'dist/preview.mjs')];
   return result;
 };
@@ -83,7 +79,8 @@ export const babel: PresetProperty<'babel'> = async (baseConfig: TransformOption
       (preset) =>
         !(
           (isPresetConfigItem(preset) &&
-            (preset as ConfigItem).file?.request === require.resolve('@babel/preset-react')) ||
+            (preset as ConfigItem).file?.request ===
+              fileURLToPath(import.meta.resolve('@babel/preset-react'))) ||
           isNextBabelConfig(preset)
         )
     ) ?? [];

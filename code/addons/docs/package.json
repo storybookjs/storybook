@@ -24,45 +24,39 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
     "./preview": {
       "types": "./dist/preview.d.ts",
-      "import": "./dist/preview.mjs",
-      "require": "./dist/preview.js"
+      "default": "./dist/preview.js"
     },
     "./preset": {
       "types": "./dist/preset.d.ts",
-      "import": "./dist/preset.js",
-      "require": "./dist/preset.js"
+      "default": "./dist/preset.js"
     },
     "./blocks": {
       "types": "./dist/blocks.d.ts",
-      "import": "./dist/blocks.mjs",
-      "require": "./dist/blocks.js"
+      "default": "./dist/blocks.js"
     },
     "./dist/preview": {
       "types": "./dist/preview.d.ts",
-      "import": "./dist/preview.mjs",
-      "require": "./dist/preview.js"
+      "default": "./dist/preview.js"
     },
     "./dist/preset": {
       "types": "./dist/preset.d.ts",
-      "require": "./dist/preset.js"
+      "default": "./dist/preset.js"
     },
     "./dist/shims/mdx-react-shim": {
       "types": "./dist/shims/mdx-react-shim.d.ts",
-      "import": "./dist/shims/mdx-react-shim.mjs",
-      "require": "./dist/shims/mdx-react-shim.js"
+      "default": "./dist/shims/mdx-react-shim.js"
     },
     "./mdx-react-shim": {
       "types": "./dist/shims/mdx-react-shim.d.ts",
-      "import": "./dist/shims/mdx-react-shim.mjs",
-      "require": "./dist/shims/mdx-react-shim.js"
+      "default": "./dist/shims/mdx-react-shim.js"
     },
     "./mdx-loader": "./dist/mdx-loader.js",
     "./svelte/HOC.svelte": "./svelte/HOC.svelte",
@@ -73,8 +67,6 @@
     "./web-components/index.js": "./web-components/index.js",
     "./package.json": "./package.json"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
@@ -94,7 +86,7 @@
   ],
   "scripts": {
     "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
+    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
     "@mdx-js/react": "^3.0.0",
@@ -123,12 +115,16 @@
     "access": "public"
   },
   "bundler": {
-    "entries": [
+    "previewEntries": [
+      "./src/preview.ts"
+    ],
+    "exportEntries": [
       "./src/index.ts",
-      "./src/preset.ts",
-      "./src/preview.ts",
       "./src/blocks.ts",
-      "./src/shims/mdx-react-shim.ts",
+      "./src/shims/mdx-react-shim.ts"
+    ],
+    "nodeEntries": [
+      "./src/preset.ts",
       "./src/mdx-loader.ts"
     ]
   },

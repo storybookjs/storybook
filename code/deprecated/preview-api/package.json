@@ -20,23 +20,19 @@
   },
   "license": "MIT",
   "sideEffects": false,
+  "type": "module",
   "exports": {
     ".": {
       "types": "./shim.d.ts",
-      "import": "./shim.mjs",
-      "require": "./shim.js"
+      "default": "./shim.js"
     },
     "./package.json": "./package.json"
   },
-  "main": "./shim.js",
-  "module": "./shim.mjs",
-  "react-native": "./shim.mjs",
+  "react-native": "./shim.js",
   "types": "./shim.d.ts",
   "files": [
     "README.md",
     "*.js",
-    "*.mjs",
-    "*.cjs",
     "*.d.ts"
   ],
   "peerDependencies": {

@@ -1,14 +1,18 @@
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { basename, relative } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
 
 import MagicString from 'magic-string';
-import { replace, typescript } from 'svelte-preprocess';
+import replace from 'svelte-preprocess/dist/processors/replace.js';
+import typescript from 'svelte-preprocess/dist/processors/typescript.js';
 import { preprocess } from 'svelte/compiler';
 import svelteDoc from 'sveltedoc-parser';
 import type { SvelteComponentDoc, SvelteParserOptions } from 'sveltedoc-parser';
 import type { PluginOption } from 'vite';
+
+const require = createRequire(import.meta.url);
 
 /*
  * Patch sveltedoc-parser internal options.
@@ -93,7 +97,7 @@ export async function svelteDocgen(svelteOptions: Record<string, any> = {}): Pro
         docPreprocessOptions = [replace([[/<style.+<\/style>/gims, '']])];
 
         try {
-          const ts = require.resolve('typescript');
+          const ts = import.meta.resolve('typescript');
           if (ts) {
             docPreprocessOptions.unshift(typescript());
           }

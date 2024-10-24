@@ -21,29 +21,25 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
     "./decorator": {
       "types": "./dist/decorator.d.ts",
-      "import": "./dist/decorator.mjs",
-      "require": "./dist/decorator.js"
+      "default": "./dist/decorator.js"
     },
     "./preview": {
       "types": "./dist/preview.d.ts",
-      "import": "./dist/preview.mjs",
-      "require": "./dist/preview.js"
+      "default": "./dist/preview.js"
     },
     "./manager": "./dist/manager.js",
     "./register.js": "./dist/manager.js",
     "./package.json": "./package.json"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "react-native": "dist/index.mjs",
+  "react-native": "dist/index.js",
   "types": "dist/index.d.ts",
   "typesVersions": {
     "*": {

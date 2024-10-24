@@ -1,4 +1,5 @@
 /// <reference types="webpack" />
+import { fileURLToPath } from 'url';
 
 function webpack(
   webpackConfig = { module: { rules: [] as Array<unknown> } },
@@ -18,7 +19,7 @@ function webpack(
           ...rule,
           use: [
             {
-              loader: require.resolve('@storybook/source-loader'),
+              loader: fileURLToPath(import.meta.resolve('@storybook/source-loader')),
               options: loaderOptions,
             },
           ],

@@ -23,28 +23,22 @@
   "exports": {
     ".": {
       "types": "./shim.d.ts",
-      "import": "./shim.mjs",
-      "require": "./shim.js"
+      "default": "./shim.js"
     },
     "./preview-errors": {
       "types": "./preview-errors.d.ts",
-      "import": "./preview-errors.mjs",
-      "require": "./preview-errors.js"
+      "default": "./preview-errors.js"
     },
     "./manager-errors": {
       "types": "./manager-errors.d.ts",
-      "import": "./manager-errors.mjs",
-      "require": "./manager-errors.js"
+      "default": "./manager-errors.js"
     },
     "./server-errors": {
       "types": "./server-errors.d.ts",
-      "import": "./server-errors.mjs",
-      "require": "./server-errors.js"
+      "default": "./server-errors.js"
     },
     "./package.json": "./package.json"
   },
-  "main": "./shim.js",
-  "module": "./shim.mjs",
   "types": "./shim.d.ts",
   "typesVersions": {
     "*": {
@@ -65,8 +59,6 @@
   "files": [
     "README.md",
     "*.js",
-    "*.mjs",
-    "*.cjs",
     "*.d.ts"
   ],
   "peerDependencies": {

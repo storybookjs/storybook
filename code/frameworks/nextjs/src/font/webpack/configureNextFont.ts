@@ -1,8 +1,9 @@
+import { fileURLToPath } from 'url';
 import type { Configuration } from 'webpack';
 
 export function configureNextFont(baseConfig: Configuration, isSWC?: boolean) {
-  const fontLoaderPath = require.resolve(
-    '@storybook/nextjs/font/webpack/loader/storybook-nextjs-font-loader'
+  const fontLoaderPath = fileURLToPath(
+    import.meta.resolve('@storybook/nextjs/font/webpack/loader/storybook-nextjs-font-loader')
   );
 
   if (isSWC) {

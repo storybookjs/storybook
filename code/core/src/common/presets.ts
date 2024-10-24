@@ -40,7 +40,7 @@ export function filterPresetsConfig(presetsConfig: PresetConfig[]): PresetConfig
   });
 }
 
-function resolvePathToMjs(filePath: string): string {
+async function resolvePathToMjs(filePath: string): Promise<string> {
   const { dir, name } = parse(filePath);
   const mjsPath = join(dir, `${name}.mjs`);
   if (safeResolve(mjsPath)) {
@@ -49,11 +49,11 @@ function resolvePathToMjs(filePath: string): string {
   return filePath;
 }
 
-function resolvePresetFunction<T = any>(
+async function resolvePresetFunction<T = any>(
   input: T[] | Function,
   presetOptions: any,
   storybookOptions: InterPresetOptions
-): T[] {
+): Promise<T[]> {
   if (isFunction(input)) {
     return [...input({ ...storybookOptions, ...presetOptions })];
   }
@@ -76,11 +76,11 @@ function resolvePresetFunction<T = any>(
  *   '@storybook/addon-docs/preset', options } }`
  */
 
-export const resolveAddonName = (
+export const resolveAddonName = async (
   configDir: string,
   name: string,
   options: any
-): CoreCommon_ResolvedAddonPreset | CoreCommon_ResolvedAddonVirtual | undefined => {
+): Promise<CoreCommon_ResolvedAddonPreset | CoreCommon_ResolvedAddonVirtual | undefined> => {
   const resolve = name.startsWith('/') ? safeResolve : safeResolveFrom.bind(null, configDir);
   const resolved = resolve(name);
 
@@ -94,7 +94,7 @@ export const resolveAddonName = (
         // we remove the extension
         // this is a bit of a hack to try to find .mjs files
         // node can only ever resolve .js files; it does not look at the exports field in package.json
-        managerEntries: [resolvePathToMjs(join(fdir, fname))],
+        managerEntries: [await resolvePathToMjs(join(fdir, fname))],
       };
     }
     if (name.match(/\/(preset)(\.(js|mjs|ts|tsx|jsx))?$/)) {
@@ -105,7 +105,7 @@ export const resolveAddonName = (
     }
   }
 
-  const checkExists = (exportName: string) => {
+  const checkExists = async (exportName: string) => {
     if (resolve(`${name}${exportName}`)) {
       return `${name}${exportName}`;
     }
@@ -119,7 +119,7 @@ export const resolveAddonName = (
    * broken in such cases, because it does not process absolute paths, and it will try to import
    * from the bare import, breaking in pnp/pnpm.
    */
-  const absolutizeExport = (exportName: string, preferMJS: boolean) => {
+  const absolutizeExport = async (exportName: string, preferMJS: boolean) => {
     const found = resolve(`${name}${exportName}`);
 
     if (found) {
@@ -128,12 +128,13 @@ export const resolveAddonName = (
     return undefined;
   };
 
-  const managerFile = absolutizeExport(`/manager`, true);
+  const managerFile = await absolutizeExport(`/manager`, true);
   const registerFile =
-    absolutizeExport(`/register`, true) || absolutizeExport(`/register-panel`, true);
-  const previewFile = checkExists(`/preview`);
-  const previewFileAbsolute = absolutizeExport('/preview', true);
-  const presetFile = absolutizeExport(`/preset`, false);
+    (await absolutizeExport(`/register`, true)) ||
+    (await absolutizeExport(`/register-panel`, true));
+  const previewFile = await checkExists(`/preview`);
+  const previewFileAbsolute = await absolutizeExport('/preview', true);
+  const presetFile = await absolutizeExport(`/preset`, false);
 
   if (!(managerFile || previewFile) && presetFile) {
     return {
@@ -188,14 +189,14 @@ export const resolveAddonName = (
 
 const map =
   ({ configDir }: InterPresetOptions) =>
-  (item: any) => {
+  async (item: any) => {
     const options = isObject(item) ? item['options'] || undefined : undefined;
     const name = isObject(item) ? item['name'] : item;
 
     let resolved;
 
     try {
-      resolved = resolveAddonName(configDir, name, options);
+      resolved = await resolveAddonName(configDir, name, options);
     } catch (err) {
       logger.error(
         `Addon value should end in /manager or /preview or /register OR it should be a valid preset https://storybook.js.org/docs/react/addons/writing-presets/\n${item}`
@@ -240,7 +241,7 @@ export async function loadPreset(
 
     if (typeof contents === 'function') {
       // allow the export of a preset to be a function, that gets storybookOptions
-      contents = contents(storybookOptions, presetOptions);
+      contents = await contents(storybookOptions, presetOptions);
     }
 
     if (Array.isArray(contents)) {
@@ -267,19 +268,19 @@ export async function loadPreset(
         };
       }
 
-      const subPresets = resolvePresetFunction(
-        presetsInput,
-        presetOptions,
-        storybookOptions
+      const subPresets = (
+        await resolvePresetFunction(presetsInput, presetOptions, storybookOptions)
       ).filter(filter);
-      const subAddons = resolvePresetFunction(addonsInput, presetOptions, storybookOptions).filter(
-        filter
-      );
+      const subAddons = (
+        await resolvePresetFunction(addonsInput, presetOptions, storybookOptions)
+      ).filter(filter);
 
       return [
         ...(await loadPresets([...subPresets], level + 1, storybookOptions)),
         ...(await loadPresets(
-          [...subAddons.map(map(storybookOptions))].filter(Boolean) as PresetConfig[],
+          [...(await Promise.all(subAddons.map(map(storybookOptions))))].filter(
+            Boolean
+          ) as PresetConfig[],
           level + 1,
           storybookOptions
         )),
@@ -333,7 +334,7 @@ async function loadPresets(
   }, []);
 }
 
-function applyPresets(
+async function applyPresets(
   presets: LoadedPreset[],
   extension: string,
   config: any,
@@ -413,7 +414,7 @@ export async function loadAllPresets(
 
   const presetsConfig: PresetConfig[] = [
     ...corePresets,
-    ...loadCustomPresets(options),
+    ...(await loadCustomPresets(options)),
     ...overridePresets,
   ];
 

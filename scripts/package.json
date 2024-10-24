@@ -132,6 +132,7 @@
     "glob": "^10.4.5",
     "http-server": "^14.1.1",
     "husky": "^4.3.7",
+    "jiti": "^2.3.3",
     "json5": "^2.2.3",
     "junit-xml": "^1.2.0",
     "knip": "^5.30.1",
@@ -186,9 +187,6 @@
     "window-size": "^1.1.1",
     "yaml": "^2.4.5",
     "zod": "^3.23.8"
-  },
-  "devDependencies": {
-    "jiti": "^1.21.6"
   },
   "optionalDependencies": {
     "@verdaccio/types": "^10.8.0",

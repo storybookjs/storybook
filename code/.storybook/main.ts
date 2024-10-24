@@ -1,5 +1,7 @@
 import { join } from 'node:path';
 
+import { mergeConfig } from 'vite';
+
 import type { StorybookConfig } from '../frameworks/react-vite';
 
 const componentsPath = join(__dirname, '../core/src/components');
@@ -135,8 +137,6 @@ const config: StorybookConfig = {
     backgroundsStoryGlobals: true,
   },
   viteFinal: async (viteConfig, { configType }) => {
-    const { mergeConfig } = await import('vite');
-
     return mergeConfig(viteConfig, {
       resolve: {
         alias: {
@@ -162,5 +162,9 @@ const config: StorybookConfig = {
   },
   // logLevel: 'debug',
 };
+
+// console.log({__filename, __dirname});
+
+// console.log(require.resolve('./main.ts'))
 
 export default config;

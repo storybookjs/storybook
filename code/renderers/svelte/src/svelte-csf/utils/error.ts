@@ -56,6 +56,12 @@ export abstract class StorybookSvelteCSFError extends Error {
    */
   readonly fromStorybook: true = true as const;
 
+  /**
+   * Any custom message to override the default error message.
+   * Vite overrides the `Error.message` property, so we support that.
+   */
+  private customMessage?: string;
+
   get fullErrorCode() {
     const paddedCode = String(this.code).padStart(4, '0');
     return `SB_SVELTE_CSF_${this.category}_${paddedCode}` as `SB_SVELTE_CSF_${this['category']}_${string}`;
@@ -74,6 +80,10 @@ export abstract class StorybookSvelteCSFError extends Error {
    * Generates the error message along with additional documentation link (if applicable).
    */
   get message() {
+    if(this.customMessage) {
+      return this.customMessage;
+    }
+
     let page: string | undefined;
 
     if (this.documentation === true) {
@@ -85,6 +95,14 @@ export abstract class StorybookSvelteCSFError extends Error {
     }
 
     return `${this.template()}${page != null ? `\n\nMore info: ${page}\n` : ''}`;
+  }
+
+  /**
+   * Allows anyone to set Error.message after creation, mimicking the native Error behavior.
+   * Vite does this sometimes.
+   */
+  set message(message: string) {
+    this.customMessage = message;
   }
 
   /**

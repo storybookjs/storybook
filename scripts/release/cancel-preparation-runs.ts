@@ -92,14 +92,14 @@ export const run = async () => {
   );
 
   if (result.some((r) => r.status === 'rejected')) {
-    console.warn('⚠️ Some runs could not be cancelled:');
+    console.warn('⚠️ Some runs could not be canceled:');
     result.forEach((r, index) => {
       if (r.status === 'rejected') {
         console.warn(`Run ID: ${runsToCancel[index].id} - Reason: ${r.reason}`);
       }
     });
   } else {
-    console.log('✅ Successfully cancelled all preparation runs.');
+    console.log('✅ Successfully canceled all preparation runs.');
   }
 };
 

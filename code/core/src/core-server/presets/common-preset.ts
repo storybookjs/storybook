@@ -304,7 +304,7 @@ export const experimental_serverChannel = async (
       TESTING_MODULE_PROGRESS_REPORT,
       async (payload: TestingModuleProgressReportPayload) => {
         if (
-          (payload.status === 'success' || payload.status === 'cancelled') &&
+          (payload.status === 'success' || payload.status === 'canceled') &&
           payload.progress?.finishedAt
         ) {
           await telemetry('testing-module-completed-report', {

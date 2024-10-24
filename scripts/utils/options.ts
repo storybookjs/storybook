@@ -267,7 +267,7 @@ export async function promptOptions<TOptions extends OptionSpecifier>(
 
   const selection = await prompts(questions, {
     onCancel: () => {
-      logger.log('Command cancelled by the user. Exiting...');
+      logger.log('Command canceled by the user. Exiting...');
       process.exit(1);
     },
   });

@@ -29,7 +29,7 @@ export type TestingModuleRunAllRequestPayload = {
 export type TestingModuleProgressReportPayload =
   | {
       providerId: TestProviderId;
-      status: 'success' | 'pending' | 'cancelled';
+      status: 'success' | 'pending' | 'canceled';
       cancellable?: boolean;
       progress?: TestingModuleProgressReportProgress;
       details?: { [key: string]: any };

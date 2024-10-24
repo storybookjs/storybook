@@ -17,14 +17,14 @@ test.describe('Next.js', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto(storybookUrl);
-    await new SbPage(page).waitUntilLoaded();
+    await new SbPage(page, expect).waitUntilLoaded();
   });
 
   test.describe('next/image', () => {
     let sbPage: SbPage;
 
     test.beforeEach(async ({ page }) => {
-      sbPage = new SbPage(page);
+      sbPage = new SbPage(page, expect);
     });
 
     // eslint-disable-next-line playwright/no-skipped-test -- test is flaky, investigate why
@@ -51,7 +51,7 @@ test.describe('Next.js', () => {
     let sbPage: SbPage;
 
     test.beforeEach(async ({ page }) => {
-      sbPage = new SbPage(page);
+      sbPage = new SbPage(page, expect);
 
       await sbPage.navigateToStory(
         'stories/frameworks/nextjs-nextjs-default-ts/Navigation',
@@ -86,7 +86,7 @@ test.describe('Next.js', () => {
     let sbPage: SbPage;
 
     test.beforeEach(async ({ page }) => {
-      sbPage = new SbPage(page);
+      sbPage = new SbPage(page, expect);
 
       await sbPage.navigateToStory('stories/frameworks/nextjs-nextjs-default-ts/Router', 'default');
       root = sbPage.previewRoot();

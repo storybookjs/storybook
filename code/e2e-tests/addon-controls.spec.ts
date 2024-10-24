@@ -8,7 +8,7 @@ const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 test.describe('addon-controls', () => {
   test('should change component when changing controls', async ({ page }) => {
     await page.goto(storybookUrl);
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.waitUntilLoaded();
 
     await sbPage.navigateToStory('example/button', 'primary');
@@ -65,7 +65,7 @@ test.describe('addon-controls', () => {
   test('should apply controls automatically when passed via url', async ({ page }) => {
     await page.goto(`${storybookUrl}?path=/story/example-button--primary&args=label:Hello+world`);
 
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.waitUntilLoaded();
     await expect(sbPage.previewRoot().locator('button')).toContainText('Hello world');
 
@@ -77,7 +77,7 @@ test.describe('addon-controls', () => {
   test('should set select option when value contains double spaces', async ({ page }) => {
     await page.goto(`${storybookUrl}?path=/story/addons-controls-basics--undefined`);
 
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.waitUntilLoaded();
     await sbPage.viewAddonPanel('Controls');
     await sbPage.panelContent().locator('#control-select').selectOption('double  space');
@@ -89,7 +89,7 @@ test.describe('addon-controls', () => {
   test('should set multiselect option when value contains double spaces', async ({ page }) => {
     await page.goto(`${storybookUrl}?path=/story/addons-controls-basics--undefined`);
 
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.waitUntilLoaded();
     await sbPage.viewAddonPanel('Controls');
     await sbPage.panelContent().locator('#control-multiSelect').selectOption('double  space');

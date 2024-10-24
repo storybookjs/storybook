@@ -8,7 +8,7 @@
     "dev": "next dev",
     "jest": "jest",
     "lint": "next lint",
-    "playwright": "echo 'No playwright setup yet'",
+    "playwright-ct": "echo 'No playwright setup yet'",
     "start": "next start",
     "storybook": "storybook dev -p 6006",
     "vitest": "echo 'Vitest is not supported in Next.js testing'"

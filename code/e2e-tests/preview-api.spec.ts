@@ -12,7 +12,7 @@ test.describe('preview-api', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(storybookUrl);
 
-    await new SbPage(page).waitUntilLoaded();
+    await new SbPage(page, expect).waitUntilLoaded();
   });
 
   test('should pass over shortcuts, but not from play functions, story', async ({ page }) => {
@@ -21,13 +21,13 @@ test.describe('preview-api', () => {
       `Skipping ${templateName}, which does not support addon-interactions`
     );
 
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.deepLinkToStory(storybookUrl, 'core/shortcuts', 'keydown-during-play');
     await expect(sbPage.page.locator('.sidebar-container')).toBeVisible();
 
     // wait for the play function to complete
-    await sbPage.viewAddonPanel('Interactions');
-    const interactionsTab = page.locator('#tabbutton-storybook-interactions-panel');
+    await sbPage.viewAddonPanel('Component tests');
+    const interactionsTab = page.locator('#tabbutton-storybook-test-panel');
     await expect(interactionsTab).toBeVisible();
     const panel = sbPage.panelContent();
     const runStatusBadge = panel.locator('[aria-label="Status of the test run"]');
@@ -45,7 +45,7 @@ test.describe('preview-api', () => {
       `Skipping ${templateName}, which does not support addon-interactions`
     );
 
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.deepLinkToStory(storybookUrl, 'core/shortcuts', 'docs');
 
     await expect(sbPage.page.locator('.sidebar-container')).toBeVisible();
@@ -56,7 +56,7 @@ test.describe('preview-api', () => {
 
   // if rerenders were interleaved the button would have rendered "Error: Interleaved loaders. Changed arg"
   test('should only render once at a time when rapidly changing args', async ({ page }) => {
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory('core/rendering', 'slow-loader');
 
     const root = sbPage.previewRoot();
@@ -74,7 +74,7 @@ test.describe('preview-api', () => {
   });
 
   test('should reload plage when remounting while loading', async ({ page }) => {
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory('core/rendering', 'slow-loader');
 
     const root = sbPage.previewRoot();

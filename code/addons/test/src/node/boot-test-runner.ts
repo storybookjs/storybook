@@ -21,7 +21,7 @@ const MAX_START_TIME = 30000;
 
 // This path is a bit confusing, but essentially `boot-test-runner` gets bundled into the preset bundle
 // which is at the root. Then, from the root, we want to load `node/vitest.mjs`
-const vitestModulePath = join(__dirname, 'node', 'vitest.mjs');
+const vitestModulePath = join(__dirname, 'node', 'vitest.js');
 
 let child: null | ChildProcess;
 let ready = false;

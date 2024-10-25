@@ -1,7 +1,7 @@
 {
   "builders": {
     "build-storybook": {
-      "implementation": "./build-storybook",
+      "implementation": "./build-storybook/index.js",
       "schema": "./build-storybook/schema.json",
       "description": "Build storybook"
     },

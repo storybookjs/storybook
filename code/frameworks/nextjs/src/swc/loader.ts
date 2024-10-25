@@ -7,7 +7,7 @@ import type { Options } from 'storybook/internal/types';
 import { getVirtualModules } from '@storybook/builder-webpack5';
 
 import type { NextConfig } from 'next';
-import loadJsConfig from 'next/dist/build/load-jsconfig';
+import loadJsConfig from 'next/dist/build/load-jsconfig.js';
 import type { Configuration as WebpackConfig } from 'webpack';
 
 export const configureSWCLoader = async (

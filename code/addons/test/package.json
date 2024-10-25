@@ -23,6 +23,7 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -46,7 +47,7 @@
     },
     "./preview": {
       "types": "./dist/preview.d.ts",
-      "defau;t": "./dist/preview.js"
+      "default": "./dist/preview.js"
     },
     "./manager": "./dist/manager.js",
     "./preset": "./dist/preset.js",

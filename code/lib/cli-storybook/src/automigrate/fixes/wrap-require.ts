@@ -57,7 +57,7 @@ export const wrapRequire: Fix<WrapRequireRunOptions> = {
     } project. 
     For Storybook to work correctly, some fields in your main config must be updated. We can do this for you automatically.
     
-    More info: https://storybook.js.org/docs/react/faq#how-do-i-fix-module-resolution-in-special-environments`;
+    More info: https://storybook.js.org/docs/faq#how-do-i-fix-module-resolution-in-special-environments`;
   },
 
   async run({ dryRun, mainConfigPath, result }) {

@@ -1,9 +1,9 @@
-import type { PlayFunctionContext } from '@storybook/types';
-import type { ComponentProps, Snippet } from 'svelte';
+import type { StoryContext as StorybookStoryContext } from '@storybook/types';
+import { createRawSnippet, type ComponentProps, type Snippet } from 'svelte';
 import type { Primitive } from 'type-fest';
 import { describe, expectTypeOf, it } from 'vitest';
 
-import StoryComponent from "#runtime/Story.svelte";
+import StoryComponent from '#runtime/Story.svelte';
 import { defineMeta, type Args, type StoryContext } from '#index';
 import type {
   Meta,
@@ -19,7 +19,9 @@ describe(defineMeta.name, () => {
     const { Story, meta } = defineMeta({
       component: Button,
       args: {
-        children: 'Click me',
+        children: createRawSnippet(() => ({
+          render: () => 'Click me',
+        })),
         onclick: (event) => {
           expectTypeOf(event).not.toBeAny();
           expectTypeOf(event).toEqualTypeOf<
@@ -29,11 +31,11 @@ describe(defineMeta.name, () => {
       },
       play(context) {
         expectTypeOf(context).not.toBeAny();
-        expectTypeOf(context).toMatchTypeOf<PlayFunctionContext<SvelteRenderer<typeof Button>>>();
+        expectTypeOf(context).toMatchTypeOf<StorybookStoryContext<SvelteRenderer<typeof Button>>>();
       },
     });
 
-    expectTypeOf(Story).toMatchTypeOf < typeof StoryComponent<typeof Button>();
+    expectTypeOf(Story).toMatchTypeOf<typeof StoryComponent<typeof Button>>();
     expectTypeOf(meta).toMatchTypeOf<Meta<typeof Button>>();
   });
 });
@@ -43,7 +45,9 @@ describe("type helper for snippets 'Args'", () => {
     const { Story } = defineMeta({
       component: Button,
       args: {
-        children: 'Click me',
+        children: createRawSnippet(() => ({
+          render: () => 'Click me',
+        })),
         onclick: (event) => {
           expectTypeOf(event).not.toBeAny();
           expectTypeOf(event).toEqualTypeOf<
@@ -53,14 +57,14 @@ describe("type helper for snippets 'Args'", () => {
       },
       play(context) {
         expectTypeOf(context).not.toBeAny();
-        expectTypeOf(context).toMatchTypeOf<PlayFunctionContext<SvelteRenderer<typeof Button>>>();
+        expectTypeOf(context).toMatchTypeOf<StorybookStoryContext<SvelteRenderer<typeof Button>>>();
       },
     });
     expectTypeOf<Args<typeof Story>>().not.toBeNever();
     expectTypeOf<Args<typeof Story>>().not.toBeNullable();
     expectTypeOf<Args<typeof Story>>().toMatchTypeOf<StoryAnnotations<typeof Button>['args']>();
     expectTypeOf<Args<typeof Story>['children']>().toMatchTypeOf<Snippet | Primitive>();
-    expectTypeOf<Args<typeof Story>['children']>().toBeNullable();
+    expectTypeOf<Args<typeof Story>['children']>().not.toBeNullable();
   });
 });
 
@@ -69,7 +73,9 @@ describe("type helper for snippets 'StoryContext'", () => {
     const { Story, meta } = defineMeta({
       component: Button,
       args: {
-        children: 'Click me',
+        children: createRawSnippet(() => ({
+          render: () => 'Click me',
+        })),
         onclick: (event) => {
           expectTypeOf(event).not.toBeAny();
           expectTypeOf(event).toEqualTypeOf<
@@ -79,7 +85,7 @@ describe("type helper for snippets 'StoryContext'", () => {
       },
       play(context) {
         expectTypeOf(context).not.toBeAny();
-        expectTypeOf(context).toMatchTypeOf<PlayFunctionContext<SvelteRenderer<typeof Button>>>();
+        expectTypeOf(context).toMatchTypeOf<StorybookStoryContext<SvelteRenderer<typeof Button>>>();
       },
     });
 
@@ -92,7 +98,9 @@ describe("component 'Story' destructured from 'defineMeta", () => {
     const { Story } = defineMeta({
       component: Button,
       args: {
-        children: 'Click me',
+        children: createRawSnippet(() => ({
+          render: () => 'Click me',
+        })),
       },
     });
 
@@ -108,7 +116,7 @@ describe("component 'Story' destructured from 'defineMeta", () => {
     expectTypeOf<TStoryProps['args']>().toBeNullable();
     expectTypeOf<NonNullable<TStoryProps['args']>>().toHaveProperty('size');
     expectTypeOf<NonNullable<TStoryProps['args']>>().toHaveProperty('children');
-    expectTypeOf<NonNullable<TStoryProps['args']>['children']>().toBeNullable();
+    expectTypeOf<NonNullable<TStoryProps['args']>['children']>().not.toBeNullable();
     expectTypeOf<TStoryProps['play']>().toBeNullable();
   });
 });

@@ -13,36 +13,39 @@ import LegacyStoryComponent from './runtime/LegacyStory.svelte';
 // TODO: Remove in next major release
 import LegacyTemplateComponent from './runtime/LegacyTemplate.svelte';
 // FIXME: Testing, remove before release
-import Button from '../examples/components/Button.svelte';
+import Button from './Button.svelte';
 // FIXME: Testing, remove before release
-import { mount } from 'svelte';
+import { createRawSnippet, mount } from 'svelte';
 
 export { setTemplate } from './runtime/contexts/template.svelte';
 
-
-export function defineMeta<
-  const TCmpOrArgs extends CmpOrArgs,
->(meta: MetaType<TCmpOrArgs>) {
+export function defineMeta<const TCmpOrArgs extends CmpOrArgs>(meta: MetaType<TCmpOrArgs>) {
   return {
     Story: StoryComponent as typeof StoryComponent<TCmpOrArgs>,
     meta,
-  }
+  };
 }
 
 // FIXME: Testing, remove before release
 const { Story } = defineMeta({
   component: Button,
   args: {
-    size: "small"
+    size: 'small',
   },
 });
 
 // FIXME: Testing, remove before release
 mount(Story, {
   props: {
-    name: "Primary",
+    name: 'Primary',
     args: {
-      primary: true
+      size: 'small',
+      primary: true,
+      children: createRawSnippet(() => {
+        return {
+          render: () => 'Click me',
+        };
+      }),
     },
     play: (context) => {
       context.args.size;
@@ -51,13 +54,15 @@ mount(Story, {
   target: window.document,
 });
 
-export type Args<TStoryCmp> =
-  TStoryCmp extends typeof StoryComponent<infer TCmpOrArgs extends CmpOrArgs>
+export type Args<TStoryCmp> = TStoryCmp extends typeof StoryComponent<
+  infer TCmpOrArgs extends CmpOrArgs
+>
   ? NonNullable<StoryAnnotations<TCmpOrArgs>['args']>
   : never;
 
-export type StoryContext<TStoryCmp> =
-  TStoryCmp extends typeof StoryComponent<infer TCmpOrArgs extends CmpOrArgs>
+export type StoryContext<TStoryCmp> = TStoryCmp extends typeof StoryComponent<
+  infer TCmpOrArgs extends CmpOrArgs
+>
   ? BaseStoryContext<TCmpOrArgs>
   : never;
 

@@ -8,7 +8,6 @@ import type {
 import type { Component, ComponentProps } from 'svelte';
 import type { SetOptional, Simplify } from 'type-fest';
 
-
 export type Cmp = Component<any>;
 export type CmpOrArgs = Cmp | Args;
 
@@ -36,9 +35,7 @@ export interface SvelteStoryResult<TCmpOrArgs extends CmpOrArgs> {
   decorator?: TCmpOrArgs extends Cmp ? TCmpOrArgs : Component<TCmpOrArgs>;
 }
 
-export type StoryContext<
-  TCmpOrArgs extends CmpOrArgs = CmpOrArgs,
-> = BaseStoryContext<
+export type StoryContext<TCmpOrArgs extends CmpOrArgs = CmpOrArgs> = BaseStoryContext<
   // Renderer
   SvelteRenderer<TCmpOrArgs>,
   // Args

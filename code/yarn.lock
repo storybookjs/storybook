@@ -7028,6 +7028,7 @@ __metadata:
     magic-string: "npm:^0.30.0"
     svelte: "npm:^5.0.5"
     svelte-preprocess: "npm:^5.1.1"
+    svelte2tsx: "npm:^0.7.13"
     sveltedoc-parser: "npm:^4.2.1"
     ts-dedent: "npm:^2.2.0"
     typescript: "npm:^5.3.2"
@@ -12874,6 +12875,13 @@ __metadata:
   version: 0.2.2
   resolution: "decode-uri-component@npm:0.2.2"
   checksum: 10c0/1f4fa54eb740414a816b3f6c24818fbfcabd74ac478391e9f4e2282c994127db02010ce804f3d08e38255493cfe68608b3f5c8e09fd6efc4ae46c807691f7a31
+  languageName: node
+  linkType: hard
+
+"dedent-js@npm:^1.0.1":
+  version: 1.0.1
+  resolution: "dedent-js@npm:1.0.1"
+  checksum: 10c0/a8cff2e02d5a1ce64615c5c53c9789e7ef1abb9ae7bf2322dc991fcbaf08d901ace1a679c1e021de15a85db7787b8ccfb02011e1f394afef0f698fc857a47009
   languageName: node
   linkType: hard
 
@@ -22435,7 +22443,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"pascal-case@npm:^3.1.2":
+"pascal-case@npm:^3.1.1, pascal-case@npm:^3.1.2":
   version: 3.1.2
   resolution: "pascal-case@npm:3.1.2"
   dependencies:
@@ -26766,6 +26774,19 @@ __metadata:
     typescript:
       optional: true
   checksum: 10c0/8de6571ddca032dc7a33c37a6cd7caa72eeabf6acbe81924e26f14e9f5de8bbf2806c86d1ac3cb435923c3953d0d9365dfbe2a8c94cd3b383ecfe50957e1b8f9
+  languageName: node
+  linkType: hard
+
+"svelte2tsx@npm:^0.7.13":
+  version: 0.7.13
+  resolution: "svelte2tsx@npm:0.7.13"
+  dependencies:
+    dedent-js: "npm:^1.0.1"
+    pascal-case: "npm:^3.1.1"
+  peerDependencies:
+    svelte: ^3.55 || ^4.0.0-next.0 || ^4.0 || ^5.0.0-next.0
+    typescript: ^4.9.4 || ^5.0.0
+  checksum: 10c0/a6df2873e551d116bae8b4664b1838a52c6aa50ad50e30e41611e8bf390c525ceb97b53d034f2e0030a640e157e1f88ac33d52b6e4abb54861b3fc120aae82f7
   languageName: node
   linkType: hard
 

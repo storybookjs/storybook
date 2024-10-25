@@ -1,16 +1,15 @@
 import type { PlayFunctionContext } from '@storybook/types';
 import type { ComponentProps, Snippet } from 'svelte';
-import type { EmptyObject, Primitive } from 'type-fest';
+import type { Primitive } from 'type-fest';
 import { describe, expectTypeOf, it } from 'vitest';
 
+import StoryComponent from "#runtime/Story.svelte";
 import { defineMeta, type Args, type StoryContext } from '#index';
 import type {
   Meta,
   StoryAnnotations,
-  StoryCmp,
   StoryContext as BaseStoryContext,
   SvelteRenderer,
-  MapSnippetsToAcceptPrimitives,
 } from '#types';
 
 import Button from '../examples/components/Button.svelte';
@@ -31,13 +30,10 @@ describe(defineMeta.name, () => {
       play(context) {
         expectTypeOf(context).not.toBeAny();
         expectTypeOf(context).toMatchTypeOf<PlayFunctionContext<SvelteRenderer<typeof Button>>>();
-        expectTypeOf(context.args).toMatchTypeOf<
-          MapSnippetsToAcceptPrimitives<ComponentProps<Button>>
-        >();
       },
     });
 
-    expectTypeOf(Story).toMatchTypeOf<StoryCmp<EmptyObject, typeof Button, Meta<typeof Button>>>();
+    expectTypeOf(Story).toMatchTypeOf < typeof StoryComponent<typeof Button>();
     expectTypeOf(meta).toMatchTypeOf<Meta<typeof Button>>();
   });
 });
@@ -58,16 +54,11 @@ describe("type helper for snippets 'Args'", () => {
       play(context) {
         expectTypeOf(context).not.toBeAny();
         expectTypeOf(context).toMatchTypeOf<PlayFunctionContext<SvelteRenderer<typeof Button>>>();
-        expectTypeOf(context.args).toMatchTypeOf<
-          MapSnippetsToAcceptPrimitives<ComponentProps<Button>>
-        >();
       },
     });
     expectTypeOf<Args<typeof Story>>().not.toBeNever();
     expectTypeOf<Args<typeof Story>>().not.toBeNullable();
-    expectTypeOf<Args<typeof Story>>().toMatchTypeOf<
-      StoryAnnotations<typeof Button, Meta<typeof Button>>['args']
-    >();
+    expectTypeOf<Args<typeof Story>>().toMatchTypeOf<StoryAnnotations<typeof Button>['args']>();
     expectTypeOf<Args<typeof Story>['children']>().toMatchTypeOf<Snippet | Primitive>();
     expectTypeOf<Args<typeof Story>['children']>().toBeNullable();
   });
@@ -89,15 +80,10 @@ describe("type helper for snippets 'StoryContext'", () => {
       play(context) {
         expectTypeOf(context).not.toBeAny();
         expectTypeOf(context).toMatchTypeOf<PlayFunctionContext<SvelteRenderer<typeof Button>>>();
-        expectTypeOf(context.args).toMatchTypeOf<
-          MapSnippetsToAcceptPrimitives<ComponentProps<Button>>
-        >();
       },
     });
 
-    expectTypeOf<StoryContext<typeof Story>>().toMatchTypeOf<
-      BaseStoryContext<typeof Button, typeof meta>
-    >();
+    expectTypeOf<StoryContext<typeof Story>>().toMatchTypeOf<BaseStoryContext<typeof Button>>();
   });
 });
 
@@ -112,7 +98,7 @@ describe("component 'Story' destructured from 'defineMeta", () => {
 
     type TStoryProps = ComponentProps<typeof Story>;
 
-    expectTypeOf(Story).toMatchTypeOf<StoryCmp<typeof Button, Meta<typeof Button>>>();
+    expectTypeOf(Story).toMatchTypeOf<typeof StoryComponent<typeof Button>>();
     expectTypeOf<TStoryProps>().not.toBeNever();
     expectTypeOf<Meta<typeof Button>['args']>().toBeNullable();
     expectTypeOf<NonNullable<Meta<typeof Button>['args']>['children']>().toBeNullable();

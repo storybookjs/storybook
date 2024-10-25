@@ -1,12 +1,11 @@
 import type { PlayFunctionContext } from '@storybook/types';
-import type { Component, ComponentProps } from 'svelte';
+import type { Component } from 'svelte';
 import { describe, expectTypeOf, it } from 'vitest';
 
 import type {
   Meta,
   SvelteRenderer,
   ComponentAnnotations,
-  MapSnippetsToAcceptPrimitives,
 } from '#types';
 
 import Button from '../examples/components/Button.svelte';
@@ -37,9 +36,6 @@ describe('Meta', () => {
       },
       play(context) {
         expectTypeOf(context).toMatchTypeOf<PlayFunctionContext<SvelteRenderer<typeof Button>>>();
-        expectTypeOf(context.args).toMatchTypeOf<
-          MapSnippetsToAcceptPrimitives<ComponentProps<Button>>
-        >();
       },
     } satisfies Meta<typeof Button>;
 

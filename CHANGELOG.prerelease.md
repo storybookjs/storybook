@@ -1,3 +1,8 @@
+## 8.4.0-beta.0
+
+- Core: Add unified UI Testing Module - [#29241](https://github.com/storybookjs/storybook/pull/29241), thanks @yannbf!
+- Svelte: Improve argTypes inference with `svelte2tsx` - support runes - [#29423](https://github.com/storybookjs/storybook/pull/29423), thanks @JReinhold!
+
 ## 8.4.0-alpha.8
 
 - Addon-Test: Support for `@vitest/browser` v2.1.2 - [#29407](https://github.com/storybookjs/storybook/pull/29407), thanks @strozw!

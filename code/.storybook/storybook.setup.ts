@@ -3,7 +3,6 @@ import { beforeAll, vi, expect as vitestExpect } from 'vitest';
 import { setProjectAnnotations } from '@storybook/react';
 import { userEvent as storybookEvent, expect as storybookExpect } from '@storybook/test';
 
-// eslint-disable-next-line import/namespace
 import * as testAnnotations from '@storybook/experimental-addon-test/preview';
 
 import * as coreAnnotations from '../addons/toolbars/template/stories/preview';

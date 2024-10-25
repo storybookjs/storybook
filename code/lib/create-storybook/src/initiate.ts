@@ -171,7 +171,7 @@ const installStorybook = async <Project extends ProjectType>(
       default:
         paddedLog(`We couldn't detect your project type. (code: ${projectType})`);
         paddedLog(
-          'You can specify a project type explicitly via `storybook init --type <type>`, see our docs on how to configure Storybook for your framework: https://storybook.js.org/docs/react/get-started/install'
+          'You can specify a project type explicitly via `storybook init --type <type>`, see our docs on how to configure Storybook for your framework: https://storybook.js.org/docs/get-started/install'
         );
 
         // Add a new line for the clear visibility.

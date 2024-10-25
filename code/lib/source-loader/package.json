@@ -1,6 +1,6 @@
 {
   "name": "@storybook/source-loader",
-  "version": "8.4.0-alpha.8",
+  "version": "8.4.0-beta.0",
   "description": "Source loader",
   "keywords": [
     "lib",

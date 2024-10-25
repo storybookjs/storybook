@@ -104,8 +104,10 @@ export const init: ModuleFn = ({ store }) => {
         }
       }
 
-      if (subpath) {
-        url += `${subpath}/`;
+      const [cleanedSubpath, hash] = subpath?.split('#') || [];
+
+      if (cleanedSubpath) {
+        url += `${cleanedSubpath}/`;
       }
 
       if (renderer && typeof global.STORYBOOK_RENDERER !== 'undefined') {
@@ -114,6 +116,10 @@ export const init: ModuleFn = ({ store }) => {
         if (rendererName) {
           url += `?renderer=${normalizeRendererName(rendererName)}`;
         }
+      }
+
+      if (hash) {
+        url += `#${hash}`;
       }
 
       return url;

@@ -7,13 +7,13 @@ import {
   CollapseIcon as CollapseIconSvg,
   ExpandAltIcon,
   StatusFailIcon,
-  StatusPassIcon,
   StatusWarnIcon,
   SyncIcon,
 } from '@storybook/icons';
-import type { API_StatusValue, StoryId } from '@storybook/types';
+import type { API_HashEntry, API_StatusValue, StoryId } from '@storybook/types';
 
 import { PRELOAD_ENTRIES } from '@storybook/core/core-events';
+import { useStorybookApi } from '@storybook/core/manager-api';
 import type {
   API,
   ComponentEntry,
@@ -22,7 +22,6 @@ import type {
   StoriesHash,
   StoryEntry,
 } from '@storybook/core/manager-api';
-import { useStorybookApi } from '@storybook/core/manager-api';
 
 import { transparentize } from 'polished';
 
@@ -43,6 +42,9 @@ import { CollapseIcon } from './components/CollapseIcon';
 import type { Highlight, Item } from './types';
 import type { ExpandAction, ExpandedState } from './useExpanded';
 import { useExpanded } from './useExpanded';
+
+export const TEST_ADDON_ID = 'storybook/test';
+export const TEST_PROVIDER_ID = `${TEST_ADDON_ID}/test-provider`;
 
 const Container = styled.div<{ hasOrphans: boolean }>((props) => ({
   marginTop: props.hasOrphans ? 20 : 0,
@@ -133,6 +135,7 @@ interface NodeProps {
   status: State['status'][keyof State['status']];
   groupStatus: Record<StoryId, API_StatusValue>;
   api: API;
+  collapsedData: Record<string, API_HashEntry>;
 }
 
 const Node = React.memo<NodeProps>(function Node({
@@ -149,6 +152,7 @@ const Node = React.memo<NodeProps>(function Node({
   isExpanded,
   setExpanded,
   onSelectStoryId,
+  collapsedData,
   api,
 }) {
   const { isDesktop, isMobile, setMobileMenuOpen } = useLayout();
@@ -218,8 +222,9 @@ const Node = React.memo<NodeProps>(function Node({
                     id: addonId,
                     title: value.title,
                     description: value.description,
+                    'aria-label': `Test status for ${value.title}: ${value.status}`,
                     icon: {
-                      success: <StatusPassIcon color={theme.color.positive} />,
+                      success: null, // We don't show a checkmark, to avoid clutter
                       error: <StatusFailIcon color={theme.color.negative} />,
                       warn: <StatusWarnIcon color={theme.color.warning} />,
                       pending: <SyncIcon size={12} color={theme.color.defaultText} />,
@@ -233,7 +238,13 @@ const Node = React.memo<NodeProps>(function Node({
               />
             )}
           >
-            <StatusButton type="button" status={statusValue} selectedItem={isSelected}>
+            <StatusButton
+              aria-label={`Test status: ${statusValue}`}
+              role="status"
+              type="button"
+              status={statusValue}
+              selectedItem={isSelected}
+            >
               {icon}
             </StatusButton>
           </WithTooltip>
@@ -560,9 +571,11 @@ export const Tree = React.memo<{
         return (
           // @ts-expect-error (TODO)
           <Root
+            api={api}
             key={id}
             item={item}
             refId={refId}
+            collapsedData={collapsedData}
             isOrphan={false}
             isDisplayed
             isSelected={selectedStoryId === itemId}
@@ -580,6 +593,7 @@ export const Tree = React.memo<{
       return (
         <Node
           api={api}
+          collapsedData={collapsedData}
           key={id}
           item={item}
           // @ts-expect-error (non strict)

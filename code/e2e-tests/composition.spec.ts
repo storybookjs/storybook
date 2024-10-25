@@ -13,7 +13,7 @@ test.describe('composition', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto(storybookUrl);
-    await new SbPage(page).waitUntilLoaded();
+    await new SbPage(page, expect).waitUntilLoaded();
   });
 
   test('should correctly filter composed stories', async ({ page }) => {

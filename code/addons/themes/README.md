@@ -12,7 +12,7 @@ Requires Storybook 7.0 or later. If you need to add it to your Storybook, you ca
 npm i -D @storybook/addon-themes
 ```
 
-Then, add following content to [`.storybook/main.js`](https://storybook.js.org/docs/react/configure/#configure-your-storybook-project):
+Then, add following content to [`.storybook/main.js`](https://storybook.js.org/docs/configure#configure-your-storybook-project):
 
 ```js
 export default {

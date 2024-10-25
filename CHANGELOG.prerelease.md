@@ -1,3 +1,19 @@
+## 8.4.0-beta.0
+
+- Core: Add unified UI Testing Module - [#29241](https://github.com/storybookjs/storybook/pull/29241), thanks @yannbf!
+- Svelte: Improve argTypes inference with `svelte2tsx` - support runes - [#29423](https://github.com/storybookjs/storybook/pull/29423), thanks @JReinhold!
+
+## 8.4.0-alpha.8
+
+- Addon-Test: Support for `@vitest/browser` v2.1.2 - [#29407](https://github.com/storybookjs/storybook/pull/29407), thanks @strozw!
+- ConfigFile: Fix `export { X }` parsing - [#29344](https://github.com/storybookjs/storybook/pull/29344), thanks @vctqs1!
+- Core: Fix building Storybook deleting project root files - [#29371](https://github.com/storybookjs/storybook/pull/29371), thanks @JReinhold!
+- Interactions: Escape xml of interactions errors - [#29414](https://github.com/storybookjs/storybook/pull/29414), thanks @kasperpeulen!
+- Svelte: Add v5 stories to CLI templates - [#29382](https://github.com/storybookjs/storybook/pull/29382), thanks @JReinhold!
+- Test: Remove unused `util` dependency - [#29310](https://github.com/storybookjs/storybook/pull/29310), thanks @JReinhold!
+- UI: Fix RefIndicator to use CheckIcon instead of string - [#29209](https://github.com/storybookjs/storybook/pull/29209), thanks @JSMike!
+- UI: Simple tag filtering - [#29333](https://github.com/storybookjs/storybook/pull/29333), thanks @shilman!
+
 ## 8.4.0-alpha.7
 
 - CLI: Install Svelte CSF v5 in Svelte5 projects - [#29323](https://github.com/storybookjs/storybook/pull/29323), thanks @shilman!

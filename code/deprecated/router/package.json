@@ -1,6 +1,6 @@
 {
   "name": "@storybook/router",
-  "version": "8.4.0-alpha.7",
+  "version": "8.4.0-beta.0",
   "description": "Core Storybook Router",
   "keywords": [
     "storybook"

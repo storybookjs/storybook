@@ -1,6 +1,6 @@
 {
   "name": "@storybook/source-loader",
-  "version": "8.4.0-alpha.7",
+  "version": "8.4.0-beta.0",
   "description": "Source loader",
   "keywords": [
     "lib",
@@ -45,7 +45,7 @@
   },
   "dependencies": {
     "@storybook/csf": "^0.1.11",
-    "es-toolkit": "^1.21.0",
+    "es-toolkit": "^1.22.0",
     "estraverse": "^5.2.0",
     "prettier": "^3.1.1"
   },

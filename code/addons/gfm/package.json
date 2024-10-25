@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-mdx-gfm",
-  "version": "8.4.0-alpha.7",
+  "version": "8.4.0-beta.0",
   "description": "GitHub Flavored Markdown in Storybook",
   "keywords": [
     "addon",

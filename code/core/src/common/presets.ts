@@ -205,17 +205,7 @@ export const resolveAddonName = async (
       ...(managerEntries.length ? { managerEntries } : {}),
       ...(previewFile
         ? {
-            previewAnnotations: [
-              previewFileAbsolute
-                ? {
-                    // TODO: Evaluate if searching for node_modules in a yarn pnp environment is correct
-                    bare: previewFile.includes('node_modules')
-                      ? stripAbsNodeModulesPath(previewFile)
-                      : previewFile,
-                    absolute: previewFileAbsolute,
-                  }
-                : previewFile,
-            ],
+            previewAnnotations: [previewFile],
           }
         : {}),
       ...(presetFile ? { presets: [{ name: presetFile, options }] } : {}),

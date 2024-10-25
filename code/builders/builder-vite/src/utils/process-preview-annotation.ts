@@ -11,16 +11,6 @@ import slash from 'slash';
  * source, we want URLs absolute relative to project root.
  */
 export function processPreviewAnnotation(path: PreviewAnnotation | undefined, projectRoot: string) {
-  // If entry is an object, take the first, which is the
-  // bare (non-absolute) specifier.
-  // This is so that webpack can use an absolute path, and
-  // continue supporting super-addons in pnp/pnpm without
-  // requiring them to re-export their sub-addons as we do
-  // in addon-essentials.
-  if (typeof path === 'object') {
-    return path.absolute;
-  }
-
   if (!path) {
     return;
   }

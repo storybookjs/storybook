@@ -30,17 +30,7 @@ export const getVirtualModules = async (options: Options) => {
 
   const previewAnnotations = [
     ...(await options.presets.apply<PreviewAnnotation[]>('previewAnnotations', [], options)).map(
-      (entry) => {
-        // If entry is an object, use the absolute import specifier.
-        // This is to maintain back-compat with community addons that bundle other addons
-        // and package managers that "hide" sub dependencies (e.g. pnpm / yarn pnp)
-        // The vite builder uses the bare import specifier.
-        if (typeof entry === 'object') {
-          return entry.absolute;
-        }
-
-        return slash(entry);
-      }
+      (entry) => slash(entry)
     ),
     loadPreviewOrConfigFile(options),
   ].filter(Boolean);

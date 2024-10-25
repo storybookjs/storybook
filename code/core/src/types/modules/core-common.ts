@@ -540,7 +540,7 @@ export interface CoreCommon_ResolvedAddonPreset {
   name: string;
 }
 
-export type PreviewAnnotation = string | { bare: string; absolute: string };
+export type PreviewAnnotation = string;
 
 export interface CoreCommon_ResolvedAddonVirtual {
   type: 'virtual';

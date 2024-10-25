@@ -30,8 +30,8 @@
       "default": "./dist/playwright.js"
     },
     "./preset": "./dist/preset.js",
-    "./dist/entry-preview.js": "./dist/entry-preview.js",
-    "./dist/entry-preview-docs.js": "./dist/entry-preview-docs.js",
+    "./entry-preview": "./dist/entry-preview.js",
+    "./entry-preview-docs": "./dist/entry-preview-docs.js",
     "./package.json": "./package.json",
     "./internal/PreviewRender.svelte": "./dist/components/PreviewRender.svelte",
     "./internal/SlotDecorator.svelte": "./dist/components/SlotDecorator.svelte",

@@ -29,15 +29,15 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./dist/framework-preset-svelte-docs": {
+    "./framework-preset-svelte-docs": {
       "types": "./dist/framework-preset-svelte-docs.d.ts",
       "default": "./dist/framework-preset-svelte-docs.js"
     },
-    "./dist/framework-preset-svelte": {
+    "./framework-preset-svelte": {
       "types": "./dist/framework-preset-svelte.d.ts",
       "default": "./dist/framework-preset-svelte.js"
     },
-    "./dist/svelte-docgen-loader": {
+    "./svelte-docgen-loader": {
       "types": "./dist/svelte-docgen-loader.d.ts",
       "default": "./dist/svelte-docgen-loader.js"
     },

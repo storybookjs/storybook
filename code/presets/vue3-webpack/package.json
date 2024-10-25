@@ -37,14 +37,6 @@
       "types": "./dist/framework-preset-vue3.d.ts",
       "default": "./dist/framework-preset-vue3.js"
     },
-    "./dist/framework-preset-vue3-docs": {
-      "types": "./dist/framework-preset-vue3-docs.d.ts",
-      "default": "./dist/framework-preset-vue3-docs.js"
-    },
-    "./dist/framework-preset-vue3": {
-      "types": "./dist/framework-preset-vue3.d.ts",
-      "default": "./dist/framework-preset-vue3.js"
-    },
     "./package.json": "./package.json"
   },
   "types": "dist/index.d.ts",

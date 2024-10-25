@@ -29,7 +29,6 @@
       "default": "./dist/index.js"
     },
     "./preview": "./dist/preview.js",
-    "./dist/preview.js": "./dist/preview.js",
     "./preset": "./dist/preset.js",
     "./vite-plugin": {
       "types": "./dist/vite-plugin.d.ts",

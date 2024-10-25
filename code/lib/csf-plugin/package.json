@@ -26,7 +26,7 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./dist/webpack-loader": {
+    "./webpack-loader": {
       "types": "./dist/webpack-loader.d.ts",
       "default": "./dist/webpack-loader.js"
     },

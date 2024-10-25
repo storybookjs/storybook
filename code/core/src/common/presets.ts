@@ -1,4 +1,8 @@
-import { join, parse } from 'node:path';
+import { create } from 'node:domain';
+import { stat } from 'node:fs/promises';
+import { createRequire } from 'node:module';
+import path, { join, parse } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import type {
   BuilderOptions,
@@ -82,7 +86,23 @@ export const resolveAddonName = async (
   options: any
 ): Promise<CoreCommon_ResolvedAddonPreset | CoreCommon_ResolvedAddonVirtual | undefined> => {
   const resolve = name.startsWith('/') ? safeResolve : safeResolveFrom.bind(null, configDir);
-  const resolved = resolve(name);
+  let resolved = resolve(name);
+
+  try {
+    const esmResolved = fileURLToPath(import.meta.resolve(name));
+    if ((await stat(esmResolved)).isFile()) {
+      resolved = esmResolved;
+    } else {
+      const require = createRequire(import.meta.url);
+      const esmResolvedRequireResolved = require.resolve(esmResolved);
+
+      if ((await stat(esmResolvedRequireResolved)).isFile()) {
+        resolved = esmResolvedRequireResolved;
+      }
+    }
+  } catch (err) {
+    //
+  }
 
   if (resolved) {
     const { dir: fdir, name: fname } = parse(resolved);
@@ -106,6 +126,22 @@ export const resolveAddonName = async (
   }
 
   const checkExists = async (exportName: string) => {
+    try {
+      const esmResolved = fileURLToPath(import.meta.resolve(`${name}${exportName}`));
+      if ((await stat(esmResolved)).isFile()) {
+        return `${name}${exportName}`;
+      } else {
+        const require = createRequire(import.meta.url);
+        const esmResolvedRequireResolved = require.resolve(esmResolved);
+
+        if ((await stat(esmResolvedRequireResolved)).isFile()) {
+          return `${name}${exportName}`;
+        }
+      }
+    } catch (err) {
+      //
+    }
+
     if (resolve(`${name}${exportName}`)) {
       return `${name}${exportName}`;
     }
@@ -120,6 +156,22 @@ export const resolveAddonName = async (
    * from the bare import, breaking in pnp/pnpm.
    */
   const absolutizeExport = async (exportName: string, preferMJS: boolean) => {
+    try {
+      const esmResolved = fileURLToPath(import.meta.resolve(`${name}${exportName}`));
+      if ((await stat(esmResolved)).isFile()) {
+        return `${name}${exportName}`;
+      } else {
+        const require = createRequire(import.meta.url);
+        const esmResolvedRequireResolved = require.resolve(esmResolved);
+
+        if ((await stat(esmResolvedRequireResolved)).isFile()) {
+          return `${name}${exportName}`;
+        }
+      }
+    } catch (err) {
+      //
+    }
+
     const found = resolve(`${name}${exportName}`);
 
     if (found) {
@@ -129,9 +181,6 @@ export const resolveAddonName = async (
   };
 
   const managerFile = await absolutizeExport(`/manager`, true);
-  const registerFile =
-    (await absolutizeExport(`/register`, true)) ||
-    (await absolutizeExport(`/register-panel`, true));
   const previewFile = await checkExists(`/preview`);
   const previewFileAbsolute = await absolutizeExport('/preview', true);
   const presetFile = await absolutizeExport(`/preset`, false);
@@ -143,15 +192,11 @@ export const resolveAddonName = async (
     };
   }
 
-  if (managerFile || registerFile || previewFile || presetFile) {
+  if (managerFile || previewFile || presetFile) {
     const managerEntries = [];
 
     if (managerFile) {
       managerEntries.push(managerFile);
-    }
-    // register file is the old way of registering addons
-    if (!managerFile && registerFile && !presetFile) {
-      managerEntries.push(registerFile);
     }
 
     return {
@@ -392,8 +437,6 @@ export async function getPresets(
   storybookOptions: InterPresetOptions
 ): Promise<Presets> {
   const loadedPresets: LoadedPreset[] = await loadPresets(presets, 0, storybookOptions);
-
-  // console.log({loadedPresets})
 
   return {
     apply: async (extension: string, config: any, args = {}) =>

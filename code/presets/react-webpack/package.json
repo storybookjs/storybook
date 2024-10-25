@@ -41,18 +41,6 @@
       "types": "./dist/loaders/react-docgen-loader.d.ts",
       "default": "./dist/loaders/react-docgen-loader.js"
     },
-    "./dist/framework-preset-cra": {
-      "types": "./dist/framework-preset-cra.d.ts",
-      "default": "./dist/framework-preset-cra.js"
-    },
-    "./dist/framework-preset-react-docs": {
-      "types": "./dist/framework-preset-react-docs.d.ts",
-      "default": "./dist/framework-preset-react-docs.js"
-    },
-    "./dist/loaders/react-docgen-loader": {
-      "types": "./dist/loaders/react-docgen-loader.d.ts",
-      "default": "./dist/loaders/react-docgen-loader.js"
-    },
     "./package.json": "./package.json"
   },
   "types": "dist/index.d.ts",

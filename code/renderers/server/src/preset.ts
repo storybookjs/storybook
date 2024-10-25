@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import type { ComponentTitle, PresetProperty, StoryName, Tag } from 'storybook/internal/types';
 
@@ -49,5 +49,7 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   }
   const result: string[] = [];
 
-  return result.concat(input).concat([join(__dirname, 'entry-preview.js')]);
+  return result
+    .concat(input)
+    .concat([fileURLToPath(import.meta.resolve('@storybook/server/entry-preview'))]);
 };

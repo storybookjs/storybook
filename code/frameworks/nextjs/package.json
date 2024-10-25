@@ -30,10 +30,6 @@
       "types": "./dist/image-context.d.ts",
       "default": "./dist/image-context.js"
     },
-    "./dist/image-context": {
-      "types": "./dist/image-context.d.ts",
-      "default": "./dist/image-context.js"
-    },
     "./preset": {
       "types": "./dist/preset.d.ts",
       "default": "./dist/preset.js"
@@ -42,16 +38,15 @@
       "types": "./dist/font/webpack/loader/storybook-nextjs-font-loader.d.ts",
       "default": "./dist/font/webpack/loader/storybook-nextjs-font-loader.js"
     },
-    "./dist/preview.js": "./dist/preview.js",
     "./next-image-loader-stub.js": {
       "types": "./dist/next-image-loader-stub.d.ts",
       "default": "./dist/next-image-loader-stub.js"
     },
-    "./dist/compatibility/segment.compat": {
+    "./compatibility/segment.compat": {
       "types": "./dist/compatibility/segment.compat.d.ts",
       "default": "./dist/compatibility/segment.compat.js"
     },
-    "./dist/compatibility/redirect-status-code.compat": {
+    "./compatibility/redirect-status-code.compat": {
       "types": "./dist/compatibility/redirect-status-code.compat.d.ts",
       "default": "./dist/compatibility/redirect-status-code.compat.js"
     },

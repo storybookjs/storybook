@@ -42,18 +42,6 @@
       "types": "./dist/blocks.d.ts",
       "default": "./dist/blocks.js"
     },
-    "./dist/preview": {
-      "types": "./dist/preview.d.ts",
-      "default": "./dist/preview.js"
-    },
-    "./dist/preset": {
-      "types": "./dist/preset.d.ts",
-      "default": "./dist/preset.js"
-    },
-    "./dist/shims/mdx-react-shim": {
-      "types": "./dist/shims/mdx-react-shim.d.ts",
-      "default": "./dist/shims/mdx-react-shim.js"
-    },
     "./mdx-react-shim": {
       "types": "./dist/shims/mdx-react-shim.d.ts",
       "default": "./dist/shims/mdx-react-shim.js"

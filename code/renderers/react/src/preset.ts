@@ -18,17 +18,9 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
 
   return result
     .concat(input)
-    .concat([fileURLToPath(import.meta.resolve('@storybook/react/entry-preview.js'))])
-    .concat(
-      docsEnabled
-        ? [fileURLToPath(import.meta.resolve('@storybook/react/entry-preview-docs.js'))]
-        : []
-    )
-    .concat(
-      features?.experimentalRSC
-        ? [fileURLToPath(import.meta.resolve('@storybook/react/entry-preview-rsc.js'))]
-        : []
-    );
+    .concat(['@storybook/react/entry-preview'])
+    .concat(docsEnabled ? ['@storybook/react/entry-preview-docs'] : [])
+    .concat(features?.experimentalRSC ? ['@storybook/react/entry-preview-rsc'] : []);
 };
 
 /**

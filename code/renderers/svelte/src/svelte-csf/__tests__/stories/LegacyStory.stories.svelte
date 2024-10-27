@@ -2,7 +2,7 @@
   import { Story, Template } from '@storybook/addon-svelte-csf';
   import type { Meta } from '@storybook/svelte';
 
-  import LegacyStory from './LegacyTemplate.svelte';
+  import LegacyStory from './LegacyStory.svelte';
 
   /**
    * Description set explicitly in the comment above export const meta.
@@ -15,7 +15,9 @@
    */
   export const meta = {
     title: 'LegacyStory',
+    // @ts-expect-error FIXME: Needs invesigation on `@storybook/svelte` types
     component: LegacyStory,
+    args: {},
     tags: ['autodocs'],
   } satisfies Meta<typeof LegacyStory>;
 

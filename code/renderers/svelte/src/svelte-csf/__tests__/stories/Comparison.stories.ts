@@ -24,6 +24,7 @@ const meta = {
   // @ts-expect-error
   component: Comparison,
   argTypes: {
+    // @ts-expect-error
     csf: { table: { disable: true } },
   },
   tags: ['autodocs', '!dev'],

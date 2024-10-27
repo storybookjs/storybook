@@ -11,15 +11,16 @@
 
   import { type StoryRendererContext } from './contexts/renderer.svelte';
 
-  type Props = ComponentProps<Story<Component>> & {
+  type $$Props = ComponentProps<Story<Component>> & {
     /**
      * Which one of `<Template>` id should be used for rendering this story children?
+     * @deprecated use Svelte [snippets]() instead.
+     * @see
      */
     template?: string | null;
   };
 
-  let { args }: Props = $props();
-
+  let args: $$Props['args'];
   let context: StoryRendererContext['storyContext'];
 </script>
 

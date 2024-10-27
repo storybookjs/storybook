@@ -32,7 +32,7 @@
   </LegacyStory>
 </Template>
 
-<Story name="Default" />
+<Story name="Default" autodocs />
 
 <Story name="Rounded" args={{ rounded: true }} />
 

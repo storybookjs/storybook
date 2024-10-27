@@ -1,14 +1,14 @@
 <script lang="ts">
-  import type { HTMLAttributes } from 'svelte/elements';
+  import type { HTMLButtonAttributes } from 'svelte/elements';
 
-  interface Props extends HTMLAttributes<HTMLButtonElement> {
+  interface $$Props extends HTMLButtonAttributes {
     rounded?: boolean;
   }
 
-  let { rounded = false, ...restProps }: Props = $props();
+  export let rounded = false;
 </script>
 
-<button class="button" class:rounded {...restProps}>
+<button class="button" class:rounded {...$$restProps}>
   <strong>{rounded ? 'Round' : 'Square'} corners</strong>
   <hr />
 </button>

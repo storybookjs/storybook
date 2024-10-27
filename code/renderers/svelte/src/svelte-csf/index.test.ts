@@ -3,8 +3,9 @@ import { createRawSnippet, type ComponentProps, type Snippet } from 'svelte';
 import type { Primitive } from 'type-fest';
 import { describe, expectTypeOf, it } from 'vitest';
 
-import StoryComponent from '#runtime/Story.svelte';
-import { defineMeta, type Args, type StoryContext } from '#index';
+import StoryComponent from './runtime/Story.svelte';
+
+import { defineMeta, type Args, type StoryContext } from './index';
 import type {
   Meta,
   StoryAnnotations,

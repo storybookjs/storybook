@@ -1,6 +1,3 @@
-// FIXME: Testing, remove before release
-import { createRawSnippet, mount } from 'svelte';
-
 import StoryComponent from './runtime/Story.svelte';
 // TODO: Remove in next major release
 import LegacyMetaComponent from './runtime/LegacyMeta.svelte';
@@ -8,8 +5,6 @@ import LegacyMetaComponent from './runtime/LegacyMeta.svelte';
 import LegacyStoryComponent from './runtime/LegacyStory.svelte';
 // TODO: Remove in next major release
 import LegacyTemplateComponent from './runtime/LegacyTemplate.svelte';
-// FIXME: Testing, remove before release
-import Button from './Button.svelte';
 
 export { setTemplate } from './runtime/contexts/template.svelte';
 import type {
@@ -25,48 +20,6 @@ export function defineMeta<const TCmp extends Cmp>(meta: MetaType<TCmp>) {
     meta,
   };
 }
-
-// FIXME: Testing, remove before release
-const { Story } = defineMeta({
-  component: Button,
-  args: {
-    size: 'small',
-  },
-});
-
-// FIXME: Testing, remove before release
-mount(Story, {
-  props: {
-    name: 'Primary',
-    args: {
-      size: 'small',
-      primary: true,
-      children: createRawSnippet(() => {
-        return {
-          render: () => 'Click me',
-        };
-      }),
-    },
-    play: (context) => {
-      context.args.size;
-    },
-  },
-  target: window.document,
-});
-
-// FIXME: Testing, remove before release
-mount(Button, {
-  props: {
-    size: 'small',
-    primary: true,
-    children: createRawSnippet(() => {
-      return {
-        render: () => 'Click me',
-      };
-    }),
-  },
-  target: window.document,
-});
 
 export type Args<TStoryCmp> = TStoryCmp extends typeof StoryComponent<infer TCmp extends Cmp>
   ? NonNullable<StoryAnnotations<TCmp>['args']>

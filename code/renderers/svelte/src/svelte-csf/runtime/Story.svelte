@@ -38,12 +38,12 @@
      * @deprecrated
      * Use `tags={['autodocs']}` instead.
      */
-    autodocs?: never;
+    autodocs?: boolean;
     /**
      * @deprecated
      * Use `parameters={{ docs: { source: { code: "..." } } }}` instead.
      */
-    source?: never;
+    source?: boolean | string;
   } & ({ exportName: string } | { name: string });
 
   const { children, name, exportName: exportNameProp, play, ...restProps }: Props = $props();

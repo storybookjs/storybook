@@ -1,5 +1,4 @@
 import type {
-  Args,
   ComponentAnnotations as BaseComponentAnnotations,
   StoryAnnotations as BaseStoryAnnotations,
   StoryContext as BaseStoryContext,
@@ -9,49 +8,44 @@ import type { Component, ComponentProps } from 'svelte';
 import type { SetOptional, Simplify } from 'type-fest';
 
 export type Cmp = Component<any>;
-export type CmpOrArgs = Cmp | Args;
 
 /**
  * Metadata to configure the stories for a component.
  *
  * @see [Default export](https://storybook.js.org/docs/formats/component-story-format/#default-export)
  */
-export type Meta<TCmpOrArgs extends CmpOrArgs> = ComponentAnnotations<TCmpOrArgs>;
+export type Meta<TCmp extends Cmp> = ComponentAnnotations<TCmp>;
 
-export type ComponentAnnotations<TCmpOrArgs extends CmpOrArgs> = BaseComponentAnnotations<
-  // Renderer
-  SvelteRenderer<TCmpOrArgs>,
-  TCmpOrArgs extends Cmp ? ComponentProps<TCmpOrArgs> : TCmpOrArgs
+export type ComponentAnnotations<TCmp extends Cmp> = BaseComponentAnnotations<
+  // 👇 Renderer
+  SvelteRenderer<TCmp>,
+  // 👇 Args
+  ComponentProps<TCmp>
 >;
 
-export interface SvelteRenderer<TCmpOrArgs extends CmpOrArgs> extends WebRenderer {
-  component: TCmpOrArgs extends Cmp ? TCmpOrArgs : Component<TCmpOrArgs>;
-  storyResult: SvelteStoryResult<TCmpOrArgs>;
+export interface SvelteRenderer<TCmp extends Cmp> extends WebRenderer {
+  component: TCmp;
+  storyResult: SvelteStoryResult<TCmp>;
 }
 
-export interface SvelteStoryResult<TCmpOrArgs extends CmpOrArgs> {
-  Component?: TCmpOrArgs extends Cmp ? TCmpOrArgs : Component<TCmpOrArgs>;
-  props?: TCmpOrArgs extends Cmp ? ComponentProps<TCmpOrArgs> : TCmpOrArgs;
-  decorator?: TCmpOrArgs extends Cmp ? TCmpOrArgs : Component<TCmpOrArgs>;
+export interface SvelteStoryResult<TCmp extends Cmp> {
+  Component?: TCmp;
+  props?: ComponentProps<TCmp>;
+  decorator?: TCmp;
 }
 
-export type StoryContext<TCmpOrArgs extends CmpOrArgs = CmpOrArgs> = BaseStoryContext<
+export type StoryContext<TCmp extends Cmp> = BaseStoryContext<
   // Renderer
-  SvelteRenderer<TCmpOrArgs>,
+  SvelteRenderer<TCmp>,
   // Args
-  Simplify<TCmpOrArgs extends Cmp ? ComponentProps<TCmpOrArgs> : TCmpOrArgs>
+  Simplify<TCmp>
 >;
 
-export type StoryAnnotations<TCmpOrArgs extends CmpOrArgs> = BaseStoryAnnotations<
-  // Renderer
-  SvelteRenderer<TCmpOrArgs>,
-  // All of the args - combining the component props and the ones from meta - defineMeta
-  TCmpOrArgs extends Cmp ? ComponentProps<TCmpOrArgs> : TCmpOrArgs,
-  // NOTE: This is supposed to set all of the args specified in 'defineMeta' to be optional for Story
-  Simplify<
-    SetOptional<
-      TCmpOrArgs extends Cmp ? ComponentProps<TCmpOrArgs> : TCmpOrArgs,
-      keyof Meta<TCmpOrArgs>
-    >
-  >
+export type StoryAnnotations<TCmp extends Cmp> = BaseStoryAnnotations<
+  // 👇 Renderer
+  SvelteRenderer<TCmp>,
+  // 👇 All of the args - combining the component props and the ones from meta - defineMeta
+  ComponentProps<TCmp>,
+  // NOTE: 👇 This is supposed to set all of the args specified in 'defineMeta' to be optional for Story
+  Partial<Simplify<SetOptional<ComponentProps<TCmp>, keyof Meta<TCmp>['args']>>>
 >;

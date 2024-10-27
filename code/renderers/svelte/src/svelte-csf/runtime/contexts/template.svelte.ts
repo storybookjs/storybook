@@ -1,12 +1,13 @@
 import { getContext, hasContext, setContext, type ComponentProps } from 'svelte';
 
-import type Story from '#runtime/Story.svelte';
-import type { CmpOrArgs } from '#types';
+import type Story from '../Story.svelte';
+
+import type { Cmp } from '../../types';
 
 const CONTEXT_KEYS = 'storybook-stories-template-snippet-context';
 
-function buildContext<TCmpOrArgs extends CmpOrArgs>() {
-  let template = $state<ComponentProps<typeof Story<TCmpOrArgs>>['children']>();
+function buildContext<TCmp extends Cmp>() {
+  let template = $state<ComponentProps<typeof Story<TCmp>>['children']>();
 
   function set(snippet?: typeof template) {
     template = snippet;
@@ -20,28 +21,24 @@ function buildContext<TCmpOrArgs extends CmpOrArgs>() {
   };
 }
 
-type StoriesTemplateContext<
-  TCmpOrArgs extends CmpOrArgs,
-> = ReturnType<typeof buildContext<TCmpOrArgs>>;
+type StoriesTemplateContext<TCmp extends Cmp> = ReturnType<typeof buildContext<TCmp>>;
 
-export function useStoriesTemplate<
-  TCmpOrArgs extends CmpOrArgs,
->() {
+export function useStoriesTemplate<TCmp extends Cmp>() {
   if (!hasContext(CONTEXT_KEYS)) {
-    setContext(CONTEXT_KEYS, buildContext<TCmpOrArgs>());
+    setContext(CONTEXT_KEYS, buildContext<TCmp>());
   }
 
-  return getContext<StoriesTemplateContext<TCmpOrArgs>>(CONTEXT_KEYS).template;
+  return getContext<StoriesTemplateContext<TCmp>>(CONTEXT_KEYS).template;
 }
 
-export function setTemplate<TCmpOrArgs extends CmpOrArgs>(
-  snippet?: StoriesTemplateContext<TCmpOrArgs>['template']
+export function setTemplate<TCmp extends Cmp>(
+  snippet?: StoriesTemplateContext<TCmp>['template']
 ): void {
   if (!hasContext(CONTEXT_KEYS)) {
-    setContext(CONTEXT_KEYS, buildContext<TCmpOrArgs>());
+    setContext(CONTEXT_KEYS, buildContext<TCmp>());
   }
 
-  const ctx = getContext<StoriesTemplateContext<TCmpOrArgs>>(CONTEXT_KEYS);
+  const ctx = getContext<StoriesTemplateContext<TCmp>>(CONTEXT_KEYS);
 
   ctx.set(snippet);
 }

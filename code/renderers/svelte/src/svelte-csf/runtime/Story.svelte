@@ -1,14 +1,14 @@
-<script lang="ts" generics="const TCmpOrArgs extends CmpOrArgs">
+<script lang="ts" generics="const TCmp extends Cmp">
   import type { Snippet } from 'svelte';
 
-  import { useStoriesExtractor } from '#runtime/contexts/extractor.svelte';
-  import { useStoryRenderer, type StoryRendererContext } from '#runtime/contexts/renderer.svelte';
-  import { useStoriesTemplate } from '#runtime/contexts/template.svelte';
+  import { useStoriesExtractor } from './contexts/extractor.svelte';
+  import { useStoryRenderer, type StoryRendererContext } from './contexts/renderer.svelte';
+  import { useStoriesTemplate } from './contexts/template.svelte';
 
-  import { storyNameToExportName } from '#utils/identifier-utils';
-  import type { CmpOrArgs, StoryAnnotations } from '#types';
+  import { storyNameToExportName } from '../utils/identifier-utils';
+  import type { Cmp, StoryAnnotations } from '../types';
 
-  type Props = Partial<StoryAnnotations<TCmpOrArgs>> & {
+  type Props = Partial<StoryAnnotations<TCmp>> & {
     /**
      * The content to render in the story, either as:
      * 1. A snippet taking args and storyContext as parameters
@@ -18,7 +18,7 @@
      */
     children?: Snippet<
       /* prettier ignore */
-      [StoryRendererContext<TCmpOrArgs>['args'], StoryRendererContext<TCmpOrArgs>['storyContext']]
+      [StoryRendererContext<TCmp>['args'], StoryRendererContext<TCmp>['storyContext']]
     >;
     /**
      * Name of the story. Can be omitted if `exportName` is provided.
@@ -49,9 +49,9 @@
   const { children, name, exportName: exportNameProp, play, ...restProps }: Props = $props();
   const exportName = exportNameProp ?? storyNameToExportName(name!);
 
-  const extractor = useStoriesExtractor<TCmpOrArgs>();
-  const renderer = useStoryRenderer<TCmpOrArgs>();
-  const template = useStoriesTemplate<TCmpOrArgs>();
+  const extractor = useStoriesExtractor<TCmp>();
+  const renderer = useStoryRenderer<TCmp>();
+  const template = useStoriesTemplate<TCmp>();
 
   const isCurrentlyViewed = $derived(
     !extractor.isExtracting && renderer.currentStoryExportName === exportName

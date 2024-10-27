@@ -6,6 +6,7 @@
     type StoryContext,
   } from '@storybook/addon-svelte-csf';
   import { fn } from '@storybook/test';
+  import { createRawSnippet } from 'svelte';
 
   import Button from './components/Button.svelte';
 
@@ -19,7 +20,7 @@
     component: Button,
     tags: ['autodocs'],
     args: {
-      children: 'Click me',
+      children: createRawSnippet(() => ({ render: () => 'Click me' })),
       onclick: onclickFn,
     },
     argTypes: {

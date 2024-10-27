@@ -9,10 +9,9 @@
 
   import type Story from './Story.svelte';
 
-  import { type StoryRendererContext } from '#runtime/contexts/renderer.svelte';
-  import type { Meta } from '#types';
+  import { type StoryRendererContext } from './contexts/renderer.svelte';
 
-  type Props = ComponentProps<Story<Component, Meta<Component>>> & {
+  type Props = ComponentProps<Story<Component>> & {
     /**
      * Which one of `<Template>` id should be used for rendering this story children?
      */

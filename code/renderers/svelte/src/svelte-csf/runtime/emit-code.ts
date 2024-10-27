@@ -1,16 +1,16 @@
 import { SourceType, SNIPPET_RENDERED } from '@storybook/docs-tools';
-
 import { addons } from '@storybook/preview-api';
 import type { StoryObj } from '@storybook/svelte';
 import { get } from 'es-toolkit/compat';
 import type { ComponentProps } from 'svelte';
 
-import type Story from '#runtime/Story.svelte';
-import type { CmpOrArgs, StoryContext } from '#types';
+import type Story from './Story.svelte';
+
+import type { Cmp, StoryContext } from '../types';
 
 type Params = {
-  args: ComponentProps<Story<CmpOrArgs>>['args'];
-  storyContext: StoryContext<CmpOrArgs>;
+  args: ComponentProps<Story<Cmp>>['args'];
+  storyContext: StoryContext<Cmp>;
 };
 
 const channel: ReturnType<(typeof addons)['getChannel']> | undefined = addons.getChannel();

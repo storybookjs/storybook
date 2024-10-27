@@ -20,11 +20,7 @@ describe(transformTemplateToSnippet.name, () => {
     `;
     const component = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
 
-    expect(
-      print(
-        transformTemplateToSnippet({ component })
-      )
-    ).toMatchInlineSnapshot(`
+    expect(print(transformTemplateToSnippet({ component }))).toMatchInlineSnapshot(`
       "{#snippet sb_default_template(args)}
       	<Button {...args} variant="primary" />
       {/snippet}"
@@ -43,11 +39,7 @@ describe(transformTemplateToSnippet.name, () => {
     `;
     const component = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
 
-    expect(
-      print(
-        transformTemplateToSnippet({ component })
-      )
-    ).toMatchInlineSnapshot(`
+    expect(print(transformTemplateToSnippet({ component }))).toMatchInlineSnapshot(`
 			"{#snippet coolTemplate(args)}
 				<Button {...args} variant="primary" />
 			{/snippet}"
@@ -66,11 +58,7 @@ describe(transformTemplateToSnippet.name, () => {
     `;
     const component = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
 
-    expect(
-      print(
-        transformTemplateToSnippet({ component })
-      )
-    ).toMatchInlineSnapshot(`
+    expect(print(transformTemplateToSnippet({ component }))).toMatchInlineSnapshot(`
       "{#snippet sb_default_template(_args, context)}
       	<p>{context.args}</p>
       {/snippet}"

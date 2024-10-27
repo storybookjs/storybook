@@ -64,7 +64,7 @@ describe("type helper for snippets 'Args'", () => {
     expectTypeOf<Args<typeof Story>>().not.toBeNullable();
     expectTypeOf<Args<typeof Story>>().toMatchTypeOf<StoryAnnotations<typeof Button>['args']>();
     expectTypeOf<Args<typeof Story>['children']>().toMatchTypeOf<Snippet | Primitive>();
-    expectTypeOf<Args<typeof Story>['children']>().not.toBeNullable();
+    expectTypeOf<Args<typeof Story>['children']>().toBeNullable();
   });
 });
 
@@ -90,6 +90,7 @@ describe("type helper for snippets 'StoryContext'", () => {
     });
 
     expectTypeOf<StoryContext<typeof Story>>().toMatchTypeOf<BaseStoryContext<typeof Button>>();
+    expectTypeOf(meta).toMatchTypeOf<Meta<typeof Button>>();
   });
 });
 
@@ -116,7 +117,7 @@ describe("component 'Story' destructured from 'defineMeta", () => {
     expectTypeOf<TStoryProps['args']>().toBeNullable();
     expectTypeOf<NonNullable<TStoryProps['args']>>().toHaveProperty('size');
     expectTypeOf<NonNullable<TStoryProps['args']>>().toHaveProperty('children');
-    expectTypeOf<NonNullable<TStoryProps['args']>['children']>().not.toBeNullable();
+    expectTypeOf<NonNullable<TStoryProps['args']>['children']>().toBeNullable();
     expectTypeOf<TStoryProps['play']>().toBeNullable();
   });
 });

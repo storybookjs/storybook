@@ -1,9 +1,5 @@
-import type {
-  Meta as MetaType,
-  StoryContext as BaseStoryContext,
-  StoryAnnotations,
-  CmpOrArgs,
-} from '#types';
+// FIXME: Testing, remove before release
+import { createRawSnippet, mount } from 'svelte';
 
 import StoryComponent from './runtime/Story.svelte';
 // TODO: Remove in next major release
@@ -14,14 +10,18 @@ import LegacyStoryComponent from './runtime/LegacyStory.svelte';
 import LegacyTemplateComponent from './runtime/LegacyTemplate.svelte';
 // FIXME: Testing, remove before release
 import Button from './Button.svelte';
-// FIXME: Testing, remove before release
-import { createRawSnippet, mount } from 'svelte';
 
 export { setTemplate } from './runtime/contexts/template.svelte';
+import type {
+  Meta as MetaType,
+  StoryContext as BaseStoryContext,
+  StoryAnnotations,
+  Cmp,
+} from './types';
 
-export function defineMeta<const TCmpOrArgs extends CmpOrArgs>(meta: MetaType<TCmpOrArgs>) {
+export function defineMeta<const TCmp extends Cmp>(meta: MetaType<TCmp>) {
   return {
-    Story: StoryComponent as typeof StoryComponent<TCmpOrArgs>,
+    Story: StoryComponent as typeof StoryComponent<TCmp>,
     meta,
   };
 }
@@ -54,16 +54,28 @@ mount(Story, {
   target: window.document,
 });
 
-export type Args<TStoryCmp> = TStoryCmp extends typeof StoryComponent<
-  infer TCmpOrArgs extends CmpOrArgs
->
-  ? NonNullable<StoryAnnotations<TCmpOrArgs>['args']>
+// FIXME: Testing, remove before release
+mount(Button, {
+  props: {
+    size: 'small',
+    primary: true,
+    children: createRawSnippet(() => {
+      return {
+        render: () => 'Click me',
+      };
+    }),
+  },
+  target: window.document,
+});
+
+export type Args<TStoryCmp> = TStoryCmp extends typeof StoryComponent<infer TCmp extends Cmp>
+  ? NonNullable<StoryAnnotations<TCmp>['args']>
   : never;
 
 export type StoryContext<TStoryCmp> = TStoryCmp extends typeof StoryComponent<
-  infer TCmpOrArgs extends CmpOrArgs
+  infer TCmp extends Cmp
 >
-  ? BaseStoryContext<TCmpOrArgs>
+  ? BaseStoryContext<TCmp>
   : never;
 
 // TODO: Remove in next major release

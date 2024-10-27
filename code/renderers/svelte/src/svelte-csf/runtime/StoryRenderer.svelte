@@ -1,21 +1,21 @@
 <script lang="ts">
   import type { Component } from 'svelte';
 
-  import { useStoryRenderer } from '#runtime/contexts/renderer.svelte';
-  import { emitCode } from '#runtime/emit-code';
+  import { useStoryRenderer } from './contexts/renderer.svelte';
+  import { emitCode } from './emit-code';
 
-  import type { CmpOrArgs, StoryAnnotations, StoryContext } from '#types';
+  import type { Cmp, StoryAnnotations, StoryContext } from '../types';
 
   type Props = {
     Stories: Component;
     exportName: string;
-    args: NonNullable<StoryAnnotations<CmpOrArgs>['args']>;
-    storyContext: StoryContext<CmpOrArgs>;
+    args: NonNullable<StoryAnnotations<Cmp>['args']>;
+    storyContext: StoryContext<Cmp>;
   };
 
   let { Stories, exportName, args, storyContext }: Props = $props();
 
-  const context = useStoryRenderer<CmpOrArgs>();
+  const context = useStoryRenderer<Cmp>();
 
   $effect(() => {
     context.set({

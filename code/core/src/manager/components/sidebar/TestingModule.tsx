@@ -1,6 +1,6 @@
 import React, { type SyntheticEvent, useEffect, useRef, useState } from 'react';
 
-import { Button } from '@storybook/core/components';
+import { Button, TooltipNote } from '@storybook/core/components';
 import { keyframes, styled } from '@storybook/core/theming';
 import {
   ChevronSmallUpIcon,
@@ -11,6 +11,8 @@ import {
 } from '@storybook/icons';
 
 import type { TestProviders } from '@storybook/core/core-events';
+
+import { WithTooltip } from '../../../components/components/tooltip/WithTooltip';
 
 const DEFAULT_HEIGHT = 500;
 
@@ -320,36 +322,48 @@ export const TestingModule = ({
             )}
 
             {errorCount > 0 && (
-              <StatusButton
-                id="errors-found-filter"
-                variant="ghost"
-                padding={errorCount < 10 ? 'medium' : 'small'}
-                status="negative"
-                active={errorsActive}
-                onClick={(e: SyntheticEvent) => {
-                  e.stopPropagation();
-                  setErrorsActive(!errorsActive);
-                }}
-                aria-label="Show errors"
+              <WithTooltip
+                hasChrome={false}
+                tooltip={<TooltipNote note="Toggle errors" />}
+                trigger="hover"
               >
-                {errorCount < 100 ? errorCount : '99+'}
-              </StatusButton>
+                <StatusButton
+                  id="errors-found-filter"
+                  variant="ghost"
+                  padding={errorCount < 10 ? 'medium' : 'small'}
+                  status="negative"
+                  active={errorsActive}
+                  onClick={(e: SyntheticEvent) => {
+                    e.stopPropagation();
+                    setErrorsActive(!errorsActive);
+                  }}
+                  aria-label="Toggle errors"
+                >
+                  {errorCount < 100 ? errorCount : '99+'}
+                </StatusButton>
+              </WithTooltip>
             )}
             {warningCount > 0 && (
-              <StatusButton
-                id="warnings-found-filter"
-                variant="ghost"
-                padding={warningCount < 10 ? 'medium' : 'small'}
-                status="warning"
-                active={warningsActive}
-                onClick={(e: SyntheticEvent) => {
-                  e.stopPropagation();
-                  setWarningsActive(!warningsActive);
-                }}
-                aria-label="Show warnings"
+              <WithTooltip
+                hasChrome={false}
+                tooltip={<TooltipNote note="Toggle warnings" />}
+                trigger="hover"
               >
-                {warningCount < 100 ? warningCount : '99+'}
-              </StatusButton>
+                <StatusButton
+                  id="warnings-found-filter"
+                  variant="ghost"
+                  padding={warningCount < 10 ? 'medium' : 'small'}
+                  status="warning"
+                  active={warningsActive}
+                  onClick={(e: SyntheticEvent) => {
+                    e.stopPropagation();
+                    setWarningsActive(!warningsActive);
+                  }}
+                  aria-label="Toggle warnings"
+                >
+                  {warningCount < 100 ? warningCount : '99+'}
+                </StatusButton>
+              </WithTooltip>
             )}
           </Filters>
         </Bar>

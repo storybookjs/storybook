@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import process from 'process';
 
-import { SbPage } from './util';
+import { SbPage, hasVitestIntegration } from './util';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
@@ -26,8 +26,12 @@ test.describe('preview-api', () => {
     await expect(sbPage.page.locator('.sidebar-container')).toBeVisible();
 
     // wait for the play function to complete
-    await sbPage.viewAddonPanel('Component tests');
-    const interactionsTab = page.locator('#tabbutton-storybook-test-panel');
+    await sbPage.viewAddonPanel(hasVitestIntegration ? 'Component tests' : 'Interactions');
+    const interactionsTab = page.locator(
+      hasVitestIntegration
+        ? '#tabbutton-storybook-test-panel'
+        : '#tabbutton-storybook-interactions-panel'
+    );
     await expect(interactionsTab).toBeVisible();
     const panel = sbPage.panelContent();
     const runStatusBadge = panel.locator('[aria-label="Status of the test run"]');

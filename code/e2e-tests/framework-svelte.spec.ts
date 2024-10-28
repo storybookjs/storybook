@@ -17,20 +17,20 @@ test.describe('Svelte', () => {
   test('JS story has auto-generated args table', async ({ page }) => {
     const sbPage = new SbPage(page, expect);
 
-    await sbPage.navigateToStory('stories/renderers/svelte/js-docs', 'docs');
+    await sbPage.navigateToStory('stories/renderers/svelte/docs-jsdoc', 'docs');
     const root = sbPage.previewRoot();
     const argsTable = root.locator('.docblock-argstable');
-    await expect(argsTable).toContainText('Rounds the button');
+    await expect(argsTable).toContainText('Union of literal strings');
   });
 
   test('TS story has auto-generated args table', async ({ page }) => {
     test.skip(!templateName?.endsWith('ts') || false, 'Only test TS story in TS templates');
     const sbPage = new SbPage(page, expect);
 
-    await sbPage.navigateToStory('stories/renderers/svelte/ts-docs', 'docs');
+    await sbPage.navigateToStory('stories/renderers/svelte/docs-ts', 'docs');
     const root = sbPage.previewRoot();
     const argsTable = root.locator('.docblock-argstable');
-    await expect(argsTable).toContainText('Rounds the button');
+    await expect(argsTable).toContainText('Union of literal strings');
   });
 
   test('Decorators are excluded from generated source code', async ({ page }) => {

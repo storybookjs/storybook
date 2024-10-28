@@ -51,7 +51,7 @@
     },
     "docs": {
       "type": "boolean",
-      "description": "Starts Storybook in documentation mode. Learn more about it : https://storybook.js.org/docs/react/writing-docs/build-documentation#preview-storybooks-documentation.",
+      "description": "Starts Storybook in documentation mode. Learn more about it : https://storybook.js.org/docs/writing-docs/build-documentation#preview-storybooks-documentation.",
       "default": false
     },
     "test": {

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/root",
-  "version": "8.4.0-alpha.8",
+  "version": "8.4.0-beta.1",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -90,7 +90,7 @@
     "type-fest": "~2.19"
   },
   "dependencies": {
-    "@chromatic-com/storybook": "^1.6.1",
+    "@chromatic-com/storybook": "^3.1.0",
     "@happy-dom/global-registrator": "^14.12.0",
     "@nx/eslint": "18.0.6",
     "@nx/vite": "18.0.6",

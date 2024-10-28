@@ -261,6 +261,7 @@ jobs:
     executor:
       class: xlarge
       name: sb_playwright
+    parallelism: 4
     steps:
       - git-shallow-clone/checkout_advanced:
           clone_options: "--depth 1 --verbose"
@@ -270,9 +271,7 @@ jobs:
           name: Test
           command: |
             cd code
-            yarn test
-      - store_test_results:
-          path: code/junit.xml
+            SHARD="$((${CIRCLE_NODE_INDEX}+1))"; yarn test --reporter=blob --shard=${SHARD}/${CIRCLE_NODE_TOTAL}
       # TODO: bring coverage back later. This has caused flakiness in the tests because
       # Somehow Vitest reports coverage while some tests are still running,
       # then it tries to report coverage again and as result it crashes like this:
@@ -281,8 +280,26 @@ jobs:
       #     root: .
       #     paths:
       #       - code/coverage
+      - persist_to_workspace:
+          root: .
+          paths:
+            - code/.vitest-reports
       - report-workflow-on-failure
       - cancel-workflow-on-failure
+  store-test-results:
+    executor:
+      class: small
+      name: sb_node_22_browsers
+    steps:
+      - git-shallow-clone/checkout_advanced:
+          clone_options: "--depth 1 --verbose"
+      - attach_workspace:
+          at: .
+      - run:
+          name: Merge test results
+          command: cd code && yarn vitest run --merge-reports --reporter=junit --outputFile=junit.xml
+      - store_test_results:
+          path: code/junit.xml
   coverage:
     executor:
       class: small
@@ -742,6 +759,9 @@ workflows:
       - unit-tests:
           requires:
             - build
+      - store-test-results:
+          requires:
+            - unit-tests
       - script-checks:
           requires:
             - build
@@ -814,6 +834,9 @@ workflows:
       - unit-tests:
           requires:
             - build
+      - store-test-results:
+          requires:
+            - unit-tests
       - script-checks:
           requires:
             - build
@@ -887,6 +910,9 @@ workflows:
       - unit-tests:
           requires:
             - build
+      - store-test-results:
+          requires:
+            - unit-tests
       - script-checks:
           requires:
             - build

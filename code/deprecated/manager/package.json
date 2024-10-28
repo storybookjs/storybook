@@ -1,6 +1,6 @@
 {
   "name": "@storybook/manager",
-  "version": "8.4.0-alpha.8",
+  "version": "8.4.0-beta.1",
   "description": "Core Storybook UI",
   "keywords": [
     "storybook"

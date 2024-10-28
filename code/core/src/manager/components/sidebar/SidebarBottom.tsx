@@ -211,7 +211,7 @@ export const SidebarBottomBase = ({ api, notifications = [], status = {} }: Side
   }, [api, testProviders, updateTestProvider, clearState]);
 
   const testProvidersArray = Object.values(testProviders);
-  if (!hasWarnings && !hasErrors && !testProvidersArray.length) {
+  if (!hasWarnings && !hasErrors && !testProvidersArray.length && !notifications.length) {
     return null;
   }
 

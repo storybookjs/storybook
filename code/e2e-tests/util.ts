@@ -2,6 +2,8 @@ import { toId } from '@storybook/csf';
 
 import type { Expect, Page } from '@playwright/test';
 
+import { allTemplates } from '../lib/cli-storybook/src/sandbox-templates';
+
 export class SbPage {
   readonly page: Page;
 
@@ -142,3 +144,9 @@ export class SbPage {
     return this.previewIframe().locator('body');
   }
 }
+
+const templateName: keyof typeof allTemplates = process.env.STORYBOOK_TEMPLATE_NAME || ('' as any);
+
+const templates = allTemplates;
+export const hasVitestIntegration =
+  !templates[templateName]?.skipTasks?.includes('vitest-integration');

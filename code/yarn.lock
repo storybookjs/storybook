@@ -6253,6 +6253,7 @@ __metadata:
     react-dom: "npm:^18.2.0"
     semver: "npm:^7.6.3"
     slash: "npm:^5.0.0"
+    strip-ansi: "npm:^7.1.0"
     ts-dedent: "npm:^2.2.0"
     typescript: "npm:^5.3.2"
     vitest: "npm:^2.1.3"

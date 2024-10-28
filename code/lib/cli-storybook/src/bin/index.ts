@@ -8,6 +8,7 @@ import { logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext, telemetry } from 'storybook/internal/telemetry';
 
 import { program } from 'commander';
+import { initiate } from 'create-storybook';
 import envinfo from 'envinfo';
 import { findPackageSync } from 'fd-package-json';
 import leven from 'leven';
@@ -179,6 +180,46 @@ command('doctor')
   .action(async (options) => {
     await doctor(options).catch((e) => {
       logger.error(e);
+      process.exit(1);
+    });
+  });
+
+command('init')
+  .description('Initialize Storybook in your project.')
+  .option(
+    '--disable-telemetry',
+    'Disable sending telemetry data',
+    process.env.STORYBOOK_DISABLE_TELEMETRY && process.env.STORYBOOK_DISABLE_TELEMETRY !== 'false'
+  )
+  .option('--debug', 'Get more logs in debug mode', false)
+  .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
+  .option('-f --force', 'Force add Storybook')
+  .option('-s --skip-install', 'Skip installing dependencies')
+  .option(
+    '--package-manager <npm|pnpm|yarn1|yarn2>',
+    'Force package manager for installing dependencies'
+  )
+  .option('--use-pnp', 'Enable PnP mode for Yarn 2+')
+  .option(
+    '-p --parser <babel | babylon | flow | ts | tsx>',
+    'Specify the parser to use (e.g., babel, flow, typescript)'
+  )
+  .option('-t --type <type>', 'Add Storybook for a specific project type')
+  .option('-y --yes', 'Answer yes to all prompts')
+  .option('-b --builder <webpack5 | vite>', 'Specify the builder to use')
+  .option('-l --linkable', 'Prepare installation for link (contributor helper)')
+  .option(
+    '--dev',
+    'Launch the development server after completing initialization. Enabled by default',
+    process.env.CI !== 'true' && process.env.IN_STORYBOOK_SANDBOX !== 'true'
+  )
+  .option(
+    '--no-dev',
+    'Complete the initialization of Storybook without launching the Storybook development server'
+  )
+  .action((options: any) => {
+    initiate(options).catch((err: any) => {
+      logger.error(err);
       process.exit(1);
     });
   });

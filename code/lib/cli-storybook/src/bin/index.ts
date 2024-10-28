@@ -211,14 +211,14 @@ command('init')
   .option(
     '--dev',
     'Launch the development server after completing initialization. Enabled by default',
-    process.env.CI !== 'true' && process.env.IN_STORYBOOK_SANDBOX !== 'true'
+    !Boolean(process.env.CI) && !Boolean(process.env.IN_STORYBOOK_SANDBOX)
   )
   .option(
     '--no-dev',
     'Complete the initialization of Storybook without launching the Storybook development server'
   )
-  .action((options: any) => {
-    initiate(options).catch((err: any) => {
+  .action((options) => {
+    initiate(options).catch((err) => {
       logger.error(err);
       process.exit(1);
     });

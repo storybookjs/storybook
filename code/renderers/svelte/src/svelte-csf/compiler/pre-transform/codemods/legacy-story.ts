@@ -109,6 +109,10 @@ export function transformLegacyStory(params: Params): SvelteAST.Component {
     });
   }
 
+  if (parameters) {
+    newAttributes.push(parameters);
+  }
+
   if (tags) {
     newAttributes.push(tags);
   }

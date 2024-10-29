@@ -1,3 +1,10 @@
+## 8.4.0-beta.2
+
+- Addon Test: Adjust file exports to be ESM/CJS compatible - [#29471](https://github.com/storybookjs/storybook/pull/29471), thanks @valentinpalkovic!
+- Addon Test: Only register testing module in Vite projects - [#29472](https://github.com/storybookjs/storybook/pull/29472), thanks @yannbf!
+- Core: Show tooltip on filter toggles to clarify their purpose - [#29447](https://github.com/storybookjs/storybook/pull/29447), thanks @ghengeveld!
+- Webpack: Fix export 'act' (imported as 'React4') was not found in 'react' errors in webpack - [#29235](https://github.com/storybookjs/storybook/pull/29235), thanks @kasperpeulen!
+
 ## 8.4.0-beta.1
 
 - Addon Test: Error when addon interactions exists - [#29434](https://github.com/storybookjs/storybook/pull/29434), thanks @valentinpalkovic!

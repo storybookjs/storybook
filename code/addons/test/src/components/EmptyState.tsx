@@ -4,20 +4,14 @@ import { EmptyTabContent, Link } from 'storybook/internal/components';
 import { useStorybookApi } from 'storybook/internal/manager-api';
 import { styled } from 'storybook/internal/theming';
 
-import { DocumentIcon, VideoIcon } from '@storybook/icons';
+import { DocumentIcon } from '@storybook/icons';
 
-import { DOCUMENTATION_LINK, TUTORIAL_VIDEO_LINK } from '../constants';
+import { DOCUMENTATION_LINK } from '../constants';
 
 const Links = styled.div(({ theme }) => ({
   display: 'flex',
   fontSize: theme.typography.size.s2 - 1,
   gap: 25,
-}));
-
-const Divider = styled.div(({ theme }) => ({
-  width: 1,
-  height: 16,
-  backgroundColor: theme.appBorderColor,
 }));
 
 export const Empty = () => {
@@ -46,19 +40,15 @@ export const Empty = () => {
 
   return (
     <EmptyTabContent
-      title="Interaction testing"
+      title="Component testing"
       description={
         <>
-          Interaction tests allow you to verify the functional aspects of UIs. Write a play function
+          Component tests allow you to verify the functional aspects of UIs. Write a play function
           for your story and you&apos;ll see it run here.
         </>
       }
       footer={
         <Links>
-          <Link href={TUTORIAL_VIDEO_LINK} target="_blank" withArrow>
-            <VideoIcon /> Watch 8m video
-          </Link>
-          <Divider />
           <Link href={docsUrl} target="_blank" withArrow>
             <DocumentIcon /> Read docs
           </Link>

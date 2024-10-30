@@ -228,7 +228,7 @@ export class MountMustBeDestructuredError extends StorybookError {
       
       Note that Angular is not supported. As async/await is transpiled to support the zone.js polyfill. 
       
-      More info: https://storybook.js.org/docs/writing-tests/interaction-testing#run-code-before-the-component-gets-rendered
+      More info: https://storybook.js.org/docs/writing-tests/component-testing#run-code-before-the-component-gets-rendered
       
       Received the following play function:
       ${data.playFunction}`,

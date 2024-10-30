@@ -126,7 +126,7 @@ export const babel = async (_: unknown, options: Options) => {
     ...babelDefault,
     // This override makes sure that we will never transpile babel further down then the browsers that storybook supports.
     // This is needed to support the mount property of the context described here:
-    // https://storybook.js.org/docs/writing-tests/interaction-testing#run-code-before-each-test
+    // https://storybook.js.org/docs/writing-tests/component-testing#run-code-before-each-test
     overrides: [
       ...(babelDefault?.overrides ?? []),
       {

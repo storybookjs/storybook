@@ -21,7 +21,7 @@ const meta: Meta<typeof MyPage> = {
 export default meta;
 type Story = StoryObj<typeof MyPage>;
 
-// More on interaction testing: https://storybook.js.org/docs/writing-tests/interaction-testing
+// More on component testing: https://storybook.js.org/docs/writing-tests/component-testing
 export const LoggedIn: Story = {
   play: async ({ canvasElement }: any) => {
     const canvas = within(canvasElement);

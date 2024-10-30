@@ -4,7 +4,7 @@ import { expect } from '@storybook/test';
 
 export default {
   component: globalThis.Components.Pre,
-  args: { text: 'Check that id assertions in interaction tests are passing' },
+  args: { text: 'Check that id assertions in component tests are passing' },
   id: 'indexer-custom-meta-id',
 };
 

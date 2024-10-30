@@ -39,6 +39,7 @@ interface InteractionsPanelProps {
   caughtException?: Error;
   unhandledErrors?: SerializedError[];
   isPlaying?: boolean;
+  isDemoMode?: boolean;
   pausedAt?: Call['id'];
   calls: Map<string, any>;
   endRef?: React.Ref<HTMLDivElement>;
@@ -101,6 +102,7 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
     caughtException,
     unhandledErrors,
     isPlaying,
+    isDemoMode,
     pausedAt,
     onScrollToEnd,
     endRef,
@@ -124,6 +126,7 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
           <Subnav
             controls={controls}
             controlStates={controlStates}
+            isDemoMode={isDemoMode}
             status={browserTestStatus}
             storyFileName={fileName}
             onScrollToEnd={onScrollToEnd}

@@ -1,6 +1,6 @@
 // TODO: discuss about this, ideally there should be "THE FLAG" where we know things are running in SB Manager.
 // This should not execute in Vitest browser mode, in Test runner, when opening a story in isolation, etc.
-const shouldUseDemoMode = globalThis.STORYBOOK_RENDERER;
+const shouldUseDemoMode = (globalThis.parent as any)?.STORYBOOK_RENDERER;
 
 export async function wait(ms: number) {
   if (shouldUseDemoMode) {

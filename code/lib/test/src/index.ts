@@ -116,30 +116,27 @@ const nameSpiesAndWrapActionsInSpies: LoaderFunction = ({ initialArgs }) => {
   traverseArgs(initialArgs);
 };
 
+const enhancedUserEvent = {
+  ...userEvent.setup(),
+  type: async (...args: any[]) => {
+    const [target, text, options] = args;
+    const userSession = userEvent.setup({
+      // make the typing take .5 seconds
+      delay: Math.floor(Math.max(500 / text.length, 0)),
+    });
+    return userSession.type(target, text, options);
+  },
+  click: async (target: any) => {
+    await mouseTo(target, {});
+    return userEvent.click(target);
+  },
+} as any;
+
 const enhanceContext: LoaderFunction = (context) => {
   if (globalThis.HTMLElement && context.canvasElement instanceof globalThis.HTMLElement) {
     context.canvas = within(context.canvasElement);
-    if (context.parameters.test?.demoMode || context.globals.interactionsDemoMode) {
-      const user = userEvent.setup();
-
-      context.userEvent = {
-        ...user,
-        type: async (...args) => {
-          const [target, text, options] = args;
-          const userSession = userEvent.setup({
-            // make the typing take .5 seconds
-            delay: Math.floor(Math.max(500 / text.length, 0)),
-          });
-          return userSession.type(target, text, options);
-        },
-        click: async (target) => {
-          await mouseTo(target, {
-            cursorStyle: context.parameters.test?.cursorStyle,
-            delay: context.parameters.test?.demoModeDelay,
-          });
-          return user.click(target);
-        },
-      };
+    if (context.globals.interactionsDemoMode) {
+      context.userEvent = enhancedUserEvent;
     } else {
       context.userEvent = userEvent.setup();
     }

@@ -99,6 +99,8 @@ export const getInteractions = ({
 export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId }) {
   const { status: storyStatuses } = useStorybookState();
 
+  const [globals, updateGlobals] = useGlobals();
+
   // shared state
   const [addonState, set] = useAddonState(ADDON_ID, {
     controlStates: INITIAL_CONTROL_STATES,
@@ -106,12 +108,13 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
     pausedAt: undefined,
     interactions: [],
     isPlaying: false,
-    isDemoMode: false,
     hasException: false,
     caughtException: undefined,
     interactionsCount: 0,
     unhandledErrors: undefined,
   });
+
+  console.log({ globals });
 
   // local state
   const [scrollTarget, setScrollTarget] = useState<HTMLElement | undefined>(undefined);
@@ -147,8 +150,6 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
     }
     return () => observer?.disconnect();
   }, []);
-
-  const [globals, updateGlobals] = useGlobals();
 
   const emit = useChannel(
     {
@@ -231,7 +232,7 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
         interactionsCount: list.filter(({ method }) => method !== 'step').length,
       };
     });
-  }, [collapsed]);
+  }, [collapsed, set]);
 
   const controls: Controls = useMemo(
     () => ({
@@ -244,10 +245,9 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
         emit(FORCE_REMOUNT, { storyId });
       },
       toggleDemoMode: () => {
-        set((s) => ({ ...s, demoMode: !s.demoMode }));
         updateGlobals({
           ...globals,
-          interactionsDemoMode: !globals.interactionsDemoMode,
+          interactionsDemoMode: globals.interactionsDemoMode === true ? null : true,
         });
       },
     }),
@@ -299,6 +299,7 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
         caughtException={caughtException}
         unhandledErrors={unhandledErrors}
         isPlaying={isPlaying}
+        isDemoMode={globals.interactionsDemoMode}
         pausedAt={pausedAt}
         endRef={endRef}
         onScrollToEnd={scrollTarget && scrollToTarget}

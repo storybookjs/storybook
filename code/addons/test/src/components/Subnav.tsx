@@ -44,6 +44,7 @@ const StyledSubnav = styled.nav(({ theme }) => ({
 
 export interface SubnavProps {
   controls: Controls;
+  isDemoMode: boolean;
   controlStates: ControlStates;
   status: Call['status'];
   storyFileName?: string;
@@ -119,6 +120,7 @@ export const Subnav: React.FC<SubnavProps> = ({
   controlStates,
   status,
   storyFileName,
+  isDemoMode,
   onScrollToEnd,
 }) => {
   const buttonText = status === CallStates.ERROR ? 'Scroll to error' : 'Scroll to end';
@@ -185,7 +187,7 @@ export const Subnav: React.FC<SubnavProps> = ({
             <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Demo mode" />}>
               <IconButton
                 key="outline"
-                active={controlStates.demoMode}
+                active={isDemoMode}
                 aria-label="Demo mode"
                 title="Apply outlines to the preview"
                 onClick={controls.toggleDemoMode}

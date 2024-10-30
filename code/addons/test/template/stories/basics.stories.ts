@@ -103,15 +103,14 @@ export const WithLoaders = {
 const UserEventSetup = {
   play: async (context) => {
     const { args, canvasElement, step } = context;
-    const user = userEvent.setup();
     const canvas = within(canvasElement);
-    await step('Select and type on input using user-event v14 setup', async () => {
+    await step('Select and type on input using user-event v14 setup!!!!', async () => {
       const input = canvas.getByRole('textbox');
-      await user.click(input);
-      await user.type(input, 'Typing ...');
+      await context.userEvent.click(input);
+      await context.userEvent.type(input, 'Typing ...');
     });
     await step('Tab and press enter on submit button', async () => {
-      await user.pointer([
+      await context.userEvent.pointer([
         { keys: '[TouchA>]', target: canvas.getByRole('textbox') },
         { keys: '[/TouchA]' },
       ]);
@@ -121,8 +120,7 @@ const UserEventSetup = {
         // user event has a few issues on firefox, therefore we do it differently
         await fireEvent.click(submitButton);
       } else {
-        await user.tab();
-        await user.keyboard('{enter}');
+        await context.userEvent.click(submitButton);
         await expect(submitButton).toHaveFocus();
       }
 

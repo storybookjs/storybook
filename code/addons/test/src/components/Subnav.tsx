@@ -16,6 +16,7 @@ import {
   FastForwardIcon,
   PlayBackIcon,
   PlayNextIcon,
+  PointerHandIcon,
   RewindIcon,
   SyncIcon,
 } from '@storybook/icons';
@@ -179,6 +180,18 @@ export const Subnav: React.FC<SubnavProps> = ({
               <RerunButton aria-label="Rerun" onClick={controls.rerun}>
                 <SyncIcon />
               </RerunButton>
+            </WithTooltip>
+
+            <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Demo mode" />}>
+              <IconButton
+                key="outline"
+                active={controlStates.demoMode}
+                aria-label="Demo mode"
+                title="Apply outlines to the preview"
+                onClick={controls.toggleDemoMode}
+              >
+                <PointerHandIcon />
+              </IconButton>
             </WithTooltip>
           </Group>
           {storyFileName && (

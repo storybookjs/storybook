@@ -21,6 +21,7 @@ export interface Controls {
   next: (args: any) => void;
   end: (args: any) => void;
   rerun: (args: any) => void;
+  toggleDemoMode: (args: any) => void;
 }
 
 interface InteractionsPanelProps {

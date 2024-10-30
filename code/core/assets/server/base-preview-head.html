@@ -433,6 +433,76 @@
     margin-bottom: 4px;
     padding: 2px 5px;
   }
+
+  /* storybook interactions demo mode */
+  #sb-demo-cursor {
+    z-index: 9999;
+    transition-duration: 1000ms;
+    transition-timing-function: cubic-bezier(0.2, 1, 0.2, 1);
+    transition-property: top, left;
+    position: fixed;
+    width: 30px;
+    height: 30px;
+    border-radius: 20px;
+    margin: -20px 0 0 -20px;
+    background: rgba(0, 0, 0, 0);
+    top: 50%;
+    left: 50%;
+    pointer-events: none;
+  }
+
+  #sb-demo-cursor[data-type='circle'].sb-cursor-moving {
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+  }
+
+  #sb-demo-cursor[data-type='circle'].sb-cursor-hide {
+    animation:
+      fadeCursor 1000ms linear,
+      press 300ms ease-in;
+  }
+
+  #sb-demo-cursor[data-type='hand'].sb-cursor-hide {
+    animation:
+      hideCursor 1000ms linear forwards,
+      press 300ms ease-in;
+  }
+
+  @keyframes fadeCursor {
+    0% {
+      background: rgba(0, 0, 0, 0.8);
+      opacity: 1;
+    }
+
+    100% {
+      background: rgba(0, 0, 0, 0);
+      opacity: 0;
+    }
+  }
+
+  @keyframes hideCursor {
+    0% {
+      opacity: 1;
+    }
+
+    100% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes press {
+    0% {
+      transform: scale(1);
+    }
+
+    50% {
+      transform: scale(0.45);
+    }
+
+    100% {
+      transform: scale(1);
+    }
+  }
 </style>
 
 <script>

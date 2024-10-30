@@ -447,7 +447,7 @@ async function run() {
       },
       {
         onCancel: () => {
-          logger.log('Command cancelled by the user. Exiting...');
+          logger.log('Command canceled by the user. Exiting...');
           process.exit(1);
         },
       }

@@ -5,15 +5,16 @@ import type {
   ArgsStoryFn,
   ComponentAnnotations,
   DecoratorFunction,
-  LoaderFunction,
-  StoryAnnotations,
   StoryContext as GenericStoryContext,
-  StrictArgs,
+  LoaderFunction,
   ProjectAnnotations,
+  StoryAnnotations,
+  StrictArgs,
 } from 'storybook/internal/types';
 
-import type { ComponentType, ComponentProps, SvelteComponent } from 'svelte';
+import type { ComponentProps, ComponentType, SvelteComponent } from 'svelte';
 import type { SetOptional, Simplify } from 'type-fest';
+
 import type { SvelteRenderer } from './types';
 
 export type { Args, ArgTypes, Parameters, StrictArgs } from 'storybook/internal/types';
@@ -21,7 +22,7 @@ export type { Args, ArgTypes, Parameters, StrictArgs } from 'storybook/internal/
 /**
  * Metadata to configure the stories for a component.
  *
- * @see [Default export](https://storybook.js.org/docs/formats/component-story-format/#default-export)
+ * @see [Default export](https://storybook.js.org/docs/api/csf#default-export)
  */
 export type Meta<CmpOrArgs = Args> =
   CmpOrArgs extends SvelteComponent<infer Props>
@@ -30,7 +31,7 @@ export type Meta<CmpOrArgs = Args> =
 /**
  * Story function that represents a CSFv2 component example.
  *
- * @see [Named Story exports](https://storybook.js.org/docs/formats/component-story-format/#named-story-exports)
+ * @see [Named Story exports](https://storybook.js.org/docs/api/csf#named-story-exports)
  */
 export type StoryFn<TCmpOrArgs = Args> =
   TCmpOrArgs extends SvelteComponent<infer Props>
@@ -40,7 +41,7 @@ export type StoryFn<TCmpOrArgs = Args> =
 /**
  * Story object that represents a CSFv3 component example.
  *
- * @see [Named Story exports](https://storybook.js.org/docs/formats/component-story-format/#named-story-exports)
+ * @see [Named Story exports](https://storybook.js.org/docs/api/csf#named-story-exports)
  */
 export type StoryObj<MetaOrCmpOrArgs = Args> = MetaOrCmpOrArgs extends {
   render?: ArgsStoryFn<SvelteRenderer, any>;

@@ -1,6 +1,8 @@
-import { ArrowRightIcon } from '@storybook/icons';
-import { styled, keyframes } from 'storybook/internal/theming';
 import React, { useCallback, useEffect, useState } from 'react';
+
+import { keyframes, styled } from 'storybook/internal/theming';
+
+import { ArrowRightIcon } from '@storybook/icons';
 
 const fadeIn = keyframes({
   from: {
@@ -192,7 +194,9 @@ export const SplashScreen = ({ onDismiss, duration = 6000 }: SplashScreenProps) 
   }, [onDismiss]);
 
   useEffect(() => {
-    if (!duration) return;
+    if (!duration) {
+      return;
+    }
     const framelength = 1000 / 50; // 50 frames per second
     const increment = 100 / (duration / framelength); // 0-100% at 20ms intervals
     const interval = setInterval(() => setProgress((prev) => prev + increment), framelength);
@@ -200,7 +204,9 @@ export const SplashScreen = ({ onDismiss, duration = 6000 }: SplashScreenProps) 
   }, [duration]);
 
   useEffect(() => {
-    if (ready) dismiss();
+    if (ready) {
+      dismiss();
+    }
   }, [ready, dismiss]);
 
   return (

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention,storybook/prefer-pascal-case */
-import { expect, mocked, getByRole, spyOn, userEvent } from '@storybook/test';
+import { expect, getByRole, mocked, spyOn, userEvent } from '@storybook/test';
 
 const meta = {
   component: globalThis.Components.Button,

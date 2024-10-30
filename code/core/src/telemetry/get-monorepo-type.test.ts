@@ -1,11 +1,12 @@
 /* eslint-disable no-underscore-dangle */
-import { describe, it, expect, vi } from 'vitest';
-import * as fsExtra from 'fs-extra';
-import path from 'node:path';
+import * as fs from 'node:fs';
+import { join } from 'node:path';
+
+import { describe, expect, it, vi } from 'vitest';
 
 import { getMonorepoType, monorepoConfigs } from './get-monorepo-type';
 
-vi.mock('fs-extra', async () => import('../../../__mocks__/fs-extra'));
+vi.mock('node:fs', async () => import('../../../__mocks__/fs'));
 
 vi.mock('@storybook/core/common', async (importOriginal) => {
   return {
@@ -16,14 +17,14 @@ vi.mock('@storybook/core/common', async (importOriginal) => {
 
 const checkMonorepoType = ({ monorepoConfigFile, isYarnWorkspace = false }: any) => {
   const mockFiles = {
-    [path.join('root', 'package.json')]: isYarnWorkspace ? '{ "workspaces": [] }' : '{}',
+    [join('root', 'package.json')]: isYarnWorkspace ? '{ "workspaces": [] }' : '{}',
   };
 
   if (monorepoConfigFile) {
-    mockFiles[path.join('root', monorepoConfigFile)] = '{}';
+    mockFiles[join('root', monorepoConfigFile)] = '{}';
   }
 
-  vi.mocked<typeof import('../../../__mocks__/fs-extra')>(fsExtra as any).__setMockFiles(mockFiles);
+  vi.mocked<typeof import('../../../__mocks__/fs')>(fs as any).__setMockFiles(mockFiles);
 
   return getMonorepoType();
 };

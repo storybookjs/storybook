@@ -1,18 +1,20 @@
-import { readdir } from 'fs/promises';
-import { pathExists, readFile } from 'fs-extra';
 import { program } from 'commander';
+// eslint-disable-next-line depend/ban-dependencies
+import { pathExists, readFile } from 'fs-extra';
+import { readdir } from 'fs/promises';
+import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
-import chalk from 'chalk';
 import yaml from 'yaml';
-import { esMain } from './utils/esmain';
+
 import {
+  type Cadence,
+  type SkippableTask,
+  type Template as TTemplate,
   allTemplates,
   templatesByCadence,
-  type Cadence,
-  type Template as TTemplate,
-  type SkippableTask,
-} from '../code/lib/cli/src/sandbox-templates';
+} from '../code/lib/cli-storybook/src/sandbox-templates';
 import { SANDBOX_DIRECTORY } from './utils/constants';
+import { esMain } from './utils/esmain';
 
 const sandboxDir = process.env.SANDBOX_ROOT || SANDBOX_DIRECTORY;
 
@@ -82,6 +84,7 @@ const tasksMap = {
   'test-runner': 'test-runner-production',
   // 'test-runner-dev', TODO: bring this back when the task is enabled again
   bench: 'bench',
+  'vitest-integration': 'vitest-integration',
 } as const;
 
 type TaskKey = keyof typeof tasksMap;
@@ -101,7 +104,7 @@ async function checkParallelism(cadence?: Cadence, scriptName?: TaskKey) {
   let isIncorrect = false;
 
   cadences.forEach((cad) => {
-    summary.push(`\n${chalk.bold(cad)}`);
+    summary.push(`\n${picocolors.bold(cad)}`);
     const cadenceTemplates = Object.entries(allTemplates).filter(([key]) =>
       templatesByCadence[cad].includes(key as TemplateKey)
     );
@@ -127,7 +130,7 @@ async function checkParallelism(cadence?: Cadence, scriptName?: TaskKey) {
 
         if (newParallelism !== currentParallelism) {
           summary.push(
-            `-- ❌ ${tasksMap[script]} - parallelism: ${currentParallelism} ${chalk.bgRed(
+            `-- ❌ ${tasksMap[script]} - parallelism: ${currentParallelism} ${picocolors.bgRed(
               `(should be ${newParallelism})`
             )}`
           );
@@ -181,7 +184,9 @@ async function run({ cadence, task, check }: RunOptions) {
     return;
   }
 
-  if (!cadence) throw new Error('Need to supply cadence to get template script');
+  if (!cadence) {
+    throw new Error('Need to supply cadence to get template script');
+  }
 
   const { CIRCLE_NODE_INDEX = 0, CIRCLE_NODE_TOTAL = 1 } = process.env;
 

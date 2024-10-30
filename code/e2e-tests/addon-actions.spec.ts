@@ -1,5 +1,6 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import process from 'process';
+
 import { SbPage } from './util';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
@@ -12,16 +13,16 @@ test.describe('addon-actions', () => {
       'Svelte 5 prerelase does not support automatic actions with our current example components yet'
     );
     await page.goto(storybookUrl);
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     sbPage.waitUntilLoaded();
 
     await sbPage.navigateToStory('example/button', 'primary');
     const root = sbPage.previewRoot();
-    const button = root.locator('button', { hasText: 'Button' });
+    const button = root.getByRole('button', { name: 'Button' });
     await button.click();
 
     await sbPage.viewAddonPanel('Actions');
-    const logItem = await page.locator('#storybook-panel-root #panel-tab-content', {
+    const logItem = page.locator('#storybook-panel-root #panel-tab-content', {
       hasText: 'click',
     });
     await expect(logItem).toBeVisible();
@@ -33,17 +34,17 @@ test.describe('addon-actions', () => {
       'Svelte 5 prerelase does not support automatic actions with our current example components yet'
     );
     await page.goto(storybookUrl);
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     sbPage.waitUntilLoaded();
 
     await sbPage.navigateToStory('addons/actions/spies', 'show-spy-on-in-actions');
 
     const root = sbPage.previewRoot();
-    const button = root.locator('button', { hasText: 'Button' });
+    const button = root.getByRole('button', { name: 'Button' });
     await button.click();
 
     await sbPage.viewAddonPanel('Actions');
-    const logItem = await page.locator('#storybook-panel-root #panel-tab-content', {
+    const logItem = page.locator('#storybook-panel-root #panel-tab-content', {
       hasText: 'console.log',
     });
     await expect(logItem).toBeVisible();

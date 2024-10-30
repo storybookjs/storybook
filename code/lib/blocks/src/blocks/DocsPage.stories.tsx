@@ -1,9 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react';
+
 import { DocsPage } from './DocsPage';
 
 const meta = {
   component: DocsPage,
   parameters: {
+    layout: 'fullscreen',
     docsStyles: true,
     chromatic: {
       disableSnapshot: true,

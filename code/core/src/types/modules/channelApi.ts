@@ -1,13 +1,13 @@
 import type { API_ViewMode } from './api';
 import type {
-  Args,
   ArgTypes,
+  Args,
   ComponentId,
+  GlobalTypes,
+  Globals,
   Parameters,
   StoryId,
   StoryKind,
-  Globals,
-  GlobalTypes,
 } from './csf';
 
 // The data received on the (legacy) `setStories` event
@@ -52,8 +52,16 @@ export type SetStoriesPayload =
     } & Record<string, never>);
 
 export interface SetGlobalsPayload {
+  // userGlobals
   globals: Globals;
   globalTypes: GlobalTypes;
+}
+
+export interface GlobalsUpdatedPayload {
+  initialGlobals: Globals;
+  userGlobals: Globals;
+  storyGlobals: Globals;
+  globals: Globals;
 }
 
 export interface StoryPreparedPayload {

@@ -1,5 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
 import { Addon_TypesEnum as types } from '@storybook/core/types';
+
 import { init as initAddons } from '../modules/addons';
 
 const PANELS = {
@@ -17,10 +19,20 @@ const PANELS = {
   },
 };
 
+const TEST_PROVIDERS = {
+  'storybook/test/test-provider': {
+    id: 'storybook/test/test-provider',
+    title: 'Component tests',
+  },
+};
+
 const provider = {
   getElements(type) {
     if (type === types.PANEL) {
       return PANELS;
+    }
+    if (type === types.experimental_TEST_PROVIDER) {
+      return TEST_PROVIDERS;
     }
     return null;
   },
@@ -36,14 +48,13 @@ const store = {
 describe('Addons API', () => {
   describe('#getElements', () => {
     it('should return provider elements', () => {
-      // given
       const { api } = initAddons({ provider, store });
 
-      // when
       const panels = api.getElements(types.PANEL);
-
-      // then
       expect(panels).toBe(PANELS);
+
+      const testProviders = api.getElements(types.experimental_TEST_PROVIDER);
+      expect(testProviders).toBe(TEST_PROVIDERS);
     });
   });
 

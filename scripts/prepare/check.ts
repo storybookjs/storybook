@@ -1,5 +1,6 @@
-import { join } from 'path';
+// eslint-disable-next-line depend/ban-dependencies
 import fs from 'fs-extra';
+import { join } from 'path';
 import ts from 'typescript';
 
 const run = async ({ cwd }: { cwd: string }) => {

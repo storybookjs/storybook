@@ -47,7 +47,7 @@ const { InvalidForm } = composeStories(stories);
 
 test('Checks if the form is valid', async () => {
   // Renders the composed story
-  await InvalidForm.play();
+  await InvalidForm.run();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',
@@ -71,7 +71,7 @@ const { InvalidForm } = composeStories(stories);
 
 test('Checks if the form is valid', async () => {
   // Renders the composed story
-  await InvalidForm.play();
+  await InvalidForm.run();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',
@@ -95,7 +95,7 @@ const { InvalidForm } = composeStories(stories);
 
 it('Checks if the form is valid', async () => {
   // Renders the composed story
-  await InvalidForm.play();
+  await InvalidForm.run();
 
   await fireEvent.click(screen.getByText('Submit'));
 
@@ -115,7 +115,7 @@ const { InvalidForm } = composeStories(stories);
 
 test('Checks if the form is valid', async () => {
   // Renders the composed story
-  await InvalidForm.play();
+  await InvalidForm.run();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',
@@ -139,7 +139,7 @@ const { InvalidForm } = composeStories(stories);
 
 test('Checks if the form is valid', async () => {
   // Renders the composed story
-  await InvalidForm.play();
+  await InvalidForm.run();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',

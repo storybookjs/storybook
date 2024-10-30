@@ -1,10 +1,14 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import React from 'react';
-import { ManagerContext } from '@storybook/core/manager-api';
+
+import type { Meta, StoryObj } from '@storybook/react';
 import { within } from '@storybook/test';
-import { startCase } from 'lodash';
-import { MobileNavigation } from './MobileNavigation';
+
+import { ManagerContext } from '@storybook/core/manager-api';
+
+import { startCase } from 'es-toolkit';
+
 import { LayoutProvider, useLayout } from '../../layout/LayoutProvider';
+import { MobileNavigation } from './MobileNavigation';
 
 const MockPanel = () => {
   const { setMobilePanelOpen } = useLayout();
@@ -69,7 +73,6 @@ const meta = {
   ],
   parameters: {
     layout: 'fullscreen',
-    theme: 'light',
     viewport: {
       defaultViewport: 'mobile1',
     },
@@ -86,9 +89,12 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {};
+export const Default: Story = {
+  globals: { sb_theme: 'light' },
+};
 export const Dark: Story = {
-  parameters: { theme: 'dark' },
+  globals: { sb_theme: 'dark' },
+  parameters: { chromatic: { disable: true } },
 };
 
 export const LongStoryName: Story = {

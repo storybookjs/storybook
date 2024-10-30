@@ -1,5 +1,6 @@
 import type { StrictArgTypes } from '@storybook/core/types';
-import pickBy from 'lodash/pickBy.js';
+
+import { pickBy } from 'es-toolkit';
 
 export type PropDescriptor = string[] | RegExp;
 
@@ -17,8 +18,8 @@ export const filterArgTypes = (
   return (
     argTypes &&
     pickBy(argTypes, (argType, key) => {
-      const name = argType.name || key;
-      return (!include || matches(name, include)) && (!exclude || !matches(name, exclude));
+      const name = argType.name || key.toString();
+      return !!(!include || matches(name, include)) && (!exclude || !matches(name, exclude));
     })
   );
 };

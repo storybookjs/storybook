@@ -106,6 +106,7 @@ And I can also embed arbitrary markdown & JSX in this file.
 import React from 'react';
 import { Button } from './Button';
 import mdx from './Button.mdx';
+
 export default {
   title: 'Demo/Button',
   parameters: {
@@ -281,7 +282,7 @@ These two methods are complementary. The former is useful for story-specific, an
 
 What happens if you want to add some wrapper for your MDX page, or add some other kind of React context?
 
-When you're writing stories you can do this by adding a [decorator](https://storybook.js.org/docs/react/writing-stories/decorators), but when you're adding arbitrary JSX to your MDX documentation outside of a `<Story>` block, decorators no longer apply, and you need to use the `docs.container` parameter.
+When you're writing stories you can do this by adding a [decorator](https://storybook.js.org/docs/writing-stories/decorators), but when you're adding arbitrary JSX to your MDX documentation outside of a `<Story>` block, decorators no longer apply, and you need to use the `docs.container` parameter.
 
 The closest Docs equivalent of a decorator is the `container`, a wrapper element that is rendered around the page that is being rendered. Here's an example of adding a solid red border around the page. It uses Storybook's default page container (that sets up various contexts and other magic) and then inserts its own logic between that container and the contents of the page:
 

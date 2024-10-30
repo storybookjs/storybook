@@ -1,14 +1,17 @@
 import React from 'react';
-import { action } from '@storybook/addon-actions';
+
 import { LocationProvider } from '@storybook/core/router';
-import type { Meta, StoryObj } from '@storybook/react';
-import NotificationItem from './NotificationItem';
 import {
   AccessibilityIcon as AccessibilityIconIcon,
   BookIcon as BookIconIcon,
   FaceHappyIcon,
 } from '@storybook/icons';
+import type { Meta, StoryObj } from '@storybook/react';
 import { expect, fn, userEvent, waitFor, within } from '@storybook/test';
+
+import { action } from '@storybook/addon-actions';
+
+import NotificationItem from './NotificationItem';
 
 const meta = {
   component: NotificationItem,
@@ -20,7 +23,7 @@ const meta = {
       </LocationProvider>
     ),
     (Story) => (
-      <div style={{ width: '240px', margin: '1rem' }}>
+      <div style={{ width: '240px' }}>
         <Story />
       </div>
     ),

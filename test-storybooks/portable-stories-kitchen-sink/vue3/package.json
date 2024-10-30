@@ -9,13 +9,13 @@
     "dev": "vite",
     "jest": "echo 'Jest tests are not implemented!'",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "playwright": "playwright test",
+    "playwright-ct": "playwright test",
     "preview": "vite preview",
     "storybook": "STORYBOOK_TELEMETRY_URL=\"http://localhost:6007/event-log\" storybook dev -p 6006",
     "vitest": "echo 'Vitest tests are implemented in the renderer directory instead!'"
   },
   "resolutions": {
-    "@playwright/test": "1.42.1",
+    "@playwright/test": "1.48.1",
     "@storybook/addon-a11y": "file:../../../code/addons/a11y",
     "@storybook/addon-actions": "file:../../../code/addons/actions",
     "@storybook/addon-backgrounds": "file:../../../code/addons/backgrounds",
@@ -78,20 +78,20 @@
     "@storybook/web-components": "file:../../../code/renderers/web-components",
     "@storybook/web-components-vite": "file:../../../code/frameworks/web-components-vite",
     "@storybook/web-components-webpack5": "file:../../../code/frameworks/web-components-webpack5",
-    "playwright": "1.42.1",
+    "playwright": "1.48.1",
     "storybook": "file:../../../code/lib/cli"
   },
   "dependencies": {
     "vue": "^3.4.19"
   },
   "devDependencies": {
-    "@playwright/experimental-ct-vue": "1.42.1",
+    "@playwright/experimental-ct-vue": "1.48.1",
     "@storybook/addon-essentials": "^8.0.0",
     "@storybook/addon-interactions": "^8.0.0",
     "@storybook/test": "^8.0.0",
     "@storybook/vue3": "^8.0.0",
     "@storybook/vue3-vite": "^8.0.0",
-    "@testing-library/jest-dom": "6.4.5",
+    "@testing-library/jest-dom": "6.5.0",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "@vitejs/plugin-vue": "^5.0.4",

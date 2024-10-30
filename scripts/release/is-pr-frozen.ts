@@ -1,8 +1,11 @@
-import chalk from 'chalk';
-import program from 'commander';
+import { join } from 'node:path';
+
 import { setOutput } from '@actions/core';
-import path from 'path';
+import { program } from 'commander';
+// eslint-disable-next-line depend/ban-dependencies
 import { readJson } from 'fs-extra';
+import picocolors from 'picocolors';
+
 import { esMain } from '../utils/esmain';
 import { getPullInfoFromCommit } from './utils/get-github-info';
 import { git } from './utils/git-client';
@@ -15,8 +18,8 @@ program
   .option('-H, --patch', 'Look for patch PR instead of next PR', false)
   .option('-V, --verbose', 'Enable verbose logging', false);
 
-const CODE_DIR_PATH = path.join(__dirname, '..', '..', 'code');
-const CODE_PACKAGE_JSON_PATH = path.join(CODE_DIR_PATH, 'package.json');
+const CODE_DIR_PATH = join(__dirname, '..', '..', 'code');
+const CODE_PACKAGE_JSON_PATH = join(CODE_DIR_PATH, 'package.json');
 
 const getCurrentVersion = async () => {
   console.log(`📐 Reading current version of Storybook...`);
@@ -37,7 +40,7 @@ const getRepo = async (verbose?: boolean): Promise<string> => {
   const pushUrl = originRemote.refs.push;
   const repo = pushUrl.replace(/\.git$/, '').replace(/.*:(\/\/github\.com\/)*/, '');
   if (verbose) {
-    console.log(`📦 Extracted repo: ${chalk.blue(repo)}`);
+    console.log(`📦 Extracted repo: ${picocolors.blue(repo)}`);
   }
   return repo;
 };
@@ -48,7 +51,7 @@ export const run = async (options: unknown) => {
   const version = await getCurrentVersion();
   const branch = `version-${patch ? 'patch' : 'non-patch'}-from-${version}`;
 
-  console.log(`💬 Determining if pull request from branch '${chalk.blue(branch)}' is frozen`);
+  console.log(`💬 Determining if pull request from branch '${picocolors.blue(branch)}' is frozen`);
 
   console.log(`⬇️ Fetching remote 'origin/${branch}'...`);
   try {

@@ -1,7 +1,6 @@
 import type { PreparedStory } from 'storybook/internal/types';
-import { global } from '@storybook/global';
 
-const excludeTags = Object.entries(global.TAGS_OPTIONS ?? {}).reduce(
+const excludeTags = Object.entries(globalThis.TAGS_OPTIONS ?? {}).reduce(
   (acc, entry) => {
     const [tag, option] = entry;
     if ((option as any).excludeFromDocsStories) {

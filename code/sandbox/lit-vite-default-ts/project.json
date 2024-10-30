@@ -3,12 +3,12 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "implicitDependencies": [
-    "cli",
+    "storybook",
     "core",
-    "essentials",
-    "interactions",
-    "links",
-    "onboarding",
+    "addon-essentials",
+    "addon-interactions",
+    "addon-links",
+    "addon-onboarding",
     "blocks",
     "web-components-vite"
   ],

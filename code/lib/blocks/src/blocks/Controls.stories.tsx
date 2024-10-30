@@ -1,16 +1,18 @@
 import React from 'react';
-import type { Meta, StoryObj } from '@storybook/react';
 
-import { Controls } from './Controls';
+import type { PlayFunctionContext } from '@storybook/csf';
+import type { Meta, StoryObj } from '@storybook/react';
+import { within } from '@storybook/test';
+
 import * as ExampleStories from '../examples/ControlsParameters.stories';
 import * as SubcomponentsExampleStories from '../examples/ControlsWithSubcomponentsParameters.stories';
-import { within } from '@storybook/test';
-import type { PlayFunctionContext } from '@storybook/csf';
 import * as EmptyArgTypesStories from '../examples/EmptyArgTypes.stories';
+import { Controls } from './Controls';
 
 const meta = {
   component: Controls,
   parameters: {
+    layout: 'fullscreen',
     relativeCsfPaths: [
       '../examples/ControlsParameters.stories',
       '../examples/EmptyArgTypes.stories',
@@ -146,7 +148,8 @@ export const SubcomponentsSortProp: Story = {
 };
 
 /**
- * When a story is defined without any argTypes or args, the Docs UI should not display the control component.
+ * When a story is defined without any argTypes or args, the Docs UI should not display the control
+ * component.
  */
 export const EmptyArgTypes: Story = {
   args: {

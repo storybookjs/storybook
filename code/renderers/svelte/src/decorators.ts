@@ -1,5 +1,6 @@
-import type { DecoratorFunction, StoryContext, LegacyStoryFn } from 'storybook/internal/types';
 import { sanitizeStoryContextUpdate } from 'storybook/internal/preview-api';
+import type { DecoratorFunction, LegacyStoryFn, StoryContext } from 'storybook/internal/types';
+
 /*
 ! DO NOT change this SlotDecorator import to a relative path, it will break it.
 ! A relative import will be compiled at build time, and Svelte will be unable to
@@ -8,12 +9,14 @@ import { sanitizeStoryContextUpdate } from 'storybook/internal/preview-api';
 ! with the same bundle as the user's Svelte components
 */
 import SlotDecorator from '@storybook/svelte/internal/SlotDecorator.svelte';
+
 import type { SvelteRenderer } from './types';
 
 /**
- * Handle component loaded with ESM or CJS,
- * by getting the 'default' property of the object if it exists.
- * @param obj object
+ * Handle component loaded with ESM or CJS, by getting the 'default' property of the object if it
+ * exists.
+ *
+ * @param obj Object
  */
 function unWrap<T>(obj: { default: T } | T): T {
   return obj && typeof obj === 'object' && 'default' in obj ? obj.default : obj;
@@ -24,12 +27,14 @@ function unWrap<T>(obj: { default: T } | T): T {
  *
  * - `() => ({ Component: MyComponent, props: ...})` is already prepared, kept as-is
  * - `() => MyComponent` is transformed to `() => ({ Component: MyComponent })`
- * - `() => ({})` is transformed to component from context with `() => ({ Component: context.component })`
- * - A decorator component is wrapped with SlotDecorator, injecting the decorated component in a <slot />
+ * - `() => ({})` is transformed to component from context with `() => ({ Component: context.component
+ *   })`
+ * - A decorator component is wrapped with SlotDecorator, injecting the decorated component in a <slot
+ *   />
  *
  * @param context StoryContext
- * @param story  the current story
- * @param innerStory the story decorated by the current story
+ * @param story The current story
+ * @param innerStory The story decorated by the current story
  */
 function prepareStory(
   context: StoryContext<SvelteRenderer>,
@@ -69,7 +74,8 @@ function prepareStory(
     };
   }
 
-  return preparedStory;
+  // no innerStory means this is the last story in the decorator chain, so it should create events from argTypes
+  return { ...preparedStory, argTypes: context.argTypes };
 }
 
 export function decorateStory(storyFn: any, decorators: any[]) {

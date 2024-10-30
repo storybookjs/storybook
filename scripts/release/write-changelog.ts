@@ -1,9 +1,12 @@
-import chalk from 'chalk';
-import path from 'path';
-import program from 'commander';
+import { join } from 'node:path';
+
+import { program } from 'commander';
+// eslint-disable-next-line depend/ban-dependencies
+import { readFile, writeFile, writeJson } from 'fs-extra';
+import picocolors from 'picocolors';
 import semver from 'semver';
 import { z } from 'zod';
-import { readFile, writeFile, writeJson } from 'fs-extra';
+
 import { esMain } from '../utils/esmain';
 import { getChanges } from './utils/get-changes';
 
@@ -45,7 +48,7 @@ const validateOptions = (args: unknown[], options: { [key: string]: any }): opti
   optionsSchema.parse(options);
   if (args.length !== 1 || !semver.valid(args[0] as string)) {
     console.error(
-      `🚨 Invalid arguments, expected a single argument with the version to generate changelog for, eg. ${chalk.green(
+      `🚨 Invalid arguments, expected a single argument with the version to generate changelog for, eg. ${picocolors.green(
         '7.1.0-beta.8'
       )}`
     );
@@ -65,10 +68,10 @@ const writeToChangelogFile = async ({
 }) => {
   const isPrerelease = semver.prerelease(version) !== null;
   const changelogFilename = isPrerelease ? 'CHANGELOG.prerelease.md' : 'CHANGELOG.md';
-  const changelogPath = path.join(__dirname, '..', '..', changelogFilename);
+  const changelogPath = join(__dirname, '..', '..', changelogFilename);
 
   if (verbose) {
-    console.log(`📝 Writing changelog to ${chalk.blue(changelogPath)}`);
+    console.log(`📝 Writing changelog to ${picocolors.blue(changelogPath)}`);
   }
 
   const currentChangelog = await readFile(changelogPath, 'utf-8');
@@ -88,10 +91,10 @@ const writeToDocsVersionFile = async ({
 }) => {
   const isPrerelease = semver.prerelease(version) !== null;
   const filename = isPrerelease ? 'next.json' : 'latest.json';
-  const filepath = path.join(__dirname, '..', '..', 'docs', 'versions', filename);
+  const filepath = join(__dirname, '..', '..', 'docs', 'versions', filename);
 
   if (verbose) {
-    console.log(`📝 Writing changelog to ${chalk.blue(path)}`);
+    console.log(`📝 Writing changelog to ${picocolors.blue(filepath)}`);
   }
 
   const textWithoutHeading = changelogText.split('\n').slice(2).join('\n').replaceAll('"', '\\"');
@@ -114,9 +117,9 @@ export const run = async (args: unknown[], options: unknown) => {
   const version = args[0] as string;
 
   console.log(
-    `💬 Generating changelog for ${chalk.blue(version)} between ${chalk.green(
+    `💬 Generating changelog for ${picocolors.blue(version)} between ${picocolors.green(
       from || 'latest'
-    )} and ${chalk.green(to || 'HEAD')}`
+    )} and ${picocolors.green(to || 'HEAD')}`
   );
 
   const { changelogText } = await getChanges({ version, from, to, unpickedPatches, verbose });

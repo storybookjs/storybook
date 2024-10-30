@@ -1,7 +1,10 @@
+import { existsSync } from 'node:fs';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { dirname, join, normalize } from 'node:path';
+
 import type { OutputFile } from 'esbuild';
-import fs from 'fs-extra';
-import { join, normalize } from 'node:path';
 import slash from 'slash';
+
 import type { Compilation } from '../types';
 
 export async function readOrderedFiles(
@@ -13,8 +16,11 @@ export async function readOrderedFiles(
       // convert deeply nested paths to a single level, also remove special characters
       const { location, url } = sanitizePath(file, addonsDir);
 
-      await fs.ensureFile(location);
-      await fs.writeFile(location, file.contents);
+      if (!existsSync(location)) {
+        const directory = dirname(location);
+        await mkdir(directory, { recursive: true });
+      }
+      await writeFile(location, file.contents);
       return url;
     }) || []
   );

@@ -1,6 +1,8 @@
-import { UnknownArgTypesError } from '@storybook/core/preview-errors';
 import type { SBType } from '@storybook/core/types';
-import type { FlowType, FlowSigType, FlowLiteralType } from './types';
+
+import { UnknownArgTypesError } from '@storybook/core/preview-errors';
+
+import type { FlowLiteralType, FlowSigType, FlowType } from './types';
 
 const isLiteral = (type: FlowType): type is FlowLiteralType => type.name === 'literal';
 const toEnumOption = (element: FlowLiteralType) => element.value.replace(/['|"]/g, '');
@@ -26,7 +28,10 @@ const convertSig = (type: FlowSigType) => {
 export const convert = (type: FlowType): SBType | void => {
   const { name, raw } = type;
   const base: any = {};
-  if (typeof raw !== 'undefined') base.raw = raw;
+
+  if (typeof raw !== 'undefined') {
+    base.raw = raw;
+  }
   switch (type.name) {
     case 'literal':
       return { ...base, name: 'other', value: type.value };

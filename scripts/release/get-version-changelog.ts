@@ -1,6 +1,7 @@
 import { setOutput } from '@actions/core';
-import chalk from 'chalk';
 import { program } from 'commander';
+import picocolors from 'picocolors';
+
 import { esMain } from '../utils/esmain';
 import { getCurrentVersion } from './get-current-version';
 import { getChanges } from './utils/get-changes';
@@ -16,7 +17,7 @@ program
 export const getVersionChangelog = async (args: { version?: string; verbose?: boolean }) => {
   const version = args.version || (await getCurrentVersion());
 
-  console.log(`📝 Getting changelog for version ${chalk.blue(version)}`);
+  console.log(`📝 Getting changelog for version ${picocolors.blue(version)}`);
 
   const { changelogText } = await getChanges({ from: version, version, verbose: args.verbose });
 

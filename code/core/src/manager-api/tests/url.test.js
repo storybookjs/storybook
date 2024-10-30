@@ -1,12 +1,13 @@
-import { describe, beforeEach, it, expect, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  SET_CURRENT_STORY,
   GLOBALS_UPDATED,
+  SET_CURRENT_STORY,
   UPDATE_QUERY_PARAMS,
 } from '@storybook/core/core-events';
 
 import EventEmitter from 'events';
+
 import { init as initURL } from '../modules/url';
 
 vi.mock('@storybook/core/client-logger');
@@ -18,7 +19,7 @@ describe('initial state', () => {
   describe('config query parameters', () => {
     it('handles full parameter', () => {
       const navigate = vi.fn();
-      const location = { search: new URLSearchParams({ full: '1' }).toString() };
+      const location = { search: '?' + new URLSearchParams({ full: '1' }).toString() };
 
       const {
         state: { layout },
@@ -33,7 +34,7 @@ describe('initial state', () => {
 
     it('handles nav parameter', () => {
       const navigate = vi.fn();
-      const location = { search: new URLSearchParams({ nav: '0' }).toString() };
+      const location = { search: '?' + new URLSearchParams({ nav: '0' }).toString() };
 
       const {
         state: { layout },
@@ -44,7 +45,7 @@ describe('initial state', () => {
 
     it('handles shortcuts parameter', () => {
       const navigate = vi.fn();
-      const location = { search: new URLSearchParams({ shortcuts: '0' }).toString() };
+      const location = { search: '?' + new URLSearchParams({ shortcuts: '0' }).toString() };
 
       const {
         state: { ui },
@@ -55,7 +56,7 @@ describe('initial state', () => {
 
     it('handles panel parameter, bottom', () => {
       const navigate = vi.fn();
-      const location = { search: new URLSearchParams({ panel: 'bottom' }).toString() };
+      const location = { search: '?' + new URLSearchParams({ panel: 'bottom' }).toString() };
 
       const {
         state: { layout },
@@ -66,7 +67,7 @@ describe('initial state', () => {
 
     it('handles panel parameter, right', () => {
       const navigate = vi.fn();
-      const location = { search: new URLSearchParams({ panel: 'right' }).toString() };
+      const location = { search: '?' + new URLSearchParams({ panel: 'right' }).toString() };
 
       const {
         state: { layout },
@@ -77,7 +78,7 @@ describe('initial state', () => {
 
     it('handles panel parameter, 0', () => {
       const navigate = vi.fn();
-      const location = { search: new URLSearchParams({ panel: '0' }).toString() };
+      const location = { search: '?' + new URLSearchParams({ panel: '0' }).toString() };
 
       const {
         state: { layout },
@@ -178,7 +179,12 @@ describe('initModule', () => {
     const channel = new EventEmitter();
     initURL({ store, provider: { channel }, state: { location: {} }, navigate, fullAPI });
 
-    channel.emit(GLOBALS_UPDATED, { globals: { a: 2 }, initialGlobals: { a: 1, b: 1 } });
+    channel.emit(GLOBALS_UPDATED, {
+      userGlobals: { a: 2 },
+      storyGlobals: {},
+      globals: { a: 2 },
+      initialGlobals: { a: 1, b: 1 },
+    });
     expect(navigate).toHaveBeenCalledWith(
       '/story/test--story&globals=a:2;b:!undefined',
       expect.objectContaining({ replace: true })
@@ -200,7 +206,7 @@ describe('initModule', () => {
       }),
     });
 
-    channel.emit(GLOBALS_UPDATED, { globals: { g: 2 } });
+    channel.emit(GLOBALS_UPDATED, { userGlobals: { g: 2 }, storyGlobals: {}, globals: { g: 2 } });
     expect(navigate).toHaveBeenCalledWith(
       '/story/test--story&full=1&globals=g:2',
       expect.objectContaining({ replace: true })

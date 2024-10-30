@@ -1,10 +1,7 @@
-import * as t from '@babel/types';
-import bt from '@babel/traverse';
-import { valueToAST } from './valueToAST';
-import { SaveStoryError } from './utils';
+import { types as t, traverse } from '@storybook/core/babel';
 
-// @ts-expect-error (needed due to it's use of `exports.default`)
-const traverse = (bt.default || bt) as typeof bt;
+import { SaveStoryError } from './utils';
+import { valueToAST } from './valueToAST';
 
 export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, any>) => {
   let found = false;
@@ -92,7 +89,6 @@ export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, an
                   delete args[key.node.name];
                 }
               },
-              // @ts-expect-error noScope works but is not typed properly
               noScope: true,
             });
 

@@ -1,7 +1,8 @@
-import { StoryFn, Meta, moduleMetadata, StoryObj } from '@storybook/angular';
-import { ChipsModule } from './angular-src/chips.module';
-import { ChipsGroupComponent } from './angular-src/chips-group.component';
+import { Meta, StoryFn, StoryObj, moduleMetadata } from '@storybook/angular';
+
 import { CHIP_COLOR } from './angular-src/chip-color.token';
+import { ChipsGroupComponent } from './angular-src/chips-group.component';
+import { ChipsModule } from './angular-src/chips.module';
 
 const meta: Meta<ChipsGroupComponent> = {
   // title: 'Basics / NgModule / forRoot() pattern',
@@ -27,6 +28,8 @@ const meta: Meta<ChipsGroupComponent> = {
     removeChipClick: { action: 'Remove chip' },
     removeAllChipsClick: { action: 'Remove all chips clicked' },
   },
+  tags: ['!test', '!vitest'],
+  parameters: { chromatic: { disable: true } },
 };
 
 export default meta;

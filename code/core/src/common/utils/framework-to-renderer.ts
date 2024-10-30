@@ -11,6 +11,7 @@ export const frameworkToRenderer: Record<
   'html-vite': 'html',
   'html-webpack5': 'html',
   nextjs: 'react',
+  'experimental-nextjs-vite': 'react',
   'preact-vite': 'preact',
   'preact-webpack5': 'preact',
   qwik: 'qwik',
@@ -25,6 +26,8 @@ export const frameworkToRenderer: Record<
   'vue3-webpack5': 'vue3',
   'web-components-vite': 'web-components',
   'web-components-webpack5': 'web-components',
+  'react-rsbuild': 'react',
+  'vue3-rsbuild': 'vue3',
   // renderers
   html: 'html',
   preact: 'preact',

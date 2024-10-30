@@ -1,13 +1,13 @@
 import type { FC } from 'react';
 import React, { useCallback } from 'react';
 
-import { opacify, transparentize } from 'polished';
+import { Button } from 'storybook/internal/components';
 import { styled } from 'storybook/internal/theming';
 
-import { Button } from 'storybook/internal/components';
-import { getControlId, getControlSetterButtonId } from './helpers';
+import { opacify, transparentize } from 'polished';
 
-import type { ControlProps, BooleanValue, BooleanConfig } from './types';
+import { getControlId, getControlSetterButtonId } from './helpers';
+import type { BooleanConfig, BooleanValue, ControlProps } from './types';
 
 const Label = styled.label(({ theme }) => ({
   lineHeight: '18px',
@@ -95,14 +95,14 @@ const parse = (value: string | null): boolean => value === 'true';
 export type BooleanProps = ControlProps<BooleanValue> & BooleanConfig;
 /**
  * # Boolean Control
- * Renders a switch toggle with "True" or "False".
- * or if the value is `undefined`, renders a button to set the boolean.
+ *
+ * Renders a switch toggle with "True" or "False". or if the value is `undefined`, renders a button
+ * to set the boolean.
  *
  * ## Example usage
  *
  * ```
- *
- * <BooleanControl name="isTrue" value={value} onChange={handleValueChange}/>
+ * <BooleanControl name="isTrue" value={value} onChange={handleValueChange} />;
  * ```
  */
 export const BooleanControl: FC<BooleanProps> = ({

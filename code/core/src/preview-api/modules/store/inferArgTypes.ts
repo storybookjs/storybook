@@ -1,8 +1,11 @@
-import mapValues from 'lodash/mapValues.js';
-import { dedent } from 'ts-dedent';
-import { logger } from '@storybook/core/client-logger';
-import { combineParameters } from './parameters';
 import type { ArgTypesEnhancer, Renderer, SBType } from '@storybook/core/types';
+
+import { logger } from '@storybook/core/client-logger';
+
+import { mapValues } from 'es-toolkit';
+import { dedent } from 'ts-dedent';
+
+import { combineParameters } from './parameters';
 
 const inferType = (value: any, name: string, visited: Set<any>): SBType => {
   const type = typeof value;
@@ -22,8 +25,8 @@ const inferType = (value: any, name: string, visited: Set<any>): SBType => {
         We've detected a cycle in arg '${name}'. Args should be JSON-serializable.
 
         Consider using the mapping feature or fully custom args:
-        - Mapping: https://storybook.js.org/docs/react/writing-stories/args#mapping-to-complex-arg-values
-        - Custom args: https://storybook.js.org/docs/react/essentials/controls#fully-custom-args
+        - Mapping: https://storybook.js.org/docs/writing-stories/args#mapping-to-complex-arg-values
+        - Custom args: https://storybook.js.org/docs/essentials/controls#fully-custom-args
       `);
       return { name: 'other', value: 'cyclic object' };
     }

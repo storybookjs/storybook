@@ -95,6 +95,7 @@ Pulls the selected theme from storybook's global state.
 
 ```js
 import { DecoratorHelpers } from '@storybook/addon-themes';
+
 const { pluckThemeFromContext } = DecoratorHelpers;
 
 export const myCustomDecorator =
@@ -112,6 +113,7 @@ Returns the theme parameters for this addon.
 
 ```js
 import { DecoratorHelpers } from '@storybook/addon-themes';
+
 const { useThemeParameters } = DecoratorHelpers;
 
 export const myCustomDecorator =
@@ -129,6 +131,7 @@ Used to register the themes and defaultTheme with the addon state.
 
 ```js
 import { DecoratorHelpers } from '@storybook/addon-themes';
+
 const { initializeThemeState } = DecoratorHelpers;
 
 export const myCustomDecorator = ({ themes, defaultState, ...rest }) => {
@@ -145,8 +148,7 @@ export const myCustomDecorator = ({ themes, defaultState, ...rest }) => {
 Let's use Vuetify as an example. Vuetify uses it's own global state to know which theme to render. To build a custom decorator to accommodate this method we'll need to do the following
 
 ```js
-// .storybook/withVeutifyTheme.decorator.js
-
+// .storybook/withVuetifyTheme.decorator.js
 import { DecoratorHelpers } from '@storybook/addon-themes';
 import { useTheme } from 'vuetify';
 
@@ -182,7 +184,6 @@ This can then be provided to Storybook in `.storybook/preview.js`:
 
 ```js
 // .storybook/preview.js
-
 import { setup } from '@storybook/vue3';
 import { registerPlugins } from '../src/plugins';
 import { withVuetifyTheme } from './withVuetifyTheme.decorator';

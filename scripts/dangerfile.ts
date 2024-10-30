@@ -1,11 +1,14 @@
-/* eslint-disable import/extensions */
-import { fail, danger } from 'danger';
+/* eslint-disable import/no-extraneous-dependencies, import/extensions */
 import { execSync } from 'child_process';
+import { danger, fail } from 'danger';
 
 execSync('npm install lodash');
 
+// eslint-disable-next-line depend/ban-dependencies
 const flatten = require('lodash/flatten.js');
+// eslint-disable-next-line depend/ban-dependencies
 const intersection = require('lodash/intersection.js');
+// eslint-disable-next-line depend/ban-dependencies
 const isEmpty = require('lodash/isEmpty.js');
 
 const pkg = require('../code/package.json');

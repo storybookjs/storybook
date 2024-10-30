@@ -1,7 +1,9 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
-import type { Meta, StoryObj } from '@storybook/react';
-import { within, fireEvent, expect } from '@storybook/test';
 import React from 'react';
+
+import type { Meta, StoryObj } from '@storybook/react';
+import { expect, fireEvent, within } from '@storybook/test';
+
 import { Button } from './Button';
 
 const meta = {
@@ -11,9 +13,9 @@ const meta = {
   argTypes: {
     backgroundColor: { control: 'color' },
   },
+  // Stop *this* story from being stacked in Chromatic
+  globals: { sb_theme: 'default' },
   parameters: {
-    // Stop *this* story from being stacked in Chromatic
-    theme: 'default',
     // these are to test the deprecated features of the Description block
     notes: 'These are notes for the Button stories',
     info: 'This is info for the Button stories',
@@ -56,8 +58,8 @@ _this description was written as a string in \`parameters.docs.description.story
 };
 
 /**
- * This is the large button
- * _this description was written as a comment above the story, and should never be shown because it should be overridden by the description in the parameters_
+ * This is the large button _this description was written as a comment above the story, and should
+ * never be shown because it should be overridden by the description in the parameters_
  */
 export const Large: Story = {
   args: {

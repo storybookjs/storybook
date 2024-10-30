@@ -1,14 +1,15 @@
-import Watchpack from 'watchpack';
-import slash from 'slash';
-import fs from 'node:fs';
-import path from 'node:path';
+import { type Dirent, lstatSync, readdirSync } from 'node:fs';
+import { basename, join, relative, resolve } from 'node:path';
 
-import type { NormalizedStoriesSpecifier, Path } from '@storybook/core/types';
 import { commonGlobOptions } from '@storybook/core/common';
+import type { NormalizedStoriesSpecifier, Path } from '@storybook/core/types';
+
+import slash from 'slash';
+import Watchpack from 'watchpack';
 
 const isDirectory = (directory: Path) => {
   try {
-    return fs.lstatSync(directory).isDirectory();
+    return lstatSync(directory).isDirectory();
   } catch (err) {
     return false;
   }
@@ -24,11 +25,11 @@ function getNestedFilesAndDirectories(directories: Path[]) {
     if (traversedDirectories.has(directory)) {
       return;
     }
-    fs.readdirSync(directory, { withFileTypes: true }).forEach((ent: fs.Dirent) => {
+    readdirSync(directory, { withFileTypes: true }).forEach((ent: Dirent) => {
       if (ent.isDirectory()) {
-        traverse(path.join(directory, ent.name));
+        traverse(join(directory, ent.name));
       } else if (ent.isFile()) {
-        files.add(path.join(directory, ent.name));
+        files.add(join(directory, ent.name));
       }
     });
     traversedDirectories.add(directory);
@@ -45,7 +46,7 @@ export function watchStorySpecifiers(
   // Watch all nested files and directories up front to avoid this issue:
   // https://github.com/webpack/watchpack/issues/222
   const { files, directories } = getNestedFilesAndDirectories(
-    specifiers.map((ns) => path.resolve(options.workingDir, ns.directory))
+    specifiers.map((ns) => resolve(options.workingDir, ns.directory))
   );
 
   // See https://www.npmjs.com/package/watchpack for full options.
@@ -58,7 +59,7 @@ export function watchStorySpecifiers(
   wp.watch({ files, directories });
 
   const toImportPath = (absolutePath: Path) => {
-    const relativePath = path.relative(options.workingDir, absolutePath);
+    const relativePath = relative(options.workingDir, absolutePath);
     return slash(relativePath.startsWith('.') ? relativePath : `./${relativePath}`);
   };
 
@@ -87,15 +88,16 @@ export function watchStorySpecifiers(
           .map(async (specifier) => {
             // If `./path/to/dir` was added, check all files matching `./path/to/dir/**/*.stories.*`
             // (where the last bit depends on `files`).
-            const dirGlob = path.join(
+            const dirGlob = join(
               absolutePath,
               '**',
               // files can be e.g. '**/foo/*/*.js' so we just want the last bit,
               // because the directory could already be within the files part (e.g. './x/foo/bar')
-              path.basename(specifier.files)
+              basename(specifier.files)
             );
 
             // Dynamically import globby because it is a pure ESM module
+            // eslint-disable-next-line depend/ban-dependencies
             const { globby } = await import('globby');
 
             // glob only supports forward slashes

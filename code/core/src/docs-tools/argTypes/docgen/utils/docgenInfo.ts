@@ -1,5 +1,4 @@
 /* eslint-disable no-underscore-dangle */
-
 import type { Component } from '../../types';
 import { str } from './string';
 

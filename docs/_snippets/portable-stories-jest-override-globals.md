@@ -12,13 +12,13 @@ test('renders in English', async () => {
     { globals: { locale: 'en' } } // 👈 Project annotations to override the locale
   );
 
-  await Primary.play();
+  await Primary.run();
 });
 
 test('renders in Spanish', async () => {
   const Primary = composeStory(PrimaryStory, meta, { globals: { locale: 'es' } });
 
-  await Primary.play();
+  await Primary.run();
 });
 ```
 
@@ -36,12 +36,12 @@ test('renders in English', async () => {
     { globals: { locale: 'en' } } // 👈 Project annotations to override the locale
   );
 
-  await Primary.play();
+  await Primary.run();
 });
 
 test('renders in Spanish', async () => {
   const Primary = composeStory(PrimaryStory, meta, { globals: { locale: 'es' } });
 
-  await Primary.play();
+  await Primary.run();
 });
 ```

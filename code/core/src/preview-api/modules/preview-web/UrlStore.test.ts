@@ -1,7 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
 import { global } from '@storybook/global';
 
-import { pathToId, setPath, getSelectionSpecifierFromPath } from './UrlStore';
+import { getSelectionSpecifierFromPath, pathToId, setPath } from './UrlStore';
 
 const { history, document } = global;
 
@@ -39,7 +40,7 @@ describe('UrlStore', () => {
       );
     });
     it('should replace legacy parameters but preserve others', () => {
-      document.location.search = 'foo=bar&selectedStory=selStory&selectedKind=selKind';
+      document.location.search = '?foo=bar&selectedStory=selStory&selectedKind=selKind';
       setPath({ storyId: 'story--id', viewMode: 'story' });
       expect(history.replaceState).toHaveBeenCalledWith(
         {},
@@ -48,7 +49,7 @@ describe('UrlStore', () => {
       );
     });
     it('should ignore + keep hashes', () => {
-      document.location.search = 'foo=bar&selectedStory=selStory&selectedKind=selKind';
+      document.location.search = '?foo=bar&selectedStory=selStory&selectedKind=selKind';
       document.location.hash = '#foobar';
       setPath({ storyId: 'story--id', viewMode: 'story' });
       expect(history.replaceState).toHaveBeenCalledWith(

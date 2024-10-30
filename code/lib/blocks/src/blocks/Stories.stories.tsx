@@ -1,9 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react';
+
 import { Stories } from './Stories';
 
 const meta = {
   component: Stories,
-  parameters: { docsStyles: true },
+  parameters: {
+    layout: 'fullscreen',
+    docsStyles: true,
+  },
 } satisfies Meta<typeof Stories>;
 
 export default meta;

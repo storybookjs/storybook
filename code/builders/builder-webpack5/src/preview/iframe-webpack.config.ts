@@ -1,23 +1,27 @@
-import { dirname, join, resolve } from 'path';
-import { DefinePlugin, HotModuleReplacementPlugin, ProgressPlugin, ProvidePlugin } from 'webpack';
-import type { Configuration } from 'webpack';
-import HtmlWebpackPlugin from 'html-webpack-plugin';
-// @ts-expect-error (I removed this on purpose, because it's incorrect)
-import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin';
-import TerserWebpackPlugin from 'terser-webpack-plugin';
-import VirtualModulePlugin from 'webpack-virtual-modules';
-import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
-import type { TransformOptions as EsbuildOptions } from 'esbuild';
-import type { Options } from 'storybook/internal/types';
-import { globalsNameReferenceMap } from 'storybook/internal/preview/globals';
+import { dirname, join, resolve } from 'node:path';
+
 import {
   getBuilderOptions,
-  stringifyProcessEnvs,
-  normalizeStories,
   isPreservingSymlinks,
+  normalizeStories,
+  stringifyProcessEnvs,
 } from 'storybook/internal/common';
+import { globalsNameReferenceMap } from 'storybook/internal/preview/globals';
+import type { Options } from 'storybook/internal/types';
+
 import { type BuilderOptions } from '@storybook/core-webpack';
+
+// @ts-expect-error (I removed this on purpose, because it's incorrect)
+import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin';
+import type { TransformOptions as EsbuildOptions } from 'esbuild';
+import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
+import HtmlWebpackPlugin from 'html-webpack-plugin';
+import TerserWebpackPlugin from 'terser-webpack-plugin';
 import { dedent } from 'ts-dedent';
+import { DefinePlugin, HotModuleReplacementPlugin, ProgressPlugin, ProvidePlugin } from 'webpack';
+import type { Configuration } from 'webpack';
+import VirtualModulePlugin from 'webpack-virtual-modules';
+
 import type { TypescriptOptions } from '../types';
 import { getVirtualModules } from './virtual-module-mapping';
 
@@ -68,7 +72,7 @@ export default async (
     docsOptions,
     entries,
     nonNormalizedStories,
-    modulesCount = 1000,
+    modulesCount,
     build,
     tagsOptions,
   ] = await Promise.all([
@@ -82,7 +86,7 @@ export default async (
     presets.apply('docs'),
     presets.apply<string[]>('entries', []),
     presets.apply('stories', []),
-    options.cache?.get('modulesCount').catch(() => {}),
+    options.cache?.get('modulesCount', 1000),
     options.presets.apply('build'),
     presets.apply('tags', {}),
   ]);
@@ -161,7 +165,7 @@ export default async (
         inject: false,
         template,
         templateParameters: {
-          version: packageJson.version,
+          version: packageJson?.version,
           globals: {
             CONFIG_TYPE: configType,
             LOGLEVEL: logLevel,

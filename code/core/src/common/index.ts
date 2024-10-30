@@ -1,3 +1,5 @@
+import versions from './versions';
+
 /// <reference types="@types/compression" />
 
 export * from './presets';
@@ -16,7 +18,6 @@ export * from './utils/get-storybook-info';
 export * from './utils/get-storybook-refs';
 export * from './utils/glob-to-regexp';
 export * from './utils/HandledError';
-export * from './utils/handlebars';
 export * from './utils/interpolate';
 export * from './utils/interpret-files';
 export * from './utils/interpret-require';
@@ -38,9 +39,10 @@ export * from './utils/validate-configuration-files';
 export * from './utils/satisfies';
 export * from './utils/strip-abs-node-modules-path';
 export * from './utils/formatter';
+export * from './utils/get-story-id';
+export * from './utils/posix';
 export * from './js-package-manager';
 
-import versions from './versions';
 export { versions };
 
 export { createFileSystemCache } from './utils/file-cache';

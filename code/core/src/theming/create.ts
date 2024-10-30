@@ -1,7 +1,6 @@
 // This generates theme variables in the correct shape for the UI
-import lightThemeVars from './themes/light';
 import darkThemeVars from './themes/dark';
-
+import lightThemeVars from './themes/light';
 import type { ThemeVars, ThemeVarsPartial } from './types';
 import { getPreferredColorScheme } from './utils';
 

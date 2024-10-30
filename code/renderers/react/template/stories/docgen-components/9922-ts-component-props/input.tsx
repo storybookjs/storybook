@@ -1,4 +1,4 @@
-import type { FC, ComponentProps, HTMLAttributes } from 'react';
+import type { ComponentProps, FC, HTMLAttributes } from 'react';
 import React from 'react';
 
 type Props = Pick<HTMLAttributes<HTMLButtonElement>, 'onClick'> & {

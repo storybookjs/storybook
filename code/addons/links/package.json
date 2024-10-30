@@ -1,10 +1,9 @@
 {
   "name": "@storybook/addon-links",
-  "version": "8.3.0-alpha.3",
+  "version": "8.4.0-beta.3",
   "description": "Link stories together to build demos and prototypes with your UI components",
   "keywords": [
-    "addon",
-    "storybook",
+    "storybook-addons",
     "organize"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/links",
@@ -24,7 +23,6 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
@@ -63,8 +61,8 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/addon-bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
     "@storybook/csf": "^0.1.11",
@@ -72,7 +70,6 @@
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
-    "fs-extra": "^11.1.0",
     "typescript": "^5.3.2"
   },
   "peerDependencies": {

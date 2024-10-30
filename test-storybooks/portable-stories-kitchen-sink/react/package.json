@@ -9,13 +9,14 @@
     "dev": "vite",
     "jest": "jest",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "playwright": "playwright test",
+    "playwright-ct": "playwright test -c playwright-ct.config.ts",
+    "playwright-e2e": "playwright test -c playwright-e2e.config.ts",
     "preview": "vite preview",
-    "storybook": "STORYBOOK_TELEMETRY_URL=\"http://localhost:6007/event-log\" storybook dev -p 6006",
-    "vitest": "echo 'Vitest tests are implemented in the renderer directory instead!'"
+    "storybook": "storybook dev -p 6006",
+    "vitest": "echo 'not running'"
   },
   "resolutions": {
-    "@playwright/test": "1.42.1",
+    "@playwright/test": "1.48.1",
     "@storybook/addon-a11y": "portal:../../../code/addons/a11y",
     "@storybook/addon-actions": "portal:../../../code/addons/actions",
     "@storybook/addon-backgrounds": "portal:../../../code/addons/backgrounds",
@@ -43,6 +44,7 @@
     "@storybook/core-webpack": "portal:../../../code/lib/core-webpack",
     "@storybook/csf-plugin": "portal:../../../code/lib/csf-plugin",
     "@storybook/ember": "portal:../../../code/frameworks/ember",
+    "@storybook/experimental-addon-test": "file:../../../code/addons/test",
     "@storybook/html": "portal:../../../code/renderers/html",
     "@storybook/html-webpack5": "portal:../../../code/frameworks/html-webpack5",
     "@storybook/instrumenter": "portal:../../../code/lib/instrumenter",
@@ -78,7 +80,7 @@
     "@storybook/web-components": "portal:../../../code/renderers/web-components",
     "@storybook/web-components-vite": "portal:../../../code/frameworks/web-components-vite",
     "@storybook/web-components-webpack5": "portal:../../../code/frameworks/web-components-webpack5",
-    "playwright": "1.42.1",
+    "playwright": "1.48.1",
     "storybook": "portal:../../../code/lib/cli"
   },
   "dependencies": {
@@ -86,16 +88,19 @@
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@playwright/experimental-ct-react": "1.42.1",
+    "@playwright/experimental-ct-react": "1.48.1",
+    "@playwright/test": "1.48.1",
     "@storybook/addon-actions": "^8.0.0",
+    "@storybook/addon-controls": "^8.0.0",
     "@storybook/addon-essentials": "^8.0.0",
     "@storybook/addon-interactions": "^8.0.0",
+    "@storybook/experimental-addon-test": "^8.0.0",
     "@storybook/react": "^8.0.0",
     "@storybook/react-vite": "^8.0.0",
     "@storybook/test": "^8.0.0",
     "@swc/core": "^1.4.2",
     "@swc/jest": "^0.2.36",
-    "@testing-library/jest-dom": "6.4.5",
+    "@testing-library/jest-dom": "6.5.0",
     "@testing-library/react": "^14.2.1",
     "@types/identity-obj-proxy": "^3",
     "@types/react": "^18.2.55",
@@ -103,6 +108,7 @@
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "@vitejs/plugin-react": "^4.2.1",
+    "@vitest/browser": "^2.1.3",
     "cypress": "^13.6.4",
     "eslint": "^8.56.0",
     "eslint-plugin-react-hooks": "^4.6.0",
@@ -113,6 +119,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "storybook": "^8.0.0",
     "typescript": "^5.2.2",
-    "vite": "^5.1.1"
+    "vite": "^5.1.1",
+    "vitest": "^2.1.3"
   }
 }

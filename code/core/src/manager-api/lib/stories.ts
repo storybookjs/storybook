@@ -1,29 +1,30 @@
+import type {
+  API_ComponentEntry,
+  API_DocsEntry,
+  API_GroupEntry,
+  API_HashEntry,
+  API_IndexHash,
+  API_PreparedStoryIndex,
+  API_Provider,
+  API_RootEntry,
+  API_StoryEntry,
+  DocsOptions,
+  IndexEntry,
+  Parameters,
+  SetStoriesPayload,
+  SetStoriesStoryData,
+  StoryId,
+  StoryIndexV2,
+  StoryIndexV3,
+} from '@storybook/core/types';
+import { sanitize } from '@storybook/csf';
+
+import { countBy, mapValues } from 'es-toolkit';
 import memoize from 'memoizerific';
 import { dedent } from 'ts-dedent';
-import countBy from 'lodash/countBy.js';
-import mapValues from 'lodash/mapValues.js';
-import { sanitize } from '@storybook/csf';
-import type {
-  StoryId,
-  Parameters,
-  DocsOptions,
-  API_Provider,
-  SetStoriesStoryData,
-  API_PreparedStoryIndex,
-  StoryIndexV3,
-  IndexEntry,
-  API_RootEntry,
-  API_GroupEntry,
-  API_ComponentEntry,
-  API_IndexHash,
-  API_DocsEntry,
-  API_StoryEntry,
-  API_HashEntry,
-  SetStoriesPayload,
-  StoryIndexV2,
-} from '@storybook/core/types';
 
-import { type API, combineParameters, type State } from '../root';
+import { type API, type State, combineParameters } from '../root';
+import intersect from './intersect';
 import merge from './merge';
 
 const TITLE_PATH_SEPARATOR = /\s*\/\s*/;
@@ -40,7 +41,7 @@ export const denormalizeStoryParameters = ({
       kindParameters[storyData.kind],
       storyData.parameters as unknown as Parameters
     ),
-  }));
+  })) as SetStoriesStoryData;
 };
 
 export const transformSetStoriesStoryDataToStoriesHash = (
@@ -54,7 +55,9 @@ export const transformSetStoriesStoryDataToPreparedStoryIndex = (
 ): API_PreparedStoryIndex => {
   const entries: API_PreparedStoryIndex['entries'] = Object.entries(stories).reduce(
     (acc, [id, story]) => {
-      if (!story) return acc;
+      if (!story) {
+        return acc;
+      }
 
       const { docsOnly, fileName, ...parameters } = story.parameters;
       const base = {
@@ -109,7 +112,7 @@ export const transformStoryIndexV2toV3 = (index: StoryIndexV2): StoryIndexV3 => 
 };
 
 export const transformStoryIndexV3toV4 = (index: StoryIndexV3): API_PreparedStoryIndex => {
-  const countByTitle = countBy(Object.values(index.stories), 'title');
+  const countByTitle = countBy(Object.values(index.stories), (item) => item.title);
   return {
     v: 4,
     entries: Object.values(index.stories).reduce(
@@ -140,9 +143,9 @@ export const transformStoryIndexV3toV4 = (index: StoryIndexV3): API_PreparedStor
 };
 
 /**
- * Storybook 8.0 and below did not automatically tag stories with 'dev'.
- * Therefore Storybook 8.1 and above would not show composed 8.0 stories by default.
- * This function adds the 'dev' tag to all stories in the index to workaround this issue.
+ * Storybook 8.0 and below did not automatically tag stories with 'dev'. Therefore Storybook 8.1 and
+ * above would not show composed 8.0 stories by default. This function adds the 'dev' tag to all
+ * stories in the index to workaround this issue.
  */
 export const transformStoryIndexV4toV5 = (
   index: API_PreparedStoryIndex
@@ -271,6 +274,9 @@ export const transformStoryIndexToStoriesHash = (
             children: [childId],
           }),
         });
+        // merge computes a union of arrays but we want an intersection on this
+        // specific array property, so it's easier to add it after the merge.
+        acc[id].tags = intersect(acc[id]?.tags ?? item.tags, item.tags);
       } else {
         acc[id] = merge<API_GroupEntry>((acc[id] || {}) as API_GroupEntry, {
           type: 'group',
@@ -325,7 +331,9 @@ export const transformStoryIndexToStoriesHash = (
 };
 
 export const addPreparedStories = (newHash: API_IndexHash, oldHash?: API_IndexHash) => {
-  if (!oldHash) return newHash;
+  if (!oldHash) {
+    return newHash;
+  }
 
   return Object.fromEntries(
     Object.entries(newHash).map(([id, newEntry]) => {

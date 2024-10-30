@@ -1,9 +1,10 @@
+// eslint-disable-next-line depend/ban-dependencies
 import { readFile } from 'fs-extra';
 import { resolve } from 'path';
 
-import { maxConcurrentTasks } from '../utils/maxConcurrentTasks';
-import { exec } from '../utils/exec';
 import type { Task } from '../task';
+import { exec } from '../utils/exec';
+import { maxConcurrentTasks } from '../utils/maxConcurrentTasks';
 
 // The amount of VCPUs for the check task on CI is 4 (large resource)
 const amountOfVCPUs = 4;
@@ -27,7 +28,10 @@ export const compile: Task = {
         'utf8'
       );
       const isLinkedContents = contents.indexOf(linkedContents) !== -1;
-      if (link) return isLinkedContents;
+
+      if (link) {
+        return isLinkedContents;
+      }
       return !isLinkedContents;
     } catch (err) {
       return false;

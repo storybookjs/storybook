@@ -1,15 +1,30 @@
 import React, { useState } from 'react';
-import type { Meta, StoryObj } from '@storybook/react';
-import { userEvent, within, expect } from '@storybook/test';
 
-import { Modal } from './Modal';
+import type { Meta, StoryObj } from '@storybook/react';
+import { expect, userEvent, within } from '@storybook/test';
+
 import { Button } from '../Button/Button';
+import { Modal } from './Modal';
 
 type Story = StoryObj<typeof meta>;
 
 const meta = {
   component: Modal,
-  decorators: [(storyFn) => <div style={{ width: '1200px', height: '800px' }}>{storyFn()}</div>],
+  decorators: [
+    (storyFn) => (
+      <div
+        style={{
+          width: '100%',
+          minWidth: '1200px',
+          height: '800px',
+          background:
+            'repeating-linear-gradient(45deg, #000000, #ffffff 50px, #ffffff 50px, #ffffff 80px)',
+        }}
+      >
+        {storyFn()}
+      </div>
+    ),
+  ],
 } satisfies Meta<typeof Modal>;
 
 export default meta;

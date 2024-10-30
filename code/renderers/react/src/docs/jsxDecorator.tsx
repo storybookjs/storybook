@@ -1,16 +1,21 @@
 /* eslint-disable no-underscore-dangle */
 import type { ReactElement, ReactNode } from 'react';
-import React, { isValidElement, createElement } from 'react';
-import type { Options } from 'react-element-to-jsx-string';
-import reactElementToJSXString from 'react-element-to-jsx-string';
+import React, { createElement, isValidElement } from 'react';
 
-import { addons, useEffect } from 'storybook/internal/preview-api';
-import type { StoryContext, ArgsStoryFn, PartialStoryFn } from 'storybook/internal/types';
-import { SourceType, SNIPPET_RENDERED, getDocgenSection } from 'storybook/internal/docs-tools';
 import { logger } from 'storybook/internal/client-logger';
-import { isMemo, isForwardRef } from './lib';
+import { SNIPPET_RENDERED, SourceType, getDocgenSection } from 'storybook/internal/docs-tools';
+import { addons, useEffect } from 'storybook/internal/preview-api';
+import type { ArgsStoryFn, PartialStoryFn, StoryContext } from 'storybook/internal/types';
+
+import type { Options } from 'react-element-to-jsx-string';
+import type reactElementToJSXStringType from 'react-element-to-jsx-string';
+// @ts-expect-error (this is needed, because our bundling prefers the `browser` field, but that yields CJS)
+import reactElementToJSXStringRaw from 'react-element-to-jsx-string/dist/esm/index.js';
 
 import type { ReactRenderer } from '../types';
+import { isForwardRef, isMemo } from './lib';
+
+const reactElementToJSXString = reactElementToJSXStringRaw as typeof reactElementToJSXStringType;
 
 const toPascalCase = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 
@@ -20,13 +25,17 @@ const toPascalCase = (str: string) => str.charAt(0).toUpperCase() + str.slice(1)
  * Symbols come from here
  * https://github.com/facebook/react/blob/338dddc089d5865761219f02b5175db85c54c489/packages/react-devtools-shared/src/backend/ReactSymbols.js
  *
- * E.g.
- * Symbol(react.suspense)                    -> React.Suspense
- * Symbol(react.strict_mode)                 -> React.StrictMode
+ * @example
+ *
+ * ```
+ * Symbol(react.suspense) -> React.Suspense
+ * Symbol(react.strict_mode) -> React.StrictMode
  * Symbol(react.server_context.defaultValue) -> React.ServerContext.DefaultValue
+ * ```
  *
  * @param {Symbol} elementType - The symbol to convert
- * @returns {string | null} A displayName for the Symbol in case elementType is a Symbol; otherwise, null.
+ * @returns {string | null} A displayName for the Symbol in case elementType is a Symbol; otherwise,
+ *   null.
  */
 export const getReactSymbolName = (elementType: any): string => {
   const elementName = elementType.$$typeof || elementType;
@@ -114,11 +123,11 @@ export const renderJsx = (code: React.ReactElement, options?: JSXOptions) => {
   if (typeof options?.displayName === 'string') {
     displayNameDefaults = { showFunctions: true, displayName: () => options.displayName };
     /**
-     * add `renderedJSX?.type`to handle this case:
+     * Add `renderedJSX?.type`to handle this case:
      *
      * https://github.com/zhyd1997/storybook/blob/20863a75ba4026d7eba6b288991a2cf091d4dfff/code/renderers/react/template/stories/errors.stories.tsx#L14
      *
-     * or it show the error message when run `yarn build-storybook --quiet`:
+     * Or it show the error message when run `yarn build-storybook --quiet`:
      *
      * Cannot read properties of undefined (reading '__docgenInfo').
      */
@@ -211,7 +220,9 @@ export const skipJsxRender = (context: StoryContext<ReactRenderer>) => {
 const isMdx = (node: any) => node.type?.displayName === 'MDXCreateElement' && !!node.props?.mdxType;
 
 const mdxToJsx = (node: any) => {
-  if (!isMdx(node)) return node;
+  if (!isMdx(node)) {
+    return node;
+  }
   const { mdxType, originalType, children, ...rest } = node.props;
   let jsxChildren = [] as ReactElement[];
   if (children) {

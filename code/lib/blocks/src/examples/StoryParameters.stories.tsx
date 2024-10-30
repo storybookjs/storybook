@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react';
+
 import { SimpleSizeTest } from './SimpleSizeTest';
 
 const meta = {
   title: 'examples/Stories for the Story Block',
   component: SimpleSizeTest,
-  // Stop *this* story from being stacked in Chromatic (we want the caller to stack though)
-  parameters: { theme: 'default' },
+  globals: { sb_theme: 'light' },
 } satisfies Meta<typeof SimpleSizeTest>;
 export default meta;
 

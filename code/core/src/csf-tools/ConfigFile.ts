@@ -1,21 +1,18 @@
 /* eslint-disable no-underscore-dangle */
 import { readFile, writeFile } from 'node:fs/promises';
+
+import {
+  type RecastOptions,
+  babelParse,
+  generate,
+  recast,
+  types as t,
+  traverse,
+} from '@storybook/core/babel';
+
 import { dedent } from 'ts-dedent';
 
-import * as t from '@babel/types';
-import bg from '@babel/generator';
-import bt from '@babel/traverse';
-
-import type { Options } from 'recast';
-import * as recast from 'recast';
-
-import { babelParse } from './babelParse';
 import type { PrintResultType } from './PrintResultType';
-
-// @ts-expect-error (needed due to it's use of `exports.default`)
-const traverse = (bt.default || bt) as typeof bt;
-// @ts-expect-error (needed due to it's use of `exports.default`)
-const generate = (bg.default || bg) as typeof bg;
 
 const logger = console;
 
@@ -44,9 +41,21 @@ const getCsfParsingErrorMessage = ({
 };
 
 const propKey = (p: t.ObjectProperty) => {
-  if (t.isIdentifier(p.key)) return p.key.name;
-  if (t.isStringLiteral(p.key)) return p.key.value;
+  if (t.isIdentifier(p.key)) {
+    return p.key.name;
+  }
+
+  if (t.isStringLiteral(p.key)) {
+    return p.key.value;
+  }
   return null;
+};
+
+const unwrap = (node: t.Node | undefined | null): any => {
+  if (t.isTSAsExpression(node) || t.isTSSatisfiesExpression(node)) {
+    return unwrap(node.expression);
+  }
+  return node;
 };
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -77,7 +86,9 @@ const _getPathProperties = (path: string[], node: t.Node): t.ObjectProperty[] | 
     const field = (node.properties as t.ObjectProperty[]).find((p) => propKey(p) === first);
     if (field) {
       // FXIME handle spread etc.
-      if (rest.length === 0) return node.properties as t.ObjectProperty[];
+      if (rest.length === 0) {
+        return node.properties as t.ObjectProperty[];
+      }
 
       return _getPathProperties(rest, (field as t.ObjectProperty).value);
     }
@@ -91,6 +102,7 @@ const _findVarDeclarator = (
 ): t.VariableDeclarator | null | undefined => {
   let declarator: t.VariableDeclarator | null | undefined = null;
   let declarations: t.VariableDeclarator[] | null = null;
+
   program.body.find((node: t.Node) => {
     if (t.isVariableDeclaration(node)) {
       declarations = node.declarations;
@@ -124,7 +136,9 @@ const _findVarInitialization = (identifier: string, program: t.Program) => {
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const _makeObjectExpression = (path: string[], value: t.Expression): t.Expression => {
-  if (path.length === 0) return value;
+  if (path.length === 0) {
+    return value;
+  }
   const [first, ...rest] = path;
   const innerExpression = _makeObjectExpression(rest, value);
   return t.objectExpression([t.objectProperty(t.identifier(first), innerExpression)]);
@@ -185,9 +199,7 @@ export class ConfigFile {
               ? _findVarInitialization(node.declaration.name, parent)
               : node.declaration;
 
-          if (t.isTSAsExpression(decl) || t.isTSSatisfiesExpression(decl)) {
-            decl = decl.expression;
-          }
+          decl = unwrap(decl);
 
           if (t.isObjectExpression(decl)) {
             self._exportsObject = decl;
@@ -237,9 +249,13 @@ export class ConfigFile {
               ) {
                 const { name: localName } = spec.local;
                 const { name: exportName } = spec.exported;
+
                 const decl = _findVarDeclarator(localName, parent as t.Program) as any;
-                self._exports[exportName] = decl.init;
-                self._exportDecls[exportName] = decl;
+                // decl can be empty in case X from `import { X } from ....` because it is not handled in _findVarDeclarator
+                if (decl) {
+                  self._exports[exportName] = decl.init;
+                  self._exportDecls[exportName] = decl;
+                }
               }
             });
           } else {
@@ -269,9 +285,7 @@ export class ConfigFile {
                 exportObject = _findVarInitialization(right.name, parent as t.Program) as any;
               }
 
-              if (t.isTSAsExpression(exportObject) || t.isTSSatisfiesExpression(exportObject)) {
-                exportObject = exportObject.expression;
-              }
+              exportObject = unwrap(exportObject);
 
               if (t.isObjectExpression(exportObject)) {
                 self._exportsObject = exportObject;
@@ -308,14 +322,20 @@ export class ConfigFile {
   getFieldNode(path: string[]) {
     const [root, ...rest] = path;
     const exported = this._exports[root];
-    if (!exported) return undefined;
+
+    if (!exported) {
+      return undefined;
+    }
     return _getPath(rest, exported);
   }
 
-  getFieldProperties(path: string[]) {
+  getFieldProperties(path: string[]): ReturnType<typeof _getPathProperties> {
     const [root, ...rest] = path;
     const exported = this._exports[root];
-    if (!exported) return undefined;
+
+    if (!exported) {
+      return undefined;
+    }
     return _getPathProperties(rest, exported);
   }
 
@@ -351,7 +371,7 @@ export class ConfigFile {
       const decl = this._exportDecls[path[0]];
       decl.init = _makeObjectExpression([], expr);
     } else if (this.hasDefaultExport) {
-      // This means the main.js of the user has a default export that is not an object expression, therefore we can't change the AST.
+      // This means the main.js of the user has a default export that is not an object expression, therefore we can'types change the AST.
       throw new Error(
         `Could not set the "${path.join(
           '.'
@@ -369,17 +389,17 @@ export class ConfigFile {
   }
 
   /**
-   * Returns the name of a node in a given path, supporting the following formats:
-   * 1. { framework: 'value' }
-   * 2. { framework: { name: 'value', options: {} } }
-   */
-  /**
-   * Returns the name of a node in a given path, supporting the following formats:
    * @example
+   *
+   * ```ts
    * // 1. { framework: 'framework-name' }
    * // 2. { framework: { name: 'framework-name', options: {} }
-   * getNameFromPath(['framework']) // => 'framework-name'
+   * getNameFromPath(['framework']); // => 'framework-name'
+   * ```
+   *
+   * @returns The name of a node in a given path, supporting the following formats:
    */
+
   getNameFromPath(path: string[]): string | undefined {
     const node = this.getFieldNode(path);
     if (!node) {
@@ -391,16 +411,16 @@ export class ConfigFile {
 
   /**
    * Returns an array of names of a node in a given path, supporting the following formats:
-   * @example
-   * const config = {
-   *   addons: [
-   *     'first-addon',
-   *     { name: 'second-addon', options: {} }
-   *   ]
-   * }
-   * // => ['first-addon', 'second-addon']
-   * getNamesFromPath(['addons'])
    *
+   * @example
+   *
+   * ```ts
+   * const config = {
+   *   addons: ['first-addon', { name: 'second-addon', options: {} }],
+   * };
+   * // => ['first-addon', 'second-addon']
+   * getNamesFromPath(['addons']);
+   * ```
    */
   getNamesFromPath(path: string[]): string[] | undefined {
     const node = this.getFieldNode(path);
@@ -430,8 +450,9 @@ export class ConfigFile {
 
   /**
    * Given a node and a fallback property, returns a **non-evaluated** string value of the node.
-   * 1. { node: 'value' }
-   * 2. { node: { fallbackProperty: 'value' } }
+   *
+   * 1. `{ node: 'value' }`
+   * 2. `{ node: { fallbackProperty: 'value' } }`
    */
   _getPresetValue(node: t.Node, fallbackProperty: string) {
     let value;
@@ -484,7 +505,7 @@ export class ConfigFile {
         properties.splice(index, 1);
       }
     };
-    // the structure of this._exports doesn't work for this use case
+    // the structure of this._exports doesn'types work for this use case
     // so we have to manually bypass it here
     if (path.length === 1) {
       let removedRootProperty = false;
@@ -504,9 +525,8 @@ export class ConfigFile {
           if (t.isIdentifier(decl)) {
             decl = _findVarInitialization(decl.name, this._ast.program);
           }
-          if (t.isTSAsExpression(decl) || t.isTSSatisfiesExpression(decl)) {
-            decl = decl.expression;
-          }
+
+          decl = unwrap(decl);
           if (t.isObjectExpression(decl)) {
             const properties = decl.properties as t.ObjectProperty[];
             removeProperty(properties, path[0]);
@@ -529,7 +549,10 @@ export class ConfigFile {
           removedRootProperty = true;
         }
       });
-      if (removedRootProperty) return;
+
+      if (removedRootProperty) {
+        return;
+      }
     }
 
     const properties = this.getFieldProperties(path) as t.ObjectProperty[];
@@ -541,7 +564,10 @@ export class ConfigFile {
 
   appendValueToArray(path: string[], value: any) {
     const node = this.valueToNode(value);
-    if (node) this.appendNodeToArray(path, node);
+
+    if (node) {
+      this.appendNodeToArray(path, node);
+    }
   }
 
   appendNodeToArray(path: string[], node: t.Expression) {
@@ -556,12 +582,15 @@ export class ConfigFile {
   }
 
   /**
-   * Specialized helper to remove addons or other array entries
-   * that can either be strings or objects with a name property.
+   * Specialized helper to remove addons or other array entries that can either be strings or
+   * objects with a name property.
    */
   removeEntryFromArray(path: string[], value: string) {
     const current = this.getFieldNode(path);
-    if (!current) return;
+
+    if (!current) {
+      return;
+    }
     if (t.isArrayExpression(current)) {
       const index = current.elements.findIndex((element) => {
         if (t.isStringLiteral(element)) {
@@ -600,10 +629,10 @@ export class ConfigFile {
     return this._quotes;
   }
 
-  valueToNode(value: any) {
+  valueToNode(value: any): t.Expression | undefined {
     const quotes = this._inferQuotes();
     let valueNode;
-    // we do this rather than t.valueToNode because apparently
+    // we do this rather than types.valueToNode because apparently
     // babel only preserves quotes if they are parsed from the original code.
     if (quotes === 'single') {
       const { code } = generate(t.valueToNode(value), { jsescOption: { quotes } });
@@ -637,7 +666,7 @@ export class ConfigFile {
     this.setFieldNode(path, valueNode);
   }
 
-  getBodyDeclarations() {
+  getBodyDeclarations(): t.Statement[] {
     return this._ast.program.body;
   }
 
@@ -647,15 +676,20 @@ export class ConfigFile {
 
   /**
    * Import specifiers for a specific require import
-   * @param importSpecifiers - The import specifiers to set. If a string is passed in, a default import will be set. Otherwise, an array of named imports will be set
-   * @param fromImport - The module to import from
+   *
    * @example
+   *
+   * ```ts
    * // const { foo } = require('bar');
    * setRequireImport(['foo'], 'bar');
    *
    * // const foo = require('bar');
    * setRequireImport('foo', 'bar');
+   * ```
    *
+   * @param importSpecifiers - The import specifiers to set. If a string is passed in, a default
+   *   import will be set. Otherwise, an array of named imports will be set
+   * @param fromImport - The module to import from
    */
   setRequireImport(importSpecifier: string[] | string, fromImport: string) {
     const requireDeclaration = this._ast.program.body.find(
@@ -672,9 +706,13 @@ export class ConfigFile {
 
     /**
      * Returns true, when the given import declaration has the given import specifier
+     *
      * @example
+     *
+     * ```ts
      * // const { foo } = require('bar');
      * hasImportSpecifier(declaration, 'foo');
+     * ```
      */
     const hasRequireSpecifier = (name: string) =>
       t.isObjectPattern(requireDeclaration?.declarations[0].id) &&
@@ -687,9 +725,13 @@ export class ConfigFile {
 
     /**
      * Returns true, when the given import declaration has the given default import specifier
+     *
      * @example
+     *
+     * ```ts
      * // import foo from 'bar';
      * hasImportSpecifier(declaration, 'foo');
+     * ```
      */
     const hasDefaultRequireSpecifier = (declaration: t.VariableDeclaration, name: string) =>
       declaration.declarations.length === 1 &&
@@ -713,10 +755,10 @@ export class ConfigFile {
 
       if (requireDeclaration) {
         if (!hasDefaultRequireSpecifier(requireDeclaration, importSpecifier)) {
-          // If the import declaration hasn't the specified default identifier, we add a new variable declaration
+          // If the import declaration hasn'types the specified default identifier, we add a new variable declaration
           addDefaultRequireSpecifier();
         }
-        // If the import declaration with the given source doesn't exist
+        // If the import declaration with the given source doesn'types exist
       } else {
         // Add the import declaration to the top of the file
         addDefaultRequireSpecifier();
@@ -748,16 +790,22 @@ export class ConfigFile {
 
   /**
    * Set import specifiers for a given import statement.
-   * @description Does not support setting type imports (yet)
-   * @param importSpecifiers - The import specifiers to set. If a string is passed in, a default import will be set. Otherwise, an array of named imports will be set
-   * @param fromImport - The module to import from
+   *
+   * Does not support setting type imports (yet)
+   *
    * @example
+   *
+   * ```ts
    * // import { foo } from 'bar';
    * setImport(['foo'], 'bar');
    *
    * // import foo from 'bar';
    * setImport('foo', 'bar');
+   * ```
    *
+   * @param importSpecifiers - The import specifiers to set. If a string is passed in, a default
+   *   import will be set. Otherwise, an array of named imports will be set
+   * @param fromImport - The module to import from
    */
   setImport(importSpecifier: string[] | string, fromImport: string) {
     const getNewImportSpecifier = (specifier: string) =>
@@ -765,9 +813,13 @@ export class ConfigFile {
 
     /**
      * Returns true, when the given import declaration has the given import specifier
+     *
      * @example
+     *
+     * ```ts
      * // import { foo } from 'bar';
      * hasImportSpecifier(declaration, 'foo');
+     * ```
      */
     const hasImportSpecifier = (declaration: t.ImportDeclaration, name: string) =>
       declaration.specifiers.find(
@@ -779,9 +831,13 @@ export class ConfigFile {
 
     /**
      * Returns true, when the given import declaration has the given default import specifier
+     *
      * @example
+     *
+     * ```ts
      * // import foo from 'bar';
      * hasImportSpecifier(declaration, 'foo');
+     * ```
      */
     const hasDefaultImportSpecifier = (declaration: t.ImportDeclaration, name: string) =>
       declaration.specifiers.find((specifier) => t.isImportDefaultSpecifier(specifier));
@@ -795,12 +851,12 @@ export class ConfigFile {
       // If the import declaration with the given source exists
       if (importDeclaration) {
         if (!hasDefaultImportSpecifier(importDeclaration, importSpecifier)) {
-          // If the import declaration hasn't a default specifier, we add it
+          // If the import declaration hasn'types a default specifier, we add it
           importDeclaration.specifiers.push(
             t.importDefaultSpecifier(t.identifier(importSpecifier))
           );
         }
-        // If the import declaration with the given source doesn't exist
+        // If the import declaration with the given source doesn'types exist
       } else {
         // Add the import declaration to the top of the file
         this._ast.program.body.unshift(
@@ -839,7 +895,7 @@ export const formatConfig = (config: ConfigFile): string => {
   return printConfig(config).code;
 };
 
-export const printConfig = (config: ConfigFile, options: Options = {}): PrintResultType => {
+export const printConfig = (config: ConfigFile, options: RecastOptions = {}): PrintResultType => {
   return recast.print(config._ast, options);
 };
 
@@ -850,6 +906,9 @@ export const readConfig = async (fileName: string) => {
 
 export const writeConfig = async (config: ConfigFile, fileName?: string) => {
   const fname = fileName || config.fileName;
-  if (!fname) throw new Error('Please specify a fileName for writeConfig');
+
+  if (!fname) {
+    throw new Error('Please specify a fileName for writeConfig');
+  }
   await writeFile(fname, formatConfig(config));
 };

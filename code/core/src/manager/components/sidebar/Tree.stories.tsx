@@ -1,34 +1,37 @@
 // @TODO: use addon-interactions and remove the rule disable above
 import React, { useState } from 'react';
+
+import type { Meta, StoryObj } from '@storybook/react';
+import { expect, within } from '@storybook/test';
+
 import type { ComponentEntry, IndexHash } from '@storybook/core/manager-api';
+
 import { action } from '@storybook/addon-actions';
 
-import type { StoryObj, Meta } from '@storybook/react';
-import { within, expect } from '@storybook/test';
+import { DEFAULT_REF_ID } from './Sidebar';
 import { Tree } from './Tree';
 import { index } from './mockdata.large';
-import { DEFAULT_REF_ID } from './Sidebar';
-
-const customViewports = {
-  sized: {
-    name: 'Sized',
-    styles: {
-      width: '380px',
-      height: '90%',
-    },
-  },
-};
 
 const meta = {
   component: Tree,
   title: 'Sidebar/Tree',
   excludeStories: /.*Data$/,
+  globals: {
+    sb_theme: 'light',
+    viewport: { value: 'sized' },
+  },
   parameters: {
     layout: 'fullscreen',
-    theme: 'light',
     viewport: {
-      defaultViewport: 'sized',
-      viewports: customViewports,
+      options: {
+        sized: {
+          name: 'Sized',
+          styles: {
+            width: '380px',
+            height: '90%',
+          },
+        },
+      },
     },
     chromatic: { viewports: [380] },
   },
@@ -64,7 +67,7 @@ export const Full: Story = {
 };
 export const Dark: Story = {
   ...Full,
-  parameters: { theme: 'dark' },
+  globals: { sb_theme: 'dark' },
 };
 
 export const SingleStoryComponents: Story = {
@@ -205,12 +208,21 @@ export const DocsOnlySingleStoryComponents = {
 export const SkipToCanvasLinkFocused: Story = {
   ...DocsOnlySingleStoryComponents,
   parameters: {
-    chromatic: { disable: true },
+    chromatic: { viewports: [1280] },
     viewport: {
-      defaultViewport: 'sized',
-      viewports: customViewports,
-      defaultOrientation: 'landscape',
+      options: {
+        desktop: {
+          name: 'Desktop',
+          styles: {
+            width: '100%',
+            height: '100%',
+          },
+        },
+      },
     },
+  },
+  globals: {
+    viewport: { value: 'desktop' },
   },
   play: async ({ canvasElement }) => {
     const screen = await within(canvasElement);

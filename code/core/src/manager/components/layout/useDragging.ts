@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { useEffect, useRef } from 'react';
+
 import type { LayoutState } from './Layout';
 
 // the distance from the edge of the screen at which the panel/sidebar will snap to the edge
@@ -8,16 +9,12 @@ const SIDEBAR_MIN_WIDTH_PX = 240;
 const RIGHT_PANEL_MIN_WIDTH_PX = 270;
 const MIN_WIDTH_STIFFNESS = 0.9;
 
-/**
- * Clamps a value between min and max.
- */
+/** Clamps a value between min and max. */
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
-/**
- * Interpolates a value between min and max based on the relativeValue.
- */
+/** Interpolates a value between min and max based on the relativeValue. */
 function interpolate(relativeValue: number, min: number, max: number): number {
   return min + (max - min) * relativeValue;
 }

@@ -1,10 +1,12 @@
 import React from 'react';
-import type { StoryObj, Meta } from '@storybook/react';
-import { CallStates } from '@storybook/instrumenter';
-import { styled } from 'storybook/internal/theming';
-import { userEvent, within, waitFor, expect } from '@storybook/test';
-import { isChromatic } from '../../../../.storybook/isChromatic';
 
+import { styled } from 'storybook/internal/theming';
+
+import { CallStates } from '@storybook/instrumenter';
+import type { Meta, StoryObj } from '@storybook/react';
+import { expect, userEvent, waitFor, within } from '@storybook/test';
+
+import { isChromatic } from '../../../../.storybook/isChromatic';
 import { getCalls, getInteractions } from '../mocks';
 import { InteractionsPanel } from './InteractionsPanel';
 import SubnavStories from './Subnav.stories';
@@ -33,10 +35,7 @@ const meta = {
       </StyledWrapper>
     ),
   ],
-  parameters: {
-    layout: 'fullscreen',
-    theme: 'light', // stacked will break interactions
-  },
+  parameters: { layout: 'fullscreen' },
   args: {
     calls: new Map(getCalls(CallStates.DONE).map((call) => [call.id, call])),
     controls: SubnavStories.args.controls,
@@ -60,35 +59,37 @@ export const Passing: Story = {
   args: {
     interactions: getInteractions(CallStates.DONE),
   },
-};
-Passing.play = async ({ args, canvasElement }) => {
-  if (isChromatic()) return;
-  const canvas = within(canvasElement);
+  play: async ({ args, canvasElement }) => {
+    if (isChromatic()) {
+      return;
+    }
+    const canvas = within(canvasElement);
 
-  await waitFor(async () => {
-    await userEvent.click(canvas.getByLabelText('Go to start'));
-    await expect(args.controls.start).toHaveBeenCalled();
-  });
+    await waitFor(async () => {
+      await userEvent.click(canvas.getByLabelText('Go to start'));
+      await expect(args.controls.start).toHaveBeenCalled();
+    });
 
-  await waitFor(async () => {
-    await userEvent.click(canvas.getByLabelText('Go back'));
-    await expect(args.controls.back).toHaveBeenCalled();
-  });
+    await waitFor(async () => {
+      await userEvent.click(canvas.getByLabelText('Go back'));
+      await expect(args.controls.back).toHaveBeenCalled();
+    });
 
-  await waitFor(async () => {
-    await userEvent.click(canvas.getByLabelText('Go forward'));
-    await expect(args.controls.next).not.toHaveBeenCalled();
-  });
+    await waitFor(async () => {
+      await userEvent.click(canvas.getByLabelText('Go forward'));
+      await expect(args.controls.next).not.toHaveBeenCalled();
+    });
 
-  await waitFor(async () => {
-    await userEvent.click(canvas.getByLabelText('Go to end'));
-    await expect(args.controls.end).not.toHaveBeenCalled();
-  });
+    await waitFor(async () => {
+      await userEvent.click(canvas.getByLabelText('Go to end'));
+      await expect(args.controls.end).not.toHaveBeenCalled();
+    });
 
-  await waitFor(async () => {
-    await userEvent.click(canvas.getByLabelText('Rerun'));
-    await expect(args.controls.rerun).toHaveBeenCalled();
-  });
+    await waitFor(async () => {
+      await userEvent.click(canvas.getByLabelText('Rerun'));
+      await expect(args.controls.rerun).toHaveBeenCalled();
+    });
+  },
 };
 
 export const Paused: Story = {

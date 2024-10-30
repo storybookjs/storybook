@@ -1,4 +1,22 @@
+import type { Channel } from '@storybook/core/channels';
+import type {
+  Args,
+  Globals,
+  GlobalsUpdatedPayload,
+  ModuleImportFn,
+  PreparedStory,
+  ProjectAnnotations,
+  RenderContextCallbacks,
+  RenderToCanvas,
+  Renderer,
+  SetGlobalsPayload,
+  StoryId,
+  StoryIndex,
+  StoryRenderOptions,
+} from '@storybook/core/types';
+import type { CleanupCallback } from '@storybook/csf';
 import { global } from '@storybook/global';
+
 import { deprecate, logger } from '@storybook/core/client-logger';
 import type {
   ArgTypesRequestPayload,
@@ -20,34 +38,18 @@ import {
   UPDATE_GLOBALS,
   UPDATE_STORY_ARGS,
 } from '@storybook/core/core-events';
-import type { CleanupCallback } from '@storybook/csf';
-import type { Channel } from '@storybook/core/channels';
-import type {
-  Renderer,
-  Args,
-  Globals,
-  ModuleImportFn,
-  RenderContextCallbacks,
-  RenderToCanvas,
-  PreparedStory,
-  StoryIndex,
-  ProjectAnnotations,
-  StoryId,
-  StoryRenderOptions,
-  SetGlobalsPayload,
-} from '@storybook/core/types';
 import {
   CalledPreviewMethodBeforeInitializationError,
   MissingRenderToCanvasError,
   StoryIndexFetchError,
   StoryStoreAccessedBeforeInitializationError,
 } from '@storybook/core/preview-errors';
-import { addons } from '../addons';
-import { StoryStore } from '../../store';
 
-import { StoryRender } from './render/StoryRender';
+import { StoryStore } from '../../store';
+import { addons } from '../addons';
 import type { CsfDocsRender } from './render/CsfDocsRender';
 import type { MdxDocsRender } from './render/MdxDocsRender';
+import { StoryRender } from './render/StoryRender';
 
 const { fetch } = global;
 
@@ -56,9 +58,7 @@ const STORY_INDEX_PATH = './index.json';
 export type MaybePromise<T> = Promise<T> | T;
 
 export class Preview<TRenderer extends Renderer> {
-  /**
-   * @deprecated will be removed in 8.0, please use channel instead
-   */
+  /** @deprecated Will be removed in 8.0, please use channel instead */
   serverChannel?: Channel;
 
   protected storyStoreValue?: StoryStore<TRenderer>;
@@ -96,13 +96,17 @@ export class Preview<TRenderer extends Renderer> {
     });
 
     // Cannot await this in constructor, but if you want to await it, use `ready()`
-    if (shouldInitialize) this.initialize();
+
+    // Cannot await this in constructor, but if you want to await it, use `ready()`
+    if (shouldInitialize) {
+      this.initialize();
+    }
   }
 
   // Create a proxy object for `__STORYBOOK_STORY_STORE__` and `__STORYBOOK_PREVIEW__.storyStore`
   // That proxies through to the store once ready, and errors beforehand. This means we can set
   // `__STORYBOOK_STORY_STORE__ = __STORYBOOK_PREVIEW__.storyStore` without having to wait, and
-  // simiarly integrators can access the `storyStore` on the preview at any time, although
+  // similarly integrators can access the `storyStore` on the preview at any time, although
   // it is considered deprecated and we will no longer allow access in 9.0
   get storyStore() {
     return new Proxy(
@@ -117,7 +121,7 @@ export class Preview<TRenderer extends Renderer> {
           throw new StoryStoreAccessedBeforeInitializationError();
         },
       }
-    );
+    ) as StoryStore<TRenderer>;
   }
 
   // INITIALIZATION
@@ -152,7 +156,10 @@ export class Preview<TRenderer extends Renderer> {
       const projectAnnotations = await this.getProjectAnnotations();
 
       this.renderToCanvas = projectAnnotations.renderToCanvas;
-      if (!this.renderToCanvas) throw new MissingRenderToCanvasError();
+
+      if (!this.renderToCanvas) {
+        throw new MissingRenderToCanvasError();
+      }
 
       return projectAnnotations;
     } catch (err) {
@@ -196,10 +203,11 @@ export class Preview<TRenderer extends Renderer> {
 
   // If initialization gets as far as the story index, this function runs.
   protected initializeWithStoryIndex(storyIndex: StoryIndex): void {
-    if (!this.projectAnnotationsBeforeInitialization)
+    if (!this.projectAnnotationsBeforeInitialization) {
       // This is a protected method and so shouldn't be called out of order by users
       // eslint-disable-next-line local-rules/no-uncategorized-errors
       throw new Error('Cannot call initializeWithStoryIndex until project annotations resolve');
+    }
 
     this.storyStoreValue = new StoryStore(
       storyIndex,
@@ -218,11 +226,12 @@ export class Preview<TRenderer extends Renderer> {
   }
 
   emitGlobals() {
-    if (!this.storyStoreValue)
+    if (!this.storyStoreValue) {
       throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'emitGlobals' });
+    }
 
     const payload: SetGlobalsPayload = {
-      globals: this.storyStoreValue.globals.get() || {},
+      globals: this.storyStoreValue.userGlobals.get() || {},
       globalTypes: this.storyStoreValue.projectAnnotations.globalTypes || {},
     };
     this.channel.emit(SET_GLOBALS, payload);
@@ -285,27 +294,56 @@ export class Preview<TRenderer extends Renderer> {
     importFn?: ModuleImportFn;
     storyIndex?: StoryIndex;
   }) {
-    if (!this.storyStoreValue)
+    if (!this.storyStoreValue) {
       throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'onStoriesChanged' });
+    }
     await this.storyStoreValue.onStoriesChanged({ importFn, storyIndex });
   }
 
-  async onUpdateGlobals({ globals }: { globals: Globals }) {
-    if (!this.storyStoreValue)
+  async onUpdateGlobals({
+    globals: updatedGlobals,
+    currentStory,
+  }: {
+    globals: Globals;
+    currentStory?: PreparedStory<TRenderer>;
+  }) {
+    if (!this.storyStoreValue) {
+      await this.storeInitializationPromise;
+    }
+    if (!this.storyStoreValue) {
       throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'onUpdateGlobals' });
-    this.storyStoreValue.globals.update(globals);
+    }
+
+    this.storyStoreValue.userGlobals.update(updatedGlobals);
+
+    if (currentStory) {
+      const { initialGlobals, storyGlobals, userGlobals, globals } =
+        this.storyStoreValue.getStoryContext(currentStory);
+      this.channel.emit(GLOBALS_UPDATED, {
+        initialGlobals,
+        userGlobals,
+        storyGlobals,
+        globals,
+      } satisfies GlobalsUpdatedPayload);
+    } else {
+      // If there is no known selected story (e.g. if we are in docs mode), the userGlobals
+      // are not overridden.
+      const { initialGlobals, globals } = this.storyStoreValue.userGlobals;
+      this.channel.emit(GLOBALS_UPDATED, {
+        initialGlobals,
+        userGlobals: globals,
+        storyGlobals: {},
+        globals,
+      } satisfies GlobalsUpdatedPayload);
+    }
 
     await Promise.all(this.storyRenders.map((r) => r.rerender()));
-
-    this.channel.emit(GLOBALS_UPDATED, {
-      globals: this.storyStoreValue.globals.get(),
-      initialGlobals: this.storyStoreValue.globals.initialGlobals,
-    });
   }
 
   async onUpdateArgs({ storyId, updatedArgs }: { storyId: StoryId; updatedArgs: Args }) {
-    if (!this.storyStoreValue)
+    if (!this.storyStoreValue) {
       throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'onUpdateArgs' });
+    }
     this.storyStoreValue.args.update(storyId, updatedArgs);
 
     await Promise.all(
@@ -344,8 +382,14 @@ export class Preview<TRenderer extends Renderer> {
   }
 
   async onResetArgs({ storyId, argNames }: { storyId: string; argNames?: string[] }) {
-    if (!this.storyStoreValue)
+    if (!this.storyStoreValue) {
       throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'onResetArgs' });
+    }
+
+    // NOTE: we have to be careful here and avoid await-ing when updating a rendered's args.
+    // That's because below in `renderStoryToElement` we have also bound to this event and will
+    // render the story in the same tick.
+    // However, we can do that safely as the current story is available in `this.storyRenders`
 
     // NOTE: we have to be careful here and avoid await-ing when updating a rendered's args.
     // That's because below in `renderStoryToElement` we have also bound to this event and will
@@ -390,10 +434,11 @@ export class Preview<TRenderer extends Renderer> {
     callbacks: RenderContextCallbacks<TRenderer>,
     options: StoryRenderOptions
   ) {
-    if (!this.renderToCanvas || !this.storyStoreValue)
+    if (!this.renderToCanvas || !this.storyStoreValue) {
       throw new CalledPreviewMethodBeforeInitializationError({
         methodName: 'renderStoryToElement',
       });
+    }
 
     const render = new StoryRender<TRenderer>(
       this.channel,
@@ -424,24 +469,29 @@ export class Preview<TRenderer extends Renderer> {
 
   // API
   async loadStory({ storyId }: { storyId: StoryId }) {
-    if (!this.storyStoreValue)
+    if (!this.storyStoreValue) {
       throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'loadStory' });
+    }
 
     return this.storyStoreValue.loadStory({ storyId });
   }
 
   getStoryContext(story: PreparedStory<TRenderer>, { forceInitialArgs = false } = {}) {
-    if (!this.storyStoreValue)
+    if (!this.storyStoreValue) {
       throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'getStoryContext' });
+    }
 
     return this.storyStoreValue.getStoryContext(story, { forceInitialArgs });
   }
 
   async extract(options?: { includeDocsOnly: boolean }) {
-    if (!this.storyStoreValue)
+    if (!this.storyStoreValue) {
       throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'extract' });
+    }
 
-    if (this.previewEntryError) throw this.previewEntryError;
+    if (this.previewEntryError) {
+      throw this.previewEntryError;
+    }
 
     await this.storyStoreValue.cacheAllCSFFiles();
 

@@ -1,8 +1,10 @@
 import type { FC } from 'react';
 import React from 'react';
+
+import { codeCommon } from 'storybook/internal/components';
 import type { CSSObject } from 'storybook/internal/theming';
 import { styled } from 'storybook/internal/theming';
-import { codeCommon } from 'storybook/internal/components';
+
 import type { JsDocTags } from './types';
 
 interface ArgJsDocArgs {

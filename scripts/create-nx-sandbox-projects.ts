@@ -1,6 +1,7 @@
-import * as templates from '../code/lib/cli/src/sandbox-templates';
-import * as fs from 'fs';
-import * as path from 'path';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+
+import * as templates from '../code/lib/cli-storybook/src/sandbox-templates';
 
 // @ts-expect-error somehow TS thinks there is a default export
 const { allTemplates, merged, daily, normal } = (templates.default ||
@@ -14,6 +15,7 @@ const projectJson = (name: string, framework: string, tags: string[]) => ({
     'test',
     'essentials',
     'interactions',
+    'experimental-addon-test',
     'links',
     'onboarding',
     'blocks',
@@ -30,7 +32,7 @@ const projectJson = (name: string, framework: string, tags: string[]) => ({
 });
 Object.entries(allTemplates).forEach(([key, value]) => {
   const p = key.replaceAll('/', '-');
-  const full = path.join(process.cwd(), '../code/sandbox', p, 'project.json');
+  const full = join(process.cwd(), '../code/sandbox', p, 'project.json');
 
   console.log(full);
   const framework = value.expected.framework.replace('@storybook/', '');
@@ -43,7 +45,7 @@ Object.entries(allTemplates).forEach(([key, value]) => {
   ];
   ensureDirectoryExistence(full);
   console.log(full);
-  fs.writeFileSync(
+  writeFileSync(
     full,
     '// auto-generated from scripts/create-nx-sandbox-projects.ts\n' +
       JSON.stringify(projectJson(key, framework, tags), null, 2),
@@ -54,10 +56,10 @@ Object.entries(allTemplates).forEach(([key, value]) => {
 });
 
 function ensureDirectoryExistence(filePath: string): void {
-  const dirname = path.dirname(filePath);
-  if (fs.existsSync(dirname)) {
+  const dir = dirname(filePath);
+  if (existsSync(dir)) {
     return;
   }
-  ensureDirectoryExistence(dirname);
-  fs.mkdirSync(dirname);
+  ensureDirectoryExistence(dir);
+  mkdirSync(dir);
 }

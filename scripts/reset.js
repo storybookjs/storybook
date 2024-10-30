@@ -1,11 +1,13 @@
-import fs from 'fs';
+import { spawn } from 'node:child_process';
+import { appendFile, writeFileSync } from 'node:fs';
+
+// eslint-disable-next-line depend/ban-dependencies
 import { remove } from 'fs-extra';
-import { spawn } from 'child_process';
 import trash from 'trash';
 
 const logger = console;
 
-fs.writeFileSync('reset.log', '');
+writeFileSync('reset.log', '');
 
 const cleaningProcess = spawn('git', [
   'clean',
@@ -47,7 +49,7 @@ cleaningProcess.stdout.on('data', (data) => {
         }
       });
   }
-  fs.appendFile('reset.log', data, (err) => {
+  appendFile('reset.log', data, (err) => {
     if (err) {
       throw err;
     }

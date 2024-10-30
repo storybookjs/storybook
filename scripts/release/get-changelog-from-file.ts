@@ -1,10 +1,13 @@
+import { join } from 'node:path';
+
 import { setOutput } from '@actions/core';
-import chalk from 'chalk';
 import { program } from 'commander';
+// eslint-disable-next-line depend/ban-dependencies
 import { readFile } from 'fs-extra';
-import path from 'path';
+import picocolors from 'picocolors';
 import semver from 'semver';
 import { dedent } from 'ts-dedent';
+
 import { esMain } from '../utils/esmain';
 import { getCurrentVersion } from './get-current-version';
 
@@ -25,15 +28,15 @@ export const getChangelogFromFile = async (args: {
   const version = args.version || (await getCurrentVersion());
   const isPrerelease = semver.prerelease(version) !== null;
   const changelogFilename = isPrerelease ? 'CHANGELOG.prerelease.md' : 'CHANGELOG.md';
-  const changelogPath = path.join(__dirname, '..', '..', changelogFilename);
+  const changelogPath = join(__dirname, '..', '..', changelogFilename);
 
-  console.log(`📝 Getting changelog from ${chalk.blue(changelogPath)}`);
+  console.log(`📝 Getting changelog from ${picocolors.blue(changelogPath)}`);
 
   const fullChangelog = await readFile(changelogPath, 'utf-8');
   const changelogForVersion = fullChangelog.split(/(^|\n)## /).find((v) => v.startsWith(version));
   if (!changelogForVersion) {
     throw new Error(
-      `Could not find changelog entry for version ${chalk.blue(version)} in ${chalk.green(
+      `Could not find changelog entry for version ${picocolors.blue(version)} in ${picocolors.green(
         changelogPath
       )}`
     );

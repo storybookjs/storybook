@@ -5,15 +5,17 @@ import type {
   ArgsStoryFn,
   ComponentAnnotations,
   DecoratorFunction,
+  StoryContext as GenericStoryContext,
   LoaderFunction,
   ProjectAnnotations,
   StoryAnnotations,
-  StoryContext as GenericStoryContext,
   StrictArgs,
 } from 'storybook/internal/types';
+
 import type { Constructor, RemoveIndexSignature, SetOptional, Simplify } from 'type-fest';
 import type { FunctionalComponent, VNodeChild } from 'vue';
 import type { ComponentProps, ComponentSlots } from 'vue-component-type-helpers';
+
 import type { VueRenderer } from './types';
 
 export type { Args, ArgTypes, Parameters, StrictArgs } from 'storybook/internal/types';
@@ -22,7 +24,7 @@ export type { VueRenderer };
 /**
  * Metadata to configure the stories for a component.
  *
- * @see [Default export](https://storybook.js.org/docs/formats/component-story-format/#default-export)
+ * @see [Default export](https://storybook.js.org/docs/api/csf#default-export)
  */
 export type Meta<TCmpOrArgs = Args> = ComponentAnnotations<
   VueRenderer,
@@ -32,7 +34,7 @@ export type Meta<TCmpOrArgs = Args> = ComponentAnnotations<
 /**
  * Story function that represents a CSFv2 component example.
  *
- * @see [Named Story exports](https://storybook.js.org/docs/formats/component-story-format/#named-story-exports)
+ * @see [Named Story exports](https://storybook.js.org/docs/api/csf#named-story-exports)
  */
 export type StoryFn<TCmpOrArgs = Args> = AnnotatedStoryFn<
   VueRenderer,
@@ -42,7 +44,7 @@ export type StoryFn<TCmpOrArgs = Args> = AnnotatedStoryFn<
 /**
  * Story object that represents a CSFv3 component example.
  *
- * @see [Named Story exports](https://storybook.js.org/docs/formats/component-story-format/#named-story-exports)
+ * @see [Named Story exports](https://storybook.js.org/docs/api/csf#named-story-exports)
  */
 export type StoryObj<TMetaOrCmpOrArgs = Args> = TMetaOrCmpOrArgs extends {
   render?: ArgsStoryFn<VueRenderer, any>;

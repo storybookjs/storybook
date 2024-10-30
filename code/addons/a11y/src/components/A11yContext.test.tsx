@@ -1,15 +1,18 @@
 // @vitest-environment happy-dom
+import { act, cleanup, render } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { describe, beforeEach, afterEach, it, expect, vi } from 'vitest';
 import * as React from 'react';
-import type { AxeResults } from 'axe-core';
-import { render, act, cleanup } from '@testing-library/react';
-import * as api from 'storybook/internal/manager-api';
+
 import { STORY_CHANGED } from 'storybook/internal/core-events';
+import * as api from 'storybook/internal/manager-api';
+
 import { HIGHLIGHT } from '@storybook/addon-highlight';
 
-import { A11yContextProvider, useA11yContext } from './A11yContext';
+import type { AxeResults } from 'axe-core';
+
 import { EVENTS } from '../constants';
+import { A11yContextProvider, useA11yContext } from './A11yContext';
 
 vi.mock('storybook/internal/manager-api');
 const mockedApi = vi.mocked(api);

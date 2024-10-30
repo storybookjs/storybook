@@ -8,7 +8,7 @@ Use it to call attention to particular parts of the story. Or use it to enhance 
 
 ## Usage
 
-This addon requires Storybook 6.5 or later. Highlight is part of [essentials](https://storybook.js.org/docs/react/essentials) and so is installed in all new Storybooks by default. If you need to add it to your Storybook, you can run the following command:
+This addon requires Storybook 6.5 or later. Highlight is part of [essentials](https://storybook.js.org/docs/essentials) and so is installed in all new Storybooks by default. If you need to add it to your Storybook, you can run the following command:
 
 yarn:
 
@@ -32,7 +32,6 @@ Add `"@storybook/addon-highlight"` to the addons array in your `.storybook/main.
 
 ```ts
 // .storybook/main.ts
-
 // Replace your-framework with the framework you are using (e.g., react-webpack5, vue3-vite)
 import type { StorybookConfig } from '@storybook/your-framework';
 
@@ -49,11 +48,9 @@ Highlight DOM nodes by emitting the `HIGHLIGHT` event from within a story or an 
 
 ```ts
 // MyComponent.stories.ts
-
 import type { Meta, StoryObj } from '@storybook/react';
 import { useChannel } from '@storybook/preview-api';
 import { HIGHLIGHT } from '@storybook/addon-highlight';
-
 import { MyComponent } from './MyComponent';
 
 const meta: Meta<typeof MyComponent> = {
@@ -82,11 +79,9 @@ Highlights are automatically cleared when the story changes. You can also manual
 
 ```ts
 // MyComponent.stories.ts|tsx
-
 import type { Meta, StoryObj } from '@storybook/react';
 import { useChannel } from '@storybook/preview-api';
 import { HIGHLIGHT, RESET_HIGHLIGHT } from '@storybook/addon-highlight';
-
 import { MyComponent } from './MyComponent';
 
 const meta: Meta<typeof MyComponent> = {
@@ -116,11 +111,9 @@ The addon applies a standard style to the highlighted elements you've enabled fo
 
 ```ts
 // MyComponent.stories.ts
-
 import type { Meta, StoryObj } from '@storybook/react';
 import { useChannel } from '@storybook/preview-api';
 import { HIGHLIGHT } from '@storybook/addon-highlight';
-
 import { MyComponent } from './MyComponent';
 
 const meta: Meta<typeof MyComponent> = {

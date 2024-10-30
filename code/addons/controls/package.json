@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-controls",
-  "version": "8.3.0-alpha.3",
+  "version": "8.4.0-beta.3",
   "description": "Interact with component inputs dynamically in the Storybook UI",
   "keywords": [
     "addon",
@@ -28,7 +28,6 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
@@ -47,17 +46,17 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/addon-bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
+    "@storybook/global": "^5.0.0",
     "dequal": "^2.0.2",
-    "lodash": "^4.17.21",
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
     "@storybook/blocks": "workspace:*",
-    "@storybook/icons": "^1.2.5",
+    "@storybook/icons": "^1.2.12",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

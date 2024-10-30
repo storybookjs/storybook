@@ -1,4 +1,5 @@
 import type { Channel } from '@storybook/core/channels';
+
 import type { RequestData, ResponseData } from '@storybook/core/core-events';
 
 export class RequestResponseError<Payload extends Record<string, any> | void> extends Error {
@@ -33,11 +34,17 @@ export const experimental_requestResponse = <
     const responseHandler = (
       response: ResponseData<ResponsePayload, CreateNewStoryErrorPayload>
     ) => {
-      if (response.id !== request.id) return;
+      if (response.id !== request.id) {
+        return;
+      }
       clearTimeout(timeoutId);
       channel.off(responseEvent, responseHandler);
-      if (response.success) resolve(response.payload);
-      else reject(new RequestResponseError(response.error, response.payload));
+
+      if (response.success) {
+        resolve(response.payload);
+      } else {
+        reject(new RequestResponseError(response.error, response.payload));
+      }
     };
 
     channel.emit(requestEvent, request);

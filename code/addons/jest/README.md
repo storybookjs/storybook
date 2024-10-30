@@ -2,7 +2,7 @@
 
 Storybook addon for inspecting Jest unit test results.
 
-[Framework Support](https://storybook.js.org/docs/react/api/frameworks-feature-support)
+[Framework Support](https://storybook.js.org/docs/configure/integration/frameworks-feature-support)
 
 [![Storybook Jest Addon Demo](https://raw.githubusercontent.com/storybookjs/storybook/next/code/addons/jest/docs/storybook-addon-jest.gif)](http://storybooks-official.netlify.com/?selectedKind=Addons%7Cjest&selectedStory=withTests&full=0&addons=1&stories=1&panelRight=0&addonPanel=storybook%2Ftests%2Fpanel)
 
@@ -20,7 +20,7 @@ Or if you're using yarn as a package manager:
 
 ## Configuration
 
-Register the addon in your [`.storybook/main.js`](https://storybook.js.org/docs/react/configure/#configure-your-storybook-project):
+Register the addon in your [`.storybook/main.js`](https://storybook.js.org/docs/configure#configure-your-storybook-project):
 
 ```js
 export default {
@@ -84,16 +84,13 @@ Assuming that you have already created a test file for your component (e.g., `My
 
 ### Story-level
 
-In your story file, add a [decorator](https://storybook.js.org/docs/react/writing-stories/decorators) to your story's default export to display the results:
+In your story file, add a [decorator](https://storybook.js.org/docs/writing-stories/decorators) to your story's default export to display the results:
 
 ```js
 // MyComponent.stories.js|jsx
-
-import MyComponent from './MyComponent';
-
-import results from '../.jest-test-results.json';
-
 import { withTests } from '@storybook/addon-jest';
+import results from '../.jest-test-results.json';
+import MyComponent from './MyComponent';
 
 export default {
   component: MyComponent,
@@ -102,7 +99,7 @@ export default {
 };
 ```
 
-You can also add multiple tests results within your story by including the `jest` [parameter](https://storybook.js.org/docs/react/writing-stories/parameters), for example:
+You can also add multiple tests results within your story by including the `jest` [parameter](https://storybook.js.org/docs/writing-stories/parameters), for example:
 
 ```js
 // MyComponent.stories.js|jsx
@@ -133,13 +130,11 @@ Default.parameters = {
 ### Global level
 
 To avoid importing the results of the tests in each story, you can update
-your [`.storybook/preview.js`](https://storybook.js.org/docs/react/configure/#configure-story-rendering) and include a decorator allowing you to display the results only for the stories that have the `jest` parameter defined:
+your [`.storybook/preview.js`](https://storybook.js.org/docs/configure#configure-story-rendering) and include a decorator allowing you to display the results only for the stories that have the `jest` parameter defined:
 
 ```js
 // .storybook/preview.js
-
 import { withTests } from '@storybook/addon-jest';
-
 import results from '../.jest-test-results.json';
 
 export const decorators = [
@@ -181,7 +176,6 @@ You can disable the addon for a single story by setting the `jest` parameter to 
 
 ```js
 // MyComponent.stories.js|jsx
-
 import MyComponent from './MyComponent';
 
 export default {
@@ -209,9 +203,7 @@ Then, in your `.storybook/preview.js`, you'll need to add a decorator with the f
 
 ```js
 // .storybook/preview.js
-
 import { withTests } from '@storybook/addon-jest';
-
 import results from '../.jest-test-results.json';
 
 export const decorators = [
@@ -226,9 +218,7 @@ Finally, in your story, you'll need to include the following:
 
 ```ts
 // MyComponent.stories.ts
-
 import type { Meta, StoryFn } from '@storybook/angular';
-
 import MyComponent from './MyComponent.component';
 
 export default {

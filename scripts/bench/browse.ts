@@ -1,5 +1,6 @@
 import { chromium } from 'playwright';
-import { now, getPreviewPage } from './utils';
+
+import { getPreviewPage, now } from './utils';
 
 interface Result {
   managerHeaderVisible?: number;
@@ -21,13 +22,21 @@ export const browse = async (url: string, { disableDocs }: { disableDocs?: boole
    * We instantiate a new browser for each run to avoid any caching happening in the browser itself
    */
   const x = await benchStory(url);
-  if (!disableDocs) await benchAutodocs(url);
+
+  if (!disableDocs) {
+    await benchAutodocs(url);
+  }
 
   result.storyVisibleUncached = x.storyVisible;
 
-  if (!disableDocs) Object.assign(result, await benchMDX(url));
+  if (!disableDocs) {
+    Object.assign(result, await benchMDX(url));
+  }
   Object.assign(result, await benchStory(url));
-  if (!disableDocs) Object.assign(result, await benchAutodocs(url));
+
+  if (!disableDocs) {
+    Object.assign(result, await benchAutodocs(url));
+  }
 
   return result;
 };

@@ -1,14 +1,6 @@
 const path = require('path');
-const fs = require('fs');
 
 const scriptPath = path.join(__dirname, '..', 'scripts');
-
-const addonsPackages = fs
-  .readdirSync(path.join(__dirname, 'addons'))
-  .filter((p) => fs.statSync(path.join(__dirname, 'addons', p)).isDirectory());
-const libPackages = fs
-  .readdirSync(path.join(__dirname, 'lib'))
-  .filter((p) => fs.statSync(path.join(__dirname, 'lib', p)).isDirectory());
 
 module.exports = {
   root: true,
@@ -19,6 +11,10 @@ module.exports = {
   },
   plugins: ['local-rules'],
   rules: {
+    'import/no-extraneous-dependencies': [
+      'error',
+      { devDependencies: true, peerDependencies: true },
+    ],
     'import/no-unresolved': 'off', // covered by typescript
     'eslint-comments/disable-enable-pair': ['error', { allowWholeFile: true }],
     'eslint-comments/no-unused-disable': 'error',
@@ -47,17 +43,18 @@ module.exports = {
   },
   overrides: [
     {
+      files: ['**/templates/virtualModuleModernEntry.js'],
+      rules: {
+        'no-underscore-dangle': 'off',
+        'import/no-extraneous-dependencies': 'off',
+      },
+    },
+    {
       // this package depends on a lot of peerDependencies we don't want to specify, because npm would install them
       files: ['**/frameworks/angular/template/**/*'],
       rules: {
         '@typescript-eslint/no-useless-constructor': 'off',
         '@typescript-eslint/dot-notation': 'off',
-      },
-    },
-    {
-      files: ['**/template/**/*', '**/vitest.config.ts', '**/addons/docs/**/*'],
-      rules: {
-        'import/no-extraneous-dependencies': 'off',
       },
     },
     {
@@ -74,32 +71,13 @@ module.exports = {
     },
     {
       // this package depends on a lot of peerDependencies we don't want to specify, because npm would install them
-      files: ['**/*.ts', '**/*.tsx'],
-      rules: {
-        'no-shadow': 'off',
-        '@typescript-eslint/ban-types': 'warn', // should become error, in the future
-      },
-    },
-    {
-      // this package depends on a lot of peerDependencies we don't want to specify, because npm would install them
       files: ['**/builder-vite/**/*.html'],
       rules: {
         '@typescript-eslint/no-unused-expressions': 'off', // should become error, in the future
       },
     },
     {
-      // these packages use pre-bundling, dependencies will be bundled, and will be in devDepenencies
-      files: ['frameworks/**/*', 'builders/**/*', 'deprecated/**/*', 'renderers/**/*'],
-      excludedFiles: ['frameworks/angular/**/*', 'frameworks/ember/**/*', 'core/**/*'],
-      rules: {
-        'import/no-extraneous-dependencies': [
-          'error',
-          { bundledDependencies: false, devDependencies: true, peerDependencies: true },
-        ],
-      },
-    },
-    {
-      files: ['**/.storybook/**'],
+      files: ['**/.storybook/**', '**/scripts/**/*', 'vitest.d.ts', '**/vitest.config.*'],
       rules: {
         'import/no-extraneous-dependencies': [
           'error',
@@ -107,35 +85,26 @@ module.exports = {
         ],
       },
     },
-    ...addonsPackages.map((directory) => ({
-      files: [path.join('**', 'addons', directory, '**', '*.*')],
+    {
+      files: [
+        '*.test.*',
+        '*.spec.*',
+        '**/addons/docs/**/*',
+        '**/__tests__/**',
+        '**/__testfixtures__/**',
+        '**/*.test.*',
+        '**/*.stories.*',
+        '**/*.mockdata.*',
+        '**/template/**/*',
+      ],
       rules: {
-        'import/no-extraneous-dependencies': [
-          'error',
-          {
-            packageDir: [__dirname, path.join(__dirname, 'addons', directory)],
-            devDependencies: true,
-          },
-        ],
+        'import/no-extraneous-dependencies': 'off',
       },
-    })),
-    ...libPackages.map((directory) => ({
-      files: [path.join('**', 'lib', directory, '**', '*.*')],
-      rules: {
-        'import/no-extraneous-dependencies': [
-          'error',
-          {
-            packageDir: [__dirname, path.join(__dirname, 'lib', directory)],
-            devDependencies: true,
-          },
-        ],
-      },
-    })),
+    },
     {
       files: ['**/__tests__/**', '**/__testfixtures__/**', '**/*.test.*', '**/*.stories.*'],
       rules: {
         '@typescript-eslint/no-empty-function': 'off',
-        'import/no-extraneous-dependencies': 'off',
       },
     },
     {
@@ -195,13 +164,6 @@ module.exports = {
       },
     },
     {
-      // Because those templates reference css files in other directory.
-      files: ['**/template/cli/**/*'],
-      rules: {
-        'import/no-unresolved': 'off',
-      },
-    },
-    {
       files: ['**/*.ts', '!**/*.test.*', '!**/*.spec.*'],
       excludedFiles: ['**/*.test.*', '**/*.mockdata.*'],
       rules: {
@@ -220,6 +182,29 @@ module.exports = {
       excludedFiles: ['**/*.test.*'],
       rules: {
         'local-rules/no-duplicated-error-codes': 'error',
+      },
+    },
+    {
+      files: ['./e2e-tests/*.ts'],
+      extends: ['plugin:playwright/recommended'],
+      rules: {
+        'playwright/no-skipped-test': [
+          'warn',
+          {
+            allowConditional: true,
+          },
+        ],
+        'playwright/no-raw-locators': 'off', // TODO: enable this, requires the UI to actually be accessible
+        'playwright/prefer-comparison-matcher': 'error',
+        'playwright/prefer-equality-matcher': 'error',
+        'playwright/prefer-hooks-on-top': 'error',
+        'playwright/prefer-strict-equal': 'error',
+        'playwright/prefer-to-be': 'error',
+        'playwright/prefer-to-contain': 'error',
+        'playwright/prefer-to-have-count': 'error',
+        'playwright/prefer-to-have-length': 'error',
+        'playwright/require-to-throw-message': 'error',
+        'playwright/require-top-level-describe': 'error',
       },
     },
   ],

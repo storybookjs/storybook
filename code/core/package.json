@@ -1,6 +1,6 @@
 {
   "name": "@storybook/core",
-  "version": "8.3.0-alpha.3",
+  "version": "8.4.0-beta.3",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -152,6 +152,21 @@
       "import": "./dist/preview/globals.js",
       "require": "./dist/preview/globals.cjs"
     },
+    "./cli": {
+      "types": "./dist/cli/index.d.ts",
+      "import": "./dist/cli/index.js",
+      "require": "./dist/cli/index.cjs"
+    },
+    "./babel": {
+      "types": "./dist/babel/index.d.ts",
+      "import": "./dist/babel/index.js",
+      "require": "./dist/babel/index.cjs"
+    },
+    "./cli/bin": {
+      "types": "./dist/cli/bin/index.d.ts",
+      "import": "./dist/cli/bin/index.js",
+      "require": "./dist/cli/bin/index.cjs"
+    },
     "./package.json": "./package.json"
   },
   "main": "dist/index.cjs",
@@ -239,6 +254,15 @@
       ],
       "preview/globals": [
         "./dist/preview/globals.d.ts"
+      ],
+      "cli": [
+        "./dist/cli/index.d.ts"
+      ],
+      "babel": [
+        "./dist/babel/index.d.ts"
+      ],
+      "cli/bin": [
+        "./dist/cli/bin/index.d.ts"
       ]
     }
   },
@@ -249,20 +273,20 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "bun ./scripts/check.ts",
-    "prep": "bun ./scripts/prep.ts"
+    "check": "jiti ./scripts/check.ts",
+    "prep": "jiti ./scripts/prep.ts"
   },
   "dependencies": {
     "@storybook/csf": "^0.1.11",
-    "@types/express": "^4.17.21",
-    "@types/node": "^18.0.0",
+    "better-opn": "^3.0.2",
     "browser-assert": "^1.2.1",
-    "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0",
+    "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0",
     "esbuild-register": "^3.5.0",
-    "express": "^4.19.2",
+    "jsdoc-type-pratt-parser": "^4.0.0",
     "process": "^0.11.10",
     "recast": "^0.23.5",
-    "util": "^0.12.4",
+    "semver": "^7.6.2",
+    "util": "^0.12.5",
     "ws": "^8.2.3"
   },
   "devDependencies": {
@@ -280,92 +304,87 @@
     "@emotion/styled": "^11.11.0",
     "@emotion/use-insertion-effect-with-fallbacks": "^1.0.1",
     "@fal-works/esbuild-plugin-global-externals": "^2.1.2",
-    "@ndelangen/fs-extra-unified": "^1.0.3",
+    "@ndelangen/get-tarball": "^3.0.7",
+    "@polka/compression": "^1.0.0-next.28",
     "@popperjs/core": "^2.6.0",
     "@radix-ui/react-dialog": "^1.0.5",
-    "@radix-ui/react-scroll-area": "^1.0.5",
+    "@radix-ui/react-scroll-area": "1.2.0-rc.7",
     "@radix-ui/react-slot": "^1.0.2",
     "@storybook/docs-mdx": "4.0.0-next.1",
     "@storybook/global": "^5.0.0",
-    "@storybook/icons": "^1.2.5",
+    "@storybook/icons": "^1.2.12",
     "@tanstack/react-virtual": "^3.3.0",
     "@testing-library/react": "^14.0.0",
-    "@types/compression": "^1.7.0",
+    "@types/cross-spawn": "^6.0.2",
     "@types/detect-port": "^1.3.0",
     "@types/diff": "^5.0.9",
     "@types/ejs": "^3.1.1",
     "@types/find-cache-dir": "^5.0.0",
-    "@types/fs-extra": "^11.0.1",
     "@types/js-yaml": "^4.0.5",
-    "@types/lodash": "^4.14.167",
-    "@types/mock-fs": "^4.13.1",
-    "@types/node": "^18.0.0",
+    "@types/node": "^22.0.0",
     "@types/npmlog": "^7.0.0",
     "@types/picomatch": "^2.3.0",
     "@types/prettier": "^3.0.0",
     "@types/pretty-hrtime": "^1.0.0",
-    "@types/qs": "^6",
+    "@types/prompts": "^2.0.9",
     "@types/react-syntax-highlighter": "11.0.5",
     "@types/react-transition-group": "^4",
-    "@types/semver": "^7.3.4",
+    "@types/semver": "^7.5.8",
     "@types/ws": "^8",
-    "@vitest/utils": "^1.3.1",
     "@yarnpkg/esbuild-plugin-pnp": "^3.0.0-rc.10",
     "@yarnpkg/fslib": "2.10.3",
     "@yarnpkg/libzip": "2.3.0",
     "ansi-to-html": "^0.7.2",
     "assert": "^2.1.0",
     "babel-plugin-react-docgen": "4.2.1",
-    "better-opn": "^3.0.2",
     "boxen": "^7.1.1",
     "browser-dtector": "^3.4.0",
     "camelcase": "^8.0.0",
-    "chai": "^4.4.1",
-    "chalk": "^5.3.0",
     "cli-table3": "^0.6.1",
+    "commander": "^12.1.0",
     "comment-parser": "^1.4.1",
-    "compression": "^1.7.4",
     "copy-to-clipboard": "^3.3.1",
     "cross-spawn": "^7.0.3",
     "css": "^3.0.0",
     "deep-object-diff": "^1.1.0",
     "dequal": "^2.0.2",
+    "detect-indent": "^7.0.1",
     "detect-package-manager": "^3.0.2",
     "detect-port": "^1.3.0",
     "diff": "^5.2.0",
     "downshift": "^9.0.4",
     "ejs": "^3.1.10",
+    "es-toolkit": "^1.22.0",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0",
     "esbuild-plugin-alias": "^0.2.1",
     "execa": "^8.0.1",
-    "express": "^4.19.2",
     "fd-package-json": "^1.2.0",
     "fetch-retry": "^6.0.0",
-    "file-system-cache": "^2.4.4",
     "find-cache-dir": "^5.0.0",
     "find-up": "^7.0.0",
     "flush-promises": "^1.0.2",
-    "fs-extra": "^11.1.0",
     "fuse.js": "^3.6.1",
+    "get-npm-tarball-url": "^2.0.3",
     "glob": "^10.0.0",
     "globby": "^14.0.1",
-    "handlebars": "^4.7.7",
+    "jiti": "^1.21.6",
     "js-yaml": "^4.1.0",
-    "jsdoc-type-pratt-parser": "^4.0.0",
     "lazy-universal-dotenv": "^4.0.0",
-    "lodash": "^4.17.21",
+    "leven": "^4.0.0",
     "markdown-to-jsx": "^7.4.5",
+    "memfs": "^4.11.1",
     "memoizerific": "^1.11.3",
-    "mock-fs": "^5.2.0",
     "nanoid": "^4.0.2",
     "npmlog": "^7.0.0",
     "open": "^8.4.0",
+    "picocolors": "^1.1.0",
     "picomatch": "^2.3.0",
+    "picoquery": "^1.4.0",
     "polished": "^4.2.2",
+    "polka": "^1.0.0-next.28",
     "prettier": "^3.2.5",
     "pretty-hrtime": "^1.0.3",
     "prompts": "^2.4.0",
-    "qs": "^6.10.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-draggable": "^4.4.5",
@@ -378,9 +397,11 @@
     "react-transition-group": "^4.4.5",
     "require-from-string": "^2.0.2",
     "resolve-from": "^5.0.0",
-    "semver": "^7.3.7",
+    "sirv": "^2.0.4",
     "slash": "^5.0.0",
+    "source-map": "^0.7.4",
     "store2": "^2.14.2",
+    "strip-json-comments": "^5.0.1",
     "telejson": "^7.2.0",
     "tiny-invariant": "^1.3.1",
     "tinyspy": "^2.2.0",
@@ -390,8 +411,15 @@
     "typescript": "^5.3.2",
     "unique-string": "^3.0.0",
     "use-resize-observer": "^9.1.0",
-    "util": "^0.12.4",
     "watchpack": "^2.2.0"
+  },
+  "peerDependencies": {
+    "prettier": "^2 || ^3"
+  },
+  "peerDependenciesMeta": {
+    "prettier": {
+      "optional": true
+    }
   },
   "publishConfig": {
     "access": "public"

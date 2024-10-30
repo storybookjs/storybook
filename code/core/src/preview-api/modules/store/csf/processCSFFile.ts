@@ -1,10 +1,11 @@
-import type { Renderer, ComponentTitle, Parameters, Path } from '@storybook/core/types';
+import type { ComponentTitle, Parameters, Path, Renderer } from '@storybook/core/types';
+import type { CSFFile, ModuleExports, NormalizedComponentAnnotations } from '@storybook/core/types';
 import { isExportStory } from '@storybook/csf';
+
 import { logger } from '@storybook/core/client-logger';
 
-import { normalizeStory } from './normalizeStory';
 import { normalizeComponentAnnotations } from './normalizeComponentAnnotations';
-import type { CSFFile, ModuleExports, NormalizedComponentAnnotations } from '@storybook/core/types';
+import { normalizeStory } from './normalizeStory';
 
 const checkGlobals = (parameters: Parameters) => {
   const { globals, globalTypes } = parameters;
@@ -21,11 +22,16 @@ const checkGlobals = (parameters: Parameters) => {
 
 const checkStorySort = (parameters: Parameters) => {
   const { options } = parameters;
-  if (options?.storySort) logger.error('The storySort option parameter can only be set globally');
+
+  if (options?.storySort) {
+    logger.error('The storySort option parameter can only be set globally');
+  }
 };
 
 const checkDisallowedParameters = (parameters?: Parameters) => {
-  if (!parameters) return;
+  if (!parameters) {
+    return;
+  }
 
   checkGlobals(parameters);
   checkStorySort(parameters);

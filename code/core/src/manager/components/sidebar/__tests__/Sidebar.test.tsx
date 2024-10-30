@@ -1,14 +1,16 @@
 // @vitest-environment happy-dom
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import type { RenderResult } from '@testing-library/react';
+import { afterEach, describe, expect, test } from 'vitest';
 
-import { afterEach, describe, test, expect } from 'vitest';
 import React from 'react';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+
 import { ThemeProvider, ensure, themes } from '@storybook/core/theming';
+import type { Theme } from '@storybook/core/theming';
+import type { API_IndexHash } from '@storybook/core/types';
 
 import type { HashEntry, Refs } from '@storybook/core/manager-api';
-import type { Theme } from '@storybook/core/theming';
-import type { RenderResult } from '@testing-library/react';
-import type { API_IndexHash } from '@storybook/core/types';
+
 import { Sidebar } from '../Sidebar';
 import type { SidebarProps } from '../Sidebar';
 
@@ -57,6 +59,7 @@ const generateStories = ({ title, refId }: { title: string; refId?: string }): A
       name: componentName,
       children: [docsId],
       parent: rootId,
+      tags: [],
     },
     // @ts-expect-error the missing fields are deprecated and replaced by the type prop
     {

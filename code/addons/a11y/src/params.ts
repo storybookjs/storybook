@@ -1,4 +1,4 @@
-import type { ElementContext, Spec, RunOptions } from 'axe-core';
+import type { ElementContext, RunOptions, Spec } from 'axe-core';
 
 export interface Setup {
   element?: ElementContext;

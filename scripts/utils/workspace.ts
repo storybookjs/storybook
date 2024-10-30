@@ -1,5 +1,7 @@
-import memoize from 'memoizerific';
+// eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
+import memoize from 'memoizerific';
+
 import { CODE_DIRECTORY } from './constants';
 
 export type Workspace = { name: string; location: string };

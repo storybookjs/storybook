@@ -1,5 +1,7 @@
-import { global } from '@storybook/global';
 import { addons } from 'storybook/internal/preview-api';
+
+import { global } from '@storybook/global';
+
 import { EVENTS } from './constants';
 import type { A11yParameters } from './params';
 
@@ -13,10 +15,7 @@ let activeStoryId: string | undefined;
 
 const defaultParameters = { config: {}, options: {} };
 
-/**
- * Handle A11yContext events.
- * Because the event are sent without manual check, we split calls
- */
+/** Handle A11yContext events. Because the event are sent without manual check, we split calls */
 const handleRequest = async (storyId: string, input: A11yParameters | null) => {
   if (!input?.manual) {
     await run(storyId, input ?? defaultParameters);

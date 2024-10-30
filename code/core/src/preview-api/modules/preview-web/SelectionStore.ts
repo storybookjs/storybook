@@ -1,4 +1,5 @@
 import type { Args, StoryId, ViewMode } from '@storybook/core/types';
+
 import type { StorySpecifier } from '../store/StoryIndexStore';
 
 export interface SelectionSpecifier {
@@ -20,5 +21,5 @@ export interface SelectionStore {
 
   setSelection(selection: Selection): void;
 
-  setQueryParams(queryParams: qs.ParsedQs): void;
+  setQueryParams(queryParams: Record<PropertyKey, unknown>): void;
 }

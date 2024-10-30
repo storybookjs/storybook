@@ -17,9 +17,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: 1.1.1
       - name: Set node version
         uses: actions/setup-node@v4
         with:
@@ -27,5 +24,9 @@ jobs:
 
       - name: install and compile
         run: yarn task --task compile --start-from=auto
+
+      - name: Install Playwright Dependencies
+        run: cd code && yarn exec playwright install chromium --with-deps
+
       - name: test
         run: yarn test

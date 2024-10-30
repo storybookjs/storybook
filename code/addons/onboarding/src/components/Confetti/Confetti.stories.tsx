@@ -1,6 +1,8 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { Confetti } from './Confetti';
 import React from 'react';
+
+import type { Meta, StoryObj } from '@storybook/react';
+
+import { Confetti } from './Confetti';
 
 const meta: Meta<typeof Confetti> = {
   component: Confetti,

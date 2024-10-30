@@ -1,8 +1,10 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import React from 'react';
-import { AboutScreen } from './About';
-import UpgradeBlockStoriesMeta from '../components/upgrade/UpgradeBlock.stories';
+
+import type { Meta, StoryObj } from '@storybook/react';
 import { fn } from '@storybook/test';
+
+import UpgradeBlockStoriesMeta from '../components/upgrade/UpgradeBlock.stories';
+import { AboutScreen } from './About';
 
 const meta = {
   component: AboutScreen,

@@ -1,12 +1,12 @@
 import type { FC } from 'react';
 import React from 'react';
-import { styled } from 'storybook/internal/theming';
+
 import { logger } from 'storybook/internal/client-logger';
+import { styled } from 'storybook/internal/theming';
 
-import type { ControlProps, OptionsSingleSelection, NormalizedOptionsConfig } from '../types';
-
-import { selectedKey } from './helpers';
 import { getControlId } from '../helpers';
+import type { ControlProps, NormalizedOptionsConfig, OptionsSingleSelection } from '../types';
+import { selectedKey } from './helpers';
 
 const Wrapper = styled.div<{ isInline: boolean }>(
   ({ isInline }) =>

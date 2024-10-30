@@ -1,16 +1,14 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import type { FileSystemCache } from 'file-system-cache';
-import type * as telejson from 'telejson';
-import type { Router } from 'express';
 // should be node:http, but that caused the ui/manager to fail to build, might be able to switch this back once ui/manager is in the core
-import type { Server } from 'http';
+import type { Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
+import type { Server as NetServer } from 'net';
+import type { Options as TelejsonOptions } from 'telejson';
 import type { PackageJson as PackageJsonFromTypeFest } from 'type-fest';
 
-import type { StoriesEntry, Indexer } from './indexer';
+import type { FileSystemCache } from '../../common/utils/file-cache';
+import type { Indexer, StoriesEntry } from './indexer';
 
-/**
- * ⚠️ This file contains internal WIP types they MUST NOT be exported outside this package for now!
- */
+/** ⚠️ This file contains internal WIP types they MUST NOT be exported outside this package for now! */
 
 export type BuilderName = 'webpack5' | '@storybook/builder-webpack5' | string;
 export type RendererName = string;
@@ -28,32 +26,32 @@ export interface CoreConfig {
       };
   renderer?: RendererName;
   disableWebpackDefaults?: boolean;
-  channelOptions?: Partial<telejson.Options>;
-  /**
-   * Disables the generation of project.json, a file containing Storybook metadata
-   */
+  channelOptions?: Partial<TelejsonOptions>;
+  /** Disables the generation of project.json, a file containing Storybook metadata */
   disableProjectJson?: boolean;
   /**
    * Disables Storybook telemetry
+   *
    * @see https://storybook.js.org/telemetry
    */
   disableTelemetry?: boolean;
 
-  /**
-   * Disables notifications for Storybook updates.
-   */
+  /** Disables notifications for Storybook updates. */
   disableWhatsNewNotifications?: boolean;
   /**
    * Enable crash reports to be sent to Storybook telemetry
+   *
    * @see https://storybook.js.org/telemetry
    */
   enableCrashReports?: boolean;
   /**
-   * enable CORS headings to run document in a "secure context"
-   * see: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer#security_requirements
-   * This enables these headers in development-mode:
-   *   Cross-Origin-Opener-Policy: same-origin
-   *   Cross-Origin-Embedder-Policy: require-corp
+   * Enable CORS headings to run document in a "secure context" see:
+   * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer#security_requirements
+   * This enables these headers in development-mode: Cross-Origin-Opener-Policy: same-origin
+   *
+   * ```text
+   * Cross-Origin-Embedder-Policy: require-corp
+   * ```
    */
   crossOriginIsolated?: boolean;
 }
@@ -153,12 +151,12 @@ export type PackageJson = PackageJsonFromTypeFest & Record<string, any>;
 // TODO: This could be exported to the outside world and used in `options.ts` file of each `@storybook/APP`
 // like it's described in docs/api/new-frameworks.md
 export interface LoadOptions {
-  packageJson: PackageJson;
+  packageJson?: PackageJson;
   outputDir?: string;
   configDir?: string;
   cacheKey?: string;
   ignorePreview?: boolean;
-  extendServer?: (server: Server) => void;
+  extendServer?: (server: HttpServer) => void;
 }
 
 export interface CLIOptions {
@@ -213,13 +211,37 @@ export type Options = LoadOptions &
   CLIOptions &
   BuilderOptions & { build?: TestBuildConfig };
 
+// A minimal version of Polka's interface to avoid exposing internal implementation details
+export type Middleware<T extends IncomingMessage = IncomingMessage> = (
+  req: T & IncomingMessage,
+  res: ServerResponse,
+  next: (err?: string | Error) => Promise<void> | void
+) => Promise<void> | void;
+
+interface ServerApp<T extends IncomingMessage = IncomingMessage> {
+  server: NetServer;
+
+  use(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
+  use(...handlers: Middleware<T>[]): this;
+
+  get(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
+  post(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
+  put(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
+  patch(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
+  delete(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
+  head(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
+  options(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
+  connect(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
+  trace(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
+}
+
 export interface Builder<Config, BuilderStats extends Stats = Stats> {
   getConfig: (options: Options) => Promise<Config>;
   start: (args: {
     options: Options;
     startTime: ReturnType<typeof process.hrtime>;
-    router: Router;
-    server: Server;
+    router: ServerApp;
+    server: HttpServer;
     channel: ServerChannel;
   }) => Promise<void | {
     stats?: BuilderStats;
@@ -235,9 +257,7 @@ export interface Builder<Config, BuilderStats extends Stats = Stats> {
   overridePresets?: string[];
 }
 
-/**
- * Options for TypeScript usage within Storybook.
- */
+/** Options for TypeScript usage within Storybook. */
 export interface TypescriptOptions {
   /**
    * Enables type checking within Storybook.
@@ -261,10 +281,7 @@ export type Preset =
       options?: any;
     };
 
-/**
- * An additional script that gets injected into the
- * preview or the manager,
- */
+/** An additional script that gets injected into the preview or the manager, */
 export type Entry = string;
 
 type CoreCommon_StorybookRefs = Record<
@@ -273,56 +290,38 @@ type CoreCommon_StorybookRefs = Record<
 >;
 
 export type DocsOptions = {
-  /**
-   * What should we call the generated docs entries?
-   */
+  /** What should we call the generated docs entries? */
   defaultName?: string;
   /**
-   * Should we generate a docs entry per CSF file?
-   * Set to 'tag' (the default) to generate an entry for every CSF file with the
-   * 'autodocs' tag.
+   * Should we generate a docs entry per CSF file? Set to 'tag' (the default) to generate an entry
+   * for every CSF file with the 'autodocs' tag.
    *
    * @deprecated Use `tags: ['autodocs']` in `.storybook/preview.js` instead
    */
   autodocs?: boolean | 'tag';
-  /**
-   * Only show doc entries in the side bar (usually set with the `--docs` CLI flag)
-   */
+  /** Only show doc entries in the side bar (usually set with the `--docs` CLI flag) */
   docsMode?: boolean;
 };
 
 export interface TestBuildFlags {
   /**
-   * The package @storybook/blocks will be excluded from the bundle, even when imported in e.g. the preview.
+   * The package @storybook/blocks will be excluded from the bundle, even when imported in e.g. the
+   * preview.
    */
   disableBlocks?: boolean;
-  /**
-   * Disable specific addons
-   */
+  /** Disable specific addons */
   disabledAddons?: string[];
-  /**
-   * Filter out .mdx stories entries
-   */
+  /** Filter out .mdx stories entries */
   disableMDXEntries?: boolean;
-  /**
-   * Override autodocs to be disabled
-   */
+  /** Override autodocs to be disabled */
   disableAutoDocs?: boolean;
-  /**
-   * Override docgen to be disabled.
-   */
+  /** Override docgen to be disabled. */
   disableDocgen?: boolean;
-  /**
-   * Override sourcemaps generation to be disabled.
-   */
+  /** Override sourcemaps generation to be disabled. */
   disableSourcemaps?: boolean;
-  /**
-   * Override tree-shaking (dead code elimination) to be disabled.
-   */
+  /** Override tree-shaking (dead code elimination) to be disabled. */
   disableTreeShaking?: boolean;
-  /**
-   * Minify with ESBuild when using webpack.
-   */
+  /** Minify with ESBuild when using webpack. */
   esbuildMinify?: boolean;
 }
 
@@ -340,28 +339,29 @@ export interface TagOptions {
 export type TagsOptions = Record<Tag, Partial<TagOptions>>;
 
 /**
- * The interface for Storybook configuration used internally in presets
- * The difference is that these values are the raw values, AKA, not wrapped with `PresetValue<>`
+ * The interface for Storybook configuration used internally in presets The difference is that these
+ * values are the raw values, AKA, not wrapped with `PresetValue<>`
  */
 export interface StorybookConfigRaw {
   /**
    * Sets the addons you want to use with Storybook.
    *
-   * @example `['@storybook/addon-essentials']` or `[{ name: '@storybook/addon-essentials', options: { backgrounds: false } }]`
+   * @example
+   *
+   * ```ts
+   * addons = ['@storybook/addon-essentials'];
+   * addons = [{ name: '@storybook/addon-essentials', options: { backgrounds: false } }];
+   * ```
    */
   addons?: Preset[];
   core?: CoreConfig;
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;
   features?: {
-    /**
-     * Filter args with a "target" on the type from the render function (EXPERIMENTAL)
-     */
+    /** Filter args with a "target" on the type from the render function (EXPERIMENTAL) */
     argTypeTargetsV7?: boolean;
 
-    /**
-     * Apply decorators from preview.js before decorators from addons or frameworks
-     */
+    /** Apply decorators from preview.js before decorators from addons or frameworks */
     legacyDecoratorFileOrder?: boolean;
 
     /**
@@ -371,10 +371,13 @@ export interface StorybookConfigRaw {
      */
     disallowImplicitActionsInRenderV8?: boolean;
 
-    /**
-     * Enable asynchronous component rendering in React renderer
-     */
+    /** Enable asynchronous component rendering in React renderer */
     experimentalRSC?: boolean;
+
+    /** Use globals & globalTypes for configuring the viewport addon */
+    viewportStoryGlobals?: boolean;
+    /** Use globals & globalTypes for configuring the backgrounds addon */
+    backgroundsStoryGlobals?: boolean;
   };
 
   build?: TestBuildConfig;
@@ -415,22 +418,31 @@ export interface StorybookConfigRaw {
 }
 
 /**
- * The interface for Storybook configuration in `main.ts` files.
- * This interface is public
- * All values should be wrapped with `PresetValue<>`, though there are a few exceptions: `addons`, `framework`
+ * The interface for Storybook configuration in `main.ts` files. This interface is public All values
+ * should be wrapped with `PresetValue<>`, though there are a few exceptions: `addons`, `framework`
  */
 export interface StorybookConfig {
   /**
    * Sets the addons you want to use with Storybook.
    *
-   * @example `['@storybook/addon-essentials']` or `[{ name: '@storybook/addon-essentials', options: { backgrounds: false } }]`
+   * @example
+   *
+   * ```
+   * addons = ['@storybook/addon-essentials'];
+   * addons = [{ name: '@storybook/addon-essentials', options: { backgrounds: false } }];
+   * ```
    */
   addons?: StorybookConfigRaw['addons'];
   core?: PresetValue<StorybookConfigRaw['core']>;
   /**
    * Sets a list of directories of static files to be loaded by Storybook server
    *
-   * @example `['./public']` or `[{from: './public', 'to': '/assets'}]`
+   * @example
+   *
+   * ```ts
+   * staticDirs = ['./public'];
+   * staticDirs = [{ from: './public', to: '/assets' }];
+   * ```
    */
   staticDirs?: PresetValue<StorybookConfigRaw['staticDirs']>;
   logLevel?: PresetValue<StorybookConfigRaw['logLevel']>;
@@ -441,88 +453,72 @@ export interface StorybookConfig {
   /**
    * Tells Storybook where to find stories.
    *
-   * @example `['./src/*.stories.@(j|t)sx?']` or `async () => [...(await myCustomStoriesEntryBuilderFunc())]`
+   * @example
+   *
+   * ```ts
+   * stories = ['./src/*.stories.@(j|t)sx?'];
+   * stories = async () => [...(await myCustomStoriesEntryBuilderFunc())];
+   * ```
    */
   stories: PresetValue<StorybookConfigRaw['stories']>;
 
-  /**
-   * Framework, e.g. '@storybook/react-vite', required in v7
-   */
+  /** Framework, e.g. '@storybook/react-vite', required in v7 */
   framework?: StorybookConfigRaw['framework'];
 
-  /**
-   * Controls how Storybook handles TypeScript files.
-   */
+  /** Controls how Storybook handles TypeScript files. */
   typescript?: PresetValue<StorybookConfigRaw['typescript']>;
 
-  /**
-   * References external Storybooks
-   */
+  /** References external Storybooks */
   refs?: PresetValue<StorybookConfigRaw['refs']>;
 
-  /**
-   * Modify or return babel config.
-   */
+  /** Modify or return babel config. */
   babel?: PresetValue<StorybookConfigRaw['babel']>;
 
-  /**
-   * Modify or return swc config.
-   */
+  /** Modify or return swc config. */
   swc?: PresetValue<StorybookConfigRaw['swc']>;
 
-  /**
-   * Modify or return env config.
-   */
+  /** Modify or return env config. */
   env?: PresetValue<StorybookConfigRaw['env']>;
 
-  /**
-   * Modify or return babel config.
-   */
+  /** Modify or return babel config. */
   babelDefault?: PresetValue<StorybookConfigRaw['babelDefault']>;
 
-  /**
-   * Add additional scripts to run in the preview a la `.storybook/preview.js`
-   */
+  /** Add additional scripts to run in the preview a la `.storybook/preview.js` */
   previewAnnotations?: PresetValue<StorybookConfigRaw['previewAnnotations']>;
 
-  /**
-   * Process CSF files for the story index.
-   */
+  /** Process CSF files for the story index. */
   experimental_indexers?: PresetValue<StorybookConfigRaw['experimental_indexers']>;
 
-  /**
-   * Docs related features in index generation
-   */
+  /** Docs related features in index generation */
   docs?: PresetValue<StorybookConfigRaw['docs']>;
 
   /**
-   * Programmatically modify the preview head/body HTML.
-   * The previewHead and previewBody functions accept a string,
-   * which is the existing head/body, and return a modified string.
+   * Programmatically modify the preview head/body HTML. The previewHead and previewBody functions
+   * accept a string, which is the existing head/body, and return a modified string.
    */
   previewHead?: PresetValue<StorybookConfigRaw['previewHead']>;
 
   previewBody?: PresetValue<StorybookConfigRaw['previewBody']>;
 
   /**
-   * Programmatically override the preview's main page template.
-   * This should return a reference to a file containing an `.ejs` template
-   * that will be interpolated with environment variables.
+   * Programmatically override the preview's main page template. This should return a reference to a
+   * file containing an `.ejs` template that will be interpolated with environment variables.
    *
-   * @example '.storybook/index.ejs'
+   * @example
+   *
+   * ```ts
+   * previewMainTemplate = '.storybook/index.ejs';
+   * ```
    */
   previewMainTemplate?: PresetValue<StorybookConfigRaw['previewMainTemplate']>;
 
   /**
-   * Programmatically modify the preview head/body HTML.
-   * The managerHead function accept a string,
+   * Programmatically modify the preview head/body HTML. The managerHead function accept a string,
    * which is the existing head content, and return a modified string.
    */
   managerHead?: PresetValue<StorybookConfigRaw['managerHead']>;
 
-  /**
-   * Configure non-standard tag behaviors
-   */
+  /** Configure non-standard tag behaviors */
   tags?: PresetValue<StorybookConfigRaw['tags']>;
 }
 
@@ -574,13 +570,17 @@ export interface CoreCommon_StorybookInfo {
 }
 
 /**
- * Given a generic string type, returns that type but ensures that a string in general is compatible with it.
- * We use this construct to ensure that IDEs can provide better autocompletion for string types.
- * This is, for example, needed for main config fields, where we want to ensure that the user can provide
- * a custom string, but also a string that is compatible with the type.
+ * Given a generic string type, returns that type but ensures that a string in general is compatible
+ * with it. We use this construct to ensure that IDEs can provide better autocompletion for string
+ * types. This is, for example, needed for main config fields, where we want to ensure that the user
+ * can provide a custom string, but also a string that is compatible with the type.
+ *
  * @example
- * type Framework = CompatibleString<'@storybook/nextjs'>
- * const framework: Framework = '@storybook/nextjs'; // valid and will be autocompleted
- * const framework: Framework = path.dirname(require.resolve(path.join("@storybook/nextjs", "package.json"))) // valid
+ *
+ * ```ts
+ * type Framework = CompatibleString<'@storybook/nextjs'>;
+ * const framework: Framework = '@storybook/nextjs'; // valid and will be autocompleted const framework: Framework =
+ * path.dirname(require.resolve(path.join('@storybook/nextjs', 'package.json'))); // valid
+ * ```
  */
 export type CompatibleString<T extends string> = T | (string & {});

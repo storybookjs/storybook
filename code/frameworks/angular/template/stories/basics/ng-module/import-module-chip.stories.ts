@@ -1,6 +1,7 @@
-import { StoryFn, Meta, moduleMetadata, StoryObj } from '@storybook/angular';
-import { ChipsModule } from './angular-src/chips.module';
+import { Meta, StoryFn, StoryObj, moduleMetadata } from '@storybook/angular';
+
 import { ChipComponent } from './angular-src/chip.component';
+import { ChipsModule } from './angular-src/chips.module';
 
 const meta: Meta<ChipComponent> = {
   component: ChipComponent,
@@ -9,6 +10,8 @@ const meta: Meta<ChipComponent> = {
       imports: [ChipsModule],
     }),
   ],
+  tags: ['!test', '!vitest'],
+  parameters: { chromatic: { disable: true } },
 };
 
 export default meta;

@@ -35,6 +35,7 @@ export default mergeConfig(
     test: {
       name: 'storybook-ui',
       include: [
+        '../lib/**/*.{story,stories}.?(c|m)[jt]s?(x)',
         '../addons/**/*.{story,stories}.?(c|m)[jt]s?(x)',
         // '../core/template/stories/**/*.{story,stories}.?(c|m)[jt]s?(x)',
         '../core/src/manager/**/*.{story,stories}.?(c|m)[jt]s?(x)',

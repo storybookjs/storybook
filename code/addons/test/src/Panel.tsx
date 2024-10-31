@@ -114,8 +114,6 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
     unhandledErrors: undefined,
   });
 
-  console.log({ globals });
-
   // local state
   const [scrollTarget, setScrollTarget] = useState<HTMLElement | undefined>(undefined);
   const [collapsed, setCollapsed] = useState<Set<Call['id']>>(new Set());
@@ -175,8 +173,7 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
       },
       [STORY_RENDER_PHASE_CHANGED]: (event) => {
         if (event.newPhase === 'preparing') {
-          set((s) => ({
-            ...s,
+          set({
             controlStates: INITIAL_CONTROL_STATES,
             isErrored: false,
             pausedAt: undefined,
@@ -186,7 +183,7 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
             caughtException: undefined,
             interactionsCount: 0,
             unhandledErrors: undefined,
-          }));
+          });
           return;
         }
         set((s) => {

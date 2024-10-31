@@ -189,7 +189,7 @@ export const Subnav: React.FC<SubnavProps> = ({
                 key="outline"
                 active={isDemoMode}
                 aria-label="Demo mode"
-                title="Apply outlines to the preview"
+                title="Toggle demo mode"
                 onClick={controls.toggleDemoMode}
               >
                 <PointerHandIcon />

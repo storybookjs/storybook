@@ -33,6 +33,10 @@ const config: StorybookConfig = {
       titlePrefix: 'blocks',
     },
     {
+      directory: '../lib/test/src',
+      titlePrefix: 'test',
+    },
+    {
       directory: '../addons/a11y/template/stories',
       titlePrefix: 'addons/a11y',
     },

@@ -1,6 +1,6 @@
 // TODO: discuss about this, ideally there should be "THE FLAG" where we know things are running in SB Manager.
 // This should not execute in Vitest browser mode, in Test runner, when opening a story in isolation, etc.
-const shouldUseDemoMode = (globalThis.parent as any)?.STORYBOOK_RENDERER;
+const shouldUseDemoMode = (globalThis.parent as any)?.STORYBOOK_ENV;
 
 export async function wait(ms: number) {
   if (shouldUseDemoMode) {
@@ -11,7 +11,7 @@ export async function wait(ms: number) {
   }
 }
 
-export async function mouseTo(
+export async function projectCursorAt(
   target: Element,
   { cursorStyle = 'hand', delay = 1000 }: { cursorStyle?: 'hand' | 'circle'; delay?: number }
 ) {
@@ -80,17 +80,20 @@ export async function mouseTo(
 
       const moveCursor = () => {
         const { left, top, width, height } = target.getBoundingClientRect();
-        const sTop = Math.round(top + Math.min(height / 2, 50)) + 'px';
-        const sLeft = Math.round(left + Math.min(width / 2, 50)) + 'px';
+        // let sTop = Math.round(top + Math.min(height / 2, 50));
+        // let sLeft = Math.round(left + Math.min(width / 2, 50));
+
+        const sTop = top + (cursorStyle === 'circle' ? 15 : 25);
+        const sLeft = left + (cursorStyle === 'circle' ? 15 : 25);
         cursorEl.className = '';
 
         if (cursorStyle === 'circle') {
           cursorEl.className = 'sb-cursor-moving';
         }
-        cursorEl.style.top = sTop;
-        cursorEl.style.left = sLeft;
+        cursorEl.style.top = `${sTop}px`;
+        cursorEl.style.left = `${sLeft}px`;
+        // bakes in a 10% time delay from movement ending to click event
         cursorEl.style.transitionDuration = `${Math.round(delay * 0.9)}ms`;
-        // ^ bakes in a 10% time delay from movement ending to click event
 
         setTimeout(resolve, delay);
       };

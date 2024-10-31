@@ -279,4 +279,59 @@ describe(transformLegacyStory.name, () => {
       </Story>"
     `);
   });
+
+  it("leaves existing Story parameters untouched", async ({
+    expect,
+  }) => {
+    const code = `
+      <script context="module">
+        import { Story } from "@storybook/addon-svelte-csf";
+      </script>
+
+      <Story
+        name="Default"
+        parameters={{ 
+          sveltekit_experimental: {
+            stores: {
+              page: {
+                data: {
+                  test: 'passed',
+                },
+              },
+              navigating: {
+                route: {
+                  id: '/storybook',
+                },
+              },
+              updated: true,
+            },
+          },
+        }}
+      >
+        <h1>{"Test"}</h1>
+      </Story>
+    `;
+    const component = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
+
+    expect(
+      print(
+        transformLegacyStory({
+          component,
+          state: { componentIdentifierName: {} },
+        })
+      )
+    ).toMatchInlineSnapshot(`
+      "<Story name="Default" parameters={{
+      	sveltekit_experimental: {
+      		stores: {
+      			page: { data: { test: 'passed' } },
+      			navigating: { route: { id: '/storybook' } },
+      			updated: true
+      		}
+      	}
+      }}>
+      	<h1>{"Test"}</h1>
+      </Story>"
+    `);
+  });
 });

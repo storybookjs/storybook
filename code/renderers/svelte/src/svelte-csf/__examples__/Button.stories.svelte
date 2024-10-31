@@ -6,7 +6,6 @@
     type StoryContext,
   } from '@storybook/addon-svelte-csf';
   import { fn } from '@storybook/test';
-  import { createRawSnippet } from 'svelte';
 
   import Button from './components/Button.svelte';
 
@@ -20,7 +19,6 @@
     component: Button,
     tags: ['autodocs'],
     args: {
-      children: createRawSnippet(() => ({ render: () => 'Click me' })),
       onclick: onclickFn,
     },
     argTypes: {
@@ -38,8 +36,8 @@
   setTemplate(template);
 </script>
 
-{#snippet template({ children, ...args }: Args<typeof Story>, context: StoryContext<typeof Story>)}
-  <Button {...args}>{children}</Button>
+{#snippet template(args: Args<typeof Story>, context: StoryContext<typeof Story>)}
+  <Button {...args}>{'Click me'}</Button>
 {/snippet}
 
 <!-- Only use this sparingly as the main CTA. -->

@@ -1,11 +1,14 @@
-<script lang="ts">
-  /**
-   * This component is to support deprecated legacy component - `Template`,
-   * and this component functionality is just a "mock".
-   * E.g. to allow user still have typing experience.
-   * Vite pre-transform hook does codemod where this component gets transformed into Svelte v5 SnippetBlock.
-   */
+<!--
+@component
+This component is to support deprecated legacy component - `Template`,
+and this component functionality is just a "mock".
+E.g. to allow user still have typing experience.
+Vite pre-transform hook does codemod where this component gets transformed into Svelte v5 snippet block.
 
+@deprecated
+@see {@link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#template-component-removed}
+-->
+<script lang="ts">
   import { type StoryRendererContext } from './contexts/renderer.svelte';
 
   export let id: string = 'default';

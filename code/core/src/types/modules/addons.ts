@@ -474,7 +474,9 @@ export interface Addon_TestProviderType<
   name: string;
   title: (state: Addon_TestProviderState<Details>) => ReactNode;
   description: (state: Addon_TestProviderState<Details>) => ReactNode;
-  mapStatusUpdate?: (state: Addon_TestProviderState<Details>) => API_StatusUpdate;
+  mapStatusUpdate?: (
+    state: Addon_TestProviderState<Details>
+  ) => API_StatusUpdate | ((state: API_StatusState) => API_StatusUpdate);
   runnable?: boolean;
   watchable?: boolean;
 }
@@ -489,6 +491,10 @@ export type Addon_TestProviderState<Details extends { [key: string]: any } = Non
     watching: boolean;
     failed: boolean;
     crashed: boolean;
+    error?: {
+      name: string;
+      message?: string;
+    };
   };
 
 type Addon_TypeBaseNames = Exclude<

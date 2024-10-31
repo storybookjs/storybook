@@ -30,6 +30,8 @@ const SIDEBAR_BOTTOM_SPACER_ID = 'sidebar-bottom-spacer';
 // This ID is used by some integrators to target the (fixed position) sidebar bottom element so it should remain stable.
 const SIDEBAR_BOTTOM_WRAPPER_ID = 'sidebar-bottom-wrapper';
 
+const STORAGE_KEY = '@storybook/manager/test-providers';
+
 const initialTestProviderState: TestProviderState = {
   details: {} as { [key: string]: any },
   cancellable: false,
@@ -97,13 +99,17 @@ export const SidebarBottomBase = ({ api, notifications = [], status = {} }: Side
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [warningsActive, setWarningsActive] = useState(false);
   const [errorsActive, setErrorsActive] = useState(false);
-  const [testProviders, setTestProviders] = useState<TestProviders>(() =>
-    Object.fromEntries(
+  const [testProviders, setTestProviders] = useState<TestProviders>(() => {
+    let sessionState: TestProviders = {};
+    try {
+      sessionState = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '{}');
+    } catch (_) {}
+    return Object.fromEntries(
       Object.entries(api.getElements(Addon_TypesEnum.experimental_TEST_PROVIDER)).map(
-        ([id, config]) => [id, { ...config, ...initialTestProviderState }]
+        ([id, config]) => [id, { ...config, ...initialTestProviderState, ...sessionState[id] }]
       )
-    )
-  );
+    );
+  });
 
   const warnings = Object.values(status).filter((statusByAddonId) =>
     Object.values(statusByAddonId).some((value) => value?.status === 'warn')
@@ -116,25 +122,28 @@ export const SidebarBottomBase = ({ api, notifications = [], status = {} }: Side
 
   const updateTestProvider = useCallback(
     (id: TestProviderId, update: Partial<TestProviderState>) =>
-      setTestProviders((state) => ({ ...state, [id]: { ...state[id], ...update } })),
+      setTestProviders((state) => {
+        const newValue = { ...state, [id]: { ...state[id], ...update } };
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(newValue));
+        return newValue;
+      }),
     []
   );
 
   const clearState = useCallback(
-    ({ providerId: id }: { providerId: TestProviderId }) => {
-      const startingState: Partial<TestProviderState> = {
+    ({ providerId }: { providerId: TestProviderId }) => {
+      updateTestProvider(providerId, {
         cancelling: false,
         running: true,
         failed: false,
         crashed: false,
         progress: undefined,
-      };
-      setTestProviders((state) => ({ ...state, [id]: { ...state[id], ...startingState } }));
-      api.experimental_updateStatus(id, (state = {}) =>
+      });
+      api.experimental_updateStatus(providerId, (state = {}) =>
         Object.fromEntries(Object.keys(state).map((key) => [key, null]))
       );
     },
-    [api]
+    [api, updateTestProvider]
   );
 
   const onRunTests = useCallback(
@@ -184,11 +193,11 @@ export const SidebarBottomBase = ({ api, notifications = [], status = {} }: Side
       updateTestProvider(providerId, { details, running: false, crashed: true, watching: false });
     };
 
-    const onProgressReport = ({ providerId, ...details }: TestingModuleProgressReportPayload) => {
-      if (details.status === 'failed') {
-        updateTestProvider(providerId, { details, running: false, failed: true });
+    const onProgressReport = ({ providerId, ...result }: TestingModuleProgressReportPayload) => {
+      if (result.status === 'failed') {
+        updateTestProvider(providerId, { ...result, running: false, failed: true });
       } else {
-        const update = { ...details, running: details.status === 'pending' };
+        const update = { ...result, running: result.status === 'pending' };
         updateTestProvider(providerId, update);
 
         const { mapStatusUpdate, ...state } = testProviders[providerId];
@@ -211,7 +220,7 @@ export const SidebarBottomBase = ({ api, notifications = [], status = {} }: Side
   }, [api, testProviders, updateTestProvider, clearState]);
 
   const testProvidersArray = Object.values(testProviders);
-  if (!hasWarnings && !hasErrors && !testProvidersArray.length) {
+  if (!hasWarnings && !hasErrors && !testProvidersArray.length && !notifications.length) {
     return null;
   }
 

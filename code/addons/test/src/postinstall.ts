@@ -53,43 +53,6 @@ export default async function postInstall(options: PostinstallOptions) {
   // if Vitest is installed, we use the same version to keep consistency across Vitest packages
   const vitestVersionToInstall = vitestVersionSpecifier ?? 'latest';
 
-  const addonInteractionsName = '@storybook/addon-interactions';
-  const interactionsAddon = info.addons.find((addon: string | { name: string }) => {
-    // account for addons as objects, as well as addons with PnP paths
-    const addonName = typeof addon === 'string' ? addon : addon.name;
-    return addonName.includes(addonInteractionsName);
-  });
-
-  if (!!interactionsAddon) {
-    let shouldUninstall = options.yes;
-    if (!options.yes) {
-      logger.plain(dedent`
-        We have detected that you're using ${addonInteractionsName}.
-        The Storybook test addon is a replacement for the interactions addon, so you must uninstall and unregister it in order to use the test addon correctly. This can be done automatically.
-
-        More info: ${picocolors.yellow('https://storybook.js.org/docs/writing-tests/test-addon')}
-      `);
-
-      const response = await prompts({
-        type: 'confirm',
-        name: 'shouldUninstall',
-        message: `Would you like me to remove and unregister ${addonInteractionsName}?`,
-        initial: true,
-      });
-
-      shouldUninstall = response.shouldUninstall;
-    }
-
-    if (shouldUninstall) {
-      await execa(
-        packageManager.getRemoteRunCommand(),
-        ['storybook', 'remove', addonInteractionsName, '--package-manager', options.packageManager],
-        {
-          shell: true,
-        }
-      );
-    }
-  }
   const annotationsImport = [
     '@storybook/nextjs',
     '@storybook/experimental-nextjs-vite',
@@ -122,10 +85,10 @@ export default async function postInstall(options: PostinstallOptions) {
       `);
     }
 
-    if (coercedVitestVersion && !satisfies(coercedVitestVersion, '>=2.0.0')) {
-      reasons.push(`
-        • The addon requires Vitest 2.0.0 or later. You are currently using ${vitestVersionSpecifier}.
-          Please update your ${picocolors.bold(colors.pink('vitest'))} dependency and try again.
+    if (coercedVitestVersion && !satisfies(coercedVitestVersion, '>=2.1.0')) {
+      reasons.push(dedent`
+        • The addon requires Vitest 2.1.0 or later. You are currently using ${picocolors.bold(vitestVersionSpecifier)}.
+          Please update all of your Vitest dependencies and try again.
       `);
     }
 
@@ -145,7 +108,7 @@ export default async function postInstall(options: PostinstallOptions) {
       );
       reasons.push(
         dedent`
-          To roll back the installation, remove ${picocolors.bold(colors.pink(ADDON_NAME))} from the "addons" array
+          You can fix these issues and rerun the command to reinstall. If you wish to roll back the installation, remove ${picocolors.bold(colors.pink(ADDON_NAME))} from the "addons" array
           in your main Storybook config file and remove the dependency from your package.json file.
         `
       );
@@ -178,6 +141,57 @@ export default async function postInstall(options: PostinstallOptions) {
     printError('⛔️ Sorry!', result);
     logger.line(1);
     return;
+  }
+
+  const addonInteractionsName = '@storybook/addon-interactions';
+  const interactionsAddon = info.addons.find((addon: string | { name: string }) => {
+    // account for addons as objects, as well as addons with PnP paths
+    const addonName = typeof addon === 'string' ? addon : addon.name;
+    return addonName.includes(addonInteractionsName);
+  });
+
+  if (!!interactionsAddon) {
+    let shouldUninstall = options.yes;
+    if (!options.yes) {
+      printInfo(
+        '⚠️ Attention',
+        dedent`
+          We have detected that you're using ${addonInteractionsName}.
+          The Storybook test addon is a replacement for the interactions addon, so you must uninstall and unregister it in order to use the test addon correctly. This can be done automatically.
+
+          More info: ${picocolors.cyan('https://storybook.js.org/docs/writing-tests/test-addon')}
+        `
+      );
+
+      const response = await prompts({
+        type: 'confirm',
+        name: 'shouldUninstall',
+        message: `Would you like me to remove and unregister ${addonInteractionsName}? Press N to abort the entire installation.`,
+        initial: true,
+      });
+
+      shouldUninstall = response.shouldUninstall;
+    }
+
+    if (shouldUninstall) {
+      await execa(
+        packageManager.getRemoteRunCommand(),
+        [
+          'storybook',
+          'remove',
+          addonInteractionsName,
+          '--package-manager',
+          options.packageManager,
+          '--config-dir',
+          options.configDir,
+        ],
+        {
+          shell: true,
+        }
+      );
+    } else {
+      return;
+    }
   }
 
   const vitestInfo = getVitestPluginInfo(info.frameworkPackageName);
@@ -317,6 +331,8 @@ export default async function postInstall(options: PostinstallOptions) {
     // If there's an existing config, we create a workspace file so we can run Storybook tests alongside.
     const extname = path.extname(rootConfig);
     const browserWorkspaceFile = path.resolve(dirname(rootConfig), `vitest.workspace${extname}`);
+    // to be set in vitest config
+    const vitestSetupFilePath = path.relative(path.dirname(browserWorkspaceFile), vitestSetupFile);
 
     logger.line(1);
     logger.plain(`${step} Creating a Vitest project workspace file:`);
@@ -335,7 +351,7 @@ export default async function postInstall(options: PostinstallOptions) {
             extends: '${viteConfigFile ? relative(dirname(browserWorkspaceFile), viteConfigFile) : ''}',
             plugins: [
               // See options at: https://storybook.js.org/docs/writing-tests/vitest-plugin#storybooktest
-              storybookTest(),${vitestInfo.frameworkPluginDocs + vitestInfo.frameworkPluginCall}
+              storybookTest({ configDir: '${options.configDir}' }),${vitestInfo.frameworkPluginDocs + vitestInfo.frameworkPluginCall}
             ],
             test: {
               name: 'storybook',
@@ -347,7 +363,7 @@ export default async function postInstall(options: PostinstallOptions) {
               },
               // Make sure to adjust this pattern to match your stories files.
               include: ['**/*.stories.?(m)[jt]s?(x)'],
-              setupFiles: ['./.storybook/vitest.setup.ts'],
+              setupFiles: ['${vitestSetupFilePath}'],
             },
           },
         ]);
@@ -356,6 +372,8 @@ export default async function postInstall(options: PostinstallOptions) {
   } else {
     // If there's no existing Vitest/Vite config, we create a new Vitest config file.
     const newVitestConfigFile = path.resolve('vitest.config.ts');
+    // to be set in vitest config
+    const vitestSetupFilePath = path.relative(path.dirname(newVitestConfigFile), vitestSetupFile);
 
     logger.line(1);
     logger.plain(`${step} Creating a Vitest project config file:`);
@@ -371,7 +389,7 @@ export default async function postInstall(options: PostinstallOptions) {
         export default defineConfig({
           plugins: [
             // See options at: https://storybook.js.org/docs/writing-tests/vitest-plugin#storybooktest
-            storybookTest(),${vitestInfo.frameworkPluginDocs + vitestInfo.frameworkPluginCall}
+            storybookTest({ configDir: '${options.configDir}' }),${vitestInfo.frameworkPluginDocs + vitestInfo.frameworkPluginCall}
           ],
           test: {
             name: 'storybook',
@@ -383,7 +401,7 @@ export default async function postInstall(options: PostinstallOptions) {
             },
             // Make sure to adjust this pattern to match your stories files.
             include: ['**/*.stories.?(m)[jt]s?(x)'],
-            setupFiles: ['./.storybook/vitest.setup.ts'],
+            setupFiles: ['${vitestSetupFilePath}'],
           },
         });
       `

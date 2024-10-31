@@ -69,7 +69,7 @@ test.describe("component testing", () => {
     await page.getByRole('button', { name: 'Run tests' }).click();
 
     // Wait for test results to appear
-    const errorFilter = page.getByLabel("Show errors");
+    const errorFilter = page.getByLabel("Toggle errors");
     await expect(errorFilter).toBeVisible({ timeout: 30000 });
 
     // Assert discrepancy: CLI pass + Browser fail
@@ -117,7 +117,7 @@ test.describe("component testing", () => {
     await page.getByRole('button', { name: 'Run tests' }).click();
 
     // Wait for test results to appear
-    const errorFilter = page.getByLabel("Show errors");
+    const errorFilter = page.getByLabel("Toggle errors");
     await expect(errorFilter).toBeVisible({ timeout: 30000 });
 
     // Assert for expected success
@@ -171,7 +171,7 @@ test.describe("component testing", () => {
     await setForceFailureFlag(true);
 
     // Wait for test results to appear
-    const errorFilter = page.getByLabel("Show errors");
+    const errorFilter = page.getByLabel("Toggle errors");
     await expect(errorFilter).toBeVisible({ timeout: 30000 });
 
     // Assert for expected success

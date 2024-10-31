@@ -97,11 +97,13 @@ const bootTestRunner = async (channel: Channel, initEvent?: string, initArgs?: a
           killChild();
           log(result.message);
           log(result.error);
+          // eslint-disable-next-line local-rules/no-uncategorized-errors
+          const error = new Error(`${result.message}\n${result.error}`);
           // Reject if the child process reports an error before it's ready
           if (!ready) {
-            reject(new Error(`${result.message}\n${result.error}`));
+            reject(error);
           } else {
-            reportFatalError(result.error);
+            reportFatalError(error);
           }
         } else {
           channel.emit(result.type, ...result.args);

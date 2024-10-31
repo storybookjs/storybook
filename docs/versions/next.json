@@ -1,1 +1,1 @@
-{"version":"8.4.0-beta.0","info":{"plain":"- Core: Add unified UI Testing Module - [#29241](https://github.com/storybookjs/storybook/pull/29241), thanks @yannbf!\n- Svelte: Improve argTypes inference with `svelte2tsx` - support runes - [#29423](https://github.com/storybookjs/storybook/pull/29423), thanks @JReinhold!"}}
+{"version":"8.5.0-alpha.0","info":{"plain":""}}

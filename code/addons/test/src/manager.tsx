@@ -80,98 +80,106 @@ const RelativeTime = ({ timestamp, testCount }: { timestamp: Date; testCount: nu
 };
 
 addons.register(ADDON_ID, (api) => {
-  addons.add(TEST_PROVIDER_ID, {
-    type: Addon_TypesEnum.experimental_TEST_PROVIDER,
-    runnable: true,
-    watchable: true,
+  const storybookBuilder = (globalThis as any).STORYBOOK_BUILDER || '';
+  if (storybookBuilder.includes('vite')) {
+    const openAddonPanel = () => {
+      api.setSelectedPanel(PANEL_ID);
+      api.togglePanel(true);
+    };
 
-    name: 'Component tests',
-    title: ({ crashed, failed }) =>
-      crashed || failed ? 'Component tests failed' : 'Component tests',
-    description: ({ failed, running, watching, progress, crashed, details }) => {
-      const [isModalOpen, setIsModalOpen] = useState(false);
+    addons.add(TEST_PROVIDER_ID, {
+      type: Addon_TypesEnum.experimental_TEST_PROVIDER,
+      runnable: true,
+      watchable: true,
 
-      const errorMessage = details?.error?.message;
+      name: 'Component tests',
+      title: ({ crashed, failed }) =>
+        crashed || failed ? 'Component tests failed' : 'Component tests',
+      description: ({ failed, running, watching, progress, crashed, error }) => {
+        const [isModalOpen, setIsModalOpen] = useState(false);
 
-      let message: string | React.ReactNode = 'Not run';
+        const errorMessage = error?.message;
 
-      if (running) {
-        message = progress
-          ? `Testing... ${progress.numPassedTests}/${progress.numTotalTests}`
-          : 'Starting...';
-      } else if (failed && !errorMessage) {
-        message = 'Component tests failed';
-      } else if (crashed || (failed && errorMessage)) {
-        message = (
+        let message: string | React.ReactNode = 'Not run';
+
+        if (running) {
+          message = progress
+            ? `Testing... ${progress.numPassedTests}/${progress.numTotalTests}`
+            : 'Starting...';
+        } else if (failed && !errorMessage) {
+          message = '';
+        } else if (crashed || (failed && errorMessage)) {
+          message = (
+            <>
+              <LinkComponent
+                isButton
+                onClick={() => {
+                  setIsModalOpen(true);
+                }}
+              >
+                {error?.name || 'View full error'}
+              </LinkComponent>
+            </>
+          );
+        } else if (progress?.finishedAt) {
+          message = (
+            <RelativeTime
+              timestamp={new Date(progress.finishedAt)}
+              testCount={progress.numTotalTests}
+            />
+          );
+        } else if (watching) {
+          message = 'Watching for file changes';
+        }
+
+        return (
           <>
-            <LinkComponent
-              isButton
-              onClick={() => {
-                setIsModalOpen(true);
+            {message}
+            <GlobalErrorModal
+              error={errorMessage}
+              open={isModalOpen}
+              onClose={() => {
+                setIsModalOpen(false);
               }}
-            >
-              {details?.error?.name || 'View full error'}
-            </LinkComponent>
+              onRerun={() => {
+                setIsModalOpen(false);
+                api
+                  .getChannel()
+                  .emit(TESTING_MODULE_RUN_ALL_REQUEST, { providerId: TEST_PROVIDER_ID });
+              }}
+            />
           </>
         );
-      } else if (progress?.finishedAt) {
-        message = (
-          <RelativeTime
-            timestamp={new Date(progress.finishedAt)}
-            testCount={progress.numTotalTests}
-          />
-        );
-      } else if (watching) {
-        message = 'Watching for file changes';
-      }
+      },
 
-      return (
-        <>
-          {message}
-          <GlobalErrorModal
-            error={errorMessage}
-            open={isModalOpen}
-            onClose={() => {
-              setIsModalOpen(false);
-            }}
-            onRerun={() => {
-              setIsModalOpen(false);
-              api
-                .getChannel()
-                .emit(TESTING_MODULE_RUN_ALL_REQUEST, { providerId: TEST_PROVIDER_ID });
-            }}
-          />
-        </>
-      );
-    },
-
-    mapStatusUpdate: (state) =>
-      Object.fromEntries(
-        (state.details.testResults || []).flatMap((testResult) =>
-          testResult.results
-            .map(({ storyId, status, testRunId, ...rest }) => {
-              if (storyId) {
-                const statusObject: API_StatusObject = {
-                  title: 'Vitest',
-                  status: statusMap[status],
-                  description:
-                    'failureMessages' in rest && rest.failureMessages?.length
-                      ? rest.failureMessages.join('\n')
-                      : '',
-                  data: {
-                    testRunId,
-                  },
-                };
-                return [storyId, statusObject];
-              }
-            })
-            .filter(Boolean)
-        )
-      ),
-  } as Addon_TestProviderType<{
-    testResults: TestResult[];
-    error?: { message: string; name: string };
-  }>);
+      mapStatusUpdate: (state) =>
+        Object.fromEntries(
+          (state.details.testResults || []).flatMap((testResult) =>
+            testResult.results
+              .map(({ storyId, status, testRunId, ...rest }) => {
+                if (storyId) {
+                  const statusObject: API_StatusObject = {
+                    title: 'Component tests',
+                    status: statusMap[status],
+                    description:
+                      'failureMessages' in rest && rest.failureMessages?.length
+                        ? rest.failureMessages.join('\n')
+                        : '',
+                    data: {
+                      testRunId,
+                    },
+                    onClick: openAddonPanel,
+                  };
+                  return [storyId, statusObject];
+                }
+              })
+              .filter(Boolean)
+          )
+        ),
+    } as Addon_TestProviderType<{
+      testResults: TestResult[];
+    }>);
+  }
 
   addons.add(PANEL_ID, {
     type: types.PANEL,

@@ -67,4 +67,4 @@ export {
  * </script>
  * ```
  */
-export type StoryProps = ComponentProps<typeof LegacyStoryComponent>;
+export type StoryProps = ComponentProps<LegacyStoryComponent>;

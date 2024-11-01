@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-viewport",
-  "version": "8.4.0",
+  "version": "8.4.1",
   "description": "Build responsive components by adjusting Storybook’s viewport size and orientation",
   "keywords": [
     "addon",

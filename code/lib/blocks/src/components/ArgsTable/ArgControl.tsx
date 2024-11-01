@@ -86,7 +86,7 @@ export const ArgControl: FC<ArgControlProps> = ({ row, arg, updateArgs, isHovere
   // row.name is a display name and not a suitable DOM input id or name - i might contain whitespace etc.
   // row.key is a hash key and therefore a much safer choice
   const props = { name: key, argType: row, value: boxedValue.value, onChange, onBlur, onFocus };
-  const Control = typeof control !== 'string' ? Controls[control.type] ?? NoControl : NoControl;
+  const Control = typeof control !== 'string' ? (Controls[control.type] ?? NoControl) : NoControl;
 
   if (typeof control === 'string') {
     return <Control {...props} />;

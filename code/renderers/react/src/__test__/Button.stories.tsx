@@ -103,7 +103,6 @@ export const HooksStory: CSF3Story = {
     );
   },
   play: async ({ canvasElement, step }) => {
-    console.log('start of play function');
     const canvas = within(canvasElement);
     await step('Step label', async () => {
       const inputEl = canvas.getByTestId('input');
@@ -112,8 +111,8 @@ export const HooksStory: CSF3Story = {
       await userEvent.type(inputEl, 'Hello world!');
 
       await expect(inputEl).toHaveValue('Hello world!');
+      await expect(buttonEl).toHaveTextContent('I am clicked');
     });
-    console.log('end of play function');
   },
 };
 
@@ -179,6 +178,12 @@ export const MountInPlayFunction: CSF3Story<{ mockFn: (val: string) => string }>
 
     // equivalent of play
     expect(args.mockFn).toHaveBeenCalledWith('render');
+  },
+};
+
+export const MountInPlayFunctionThrow: CSF3Story<{ mockFn: (val: string) => string }> = {
+  play: async () => {
+    throw new Error('Error thrown in play');
   },
 };
 

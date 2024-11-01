@@ -213,6 +213,55 @@ describe('transformer', () => {
       `);
     });
 
+    describe("use the story's name as test title", () => {
+      it('should support CSF v3 via name property', async () => {
+        const code = `
+        export default { component: Button }
+        export const Primary = { name: "custom name" };`;
+        const result = await transform({ code });
+
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect } from "vitest";
+          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          const _meta = {
+            component: Button,
+            title: "automatic/calculated/title"
+          };
+          export default _meta;
+          export const Primary = {
+            name: "custom name"
+          };
+          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _test("custom name", _testStory("Primary", Primary, _meta, []));
+          }
+        `);
+      });
+
+      it('should support CSF v1/v2 via storyName property', async () => {
+        const code = `
+        export default { component: Button }
+        export const Story = () => {}
+        Story.storyName = 'custom name';`;
+        const result = await transform({ code: code });
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect } from "vitest";
+          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          const _meta = {
+            component: Button,
+            title: "automatic/calculated/title"
+          };
+          export default _meta;
+          export const Story = () => {};
+          Story.storyName = 'custom name';
+          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _test("custom name", _testStory("Story", Story, _meta, []));
+          }
+        `);
+      });
+    });
+
     it('should add test statement to const declared exported stories', async () => {
       const code = `
         export default {};
@@ -243,6 +292,40 @@ describe('transformer', () => {
         const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
         if (_isRunningFromThisFile) {
           _test("Primary", _testStory("Primary", Primary, _meta, []));
+        }
+      `);
+    });
+
+    it('should add test statement to const declared renamed exported stories', async () => {
+      const code = `
+        export default {};
+        const Primary = {
+          args: {
+            label: 'Primary Button',
+          },
+        };
+
+        export { Primary as PrimaryStory };
+      `;
+
+      const result = await transform({ code });
+
+      expect(result.code).toMatchInlineSnapshot(`
+        import { test as _test, expect as _expect } from "vitest";
+        import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+        const _meta = {
+          title: "automatic/calculated/title"
+        };
+        export default _meta;
+        const Primary = {
+          args: {
+            label: 'Primary Button'
+          }
+        };
+        export { Primary as PrimaryStory };
+        const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+        if (_isRunningFromThisFile) {
+          _test("PrimaryStory", _testStory("PrimaryStory", Primary, _meta, []));
         }
       `);
     });

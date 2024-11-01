@@ -4,11 +4,13 @@ import http from 'node:http';
 import type { Server } from 'node:http';
 import { join, resolve as resolvePath } from 'node:path';
 
-import chalk from 'chalk';
 import { program } from 'commander';
+// eslint-disable-next-line depend/ban-dependencies
 import { execa, execaSync } from 'execa';
+// eslint-disable-next-line depend/ban-dependencies
 import { pathExists, readJSON, remove } from 'fs-extra';
 import pLimit from 'p-limit';
+import picocolors from 'picocolors';
 import { parseConfigFile, runServer } from 'verdaccio';
 
 import { maxConcurrentTasks } from './utils/concurrency';
@@ -197,7 +199,9 @@ const run = async () => {
     }
   );
 
-  logger.log(`📦 found ${packages.length} storybook packages at version ${chalk.blue(version)}`);
+  logger.log(
+    `📦 found ${packages.length} storybook packages at version ${picocolors.blue(version)}`
+  );
 
   if (opts.publish) {
     await publish(packages, 'http://localhost:6002');

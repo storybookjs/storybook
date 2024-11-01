@@ -103,8 +103,10 @@ const baseTemplates = {
       renderer: '@storybook/react',
       builder: '@storybook/builder-webpack5',
     },
+
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
     modifications: {
+      extraDependencies: ['prop-types'],
       mainConfig: (config) => {
         const stories = config.getFieldValue<Array<StoriesEntry>>(['stories']);
         return {
@@ -133,6 +135,9 @@ const baseTemplates = {
       renderer: '@storybook/react',
       builder: '@storybook/builder-webpack5',
     },
+    modifications: {
+      extraDependencies: ['prop-types'],
+    },
   },
   'nextjs/13-ts': {
     name: 'Next.js v13.5 (Webpack | TypeScript)',
@@ -147,14 +152,14 @@ const baseTemplates = {
       mainConfig: {
         features: { experimentalRSC: true },
       },
-      extraDependencies: ['server-only'],
+      extraDependencies: ['server-only', 'prop-types'],
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'nextjs/default-js': {
     name: 'Next.js Latest (Webpack | JavaScript)',
     script:
-      'yarn create next-app {{beforeDir}} --javascript --eslint --tailwind --app --import-alias="@/*" --src-dir',
+      'npx create-next-app@^14 {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
     expected: {
       framework: '@storybook/nextjs',
       renderer: '@storybook/react',
@@ -164,14 +169,14 @@ const baseTemplates = {
       mainConfig: {
         features: { experimentalRSC: true },
       },
-      extraDependencies: ['server-only'],
+      extraDependencies: ['server-only', 'prop-types'],
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'nextjs/default-ts': {
     name: 'Next.js Latest (Webpack | TypeScript)',
     script:
-      'yarn create next-app {{beforeDir}} --typescript --eslint --tailwind --app --import-alias="@/*" --src-dir',
+      'npx create-next-app@^14 {{beforeDir}} --typescript --eslint --tailwind --app --import-alias="@/*" --src-dir',
     expected: {
       framework: '@storybook/nextjs',
       renderer: '@storybook/react',
@@ -181,7 +186,7 @@ const baseTemplates = {
       mainConfig: {
         features: { experimentalRSC: true },
       },
-      extraDependencies: ['server-only'],
+      extraDependencies: ['server-only', 'prop-types'],
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
@@ -195,7 +200,7 @@ const baseTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     modifications: {
-      extraDependencies: ['server-only'],
+      extraDependencies: ['server-only', 'prop-types'],
       mainConfig: {
         features: { experimentalRSC: true },
       },
@@ -205,7 +210,7 @@ const baseTemplates = {
   'experimental-nextjs-vite/default-ts': {
     name: 'Next.js Latest (Vite | TypeScript)',
     script:
-      'yarn create next-app {{beforeDir}} --typescript --eslint --tailwind --app --import-alias="@/*" --src-dir',
+      'npx create-next-app@^14 {{beforeDir}} --typescript --eslint --tailwind --app --import-alias="@/*" --src-dir',
     expected: {
       framework: '@storybook/experimental-nextjs-vite',
       renderer: '@storybook/react',
@@ -216,7 +221,12 @@ const baseTemplates = {
         framework: '@storybook/experimental-nextjs-vite',
         features: { experimentalRSC: true },
       },
-      extraDependencies: ['server-only', '@storybook/experimental-nextjs-vite', 'vite'],
+      extraDependencies: [
+        'server-only',
+        '@storybook/experimental-nextjs-vite',
+        'vite',
+        'prop-types',
+      ],
     },
     skipTasks: ['e2e-tests-dev', 'bench'],
   },
@@ -228,6 +238,9 @@ const baseTemplates = {
       renderer: '@storybook/react',
       builder: '@storybook/builder-vite',
     },
+    modifications: {
+      extraDependencies: ['prop-types'],
+    },
     skipTasks: ['e2e-tests-dev', 'bench'],
   },
   'react-vite/default-ts': {
@@ -237,6 +250,9 @@ const baseTemplates = {
       framework: '@storybook/react-vite',
       renderer: '@storybook/react',
       builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      extraDependencies: ['prop-types'],
     },
     skipTasks: ['bench'],
   },
@@ -261,6 +277,9 @@ const baseTemplates = {
       renderer: '@storybook/react',
       builder: '@storybook/builder-vite',
     },
+    modifications: {
+      extraDependencies: ['prop-types'],
+    },
     skipTasks: ['e2e-tests-dev', 'bench'],
   },
   'react-webpack/18-ts': {
@@ -270,6 +289,9 @@ const baseTemplates = {
       framework: '@storybook/react-webpack5',
       renderer: '@storybook/react',
       builder: '@storybook/builder-webpack5',
+    },
+    modifications: {
+      extraDependencies: ['prop-types'],
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
@@ -281,6 +303,9 @@ const baseTemplates = {
       framework: '@storybook/react-webpack5',
       renderer: '@storybook/react',
       builder: '@storybook/builder-webpack5',
+    },
+    modifications: {
+      extraDependencies: ['prop-types'],
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
@@ -302,6 +327,9 @@ const baseTemplates = {
       framework: '@storybook/react-webpack5',
       renderer: '@storybook/react',
       builder: '@storybook/builder-webpack5',
+    },
+    modifications: {
+      extraDependencies: ['prop-types'],
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
@@ -581,7 +609,7 @@ const internalTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     modifications: {
-      extraDependencies: ['@storybook/addon-webpack5-compiler-babel'],
+      extraDependencies: ['@storybook/addon-webpack5-compiler-babel', 'prop-types'],
       editAddons: (addons) =>
         [...addons, '@storybook/addon-webpack5-compiler-babel'].filter(
           (a) => a !== '@storybook/addon-webpack5-compiler-swc'
@@ -598,6 +626,9 @@ const internalTemplates = {
       framework: '@storybook/react-webpack5',
       renderer: '@storybook/react',
       builder: '@storybook/builder-webpack5',
+    },
+    modifications: {
+      extraDependencies: ['prop-types'],
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
     isInternal: true,

@@ -1,4 +1,5 @@
-import { copy } from 'fs-extra';
+import { cp } from 'node:fs/promises';
+
 import { join } from 'path';
 
 const src = join(__dirname, '..', 'src');
@@ -11,7 +12,7 @@ const run = async () => {
   console.log('Copying unbundled files to dist...');
   await Promise.all(
     PATHS_TO_COPY.map((pathToCopy) =>
-      copy(join(src, pathToCopy), join(dist, pathToCopy), { overwrite: true })
+      cp(join(src, pathToCopy), join(dist, pathToCopy), { recursive: true, force: true })
     )
   );
   console.log('Done!');

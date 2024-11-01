@@ -2,8 +2,8 @@
  * This script cancels all running preparation workflows in GitHub. It will fetch all active runs
  * for the preparation workflows, and cancel them.
  */
-import chalk from 'chalk';
 import { program } from 'commander';
+import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import { esMain } from '../utils/esmain';
@@ -35,12 +35,12 @@ export const run = async () => {
   )?.id;
 
   console.log(`Found workflow IDs for the preparation workflows:
-    ${chalk.blue(PREPARE_PATCH_WORKFLOW_PATH)}: ${chalk.green(preparePatchWorkflowId)}
-    ${chalk.blue(PREPARE_NON_PATCH_WORKFLOW_PATH)}: ${chalk.green(prepareNonPatchWorkflowId)}`);
+    ${picocolors.blue(PREPARE_PATCH_WORKFLOW_PATH)}: ${picocolors.green(preparePatchWorkflowId)}
+    ${picocolors.blue(PREPARE_NON_PATCH_WORKFLOW_PATH)}: ${picocolors.green(prepareNonPatchWorkflowId)}`);
 
   if (!preparePatchWorkflowId || !prepareNonPatchWorkflowId) {
     throw new Error(dedent`🚨 Could not find workflow IDs for the preparation workflows
-    - Looked for paths: "${chalk.blue(PREPARE_PATCH_WORKFLOW_PATH)}" and "${chalk.blue(
+    - Looked for paths: "${picocolors.blue(PREPARE_PATCH_WORKFLOW_PATH)}" and "${picocolors.blue(
       PREPARE_NON_PATCH_WORKFLOW_PATH
     )}", are they still correct?
     - Found workflows:
@@ -75,7 +75,10 @@ export const run = async () => {
 
   console.log(`🔍 Found ${runsToCancel.length} runs to cancel. Cancelling them now:
     ${runsToCancel
-      .map((r) => `${chalk.green(r.path)} - ${chalk.green(r.id)}: ${chalk.blue(r.status)}`)
+      .map(
+        (r) =>
+          `${picocolors.green(r.path)} - ${picocolors.green(r.id)}: ${picocolors.blue(r.status)}`
+      )
       .join('\n    ')}`);
 
   const result = await Promise.allSettled(

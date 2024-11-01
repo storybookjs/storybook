@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { readdir } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 
 import type { PackageManagerName } from 'storybook/internal/common';
@@ -5,10 +7,9 @@ import { JsPackageManagerFactory } from 'storybook/internal/common';
 import { versions } from 'storybook/internal/common';
 
 import boxen from 'boxen';
-import chalk from 'chalk';
 import { initiate } from 'create-storybook';
-import { existsSync, readdir } from 'fs-extra';
 import { downloadTemplate } from 'giget';
+import picocolors from 'picocolors';
 import prompts from 'prompts';
 import { lt, prerelease } from 'semver';
 import invariant from 'tiny-invariant';
@@ -56,18 +57,18 @@ export const sandbox = async ({
   const branch = isPrerelease ? 'next' : 'main';
 
   const messages = {
-    welcome: `Creating a Storybook ${chalk.bold(currentVersion)} sandbox..`,
-    notLatest: chalk.red(dedent`
-      This version is behind the latest release, which is: ${chalk.bold(latestVersion)}!
+    welcome: `Creating a Storybook ${picocolors.bold(currentVersion)} sandbox..`,
+    notLatest: picocolors.red(dedent`
+      This version is behind the latest release, which is: ${picocolors.bold(latestVersion)}!
       You likely ran the init command through npx, which can use a locally cached version, to get the latest please run:
-      ${chalk.bold('npx storybook@latest sandbox')}
+      ${picocolors.bold('npx storybook@latest sandbox')}
       
       You may want to CTRL+C to stop, and run with the latest version instead.
     `),
-    longInitTime: chalk.yellow(
+    longInitTime: picocolors.yellow(
       'The creation of the sandbox will take longer, because we will need to run init.'
     ),
-    prerelease: chalk.yellow('This is a pre-release version.'),
+    prerelease: picocolors.yellow('This is a pre-release version.'),
   };
 
   logger.log(
@@ -114,12 +115,12 @@ export const sandbox = async ({
           dedent`
             🔎 You filtered out all templates. 🔍
 
-            After filtering all the templates with "${chalk.yellow(
+            After filtering all the templates with "${picocolors.yellow(
               filterValue
             )}", we found no results. Please try again with a different filter.
 
             Available templates:
-            ${keys.map((key) => chalk.blue`- ${key}`).join('\n')}
+            ${keys.map((key) => picocolors.blue(`- ${key}`)).join('\n')}
             `.trim(),
           { borderStyle: 'round', padding: 1, borderColor: '#F1618C' } as any
         )
@@ -133,9 +134,9 @@ export const sandbox = async ({
       logger.info(
         boxen(
           dedent`
-            🤗 Welcome to ${chalk.yellow('sb sandbox')}! 🤗
+            🤗 Welcome to ${picocolors.yellow('sb sandbox')}! 🤗
 
-            Create a ${chalk.green('new project')} to minimally reproduce Storybook issues.
+            Create a ${picocolors.green('new project')} to minimally reproduce Storybook issues.
 
             1. select an environment that most closely matches your project setup.
             2. select a location for the reproduction, outside of your project.
@@ -198,7 +199,7 @@ export const sandbox = async ({
 
     logger.info(`🏃 Adding ${selectedConfig.name} into ${templateDestination}`);
 
-    logger.log(`📦 Downloading sandbox template (${chalk.bold(downloadType)})...`);
+    logger.log(`📦 Downloading sandbox template (${picocolors.bold(downloadType)})...`);
     try {
       // Download the sandbox based on subfolder "after-storybook" and selected branch
       const gitPath = `github:storybookjs/sandboxes/${templateId}/${downloadType}#${branch}`;
@@ -206,11 +207,11 @@ export const sandbox = async ({
         force: true,
         dir: templateDestination,
       });
-      // throw an error if templateDestination is an empty directory using fs-extra
+      // throw an error if templateDestination is an empty directory
       if ((await readdir(templateDestination)).length === 0) {
-        const selected = chalk.yellow(templateId);
+        const selected = picocolors.yellow(templateId);
         throw new Error(dedent`
-          Template downloaded from ${chalk.blue(gitPath)} is empty.
+          Template downloaded from ${picocolors.blue(gitPath)} is empty.
           Are you use it exists? Or did you want to set ${selected} to inDevelopment first?
         `);
       }
@@ -236,23 +237,23 @@ export const sandbox = async ({
     }
 
     const initMessage = init
-      ? chalk.yellow(dedent`
+      ? picocolors.yellow(dedent`
           yarn install
           yarn storybook
         `)
-      : `Recreate your setup, then ${chalk.yellow(`npx storybook@latest init`)}`;
+      : `Recreate your setup, then ${picocolors.yellow(`npx storybook@latest init`)}`;
 
     logger.info(
       boxen(
         dedent`
         🎉 Your Storybook reproduction project is ready to use! 🎉
 
-        ${chalk.yellow(`cd ${selectedDirectory}`)}
+        ${picocolors.yellow(`cd ${selectedDirectory}`)}
         ${initMessage}
 
         Once you've recreated the problem you're experiencing, please:
 
-        1. Document any additional steps in ${chalk.cyan('README.md')}
+        1. Document any additional steps in ${picocolors.cyan('README.md')}
         2. Publish the repository to github
         3. Link to the repro repository in your issue
 

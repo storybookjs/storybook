@@ -1,14 +1,13 @@
-```ts title="vitest.workspace.ts" renderer="react"
+```ts filename="vitest.workspace.ts" renderer="react"
 import { defineWorkspace } from 'vitest/config';
 import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';
 // 👇 If you're using Next.js, apply this framework plugin as well
-// import { storybookNextjsPlugin } from '@storybook/experimental-nextjs-vite/vite-plugin';
+// import { storybookNextJsPlugin } from '@storybook/experimental-nextjs-vite/vite-plugin';
 
 export default defineWorkspace([
   // This is the path to your existing Vitest config file
   './vitest.config.ts',
   {
-    name: 'storybook',
     // This is the path to your existing Vite config file
     extends: './vite.config.ts',
     plugins: [
@@ -17,9 +16,10 @@ export default defineWorkspace([
         // The --ci flag will skip prompts and not open a browser
         storybookScript: 'yarn storybook --ci',
       }),
-      // storybookNextjsPlugin(),
+      // storybookNextJsPlugin(),
     ],
     test: {
+      name: 'storybook',
       // Glob pattern to find story files
       include: ['src/**/*.stories.?(m)[jt]s?(x)'],
       // Enable browser mode
@@ -51,7 +51,6 @@ export default defineWorkspace([
   // This is the path to your existing Vitest config file
   './vitest.config.ts',
   {
-    name: 'storybook',
     // This is the path to your existing Vite config file
     extends: './vite.config.ts',
     plugins: [
@@ -63,6 +62,7 @@ export default defineWorkspace([
       storybookVuePlugin(),
     ],
     test: {
+      name: 'storybook',
       // Glob pattern to find story files
       include: ['src/**/*.stories.?(m)[jt]s?(x)'],
       // Enable browser mode
@@ -87,7 +87,7 @@ export default defineWorkspace([
 import { defineConfig, mergeConfig } from 'vitest/config';
 import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';
 // 👇 If you're using Sveltekit, apply this framework plugin as well
-// import { storybookNextjsPlugin } from '@storybook/sveltekit/vite-plugin';
+// import { storybookSveltekitPlugin } from '@storybook/sveltekit/vite-plugin';
 
 import viteConfig from './vite.config';
 
@@ -95,7 +95,6 @@ export default defineWorkspace([
   // This is the path to your existing Vitest config file
   './vitest.config.ts',
   {
-    name: 'storybook',
     // This is the path to your existing Vite config file
     extends: './vite.config.ts',
     plugins: [
@@ -107,6 +106,7 @@ export default defineWorkspace([
       // storybookSveltekitPlugin(),
     ],
     test: {
+      name: 'storybook',
       // Glob pattern to find story files
       include: ['src/**/*.stories.?(m)[jt]s?(x)'],
       // Enable browser mode

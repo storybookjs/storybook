@@ -7,7 +7,7 @@ import { styled } from 'storybook/internal/theming';
 import { MarkupIcon } from '@storybook/icons';
 
 import convert from 'color-convert';
-import debounce from 'lodash/debounce.js';
+import { debounce } from 'es-toolkit/compat';
 import { HexColorPicker, HslaStringColorPicker, RgbaStringColorPicker } from 'react-colorful';
 
 import { getControlId } from './helpers';

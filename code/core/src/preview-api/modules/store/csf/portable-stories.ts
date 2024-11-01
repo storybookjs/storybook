@@ -76,7 +76,17 @@ export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
   const annotations = Array.isArray(projectAnnotations) ? projectAnnotations : [projectAnnotations];
   globalThis.globalProjectAnnotations = composeConfigs(annotations.map(extractAnnotation));
 
-  return globalThis.globalProjectAnnotations;
+  /*
+    We must return the composition of default and global annotations here
+    To ensure that the user has the full project annotations, eg. when running
+
+    const projectAnnotations = setProjectAnnotations(...);
+    beforeAll(projectAnnotations.beforeAll)
+  */
+  return composeConfigs([
+    globalThis.defaultProjectAnnotations ?? {},
+    globalThis.globalProjectAnnotations ?? {},
+  ]);
 }
 
 const cleanups: CleanupCallback[] = [];
@@ -116,7 +126,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
     composeConfigs([
       defaultConfig && Object.keys(defaultConfig).length > 0
         ? defaultConfig
-        : globalThis.defaultProjectAnnotations ?? {},
+        : (globalThis.defaultProjectAnnotations ?? {}),
       globalThis.globalProjectAnnotations ?? {},
       projectAnnotations ?? {},
     ])
@@ -129,16 +139,17 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
   );
 
   const globalsFromGlobalTypes = getValuesFromArgTypes(normalizedProjectAnnotations.globalTypes);
+  const globals = {
+    // TODO: remove loading from globalTypes in 9.0
+    ...globalsFromGlobalTypes,
+    ...normalizedProjectAnnotations.initialGlobals,
+    ...story.storyGlobals,
+  };
 
   const initializeContext = () => {
     const context: StoryContext<TRenderer> = prepareContext({
       hooks: new HooksContext(),
-      globals: {
-        // TODO: remove loading from globalTypes in 9.0
-        ...globalsFromGlobalTypes,
-        ...normalizedProjectAnnotations.initialGlobals,
-        ...story.storyGlobals,
-      },
+      globals,
       args: { ...story.initialArgs },
       viewMode: 'story',
       loaded: {},
@@ -241,6 +252,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
 
         loadedContext = context;
       },
+      globals,
       args: story.initialArgs as Partial<TArgs>,
       parameters: story.parameters as Parameters,
       argTypes: story.argTypes as StrictArgTypes<TArgs>,

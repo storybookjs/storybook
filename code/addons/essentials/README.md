@@ -2,7 +2,7 @@
 
 Storybook Essentials is a curated collection of addons to bring out the best of Storybook.
 
-Each addon is documented and maintained by the core team and will be upgraded alongside Storybook as the platform evolves. We will also do our best to maintain [framework support](https://storybook.js.org/docs/react/api/frameworks-feature-support) for all of the officially supported frameworks.
+Each addon is documented and maintained by the core team and will be upgraded alongside Storybook as the platform evolves. We will also do our best to maintain [framework support](https://storybook.js.org/docs/configure/integration/frameworks-feature-support) for all of the officially supported frameworks.
 
 ## Contents
 

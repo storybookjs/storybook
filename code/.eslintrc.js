@@ -43,6 +43,13 @@ module.exports = {
   },
   overrides: [
     {
+      files: ['**/templates/virtualModuleModernEntry.js'],
+      rules: {
+        'no-underscore-dangle': 'off',
+        'import/no-extraneous-dependencies': 'off',
+      },
+    },
+    {
       // this package depends on a lot of peerDependencies we don't want to specify, because npm would install them
       files: ['**/frameworks/angular/template/**/*'],
       rules: {

@@ -20,7 +20,6 @@ const config: StorybookConfig = {
     '@storybook/addon-essentials',
     '@storybook/addon-interactions',
     '@storybook/addon-storysource',
-    '@storybook/addon-links',
     '@storybook/addon-jest',
     '@storybook/addon-a11y',
   ],

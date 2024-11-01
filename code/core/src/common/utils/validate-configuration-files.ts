@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { once } from '@storybook/core/node-logger';
 import { MainFileMissingError } from '@storybook/core/server-errors';
 
+// eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';
 import slash from 'slash';
 import { dedent } from 'ts-dedent';

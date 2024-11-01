@@ -1,4 +1,4 @@
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import type { Fix } from '../types';
@@ -21,12 +21,12 @@ export const storyshotsMigration: Fix = {
   },
   prompt() {
     return dedent`
-      ${chalk.bold(
+      ${picocolors.bold(
         'Attention'
       )}: Storyshots is now officially deprecated, is no longer being maintained, and was removed in Storybook 8. 
       
       We recommend following the migration guide we've prepared to help you during this transition period:
-      ${chalk.yellow('https://storybook.js.org/docs/writing-tests/storyshots-migration-guide')}
+      ${picocolors.yellow('https://storybook.js.org/docs/writing-tests/storyshots-migration-guide')}
     `;
   },
 };

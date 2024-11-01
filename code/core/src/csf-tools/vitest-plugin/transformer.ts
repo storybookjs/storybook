@@ -201,19 +201,23 @@ export async function vitestTransform({
     ast.program.body.push(isRunningFromThisFileDeclaration);
 
     const getTestStatementForStory = ({
+      localName,
       exportName,
+      testTitle,
       node,
     }: {
+      localName: string;
       exportName: string;
+      testTitle: string;
       node: t.Node;
     }): t.ExpressionStatement => {
       // Create the _test expression directly using the exportName identifier
       const testStoryCall = t.expressionStatement(
         t.callExpression(vitestTestId, [
-          t.stringLiteral(exportName),
+          t.stringLiteral(testTitle),
           t.callExpression(testStoryId, [
             t.stringLiteral(exportName),
-            t.identifier(exportName),
+            t.identifier(localName),
             t.identifier(metaExportName),
             skipTagsId,
           ]),
@@ -239,10 +243,10 @@ export async function vitestTransform({
           return;
         }
 
-        return getTestStatementForStory({
-          exportName,
-          node,
-        });
+        const localName = parsed._stories[exportName].localName ?? exportName;
+        // use the story's name as the test title for vitest, and fallback to exportName
+        const testTitle = parsed._stories[exportName].name ?? exportName;
+        return getTestStatementForStory({ testTitle, localName, exportName, node });
       })
       .filter((st) => !!st) as t.ExpressionStatement[];
 

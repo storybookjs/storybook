@@ -7,7 +7,7 @@ import type {
 
 import { logger } from '@storybook/core/client-logger';
 
-import mapValues from 'lodash/mapValues.js';
+import { mapValues } from 'es-toolkit';
 
 import { filterArgTypes } from './filterArgTypes';
 import { combineParameters } from './parameters';
@@ -77,7 +77,7 @@ export const inferControls: ArgTypesEnhancer<Renderer> = (context) => {
 
   const filteredArgTypes = filterArgTypes(argTypes, include, exclude);
   const withControls = mapValues(filteredArgTypes, (argType, name) => {
-    return argType?.type && inferControl(argType, name, matchers);
+    return argType?.type && inferControl(argType, name.toString(), matchers);
   });
 
   return combineParameters(withControls, filteredArgTypes);

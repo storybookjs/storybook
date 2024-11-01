@@ -1,6 +1,6 @@
 import { AngularJSON, isNxProject } from 'storybook/internal/cli';
 
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import semver from 'semver';
 import { dedent } from 'ts-dedent';
 
@@ -47,13 +47,13 @@ export const angularBuildersMultiproject: Fix<AngularBuildersMultiprojectRunOpti
 
   prompt() {
     return dedent`
-    In Storybook 6.4 we have deprecated calling Storybook directly (npm run storybook) for Angular. In Storybook 7.0, we've removed it entirely. Instead you have to set up the Storybook builder in your ${chalk.yellow(
+    In Storybook 6.4 we have deprecated calling Storybook directly (npm run storybook) for Angular. In Storybook 7.0, we've removed it entirely. Instead you have to set up the Storybook builder in your ${picocolors.yellow(
       'angular.json'
-    )} and execute ${chalk.yellow('ng run <your-project>:storybook')} to start Storybook. 
+    )} and execute ${picocolors.yellow('ng run <your-project>:storybook')} to start Storybook. 
     
-    ❌ Your Angular workspace uses multiple projects defined in the ${chalk.yellow(
+    ❌ Your Angular workspace uses multiple projects defined in the ${picocolors.yellow(
       'angular.json'
-    )} file and we were not able to detect a root project. Therefore we are not able to automigrate to use Angular Storybook builder. Instead, please visit ${chalk.yellow(
+    )} file and we were not able to detect a root project. Therefore we are not able to automigrate to use Angular Storybook builder. Instead, please visit ${picocolors.yellow(
       'https://github.com/storybookjs/storybook/tree/next/code/frameworks/angular'
     )} to do the migration manually.
     `;

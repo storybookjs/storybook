@@ -27,7 +27,7 @@ export async function generateModernIframeScriptCode(options: Options, projectRo
       .map(
         (previewAnnotation, index) =>
           // Prefer the updated module from an HMR update, otherwise import the original module
-          `hmrPreviewAnnotationModules.at(${index}) ?? import('${previewAnnotation}')`
+          `hmrPreviewAnnotationModules[${index}] ?? import('${previewAnnotation}')`
       )
       .join(',\n')}])
     return composeConfigs(configs);

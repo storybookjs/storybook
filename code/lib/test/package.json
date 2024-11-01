@@ -1,6 +1,6 @@
 {
   "name": "@storybook/test",
-  "version": "8.3.0-beta.4",
+  "version": "8.5.0-alpha.1",
   "description": "",
   "keywords": [
     "storybook"
@@ -23,10 +23,9 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
       "node": "./dist/index.js",
-      "default": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./package.json": "./package.json"
   },
@@ -51,8 +50,7 @@
     "@testing-library/jest-dom": "6.5.0",
     "@testing-library/user-event": "14.5.2",
     "@vitest/expect": "2.0.5",
-    "@vitest/spy": "2.0.5",
-    "util": "^0.12.4"
+    "@vitest/spy": "2.0.5"
   },
   "devDependencies": {
     "chai": "^5.1.1",
@@ -79,6 +77,9 @@
       "@vitest/expect",
       "@vitest/spy",
       "@vitest/utils"
+    ],
+    "externals": [
+      "util"
     ]
   },
   "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"

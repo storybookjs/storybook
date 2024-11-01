@@ -1,8 +1,9 @@
-import { join, parse, relative, sep } from 'node:path';
+import { existsSync } from 'node:fs';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { dirname, join, parse, relative, sep } from 'node:path';
 
 import { resolvePathInStorybookCache } from '@storybook/core/common';
 
-import fs from 'fs-extra';
 import slash from 'slash';
 
 const sanitizeBase = (path: string) => {
@@ -55,8 +56,11 @@ export async function wrapManagerEntries(entrypoints: string[], uniqueId?: strin
         sanitizeFinal(join(`${sanitizeBase(base)}-${i}`, `${sanitizeBase(name)}-bundle.js`))
       );
 
-      await fs.ensureFile(location);
-      await fs.writeFile(location, `import '${slash(entry)}';`);
+      if (!existsSync(location)) {
+        const directory = dirname(location);
+        await mkdir(directory, { recursive: true });
+      }
+      await writeFile(location, `import '${slash(entry)}';`);
 
       return location;
     })

@@ -6,8 +6,8 @@ import { normalizeStoriesEntry } from '@storybook/core/common';
 
 import { STORY_INDEX_INVALIDATED } from '@storybook/core/core-events';
 
-import type { Request, Response, Router } from 'express';
-import debounce from 'lodash/debounce.js';
+import { debounce } from 'es-toolkit/compat';
+import type Polka from 'polka';
 import Watchpack from 'watchpack';
 
 import { csfIndexer } from '../presets/common-preset';
@@ -17,7 +17,7 @@ import type { ServerChannel } from './get-server-channel';
 import { DEBOUNCE, useStoriesJson } from './stories-json';
 
 vi.mock('watchpack');
-vi.mock('lodash/debounce');
+vi.mock('es-toolkit/compat');
 vi.mock('@storybook/core/node-logger');
 
 const workingDir = join(__dirname, '__mockdata__');
@@ -58,30 +58,30 @@ const getInitializedStoryIndexGenerator = async (
 
 describe('useStoriesJson', () => {
   const use = vi.fn();
-  const router: Router = { use } as any;
-  const send = vi.fn();
+  const app: Polka.Polka = { use } as any;
+  const end = vi.fn();
   const write = vi.fn();
-  const response: Response = {
+  const response: Polka.Response = {
     header: vi.fn(),
-    send,
+    send: vi.fn(),
     status: vi.fn(),
     setHeader: vi.fn(),
     flushHeaders: vi.fn(),
     write,
     flush: vi.fn(),
-    end: vi.fn(),
+    end,
     on: vi.fn(),
   } as any;
 
   beforeEach(async () => {
     use.mockClear();
-    send.mockClear();
+    end.mockClear();
     write.mockClear();
     vi.mocked(debounce).mockImplementation((cb) => cb as any);
     Watchpack.mockClear();
   });
 
-  const request: Request = {
+  const request: Polka.Request = {
     headers: { accept: 'application/json' },
   } as any;
 
@@ -90,7 +90,7 @@ describe('useStoriesJson', () => {
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
       console.time('useStoriesJson');
       useStoriesJson({
-        router,
+        app,
         serverChannel: mockServerChannel,
         workingDir,
         normalizedStories,
@@ -105,8 +105,8 @@ describe('useStoriesJson', () => {
       await route(request, response);
       console.timeEnd('route');
 
-      expect(send).toHaveBeenCalledTimes(1);
-      expect(JSON.parse(send.mock.calls[0][0])).toMatchInlineSnapshot(`
+      expect(end).toHaveBeenCalledTimes(1);
+      expect(JSON.parse(end.mock.calls[0][0])).toMatchInlineSnapshot(`
         {
           "entries": {
             "a--metaof": {
@@ -368,7 +368,7 @@ describe('useStoriesJson', () => {
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
 
       useStoriesJson({
-        router,
+        app,
         serverChannel: mockServerChannel,
         workingDir,
         normalizedStories,
@@ -379,14 +379,14 @@ describe('useStoriesJson', () => {
       const route = use.mock.calls[0][1];
 
       const firstPromise = route(request, response);
-      const secondResponse = { ...response, send: vi.fn(), status: vi.fn() };
+      const secondResponse = { ...response, end: vi.fn(), status: vi.fn() };
       const secondPromise = route(request, secondResponse);
 
       await Promise.all([firstPromise, secondPromise]);
 
-      expect(send).toHaveBeenCalledTimes(1);
-      expect(response.status).not.toEqual(500);
-      expect(secondResponse.send).toHaveBeenCalledTimes(1);
+      expect(end).toHaveBeenCalledTimes(1);
+      expect(response.statusCode).not.toEqual(500);
+      expect(secondResponse.end).toHaveBeenCalledTimes(1);
       expect(secondResponse.status).not.toEqual(500);
     });
   });
@@ -394,13 +394,13 @@ describe('useStoriesJson', () => {
   describe('SSE endpoint', () => {
     beforeEach(() => {
       use.mockClear();
-      send.mockClear();
+      end.mockClear();
     });
 
     it('sends invalidate events', async () => {
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
       useStoriesJson({
-        router,
+        app,
         serverChannel: mockServerChannel,
         workingDir,
         normalizedStories,
@@ -434,7 +434,7 @@ describe('useStoriesJson', () => {
     it('only sends one invalidation when multiple event listeners are listening', async () => {
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
       useStoriesJson({
-        router,
+        app,
         serverChannel: mockServerChannel,
         workingDir,
         normalizedStories,
@@ -471,13 +471,12 @@ describe('useStoriesJson', () => {
 
     it('debounces invalidation events', async () => {
       vi.mocked(debounce).mockImplementation(
-        // @ts-expect-error it doesn't think default exists
-        (await vi.importActual<typeof import('lodash/debounce.js')>('lodash/debounce.js')).default
+        (await vi.importActual<typeof import('es-toolkit/compat')>('es-toolkit/compat')).debounce
       );
 
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
       useStoriesJson({
-        router,
+        app,
         serverChannel: mockServerChannel,
         workingDir,
         normalizedStories,

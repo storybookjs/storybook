@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react",
-  "version": "8.3.0-beta.4",
+  "version": "8.5.0-alpha.1",
   "description": "Storybook React renderer",
   "keywords": [
     "storybook"
@@ -62,44 +62,46 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/components": "workspace:^",
+    "@storybook/components": "workspace:*",
     "@storybook/global": "^5.0.0",
-    "@storybook/manager-api": "workspace:^",
-    "@storybook/preview-api": "workspace:^",
+    "@storybook/manager-api": "workspace:*",
+    "@storybook/preview-api": "workspace:*",
     "@storybook/react-dom-shim": "workspace:*",
-    "@storybook/theming": "workspace:^",
-    "@types/escodegen": "^0.0.6",
-    "@types/estree": "^0.0.51",
-    "@types/node": "^22.0.0",
-    "acorn": "^7.4.1",
-    "acorn-jsx": "^5.3.1",
-    "acorn-walk": "^7.2.0",
-    "escodegen": "^2.1.0",
-    "html-tags": "^3.1.0",
-    "prop-types": "^15.7.2",
-    "react-element-to-jsx-string": "^15.0.0",
-    "semver": "^7.3.7",
-    "ts-dedent": "^2.0.0",
-    "type-fest": "~2.19",
-    "util-deprecate": "^1.0.2"
+    "@storybook/theming": "workspace:*"
   },
   "devDependencies": {
     "@storybook/test": "workspace:*",
     "@types/babel-plugin-react-docgen": "^4",
+    "@types/escodegen": "^0.0.6",
+    "@types/estree": "^0.0.51",
+    "@types/node": "^22.0.0",
     "@types/semver": "^7.3.4",
-    "@types/util-deprecate": "^1.0.0",
+    "acorn": "^7.4.1",
+    "acorn-jsx": "^5.3.1",
+    "acorn-walk": "^7.2.0",
     "babel-plugin-react-docgen": "^4.2.1",
+    "es-toolkit": "^1.22.0",
+    "escodegen": "^2.1.0",
     "expect-type": "^0.15.0",
-    "lodash": "^4.17.21",
-    "require-from-string": "^2.0.2"
+    "html-tags": "^3.1.0",
+    "prop-types": "^15.7.2",
+    "react-element-to-jsx-string": "^15.0.0",
+    "require-from-string": "^2.0.2",
+    "semver": "^7.3.7",
+    "ts-dedent": "^2.0.0",
+    "type-fest": "~2.19"
   },
   "peerDependencies": {
+    "@storybook/test": "workspace:*",
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
     "storybook": "workspace:^",
     "typescript": ">= 4.2.x"
   },
   "peerDependenciesMeta": {
+    "@storybook/test": {
+      "optional": true
+    },
     "typescript": {
       "optional": true
     }

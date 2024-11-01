@@ -1,6 +1,6 @@
 {
   "name": "@storybook/preact",
-  "version": "8.3.0-beta.4",
+  "version": "8.5.0-alpha.1",
   "description": "Storybook Preact renderer",
   "keywords": [
     "storybook"
@@ -46,11 +46,11 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/components": "workspace:^",
+    "@storybook/components": "workspace:*",
     "@storybook/global": "^5.0.0",
-    "@storybook/manager-api": "workspace:^",
-    "@storybook/preview-api": "workspace:^",
-    "@storybook/theming": "workspace:^",
+    "@storybook/manager-api": "workspace:*",
+    "@storybook/preview-api": "workspace:*",
+    "@storybook/theming": "workspace:*",
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {

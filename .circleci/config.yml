@@ -64,7 +64,7 @@ executors:
         default: "small"
     working_directory: /tmp/storybook
     docker:
-      - image: mcr.microsoft.com/playwright:v1.46.0-jammy
+      - image: mcr.microsoft.com/playwright:v1.48.1-jammy
         environment:
           NODE_OPTIONS: --max_old_space_size=6144
     resource_class: <<parameters.class>>
@@ -154,6 +154,8 @@ jobs:
             cd code
             yarn local-registry --publish
       - report-workflow-on-failure
+      - store_artifacts:
+          path: code/bench/esbuild-metafiles
       - save_cache:
           name: Save Yarn cache
           key: build-yarn-2-cache-v4--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
@@ -164,6 +166,7 @@ jobs:
           paths:
             - code/node_modules
             - scripts/node_modules
+            - code/bench
             - code/examples
             - code/node_modules
             - code/addons
@@ -190,6 +193,22 @@ jobs:
           command: |
             cd code
             yarn lint
+      - report-workflow-on-failure
+      - cancel-workflow-on-failure
+  knip:
+    executor:
+      class: large
+      name: sb_node_22_classic
+    steps:
+      - git-shallow-clone/checkout_advanced:
+          clone_options: "--depth 1 --verbose"
+      - attach_workspace:
+          at: .
+      - run:
+          name: Knip
+          command: |
+            cd code
+            yarn knip --no-exit-code
       - report-workflow-on-failure
       - cancel-workflow-on-failure
   check:
@@ -242,6 +261,7 @@ jobs:
     executor:
       class: xlarge
       name: sb_playwright
+    parallelism: 4
     steps:
       - git-shallow-clone/checkout_advanced:
           clone_options: "--depth 1 --verbose"
@@ -251,15 +271,35 @@ jobs:
           name: Test
           command: |
             cd code
-            yarn test --coverage
-      - store_test_results:
-          path: code/junit.xml
+            SHARD="$((${CIRCLE_NODE_INDEX}+1))"; yarn test --reporter=blob --shard=${SHARD}/${CIRCLE_NODE_TOTAL}
+      # TODO: bring coverage back later. This has caused flakiness in the tests because
+      # Somehow Vitest reports coverage while some tests are still running,
+      # then it tries to report coverage again and as result it crashes like this:
+      # https://app.circleci.com/pipelines/github/storybookjs/storybook/85043/workflows/4ddf7907-b93c-4b17-8fdf-fe0bd7fde905/jobs/715446
+      # - persist_to_workspace:
+      #     root: .
+      #     paths:
+      #       - code/coverage
       - persist_to_workspace:
           root: .
           paths:
-            - code/coverage
+            - code/.vitest-reports
       - report-workflow-on-failure
       - cancel-workflow-on-failure
+  store-test-results:
+    executor:
+      class: small
+      name: sb_node_22_browsers
+    steps:
+      - git-shallow-clone/checkout_advanced:
+          clone_options: "--depth 1 --verbose"
+      - attach_workspace:
+          at: .
+      - run:
+          name: Merge test results
+          command: cd code && yarn vitest run --merge-reports --reporter=junit --outputFile=junit.xml
+      - store_test_results:
+          path: code/junit.xml
   coverage:
     executor:
       class: small
@@ -628,10 +668,37 @@ jobs:
                   mkdir empty-<< parameters.template >>-no-install
                   cd empty-<< parameters.template >>-no-install
                   npx storybook init --yes --skip-install
+                  npm install
+                  npm run build-storybook
                 environment:
                   IN_STORYBOOK_SANDBOX: true
                   STORYBOOK_INIT_EMPTY_TYPE: << parameters.template >>
                   STORYBOOK_DISABLE_TELEMETRY: true
+      - report-workflow-on-failure
+  test-ui-testing-module:
+    executor:
+      name: sb_playwright
+      class: medium
+    steps:
+      - git-shallow-clone/checkout_advanced:
+          clone_options: "--depth 1 --verbose"
+      - attach_workspace:
+          at: .
+      - run:
+          name: Install dependencies
+          command: yarn install --no-immutable
+          working_directory: test-storybooks/portable-stories-kitchen-sink/react
+          environment:
+            YARN_ENABLE_IMMUTABLE_INSTALLS: false
+      - run:
+          name: Run E2E tests
+          command: yarn playwright-e2e
+          working_directory: test-storybooks/portable-stories-kitchen-sink/react
+      - store_test_results:
+          path: test-results
+      - store_artifacts:
+          path: test-storybooks/portable-stories-kitchen-sink/react/test-results/
+          destination: playwright
       - report-workflow-on-failure
   test-portable-stories:
     parameters:
@@ -661,7 +728,7 @@ jobs:
           working_directory: test-storybooks/portable-stories-kitchen-sink/<< parameters.directory >>
       - run:
           name: Run Playwright CT tests
-          command: yarn playwright
+          command: yarn playwright-ct
           working_directory: test-storybooks/portable-stories-kitchen-sink/<< parameters.directory >>
       - run:
           name: Run Cypress CT tests
@@ -683,12 +750,18 @@ workflows:
       - lint:
           requires:
             - build
+      - knip:
+          requires:
+            - build
       - check:
           requires:
             - build
       - unit-tests:
           requires:
             - build
+      - store-test-results:
+          requires:
+            - unit-tests
       - script-checks:
           requires:
             - build
@@ -730,6 +803,9 @@ workflows:
           parallelism: 5
           requires:
             - build-sandboxes
+      - test-ui-testing-module:
+          requires:
+            - build
       - test-portable-stories:
           requires:
             - build
@@ -749,12 +825,18 @@ workflows:
       - lint:
           requires:
             - build
+      - knip:
+          requires:
+            - build
       - check:
           requires:
             - build
       - unit-tests:
           requires:
             - build
+      - store-test-results:
+          requires:
+            - unit-tests
       - script-checks:
           requires:
             - build
@@ -798,6 +880,9 @@ workflows:
           matrix:
             parameters:
               directory: ["react", "vue3", "nextjs", "svelte"]
+      - test-ui-testing-module:
+          requires:
+            - build
       - bench:
           parallelism: 5
           requires:
@@ -816,12 +901,18 @@ workflows:
       - lint:
           requires:
             - build
+      - knip:
+          requires:
+            - build
       - check:
           requires:
             - build
       - unit-tests:
           requires:
             - build
+      - store-test-results:
+          requires:
+            - unit-tests
       - script-checks:
           requires:
             - build
@@ -865,6 +956,9 @@ workflows:
           matrix:
             parameters:
               directory: ["react", "vue3", "nextjs", "svelte"]
+      - test-ui-testing-module:
+          requires:
+            - build
       - test-empty-init:
           requires:
             - build

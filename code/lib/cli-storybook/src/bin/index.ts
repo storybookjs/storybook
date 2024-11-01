@@ -7,11 +7,11 @@ import { withTelemetry } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext, telemetry } from 'storybook/internal/telemetry';
 
-import chalk from 'chalk';
 import { program } from 'commander';
 import envinfo from 'envinfo';
 import { findPackageSync } from 'fd-package-json';
 import leven from 'leven';
+import picocolors from 'picocolors';
 import invariant from 'tiny-invariant';
 
 import { add } from '../add';
@@ -43,19 +43,21 @@ const command = (name: string) =>
 command('add <addon>')
   .description('Add an addon to your Storybook')
   .option(
-    '--package-manager <npm|pnpm|yarn1|yarn2>',
+    '--package-manager <npm|pnpm|yarn1|yarn2|bun>',
     'Force package manager for installing dependencies'
   )
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
   .option('-s --skip-postinstall', 'Skip package specific postinstall config modifications')
+  .option('-y --yes', 'Skip prompting the user')
   .action((addonName: string, options: any) => add(addonName, options));
 
 command('remove <addon>')
   .description('Remove an addon from your Storybook')
   .option(
-    '--package-manager <npm|pnpm|yarn1|yarn2>',
+    '--package-manager <npm|pnpm|yarn1|yarn2|bun>',
     'Force package manager for installing dependencies'
   )
+  .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
   .action((addonName: string, options: any) =>
     withTelemetry('remove', { cliOptions: options }, async () => {
       await remove(addonName, options);
@@ -68,7 +70,7 @@ command('remove <addon>')
 command('upgrade')
   .description(`Upgrade your Storybook packages to v${versions.storybook}`)
   .option(
-    '--package-manager <npm|pnpm|yarn1|yarn2>',
+    '--package-manager <npm|pnpm|yarn1|yarn2|bun>',
     'Force package manager for installing dependencies'
   )
   .option('-y --yes', 'Skip prompting the user')
@@ -81,7 +83,7 @@ command('upgrade')
 command('info')
   .description('Prints debugging information about the local environment')
   .action(async () => {
-    consoleLogger.log(chalk.bold('\nStorybook Environment Info:'));
+    consoleLogger.log(picocolors.bold('\nStorybook Environment Info:'));
     const pkgManager = await JsPackageManagerFactory.getPackageManager();
     const activePackageManager = pkgManager.type.replace(/\d/, ''); // 'yarn1' -> 'yarn'
     const output = await envinfo.run({
@@ -95,7 +97,7 @@ command('info')
     consoleLogger.log(
       output.replace(
         activePackageManagerLine,
-        chalk.bold(`${activePackageManagerLine} <----- active`)
+        picocolors.bold(`${activePackageManagerLine} <----- active`)
       )
     );
   });
@@ -155,7 +157,7 @@ command('automigrate [fixId]')
   .description('Check storybook for incompatibilities or migrations and apply fixes')
   .option('-y --yes', 'Skip prompting the user')
   .option('-n --dry-run', 'Only check for fixes, do not actually run them')
-  .option('--package-manager <npm|pnpm|yarn1|yarn2>', 'Force package manager')
+  .option('--package-manager <npm|pnpm|yarn1|yarn2|bun>', 'Force package manager')
   .option('-l --list', 'List available migrations')
   .option('-c, --config-dir <dir-name>', 'Directory of Storybook configurations to migrate')
   .option('-s --skip-install', 'Skip installing deps')
@@ -172,7 +174,7 @@ command('automigrate [fixId]')
 
 command('doctor')
   .description('Check Storybook for known problems and provide suggestions or fixes')
-  .option('--package-manager <npm|pnpm|yarn1|yarn2>', 'Force package manager')
+  .option('--package-manager <npm|pnpm|yarn1|yarn2|bun>', 'Force package manager')
   .option('-c, --config-dir <dir-name>', 'Directory of Storybook configuration')
   .action(async (options) => {
     await doctor(options).catch((e) => {

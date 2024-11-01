@@ -7,6 +7,7 @@ interface Options {
 export const warn = async ({ hasTSDependency }: Options) => {
   if (!hasTSDependency) {
     // Dynamically import globby because it is a pure ESM module
+    // eslint-disable-next-line depend/ban-dependencies
     const { globby } = await import('globby');
 
     const files = await globby(['**/*.@(ts|tsx)', '!**/node_modules', '!**/*.d.ts']);

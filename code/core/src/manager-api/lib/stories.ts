@@ -19,12 +19,12 @@ import type {
 } from '@storybook/core/types';
 import { sanitize } from '@storybook/csf';
 
-import countBy from 'lodash/countBy.js';
-import mapValues from 'lodash/mapValues.js';
+import { countBy, mapValues } from 'es-toolkit';
 import memoize from 'memoizerific';
 import { dedent } from 'ts-dedent';
 
 import { type API, type State, combineParameters } from '../root';
+import intersect from './intersect';
 import merge from './merge';
 
 const TITLE_PATH_SEPARATOR = /\s*\/\s*/;
@@ -41,7 +41,7 @@ export const denormalizeStoryParameters = ({
       kindParameters[storyData.kind],
       storyData.parameters as unknown as Parameters
     ),
-  }));
+  })) as SetStoriesStoryData;
 };
 
 export const transformSetStoriesStoryDataToStoriesHash = (
@@ -112,7 +112,7 @@ export const transformStoryIndexV2toV3 = (index: StoryIndexV2): StoryIndexV3 => 
 };
 
 export const transformStoryIndexV3toV4 = (index: StoryIndexV3): API_PreparedStoryIndex => {
-  const countByTitle = countBy(Object.values(index.stories), 'title');
+  const countByTitle = countBy(Object.values(index.stories), (item) => item.title);
   return {
     v: 4,
     entries: Object.values(index.stories).reduce(
@@ -274,6 +274,9 @@ export const transformStoryIndexToStoriesHash = (
             children: [childId],
           }),
         });
+        // merge computes a union of arrays but we want an intersection on this
+        // specific array property, so it's easier to add it after the merge.
+        acc[id].tags = intersect(acc[id]?.tags ?? item.tags, item.tags);
       } else {
         acc[id] = merge<API_GroupEntry>((acc[id] || {}) as API_GroupEntry, {
           type: 'group',

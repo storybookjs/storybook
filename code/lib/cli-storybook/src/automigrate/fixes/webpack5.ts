@@ -1,4 +1,4 @@
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import semver from 'semver';
 import { dedent } from 'ts-dedent';
 
@@ -43,17 +43,17 @@ export const webpack5 = {
   },
 
   prompt({ webpackVersion }) {
-    const webpackFormatted = chalk.cyan(`webpack ${webpackVersion}`);
+    const webpackFormatted = picocolors.cyan(`webpack ${webpackVersion}`);
 
     return dedent`
       We've detected you're running ${webpackFormatted}.
       Your Storybook's main.js files specifies webpack4, which is incompatible.
       
-      To run Storybook in webpack5-mode, we can install Storybook's ${chalk.cyan(
+      To run Storybook in webpack5-mode, we can install Storybook's ${picocolors.cyan(
         '@storybook/builder-webpack5'
       )} for you.
 
-      More info: ${chalk.yellow(
+      More info: ${picocolors.yellow(
         'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#webpack-5-manager-build'
       )}
     `;

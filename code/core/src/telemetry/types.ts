@@ -20,7 +20,10 @@ export type EventType =
   | 'remove'
   | 'save-story'
   | 'create-new-story-file'
-  | 'create-new-story-file-search';
+  | 'create-new-story-file-search'
+  | 'testing-module-watch-mode'
+  | 'testing-module-completed-report'
+  | 'testing-module-crash-report';
 
 export interface Dependency {
   version: string | undefined;

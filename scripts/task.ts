@@ -1,3 +1,4 @@
+// eslint-disable-next-line depend/ban-dependencies
 import { outputFile, pathExists, readFile } from 'fs-extra';
 import type { TestCase } from 'junit-xml';
 import { getJunitXml } from 'junit-xml';
@@ -37,7 +38,7 @@ import { createOptions, getCommand, getOptionsOrPrompt } from './utils/options';
 
 const sandboxDir = process.env.SANDBOX_ROOT || SANDBOX_DIRECTORY;
 
-export const extraAddons = ['a11y', 'storysource'];
+export const extraAddons = ['@storybook/addon-a11y', '@storybook/addon-storysource'];
 
 export type Path = string;
 export type TemplateDetails = {

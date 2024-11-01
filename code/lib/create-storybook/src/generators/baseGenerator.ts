@@ -1,3 +1,4 @@
+import { mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
 import type { NpmOptions } from 'storybook/internal/cli';
@@ -10,7 +11,7 @@ import type { JsPackageManager } from 'storybook/internal/common';
 import { getPackageDetails, versions as packageVersions } from 'storybook/internal/common';
 import type { SupportedFrameworks } from 'storybook/internal/types';
 
-import fse from 'fs-extra';
+// eslint-disable-next-line depend/ban-dependencies
 import ora from 'ora';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
@@ -228,11 +229,7 @@ export async function baseGenerator(
         })
       : extraAddonPackages;
 
-  extraAddonsToInstall.push(
-    '@storybook/addon-links',
-    '@storybook/addon-essentials',
-    '@chromatic-com/storybook@^1'
-  );
+  extraAddonsToInstall.push('@storybook/addon-essentials', '@chromatic-com/storybook@^3');
 
   // added to main.js
   const addons = [
@@ -328,7 +325,9 @@ export async function baseGenerator(
     addDependenciesSpinner.succeed();
   }
 
-  await fse.ensureDir(`./${storybookConfigFolder}`);
+  // Passing `recursive: true` ensures that the method doesn't throw when
+  // the directory already exists.
+  await mkdir(`./${storybookConfigFolder}`, { recursive: true });
 
   if (addMainFile) {
     const prefixes = shouldApplyRequireWrapperOnPackageNames
@@ -338,14 +337,14 @@ export async function baseGenerator(
             ? dedent`/**
             * This function is used to resolve the absolute path of a package.
             * It is needed in projects that use Yarn PnP or are set up within a monorepo.
-            */ 
+            */
             function getAbsolutePath(value) {
               return dirname(require.resolve(join(value, 'package.json')))
             }`
             : dedent`/**
           * This function is used to resolve the absolute path of a package.
           * It is needed in projects that use Yarn PnP or are set up within a monorepo.
-          */ 
+          */
           function getAbsolutePath(value: string): any {
             return dirname(require.resolve(join(value, 'package.json')))
           }`,

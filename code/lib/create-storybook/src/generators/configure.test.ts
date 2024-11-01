@@ -1,17 +1,20 @@
+import type { Stats } from 'node:fs';
+import * as fsp from 'node:fs/promises';
+
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { SupportedLanguage } from 'storybook/internal/cli';
 
-import fse from 'fs-extra';
 import { dedent } from 'ts-dedent';
 
 import { configureMain, configurePreview } from './configure';
 
-vi.mock('fs-extra');
+vi.mock('node:fs/promises');
 
 describe('configureMain', () => {
   beforeAll(() => {
     vi.clearAllMocks();
+    vi.mocked(fsp.stat).mockRejectedValue({});
   });
 
   it('should generate main.js', async () => {
@@ -25,7 +28,7 @@ describe('configureMain', () => {
       },
     });
 
-    const { calls } = vi.mocked(fse.writeFile).mock;
+    const { calls } = vi.mocked(fsp.writeFile).mock;
     const [mainConfigPath, mainConfigContent] = calls[0];
 
     expect(mainConfigPath).toEqual('./.storybook/main.js');
@@ -54,7 +57,7 @@ describe('configureMain', () => {
       },
     });
 
-    const { calls } = vi.mocked(fse.writeFile).mock;
+    const { calls } = vi.mocked(fsp.writeFile).mock;
     const [mainConfigPath, mainConfigContent] = calls[0];
 
     expect(mainConfigPath).toEqual('./.storybook/main.ts');
@@ -78,7 +81,6 @@ describe('configureMain', () => {
       language: SupportedLanguage.JAVASCRIPT,
       prefixes: [],
       addons: [
-        "%%path.dirname(require.resolve(path.join('@storybook/addon-links', 'package.json')))%%",
         "%%path.dirname(require.resolve(path.join('@storybook/addon-essentials', 'package.json')))%%",
         "%%path.dirname(require.resolve(path.join('@storybook/preset-create-react-app', 'package.json')))%%",
         "%%path.dirname(require.resolve(path.join('@storybook/addon-interactions', 'package.json')))%%",
@@ -89,7 +91,7 @@ describe('configureMain', () => {
       },
     });
 
-    const { calls } = vi.mocked(fse.writeFile).mock;
+    const { calls } = vi.mocked(fsp.writeFile).mock;
     const [mainConfigPath, mainConfigContent] = calls[0];
 
     expect(mainConfigPath).toEqual('./.storybook/main.js');
@@ -100,7 +102,6 @@ describe('configureMain', () => {
       const config = {
         stories: ['../stories/**/*.mdx', '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
         addons: [
-          path.dirname(require.resolve(path.join('@storybook/addon-links', 'package.json'))),
           path.dirname(require.resolve(path.join('@storybook/addon-essentials', 'package.json'))),
           path.dirname(require.resolve(path.join('@storybook/preset-create-react-app', 'package.json'))),
           path.dirname(require.resolve(path.join('@storybook/addon-interactions', 'package.json'))),
@@ -123,7 +124,7 @@ describe('configurePreview', () => {
       rendererId: 'react',
     });
 
-    const { calls } = vi.mocked(fse.writeFile).mock;
+    const { calls } = vi.mocked(fsp.writeFile).mock;
     const [previewConfigPath, previewConfigContent] = calls[0];
 
     expect(previewConfigPath).toEqual('./.storybook/preview.js');
@@ -152,7 +153,7 @@ describe('configurePreview', () => {
       rendererId: 'react',
     });
 
-    const { calls } = vi.mocked(fse.writeFile).mock;
+    const { calls } = vi.mocked(fsp.writeFile).mock;
     const [previewConfigPath, previewConfigContent] = calls[0];
 
     expect(previewConfigPath).toEqual('./.storybook/preview.ts');
@@ -176,13 +177,13 @@ describe('configurePreview', () => {
   });
 
   it('should not do anything if the framework template already included a preview', async () => {
-    vi.mocked(fse.pathExists).mockImplementationOnce(() => Promise.resolve(true));
+    vi.mocked(fsp.stat).mockResolvedValueOnce({} as Stats);
     await configurePreview({
       language: SupportedLanguage.TYPESCRIPT_4_9,
       storybookConfigFolder: '.storybook',
       rendererId: 'react',
     });
-    expect(fse.writeFile).not.toHaveBeenCalled();
+    expect(fsp.writeFile).not.toHaveBeenCalled();
   });
 
   it('should add prefix if frameworkParts are passed', async () => {
@@ -199,7 +200,7 @@ describe('configurePreview', () => {
       },
     });
 
-    const { calls } = vi.mocked(fse.writeFile).mock;
+    const { calls } = vi.mocked(fsp.writeFile).mock;
     const [previewConfigPath, previewConfigContent] = calls[0];
 
     expect(previewConfigPath).toEqual('./.storybook/preview.ts');

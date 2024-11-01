@@ -59,7 +59,7 @@ Starting in SB 6.0, the `ArgsTable` block has built-in `Controls` (formerly know
 
 <br/>
 
-These controls are implemented to appear automatically in the props table when your story accepts [Storybook Args](https://storybook.js.org/docs/react/api/csf#args-story-inputs) as its input. This is done slightly differently depending on whether you're using `DocsPage` or `MDX`.
+These controls are implemented to appear automatically in the props table when your story accepts [Storybook Args](https://storybook.js.org/docs/api/csf#args-story-inputs) as its input. This is done slightly differently depending on whether you're using `DocsPage` or `MDX`.
 
 **DocsPage.** In [DocsPage](./docspage.md), simply write your story to consume args and the auto-generated props table will display controls in the right-most column:
 
@@ -82,7 +82,7 @@ export const WithControls = (args) => <MyComponent {...args} />;
 <ArgsTable story="Controls" />
 ```
 
-For a very detailed walkthrough of how to write stories that use controls, read the [documentation](https://storybook.js.org/docs/react/essentials/controls).
+For a very detailed walkthrough of how to write stories that use controls, read the [documentation](https://storybook.js.org/docs/essentials/controls).
 
 ## Customization
 
@@ -187,20 +187,20 @@ This would render a row with a modified description, a type display with a dropd
 > - `type: 'number'` is shorthand for `type: { name: 'number' }`
 > - `control: 'radio'` is shorthand for `control: { type: 'radio' }`
 
-Controls customization has an entire section in the [documentation](https://storybook.js.org/docs/react/essentials/controls#configuration).
+Controls customization has an entire section in the [documentation](https://storybook.js.org/docs/essentials/controls#configuration).
 
 Here are the possible customizations for the rest of the prop table:
 
-| Field                        | Description                                                                                          |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `name`                       | The name of the property                                                                             |
-| `type.required`              | Whether or not the property is required                                                              |
-| `description`                | A markdown description for the property                                                              |
-| `table.type.summary`         | A short version of the type                                                                          |
-| `table.type.detail`          | A longer version of the type (if it's a complex type)                                                |
-| `table.defaultValue.summary` | A short version of the default value                                                                 |
-| `table.defaultValue.detail`  | A longer version of the default value (if it's a complex value)                                      |
-| `control`                    | See [`addon-controls` README](https://storybook.js.org/docs/react/essentials/controls#configuration) |
+| Field                        | Description                                                                                    |
+| ---------------------------- | ---------------------------------------------------------------------------------------------- |
+| `name`                       | The name of the property                                                                       |
+| `type.required`              | Whether or not the property is required                                                        |
+| `description`                | A markdown description for the property                                                        |
+| `table.type.summary`         | A short version of the type                                                                    |
+| `table.type.detail`          | A longer version of the type (if it's a complex type)                                          |
+| `table.defaultValue.summary` | A short version of the default value                                                           |
+| `table.defaultValue.detail`  | A longer version of the default value (if it's a complex value)                                |
+| `control`                    | See [`addon-controls` README](https://storybook.js.org/docs/essentials/controls#configuration) |
 
 ## Reporting a bug
 

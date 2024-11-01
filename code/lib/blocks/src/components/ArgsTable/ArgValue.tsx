@@ -7,7 +7,7 @@ import { styled } from 'storybook/internal/theming';
 import type { InputType, SBType } from '@storybook/csf';
 import { ChevronSmallDownIcon, ChevronSmallUpIcon } from '@storybook/icons';
 
-import uniq from 'lodash/uniq.js';
+import { uniq } from 'es-toolkit/compat';
 import memoize from 'memoizerific';
 
 interface ArgValueProps {

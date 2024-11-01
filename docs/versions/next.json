@@ -1,1 +1,1 @@
-{"version":"8.4.0-beta.5","info":{"plain":"- Addon Test: Improve unsupported vitest message - [#29486](https://github.com/storybookjs/storybook/pull/29486), thanks @valentinpalkovic!\n- Core: Fix race condition during empty folder init - [#29490](https://github.com/storybookjs/storybook/pull/29490), thanks @valentinpalkovic!"}}
+{"version":"8.5.0-alpha.1","info":{"plain":"- Core: Relax peer dep constraint of shim packages - [#29503](https://github.com/storybookjs/storybook/pull/29503), thanks @kasperpeulen!"}}

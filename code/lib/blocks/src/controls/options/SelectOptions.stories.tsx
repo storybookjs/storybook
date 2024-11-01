@@ -99,7 +99,7 @@ export const Object: Story = {
   name: 'DEPRECATED: Object',
   args: {
     value: objectOptions.B,
-    argType: { options: [objectOptions] },
+    argType: { options: objectOptions as any },
   },
   argTypes: { value: { control: { type: 'object' } } },
 };

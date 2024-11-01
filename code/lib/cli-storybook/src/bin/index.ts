@@ -43,7 +43,7 @@ const command = (name: string) =>
 command('add <addon>')
   .description('Add an addon to your Storybook')
   .option(
-    '--package-manager <npm|pnpm|yarn1|yarn2>',
+    '--package-manager <npm|pnpm|yarn1|yarn2|bun>',
     'Force package manager for installing dependencies'
   )
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
@@ -54,7 +54,7 @@ command('add <addon>')
 command('remove <addon>')
   .description('Remove an addon from your Storybook')
   .option(
-    '--package-manager <npm|pnpm|yarn1|yarn2>',
+    '--package-manager <npm|pnpm|yarn1|yarn2|bun>',
     'Force package manager for installing dependencies'
   )
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
@@ -70,7 +70,7 @@ command('remove <addon>')
 command('upgrade')
   .description(`Upgrade your Storybook packages to v${versions.storybook}`)
   .option(
-    '--package-manager <npm|pnpm|yarn1|yarn2>',
+    '--package-manager <npm|pnpm|yarn1|yarn2|bun>',
     'Force package manager for installing dependencies'
   )
   .option('-y --yes', 'Skip prompting the user')
@@ -157,7 +157,7 @@ command('automigrate [fixId]')
   .description('Check storybook for incompatibilities or migrations and apply fixes')
   .option('-y --yes', 'Skip prompting the user')
   .option('-n --dry-run', 'Only check for fixes, do not actually run them')
-  .option('--package-manager <npm|pnpm|yarn1|yarn2>', 'Force package manager')
+  .option('--package-manager <npm|pnpm|yarn1|yarn2|bun>', 'Force package manager')
   .option('-l --list', 'List available migrations')
   .option('-c, --config-dir <dir-name>', 'Directory of Storybook configurations to migrate')
   .option('-s --skip-install', 'Skip installing deps')
@@ -174,7 +174,7 @@ command('automigrate [fixId]')
 
 command('doctor')
   .description('Check Storybook for known problems and provide suggestions or fixes')
-  .option('--package-manager <npm|pnpm|yarn1|yarn2>', 'Force package manager')
+  .option('--package-manager <npm|pnpm|yarn1|yarn2|bun>', 'Force package manager')
   .option('-c, --config-dir <dir-name>', 'Directory of Storybook configuration')
   .action(async (options) => {
     await doctor(options).catch((e) => {

@@ -1,3 +1,7 @@
+## 8.5.0-alpha.1
+
+- Core: Relax peer dep constraint of shim packages - [#29503](https://github.com/storybookjs/storybook/pull/29503), thanks @kasperpeulen!
+
 ## 8.5.0-alpha.0
 
 

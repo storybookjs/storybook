@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular",
-  "version": "8.5.0-alpha.0",
+  "version": "8.5.0-alpha.1",
   "description": "Storybook for Angular: Develop Angular components in isolation with hot reloading.",
   "keywords": [
     "storybook",
@@ -38,12 +38,12 @@
   },
   "dependencies": {
     "@storybook/builder-webpack5": "workspace:*",
-    "@storybook/components": "workspace:^",
+    "@storybook/components": "workspace:*",
     "@storybook/core-webpack": "workspace:*",
     "@storybook/global": "^5.0.0",
-    "@storybook/manager-api": "workspace:^",
-    "@storybook/preview-api": "workspace:^",
-    "@storybook/theming": "workspace:^",
+    "@storybook/manager-api": "workspace:*",
+    "@storybook/preview-api": "workspace:*",
+    "@storybook/theming": "workspace:*",
     "@types/node": "^22.0.0",
     "@types/react": "^18.0.37",
     "@types/react-dom": "^18.0.11",

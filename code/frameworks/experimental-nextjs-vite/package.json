@@ -1,6 +1,6 @@
 {
   "name": "@storybook/experimental-nextjs-vite",
-  "version": "8.5.0-alpha.0",
+  "version": "8.5.0-alpha.1",
   "description": "Storybook for Next.js and Vite",
   "keywords": [
     "storybook",

@@ -28,8 +28,8 @@ type NpmDependencies = {
 export type NpmListOutput = {
   dependencies: NpmDependencies;
 };
-const NPM_ERROR_REGEX = /npm (ERR!|error) (code|errno) (\w+)/i;
 
+const NPM_ERROR_REGEX = /npm ERR! code (\w+)/;
 const NPM_ERROR_CODES = {
   E401: 'Authentication failed or is required.',
   E403: 'Access to the resource is forbidden.',
@@ -64,25 +64,25 @@ const NPM_ERROR_CODES = {
   EUNKNOWNTYPE: 'Unknown type encountered.',
 };
 
-export class NPMProxy extends JsPackageManager {
-  readonly type = 'npm';
+export class BUNProxy extends JsPackageManager {
+  readonly type = 'bun';
 
   installArgs: string[] | undefined;
 
   async initPackageJson() {
-    await this.executeCommand({ command: 'npm', args: ['init', '-y'] });
+    await this.executeCommand({ command: 'bun', args: ['init'] });
   }
 
   getRunStorybookCommand(): string {
-    return 'npm run storybook';
+    return 'bun run storybook';
   }
 
   getRunCommand(command: string): string {
-    return `npm run ${command}`;
+    return `bun run ${command}`;
   }
 
   getRemoteRunCommand(): string {
-    return 'npx';
+    return 'bunx';
   }
 
   public async getPackageJSON(
@@ -119,8 +119,8 @@ export class NPMProxy extends JsPackageManager {
     stdio?: 'pipe' | 'inherit'
   ): string {
     return this.executeCommandSync({
-      command: 'npm',
-      args: ['exec', '--', command, ...args],
+      command: 'bun',
+      args: ['run', command, ...args],
       cwd,
       stdio,
     });
@@ -128,8 +128,8 @@ export class NPMProxy extends JsPackageManager {
 
   public async runPackageCommand(command: string, args: string[], cwd?: string): Promise<string> {
     return this.executeCommand({
-      command: 'npm',
-      args: ['exec', '--', command, ...args],
+      command: 'bun',
+      args: ['run', command, ...args],
       cwd,
     });
   }
@@ -177,7 +177,7 @@ export class NPMProxy extends JsPackageManager {
 
   protected async runInstall() {
     await this.executeCommand({
-      command: 'npm',
+      command: 'bun',
       args: ['install', ...this.getInstallArgs()],
       stdio: 'inherit',
     });
@@ -204,8 +204,8 @@ export class NPMProxy extends JsPackageManager {
 
     try {
       await this.executeCommand({
-        command: 'npm',
-        args: ['install', ...args, ...this.getInstallArgs()],
+        command: 'bun',
+        args: ['add', ...args, ...this.getInstallArgs()],
         stdio: process.env.CI ? 'inherit' : ['ignore', logStream, logStream],
       });
     } catch (err) {
@@ -229,8 +229,8 @@ export class NPMProxy extends JsPackageManager {
     const args = [...dependencies];
 
     await this.executeCommand({
-      command: 'npm',
-      args: ['uninstall', ...this.getInstallArgs(), ...args],
+      command: 'bun',
+      args: ['remove', ...args, ...this.getInstallArgs()],
       stdio: 'inherit',
     });
   }
@@ -316,7 +316,7 @@ export class NPMProxy extends JsPackageManager {
     const match = logs.match(NPM_ERROR_REGEX);
 
     if (match) {
-      const errorCode = match[3] as keyof typeof NPM_ERROR_CODES;
+      const errorCode = match[1] as keyof typeof NPM_ERROR_CODES;
       if (errorCode) {
         finalMessage = `${finalMessage} ${errorCode}`;
       }

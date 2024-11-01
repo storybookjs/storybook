@@ -1,6 +1,6 @@
 {
   "name": "@storybook/theming",
-  "version": "8.5.0-alpha.0",
+  "version": "8.5.0-alpha.1",
   "description": "Core Storybook Components",
   "keywords": [
     "storybook"
@@ -44,7 +44,7 @@
     "*.d.ts"
   ],
   "peerDependencies": {
-    "storybook": "workspace:^"
+    "storybook": "^8.2.0 || ^8.3.0-0 || ^8.4.0-0 || ^8.5.0-0 || ^8.6.0-0"
   },
   "publishConfig": {
     "access": "public"

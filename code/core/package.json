@@ -414,7 +414,7 @@
     "watchpack": "^2.2.0"
   },
   "peerDependencies": {
-    "prettier": "^2 || ^3"
+    "prettier": "^1 || ^2 || ^3"
   },
   "peerDependenciesMeta": {
     "prettier": {

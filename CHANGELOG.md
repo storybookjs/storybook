@@ -1,3 +1,7 @@
+## 8.4.1
+
+- Core: Relax peer dep constraint of shim packages - [#29503](https://github.com/storybookjs/storybook/pull/29503), thanks @kasperpeulen!
+
 ## 8.4.0
 
 Storybook 8.4 comes with a ton of exciting new features designed to give you the best experience developing, testing, and debugging tests in the browser!

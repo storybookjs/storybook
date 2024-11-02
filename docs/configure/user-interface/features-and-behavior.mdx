@@ -39,9 +39,20 @@ The following options are configurable under the `sidebar` namespace:
 
 The following options are configurable under the `toolbar` namespace:
 
-| Name   | Type   | Description                        | Example Value       |
-| ------ | ------ | ---------------------------------- | ------------------- |
-| **id** | String | Toggle visibility for toolbar item | `{ hidden: false }` |
+| Name     | Type   | Description                                                          | Example Value        |
+| ---------| ------ | -------------------------------------------------------------------- | -------------------- |
+| **[id]** | String | Toggle visibility for a specific toolbar item (e.g. `title`, `zoom`) | `{ hidden: false }`  |
+
+## TODO layout customisation doc
+
+TODO:
+1. Document both functions with use cases
+2. Add caveat about bricking the user experience by hiding sidebar everywhere
+
+| Name            | Type     | Description                       | Example Value                                                                 |
+| --------------- | -------- | --------------------------------- | ----------------------------------------------------------------------------- |
+| **showSidebar** | Function | Toggle visibility for the sidebar | `({ storyId }, defaultValue) => storyId === 'landing' ? false : defaultValue` |
+| **showToolbar** | Function | Toggle visibility for the toolbar | `({ viewMode }, defaultValue) => viewMode === 'docs' ? false : defaultValue` |
 
 ## Configuring through URL parameters
 

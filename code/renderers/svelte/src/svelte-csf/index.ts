@@ -1,5 +1,3 @@
-import type { ComponentProps } from 'svelte';
-
 import StoryComponent from './runtime/Story.svelte';
 // TODO: Remove in next major release
 import LegacyMetaComponent from './runtime/LegacyMeta.svelte';
@@ -53,18 +51,4 @@ export {
 };
 
 // TODO: Remove in next major release
-/**
- * @deprecated
- * Use `Story` component returned from `defineMeta` instead together with {@link ComponentProps}.
- *
- * ```svelte
- * <script lang="ts">
- *   import type { ComponentProps } from 'svelte';
- *
- *   const { Story } = defineMeta({ ... });
- *
- *   type StoryProps = ComponentProps<typeof Story>;
- * </script>
- * ```
- */
-export type StoryProps = ComponentProps<LegacyStoryComponent>;
+export * from './legacy-types';

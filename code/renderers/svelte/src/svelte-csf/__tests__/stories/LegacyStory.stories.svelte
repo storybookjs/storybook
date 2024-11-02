@@ -1,5 +1,6 @@
 <script context="module" lang="ts">
-  import { Story, Template } from '@storybook/addon-svelte-csf';
+  import { Story, Template, type StoryProps } from '@storybook/addon-svelte-csf';
+  import { expect, within } from '@storybook/test';
   import type { Meta } from '@storybook/svelte';
 
   import LegacyStory from './LegacyStory.svelte';
@@ -15,17 +16,26 @@
    */
   export const meta = {
     title: 'LegacyStory',
-    // @ts-expect-error FIXME: Needs invesigation on `@storybook/svelte` types
     component: LegacyStory,
-    args: {},
+    args: {
+      rounded: false,
+    },
     tags: ['autodocs'],
-  } satisfies Meta<typeof LegacyStory>;
+  } satisfies Meta<LegacyStory>;
 
   let count = 0;
 
   function handleClick() {
     count += 1;
   }
+
+  const play: StoryProps['play'] = async (context) => {
+    const { canvasElement, step } = context;
+    const canvas = within(canvasElement);
+    await step("The container renders it's contents", async () => {
+      expect(await canvas.findByText('You clicked')).toBeInTheDocument();
+    });
+  };
 </script>
 
 <Template let:args>
@@ -34,13 +44,10 @@
   </LegacyStory>
 </Template>
 
-<Story name="Default" autodocs />
+<Story name="Default" autodocs {play} />
 
 <Story name="Rounded" args={{ rounded: true }} />
 
-<Story name="Square" source args={{ rounded: false }} />
-
-<!-- Dynamic snippet should be disabled for this story -->
-<Story name="No Args">
-  <LegacyStory>Label</LegacyStory>
+<Story name="Square" source args={{ rounded: false }}>
+  {'Test'}
 </Story>

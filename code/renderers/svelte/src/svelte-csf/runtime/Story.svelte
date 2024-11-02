@@ -10,6 +10,11 @@
 
   type Props = Partial<StoryAnnotations<TCmp>> & {
     /**
+     * @deprecated
+     * Use `exportName` instead.
+     */
+    id?: never;
+    /**
      * The content to render in the story, either as:
      * 1. A snippet taking args and storyContext as parameters
      * 2. Static markup

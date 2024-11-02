@@ -9,7 +9,7 @@ Vite pre-transform hook does codemod where this component gets transformed into 
 @see {@link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#meta-component-removed-in-favor-of-definemeta}
 -->
 <script lang="ts">
-  import type { Meta } from '@storybook/svelte';
+  import type { MetaProps, Slots } from '../legacy-types.d';
 
-  type $$Props = Meta;
+  type $$Props = MetaProps;
 </script>

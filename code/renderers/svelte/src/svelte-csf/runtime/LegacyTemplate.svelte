@@ -9,14 +9,17 @@ Vite pre-transform hook does codemod where this component gets transformed into 
 @see {@link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#template-component-removed}
 -->
 <script lang="ts">
-  import { type StoryRendererContext } from './contexts/renderer.svelte';
+  import type { Slots, TemplateProps } from '../legacy-types.d';
 
   export let id: string = 'default';
   // silents the Svelte warning about 'id' being unused. It's only here for typing purposes.
   const silentWarningAboutId = id;
 
-  let args: StoryRendererContext['storyContext'];
-  let context: StoryRendererContext['args'];
+  type $$Props = TemplateProps;
+  type $$Slots = Slots;
+
+  let args: $$Slots['default']['args'];
+  let context: $$Slots['default']['context'];
 </script>
 
 <slot {context} {args} />

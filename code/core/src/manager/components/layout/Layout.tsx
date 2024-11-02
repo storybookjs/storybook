@@ -4,6 +4,8 @@ import { Match } from '@storybook/core/router';
 import { styled } from '@storybook/core/theming';
 import type { API_Layout, API_ViewMode } from '@storybook/core/types';
 
+import type { API } from '@storybook/core/manager-api';
+
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
 import { Notifications } from '../../container/Notifications';
 import { MobileNavigation } from '../mobile/navigation/MobileNavigation';
@@ -22,6 +24,7 @@ interface ManagerLayoutState
 export type LayoutState = InternalLayoutState & ManagerLayoutState;
 
 interface Props {
+  api: API;
   managerLayoutState: ManagerLayoutState;
   setManagerLayoutState: (state: Partial<Omit<ManagerLayoutState, 'viewMode'>>) => void;
   slotMain?: React.ReactNode;
@@ -44,11 +47,13 @@ const layoutStateIsEqual = (state: ManagerLayoutState, other: ManagerLayoutState
  * manager store to the internal state here when necessary
  */
 const useLayoutSyncingState = ({
+  api,
   managerLayoutState,
   setManagerLayoutState,
   isDesktop,
   hasTab,
 }: {
+  api: API;
   managerLayoutState: Props['managerLayoutState'];
   setManagerLayoutState: Props['setManagerLayoutState'];
   isDesktop: boolean;
@@ -108,8 +113,10 @@ const useLayoutSyncingState = ({
     ? internalDraggingSizeState
     : managerLayoutState;
 
+  const customisedNavSize = api.getNavSizeWithCustomisations(navSize);
+
   return {
-    navSize,
+    navSize: customisedNavSize,
     rightPanelWidth,
     bottomPanelHeight,
     panelPosition: managerLayoutState.panelPosition,
@@ -121,7 +128,13 @@ const useLayoutSyncingState = ({
   };
 };
 
-export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...slots }: Props) => {
+export const Layout = ({
+  api,
+  managerLayoutState,
+  setManagerLayoutState,
+  hasTab,
+  ...slots
+}: Props) => {
   const { isDesktop, isMobile } = useLayout();
 
   const {
@@ -134,7 +147,7 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
     showPages,
     showPanel,
     isDragging,
-  } = useLayoutSyncingState({ managerLayoutState, setManagerLayoutState, isDesktop, hasTab });
+  } = useLayoutSyncingState({ api, managerLayoutState, setManagerLayoutState, isDesktop, hasTab });
 
   return (
     <LayoutContainer

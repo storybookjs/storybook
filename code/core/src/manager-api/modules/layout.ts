@@ -1,12 +1,18 @@
 import type { ThemeVars } from '@storybook/core/theming';
 import { create } from '@storybook/core/theming/create';
-import type { API_Layout, API_PanelPositions, API_UI } from '@storybook/core/types';
+import type {
+  API_Layout,
+  API_LayoutCustomisations,
+  API_PanelPositions,
+  API_UI,
+} from '@storybook/core/types';
 import { global } from '@storybook/global';
 
 import { SET_CONFIG } from '@storybook/core/core-events';
 
 import { isEqual as deepEqual, pick, toMerged } from 'es-toolkit';
 
+import { isFunction } from '../../common/utils/type-guards';
 import merge from '../lib/merge';
 import type { ModuleFn } from '../lib/types';
 import type { State } from '../root';
@@ -21,6 +27,7 @@ export const ActiveTabs = {
 
 export interface SubState {
   layout: API_Layout;
+  layoutCustomisations: API_LayoutCustomisations;
   ui: API_UI;
   selectedPanel: string | undefined;
   theme: ThemeVars;
@@ -78,6 +85,16 @@ export interface SubAPI {
   getIsPanelShown: () => boolean;
   /** GetIsNavShown - Returns the current visibility of the navigation bar in the Storybook UI. */
   getIsNavShown: () => boolean;
+  /**
+   * GetShowToolbarWithCustomisations - Returns the current visibility of the toolbar, taking into
+   * account customisations requested by the end user via a layoutCustomisations function.
+   */
+  getShowToolbarWithCustomisations: (showToolbar: boolean) => boolean;
+  /**
+   * GetNavSizeWithCustomisations - Returns the size to apply to the sidebar/nav, taking into
+   * account customisations requested by the end user via a layoutCustomisations function.
+   */
+  getNavSizeWithCustomisations: (navSize: number) => number;
 }
 
 type PartialSubState = Partial<SubState>;
@@ -99,6 +116,10 @@ export const defaultLayoutState: SubState = {
     },
     panelPosition: 'bottom',
     showTabs: true,
+  },
+  layoutCustomisations: {
+    showSidebar: undefined,
+    showToolbar: undefined,
   },
   selectedPanel: undefined,
   theme: create(),
@@ -313,7 +334,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
     },
 
     getInitialOptions() {
-      const { theme, selectedPanel, ...options } = provider.getConfig();
+      const { theme, selectedPanel, layoutCustomisations, ...options } = provider.getConfig();
 
       return {
         ...defaultLayoutState,
@@ -323,6 +344,10 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
             pick(options, Object.keys(defaultLayoutState.layout))
           ),
           ...(singleStory && { navSize: 0 }),
+        },
+        layoutCustomisations: {
+          ...defaultLayoutState.layoutCustomisations,
+          ...(layoutCustomisations ?? {}),
         },
         ui: toMerged(defaultLayoutState.ui, pick(options, Object.keys(defaultLayoutState.ui))),
         selectedPanel: selectedPanel || defaultLayoutState.selectedPanel,
@@ -338,6 +363,31 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
     },
     getIsNavShown() {
       return getIsNavShown(store.getState());
+    },
+
+    getShowToolbarWithCustomisations(showToolbar: boolean) {
+      const state = store.getState();
+
+      if (isFunction(state.layoutCustomisations.showToolbar)) {
+        return state.layoutCustomisations.showToolbar(state, showToolbar);
+      }
+
+      return showToolbar;
+    },
+
+    getNavSizeWithCustomisations(navSize: number) {
+      const state = store.getState();
+
+      if (isFunction(state.layoutCustomisations.showSidebar)) {
+        const shouldShowNav = state.layoutCustomisations.showSidebar(state, navSize !== 0);
+        if (navSize === 0 && shouldShowNav === true) {
+          return state.layout.recentVisibleSizes.navSize;
+        } else if (navSize !== 0 && shouldShowNav === false) {
+          return 0;
+        }
+      }
+
+      return navSize;
     },
 
     setOptions: (options: any) => {

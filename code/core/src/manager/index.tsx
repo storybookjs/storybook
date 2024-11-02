@@ -71,6 +71,7 @@ const Main: FC<{ provider: Provider }> = ({ provider }) => {
                 <LayoutProvider>
                   <App
                     key="app"
+                    api={api}
                     pages={pages}
                     managerLayoutState={{
                       ...state.layout,

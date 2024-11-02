@@ -2,6 +2,7 @@
 import type { FC, PropsWithChildren, ReactElement, ReactNode } from 'react';
 
 import type { TestingModuleProgressReportProgress } from '../../core-events';
+import type { State } from '../../manager-api';
 import type { RenderData as RouterData } from '../../router/types';
 import type { ThemeVars } from '../../theming/types';
 import type { API_SidebarOptions } from './api';
@@ -530,6 +531,10 @@ export interface Addon_ToolbarConfig {
 }
 export interface Addon_Config {
   theme?: ThemeVars;
+  layout?: {
+    showSidebar?: (state: State, currentValue: boolean) => boolean;
+    showToolbar?: (state: State, currentValue: boolean) => boolean;
+  };
   toolbar?: {
     [id: string]: Addon_ToolbarConfig;
   };

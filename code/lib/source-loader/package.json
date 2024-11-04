@@ -47,7 +47,7 @@
     "@storybook/csf": "^0.1.11",
     "es-toolkit": "^1.22.0",
     "estraverse": "^5.2.0",
-    "prettier": "^3.1.1"
+    "prettier": "^3.3.3"
   },
   "devDependencies": {
     "typescript": "^5.3.2"

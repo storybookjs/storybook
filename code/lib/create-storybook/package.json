@@ -61,7 +61,7 @@
     "fd-package-json": "^1.2.0",
     "find-up": "^5.0.0",
     "ora": "^5.4.1",
-    "prettier": "^3.1.1",
+    "prettier": "^3.3.3",
     "prompts": "^2.4.0",
     "semver": "^7.3.7",
     "storybook": "workspace:*",

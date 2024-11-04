@@ -5,7 +5,7 @@ import type { TestingModuleProgressReportProgress } from '../../core-events';
 import type { State } from '../../manager-api';
 import type { RenderData as RouterData } from '../../router/types';
 import type { ThemeVars } from '../../theming/types';
-import type { API_SidebarOptions } from './api';
+import type { API_LayoutCustomisations, API_SidebarOptions } from './api';
 import type { API_StatusState, API_StatusUpdate } from './api-stories';
 import type {
   Args,
@@ -532,8 +532,8 @@ export interface Addon_ToolbarConfig {
 export interface Addon_Config {
   theme?: ThemeVars;
   layout?: {
-    showSidebar?: (state: State, currentValue: boolean) => boolean;
-    showToolbar?: (state: State, currentValue: boolean) => boolean;
+    showSidebar?: API_LayoutCustomisations['showSidebar'];
+    showToolbar?: API_LayoutCustomisations['showToolbar'];
   };
   toolbar?: {
     [id: string]: Addon_ToolbarConfig;

@@ -109,7 +109,6 @@ const useCombination = (
   return useMemo(() => ({ hash, entries: Object.entries(hash) }), [hash]);
 };
 
-const isDevelopment = global.CONFIG_TYPE === 'DEVELOPMENT';
 const isRendererReact = global.STORYBOOK_RENDERER === 'react';
 
 export interface SidebarProps extends API_LoadedRefData {
@@ -124,6 +123,7 @@ export interface SidebarProps extends API_LoadedRefData {
   onMenuClick?: HeadingProps['onMenuClick'];
   showCreateStoryButton?: boolean;
   indexJson?: StoryIndex;
+  isDevelopment?: boolean;
 }
 export const Sidebar = React.memo(function Sidebar({
   // @ts-expect-error (non strict)
@@ -138,6 +138,7 @@ export const Sidebar = React.memo(function Sidebar({
   extra,
   menuHighlighted = false,
   enableShortcuts = true,
+  isDevelopment = global.CONFIG_TYPE === 'DEVELOPMENT',
   refs = {},
   onMenuClick,
   showCreateStoryButton = isDevelopment && isRendererReact,
@@ -229,7 +230,7 @@ export const Sidebar = React.memo(function Sidebar({
             )}
           </Search>
         </Top>
-        {isMobile || isLoading ? null : <SidebarBottom />}
+        {isMobile || isLoading ? null : <SidebarBottom isDevelopment={isDevelopment} />}
       </ScrollArea>
     </Container>
   );

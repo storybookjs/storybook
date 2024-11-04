@@ -88,7 +88,7 @@ export default async function postInstall(options: PostinstallOptions) {
     if (coercedVitestVersion && !satisfies(coercedVitestVersion, '>=2.1.0')) {
       reasons.push(dedent`
         • The addon requires Vitest 2.1.0 or later. You are currently using ${picocolors.bold(vitestVersionSpecifier)}.
-          Please update your ${picocolors.bold(colors.pink('vitest'))} dependency and try again.
+          Please update all of your Vitest dependencies and try again.
       `);
     }
 

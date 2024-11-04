@@ -229,7 +229,12 @@ export const TestingModule = ({
   const testing = testProviders.length > 0;
 
   return (
-    <Outline running={running} crashed={crashed} failed={failed || errorCount > 0}>
+    <Outline
+      id="storybook-testing-module"
+      running={running}
+      crashed={crashed}
+      failed={failed || errorCount > 0}
+    >
       <Card>
         <Collapsible
           style={{

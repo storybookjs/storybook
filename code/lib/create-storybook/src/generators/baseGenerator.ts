@@ -245,7 +245,7 @@ export async function baseGenerator(
   ].filter(Boolean);
 
   // TODO: migrate template stories in solid and qwik to use @storybook/test
-  if (['solid', 'qwik'].includes(rendererId)) {
+  if (['qwik'].includes(rendererId)) {
     addonPackages.push('@storybook/testing-library');
   } else {
     addonPackages.push('@storybook/test');

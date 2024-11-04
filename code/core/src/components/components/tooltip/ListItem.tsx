@@ -123,6 +123,7 @@ const Item = styled.div<ItemProps>(
   ({ theme }) => ({
     width: '100%',
     border: 'none',
+    borderRadius: theme.appBorderRadius,
     background: 'none',
     fontSize: theme.typography.size.s1,
     transition: 'all 150ms ease-out',

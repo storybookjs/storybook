@@ -6,6 +6,7 @@ import { SidebarBottomBase } from './SidebarBottom';
 export default {
   component: SidebarBottomBase,
   args: {
+    isDevelopment: true,
     api: {
       clearNotification: fn(),
       emit: fn(),

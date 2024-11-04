@@ -6,7 +6,7 @@
   export let title;
   export let storyFn;
   export let showError;
-  export let storyContext;
+  export const storyContext;
 
   let {
     /** @type {SvelteComponent} */

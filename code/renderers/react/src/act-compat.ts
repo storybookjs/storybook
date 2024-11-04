@@ -14,7 +14,8 @@ declare const globalThis: {
 const clonedReact = { ...React };
 
 const reactAct =
-  // @ts-expect-error act might not be available in some versions of React
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore act might not be available in some versions of React
   typeof clonedReact.act === 'function' ? clonedReact.act : DeprecatedReactTestUtils.act;
 
 export function setReactActEnvironment(isReactActEnvironment: boolean) {

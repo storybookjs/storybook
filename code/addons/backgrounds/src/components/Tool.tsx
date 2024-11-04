@@ -9,8 +9,6 @@ import { PARAM_KEY as KEY } from '../constants';
 import { DEFAULT_BACKGROUNDS } from '../defaults';
 import type { Background, BackgroundMap, Config, GlobalStateUpdate } from '../types';
 
-type Link = Parameters<typeof TooltipLinkList>['0']['links'][0];
-
 export const BackgroundTool = memo(function BackgroundSelector() {
   const config = useParameter<Config>(KEY);
   const [globals, updateGlobals, storyGlobals] = useGlobals();
@@ -114,7 +112,7 @@ const Pure = memo(function PureTool(props: PureProps) {
                         },
                       ]
                     : []),
-                  ...Object.entries(backgroundMap).map<Link>(([k, value]) => ({
+                  ...Object.entries(backgroundMap).map(([k, value]) => ({
                     id: k,
                     title: value.name,
                     icon: <CircleIcon color={value?.value || 'grey'} />,

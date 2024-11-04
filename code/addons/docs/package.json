@@ -114,7 +114,7 @@
     "rehype-external-links": "^3.0.0",
     "rehype-slug": "^6.0.0",
     "typescript": "^5.3.2",
-    "vite": "^4.0.4"
+    "vite": "^5.4.10"
   },
   "peerDependencies": {
     "storybook": "workspace:^"

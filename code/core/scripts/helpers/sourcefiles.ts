@@ -30,10 +30,10 @@ async function generateVersionsFile(prettierConfig: prettier.Options | null): Pr
 
   const versions = JSON.stringify(
     workspace
-      .sort((a, b) => a.path.localeCompare(b.path))
+      .sort((a, b) => a!.path.localeCompare(b!.path))
       .reduce<Record<string, string>>((acc, i) => {
-        if (i.publishConfig && i.publishConfig.access === 'public') {
-          acc[i.name] = i.version;
+        if (i!.publishConfig && i!.publishConfig.access === 'public') {
+          acc[i!.name] = i!.version;
         }
         return acc;
       }, {})

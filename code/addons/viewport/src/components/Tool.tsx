@@ -1,6 +1,6 @@
 import React, { type FC, Fragment, useCallback, useEffect, useState } from 'react';
 
-import { IconButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
+import { IconButton, type Link, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
 import { type API, useGlobals, useParameter } from 'storybook/internal/manager-api';
 import { Global } from 'storybook/internal/theming';
 
@@ -31,8 +31,6 @@ interface PureProps {
   width: string;
   height: string;
 }
-
-type Link = Parameters<typeof TooltipLinkList>['0']['links'][0];
 
 export const ViewportTool: FC<{ api: API }> = ({ api }) => {
   const config = useParameter<Config>(KEY);
@@ -116,29 +114,31 @@ const Pure = React.memo(function PureTool(props: PureProps) {
         tooltip={({ onHide }) => (
           <TooltipLinkList
             links={[
-              ...(length > 0 && item !== responsiveViewport
-                ? [
-                    {
-                      id: 'reset',
-                      title: 'Reset viewport',
-                      icon: <RefreshIcon />,
-                      onClick: () => {
-                        update({ value: undefined, isRotated: false });
-                        onHide();
+              [
+                ...(length > 0 && item !== responsiveViewport
+                  ? [
+                      {
+                        id: 'reset',
+                        title: 'Reset viewport',
+                        icon: <RefreshIcon />,
+                        onClick: () => {
+                          update({ value: undefined, isRotated: false });
+                          onHide();
+                        },
                       },
-                    },
-                  ]
-                : []),
-              ...Object.entries(viewportMap).map<Link>(([k, value]) => ({
-                id: k,
-                title: value.name,
-                icon: iconsMap[value.type],
-                active: k === viewportName,
-                onClick: () => {
-                  update({ value: k, isRotated: false });
-                  onHide();
-                },
-              })),
+                    ]
+                  : []),
+                ...Object.entries(viewportMap).map(([k, value]) => ({
+                  id: k,
+                  title: value.name,
+                  icon: iconsMap[value.type],
+                  active: k === viewportName,
+                  onClick: () => {
+                    update({ value: k, isRotated: false });
+                    onHide();
+                  },
+                })),
+              ],
             ]}
           />
         )}

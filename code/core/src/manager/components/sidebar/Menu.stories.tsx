@@ -9,13 +9,16 @@ import { expect, screen, userEvent, within } from '@storybook/test';
 
 import type { State } from '@storybook/core/manager-api';
 
+import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
 import { useMenu } from '../../container/Menu';
 import { LayoutProvider } from '../layout/LayoutProvider';
 import { SidebarMenu } from './Menu';
 
-const fakemenu: ComponentProps<typeof TooltipLinkList>['links'] = [
-  { title: 'has icon', icon: <LinkIcon />, id: 'icon' },
-  { title: 'has no icon', id: 'non' },
+const fakemenu: Link[][] = [
+  [
+    { title: 'has icon', icon: <LinkIcon />, id: 'icon' },
+    { title: 'has no icon', id: 'non' },
+  ],
 ];
 
 const meta = {

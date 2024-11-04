@@ -38,6 +38,7 @@ import { useLayout } from '../layout/LayoutProvider';
 import { IconSymbols, UseSymbol } from './IconSymbols';
 import { StatusButton } from './StatusButton';
 import { StatusContext, useStatusSummary } from './StatusContext';
+import { StoryMenu } from './StoryMenu';
 import { ComponentNode, DocumentNode, GroupNode, RootNode, StoryNode } from './TreeNode';
 import { CollapseIcon } from './components/CollapseIcon';
 import type { Highlight, Item } from './types';
@@ -78,10 +79,12 @@ export const LeafNodeStyleWrapper = styled.div(({ theme }) => ({
   background: 'transparent',
   minHeight: 28,
   borderRadius: 4,
+  '--story-menu-visibility': 'hidden',
 
   '&:hover, &:focus': {
     background: transparentize(0.93, theme.color.secondary),
     outline: 'none',
+    '--story-menu-visibility': 'visible',
   },
 
   '&[data-selected="true"]': {
@@ -208,50 +211,16 @@ const Node = React.memo<NodeProps>(function Node({
             <a href="#storybook-preview-wrapper">Skip to canvas</a>
           </SkipToContentLink>
         )}
-        {icon ? (
-          <WithTooltip
-            closeOnOutsideClick
-            closeOnTriggerHidden
-            onClick={(event) => event.stopPropagation()}
-            placement="bottom"
-            tooltip={({ onHide }) => (
-              <TooltipLinkList
-                links={Object.entries(status || {})
-                  .sort(
-                    (a, b) => statusOrder.indexOf(a[1].status) - statusOrder.indexOf(b[1].status)
-                  )
-                  .map(([addonId, value]) => ({
-                    id: addonId,
-                    title: value.title,
-                    description: value.description,
-                    'aria-label': `Test status for ${value.title}: ${value.status}`,
-                    icon: {
-                      success: <StatusPassIcon color={theme.color.positive} />,
-                      error: <StatusFailIcon color={theme.color.negative} />,
-                      warn: <StatusWarnIcon color={theme.color.warning} />,
-                      pending: <SyncIcon size={12} color={theme.color.defaultText} />,
-                      unknown: null,
-                    }[value.status],
-                    onClick: () => {
-                      onSelectStoryId(item.id);
-                      value.onClick?.();
-                      onHide();
-                    },
-                  }))}
-              />
-            )}
-          >
-            <StatusButton
-              aria-label={`Test status: ${statusValue}`}
-              role="status"
-              type="button"
-              status={statusValue}
-              selectedItem={isSelected}
-            >
-              {icon}
-            </StatusButton>
-          </WithTooltip>
-        ) : null}
+        <StoryMenu
+          {...{
+            storyId: item.id,
+            isSelected,
+            onSelectStoryId,
+            status,
+            statusIcon: icon,
+            statusValue,
+          }}
+        />
       </LeafNodeStyleWrapper>
     );
   }

@@ -33,7 +33,7 @@
     const { canvasElement, step } = context;
     const canvas = within(canvasElement);
     await step("The container renders it's contents", async () => {
-      expect(await canvas.findByText('You clicked')).toBeInTheDocument();
+      expect(await canvas.findByRole('button')).toBeInTheDocument();
     });
   };
 </script>

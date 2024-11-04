@@ -16,6 +16,7 @@ const preview: Preview = {
         date: /Date$/i,
       },
     },
+    react: { rsc: true },
   },
 };
 

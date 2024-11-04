@@ -1,7 +1,13 @@
 import type { Mock } from "@storybook/test";
 import { fn } from "@storybook/test";
+import type { NextComponentType, NextPageContext } from "next";
 import singletonRouter, * as originalRouter from "next/dist/client/router.js";
+import type {
+  ExcludeRouterProps,
+  WithRouterProps,
+} from "next/dist/client/with-router";
 import type { NextRouter, SingletonRouter } from "next/router.js";
+import type { ComponentType } from "react";
 import { NextjsRouterMocksNotAvailable } from "storybook/internal/preview-errors";
 
 const defaultRouterState = {
@@ -133,9 +139,12 @@ export default singletonRouter;
 
 // mock utilities/overrides (as of Next v14.2.0)
 // passthrough mocks - keep original implementation but allow for spying
-export const useRouter = fn(originalRouter.useRouter).mockName(
-  "next/router::useRouter",
-);
-export const withRouter = fn(originalRouter.withRouter).mockName(
-  "next/router::withRouter",
-);
+export const useRouter: Mock<() => NextRouter> = fn(
+  originalRouter.useRouter,
+).mockName("next/router::useRouter");
+export const withRouter: Mock<
+  (
+    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+    ComposedComponent: NextComponentType<NextPageContext, any, WithRouterProps>,
+  ) => ComponentType<ExcludeRouterProps<WithRouterProps>>
+> = fn(originalRouter.withRouter).mockName("next/router::withRouter");

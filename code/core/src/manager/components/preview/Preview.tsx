@@ -60,7 +60,7 @@ const Preview = React.memo<PreviewProps>(function Preview(props) {
 
   const shouldScale = viewMode === 'story';
   const { showToolbar } = options;
-  const shouldShowToolbar = api.getShowToolbarWithCustomisations(showToolbar);
+  const customisedShowToolbar = api.getShowToolbarWithCustomisations(showToolbar);
 
   const previousStoryId = useRef(storyId);
 
@@ -95,7 +95,7 @@ const Preview = React.memo<PreviewProps>(function Preview(props) {
         <S.PreviewContainer>
           <ToolbarComp
             key="tools"
-            isShown={shouldShowToolbar}
+            isShown={customisedShowToolbar}
             // @ts-expect-error (non strict)
             tabId={tabId}
             tabs={tabs}

@@ -1,3 +1,7 @@
+## 8.3.7
+
+- Core: Relax peer dep constraint of shim packages - [#29503](https://github.com/storybookjs/storybook/pull/29503), thanks @kasperpeulen!
+
 ## 8.3.6
 
 - CLI: Install Svelte CSF v5 in Svelte5 projects - [#29323](https://github.com/storybookjs/storybook/pull/29323), thanks @shilman!

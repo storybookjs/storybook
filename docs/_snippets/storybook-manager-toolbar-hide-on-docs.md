@@ -1,5 +1,5 @@
 ```js filename="./storybook/manager.js" renderer="common" language="js"
-import { addons } from '@storybook/manager-api';
+import { addons, type State } from '@storybook/manager-api';
 
 addons.setConfig({
   layoutCustomisations: {

@@ -8,7 +8,6 @@ import { screen } from '@storybook/test';
 
 import { action } from '@storybook/addon-actions';
 
-import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
 import { Heading } from './Heading';
 
 type Story = StoryFn<typeof Heading>;
@@ -24,7 +23,7 @@ export default {
   ],
 } as Meta<typeof Heading>;
 
-const menuItems: Link[][] = [
+const menuItems = [
   [
     { title: 'Menu Item 1', onClick: action('onActivateMenuItem'), id: '1' },
     { title: 'Menu Item 2', onClick: action('onActivateMenuItem'), id: '2' },

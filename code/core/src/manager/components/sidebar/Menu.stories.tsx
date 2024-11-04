@@ -1,4 +1,3 @@
-import type { ComponentProps } from 'react';
 import React from 'react';
 
 import { TooltipLinkList } from '@storybook/core/components';
@@ -9,12 +8,11 @@ import { expect, screen, userEvent, within } from '@storybook/test';
 
 import type { State } from '@storybook/core/manager-api';
 
-import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
 import { useMenu } from '../../container/Menu';
 import { LayoutProvider } from '../layout/LayoutProvider';
-import { SidebarMenu } from './Menu';
+import { type MenuList, SidebarMenu } from './Menu';
 
-const fakemenu: Link[][] = [
+const fakemenu: MenuList = [
   [
     { title: 'has icon', icon: <LinkIcon />, id: 'icon' },
     { title: 'has no icon', id: 'non' },

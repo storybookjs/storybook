@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from '@storybook/core/common';
 
+// eslint-disable-next-line depend/ban-dependencies
 import stripAnsi from 'strip-ansi';
 
 import { missingStorybookDependencies } from './missing-storybook-dependencies';

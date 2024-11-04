@@ -3,6 +3,7 @@ import { expect, test, vi } from 'vitest';
 import { JsPackageManagerFactory } from 'storybook/internal/common';
 import { logger as loggerRaw } from 'storybook/internal/node-logger';
 
+// eslint-disable-next-line depend/ban-dependencies
 import stripAnsi from 'strip-ansi';
 
 import { autoblock } from './index';

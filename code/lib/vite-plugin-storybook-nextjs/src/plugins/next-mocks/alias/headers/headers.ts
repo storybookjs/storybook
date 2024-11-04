@@ -1,39 +1,52 @@
 import { fn } from "@storybook/test";
 
 import { HeadersAdapter } from "next/dist/server/web/spec-extension/adapters/headers.js";
+import type { Mock } from "vitest";
 
 class HeadersAdapterMock extends HeadersAdapter {
   constructor() {
     super({});
   }
 
-  append = fn(super.append.bind(this)).mockName(
-    "next/headers::headers().append",
-  );
+  append: Mock<(name: string, value: string) => void> = fn(
+    super.append.bind(this),
+  ).mockName("next/headers::headers().append");
 
-  delete = fn(super.delete.bind(this)).mockName(
+  delete: Mock<(name: string) => void> = fn(super.delete.bind(this)).mockName(
     "next/headers::headers().delete",
   );
 
-  get = fn(super.get.bind(this)).mockName("next/headers::headers().get");
+  get: Mock<(name: string) => string | null> = fn(
+    super.get.bind(this),
+  ).mockName("next/headers::headers().get");
 
-  has = fn(super.has.bind(this)).mockName("next/headers::headers().has");
-
-  set = fn(super.set.bind(this)).mockName("next/headers::headers().set");
-
-  forEach = fn(super.forEach.bind(this)).mockName(
-    "next/headers::headers().forEach",
+  has: Mock<(name: string) => boolean> = fn(super.has.bind(this)).mockName(
+    "next/headers::headers().has",
   );
 
-  entries = fn(super.entries.bind(this)).mockName(
-    "next/headers::headers().entries",
-  );
+  set: Mock<(name: string, value: string) => void> = fn(
+    super.set.bind(this),
+  ).mockName("next/headers::headers().set");
 
-  keys = fn(super.keys.bind(this)).mockName("next/headers::headers().keys");
+  forEach: Mock<
+    (
+      callbackfn: (value: string, name: string, parent: Headers) => void,
+      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+      thisArg?: any,
+    ) => void
+  > = fn(super.forEach.bind(this)).mockName("next/headers::headers().forEach");
 
-  values = fn(super.values.bind(this)).mockName(
-    "next/headers::headers().values",
-  );
+  entries: Mock<() => IterableIterator<[string, string]>> = fn(
+    super.entries.bind(this),
+  ).mockName("next/headers::headers().entries");
+
+  keys: Mock<() => IterableIterator<string>> = fn(
+    super.keys.bind(this),
+  ).mockName("next/headers::headers().keys");
+
+  values: Mock<() => IterableIterator<string>> = fn(
+    super.values.bind(this),
+  ).mockName("next/headers::headers().values");
 }
 
 let headersAdapterMock: HeadersAdapterMock;

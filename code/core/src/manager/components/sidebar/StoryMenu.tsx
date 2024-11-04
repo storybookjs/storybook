@@ -56,7 +56,7 @@ export const StoryMenu = ({
   const [visible, setVisible] = useState(false);
   const theme = useTheme();
 
-  const links = [
+  const links: Link[][] = [
     // Story options (built-ins):
     [
       // {
@@ -73,6 +73,7 @@ export const StoryMenu = ({
       .map(([addonId, value]) => ({
         id: addonId,
         title: value.title,
+        right: value.data?.score,
         description: value.description,
         'aria-label': `Test status for ${value.title}: ${value.status}`,
         icon: {

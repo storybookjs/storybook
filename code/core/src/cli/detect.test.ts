@@ -13,19 +13,23 @@ vi.mock('./helpers', () => ({
   isNxProject: vi.fn(),
 }));
 
-vi.mock('fs', () => ({
-  existsSync: vi.fn(),
-  stat: vi.fn(),
-  lstat: vi.fn(),
-  access: vi.fn(),
-  realpathSync: vi.fn(),
-  lstatSync: vi.fn(),
-  readdir: vi.fn(),
-  readdirSync: vi.fn(),
-  readlinkSync: vi.fn(),
-  default: vi.fn(),
-  mkdirSync: vi.fn(),
-}));
+vi.mock(import('fs'), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    existsSync: vi.fn(),
+    stat: vi.fn(),
+    lstat: vi.fn(),
+    access: vi.fn(),
+    realpathSync: vi.fn(),
+    lstatSync: vi.fn(),
+    readdir: vi.fn(),
+    readdirSync: vi.fn(),
+    readlinkSync: vi.fn(),
+    default: vi.fn(),
+    mkdirSync: vi.fn(),
+  };
+});
 
 vi.mock('@storybook/core/node-logger');
 

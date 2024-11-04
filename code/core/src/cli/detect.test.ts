@@ -13,9 +13,10 @@ vi.mock('./helpers', () => ({
   isNxProject: vi.fn(),
 }));
 
-vi.mock(import('fs'), async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
+vi.mock('fs', async (importOriginal) => {
+  const actual = await importOriginal<any>();
+
+  const exported = {
     ...actual,
     existsSync: vi.fn(),
     stat: vi.fn(),
@@ -29,6 +30,7 @@ vi.mock(import('fs'), async (importOriginal) => {
     default: vi.fn(),
     mkdirSync: vi.fn(),
   };
+  return { default: { ...actual.default, ...exported }, ...exported };
 });
 
 vi.mock('@storybook/core/node-logger');

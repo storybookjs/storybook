@@ -91,6 +91,17 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin[] {
               ],
             },
           }),
+          optimizeDeps: {
+            include: [
+              "@mdx-js/react",
+              "@storybook/blocks",
+              "next/dist/compiled/react",
+              "next/image",
+              "next/legacy/image",
+              "react/jsx-dev-runtime",
+              "styled-jsx/style",
+            ],
+          },
           test: {
             alias: {
               "react/jsx-dev-runtime": require.resolve(

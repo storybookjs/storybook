@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+const { describe, it, expect } = require('vitest');
 
 const run = require('../helpers.cjs');
 

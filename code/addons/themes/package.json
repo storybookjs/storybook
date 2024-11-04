@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-themes",
-  "version": "8.2.9",
+  "version": "8.2.10",
   "description": "Switch between multiple themes for you components in Storybook",
   "keywords": [
     "css",

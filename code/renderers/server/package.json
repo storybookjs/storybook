@@ -1,6 +1,6 @@
 {
   "name": "@storybook/server",
-  "version": "8.2.9",
+  "version": "8.2.10",
   "description": "Storybook Server renderer",
   "keywords": [
     "storybook"

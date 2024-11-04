@@ -132,6 +132,7 @@
     "glob": "^10.4.5",
     "http-server": "^14.1.1",
     "husky": "^4.3.7",
+    "jiti": "^2.4.0",
     "json5": "^2.2.3",
     "junit-xml": "^1.2.0",
     "knip": "^5.30.1",
@@ -187,15 +188,12 @@
     "yaml": "^2.4.5",
     "zod": "^3.23.8"
   },
-  "devDependencies": {
-    "jiti": "^1.21.6"
-  },
   "optionalDependencies": {
     "@verdaccio/types": "^10.8.0",
     "verdaccio": "^5.31.1",
     "verdaccio-auth-memory": "^10.2.2"
   },
-  "packageManager": "yarn@4.4.0+sha512.91d93b445d9284e7ed52931369bc89a663414e5582d00eea45c67ddc459a2582919eece27c412d6ffd1bd0793ff35399381cb229326b961798ce4f4cc60ddfdb",
+  "packageManager": "yarn@4.5.1",
   "engines": {
     "node": ">=22.0.0"
   }

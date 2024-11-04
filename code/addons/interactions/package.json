@@ -60,7 +60,7 @@
   },
   "devDependencies": {
     "@devtools-ds/object-inspector": "^1.1.2",
-    "@storybook/icons": "^1.2.5",
+    "@storybook/icons": "^1.2.12",
     "@types/node": "^22.0.0",
     "ansi-to-html": "^0.7.2",
     "formik": "^2.2.9",

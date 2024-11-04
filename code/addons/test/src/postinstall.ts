@@ -58,7 +58,9 @@ export default async function postInstall(options: PostinstallOptions) {
     '@storybook/experimental-nextjs-vite',
     '@storybook/sveltekit',
   ].includes(info.frameworkPackageName)
-    ? info.frameworkPackageName
+    ? info.frameworkPackageName === '@storybook/nextjs'
+      ? '@storybook/experimental-nextjs-vite'
+      : info.frameworkPackageName
     : info.rendererPackageName &&
         ['@storybook/react', '@storybook/svelte', '@storybook/vue3'].includes(
           info.rendererPackageName
@@ -431,7 +433,7 @@ const getVitestPluginInfo = (framework: string) => {
   let frameworkPluginCall = '';
   let frameworkPluginDocs = '';
 
-  if (framework === '@storybook/nextjs') {
+  if (framework === '@storybook/nextjs' || framework === '@storybook/experimental-nextjs-vite') {
     frameworkPluginImport =
       "import { storybookNextJsPlugin } from '@storybook/experimental-nextjs-vite/vite-plugin';";
     frameworkPluginDocs =

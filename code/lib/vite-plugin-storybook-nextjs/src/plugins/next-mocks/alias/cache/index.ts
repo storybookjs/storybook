@@ -29,3 +29,4 @@ const cacheExports = {
 };
 
 export default cacheExports;
+export { unstable_cache, revalidateTag, revalidatePath, unstable_noStore };

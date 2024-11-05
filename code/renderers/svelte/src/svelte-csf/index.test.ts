@@ -1,45 +1,28 @@
-import type { PlayFunctionContext } from '@storybook/types';
-import type { ComponentProps, Snippet } from 'svelte';
-import type { EmptyObject, Primitive } from 'type-fest';
+import type { StoryContext as StorybookStoryContext } from '@storybook/types';
+import { createRawSnippet, type ComponentProps, type Snippet } from 'svelte';
+import type { Primitive } from 'type-fest';
 import { describe, expectTypeOf, it } from 'vitest';
 
-import { defineMeta, type Args, type StoryContext } from '#index';
+import StoryComponent from './runtime/Story.svelte';
+
+import { defineMeta, type Args, type StoryContext } from './index';
 import type {
   Meta,
   StoryAnnotations,
-  StoryCmp,
   StoryContext as BaseStoryContext,
   SvelteRenderer,
-  MapSnippetsToAcceptPrimitives,
 } from '#types';
 
 import Button from '../examples/components/Button.svelte';
 
 describe(defineMeta.name, () => {
-  // it('works when no meta entry "component" is provided', () => {
-  //   const { Story, meta } = defineMeta({
-  //     args: {
-  //       sample: 0,
-  //     },
-  //     play(context) {
-  //       expectTypeOf(context).not.toBeAny();
-  //       expectTypeOf(context).toMatchTypeOf<
-  //         PlayFunctionContext<SvelteRenderer<Component<{ sample: 0 }>>>
-  //       >();
-  //       expectTypeOf(context.args).not.toBeAny();
-  //       expectTypeOf(context.args).toMatchTypeOf<MapSnippetsToAcceptPrimitives<{ sample: 0 }>>();
-  //     },
-  //   });
-
-  //   expectTypeOf(Story).toMatchTypeOf<StoryCmp<EmptyObject, { sample: 0 }, Meta<{ sample: 0 }>>>();
-  //   expectTypeOf(meta).toMatchTypeOf<Meta<Component<{ sample: 0 }>>>();
-  // });
-
   it('works with provided meta entry "component" entry', () => {
     const { Story, meta } = defineMeta({
       component: Button,
       args: {
-        children: 'Click me',
+        children: createRawSnippet(() => ({
+          render: () => 'Click me',
+        })),
         onclick: (event) => {
           expectTypeOf(event).not.toBeAny();
           expectTypeOf(event).toEqualTypeOf<
@@ -49,14 +32,11 @@ describe(defineMeta.name, () => {
       },
       play(context) {
         expectTypeOf(context).not.toBeAny();
-        expectTypeOf(context).toMatchTypeOf<PlayFunctionContext<SvelteRenderer<typeof Button>>>();
-        expectTypeOf(context.args).toMatchTypeOf<
-          MapSnippetsToAcceptPrimitives<ComponentProps<Button>>
-        >();
+        expectTypeOf(context).toMatchTypeOf<StorybookStoryContext<SvelteRenderer<typeof Button>>>();
       },
     });
 
-    expectTypeOf(Story).toMatchTypeOf<StoryCmp<EmptyObject, typeof Button, Meta<typeof Button>>>();
+    expectTypeOf(Story).toMatchTypeOf<typeof StoryComponent<typeof Button>>();
     expectTypeOf(meta).toMatchTypeOf<Meta<typeof Button>>();
   });
 });
@@ -66,7 +46,9 @@ describe("type helper for snippets 'Args'", () => {
     const { Story } = defineMeta({
       component: Button,
       args: {
-        children: 'Click me',
+        children: createRawSnippet(() => ({
+          render: () => 'Click me',
+        })),
         onclick: (event) => {
           expectTypeOf(event).not.toBeAny();
           expectTypeOf(event).toEqualTypeOf<
@@ -76,17 +58,12 @@ describe("type helper for snippets 'Args'", () => {
       },
       play(context) {
         expectTypeOf(context).not.toBeAny();
-        expectTypeOf(context).toMatchTypeOf<PlayFunctionContext<SvelteRenderer<typeof Button>>>();
-        expectTypeOf(context.args).toMatchTypeOf<
-          MapSnippetsToAcceptPrimitives<ComponentProps<Button>>
-        >();
+        expectTypeOf(context).toMatchTypeOf<StorybookStoryContext<SvelteRenderer<typeof Button>>>();
       },
     });
     expectTypeOf<Args<typeof Story>>().not.toBeNever();
     expectTypeOf<Args<typeof Story>>().not.toBeNullable();
-    expectTypeOf<Args<typeof Story>>().toMatchTypeOf<
-      StoryAnnotations<typeof Button, Meta<typeof Button>>['args']
-    >();
+    expectTypeOf<Args<typeof Story>>().toMatchTypeOf<StoryAnnotations<typeof Button>['args']>();
     expectTypeOf<Args<typeof Story>['children']>().toMatchTypeOf<Snippet | Primitive>();
     expectTypeOf<Args<typeof Story>['children']>().toBeNullable();
   });
@@ -97,7 +74,9 @@ describe("type helper for snippets 'StoryContext'", () => {
     const { Story, meta } = defineMeta({
       component: Button,
       args: {
-        children: 'Click me',
+        children: createRawSnippet(() => ({
+          render: () => 'Click me',
+        })),
         onclick: (event) => {
           expectTypeOf(event).not.toBeAny();
           expectTypeOf(event).toEqualTypeOf<
@@ -107,16 +86,12 @@ describe("type helper for snippets 'StoryContext'", () => {
       },
       play(context) {
         expectTypeOf(context).not.toBeAny();
-        expectTypeOf(context).toMatchTypeOf<PlayFunctionContext<SvelteRenderer<typeof Button>>>();
-        expectTypeOf(context.args).toMatchTypeOf<
-          MapSnippetsToAcceptPrimitives<ComponentProps<Button>>
-        >();
+        expectTypeOf(context).toMatchTypeOf<StorybookStoryContext<SvelteRenderer<typeof Button>>>();
       },
     });
 
-    expectTypeOf<StoryContext<typeof Story>>().toMatchTypeOf<
-      BaseStoryContext<typeof Button, typeof meta>
-    >();
+    expectTypeOf<StoryContext<typeof Story>>().toMatchTypeOf<BaseStoryContext<typeof Button>>();
+    expectTypeOf(meta).toMatchTypeOf<Meta<typeof Button>>();
   });
 });
 
@@ -125,13 +100,15 @@ describe("component 'Story' destructured from 'defineMeta", () => {
     const { Story } = defineMeta({
       component: Button,
       args: {
-        children: 'Click me',
+        children: createRawSnippet(() => ({
+          render: () => 'Click me',
+        })),
       },
     });
 
     type TStoryProps = ComponentProps<typeof Story>;
 
-    expectTypeOf(Story).toMatchTypeOf<StoryCmp<EmptyObject, typeof Button, Meta<typeof Button>>>();
+    expectTypeOf(Story).toMatchTypeOf<typeof StoryComponent<typeof Button>>();
     expectTypeOf<TStoryProps>().not.toBeNever();
     expectTypeOf<Meta<typeof Button>['args']>().toBeNullable();
     expectTypeOf<NonNullable<Meta<typeof Button>['args']>['children']>().toBeNullable();

@@ -1,14 +1,3 @@
-import type { Args as BaseArgs } from '@storybook/types';
-import type { EmptyObject } from 'type-fest';
-
-import type {
-  Meta as MetaType,
-  StoryCmp,
-  StoryContext as BaseStoryContext,
-  StoryAnnotations,
-  Cmp,
-} from '#types';
-
 import StoryComponent from './runtime/Story.svelte';
 // TODO: Remove in next major release
 import LegacyMetaComponent from './runtime/LegacyMeta.svelte';
@@ -18,26 +7,29 @@ import LegacyStoryComponent from './runtime/LegacyStory.svelte';
 import LegacyTemplateComponent from './runtime/LegacyTemplate.svelte';
 
 export { setTemplate } from './runtime/contexts/template.svelte';
+import type {
+  Meta as MetaType,
+  StoryContext as BaseStoryContext,
+  StoryAnnotations,
+  Cmp,
+} from './types';
 
-export function defineMeta<
-  const TOverrideArgs extends BaseArgs = EmptyObject,
-  const TCmp extends Cmp = Cmp,
->(meta: MetaType<TCmp>) {
+export function defineMeta<const TCmp extends Cmp>(meta: MetaType<TCmp>) {
   return {
-    Story: StoryComponent as StoryCmp<EmptyObject, TCmp, typeof meta>,
+    Story: StoryComponent as typeof StoryComponent<TCmp>,
     meta,
   };
 }
 
-export type Args<TStoryCmp> =
-  TStoryCmp extends StoryCmp<infer _TOverrideArgs, infer TCmpOrArgs, infer TMeta>
-    ? NonNullable<StoryAnnotations<TCmpOrArgs, TMeta>['args']>
-    : never;
+export type Args<TStoryCmp> = TStoryCmp extends typeof StoryComponent<infer TCmp extends Cmp>
+  ? NonNullable<StoryAnnotations<TCmp>['args']>
+  : never;
 
-export type StoryContext<TStoryCmp> =
-  TStoryCmp extends StoryCmp<infer _TOverrideArgs, infer TCmpOrArgs, infer TMeta>
-    ? BaseStoryContext<TCmpOrArgs, TMeta>
-    : never;
+export type StoryContext<TStoryCmp> = TStoryCmp extends typeof StoryComponent<
+  infer TCmp extends Cmp
+>
+  ? BaseStoryContext<TCmp>
+  : never;
 
 // TODO: Remove in next major release
 export {
@@ -57,3 +49,6 @@ export {
    */
   LegacyTemplateComponent as Template,
 };
+
+// TODO: Remove in next major release
+export * from './legacy-types.d';

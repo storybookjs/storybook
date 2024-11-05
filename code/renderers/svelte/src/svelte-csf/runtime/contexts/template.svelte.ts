@@ -1,12 +1,13 @@
-import type { Args } from '@storybook/types';
 import { getContext, hasContext, setContext, type ComponentProps } from 'svelte';
 
-import type { Cmp, Meta, StoryCmp } from '#types';
+import type Story from '../Story.svelte';
+
+import type { Cmp } from '../../types';
 
 const CONTEXT_KEYS = 'storybook-stories-template-snippet-context';
 
-function buildContext<TOverrideArgs extends Args, TCmp extends Cmp, TMeta extends Meta<TCmp>>() {
-  let template = $state<ComponentProps<StoryCmp<TOverrideArgs, TCmp, TMeta>>['children']>();
+function buildContext<TCmp extends Cmp>() {
+  let template = $state<ComponentProps<typeof Story<TCmp>>['children']>();
 
   function set(snippet?: typeof template) {
     template = snippet;
@@ -20,32 +21,24 @@ function buildContext<TOverrideArgs extends Args, TCmp extends Cmp, TMeta extend
   };
 }
 
-type StoriesTemplateContext<
-  TOverrideArgs extends Args,
-  TCmp extends Cmp,
-  TMeta extends Meta<TCmp>,
-> = ReturnType<typeof buildContext<TOverrideArgs, TCmp, TMeta>>;
+type StoriesTemplateContext<TCmp extends Cmp> = ReturnType<typeof buildContext<TCmp>>;
 
-export function useStoriesTemplate<
-  TOverrideArgs extends Args,
-  TCmp extends Cmp,
-  TMeta extends Meta<TCmp>,
->() {
+export function useStoriesTemplate<TCmp extends Cmp>() {
   if (!hasContext(CONTEXT_KEYS)) {
-    setContext(CONTEXT_KEYS, buildContext<TOverrideArgs, TCmp, TMeta>());
+    setContext(CONTEXT_KEYS, buildContext<TCmp>());
   }
 
-  return getContext<StoriesTemplateContext<TOverrideArgs, TCmp, TMeta>>(CONTEXT_KEYS).template;
+  return getContext<StoriesTemplateContext<TCmp>>(CONTEXT_KEYS).template;
 }
 
-export function setTemplate<TOverrideArgs extends Args, TCmp extends Cmp, TMeta extends Meta<TCmp>>(
-  snippet?: StoriesTemplateContext<TOverrideArgs, TCmp, TMeta>['template']
+export function setTemplate<TCmp extends Cmp>(
+  snippet?: StoriesTemplateContext<TCmp>['template']
 ): void {
   if (!hasContext(CONTEXT_KEYS)) {
-    setContext(CONTEXT_KEYS, buildContext<TOverrideArgs, TCmp, TMeta>());
+    setContext(CONTEXT_KEYS, buildContext<TCmp>());
   }
 
-  const ctx = getContext<StoriesTemplateContext<TOverrideArgs, TCmp, TMeta>>(CONTEXT_KEYS);
+  const ctx = getContext<StoriesTemplateContext<TCmp>>(CONTEXT_KEYS);
 
   ctx.set(snippet);
 }

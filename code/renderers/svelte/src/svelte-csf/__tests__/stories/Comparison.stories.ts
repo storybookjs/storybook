@@ -20,8 +20,11 @@ import Comparison from './Comparison.svelte';
  */
 const meta = {
   title: 'Comparison/Regular CSF',
+  // FIXME: `@storybook/svelte`.Meta needs to start using `Component` instead of `ComponentType`/`SvelteComponent`
+  // @ts-expect-error
   component: Comparison,
   argTypes: {
+    // @ts-expect-error
     csf: { table: { disable: true } },
   },
   tags: ['autodocs', '!dev'],
@@ -32,5 +35,7 @@ export default meta;
 type Story = StoryObj<typeof Comparison>;
 
 export const Default: Story = {
+  // FIXME: `@storybook/svelte`.Meta needs to start using `Component` instead of `ComponentType`/`SvelteComponent`
+  // @ts-expect-error
   args: { csf: 'regular' },
 };

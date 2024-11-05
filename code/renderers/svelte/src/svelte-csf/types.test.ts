@@ -1,13 +1,8 @@
-import type { PlayFunctionContext } from '@storybook/types';
-import type { Component, ComponentProps } from 'svelte';
+import type { StoryContext } from '@storybook/types';
+import { createRawSnippet, type Component } from 'svelte';
 import { describe, expectTypeOf, it } from 'vitest';
 
-import type {
-  Meta,
-  SvelteRenderer,
-  ComponentAnnotations,
-  MapSnippetsToAcceptPrimitives,
-} from '#types';
+import type { Meta, SvelteRenderer, ComponentAnnotations } from '#types';
 
 import Button from '../examples/components/Button.svelte';
 
@@ -27,7 +22,9 @@ describe('Meta', () => {
     const meta = {
       component: Button,
       args: {
-        children: 'good',
+        children: createRawSnippet(() => ({
+          render: () => 'good',
+        })),
         disabled: false,
         onclick: (event) => {
           expectTypeOf(event).toEqualTypeOf<
@@ -36,10 +33,7 @@ describe('Meta', () => {
         },
       },
       play(context) {
-        expectTypeOf(context).toMatchTypeOf<PlayFunctionContext<SvelteRenderer<typeof Button>>>();
-        expectTypeOf(context.args).toMatchTypeOf<
-          MapSnippetsToAcceptPrimitives<ComponentProps<Button>>
-        >();
+        expectTypeOf(context).toMatchTypeOf<StoryContext<SvelteRenderer<typeof Button>>>();
       },
     } satisfies Meta<typeof Button>;
 

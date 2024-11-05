@@ -2,7 +2,6 @@
 import { logger } from '@storybook/client-logger';
 import type { StoryObj } from '@storybook/svelte';
 import { mount, unmount, type Component } from 'svelte';
-import type { EmptyObject } from 'type-fest';
 
 import type { StoriesRepository } from '#runtime/contexts/extractor.svelte';
 import type { Cmp, Meta } from '#types';
@@ -28,7 +27,7 @@ const createFragment = document.createDocumentFragment
  */
 // TODO: I'm not sure the 'meta' is necessary here. As long as it's default exported, SB should internally combine it with the stories. Except for the play logic below, that looks funky, need to ask Pablo about that.
 export const createRuntimeStories = (Stories: Component, meta: Meta<Cmp>) => {
-  const repository: StoriesRepository<EmptyObject, Cmp, Meta<Cmp>> = {
+  const repository: StoriesRepository<Cmp> = {
     stories: new Map(),
   };
 

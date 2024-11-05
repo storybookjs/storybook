@@ -1,24 +1,21 @@
 import { getContext, hasContext, setContext } from 'svelte';
 
-import type { Cmp, Meta, StoryAnnotations, StoryContext } from '#types';
-import type { Args } from '@storybook/types';
+import type { Cmp, StoryAnnotations, StoryContext } from '../../types';
 
 const CONTEXT_KEY = 'storybook-story-renderer-context';
 
-interface ContextProps<TOverrideArgs extends Args, TCmp extends Cmp, TMeta extends Meta<TCmp>> {
+interface ContextProps<TCmp extends Cmp> {
   currentStoryExportName: string | undefined;
-  args: NonNullable<StoryAnnotations<TCmp, TMeta>['args']>;
-  storyContext: StoryContext<TCmp, TMeta>;
+  args: NonNullable<StoryAnnotations<TCmp>['args']>;
+  storyContext: StoryContext<TCmp>;
 }
 
-function buildContext<TOverrideArgs extends Args, TCmp extends Cmp, TMeta extends Meta<TCmp>>(
-  props: ContextProps<TOverrideArgs, TCmp, TMeta>
-) {
+function buildContext<TCmp extends Cmp>(props: ContextProps<TCmp>) {
   let currentStoryExportName = $state(props.currentStoryExportName);
   let args = $state(props.args);
   let storyContext = $state(props.storyContext);
 
-  function set(props: ContextProps<TOverrideArgs, TCmp, TMeta>) {
+  function set(props: ContextProps<TCmp>) {
     currentStoryExportName = props.currentStoryExportName;
     args = props.args;
     storyContext = props.storyContext;
@@ -38,20 +35,11 @@ function buildContext<TOverrideArgs extends Args, TCmp extends Cmp, TMeta extend
   };
 }
 
-export type StoryRendererContext<
-  TOverrideArgs extends Args = Args,
-  TCmp extends Cmp = Cmp,
-  TMeta extends Meta<TCmp> = Meta<TCmp>,
-> = ReturnType<typeof buildContext<TOverrideArgs, TCmp, TMeta>>;
+export type StoryRendererContext<TCmp extends Cmp = Cmp> = ReturnType<typeof buildContext<TCmp>>;
 
-function createStoryRendererContext<
-  TOverrideArgs extends Args,
-  TCmp extends Cmp,
-  TMeta extends Meta<TCmp>,
->(): void {
-  const ctx = buildContext<TOverrideArgs, TCmp, TMeta>({
+function createStoryRendererContext<TCmp extends Cmp>(): void {
+  const ctx = buildContext<TCmp>({
     currentStoryExportName: undefined,
-    // @ts-expect-error FIXME: I don't know how to satisfy this one
     args: {},
     // @ts-expect-error FIXME: I don't know how to satisfy this one
     storyContext: {},
@@ -60,14 +48,10 @@ function createStoryRendererContext<
   setContext(CONTEXT_KEY, ctx);
 }
 
-export function useStoryRenderer<
-  TOverrideArgs extends Args,
-  TCmp extends Cmp,
-  TMeta extends Meta<TCmp>,
->() {
+export function useStoryRenderer<TCmp extends Cmp>() {
   if (!hasContext(CONTEXT_KEY)) {
-    createStoryRendererContext<TOverrideArgs, TCmp, TMeta>();
+    createStoryRendererContext<TCmp>();
   }
 
-  return getContext<StoryRendererContext<TOverrideArgs, TCmp, TMeta>>(CONTEXT_KEY);
+  return getContext<StoryRendererContext<TCmp>>(CONTEXT_KEY);
 }

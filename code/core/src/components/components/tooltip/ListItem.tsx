@@ -51,6 +51,7 @@ export interface RightProps {
 
 const Right = styled.span<RightProps>({
   display: 'flex',
+  marginLeft: 10,
   '& svg': {
     height: 12,
     width: 12,
@@ -135,10 +136,7 @@ const Item = styled.div<ItemProps>(
     padding: '7px 10px',
     display: 'flex',
     alignItems: 'center',
-
-    '& > * + *': {
-      paddingLeft: 10,
-    },
+    gap: 10,
   }),
   ({ theme, href, onClick }) =>
     (href || onClick) && {

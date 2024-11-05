@@ -83,19 +83,28 @@ const Swap = React.memo(function Swap({
   );
 });
 
-const useCombination = (
-  index: SidebarProps['index'],
-  indexError: SidebarProps['indexError'],
-  previewInitialized: SidebarProps['previewInitialized'],
-  status: SidebarProps['status'],
-  refs: SidebarProps['refs']
-): CombinedDataset => {
+const useCombination = ({
+  index,
+  indexError,
+  previewInitialized,
+  actions,
+  status,
+  refs,
+}: {
+  index: SidebarProps['index'];
+  indexError: SidebarProps['indexError'];
+  previewInitialized: SidebarProps['previewInitialized'];
+  actions: SidebarProps['actions'];
+  status: SidebarProps['status'];
+  refs: SidebarProps['refs'];
+}): CombinedDataset => {
   const hash = useMemo(
     () => ({
       [DEFAULT_REF_ID]: {
         index,
         indexError,
         previewInitialized,
+        actions,
         status,
         title: null,
         id: DEFAULT_REF_ID,
@@ -103,7 +112,7 @@ const useCombination = (
       },
       ...refs,
     }),
-    [refs, index, indexError, previewInitialized, status]
+    [refs, index, indexError, previewInitialized, actions, status]
   );
   // @ts-expect-error (non strict)
   return useMemo(() => ({ hash, entries: Object.entries(hash) }), [hash]);
@@ -113,6 +122,7 @@ const isRendererReact = global.STORYBOOK_RENDERER === 'react';
 
 export interface SidebarProps extends API_LoadedRefData {
   refs: State['refs'];
+  actions: State['actions'];
   status: State['status'];
   menu: any[];
   extra: Addon_SidebarTopType[];
@@ -132,6 +142,7 @@ export const Sidebar = React.memo(function Sidebar({
   index,
   indexJson,
   indexError,
+  actions,
   status,
   previewInitialized,
   menu,
@@ -146,7 +157,7 @@ export const Sidebar = React.memo(function Sidebar({
   const [isFileSearchModalOpen, setIsFileSearchModalOpen] = useState(false);
   // @ts-expect-error (non strict)
   const selected: Selection = useMemo(() => storyId && { storyId, refId }, [storyId, refId]);
-  const dataset = useCombination(index, indexError, previewInitialized, status, refs);
+  const dataset = useCombination({ index, indexError, previewInitialized, actions, status, refs });
   const isLoading = !index && !indexError;
   const lastViewedProps = useLastViewed(selected);
   const { isMobile } = useLayout();

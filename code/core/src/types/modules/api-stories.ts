@@ -118,16 +118,23 @@ export interface API_Versions {
   current?: API_Version;
 }
 
-export type API_StatusValue = 'pending' | 'success' | 'error' | 'warn' | 'unknown';
+export interface API_ActionsObject {
+  event: string;
+  title: string;
+  description?: string;
+}
+export type API_ActionsState = Record<StoryId, Record<string, API_ActionsObject>>;
+export type API_ActionsUpdate = Record<StoryId, API_ActionsObject | null>;
 
 export interface API_StatusObject {
   status: API_StatusValue;
   title: string;
-  description: string;
+  description?: string;
+  count?: number;
   data?: any;
   onClick?: () => void;
 }
-
+export type API_StatusValue = 'pending' | 'success' | 'error' | 'warn' | 'unknown';
 export type API_StatusState = Record<StoryId, Record<string, API_StatusObject>>;
 export type API_StatusUpdate = Record<StoryId, API_StatusObject | null>;
 

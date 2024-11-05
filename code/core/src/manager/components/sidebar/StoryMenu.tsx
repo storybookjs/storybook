@@ -4,6 +4,7 @@ import { TooltipLinkList, WithTooltip } from '@storybook/core/components';
 import { styled, useTheme } from '@storybook/core/theming';
 import {
   EllipsisIcon,
+  PlayHollowIcon,
   StatusFailIcon,
   StatusPassIcon,
   StatusWarnIcon,
@@ -11,7 +12,7 @@ import {
 } from '@storybook/icons';
 import type { API_StatusValue } from '@storybook/types';
 
-import type { State } from '@storybook/core/manager-api';
+import { type State, useChannel } from '@storybook/core/manager-api';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
 import { StatusButton } from './StatusButton';
@@ -40,6 +41,7 @@ interface StoryMenuProps {
   storyId: string;
   isSelected: boolean;
   onSelectStoryId: (itemId: string) => void;
+  actions: State['actions'][keyof State['actions']];
   status: State['status'][keyof State['status']];
   statusIcon: ReactElement | null;
   statusValue: API_StatusValue;
@@ -49,12 +51,14 @@ export const StoryMenu = ({
   storyId,
   isSelected,
   onSelectStoryId,
+  actions,
   status,
   statusIcon,
   statusValue,
 }: StoryMenuProps) => {
   const [visible, setVisible] = useState(false);
   const theme = useTheme();
+  const emit = useChannel({});
 
   const links: Link[][] = [
     // Story options (built-ins):
@@ -73,8 +77,8 @@ export const StoryMenu = ({
       .map(([addonId, value]) => ({
         id: addonId,
         title: value.title,
-        right: value.data?.score,
-        description: value.description,
+        center: value.description,
+        right: value.data?.score ?? value.count,
         'aria-label': `Test status for ${value.title}: ${value.status}`,
         icon: {
           success: <StatusPassIcon color={theme.color.positive} />,
@@ -89,8 +93,14 @@ export const StoryMenu = ({
         },
       })),
 
-    // TODO Story actions:
-    [],
+    // Story actions:
+    Object.entries(actions || {}).map(([addonId, value]) => ({
+      id: addonId,
+      title: value.title,
+      center: value.description,
+      icon: <PlayHollowIcon color={theme.textMutedColor} />,
+      onClick: () => emit(value.event, [storyId]),
+    })),
   ];
 
   if (!links.some((group) => group.some(Boolean))) {
@@ -107,8 +117,7 @@ export const StoryMenu = ({
       tooltip={({ onHide }) => <TooltipLinkList links={hideOnClick(links, onHide)} />}
     >
       <MenuButton
-        aria-label={`Test status: ${statusValue}`}
-        role="status"
+        aria-label="Story menu"
         type="button"
         status={statusValue}
         selectedItem={isSelected}

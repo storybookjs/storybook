@@ -28,6 +28,7 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
       // eslint-disable-next-line @typescript-eslint/naming-convention
       internal_index,
       index,
+      actions,
       status,
       indexError,
       previewInitialized,
@@ -57,6 +58,7 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
       indexJson: internal_index,
       index,
       indexError,
+      actions,
       status,
       previewInitialized,
       refs,

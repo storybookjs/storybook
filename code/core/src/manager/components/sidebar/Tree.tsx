@@ -136,6 +136,7 @@ interface NodeProps {
   setExpanded: (action: ExpandAction) => void;
   setFullyExpanded?: () => void;
   onSelectStoryId: (itemId: string) => void;
+  actions: State['actions'][keyof State['actions']];
   status: State['status'][keyof State['status']];
   groupStatus: Record<StoryId, API_StatusValue>;
   api: API;
@@ -144,6 +145,7 @@ interface NodeProps {
 
 const Node = React.memo<NodeProps>(function Node({
   item,
+  actions,
   status,
   groupStatus,
   refId,
@@ -172,9 +174,7 @@ const Node = React.memo<NodeProps>(function Node({
     const LeafNode = item.type === 'docs' ? DocumentNode : StoryNode;
 
     const statusValue = getHighestStatus(Object.values(status || {}).map((s) => s.status));
-    const [icon, textColor] = statusMapping[statusValue];
-
-    const statusOrder: API_StatusValue[] = ['success', 'error', 'warn', 'pending', 'unknown'];
+    const [statusIcon, textColor] = statusMapping[statusValue];
 
     return (
       <LeafNodeStyleWrapper
@@ -216,8 +216,9 @@ const Node = React.memo<NodeProps>(function Node({
             storyId: item.id,
             isSelected,
             onSelectStoryId,
+            actions,
             status,
-            statusIcon: icon,
+            statusIcon,
             statusValue,
           }}
         />
@@ -279,7 +280,7 @@ const Node = React.memo<NodeProps>(function Node({
         links.push({
           id: 'errors',
           icon: <StatusFailIcon color={theme.color.negative} />,
-          title: `${counts.error} ${counts.error === 1 ? 'story' : 'stories'} with errors`,
+          title: `${counts.error} ${counts.error === 1 ? 'error' : 'errors'}`,
           onClick: () => {
             const [firstStoryId, [firstError]] = Object.entries(statuses.error)[0];
             onSelectStoryId(firstStoryId);
@@ -292,7 +293,7 @@ const Node = React.memo<NodeProps>(function Node({
         links.push({
           id: 'warnings',
           icon: <StatusWarnIcon color={theme.color.gold} />,
-          title: `${counts.warn} ${counts.warn === 1 ? 'story' : 'stories'} with warnings`,
+          title: `${counts.warn} ${counts.warn === 1 ? 'warning' : 'warnings'}`,
           onClick: () => {
             const [firstStoryId, [firstWarning]] = Object.entries(statuses.warn)[0];
             onSelectStoryId(firstStoryId);

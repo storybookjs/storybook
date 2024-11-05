@@ -83,6 +83,7 @@ const meta = {
     storyId,
     refId: DEFAULT_REF_ID,
     refs: {},
+    actions: {},
     status: {},
     showCreateStoryButton: true,
     isDevelopment: true,
@@ -236,8 +237,11 @@ export const StatusesCollapsed: Story = {
         return {
           ...acc,
           [id]: {
-            addonA: { status: 'warn', title: 'Addon A', description: 'We just wanted you to know' },
-            addonB: { status: 'error', title: 'Addon B', description: 'This is a big deal!' },
+            a: { status: 'warn', title: 'Visual changes', description: 'Look at that' },
+            b: { status: 'error', title: 'Component tests', description: 'This is a big deal!' },
+            c: { status: 'error', title: 'Accessibility violations', description: '', count: 2 },
+            d: { status: 'warn', title: 'Accessibility warnings', description: '', count: 1 },
+            e: { status: 'warn', title: 'Coverage', description: '', data: { score: '50%' } },
           },
         };
       }
@@ -258,8 +262,11 @@ export const StatusesOpen: Story = {
       return {
         ...acc,
         [id]: {
-          addonA: { status: 'warn', title: 'Addon A', description: 'We just wanted you to know' },
-          addonB: { status: 'error', title: 'Addon B', description: 'This is a big deal!' },
+          a: { status: 'warn', title: 'Visual changes', description: 'Look at that' },
+          b: { status: 'error', title: 'Component tests', description: 'This is a big deal!' },
+          c: { status: 'error', title: 'Accessibility violations', description: '', count: 2 },
+          d: { status: 'warn', title: 'Accessibility warnings', description: '', count: 1 },
+          e: { status: 'warn', title: 'Coverage', description: '', data: { score: '50%' } },
         },
       };
     }, {}),

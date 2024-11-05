@@ -1,4 +1,6 @@
 import type {
+  API_ActionsState,
+  API_ActionsUpdate,
   API_ComposedRef,
   API_DocsEntry,
   API_FilterFunction,
@@ -73,6 +75,7 @@ export interface SubState extends API_LoadedRefData {
   storyId: StoryId;
   internal_index?: API_PreparedStoryIndex;
   viewMode: API_ViewMode;
+  actions: API_ActionsState;
   status: API_StatusState;
   filters: Record<string, API_FilterFunction>;
 }
@@ -268,6 +271,17 @@ export interface SubAPI {
    * @returns {Promise<void>} A promise that resolves when the preview has been set as initialized.
    */
   setPreviewInitialized: (ref?: ComposedRef) => Promise<void>;
+  /**
+   * Updates the status of a collection of stories.
+   *
+   * @param {string} addonId - The ID of the addon to update.
+   * @param {StatusUpdate} update - An object containing the updated status information.
+   * @returns {Promise<void>} A promise that resolves when the status has been updated.
+   */
+  experimental_updateActions: (
+    addonId: string,
+    update: API_ActionsUpdate | ((state: API_ActionsState) => API_ActionsUpdate)
+  ) => Promise<void>;
   /**
    * Updates the status of a collection of stories.
    *
@@ -631,6 +645,44 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     },
 
     /* EXPERIMENTAL APIs */
+    experimental_updateActions: async (id, input) => {
+      const { actions, internal_index: index } = store.getState();
+      const newActions = { ...actions };
+
+      const update = typeof input === 'function' ? input(actions) : input;
+
+      if (!id || Object.keys(update).length === 0) {
+        return;
+      }
+
+      Object.entries(update).forEach(([storyId, value]) => {
+        if (!storyId || typeof value !== 'object') {
+          return;
+        }
+        newActions[storyId] = { ...(newActions[storyId] || {}) };
+        if (value === null) {
+          delete newActions[storyId][id];
+        } else {
+          newActions[storyId][id] = value;
+        }
+
+        if (Object.keys(newActions[storyId]).length === 0) {
+          delete newActions[storyId];
+        }
+      });
+
+      await store.setState({ actions: newActions }, { persistence: 'session' });
+
+      if (index) {
+        // We need to re-prepare the index
+        await api.setIndex(index);
+
+        const refs = await fullAPI.getRefs();
+        Object.entries(refs).forEach(([refId, { internal_index, ...ref }]) => {
+          fullAPI.setRef(refId, { ...ref, storyIndex: internal_index }, true);
+        });
+      }
+    },
     experimental_updateStatus: async (id, input) => {
       const { status, internal_index: index } = store.getState();
       const newStatus = { ...status };

@@ -30,7 +30,7 @@ export const useStatusSummary = (item: Item) => {
   ) {
     for (const storyId of getDescendantIds(data, item.id, false)) {
       for (const value of Object.values(status[storyId] || {})) {
-        summary.counts[value.status]++;
+        summary.counts[value.status] += value.count ?? 1;
         summary.statuses[value.status][storyId] = summary.statuses[value.status][storyId] || [];
         summary.statuses[value.status][storyId].push(value);
       }

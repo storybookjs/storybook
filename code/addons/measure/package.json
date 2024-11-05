@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-measure",
-  "version": "8.5.0-alpha.2",
+  "version": "8.5.0-alpha.3",
   "description": "Inspect layouts by visualizing the box model",
   "keywords": [
     "storybook-addons",

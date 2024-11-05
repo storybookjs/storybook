@@ -1,3 +1,24 @@
+# v1.0.12 (Tue Nov 05 2024)
+
+#### 🐛 Bug Fix
+
+- fix: Optimize dependencies to fix hot reloading issues when switching between stories [#23](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/23) ([@valentinpalkovic](https://github.com/valentinpalkovic))
+- fix: Aliases to react & react-dom use full path resolution [#21](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/21) ([@alexeden](https://github.com/alexeden))
+- fix: Update storybook to make example work [#19](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/19) ([@strozw](https://github.com/strozw))
+- docs: update the `vitest.config.ts` sample to be more type-safe. [#18](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/18) ([@strozw](https://github.com/strozw))
+
+#### ⚠️ Pushed to `main`
+
+- Fix CI for release ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 3
+
+- Alex Eden ([@alexeden](https://github.com/alexeden))
+- Satoru Ohzawa ([@strozw](https://github.com/strozw))
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
 # v1.0.11 (Thu Sep 05 2024)
 
 #### 🐛 Bug Fix

@@ -955,6 +955,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       viewMode: initialViewMode,
       hasCalledSetOptions: false,
       previewInitialized: false,
+      actions: {},
       status: {},
       filters: config?.sidebar?.filters || {},
     },

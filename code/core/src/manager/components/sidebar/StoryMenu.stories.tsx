@@ -10,6 +10,8 @@ import { StoryMenu } from './StoryMenu';
 const managerContext: any = {
   api: {
     emit: fn().mockName('api::emit'),
+    on: fn().mockName('api::on'),
+    off: fn().mockName('api::off'),
   },
 };
 

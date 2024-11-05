@@ -2,15 +2,23 @@
 import React, { useState } from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react';
-import { expect, within } from '@storybook/test';
+import { expect, fn, within } from '@storybook/test';
 
-import type { ComponentEntry, IndexHash } from '@storybook/core/manager-api';
+import { type ComponentEntry, type IndexHash, ManagerContext } from '@storybook/core/manager-api';
 
 import { action } from '@storybook/addon-actions';
 
 import { DEFAULT_REF_ID } from './Sidebar';
 import { Tree } from './Tree';
 import { index } from './mockdata.large';
+
+const managerContext: any = {
+  api: {
+    emit: fn().mockName('api::emit'),
+    on: fn().mockName('api::on'),
+    off: fn().mockName('api::off'),
+  },
+};
 
 const meta = {
   component: Tree,
@@ -35,6 +43,9 @@ const meta = {
     },
     chromatic: { viewports: [380] },
   },
+  decorators: [
+    (Story) => <ManagerContext.Provider value={managerContext}>{Story()}</ManagerContext.Provider>,
+  ],
 } as Meta<typeof Tree>;
 
 export default meta;

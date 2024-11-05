@@ -1,3 +1,15 @@
+# v1.0.13 (Tue Nov 05 2024)
+
+#### 🐛 Bug Fix
+
+- fix: Export additional cache utilities from the cache module [#24](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/24) ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
 # v1.0.12 (Tue Nov 05 2024)
 
 #### 🐛 Bug Fix

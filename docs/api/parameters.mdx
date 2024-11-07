@@ -154,9 +154,7 @@ When specifying parameters, they are merged together in order of increasing spec
 
 In other words, the following specifications of parameters:
 
-```js
-// .storybook/preview.js|ts
-
+```js title=".storybook/preview.js|ts"
 const preview = {
   // 👇 Project-level parameters
   parameters: {
@@ -171,9 +169,7 @@ const preview = {
 export default preview;
 ```
 
-```js
-// Dialog.stories.js|ts
-
+```js title="Dialog.stories.js|ts"
 const meta = {
   component: Dialog,
   // 👇 Meta-level parameters

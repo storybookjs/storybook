@@ -112,7 +112,7 @@ sidebar:
 
   Don't forget to also add your global styles to your `build-storybook` target in your `angular.json` file. This will ensure that your global styles are included in the static build of your Storybook as well.
 
-  ```jsonc
+  ```jsonc title="angular.json"
   {
     "storybook": {
         "builder": "@storybook/angular:start-storybook",
@@ -163,25 +163,25 @@ sidebar:
 
   For earlier Nx versions (before 14.1.8), your configuration would look like this:
 
-  ```json
-  "build-storybook": {
-    "executor": "@nrwl/storybook:build",
-    "outputs": ["{options.outputPath}"],
-    "options": {
-      "uiFramework": "@storybook/angular",
-      "outputPath": "dist/storybook/example-lib",
-      "config": {
-        "configFolder": "libs/example-lib/storybook/.storybook"
-      },
-      "projectBuildConfig": "example-lib:build-storybook",
-      "styles": ["apps/example-app/src/styles.scss"]
+  ```json title="project.json"
+  {
+    "build-storybook": {
+      "executor": "@nrwl/storybook:build",
+       "outputs": ["{options.outputPath}"],
+       "uiFramework": "@storybook/angular",
+       "outputPath": "dist/storybook/example-lib",
+        "config": {
+          "configFolder": "libs/example-lib/storybook/.storybook"
+        },
+        "projectBuildConfig": "example-lib:build-storybook",
+        "styles": ["apps/example-app/src/styles.scss"]
     }
   }
   ```
 
   Starting with version 14.1.8, Nx uses the Storybook builder directly, which means any configuration supplied to the builder also applies to the NX setup. If you're working with a library, you'll need to configure the styling options ( e.g., preprocessors) inside the `build-storybook` options configuration object. For example:
 
-  ```json
+  ```json title="project.json"
   {
     "storybook": {
       "executor": "@storybook/angular:start-storybook",

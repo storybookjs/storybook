@@ -78,7 +78,7 @@ Complementing the components, also included is a set of UI primitives. Use the c
 
 When you're developing your addon as a package, you can’t use `npm link` to add it to your project. List your addon as a local dependency into your package.json:
 
-```json
+```json title="package.json"
 {
   "dependencies": {
     "@storybook/addon-controls": "file:///home/username/myrepo"
@@ -100,7 +100,7 @@ While developing your addon, you can configure HMR (hot module replacement) to r
 
 If you're developing a standalone addon, add a new script to `package.json` with the following:
 
-```json
+```json title="package.json"
 {
   "scripts": {
     "start": "npm run build -- --watch"

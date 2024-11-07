@@ -15,9 +15,7 @@ When using the Canvas block in MDX, it references a story with the `of` prop:
 
 {/* prettier-ignore-start */}
 
-```md
-{/* ButtonDocs.mdx */}
-
+```md title="ButtonDocs.mdx"
 import { Meta, Canvas } from '@storybook/blocks';
 import * as ButtonStories from './Button.stories';
 
@@ -55,9 +53,7 @@ import { Canvas } from '@storybook/blocks';
 
   {/* prettier-ignore-start */}
 
-  ```md
-  {/* ButtonDocs.mdx */}
-
+  ```md title="ButtonDocs.mdx"
   <Canvas of={ButtonStories.Basic} sourceState="shown" />
   ```
 
@@ -89,9 +85,7 @@ Provides any additional custom actions to show in the bottom right corner. These
 
 {/* prettier-ignore-start */}
 
-```md
-{/* ButtonDocs.mdx */}
-
+```md title="ButtonDocs.mdx"
 import { Meta, Story, Canvas, SourceState } from '@storybook/blocks';
 import * as ButtonStories from './Button.stories';
 
@@ -148,17 +142,17 @@ You can render a story from a CSF file that you haven’t attached to the MDX fi
 
 {/* prettier-ignore-start */}
 
-```md
-{/* ButtonDocs.mdx */}
-
+```md title="ButtonDocs.mdx"
 import { Meta, Canvas } from '@storybook/blocks';
 import * as ButtonStories from './Button.stories';
 import * as HeaderStories from './Header.stories';
 
 <Meta of={ButtonStories} />
 
-{/* Although this MDX file is largely concerned with Button,
-    it can render Header stories too */}
+{/* 
+  Although this MDX file is largely concerned with Button.
+  It can render Header stories too 
+*/}
 <Canvas of={HeaderStories.LoggedIn} meta={HeaderStories} />
 ```
 

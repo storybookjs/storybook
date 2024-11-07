@@ -1,4 +1,4 @@
-```shell renderer="common" language="js" tabTitle="webpack-4"
+```shell renderer="common" language="js" tabTitle="Webpack 4"
 # With npm
 npm install @storybook/preset-scss css-loader@5.2.7 sass sass-loader@10.1.1 style-loader@2.0.0 --save-dev
 
@@ -9,7 +9,7 @@ yarn add --dev @storybook/preset-scss css-loader@5.2.7 sass sass-loader@10.1.1 s
 pnpm add --save-dev @storybook/preset-scss css-loader@5.2.7 sass sass-loader@10.1.1 style-loader@2.0.0
 ```
 
-```shell renderer="common" language="js" tabTitle="webpack-5"
+```shell renderer="common" language="js" tabTitle="Webpack 5"
 # With npm
 npm install @storybook/preset-scss css-loader sass sass-loader style-loader --save-dev
 

@@ -17,7 +17,7 @@ Storybook 7 is our first major release in over two years. While Storybook’s ad
 
 The first thing to do is upgrade any Storybook dependencies in your project. We release the next version of all our packages on the `next` npm tag, so the easiest thing is to reference that in your `package.json`:
 
-```json
+```json title="package.json"
 {
   "dependencies": {
     "@storybook/client-logger": "next"
@@ -27,7 +27,7 @@ The first thing to do is upgrade any Storybook dependencies in your project. We 
 
 If you'd rather depend on the latest version of Storybook, you can use the `latest` tag:
 
-```json
+```json title="package.json"
 {
   "dependencies": {
     "@storybook/client-logger": "latest"
@@ -37,7 +37,7 @@ If you'd rather depend on the latest version of Storybook, you can use the `late
 
 Or use a version specifier:
 
-```json
+```json title="package.json"
 {
   "dependencies": {
     "@storybook/client-logger": "^7.0.0"

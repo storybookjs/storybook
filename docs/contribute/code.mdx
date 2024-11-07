@@ -1,5 +1,6 @@
 ---
 title: 'Code contributions'
+hideRendererSelector: true
 sidebar:
   order: 2
   title: Code
@@ -212,7 +213,7 @@ npx storybook@next link --local /path/to/local-repro-directory
 
 The first step is to add an entry to `code/lib/cli/src/sandbox-templates.ts`, which is the master list of all repro templates:
 
-```ts
+```ts title="code/lib/cli/src/sandbox-templates.ts"
 'cra/default-js': {
     name: 'Create React App (Javascript)',
     script: 'npx create-react-app .',

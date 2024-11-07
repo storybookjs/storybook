@@ -1,5 +1,6 @@
 ---
 title: 'Code snippets contributions'
+hideRendererSelector: true
 sidebar:
   order: 2
   title: Code snippets
@@ -29,9 +30,7 @@ The following code block demonstrates how to structure a code snippet in the Sto
 
 {/* prettier-ignore-start */}
 
-````md
-<!-- docs/_snippets/button-group-story.md -->
-
+````md title="docs/_snippets/button-group-story.md"
 ```ts filename="ButtonGroup.stories.ts" renderer="vue" language="ts" tabTitle="3"
 import type { Meta, StoryObj } from '@storybook/vue3';
 
@@ -76,9 +75,7 @@ Most code examples should include a file name so readers can understand which fi
 
 {/* prettier-ignore-start */}
 
-````md
-<!-- docs/_snippets/button-stories.md -->
-
+````md title="docs/_snippets/button-stories.md"
 ```ts filename="Button.stories.ts"
 ```
 ````
@@ -91,9 +88,7 @@ Use the `language` attribute to define the language to which the code snippet ap
 
 {/* prettier-ignore-start */}
 
-````md
-<!-- docs/_snippets/button-stories.md -->
-
+````md title="docs/_snippets/button-stories.md"
 ```ts filename="Button.stories.ts" language="js|ts|ts-4-9|mdx"
 ```
 ````
@@ -106,9 +101,7 @@ Use the `renderer` attribute to indicate which of the [supported frameworks](../
 
 {/* prettier-ignore-start */}
 
-````md
-<!-- docs/_snippets/button-stories.md -->
-
+````md title="docs/_snippets/button-stories.md"
 ```ts filename="Button.stories.ts" language="ts" renderer="react|vue|angular|web-components|ember|html|svelte|preact|qwik|solid"
 ```
 ````
@@ -119,9 +112,7 @@ Alternatively, if you're documenting examples that apply to multiple frameworks,
 
 {/* prettier-ignore-start */}
 
-````md
-<!-- docs/_snippets/button-stories.md -->
-
+````md title="docs/_snippets/button-stories.md"
 ```ts filename="Button.stories.ts" language="ts" renderer="common"
 ```
 ````
@@ -135,9 +126,7 @@ Use the `packageManager` attribute to configure the package manager used in the 
 
 {/* prettier-ignore-start */}
 
-````md
-<!-- docs/_snippets/storybook-run-dev.md -->
-
+````md title="docs/_snippets/storybook-run-dev.md"
 ```shell renderer="common" language="js" packageManager="npm|yarn|pnpm"
 ```
 ````
@@ -150,9 +139,7 @@ Use the `tabTitle` attribute to indicate the tab title in which the code snippet
  
 {/* prettier-ignore-start */}
 
-````md
-<!-- docs/_snippets/component-decorator.md -->
-
+````md title="docs/_snippets/component-decorator.md"
 ```ts filename="YourConponent.stories.ts" language="ts" renderer="common" tabTitle="Story"
 ```
 ```ts filename=".storybook/preview.ts" language="ts" renderer="common" tabTitle="Storybook configuration"
@@ -179,7 +166,7 @@ Browse the documentation and look for the code snippets you want to contribute. 
 
 {/* prettier-ignore-start */}
 
- ```jsx
+ ```jsx title="docs/get-started/setup.mdx"
 {/* prettier-ignore-start */}
 
 <CodeSnippets path="your-component.md" usesCsf3 />
@@ -194,9 +181,7 @@ Open the file inside the `docs/_snippets` directory and adjust the content to ma
 
 {/* prettier-ignore-start */}
 
-````ts
-// docs/_snippets/your-component.md
-
+````md title="docs/_snippets/your-component.md"
 ```ts filename="YourComponent.stories.ts" renderer="qwik" language="ts-4-9"
 import type { Meta, StoryObj } from 'storybook-framework-qwik';
 

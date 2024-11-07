@@ -207,9 +207,7 @@ Let's look at an example of how this might work.
 
 First, here's an example of a non-CSF source file:
 
-```ts
-// Button.variants.js|ts
-
+```ts title="Button.variants.js|ts"
 import { variantsFromComponent, createStoryFromVariant } from '../utils';
 import { Button } from './Button';
 
@@ -236,9 +234,7 @@ The builder plugin would then:
 
 That resulting CSF file would then be indexed by Storybook. It would look something like this:
 
-```js
-// virtual:Button.variants.js|ts
-
+```js title="virtual:Button.variants.js|ts"
 import { Button } from './Button';
 
 export default {
@@ -301,9 +297,7 @@ Some example usages of custom indexers include:
 
   A builder plugin will then need to transform the JSON file into a regular CSF file. This transformation could be done with a Vite plugin similar to this:
 
-  ```ts
-  // vite-plugin-storybook-json-stories.ts
-
+  ```ts title="vite-plugin-storybook-json-stories.ts"
   import type { PluginOption } from 'vite';
   import fs from 'fs/promises';
 

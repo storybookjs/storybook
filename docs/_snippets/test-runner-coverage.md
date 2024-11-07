@@ -1,5 +1,5 @@
 ```shell renderer="common" language="js" packageManager="npm"
-npm run test-storybook -- --coverage
+npm run test-storybook --coverage
 ```
 
 ```shell renderer="common" language="js" packageManager="pnpm"

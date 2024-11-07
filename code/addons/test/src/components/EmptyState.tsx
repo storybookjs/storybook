@@ -46,19 +46,15 @@ export const Empty = () => {
 
   return (
     <EmptyTabContent
-      title="Interaction testing"
+      title="Component testing"
       description={
         <>
-          Interaction tests allow you to verify the functional aspects of UIs. Write a play function
-          for your story and you&apos;ll see it run here.
+          Your component rendered successfully. Add a play function to this story to test its
+          functionality, which will be displayed here.
         </>
       }
       footer={
         <Links>
-          <Link href={TUTORIAL_VIDEO_LINK} target="_blank" withArrow>
-            <VideoIcon /> Watch 8m video
-          </Link>
-          <Divider />
           <Link href={docsUrl} target="_blank" withArrow>
             <DocumentIcon /> Read docs
           </Link>

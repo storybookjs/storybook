@@ -85,6 +85,7 @@ const meta = {
     refs: {},
     status: {},
     showCreateStoryButton: true,
+    isDevelopment: true,
   },
   decorators: [
     (storyFn) => (

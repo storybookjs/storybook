@@ -42,8 +42,6 @@ function getSelectedParams(currentTree: FlightRouterState, params: Params = {}):
     }
 
     // Ensure catchAll and optional catchall are turned into an array
-
-    // Ensure catchAll and optional catchall are turned into an array
     const isCatchAll = isDynamicParameter && (segment[2] === 'c' || segment[2] === 'oc');
 
     if (isCatchAll) {

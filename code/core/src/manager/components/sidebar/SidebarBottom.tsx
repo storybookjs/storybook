@@ -92,9 +92,15 @@ interface SidebarBottomProps {
   api: API;
   notifications: State['notifications'];
   status: State['status'];
+  isDevelopment?: boolean;
 }
 
-export const SidebarBottomBase = ({ api, notifications = [], status = {} }: SidebarBottomProps) => {
+export const SidebarBottomBase = ({
+  api,
+  notifications = [],
+  status = {},
+  isDevelopment,
+}: SidebarBottomProps) => {
   const spacerRef = useRef<HTMLDivElement | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [warningsActive, setWarningsActive] = useState(false);
@@ -228,27 +234,36 @@ export const SidebarBottomBase = ({ api, notifications = [], status = {} }: Side
     <div id={SIDEBAR_BOTTOM_SPACER_ID} ref={spacerRef}>
       <Content id={SIDEBAR_BOTTOM_WRAPPER_ID} ref={wrapperRef}>
         <NotificationList notifications={notifications} clearNotification={api.clearNotification} />
-        <TestingModule
-          {...{
-            testProviders: testProvidersArray,
-            errorCount: errors.length,
-            errorsActive,
-            setErrorsActive,
-            warningCount: warnings.length,
-            warningsActive,
-            setWarningsActive,
-            onRunTests,
-            onCancelTests,
-            onSetWatchMode,
-          }}
-        />
+        {isDevelopment && (
+          <TestingModule
+            {...{
+              testProviders: testProvidersArray,
+              errorCount: errors.length,
+              errorsActive,
+              setErrorsActive,
+              warningCount: warnings.length,
+              warningsActive,
+              setWarningsActive,
+              onRunTests,
+              onCancelTests,
+              onSetWatchMode,
+            }}
+          />
+        )}
       </Content>
     </div>
   );
 };
 
-export const SidebarBottom = () => {
+export const SidebarBottom = ({ isDevelopment }: { isDevelopment?: boolean }) => {
   const api = useStorybookApi();
   const { notifications, status } = useStorybookState();
-  return <SidebarBottomBase api={api} notifications={notifications} status={status} />;
+  return (
+    <SidebarBottomBase
+      api={api}
+      notifications={notifications}
+      status={status}
+      isDevelopment={isDevelopment}
+    />
+  );
 };

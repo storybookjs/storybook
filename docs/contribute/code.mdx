@@ -10,7 +10,7 @@ Contribute a new feature or bug fix to [Storybook's monorepo](https://github.com
 ## Prerequisites
 
 * Ensure you have Node version 18 installed (suggestion: v18.16.0).
-* Ensure if you are using Windows to use the Windows Subsystem for Linux (WSL).
+* If you're working with Windows, all commands should be run in a terminal with administrator privileges.
 
 ## Initial setup
 
@@ -206,7 +206,7 @@ npx storybook@next link --local /path/to/local-repro-directory
 
 ## Developing a template
 
-The first step is to add an entry to `code/lib/cli/src/sandbox-templates.ts`, which is the master list of all repro templates:
+The first step is to add an entry to `code/lib/cli-storybook/src/sandbox-templates.ts`, which is the master list of all repro templates:
 
 ```ts
 'cra/default-js': {

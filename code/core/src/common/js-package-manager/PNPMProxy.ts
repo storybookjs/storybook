@@ -244,7 +244,7 @@ export class PNPMProxy extends JsPackageManager {
         args: ['info', packageName, ...args],
       });
 
-      const parsedOutput = fetchAllVersions ? JSON.parse(commandResult) : commandResult;
+      const parsedOutput = fetchAllVersions ? JSON.parse(commandResult) : commandResult.trim();
 
       if (parsedOutput.error?.summary) {
         // this will be handled in the catch block below

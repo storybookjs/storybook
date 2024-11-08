@@ -239,14 +239,14 @@ export class BUNProxy extends JsPackageManager {
     packageName: string,
     fetchAllVersions: T
   ): Promise<T extends true ? string[] : string> {
-    const args = [fetchAllVersions ? 'versions' : 'version', '--json'];
+    const args = fetchAllVersions ? ['versions', '--json'] : ['version'];
     try {
       const commandResult = await this.executeCommand({
         command: 'npm',
         args: ['info', packageName, ...args],
       });
 
-      const parsedOutput = JSON.parse(commandResult);
+      const parsedOutput = fetchAllVersions ? JSON.parse(commandResult) : commandResult;
 
       if (parsedOutput.error?.summary) {
         // this will be handled in the catch block below

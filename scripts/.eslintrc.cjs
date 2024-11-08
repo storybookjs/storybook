@@ -1,7 +1,7 @@
 module.exports = {
   root: true,
   extends: [
-    //
+    "plugin:oxlint/recommended",
     '@storybook/eslint-config-storybook',
     'plugin:storybook/recommended',
     'plugin:depend/recommended'

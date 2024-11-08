@@ -4586,6 +4586,62 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@oxlint/darwin-arm64@npm:0.11.0":
+  version: 0.11.0
+  resolution: "@oxlint/darwin-arm64@npm:0.11.0"
+  conditions: os=darwin & cpu=arm64
+  languageName: node
+  linkType: hard
+
+"@oxlint/darwin-x64@npm:0.11.0":
+  version: 0.11.0
+  resolution: "@oxlint/darwin-x64@npm:0.11.0"
+  conditions: os=darwin & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@oxlint/linux-arm64-gnu@npm:0.11.0":
+  version: 0.11.0
+  resolution: "@oxlint/linux-arm64-gnu@npm:0.11.0"
+  conditions: os=linux & cpu=arm64 & libc=glibc
+  languageName: node
+  linkType: hard
+
+"@oxlint/linux-arm64-musl@npm:0.11.0":
+  version: 0.11.0
+  resolution: "@oxlint/linux-arm64-musl@npm:0.11.0"
+  conditions: os=linux & cpu=arm64 & libc=musl
+  languageName: node
+  linkType: hard
+
+"@oxlint/linux-x64-gnu@npm:0.11.0":
+  version: 0.11.0
+  resolution: "@oxlint/linux-x64-gnu@npm:0.11.0"
+  conditions: os=linux & cpu=x64 & libc=glibc
+  languageName: node
+  linkType: hard
+
+"@oxlint/linux-x64-musl@npm:0.11.0":
+  version: 0.11.0
+  resolution: "@oxlint/linux-x64-musl@npm:0.11.0"
+  conditions: os=linux & cpu=x64 & libc=musl
+  languageName: node
+  linkType: hard
+
+"@oxlint/win32-arm64@npm:0.11.0":
+  version: 0.11.0
+  resolution: "@oxlint/win32-arm64@npm:0.11.0"
+  conditions: os=win32 & cpu=arm64
+  languageName: node
+  linkType: hard
+
+"@oxlint/win32-x64@npm:0.11.0":
+  version: 0.11.0
+  resolution: "@oxlint/win32-x64@npm:0.11.0"
+  conditions: os=win32 & cpu=x64
+  languageName: node
+  linkType: hard
+
 "@phenomnomnominal/tsquery@npm:~5.0.1":
   version: 5.0.1
   resolution: "@phenomnomnominal/tsquery@npm:5.0.1"
@@ -6935,6 +6991,7 @@ __metadata:
     eslint-import-resolver-typescript: "npm:^3.6.1"
     eslint-plugin-depend: "npm:^0.11.0"
     eslint-plugin-local-rules: "portal:../scripts/eslint-plugin-local-rules"
+    eslint-plugin-oxlint: "npm:^0.11.0"
     eslint-plugin-playwright: "npm:^1.6.2"
     eslint-plugin-storybook: "npm:^0.8.0"
     github-release-from-changelog: "npm:^2.1.1"
@@ -6945,6 +7002,7 @@ __metadata:
     lint-staged: "npm:^13.2.2"
     mock-require: "npm:^3.0.3"
     nx: "npm:18.0.6"
+    oxlint: "npm:^0.11.0"
     prettier: "npm:^3.1.1"
     prettier-plugin-brace-style: "npm:^0.6.2"
     prettier-plugin-css-order: "npm:^2.1.2"
@@ -14520,6 +14578,15 @@ __metadata:
   languageName: node
   linkType: soft
 
+"eslint-plugin-oxlint@npm:^0.11.0":
+  version: 0.11.0
+  resolution: "eslint-plugin-oxlint@npm:0.11.0"
+  dependencies:
+    jsonc-parser: "npm:^3.3.1"
+  checksum: 10c0/89050c240c569c9828237adf1031ceef0c7ccc8bc006b63aa347c8facc3189cf8774344de690b4433d382b3a7d80680941326fc9c9eaca8f8e9c24543048d3d1
+  languageName: node
+  linkType: hard
+
 "eslint-plugin-playwright@npm:^1.6.2":
   version: 1.6.2
   resolution: "eslint-plugin-playwright@npm:1.6.2"
@@ -18652,6 +18719,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"jsonc-parser@npm:^3.3.1":
+  version: 3.3.1
+  resolution: "jsonc-parser@npm:3.3.1"
+  checksum: 10c0/269c3ae0a0e4f907a914bf334306c384aabb9929bd8c99f909275ebd5c2d3bc70b9bcd119ad794f339dec9f24b6a4ee9cd5a8ab2e6435e730ad4075388fc2ab6
+  languageName: node
+  linkType: hard
+
 "jsonexport@npm:^3.0.1":
   version: 3.2.0
   resolution: "jsonexport@npm:3.2.0"
@@ -22103,6 +22177,42 @@ __metadata:
   version: 1.1.1
   resolution: "override-require@npm:1.1.1"
   checksum: 10c0/1bc05ed3b4094ca3e930841b9f763ddabd13ed080f88df5c2884a86511aea54caadc472065297b9666e183b91d964921232aa863d26133c2f9c945b15926b6e7
+  languageName: node
+  linkType: hard
+
+"oxlint@npm:^0.11.0":
+  version: 0.11.0
+  resolution: "oxlint@npm:0.11.0"
+  dependencies:
+    "@oxlint/darwin-arm64": "npm:0.11.0"
+    "@oxlint/darwin-x64": "npm:0.11.0"
+    "@oxlint/linux-arm64-gnu": "npm:0.11.0"
+    "@oxlint/linux-arm64-musl": "npm:0.11.0"
+    "@oxlint/linux-x64-gnu": "npm:0.11.0"
+    "@oxlint/linux-x64-musl": "npm:0.11.0"
+    "@oxlint/win32-arm64": "npm:0.11.0"
+    "@oxlint/win32-x64": "npm:0.11.0"
+  dependenciesMeta:
+    "@oxlint/darwin-arm64":
+      optional: true
+    "@oxlint/darwin-x64":
+      optional: true
+    "@oxlint/linux-arm64-gnu":
+      optional: true
+    "@oxlint/linux-arm64-musl":
+      optional: true
+    "@oxlint/linux-x64-gnu":
+      optional: true
+    "@oxlint/linux-x64-musl":
+      optional: true
+    "@oxlint/win32-arm64":
+      optional: true
+    "@oxlint/win32-x64":
+      optional: true
+  bin:
+    oxc_language_server: bin/oxc_language_server
+    oxlint: bin/oxlint
+  checksum: 10c0/7002aef24409555df2377e4d6be18dae09f918eed0820aa0e6b2af3933f76b1789507bde6d68f6a7f4a01dad01bd3112582e4440bb0874791835f72f9d34fce8
   languageName: node
   linkType: hard
 

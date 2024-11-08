@@ -50,6 +50,11 @@
 <!-- This is _tiny_ 🤏 -->
 <Story name="Small" args={{ size: 'small' }} />
 
-<Story name="Long content">
-  <Button onclick={onclickFn}>The very long content</Button>
+<Story name="Long content">The very long content</Story>
+
+<Story name="Custom template">
+  {#snippet template(args, context)}
+    <Button {...args}>🩷 Storybook</Button>
+    <Button {...args}>🧡 Svelte</Button>
+  {/snippet}
 </Story>

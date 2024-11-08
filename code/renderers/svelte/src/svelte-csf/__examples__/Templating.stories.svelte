@@ -56,14 +56,14 @@
 </Story>
 
 <!--
-  Pass a `children` snippet to the story to make it dynamic and react to Storybook's `args` changes.
+  Pass a `template` snippet to the story to make it dynamic and react to Storybook's `args` changes.
   The snippet takes two arguments, `args` and `context`.
 
   Example:
 
   ```svelte
   <Story name="Dynamic story">
-    {#snippet children(args)}
+    {#snippet template(args)}
       <SomeComponent {...args}>
         Dynamic template
       </SomeComponent>
@@ -72,7 +72,7 @@
   ```
 -->
 <Story
-  name="Children snippet"
+  name="Template snippet"
   args={{ text: 'This story uses a children snippet' }}
   play={async (context) => {
     const { args, canvasElement } = context;
@@ -84,7 +84,7 @@
     expect(p).toBeInTheDocument();
   }}
 >
-  {#snippet children(args)}
+  {#snippet template(args)}
     <h2 data-testid="heading">Children snippet</h2>
     <p>{args?.text}</p>
   {/snippet}
@@ -113,7 +113,7 @@
 -->
 <Story
   name="Shared template"
-  children={sharedTemplate}
+  template={sharedTemplate}
   args={{
     text: 'This story uses a shared snippet, which is explicitly set as the `children` prop to the <Story> component',
   }}

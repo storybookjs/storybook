@@ -73,7 +73,7 @@
 -->
 <Story
   name="Template snippet"
-  args={{ text: 'This story uses a children snippet' }}
+  args={{ text: 'This story uses a template snippet' }}
   play={async (context) => {
     const { args, canvasElement } = context;
     const canvas = within(canvasElement);
@@ -85,7 +85,7 @@
   }}
 >
   {#snippet template(args)}
-    <h2 data-testid="heading">Children snippet</h2>
+    <h2 data-testid="heading">Template snippet</h2>
     <p>{args?.text}</p>
   {/snippet}
 </Story>
@@ -97,7 +97,7 @@
 
 <!--
   If you want to share the template between multiple stories,
-  you can define the snippet at the root and pass it in as the `children` **prop** to the `<Story>` component.
+  you can define the snippet at the root and pass it in as the `template` **prop** to the `<Story>` component.
 
   Example:
 
@@ -108,14 +108,14 @@
     </SomeComponent>
   {/snippet}
 
-  <Story name="Explicit snippet" children={template} />
+  <Story name="Explicit snippet" {template} />
   ```
 -->
 <Story
   name="Shared template"
   template={sharedTemplate}
   args={{
-    text: 'This story uses a shared snippet, which is explicitly set as the `children` prop to the <Story> component',
+    text: 'This story uses a shared snippet, which is explicitly set as the `template` prop to the <Story> component',
   }}
   play={async (context) => {
     const { args, canvasElement } = context;

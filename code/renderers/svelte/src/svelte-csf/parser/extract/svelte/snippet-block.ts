@@ -4,76 +4,47 @@ import { extractStoryAttributesNodes } from '#parser/extract/svelte/story/attrib
 
 import {
   InvalidSetTemplateFirstArgumentError,
-  InvalidStoryChildrenAttributeError,
+  InvalidStoryTemplateAttributeError,
 } from '#utils/error/parser/extract/svelte';
 
 /**
- * Svelte 5 allows to passing `children` as attribute _(aka prop)_.
- *
  * For example:
  *
  * ```svelte
  * {#snippet myTemplate()}
  *   <SomeComponent color="red" />
  * {/snippet}
- * <Story children={myTemplate} />
+ * <Story template={myTemplate} />
  * ```
  *
  * This function attempts to extract the AST node of the snippet block from the root fragment of `*.svelte` file,
- * which was referenced by the attribute `children`. Following example above - it would be snippet `myTemplate`.
+ * which was referenced by the attribute `template`. Following example above - it would be snippet `myTemplate`.
  */
-export function findStoryAttributeChildrenSnippetBlock(options: {
+export function findStoryAttributeTemplateSnippetBlock(options: {
   component: SvelteAST.Component;
   nodes: SvelteASTNodes;
   filename?: string;
-}) {
+}): SvelteAST.SnippetBlock | undefined {
   const { component, nodes, filename } = options;
-  const { children } = extractStoryAttributesNodes({
+  const { template } = extractStoryAttributesNodes({
     component,
-    attributes: ['children'],
+    attributes: ['template'],
   });
 
-  if (!children) {
+  if (!template) {
     return;
   }
 
-  const { value } = children;
-
-  if (value === true) {
-    throw new InvalidStoryChildrenAttributeError({
+  if (template.value === true || Array.isArray(template.value)) {
+    throw new InvalidStoryTemplateAttributeError({
       component: component,
-      childrenAttribute: children,
-      filename,
-    });
-  }
-
-  // value is SvelteAST.ExpressionTag
-  if (!Array.isArray(value)) {
-    if (value.expression.type !== 'Identifier') {
-      throw new InvalidStoryChildrenAttributeError({
-        component: component,
-        childrenAttribute: children,
-        filename,
-      });
-    }
-
-    return findSnippetBlockByName({
-      name: value.expression.name,
-      nodes: nodes,
-    });
-  }
-
-  // value is Array<SvelteAST.ExpressionTag | SvelteAST.Text> - I haven't figured out when it would happen
-  if (value[0].type !== 'ExpressionTag') {
-    throw new InvalidStoryChildrenAttributeError({
-      component: component,
-      childrenAttribute: children,
+      templateAttribute: template,
       filename,
     });
   }
 
   return findSnippetBlockByName({
-    name: value[0].expression.name,
+    name: template.value.expression.name,
     nodes: nodes,
   });
 }
@@ -125,7 +96,7 @@ export function findSetTemplateSnippetBlock(options: {
 function findSnippetBlockByName(options: {
   /**
    * Snippet's block expression name to find by.
-   * For example, from the following: `{#snippet children(args)}` - `children`
+   * For example, from the following: `{#snippet template(args)}` - `template`
    */
   name: string;
   nodes: SvelteASTNodes;

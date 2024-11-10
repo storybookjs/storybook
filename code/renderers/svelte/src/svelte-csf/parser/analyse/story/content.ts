@@ -3,10 +3,10 @@ import dedent from 'dedent';
 import { getDefineMetaComponentValue } from '#parser/analyse/define-meta/component-identifier';
 import type { SvelteAST } from '#parser/ast';
 import type { extractSvelteASTNodes } from '#parser/extract/svelte/nodes';
-import { extractStoryChildrenSnippetBlock } from '#parser/extract/svelte/story/children';
+import { extractStoryTemplateSnippetBlock } from '#parser/extract/svelte/story/template';
 import {
   findSetTemplateSnippetBlock,
-  findStoryAttributeChildrenSnippetBlock,
+  findStoryAttributeTemplateSnippetBlock,
 } from '#parser/extract/svelte/snippet-block';
 
 interface Params {
@@ -19,17 +19,17 @@ interface Params {
 }
 
 /**
- * Extract the source code of the `<Story />` component children.
+ * Extract the source code of the `<Story />` component content (children or template snippet).
  * Reference: Step 2 from the comment: https://github.com/storybookjs/addon-svelte-csf/pull/181#issuecomment-2143539873
  */
-export function getStoryChildrenRawCode(params: Params): string {
+export function getStoryContentRawCode(params: Params): string {
   const { nodes, originalCode, filename } = params;
   const { component, svelte } = nodes;
 
   // `<Story />` component is self-closing...
   if (component.fragment.nodes.length === 0) {
     /**
-     * Case - "explicit template" - `children` attribute references to a snippet block at the root level of fragment.
+     * Case - "explicit template" - `template` attribute references to a snippet block at the root level of fragment.
      *
      * Example:
      *
@@ -38,17 +38,17 @@ export function getStoryChildrenRawCode(params: Params): string {
      *     <SomeComponent {...args} />
      * {/snippet}
      *
-     * <Story name="Default" children={template1} />
+     * <Story name="Default" template={template1} />
      * ```
      */
-    const storyAttributeChildrenSnippetBlock = findStoryAttributeChildrenSnippetBlock({
+    const storyAttributTemplateSnippetBlock = findStoryAttributeTemplateSnippetBlock({
       component,
       nodes: svelte,
       filename,
     });
 
-    if (storyAttributeChildrenSnippetBlock) {
-      return getSnippetBlockBodyRawCode(originalCode, storyAttributeChildrenSnippetBlock);
+    if (storyAttributTemplateSnippetBlock) {
+      return getSnippetBlockBodyRawCode(originalCode, storyAttributTemplateSnippetBlock);
     }
 
     /**
@@ -88,19 +88,19 @@ export function getStoryChildrenRawCode(params: Params): string {
   }
 
   /**
-   * Case - Story with children - and with a snippet block `children` inside
+   * Case - Story with children - and with a snippet block `template` inside
    *
    * Example:
    *
    * ```svelte
    * <Story name="Default">
-   *     {#snippet children(args)}
+   *     {#snippet template(args)}
    *          <SomeComponent {...args} />
    *     {/snippet}
    * </Story>
    * ```
    */
-  const storyChildrenSnippetBlock = extractStoryChildrenSnippetBlock(component);
+  const storyChildrenSnippetBlock = extractStoryTemplateSnippetBlock(component);
 
   if (storyChildrenSnippetBlock) {
     return getSnippetBlockBodyRawCode(originalCode, storyChildrenSnippetBlock);
@@ -132,7 +132,7 @@ export function getStoryChildrenRawCode(params: Params): string {
  * For example, from the following case:
  *
  * ```svelte
- * {#snippet children(args)}
+ * {#snippet template(args)}
  *   <!-- Some comment... -->
  *   "Static text"
  *   <Component {...args } />

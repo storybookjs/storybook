@@ -185,7 +185,7 @@ describe(transformLegacyStory.name, () => {
           state: { componentIdentifierName: {} },
         })
       )
-    ).toMatchInlineSnapshot(`"<Story name="Default" children={someTemplate} />"`);
+    ).toMatchInlineSnapshot(`"<Story name="Default" template={someTemplate} />"`);
   });
 
   it("when directive 'let:args' is used then it wraps Story fragment with 'children' snippet block", async ({
@@ -280,9 +280,7 @@ describe(transformLegacyStory.name, () => {
     `);
   });
 
-  it("leaves existing Story parameters untouched", async ({
-    expect,
-  }) => {
+  it('leaves existing Story parameters untouched', async ({ expect }) => {
     const code = `
       <script context="module">
         import { Story } from "@storybook/addon-svelte-csf";

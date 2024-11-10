@@ -149,24 +149,24 @@ export class GetDefineMetaFirstArgumentError extends StorybookSvelteCSFError {
   }
 }
 
-export class InvalidStoryChildrenAttributeError extends StorybookSvelteCSFError {
+export class InvalidStoryTemplateAttributeError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractSvelte;
   readonly code = 7;
   public documentation = true;
 
-  public childrenAttribute: SvelteAST.Attribute;
+  public templateAttribute: SvelteAST.Attribute;
 
   constructor({
     filename,
     component,
-    childrenAttribute,
+    templateAttribute,
   }: {
     filename?: StorybookSvelteCSFError['filename'];
     component: NonNullable<StorybookSvelteCSFError['component']>;
-    childrenAttribute: InvalidStoryChildrenAttributeError['childrenAttribute'];
+    templateAttribute: InvalidStoryTemplateAttributeError['templateAttribute'];
   }) {
     super({ filename, component });
-    this.childrenAttribute = childrenAttribute;
+    this.templateAttribute = templateAttribute;
   }
 
   template() {

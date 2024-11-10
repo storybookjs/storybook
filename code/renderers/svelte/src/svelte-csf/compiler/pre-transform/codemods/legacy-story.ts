@@ -243,7 +243,7 @@ function templateToChildren(
 
   return {
     ...rest,
-    name: 'children',
+    name: 'template',
     value: [
       createASTExpressionTag({
         type: 'Identifier',

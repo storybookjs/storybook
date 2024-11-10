@@ -6,7 +6,7 @@ import {
 import type { extractStoriesNodesFromExportDefaultFn } from '#parser/extract/compiled/stories';
 import { getStoryPropsObjectExpression } from '#parser/extract/compiled/story';
 import type { SvelteASTNodes, extractSvelteASTNodes } from '#parser/extract/svelte/nodes';
-import { getStoryChildrenRawCode } from '#parser/analyse/story/children';
+import { getStoryContentRawCode } from '#parser/analyse/story/content';
 import { createASTObjectExpression, createASTProperty } from '#parser/ast';
 
 interface Params {
@@ -46,7 +46,7 @@ export function insertSvelteCSFToStoryParameters(params: Params) {
     );
   }
 
-  const rawCode = getStoryChildrenRawCode({
+  const rawCode = getStoryContentRawCode({
     nodes: {
       component: component.svelte.component,
       svelte,

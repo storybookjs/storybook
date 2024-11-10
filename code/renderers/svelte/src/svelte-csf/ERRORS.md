@@ -97,17 +97,17 @@ It must be a valid **object expression** with the same structure as [the Default
 
 ### `SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0007`
 
-A `<Story>` component received an invalid `children` prop. If set, the `children` prop must be a reference to a [snippet](https://svelte-5-preview.vercel.app/docs/snippets) defined in the root scope file. Eg.:
+A `<Story>` component received an invalid `template` prop. If set, the `template` prop must be a reference to a [snippet](https://svelte-5-preview.vercel.app/docs/snippets) defined in the root scope file. Eg.:
 
 ```svelte
 {#snippet template()}
   <span>🚀</span>
 {/snippet}
 
-<Story name="Rocket" children={template} />
+<Story name="Rocket" {template} />
 ```
 
-This error indicates that the `children` prop was passed, but it was not correctly referencing a snippet.
+This error indicates that the `template` prop was passed, but it was not correctly referencing a snippet.
 
 ### `SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0008`
 
@@ -141,7 +141,7 @@ The import of `defineMeta` from this addon could not be found while parsing the 
 
 If you get this error, please open a bug report with detailed reproduction steps including the code that caused the error.
 
-https://github.com/storybookjs/addon-svelte-csf/issues/new
+<https://github.com/storybookjs/addon-svelte-csf/issues/new>
 
 ### `SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0002`
 
@@ -149,7 +149,7 @@ A variable declaration with the `defineMeta` call could not be found while parsi
 
 If you get this error, please open a bug report with detailed reproduction steps including the code that caused the error.
 
-https://github.com/storybookjs/addon-svelte-csf/issues/new
+<https://github.com/storybookjs/addon-svelte-csf/issues/new>
 
 ### `SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0003`
 
@@ -157,7 +157,7 @@ A default export could not be found while parsing the _compiled_ code. The Svelt
 
 If you get this error, please open a bug report with detailed reproduction steps including the code that caused the error.
 
-https://github.com/storybookjs/addon-svelte-csf/issues/new
+<https://github.com/storybookjs/addon-svelte-csf/issues/new>
 
 ### `SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0004`
 
@@ -165,7 +165,7 @@ A `Story` identifier could not be found while parsing the _compiled_ code.
 
 If you get this error, please open a bug report with detailed reproduction steps including the code that caused the error.
 
-https://github.com/storybookjs/addon-svelte-csf/issues/new
+<https://github.com/storybookjs/addon-svelte-csf/issues/new>
 
 ### `SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0005`
 
@@ -173,7 +173,7 @@ A main function component could not be found while parsing the _compiled_ code.
 
 If you get this error, please open a bug report with detailed reproduction steps including the code that caused the error.
 
-https://github.com/storybookjs/addon-svelte-csf/issues/new
+<https://github.com/storybookjs/addon-svelte-csf/issues/new>
 
 ### `SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0006`
 
@@ -181,7 +181,7 @@ A Story-component's props could not be extracted as an object expression from th
 
 If you get this error, please open a bug report with detailed reproduction steps including the code that caused the error.
 
-https://github.com/storybookjs/addon-svelte-csf/issues/new
+<https://github.com/storybookjs/addon-svelte-csf/issues/new>
 
 ## `PARSER_ANALYSE_DEFINE_META`
 

@@ -26,7 +26,7 @@
     expect(args.onclick).toHaveBeenCalled();
   }}
 >
-  {#snippet children(args)}
+  {#snippet template(args)}
     <button {...args}>
       Click me to see an a log in the <strong>Actions</strong> tab
     </button>

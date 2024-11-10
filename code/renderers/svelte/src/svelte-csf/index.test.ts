@@ -1,11 +1,10 @@
 import type { StoryContext as StorybookStoryContext } from '@storybook/types';
-import { createRawSnippet, type ComponentProps, type Snippet } from 'svelte';
-import type { Primitive } from 'type-fest';
+import { createRawSnippet, mount, type ComponentProps, type Snippet } from 'svelte';
 import { describe, expectTypeOf, it } from 'vitest';
 
 import StoryComponent from './runtime/Story.svelte';
 
-import { defineMeta, type Args, type StoryContext } from './index';
+import { defineMeta, type Args, type StoryContext, type TemplateSnippet } from './index';
 import type {
   Meta,
   StoryAnnotations,
@@ -64,7 +63,7 @@ describe("type helper for snippets 'Args'", () => {
     expectTypeOf<Args<typeof Story>>().not.toBeNever();
     expectTypeOf<Args<typeof Story>>().not.toBeNullable();
     expectTypeOf<Args<typeof Story>>().toMatchTypeOf<StoryAnnotations<typeof Button>['args']>();
-    expectTypeOf<Args<typeof Story>['children']>().toMatchTypeOf<Snippet | Primitive>();
+    expectTypeOf<Args<typeof Story>['children']>().toMatchTypeOf<Snippet | undefined>();
     expectTypeOf<Args<typeof Story>['children']>().toBeNullable();
   });
 });
@@ -92,6 +91,31 @@ describe("type helper for snippets 'StoryContext'", () => {
 
     expectTypeOf<StoryContext<typeof Story>>().toMatchTypeOf<BaseStoryContext<typeof Button>>();
     expectTypeOf(meta).toMatchTypeOf<Meta<typeof Button>>();
+  });
+});
+
+describe("type helper 'TemplateSnippet' for 'createRawSnippet'", () => {
+  it("infers the type of entry 'args' from 'defineMeta' correctly", () => {
+    const { Story } = defineMeta({
+      component: Button,
+    });
+    const templateRawSnippet_ = createRawSnippet<TemplateSnippet<typeof Story>>((args, context) => {
+      expectTypeOf(args()).toEqualTypeOf<Args<typeof Story>>();
+      expectTypeOf(context()).toEqualTypeOf<StoryContext<typeof Story>>();
+      return {
+        render: () => 'Content via template snippet',
+      };
+    });
+    expectTypeOf(templateRawSnippet_).toEqualTypeOf<
+      Snippet<[Args<typeof Story>, StoryContext<typeof Story>]>
+    >();
+    mount(Story, {
+      target: window.document,
+      props: {
+        name: 'Testing TemplateSnippet',
+        template: templateRawSnippet_,
+      },
+    });
   });
 });
 

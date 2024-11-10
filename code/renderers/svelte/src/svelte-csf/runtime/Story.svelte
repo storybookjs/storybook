@@ -1,4 +1,13 @@
-<script lang="ts" generics="const TCmp extends Cmp">
+<script module lang="ts">
+  type TemplateSnippet<T extends Cmp> = Snippet<
+    [StoryRendererContext<T>['args'], StoryRendererContext<T>['storyContext']]
+  >;
+</script>
+
+<script
+  lang="ts"
+  generics="const TCmp extends Cmp, TChildren extends Snippet = Snippet, TTemplate extends TemplateSnippet<TCmp> = TemplateSnippet<TCmp>"
+>
   import type { Snippet } from 'svelte';
 
   import { useStoriesExtractor } from './contexts/extractor.svelte';
@@ -8,9 +17,6 @@
   import { storyNameToExportName } from '../utils/identifier-utils';
   import type { Cmp, StoryAnnotations } from '../types';
 
-  type TemplateSnippet = Snippet<
-    [StoryRendererContext<TCmp>['args'], StoryRendererContext<TCmp>['storyContext']]
-  >;
   type Props = Partial<StoryAnnotations<TCmp>> & {
     /**
      * @deprecated
@@ -70,7 +76,7 @@
            *
            * NOTE: Can be omitted if a default template is set with [`setTemplate()`](https://github.com/storybookjs/addon-svelte-csf/blob/main/README.md#default-snippet)
            */
-          children?: Snippet;
+          children?: TChildren;
           template?: never;
         }
       | {
@@ -80,7 +86,7 @@
            *
            * NOTE: Can be omitted if a default template is set with [`setTemplate()`](https://github.com/storybookjs/addon-svelte-csf/blob/main/README.md#default-snippet)
            */
-          template?: TemplateSnippet;
+          template?: TTemplate;
         }
     );
   let {
@@ -140,8 +146,6 @@
     <renderer.storyContext.component {...renderer.args} />
   {:else}
     <p>
-      <!-- TODO: Remove this -->
-      {'@dominikg gave up...'}
       No story rendered. See
       <a href="https://github.com/storybookjs/addon-svelte-csf#defining-stories" target="_blank"
         >the docs</a

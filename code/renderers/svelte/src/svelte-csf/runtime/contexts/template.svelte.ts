@@ -7,7 +7,7 @@ import type { Cmp } from '../../types';
 const CONTEXT_KEYS = 'storybook-stories-template-snippet-context';
 
 function buildContext<TCmp extends Cmp>() {
-  let template = $state<ComponentProps<typeof Story<TCmp>>['children']>();
+  let template = $state<ComponentProps<typeof Story<TCmp>>['template']>();
 
   function set(snippet?: typeof template) {
     template = snippet;

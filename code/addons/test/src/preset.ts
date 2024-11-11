@@ -14,7 +14,7 @@ import type { Options, PresetProperty, StoryId } from 'storybook/internal/types'
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import { STORYBOOK_ADDON_TEST_CHANNEL } from './constants';
+import { STORYBOOK_ADDON_TEST_CHANNEL, getUniversalState } from './constants';
 import { log } from './logger';
 import { runTestRunner } from './node/boot-test-runner';
 
@@ -46,6 +46,19 @@ type Event = {
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const experimental_serverChannel = async (channel: Channel, options: Options) => {
+  const myUniversalState = getUniversalState(channel);
+
+  myUniversalState.subscribe((state) => {
+    console.log('State updated:\n', JSON.stringify(state, null, 2));
+  });
+
+  setInterval(() => {
+    myUniversalState.state = {
+      message: 'SERVER TIMER: updated state',
+      randomNumber: Math.random(),
+    };
+  }, 10_000);
+
   const core = await options.presets.apply('core');
   const builderName = typeof core?.builder === 'string' ? core.builder : core?.builder?.name;
   const framework = await getFrameworkName(options);

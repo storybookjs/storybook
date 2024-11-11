@@ -1,6 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
-import { AddonPanel, Badge, Link as LinkComponent, Spaced } from 'storybook/internal/components';
+import {
+  AddonPanel,
+  Badge,
+  IconButton,
+  Link as LinkComponent,
+  Spaced,
+  WithTooltip,
+} from 'storybook/internal/components';
 import { TESTING_MODULE_RUN_ALL_REQUEST } from 'storybook/internal/core-events';
 import type { Combo } from 'storybook/internal/manager-api';
 import { Consumer, addons, types, useAddonState } from 'storybook/internal/manager-api';
@@ -11,10 +18,13 @@ import {
   Addon_TypesEnum,
 } from 'storybook/internal/types';
 
+import { WandIcon } from '@storybook/icons';
+
 import { Panel } from './Panel';
 import { GlobalErrorModal } from './components/GlobalErrorModal';
-import { ADDON_ID, PANEL_ID, TEST_PROVIDER_ID } from './constants';
+import { ADDON_ID, PANEL_ID, TEST_PROVIDER_ID, getUniversalState } from './constants';
 import type { TestResult } from './node/reporter';
+import { useUniversalState } from './use-universal-state-manager';
 
 function Title() {
   const [addonState = {}] = useAddonState(ADDON_ID);
@@ -80,6 +90,19 @@ const RelativeTime = ({ timestamp, testCount }: { timestamp: Date; testCount: nu
 };
 
 addons.register(ADDON_ID, (api) => {
+  const myUniversalState = getUniversalState(api.getChannel());
+
+  myUniversalState.subscribe((state) => {
+    console.log('MANAGER: State updated: \n', JSON.stringify(state, null, 2));
+  });
+
+  setInterval(() => {
+    myUniversalState.state = {
+      message: 'MANAGER TIMER: updated state',
+      randomNumber: Math.random(),
+    };
+  }, 8_000);
+
   const storybookBuilder = (globalThis as any).STORYBOOK_BUILDER || '';
   if (storybookBuilder.includes('vite')) {
     const openAddonPanel = () => {
@@ -97,6 +120,7 @@ addons.register(ADDON_ID, (api) => {
         crashed || failed ? 'Component tests failed' : 'Component tests',
       description: ({ failed, running, watching, progress, crashed, error }) => {
         const [isModalOpen, setIsModalOpen] = useState(false);
+        const [universalState, setUniversalState] = useUniversalState(myUniversalState);
 
         const errorMessage = error?.message;
 
@@ -135,6 +159,28 @@ addons.register(ADDON_ID, (api) => {
         return (
           <>
             {message}
+            <div
+              style={{
+                position: 'fixed',
+                left: 0,
+                bottom: 0,
+                width: '400px',
+                height: '150px',
+                background: 'white',
+                color: 'black',
+                border: '2px solid red',
+              }}
+              onClick={() => {
+                setUniversalState({
+                  message: 'USER TEST PROVIDER: updated state',
+                  randomNumber: Math.random(),
+                });
+              }}
+            >
+              <pre>
+                <code>{JSON.stringify(universalState, null, 2)}</code>
+              </pre>
+            </div>
             <GlobalErrorModal
               error={errorMessage}
               open={isModalOpen}
@@ -192,10 +238,80 @@ addons.register(ADDON_ID, (api) => {
         };
       }, []);
 
+      const [universalState, setUniversalState] = useUniversalState(myUniversalState);
+
       return (
         <AddonPanel active={active}>
+          <div
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              width: '400px',
+              height: '150px',
+              background: 'white',
+              color: 'black',
+              border: '2px solid red',
+            }}
+            onClick={() => {
+              setUniversalState({
+                message: 'USER PANEL: updated state',
+                randomNumber: Math.random(),
+              });
+            }}
+          >
+            <pre>
+              <code>{JSON.stringify(universalState, null, 2)}</code>
+            </pre>
+          </div>
           <Consumer filter={newLocal}>{({ storyId }) => <Panel storyId={storyId} />}</Consumer>
         </AddonPanel>
+      );
+    },
+  });
+
+  addons.add(PANEL_ID, {
+    title: '',
+    type: types.TOOL,
+    match: ({ viewMode, tabId }) => viewMode === 'story' && !tabId,
+    render: () => {
+      const [universalState, setUniversalState] = useUniversalState(myUniversalState);
+
+      return (
+        <WithTooltip
+          placement="top"
+          tooltip={() => {
+            return (
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  width: '400px',
+                  height: '150px',
+                  background: 'white',
+                  color: 'black',
+                  border: '2px solid red',
+                }}
+                onClick={() => {
+                  setUniversalState({
+                    message: 'USER TOOLBAR: updated state',
+                    randomNumber: Math.random(),
+                  });
+                }}
+              >
+                <pre>
+                  <code>{JSON.stringify(universalState, null, 2)}</code>
+                </pre>
+              </div>
+            );
+          }}
+          closeOnOutsideClick
+        >
+          <IconButton key="filter" title="Debug universal state">
+            <WandIcon />
+          </IconButton>
+        </WithTooltip>
       );
     },
   });

@@ -59,7 +59,6 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
         Information on how to upgrade here: ${picocolors.yellow('https://storybook.js.org/docs/get-started/frameworks/nextjs#with-vite')}\n
       `);
     }
-
     return channel;
   }
 

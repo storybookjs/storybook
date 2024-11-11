@@ -16,7 +16,7 @@ import type { InstallationMetadata } from './types';
 
 const logger = console;
 
-export type PackageManagerName = 'npm' | 'yarn1' | 'yarn2' | 'pnpm';
+export type PackageManagerName = 'npm' | 'yarn1' | 'yarn2' | 'pnpm' | 'bun';
 
 type StorybookPackage = keyof typeof storybookPackagesVersions;
 

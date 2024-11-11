@@ -11,12 +11,19 @@ const List = styled.div(
     minWidth: 180,
     overflow: 'hidden',
     overflowY: 'auto',
-    maxHeight: 15.5 * 32, // 11.5 items
+    maxHeight: 15.5 * 32 + 8, // 15.5 items at 32px each + 8px padding
   },
   ({ theme }) => ({
-    borderRadius: theme.appBorderRadius,
+    borderRadius: theme.appBorderRadius + 2,
   })
 );
+
+const Group = styled.div(({ theme }) => ({
+  padding: 4,
+  '& + &': {
+    borderTop: `1px solid ${theme.appBorderColor}`,
+  },
+}));
 
 export interface Link extends Omit<ListItemProps, 'onClick'> {
   id: string;
@@ -42,17 +49,26 @@ const Item = ({ id, onClick, ...rest }: ItemProps) => {
 };
 
 export interface TooltipLinkListProps extends ComponentProps<typeof List> {
-  links: Link[];
+  links: Link[] | Link[][];
   LinkWrapper?: LinkWrapperType;
 }
 
 export const TooltipLinkList = ({ links, LinkWrapper, ...props }: TooltipLinkListProps) => {
-  const isIndented = links.some((link) => link.icon);
+  const groups = Array.isArray(links[0]) ? (links as Link[][]) : [links as Link[]];
+  const isIndented = groups.some((group) => group.some((link) => link.icon));
   return (
     <List {...props}>
-      {links.map((link) => (
-        <Item key={link.id} isIndented={isIndented} LinkWrapper={LinkWrapper} {...link} />
-      ))}
+      {groups
+        .filter((group) => group.length)
+        .map((group, index) => {
+          return (
+            <Group key={group.map((link) => link.id).join(`~${index}~`)}>
+              {group.map((link) => (
+                <Item key={link.id} isIndented={isIndented} LinkWrapper={LinkWrapper} {...link} />
+              ))}
+            </Group>
+          );
+        })}
     </List>
   );
 };

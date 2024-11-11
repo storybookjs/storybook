@@ -65,7 +65,7 @@ export class StorybookReporter implements Reporter {
   sendReport: (payload: TestingModuleProgressReportPayload) => void;
 
   constructor(private testManager: TestManager) {
-    this.sendReport = throttle((payload) => this.testManager.sendProgressReport(payload), 200);
+    this.sendReport = throttle((payload) => this.testManager.sendProgressReport(payload), 1000);
   }
 
   onInit(ctx: Vitest) {
@@ -190,51 +190,55 @@ export class StorybookReporter implements Reporter {
   async onFinished() {
     const unhandledErrors = this.ctx.state.getUnhandledErrors();
 
-    if (unhandledErrors?.length) {
-      this.testManager.reportFatalError(
-        `Vitest caught ${unhandledErrors.length} unhandled error${unhandledErrors?.length > 1 ? 's' : ''} during the test run.`,
-        unhandledErrors[0]
-      );
-    } else {
-      const isCancelled = this.ctx.isCancelling;
-      const report = this.getProgressReport(Date.now());
+    const isCancelled = this.ctx.isCancelling;
+    const report = this.getProgressReport(Date.now());
 
-      const testSuiteFailures = report.details.testResults.filter(
-        (t) => t.status === 'failed' && t.results.length === 0
-      );
+    const testSuiteFailures = report.details.testResults.filter(
+      (t) => t.status === 'failed' && t.results.length === 0
+    );
 
-      const reducedTestSuiteFailures = new Set<string>();
+    const reducedTestSuiteFailures = new Set<string>();
 
-      testSuiteFailures.forEach((t) => {
-        reducedTestSuiteFailures.add(t.message);
+    testSuiteFailures.forEach((t) => {
+      reducedTestSuiteFailures.add(t.message);
+    });
+
+    if (isCancelled) {
+      this.sendReport({
+        providerId: TEST_PROVIDER_ID,
+        status: 'cancelled',
+        ...report,
       });
+    } else if (reducedTestSuiteFailures.size > 0 || unhandledErrors.length > 0) {
+      const error =
+        reducedTestSuiteFailures.size > 0
+          ? {
+              name: `${reducedTestSuiteFailures.size} component ${reducedTestSuiteFailures.size === 1 ? 'test' : 'tests'} failed`,
+              message: Array.from(reducedTestSuiteFailures).reduce(
+                (acc, curr) => `${acc}\n${curr}`,
+                ''
+              ),
+            }
+          : {
+              name: `${unhandledErrors.length} unhandled error${unhandledErrors?.length > 1 ? 's' : ''}`,
+              message: unhandledErrors
+                .map((e, index) => `[${index}]: ${(e as any).stack || (e as any).message}`)
+                .join('\n----------\n'),
+            };
 
-      if (isCancelled) {
-        this.sendReport({
-          providerId: TEST_PROVIDER_ID,
-          status: 'cancelled',
-          ...report,
-        });
-      } else if (reducedTestSuiteFailures.size > 0) {
-        const message = Array.from(reducedTestSuiteFailures).reduce(
-          (acc, curr) => `${acc}\n${curr}`,
-          ''
-        );
-        this.sendReport({
-          providerId: TEST_PROVIDER_ID,
-          status: 'failed',
-          error: {
-            name: `${reducedTestSuiteFailures.size} component ${reducedTestSuiteFailures.size === 1 ? 'test' : 'tests'} failed`,
-            message: message,
-          },
-        });
-      } else {
-        this.sendReport({
-          providerId: TEST_PROVIDER_ID,
-          status: 'success',
-          ...report,
-        });
-      }
+      this.sendReport({
+        providerId: TEST_PROVIDER_ID,
+        status: 'failed',
+        details: report.details,
+        progress: report.progress,
+        error,
+      });
+    } else {
+      this.sendReport({
+        providerId: TEST_PROVIDER_ID,
+        status: 'success',
+        ...report,
+      });
     }
 
     this.clearVitestState();

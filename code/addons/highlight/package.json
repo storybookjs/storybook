@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-highlight",
-  "version": "8.4.0-beta.1",
+  "version": "8.5.0-alpha.3",
   "description": "Highlight DOM nodes within your stories",
   "keywords": [
     "storybook-addons",

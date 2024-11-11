@@ -211,6 +211,31 @@ jobs:
             yarn knip --no-exit-code
       - report-workflow-on-failure
       - cancel-workflow-on-failure
+  bench-packages:
+    executor:
+      class: medium
+      name: sb_node_22_classic
+    steps:
+      - git-shallow-clone/checkout_advanced:
+          clone_options: "--depth 1 --verbose"
+      - attach_workspace:
+          at: .
+      - run:
+          name: Benchmarking Packages
+          working_directory: scripts
+          command: |
+            yarn local-registry --open &
+            until curl -s http://localhost:6001 > /dev/null; do
+              echo 'Waiting for local registry to be available...'
+              sleep 2
+            done
+            yarn bench-packages --baseBranch << pipeline.parameters.ghBaseBranch >> --pull-request << pipeline.parameters.ghPrNumber >> --upload
+      - store_artifacts: 
+          path: bench/packages/results.json
+      - store_artifacts: 
+          path: bench/packages/compare-with-<< pipeline.parameters.ghBaseBranch >>.json
+      - report-workflow-on-failure
+      - cancel-workflow-on-failure
   check:
     executor:
       class: xlarge
@@ -543,7 +568,7 @@ jobs:
       - store_artifacts: # this is where playwright puts more complex stuff
           path: code/playwright-results/
           destination: playwright
-  bench:
+  bench-sandboxes:
     parameters:
       parallelism:
         type: integer
@@ -753,6 +778,9 @@ workflows:
       - knip:
           requires:
             - build
+      - bench-packages:
+          requires:
+            - build
       - check:
           requires:
             - build
@@ -799,7 +827,7 @@ workflows:
           parallelism: 5
           requires:
             - create-sandboxes
-      - bench:
+      - bench-sandboxes:
           parallelism: 5
           requires:
             - build-sandboxes
@@ -826,6 +854,9 @@ workflows:
           requires:
             - build
       - knip:
+          requires:
+            - build
+      - bench-packages:
           requires:
             - build
       - check:
@@ -883,7 +914,7 @@ workflows:
       - test-ui-testing-module:
           requires:
             - build
-      - bench:
+      - bench-sandboxes:
           parallelism: 5
           requires:
             - build-sandboxes
@@ -902,6 +933,9 @@ workflows:
           requires:
             - build
       - knip:
+          requires:
+            - build
+      - bench-packages:
           requires:
             - build
       - check:
@@ -977,7 +1011,7 @@ workflows:
                 # --smoke-test is not supported for the angular builder right now
                 # - "angular-cli"
                 - "lit-vite-ts"
-      - bench:
+      - bench-sandboxes:
           parallelism: 5
           requires:
             - build-sandboxes

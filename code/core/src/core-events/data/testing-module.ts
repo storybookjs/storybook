@@ -37,6 +37,8 @@ export type TestingModuleProgressReportPayload =
   | {
       providerId: TestProviderId;
       status: 'failed';
+      progress?: TestingModuleProgressReportProgress;
+      details?: { [key: string]: any };
       error: {
         name: string;
         message: string;

@@ -36,16 +36,16 @@ export const configureConfig = async ({
     addScopedAlias(baseConfig, 'react', 'next/dist/compiled/react');
   }
   if (tryResolve('next/dist/compiled/react-dom/cjs/react-dom-test-utils.production.js')) {
-    setAlias(
+    addScopedAlias(
       baseConfig,
       'react-dom/test-utils',
       'next/dist/compiled/react-dom/cjs/react-dom-test-utils.production.js'
     );
   }
   if (tryResolve('next/dist/compiled/react-dom')) {
-    setAlias(baseConfig, 'react-dom$', 'next/dist/compiled/react-dom');
-    setAlias(baseConfig, 'react-dom/client', 'next/dist/compiled/react-dom/client');
-    setAlias(baseConfig, 'react-dom/server', 'next/dist/compiled/react-dom/server');
+    addScopedAlias(baseConfig, 'react-dom$', 'next/dist/compiled/react-dom');
+    addScopedAlias(baseConfig, 'react-dom/client', 'next/dist/compiled/react-dom/client');
+    addScopedAlias(baseConfig, 'react-dom/server', 'next/dist/compiled/react-dom/server');
   }
 
   setupRuntimeConfig(baseConfig, nextConfig);

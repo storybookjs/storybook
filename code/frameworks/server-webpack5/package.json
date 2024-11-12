@@ -1,6 +1,6 @@
 {
   "name": "@storybook/server-webpack5",
-  "version": "8.4.0-alpha.8",
+  "version": "8.5.0-alpha.4",
   "description": "Storybook for Server: View HTML snippets from a server in isolation with Hot Reloading.",
   "keywords": [
     "storybook"

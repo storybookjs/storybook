@@ -1,6 +1,6 @@
 {
   "name": "@storybook/nextjs",
-  "version": "8.4.0-alpha.8",
+  "version": "8.5.0-alpha.4",
   "description": "Storybook for Next.js",
   "keywords": [
     "storybook",
@@ -56,6 +56,11 @@
       "types": "./dist/compatibility/redirect-status-code.compat.d.ts",
       "import": "./dist/compatibility/redirect-status-code.compat.mjs",
       "require": "./dist/compatibility/redirect-status-code.compat.js"
+    },
+    "./dist/compatibility/draft-mode.compat": {
+      "types": "./dist/compatibility/draft-mode.compat.d.ts",
+      "import": "./dist/compatibility/draft-mode.compat.mjs",
+      "require": "./dist/compatibility/draft-mode.compat.js"
     },
     "./export-mocks": {
       "types": "./dist/export-mocks/index.d.ts",
@@ -156,7 +161,7 @@
     "postcss-loader": "^8.1.1",
     "react-refresh": "^0.14.0",
     "resolve-url-loader": "^5.0.0",
-    "sass-loader": "^13.2.0",
+    "sass-loader": "^14.2.1",
     "semver": "^7.3.5",
     "style-loader": "^3.3.1",
     "styled-jsx": "^5.1.6",
@@ -171,12 +176,12 @@
     "@types/babel__preset-env": "^7",
     "@types/loader-utils": "^2.0.5",
     "@types/react-refresh": "^0",
-    "next": "^14.1.0",
+    "next": "^15.0.3",
     "typescript": "^5.3.2",
     "webpack": "^5.65.0"
   },
   "peerDependencies": {
-    "next": "^13.5.0 || ^14.0.0",
+    "next": "^13.5.0 || ^14.0.0 || ^15.0.0",
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
     "storybook": "workspace:^",
@@ -212,6 +217,7 @@
       "./src/export-mocks/navigation/index.ts",
       "./src/compatibility/segment.compat.ts",
       "./src/compatibility/redirect-status-code.compat.ts",
+      "./src/compatibility/draft-mode.compat.ts",
       "./src/next-image-loader-stub.ts",
       "./src/images/decorator.tsx",
       "./src/images/next-legacy-image.tsx",

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/router",
-  "version": "8.4.0-alpha.8",
+  "version": "8.5.0-alpha.4",
   "description": "Core Storybook Router",
   "keywords": [
     "storybook"
@@ -44,7 +44,7 @@
     "*.d.ts"
   ],
   "peerDependencies": {
-    "storybook": "workspace:^"
+    "storybook": "^8.2.0 || ^8.3.0-0 || ^8.4.0-0 || ^8.5.0-0 || ^8.6.0-0"
   },
   "publishConfig": {
     "access": "public"

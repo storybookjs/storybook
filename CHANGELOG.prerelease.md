@@ -1,3 +1,71 @@
+## 8.5.0-alpha.4
+
+- Next.js: Add support for Next 15 - [#29587](https://github.com/storybookjs/storybook/pull/29587), thanks @yannbf!
+- UI: Add Yarn to About Section - [#29225](https://github.com/storybookjs/storybook/pull/29225), thanks @grantwforsythe!
+
+## 8.5.0-alpha.3
+
+- Addon Test: Fix post-install logic for Next.js Vite framework support - [#29524](https://github.com/storybookjs/storybook/pull/29524), thanks @valentinpalkovic!
+- Core: Prevent clipping box shadow on file search modal - [#29523](https://github.com/storybookjs/storybook/pull/29523), thanks @ghengeveld!
+
+## 8.5.0-alpha.2
+
+- Addon Test: Only render the TestingModule component in development mode - [#29501](https://github.com/storybookjs/storybook/pull/29501), thanks @yannbf!
+- CLI: Fix Solid init by installing `@storybook/test` - [#29514](https://github.com/storybookjs/storybook/pull/29514), thanks @shilman!
+- Core: Add bun support with npm fallback - [#29267](https://github.com/storybookjs/storybook/pull/29267), thanks @stephenjason89!
+- Core: Shim CJS-only globals in ESM output - [#29157](https://github.com/storybookjs/storybook/pull/29157), thanks @valentinpalkovic!
+- Next.js: Fix bundled react and react-dom in monorepos - [#29444](https://github.com/storybookjs/storybook/pull/29444), thanks @sentience!
+- Next.js: Upgrade sass-loader from ^13.2.0 to ^14.2.1 - [#29264](https://github.com/storybookjs/storybook/pull/29264), thanks @HoncharenkoZhenya!
+- UI: Add support for groups to `TooltipLinkList` and use it in main menu - [#29507](https://github.com/storybookjs/storybook/pull/29507), thanks @ghengeveld!
+
+## 8.5.0-alpha.1
+
+- Core: Relax peer dep constraint of shim packages - [#29503](https://github.com/storybookjs/storybook/pull/29503), thanks @kasperpeulen!
+
+## 8.5.0-alpha.0
+
+
+## 8.4.0-beta.5
+
+- Addon Test: Improve unsupported vitest message - [#29486](https://github.com/storybookjs/storybook/pull/29486), thanks @valentinpalkovic!
+- Core: Fix race condition during empty folder init - [#29490](https://github.com/storybookjs/storybook/pull/29490), thanks @valentinpalkovic!
+
+## 8.4.0-beta.4
+
+- Addon Test: Improve Error Handling - [#29476](https://github.com/storybookjs/storybook/pull/29476), thanks @valentinpalkovic!
+- Addon Test: Improve postinstall script - [#29479](https://github.com/storybookjs/storybook/pull/29479), thanks @yannbf!
+- Addon Test: Throttle Vitest progress updates more heavily - [#29482](https://github.com/storybookjs/storybook/pull/29482), thanks @ghengeveld!
+- CLI: Refactor NPMProxy error parsing logic - [#29459](https://github.com/storybookjs/storybook/pull/29459), thanks @yannbf!
+- Core: Track test provider state in sessionStorage - [#29450](https://github.com/storybookjs/storybook/pull/29450), thanks @ghengeveld!
+- Dependencies: Upgrade VTA to v3.2.0 to resolve peerDep conflict - [#29461](https://github.com/storybookjs/storybook/pull/29461), thanks @ghengeveld!
+
+## 8.4.0-beta.3
+
+- Addon Test: Only register testing module in Vite projects - [#29472](https://github.com/storybookjs/storybook/pull/29472), thanks @yannbf!
+
+## 8.4.0-beta.2
+
+- Addon Test: Adjust file exports to be ESM/CJS compatible - [#29471](https://github.com/storybookjs/storybook/pull/29471), thanks @valentinpalkovic!
+- Core: Show tooltip on filter toggles to clarify their purpose - [#29447](https://github.com/storybookjs/storybook/pull/29447), thanks @ghengeveld!
+- Webpack: Fix export 'act' (imported as 'React4') was not found in 'react' errors in webpack - [#29235](https://github.com/storybookjs/storybook/pull/29235), thanks @kasperpeulen!
+
+## 8.4.0-beta.1
+
+- Addon Test: Error when addon interactions exists - [#29434](https://github.com/storybookjs/storybook/pull/29434), thanks @valentinpalkovic!
+- Addon Test: Escape XML when converting ANSI to HTML in test errors - [#29446](https://github.com/storybookjs/storybook/pull/29446), thanks @ghengeveld!
+- Addon Test: Fix hiding stacktrace for assertion errors in test panel - [#29458](https://github.com/storybookjs/storybook/pull/29458), thanks @ghengeveld!
+- CLI: Fix `yarn` detection - [#29448](https://github.com/storybookjs/storybook/pull/29448), thanks @ndelangen!
+- Core: Close story status menu when selecting an item - [#29455](https://github.com/storybookjs/storybook/pull/29455), thanks @ghengeveld!
+- Core: Open 'Component tests' addon panel when clicking a story status - [#29456](https://github.com/storybookjs/storybook/pull/29456), thanks @ghengeveld!
+- Core: Show checkmark icon in story status dropdown and update status label for component tests - [#29451](https://github.com/storybookjs/storybook/pull/29451), thanks @ghengeveld!
+- Dependencies: Upgrade VTA to v3.1.0 - [#29449](https://github.com/storybookjs/storybook/pull/29449), thanks @ghengeveld!
+- Maintenance: Fix broken and outdated documentation links - [#29412](https://github.com/storybookjs/storybook/pull/29412), thanks @jonniebigodes!
+
+## 8.4.0-beta.0
+
+- Core: Add unified UI Testing Module - [#29241](https://github.com/storybookjs/storybook/pull/29241), thanks @yannbf!
+- Svelte: Improve argTypes inference with `svelte2tsx` - support runes - [#29423](https://github.com/storybookjs/storybook/pull/29423), thanks @JReinhold!
+
 ## 8.4.0-alpha.8
 
 - Addon-Test: Support for `@vitest/browser` v2.1.2 - [#29407](https://github.com/storybookjs/storybook/pull/29407), thanks @strozw!

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/test",
-  "version": "8.4.0-alpha.8",
+  "version": "8.5.0-alpha.4",
   "description": "",
   "keywords": [
     "storybook"
@@ -23,10 +23,9 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
       "node": "./dist/index.js",
-      "default": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./package.json": "./package.json"
   },

@@ -5,7 +5,7 @@ import type { Options as ExecaOptions } from 'execa';
 // eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
 // eslint-disable-next-line depend/ban-dependencies
-import { copy, emptyDir, ensureDir, move, remove, rename, writeFile } from 'fs-extra';
+import { copy, emptyDir, ensureDir, move, remove, writeFile } from 'fs-extra';
 import pLimit from 'p-limit';
 import { join, relative } from 'path';
 import prettyTime from 'pretty-hrtime';
@@ -129,7 +129,8 @@ const addStorybook = async ({
     throw e;
   }
 
-  await rename(tmpDir, afterDir);
+  await copy(tmpDir, afterDir);
+  await remove(tmpDir);
 };
 
 export const runCommand = async (script: string, options: ExecaOptions, debug = false) => {
@@ -197,7 +198,19 @@ const runGenerators = async (
           // We do the creation inside a temp dir to avoid yarn container problems
           const createBaseDir = await temporaryDirectory();
           if (!script.includes('pnp')) {
-            await setupYarn({ cwd: createBaseDir });
+            try {
+              await setupYarn({ cwd: createBaseDir });
+            } catch (error) {
+              const message = `❌ Failed to setup yarn in template: ${name} (${dirName})`;
+              if (isCI) {
+                ghActions.error(dedent`${message}
+                  ${(error as any).stack}`);
+              } else {
+                console.error(message);
+                console.error(error);
+              }
+              throw new Error(message);
+            }
           }
 
           const createBeforeDir = join(createBaseDir, BEFORE_DIR_NAME);

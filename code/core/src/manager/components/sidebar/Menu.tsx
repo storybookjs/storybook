@@ -8,9 +8,10 @@ import { CloseIcon, CogIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
 
+import type { useMenu } from '../../container/Menu';
 import { useLayout } from '../layout/LayoutProvider';
 
-export type MenuList = ComponentProps<typeof TooltipLinkList>['links'];
+export type MenuList = ReturnType<typeof useMenu>;
 
 export const SidebarIconButton: FC<ComponentProps<typeof Button> & { highlighted: boolean }> =
   styled(IconButton)<
@@ -60,17 +61,21 @@ const SidebarMenuList: FC<{
   menu: MenuList;
   onHide: () => void;
 }> = ({ menu, onHide }) => {
-  const links = useMemo(() => {
-    return menu.map(({ onClick, ...rest }) => ({
-      ...rest,
-      onClick: ((event, item) => {
-        if (onClick) {
-          onClick(event, item);
-        }
-        onHide();
-      }) as ClickHandler,
-    }));
-  }, [menu, onHide]);
+  const links = useMemo(
+    () =>
+      menu.map((group) =>
+        group.map(({ onClick, ...rest }) => ({
+          ...rest,
+          onClick: ((event, item) => {
+            if (onClick) {
+              onClick(event, item);
+            }
+            onHide();
+          }) as ClickHandler,
+        }))
+      ),
+    [menu, onHide]
+  );
   return <TooltipLinkList links={links} />;
 };
 

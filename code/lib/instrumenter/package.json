@@ -1,6 +1,6 @@
 {
   "name": "@storybook/instrumenter",
-  "version": "8.4.0-alpha.8",
+  "version": "8.5.0-alpha.4",
   "description": "",
   "keywords": [
     "storybook"
@@ -44,7 +44,7 @@
   },
   "dependencies": {
     "@storybook/global": "^5.0.0",
-    "@vitest/utils": "^2.0.5"
+    "@vitest/utils": "^2.1.1"
   },
   "devDependencies": {
     "typescript": "^5.3.2"

@@ -41,6 +41,8 @@ const managerContext: any = {
     getShortcutKeys: fn(() => ({ search: ['control', 'shift', 's'] })).mockName(
       'api::getShortcutKeys'
     ),
+    getChannel: fn().mockName('api::getChannel'),
+    getElements: fn(() => ({})),
     selectStory: fn().mockName('api::selectStory'),
     experimental_setFilter: fn().mockName('api::experimental_setFilter'),
     getDocsUrl: () => 'https://storybook.js.org/docs/',
@@ -83,6 +85,7 @@ const meta = {
     refs: {},
     status: {},
     showCreateStoryButton: true,
+    isDevelopment: true,
   },
   decorators: [
     (storyFn) => (

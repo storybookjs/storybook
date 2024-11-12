@@ -1,6 +1,6 @@
 {
   "name": "@storybook/core-events",
-  "version": "8.4.0-alpha.8",
+  "version": "8.5.0-alpha.4",
   "description": "Event names used in storybook core",
   "keywords": [
     "storybook"
@@ -70,7 +70,7 @@
     "*.d.ts"
   ],
   "peerDependencies": {
-    "storybook": "workspace:^"
+    "storybook": "^8.2.0 || ^8.3.0-0 || ^8.4.0-0 || ^8.5.0-0 || ^8.6.0-0"
   },
   "publishConfig": {
     "access": "public"

@@ -43,8 +43,8 @@ export const Empty = () => {
       title="Component testing"
       description={
         <>
-          Component tests allow you to verify the functional aspects of UIs. Write a play function
-          for your story and you&apos;ll see it run here.
+          Your component rendered successfully. Add a play function to this story to test its
+          functionality, which will be displayed here.
         </>
       }
       footer={

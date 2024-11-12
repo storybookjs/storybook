@@ -1,5 +1,7 @@
 import React from 'react';
 
+import type { Meta, StoryObj } from '@storybook/react';
+
 const Component = () => (
   <div>
     <style jsx>{`
@@ -15,6 +17,6 @@ const Component = () => (
 
 export default {
   component: Component,
-};
+} as Meta<typeof Component>;
 
-export const Default = {};
+export const Default: StoryObj<typeof Component> = {};

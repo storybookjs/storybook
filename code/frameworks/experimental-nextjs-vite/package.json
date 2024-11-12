@@ -103,12 +103,12 @@
   },
   "devDependencies": {
     "@types/node": "^18.0.0",
-    "next": "^14.2.5",
+    "next": "^15.0.3",
     "typescript": "^5.3.2"
   },
   "peerDependencies": {
     "@storybook/test": "workspace:*",
-    "next": "^14.1.0",
+    "next": "^14.1.0 || ^15.0.0",
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
     "storybook": "workspace:^",

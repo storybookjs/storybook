@@ -156,10 +156,10 @@ const baseTemplates = {
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
-  'nextjs/default-js': {
-    name: 'Next.js Latest (Webpack | JavaScript)',
+  'nextjs/14-ts': {
+    name: 'Next.js v14.2 (Webpack | TypeScript)',
     script:
-      'npx create-next-app@^14 {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
+      'yarn create next-app {{beforeDir}} -e https://github.com/vercel/next.js/tree/v14.2.17/examples/hello-world && cd {{beforeDir}} && npm pkg set "dependencies.next"="^14.2.17" && yarn && git add . && git commit --amend --no-edit && cd ..',
     expected: {
       framework: '@storybook/nextjs',
       renderer: '@storybook/react',
@@ -172,11 +172,12 @@ const baseTemplates = {
       extraDependencies: ['server-only', 'prop-types'],
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
+    inDevelopment: true,
   },
   'nextjs/default-ts': {
     name: 'Next.js Latest (Webpack | TypeScript)',
     script:
-      'npx create-next-app@^14 {{beforeDir}} --typescript --eslint --tailwind --app --import-alias="@/*" --src-dir',
+      'npx create-next-app {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
     expected: {
       framework: '@storybook/nextjs',
       renderer: '@storybook/react',
@@ -193,7 +194,7 @@ const baseTemplates = {
   'nextjs/prerelease': {
     name: 'Next.js Prerelease (Webpack | TypeScript)',
     script:
-      'npx create-next-app@canary {{beforeDir}} --typescript --eslint --tailwind --app --import-alias="@/*" --src-dir',
+      'npx create-next-app@canary {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
     expected: {
       framework: '@storybook/nextjs',
       renderer: '@storybook/react',
@@ -210,7 +211,7 @@ const baseTemplates = {
   'experimental-nextjs-vite/default-ts': {
     name: 'Next.js Latest (Vite | TypeScript)',
     script:
-      'npx create-next-app@^14 {{beforeDir}} --typescript --eslint --tailwind --app --import-alias="@/*" --src-dir',
+      'npx create-next-app@^14 {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
     expected: {
       framework: '@storybook/experimental-nextjs-vite',
       renderer: '@storybook/react',
@@ -785,7 +786,6 @@ export const daily: TemplateKey[] = [
   'svelte-kit/prerelease-ts',
   'svelte-vite/default-js',
   'nextjs/13-ts',
-  'nextjs/default-js',
   'nextjs/prerelease',
   'qwik-vite/default-ts',
   'preact-vite/default-js',

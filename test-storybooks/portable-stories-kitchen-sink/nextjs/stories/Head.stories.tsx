@@ -1,7 +1,7 @@
 import Head from 'next/head';
 import React from 'react';
 import { expect, waitFor } from '@storybook/test';
-import { StoryObj } from '@storybook/react';
+import { Meta, StoryObj } from '@storybook/react';
 
 function Component() {
   return (
@@ -20,7 +20,7 @@ function Component() {
 
 export default {
   component: Component,
-};
+} as Meta<typeof Component>;
 
 export const Default: StoryObj = {
   play: async () => {

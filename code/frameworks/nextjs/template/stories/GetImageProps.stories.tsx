@@ -1,12 +1,14 @@
 import React from 'react';
 
+import type { Meta, StoryObj } from '@storybook/react';
+
 import { getImageProps } from 'next/image';
 
 import Accessibility from '../../assets/accessibility.svg';
 import Testing from '../../assets/testing.png';
 
 // referenced from https://nextjs.org/docs/pages/api-reference/components/image#theme-detection-picture
-const Component = (props) => {
+const Component = (props: any) => {
   const {
     props: { srcSet: dark },
   } = getImageProps({ src: Accessibility, ...props });
@@ -29,6 +31,6 @@ export default {
   args: {
     alt: 'getImageProps Example',
   },
-};
+} as Meta<typeof Component>;
 
-export const Default = {};
+export const Default: StoryObj<typeof Component> = {};

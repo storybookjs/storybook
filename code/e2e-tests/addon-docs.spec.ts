@@ -189,6 +189,10 @@ test.describe('addon-docs', () => {
   });
 
   test('should resolve react to the correct version', async ({ page }) => {
+    test.skip(
+      templateName?.includes('nextjs'),
+      'TODO: remove this once sandboxes are synced (SOON!!)'
+    );
     // Arrange - Navigate to MDX docs
     const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory('addons/docs/docs2/resolvedreact', 'mdx', 'docs');
@@ -201,6 +205,7 @@ test.describe('addon-docs', () => {
     } else if (templateName.includes('react16')) {
       expectedReactVersionRange = /^16/;
     } else if (
+      templateName.includes('nextjs/default-ts') ||
       templateName.includes('nextjs/prerelease') ||
       templateName.includes('react-vite/prerelease') ||
       templateName.includes('react-webpack/prerelease')

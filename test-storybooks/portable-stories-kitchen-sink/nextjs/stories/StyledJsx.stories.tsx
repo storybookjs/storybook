@@ -1,3 +1,4 @@
+import { Meta } from '@storybook/react';
 import React from 'react';
 
 const Component = () => (
@@ -15,6 +16,6 @@ const Component = () => (
 
 export default {
   component: Component,
-};
+} as Meta<typeof Component>;
 
 export const Default = {};

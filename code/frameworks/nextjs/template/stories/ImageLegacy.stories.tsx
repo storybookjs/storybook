@@ -1,9 +1,8 @@
-import React, { useRef, useState } from 'react';
+import type { Meta, StoryObj } from '@storybook/react';
 
-import Image from 'next/image';
+import Image from 'next/legacy/image';
 
 import Accessibility from '../../assets/accessibility.svg';
-import AvifImage from '../../assets/avif-test-image.avif';
 
 export default {
   component: Image,
@@ -11,24 +10,19 @@ export default {
     src: Accessibility,
     alt: 'Accessibility',
   },
-};
+} as Meta<typeof Image>;
 
-export const Default = {};
+type Story = StoryObj<typeof Image>;
 
-export const Avif = {
-  args: {
-    src: AvifImage,
-    alt: 'Avif Test Image',
-  },
-};
+export const Default: Story = {};
 
-export const BlurredPlaceholder = {
+export const BlurredPlaceholder: Story = {
   args: {
     placeholder: 'blur',
   },
 };
 
-export const BlurredAbsolutePlaceholder = {
+export const BlurredAbsolutePlaceholder: Story = {
   args: {
     src: 'https://storybook.js.org/images/placeholders/50x50.png',
     width: 50,
@@ -41,64 +35,5 @@ export const BlurredAbsolutePlaceholder = {
     // ignoring in Chromatic to avoid inconsistent snapshots
     // given that the switch from blur to image is quite fast
     chromatic: { disableSnapshot: true },
-  },
-};
-
-export const FilledParent = {
-  args: {
-    fill: true,
-  },
-  decorator: [
-    (Story) => <div style={{ width: 500, height: 500, position: 'relative' }}>{Story()}</div>,
-  ],
-};
-
-export const Sized = {
-  args: {
-    fill: true,
-    sizes: '(max-width: 600px) 100vw, 600px',
-    decorator: [
-      (Story) => <div style={{ width: 800, height: 800, position: 'relative' }}>{Story()}</div>,
-    ],
-  },
-};
-
-export const Lazy = {
-  args: {
-    src: 'https://storybook.js.org/images/placeholders/50x50.png',
-    width: 50,
-    height: 50,
-  },
-  decorators: [
-    (Story) => (
-      <>
-        <div style={{ height: '200vh' }} />
-        {Story()}
-      </>
-    ),
-  ],
-};
-
-export const Eager = {
-  ...Lazy,
-  parameters: {
-    nextjs: {
-      image: {
-        loading: 'eager',
-      },
-    },
-  },
-};
-
-export const WithRef = {
-  render() {
-    const [ref, setRef] = useState(null);
-
-    return (
-      <div>
-        <Image src={Accessibility} alt="Accessibility" ref={setRef} />
-        <p>Alt attribute of image: {ref?.alt}</p>
-      </div>
-    );
   },
 };

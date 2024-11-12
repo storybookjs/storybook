@@ -58,7 +58,9 @@ export default {
   },
 } as Meta<typeof Component>;
 
-export const ProtectedWhileLoggedOut: StoryObj<typeof Component> = {
+type Story = StoryObj<typeof Component>;
+
+export const ProtectedWhileLoggedOut: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByText('Access protected route'));
@@ -70,7 +72,7 @@ export const ProtectedWhileLoggedOut: StoryObj<typeof Component> = {
   },
 };
 
-export const ProtectedWhileLoggedIn: StoryObj<typeof Component> = {
+export const ProtectedWhileLoggedIn: Story = {
   beforeEach() {
     cookies().set('user', 'storybookjs');
   },
@@ -86,7 +88,7 @@ export const ProtectedWhileLoggedIn: StoryObj<typeof Component> = {
   },
 };
 
-export const Logout: StoryObj<typeof Component> = {
+export const Logout: Story = {
   beforeEach() {
     cookies().set('user', 'storybookjs');
   },
@@ -102,7 +104,7 @@ export const Logout: StoryObj<typeof Component> = {
   },
 };
 
-export const Login: StoryObj<typeof Component> = {
+export const Login: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByText('Login'));

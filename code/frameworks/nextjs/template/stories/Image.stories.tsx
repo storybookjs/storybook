@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 
-import Image from 'next/legacy/image';
+import type { Meta, StoryObj } from '@storybook/react';
+
+import Image from 'next/image';
 
 import Accessibility from '../../assets/accessibility.svg';
+import AvifImage from '../../assets/avif-test-image.avif';
 
 export default {
   component: Image,
@@ -10,17 +13,26 @@ export default {
     src: Accessibility,
     alt: 'Accessibility',
   },
+} as Meta<typeof Image>;
+
+type Story = StoryObj<typeof Image>;
+
+export const Default: Story = {};
+
+export const Avif: Story = {
+  args: {
+    src: AvifImage,
+    alt: 'Avif Test Image',
+  },
 };
 
-export const Default = {};
-
-export const BlurredPlaceholder = {
+export const BlurredPlaceholder: Story = {
   args: {
     placeholder: 'blur',
   },
 };
 
-export const BlurredAbsolutePlaceholder = {
+export const BlurredAbsolutePlaceholder: Story = {
   args: {
     src: 'https://storybook.js.org/images/placeholders/50x50.png',
     width: 50,
@@ -33,5 +45,64 @@ export const BlurredAbsolutePlaceholder = {
     // ignoring in Chromatic to avoid inconsistent snapshots
     // given that the switch from blur to image is quite fast
     chromatic: { disableSnapshot: true },
+  },
+};
+
+export const FilledParent: Story = {
+  args: {
+    fill: true,
+  },
+  decorators: [
+    (Story) => <div style={{ width: 500, height: 500, position: 'relative' }}>{Story()}</div>,
+  ],
+};
+
+export const Sized: Story = {
+  args: {
+    fill: true,
+    sizes: '(max-width: 600px) 100vw, 600px',
+  },
+  decorators: [
+    (Story) => <div style={{ width: 800, height: 800, position: 'relative' }}>{Story()}</div>,
+  ],
+};
+
+export const Lazy: Story = {
+  args: {
+    src: 'https://storybook.js.org/images/placeholders/50x50.png',
+    width: 50,
+    height: 50,
+  },
+  decorators: [
+    (Story) => (
+      <>
+        <div style={{ height: '200vh' }} />
+        {Story()}
+      </>
+    ),
+  ],
+};
+
+export const Eager: Story = {
+  ...Lazy,
+  parameters: {
+    nextjs: {
+      image: {
+        loading: 'eager',
+      },
+    },
+  },
+};
+
+export const WithRef: Story = {
+  render() {
+    const [ref, setRef] = useState<HTMLImageElement | null>(null);
+
+    return (
+      <div>
+        <Image src={Accessibility} alt="Accessibility" ref={setRef} />
+        <p>Alt attribute of image: {ref?.alt}</p>
+      </div>
+    );
   },
 };

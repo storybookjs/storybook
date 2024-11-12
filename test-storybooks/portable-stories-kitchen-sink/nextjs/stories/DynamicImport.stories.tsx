@@ -1,3 +1,4 @@
+import { Meta } from '@storybook/react';
 import dynamic from 'next/dynamic';
 import React, { Suspense } from 'react';
 
@@ -15,6 +16,6 @@ function Component() {
 
 export default {
   component: Component,
-};
+} as Meta<typeof Component>;
 
 export const Default = {};

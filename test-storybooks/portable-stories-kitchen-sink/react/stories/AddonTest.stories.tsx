@@ -12,7 +12,7 @@ const Component = () => <button>test</button>
 export default {
   title: 'Addons/Test',
   component: Component,
-};
+} as Meta<typeof Component>;
 
 const { pass } = instrument({
   pass: async () => {},

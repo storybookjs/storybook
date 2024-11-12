@@ -108,7 +108,7 @@ export default {
   },
 } as Meta<typeof Component>;
 
-export const Default: StoryObj<typeof Component> = {
+export const Default: Story = {
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
     const routerMock = getRouter();

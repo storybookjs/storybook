@@ -142,13 +142,13 @@
 </script>
 
 {#if isCurrentlyViewed}
-  {#if template && isSnippet(template)}
+  {#if isSnippet(template)}
     {@render template(renderer.args, renderer.storyContext)}
   {:else if isSnippet(children)}
     {#if asChild}
       {@render children()}
     {:else if renderer.storyContext.component}
-      <renderer.storyContext.component {children} {...renderer.args}/>
+      <renderer.storyContext.component {children} {...renderer.args} />
     {:else}
       {@render children()}
     {/if}

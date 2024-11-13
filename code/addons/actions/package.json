@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-actions",
-  "version": "8.4.2",
+  "version": "8.4.3",
   "description": "Get UI feedback when an action is performed on an interactive element",
   "keywords": [
     "storybook",

@@ -1,5 +1,6 @@
-/* eslint-disable react/prop-types */
 import React from 'react';
+
+import type { Meta, StoryObj } from '@storybook/react';
 
 import Link from 'next/link';
 
@@ -7,7 +8,10 @@ import style from './Link.stories.module.css';
 
 // `onClick`, `href`, and `ref` need to be passed to the DOM element
 // for proper handling
-const MyButton = React.forwardRef(function Button({ onClick, href, children }, ref) {
+const MyButton = React.forwardRef<
+  HTMLAnchorElement,
+  React.DetailedHTMLProps<React.AnchorHTMLAttributes<HTMLAnchorElement>, HTMLAnchorElement>
+>(function Button({ onClick, href, children }, ref) {
   return (
     <a href={href} onClick={onClick} ref={ref}>
       {children}
@@ -70,11 +74,13 @@ const Component = () => (
 
 export default {
   component: Component,
-};
+} as Meta<typeof Component>;
 
-export const Default = {};
+type Story = StoryObj<typeof Component>;
 
-export const InAppDir = {
+export const Default: Story = {};
+
+export const InAppDir: Story = {
   parameters: {
     nextjs: {
       appDirectory: true,

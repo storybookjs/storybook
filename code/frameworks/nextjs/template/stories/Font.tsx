@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import React from 'react';
 
 import { Rubik_Puddles } from 'next/font/google';
@@ -15,7 +14,7 @@ export const localRubikStorm = localFont({
   variable: '--font-rubik-storm',
 });
 
-export default function Font({ variant }) {
+export default function Font({ variant }: { variant: 'className' | 'style' | 'variable' }) {
   switch (variant) {
     case 'className':
       return (

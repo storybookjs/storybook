@@ -1,5 +1,7 @@
 import React, { Suspense } from 'react';
 
+import type { Meta, StoryObj } from '@storybook/react';
+
 import dynamic from 'next/dynamic';
 
 const DynamicComponent = dynamic(() => import('./dynamic-component'), {
@@ -16,6 +18,6 @@ function Component() {
 
 export default {
   component: Component,
-};
+} as Meta<typeof Component>;
 
-export const Default = {};
+export const Default: StoryObj<typeof Component> = {};

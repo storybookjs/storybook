@@ -26,6 +26,7 @@ import { MountMustBeDestructuredError } from '@storybook/core/preview-errors';
 import { dedent } from 'ts-dedent';
 
 import { HooksContext } from '../../../addons';
+import { ReporterAPI } from '../reporter-api';
 import { composeConfigs } from './composeConfigs';
 import { getValuesFromArgTypes } from './getValuesFromArgTypes';
 import { normalizeComponentAnnotations } from './normalizeComponentAnnotations';
@@ -146,12 +147,15 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
     ...story.storyGlobals,
   };
 
+  const reporting = new ReporterAPI();
+
   const initializeContext = () => {
     const context: StoryContext<TRenderer> = prepareContext({
       hooks: new HooksContext(),
       globals,
       args: { ...story.initialArgs },
       viewMode: 'story',
+      reporting,
       loaded: {},
       abortSignal: new AbortController().signal,
       step: (label, play) => story.runStep(label, play, context),
@@ -258,6 +262,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
       argTypes: story.argTypes as StrictArgTypes<TArgs>,
       play: playFunction!,
       run,
+      reporting,
       tags: story.tags,
     }
   );

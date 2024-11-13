@@ -6,6 +6,7 @@ import type {
   TestingModuleProgressReportPayload,
   TestingModuleProgressReportProgress,
 } from 'storybook/internal/core-events';
+import type { Report } from 'storybook/internal/preview-api';
 
 import type { API_StatusUpdate } from '@storybook/types';
 
@@ -26,6 +27,7 @@ export type TestResultResult =
       storyId: string;
       testRunId: string;
       duration: number;
+      reports: Report[];
     }
   | {
       status: 'failed';
@@ -33,6 +35,7 @@ export type TestResultResult =
       duration: number;
       testRunId: string;
       failureMessages: string[];
+      reports: Report[];
     };
 
 export type TestResult = {
@@ -113,16 +116,26 @@ export class StorybookReporter implements Reporter {
 
         const status = StatusMap[t.result?.state || t.mode] || 'skipped';
         const storyId = (t.meta as any).storyId as string;
+        const reports = (t.meta as any).reports as Report[];
         const duration = t.result?.duration || 0;
         const testRunId = this.start.toString();
 
         switch (status) {
           case 'passed':
           case 'pending':
-            return [{ status, storyId, duration, testRunId } as TestResultResult];
+            return [{ status, storyId, duration, testRunId, reports } as TestResultResult];
           case 'failed':
             const failureMessages = t.result?.errors?.map((e) => e.stack || e.message) || [];
-            return [{ status, storyId, duration, failureMessages, testRunId } as TestResultResult];
+            return [
+              {
+                status,
+                storyId,
+                duration,
+                failureMessages,
+                testRunId,
+                reports,
+              } as TestResultResult,
+            ];
           default:
             return [];
         }

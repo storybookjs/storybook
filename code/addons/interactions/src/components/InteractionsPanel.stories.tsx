@@ -56,6 +56,17 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Passing: Story = {
+  // TODO: Remove after prototyping
+  beforeEach: async ({ reporting }) => {
+    reporting.addReport({
+      id: 'a11y',
+      status: 'passed',
+      version: 1,
+      result: {
+        violations: [{ id: 'a11y', impact: 'critical', description: 'A11y violation' }],
+      },
+    });
+  },
   args: {
     interactions: getInteractions(CallStates.DONE),
   },

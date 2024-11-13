@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Channel } from '@storybook/core/channels';
 import type { PreparedStory, Renderer, StoryContext, StoryIndexEntry } from '@storybook/core/types';
 
-import type { StoryStore } from '../../store';
+import { ReporterAPI, type StoryStore } from '../../store';
 import { PREPARE_ABORTED } from './Render';
 import { StoryRender } from './StoryRender';
 
@@ -48,7 +48,9 @@ const buildStory = (overrides: Partial<PreparedStory> = {}): PreparedStory =>
 
 const buildStore = (overrides: Partial<StoryStore<Renderer>> = {}): StoryStore<Renderer> =>
   ({
-    getStoryContext: () => ({}),
+    getStoryContext: () => ({
+      reporting: new ReporterAPI(),
+    }),
     addCleanupCallbacks: vi.fn(),
     cleanupStory: vi.fn(),
     ...overrides,

@@ -6426,12 +6426,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/csf@npm:0.1.11, @storybook/csf@npm:^0.1.11":
-  version: 0.1.11
-  resolution: "@storybook/csf@npm:0.1.11"
+"@storybook/csf@npm:0.1.12--canary.110.bb5bb77.0":
+  version: 0.1.12--canary.110.bb5bb77.0
+  resolution: "@storybook/csf@npm:0.1.12--canary.110.bb5bb77.0"
   dependencies:
     type-fest: "npm:^2.19.0"
-  checksum: 10c0/c5329fc13e7d762049b5c91df1bc1c0e510a1a898c401b72b68f1ff64139a85ab64a92f8e681d2fcb226c0a4a55d0f23b569b2bdb517e0f067bd05ea46228356
+  checksum: 10c0/c59ef657b9c0b125722baa1136dbb1d6b0e8bbe1c5b3784c1c579e20164be0c96524a556acaad8e7d9bbd8fcbfd2d324e093874657773231a01b7e49a429cfa3
   languageName: node
   linkType: hard
 
@@ -6441,6 +6441,15 @@ __metadata:
   dependencies:
     lodash: "npm:^4.17.15"
   checksum: 10c0/7b0f75763415f9147692a460b44417ee56ea9639433716a1fd4d1df4c8b0221cbc71b8da0fbed4dcecb3ccd6c7ed64be39f5c255c713539a6088a1d6488aaa24
+  languageName: node
+  linkType: hard
+
+"@storybook/csf@npm:^0.1.11":
+  version: 0.1.11
+  resolution: "@storybook/csf@npm:0.1.11"
+  dependencies:
+    type-fest: "npm:^2.19.0"
+  checksum: 10c0/c5329fc13e7d762049b5c91df1bc1c0e510a1a898c401b72b68f1ff64139a85ab64a92f8e681d2fcb226c0a4a55d0f23b569b2bdb517e0f067bd05ea46228356
   languageName: node
   linkType: hard
 
@@ -7120,7 +7129,7 @@ __metadata:
     "@storybook/codemod": "workspace:*"
     "@storybook/core": "workspace:*"
     "@storybook/core-webpack": "workspace:*"
-    "@storybook/csf": "npm:0.1.11"
+    "@storybook/csf": "npm:0.1.12--canary.110.bb5bb77.0"
     "@storybook/csf-plugin": "workspace:*"
     "@storybook/ember": "workspace:*"
     "@storybook/eslint-config-storybook": "npm:^4.0.0"

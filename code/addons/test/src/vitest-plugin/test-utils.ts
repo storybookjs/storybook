@@ -3,7 +3,7 @@
 /* eslint-disable no-underscore-dangle */
 import { type RunnerTask, type TaskContext, type TaskMeta, type TestContext } from 'vitest';
 
-import { composeStory } from 'storybook/internal/preview-api';
+import { type Report, composeStory } from 'storybook/internal/preview-api';
 import type { ComponentAnnotations, ComposedStoryFn } from 'storybook/internal/types';
 
 import { setViewport } from './viewports';
@@ -22,10 +22,14 @@ export const testStory = (
 
     context.story = composedStory;
 
-    const _task = context.task as RunnerTask & { meta: TaskMeta & { storyId: string } };
+    const _task = context.task as RunnerTask & {
+      meta: TaskMeta & { storyId: string; reports: Report[] };
+    };
     _task.meta.storyId = composedStory.id;
 
     await setViewport(composedStory.parameters, composedStory.globals);
     await composedStory.run();
+
+    _task.meta.reports = composedStory.reporting.reports;
   };
 };

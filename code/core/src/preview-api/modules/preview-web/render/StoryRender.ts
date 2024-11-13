@@ -14,6 +14,7 @@ import type {
 
 import {
   PLAY_FUNCTION_THREW_EXCEPTION,
+  STORY_COMPLETED,
   STORY_RENDERED,
   STORY_RENDER_PHASE_CHANGED,
   UNHANDLED_ERRORS_WHILE_PLAYING,
@@ -34,6 +35,7 @@ export type RenderPhase =
   | 'playing'
   | 'played'
   | 'completed'
+  | 'finished'
   | 'aborted'
   | 'errored';
 
@@ -288,7 +290,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       const ignoreUnhandledErrors =
         this.story.parameters?.test?.dangerouslyIgnoreUnhandledErrors === true;
 
-      const unhandledErrors: Set<unknown> = new Set();
+      const unhandledErrors: Set<unknown> = new Set<unknown>();
       const onError = (event: ErrorEvent | PromiseRejectionEvent) =>
         unhandledErrors.add('error' in event ? event.error : event.reason);
 
@@ -349,9 +351,30 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       await this.runPhase(abortSignal, 'completed', async () =>
         this.channel.emit(STORY_RENDERED, id)
       );
+
+      // The event name 'completed' is unfortunately already reserved by the STORY_RENDERED event
+      await this.runPhase(abortSignal, 'finished', async () =>
+        this.channel.emit(STORY_COMPLETED, {
+          storyId: id,
+          unhandledExceptions: !ignoreUnhandledErrors
+            ? Array.from(unhandledErrors).map(serializeError)
+            : [],
+          status: !ignoreUnhandledErrors && unhandledErrors.size > 0 ? 'error' : 'success',
+          reporters: context.reporting.reports,
+        })
+      );
     } catch (err) {
       this.phase = 'errored';
       this.callbacks.showException(err as Error);
+
+      await this.runPhase(abortSignal, 'finished', async () =>
+        this.channel.emit(STORY_COMPLETED, {
+          storyId: id,
+          unhandledExceptions: [serializeError(err)],
+          status: 'error',
+          reporters: [],
+        })
+      );
     }
 
     // If a rerender was enqueued during the render, clear the queue and render again

@@ -22,6 +22,7 @@ import tsx from 'react-syntax-highlighter/dist/esm/languages/prism/tsx';
 import typescript from 'react-syntax-highlighter/dist/esm/languages/prism/typescript';
 import yml from 'react-syntax-highlighter/dist/esm/languages/prism/yaml';
 import ReactSyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism-light';
+import vue from 'react-syntax-highlighter/dist/esm/languages/hljs/vue';
 
 import { ActionBar } from '../ActionBar/ActionBar';
 import type { ScrollAreaProps } from '../ScrollArea/ScrollArea';
@@ -46,6 +47,7 @@ export const supportedLanguages = {
   tsx,
   typescript,
   graphql,
+  vue
 };
 
 Object.entries(supportedLanguages).forEach(([key, val]) => {

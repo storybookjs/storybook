@@ -131,6 +131,16 @@ export const storybookTest = (options?: UserOptions): Plugin => {
         config.test.server.deps.inline.push('@storybook/experimental-addon-test');
       }
 
+      config.optimizeDeps ??= {};
+      config.optimizeDeps = {
+        ...config.optimizeDeps,
+        include: [
+          ...(config.optimizeDeps.include ?? []),
+          'react-dom/test-utils',
+          '@storybook/experimental-addon-test/**',
+        ],
+      };
+
       if (frameworkName?.includes('vue3')) {
         config.define ??= {};
         config.define.__VUE_PROD_HYDRATION_MISMATCH_DETAILS__ = 'false';

@@ -9,6 +9,8 @@ import type {
   SvelteComponentDoc,
 } from 'sveltedoc-parser/typings';
 
+import { IS_SVELTE_V4 } from '../utils';
+
 type ComponentWithDocgen = {
   __docgen: SvelteComponentDoc;
 };
@@ -23,8 +25,16 @@ export const extractArgTypes: ArgTypesExtractor = (
   try {
     // eslint-disable-next-line no-underscore-dangle
     const docgen = component.__docgen;
+
     if (docgen) {
-      return createArgTypes(docgen);
+      const argTypes = createArgTypes(docgen);
+
+      if (!IS_SVELTE_V4) {
+        // NOTE: Filter out event handlers `on:*` as they're deprecated from Svelte v5
+        return Object.fromEntries(Object.entries(argTypes).filter(([name, _]) => !name.startsWith("on:")));
+      }
+
+      return argTypes;
     }
   } catch (err) {
     logger.log(`Error extracting argTypes: ${err}`);

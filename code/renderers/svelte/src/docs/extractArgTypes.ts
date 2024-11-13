@@ -31,7 +31,7 @@ export const extractArgTypes: ArgTypesExtractor = (
 
       if (!IS_SVELTE_V4) {
         // NOTE: Filter out event handlers `on:*` as they're deprecated from Svelte v5
-        return Object.fromEntries(Object.entries(argTypes).filter(([name, _]) => !name.startsWith("on:")));
+        return Object.fromEntries(Object.entries(argTypes).filter(([name, _]) => !name.startsWith('on:')));
       }
 
       return argTypes;

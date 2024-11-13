@@ -47,7 +47,7 @@ export const supportedLanguages = {
   tsx,
   typescript,
   graphql,
-  vue
+  vue,
 };
 
 Object.entries(supportedLanguages).forEach(([key, val]) => {

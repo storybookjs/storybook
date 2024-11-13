@@ -58,3 +58,12 @@
     <Button {...args}>🧡 Svelte</Button>
   {/snippet}
 </Story>
+
+<!--
+Input values from the controls tab will **not** be passed down to story.
+Neither the `args` from meta.
+-->
+<Story name="Static story" parameters={{ controls: { disable: true } }} asChild>
+  <h1>This is a static story</h1>
+  <Button>Static button</Button>
+</Story>

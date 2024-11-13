@@ -77,10 +77,15 @@
            * NOTE: Can be omitted if a default template is set with [`setTemplate()`](https://github.com/storybookjs/addon-svelte-csf/blob/main/README.md#default-snippet)
            */
           children?: TChildren;
+          /**
+           * Make the children the actual story content. This is useful when you want to create a **static story**.
+           */
+          asChild?: boolean;
           template?: never;
         }
       | {
           children?: never;
+          asChild?: never;
           /**
            * The content to render in the story with a snippet taking `args` and `storyContext` as parameters
            *
@@ -95,6 +100,7 @@
     exportName: exportNameProp,
     play,
     template,
+    asChild = false,
     ...restProps
   }: Props = $props();
   const exportName = exportNameProp ?? storyNameToExportName(name!);
@@ -139,7 +145,15 @@
   {#if template && isSnippet(template)}
     {@render template(renderer.args, renderer.storyContext)}
   {:else if children && isSnippet(children)}
-    {@render children()}
+    {#if asChild}
+      {@render children()}
+    {:else if renderer.storyContext.component}
+      <renderer.storyContext.component {...renderer.args}>
+        {@render children()}
+      </renderer.storyContext.component>
+    {:else}
+      {@render children()}
+    {/if}
   {:else if storiesTemplate}
     {@render storiesTemplate(renderer.args, renderer.storyContext)}
   {:else if renderer.storyContext.component}

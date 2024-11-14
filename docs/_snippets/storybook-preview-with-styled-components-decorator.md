@@ -31,6 +31,30 @@ export default preview;
 import '@angular/localize/init';
 ```
 
+```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="preview"
+import type { Preview } from '@storybook/angular';
+
+import { setCompodocJson } from '@storybook/addon-docs/angular';
+
+import docJson from '../documentation.json';
+import '../src/polyfills';
+
+setCompodocJson(docJson);
+
+const preview: Preview = {
+  parameters: {
+    actions: { argTypesRegex: '^on[A-Z].*' },
+    controls: {
+      matchers: {
+        color: /(background|color)$/i,
+        date: /Date$/i,
+      },
+    },
+  },
+};
+export default preview;
+```
+
 ```jsx filename=".storybook/preview.js" renderer="react" language="js"
 import React from 'react';
 

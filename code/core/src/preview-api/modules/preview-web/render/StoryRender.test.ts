@@ -1,12 +1,14 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { STORY_COMPLETED } from 'storybook/internal/core-events';
+
 import { Channel } from '@storybook/core/channels';
 import type { PreparedStory, Renderer, StoryContext, StoryIndexEntry } from '@storybook/core/types';
 
 import { ReporterAPI, type StoryStore } from '../../store';
 import { PREPARE_ABORTED } from './Render';
-import { StoryRender } from './StoryRender';
+import { StoryRender, serializeError } from './StoryRender';
 
 const entry = {
   type: 'story',
@@ -255,6 +257,93 @@ describe('StoryRender', () => {
 
     await render.renderToElement({} as any);
     expect(actualMount).toHaveBeenCalled();
+  });
+
+  it('should handle the "finished" phase correctly when the story finishes successfully', async () => {
+    // Arrange - setup StoryRender and async gate blocking finished phase
+    const [finishGate, resolveFinishGate] = createGate();
+    const story = buildStory({
+      playFunction: vi.fn(async () => {
+        await finishGate;
+      }),
+    });
+    const store = buildStore();
+
+    const channel = new Channel({});
+    const emitSpy = vi.spyOn(channel, 'emit');
+
+    const render = new StoryRender(
+      channel,
+      store,
+      vi.fn() as any,
+      {} as any,
+      entry.id,
+      'story',
+      { autoplay: true },
+      story
+    );
+
+    // Act - render, resolve finish gate, teardown
+    render.renderToElement({} as any);
+    await tick(); // go from 'loading' to 'rendering' phase
+    resolveFinishGate();
+    await tick(); // go from 'rendering' to 'finished' phase
+    render.teardown();
+
+    // Assert - ensure finished phase is handled correctly
+    expect(render.phase).toBe('finished');
+    expect(emitSpy).toHaveBeenCalledWith(STORY_COMPLETED, {
+      reporters: [],
+      status: 'success',
+      storyId: 'id',
+      unhandledExceptions: [],
+    });
+  });
+
+  it('should handle the "finished" phase correctly when the story throws an error', async () => {
+    // Arrange - setup StoryRender and async gate blocking finished phase
+    const [finishGate, rejectFinishGate] = createGate();
+    const error = new Error('Test error');
+    const story = buildStory({
+      parameters: {},
+      playFunction: vi.fn(async () => {
+        await finishGate;
+        throw error;
+      }),
+    });
+    const store = buildStore();
+
+    const channel = new Channel({});
+    const emitSpy = vi.spyOn(channel, 'emit');
+
+    const render = new StoryRender(
+      channel,
+      store,
+      vi.fn() as any,
+      {
+        showException: vi.fn(),
+      } as any,
+      entry.id,
+      'story',
+      { autoplay: true },
+      story
+    );
+
+    // Act - render, reject finish gate, teardown
+    render.renderToElement({} as any);
+    await tick(); // go from 'loading' to 'rendering' phase
+    rejectFinishGate();
+    await tick(); // go from 'rendering' to 'finished' phase
+    render.teardown();
+
+    // Assert - ensure finished phase is handled correctly
+    expect(render.phase).toBe('finished');
+    expect(emitSpy).toHaveBeenCalledWith(STORY_COMPLETED, {
+      reporters: [],
+      status: 'error',
+      storyId: 'id',
+      unhandledExceptions: [serializeError(error)],
+    });
   });
 
   describe('teardown', () => {

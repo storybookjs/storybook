@@ -39,7 +39,7 @@ export type RenderPhase =
   | 'aborted'
   | 'errored';
 
-function serializeError(error: any) {
+export function serializeError(error: any) {
   try {
     const { name = 'Error', message = String(error), stack } = error;
     return { name, message, stack };

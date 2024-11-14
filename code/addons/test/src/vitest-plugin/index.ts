@@ -134,12 +134,12 @@ export const storybookTest = (options?: UserOptions): Plugin => {
       config.optimizeDeps ??= {};
       config.optimizeDeps = {
         ...config.optimizeDeps,
-        include: [
-          ...(config.optimizeDeps.include ?? []),
-          'react-dom/test-utils',
-          '@storybook/experimental-addon-test/**',
-        ],
+        include: [...(config.optimizeDeps.include ?? []), '@storybook/experimental-addon-test/**'],
       };
+
+      if (frameworkName?.includes('react') || frameworkName?.includes('nextjs')) {
+        config.optimizeDeps.include.push('react-dom/test-utils');
+      }
 
       if (frameworkName?.includes('vue3')) {
         config.define ??= {};

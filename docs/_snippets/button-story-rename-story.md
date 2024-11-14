@@ -12,7 +12,7 @@ type Story = StoryObj<Button>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary: Story = {
@@ -31,7 +31,7 @@ import { createButton } from './Button';
 
 export default {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Button',
@@ -39,7 +39,7 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary = {
@@ -55,7 +55,7 @@ import { createButton, ButtonArgs } from './Button';
 
 const meta: Meta<ButtonArgs> = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loadingg
    * to learn how to generate automatic titles
    */
   title: 'Button',
@@ -66,7 +66,7 @@ type Story = StoryObj<ButtonArgs>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary: Story = {
@@ -84,7 +84,7 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary = {
@@ -107,7 +107,7 @@ type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary: Story = {
@@ -130,7 +130,7 @@ type Story = StoryObj<typeof Button>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary: Story = {
@@ -148,7 +148,7 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary = {
@@ -171,7 +171,7 @@ type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary: Story = {
@@ -194,7 +194,7 @@ type Story = StoryObj<typeof Button>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary: Story = {
@@ -212,7 +212,7 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary = ({
@@ -241,7 +241,7 @@ type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/svelte/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary: Story = ({
@@ -270,7 +270,7 @@ type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/svelte/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary: Story = ({
@@ -294,7 +294,7 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary = {
@@ -321,7 +321,7 @@ type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary: Story = {
@@ -348,7 +348,7 @@ type Story = StoryObj<typeof Button>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary: Story = {
@@ -384,4 +384,3 @@ export const Primary: Story = {
   name: 'I am the primary',
 };
 ```
-

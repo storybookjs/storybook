@@ -8,14 +8,16 @@ sidebar:
 Storybook 7 is our first major release in over two years. While Storybook’s addon API has not changed much in the past couple of years, addons require several changes for compatibility with Storybook 7. This guide will walk you through the upgrade process.
 
 <Callout variant="info">
+
   As we gather feedback from the community, we’ll update this page. We also have a general [Storybook migration guide](../migration-guide.mdx) if you’re looking for that.
+  
 </Callout>
 
 ## Dependencies
 
 The first thing to do is upgrade any Storybook dependencies in your project. We release the next version of all our packages on the `next` npm tag, so the easiest thing is to reference that in your `package.json`:
 
-```json
+```json title="package.json"
 {
   "dependencies": {
     "@storybook/client-logger": "next"
@@ -25,7 +27,7 @@ The first thing to do is upgrade any Storybook dependencies in your project. We 
 
 If you'd rather depend on the latest version of Storybook, you can use the `latest` tag:
 
-```json
+```json title="package.json"
 {
   "dependencies": {
     "@storybook/client-logger": "latest"
@@ -35,7 +37,7 @@ If you'd rather depend on the latest version of Storybook, you can use the `late
 
 Or use a version specifier:
 
-```json
+```json title="package.json"
 {
   "dependencies": {
     "@storybook/client-logger": "^7.0.0"

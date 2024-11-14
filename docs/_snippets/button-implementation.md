@@ -155,9 +155,7 @@ export const Button: React.FC<ButtonProps> = ({
 ```html renderer="vue" language="js" tabTitle="2"
 {/* Button.vue */}
 
-<template>
-  {/* the component markup implementation */}
-</template>
+<template> {/* the component markup implementation */} </template>
 
 <script>
   export default {
@@ -209,9 +207,7 @@ export const Button: React.FC<ButtonProps> = ({
 ```html renderer="vue" language="ts" tabTitle="2"
 {/* Button.vue */}
 
-<template>
-  {/* the component markup implementation */}
-</template>
+<template> {/* the component markup implementation */} </template>
 
 <script lang="ts">
   import Vue from 'vue';
@@ -264,9 +260,7 @@ export const Button: React.FC<ButtonProps> = ({
 ```html renderer="vue" language="js" tabTitle="3"
 {/* Button.vue */}
 
-<template>
-  {/* the component markup implementation */}
-</template>
+<template> {/* the component markup implementation */} </template>
 
 <script>
   export default {
@@ -322,9 +316,7 @@ export const Button: React.FC<ButtonProps> = ({
 ```html renderer="vue" language="ts" tabTitle="3"
 {/* Button.vue */}
 
-<template>
-  {/* the component markup implementation */}
-</template>
+<template> {/* the component markup implementation */} </template>
 
 <script lang="ts">
   import { defineComponent, reactive } from 'vue';
@@ -379,4 +371,3 @@ export const Button: React.FC<ButtonProps> = ({
   });
 </script>
 ```
-

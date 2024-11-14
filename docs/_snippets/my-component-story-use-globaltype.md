@@ -525,4 +525,3 @@ export const StoryWithLocale: Story = {
   },
 };
 ```
-

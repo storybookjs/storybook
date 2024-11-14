@@ -5,7 +5,7 @@ import { Checkbox } from './checkbox.component';
 
 const meta: Meta<Checkbox> = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Design System/Atoms/Checkbox',
@@ -20,7 +20,7 @@ import { CheckBox } from './Checkbox';
 
 export default {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Design System/Atoms/Checkbox',
@@ -36,7 +36,7 @@ import { CheckBox } from './Checkbox';
 
 const meta = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Design System/Atoms/Checkbox',
@@ -54,7 +54,7 @@ import { CheckBox } from './Checkbox';
 
 const meta: Meta<typeof CheckBox> = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Design System/Atoms/Checkbox',
@@ -81,4 +81,3 @@ const meta: Meta = {
 
 export default meta;
 ```
-

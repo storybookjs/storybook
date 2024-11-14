@@ -345,4 +345,3 @@ export const MockedError: Story = {
   },
 };
 ```
-

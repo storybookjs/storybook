@@ -13,7 +13,7 @@ Storybook is a helpful tool for snapshot testing because every story is essentia
 
 ## Migrating Tests
 
-The Storyshots addon was the original testing solution for Storybook, offering a highly extensible API and a wide range of configuration options for testing. However, it was difficult to set up and maintain, and it needed to be compatible with the latest version of Storybook, which introduced some significant architectural changes, including a high-performance [on-demand story loading](../configure/index.mdx#on-demand-story-loading) feature. As a result, Storyhots is now officially deprecated, is no longer being maintained, and will be removed in the next major release of Storybook. We recommend following the [migration guide](./storyshots-migration-guide.mdx) we've prepared to help you during this transition period.
+The Storyshots addon was the original testing solution for Storybook, offering a highly extensible API and a wide range of configuration options for testing. However, it was difficult to set up and maintain, and it needed to be compatible with the latest version of Storybook, which introduced some significant architectural changes, including a high-performance [on-demand story loading](../../configure/index.mdx#on-demand-story-loading) feature. As a result, Storyhots is now officially deprecated, is no longer being maintained, and will be removed in the next major release of Storybook. We recommend following the [migration guide](./storyshots-migration-guide.mdx) we've prepared to help you during this transition period.
 
 ## Set up Storyshots
 
@@ -45,7 +45,7 @@ Add a test file to your environment with the following contents to configure Sto
   You can name the test file differently to suit your needs. Bear in mind that it requires to be picked up by Jest.
 </Callout>
 
-Run your first test. Storyshots will recognize your stories (based on [.storybook/main.js's setup](https://storybook.js.org/docs/configure/story-rendering)) and save them in the **snapshots** directory.
+Run your first test. Storyshots will recognize your stories (based on [.storybook/main.js's setup](../../configure/story-rendering.mdx)) and save them in the **snapshots** directory.
 
 ```shell
 npm test storybook.test.js
@@ -61,7 +61,7 @@ If they're intentional, accept them as new baselines. If the changes are bugs, f
 
 ### Configure the snapshot's directory
 
-If your project has a custom setup for snapshot testing, you'll need to take additional steps to run Storyshots. You'll need to install both [@storybook/addon-storyshots-puppeteer](https://storybook.js.org/addons/@storybook/addon-storyshots-puppeteer) and [puppeteer](https://github.com/puppeteer/puppeteer):
+If your project has a custom setup for snapshot testing, you'll need to take additional steps to run Storyshots. You'll need to install both [`@storybook/addon-storyshots-puppeteer`](https://github.com/storybookjs/storybook/tree/release-7-6/code/addons/storyshots-puppeteer) and [puppeteer](https://github.com/puppeteer/puppeteer):
 
 ```shell
 # With npm
@@ -80,7 +80,9 @@ Next, update your test file (for example, `storybook.test.js`) to the following:
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
-  Don't forget to replace your-custom-directory with your own.
+
+  Don't forget to replace `your-custom-directory` with your own.
+
 </Callout>
 
 When you run your tests, the snapshots will be available in your specified directory.
@@ -99,7 +101,7 @@ These are the frameworks currently supported by Storyshots: `angular`, `html`, `
 
 ### Additional customization
 
-Storyshots is highly customizable and includes options for various advanced use cases. You can read more in the [addon’s documentation](https://github.com/storybookjs/storybook/tree/master/addons/storyshots/storyshots-core#options).
+Storyshots is highly customizable and includes options for various advanced use cases. You can read more in the [addon’s documentation](https://github.com/storybookjs/storybook/tree/release-7-6/code/addons/storyshots-core#options).
 
 ***
 

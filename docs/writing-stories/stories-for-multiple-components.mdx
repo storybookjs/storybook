@@ -13,7 +13,7 @@ The simplest approach we can take is to reuse the stories of the `ListItem` in t
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="list-story-unchecked.md" usesCsf3 csf2Path="writing-stories/stories-for-multiple-components#snippet-list-story-unchecked" />
+<CodeSnippets path="list-story-unchecked.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -27,7 +27,9 @@ One way we improve that situation is by pulling the rendered subcomponent out in
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="list-story-with-unchecked-children.md" usesCsf3 csf2Path="writing-stories/stories-for-multiple-components#snippet-list-story-with-unchecked-children" />
+<IfRenderer renderer={['react','solid' ]}>
+
+<CodeSnippets path="list-story-with-unchecked-children.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -46,13 +48,15 @@ As they could lead into errors with your Storybook.
   We're currently working on improving the overall experience for the children arg and allow you to edit children arg in a control and allow you to use other types of components in the near future. But for now you need to factor in this caveat when you're implementing your stories.
 </Callout>
 
+</IfRenderer>
+
 ## Creating a Template Component
 
 Another option that is more “data”-based is to create a special “story-generating” template component:
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="list-story-template.md" usesCsf3 csf2Path="writing-stories/stories-for-multiple-components#snippet-list-story-template" />
+<CodeSnippets path="list-story-template.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 

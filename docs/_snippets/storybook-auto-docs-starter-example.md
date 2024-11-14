@@ -1,6 +1,4 @@
-```mdx renderer="common" language="mdx"
-{/* Button.mdx */}
-
+```mdx filename="Button.mdx" renderer="common" language="mdx"
 import { Meta, Story } from '@storybook/blocks';
 
 import * as ButtonStories from './Button.stories';
@@ -19,4 +17,3 @@ Buttons are often used for form submissions and to toggle elements into view.
 
 <Story of={ButtonStories.Basic} />
 ```
-

@@ -26,7 +26,7 @@ The addon built in this guide is a UI-based addon, specifically a [toolbar](./ad
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="storybook-addon-toolkit-toolbar-example.md" />
+<CodeSnippets path="storybook-addon-toolkit-addon-examples.md" />
 
 {/* prettier-ignore-end */}
 
@@ -45,7 +45,9 @@ Clone the repository you just created and install its dependencies. When the ins
 {/* prettier-ignore-end */}
 
 <Callout variant="info">
+
   The Addon Kit uses [Typescript](https://www.typescriptlang.org/) by default. If you want to use JavaScript instead, you can run the `eject-ts` command to convert the project to JavaScript.
+
 </Callout>
 
 ### Understanding the build system
@@ -230,7 +232,9 @@ The second metadata category is related to the [integration catalog](https://sto
 ```
 
 <Callout variant="info">
+
   The `storybook` configuration element includes additional properties that help customize the addon's searchability and indexing. For more information, see the [Integration catalog documentation](./integration-catalog.mdx).
+
 </Callout>
 
 One essential item to note is the `keywords` property as it maps to the catalog's tag system. Adding the `storybook-addons` ensures that the addon is discoverable in the catalog when searching for addons. The remaining keywords help with the searchability and categorization of the addon.

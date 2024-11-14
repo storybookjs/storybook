@@ -13,6 +13,7 @@ type Story = StoryObj<Button>;
 export const Primary: Story = {
   parameters: {
     backgrounds: {
+      default: 'dark',
       values: [
         { name: 'red', value: '#f00' },
         { name: 'green', value: '#0f0' },
@@ -35,6 +36,11 @@ export const OnDark = {
   parameters: {
     backgrounds: {
       default: 'dark',
+      values: [
+        { name: 'red', value: '#f00' },
+        { name: 'green', value: '#0f0' },
+        { name: 'blue', value: '#00f' },
+      ],
     },
   },
 };
@@ -58,6 +64,11 @@ export const OnDark: Story = {
   parameters: {
     backgrounds: {
       default: 'dark',
+      values: [
+        { name: 'red', value: '#f00' },
+        { name: 'green', value: '#0f0' },
+        { name: 'blue', value: '#00f' },
+      ],
     },
   },
 };
@@ -81,6 +92,11 @@ export const OnDark: Story = {
   parameters: {
     backgrounds: {
       default: 'dark',
+      values: [
+        { name: 'red', value: '#f00' },
+        { name: 'green', value: '#0f0' },
+        { name: 'blue', value: '#00f' },
+      ],
     },
   },
 };
@@ -98,6 +114,7 @@ export const Primary = {
   },
   parameters: {
     backgrounds: {
+      default: 'dark',
       values: [
         { name: 'red', value: '#f00' },
         { name: 'green', value: '#0f0' },
@@ -134,4 +151,3 @@ export const Primary: Story = {
   },
 };
 ```
-

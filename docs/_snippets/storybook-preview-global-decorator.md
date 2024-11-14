@@ -9,7 +9,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-```jsx filename=".storybook/preview.jsx" renderer="react" language="js"
+```js filename=".storybook/preview.jsx" renderer="react" language="js"
 import React from 'react';
 
 export default {
@@ -24,7 +24,7 @@ export default {
 };
 ```
 
-```tsx filename=".storybook/preview.tsx" renderer="react" language="ts"
+```ts filename=".storybook/preview.tsx" renderer="react" language="ts"
 import React from 'react';
 
 import { Preview } from '@storybook/react';
@@ -43,11 +43,12 @@ const preview: Preview = {
 export default preview;
 ```
 
-```jsx filename=".storybook/preview.js" renderer="solid" language="js"
+```js filename=".storybook/preview.js" renderer="solid" language="js"
 export default {
   decorators: [
     (Story) => (
       <div style={{ margin: '3em' }}>
+        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it. Useful to prevent the full remount of the component's story. */}
         <Story />
       </div>
     ),
@@ -55,13 +56,14 @@ export default {
 };
 ```
 
-```js filename=".storybook/preview.tsx" renderer="solid" language="ts"
+```ts filename=".storybook/preview.tsx" renderer="solid" language="ts"
 import { Preview } from 'storybook-solidjs';
 
 const preview: Preview = {
   decorators: [
     (Story) => (
       <div style={{ margin: '3em' }}>
+        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it. Useful to prevent the full remount of the component's story. */}
         <Story />
       </div>
     ),
@@ -71,13 +73,25 @@ const preview: Preview = {
 export default preview;
 ```
 
-```js filename=".storybook/preview.js" renderer="svelte" language="js"
+```js filename=".storybook/preview.js" renderer="svelte" language="js" tabTitle="storybook-preview"
 import MarginDecorator from './MarginDecorator.svelte';
 
 export default { decorators: [() => MarginDecorator] };
 ```
 
-```ts filename=".storybook/preview.ts" renderer="svelte" language="ts"
+```html filename="MarginDecorator.svelte" renderer="svelte" language="js" tabTitle="decorator-component"
+<div>
+  <slot />
+</div>
+
+<style>
+  div {
+    margin: 3em;
+  }
+</style>
+```
+
+```ts filename=".storybook/preview.ts" renderer="svelte" language="ts" tabTitle="storybook-preview"
 import type { Preview } from '@storybook/svelte';
 
 import MarginDecorator from './MarginDecorator.svelte';
@@ -87,6 +101,18 @@ const preview: Preview = {
 };
 
 export default preview;
+```
+
+```html filename="MarginDecorator.svelte" renderer="svelte" language="ts" tabTitle="decorator-component"
+<div>
+  <slot />
+</div>
+
+<style>
+  div {
+    margin: 3em;
+  }
+</style>
 ```
 
 ```js filename=".storybook/preview.js" renderer="vue" language="js"
@@ -122,4 +148,3 @@ export default {
   decorators: [(story) => html`<div style="margin: 3em">${story()}</div>`],
 };
 ```
-

@@ -45,7 +45,7 @@ In such cases, it is natural to use [args composition](./args.mdx#args-compositi
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="page-story-with-args-composition.md" usesCsf3 csf2Path="writing-stories/build-pages-with-storybook#snippet-page-story-with-args-composition" />
+<CodeSnippets path="page-story-with-args-composition.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -74,7 +74,9 @@ Run the following commands to install MSW, the addon, and generate a mock servic
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
+
   If you're working with Angular, you'll need to adjust the command to save the mock service worker file in a different directory (e.g., `src`).
+
 </Callout>
 
 Update your `.storybook/preview.js` file and enable the addon via a [global decorator](./decorators.mdx#global-decorators).
@@ -107,19 +109,21 @@ To test your screen with the mocked data, you could write a similar set of stori
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="documentscreen-story-msw-rest-request.md" usesCsf3 csf2Path="writing-stories/build-pages-with-storybook#snippet-documentscreen-story-msw-rest-request" />
+<CodeSnippets path="documentscreen-story-msw-rest-request.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
+
   This example details how you can mock the REST request with fetch. Similar HTTP clients such as [`axios`](https://axios-http.com/) can be used as well.
+  
 </Callout>
 
 The mocked data (i.e., `TestData`) will be injected via [parameters](./parameters.mdx), enabling you to configure it per-story basis.
 
 #### Mocking GraphQL queries with MSW addon
 
-In addition to mocking RESTful requests, the other noteworthy feature of the [MSW addon](https://msw-sb.vercel.app/?path=/story/guides-introduction--page) is the ability to mock incoming data from any of the mainstream [GraphQL](https://www.apollographql.com/docs/react/integrations/integrations/) clients (e.g., [Apollo Client](https://www.apollographql.com/docs/), [URQL](https://formidable.com/open-source/urql/) or [React Query](https://react-query.tanstack.com/)). For instance, if your screen retrieves the user's information and a list of documents based on a query result, you could have a similar implementation:
+In addition to mocking RESTful requests, the other noteworthy feature of the [MSW addon](https://msw-sb.vercel.app/?path=/docs/guides-introduction--docs) is the ability to mock incoming data from any of the mainstream [GraphQL](https://www.apollographql.com/docs/react/integrations/integrations/) clients (e.g., [Apollo Client](https://www.apollographql.com/docs/), [URQL](https://formidable.com/open-source/urql/) or [React Query](https://react-query.tanstack.com/)). For instance, if your screen retrieves the user's information and a list of documents based on a query result, you could have a similar implementation:
 
 {/* prettier-ignore-start */}
 
@@ -131,7 +135,7 @@ To test your screen with the GraphQL mocked data, you could write the following 
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="documentscreen-story-msw-graphql-query.md" usesCsf3 csf2Path="writing-stories/build-pages-with-storybook#snippet-documentscreen-story-msw-graphql-query" />
+<CodeSnippets path="documentscreen-story-msw-graphql-query.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -172,7 +176,7 @@ Finally, we can set the mock values in a specific story. Let's borrow an example
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="app-story-with-mock.md" usesCsf3 csf2Path="writing-stories/build-pages-with-storybook#snippet-app-story-with-mock" />
+<CodeSnippets path="app-story-with-mock.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -202,7 +206,9 @@ Like the [import mocking](#mocking-imports) above, once you have a mock, you’l
   ```
 
   <Callout variant="info" icon="💡">
+
     It’s also often helpful to set up a “global” container context (perhaps named `GlobalContainerContext`) for container components that may be rendered on every page of your app and add them to the top level of your application. While it’s possible to place every container within this global context, it should only provide globally required containers.
+
   </Callout>
 
   Let’s look at an example implementation of this approach.
@@ -229,12 +235,14 @@ Like the [import mocking](#mocking-imports) above, once you have a mock, you’l
 
   {/* prettier-ignore-start */}
 
-  <CodeSnippets path="mock-context-container.md" usesCsf3 csf2Path="writing-stories/build-pages-with-storybook#snippet-mock-context-container" />
+  <CodeSnippets path="mock-context-container.md" usesCsf3 />
 
   {/* prettier-ignore-end */}
 
   <Callout variant="info">
+  
     If the same context applies to all `ProfilePage` stories, we can use a [decorator](./decorators.mdx).
+    
   </Callout>
 
   #### Providing containers to your application

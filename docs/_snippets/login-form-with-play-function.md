@@ -17,7 +17,7 @@ type Story = StoryObj<LoginForm>;
 export const EmptyForm: Story = {};
 
 /*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const FilledForm: Story = {
@@ -29,7 +29,7 @@ export const FilledForm: Story = {
 
     await userEvent.type(canvas.getByTestId('password'), 'a-random-password');
 
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    // See https://storybook.js.org/docs/7/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
     await userEvent.click(canvas.getByRole('button'));
 
     // 👇 Assert DOM structure
@@ -56,7 +56,7 @@ export default {
 export const EmptyForm = {};
 
 /*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const FilledForm = {
@@ -68,7 +68,7 @@ export const FilledForm = {
 
     await userEvent.type(canvas.getByTestId('password'), 'a-random-password');
 
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    // See https://storybook.js.org/docs/7/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
     await userEvent.click(canvas.getByRole('button'));
 
     // 👇 Assert DOM structure
@@ -100,7 +100,7 @@ type Story = StoryObj<typeof meta>;
 export const EmptyForm: Story = {};
 
 /*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const FilledForm: Story = {
@@ -112,7 +112,7 @@ export const FilledForm: Story = {
 
     await userEvent.type(canvas.getByTestId('password'), 'a-random-password');
 
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    // See https://storybook.js.org/docs/7/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
     await userEvent.click(canvas.getByRole('button'));
 
     // 👇 Assert DOM structure
@@ -144,7 +144,7 @@ type Story = StoryObj<typeof LoginForm>;
 export const EmptyForm: Story = {};
 
 /*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const FilledForm: Story = {
@@ -156,7 +156,7 @@ export const FilledForm: Story = {
 
     await userEvent.type(canvas.getByTestId('password'), 'a-random-password');
 
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    // See https://storybook.js.org/docs/7/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
     await userEvent.click(canvas.getByRole('button'));
 
     // 👇 Assert DOM structure
@@ -183,7 +183,7 @@ export default {
 export const EmptyForm = {};
 
 /*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const FilledForm = {
@@ -195,7 +195,7 @@ export const FilledForm = {
 
     await userEvent.type(canvas.getByTestId('password'), 'a-random-password');
 
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    // See https://storybook.js.org/docs/7/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
     await userEvent.click(canvas.getByRole('button'));
 
     // 👇 Assert DOM structure
@@ -227,7 +227,7 @@ type Story = StoryObj<typeof meta>;
 export const EmptyForm: Story = {};
 
 /*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const FilledForm: Story = {
@@ -239,7 +239,7 @@ export const FilledForm: Story = {
 
     await userEvent.type(canvas.getByTestId('password'), 'a-random-password');
 
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    // See https://storybook.js.org/docs/7/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
     await userEvent.click(canvas.getByRole('button'));
 
     // 👇 Assert DOM structure
@@ -271,7 +271,7 @@ type Story = StoryObj<typeof LoginForm>;
 export const EmptyForm: Story = {};
 
 /*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const FilledForm: Story = {
@@ -283,7 +283,7 @@ export const FilledForm: Story = {
 
     await userEvent.type(canvas.getByTestId('password'), 'a-random-password');
 
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    // See https://storybook.js.org/docs/7/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
     await userEvent.click(canvas.getByRole('button'));
 
     // 👇 Assert DOM structure
@@ -309,7 +309,7 @@ export default {
 export const EmptyForm = {};
 
 /*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const FilledForm = {
@@ -321,7 +321,7 @@ export const FilledForm = {
 
     await userEvent.type(canvas.getByTestId('password'), 'a-random-password');
 
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    // See https://storybook.js.org/docs/7/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
     await userEvent.click(canvas.getByRole('button'));
 
     // 👇 Assert DOM structure
@@ -351,7 +351,7 @@ type Story = StoryObj<typeof meta>;
 export const EmptyForm: Story = {};
 
 /*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const FilledForm: Story = {
@@ -363,7 +363,7 @@ export const FilledForm: Story = {
 
     await userEvent.type(canvas.getByTestId('password'), 'a-random-password');
 
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    // See https://storybook.js.org/docs/7/essentials/actions#automatically-matching-argsgs to learn how to setup logging in the Actions panel
     await userEvent.click(canvas.getByRole('button'));
 
     // 👇 Assert DOM structure
@@ -393,7 +393,7 @@ type Story = StoryObj<typeof meta>;
 export const EmptyForm: Story = {};
 
 /*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const FilledForm: Story = {
@@ -405,7 +405,7 @@ export const FilledForm: Story = {
 
     await userEvent.type(canvas.getByTestId('password'), 'a-random-password');
 
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    // See https://storybook.js.org/docs/7/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
     await userEvent.click(canvas.getByRole('button'));
 
     // 👇 Assert DOM structure
@@ -437,7 +437,7 @@ export const EmptyForm = {
 };
 
 /*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const FilledForm = {
@@ -453,7 +453,7 @@ export const FilledForm = {
 
     await userEvent.type(canvas.getByTestId('password'), 'a-random-password');
 
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    // See https://storybook.js.org/docs/7/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
     await userEvent.click(canvas.getByRole('button'));
 
     // 👇 Assert DOM structure
@@ -491,7 +491,7 @@ export const EmptyForm: Story = {
 };
 
 /*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const FilledForm: Story = {
@@ -507,7 +507,7 @@ export const FilledForm: Story = {
 
     await userEvent.type(canvas.getByTestId('password'), 'a-random-password');
 
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    // See https://storybook.js.org/docs/7/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
     await userEvent.click(canvas.getByRole('button'));
 
     // 👇 Assert DOM structure
@@ -545,7 +545,7 @@ export const EmptyForm: Story = {
 };
 
 /*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const FilledForm: Story = {
@@ -561,7 +561,7 @@ export const FilledForm: Story = {
 
     await userEvent.type(canvas.getByTestId('password'), 'a-random-password');
 
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    // See https://storybook.js.org/docs/7/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
     await userEvent.click(canvas.getByRole('button'));
 
     // 👇 Assert DOM structure
@@ -585,7 +585,7 @@ export default {
 export const EmptyForm = {};
 
 /*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvasas
  * to learn more about using the canvasElement to query the DOM
  */
 export const FilledForm = {
@@ -597,7 +597,7 @@ export const FilledForm = {
 
     await userEvent.type(canvas.getByTestId('password'), 'a-random-password');
 
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    // See https://storybook.js.org/docs/7/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
     await userEvent.click(canvas.getByRole('button'));
 
     // 👇 Assert DOM structure
@@ -625,7 +625,7 @@ type Story = StoryObj;
 export const EmptyForm: Story = {};
 
 /*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const FilledForm: Story = {
@@ -637,7 +637,7 @@ export const FilledForm: Story = {
 
     await userEvent.type(canvas.getByTestId('password'), 'a-random-password');
 
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    // See https://storybook.js.org/docs/7/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
     await userEvent.click(canvas.getByRole('button'));
 
     // 👇 Assert DOM structure
@@ -649,4 +649,3 @@ export const FilledForm: Story = {
   },
 };
 ```
-

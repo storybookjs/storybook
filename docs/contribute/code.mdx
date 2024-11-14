@@ -1,5 +1,6 @@
 ---
 title: 'Code contributions'
+hideRendererSelector: true
 sidebar:
   order: 2
   title: Code
@@ -54,7 +55,9 @@ yarn task
 When prompted, answer the questions as accurately as possible to allow Storybook to determine your goals. After answering these questions, you should see the entire command with the options you've selected should you require to re-run it.
 
 <Callout variant="info" icon="💡">
+
   The `yarn task` command takes a few development shortcuts that can catch you off guard when switching branches and may require you to re-run both the `install` and `compile` tasks. You can speed up the process by running the command with the `start-from=install` flag.
+
 </Callout>
 
 ## Running tests
@@ -86,7 +89,9 @@ yarn build
 When prompted to start the build process in `watch` mode, answer **yes** to develop in interactive mode. Afterward, choose which packages you want to build. For example, if you're going to work on a feature for `@storybook/addon-docs`, you might want to select both `@storybook/addon-docs` and `@storybook/components`.
 
 <Callout variant="info" icon="💡">
+
   Build's `watch` mode is great for interactive development. However, for performance reasons, it only transpiles your code and doesn't execute the TypeScript compiler. If something isn't working as expected, try running the `build` command **WITHOUT** enabling watch mode: it will re-generate TypeScript types and perform automatic type checking for you.
+
 </Callout>
 
 ![Storybook package selector](../_assets/contribute/storybook-build-packages-selection-optimized.png)
@@ -144,7 +149,9 @@ yarn test
 ```
 
 <Callout variant="info" icon="💡">
+
   Storybook relies on [Jest](https://jestjs.io/) as part of it's testing suite. During the test run, if you spot that snapshot tests are failing, re-run the command with the `-u` flag to update them.
+
 </Callout>
 
 Doing this prevents last-minute bugs and is a great way to merge your contribution faster once you submit your pull request. Failing to do so will lead to one of the maintainers mark the pull request with the **Work in Progress** label until all tests pass.
@@ -171,9 +178,11 @@ yarn task --task e2e-tests --template=react-vite/default-ts --start-from=install
 Typically it is a good idea to start from the `install` task to ensure your local code is completely up to date. If you reproduce the failure, you can try and make fixes, [compile them](#start-developing) with `build`, then rerun the task with `--start-from=auto`.
 
 <Callout variant="info" icon="💡">
+
   The default instructions run the code in "linked" mode, meaning built changes to Storybook library code will be reflected in the sandbox immediately (the next time you run the task). However, CI runs in "unlinked" mode, which in rare cases, will behave differently.
 
   If you are having trouble reproducing, try rerunning the command with the `--no-link` flag. If you need to do that, you'll need to run it with `--start-from=compile` after each code change.
+
 </Callout>
 
 ## How to work with reproductions
@@ -195,14 +204,16 @@ npx storybook@next link --local /path/to/local-repro-directory
 ```
 
 <Callout variant="info" icon="💡">
+
   The `storybook link` command relies on [Yarn linking](https://yarnpkg.com/cli/link/) under the hood. It requires your local reproduction to be using [Yarn 2 or higher](https://yarnpkg.com/) as well, which is the case if you've already enabled it with the [`storybook sandbox`](./how-to-reproduce.mdx) command per our contribution guidelines. The process will fail if you're trying to link a non-Yarn 2 project.
+  
 </Callout>
 
 ## Developing a template
 
 The first step is to add an entry to `code/lib/cli/src/sandbox-templates.ts`, which is the master list of all repro templates:
 
-```ts
+```ts title="code/lib/cli/src/sandbox-templates.ts"
 'cra/default-js': {
     name: 'Create React App (Javascript)',
     script: 'npx create-react-app .',
@@ -258,4 +269,4 @@ Once the PR is merged, the template will be generated on a nightly cadence and y
 * Code for features and bug fixes
 * [Frameworks](./framework.mdx) to get started with a new framework
 * [Documentation](./documentation/documentation-updates.mdx) for documentation improvements, typos, and clarifications
-* [Examples](./documentation/new-snippets.mdx) for new snippets and examples
+* [Examples](./documentation/new-snippets.mdx) for new snippets

@@ -1,6 +1,4 @@
-```mdx renderer="common" language="mdx"
-{/* Page.mdx */}
-
+```mdx filename="Page.mdx" renderer="common" language="mdx"
 import { Canvas, Meta, Story } from '@storybook/blocks';
 
 import * as ListStories from './List.stories';
@@ -13,7 +11,7 @@ import * as PageStories from './Page.stories';
 
 # Page
 
-Page is a layout container that is used to position children in predetermined areas. 
+Page is a layout container that is used to position children in predetermined areas.
 
 It's often used to apply consistent positioning for content across pages in an application
 
@@ -37,4 +35,3 @@ List items are used to group related content in a list. They must be nested with
 
 <Story of={ListItemStories.Starter} meta={ListItemStories} />
 ```
-

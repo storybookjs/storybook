@@ -35,12 +35,14 @@ Storybook's `play` functions are small code snippets that run once the story fin
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="register-component-with-play-function.md" usesCsf3 csf2Path="writing-stories/play-function#snippet-register-component-with-play-function" />
+<CodeSnippets path="register-component-with-play-function.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
+
   See the [Interaction testing documentation](../writing-tests/interaction-testing.mdx#api-for-user-events) for an overview of the available API events.
+
 </Callout>
 
 When Storybook finishes rendering the story, it executes the steps defined within the `play` function, interacting with the component and filling the form's information. All of this without the need for user intervention. If you check your `Interactions` panel, you'll see the step-by-step flow.
@@ -51,7 +53,7 @@ Thanks to the [Component Story Format](../api/csf.mdx), an ES6 module based file
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="my-component-play-function-composition.md" usesCsf3 csf2Path="writing-stories/play-function#snippet-my-component-play-function-composition" />
+<CodeSnippets path="my-component-play-function-composition.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -65,7 +67,7 @@ A common type of component interaction is a button click. If you need to reprodu
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="my-component-play-function-with-clickevent.md" usesCsf3 csf2Path="writing-stories/play-function#snippet-my-component-play-function-with-clickevent" />
+<CodeSnippets path="my-component-play-function-with-clickevent.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -75,7 +77,7 @@ Asides from click events, you can also script additional events with the `play` 
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="my-component-play-function-with-selectevent.md" usesCsf3 csf2Path="writing-stories/play-function#snippet-my-component-play-function-with-selectevent" />
+<CodeSnippets path="my-component-play-function-with-selectevent.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -83,7 +85,7 @@ In addition to events, you can also create interactions with the `play` function
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="my-component-play-function-with-delay.md" usesCsf3 csf2Path="writing-stories/play-function#snippet-my-component-play-function-with-delay" />
+<CodeSnippets path="my-component-play-function-with-delay.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -93,7 +95,7 @@ You can also use the `play` function to verify the existence of an element based
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="my-component-play-function-waitfor.md" usesCsf3 csf2Path="writing-stories/play-function#snippet-my-component-play-function-waitfor" />
+<CodeSnippets path="my-component-play-function-waitfor.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -103,12 +105,14 @@ If you need, you can also adjust your `play` function to find elements based on 
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="my-component-play-function-alt-queries.md" usesCsf3 csf2Path="writing-stories/play-function#snippet-my-component-play-function-alt-queries" />
+<CodeSnippets path="my-component-play-function-alt-queries.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
+
   You can read more about the querying elements in the [Testing Library documentation](https://testing-library.com/docs/queries/about/).
+
 </Callout>
 
 When Storybook loads the story, the `play` function starts its execution and queries the DOM tree expecting the element to be available when the story renders. In case there's a failure in your test, you'll be able to verify its root cause quickly.
@@ -117,7 +121,7 @@ Otherwise, if the component is not immediately available, for instance, due to a
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="my-component-play-function-query-findby.md" usesCsf3 csf2Path="writing-stories/play-function#snippet-my-component-play-function-query-findby" />
+<CodeSnippets path="my-component-play-function-query-findby.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -127,7 +131,7 @@ By default, each interaction you write inside your `play` function will be execu
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="my-component-play-function-with-canvas.md" usesCsf3 csf2Path="writing-stories/play-function#snippet-my-component-play-function-with-canvas" />
+<CodeSnippets path="my-component-play-function-with-canvas.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 

@@ -5,7 +5,7 @@ import { Button as ButtonComponent } from './button.component';
 
 const meta: Meta<ButtonComponent> = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Design System/Atoms/Button',
@@ -24,7 +24,7 @@ import { Button as ButtonComponent } from './Button';
 
 export default {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Design System/Atoms/Button',
@@ -43,7 +43,7 @@ import { Button as ButtonComponent } from './Button';
 
 const meta = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Design System/Atoms/Button',
@@ -65,7 +65,7 @@ import { Button as ButtonComponent } from './Button';
 
 const meta: Meta<typeof ButtonComponent> = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Design System/Atoms/Button',
@@ -103,4 +103,3 @@ type Story = StoryObj;
 // This is the only named export in the file, and it matches the component name
 export const Button: Story = {};
 ```
-

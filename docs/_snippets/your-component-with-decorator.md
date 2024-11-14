@@ -59,7 +59,7 @@ const meta: Meta<typeof YourComponent> = {
   decorators: [
     (Story) => (
       <div style={{ margin: '3em' }}>
-        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it  */}
+        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it */}
         <Story />
       </div>
     ),
@@ -77,6 +77,7 @@ export default {
   decorators: [
     (Story) => (
       <div style={{ margin: '3em' }}>
+        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it. Useful to prevent the full remount of the component's story. */}
         <Story />
       </div>
     ),
@@ -84,33 +85,7 @@ export default {
 };
 ```
 
-```js filename="YourComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="story-function-js"
-import { YourComponent } from './YourComponent';
-
-// Replacing the <Story/> element with a Story function is also a good way of writing decorators.
-// Useful to prevent the full remount of the component's story.
-export default {
-  component: YourComponent,
-  decorators: [(Story) => <div style={{ margin: '3em' }}>{Story()}</div>],
-};
-```
-
-```tsx filename="YourComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="story-function-ts"
-import type { Meta } from 'storybook-solidjs';
-
-import { YourComponent } from './YourComponent';
-
-// Replacing the <Story/> element with a Story function is also a good way of writing decorators.
-// Useful to prevent the full remount of the component's story.
-const meta: Meta<typeof YourComponent> = {
-  component: YourComponent,
-  decorators: [(Story) => <div style={{ margin: '3em' }}>{Story()}</div>],
-};
-
-export default meta;
-```
-
-```tsx filename="YourComponent.stories.ts|tsx" renderer="solid" language="ts-4-9"
+```ts filename="YourComponent.stories.ts|tsx" renderer="solid" language="ts-4-9"
 import type { Meta } from 'storybook-solidjs';
 
 import { YourComponent } from './YourComponent';
@@ -120,6 +95,7 @@ const meta = {
   decorators: [
     (Story) => (
       <div style={{ margin: '3em' }}>
+        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it. Useful to prevent the full remount of the component's story. */}
         <Story />
       </div>
     ),
@@ -129,7 +105,7 @@ const meta = {
 export default meta;
 ```
 
-```tsx filename="YourComponent.stories.ts|tsx" renderer="solid" language="ts"
+```ts filename="YourComponent.stories.ts|tsx" renderer="solid" language="ts"
 import type { Meta } from 'storybook-solidjs';
 
 import { YourComponent } from './YourComponent';
@@ -139,6 +115,7 @@ const meta: Meta<typeof YourComponent> = {
   decorators: [
     (Story) => (
       <div style={{ margin: '3em' }}>
+        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it. Useful to prevent the full remount of the component's story. */}
         <Story />
       </div>
     ),
@@ -148,7 +125,7 @@ const meta: Meta<typeof YourComponent> = {
 export default meta;
 ```
 
-```js filename="YourComponent.stories.js" renderer="svelte" language="js"
+```js filename="YourComponent.stories.js" renderer="svelte" language="js" tabTitle="story"
 import YourComponent from './YourComponent.svelte';
 
 import MarginDecorator from './MarginDecorator.svelte';
@@ -159,27 +136,19 @@ export default {
 };
 ```
 
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* YourComponent.stories.svelte */}
+```html filename="MarginDecorator.svelte" renderer="svelte" language="js" tabTitle="decorator-component"
+<div>
+  <slot />
+</div>
 
-<script>
-  import { Meta, Template } from '@storybook/addon-svelte-csf';
-
-  import MarginDecorator from './MarginDecorator.svelte';
-
-  import YourComponent from './YourComponent.svelte';
-</script>
-
-<meta title="YourComponent" component="{YourComponent}" />
-
-<template let:args>
-  <MarginDecorator>
-    {/*👇 Your component here */}
-  </MarginDecorator>
-</template>
+<style>
+  div {
+    margin: 3em;
+  }
+</style>
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts-4-9"
+```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="story"
 import type { Meta } from '@storybook/svelte';
 
 import YourComponent from './YourComponent.svelte';
@@ -193,7 +162,19 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts"
+```html filename="MarginDecorator.svelte" renderer="svelte" language="ts-4-9" tabTitle="decorator-component"
+<div>
+  <slot />
+</div>
+
+<style>
+  div {
+    margin: 3em;
+  }
+</style>
+```
+
+```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts" tabTitle="story"
 import type { Meta } from '@storybook/svelte';
 
 import YourComponent from './YourComponent.svelte';
@@ -205,6 +186,18 @@ const meta: Meta<typeof YourComponent> = {
 };
 
 export default meta;
+```
+
+```html filename="MarginDecorator.svelte" renderer="svelte" language="ts" tabTitle="decorator-component"
+<div>
+  <slot />
+</div>
+
+<style>
+  div {
+    margin: 3em;
+  }
+</style>
 ```
 
 ```js filename="YourComponent.stories.js" renderer="vue" language="js"
@@ -264,4 +257,3 @@ const meta: Meta<YourComponentProps> = {
 };
 export default meta;
 ```
-

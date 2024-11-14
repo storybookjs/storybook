@@ -13,9 +13,7 @@ The `Stories` block renders the full collection of stories in a stories file.
 
 {/* prettier-ignore-start */}
 
-```md
-{/* ButtonDocs.mdx */}
-
+```md title="ButtonDocs.mdx"
 import { Meta, Stories } from '@storybook/blocks';
 import * as ButtonStories from './Button.stories';
 
@@ -43,7 +41,9 @@ Default: `true`
 Determines if the collection of stories includes the primary (first) story.
 
 <Callout variant="info" icon="💡">
+
   If a stories file contains only one story and `includePrimary={true}`, the `Stories` block will render nothing to avoid a potentially confusing situation.
+  
 </Callout>
 
 ### `title`

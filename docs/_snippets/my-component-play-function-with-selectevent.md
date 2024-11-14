@@ -18,7 +18,7 @@ function sleep(ms: number) {
 }
 
 /*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const ExampleChangeEvent: Story = {
@@ -52,7 +52,7 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/* See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+/* See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const ExampleChangeEvent = {
@@ -92,7 +92,7 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/* See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+/* See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const ExampleChangeEvent: Story = {
@@ -132,7 +132,7 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/* See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+/* See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const ExampleChangeEvent: Story = {
@@ -164,7 +164,7 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/* See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+/* See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const ExampleChangeEvent = {
@@ -200,7 +200,7 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/* See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+/* See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const ExampleChangeEvent: Story = {
@@ -219,4 +219,3 @@ export const ExampleChangeEvent: Story = {
   },
 };
 ```
-

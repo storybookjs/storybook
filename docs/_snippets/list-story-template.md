@@ -13,7 +13,7 @@ import { Unchecked } from './ListItem.stories';
 
 const meta: Meta<List> = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'List',
@@ -31,7 +31,7 @@ type Story = StoryObj<List>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 const ListTemplate: Story = {
@@ -69,7 +69,7 @@ import { Unchecked } from './ListItem.stories';
 
 export default {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'List',
@@ -119,7 +119,7 @@ import { Unchecked } from './ListItem.stories';
 
 const meta = {
   /* 👇 The title prop is optional.
-   * Seehttps://storybook.js.org/docs/configure/#configure-story-loading
+   * Seehttps://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'List',
@@ -168,7 +168,7 @@ import { Unchecked } from './ListItem.stories';
 
 const meta: Meta<typeof List> = {
   /* 👇 The title prop is optional.
-   * Seehttps://storybook.js.org/docs/configure/#configure-story-loading
+   * Seehttps://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'List',
@@ -215,7 +215,7 @@ import { Unchecked } from './ListItem.stories';
 
 export default {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'List',
@@ -265,7 +265,7 @@ import { Unchecked } from './ListItem.stories';
 
 const meta = {
   /* 👇 The title prop is optional.
-   * Seehttps://storybook.js.org/docs/configure/#configure-story-loading
+   * Seehttps://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'List',
@@ -314,7 +314,7 @@ import { Unchecked } from './ListItem.stories';
 
 const meta: Meta<typeof List> = {
   /* 👇 The title prop is optional.
-   * Seehttps://storybook.js.org/docs/configure/#configure-story-loading
+   * Seehttps://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'List',
@@ -361,7 +361,7 @@ import { Unchecked } from './ListItem.stories';
 
 export default {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'List',
@@ -411,7 +411,7 @@ import { Unchecked } from './ListItem.stories';
 
 const meta = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'List',
@@ -466,7 +466,7 @@ import { Unchecked } from './ListItem.stories';
 
 const meta: Meta<typeof List> = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'List',
@@ -519,7 +519,7 @@ import { Unchecked } from './ListItem.stories';
 
 export default {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'List',
@@ -572,7 +572,7 @@ import { Unchecked } from './ListItem.stories';
 
 const meta = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'List',
@@ -628,7 +628,7 @@ import { Unchecked } from './ListItem.stories';
 
 const meta: Meta<typeof List> = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'List',
@@ -756,4 +756,3 @@ export const OneItem: Story = {
   },
 };
 ```
-

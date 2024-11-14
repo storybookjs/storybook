@@ -4,7 +4,7 @@ import { ListItem } from './ListItem';
 
 export default {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'List',
@@ -31,7 +31,7 @@ import { ListItem } from './ListItem';
 
 const meta = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'List',
@@ -62,7 +62,7 @@ import { ListItem } from './ListItem';
 
 const meta: Meta<typeof List> = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'List',
@@ -83,4 +83,3 @@ export const OneItem: Story = {
   ),
 };
 ```
-

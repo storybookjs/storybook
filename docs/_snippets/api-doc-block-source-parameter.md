@@ -20,7 +20,13 @@ export const Basic: Story = {
 ```
 
 ```js filename="Button.stories.js|jsx" renderer="common" language="js"
-export const Basic {
+import { Button } from './Button';
+
+export default {
+  component: Button,
+};
+
+export const Basic = {
   parameters: {
     docs: {
       source: { language: 'jsx' },
@@ -107,4 +113,3 @@ export const Basic: Story = {
   },
 };
 ```
-

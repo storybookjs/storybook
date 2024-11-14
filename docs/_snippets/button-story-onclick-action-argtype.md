@@ -47,4 +47,3 @@ const meta: Meta<typeof Button> = {
 
 export default meta;
 ```
-

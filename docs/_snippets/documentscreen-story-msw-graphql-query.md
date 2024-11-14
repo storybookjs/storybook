@@ -1,4 +1,4 @@
-```ts filename="YourPage.stories.ts" renderer="angular" language="ts"
+```ts filename="YourPage.stories.ts" renderer="angular" language="ts" tabTitle="story"
 import { moduleMetadata } from '@storybook/angular';
 
 import type { Meta, StoryObj } from '@storybook/angular';
@@ -80,6 +80,44 @@ export const MockedError: Story = {
     ],
   },
 };
+```
+
+```ts filename="mock-graphql.module.ts" renderer="angular" language="ts" tabTitle="mock-apollo-module"
+import { NgModule } from '@angular/core';
+import { APOLLO_OPTIONS } from 'apollo-angular';
+import { ApolloClientOptions, InMemoryCache } from '@apollo/client/core';
+import { HttpLink } from 'apollo-angular/http';
+
+// See here for docs https://apollo-angular.com/docs/get-started
+
+const uri = 'https://your-graphql-endpoint';
+export function createApollo(httpLink: HttpLink): ApolloClientOptions<any> {
+  return {
+    link: httpLink.create({ uri }),
+    cache: new InMemoryCache(),
+    defaultOptions: {
+      watchQuery: {
+        fetchPolicy: 'no-cache',
+        errorPolicy: 'all',
+      },
+      query: {
+        fetchPolicy: 'no-cache',
+        errorPolicy: 'all',
+      },
+    },
+  };
+}
+
+@NgModule({
+  providers: [
+    {
+      provide: APOLLO_OPTIONS,
+      useFactory: createApollo,
+      deps: [HttpLink],
+    },
+  ],
+})
+export class MockGraphQLModule {}
 ```
 
 ```js filename="YourPage.stories.js|jsx" renderer="react" language="js"
@@ -360,7 +398,7 @@ export const MockedError: Story = {
 };
 ```
 
-```js filename="YourPage.stories.js" renderer="svelte" language="js"
+```js filename="YourPage.stories.js" renderer="svelte" language="js" tabTitle="story"
 import { graphql } from 'msw';
 
 import DocumentScreen from './YourPage.svelte';
@@ -430,7 +468,33 @@ export const MockedError = {
 };
 ```
 
-```ts filename="YourPage.stories.ts" renderer="svelte" language="ts-4-9"
+```html filename="MockApolloWrapperClient.svelte" renderer="svelte" language="js" tabTitle="apollo-wrapper-component"
+<script>
+  import { ApolloClient, InMemoryCache } from '@apollo/client';
+
+  import { setClient } from 'svelte-apollo';
+
+  const mockedClient = new ApolloClient({
+    uri: 'https://your-graphql-endpoint',
+    cache: new InMemoryCache(),
+    defaultOptions: {
+      watchQuery: {
+        fetchPolicy: 'no-cache',
+        errorPolicy: 'all',
+      },
+      query: {
+        fetchPolicy: 'no-cache',
+        errorPolicy: 'all',
+      },
+    },
+  });
+  setClient(mockedClient);
+</script>
+
+<slot />
+```
+
+```ts filename="YourPage.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="story"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
 import { graphql } from 'msw';
@@ -499,7 +563,33 @@ export const MockedError: Story = {
 };
 ```
 
-```ts filename="YourPage.stories.ts" renderer="svelte" language="ts"
+```html filename="MockApolloWrapperClient.svelte" renderer="svelte" language="ts-4-9" tabTitle="apollo-wrapper-component"
+<script lang="ts">
+  import { ApolloClient, InMemoryCache } from '@apollo/client';
+
+  import { setClient } from 'svelte-apollo';
+
+  const mockedClient = new ApolloClient({
+    uri: 'https://your-graphql-endpoint',
+    cache: new InMemoryCache(),
+    defaultOptions: {
+      watchQuery: {
+        fetchPolicy: 'no-cache',
+        errorPolicy: 'all',
+      },
+      query: {
+        fetchPolicy: 'no-cache',
+        errorPolicy: 'all',
+      },
+    },
+  });
+  setClient(mockedClient);
+</script>
+
+<slot />
+```
+
+```ts filename="YourPage.stories.ts" renderer="svelte" language="ts" tabTitle="story"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
 import { graphql } from 'msw';
@@ -568,7 +658,33 @@ export const MockedError: Story = {
 };
 ```
 
-```js filename="YourPage.stories.js" renderer="vue" language="js"
+```html filename="MockApolloWrapperClient.svelte" renderer="svelte" language="ts" tabTitle="apollo-wrapper-component"
+<script lang="ts">
+  import { ApolloClient, InMemoryCache } from '@apollo/client';
+
+  import { setClient } from 'svelte-apollo';
+
+  const mockedClient = new ApolloClient({
+    uri: 'https://your-graphql-endpoint',
+    cache: new InMemoryCache(),
+    defaultOptions: {
+      watchQuery: {
+        fetchPolicy: 'no-cache',
+        errorPolicy: 'all',
+      },
+      query: {
+        fetchPolicy: 'no-cache',
+        errorPolicy: 'all',
+      },
+    },
+  });
+  setClient(mockedClient);
+</script>
+
+<slot />
+```
+
+```js filename="YourPage.stories.js" renderer="vue" language="js" tabTitle="story"
 import DocumentScreen from './YourPage.vue';
 
 import WrapperComponent from './ApolloWrapperClient.vue';
@@ -606,7 +722,7 @@ const TestData = {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const MockedSuccess = {
@@ -645,7 +761,47 @@ export const MockedError = {
 };
 ```
 
-```ts filename="YourPage.stories.ts" renderer="vue" language="ts-4-9"
+```html filename="ApolloWrapperClient.vue" renderer="vue" language="js" tabTitle="apollo-wrapper-component"
+<template>
+  <div><slot /></div>
+</template>
+
+<script>
+  import { defineComponent, provide } from 'vue';
+  import { DefaultApolloClient } from '@vue/apollo-composable';
+  import { ApolloClient, createHttpLink, InMemoryCache } from '@apollo/client/core';
+
+  // Apollo client wrapper component that can be used within your app and Storybook
+  export default defineComponent({
+    name: 'WrapperComponent',
+    setup() {
+      const httpLink = createHttpLink({
+        // You should use an absolute URL here
+        uri: 'https://your-graphql-endpoint',
+      });
+      const cache = new InMemoryCache();
+
+      const mockedClient = new ApolloClient({
+        link: httpLink,
+        cache,
+        defaultOptions: {
+          watchQuery: {
+            fetchPolicy: 'no-cache',
+            errorPolicy: 'all',
+          },
+          query: {
+            fetchPolicy: 'no-cache',
+            errorPolicy: 'all',
+          },
+        },
+      });
+      provide(DefaultApolloClient, mockedClient);
+    },
+  });
+</script>
+```
+
+```ts filename="YourPage.stories.ts" renderer="vue" language="ts-4-9" tabTitle="story"
 import { graphql } from 'msw';
 
 import type { Meta, StoryObj } from '@storybook/vue3';
@@ -688,7 +844,7 @@ type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const MockedSuccess: Story = {
@@ -727,7 +883,47 @@ export const MockedError: Story = {
 };
 ```
 
-```ts filename="YourPage.stories.ts" renderer="vue" language="ts"
+```html filename="ApolloWrapperClient.vue" renderer="vue" language="ts-4-9" tabTitle="apollo-wrapper-component"
+<template>
+  <div><slot /></div>
+</template>
+
+<script>
+  import { defineComponent, provide } from 'vue';
+  import { DefaultApolloClient } from '@vue/apollo-composable';
+  import { ApolloClient, createHttpLink, InMemoryCache } from '@apollo/client/core';
+
+  // Apollo client wrapper component that can be used within your app and Storybook
+  export default defineComponent({
+    name: 'WrapperComponent',
+    setup() {
+      const httpLink = createHttpLink({
+        // You should use an absolute URL here
+        uri: 'https://your-graphql-endpoint',
+      });
+      const cache = new InMemoryCache();
+
+      const mockedClient = new ApolloClient({
+        link: httpLink,
+        cache,
+        defaultOptions: {
+          watchQuery: {
+            fetchPolicy: 'no-cache',
+            errorPolicy: 'all',
+          },
+          query: {
+            fetchPolicy: 'no-cache',
+            errorPolicy: 'all',
+          },
+        },
+      });
+      provide(DefaultApolloClient, mockedClient);
+    },
+  });
+</script>
+```
+
+```ts filename="YourPage.stories.ts" renderer="vue" language="ts" tabTitle="story"
 import { graphql } from 'msw';
 
 import type { Meta, StoryObj } from '@storybook/vue3';
@@ -770,7 +966,7 @@ type Story = StoryObj<typeof DocumentScreen>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const MockedSuccess: Story = {
@@ -809,3 +1005,42 @@ export const MockedError: Story = {
 };
 ```
 
+```html filename="ApolloWrapperClient.vue" renderer="vue" language="ts" tabTitle="apollo-wrapper-component"
+<template>
+  <div><slot /></div>
+</template>
+
+<script>
+  import { defineComponent, provide } from 'vue';
+  import { DefaultApolloClient } from '@vue/apollo-composable';
+  import { ApolloClient, createHttpLink, InMemoryCache } from '@apollo/client/core';
+
+  // Apollo client wrapper component that can be used within your app and Storybook
+  export default defineComponent({
+    name: 'WrapperComponent',
+    setup() {
+      const httpLink = createHttpLink({
+        // You should use an absolute URL here
+        uri: 'https://your-graphql-endpoint',
+      });
+      const cache = new InMemoryCache();
+
+      const mockedClient = new ApolloClient({
+        link: httpLink,
+        cache,
+        defaultOptions: {
+          watchQuery: {
+            fetchPolicy: 'no-cache',
+            errorPolicy: 'all',
+          },
+          query: {
+            fetchPolicy: 'no-cache',
+            errorPolicy: 'all',
+          },
+        },
+      });
+      provide(DefaultApolloClient, mockedClient);
+    },
+  });
+</script>
+```

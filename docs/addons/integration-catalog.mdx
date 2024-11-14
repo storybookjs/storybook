@@ -19,7 +19,9 @@ Add your addon to the catalog by publishing a npm package that follows these req
 * `preset.js` file written as an ES5 module at the root level
 
 <Callout variant="info" icon="💡">
+
   Get a refresher on how to [write a Storybook addon](./writing-addons.mdx).
+
 </Callout>
 
 ### Addon metadata
@@ -56,13 +58,13 @@ Use the list below as a reference when filling in the values for both the `suppo
 * react-native
 
 <Callout variant="info" icon="💡">
+
   Make sure to copy each item **exactly** as listed so that we can properly index your addon in our catalog.
+
 </Callout>
 
-```json
+```json title="package.json"
 {
-  // package.json
-
   "name": "storybook-addon-outline",
   "version": "1.0.0",
   "description": "Outline all elements with CSS to help with layout placement and alignment",
@@ -87,7 +89,7 @@ The `package.json` above appears like below in the catalog. See an example of a 
 
 #### How long does it take for my addon to show up in the catalog?
 
-Once you publish the addon, it will appear in the catalog. There may be a delay between the time you publish your addon and when it's listed in the catalog. If your addon doesn't show up within 24 hours, [open an issue](https://github.com/storybookjs/frontpage/issues).
+Once you publish the addon, it will appear in the catalog. There may be a delay between the time you publish your addon and when it's listed in the catalog. If your addon doesn't show up within 24 hours, [open an issue](https://github.com/storybookjs/web/issues).
 
 ## Recipes
 

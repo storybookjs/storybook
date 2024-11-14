@@ -11,9 +11,10 @@ By default, most elements (like `h1`, `p`, etc.) in docs have a few default styl
 
 {/* prettier-ignore-start */}
 
-```md
-import { Meta, Unstyled } from "@storybook/blocks";
-import { Header } from "./Header.tsx";
+```md title="Header.mdx"
+import { Meta, Unstyled } from '@storybook/blocks';
+
+import { Header } from ''./Header.tsx';
 
 <Meta title="Unstyled" />
 
@@ -44,6 +45,7 @@ Yields:
 </Callout>
 
 <Callout variant="info" icon="💡">
+
   Due to how CSS inheritance works it’s best to always add the Unstyled block to the root of your MDX, and not nested into other elements. The following example will cause some Storybook styles like `color` to be inherited into `CustomComponent` because they are applied to the root `div`:
 
   {/* prettier-ignore-start */}
@@ -57,6 +59,7 @@ Yields:
   ```
 
   {/* prettier-ignore-end */}
+  
 </Callout>
 
 ## Unstyled

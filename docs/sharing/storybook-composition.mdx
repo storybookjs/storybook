@@ -29,7 +29,9 @@ In your [`.storybook/main.js`](../configure/index.mdx#configure-story-rendering)
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
+
   Limitation: Addons in composed Storybooks will not work as they normally do in a non-composed Storybook.
+
 </Callout>
 
 ## Compose local Storybooks
@@ -97,7 +99,9 @@ npx storybook extract
 ```
 
 <Callout variant="info" icon="💡">
+
   `storybook extract` uses [Puppeteer](https://www.npmjs.com/package/puppeteer), which downloads and installs Chromium. Set the environment `SB_CHROMIUM_PATH` to configure your local Chromium installation.
+  
 </Callout>
 
 Although a good approach to improve composition, it comes with a cost, as it will require an additional dependency being added and increased build times. Once it finishes executing, it will generate an `index.json` file in the default build directory (`storybook-static`) with the information related to your Storybook. Here’s an example of the file contents:

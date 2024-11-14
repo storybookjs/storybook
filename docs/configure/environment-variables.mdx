@@ -19,20 +19,24 @@ STORYBOOK_THEME=red STORYBOOK_DATA_KEY=12345 npm run storybook
 Then we can access these environment variables anywhere inside our preview JavaScript code like below:
 
 <IfRenderer renderer={['angular', 'ember' ]}>
+
   {/* prettier-ignore-start */}
 
-  <CodeSnippets path="storybook-read-environment-variables.md" />
-</IfRenderer>
+  <CodeSnippets path="storybook-read-environment-variables-node.md" />
 
-{/* prettier-ignore-end */}
+  {/* prettier-ignore-end */}
+
+</IfRenderer>
 
 <IfRenderer renderer={['html', 'react', 'qwik', 'preact','svelte', 'solid', 'vue', 'web-components' ]}>
+
   {/* prettier-ignore-start */}
 
-  <CodeSnippets path="storybook-read-environment-variables.md" />
-</IfRenderer>
+  <CodeSnippets path="storybook-read-all-environment-variables.md" />
 
-{/* prettier-ignore-end */}
+  {/* prettier-ignore-end */}
+
+</IfRenderer>
 
 You can also access these variables in your custom `<head>`/`<body>` using the substitution `%STORYBOOK_X%`, for example: `%STORYBOOK_THEME%` will become `red`.
 
@@ -59,6 +63,7 @@ Then you can access this environment variable anywhere, even within your stories
 {/* prettier-ignore-end */}
 
 <IfRenderer renderer={['html', 'react', 'qwik', 'preact','svelte', 'solid', 'vue', 'web-components' ]}>
+
   #### With Vite
 
   Out of the box, Storybook provides a [Vite builder](../builders/vite.mdx), which does not output Node.js globals like `process.env`. To access environment variables in Storybook (e.g., `STORYBOOK_`, `VITE_`), you can use `import.meta.env`. For example:
@@ -68,10 +73,13 @@ Then you can access this environment variable anywhere, even within your stories
   <CodeSnippets path="my-component-vite-env-variables.md" />
 
   {/* prettier-ignore-end */}
+
 </IfRenderer>
 
 <Callout variant="info">
+
   You can also use specific files for specific modes. Add a `.env.development` or `.env.production` to apply different values to your environment variables.
+
 </Callout>
 
 You can also pass these environment variables when you are [building your Storybook](../sharing/publish-storybook.mdx) with `build-storybook`.
@@ -92,7 +100,7 @@ When Storybook loads, it will enable you to access them in your stories similar 
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="my-component-env-var-config.md" usesCsf3 csf2Path="configure/environment-variables#snippet-my-component-env-var-config" />
+<CodeSnippets path="my-component-env-var-config.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -109,7 +117,9 @@ The table below lists the available options:
 | Chromium | `BROWSER="chromium"` |
 
 <Callout variant="info" icon="💡">
+
   By default, Storybook will open a new Chrome window as part of its startup process. If you don't have Chrome installed, make sure to include one of the following options, or set your default browser accordingly.
+  
 </Callout>
 
 ## Troubleshooting

@@ -23,7 +23,7 @@ To define the args of a single story, use the `args` CSF story key:
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story-with-args.md" usesCsf3 csf2Path="writing-stories/args#snippet-button-story-with-args" />
+<CodeSnippets path="button-story-with-args.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -31,7 +31,7 @@ These args will only apply to the story for which they are attached, although yo
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story-primary-long-name.md" usesCsf3 csf2Path="writing-stories/args#snippet-button-story-primary-long-name" />
+<CodeSnippets path="button-story-primary-long-name.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -43,7 +43,7 @@ You can also define args at the component level; they will apply to all the comp
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story-component-args-primary.md" usesCsf3 csf2Path="writing-stories/args#snippet-button-story-component-args-primary" />
+<CodeSnippets path="button-story-component-args-primary.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -58,7 +58,9 @@ You can also define args at the global level; they will apply to every component
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
+
   For most uses of global args, [globals](../essentials/toolbars-and-globals.mdx) are a better tool for defining globally-applied settings, such as a theme. Using globals enables users to change the value with the toolbar menu.
+
 </Callout>
 
 ## Args composition
@@ -67,7 +69,7 @@ You can separate the arguments to a story to compose in other stories. Here's ho
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story-primary-composition.md" usesCsf3 csf2Path="writing-stories/args#snippet-button-story-primary-composition" />
+<CodeSnippets path="button-story-primary-composition.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -81,7 +83,7 @@ Args are useful when writing stories for composite components that are assembled
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="page-story.md" usesCsf3 csf2Path="writing-stories/args#snippet-page-story" />
+<CodeSnippets path="page-story.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -94,7 +96,7 @@ Args are useful when writing stories for composite components that are assembled
 
   {/* prettier-ignore-start */}
 
-  <CodeSnippets path="page-story-slots.md" usesCsf3 csf2Path="writing-stories/args#snippet-page-story-slots" />
+  <CodeSnippets path="page-story-slots.md" usesCsf3 />
 
   {/* prettier-ignore-end */}
 </IfRenderer>
@@ -122,6 +124,7 @@ Similarly, special formats are available for dates and colors. Date objects will
 Args specified through the URL will extend and override any default values of args set on the story.
 
 <IfRenderer renderer="react">
+
   ## Setting args from within a story
 
   Interactive components often need to be controlled by their containing component or page to respond to events, modify their state and reflect those changes in the UI. For example, when a user toggles a switch component, the switch should be checked, and the arg shown in Storybook should reflect the change. To enable this, you can use the `useArgs` API exported by `@storybook/preview-api`:
@@ -131,6 +134,7 @@ Args specified through the URL will extend and override any default values of ar
   <CodeSnippets path="page-story-args-within-story.md" />
 
   {/* prettier-ignore-end */}
+  
 </IfRenderer>
 
 ## Mapping to complex arg values
@@ -171,6 +175,8 @@ Note that `mapping` does not have to be exhaustive. If the arg value is not a pr
   {/* prettier-ignore-end */}
 
   <Callout variant="info" icon="💡">
+
     Note that `args` is still available as a key in the context.
+
   </Callout>
 </details>

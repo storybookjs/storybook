@@ -13,9 +13,9 @@ Storybook can be set up for both single-project and multi-project Angular worksp
 
 ## How can I opt-out of Angular Ivy?
 
-In case you are having trouble with Angular Ivy you can deactivate it in your `main.js`:
+In case you are having trouble with Angular Ivy you can deactivate it in your `main.js|ts`:
 
-```javascript
+```js title=".storybook/main.js|ts"
 export default {
   stories: [
     /* ... */
@@ -36,7 +36,7 @@ export default {
 
 In case you postinstall ngcc, you can disable it:
 
-```javascript
+```js title=".storybook/main.js|ts"
 export default {
   stories: [
     /* ... */
@@ -64,7 +64,9 @@ npm test -- --coverage --collectCoverageFrom='["src/**/*.{js,jsx}","!src/**/stor
 ```
 
 <Callout variant="info" icon="💡">
+
   If you're using [`Yarn`](https://yarnpkg.com/) as a package manager, you'll need to adjust the command accordingly.
+  
 </Callout>
 
 ## I see `ReferenceError: React is not defined` when using Storybook with Next.js
@@ -78,12 +80,12 @@ Next automatically defines `React` for all of your files via a babel plugin. In 
 
 You can generally reuse Webpack rules by placing them in a file that is `require()`-ed from both your `next.config.js` and your `.storybook/main.js` files. For example:
 
-```js
+```js title=".storybook/main.js|ts"
 export default {
   webpackFinal: async (baseConfig) => {
     const nextConfig = require('/path/to/next.config.js');
 
-    // merge whatever from nextConfig into the webpack config storybook will use
+    // merge whatever from nextConfig into the webpack config Storybook will use
     return { ...baseConfig, ...nextConfig };
   },
 };
@@ -117,9 +119,9 @@ There are two ways that you can enable it, go ahead and pick one:
 FAST_REFRESH=true
 ```
 
-* Or you can set the following properties in your `.storybook/main.js` files:
+* Or you can set the following properties in your `.storybook/main.js|ts` files:
 
-```js
+```js title=".storybook/main.js|ts"
 export default {
   framework: {
     name: '@storybook/react-webpack5',
@@ -140,9 +142,9 @@ export default {
 
 If your installed React Version equals or is higher than 18.0.0, the new React Root API is automatically used and the newest React [concurrent features](https://reactjs.org/docs/concurrent-mode-intro.html) can be used.
 
-You can opt-out from the new React Root API by setting the following property in your `.storybook/main.js` file:
+You can opt-out from the new React Root API by setting the following property in your `.storybook/main.js|ts` file:
 
-```js
+```js title=".storybook/main.js|ts"
 export default {
   framework: {
     name: '@storybook/react-webpack5',
@@ -171,9 +173,7 @@ A common error is that an addon tries to access the "channel", but the channel i
 
 If you're adding Storybook's dependencies manually, make sure you include the [`@storybook/addon-controls`](https://www.npmjs.com/package/@storybook/addon-controls) dependency in your project and reference it in your `.storybook/main.js` as follows:
 
-```js
-// .storybook/main.js
-
+```js title=".storybook/main.js|ts"
 export default {
   addons: ['@storybook/addon-controls'],
 };
@@ -191,13 +191,11 @@ We're working on overcoming this limitation, and soon you'll be able to use them
 
 Storybook does not work unless you have at least one local story (or docs page) defined in your project. In this context, local means a `.stories.*` or `.mdx` file that is referenced in your project's `.storybook/main.js` config.
 
-If you're in a [Storybook composition](https://storybook.js.org/docs/sharing/storybook-composition) scenario, where you have multiple Storybooks, and want to have an extra Storybook with no stories of its own, that serves as a "glue" for all the other Storybooks in a project for demo/documentation purposes, you can do the following steps:
+If you're in a [Storybook composition](./sharing/storybook-composition.mdx) scenario, where you have multiple Storybooks, and want to have an extra Storybook with no stories of its own, that serves as a "glue" for all the other Storybooks in a project for demo/documentation purposes, you can do the following steps:
 
 Introduce a single `.mdx` docs page (addon-essentials or addon-docs required), that serves as an Introduction page, like so:
 
-```mdx
-{/* Introduction.mdx */}
-
+```md title="Introduction.mdx"
 # Welcome
 
 Some description here
@@ -205,8 +203,7 @@ Some description here
 
 And then refer to it in your Storybook config file:
 
-```ts
-// .storybook/main.js
+```js title=".storybook/main.js|ts"
 const config = {
   // define at least one local story/page here
   stories: ['../Introduction.mdx'],
@@ -237,7 +234,7 @@ We're only covering versions 5.3 and 5.0 as they were important milestones for S
 | Section          | Page                                         | Current Location                                                                                                        | Version 5.3 location                                                                                                                                                                                                                                                 | Version 5.0 location                                                                                                                                     |
 | ---------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | N/A              | Why Storybook                                | [See current documentation](./get-started/why-storybook.mdx)                                                            | Non existing feature or undocumented                                                                                                                                                                                                                                 | Non existing feature or undocumented                                                                                                                     |
-| Get started      | Install                                      | [See current documentation](./index.mdx)                                                                                | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.3/docs/src/pages/guides/quick-start-guide)                                                                                                                                     | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.0/docs/src/pages/guides/quick-start-guide)                         |
+| Get started      | Install                                      | [See current documentation](./get-started/install.mdx)                                                                  | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.3/docs/src/pages/guides/quick-start-guide)                                                                                                                                     | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.0/docs/src/pages/guides/quick-start-guide)                         |
 |                  | What's a story                               | [See current documentation](./get-started/whats-a-story.mdx)                                                            | [See versioned documentation for your framework](https://github.com/storybookjs/storybook/tree/release/5.3/docs/src/pages/guides)                                                                                                                                    | [See versioned documentation for your framework](https://github.com/storybookjs/storybook/tree/release/5.0/docs/src/pages/guides)                        |
 |                  | Browse Stories                               | [See current documentation](./get-started/browse-stories.mdx)                                                           | [See versioned documentation for your framework](https://github.com/storybookjs/storybook/tree/release/5.3/docs/src/pages/guides)                                                                                                                                    | [See versioned documentation for your framework](https://github.com/storybookjs/storybook/blob/release/5.0/docs/src/pages/guides)                        |
 |                  | Setup                                        | [See current documentation](./get-started/setup.mdx)                                                                    | [See versioned documentation for your framework](https://github.com/storybookjs/storybook/tree/release/5.3/docs/src/pages/guides)                                                                                                                                    | [See versioned documentation for your framework](https://github.com/storybookjs/storybook/tree/release/5.0/docs/src/pages/guides)                        |
@@ -304,15 +301,15 @@ We're only covering versions 5.3 and 5.0 as they were important milestones for S
 |                  | @storybook/blocks/Story                      | [See current documentation](./api/doc-blocks/doc-block-story.mdx)                                                       | Non existing feature or undocumented                                                                                                                                                                                                                                 | Non existing feature or undocumented                                                                                                                     |
 |                  | @storybook/blocks/Subtitle                   | [See current documentation](./api/doc-blocks/doc-block-subtitle.mdx)                                                    | Non existing feature or undocumented                                                                                                                                                                                                                                 | Non existing feature or undocumented                                                                                                                     |
 |                  | @storybook/blocks/Title                      | [See current documentation](./api/doc-blocks/doc-block-title.mdx)                                                       | Non existing feature or undocumented                                                                                                                                                                                                                                 | Non existing feature or undocumented                                                                                                                     |
-|                  | @storybook/blocks/Typeset                    | [See current documentation](./api/doc-blocks/doc-block-typeset.mdx)                                                     | Non existing feature or undocumented                                                                                                                                                                                                                                 | Non existing feature or undocumented                                                                                                                     |
-|                  | @storybook/blocks/Unstyled                   | [See current documentation](./api/doc-blocks/doc-block-unstyled.mdx)                                                    | Non existing feature or undocumented                                                                                                                                                                                                                                 | Non existing feature or undocumented                                                                                                                     |
-|                  | @storybook/blocks/useOf                      | [See current documentation](./api/doc-blocks/doc-block-useof.mdx)                                                       | Non existing feature or undocumented                                                                                                                                                                                                                                 | Non existing feature or undocumented                                                                                                                     |
-|                  | Stories/Component Story Format               | [See current documentation](./api/csf.mdx)                                                                              | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.3/docs/src/pages/formats/component-story-format)                                                                                                                               | Non existing feature or undocumented                                                                                                                     |
-|                  | Stories/StoriesOF format (see note below)    | [See current documentation](https://github.com/storybookjs/storybook/blob/main/code/lib/preview-api/docs/storiesOf.md)  | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.3/docs/src/pages/formats/storiesof-api)                                                                                                                                        | Non existing feature or undocumented                                                                                                                     |
-|                  | ArgTypes                                     | [See current documentation](./api/arg-types.mdx)                                                                        | Non existing feature or undocumented                                                                                                                                                                                                                                 | Non existing feature or undocumented                                                                                                                     |
-|                  | `main.js` configuration/Overview             | [See current documentation](./api/main-config/main-config.mdx)                                                          | Non existing feature or undocumented                                                                                                                                                                                                                                 | Non existing feature or undocumented                                                                                                                     |
-|                  | `main.js` configuration/framework            | [See current documentation](./api/main-config/main-config-framework.mdx)                                                | Non existing feature or undocumented                                                                                                                                                                                                                                 | Non existing feature or undocumented                                                                                                                     |
-|                  | `main.js` configuration/stories              | [See current documentation](./api/main-config/main-config-stories.mdx)                                                  | Non existing feature or undocumented                                                                                                                                                                                                                                 | Non existing feature or undocumented                                                                                                                     |
+|                  | @storybook/blocks/Typeset                    | [See current documentation](./api/doc-blocks/doc-block-typeset.mdx)                                                            | Non existing feature or undocumented                                                                                                                                                                                                                                 | Non existing feature or undocumented                                                                                                                     |
+|                  | @storybook/blocks/Unstyled                   | [See current documentation](./api/doc-blocks/doc-block-unstyled.mdx)                                                           | Non existing feature or undocumented                                                                                                                                                                                                                                 | Non existing feature or undocumented                                                                                                                     |
+|                  | @storybook/blocks/useOf                      | [See current documentation](./api/doc-blocks/doc-block-useof.mdx)                                                              | Non existing feature or undocumented                                                                                                                                                                                                                                 | Non existing feature or undocumented                                                                                                                     |
+|                  | Stories/Component Story Format               | [See current documentation](./api/csf.mdx)                                                                                     | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.3/docs/src/pages/formats/component-story-format)                                                                                                                               | Non existing feature or undocumented                                                                                                                     |
+|                  | Stories/StoriesOF format (see note below)    | [See current documentation](https://github.com/storybookjs/storybook/blob/release-7-6/code/lib/preview-api/docs/storiesOf.md)  | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.3/docs/src/pages/formats/storiesof-api)                                                                                                                                        | Non existing feature or undocumented                                                                                                                     |
+|                  | ArgTypes                                     | [See current documentation](./api/arg-types.mdx)                                                                               | Non existing feature or undocumented                                                                                                                                                                                                                                 | Non existing feature or undocumented                                                                                                                     |
+|                  | `main.js` configuration/Overview             | [See current documentation](./api/main-config/main-config.mdx)                                                                 | Non existing feature or undocumented                                                                                                                                                                                                                                 | Non existing feature or undocumented                                                                                                                     |
+|                  | `main.js` configuration/framework            | [See current documentation](./api/main-config/main-config-framework.mdx)                                                       | Non existing feature or undocumented                                                                                                                                                                                                                                 | Non existing feature or undocumented                                                                                                                     |
+|                  | `main.js` configuration/stories              | [See current documentation](./api/main-config/main-config-stories.mdx)                                                         | Non existing feature or undocumented                                                                                                                                                                                                                                 | Non existing feature or undocumented                                                                                                                     |
 |                  | `main.js` configuration/addons               | [See current documentation](./api/main-config/main-config-addons.mdx)                                                   | Non existing feature or undocumented                                                                                                                                                                                                                                 | Non existing feature or undocumented                                                                                                                     |
 |                  | `main.js` configuration/babel                | [See current documentation](./api/main-config/main-config-babel.mdx)                                                    | Non existing feature or undocumented                                                                                                                                                                                                                                 | Non existing feature or undocumented                                                                                                                     |
 |                  | `main.js` configuration/babelDefault         | [See current documentation](./api/main-config/main-config-babel-default.mdx)                                            | Non existing feature or undocumented                                                                                                                                                                                                                                 | Non existing feature or undocumented                                                                                                                     |
@@ -337,7 +334,6 @@ We're only covering versions 5.3 and 5.0 as they were important milestones for S
 |                  | Frameworks                                   | [See current documentation](./api/new-frameworks.mdx)                                                                   | Non existing feature or undocumented                                                                                                                                                                                                                                 | Non existing feature or undocumented                                                                                                                     |
 |                  | CLI options                                  | [See current documentation](./api/cli-options.mdx)                                                                      | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.3/docs/src/pages/configurations/cli-options)                                                                                                                                   | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.0/docs/src/pages/configurations/cli-options)                       |
 
-{/* TODO: Update this notice */}
 
 <Callout variant="info">
 
@@ -378,7 +374,7 @@ Out of the box, Storybook provides syntax highlighting for a set of languages (e
 
 MDX 2 introduced some changes to how the code is rendered. For example, if you enabled it in your Storybook and you have the following code block:
 
-```
+```mdx title="MyComponent.stories.mdx"
 <style>{`
   .class1 {
     ...
@@ -393,7 +389,7 @@ MDX 2 introduced some changes to how the code is rendered. For example, if you e
 
 You'll need to update it to make it compatible with MDX 2.
 
-```
+```mdx title="MyComponent.stories.mdx"
 <style>
   {`
     .class1 {
@@ -413,9 +409,7 @@ See the following [issue](https://github.com/mdx-js/mdx/issues/1945) for more in
 
 If you're working with Vue 3, you'll need to install [`@vue/apollo-composable`](https://www.npmjs.com/package/@vue/apollo-composable). With Svelte, you'll need to install [`@rollup/plugin-replace`](https://www.npmjs.com/package/@rollup/plugin-replace) and update your `rollup.config` file to the following:
 
-```js
-// rollup.config
-
+```js title="rollup.config.js"
 // Boilerplate imports
 
 import replace from '@rollup/plugin-replace';
@@ -464,15 +458,13 @@ Storybook allows you to use most characters while naming your stories. Still, sp
 
 We are aware that the default Typescript story construct might seem outdated and could potentially introduce a less than ideal way of handling type safety and strictness and could be rewritten as such:
 
-```ts
-// Button.stories.ts|tsx
-
+```ts title="Button.stories.ts|tsx"
 import React from 'react';
 import type { ComponentStory, ComponentMeta } from '@storybook/react';
 
 const StoryMeta: ComponentMeta<typeof Button> = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Button',
@@ -496,9 +488,7 @@ If you are using `argTypes.defaultValue` to fix the above, you no longer need to
 
 Additionally, suppose you were using `argTypes.defaultValue` or relying on inference to set a default value for an arg. In that case, you should define the arg's value at the component level instead:
 
-```js
-// MyComponent.stories.js
-
+```js title="MyComponent.stories.js"
 export default {
   component: MyComponent,
   args: {
@@ -510,9 +500,7 @@ export default {
 
 For Storybook's Docs, you can manually configure the displayed value by configuring the `table.defaultValue` setting:
 
-```js
-// MyComponent.stories.js
-
+```js title="MyComponent.stories.js"
 export default {
   component: MyComponent,
   argTypes: {

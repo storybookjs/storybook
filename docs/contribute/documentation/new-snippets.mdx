@@ -1,5 +1,6 @@
 ---
 title: 'Code snippets contributions'
+hideRendererSelector: true
 sidebar:
   order: 2
   title: Code snippets
@@ -9,126 +10,282 @@ Add or update the code snippets in the documentation. This page outlines how the
 
 ## Documented frameworks
 
-Storybook maintains code snippets for a [variety of frameworks](../../configure/integration/frameworks-feature-support.mdx). We try to keep them up to date as framework APIs evolve. But it's tricky to keep track of every API change in every framework.
+Storybook maintains code snippets for a [variety of frameworks](../../configure/integration/frameworks-feature-support.mdx). We try to keep them up to date as framework APIs evolve. But keeping track of every API change in every framework is tricky.
 
-We welcome community contributions to the code snippets. Here's a matrix of the frameworks we have snippets for. Help us add snippets for your favorite framework.
+We welcome community contributions to the code snippets. Here's a matrix of the frameworks for which we have snippets. Help us add snippets for your favorite framework.
 
-| React                                                                        | Vue                                                                        | Angular                                                                        | Web Components                                                                        | Svelte                                                                        | Solid                                                                        | Ember | HTML | Preact |
-| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ----- | ---- | ------ |
-| [✅](https://github.com/storybookjs/storybook/tree/next/docs/snippets/react) | [✅](https://github.com/storybookjs/storybook/tree/next/docs/snippets/vue) | [✅](https://github.com/storybookjs/storybook/tree/next/docs/snippets/angular) | [✅](https://github.com/storybookjs/storybook/tree/next/docs/snippets/web-components) | [✅](https://github.com/storybookjs/storybook/tree/next/docs/snippets/svelte) | [✅](https://github.com/storybookjs/storybook/tree/next/docs/snippets/solid) | ❌    | ❌   | ❌     |
 
-## Setup
+| React  | Vue 3 | Angular   | Web Components | Svelte | Solid  | Ember | HTML | Preact | Qwik |
+| ------ | ----- | --------- | ---------------|--------|--------|-------|------| -------|------|
+| ✅     | ✅    | ✅        | ✅             | ✅     | ✅     | ❌    | ❌   | ❌     | ❌  |
 
-Assuming you've already followed the [local environment guide](../code.mdx#initial-setup), the first thing you need to do is create a branch on your local Storybook monorepo by running the following command:
+
+## Snippet syntax
+
+The code snippets referenced throughout the Storybook documentation are located in the [`docs/_snippets`](https://github.com/storybookjs/storybook/tree/next/docs/_snippets) directory inside individual Markdown files, containing the [supported frameworks](../../configure/integration/frameworks-feature-support.mdx), features and languages (i.e., JavaScript, MDX, TypeScript).
+
+### Example
+
+The following code block demonstrates how to structure a code snippet in the Storybook documentation and the attributes you can use to provide additional context to the code snippet.
+
+{/* prettier-ignore-start */}
+
+````md title="docs/_snippets/button-group-story.md"
+```ts filename="ButtonGroup.stories.ts" renderer="vue" language="ts" tabTitle="3"
+import type { Meta, StoryObj } from '@storybook/vue3';
+
+import ButtonGroup from './ButtonGroup.vue';
+
+//👇 Imports the Button stories
+import * as ButtonStories from './Button.stories';
+
+const meta: Meta<typeof ButtonGroup> = {
+ component: ButtonGroup,
+};
+
+export default meta;
+type Story = StoryObj<typeof ButtonGroup>;
+
+export const Pair: Story = {
+  render: (args) => ({
+ components: { ButtonGroup },
+    setup() {
+ return { args };
+    },
+ template: '<ButtonGroup v-bind="args" />',
+  }),
+ args: {
+ buttons: [{ ...ButtonStories.Primary.args }, { ...ButtonStories.Secondary.args }],
+ orientation: 'horizontal',
+  },
+};
+``` 
+````
+
+{/* prettier-ignore-end */}
+
+
+## Common attributes for code snippets
+
+Following are the attributes you'll use most often in the Storybook documentation code snippets, as well as a brief explanation of each to help you understand the context in which they are used.
+
+### File name as title
+
+Most code examples should include a file name so readers can understand which file they relate to and where to paste it into their project. For code examples, include the `filename` attribute wrapped with quotation marks to indicate the file name. This is not required if the example relates to a terminal command.
+
+{/* prettier-ignore-start */}
+
+````md title="docs/_snippets/button-stories.md"
+```ts filename="Button.stories.ts"
+```
+````
+
+{/* prettier-ignore-end */}
+
+### Language configuration
+
+Use the `language` attribute to define the language to which the code snippet applies. The documentation uses this attribute to determine which variant to display (e.g., JavaScript, TypeScript, TypeScript 4.9, MDX).
+
+{/* prettier-ignore-start */}
+
+````md title="docs/_snippets/button-stories.md"
+```ts filename="Button.stories.ts" language="js|ts|ts-4-9|mdx"
+```
+````
+
+{/* prettier-ignore-end */}
+
+### Framework-specific code
+
+Use the `renderer` attribute to indicate which of the [supported frameworks](../../configure/integration/frameworks-feature-support.mdx) the code snippet belongs to.
+
+{/* prettier-ignore-start */}
+
+````md title="docs/_snippets/button-stories.md"
+```ts filename="Button.stories.ts" language="ts" renderer="react|vue|angular|web-components|ember|html|svelte|preact|qwik|solid"
+```
+````
+
+{/* prettier-ignore-end */}
+
+Alternatively, if you're documenting examples that apply to multiple frameworks, use the `renderer` attribute with the `common` value to indicate that the code snippet is framework-agnostic.
+
+{/* prettier-ignore-start */}
+
+````md title="docs/_snippets/button-stories.md"
+```ts filename="Button.stories.ts" language="ts" renderer="common"
+```
+````
+
+{/* prettier-ignore-end */}
+
+### Package manager configuration
+
+Use the `packageManager` attribute to configure the package manager used in the example from the following options: `npm`, `yarn`, or `pnpm`.
+
+
+{/* prettier-ignore-start */}
+
+````md title="docs/_snippets/storybook-run-dev.md"
+```shell renderer="common" language="js" packageManager="npm|yarn|pnpm"
+```
+````
+
+{/* prettier-ignore-end */}
+
+### Working with multiple snippets
+
+Use the `tabTitle` attribute to indicate the tab title in which the code snippet will be displayed. This attribute should only be used when multiple examples are in a single code snippet file.
+ 
+{/* prettier-ignore-start */}
+
+````md title="docs/_snippets/component-decorator.md"
+```ts filename="YourConponent.stories.ts" language="ts" renderer="common" tabTitle="Story"
+```
+```ts filename=".storybook/preview.ts" language="ts" renderer="common" tabTitle="Storybook configuration"
+```
+````
+
+{/* prettier-ignore-end */}
+
+## Contributing code snippets
+
+You can start contributing to the Storybook documentation by now that you're familiar with how the documentation is organized, the code snippet's structure, and available options. Assuming that you have already set up your [local development environment](../code.mdx#initial-setup) and are ready to contribute, the following steps will guide you through contributing code snippets to the Storybook documentation.
+
+Start by creating a new branch on your local Storybook monorepo with the following command:
+
+{/* prettier-ignore-start */}
 
 ```shell
 git checkout -b code-snippets-for-framework
 ```
+  
+{/* prettier-ignore-end */}
 
-Before adding your snippets, open the `docs` folder with your editor of choice. Get familiarized with the documentation, including how the snippets are organized and their contents.
-
-Then inside the root folder of the Storybook monorepo, run the following command:
-
-```shell
-yarn task
-```
-
-Select the option `Synchronize documentation (sync-docs)` and type the path of your `frontpage` project folder. Now every file change inside the monorepo `docs` folder will be reflected in the frontpage repo at `src/content/docs`.
-
-### Add your first snippet
-
-Now that you're familiar with how the documentation is structured, it's time to add the code snippets. First, go to the `docs/snippets/` folder and create a new directory for your framework of choice (e.g., `ember`).
-
-Browse the documentation and look for the code snippets you're willing to contribute. For example, on the [setup page](https://github.com/storybookjs/storybook/blob/next/docs/get-started/setup.mdx), you should see something similar to:
-
-```jsx
-// /docs/get-started/setup.mdx
+Browse the documentation and look for the code snippets you want to contribute. For example, on the [setup page](https://github.com/storybookjs/storybook/blob/next/docs/get-started/setup.mdx) you should see the following:
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets
-  paths={[
-    'react/your-component.js.mdx',
-    'react/your-component.ts.mdx',
-    'angular/your-component.ts.mdx',
-    'vue/your-component.2.js.mdx',
-    'vue/your-component.3.js.mdx',
-    'svelte/your-component.js.mdx',
-    'web-components/your-component.js.mdx',
-    'solid/your-component.js.mdx',
-    'solid/your-component.ts.mdx',
-  ]}
-/>
+ ```jsx title="docs/get-started/setup.mdx"
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="your-component.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 ```
 
-Create the file `ember/your-component.js.mdx`, similar to the other frameworks, and reference it.
+{/* prettier-ignore-end */}
 
-```jsx
-// /docs/get-started/setup.md
+
+Open the file inside the `docs/_snippets` directory and adjust the content to match the code snippet you're willing to contribute. For example:
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets
-  paths={[
-    'react/your-component.js.mdx',
-    'react/your-component.ts.mdx',
-    'angular/your-component.ts.mdx',
-    'vue/your-component.2.js.mdx',
-    'vue/your-component.3.js.mdx',
-    'svelte/your-component.js.mdx',
-    'web-components/your-component.js.mdx',
-    'solid/your-component.js.mdx',
-    'solid/your-component.ts.mdx',
-    'ember/your-component.js.mdx', //👈🏼 The code snippet you created.
-  ]}
-/>
+````md title="docs/_snippets/your-component.md"
+```ts filename="YourComponent.stories.ts" renderer="qwik" language="ts-4-9"
+import type { Meta, StoryObj } from 'storybook-framework-qwik';
+
+import type { YourComponentProps } from './YourComponent';
+
+import { YourComponent } from './YourComponent';
+
+//👇 This default export determines where your story goes in the story list
+const meta = {
+ component: YourComponent,
+} satisfies Meta<YourComponentProps>;
+
+export default meta;
+type Story = StoryObj<YourComponentProps>;
+
+export const FirstStory: Story = {
+ args: {
+ //👇 The args you need here will depend on your component
+ },
+};
+```
+````
 
 {/* prettier-ignore-end */}
-```
-
-<Callout variant="info" icon="💡">
-  Code snippets are divided into various file extensions, if you're contributing a TypeScript file use `.ts.mdx`, or if you're adding JavaScript files use `.js.mdx`.
-</Callout>
 
 Go through the rest of the documentation and repeat the process.
 
-### Preview your work
+## Preview your work
 
-Before submitting your contribution, we advise you to check your work against the Storybook website. Doing this prevents last-minute issues with the documentation and is also an excellent way for the maintainers to merge faster once you submit the pull request. However, failing to do so will lead one of the maintainers to notify you that your contribution has an issue.
+Before submitting your contribution, we encourage you to check your work against the Storybook website. Doing this prevents last-minute issues with the documentation and is also an excellent way for the maintainers to merge faster once you submit the pull request. However, failing to do so will lead one of the maintainers to notify you that your contribution has an issue.
 
-Start by forking [frontpage repo](https://github.com/storybookjs/frontpage) and cloning it locally.
+Start by forking the Storybook [website repository](https://github.com/storybookjs/web) and cloning it locally.
 
-```shell
-git clone https://github.com/your-username/frontpage.git
-```
-
-Navigate to the `frontpage` directory and install the required dependencies with the following command:
+{/* prettier-ignore-start */}
 
 ```shell
-yarn
+git clone https://github.com/your-username/web.git
 ```
+  
+{/* prettier-ignore-end */}
 
-Next, make sure that you have running the `Synchronize documentation (sync-docs)` task from Storybook monorepo. Then, execute the following command to launch the Storybook website.
+Navigate to the `web` directory and install the required dependencies.
+
+{/* prettier-ignore-start */}
 
 ```shell
-yarn start:docs-only
+npm install
 ```
 
-<Callout variant="info" icon="💡">
-  During the start process if there's an issue with the documentation, the process will stop and you'll get a notification.
+{/* prettier-ignore-end */}
+
+We recommend that you generate a website build first to ensure you can preview your changes locally and verify that everything is working as expected. To do so, run the following command:
+
+{/* prettier-ignore-start */}
+
+```shell
+npm run build:frontpage
+```
+
+{/* prettier-ignore-end */}
+
+<Callout variant="info">
+
+When executed, this command will retrieve the required files needed to successfully build the Storybook website, including current documentation versions (e.g., `6.5`, `7.6`, `8.x`), and copy them to the `apps/frontpage/docs/` directory, organized by version number.
+
 </Callout>
 
-Open a browser window to `http://localhost:8000`, click the Docs link, and select your framework from the dropdown.
+Run the `sync-docs` command to connect the documentation from the Storybook monorepo to the Storybook website. When prompted, provide the path to your local fork of the Storybook monorepo and the documentation version you're working on.
 
-![Storybook docs with dropdown](../../_assets/contribute/local-storybook-website-dropdown-optimized.png)
+{/* prettier-ignore-start */}
+
+```shell
+npm run sync-docs
+```
+
+{/* prettier-ignore-end */}
+
+Finally, open a new terminal window and run the `dev` command to start the Storybook website.
+
+{/* prettier-ignore-start */}
+
+```shell
+npm run dev
+```
+
+{/* prettier-ignore-end */}
+
+If all goes well, you should see the Storybook website running. Open a browser window to `http://localhost:3000`, click the Docs link to open the documentation, and select your framework from the dropdown.
+
+
+<Video src="../_assets/contribute/local-storybook-website-dropdown-optimized.mp4" />
 
 Go through the documentation and check your work.
 
 ## Submit your contribution
 
-Finally, commit, push and open a pull request in the Storybook monorepo. Add a clear description of the work you've done, and one of the maintainers will guide you through the merge process.
+Once you have verified that your changes are working as expected, you're ready to create a "Pull Request". This will let the Storybook maintainers know you have some changes to propose. At this point, we can give you feedback and request changes. To help with the review process, we encourage you to add a clear title and description of your work.
+
+
+## Troubleshooting
+
+### Code snippets not displaying
+
+If you're documenting an example that includes the `packageManager` attribute combined with another example, the documentation might not display the code snippets correctly. To avoid this, you can divide the examples into separate files and reference them in the documentation.
 
 ## Learn more about contributing to Storybook
 
@@ -136,4 +293,4 @@ Finally, commit, push and open a pull request in the Storybook monorepo. Add a c
 * [Code](../code.mdx) for features and bug fixes
 * [Frameworks](../framework.mdx) to get started with a new framework
 * [Documentation](./documentation-updates.mdx) for documentation improvements, typos, and clarifications
-* Examples for new snippets and examples
+* Examples for new snippets

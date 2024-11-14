@@ -34,7 +34,7 @@ export const WithAnImage = {
 };
 ```
 
-```tsx filename=" MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { MyComponent } from './MyComponent';
@@ -52,7 +52,7 @@ export const WithAnImage: Story = {
 };
 ```
 
-```tsx filename=" MyComponent.stories.ts|tsx" renderer="react" language="ts"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import { MyComponent } from './MyComponent';
@@ -83,7 +83,7 @@ export const WithAnImage = {
 };
 ```
 
-```tsx filename=" MyComponent.stories.ts|tsx" renderer="solid" language="ts-4-9"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts-4-9"
 import type { Meta, StoryObj } from 'storybook-solidjs';
 
 import { MyComponent } from './MyComponent';
@@ -101,7 +101,7 @@ export const WithAnImage: Story = {
 };
 ```
 
-```tsx filename=" MyComponent.stories.ts|tsx" renderer="solid" language="ts"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts"
 import type { Meta, StoryObj } from 'storybook-solidjs';
 
 import { MyComponent } from './MyComponent';
@@ -136,24 +136,6 @@ export const WithAnImage = {
     },
   }),
 };
-```
-
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* MyComponent.stories.svelte */}
-
-<script>
-  import { Meta, Template, Story } from '@storybook/addon-svelte-csf';
-
-  import MyComponent from './MyComponent.svelte';
-</script>
-
-<meta title="img" component="{MyComponent}" />
-
-<template>
-  <MyComponent src="/image.png" alt="my image" />
-</template>
-
-<Story name="WithAnImage" />
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts-4-9"
@@ -289,4 +271,3 @@ export const WithAnImage: Story = {
   render: () => html`<img src="/image.png" alt="image" />`,
 };
 ```
-

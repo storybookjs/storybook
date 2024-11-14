@@ -33,7 +33,7 @@ Storybook has the concept of [presets](../addons/writing-presets.mdx), which are
 
 It's helpful to understand Storybook's package structure before adding a framework preset. Each framework typically exposes two executables in its `package.json`:
 
-```json
+```json title="package.json"
 {
   "bin": {
     "storybook": "./bin/index.js",
@@ -68,7 +68,7 @@ Let’s look at the `@storybook/vue`’s options definition:
 
 The value of the `framework` option (i.e., ‘vue’) is something that gets passed to addons and allows them to do specific tasks related to your framework.
 
-The essence of this file is the framework presets, and these are standard [Storybook presets](../addons/writing-presets.mdx) -- you can look at framework packages in the Storybook monorepo (e.g. [React](https://github.com/storybookjs/storybook/blob/main/app/react/src/server/options.ts), [Vue](https://github.com/storybookjs/storybook/blob/main/app/vue/src/server/options.ts), [Web Components](https://github.com/storybookjs/storybook/blob/main/app/web-components/src/server/options.ts)) to see examples of framework-specific customizations.
+The essence of this file is the framework presets, and these are standard [Storybook presets](../addons/writing-presets.mdx) -- you can look at framework packages in the Storybook monorepo (e.g. [React](https://github.com/storybookjs/storybook/tree/release-7-6/code/frameworks/react-webpack5/src), [Vue](https://github.com/storybookjs/storybook/tree/release-7-6/code/frameworks/vue3-webpack5/src), [Web Components](https://github.com/storybookjs/storybook/tree/release-7-6/code/frameworks/web-components-webpack5/src)) to see examples of framework-specific customizations.
 
 While developing your custom framework, not maintained by Storybook, you can specify the path to the location file with the `frameworkPath` key:
 
@@ -94,7 +94,7 @@ Consider the following React story:
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story-with-sample.md" usesCsf3 csf2Path="api/new-frameworks#snippet-button-story-with-sample" />
+<CodeSnippets path="button-story-with-sample.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -106,7 +106,7 @@ Consider the following hypothetical example:
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story-hypothetical-example.md" usesCsf3 csf2Path="api/new-frameworks#snippet-button-story-hypothetical-example" />
+<CodeSnippets path="button-story-hypothetical-example.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -140,4 +140,4 @@ The globals file typically sets up a single global variable that client-side cod
 
 {/* prettier-ignore-end */}
 
-The `start` function abstracts all of Storybook’s framework-independent client-side (browser) code, and it takes the render function we defined above. For examples of render functions, see [React](https://github.com/storybookjs/storybook/blob/main/app/react/src/client/preview/render.tsx), [Vue](https://github.com/storybookjs/storybook/blob/main/app/vue/src/client/preview/render.ts), [Angular](https://github.com/storybookjs/storybook/blob/main/app/angular/src/client/preview/render.ts), and [Web Components](https://github.com/storybookjs/storybook/blob/main/app/web-components/src/client/preview/render.ts) in the Storybook monorepo.
+The `start` function abstracts all of Storybook’s framework-independent client-side (browser) code, and it takes the render function we defined above. For examples of render functions, see [React](https://github.com/storybookjs/storybook/blob/release-7-6/code/renderers/react/src/render.tsx), [Vue](https://github.com/storybookjs/storybook/blob/release-7-6/code/renderers/vue/src/render.ts), [Angular](https://github.com/storybookjs/storybook/blob/release-7-6/code/frameworks/angular/src/client/render.ts), and [Web Components](https://github.com/storybookjs/storybook/blob/release-7-6/code/renderers/web-components/src/render.ts) in the Storybook monorepo.

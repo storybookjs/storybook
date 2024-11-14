@@ -1,31 +1,31 @@
-```ts filename="CSF 2" renderer="angular" language="ts"
+```ts filename="CSF 2 - Button.stories.ts" renderer="angular" language="ts"
 // Other imports and story implementation
 export const Default: Story = (args) => ({
   props: args,
 });
 ```
 
-```js filename="CSF 2" renderer="react" language="js"
+```js filename="CSF 2 - Button.stories.js|jsx" renderer="react" language="js"
 // Other imports and story implementation
 export const Default = (args) => <Button {...args} />;
 ```
 
-```ts filename="CSF 2" renderer="react" language="ts"
+```ts filename="CSF 2 - Button.stories.ts|tsx" renderer="react" language="ts"
 // Other imports and story implementation
 export const Default: ComponentStory<typeof Button> = (args) => <Button {...args} />;
 ```
 
-```js filename="CSF 2" renderer="solid" language="js"
+```js filename="CSF 2 - Button.stories.js|jsx" renderer="solid" language="js"
 // Other imports and story implementation
 export const Default = (args) => <Button {...args} />;
 ```
 
-```ts filename="CSF 2" renderer="solid" language="ts"
+```ts filename="CSF 2 - Button.stories.ts|tsx" renderer="solid" language="ts"
 // Other imports and story implementation
 export const Default: ComponentStory<typeof Button> = (args) => <Button {...args} />;
 ```
 
-```js filename="CSF 2" renderer="svelte" language="js"
+```js filename="CSF 2 - Button.stories.js" renderer="svelte" language="js"
 // Other imports and story implementation
 export const Default = (args) => ({
   Component: Button,
@@ -33,7 +33,7 @@ export const Default = (args) => ({
 });
 ```
 
-```ts filename="CSF 2" renderer="svelte" language="ts"
+```ts filename="CSF 2 - Button.stories.ts" renderer="svelte" language="ts"
 // Other imports and story implementation
 export const Primary: StoryFn<typeof Button> = (args) => ({
   Component: Button,
@@ -41,7 +41,7 @@ export const Primary: StoryFn<typeof Button> = (args) => ({
 });
 ```
 
-```js filename="CSF 2" renderer="vue" language="js" tabTitle="2"
+```js filename="CSF 2 - Button.stories.js" renderer="vue" language="js" tabTitle="2"
 // Other imports and story implementation
 export const Default = (args, { argTypes }) => ({
   props: Object.keys(argTypes),
@@ -50,7 +50,7 @@ export const Default = (args, { argTypes }) => ({
 });
 ```
 
-```ts filename="CSF 2" renderer="vue" language="ts" tabTitle="2"
+```ts filename="CSF 2 - Button.stories.ts" renderer="vue" language="ts" tabTitle="2"
 // Other imports and story implementation
 export const Default: StoryFn<typeof Button> = (args, { argTypes }) => ({
   props: Object.keys(argTypes),
@@ -59,7 +59,7 @@ export const Default: StoryFn<typeof Button> = (args, { argTypes }) => ({
 });
 ```
 
-```js filename="CSF 2" renderer="vue" language="js" tabTitle="3"
+```js filename="CSF 2 - Button.stories.js" renderer="vue" language="js" tabTitle="3"
 // Other imports and story implementation
 export const Default = (args) => ({
   components: { Button },
@@ -70,7 +70,7 @@ export const Default = (args) => ({
 });
 ```
 
-```ts filename="CSF 2" renderer="vue" language="ts" tabTitle="3"
+```ts filename="CSF 2 - Button.stories.ts" renderer="vue" language="ts" tabTitle="3"
 // Other imports and story implementation
 export const Default: StoryFn<typeof Button> = (args) => ({
   components: { Button },
@@ -81,17 +81,16 @@ export const Default: StoryFn<typeof Button> = (args) => ({
 });
 ```
 
-```js filename="CSF 2" renderer="web-components" language="js"
+```js filename="CSF 2 - Button.stories.js" renderer="web-components" language="js"
 // Other imports and story implementation
 
 export const Default = ({ primary, backgroundColor, size, label }) =>
   html`<custom-button ?primary="${primary}" size="${size}" label="${label}"></custom-button>`;
 ```
 
-```ts filename="CSF 2" renderer="web-components" language="ts"
+```ts filename="CSF 2 - Button.stories.ts" renderer="web-components" language="ts"
 // Other imports and story implementation
 
 export const Default: Story = ({ primary, backgroundColor, size, label }) =>
   html`<custom-button ?primary="${primary}" size="${size}" label="${label}"></custom-button>`;
 ```
-

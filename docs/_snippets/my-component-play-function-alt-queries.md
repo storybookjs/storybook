@@ -13,14 +13,14 @@ export default meta;
 type Story = StoryObj<MyComponent>;
 
 /*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const ExampleWithRole: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    // See https://storybook.js.org/docs/7/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
     await userEvent.click(canvas.getByRole('button', { name: / button label/i }));
   },
 };
@@ -35,14 +35,14 @@ export default {
   component: MyComponent,
 };
 
-/* See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+/* See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const ExampleWithRole = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    // See https://storybook.js.org/docs/7/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
     await userEvent.click(canvas.getByRole('button', { name: / button label/i }));
   },
 };
@@ -63,14 +63,14 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/* See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+/* See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const ExampleWithRole: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    // See https://storybook.js.org/docs/7/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
     await userEvent.click(canvas.getByRole('button', { name: / button label/i }));
   },
 };
@@ -91,14 +91,14 @@ const meta: Meta<typeof MyComponent> = {
 export default meta;
 type Story = StoryObj<typeof MyComponent>;
 
-/* See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+/* See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const ExampleWithRole: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    // See https://storybook.js.org/docs/7/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
     await userEvent.click(canvas.getByRole('button', { name: / button label/i }));
   },
 };
@@ -111,14 +111,14 @@ export default {
   component: 'demo-my-component',
 };
 
-/* See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+/* See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const ExampleWithRole = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    // See https://storybook.js.org/docs/7/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
     await userEvent.click(canvas.getByRole('button', { name: / button label/i }));
   },
 };
@@ -135,16 +135,15 @@ const meta: Meta = {
 export default meta;
 type Story = StoryObj;
 
-/* See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+/* See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const ExampleWithRole: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    // See https://storybook.js.org/docs/7/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
     await userEvent.click(canvas.getByRole('button', { name: / button label/i }));
   },
 };
 ```
-

@@ -4,6 +4,11 @@ import type { Meta } from '@storybook/angular';
 import { Button } from './button.component';
 
 const meta: Meta<Button> = {
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'Button',
   component: Button,
   parameters: {
     myAddon: { disable: true }, // Disables the addon
@@ -18,7 +23,7 @@ import { Button } from './Button';
 
 export default {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Button',
@@ -37,7 +42,7 @@ import { Button } from './Button';
 
 const meta = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Button',
@@ -58,7 +63,7 @@ import { Button } from './Button';
 
 const meta: Meta<typeof Button> = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Button',
@@ -92,4 +97,3 @@ const meta: Meta = {
 
 export default meta;
 ```
-

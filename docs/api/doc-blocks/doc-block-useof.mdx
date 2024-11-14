@@ -11,9 +11,9 @@ If your own doc blocks need to interface with annotations from Storybook—that 
 
 Here’s an example of how the`useOf` hook could be used to create a custom block that displays the name of the story:
 
-```jsx
-// .storybook/blocks/StoryName.jsx
+{/* prettier-ignore-start */}
 
+```jsx title=".storybook/blocks/StoryName.jsx"
 import { useOf } from '@storybook/blocks';
 
 /**
@@ -36,11 +36,11 @@ export const StoryName = ({ of }) => {
 };
 ```
 
+{/* prettier-ignore-end */}
+
 {/* prettier-ignore-start */}
 
-```md
-{/* ButtonDocs.mdx */}
-
+```md title="ButtonDocs.mdx"
 import { Meta } from '@storybook/blocks';
 import { StoryName } from '../.storybook/blocks/StoryName';
 import * as ButtonStories from './Button.stories';

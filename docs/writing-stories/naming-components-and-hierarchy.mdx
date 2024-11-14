@@ -29,7 +29,7 @@ When creating your stories, you can explicitly use the `title` parameter to defi
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story-default-export.md" usesCsf3 csf2Path="writing-stories/naming-components-and-hierarchy#snippet-button-story-default-export" />
+<CodeSnippets path="button-story-default-export.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -43,13 +43,13 @@ It is also possible to group related components in an expandable interface to he
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story-grouped.md" usesCsf3 csf2Path="writing-stories/naming-components-and-hierarchy#snippet-button-story-grouped" />
+<CodeSnippets path="button-story-grouped.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="checkbox-story-grouped.md" usesCsf3 csf2Path="writing-stories/naming-components-and-hierarchy#snippet-checkbox-story-grouped" />
+<CodeSnippets path="checkbox-story-grouped.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -67,7 +67,7 @@ Single-story components (i.e., component stories without **siblings**) whose **d
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story-hoisted.md" usesCsf3 csf2Path="writing-stories/naming-components-and-hierarchy#snippet-button-story-hoisted" />
+<CodeSnippets path="button-story-hoisted.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -86,7 +86,9 @@ Out of the box, Storybook sorts stories based on the order in which they are imp
 {/* prettier-ignore-end */}
 
 <Callout variant="info">
+
   Asides from the unique story identifier, you can also use the `title`, `name`, and import path to sort your stories using the `storySort` function.
+
 </Callout>
 
 The `storySort` can also accept a configuration object.
@@ -98,7 +100,7 @@ The `storySort` can also accept a configuration object.
 {/* prettier-ignore-end */}
 
 | Field            |  Type   |                       Description                        | Required |      Default Value      |          Example          |
-| ---------------- | :-----: | :------------------------------------------------------: | :------: | :---------------------: | :-----------------------: |
+| ---------------- | ------- | -------------------------------------------------------- | -------- | ----------------------- | ------------------------- |
 | **method**       | String  | Tells Storybook in which order the stories are displayed |    No    | Storybook configuration |     `'alphabetical'`      |
 | **order**        |  Array  |    The stories to be shown, ordered by supplied name     |    No    |    Empty Array `[]`     | `['Intro', 'Components']` |
 | **includeNames** | Boolean |          Include story name in sort calculation          |    No    |         `false`         |          `true`           |

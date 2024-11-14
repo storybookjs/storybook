@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/angular/';
 
 import { MyComponent } from './MyComponent.component';
 
-// More on default export: https://storybook.js.org/docs/writing-stories/#default-export
+// More on default export: https://storybook.js.org/docs/7/writing-stories#default-export
 const meta: Meta<MyComponent> = {
   component: MyComponent,
 };
@@ -24,7 +24,7 @@ export const Example: Story = {
 ```js filename="MyComponent.stories.js|jsx" renderer="react" language="js"
 import { MyComponent } from './MyComponent';
 
-// More on default export: https://storybook.js.org/docs/writing-stories/#default-export
+// More on default export: https://storybook.js.org/docs/7/writing-stories#default-export
 export default {
   component: MyComponent,
 };
@@ -44,7 +44,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 
 import { MyComponent } from './MyComponent';
 
-// More on default export: https://storybook.js.org/docs/writing-stories/#default-export
+// More on default export: https://storybook.js.org/docs/7/writing-stories#default-export
 const meta = {
   component: MyComponent,
 } satisfies Meta<typeof MyComponent>;
@@ -67,7 +67,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 
 import { MyComponent } from './MyComponent';
 
-// More on default export: https://storybook.js.org/docs/writing-stories/#default-export
+// More on default export: https://storybook.js.org/docs/7/writing-stories#default-export
 const meta: Meta<typeof MyComponent> = {
   component: MyComponent,
 };
@@ -149,7 +149,7 @@ export const Example: Story = {
 ```js filename="MyComponent.stories.js" renderer="svelte" language="js"
 import MyComponent from './MyComponent.svelte';
 
-// More on default export: https://storybook.js.org/docs/writing-stories/#default-export
+// More on default export: https://storybook.js.org/docs/7/writing-stories#default-export
 export default {
   component: MyComponent,
 };
@@ -169,7 +169,7 @@ import type { Meta, StoryObj } from '@storybook/svelte';
 
 import MyComponent from './MyComponent.svelte';
 
-// More on default export: https://storybook.js.org/docs/svelte/writing-stories/introduction#default-export
+// More on default export: https://storybook.js.org/docs/7/writing-stories#default-export
 const meta = {
   component: MyComponent,
 } satisfies Meta<typeof MyComponent>;
@@ -192,7 +192,7 @@ import type { Meta, StoryObj } from '@storybook/svelte';
 
 import MyComponent from './MyComponent.svelte';
 
-// More on default export: https://storybook.js.org/docs/svelte/writing-stories/introduction#default-export
+// More on default export: https://storybook.js.org/docs/7/writing-stories#default-export
 const meta: Meta<typeof MyComponent> = {
   component: MyComponent,
 };
@@ -213,7 +213,7 @@ export const Example: Story = {
 ```js filename="MyComponent.stories.js" renderer="vue" language="js"
 import MyComponent from './MyComponent.vue';
 
-// More on default export: https://storybook.js.org/docs/writing-stories/#default-export
+// More on default export: https://storybook.js.org/docs/7/writing-stories#default-export
 export default {
   component: MyComponent,
 };
@@ -238,7 +238,7 @@ import type { Meta, StoryObj } from '@storybook/vue3';
 
 import MyComponent from './MyComponent.vue';
 
-// More on default export: https://storybook.js.org/docs/writing-stories/#default-export
+// More on default export: https://storybook.js.org/docs/7/writing-stories#default-export
 const meta = {
   component: MyComponent,
 } satisfies Meta<typeof MyComponent>;
@@ -266,7 +266,7 @@ import type { Meta, StoryObj } from '@storybook/vue3';
 
 import MyComponent from './MyComponent.vue';
 
-// More on default export: https://storybook.js.org/docs/writing-stories/#default-export
+// More on default export: https://storybook.js.org/docs/7/writing-stories#default-export
 const meta: Meta<typeof MyComponent> = {
   component: MyComponent,
 };
@@ -322,4 +322,3 @@ export const Example: Story = {
   },
 };
 ```
-

@@ -112,48 +112,48 @@ sidebar:
 
   Don't forget to also add your global styles to your `build-storybook` target in your `angular.json` file. This will ensure that your global styles are included in the static build of your Storybook as well.
 
-  ```json
-    {
+  ```jsonc title="angular.json"
+  {
     "storybook": {
-      "builder": "@storybook/angular:start-storybook",
-      "options": {
-        "configDir": ".storybook",
-        "browserTarget": "angular-latest:build",
-        "compodoc": true,
-        "compodocArgs": ["-e", "json", "-d", "."],
-        "port": 6006,
-        "styles": [
-          // Add your global styles here
-          "@angular/material/prebuilt-themes/indigo-pink.css",
-          "@fontsource/roboto/300.css",
-          "@fontsource/roboto/400.css",
-          "@fontsource/roboto/500.css",
-          "@fontsource/roboto/700.css",
-          "@fontsource/material-icons",
-          "src/styles.scss"
-        ]
+        "builder": "@storybook/angular:start-storybook",
+        "options": {
+          "configDir": ".storybook",
+          "browserTarget": "angular-latest:build",
+          "compodoc": true,
+          "compodocArgs": ["-e", "json", "-d", "."],
+          "port": 6006,
+          "styles": [
+            // Add your global styles here
+            "@angular/material/prebuilt-themes/indigo-pink.css",
+            "@fontsource/roboto/300.css",
+            "@fontsource/roboto/400.css",
+            "@fontsource/roboto/500.css",
+            "@fontsource/roboto/700.css",
+            "@fontsource/material-icons",
+            "src/styles.scss"
+          ]
+        }
+      },
+      "build-storybook": {
+        "builder": "@storybook/angular:build-storybook",
+        "options": {
+          "configDir": ".storybook",
+          "browserTarget": "angular-latest:build",
+          "compodoc": true,
+          "compodocArgs": ["-e", "json", "-d", "."],
+          "styles": [
+            // Add your global styles here
+            "@angular/material/prebuilt-themes/indigo-pink.css",
+            "@fontsource/roboto/300.css",
+            "@fontsource/roboto/400.css",
+            "@fontsource/roboto/500.css",
+            "@fontsource/roboto/700.css",
+            "@fontsource/material-icons",
+            "src/styles.scss"
+          ],
+          "outputDir": "storybook-static"
+        }
       }
-    },
-    "build-storybook": {
-      "builder": "@storybook/angular:build-storybook",
-      "options": {
-        "configDir": ".storybook",
-        "browserTarget": "angular-latest:build",
-        "compodoc": true,
-        "compodocArgs": ["-e", "json", "-d", "."],
-        "styles": [
-          // Add your global styles here
-          "@angular/material/prebuilt-themes/indigo-pink.css",
-          "@fontsource/roboto/300.css",
-          "@fontsource/roboto/400.css",
-          "@fontsource/roboto/500.css",
-          "@fontsource/roboto/700.css",
-          "@fontsource/material-icons",
-          "src/styles.scss"
-        ],
-        "outputDir": "storybook-static"
-      }
-    }
   }
   ```
 
@@ -163,47 +163,49 @@ sidebar:
 
   For earlier Nx versions (before 14.1.8), your configuration would look like this:
 
-  ```json
-   "build-storybook": {
+  ```json title="project.json"
+  {
+    "build-storybook": {
       "executor": "@nrwl/storybook:build",
-      "outputs": ["{options.outputPath}"],
-      "options": {
-        "uiFramework": "@storybook/angular",
-        "outputPath": "dist/storybook/example-lib",
+       "outputs": ["{options.outputPath}"],
+       "uiFramework": "@storybook/angular",
+       "outputPath": "dist/storybook/example-lib",
         "config": {
           "configFolder": "libs/example-lib/storybook/.storybook"
         },
         "projectBuildConfig": "example-lib:build-storybook",
         "styles": ["apps/example-app/src/styles.scss"]
-      }
     }
+  }
   ```
 
   Starting with version 14.1.8, Nx uses the Storybook builder directly, which means any configuration supplied to the builder also applies to the NX setup. If you're working with a library, you'll need to configure the styling options ( e.g., preprocessors) inside the `build-storybook` options configuration object. For example:
 
-  ```json
-      "storybook": {
-        "executor": "@storybook/angular:start-storybook",
-        "options": {
-          "configDir": "apps/example-lib/.storybook",
-          "browserTarget": "example-lib:build-storybook",
-        },
+  ```json title="project.json"
+  {
+    "storybook": {
+      "executor": "@storybook/angular:start-storybook",
+      "options": {
+        "configDir": "apps/example-lib/.storybook",
+        "browserTarget": "example-lib:build-storybook",
       },
-      "build-storybook": {
-        "executor": "@storybook/angular:build-storybook",
-        "outputs": ["{options.outputPath}"],
-        "options": {
-          "outputDir": "dist/storybook/example-lib",
-          "configDir": "apps/example-lib/.storybook",
-          "browserTarget": "example-lib:build-storybook",
-          "styles": [".storybook/custom-styles.scss"],
-          "stylePreprocessorOptions": {
-            "includePaths": [
-              "libs/design-system/src/lib"
-            ]
-          }
+    },
+    "build-storybook": {
+      "executor": "@storybook/angular:build-storybook",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputDir": "dist/storybook/example-lib",
+        "configDir": "apps/example-lib/.storybook",
+        "browserTarget": "example-lib:build-storybook",
+        "styles": [".storybook/custom-styles.scss"],
+        "stylePreprocessorOptions": {
+          "includePaths": [
+            "libs/design-system/src/lib"
+          ]
         }
       }
+    }
+  }
   ```
 
   When Nx runs, it will load Storybook's configuration and styling based on [`storybook.browserTarget`](https://nx.dev/storybook/extra-topics-for-angular-projects#setting-up-browsertarget).

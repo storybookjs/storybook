@@ -28,7 +28,7 @@ import { createButton } from './Button';
 
 export default {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Button',
@@ -44,7 +44,7 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See hhttps://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary = {
@@ -59,7 +59,7 @@ import { createButton, ButtonArgs } from './Button';
 
 const meta: Meta<ButtonArgs> = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Button',
@@ -145,6 +145,7 @@ export default {
   decorators: [
     (Story) => (
       <div style={{ margin: '3em' }}>
+        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it. Useful to prevent the full remount of the component's story. */}
         <Story />
       </div>
     ),
@@ -152,7 +153,7 @@ export default {
 };
 ```
 
-```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts-4-9"
+```ts filename="Button.stories.ts|tsx" renderer="solid" language="ts-4-9"
 import type { Meta } from 'storybook-solidjs';
 
 import { Button } from './Button';
@@ -162,6 +163,7 @@ const meta = {
   decorators: [
     (Story) => (
       <div style={{ margin: '3em' }}>
+        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it. Useful to prevent the full remount of the component's story. */}
         <Story />
       </div>
     ),
@@ -171,7 +173,7 @@ const meta = {
 export default meta;
 ```
 
-```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts"
+```ts filename="Button.stories.ts|tsx" renderer="solid" language="ts"
 import type { Meta } from 'storybook-solidjs';
 
 import { Button } from './Button';
@@ -181,6 +183,7 @@ const meta: Meta<typeof Button> = {
   decorators: [
     (Story) => (
       <div style={{ margin: '3em' }}>
+        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it. Useful to prevent the full remount of the component's story. */}
         <Story />
       </div>
     ),
@@ -190,7 +193,7 @@ const meta: Meta<typeof Button> = {
 export default meta;
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js"
+```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="story"
 import Button from './Button.svelte';
 import MarginDecorator from './MarginDecorator.svelte';
 
@@ -200,27 +203,19 @@ export default {
 };
 ```
 
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* Button.stories.svelte */}
+```html filename="MarginDecorator.svelte" renderer="svelte" language="js" tabTitle="decorator-component"
+<div>
+  <slot />
+</div>
 
-<script>
-  import { Meta, Template } from '@storybook/addon-svelte-csf';
-
-  import MarginDecorator from './MarginDecorator.svelte';
-
-  import Button from './Button.svelte';
-</script>
-
-<meta title="Button" component="{Button}" />
-
-<template let:args>
-  <MarginDecorator>
-    {/*👇 Your component here */}
-  </MarginDecorator>
-</template>
+<style>
+  div {
+    margin: 3em;
+  }
+</style>
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9"
+```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="story"
 import type { Meta } from '@storybook/svelte';
 
 import Button from './Button.svelte';
@@ -234,7 +229,19 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts"
+```html filename="MarginDecorator.svelte" renderer="svelte" language="ts-4-9" tabTitle="decorator-component"
+<div>
+  <slot />
+</div>
+
+<style>
+  div {
+    margin: 3em;
+  }
+</style>
+```
+
+```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="story"
 import type { Meta } from '@storybook/svelte';
 
 import Button from './Button.svelte';
@@ -246,6 +253,18 @@ const meta: Meta<typeof Button> = {
 };
 
 export default meta;
+```
+
+```html filename="MarginDecorator.svelte" renderer="svelte" language="ts" tabTitle="decorator-component"
+<div>
+  <slot />
+</div>
+
+<style>
+  div {
+    margin: 3em;
+  }
+</style>
 ```
 
 ```js filename="Button.stories.js" renderer="vue" language="js"
@@ -311,4 +330,3 @@ type Story = StoryObj;
 
 export const Example: Story = {};
 ```
-

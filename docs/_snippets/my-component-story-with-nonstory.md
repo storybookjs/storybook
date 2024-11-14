@@ -447,4 +447,3 @@ export const ComplexStory: Story = {
   },
 };
 ```
-

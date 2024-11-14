@@ -2,7 +2,7 @@
 const { injectAxe, checkA11y } = require('axe-playwright');
 
 /*
- * See https://storybook.js.org/docs/writing-tests/test-runner#test-hook-api
+ * See https://storybook.js.org/docs/7/writing-tests/test-runner#test-hook-api
  * to learn more about the test-runner hooks API.
  */
 module.exports = {
@@ -25,7 +25,7 @@ import type { TestRunnerConfig } from '@storybook/test-runner';
 import { injectAxe, checkA11y } from 'axe-playwright';
 
 /*
- * See https://storybook.js.org/docs/writing-tests/test-runner#test-hook-api
+ * See https://storybook.js.org/docs/7/writing-tests/test-runner#test-hook-api
  * to learn more about the test-runner hooks API.
  */
 const config: TestRunnerConfig = {
@@ -44,4 +44,3 @@ const config: TestRunnerConfig = {
 
 export default config;
 ```
-

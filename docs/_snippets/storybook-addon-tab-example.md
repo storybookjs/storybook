@@ -19,4 +19,3 @@ addons.register('my/tab', () => {
   });
 });
 ```
-

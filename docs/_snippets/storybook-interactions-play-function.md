@@ -18,7 +18,7 @@ export default meta;
 type Story = StoryObj<Form>;
 
 /*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const Submitted: Story = {
@@ -54,7 +54,7 @@ export default {
 };
 
 /*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const Submitted = {
@@ -97,7 +97,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const Submitted: Story = {
@@ -139,7 +139,7 @@ export default meta;
 type Story = StoryObj<typeof Form>;
 
 /*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const Submitted: Story = {
@@ -173,7 +173,7 @@ export default {
 };
 
 /*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const Submitted = {
@@ -212,7 +212,7 @@ export default meta;
 type Story = StoryObj;
 
 /*
- * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * See https://storybook.js.org/docs/7/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
  */
 export const Submitted: Story = {
@@ -232,4 +232,3 @@ export const Submitted: Story = {
   },
 };
 ```
-

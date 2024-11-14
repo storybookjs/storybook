@@ -9,4 +9,3 @@ pnpm add --save-dev @storybook/addon-coverage
 ```shell renderer="common" language="js" packageManager="yarn"
 yarn add --dev @storybook/addon-coverage
 ```
-

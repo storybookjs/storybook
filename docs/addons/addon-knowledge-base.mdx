@@ -31,8 +31,7 @@ Then when adding a story, you can pass a disabled parameter.
 
 Storybook uses [Emotion](https://emotion.sh/docs/introduction) for styling. Alongside with a theme that you can customize!
 
-We recommend using Emotion to style your addon’s UI components. That allows you to use the active Storybook theme to deliver a seamless developer experience.
-If you don’t want to use Emotion, you can use inline styles or another css-in-js lib. You can receive the theme as a prop by using Emotion's `withTheme` HOC. [Read more about theming](../configure/user-interface/theming.mdx).
+We recommend using Emotion to style your addon’s UI components. That allows you to use the active Storybook theme to deliver a seamless developer experience. If you don’t want to use Emotion, you can use inline styles or another css-in-js lib. You can receive the theme as a prop by using Emotion's `withTheme` HOC. [Read more about theming](../configure/user-interface/theming.mdx).
 
 ### Storybook components
 
@@ -44,40 +43,42 @@ Addon authors can develop their UIs using any React library. But we recommend us
 
 Use the components listed below with your next addon.
 
-| Component          | Source                                                                                                                                            | Story                                                                                                                          |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Action Bar         | [See component implementation](https://github.com/storybookjs/storybook/blob/main/code/ui/components/src/ActionBar/ActionBar.tsx)                 | [See component story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-actionbar--single-item)         |
-| Addon Panel        | [See component implementation](https://github.com/storybookjs/storybook/blob/main/code/ui/components/src/addon-panel/addon-panel.tsx)             | N/A                                                                                                                            |
-| Badge              | [See component implementation](https://github.com/storybookjs/storybook/blob/main/code/ui/components/src/Badge/Badge.tsx)                         | [See component story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-badge--all-badges)              |
-| Button             | [See component implementation](https://github.com/storybookjs/storybook/blob/main/code/ui/components/src/Button/Button.tsx)                       | [See component story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-button--all-buttons)            |
-| Form               | [See component implementation](https://github.com/storybookjs/storybook/blob/main/code/ui/components/src/form/index.tsx)                          | [See component story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-form-button--sizes)             |
-| Loader             | [See component implementation](https://github.com/storybookjs/storybook/blob/main/code/ui/components/src/Loader/Loader.tsx)                       | [See component story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-loader--progress-bar)           |
-| PlaceHolder        | [See component implementation](https://github.com/storybookjs/storybook/blob/main/code/ui/components/src/placeholder/placeholder.tsx)             | [See component story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-placeholder--single-child)      |
-| Scroll Area        | [See component implementation](https://github.com/storybookjs/storybook/blob/main/code/ui/components/src/ScrollArea/ScrollArea.tsx)               | [See component story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-scrollarea--vertical)           |
-| Space              | [See component implementation](https://github.com/storybookjs/storybook/blob/main/code/ui/components/src/spaced/Spaced.tsx)                       | [See component story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-spaced--row)                    |
-| Syntax Highlighter | [See component implementation](https://github.com/storybookjs/storybook/blob/main/code/ui/components/src/syntaxhighlighter/syntaxhighlighter.tsx) | [See component story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-syntaxhighlighter--bash)        |
-| Tabs               | [See component implementation](https://github.com/storybookjs/storybook/blob/main/code/ui/components/src/tabs/tabs.tsx)                           | [See component story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-tabs--stateful-static)          |
-| ToolBar            | [See component implementation](https://github.com/storybookjs/storybook/blob/main/code/ui/components/src/bar/bar.tsx)                             | N/A                                                                                                                            |
-| ToolTip            | [See component implementation](https://github.com/storybookjs/storybook/blob/main/code/ui/components/src/tooltip/Tooltip.tsx)                     | [See component story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-tooltip-tooltip--basic-default) |
-| Zoom               | [See component implementation](https://github.com/storybookjs/storybook/blob/main/code/ui/components/src/Zoom/Zoom.tsx)                           | [See component story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-zoom--element-actual-size)      |
+| Component          | Source                                                                                                                                                                | Story                                                                                                                          |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Action Bar         | [See component implementation](https://github.com/storybookjs/storybook/blob/release-7-6/code/ui/components/src/components/ActionBar/ActionBar.tsx)                   | [See component story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-actionbar--single-item)         |
+| Addon Panel        | [See component implementation](https://github.com/storybookjs/storybook/blob/release-7-6/code/ui/components/src/components/addon-panel/addon-panel.tsx)               | N/A                                                                                                                            |
+| Badge              | [See component implementation](https://github.com/storybookjs/storybook/blob/release-7-6/code/ui/components/src/components/Badge/Badge.tsx)                           | [See component story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-badge--all-badges)              |
+| Button             | [See component implementation](https://github.com/storybookjs/storybook/blob/release-7-6/code/ui/components/src/components/Button/Button.tsx)                         | [See component story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-button--all-buttons)            |
+| Form               | [See component implementation](https://github.com/storybookjs/storybook/blob/release-7-6/code/ui/components/src/components/form/index.tsx)                            | [See component story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-form-button--sizes)             |
+| Loader             | [See component implementation](https://github.com/storybookjs/storybook/blob/release-7-6/code/ui/components/src/components/Loader/Loader.tsx)                         | [See component story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-loader--progress-bar)           |
+| PlaceHolder        | [See component implementation](https://github.com/storybookjs/storybook/blob/release-7-6/code/ui/components/src/components/placeholder/placeholder.tsx)               | [See component story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-placeholder--single-child)      |
+| Scroll Area        | [See component implementation](https://github.com/storybookjs/storybook/blob/release-7-6/code/ui/components/src/components/ScrollArea/ScrollArea.tsx)                 | [See component story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-scrollarea--vertical)           |
+| Space              | [See component implementation](https://github.com/storybookjs/storybook/blob/release-7-6/code/ui/components/src/components/spaced/Spaced.tsx)                         | [See component story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-spaced--row)                    |
+| Syntax Highlighter | [See component implementation](https://github.com/storybookjs/storybook/blob/release-7-6/code/ui/components/src/components/syntaxhighlighter/syntaxhighlighter.tsx)   | [See component story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-syntaxhighlighter--bash)        |
+| Tabs               | [See component implementation](https://github.com/storybookjs/storybook/blob/release-7-6/code/ui/components/src/components/tabs/tabs.tsx)                             | [See component story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-tabs--stateful-static)          |
+| ToolBar            | [See component implementation](https://github.com/storybookjs/storybook/blob/release-7-6/code/ui/components/src/components/bar/bar.tsx)                               | N/A                                                                                                                            |
+| ToolTip            | [See component implementation](https://github.com/storybookjs/storybook/blob/release-7-6/code/ui/components/src/components/tooltip/Tooltip.tsx)                       | [See component story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-tooltip-tooltip--basic-default) |
+| Zoom               | [See component implementation](https://github.com/storybookjs/storybook/blob/release-7-6/code/ui/components/src/components/Zoom/Zoom.tsx)                             | [See component story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-zoom--element-actual-size)      |
 
 Complementing the components, also included is a set of UI primitives. Use the content listed below as a reference for styling your addon.
 
-| Component                      | Source                                                                                                         | Story                                                                                                    |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| Color Palette (see note below) | [See implementation](https://github.com/storybookjs/storybook/tree/master/code/ui/components/src/Colors)       | [See story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-colorpalette--page) |
-| Icon                           | [See implementation](https://github.com/storybookjs/storybook/blob/main/code/ui/components/src/icon/icons.tsx) | [See story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-icon--labels)       |
-| Typography                     | [See implementation](https://github.com/storybookjs/storybook/tree/master/code/ui/components/src/typography)   | [See story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-typography--all)    |
+| Component                      | Source                                                                                                                           | Story                                                                                                    |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Color Palette (see note below) | [See implementation](https://github.com/storybookjs/storybook/tree/release-7-6/code/ui/components/src/components/Colors)         | [See story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-colorpalette--page) |
+| Icon                           | [See implementation](https://github.com/storybookjs/storybook/blob/release-7-6/code/ui/components/src/components/icon/icons.tsx) | [See story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-icon--labels)       |
+| Typography                     | [See implementation](https://github.com/storybookjs/storybook/tree/release-7-6/code/ui/components/src/components/typography)     | [See story](https://main--5a375b97f4b14f0020b0cda3.chromatic.com/?path=/story/basics-typography--all)    |
 
 <Callout variant="info">
-  The color palette implemented by `@storybook/components` is a high-level abstraction of the [`@storybook/theming`](https://github.com/storybookjs/storybook/tree/next/code/lib/theming/src) package.
+
+  The color palette implemented by `@storybook/components` is a high-level abstraction of the [`@storybook/theming`](https://github.com/storybookjs/storybook/tree/release-7-6/code/lib/theming/src) package.
+
 </Callout>
 
 ### Build system
 
 When you're developing your addon as a package, you can’t use `npm link` to add it to your project. List your addon as a local dependency into your package.json:
 
-```json
+```json title="package.json"
 {
   "dependencies": {
     "@storybook/addon-controls": "file:///home/username/myrepo"
@@ -86,7 +87,9 @@ When you're developing your addon as a package, you can’t use `npm link` to ad
 ```
 
 <Callout variant="info">
+
   Run either `yarn` or `npm install` to install the addon.
+
 </Callout>
 
 ### Hot module replacement
@@ -97,7 +100,7 @@ While developing your addon, you can configure HMR (hot module replacement) to r
 
 If you're developing a standalone addon, add a new script to `package.json` with the following:
 
-```json
+```json title="package.json"
 {
   "scripts": {
     "start": "npm run build -- --watch"
@@ -119,4 +122,4 @@ If you're working on a preset that loads third-party addons, which you don't hav
 
 {/* prettier-ignore-end */}
 
-If you have control over the addons you want to customize. In that case, you can update your preset and implement a custom function to load any additional presets and provide the necessary configuration, similar to how it's implemented in the [Essentials](../../addons/essentials/src/index.ts) addon.
+If you have control over the addons you want to customize. In that case, you can update your preset and implement a custom function to load any additional presets and provide the necessary configuration, similar to how it's implemented in the [Essentials](https://github.com/storybookjs/storybook/blob/release-7-6/code/addons/essentials/src/index.ts) addon.

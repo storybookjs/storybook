@@ -47,7 +47,7 @@ export const WithAnImage = {
 };
 ```
 
-```tsx filename=" MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import imageFile from './static/image.png';
@@ -71,7 +71,7 @@ export const WithAnImage: Story = {
 };
 ```
 
-```tsx filename=" MyComponent.stories.ts|tsx" renderer="react" language="ts"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
 import type { Meta, StoryObj } from '@storybook/react';
 
 import imageFile from './static/image.png';
@@ -114,7 +114,7 @@ export const WithAnImage = {
 };
 ```
 
-```tsx filename=" MyComponent.stories.ts|tsx" renderer="solid" language="ts-4-9"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts-4-9"
 import type { Meta, StoryObj } from 'storybook-solidjs';
 
 import imageFile from './static/image.png';
@@ -138,7 +138,7 @@ export const WithAnImage: Story = {
 };
 ```
 
-```tsx filename=" MyComponent.stories.ts|tsx" renderer="solid" language="ts"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts"
 import type { Meta, StoryObj } from 'storybook-solidjs';
 
 import imageFile from './static/image.png';
@@ -162,9 +162,7 @@ export const WithAnImage: Story = {
 };
 ```
 
-```js renderer="svelte" language="js"
-//MyComponent.stories.js
-
+```js filename="MyComponent.stories.js" renderer="svelte" language="js"
 import MyComponent from './MyComponent.svelte';
 
 import imageFile from './static/image.png';
@@ -184,31 +182,6 @@ export const WithAnImage = {
     props: image,
   }),
 };
-```
-
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* MyComponent.stories.svelte */}
-
-<script>
-  import { Meta, Template, Story } from '@storybook/addon-svelte-csf';
-
-  import MyComponent from './MyComponent.svelte';
-
-  import imageFile from './static/image.png';
-
-  let image = {
-    src: imageFile,
-    alt: 'my image',
-  };
-</script>
-
-<meta title="img" component="{MyComponent}" />
-
-<template>
-  <MyComponent {image} />
-</template>
-
-<Story name="WithAnImage" />
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts-4-9"
@@ -488,4 +461,3 @@ export const WithAnImage: Story = {
   render: () => html`<img src="${image.src}" alt="${image.alt}" />`,
 };
 ```
-

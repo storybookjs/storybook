@@ -159,7 +159,7 @@ export const Primary: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js"
+```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="story"
 import Button from './Button.svelte';
 import MarginDecorator from './MarginDecorator.svelte';
 
@@ -172,7 +172,19 @@ export const Primary = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9"
+```html filename="MarginDecorator.svelte" renderer="svelte" language="js" tabTitle="decorator-component"
+<div>
+  <slot />
+</div>
+
+<style>
+  div {
+    margin: 3em;
+  }
+</style>
+```
+
+```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="story"
 import { Meta, StoryObj } from '@storybook/svelte';
 
 import Button from './Button.svelte';
@@ -190,7 +202,19 @@ export const Primary: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts"
+```html filename="MarginDecorator.svelte" renderer="svelte" language="ts-4-9" tabTitle="decorator-component"
+<div>
+  <slot />
+</div>
+
+<style>
+  div {
+    margin: 3em;
+  }
+</style>
+```
+
+```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="story"
 import { Meta, StoryObj } from '@storybook/svelte';
 
 import Button from './Button.svelte';
@@ -208,6 +232,18 @@ export const Primary: Story = {
 };
 ```
 
+```html filename="MarginDecorator.svelte" renderer="svelte" language="ts" tabTitle="decorator-component"
+<div>
+  <slot />
+</div>
+
+<style>
+  div {
+    margin: 3em;
+  }
+</style>
+```
+
 ```js filename="Button.stories.js" renderer="vue" language="js"
 import Button from './Button.vue';
 
@@ -217,7 +253,7 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary = {
@@ -244,7 +280,7 @@ type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary: Story = {
@@ -271,7 +307,7 @@ type Story = StoryObj<typeof Button>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Primary: Story = {
@@ -309,4 +345,3 @@ export const Primary: Story = {
   decorators: [(story) => html`<div style="margin: 3em">${story()}</div>`],
 };
 ```
-

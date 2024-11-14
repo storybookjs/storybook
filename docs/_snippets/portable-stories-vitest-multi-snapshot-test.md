@@ -25,4 +25,3 @@ describe(options.suite, () => {
   });
 });
 ```
-

@@ -11,7 +11,7 @@ Pick a simple component from your project, like a Button, and write a `.stories.
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="your-component.md" usesCsf3 csf2Path="get-started/setup#snippet-your-component" />
+<CodeSnippets path="your-component.md" usesCsf3 />
 
 {/* prettier-ignore-end */}
 
@@ -51,12 +51,14 @@ Your project may have additional requirements before components can be rendered 
   * [Presets](../addons/addon-types.mdx) bundle common configurations for various technologies into Storybook. In particular, presets exist for Create React App and Ant Design.
   * Specify a custom [Babel configuration](../configure/integration/compilers.mdx#babel) for Storybook. Storybook automatically tries to use your project’s config if it can.
   * Adjust the [Webpack configuration](../builders/webpack.mdx) that Storybook uses. Try patching in your own configuration if needed.
+
 </details>
 
 <details>
   <summary>Runtime configuration</summary>
 
   If Storybook builds but you see an error immediately when connecting to it in the browser, in that case, chances are one of your input files is not compiling/transpiling correctly to be interpreted by the browser. Storybook supports evergreen browsers, but you may need to check the Babel and Webpack settings (see above) to ensure your component code works correctly.
+
 </details>
 
 <details id="component-context" name="component-context">

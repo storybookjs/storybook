@@ -99,4 +99,3 @@ export const Large: Story = {
   },
 };
 ```
-

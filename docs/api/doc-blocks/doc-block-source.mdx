@@ -13,9 +13,7 @@ The `Source` block is used to render a snippet of source code directly.
 
 {/* prettier-ignore-start */}
 
-```md
-{/* ButtonDocs.mdx */}
-
+```md title="ButtonDocs.mdx"
 import { Meta, Source } from '@storybook/blocks';
 import * as ButtonStories from './Button.stories';
 
@@ -47,9 +45,7 @@ import { Source } from '@storybook/blocks';
 
   {/* prettier-ignore-start */}
 
-  ```md
-  {/* ButtonDocs.mdx */}
-
+  ```md title="ButtonDocs.mdx"
   <Source of={ButtonStories.Basic} language="tsx" />
   ```
 
@@ -68,9 +64,7 @@ Provides the source code to be rendered.
 
 {/* prettier-ignore-start */}
 
-```md
-{/* ButtonDocs.mdx */}
-
+```md title="ButtonDocs.mdx"
 import { Meta, Source } from '@storybook/blocks';
 import * as ButtonStories from './Button.stories';
 
@@ -99,6 +93,7 @@ Determines if the snippet is rendered in dark mode.
 </Callout>
 
 <IfRenderer renderer={['angular', 'react', 'html', 'web-components' ]}>
+
   ### `excludeDecorators`
 
   Type: `boolean`
@@ -106,6 +101,7 @@ Determines if the snippet is rendered in dark mode.
   Default: `parameters.docs.source.excludeDecorators`
 
   Determines if [decorators](../../writing-stories/decorators.mdx) are rendered in the source code snippet.
+  
 </IfRenderer>
 
 ### `format`

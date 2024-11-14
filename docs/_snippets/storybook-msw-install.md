@@ -9,4 +9,3 @@ pnpm add --save-dev msw msw-storybook-addon
 ```shell renderer="common" language="js" packageManager="yarn"
 yarn add --dev msw msw-storybook-addon
 ```
-

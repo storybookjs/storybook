@@ -5,7 +5,7 @@ import { Button } from './button.component';
 
 const meta: Meta<Button> = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Button',
@@ -23,7 +23,7 @@ type Story = StoryObj<Button>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Basic: Story = {
@@ -40,7 +40,7 @@ import { Button } from './Button';
 
 export default {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Button',
@@ -65,7 +65,7 @@ import { Button } from './Button';
 
 const meta = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Button',
@@ -83,7 +83,7 @@ type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Basic: Story = {
@@ -98,7 +98,7 @@ import { Button } from './Button';
 
 const meta: Meta<typeof Button> = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Button',
@@ -116,7 +116,7 @@ type Story = StoryObj<typeof Button>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Basic: Story = {
@@ -129,7 +129,7 @@ import { Button } from './Button';
 
 export default {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Button',
@@ -154,7 +154,7 @@ import { Button } from './Button';
 
 const meta = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Button',
@@ -172,7 +172,7 @@ type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Basic: Story = {
@@ -187,7 +187,7 @@ import { Button } from './Button';
 
 const meta: Meta<typeof Button> = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Button',
@@ -205,7 +205,7 @@ type Story = StoryObj<typeof Button>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Basic: Story = {
@@ -218,7 +218,7 @@ import Button from './Button.svelte';
 
 export default {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Button',
@@ -234,23 +234,6 @@ export default {
 export const Basic = {};
 ```
 
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* Button.stories.svelte */}
-
-<script>
-  import { Meta, Template, Story } from '@storybook/addon-svelte-csf';
-
-  import Button from './Button.svelte';
-</script>
-
-<Meta title="Button" component={Button} parameters={{ myAddon: { data: 'this data is passed to the
-addon', }, }} />
-
-<template let:args>
-  <button {...args} />
-</template>
-```
-
 ```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
@@ -258,7 +241,7 @@ import Button from './Button.svelte';
 
 const meta = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Button',
@@ -284,7 +267,7 @@ import Button from './Button.svelte';
 
 const meta: Meta<typeof Button> = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Button',
@@ -308,7 +291,7 @@ import Button from './Button.vue';
 
 export default {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Button',
@@ -337,7 +320,7 @@ import Button from './Button.vue';
 
 const meta = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Button',
@@ -355,7 +338,7 @@ type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Basic: Story = {
@@ -374,7 +357,7 @@ import Button from './Button.vue';
 
 const meta: Meta<typeof Button> = {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'Button',
@@ -392,7 +375,7 @@ type Story = StoryObj<typeof Button>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Basic: Story = {
@@ -419,7 +402,7 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Basic = {
@@ -448,11 +431,10 @@ type Story = StoryObj;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Basic: Story = {
   render: () => html`<custom-button label="Hello"></custom-button>`,
 };
 ```
-

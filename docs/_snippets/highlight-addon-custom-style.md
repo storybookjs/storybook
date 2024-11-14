@@ -1,5 +1,6 @@
 ```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
+
 import { componentWrapperDecorator } from '@storybook/angular';
 import { useChannel } from '@storybook/preview-api';
 import { HIGHLIGHT } from '@storybook/addon-highlight';
@@ -55,6 +56,7 @@ export const StyledHighlight = {
 
 ```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts-4-9"
 import type { Meta, StoryObj } from '@storybook/react';
+
 import { useChannel } from '@storybook/preview-api';
 import { HIGHLIGHT } from '@storybook/addon-highlight';
 
@@ -84,6 +86,7 @@ export const StyledHighlight: Story = {
 
 ```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
 import type { Meta, StoryObj } from '@storybook/react';
+
 import { useChannel } from '@storybook/preview-api';
 import { HIGHLIGHT } from '@storybook/addon-highlight';
 
@@ -141,6 +144,7 @@ export const StyledHighlight = {
 ```ts filename="MyComponent.stories.ts" renderer="vue" language="ts-4-9"
 // Replace vue3 with vue if you are using Storybook for Vue 2
 import type { Meta, StoryObj } from '@storybook/vue3';
+
 import { useChannel } from '@storybook/preview-api';
 import { HIGHLIGHT } from '@storybook/addon-highlight';
 
@@ -173,6 +177,7 @@ export const StyledHighlight: Story = {
 ```ts filename="MyComponent.stories.ts" renderer="vue" language="ts"
 // Replace vue3 with vue if you are using Storybook for Vue 2
 import type { Meta, StoryObj } from '@storybook/vue3';
+
 import { useChannel } from '@storybook/preview-api';
 import { HIGHLIGHT } from '@storybook/addon-highlight';
 
@@ -227,6 +232,7 @@ export const StyledHighlight = {
 
 ```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
 import type { Meta, StoryObj } from '@storybook/web-components';
+
 import { useChannel } from '@storybook/preview-api';
 import { HIGHLIGHT } from '@storybook/addon-highlight';
 
@@ -251,4 +257,3 @@ export const StyledHighlight: Story = {
   ],
 };
 ```
-

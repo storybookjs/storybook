@@ -155,9 +155,7 @@ export function DocumentScreen() {
 }
 ```
 
-```html renderer="svelte" language="js"
-{/* YourPage.svelte */}
-
+```html filename="YourPage.svelte" renderer="svelte" language="js"
 <script>
   import { onMount } from 'svelte';
 
@@ -203,9 +201,7 @@ export function DocumentScreen() {
 {/if}
 ```
 
-```html renderer="svelte" language="ts"
-{/* YourPage.svelte */}
-
+```html filename="YourPage.svelte" renderer="svelte" language="ts"
 <script lang="ts">
   import { onMount } from 'svelte';
 
@@ -251,9 +247,7 @@ export function DocumentScreen() {
 {/if}
 ```
 
-```html renderer="vue" language="js" tabTitle="3"
-{/* YourPage.vue */}
-
+```html filename="YourPage.vue" renderer="vue" language="js" tabTitle="3"
 <template>
   <div v-if="!loading && data && data.subdocuments.length">
     <PageLayout :user="data.user">
@@ -302,9 +296,7 @@ export function DocumentScreen() {
 </script>
 ```
 
-```html renderer="vue" language="ts" tabTitle="3"
-{/* YourPage.vue */}
-
+```html filename="YourPage.vue" renderer="vue" language="ts" tabTitle="3"
 <template>
   <div v-if="!loading && data && data.subdocuments.length">
     <PageLayout :user="data.user">
@@ -418,4 +410,3 @@ class DocumentScreen extends LitElement {
 
 customElements.define('demo-document-screen', DocumentScreen);
 ```
-

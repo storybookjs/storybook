@@ -1,6 +1,4 @@
-```yml renderer="common" language="ts" tabTitle="yml"
-# .github/workflows/deploy-github-pages.yaml
-
+```yml filename=".github/workflows/deploy-github-pages.yaml" renderer="common" language="ts" tabTitle="yml"
 # Workflow name
 name: Build and Publish Storybook to GitHub Pages
 
@@ -37,4 +35,3 @@ jobs:
           path: storybook-static # default: dist/storybook
           checkout: false # default: true
 ```
-

@@ -29,7 +29,7 @@ To opt into a builder, the user must add it as a dependency and then edit their 
 
 ## Builder API
 
-In Storybook, every builder must implement the following [API](https://github.com/storybookjs/storybook/blob/next/code/lib/types/src/modules/core-common.ts#L183-L203), exposing the following configuration options and entry points:
+In Storybook, every builder must implement the following [API](https://github.com/storybookjs/storybook/blob/release-7-6/code/lib/types/src/modules/core-common.ts), exposing the following configuration options and entry points:
 
 {/* prettier-ignore-start */}
 
@@ -120,7 +120,7 @@ While running in development mode, the builder's development server must be able
 
 ### More information
 
-This area is under rapid development, and the associated documentation is still in progress and subject to change. If you are interested in creating a builder, you can learn more about implementing a builder in Storybook by checking the source code for [Vite](https://github.com/storybookjs/storybook/tree/next/code/builders/builder-vite), [Webpack](https://github.com/storybookjs/storybook/tree/next/code/builders/builder-webpack5), or Modern Web's [dev-server-storybook](https://github.com/modernweb-dev/web/blob/master/packages/dev-server-storybook/src/serve/storybookPlugin.ts). When you're ready, open an [RFC](../contribute/RFC.mdx) to discuss your proposal with the Storybook community and maintainers.
+This area is under rapid development, and the associated documentation is still in progress and subject to change. If you are interested in creating a builder, you can learn more about implementing a builder in Storybook by checking the source code for [Vite](https://github.com/storybookjs/storybook/tree/release-7-6/code/builders/builder-vite), [Webpack](https://github.com/storybookjs/storybook/tree/release-7-6/code/builders/builder-webpack5), or Modern Web's [dev-server-storybook](https://github.com/modernweb-dev/web/blob/master/packages/dev-server-storybook/src/serve/storybookPlugin.ts). When you're ready, open an [RFC](../contribute/RFC.mdx) to discuss your proposal with the Storybook community and maintainers.
 
 #### Learn more about builders
 

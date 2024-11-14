@@ -13,4 +13,3 @@ const ProfilePageContext = createContext();
 
 export default ProfilePageContext;
 ```
-

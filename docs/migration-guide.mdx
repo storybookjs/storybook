@@ -190,9 +190,7 @@ Storybook 6 had a second recipe, [“CSF stories with arbitrary MDX”](https://
 
 #### Before
 
-```mdx
-// Button.mdx
-
+```mdx title="Button.stories.mdx"
 import { Story } from '@storybook/addon-docs';
 
 # Story embed
@@ -200,9 +198,7 @@ import { Story } from '@storybook/addon-docs';
 <Story id="button--basic" />
 ```
 
-```js
-// Button.stories.js
-
+```js title="Button.stories.js"
 import { Button } from './Button';
 import mdx from './Button.mdx';
 
@@ -212,9 +208,7 @@ export default {
 };
 ```
 
-```js
-// .storybook/main.js
-
+```js title=".storybook/main.js"
 module.exports = {
   stories: ['../src/**.stories.@(js|jsx|mjs|ts|tsx)'],
 };
@@ -226,9 +220,7 @@ Your MDX files should be updated to reference the CSF story export, which is saf
 
 {/* prettier-ignore-start */}
 
-```mdx
-{/* Button.mdx */}
-
+```mdx title="Button.mdx"
 {/* Note the new package we import from */}
 import { Story } from '@storybook/blocks';
 import * as ButtonStories from './Button.stories';
@@ -242,9 +234,7 @@ import * as ButtonStories from './Button.stories';
 
 You should also remove the MDX imports from your story files:
 
-```js
-// Button.stories.js
-
+```js title="Button.stories.js"
 import { Button } from './Button';
 
 export default {
@@ -254,9 +244,7 @@ export default {
 
 Finally, you’ll need to add the MDX files to `.storybook/main.js` so that they are indexed:
 
-```js
-// .storybook/main.js
-
+```js title=".storybook/main.js"
 module.exports = {
   stories: ['../src/**.mdx', '../src/**.stories.@(js|jsx|mjs|ts|tsx)'],
 };

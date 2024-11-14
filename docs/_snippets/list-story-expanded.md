@@ -59,7 +59,7 @@ import { createListItem } from './ListItem';
 
 export default {
   /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * See https://storybook.js.org/docs/7/configure#configure-story-loading
    * to learn how to generate automatic titles
    */
   title: 'List',
@@ -67,7 +67,7 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Empty = {
@@ -108,7 +108,7 @@ type Story = StoryObj<ListArgs>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Empty: Story = {
@@ -146,7 +146,7 @@ export const Empty = {};
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const OneItem = {
@@ -185,7 +185,7 @@ export const Empty: Story = {};
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const OneItem: Story = {
@@ -224,7 +224,7 @@ export const Empty: Story = {};
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const OneItem: Story = {
@@ -258,7 +258,7 @@ export const Empty = {};
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const OneItem = {
@@ -297,7 +297,7 @@ export const Empty: Story = {};
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const OneItem: Story = {
@@ -336,7 +336,7 @@ export const Empty: Story = {};
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const OneItem: Story = {
@@ -358,44 +358,6 @@ export const ManyItems: Story = {
 };
 ```
 
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* List.stories.svelte */}
-
-<script>
-  import { Meta, Template, Story } from '@storybook/addon-svelte-csf';
-
-  import List from './List.svelte';
-
-  import ListItem from './ListItem.svelte';
-</script>
-
-<meta title="List" component="{List}" />
-
-<template let:args id="Empty">
-  <List {...args} />
-</template>
-
-<template let:args id="OneItem">
-  <List {...args}>
-    <ListItem />
-  </List>
-</template>
-
-<template let:args id="ManyItems">
-  <List {...args}>
-    <ListItem />
-    <ListItem />
-    <ListItem />
-  </List>
-</template>
-
-<Story name="Empty" template="Empty" />
-
-<Story name="OneItem" template="OneItem" />
-
-<Story name="MultipleItems" template="ManyItems" />
-```
-
 ```js filename="List.stories.js" renderer="vue" language="js"
 import List from './ListComponent.vue';
 import ListItem from './ListItem.vue';
@@ -406,7 +368,7 @@ export default {
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Empty = {
@@ -455,7 +417,7 @@ type Story = StoryObj<typeof meta>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Empty: Story = {
@@ -504,7 +466,7 @@ type Story = StoryObj<typeof List>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const Empty: Story = {
@@ -601,4 +563,3 @@ export const ManyItems: Story = {
   `,
 };
 ```
-

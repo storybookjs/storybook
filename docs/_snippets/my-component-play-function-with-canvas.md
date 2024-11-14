@@ -140,4 +140,3 @@ export const ExampleStory: Story = {
   },
 };
 ```
-

@@ -15,9 +15,7 @@ When using the Canvas block in MDX, it references a story with the `of` prop:
 
 {/* prettier-ignore-start */}
 
-```md
-{/* ButtonDocs.mdx */}
-
+```md title="ButtonDocs.mdx"
 import { Meta, Canvas } from '@storybook/blocks';
 import * as ButtonStories from './Button.stories';
 
@@ -29,7 +27,9 @@ import * as ButtonStories from './Button.stories';
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
+
   In previous versions of Storybook it was possible to pass in arbitrary components as children to `Canvas`. That is deprecated and the `Canvas` block now only supports a single story.
+
 </Callout>
 
 ## Canvas
@@ -53,9 +53,7 @@ import { Canvas } from '@storybook/blocks';
 
   {/* prettier-ignore-start */}
 
-  ```md
-  {/* ButtonDocs.mdx */}
-
+  ```md title="ButtonDocs.mdx"
   <Canvas of={ButtonStories.Basic} sourceState="shown" />
   ```
 
@@ -87,9 +85,7 @@ Provides any additional custom actions to show in the bottom right corner. These
 
 {/* prettier-ignore-start */}
 
-```md
-{/* ButtonDocs.mdx */}
-
+```md title="ButtonDocs.mdx"
 import { Meta, Story, Canvas, SourceState } from '@storybook/blocks';
 import * as ButtonStories from './Button.stories';
 
@@ -146,17 +142,17 @@ You can render a story from a CSF file that you haven’t attached to the MDX fi
 
 {/* prettier-ignore-start */}
 
-```md
-{/* ButtonDocs.mdx */}
-
+```md title="ButtonDocs.mdx"
 import { Meta, Canvas } from '@storybook/blocks';
 import * as ButtonStories from './Button.stories';
 import * as HeaderStories from './Header.stories';
 
 <Meta of={ButtonStories} />
 
-{/* Although this MDX file is largely concerned with Button,
-    it can render Header stories too */}
+{/* 
+  Although this MDX file is largely concerned with Button.
+  It can render Header stories too 
+*/}
 <Canvas of={HeaderStories.LoggedIn} meta={HeaderStories} />
 ```
 
@@ -175,7 +171,9 @@ Type: `SourceProps['code'] | SourceProps['format'] | SourceProps['language'] | S
 Specifies the props passed to the inner `Source` block. For more information, see the `Source` Doc Block [documentation](./doc-block-source.mdx).
 
 <Callout variant="info" icon="💡">
+
   The dark prop is ignored, as the `Source` block is always rendered in dark mode when shown as part of a `Canvas` block.
+  
 </Callout>
 
 ### `sourceState`

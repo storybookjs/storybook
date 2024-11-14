@@ -238,28 +238,6 @@ export const MyStory = {
 };
 ```
 
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* MyComponent.stories.svelte */}
-
-<script>
-  import { Meta, Template, Story } from '@storybook/addon-svelte-csf';
-
-  import { INITIAL_VIEWPORTS } from '@storybook/addon-viewport';
-
-  import MyComponent from './MyComponent.svelte';
-</script>
-
-<Meta title="MyComponent" component={MyComponent} parameters={{ //👇 The viewports object from the
-Essentials addon viewport: { //👇 The viewports you want to use viewports: INITIAL_VIEWPORTS, //👇
-Your own default viewport defaultViewport: 'iphone6', }, }} />
-
-<template let:args>
-  <MyComponent {...args} />
-</template>
-
-<Story name="MyStory" parameters={{ viewport: { defaultViewport: 'iphonex', }, }} />
-```
-
 ```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts-4-9"
 import type { Meta, StoryObj } from '@storybook/svelte';
 import { INITIAL_VIEWPORTS } from '@storybook/addon-viewport';
@@ -484,4 +462,3 @@ export const MyStory: Story = {
   },
 };
 ```
-

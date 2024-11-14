@@ -71,7 +71,7 @@ import { html } from 'lit';
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const StoryWithLocale = {
@@ -89,7 +89,7 @@ import { StoryObj } from '@storybook/web-components';
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
+ * See https://storybook.js.org/docs/7/api/csf
  * to learn how to use render functions.
  */
 export const StoryWithLocale: StoryObj = {
@@ -99,4 +99,3 @@ export const StoryWithLocale: StoryObj = {
   },
 };
 ```
-

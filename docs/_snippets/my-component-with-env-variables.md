@@ -71,24 +71,6 @@ export const ExampleStory: Story = {
 };
 ```
 
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* MyComponent.stories.svelte */}
-
-<script>
-  import { Meta, Template, Story } from '@storybook/addon-svelte-csf';
-
-  import MyComponent from './MyComponent.svelte';
-</script>
-
-<meta title="MyComponent" component="{MyComponent}" />
-
-<template let:args>
-  <MyComponent {...args} />
-</template>
-
-<Story name="ExampleStory" args={{ propertyA: process.env.STORYBOOK_DATA_KEY, }} />
-```
-
 ```js filename="MyComponent.stories.js" renderer="web-components" language="js"
 export default {
   component: 'my-component',
@@ -117,4 +99,3 @@ export const ExampleStory: Story = {
   },
 };
 ```
-

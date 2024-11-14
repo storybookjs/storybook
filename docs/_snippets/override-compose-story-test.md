@@ -70,7 +70,7 @@ const FormValidation = composeStory(ValidFormStory, Meta, {
 });
 ```
 
-```js filename="tests/Form.test.js" renderer="vue" language="js" tabTitle="compose-stories-3"
+```js filename="tests/Form.test.js" renderer="vue" language="js" tabTitle="compose-stories"
 import { composeStory } from '@storybook/testing-vue3';
 
 import * as FormStories from './LoginForm.stories';
@@ -88,7 +88,7 @@ const { ValidForm } = composeStories(FormStories, {
 });
 ```
 
-```ts filename="tests/Form.test.ts" renderer="vue" language="ts" tabTitle="compose-stories-3"
+```ts filename="tests/Form.test.ts" renderer="vue" language="ts" tabTitle="compose-stories"
 import { composeStory } from '@storybook/testing-vue3';
 
 import * as FormStories from './LoginForm.stories';
@@ -106,7 +106,7 @@ const { ValidForm } = composeStories(FormStories, {
 });
 ```
 
-```js filename="tests/Form.test.js" renderer="vue" language="js" tabTitle="compose-story-3"
+```js filename="tests/Form.test.js" renderer="vue" language="js" tabTitle="compose-story"
 import { composeStory } from '@storybook/testing-vue3';
 
 import Meta, { ValidForm as ValidFormStory } from './LoginForm.stories';
@@ -124,7 +124,7 @@ const FormValidation = composeStory(ValidFormStory, Meta, {
 });
 ```
 
-```ts filename="tests/Form.test.ts" renderer="vue" language="ts" tabTitle="compose-story-3"
+```ts filename="tests/Form.test.ts" renderer="vue" language="ts" tabTitle="compose-story"
 import { composeStory } from '@storybook/testing-vue3';
 
 import Meta, { ValidForm as ValidFormStory } from './LoginForm.stories';
@@ -141,4 +141,3 @@ const FormValidation = composeStory(ValidFormStory, Meta, {
   },
 });
 ```
-

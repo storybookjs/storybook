@@ -17,7 +17,17 @@ First, we'll need to build Storybook as a static web application. The functional
 
 {/* prettier-ignore-start */}
 
+<IfRenderer renderer={['vue', 'web-components', 'ember', 'html', 'react', 'svelte', 'preact', 'qwik','solid' ]}>
+
 <CodeSnippets path="build-storybook-production-mode.md" />
+
+</IfRenderer>
+
+<IfRenderer renderer="angular">
+
+<CodeSnippets path="build-storybook-production-mode-angular.md" />
+
+</IfRenderer>
 
 {/* prettier-ignore-end */}
 
@@ -34,7 +44,9 @@ If you're using Angular, it's often better to use the [Angular builder](../get-s
 </If>
 
 <Callout variant="info" icon="💡">
+
   You can provide additional flags to customize the command. Read more about the flag options [here](../api/cli-options.mdx).
+
 </Callout>
 
 Storybook will create a static web application capable of being served by any web server. Preview it locally by running the following command:
@@ -100,7 +112,9 @@ In your project's root directory, add a new file called `chromatic.yml` inside t
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
+
   Secrets are secure environment variables provided by GitHub so that you don't need to hard code your `project-token`. Read the [official documentation](https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository) to learn how to configure them.
+
 </Callout>
 
 Commit and push the file. Congratulations, you've successfully automated publishing your Storybook. Now whenever you open a PR you’ll get a handy link to your published Storybook in your PR checks.
@@ -138,11 +152,13 @@ To deploy Storybook on GitHub Pages, use the community-built [Deploy Storybook t
 {/* prettier-ignore-end */}
 
 <Callout variant="info">
+
   The GitHub Pages Action requires additional configuration options to customize the deployment process. Refer to the [official documentation](https://github.com/marketplace/actions/deploy-storybook-to-github-pages) for more information.
+  
 </Callout>
 
 <details>
-  <summary><h2>Component Publishing Protocol (CPP)</h2></summary>
+  <summary><h3>Component Publishing Protocol (CPP)</h3></summary>
 
   Storybook can communicate with services that host built Storybooks online. This enables features such as [Composition](./storybook-composition.mdx). We categorize services via compliance with the "Component Publishing Protocol" (CPP) with various levels of support in Storybook.
 

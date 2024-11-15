@@ -157,9 +157,7 @@ export default meta;
 
   const { Story } = defineMeta({
     component: YourComponent,
-    decorators: [() => ({
-      Component: MarginDecorator,
-    })],
+    decorators: [() => MarginDecorator],
   });
 </script>
 ```
@@ -195,18 +193,18 @@ import YourComponent from './YourComponent.svelte';
 import MarginDecorator from './MarginDecorator.svelte';
 
 const meta = {
-  component: Button,
+  component: YourComponent,
   decorators: [() => MarginDecorator],
 } satisfies Meta<typeof YourComponent>;
 
 export default meta;
 ```
 
-```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import MyComponent from './MyComponent.svelte';
+  import YourComponent from './YourComponent.svelte';
   import MarginDecorator from './MarginDecorator.svelte';
 
   const { Story } = defineMeta({

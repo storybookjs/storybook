@@ -44,7 +44,7 @@ export const ExampleChangeEvent: Story = {
 
   import { userEvent, within } from '@storybook/test';
 
-  import MyComponent  from './MyComponent.svelte';
+  import MyComponent from './MyComponent.svelte';
 
   const { Story } = defineMeta({
     component: MyComponent,
@@ -151,7 +151,7 @@ export const ExampleChangeEvent = {
 
   import { userEvent, within } from '@storybook/test';
 
-  import MyComponent  from './MyComponent.svelte';
+  import MyComponent from './MyComponent.svelte';
 
   const { Story } = defineMeta({
     component: MyComponent,
@@ -269,7 +269,7 @@ export const ExampleChangeEvent: Story = {
 
   import { userEvent, within } from '@storybook/test';
 
-  import MyComponent  from './MyComponent.svelte';
+  import MyComponent from './MyComponent.svelte';
 
   const { Story } = defineMeta({
     component: MyComponent,

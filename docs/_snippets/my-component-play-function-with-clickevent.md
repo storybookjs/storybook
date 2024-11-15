@@ -41,7 +41,7 @@ export const FireEventExample: Story = {
 
   import { fireEvent, userEvent, within } from '@storybook/test';
 
-  import MyComponent  from './MyComponent.svelte';
+  import MyComponent from './MyComponent.svelte';
 
   const { Story } = defineMeta({
     component: MyComponent,
@@ -141,7 +141,7 @@ export const FireEventExample = {
 
   import { fireEvent, userEvent, within } from '@storybook/test';
 
-  import MyComponent  from './MyComponent.svelte';
+  import MyComponent from './MyComponent.svelte';
 
   const { Story } = defineMeta({
     component: MyComponent,
@@ -252,7 +252,7 @@ export const FireEventExample: Story = {
 
   import { fireEvent, userEvent, within } from '@storybook/test';
 
-  import MyComponent  from './MyComponent.svelte';
+  import MyComponent from './MyComponent.svelte';
 
   const { Story } = defineMeta({
     component: MyComponent,

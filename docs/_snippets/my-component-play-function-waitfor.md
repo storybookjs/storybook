@@ -45,7 +45,7 @@ export const ExampleAsyncStory: Story = {
 
   import { userEvent, waitFor, within } from '@storybook/test';
 
-  import MyComponent  from './MyComponent.svelte';
+  import MyComponent from './MyComponent.svelte';
 
   const { Story } = defineMeta({
     component: MyComponent,
@@ -155,7 +155,7 @@ export const ExampleAsyncStory = {
 
   import { userEvent, waitFor, within } from '@storybook/test';
 
-  import MyComponent  from './MyComponent.svelte';
+  import MyComponent from './MyComponent.svelte';
 
   const { Story } = defineMeta({
     component: MyComponent,
@@ -276,7 +276,7 @@ export const ExampleAsyncStory: Story = {
 
   import { userEvent, waitFor, within } from '@storybook/test';
 
-  import MyComponent  from './MyComponent.svelte';
+  import MyComponent from './MyComponent.svelte';
 
   const { Story } = defineMeta({
     component: MyComponent,

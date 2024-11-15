@@ -107,7 +107,7 @@ const meta = {
 } satisfies Meta<typeof Button>;
 
 export default meta;
-type Story = StoryObj<typeof Meta>;
+type Story = StoryObj<typeof meta>;
 
 export const OnDark: Story = {
   // 👇 Story-level parameters
@@ -130,7 +130,7 @@ const meta = {
 } satisfies Meta<typeof Button>;
 
 export default meta;
-type Story = StoryObj<typeof Meta>;
+type Story = StoryObj<typeof meta>;
 
 export const OnDark: Story = {
   // 👇 Story-level parameters

@@ -75,7 +75,7 @@ Storybook for Svelte & Vite is a [framework](../../contribute/framework.mdx) tha
   Storybook provides a Svelte [addon](https://storybook.js.org/addons/@storybook/addon-svelte-csf) maintained by the community, enabling you to write stories for your Svelte components using the template syntax. 
   
   <Callout variant="info">
-    The community actively maintains the Svelte CSF addon but still lacks some features currently available in the official Storybook Svelte framework support. For more information, see [addon's documentation](https://github.com/storybookjs/addon-svelte-csf).
+    The community actively maintains the Svelte CSF addon but still lacks some features currently available in the official Storybook Svelte framework support. For more information, see the [addon's documentation](https://github.com/storybookjs/addon-svelte-csf).
   </Callout>
 
   ### Setup
@@ -150,13 +150,13 @@ Storybook for Svelte & Vite is a [framework](../../contribute/framework.mdx) tha
 
   <Callout variant="info">
 
-    If you need support for the `Template` component, the addon provides a feature flag for backward compatibility. For more information, see the [configration options](#configure).
+    If you need support for the `Template` component, the addon provides a feature flag for backward compatibility. For more information, see the [configuration options](#configure).
   
   </Callout>
 
   #### Story slots to snippets
   
-  With Svelte's slot deprecation and the introduction of reusable [`snippets`](https://svelte.dev/docs/svelte/v5-migration-guide#Snippets-instead-of-slots), the addon also introduced support for this feature allowing extend the `Story` component and provide a custom snippet to provide dynamic content to your stories. This feature extends the built-in `children` support in the `Story` component, allowing you to create dynamic stories without losing reactivity.
+  With Svelte's slot deprecation and the introduction of reusable [`snippets`](https://svelte.dev/docs/svelte/v5-migration-guide#Snippets-instead-of-slots), the addon also introduced support for this feature allowing you to extend the `Story` component and provide a custom snippet to provide dynamic content to your stories. This feature extends the built-in `children` support in the `Story` component, allowing you to create dynamic stories without losing reactivity.
 
   ```svelte title="MyComponent.stories.svelte"
   <script>

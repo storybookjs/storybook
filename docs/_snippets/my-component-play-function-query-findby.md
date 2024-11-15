@@ -34,7 +34,7 @@ export const AsyncExample: Story = {
 
   import { userEvent, within } from '@storybook/test';
 
-  import MyComponent  from './MyComponent.svelte';
+  import MyComponent from './MyComponent.svelte';
 
   const { Story } = defineMeta({
     component: MyComponent,
@@ -60,7 +60,7 @@ export const AsyncExample: Story = {
 ```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import { userEvent, within } from '@storybook/test';
 
-import MyComponent  from './MyComponent.svelte';
+import MyComponent from './MyComponent.svelte';
 
 export default {
   component: MyComponent,
@@ -76,7 +76,7 @@ export const AsyncExample = {
     // Other steps
 
     // Waits for the component to be rendered before querying the element
-    await canvas.findByRole('button', { name: / button label/i }));
+    await canvas.findByRole('button', { name: / button label/i });
   },
 };
 ```
@@ -100,7 +100,7 @@ export const AsyncExample = {
     // Other steps
 
     // Waits for the component to be rendered before querying the element
-    await canvas.findByRole('button', { name: / button label/i }));
+    await canvas.findByRole('button', { name: / button label/i });
   },
 };
 ```
@@ -111,7 +111,7 @@ export const AsyncExample = {
 
   import { userEvent, within } from '@storybook/test';
 
-  import MyComponent  from './MyComponent.svelte';
+  import MyComponent from './MyComponent.svelte';
 
   const { Story } = defineMeta({
     component: MyComponent,
@@ -199,7 +199,7 @@ export const AsyncExample: Story = {
 
   import { userEvent, within } from '@storybook/test';
 
-  import MyComponent  from './MyComponent.svelte';
+  import MyComponent from './MyComponent.svelte';
 
   const { Story } = defineMeta({
     component: MyComponent,
@@ -298,7 +298,7 @@ export const AsyncExample = {
     // Other steps
 
     // Waits for the component to be rendered before querying the element
-    await canvas.findByRole('button', { name: / button label/i }));
+    await canvas.findByRole('button', { name: / button label/i });
   },
 };
 ```

@@ -261,13 +261,13 @@ export const Combo: Story = {
 
 <!-- 👇 This story will not appear in Storybook's sidebar or docs page -->
 <Story
-  name="Variant1"
+  name="Variant2"
   tags={['!dev', '!autodocs']}
   args={{ variant: 2 }}
 />
 
 <!-- 👇 This story should not be tested, but will appear in the sidebar and docs page -->
-<Story name="Variant1" tags={['!dev', '!autodocs']}>
+<Story name="Combo" tags={['!test']}>
   <Button variant={1}>
   <Button variant={2}>
 </Story>
@@ -292,13 +292,13 @@ export const Combo: Story = {
 
 <!-- 👇 This story will not appear in Storybook's sidebar or docs page -->
 <Story
-  name="Variant1"
+  name="Variant2"
   tags={['!dev', '!autodocs']}
   args={{ variant: 2 }}
 />
 
 <!-- 👇 This story should not be tested, but will appear in the sidebar and docs page -->
-<Story name="Variant1" tags={['!dev', '!autodocs']}>
+<Story name="Combo" tags={['!test']}>
   <Button variant={1}>
   <Button variant={2}>
 </Story>
@@ -323,13 +323,13 @@ export const Combo: Story = {
 
 <!-- 👇 This story will not appear in Storybook's sidebar or docs page -->
 <Story
-  name="Variant1"
+  name="Variant2"
   tags={['!dev', '!autodocs']}
   args={{ variant: 2 }}
 />
 
 <!-- 👇 This story should not be tested, but will appear in the sidebar and docs page -->
-<Story name="Variant1" tags={['!dev', '!autodocs']}>
+<Story name="Combo" tags={['!test']}>
   <Button variant={1}>
   <Button variant={2}>
 </Story>

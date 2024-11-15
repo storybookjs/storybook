@@ -1,5 +1,5 @@
 ```ts filename="Page.stories.ts" renderer="angular" language="ts"
-import type { Meta, StoryObj } from '@storybook/angular';
+import type { Meta } from '@storybook/angular';
 
 import { Page } from './Page';
 
@@ -60,7 +60,7 @@ export default {
 ```
 
 ```ts filename="Page.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte';
+import type { Meta } from '@storybook/svelte';
 
 import Page from './Page.svelte';
 
@@ -74,7 +74,7 @@ export default meta;
 
 ```ts filename="Page.stories.ts" renderer="common" language="ts-4-9"
 // Replace your-framework with the framework you are using (e.g., nextjs, vue3-vite)
-import type { Meta, StoryObj } from '@storybook/your-framework';
+import type { Meta } from '@storybook/your-framework';
 
 import { Page } from './Page';
 
@@ -101,7 +101,7 @@ export default meta;
 ```
 
 ```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte';
+import type { Meta } from '@storybook/svelte';
 
 import Page from './Page.svelte';
 
@@ -115,7 +115,7 @@ export default meta;
 
 ```ts filename="Page.stories.ts" renderer="common" language="ts"
 // Replace your-framework with the framework you are using (e.g., nextjs, vue3-vite)
-import type { Meta, StoryObj } from '@storybook/your-framework';
+import type { Meta } from '@storybook/your-framework';
 
 import { Page } from './Page';
 
@@ -137,7 +137,7 @@ export default {
 ```
 
 ```ts filename="Page.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta } from '@storybook/web-components';
 
 const meta: Meta = {
   title: 'Page',

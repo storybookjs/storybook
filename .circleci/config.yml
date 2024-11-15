@@ -964,6 +964,10 @@ workflows:
       - bench-packages:
           requires:
             - build
+          filters:
+            branches:
+              only:
+                - next
       - check:
           requires:
             - build

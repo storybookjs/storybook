@@ -13,7 +13,7 @@ Use the Storybook CLI to install it in a single command. Run this inside your pr
 
 {/* prettier-ignore-end */}
 
-<details>
+<details id="custom-storybook-version">
   <summary>Install a specific version</summary>
 
   The `init` command will use whichever version you specify. For example:
@@ -171,7 +171,7 @@ There are some noteworthy items here:
   <IfRenderer renderer="svelte">
     #### Writing native Svelte stories
 
-    Storybook provides a Svelte addon maintained by the community, enabling you to write stories for your Svelte components using the template syntax. You'll need to take some additional steps to enable this feature.
+    Storybook provides a Svelte [addon](https://storybook.js.org/addons/@storybook/addon-svelte-csf) maintained by the community, enabling you to write stories for your Svelte components using the template syntax. Starting with Storybook 8.2, the addon is automatically installed and configured when you initialize your project with the Svelte framework. However, if you installed a [specific version](#custom-storybook-version) of Storybook, you'll need to take additional steps to enable this feature.
 
     Run the following command to install the addon.
 
@@ -181,11 +181,17 @@ There are some noteworthy items here:
 
     {/* prettier-ignore-end */}
 
-    Update your Storybook configuration file (i.e., `.storybook/main.js|ts`) to include it.
+    <Callout variant="info">
 
+      The CLI's [`add`](../api/cli-options.mdx#add) command automates the addon's installation and setup. To install it manually, see our [documentation](../addons/install-addons.mdx#manual-installation) on how to install addons.
+    
+    </Callout>
+
+    Update your Storybook configuration file (i.e., `.storybook/main.js|ts`) to enable support for this format.
+  
     {/* prettier-ignore-start */}
 
-    <CodeSnippets path="main-config-csf-addon-register.md" />
+    <CodeSnippets path="main-config-svelte-csf-register.md" />
 
     {/* prettier-ignore-end */}
 
@@ -259,6 +265,6 @@ There are some noteworthy items here:
   Now that you have successfully installed Storybook and understood how it works, let's continue where you left off in the [setup wizard](#run-the-setup-wizard) and delve deeper into writing stories.
 </IfRenderer>
 
-<IfRenderer renderer={['angular', 'vue', 'web-components', 'ember', 'html', 'svelte', 'preact', 'qwik','solid' ]}>
+<IfRenderer renderer={['angular', 'vue', 'web-components', 'ember', 'html', 'svelte', 'preact', 'qwik', 'solid' ]}>
   Now that you installed Storybook successfully, let’s take a look at a story that was written for us.
 </IfRenderer>

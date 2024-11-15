@@ -13,15 +13,45 @@ When writing stories, decorators are typically used to wrap stories with extra m
 
 ## Wrap stories with extra markup
 
-Some components require a “harness” to render in a useful way. For instance, if a component runs right up to its edges, you might want to space it inside Storybook. Use a decorator to add spacing for all stories of the component.
+<IfRenderer renderer="svelte">
 
-![Story without padding](../_assets/writing-stories/decorators-no-padding.png)
+  Some components require a “harness” to render in a useful way. For instance, if a component runs right up to its edges, you might want to space it inside Storybook. With Svelte, you'll need to take additional steps to set it up properly.
 
-{/* prettier-ignore-start */}
+  ![Story without padding](../_assets/writing-stories/decorators-no-padding.png)
 
-<CodeSnippets path="your-component-with-decorator.md" />
+  Start by creating a new Svelte component that will act as a decorator. This component will wrap your story and provide the required spacing or layout elements.
 
-{/* prettier-ignore-end */}
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="margindecorator.md" />
+
+  {/* prettier-ignore-end */}
+
+  Update your story to include the component and reference it to apply the required spacing or other functionality for all its stories.
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="your-component-with-decorator.md" />
+
+  {/* prettier-ignore-end */}
+
+</IfRenderer>
+
+<If notRenderer="svelte">
+
+  Some components require a “harness” to render in a useful way. For instance, if a component runs right up to its edges, you might want to space it inside Storybook. Use a decorator to add spacing for all stories of the component.
+
+  ![Story without padding](../_assets/writing-stories/decorators-no-padding.png)
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="your-component-with-decorator.md" />
+
+  {/* prettier-ignore-end */}
+
+</If>
+
+
 
 ![Story with padding](../_assets/writing-stories/decorators-padding.png)
 
@@ -55,11 +85,21 @@ If your components are “connected” and require side-loaded data to render, y
 
 ## Story decorators
 
-To define a decorator for a single story, use the `decorators` key on a named export:
+<IfRenderer renderer="svelte">
+
+  To define a decorator for a single story, use the `decorators` property in the `Story` component if you are using Svelte CSF with the native templating syntax, or use the `decorators` key on a CSF named export:
+
+</IfRenderer>
+
+<If notRenderer="svelte">
+
+  To define a decorator for a single story, use the `decorators` key on a named export:
+
+</If>
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story-decorator.md" usesCsf3 csf2Path="writing-stories/decorators#snippet-button-story-decorator" />
+<CodeSnippets path="button-story-decorator.md" />
 
 {/* prettier-ignore-end */}
 
@@ -67,7 +107,17 @@ It is useful to ensure that the story remains a “pure” rendering of the comp
 
 ## Component decorators
 
-To define a decorator for all stories of a component, use the `decorators` key of the default CSF export:
+<IfRenderer renderer="svelte">
+
+  To define a decorator for all component stories, include the `decorators` property in the `defineMeta` function of a Svelte CSF story file. Alternatively, use the `decorators` key on the default CSF export:
+
+</IfRenderer>
+
+<If notRenderer="svelte">
+
+  To define a decorator for all stories of a component, use the `decorators` key of the default CSF export:
+
+</If>
 
 {/* prettier-ignore-start */}
 
@@ -77,7 +127,7 @@ To define a decorator for all stories of a component, use the `decorators` key o
 
 ## Global decorators
 
-We can also set a decorator for **all stories** via the `decorators` export of your [`.storybook/preview.js`](../configure/index.mdx#configure-story-rendering) file (this is the file where you configure all stories):
+We can also set a decorator for **all stories** via the `decorators` export of your [`.storybook/preview.js|ts`](../configure/index.mdx#configure-story-rendering) file (this is the file where you configure all stories):
 
 {/* prettier-ignore-start */}
 

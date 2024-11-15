@@ -76,7 +76,6 @@ export default {
 };
 
 // Always an empty list, not super interesting
-
 export const Empty = {};
 ```
 
@@ -92,7 +91,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-//👇 Always an empty list, not super interesting
+// Always an empty list, not super interesting
 export const Empty: Story = {};
 ```
 
@@ -108,7 +107,7 @@ const meta: Meta<typeof List> = {
 export default meta;
 type Story = StoryObj<typeof List>;
 
-//👇 Always an empty list, not super interesting
+// Always an empty list, not super interesting
 export const Empty: Story = {};
 ```
 
@@ -119,8 +118,7 @@ export default {
   component: List,
 };
 
-// Always an empty list, not super interesting
-
+//Always an empty list, not super interesting
 export const Empty = {};
 ```
 
@@ -136,7 +134,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-//👇 Always an empty list, not super interesting
+// Always an empty list, not super interesting
 export const Empty: Story = {};
 ```
 
@@ -152,28 +150,96 @@ const meta: Meta<typeof List> = {
 export default meta;
 type Story = StoryObj<typeof List>;
 
-//👇 Always an empty list, not super interesting
+// Always an empty list, not super interesting
 export const Empty: Story = {};
 ```
 
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* List.stories.svelte */}
-
-<script>
-  import { Meta, Template, Story } from '@storybook/addon-svelte-csf';
+```svelte filename="List.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
 
   import List from './List.svelte';
+
+  const { Story } = defineMeta({
+    component: List,
+  });
 </script>
 
-<meta title="List" component="{List}" />
+<!-- Always an empty list, not super interesting -->
+<Story name="Empty" />
+```
 
-<template let:args>
-  <List {...args} />
-</template>
+```js filename="List.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+import List from './List.svelte';
 
-<Story name="Empty">
-  <List {...args} />
-</Story>
+export default {
+  component: List,
+};
+
+// Always an empty list, not super interesting
+export const Empty = {};
+```
+
+```svelte filename="List.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import List from './List.svelte';
+
+  const { Story } = defineMeta({
+    component: List,
+  });
+</script>
+
+<!-- Always an empty list, not super interesting -->
+<Story name="Empty" />
+```
+
+```ts filename="List.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
+import type { Meta, StoryObj } from '@storybook/svelte';
+
+import List from './List.svelte';
+
+const meta = {
+  component: List,
+} satisfies Meta<typeof List>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+// Always an empty list, not super interesting
+export const Empty: Story = {};
+```
+
+```svelte filename="List.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import List from './List.svelte';
+
+  const { Story } = defineMeta({
+    component: List,
+  });
+</script>
+
+<!-- Always an empty list, not super interesting -->
+<Story name="Empty" />
+```
+
+```ts filename="List.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+import type { Meta, StoryObj } from '@storybook/svelte';
+
+import List from './List.svelte';
+
+const meta: Meta<typeof List> = {
+  component: List,
+};
+
+export default meta;
+type Story = StoryObj<typeof List>;
+
+// Always an empty list, not super interesting
+export const Empty: Story = {};
 ```
 
 ```js filename="List.stories.js" renderer="vue" language="js"
@@ -262,4 +328,3 @@ export const Empty: Story = {
   render: () => html`<demo-list></demo-list>`,
 };
 ```
-

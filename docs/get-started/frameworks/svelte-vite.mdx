@@ -7,7 +7,7 @@ sidebar:
 
 Storybook for Svelte & Vite is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for applications using [Svelte](https://svelte.dev/) built with [Vite](https://vitejs.dev/).
 
-<If notRenderer={'svelte'}>
+<If notRenderer="svelte">
   <Callout variant="info">
     Storybook for Svelte & Vite is only supported in [Svelte](?renderer=svelte) projects.
   </Callout>
@@ -15,7 +15,7 @@ Storybook for Svelte & Vite is a [framework](../../contribute/framework.mdx) tha
   {/* End non-supported renderers */}
 </If>
 
-<If renderer={'svelte'}>
+<If renderer="svelte">
   ## Requirements
 
   * Svelte ≥ 4.0
@@ -26,7 +26,7 @@ Storybook for Svelte & Vite is a [framework](../../contribute/framework.mdx) tha
 
   ### In a project without Storybook
 
-  Follow the prompts after running this command in your Sveltekit project's root directory:
+  Follow the prompts after running this command in your Svelte project's root directory:
 
   {/* prettier-ignore-start */}
 
@@ -48,7 +48,9 @@ Storybook for Svelte & Vite is a [framework](../../contribute/framework.mdx) tha
 
   #### Automatic migration
 
-  When running the `upgrade` command above, you should get a prompt asking you to migrate to `@storybook/sveltekit`, which should handle everything for you. In case that auto-migration does not work for your project, refer to the manual migration below.
+  {/* TK: Vet this for accuracy, the migration never prompted me to opt-in to the @storybook/sveltekit package, instead it updated the package version. Additionally the example refers to svelte-vite, not sveltekit */}
+
+  When running the `upgrade` command above, you should get a prompt asking you to migrate to `@storybook/svelte-vite`, which should handle everything for you. In case that auto-migration does not work for your project, refer to the manual migration below.
 
   #### Manual migration
 
@@ -70,7 +72,15 @@ Storybook for Svelte & Vite is a [framework](../../contribute/framework.mdx) tha
 
   ## Writing native Svelte stories
 
-  Storybook provides a Svelte addon maintained by the community, enabling you to write stories for your Svelte components using the template syntax. You'll need to take some additional steps to enable this feature.
+  Storybook provides a Svelte [addon](https://storybook.js.org/addons/@storybook/addon-svelte-csf) maintained by the community, enabling you to write stories for your Svelte components using the template syntax. 
+  
+  <Callout variant="info">
+    The community actively maintains the Svelte CSF addon but still lacks some features currently available in the official Storybook Svelte framework support. For more information, see [addon's documentation](https://github.com/storybookjs/addon-svelte-csf).
+  </Callout>
+
+  ### Setup
+
+  If you initialized your project with the Svelte framework, the addon has already been installed and configured for you. However, if you're [migrating](#automatic-migration) from a previous version, you'll need to take additional steps to enable this feature.
 
   Run the following command to install the addon.
 
@@ -81,8 +91,100 @@ Storybook for Svelte & Vite is a [framework](../../contribute/framework.mdx) tha
   {/* prettier-ignore-end */}
 
   <Callout variant="info">
-    The community actively maintains the Svelte CSF addon but still lacks some features currently available in the official Storybook Svelte framework support. For more information, see [addon's documentation](https://github.com/storybookjs/addon-svelte-csf).
+  
+    The CLI's [`add`](../../api/cli-options.mdx#add) command automates the addon's installation and setup. To install it manually, see our [documentation](../addons/install-addons.mdx#manual-installation) on how to install addons.
+  
   </Callout>
+
+  Update your Storybook configuration file (i.e., `.storybook/main.js|ts`) to enable support for this format.
+  
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="main-config-svelte-csf-register.md" />
+
+  {/* prettier-ignore-end */}
+
+  ### Configure
+ 
+  By default, the Svelte [addon](https://storybook.js.org/addons/@storybook/addon-svelte-csf) addon offers zero-config support for Storybook's Svelte framework. However, you can extend your Storybook configuration file (i.e., `.storybook/main.js|ts`) and provide additional addon options. Listed below are the available options and examples of how to use them.
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="svelte-csf-addon-options.md" />
+
+  {/* prettier-ignore-end */}
+
+  | Options          | Description |
+  | ---------------- | ------------------------------------------------------------------------------------------------------------------ |
+  | `legacyTemplate` | Enables support for the `Template` component for backward compatibility. <br/> `options: { legacyTemplate: true }` |
+  
+  <Callout variant="info">
+
+    Enabling the `legacyTemplate` option can introduce a performance overhead and should be used cautiously. For more information, refer to the [addon's documentation](https://github.com/storybookjs/addon-svelte-csf/blob/next/README.md#legacy-api).
+  
+  </Callout>
+
+  ### Upgrade to Svelte CSF addon v5
+
+  With the Svelte 5 release, Storybook's Svelte CSF addon has been updated to support the new features. This guide will help you migrate to the latest version of the addon. Below is an overview of the major changes in version 5.0 and the steps needed to upgrade your project.
+
+  #### Simplified story API
+  
+  If you are using the `Meta` component or the `meta` named export to define the story's metadata (e.g., [parameters](../../writing-stories/parameters.mdx)), you'll need to update your stories to use the new `defineMeta` function. This function returns an object with the required information, including a `Story` component that you must use to define your component stories.
+  
+  {/* prettier-ignore-start */ }
+
+  <CodeSnippets path="svelte-csf-story-migration.md" />
+
+  {/* prettier-ignore-end */}
+
+  #### Story templates
+ 
+  If you used the `Template` component to control how the component renders in the Storybook, this feature was replaced with built-in children support in the `Story` component, enabling you to compose components and define the UI structure directly in the story.
+  
+  {/* prettier-ignore-start */ }
+
+  <CodeSnippets path="svelte-csf-story-custom-children.md" />
+
+  {/* prettier-ignore-end */}
+
+  <Callout variant="info">
+
+    If you need support for the `Template` component, the addon provides a feature flag for backward compatibility. For more information, see the [configration options](#configure).
+  
+  </Callout>
+
+  #### Story slots to snippets
+  
+  With Svelte's slot deprecation and the introduction of reusable [`snippets`](https://svelte.dev/docs/svelte/v5-migration-guide#Snippets-instead-of-slots), the addon also introduced support for this feature allowing extend the `Story` component and provide a custom snippet to provide dynamic content to your stories. This feature extends the built-in `children` support in the `Story` component, allowing you to create dynamic stories without losing reactivity.
+
+  ```svelte title="MyComponent.stories.svelte"
+  <script>
+    import { defineMeta } from '@storybook/addon-svelte-csf';
+    
+    import MyComponent from './MyComponent.svelte';
+
+    const { Story } = defineMeta({
+      component: MyComponent,
+    });
+  </script>
+
+  <Story name="Default" args={{ exampleProperty: true }}>
+    {#snippet children(args)}
+      <MyComponent {...args}>Reactive component</MyComponent>
+    {/snippet}
+  </Story>
+  ```
+
+  #### Tags support
+
+  If you enabled automatic documentation generation with the `autodocs` story property, you must replace it with [`tags`](../../writing-stories/tags.mdx). This property allows you to categorize and filter stories based on specific criteria and generate documentation based on the tags applied to the stories.
+  
+  {/* prettier-ignore-start */ }
+
+  <CodeSnippets path="svelte-csf-addon-tags.md" />
+
+  {/* prettier-ignore-end */}
 
   ## API
 
@@ -90,20 +192,11 @@ Storybook for Svelte & Vite is a [framework](../../contribute/framework.mdx) tha
 
   You can pass an options object for additional configuration if needed:
 
-  ```js
-  // .storybook/main.js
-  import * as path from 'path';
+  {/* prettier-ignore-start */ }
 
-  export default {
-    // ...
-    framework: {
-      name: '@storybook/svelte-vite',
-      options: {
-        // ...
-      },
-    },
-  };
-  ```
+  <CodeSnippets path="svelte-vite-framework-options.md" />
+
+  {/* prettier-ignore-end */}
 
   The available options are:
 

@@ -160,7 +160,46 @@ export const Pair: Story = {
 };
 ```
 
-```js filename="ButtonGroup.stories.js" renderer="svelte" language="js"
+```svelte filename="ButtonGroup.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import ButtonGroup from './ButtonGroup.svelte';
+
+  //👇 Imports the Button stories
+  import * as ButtonStories from './Button.stories.svelte';
+
+  const { Story } = defineMeta({
+    component: ButtonGroup,
+  });
+</script>
+
+<Story
+  name="Primary"
+  args={{
+    buttons: [{ ...ButtonStories.Primary.args }, { ...ButtonStories.Secondary.args }],
+    orientation: 'horizontal',
+  }}
+/>
+
+<Story
+  name="Secondary"
+  args={{
+    backgroundColor: '#ff0',
+    label: '😄👍😍💯',
+   }}
+/>
+
+<Story
+  name="Tertiary"
+  args={{
+    backgroundColor:'#ff0',
+    label: '📚📕📈🤓',
+  }}
+/>
+```
+
+```js filename="ButtonGroup.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import ButtonGroup from '../ButtonGroup.svelte';
 
 //👇 Imports the Button stories
@@ -178,7 +217,46 @@ export const Pair = {
 };
 ```
 
-```ts filename="ButtonGroup.stories.ts" renderer="svelte" language="ts-4-9"
+```svelte filename="ButtonGroup.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import ButtonGroup from './ButtonGroup.svelte';
+
+  //👇 Imports the Button stories
+  import * as ButtonStories from './Button.stories.svelte';
+
+  const { Story } = defineMeta({
+    component: ButtonGroup,
+  });
+</script>
+
+<Story
+  name="Primary"
+  args={{
+    buttons: [{ ...ButtonStories.Primary.args }, { ...ButtonStories.Secondary.args }],
+    orientation: 'horizontal',
+  }}
+/>
+
+<Story
+  name="Secondary"
+  args={{
+    backgroundColor: '#ff0',
+    label: '😄👍😍💯',
+   }}
+/>
+
+<Story
+  name="Tertiary"
+  args={{
+    backgroundColor:'#ff0',
+    label: '📚📕📈🤓',
+  }}
+/>
+```
+
+```ts filename="ButtonGroup.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
 import ButtonGroup from './ButtonGroup.svelte';
@@ -201,7 +279,46 @@ export const Pair: Story = {
 };
 ```
 
-```ts filename="ButtonGroup.stories.ts" renderer="svelte" language="ts"
+```svelte filename="ButtonGroup.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import ButtonGroup from './ButtonGroup.svelte';
+
+  //👇 Imports the Button stories
+  import * as ButtonStories from './Button.stories.svelte';
+
+  const { Story } = defineMeta({
+    component: ButtonGroup,
+  });
+</script>
+
+<Story
+  name="Primary"
+  args={{
+    buttons: [{ ...ButtonStories.Primary.args }, { ...ButtonStories.Secondary.args }],
+    orientation: 'horizontal',
+  }}
+/>
+
+<Story
+  name="Secondary"
+  args={{
+    backgroundColor: '#ff0',
+    label: '😄👍😍💯',
+   }}
+/>
+
+<Story
+  name="Tertiary"
+  args={{
+    backgroundColor:'#ff0',
+    label: '📚📕📈🤓',
+  }}
+/>
+```
+
+```ts filename="ButtonGroup.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
 import ButtonGroup from './ButtonGroup.svelte';
@@ -350,4 +467,3 @@ export const Pair: Story = {
   },
 };
 ```
-

@@ -35,6 +35,75 @@ export const FireEventExample: Story = {
 };
 ```
 
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import { fireEvent, userEvent, within } from '@storybook/test';
+
+  import MyComponent  from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<!--
+  See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+  to learn more about using the canvasElement to query the DOM
+-->
+<Story
+  name="ClickExample"
+  play={async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    await userEvent.click(canvas.getByRole('button'));
+  }}
+/>
+
+<Story
+  name="FireEventExample"
+  play={async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    await fireEvent.click(canvas.getByTestId('data-testid'));
+  }}
+/>
+```
+
+```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+import { fireEvent, userEvent, within } from '@storybook/test';
+
+import MyComponent from './MyComponent.svelte';
+
+export default {
+  component: MyComponent,
+};
+
+/* See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvasElement to query the DOM
+ */
+export const ClickExample = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    await userEvent.click(canvas.getByRole('button'));
+  },
+};
+
+export const FireEventExample = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    await fireEvent.click(canvas.getByTestId('data-testid'));
+  },
+};
+```
+
 ```js filename="MyComponent.stories.js|jsx" renderer="common" language="js"
 import { fireEvent, userEvent, within } from '@storybook/test';
 
@@ -66,6 +135,80 @@ export const FireEventExample = {
 };
 ```
 
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import { fireEvent, userEvent, within } from '@storybook/test';
+
+  import MyComponent  from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<!--
+  See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+  to learn more about using the canvasElement to query the DOM
+-->
+<Story
+  name="ClickExample"
+  play={async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    await userEvent.click(canvas.getByRole('button'));
+  }}
+/>
+
+<Story
+  name="FireEventExample"
+  play={async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    await fireEvent.click(canvas.getByTestId('data-testid'));
+  }}
+/>
+```
+
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
+import type { Meta, StoryObj } from '@storybook/svelte';
+
+import { fireEvent, userEvent, within } from '@storybook/test';
+
+import MyComponent from './MyComponent.svelte';
+
+const meta = {
+  component: MyComponent,
+} satisfies Meta<typeof MyComponent>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+/* See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvasElement to query the DOM
+ */
+export const ClickExample: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    await userEvent.click(canvas.getByRole('button'));
+  },
+};
+
+export const FireEventExample: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    await fireEvent.click(canvas.getByTestId('data-testid'));
+  },
+};
+```
+
 ```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts-4-9"
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
@@ -80,6 +223,80 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
+
+/* See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvasElement to query the DOM
+ */
+export const ClickExample: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    await userEvent.click(canvas.getByRole('button'));
+  },
+};
+
+export const FireEventExample: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    await fireEvent.click(canvas.getByTestId('data-testid'));
+  },
+};
+```
+
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import { fireEvent, userEvent, within } from '@storybook/test';
+
+  import MyComponent  from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<!--
+  See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+  to learn more about using the canvasElement to query the DOM
+-->
+<Story
+  name="ClickExample"
+  play={async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    await userEvent.click(canvas.getByRole('button'));
+  }}
+/>
+
+<Story
+  name="FireEventExample"
+  play={async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    await fireEvent.click(canvas.getByTestId('data-testid'));
+  }}
+/>
+```
+
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+import type { Meta, StoryObj } from '@storybook/svelte';
+
+import { fireEvent, userEvent, within } from '@storybook/test';
+
+import MyComponent from './MyComponent.svelte';
+
+const meta: Meta<typeof MyComponent> = {
+  component: MyComponent,
+};
+
+export default meta;
+type Story = StoryObj<typeof MyComponent>;
 
 /* See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
  * to learn more about using the canvasElement to query the DOM
@@ -201,4 +418,3 @@ export const FireEventExample: Story = {
   },
 };
 ```
-

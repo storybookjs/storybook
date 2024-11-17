@@ -63,7 +63,7 @@
     "@types/node": "^22.0.0",
     "ts-loader": "^9.2.8",
     "vue-docgen-api": "^4.75.1",
-    "vue-docgen-loader": "^1.5.1",
+    "vue-docgen-loader": "^2.0.1",
     "vue-loader": "^16.0.0",
     "webpack": "5"
   },

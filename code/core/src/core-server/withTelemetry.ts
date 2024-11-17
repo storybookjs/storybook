@@ -139,7 +139,9 @@ export async function withTelemetry<T>(
   run: () => Promise<T>
 ): Promise<T | undefined> {
   const enableTelemetry = !(
-    options.cliOptions.disableTelemetry || options.cliOptions.test === true
+    options.cliOptions.disableTelemetry === true ||
+    options.cliOptions.test === true ||
+    options.cliOptions.versionUpdates === false
   );
 
   let canceled = false;

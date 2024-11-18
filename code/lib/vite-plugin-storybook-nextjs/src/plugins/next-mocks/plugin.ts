@@ -1,6 +1,7 @@
 import { createRequire } from "node:module";
 import type { Plugin } from "vite";
 import { VITEST_PLUGIN_NAME, getExecutionEnvironment } from "../../utils";
+import { getCompatibilityAliases } from "./compatibility/compatibility-map";
 
 const require = createRequire(import.meta.url);
 
@@ -40,6 +41,7 @@ export const getAlias = (env: Env) => ({
     "next/dist/compiled/@opentelemetry/api",
   ),
   "next/dynamic": getEntryPoint("dynamic", env),
+  ...getCompatibilityAliases(),
 });
 
 export const vitePluginNextMocks = () =>

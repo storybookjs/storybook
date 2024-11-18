@@ -249,7 +249,7 @@ type Story = StoryObj<typeof Button>;
 
 export const ExperimentalFeatureStory: Story = {
   /*
-   *This particular story will have these tags applied:
+   * This particular story will have these tags applied:
    * - experimental
    * - autodocs (inherited from meta)
    * - dev (inherited from meta)
@@ -281,7 +281,7 @@ type Story = StoryObj<typeof Button>;
 
 export const ExperimentalFeatureStory: Story = {
   /*
-   *This particular story will have these tags applied:
+   * This particular story will have these tags applied:
    * - experimental
    * - autodocs (inherited from meta)
    * - dev (inherited from meta)

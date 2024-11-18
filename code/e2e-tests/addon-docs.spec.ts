@@ -123,6 +123,7 @@ test.describe('addon-docs', () => {
       //   - template: https://638db567ed97c3fb3e21cc22-ulhjwkqzzj.chromatic.com/?path=/docs/addons-docs-docspage-basic--docs
       //   - real: https://638db567ed97c3fb3e21cc22-ulhjwkqzzj.chromatic.com/?path=/docs/example-button--docs
       'lit-vite',
+      'react-native-web',
     ];
     test.skip(
       new RegExp(`^${skipped.join('|')}`, 'i').test(`${templateName}`),

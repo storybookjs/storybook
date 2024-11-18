@@ -32,7 +32,7 @@ export const ExampleWithRole: Story = {
 
   import { userEvent, within } from '@storybook/test';
 
-  import MyComponent  from './MyComponent.svelte';
+  import MyComponent from './MyComponent.svelte';
 
   const { Story } = defineMeta({
     component: MyComponent,
@@ -103,7 +103,7 @@ export const ExampleWithRole = {
 
   import { userEvent, within } from '@storybook/test';
 
-  import MyComponent  from './MyComponent.svelte';
+  import MyComponent from './MyComponent.svelte';
 
   const { Story } = defineMeta({
     component: MyComponent,
@@ -185,7 +185,7 @@ export const ExampleWithRole: Story = {
 
   import { userEvent, within } from '@storybook/test';
 
-  import MyComponent  from './MyComponent.svelte';
+  import MyComponent from './MyComponent.svelte';
 
   const { Story } = defineMeta({
     component: MyComponent,
@@ -211,7 +211,7 @@ import type { Meta, StoryObj } from '@storybook/svelte';
 
 import { userEvent, within } from '@storybook/test';
 
-import { MyComponent } from './MyComponent';
+import MyComponent from './MyComponent.svelte';
 
 const meta: Meta<typeof MyComponent> = {
   component: MyComponent,

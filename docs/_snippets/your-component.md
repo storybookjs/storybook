@@ -230,7 +230,7 @@ export const FirstStory: Story = {
 ```js filename="YourComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import YourComponent from './YourComponent.svelte';
 
-//👇This default export determines where your story goes in the story list
+//👇 This default export determines where your story goes in the story list
 export default {
   component: YourComponent,
 };

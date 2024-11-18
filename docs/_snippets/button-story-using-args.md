@@ -336,7 +336,7 @@ export const Tertiary: Story = {
   args={{
     backgroundColor: '#ff0',
     label: '😄👍😍💯',
-   }}
+  }}
 />
 
 <Story
@@ -401,7 +401,7 @@ export const Tertiary = {
   args={{
     backgroundColor: '#ff0',
     label: '😄👍😍💯',
-   }}
+  }}
 />
 
 <Story
@@ -471,7 +471,7 @@ export const Tertiary: Story = {
   args={{
     backgroundColor: '#ff0',
     label: '😄👍😍💯',
-   }}
+  }}
 />
 
 <Story

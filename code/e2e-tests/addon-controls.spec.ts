@@ -4,9 +4,12 @@ import process from 'process';
 import { SbPage } from './util';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
+const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 
 test.describe('addon-controls', () => {
   test('should change component when changing controls', async ({ page }) => {
+    test.skip(templateName.includes('react-native-web'), 'React Native CSS behaves differently');
+
     await page.goto(storybookUrl);
     const sbPage = new SbPage(page, expect);
     await sbPage.waitUntilLoaded();

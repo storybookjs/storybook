@@ -31,7 +31,7 @@ export const ExperimentalFeatureStory: Story = {
   });
 </script>
 
-<!-- 👇 For this particular story, remove the inherited stable` tag and apply the `experimental` tag -->
+<!-- 👇 For this particular story, remove the inherited `stable` tag and apply the `experimental` tag -->
 <Story name="ExperimentalFeatureStory" tags={['!stable', 'experimental']} />
 ```
 
@@ -78,7 +78,7 @@ export const ExperimentalFeatureStory = {
   });
 </script>
 
-<!-- 👇 For this particular story, remove the inherited stable` tag and apply the `experimental` tag -->
+<!-- 👇 For this particular story, remove the inherited `stable` tag and apply the `experimental` tag -->
 <Story name="ExperimentalFeatureStory" tags={['!stable', 'experimental']} />
 ```
 
@@ -136,7 +136,7 @@ export const ExperimentalFeatureStory: Story = {
   });
 </script>
 
-<!-- 👇 For this particular story, remove the inherited stable` tag and apply the `experimental` tag -->
+<!-- 👇 For this particular story, remove the inherited `stable` tag and apply the `experimental` tag -->
 <Story name="ExperimentalFeatureStory" tags={['!stable', 'experimental']} />
 ```
 

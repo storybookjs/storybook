@@ -30,7 +30,7 @@ export const ExampleStory: Story = {
 
   import { userEvent, within } from '@storybook/test';
 
-  import MyComponent  from './MyComponent.svelte';
+  import MyComponent from './MyComponent.svelte';
 
   const { Story } = defineMeta({
     component: MyComponent,
@@ -101,7 +101,7 @@ export const ExampleStory = {
 
   import { userEvent, within } from '@storybook/test';
 
-  import MyComponent  from './MyComponent.svelte';
+  import MyComponent from './MyComponent.svelte';
 
   const { Story } = defineMeta({
     component: MyComponent,
@@ -178,7 +178,7 @@ export const ExampleStory: Story = {
   import { defineMeta } from '@storybook/addon-svelte-csf';
   import { userEvent, within } from '@storybook/test';
 
-  import MyComponent  from './MyComponent.svelte';
+  import MyComponent from './MyComponent.svelte';
 
   const { Story } = defineMeta({
     component: MyComponent,

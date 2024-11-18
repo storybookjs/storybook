@@ -175,26 +175,10 @@ export const Pair: Story = {
 </script>
 
 <Story
-  name="Primary"
+  name="Pair"
   args={{
     buttons: [{ ...ButtonStories.Primary.args }, { ...ButtonStories.Secondary.args }],
     orientation: 'horizontal',
-  }}
-/>
-
-<Story
-  name="Secondary"
-  args={{
-    backgroundColor: '#ff0',
-    label: '😄👍😍💯',
-   }}
-/>
-
-<Story
-  name="Tertiary"
-  args={{
-    backgroundColor:'#ff0',
-    label: '📚📕📈🤓',
   }}
 />
 ```
@@ -232,26 +216,10 @@ export const Pair = {
 </script>
 
 <Story
-  name="Primary"
+  name="Pair"
   args={{
     buttons: [{ ...ButtonStories.Primary.args }, { ...ButtonStories.Secondary.args }],
     orientation: 'horizontal',
-  }}
-/>
-
-<Story
-  name="Secondary"
-  args={{
-    backgroundColor: '#ff0',
-    label: '😄👍😍💯',
-   }}
-/>
-
-<Story
-  name="Tertiary"
-  args={{
-    backgroundColor:'#ff0',
-    label: '📚📕📈🤓',
   }}
 />
 ```
@@ -294,26 +262,10 @@ export const Pair: Story = {
 </script>
 
 <Story
-  name="Primary"
+  name="Pair"
   args={{
     buttons: [{ ...ButtonStories.Primary.args }, { ...ButtonStories.Secondary.args }],
     orientation: 'horizontal',
-  }}
-/>
-
-<Story
-  name="Secondary"
-  args={{
-    backgroundColor: '#ff0',
-    label: '😄👍😍💯',
-   }}
-/>
-
-<Story
-  name="Tertiary"
-  args={{
-    backgroundColor:'#ff0',
-    label: '📚📕📈🤓',
   }}
 />
 ```

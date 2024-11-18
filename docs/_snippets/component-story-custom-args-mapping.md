@@ -34,7 +34,7 @@ export default meta;
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import Button from './components/Button.svelte';
+  import Button from './Button.svelte';
 
   import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from './icons';
 
@@ -122,7 +122,7 @@ export default {
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import Button from './components/Button.svelte';
+  import Button from './Button.svelte';
 
   import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from './icons';
 
@@ -219,7 +219,7 @@ export default meta;
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
-  import Button from './components/Button.svelte';
+  import Button from './Button.svelte';
 
   import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from './icons';
 

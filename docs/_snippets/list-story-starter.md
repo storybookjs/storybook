@@ -118,7 +118,7 @@ export default {
   component: List,
 };
 
-//Always an empty list, not super interesting
+// Always an empty list, not super interesting
 export const Empty = {};
 ```
 

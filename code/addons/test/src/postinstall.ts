@@ -206,7 +206,7 @@ export default async function postInstall(options: PostinstallOptions) {
 
         Adding ${picocolors.bold(colors.pink(`@storybook/experimental-nextjs-vite/vite-plugin`))} so you can use it with Vitest.
 
-        More info about the plugin at: ${picocolors.cyan(`https://github.com/storybookjs/vite-plugin-storybook-nextjs`)}
+        More info about the plugin at: ${picocolors.cyan(`https://github.com/storybookjs/storybook/tree/next/code/frameworks/experimental-nextjs-vite/vite-plugin`)}
       `
     );
     try {
@@ -437,7 +437,7 @@ const getVitestPluginInfo = (framework: string) => {
     frameworkPluginImport =
       "import { storybookNextJsPlugin } from '@storybook/experimental-nextjs-vite/vite-plugin';";
     frameworkPluginDocs =
-      '// More info at: https://github.com/storybookjs/vite-plugin-storybook-nextjs';
+      '// More info at: https://github.com/storybookjs/storybook/tree/next/code/frameworks/experimental-nextjs-vite/vite-plugin';
     frameworkPluginCall = 'storybookNextJsPlugin()';
   }
 

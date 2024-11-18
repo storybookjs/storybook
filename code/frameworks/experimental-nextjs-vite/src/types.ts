@@ -37,4 +37,6 @@ export type StorybookConfig = Omit<
   keyof StorybookConfigVite | keyof StorybookConfigFramework
 > &
   StorybookConfigVite &
-  StorybookConfigFramework & {};
+  StorybookConfigFramework &
+  // TODO: check if unknown is better than {}
+  unknown;

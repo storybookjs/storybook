@@ -1,5 +1,16 @@
 {
   "extends": "../../tsconfig.json",
-  "compilerOptions": {},
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ESNext", "DOM"],
+    "module": "Preserve",
+    "jsx": "react",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "declaration": true,
+    "sourceMap": true,
+    "noEmit": true,
+    "esModuleInterop": true
+  },
   "include": ["src/**/*", "template/**/*"]
 }

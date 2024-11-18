@@ -6,9 +6,9 @@ import type { PresetProperty } from 'storybook/internal/types';
 import type { StorybookConfigVite } from '@storybook/builder-vite';
 
 import { dirname, join } from 'path';
-import vitePluginStorybookNextjs from 'vite-plugin-storybook-nextjs';
 
 import type { FrameworkOptions } from './types';
+import { storybookNextJsPlugin } from './vite-plugin';
 
 export const core: PresetProperty<'core'> = async (config, options) => {
   const framework = await options.presets.apply('framework');
@@ -38,7 +38,7 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
   const { nextConfigPath } = await options.presets.apply<FrameworkOptions>('frameworkOptions');
 
   const nextDir = nextConfigPath ? path.dirname(nextConfigPath) : undefined;
-  config.plugins.push(vitePluginStorybookNextjs({ dir: nextDir }));
+  config.plugins.push(storybookNextJsPlugin({ dir: nextDir }));
 
   return config;
 };

@@ -4092,17 +4092,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@next/env@npm:15.0.3":
+"@next/env@npm:15.0.3, @next/env@npm:^15.0.3":
   version: 15.0.3
   resolution: "@next/env@npm:15.0.3"
   checksum: 10c0/63582fed80d6a28fff102c935095da71fd57ddf6b5f5d564e85ebdefdeb93298f7f7cf7d813c75b460c6627106717ea959b4c232939e7abb97d73d8b8467d4cd
-  languageName: node
-  linkType: hard
-
-"@next/env@npm:^14.2.5":
-  version: 14.2.5
-  resolution: "@next/env@npm:14.2.5"
-  checksum: 10c0/63d8b88ac450b3c37940a9e2119a63a1074aca89908574ade6157a8aa295275dcb3ac5f69e00883fc55d0f12963b73b74e87ba32a5768a489f9609c6be57b699
   languageName: node
   linkType: hard
 
@@ -6474,15 +6467,21 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/experimental-nextjs-vite@workspace:frameworks/experimental-nextjs-vite"
   dependencies:
+    "@next/env": "npm:^15.0.3"
     "@storybook/builder-vite": "workspace:*"
     "@storybook/react": "workspace:*"
     "@storybook/test": "workspace:*"
     "@types/node": "npm:^18.0.0"
+    "@types/semver": "npm:^7.3.4"
+    image-size: "npm:^1.1.1"
+    magic-string: "npm:^0.30.11"
+    module-alias: "npm:^2.2.3"
     next: "npm:^15.0.3"
+    semver: "npm:^7.3.5"
     sharp: "npm:^0.33.3"
     styled-jsx: "npm:5.1.6"
+    ts-dedent: "npm:^2.2.0"
     typescript: "npm:^5.3.2"
-    vite-plugin-storybook-nextjs: "npm:^1.0.11"
   peerDependencies:
     "@storybook/test": "workspace:*"
     next: ^14.1.0 || ^15.0.0
@@ -6495,6 +6494,8 @@ __metadata:
       optional: true
   peerDependenciesMeta:
     typescript:
+      optional: true
+    vite:
       optional: true
   languageName: unknown
   linkType: soft
@@ -25841,7 +25842,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sharp@npm:^0.33.3, sharp@npm:^0.33.4":
+"sharp@npm:^0.33.3":
   version: 0.33.4
   resolution: "sharp@npm:0.33.4"
   dependencies:
@@ -28795,28 +28796,6 @@ __metadata:
     "@nuxt/kit":
       optional: true
   checksum: 10c0/b44c80a9a9b7677529e8674fdeaf4a9c052e2237cfb749d558898a487f481ac7d797ed2067eca93a5da8ade50bae9c289919c5aefdb26a4b5ceccc75b24b78a3
-  languageName: node
-  linkType: hard
-
-"vite-plugin-storybook-nextjs@npm:^1.0.11":
-  version: 1.0.11
-  resolution: "vite-plugin-storybook-nextjs@npm:1.0.11"
-  dependencies:
-    "@next/env": "npm:^14.2.5"
-    image-size: "npm:^1.1.1"
-    magic-string: "npm:^0.30.11"
-    module-alias: "npm:^2.2.3"
-    sharp: "npm:^0.33.4"
-    ts-dedent: "npm:^2.2.0"
-  peerDependencies:
-    "@storybook/test": ^8.3.0-alpha.3
-    next: ^14.1.0
-    storybook: ^8.3.0-alpha.3
-    vite: ^5.0.0
-  dependenciesMeta:
-    sharp:
-      optional: true
-  checksum: 10c0/9652b76c13a682b688d9a4f617b1a66263f25f395a99af8e258bedef4f3b3ce1c856ec1ff66cc0359d6aedc96adee9750fd6b0432514dd575ad7896cd1de70df
   languageName: node
   linkType: hard
 

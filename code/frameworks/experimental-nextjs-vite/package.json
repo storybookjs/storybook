@@ -21,6 +21,9 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "sideEffects": [
+    "./src/vite-plugin/polyfills/promise-with-resolvers.ts"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -33,6 +36,11 @@
       "require": "./dist/preset.js"
     },
     "./dist/preview.mjs": "./dist/preview.mjs",
+    "./dist/compatibility/draft-mode.compat": {
+      "types": "./dist/compatibility/draft-mode.compat.d.ts",
+      "import": "./dist/compatibility/draft-mode.compat.mjs",
+      "require": "./dist/compatibility/draft-mode.compat.js"
+    },
     "./cache.mock": {
       "types": "./dist/export-mocks/cache/index.d.ts",
       "import": "./dist/export-mocks/cache/index.mjs",
@@ -53,7 +61,27 @@
       "import": "./dist/export-mocks/router/index.mjs",
       "require": "./dist/export-mocks/router/index.js"
     },
-    "./vite-plugin": {
+    "./vite-plugin-mocks/browser/mocks/cache": "./dist/vite-plugin/plugins/next-mocks/alias/cache/index.mjs",
+    "./vite-plugin-mocks/browser/mocks/navigation": "./dist/vite-plugin/plugins/next-mocks/alias/navigation/index.mjs",
+    "./vite-plugin-mocks/browser/mocks/headers": "./dist/vite-plugin/plugins/next-mocks/alias/headers/index.mjs",
+    "./vite-plugin-mocks/browser/mocks/router": "./dist/vite-plugin/plugins/next-mocks/alias/router/index.mjs",
+    "./vite-plugin-mocks/browser/mocks/server-only": "./dist/vite-plugin/plugins/next-mocks/alias/rsc/server-only.mjs",
+    "./vite-plugin-mocks/browser/mocks/dynamic": "./dist/vite-plugin/plugins/next-mocks/alias/dynamic/index.mjs",
+    "./vite-plugin-mocks/browser/mocks/image": "./dist/vite-plugin/plugins/next-image/alias/next-image.mjs",
+    "./vite-plugin-mocks/browser/mocks/legacy-image": "./dist/vite-plugin/plugins/next-image/alias/next-legacy-image.mjs",
+    "./vite-plugin-mocks/browser/mocks/image-default-loader": "./dist/vite-plugin/plugins/next-image/alias/image-default-loader.js",
+    "./vite-plugin-mocks/browser/mocks/image-context": "./dist/vite-plugin/plugins/next-image/alias/image-context.mjs",
+    "./vite-plugin-mocks/node/mocks/cache": "./dist/vite-plugin/plugins/next-mocks/alias/cache/index.js",
+    "./vite-plugin-mocks/node/mocks/navigation": "./dist/vite-plugin/plugins/next-mocks/alias/navigation/index.js",
+    "./vite-plugin-mocks/node/mocks/headers": "./dist/vite-plugin/plugins/next-mocks/alias/headers/index.js",
+    "./vite-plugin-mocks/node/mocks/router": "./dist/vite-plugin/plugins/next-mocks/alias/router/index.js",
+    "./vite-plugin-mocks/node/mocks/server-only": "./dist/vite-plugin/plugins/next-mocks/alias/rsc/server-only.js",
+    "./vite-plugin-mocks/node/mocks/dynamic": "./dist/vite-plugin/plugins/next-mocks/alias/dynamic/index.js",
+    "./vite-plugin-mocks/node/mocks/image": "./dist/vite-plugin/plugins/next-image/alias/next-image.js",
+    "./vite-plugin-mocks/node/mocks/legacy-image": "./dist/vite-plugin/plugins/next-image/alias/next-legacy-image.js",
+    "./vite-plugin-mocks/node/mocks/image-default-loader": "./dist/vite-plugin/plugins/next-image/alias/image-default-loader.js",
+    "./vite-plugin-mocks/node/mocks/image-context": "./dist/vite-plugin/plugins/next-image/alias/image-context.js",
+    "./vite-plugin-mocks": {
       "types": "./dist/vite-plugin/index.d.ts",
       "import": "./dist/vite-plugin/index.mjs",
       "require": "./dist/vite-plugin/index.js"
@@ -95,11 +123,17 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
+    "@next/env": "^15.0.3",
     "@storybook/builder-vite": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/test": "workspace:*",
+    "@types/semver": "^7.3.4",
+    "image-size": "^1.1.1",
+    "magic-string": "^0.30.11",
+    "module-alias": "^2.2.3",
+    "semver": "^7.3.5",
     "styled-jsx": "5.1.6",
-    "vite-plugin-storybook-nextjs": "^1.0.11"
+    "ts-dedent": "^2.2.0"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",
@@ -116,6 +150,9 @@
   },
   "peerDependenciesMeta": {
     "typescript": {
+      "optional": true
+    },
+    "vite": {
       "optional": true
     }
   },
@@ -138,10 +175,31 @@
       "./src/export-mocks/headers/index.ts",
       "./src/export-mocks/router/index.ts",
       "./src/export-mocks/navigation/index.ts",
-      "./src/images/decorator.tsx"
+      "./src/images/decorator.tsx",
+      "./src/vite-plugin/plugins/next-image/alias/next-image.tsx",
+      "./src/vite-plugin/plugins/next-image/alias/next-legacy-image.tsx",
+      "./src/vite-plugin/plugins/next-image/alias/image-default-loader.tsx",
+      "./src/vite-plugin/plugins/next-image/alias/image-context.tsx",
+      "./src/vite-plugin/plugins/next-mocks/alias/headers/cookies.ts",
+      "./src/vite-plugin/plugins/next-mocks/alias/headers/headers.ts",
+      "./src/vite-plugin/plugins/next-mocks/alias/headers/index.ts",
+      "./src/vite-plugin/plugins/next-mocks/alias/cache/index.ts",
+      "./src/vite-plugin/plugins/next-mocks/alias/navigation/index.ts",
+      "./src/vite-plugin/plugins/next-mocks/alias/router/index.ts",
+      "./src/vite-plugin/plugins/next-mocks/alias/rsc/server-only.ts",
+      "./src/vite-plugin/plugins/next-mocks/alias/dynamic/index.tsx",
+      "./src/vite-plugin/mocks/storybook.global.ts"
     ],
     "externals": [
-      "sb-original/image-context"
+      "sb-original/image-context",
+      "sb-original/default-loader",
+      "storybook",
+      "@storybook/test-runner",
+      "@storybook/nextjs",
+      "@storybook/test",
+      "react",
+      "sharp",
+      "next"
     ],
     "platform": "node"
   },

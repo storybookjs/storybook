@@ -88,7 +88,19 @@ const meta: Meta<typeof Button> = {
 export default meta;
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+  });
+</script>
+```
+
+```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import Button from './Button.svelte';
 
 export default {
@@ -96,7 +108,19 @@ export default {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+  });
+</script>
+```
+
+```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
 import type { Meta } from '@storybook/svelte';
 
 import Button from './Button.svelte';
@@ -108,7 +132,19 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+  });
+</script>
+```
+
+```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
 import type { Meta } from '@storybook/svelte';
 
 import Button from './Button.svelte';
@@ -168,4 +204,3 @@ const meta: Meta = {
 
 export default meta;
 ```
-

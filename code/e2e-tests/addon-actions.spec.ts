@@ -12,6 +12,10 @@ test.describe('addon-actions', () => {
       templateName.includes('svelte') && templateName.includes('prerelease'),
       'Svelte 5 prerelase does not support automatic actions with our current example components yet'
     );
+    test.skip(
+      templateName.includes('react-native-web'),
+      'React Native uses onPress rather than onClick'
+    );
     await page.goto(storybookUrl);
     const sbPage = new SbPage(page, expect);
     sbPage.waitUntilLoaded();

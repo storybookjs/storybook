@@ -1,3 +1,4 @@
+import { Meta } from '@storybook/react'
 import { instrument } from '@storybook/instrumenter'
 import type { StoryAnnotations } from 'storybook/internal/types';
 

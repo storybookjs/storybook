@@ -19,11 +19,21 @@ The `args` object can be defined at the [story](#story-args), [component](#compo
 
 ## Story args
 
-To define the args of a single story, use the `args` CSF story key:
+<IfRenderer renderer="svelte">
+
+  To define the args of a single story, use the `args` property in the `Story` component if you are using Svelte CSF with the native templating syntax, or use the `args` key on a CSF story file:
+
+</IfRenderer>
+
+<If notRenderer="svelte">
+
+  To define the args of a single story, use the `args` CSF story key:
+
+</If>
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story-with-args.md" usesCsf3 csf2Path="writing-stories/args#snippet-button-story-with-args" />
+<CodeSnippets path="button-story-with-args.md" />
 
 {/* prettier-ignore-end */}
 
@@ -31,7 +41,7 @@ These args will only apply to the story for which they are attached, although yo
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story-primary-long-name.md" usesCsf3 csf2Path="writing-stories/args#snippet-button-story-primary-long-name" />
+<CodeSnippets path="button-story-primary-long-name.md" />
 
 {/* prettier-ignore-end */}
 
@@ -39,7 +49,17 @@ In the above example, we use the [object spread](https://developer.mozilla.org/e
 
 ## Component args
 
-You can also define args at the component level; they will apply to all the component's stories unless you overwrite them. To do so, use the `args` key on the `default` CSF export:
+<IfRenderer renderer="svelte">
+
+  You can also define args at the component level; they will apply to all the component's stories unless you overwrite them. To do so, use the `args` property in the `defineMeta` function of a Svelte CSF story file or via the `args` key on the default CSF export:
+
+</IfRenderer>
+
+<If notRenderer="svelte">
+
+  You can also define args at the component level; they will apply to all the component's stories unless you overwrite them. To do so, use the `args` key on the `default` CSF export:
+
+</If>
 
 {/* prettier-ignore-start */}
 
@@ -49,7 +69,7 @@ You can also define args at the component level; they will apply to all the comp
 
 ## Global args
 
-You can also define args at the global level; they will apply to every component's stories unless you overwrite them. To do so, define the `args` property in the default export of `preview.js`:
+You can also define args at the global level; they will apply to every component's stories unless you overwrite them. To do so, define the `args` property in the default export of `preview.js|ts`:
 
 {/* prettier-ignore-start */}
 
@@ -67,7 +87,7 @@ You can separate the arguments to a story to compose in other stories. Here's ho
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story-primary-composition.md" usesCsf3 csf2Path="writing-stories/args#snippet-button-story-primary-composition" />
+<CodeSnippets path="button-story-primary-composition.md" />
 
 {/* prettier-ignore-end */}
 
@@ -79,23 +99,19 @@ Args are useful when writing stories for composite components that are assembled
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="page-story.md" usesCsf3 csf2Path="writing-stories/args#snippet-page-story" />
+<CodeSnippets path="page-story.md" />
 
 {/* prettier-ignore-end */}
 
-<IfRenderer renderer={[ 'angular', 'ember', 'html', 'preact', 'qwik', 'react', 'solid', 'vue', 'web-components' ]}>
-  {/* Uncomment once frameworks that support custom templates are enabled to prevent misinformation about the example */}
+## Args can modify any aspect of your component
 
-  ## Args can modify any aspect of your component
+You can use args in your stories to configure the component's appearance, similar to what you would do in an application. For example, here's how you could use a `footer` arg to populate a child component:
 
-  You can use args in your stories to configure the component's appearance, similar to what you would do in an application. For example, here's how you could use a `footer` arg to populate a child component:
+{/* prettier-ignore-start */}
 
-  {/* prettier-ignore-start */}
+<CodeSnippets path="page-story-slots.md" />
 
-  <CodeSnippets path="page-story-slots.md" usesCsf3 csf2Path="writing-stories/args#snippet-page-story-slots" />
-
-  {/* prettier-ignore-end */}
-</IfRenderer>
+{/* prettier-ignore-end */}
 
 ## Setting args through the URL
 

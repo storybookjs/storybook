@@ -39,6 +39,7 @@
     "./browser/mocks/legacy-image": "./dist/plugins/next-image/alias/next-legacy-image.js",
     "./browser/mocks/image-default-loader": "./dist/plugins/next-image/alias/image-default-loader.js",
     "./browser/mocks/image-context": "./dist/plugins/next-image/alias/image-context.js",
+    "./browser/mocks/draft-mode.compat": "./dist/plugins/next-mocks/compatibility/draft-mode.compat.js",
     "./node/mocks/cache": "./dist/plugins/next-mocks/alias/cache/index.cjs",
     "./node/mocks/navigation": "./dist/plugins/next-mocks/alias/navigation/index.cjs",
     "./node/mocks/headers": "./dist/plugins/next-mocks/alias/headers/index.cjs",
@@ -48,7 +49,8 @@
     "./node/mocks/image": "./dist/plugins/next-image/alias/next-image.cjs",
     "./node/mocks/legacy-image": "./dist/plugins/next-image/alias/next-legacy-image.cjs",
     "./node/mocks/image-default-loader": "./dist/plugins/next-image/alias/image-default-loader.cjs",
-    "./node/mocks/image-context": "./dist/plugins/next-image/alias/image-context.cjs"
+    "./node/mocks/image-context": "./dist/plugins/next-image/alias/image-context.cjs",
+    "./node/mocks/draft-mode.compat": "./dist/plugins/next-mocks/compatibility/draft-mode.compat.cjs"
   },
   "scripts": {
     "prepublishOnly": "pnpm build",
@@ -60,7 +62,7 @@
   },
   "peerDependencies": {
     "@storybook/test": "^8.3.0",
-    "next": "^14.1.0",
+    "next": "^14.1.0 || ^15.0.0",
     "storybook": "^8.3.0",
     "vite": "^5.0.0"
   },
@@ -69,11 +71,13 @@
     "@storybook/test": "^8.3.0",
     "@types/node": "^18",
     "@types/react": "^18",
+    "@types/semver": "^7.5.8",
     "auto": "^11.2.0",
     "lefthook": "^1.6.16",
-    "next": "^14.2.5",
-    "react": "^18",
+    "next": "^15.0.3",
+    "react": "19.0.0-rc-66855b96-20241106",
     "rollup": "^4.18.0",
+    "semver": "^7.6.3",
     "sharp": "^0.33.4",
     "storybook": "^8.3.0",
     "tsup": "^8.1.0",
@@ -83,7 +87,7 @@
   },
   "packageManager": "pnpm@9.4.0",
   "dependencies": {
-    "@next/env": "^14.2.5",
+    "@next/env": "^15.0.3",
     "image-size": "^1.1.1",
     "magic-string": "^0.30.11",
     "module-alias": "^2.2.3",

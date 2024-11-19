@@ -20,3 +20,14 @@ export const { step: runStep } = instrument(
 export const parameters = {
   throwPlayFunctionExceptions: false,
 };
+
+export const initialGlobals = {
+  interactionsDemoMode: null as any,
+};
+
+export const beforeEach = () => {
+  return () => {
+    // remove demo mode cursor
+    document.getElementById('sb-demo-cursor')?.remove();
+  };
+};

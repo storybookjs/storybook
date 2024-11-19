@@ -118,5 +118,7 @@ export interface UserEvent extends _UserEvent {}
 
 export const { userEvent }: { userEvent: UserEvent } = instrument(
   { userEvent: _userEvent },
-  { intercept: true }
+  {
+    intercept: (method) => method !== 'setup',
+  }
 );

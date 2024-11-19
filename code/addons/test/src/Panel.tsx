@@ -11,6 +11,7 @@ import {
 import {
   useAddonState,
   useChannel,
+  useGlobals,
   useParameter,
   useStorybookState,
 } from 'storybook/internal/manager-api';
@@ -19,7 +20,7 @@ import { global } from '@storybook/global';
 import { type Call, CallStates, EVENTS, type LogItem } from '@storybook/instrumenter';
 import type { API_StatusValue } from '@storybook/types';
 
-import { InteractionsPanel } from './components/InteractionsPanel';
+import { type Controls, InteractionsPanel } from './components/InteractionsPanel';
 import { ADDON_ID, TEST_PROVIDER_ID } from './constants';
 
 interface Interaction extends Call {
@@ -97,6 +98,8 @@ export const getInteractions = ({
 
 export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId }) {
   const { status: storyStatuses } = useStorybookState();
+
+  const [globals, updateGlobals] = useGlobals();
 
   // shared state
   const [addonState, set] = useAddonState(ADDON_ID, {
@@ -226,9 +229,9 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
         interactionsCount: list.filter(({ method }) => method !== 'step').length,
       };
     });
-  }, [collapsed]);
+  }, [collapsed, set]);
 
-  const controls = useMemo(
+  const controls: Controls = useMemo(
     () => ({
       start: () => emit(EVENTS.START, { storyId }),
       back: () => emit(EVENTS.BACK, { storyId }),
@@ -238,8 +241,14 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
       rerun: () => {
         emit(FORCE_REMOUNT, { storyId });
       },
+      toggleDemoMode: () => {
+        updateGlobals({
+          ...globals,
+          interactionsDemoMode: globals.interactionsDemoMode === true ? null : true,
+        });
+      },
     }),
-    [storyId]
+    [storyId, globals, updateGlobals, emit]
   );
 
   const storyFilePath = useParameter('fileName', '');
@@ -287,6 +296,7 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
         caughtException={caughtException}
         unhandledErrors={unhandledErrors}
         isPlaying={isPlaying}
+        isDemoMode={globals.interactionsDemoMode}
         pausedAt={pausedAt}
         endRef={endRef}
         onScrollToEnd={scrollTarget && scrollToTarget}

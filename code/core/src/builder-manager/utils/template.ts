@@ -46,6 +46,7 @@ export const renderHTML = async (
     files: { js: jsFiles, css: cssFiles },
     favicon: await favicon,
     globals: {
+      STORYBOOK_ENV: 'true',
       FEATURES: JSON.stringify(await features, null, 2),
       REFS: JSON.stringify(await refs, null, 2),
       LOGLEVEL: JSON.stringify(await logLevel, null, 2),

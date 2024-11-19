@@ -6,6 +6,7 @@ import { instrument } from '@storybook/instrumenter';
 
 import * as chai from 'chai';
 
+import { projectCursorAt } from './demo-mode';
 import { expect as rawExpect } from './expect';
 import {
   clearAllMocks,
@@ -15,7 +16,7 @@ import {
   resetAllMocks,
   restoreAllMocks,
 } from './spy';
-import { type queries, within } from './testing-library';
+import { type queries, userEvent, within } from './testing-library';
 
 export * from './spy';
 
@@ -24,8 +25,7 @@ type Queries = BoundFunctions<typeof queries>;
 declare module '@storybook/csf' {
   interface Canvas extends Queries {}
   interface StoryContext {
-    // TODO enable this in a later PR, once we have time to QA this properly
-    //   userEvent: ReturnType<typeof userEvent.setup>;
+    userEvent: ReturnType<typeof userEvent.setup>;
   }
 }
 
@@ -119,8 +119,55 @@ const nameSpiesAndWrapActionsInSpies: LoaderFunction = ({ initialArgs }) => {
 const enhanceContext: LoaderFunction = (context) => {
   if (globalThis.HTMLElement && context.canvasElement instanceof globalThis.HTMLElement) {
     context.canvas = within(context.canvasElement);
-    // TODO enable this in a later PR, once we have time to QA this properly
-    // context.userEvent = userEvent.setup();
+    if (context.globals.interactionsDemoMode) {
+      const user = userEvent.setup();
+      const demoModeOptions = {
+        cursorStyle: context.parameters.test?.cursorStyle,
+        delay: context.parameters.test?.demoModeDelay,
+      };
+
+      context.userEvent = {
+        ...user,
+        type: async (...args) => {
+          const [target, text, options] = args;
+          const userSession = userEvent.setup({
+            // make the typing take .5 seconds
+            delay: Math.floor(Math.max(500 / text.length, 0)),
+          });
+          // QUESTION: Should we project the cursor on type?
+          // If users to userEvent.click + userEvent.type then it's too much
+          // await projectCursorAt(target, demoModeOptions);
+          return userSession.type(target, text, options);
+        },
+        click: async (target) => {
+          await projectCursorAt(target, demoModeOptions);
+          return user.click(target);
+        },
+        pointer: async (options) => {
+          // For pointer events it's really tricky because the API is super flexible
+          // so we try to guess the target in the safest way possible
+          if (typeof options === 'object') {
+            let target;
+            if ('target' in options) {
+              target = options.target;
+            } else if (Array.isArray(options)) {
+              target =
+                options.find(
+                  (option): option is { target: any } =>
+                    typeof option === 'object' && 'target' in option
+                )?.target ?? null;
+            }
+
+            if (target) {
+              await projectCursorAt(target, demoModeOptions);
+            }
+          }
+          return user.pointer(options);
+        },
+      };
+    } else {
+      context.userEvent = userEvent.setup();
+    }
   }
 };
 

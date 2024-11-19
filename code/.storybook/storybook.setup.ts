@@ -15,9 +15,7 @@ import * as projectAnnotations from './preview';
 vi.spyOn(console, 'warn').mockImplementation((...args) => console.log(...args));
 
 const annotations = setProjectAnnotations([
-  // @ts-expect-error check type errors later
   projectAnnotations,
-  // @ts-expect-error check type errors later
   componentAnnotations,
   coreAnnotations,
   testAnnotations,
@@ -29,7 +27,13 @@ const annotations = setProjectAnnotations([
       if (globalThis.__vitest_browser__) {
         const vitest = await import('@vitest/browser/context');
         const { userEvent: browserEvent } = vitest;
-        context.userEvent = browserEvent.setup();
+        // @ts-expect-error check type errors later
+        context.userEvent = {
+          // we add storybook user event here as browserEvent is limited
+          // and does not have a few methods like pointer so we fallback to Storybook's userEvent
+          ...storybookEvent.setup(),
+          ...browserEvent.setup(),
+        };
         context.expect = vitestExpect;
       } else {
         context.userEvent = storybookEvent.setup();

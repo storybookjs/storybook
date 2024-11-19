@@ -41,7 +41,7 @@ export const getAlias = (env: Env) => ({
     "next/dist/compiled/@opentelemetry/api",
   ),
   "next/dynamic": getEntryPoint("dynamic", env),
-  ...getCompatibilityAliases(),
+  ...getCompatibilityAliases(env),
 });
 
 export const vitePluginNextMocks = () =>

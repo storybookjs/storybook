@@ -15,17 +15,15 @@
     "inspect": "serve .storybook/.vite-inspect"
   },
   "dependencies": {
-    "next": "14.2.5",
-    "react": "^18",
-    "react-dom": "^18",
+    "next": "^15.0.3",
+    "react": "19.0.0-rc-66855b96-20241106",
+    "react-dom": "19.0.0-rc-66855b96-20241106",
     "styled-jsx": "^5.1.6"
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^3.2.2",
     "@storybook/addon-actions": "0.0.0-pr-29640-sha-3521df0d",
     "@storybook/addon-essentials": "0.0.0-pr-29640-sha-3521df0d",
-    "@storybook/addon-links": "0.0.0-pr-29640-sha-3521df0d",
-    "@storybook/addon-onboarding": "0.0.0-pr-29640-sha-3521df0d",
     "@storybook/addon-toolbars": "0.0.0-pr-29640-sha-3521df0d",
     "@storybook/blocks": "0.0.0-pr-29640-sha-3521df0d",
     "@storybook/experimental-addon-test": "0.0.0-pr-29640-sha-3521df0d",
@@ -37,8 +35,8 @@
     "@testing-library/jest-dom": "^6.4.6",
     "@testing-library/react": "^16.0.0",
     "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
     "@vitest/browser": "^2.1.4",
     "autoprefixer": "^10.4.19",
     "bootstrap": "^5.3.3",

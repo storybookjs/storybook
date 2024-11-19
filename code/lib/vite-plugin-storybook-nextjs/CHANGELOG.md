@@ -1,3 +1,15 @@
+# v1.1.0 (Tue Nov 19 2024)
+
+#### 🚀 Enhancement
+
+- feat: Add Next.js 15 support [#27](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/27) ([@yannbf](https://github.com/yannbf))
+
+#### Authors: 1
+
+- Yann Braga ([@yannbf](https://github.com/yannbf))
+
+---
+
 # v1.0.13 (Tue Nov 05 2024)
 
 #### 🐛 Bug Fix

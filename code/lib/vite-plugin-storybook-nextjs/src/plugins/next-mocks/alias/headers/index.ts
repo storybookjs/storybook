@@ -8,7 +8,7 @@ export { headers } from "./headers";
 export { cookies } from "./cookies";
 
 // re-exports of the actual module
-export * from "next/dist/server/request/headers";
+export { UnsafeUnwrappedHeaders } from "next/dist/server/request/headers";
 
 // passthrough mocks - keep original implementation but allow for spying
 const draftMode: Mock<() => ReturnType<typeof originalDraftMode>> = fn(

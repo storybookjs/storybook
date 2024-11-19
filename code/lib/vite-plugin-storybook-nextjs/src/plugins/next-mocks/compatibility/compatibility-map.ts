@@ -28,10 +28,12 @@ export const getCompatibilityAliases = (env: Env) => {
   const version = getNextjsVersion();
   const result: Record<string, string> = {};
 
+  const compatMap = mapping(env);
+
   // biome-ignore lint/complexity/noForEach: <explanation>
-  Object.keys(mapping).forEach((key) => {
+  Object.keys(compatMap).forEach((key) => {
     if (semver.intersects(version, key)) {
-      Object.assign(result, mapping(env)[key]);
+      Object.assign(result, compatMap[key]);
     }
   });
 

@@ -39,7 +39,7 @@
     "./browser/mocks/legacy-image": "./dist/plugins/next-image/alias/next-legacy-image.js",
     "./browser/mocks/image-default-loader": "./dist/plugins/next-image/alias/image-default-loader.js",
     "./browser/mocks/image-context": "./dist/plugins/next-image/alias/image-context.js",
-    "./browser/mocks/draft-mode": "./dist/plugins/next-mocks/compatibility/draft-mode.compat.js",
+    "./browser/mocks/draft-mode.compat": "./dist/plugins/next-mocks/compatibility/draft-mode.compat.js",
     "./node/mocks/cache": "./dist/plugins/next-mocks/alias/cache/index.cjs",
     "./node/mocks/navigation": "./dist/plugins/next-mocks/alias/navigation/index.cjs",
     "./node/mocks/headers": "./dist/plugins/next-mocks/alias/headers/index.cjs",
@@ -50,7 +50,7 @@
     "./node/mocks/legacy-image": "./dist/plugins/next-image/alias/next-legacy-image.cjs",
     "./node/mocks/image-default-loader": "./dist/plugins/next-image/alias/image-default-loader.cjs",
     "./node/mocks/image-context": "./dist/plugins/next-image/alias/image-context.cjs",
-    "./node/mocks/draft-mode": "./dist/plugins/next-mocks/compatibility/draft-mode.compat.cjs"
+    "./node/mocks/draft-mode.compat": "./dist/plugins/next-mocks/compatibility/draft-mode.compat.cjs"
   },
   "scripts": {
     "prepublishOnly": "pnpm build",

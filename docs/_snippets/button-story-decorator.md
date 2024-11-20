@@ -159,7 +159,27 @@ export const Primary: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+  import MarginDecorator from './MarginDecorator.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+  });
+</script>
+
+<Story
+  name="Primary"
+  decorators={[
+    () => MarginDecorator
+  ]}
+/>
+```
+
+```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import Button from './Button.svelte';
 import MarginDecorator from './MarginDecorator.svelte';
 
@@ -172,7 +192,27 @@ export const Primary = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+  import MarginDecorator from './MarginDecorator.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+  });
+</script>
+
+<Story
+  name="Primary"
+  decorators={[
+    () => MarginDecorator
+  ]}
+/>
+```
+
+```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
 import { Meta, StoryObj } from '@storybook/svelte';
 
 import Button from './Button.svelte';
@@ -190,7 +230,27 @@ export const Primary: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+  import MarginDecorator from './MarginDecorator.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+  });
+</script>
+
+<Story
+  name="Primary"
+  decorators={[
+    () => MarginDecorator
+  ]}
+/>
+```
+
+```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
 import { Meta, StoryObj } from '@storybook/svelte';
 
 import Button from './Button.svelte';
@@ -307,4 +367,3 @@ export const Primary: Story = {
   decorators: [(story) => html`<div style="margin: 3em">${story()}</div>`],
 };
 ```
-

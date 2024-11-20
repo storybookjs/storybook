@@ -244,12 +244,7 @@ export async function baseGenerator(
     ...extraAddonsToInstall,
   ].filter(Boolean);
 
-  // TODO: migrate template stories in solid and qwik to use @storybook/test
-  if (['qwik'].includes(rendererId)) {
-    addonPackages.push('@storybook/testing-library');
-  } else {
-    addonPackages.push('@storybook/test');
-  }
+  addonPackages.push('@storybook/test');
 
   if (hasInteractiveStories(rendererId)) {
     addons.push('@storybook/addon-interactions');

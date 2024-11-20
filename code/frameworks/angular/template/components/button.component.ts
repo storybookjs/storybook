@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 
 @Component({
+  standalone: false,
   // Needs to be a different name to the CLI template button
   selector: 'storybook-framework-button',
   template: ` <button

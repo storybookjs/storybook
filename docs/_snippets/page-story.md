@@ -154,7 +154,23 @@ export const LoggedIn: Story = {
 };
 ```
 
-```js filename="Page.stories.js" renderer="svelte" language="js"
+```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Page from './Page.svelte';
+  //👇 Imports all Header stories
+  import * as HeaderStories from './Header.stories.svelte';
+
+  const { Story } = defineMeta({
+    component: Page,
+  });
+</script>
+
+<Story name="LoggedIn" args={{ ...HeaderStories.LoggedIn.args }} />
+```
+
+```js filename="Page.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import Page from './Page.svelte';
 
 //👇 Imports all Header stories
@@ -171,7 +187,23 @@ export const LoggedIn = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="svelte" language="ts-4-9"
+```svelte filename="Page.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Page from './Page.svelte';
+  //👇 Imports all Header stories
+  import * as HeaderStories from './Header.stories.svelte';
+
+  const { Story } = defineMeta({
+    component: Page,
+  });
+</script>
+
+<Story name="LoggedIn" args={{ ...HeaderStories.LoggedIn.args }} />
+```
+
+```ts filename="Page.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
 import Page from './Page.svelte';
@@ -193,7 +225,23 @@ export const LoggedIn: Story = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="svelte" language="ts"
+```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Page from './Page.svelte';
+  //👇 Imports all Header stories
+  import * as HeaderStories from './Header.stories.svelte';
+
+  const { Story } = defineMeta({
+    component: Page,
+  });
+</script>
+
+<Story name="LoggedIn" args={{ ...HeaderStories.LoggedIn.args }} />
+```
+
+```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
 import Page from './Page.svelte';
@@ -346,4 +394,3 @@ export const LoggedIn: Story = {
   },
 };
 ```
-

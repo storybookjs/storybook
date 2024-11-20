@@ -1,6 +1,7 @@
 import { Component, Input, ChangeDetectionStrategy, HostBinding } from '@angular/core';
 
 @Component({
+  standalone: false,
   selector: 'storybook-on-push-box',
   template: ` Word of the day: {{ word }} `,
   styles: [

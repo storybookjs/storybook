@@ -23,6 +23,43 @@ export const Primary: Story = {
 };
 ```
 
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+  });
+</script>
+
+<!-- 👇 Story-level parameters-->
+<Story
+  name="OnDark"
+  parameters={{
+    backgrounds: { default: 'dark' }
+  }}
+/>
+```
+
+```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+import Button from './Button.svelte';
+
+export default {
+  component: Button,
+};
+
+export const OnDark = {
+  // 👇 Story-level parameters
+  parameters: {
+    backgrounds: {
+      default: 'dark',
+    },
+  },
+};
+```
+
 ```js filename="Button.stories.js|jsx" renderer="common" language="js"
 import { Button } from './Button';
 
@@ -31,6 +68,48 @@ export default {
 };
 
 export const OnDark = {
+  // 👇 Story-level parameters
+  parameters: {
+    backgrounds: {
+      default: 'dark',
+    },
+  },
+};
+```
+
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+  });
+</script>
+
+<!-- 👇 Story-level parameters-->
+<Story
+  name="OnDark"
+  parameters={{
+    backgrounds: { default: 'dark' }
+  }}
+/>
+```
+
+```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
+import type { Meta, StoryObj } from '@storybook/svelte';
+
+import Button from './Button.svelte';
+
+const meta = {
+  component: Button,
+} satisfies Meta<typeof Button>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const OnDark: Story = {
   // 👇 Story-level parameters
   parameters: {
     backgrounds: {
@@ -49,9 +128,51 @@ import { Button } from './Button';
 const meta = {
   component: Button,
 } satisfies Meta<typeof Button>;
-export default meta;
 
-type Story = StoryObj<typeof Meta>;
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const OnDark: Story = {
+  // 👇 Story-level parameters
+  parameters: {
+    backgrounds: {
+      default: 'dark',
+    },
+  },
+};
+```
+
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+  });
+</script>
+
+<!-- 👇 Story-level parameters-->
+<Story
+  name="OnDark"
+  parameters={{
+    backgrounds: { default: 'dark' }
+  }}
+/>
+```
+
+```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+import type { Meta, StoryObj } from '@storybook/svelte';
+
+import Button from './Button.svelte';
+
+const meta: Meta<typeof Button> = {
+  component: Button,
+};
+
+export default meta;
+type Story = StoryObj<typeof Button>;
 
 export const OnDark: Story = {
   // 👇 Story-level parameters
@@ -72,8 +193,8 @@ import { Button } from './Button';
 const meta: Meta<typeof Button> = {
   component: Button,
 };
-export default meta;
 
+export default meta;
 type Story = StoryObj<typeof Button>;
 
 export const OnDark: Story = {
@@ -134,4 +255,3 @@ export const Primary: Story = {
   },
 };
 ```
-

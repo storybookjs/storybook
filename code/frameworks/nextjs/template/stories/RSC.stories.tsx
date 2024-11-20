@@ -28,7 +28,7 @@ export const DisableRSC: Story = {
 };
 
 export const Errored: Story = {
-  tags: ['!test'],
+  tags: ['!test', '!vitest'],
   parameters: {
     chromatic: { disable: true },
   },

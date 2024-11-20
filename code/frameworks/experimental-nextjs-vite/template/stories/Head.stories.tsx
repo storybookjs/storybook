@@ -33,8 +33,8 @@ export const Default: Story = {
   play: async () => {
     await waitFor(() => expect(document.title).toEqual('Next.js Head Title'));
     await expect(document.querySelectorAll('meta[property="og:title"]')).toHaveLength(1);
-    await expect((document.querySelector('meta[property="og:title"]') as any).content).toEqual(
-      'My new title'
-    );
+    await expect(
+      (document.querySelector('meta[property="og:title"]') as HTMLMetaElement)?.content
+    ).toEqual('My new title');
   },
 };

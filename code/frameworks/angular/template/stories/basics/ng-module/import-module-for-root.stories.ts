@@ -28,8 +28,6 @@ const meta: Meta<ChipsGroupComponent> = {
     removeChipClick: { action: 'Remove chip' },
     removeAllChipsClick: { action: 'Remove all chips clicked' },
   },
-  tags: ['!test', '!vitest'],
-  parameters: { chromatic: { disable: true } },
 };
 
 export default meta;

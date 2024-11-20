@@ -1,1 +1,1 @@
-{"version":"8.5.0-alpha.4","info":{"plain":"- Next.js: Add support for Next 15 - [#29587](https://github.com/storybookjs/storybook/pull/29587), thanks @yannbf!\n- UI: Add Yarn to About Section - [#29225](https://github.com/storybookjs/storybook/pull/29225), thanks @grantwforsythe!"}}
+{"version":"8.5.0-alpha.8","info":{"plain":"- UI: Sidebar context menu addon API - [#29557](https://github.com/storybookjs/storybook/pull/29557), thanks @ndelangen!"}}

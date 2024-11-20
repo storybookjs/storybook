@@ -207,56 +207,67 @@ export const FirstStory: Story = {
 };
 ```
 
-```js filename="YourComponent.stories.js" renderer="svelte" language="js"
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import YourComponent from './YourComponent.svelte';
+
+  //👇 This export determines where your story goes in the story list
+  const { Story } = defineMeta({
+    component: YourComponent,
+  });
+</script>
+
+<Story
+  name="FirstStory"
+  args={{
+    /*👇 The args you need here will depend on your component */
+  }}
+/>
+```
+
+```js filename="YourComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import YourComponent from './YourComponent.svelte';
 
-//👇This default export determines where your story goes in the story list
+//👇 This default export determines where your story goes in the story list
 export default {
   component: YourComponent,
 };
 
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
 export const FirstStory = {
-  render: (args) => ({
-    Component: YourComponent,
-    props: args,
-  }),
   args: {
     //👇 The args you need here will depend on your component
   },
 };
 ```
 
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* YourComponent.stories.svelte */}
-
-<script>
-  import { Meta, Template, Story } from '@storybook/addon-svelte-csf';
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
 
   import YourComponent from './YourComponent.svelte';
+
+  //👇 This export determines where your story goes in the story list
+  const { Story } = defineMeta({
+    component: YourComponent,
+  });
 </script>
 
-{/*👇 The title determines where your story goes in the story list */}
-<Meta title="YourComponent" component={YourComponent} argTypes={{ /* Customize your args here
-depending on your component */ }} />
-
-<template let:args>
-  <button {...args} />
-</template>
-
-<Story name="FirstStory" args={{ /* The args you need here will depend on your component */ }} />
+<Story
+  name="FirstStory"
+  args={{
+    /*👇 The args you need here will depend on your component */
+  }}
+/>
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts-4-9"
+```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
 import YourComponent from './YourComponent.svelte';
 
-//👇This default export determines where your story goes in the story list
+//👇 This default export determines where your story goes in the story list
 const meta = {
   component: YourComponent,
 } satisfies Meta<typeof YourComponent>;
@@ -271,12 +282,32 @@ export const FirstStory: Story = {
 };
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts"
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import YourComponent from './YourComponent.svelte';
+
+  //👇 This export determines where your story goes in the story list
+  const { Story } = defineMeta({
+    component: YourComponent,
+  });
+</script>
+
+<Story
+  name="FirstStory"
+  args={{
+    /*👇 The args you need here will depend on your component */
+  }}
+/>
+```
+
+```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
 import YourComponent from './YourComponent.svelte';
 
-//👇This default export determines where your story goes in the story list
+//👇 This default export determines where your story goes in the story list
 const meta: Meta<typeof YourComponent> = {
   component: YourComponent,
 };
@@ -412,4 +443,3 @@ export const FirstStory: Story = {
   },
 };
 ```
-

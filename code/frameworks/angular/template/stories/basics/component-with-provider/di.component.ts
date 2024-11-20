@@ -4,6 +4,7 @@ import { stringify } from 'telejson';
 export const TEST_TOKEN = new InjectionToken<string>('test');
 
 @Component({
+  standalone: false,
   selector: 'storybook-di-component',
   templateUrl: './di.component.html',
   providers: [{ provide: TEST_TOKEN, useValue: 123 }],

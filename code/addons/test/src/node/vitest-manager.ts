@@ -58,6 +58,7 @@ export class VitestManager {
     if (!this.vitest) {
       await this.startVitest();
     }
+    this.resetTestNamePattern();
 
     const storybookTests = await this.getStorybookTestSpecs();
     for (const storybookTest of storybookTests) {
@@ -87,6 +88,7 @@ export class VitestManager {
     if (!this.vitest) {
       await this.startVitest();
     }
+    this.resetTestNamePattern();
 
     // This list contains all the test files (story files) that need to be run
     // based on the test files that are passed in the tests array
@@ -95,6 +97,8 @@ export class VitestManager {
     const testList: TestSpecification[] = [];
 
     const storybookTests = await this.getStorybookTestSpecs();
+
+    const filteredStoryNames: string[] = [];
 
     for (const storybookTest of storybookTests) {
       const match = testPayload.find((test) => {
@@ -107,12 +111,29 @@ export class VitestManager {
           this.updateLastChanged(storybookTest.moduleId);
         }
 
+        if (match.stories?.length) {
+          filteredStoryNames.push(...match.stories.map((story) => story.name));
+        }
         testList.push(storybookTest);
       }
     }
 
     await this.cancelCurrentRun();
+
+    if (filteredStoryNames.length > 0) {
+      // temporarily set the test name pattern to only run the selected stories
+      // converting a list of story names to a single regex pattern
+      // ie. ['My Story', 'Other Story'] => /^(My Story|Other Story)$/
+      const testNamePattern = new RegExp(
+        `^(${filteredStoryNames
+          .map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+          .join('|')})$`
+      );
+      this.vitest!.configOverride.testNamePattern = testNamePattern;
+    }
+
     await this.vitest!.runFiles(testList, true);
+    this.resetTestNamePattern();
   }
 
   async cancelCurrentRun() {
@@ -173,6 +194,7 @@ export class VitestManager {
     if (!this.vitest) {
       return;
     }
+    this.resetTestNamePattern();
 
     const globTestFiles = await this.vitest.globTestSpecs();
     const testGraphs = await Promise.all(
@@ -219,11 +241,18 @@ export class VitestManager {
   }
 
   async setupWatchers() {
+    this.resetTestNamePattern();
     this.vitest?.server?.watcher.removeAllListeners('change');
     this.vitest?.server?.watcher.removeAllListeners('add');
     this.vitest?.server?.watcher.on('change', this.runAffectedTestsAfterChange.bind(this));
     this.vitest?.server?.watcher.on('add', this.runAffectedTestsAfterChange.bind(this));
     this.registerVitestConfigListener();
+  }
+
+  resetTestNamePattern() {
+    if (this.vitest) {
+      this.vitest.configOverride.testNamePattern = undefined;
+    }
   }
 
   isStorybookProject(project: TestProject | WorkspaceProject) {

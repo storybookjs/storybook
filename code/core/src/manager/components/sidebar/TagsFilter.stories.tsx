@@ -5,6 +5,7 @@ import { TagsFilter } from './TagsFilter';
 
 const meta = {
   component: TagsFilter,
+  title: 'Sidebar/TagsFilter',
   tags: ['haha'],
   args: {
     api: {

@@ -453,6 +453,12 @@ const getVitestPluginInfo = (framework: string) => {
     frameworkPluginCall = 'storybookVuePlugin()';
   }
 
+  if (framework === '@storybook/react-native-web-vite') {
+    frameworkPluginImport =
+      "import { storybookReactNativeWeb } from '@storybook/react-native-web-vite/vite-plugin';";
+    frameworkPluginCall = 'storybookReactNativeWeb()';
+  }
+
   // spaces for file identation
   frameworkPluginImport = `\n${frameworkPluginImport}`;
   frameworkPluginDocs = frameworkPluginDocs ? `\n    ${frameworkPluginDocs}` : '';
@@ -491,14 +497,19 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
   }
 
   const builderPackageJson = await fs.readFile(
-    `${typeof builder === 'string' ? builder : builder.name}/package.json`,
+    require.resolve(
+      path.join(typeof builder === 'string' ? builder : builder.name, 'package.json')
+    ),
     'utf8'
   );
   const builderPackageName = JSON.parse(builderPackageJson).name;
 
   let rendererPackageName: string | undefined;
   if (renderer) {
-    const rendererPackageJson = await fs.readFile(`${renderer}/package.json`, 'utf8');
+    const rendererPackageJson = await fs.readFile(
+      require.resolve(path.join(renderer, 'package.json')),
+      'utf8'
+    );
     rendererPackageName = JSON.parse(rendererPackageJson).name;
   }
 

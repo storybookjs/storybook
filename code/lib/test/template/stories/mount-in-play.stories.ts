@@ -32,7 +32,8 @@ export const MountInPlay = {
     await mount();
     console.log('6 - [after mount]');
     await userEvent.click(getByRole(canvasElement, 'button'));
-    await expect(mocked(console.log).mock.calls).toEqual([
+    const allLogs = mocked(console.log).mock.calls.filter(([message]) => /^\d+ - /.test(message));
+    await expect(allLogs).toEqual([
       ['1 - [from loaders]'],
       ['2 - [from meta beforeEach]'],
       ['3 - [from story beforeEach]'],

@@ -170,7 +170,7 @@ const hasInteractiveStories = (rendererId: SupportedRenderers) =>
   ['react', 'angular', 'preact', 'svelte', 'vue3', 'html', 'solid', 'qwik'].includes(rendererId);
 
 const hasFrameworkTemplates = (framework?: SupportedFrameworks) =>
-  framework ? ['angular', 'nextjs'].includes(framework) : false;
+  framework ? ['angular', 'nextjs', 'react-native-web-vite'].includes(framework) : false;
 
 export async function baseGenerator(
   packageManager: JsPackageManager,

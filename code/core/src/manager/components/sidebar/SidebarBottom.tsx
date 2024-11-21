@@ -105,17 +105,7 @@ export const SidebarBottomBase = ({
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [warningsActive, setWarningsActive] = useState(false);
   const [errorsActive, setErrorsActive] = useState(false);
-  const [testProviders, setTestProviders] = useState<TestProviders>(() => {
-    let sessionState: TestProviders = {};
-    try {
-      sessionState = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '{}');
-    } catch (_) {}
-    return Object.fromEntries(
-      Object.entries(api.getElements(Addon_TypesEnum.experimental_TEST_PROVIDER)).map(
-        ([id, config]) => [id, { ...config, ...initialTestProviderState, ...sessionState[id] }]
-      )
-    );
-  });
+  const { testProviders } = useStorybookState();
 
   const warnings = Object.values(status).filter((statusByAddonId) =>
     Object.values(statusByAddonId).some((value) => value?.status === 'warn')
@@ -125,55 +115,6 @@ export const SidebarBottomBase = ({
   );
   const hasWarnings = warnings.length > 0;
   const hasErrors = errors.length > 0;
-
-  const updateTestProvider = useCallback(
-    (id: TestProviderId, update: Partial<TestProviderState>) =>
-      setTestProviders((state) => {
-        const newValue = { ...state, [id]: { ...state[id], ...update } };
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(newValue));
-        return newValue;
-      }),
-    []
-  );
-
-  const clearState = useCallback(
-    ({ providerId }: { providerId: TestProviderId }) => {
-      updateTestProvider(providerId, {
-        cancelling: false,
-        running: true,
-        failed: false,
-        crashed: false,
-        progress: undefined,
-      });
-      api.experimental_updateStatus(providerId, (state = {}) =>
-        Object.fromEntries(Object.keys(state).map((key) => [key, null]))
-      );
-    },
-    [api, updateTestProvider]
-  );
-
-  const onRunTests = useCallback(
-    (id: TestProviderId) => {
-      api.emit(TESTING_MODULE_RUN_ALL_REQUEST, { providerId: id });
-    },
-    [api]
-  );
-
-  const onCancelTests = useCallback(
-    (id: TestProviderId) => {
-      updateTestProvider(id, { cancelling: true });
-      api.emit(TESTING_MODULE_CANCEL_TEST_RUN_REQUEST, { providerId: id });
-    },
-    [api, updateTestProvider]
-  );
-
-  const onSetWatchMode = useCallback(
-    (providerId: string, watchMode: boolean) => {
-      updateTestProvider(providerId, { watching: watchMode });
-      api.emit(TESTING_MODULE_WATCH_MODE_REQUEST, { providerId, watchMode });
-    },
-    [api, updateTestProvider]
-  );
 
   useEffect(() => {
     const spacer = spacerRef.current;
@@ -196,15 +137,27 @@ export const SidebarBottomBase = ({
 
   useEffect(() => {
     const onCrashReport = ({ providerId, ...details }: TestingModuleCrashReportPayload) => {
-      updateTestProvider(providerId, { details, running: false, crashed: true, watching: false });
+      api.updateTestProviderState(providerId, {
+        details,
+        running: false,
+        crashed: true,
+        watching: false,
+      });
+    };
+
+    const clearState = ({ providerId }: { providerId: TestProviderId }) => {
+      api.clearTestProviderState(providerId);
+      api.experimental_updateStatus(providerId, (state = {}) =>
+        Object.fromEntries(Object.keys(state).map((key) => [key, null]))
+      );
     };
 
     const onProgressReport = ({ providerId, ...result }: TestingModuleProgressReportPayload) => {
       if (result.status === 'failed') {
-        updateTestProvider(providerId, { ...result, running: false, failed: true });
+        api.updateTestProviderState(providerId, { ...result, running: false, failed: true });
       } else {
         const update = { ...result, running: result.status === 'pending' };
-        updateTestProvider(providerId, update);
+        api.updateTestProviderState(providerId, update);
 
         const { mapStatusUpdate, ...state } = testProviders[providerId];
         const statusUpdate = mapStatusUpdate?.({ ...state, ...update });
@@ -214,18 +167,18 @@ export const SidebarBottomBase = ({
       }
     };
 
-    api.getChannel()?.on(TESTING_MODULE_CRASH_REPORT, onCrashReport);
-    api.getChannel()?.on(TESTING_MODULE_RUN_ALL_REQUEST, clearState);
-    api.getChannel()?.on(TESTING_MODULE_PROGRESS_REPORT, onProgressReport);
+    api.on(TESTING_MODULE_CRASH_REPORT, onCrashReport);
+    api.on(TESTING_MODULE_RUN_ALL_REQUEST, clearState);
+    api.on(TESTING_MODULE_PROGRESS_REPORT, onProgressReport);
 
     return () => {
-      api.getChannel()?.off(TESTING_MODULE_CRASH_REPORT, onCrashReport);
-      api.getChannel()?.off(TESTING_MODULE_PROGRESS_REPORT, onProgressReport);
-      api.getChannel()?.off(TESTING_MODULE_RUN_ALL_REQUEST, clearState);
+      api.off(TESTING_MODULE_CRASH_REPORT, onCrashReport);
+      api.off(TESTING_MODULE_PROGRESS_REPORT, onProgressReport);
+      api.off(TESTING_MODULE_RUN_ALL_REQUEST, clearState);
     };
-  }, [api, testProviders, updateTestProvider, clearState]);
+  }, [api, testProviders]);
 
-  const testProvidersArray = Object.values(testProviders);
+  const testProvidersArray = Object.values(testProviders || {});
   if (!hasWarnings && !hasErrors && !testProvidersArray.length && !notifications.length) {
     return null;
   }
@@ -244,9 +197,6 @@ export const SidebarBottomBase = ({
               warningCount: warnings.length,
               warningsActive,
               setWarningsActive,
-              onRunTests,
-              onCancelTests,
-              onSetWatchMode,
             }}
           />
         )}

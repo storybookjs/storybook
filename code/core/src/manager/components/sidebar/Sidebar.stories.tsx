@@ -33,6 +33,7 @@ const managerContext: any = {
       autodocs: 'tag',
       docsMode: false,
     },
+    testProviders: {},
   },
   api: {
     emit: fn().mockName('api::emit'),

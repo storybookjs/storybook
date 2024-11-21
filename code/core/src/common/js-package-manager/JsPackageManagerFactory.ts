@@ -141,6 +141,7 @@ function hasNPM(cwd?: string) {
     env: {
       ...process.env,
       COREPACK_ENABLE_STRICT: '0',
+      COREPACK_ENABLE_AUTO_PIN: '0',
     },
   });
   return npmVersionCommand.status === 0;
@@ -153,6 +154,7 @@ function hasBun(cwd?: string) {
     env: {
       ...process.env,
       COREPACK_ENABLE_STRICT: '0',
+      COREPACK_ENABLE_AUTO_PIN: '0',
     },
   });
   return pnpmVersionCommand.status === 0;
@@ -165,6 +167,7 @@ function hasPNPM(cwd?: string) {
     env: {
       ...process.env,
       COREPACK_ENABLE_STRICT: '0',
+      COREPACK_ENABLE_AUTO_PIN: '0',
     },
   });
   return pnpmVersionCommand.status === 0;
@@ -177,6 +180,7 @@ function getYarnVersion(cwd?: string): 1 | 2 | undefined {
     env: {
       ...process.env,
       COREPACK_ENABLE_STRICT: '0',
+      COREPACK_ENABLE_AUTO_PIN: '0',
     },
   });
 

@@ -208,10 +208,34 @@ const baseTemplates = {
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
-  'experimental-nextjs-vite/default-ts': {
+  'experimental-nextjs-vite/14-ts': {
     name: 'Next.js Latest (Vite | TypeScript)',
     script:
       'npx create-next-app@^14 {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
+    expected: {
+      framework: '@storybook/experimental-nextjs-vite',
+      renderer: '@storybook/react',
+      builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      mainConfig: {
+        framework: '@storybook/experimental-nextjs-vite',
+        features: { experimentalRSC: true },
+      },
+      extraDependencies: [
+        'server-only',
+        '@storybook/experimental-nextjs-vite',
+        'vite',
+        'prop-types',
+      ],
+    },
+    inDevelopment: true,
+    skipTasks: ['e2e-tests-dev', 'bench'],
+  },
+  'experimental-nextjs-vite/default-ts': {
+    name: 'Next.js Latest (Vite | TypeScript)',
+    script:
+      'npx create-next-app {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
     expected: {
       framework: '@storybook/experimental-nextjs-vite',
       renderer: '@storybook/react',
@@ -593,6 +617,43 @@ const baseTemplates = {
       builder: '@storybook/builder-webpack5',
     },
   },
+  'react-native-web-vite/expo-ts': {
+    // NOTE: create-expo-app installs React 18.2.0. But yarn portal
+    // expects 18.3.1 (dunno why). Therefore to run this in dev you
+    // must either:
+    //  - edit the sandbox package.json to depend on react 18.3.1, OR
+    //  - build/run the sandbox in --no-link mode, which is fine
+    //
+    // Users & CI won't see this limitation because they are not using
+    // yarn portals.
+    name: 'React Native Expo Latest (Vite | TypeScript)',
+    script: 'npx create-expo-app -y {{beforeDir}}',
+    expected: {
+      framework: '@storybook/react-native-web-vite',
+      renderer: '@storybook/react',
+      builder: '@storybook/builder-vite',
+    },
+    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
+  },
+  'react-native-web-vite/rn-cli-ts': {
+    // NOTE: create-expo-app installs React 18.2.0. But yarn portal
+    // expects 18.3.1 (dunno why). Therefore to run this in dev you
+    // must either:
+    //  - edit the sandbox package.json to depend on react 18.3.1, OR
+    //  - build/run the sandbox in --no-link mode, which is fine
+    //
+    // Users & CI won't see this limitation because they are not using
+    // yarn portals.
+    name: 'React Native CLI Latest (Vite | TypeScript)',
+    script:
+      'npx @react-native-community/cli@latest init --install-pods=false --directory={{beforeDir}} rnapp',
+    expected: {
+      framework: '@storybook/react-native-web-vite',
+      renderer: '@storybook/react',
+      builder: '@storybook/builder-vite',
+    },
+    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
+  },
 } satisfies Record<string, BaseTemplates>;
 
 /**
@@ -792,6 +853,8 @@ export const daily: TemplateKey[] = [
   'html-vite/default-js',
   'internal/react16-webpack',
   'internal/react18-webpack-babel',
+  'react-native-web-vite/expo-ts',
+  // 'react-native-web-vite/rn-cli-ts',
 ];
 
 export const templatesByCadence = { normal, merged, daily };

@@ -8,17 +8,17 @@ export type TestProviderState = Addon_TestProviderState;
 
 export type TestProviders = Record<TestProviderId, TestProviderConfig & TestProviderState>;
 
-export type TestingModuleRunRequestStories = {
-  id: string;
-  name: string;
+export type TestingModuleRunRequestStory = {
+  id: string; // button--primary
+  name: string; // Primary
 };
 
 export type TestingModuleRunRequestPayload = {
   providerId: TestProviderId;
   payload: {
-    stories: TestingModuleRunRequestStories[];
-    importPath: string;
-    componentPath: string;
+    importPath: string; // ./.../button.stories.tsx
+    stories?: TestingModuleRunRequestStory[];
+    componentPath?: string; // ./.../button.tsx
   }[];
 };
 

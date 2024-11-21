@@ -17,6 +17,9 @@ const vitest = vi.hoisted(() => ({
   cancelCurrentRun: vi.fn(),
   globTestSpecs: vi.fn(),
   getModuleProjects: vi.fn(() => []),
+  configOverride: {
+    testNamePattern: undefined,
+  },
 }));
 
 vi.mock('vitest/node', () => ({
@@ -84,12 +87,10 @@ describe('TestManager', () => {
         {
           stories: [],
           importPath: 'path/to/file',
-          componentPath: 'path/to/component',
         },
         {
           stories: [],
           importPath: 'path/to/another/file',
-          componentPath: 'path/to/another/component',
         },
       ],
     });
@@ -107,7 +108,6 @@ describe('TestManager', () => {
         {
           stories: [],
           importPath: 'path/to/unknown/file',
-          componentPath: 'path/to/unknown/component',
         },
       ],
     });
@@ -119,7 +119,6 @@ describe('TestManager', () => {
         {
           stories: [],
           importPath: 'path/to/file',
-          componentPath: 'path/to/component',
         },
       ],
     });

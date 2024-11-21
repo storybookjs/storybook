@@ -1,0 +1,7 @@
+{
+  "rules": {
+    "import/extensions": "off",
+    "react/no-unknown-property": "off",
+    "react/react-in-jsx-scope": "off"
+  }
+}

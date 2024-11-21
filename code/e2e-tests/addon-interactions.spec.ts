@@ -23,6 +23,10 @@ test.describe('addon-interactions', () => {
       /^(lit)/i.test(`${templateName}`),
       `Skipping ${templateName}, which does not support addon-interactions`
     );
+    test.skip(
+      templateName.includes('react-native-web'),
+      'React Native does not use className locators'
+    );
 
     const sbPage = new SbPage(page, expect);
 

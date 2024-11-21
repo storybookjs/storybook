@@ -1,5 +1,4 @@
 import { type ChildProcess } from 'node:child_process';
-import { join } from 'node:path';
 
 import type { Channel } from 'storybook/internal/channels';
 import {
@@ -13,6 +12,7 @@ import {
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execaNode } from 'execa';
+import { join } from 'pathe';
 
 import { TEST_PROVIDER_ID } from '../constants';
 import { log } from '../logger';

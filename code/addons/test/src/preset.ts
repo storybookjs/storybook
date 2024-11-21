@@ -1,5 +1,4 @@
 import { readFileSync } from 'node:fs';
-import { isAbsolute, join } from 'node:path';
 
 import type { Channel } from 'storybook/internal/channels';
 import { checkAddonOrder, getFrameworkName, serverRequire } from 'storybook/internal/common';
@@ -11,6 +10,7 @@ import {
 import { oneWayHash, telemetry } from 'storybook/internal/telemetry';
 import type { Options, PresetProperty, StoryId } from 'storybook/internal/types';
 
+import { isAbsolute, join } from 'pathe';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 

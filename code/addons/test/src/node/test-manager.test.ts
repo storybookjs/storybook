@@ -3,7 +3,7 @@ import { createVitest } from 'vitest/node';
 
 import { Channel, type ChannelTransport } from '@storybook/core/channels';
 
-import path from 'path';
+import path from 'pathe';
 
 import { TEST_PROVIDER_ID } from '../constants';
 import { TestManager } from './test-manager';

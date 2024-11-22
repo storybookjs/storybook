@@ -43,16 +43,16 @@ The following options are configurable under the `toolbar` namespace:
 | ---------| ------ | -------------------------------------------------------------------- | -------------------- |
 | **[id]** | String | Toggle visibility for a specific toolbar item (e.g. `title`, `zoom`) | `{ hidden: false }`  |
 
-## TODO layout customisation doc
-
-TODO:
-1. Document both functions with use cases
-2. Add caveat about bricking the user experience by hiding sidebar everywhere
+The following options are configurable under the `layoutCustomisations` namespace:
 
 | Name            | Type     | Description                       | Example Value                                                                 |
 | --------------- | -------- | --------------------------------- | ----------------------------------------------------------------------------- |
 | **showSidebar** | Function | Toggle visibility for the sidebar | `({ storyId }, defaultValue) => storyId === 'landing' ? false : defaultValue` |
 | **showToolbar** | Function | Toggle visibility for the toolbar | `({ viewMode }, defaultValue) => viewMode === 'docs' ? false : defaultValue` |
+
+<Callout variant="warning">
+  The `showSidebar` and `showToolbar` functions let you hide parts of the UI that are essential to the functionality of Storybook. They can make navigation impossible for your users if used incorrectly. When hiding the sidebar, make sure the page being displayed provides an alternative means of navigation.
+</Callout>
 
 ## Configuring through URL parameters
 

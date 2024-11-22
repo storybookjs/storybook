@@ -11,6 +11,14 @@ addons.setConfig({
   theme: undefined,
   selectedPanel: undefined,
   initialActive: 'sidebar',
+  layoutCustomisations: {
+    showSidebar(state, defaultValue) {
+      return (state.storyId === 'landing') ? false : defaultValue;
+    },
+    showToolbar(state, defaultValue) {
+      return (state.viewMode === 'docs') ? false : defaultValue;
+    },
+  },
   sidebar: {
     showRoots: false,
     collapsedRoots: ['other'],

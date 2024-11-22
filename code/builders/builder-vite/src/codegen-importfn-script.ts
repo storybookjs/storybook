@@ -31,7 +31,7 @@ async function toImportFn(stories: string[]) {
   const objectEntries = stories.map((file) => {
     const relativePath = normalizePath(relative(process.cwd(), file));
 
-    return `  '${toImportPath(relativePath)}': async () => import('/@fs/${file}')`;
+    return `  '${toImportPath(relativePath)}': async () => import('${file}')`;
   });
 
   return `

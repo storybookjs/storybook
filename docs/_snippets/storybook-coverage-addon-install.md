@@ -1,12 +1,11 @@
 ```shell renderer="common" language="js" packageManager="npm"
-npm install @storybook/addon-coverage --save-dev
+npx storybook@latest add @storybook/addon-coverage
 ```
 
 ```shell renderer="common" language="js" packageManager="pnpm"
-pnpm add --save-dev @storybook/addon-coverage
+pnpm dlx storybook@latest add @storybook/addon-coverage
 ```
 
 ```shell renderer="common" language="js" packageManager="yarn"
-yarn add --dev @storybook/addon-coverage
+yarn dlx storybook@latest add @storybook/addon-coverage
 ```
-

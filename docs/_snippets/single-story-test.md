@@ -44,7 +44,7 @@ test('Validates form', async () => {
 });
 ```
 
-```js filename="tests/Form.test.js" renderer="vue" language="js" tabTitle="3"
+```js filename="tests/Form.test.js" renderer="vue" language="js"
 import { fireEvent, screen } from '@testing-library/vue';
 
 import { composeStory } from '@storybook/vue3';
@@ -67,7 +67,7 @@ test('Validates form', async () => {
 });
 ```
 
-```ts filename="tests/Form.test.ts" renderer="vue" language="ts" tabTitle="3"
+```ts filename="tests/Form.test.ts" renderer="vue" language="ts"
 import { fireEvent, screen } from '@testing-library/vue';
 
 import { composeStory } from '@storybook/vue3';

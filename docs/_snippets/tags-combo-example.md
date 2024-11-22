@@ -28,8 +28,8 @@ export const Combo: Story = {
   render: () => ({
     template: `
       <div>
-        <demo-button variant={1}>
-        <demo-button variant={2}>
+        <demo-button [variant]="1"></demo-button>
+        <demo-button [variant]="2"></demo-button>
       </div>
     `,
   }),
@@ -60,8 +60,8 @@ export const Combo = {
   tags: ['!test'],
   render: () => (
     <>
-      <Button variant={1}>
-      <Button variant={2}>
+      <Button variant={1} />
+      <Button variant={2} />
     </>
   ),
 };
@@ -96,8 +96,8 @@ export const Combo: Story = {
   tags: ['!test'],
   render: () => (
     <>
-      <Button variant={1}>
-      <Button variant={2}>
+      <Button variant={1} />
+      <Button variant={2} />
     </>
   ),
 };
@@ -132,8 +132,8 @@ export const Combo: Story = {
   tags: ['!test'],
   render: () => (
     <>
-      <Button variant={1}>
-      <Button variant={2}>
+      <Button variant={1} />
+      <Button variant={2} />
     </>
   ),
 };
@@ -163,8 +163,8 @@ export const Combo = {
   tags: ['!test'],
   render: () => (
     <>
-      <Button variant={1}>
-      <Button variant={2}>
+      <Button variant={1} />
+      <Button variant={2} />
     </>
   ),
 };
@@ -199,8 +199,8 @@ export const Combo: Story = {
   tags: ['!test'],
   render: () => (
     <>
-      <Button variant={1}>
-      <Button variant={2}>
+      <Button variant={1} />
+      <Button variant={2} />
     </>
   ),
 };
@@ -235,8 +235,8 @@ export const Combo: Story = {
   tags: ['!test'],
   render: () => (
     <>
-      <Button variant={1}>
-      <Button variant={2}>
+      <Button variant={1} />
+      <Button variant={2} />
     </>
   ),
 };
@@ -299,8 +299,8 @@ export const Combo: Story = {
 
 <!-- 👇 This story should not be tested, but will appear in the sidebar and docs page -->
 <Story name="Combo" tags={['!test']}>
-  <Button variant={1}>
-  <Button variant={2}>
+  <Button variant={1} />
+  <Button variant={2} />
 </Story>
 ```
 
@@ -330,8 +330,8 @@ export const Combo: Story = {
 
 <!-- 👇 This story should not be tested, but will appear in the sidebar and docs page -->
 <Story name="Combo" tags={['!test']}>
-  <Button variant={1}>
-  <Button variant={2}>
+  <Button variant={1} />
+  <Button variant={2} />
 </Story>
 ```
 
@@ -361,8 +361,8 @@ export const Combo = {
     components: { Button },
     template: `
       <div>
-        <Button variant={1}>
-        <Button variant={2}>
+        <Button :variant="1" />
+        <Button :variant="2" />
       </div>
     `,
   }),
@@ -400,8 +400,8 @@ export const Combo: Story = {
     components: { Button },
     template: `
       <div>
-        <Button variant={1}>
-        <Button variant={2}>
+        <Button :variant="1" />
+        <Button :variant="2" />
       </div>
     `,
   }),
@@ -439,15 +439,15 @@ export const Combo: Story = {
     components: { Button },
     template: `
       <div>
-        <Button variant={1}>
-        <Button variant={2}>
+        <Button :variant="1" />
+        <Button :variant="2" />
       </div>
     `,
   }),
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="js"
+```ts filename="Button.stories.js" renderer="web-components" language="js"
 import { html } from 'lit';
 
 export default {
@@ -472,9 +472,8 @@ export const Combo = {
   tags: ['!test'],
   render: () => html`
     <div>
-      <demo-button variant="1">
-      <demo-button variant="2">
-      {/* Etc... */}
+      <demo-button variant="1" />
+      <demo-button variant="2" />
     </div>
   `,
 };
@@ -509,8 +508,8 @@ export const Combo: Story = {
   tags: ['!test'],
   render: () => html`
     <div>
-      <demo-button variant="1">
-      <demo-button variant="2">
+      <demo-button variant="1" />
+      <demo-button variant="2" />
     </div>
   `,
 };

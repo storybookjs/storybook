@@ -263,7 +263,7 @@ export const LoggedIn: Story = {
 };
 ```
 
-```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="3"
+```js filename="Page.stories.js" renderer="vue" language="js"
 import Page from './Page.vue';
 
 //👇 Imports all Header stories
@@ -292,7 +292,7 @@ export const LoggedIn = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="vue" language="ts-4-9" tabTitle="3"
+```ts filename="Page.stories.ts" renderer="vue" language="ts-4-9"
 import type { Meta, StoryObj } from '@storybook/vue3';
 
 import Page from './Page.vue';
@@ -326,7 +326,7 @@ export const Primary: Story = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="3"
+```ts filename="Page.stories.ts" renderer="vue" language="ts"
 import type { Meta, StoryObj } from '@storybook/vue3';
 
 import Page from './Page.vue';

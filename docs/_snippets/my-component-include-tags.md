@@ -31,4 +31,3 @@ export const IncludeStory: Story = {
   tags: ['test-only'],
 };
 ```
-

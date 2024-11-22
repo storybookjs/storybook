@@ -109,6 +109,9 @@ export const install: Task['run'] = async ({ sandboxDir, key }, { link, dryRun, 
       'svelte-vite/default-ts',
       'vue3-vite/default-js',
       'vue3-vite/default-ts',
+      'angular-cli/15-ts',
+      'angular-cli/default-ts',
+      'angular-cli/prerelease',
     ];
     if (sandboxesNeedingWorkarounds.includes(key)) {
       await addWorkaroundResolutions({ cwd, dryRun, debug });

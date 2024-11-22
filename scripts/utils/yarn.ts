@@ -29,7 +29,8 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
   packageJson.resolutions = {
     ...packageJson.resolutions,
     ...storybookVersions,
-    'enhanced-resolve': '~5.10.0', // TODO, remove this
+    // Remove this once this issue is fixed https://github.com/thednp/position-observer/issues/1
+    '@thednp/shorty': '2.0.7',
     // this is for our CI test, ensure we use the same version as docker image, it should match version specified in `./code/package.json` and `.circleci/config.yml`
     '@swc/core': '1.5.7',
     playwright: '1.48.1',
@@ -87,6 +88,7 @@ export const addWorkaroundResolutions = async ({ cwd, dryRun }: YarnOptions) => 
     '@testing-library/user-event': '^14.5.2',
     // TODO: Remove as soon as @storybook/csf@0.1.10 is released
     '@storybook/csf': '0.1.10--canary.d841bb4.0',
+    '@thednp/shorty': '2.0.7',
   };
   await writeJSON(packageJsonPath, packageJson, { spaces: 2 });
 };

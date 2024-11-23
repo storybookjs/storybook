@@ -6612,6 +6612,7 @@ __metadata:
     execa: "npm:^8.0.1"
     find-up: "npm:^7.0.0"
     formik: "npm:^2.2.9"
+    pathe: "npm:^1.1.2"
     picocolors: "npm:^1.1.0"
     polished: "npm:^4.2.2"
     prompts: "npm:^2.4.0"

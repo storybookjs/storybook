@@ -11,7 +11,7 @@ Storybook for Angular is a [framework](../../contribute/framework.mdx) that make
 * 🎛️ Compodoc integration
 * 💫 and more!
 
-<If notRenderer={'angular'}>
+<If notRenderer="angular">
   <Callout variant="info">
     Storybook for Angular is only supported in [Angular](?renderer=angular) projects.
   </Callout>
@@ -19,10 +19,10 @@ Storybook for Angular is a [framework](../../contribute/framework.mdx) that make
   {/* End non-supported renderers */}
 </If>
 
-<If renderer={'angular'}>
+<If renderer="angular">
   ## Requirements
 
-  * Angular ≥ 15.0 \< 19.0
+  * Angular ≥ 15.0 \< 20.0
   * Webpack ≥ 5.0
   * Storybook ≥ 8.0
 
@@ -74,16 +74,11 @@ Storybook for Angular is a [framework](../../contribute/framework.mdx) that make
 
   Finally, update your `angular.json` to include the Storybook builder:
 
-  ```jsonc
-  // angular.json
+  ```jsonc title="angular.json"
   {
-    ...
     "projects": {
-      ...
       "your-project": {
-        ...
         "architect": {
-          ...
           "storybook": {
             "builder": "@storybook/angular:start-storybook",
             "options": {
@@ -115,7 +110,7 @@ Storybook for Angular is a [framework](../../contribute/framework.mdx) that make
 
   ## Run Storybook
 
-  To run Storybook for a particular project, please run:
+  To run Storybook for a particular project, please run the following:
 
   ```sh
   ng run <your-project>:storybook
@@ -131,11 +126,11 @@ Storybook for Angular is a [framework](../../contribute/framework.mdx) that make
 
   ## Setup Compodoc
 
-  You can include JSDoc comments above components, directives, and other parts of your Angular code to include documentation for those elements. Compodoc uses these comments to [generate documentation](../../writing-docs/autodocs.mdx) for your application. In Storybook, it is useful to add explanatory comments above `@Inputs` and `@Outputs`, since these are the main elements that Storybook displays in its user interface. The `@Inputs` and `@Outputs` are the elements that you can interact with in Storybook, such as [controls](../../essentials/controls.mdx).
+  You can include JSDoc comments above components, directives, and other parts of your Angular code to include documentation for those elements. Compodoc uses these comments to [generate documentation](../../writing-docs/autodocs.mdx) for your application. In Storybook, it is useful to add explanatory comments above `@Inputs` and `@Outputs`, since these are the main elements that Storybook displays in its user interface. The `@Inputs` and `@Outputs` are elements you can interact with in Storybook, such as [controls](../../essentials/controls.mdx).
 
   ### Automatic setup
 
-  When installing Storybook via `npx storybook@latest init`, you will be given the option to set up Compodoc automatically.
+  When installing Storybook via `npx storybook@latest init`, you can set up Compodoc automatically.
 
   ### Manual setup
 
@@ -149,20 +144,14 @@ Storybook for Angular is a [framework](../../contribute/framework.mdx) that make
 
   Add the following option to your Storybook Builder:
 
-  ```jsonc
-  // angular.json
+  ```jsonc title="angular.json"
   {
-    ...
     "projects": {
-      ...
       "your-project": {
-        ...
         "architect": {
-          ...
           "storybook": {
             "builder": "@storybook/angular:start-storybook",
             "options": {
-              ...
               // 👇 Add these
               "compodoc": true,
               "compodocArgs": [
@@ -177,7 +166,6 @@ Storybook for Angular is a [framework](../../contribute/framework.mdx) that make
           "build-storybook": {
             "builder": "@storybook/angular:build-storybook",
             "options": {
-              ...
               // 👇 Add these
               "compodoc": true,
               "compodocArgs": [
@@ -194,25 +182,27 @@ Storybook for Angular is a [framework](../../contribute/framework.mdx) that make
   }
   ```
 
-  Go to your `.storybook/preview.js` and add the following:
+  Go to your `.storybook/preview.ts` and add the following:
 
-  ```js
-  // .storybook/preview.js
+  ```ts title=".storybook/preview.ts"
+  import type { Preview } from '@storybook/angular';
+
   // 👇 Add these
   import { setCompodocJson } from '@storybook/addon-docs/angular';
   import docJson from '../documentation.json';
   setCompodocJson(docJson);
 
-  // ... rest of file
+  const preview: Preview = {};
+  export default preview;
   ```
 
   ## `applicationConfig` decorator
 
-  If your component relies on application-wide providers, like the ones defined by BrowserAnimationsModule or any other modules which use the forRoot pattern to provide a ModuleWithProviders, you can apply the `applicationConfig` [decorator](../../writing-stories/decorators.mdx) to all stories for that component. This will provide them to the [bootstrapApplication function](https://angular.io/guide/standalone-components#configuring-dependency-injection), which is used to bootstrap the component in Storybook.
+  If your component relies on application-wide providers, like the ones defined by [`BrowserAnimationsModule`](https://angular.dev/api/platform-browser/animations/BrowserAnimationsModule) or any other modules that use the forRoot pattern to provide a [`ModuleWithProviders`](https://angular.dev/api/core/ModuleWithProviders), you can apply the `applicationConfig` [decorator](../../writing-stories/decorators.mdx) to all stories for that component. This will provide them with the [bootstrapApplication function](https://angular.io/guide/standalone-components#configuring-dependency-injection), used to bootstrap the component in Storybook.
 
-  ```ts
-  // ChipsModule.stories.ts
+  ```ts title="ChipsModule.stories.ts"
   import { Meta, applicationConfig, StoryObj } from '@storybook/angular';
+
   import { BrowserAnimationsModule, provideAnimations } from '@angular/platform-browser/animations';
   import { importProvidersFrom } from '@angular/core';
 
@@ -236,14 +226,13 @@ Storybook for Angular is a [framework](../../contribute/framework.mdx) that make
   };
 
   export default meta;
-
   type Story = StoryObj<ChipsModule>;
 
   export const WithCustomApplicationProvider: Story = {
     render: () => ({
       // Apply application config to a specific story
       applicationConfig: {
-        // The providers will be merged with the ones defined in the applicationConfig decorators providers array of the global meta object
+        // The providers will be merged with the ones defined in the applicationConfig decorator's providers array of the global meta object
         providers: [...],
       }
     })
@@ -254,8 +243,7 @@ Storybook for Angular is a [framework](../../contribute/framework.mdx) that make
 
   If your component has dependencies on other Angular directives and modules, these can be supplied using the `moduleMetadata` [decorator](../../writing-stories/decorators.mdx) either for all stories of a component or for individual stories.
 
-  ```ts
-  // YourComponent.stories.ts
+  ```ts title="YourComponent.stories.ts"
   import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
   import { YourComponent } from './your.component';
@@ -275,7 +263,6 @@ Storybook for Angular is a [framework](../../contribute/framework.mdx) that make
     ],
   };
   export default meta;
-
   type Story = StoryObj<YourComponent>;
 
   export const Base: Story = {};
@@ -298,15 +285,15 @@ Storybook for Angular is a [framework](../../contribute/framework.mdx) that make
 
   The Storybook [Angular builder](https://angular.io/guide/glossary#builder) is a way to run Storybook in an Angular workspace. It is a drop-in replacement for running `storybook dev` and `storybook build` directly.
 
-  You can run `npx storybook@next automigrate` to try let Storybook detect and automatically fix your configuration. Otherwise, you can follow the next steps to manually adjust your configuration.
+  You can run `npx storybook@next automigrate` to try letting Storybook detect and automatically fix your configuration. Otherwise, you can follow the next steps to adjust your configuration manually.
 
   #### Do you have only one Angular project in your workspace?
 
-  First, go to your `angular.json` and add `storybook` and `build-storybook` entries in `architect` section of your project like shown above.
+  First, go to your `angular.json` and add `storybook` and `build-storybook` entries in your project's `architect` section, as shown [above](#manual-setup).
 
   Second, adjust your `package.json` script section. Usually, it will look like this:
 
-  ```jsonc
+  ```jsonc title="package.json"
   {
     "scripts": {
       "storybook": "start-storybook -p 6006", // or `storybook dev -p 6006`
@@ -317,7 +304,7 @@ Storybook for Angular is a [framework](../../contribute/framework.mdx) that make
 
   Now, you can run Storybook with `ng run <your-project>:storybook` and build it with `ng run <your-project>:build-storybook`. Adjust the scripts in your `package.json` accordingly.
 
-  ```json
+  ```json title="package.json"
   {
     "scripts": {
       "storybook": "ng run <project-name>:storybook",
@@ -326,9 +313,9 @@ Storybook for Angular is a [framework](../../contribute/framework.mdx) that make
   }
   ```
 
-  Also compodoc is now built-in in `@storybook/angular` and you don't have to call it explicitly. If were running compodoc in your `package.json` scripts like this:
+   Also, `compodoc` is now built into `@storybook/angular`; you don't have to call it explicitly. If we're running `compodoc` in your `package.json` scripts like this:
 
-  ```json
+  ```json title="package.json"
   {
     "scripts": {
       "docs:json": "compodoc -p tsconfig.json -e json -d ./documentation",
@@ -340,7 +327,7 @@ Storybook for Angular is a [framework](../../contribute/framework.mdx) that make
 
   Change it to:
 
-  ```json
+  ```json title="package.json"
   {
     "scripts": {
       "storybook": "ng run <project-name>:storybook",
@@ -351,11 +338,11 @@ Storybook for Angular is a [framework](../../contribute/framework.mdx) that make
 
   #### I have multiple projects in my Angular workspace
 
-  In this case you have to adjust your `angular.json` and `package.json` as described above for each project in which you want to use Storybook. Please note, that each project should have a dedicated `.storybook` folder, which should be placed in the root of the project.
+  In this case, you have to adjust your `angular.json` and `package.json` as described above for each project you want to use Storybook. Please note that each project should have a dedicated `.storybook` folder placed at the project's root.
 
-  You can run `npx storybook@latest init` sequentially for each project to setup Storybook for each of them to automatically create the `.storybook` folder and create the necessary configuration in your `angular.json`.
+  You can run `npx storybook@latest init` sequentially for each project to set up Storybook for each of them to automatically create the `.storybook` folder and create the necessary configuration in your `angular.json`.
 
-  You can then use [Storybook composition](https://storybook.js.org/docs/angular/sharing/storybook-composition) to composite multiple Storybooks into one.
+  You can then combine multiple Storybooks with [Storybook composition](../../sharing/storybook-composition.mdx).
 
   ### How do I configure Angular's builder for Storybook?
 
@@ -364,7 +351,9 @@ Storybook for Angular is a [framework](../../contribute/framework.mdx) that make
   | Configuration element        | Description                                                                                                                                                                                     |
   | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
   | `"browserTarget"`            | Build target to be served using the following format. <br /> `"example-project:builder:config"`                                                                                                 |
-  | `"tsConfig"`                 | Location of the TypeScript configuration file, relative to the current workspace. <br /> `"tsConfig": "./tsconfig.json"`.                                                                       |
+  | `"debugWebpack"`             | Debug the Webpack configuration <br /> `"debugWebpack": true`                                                                                                                                   |
+  | `"tsConfig"`                 | Location of the TypeScript configuration file relative to the current workspace. <br /> `"tsConfig": "./tsconfig.json"`.                                                                        |
+  | `"preserveSymlinks"`         | Do not use the real path when resolving modules. If true, symlinks are resolved to their real path; otherwise, they are resolved to their symlinked path. <br /> `"preserveSymlinks": true`     |
   | `"port"`                     | Port used by Storybook. <br /> `"port": 6006`                                                                                                                                                   |
   | `"host"`                     | Set up a custom host for Storybook. <br /> `"host": "http://my-custom-host"`                                                                                                                    |
   | `"configDir"`                | Storybook configuration directory location. <br /> `"configDir": ".storybook"`                                                                                                                  |
@@ -374,10 +363,20 @@ Storybook for Angular is a [framework](../../contribute/framework.mdx) that make
   | `"sslKey"`                   | Provides an SSL key to serve Storybook. <br /> `"sslKey": "your-ssl-key"`                                                                                                                       |
   | `"smokeTest"`                | Exit Storybook after successful start. <br /> `"smokeTest": true`                                                                                                                               |
   | `"ci"`                       | Starts Storybook in CI mode (skips interactive prompts and will not open browser window). <br /> `"ci": true`                                                                                   |
+  | `"open"`                     | Whether to open Storybook automatically in the browser. <br /> `"open": true`                                                                                                                   |
   | `"quiet"`                    | Filters Storybook verbose build output. <br /> `"quiet": true`                                                                                                                                  |
+  | `"enableProdMode"`           | Disable Angular's development mode, which turns off assertions and other checks within the framework. <br /> `"enableProdMode": true`                                                           |
   | `"docs"`                     | Starts Storybook in [documentation mode](../../writing-docs/build-documentation.mdx#preview-storybooks-documentation). <br /> `"docs": true`                                                    |
-  | `"styles"`                   | Provide the location of the [application's styles](../../configure/styling-and-css.mdx#importing-css-files) to be used with Storybook. <br /> `"styles": ["src/styles.css", "src/styles.scss"]` |
+  | `"compodoc"`                 | Execute compodoc before. <br /> `"compodoc": true`                                                                                                                                              |
+  | `"compodocArgs"`             | Compodoc [options](https://compodoc.app/guides/options.html). Options `-p` with tsconfig path and `-d` with workspace root is always given. <br /> `"compodocArgs": ["-e", "json"]`             |
+  | `"styles"`                   | Provide the location of the [application's styles](../../configure/styling-and-css.mdx#global-styles) to be used with Storybook. <br /> `"styles": ["src/styles.css", "src/styles.scss"]`       |
   | `"stylePreprocessorOptions"` | Provides further customization for style preprocessors resolved to the workspace root. <br /> `"stylePreprocessorOptions": { "includePaths": ["src/styles"] }`                                  |
+  | `"assets"`                   | List of static application assets. <br /> `"assets": ["src/assets"]`                                                                                                                            |
+  | `"initialPath"`              | URL path to be appended when visiting Storybook for the first time. <br /> `"initialPath": "docs/configure-your-project--docs"`                                                                 |
+  | `"webpackStatsJson"`         | Write Webpack Stats JSON to disk. <br /> `"webpackStatsJson": true`                                                                                                                             |
+  | `"previewUrl"`               | Disables the default storybook preview and lets you use your own. <br /> `"previewUrl": "iframe.html"`                                                                                          |
+  | `"loglevel"`                 | Controls level of logging during build. Can be one of: [silly, verbose, info (default), warn, error, silent]. <br /> `"loglevel": "info"`                                                       |
+  | `"sourceMap"`                | Configure [sourcemaps](https://angular.io/guide/workspace-config#source-map-configuration.). <br /> `"sourceMap": true`                                                                         |
 
   The full list of options can be found in the Angular builder schemas:
 
@@ -390,12 +389,10 @@ Storybook for Angular is a [framework](../../contribute/framework.mdx) that make
 
   You can pass an options object for additional configuration if needed:
 
-  ```js
-  // .storybook/main.js
-  import * as path from 'path';
+  ```js title=".storybook/main.ts"
+  import type { StorybookConfig } from '@storybook/angular';
 
-  export default {
-    // ...
+  const config: StorybookConfig = {
     framework: {
       name: '@storybook/angular',
       options: {
@@ -411,7 +408,7 @@ Storybook for Angular is a [framework](../../contribute/framework.mdx) that make
 
   Type: `Record<string, any>`
 
-  Configure options for the [framework's builder](../../api/main-config/main-config-framework.mdx#optionsbuilder). For Angular, , available options can be found in the [Webpack builder docs](../../builders/webpack.mdx).
+  Configure options for the [framework's builder](../../api/main-config/main-config-framework.mdx#optionsbuilder). For this framework, available options can be found in the [Webpack builder docs](../../builders/webpack.mdx). 
 
   {/* End supported renderers */}
 </If>

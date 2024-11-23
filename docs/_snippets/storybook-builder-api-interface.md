@@ -20,4 +20,3 @@ export interface Builder<Config, Stats> {
   overridePresets?: string[];
 }
 ```
-

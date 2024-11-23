@@ -231,7 +231,7 @@ export const CustomFooter: Story = {
 </Story>
 ```
 
-```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="3"
+```js filename="Page.stories.js" renderer="vue" language="js"
 import Page from './Page.vue';
 
 export default {
@@ -258,7 +258,7 @@ export const CustomFooter = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="vue" language="ts-4-9" tabTitle="3"
+```ts filename="Page.stories.ts" renderer="vue" language="ts-4-9"
 // https://www.npmjs.com/package/vue-component-type-helpers
 import type { ComponentProps } from 'vue-component-type-helpers';
 import type { Meta, StoryObj } from '@storybook/vue3';
@@ -294,7 +294,7 @@ export const Primary = {
 } satisfies Story;
 ```
 
-```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="3"
+```ts filename="Page.stories.ts" renderer="vue" language="ts"
 // https://www.npmjs.com/package/vue-component-type-helpers
 import type { ComponentProps } from 'vue-component-type-helpers';
 import type { Meta, StoryObj } from '@storybook/vue3';

@@ -307,7 +307,7 @@ export const WithAnImage: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="3"
+```js filename="MyComponent.stories.js" renderer="vue" language="js"
 import MyComponent from './MyComponent.vue';
 
 import imageFile from './static/image.png';
@@ -332,7 +332,7 @@ export const WithAnImage = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts-4-9" tabTitle="3"
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts-4-9"
 import type { Meta, StoryObj } from '@storybook/vue3';
 
 import MyComponent from './MyComponent.vue';
@@ -362,7 +362,7 @@ export const WithAnImage: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="3"
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts"
 import type { Meta, StoryObj } from '@storybook/vue3';
 
 import MyComponent from './MyComponent.vue';

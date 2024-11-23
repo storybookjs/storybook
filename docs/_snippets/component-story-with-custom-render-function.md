@@ -371,4 +371,3 @@ export const Example: Story = {
   `,
 };
 ```
-

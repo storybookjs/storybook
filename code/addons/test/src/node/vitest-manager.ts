@@ -1,11 +1,11 @@
 import { existsSync } from 'node:fs';
-import path, { normalize } from 'node:path';
 
 import type { TestProject, TestSpecification, Vitest, WorkspaceProject } from 'vitest/node';
 
 import type { Channel } from 'storybook/internal/channels';
 import type { TestingModuleRunRequestPayload } from 'storybook/internal/core-events';
 
+import path, { normalize } from 'pathe';
 import slash from 'slash';
 
 import { log } from '../logger';

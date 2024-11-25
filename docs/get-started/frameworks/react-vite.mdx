@@ -11,7 +11,7 @@ Storybook for React & Vite is a [framework](../../contribute/framework.mdx) that
 * 🪄 Zero config
 * 💫 and more!
 
-<If notRenderer={'react'}>
+<If notRenderer="react">
   <Callout variant="info">
     Storybook for React & Vite is only supported in [React](?renderer=react) projects.
   </Callout>
@@ -19,7 +19,7 @@ Storybook for React & Vite is a [framework](../../contribute/framework.mdx) that
   {/* End non-supported renderers */}
 </If>
 
-<If renderer={'react'}>
+<If renderer="react">
   ## Requirements
 
   * React ≥ 16.8
@@ -86,27 +86,17 @@ Storybook for React & Vite is a [framework](../../contribute/framework.mdx) that
 
   You can pass an options object for additional configuration if needed:
 
-  ```ts
-  // .storybook/main.ts
-  import type { StorybookConfig } from '@storybook/react-vite';
+  {/* prettier-ignore-start */}
 
-  const config: StorybookConfig = {
-    framework: {
-      name: '@storybook/react-vite',
-      options: {
-        // ...
-      },
-    },
-  };
+  <CodeSnippets path="react-vite-framework-options.md" />
 
-  export default config;
-  ```
+  {/* prettier-ignore-end */}
 
   #### `builder`
 
   Type: `Record<string, any>`
 
   Configure options for the [framework's builder](../../api/main-config/main-config-framework.mdx#optionsbuilder). For this framework, available options can be found in the [Vite builder docs](../../builders/vite.mdx).
-
+  
   {/* End supported renderers */}
 </If>

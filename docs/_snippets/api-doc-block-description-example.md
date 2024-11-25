@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { Button } from './button.component';
 
 /**
- * # Button stories
+ * Button stories
  * These stories showcase the button
  */
 const meta: Meta<Button> = {
@@ -22,7 +22,7 @@ export default meta;
 type Story = StoryObj<Button>;
 
 /**
- * # Primary Button
+ * Primary Button
  * This is the primary button
  */
 export const Primary: Story = {
@@ -40,7 +40,7 @@ export const Primary: Story = {
 import { Button } from './Button';
 
 /**
- * # Button stories
+ * Button stories
  * These stories showcase the button
  */
 export default {
@@ -55,7 +55,7 @@ export default {
 }
 
 /**
- * # Primary Button
+ * Primary Button
  * This is the primary button
  */
 export const Primary = {
@@ -76,7 +76,7 @@ import type { Meta, StoryObj } from '@storybook/your-framework';
 import { Button } from './Button';
 
 /**
- * # Button stories
+ * Button stories
  * These stories showcase the button
  */
 const meta = {
@@ -94,7 +94,7 @@ export default meta;
 type Story = StoryObj<typeof meta>
 
 /**
- * # Primary Button
+ * Primary Button
  * This is the primary button
  */
 export const Primary: Story = {
@@ -115,7 +115,7 @@ import type { Meta, StoryObj } from '@storybook/your-framework';
 import { Button } from './Button';
 
 /**
- * # Button stories
+ * Button stories
  * These stories showcase the button
  */
 const meta: Meta<typeof Button> = {
@@ -133,7 +133,7 @@ export default meta;
 type Story = StoryObj<typeof Button>;
 
 /**
- * # Primary Button
+ * Primary Button
  * This is the primary button
  */
 export const Primary: Story = {
@@ -148,6 +148,10 @@ export const Primary: Story = {
 ```
 
 ```js filename="Button.stories.js" renderer="web-components" language="js"
+/**
+ * Button stories
+ * These stories showcase the button
+ */
 export default {
   title: 'Button',
   component: 'demo-button',
@@ -179,7 +183,7 @@ export const Primary = {
 import type { Meta, StoryObj } from '@storybook/web-components';
 
 /**
- * # Button stories
+ * Button stories
  * These stories showcase the button
  */
 const meta: Meta = {
@@ -198,7 +202,7 @@ export default meta;
 type Story = StoryObj;
 
 /**
- * # Primary Button
+ * Primary Button
  * This is the primary button
  */
 export const Primary: Story = {
@@ -211,4 +215,3 @@ export const Primary: Story = {
   },
 };
 ```
-

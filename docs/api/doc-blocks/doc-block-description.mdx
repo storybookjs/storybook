@@ -13,9 +13,7 @@ The `Description` block displays the description for a component, story, or meta
 
 {/* prettier-ignore-start */}
 
-```md
-{/* ButtonDocs.mdx */}
-
+```md title="ButtonDocs.mdx"
 import { Meta, Description } from '@storybook/blocks';
 import * as ButtonStories from './Button.stories';
 
@@ -63,12 +61,9 @@ When documenting a component, reference a meta export in the `of` prop (see belo
 
 This flow gives you powerful ways to override the description for each scenario. Take the following example:
 
-```jsx
-// Button.jsx
-
+```jsx title="Button.jsx"
 /**
- * # The Button component
- * Shows a button
+ * The Button component shows a button
  */
 export const Button = () => <button>Click me</button>;
 ```
@@ -81,9 +76,7 @@ export const Button = () => <button>Click me</button>;
 
 {/* prettier-ignore-start */}
 
-```md
-{/* ButtonDocs.mdx */}
-
+```md title="ButtonDocs.mdx"
 import { Meta, Description } from '@storybook/blocks';
 import * as ButtonStories from './Button.stories';
 

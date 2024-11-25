@@ -45,7 +45,7 @@ export class DocumentScreen implements OnInit {
 }
 ```
 
-```js filename="YourPage.js|jsx|mjs|ts|tsx" renderer="react" language="js"
+```js filename="YourPage.jsx" renderer="react" language="js"
 import React, { useState, useEffect } from 'react';
 
 import { PageLayout } from './PageLayout';
@@ -155,7 +155,7 @@ export function DocumentScreen() {
 }
 ```
 
-```js filename="YourPage.js|jsx|mjs|ts|tsx" renderer="solid" language="js"
+```js filename="YourPage.jsx" renderer="solid" language="js"
 import { createSignal, Match, Switch } from 'solid-js';
 
 import { PageLayout } from './PageLayout';
@@ -211,9 +211,7 @@ export function DocumentScreen() {
 }
 ```
 
-```html renderer="svelte" language="js"
-{/* YourPage.svelte */}
-
+```svelte filename="YourPage.svelte" renderer="svelte" language="js"
 <script>
   import { onMount } from 'svelte';
 
@@ -259,9 +257,7 @@ export function DocumentScreen() {
 {/if}
 ```
 
-```html renderer="svelte" language="ts"
-{/* YourPage.svelte */}
-
+```svelte filename="YourPage.svelte" renderer="svelte" language="ts"
 <script lang="ts">
   import { onMount } from 'svelte';
 
@@ -307,9 +303,7 @@ export function DocumentScreen() {
 {/if}
 ```
 
-```html renderer="vue" language="js" tabTitle="3"
-{/* YourPage.vue */}
-
+```html filename="YourPage.vue" renderer="vue" language="js"
 <template>
   <div v-if="!loading && data && data.subdocuments.length">
     <PageLayout :user="data.user">
@@ -358,9 +352,7 @@ export function DocumentScreen() {
 </script>
 ```
 
-```html renderer="vue" language="ts" tabTitle="3"
-{/* YourPage.vue */}
-
+```html filename="YourPage.vue" renderer="vue" language="ts"
 <template>
   <div v-if="!loading && data && data.subdocuments.length">
     <PageLayout :user="data.user">
@@ -474,4 +466,3 @@ class DocumentScreen extends LitElement {
 
 customElements.define('demo-document-screen', DocumentScreen);
 ```
-

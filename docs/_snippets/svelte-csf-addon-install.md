@@ -9,4 +9,3 @@ pnpm dlx storybook@latest add @storybook/addon-svelte-csf
 ```shell renderer="svelte" language="js" packageManager="yarn"
 yarn storybook@latest add @storybook/addon-svelte-csf
 ```
-

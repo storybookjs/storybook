@@ -1,6 +1,6 @@
 {
   "name": "@storybook/manager-api",
-  "version": "8.5.0-alpha.9",
+  "version": "8.5.0-alpha.10",
   "description": "Core Storybook Manager API & Context",
   "keywords": [
     "storybook"

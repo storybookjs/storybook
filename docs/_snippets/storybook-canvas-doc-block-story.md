@@ -162,4 +162,3 @@ export const Colors: Story = {
   ),
 };
 ```
-

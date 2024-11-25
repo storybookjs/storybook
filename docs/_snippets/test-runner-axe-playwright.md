@@ -9,4 +9,3 @@ pnpm add --save-dev axe-playwright
 ```shell renderer="common" language="js" packageManager="yarn"
 yarn add --dev axe-playwright
 ```
-

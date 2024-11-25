@@ -17,6 +17,7 @@ const TextStyle = styled.div(({ theme }) => ({
   lineHeight: '20px',
   margin: 0,
 }));
+
 const Text = styled.div(({ theme }) => ({
   fontSize: theme.typography.size.s2,
   lineHeight: '20px',
@@ -50,24 +51,31 @@ export const AuthBlock: FC<{ loginUrl: string; id: string }> = ({ loginUrl, id }
   const [isAuthAttempted, setAuthAttempted] = useState(false);
 
   const refresh = useCallback(() => {
-    globalWindow.document.location.reload();
+    setAuthAttempted(false);
   }, []);
 
-  const open = useCallback<React.MouseEventHandler>((e) => {
-    e.preventDefault();
-    const childWindow = globalWindow.open(loginUrl, `storybook_auth_${id}`, 'resizable,scrollbars');
+  const open = useCallback<React.MouseEventHandler>(
+    (e) => {
+      e.preventDefault();
+      const childWindow = globalWindow.open(
+        loginUrl,
+        `storybook_auth_${id}`,
+        'resizable,scrollbars'
+      );
 
-    // poll for window to close
-    const timer = setInterval(() => {
-      if (!childWindow) {
-        logger.error('unable to access loginUrl window');
-        clearInterval(timer);
-      } else if (childWindow.closed) {
-        clearInterval(timer);
-        setAuthAttempted(true);
-      }
-    }, 1000);
-  }, []);
+      // poll for window to close
+      const timer = setInterval(() => {
+        if (!childWindow) {
+          logger.error('unable to access loginUrl window');
+          clearInterval(timer);
+        } else if (childWindow.closed) {
+          clearInterval(timer);
+          setAuthAttempted(true);
+        }
+      }, 1000);
+    },
+    [loginUrl, id]
+  );
 
   return (
     <Contained>
@@ -79,7 +87,6 @@ export const AuthBlock: FC<{ loginUrl: string; id: string }> = ({ loginUrl, id }
               this Storybook.
             </Text>
             <div>
-              {/* TODO: Make sure this button is working without the deprecated props */}
               <Button small gray onClick={refresh}>
                 <SyncIcon />
                 Refresh now

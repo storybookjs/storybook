@@ -278,6 +278,8 @@ const SourceCodeMessage: FC<{
 
 const LoginRequiredMessage: FC<RefType> = ({ loginUrl, id }) => {
   const theme = useTheme();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   const open = useCallback<MouseEventHandler>((e) => {
     e.preventDefault();
     const childWindow = globalWindow.open(loginUrl, `storybook_auth_${id}`, 'resizable,scrollbars');
@@ -288,10 +290,14 @@ const LoginRequiredMessage: FC<RefType> = ({ loginUrl, id }) => {
         clearInterval(timer);
       } else if (childWindow.closed) {
         clearInterval(timer);
-        document.location.reload();
+        setIsLoggedIn(true);
       }
     }, 1000);
   }, []);
+
+  if (isLoggedIn) {
+    return <div>Login Successful!</div>;
+  }
 
   return (
     <Message onClick={open}>

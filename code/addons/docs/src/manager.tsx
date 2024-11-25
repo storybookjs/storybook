@@ -29,7 +29,7 @@ addons.register(ADDON_ID, (api) => {
 
       return (
         <AddonPanel active={!!active}>
-          <Source code={codeSnippet.source} format={codeSnippet.format} />
+          <Source code={codeSnippet.source} format={codeSnippet.format} dark />
         </AddonPanel>
       );
     },

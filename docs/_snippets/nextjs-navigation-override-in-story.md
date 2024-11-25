@@ -41,7 +41,7 @@ const meta = {
 } satisfies Meta<typeof NavigationBasedComponent>;
 export default meta;
 
-type Story = StoryObj<typeof Meta>;
+type Story = StoryObj<typeof meta>;
 
 // If you have the actions addon,
 // you can interact with the links and see the route change events there
@@ -91,4 +91,3 @@ export const Example: Story = {
   },
 };
 ```
-

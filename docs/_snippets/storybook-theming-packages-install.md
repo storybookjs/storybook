@@ -9,4 +9,3 @@ pnpm add --save-dev @storybook/manager-api @storybook/theming
 ```shell renderer="common" language="js" packageManager="yarn"
 yarn add --dev @storybook/manager-api @storybook/theming
 ```
-

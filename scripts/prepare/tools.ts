@@ -6,7 +6,7 @@ import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import { spawn } from 'cross-spawn';
 import * as esbuild from 'esbuild';
 // eslint-disable-next-line depend/ban-dependencies
-import { readJson } from 'fs-extra';
+import { pathExists, readJson } from 'fs-extra';
 // eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';
 import limit from 'p-limit';
@@ -118,7 +118,10 @@ export const nodeInternals = [
   ...require('module').builtinModules.flatMap((m: string) => [m, `node:${m}`]),
 ];
 
-export const getWorkspace = async () => {
+type PackageJson = typefest.PackageJson &
+  Required<Pick<typefest.PackageJson, 'name' | 'version'>> & { path: string };
+
+export const getWorkspace = async (): Promise<PackageJson[]> => {
   const codePackage = await readJson(join(CODE_DIRECTORY, 'package.json'));
   const {
     workspaces: { packages: patterns },
@@ -131,10 +134,18 @@ export const getWorkspace = async () => {
   return Promise.all(
     workspaces
       .flatMap((p) => p.map((i) => join(CODE_DIRECTORY, i)))
-      .map(async (p) => {
-        const pkg = await readJson(join(p, 'package.json'));
-        return { ...pkg, path: p } as typefest.PackageJson &
-          Required<Pick<typefest.PackageJson, 'name' | 'version'>> & { path: string };
+      .map(async (packagePath) => {
+        const packageJsonPath = join(packagePath, 'package.json');
+        if (!(await pathExists(packageJsonPath))) {
+          // If we delete a package, then an empty folder might still be left behind on some dev machines
+          // In this case, just ignore the folder
+          console.warn(
+            `No package.json found in ${packagePath}. You might want to delete this folder.`
+          );
+          return null;
+        }
+        const pkg = await readJson(packageJsonPath);
+        return { ...pkg, path: packagePath } as PackageJson;
       })
-  );
+  ).then((packages) => packages.filter((p) => p !== null));
 };

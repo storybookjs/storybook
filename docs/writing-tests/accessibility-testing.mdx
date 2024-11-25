@@ -43,7 +43,7 @@ Storybook's a11y addon runs [Axe](https://github.com/dequelabs/axe-core) on the 
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="component-story-with-accessibility.md" usesCsf3 csf2Path="writing-tests/accessibility-testing#snippet-component-story-with-accessibility" />
+<CodeSnippets path="component-story-with-accessibility.md" />
 
 {/* prettier-ignore-end */}
 
@@ -67,7 +67,17 @@ If you need to dismiss an accessibility rule or modify its settings across all s
 
 #### Component-level a11y configuration
 
-You can also customize your own set of rules for all stories of a component. Update your story's default export and add a parameter with the required configuration:
+<IfRenderer renderer="svelte">
+
+  You can also customize your own set of rules for all stories of a component. If you're using Svelte CSF with the native templating syntax, you can update the `defineMeta` function or the default export of the CSF story and provide the required configuration:
+
+</IfRenderer>
+
+<IfRenderer renderer={['angular', 'vue', 'web-components', 'ember', 'html', 'react', 'preact', 'qwik', 'solid']}>
+
+  You can also customize your own set of rules for all stories of a component. Update your story's default export and add a parameter with the required configuration:
+
+</IfRenderer>
 
 {/* prettier-ignore-start */}
 
@@ -81,17 +91,28 @@ Customize the a11y ruleset at the story level by updating your story to include 
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="storybook-addon-a11y-story-config.md" usesCsf3 csf2Path="writing-tests/accessibility-testing#snippet-storybook-addon-a11y-story-config" />
+<CodeSnippets path="storybook-addon-a11y-story-config.md" />
 
 {/* prettier-ignore-end */}
 
 #### How to disable a11y tests
 
-Disable accessibility testing for stories or components by adding the following parameter to your story’s export or component’s default export respectively:
+<IfRenderer renderer="svelte">
+
+  If you are using Svelte CSF, you can turn off accessibility testing for stories or components by adding a parameter to your story or adjusting the defineMeta function with the required configuration. With a regular CSF story, you can add the following to your story's export or component's default export:
+  
+</IfRenderer>
+
+<IfRenderer renderer={['angular', 'vue', 'web-components', 'ember', 'html', 'react', 'preact', 'qwik', 'solid']}>
+
+  Disable accessibility testing for stories or components by adding the following parameter to your story’s export or component’s default export respectively:
+
+</IfRenderer>
+
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="storybook-addon-a11y-disable.md" usesCsf3 csf2Path="writing-tests/accessibility-testing#snippet-storybook-addon-a11y-disable" />
+<CodeSnippets path="storybook-addon-a11y-disable.md" />
 
 {/* prettier-ignore-end */}
 

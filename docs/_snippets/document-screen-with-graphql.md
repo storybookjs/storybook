@@ -66,7 +66,7 @@ export class SampleGraphqlComponent implements OnInit {
 }
 ```
 
-```js filename="YourPage.js|jsx" renderer="react" language="js"
+```js filename="YourPage.jsx" renderer="react" language="js"
 import { useQuery, gql } from '@apollo/client';
 
 import { PageLayout } from './PageLayout';
@@ -122,7 +122,7 @@ export function DocumentScreen() {
 }
 ```
 
-```ts filename="YourPage.ts|tsx" renderer="react" language="ts"
+```ts filename="YourPage.tsx" renderer="react" language="ts"
 import { useQuery, gql } from '@apollo/client';
 
 import { PageLayout } from './PageLayout';
@@ -202,7 +202,7 @@ export function DocumentScreen() {
 }
 ```
 
-```js filename="YourPage.js|jsx" renderer="solid" language="js"
+```js filename="YourPage.jsx" renderer="solid" language="js"
 import { Match, Switch } from 'solid-js';
 import { createGraphQLClient, gql } from '@solid-primitives/graphql';
 
@@ -263,7 +263,7 @@ export function DocumentScreen() {
 }
 ```
 
-```ts filename="YourPage.ts|tsx" renderer="solid" language="ts"
+```ts filename="YourPage.tsx" renderer="solid" language="ts"
 import { createGraphQLClient, gql } from '@solid-primitives/graphql';
 
 import { PageLayout } from './PageLayout';
@@ -347,9 +347,7 @@ export function DocumentScreen() {
 }
 ```
 
-```html renderer="vue" language="js" tabTitle="3"
-{/* YourPage.vue */}
-
+```html filename="YourPage.vue" renderer="vue" language="js"
 <template>
   <div v-if="loading">Loading...</div>
 
@@ -406,9 +404,7 @@ export function DocumentScreen() {
 </script>
 ```
 
-```html renderer="vue" language="ts" tabTitle="3"
-{/* YourPage.vue */}
-
+```html filename="YourPage.vue" renderer="vue" language="ts"
 <template>
   <div v-if="loading">Loading...</div>
 
@@ -467,3 +463,92 @@ export function DocumentScreen() {
 </script>
 ```
 
+```svelte filename="YourPage.svelte" renderer="svelte" language="js"
+<script>
+  import gql from 'graphql-tag';
+  import { query } from 'svelte-apollo';
+  import PageLayout from './PageLayout.svelte';
+  import DocumentHeader from './DocumentHeader.svelte';
+  import DocumentList from './DocumentList.svelte';
+
+  const AllInfoQuery = gql`
+    query AllInfoQuery {
+      user {
+        userID
+        name
+      }
+      document {
+        id
+        userID
+        title
+        brief
+        status
+      }
+      subdocuments {
+        id
+        userID
+        title
+        content
+        status
+      }
+    }
+  `;
+  const infoResult = query(AllInfoQuery);
+</script>
+
+{#if $infoResult.loading}
+<p>Loading...</p>
+{:else if $infoResult.error}
+<p>There was an error fetching the data!</p>
+{:else}
+<PageLayout {$infoResult.data.user}>
+  <DocumentHeader {$infoResult.data.document} />
+  <DocumentList {$infoResult.data.subdocuments} />
+</PageLayout>
+{/if}
+```
+
+```svelte filename="YourPage.svelte" renderer="svelte" language="ts"
+<script lang="ts">
+  import gql from 'graphql-tag';
+  import { query } from 'svelte-apollo';
+  import PageLayout from './PageLayout.svelte';
+  import DocumentHeader from './DocumentHeader.svelte';
+  import DocumentList from './DocumentList.svelte';
+
+  const AllInfoQuery = gql`
+    query AllInfoQuery {
+      user {
+        userID
+        name
+      }
+      document {
+        id
+        userID
+        title
+        brief
+        status
+      }
+      subdocuments {
+        id
+        userID
+        title
+        content
+        status
+      }
+    }
+  `;
+  const infoResult = query(AllInfoQuery);
+</script>
+
+{#if $infoResult.loading}
+<p>Loading...</p>
+{:else if $infoResult.error}
+<p>There was an error fetching the data!</p>
+{:else}
+<PageLayout {$infoResult.data.user}>
+  <DocumentHeader {$infoResult.data.document} />
+  <DocumentList {$infoResult.data.subdocuments} />
+</PageLayout>
+{/if}
+```

@@ -85,10 +85,6 @@ export class NPMProxy extends JsPackageManager {
     return 'npx';
   }
 
-  async getNpmVersion(): Promise<string> {
-    return this.executeCommand({ command: 'npm', args: ['--version'] });
-  }
-
   public async getPackageJSON(
     packageName: string,
     basePath = this.cwd

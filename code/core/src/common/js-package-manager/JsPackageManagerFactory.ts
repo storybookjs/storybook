@@ -3,6 +3,7 @@ import { basename, parse, relative } from 'node:path';
 import { sync as spawnSync } from 'cross-spawn';
 import { findUpSync } from 'find-up';
 
+import { BUNProxy } from './BUNProxy';
 import type { JsPackageManager, PackageManagerName } from './JsPackageManager';
 import { NPMProxy } from './NPMProxy';
 import { PNPMProxy } from './PNPMProxy';
@@ -12,12 +13,14 @@ import { Yarn2Proxy } from './Yarn2Proxy';
 const NPM_LOCKFILE = 'package-lock.json';
 const PNPM_LOCKFILE = 'pnpm-lock.yaml';
 const YARN_LOCKFILE = 'yarn.lock';
+const BUN_LOCKFILE = 'bun.lockb';
 
 type PackageManagerProxy =
   | typeof NPMProxy
   | typeof PNPMProxy
   | typeof Yarn1Proxy
-  | typeof Yarn2Proxy;
+  | typeof Yarn2Proxy
+  | typeof BUNProxy;
 
 export class JsPackageManagerFactory {
   public static getPackageManager(
@@ -33,6 +36,7 @@ export class JsPackageManagerFactory {
       findUpSync(YARN_LOCKFILE, { cwd }),
       findUpSync(PNPM_LOCKFILE, { cwd }),
       findUpSync(NPM_LOCKFILE, { cwd }),
+      findUpSync(BUN_LOCKFILE, { cwd }),
     ]
       .filter(Boolean)
       .sort((a, b) => {
@@ -59,6 +63,7 @@ export class JsPackageManagerFactory {
 
     const hasNPMCommand = hasNPM(cwd);
     const hasPNPMCommand = hasPNPM(cwd);
+    const hasBunCommand = hasBun(cwd);
     const yarnVersion = getYarnVersion(cwd);
 
     if (yarnVersion && (closestLockfile === YARN_LOCKFILE || (!hasNPMCommand && !hasPNPMCommand))) {
@@ -71,6 +76,10 @@ export class JsPackageManagerFactory {
 
     if (hasNPMCommand && closestLockfile === NPM_LOCKFILE) {
       return new NPMProxy({ cwd });
+    }
+
+    if (hasBunCommand && closestLockfile === BUN_LOCKFILE) {
+      return new BUNProxy({ cwd });
     }
 
     // Option 3: If the user is running a command via npx/pnpx/yarn create/etc, we infer the package manager from the command
@@ -94,6 +103,7 @@ export class JsPackageManagerFactory {
     pnpm: PNPMProxy,
     yarn1: Yarn1Proxy,
     yarn2: Yarn2Proxy,
+    bun: BUNProxy,
   };
 
   /**
@@ -131,9 +141,23 @@ function hasNPM(cwd?: string) {
     env: {
       ...process.env,
       COREPACK_ENABLE_STRICT: '0',
+      COREPACK_ENABLE_AUTO_PIN: '0',
     },
   });
   return npmVersionCommand.status === 0;
+}
+
+function hasBun(cwd?: string) {
+  const pnpmVersionCommand = spawnSync('bun', ['--version'], {
+    cwd,
+    shell: true,
+    env: {
+      ...process.env,
+      COREPACK_ENABLE_STRICT: '0',
+      COREPACK_ENABLE_AUTO_PIN: '0',
+    },
+  });
+  return pnpmVersionCommand.status === 0;
 }
 
 function hasPNPM(cwd?: string) {
@@ -143,6 +167,7 @@ function hasPNPM(cwd?: string) {
     env: {
       ...process.env,
       COREPACK_ENABLE_STRICT: '0',
+      COREPACK_ENABLE_AUTO_PIN: '0',
     },
   });
   return pnpmVersionCommand.status === 0;
@@ -155,6 +180,7 @@ function getYarnVersion(cwd?: string): 1 | 2 | undefined {
     env: {
       ...process.env,
       COREPACK_ENABLE_STRICT: '0',
+      COREPACK_ENABLE_AUTO_PIN: '0',
     },
   });
 

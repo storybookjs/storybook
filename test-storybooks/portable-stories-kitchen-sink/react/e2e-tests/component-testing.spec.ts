@@ -65,12 +65,22 @@ test.describe("component testing", () => {
     if ((await testStoryElement.getAttribute("aria-expanded")) !== "true") {
       testStoryElement.click();
     }
+    
+    const testingModuleDescription = await page.locator('[data-module-id="storybook/test/test-provider"]').locator('#testing-module-description');
 
-    await page.getByRole('button', { name: 'Run tests' }).click();
+    await expect(testingModuleDescription).toContainText('Not run');
+
+    const runTestsButton = await page.getByLabel('Start component tests')
+
+    await runTestsButton.click();
+
+    await expect(testingModuleDescription).toContainText('Testing', { timeout: 60000 });
 
     // Wait for test results to appear
+    await expect(testingModuleDescription).toHaveText(/Ran \d+ tests/, { timeout: 60000 });
+
     const errorFilter = page.getByLabel("Toggle errors");
-    await expect(errorFilter).toBeVisible({ timeout: 30000 });
+    await expect(errorFilter).toBeVisible();
 
     // Assert discrepancy: CLI pass + Browser fail
     const failingStoryElement = page.locator(
@@ -107,18 +117,37 @@ test.describe("component testing", () => {
 
     const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory("addons/test", "Expected Failure");
-
+    
     // For whatever reason, sometimes it takes longer for the story to load
     const storyElement = sbPage
       .getCanvasBodyElement()
       .getByRole("button", { name: "test" });
     await expect(storyElement).toBeVisible({ timeout: 10000 });
 
-    await page.getByRole('button', { name: 'Run tests' }).click();
+    await expect(page.locator('#testing-module-title')).toHaveText('Component tests');
+
+    const testingModuleDescription = await page.locator('[data-module-id="storybook/test/test-provider"]').locator('#testing-module-description');
+
+    await expect(testingModuleDescription).toContainText('Not run');
+
+    const runTestsButton = await page.getByLabel('Start component tests')
+    const watchModeButton = await page.getByLabel('Enable watch mode for Component tests')
+    await expect(runTestsButton).toBeEnabled();
+    await expect(watchModeButton).toBeEnabled();
+
+    await runTestsButton.click();
+    await expect(watchModeButton).toBeDisabled();
+
+    await expect(testingModuleDescription).toContainText('Testing');
 
     // Wait for test results to appear
+    await expect(testingModuleDescription).toHaveText(/Ran \d+ tests/, { timeout: 30000 });
+    
+    await expect(runTestsButton).toBeEnabled();
+    await expect(watchModeButton).toBeEnabled();
+
     const errorFilter = page.getByLabel("Toggle errors");
-    await expect(errorFilter).toBeVisible({ timeout: 30000 });
+    await expect(errorFilter).toBeVisible();
 
     // Assert for expected success
     const successfulStoryElement = page.locator(
@@ -147,7 +176,7 @@ test.describe("component testing", () => {
     await expect(sidebarItems).toHaveCount(1);
   });
 
-  test("should execute tests via testing module UI watch mode", async ({
+  test("should execute watch mode tests via testing module UI", async ({
     page,
     browserName,
   }) => {

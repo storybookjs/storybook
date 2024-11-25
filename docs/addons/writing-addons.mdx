@@ -26,7 +26,7 @@ The addon built in this guide is a UI-based addon, specifically a [toolbar](./ad
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="storybook-addon-toolkit-toolbar-example.md" />
+<CodeSnippets path="storybook-addon-toolkit-types.md" />
 
 {/* prettier-ignore-end */}
 
@@ -68,9 +68,7 @@ By default, code for the UI-based addons is located in one of the following file
 
 Going through the code blocks in sequence:
 
-```ts
-// src/Tool.tsx
-
+```ts title="src/Tool.tsx"
 import { useGlobals, useStorybookApi } from '@storybook/manager-api';
 import { IconButton } from '@storybook/components';
 import { LightningIcon } from '@storybook/icons';
@@ -80,9 +78,7 @@ The [`useGlobals`](./addons-api.mdx#useglobals) and [`useStorybookApi`](./addons
 
 The `IconButton` or `Button` component from the [`@storybook/components`](https://www.npmjs.com/package/@storybook/components) package can be used to render the buttons in the toolbar. The [`@storybook/icons`](https://github.com/storybookjs/icons) package provides a large set of appropriately sized and styled icons to choose from.
 
-```ts
-// src/Tool.tsx
-
+```ts title="src/Tool.tsx"
 export const Tool = memo(function MyAddonSelector() {
   const [globals, updateGlobals] = useGlobals();
   const api = useStorybookApi();
@@ -175,7 +171,7 @@ Storybook addons, similar to most packages in the JavaScript ecosystem, are dist
 
 The first category of metadata is related to the addon itself. This includes the entry for the module, which files to include when the addon is published. And the required configuration to integrate the addon with Storybook, allowing it to be used by its consumers.
 
-```json
+```json title="package.json"
 {
   "exports": {
     ".": {
@@ -213,7 +209,7 @@ The first category of metadata is related to the addon itself. This includes the
 
 The second metadata category is related to the [integration catalog](https://storybook.js.org/integrations). Most of this information is already pre-configured by the Addon Kit. However, items like the display name, icon, and frameworks must be configured via the `storybook` property to be displayed in the catalog.
 
-```json
+```json title="package.json"
 {
   "name": "my-storybook-addon",
   "version": "1.0.0",

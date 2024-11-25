@@ -170,7 +170,7 @@ const hasInteractiveStories = (rendererId: SupportedRenderers) =>
   ['react', 'angular', 'preact', 'svelte', 'vue3', 'html', 'solid', 'qwik'].includes(rendererId);
 
 const hasFrameworkTemplates = (framework?: SupportedFrameworks) =>
-  framework ? ['angular', 'nextjs'].includes(framework) : false;
+  framework ? ['angular', 'nextjs', 'react-native-web-vite'].includes(framework) : false;
 
 export async function baseGenerator(
   packageManager: JsPackageManager,
@@ -244,12 +244,7 @@ export async function baseGenerator(
     ...extraAddonsToInstall,
   ].filter(Boolean);
 
-  // TODO: migrate template stories in solid and qwik to use @storybook/test
-  if (['solid', 'qwik'].includes(rendererId)) {
-    addonPackages.push('@storybook/testing-library');
-  } else {
-    addonPackages.push('@storybook/test');
-  }
+  addonPackages.push('@storybook/test');
 
   if (hasInteractiveStories(rendererId)) {
     addons.push('@storybook/addon-interactions');

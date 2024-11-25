@@ -66,7 +66,6 @@ async function run() {
       await generateTypesMapperFiles(entries);
       await modifyThemeTypes();
       await generateTypesFiles(entries, isOptimized, cwd);
-      await modifyThemeTypes();
     })
   );
 

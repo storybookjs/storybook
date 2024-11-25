@@ -149,7 +149,7 @@ For instance, suppose you have a `variant` arg on your story that should be `pri
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story-controls-primary-variant.md" usesCsf3 csf2Path="essentials/controls#snippet-button-story-controls-primary-variant" />
+<CodeSnippets path="button-story-controls-primary-variant.md" />
 
 {/* prettier-ignore-end */}
 
@@ -161,7 +161,17 @@ It works as long as you type a valid string into the auto-generated text control
 
 We can specify which controls get used by declaring a custom [argType](../api/arg-types.mdx) for the `variant` property. ArgTypes encode basic metadata for args, such as name, description, and defaultValue for an arg. These get automatically filled in by Storybook Docs.
 
-`ArgTypes` can also contain arbitrary annotations, which the user can override. Since `variant` is a property of the component, let's put that annotation on the default export.
+<IfRenderer renderer="svelte">
+
+  `ArgTypes` can also contain arbitrary annotations, which the user can override. Since `variant` is a component property, let's put that annotation on the `defineMeta` function, or the default export if you're using standard CSF.
+
+</IfRenderer>
+
+<If notRenderer="svelte">
+
+  `ArgTypes` can also contain arbitrary annotations, which the user can override. Since `variant` is a component property, let's put that annotation on the default export.
+
+</If>
 
 {/* prettier-ignore-start */}
 
@@ -179,7 +189,7 @@ This replaces the input with a radio group for a more intuitive experience.
 
 ## Custom control type matchers
 
-Controls can automatically be inferred from arg's name with [regex](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/RegExp), but currently only for the color picker and date picker controls. If you've used the Storybook CLI to setup your project, it should have automatically created the following defaults in `.storybook/preview.js`:
+Controls can automatically be inferred from arg's name with [regex](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/RegExp), but currently only for the color picker and date picker controls. If you've used the Storybook CLI to setup your project, it should have automatically created the following defaults in `.storybook/preview.js|ts`:
 
 | Control   | Default regex                            | Description                                               |
 | --------- | ---------------------------------------- | --------------------------------------------------------- |
@@ -194,27 +204,24 @@ If you haven't used the CLI to set the configuration, or if you want to define y
 
 {/* prettier-ignore-end */}
 
-<IfRenderer renderer={['angular', 'ember', 'html', 'preact', 'qwik', 'react', 'solid', 'vue', 'web-components' ]}>
-  {/* Uncomment once frameworks that support custom templates are enabled to prevent misinformation about the example */}
+## Fully custom args
 
-  ## Fully custom args
+Until now, we only used auto-generated controls based on the component for which we're writing stories. If we are writing [complex stories](../writing-stories/stories-for-multiple-components.mdx), we may want to add controls for args that aren’t part of the component. For example, here's how you could use a `footer` arg to populate a child component:
 
-  Until now, we only used auto-generated controls based on the component for which we're writing stories. If we are writing [complex stories](../writing-stories/stories-for-multiple-components.mdx), we may want to add controls for args that aren’t part of the component. For example, here's how you could use a `footer` arg to populate a child component:
+{/* prettier-ignore-start */}
 
-  {/* prettier-ignore-start */}
+<CodeSnippets path="page-story-slots.md"/>
 
-  <CodeSnippets path="page-story-slots.md" usesCsf3 csf2Path="writing-stories/args#snippet-page-story-slots" />
+{/* prettier-ignore-end */}
 
-  {/* prettier-ignore-end */}
-
-  By default, Storybook will add controls for all args that:
+By default, Storybook will add controls for all args that:
 
   * It infers from the component definition [if your framework supports it](../configure/integration/frameworks-feature-support.mdx).
 
   * Appear in the list of args for your story.
 
-  Using `argTypes`, you can change the display and behavior of each control.
-</IfRenderer>
+Using `argTypes`, you can change the display and behavior of each control.
+
 
 ### Dealing with complex values
 
@@ -224,7 +231,7 @@ One way to deal with this is to use primitive values (e.g., strings) as arg valu
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="component-story-custom-args-complex.md" usesCsf3 csf2Path="essentials/controls#snippet-component-story-custom-args-complex" />
+<CodeSnippets path="component-story-custom-args-complex.md" />
 
 {/* prettier-ignore-end */}
 
@@ -239,6 +246,16 @@ Unless you need the flexibility of a function, an easier way to map primitives t
 Note that both `mapping` and `control.labels` don't have to be exhaustive. If the currently selected option is not listed, it's used verbatim.
 
 ## Creating and editing stories from controls
+
+<If renderer="svelte">
+
+  <Callout variant="info">
+
+    This feature is not supported with the Svelte CSF. To opt-in to this feature with Svelte, you must use Storybook's [Component Story Format](../api/csf.mdx).
+  
+  </Callout>
+  
+</If>
 
 The Controls addon allows you to create or edit stories, directly from the Controls panel.
 
@@ -262,7 +279,7 @@ You can also update a control's value, then save the changes to the story. The s
 
 ### Disable creating and editing of stories
 
-If you don't want to allow the creation or editing of stories from the Controls panel, you can disable this feature by setting the `disableSaveFromUI` parameter to `true` in the `parameters.controls` parameter in your `.storybook/preview.js` file.
+If you don't want to allow the creation or editing of stories from the Controls panel, you can disable this feature by setting the `disableSaveFromUI` parameter to `true` in the `parameters.controls` parameter in your `.storybook/preview.js|ts` file.
 
 ## Configuration
 
@@ -315,7 +332,7 @@ Controls supports the following configuration [parameters](../writing-stories/pa
 
 Since Controls is built on the same engine as Storybook Docs, it can also show property documentation alongside your controls using the expanded parameter (defaults to false). This means you embed a complete [`Controls`](../api/doc-blocks/doc-block-controls.mdx) doc block in the controls panel. The description and default value rendering can be [customized](#fully-custom-args) like the doc block.
 
-To enable expanded mode globally, add the following to [`.storybook/preview.js`](../configure/index.mdx#configure-story-rendering):
+To enable expanded mode globally, add the following to [`.storybook/preview.js|ts`](../configure/index.mdx#configure-story-rendering):
 
 {/* prettier-ignore-start */}
 
@@ -349,7 +366,7 @@ Consider the following story snippets:
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="component-story-disable-controls-regex.md" usesCsf3 csf2Path="essentials/controls#snippet-component-story-disable-controls-regex" />
+<CodeSnippets path="component-story-disable-controls-regex.md" />
 
 {/* prettier-ignore-end */}
 
@@ -431,13 +448,17 @@ It may also contain at most one of the following operators:
 
 If no operator is provided, that is equivalent to `{ truthy: true }`.
 
-<IfRenderer renderer={[ 'angular', 'ember', 'web-components' ]}>
-  ## Troubleshooting
+## Troubleshooting
 
+<IfRenderer renderer={['angular', 'ember', 'web-components']}>
   ### Controls are not automatically generated for my component
 
   If you're working with Angular, Ember, or Web Components, automatic argTypes and controls inference will not work out of the box and requires you to provide [additional configuration](#choosing-the-control-type) to allow Storybook to retrieve the necessary metadata and generate the needed argTypes and controls for your stories. However, if you need additional customization, you can always [define them manually](#fully-custom-args).
 </IfRenderer>
+
+### The controls are not updating the story within the auto-generated documentation
+
+If you turned off inline rendering for your stories via the [`inline`](../api/doc-blocks/doc-block-story.mdx#inline) configuration option, you would run into a situation where the associated controls are not updating the story within the documentation page. This is a known limitation of the current implementation and will be addressed in a future release.
 
 ## API
 

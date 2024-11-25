@@ -7,6 +7,8 @@ import type { Tag } from '@storybook/types';
 
 import type { API } from '@storybook/core/manager-api';
 
+import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
+
 const BUILT_IN_TAGS_SHOW = new Set(['play-fn']);
 
 const Wrapper = styled.div({
@@ -29,56 +31,60 @@ export const TagsFilterPanel = ({
   toggleTag,
   isDevelopment,
 }: TagsFilterPanelProps) => {
-  const theme = useTheme();
   const userTags = allTags.filter((tag) => !BUILT_IN_TAGS_SHOW.has(tag));
   const docsUrl = api.getDocsUrl({ subpath: 'writing-stories/tags#filtering-by-custom-tags' });
-  const items = allTags.map((tag) => {
-    const checked = selectedTags.includes(tag);
-    const id = `tag-${tag}`;
-    return {
-      id,
-      title: tag,
-      right: (
-        <input
-          type="checkbox"
-          id={id}
-          name={id}
-          value={tag}
-          checked={checked}
-          onChange={() => {
-            // The onClick handler higher up the tree will handle the toggle
-            // For controlled inputs, a onClick handler is needed, though
-            // Accessibility-wise this isn't optimal, but I guess that's a limitation
-            // of the current design of TooltipLinkList
-          }}
-        />
-      ),
-      onClick: () => toggleTag(tag),
-    };
-  }) as any[];
+
+  const groups = [
+    allTags.map((tag) => {
+      const checked = selectedTags.includes(tag);
+      const id = `tag-${tag}`;
+      return {
+        id,
+        title: tag,
+        right: (
+          <input
+            type="checkbox"
+            id={id}
+            name={id}
+            value={tag}
+            checked={checked}
+            onChange={() => {
+              // The onClick handler higher up the tree will handle the toggle
+              // For controlled inputs, a onClick handler is needed, though
+              // Accessibility-wise this isn't optimal, but I guess that's a limitation
+              // of the current design of TooltipLinkList
+            }}
+          />
+        ),
+        onClick: () => toggleTag(tag),
+      };
+    }),
+  ] as Link[][];
 
   if (allTags.length === 0) {
-    items.push({
-      id: 'no-tags',
-      title: 'There are no tags. Use tags to organize and filter your Storybook.',
-      isIndented: false,
-    });
-  }
-  if (userTags.length === 0 && isDevelopment) {
-    items.push({
-      id: 'tags-docs',
-      title: 'Learn how to add tags',
-      icon: <ShareAltIcon />,
-      href: docsUrl,
-      style: {
-        borderTop: `4px solid ${theme.appBorderColor}`,
+    groups.push([
+      {
+        id: 'no-tags',
+        title: 'There are no tags. Use tags to organize and filter your Storybook.',
+        isIndented: false,
       },
-    });
+    ]);
+  }
+
+  if (userTags.length === 0 && isDevelopment) {
+    groups.push([
+      {
+        id: 'tags-docs',
+        title: 'Learn how to add tags',
+        icon: <ShareAltIcon />,
+        href: docsUrl,
+      },
+    ]);
   }
 
   return (
     <Wrapper>
-      <TooltipLinkList links={items} />
+      <TooltipLinkList links={groups} />
     </Wrapper>
   );
 };

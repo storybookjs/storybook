@@ -5,6 +5,7 @@ import { TagsFilterPanel } from './TagsFilterPanel';
 
 const meta = {
   component: TagsFilterPanel,
+  title: 'Sidebar/TagsFilterPanel',
   args: {
     toggleTag: fn(),
     api: {

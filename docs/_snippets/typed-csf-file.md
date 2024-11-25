@@ -81,4 +81,3 @@ export const Primary: StoryObj = {
   },
 };
 ```
-

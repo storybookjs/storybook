@@ -16,4 +16,3 @@ export default {
   testPathForConsistencyCheck: 'example',
 };
 ```
-

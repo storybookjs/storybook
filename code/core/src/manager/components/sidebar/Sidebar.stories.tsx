@@ -33,6 +33,7 @@ const managerContext: any = {
       autodocs: 'tag',
       docsMode: false,
     },
+    testProviders: {},
   },
   api: {
     emit: fn().mockName('api::emit'),
@@ -85,6 +86,7 @@ const meta = {
     refs: {},
     status: {},
     showCreateStoryButton: true,
+    isDevelopment: true,
   },
   decorators: [
     (storyFn) => (

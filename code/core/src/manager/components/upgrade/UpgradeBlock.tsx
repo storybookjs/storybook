@@ -14,7 +14,7 @@ interface UpgradeBlockProps {
 
 export const UpgradeBlock: FC<UpgradeBlockProps> = ({ onNavigateToWhatsNew }) => {
   const api = useStorybookApi();
-  const [activeTab, setActiveTab] = useState<'npm' | 'pnpm'>('npm');
+  const [activeTab, setActiveTab] = useState<'npm' | 'yarn' | 'pnpm'>('npm');
 
   return (
     <Container>
@@ -24,12 +24,17 @@ export const UpgradeBlock: FC<UpgradeBlockProps> = ({ onNavigateToWhatsNew }) =>
         <ButtonTab active={activeTab === 'npm'} onClick={() => setActiveTab('npm')}>
           npm
         </ButtonTab>
+        <ButtonTab active={activeTab === 'yarn'} onClick={() => setActiveTab('yarn')}>
+          yarn
+        </ButtonTab>
         <ButtonTab active={activeTab === 'pnpm'} onClick={() => setActiveTab('pnpm')}>
           pnpm
         </ButtonTab>
       </Tabs>
       <Code>
-        {activeTab === 'npm' ? 'npx storybook@latest upgrade' : 'pnpm dlx storybook@latest upgrade'}
+        {activeTab === 'npm'
+          ? 'npx storybook@latest upgrade'
+          : `${activeTab} dlx storybook@latest upgrade`}
       </Code>
       {onNavigateToWhatsNew && (
         // eslint-disable-next-line jsx-a11y/anchor-is-valid

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/svelte",
-  "version": "8.4.0-beta.3",
+  "version": "8.5.0-alpha.10",
   "description": "Storybook Svelte renderer",
   "keywords": [
     "storybook"
@@ -55,11 +55,11 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/components": "workspace:^",
+    "@storybook/components": "workspace:*",
     "@storybook/global": "^5.0.0",
-    "@storybook/manager-api": "workspace:^",
-    "@storybook/preview-api": "workspace:^",
-    "@storybook/theming": "workspace:^",
+    "@storybook/manager-api": "workspace:*",
+    "@storybook/preview-api": "workspace:*",
+    "@storybook/theming": "workspace:*",
     "sveltedoc-parser": "^4.2.1",
     "ts-dedent": "^2.0.0",
     "type-fest": "~2.19"

@@ -5,6 +5,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { fn, userEvent } from '@storybook/test';
 
 import type { TestProviders } from '@storybook/core/core-events';
+import { ManagerContext } from '@storybook/core/manager-api';
 
 import { TestingModule } from './TestingModule';
 
@@ -23,8 +24,13 @@ const testProviders: TestProviders[keyof TestProviders][] = [
     type: Addon_TypesEnum.experimental_TEST_PROVIDER,
     id: 'component-tests',
     name: 'Component tests',
-    title: () => 'Component tests',
-    description: () => 'Ran 2 seconds ago',
+    render: () => (
+      <>
+        Component tests
+        <br />
+        Ran 2 seconds ago
+      </>
+    ),
     runnable: true,
     watchable: true,
     ...baseState,
@@ -33,8 +39,13 @@ const testProviders: TestProviders[keyof TestProviders][] = [
     type: Addon_TypesEnum.experimental_TEST_PROVIDER,
     id: 'visual-tests',
     name: 'Visual tests',
-    title: () => 'Visual tests',
-    description: () => 'Not run',
+    render: () => (
+      <>
+        Visual tests
+        <br />
+        Not run
+      </>
+    ),
     runnable: true,
     ...baseState,
   },
@@ -42,15 +53,30 @@ const testProviders: TestProviders[keyof TestProviders][] = [
     type: Addon_TypesEnum.experimental_TEST_PROVIDER,
     id: 'linting',
     name: 'Linting',
-    title: () => 'Linting',
-    description: () => 'Watching for changes',
+    render: () => (
+      <>
+        Linting
+        <br />
+        Watching for changes
+      </>
+    ),
     ...baseState,
     watching: true,
   },
 ];
 
+const managerContext: any = {
+  api: {
+    runTestProvider: fn().mockName('api::runTestProvider'),
+    cancelTestProvider: fn().mockName('api::cancelTestProvider'),
+    updateTestProviderState: fn().mockName('api::updateTestProviderState'),
+    setTestProviderWatchMode: fn().mockName('api::setTestProviderWatchMode'),
+  },
+};
+
 const meta = {
   component: TestingModule,
+  title: 'Sidebar/TestingModule',
   args: {
     testProviders,
     errorCount: 0,
@@ -59,11 +85,11 @@ const meta = {
     warningCount: 0,
     warningsActive: false,
     setWarningsActive: fn(),
-    onRunTests: fn(),
-    onCancelTests: fn(),
-    onSetWatchMode: fn(),
   },
   decorators: [
+    (storyFn) => (
+      <ManagerContext.Provider value={managerContext}>{storyFn()}</ManagerContext.Provider>
+    ),
     (StoryFn) => (
       <div style={{ maxWidth: 232 }}>
         <StoryFn />
@@ -180,8 +206,13 @@ export const Crashed: Story = {
     testProviders: [
       {
         ...testProviders[0],
-        title: () => "Component tests didn't complete",
-        description: () => 'Problems!',
+        render: () => (
+          <>
+            Component tests didn't complete
+            <br />
+            Problems!
+          </>
+        ),
         crashed: true,
       },
       ...testProviders.slice(1),

@@ -121,4 +121,3 @@ export default {
   decorators: [(story) => html`<div style="margin: 3em">${story()}</div>`],
 };
 ```
-

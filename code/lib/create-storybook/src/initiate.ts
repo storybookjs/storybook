@@ -31,6 +31,7 @@ import preactGenerator from './generators/PREACT';
 import qwikGenerator from './generators/QWIK';
 import reactGenerator from './generators/REACT';
 import reactNativeGenerator from './generators/REACT_NATIVE';
+import reactNativeWebGenerator from './generators/REACT_NATIVE_WEB';
 import reactScriptsGenerator from './generators/REACT_SCRIPTS';
 import serverGenerator from './generators/SERVER';
 import solidGenerator from './generators/SOLID';
@@ -80,6 +81,12 @@ const installStorybook = async <Project extends ProjectType>(
 
       case ProjectType.REACT_NATIVE: {
         return reactNativeGenerator(packageManager, npmOptions).then(
+          commandLog('Adding Storybook support to your "React Native" app')
+        );
+      }
+
+      case ProjectType.REACT_NATIVE_WEB: {
+        return reactNativeWebGenerator(packageManager, npmOptions, generatorOptions).then(
           commandLog('Adding Storybook support to your "React Native" app')
         );
       }

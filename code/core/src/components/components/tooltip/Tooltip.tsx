@@ -109,7 +109,7 @@ const Wrapper = styled.div<WrapperProps>(
             drop-shadow(0px 5px 5px rgba(0,0,0,0.05))
             drop-shadow(0 1px 3px rgba(0,0,0,0.1))
           `,
-          borderRadius: theme.appBorderRadius,
+          borderRadius: theme.appBorderRadius + 2,
           fontSize: theme.typography.size.s1,
         }
       : {}

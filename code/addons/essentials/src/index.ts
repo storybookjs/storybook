@@ -88,9 +88,9 @@ export function addons(options: PresetOptions) {
 
   // NOTE: The order of these addons is important.
   return [
+    'docs',
     'controls',
     'actions',
-    'docs',
     'backgrounds',
     'viewport',
     'toolbars',

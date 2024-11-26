@@ -189,6 +189,8 @@ const runGenerators = async (
             flags = ['--type html'];
           } else if (expected.renderer === '@storybook/server') {
             flags = ['--type server'];
+          } else if (expected.framework === '@storybook/react-native-web-vite') {
+            flags = ['--type react_native_web'];
           }
 
           const time = process.hrtime();

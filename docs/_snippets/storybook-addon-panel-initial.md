@@ -20,4 +20,3 @@ addons.register(ADDON_ID, (api) => {
   });
 });
 ```
-

@@ -81,7 +81,29 @@ export const NonA11yStory: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="svelte" language="js"
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="NonA11yStory"
+  parameters={{
+    a11y: {
+      // This option disables all a11y checks on this story
+      disable: true,
+    },
+  }}
+/>
+```
+
+```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import MyComponent from './MyComponent.svelte';
 
 export default {
@@ -98,7 +120,29 @@ export const NonA11yStory = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts-4-9"
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="NonA11yStory"
+  parameters={{
+    a11y: {
+      // This option disables all a11y checks on this story
+      disable: true,
+    },
+  }}
+/>
+```
+
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
 import MyComponent from './MyComponent.svelte';
@@ -120,7 +164,29 @@ export const NonA11yStory: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts"
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="NonA11yStory"
+  parameters={{
+    a11y: {
+      // This option disables all a11y checks on this story
+      disable: true,
+    },
+  }}
+/>
+```
+
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
 import MyComponent from './MyComponent.svelte';
@@ -237,4 +303,3 @@ export const ExampleStory: Story = {
   },
 };
 ```
-

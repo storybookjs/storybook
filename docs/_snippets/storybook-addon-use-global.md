@@ -39,4 +39,3 @@ export const withGlobals = (StoryFn: StoryFunction<Renderer>, context: StoryCont
   return StoryFn();
 };
 ```
-

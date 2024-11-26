@@ -7,4 +7,3 @@ export function babelDefault(config: TransformOptions) {
   };
 }
 ```
-

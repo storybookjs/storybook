@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-jest",
-  "version": "8.5.0-alpha.3",
+  "version": "8.5.0-alpha.10",
   "description": "React storybook addon that show component jest report",
   "keywords": [
     "addon",

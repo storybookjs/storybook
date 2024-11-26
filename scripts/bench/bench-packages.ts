@@ -370,7 +370,7 @@ const uploadToGithub = async ({
 const run = async () => {
   program
     .option(
-      '-b, --baseBranch <string>',
+      '-b, --base-branch <string>',
       'The base branch to compare the results with. Requires GCP_CREDENTIALS env var'
     )
     .option(

@@ -138,6 +138,8 @@ export const init: Task['run'] = async (
     extra = { type: 'html' };
   } else if (template.expected.renderer === '@storybook/server') {
     extra = { type: 'server' };
+  } else if (template.expected.framework === '@storybook/react-native-web-vite') {
+    extra = { type: 'react_native_web' };
   }
 
   await executeCLIStep(steps.init, {

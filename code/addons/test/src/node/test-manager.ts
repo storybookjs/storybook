@@ -1,13 +1,13 @@
 import type { Channel } from 'storybook/internal/channels';
 import {
   TESTING_MODULE_CANCEL_TEST_RUN_REQUEST,
+  TESTING_MODULE_CONFIG_CHANGE,
   TESTING_MODULE_PROGRESS_REPORT,
-  TESTING_MODULE_RUN_ALL_REQUEST,
   TESTING_MODULE_RUN_REQUEST,
   TESTING_MODULE_WATCH_MODE_REQUEST,
   type TestingModuleCancelTestRunRequestPayload,
+  type TestingModuleConfigChangePayload,
   type TestingModuleProgressReportPayload,
-  type TestingModuleRunAllRequestPayload,
   type TestingModuleRunRequestPayload,
   type TestingModuleWatchModeRequestPayload,
 } from 'storybook/internal/core-events';
@@ -16,7 +16,7 @@ import { TEST_PROVIDER_ID } from '../constants';
 import { VitestManager } from './vitest-manager';
 
 export class TestManager {
-  private vitestManager: VitestManager;
+  vitestManager: VitestManager;
 
   watchMode = false;
 
@@ -30,7 +30,7 @@ export class TestManager {
     this.vitestManager = new VitestManager(channel, this);
 
     this.channel.on(TESTING_MODULE_RUN_REQUEST, this.handleRunRequest.bind(this));
-    this.channel.on(TESTING_MODULE_RUN_ALL_REQUEST, this.handleRunAllRequest.bind(this));
+    this.channel.on(TESTING_MODULE_CONFIG_CHANGE, this.handleConfigChange.bind(this));
     this.channel.on(TESTING_MODULE_WATCH_MODE_REQUEST, this.handleWatchModeRequest.bind(this));
     this.channel.on(TESTING_MODULE_CANCEL_TEST_RUN_REQUEST, this.handleCancelRequest.bind(this));
 
@@ -43,14 +43,22 @@ export class TestManager {
     await this.vitestManager.startVitest(watchMode);
   }
 
-  async handleWatchModeRequest(request: TestingModuleWatchModeRequestPayload) {
+  async handleConfigChange(payload: TestingModuleConfigChangePayload) {
+    // TODO do something with the config
+    const config = payload.config;
+  }
+
+  async handleWatchModeRequest(payload: TestingModuleWatchModeRequestPayload) {
+    // TODO do something with the config
+    const config = payload.config;
+
     try {
-      if (request.providerId !== TEST_PROVIDER_ID) {
+      if (payload.providerId !== TEST_PROVIDER_ID) {
         return;
       }
 
-      if (this.watchMode !== request.watchMode) {
-        this.watchMode = request.watchMode;
+      if (this.watchMode !== payload.watchMode) {
+        this.watchMode = payload.watchMode;
         await this.restartVitest(this.watchMode);
       }
     } catch (e) {
@@ -58,33 +66,21 @@ export class TestManager {
     }
   }
 
-  async handleRunRequest(request: TestingModuleRunRequestPayload) {
+  async handleRunRequest(payload: TestingModuleRunRequestPayload) {
     try {
-      if (request.providerId !== TEST_PROVIDER_ID) {
+      if (payload.providerId !== TEST_PROVIDER_ID) {
         return;
       }
 
-      await this.vitestManager.runTests(request.payload);
+      await this.vitestManager.runTests(payload);
     } catch (e) {
       this.reportFatalError('Failed to run tests', e);
     }
   }
 
-  async handleRunAllRequest(request: TestingModuleRunAllRequestPayload) {
+  async handleCancelRequest(payload: TestingModuleCancelTestRunRequestPayload) {
     try {
-      if (request.providerId !== TEST_PROVIDER_ID) {
-        return;
-      }
-
-      await this.vitestManager.runAllTests();
-    } catch (e) {
-      this.reportFatalError('Failed to run all tests', e);
-    }
-  }
-
-  async handleCancelRequest(request: TestingModuleCancelTestRunRequestPayload) {
-    try {
-      if (request.providerId !== TEST_PROVIDER_ID) {
+      if (payload.providerId !== TEST_PROVIDER_ID) {
         return;
       }
 

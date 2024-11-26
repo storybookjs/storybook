@@ -18,10 +18,13 @@ import {
   PathnameContext,
   SearchParamsContext,
 } from 'next/dist/shared/lib/hooks-client-context.shared-runtime';
-import { type Params } from 'next/dist/shared/lib/router/utils/route-matcher';
 import { PAGE_SEGMENT_KEY } from 'next/dist/shared/lib/segment';
 
 import type { RouteParams } from './types';
+
+// Using an inline type so we can support Next 14 and lower
+// from https://github.com/vercel/next.js/blob/v15.0.3/packages/next/src/server/request/params.ts#L25
+type Params = Record<string, string | Array<string> | undefined>;
 
 type AppRouterProviderProps = {
   routeParams: RouteParams;

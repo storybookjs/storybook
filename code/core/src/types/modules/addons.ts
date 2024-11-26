@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import type { FC, PropsWithChildren, ReactElement, ReactNode } from 'react';
 
-import type { TestingModuleProgressReportProgress } from '../../core-events';
+import type { ListItem } from '../../components';
+import type { TestProviderConfig, TestingModuleProgressReportProgress } from '../../core-events';
 import type { RenderData as RouterData } from '../../router/types';
 import type { ThemeVars } from '../../theming/types';
 import type { API_SidebarOptions } from './api';
-import type { API_StatusState, API_StatusUpdate } from './api-stories';
+import type { API_HashEntry, API_StatusState, API_StatusUpdate } from './api-stories';
 import type {
   Args,
   ArgsStoryFn as ArgsStoryFnForFramework,
@@ -28,6 +29,7 @@ export type Addon_Types = Exclude<
   Addon_TypesEnum,
   | Addon_TypesEnum.experimental_PAGE
   | Addon_TypesEnum.experimental_SIDEBAR_BOTTOM
+  | Addon_TypesEnum.experimental_TEST_PROVIDER
   | Addon_TypesEnum.experimental_SIDEBAR_TOP
 >;
 
@@ -329,7 +331,7 @@ export type Addon_Type =
   | Addon_WrapperType
   | Addon_SidebarBottomType
   | Addon_SidebarTopType
-  | Addon_TestProviderType;
+  | Addon_TestProviderType<Addon_TestProviderState>;
 export interface Addon_BaseType {
   /**
    * The title of the addon. This can be a simple string, but it can also be a
@@ -467,13 +469,21 @@ export interface Addon_SidebarTopType {
 
 export interface Addon_TestProviderType<
   Details extends { [key: string]: any } = NonNullable<unknown>,
+  Config extends { [key: string]: any } = NonNullable<unknown>,
 > {
   type: Addon_TypesEnum.experimental_TEST_PROVIDER;
   /** The unique id of the test provider. */
   id: string;
   name: string;
-  title: (state: Addon_TestProviderState<Details>) => ReactNode;
-  description: (state: Addon_TestProviderState<Details>) => ReactNode;
+  /** @deprecated Use render instead */
+  title?: (state: TestProviderConfig & Addon_TestProviderState<Details, Config>) => ReactNode;
+  /** @deprecated Use render instead */
+  description?: (state: TestProviderConfig & Addon_TestProviderState<Details, Config>) => ReactNode;
+  render?: (state: TestProviderConfig & Addon_TestProviderState<Details, Config>) => ReactNode;
+  sidebarContextMenu?: (options: {
+    context: API_HashEntry;
+    state: Addon_TestProviderState<Details>;
+  }) => ReactNode;
   mapStatusUpdate?: (
     state: Addon_TestProviderState<Details>
   ) => API_StatusUpdate | ((state: API_StatusState) => API_StatusUpdate);
@@ -481,21 +491,24 @@ export interface Addon_TestProviderType<
   watchable?: boolean;
 }
 
-export type Addon_TestProviderState<Details extends { [key: string]: any } = NonNullable<unknown>> =
-  Pick<Addon_TestProviderType, 'runnable' | 'watchable'> & {
-    progress?: TestingModuleProgressReportProgress;
-    details: Details;
-    cancellable: boolean;
-    cancelling: boolean;
-    running: boolean;
-    watching: boolean;
-    failed: boolean;
-    crashed: boolean;
-    error?: {
-      name: string;
-      message?: string;
-    };
+export type Addon_TestProviderState<
+  Details extends { [key: string]: any } = NonNullable<unknown>,
+  Config extends { [key: string]: any } = NonNullable<unknown>,
+> = Pick<Addon_TestProviderType, 'runnable' | 'watchable'> & {
+  progress?: TestingModuleProgressReportProgress;
+  details: Details;
+  cancellable: boolean;
+  cancelling: boolean;
+  running: boolean;
+  watching: boolean;
+  failed: boolean;
+  crashed: boolean;
+  error?: {
+    name: string;
+    message?: string;
   };
+  config?: Config;
+};
 
 type Addon_TypeBaseNames = Exclude<
   Addon_TypesEnum,
@@ -511,7 +524,7 @@ export interface Addon_TypesMapping extends Record<Addon_TypeBaseNames, Addon_Ba
   [Addon_TypesEnum.experimental_PAGE]: Addon_PageType;
   [Addon_TypesEnum.experimental_SIDEBAR_BOTTOM]: Addon_SidebarBottomType;
   [Addon_TypesEnum.experimental_SIDEBAR_TOP]: Addon_SidebarTopType;
-  [Addon_TypesEnum.experimental_TEST_PROVIDER]: Addon_TestProviderType;
+  [Addon_TypesEnum.experimental_TEST_PROVIDER]: Addon_TestProviderType<Addon_TestProviderState>;
 }
 
 export type Addon_Loader<API> = (api: API) => void;

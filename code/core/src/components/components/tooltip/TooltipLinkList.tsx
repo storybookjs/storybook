@@ -1,5 +1,5 @@
-import type { ComponentProps, SyntheticEvent } from 'react';
-import React, { useCallback } from 'react';
+import type { ComponentProps, ReactNode, SyntheticEvent } from 'react';
+import React, { Fragment, useCallback } from 'react';
 
 import { styled } from '@storybook/core/theming';
 
@@ -15,7 +15,8 @@ const List = styled.div(
   },
   ({ theme }) => ({
     borderRadius: theme.appBorderRadius + 2,
-  })
+  }),
+  ({ theme }) => (theme.base === 'dark' ? { background: theme.background.content } : {})
 );
 
 const Group = styled.div(({ theme }) => ({
@@ -25,7 +26,7 @@ const Group = styled.div(({ theme }) => ({
   },
 }));
 
-export interface Link extends Omit<ListItemProps, 'onClick'> {
+export interface NormalLink extends Omit<ListItemProps, 'onClick'> {
   id: string;
   onClick?: (
     event: SyntheticEvent,
@@ -33,7 +34,18 @@ export interface Link extends Omit<ListItemProps, 'onClick'> {
   ) => void;
 }
 
-interface ItemProps extends Link {
+export type Link = CustomLink | NormalLink;
+
+/**
+ * This is a custom link that can be used in the `TooltipLinkList` component. It allows for custom
+ * content to be rendered in the list; it does not have to be a link.
+ */
+interface CustomLink {
+  id: string;
+  content: ReactNode;
+}
+
+interface ItemProps extends NormalLink {
   isIndented?: boolean;
 }
 
@@ -55,7 +67,7 @@ export interface TooltipLinkListProps extends ComponentProps<typeof List> {
 
 export const TooltipLinkList = ({ links, LinkWrapper, ...props }: TooltipLinkListProps) => {
   const groups = Array.isArray(links[0]) ? (links as Link[][]) : [links as Link[]];
-  const isIndented = groups.some((group) => group.some((link) => link.icon));
+  const isIndented = groups.some((group) => group.some((link) => 'icon' in link && link.icon));
   return (
     <List {...props}>
       {groups
@@ -63,9 +75,14 @@ export const TooltipLinkList = ({ links, LinkWrapper, ...props }: TooltipLinkLis
         .map((group, index) => {
           return (
             <Group key={group.map((link) => link.id).join(`~${index}~`)}>
-              {group.map((link) => (
-                <Item key={link.id} isIndented={isIndented} LinkWrapper={LinkWrapper} {...link} />
-              ))}
+              {group.map((link) => {
+                if ('content' in link) {
+                  return <Fragment key={link.id}>{link.content}</Fragment>;
+                }
+                return (
+                  <Item key={link.id} isIndented={isIndented} LinkWrapper={LinkWrapper} {...link} />
+                );
+              })}
             </Group>
           );
         })}

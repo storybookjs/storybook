@@ -27,4 +27,3 @@ const preview: ProjectAnnotations<Renderer> = {
 
 export default preview;
 ```
-

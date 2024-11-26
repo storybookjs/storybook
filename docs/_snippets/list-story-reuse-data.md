@@ -245,7 +245,7 @@ export const ManyItems: Story = {
 };
 ```
 
-```js filename="List.stories.js" renderer="vue" language="js" tabTitle="3"
+```js filename="List.stories.js" renderer="vue" language="js"
 import List from './ListComponent.vue';
 import ListItem from './ListItem.vue';
 
@@ -276,7 +276,7 @@ export const ManyItems = {
 };
 ```
 
-```ts filename="List.stories.ts" renderer="vue" language="ts-4-9" tabTitle="3"
+```ts filename="List.stories.ts" renderer="vue" language="ts-4-9"
 import type { Meta, StoryObj } from '@storybook/vue3';
 
 import List from './ListComponent.vue';
@@ -312,7 +312,7 @@ export const ManyItems: Story = {
 };
 ```
 
-```ts filename="List.stories.ts" renderer="vue" language="ts" tabTitle="3"
+```ts filename="List.stories.ts" renderer="vue" language="ts"
 import type { Meta, StoryObj } from '@storybook/vue3';
 
 import List from './ListComponent.vue';
@@ -392,4 +392,3 @@ export const ManyItems: Story = {
   `,
 };
 ```
-

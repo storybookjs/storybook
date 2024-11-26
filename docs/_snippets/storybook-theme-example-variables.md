@@ -9,4 +9,3 @@ export default create({
   brandTarget: '_self',
 });
 ```
-

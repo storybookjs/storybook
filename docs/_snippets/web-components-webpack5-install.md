@@ -9,4 +9,3 @@ pnpm add --save-dev @storybook/web-components-webpack5
 ```shell renderer="web-components" language="js" packageManager="yarn"
 yarn add --dev @storybook/web-components-webpack5
 ```
-

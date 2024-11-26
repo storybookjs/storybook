@@ -1,0 +1,27 @@
+name: Publish to Chromatic
+
+on:
+  push:
+    branches:
+      - next
+  pull_request:
+    branches:
+      - next
+
+jobs:
+  chromatic-deployment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Publish to Chromatic
+        uses: chromaui/action@latest
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}

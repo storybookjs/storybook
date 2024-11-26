@@ -21,4 +21,3 @@ export const Sample = {
   render: () => <Button label="hello button" />,
 };
 ```
-

@@ -76,9 +76,11 @@ export default {
   component: Component,
 } as Meta<typeof Component>;
 
-export const Default: StoryObj<typeof Component> = {};
+type Story = StoryObj<typeof Component>;
 
-export const InAppDir: StoryObj<typeof Component> = {
+export const Default: Story = {};
+
+export const InAppDir: Story = {
   parameters: {
     nextjs: {
       appDirectory: true,

@@ -7,7 +7,7 @@ sidebar:
 
 Storybook for React & Webpack is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for [React](https://react.dev/) applications built with [Webpack](https://webpack.js.org/).
 
-<If notRenderer={'react'}>
+<If notRenderer="react">
   <Callout variant="info">
     Storybook for React & Webpack is only supported in [React](?renderer=react) projects.
   </Callout>
@@ -15,7 +15,7 @@ Storybook for React & Webpack is a [framework](../../contribute/framework.mdx) t
   {/* End non-supported renderers */}
 </If>
 
-<If renderer={'react'}>
+<If renderer="react">
   ## Requirements
 
   * React ≥ 16.8
@@ -112,21 +112,11 @@ Storybook for React & Webpack is a [framework](../../contribute/framework.mdx) t
 
   You can pass an options object for additional configuration if needed:
 
-  ```ts
-  // .storybook/main.ts
-  import type { StorybookConfig } from '@storybook/react-webpack5';
+  {/* prettier-ignore-start */}
 
-  const config: StorybookConfig = {
-    framework: {
-      name: '@storybook/react-webpack5',
-      options: {
-        // ...
-      },
-    },
-  };
+  <CodeSnippets path="react-webpack5-framework-options.md" />
 
-  export default config;
-  ```
+  {/* prettier-ignore-end */}  
 
   #### `builder`
 

@@ -24,7 +24,6 @@ import { Search } from './Search';
 import { SearchResults } from './SearchResults';
 import { SidebarBottom } from './SidebarBottom';
 import { TagsFilter } from './TagsFilter';
-import { TEST_PROVIDER_ID } from './Tree';
 import type { CombinedDataset, Selection } from './types';
 import { useLastViewed } from './useLastViewed';
 

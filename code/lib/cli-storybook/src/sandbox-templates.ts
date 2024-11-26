@@ -208,10 +208,34 @@ const baseTemplates = {
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
-  'experimental-nextjs-vite/default-ts': {
+  'experimental-nextjs-vite/14-ts': {
     name: 'Next.js Latest (Vite | TypeScript)',
     script:
       'npx create-next-app@^14 {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
+    expected: {
+      framework: '@storybook/experimental-nextjs-vite',
+      renderer: '@storybook/react',
+      builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      mainConfig: {
+        framework: '@storybook/experimental-nextjs-vite',
+        features: { experimentalRSC: true },
+      },
+      extraDependencies: [
+        'server-only',
+        '@storybook/experimental-nextjs-vite',
+        'vite',
+        'prop-types',
+      ],
+    },
+    inDevelopment: true,
+    skipTasks: ['e2e-tests-dev', 'bench'],
+  },
+  'experimental-nextjs-vite/default-ts': {
+    name: 'Next.js Latest (Vite | TypeScript)',
+    script:
+      'npx create-next-app {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
     expected: {
       framework: '@storybook/experimental-nextjs-vite',
       renderer: '@storybook/react',

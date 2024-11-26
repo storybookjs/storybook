@@ -10,7 +10,7 @@ sidebar:
 Component Story Format (CSF) is the recommended way to [write stories](../writing-stories/index.mdx). It's an [open standard](https://github.com/ComponentDriven/csf) based on ES6 modules that is portable beyond Storybook.
 
 <Callout variant="info" icon="💡">
-  If you have stories written in the older `storiesOf()` syntax, it was removed in Storybook 8.0 and is no longer maintained. We recommend migrating your stories to CSF. See the [migration guide](../migration-guide/index.mdx#storiesof-to-csf) for more information.
+  If you have stories written in the older `storiesOf()` syntax, it was removed in Storybook 8.0 and is no longer maintained. We recommend migrating your stories to CSF. See the [migration guide](../migration-guide/index.mdx#major-breaking-changes) for more information.
 </Callout>
 
 In CSF, stories and component metadata are defined as ES Modules. Every component story file consists of a required [default export](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export#Using_the_default_export) and one or more [named exports](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export).
@@ -35,7 +35,7 @@ With CSF, every named export in the file represents a story object by default.
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="my-component-story-basic-and-props.md" usesCsf3 csf2Path="api/csf#snippet-my-component-story-basic-and-props" />
+<CodeSnippets path="my-component-story-basic-and-props.md" />
 
 {/* prettier-ignore-end */}
 
@@ -57,7 +57,7 @@ Storybook's `name` configuration element is helpful in specific circumstances. C
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="my-component-story-with-storyname.md" usesCsf3 csf2Path="api/csf#snippet-my-component-story-with-storyname" />
+<CodeSnippets path="my-component-story-with-storyname.md" />
 
 {/* prettier-ignore-end */}
 
@@ -69,7 +69,7 @@ Consider Storybook’s ["Button" example](../writing-stories/index.mdx#defining-
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story-click-handler.md" usesCsf3 csf2Path="api/csf#snippet-button-story-click-handler" />
+<CodeSnippets path="button-story-click-handler.md" />
 
 {/* prettier-ignore-end */}
 
@@ -77,7 +77,7 @@ Now consider the same example, re-written with args:
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story-click-handler-args.md" usesCsf3 csf2Path="api/csf#snippet-button-story-click-handler-args" />
+<CodeSnippets path="button-story-click-handler-args.md" />
 
 {/* prettier-ignore-end */}
 
@@ -85,7 +85,7 @@ Or even more simply:
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story-click-handler-simplificated.md" usesCsf3 csf2Path="api/csf#snippet-button-story-click-handler-simplificated" />
+<CodeSnippets path="button-story-click-handler-simplificated.md" />
 
 {/* prettier-ignore-end */}
 
@@ -101,7 +101,7 @@ A good use case for the `play` function is a form component. With previous Story
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="login-form-with-play-function.md" usesCsf3 csf2Path="api/csf#snippet-login-form-with-play-function" />
+<CodeSnippets path="login-form-with-play-function.md" />
 
 {/* prettier-ignore-end */}
 
@@ -114,7 +114,7 @@ When the story renders in the UI, Storybook executes each step defined in the `p
 
   {/* prettier-ignore-start */}
 
-  <CodeSnippets path="component-story-with-custom-render-function.md" usesCsf3 csf2Path="api/csf#snippet-component-story-with-custom-render-function" />
+  <CodeSnippets path="component-story-with-custom-render-function.md" />
 
   {/* prettier-ignore-end */}
 
@@ -152,7 +152,7 @@ Consider the following story file:
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="my-component-story-with-nonstory.md" usesCsf3 csf2Path="api/csf#snippet-my-component-story-with-nonstory" />
+<CodeSnippets path="my-component-story-with-nonstory.md" />
 
 {/* prettier-ignore-end */}
 

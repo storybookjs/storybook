@@ -354,7 +354,7 @@ export const Default: Story = {
 };
 ```
 
-```js filename="Histogram.stories.js" renderer="vue" language="js" tabTitle="3"
+```js filename="Histogram.stories.js" renderer="vue" language="js"
 import Histogram from './Histogram.vue';
 
 export default {
@@ -383,7 +383,7 @@ export const Default = {
 };
 ```
 
-```ts filename="Histogram.stories.ts" renderer="vue" language="ts-4-9" tabTitle="3"
+```ts filename="Histogram.stories.ts" renderer="vue" language="ts-4-9"
 import type { Meta, StoryObj } from '@storybook/vue3';
 
 import Histogram from './Histogram.vue';
@@ -417,7 +417,7 @@ export const Default: Story = {
 };
 ```
 
-```ts filename="Histogram.stories.ts" renderer="vue" language="ts" tabTitle="3"
+```ts filename="Histogram.stories.ts" renderer="vue" language="ts"
 import type { Meta, StoryObj } from '@storybook/vue3';
 
 import Histogram from './Histogram.vue';

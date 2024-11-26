@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from '@storybook/angular';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
 import { getUserFromSession } from '#api/session.mock';
+
 import { Page } from './Page';
 
 const meta: Meta<Page> = {
@@ -22,6 +23,7 @@ export const Default: Story = {
 
 ```js filename="Page.stories.js" renderer="common" language="js"
 import { getUserFromSession } from '#api/session.mock';
+
 import { Page } from './Page';
 
 export default {
@@ -42,6 +44,7 @@ import type { Meta, StoryObj } from '@storybook/your-renderer';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
 import { getUserFromSession } from '#api/session.mock';
+
 import { Page } from './Page';
 
 const meta = {
@@ -66,6 +69,7 @@ import type { Meta, StoryObj } from '@storybook/your-renderer';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
 import { getUserFromSession } from '#api/session.mock';
+
 import { Page } from './Page';
 
 const meta: Meta<typeof Page> = {
@@ -118,4 +122,3 @@ export const Default: Story = {
   },
 };
 ```
-

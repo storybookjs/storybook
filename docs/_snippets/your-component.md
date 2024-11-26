@@ -322,7 +322,7 @@ export const FirstStory: Story = {
 };
 ```
 
-```js filename="YourComponent.stories.js" renderer="vue" language="js" tabTitle="3"
+```js filename="YourComponent.stories.js" renderer="vue" language="js"
 import YourComponent from './YourComponent.vue';
 
 //👇 This default export determines where your story goes in the story list
@@ -349,9 +349,7 @@ export const FirstStory = {
 };
 ```
 
-```ts filename="YourComponent.stories.js" renderer="vue" language="ts-4-9" tabTitle="3"
-import type { Meta, StoryObj } from '@storybook/vue3';
-
+```ts filename="YourComponent.stories.js" renderer="vue" language="ts-4-9"
 import YourComponent from './YourComponent.vue';
 
 const meta = {
@@ -381,7 +379,7 @@ export const Primary: Story = {
 };
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="vue" language="ts" tabTitle="3"
+```ts filename="YourComponent.stories.ts" renderer="vue" language="ts"
 import type { Meta, StoryObj } from '@storybook/vue3';
 
 import YourComponent from './YourComponent.vue';

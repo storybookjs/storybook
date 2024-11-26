@@ -1,6 +1,4 @@
 /* eslint-disable no-underscore-dangle */
-import { join, resolve } from 'node:path';
-
 import type { Plugin } from 'vitest/config';
 
 import {
@@ -11,6 +9,8 @@ import {
 import { readConfig, vitestTransform } from 'storybook/internal/csf-tools';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
 import type { StoriesEntry } from 'storybook/internal/types';
+
+import { join, resolve } from 'pathe';
 
 import type { InternalOptions, UserOptions } from './types';
 
@@ -99,6 +99,9 @@ export const storybookTest = (options?: UserOptions): Plugin => {
         ...config.test.env,
         // To be accessed by the setup file
         __STORYBOOK_URL__: storybookUrl,
+        __VITEST_INCLUDE_TAGS__: finalOptions.tags.include.join(','),
+        __VITEST_EXCLUDE_TAGS__: finalOptions.tags.exclude.join(','),
+        __VITEST_SKIP_TAGS__: finalOptions.tags.skip.join(','),
       };
 
       if (config.test.browser) {

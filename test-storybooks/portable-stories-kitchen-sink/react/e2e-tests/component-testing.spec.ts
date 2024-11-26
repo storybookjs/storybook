@@ -136,8 +136,6 @@ test.describe("component testing", () => {
     await expect(watchModeButton).toBeEnabled();
 
     await runTestsButton.click();
-
-    await expect(runTestsButton).toBeDisabled();
     await expect(watchModeButton).toBeDisabled();
 
     await expect(testingModuleDescription).toContainText('Testing');

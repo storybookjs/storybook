@@ -1,18 +1,14 @@
 import React, { type SyntheticEvent, useEffect, useRef, useState } from 'react';
 
 import { Button, TooltipNote } from '@storybook/core/components';
+import { WithTooltip } from '@storybook/core/components';
 import { keyframes, styled } from '@storybook/core/theming';
-import {
-  ChevronSmallUpIcon,
-  EyeIcon,
-  PlayAllHollowIcon,
-  PlayHollowIcon,
-  StopAltHollowIcon,
-} from '@storybook/icons';
+import { ChevronSmallUpIcon, PlayAllHollowIcon } from '@storybook/icons';
 
 import type { TestProviders } from '@storybook/core/core-events';
+import { useStorybookApi } from '@storybook/core/manager-api';
 
-import { WithTooltip } from '../../../components/components/tooltip/WithTooltip';
+import { LegacyRender } from './LegacyRender';
 
 const DEFAULT_HEIGHT = 500;
 
@@ -148,43 +144,6 @@ const TestProvider = styled.div({
   gap: 6,
 });
 
-const Info = styled.div({
-  display: 'flex',
-  flexDirection: 'column',
-  marginLeft: 6,
-});
-
-const Actions = styled.div({
-  display: 'flex',
-  gap: 6,
-});
-
-const TitleWrapper = styled.div<{ crashed?: boolean }>(({ crashed, theme }) => ({
-  fontSize: theme.typography.size.s1,
-  fontWeight: crashed ? 'bold' : 'normal',
-  color: crashed ? theme.color.negativeText : theme.color.defaultText,
-}));
-
-const DescriptionWrapper = styled.div(({ theme }) => ({
-  fontSize: theme.typography.size.s1,
-  color: theme.barTextColor,
-}));
-
-const DynamicInfo = ({ state }: { state: TestProviders[keyof TestProviders] }) => {
-  const Description = state.description;
-  const Title = state.title;
-  return (
-    <Info>
-      <TitleWrapper crashed={state.crashed} id="testing-module-title">
-        <Title {...state} />
-      </TitleWrapper>
-      <DescriptionWrapper id="testing-module-description">
-        <Description {...state} />
-      </DescriptionWrapper>
-    </Info>
-  );
-};
-
 interface TestingModuleProps {
   testProviders: TestProviders[keyof TestProviders][];
   errorCount: number;
@@ -193,9 +152,6 @@ interface TestingModuleProps {
   warningCount: number;
   warningsActive: boolean;
   setWarningsActive: (active: boolean) => void;
-  onRunTests: (providerId: string) => void;
-  onCancelTests: (providerId: string) => void;
-  onSetWatchMode: (providerId: string, watchMode: boolean) => void;
 }
 
 export const TestingModule = ({
@@ -206,10 +162,8 @@ export const TestingModule = ({
   warningCount,
   warningsActive,
   setWarningsActive,
-  onRunTests,
-  onCancelTests,
-  onSetWatchMode,
 }: TestingModuleProps) => {
+  const api = useStorybookApi();
   const contentRef = useRef<HTMLDivElement>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [maxHeight, setMaxHeight] = useState(DEFAULT_HEIGHT);
@@ -243,50 +197,14 @@ export const TestingModule = ({
           }}
         >
           <Content ref={contentRef}>
-            {testProviders.map((state) => (
-              <TestProvider key={state.id} data-module-id={state.id}>
-                <DynamicInfo state={state} />
-                <Actions>
-                  {state.watchable && (
-                    <Button
-                      aria-label={`${state.watching ? 'Disable' : 'Enable'} watch mode for ${state.name}`}
-                      variant="ghost"
-                      padding="small"
-                      active={state.watching}
-                      onClick={() => onSetWatchMode(state.id, !state.watching)}
-                      disabled={state.crashed || state.running}
-                    >
-                      <EyeIcon />
-                    </Button>
-                  )}
-                  {state.runnable && (
-                    <>
-                      {state.running && state.cancellable ? (
-                        <Button
-                          aria-label={`Stop ${state.name}`}
-                          variant="ghost"
-                          padding="small"
-                          onClick={() => onCancelTests(state.id)}
-                          disabled={state.cancelling}
-                        >
-                          <StopAltHollowIcon />
-                        </Button>
-                      ) : (
-                        <Button
-                          aria-label={`Start ${state.name}`}
-                          variant="ghost"
-                          padding="small"
-                          onClick={() => onRunTests(state.id)}
-                          disabled={state.crashed || state.running}
-                        >
-                          <PlayHollowIcon />
-                        </Button>
-                      )}
-                    </>
-                  )}
-                </Actions>
-              </TestProvider>
-            ))}
+            {testProviders.map((state) => {
+              const { render: Render } = state;
+              return (
+                <TestProvider key={state.id} data-module-id={state.id}>
+                  {Render ? <Render {...state} /> : <LegacyRender {...state} />}
+                </TestProvider>
+              );
+            })}
           </Content>
         </Collapsible>
 
@@ -299,7 +217,7 @@ export const TestingModule = ({
                 e.stopPropagation();
                 testProviders
                   .filter((state) => !state.crashed && !state.running && state.runnable)
-                  .forEach(({ id }) => onRunTests(id));
+                  .forEach(({ id }) => api.runTestProvider(id));
               }}
               disabled={running}
             >

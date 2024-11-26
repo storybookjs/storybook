@@ -3,4 +3,3 @@ import { addons } from '@storybook/preview-api';
 
 import { useStorybookApi } from '@storybook/manager-api';
 ```
-

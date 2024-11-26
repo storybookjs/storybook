@@ -19,8 +19,8 @@ import { global } from '@storybook/global';
 import { type Call, CallStates, EVENTS, type LogItem } from '@storybook/instrumenter';
 import type { API_StatusValue } from '@storybook/types';
 
-import { InteractionsPanel } from './components/InteractionsPanel';
-import { ADDON_ID, TEST_PROVIDER_ID } from './constants';
+import { ADDON_ID, TEST_PROVIDER_ID } from '../constants';
+import { InteractionsPanel } from './InteractionsPanel';
 
 interface Interaction extends Call {
   status: Call['status'];

@@ -1,6 +1,5 @@
 import { fn } from '@storybook/test';
 
-// This export won't exist in Next.js 14 but it's safe because we ignore it in Webpack when applicable
 import { draftMode as originalDraftMode } from 'next/dist/server/request/draft-mode';
 import * as headers from 'next/dist/server/request/headers';
 

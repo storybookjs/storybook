@@ -99,4 +99,3 @@ export const Simple: Story = {
   parameters: {},
 };
 ```
-

@@ -1,5 +1,7 @@
 import React from 'react';
 
+import type { Meta, StoryObj } from '@storybook/react';
+
 import Image from 'next/legacy/image';
 
 import Accessibility from '../../assets/accessibility.svg';
@@ -10,17 +12,19 @@ export default {
     src: Accessibility,
     alt: 'Accessibility',
   },
-};
+} as Meta<typeof Image>;
 
-export const Default = {};
+type Story = StoryObj<typeof Image>;
 
-export const BlurredPlaceholder = {
+export const Default: Story = {};
+
+export const BlurredPlaceholder: Story = {
   args: {
     placeholder: 'blur',
   },
 };
 
-export const BlurredAbsolutePlaceholder = {
+export const BlurredAbsolutePlaceholder: Story = {
   args: {
     src: 'https://storybook.js.org/images/placeholders/50x50.png',
     width: 50,

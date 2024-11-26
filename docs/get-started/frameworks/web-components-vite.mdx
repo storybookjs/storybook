@@ -7,7 +7,7 @@ sidebar:
 
 Storybook for Web components & Vite is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for applications using [Web components](https://www.webcomponents.org/introduction) built with [Vite](https://vitejs.dev/).
 
-<If notRenderer={'web-components'}>
+<If notRenderer="web-components">
   <Callout variant="info">
     Storybook for Web components & Vite is only supported in [Web components](?renderer=web-components) projects.
   </Callout>
@@ -15,7 +15,7 @@ Storybook for Web components & Vite is a [framework](../../contribute/framework.
   {/* End non-supported renderers */}
 </If>
 
-<If renderer={'web-components'}>
+<If renderer="web-components">
   ## Requirements
 
   * Vite ≥ 4.0
@@ -73,20 +73,11 @@ Storybook for Web components & Vite is a [framework](../../contribute/framework.
 
   You can pass an options object for additional configuration if needed:
 
-  ```js
-  // .storybook/main.js
-  import * as path from 'path';
+  {/* prettier-ignore-start */}
 
-  export default {
-    // ...
-    framework: {
-      name: '@storybook/web-components-vite',
-      options: {
-        // ...
-      },
-    },
-  };
-  ```
+  <CodeSnippets path="web-components-vite-framework-options.md" />
+
+  {/* prettier-ignore-end */}  
 
   The available options are:
 

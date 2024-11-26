@@ -15,4 +15,3 @@ addons.register('my-addon', () => {
   });
 });
 ```
-

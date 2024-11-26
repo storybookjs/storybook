@@ -1,7 +1,7 @@
 import type { ComponentProps, FC } from 'react';
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 
-import type { Button, TooltipLinkListLink } from '@storybook/core/components';
+import type { Button } from '@storybook/core/components';
 import { IconButton, TooltipLinkList, WithTooltip } from '@storybook/core/components';
 import { styled } from '@storybook/core/theming';
 import { CloseIcon, CogIcon } from '@storybook/icons';
@@ -55,28 +55,11 @@ const MenuButtonGroup = styled.div({
   gap: 4,
 });
 
-type ClickHandler = TooltipLinkListLink['onClick'];
-
 const SidebarMenuList: FC<{
   menu: MenuList;
-  onHide: () => void;
-}> = ({ menu, onHide }) => {
-  const links = useMemo(
-    () =>
-      menu.map((group) =>
-        group.map(({ onClick, ...rest }) => ({
-          ...rest,
-          onClick: ((event, item) => {
-            if (onClick) {
-              onClick(event, item);
-            }
-            onHide();
-          }) as ClickHandler,
-        }))
-      ),
-    [menu, onHide]
-  );
-  return <TooltipLinkList links={links} />;
+  onClick: () => void;
+}> = ({ menu, onClick }) => {
+  return <TooltipLinkList links={menu} onClick={onClick} />;
 };
 
 export interface SidebarMenuProps {
@@ -118,7 +101,7 @@ export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted, onClick
     <WithTooltip
       placement="top"
       closeOnOutsideClick
-      tooltip={({ onHide }) => <SidebarMenuList onHide={onHide} menu={menu} />}
+      tooltip={({ onHide }) => <SidebarMenuList onClick={onHide} menu={menu} />}
       onVisibleChange={setIsTooltipVisible}
     >
       <SidebarIconButton

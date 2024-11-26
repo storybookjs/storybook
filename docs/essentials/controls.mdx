@@ -448,13 +448,17 @@ It may also contain at most one of the following operators:
 
 If no operator is provided, that is equivalent to `{ truthy: true }`.
 
-<IfRenderer renderer={[ 'angular', 'ember', 'web-components' ]}>
-  ## Troubleshooting
+## Troubleshooting
 
+<IfRenderer renderer={['angular', 'ember', 'web-components']}>
   ### Controls are not automatically generated for my component
 
   If you're working with Angular, Ember, or Web Components, automatic argTypes and controls inference will not work out of the box and requires you to provide [additional configuration](#choosing-the-control-type) to allow Storybook to retrieve the necessary metadata and generate the needed argTypes and controls for your stories. However, if you need additional customization, you can always [define them manually](#fully-custom-args).
 </IfRenderer>
+
+### The controls are not updating the story within the auto-generated documentation
+
+If you turned off inline rendering for your stories via the [`inline`](../api/doc-blocks/doc-block-story.mdx#inline) configuration option, you would run into a situation where the associated controls are not updating the story within the documentation page. This is a known limitation of the current implementation and will be addressed in a future release.
 
 ## API
 

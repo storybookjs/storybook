@@ -105,9 +105,18 @@ export const storybookTest = (options?: UserOptions): Plugin => {
         config.test.browser.screenshotFailures ??= false;
       }
 
+      // copying straight from https://github.com/vitejs/vite/blob/main/packages/vite/src/node/constants.ts#L60
+      // to avoid having to maintain Vite as a dependency just for this
+      const viteDefaultClientConditions = ['module', 'browser', 'development|production'];
+
       config.resolve ??= {};
       config.resolve.conditions ??= [];
-      config.resolve.conditions.push('storybook', 'stories', 'test');
+      config.resolve.conditions.push(
+        'storybook',
+        'stories',
+        'test',
+        ...viteDefaultClientConditions
+      );
 
       config.test.setupFiles ??= [];
       if (typeof config.test.setupFiles === 'string') {

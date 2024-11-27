@@ -20,6 +20,20 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "node": "./dist/index.js",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./preset": {
+      "types": "./dist/preset.d.ts",
+      "require": "./dist/preset.js"
+    },
+    "./builders/builder.json": "./src/builders/builders.json",
+    "./package.json": "./package.json"
+  },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -33,20 +47,17 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node ../../../scripts/node_modules/.bin/tsc",
-    "prep": "rimraf dist && jiti ../../../scripts/prepare/tsc.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
+    "@storybook/angular-renderer": "workspace:*",
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/components": "workspace:*",
     "@storybook/core-webpack": "workspace:*",
     "@storybook/global": "^5.0.0",
-    "@storybook/manager-api": "workspace:*",
-    "@storybook/preview-api": "workspace:*",
-    "@storybook/theming": "workspace:*",
+    "@storybook/preset-angular-webpack": "workspace:*",
     "@types/node": "^22.0.0",
-    "@types/react": "^18.0.37",
-    "@types/react-dom": "^18.0.11",
     "@types/semver": "^7.3.4",
     "@types/webpack-env": "^1.18.0",
     "fd-package-json": "^1.2.0",
@@ -54,53 +65,20 @@
     "semver": "^7.3.7",
     "telejson": "^7.2.0",
     "ts-dedent": "^2.0.0",
-    "tsconfig-paths-webpack-plugin": "^4.0.1",
     "util-deprecate": "^1.0.2",
     "webpack": "5"
   },
   "devDependencies": {
     "@analogjs/vite-plugin-angular": "^0.2.24",
-    "@angular-devkit/architect": "^0.1703.0",
-    "@angular-devkit/build-angular": "^17.3.0",
-    "@angular-devkit/core": "^17.3.0",
-    "@angular/animations": "^17.3.0",
-    "@angular/cli": "^17.3.0",
-    "@angular/common": "^17.3.0",
-    "@angular/compiler": "^17.3.0",
-    "@angular/compiler-cli": "^17.3.0",
-    "@angular/core": "^17.3.0",
-    "@angular/forms": "^17.3.0",
-    "@angular/platform-browser": "^17.3.0",
-    "@angular/platform-browser-dynamic": "^17.3.0",
-    "@types/cross-spawn": "^6.0.2",
-    "@types/tmp": "^0.2.3",
-    "cross-spawn": "^7.0.3",
-    "tmp": "^0.2.1",
-    "typescript": "^5.3.2",
-    "webpack": "5",
-    "zone.js": "^0.14.2"
+    "typescript": "^5.3.2"
   },
   "peerDependencies": {
     "@angular-devkit/architect": ">=0.1500.0 < 0.2000.0",
     "@angular-devkit/build-angular": ">=15.0.0 < 20.0.0",
     "@angular-devkit/core": ">=15.0.0 < 20.0.0",
-    "@angular/cli": ">=15.0.0 < 20.0.0",
-    "@angular/common": ">=15.0.0 < 20.0.0",
-    "@angular/compiler": ">=15.0.0 < 20.0.0",
-    "@angular/compiler-cli": ">=15.0.0 < 20.0.0",
-    "@angular/core": ">=15.0.0 < 20.0.0",
-    "@angular/forms": ">=15.0.0 < 20.0.0",
-    "@angular/platform-browser": ">=15.0.0 < 20.0.0",
-    "@angular/platform-browser-dynamic": ">=15.0.0 < 20.0.0",
     "rxjs": "^6.0.0 || ^7.4.0",
     "storybook": "workspace:^",
-    "typescript": "^4.0.0 || ^5.0.0",
-    "zone.js": ">= 0.11.1 < 1.0.0"
-  },
-  "peerDependenciesMeta": {
-    "@angular/cli": {
-      "optional": true
-    }
+    "typescript": "^4.0.0 || ^5.0.0"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -110,8 +88,14 @@
   },
   "builders": "dist/builders/builders.json",
   "bundler": {
+    "entries": [
+      "./src/index.ts",
+      "./src/preset.ts",
+      "./src/builders/build-storybook/index.ts",
+      "./src/builders/start-storybook/index.ts"
+    ],
     "post": "./scripts/postbuild.js",
-    "tsConfig": "tsconfig.build.json"
+    "platform": "node"
   },
   "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

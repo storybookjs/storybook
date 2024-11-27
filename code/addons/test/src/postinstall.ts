@@ -1,8 +1,6 @@
 import { existsSync } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import { writeFile } from 'node:fs/promises';
-import { dirname, join, relative } from 'node:path';
-import * as path from 'node:path';
 
 import {
   JsPackageManagerFactory,
@@ -16,6 +14,7 @@ import { colors, logger } from 'storybook/internal/node-logger';
 // eslint-disable-next-line depend/ban-dependencies
 import { execa } from 'execa';
 import { findUp } from 'find-up';
+import { dirname, extname, join, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';
 import prompts from 'prompts';
 import { coerce, satisfies } from 'semver';
@@ -27,7 +26,8 @@ import { printError, printInfo, printSuccess, step } from './postinstall-logger'
 const ADDON_NAME = '@storybook/experimental-addon-test' as const;
 const EXTENSIONS = ['.js', '.jsx', '.ts', '.tsx', '.cts', '.mts', '.cjs', '.mjs'] as const;
 
-const findFile = async (basename: string) => findUp(EXTENSIONS.map((ext) => basename + ext));
+const findFile = async (basename: string, extraExtensions: string[] = []) =>
+  findUp([...EXTENSIONS, ...extraExtensions].map((ext) => basename + ext));
 
 export default async function postInstall(options: PostinstallOptions) {
   printSuccess(
@@ -244,7 +244,10 @@ export default async function postInstall(options: PostinstallOptions) {
     args: ['playwright', 'install', 'chromium', '--with-deps'],
   });
 
-  const vitestSetupFile = path.resolve(options.configDir, 'vitest.setup.ts');
+  const fileExtension =
+    allDeps['typescript'] || (await findFile('tsconfig', ['.json'])) ? 'ts' : 'js';
+
+  const vitestSetupFile = resolve(options.configDir, `vitest.setup.${fileExtension}`);
   if (existsSync(vitestSetupFile)) {
     printError(
       '🚨 Oh no!',
@@ -264,9 +267,9 @@ export default async function postInstall(options: PostinstallOptions) {
   logger.plain(`${step} Creating a Vitest setup file for Storybook:`);
   logger.plain(colors.gray(`  ${vitestSetupFile}`));
 
-  const previewExists = EXTENSIONS.map((ext) =>
-    path.resolve(options.configDir, `preview${ext}`)
-  ).some((config) => existsSync(config));
+  const previewExists = EXTENSIONS.map((ext) => resolve(options.configDir, `preview${ext}`)).some(
+    (config) => existsSync(config)
+  );
 
   await writeFile(
     vitestSetupFile,
@@ -331,10 +334,10 @@ export default async function postInstall(options: PostinstallOptions) {
 
   if (rootConfig) {
     // If there's an existing config, we create a workspace file so we can run Storybook tests alongside.
-    const extname = path.extname(rootConfig);
-    const browserWorkspaceFile = path.resolve(dirname(rootConfig), `vitest.workspace${extname}`);
+    const extension = extname(rootConfig);
+    const browserWorkspaceFile = resolve(dirname(rootConfig), `vitest.workspace${extension}`);
     // to be set in vitest config
-    const vitestSetupFilePath = path.relative(path.dirname(browserWorkspaceFile), vitestSetupFile);
+    const vitestSetupFilePath = relative(dirname(browserWorkspaceFile), vitestSetupFile);
 
     logger.line(1);
     logger.plain(`${step} Creating a Vitest project workspace file:`);
@@ -373,9 +376,9 @@ export default async function postInstall(options: PostinstallOptions) {
     );
   } else {
     // If there's no existing Vitest/Vite config, we create a new Vitest config file.
-    const newVitestConfigFile = path.resolve('vitest.config.ts');
+    const newVitestConfigFile = resolve(`vitest.config.${fileExtension}`);
     // to be set in vitest config
-    const vitestSetupFilePath = path.relative(path.dirname(newVitestConfigFile), vitestSetupFile);
+    const vitestSetupFilePath = relative(dirname(newVitestConfigFile), vitestSetupFile);
 
     logger.line(1);
     logger.plain(`${step} Creating a Vitest project config file:`);
@@ -453,6 +456,12 @@ const getVitestPluginInfo = (framework: string) => {
     frameworkPluginCall = 'storybookVuePlugin()';
   }
 
+  if (framework === '@storybook/react-native-web-vite') {
+    frameworkPluginImport =
+      "import { storybookReactNativeWeb } from '@storybook/react-native-web-vite/vite-plugin';";
+    frameworkPluginCall = 'storybookReactNativeWeb()';
+  }
+
   // spaces for file identation
   frameworkPluginImport = `\n${frameworkPluginImport}`;
   frameworkPluginDocs = frameworkPluginDocs ? `\n    ${frameworkPluginDocs}` : '';
@@ -491,14 +500,17 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
   }
 
   const builderPackageJson = await fs.readFile(
-    `${typeof builder === 'string' ? builder : builder.name}/package.json`,
+    require.resolve(join(typeof builder === 'string' ? builder : builder.name, 'package.json')),
     'utf8'
   );
   const builderPackageName = JSON.parse(builderPackageJson).name;
 
   let rendererPackageName: string | undefined;
   if (renderer) {
-    const rendererPackageJson = await fs.readFile(`${renderer}/package.json`, 'utf8');
+    const rendererPackageJson = await fs.readFile(
+      require.resolve(join(renderer, 'package.json')),
+      'utf8'
+    );
     rendererPackageName = JSON.parse(rendererPackageJson).name;
   }
 

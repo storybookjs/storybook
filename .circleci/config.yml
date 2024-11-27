@@ -165,17 +165,15 @@ jobs:
           root: .
           paths:
             - code/node_modules
+            - code/addons
             - scripts/node_modules
             - code/bench
             - code/examples
-            - code/node_modules
-            - code/addons
             - code/frameworks
             - code/deprecated
             - code/lib
             - code/core
             - code/builders
-            - code/ui
             - code/renderers
             - code/presets
             - .verdaccio-cache
@@ -269,16 +267,30 @@ jobs:
     steps:
       - git-shallow-clone/checkout_advanced:
           clone_options: "--depth 1 --verbose"
-      - attach_workspace:
-          at: .
       - nx/set-shas:
           main-branch-name: "next"
           workflow-name: << pipeline.parameters.workflow >>
       - run:
+          name: install in scripts
+          command: |
+            cd scripts
+            yarn install
+      - run:
+          name: install in code
+          command: |
+            cd code
+            yarn install
+      - run:
+          name: Compile
+          command: |
+            yarn task --task compile --start-from=compile --no-link --debug
+      - run:
           name: Check
           command: |
-            yarn task --task compile --start-from=auto --no-link --debug
-            yarn task --task check --start-from=auto --no-link --debug
+            yarn task --task check --start-from=check --no-link --debug
+      - run:
+          name: Ensure no changes pending
+          command: |
             git diff --exit-code
       - report-workflow-on-failure
       - cancel-workflow-on-failure
@@ -807,9 +819,7 @@ workflows:
       - bench-packages:
           requires:
             - build
-      - check:
-          requires:
-            - build
+      - check
       - unit-tests:
           requires:
             - build
@@ -885,9 +895,7 @@ workflows:
       - bench-packages:
           requires:
             - build
-      - check:
-          requires:
-            - build
+      - check
       - unit-tests:
           requires:
             - build
@@ -964,9 +972,7 @@ workflows:
       - bench-packages:
           requires:
             - build
-      - check:
-          requires:
-            - build
+      - check
       - unit-tests:
           requires:
             - build

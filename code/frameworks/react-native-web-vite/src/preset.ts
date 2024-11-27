@@ -1,15 +1,12 @@
 // @ts-expect-error FIXME
 import { viteFinal as reactViteFinal } from '@storybook/react-vite/preset';
 
-import type { BabelOptions, Options as ReactOptions } from '@vitejs/plugin-react';
 import react from '@vitejs/plugin-react';
 import type { PluginOption } from 'vite';
 
 import type { FrameworkOptions, StorybookConfig } from './types';
 
-function reactNativeWeb(
-  reactOptions: Omit<ReactOptions, 'babel'> & { babel?: BabelOptions }
-): PluginOption {
+export function reactNativeWeb(): PluginOption {
   return {
     name: 'vite:react-native-web',
     config(_userConfig, env) {
@@ -80,7 +77,7 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
       ...pluginReactOptions,
     })
   );
-  plugins.push(reactNativeWeb(pluginReactOptions));
+  plugins.push(reactNativeWeb());
 
   return reactConfig;
 };

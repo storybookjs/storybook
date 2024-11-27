@@ -119,28 +119,18 @@ There are some noteworthy items here:
 
   {/* prettier-ignore-end */}
 
+  <If notRenderer="angular">
+
+    #### Storybook doesn't work with an empty directory
+
+    By default, Storybook is configured to detect whether you're initializing it on an empty directory or an existing project. However, if you attempt to initialize Storybook, select a Vite-based framework (e.g., [React](./frameworks/react-vite.mdx)) in a directory that only contains a `package.json` file, you may run into issues with [Yarn Modern](https://yarnpkg.com/getting-started). This is due to how Yarn handles peer dependencies and how Storybook is set up to work with Vite-based frameworks, as it requires the [Vite](https://vitejs.dev/) package to be installed. To solve this issue, you must install Vite manually and initialize Storybook.
+    
+  </If>
+  
   <IfRenderer renderer="angular">
     #### Storybook doesn't work with my Angular project using the Angular CLI
 
-    Out of the box, adding Storybook to an Angular project using the Angular CLI requires you to run the installation command from the root of the project or, if you're working with a monorepo environment, from the directory where the Angular configuration file (i.e., `angular.json`) is located as it will be used to set up the builder configuration necessary to run Storybook. However, if you need, you can extend the builder configuration to customize Storybook's behavior. Listed below are the supported options:
-
-    | Configuration element        | Description                                                                                                                                                                                         |
-    | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-    | `"browserTarget"`            | Build target to be served using the following format. <br /> `"example-project:builder:config"`                                                                                                     |
-    | `"tsConfig"`                 | Location of the TypeScript configuration file, relative to the current workspace. <br /> `"tsConfig": "./tsconfig.json"`.                                                                           |
-    | `"port"`                     | Port used by Storybook. <br /> `"port": 6006`                                                                                                                                                       |
-    | `"host"`                     | Set up a custom host for Storybook. <br /> `"host": "http://my-custom-host"`                                                                                                                        |
-    | `"configDir"`                | Storybook configuration directory location. <br /> `"configDir": ".storybook"`                                                                                                                      |
-    | `"https"`                    | Starts Storybook with HTTPS enabled. <br /> `"https": true` <br /> Requires custom certificate information.                                                                                         |
-    | `"sslCa"`                    | Provides an SSL certificate authority. <br /> `"sslCa": "your-custom-certificate-authority"` <br /> Optional usage with `"https"`                                                                   |
-    | `"sslCert"`                  | Provides an SSL certificate. <br /> `"sslCert": "your-custom-certificate"` <br /> Required for `https`                                                                                              |
-    | `"sslKey"`                   | Provides an SSL key to serve Storybook. <br /> `"sslKey": "your-ssl-key"`                                                                                                                           |
-    | `"smokeTest"`                | Exit Storybook after successful start. <br /> `"smokeTest": true`                                                                                                                                   |
-    | `"ci"`                       | Starts Storybook in CI mode (skips interactive prompts and will not open browser window). <br /> `"ci": true`                                                                                       |
-    | `"quiet"`                    | Filters Storybook verbose build output. <br /> `"quiet": true`                                                                                                                                      |
-    | `"docs"`                     | Starts Storybook in [documentation mode](../writing-docs/build-documentation.mdx#preview-storybooks-documentation). <br /> `"docs": true`                                                           |
-    | `"styles"`                   | Provide the location of the [application's styles](../configure/styling-and-css.mdx#importing-css-files) to be used with Storybook. <br /> `"styles": ["src/styles.css", "src/styles.scss"]` <br /> |
-    | `"stylePreprocessorOptions"` | Provides further customization for style preprocessors resolved to the workspace root. <br /> `"stylePreprocessorOptions": { "includePaths": ["src/styles"] }`                                      |
+    Out of the box, adding Storybook to an Angular project using the Angular CLI requires you to run the installation command from the root of the project or, if you're working with a monorepo environment, from the directory where the Angular configuration file (i.e., `angular.json`) is located as it will be used to set up the builder configuration necessary to run Storybook. However, if you need, you can extend the builder configuration to customize Storybook's behavior. To learn more about the available options, see the [Angular framework documentation](./frameworks/angular.mdx#how-do-i-configure-angulars-builder-for-storybook).
   </IfRenderer>
 
   <IfRenderer renderer="ember">

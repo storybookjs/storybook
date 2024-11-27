@@ -3,7 +3,7 @@ import { dirname, join, parse, relative, resolve } from 'node:path';
 
 import findPackageJson from 'find-package-json';
 import MagicString from 'magic-string';
-import type { PluginOption } from 'vite';
+import type { ModuleNode, PluginOption } from 'vite';
 import {
   type ComponentMeta,
   type MetaCheckerOptions,
@@ -145,6 +145,20 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
       } catch (e) {
         return undefined;
       }
+    },
+    // handle hot updates to update the component meta on file changes
+    async handleHotUpdate({ file, read, server, modules, timestamp }) {
+      const content = await read();
+      checker.updateFile(file, content);
+      // Invalidate modules manually
+      const invalidatedModules = new Set<ModuleNode>();
+
+      for (const mod of modules) {
+        server.moduleGraph.invalidateModule(mod, invalidatedModules, timestamp, true);
+      }
+
+      server.ws.send({ type: 'full-reload' });
+      return [];
     },
   };
 }

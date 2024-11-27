@@ -3,4 +3,3 @@ export default {
   managerEntries: ['some-storybook-addon/entry-point.js'],
 };
 ```
-

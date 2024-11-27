@@ -308,4 +308,3 @@ export const Example: Story = {
   },
 };
 ```
-

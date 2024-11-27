@@ -43,9 +43,10 @@ export const PrimaryLongName: Story = {
 
 <Story name="Primary" args={primaryArgs} />
 
-<Story name="PrimaryLongName" args={{
-  ...primaryArgs,
-  label: 'Primary with a really long name'
+<Story name="PrimaryLongName"
+  args={{
+    ...primaryArgs,
+    label: 'Primary with a really long name'
   }} />
 ```
 
@@ -111,9 +112,10 @@ export const PrimaryLongName = {
 
 <Story name="Primary" args={primaryArgs} />
 
-<Story name="PrimaryLongName" args={{
-  ...primaryArgs,
-  label: 'Primary with a really long name'
+<Story name="PrimaryLongName"
+  args={{
+    ...primaryArgs,
+    label: 'Primary with a really long name'
   }} />
 ```
 
@@ -190,9 +192,10 @@ export const PrimaryLongName: Story = {
 
 <Story name="Primary" args={primaryArgs} />
 
-<Story name="PrimaryLongName" args={{
-  ...primaryArgs,
-  label: 'Primary with a really long name'
+<Story name="PrimaryLongName"
+  args={{
+    ...primaryArgs,
+    label: 'Primary with a really long name'
   }} />
 ```
 

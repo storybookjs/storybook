@@ -114,4 +114,3 @@ export const GoBack: Story = {
   },
 };
 ```
-

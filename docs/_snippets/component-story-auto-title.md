@@ -80,4 +80,3 @@ export const Default = {
   args: { message: 'Hello world!' },
 };
 ```
-

@@ -1,6 +1,7 @@
 import { Component, Output, EventEmitter } from '@angular/core';
 
 @Component({
+  standalone: false,
   selector: 'storybook-form',
   template: `
     <form id="interaction-test-form" (submit)="handleSubmit($event)">

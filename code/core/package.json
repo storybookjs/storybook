@@ -1,6 +1,6 @@
 {
   "name": "@storybook/core",
-  "version": "8.5.0-alpha.10",
+  "version": "8.5.0-alpha.11",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"

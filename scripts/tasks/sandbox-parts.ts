@@ -109,9 +109,10 @@ export const install: Task['run'] = async ({ sandboxDir, key }, { link, dryRun, 
       'svelte-vite/default-ts',
       'vue3-vite/default-js',
       'vue3-vite/default-ts',
+      'svelte-kit/skeleton-ts',
     ];
-    if (sandboxesNeedingWorkarounds.includes(key)) {
-      await addWorkaroundResolutions({ cwd, dryRun, debug });
+    if (sandboxesNeedingWorkarounds.includes(key) || key.includes('vite')) {
+      await addWorkaroundResolutions({ cwd, dryRun, debug, key });
     }
 
     await exec(

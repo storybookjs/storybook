@@ -116,6 +116,7 @@
     "@storybook/addon-toolbars": "workspace:*",
     "@storybook/addon-viewport": "workspace:*",
     "@storybook/angular": "workspace:*",
+    "@storybook/angular-renderer": "workspace:*",
     "@storybook/bench": "next",
     "@storybook/blocks": "workspace:*",
     "@storybook/builder-vite": "workspace:*",
@@ -138,6 +139,7 @@
     "@storybook/preact": "workspace:*",
     "@storybook/preact-vite": "workspace:*",
     "@storybook/preact-webpack5": "workspace:*",
+    "@storybook/preset-angular-webpack": "workspace:*",
     "@storybook/preset-create-react-app": "workspace:*",
     "@storybook/preset-html-webpack": "workspace:*",
     "@storybook/preset-preact-webpack": "workspace:*",
@@ -294,5 +296,8 @@
         "Dependency Upgrades"
       ]
     ]
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.1"
   }
 }

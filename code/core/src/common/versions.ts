@@ -70,6 +70,7 @@ export default {
   '@storybook/instrumenter': '8.5.0-alpha.20',
   '@storybook/react-dom-shim': '8.5.0-alpha.20',
   '@storybook/source-loader': '8.5.0-alpha.20',
+  '@storybook/preset-angular-webpack': '8.5.0-alpha.19'
   '@storybook/test': '8.5.0-alpha.20',
   '@storybook/preset-create-react-app': '8.5.0-alpha.20',
   '@storybook/preset-html-webpack': '8.5.0-alpha.20',
@@ -79,6 +80,7 @@ export default {
   '@storybook/preset-svelte-webpack': '8.5.0-alpha.20',
   '@storybook/preset-vue3-webpack': '8.5.0-alpha.20',
   '@storybook/html': '8.5.0-alpha.20',
+  '@storybook/angular-renderer': '8.5.0-alpha.19',
   '@storybook/preact': '8.5.0-alpha.20',
   '@storybook/react': '8.5.0-alpha.20',
   '@storybook/server': '8.5.0-alpha.20',

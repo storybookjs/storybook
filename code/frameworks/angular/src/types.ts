@@ -9,6 +9,7 @@ import {
   StorybookConfig as StorybookConfigBase,
   TypescriptOptions as TypescriptOptionsReact,
 } from '@storybook/core-webpack';
+import { AngularOptions } from '@storybook/preset-angular-webpack/src';
 
 type FrameworkName = CompatibleString<'@storybook/angular'>;
 type BuilderName = CompatibleString<'@storybook/builder-webpack5'>;
@@ -21,16 +22,16 @@ type StorybookConfigFramework = {
   framework:
     | FrameworkName
     | {
-        name: FrameworkName;
-        options: FrameworkOptions;
-      };
+    name: FrameworkName;
+    options: FrameworkOptions;
+  };
   core?: StorybookConfigBase['core'] & {
     builder?:
       | BuilderName
       | {
-          name: BuilderName;
-          options: BuilderOptions;
-        };
+      name: BuilderName;
+      options: BuilderOptions;
+    };
   };
   typescript?: Partial<TypescriptOptionsBuilder & TypescriptOptionsReact> &
     StorybookConfigBase['typescript'];
@@ -43,8 +44,3 @@ export type StorybookConfig = Omit<
 > &
   StorybookConfigWebpack &
   StorybookConfigFramework;
-
-export interface AngularOptions {
-  enableIvy?: boolean;
-  enableNgcc?: boolean;
-}

@@ -1,0 +1,131 @@
+{
+  "name": "@storybook/preset-angular-webpack",
+  "version": "8.5.0-alpha.11",
+  "description": "Storybook for Angular: Develop Angular Component in isolation with Hot Reloading",
+  "keywords": [
+    "storybook"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/presets/angular-webpack",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/presets/angular-webpack"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "node": "./dist/index.js",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./preset": {
+      "types": "./dist/index.d.ts",
+      "node": "./dist/index.js",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./dist/server/framework-preset-angular-cli": {
+      "types": "./dist/server/framework-preset-angular-cli.d.ts",
+      "import": "./dist/server/framework-preset-angular-cli.mjs",
+      "require": "./dist/server/framework-preset-angular-cli.js"
+    },
+    "./dist/server/framework-preset-angular-docs": {
+      "types": "./dist/server/framework-preset-angular-docs.d.ts",
+      "import": "./dist/server/framework-preset-angular-docs.mjs",
+      "require": "./dist/server/framework-preset-angular-docs.js"
+    },
+    "./dist/server/framework-preset-angular-ivy": {
+      "types": "./dist/server/framework-preset-angular-ivy.d.ts",
+      "import": "./dist/server/framework-preset-angular-ivy.mjs",
+      "require": "./dist/server/framework-preset-angular-ivy.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "*.js",
+    "*.d.ts",
+    "!src/**/*"
+  ],
+  "scripts": {
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
+  },
+  "dependencies": {
+    "@storybook/angular-renderer": "workspace:*",
+    "@storybook/core-webpack": "workspace:*",
+    "@types/node": "^22.0.0",
+    "@types/semver": "^7.3.4",
+    "find-up": "^5.0.0",
+    "resolve": "^1.22.8",
+    "semver": "^7.3.7",
+    "tsconfig-paths": "^4.2.0",
+    "tsconfig-paths-webpack-plugin": "^4.0.1",
+    "webpack": "5"
+  },
+  "devDependencies": {
+    "@angular-devkit/architect": "^0.1703.0",
+    "@angular-devkit/build-angular": "^17.3.0",
+    "@angular-devkit/core": "^17.3.0",
+    "@angular/animations": "^17.3.0",
+    "@angular/cli": "^17.3.0",
+    "@angular/common": "^17.3.0",
+    "@angular/compiler": "^17.3.0",
+    "@angular/compiler-cli": "^17.3.0",
+    "@angular/core": "^17.3.0",
+    "@angular/forms": "^17.3.0",
+    "@angular/platform-browser": "^17.3.0",
+    "@angular/platform-browser-dynamic": "^17.3.0",
+    "typescript": "^5.3.2"
+  },
+  "peerDependencies": {
+    "@angular-devkit/architect": ">=0.1500.0 < 0.2000.0",
+    "@angular-devkit/build-angular": ">=15.0.0 < 20.0.0",
+    "@angular-devkit/core": ">=15.0.0 < 20.0.0",
+    "@angular/cli": ">=15.0.0 < 20.0.0",
+    "@angular/common": ">=15.0.0 < 20.0.0",
+    "@angular/compiler": ">=15.0.0 < 20.0.0",
+    "@angular/compiler-cli": ">=15.0.0 < 20.0.0",
+    "@angular/core": ">=15.0.0 < 20.0.0",
+    "@angular/forms": ">=15.0.0 < 20.0.0",
+    "@angular/platform-browser": ">=15.0.0 < 20.0.0",
+    "@angular/platform-browser-dynamic": ">=15.0.0 < 20.0.0",
+    "rxjs": "^6.0.0 || ^7.4.0",
+    "storybook": "workspace:^",
+    "typescript": "^4.0.0 || ^5.0.0",
+    "zone.js": ">= 0.11.1 < 1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "bundler": {
+    "entries": [
+      "./src/index.ts",
+      "./src/server/framework-preset-angular-cli.ts",
+      "./src/server/framework-preset-angular-ivy.ts",
+      "./src/server/framework-preset-angular-docs.ts"
+    ],
+    "platform": "node"
+  },
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+}

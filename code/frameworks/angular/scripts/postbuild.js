@@ -9,9 +9,13 @@
 const fs = require('fs');
 const path = require('path');
 
-const filePath = path.join(__dirname, '../dist/client/public-types.d.ts');
-const fileContent = fs.readFileSync(filePath, 'utf8');
-const newContent = fileContent
-  .replaceAll(/(type AngularInputSignal)/g, '// @ts-ignore\n$1')
-  .replaceAll(/(type AngularOutputEmitterRef)/g, '// @ts-ignore\n$1');
-fs.writeFileSync(filePath, newContent, 'utf8');
+[
+  'builders/builders.json',
+  'builders/start-storybook/schema.json',
+  'builders/build-storybook/schema.json',
+].forEach((filePath) => {
+  const srcPath = path.join(__dirname, `../src/${filePath}`);
+  const distPath = path.join(__dirname, `../dist/${filePath}`);
+
+  fs.copyFileSync(srcPath, distPath);
+});

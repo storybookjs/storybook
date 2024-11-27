@@ -1,28 +1,13 @@
 import { PresetProperty } from 'storybook/internal/types';
-
 import { dirname, join } from 'node:path';
-
-import { StandaloneOptions } from './builders/utils/standalone-options';
 import { StorybookConfig } from './types';
 
 const getAbsolutePath = <I extends string>(input: I): I =>
   dirname(require.resolve(join(input, 'package.json'))) as any;
 
 export const addons: PresetProperty<'addons'> = [
-  require.resolve('./server/framework-preset-angular-cli'),
-  require.resolve('./server/framework-preset-angular-ivy'),
-  require.resolve('./server/framework-preset-angular-docs'),
+  require.resolve('@storybook/preset-angular-webpack'),
 ];
-
-export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entries = [], options) => {
-  const annotations = [...entries, require.resolve('./client/config')];
-
-  if ((options as any as StandaloneOptions).enableProdMode) {
-    annotations.unshift(require.resolve('./client/preview-prod'));
-  }
-
-  return annotations;
-};
 
 export const core: PresetProperty<'core'> = async (config, options) => {
   const framework = await options.presets.apply('framework');
@@ -33,7 +18,18 @@ export const core: PresetProperty<'core'> = async (config, options) => {
       name: getAbsolutePath('@storybook/builder-webpack5'),
       options: typeof framework === 'string' ? {} : framework.options.builder || {},
     },
+    renderer: getAbsolutePath('@storybook/angular-renderer'),
   };
+};
+
+export const webpack: StorybookConfig['webpack'] = async (config) => {
+  config.resolve = config.resolve || {};
+
+  config.resolve.alias = {
+    ...config.resolve?.alias,
+    '@storybook/angular-renderer': getAbsolutePath('@storybook/angular-renderer'),
+  };
+  return config;
 };
 
 export const typescript: PresetProperty<'typescript'> = async (config) => {

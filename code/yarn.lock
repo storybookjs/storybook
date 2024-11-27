@@ -29,12 +29,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@analogjs/vite-plugin-angular@npm:^0.2.24":
-  version: 0.2.28
-  resolution: "@analogjs/vite-plugin-angular@npm:0.2.28"
+"@analogjs/vite-plugin-angular@npm:^1.9.4":
+  version: 1.9.4
+  resolution: "@analogjs/vite-plugin-angular@npm:1.9.4"
+  dependencies:
+    ts-morph: "npm:^21.0.0"
+    vfile: "npm:^6.0.3"
   peerDependencies:
-    "@angular-devkit/build-angular": ^15.0.0 || >=16.0.0
-  checksum: 10c0/5677d251206d8eb4e7f2da6f43d8c6baf738c1c7fa9c4880e2c2360963d985a40a66c208e56700200e90dbc62634f33841b75f55683623853778b70bdd653dec
+    "@angular-devkit/build-angular": ^15.0.0 || ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-rc.0
+    "@angular/build": ^18.0.0 || ^19.0.0-rc.0
+  peerDependenciesMeta:
+    "@angular-devkit/build-angular":
+      optional: true
+    "@angular/build":
+      optional: true
+  checksum: 10c0/df9e9a77af8a485f3357bf8990fba89711c1c25b837c621718e8f3910bea5600b932cbffbf210e1a867ba5dff82b09f65eca09712a73732b06784358f620bfec
   languageName: node
   linkType: hard
 
@@ -5843,11 +5852,11 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/angular@workspace:*, @storybook/angular@workspace:frameworks/angular":
+"@storybook/angular-renderer@workspace:*, @storybook/angular-renderer@workspace:renderers/angular-renderer":
   version: 0.0.0-use.local
-  resolution: "@storybook/angular@workspace:frameworks/angular"
+  resolution: "@storybook/angular-renderer@workspace:renderers/angular-renderer"
   dependencies:
-    "@analogjs/vite-plugin-angular": "npm:^0.2.24"
+    "@analogjs/vite-plugin-angular": "npm:^1.9.4"
     "@angular-devkit/architect": "npm:^0.1703.0"
     "@angular-devkit/build-angular": "npm:^17.3.0"
     "@angular-devkit/core": "npm:^17.3.0"
@@ -5860,30 +5869,18 @@ __metadata:
     "@angular/forms": "npm:^17.3.0"
     "@angular/platform-browser": "npm:^17.3.0"
     "@angular/platform-browser-dynamic": "npm:^17.3.0"
-    "@storybook/builder-webpack5": "workspace:*"
     "@storybook/components": "workspace:*"
-    "@storybook/core-webpack": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/manager-api": "workspace:*"
     "@storybook/preview-api": "workspace:*"
+    "@storybook/react-dom-shim": "workspace:*"
+    "@storybook/test": "workspace:*"
     "@storybook/theming": "workspace:*"
     "@types/cross-spawn": "npm:^6.0.2"
-    "@types/node": "npm:^22.0.0"
-    "@types/react": "npm:^18.0.37"
-    "@types/react-dom": "npm:^18.0.11"
-    "@types/semver": "npm:^7.3.4"
     "@types/tmp": "npm:^0.2.3"
-    "@types/webpack-env": "npm:^1.18.0"
     cross-spawn: "npm:^7.0.3"
-    fd-package-json: "npm:^1.2.0"
-    find-up: "npm:^5.0.0"
-    semver: "npm:^7.3.7"
-    telejson: "npm:^7.2.0"
     tmp: "npm:^0.2.1"
-    ts-dedent: "npm:^2.0.0"
-    tsconfig-paths-webpack-plugin: "npm:^4.0.1"
     typescript: "npm:^5.3.2"
-    util-deprecate: "npm:^1.0.2"
     webpack: "npm:5"
     zone.js: "npm:^0.14.2"
   peerDependencies:
@@ -5905,6 +5902,41 @@ __metadata:
   peerDependenciesMeta:
     "@angular/cli":
       optional: true
+    "@storybook/test":
+      optional: true
+    typescript:
+      optional: true
+  languageName: unknown
+  linkType: soft
+
+"@storybook/angular@workspace:*, @storybook/angular@workspace:frameworks/angular":
+  version: 0.0.0-use.local
+  resolution: "@storybook/angular@workspace:frameworks/angular"
+  dependencies:
+    "@storybook/angular-renderer": "workspace:*"
+    "@storybook/builder-webpack5": "workspace:*"
+    "@storybook/components": "workspace:*"
+    "@storybook/core-webpack": "workspace:*"
+    "@storybook/global": "npm:^5.0.0"
+    "@storybook/preset-angular-webpack": "workspace:*"
+    "@types/node": "npm:^22.0.0"
+    "@types/semver": "npm:^7.3.4"
+    "@types/webpack-env": "npm:^1.18.0"
+    fd-package-json: "npm:^1.2.0"
+    find-up: "npm:^5.0.0"
+    semver: "npm:^7.3.7"
+    telejson: "npm:^7.2.0"
+    ts-dedent: "npm:^2.0.0"
+    typescript: "npm:^5.3.2"
+    util-deprecate: "npm:^1.0.2"
+    webpack: "npm:5"
+  peerDependencies:
+    "@angular-devkit/architect": ">=0.1500.0 < 0.2000.0"
+    "@angular-devkit/build-angular": ">=15.0.0 < 20.0.0"
+    "@angular-devkit/core": ">=15.0.0 < 20.0.0"
+    rxjs: ^6.0.0 || ^7.4.0
+    storybook: "workspace:^"
+    typescript: ^4.0.0 || ^5.0.0
   languageName: unknown
   linkType: soft
 
@@ -6738,6 +6770,55 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@storybook/preset-angular-webpack@workspace:*, @storybook/preset-angular-webpack@workspace:presets/angular-webpack":
+  version: 0.0.0-use.local
+  resolution: "@storybook/preset-angular-webpack@workspace:presets/angular-webpack"
+  dependencies:
+    "@angular-devkit/architect": "npm:^0.1703.0"
+    "@angular-devkit/build-angular": "npm:^17.3.0"
+    "@angular-devkit/core": "npm:^17.3.0"
+    "@angular/animations": "npm:^17.3.0"
+    "@angular/cli": "npm:^17.3.0"
+    "@angular/common": "npm:^17.3.0"
+    "@angular/compiler": "npm:^17.3.0"
+    "@angular/compiler-cli": "npm:^17.3.0"
+    "@angular/core": "npm:^17.3.0"
+    "@angular/forms": "npm:^17.3.0"
+    "@angular/platform-browser": "npm:^17.3.0"
+    "@angular/platform-browser-dynamic": "npm:^17.3.0"
+    "@storybook/angular-renderer": "workspace:*"
+    "@storybook/core-webpack": "workspace:*"
+    "@types/node": "npm:^22.0.0"
+    "@types/semver": "npm:^7.3.4"
+    find-up: "npm:^5.0.0"
+    resolve: "npm:^1.22.8"
+    semver: "npm:^7.3.7"
+    tsconfig-paths: "npm:^4.2.0"
+    tsconfig-paths-webpack-plugin: "npm:^4.0.1"
+    typescript: "npm:^5.3.2"
+    webpack: "npm:5"
+  peerDependencies:
+    "@angular-devkit/architect": ">=0.1500.0 < 0.2000.0"
+    "@angular-devkit/build-angular": ">=15.0.0 < 20.0.0"
+    "@angular-devkit/core": ">=15.0.0 < 20.0.0"
+    "@angular/cli": ">=15.0.0 < 20.0.0"
+    "@angular/common": ">=15.0.0 < 20.0.0"
+    "@angular/compiler": ">=15.0.0 < 20.0.0"
+    "@angular/compiler-cli": ">=15.0.0 < 20.0.0"
+    "@angular/core": ">=15.0.0 < 20.0.0"
+    "@angular/forms": ">=15.0.0 < 20.0.0"
+    "@angular/platform-browser": ">=15.0.0 < 20.0.0"
+    "@angular/platform-browser-dynamic": ">=15.0.0 < 20.0.0"
+    rxjs: ^6.0.0 || ^7.4.0
+    storybook: "workspace:^"
+    typescript: ^4.0.0 || ^5.0.0
+    zone.js: ">= 0.11.1 < 1.0.0"
+  peerDependenciesMeta:
+    typescript:
+      optional: true
+  languageName: unknown
+  linkType: soft
+
 "@storybook/preset-create-react-app@workspace:*, @storybook/preset-create-react-app@workspace:presets/create-react-app":
   version: 0.0.0-use.local
   resolution: "@storybook/preset-create-react-app@workspace:presets/create-react-app"
@@ -7056,6 +7137,7 @@ __metadata:
     "@storybook/addon-toolbars": "workspace:*"
     "@storybook/addon-viewport": "workspace:*"
     "@storybook/angular": "workspace:*"
+    "@storybook/angular-renderer": "workspace:*"
     "@storybook/bench": "npm:next"
     "@storybook/blocks": "workspace:*"
     "@storybook/builder-vite": "workspace:*"
@@ -7078,6 +7160,7 @@ __metadata:
     "@storybook/preact": "workspace:*"
     "@storybook/preact-vite": "workspace:*"
     "@storybook/preact-webpack5": "workspace:*"
+    "@storybook/preset-angular-webpack": "workspace:*"
     "@storybook/preset-create-react-app": "workspace:*"
     "@storybook/preset-html-webpack": "workspace:*"
     "@storybook/preset-preact-webpack": "workspace:*"
@@ -7152,6 +7235,7 @@ __metadata:
     process: "npm:^0.11.10"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
+    rimraf: "npm:^6.0.1"
     semver: "npm:^7.3.7"
     serve-static: "npm:^1.14.1"
     slash: "npm:^5.0.0"
@@ -7713,6 +7797,18 @@ __metadata:
     "@vue/compiler-sfc":
       optional: true
   checksum: 10c0/42270fb9c89e54a3f8b6ac8c43e6d0e03350e2857e902cdad4de22c78ef1864da600525595311bc7e94e51c16c7dd3882c2e048a162fdab59761ffa893756aa2
+  languageName: node
+  linkType: hard
+
+"@ts-morph/common@npm:~0.22.0":
+  version: 0.22.0
+  resolution: "@ts-morph/common@npm:0.22.0"
+  dependencies:
+    fast-glob: "npm:^3.3.2"
+    minimatch: "npm:^9.0.3"
+    mkdirp: "npm:^3.0.1"
+    path-browserify: "npm:^1.0.1"
+  checksum: 10c0/1f1ff7fee54414e09803b1ba559ff51881b821c19bc97cb19d06fc46c58957dea4a58e6a83e9f2e30e08c8179d6d142e45be329d9242f410323795b5c1e04806
   languageName: node
   linkType: hard
 
@@ -12306,6 +12402,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"code-block-writer@npm:^12.0.0":
+  version: 12.0.0
+  resolution: "code-block-writer@npm:12.0.0"
+  checksum: 10c0/ced73cdc466bff968bba9e8e32340d88420d25a229b9269f7425a10a7c2c9a12ca702dcb601b2462b96472d354f021cf66e552179fcbe30c8f7ecd0173c5fa07
+  languageName: node
+  linkType: hard
+
 "collapse-white-space@npm:^2.0.0":
   version: 2.1.0
   resolution: "collapse-white-space@npm:2.1.0"
@@ -16697,6 +16800,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"glob@npm:^11.0.0":
+  version: 11.0.0
+  resolution: "glob@npm:11.0.0"
+  dependencies:
+    foreground-child: "npm:^3.1.0"
+    jackspeak: "npm:^4.0.1"
+    minimatch: "npm:^10.0.0"
+    minipass: "npm:^7.1.2"
+    package-json-from-dist: "npm:^1.0.0"
+    path-scurry: "npm:^2.0.0"
+  bin:
+    glob: dist/esm/bin.mjs
+  checksum: 10c0/419866015d8795258a8ac51de5b9d1a99c72634fc3ead93338e4da388e89773ab21681e494eac0fbc4250b003451ca3110bb4f1c9393d15d14466270094fdb4e
+  languageName: node
+  linkType: hard
+
 "glob@npm:^5.0.10":
   version: 5.0.15
   resolution: "glob@npm:5.0.15"
@@ -18750,6 +18869,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"jackspeak@npm:^4.0.1":
+  version: 4.0.2
+  resolution: "jackspeak@npm:4.0.2"
+  dependencies:
+    "@isaacs/cliui": "npm:^8.0.2"
+  checksum: 10c0/b26039d11c0163a95b1e58851b9ac453cce64ad6d1eb98a00b303ad5eeb761b29d33c9419d1e16c016d3f7151c8edf7df223e6cf93a1907655fd95d6ce85c0de
+  languageName: node
+  linkType: hard
+
 "jake@npm:^10.8.5":
   version: 10.8.7
   resolution: "jake@npm:10.8.7"
@@ -19859,6 +19987,13 @@ __metadata:
   version: 10.4.3
   resolution: "lru-cache@npm:10.4.3"
   checksum: 10c0/ebd04fbca961e6c1d6c0af3799adcc966a1babe798f685bb84e6599266599cd95d94630b10262f5424539bc4640107e8a33aa28585374abf561d30d16f4b39fb
+  languageName: node
+  linkType: hard
+
+"lru-cache@npm:^11.0.0":
+  version: 11.0.2
+  resolution: "lru-cache@npm:11.0.2"
+  checksum: 10c0/c993b8e06ead0b24b969c1dbb5b301716aed66e320e9014a80012f5febe280b438f28ff50046b2c55ff404e889351ccb332ff91f8dd175a21f5eae80e3fb155f
   languageName: node
   linkType: hard
 
@@ -21362,6 +21497,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"minimatch@npm:^10.0.0":
+  version: 10.0.1
+  resolution: "minimatch@npm:10.0.1"
+  dependencies:
+    brace-expansion: "npm:^2.0.1"
+  checksum: 10c0/e6c29a81fe83e1877ad51348306be2e8aeca18c88fdee7a99df44322314279e15799e41d7cb274e4e8bb0b451a3bc622d6182e157dfa1717d6cda75e9cd8cd5d
+  languageName: node
+  linkType: hard
+
 "minimatch@npm:^5.0.1":
   version: 5.1.6
   resolution: "minimatch@npm:5.1.6"
@@ -21524,6 +21668,15 @@ __metadata:
   bin:
     mkdirp: bin/cmd.js
   checksum: 10c0/46ea0f3ffa8bc6a5bc0c7081ffc3907777f0ed6516888d40a518c5111f8366d97d2678911ad1a6882bf592fa9de6c784fea32e1687bb94e1f4944170af48a5cf
+  languageName: node
+  linkType: hard
+
+"mkdirp@npm:^3.0.1":
+  version: 3.0.1
+  resolution: "mkdirp@npm:3.0.1"
+  bin:
+    mkdirp: dist/cjs/src/bin.js
+  checksum: 10c0/9f2b975e9246351f5e3a40dcfac99fcd0baa31fbfab615fe059fb11e51f10e4803c63de1f384c54d656e4db31d000e4767e9ef076a22e12a641357602e31d57d
   languageName: node
   linkType: hard
 
@@ -23072,6 +23225,16 @@ __metadata:
     lru-cache: "npm:^10.2.0"
     minipass: "npm:^5.0.0 || ^6.0.2 || ^7.0.0"
   checksum: 10c0/32a13711a2a505616ae1cc1b5076801e453e7aae6ac40ab55b388bb91b9d0547a52f5aaceff710ea400205f18691120d4431e520afbe4266b836fadede15872d
+  languageName: node
+  linkType: hard
+
+"path-scurry@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "path-scurry@npm:2.0.0"
+  dependencies:
+    lru-cache: "npm:^11.0.0"
+    minipass: "npm:^7.1.2"
+  checksum: 10c0/3da4adedaa8e7ef8d6dc4f35a0ff8f05a9b4d8365f2b28047752b62d4c1ad73eec21e37b1579ef2d075920157856a3b52ae8309c480a6f1a8bbe06ff8e52b33c
   languageName: node
   linkType: hard
 
@@ -25592,6 +25755,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"rimraf@npm:^6.0.1":
+  version: 6.0.1
+  resolution: "rimraf@npm:6.0.1"
+  dependencies:
+    glob: "npm:^11.0.0"
+    package-json-from-dist: "npm:^1.0.0"
+  bin:
+    rimraf: dist/esm/bin.mjs
+  checksum: 10c0/b30b6b072771f0d1e73b4ca5f37bb2944ee09375be9db5f558fcd3310000d29dfcfa93cf7734d75295ad5a7486dc8e40f63089ced1722a664539ffc0c3ece8c6
+  languageName: node
+  linkType: hard
+
 "rimraf@npm:~2.6.2":
   version: 2.6.3
   resolution: "rimraf@npm:2.6.3"
@@ -27911,6 +28086,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"ts-morph@npm:^21.0.0":
+  version: 21.0.1
+  resolution: "ts-morph@npm:21.0.1"
+  dependencies:
+    "@ts-morph/common": "npm:~0.22.0"
+    code-block-writer: "npm:^12.0.0"
+  checksum: 10c0/ed1d4ccdeba2300cfa236f2aaf64bb462aa386141e659a08d8a2eb96d3b4b274abc9d97b8dd06a0c13af79187b197f38f6a8baca709f99d11094a82c8abccf27
+  languageName: node
+  linkType: hard
+
 "ts-node@npm:10.9.1":
   version: 10.9.1
   resolution: "ts-node@npm:10.9.1"
@@ -29078,6 +29263,16 @@ __metadata:
     unist-util-stringify-position: "npm:^4.0.0"
     vfile-message: "npm:^4.0.0"
   checksum: 10c0/443bda43e5ad3b73c5976e987dba2b2d761439867ba7d5d7c5f4b01d3c1cb1b976f5f0e6b2399a00dc9b4eaec611bd9984ce9ce8a75a72e60aed518b10a902d2
+  languageName: node
+  linkType: hard
+
+"vfile@npm:^6.0.3":
+  version: 6.0.3
+  resolution: "vfile@npm:6.0.3"
+  dependencies:
+    "@types/unist": "npm:^3.0.0"
+    vfile-message: "npm:^4.0.0"
+  checksum: 10c0/e5d9eb4810623f23758cfc2205323e33552fb5972e5c2e6587babe08fe4d24859866277404fb9e2a20afb71013860d96ec806cb257536ae463c87d70022ab9ef
   languageName: node
   linkType: hard
 

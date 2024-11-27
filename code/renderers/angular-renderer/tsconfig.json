@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.build.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "strict": false
+  },
+  "include": ["src/**/*", "src/**/*.json", "template/**/*"]
+}

@@ -1,0 +1,65 @@
+import { Meta } from '@storybook/addon-docs';
+
+<Meta title="stories / frameworks / angular / others / ngx-translate" />
+
+# [ngx-translate](https://github.com/ngx-translate/core)
+
+> No real example here to avoid adding more dependency to storybook mono repository
+
+There are several ways to configure ngx-translate in storybook which will depend on your context.
+
+Here is a simple example with a storybook decorator that you can place in the `preview.ts` or locally on the stories.
+[See the doc on decorators](https://storybook.js.org/docs/angular/writing-stories/decorators)
+
+```ts
+import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
+import { TranslateHttpLoader } from '@ngx-translate/http-loader';
+import { moduleMetadata, applicationConfig } from '@storybook/angular';
+
+function createTranslateLoader(http: HttpClient) {
+  return new TranslateHttpLoader(http, '/assets/i18n/', '.json');
+}
+
+const TranslateModuleDecorator = (storyFunc, context) => {
+  const { locale } = context.globals;
+
+  return applicationConfig({
+    providers: [
+      importProvidersFrom(
+        HttpClientModule, 
+        TranslateModule.forRoot({
+          defaultLanguage: locale,
+          loader: {
+            provide: TranslateLoader,
+            useFactory: createTranslateLoader,
+            deps: [HttpClient],
+          },
+        })
+      )
+    ]
+  })(storyFunc, context);
+};
+
+// for `preview.ts`
+export const decorators = [
+  moduleMetadata({
+    imports: [TranslateModule],
+  }),
+  TranslateModuleDecorator,
+];
+```
+
+If the `TranslateModule.forRoot` is made by another module you can try to set this provider `DEFAULT_LANGUAGE`
+
+```ts
+import { DEFAULT_LANGUAGE } from '@ngx-translate/core';
+
+const TranslateModuleDecorator = (storyFunc, context) => {
+  const { locale } = context.globals;
+
+  return applicationConfig({
+    providers: [{ provide: DEFAULT_LANGUAGE, useValue: locale }],
+  })(storyFunc, context);
+};
+```

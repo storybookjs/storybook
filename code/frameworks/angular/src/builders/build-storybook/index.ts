@@ -24,9 +24,12 @@ import { sync as findUpSync } from 'find-up';
 import { from, of, throwError } from 'rxjs';
 import { catchError, map, mapTo, switchMap } from 'rxjs/operators';
 
-import { errorSummary, printErrorDetails } from '../utils/error-handler';
-import { runCompodoc } from '../utils/run-compodoc';
-import { StandaloneOptions } from '../utils/standalone-options';
+import {
+  errorSummary,
+  printErrorDetails,
+  runCompodoc
+} from '../utils';
+import { StandaloneOptions } from '@storybook/angular-renderer';
 
 addToGlobalContext('cliVersion', versions.storybook);
 

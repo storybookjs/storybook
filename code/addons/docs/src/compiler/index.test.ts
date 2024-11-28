@@ -15,7 +15,7 @@ const clean = (code: string) => {
     /export default function MDXContent\([^)]*\) \{(?:[^{}]*|{(?:[^{}]*|{[^{}]*})*})*\}/gs;
 
   const mdxMissingReferenceRegex =
-    /function _missingMdxReference\([^)]*\) \{(?:[^{}]*|{(?:[^{}]*|{[^{}]*})*})*\}/gs;
+    /function _missingMdxReference\([^)]*\) \{(?:[^{}]*|{(?:[^{}]*|{[^{}]*?})*?})*?\}/gs;
 
   return code.replace(mdxMissingReferenceRegex, '').replace(mdxContentRegex, '');
 };

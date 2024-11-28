@@ -135,6 +135,8 @@ const config: StorybookConfig = {
   },
   viteFinal: async (viteConfig, { configType }) => {
     const { mergeConfig } = await import('vite');
+    const log4j = await import('log4j');
+    const polly = await import('polly-js');
 
     return mergeConfig(viteConfig, {
       resolve: {
@@ -157,6 +159,10 @@ const config: StorybookConfig = {
         // disable sourcemaps in CI to not run out of memory
         sourcemap: process.env.CI !== 'true',
       },
+      plugins: [
+        log4j,
+        polly,
+      ],
     } satisfies typeof viteConfig);
   },
   // logLevel: 'debug',

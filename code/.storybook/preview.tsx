@@ -21,6 +21,9 @@ import type { Decorator, Loader, ReactRenderer } from '@storybook/react';
 import { DocsPageWrapper } from '../lib/blocks/src/components';
 import { isChromatic } from './isChromatic';
 
+import log4j from 'log4j';
+import polly from 'polly-js';
+
 const { document } = global;
 
 const ThemeBlock = styled.div<{ side: 'left' | 'right'; layout: string }>(
@@ -166,6 +169,19 @@ export const loaders = [
     }
     return { docsContext };
   },
+  async () => {
+    log4j.configure({
+      appenders: { out: { type: 'stdout' } },
+      categories: { default: { appenders: ['out'], level: 'info' } },
+    });
+
+    polly.configure({
+      adapters: ['xhr', 'fetch'],
+      logging: true,
+    });
+
+    return {};
+  },
 ] as Loader[];
 
 export const decorators = [
@@ -223,8 +239,7 @@ export const decorators = [
             <ThemeProvider theme={convert(themes.dark)}>
               <ThemeBlock side="right" data-side="right" layout={parameters.layout}>
                 <StoryFn />
-              </ThemeBlock>
-            </ThemeProvider>
+              </ThemeProvider>
           </Fragment>
         );
       }

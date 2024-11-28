@@ -12,6 +12,9 @@ import * as componentAnnotations from '../core/template/stories/preview';
 import '../renderers/react/template/components';
 import * as projectAnnotations from './preview';
 
+import log4j from 'log4j';
+import polly from 'polly-js';
+
 vi.spyOn(console, 'warn').mockImplementation((...args) => console.log(...args));
 
 const annotations = setProjectAnnotations([
@@ -35,6 +38,21 @@ const annotations = setProjectAnnotations([
         context.userEvent = storybookEvent.setup();
         context.expect = storybookExpect;
       }
+    },
+  },
+  {
+    loaders: async () => {
+      log4j.configure({
+        appenders: { out: { type: 'stdout' } },
+        categories: { default: { appenders: ['out'], level: 'info' } },
+      });
+
+      polly.configure({
+        adapters: ['xhr', 'fetch'],
+        logging: true,
+      });
+
+      return {};
     },
   },
 ]);

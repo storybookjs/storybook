@@ -30,6 +30,8 @@ export default mergeConfig(
           },
         })
       ),
+      import('log4j').then((log4j) => log4j),
+      import('polly-js').then((polly) => polly),
       ...extraPlugins,
     ],
     test: {

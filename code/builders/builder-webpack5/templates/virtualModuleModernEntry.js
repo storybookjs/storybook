@@ -19,13 +19,22 @@ window.__STORYBOOK_STORY_STORE__ = preview.storyStore;
 window.__STORYBOOK_ADDONS_CHANNEL__ = channel;
 
 if (import.meta.webpackHot) {
-  import.meta.webpackHot.accept('./stories/index.js', () => {
-    // importFn has changed so we need to patch the new one in
-    preview.onStoriesChanged({ importFn });
+if (import.meta.webpackHot) {
+  import.meta.webpackHot.accept(STORIES_PATH, (err) => {
+    if (err) {
+      console.error('Error accepting stories module:', err);
+    } else {
+      // importFn has changed so we need to patch the new one in
+      preview.onStoriesChanged({ importFn });
+    }
   });
 
-  import.meta.webpackHot.accept(['./preview.js'], () => {
-    // getProjectAnnotations has changed so we need to patch the new one in
-    preview.onGetProjectAnnotationsChanged({ getProjectAnnotations });
+  import.meta.webpackHot.accept(PREVIEW_PATH, (err) => {
+    if (err) {
+      console.error('Error accepting preview module:', err);
+    } else {
+      // getProjectAnnotations has changed so we need to patch the new one in
+      preview.onGetProjectAnnotationsChanged({ getProjectAnnotations });
+    }
   });
 }

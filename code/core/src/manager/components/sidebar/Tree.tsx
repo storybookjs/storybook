@@ -75,7 +75,7 @@ export const LeafNodeStyleWrapper = styled.div(({ theme }) => ({
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
-  color: theme.color.defaultText,
+  color: 'var(--sb-theme-color-defaulttext)' as string,
   background: 'transparent',
   minHeight: 28,
   borderRadius: 4,

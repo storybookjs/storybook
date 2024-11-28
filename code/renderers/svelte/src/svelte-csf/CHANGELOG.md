@@ -1,3 +1,15 @@
+# v4.2.0 (Thu Nov 28 2024)
+
+#### 🚀 Enhancement
+
+- Support Vite 6 [#235](https://github.com/storybookjs/addon-svelte-csf/pull/235) ([@yannbf](https://github.com/yannbf))
+
+#### Authors: 1
+
+- Yann Braga ([@yannbf](https://github.com/yannbf))
+
+---
+
 # v4.1.7 (Sun Sep 01 2024)
 
 #### 🐛 Bug Fix

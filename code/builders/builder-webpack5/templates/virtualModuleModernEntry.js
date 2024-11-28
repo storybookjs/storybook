@@ -2,7 +2,6 @@ import { createBrowserChannel } from 'storybook/internal/channels';
 import { PreviewWeb, addons, composeConfigs } from 'storybook/internal/preview-api';
 
 import { global } from '@storybook/global';
-
 import { importFn } from '{{storiesFilename}}';
 
 const getProjectAnnotations = () => composeConfigs(['{{previewAnnotations_requires}}']);
@@ -15,7 +14,6 @@ if (global.CONFIG_TYPE === 'DEVELOPMENT') {
 }
 
 const preview = new PreviewWeb(importFn, getProjectAnnotations);
-
 window.__STORYBOOK_PREVIEW__ = preview;
 window.__STORYBOOK_STORY_STORE__ = preview.storyStore;
 window.__STORYBOOK_ADDONS_CHANNEL__ = channel;

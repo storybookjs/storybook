@@ -1,6 +1,6 @@
 import memoize from 'memoizerific';
 
-import type { Background, Color, Typography } from './types';
+import type { Background, Color, StorybookTheme, Typography } from './types';
 
 type Value = string | number;
 interface Return {
@@ -110,3 +110,29 @@ export const createGlobal = memoize(1)(({
     },
   };
 });
+
+const flatten = (
+  acc: Record<string, string>,
+  data: Record<string, any>,
+  prefix: string = ''
+): Record<string, string> =>
+  Object.entries(data).reduce((iacc, [key, value]) => {
+    const n = (prefix ? `${prefix}-${key}` : key).toLocaleLowerCase();
+    if (n.includes(' ')) {
+      return iacc;
+    }
+    if (typeof value === 'object') {
+      return flatten(iacc, value, n);
+    }
+
+    iacc[n] = value;
+
+    return iacc;
+  }, acc);
+
+export const createThemeVars = (theme: StorybookTheme) => {
+  const vars = flatten({}, theme, '--sb-theme');
+  return {
+    html: vars,
+  };
+};

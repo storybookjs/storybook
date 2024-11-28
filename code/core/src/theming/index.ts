@@ -35,7 +35,7 @@ export * from './types';
 export { default as createCache } from '@emotion/cache';
 export { default as isPropValid } from '@emotion/is-prop-valid';
 
-export { createGlobal, createReset } from './global';
+export { createGlobal, createReset, createThemeVars } from './global';
 export * from './create';
 export * from './convert';
 export * from './ensure';

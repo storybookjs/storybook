@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react';
 import React from 'react';
 
-import { Global, createGlobal } from '@storybook/core/theming';
+import { Global, createGlobal, createThemeVars } from '@storybook/core/theming';
 import type { Addon_PageType } from '@storybook/core/types';
 
 import { Layout } from './components/layout/Layout';
@@ -23,6 +23,7 @@ export const App = ({ managerLayoutState, setManagerLayoutState, pages, hasTab }
   return (
     <>
       <Global styles={createGlobal} />
+      <Global styles={createThemeVars} />
       <Layout
         hasTab={hasTab}
         managerLayoutState={managerLayoutState}

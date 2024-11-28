@@ -79,14 +79,9 @@ export const addWorkaroundResolutions = async ({ cwd, dryRun }: YarnOptions) => 
   const packageJson = await readJSON(packageJsonPath);
   packageJson.resolutions = {
     ...packageJson.resolutions,
-    // Due to our support of older vite versions
-    '@vitejs/plugin-react': '4.2.0',
-    '@vitejs/plugin-vue': '4.5.0',
     '@testing-library/dom': '^9.3.4',
     '@testing-library/jest-dom': '^6.5.0',
     '@testing-library/user-event': '^14.5.2',
-    // TODO: Remove as soon as @storybook/csf@0.1.10 is released
-    '@storybook/csf': '0.1.10--canary.d841bb4.0',
   };
   await writeJSON(packageJsonPath, packageJson, { spaces: 2 });
 };

@@ -1,20 +1,43 @@
-import React, { type FC, Fragment, useCallback, useRef, useState } from 'react';
+import React, { type FC, useCallback, useRef, useState } from 'react';
 
-import { Button } from 'storybook/internal/components';
+import { Button, ListItem } from 'storybook/internal/components';
 import {
   TESTING_MODULE_CONFIG_CHANGE,
   type TestProviderConfig,
   type TestProviderState,
-  type TestingModuleConfigChangePayload,
 } from 'storybook/internal/core-events';
 import type { API } from 'storybook/internal/manager-api';
-import { styled } from 'storybook/internal/theming';
+import { styled, useTheme } from 'storybook/internal/theming';
 
-import { EditIcon, EyeIcon, PlayHollowIcon, StopAltHollowIcon } from '@storybook/icons';
+import {
+  AccessibilityIcon,
+  EditIcon,
+  EyeIcon,
+  PlayHollowIcon,
+  PointerHandIcon,
+  ShieldIcon,
+  StopAltHollowIcon,
+} from '@storybook/icons';
+
+import { isEqual } from 'es-toolkit';
+import { debounce } from 'es-toolkit/compat';
 
 import { type Config, type Details, TEST_PROVIDER_ID } from '../constants';
 import { Description } from './Description';
 import { GlobalErrorModal } from './GlobalErrorModal';
+import { TestStatusIcon } from './TestStatusIcon';
+
+const Container = styled.div({
+  display: 'flex',
+  flexDirection: 'column',
+});
+
+const Heading = styled.div({
+  display: 'flex',
+  justifyContent: 'space-between',
+  padding: '8px 2px',
+  gap: 6,
+});
 
 const Info = styled.div({
   display: 'flex',
@@ -33,32 +56,37 @@ const Actions = styled.div({
   gap: 6,
 });
 
-const Head = styled.div({
-  display: 'flex',
-  justifyContent: 'space-between',
-  gap: 6,
+const Extras = styled.div({
+  marginBottom: 2,
+});
+
+const Checkbox = styled.input({
+  margin: 0,
+  '&:enabled': {
+    cursor: 'pointer',
+  },
 });
 
 export const TestProviderRender: FC<{
   api: API;
   state: TestProviderConfig & TestProviderState<Details, Config>;
 }> = ({ state, api }) => {
+  const [isEditing, setIsEditing] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const theme = useTheme();
 
-  const title = state.crashed || state.failed ? 'Component tests failed' : 'Component tests';
+  const title = state.crashed || state.failed ? 'Local tests failed' : 'Run local tests';
   const errorMessage = state.error?.message;
 
-  const [config, changeConfig] = useConfig(
+  const [config, updateConfig] = useConfig(
+    api,
     state.id,
-    state.config || { a11y: false, coverage: false },
-    api
+    state.config || { a11y: false, coverage: false }
   );
 
-  const [isEditing, setIsEditing] = useState(false);
-
   return (
-    <Fragment>
-      <Head>
+    <Container>
+      <Heading>
         <Info>
           <Title crashed={state.crashed} id="testing-module-title">
             {title}
@@ -68,11 +96,11 @@ export const TestProviderRender: FC<{
 
         <Actions>
           <Button
-            aria-label={`Edit`}
+            aria-label={`${isEditing ? 'Close' : 'Open'} settings for ${state.name}`}
             variant="ghost"
             padding="small"
             active={isEditing}
-            onClick={() => setIsEditing((v) => !v)}
+            onClick={() => setIsEditing(!isEditing)}
           >
             <EditIcon />
           </Button>
@@ -105,7 +133,7 @@ export const TestProviderRender: FC<{
                   aria-label={`Start ${state.name}`}
                   variant="ghost"
                   padding="small"
-                  onClick={() => api.runTestProvider(state.id, {})}
+                  onClick={() => api.runTestProvider(state.id)}
                   disabled={state.crashed || state.running}
                 >
                   <PlayHollowIcon />
@@ -114,29 +142,60 @@ export const TestProviderRender: FC<{
             </>
           )}
         </Actions>
-      </Head>
+      </Heading>
 
-      {!isEditing ? (
-        <Fragment>
-          {Object.entries(config).map(([key, value]) => (
-            <div key={key}>
-              {key}: {value ? 'ON' : 'OFF'}
-            </div>
-          ))}
-        </Fragment>
+      {isEditing ? (
+        <Extras>
+          <ListItem
+            as="label"
+            title="Component tests"
+            icon={<PointerHandIcon color={theme.textMutedColor} />}
+            right={<Checkbox type="checkbox" checked disabled />}
+          />
+          <ListItem
+            as="label"
+            title="Coverage"
+            icon={<ShieldIcon color={theme.textMutedColor} />}
+            right={
+              <Checkbox
+                type="checkbox"
+                disabled // TODO: Implement coverage
+                checked={config.coverage}
+                onChange={() => updateConfig({ coverage: !config.coverage })}
+              />
+            }
+          />
+          <ListItem
+            as="label"
+            title="Accessibility"
+            icon={<AccessibilityIcon color={theme.textMutedColor} />}
+            right={
+              <Checkbox
+                type="checkbox"
+                disabled // TODO: Implement a11y
+                checked={config.a11y}
+                onChange={() => updateConfig({ a11y: !config.a11y })}
+              />
+            }
+          />
+        </Extras>
       ) : (
-        <Fragment>
-          {Object.entries(config).map(([key, value]) => (
-            <div
-              key={key}
-              onClick={() => {
-                changeConfig({ [key]: !value });
-              }}
-            >
-              {key}: {value ? 'ON' : 'OFF'}
-            </div>
-          ))}
-        </Fragment>
+        <Extras>
+          <ListItem
+            title="Component tests"
+            icon={<TestStatusIcon status="positive" aria-label="status: passed" />}
+          />
+          <ListItem
+            title="Coverage"
+            icon={<TestStatusIcon percentage={60} status="warning" aria-label="status: warning" />}
+            right={`60%`}
+          />
+          <ListItem
+            title="Accessibility"
+            icon={<TestStatusIcon status="negative" aria-label="status: failed" />}
+            right={73}
+          />
+        </Extras>
       )}
 
       <GlobalErrorModal
@@ -150,33 +209,35 @@ export const TestProviderRender: FC<{
           api.runTestProvider(TEST_PROVIDER_ID);
         }}
       />
-    </Fragment>
+    </Container>
   );
 };
 
-function useConfig(id: string, config: Config, api: API) {
-  const data = useRef<Config>(config);
-  data.current = config || {
-    a11y: false,
-    coverage: false,
-  };
+function useConfig(api: API, providerId: string, initialConfig: Config) {
+  const [currentConfig, setConfig] = useState<Config>(initialConfig);
+  const lastConfig = useRef(initialConfig);
 
-  const changeConfig = useCallback(
-    (update: Partial<Config>) => {
-      const newConfig = {
-        ...data.current,
-        ...update,
-      };
-      api.updateTestProviderState(id, {
-        config: newConfig,
-      });
-      api.emit(TESTING_MODULE_CONFIG_CHANGE, {
-        providerId: id,
-        config: newConfig,
-      } as TestingModuleConfigChangePayload);
-    },
-    [api, id]
+  const saveConfig = useCallback(
+    debounce((config: Config) => {
+      if (!isEqual(config, lastConfig.current)) {
+        api.updateTestProviderState(providerId, { config });
+        api.emit(TESTING_MODULE_CONFIG_CHANGE, { providerId, config });
+        lastConfig.current = config;
+      }
+    }, 500),
+    [api, providerId]
   );
 
-  return [data.current, changeConfig] as const;
+  const updateConfig = useCallback(
+    (update: Partial<Config>) => {
+      setConfig((value) => {
+        const updated = { ...value, ...update };
+        saveConfig(updated);
+        return updated;
+      });
+    },
+    [saveConfig]
+  );
+
+  return [currentConfig, updateConfig] as const;
 }

@@ -155,7 +155,9 @@ export const DynamicHeight: StoryObj = {
   play: async ({ canvasElement }) => {
     const screen = await within(canvasElement);
 
-    const toggleButton = await screen.getByLabelText('Collapse testing module');
+    const toggleButton = await screen.getByLabelText(/Expand/);
+    await userEvent.click(toggleButton);
+
     const content = await screen.findByText('CUSTOM CONTENT WITH DYNAMIC HEIGHT');
     const collapse = await screen.getByTestId('collapse');
 

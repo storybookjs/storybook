@@ -35,6 +35,7 @@ addons.register(ADDON_ID, (api) => {
       runnable: true,
       watchable: true,
       name: 'Component tests',
+      render: (state) => <TestProviderRender api={api} state={state} />,
 
       sidebarContextMenu: ({ context, state }) => {
         if (context.type === 'docs') {
@@ -46,8 +47,6 @@ addons.register(ADDON_ID, (api) => {
 
         return <ContextMenuItem context={context} state={state} />;
       },
-
-      render: (state) => <TestProviderRender api={api} state={state} />,
 
       mapStatusUpdate: (state) =>
         Object.fromEntries(

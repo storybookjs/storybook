@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 import { Link as LinkComponent } from 'storybook/internal/components';
 import { type TestProviderConfig, type TestProviderState } from 'storybook/internal/core-events';
@@ -11,6 +11,10 @@ export const DescriptionStyle = styled.div(({ theme }) => ({
   color: theme.barTextColor,
 }));
 
+const PositiveText = styled.span(({ theme }) => ({
+  color: theme.color.positiveText,
+}));
+
 export function Description({
   errorMessage,
   setIsModalOpen,
@@ -20,9 +24,24 @@ export function Description({
   errorMessage: string;
   setIsModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
-  let description: string | React.ReactNode = 'Not run';
+  const isMounted = React.useRef(false);
+  const [isUpdated, setUpdated] = React.useState(false);
 
-  if (state.running) {
+  useEffect(() => {
+    if (isMounted.current) {
+      setUpdated(true);
+      const timeout = setTimeout(setUpdated, 2000, false);
+      return () => {
+        clearTimeout(timeout);
+      };
+    }
+    isMounted.current = true;
+  }, [state.config]);
+
+  let description: string | React.ReactNode = 'Not run';
+  if (isUpdated) {
+    description = <PositiveText>Settings updated</PositiveText>;
+  } else if (state.running) {
     description = state.progress
       ? `Testing... ${state.progress.numPassedTests}/${state.progress.numTotalTests}`
       : 'Starting...';

@@ -1,18 +1,11 @@
-import React, {
-  Fragment,
-  type SyntheticEvent,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import React, { type SyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
 
 import { Button, TooltipNote } from '@storybook/core/components';
 import { WithTooltip } from '@storybook/core/components';
 import { keyframes, styled } from '@storybook/core/theming';
 import { ChevronSmallUpIcon, PlayAllHollowIcon } from '@storybook/icons';
 
-import type { TestProviders } from '@storybook/core/core-events';
+import { TESTING_MODULE_CONFIG_CHANGE, type TestProviders } from '@storybook/core/core-events';
 import { useStorybookApi } from '@storybook/core/manager-api';
 
 import { LegacyRender } from './LegacyRender';
@@ -29,42 +22,42 @@ const spin = keyframes({
   '100%': { transform: 'rotate(360deg)' },
 });
 
-const Outline = styled.div<{ crashed: boolean; failed: boolean; running: boolean }>(
-  ({ crashed, running, theme, failed }) => ({
-    position: 'relative',
-    lineHeight: '20px',
-    width: '100%',
-    padding: 1,
-    overflow: 'hidden',
-    background: `var(--sb-sidebar-bottom-card-background, ${theme.background.content})`,
-    borderRadius:
-      `var(--sb-sidebar-bottom-card-border-radius, ${theme.appBorderRadius + 1}px)` as any,
-    boxShadow: `inset 0 0 0 1px ${crashed && !running ? theme.color.negative : theme.appBorderColor}, var(--sb-sidebar-bottom-card-box-shadow, 0 1px 2px 0 rgba(0, 0, 0, 0.05), 0px -5px 20px 10px ${theme.background.app})`,
-    transitionProperty:
-      'color, background-color, border-color, text-decoration-color, fill, stroke',
-    transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
-    transitionDuration: '0.15s',
+const Outline = styled.div<{
+  crashed: boolean;
+  failed: boolean;
+  running: boolean;
+  updated: boolean;
+}>(({ crashed, failed, running, theme, updated }) => ({
+  position: 'relative',
+  lineHeight: '20px',
+  width: '100%',
+  padding: 1,
+  overflow: 'hidden',
+  backgroundColor: `var(--sb-sidebar-bottom-card-background, ${theme.background.content})`,
+  borderRadius:
+    `var(--sb-sidebar-bottom-card-border-radius, ${theme.appBorderRadius + 1}px)` as any,
+  boxShadow: `inset 0 0 0 1px ${crashed && !running ? theme.color.negative : updated ? theme.color.positive : theme.appBorderColor}, var(--sb-sidebar-bottom-card-box-shadow, 0 1px 2px 0 rgba(0, 0, 0, 0.05), 0px -5px 20px 10px ${theme.background.app})`,
+  transition: 'box-shadow 1s',
 
-    '&:after': {
-      content: '""',
-      display: running ? 'block' : 'none',
-      position: 'absolute',
-      left: '50%',
-      top: '50%',
-      marginLeft: 'calc(max(100vw, 100vh) * -0.5)',
-      marginTop: 'calc(max(100vw, 100vh) * -0.5)',
-      height: 'max(100vw, 100vh)',
-      width: 'max(100vw, 100vh)',
-      animation: `${spin} 3s linear infinite`,
-      background: failed
-        ? // Hardcoded colors to prevent themes from messing with them (orange+gold, secondary+seafoam)
-          `conic-gradient(transparent 90deg, #FC521F 150deg, #FFAE00 210deg, transparent 270deg)`
-        : `conic-gradient(transparent 90deg, #029CFD 150deg, #37D5D3 210deg, transparent 270deg)`,
-      opacity: 1,
-      willChange: 'auto',
-    },
-  })
-);
+  '&:after': {
+    content: '""',
+    display: running ? 'block' : 'none',
+    position: 'absolute',
+    left: '50%',
+    top: '50%',
+    marginLeft: 'calc(max(100vw, 100vh) * -0.5)',
+    marginTop: 'calc(max(100vw, 100vh) * -0.5)',
+    height: 'max(100vw, 100vh)',
+    width: 'max(100vw, 100vh)',
+    animation: `${spin} 3s linear infinite`,
+    background: failed
+      ? // Hardcoded colors to prevent themes from messing with them (orange+gold, secondary+seafoam)
+        `conic-gradient(transparent 90deg, #FC521F 150deg, #FFAE00 210deg, transparent 270deg)`
+      : `conic-gradient(transparent 90deg, #029CFD 150deg, #37D5D3 210deg, transparent 270deg)`,
+    opacity: 1,
+    willChange: 'auto',
+  },
+}));
 
 const Card = styled.div(({ theme }) => ({
   position: 'relative',
@@ -85,10 +78,8 @@ const Collapsible = styled.div(({ theme }) => ({
 }));
 
 const Content = styled.div({
-  padding: '12px 6px',
   display: 'flex',
   flexDirection: 'column',
-  gap: '12px',
 });
 
 const Bar = styled.div<{ onClick?: (e: SyntheticEvent) => void }>(({ onClick }) => ({
@@ -145,11 +136,13 @@ const StatusButton = styled(Button)<{ status: 'negative' | 'warning' }>(
         })
 );
 
-const TestProvider = styled.div({
-  display: 'flex',
-  justifyContent: 'space-between',
-  gap: 6,
-});
+const TestProvider = styled.div(({ theme }) => ({
+  padding: 4,
+
+  '&:not(:last-child)': {
+    boxShadow: `inset 0 -1px 0 ${theme.appBorderColor}`,
+  },
+}));
 
 interface TestingModuleProps {
   testProviders: TestProviders[keyof TestProviders][];
@@ -172,13 +165,13 @@ export const TestingModule = ({
 }: TestingModuleProps) => {
   const api = useStorybookApi();
 
-  const contentRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<null | ReturnType<typeof setTimeout>>(null);
-
+  const contentRef = useRef<HTMLDivElement>(null);
   const [maxHeight, setMaxHeight] = useState(DEFAULT_HEIGHT);
-
-  const [isCollapsed, setCollapsed] = useState(false);
+  const [isUpdated, setUpdated] = useState(false);
+  const [isCollapsed, setCollapsed] = useState(true);
   const [isChangingCollapse, setChangingCollapse] = useState(false);
+
   useEffect(() => {
     if (contentRef.current) {
       setMaxHeight(contentRef.current?.getBoundingClientRect().height || DEFAULT_HEIGHT);
@@ -196,6 +189,19 @@ export const TestingModule = ({
       return () => resizeObserver.disconnect();
     }
   }, [isCollapsed]);
+
+  useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout>;
+    const handler = () => {
+      setUpdated(true);
+      timeout = setTimeout(setUpdated, 1000, false);
+    };
+    api.on(TESTING_MODULE_CONFIG_CHANGE, handler);
+    return () => {
+      api.off(TESTING_MODULE_CONFIG_CHANGE, handler);
+      clearTimeout(timeout);
+    };
+  }, [api]);
 
   const toggleCollapsed = useCallback((event: SyntheticEvent) => {
     event.stopPropagation();
@@ -224,6 +230,7 @@ export const TestingModule = ({
       running={isRunning}
       crashed={isCrashed}
       failed={isFailed || errorCount > 0}
+      updated={isUpdated}
     >
       <Card>
         {hasTestProviders && (
@@ -238,13 +245,9 @@ export const TestingModule = ({
             <Content ref={contentRef}>
               {testProviders.map((state) => {
                 const { render: Render } = state;
-                return Render ? (
-                  <Fragment key={state.id}>
-                    <Render {...state} />
-                  </Fragment>
-                ) : (
-                  <TestProvider key={state.id}>
-                    <LegacyRender {...state} />
+                return (
+                  <TestProvider key={state.id} data-module-id={state.id}>
+                    {Render ? <Render {...state} /> : <LegacyRender {...state} />}
                   </TestProvider>
                 );
               })}

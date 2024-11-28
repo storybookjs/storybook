@@ -200,6 +200,34 @@ Storybook is organized as a monorepo. Useful scripts include:
 
 - `yarn run test --core --watch` - will run core tests in watch-mode
 
+### Triggering CircleCI Workflow
+
+To trigger the CircleCI workflow, you can use the HTTP request action with the following configuration:
+
+```yaml
+name: Trigger CircleCI workflow
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, labeled, reopened]
+  push:
+    branches:
+      - next
+      - main
+
+jobs:
+  trigger-circle-ci-workflow:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Normal tests
+        uses: fjogeleit/http-request-action@v1
+        with:
+          url: 'https://circleci.com/api/v2/project/gh/storybookjs/storybook/pipeline'
+          method: 'POST'
+          customHeaders: '{"Content-Type": "application/json", "Circle-Token": "${{ secrets.CIRCLE_CI_TOKEN }}"}'
+          data: '{ "branch": "${{ github.ref_name }}", "parameters": { "workflow": "normal" } }'
+```
+
 ### Sponsors
 
 Become a sponsor to have your logo and website URL on our README on Github. \[[Become a sponsor](https://opencollective.com/storybook#sponsor)]

@@ -1,4 +1,3 @@
-/// <reference path="../typings.d.ts" />
 import { global } from '@storybook/global';
 
 import { Channel } from './main';

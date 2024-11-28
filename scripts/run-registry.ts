@@ -53,7 +53,12 @@ const startVerdaccio = async () => {
       const proxy = http.createServer((req, res) => {
         // if request contains "storybook" redirect to verdaccio
         if (req.url?.includes('storybook') || req.url?.includes('/sb') || req.method === 'PUT') {
-          res.writeHead(302, { Location: 'http://localhost:6002' + req.url });
+          const targetUrl = 'http://localhost:6002' + req.url;
+          if (isLocalUrl(targetUrl)) {
+            res.writeHead(302, { Location: targetUrl });
+          } else {
+            res.writeHead(302, { Location: 'http://localhost:6002' });
+          }
           res.end();
         } else {
           // forward to npm registry
@@ -96,6 +101,14 @@ const startVerdaccio = async () => {
       }, 10000);
     }),
   ]) as Promise<Server>;
+};
+
+const isLocalUrl = (path) => {
+  try {
+    return new URL(path, 'http://localhost:6002').origin === 'http://localhost:6002';
+  } catch (e) {
+    return false;
+  }
 };
 
 const currentVersion = async () => {

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/web-components-vite",
-  "version": "8.4.5",
+  "version": "8.4.6",
   "description": "Storybook for web-components and Vite: Develop Web Components in isolation with Hot Reloading.",
   "keywords": [
     "storybook"

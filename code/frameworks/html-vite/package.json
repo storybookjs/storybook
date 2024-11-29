@@ -1,6 +1,6 @@
 {
   "name": "@storybook/html-vite",
-  "version": "8.4.5",
+  "version": "8.4.6",
   "description": "Storybook for HTML and Vite: Develop HTML in isolation with Hot Reloading.",
   "keywords": [
     "storybook"

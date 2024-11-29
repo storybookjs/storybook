@@ -242,10 +242,6 @@ export const supportedTemplates: TemplateConfiguration[] = [
 // users an "Unsupported framework" message
 export const unsupportedTemplate: TemplateConfiguration = {
   preset: ProjectType.UNSUPPORTED,
-  dependencies: {
-    // TODO(blaine): Remove when we support Nuxt 3
-    nuxt: (versionRange) => eqMajor(versionRange, 3),
-  },
   matcherFunction: ({ dependencies }) => {
     return dependencies?.some(Boolean) ?? false;
   },

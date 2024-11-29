@@ -29,6 +29,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@analogjs/vite-plugin-angular@npm:^0.2.24":
+  version: 0.2.45
+  resolution: "@analogjs/vite-plugin-angular@npm:0.2.45"
+  dependencies:
+    ts-morph: "npm:^21.0.0"
+  peerDependencies:
+    "@angular-devkit/build-angular": ^15.0.0 || >=16.0.0
+  checksum: 10c0/9a11e92af76acf454c681c8f978d8e2f5f09367478ac7404b6992645dffdf3f5b85d4bb23745ed84407f160991ef02c290f0b4bb9e61ca144b3728da34e706af
+  languageName: node
+  linkType: hard
+
 "@analogjs/vite-plugin-angular@npm:^1.9.4":
   version: 1.9.4
   resolution: "@analogjs/vite-plugin-angular@npm:1.9.4"
@@ -5913,6 +5924,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/angular@workspace:frameworks/angular"
   dependencies:
+    "@analogjs/vite-plugin-angular": "npm:^0.2.24"
     "@storybook/angular-renderer": "workspace:*"
     "@storybook/builder-webpack5": "workspace:*"
     "@storybook/components": "workspace:*"

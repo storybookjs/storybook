@@ -12,7 +12,7 @@ import { getWebpackConfig as getCustomWebpackConfig } from './angular-cli-webpac
 import type { PresetOptions } from './preset-options';
 import { moduleIsAvailable } from './utils/module-is-available';
 
-export const webpack = async (baseConfig: Configuration, options: PresetOptions) => {
+export const webpackFinal = async (baseConfig: Configuration, options: PresetOptions) => {
   if (!moduleIsAvailable('@angular-devkit/build-angular')) {
     logger.info('=> Using base config because "@angular-devkit/build-angular" is not installed');
     return baseConfig;

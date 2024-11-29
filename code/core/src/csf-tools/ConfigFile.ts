@@ -102,6 +102,7 @@ const _findVarDeclarator = (
 ): t.VariableDeclarator | null | undefined => {
   let declarator: t.VariableDeclarator | null | undefined = null;
   let declarations: t.VariableDeclarator[] | null = null;
+
   program.body.find((node: t.Node) => {
     if (t.isVariableDeclaration(node)) {
       declarations = node.declarations;
@@ -248,9 +249,13 @@ export class ConfigFile {
               ) {
                 const { name: localName } = spec.local;
                 const { name: exportName } = spec.exported;
+
                 const decl = _findVarDeclarator(localName, parent as t.Program) as any;
-                self._exports[exportName] = decl.init;
-                self._exportDecls[exportName] = decl;
+                // decl can be empty in case X from `import { X } from ....` because it is not handled in _findVarDeclarator
+                if (decl) {
+                  self._exports[exportName] = decl.init;
+                  self._exportDecls[exportName] = decl;
+                }
               }
             });
           } else {

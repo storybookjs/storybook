@@ -171,27 +171,67 @@ export const CustomFooter: Story = {
 };
 ```
 
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* Page.stories.svelte */}
-
-<script>
-  import { Meta, Template, Story } from '@storybook/addon-svelte-csf';
+```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
 
   import Page from './Page.svelte';
+
+  const { Story } = defineMeta({
+    component: Page
+  });
 </script>
 
-<meta title="Page" component="{Page}" />
-
-<template let:args>
-  <Page {...args}>
-    <footer>{args.footer}</footer>
-  </Page>
-</template>
-
-<Story name="CustomFooter" args={{ footer: 'Built with Storybook', }} />
+<Story name="CustomFooter" args={{ footer: 'Built with Storybook' }}>
+  {#snippet children(args)}
+    <Page {...args} >
+      <footer>{args.footer}</footer>
+    </Page>
+  {/snippet}
+</Story>
 ```
 
-```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="3"
+```svelte filename="Page.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Page from './Page.svelte';
+
+  const { Story } = defineMeta({
+    component: Page
+  });
+</script>
+
+<Story name="CustomFooter" args={{ footer: 'Built with Storybook' }}>
+  {#snippet children(args)}
+    <Page {...args} >
+      <footer>{args.footer}</footer>
+    </Page>
+  {/snippet}
+</Story>
+```
+
+```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Page from './Page.svelte';
+
+  const { Story } = defineMeta({
+    component: Page
+  });
+</script>
+
+<Story name="CustomFooter" args={{ footer: 'Built with Storybook' }}>
+  {#snippet children(args)}
+    <Page {...args} >
+      <footer>{args.footer}</footer>
+    </Page>
+  {/snippet}
+</Story>
+```
+
+```js filename="Page.stories.js" renderer="vue" language="js"
 import Page from './Page.vue';
 
 export default {
@@ -218,7 +258,7 @@ export const CustomFooter = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="vue" language="ts-4-9" tabTitle="3"
+```ts filename="Page.stories.ts" renderer="vue" language="ts-4-9"
 // https://www.npmjs.com/package/vue-component-type-helpers
 import type { ComponentProps } from 'vue-component-type-helpers';
 import type { Meta, StoryObj } from '@storybook/vue3';
@@ -254,7 +294,7 @@ export const Primary = {
 } satisfies Story;
 ```
 
-```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="3"
+```ts filename="Page.stories.ts" renderer="vue" language="ts"
 // https://www.npmjs.com/package/vue-component-type-helpers
 import type { ComponentProps } from 'vue-component-type-helpers';
 import type { Meta, StoryObj } from '@storybook/vue3';
@@ -336,4 +376,3 @@ export const CustomFooter: Story = {
   },
 };
 ```
-

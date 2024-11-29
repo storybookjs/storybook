@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react",
-  "version": "8.4.0-alpha.6",
+  "version": "8.5.0-alpha.13",
   "description": "Storybook React renderer",
   "keywords": [
     "storybook"
@@ -62,12 +62,12 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/components": "workspace:^",
+    "@storybook/components": "workspace:*",
     "@storybook/global": "^5.0.0",
-    "@storybook/manager-api": "workspace:^",
-    "@storybook/preview-api": "workspace:^",
+    "@storybook/manager-api": "workspace:*",
+    "@storybook/preview-api": "workspace:*",
     "@storybook/react-dom-shim": "workspace:*",
-    "@storybook/theming": "workspace:^"
+    "@storybook/theming": "workspace:*"
   },
   "devDependencies": {
     "@storybook/test": "workspace:*",
@@ -80,7 +80,7 @@
     "acorn-jsx": "^5.3.1",
     "acorn-walk": "^7.2.0",
     "babel-plugin-react-docgen": "^4.2.1",
-    "es-toolkit": "^1.21.0",
+    "es-toolkit": "^1.22.0",
     "escodegen": "^2.1.0",
     "expect-type": "^0.15.0",
     "html-tags": "^3.1.0",

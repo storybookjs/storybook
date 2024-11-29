@@ -1,13 +1,17 @@
 import { toId } from '@storybook/csf';
 
-import type { Page } from '@playwright/test';
-import { expect } from '@playwright/test';
+import type { Expect, Page } from '@playwright/test';
+
+import { allTemplates } from '../lib/cli-storybook/src/sandbox-templates';
 
 export class SbPage {
   readonly page: Page;
 
-  constructor(page: Page) {
+  readonly expect: Expect;
+
+  constructor(page: Page, expect: Expect) {
     this.page = page;
+    this.expect = expect;
   }
 
   async openComponent(title: string, hasRoot = true) {
@@ -17,7 +21,7 @@ export class SbPage {
 
       const parentLink = this.page.locator(`#${parentId}`);
 
-      await expect(parentLink).toBeVisible();
+      await this.expect(parentLink).toBeVisible();
       if ((await parentLink.getAttribute('aria-expanded')) === 'false') {
         await parentLink.click();
       }
@@ -54,7 +58,7 @@ export class SbPage {
     );
 
     const selected = storyLink;
-    await expect(selected).toHaveAttribute('data-selected', 'true');
+    await this.expect(selected).toHaveAttribute('data-selected', 'true');
 
     await this.previewRoot();
   }
@@ -74,7 +78,7 @@ export class SbPage {
     );
 
     const selected = storyLink;
-    await expect(selected).toHaveAttribute('data-selected', 'true');
+    await this.expect(selected).toHaveAttribute('data-selected', 'true');
 
     await this.previewRoot();
   }
@@ -120,7 +124,7 @@ export class SbPage {
   }
 
   panelContent() {
-    return this.page.locator('#storybook-panel-root #panel-tab-content');
+    return this.page.locator('#storybook-panel-root #panel-tab-content > div:not([hidden])');
   }
 
   async viewAddonPanel(name: string) {
@@ -140,3 +144,9 @@ export class SbPage {
     return this.previewIframe().locator('body');
   }
 }
+
+const templateName: keyof typeof allTemplates = process.env.STORYBOOK_TEMPLATE_NAME || ('' as any);
+
+const templates = allTemplates;
+export const hasVitestIntegration =
+  !templates[templateName]?.skipTasks?.includes('vitest-integration');

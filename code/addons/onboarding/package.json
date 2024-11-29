@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-onboarding",
-  "version": "8.4.0-alpha.6",
+  "version": "8.5.0-alpha.13",
   "description": "Storybook Addon Onboarding - Introduces a new onboarding experience",
   "keywords": [
     "storybook-addons",
@@ -49,7 +49,7 @@
   },
   "devDependencies": {
     "@radix-ui/react-dialog": "^1.0.5",
-    "@storybook/icons": "^1.2.10",
+    "@storybook/icons": "^1.2.12",
     "@storybook/react": "workspace:*",
     "framer-motion": "^11.0.3",
     "react": "^18.2.0",

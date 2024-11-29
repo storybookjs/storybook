@@ -188,7 +188,7 @@ export default {
   component: Button,
 };
 
-export const Primary = ({
+export const Primary = {
   // 👇 Rename this story
   name: 'I am the primary',
   args: {
@@ -210,7 +210,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Primary: Story = ({
+export const Primary: Story = {
   // 👇 Rename this story
   name: 'I am the primary',
   args: {
@@ -232,7 +232,7 @@ const meta: Meta<typeof Button> = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Primary: Story = ({
+export const Primary: Story = {
   // 👇 Rename this story
   name: 'I am the primary',
   args: {
@@ -337,4 +337,3 @@ export const Primary: Story = {
   },
 };
 ```
-

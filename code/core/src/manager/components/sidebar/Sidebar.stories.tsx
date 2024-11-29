@@ -33,6 +33,7 @@ const managerContext: any = {
       autodocs: 'tag',
       docsMode: false,
     },
+    testProviders: {},
   },
   api: {
     emit: fn().mockName('api::emit'),
@@ -41,8 +42,18 @@ const managerContext: any = {
     getShortcutKeys: fn(() => ({ search: ['control', 'shift', 's'] })).mockName(
       'api::getShortcutKeys'
     ),
+    getChannel: fn().mockName('api::getChannel'),
+    getElements: fn(() => ({})),
     selectStory: fn().mockName('api::selectStory'),
     experimental_setFilter: fn().mockName('api::experimental_setFilter'),
+    getDocsUrl: () => 'https://storybook.js.org/docs/',
+    getUrlState: () => ({
+      queryParams: {},
+      path: '',
+      viewMode: 'story',
+      url: 'http://localhost:6006/',
+    }),
+    applyQueryParams: fn().mockName('api::applyQueryParams'),
   },
 };
 
@@ -56,11 +67,26 @@ const meta = {
     menu,
     extra: [] as Addon_SidebarTopType[],
     index: index,
+    indexJson: {
+      entries: {
+        // force the tags filter menu to show in production
+        ['dummy--dummyId']: {
+          id: 'dummy--dummyId',
+          name: 'Dummy story',
+          title: 'dummy',
+          importPath: './dummy.stories.js',
+          type: 'story',
+          tags: ['A', 'B', 'C', 'dev'],
+        },
+      },
+      v: 6,
+    },
     storyId,
     refId: DEFAULT_REF_ID,
     refs: {},
     status: {},
     showCreateStoryButton: true,
+    isDevelopment: true,
   },
   decorators: [
     (storyFn) => (

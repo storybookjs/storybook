@@ -1,6 +1,6 @@
 {
   "name": "@storybook/svelte",
-  "version": "8.4.0-alpha.6",
+  "version": "8.5.0-alpha.13",
   "description": "Storybook Svelte renderer",
   "keywords": [
     "storybook"
@@ -55,26 +55,26 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/components": "workspace:^",
+    "@storybook/components": "workspace:*",
     "@storybook/global": "^5.0.0",
-    "@storybook/manager-api": "workspace:^",
-    "@storybook/preview-api": "workspace:^",
-    "@storybook/theming": "workspace:^",
+    "@storybook/manager-api": "workspace:*",
+    "@storybook/preview-api": "workspace:*",
+    "@storybook/theming": "workspace:*",
     "sveltedoc-parser": "^4.2.1",
     "ts-dedent": "^2.0.0",
     "type-fest": "~2.19"
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^3.0.2",
-    "@testing-library/svelte": "patch:@testing-library/svelte@npm%3A4.1.0#~/.yarn/patches/@testing-library-svelte-npm-4.1.0-34b7037bc0.patch",
+    "@sveltejs/vite-plugin-svelte": "^4.0.0",
+    "@testing-library/svelte": "^5.2.4",
     "expect-type": "^0.15.0",
-    "svelte": "^5.0.0-next.65",
-    "svelte-check": "^3.6.4",
+    "svelte": "^5.0.5",
+    "svelte-check": "^4.0.5",
     "typescript": "^5.3.2"
   },
   "peerDependencies": {
     "storybook": "workspace:^",
-    "svelte": "^4.0.0 || ^5.0.0-next.65"
+    "svelte": "^4.0.0 || ^5.0.0"
   },
   "engines": {
     "node": ">=18.0.0"

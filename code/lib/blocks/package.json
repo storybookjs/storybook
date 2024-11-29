@@ -1,6 +1,6 @@
 {
   "name": "@storybook/blocks",
-  "version": "8.4.0-alpha.6",
+  "version": "8.5.0-alpha.13",
   "description": "Storybook Doc Blocks",
   "keywords": [
     "storybook"
@@ -44,7 +44,7 @@
   },
   "dependencies": {
     "@storybook/csf": "^0.1.11",
-    "@storybook/icons": "^1.2.10",
+    "@storybook/icons": "^1.2.12",
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
@@ -53,7 +53,7 @@
     "@storybook/test": "workspace:*",
     "@types/color-convert": "^2.0.0",
     "color-convert": "^2.0.1",
-    "es-toolkit": "^1.21.0",
+    "es-toolkit": "^1.22.0",
     "markdown-to-jsx": "^7.4.5",
     "memoizerific": "^1.11.3",
     "polished": "^4.2.2",

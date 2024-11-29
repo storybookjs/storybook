@@ -80,15 +80,22 @@ const config: StorybookConfig = {
       directory: '../addons/interactions/src',
       titlePrefix: 'addons/interactions',
     },
-    // {
-    //   directory: '../addons/interactions/template/stories',
-    //   titlePrefix: 'addons/interactions',
-    // },
+    {
+      directory: '../addons/interactions/template/stories',
+      titlePrefix: 'addons/interactions/tests',
+    },
+    {
+      directory: '../addons/test/src/components',
+      titlePrefix: 'addons/test',
+    },
+    {
+      directory: '../addons/test/template/stories',
+      titlePrefix: 'addons/test',
+    },
   ],
   addons: [
     '@storybook/addon-themes',
     '@storybook/addon-essentials',
-    '@storybook/addon-interactions',
     '@storybook/addon-storysource',
     '@storybook/addon-designs',
     '@storybook/experimental-addon-test',

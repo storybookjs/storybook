@@ -4,6 +4,7 @@ import React from 'react';
 import { IconButton } from '@storybook/core/components';
 import { styled } from '@storybook/core/theming';
 import { BottomBarToggleIcon, MenuIcon } from '@storybook/icons';
+import type { API_IndexHash, API_Refs } from '@storybook/types';
 
 import { useStorybookApi, useStorybookState } from '@storybook/core/manager-api';
 
@@ -17,27 +18,46 @@ interface MobileNavigationProps {
   showPanel: boolean;
 }
 
+// Function to combine all indexes
+function combineIndexes(rootIndex: API_IndexHash | undefined, refs: API_Refs) {
+  // Create a copy of the root index to avoid mutation
+  const combinedIndex = { ...(rootIndex || {}) }; // Use an empty object as fallback
+
+  // Traverse refs and merge each nested index with the root index
+  Object.values(refs).forEach((ref) => {
+    if (ref.index) {
+      Object.assign(combinedIndex, ref.index);
+    }
+  });
+
+  return combinedIndex;
+}
+
 /**
  * Walks the tree from the current story to combine story+component+folder names into a single
  * string
  */
 const useFullStoryName = () => {
-  const { index } = useStorybookState();
+  const { index, refs } = useStorybookState();
   const api = useStorybookApi();
   const currentStory = api.getCurrentStoryData();
 
   if (!currentStory) {
     return '';
   }
-
+  const combinedIndex = combineIndexes(index, refs || {});
   let fullStoryName = currentStory.renderLabel?.(currentStory, api) || currentStory.name;
-  // @ts-expect-error (non strict)
-  let node = index[currentStory.id];
 
-  // @ts-expect-error (non strict)
-  while ('parent' in node && node.parent && index[node.parent] && fullStoryName.length < 24) {
-    // @ts-expect-error (non strict)
-    node = index[node.parent];
+  let node = combinedIndex[currentStory.id];
+
+  while (
+    node &&
+    'parent' in node &&
+    node.parent &&
+    combinedIndex[node.parent] &&
+    fullStoryName.length < 24
+  ) {
+    node = combinedIndex[node.parent];
     const parentName = node.renderLabel?.(node, api) || node.name;
     fullStoryName = `${parentName}/${fullStoryName}`;
   }

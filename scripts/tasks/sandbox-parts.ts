@@ -89,7 +89,7 @@ export const install: Task['run'] = async ({ sandboxDir, key }, { link, dryRun, 
       dryRun,
       debug,
     });
-    await addWorkaroundResolutions({ cwd, dryRun, debug });
+    await addWorkaroundResolutions({ cwd, dryRun, debug, key });
   } else {
     // We need to add package resolutions to ensure that we only ever install the latest version
     // of any storybook packages as verdaccio is not able to both proxy to npm and publish over
@@ -110,7 +110,7 @@ export const install: Task['run'] = async ({ sandboxDir, key }, { link, dryRun, 
       'vue3-vite/default-js',
       'vue3-vite/default-ts',
     ];
-    if (sandboxesNeedingWorkarounds.includes(key)) {
+    if (sandboxesNeedingWorkarounds.includes(key) || key.includes('vite')) {
       await addWorkaroundResolutions({ cwd, dryRun, debug });
     }
 
@@ -138,6 +138,8 @@ export const init: Task['run'] = async (
     extra = { type: 'html' };
   } else if (template.expected.renderer === '@storybook/server') {
     extra = { type: 'server' };
+  } else if (template.expected.framework === '@storybook/react-native-web-vite') {
+    extra = { type: 'react_native_web' };
   }
 
   await executeCLIStep(steps.init, {
@@ -177,8 +179,13 @@ export const init: Task['run'] = async (
 
   if (!skipTemplateStories) {
     for (const addon of addons) {
-      const addonName = `@storybook/addon-${addon}`;
-      await executeCLIStep(steps.add, { argument: addonName, cwd, dryRun, debug });
+      await executeCLIStep(steps.add, {
+        argument: addon,
+        cwd,
+        dryRun,
+        debug,
+        optionValues: { yes: true },
+      });
     }
   }
 };
@@ -391,6 +398,25 @@ const getVitestPluginInfo = (details: TemplateDetails) => {
 
 export async function setupVitest(details: TemplateDetails, options: PassedOptionValues) {
   const { sandboxDir, template } = details;
+  const packageJsonPath = join(sandboxDir, 'package.json');
+  const packageJson = await readJson(packageJsonPath);
+
+  packageJson.scripts = {
+    ...packageJson.scripts,
+    vitest: 'vitest --reporter=default --reporter=hanging-process --test-timeout=5000',
+  };
+
+  // This workaround is needed because Vitest seems to have issues in link mode
+  // so the /setup-file and /global-setup files from the vitest addon won't work in portal protocol
+  if (options.link) {
+    const vitestAddonPath = relative(sandboxDir, join(CODE_DIRECTORY, 'addons', 'test'));
+    packageJson.resolutions = {
+      ...packageJson.resolutions,
+      '@storybook/experimental-addon-test': `file:${vitestAddonPath}`,
+    };
+  }
+
+  await writeJson(packageJsonPath, packageJson, { spaces: 2 });
 
   const isVue = template.expected.renderer === '@storybook/vue3';
   const isNextjs = template.expected.framework.includes('nextjs');
@@ -414,7 +440,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
     import { setProjectAnnotations } from '${storybookPackage}'
     import * as rendererDocsAnnotations from '${template.expected.renderer}/dist/entry-preview-docs.mjs'
     import * as addonActionsAnnotations from '@storybook/addon-actions/preview'
-    import * as addonInteractionsAnnotations from '@storybook/addon-interactions/preview'
+    import * as addonTestAnnotations from '@storybook/experimental-addon-test/preview'
     import '../src/stories/components'
     import * as coreAnnotations from '../template-stories/core/preview'
     import * as toolbarAnnotations from '../template-stories/addons/toolbars/preview'
@@ -427,7 +453,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
       coreAnnotations,
       toolbarAnnotations,
       addonActionsAnnotations,
-      addonInteractionsAnnotations,
+      addonTestAnnotations,
       ${isVue ? 'vueAnnotations,' : ''}
     ])
 
@@ -501,26 +527,6 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
       ]);
   `
   );
-
-  const packageJsonPath = join(sandboxDir, 'package.json');
-  const packageJson = await readJson(packageJsonPath);
-
-  packageJson.scripts = {
-    ...packageJson.scripts,
-    vitest: 'vitest --reporter=default --reporter=hanging-process --test-timeout=5000',
-  };
-
-  // This workaround is needed because Vitest seems to have issues in link mode
-  // so the /setup-file and /global-setup files from the vitest addon won't work in portal protocol
-  if (options.link) {
-    const vitestAddonPath = relative(sandboxDir, join(CODE_DIRECTORY, 'addons', 'test'));
-    packageJson.resolutions = {
-      ...packageJson.resolutions,
-      '@storybook/experimental-addon-test': `file:${vitestAddonPath}`,
-    };
-  }
-
-  await writeJson(packageJsonPath, packageJson, { spaces: 2 });
 }
 
 export async function addExtraDependencies({
@@ -664,6 +670,15 @@ export const addStories: Task['run'] = async (
       cwd,
       disableDocs,
     });
+
+    await linkPackageStories(
+      await workspacePath('addon test package', '@storybook/experimental-addon-test'),
+      {
+        mainConfig,
+        cwd,
+        disableDocs,
+      }
+    );
   }
 
   const mainAddons = (mainConfig.getSafeFieldValue(['addons']) || []).reduce(

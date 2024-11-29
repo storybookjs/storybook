@@ -139,7 +139,7 @@ const Pure = React.memo(function PureTool(props: PureProps) {
                   onHide();
                 },
               })),
-            ]}
+            ].flat()}
           />
         )}
         closeOnOutsideClick

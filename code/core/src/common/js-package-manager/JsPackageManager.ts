@@ -16,7 +16,7 @@ import type { InstallationMetadata } from './types';
 
 const logger = console;
 
-export type PackageManagerName = 'npm' | 'yarn1' | 'yarn2' | 'pnpm';
+export type PackageManagerName = 'npm' | 'yarn1' | 'yarn2' | 'pnpm' | 'bun';
 
 type StorybookPackage = keyof typeof storybookPackagesVersions;
 
@@ -49,6 +49,8 @@ export abstract class JsPackageManager {
   public abstract getRunStorybookCommand(): string;
 
   public abstract getRunCommand(command: string): string;
+
+  public abstract getRemoteRunCommand(): string;
 
   public readonly cwd?: string;
 

@@ -12,4 +12,3 @@ pnpm dlx storybook@latest migrate csf-2-to-3 --glob="**/*.stories.tsx" --parser=
 # Convert CSF 2 to CSF 3
 yarn dlx storybook@latest migrate csf-2-to-3 --glob="**/*.stories.tsx" --parser=tsx
 ```
-

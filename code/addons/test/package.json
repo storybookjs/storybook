@@ -1,12 +1,13 @@
 {
   "name": "@storybook/experimental-addon-test",
-  "version": "8.4.0-alpha.6",
+  "version": "8.5.0-alpha.13",
   "description": "Integrate Vitest with Storybook",
   "keywords": [
     "storybook-addons",
     "addon-test",
     "vitest",
-    "testing"
+    "testing",
+    "test"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/test",
   "bugs": {
@@ -22,39 +23,43 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
-  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./vitest-plugin": {
       "types": "./dist/vitest-plugin/index.d.ts",
-      "import": "./dist/vitest-plugin/index.js",
-      "require": "./dist/vitest-plugin/index.cjs"
+      "import": "./dist/vitest-plugin/index.mjs",
+      "require": "./dist/vitest-plugin/index.js"
     },
     "./internal/global-setup": {
       "types": "./dist/vitest-plugin/global-setup.d.ts",
-      "import": "./dist/vitest-plugin/global-setup.js",
-      "require": "./dist/vitest-plugin/global-setup.cjs"
+      "import": "./dist/vitest-plugin/global-setup.mjs",
+      "require": "./dist/vitest-plugin/global-setup.js"
     },
     "./internal/setup-file": {
       "types": "./dist/vitest-plugin/setup-file.d.ts",
-      "import": "./dist/vitest-plugin/setup-file.js"
+      "import": "./dist/vitest-plugin/setup-file.mjs"
     },
     "./internal/test-utils": {
       "types": "./dist/vitest-plugin/test-utils.d.ts",
-      "import": "./dist/vitest-plugin/test-utils.js",
-      "require": "./dist/vitest-plugin/test-utils.cjs"
+      "import": "./dist/vitest-plugin/test-utils.mjs",
+      "require": "./dist/vitest-plugin/test-utils.js"
+    },
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "import": "./dist/preview.mjs",
+      "require": "./dist/preview.js"
     },
     "./manager": "./dist/manager.js",
-    "./preset": "./dist/preset.cjs",
-    "./postinstall": "./dist/postinstall.cjs",
+    "./preset": "./dist/preset.js",
+    "./postinstall": "./dist/postinstall.js",
     "./package.json": "./package.json"
   },
-  "main": "dist/index.cjs",
-  "module": "dist/index.js",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
@@ -70,23 +75,56 @@
     "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
-    "@storybook/csf": "^0.1.11"
+    "@storybook/csf": "^0.1.11",
+    "@storybook/global": "^5.0.0",
+    "@storybook/icons": "^1.2.12",
+    "@storybook/instrumenter": "workspace:*",
+    "@storybook/test": "workspace:*",
+    "@storybook/theming": "workspace:*",
+    "polished": "^4.2.2",
+    "prompts": "^2.4.0",
+    "ts-dedent": "^2.2.0"
   },
   "devDependencies": {
+    "@devtools-ds/object-inspector": "^1.1.2",
+    "@storybook/icons": "^1.2.12",
+    "@types/node": "^22.0.0",
     "@types/semver": "^7",
-    "@vitest/browser": "^2.0.0",
+    "@vitest/browser": "^2.1.3",
+    "@vitest/runner": "^2.1.3",
+    "ansi-to-html": "^0.7.2",
     "boxen": "^8.0.1",
+    "es-toolkit": "^1.22.0",
+    "execa": "^8.0.1",
     "find-up": "^7.0.0",
+    "formik": "^2.2.9",
+    "pathe": "^1.1.2",
     "picocolors": "^1.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "semver": "^7.6.3",
-    "tinyrainbow": "^1.2.0",
+    "slash": "^5.0.0",
+    "strip-ansi": "^7.1.0",
     "ts-dedent": "^2.2.0",
-    "vitest": "^2.0.0"
+    "typescript": "^5.3.2",
+    "vitest": "^2.1.3"
   },
   "peerDependencies": {
-    "@vitest/browser": "^2.0.0",
+    "@vitest/browser": "^2.1.1",
+    "@vitest/runner": "^2.1.1",
     "storybook": "workspace:^",
-    "vitest": "^2.0.0"
+    "vitest": "^2.1.1"
+  },
+  "peerDependenciesMeta": {
+    "@vitest/browser": {
+      "optional": true
+    },
+    "@vitest/runner": {
+      "optional": true
+    },
+    "vitest": {
+      "optional": true
+    }
   },
   "publishConfig": {
     "access": "public"
@@ -100,11 +138,22 @@
     "managerEntries": [
       "./src/manager.tsx"
     ],
+    "previewEntries": [
+      "./src/preview.ts"
+    ],
     "nodeEntries": [
       "./src/preset.ts",
       "./src/vitest-plugin/index.ts",
       "./src/vitest-plugin/global-setup.ts",
-      "./src/postinstall.ts"
+      "./src/postinstall.ts",
+      "./src/node/vitest.ts"
     ]
+  },
+  "storybook": {
+    "displayName": "Test",
+    "unsupportedFrameworks": [
+      "react-native"
+    ],
+    "icon": "https://user-images.githubusercontent.com/263385/101991666-479cc600-3c7c-11eb-837b-be4e5ffa1bb8.png"
   }
 }

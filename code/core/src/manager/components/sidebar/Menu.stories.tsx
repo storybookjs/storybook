@@ -1,4 +1,3 @@
-import type { ComponentProps } from 'react';
 import React from 'react';
 
 import { TooltipLinkList } from '@storybook/core/components';
@@ -11,11 +10,13 @@ import type { State } from '@storybook/core/manager-api';
 
 import { useMenu } from '../../container/Menu';
 import { LayoutProvider } from '../layout/LayoutProvider';
-import { SidebarMenu } from './Menu';
+import { type MenuList, SidebarMenu } from './Menu';
 
-const fakemenu: ComponentProps<typeof TooltipLinkList>['links'] = [
-  { title: 'has icon', icon: <LinkIcon />, id: 'icon' },
-  { title: 'has no icon', id: 'non' },
+const fakemenu: MenuList = [
+  [
+    { title: 'has icon', icon: <LinkIcon />, id: 'icon' },
+    { title: 'has no icon', id: 'non' },
+  ],
 ];
 
 const meta = {

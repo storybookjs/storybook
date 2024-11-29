@@ -12,7 +12,7 @@ Requires Storybook 7.0 or later. If you need to add it to your Storybook, you ca
 npm i -D @storybook/addon-themes
 ```
 
-Then, add following content to [`.storybook/main.js`](https://storybook.js.org/docs/react/configure/#configure-your-storybook-project):
+Then, add following content to [`.storybook/main.js`](https://storybook.js.org/docs/configure#configure-your-storybook-project):
 
 ```js
 export default {
@@ -36,7 +36,7 @@ Don't see your favorite tool listed? Don't worry! That doesn't mean this addon i
 
 ### ❗️ Overriding theme
 
-If you want to override your theme for a particular component or story, you can use the `themes.themeOverride` parameter.
+If you want to override your theme for a particular component or story, you can use the `globals.theme` parameter.
 
 ```js
 import React from 'react';

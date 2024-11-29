@@ -1,6 +1,6 @@
 {
   "name": "@storybook/root",
-  "version": "8.5.0-alpha.1",
+  "version": "8.5.0-alpha.13",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -176,7 +176,7 @@
     "@types/serve-static": "^1.13.8",
     "@typescript-eslint/experimental-utils": "^5.62.0",
     "@typescript-eslint/parser": "^6.18.1",
-    "@vitejs/plugin-react": "^3.0.1",
+    "@vitejs/plugin-react": "^4.3.2",
     "@vitejs/plugin-vue": "^4.4.0",
     "@vitest/browser": "^2.1.3",
     "@vitest/coverage-istanbul": "^2.1.3",

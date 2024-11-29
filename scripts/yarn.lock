@@ -1660,6 +1660,7 @@ __metadata:
     slash: "npm:^3.0.0"
     sort-package-json: "npm:^2.10.0"
     tiny-invariant: "npm:^1.3.3"
+    tinyexec: "npm:^0.3.0"
     trash: "npm:^7.2.0"
     ts-dedent: "npm:^2.2.0"
     tsup: "npm:^6.7.0"
@@ -13452,9 +13453,9 @@ __metadata:
   linkType: hard
 
 "tinyexec@npm:^0.3.0":
-  version: 0.3.1
-  resolution: "tinyexec@npm:0.3.1"
-  checksum: 10c0/11e7a7c5d8b3bddf8b5cbe82a9290d70a6fad84d528421d5d18297f165723cb53d2e737d8f58dcce5ca56f2e4aa2d060f02510b1f8971784f97eb3e9aec28f09
+  version: 0.3.0
+  resolution: "tinyexec@npm:0.3.0"
+  checksum: 10c0/138a4f4241aea6b6312559508468ab275a31955e66e2f57ed206e0aaabecee622624f208c5740345f0a66e33478fd065e359ed1eb1269eb6fd4fa25d44d0ba3b
   languageName: node
   linkType: hard
 

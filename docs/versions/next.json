@@ -1,1 +1,1 @@
-{"version":"8.5.0-alpha.1","info":{"plain":"- Core: Relax peer dep constraint of shim packages - [#29503](https://github.com/storybookjs/storybook/pull/29503), thanks @kasperpeulen!"}}
+{"version":"8.5.0-alpha.13","info":{"plain":"- Portable stories: Support multiple annotation notations from preview - [#29733](https://github.com/storybookjs/storybook/pull/29733), thanks @yannbf!\n- React: Upgrade react-docgen-typescript to support Vite 6 - [#29724](https://github.com/storybookjs/storybook/pull/29724), thanks @yannbf!"}}

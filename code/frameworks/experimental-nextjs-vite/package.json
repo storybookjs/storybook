@@ -1,6 +1,6 @@
 {
   "name": "@storybook/experimental-nextjs-vite",
-  "version": "8.5.0-alpha.1",
+  "version": "8.5.0-alpha.13",
   "description": "Storybook for Next.js and Vite",
   "keywords": [
     "storybook",
@@ -99,20 +99,20 @@
     "@storybook/react": "workspace:*",
     "@storybook/test": "workspace:*",
     "styled-jsx": "5.1.6",
-    "vite-plugin-storybook-nextjs": "^1.0.11"
+    "vite-plugin-storybook-nextjs": "^1.1.0"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",
-    "next": "^14.2.5",
+    "next": "^15.0.3",
     "typescript": "^5.3.2"
   },
   "peerDependencies": {
     "@storybook/test": "workspace:*",
-    "next": "^14.1.0",
+    "next": "^14.1.0 || ^15.0.0",
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta",
     "storybook": "workspace:^",
-    "vite": "^5.0.0"
+    "vite": "^5.0.0 || ^6.0.0"
   },
   "peerDependenciesMeta": {
     "typescript": {
@@ -141,7 +141,8 @@
       "./src/images/decorator.tsx"
     ],
     "externals": [
-      "sb-original/image-context"
+      "sb-original/image-context",
+      "sb-original/default-loader"
     ],
     "platform": "node"
   },

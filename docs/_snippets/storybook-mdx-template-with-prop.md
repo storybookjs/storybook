@@ -1,9 +1,7 @@
-```mdx renderer="common" language="mdx"
-{/* DocumentationTemplate.mdx */}
-
+```mdx filename="DocumentationTemplate.mdx" renderer="common" language="mdx"
 import { Meta, Title, Primary, Controls, Stories } from '@storybook/blocks';
 
-{/* 
+{/*
   * 👇 The isTemplate property is required to tell Storybook that this is a template
   * See https://storybook.js.org/docs/api/doc-blocks/doc-block-meta
   * to learn how to use
@@ -32,4 +30,3 @@ Listed below are additional variations of the component.
 <Stories />
 
 ```
-

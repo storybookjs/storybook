@@ -9,4 +9,3 @@ pnpm dlx storybook@latest add @chromatic-com/storybook
 ```shell renderer="common" language="js" packageManager="yarn"
 yarn dlx storybook@latest add @chromatic-com/storybook
 ```
-

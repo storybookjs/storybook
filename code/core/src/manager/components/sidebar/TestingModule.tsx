@@ -1,18 +1,14 @@
-import React, { type SyntheticEvent, useEffect, useRef, useState } from 'react';
+import React, { type SyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
 
 import { Button, TooltipNote } from '@storybook/core/components';
+import { WithTooltip } from '@storybook/core/components';
 import { keyframes, styled } from '@storybook/core/theming';
-import {
-  ChevronSmallUpIcon,
-  EyeIcon,
-  PlayAllHollowIcon,
-  PlayHollowIcon,
-  StopAltHollowIcon,
-} from '@storybook/icons';
+import { ChevronSmallUpIcon, PlayAllHollowIcon } from '@storybook/icons';
 
-import type { TestProviders } from '@storybook/core/core-events';
+import { TESTING_MODULE_CONFIG_CHANGE, type TestProviders } from '@storybook/core/core-events';
+import { useStorybookApi } from '@storybook/core/manager-api';
 
-import { WithTooltip } from '../../../components/components/tooltip/WithTooltip';
+import { LegacyRender } from './LegacyRender';
 
 const DEFAULT_HEIGHT = 500;
 
@@ -26,42 +22,42 @@ const spin = keyframes({
   '100%': { transform: 'rotate(360deg)' },
 });
 
-const Outline = styled.div<{ crashed: boolean; failed: boolean; running: boolean }>(
-  ({ crashed, running, theme, failed }) => ({
-    position: 'relative',
-    lineHeight: '20px',
-    width: '100%',
-    padding: 1,
-    overflow: 'hidden',
-    background: `var(--sb-sidebar-bottom-card-background, ${theme.background.content})`,
-    borderRadius:
-      `var(--sb-sidebar-bottom-card-border-radius, ${theme.appBorderRadius + 1}px)` as any,
-    boxShadow: `inset 0 0 0 1px ${crashed && !running ? theme.color.negative : theme.appBorderColor}, var(--sb-sidebar-bottom-card-box-shadow, 0 1px 2px 0 rgba(0, 0, 0, 0.05), 0px -5px 20px 10px ${theme.background.app})`,
-    transitionProperty:
-      'color, background-color, border-color, text-decoration-color, fill, stroke',
-    transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
-    transitionDuration: '0.15s',
+const Outline = styled.div<{
+  crashed: boolean;
+  failed: boolean;
+  running: boolean;
+  updated: boolean;
+}>(({ crashed, failed, running, theme, updated }) => ({
+  position: 'relative',
+  lineHeight: '20px',
+  width: '100%',
+  padding: 1,
+  overflow: 'hidden',
+  backgroundColor: `var(--sb-sidebar-bottom-card-background, ${theme.background.content})`,
+  borderRadius:
+    `var(--sb-sidebar-bottom-card-border-radius, ${theme.appBorderRadius + 1}px)` as any,
+  boxShadow: `inset 0 0 0 1px ${crashed && !running ? theme.color.negative : updated ? theme.color.positive : theme.appBorderColor}, var(--sb-sidebar-bottom-card-box-shadow, 0 1px 2px 0 rgba(0, 0, 0, 0.05), 0px -5px 20px 10px ${theme.background.app})`,
+  transition: 'box-shadow 1s',
 
-    '&:after': {
-      content: '""',
-      display: running ? 'block' : 'none',
-      position: 'absolute',
-      left: '50%',
-      top: '50%',
-      marginLeft: 'calc(max(100vw, 100vh) * -0.5)',
-      marginTop: 'calc(max(100vw, 100vh) * -0.5)',
-      height: 'max(100vw, 100vh)',
-      width: 'max(100vw, 100vh)',
-      animation: `${spin} 3s linear infinite`,
-      background: failed
-        ? // Hardcoded colors to prevent themes from messing with them (orange+gold, secondary+seafoam)
-          `conic-gradient(transparent 90deg, #FC521F 150deg, #FFAE00 210deg, transparent 270deg)`
-        : `conic-gradient(transparent 90deg, #029CFD 150deg, #37D5D3 210deg, transparent 270deg)`,
-      opacity: 1,
-      willChange: 'auto',
-    },
-  })
-);
+  '&:after': {
+    content: '""',
+    display: running ? 'block' : 'none',
+    position: 'absolute',
+    left: '50%',
+    top: '50%',
+    marginLeft: 'calc(max(100vw, 100vh) * -0.5)',
+    marginTop: 'calc(max(100vw, 100vh) * -0.5)',
+    height: 'max(100vw, 100vh)',
+    width: 'max(100vw, 100vh)',
+    animation: `${spin} 3s linear infinite`,
+    background: failed
+      ? // Hardcoded colors to prevent themes from messing with them (orange+gold, secondary+seafoam)
+        `conic-gradient(transparent 90deg, #FC521F 150deg, #FFAE00 210deg, transparent 270deg)`
+      : `conic-gradient(transparent 90deg, #029CFD 150deg, #37D5D3 210deg, transparent 270deg)`,
+    opacity: 1,
+    willChange: 'auto',
+  },
+}));
 
 const Card = styled.div(({ theme }) => ({
   position: 'relative',
@@ -76,16 +72,14 @@ const Card = styled.div(({ theme }) => ({
 
 const Collapsible = styled.div(({ theme }) => ({
   overflow: 'hidden',
-  transition: 'max-height 250ms',
+
   willChange: 'auto',
   boxShadow: `inset 0 -1px 0 ${theme.appBorderColor}`,
 }));
 
 const Content = styled.div({
-  padding: '12px 6px',
   display: 'flex',
   flexDirection: 'column',
-  gap: '12px',
 });
 
 const Bar = styled.div<{ onClick?: (e: SyntheticEvent) => void }>(({ onClick }) => ({
@@ -142,48 +136,13 @@ const StatusButton = styled(Button)<{ status: 'negative' | 'warning' }>(
         })
 );
 
-const TestProvider = styled.div({
-  display: 'flex',
-  justifyContent: 'space-between',
-  gap: 6,
-});
+const TestProvider = styled.div(({ theme }) => ({
+  padding: 4,
 
-const Info = styled.div({
-  display: 'flex',
-  flexDirection: 'column',
-  marginLeft: 6,
-});
-
-const Actions = styled.div({
-  display: 'flex',
-  gap: 6,
-});
-
-const TitleWrapper = styled.div<{ crashed?: boolean }>(({ crashed, theme }) => ({
-  fontSize: theme.typography.size.s1,
-  fontWeight: crashed ? 'bold' : 'normal',
-  color: crashed ? theme.color.negativeText : theme.color.defaultText,
+  '&:not(:last-child)': {
+    boxShadow: `inset 0 -1px 0 ${theme.appBorderColor}`,
+  },
 }));
-
-const DescriptionWrapper = styled.div(({ theme }) => ({
-  fontSize: theme.typography.size.s1,
-  color: theme.barTextColor,
-}));
-
-const DynamicInfo = ({ state }: { state: TestProviders[keyof TestProviders] }) => {
-  const Description = state.description;
-  const Title = state.title;
-  return (
-    <Info>
-      <TitleWrapper crashed={state.crashed}>
-        <Title {...state} />
-      </TitleWrapper>
-      <DescriptionWrapper>
-        <Description {...state} />
-      </DescriptionWrapper>
-    </Info>
-  );
-};
 
 interface TestingModuleProps {
   testProviders: TestProviders[keyof TestProviders][];
@@ -193,9 +152,6 @@ interface TestingModuleProps {
   warningCount: number;
   warningsActive: boolean;
   setWarningsActive: (active: boolean) => void;
-  onRunTests: (providerId: string) => void;
-  onCancelTests: (providerId: string) => void;
-  onSetWatchMode: (providerId: string, watchMode: boolean) => void;
 }
 
 export const TestingModule = ({
@@ -206,92 +162,101 @@ export const TestingModule = ({
   warningCount,
   warningsActive,
   setWarningsActive,
-  onRunTests,
-  onCancelTests,
-  onSetWatchMode,
 }: TestingModuleProps) => {
+  const api = useStorybookApi();
+
+  const timeoutRef = useRef<null | ReturnType<typeof setTimeout>>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const [collapsed, setCollapsed] = useState(false);
   const [maxHeight, setMaxHeight] = useState(DEFAULT_HEIGHT);
+  const [isUpdated, setUpdated] = useState(false);
+  const [isCollapsed, setCollapsed] = useState(true);
+  const [isChangingCollapse, setChangingCollapse] = useState(false);
 
   useEffect(() => {
-    setMaxHeight(contentRef.current?.offsetHeight || DEFAULT_HEIGHT);
+    if (contentRef.current) {
+      setMaxHeight(contentRef.current?.getBoundingClientRect().height || DEFAULT_HEIGHT);
+
+      const resizeObserver = new ResizeObserver(() => {
+        requestAnimationFrame(() => {
+          if (contentRef.current && !isCollapsed) {
+            const height = contentRef.current?.getBoundingClientRect().height || DEFAULT_HEIGHT;
+
+            setMaxHeight(height);
+          }
+        });
+      });
+      resizeObserver.observe(contentRef.current);
+      return () => resizeObserver.disconnect();
+    }
+  }, [isCollapsed]);
+
+  useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout>;
+    const handler = () => {
+      setUpdated(true);
+      timeout = setTimeout(setUpdated, 1000, false);
+    };
+    api.on(TESTING_MODULE_CONFIG_CHANGE, handler);
+    return () => {
+      api.off(TESTING_MODULE_CONFIG_CHANGE, handler);
+      clearTimeout(timeout);
+    };
+  }, [api]);
+
+  const toggleCollapsed = useCallback((event: SyntheticEvent) => {
+    event.stopPropagation();
+    setChangingCollapse(true);
+    setCollapsed((s) => !s);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      setChangingCollapse(false);
+    }, 250);
   }, []);
 
-  const toggleCollapsed = () => {
-    setMaxHeight(contentRef.current?.offsetHeight || DEFAULT_HEIGHT);
-    setCollapsed(!collapsed);
-  };
+  const isRunning = testProviders.some((tp) => tp.running);
+  const isCrashed = testProviders.some((tp) => tp.crashed);
+  const isFailed = testProviders.some((tp) => tp.failed);
+  const hasTestProviders = testProviders.length > 0;
 
-  const running = testProviders.some((tp) => tp.running);
-  const crashed = testProviders.some((tp) => tp.crashed);
-  const failed = testProviders.some((tp) => tp.failed);
-  const testing = testProviders.length > 0;
+  if (!hasTestProviders && (!errorCount || !warningCount)) {
+    return null;
+  }
 
   return (
     <Outline
       id="storybook-testing-module"
-      running={running}
-      crashed={crashed}
-      failed={failed || errorCount > 0}
+      running={isRunning}
+      crashed={isCrashed}
+      failed={isFailed || errorCount > 0}
+      updated={isUpdated}
     >
       <Card>
-        <Collapsible
-          style={{
-            display: testing ? 'block' : 'none',
-            maxHeight: collapsed ? 0 : maxHeight,
-          }}
-        >
-          <Content ref={contentRef}>
-            {testProviders.map((state) => (
-              <TestProvider key={state.id}>
-                <DynamicInfo state={state} />
-                <Actions>
-                  {state.watchable && (
-                    <Button
-                      aria-label={`${state.watching ? 'Disable' : 'Enable'} watch mode for ${state.name}`}
-                      variant="ghost"
-                      padding="small"
-                      active={state.watching}
-                      onClick={() => onSetWatchMode(state.id, !state.watching)}
-                      disabled={state.crashed || state.running}
-                    >
-                      <EyeIcon />
-                    </Button>
-                  )}
-                  {state.runnable && (
-                    <>
-                      {state.running && state.cancellable ? (
-                        <Button
-                          aria-label={`Stop ${state.name}`}
-                          variant="ghost"
-                          padding="small"
-                          onClick={() => onCancelTests(state.id)}
-                          disabled={state.cancelling}
-                        >
-                          <StopAltHollowIcon />
-                        </Button>
-                      ) : (
-                        <Button
-                          aria-label={`Start ${state.name}`}
-                          variant="ghost"
-                          padding="small"
-                          onClick={() => onRunTests(state.id)}
-                          disabled={state.crashed || state.running}
-                        >
-                          <PlayHollowIcon />
-                        </Button>
-                      )}
-                    </>
-                  )}
-                </Actions>
-              </TestProvider>
-            ))}
-          </Content>
-        </Collapsible>
+        {hasTestProviders && (
+          <Collapsible
+            data-testid="collapse"
+            style={{
+              transition: isChangingCollapse ? 'max-height 250ms' : 'max-height 0ms',
+              display: hasTestProviders ? 'block' : 'none',
+              maxHeight: isCollapsed ? 0 : maxHeight,
+            }}
+          >
+            <Content ref={contentRef}>
+              {testProviders.map((state) => {
+                const { render: Render } = state;
+                return (
+                  <TestProvider key={state.id} data-module-id={state.id}>
+                    {Render ? <Render {...state} /> : <LegacyRender {...state} />}
+                  </TestProvider>
+                );
+              })}
+            </Content>
+          </Collapsible>
+        )}
 
-        <Bar onClick={testing ? toggleCollapsed : undefined}>
-          {testing && (
+        <Bar {...(hasTestProviders ? { onClick: toggleCollapsed } : {})}>
+          {hasTestProviders && (
             <Button
               variant="ghost"
               padding="small"
@@ -299,26 +264,26 @@ export const TestingModule = ({
                 e.stopPropagation();
                 testProviders
                   .filter((state) => !state.crashed && !state.running && state.runnable)
-                  .forEach(({ id }) => onRunTests(id));
+                  .forEach(({ id }) => api.runTestProvider(id));
               }}
-              disabled={running}
+              disabled={isRunning}
             >
               <PlayAllHollowIcon />
-              {running ? 'Running...' : 'Run tests'}
+              {isRunning ? 'Running...' : 'Run tests'}
             </Button>
           )}
           <Filters>
-            {testing && (
+            {hasTestProviders && (
               <CollapseToggle
                 variant="ghost"
                 padding="small"
                 onClick={toggleCollapsed}
                 id="testing-module-collapse-toggle"
-                aria-label={collapsed ? 'Expand testing module' : 'Collapse testing module'}
+                aria-label={isCollapsed ? 'Expand testing module' : 'Collapse testing module'}
               >
                 <ChevronSmallUpIcon
                   style={{
-                    transform: collapsed ? 'none' : 'rotate(180deg)',
+                    transform: isCollapsed ? 'none' : 'rotate(180deg)',
                     transition: 'transform 250ms',
                     willChange: 'auto',
                   }}

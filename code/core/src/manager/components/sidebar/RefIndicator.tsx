@@ -21,12 +21,13 @@ import { useStorybookApi } from '@storybook/core/manager-api';
 
 import { transparentize } from 'polished';
 
+import type { NormalLink } from '../../../components/components/tooltip/TooltipLinkList';
 import type { getStateType } from '../../utils/tree';
 import type { RefType } from './types';
 
 const { document, window: globalWindow } = global;
 
-export type ClickHandler = TooltipLinkListLink['onClick'];
+export type ClickHandler = NormalLink['onClick'];
 export interface IndicatorIconProps {
   type: ReturnType<typeof getStateType>;
 }

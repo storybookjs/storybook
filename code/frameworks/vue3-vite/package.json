@@ -1,6 +1,6 @@
 {
   "name": "@storybook/vue3-vite",
-  "version": "8.5.0-alpha.1",
+  "version": "8.5.0-alpha.13",
   "description": "Storybook for Vue3 and Vite: Develop Vue3 components in isolation with Hot Reloading.",
   "keywords": [
     "storybook"
@@ -68,7 +68,7 @@
   },
   "peerDependencies": {
     "storybook": "workspace:^",
-    "vite": "^4.0.0 || ^5.0.0"
+    "vite": "^4.0.0 || ^5.0.0 || ^6.0.0"
   },
   "engines": {
     "node": ">=18.0.0"

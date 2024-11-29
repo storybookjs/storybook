@@ -84,7 +84,12 @@ export const FramesRenderer: FC<FramesRendererProps> = ({
   refsToLoad.forEach((ref) => {
     const id = `storybook-ref-${ref.id}`;
     const existingUrl = frames[id]?.split('/iframe.html')[0];
-    if (!existingUrl || ref.url !== existingUrl || !frames[id].includes(stringifiedQueryParams)) {
+
+    // TODO: Globals are not sent to composed storybooks by design at the moment.
+    // This additional check is a temporary workaround and should be removed when revisiting.
+    const composedFrame = !frames[id].includes(stringifiedQueryParams);
+
+    if (!existingUrl || ref.url !== existingUrl || composedFrame) {
       const newUrl = `${ref.url}/iframe.html?id=${storyId}&viewMode=${viewMode}&refId=${ref.id}${stringifiedQueryParams}`;
       frames[id] = newUrl;
     }

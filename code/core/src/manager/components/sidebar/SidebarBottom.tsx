@@ -1,17 +1,11 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { Fragment, useEffect, useRef, useState } from 'react';
 
 import { styled } from '@storybook/core/theming';
-import { type API_FilterFunction, Addon_TypesEnum } from '@storybook/core/types';
+import { type API_FilterFunction } from '@storybook/core/types';
 
 import {
-  TESTING_MODULE_CANCEL_TEST_RUN_REQUEST,
   TESTING_MODULE_CRASH_REPORT,
   TESTING_MODULE_PROGRESS_REPORT,
-  TESTING_MODULE_RUN_ALL_REQUEST,
-  TESTING_MODULE_WATCH_MODE_REQUEST,
-  type TestProviderId,
-  type TestProviderState,
-  type TestProviders,
   type TestingModuleCrashReportPayload,
   type TestingModuleProgressReportPayload,
 } from '@storybook/core/core-events';
@@ -29,18 +23,6 @@ import { TestingModule } from './TestingModule';
 const SIDEBAR_BOTTOM_SPACER_ID = 'sidebar-bottom-spacer';
 // This ID is used by some integrators to target the (fixed position) sidebar bottom element so it should remain stable.
 const SIDEBAR_BOTTOM_WRAPPER_ID = 'sidebar-bottom-wrapper';
-
-const STORAGE_KEY = '@storybook/manager/test-providers';
-
-const initialTestProviderState: TestProviderState = {
-  details: {} as { [key: string]: any },
-  cancellable: false,
-  cancelling: false,
-  running: false,
-  watching: false,
-  failed: false,
-  crashed: false,
-};
 
 const filterNone: API_FilterFunction = () => true;
 const filterWarn: API_FilterFunction = ({ status = {} }) =>
@@ -64,6 +46,10 @@ const getFilter = (warningsActive = false, errorsActive = false) => {
   }
   return filterNone;
 };
+
+const Spacer = styled.div({
+  pointerEvents: 'none',
+});
 
 const Content = styled.div(({ theme }) => ({
   position: 'absolute',
@@ -117,15 +103,13 @@ export const SidebarBottomBase = ({
   const hasErrors = errors.length > 0;
 
   useEffect(() => {
-    const spacer = spacerRef.current;
-    const wrapper = wrapperRef.current;
-    if (spacer && wrapper) {
+    if (spacerRef.current && wrapperRef.current) {
       const resizeObserver = new ResizeObserver(() => {
-        if (spacer && wrapper) {
-          spacer.style.height = `${wrapper.clientHeight}px`;
+        if (spacerRef.current && wrapperRef.current) {
+          spacerRef.current.style.height = `${wrapperRef.current.scrollHeight}px`;
         }
       });
-      resizeObserver.observe(wrapper);
+      resizeObserver.observe(wrapperRef.current);
       return () => resizeObserver.disconnect();
     }
   }, []);
@@ -145,18 +129,13 @@ export const SidebarBottomBase = ({
       });
     };
 
-    const clearState = ({ providerId }: { providerId: TestProviderId }) => {
-      api.clearTestProviderState(providerId);
-      api.experimental_updateStatus(providerId, (state = {}) =>
-        Object.fromEntries(Object.keys(state).map((key) => [key, null]))
-      );
-    };
-
     const onProgressReport = ({ providerId, ...result }: TestingModuleProgressReportPayload) => {
-      if (result.status === 'failed') {
+      const statusResult = 'status' in result ? result.status : undefined;
+
+      if (statusResult === 'failed') {
         api.updateTestProviderState(providerId, { ...result, running: false, failed: true });
       } else {
-        const update = { ...result, running: result.status === 'pending' };
+        const update = { ...result, running: statusResult === 'pending' };
         api.updateTestProviderState(providerId, update);
 
         const { mapStatusUpdate, ...state } = testProviders[providerId];
@@ -168,13 +147,11 @@ export const SidebarBottomBase = ({
     };
 
     api.on(TESTING_MODULE_CRASH_REPORT, onCrashReport);
-    api.on(TESTING_MODULE_RUN_ALL_REQUEST, clearState);
     api.on(TESTING_MODULE_PROGRESS_REPORT, onProgressReport);
 
     return () => {
       api.off(TESTING_MODULE_CRASH_REPORT, onCrashReport);
       api.off(TESTING_MODULE_PROGRESS_REPORT, onProgressReport);
-      api.off(TESTING_MODULE_RUN_ALL_REQUEST, clearState);
     };
   }, [api, testProviders]);
 
@@ -184,7 +161,8 @@ export const SidebarBottomBase = ({
   }
 
   return (
-    <div id={SIDEBAR_BOTTOM_SPACER_ID} ref={spacerRef}>
+    <Fragment>
+      <Spacer id={SIDEBAR_BOTTOM_SPACER_ID} ref={spacerRef}></Spacer>
       <Content id={SIDEBAR_BOTTOM_WRAPPER_ID} ref={wrapperRef}>
         <NotificationList notifications={notifications} clearNotification={api.clearNotification} />
         {isDevelopment && (
@@ -201,13 +179,14 @@ export const SidebarBottomBase = ({
           />
         )}
       </Content>
-    </div>
+    </Fragment>
   );
 };
 
 export const SidebarBottom = ({ isDevelopment }: { isDevelopment?: boolean }) => {
   const api = useStorybookApi();
   const { notifications, status } = useStorybookState();
+
   return (
     <SidebarBottomBase
       api={api}

@@ -7,6 +7,12 @@ import { EyeIcon, PlayHollowIcon, StopAltHollowIcon } from '@storybook/icons';
 import type { TestProviders } from '@storybook/core/core-events';
 import { useStorybookApi } from '@storybook/core/manager-api';
 
+const Container = styled.div({
+  display: 'flex',
+  justifyContent: 'space-between',
+  padding: '8px 2px',
+});
+
 const Info = styled.div({
   display: 'flex',
   flexDirection: 'column',
@@ -35,7 +41,7 @@ export const LegacyRender = ({ ...state }: TestProviders[keyof TestProviders]) =
   const api = useStorybookApi();
 
   return (
-    <>
+    <Container>
       <Info>
         <TitleWrapper crashed={state.crashed} id="testing-module-title">
           <Title {...state} />
@@ -84,6 +90,6 @@ export const LegacyRender = ({ ...state }: TestProviders[keyof TestProviders]) =
           </>
         )}
       </Actions>
-    </>
+    </Container>
   );
 };

@@ -2,12 +2,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { createVitest } from 'vitest/node';
 
 import { Channel, type ChannelTransport } from '@storybook/core/channels';
+import type { StoryIndex } from '@storybook/types';
 
 import path from 'pathe';
 
 import { TEST_PROVIDER_ID } from '../constants';
 import { TestManager } from './test-manager';
 
+const setTestNamePattern = vi.hoisted(() => vi.fn());
 const vitest = vi.hoisted(() => ({
   projects: [{}],
   init: vi.fn(),
@@ -18,7 +20,14 @@ const vitest = vi.hoisted(() => ({
   globTestSpecs: vi.fn(),
   getModuleProjects: vi.fn(() => []),
   configOverride: {
-    testNamePattern: undefined,
+    actualTestNamePattern: undefined,
+    get testNamePattern() {
+      return this.actualTestNamePattern;
+    },
+    set testNamePattern(value: string) {
+      setTestNamePattern(value);
+      this.actualTestNamePattern = value;
+    },
   },
 }));
 
@@ -39,6 +48,33 @@ const tests = [
     moduleId: path.join(process.cwd(), 'path/to/another/file'),
   },
 ];
+
+global.fetch = vi.fn().mockResolvedValue({
+  json: () =>
+    new Promise((resolve) =>
+      resolve({
+        v: 5,
+        entries: {
+          'story--one': {
+            type: 'story',
+            id: 'story--one',
+            name: 'One',
+            title: 'story/one',
+            importPath: 'path/to/file',
+            tags: ['test'],
+          },
+          'another--one': {
+            type: 'story',
+            id: 'another--one',
+            name: 'One',
+            title: 'another/one',
+            importPath: 'path/to/another/file',
+            tags: ['test'],
+          },
+        },
+      } as StoryIndex)
+    ),
+});
 
 const options: ConstructorParameters<typeof TestManager>[1] = {
   onError: (message, error) => {
@@ -83,16 +119,7 @@ describe('TestManager', () => {
 
     await testManager.handleRunRequest({
       providerId: TEST_PROVIDER_ID,
-      payload: [
-        {
-          stories: [],
-          importPath: 'path/to/file',
-        },
-        {
-          stories: [],
-          importPath: 'path/to/another/file',
-        },
-      ],
+      indexUrl: 'http://localhost:6006/index.json',
     });
     expect(createVitest).toHaveBeenCalledTimes(1);
     expect(vitest.runFiles).toHaveBeenCalledWith(tests, true);
@@ -104,33 +131,18 @@ describe('TestManager', () => {
 
     await testManager.handleRunRequest({
       providerId: TEST_PROVIDER_ID,
-      payload: [
-        {
-          stories: [],
-          importPath: 'path/to/unknown/file',
-        },
-      ],
+      indexUrl: 'http://localhost:6006/index.json',
+      storyIds: [],
     });
     expect(vitest.runFiles).toHaveBeenCalledWith([], true);
+    expect(vitest.configOverride.testNamePattern).toBeUndefined();
 
     await testManager.handleRunRequest({
       providerId: TEST_PROVIDER_ID,
-      payload: [
-        {
-          stories: [],
-          importPath: 'path/to/file',
-        },
-      ],
+      indexUrl: 'http://localhost:6006/index.json',
+      storyIds: ['story--one'],
     });
+    expect(setTestNamePattern).toHaveBeenCalledWith(/^One$/);
     expect(vitest.runFiles).toHaveBeenCalledWith(tests.slice(0, 1), true);
-  });
-
-  it('should handle run all request', async () => {
-    const testManager = await TestManager.start(mockChannel, options);
-    expect(createVitest).toHaveBeenCalledTimes(1);
-
-    await testManager.handleRunAllRequest({ providerId: TEST_PROVIDER_ID });
-    expect(createVitest).toHaveBeenCalledTimes(1);
-    expect(vitest.runFiles).toHaveBeenCalledWith(tests, true);
   });
 });

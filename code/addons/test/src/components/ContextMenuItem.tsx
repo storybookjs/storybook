@@ -7,7 +7,7 @@ import React, {
   useState,
 } from 'react';
 
-import { Button, type ListItem } from 'storybook/internal/components';
+import { Button, ListItem } from 'storybook/internal/components';
 import { useStorybookApi } from 'storybook/internal/manager-api';
 import { useTheme } from 'storybook/internal/theming';
 import { type API_HashEntry, type Addon_TestProviderState } from 'storybook/internal/types';
@@ -23,8 +23,7 @@ export const ContextMenuItem: FC<{
   state: Addon_TestProviderState<{
     testResults: TestResult[];
   }>;
-  ListItem: typeof ListItem;
-}> = ({ context, state, ListItem }) => {
+}> = ({ context, state }) => {
   const api = useStorybookApi();
   const [isDisabled, setDisabled] = useState(false);
 

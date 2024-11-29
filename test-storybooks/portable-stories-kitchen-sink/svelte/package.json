@@ -92,7 +92,7 @@
     "@tsconfig/svelte": "^5.0.2",
     "@types/node": "^22",
     "cypress": "^13.6.6",
-    "jsdom": "^24.0.0",
+    "happy-dom": "^15.11.7",
     "storybook": "8.0.0-rc.2",
     "svelte": "^4.2.11",
     "svelte-check": "^3.6.4",

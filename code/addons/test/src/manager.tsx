@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 
-import { AddonPanel, Button, Link as LinkComponent } from 'storybook/internal/components';
-import { TESTING_MODULE_RUN_ALL_REQUEST } from 'storybook/internal/core-events';
+import { AddonPanel } from 'storybook/internal/components';
 import type { Combo } from 'storybook/internal/manager-api';
 import { Consumer, addons, types } from 'storybook/internal/manager-api';
-import { styled } from 'storybook/internal/theming';
 import {
   type API_StatusObject,
   type API_StatusValue,
@@ -12,62 +10,17 @@ import {
   Addon_TypesEnum,
 } from 'storybook/internal/types';
 
-import { EyeIcon, PlayHollowIcon, StopAltHollowIcon } from '@storybook/icons';
-
 import { ContextMenuItem } from './components/ContextMenuItem';
-import { GlobalErrorModal } from './components/GlobalErrorModal';
 import { Panel } from './components/Panel';
 import { PanelTitle } from './components/PanelTitle';
-import { RelativeTime } from './components/RelativeTime';
-import { ADDON_ID, PANEL_ID, TEST_PROVIDER_ID } from './constants';
-import type { TestResult } from './node/reporter';
+import { TestProviderRender } from './components/TestProviderRender';
+import { ADDON_ID, type Config, type Details, PANEL_ID, TEST_PROVIDER_ID } from './constants';
 
 const statusMap: Record<any['status'], API_StatusValue> = {
   failed: 'error',
   passed: 'success',
   pending: 'pending',
 };
-
-export function getRelativeTimeString(date: Date): string {
-  const delta = Math.round((date.getTime() - Date.now()) / 1000);
-  const cutoffs = [60, 3600, 86400, 86400 * 7, 86400 * 30, 86400 * 365, Infinity];
-  const units: Intl.RelativeTimeFormatUnit[] = [
-    'second',
-    'minute',
-    'hour',
-    'day',
-    'week',
-    'month',
-    'year',
-  ];
-
-  const unitIndex = cutoffs.findIndex((cutoff) => cutoff > Math.abs(delta));
-  const divisor = unitIndex ? cutoffs[unitIndex - 1] : 1;
-  const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
-  return rtf.format(Math.floor(delta / divisor), units[unitIndex]);
-}
-
-const Info = styled.div({
-  display: 'flex',
-  flexDirection: 'column',
-  marginLeft: 6,
-});
-
-const SidebarContextMenuTitle = styled.div<{ crashed?: boolean }>(({ crashed, theme }) => ({
-  fontSize: theme.typography.size.s1,
-  fontWeight: crashed ? 'bold' : 'normal',
-  color: crashed ? theme.color.negativeText : theme.color.defaultText,
-}));
-
-const Description = styled.div(({ theme }) => ({
-  fontSize: theme.typography.size.s1,
-  color: theme.barTextColor,
-}));
-
-const Actions = styled.div({
-  display: 'flex',
-  gap: 6,
-});
 
 addons.register(ADDON_ID, (api) => {
   const storybookBuilder = (globalThis as any).STORYBOOK_BUILDER || '';
@@ -82,8 +35,9 @@ addons.register(ADDON_ID, (api) => {
       runnable: true,
       watchable: true,
       name: 'Component tests',
+      render: (state) => <TestProviderRender api={api} state={state} />,
 
-      sidebarContextMenu: ({ context, state }, { ListItem }) => {
+      sidebarContextMenu: ({ context, state }) => {
         if (context.type === 'docs') {
           return null;
         }
@@ -91,110 +45,7 @@ addons.register(ADDON_ID, (api) => {
           return null;
         }
 
-        return <ContextMenuItem context={context} state={state} ListItem={ListItem} />;
-      },
-
-      render: (state) => {
-        const [isModalOpen, setIsModalOpen] = useState(false);
-
-        const title = state.crashed || state.failed ? 'Component tests failed' : 'Component tests';
-        const errorMessage = state.error?.message;
-        let description: string | React.ReactNode = 'Not run';
-
-        if (state.running) {
-          description = state.progress
-            ? `Testing... ${state.progress.numPassedTests}/${state.progress.numTotalTests}`
-            : 'Starting...';
-        } else if (state.failed && !errorMessage) {
-          description = '';
-        } else if (state.crashed || (state.failed && errorMessage)) {
-          description = (
-            <>
-              <LinkComponent
-                isButton
-                onClick={() => {
-                  setIsModalOpen(true);
-                }}
-              >
-                {state.error?.name || 'View full error'}
-              </LinkComponent>
-            </>
-          );
-        } else if (state.progress?.finishedAt) {
-          description = (
-            <RelativeTime
-              timestamp={new Date(state.progress.finishedAt)}
-              testCount={state.progress.numTotalTests}
-            />
-          );
-        } else if (state.watching) {
-          description = 'Watching for file changes';
-        }
-
-        return (
-          <>
-            <Info>
-              <SidebarContextMenuTitle crashed={state.crashed} id="testing-module-title">
-                {title}
-              </SidebarContextMenuTitle>
-              <Description id="testing-module-description">{description}</Description>
-            </Info>
-
-            <Actions>
-              {state.watchable && (
-                <Button
-                  aria-label={`${state.watching ? 'Disable' : 'Enable'} watch mode for ${state.name}`}
-                  variant="ghost"
-                  padding="small"
-                  active={state.watching}
-                  onClick={() => api.setTestProviderWatchMode(state.id, !state.watching)}
-                  disabled={state.crashed || state.running}
-                >
-                  <EyeIcon />
-                </Button>
-              )}
-              {state.runnable && (
-                <>
-                  {state.running && state.cancellable ? (
-                    <Button
-                      aria-label={`Stop ${state.name}`}
-                      variant="ghost"
-                      padding="small"
-                      onClick={() => api.cancelTestProvider(state.id)}
-                      disabled={state.cancelling}
-                    >
-                      <StopAltHollowIcon />
-                    </Button>
-                  ) : (
-                    <Button
-                      aria-label={`Start ${state.name}`}
-                      variant="ghost"
-                      padding="small"
-                      onClick={() => api.runTestProvider(state.id)}
-                      disabled={state.crashed || state.running}
-                    >
-                      <PlayHollowIcon />
-                    </Button>
-                  )}
-                </>
-              )}
-            </Actions>
-
-            <GlobalErrorModal
-              error={errorMessage}
-              open={isModalOpen}
-              onClose={() => {
-                setIsModalOpen(false);
-              }}
-              onRerun={() => {
-                setIsModalOpen(false);
-                api
-                  .getChannel()
-                  .emit(TESTING_MODULE_RUN_ALL_REQUEST, { providerId: TEST_PROVIDER_ID });
-              }}
-            />
-          </>
-        );
+        return <ContextMenuItem context={context} state={state} />;
       },
 
       mapStatusUpdate: (state) =>
@@ -221,9 +72,7 @@ addons.register(ADDON_ID, (api) => {
               .filter(Boolean)
           )
         ),
-    } as Addon_TestProviderType<{
-      testResults: TestResult[];
-    }>);
+    } as Addon_TestProviderType<Details, Config>);
   }
 
   const filter = ({ state }: Combo) => {

@@ -303,26 +303,27 @@ export const experimental_serverChannel = async (
     channel.on(
       TESTING_MODULE_PROGRESS_REPORT,
       async (payload: TestingModuleProgressReportPayload) => {
-        if (
-          (payload.status === 'success' || payload.status === 'cancelled') &&
-          payload.progress?.finishedAt
-        ) {
+        const status = 'status' in payload ? payload.status : undefined;
+        const progress = 'progress' in payload ? payload.progress : undefined;
+        const error = 'error' in payload ? payload.error : undefined;
+
+        if ((status === 'success' || status === 'cancelled') && progress?.finishedAt) {
           await telemetry('testing-module-completed-report', {
             provider: payload.providerId,
-            duration: payload.progress.finishedAt - payload.progress.startedAt,
-            numTotalTests: payload.progress.numTotalTests,
-            numFailedTests: payload.progress.numFailedTests,
-            numPassedTests: payload.progress.numPassedTests,
-            status: payload.status,
+            duration: progress?.finishedAt - progress?.startedAt,
+            numTotalTests: progress?.numTotalTests,
+            numFailedTests: progress?.numFailedTests,
+            numPassedTests: progress?.numPassedTests,
+            status,
           });
         }
 
-        if (payload.status === 'failed') {
+        if (status === 'failed') {
           await telemetry('testing-module-completed-report', {
             provider: payload.providerId,
             status: 'failed',
             ...(options.enableCrashReports && {
-              error: sanitizeError(payload.error),
+              error: error && sanitizeError(error),
             }),
           });
         }

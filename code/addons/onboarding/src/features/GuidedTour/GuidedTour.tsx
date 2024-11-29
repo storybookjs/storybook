@@ -23,7 +23,7 @@ export function GuidedTour({
   const theme = useTheme();
 
   useEffect(() => {
-    let timeout: NodeJS.Timeout;
+    let timeout: ReturnType<typeof setTimeout>;
     setStepIndex((current) => {
       const index = steps.findIndex(({ key }) => key === step);
 

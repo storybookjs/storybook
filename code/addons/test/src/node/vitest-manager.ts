@@ -1,29 +1,65 @@
 import { existsSync } from 'node:fs';
 
-import type { TestProject, TestSpecification, Vitest, WorkspaceProject } from 'vitest/node';
+import type {
+  CoverageOptions,
+  ResolvedCoverageOptions,
+  TestProject,
+  TestSpecification,
+  Vitest,
+  WorkspaceProject,
+} from 'vitest/node';
 
-import type { Channel } from 'storybook/internal/channels';
+import { resolvePathInStorybookCache } from 'storybook/internal/common';
 import type { TestingModuleRunRequestPayload } from 'storybook/internal/core-events';
+
+import type { DocsIndexEntry, StoryIndex, StoryIndexEntry } from '@storybook/types';
 
 import path, { normalize } from 'pathe';
 import slash from 'slash';
 
+import { COVERAGE_DIRECTORY, type Config } from '../constants';
 import { log } from '../logger';
+import type { StorybookCoverageReporterOptions } from './coverage-reporter';
 import { StorybookReporter } from './reporter';
 import type { TestManager } from './test-manager';
+
+type TagsFilter = {
+  include: string[];
+  exclude: string[];
+  skip: string[];
+};
 
 export class VitestManager {
   vitest: Vitest | null = null;
 
   vitestStartupCounter = 0;
 
-  constructor(
-    private channel: Channel,
-    private testManager: TestManager
-  ) {}
+  storyCountForCurrentRun: number = 0;
 
-  async startVitest(watchMode = false) {
+  constructor(private testManager: TestManager) {}
+
+  async startVitest({ watchMode = false, coverage = false } = {}) {
     const { createVitest } = await import('vitest/node');
+
+    const storybookCoverageReporter: [string, StorybookCoverageReporterOptions] = [
+      '@storybook/experimental-addon-test/internal/coverage-reporter',
+      {
+        testManager: this.testManager,
+        coverageOptions: this.vitest?.config?.coverage as ResolvedCoverageOptions<'v8'>,
+      },
+    ];
+    const coverageOptions = (
+      coverage
+        ? {
+            enabled: true,
+            clean: false,
+            cleanOnRerun: !watchMode,
+            reportOnFailure: true,
+            reporter: [['html', {}], storybookCoverageReporter],
+            reportsDirectory: resolvePathInStorybookCache(COVERAGE_DIRECTORY),
+          }
+        : { enabled: false }
+    ) as CoverageOptions;
 
     this.vitest = await createVitest('test', {
       watch: watchMode,
@@ -35,15 +71,12 @@ export class VitestManager {
       // find a way to just show errors and warnings for example
       // Otherwise it might be hard for the user to discover Storybook related logs
       reporters: ['default', new StorybookReporter(this.testManager)],
-      // @ts-expect-error we just want to disable coverage, not specify a provider
-      coverage: {
-        enabled: false,
-      },
+      coverage: coverageOptions,
     });
 
     if (this.vitest) {
       this.vitest.onCancel(() => {
-        // TODO: handle cancelation
+        // TODO: handle cancellation
       });
     }
 
@@ -52,23 +85,6 @@ export class VitestManager {
     if (watchMode) {
       await this.setupWatchers();
     }
-  }
-
-  async runAllTests() {
-    if (!this.vitest) {
-      await this.startVitest();
-    }
-    this.resetTestNamePattern();
-
-    const storybookTests = await this.getStorybookTestSpecs();
-    for (const storybookTest of storybookTests) {
-      // make sure to clear the file cache so test results are updated even if watch mode is not enabled
-      if (!this.testManager.watchMode) {
-        this.updateLastChanged(storybookTest.moduleId);
-      }
-    }
-    await this.cancelCurrentRun();
-    await this.vitest!.runFiles(storybookTests, true);
   }
 
   private updateLastChanged(filepath: string) {
@@ -84,55 +100,89 @@ export class VitestManager {
     });
   }
 
-  async runTests(testPayload: TestingModuleRunRequestPayload['payload']) {
+  private async fetchStories(indexUrl: string, requestStoryIds?: string[]) {
+    try {
+      const index = (await Promise.race([
+        fetch(indexUrl).then((res) => res.json()),
+        new Promise((_, reject) => setTimeout(reject, 3000, new Error('Request took too long'))),
+      ])) as StoryIndex;
+      const storyIds = requestStoryIds || Object.keys(index.entries);
+      return storyIds.map((id) => index.entries[id]).filter((story) => story.type === 'story');
+    } catch (e) {
+      log('Failed to fetch story index: ' + e.message);
+      return [];
+    }
+  }
+
+  private filterStories(
+    story: StoryIndexEntry | DocsIndexEntry,
+    moduleId: string,
+    tagsFilter: TagsFilter
+  ) {
+    const absoluteImportPath = path.join(process.cwd(), story.importPath);
+    if (absoluteImportPath !== moduleId) {
+      return false;
+    }
+    if (tagsFilter.include.length && !tagsFilter.include.some((tag) => story.tags?.includes(tag))) {
+      return false;
+    }
+    if (tagsFilter.exclude.some((tag) => story.tags?.includes(tag))) {
+      return false;
+    }
+    // Skipped tests are intentionally included here
+    return true;
+  }
+
+  async runTests(requestPayload: TestingModuleRunRequestPayload<Config>) {
     if (!this.vitest) {
       await this.startVitest();
     }
+
     this.resetTestNamePattern();
 
-    // This list contains all the test files (story files) that need to be run
-    // based on the test files that are passed in the tests array
-    // This list does NOT contain any filtering of specific
-    // test cases (story) within the test files
-    const testList: TestSpecification[] = [];
+    const stories = await this.fetchStories(requestPayload.indexUrl, requestPayload.storyIds);
+    const vitestTestSpecs = await this.getStorybookTestSpecs();
+    const isSingleStoryRun = requestPayload.storyIds?.length === 1;
 
-    const storybookTests = await this.getStorybookTestSpecs();
+    const { filteredTestFiles, totalTestCount } = vitestTestSpecs.reduce(
+      (acc, spec) => {
+        /* eslint-disable no-underscore-dangle */
+        const { env = {} } = spec.project.config;
+        const include = env.__VITEST_INCLUDE_TAGS__?.split(',').filter(Boolean) ?? ['test'];
+        const exclude = env.__VITEST_EXCLUDE_TAGS__?.split(',').filter(Boolean) ?? [];
+        const skip = env.__VITEST_SKIP_TAGS__?.split(',').filter(Boolean) ?? [];
+        /* eslint-enable no-underscore-dangle */
 
-    const filteredStoryNames: string[] = [];
-
-    for (const storybookTest of storybookTests) {
-      const match = testPayload.find((test) => {
-        const absoluteImportPath = path.join(process.cwd(), test.importPath);
-        return absoluteImportPath === storybookTest.moduleId;
-      });
-      if (match) {
-        // make sure to clear the file cache so test results are updated even if watch mode is not enabled
-        if (!this.testManager.watchMode) {
-          this.updateLastChanged(storybookTest.moduleId);
+        const matches = stories.filter((story) =>
+          this.filterStories(story, spec.moduleId, { include, exclude, skip })
+        );
+        if (matches.length) {
+          if (!this.testManager.watchMode) {
+            // Clear the file cache if watch mode is not enabled
+            this.updateLastChanged(spec.moduleId);
+          }
+          acc.filteredTestFiles.push(spec);
+          acc.totalTestCount += matches.filter(
+            // Don't count skipped stories, because StorybookReporter doesn't include them either
+            (story) => !skip.some((tag) => story.tags?.includes(tag))
+          ).length;
         }
-
-        if (match.stories?.length) {
-          filteredStoryNames.push(...match.stories.map((story) => story.name));
-        }
-        testList.push(storybookTest);
-      }
-    }
+        return acc;
+      },
+      { filteredTestFiles: [] as TestSpecification[], totalTestCount: 0 }
+    );
 
     await this.cancelCurrentRun();
+    this.storyCountForCurrentRun = totalTestCount;
 
-    if (filteredStoryNames.length > 0) {
-      // temporarily set the test name pattern to only run the selected stories
-      // converting a list of story names to a single regex pattern
-      // ie. ['My Story', 'Other Story'] => /^(My Story|Other Story)$/
-      const testNamePattern = new RegExp(
-        `^(${filteredStoryNames
-          .map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-          .join('|')})$`
+    if (isSingleStoryRun) {
+      const storyName = stories[0].name;
+      this.vitest!.configOverride.testNamePattern = new RegExp(
+        `^${storyName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`
       );
-      this.vitest!.configOverride.testNamePattern = testNamePattern;
     }
 
-    await this.vitest!.runFiles(testList, true);
+    await this.vitest!.runFiles(filteredTestFiles, true);
     this.resetTestNamePattern();
   }
 
@@ -216,7 +266,7 @@ export class VitestManager {
     if (triggerAffectedTests.length) {
       await this.vitest.cancelCurrentRun('keyboard-input');
       await this.vitest.runningPromise;
-      await this.vitest.runFiles(triggerAffectedTests, true);
+      await this.vitest.runFiles(triggerAffectedTests, false);
     }
   }
 
@@ -224,6 +274,7 @@ export class VitestManager {
     const id = slash(file);
     this.vitest?.logger.clearHighlightCache(id);
     this.updateLastChanged(id);
+    this.storyCountForCurrentRun = 0;
 
     await this.runAffectedTests(file);
   }

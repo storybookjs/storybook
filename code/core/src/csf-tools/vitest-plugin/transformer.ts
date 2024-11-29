@@ -19,11 +19,14 @@ type TagsFilter = {
 };
 
 const isValidTest = (storyTags: string[], tagsFilter: TagsFilter) => {
-  const isIncluded =
-    tagsFilter?.include.length === 0 || tagsFilter?.include.some((tag) => storyTags.includes(tag));
-  const isNotExcluded = tagsFilter?.exclude.every((tag) => !storyTags.includes(tag));
-
-  return isIncluded && isNotExcluded;
+  if (tagsFilter.include.length && !tagsFilter.include.some((tag) => storyTags?.includes(tag))) {
+    return false;
+  }
+  if (tagsFilter.exclude.some((tag) => storyTags?.includes(tag))) {
+    return false;
+  }
+  // Skipped tests are intentionally included here
+  return true;
 };
 /**
  * TODO: the functionality in this file can be moved back to the vitest plugin itself It can use

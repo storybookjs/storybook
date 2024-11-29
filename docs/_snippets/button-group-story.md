@@ -293,7 +293,7 @@ export const Pair: Story = {
 };
 ```
 
-```js filename="ButtonGroup.stories.js" renderer="vue" language="js" tabTitle="3"
+```js filename="ButtonGroup.stories.js" renderer="vue" language="js"
 import ButtonGroup from './ButtonGroup.vue';
 
 //👇 Imports the Button stories
@@ -323,7 +323,7 @@ export const Pair = {
 };
 ```
 
-```ts filename="ButtonGroup.stories.ts" renderer="vue" language="ts-4-9" tabTitle="3"
+```ts filename="ButtonGroup.stories.ts" renderer="vue" language="ts-4-9"
 import type { Meta, StoryObj } from '@storybook/vue3';
 
 import ButtonGroup from './ButtonGroup.vue';
@@ -353,7 +353,7 @@ export const Pair: Story = {
 };
 ```
 
-```ts filename="ButtonGroup.stories.ts" renderer="vue" language="ts" tabTitle="3"
+```ts filename="ButtonGroup.stories.ts" renderer="vue" language="ts"
 import type { Meta, StoryObj } from '@storybook/vue3';
 
 import ButtonGroup from './ButtonGroup.vue';

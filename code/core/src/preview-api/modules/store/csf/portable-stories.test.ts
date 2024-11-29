@@ -77,6 +77,25 @@ describe('composeStory', () => {
     expect(composedStory.parameters.fromAnnotations.asDefaultImport).toEqual(true);
   });
 
+  it('should compose project annotations when used in named and default exports from the same module', () => {
+    setProjectAnnotations([
+      {
+        initialGlobals: { namedExportAnnotation: true },
+        default: {
+          parameters: { defaultExportAnnotation: true },
+        },
+      },
+    ]);
+
+    const Story: Story = {
+      render: () => {},
+    };
+
+    const composedStory = composeStory(Story, meta);
+    expect(composedStory.parameters.defaultExportAnnotation).toEqual(true);
+    expect(composedStory.globals.namedExportAnnotation).toEqual(true);
+  });
+
   it('should return story with composed annotations from story, meta and project', () => {
     const decoratorFromProjectAnnotations = vi.fn((StoryFn) => StoryFn());
     const decoratorFromStoryAnnotations = vi.fn((StoryFn) => StoryFn());

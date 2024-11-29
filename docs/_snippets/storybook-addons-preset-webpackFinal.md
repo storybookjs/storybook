@@ -29,4 +29,3 @@ export function webpackFinal(config: WebpackConfig, options: any = {}) {
   return config;
 }
 ```
-

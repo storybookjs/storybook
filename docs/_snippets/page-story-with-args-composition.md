@@ -141,4 +141,3 @@ export const Simple: Story = {
   },
 };
 ```
-

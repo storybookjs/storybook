@@ -1,1 +1,1 @@
-{"version":"8.5.0-alpha.8","info":{"plain":"- UI: Sidebar context menu addon API - [#29557](https://github.com/storybookjs/storybook/pull/29557), thanks @ndelangen!"}}
+{"version":"8.5.0-alpha.13","info":{"plain":"- Portable stories: Support multiple annotation notations from preview - [#29733](https://github.com/storybookjs/storybook/pull/29733), thanks @yannbf!\n- React: Upgrade react-docgen-typescript to support Vite 6 - [#29724](https://github.com/storybookjs/storybook/pull/29724), thanks @yannbf!"}}

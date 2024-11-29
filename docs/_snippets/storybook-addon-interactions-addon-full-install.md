@@ -9,4 +9,3 @@ pnpm add --save-dev @storybook/test @storybook/addon-interactions
 ```shell renderer="common" language="js" packageManager="yarn"
 yarn add --dev @storybook/test @storybook/addon-interactions
 ```
-

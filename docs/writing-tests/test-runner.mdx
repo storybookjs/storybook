@@ -26,7 +26,7 @@ Run the following command to install it.
 
 Update your `package.json` scripts and enable the test runner.
 
-```json
+```json title="package.json"
 {
   "scripts": {
     "test-storybook": "test-storybook"
@@ -336,7 +336,7 @@ Timeout - Async callback was not invoked within the 15000 ms timeout specified b
 
 It might be that Playwright couldn't handle testing the number of stories you have in your project. Perhaps you have a large number of stories, or your CI environment has a really low RAM configuration. In such cases, you should limit the number of workers that run in parallel by adjusting your command as follows:
 
-```json
+```json title="package.json"
 {
   "scripts": {
     "test-storybook:ci": "yarn test-storybook --maxWorkers=2"

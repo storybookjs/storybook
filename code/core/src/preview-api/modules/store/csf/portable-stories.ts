@@ -61,11 +61,8 @@ function extractAnnotation<TRenderer extends Renderer = Renderer>(
   // import * as annotations from '.storybook/preview'
   // import annotations from '.storybook/preview'
   // in both cases: 1 - the file has a default export; 2 - named exports only
-  // support imports such as
-  // import * as annotations from '.storybook/preview'
-  // import annotations from '.storybook/preview'
-  // in both cases: 1 - the file has a default export; 2 - named exports only
-  return 'default' in annotation ? annotation.default : annotation;
+  // also support when the file has both annotations coming from default and named exports
+  return composeConfigs([annotation]);
 }
 
 export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(

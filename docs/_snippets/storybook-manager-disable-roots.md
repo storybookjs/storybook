@@ -7,4 +7,3 @@ addons.setConfig({
   },
 });
 ```
-

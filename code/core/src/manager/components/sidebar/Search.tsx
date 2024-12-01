@@ -421,7 +421,7 @@ export const Search = React.memo<{
                 )}
                 <Actions>
                   {isOpen && (
-                    <IconButton onClick={() => clearSelection()}>
+                    <IconButton onClick={() => clearSelection()} title="Clear search">
                       <CloseIcon />
                     </IconButton>
                   )}

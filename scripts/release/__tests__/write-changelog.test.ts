@@ -3,6 +3,7 @@ import { join } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// eslint-disable-next-line depend/ban-dependencies
 import * as fsExtraImp from 'fs-extra';
 import { dedent } from 'ts-dedent';
 

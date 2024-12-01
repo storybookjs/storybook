@@ -1,17 +1,17 @@
 /* eslint-disable no-underscore-dangle */
 import * as fs from 'node:fs';
+import * as fsp from 'node:fs/promises';
 
 import { describe, expect, it, vi } from 'vitest';
 
 import type { PackageJson } from 'storybook/internal/common';
 
-import * as fsExtra from 'fs-extra';
 import { dedent } from 'ts-dedent';
 
 import { makePackageManager } from '../helpers/testing-helpers';
 import { eslintPlugin } from './eslint-plugin';
 
-vi.mock('fs-extra', async () => import('../../../../../__mocks__/fs-extra'));
+vi.mock('node:fs/promises', async () => import('../../../../../__mocks__/fs/promises'));
 vi.mock('fs');
 
 const checkEslint = async ({
@@ -23,7 +23,7 @@ const checkEslint = async ({
   hasEslint?: boolean;
   eslintExtension?: string;
 }) => {
-  vi.mocked<typeof import('../../../../../__mocks__/fs-extra')>(fsExtra as any).__setMockFiles({
+  vi.mocked<typeof import('../../../../../__mocks__/fs/promises')>(fsp as any).__setMockFiles({
     [`.eslintrc.${eslintExtension}`]: !hasEslint
       ? null
       : dedent(`

@@ -1,16 +1,18 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
-import { watch } from 'node:fs';
-import { mkdir, rm } from 'node:fs/promises';
+import { existsSync, mkdirSync, watch } from 'node:fs';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
+import type { Metafile } from 'esbuild';
+
 import {
-  chalk,
   dedent,
   esbuild,
   globalExternals,
   measure,
   merge,
   nodeInternals,
+  picocolors,
   prettyTime,
   process,
 } from '../../../scripts/prepare/tools';
@@ -64,7 +66,6 @@ async function run() {
       await generateTypesMapperFiles(entries);
       await modifyThemeTypes();
       await generateTypesFiles(entries, isOptimized, cwd);
-      await modifyThemeTypes();
     })
   );
 
@@ -75,12 +76,15 @@ async function run() {
     types,
   ]);
 
-  console.log('Files generated in', chalk.yellow(prettyTime(filesTime)));
-  console.log('Package.json generated in', chalk.yellow(prettyTime(packageJsonTime)));
-  console.log(isWatch ? 'Watcher started in' : 'Bundled in', chalk.yellow(prettyTime(distTime)));
+  console.log('Files generated in', picocolors.yellow(prettyTime(filesTime)));
+  console.log('Package.json generated in', picocolors.yellow(prettyTime(packageJsonTime)));
+  console.log(
+    isWatch ? 'Watcher started in' : 'Bundled in',
+    picocolors.yellow(prettyTime(distTime))
+  );
   console.log(
     isOptimized ? 'Generated types in' : 'Generated type mappers in',
-    chalk.yellow(prettyTime(typesTime))
+    picocolors.yellow(prettyTime(typesTime))
   );
 
   async function generateDistFiles() {
@@ -191,6 +195,14 @@ async function run() {
                 '@storybook/core': join(cwd, 'src'),
                 react: dirname(require.resolve('react/package.json')),
                 'react-dom': dirname(require.resolve('react-dom/package.json')),
+                'react-dom/client': join(
+                  dirname(require.resolve('react-dom/package.json')),
+                  'client'
+                ),
+              },
+              define: {
+                // This should set react in prod mode for the manager
+                'process.env.NODE_ENV': JSON.stringify('production'),
               },
               external: [],
             })
@@ -303,29 +315,61 @@ async function run() {
 
       // show a log message when a file is compiled
       watch(join(cwd, 'dist'), { recursive: true }, (event, filename) => {
-        console.log(`compiled ${chalk.cyan(filename)}`);
+        console.log(`compiled ${picocolors.cyan(filename)}`);
       });
     } else {
-      await Promise.all(
+      // repo root/bench/esbuild-metafiles/core
+      const metafilesDir = join(__dirname, '..', '..', 'bench', 'esbuild-metafiles', 'core');
+      if (existsSync(metafilesDir)) {
+        await rm(metafilesDir, { recursive: true });
+      }
+      await mkdir(metafilesDir, { recursive: true });
+
+      const outputs = await Promise.all(
         compile.map(async (context) => {
-          const out = await context.rebuild();
+          const output = await context.rebuild();
           await context.dispose();
 
-          /**
-           * I'm leaving this in place, because I want to start utilizing it in the future. I'm
-           * imagining a github action that shows the bundle analysis in the PR. I didn't have the
-           * project-scope to make that happen now, but I want expose this very rich useful data
-           * accessible, for the next person investigating bundle size issues.
-           */
+          return output;
+        })
+      );
 
-          // if (out.metafile) {
-          //   await writeFile('report/meta.json', JSON.stringify(out.metafile, null, 2));
-          //   await writeFile(
-          //     'report/meta.txt',
-          //     await esbuild.analyzeMetafile(out.metafile, { color: false, verbose: false })
-          //   );
-          //   console.log(await esbuild.analyzeMetafile(out.metafile, { color: true }));
-          // }
+      const metafileByModule: Record<string, Metafile> = {};
+
+      for (const currentOutput of outputs) {
+        if (!currentOutput.metafile) {
+          continue;
+        }
+
+        const keys = Object.keys(currentOutput.metafile.outputs);
+        const moduleName = keys.length === 1 ? dirname(keys[0]).replace('dist/', '') : 'core';
+
+        const existingMetafile = metafileByModule[moduleName];
+
+        if (existingMetafile) {
+          existingMetafile.inputs = {
+            ...existingMetafile.inputs,
+            ...currentOutput.metafile.inputs,
+          };
+          existingMetafile.outputs = {
+            ...existingMetafile.outputs,
+            ...currentOutput.metafile.outputs,
+          };
+        } else {
+          metafileByModule[moduleName] = currentOutput.metafile;
+        }
+      }
+
+      await Promise.all(
+        Object.entries(metafileByModule).map(async ([moduleName, metafile]) => {
+          await writeFile(
+            join(metafilesDir, `${moduleName}.json`),
+            JSON.stringify(metafile, null, 2)
+          );
+          await writeFile(
+            join(metafilesDir, `${moduleName}.txt`),
+            await esbuild.analyzeMetafile(metafile, { color: false, verbose: false })
+          );
         })
       );
     }

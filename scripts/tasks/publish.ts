@@ -1,3 +1,4 @@
+// eslint-disable-next-line depend/ban-dependencies
 import { pathExists } from 'fs-extra';
 import { resolve } from 'path';
 

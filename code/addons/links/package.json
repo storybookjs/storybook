@@ -1,10 +1,9 @@
 {
   "name": "@storybook/addon-links",
-  "version": "8.3.0-alpha.9",
+  "version": "8.5.0-alpha.14",
   "description": "Link stories together to build demos and prototypes with your UI components",
   "keywords": [
-    "addon",
-    "storybook",
+    "storybook-addons",
     "organize"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/links",
@@ -25,8 +24,7 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "node": "./dist/index.js"
+      "require": "./dist/index.js"
     },
     "./react": {
       "types": "./dist/react/index.d.ts",
@@ -72,7 +70,6 @@
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
-    "fs-extra": "^11.1.0",
     "typescript": "^5.3.2"
   },
   "peerDependencies": {

@@ -4,11 +4,14 @@ import process from 'process';
 import { SbPage } from './util';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
+const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 
 test.describe('addon-controls', () => {
   test('should change component when changing controls', async ({ page }) => {
+    test.skip(templateName.includes('react-native-web'), 'React Native CSS behaves differently');
+
     await page.goto(storybookUrl);
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.waitUntilLoaded();
 
     await sbPage.navigateToStory('example/button', 'primary');
@@ -21,9 +24,7 @@ test.describe('addon-controls', () => {
     await expect(sbPage.previewRoot().locator('button')).toContainText('Hello world');
 
     // Args in URL
-    await page.waitForTimeout(300);
-    const url = await page.url();
-    await expect(url).toContain('args=label:Hello+world');
+    await page.waitForURL((url) => url.search.includes('args=label:Hello+world'));
 
     // Boolean toggle: Primary/secondary
     await expect(sbPage.previewRoot().locator('button')).toHaveCSS(
@@ -67,19 +68,19 @@ test.describe('addon-controls', () => {
   test('should apply controls automatically when passed via url', async ({ page }) => {
     await page.goto(`${storybookUrl}?path=/story/example-button--primary&args=label:Hello+world`);
 
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.waitUntilLoaded();
     await expect(sbPage.previewRoot().locator('button')).toContainText('Hello world');
 
     await sbPage.viewAddonPanel('Controls');
-    const label = await sbPage.panelContent().locator('textarea[name=label]').inputValue();
-    await expect(label).toEqual('Hello world');
+    const label = sbPage.panelContent().locator('textarea[name=label]');
+    await expect(label).toHaveValue('Hello world');
   });
 
   test('should set select option when value contains double spaces', async ({ page }) => {
     await page.goto(`${storybookUrl}?path=/story/addons-controls-basics--undefined`);
 
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.waitUntilLoaded();
     await sbPage.viewAddonPanel('Controls');
     await sbPage.panelContent().locator('#control-select').selectOption('double  space');
@@ -91,7 +92,7 @@ test.describe('addon-controls', () => {
   test('should set multiselect option when value contains double spaces', async ({ page }) => {
     await page.goto(`${storybookUrl}?path=/story/addons-controls-basics--undefined`);
 
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.waitUntilLoaded();
     await sbPage.viewAddonPanel('Controls');
     await sbPage.panelContent().locator('#control-multiSelect').selectOption('double  space');

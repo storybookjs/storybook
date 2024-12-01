@@ -1,4 +1,4 @@
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import semver from 'semver';
 import { dedent } from 'ts-dedent';
 
@@ -36,17 +36,17 @@ export const cra5: Fix<CRA5RunOptions> = {
   },
 
   prompt({ craVersion }) {
-    const craFormatted = chalk.cyan(`Create React App (CRA) ${craVersion}`);
+    const craFormatted = picocolors.cyan(`Create React App (CRA) ${craVersion}`);
 
     return dedent`
       We've detected you are running ${craFormatted} which is powered by webpack5.
       Your Storybook's main.js files specifies webpack4, which is incompatible.
 
-      In order to work with your version of CRA, we need to install Storybook's ${chalk.cyan(
+      In order to work with your version of CRA, we need to install Storybook's ${picocolors.cyan(
         '@storybook/builder-webpack5'
       )}.
 
-      More info: ${chalk.yellow(
+      More info: ${picocolors.yellow(
         'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#cra5-upgrade'
       )}
     `;

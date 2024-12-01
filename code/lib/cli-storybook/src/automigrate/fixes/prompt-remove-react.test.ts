@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { JsPackageManager } from 'storybook/internal/common';
 import type { StorybookConfig } from 'storybook/internal/types';
 
+// eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';
 
 import { removeReactDependency } from './prompt-remove-react';

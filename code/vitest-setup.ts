@@ -7,6 +7,7 @@ const ignoreList = [
   (error: any) => error.message.includes('":nth-child" is potentially unsafe'),
   (error: any) => error.message.includes('":first-child" is potentially unsafe'),
   (error: any) => error.message.match(/Browserslist: .* is outdated. Please run:/),
+  (error: any) => error.message.includes('Consider adding an error boundary'),
   (error: any) =>
     error.message.includes('react-async-component-lifecycle-hooks') &&
     error.stack.includes('addons/knobs/src/components/__tests__/Options.js'),

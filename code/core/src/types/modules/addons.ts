@@ -1,9 +1,12 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import type { FC, PropsWithChildren, ReactElement, ReactNode } from 'react';
 
+import type { ListItem } from '../../components';
+import type { TestProviderConfig, TestingModuleProgressReportProgress } from '../../core-events';
 import type { RenderData as RouterData } from '../../router/types';
 import type { ThemeVars } from '../../theming/types';
 import type { API_SidebarOptions } from './api';
+import type { API_HashEntry, API_StatusState, API_StatusUpdate } from './api-stories';
 import type {
   Args,
   ArgsStoryFn as ArgsStoryFnForFramework,
@@ -26,6 +29,7 @@ export type Addon_Types = Exclude<
   Addon_TypesEnum,
   | Addon_TypesEnum.experimental_PAGE
   | Addon_TypesEnum.experimental_SIDEBAR_BOTTOM
+  | Addon_TypesEnum.experimental_TEST_PROVIDER
   | Addon_TypesEnum.experimental_SIDEBAR_TOP
 >;
 
@@ -176,7 +180,7 @@ export interface Addon_BaseAnnotations<
   /**
    * Dynamic data that are provided (and possibly updated by) Storybook and its addons.
    *
-   * @see [Arg story inputs](https://storybook.js.org/docs/react/api/csf#args-story-inputs)
+   * @see [Arg story inputs](https://storybook.js.org/docs/api/csf#args-story-inputs)
    */
   args?: Partial<TArgs>;
 
@@ -184,14 +188,14 @@ export interface Addon_BaseAnnotations<
    * ArgTypes encode basic metadata for args, such as `name`, `description`, `defaultValue` for an
    * arg. These get automatically filled in by Storybook Docs.
    *
-   * @see [Arg types](https://storybook.js.org/docs/react/api/arg-types)
+   * @see [Arg types](https://storybook.js.org/docs/api/arg-types)
    */
   argTypes?: Addons_ArgTypes<TArgs>;
 
   /**
    * Custom metadata for a story.
    *
-   * @see [Parameters](https://storybook.js.org/docs/react/writing-stories/parameters)
+   * @see [Parameters](https://storybook.js.org/docs/writing-stories/parameters)
    */
   parameters?: Parameters;
 
@@ -200,7 +204,7 @@ export interface Addon_BaseAnnotations<
    *
    * Decorators defined in Meta will be applied to every story variation.
    *
-   * @see [Decorators](https://storybook.js.org/docs/addons/#1-decorators)
+   * @see [Decorators](https://storybook.js.org/docs/writing-stories/decorators)
    */
   decorators?: Addon_BaseDecorators<StoryFnReturnType>;
 
@@ -227,7 +231,7 @@ export interface Addon_Annotations<TArgs, StoryFnReturnType>
    * includeStories: /.*Story$/;
    * ```
    *
-   * @see [Non-story exports](https://storybook.js.org/docs/formats/component-story-format/#non-story-exports)
+   * @see [Non-story exports](https://storybook.js.org/docs/api/csf#non-story-exports)
    */
   includeStories?: string[] | RegExp;
 
@@ -242,7 +246,7 @@ export interface Addon_Annotations<TArgs, StoryFnReturnType>
    * excludeStories: /.*Data$/;
    * ```
    *
-   * @see [Non-story exports](https://storybook.js.org/docs/formats/component-story-format/#non-story-exports)
+   * @see [Non-story exports](https://storybook.js.org/docs/api/csf#non-story-exports)
    */
   excludeStories?: string[] | RegExp;
 }
@@ -261,7 +265,7 @@ export interface Addon_BaseMeta<ComponentType> {
    * export default { title: 'Design System/Atoms/Button' };
    * ```
    *
-   * @see [Story Hierarchy](https://storybook.js.org/docs/basics/writing-stories/#story-hierarchy)
+   * @see [Story Hierarchy](https://storybook.js.org/docs/writing-stories/naming-components-and-hierarchy)
    */
   title?: string;
 
@@ -272,7 +276,7 @@ export interface Addon_BaseMeta<ComponentType> {
    * Storybook will prioritize the id over the title for ID generation, if provided, and will
    * prioritize the story.storyName over the export key for display.
    *
-   * @see [Sidebar and URLs](https://storybook.js.org/docs/react/configure/sidebar-and-urls#permalinking-to-stories)
+   * @see [Sidebar and URLs](https://storybook.js.org/docs/configure/user-interface/sidebar-and-urls#permalink-to-stories)
    */
   id?: string;
 
@@ -326,7 +330,8 @@ export type Addon_Type =
   | Addon_PageType
   | Addon_WrapperType
   | Addon_SidebarBottomType
-  | Addon_SidebarTopType;
+  | Addon_SidebarTopType
+  | Addon_TestProviderType<Addon_TestProviderState>;
 export interface Addon_BaseType {
   /**
    * The title of the addon. This can be a simple string, but it can also be a
@@ -348,6 +353,7 @@ export interface Addon_BaseType {
     | Addon_TypesEnum.experimental_PAGE
     | Addon_TypesEnum.experimental_SIDEBAR_BOTTOM
     | Addon_TypesEnum.experimental_SIDEBAR_TOP
+    | Addon_TypesEnum.experimental_TEST_PROVIDER
   >;
   /**
    * The unique id of the addon.
@@ -461,12 +467,56 @@ export interface Addon_SidebarTopType {
   render: FC;
 }
 
+export interface Addon_TestProviderType<
+  Details extends { [key: string]: any } = NonNullable<unknown>,
+  Config extends { [key: string]: any } = NonNullable<unknown>,
+> {
+  type: Addon_TypesEnum.experimental_TEST_PROVIDER;
+  /** The unique id of the test provider. */
+  id: string;
+  name: string;
+  /** @deprecated Use render instead */
+  title?: (state: TestProviderConfig & Addon_TestProviderState<Details, Config>) => ReactNode;
+  /** @deprecated Use render instead */
+  description?: (state: TestProviderConfig & Addon_TestProviderState<Details, Config>) => ReactNode;
+  render?: (state: TestProviderConfig & Addon_TestProviderState<Details, Config>) => ReactNode;
+  sidebarContextMenu?: (options: {
+    context: API_HashEntry;
+    state: Addon_TestProviderState<Details>;
+  }) => ReactNode;
+  mapStatusUpdate?: (
+    state: Addon_TestProviderState<Details>
+  ) => API_StatusUpdate | ((state: API_StatusState) => API_StatusUpdate);
+  runnable?: boolean;
+  watchable?: boolean;
+}
+
+export type Addon_TestProviderState<
+  Details extends { [key: string]: any } = NonNullable<unknown>,
+  Config extends { [key: string]: any } = NonNullable<unknown>,
+> = Pick<Addon_TestProviderType, 'runnable' | 'watchable'> & {
+  progress?: TestingModuleProgressReportProgress;
+  details: Details;
+  cancellable: boolean;
+  cancelling: boolean;
+  running: boolean;
+  watching: boolean;
+  failed: boolean;
+  crashed: boolean;
+  error?: {
+    name: string;
+    message?: string;
+  };
+  config?: Config;
+};
+
 type Addon_TypeBaseNames = Exclude<
   Addon_TypesEnum,
   | Addon_TypesEnum.PREVIEW
   | Addon_TypesEnum.experimental_PAGE
   | Addon_TypesEnum.experimental_SIDEBAR_BOTTOM
   | Addon_TypesEnum.experimental_SIDEBAR_TOP
+  | Addon_TypesEnum.experimental_TEST_PROVIDER
 >;
 
 export interface Addon_TypesMapping extends Record<Addon_TypeBaseNames, Addon_BaseType> {
@@ -474,6 +524,7 @@ export interface Addon_TypesMapping extends Record<Addon_TypeBaseNames, Addon_Ba
   [Addon_TypesEnum.experimental_PAGE]: Addon_PageType;
   [Addon_TypesEnum.experimental_SIDEBAR_BOTTOM]: Addon_SidebarBottomType;
   [Addon_TypesEnum.experimental_SIDEBAR_TOP]: Addon_SidebarTopType;
+  [Addon_TypesEnum.experimental_TEST_PROVIDER]: Addon_TestProviderType<Addon_TestProviderState>;
 }
 
 export type Addon_Loader<API> = (api: API) => void;
@@ -537,4 +588,6 @@ export enum Addon_TypesEnum {
    * @deprecated This will be removed in Storybook 9.0.
    */
   experimental_SIDEBAR_TOP = 'sidebar-top',
+  /** This adds items to the Testing Module in the sidebar. */
+  experimental_TEST_PROVIDER = 'test-provider',
 }

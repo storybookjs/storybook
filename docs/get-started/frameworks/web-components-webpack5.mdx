@@ -1,13 +1,13 @@
 ---
 title: Storybook for Web components & Webpack
 sidebar:
-  order: 11
+  order: 12
   title: Web components & Webpack
 ---
 
 Storybook for Web components & Webpack is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for applications using [Web components](https://www.webcomponents.org/introduction) built with [Webpack](https://webpack.js.org/).
 
-<If notRenderer={'web-components'}>
+<If notRenderer="web-components">
   <Callout variant="info">
     Storybook for Web components & Webpack is only supported in [Web components](?renderer=web-components) projects.
   </Callout>
@@ -15,7 +15,7 @@ Storybook for Web components & Webpack is a [framework](../../contribute/framewo
   {/* End non-supported renderers */}
 </If>
 
-<If renderer={'web-components'}>
+<If renderer="web-components">
   ## Requirements
 
   * Webpack ≥ 5.0
@@ -87,30 +87,19 @@ Storybook for Web components & Webpack is a [framework](../../contribute/framewo
 
   ## Hot Module Reloading (HMR)
 
-  Web components are registered on global registry, which only accepts a given name/class once. That can lead to errors when using classical HMR. While there are ideas on how to achieve HMR with a static registry, there is no proven solution yet. Therefore, the best approach for now is to do full page reloads while developing. You can ensure those page reloads happen quickly by defining your stories as specific states of components (which we would recommend regardless).
+  Web components are registered on a global registry, which only accepts a given name/class once. That can lead to errors when using classical HMR. While there are ideas for achieving HMR with a static registry, there has yet to be a proven solution. Therefore, the best approach, for now, is to do full-page reloads while developing. You can ensure that page reloads happen quickly by defining your stories as specific states of components (which we recommend regardless).
 
-  ## Set up es6/7 dependencies
+  ## Set up ES6/7 dependencies
 
-  By default, Storybook only works with precompiled ES5 code. Because most web components themselves and their libs are distributed as ES2017, you will need to manually mark those packages as "needs transpilation".
+  By default, Storybook only works with precompiled ES5 code. Because most Web Components and their libs are distributed as ES2017, you must mark those packages as "needs transpilation" manually.
 
   For example, if you have a library called `my-library` which is in ES2017, then you can configure your project like so:
 
-  ```js
-  // .storybook/main.js
+  {/* prettier-ignore-start */}
 
-  export default {
-    webpackFinal: async (config) => {
-      // Find web-components rule for extra transpilation
-      const webComponentsRule = config.module.rules.find(
-        (rule) => rule.use && rule.use.options && rule.use.options.babelrc === false
-      );
-      // Add your own `my-library`
-      webComponentsRule.test.push(new RegExp(`node_modules(\\/|\\\\)my-library(.*)\\.js$`));
+  <CodeSnippets path="web-components-webpack5-transpilation.md" />
 
-      return config;
-    },
-  };
-  ```
+  {/* prettier-ignore-end */}  
 
   By default, the following folders are transpiled:
 
@@ -123,9 +112,9 @@ Storybook for Web components & Webpack is a [framework](../../contribute/framewo
   * `node_modules/@vaadin/*.js`
 
   <Callout variant="info">
-    Note that the `src` folder is also included. This provides some extra configuration to allow for `import.meta` and some other features.
+    Note that the `src` folder is also included. This provides extra configuration for `import.meta` and other features.
 
-    If you use a folder for your components/stories other than `src`, you will need to use the configuration example above to have it properly transpiled.
+    If you use a folder for your components/stories other than `src`, you must use the configuration example above to have it correctly transpiled.
   </Callout>
 
   ## API
@@ -134,20 +123,11 @@ Storybook for Web components & Webpack is a [framework](../../contribute/framewo
 
   You can pass an options object for additional configuration if needed:
 
-  ```js
-  // .storybook/main.js
-  import * as path from 'path';
+  {/* prettier-ignore-start */}
 
-  export default {
-    // ...
-    framework: {
-      name: '@storybook/web-components-webpack5',
-      options: {
-        // ...
-      },
-    },
-  };
-  ```
+  <CodeSnippets path="web-components-webpack5-framework-options.md" />
+
+  {/* prettier-ignore-end */}  
 
   The available options are:
 
@@ -167,7 +147,7 @@ Storybook for Web components & Webpack is a [framework](../../contribute/framewo
   Failed to execute 'define' on 'CustomElementRegistry': the name "..." has already been used with this registry
   ```
 
-  This error occurs because the component is already registered in the global registry. See the [limitations of HMR with web components](#hot-module-reloading-hmr) for more information.
+  This error occurs because the component is already registered in the global registry. For more information, see the [limitations of HMR with web components](#hot-module-reloading-hmr).
 
   {/* End supported renderers */}
 </If>

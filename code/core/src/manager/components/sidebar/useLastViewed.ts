@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 
-import debounce from 'lodash/debounce.js';
+import { debounce } from 'es-toolkit/compat';
 import store from 'store2';
 
 import type { Selection, StoryRef } from './types';

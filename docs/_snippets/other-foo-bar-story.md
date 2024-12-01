@@ -115,4 +115,3 @@ export const Baz: Story = {
   name: 'Insert name here',
 };
 ```
-

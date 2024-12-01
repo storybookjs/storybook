@@ -202,7 +202,7 @@ export function filterTabs(panels: Addon_BaseType[], parameters?: Record<string,
 
   if (previewTabs || parametersTabs) {
     // deep merge global and local settings
-    const tabs = merge(previewTabs, parametersTabs);
+    const tabs = merge(previewTabs || {}, parametersTabs || {});
     const arrTabs = Object.keys(tabs).map((key, index) => ({
       index,
       ...(typeof tabs[key] === 'string' ? { title: tabs[key] } : tabs[key]),

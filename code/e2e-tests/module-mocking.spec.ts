@@ -9,16 +9,16 @@ test.describe('module-mocking', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(storybookUrl);
 
-    await new SbPage(page).waitUntilLoaded();
+    await new SbPage(page, expect).waitUntilLoaded();
   });
 
   test('should assert story lifecycle order', async ({ page }) => {
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
 
     await sbPage.navigateToStory('lib/test/before-each', 'before-each-order');
 
     await sbPage.viewAddonPanel('Actions');
-    const logItem = await page.locator('#storybook-panel-root #panel-tab-content');
+    const logItem = page.locator('#storybook-panel-root #panel-tab-content');
     await expect(logItem).toBeVisible();
 
     const expectedTexts = [
@@ -37,12 +37,12 @@ test.describe('module-mocking', () => {
   });
 
   test('should assert that utils import is mocked', async ({ page }) => {
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
 
     await sbPage.navigateToStory('lib/test/module-mocking', 'basic');
 
     await sbPage.viewAddonPanel('Actions');
-    const logItem = await page.locator('#storybook-panel-root #panel-tab-content', {
+    const logItem = page.locator('#storybook-panel-root #panel-tab-content', {
       hasText: 'foo: []',
     });
     await expect(logItem).toBeVisible();

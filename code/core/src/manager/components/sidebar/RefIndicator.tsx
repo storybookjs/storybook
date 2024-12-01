@@ -7,6 +7,7 @@ import { styled, useTheme } from '@storybook/core/theming';
 import { global } from '@storybook/global';
 import {
   AlertIcon,
+  CheckIcon,
   ChevronDownIcon,
   DocumentIcon,
   GlobeIcon,
@@ -20,12 +21,13 @@ import { useStorybookApi } from '@storybook/core/manager-api';
 
 import { transparentize } from 'polished';
 
+import type { NormalLink } from '../../../components/components/tooltip/TooltipLinkList';
 import type { getStateType } from '../../utils/tree';
 import type { RefType } from './types';
 
 const { document, window: globalWindow } = global;
 
-export type ClickHandler = TooltipLinkListLink['onClick'];
+export type ClickHandler = NormalLink['onClick'];
 export interface IndicatorIconProps {
   type: ReturnType<typeof getStateType>;
 }
@@ -216,7 +218,7 @@ export const RefIndicator = React.memo(
                 <TooltipLinkList
                   // @ts-expect-error (non strict)
                   links={Object.entries(ref.versions).map(([id, href]) => ({
-                    icon: href === ref.url ? 'check' : undefined,
+                    icon: href === ref.url ? <CheckIcon /> : undefined,
                     id,
                     title: id,
                     href,
@@ -306,10 +308,7 @@ const ReadDocsMessage: FC = () => {
   const theme = useTheme();
 
   return (
-    <Message
-      href="https://storybook.js.org/docs/react/sharing/storybook-composition"
-      target="_blank"
-    >
+    <Message href="https://storybook.js.org/docs/sharing/storybook-composition" target="_blank">
       <DocumentIcon color={theme.color.green} />
       <div>
         <MessageTitle>Read Composition docs</MessageTitle>
@@ -347,14 +346,12 @@ const LoadingMessage: FC<{ url: string }> = ({ url }) => {
   );
 };
 
+// TODO: This is a temporary fix as the documentation link is not available with the 8.0 release, since the features it referenced were removed. See https://storybook.js.org/docs/7/sharing/storybook-composition#improve-your-storybook-composition for context.
 const PerformanceDegradedMessage: FC = () => {
   const theme = useTheme();
 
   return (
-    <Message
-      href="https://storybook.js.org/docs/react/sharing/storybook-composition#improve-your-storybook-composition"
-      target="_blank"
-    >
+    <Message href="https://storybook.js.org/docs/sharing/storybook-composition" target="_blank">
       <LightningIcon color={theme.color.gold} />
       <div>
         <MessageTitle>Reduce lag</MessageTitle>

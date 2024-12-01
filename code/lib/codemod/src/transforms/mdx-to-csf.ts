@@ -2,13 +2,17 @@
 import { existsSync, renameSync, writeFileSync } from 'node:fs';
 import { basename, join, parse } from 'node:path';
 
-import { babelParse, babelParseExpression } from '@storybook/core/csf-tools';
+import {
+  type BabelFile,
+  core as babel,
+  babelParse,
+  babelParseExpression,
+  recast,
+  types as t,
+} from '@storybook/core/babel';
 
-import type { BabelFile } from '@babel/core';
-import * as babel from '@babel/core';
-import * as t from '@babel/types';
+import { camelCase } from 'es-toolkit';
 import type { FileInfo } from 'jscodeshift';
-import camelCase from 'lodash/camelCase';
 import type { MdxFlowExpression } from 'mdast-util-mdx-expression';
 import type {
   MdxJsxAttribute,
@@ -18,7 +22,6 @@ import type {
 } from 'mdast-util-mdx-jsx';
 import type { MdxjsEsm } from 'mdast-util-mdxjs-esm';
 import prettier from 'prettier';
-import * as recast from 'recast';
 import { remark } from 'remark';
 import remarkMdx from 'remark-mdx';
 import { is } from 'unist-util-is';
@@ -407,7 +410,7 @@ function addStoriesImport(
 }
 
 export function nameToValidExport(name: string) {
-  const [first, ...rest] = Array.from(camelCase(name));
+  const [first, ...rest] = Array.from(camelCase(name).replace(/\s/g, ''));
 
   return `${first.match(/[a-zA-Z_$]/) ? first.toUpperCase() : `$${first}`}${rest.join('')}`;
 }

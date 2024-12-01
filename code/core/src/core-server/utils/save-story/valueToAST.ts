@@ -1,5 +1,4 @@
-import * as babylon from '@babel/parser';
-import * as t from '@babel/types';
+import { parser, types as t } from '@storybook/core/babel';
 
 export function valueToAST<T>(literal: T): any {
   if (literal === null) {
@@ -7,7 +6,7 @@ export function valueToAST<T>(literal: T): any {
   }
   switch (typeof literal) {
     case 'function':
-      const ast = babylon.parse(literal.toString(), {
+      const ast = parser.parse(literal.toString(), {
         allowReturnOutsideFunction: true,
         allowSuperOutsideMethod: true,
       });

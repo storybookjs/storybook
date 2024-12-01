@@ -1,5 +1,7 @@
 // This file requires many imports from `../code`, which requires both an install and bootstrap of
 // the repo to work properly. So we load it async in the task runner *after* those steps.
+import { isFunction } from 'es-toolkit';
+// eslint-disable-next-line depend/ban-dependencies
 import {
   copy,
   ensureDir,
@@ -12,25 +14,24 @@ import {
   writeJson,
 } from 'fs-extra';
 import JSON5 from 'json5';
-import { isFunction } from 'lodash';
 import { createRequire } from 'module';
 import { join, relative, resolve, sep } from 'path';
 import slash from 'slash';
 import dedent from 'ts-dedent';
 
+import { babelParse } from '../../code/core/src/babel/babelParse';
 import { detectLanguage } from '../../code/core/src/cli/detect';
 import { SupportedLanguage } from '../../code/core/src/cli/project_types';
 import { JsPackageManagerFactory, versions as storybookPackages } from '../../code/core/src/common';
 import type { ConfigFile } from '../../code/core/src/csf-tools';
 import { writeConfig } from '../../code/core/src/csf-tools';
-import { babelParse } from '../../code/core/src/csf-tools/babelParse';
 import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
 import type { PassedOptionValues, Task, TemplateDetails } from '../task';
 import { executeCLIStep, steps } from '../utils/cli-step';
 import { CODE_DIRECTORY, REPROS_DIRECTORY } from '../utils/constants';
 import { exec } from '../utils/exec';
 import { filterExistsInCodeDir } from '../utils/filterExistsInCodeDir';
-import { addPreviewAnnotations, readMainConfig } from '../utils/main-js';
+import { addPreviewAnnotations, readConfig } from '../utils/main-js';
 import { updatePackageScripts } from '../utils/package-json';
 import { findFirstPath } from '../utils/paths';
 import { workspacePath } from '../utils/workspace';
@@ -88,7 +89,7 @@ export const install: Task['run'] = async ({ sandboxDir, key }, { link, dryRun, 
       dryRun,
       debug,
     });
-    await addWorkaroundResolutions({ cwd, dryRun, debug });
+    await addWorkaroundResolutions({ cwd, dryRun, debug, key });
   } else {
     // We need to add package resolutions to ensure that we only ever install the latest version
     // of any storybook packages as verdaccio is not able to both proxy to npm and publish over
@@ -109,7 +110,7 @@ export const install: Task['run'] = async ({ sandboxDir, key }, { link, dryRun, 
       'vue3-vite/default-js',
       'vue3-vite/default-ts',
     ];
-    if (sandboxesNeedingWorkarounds.includes(key)) {
+    if (sandboxesNeedingWorkarounds.includes(key) || key.includes('vite')) {
       await addWorkaroundResolutions({ cwd, dryRun, debug });
     }
 
@@ -137,6 +138,8 @@ export const init: Task['run'] = async (
     extra = { type: 'html' };
   } else if (template.expected.renderer === '@storybook/server') {
     extra = { type: 'server' };
+  } else if (template.expected.framework === '@storybook/react-native-web-vite') {
+    extra = { type: 'react_native_web' };
   }
 
   await executeCLIStep(steps.init, {
@@ -176,8 +179,13 @@ export const init: Task['run'] = async (
 
   if (!skipTemplateStories) {
     for (const addon of addons) {
-      const addonName = `@storybook/addon-${addon}`;
-      await executeCLIStep(steps.add, { argument: addonName, cwd, dryRun, debug });
+      await executeCLIStep(steps.add, {
+        argument: addon,
+        cwd,
+        dryRun,
+        debug,
+        optionValues: { yes: true },
+      });
     }
   }
 };
@@ -207,7 +215,7 @@ function addEsbuildLoaderToStories(mainConfig: ConfigFile) {
           },
         },
         // Handle MDX files per the addon-docs presets (ish)
-        {        
+        {
           test: /template-stories\\/.*\\.mdx$/,
           exclude: /\\.stories\\.mdx$/,
           use: [
@@ -369,13 +377,20 @@ const getVitestPluginInfo = (details: TemplateDetails) => {
   const isSveltekit = framework.includes('sveltekit');
 
   if (isNextjs) {
-    frameworkPluginImport = "import vitePluginNext from 'vite-plugin-storybook-nextjs'";
-    frameworkPluginCall = 'vitePluginNext()';
+    frameworkPluginImport =
+      "import { storybookNextJsPlugin } from '@storybook/experimental-nextjs-vite/vite-plugin'";
+    frameworkPluginCall = 'storybookNextJsPlugin()';
   }
 
   if (isSveltekit) {
-    frameworkPluginImport = "import { storybookSveltekitPlugin } from '@storybook/sveltekit/vite'";
+    frameworkPluginImport =
+      "import { storybookSveltekitPlugin } from '@storybook/sveltekit/vite-plugin'";
     frameworkPluginCall = 'storybookSveltekitPlugin()';
+  }
+
+  if (framework === '@storybook/vue3-vite') {
+    frameworkPluginImport = "import { storybookVuePlugin } from '@storybook/vue3-vite/vite-plugin'";
+    frameworkPluginCall = 'storybookVuePlugin()';
   }
 
   return { frameworkPluginImport, frameworkPluginCall };
@@ -383,6 +398,25 @@ const getVitestPluginInfo = (details: TemplateDetails) => {
 
 export async function setupVitest(details: TemplateDetails, options: PassedOptionValues) {
   const { sandboxDir, template } = details;
+  const packageJsonPath = join(sandboxDir, 'package.json');
+  const packageJson = await readJson(packageJsonPath);
+
+  packageJson.scripts = {
+    ...packageJson.scripts,
+    vitest: 'vitest --reporter=default --reporter=hanging-process --test-timeout=5000',
+  };
+
+  // This workaround is needed because Vitest seems to have issues in link mode
+  // so the /setup-file and /global-setup files from the vitest addon won't work in portal protocol
+  if (options.link) {
+    const vitestAddonPath = relative(sandboxDir, join(CODE_DIRECTORY, 'addons', 'test'));
+    packageJson.resolutions = {
+      ...packageJson.resolutions,
+      '@storybook/experimental-addon-test': `file:${vitestAddonPath}`,
+    };
+  }
+
+  await writeJson(packageJsonPath, packageJson, { spaces: 2 });
 
   const isVue = template.expected.renderer === '@storybook/vue3';
   const isNextjs = template.expected.framework.includes('nextjs');
@@ -406,7 +440,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
     import { setProjectAnnotations } from '${storybookPackage}'
     import * as rendererDocsAnnotations from '${template.expected.renderer}/dist/entry-preview-docs.mjs'
     import * as addonActionsAnnotations from '@storybook/addon-actions/preview'
-    import * as addonInteractionsAnnotations from '@storybook/addon-interactions/preview'
+    import * as addonTestAnnotations from '@storybook/experimental-addon-test/preview'
     import '../src/stories/components'
     import * as coreAnnotations from '../template-stories/core/preview'
     import * as toolbarAnnotations from '../template-stories/addons/toolbars/preview'
@@ -414,24 +448,23 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
     ${isVue ? 'import * as vueAnnotations from "../src/stories/renderers/vue3/preview.js"' : ''}
 
     const annotations = setProjectAnnotations([
-      { tags: ['vitest'] },
       rendererDocsAnnotations,
       projectAnnotations,
       coreAnnotations,
       toolbarAnnotations,
       addonActionsAnnotations,
-      addonInteractionsAnnotations,
+      addonTestAnnotations,
       ${isVue ? 'vueAnnotations,' : ''}
     ])
 
-    beforeAll(annotations.beforeAll!)`
+    beforeAll(annotations.beforeAll)`
   );
 
   await writeFile(
     join(sandboxDir, 'vitest.workspace.ts'),
     dedent`
       import { defineWorkspace, defaultExclude } from "vitest/config";
-      import { storybookTest } from "@storybook/experimental-addon-vitest/plugin";
+      import { storybookTest } from "@storybook/experimental-addon-test/vitest-plugin";
       ${frameworkPluginImport}
 
       export default defineWorkspace([
@@ -461,13 +494,11 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
           }
           resolve: {
             preserveSymlinks: true,
-            ${isVue ? "alias: { vue: 'vue/dist/vue.esm-bundler.js' }," : ''}
           },
           test: {
             name: "storybook",
             pool: "threads",
             include: [
-              // we need to set the path like this because svelte-kit overrides the root path so this makes it work in all sandboxes
               "src/**/*.{story,stories}.?(c|m)[jt]s?(x)",
               "template-stories/**/*.{story,stories}.?(c|m)[jt]s?(x)",
             ],
@@ -488,7 +519,6 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
               name: "chromium",
               provider: "playwright",
               headless: true,
-              screenshotFailures: false,
             },
             setupFiles: ["./.storybook/vitest.setup.ts"],
             environment: "happy-dom",
@@ -497,27 +527,6 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
       ]);
   `
   );
-
-  const packageJsonPath = join(sandboxDir, 'package.json');
-  const packageJson = await readJson(packageJsonPath);
-
-  packageJson.scripts = {
-    ...packageJson.scripts,
-    vitest:
-      'vitest --pass-with-no-tests --reporter=default --reporter=hanging-process --test-timeout=5000',
-  };
-
-  // This workaround is needed because Vitest seems to have issues in link mode
-  // so the /setup-file and /global-setup files from the vitest addon won't work in portal protocol
-  if (options.link) {
-    const vitestAddonPath = relative(sandboxDir, join(CODE_DIRECTORY, 'addons', 'vitest'));
-    packageJson.resolutions = {
-      ...packageJson.resolutions,
-      '@storybook/experimental-addon-vitest': `file:${vitestAddonPath}`,
-    };
-  }
-
-  await writeJson(packageJsonPath, packageJson, { spaces: 2 });
 }
 
 export async function addExtraDependencies({
@@ -562,7 +571,7 @@ export const addStories: Task['run'] = async (
   const cwd = sandboxDir;
   const storiesPath = await findFirstPath([join('src', 'stories'), 'stories'], { cwd });
 
-  const mainConfig = await readMainConfig({ cwd });
+  const mainConfig = await readConfig({ fileName: 'main', cwd });
   const packageManager = JsPackageManagerFactory.getPackageManager({}, sandboxDir);
 
   // Ensure that we match the right stories in the stories directory
@@ -661,6 +670,15 @@ export const addStories: Task['run'] = async (
       cwd,
       disableDocs,
     });
+
+    await linkPackageStories(
+      await workspacePath('addon test package', '@storybook/experimental-addon-test'),
+      {
+        mainConfig,
+        cwd,
+        disableDocs,
+      }
+    );
   }
 
   const mainAddons = (mainConfig.getSafeFieldValue(['addons']) || []).reduce(
@@ -709,13 +727,13 @@ export const addStories: Task['run'] = async (
 
 export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { disableDocs }) => {
   logger.log('📝 Extending main.js');
-  const mainConfig = await readMainConfig({ cwd: sandboxDir });
+  const mainConfig = await readConfig({ fileName: 'main', cwd: sandboxDir });
 
   if (key === 'react-vite/default-ts') {
     addRefs(mainConfig);
   }
 
-  const templateConfig = isFunction(template.modifications?.mainConfig)
+  const templateConfig: any = isFunction(template.modifications?.mainConfig)
     ? template.modifications?.mainConfig(mainConfig)
     : template.modifications?.mainConfig || {};
   const configToAdd = {
@@ -785,6 +803,17 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
     setSandboxViteFinal(mainConfig);
   }
   await writeConfig(mainConfig);
+};
+
+export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
+  logger.log('📝 Extending preview.js');
+  const previewConfig = await readConfig({ cwd: sandboxDir, fileName: 'preview' });
+
+  if (template.expected.builder.includes('vite')) {
+    previewConfig.setFieldValue(['tags'], ['vitest']);
+  }
+
+  await writeConfig(previewConfig);
 };
 
 export async function setImportMap(cwd: string) {

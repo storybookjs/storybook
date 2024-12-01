@@ -10,11 +10,3 @@ const modern: Record<string, GlobalState> = {
 const legacy = { viewport: 'reset', viewportRotated: false };
 
 export const initialGlobals = FEATURES?.viewportStoryGlobals ? modern : legacy;
-
-export const parameters = FEATURES?.viewportStoryGlobals
-  ? {
-      [KEY]: {
-        options: MINIMAL_VIEWPORTS,
-      },
-    }
-  : {};

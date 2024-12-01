@@ -24,6 +24,10 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
       storyId,
       refId,
       layout: { showToolbar },
+      // FIXME: This is the actual `index.json` index where the `index` below
+      // is actually the stories hash. We should fix this up and make it consistent.
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      internal_index,
       index,
       status,
       indexError,
@@ -51,6 +55,7 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
     return {
       title: name,
       url,
+      indexJson: internal_index,
       index,
       indexError,
       status,

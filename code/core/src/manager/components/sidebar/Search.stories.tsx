@@ -66,12 +66,6 @@ type Story = StoryObj<typeof meta>;
 
 export const Simple: Story = {};
 
-export const SimpleWithCreateButton: Story = {
-  args: {
-    showCreateStoryButton: true,
-  },
-};
-
 export const FilledIn: Story = {
   args: {
     initialQuery: 'Search query',
@@ -83,6 +77,8 @@ export const LastViewed: Story = {
     getLastViewed,
   },
 };
+
+export const SimpleWithCreateButton: Story = {};
 
 export const ShortcutsDisabled: Story = {
   args: {

@@ -4,7 +4,7 @@ import { getStorybookVersionSpecifier } from 'storybook/internal/cli';
 
 import type { InstallationMetadata, JsPackageManager } from '@storybook/core/common';
 
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import type { Fix } from '../types';
@@ -70,6 +70,7 @@ export const missingStorybookDependencies: Fix<MissingStorybookDependenciesOptio
 
   async check({ packageManager }) {
     // Dynamically import globby because it is a pure ESM module
+    // eslint-disable-next-line depend/ban-dependencies
     const { globby } = await import('globby');
 
     const result = await checkInstallations(packageManager, consolidatedPackages);
@@ -112,7 +113,7 @@ export const missingStorybookDependencies: Fix<MissingStorybookDependenciesOptio
       ${Object.entries(packageUsage)
         .map(
           ([pkg, files]) =>
-            `- ${chalk.cyan(pkg)}: (${files.length} ${files.length === 1 ? 'file' : 'files'})`
+            `- ${picocolors.cyan(pkg)}: (${files.length} ${files.length === 1 ? 'file' : 'files'})`
         )
         .sort()
         .join('\n')}

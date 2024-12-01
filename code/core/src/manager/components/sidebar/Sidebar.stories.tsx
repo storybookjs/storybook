@@ -33,6 +33,7 @@ const managerContext: any = {
       autodocs: 'tag',
       docsMode: false,
     },
+    testProviders: {},
   },
   api: {
     emit: fn().mockName('api::emit'),
@@ -41,10 +42,18 @@ const managerContext: any = {
     getShortcutKeys: fn(() => ({ search: ['control', 'shift', 's'] })).mockName(
       'api::getShortcutKeys'
     ),
+    getChannel: fn().mockName('api::getChannel'),
+    getElements: fn(() => ({})),
     selectStory: fn().mockName('api::selectStory'),
     experimental_setFilter: fn().mockName('api::experimental_setFilter'),
-    setQueryParams: fn().mockName('api::setQueryParams'),
-    getQueryParams: fn().mockName('api::getQueryParams'),
+    getDocsUrl: () => 'https://storybook.js.org/docs/',
+    getUrlState: () => ({
+      queryParams: {},
+      path: '',
+      viewMode: 'story',
+      url: 'http://localhost:6006/',
+    }),
+    applyQueryParams: fn().mockName('api::applyQueryParams'),
   },
 };
 
@@ -58,11 +67,26 @@ const meta = {
     menu,
     extra: [] as Addon_SidebarTopType[],
     index: index,
+    indexJson: {
+      entries: {
+        // force the tags filter menu to show in production
+        ['dummy--dummyId']: {
+          id: 'dummy--dummyId',
+          name: 'Dummy story',
+          title: 'dummy',
+          importPath: './dummy.stories.js',
+          type: 'story',
+          tags: ['A', 'B', 'C', 'dev'],
+        },
+      },
+      v: 6,
+    },
     storyId,
     refId: DEFAULT_REF_ID,
     refs: {},
     status: {},
     showCreateStoryButton: true,
+    isDevelopment: true,
   },
   decorators: [
     (storyFn) => (
@@ -142,6 +166,42 @@ export const IndexError: Story = {
 export const WithRefs: Story = {
   args: {
     refs,
+  },
+};
+
+export const WithRefsNarrow: Story = {
+  args: {
+    refs: {
+      wide: {
+        ...refs.optimized,
+        title: 'This is a ref with a very long title',
+      },
+    },
+  },
+  parameters: {
+    viewport: {
+      options: {
+        narrow: {
+          name: 'narrow',
+          styles: {
+            width: '400px',
+            height: '800px',
+          },
+        },
+      },
+    },
+    chromatic: {
+      modes: {
+        narrow: {
+          viewport: 400,
+        },
+      },
+    },
+  },
+  globals: {
+    viewport: {
+      value: 'narrow',
+    },
   },
 };
 

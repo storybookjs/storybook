@@ -1,6 +1,6 @@
 {
   "name": "@storybook/vue3",
-  "version": "8.3.0-alpha.9",
+  "version": "8.5.0-alpha.14",
   "description": "Storybook Vue 3 renderer",
   "keywords": [
     "storybook"
@@ -23,14 +23,12 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "node": "./dist/index.js"
+      "require": "./dist/index.js"
     },
     "./experimental-playwright": {
       "types": "./dist/playwright.d.ts",
       "import": "./dist/playwright.mjs",
-      "require": "./dist/playwright.js",
-      "node": "./dist/playwright.js"
+      "require": "./dist/playwright.js"
     },
     "./preset": "./preset.js",
     "./dist/entry-preview.mjs": "./dist/entry-preview.mjs",
@@ -63,11 +61,11 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/components": "workspace:^",
+    "@storybook/components": "workspace:*",
     "@storybook/global": "^5.0.0",
-    "@storybook/manager-api": "workspace:^",
-    "@storybook/preview-api": "workspace:^",
-    "@storybook/theming": "workspace:^",
+    "@storybook/manager-api": "workspace:*",
+    "@storybook/preview-api": "workspace:*",
+    "@storybook/theming": "workspace:*",
     "@vue/compiler-core": "^3.0.0",
     "ts-dedent": "^2.0.0",
     "type-fest": "~2.19",
@@ -78,7 +76,6 @@
     "@testing-library/vue": "^8.0.0",
     "@types/prettier": "^3.0.0",
     "@vitejs/plugin-vue": "^4.4.0",
-    "lodash": "^4.17.21",
     "typescript": "^5.3.2",
     "vue": "^3.2.47",
     "vue-tsc": "latest"

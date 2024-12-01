@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { FindPackageVersionsError } from '@storybook/core/server-errors';
 
 import { findUp } from 'find-up';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
 import { createLogStream } from '../utils/cli';
 import { JsPackageManager } from './JsPackageManager';
@@ -51,6 +51,10 @@ export class Yarn1Proxy extends JsPackageManager {
 
   getRunCommand(command: string): string {
     return `yarn ${command}`;
+  }
+
+  getRemoteRunCommand(): string {
+    return 'npx';
   }
 
   public runPackageCommandSync(

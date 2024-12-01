@@ -3,7 +3,9 @@ import { join } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
+// eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
+// eslint-disable-next-line depend/ban-dependencies
 import * as fsExtraImp from 'fs-extra';
 
 import type * as MockedFSToExtra from '../../../code/__mocks__/fs-extra';

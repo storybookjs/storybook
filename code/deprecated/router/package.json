@@ -1,6 +1,6 @@
 {
   "name": "@storybook/router",
-  "version": "8.3.0-alpha.9",
+  "version": "8.5.0-alpha.14",
   "description": "Core Storybook Router",
   "keywords": [
     "storybook"
@@ -24,8 +24,7 @@
     ".": {
       "types": "./shim.d.ts",
       "import": "./shim.mjs",
-      "require": "./shim.js",
-      "node": "./shim.js"
+      "require": "./shim.js"
     },
     "./utils": {
       "types": "./utils.d.ts",
@@ -45,7 +44,7 @@
     "*.d.ts"
   ],
   "peerDependencies": {
-    "storybook": "workspace:^"
+    "storybook": "^8.2.0 || ^8.3.0-0 || ^8.4.0-0 || ^8.5.0-0 || ^8.6.0-0"
   },
   "publishConfig": {
     "access": "public"

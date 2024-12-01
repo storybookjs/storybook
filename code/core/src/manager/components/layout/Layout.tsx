@@ -146,7 +146,6 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
       viewMode={managerLayoutState.viewMode}
       showPanel={showPanel}
     >
-      <Notifications />
       {showPages && <PagesContainer>{slots.slotPages}</PagesContainer>}
       <Match path={/(^\/story|docs|onboarding\/|^\/$)/} startsWith={false}>
         {({ match }) => <ContentContainer shown={!!match}>{slots.slotMain}</ContentContainer>}
@@ -170,7 +169,14 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
         </>
       )}
       {isMobile && (
-        <MobileNavigation menu={slots.slotSidebar} panel={slots.slotPanel} showPanel={showPanel} />
+        <>
+          <Notifications />
+          <MobileNavigation
+            menu={slots.slotSidebar}
+            panel={slots.slotPanel}
+            showPanel={showPanel}
+          />
+        </>
       )}
     </LayoutContainer>
   );

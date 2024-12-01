@@ -2,7 +2,7 @@
 title: 'Stories in end-to-end tests'
 sidebar:
   title: End-to-end tests
-  order: 1
+  order: 2
 ---
 
 Storybook seamlessly integrates with additional testing frameworks like [Cypress](https://www.cypress.io/) and [Playwright](https://playwright.dev/) to provide a comprehensive testing solution. By leveraging the Component Story Format (CSF), developers can write test cases that simulate user interactions and verify the behavior of individual components within the Storybook environment. This approach enables developers to thoroughly test their components' functionality, responsiveness, and visual appearance across different scenarios, resulting in more robust and reliable applications.
@@ -15,7 +15,7 @@ An example of an end-to-end test with Cypress and Storybook is testing a login c
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="login-form-with-play-function.md" usesCsf3 csf2Path="writing-tests/importing-stories-in-tests#snippet-login-form-with-play-function" />
+<CodeSnippets path="login-form-with-play-function.md" />
 
 {/* prettier-ignore-end */}
 
@@ -43,7 +43,7 @@ A real-life scenario of user flow testing with Playwright would be how to test a
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="login-form-with-play-function.md" usesCsf3 csf2Path="writing-tests/importing-stories-in-tests#snippet-login-form-with-play-function" />
+<CodeSnippets path="login-form-with-play-function.md" />
 
 {/* prettier-ignore-end */}
 
@@ -63,11 +63,11 @@ Once you execute Playwright, it opens a new browser window, loads Storybook's is
 
 #### Learn about other UI tests
 
-* [Test runner](../test-runner.mdx) to automate test execution
+* [Component tests](../component-testing.mdx) for user behavior simulation
 * [Visual tests](../visual-testing.mdx) for appearance
 * [Accessibility tests](../accessibility-testing.mdx) for accessibility
-* [Interaction tests](../interaction-testing.mdx) for user behavior simulation
-* [Coverage tests](../test-coverage.mdx) for measuring code coverage
 * [Snapshot tests](../snapshot-testing/snapshot-testing.mdx) for rendering errors and warnings
+* [Test runner](../test-runner.mdx) to automate test execution
+* [Test coverage](../test-coverage.mdx) for measuring code coverage
 * End-to-end tests for simulating real user scenarios
 * [Unit tests](./stories-in-unit-tests.mdx) for functionality

@@ -8,10 +8,14 @@ import { addons, useEffect } from 'storybook/internal/preview-api';
 import type { ArgsStoryFn, PartialStoryFn, StoryContext } from 'storybook/internal/types';
 
 import type { Options } from 'react-element-to-jsx-string';
-import reactElementToJSXString from 'react-element-to-jsx-string';
+import type reactElementToJSXStringType from 'react-element-to-jsx-string';
+// @ts-expect-error (this is needed, because our bundling prefers the `browser` field, but that yields CJS)
+import reactElementToJSXStringRaw from 'react-element-to-jsx-string/dist/esm/index.js';
 
 import type { ReactRenderer } from '../types';
 import { isForwardRef, isMemo } from './lib';
+
+const reactElementToJSXString = reactElementToJSXStringRaw as typeof reactElementToJSXStringType;
 
 const toPascalCase = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 

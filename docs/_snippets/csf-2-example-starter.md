@@ -1,4 +1,4 @@
-```ts filename="CSF 2" renderer="angular" language="ts"
+```ts filename="CSF 2 - Button.stories.ts" renderer="angular" language="ts"
 import { Meta, Story } from '@storybook/angular';
 
 import { Button } from './button.component';
@@ -14,7 +14,7 @@ export const Primary: Story = (args) => ({
 Primary.args = { primary: true };
 ```
 
-```js filename="CSF 2" renderer="react" language="js"
+```js filename="CSF 2 - Button.stories.js|jsx" renderer="react" language="js"
 import { Button } from './Button';
 
 export default {
@@ -26,7 +26,7 @@ export const Primary = (args) => <Button {...args} />;
 Primary.args = { primary: true };
 ```
 
-```tsx filename="CSF 2" renderer="react" language="ts"
+```tsx filename="CSF 2 - Button.stories.ts|tsx" renderer="react" language="ts"
 import { ComponentStory, ComponentMeta } from '@storybook/react';
 
 import { Button } from './Button';
@@ -40,7 +40,7 @@ export const Primary: ComponentStory<typeof Button> = (args) => <Button {...args
 Primary.args = { primary: true };
 ```
 
-```js filename="CSF 2" renderer="solid" language="js"
+```js filename="CSF 2 - Button.stories.js|jsx" renderer="solid" language="js"
 import { Button } from './Button';
 
 export default {
@@ -52,7 +52,7 @@ export const Primary = (args) => <Button {...args} />;
 Primary.args = { primary: true };
 ```
 
-```tsx filename="CSF 2" renderer="solid" language="ts"
+```tsx filename="CSF 2 - Button.stories.ts|tsx" renderer="solid" language="ts"
 import { ComponentStory, ComponentMeta } from 'storybook-solidjs';
 
 import { Button } from './Button';
@@ -66,7 +66,7 @@ export const Primary: ComponentStory<typeof Button> = (args) => <Button {...args
 Primary.args = { primary: true };
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js"
+```js filename="CSF 2 - Button.stories.js" renderer="svelte" language="js"
 import Button from './Button.svelte';
 
 export default {
@@ -81,7 +81,7 @@ export const Primary = (args) => ({
 Primary.args = { primary: true };
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts"
+```ts filename="CSF 2 - Button.stories.ts" renderer="svelte" language="ts"
 import type { Meta, StoryFn } from '@storybook/svelte';
 
 import Button from './Button.svelte';
@@ -98,7 +98,7 @@ export const Primary: StoryFn<typeof Button> = (args) => ({
 Primary.args = { primary: true };
 ```
 
-```js filename="CSF 2" renderer="vue" language="js" tabTitle="3"
+```js filename="CSF 2 - Button.stories.js" renderer="vue" language="js"
 import Button from './Button.vue';
 
 export default {
@@ -116,7 +116,7 @@ export const Primary = (args) => ({
 Primary.args = { primary: true };
 ```
 
-```ts filename="CSF 2" renderer="vue" language="ts" tabTitle="3"
+```ts filename="CSF 2 - Button.stories.ts" renderer="vue" language="ts"
 import { Meta, StoryFn } from '@storybook/vue3';
 
 import Button from './Button.vue';
@@ -136,7 +136,7 @@ export const Primary: StoryFn<typeof Button> = (args) => ({
 Primary.args = { primary: true };
 ```
 
-```js filename="CSF 2" renderer="web-components" language="js"
+```js filename="CSF 2 - Button.stories.js" renderer="web-components" language="js"
 import { html } from 'lit';
 
 export default {
@@ -150,7 +150,7 @@ Primary.args = {
 };
 ```
 
-```ts filename="CSF 2" renderer="web-components" language="ts"
+```ts filename="CSF 2 - Button.stories.ts" renderer="web-components" language="ts"
 import type { Meta, Story } from '@storybook/web-components';
 
 import { html } from 'lit';
@@ -166,4 +166,3 @@ Primary.args = {
   primary: true,
 };
 ```
-

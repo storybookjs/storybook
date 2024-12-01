@@ -288,7 +288,46 @@ export const ExampleStory: Story = {
 };
 ```
 
-```js filename="YourComponent.stories.js" renderer="svelte" language="js"
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  const { Story } = defineMeta({
+      component: YourComponent,
+      //👇 Creates specific argTypes
+      argTypes: {
+        propertyA: {
+          options: ['Item One', 'Item Two', 'Item Three'],
+          control: { type: 'select' }, // Automatically inferred when 'options' is defined
+        },
+        propertyB: {
+          options: ['Another Item One', 'Another Item Two', 'Another Item Three'],
+        },
+      },
+  });
+
+  const someFunction = (valuePropertyA, valuePropertyB) => {
+    // Do some logic here
+  };
+</script>
+
+<Story
+  name="ExampleStory"
+  args={{
+    propertyA: 'Item One',
+    propertyB: 'Another Item One',
+  }}
+>
+  {#snippet children(args)}
+    <YourComponent
+      {...args}
+      someProperty={someFunction(args.propertyA, args.propertyB)}
+    />
+  {/snippet}
+</Story>
+```
+
+```js filename="YourComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import YourComponent from './YourComponent.svelte';
 
 export default {
@@ -310,9 +349,9 @@ const someFunction = (valuePropertyA, valuePropertyB) => {
 };
 
 export const ExampleStory = {
-  render: ({ propertyA, propertyB }) => {
+  render: (args) => {
     //👇 Assigns the function result to a variable
-    const someFunctionResult = someFunction(propertyA, propertyB);
+    const someFunctionResult = someFunction(args.propertyA, args.propertyB);
     return {
       Component: YourComponent,
       props: {
@@ -328,32 +367,46 @@ export const ExampleStory = {
 };
 ```
 
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* YourComponent.stories.svelte */}
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
 
-<script>
-  import { Meta, Template, Story } from '@storybook/addon-svelte-csf';
+  const { Story } = defineMeta({
+      component: YourComponent,
+      //👇 Creates specific argTypes
+      argTypes: {
+        propertyA: {
+          options: ['Item One', 'Item Two', 'Item Three'],
+          control: { type: 'select' }, // Automatically inferred when 'options' is defined
+        },
+        propertyB: {
+          options: ['Another Item One', 'Another Item Two', 'Another Item Three'],
+        },
+      },
+  });
 
-  import YourComponent from './YourComponent.svelte';
-
-  //👇 Some function to demonstrate the behavior
-  function someFunction(valuePropertyA, valuePropertyB) {
-    // Makes some computations and returns something
-  }
+  const someFunction = (valuePropertyA, valuePropertyB) => {
+    // Do some logic here
+  };
 </script>
 
-{/*👇 Creates specific argTypes and automatically infers them when 'options' is defined */}
-
-<Meta title="YourComponent" component={YourComponent} argTypes={{ propertyA: { options: ['Item One',
-'Item Two', 'Item Three'], control: { type: 'select' }, }, propertyB: { options: ['Another Item
-One', 'Another Item Two', 'Another Item Three'], }, }} />
-
-<template let:args>
-  <YourComponent {...args} someProperty="{someFunction(args.propertyA," args.propertyB)} />
-</template>
+<Story
+  name="ExampleStory"
+  args={{
+    propertyA: 'Item One',
+    propertyB: 'Another Item One',
+  }}
+>
+  {#snippet children(args)}
+    <YourComponent
+      {...args}
+      someProperty={someFunction(args.propertyA, args.propertyB)}
+    />
+  {/snippet}
+</Story>
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts-4-9"
+```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
 import YourComponent from './YourComponent.svelte';
@@ -380,9 +433,9 @@ const someFunction = (valuePropertyA, valuePropertyB) => {
 };
 
 export const ExampleStory: Story = {
-  render: ({ propertyA, propertyB }) => {
+  render: (args) => {
     //👇 Assigns the function result to a variable
-    const someFunctionResult = someFunction(propertyA, propertyB);
+    const someFunctionResult = someFunction(args.propertyA, args.propertyB);
     return {
       Component: YourComponent,
       props: {
@@ -398,7 +451,46 @@ export const ExampleStory: Story = {
 };
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts"
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  const { Story } = defineMeta({
+      component: YourComponent,
+      //👇 Creates specific argTypes
+      argTypes: {
+        propertyA: {
+          options: ['Item One', 'Item Two', 'Item Three'],
+          control: { type: 'select' }, // Automatically inferred when 'options' is defined
+        },
+        propertyB: {
+          options: ['Another Item One', 'Another Item Two', 'Another Item Three'],
+        },
+      },
+  });
+
+  const someFunction = (valuePropertyA, valuePropertyB) => {
+    // Do some logic here
+  };
+</script>
+
+<Story
+  name="ExampleStory"
+  args={{
+    propertyA: 'Item One',
+    propertyB: 'Another Item One',
+  }}
+>
+  {#snippet children(args)}
+    <YourComponent
+      {...args}
+      someProperty={someFunction(args.propertyA, args.propertyB)}
+    />
+  {/snippet}
+</Story>
+```
+
+```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
 import YourComponent from './YourComponent.svelte';
@@ -425,9 +517,9 @@ const someFunction = (valuePropertyA, valuePropertyB) => {
 };
 
 export const ExampleStory: Story = {
-  render: ({ propertyA, propertyB }) => {
+  render: (args) => {
     //👇 Assigns the function result to a variable
-    const someFunctionResult = someFunction(propertyA, propertyB);
+    const someFunctionResult = someFunction(args.propertyA, args.propertyB);
     return {
       Component: YourComponent,
       props: {
@@ -677,4 +769,3 @@ export const ExampleStory: Story = {
   },
 };
 ```
-

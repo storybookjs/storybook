@@ -2,6 +2,7 @@ import { Component, Input } from '@angular/core';
 import { componentWrapperDecorator, Meta, StoryObj } from '@storybook/angular';
 
 @Component({
+  standalone: false,
   selector: 'sb-button',
   template: `<button [style.background-color]="color"><ng-content></ng-content></button>`,
   styles: [

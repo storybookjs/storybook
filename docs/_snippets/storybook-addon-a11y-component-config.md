@@ -32,6 +32,70 @@ const meta: Meta<MyComponent> = {
 export default meta;
 ```
 
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+    parameters: {
+      a11y: {
+        // Optional selector to inspect
+        element: '#storybook-root',
+        config: {
+          rules: [
+            {
+              // The autocomplete rule will not run based on the CSS selector provided
+              id: 'autocomplete-valid',
+              selector: '*:not([autocomplete="nope"])',
+            },
+            {
+              // Setting the enabled option to false will disable checks for this particular rule on all stories.
+              id: 'image-alt',
+              enabled: false,
+            },
+          ],
+        },
+        options: {},
+        manual: true,
+      },
+    },
+  });
+</script>
+```
+
+```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+import MyComponent from './MyComponent.svelte';
+
+export default {
+  component: MyComponent,
+  parameters: {
+    a11y: {
+      // Optional selector to inspect
+      element: '#storybook-root',
+      config: {
+        rules: [
+          {
+            // The autocomplete rule will not run based on the CSS selector provided
+            id: 'autocomplete-valid',
+            selector: '*:not([autocomplete="nope"])',
+          },
+          {
+            // Setting the enabled option to false will disable checks for this particular rule on all stories.
+            id: 'image-alt',
+            enabled: false,
+          },
+        ],
+      },
+      options: {},
+      manual: true,
+    },
+  },
+};
+```
+
 ```js filename="MyComponent.stories.js|jsx" renderer="common" language="js"
 import { MyComponent } from './MyComponent';
 
@@ -60,6 +124,74 @@ export default {
     },
   },
 };
+```
+
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+    parameters: {
+      a11y: {
+        // Optional selector to inspect
+        element: '#storybook-root',
+        config: {
+          rules: [
+            {
+              // The autocomplete rule will not run based on the CSS selector provided
+              id: 'autocomplete-valid',
+              selector: '*:not([autocomplete="nope"])',
+            },
+            {
+              // Setting the enabled option to false will disable checks for this particular rule on all stories.
+              id: 'image-alt',
+              enabled: false,
+            },
+          ],
+        },
+        options: {},
+        manual: true,
+      },
+    },
+  });
+</script>
+```
+
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
+import type { Meta } from '@storybook/svelte';
+
+import MyComponent from './MyComponent.svelte';
+
+const meta = {
+  component: MyComponent,
+  parameters: {
+    a11y: {
+      // Optional selector to inspect
+      element: '#storybook-root',
+      config: {
+        rules: [
+          {
+            // The autocomplete rule will not run based on the CSS selector provided
+            id: 'autocomplete-valid',
+            selector: '*:not([autocomplete="nope"])',
+          },
+          {
+            // Setting the enabled option to false will disable checks for this particular rule on all stories.
+            id: 'image-alt',
+            enabled: false,
+          },
+        ],
+      },
+      options: {},
+      manual: true,
+    },
+  },
+} satisfies Meta<typeof MyComponent>;
+
+export default meta;
 ```
 
 ```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts-4-9"
@@ -93,6 +225,74 @@ const meta = {
     },
   },
 } satisfies Meta<typeof MyComponent>;
+
+export default meta;
+```
+
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+    parameters: {
+      a11y: {
+        // Optional selector to inspect
+        element: '#storybook-root',
+        config: {
+          rules: [
+            {
+              // The autocomplete rule will not run based on the CSS selector provided
+              id: 'autocomplete-valid',
+              selector: '*:not([autocomplete="nope"])',
+            },
+            {
+              // Setting the enabled option to false will disable checks for this particular rule on all stories.
+              id: 'image-alt',
+              enabled: false,
+            },
+          ],
+        },
+        options: {},
+        manual: true,
+      },
+    },
+  });
+</script>
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="svelte" language="ts" tabTitle="CSF"
+import type { Meta } from '@storybook/svelte';
+
+import MyComponent from './MyComponent.svelte';
+
+const meta: Meta<typeof MyComponent> = {
+  component: MyComponent,
+  parameters: {
+    a11y: {
+      // Optional selector to inspect
+      element: '#storybook-root',
+      config: {
+        rules: [
+          {
+            // The autocomplete rule will not run based on the CSS selector provided
+            id: 'autocomplete-valid',
+            selector: '*:not([autocomplete="nope"])',
+          },
+          {
+            // Setting the enabled option to false will disable checks for this particular rule on all stories.
+            id: 'image-alt',
+            enabled: false,
+          },
+        ],
+      },
+      options: {},
+      manual: true,
+    },
+  },
+};
 
 export default meta;
 ```
@@ -191,4 +391,3 @@ const meta: Meta = {
 
 export default meta;
 ```
-

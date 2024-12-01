@@ -5,8 +5,6 @@ import type { ThemeVars } from 'storybook/internal/theming';
 import { ThemeProvider, ensure as ensureTheme } from 'storybook/internal/theming';
 import type { Renderer } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import { DocsPageWrapper } from '../components';
 import { TableOfContents } from '../components/TableOfContents';
 import type { DocsContextProps } from './DocsContext';
@@ -14,7 +12,7 @@ import { DocsContext } from './DocsContext';
 import { SourceContainer } from './SourceContainer';
 import { scrollToElement } from './utils';
 
-const { document, window: globalWindow } = global;
+const { document, window: globalWindow } = globalThis;
 
 export interface DocsContainerProps<TFramework extends Renderer = Renderer> {
   context: DocsContextProps<TFramework>;

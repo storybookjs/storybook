@@ -123,6 +123,7 @@ const Item = styled.div<ItemProps>(
   ({ theme }) => ({
     width: '100%',
     border: 'none',
+    borderRadius: theme.appBorderRadius,
     background: 'none',
     fontSize: theme.typography.size.s1,
     transition: 'all 150ms ease-out',
@@ -149,6 +150,15 @@ const Item = styled.div<ItemProps>(
         opacity: 1,
       },
     },
+  ({ theme, as }) =>
+    as === 'label' && {
+      '&:has(input:not(:disabled))': {
+        cursor: 'pointer',
+        '&:hover': {
+          background: theme.background.hoverable,
+        },
+      },
+    },
   ({ disabled }) => disabled && { cursor: 'not-allowed' }
 );
 
@@ -169,7 +179,7 @@ const getItemProps = memoize(100)((onClick, href, LinkWrapper) => ({
 
 export type LinkWrapperType = (props: any) => ReactNode;
 
-export interface ListItemProps extends Omit<ComponentProps<typeof Item>, 'href' | 'title'> {
+export interface ListItemProps extends Omit<ComponentProps<typeof Item>, 'title'> {
   loading?: boolean;
   title?: ReactNode;
   center?: ReactNode;

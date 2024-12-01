@@ -1,19 +1,18 @@
 /* eslint-disable no-underscore-dangle */
+import * as fsp from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
 
-import * as fsExtra from 'fs-extra';
-
 import { RemovedAPIs, removedGlobalClientAPIs as migration } from './remove-global-client-apis';
 
-vi.mock('fs-extra', async () => import('../../../../../__mocks__/fs-extra'));
+vi.mock('node:fs/promises', async () => import('../../../../../__mocks__/fs/promises'));
 
 const check = async ({ contents, previewConfigPath }: any) => {
   if (contents) {
-    vi.mocked<typeof import('../../../../../__mocks__/fs-extra')>(fsExtra as any).__setMockFiles({
+    vi.mocked<typeof import('../../../../../__mocks__/fs/promises')>(fsp as any).__setMockFiles({
       [join('.storybook', 'preview.js')]: contents,
     });
   }

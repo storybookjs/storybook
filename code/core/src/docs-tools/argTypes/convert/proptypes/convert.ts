@@ -1,6 +1,6 @@
 import type { SBType } from '@storybook/core/types';
 
-import mapValues from 'lodash/mapValues.js';
+import { mapValues } from 'es-toolkit';
 
 import { parseLiteral } from '../utils';
 import type { PTType } from './types';

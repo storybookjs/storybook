@@ -424,4 +424,3 @@ export const Primary: Story = {
   ],
 };
 ```
-

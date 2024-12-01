@@ -39,10 +39,9 @@ Change the version of the composed Storybook to see how the library evolves. Thi
 
 Component library authors can expand adoption by composing their components in their consumer’s Storybooks.
 
-Add a `storybook` property in your published `package.json`that contains an object with a `url` field. Point the URL field to a published Storybook at the version you want.
+Add a `storybook` property in your published `package.json` that contains an object with a `url` field. Point the URL field to a published Storybook at the version you want.
 
-```json
-// Your component library’s package.json
+```json title="package.json"
 {
   "storybook": {
     "url": "https://host.com/your-storybook-for-this-version"
@@ -54,7 +53,7 @@ Add a `storybook` property in your published `package.json`that contains an obje
 
 If you're using [Chromatic](./publish-storybook.mdx#publish-storybook-with-chromatic), you can provide a single URL for your Storybook in the `storybook.url` field. You do not need to change the URL each time you publish a new version. Storybook will automatically find the correct URL for your package. For example:
 
-```json
+```json title="package.json"
 {
   "storybook": {
     "url": "https://master--xyz123.chromatic.com"

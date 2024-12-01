@@ -105,17 +105,17 @@
     - [Tab addons cannot manually route, Tool addons can filter their visibility via tabId](#tab-addons-cannot-manually-route-tool-addons-can-filter-their-visibility-via-tabid)
     - [Removed `config` preset](#removed-config-preset-1)
 - [From version 7.5.0 to 7.6.0](#from-version-750-to-760)
-    - [CommonJS with Vite is deprecated](#commonjs-with-vite-is-deprecated)
-    - [Using implicit actions during rendering is deprecated](#using-implicit-actions-during-rendering-is-deprecated)
-    - [typescript.skipBabel deprecated](#typescriptskipbabel-deprecated)
-    - [Primary doc block accepts of prop](#primary-doc-block-accepts-of-prop)
-    - [Addons no longer need a peer dependency on React](#addons-no-longer-need-a-peer-dependency-on-react)
+  - [CommonJS with Vite is deprecated](#commonjs-with-vite-is-deprecated)
+  - [Using implicit actions during rendering is deprecated](#using-implicit-actions-during-rendering-is-deprecated)
+  - [typescript.skipBabel deprecated](#typescriptskipbabel-deprecated)
+  - [Primary doc block accepts of prop](#primary-doc-block-accepts-of-prop)
+  - [Addons no longer need a peer dependency on React](#addons-no-longer-need-a-peer-dependency-on-react)
 - [From version 7.4.0 to 7.5.0](#from-version-740-to-750)
-    - [`storyStoreV6` and `storiesOf` is deprecated](#storystorev6-and-storiesof-is-deprecated)
-    - [`storyIndexers` is replaced with `experimental_indexers`](#storyindexers-is-replaced-with-experimental_indexers)
+  - [`storyStoreV6` and `storiesOf` is deprecated](#storystorev6-and-storiesof-is-deprecated)
+  - [`storyIndexers` is replaced with `experimental_indexers`](#storyindexers-is-replaced-with-experimental_indexers)
 - [From version 7.0.0 to 7.2.0](#from-version-700-to-720)
-    - [Addon API is more type-strict](#addon-api-is-more-type-strict)
-    - [Addon-controls hideNoControlsWarning parameter is deprecated](#addon-controls-hidenocontrolswarning-parameter-is-deprecated)
+  - [Addon API is more type-strict](#addon-api-is-more-type-strict)
+  - [Addon-controls hideNoControlsWarning parameter is deprecated](#addon-controls-hidenocontrolswarning-parameter-is-deprecated)
 - [From version 6.5.x to 7.0.0](#from-version-65x-to-700)
   - [7.0 breaking changes](#70-breaking-changes)
     - [Dropped support for Node 15 and below](#dropped-support-for-node-15-and-below)
@@ -141,7 +141,7 @@
     - [Deploying build artifacts](#deploying-build-artifacts)
       - [Dropped support for file URLs](#dropped-support-for-file-urls)
       - [Serving with nginx](#serving-with-nginx)
-      - [Ignore story files from node\_modules](#ignore-story-files-from-node_modules)
+      - [Ignore story files from node_modules](#ignore-story-files-from-node_modules)
   - [7.0 Core changes](#70-core-changes)
     - [7.0 feature flags removed](#70-feature-flags-removed)
     - [Story context is prepared before for supporting fine grained updates](#story-context-is-prepared-before-for-supporting-fine-grained-updates)
@@ -155,7 +155,7 @@
     - [Addon-interactions: Interactions debugger is now default](#addon-interactions-interactions-debugger-is-now-default)
   - [7.0 Vite changes](#70-vite-changes)
     - [Vite builder uses Vite config automatically](#vite-builder-uses-vite-config-automatically)
-    - [Vite cache moved to node\_modules/.cache/.vite-storybook](#vite-cache-moved-to-node_modulescachevite-storybook)
+    - [Vite cache moved to node_modules/.cache/.vite-storybook](#vite-cache-moved-to-node_modulescachevite-storybook)
   - [7.0 Webpack changes](#70-webpack-changes)
     - [Webpack4 support discontinued](#webpack4-support-discontinued)
     - [Babel mode v7 exclusively](#babel-mode-v7-exclusively)
@@ -167,6 +167,7 @@
     - [Angular: Drop support for calling Storybook directly](#angular-drop-support-for-calling-storybook-directly)
     - [Angular: Application providers and ModuleWithProviders](#angular-application-providers-and-modulewithproviders)
     - [Angular: Removed legacy renderer](#angular-removed-legacy-renderer)
+    - [Angular: initializer functions](#angular-initializer-functions)
     - [Next.js: use the `@storybook/nextjs` framework](#nextjs-use-the-storybooknextjs-framework)
     - [SvelteKit: needs the `@storybook/sveltekit` framework](#sveltekit-needs-the-storybooksveltekit-framework)
     - [Vue3: replaced app export with setup](#vue3-replaced-app-export-with-setup)
@@ -205,7 +206,7 @@
     - [Dropped addon-docs manual babel configuration](#dropped-addon-docs-manual-babel-configuration)
     - [Dropped addon-docs manual configuration](#dropped-addon-docs-manual-configuration)
     - [Autoplay in docs](#autoplay-in-docs)
-    - [Removed STORYBOOK\_REACT\_CLASSES global](#removed-storybook_react_classes-global)
+    - [Removed STORYBOOK_REACT_CLASSES global](#removed-storybook_react_classes-global)
   - [7.0 Deprecations and default changes](#70-deprecations-and-default-changes)
     - [storyStoreV7 enabled by default](#storystorev7-enabled-by-default)
     - [`Story` type deprecated](#story-type-deprecated)
@@ -430,8 +431,12 @@ These APIs allowed addons to render arbitrary content in the Storybook sidebar. 
 
 > [!NOTE]
 > You need to set the feature flag `backgroundsStoryGlobals` to `true` in your `.storybook/main.ts` to use the new format and set the value with `globals`.
+>
+> See here how to set feature flags: https://storybook.js.org/docs/api/main-config/main-config-features
 
-The `addon-backgrounds` addon now uses a new format for parameters. The `backgrounds` parameter is now an object with an `options` property that is assigned to an object of background values, where the key is used when setting the global value.
+The `addon-backgrounds` addon now uses a new format for configuring its list of selectable backgrounds.
+The `backgrounds` parameter is now an object with an `options` property.
+This `options` object is a key-value pair where the key is used when setting the global value, the value is an object with a `name` and `value` property.
 
 ```diff
 // .storybook/preview.js
@@ -472,8 +477,13 @@ This locks that story to the `twitter` background, it cannot be changed by the a
 
 > [!NOTE]
 > You need to set the feature flag `viewportStoryGlobals` to `true` in your `.storybook/main.ts` to use the new format and set the value with `globals`.
+>
+> See here how to set feature flags: https://storybook.js.org/docs/api/main-config/main-config-features
 
-The `addon-viewport` addon now uses a new format for parameters. The `viewport` parameter is now an object with an `options` property that is assigned to an object of viewport values, where the key is used when setting the global value.
+The `addon-viewport` addon now uses a new format for configuring its list of selectable viewports.
+The `viewport` parameter is now an object with an `options` property.
+This `options` object is a key-value pair where the key is used when setting the global value, the value is an object with a `name` and `styles` property.
+The `styles` property is an object with a `width` and a `height` property.
 
 ```diff
 // .storybook/preview.js
@@ -501,7 +511,8 @@ export const parameters = {
 };
 ```
 
-Setting an override value should now be done via a `globals` property on your component/meta or story itself. Also note the change from `defaultOrientation: "landscape"` to `isRotated: true`.
+Setting an override value should now be done via a `globals` property on your component/meta or story itself.
+Also note the change from `defaultOrientation: "landscape"` to `isRotated: true`.
 
 ```diff
 // Button.stories.ts
@@ -2568,6 +2579,15 @@ Please visit https://angular.io/guide/standalone-components#configuring-dependen
 #### Angular: Removed legacy renderer
 
 The `parameters.angularLegacyRendering` option is removed. You cannot use the old legacy renderer anymore.
+
+#### Angular: Initializer functions
+
+Initializer functions using the `APP_INITIALIZER` dependency injection token only run when the component renders. To ensure an initializer function is always executed, you can adjust your `.storybook/preview.ts` and invoke it directly.
+
+```js
+myCustomInitializer();
+export default preview;
+```
 
 #### Next.js: use the `@storybook/nextjs` framework
 

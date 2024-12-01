@@ -9,7 +9,7 @@ import {
   getIncompatibleStorybookPackages,
 } from './getIncompatibleStorybookPackages';
 
-vi.mock('chalk', () => {
+vi.mock('picocolors', () => {
   return {
     default: {
       yellow: (str: string) => str,

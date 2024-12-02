@@ -3,8 +3,8 @@ import MockDate from 'mockdate';
 
 export default {
   async beforeEach() {
-    MockDate.reset()
-  }
+    MockDate.reset();
+  },
 };
 ```
 
@@ -15,10 +15,9 @@ import MockDate from 'mockdate';
 
 const preview: Preview = {
   async beforeEach() {
-    MockDate.reset()
-  }
+    MockDate.reset();
+  },
 };
 
 export default preview;
 ```
-

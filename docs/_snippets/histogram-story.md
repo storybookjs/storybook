@@ -227,23 +227,36 @@ export const Default: Story = {
 };
 ```
 
-```js filename="Histogram.stories.js" renderer="svelte" language="js"
+```svelte filename="Histogram.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Histogram from './Histogram.svelte';
+
+  const { Story } = defineMeta({
+    component: Histogram,
+  });
+</script>
+
+<Story
+  name="Default"
+  args={{
+    dataType: 'latency',
+    showHistogramLabels: true,
+    histogramAccentColor: '#1EA7FD',
+    label: 'Latency distribution',
+  }}
+/>
+```
+
+```js filename="Histogram.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import Histogram from './Histogram.svelte';
 
 export default {
   component: Histogram,
 };
 
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
 export const Default = {
-  render: (args) => ({
-    Component: Histogram,
-    props: args,
-  }),
   args: {
     dataType: 'latency',
     showHistogramLabels: true,
@@ -253,7 +266,29 @@ export const Default = {
 };
 ```
 
-```ts filename="Histogram.stories.ts" renderer="svelte" language="ts-4-9"
+```svelte filename="Histogram.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Histogram from './Histogram.svelte';
+
+  const { Story } = defineMeta({
+    component: Histogram,
+  });
+</script>
+
+<Story
+  name="Default"
+  args={{
+    dataType: 'latency',
+    showHistogramLabels: true,
+    histogramAccentColor: '#1EA7FD',
+    label: 'Latency distribution',
+  }}
+/>
+```
+
+```ts filename="Histogram.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
 import Histogram from './Histogram.svelte';
@@ -265,16 +300,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
 export const Default: Story = {
-  render: (args) => ({
-    Component: Histogram,
-    props: args,
-  }),
   args: {
     dataType: 'latency',
     showHistogramLabels: true,
@@ -284,7 +310,29 @@ export const Default: Story = {
 };
 ```
 
-```ts filename="Histogram.stories.ts" renderer="svelte" language="ts"
+```svelte filename="Histogram.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Histogram from './Histogram.svelte';
+
+  const { Story } = defineMeta({
+    component: Histogram,
+  });
+</script>
+
+<Story
+  name="Default"
+  args={{
+    dataType: 'latency',
+    showHistogramLabels: true,
+    histogramAccentColor: '#1EA7FD',
+    label: 'Latency distribution',
+  }}
+/>
+```
+
+```ts filename="Histogram.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
 import Histogram from './Histogram.svelte';
@@ -296,16 +344,7 @@ const meta: Meta<typeof Histogram> = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
 export const Default: Story = {
-  render: (args) => ({
-    Component: Histogram,
-    props: args,
-  }),
   args: {
     dataType: 'latency',
     showHistogramLabels: true,
@@ -315,7 +354,7 @@ export const Default: Story = {
 };
 ```
 
-```js filename="Histogram.stories.js" renderer="vue" language="js" tabTitle="3"
+```js filename="Histogram.stories.js" renderer="vue" language="js"
 import Histogram from './Histogram.vue';
 
 export default {
@@ -344,7 +383,7 @@ export const Default = {
 };
 ```
 
-```ts filename="Histogram.stories.ts" renderer="vue" language="ts-4-9" tabTitle="3"
+```ts filename="Histogram.stories.ts" renderer="vue" language="ts-4-9"
 import type { Meta, StoryObj } from '@storybook/vue3';
 
 import Histogram from './Histogram.vue';
@@ -378,7 +417,7 @@ export const Default: Story = {
 };
 ```
 
-```ts filename="Histogram.stories.ts" renderer="vue" language="ts" tabTitle="3"
+```ts filename="Histogram.stories.ts" renderer="vue" language="ts"
 import type { Meta, StoryObj } from '@storybook/vue3';
 
 import Histogram from './Histogram.vue';
@@ -446,4 +485,3 @@ export const Default: Story = {
   },
 };
 ```
-

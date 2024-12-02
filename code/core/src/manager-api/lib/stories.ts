@@ -1,4 +1,5 @@
 import type {
+  API_BaseEntry,
   API_ComponentEntry,
   API_DocsEntry,
   API_GroupEntry,
@@ -16,6 +17,7 @@ import type {
   StoryId,
   StoryIndexV2,
   StoryIndexV3,
+  Tag,
 } from '@storybook/core/types';
 import { sanitize } from '@storybook/csf';
 
@@ -248,6 +250,7 @@ export const transformStoryIndexToStoriesHash = (
           type: 'root',
           id,
           name: names[idx],
+          tags: [],
           depth: idx,
           renderLabel,
           startCollapsed: collapsedRoots.includes(id),
@@ -267,6 +270,7 @@ export const transformStoryIndexToStoriesHash = (
           type: 'component',
           id,
           name: names[idx],
+          tags: [],
           parent: paths[idx - 1],
           depth: idx,
           renderLabel,
@@ -274,14 +278,12 @@ export const transformStoryIndexToStoriesHash = (
             children: [childId],
           }),
         });
-        // merge computes a union of arrays but we want an intersection on this
-        // specific array property, so it's easier to add it after the merge.
-        acc[id].tags = intersect(acc[id]?.tags ?? item.tags, item.tags);
       } else {
         acc[id] = merge<API_GroupEntry>((acc[id] || {}) as API_GroupEntry, {
           type: 'group',
           id,
           name: names[idx],
+          tags: [],
           parent: paths[idx - 1],
           depth: idx,
           renderLabel,
@@ -295,6 +297,7 @@ export const transformStoryIndexToStoriesHash = (
     // Finally add an entry for the docs/story itself
     acc[item.id] = {
       type: 'story',
+      tags: [],
       ...item,
       depth: paths.length,
       parent: paths[paths.length - 1],
@@ -313,9 +316,18 @@ export const transformStoryIndexToStoriesHash = (
     }
 
     acc[item.id] = item;
-    // Ensure we add the children depth-first *before* inserting any other entries
+    // Ensure we add the children depth-first *before* inserting any other entries,
+    // and compute tags from the children put in the accumulator afterwards, once
+    // they're all known and we can compute a sound intersection.
     if (item.type === 'root' || item.type === 'group' || item.type === 'component') {
       item.children.forEach((childId: any) => addItem(acc, storiesHashOutOfOrder[childId]));
+
+      item.tags = item.children.reduce((currentTags: Tag[] | null, childId: any): Tag[] => {
+        const child = acc[childId];
+
+        // On the first child, we have nothing to intersect against so we use it as a source of data.
+        return currentTags === null ? child.tags : intersect(currentTags, child.tags);
+      }, null);
     }
     return acc;
   }

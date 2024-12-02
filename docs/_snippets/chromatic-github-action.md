@@ -1,6 +1,4 @@
-```shell renderer="common" language="js"
-# .github/workflows/chromatic.yml
-
+```yml filename=".github/workflows/chromatic.yml" renderer="common" language="js"
 # Workflow name
 name: 'Chromatic Publish'
 
@@ -19,15 +17,14 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
           cache: 'yarn'
       - run: yarn
       #👇 Adds Chromatic as a step in the workflow
-      - uses: chromaui/action@v1
+      - uses: chromaui/action@latest
         # Options required for Chromatic's GitHub Action
         with:
           #👇 Chromatic projectToken,
           projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
           token: ${{ secrets.GITHUB_TOKEN }}
 ```
-

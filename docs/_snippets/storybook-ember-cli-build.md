@@ -13,4 +13,3 @@ module.exports = function (defaults) {
   return app.toTree();
 };
 ```
-

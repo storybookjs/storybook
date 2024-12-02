@@ -1,19 +1,39 @@
-```mdx renderer="common" language="mdx"
-{/* src/components/Button/Button.mdx */}
-
-import { Meta } from '@storybook/blocks';
+```mdx filename="src/components/Button/Button.mdx" renderer="common" language="mdx"
+import { Meta, Story } from '@storybook/blocks';
 
 {/* 👇 Documentation-only page */}
+
 <Meta title="Documentation" />
 
-
 {/* 👇 Component documentation page */}
-import * as ExampleComponentStories from './ExampleComponent.stories';
+import * as ButtonStories from './Button.stories';
 
-<Meta of={ExampleComponentStories} /> 
+<Meta of={ButtonStories} />
+
+<Story of={ButtonStories.Primary} />
 ```
 
-```ts filename="src/components/Button/Button.stories.tsx" renderer="common" language="ts-4-9"
+```js filename="src/components/Button/Button.stories.js|jsx" renderer="common" language="js"
+import { Button } from './Button';
+
+export default {
+  // Sets the name for the stories container
+  title: 'components/Button',
+  // The component name will be used if `title` is not set
+  component: Button,
+};
+
+// The story variable name will be used if `name` is not set
+const Primary = {
+  // Sets the name for that particular story
+  name: 'Primary',
+  args: {
+    label: 'Button',
+  },
+};
+```
+
+```ts filename="src/components/Button/Button.stories.ts|tsx" renderer="common" language="ts-4-9"
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -39,7 +59,7 @@ const Primary: Story = {
 };
 ```
 
-```ts filename="src/components/Button/Button.stories.tsx" renderer="common" language="ts"
+```ts filename="src/components/Button/Button.stories.ts|tsx" renderer="common" language="ts"
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -64,4 +84,3 @@ const Primary: Story = {
   },
 };
 ```
-

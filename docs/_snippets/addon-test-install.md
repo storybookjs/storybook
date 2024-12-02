@@ -1,4 +1,4 @@
-```shell renderer="common" language="js" packageManager="npx"
+```shell renderer="common" language="js" packageManager="npm"
 npx storybook add @storybook/experimental-addon-test
 ```
 

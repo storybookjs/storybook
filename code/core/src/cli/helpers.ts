@@ -157,6 +157,7 @@ export const frameworkToDefaultBuilder: Record<
   'preact-vite': CoreBuilder.Vite,
   'preact-webpack5': CoreBuilder.Webpack5,
   qwik: CoreBuilder.Vite,
+  'react-native-web-vite': CoreBuilder.Vite,
   'react-vite': CoreBuilder.Vite,
   'react-webpack5': CoreBuilder.Webpack5,
   'server-webpack5': CoreBuilder.Webpack5,
@@ -192,6 +193,13 @@ export async function getVersionSafe(packageManager: JsPackageManager, packageNa
   }
   return undefined;
 }
+
+export const cliStoriesTargetPath = async () => {
+  if (existsSync('./src')) {
+    return './src/stories';
+  }
+  return './stories';
+};
 
 export async function copyTemplateFiles({
   packageManager,
@@ -252,14 +260,7 @@ export async function copyTemplateFiles({
     throw new Error(`Unsupported renderer: ${renderer} (${baseDir})`);
   };
 
-  const targetPath = async () => {
-    if (existsSync('./src')) {
-      return './src/stories';
-    }
-    return './stories';
-  };
-
-  const destinationPath = destination ?? (await targetPath());
+  const destinationPath = destination ?? (await cliStoriesTargetPath());
   if (commonAssetsDir) {
     await cp(commonAssetsDir, destinationPath, {
       recursive: true,

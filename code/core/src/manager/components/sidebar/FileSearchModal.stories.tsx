@@ -8,6 +8,7 @@ import { FileSearchModal } from './FileSearchModal';
 
 const meta = {
   component: FileSearchModal,
+  title: 'Sidebar/FileSearchModal',
   args: {
     open: true,
     setError: fn(),

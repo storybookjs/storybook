@@ -1,13 +1,13 @@
 ---
 title: Storybook for Vue & Webpack
 sidebar:
-  order: 9
+  order: 10
   title: Vue & Webpack
 ---
 
 Storybook for Vue & Webpack is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for [Vue](https://vuejs.org/) applications built with [Webpack](https://webpack.js.org/).
 
-<If notRenderer={'vue'}>
+<If notRenderer="vue">
   <Callout variant="info">
     Storybook for Vue & Webpack is only supported in [Vue](?renderer=vue) projects.
   </Callout>
@@ -15,7 +15,7 @@ Storybook for Vue & Webpack is a [framework](../../contribute/framework.mdx) tha
   {/* End non-supported renderers */}
 </If>
 
-<If renderer={'vue'}>
+<If renderer="vue">
   ## Requirements
 
   * Vue ≥ 3.0
@@ -88,20 +88,18 @@ Storybook for Vue & Webpack is a [framework](../../contribute/framework.mdx) tha
 
   ## Extending the Vue application
 
-  Storybook creates a [Vue 3 application](https://vuejs.org/api/application.html#application-api) for your component preview. When using global custom components (`app.component`), directives (`app.directive`), extensions (`app.use`), or other application methods, you will need to configure those in the `./storybook/preview.js` file.
+  Storybook creates a [Vue 3 application](https://vuejs.org/api/application.html#application-api) for your component preview. When using global custom components (`app.component`), directives (`app.directive`), extensions (`app.use`), or other application methods, you will need to configure those in the `./storybook/preview.js|ts` file.
 
-  Therefore, Storybook provides you with a `setup` function exported from this package, which receives as a callback your Storybook instance, which you can interact with and add your custom configuration.
+  Therefore, Storybook provides you with a `setup` function exported from this package. This function receives your Storybook instance as a callback, which you can interact with and add your custom configuration.
 
-  ```js
-  // .storybook/preview.js
-
+  ```js title=".storybook/preview.js|ts"
   import { setup } from '@storybook/vue3';
 
   setup((app) => {
     app.use(MyPlugin);
     app.component('my-component', MyComponent);
     app.mixin({
-      /* My mixin */
+      // My mixin
     });
   });
   ```
@@ -124,21 +122,11 @@ Storybook for Vue & Webpack is a [framework](../../contribute/framework.mdx) tha
 
   You can pass an options object for additional configuration if needed:
 
-  ```ts
-  // .storybook/main.ts
-  import type { StorybookConfig } from '@storybook/vue-webpack5';
+  {/* prettier-ignore-start */}
 
-  const config: StorybookConfig = {
-    framework: {
-      name: '@storybook/vue-webpack5',
-      options: {
-        // ...
-      },
-    },
-  };
+  <CodeSnippets path="vue-webpack5-framework-options.md" />
 
-  export default config;
-  ```
+  {/* prettier-ignore-end */}
 
   #### `builder`
 

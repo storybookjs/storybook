@@ -1,3 +1,4 @@
+import { Meta } from '@storybook/react'
 import { instrument } from '@storybook/instrumenter'
 import type { StoryAnnotations } from 'storybook/internal/types';
 
@@ -11,7 +12,7 @@ const Component = () => <button>test</button>
 export default {
   title: 'Addons/Test',
   component: Component,
-};
+} as Meta<typeof Component>;
 
 const { pass } = instrument({
   pass: async () => {},

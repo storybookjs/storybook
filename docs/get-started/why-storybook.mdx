@@ -19,7 +19,7 @@ The breadth of modern frontends overwhelm existing workflows. Developers must co
 
 ## The solution
 
-#### Build UIs in isolation
+### Build UIs in isolation
 
 Every piece of UI is now a [component](https://www.componentdriven.org/). The superpower of components is that you don't need to spin up the whole app just to see how they render. You can render a specific variation in isolation by passing in props, mocking data, or faking events.
 
@@ -27,7 +27,7 @@ Storybook is packaged as a small, development-only, [workshop](https://bradfrost
 
 <Video src="../_assets/get-started/whats-a-story.mp4" />
 
-#### Capture UI variations as “stories”
+### Capture UI variations as “stories”
 
 When developing a component variation in isolation, save it as a story. [Stories](https://github.com/ComponentDriven/csf) are a declarative syntax for supplying props and mock data to simulate component variations. Each component can have multiple stories. Each story allows you to demonstrate a specific variation of that component to verify appearance and behavior.
 
@@ -35,11 +35,11 @@ You write stories for granular UI component variation and then use those stories
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="histogram-story.md" usesCsf3 csf2Path="why-storybook#snippet-histogram-story" />
+<CodeSnippets path="histogram-story.md" />
 
 {/* prettier-ignore-end */}
 
-#### Storybook keeps track of every story
+### Storybook keeps track of every story
 
 Storybook is an interactive directory of your UI components and their stories. In the past, you'd have to spin up the app, navigate to a page, and contort the UI into the right state. This is a huge waste of time and bogs down frontend development. With Storybook, you can skip all those steps and jump straight to working on a UI component in a specific state.
 

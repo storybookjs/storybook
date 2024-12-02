@@ -5,7 +5,6 @@ import { Channel, type ChannelTransport } from '@storybook/core/channels';
 import {
   TESTING_MODULE_CANCEL_TEST_RUN_REQUEST,
   TESTING_MODULE_PROGRESS_REPORT,
-  TESTING_MODULE_RUN_ALL_REQUEST,
   TESTING_MODULE_RUN_REQUEST,
   TESTING_MODULE_WATCH_MODE_REQUEST,
 } from '@storybook/core/core-events';
@@ -101,13 +100,6 @@ describe('bootTestRunner', () => {
       args: ['foo'],
       from: 'server',
       type: TESTING_MODULE_RUN_REQUEST,
-    });
-
-    mockChannel.emit(TESTING_MODULE_RUN_ALL_REQUEST, 'bar');
-    expect(child.send).toHaveBeenCalledWith({
-      args: ['bar'],
-      from: 'server',
-      type: TESTING_MODULE_RUN_ALL_REQUEST,
     });
 
     mockChannel.emit(TESTING_MODULE_WATCH_MODE_REQUEST, 'baz');

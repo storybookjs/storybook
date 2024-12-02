@@ -1,11 +1,10 @@
 import { type ChildProcess } from 'node:child_process';
-import { join } from 'node:path';
 
 import type { Channel } from 'storybook/internal/channels';
 import {
   TESTING_MODULE_CANCEL_TEST_RUN_REQUEST,
+  TESTING_MODULE_CONFIG_CHANGE,
   TESTING_MODULE_CRASH_REPORT,
-  TESTING_MODULE_RUN_ALL_REQUEST,
   TESTING_MODULE_RUN_REQUEST,
   TESTING_MODULE_WATCH_MODE_REQUEST,
   type TestingModuleCrashReportPayload,
@@ -13,6 +12,7 @@ import {
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execaNode } from 'execa';
+import { join } from 'pathe';
 
 import { TEST_PROVIDER_ID } from '../constants';
 import { log } from '../logger';
@@ -40,18 +40,18 @@ const bootTestRunner = async (channel: Channel, initEvent?: string, initArgs?: a
 
   const forwardRun = (...args: any[]) =>
     child?.send({ args, from: 'server', type: TESTING_MODULE_RUN_REQUEST });
-  const forwardRunAll = (...args: any[]) =>
-    child?.send({ args, from: 'server', type: TESTING_MODULE_RUN_ALL_REQUEST });
   const forwardWatchMode = (...args: any[]) =>
     child?.send({ args, from: 'server', type: TESTING_MODULE_WATCH_MODE_REQUEST });
   const forwardCancel = (...args: any[]) =>
     child?.send({ args, from: 'server', type: TESTING_MODULE_CANCEL_TEST_RUN_REQUEST });
+  const forwardConfigChange = (...args: any[]) =>
+    child?.send({ args, from: 'server', type: TESTING_MODULE_CONFIG_CHANGE });
 
   const killChild = () => {
     channel.off(TESTING_MODULE_RUN_REQUEST, forwardRun);
-    channel.off(TESTING_MODULE_RUN_ALL_REQUEST, forwardRunAll);
     channel.off(TESTING_MODULE_WATCH_MODE_REQUEST, forwardWatchMode);
     channel.off(TESTING_MODULE_CANCEL_TEST_RUN_REQUEST, forwardCancel);
+    channel.off(TESTING_MODULE_CONFIG_CHANGE, forwardConfigChange);
     child?.kill();
     child = null;
   };
@@ -88,9 +88,9 @@ const bootTestRunner = async (channel: Channel, initEvent?: string, initArgs?: a
 
           // Forward all events from the channel to the child process
           channel.on(TESTING_MODULE_RUN_REQUEST, forwardRun);
-          channel.on(TESTING_MODULE_RUN_ALL_REQUEST, forwardRunAll);
           channel.on(TESTING_MODULE_WATCH_MODE_REQUEST, forwardWatchMode);
           channel.on(TESTING_MODULE_CANCEL_TEST_RUN_REQUEST, forwardCancel);
+          channel.on(TESTING_MODULE_CONFIG_CHANGE, forwardConfigChange);
 
           resolve();
         } else if (result.type === 'error') {

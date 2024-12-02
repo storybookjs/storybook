@@ -14,7 +14,7 @@ export async function modifyThemeTypes() {
   const contents = await readFile(target, 'utf-8');
 
   const footer = contents.includes('// auto generated file')
-    ? `export { StorybookTheme as Theme } from '../src/index';`
+    ? `export { StorybookTheme as Theme } from '../../src/theming/index';`
     : dedent`
         interface Theme extends StorybookTheme {}
         export type { Theme };

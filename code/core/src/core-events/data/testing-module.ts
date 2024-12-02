@@ -4,26 +4,21 @@ type DateNow = number;
 
 export type TestProviderId = Addon_TestProviderType['id'];
 export type TestProviderConfig = Addon_TestProviderType;
-export type TestProviderState = Addon_TestProviderState;
+export type TestProviderState<
+  Details extends { [key: string]: any } = NonNullable<unknown>,
+  Config extends { [key: string]: any } = NonNullable<unknown>,
+> = Addon_TestProviderState<Details, Config>;
 
 export type TestProviders = Record<TestProviderId, TestProviderConfig & TestProviderState>;
 
-export type TestingModuleRunRequestStories = {
-  id: string;
-  name: string;
-};
-
-export type TestingModuleRunRequestPayload = {
+export type TestingModuleRunRequestPayload<
+  Config extends { [key: string]: any } = NonNullable<unknown>,
+> = {
   providerId: TestProviderId;
-  payload: {
-    stories: TestingModuleRunRequestStories[];
-    importPath: string;
-    componentPath: string;
-  }[];
-};
-
-export type TestingModuleRunAllRequestPayload = {
-  providerId: TestProviderId;
+  // TODO: Avoid needing to do a fetch request server-side to retrieve the index
+  indexUrl: string; // e.g. http://localhost:6006/index.json
+  storyIds?: string[]; // ['button--primary', 'button--secondary']
+  config?: Config;
 };
 
 export type TestingModuleProgressReportPayload =
@@ -44,6 +39,10 @@ export type TestingModuleProgressReportPayload =
         message: string;
         stack?: string;
       };
+    }
+  | {
+      providerId: TestProviderId;
+      details: { [key: string]: any };
     };
 
 export type TestingModuleCrashReportPayload = {
@@ -78,7 +77,17 @@ export type TestingModuleCancelTestRunResponsePayload =
       message: string;
     };
 
-export type TestingModuleWatchModeRequestPayload = {
+export type TestingModuleWatchModeRequestPayload<
+  Config extends { [key: string]: any } = NonNullable<unknown>,
+> = {
   providerId: TestProviderId;
   watchMode: boolean;
+  config?: Config;
+};
+
+export type TestingModuleConfigChangePayload<
+  Config extends { [key: string]: any } = NonNullable<unknown>,
+> = {
+  providerId: TestProviderId;
+  config: Config;
 };

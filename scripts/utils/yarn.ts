@@ -29,7 +29,6 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
   packageJson.resolutions = {
     ...packageJson.resolutions,
     ...storybookVersions,
-    'enhanced-resolve': '~5.10.0', // TODO, remove this
     // this is for our CI test, ensure we use the same version as docker image, it should match version specified in `./code/package.json` and `.circleci/config.yml`
     '@swc/core': '1.5.7',
     playwright: '1.48.1',
@@ -68,7 +67,10 @@ export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
   );
 };
 
-export const addWorkaroundResolutions = async ({ cwd, dryRun }: YarnOptions) => {
+export const addWorkaroundResolutions = async ({
+  cwd,
+  dryRun,
+}: YarnOptions & { key?: TemplateKey }) => {
   logger.info(`🔢 Adding resolutions for workarounds`);
 
   if (dryRun) {
@@ -79,15 +81,11 @@ export const addWorkaroundResolutions = async ({ cwd, dryRun }: YarnOptions) => 
   const packageJson = await readJSON(packageJsonPath);
   packageJson.resolutions = {
     ...packageJson.resolutions,
-    // Due to our support of older vite versions
-    '@vitejs/plugin-react': '4.2.0',
-    '@vitejs/plugin-vue': '4.5.0',
     '@testing-library/dom': '^9.3.4',
     '@testing-library/jest-dom': '^6.5.0',
     '@testing-library/user-event': '^14.5.2',
-    // TODO: Remove as soon as @storybook/csf@0.1.10 is released
-    '@storybook/csf': '0.1.10--canary.d841bb4.0',
   };
+
   await writeJSON(packageJsonPath, packageJson, { spaces: 2 });
 };
 

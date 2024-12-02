@@ -118,7 +118,10 @@ export const nodeInternals = [
   ...require('module').builtinModules.flatMap((m: string) => [m, `node:${m}`]),
 ];
 
-export const getWorkspace = async () => {
+type PackageJson = typefest.PackageJson &
+  Required<Pick<typefest.PackageJson, 'name' | 'version'>> & { path: string };
+
+export const getWorkspace = async (): Promise<PackageJson[]> => {
   const codePackage = await readJson(join(CODE_DIRECTORY, 'package.json'));
   const {
     workspaces: { packages: patterns },
@@ -142,8 +145,7 @@ export const getWorkspace = async () => {
           return null;
         }
         const pkg = await readJson(packageJsonPath);
-        return { ...pkg, path: packagePath } as typefest.PackageJson &
-          Required<Pick<typefest.PackageJson, 'name' | 'version'>> & { path: string };
+        return { ...pkg, path: packagePath } as PackageJson;
       })
   ).then((packages) => packages.filter((p) => p !== null));
 };

@@ -9,4 +9,3 @@ pnpm dlx storybook@next upgrade
 ```shell renderer="common" language="js" packageManager="yarn"
 yarn dlx storybook@next upgrade
 ```
-

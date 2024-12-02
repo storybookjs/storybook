@@ -1,6 +1,6 @@
 export default <T>(a: T[], b: T[]): T[] => {
   // no point in intersecting if one of the input is ill-defined
-  if (!a || !b) {
+  if (!Array.isArray(a) || !Array.isArray(b) || !a.length || !b.length) {
     return [];
   }
 

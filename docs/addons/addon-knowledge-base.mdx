@@ -7,7 +7,7 @@ sidebar:
 
 Once you understand the basics of writing addons, there are a variety of common enhancements to make your addon better. This page details additional information about addon creation. Use it as a quick reference guide when creating your own addons.
 
-### Disable the addon panel
+## Disable the addon panel
 
 It’s possible to disable the addon panel for a particular story.
 
@@ -27,14 +27,14 @@ Then when adding a story, you can pass a disabled parameter.
 
 {/* prettier-ignore-end */}
 
-### Style your addon
+## Style your addon
 
 Storybook uses [Emotion](https://emotion.sh/docs/introduction) for styling. Alongside with a theme that you can customize!
 
 We recommend using Emotion to style your addon’s UI components. That allows you to use the active Storybook theme to deliver a seamless developer experience.
 If you don’t want to use Emotion, you can use inline styles or another css-in-js lib. You can receive the theme as a prop by using Emotion's `withTheme` HOC. [Read more about theming](../configure/user-interface/theming.mdx).
 
-### Storybook components
+## Storybook components
 
 Addon authors can develop their UIs using any React library. But we recommend using Storybook’s UI components in `@storybook/components` to build addons faster. When you use Storybook components, you get:
 
@@ -75,11 +75,11 @@ Complementing the components, also included is a set of UI primitives. Use the c
   
 </Callout>
 
-### Build system
+## Build system
 
 When you're developing your addon as a package, you can’t use `npm link` to add it to your project. List your addon as a local dependency into your package.json:
 
-```json
+```json title="package.json"
 {
   "dependencies": {
     "@storybook/addon-controls": "file:///home/username/myrepo"
@@ -91,15 +91,15 @@ When you're developing your addon as a package, you can’t use `npm link` to ad
   Run either `yarn` or `npm install` to install the addon.
 </Callout>
 
-### Hot module replacement
+## Hot module replacement
 
 While developing your addon, you can configure HMR (hot module replacement) to reflect the changes made.
 
-### Standalone Storybook addons
+## Standalone Storybook addons
 
 If you're developing a standalone addon, add a new script to `package.json` with the following:
 
-```json
+```json title="package.json"
 {
   "scripts": {
     "start": "npm run build -- --watch"
@@ -107,11 +107,11 @@ If you're developing a standalone addon, add a new script to `package.json` with
 }
 ```
 
-#### Local Storybook addons
+### Local Storybook addons
 
 If you're developing a local Storybook addon built on top of an existing Storybook installation, HMR (hot module replacement) is available out of the box.
 
-### Composing addons in presets
+## Composing addons in presets
 
 If you're working on a preset that loads third-party addons, which you don't have control over, and you need access to certain features (e.g., decorators) or provide additional configurations. In that case, you'll need to update your preset to the following to allow you to load and configure the other addons:
 

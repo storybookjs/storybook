@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { fn } from '@storybook/test';
+
 import { ManagerContext } from '@storybook/core/manager-api';
 
 import { standardData as standardHeaderData } from './Heading.stories';
@@ -7,6 +9,15 @@ import { IconSymbols } from './IconSymbols';
 import { Ref } from './Refs';
 import { mockDataset } from './mockdata';
 import type { RefType } from './types';
+
+const managerContext = {
+  state: { docsOptions: {}, testProviders: {} },
+  api: {
+    on: fn().mockName('api::on'),
+    off: fn().mockName('api::off'),
+    getElements: fn(() => ({})),
+  },
+} as any;
 
 export default {
   component: Ref,
@@ -16,7 +27,7 @@ export default {
   globals: { sb_theme: 'side-by-side' },
   decorators: [
     (storyFn: any) => (
-      <ManagerContext.Provider value={{ state: { docsOptions: {} } } as any}>
+      <ManagerContext.Provider value={managerContext}>
         <IconSymbols />
         {storyFn()}
       </ManagerContext.Provider>

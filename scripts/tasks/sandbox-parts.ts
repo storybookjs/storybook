@@ -439,6 +439,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
     dedent`import { beforeAll } from 'vitest'
     import { setProjectAnnotations } from '${storybookPackage}'
     import * as rendererDocsAnnotations from '${template.expected.renderer}/dist/entry-preview-docs.mjs'
+    import * as addonA11yAnnotations from '@storybook/addon-a11y/preview'
     import * as addonActionsAnnotations from '@storybook/addon-actions/preview'
     import * as addonTestAnnotations from '@storybook/experimental-addon-test/preview'
     import '../src/stories/components'
@@ -448,13 +449,14 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
     ${isVue ? 'import * as vueAnnotations from "../src/stories/renderers/vue3/preview.js"' : ''}
 
     const annotations = setProjectAnnotations([
+      ${isVue ? 'vueAnnotations,' : ''}
       rendererDocsAnnotations,
-      projectAnnotations,
       coreAnnotations,
       toolbarAnnotations,
       addonActionsAnnotations,
       addonTestAnnotations,
-      ${isVue ? 'vueAnnotations,' : ''}
+      addonA11yAnnotations,
+      projectAnnotations,
     ])
 
     beforeAll(annotations.beforeAll)`
@@ -811,6 +813,11 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
 
   if (template.expected.builder.includes('vite')) {
     previewConfig.setFieldValue(['tags'], ['vitest']);
+    // TODO: Remove this once the starter components + test stories have proper accessibility
+    previewConfig.setFieldValue(
+      ['parameters', 'a11y'],
+      ['minor', 'moderate', 'serious', 'critical']
+    );
   }
 
   await writeConfig(previewConfig);

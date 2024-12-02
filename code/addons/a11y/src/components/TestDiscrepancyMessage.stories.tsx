@@ -5,7 +5,7 @@ import { ManagerContext } from 'storybook/internal/manager-api';
 import type { Meta, StoryObj } from '@storybook/react';
 import { fn } from '@storybook/test';
 
-import { TestDiscrepancyMessage } from '../../src/components/TestDiscrepancyMessage';
+import { TestDiscrepancyMessage } from './TestDiscrepancyMessage';
 
 type Story = StoryObj<typeof TestDiscrepancyMessage>;
 

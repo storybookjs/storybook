@@ -8,9 +8,9 @@ import { fn } from '@storybook/test';
 
 import type axe from 'axe-core';
 
-import { A11YPanel } from '../../src/components/A11YPanel';
-import { A11yContext } from '../../src/components/A11yContext';
-import type { A11yContextStore } from '../../src/components/A11yContext';
+import { A11YPanel } from './A11YPanel';
+import { A11yContext } from './A11yContext';
+import type { A11yContextStore } from './A11yContext';
 
 const managerContext: any = {
   state: {},

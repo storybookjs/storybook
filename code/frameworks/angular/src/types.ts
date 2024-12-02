@@ -9,7 +9,7 @@ import {
   StorybookConfig as StorybookConfigBase,
   TypescriptOptions as TypescriptOptionsReact,
 } from '@storybook/core-webpack';
-import { AngularOptions } from '@storybook/preset-angular-webpack/src';
+import { AngularOptions } from '@storybook/preset-angular-webpack';
 
 type FrameworkName = CompatibleString<'@storybook/angular'>;
 type BuilderName = CompatibleString<'@storybook/builder-webpack5'>;

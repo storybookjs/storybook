@@ -6,7 +6,7 @@ const getAbsolutePath = <I extends string>(input: I): I =>
   dirname(require.resolve(join(input, 'package.json'))) as any;
 
 export const addons: PresetProperty<'addons'> = [
-  require.resolve('@storybook/preset-angular-webpack'),
+  getAbsolutePath('@storybook/preset-angular-webpack'),
 ];
 
 export const core: PresetProperty<'core'> = async (config, options) => {
@@ -19,22 +19,5 @@ export const core: PresetProperty<'core'> = async (config, options) => {
       options: typeof framework === 'string' ? {} : framework.options.builder || {},
     },
     renderer: getAbsolutePath('@storybook/angular-renderer'),
-  };
-};
-
-export const webpack: StorybookConfig['webpack'] = async (config) => {
-  config.resolve = config.resolve || {};
-
-  config.resolve.alias = {
-    ...config.resolve?.alias,
-    '@storybook/angular-renderer': getAbsolutePath('@storybook/angular-renderer'),
-  };
-  return config;
-};
-
-export const typescript: PresetProperty<'typescript'> = async (config) => {
-  return {
-    ...config,
-    skipCompiler: true,
   };
 };

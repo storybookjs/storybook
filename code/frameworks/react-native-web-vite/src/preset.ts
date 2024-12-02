@@ -1,8 +1,9 @@
 // @ts-expect-error FIXME
 import { viteFinal as reactViteFinal } from '@storybook/react-vite/preset';
 
+import { esbuildFlowPlugin, flowPlugin } from '@bunchtogether/vite-plugin-flow';
 import react from '@vitejs/plugin-react';
-import type { PluginOption } from 'vite';
+import type { InlineConfig, PluginOption } from 'vite';
 
 import type { FrameworkOptions, StorybookConfig } from './types';
 
@@ -61,13 +62,19 @@ export function reactNativeWeb(): PluginOption {
 }
 
 export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) => {
+  const { mergeConfig } = await import('vite');
+
   const { pluginReactOptions = {} } =
     await options.presets.apply<FrameworkOptions>('frameworkOptions');
 
   const reactConfig = await reactViteFinal(config, options);
+
   const { plugins = [] } = reactConfig;
 
   plugins.unshift(
+    flowPlugin({
+      exclude: [],
+    }),
     react({
       babel: {
         babelrc: false,
@@ -77,9 +84,16 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
       ...pluginReactOptions,
     })
   );
+
   plugins.push(reactNativeWeb());
 
-  return reactConfig;
+  return mergeConfig(reactConfig, {
+    optimizeDeps: {
+      esbuildOptions: {
+        plugins: [esbuildFlowPlugin(new RegExp(/\.(flow|jsx?)$/), (_path: string) => 'jsx')],
+      },
+    },
+  } satisfies InlineConfig);
 };
 
 export const core = {

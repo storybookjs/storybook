@@ -22,6 +22,7 @@ import { DocsPageWrapper } from '../lib/blocks/src/components';
 import { isChromatic } from './isChromatic';
 
 const { document } = global;
+globalThis.CONFIG_TYPE = 'DEVELOPMENT';
 
 const ThemeBlock = styled.div<{ side: 'left' | 'right'; layout: string }>(
   {

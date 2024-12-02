@@ -74,7 +74,7 @@ export const LeafNodeStyleWrapper = styled.div(({ theme }) => ({
   position: 'relative',
   display: 'flex',
   justifyContent: 'space-between',
-  alignItems: 'center',
+  alignItems: 'flex-start',
   color: theme.color.defaultText,
   background: 'transparent',
   minHeight: 28,
@@ -216,6 +216,7 @@ const Node = React.memo<NodeProps>(function Node({
   const statusLinks = useMemo<Link[]>(() => {
     if (item.type === 'story' || item.type === 'docs') {
       return Object.entries(status || {})
+        .filter(([, value]) => value.sidebarContextMenu !== false)
         .sort((a, b) => statusOrder.indexOf(a[1].status) - statusOrder.indexOf(b[1].status))
         .map(([addonId, value]) => ({
           id: addonId,

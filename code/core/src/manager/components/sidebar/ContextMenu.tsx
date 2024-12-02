@@ -12,7 +12,11 @@ import type { API } from '@storybook/core/manager-api';
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
 import { StatusButton } from './StatusButton';
 import type { ExcludesNull } from './Tree';
-import { ContextMenu } from './Tree';
+
+const empty = {
+  onMouseEnter: () => {},
+  node: null,
+};
 
 export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) => {
   const [hoverCount, setHoverCount] = useState(0);
@@ -34,7 +38,7 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
   }, []);
 
   /**
-   * Calculate the providerLinks whenever the user mouses over the container. We use an incrementer,
+   * Calculate the providerLinks whenever the user mouses over the container. We use an incrementor,
    * instead of a simple boolean to ensure that the links are recalculated
    */
   const providerLinks = useMemo(() => {
@@ -51,6 +55,11 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
   const isRendered = providerLinks.length > 0 || links.length > 0;
 
   return useMemo(() => {
+    // Never show the SidebarContextMenu in production
+    if (globalThis.CONFIG_TYPE !== 'DEVELOPMENT') {
+      return empty;
+    }
+
     return {
       onMouseEnter: handlers.onMouseEnter,
       node: isRendered ? (
@@ -66,9 +75,7 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
               setIsOpen(true);
             }
           }}
-          tooltip={({ onHide }) => (
-            <LiveContextMenu context={context} links={links} onClick={onHide} />
-          )}
+          tooltip={<LiveContextMenu context={context} links={links} />}
         >
           <StatusButton type="button" status={'pending'}>
             <EllipsisIcon />

@@ -70,7 +70,6 @@ export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
 export const addWorkaroundResolutions = async ({
   cwd,
   dryRun,
-  key,
 }: YarnOptions & { key?: TemplateKey }) => {
   logger.info(`🔢 Adding resolutions for workarounds`);
 
@@ -82,21 +81,10 @@ export const addWorkaroundResolutions = async ({
   const packageJson = await readJSON(packageJsonPath);
   packageJson.resolutions = {
     ...packageJson.resolutions,
-    // Due to our support of older vite versions
-    '@vitejs/plugin-react': '4.2.0',
-    '@vitejs/plugin-vue': '4.5.0',
-    // TODO: Remove this once we figure out how to properly test Vite 4, 5 and 6 in our sandboxes
-    vite: '^5.0.0',
-    // We need to downgrade the plugin so that it works with Vite 5 projects
-    '@sveltejs/vite-plugin-svelte': '4.0.2',
     '@testing-library/dom': '^9.3.4',
     '@testing-library/jest-dom': '^6.5.0',
     '@testing-library/user-event': '^14.5.2',
   };
-
-  if (key.includes('svelte-kit')) {
-    packageJson.resolutions['@sveltejs/vite-plugin-svelte'] = '^3.0.0';
-  }
 
   await writeJSON(packageJsonPath, packageJson, { spaces: 2 });
 };

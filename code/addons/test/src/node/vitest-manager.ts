@@ -1,8 +1,15 @@
 import { existsSync } from 'node:fs';
 
-import type { TestProject, TestSpecification, Vitest, WorkspaceProject } from 'vitest/node';
+import type {
+  CoverageOptions,
+  ResolvedCoverageOptions,
+  TestProject,
+  TestSpecification,
+  Vitest,
+  WorkspaceProject,
+} from 'vitest/node';
 
-import type { Channel } from 'storybook/internal/channels';
+import { resolvePathInStorybookCache } from 'storybook/internal/common';
 import type { TestingModuleRunRequestPayload } from 'storybook/internal/core-events';
 
 import type { DocsIndexEntry, StoryIndex, StoryIndexEntry } from '@storybook/types';
@@ -10,7 +17,9 @@ import type { DocsIndexEntry, StoryIndex, StoryIndexEntry } from '@storybook/typ
 import path, { normalize } from 'pathe';
 import slash from 'slash';
 
+import { COVERAGE_DIRECTORY, type Config } from '../constants';
 import { log } from '../logger';
+import type { StorybookCoverageReporterOptions } from './coverage-reporter';
 import { StorybookReporter } from './reporter';
 import type { TestManager } from './test-manager';
 
@@ -27,13 +36,30 @@ export class VitestManager {
 
   storyCountForCurrentRun: number = 0;
 
-  constructor(
-    private channel: Channel,
-    private testManager: TestManager
-  ) {}
+  constructor(private testManager: TestManager) {}
 
-  async startVitest(watchMode = false) {
+  async startVitest({ watchMode = false, coverage = false } = {}) {
     const { createVitest } = await import('vitest/node');
+
+    const storybookCoverageReporter: [string, StorybookCoverageReporterOptions] = [
+      '@storybook/experimental-addon-test/internal/coverage-reporter',
+      {
+        testManager: this.testManager,
+        coverageOptions: this.vitest?.config?.coverage as ResolvedCoverageOptions<'v8'>,
+      },
+    ];
+    const coverageOptions = (
+      coverage
+        ? {
+            enabled: true,
+            clean: false,
+            cleanOnRerun: !watchMode,
+            reportOnFailure: true,
+            reporter: [['html', {}], storybookCoverageReporter],
+            reportsDirectory: resolvePathInStorybookCache(COVERAGE_DIRECTORY),
+          }
+        : { enabled: false }
+    ) as CoverageOptions;
 
     this.vitest = await createVitest('test', {
       watch: watchMode,
@@ -45,19 +71,20 @@ export class VitestManager {
       // find a way to just show errors and warnings for example
       // Otherwise it might be hard for the user to discover Storybook related logs
       reporters: ['default', new StorybookReporter(this.testManager)],
-      // @ts-expect-error we just want to disable coverage, not specify a provider
-      coverage: {
-        enabled: false,
-      },
+      coverage: coverageOptions,
     });
 
     if (this.vitest) {
       this.vitest.onCancel(() => {
-        // TODO: handle cancelation
+        // TODO: handle cancellation
       });
     }
 
-    await this.vitest.init();
+    try {
+      await this.vitest.init();
+    } catch (e) {
+      this.testManager.reportFatalError('Failed to init Vitest', e);
+    }
 
     if (watchMode) {
       await this.setupWatchers();
@@ -110,10 +137,11 @@ export class VitestManager {
     return true;
   }
 
-  async runTests(requestPayload: TestingModuleRunRequestPayload) {
+  async runTests(requestPayload: TestingModuleRunRequestPayload<Config>) {
     if (!this.vitest) {
       await this.startVitest();
     }
+
     this.resetTestNamePattern();
 
     const stories = await this.fetchStories(requestPayload.indexUrl, requestPayload.storyIds);
@@ -242,7 +270,7 @@ export class VitestManager {
     if (triggerAffectedTests.length) {
       await this.vitest.cancelCurrentRun('keyboard-input');
       await this.vitest.runningPromise;
-      await this.vitest.runFiles(triggerAffectedTests, true);
+      await this.vitest.runFiles(triggerAffectedTests, false);
     }
   }
 

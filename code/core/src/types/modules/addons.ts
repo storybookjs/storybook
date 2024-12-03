@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import type { FC, PropsWithChildren, ReactElement, ReactNode } from 'react';
 
-import type { ListItem } from '../../components';
 import type { TestProviderConfig, TestingModuleProgressReportProgress } from '../../core-events';
 import type { RenderData as RouterData } from '../../router/types';
 import type { ThemeVars } from '../../theming/types';

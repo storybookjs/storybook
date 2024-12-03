@@ -194,6 +194,7 @@ export interface BuilderOptions {
   ignorePreview?: boolean;
   cache?: FileSystemCache;
   configDir: string;
+  projectRoot?: string;
   docsMode?: boolean;
   features?: StorybookConfigRaw['features'];
   versionCheck?: VersionCheck;

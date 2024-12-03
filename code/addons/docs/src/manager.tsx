@@ -1,7 +1,8 @@
 import React from 'react';
 
 import { AddonPanel, type SyntaxHighlighterFormatTypes } from 'storybook/internal/components';
-import { ADDON_ID, PANEL_ID, SNIPPET_RENDERED } from 'storybook/internal/docs-tools';
+import { FORCE_RE_RENDER, PRELOAD_ENTRIES } from 'storybook/internal/core-events';
+import { ADDON_ID, PANEL_ID, PARAM_KEY, SNIPPET_RENDERED } from 'storybook/internal/docs-tools';
 import { addons, types, useAddonState, useChannel } from 'storybook/internal/manager-api';
 
 import { Source } from '@storybook/blocks';

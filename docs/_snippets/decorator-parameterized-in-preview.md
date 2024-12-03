@@ -38,11 +38,15 @@ export default {
         case 'page':
           return (
             // Your page layout is probably a little more complex than this ;)
-            <div className="page-layout"><Story /></div>
+            <div className="page-layout">
+              <Story />
+            </div>
           );
         case 'page-mobile':
           return (
-            <div className="page-mobile-layout"><Story /></div>
+            <div className="page-mobile-layout">
+              <Story />
+            </div>
           );
         default:
           // In the default case, don't apply a layout
@@ -68,11 +72,15 @@ const preview: Preview = {
         case 'page':
           return (
             // Your page layout is probably a little more complex than this ;)
-            <div className="page-layout"><Story /></div>
+            <div className="page-layout">
+              <Story />
+            </div>
           );
         case 'page-mobile':
           return (
-            <div className="page-mobile-layout"><Story /></div>
+            <div className="page-mobile-layout">
+              <Story />
+            </div>
           );
         default:
           // In the default case, don't apply a layout
@@ -96,11 +104,15 @@ export default {
         case 'page':
           return (
             // Your page layout is probably a little more complex than this ;)
-            <div className="page-layout"><Story /></div>
+            <div className="page-layout">
+              <Story />
+            </div>
           );
         case 'page-mobile':
           return (
-            <div className="page-mobile-layout"><Story /></div>
+            <div className="page-mobile-layout">
+              <Story />
+            </div>
           );
         default:
           // In the default case, don't apply a layout
@@ -124,11 +136,15 @@ const preview: Preview = {
         case 'page':
           return (
             // Your page layout is probably a little more complex than this ;)
-            <div className="page-layout"><Story /></div>
+            <div className="page-layout">
+              <Story />
+            </div>
           );
         case 'page-mobile':
           return (
-            <div className="page-mobile-layout"><Story /></div>
+            <div className="page-mobile-layout">
+              <Story />
+            </div>
           );
         default:
           // In the default case, don't apply a layout
@@ -188,4 +204,3 @@ const preview: Preview = {
 
 export default preview;
 ```
-

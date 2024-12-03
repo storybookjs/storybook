@@ -1,5 +1,8 @@
 <h1>Migration</h1>
 
+- [From version 8.4.x to 8.5.x](#from-version-84x-to-85x)
+  - [Framework-specific changes in 8.5.x](#framework-specific-changes-in-85x)
+    - [Vite: Automatic detection of additional `optimizeDeps` entries is now performed after `viteFinal`](#vite-automatic-detection-of-additional-optimizedeps-entries-is-now-performed-after-vitefinal)
 - [From version 8.2.x to 8.3.x](#from-version-82x-to-83x)
   - [Removed `experimental_SIDEBAR_BOTTOM` and deprecated `experimental_SIDEBAR_TOP` addon types](#removed-experimental_sidebar_bottom-and-deprecated-experimental_sidebar_top-addon-types)
   - [New parameters format for addon backgrounds](#new-parameters-format-for-addon-backgrounds)
@@ -418,6 +421,17 @@
   - [Webpack upgrade](#webpack-upgrade)
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
+
+## From version 8.4.x to 8.5.x
+
+### Framework-specific changes in 8.5.x
+
+#### Vite: Automatic detection of additional `optimizeDeps` entries is now performed after `viteFinal`
+
+By default, the [Storybook Vite builder](https://storybook.js.org/docs/builders/vite) automatically precompiles a [number of dependencies](https://github.com/storybookjs/storybook/blob/a8ad83fe63dd126a90d78d37c0aa3fa5557fb480/code/builders/builder-vite/src/optimizeDeps.ts#L11-L112) (excluding those not present in the current project) to ensure compatibility with ECMAScript Modules (ESM).
+Due to implementation restrictions, determining the set of dependencies to be optimized requires resolving a preliminary configuration that is then used to determine which dependencies are actually installed.
+
+Starting with 8.5, the [`viteFinal` hook](https://storybook.js.org/docs/builders/vite#typescript) is now called *before* the automatically detected dependencies are added, so it has a chance to modify the resolution process and other settings.
 
 ## From version 8.2.x to 8.3.x
 

@@ -28,11 +28,19 @@ export async function createViteServer(options: Options, devServer: Server) {
       },
     },
     appType: 'custom' as const,
-    optimizeDeps: await getOptimizeDeps(commonCfg, options),
   };
 
   const finalConfig = await presets.apply('viteFinal', config, options);
 
+  // getOptimizeDeps calls resolveConfig internally, and should therefore
+  // be invoked on the fully finalized configuration, in case viteFinal
+  // has applied some changes that were necessary for the configuration
+  // to be valid.
+  const finalConfigWithDeps = {
+    ...finalConfig,
+    optimizeDeps: await getOptimizeDeps(finalConfig, options),
+  };
+
   const { createServer } = await import('vite');
-  return createServer(await sanitizeEnvVars(options, finalConfig));
+  return createServer(await sanitizeEnvVars(options, finalConfigWithDeps));
 }

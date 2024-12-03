@@ -1,5 +1,7 @@
 <h1>Migration</h1>
 
+- [From version 8.4.x to 8.5.x](#from-version-84x-to-85x)
+  - [Added source code pnael to docs](#added-source-code-pnael-to-docs)
 - [From version 8.2.x to 8.3.x](#from-version-82x-to-83x)
   - [Removed `experimental_SIDEBAR_BOTTOM` and deprecated `experimental_SIDEBAR_TOP` addon types](#removed-experimental_sidebar_bottom-and-deprecated-experimental_sidebar_top-addon-types)
   - [New parameters format for addon backgrounds](#new-parameters-format-for-addon-backgrounds)
@@ -167,7 +169,7 @@
     - [Angular: Drop support for calling Storybook directly](#angular-drop-support-for-calling-storybook-directly)
     - [Angular: Application providers and ModuleWithProviders](#angular-application-providers-and-modulewithproviders)
     - [Angular: Removed legacy renderer](#angular-removed-legacy-renderer)
-    - [Angular: initializer functions](#angular-initializer-functions)
+    - [Angular: Initializer functions](#angular-initializer-functions)
     - [Next.js: use the `@storybook/nextjs` framework](#nextjs-use-the-storybooknextjs-framework)
     - [SvelteKit: needs the `@storybook/sveltekit` framework](#sveltekit-needs-the-storybooksveltekit-framework)
     - [Vue3: replaced app export with setup](#vue3-replaced-app-export-with-setup)
@@ -418,6 +420,22 @@
   - [Webpack upgrade](#webpack-upgrade)
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
+
+## From version 8.4.x to 8.5.x
+
+### Added source code pnael to docs
+
+Starting in 8.5, Storybook Docs (`@storybook/addon-docs`) automatically adds a new addon panel to stories that displays a source snippet beneath each story. This works similarly to the existing [source snippet doc block](https://storybook.js.org/docs/writing-docs/doc-blocks#source), but in the story view. It is intended to replace the [Storysource addon](https://storybook.js.org/addons/@storybook/addon-storysource).
+
+If you wish to disable this panel globally, add the following line to your `.storybook/preview.js` project configuration. You can also selectively disable/enable at the story level.
+
+```js
+export default {
+  parameters: {
+    docsSourcePanel: { disable: true },
+  },
+};
+```
 
 ## From version 8.2.x to 8.3.x
 

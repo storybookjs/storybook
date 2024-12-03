@@ -263,7 +263,7 @@ export const TestingModule = ({
               onClick={(e: SyntheticEvent) => {
                 e.stopPropagation();
                 testProviders
-                  .filter((state) => !state.crashed && !state.running && state.runnable)
+                  .filter((state) => !state.running && state.runnable)
                   .forEach(({ id }) => api.runTestProvider(id));
               }}
               disabled={isRunning}

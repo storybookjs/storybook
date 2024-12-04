@@ -55,6 +55,7 @@ export class VitestManager {
             clean: false,
             cleanOnRerun: !watchMode,
             reportOnFailure: true,
+            exclude: [...(this.vitest?.config?.coverage?.exclude || []), '**/*.stories.*'],
             reporter: [['html', {}], storybookCoverageReporter],
             reportsDirectory: resolvePathInStorybookCache(COVERAGE_DIRECTORY),
           }

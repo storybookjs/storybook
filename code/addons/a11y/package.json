@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-a11y",
-  "version": "8.5.0-alpha.14",
+  "version": "8.5.0-alpha.16",
   "description": "Test component compliance with web accessibility standards",
   "keywords": [
     "a11y",

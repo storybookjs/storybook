@@ -1,6 +1,5 @@
 // noinspection JSUnusedGlobalSymbols
-import { cp, readFile } from 'node:fs/promises';
-import { join, parse } from 'node:path';
+import { readFile } from 'node:fs/promises';
 
 import { NoStatsForViteDevError } from 'storybook/internal/server-errors';
 import type { Middleware, Options } from 'storybook/internal/types';
@@ -61,15 +60,6 @@ export const start: ViteBuilder['start'] = async ({
 }) => {
   server = await createViteServer(options as Options, devServer);
 
-  const previewResolvedDir = join(corePath, 'dist/preview');
-  router.use(
-    '/sb-preview',
-    sirv(previewResolvedDir, {
-      maxAge: 300000,
-      dev: true,
-      immutable: true,
-    })
-  );
   router.use(iframeMiddleware(options as Options, server));
   router.use(server.middlewares);
 
@@ -85,22 +75,5 @@ export const start: ViteBuilder['start'] = async ({
 };
 
 export const build: ViteBuilder['build'] = async ({ options }) => {
-  const viteCompilation = viteBuild(options as Options);
-
-  const previewResolvedDir = join(corePath, 'dist/preview');
-  const previewDirTarget = join(options.outputDir || '', `sb-preview`);
-  const previewFiles = cp(previewResolvedDir, previewDirTarget, {
-    filter: (src) => {
-      const { ext } = parse(src);
-      if (ext) {
-        return ext === '.js';
-      }
-      return true;
-    },
-    recursive: true,
-  });
-
-  const [out] = await Promise.all([viteCompilation, previewFiles]);
-
-  return out;
+  return viteBuild(options as Options);
 };

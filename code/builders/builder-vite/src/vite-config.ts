@@ -53,18 +53,18 @@ export async function commonConfig(
 
   const { viteConfigPath } = await getBuilderOptions<BuilderOptions>(options);
 
-  const projectRoot = resolve(options.configDir, '..');
+  options.projectRoot = options.projectRoot || resolve(options.configDir, '..');
 
   // I destructure away the `build` property from the user's config object
   // I do this because I can contain config that breaks storybook, such as we had in a lit project.
   // If the user needs to configure the `build` they need to do so in the viteFinal function in main.js.
   const { config: { build: buildProperty = undefined, ...userConfig } = {} } =
-    (await loadConfigFromFile(configEnv, viteConfigPath, projectRoot)) ?? {};
+    (await loadConfigFromFile(configEnv, viteConfigPath, options.projectRoot)) ?? {};
 
   const sbConfig: InlineConfig = {
     configFile: false,
     cacheDir: resolvePathInStorybookCache('sb-vite', options.cacheKey),
-    root: projectRoot,
+    root: options.projectRoot,
     // Allow storybook deployed as subfolder.  See https://github.com/storybookjs/builder-vite/issues/238
     base: './',
     plugins: await pluginConfig(options),

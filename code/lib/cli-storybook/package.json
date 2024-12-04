@@ -1,6 +1,6 @@
 {
   "name": "@storybook/cli",
-  "version": "8.5.0-alpha.14",
+  "version": "8.5.0-alpha.16",
   "description": "Storybook CLI",
   "keywords": [
     "storybook"

@@ -1,3 +1,4 @@
+<!-- prettier-ignore -->
 ```mdx filename="Changelog.mdx" renderer="common" language="mdx"
 import { Meta, Markdown } from '@storybook/blocks';
 

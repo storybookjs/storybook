@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import type { FC, PropsWithChildren, ReactElement, ReactNode } from 'react';
 
-import type { ListItem } from '../../components';
 import type { TestProviderConfig, TestingModuleProgressReportProgress } from '../../core-events';
 import type { RenderData as RouterData } from '../../router/types';
 import type { ThemeVars } from '../../theming/types';
@@ -484,9 +483,10 @@ export interface Addon_TestProviderType<
     context: API_HashEntry;
     state: TestProviderConfig & Addon_TestProviderState<Details, Config>;
   }) => ReactNode;
-  mapStatusUpdate?: (
-    state: Addon_TestProviderState<Details>
-  ) => API_StatusUpdate | ((state: API_StatusState) => API_StatusUpdate);
+  stateUpdater?: (
+    state: TestProviderConfig & Addon_TestProviderState<Details, Config>,
+    update: Partial<Addon_TestProviderState<Details, Config>>
+  ) => void | Partial<TestProviderConfig & Addon_TestProviderState<Details, Config>>;
   runnable?: boolean;
   watchable?: boolean;
 }

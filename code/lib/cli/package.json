@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "8.5.0-alpha.14",
+  "version": "8.5.0-alpha.16",
   "description": "Storybook's CLI - install, dev, build, upgrade, and more",
   "keywords": [
     "cli",
@@ -187,6 +187,12 @@
       "types": "./core/babel/index.d.ts",
       "import": "./core/babel/index.js",
       "require": "./core/babel/index.cjs"
+    },
+    "./internal/manager/globals-runtime": {
+      "import": "./core/manager/globals-runtime.js"
+    },
+    "./internal/preview/runtime": {
+      "import": "./core/preview/runtime.js"
     }
   },
   "main": "dist/index.cjs",
@@ -226,15 +232,6 @@
       ],
       "internal/core-server": [
         "./core/core-server/index.d.ts"
-      ],
-      "internal/core-server/presets/common-manager": [
-        "./core/core-server/presets/common-manager.d.ts"
-      ],
-      "internal/core-server/presets/common-override-preset": [
-        "./core/core-server/presets/common-override-preset.d.ts"
-      ],
-      "internal/core-server/presets/common-preset": [
-        "./core/core-server/presets/common-preset.d.ts"
       ],
       "internal/csf-tools": [
         "./core/csf-tools/index.d.ts"

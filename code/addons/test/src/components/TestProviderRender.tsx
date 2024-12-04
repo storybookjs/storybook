@@ -129,7 +129,7 @@ export const TestProviderRender: FC<
               padding="small"
               active={state.watching}
               onClick={() => api.setTestProviderWatchMode(state.id, !state.watching)}
-              disabled={state.crashed || state.running || isEditing}
+              disabled={state.running || isEditing}
             >
               <EyeIcon />
             </Button>
@@ -152,7 +152,7 @@ export const TestProviderRender: FC<
                   variant="ghost"
                   padding="small"
                   onClick={() => api.runTestProvider(state.id, { entryId })}
-                  disabled={state.crashed || state.running || isEditing}
+                  disabled={state.running || isEditing}
                 >
                   <PlayHollowIcon />
                 </Button>
@@ -180,19 +180,6 @@ export const TestProviderRender: FC<
                 checked={state.watching ? false : config.coverage}
                 disabled={state.watching}
                 onChange={() => updateConfig({ coverage: !config.coverage })}
-              />
-            }
-          />
-          <ListItem
-            as="label"
-            title="Accessibility"
-            icon={<AccessibilityIcon color={theme.textMutedColor} />}
-            right={
-              <Checkbox
-                type="checkbox"
-                disabled={state.running}
-                checked={config.a11y}
-                onChange={() => updateConfig({ a11y: !config.a11y })}
               />
             }
           />
@@ -232,11 +219,6 @@ export const TestProviderRender: FC<
               icon={<TestStatusIcon status="unknown" aria-label={`status: unknown`} />}
             />
           )}
-          <ListItem
-            title="Accessibility"
-            icon={<TestStatusIcon status="negative" aria-label="status: failed" />}
-            right={73}
-          />
         </Extras>
       )}
     </Container>

@@ -72,31 +72,35 @@ addons.register(ADDON_ID, (api) => {
         );
       },
 
-      mapStatusUpdate: (state) =>
-        Object.fromEntries(
-          (state.details?.testResults || []).flatMap((testResult) =>
-            testResult.results
-              .map(({ storyId, status, testRunId, ...rest }) => {
-                if (storyId) {
-                  const statusObject: API_StatusObject = {
+      stateUpdater: (state, update) => {
+        if (!update.details?.testResults) {
+          return;
+        }
+
+        api.experimental_updateStatus(
+          TEST_PROVIDER_ID,
+          Object.fromEntries(
+            update.details.testResults.flatMap((testResult) =>
+              testResult.results
+                .filter(({ storyId }) => storyId)
+                .map(({ storyId, status, testRunId, ...rest }) => [
+                  storyId,
+                  {
                     title: 'Component tests',
                     status: statusMap[status],
                     description:
-                      'failureMessages' in rest && rest.failureMessages?.length
+                      'failureMessages' in rest && rest.failureMessages
                         ? rest.failureMessages.join('\n')
                         : '',
-                    data: {
-                      testRunId,
-                    },
+                    data: { testRunId },
                     onClick: openAddonPanel,
                     sidebarContextMenu: false,
-                  };
-                  return [storyId, statusObject];
-                }
-              })
-              .filter(Boolean)
+                  } as API_StatusObject,
+                ])
+            )
           )
-        ),
+        );
+      },
     } as Addon_TestProviderType<Details, Config>);
   }
 

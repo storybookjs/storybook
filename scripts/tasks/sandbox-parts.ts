@@ -245,7 +245,19 @@ function addEsbuildLoaderToStories(mainConfig: ConfigFile) {
   And allow source directories to complement any existing allow patterns
   (".storybook" is already being allowed by builder-vite)
 */
-function setSandboxViteFinal(mainConfig: ConfigFile) {
+function setSandboxViteFinal(mainConfig: ConfigFile, template: TemplateKey) {
+  const temporaryAliasWorkaround = template.includes('nuxt')
+    ? `
+    // TODO: Remove this once Storybook Nuxt applies this internally
+    resolve: {
+      ...config.resolve,
+      alias: {
+        ...config.resolve.alias,
+        vue: 'vue/dist/vue.esm-bundler.js',
+      }
+    }
+  `
+    : '';
   const viteFinalCode = `
   (config) => ({
     ...config,
@@ -257,6 +269,7 @@ function setSandboxViteFinal(mainConfig: ConfigFile) {
         allow: ['stories', 'src', 'template-stories', 'node_modules', ...(config.server?.fs?.allow || [])],
       },
     },
+    ${temporaryAliasWorkaround}
   })`;
   // @ts-expect-error (Property 'expression' does not exist on type 'BlockStatement')
   mainConfig.setFieldNode(['viteFinal'], babelParse(viteFinalCode).program.body[0].expression);
@@ -564,9 +577,10 @@ export const addStories: Task['run'] = async (
   { sandboxDir, template, key },
   { addon: extraAddons, disableDocs }
 ) => {
-  logger.log('💃 adding stories');
+  logger.log('💃 Adding stories');
   const cwd = sandboxDir;
-  const storiesPath = await findFirstPath([join('src', 'stories'), 'stories'], { cwd });
+  const storiesPath =
+    (await findFirstPath([join('src', 'stories'), 'stories'], { cwd })) || 'stories';
 
   const mainConfig = await readConfig({ fileName: 'main', cwd });
   const packageManager = JsPackageManagerFactory.getPackageManager({}, sandboxDir);
@@ -797,7 +811,7 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
   }
 
   if (template.expected.builder === '@storybook/builder-vite') {
-    setSandboxViteFinal(mainConfig);
+    setSandboxViteFinal(mainConfig, key);
   }
   await writeConfig(mainConfig);
 };

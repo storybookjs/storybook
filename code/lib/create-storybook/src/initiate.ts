@@ -27,6 +27,7 @@ import angularGenerator from './generators/ANGULAR';
 import emberGenerator from './generators/EMBER';
 import htmlGenerator from './generators/HTML';
 import nextjsGenerator from './generators/NEXTJS';
+import nuxtGenerator from './generators/NUXT';
 import preactGenerator from './generators/PREACT';
 import qwikGenerator from './generators/QWIK';
 import reactGenerator from './generators/REACT';
@@ -115,6 +116,11 @@ const installStorybook = async <Project extends ProjectType>(
       case ProjectType.VUE3:
         return vue3Generator(packageManager, npmOptions, generatorOptions).then(
           commandLog('Adding Storybook support to your "Vue 3" app')
+        );
+
+      case ProjectType.NUXT:
+        return nuxtGenerator(packageManager, npmOptions, generatorOptions).then(
+          commandLog('Adding Storybook support to your "Nuxt" app')
         );
 
       case ProjectType.ANGULAR:

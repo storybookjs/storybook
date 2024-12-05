@@ -1,5 +1,5 @@
 import type { ClipboardEvent, FC, ReactElement, ReactNode } from 'react';
-import React, { Children, useCallback, useState } from 'react';
+import React, { Children, useCallback, useContext, useState } from 'react';
 
 import { ActionBar, Zoom } from 'storybook/internal/components';
 import type { ActionItem } from 'storybook/internal/components';
@@ -9,6 +9,8 @@ import { darken } from 'polished';
 
 import type { SourceProps } from '.';
 import { Source } from '.';
+import { DocsContext } from '../blocks/DocsContext';
+import { getStoryId } from '../blocks/Story';
 import { getBlockBackgroundStyle } from './BlockBackgroundStyles';
 import { StorySkeleton } from './Story';
 import { Toolbar } from './Toolbar';
@@ -151,11 +153,12 @@ const getSource = (
     }
   }
 };
-function getStoryId(children: ReactNode) {
+
+function getChildProps(children: ReactNode) {
   if (Children.count(children) === 1) {
     const elt = children as ReactElement;
     if (elt.props) {
-      return elt.props.id;
+      return elt.props;
     }
   }
   return null;
@@ -204,6 +207,8 @@ export const Preview: FC<PreviewProps> = ({
 
   const { window: globalWindow } = globalThis;
 
+  const context = useContext(DocsContext);
+
   const copyToClipboard = useCallback(async (text: string) => {
     const { createCopyToClipboardFunction } = await import('storybook/internal/components');
     createCopyToClipboardFunction();
@@ -251,7 +256,7 @@ export const Preview: FC<PreviewProps> = ({
           border
           zoom={(z: number) => setScale(scale * z)}
           resetZoom={() => setScale(1)}
-          storyId={getStoryId(children)}
+          storyId={getStoryId(getChildProps(children), context)}
           baseUrl="./iframe.html"
         />
       )}

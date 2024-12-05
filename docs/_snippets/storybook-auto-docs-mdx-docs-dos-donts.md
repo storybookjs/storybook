@@ -1,3 +1,4 @@
+<!-- prettier-ignore -->
 ```mdx filename="Guideline.mdx" renderer="common" language="mdx"
 <Guidelines>
   <Dos>

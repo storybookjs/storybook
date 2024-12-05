@@ -1,6 +1,6 @@
 {
   "name": "@storybook/experimental-addon-test",
-  "version": "8.4.6",
+  "version": "8.4.7",
   "description": "Integrate Vitest with Storybook",
   "keywords": [
     "storybook-addons",

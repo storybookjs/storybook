@@ -3,7 +3,7 @@ export default {
   webpackFinal: async (config) => {
     // Find web-components rule for extra transpilation
     const webComponentsRule = config.module.rules.find(
-      (rule) => rule.use && rule.use.options && rule.use.options.babelrc === false
+      (rule) => rule.use && rule.use.options && rule.use.options.babelrc === false,
     );
     // Add your own `my-library`
     webComponentsRule.test.push(new RegExp(`node_modules(\\/|\\\\)my-library(.*)\\.js$`));
@@ -20,7 +20,7 @@ const config: StorybookConfig = {
   webpackFinal: async (config) => {
     // Find web-components rule for extra transpilation
     const webComponentsRule = config.module.rules.find(
-      (rule) => rule.use && rule.use.options && rule.use.options.babelrc === false
+      (rule) => rule.use && rule.use.options && rule.use.options.babelrc === false,
     );
     // Add your own `my-library`
     webComponentsRule.test.push(new RegExp(`node_modules(\\/|\\\\)my-library(.*)\\.js$`));

@@ -162,8 +162,6 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
   configureStyledJsx(baseConfig);
   configureNodePolyfills(baseConfig);
   configureAliases(baseConfig);
-  configureCompatibilityAliases(baseConfig);
-  configureNextExportMocks(baseConfig);
 
   if (isDevelopment) {
     configureFastRefresh(baseConfig);

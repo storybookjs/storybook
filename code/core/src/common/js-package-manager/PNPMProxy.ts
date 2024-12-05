@@ -4,8 +4,7 @@ import { join } from 'node:path';
 import { FindPackageVersionsError } from '@storybook/core/server-errors';
 
 import { findUpSync } from 'find-up';
-import { pathExistsSync } from 'fs-extra';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
 import { createLogStream } from '../utils/cli';
 import { JsPackageManager } from './JsPackageManager';
@@ -42,7 +41,7 @@ export class PNPMProxy extends JsPackageManager {
     const CWD = process.cwd();
 
     const pnpmWorkspaceYaml = `${CWD}/pnpm-workspace.yaml`;
-    return pathExistsSync(pnpmWorkspaceYaml);
+    return existsSync(pnpmWorkspaceYaml);
   }
 
   async initPackageJson() {
@@ -58,6 +57,10 @@ export class PNPMProxy extends JsPackageManager {
 
   getRunCommand(command: string): string {
     return `pnpm run ${command}`;
+  }
+
+  getRemoteRunCommand(): string {
+    return 'pnpm dlx';
   }
 
   async getPnpmVersion(): Promise<string> {

@@ -7,13 +7,13 @@ sidebar:
 
 <YouTubeCallout id="DuJ_gmSncLM" title="Create custom toolbar items using global types" />
 
-Storybook ships with toolbar addons to control the [viewport](./viewport.mdx) and [background](./backgrounds.mdx) the story renders in. You can also create your toolbar items that control special “globals,” which you can then read to create [decorators](../writing-stories/decorators.mdx) to control story rendering.
+Storybook ships with toolbar addons to control the [viewport](./viewport.mdx) and [background](./backgrounds.mdx) the story renders in. You can also create toolbar items which control special “globals”. You can then read the global values to create [decorators](../writing-stories/decorators.mdx) to control story rendering.
 
 ![Toolbars and globals](../_assets/essentials/toolbars-and-globals.png)
 
 ## Globals
 
-Globals in Storybook represent “global” (as in not story-specific) inputs to the rendering of the story. As they aren’t specific to the story, they aren’t passed in the `args` argument to the story function (although they are accessible as `context.globals`), but typically you use them in decorators, which apply to all stories.
+Globals in Storybook represent “global” (as in not story-specific) inputs to the rendering of the story. As they aren’t specific to the story, they aren’t passed in the `args` argument to the story function (although they are accessible as `context.globals`). Instead, they are typically used in decorators, which apply to all stories.
 
 When the globals change, the story re-renders and the decorators rerun with the new values. The easiest way to change globals is to create a toolbar item for them.
 
@@ -21,13 +21,15 @@ When the globals change, the story re-renders and the decorators rerun with the 
 
 Storybook has a simple, declarative syntax for configuring toolbar menus. In your [`.storybook/preview.js|ts`](../configure/index.mdx#configure-story-rendering), you can add your own toolbars by creating `globalTypes` with a `toolbar` annotation:
 
+{/* prettier-ignore-start */}
+
 <CodeSnippets path="storybook-preview-configure-globaltypes.md" />
 
 {/* prettier-ignore-end */}
 
 <Callout variant="info" icon="💡">
 
- As globals are *global* you can *only* set `globalTypes` in [`.storybook/preview.js|ts`](../configure/index.mdx#configure-story-rendering).
+ As globals are *global* you can *only* set `globalTypes` and `initialGlobals` in [`.storybook/preview.js|ts`](../configure/index.mdx#configure-story-rendering).
 
 </Callout>
 
@@ -77,22 +79,27 @@ We have a `global` implemented. Let's wire it up! We can consume our new `theme`
   {/* prettier-ignore-end */}
 </IfRenderer>
 
-
 ## Setting globals on a story
 
-By default, custom toolbars and other globals defined with the `globalTypes` annotation, similar to the one created to set up our custom theme, are consistently applied to every story available. However, if you need to, you can override them at the component or story level to use a custom value for a specific story or subset of stories. This will allow you to test specific scenarios (e.g., custom appearance, behavior) where a particular value should be used. To do this, add a `globals` annotation in your story to enable the selected option.
+<Callout variant="warning" icon="🆕">
+  The ability to set globals on a story or component is available in Storybook 8.3+. Some addons, like [backgrounds](./backgrounds.mdx) and [viewport](./viewport.mdx), have been updated to use the `globals` API when a [feature flag](../api/main-config/main-config-features.mdx) is enabled.
+</Callout>
+
+When a global value is changed with a toolbar menu in Storybook, that value continues to be used as you navigate between stories. But sometimes a story requires a specific value to render correctly, e.g., when testing against a particular environment.
+
+To ensure that a story always uses a specific global value, regardless of what has been chosen in the toolbar, you can set the `globals` annotation on a story or component. This overrides the global value for those stories and disables the toolbar menu for that global when viewing the stories.
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="component-story-theme-override-globals.md" />
+<CodeSnippets path="addon-backgrounds-define-globals.md" />
 
 {/* prettier-ignore-end */}
 
-When Storybook loads the stories, it applies the selected theme to every story except the `Dark` story, which automatically applies the `dark` theme. It also turns off the toolbar dropdown with the theme options, preventing them from being changed and notifying that this story requires a specific value to be used.
+In the example above, Storybook will force all Button stories to use a gray background color, except the `OnDark` story, which will use the dark background. For all Button stories, the toolbar menu will be disabled for the `backgrounds` global, with a tooltip explaining that the global is set at the story level.
 
 <Callout variant="info" icon="💡">
 
-Configuring a story's `globals` annotation to override the project-level global settings is useful but should be used with moderation. Globals that are _not_ defined at the story level can be selected interactively in Storybook's UI, allowing users to explore every existing combination of values (e.g., global values, [`args`](../writing-stories/args.mdx)). Enabling them at the story level will turn them off, preventing users from exploring the available options.
+Configuring a story's `globals` annotation to override the project-level global settings is useful but should be used with moderation. Globals that are _not_ defined at the story level can be selected interactively in Storybook's UI, allowing users to explore every existing combination of values (e.g., global values, [`args`](../writing-stories/args.mdx)). Setting them at the story level will disable that control, preventing users from exploring the available options.
 
 </Callout>
 
@@ -143,7 +150,7 @@ Using the example above, you can modify any story to retrieve the **Locale** `gl
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="my-component-story-use-globaltype.md" usesCsf3 csf2Path="essentials/toolbars-and-globals#snippet-my-component-story-use-globaltype" />
+<CodeSnippets path="my-component-story-use-globaltype.md" />
 
 {/* prettier-ignore-end */}
 

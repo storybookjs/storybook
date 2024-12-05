@@ -1,11 +1,7 @@
 /* eslint-disable no-underscore-dangle */
-import bg from '@babel/generator';
-import * as t from '@babel/types';
+import { generate, types as t } from '@storybook/core/babel';
 
 import type { CsfFile } from './CsfFile';
-
-// @ts-expect-error (needed due to it's use of `exports.default`)
-const generate = (bg.default || bg) as typeof bg;
 
 export interface EnrichCsfOptions {
   disableSource?: boolean;

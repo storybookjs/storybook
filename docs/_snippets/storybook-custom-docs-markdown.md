@@ -1,9 +1,8 @@
-```mdx renderer="common" language="mdx"
-{/* Changelog.mdx */}
+<!-- prettier-ignore -->
+```mdx filename="Changelog.mdx" renderer="common" language="mdx"
+import { Meta, Markdown } from '@storybook/blocks';
 
-import { Meta, Markdown } from "@storybook/blocks";
-
-import Readme from "../../Changelog.md?raw";
+import Readme from '../../Changelog.md?raw';
 
 <Meta title="Changelog" />
 
@@ -11,4 +10,3 @@ import Readme from "../../Changelog.md?raw";
 
 <Markdown>{Readme}</Markdown>
 ```
-

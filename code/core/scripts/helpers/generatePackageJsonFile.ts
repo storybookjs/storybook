@@ -1,7 +1,6 @@
-import { writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 
-import { readJSON } from 'fs-extra';
 import slash from 'slash';
 
 import { sortPackageJson } from '../../../../scripts/prepare/tools';
@@ -11,7 +10,7 @@ const cwd = process.cwd();
 
 export async function generatePackageJsonFile(entries: ReturnType<typeof getEntries>) {
   const location = join(cwd, 'package.json');
-  const pkgJson = await readJSON(location);
+  const pkgJson = JSON.parse(await readFile(location, { encoding: 'utf8' }));
 
   /**
    * Re-create the `exports` field in `code/core/package.json` This way we only need to update the
@@ -59,6 +58,10 @@ export async function generatePackageJsonFile(entries: ReturnType<typeof getEntr
     '*': {
       '*': ['./dist/index.d.ts'],
       ...entries.reduce<Record<string, string[]>>((acc, entry) => {
+        if (!entry.dts) {
+          return acc;
+        }
+
         let main = slash(relative(cwd, entry.file).replace('src', 'dist'));
         if (main === './dist/index.ts' || main === './dist/index.tsx') {
           main = '.';

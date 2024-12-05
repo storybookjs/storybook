@@ -6,10 +6,10 @@ import {
   isTooLongForDefaultValueSummary,
 } from 'storybook/internal/docs-tools';
 
-import isFunction from 'lodash/isFunction.js';
-import isPlainObject from 'lodash/isPlainObject.js';
-import isString from 'lodash/isString.js';
-import reactElementToJSXString from 'react-element-to-jsx-string';
+import { isFunction, isPlainObject, isString } from 'es-toolkit/compat';
+import type reactElementToJSXStringType from 'react-element-to-jsx-string';
+// @ts-expect-error (this is needed, because our bundling prefers the `browser` field, but that yields CJS)
+import reactElementToJSXStringRaw from 'react-element-to-jsx-string/dist/esm/index.js';
 
 import { ELEMENT_CAPTION, FUNCTION_CAPTION, OBJECT_CAPTION } from '../captions';
 import type { InspectionFunction } from '../inspection';
@@ -18,6 +18,8 @@ import { isHtmlTag } from '../isHtmlTag';
 import { generateArray } from './generateArray';
 import { generateObject } from './generateObject';
 import { getPrettyElementIdentifier, getPrettyFuncIdentifier } from './prettyIdentifier';
+
+const reactElementToJSXString = reactElementToJSXStringRaw as typeof reactElementToJSXStringType;
 
 export type TypeResolver = (rawDefaultProp: any, propDef: PropDef) => PropDefaultValue;
 

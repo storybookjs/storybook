@@ -42,5 +42,3 @@ export const iconsMap: Record<Viewport['type'], React.ReactNode> = {
   tablet: <TabletIcon />,
   other: <Fragment />,
 };
-
-export const emptyViewportMap: ViewportMap = {};

@@ -2,7 +2,7 @@ import { getStorybookVersionSpecifier } from 'storybook/internal/cli';
 import { writeConfig } from 'storybook/internal/csf-tools';
 import type { PackageJson } from 'storybook/internal/types';
 
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import { updateMainConfig } from '../helpers/mainConfigFile';
@@ -42,18 +42,18 @@ export const builderVite: Fix<BuilderViteOptions> = {
   },
 
   prompt({ builder }) {
-    const builderFormatted = chalk.cyan(JSON.stringify(builder, null, 2));
+    const builderFormatted = picocolors.cyan(JSON.stringify(builder, null, 2));
 
     return dedent`
       We've detected you're using the community vite builder: ${builderFormatted}
       
-      'storybook-builder-vite' is deprecated and now located at ${chalk.cyan(
+      'storybook-builder-vite' is deprecated and now located at ${picocolors.cyan(
         '@storybook/builder-vite'
       )}.
 
       We can upgrade your project to use the new builder automatically.
       
-      More info: ${chalk.yellow(
+      More info: ${picocolors.yellow(
         'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vite-builder-renamed'
       )}
     `;

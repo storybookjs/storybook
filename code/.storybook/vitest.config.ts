@@ -19,29 +19,32 @@ if (process.env.INSPECT === 'true') {
 
 export default mergeConfig(
   vitestCommonConfig,
+  // @ts-expect-error added this because of testNamePattern below
   defineProject({
     plugins: [
-      import('@storybook/experimental-addon-vitest/plugin').then(({ storybookTest }) =>
+      import('@storybook/experimental-addon-test/vitest-plugin').then(({ storybookTest }) =>
         storybookTest({
           configDir: process.cwd(),
+          tags: {
+            include: ['vitest'],
+          },
         })
       ),
       ...extraPlugins,
     ],
     test: {
       name: 'storybook-ui',
-      include: [
-        // TODO: test all core and addon stories later
-        // './core/**/components/**/*.{story,stories}.?(c|m)[jt]s?(x)',
-        '../addons/**/src/**/*.{story,stories}.?(c|m)[jt]s?(x)',
-      ],
       exclude: [
         ...defaultExclude,
         '../node_modules/**',
         '**/__mockdata__/**',
-        // expected to fail in Vitest because of fetching /iframe.html to cause ECONNREFUSED
-        '**/Zoom.stories.tsx',
+        '../**/__mockdata__/**',
+        '**/Zoom.stories.tsx', // expected to fail in Vitest because of fetching /iframe.html to cause ECONNREFUSED
+        '**/lib/blocks/src/**', // won't work because of https://github.com/storybookjs/storybook/issues/29783
       ],
+      // TODO: bring this back once portable stories support @storybook/core/preview-api hooks
+      // @ts-expect-error this type does not exist but the property does!
+      testNamePattern: /^(?!.*(UseState)).*$/,
       browser: {
         enabled: true,
         name: 'chromium',

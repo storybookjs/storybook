@@ -7,15 +7,15 @@ import { Global } from 'storybook/internal/theming';
 import { GrowIcon, RefreshIcon, TransferIcon } from '@storybook/icons';
 
 import { PARAM_KEY as KEY } from '../constants';
+import { MINIMAL_VIEWPORTS } from '../defaults';
 import { responsiveViewport } from '../responsiveViewport';
 import { registerShortcuts } from '../shortcuts';
-import type { Config, GlobalState, GlobalStateUpdate, Viewport, ViewportMap } from '../types';
+import type { Config, GlobalStateUpdate, Viewport, ViewportMap } from '../types';
 import {
   ActiveViewportLabel,
   ActiveViewportSize,
   IconButtonLabel,
   IconButtonWithLabel,
-  emptyViewportMap,
   iconsMap,
 } from '../utils';
 
@@ -39,7 +39,7 @@ export const ViewportTool: FC<{ api: API }> = ({ api }) => {
   const [globals, updateGlobals, storyGlobals] = useGlobals();
   const [isTooltipVisible, setIsTooltipVisible] = useState(false);
 
-  const { options = emptyViewportMap, disable } = config || {};
+  const { options = MINIMAL_VIEWPORTS, disable } = config || {};
   const data = globals?.[KEY] || {};
   const viewportName: string = data.value;
   const isRotated: boolean = data.isRotated;
@@ -139,7 +139,7 @@ const Pure = React.memo(function PureTool(props: PureProps) {
                   onHide();
                 },
               })),
-            ]}
+            ].flat()}
           />
         )}
         closeOnOutsideClick

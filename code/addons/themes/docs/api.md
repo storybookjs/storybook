@@ -148,7 +148,7 @@ export const myCustomDecorator = ({ themes, defaultState, ...rest }) => {
 Let's use Vuetify as an example. Vuetify uses it's own global state to know which theme to render. To build a custom decorator to accommodate this method we'll need to do the following
 
 ```js
-// .storybook/withVeutifyTheme.decorator.js
+// .storybook/withVuetifyTheme.decorator.js
 import { DecoratorHelpers } from '@storybook/addon-themes';
 import { useTheme } from 'vuetify';
 

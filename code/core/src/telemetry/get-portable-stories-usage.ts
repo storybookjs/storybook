@@ -1,3 +1,4 @@
+// eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
 
 import { createFileSystemCache, resolvePathInStorybookCache } from '../common';

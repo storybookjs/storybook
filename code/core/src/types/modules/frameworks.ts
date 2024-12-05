@@ -8,6 +8,7 @@ export type SupportedFrameworks =
   | 'nextjs'
   | 'preact-vite'
   | 'preact-webpack5'
+  | 'react-native-web-vite'
   | 'react-vite'
   | 'react-webpack5'
   | 'server-webpack5'

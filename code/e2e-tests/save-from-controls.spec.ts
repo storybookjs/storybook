@@ -19,7 +19,7 @@ test.describe('save-from-controls', () => {
     test.skip(browserName !== 'chromium', `Skipping save-from-controls tests for ${browserName}`);
 
     await page.goto(storybookUrl);
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.waitUntilLoaded();
 
     await sbPage.navigateToStory('example/button', 'primary');
@@ -35,11 +35,11 @@ test.describe('save-from-controls', () => {
     await sbPage.panelContent().locator('[data-short-label="Unsaved changes"]').isVisible();
 
     // update the story
-    await sbPage.panelContent().locator('button').getByText('Update story').click({ force: true });
+    await sbPage.panelContent().locator('button').getByText('Update story').click();
 
     // Assert the file is saved
-    const notification1 = await sbPage.page.waitForSelector('[title="Story saved"]');
-    await notification1.isVisible();
+    const notification1 = sbPage.page.getByTitle('Story saved');
+    await expect(notification1).toBeVisible();
 
     // dismiss
     await notification1.click();
@@ -52,21 +52,19 @@ test.describe('save-from-controls', () => {
     // Assert the footer is shown
     await sbPage.panelContent().locator('[data-short-label="Unsaved changes"]').isVisible();
 
-    const buttons = await sbPage
+    const buttons = sbPage
       .panelContent()
       .locator('[aria-label="Create new story with these settings"]');
 
     // clone the story
-    await buttons.click({ force: true });
+    await buttons.click();
 
-    const input = await sbPage.page.waitForSelector('[placeholder="Story export name"]');
-    await input.fill('ClonedStory' + id);
-    const submit = await sbPage.page.waitForSelector('[type="submit"]');
-    await submit.click();
+    await sbPage.page.getByPlaceholder('Story export name').fill('ClonedStory' + id);
+    await sbPage.page.getByRole('button', { name: 'Create' }).click();
 
     // Assert the file is saved
-    const notification2 = await sbPage.page.waitForSelector('[title="Story created"]');
-    await notification2.isVisible();
+    const notification2 = sbPage.page.getByTitle('Story created');
+    await expect(notification2).toBeVisible();
     await notification2.click();
 
     // Assert the Button components is rendered in the preview

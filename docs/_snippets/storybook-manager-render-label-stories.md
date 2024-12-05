@@ -9,4 +9,3 @@ addons.setConfig({
   },
 });
 ```
-

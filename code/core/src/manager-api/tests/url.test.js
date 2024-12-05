@@ -19,7 +19,7 @@ describe('initial state', () => {
   describe('config query parameters', () => {
     it('handles full parameter', () => {
       const navigate = vi.fn();
-      const location = { search: new URLSearchParams({ full: '1' }).toString() };
+      const location = { search: '?' + new URLSearchParams({ full: '1' }).toString() };
 
       const {
         state: { layout },
@@ -34,7 +34,7 @@ describe('initial state', () => {
 
     it('handles nav parameter', () => {
       const navigate = vi.fn();
-      const location = { search: new URLSearchParams({ nav: '0' }).toString() };
+      const location = { search: '?' + new URLSearchParams({ nav: '0' }).toString() };
 
       const {
         state: { layout },
@@ -45,7 +45,7 @@ describe('initial state', () => {
 
     it('handles shortcuts parameter', () => {
       const navigate = vi.fn();
-      const location = { search: new URLSearchParams({ shortcuts: '0' }).toString() };
+      const location = { search: '?' + new URLSearchParams({ shortcuts: '0' }).toString() };
 
       const {
         state: { ui },
@@ -56,7 +56,7 @@ describe('initial state', () => {
 
     it('handles panel parameter, bottom', () => {
       const navigate = vi.fn();
-      const location = { search: new URLSearchParams({ panel: 'bottom' }).toString() };
+      const location = { search: '?' + new URLSearchParams({ panel: 'bottom' }).toString() };
 
       const {
         state: { layout },
@@ -67,7 +67,7 @@ describe('initial state', () => {
 
     it('handles panel parameter, right', () => {
       const navigate = vi.fn();
-      const location = { search: new URLSearchParams({ panel: 'right' }).toString() };
+      const location = { search: '?' + new URLSearchParams({ panel: 'right' }).toString() };
 
       const {
         state: { layout },
@@ -78,7 +78,7 @@ describe('initial state', () => {
 
     it('handles panel parameter, 0', () => {
       const navigate = vi.fn();
-      const location = { search: new URLSearchParams({ panel: '0' }).toString() };
+      const location = { search: '?' + new URLSearchParams({ panel: '0' }).toString() };
 
       const {
         state: { layout },

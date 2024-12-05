@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-jest",
-  "version": "8.3.0-alpha.9",
+  "version": "8.5.0-alpha.17",
   "description": "React storybook addon that show component jest report",
   "keywords": [
     "addon",
@@ -31,8 +31,7 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "node": "./dist/index.js"
+      "require": "./dist/index.js"
     },
     "./manager": "./dist/manager.js",
     "./register": "./dist/manager.js",
@@ -59,7 +58,7 @@
     "upath": "^2.0.1"
   },
   "devDependencies": {
-    "@storybook/icons": "^1.2.10",
+    "@storybook/icons": "^1.2.12",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-resize-detector": "^7.1.2",

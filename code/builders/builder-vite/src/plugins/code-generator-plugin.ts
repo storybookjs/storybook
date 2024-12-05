@@ -8,12 +8,7 @@ import { generateImportFnScriptCode } from '../codegen-importfn-script';
 import { generateModernIframeScriptCode } from '../codegen-modern-iframe-script';
 import { generateAddonSetupCode } from '../codegen-set-addon-channel';
 import { transformIframeHtml } from '../transform-iframe-html';
-import {
-  virtualAddonSetupFile,
-  virtualFileId,
-  virtualPreviewFile,
-  virtualStoriesFile,
-} from '../virtual-file-names';
+import { SB_VIRTUAL_FILES, getResolvedVirtualModuleId } from '../virtual-file-names';
 
 export function codeGeneratorPlugin(options: Options): Plugin {
   const iframePath = require.resolve('@storybook/builder-vite/input/iframe.html');
@@ -28,11 +23,15 @@ export function codeGeneratorPlugin(options: Options): Plugin {
       // invalidate the whole vite-app.js script on every file change.
       // (this might be a little too aggressive?)
       server.watcher.on('change', () => {
-        const appModule = server.moduleGraph.getModuleById(virtualFileId);
+        const appModule = server.moduleGraph.getModuleById(
+          getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_APP_FILE)
+        );
         if (appModule) {
           server.moduleGraph.invalidateModule(appModule);
         }
-        const storiesModule = server.moduleGraph.getModuleById(virtualStoriesFile);
+        const storiesModule = server.moduleGraph.getModuleById(
+          getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE)
+        );
         if (storiesModule) {
           server.moduleGraph.invalidateModule(storiesModule);
         }
@@ -45,13 +44,13 @@ export function codeGeneratorPlugin(options: Options): Plugin {
         // TODO maybe use the stories declaration in main
         if (/\.stories\.([tj])sx?$/.test(path) || /\.mdx$/.test(path)) {
           // We need to emit a change event to trigger HMR
-          server.watcher.emit('change', virtualStoriesFile);
+          server.watcher.emit('change', SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE);
         }
       });
     },
     config(config, { command }) {
       // If we are building the static distribution, add iframe.html as an entry.
-      // In development mode, it's not an entry - instead, we use an express middleware
+      // In development mode, it's not an entry - instead, we use a middleware
       // to serve iframe.html. The reason is that Vite's dev server (at the time of writing)
       // does not support virtual files as entry points.
       if (command === 'build') {
@@ -69,34 +68,34 @@ export function codeGeneratorPlugin(options: Options): Plugin {
       iframeId = `${config.root}/iframe.html`;
     },
     resolveId(source) {
-      if (source === virtualFileId) {
-        return `${virtualFileId}`;
+      if (source === SB_VIRTUAL_FILES.VIRTUAL_APP_FILE) {
+        return getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_APP_FILE);
       }
       if (source === iframePath) {
         return iframeId;
       }
-      if (source === virtualStoriesFile) {
-        return `${virtualStoriesFile}`;
+      if (source === SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE) {
+        return getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE);
       }
-      if (source === virtualPreviewFile) {
-        return virtualPreviewFile;
+      if (source === SB_VIRTUAL_FILES.VIRTUAL_PREVIEW_FILE) {
+        return getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_PREVIEW_FILE);
       }
-      if (source === virtualAddonSetupFile) {
-        return `${virtualAddonSetupFile}`;
+      if (source === SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE) {
+        return getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE);
       }
 
       return undefined;
     },
     async load(id, config) {
-      if (id === `${virtualStoriesFile}`) {
+      if (id === getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE)) {
         return generateImportFnScriptCode(options);
       }
 
-      if (id === `${virtualAddonSetupFile}`) {
+      if (id === getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE)) {
         return generateAddonSetupCode();
       }
 
-      if (id === `${virtualFileId}`) {
+      if (id === getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_APP_FILE)) {
         return generateModernIframeScriptCode(options, projectRoot);
       }
 

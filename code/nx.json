@@ -1,16 +1,9 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "extends": "nx/presets/npm.json",
-  "cacheDirectory": "../.nx/cache",
   "nxCloudAccessToken": "NGVmYTkxMmItYzY3OS00MjkxLTk1ZDktZDFmYTFmNmVlNGY4fHJlYWQ=",
   "defaultBase": "next",
   "parallel": 8,
-  "affected": {
-    "defaultBase": "next"
-  },
-  "cli": {
-    "packageManager": "yarn"
-  },
   "plugins": [
     {
       "plugin": "@nx/vite/plugin",
@@ -52,7 +45,7 @@
         "{workspaceRoot}/../scripts/prepare/{bundle,addon-bundle,esm-bundle}.ts"
       ],
       "dependsOn": ["^build"],
-      "outputs": ["{projectRoot}/dist"],
+      "outputs": ["{projectRoot}/dist", "{workspaceRoot}/bench/esbuild-metafiles/{projectName}"],
       "cache": true
     },
     "test": {
@@ -138,7 +131,7 @@
     "sharedGlobals": ["{workspaceRoot}/tsconfig.json"],
     "production": [
       "default",
-      "!{projectRoot}/src/**/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap),",
+      "!{projectRoot}/src/**/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
       "!{projectRoot}/vitest.config.[jt]s",
       "!{projectRoot}/README.md",
       "!{projectRoot}/.eslintrc.{json,js}",

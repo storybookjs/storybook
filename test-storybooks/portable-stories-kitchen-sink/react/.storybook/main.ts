@@ -3,12 +3,15 @@ import type { StorybookConfig } from "@storybook/react-vite";
 const config: StorybookConfig = {
   stories: ["../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
   addons: [
-    "@storybook/addon-essentials",
-    "@storybook/addon-interactions"
+    "@storybook/addon-controls",
+    "@storybook/experimental-addon-test",
   ],
   framework: {
     name: "@storybook/react-vite",
     options: {},
+  },
+  core: {
+    disableWhatsNewNotifications: true
   },
 };
 export default config;

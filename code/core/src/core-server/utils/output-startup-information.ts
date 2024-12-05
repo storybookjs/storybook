@@ -3,8 +3,8 @@ import type { VersionCheck } from '@storybook/core/types';
 import { colors } from '@storybook/core/node-logger';
 
 import boxen from 'boxen';
-import chalk from 'chalk';
 import Table from 'cli-table3';
+import picocolors from 'picocolors';
 import prettyTime from 'pretty-hrtime';
 import { dedent } from 'ts-dedent';
 
@@ -50,13 +50,13 @@ export function outputStartupInformation(options: {
   });
 
   serveMessage.push(
-    ['Local:', chalk.cyan(address)],
-    ['On your network:', chalk.cyan(networkAddress)]
+    ['Local:', picocolors.cyan(address)],
+    ['On your network:', picocolors.cyan(networkAddress)]
   );
 
   const timeStatement = [
-    managerTotalTime && `${chalk.underline(prettyTime(managerTotalTime))} for manager`,
-    previewTotalTime && `${chalk.underline(prettyTime(previewTotalTime))} for preview`,
+    managerTotalTime && `${picocolors.underline(prettyTime(managerTotalTime))} for manager`,
+    previewTotalTime && `${picocolors.underline(prettyTime(previewTotalTime))} for preview`,
   ]
     .filter(Boolean)
     .join(' and ');
@@ -64,8 +64,10 @@ export function outputStartupInformation(options: {
   console.log(
     boxen(
       dedent`
-          ${colors.green(`Storybook ${chalk.bold(version)} for ${chalk.bold(name)} started`)}
-          ${chalk.gray(timeStatement)}
+          ${colors.green(
+            `Storybook ${picocolors.bold(version)} for ${picocolors.bold(name)} started`
+          )}
+          ${picocolors.gray(timeStatement)}
 
           ${serveMessage.toString()}${updateMessage ? `\n\n${updateMessage}` : ''}
         `,

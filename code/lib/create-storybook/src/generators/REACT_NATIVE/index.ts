@@ -14,15 +14,19 @@ const generator = async (
 
   const reactVersion = packageJson.dependencies.react;
 
-  const controlsPeerDependencies = [
+  const peerDependencies = [
     'react-native-safe-area-context',
     '@react-native-async-storage/async-storage',
     '@react-native-community/datetimepicker',
     '@react-native-community/slider',
+    'react-native-reanimated',
+    'react-native-gesture-handler',
+    '@gorhom/bottom-sheet',
+    'react-native-svg',
   ].filter((dep) => !packageJson.dependencies[dep] && !packageJson.devDependencies[dep]);
 
   const packagesToResolve = [
-    ...controlsPeerDependencies,
+    ...peerDependencies,
     '@storybook/addon-ondevice-controls',
     '@storybook/addon-ondevice-actions',
     '@storybook/react-native',
@@ -57,7 +61,8 @@ const generator = async (
   await copyTemplateFiles({
     packageManager,
     renderer: 'react-native',
-    language: SupportedLanguage.TYPESCRIPT_3_8,
+    // this value for language is not used since we only ship the ts template. This means we just fallback to @storybook/react-native/template/cli.
+    language: SupportedLanguage.TYPESCRIPT_4_9,
     destination: storybookConfigFolder,
   });
 };

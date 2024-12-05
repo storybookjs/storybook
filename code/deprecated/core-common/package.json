@@ -1,6 +1,6 @@
 {
   "name": "@storybook/core-common",
-  "version": "8.3.0-alpha.9",
+  "version": "8.5.0-alpha.17",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -38,7 +38,7 @@
     "*.d.ts"
   ],
   "peerDependencies": {
-    "storybook": "workspace:^"
+    "storybook": "^8.2.0 || ^8.3.0-0 || ^8.4.0-0 || ^8.5.0-0 || ^8.6.0-0"
   },
   "publishConfig": {
     "access": "public"

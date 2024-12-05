@@ -10,14 +10,20 @@ import {
 } from 'storybook/internal/common';
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 
+import prompts from 'prompts';
 import SemVer from 'semver';
 import { dedent } from 'ts-dedent';
 
+import {
+  getRequireWrapperName,
+  wrapValueWithRequireWrapper,
+} from './automigrate/fixes/wrap-require-utils';
 import { postinstallAddon } from './postinstallAddon';
 
 export interface PostinstallOptions {
   packageManager: PackageManagerName;
   configDir: string;
+  yes?: boolean;
 }
 
 /**
@@ -61,6 +67,7 @@ type CLIOptions = {
   packageManager?: PackageManagerName;
   configDir?: string;
   skipPostinstall: boolean;
+  yes?: boolean;
 };
 
 /**
@@ -78,7 +85,7 @@ type CLIOptions = {
  */
 export async function add(
   addon: string,
-  { packageManager: pkgMgr, skipPostinstall, configDir: userSpecifiedConfigDir }: CLIOptions,
+  { packageManager: pkgMgr, skipPostinstall, configDir: userSpecifiedConfigDir, yes }: CLIOptions,
   logger = console
 ) {
   const [addonName, inputVersion] = getVersionSpecifier(addon);
@@ -93,19 +100,28 @@ export async function add(
 
   if (typeof configDir === 'undefined') {
     throw new Error(dedent`
-      Unable to find storybook config directory
+      Unable to find storybook config directory. Please specify your Storybook config directory with the --config-dir flag.
     `);
   }
 
   if (!mainConfig) {
-    logger.error('Unable to find storybook main.js config');
+    logger.error('Unable to find Storybook main.js config');
     return;
   }
 
+  let shouldAddToMain = true;
   if (checkInstalled(addonName, requireMain(configDir))) {
-    throw new Error(dedent`
-      Addon ${addonName} is already installed; we skipped adding it to your ${mainConfig}.
-    `);
+    const { shouldForceInstall } = await prompts({
+      type: 'confirm',
+      name: 'shouldForceInstall',
+      message: `The Storybook addon "${addonName}" is already present in ${mainConfig}. Do you wish to install it again?`,
+    });
+
+    if (!shouldForceInstall) {
+      return;
+    }
+
+    shouldAddToMain = false;
   }
 
   const main = await readConfig(mainConfig);
@@ -124,7 +140,7 @@ export async function add(
 
   if (isCoreAddon(addonName) && version !== storybookVersion) {
     logger.warn(
-      `The version of ${addonName} you are installing is not the same as the version of Storybook you are using. This may lead to unexpected behavior.`
+      `The version of ${addonName} (${version}) you are installing is not the same as the version of Storybook you are using (${storybookVersion}). This may lead to unexpected behavior.`
     );
   }
 
@@ -135,12 +151,23 @@ export async function add(
   logger.log(`Installing ${addonWithVersion}`);
   await packageManager.addDependencies({ installAsDevDependencies: true }, [addonWithVersion]);
 
-  logger.log(`Adding '${addon}' to main.js addons field.`);
-  main.appendValueToArray(['addons'], addonName);
-  await writeConfig(main);
+  if (shouldAddToMain) {
+    logger.log(`Adding '${addon}' to the "addons" field in ${mainConfig}`);
+
+    const mainConfigAddons = main.getFieldNode(['addons']);
+    if (mainConfigAddons && getRequireWrapperName(main) !== null) {
+      const addonNode = main.valueToNode(addonName);
+      main.appendNodeToArray(['addons'], addonNode as any);
+      wrapValueWithRequireWrapper(main, addonNode as any);
+    } else {
+      main.appendValueToArray(['addons'], addonName);
+    }
+
+    await writeConfig(main);
+  }
 
   if (!skipPostinstall && isCoreAddon(addonName)) {
-    await postinstallAddon(addonName, { packageManager: packageManager.type, configDir });
+    await postinstallAddon(addonName, { packageManager: packageManager.type, configDir, yes });
   }
 }
 function isValidVersion(version: string) {

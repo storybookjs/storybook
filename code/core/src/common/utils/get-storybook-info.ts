@@ -1,9 +1,8 @@
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 import type { SupportedFrameworks } from '@storybook/core/types';
 import type { CoreCommon_StorybookInfo, PackageJson } from '@storybook/core/types';
-
-import { pathExistsSync } from 'fs-extra';
 
 import { getStorybookConfiguration } from './get-storybook-configuration';
 
@@ -42,6 +41,8 @@ export const frameworkPackages: Record<string, SupportedFrameworks> = {
   '@storybook/svelte-webpack5': 'svelte-webpack5',
   '@storybook/sveltekit': 'sveltekit',
   '@storybook/vue3-vite': 'vue3-vite',
+  '@storybook/experimental-nextjs-vite': 'experimental-nextjs-vite',
+  '@storybook/react-native-web-vite': 'react-native-web-vite',
   '@storybook/vue3-webpack5': 'vue3-webpack5',
   '@storybook/web-components-vite': 'web-components-vite',
   '@storybook/web-components-webpack5': 'web-components-webpack5',
@@ -92,9 +93,7 @@ const validConfigExtensions = ['ts', 'js', 'tsx', 'jsx', 'mjs', 'cjs'];
 
 export const findConfigFile = (prefix: string, configDir: string) => {
   const filePrefix = join(configDir, prefix);
-  const extension = validConfigExtensions.find((ext: string) =>
-    pathExistsSync(`${filePrefix}.${ext}`)
-  );
+  const extension = validConfigExtensions.find((ext: string) => existsSync(`${filePrefix}.${ext}`));
   return extension ? `${filePrefix}.${extension}` : null;
 };
 

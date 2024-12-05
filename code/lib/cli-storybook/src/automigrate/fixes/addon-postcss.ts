@@ -1,4 +1,4 @@
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import { getAddonNames } from '../helpers/mainConfigFile';
@@ -28,13 +28,13 @@ export const addonPostCSS: Fix<AddonPostcssRunOptions> = {
 
   prompt() {
     return dedent`
-      ${chalk.bold(
+      ${picocolors.bold(
         'Attention'
       )}: We've detected that you're using the following package which is incompatible with Storybook 8 and beyond:
 
-      - ${chalk.cyan(`@storybook/addon-postcss`)}
+      - ${picocolors.cyan(`@storybook/addon-postcss`)}
       
-      Please migrate to ${chalk.cyan(
+      Please migrate to ${picocolors.cyan(
         `@storybook/addon-styling-webpack`
       )} once you're done upgrading.
     `;

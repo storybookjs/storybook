@@ -1,16 +1,17 @@
 /* eslint-disable no-underscore-dangle */
+import type { BabelFile, NodePath } from '@storybook/core/babel';
+import { core as babel, types as t } from '@storybook/core/babel';
+
 import type { CsfFile } from '@storybook/core/csf-tools';
 import { loadCsf, printCsf } from '@storybook/core/csf-tools';
 
-import type { BabelFile, NodePath } from '@babel/core';
-import * as babel from '@babel/core';
-import * as t from '@babel/types';
-import { isIdentifier, isTSTypeAnnotation, isTSTypeReference } from '@babel/types';
 import type { API, FileInfo } from 'jscodeshift';
 import prettier from 'prettier';
 import invariant from 'tiny-invariant';
 
 import { upgradeDeprecatedTypes } from './upgrade-deprecated-types';
+
+const { isIdentifier, isTSTypeAnnotation, isTSTypeReference } = t;
 
 const logger = console;
 

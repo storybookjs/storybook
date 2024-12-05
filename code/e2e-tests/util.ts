@@ -1,13 +1,17 @@
 import { toId } from '@storybook/csf';
 
-import type { Page } from '@playwright/test';
-import { expect } from '@playwright/test';
+import type { Expect, Page } from '@playwright/test';
+
+import { allTemplates } from '../lib/cli-storybook/src/sandbox-templates';
 
 export class SbPage {
   readonly page: Page;
 
-  constructor(page: Page) {
+  readonly expect: Expect;
+
+  constructor(page: Page, expect: Expect) {
     this.page = page;
+    this.expect = expect;
   }
 
   async openComponent(title: string, hasRoot = true) {
@@ -17,7 +21,7 @@ export class SbPage {
 
       const parentLink = this.page.locator(`#${parentId}`);
 
-      await expect(parentLink).toBeVisible();
+      await this.expect(parentLink).toBeVisible();
       if ((await parentLink.getAttribute('aria-expanded')) === 'false') {
         await parentLink.click();
       }
@@ -43,18 +47,18 @@ export class SbPage {
     const titleId = toId(title);
     const storyId = toId(name);
     const storyLinkId = `#${titleId}--${storyId}`;
-    await this.page.waitForSelector(storyLinkId);
+    await this.page.locator(storyLinkId).waitFor();
     const storyLink = this.page.locator('*', { has: this.page.locator(`> ${storyLinkId}`) });
-    await storyLink.click({ force: true });
+    await storyLink.click();
 
     await this.page.waitForURL((url) =>
       url.search.includes(
-        `path=/${viewMode ?? name === 'docs' ? 'docs' : 'story'}/${titleId}--${storyId}`
+        `path=/${(viewMode ?? name === 'docs') ? 'docs' : 'story'}/${titleId}--${storyId}`
       )
     );
 
-    const selected = await storyLink.getAttribute('data-selected');
-    await expect(selected).toBe('true');
+    const selected = storyLink;
+    await this.expect(selected).toHaveAttribute('data-selected', 'true');
 
     await this.previewRoot();
   }
@@ -65,16 +69,16 @@ export class SbPage {
     const titleId = toId(title);
     const storyId = toId(name);
     const storyLinkId = `#${titleId}-${storyId}--docs`;
-    await this.page.waitForSelector(storyLinkId);
+    await this.page.locator(storyLinkId).waitFor();
     const storyLink = this.page.locator('*', { has: this.page.locator(`> ${storyLinkId}`) });
-    await storyLink.click({ force: true });
+    await storyLink.click();
 
     await this.page.waitForURL((url) =>
       url.search.includes(`path=/docs/${titleId}-${storyId}--docs`)
     );
 
-    const selected = await storyLink.getAttribute('data-selected');
-    await expect(selected).toBe('true');
+    const selected = storyLink;
+    await this.expect(selected).toHaveAttribute('data-selected', 'true');
 
     await this.previewRoot();
   }
@@ -120,11 +124,11 @@ export class SbPage {
   }
 
   panelContent() {
-    return this.page.locator('#storybook-panel-root #panel-tab-content');
+    return this.page.locator('#storybook-panel-root #panel-tab-content > div:not([hidden])');
   }
 
   async viewAddonPanel(name: string) {
-    const tabs = await this.page.locator('[role=tablist] button[role=tab]');
+    const tabs = this.page.locator('[role=tablist] button[role=tab]');
     const tab = tabs.locator(`text=/^${name}/`);
     await tab.click();
   }
@@ -140,3 +144,9 @@ export class SbPage {
     return this.previewIframe().locator('body');
   }
 }
+
+const templateName: keyof typeof allTemplates = process.env.STORYBOOK_TEMPLATE_NAME || ('' as any);
+
+const templates = allTemplates;
+export const hasVitestIntegration =
+  !templates[templateName]?.skipTasks?.includes('vitest-integration');

@@ -143,7 +143,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="3"
+```js filename=".storybook/preview.js" renderer="vue" language="js"
 import { setup } from '@storybook/vue3';
 
 import { VApp } from 'vuetify/components';
@@ -176,7 +176,7 @@ const preview = {
 export default preview;
 ```
 
-```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="3"
+```ts filename=".storybook/preview.ts" renderer="vue" language="ts"
 import type { Preview } from '@storybook/vue3';
 import { setup } from '@storybook/vue3';
 
@@ -243,4 +243,3 @@ const preview: Preview = {
 
 export default preview;
 ```
-

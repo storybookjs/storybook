@@ -21,10 +21,10 @@
               "-e",
               "json",
               "-d",
-              "." // Add this line to introspect the relevant files starting from the root directory of your project.
+              ".", // Add this line to introspect the relevant files starting from the root directory of your project.
             ],
-            "port": 6006
-          }
+            "port": 6006,
+          },
         },
         "build-storybook": {
           "builder": "@storybook/angular:build-storybook",
@@ -36,14 +36,13 @@
               "-e",
               "json",
               "-d",
-              "." // Add this line to introspect the relevant files starting from the root directory of your project.
+              ".", // Add this line to introspect the relevant files starting from the root directory of your project.
             ],
-            "outputDir": "storybook-static"
-          }
-        }
-      }
-    }
-  }
+            "outputDir": "storybook-static",
+          },
+        },
+      },
+    },
+  },
 }
 ```
-

@@ -24,10 +24,7 @@ vi.mock('fs', () => ({
   readdirSync: vi.fn(),
   readlinkSync: vi.fn(),
   default: vi.fn(),
-}));
-
-vi.mock('fs-extra', () => ({
-  pathExistsSync: vi.fn(() => true),
+  mkdirSync: vi.fn(),
 }));
 
 vi.mock('@storybook/core/node-logger');

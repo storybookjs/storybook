@@ -1,11 +1,11 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
 
 /* eslint-disable no-underscore-dangle */
+import { types as t } from '@storybook/core/babel';
 import { getStoryTitle } from '@storybook/core/common';
 import type { StoriesEntry, Tag } from '@storybook/core/types';
 import { combineTags } from '@storybook/csf';
 
-import * as t from '@babel/types';
 import { dedent } from 'ts-dedent';
 
 import { formatCsf, loadCsf } from '../CsfFile';
@@ -19,12 +19,20 @@ type TagsFilter = {
 };
 
 const isValidTest = (storyTags: string[], tagsFilter: TagsFilter) => {
-  const isIncluded =
-    tagsFilter?.include.length === 0 || tagsFilter?.include.some((tag) => storyTags.includes(tag));
-  const isNotExcluded = tagsFilter?.exclude.every((tag) => !storyTags.includes(tag));
-
-  return isIncluded && isNotExcluded;
+  if (tagsFilter.include.length && !tagsFilter.include.some((tag) => storyTags?.includes(tag))) {
+    return false;
+  }
+  if (tagsFilter.exclude.some((tag) => storyTags?.includes(tag))) {
+    return false;
+  }
+  // Skipped tests are intentionally included here
+  return true;
 };
+/**
+ * TODO: the functionality in this file can be moved back to the vitest plugin itself It can use
+ * `storybook/internal/babel` for all it's babel needs, without duplicating babel embedding in our
+ * bundles.
+ */
 
 export async function vitestTransform({
   code,
@@ -40,7 +48,7 @@ export async function vitestTransform({
   tagsFilter: TagsFilter;
   stories: StoriesEntry[];
   previewLevelTags: Tag[];
-}) {
+}): Promise<ReturnType<typeof formatCsf>> {
   const isStoryFile = /\.stor(y|ies)\./.test(fileName);
   if (!isStoryFile) {
     return code;
@@ -167,8 +175,10 @@ export async function vitestTransform({
       // Combine testPath and filepath using the ?? operator
       const nullishCoalescingExpression = t.logicalExpression(
         '??',
-        testPathProperty,
-        filePathProperty
+        // TODO: switch order of testPathProperty and filePathProperty when the bug is fixed
+        // https://github.com/vitest-dev/vitest/issues/6367 (or probably just use testPathProperty)
+        filePathProperty,
+        testPathProperty
       );
 
       // Create the final expression: import.meta.url.includes(...)
@@ -194,19 +204,23 @@ export async function vitestTransform({
     ast.program.body.push(isRunningFromThisFileDeclaration);
 
     const getTestStatementForStory = ({
+      localName,
       exportName,
+      testTitle,
       node,
     }: {
+      localName: string;
       exportName: string;
+      testTitle: string;
       node: t.Node;
-    }) => {
+    }): t.ExpressionStatement => {
       // Create the _test expression directly using the exportName identifier
       const testStoryCall = t.expressionStatement(
         t.callExpression(vitestTestId, [
-          t.stringLiteral(exportName),
+          t.stringLiteral(testTitle),
           t.callExpression(testStoryId, [
             t.stringLiteral(exportName),
-            t.identifier(exportName),
+            t.identifier(localName),
             t.identifier(metaExportName),
             skipTagsId,
           ]),
@@ -232,10 +246,10 @@ export async function vitestTransform({
           return;
         }
 
-        return getTestStatementForStory({
-          exportName,
-          node,
-        });
+        const localName = parsed._stories[exportName].localName ?? exportName;
+        // use the story's name as the test title for vitest, and fallback to exportName
+        const testTitle = parsed._stories[exportName].name ?? exportName;
+        return getTestStatementForStory({ testTitle, localName, exportName, node });
       })
       .filter((st) => !!st) as t.ExpressionStatement[];
 
@@ -253,7 +267,7 @@ export async function vitestTransform({
       ),
       t.importDeclaration(
         [t.importSpecifier(testStoryId, t.identifier('testStory'))],
-        t.stringLiteral('@storybook/experimental-addon-vitest/internal/test-utils')
+        t.stringLiteral('@storybook/experimental-addon-test/internal/test-utils')
       ),
     ];
 

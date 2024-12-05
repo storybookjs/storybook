@@ -224,7 +224,27 @@ export const Primary: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+  });
+</script>
+
+<Story
+  name="Primary"
+  args={{
+    primary: true,
+    label: 'Button'
+  }}
+/>
+```
+
+```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import Button from './Button.svelte';
 
 export default {
@@ -239,30 +259,27 @@ export const Primary = {
 };
 ```
 
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* Button.stories.svelte */}
-
-<script>
-  import { Meta, Template, Story } from '@storybook/addon-svelte-csf';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
 
   import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+  });
 </script>
 
-<Meta title="Button" component={Button} argTypes={{ label: { control: 'text' }, primary: { control:
-'boolean' }, }} />
-
-{/*👇 We create a “template” of how args map to rendering */}
-
-<template let:args>
-  <button {...args} />
-</template>
-
-{/* 👇 Each story then reuses that template */}
-
-<Story name='Primary' args={{ primary: true, label: 'Button' }} />
+<Story
+  name="Primary"
+  args={{
+    primary: true,
+    label: 'Button'
+  }}
+/>
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9"
+```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
 import Button from './Button.svelte';
@@ -282,7 +299,27 @@ export const Primary: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+  });
+</script>
+
+<Story
+  name="Primary"
+  args={{
+    primary: true,
+    label: 'Button'
+  }}
+/>
+```
+
+```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
 import Button from './Button.svelte';
@@ -302,7 +339,7 @@ export const Primary: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="3"
+```js filename="Button.stories.js" renderer="vue" language="js"
 import Button from './Button.vue';
 
 export default {
@@ -329,7 +366,7 @@ export const Primary = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts-4-9" tabTitle="3"
+```ts filename="Button.stories.ts" renderer="vue" language="ts-4-9"
 import type { Meta, StoryObj } from '@storybook/vue3';
 
 import Button from './Button.vue';
@@ -361,7 +398,7 @@ export const Primary: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="3"
+```ts filename="Button.stories.ts" renderer="vue" language="ts"
 import type { Meta, StoryObj } from '@storybook/vue3';
 
 import Button from './Button.vue';
@@ -423,4 +460,3 @@ export const Primary: Story = {
   },
 };
 ```
-

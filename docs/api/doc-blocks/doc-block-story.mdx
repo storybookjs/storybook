@@ -21,9 +21,7 @@ In Storybook Docs, you can render any of your stories from your CSF files in the
 
 {/* prettier-ignore-start */}
 
-```md
-{/* ButtonDocs.mdx */}
-
+```md title="ButtonDocs.mdx"+
 import { Meta, Story } from '@storybook/blocks';
 import * as ButtonStories from './Button.stories';
 
@@ -55,9 +53,7 @@ import { Story } from '@storybook/blocks';
 
   {/* prettier-ignore-start */}
 
-  ```md
-  {/* ButtonDocs.mdx */}
-
+  ```md title="ButtonDocs.mdx"
   <Story of={ButtonStories.Basic} autoplay />
   ```
 
@@ -79,7 +75,7 @@ Because all stories render simultaneously in docs entries, play functions can pe
 However, if you know your play function is “safe” to run in docs, you can use this prop to run it automatically.
 
 <Callout variant="info">
-  If a story uses [`mount` in its play function](../../writing-tests/interaction-testing.mdx#run-code-before-the-component-gets-rendered), it will not render in docs unless `autoplay` is set to `true`.
+  If a story uses [`mount` in its play function](../../writing-tests/component-testing.mdx#run-code-before-the-component-gets-rendered), it will not render in docs unless `autoplay` is set to `true`.
 </Callout>
 
 ### `height`
@@ -114,9 +110,7 @@ You can render a story from a CSF file that you haven’t attached to the MDX fi
 
 {/* prettier-ignore-start */}
 
-```md
-{/* ButtonDocs.mdx */}
-
+```md title="ButtonDocs.mdx"
 import { Meta, Story } from '@storybook/blocks';
 import * as ButtonStories from './Button.stories';
 import * as HeaderStories from './Header.stories';

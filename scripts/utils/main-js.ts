@@ -4,9 +4,9 @@ import slash from 'slash';
 
 import { getInterpretedFile } from '../../code/core/src/common';
 import type { ConfigFile } from '../../code/core/src/csf-tools';
-import { readConfig } from '../../code/core/src/csf-tools';
+import { readConfig as csfReadConfig } from '../../code/core/src/csf-tools';
 
-export async function readMainConfig({ cwd }: { cwd: string }) {
+export async function readConfig({ fileName, cwd }: { fileName: string; cwd: string }) {
   const configDir = join(cwd, '.storybook');
   if (!existsSync(configDir)) {
     throw new Error(
@@ -14,8 +14,8 @@ export async function readMainConfig({ cwd }: { cwd: string }) {
     );
   }
 
-  const mainConfigPath = getInterpretedFile(resolve(configDir, 'main'));
-  return readConfig(mainConfigPath);
+  const mainConfigPath = getInterpretedFile(resolve(configDir, fileName));
+  return csfReadConfig(mainConfigPath);
 }
 
 export function addPreviewAnnotations(mainConfig: ConfigFile, paths: string[]) {

@@ -167,6 +167,7 @@
     - [Angular: Drop support for calling Storybook directly](#angular-drop-support-for-calling-storybook-directly)
     - [Angular: Application providers and ModuleWithProviders](#angular-application-providers-and-modulewithproviders)
     - [Angular: Removed legacy renderer](#angular-removed-legacy-renderer)
+    - [Angular: initializer functions](#angular-initializer-functions)
     - [Next.js: use the `@storybook/nextjs` framework](#nextjs-use-the-storybooknextjs-framework)
     - [SvelteKit: needs the `@storybook/sveltekit` framework](#sveltekit-needs-the-storybooksveltekit-framework)
     - [Vue3: replaced app export with setup](#vue3-replaced-app-export-with-setup)
@@ -428,35 +429,45 @@ These APIs allowed addons to render arbitrary content in the Storybook sidebar. 
 
 ### New parameters format for addon backgrounds
 
-The `addon-backgrounds` addon now uses a new format for parameters. The `backgrounds` parameter is now an object with a `values` key that contains the background values.
+> [!NOTE]
+> You need to set the feature flag `backgroundsStoryGlobals` to `true` in your `.storybook/main.ts` to use the new format and set the value with `globals`.
+>
+> See here how to set feature flags: https://storybook.js.org/docs/api/main-config/main-config-features
 
-> ! You need to set the feature flag `backgroundsStoryGlobals` to `true` in your `.storybook/main.ts` to use the new format.
+The `addon-backgrounds` addon now uses a new format for configuring its list of selectable backgrounds.
+The `backgrounds` parameter is now an object with an `options` property.
+This `options` object is a key-value pair where the key is used when setting the global value, the value is an object with a `name` and `value` property.
 
 ```diff
 // .storybook/preview.js
 export const parameters = {
   backgrounds: {
--    values: [
--      { name: 'twitter', value: '#00aced' },
--      { name: 'facebook', value: '#3b5998' },
--    ],
-+    options: {
-+      twitter: { name: 'twitter', value: '#00aced' },
-+      facebook: { name: 'facebook', value: '#3b5998' },
-+    },
+-   values: [
+-     { name: 'twitter', value: '#00aced' },
+-     { name: 'facebook', value: '#3b5998' },
+-   ],
++   options: {
++     twitter: { name: 'Twitter', value: '#00aced' },
++     facebook: { name: 'Facebook', value: '#3b5998' },
++   },
   },
 };
 ```
 
 Setting an override value should now be done via a `globals` property on your component/meta or story itself:
 
-```ts
+```diff
 // Button.stories.ts
 export default {
   component: Button,
-  globals: {
-    backgrounds: { value: "twitter" },
-  },
+- parameters: {
+-   backgrounds: {
+-     default: "twitter",
+-   },
+- },
++ globals: {
++   backgrounds: { value: "twitter" },
++ },
 };
 ```
 
@@ -464,49 +475,65 @@ This locks that story to the `twitter` background, it cannot be changed by the a
 
 ### New parameters format for addon viewport
 
-> ! You need to set the feature flag `viewportStoryGlobals` to `true` in your `.storybook/main.ts` to use the new format.
+> [!NOTE]
+> You need to set the feature flag `viewportStoryGlobals` to `true` in your `.storybook/main.ts` to use the new format and set the value with `globals`.
+>
+> See here how to set feature flags: https://storybook.js.org/docs/api/main-config/main-config-features
 
-The `addon-viewport` addon now uses a new format for parameters. The `viewport` parameter is now an object with a `viewports` key that contains the viewport values.
+The `addon-viewport` addon now uses a new format for configuring its list of selectable viewports.
+The `viewport` parameter is now an object with an `options` property.
+This `options` object is a key-value pair where the key is used when setting the global value, the value is an object with a `name` and `styles` property.
+The `styles` property is an object with a `width` and a `height` property.
 
 ```diff
 // .storybook/preview.js
 export const parameters = {
   viewport: {
--    viewports: {
--      iphone5: {
--        name: 'phone',
--        styles: {
--          width: '320px',
--          height: '568px',
--        },
--      },
+-   viewports: {
+-     iphone5: {
+-       name: 'phone',
+-       styles: {
+-         width: '320px',
+-         height: '568px',
+-       },
 -     },
-+    options: {
-+      iphone5: {
-+        name: 'phone',
-+        styles: {
-+          width: '320px',
-+          height: '568px',
-+        },
-+      },
-+    },
+-    },
++   options: {
++     iphone5: {
++       name: 'phone',
++       styles: {
++         width: '320px',
++         height: '568px',
++       },
++     },
++   },
   },
 };
 ```
 
-Setting an override value should now be done via a `globals` property on your component/meta or story itself:
+Setting an override value should now be done via a `globals` property on your component/meta or story itself.
+Also note the change from `defaultOrientation: "landscape"` to `isRotated: true`.
 
-```ts
+```diff
 // Button.stories.ts
 export default {
   component: Button,
-  globals: {
-    viewport: { value: "phone" },
-  },
+- parameters: {
+-   viewport: {
+-     defaultViewport: "iphone5",
+-     defaultOrientation: "landscape",
+-   },
+- },
++ globals: {
++   viewport: {
++     value: "iphone5",
++     isRotated: true,
++   },
++ },
 };
 ```
 
-This locks that story to the `phone` viewport, it cannot be changed by the addon UI.
+This locks that story to the `iphone5` viewport in landscape orientation, it cannot be changed by the addon UI.
 
 ## From version 8.1.x to 8.2.x
 
@@ -2497,13 +2524,13 @@ This means also, that there is no root ngModule anymore. Previously you were abl
 For example, if you want to configure BrowserAnimationModule in your stories, please extract the necessary providers the following way and provide them via the `applicationConfig` decorator:
 
 ```js
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { importProvidersFrom } from '@angular/core';
-import { applicationConfig, Meta, StoryObj } from '@storybook/angular';
-import {ExampleComponent} from './example.component';
+import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
+import { importProvidersFrom } from "@angular/core";
+import { applicationConfig, Meta, StoryObj } from "@storybook/angular";
+import { ExampleComponent } from "./example.component";
 
 const meta: Meta = {
-  title: 'Example',
+  title: "Example",
   component: ExampleComponent,
   decorators: [
     // Define application-wide providers with the applicationConfig decorator
@@ -2519,14 +2546,14 @@ const meta: Meta = {
 
 export default meta;
 
-type Story = StoryObj<typeof ExampleComponent>
+type Story = StoryObj<typeof ExampleComponent>;
 
 export const Default: Story = {
   render: () => ({
     // Define application-wide providers directly in the render function
     applicationConfig: {
       providers: [importProvidersFrom(BrowserAnimationsModule)],
-    }
+    },
   }),
 };
 ```
@@ -2552,6 +2579,15 @@ Please visit https://angular.io/guide/standalone-components#configuring-dependen
 #### Angular: Removed legacy renderer
 
 The `parameters.angularLegacyRendering` option is removed. You cannot use the old legacy renderer anymore.
+
+#### Angular: Initializer functions
+
+Initializer functions using the `APP_INITIALIZER` dependency injection token only run when the component renders. To ensure an initializer function is always executed, you can adjust your `.storybook/preview.ts` and invoke it directly.
+
+```js
+myCustomInitializer();
+export default preview;
+```
 
 #### Next.js: use the `@storybook/nextjs` framework
 

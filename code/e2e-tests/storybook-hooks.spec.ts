@@ -1,8 +1,10 @@
+/* eslint-disable playwright/expect-expect */
+
 /* eslint-disable no-underscore-dangle */
 import { promises as fs } from 'node:fs';
 import { join } from 'node:path';
 
-import { test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 import { SbPage } from './util';
 
@@ -29,11 +31,11 @@ test.describe('Storybook hooks', () => {
   );
   test.beforeEach(async ({ page }) => {
     await page.goto(storybookUrl);
-    await new SbPage(page).waitUntilLoaded();
+    await new SbPage(page, expect).waitUntilLoaded();
   });
 
   test('should call beforeAll upon loading Storybook', async ({ page }, { titlePath }) => {
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
 
     await sbPage.navigateToStory('example/button', 'primary');
 
@@ -48,7 +50,7 @@ test.describe('Storybook hooks', () => {
 
   test('should call beforeAll and cleanup on HMR', async ({ page }, { titlePath }) => {
     test.skip(!isStorybookDev, 'HMR is only applicable in dev mode');
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
 
     await sbPage.navigateToStory('example/button', 'primary');
 

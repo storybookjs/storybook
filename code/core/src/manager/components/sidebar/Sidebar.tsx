@@ -1,18 +1,29 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 
-import { ScrollArea, Spaced } from '@storybook/core/components';
+import {
+  IconButton,
+  ScrollArea,
+  Spaced,
+  TooltipNote,
+  WithTooltip,
+} from '@storybook/core/components';
 import { styled } from '@storybook/core/theming';
-import type { API_LoadedRefData, Addon_SidebarTopType } from '@storybook/core/types';
+import type { API_LoadedRefData, Addon_SidebarTopType, StoryIndex } from '@storybook/core/types';
+import { global } from '@storybook/global';
+import { PlusIcon } from '@storybook/icons';
 
-import type { State } from '@storybook/core/manager-api';
+import { type State, useStorybookApi } from '@storybook/core/manager-api';
 
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
+import { useLayout } from '../layout/LayoutProvider';
+import { CreateNewStoryFileModal } from './CreateNewStoryFileModal';
 import { Explorer } from './Explorer';
 import type { HeadingProps } from './Heading';
 import { Heading } from './Heading';
 import { Search } from './Search';
 import { SearchResults } from './SearchResults';
 import { SidebarBottom } from './SidebarBottom';
+import { TagsFilter } from './TagsFilter';
 import type { CombinedDataset, Selection } from './types';
 import { useLastViewed } from './useLastViewed';
 
@@ -44,17 +55,15 @@ const Top = styled(Spaced)({
   flex: 1,
 });
 
-const Bottom = styled.div(({ theme }) => ({
-  borderTop: `1px solid ${theme.appBorderColor}`,
-  padding: theme.layoutMargin / 2,
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: theme.layoutMargin / 2,
-  backgroundColor: theme.barBg,
+const TooltipNoteWrapper = styled(TooltipNote)({
+  margin: 0,
+});
 
-  '&:empty': {
-    display: 'none',
-  },
+const CreateNewStoryButton = styled(IconButton)(({ theme }) => ({
+  color: theme.color.mediumdark,
+  width: 32,
+  height: 32,
+  borderRadius: theme.appBorderRadius + 2,
 }));
 
 const Swap = React.memo(function Swap({
@@ -99,6 +108,8 @@ const useCombination = (
   return useMemo(() => ({ hash, entries: Object.entries(hash) }), [hash]);
 };
 
+const isRendererReact = global.STORYBOOK_RENDERER === 'react';
+
 export interface SidebarProps extends API_LoadedRefData {
   refs: State['refs'];
   status: State['status'];
@@ -110,13 +121,15 @@ export interface SidebarProps extends API_LoadedRefData {
   enableShortcuts?: boolean;
   onMenuClick?: HeadingProps['onMenuClick'];
   showCreateStoryButton?: boolean;
+  indexJson?: StoryIndex;
+  isDevelopment?: boolean;
 }
-
 export const Sidebar = React.memo(function Sidebar({
   // @ts-expect-error (non strict)
   storyId = null,
   refId = DEFAULT_REF_ID,
   index,
+  indexJson,
   indexError,
   status,
   previewInitialized,
@@ -124,15 +137,19 @@ export const Sidebar = React.memo(function Sidebar({
   extra,
   menuHighlighted = false,
   enableShortcuts = true,
+  isDevelopment = global.CONFIG_TYPE === 'DEVELOPMENT',
   refs = {},
   onMenuClick,
-  showCreateStoryButton,
+  showCreateStoryButton = isDevelopment && isRendererReact,
 }: SidebarProps) {
+  const [isFileSearchModalOpen, setIsFileSearchModalOpen] = useState(false);
   // @ts-expect-error (non strict)
   const selected: Selection = useMemo(() => storyId && { storyId, refId }, [storyId, refId]);
   const dataset = useCombination(index, indexError, previewInitialized, status, refs);
   const isLoading = !index && !indexError;
   const lastViewedProps = useLastViewed(selected);
+  const { isMobile } = useLayout();
+  const api = useStorybookApi();
 
   return (
     <Container className="container sidebar-container">
@@ -150,7 +167,35 @@ export const Sidebar = React.memo(function Sidebar({
           <Search
             dataset={dataset}
             enableShortcuts={enableShortcuts}
-            showCreateStoryButton={showCreateStoryButton}
+            searchBarContent={
+              showCreateStoryButton && (
+                <>
+                  <WithTooltip
+                    trigger="hover"
+                    hasChrome={false}
+                    tooltip={<TooltipNoteWrapper note="Create a new story" />}
+                  >
+                    <CreateNewStoryButton
+                      onClick={() => {
+                        setIsFileSearchModalOpen(true);
+                      }}
+                      variant="outline"
+                    >
+                      <PlusIcon />
+                    </CreateNewStoryButton>
+                  </WithTooltip>
+                  <CreateNewStoryFileModal
+                    open={isFileSearchModalOpen}
+                    onOpenChange={setIsFileSearchModalOpen}
+                  />
+                </>
+              )
+            }
+            searchFieldContent={
+              indexJson && (
+                <TagsFilter api={api} indexJson={indexJson} isDevelopment={isDevelopment} />
+              )
+            }
             {...lastViewedProps}
           >
             {({
@@ -184,12 +229,8 @@ export const Sidebar = React.memo(function Sidebar({
             )}
           </Search>
         </Top>
+        {isMobile || isLoading ? null : <SidebarBottom isDevelopment={isDevelopment} />}
       </ScrollArea>
-      {isLoading ? null : (
-        <Bottom className="sb-bar">
-          <SidebarBottom />
-        </Bottom>
-      )}
     </Container>
   );
 });

@@ -231,4 +231,3 @@ export const Highlighted: Story = {
   ],
 };
 ```
-

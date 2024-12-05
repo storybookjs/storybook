@@ -9,4 +9,3 @@ pnpm run release
 ```shell renderer="common" language="js" packageManager="yarn"
 yarn release
 ```
-

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-a11y",
-  "version": "8.3.0-alpha.9",
+  "version": "8.5.0-alpha.17",
   "description": "Test component compliance with web accessibility standards",
   "keywords": [
     "a11y",
@@ -29,8 +29,7 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "node": "./dist/index.js"
+      "require": "./dist/index.js"
     },
     "./preview": {
       "types": "./dist/preview.d.ts",
@@ -61,9 +60,8 @@
   },
   "devDependencies": {
     "@storybook/global": "^5.0.0",
-    "@storybook/icons": "^1.2.10",
+    "@storybook/icons": "^1.2.12",
     "@testing-library/react": "^14.0.0",
-    "lodash": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-resize-detector": "^7.1.2",

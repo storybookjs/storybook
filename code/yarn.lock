@@ -5925,30 +5925,65 @@ __metadata:
   resolution: "@storybook/angular@workspace:frameworks/angular"
   dependencies:
     "@analogjs/vite-plugin-angular": "npm:^0.2.24"
+    "@angular-devkit/architect": "npm:^0.1703.0"
+    "@angular-devkit/build-angular": "npm:^17.3.0"
+    "@angular-devkit/core": "npm:^17.3.0"
+    "@angular/animations": "npm:^17.3.0"
+    "@angular/cli": "npm:^17.3.0"
+    "@angular/common": "npm:^17.3.0"
+    "@angular/compiler": "npm:^17.3.0"
+    "@angular/compiler-cli": "npm:^17.3.0"
+    "@angular/core": "npm:^17.3.0"
+    "@angular/forms": "npm:^17.3.0"
+    "@angular/platform-browser": "npm:^17.3.0"
+    "@angular/platform-browser-dynamic": "npm:^17.3.0"
     "@storybook/angular-renderer": "workspace:*"
     "@storybook/builder-webpack5": "workspace:*"
     "@storybook/components": "workspace:*"
     "@storybook/core-webpack": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
+    "@storybook/manager-api": "workspace:*"
     "@storybook/preset-angular-webpack": "workspace:*"
+    "@storybook/preview-api": "workspace:*"
+    "@storybook/theming": "workspace:*"
+    "@types/cross-spawn": "npm:^6.0.2"
     "@types/node": "npm:^22.0.0"
+    "@types/react": "npm:^18.0.37"
+    "@types/react-dom": "npm:^18.0.11"
     "@types/semver": "npm:^7.3.4"
+    "@types/tmp": "npm:^0.2.3"
     "@types/webpack-env": "npm:^1.18.0"
+    cross-spawn: "npm:^7.0.3"
     fd-package-json: "npm:^1.2.0"
     find-up: "npm:^5.0.0"
     semver: "npm:^7.3.7"
     telejson: "npm:^7.2.0"
+    tmp: "npm:^0.2.1"
     ts-dedent: "npm:^2.0.0"
+    tsconfig-paths-webpack-plugin: "npm:^4.0.1"
     typescript: "npm:^5.3.2"
     util-deprecate: "npm:^1.0.2"
     webpack: "npm:5"
+    zone.js: "npm:^0.14.2"
   peerDependencies:
     "@angular-devkit/architect": ">=0.1500.0 < 0.2000.0"
     "@angular-devkit/build-angular": ">=15.0.0 < 20.0.0"
     "@angular-devkit/core": ">=15.0.0 < 20.0.0"
+    "@angular/cli": ">=15.0.0 < 20.0.0"
+    "@angular/common": ">=15.0.0 < 20.0.0"
+    "@angular/compiler": ">=15.0.0 < 20.0.0"
+    "@angular/compiler-cli": ">=15.0.0 < 20.0.0"
+    "@angular/core": ">=15.0.0 < 20.0.0"
+    "@angular/forms": ">=15.0.0 < 20.0.0"
+    "@angular/platform-browser": ">=15.0.0 < 20.0.0"
+    "@angular/platform-browser-dynamic": ">=15.0.0 < 20.0.0"
     rxjs: ^6.0.0 || ^7.4.0
     storybook: "workspace:^"
     typescript: ^4.0.0 || ^5.0.0
+    zone.js: ">= 0.11.1 < 1.0.0"
+  peerDependenciesMeta:
+    "@angular/cli":
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -6786,6 +6821,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/preset-angular-webpack@workspace:presets/angular-webpack"
   dependencies:
+    "@analogjs/vite-plugin-angular": "npm:^0.2.24"
     "@angular-devkit/architect": "npm:^0.1703.0"
     "@angular-devkit/build-angular": "npm:^17.3.0"
     "@angular-devkit/core": "npm:^17.3.0"
@@ -6798,17 +6834,32 @@ __metadata:
     "@angular/forms": "npm:^17.3.0"
     "@angular/platform-browser": "npm:^17.3.0"
     "@angular/platform-browser-dynamic": "npm:^17.3.0"
-    "@storybook/angular-renderer": "workspace:*"
+    "@storybook/components": "workspace:*"
     "@storybook/core-webpack": "workspace:*"
+    "@storybook/global": "npm:^5.0.0"
+    "@storybook/manager-api": "workspace:*"
+    "@storybook/preset-angular-webpack": "workspace:*"
+    "@storybook/preview-api": "workspace:*"
+    "@storybook/theming": "workspace:*"
+    "@types/cross-spawn": "npm:^6.0.2"
     "@types/node": "npm:^22.0.0"
+    "@types/react": "npm:^18.0.37"
+    "@types/react-dom": "npm:^18.0.11"
     "@types/semver": "npm:^7.3.4"
+    "@types/tmp": "npm:^0.2.3"
+    "@types/webpack-env": "npm:^1.18.0"
+    cross-spawn: "npm:^7.0.3"
+    fd-package-json: "npm:^1.2.0"
     find-up: "npm:^5.0.0"
-    resolve: "npm:^1.22.8"
     semver: "npm:^7.3.7"
-    tsconfig-paths: "npm:^4.2.0"
+    telejson: "npm:^7.2.0"
+    tmp: "npm:^0.2.1"
+    ts-dedent: "npm:^2.0.0"
     tsconfig-paths-webpack-plugin: "npm:^4.0.1"
     typescript: "npm:^5.3.2"
+    util-deprecate: "npm:^1.0.2"
     webpack: "npm:5"
+    zone.js: "npm:^0.14.2"
   peerDependencies:
     "@angular-devkit/architect": ">=0.1500.0 < 0.2000.0"
     "@angular-devkit/build-angular": ">=15.0.0 < 20.0.0"
@@ -6825,9 +6876,6 @@ __metadata:
     storybook: "workspace:^"
     typescript: ^4.0.0 || ^5.0.0
     zone.js: ">= 0.11.1 < 1.0.0"
-  peerDependenciesMeta:
-    typescript:
-      optional: true
   languageName: unknown
   linkType: soft
 
@@ -7235,6 +7283,7 @@ __metadata:
     happy-dom: "npm:^14.12.0"
     http-server: "npm:^14.1.1"
     husky: "npm:^4.3.7"
+    jiti: "npm:^2.4.1"
     lint-staged: "npm:^13.2.2"
     mock-require: "npm:^3.0.3"
     nx: "npm:20.2.2"
@@ -18954,6 +19003,15 @@ __metadata:
   bin:
     jiti: bin/jiti.js
   checksum: 10c0/05b9ed58cd30d0c3ccd3c98209339e74f50abd9a17e716f65db46b6a35812103f6bde6e134be7124d01745586bca8cc5dae1d0d952267c3ebe55171949c32e56
+  languageName: node
+  linkType: hard
+
+"jiti@npm:^2.4.1":
+  version: 2.4.1
+  resolution: "jiti@npm:2.4.1"
+  bin:
+    jiti: lib/jiti-cli.mjs
+  checksum: 10c0/3cf67d1b952a9e8cffbb4f96527880da6cdb58a1eae2a6d2deb4645621dfc8b766d21549f71c6153a2094a40bb635ffafed4cd0dd42f3b3263b187d1ee846225
   languageName: node
   linkType: hard
 

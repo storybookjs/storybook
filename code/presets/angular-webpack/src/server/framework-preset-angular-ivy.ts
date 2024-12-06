@@ -1,12 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { Preset } from 'storybook/internal/types';
+import { Preset } from 'storybook/internal/types';
 
-import type { Configuration } from 'webpack';
+import { Configuration } from 'webpack';
 
-import type { AngularOptions } from '../types';
-import type { PresetOptions } from './preset-options';
+import { AngularOptions } from '../types';
+import { PresetOptions } from './preset-options';
 
 /**
  * Source :

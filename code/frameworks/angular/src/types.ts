@@ -22,16 +22,16 @@ type StorybookConfigFramework = {
   framework:
     | FrameworkName
     | {
-    name: FrameworkName;
-    options: FrameworkOptions;
-  };
+        name: FrameworkName;
+        options: FrameworkOptions;
+      };
   core?: StorybookConfigBase['core'] & {
     builder?:
       | BuilderName
       | {
-      name: BuilderName;
-      options: BuilderOptions;
-    };
+          name: BuilderName;
+          options: BuilderOptions;
+        };
   };
   typescript?: Partial<TypescriptOptionsBuilder & TypescriptOptionsReact> &
     StorybookConfigBase['typescript'];

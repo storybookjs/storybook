@@ -12,8 +12,8 @@ import type {
 import {
   DOCS_RENDERED,
   STORY_ERRORED,
+  STORY_FINISHED,
   STORY_MISSING,
-  STORY_RENDERED,
   STORY_RENDER_PHASE_CHANGED,
   STORY_THREW_EXCEPTION,
 } from '@storybook/core/core-events';
@@ -204,11 +204,11 @@ export const waitForEvents = (
 // the async parts, so we need to listen for the "done" events
 export const waitForRender = () =>
   waitForEvents([
-    STORY_RENDERED,
     DOCS_RENDERED,
-    STORY_THREW_EXCEPTION,
+    STORY_FINISHED,
     STORY_ERRORED,
     STORY_MISSING,
+    STORY_THREW_EXCEPTION,
   ]);
 
 export const waitForRenderPhase = (phase: RenderPhase) => {

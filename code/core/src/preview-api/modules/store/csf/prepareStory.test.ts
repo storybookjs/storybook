@@ -54,6 +54,10 @@ const addExtraContext = (
     ...context,
     hooks: new HooksContext(),
     viewMode: 'story' as const,
+    reporting: {
+      reports: [],
+      addReport: vi.fn(),
+    },
     loaded: {},
     mount: vi.fn(),
     abortSignal: new AbortController().signal,
@@ -792,6 +796,7 @@ describe('prepareMeta', () => {
       story,
       applyLoaders,
       applyBeforeEach,
+      applyAfterEach,
       originalStoryFn,
       unboundStoryFn,
       undecoratedStoryFn,

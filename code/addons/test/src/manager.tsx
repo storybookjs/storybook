@@ -100,6 +100,35 @@ addons.register(ADDON_ID, (api) => {
             )
           )
         );
+
+        api.experimental_updateStatus(
+          'storybook/addon-a11y/test-provider',
+          Object.fromEntries(
+            update.details.testResults.flatMap((testResult) =>
+              testResult.results
+                .filter(({ storyId }) => storyId)
+                .map(({ storyId, status, testRunId, reports, ...rest }) => {
+                  const a11yReport = reports.find((r: any) => r.type === 'a11y');
+                  return [
+                    storyId,
+                    a11yReport
+                      ? {
+                          title: 'Accessibility tests',
+                          description: '',
+                          status: statusMap[a11yReport.status],
+                          data: { testRunId },
+                          onClick: () => {
+                            api.setSelectedPanel('storybook/a11y/panel');
+                            api.togglePanel(true);
+                          },
+                          sidebarContextMenu: false,
+                        }
+                      : null,
+                  ] as const;
+                })
+            )
+          )
+        );
       },
     } as Addon_TestProviderType<Details, Config>);
   }

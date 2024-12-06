@@ -16,6 +16,7 @@ import { join, resolve } from 'pathe';
 import sirv from 'sirv';
 import { convertPathToPattern } from 'tinyglobby';
 
+import { TestManager } from '../node/test-manager';
 import type { InternalOptions, UserOptions } from './types';
 
 const defaultOptions: UserOptions = {
@@ -142,6 +143,9 @@ export const storybookTest = (options?: UserOptions): Plugin => {
         ...config.test.env,
         // To be accessed by the setup file
         __STORYBOOK_URL__: storybookUrl,
+        // We signal the test runner that we are not running it via Storybook
+        // We are overriding the environment variable to 'true' if vitest runs via @storybook/addon-test's backend
+        VITEST_STORYBOOK: 'false',
         __VITEST_INCLUDE_TAGS__: finalOptions.tags.include.join(','),
         __VITEST_EXCLUDE_TAGS__: finalOptions.tags.exclude.join(','),
         __VITEST_SKIP_TAGS__: finalOptions.tags.skip.join(','),
@@ -150,7 +154,27 @@ export const storybookTest = (options?: UserOptions): Plugin => {
       config.envPrefix = Array.from(new Set([...(config.envPrefix || []), 'STORYBOOK_', 'VITE_']));
 
       if (config.test.browser) {
+        config.define ??= {
+          ...config.define,
+          // polyfilling process.env.VITEST_STORYBOOK to 'false' in the browser
+          'process.env.VITEST_STORYBOOK': JSON.stringify('false'),
+        };
+
         config.test.browser.screenshotFailures ??= false;
+
+        config.test.browser.commands ??= {
+          getInitialGlobals: () => {
+            const envConfig = JSON.parse(process.env.VITEST_STORYBOOK_CONFIG ?? '{}');
+
+            const isA11yEnabled = envConfig.a11y ?? true;
+
+            return {
+              a11y: {
+                manual: !isA11yEnabled,
+              },
+            };
+          },
+        };
       }
 
       // copying straight from https://github.com/vitejs/vite/blob/main/packages/vite/src/node/constants.ts#L60

@@ -7,6 +7,7 @@ import type {
   API_LeafEntry,
   API_LoadedRefData,
   API_PreparedStoryIndex,
+  API_StatusObject,
   API_StatusState,
   API_StatusUpdate,
   API_StoryEntry,
@@ -268,6 +269,12 @@ export interface SubAPI {
    * @returns {Promise<void>} A promise that resolves when the preview has been set as initialized.
    */
   setPreviewInitialized: (ref?: ComposedRef) => Promise<void>;
+  /**
+   * Returns the current status of the stories.
+   *
+   * @returns {API_StatusState} The current status of the stories.
+   */
+  getCurrentStoryStatus: () => Record<string, API_StatusObject>;
   /**
    * Updates the status of a collection of stories.
    *
@@ -628,6 +635,11 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       } else {
         fullAPI.updateRef(ref.id, { previewInitialized: true });
       }
+    },
+
+    getCurrentStoryStatus: () => {
+      const { status, storyId } = store.getState();
+      return status[storyId as StoryId];
     },
 
     /* EXPERIMENTAL APIs */

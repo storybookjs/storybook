@@ -45,6 +45,9 @@ export class TestManager {
     if (payload.providerId !== TEST_PROVIDER_ID) {
       return;
     }
+
+    process.env.VITEST_STORYBOOK_CONFIG = JSON.stringify(payload.config);
+
     if (this.coverage !== payload.config.coverage) {
       try {
         this.coverage = payload.config.coverage;
@@ -69,6 +72,13 @@ export class TestManager {
     try {
       if (payload.providerId !== TEST_PROVIDER_ID) {
         return;
+      }
+
+      if (payload.config) {
+        this.handleConfigChange({
+          providerId: payload.providerId,
+          config: payload.config as any,
+        });
       }
 
       if (this.watchMode !== payload.watchMode) {

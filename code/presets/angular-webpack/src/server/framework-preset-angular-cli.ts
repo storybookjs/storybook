@@ -1,18 +1,16 @@
 import { logger } from 'storybook/internal/node-logger';
 import { AngularLegacyBuildOptionsError } from 'storybook/internal/server-errors';
 
-import type { BuilderContext } from '@angular-devkit/architect';
-import { targetFromTargetString } from '@angular-devkit/architect';
-import type { JsonObject } from '@angular-devkit/core';
-import { logging } from '@angular-devkit/core';
+import { BuilderContext, targetFromTargetString } from '@angular-devkit/architect';
+import { JsonObject, logging } from '@angular-devkit/core';
 import { sync as findUpSync } from 'find-up';
-import type { Configuration } from 'webpack';
+import webpack from 'webpack';
 
 import { getWebpackConfig as getCustomWebpackConfig } from './angular-cli-webpack';
-import type { PresetOptions } from './preset-options';
+import { PresetOptions } from './preset-options';
 import { moduleIsAvailable } from './utils/module-is-available';
 
-export const webpackFinal = async (baseConfig: Configuration, options: PresetOptions) => {
+export async function webpackFinal(baseConfig: webpack.Configuration, options: PresetOptions) {
   if (!moduleIsAvailable('@angular-devkit/build-angular')) {
     logger.info('=> Using base config because "@angular-devkit/build-angular" is not installed');
     return baseConfig;
@@ -30,7 +28,7 @@ export const webpackFinal = async (baseConfig: Configuration, options: PresetOpt
     },
     builderContext,
   });
-};
+}
 
 /** Get Builder Context If storybook is not start by angular builder create dumb BuilderContext */
 function getBuilderContext(options: PresetOptions): BuilderContext {

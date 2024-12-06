@@ -1,7 +1,7 @@
 {
   "name": "@storybook/preset-angular-webpack",
-  "version": "8.5.0-alpha.11",
-  "description": "Storybook for Angular: Develop Angular Component in isolation with Hot Reloading",
+  "version": "8.5.0-alpha.18",
+  "description": "Storybook for Angular: View Angular components in isolation with Hot Reloading.",
   "keywords": [
     "storybook"
   ],
@@ -12,7 +12,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/storybookjs/storybook.git",
-    "directory": "code/presets/angular-webpack"
+    "directory": "code/presets/html-webpack"
   },
   "funding": {
     "type": "opencollective",
@@ -64,18 +64,29 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/angular-renderer": "workspace:*",
+    "@storybook/components": "workspace:*",
     "@storybook/core-webpack": "workspace:*",
+    "@storybook/global": "^5.0.0",
+    "@storybook/manager-api": "workspace:*",
+    "@storybook/preset-angular-webpack": "workspace:*",
+    "@storybook/preview-api": "workspace:*",
+    "@storybook/theming": "workspace:*",
     "@types/node": "^22.0.0",
+    "@types/react": "^18.0.37",
+    "@types/react-dom": "^18.0.11",
     "@types/semver": "^7.3.4",
+    "@types/webpack-env": "^1.18.0",
+    "fd-package-json": "^1.2.0",
     "find-up": "^5.0.0",
-    "resolve": "^1.22.8",
     "semver": "^7.3.7",
-    "tsconfig-paths": "^4.2.0",
+    "telejson": "^7.2.0",
+    "ts-dedent": "^2.0.0",
     "tsconfig-paths-webpack-plugin": "^4.0.1",
+    "util-deprecate": "^1.0.2",
     "webpack": "5"
   },
   "devDependencies": {
+    "@analogjs/vite-plugin-angular": "^0.2.24",
     "@angular-devkit/architect": "^0.1703.0",
     "@angular-devkit/build-angular": "^17.3.0",
     "@angular-devkit/core": "^17.3.0",
@@ -88,7 +99,13 @@
     "@angular/forms": "^17.3.0",
     "@angular/platform-browser": "^17.3.0",
     "@angular/platform-browser-dynamic": "^17.3.0",
-    "typescript": "^5.3.2"
+    "@types/cross-spawn": "^6.0.2",
+    "@types/tmp": "^0.2.3",
+    "cross-spawn": "^7.0.3",
+    "tmp": "^0.2.1",
+    "typescript": "^5.3.2",
+    "webpack": "5",
+    "zone.js": "^0.14.2"
   },
   "peerDependencies": {
     "@angular-devkit/architect": ">=0.1500.0 < 0.2000.0",
@@ -107,11 +124,6 @@
     "typescript": "^4.0.0 || ^5.0.0",
     "zone.js": ">= 0.11.1 < 1.0.0"
   },
-  "peerDependenciesMeta": {
-    "typescript": {
-      "optional": true
-    }
-  },
   "engines": {
     "node": ">=18.0.0"
   },
@@ -122,8 +134,8 @@
     "entries": [
       "./src/index.ts",
       "./src/server/framework-preset-angular-cli.ts",
-      "./src/server/framework-preset-angular-ivy.ts",
-      "./src/server/framework-preset-angular-docs.ts"
+      "./src/server/framework-preset-angular-docs.ts",
+      "./src/server/framework-preset-angular-ivy.ts"
     ],
     "platform": "node"
   },

@@ -1,5 +1,5 @@
 import type { ConfigFile } from 'storybook/internal/csf-tools';
-import type { StoriesEntry, StorybookConfigRaw } from 'storybook/internal/types';
+import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 export type SkippableTask =
   | 'smoke-test'
@@ -91,54 +91,6 @@ type BaseTemplates = Template & {
 };
 
 const baseTemplates = {
-  'cra/default-js': {
-    name: 'Create React App Latest (Webpack | JavaScript)',
-    script: `
-      npx create-react-app {{beforeDir}} && cd {{beforeDir}} && \
-      jq '.browserslist.production[0] = ">0.9%"' package.json > tmp.json && mv tmp.json package.json
-    `,
-    expected: {
-      // TODO: change this to @storybook/cra once that package is created
-      framework: '@storybook/react-webpack5',
-      renderer: '@storybook/react',
-      builder: '@storybook/builder-webpack5',
-    },
-
-    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
-    modifications: {
-      extraDependencies: ['prop-types'],
-      mainConfig: (config) => {
-        const stories = config.getFieldValue<Array<StoriesEntry>>(['stories']);
-        return {
-          stories: stories?.map((s) => {
-            if (typeof s === 'string') {
-              return s.replace(/\|(tsx?|ts)\b|\b(tsx?|ts)\|/g, '');
-            } else {
-              return s;
-            }
-          }),
-        };
-      },
-    },
-  },
-  'cra/default-ts': {
-    name: 'Create React App Latest (Webpack | TypeScript)',
-    script: `
-      npx create-react-app {{beforeDir}} --template typescript && cd {{beforeDir}} && \
-      jq '.browserslist.production[0] = ">0.9%"' package.json > tmp.json && mv tmp.json package.json
-    `,
-    // Re-enable once https://github.com/storybookjs/storybook/issues/19351 is fixed.
-    skipTasks: ['smoke-test', 'bench', 'vitest-integration'],
-    expected: {
-      // TODO: change this to @storybook/cra once that package is created
-      framework: '@storybook/react-webpack5',
-      renderer: '@storybook/react',
-      builder: '@storybook/builder-webpack5',
-    },
-    modifications: {
-      extraDependencies: ['prop-types'],
-    },
-  },
   'nextjs/13-ts': {
     name: 'Next.js v13.5 (Webpack | TypeScript)',
     script:
@@ -172,7 +124,6 @@ const baseTemplates = {
       extraDependencies: ['server-only', 'prop-types'],
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
-    inDevelopment: true,
   },
   'nextjs/default-ts': {
     name: 'Next.js Latest (Webpack | TypeScript)',
@@ -229,7 +180,6 @@ const baseTemplates = {
         'prop-types',
       ],
     },
-    inDevelopment: true,
     skipTasks: ['e2e-tests-dev', 'bench'],
   },
   'experimental-nextjs-vite/default-ts': {
@@ -252,19 +202,6 @@ const baseTemplates = {
         'vite',
         'prop-types',
       ],
-    },
-    skipTasks: ['e2e-tests-dev', 'bench'],
-  },
-  'react-vite/default-js': {
-    name: 'React Latest (Vite | JavaScript)',
-    script: 'npm create vite --yes {{beforeDir}} -- --template react',
-    expected: {
-      framework: '@storybook/react-vite',
-      renderer: '@storybook/react',
-      builder: '@storybook/builder-vite',
-    },
-    modifications: {
-      extraDependencies: ['prop-types'],
     },
     skipTasks: ['e2e-tests-dev', 'bench'],
   },
@@ -318,7 +255,7 @@ const baseTemplates = {
     modifications: {
       extraDependencies: ['prop-types'],
     },
-    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
+    skipTasks: ['bench', 'vitest-integration'],
   },
   'react-webpack/17-ts': {
     name: 'React v17 (Webpack | TypeScript)',
@@ -358,18 +295,6 @@ const baseTemplates = {
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
-  'solid-vite/default-js': {
-    name: 'SolidJS Latest (Vite | JavaScript)',
-    script: 'npx degit solidjs/templates/js {{beforeDir}}',
-    expected: {
-      framework: 'storybook-solidjs-vite',
-      renderer: 'storybook-solidjs',
-      builder: '@storybook/builder-vite',
-    },
-    // TODO: remove this once solid-vite framework is released
-    inDevelopment: true,
-    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
-  },
   'solid-vite/default-ts': {
     name: 'SolidJS Latest (Vite | TypeScript)',
     script: 'npx degit solidjs/templates/ts {{beforeDir}}',
@@ -380,16 +305,6 @@ const baseTemplates = {
     },
     // TODO: remove this once solid-vite framework is released
     inDevelopment: true,
-    skipTasks: ['e2e-tests-dev', 'bench'],
-  },
-  'vue3-vite/default-js': {
-    name: 'Vue v3 (Vite | JavaScript)',
-    script: 'npm create vite --yes {{beforeDir}} -- --template vue',
-    expected: {
-      framework: '@storybook/vue3-vite',
-      renderer: '@storybook/vue3',
-      builder: '@storybook/builder-vite',
-    },
     skipTasks: ['e2e-tests-dev', 'bench'],
   },
   'vue3-vite/default-ts': {
@@ -412,17 +327,6 @@ const baseTemplates = {
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
-  'html-vite/default-js': {
-    name: 'HTML Latest (Vite | JavaScript)',
-    script:
-      'npm create vite --yes {{beforeDir}} -- --template vanilla && cd {{beforeDir}} && echo "export default {}" > vite.config.js',
-    expected: {
-      framework: '@storybook/html-vite',
-      renderer: '@storybook/html',
-      builder: '@storybook/builder-vite',
-    },
-    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
-  },
   'html-vite/default-ts': {
     name: 'HTML Latest (Vite | TypeScript)',
     script:
@@ -433,16 +337,6 @@ const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
-  },
-  'svelte-vite/default-js': {
-    name: 'Svelte Latest (Vite | JavaScript)',
-    script: 'npm create vite --yes {{beforeDir}} -- --template svelte',
-    expected: {
-      framework: '@storybook/svelte-vite',
-      renderer: '@storybook/svelte',
-      builder: '@storybook/builder-vite',
-    },
-    skipTasks: ['e2e-tests-dev', 'bench'],
   },
   'svelte-vite/default-ts': {
     name: 'Svelte Latest (Vite | TypeScript)',
@@ -488,17 +382,6 @@ const baseTemplates = {
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
-  'svelte-kit/skeleton-js': {
-    name: 'SvelteKit Latest (Vite | JavaScript)',
-    script:
-      'yarn create svelte-with-args --name=svelte-kit/skeleton-js --directory={{beforeDir}} --template=skeleton --types=null --no-prettier --no-eslint --no-playwright --no-vitest --no-svelte5',
-    expected: {
-      framework: '@storybook/sveltekit',
-      renderer: '@storybook/svelte',
-      builder: '@storybook/builder-vite',
-    },
-    skipTasks: ['e2e-tests-dev', 'bench'],
-  },
   'svelte-kit/skeleton-ts': {
     name: 'SvelteKit Latest (Vite | TypeScript)',
     script:
@@ -520,18 +403,6 @@ const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     skipTasks: ['e2e-tests-dev', 'bench'],
-  },
-  'lit-vite/default-js': {
-    name: 'Lit Latest (Vite | JavaScript)',
-    script:
-      'npm create vite --yes {{beforeDir}} -- --template lit && cd {{beforeDir}} && echo "export default {}" > vite.config.js',
-    expected: {
-      framework: '@storybook/web-components-vite',
-      renderer: '@storybook/web-components',
-      builder: '@storybook/builder-vite',
-    },
-    // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
-    skipTasks: ['smoke-test', 'e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'lit-vite/default-ts': {
     name: 'Lit Latest (Vite | TypeScript)',
@@ -556,19 +427,6 @@ const baseTemplates = {
     },
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
     skipTasks: ['smoke-test', 'e2e-tests-dev', 'bench', 'vitest-integration'],
-  },
-  'preact-vite/default-js': {
-    name: 'Preact Latest (Vite | JavaScript)',
-    script: 'npm create vite --yes {{beforeDir}} -- --template preact',
-    expected: {
-      framework: '@storybook/preact-vite',
-      renderer: '@storybook/preact',
-      builder: '@storybook/builder-vite',
-    },
-    modifications: {
-      extraDependencies: ['preact-render-to-string'],
-    },
-    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'preact-vite/default-ts': {
     name: 'Preact Latest (Vite | TypeScript)',
@@ -706,13 +564,6 @@ const internalTemplates = {
     isInternal: true,
     skipTasks: ['bench', 'vitest-integration'],
   },
-  // 'internal/pnp': {
-  //   ...baseTemplates['cra/default-ts'],
-  //   name: 'PNP (cra/default-ts)',
-  //   script: 'yarn create react-app . --use-pnp',
-  //   isInternal: true,
-  //   inDevelopment: true,
-  // },
 } satisfies Record<`internal/${string}`, Template & { isInternal: true }>;
 
 const benchTemplates = {
@@ -806,7 +657,7 @@ export const allTemplates: Record<TemplateKey, Template> = {
 };
 
 export const normal: TemplateKey[] = [
-  'cra/default-ts',
+  'react-webpack/18-ts',
   'react-vite/default-ts',
   'angular-cli/default-ts',
   'vue3-vite/default-ts',
@@ -825,7 +676,6 @@ export const normal: TemplateKey[] = [
 
 export const merged: TemplateKey[] = [
   ...normal,
-  'react-webpack/18-ts',
   'react-webpack/17-ts',
   'angular-cli/15-ts',
   'preact-vite/default-ts',
@@ -836,21 +686,13 @@ export const merged: TemplateKey[] = [
 export const daily: TemplateKey[] = [
   ...merged,
   'angular-cli/prerelease',
-  'cra/default-js',
-  'react-vite/default-js',
   'react-vite/prerelease-ts',
   'react-webpack/prerelease-ts',
-  'vue3-vite/default-js',
   'vue-cli/default-js',
-  'lit-vite/default-js',
-  'svelte-kit/skeleton-js',
   'svelte-kit/prerelease-ts',
-  'svelte-vite/default-js',
   'nextjs/13-ts',
   'nextjs/prerelease',
   'qwik-vite/default-ts',
-  'preact-vite/default-js',
-  'html-vite/default-js',
   'internal/react16-webpack',
   'internal/react18-webpack-babel',
   'react-native-web-vite/expo-ts',

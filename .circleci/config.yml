@@ -757,6 +757,10 @@ jobs:
           name: Run E2E tests
           command: yarn playwright-e2e
           working_directory: test-storybooks/portable-stories-kitchen-sink/react
+      - run:
+          name: Run Vitest
+          command: yarn vitest-non-failing-tests
+          working_directory: test-storybooks/portable-stories-kitchen-sink/react
       - store_test_results:
           path: test-results
       - store_artifacts:

@@ -2,13 +2,17 @@ import { existsSync } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import { writeFile } from 'node:fs/promises';
 
+import type { types } from 'storybook/internal/babel';
+import { traverse } from 'storybook/internal/babel';
 import {
   JsPackageManagerFactory,
   extractProperFrameworkName,
   loadAllPresets,
   loadMainConfig,
+  serverResolve,
   validateFrameworkName,
 } from 'storybook/internal/common';
+import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 import { colors, logger } from 'storybook/internal/node-logger';
 
 // eslint-disable-next-line depend/ban-dependencies
@@ -52,6 +56,44 @@ export default async function postInstall(options: PostinstallOptions) {
   const coercedVitestVersion = vitestVersionSpecifier ? coerce(vitestVersionSpecifier) : null;
   // if Vitest is installed, we use the same version to keep consistency across Vitest packages
   const vitestVersionToInstall = vitestVersionSpecifier ?? 'latest';
+
+  if (info.frameworkPackageName === '@storybook/nextjs') {
+    const out = await prompts({
+      type: 'confirm',
+      name: 'migrateToExperimentalNextjsVite',
+      message: `To use this addon, you should migrate to use @storybook/experimental-nextjs-vite, do you want to migrate?`,
+      initial: true,
+    });
+
+    if (out.migrateToExperimentalNextjsVite) {
+      await packageManager.addDependencies({ installAsDevDependencies: true }, [
+        '@storybook/experimental-nextjs-vite',
+      ]);
+
+      await packageManager.removeDependencies({}, ['@storybook/next']);
+
+      // update the storybook main.ts config file
+      const mainJsPath = serverResolve(resolve(options.configDir, 'main')) as string;
+
+      const config = await readConfig(mainJsPath);
+
+      const node = config.getFieldNode(['framework']);
+
+      traverse(node, {
+        StringLiteral(path) {
+          if (path.node.value === '@storybook/next') {
+            path.node.value = '@storybook/experimental-nextjs-vite';
+          }
+        },
+      });
+
+      config.setFieldNode(['framework'], node as types.Expression);
+
+      await writeConfig(config, mainJsPath);
+
+      info.frameworkPackageName = '@storybook/experimental-nextjs-vite';
+    }
+  }
 
   const annotationsImport = [
     '@storybook/nextjs',

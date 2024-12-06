@@ -1,6 +1,6 @@
 import { PresetProperty } from 'storybook/internal/types';
+
 import { dirname, join } from 'node:path';
-import { StorybookConfig } from './types';
 
 const getAbsolutePath = <I extends string>(input: I): I =>
   dirname(require.resolve(join(input, 'package.json'))) as any;
@@ -8,6 +8,13 @@ const getAbsolutePath = <I extends string>(input: I): I =>
 export const addons: PresetProperty<'addons'> = [
   getAbsolutePath('@storybook/preset-angular-webpack'),
 ];
+
+export const typescript: PresetProperty<'typescript'> = async (config) => {
+  return {
+    ...config,
+    skipCompiler: true,
+  };
+};
 
 export const core: PresetProperty<'core'> = async (config, options) => {
   const framework = await options.presets.apply('framework');

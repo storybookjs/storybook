@@ -202,6 +202,7 @@
     "happy-dom": "^14.12.0",
     "http-server": "^14.1.1",
     "husky": "^4.3.7",
+    "jiti": "^2.4.1",
     "lint-staged": "^13.2.2",
     "mock-require": "^3.0.3",
     "nx": "20.2.2",
@@ -226,6 +227,9 @@
     "vite-plugin-inspect": "^0.8.5",
     "vitest": "^2.1.3",
     "wait-on": "^7.0.1"
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.1"
   },
   "dependenciesMeta": {
     "ejs": {
@@ -296,8 +300,5 @@
         "Dependency Upgrades"
       ]
     ]
-  },
-  "devDependencies": {
-    "rimraf": "^6.0.1"
   }
 }

@@ -71,6 +71,7 @@ export default {
   '@storybook/preset-angular-webpack': '8.5.0-alpha.20',
   '@storybook/react-dom-shim': '8.5.0-alpha.20',
   '@storybook/source-loader': '8.5.0-alpha.20',
+  '@storybook/preset-angular-webpack': '8.5.0-alpha.20',
   '@storybook/test': '8.5.0-alpha.20',
   '@storybook/preset-create-react-app': '8.5.0-alpha.20',
   '@storybook/preset-html-webpack': '8.5.0-alpha.20',

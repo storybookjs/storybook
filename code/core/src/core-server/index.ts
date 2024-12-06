@@ -7,3 +7,5 @@ export * from './build-dev';
 export * from './withTelemetry';
 export { default as build } from './standalone';
 export { StoryIndexGenerator } from './utils/StoryIndexGenerator';
+
+export { loadStorybook as experimental_loadStorybook } from './load';

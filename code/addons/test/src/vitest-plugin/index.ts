@@ -4,11 +4,10 @@ import { mergeConfig } from 'vitest/config';
 
 import {
   getInterpretedFile,
-  loadAllPresets,
   normalizeStories,
   validateConfigurationFiles,
 } from 'storybook/internal/common';
-import { StoryIndexGenerator } from 'storybook/internal/core-server';
+import { StoryIndexGenerator, experimental_loadStorybook } from 'storybook/internal/core-server';
 import { readConfig, vitestTransform } from 'storybook/internal/csf-tools';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
 import type { DocsOptions, StoriesEntry } from 'storybook/internal/types';
@@ -34,7 +33,7 @@ const extractTagsFromPreview = async (configDir: string) => {
   return previewConfig.getFieldValue(['tags']) ?? [];
 };
 
-export const storybookTest = (options?: UserOptions): Plugin => {
+export const storybookTest = async (options?: UserOptions): Promise<Plugin> => {
   const finalOptions = {
     ...defaultOptions,
     ...options,
@@ -65,13 +64,28 @@ export const storybookTest = (options?: UserOptions): Plugin => {
   let storiesGlobs: StoriesEntry[];
   let storiesFiles: string[];
 
+  const configDir = finalOptions.configDir;
+
+  const storybookOptions = await experimental_loadStorybook({
+    configDir,
+    packageJson: {},
+  });
+
   return {
     name: 'vite-plugin-storybook-test',
     enforce: 'pre',
+    async transformIndexHtml(html) {
+      const { presets } = storybookOptions;
+
+      const headHtmlSnippet = await presets.apply<string | undefined>('previewHead');
+      const bodyHtmlSnippet = await presets.apply<string | undefined>('previewBody');
+
+      return html
+        .replace('</head>', `${headHtmlSnippet ?? ''}</head>`)
+        .replace('<body>', `<body>${bodyHtmlSnippet ?? ''}`);
+    },
     async config(input) {
       let config = input;
-
-      const configDir = finalOptions.configDir;
 
       try {
         await validateConfigurationFiles(configDir);
@@ -82,12 +96,7 @@ export const storybookTest = (options?: UserOptions): Plugin => {
         });
       }
 
-      const presets = await loadAllPresets({
-        configDir,
-        corePresets: [],
-        overridePresets: [],
-        packageJson: {},
-      });
+      const { presets } = storybookOptions;
 
       const workingDir = process.cwd();
       const directories = {

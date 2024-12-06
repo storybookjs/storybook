@@ -1,5 +1,6 @@
 /* eslint-disable no-underscore-dangle */
 import type { Plugin } from 'vitest/config';
+import { mergeConfig } from 'vitest/config';
 
 import {
   getInterpretedFile,
@@ -71,8 +72,11 @@ export const storybookTest = (options?: UserOptions): Plugin => {
   return {
     name: 'vite-plugin-storybook-test',
     enforce: 'pre',
-    async config(config) {
+    async config(input) {
+      let config = input;
+
       const configDir = finalOptions.configDir;
+
       try {
         await validateConfigurationFiles(configDir);
       } catch (err) {
@@ -129,6 +133,9 @@ export const storybookTest = (options?: UserOptions): Plugin => {
       // const isRunningInBrowserMode = config.plugins.find((plugin: Plugin) =>
       //   plugin.name?.startsWith('vitest:browser')
       // )
+
+      const viteConfigFromStorybook = await presets.apply('viteFinal', {});
+      config = mergeConfig(viteConfigFromStorybook, config);
 
       config.test ??= {};
 

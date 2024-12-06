@@ -38,7 +38,7 @@ export class VitestManager {
 
   constructor(private testManager: TestManager) {}
 
-  async startVitest({ watchMode = false, coverage = false } = {}) {
+  async startVitest({ coverage = false } = {}) {
     const { createVitest } = await import('vitest/node');
 
     const storybookCoverageReporter: [string, StorybookCoverageReporterOptions] = [
@@ -53,7 +53,7 @@ export class VitestManager {
         ? {
             enabled: true,
             clean: false,
-            cleanOnRerun: !watchMode,
+            cleanOnRerun: false,
             reportOnFailure: true,
             reporter: [['html', {}], storybookCoverageReporter],
             reportsDirectory: resolvePathInStorybookCache(COVERAGE_DIRECTORY),
@@ -62,9 +62,8 @@ export class VitestManager {
     ) as CoverageOptions;
 
     this.vitest = await createVitest('test', {
-      watch: watchMode,
+      watch: true,
       passWithNoTests: false,
-      changed: watchMode,
       // TODO:
       // Do we want to enable Vite's default reporter?
       // The output in the terminal might be too spamy and it might be better to
@@ -94,9 +93,7 @@ export class VitestManager {
       this.testManager.reportFatalError('Failed to init Vitest', e);
     }
 
-    if (watchMode) {
-      await this.setupWatchers();
-    }
+    await this.setupWatchers();
   }
 
   private updateLastChanged(filepath: string) {
@@ -288,6 +285,11 @@ export class VitestManager {
     this.updateLastChanged(id);
     this.storyCountForCurrentRun = 0;
 
+    // when watch mode is disabled, don't trigger any tests (below)
+    // but still invalidate the cache for the changed file, which is handled above
+    if (!this.testManager.watchMode) {
+      return;
+    }
     await this.runAffectedTests(file);
   }
 

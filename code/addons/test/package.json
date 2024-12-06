@@ -109,6 +109,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "semver": "^7.6.3",
+    "sirv": "^2.0.4",
     "slash": "^5.0.0",
     "strip-ansi": "^7.1.0",
     "tinyglobby": "^0.2.10",

@@ -39,12 +39,6 @@ export class TestManager {
     this.vitestManager.startVitest().then(() => options.onReady?.());
   }
 
-  async restartVitest({ watchMode, coverage }: { watchMode: boolean; coverage: boolean }) {
-    await this.vitestManager.vitest?.runningPromise;
-    await this.vitestManager.closeVitest();
-    await this.vitestManager.startVitest({ watchMode, coverage });
-  }
-
   async handleConfigChange(
     payload: TestingModuleConfigChangePayload<{ coverage: boolean; a11y: boolean }>
   ) {
@@ -54,7 +48,10 @@ export class TestManager {
     if (this.coverage !== payload.config.coverage) {
       try {
         this.coverage = payload.config.coverage;
-        await this.restartVitest({ watchMode: this.watchMode, coverage: this.coverage });
+        await this.vitestManager.restartVitest({
+          watchMode: this.watchMode,
+          coverage: this.coverage,
+        });
       } catch (e) {
         const isV8 = e.message?.includes('@vitest/coverage-v8');
         const isIstanbul = e.message?.includes('@vitest/coverage-istanbul');
@@ -76,7 +73,7 @@ export class TestManager {
 
       if (this.watchMode !== payload.watchMode) {
         this.watchMode = payload.watchMode;
-        await this.restartVitest({ watchMode: this.watchMode, coverage: false });
+        await this.vitestManager.restartVitest({ watchMode: this.watchMode, coverage: false });
       }
     } catch (e) {
       this.reportFatalError('Failed to change watch mode', e);
@@ -88,32 +85,39 @@ export class TestManager {
       if (payload.providerId !== TEST_PROVIDER_ID) {
         return;
       }
+
+      const allTestsRun = (payload.storyIds ?? []).length === 0;
+
       if (payload.config && this.coverage !== payload.config.coverage) {
         this.coverage = payload.config.coverage;
       }
 
-      const allTestsRun = (payload.storyIds ?? []).length === 0;
       if (this.coverage) {
         /*
            If we have coverage enabled and we're running all stories,
            we have to restart Vitest AND disable watch mode otherwise the coverage report will be incorrect,
            Vitest behaves wonky when re-using the same Vitest instance but with watch mode disabled,
            among other things it causes the coverage report to be incorrect and stale.
-           
+
            If we're only running a subset of stories, we have to temporarily disable coverage,
            as a coverage report for a subset of stories is not useful.
          */
-        await this.restartVitest({
+        await this.vitestManager.restartVitest({
           watchMode: allTestsRun ? false : this.watchMode,
           coverage: allTestsRun,
         });
+      } else {
+        await this.vitestManager.vitestRestartPromise;
       }
 
       await this.vitestManager.runTests(payload);
 
       if (this.coverage && !allTestsRun) {
         // Re-enable coverage if it was temporarily disabled because of a subset of stories was run
-        await this.restartVitest({ watchMode: this.watchMode, coverage: this.coverage });
+        await this.vitestManager.restartVitest({
+          watchMode: this.watchMode,
+          coverage: this.coverage,
+        });
       }
     } catch (e) {
       this.reportFatalError('Failed to run tests', e);

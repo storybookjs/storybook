@@ -14,7 +14,7 @@ export async function copyAllStaticFiles(staticDirs: any[] | undefined, outputDi
     await Promise.all(
       staticDirs.map(async (dir) => {
         try {
-          const { staticDir, staticPath, targetDir } = await parseStaticDir(dir);
+          const { staticDir, staticPath, targetDir } = parseStaticDir(dir);
           const targetPath = join(outputDir, targetDir);
 
           // we copy prebuild static files from node_modules/@storybook/manager & preview
@@ -54,7 +54,7 @@ export async function copyAllStaticFilesRelativeToMain(
     await acc;
 
     const staticDirAndTarget = typeof dir === 'string' ? dir : `${dir.from}:${dir.to}`;
-    const { staticPath: from, targetEndpoint: to } = await parseStaticDir(
+    const { staticPath: from, targetEndpoint: to } = parseStaticDir(
       getDirectoryFromWorkingDir({
         configDir,
         workingDir,

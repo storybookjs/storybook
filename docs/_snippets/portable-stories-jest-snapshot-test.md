@@ -12,7 +12,7 @@ const compose = (entry) => {
     return composeStories(entry);
   } catch (e) {
     throw new Error(
-      `There was an issue composing stories for the module: ${JSON.stringify(entry)}, ${e}`
+      `There was an issue composing stories for the module: ${JSON.stringify(entry)}, ${e}`,
     );
   }
 };
@@ -20,7 +20,7 @@ const compose = (entry) => {
 function getAllStoryFiles() {
   // Place the glob you want to match your stories files
   const storyFiles = glob.sync(
-    path.join(__dirname, 'stories/**/*.{stories,story}.{js,jsx,mjs,ts,tsx}')
+    path.join(__dirname, 'stories/**/*.{stories,story}.{js,jsx,mjs,ts,tsx}'),
   );
 
   return storyFiles.map((filePath) => {
@@ -58,7 +58,7 @@ describe(options.suite, () => {
 
       if (stories.length <= 0) {
         throw new Error(
-          `No stories found for this module: ${title}. Make sure there is at least one valid story for this module, without a disable parameter, or add parameters.storyshots.disable in the default export of this file.`
+          `No stories found for this module: ${title}. Make sure there is at least one valid story for this module, without a disable parameter, or add parameters.storyshots.disable in the default export of this file.`,
         );
       }
 
@@ -100,7 +100,7 @@ const compose = (entry: StoryFile): ReturnType<typeof composeStories<StoryFile>>
     return composeStories(entry);
   } catch (e) {
     throw new Error(
-      `There was an issue composing stories for the module: ${JSON.stringify(entry)}, ${e}`
+      `There was an issue composing stories for the module: ${JSON.stringify(entry)}, ${e}`,
     );
   }
 };
@@ -108,7 +108,7 @@ const compose = (entry: StoryFile): ReturnType<typeof composeStories<StoryFile>>
 function getAllStoryFiles() {
   // Place the glob you want to match your stories files
   const storyFiles = glob.sync(
-    path.join(__dirname, 'stories/**/*.{stories,story}.{js,jsx,mjs,ts,tsx}')
+    path.join(__dirname, 'stories/**/*.{stories,story}.{js,jsx,mjs,ts,tsx}'),
   );
 
   return storyFiles.map((filePath) => {
@@ -146,7 +146,7 @@ describe(options.suite, () => {
 
       if (stories.length <= 0) {
         throw new Error(
-          `No stories found for this module: ${title}. Make sure there is at least one valid story for this module, without a disable parameter, or add parameters.storyshots.disable in the default export of this file.`
+          `No stories found for this module: ${title}. Make sure there is at least one valid story for this module, without a disable parameter, or add parameters.storyshots.disable in the default export of this file.`,
         );
       }
 

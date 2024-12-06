@@ -2,7 +2,7 @@ import { dirname, join } from 'node:path';
 
 import type { PresetProperty } from 'storybook/internal/types';
 
-import type { PluginOption } from 'vite';
+import type { Plugin } from 'vite';
 
 import { vueComponentMeta } from './plugins/vue-component-meta';
 import { vueDocgen } from './plugins/vue-docgen';
@@ -18,7 +18,7 @@ export const core: PresetProperty<'core'> = {
 };
 
 export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) => {
-  const plugins: PluginOption[] = [templateCompilation()];
+  const plugins: Plugin[] = [await templateCompilation()];
 
   const framework = await options.presets.apply('framework');
   const frameworkOptions: FrameworkOptions =

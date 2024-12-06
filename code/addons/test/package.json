@@ -1,6 +1,6 @@
 {
   "name": "@storybook/experimental-addon-test",
-  "version": "8.5.0-alpha.15",
+  "version": "8.5.0-alpha.18",
   "description": "Integrate Vitest with Storybook",
   "keywords": [
     "storybook-addons",
@@ -109,8 +109,10 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "semver": "^7.6.3",
+    "sirv": "^2.0.4",
     "slash": "^5.0.0",
     "strip-ansi": "^7.1.0",
+    "tinyglobby": "^0.2.10",
     "ts-dedent": "^2.2.0",
     "typescript": "^5.3.2",
     "vitest": "^2.1.3"

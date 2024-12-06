@@ -498,14 +498,11 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
           test: {
             name: "storybook",
             pool: "threads",
-            include: [
-              "src/**/*.{story,stories}.?(c|m)[jt]s?(x)",
-              "template-stories/**/*.{story,stories}.?(c|m)[jt]s?(x)",
-            ],
             exclude: [
               ...defaultExclude,
               // TODO: investigate TypeError: Cannot read properties of null (reading 'useContext')
               "**/*argtypes*",
+              ${template.expected.renderer === '@storybook/svelte' ? '"**/*.stories.svelte",' : ''}
             ],
             /**
              * TODO: Either fix or acknowledge limitation of:

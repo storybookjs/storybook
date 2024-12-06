@@ -3,7 +3,7 @@ import { dirname, join, parse, relative, resolve } from 'node:path';
 
 import findPackageJson from 'find-package-json';
 import MagicString from 'magic-string';
-import type { ModuleNode, PluginOption } from 'vite';
+import type { ModuleNode, Plugin } from 'vite';
 import {
   type ComponentMeta,
   type MetaCheckerOptions,
@@ -21,12 +21,11 @@ type MetaSource = {
 } & ComponentMeta &
   MetaCheckerOptions['schema'];
 
-export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<PluginOption> {
+export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<Plugin> {
   const { createFilter } = await import('vite');
 
   // exclude stories, virtual modules and storybook internals
-  const exclude =
-    /\.stories\.(ts|tsx|js|jsx)$|^\0\/virtual:|^\/virtual:|^\/sb-preview\/|\.storybook\/.*\.(ts|js)$/;
+  const exclude = /\.stories\.(ts|tsx|js|jsx)$|^\0\/virtual:|^\/virtual:|\.storybook\/.*\.(ts|js)$/;
   const include = /\.(vue|ts|js|tsx|jsx)$/;
   const filter = createFilter(include, exclude);
 

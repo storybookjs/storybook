@@ -43,6 +43,7 @@
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
+  "sideEffects": false,
   "react-native": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "typesVersions": {

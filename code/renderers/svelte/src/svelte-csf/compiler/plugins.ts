@@ -57,7 +57,7 @@ export async function preTransformPlugin(): Promise<Plugin> {
   };
 }
 
-export async function postTransformPlugin(): Promise<Plugin> {
+export async function transformPlugin(): Promise<Plugin> {
   const [{ createFilter }, { loadSvelteConfig }] = await Promise.all([
     import('vite'),
     import('@sveltejs/vite-plugin-svelte'),
@@ -68,8 +68,7 @@ export async function postTransformPlugin(): Promise<Plugin> {
   const filter = createFilter(include);
 
   return {
-    name: 'storybook:addon-svelte-csf-plugin-post',
-    enforce: 'post',
+    name: 'storybook:addon-svelte-csf',
     async transform(compiledCode, id) {
       if (!filter(id)) return undefined;
 

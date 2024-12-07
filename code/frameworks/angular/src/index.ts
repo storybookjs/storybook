@@ -1,4 +1,5 @@
-export * from './client/index';
+// For backwarts compatibility
+export * from '@storybook/angular-renderer';
 export * from './types';
 
 /*

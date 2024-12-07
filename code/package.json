@@ -116,6 +116,7 @@
     "@storybook/addon-toolbars": "workspace:*",
     "@storybook/addon-viewport": "workspace:*",
     "@storybook/angular": "workspace:*",
+    "@storybook/angular-renderer": "workspace:*",
     "@storybook/bench": "next",
     "@storybook/blocks": "workspace:*",
     "@storybook/builder-vite": "workspace:*",
@@ -200,6 +201,7 @@
     "happy-dom": "^14.12.0",
     "http-server": "^14.1.1",
     "husky": "^4.3.7",
+    "jiti": "^2.4.1",
     "lint-staged": "^13.2.2",
     "mock-require": "^3.0.3",
     "nx": "20.1.4",
@@ -294,5 +296,8 @@
         "Dependency Upgrades"
       ]
     ]
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.1"
   }
 }

@@ -41,6 +41,8 @@ export const frameworkPackages: Record<string, SupportedFrameworks> = {
   '@storybook/svelte-webpack5': 'svelte-webpack5',
   '@storybook/sveltekit': 'sveltekit',
   '@storybook/vue3-vite': 'vue3-vite',
+  '@storybook/experimental-nextjs-vite': 'experimental-nextjs-vite',
+  '@storybook/react-native-web-vite': 'react-native-web-vite',
   '@storybook/vue3-webpack5': 'vue3-webpack5',
   '@storybook/web-components-vite': 'web-components-vite',
   '@storybook/web-components-webpack5': 'web-components-webpack5',

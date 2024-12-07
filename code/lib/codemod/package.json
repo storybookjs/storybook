@@ -1,6 +1,6 @@
 {
   "name": "@storybook/codemod",
-  "version": "8.5.0-alpha.16",
+  "version": "8.5.0-alpha.18",
   "description": "A collection of codemod scripts written with JSCodeshift",
   "keywords": [
     "storybook"

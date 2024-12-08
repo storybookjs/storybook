@@ -73,7 +73,7 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
 
   plugins.unshift(
     flowPlugin({
-      exclude: [],
+      exclude: [/node_modules\/(?!react-native|@react-native)/],
     }),
     react({
       babel: {

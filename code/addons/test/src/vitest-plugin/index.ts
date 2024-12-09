@@ -5,11 +5,14 @@ import type { ViteUserConfig } from 'vitest/config';
 
 import {
   getInterpretedFile,
-  loadAllPresets,
   normalizeStories,
   validateConfigurationFiles,
 } from 'storybook/internal/common';
-import { StoryIndexGenerator, mapStaticDir } from 'storybook/internal/core-server';
+import {
+  StoryIndexGenerator,
+  experimental_loadStorybook,
+  mapStaticDir,
+} from 'storybook/internal/core-server';
 import { readConfig, vitestTransform } from 'storybook/internal/csf-tools';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
 import type { DocsOptions, StoriesEntry } from 'storybook/internal/types';
@@ -74,27 +77,37 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin> => {
   let storiesGlobs: StoriesEntry[];
   let storiesFiles: string[];
 
-  const presets = await loadAllPresets({
+  const storybookOptions = await experimental_loadStorybook({
     configDir: finalOptions.configDir,
-    corePresets: [],
-    overridePresets: [],
     packageJson: {},
   });
 
   return {
     name: 'vite-plugin-storybook-test',
     enforce: 'pre',
-    async config(input) {
-      const configDir = finalOptions.configDir;
+    async transformIndexHtml(html) {
+      const { presets } = storybookOptions;
 
+      const [headHtmlSnippet, bodyHtmlSnippet] = await Promise.all([
+        presets.apply('previewHead'),
+        presets.apply('previewBody'),
+      ]);
+
+      return html
+        .replace('</head>', `${headHtmlSnippet ?? ''}</head>`)
+        .replace('<body>', `<body>${bodyHtmlSnippet ?? ''}`);
+    },
+    async config(input) {
       try {
-        await validateConfigurationFiles(configDir);
+        await validateConfigurationFiles(finalOptions.configDir);
       } catch (err) {
         throw new MainFileMissingError({
-          location: configDir,
+          location: finalOptions.configDir,
           source: 'vitest',
         });
       }
+
+      const { presets } = storybookOptions;
 
       // performance optimization: load all in parallel
       const [
@@ -115,7 +128,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin> => {
         presets.apply('env', {}),
         presets.apply('viteFinal', {}),
 
-        extractTagsFromPreview(configDir),
+        extractTagsFromPreview(finalOptions.configDir),
       ]);
 
       const generator = new StoryIndexGenerator(normalizeStories(storiesGlobsData, directories), {
@@ -230,6 +243,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin> => {
       return config;
     },
     async configureServer(server) {
+      const { presets } = storybookOptions;
       const statics: ReturnType<typeof mapStaticDir>[] = [];
       const staticDirs = await presets.apply('staticDirs', []);
 

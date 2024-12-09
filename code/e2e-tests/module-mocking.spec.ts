@@ -15,7 +15,7 @@ test.describe('module-mocking', () => {
   test('should assert story lifecycle order', async ({ page }) => {
     const sbPage = new SbPage(page, expect);
 
-    await sbPage.navigateToStory('lib/test/before-each', 'before-each-order');
+    await sbPage.navigateToStory('lib/test/order-of-hooks', 'order-of-hooks');
 
     await sbPage.viewAddonPanel('Actions');
     const logItem = page.locator('#storybook-panel-root #panel-tab-content');
@@ -25,8 +25,12 @@ test.describe('module-mocking', () => {
       '1 - [from loaders]',
       '2 - [from meta beforeEach]',
       '3 - [from story beforeEach]',
-      '4 - [from decorator]',
-      '5 - [from onClick]',
+      '4 - [before mount]',
+      '5 - [from decorator]',
+      '6 - [after mount]',
+      '7 - [from onClick]',
+      '8 - [from story afterEach]',
+      '9 - [from meta afterEach]',
     ];
 
     // Assert that each LI text content contains the expected text in order

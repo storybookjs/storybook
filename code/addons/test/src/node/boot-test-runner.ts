@@ -23,10 +23,13 @@ const MAX_START_TIME = 30000;
 // which is at the root. Then, from the root, we want to load `node/vitest.mjs`
 const vitestModulePath = join(__dirname, 'node', 'vitest.mjs');
 
+// Events that were triggered before Vitest was ready are queued up and resent once it's ready
+const eventQueue: { type: string; args: any[] }[] = [];
+
 let child: null | ChildProcess;
 let ready = false;
 
-const bootTestRunner = async (channel: Channel, initEvent?: string, initArgs?: any[]) => {
+const bootTestRunner = async (channel: Channel) => {
   let stderr: string[] = [];
 
   function reportFatalError(e: any) {
@@ -58,6 +61,7 @@ const bootTestRunner = async (channel: Channel, initEvent?: string, initArgs?: a
 
   const exit = (code = 0) => {
     killChild();
+    eventQueue.length = 0;
     process.exit(code);
   };
 
@@ -81,9 +85,10 @@ const bootTestRunner = async (channel: Channel, initEvent?: string, initArgs?: a
 
       child.on('message', (result: any) => {
         if (result.type === 'ready') {
-          // Resend the event that triggered the boot sequence, now that the child is ready to handle it
-          if (initEvent && initArgs) {
-            child?.send({ type: initEvent, args: initArgs, from: 'server' });
+          // Resend events that triggered (during) the boot sequence, now that Vitest is ready
+          while (eventQueue.length) {
+            const { type, args } = eventQueue.shift();
+            child?.send({ type, args, from: 'server' });
           }
 
           // Forward all events from the channel to the child process
@@ -124,14 +129,18 @@ const bootTestRunner = async (channel: Channel, initEvent?: string, initArgs?: a
 
   await Promise.race([startChildProcess(), timeout]).catch((e) => {
     reportFatalError(e);
+    eventQueue.length = 0;
     throw e;
   });
 };
 
 export const runTestRunner = async (channel: Channel, initEvent?: string, initArgs?: any[]) => {
+  if (!ready && initEvent) {
+    eventQueue.push({ type: initEvent, args: initArgs });
+  }
   if (!child) {
     ready = false;
-    await bootTestRunner(channel, initEvent, initArgs);
+    await bootTestRunner(channel);
     ready = true;
   }
 };
@@ -141,4 +150,6 @@ export const killTestRunner = () => {
     child.kill();
     child = null;
   }
+  ready = false;
+  eventQueue.length = 0;
 };

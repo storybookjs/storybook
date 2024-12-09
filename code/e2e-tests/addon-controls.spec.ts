@@ -29,7 +29,7 @@ test.describe('addon-controls', () => {
     // Boolean toggle: Primary/secondary
     await expect(sbPage.previewRoot().locator('button')).toHaveCSS(
       'background-color',
-      'rgb(30, 167, 253)'
+      'rgb(85, 90, 185)'
     );
     const toggle = sbPage.panelContent().locator('input[name=primary]');
     await toggle.click();
@@ -61,7 +61,7 @@ test.describe('addon-controls', () => {
     await reset.click();
     const button = sbPage.previewRoot().locator('button');
     await expect(button).toHaveCSS('font-size', '14px');
-    await expect(button).toHaveCSS('background-color', 'rgb(30, 167, 253)');
+    await expect(button).toHaveCSS('background-color', 'rgb(85, 90, 185)');
     await expect(button).toContainText('Button');
   });
 

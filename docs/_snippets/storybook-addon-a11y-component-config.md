@@ -24,6 +24,10 @@ const meta: Meta<MyComponent> = {
         ],
       },
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
       manual: true,
     },
   },
@@ -58,7 +62,11 @@ export default meta;
             },
           ],
         },
-        options: {},
+        options: {}
+      },
+    },
+    globals: {
+      a11y: {
         manual: true,
       },
     },
@@ -90,6 +98,10 @@ export default {
         ],
       },
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
       manual: true,
     },
   },
@@ -120,6 +132,10 @@ export default {
         ],
       },
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
       manual: true,
     },
   },
@@ -153,6 +169,10 @@ export default {
           ],
         },
         options: {},
+      },
+    },
+    globals: {
+      a11y: {
         manual: true,
       },
     },
@@ -186,6 +206,10 @@ const meta = {
         ],
       },
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
       manual: true,
     },
   },
@@ -221,6 +245,10 @@ const meta = {
         ],
       },
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
       manual: true,
     },
   },
@@ -256,6 +284,10 @@ export default meta;
           ],
         },
         options: {},
+      },
+    },
+    globals: {
+      a11y: {
         manual: true,
       },
     },
@@ -289,6 +321,10 @@ const meta: Meta<typeof MyComponent> = {
         ],
       },
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
       manual: true,
     },
   },
@@ -324,6 +360,10 @@ const meta: Meta<typeof MyComponent> = {
         ],
       },
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
       manual: true,
     },
   },
@@ -354,6 +394,10 @@ export default {
         ],
       },
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
       manual: true,
     },
   },
@@ -384,6 +428,10 @@ const meta: Meta = {
         ],
       },
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
       manual: true,
     },
   },

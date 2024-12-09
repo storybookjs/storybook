@@ -195,7 +195,7 @@ export class Instrumenter {
         return {
           playUntil: shadowCalls
             .slice(0, firstRowIndex)
-            .filter((call) => call.interceptable && !call.ancestors.length)
+            .filter((call) => call.interceptable && !call.ancestors?.length)
             .slice(-1)[0]?.id,
         };
       });
@@ -205,7 +205,7 @@ export class Instrumenter {
     };
 
     const back = ({ storyId }: { storyId: string }) => {
-      const log = this.getLog(storyId).filter((call) => !call.ancestors.length);
+      const log = this.getLog(storyId).filter((call) => !call.ancestors?.length);
       const last = log.reduceRight((res, item, index) => {
         if (res >= 0 || item.status === CallStates.WAITING) {
           return res;
@@ -538,7 +538,7 @@ export class Instrumenter {
         }));
 
         // Exceptions inside callbacks should bubble up to the parent call.
-        if (call.ancestors.length) {
+        if (call.ancestors?.length) {
           if (!Object.prototype.hasOwnProperty.call(e, 'callId')) {
             Object.defineProperty(e, 'callId', { value: call.id });
           }

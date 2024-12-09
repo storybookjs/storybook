@@ -23,30 +23,21 @@ const HighlightToggleLabel = styled.label(({ theme }) => ({
   color: theme.color.dark,
 }));
 
-const GlobalToggle = styled.div<{ elementWidth: number }>(({ elementWidth, theme }) => {
-  const maxWidthBeforeBreak = 450;
-  return {
-    cursor: 'pointer',
-    fontSize: 13,
-    lineHeight: '20px',
-    padding: elementWidth > maxWidthBeforeBreak ? '10px 15px 10px 0' : '10px 0px 10px 15px',
-    height: '40px',
-    border: 'none',
-    marginTop: elementWidth > maxWidthBeforeBreak ? -40 : 0,
-    float: elementWidth > maxWidthBeforeBreak ? 'right' : 'left',
-    display: 'flex',
-    alignItems: 'center',
-    width: elementWidth > maxWidthBeforeBreak ? 'auto' : '100%',
-    borderBottom: elementWidth > maxWidthBeforeBreak ? 'none' : `1px solid ${theme.appBorderColor}`,
+const GlobalToggle = styled.div(() => ({
+  alignItems: 'center',
+  cursor: 'pointer',
+  display: 'flex',
+  fontSize: 13,
+  height: 40,
+  padding: '0 15px',
 
-    input: {
-      marginLeft: 10,
-      marginRight: 0,
-      marginTop: -1,
-      marginBottom: 0,
-    },
-  };
-});
+  input: {
+    marginBottom: 0,
+    marginLeft: 10,
+    marginRight: 0,
+    marginTop: -1,
+  },
+}));
 
 const Item = styled.button<{ active?: boolean }>(
   ({ theme }) => ({
@@ -82,6 +73,7 @@ const List = styled.div(({ theme }) => ({
   boxShadow: `${theme.appBorderColor} 0 -1px 0 0 inset`,
   background: theme.background.app,
   display: 'flex',
+  flexWrap: 'wrap',
   justifyContent: 'space-between',
   whiteSpace: 'nowrap',
 }));
@@ -131,16 +123,18 @@ export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
             </Item>
           ))}
         </TabsWrapper>
+        {tabs[activeTab].items.length > 0 ? (
+          <GlobalToggle>
+            <HighlightToggleLabel htmlFor={highlightToggleId}>
+              {highlightLabel}
+            </HighlightToggleLabel>
+            <HighlightToggle
+              toggleId={highlightToggleId}
+              elementsToHighlight={retrieveAllNodesFromResults(tabs[activeTab].items)}
+            />
+          </GlobalToggle>
+        ) : null}
       </List>
-      {tabs[activeTab].items.length > 0 ? (
-        <GlobalToggle elementWidth={width || 0}>
-          <HighlightToggleLabel htmlFor={highlightToggleId}>{highlightLabel}</HighlightToggleLabel>
-          <HighlightToggle
-            toggleId={highlightToggleId}
-            elementsToHighlight={retrieveAllNodesFromResults(tabs[activeTab].items)}
-          />
-        </GlobalToggle>
-      ) : null}
       {tabs[activeTab].panel}
     </Container>
   );

@@ -60,6 +60,6 @@ export { createPlaywrightTest } from './modules/store/csf/portable-stories';
 export type { PropDescriptor } from './store';
 
 /** STORIES API */
-export { StoryStore } from './store';
+export { StoryStore, type Report, ReporterAPI } from './store';
 export { Preview, PreviewWeb, PreviewWithSelection, UrlStore, WebView } from './preview-web';
 export type { SelectionStore, View } from './preview-web';

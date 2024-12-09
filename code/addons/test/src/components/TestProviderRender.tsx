@@ -23,9 +23,8 @@ import {
 import { isEqual } from 'es-toolkit';
 import { debounce } from 'es-toolkit/compat';
 
-// Relatively importing from a11y to get the ADDON_ID
 import { ADDON_ID as A11Y_ADDON_ID } from '../../../a11y/src/constants';
-import { type Config, type Details } from '../constants';
+import { type Config, type Details, PANEL_ID } from '../constants';
 import { type TestStatus } from '../node/reporter';
 import { Description } from './Description';
 import { TestStatusIcon } from './TestStatusIcon';
@@ -145,6 +144,12 @@ export const TestProviderRender: FC<
 
   const status = (state.failed ? 'failed' : results[0]?.status) || 'unknown';
 
+  const openTestsPanel = (id: string) => {
+    api.selectStory(id);
+    api.setSelectedPanel(PANEL_ID);
+    api.togglePanel(true);
+  };
+
   return (
     <Container {...props}>
       <Heading>
@@ -244,6 +249,11 @@ export const TestProviderRender: FC<
         <Extras>
           <ListItem
             title="Component tests"
+            onClick={
+              (status === 'failed' || status === 'warning') && results[0]
+                ? () => openTestsPanel(results[0].storyId)
+                : null
+            }
             icon={
               state.crashed ? (
                 <TestStatusIcon status="critical" aria-label="status: crashed" />

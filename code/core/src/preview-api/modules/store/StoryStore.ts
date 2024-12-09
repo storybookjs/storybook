@@ -45,6 +45,7 @@ import {
   prepareStory,
   processCSFFile,
 } from './csf';
+import { ReporterAPI } from './reporter-api';
 
 export function picky<T extends Record<string, any>, K extends keyof T>(
   obj: T,
@@ -253,12 +254,14 @@ export class StoryStore<TRenderer extends Renderer> {
   getStoryContext(story: PreparedStory<TRenderer>, { forceInitialArgs = false } = {}) {
     const userGlobals = this.userGlobals.get();
     const { initialGlobals } = this.userGlobals;
+    const reporting = new ReporterAPI();
     return prepareContext({
       ...story,
       args: forceInitialArgs ? story.initialArgs : this.args.get(story.id),
       initialGlobals,
       globalTypes: this.projectAnnotations.globalTypes,
       userGlobals,
+      reporting,
       globals: {
         ...userGlobals,
         ...story.storyGlobals,

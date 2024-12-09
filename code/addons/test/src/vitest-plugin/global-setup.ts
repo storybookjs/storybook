@@ -7,6 +7,18 @@ import { logger } from 'storybook/internal/node-logger';
 
 let storybookProcess: ChildProcess | null = null;
 
+const getIsVitestStandaloneRun = () => {
+  try {
+    // @ts-expect-error Suppress TypeScript warning about wrong setting. Doesn't matter, because we don't use tsc for bundling.
+    return (import.meta.env || process?.env).STORYBOOK !== 'true';
+  } catch (e) {
+    return false;
+  }
+};
+
+const isVitestStandaloneRun = getIsVitestStandaloneRun();
+
+// TODO: Not run when executed via Storybook
 const checkStorybookRunning = async (storybookUrl: string): Promise<boolean> => {
   try {
     const response = await fetch(`${storybookUrl}/iframe.html`, { method: 'HEAD' });
@@ -56,7 +68,7 @@ const killProcess = (process: ChildProcess) => {
 };
 
 export const setup = async ({ config }: GlobalSetupContext) => {
-  if (config.watch) {
+  if (config.watch && isVitestStandaloneRun) {
     await startStorybookIfNotRunning();
   }
 };

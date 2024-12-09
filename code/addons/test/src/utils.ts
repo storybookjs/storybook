@@ -1,5 +1,7 @@
 import { type StorybookTheme, useTheme } from 'storybook/internal/theming';
 
+import type { StorybookConfig } from '@storybook/types';
+
 import Filter from 'ansi-to-html';
 import stripAnsi from 'strip-ansi';
 
@@ -38,4 +40,20 @@ export function createAnsiToHtmlFilter(theme: StorybookTheme) {
 export function useAnsiToHtmlFilter() {
   const theme = useTheme();
   return createAnsiToHtmlFilter(theme);
+}
+
+export function getAddonNames(mainConfig: StorybookConfig): string[] {
+  const addons = mainConfig.addons || [];
+  const addonList = addons.map((addon) => {
+    let name = '';
+    if (typeof addon === 'string') {
+      name = addon;
+    } else if (typeof addon === 'object') {
+      name = addon.name;
+    }
+
+    return name;
+  });
+
+  return addonList.filter((item): item is NonNullable<typeof item> => item != null);
 }

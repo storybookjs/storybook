@@ -1,6 +1,6 @@
 {
   "name": "@storybook/blocks",
-  "version": "8.5.0-alpha.14",
+  "version": "8.5.0-alpha.18",
   "description": "Storybook Doc Blocks",
   "keywords": [
     "storybook"
@@ -43,7 +43,7 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/csf": "^0.1.11",
+    "@storybook/csf": "0.1.12",
     "@storybook/icons": "^1.2.12",
     "ts-dedent": "^2.0.0"
   },

@@ -1,19 +1,12 @@
-import React from 'react';
+import React, { useContext } from 'react';
 
 import { Button, IconButton, Modal } from 'storybook/internal/components';
 import { useStorybookApi } from 'storybook/internal/manager-api';
+import { styled } from 'storybook/internal/theming';
 
 import { CloseIcon, SyncIcon } from '@storybook/icons';
-import { styled } from '@storybook/theming';
 
 import { DOCUMENTATION_FATAL_ERROR_LINK } from '../constants';
-
-interface GlobalErrorModalProps {
-  error: string;
-  open: boolean;
-  onClose: () => void;
-  onRerun: () => void;
-}
 
 const ModalBar = styled.div({
   display: 'flex',
@@ -49,8 +42,24 @@ const TroubleshootLink = styled.a(({ theme }) => ({
   color: theme.color.defaultText,
 }));
 
-export function GlobalErrorModal({ onRerun, onClose, error, open }: GlobalErrorModalProps) {
+export const GlobalErrorContext = React.createContext<{
+  isModalOpen: boolean;
+  setModalOpen: (isOpen: boolean) => void;
+  error?: string;
+}>({
+  isModalOpen: false,
+  setModalOpen: () => {},
+  error: undefined,
+});
+
+interface GlobalErrorModalProps {
+  onRerun: () => void;
+}
+
+export function GlobalErrorModal({ onRerun }: GlobalErrorModalProps) {
   const api = useStorybookApi();
+  const { error, isModalOpen, setModalOpen } = useContext(GlobalErrorContext);
+  const handleClose = () => setModalOpen(false);
 
   const troubleshootURL = api.getDocsUrl({
     subpath: DOCUMENTATION_FATAL_ERROR_LINK,
@@ -59,7 +68,7 @@ export function GlobalErrorModal({ onRerun, onClose, error, open }: GlobalErrorM
   });
 
   return (
-    <Modal onEscapeKeyDown={onClose} onInteractOutside={onClose} open={open}>
+    <Modal onEscapeKeyDown={handleClose} onInteractOutside={handleClose} open={isModalOpen}>
       <ModalBar>
         <ModalTitle>Storybook Tests error details</ModalTitle>
         <ModalActionBar>
@@ -72,7 +81,7 @@ export function GlobalErrorModal({ onRerun, onClose, error, open }: GlobalErrorM
               Troubleshoot
             </a>
           </Button>
-          <IconButton onClick={onClose}>
+          <IconButton onClick={handleClose}>
             <CloseIcon />
           </IconButton>
         </ModalActionBar>

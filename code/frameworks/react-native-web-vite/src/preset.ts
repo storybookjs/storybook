@@ -4,6 +4,7 @@ import { viteFinal as reactViteFinal } from '@storybook/react-vite/preset';
 import { esbuildFlowPlugin, flowPlugin } from '@bunchtogether/vite-plugin-flow';
 import react from '@vitejs/plugin-react';
 import type { InlineConfig, PluginOption } from 'vite';
+import tsconfigPaths from 'vite-tsconfig-paths';
 
 import type { FrameworkOptions, StorybookConfig } from './types';
 
@@ -72,8 +73,9 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
   const { plugins = [] } = reactConfig;
 
   plugins.unshift(
+    tsconfigPaths(),
     flowPlugin({
-      exclude: [],
+      exclude: [/node_modules\/(?!react-native|@react-native)/],
     }),
     react({
       babel: {

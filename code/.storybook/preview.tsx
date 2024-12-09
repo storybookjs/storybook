@@ -22,6 +22,7 @@ import { DocsPageWrapper } from '../lib/blocks/src/components';
 import { isChromatic } from './isChromatic';
 
 const { document } = global;
+globalThis.CONFIG_TYPE = 'DEVELOPMENT';
 
 const ThemeBlock = styled.div<{ side: 'left' | 'right'; layout: string }>(
   {
@@ -356,6 +357,9 @@ export const parameters = {
       cellAmount: 10,
       opacity: 0.4,
     },
+  },
+  a11y: {
+    warnings: ['minor', 'moderate', 'serious', 'critical'],
   },
 };
 

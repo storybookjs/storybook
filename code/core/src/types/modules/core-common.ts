@@ -71,6 +71,7 @@ export interface Presets {
   apply(extension: 'babel', config?: {}, args?: any): Promise<any>;
   apply(extension: 'swc', config?: {}, args?: any): Promise<any>;
   apply(extension: 'entries', config?: [], args?: any): Promise<unknown>;
+  apply(extension: 'env', config?: {}, args?: any): Promise<any>;
   apply(extension: 'stories', config?: [], args?: any): Promise<StoriesEntry[]>;
   apply(extension: 'managerEntries', config: [], args?: any): Promise<string[]>;
   apply(extension: 'refs', config?: [], args?: any): Promise<StorybookConfigRaw['refs']>;
@@ -194,6 +195,7 @@ export interface BuilderOptions {
   ignorePreview?: boolean;
   cache?: FileSystemCache;
   configDir: string;
+  projectRoot?: string;
   docsMode?: boolean;
   features?: StorybookConfigRaw['features'];
   versionCheck?: VersionCheck;

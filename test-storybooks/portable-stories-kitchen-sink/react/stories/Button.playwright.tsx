@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { createTest } from '@storybook/react/experimental-playwright';
 import { test as base, expect } from '@playwright/experimental-ct-react';
 import stories, { SingleComposedStory, WithSpanishGlobal } from './Button.stories.playwright';

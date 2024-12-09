@@ -12,6 +12,33 @@ const makeProperty = (compodocType?: string) => ({
 
 const getDummyCompodocJson = () => {
   return {
+    components: [
+      {
+        name: 'ButtonComponent',
+        type: 'component',
+        propertiesClass: [],
+        inputsClass: [
+          {
+            required: true,
+            name: 'label',
+            defaultValue: "'Button'",
+            type: 'string',
+            decorators: [],
+          },
+          {
+            name: 'primary',
+            defaultValue: 'false',
+            deprecated: false,
+            deprecationMessage: '',
+            line: 23,
+            type: 'boolean',
+            decorators: [],
+          },
+        ],
+        outputsClass: [],
+        methodsClass: [],
+      },
+    ],
     miscellaneous: {
       typealiases: [
         {

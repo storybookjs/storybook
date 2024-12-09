@@ -21,6 +21,14 @@ export const isMethod = (methodOrProp: Method | Property): methodOrProp is Metho
   return (methodOrProp as Method).args !== undefined;
 };
 
+export const isRequired = (item: Property): boolean => {
+  return item.hasOwnProperty('required') && item.required;
+};
+
+export const setRequiredProperty = (property: Property) => {
+  return isRequired(property) ? { required: true } : {};
+};
+
 export const setCompodocJson = (compodocJson: CompodocJson) => {
   global.__STORYBOOK_COMPODOC_JSON__ = compodocJson;
 };
@@ -139,13 +147,13 @@ const extractEnumValues = (compodocType: any) => {
 export const extractType = (property: Property, defaultValue: any): SBType => {
   const compodocType = property.type || extractTypeFromValue(defaultValue);
   switch (compodocType) {
-    case 'string':
     case 'boolean':
+    case 'string':
     case 'number':
-      return { name: compodocType };
+      return { name: compodocType, ...setRequiredProperty(property) };
     case undefined:
     case null:
-      return { name: 'other', value: 'void' };
+      return { name: 'other', value: 'void', ...setRequiredProperty(property) };
     default: {
       const resolvedType = resolveTypealias(compodocType);
       const enumValues = extractEnumValues(resolvedType);
@@ -246,8 +254,7 @@ export const extractArgTypesFromData = (componentData: Class | Directive | Injec
           ? { name: 'other', value: 'void' }
           : extractType(item as Property, defaultValue);
       const action = section === 'outputs' ? { action: item.name } : {};
-
-      const argType = {
+      const argType: InputType = {
         name: item.name,
         description: item.rawdescription || item.description,
         type,
@@ -256,7 +263,6 @@ export const extractArgTypesFromData = (componentData: Class | Directive | Injec
           category: section,
           type: {
             summary: isMethod(item) ? displaySignature(item) : item.type,
-            required: isMethod(item) ? false : !item.optional,
           },
           defaultValue: { summary: defaultValue },
         },

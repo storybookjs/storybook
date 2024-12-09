@@ -1,0 +1,152 @@
+{
+  "name": "@storybook/angular-renderer",
+  "version": "8.5.0-alpha.11",
+  "description": "Storybook Angular renderer",
+  "keywords": [
+    "storybook"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/renderers/angular-renderer",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/renderers/angular-renderer"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./client/docs": {
+      "types": "./dist/client/docs/index.d.ts",
+      "import": "./dist/client/docs/index.mjs",
+      "require": "./dist/client/docs/index.js"
+    },
+    "./client/config": {
+      "types": "./dist/client/config.d.ts",
+      "import": "./dist/client/config.mjs",
+      "require": "./dist/client/config.js"
+    },
+    "./client/preview-prod": {
+      "types": "./dist/client/preview-prod.d.ts",
+      "import": "./dist/client/preview-prod.mjs",
+      "require": "./dist/client/preview-prod.js"
+    },
+    "./client/docs/config": {
+      "types": "./dist/client/docs/config.d.ts",
+      "import": "./dist/client/docs/config.mjs",
+      "require": "./dist/client/docs/config.js"
+    },
+    "./dist/client/docs/config": {
+      "types": "./dist/client/docs/config.d.ts",
+      "import": "./dist/client/docs/config.mjs",
+      "require": "./dist/client/docs/config.js"
+    },
+    "./preset": "./preset.js",
+    "./package.json": "./package.json"
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*",
+    "template/cli/**/*",
+    "README.md",
+    "*.js",
+    "*.d.ts",
+    "!src/**/*"
+  ],
+  "scripts": {
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
+  },
+  "dependencies": {
+    "@analogjs/vite-plugin-angular": "^1.9.4",
+    "@storybook/components": "workspace:*",
+    "@storybook/global": "^5.0.0",
+    "@storybook/manager-api": "workspace:*",
+    "@storybook/preview-api": "workspace:*",
+    "@storybook/react-dom-shim": "workspace:*",
+    "@storybook/theming": "workspace:*"
+  },
+  "devDependencies": {
+    "@angular-devkit/architect": "^0.1703.0",
+    "@angular-devkit/build-angular": "^17.3.0",
+    "@angular-devkit/core": "^17.3.0",
+    "@angular/animations": "^17.3.0",
+    "@angular/cli": "^17.3.0",
+    "@angular/common": "^17.3.0",
+    "@angular/compiler": "^17.3.0",
+    "@angular/compiler-cli": "^17.3.0",
+    "@angular/core": "^17.3.0",
+    "@angular/forms": "^17.3.0",
+    "@angular/platform-browser": "^17.3.0",
+    "@angular/platform-browser-dynamic": "^17.3.0",
+    "@storybook/test": "workspace:*",
+    "@types/cross-spawn": "^6.0.2",
+    "@types/tmp": "^0.2.3",
+    "cross-spawn": "^7.0.3",
+    "tmp": "^0.2.1",
+    "typescript": "^5.3.2",
+    "webpack": "5",
+    "zone.js": "^0.14.2"
+  },
+  "peerDependencies": {
+    "@angular-devkit/architect": ">=0.1500.0 < 0.2000.0",
+    "@angular-devkit/build-angular": ">=15.0.0 < 20.0.0",
+    "@angular-devkit/core": ">=15.0.0 < 20.0.0",
+    "@angular/cli": ">=15.0.0 < 20.0.0",
+    "@angular/common": ">=15.0.0 < 20.0.0",
+    "@angular/compiler": ">=15.0.0 < 20.0.0",
+    "@angular/compiler-cli": ">=15.0.0 < 20.0.0",
+    "@angular/core": ">=15.0.0 < 20.0.0",
+    "@angular/forms": ">=15.0.0 < 20.0.0",
+    "@angular/platform-browser": ">=15.0.0 < 20.0.0",
+    "@angular/platform-browser-dynamic": ">=15.0.0 < 20.0.0",
+    "rxjs": "^6.0.0 || ^7.4.0",
+    "storybook": "workspace:^",
+    "typescript": "^4.0.0 || ^5.0.0",
+    "zone.js": ">= 0.11.1 < 1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@angular/cli": {
+      "optional": true
+    },
+    "@storybook/test": {
+      "optional": true
+    },
+    "typescript": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "bundler": {
+    "entries": [
+      "./src/index.ts",
+      "./src/preset.ts",
+      "./src/renderer.ts",
+      "./src/client/index.ts",
+      "./src/client/config.ts",
+      "./src/client/docs/config.ts",
+      "./src/client/public-types.ts",
+      "./src/client/preview-prod.ts"
+    ],
+    "platform": "browser",
+    "post": "./scripts/postbuild.js",
+    "tsConfig": "tsconfig.build.json"
+  },
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+}

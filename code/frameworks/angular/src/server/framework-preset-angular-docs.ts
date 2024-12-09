@@ -3,5 +3,5 @@ import { PresetProperty } from 'storybook/internal/types';
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry = [], options) => {
   if (!hasDocsOrControls(options)) return entry;
-  return [...entry, require.resolve('../client/docs/config')];
+  return [...entry, require.resolve('@storybook/angular-renderer/client/docs/config')];
 };

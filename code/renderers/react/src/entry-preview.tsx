@@ -10,9 +10,9 @@ export { renderToCanvas } from './renderToCanvas';
 export { mount } from './mount';
 
 export const decorators: Decorator[] = [
-  (Story, context) => {
+  (story, context) => {
     if (!context.parameters?.react?.rsc) {
-      return <Story />;
+      return story();
     }
 
     const major = semver.major(React.version);
@@ -21,10 +21,6 @@ export const decorators: Decorator[] = [
       throw new Error('React Server Components require React >= 18.3');
     }
 
-    return (
-      <React.Suspense>
-        <Story />
-      </React.Suspense>
-    );
+    return <React.Suspense>{story()}</React.Suspense>;
   },
 ];

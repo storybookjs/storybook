@@ -40,7 +40,7 @@ export async function getRendererDir(
 ) {
   const externalFramework = externalFrameworks.find((framework) => framework.name === renderer);
   const frameworkPackageName =
-    externalFramework?.renderer || externalFramework?.packageName || `@storybook/${renderer}`;
+    externalFramework?.packageName || externalFramework?.renderer || `@storybook/${renderer}`;
 
   const packageJsonPath = join(frameworkPackageName, 'package.json');
 

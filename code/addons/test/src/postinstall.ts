@@ -205,7 +205,7 @@ export default async function postInstall(options: PostinstallOptions) {
 
         Adding ${picocolors.bold(colors.pink(`@storybook/experimental-nextjs-vite/vite-plugin`))} so you can use it with Vitest.
 
-        More info about the plugin at: ${picocolors.cyan(`https://github.com/storybookjs/vite-plugin-storybook-nextjs`)}
+        More info about the plugin at ${picocolors.cyan(`https://github.com/storybookjs/vite-plugin-storybook-nextjs`)}
       `
     );
     try {
@@ -216,6 +216,21 @@ export default async function postInstall(options: PostinstallOptions) {
         'Failed to install @storybook/experimental-nextjs-vite. Please install it manually'
       );
     }
+  }
+
+  const v8Version = await packageManager.getInstalledVersion('@vitest/coverage-v8');
+  const istanbulVersion = await packageManager.getInstalledVersion('@vitest/coverage-istanbul');
+  if (!v8Version && !istanbulVersion) {
+    printInfo(
+      '🙈 Let me cover this for you',
+      dedent`
+        You don't seem to have a coverage reporter installed. Vitest needs either V8 or Istanbul to generate coverage reports.
+
+        Adding ${picocolors.bold(colors.pink(`@vitest/coverage-v8`))} to enable coverage reporting.
+        Read more about Vitest coverage providers at ${picocolors.cyan(`https://vitest.dev/guide/coverage.html#coverage-providers`)}
+      `
+    );
+    dependencies.push(`@vitest/coverage-v8`); // Version specifier is added below
   }
 
   const versionedDependencies = dependencies.map((p) => {
@@ -311,7 +326,7 @@ export default async function postInstall(options: PostinstallOptions) {
         Found an existing Vitest workspace file:
         ${colors.gray(vitestWorkspaceFile)}
 
-        I was able to configure most of the addon but could not safely extend 
+        I was able to configure most of the addon but could not safely extend
         your existing workspace file automatically, you must do it yourself. This was the last step.
 
         Please refer to the documentation to complete the setup manually:
@@ -333,7 +348,7 @@ export default async function postInstall(options: PostinstallOptions) {
           You seem to have an existing test configuration in your Vite config file:
           ${colors.gray(vitestWorkspaceFile || '')}
 
-          I was able to configure most of the addon but could not safely extend 
+          I was able to configure most of the addon but could not safely extend
           your existing workspace file automatically, you must do it yourself. This was the last step.
 
           Please refer to the documentation to complete the setup manually:
@@ -369,7 +384,7 @@ export default async function postInstall(options: PostinstallOptions) {
           {
             extends: '${viteConfigFile ? relative(dirname(browserWorkspaceFile), viteConfigFile) : ''}',
             plugins: [
-              // The plugin will run tests for the stories defined in your Storybook config 
+              // The plugin will run tests for the stories defined in your Storybook config
               // See options at: https://storybook.js.org/docs/writing-tests/vitest-plugin#storybooktest
               storybookTest({ configDir: '${options.configDir}' }),${vitestInfo.frameworkPluginDocs + vitestInfo.frameworkPluginCall}
             ],
@@ -406,7 +421,7 @@ export default async function postInstall(options: PostinstallOptions) {
         // More info at: https://storybook.js.org/docs/writing-tests/vitest-plugin
         export default defineConfig({
           plugins: [
-            // The plugin will run tests for the stories defined in your Storybook config 
+            // The plugin will run tests for the stories defined in your Storybook config
             // See options at: https://storybook.js.org/docs/writing-tests/vitest-plugin#storybooktest
             storybookTest({ configDir: '${options.configDir}' }),${vitestInfo.frameworkPluginDocs + vitestInfo.frameworkPluginCall}
           ],

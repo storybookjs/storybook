@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import type {
+import {
   AnnotatedStoryFn,
   Args,
   ComponentAnnotations,
@@ -11,8 +11,8 @@ import type {
   StrictArgs,
   ProjectAnnotations,
 } from 'storybook/internal/types';
-import type * as AngularCore from '@angular/core';
-import type { AngularRenderer } from './types';
+import * as AngularCore from '@angular/core';
+import { AngularRenderer } from './types';
 
 export type { Args, ArgTypes, Parameters, StrictArgs } from 'storybook/internal/types';
 export type { AngularRenderer };

@@ -1,5 +1,5 @@
 import { hasDocsOrControls } from 'storybook/internal/docs-tools';
-import type { PresetProperty } from 'storybook/internal/types';
+import { PresetProperty } from 'storybook/internal/types';
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry = [], options) => {
   if (!hasDocsOrControls(options)) {

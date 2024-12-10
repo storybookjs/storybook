@@ -16,7 +16,13 @@ export default {
       options: { parser: 'angular' },
     },
     {
-      files: ['**/frameworks/angular/src/**/*.ts', '**/frameworks/angular/template/**/*.ts'],
+      files: [
+        '**/frameworks/angular/src/**/*.ts',
+        '**/frameworks/angular/template/**/*.ts',
+        '**/presets/angular-webpack/src/**/*.ts',
+        '**/renderers/angular-renderer/src/**/*.ts',
+        '**/renderers/angular-renderer/template/**/*.ts',
+      ],
       options: { parser: 'babel-ts' },
     },
     {

@@ -51,7 +51,7 @@ module.exports = {
     },
     {
       // this package depends on a lot of peerDependencies we don't want to specify, because npm would install them
-      files: ['**/frameworks/angular/template/**/*'],
+      files: ['**/frameworks/angular/template/**/*', '**/renderers/angular-renderer/template/**/*'],
       rules: {
         '@typescript-eslint/no-useless-constructor': 'off',
         '@typescript-eslint/dot-notation': 'off',

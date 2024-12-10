@@ -1,6 +1,6 @@
-import type { PresetProperty } from 'storybook/internal/types';
+import { PresetProperty } from 'storybook/internal/types';
 
-import type { StandaloneOptions } from './builders/utils/standalone-options';
+import { StandaloneOptions } from './builders/utils/standalone-options';
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entries = [], options) => {
   const annotations = [...entries, require.resolve('@storybook/angular-renderer/client/config')];

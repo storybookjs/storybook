@@ -1,10 +1,10 @@
-import type {
+import {
   Parameters as DefaultParameters,
   StoryContext as DefaultStoryContext,
   WebRenderer,
 } from 'storybook/internal/types';
 
-import type { ApplicationConfig, Provider } from '@angular/core';
+import { ApplicationConfig, Provider } from '@angular/core';
 
 export interface NgModuleMetadata {
   /** List of components, directives, and pipes that belong to your component. */

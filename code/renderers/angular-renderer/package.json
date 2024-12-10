@@ -75,7 +75,8 @@
     "@storybook/manager-api": "workspace:*",
     "@storybook/preview-api": "workspace:*",
     "@storybook/react-dom-shim": "workspace:*",
-    "@storybook/theming": "workspace:*"
+    "@storybook/theming": "workspace:*",
+    "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
     "@angular-devkit/architect": "^0.1703.0",
@@ -94,6 +95,7 @@
     "@types/cross-spawn": "^6.0.2",
     "@types/tmp": "^0.2.3",
     "cross-spawn": "^7.0.3",
+    "telejson": "^7.2.0",
     "tmp": "^0.2.1",
     "typescript": "^5.3.2",
     "webpack": "5",

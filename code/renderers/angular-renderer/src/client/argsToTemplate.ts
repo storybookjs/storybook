@@ -76,4 +76,4 @@ export const argsToTemplate = <A extends Record<string, any>>(
         : `[${key}]="${formatPropInTemplate(key)}"`
     )
     .join(' ');
-}
+};

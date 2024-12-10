@@ -75,7 +75,7 @@ If you need to dismiss an accessibility rule or modify its settings across all s
 
 <IfRenderer renderer={['angular', 'vue', 'web-components', 'ember', 'html', 'react', 'preact', 'qwik', 'solid']}>
 
-  You can also customize your own set of rules for all stories of a component. Update your story's default export and add a parameter with the required configuration:
+  You can also customize your own set of rules for all stories of a component. Update your story's default export and add parameters and globals with the required configuration:
 
 </IfRenderer>
 
@@ -95,17 +95,17 @@ Customize the a11y ruleset at the story level by updating your story to include 
 
 {/* prettier-ignore-end */}
 
-#### How to disable a11y tests
+#### Turn off automated a11y tests
 
 <IfRenderer renderer="svelte">
 
-  If you are using Svelte CSF, you can turn off accessibility testing for stories or components by adding a parameter to your story or adjusting the defineMeta function with the required configuration. With a regular CSF story, you can add the following to your story's export or component's default export:
+  If you are using Svelte CSF, you can turn off automated accessibility testing for stories or components by adding globals to your story or adjusting the defineMeta function with the required configuration. With a regular CSF story, you can add the following to your story's export or component's default export:
   
 </IfRenderer>
 
 <IfRenderer renderer={['angular', 'vue', 'web-components', 'ember', 'html', 'react', 'preact', 'qwik', 'solid']}>
 
-  Disable accessibility testing for stories or components by adding the following parameter to your story’s export or component’s default export respectively:
+  Disable automated accessibility testing for stories or components by adding the following globals to your story’s export or component’s default export respectively:
 
 </IfRenderer>
 
@@ -115,6 +115,50 @@ Customize the a11y ruleset at the story level by updating your story to include 
 <CodeSnippets path="storybook-addon-a11y-disable.md" />
 
 {/* prettier-ignore-end */}
+
+<If renderer={['react', 'vue', 'svelte']}>
+
+## Test addon integration
+
+The accessibility addon provides seamless integration with Storybook's [test addon](./test-addon.mdx), enabling you to run automated accessibility checks for all your tests in the background while you run component tests. If there are any violations, the test will fail, and you will see the results in the sidebar without any additional setup.
+
+{/* TODO: add asset of the changed UI here */}
+
+### Manual upgrade
+
+If you enabled the addon and you're manually upgrading to Storybook 8.5 or later, you'll need to adjust your existing configuration (i.e., `.storybook/vitest.config.ts`) to enable the integration as follows:
+
+<CodeSnippets path="storybook-addon-a11y-test-setup.md" />
+
+### Override accessibility violation levels
+
+By default, when the accessibility addon runs with the test addon enabled, it interprets all violations as errors. This means that if a story has a minor accessibility violation, the test will fail. However, you can override this behavior by setting the `warnings` parameter in the `a11y` configuration object to define an array of impact levels that should be considered warnings.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-addon-a11y-test-override-warning-levels.md" />
+
+{/* prettier-ignore-end */}
+
+In the example above, we configured all the `minor` or `moderate` accessibility violations to be considered warnings. All other levels (i.e., `serious` or `critical`) will continue to be considered errors, fail the test, and report the results accordingly in the Storybook UI or Vitest.
+
+### Configure accessibility tests with the test addon
+
+If you want to run accessibility tests only for a subset of your stories, you can use the [tags](../writing-stories/tags.mdx) mechanism to filter the tests you want to run with the test addon. For example, to turn off accessibility tests for a specific story, add the `!a11ytest` tag to the story's meta or directly to the story's `tags` configuration option. For example:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-test-addon-disable-tests.md" />
+
+{/* prettier-ignore-end */}
+
+<Callout variant="info">
+
+  Tags can be applied at the project, component (meta), or story levels. Read our [documentation](../writing-stories/tags.mdx) for more information on configuring tags. 
+ 
+</Callout>
+
+</If>
 
 ## Automate accessibility tests with test runner
 
@@ -164,7 +208,7 @@ The test runner provides [helper methods](./test-runner.mdx#helpers), allowing a
 
 ### Disable a11y tests with the test runner
 
-Additionally, if you have already [disabled accessibility](#how-to-disable-a11y-tests) tests for any particular story, you can also configure the test runner to avoid testing it as well. For example:
+Additionally, if you have already [disabled accessibility](#turn-off-automated-a11y-tests) tests for any particular story, you can also configure the test runner to avoid testing it as well. For example:
 
 {/* prettier-ignore-start */}
 
@@ -177,6 +221,16 @@ Additionally, if you have already [disabled accessibility](#how-to-disable-a11y-
 #### What’s the difference between browser-based and linter-based accessibility tests?
 
 Browser-based accessibility tests, like those found in Storybook, evaluate the rendered DOM because that gives you the highest accuracy. Auditing code that hasn't been compiled yet is one step removed from the real thing, so you won't catch everything the user might experience.
+
+<If renderer={['react', 'vue', 'svelte']}>
+
+## Troubleshooting
+
+### Why are my tests failing in different environments?
+
+If you enabled the experimental test addon (i.e.,`@storybook/experimental-addon-test`), your tests run in Vitest using your project's configuration with Playwright's Chromium browser. This can lead to inconsistent test results reported in the Storybook UI or CLI. The inconsistency can be due to `axe-core` reporting different results in different environments, such as browser versions or configurations. If you encounter this issue, we recommend reaching out using the default communication channels (e.g., [GitHub discussions](https://github.com/storybookjs/storybook/discussions/new?category=help), [Github issues](https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml)).
+
+</If>
 
 **Learn about other UI tests**
 

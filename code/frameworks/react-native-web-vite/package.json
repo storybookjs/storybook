@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react-native-web-vite",
-  "version": "8.5.0-alpha.16",
+  "version": "8.5.0-alpha.19",
   "description": "Develop react-native components an isolated web environment with hot reloading.",
   "keywords": [
     "storybook"
@@ -58,7 +58,8 @@
     "@storybook/builder-vite": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/react-vite": "workspace:*",
-    "@vitejs/plugin-react": "^4.3.2"
+    "@vitejs/plugin-react": "^4.3.2",
+    "vite-tsconfig-paths": "^5.1.4"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

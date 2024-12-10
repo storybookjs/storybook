@@ -81,6 +81,7 @@ export { StorybookIcon } from './brand/StorybookIcon';
 
 // Loader
 export { Loader } from './components/Loader/Loader';
+export { ProgressSpinner } from './components/ProgressSpinner/ProgressSpinner';
 
 // Utils
 export { getStoryHref } from './components/utils/getStoryHref';

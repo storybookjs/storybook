@@ -1,7 +1,7 @@
 import React, { Fragment, useEffect, useRef, useState } from 'react';
 
 import { styled } from '@storybook/core/theming';
-import { type API_FilterFunction } from '@storybook/core/types';
+import { type API_FilterFunction, type API_StatusValue } from '@storybook/core/types';
 
 import {
   TESTING_MODULE_CRASH_REPORT,
@@ -129,7 +129,10 @@ export const SidebarBottomBase = ({
       });
     };
 
-    const onProgressReport = ({ providerId, ...result }: TestingModuleProgressReportPayload) => {
+    const onProgressReport = async ({
+      providerId,
+      ...result
+    }: TestingModuleProgressReportPayload) => {
       const statusResult = 'status' in result ? result.status : undefined;
       api.updateTestProviderState(
         providerId,

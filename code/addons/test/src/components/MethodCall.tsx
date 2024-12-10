@@ -425,11 +425,11 @@ export const MethodCall = ({
     return null;
   }
 
-  if (call.method === 'step' && call.path.length === 0) {
+  if (call.method === 'step' && call.path?.length === 0) {
     return <StepNode label={call.args[0]} />;
   }
 
-  const path = call.path.flatMap((elem, index) => {
+  const path = call.path?.flatMap((elem, index) => {
     // eslint-disable-next-line no-underscore-dangle
     const callId = (elem as CallRef).__callId__;
     return [
@@ -443,7 +443,7 @@ export const MethodCall = ({
     ];
   });
 
-  const args = call.args.flatMap((arg, index, array) => {
+  const args = call.args?.flatMap((arg, index, array) => {
     const node = <Node key={`node${index}`} value={arg} callsById={callsById} />;
     return index < array.length - 1
       ? [node, <span key={`comma${index}`}>,&nbsp;</span>, <wbr key={`wbr${index}`} />]

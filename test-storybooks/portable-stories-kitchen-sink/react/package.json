@@ -90,6 +90,7 @@
   "devDependencies": {
     "@playwright/experimental-ct-react": "1.48.1",
     "@playwright/test": "1.48.1",
+    "@storybook/addon-a11y": "^8.0.0",
     "@storybook/addon-actions": "^8.0.0",
     "@storybook/addon-controls": "^8.0.0",
     "@storybook/addon-essentials": "^8.0.0",

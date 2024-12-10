@@ -645,6 +645,7 @@ describe('StoryStore', () => {
       expect(store.raw()).toMatchInlineSnapshot(`
         [
           {
+            "applyAfterEach": [Function],
             "applyBeforeEach": [Function],
             "applyLoaders": [Function],
             "argTypes": {
@@ -698,6 +699,7 @@ describe('StoryStore', () => {
             "usesMount": false,
           },
           {
+            "applyAfterEach": [Function],
             "applyBeforeEach": [Function],
             "applyLoaders": [Function],
             "argTypes": {
@@ -751,6 +753,7 @@ describe('StoryStore', () => {
             "usesMount": false,
           },
           {
+            "applyAfterEach": [Function],
             "applyBeforeEach": [Function],
             "applyLoaders": [Function],
             "argTypes": {

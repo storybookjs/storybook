@@ -1,6 +1,6 @@
 {
   "name": "@storybook/ember",
-  "version": "8.5.0-alpha.16",
+  "version": "8.5.0-alpha.19",
   "description": "Storybook for Ember: Develop Ember Component in isolation with Hot Reloading.",
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/frameworks/ember",
   "bugs": {

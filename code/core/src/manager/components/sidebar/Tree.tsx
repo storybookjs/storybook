@@ -273,7 +273,10 @@ const Node = React.memo<NodeProps>(function Node({
   ]);
 
   const id = createId(item.id, refId);
-  const contextMenu = useContextMenu(item, statusLinks, api);
+  const contextMenu =
+    refId === 'storybook_internal'
+      ? useContextMenu(item, statusLinks, api)
+      : { node: null, onMouseEnter: () => {} };
 
   if (item.type === 'story' || item.type === 'docs') {
     const LeafNode = item.type === 'docs' ? DocumentNode : StoryNode;

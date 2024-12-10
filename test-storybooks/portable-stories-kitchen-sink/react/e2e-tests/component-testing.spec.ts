@@ -28,6 +28,9 @@ const setForceFailureFlag = async (value: boolean) => {
 
   // Write the updated content back to the file asynchronously
   await fs.writeFile(testStoryPath, updatedContent);
+
+  // the file change causes a HMR event, which causes a browser reload,and that can take a few seconds
+  await new Promise((resolve) => setTimeout(resolve, 2000));
 };
 
 test.describe("component testing", () => {
@@ -73,7 +76,7 @@ test.describe("component testing", () => {
 
     await expect(testingModuleDescription).toContainText('Not run');
 
-    const runTestsButton = await page.getByLabel('Start component tests')
+    const runTestsButton = await page.getByLabel('Start Component tests')
     await runTestsButton.click();
 
     await expect(testingModuleDescription).toContainText('Testing', { timeout: 60000 });
@@ -120,7 +123,7 @@ test.describe("component testing", () => {
     const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory("addons/test", "Expected Failure");
 
-    const expandButton = await page.getByLabel('Expand testing module')
+    const expandButton = page.getByLabel('Expand testing module')
     await expandButton.click();
 
     // For whatever reason, sometimes it takes longer for the story to load
@@ -135,7 +138,7 @@ test.describe("component testing", () => {
 
     await expect(testingModuleDescription).toContainText('Not run');
 
-    const runTestsButton = await page.getByLabel('Start component tests')
+    const runTestsButton = await page.getByLabel('Start Component Tests')
     const watchModeButton = await page.getByLabel('Enable watch mode for Component tests')
     await expect(runTestsButton).toBeEnabled();
     await expect(watchModeButton).toBeEnabled();

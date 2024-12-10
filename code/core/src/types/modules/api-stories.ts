@@ -124,6 +124,7 @@ export interface API_StatusObject {
   description: string;
   data?: any;
   onClick?: () => void;
+  sidebarContextMenu?: boolean;
 }
 
 export type API_StatusState = Record<StoryId, Record<string, API_StatusObject>>;

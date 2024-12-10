@@ -1,6 +1,6 @@
 {
   "name": "@storybook/csf-plugin",
-  "version": "8.5.0-alpha.13",
+  "version": "8.5.0-alpha.19",
   "description": "Enrich CSF files via static analysis",
   "keywords": [
     "storybook"

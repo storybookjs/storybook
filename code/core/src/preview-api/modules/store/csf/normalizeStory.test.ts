@@ -56,6 +56,7 @@ describe('normalizeStory', () => {
           "args": {},
           "beforeEach": [],
           "decorators": [],
+          "experimental_afterEach": [],
           "globals": {},
           "id": "title--story-export",
           "loaders": [],
@@ -127,6 +128,7 @@ describe('normalizeStory', () => {
             "args": {},
             "beforeEach": [],
             "decorators": [],
+            "experimental_afterEach": [],
             "globals": {},
             "id": "title--story-export",
             "loaders": [],
@@ -167,6 +169,7 @@ describe('normalizeStory', () => {
             "decorators": [
               [Function],
             ],
+            "experimental_afterEach": [],
             "globals": {},
             "id": "title--story-export",
             "loaders": [
@@ -225,6 +228,7 @@ describe('normalizeStory', () => {
               [Function],
               [Function],
             ],
+            "experimental_afterEach": [],
             "globals": {},
             "id": "title--story-export",
             "loaders": [

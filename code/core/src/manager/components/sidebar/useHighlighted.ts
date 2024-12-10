@@ -1,4 +1,4 @@
-import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
+import type { Dispatch, MutableRefObject, RefObject, SetStateAction } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { global } from '@storybook/global';
@@ -8,15 +8,14 @@ import { useStorybookApi } from '@storybook/core/manager-api';
 
 import { matchesKeyCode, matchesModifiers } from '../../keybinding';
 import { cycle, isAncestor, scrollIntoView } from '../../utils/tree';
-import type { CombinedDataset, Highlight, Selection } from './types';
+import type { Highlight, Selection } from './types';
 
 const { document, window: globalWindow } = global;
 
 export interface HighlightedProps {
-  containerRef: MutableRefObject<HTMLElement>;
+  containerRef: RefObject<HTMLElement | null>;
   isLoading: boolean;
   isBrowsing: boolean;
-  dataset: CombinedDataset;
   selected: Selection;
 }
 
@@ -27,7 +26,6 @@ export const useHighlighted = ({
   containerRef,
   isLoading,
   isBrowsing,
-  dataset,
   selected,
 }: HighlightedProps): [
   Highlight,
@@ -76,7 +74,7 @@ export const useHighlighted = ({
         );
       }, 0);
     }
-  }, [dataset, highlightedRef, containerRef, selected]);
+  }, [containerRef, selected, updateHighlighted]);
 
   // Highlight nodes up/down the tree using arrow keys
   useEffect(() => {
@@ -115,7 +113,7 @@ export const useHighlighted = ({
         }
 
         const highlightable = Array.from(
-          containerRef.current.querySelectorAll('[data-highlightable=true]')
+          containerRef.current?.querySelectorAll('[data-highlightable=true]') || []
         );
         const currentIndex = highlightable.findIndex(
           (el) =>

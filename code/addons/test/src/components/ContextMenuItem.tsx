@@ -8,21 +8,20 @@ import React, {
 } from 'react';
 
 import { Button, ListItem } from 'storybook/internal/components';
+import type { TestProviderConfig } from 'storybook/internal/core-events';
 import { useStorybookApi } from 'storybook/internal/manager-api';
 import { useTheme } from 'storybook/internal/theming';
 import { type API_HashEntry, type Addon_TestProviderState } from 'storybook/internal/types';
 
 import { PlayHollowIcon, StopAltHollowIcon } from '@storybook/icons';
 
-import { TEST_PROVIDER_ID } from '../constants';
-import type { TestResult } from '../node/reporter';
-import { RelativeTime } from './RelativeTime';
+import { type Config, type Details, TEST_PROVIDER_ID } from '../constants';
+import { Description } from './Description';
+import { Title } from './Title';
 
 export const ContextMenuItem: FC<{
   context: API_HashEntry;
-  state: Addon_TestProviderState<{
-    testResults: TestResult[];
-  }>;
+  state: TestProviderConfig & Addon_TestProviderState<Details, Config>;
 }> = ({ context, state }) => {
   const api = useStorybookApi();
   const [isDisabled, setDisabled] = useState(false);
@@ -51,29 +50,6 @@ export const ContextMenuItem: FC<{
 
   const theme = useTheme();
 
-  const title = state.crashed || state.failed ? 'Component tests failed' : 'Component tests';
-  const errorMessage = state.error?.message;
-  let description: string | React.ReactNode = 'Not run';
-
-  if (state.running) {
-    description = state.progress
-      ? `Testing... ${state.progress.numPassedTests}/${state.progress.numTotalTests}`
-      : 'Starting...';
-  } else if (state.failed && !errorMessage) {
-    description = '';
-  } else if (state.crashed || (state.failed && errorMessage)) {
-    description = 'An error occured';
-  } else if (state.progress?.finishedAt) {
-    description = (
-      <RelativeTime
-        timestamp={new Date(state.progress.finishedAt)}
-        testCount={state.progress.numTotalTests}
-      />
-    );
-  } else if (state.watching) {
-    description = 'Watching for file changes';
-  }
-
   return (
     <div
       onClick={(event) => {
@@ -82,8 +58,8 @@ export const ContextMenuItem: FC<{
       }}
     >
       <ListItem
-        title={title}
-        center={description}
+        title={<Title state={state} />}
+        center={<Description state={state} />}
         right={
           <Button
             onClick={onClick}

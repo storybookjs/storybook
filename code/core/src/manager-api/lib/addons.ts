@@ -132,6 +132,10 @@ export class AddonStore {
   loadAddons = (api: any) => {
     Object.values(this.loaders).forEach((value: any) => value(api));
   };
+
+  experimental_getRegisteredAddons() {
+    return Object.keys(this.loaders);
+  }
 }
 
 // Enforce addons store to be a singleton

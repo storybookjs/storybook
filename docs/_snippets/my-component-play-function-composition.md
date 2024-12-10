@@ -260,4 +260,3 @@ export const CombinedStories: Story = {
   },
 };
 ```
-

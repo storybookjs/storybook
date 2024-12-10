@@ -1,7 +1,7 @@
 import { styled } from 'storybook/internal/theming';
 
 export const TestStatusIcon = styled.div<{
-  status: 'positive' | 'warning' | 'negative' | 'unknown';
+  status: 'positive' | 'warning' | 'negative' | 'critical' | 'unknown';
   percentage?: number;
 }>(
   ({ percentage }) => ({
@@ -27,6 +27,11 @@ export const TestStatusIcon = styled.div<{
     status === 'negative' && {
       '--status-color': theme.color.negative,
       '--status-background': `${theme.color.negative}66`,
+    },
+  ({ status, theme }) =>
+    status === 'critical' && {
+      '--status-color': theme.color.defaultText,
+      '--status-background': `${theme.color.defaultText}66`,
     },
   ({ status, theme }) =>
     status === 'unknown' && {

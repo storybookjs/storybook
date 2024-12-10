@@ -61,9 +61,10 @@ const baseState: TestProviderState<Details, Config> = {
         results: [
           {
             storyId: 'story-id',
-            status: 'success',
+            status: 'passed',
             duration: 100,
             testRunId: 'test-run-id',
+            reports: [],
           },
         ],
       },

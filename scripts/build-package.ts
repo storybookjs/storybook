@@ -8,6 +8,7 @@ import picocolors from 'picocolors';
 import prompts from 'prompts';
 import windowSize from 'window-size';
 
+import { findMostMatchText } from './utils/diff';
 import { getWorkspaces } from './utils/workspace';
 
 async function run() {
@@ -80,60 +81,79 @@ async function run() {
     tasks[key].value = containsFlag || opts.all;
   });
 
-  let selection;
-  let watchMode = false;
-  let prodMode = false;
-  if (
-    !Object.keys(tasks)
-      .map((key) => tasks[key].value)
-      .filter(Boolean).length
-  ) {
-    selection = await prompts([
-      {
-        type: 'toggle',
-        name: 'watch',
-        message: 'Start in watch mode',
-        initial: false,
-        active: 'yes',
-        inactive: 'no',
-      },
-      {
-        type: 'toggle',
-        name: 'prod',
-        message: 'Start in production mode',
-        initial: false,
-        active: 'yes',
-        inactive: 'no',
-      },
-      {
-        type: 'autocompleteMultiselect',
-        message: 'Select the packages to build',
-        name: 'todo',
-        min: 1,
-        hint: 'You can also run directly with package name like `yarn build core`, or `yarn build --all` for all packages!',
-        // @ts-expect-error @types incomplete
-        optionsPerPage: windowSize.height - 3, // 3 lines for extra info
-        choices: packages.map(({ name: key }) => ({
-          value: key,
-          title: tasks[key].name || key,
-          selected: (tasks[key] && tasks[key].defaultValue) || false,
-        })),
-      },
-    ]).then(({ watch, prod, todo }: { watch: boolean; prod: boolean; todo: Array<string> }) => {
+  let watchMode = process.argv.includes('--watch');
+  let prodMode = process.argv.includes('--prod');
+  let selection = Object.keys(tasks)
+    .map((key) => tasks[key])
+    .filter((item) => !['watch', 'prod'].includes(item.name) && item.value === true);
+
+  // user has passed invalid package name(s) - try to guess the correct package name(s)
+  if ((!selection.length && main.args.length >= 1) || selection.length !== main.args.length) {
+    const suffixList = Object.values(tasks)
+      .filter((t) => t.name.includes('@storybook'))
+      .map((t) => t.suffix);
+
+    for (const arg of main.args) {
+      if (!suffixList.includes(arg)) {
+        const matchText = findMostMatchText(suffixList, arg);
+
+        if (matchText) {
+          console.log(
+            `${picocolors.red('Error')}: ${picocolors.cyan(
+              arg
+            )} is not a valid package name, Did you mean ${picocolors.cyan(matchText)}?`
+          );
+        }
+      }
+    }
+
+    process.exit(0);
+  }
+
+  if (!selection.length) {
+    selection = await prompts(
+      [
+        {
+          type: 'toggle',
+          name: 'watch',
+          message: 'Start in watch mode',
+          initial: false,
+          active: 'yes',
+          inactive: 'no',
+        },
+        {
+          type: 'toggle',
+          name: 'prod',
+          message: 'Start in production mode',
+          initial: false,
+          active: 'yes',
+          inactive: 'no',
+        },
+        {
+          type: 'autocompleteMultiselect',
+          message: 'Select the packages to build',
+          name: 'todo',
+          min: 1,
+          hint: 'You can also run directly with package name like `yarn build core`, or `yarn build --all` for all packages!',
+          // @ts-expect-error @types incomplete
+          optionsPerPage: windowSize.height - 3, // 3 lines for extra info
+          choices: packages.map(({ name: key }) => ({
+            value: key,
+            title: tasks[key].name || key,
+            selected: (tasks[key] && tasks[key].defaultValue) || false,
+          })),
+        },
+      ],
+      { onCancel: () => process.exit(0) }
+    ).then(({ watch, prod, todo }: { watch: boolean; prod: boolean; todo: Array<string> }) => {
       watchMode = watch;
       prodMode = prod;
       return todo?.map((key) => tasks[key]);
     });
-  } else {
-    // hits here when running yarn build --packagename
-    watchMode = process.argv.includes('--watch');
-    prodMode = process.argv.includes('--prod');
-    selection = Object.keys(tasks)
-      .map((key) => tasks[key])
-      .filter((item) => !['watch', 'prod'].includes(item.name) && item.value === true);
   }
 
-  selection?.filter(Boolean).forEach(async (v) => {
+  console.log('Building selected packages...');
+  selection.forEach(async (v) => {
     const command = (await readJSON(resolve('../code', v.location, 'package.json'))).scripts?.prep
       .split(posix.sep)
       .join(sep);

@@ -39,9 +39,7 @@ addons.register(ADDON_ID, (api) => {
     title: Title,
     type: types.PANEL,
     render: ({ active = true }) => (
-      <A11yContextProvider active={active}>
-        <A11YPanel />
-      </A11yContextProvider>
+      <A11yContextProvider>{active ? <A11YPanel /> : null}</A11yContextProvider>
     ),
     paramKey: PARAM_KEY,
   });

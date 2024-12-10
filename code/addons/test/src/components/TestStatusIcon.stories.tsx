@@ -34,6 +34,12 @@ export const Negative: Story = {
   },
 };
 
+export const Critical: Story = {
+  args: {
+    status: 'critical',
+  },
+};
+
 export const UnknownPercentage: Story = {
   args: {
     status: 'unknown',

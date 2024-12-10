@@ -67,39 +67,37 @@ export const favicon = async (
     ? staticDirsValue.map((dir) => (typeof dir === 'string' ? dir : `${dir.from}:${dir.to}`))
     : [];
 
-  if (statics && statics.length > 0) {
-    const lists = await Promise.all(
-      statics.map(async (dir) => {
-        const results = [];
-        const normalizedDir =
-          staticDirsValue && !isAbsolute(dir)
-            ? getDirectoryFromWorkingDir({
-                configDir: options.configDir,
-                workingDir: process.cwd(),
-                directory: dir,
-              })
-            : dir;
+  if (statics.length > 0) {
+    const lists = statics.map((dir) => {
+      const results = [];
+      const normalizedDir =
+        staticDirsValue && !isAbsolute(dir)
+          ? getDirectoryFromWorkingDir({
+              configDir: options.configDir,
+              workingDir: process.cwd(),
+              directory: dir,
+            })
+          : dir;
 
-        const { staticPath, targetEndpoint } = await parseStaticDir(normalizedDir);
+      const { staticPath, targetEndpoint } = parseStaticDir(normalizedDir);
 
-        if (targetEndpoint === '/') {
-          const url = 'favicon.svg';
-          const path = join(staticPath, url);
-          if (existsSync(path)) {
-            results.push(path);
-          }
+      if (targetEndpoint === '/') {
+        const url = 'favicon.svg';
+        const path = join(staticPath, url);
+        if (existsSync(path)) {
+          results.push(path);
         }
-        if (targetEndpoint === '/') {
-          const url = 'favicon.ico';
-          const path = join(staticPath, url);
-          if (existsSync(path)) {
-            results.push(path);
-          }
+      }
+      if (targetEndpoint === '/') {
+        const url = 'favicon.ico';
+        const path = join(staticPath, url);
+        if (existsSync(path)) {
+          results.push(path);
         }
+      }
 
-        return results;
-      })
-    );
+      return results;
+    });
     const flatlist = lists.reduce((l1, l2) => l1.concat(l2), []);
 
     if (flatlist.length > 1) {

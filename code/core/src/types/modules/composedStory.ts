@@ -9,6 +9,7 @@ import type {
   Tag,
 } from '@storybook/csf';
 
+import type { ReporterAPI } from '../../preview-api';
 import type {
   AnnotatedStoryFn,
   Args,
@@ -49,6 +50,7 @@ export type ComposedStoryFn<
   storyName: string;
   parameters: Parameters;
   argTypes: StrictArgTypes<TArgs>;
+  reporting: ReporterAPI;
   tags: Tag[];
   globals: Globals;
 };

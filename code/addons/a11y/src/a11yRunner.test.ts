@@ -22,7 +22,6 @@ describe('a11yRunner', () => {
     await import('./a11yRunner');
 
     expect(mockedAddons.getChannel).toHaveBeenCalled();
-    expect(mockChannel.on).toHaveBeenCalledWith(EVENTS.REQUEST, expect.any(Function));
     expect(mockChannel.on).toHaveBeenCalledWith(EVENTS.MANUAL, expect.any(Function));
   });
 });

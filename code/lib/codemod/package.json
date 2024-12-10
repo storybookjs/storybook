@@ -1,6 +1,6 @@
 {
   "name": "@storybook/codemod",
-  "version": "8.5.0-alpha.13",
+  "version": "8.5.0-alpha.19",
   "description": "A collection of codemod scripts written with JSCodeshift",
   "keywords": [
     "storybook"
@@ -58,7 +58,7 @@
     "@babel/preset-env": "^7.24.4",
     "@babel/types": "^7.24.0",
     "@storybook/core": "workspace:*",
-    "@storybook/csf": "^0.1.11",
+    "@storybook/csf": "0.1.12",
     "@types/cross-spawn": "^6.0.2",
     "cross-spawn": "^7.0.3",
     "es-toolkit": "^1.22.0",

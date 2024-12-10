@@ -1,6 +1,6 @@
 {
   "name": "@storybook/vue3-vite",
-  "version": "8.5.0-alpha.13",
+  "version": "8.5.0-alpha.19",
   "description": "Storybook for Vue3 and Vite: Develop Vue3 components in isolation with Hot Reloading.",
   "keywords": [
     "storybook"

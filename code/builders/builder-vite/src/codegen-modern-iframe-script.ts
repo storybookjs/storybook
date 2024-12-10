@@ -67,9 +67,14 @@ export async function generateModernIframeScriptCode(options: Options, projectRo
    * @todo Inline variable and remove `noinspection`
    */
   const code = `
-  import { composeConfigs, PreviewWeb, ClientApi } from 'storybook/internal/preview-api';
+  import { setup } from 'storybook/internal/preview/runtime';
   import '${SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE}';
+
+  setup();
+ 
+  import { composeConfigs, PreviewWeb, ClientApi } from 'storybook/internal/preview-api';
   import { importFn } from '${SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE}';
+  
   
     ${getPreviewAnnotationsFunction}
 

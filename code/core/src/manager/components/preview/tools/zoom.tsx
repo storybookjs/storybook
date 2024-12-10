@@ -1,32 +1,34 @@
 import type { MouseEventHandler, PropsWithChildren, SyntheticEvent } from 'react';
-import React, { Component, createContext, memo, useCallback } from 'react';
+import React, { Component, createContext, memo, useCallback, useEffect } from 'react';
 
 import { IconButton, Separator } from '@storybook/core/components';
 import type { Addon_BaseType } from '@storybook/core/types';
 import { ZoomIcon, ZoomOutIcon, ZoomResetIcon } from '@storybook/icons';
 
-import { types } from '@storybook/core/manager-api';
+import { types, useParameter } from '@storybook/core/manager-api';
 
-const initialZoom = 1 as const;
+const DEFAULT_ZOOM = 1 as const;
 
-const Context = createContext({ value: initialZoom, set: (v: number) => {} });
+const Context = createContext({ value: DEFAULT_ZOOM, set: (v: number) => {} });
 
 class ZoomProvider extends Component<
-  PropsWithChildren<{ shouldScale: boolean }>,
+  PropsWithChildren<{ shouldScale: boolean; initialZoom?: any }>,
   { value: number }
 > {
   state = {
-    value: initialZoom,
+    value: DEFAULT_ZOOM,
   };
 
   set = (value: number) => this.setState({ value });
 
   render() {
-    const { children, shouldScale } = this.props;
+    const { children, shouldScale, initialZoom } = this.props;
     const { set } = this;
     const { value } = this.state;
     return (
-      <Context.Provider value={{ value: shouldScale ? value : initialZoom, set }}>
+      <Context.Provider
+        value={{ value: initialZoom ? initialZoom : shouldScale ? value : DEFAULT_ZOOM, set }}
+      >
         {children}
       </Context.Provider>
     );
@@ -60,38 +62,45 @@ const Zoom = memo<{
 
 export { Zoom, ZoomConsumer, ZoomProvider };
 
-const ZoomWrapper = memo<{ set: (zoomLevel: number) => void; value: number }>(function ZoomWrapper({
-  set,
-  value,
-}) {
-  const zoomIn = useCallback(
-    (e: SyntheticEvent) => {
-      e.preventDefault();
-      set(0.8 * value);
-    },
-    [set, value]
-  );
-  const zoomOut = useCallback(
-    (e: SyntheticEvent) => {
-      e.preventDefault();
-      set(1.25 * value);
-    },
-    [set, value]
-  );
-  const reset = useCallback(
-    (e: SyntheticEvent) => {
-      e.preventDefault();
-      set(initialZoom);
-    },
-    [set, initialZoom]
-  );
-  return <Zoom key="zoom" {...{ zoomIn, zoomOut, reset }} />;
-});
+const ZoomWrapper = memo<{ set: (zoomLevel: number) => void; value: number; initialZoom: number }>(
+  function ZoomWrapper({ set, value, initialZoom }) {
+    const zoomIn = useCallback(
+      (e: SyntheticEvent) => {
+        e.preventDefault();
+        set(0.8 * value);
+      },
+      [set, value]
+    );
+    const zoomOut = useCallback(
+      (e: SyntheticEvent) => {
+        e.preventDefault();
+        set(1.25 * value);
+      },
+      [set, value]
+    );
+    const reset = useCallback(
+      (e: SyntheticEvent) => {
+        e.preventDefault();
+        set(DEFAULT_ZOOM);
+      },
+      [set]
+    );
+    useEffect(() => {
+      if (initialZoom !== DEFAULT_ZOOM) {
+        set(100 / initialZoom);
+      }
+    }, [set, initialZoom]);
+    return <Zoom key="zoom" {...{ zoomIn, zoomOut, reset }} />;
+  }
+);
 
 function ZoomToolRenderer() {
+  const initialZoom = useParameter<number>('initialZoom', DEFAULT_ZOOM);
   return (
     <>
-      <ZoomConsumer>{({ set, value }) => <ZoomWrapper {...{ set, value }} />}</ZoomConsumer>
+      <ZoomConsumer>
+        {({ set, value }) => <ZoomWrapper {...{ set, value, initialZoom }} />}
+      </ZoomConsumer>
       <Separator />
     </>
   );

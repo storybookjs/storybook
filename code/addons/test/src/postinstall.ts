@@ -16,7 +16,7 @@ import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 import { colors, logger } from 'storybook/internal/node-logger';
 
 // eslint-disable-next-line depend/ban-dependencies
-import { execa } from 'execa';
+import { $ } from 'execa';
 import { findUp } from 'find-up';
 import { dirname, extname, join, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';
@@ -227,22 +227,9 @@ export default async function postInstall(options: PostinstallOptions) {
     }
 
     if (shouldUninstall) {
-      await execa(
-        packageManager.getRemoteRunCommand(),
-        [
-          'storybook',
-          'remove',
-          addonInteractionsName,
-          '--package-manager',
-          options.packageManager,
-          '--config-dir',
-          options.configDir,
-        ],
-        {
-          shell: true,
-          stdio: 'inherit',
-        }
-      );
+      await $({
+        stdio: 'inherit',
+      })`storybook remove ${addonInteractionsName} --package-manager ${options.packageManager} --config-dir ${options.configDir}`;
     }
   }
 

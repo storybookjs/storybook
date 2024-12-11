@@ -12,7 +12,7 @@ export const core: PresetProperty<'core'> = {
   renderer: getAbsolutePath('@storybook/react'),
 };
 
-export const viteFinal: StorybookConfig['viteFinal'] = async (config, { presets }) => {
+export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (config, { presets }) => {
   const { plugins = [] } = config;
 
   // Add docgen plugin

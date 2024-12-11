@@ -1,4 +1,3 @@
-// @ts-expect-error FIXME
 import { viteFinal as reactViteFinal } from '@storybook/react-vite/preset';
 
 import { esbuildFlowPlugin, flowPlugin } from '@bunchtogether/vite-plugin-flow';

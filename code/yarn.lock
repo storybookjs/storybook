@@ -6466,6 +6466,7 @@ __metadata:
   dependencies:
     "@storybook/builder-vite": "workspace:*"
     "@storybook/react": "workspace:*"
+    "@storybook/react-vite": "workspace:*"
     "@storybook/test": "workspace:*"
     "@types/node": "npm:^18.0.0"
     next: "npm:^15.0.3"

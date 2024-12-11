@@ -1,6 +1,6 @@
 {
   "name": "@storybook/web-components",
-  "version": "8.5.0-alpha.19",
+  "version": "8.5.0-alpha.20",
   "description": "Storybook web-components renderer",
   "keywords": [
     "lit",

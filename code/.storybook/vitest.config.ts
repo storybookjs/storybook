@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 import { defaultExclude, defineProject, mergeConfig } from 'vitest/config';
 
 import Inspect from 'vite-plugin-inspect';
@@ -24,7 +26,7 @@ export default mergeConfig(
     plugins: [
       import('@storybook/experimental-addon-test/vitest-plugin').then(({ storybookTest }) =>
         storybookTest({
-          configDir: process.cwd(),
+          configDir: path.join(process.cwd(), '.storybook'),
           tags: {
             include: ['vitest'],
           },

@@ -3,6 +3,7 @@ import { outputFile, pathExists, readFile } from 'fs-extra';
 import type { TestCase } from 'junit-xml';
 import { getJunitXml } from 'junit-xml';
 import { join, resolve } from 'path';
+import picocolors from 'picocolors';
 import { prompt } from 'prompts';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
@@ -101,7 +102,7 @@ export const tasks = {
   bench,
   'vitest-integration': vitestTests,
 };
-type TaskKey = keyof typeof tasks;
+export type TaskKey = keyof typeof tasks;
 
 function isSandboxTask(taskKey: TaskKey) {
   return !['install', 'compile', 'publish', 'run-registry', 'check', 'sync-docs'].includes(taskKey);
@@ -179,7 +180,7 @@ export const options = createOptions({
   },
 });
 
-export type PassedOptionValues = Omit<OptionValues<typeof options>, 'task' | 'startFrom' | 'junit'>;
+export type PassedOptionValues = Omit<OptionValues<typeof options>, 'startFrom' | 'junit'>;
 
 const logger = console;
 
@@ -347,7 +348,8 @@ async function run() {
 
   const allOptionValues = await getOptionsOrPrompt('yarn task', options);
 
-  const { task: taskKey, startFrom, junit, ...optionValues } = allOptionValues;
+  const { junit, startFrom, ...optionValues } = allOptionValues;
+  const taskKey = optionValues.task;
 
   const finalTask = tasks[taskKey];
   const { template: templateKey } = optionValues;
@@ -363,7 +365,6 @@ async function run() {
     builtSandboxDir: templateKey && join(templateSandboxDir, 'storybook-static'),
     junitFilename: junit && getJunitFilename(taskKey),
   };
-
   const { sortedTasks, tasksThatDepend } = getTaskList(finalTask, details, optionValues);
   const sortedTasksReady = await Promise.all(
     sortedTasks.map((t) => t.ready(details, optionValues))
@@ -482,27 +483,29 @@ async function run() {
         }
       } catch (err) {
         invariant(err instanceof Error);
-        logger.error(`Error running task ${getTaskKey(task)}:`);
+        logger.error(
+          `Error running task ${picocolors.bold(getTaskKey(task))} for ${picocolors.bgCyan(picocolors.white(details.key))}:`
+        );
         logger.error(JSON.stringify(err, null, 2));
 
         if (process.env.CI) {
-          logger.error(
-            dedent`
-              To reproduce this error locally, run:
+          const separator = '\n--------------------------------------------\n';
+          const reproduceMessage = dedent`
+            To reproduce this error locally, run:
 
-              ${getCommand('yarn task', options, {
+            ${picocolors.bold(
+              getCommand('yarn task', options, {
                 ...allOptionValues,
                 link: true,
                 startFrom: 'auto',
-              })}
-              
-              Note this uses locally linking which in rare cases behaves differently to CI. For a closer match, run:
-              
-              ${getCommand('yarn task', options, {
-                ...allOptionValues,
-                startFrom: 'auto',
-              })}`
-          );
+              })
+            )}
+            
+            Note this uses locally linking which in rare cases behaves differently to CI.
+            For a closer match, add ${picocolors.bold('--no-link')} to the command above.
+          `;
+
+          err.message += `\n${separator}${reproduceMessage}${separator}\n`;
         }
 
         controllers.forEach((controller) => {

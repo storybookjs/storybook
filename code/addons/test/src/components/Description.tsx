@@ -12,7 +12,7 @@ export const Wrapper = styled.div(({ theme }) => ({
   whiteSpace: 'nowrap',
   textOverflow: 'ellipsis',
   fontSize: theme.typography.size.s1,
-  color: theme.barTextColor,
+  color: theme.textMutedColor,
 }));
 
 const PositiveText = styled.span(({ theme }) => ({

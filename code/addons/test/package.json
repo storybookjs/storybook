@@ -112,6 +112,7 @@
     "slash": "^5.0.0",
     "strip-ansi": "^7.1.0",
     "tinyglobby": "^0.2.10",
+    "tree-kill": "^1.2.2",
     "ts-dedent": "^2.2.0",
     "typescript": "^5.3.2",
     "vitest": "^2.1.3"

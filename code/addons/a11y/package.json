@@ -38,11 +38,22 @@
     },
     "./manager": "./dist/manager.js",
     "./register": "./dist/manager.js",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./postinstall": "./dist/postinstall.js"
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "dist/index.d.ts"
+      ],
+      "preview": [
+        "dist/preview.d.ts"
+      ]
+    }
+  },
   "files": [
     "dist/**/*",
     "README.md",
@@ -64,6 +75,7 @@
     "@storybook/global": "^5.0.0",
     "@storybook/icons": "^1.2.12",
     "@testing-library/react": "^14.0.0",
+    "execa": "^9.5.2",
     "picocolors": "^1.1.0",
     "pretty-format": "^29.7.0",
     "react": "^18.2.0",
@@ -87,6 +99,9 @@
     ],
     "previewEntries": [
       "./src/preview.tsx"
+    ],
+    "nodeEntries": [
+      "./src/postinstall.ts"
     ]
   },
   "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16",

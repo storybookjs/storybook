@@ -1,3 +1,14 @@
+## 8.5.0-alpha.21
+
+- Addon A11y: Add typesVersions support for TypeScript definitions in a11y package - [#30005](https://github.com/storybookjs/storybook/pull/30005), thanks @valentinpalkovic!
+- Addon A11y: Refactor environment variable handling for Vitest integration - [#30022](https://github.com/storybookjs/storybook/pull/30022), thanks @valentinpalkovic!
+- Addon A11y: Run the a11y automigration on postInstall - [#30004](https://github.com/storybookjs/storybook/pull/30004), thanks @kasperpeulen!
+- Addon A11y: Update accessibility status handling in TestProviderRender - [#30027](https://github.com/storybookjs/storybook/pull/30027), thanks @valentinpalkovic!
+- Addon Onboarding: Prebundle react-confetti - [#29996](https://github.com/storybookjs/storybook/pull/29996), thanks @yannbf!
+- Addon Test: Show sub test provider toggle state in main testing module - [#30019](https://github.com/storybookjs/storybook/pull/30019), thanks @ghengeveld!
+- Core: Fix bundling of React - [#30003](https://github.com/storybookjs/storybook/pull/30003), thanks @yannbf!
+- Vitest: Correctly stop Storybook when Vitest closes - [#30012](https://github.com/storybookjs/storybook/pull/30012), thanks @JReinhold!
+
 ## 8.5.0-alpha.20
 
 - Addon Test: Add `@vitest/coverage-v8` during postinstall if no coverage reporter is installed - [#29993](https://github.com/storybookjs/storybook/pull/29993), thanks @ghengeveld!

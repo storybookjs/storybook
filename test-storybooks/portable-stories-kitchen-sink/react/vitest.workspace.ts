@@ -5,13 +5,17 @@ export default defineWorkspace([
   {
     extends: "vite.config.ts",
     plugins: [
-      storybookTest(),
+      storybookTest(process.env.SKIP_FAIL_ON_PURPOSE ? {
+        tags: {
+          exclude: ["fail-on-purpose"],
+        }
+      } : undefined),
     ],
     test: {
       name: "storybook",
       pool: "threads",
       include: [
-        "stories/AddonTest.stories.?(c|m)[jt]s?(x)",
+        "stories/*.stories.?(c|m)[jt]s?(x)",
       ],
       deps: {
         optimizer: {

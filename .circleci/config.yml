@@ -104,6 +104,15 @@ commands:
           only_for_branches: main,next,next-release,latest-release
           fail_only: true
           failure_message: $(yarn get-report-message << pipeline.parameters.workflow >> << parameters.template >>)
+  check-network-access:
+    description: "Check network access by pinging a known URL"
+    steps:
+      - run:
+          name: Check network access
+          command: |
+            curl -sSf https://www.google.com > /dev/null
+            echo "Network access verified."
+
 jobs:
   pretty-docs:
     executor:

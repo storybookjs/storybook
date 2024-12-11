@@ -19,7 +19,7 @@ import { global } from '@storybook/global';
 import { type Call, CallStates, EVENTS, type LogItem } from '@storybook/instrumenter';
 import type { API_StatusValue } from '@storybook/types';
 
-import { ADDON_ID, TEST_PROVIDER_ID } from '../constants';
+import { ADDON_ID, STORYBOOK_ADDON_TEST_CHANNEL, TEST_PROVIDER_ID } from '../constants';
 import { InteractionsPanel } from './InteractionsPanel';
 
 interface Interaction extends Call {
@@ -114,6 +114,7 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
   // local state
   const [scrollTarget, setScrollTarget] = useState<HTMLElement | undefined>(undefined);
   const [collapsed, setCollapsed] = useState<Set<Call['id']>>(new Set());
+  const [hasResultMismatch, setResultMismatch] = useState(false);
 
   const {
     controlStates = INITIAL_CONTROL_STATES,
@@ -226,7 +227,7 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
         interactionsCount: list.filter(({ method }) => method !== 'step').length,
       };
     });
-  }, [collapsed]);
+  }, [set, collapsed]);
 
   const controls = useMemo(
     () => ({
@@ -239,7 +240,7 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
         emit(FORCE_REMOUNT, { storyId });
       },
     }),
-    [storyId]
+    [emit, storyId]
   );
 
   const storyFilePath = useParameter('fileName', '');
@@ -252,22 +253,48 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
     interactions.some((v) => v.status === CallStates.ERROR);
 
   const storyStatus = storyStatuses[storyId]?.[TEST_PROVIDER_ID];
+  const storyTestStatus = storyStatus?.status;
 
-  const browserTestStatus = React.useMemo<CallStates | null>(() => {
+  const browserTestStatus = useMemo<CallStates | null>(() => {
     if (!isPlaying && (interactions.length > 0 || hasException)) {
       return hasException ? CallStates.ERROR : CallStates.DONE;
     }
     return isPlaying ? CallStates.ACTIVE : null;
   }, [isPlaying, interactions, hasException]);
 
-  const hasResultMismatch = React.useMemo(() => {
-    return (
-      browserTestStatus !== null &&
-      browserTestStatus !== CallStates.ACTIVE &&
-      storyStatus?.status !== undefined &&
-      statusMap[browserTestStatus] !== storyStatus.status
-    );
-  }, [browserTestStatus, storyStatus]);
+  const { testRunId } = storyStatus?.data || {};
+
+  useEffect(() => {
+    const isMismatch =
+      browserTestStatus &&
+      storyTestStatus &&
+      storyTestStatus !== 'pending' &&
+      storyTestStatus !== statusMap[browserTestStatus];
+
+    if (isMismatch) {
+      const timeout = setTimeout(
+        () =>
+          setResultMismatch((currentValue) => {
+            if (!currentValue) {
+              emit(STORYBOOK_ADDON_TEST_CHANNEL, {
+                type: 'test-discrepancy',
+                payload: {
+                  browserStatus: browserTestStatus === CallStates.DONE ? 'PASS' : 'FAIL',
+                  cliStatus: browserTestStatus === CallStates.DONE ? 'FAIL' : 'PASS',
+                  storyId,
+                  testRunId,
+                },
+              });
+            }
+            return true;
+          }),
+        2000
+      );
+      return () => clearTimeout(timeout);
+    } else {
+      setResultMismatch(false);
+    }
+  }, [emit, browserTestStatus, storyTestStatus, storyId, testRunId]);
 
   if (isErrored) {
     return <Fragment key="component-tests" />;
@@ -290,8 +317,6 @@ export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId 
         pausedAt={pausedAt}
         endRef={endRef}
         onScrollToEnd={scrollTarget && scrollToTarget}
-        storyId={storyId}
-        testRunId={storyStatus?.data?.testRunId}
       />
     </Fragment>
   );

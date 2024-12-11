@@ -1,4 +1,6 @@
 /* eslint-disable no-underscore-dangle */
+import { dirname } from 'node:path';
+
 import type { Plugin } from 'vitest/config';
 import { mergeConfig } from 'vitest/config';
 import type { ViteUserConfig } from 'vitest/config';
@@ -61,6 +63,8 @@ const getStoryGlobsAndFiles = async (
     storiesFiles: generator.storyFileNames(),
   };
 };
+
+const packageDir = dirname(require.resolve('@storybook/experimental-addon-test/package.json'));
 
 export const storybookTest = async (options?: UserOptions): Promise<Plugin> => {
   const finalOptions = {
@@ -149,15 +153,15 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin> => {
       const baseConfig: Omit<ViteUserConfig, 'plugins'> = {
         test: {
           setupFiles: [
-            '@storybook/experimental-addon-test/internal/setup-file',
+            join(packageDir, 'dist/vitest-plugin/setup-file.mjs'),
             // if the existing setupFiles is a string, we have to include it otherwise we're overwriting it
             typeof inputConfig_DoNotMutate.test?.setupFiles === 'string' &&
               inputConfig_DoNotMutate.test?.setupFiles,
-          ].filter(Boolean),
+          ].filter(Boolean) as string[],
 
           ...(finalOptions.storybookScript
             ? {
-                globalSetup: ['@storybook/experimental-addon-test/internal/global-setup'],
+                globalSetup: [join(packageDir, 'dist/vitest-plugin/global-setup.mjs')],
               }
             : {}),
 

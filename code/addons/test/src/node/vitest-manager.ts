@@ -14,7 +14,7 @@ import type { TestingModuleRunRequestPayload } from 'storybook/internal/core-eve
 
 import type { DocsIndexEntry, StoryIndex, StoryIndexEntry } from '@storybook/types';
 
-import path, { normalize } from 'pathe';
+import path, { dirname, join, normalize } from 'pathe';
 import slash from 'slash';
 
 import { COVERAGE_DIRECTORY, type Config } from '../constants';
@@ -28,6 +28,8 @@ type TagsFilter = {
   exclude: string[];
   skip: string[];
 };
+
+const packageDir = dirname(require.resolve('@storybook/experimental-addon-test/package.json'));
 
 export class VitestManager {
   vitest: Vitest | null = null;
@@ -44,7 +46,7 @@ export class VitestManager {
     const { createVitest } = await import('vitest/node');
 
     const storybookCoverageReporter: [string, StorybookCoverageReporterOptions] = [
-      '@storybook/experimental-addon-test/internal/coverage-reporter',
+      join(packageDir, 'dist/node/coverage-reporter.js'),
       {
         testManager: this.testManager,
         coverageOptions: this.vitest?.config?.coverage as ResolvedCoverageOptions<'v8'>,

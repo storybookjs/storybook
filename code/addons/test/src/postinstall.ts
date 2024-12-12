@@ -115,9 +115,12 @@ export default async function postInstall(options: PostinstallOptions) {
       ? '@storybook/experimental-nextjs-vite'
       : info.frameworkPackageName
     : info.rendererPackageName &&
-        ['@storybook/react', '@storybook/svelte', '@storybook/vue3'].includes(
-          info.rendererPackageName
-        )
+        [
+          '@storybook/react',
+          '@storybook/svelte',
+          '@storybook/vue3',
+          '@storybook/web-components',
+        ].includes(info.rendererPackageName)
       ? info.rendererPackageName
       : null;
 

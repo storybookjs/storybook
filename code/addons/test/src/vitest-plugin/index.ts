@@ -24,7 +24,6 @@ import picocolors from 'picocolors';
 import sirv from 'sirv';
 import { convertPathToPattern } from 'tinyglobby';
 import { dedent } from 'ts-dedent';
-import * as vite from 'vite';
 
 import type { InternalOptions, UserOptions } from './types';
 
@@ -106,6 +105,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin> => {
     viteConfigFromStorybook,
     staticDirs,
     previewLevelTags,
+    vite,
   ] = await Promise.all([
     getStoryGlobsAndFiles(presets, directories),
     presets.apply('framework', undefined),
@@ -113,6 +113,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin> => {
     presets.apply('viteFinal', {}),
     presets.apply('staticDirs', []),
     extractTagsFromPreview(finalOptions.configDir),
+    import('vite'),
   ]);
 
   return {

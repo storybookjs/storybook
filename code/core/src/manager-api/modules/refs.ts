@@ -179,7 +179,15 @@ export const init: ModuleFn<SubAPI, SubState> = (
     },
     changeRefVersion: async (id, url) => {
       const { versions, title } = api.getRefs()[id];
-      const ref: API_SetRefData = { id, url, versions, title, index: {}, expanded: true };
+      const ref: API_SetRefData = {
+        id,
+        url,
+        versions,
+        title,
+        index: {},
+        filteredIndex: {},
+        expanded: true,
+      };
 
       await api.setRef(id, { ...ref, type: 'unknown' }, false);
       await api.checkRef(ref);
@@ -292,6 +300,7 @@ export const init: ModuleFn<SubAPI, SubState> = (
       // eslint-disable-next-line @typescript-eslint/naming-convention
       let internal_index: StoryIndex | undefined;
       let index: API_IndexHash | undefined;
+      let filteredIndex: API_IndexHash | undefined;
       const { filters } = store.getState();
       const { storyMapper = defaultStoryMapper } = provider.getConfig();
       const ref = api.getRefs()[id];
@@ -304,10 +313,17 @@ export const init: ModuleFn<SubAPI, SubState> = (
           : storyIndex;
 
         // @ts-expect-error (could be undefined)
-        index = transformStoryIndexToStoriesHash(storyIndex, {
+        filteredIndex = transformStoryIndexToStoriesHash(storyIndex, {
           provider,
           docsOptions,
           filters,
+          status: {},
+        });
+        // @ts-expect-error (could be undefined)
+        index = transformStoryIndexToStoriesHash(storyIndex, {
+          provider,
+          docsOptions,
+          filters: {},
           status: {},
         });
       }
@@ -315,8 +331,10 @@ export const init: ModuleFn<SubAPI, SubState> = (
       if (index) {
         index = addRefIds(index, ref);
       }
-
-      await api.updateRef(id, { ...ref, ...rest, index, internal_index });
+      if (filteredIndex) {
+        filteredIndex = addRefIds(filteredIndex, ref);
+      }
+      await api.updateRef(id, { ...ref, ...rest, index, filteredIndex, internal_index });
     },
 
     updateRef: async (id, data) => {

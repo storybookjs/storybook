@@ -155,6 +155,7 @@ export type API_StoryMapper = (ref: API_ComposedRef, story: SetStoriesStory) => 
 
 export interface API_LoadedRefData {
   index?: API_IndexHash;
+  filteredIndex?: API_IndexHash;
   indexError?: Error;
   previewInitialized: boolean;
 }
@@ -180,6 +181,7 @@ export type API_ComposedRefUpdate = Partial<
     | 'type'
     | 'expanded'
     | 'index'
+    | 'filteredIndex'
     | 'versions'
     | 'loginUrl'
     | 'version'

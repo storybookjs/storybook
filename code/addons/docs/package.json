@@ -71,7 +71,12 @@
     "./angular": "./angular/index.js",
     "./angular/index.js": "./angular/index.js",
     "./web-components/index.js": "./web-components/index.js",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./manager": {
+      "types": "./dist/manager.d.ts",
+      "import": "./dist/manager.mjs",
+      "require": "./dist/manager.js"
+    }
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -129,7 +134,11 @@
       "./src/preview.ts",
       "./src/blocks.ts",
       "./src/shims/mdx-react-shim.ts",
-      "./src/mdx-loader.ts"
+      "./src/mdx-loader.ts",
+      "./src/manager.tsx"
+    ],
+    "managerEntries": [
+      "./src/manager.tsx"
     ]
   },
   "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16",

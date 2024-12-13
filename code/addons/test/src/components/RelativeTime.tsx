@@ -1,41 +1,35 @@
 import { useEffect, useState } from 'react';
 
-export function getRelativeTimeString(date: Date): string {
-  const delta = Math.round((date.getTime() - Date.now()) / 1000);
-  const cutoffs = [60, 3600, 86400, 86400 * 7, 86400 * 30, 86400 * 365, Infinity];
-  const units: Intl.RelativeTimeFormatUnit[] = [
-    'second',
-    'minute',
-    'hour',
-    'day',
-    'week',
-    'month',
-    'year',
-  ];
-
-  const unitIndex = cutoffs.findIndex((cutoff) => cutoff > Math.abs(delta));
-  const divisor = unitIndex ? cutoffs[unitIndex - 1] : 1;
-  const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
-  return rtf.format(Math.floor(delta / divisor), units[unitIndex]);
-}
-
-export const RelativeTime = ({ timestamp, testCount }: { timestamp: Date; testCount: number }) => {
-  const [relativeTimeString, setRelativeTimeString] = useState(null);
+export const RelativeTime = ({ timestamp }: { timestamp?: number }) => {
+  const [timeAgo, setTimeAgo] = useState(null);
 
   useEffect(() => {
     if (timestamp) {
-      setRelativeTimeString(getRelativeTimeString(timestamp).replace(/^now$/, 'just now'));
-
-      const interval = setInterval(() => {
-        setRelativeTimeString(getRelativeTimeString(timestamp).replace(/^now$/, 'just now'));
-      }, 10000);
-
+      setTimeAgo(Date.now() - timestamp);
+      const interval = setInterval(() => setTimeAgo(Date.now() - timestamp), 10000);
       return () => clearInterval(interval);
     }
   }, [timestamp]);
 
-  return (
-    relativeTimeString &&
-    `Ran ${testCount} ${testCount === 1 ? 'test' : 'tests'} ${relativeTimeString}`
-  );
+  if (timeAgo === null) {
+    return null;
+  }
+
+  const seconds = Math.round(timeAgo / 1000);
+  if (seconds < 60) {
+    return `just now`;
+  }
+
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) {
+    return minutes === 1 ? `a minute ago` : `${minutes} minutes ago`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) {
+    return hours === 1 ? `an hour ago` : `${hours} hours ago`;
+  }
+
+  const days = Math.floor(hours / 24);
+  return days === 1 ? `yesterday` : `${days} days ago`;
 };

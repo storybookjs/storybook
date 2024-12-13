@@ -1,6 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 8.4.x to 8.5.x](#from-version-84x-to-85x)
+  - [Added source code panel to docs](#added-source-code-panel-to-docs)
   - [Addon-a11y: Component test integration](#addon-a11y-component-test-integration)
   - [Addon-a11y: Deprecated `parameters.a11y.manual`](#addon-a11y-deprecated-parametersa11ymanual)
   - [Indexing behavior of @storybook/experimental-addon-test is changed](#indexing-behavior-of-storybookexperimental-addon-test-is-changed)
@@ -424,6 +425,22 @@
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
 ## From version 8.4.x to 8.5.x
+
+### Added source code panel to docs
+
+Starting in 8.5, Storybook Docs (`@storybook/addon-docs`) automatically adds a new addon panel to stories that displays a source snippet beneath each story. This works similarly to the existing [source snippet doc block](https://storybook.js.org/docs/writing-docs/doc-blocks#source), but in the story view. It is intended to replace the [Storysource addon](https://storybook.js.org/addons/@storybook/addon-storysource).
+
+If you wish to disable this panel globally, add the following line to your `.storybook/preview.js` project configuration. You can also selectively disable/enable at the story level.
+
+```js
+export default {
+  parameters: {
+    docs: {
+      codePanel: false,
+    },
+  },
+};
+```
 
 ### Addon-a11y: Component test integration
 

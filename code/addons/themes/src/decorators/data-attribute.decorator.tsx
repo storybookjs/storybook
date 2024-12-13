@@ -22,7 +22,7 @@ export const withThemeByDataAttribute = <TRenderer extends Renderer = any>({
 }: DataAttributeStrategyConfiguration): DecoratorFunction<TRenderer> => {
   initializeThemeState(Object.keys(themes), defaultTheme);
   return (storyFn, context) => {
-    const { themeOverride } = useThemeParameters();
+    const { themeOverride } = useThemeParameters(context);
     const selected = pluckThemeFromContext(context);
 
     useEffect(() => {

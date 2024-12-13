@@ -32,6 +32,12 @@ const getPanels = (api: API) => {
     if (paramKey && parameters && parameters[paramKey] && parameters[paramKey].disable) {
       return;
     }
+    if (
+      panel.disabled === true ||
+      (typeof panel.disabled === 'function' && panel.disabled(parameters))
+    ) {
+      return;
+    }
     filteredPanels[id] = panel;
   });
 

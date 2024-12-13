@@ -93,6 +93,7 @@ const useCombination = (
     () => ({
       [DEFAULT_REF_ID]: {
         index,
+        filteredIndex: index,
         indexError,
         previewInitialized,
         status,

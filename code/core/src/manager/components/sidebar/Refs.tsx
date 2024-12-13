@@ -81,7 +81,7 @@ export const Ref: FC<RefType & RefProps & { status?: State['status'] }> = React.
     const { docsOptions } = useStorybookState();
     const api = useStorybookApi();
     const {
-      index,
+      filteredIndex: index,
       id: refId,
       title = refId,
       isLoading: isLoadingMain,

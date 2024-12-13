@@ -6,10 +6,10 @@ import { createRuntimeStoriesImport } from './appendix/create-import';
 import { createVariableFromRuntimeStoriesCall } from './appendix/create-variable-from-runtime-stories-call';
 import { createNamedExportStory } from './appendix/create-named-export-story';
 
-import { createASTIdentifier, type ESTreeAST } from '#parser/ast';
-import { getStoriesIdentifiers } from '#parser/analyse/story/attributes/identifiers';
-import type { CompiledASTNodes } from '#parser/extract/compiled/nodes';
-import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
+import { createASTIdentifier, type ESTreeAST } from '../../parser/ast';
+import { getStoriesIdentifiers } from '../../parser/analyse/story/attributes/identifiers';
+import type { CompiledASTNodes } from '../../parser/extract/compiled/nodes';
+import type { SvelteASTNodes } from '../../parser/extract/svelte/nodes';
 
 interface Params {
   code: MagicString;

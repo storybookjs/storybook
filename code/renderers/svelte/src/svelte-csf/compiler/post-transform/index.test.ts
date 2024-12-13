@@ -8,9 +8,9 @@ import { describe, it } from 'vitest';
 
 import { transformStoriesCode } from '.';
 
-import { getSvelteAST } from '#parser/ast';
-import { extractSvelteASTNodes } from '#parser/extract/svelte/nodes';
-import { extractCompiledASTNodes } from '#parser/extract/compiled/nodes';
+import { getSvelteAST } from '../../parser/ast';
+import { extractSvelteASTNodes } from '../../parser/extract/svelte/nodes';
+import { extractCompiledASTNodes } from '../../parser/extract/compiled/nodes';
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 

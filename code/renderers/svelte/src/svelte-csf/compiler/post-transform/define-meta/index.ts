@@ -4,9 +4,9 @@ import type MagicString from 'magic-string';
 import { replaceDefineMetaArgument } from './replace-argument';
 import { insertDefineMetaJSDocCommentAsDescription } from './insert-description';
 
-import type { CompiledASTNodes } from '#parser/extract/compiled/nodes';
-import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
-import { createASTIdentifier, type ESTreeAST } from '#parser/ast';
+import { createASTIdentifier, type ESTreeAST } from '../../../parser/ast';
+import type { CompiledASTNodes } from '../../../parser/extract/compiled/nodes';
+import type { SvelteASTNodes } from '../../../parser/extract/svelte/nodes';
 
 interface Params {
   code: MagicString;

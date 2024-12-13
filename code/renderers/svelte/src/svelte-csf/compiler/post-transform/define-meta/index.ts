@@ -1,11 +1,12 @@
 import { print } from 'esrap';
 import type MagicString from 'magic-string';
 
-import { destructureMetaFromDefineMeta } from './destructure-meta';
+import { replaceDefineMetaArgument } from './replace-argument';
 import { insertDefineMetaJSDocCommentAsDescription } from './insert-description';
 
 import type { CompiledASTNodes } from '#parser/extract/compiled/nodes';
 import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
+import { createASTIdentifier, type ESTreeAST } from '#parser/ast';
 
 interface Params {
   code: MagicString;
@@ -23,13 +24,16 @@ interface Params {
 export function transformDefineMeta(params: Params): void {
   const { code, nodes, filename } = params;
 
-  destructureMetaFromDefineMeta({
-    nodes: nodes.compiled,
-    filename,
-  });
   insertDefineMetaJSDocCommentAsDescription({
     nodes,
     filename,
+  });
+  const metaObjectExpression = replaceDefineMetaArgument({
+    nodes,
+    filename,
+  });
+  const metaVariableDeclaration = createMetaVariableDeclaration({
+    init: metaObjectExpression,
   });
 
   const { compiled } = nodes;
@@ -37,4 +41,24 @@ export function transformDefineMeta(params: Params): void {
   const { start, end } = defineMetaVariableDeclaration;
 
   code.update(start as number, end as number, print(defineMetaVariableDeclaration).code);
+  code.appendLeft(start as number, print(metaVariableDeclaration).code + '\n');
+}
+
+export function createMetaVariableDeclaration({
+  init,
+}: {
+  init: ESTreeAST.ObjectExpression;
+}): ESTreeAST.VariableDeclaration {
+  //
+  return {
+    type: 'VariableDeclaration',
+    kind: 'const',
+    declarations: [
+      {
+        type: 'VariableDeclarator',
+        id: createASTIdentifier('meta'),
+        init,
+      },
+    ],
+  };
 }

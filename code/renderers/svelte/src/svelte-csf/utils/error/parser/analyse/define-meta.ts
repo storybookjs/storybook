@@ -30,33 +30,29 @@ export class InvalidComponentValueError extends StorybookSvelteCSFError {
   }
 }
 
+// TODO: Rename this error
 export class NoDestructuredDefineMetaCallError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseDefineMeta;
   readonly code = 2;
   public documentation = true;
 
-  public defineMetaVariableDeclarator: ESTreeAST.VariableDeclarator;
+  public node: ESTreeAST.VariableDeclarator;
 
   constructor({
     filename,
     defineMetaVariableDeclarator,
   }: {
     filename: StorybookSvelteCSFError['filename'];
-    defineMetaVariableDeclarator: NoDestructuredDefineMetaCallError['defineMetaVariableDeclarator'];
+    defineMetaVariableDeclarator: NoDestructuredDefineMetaCallError['node'];
   }) {
     super({ filename });
-    this.defineMetaVariableDeclarator = defineMetaVariableDeclarator;
+    this.node = defineMetaVariableDeclarator;
   }
 
   template(): string {
     return dedent`
       The return value of the 'defineMeta' call was not destructured to { Story }.
       The issue occurred in Stories file: ${this.filepathURL}
-
-      The current pattern type is: "${this.defineMetaVariableDeclarator.id.type}", and expected is "ObjectPattern".
-    `;
-  }
-}
 
       The current pattern type is: "${this.node.id.type}", and expected is "ObjectPattern".
     `;

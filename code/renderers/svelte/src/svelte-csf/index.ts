@@ -14,10 +14,9 @@ import type {
   Cmp,
 } from './types';
 
-export function defineMeta<const TCmp extends Cmp>(meta: MetaType<TCmp>) {
+export function defineMeta<const TCmp extends Cmp>(_meta: MetaType<TCmp>) {
   return {
     Story: StoryComponent as typeof StoryComponent<TCmp>,
-    meta,
   };
 }
 

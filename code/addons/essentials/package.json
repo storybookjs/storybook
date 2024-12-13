@@ -40,6 +40,7 @@
     },
     "./backgrounds/manager": "./dist/backgrounds/manager.js",
     "./controls/manager": "./dist/controls/manager.js",
+    "./docs/manager": "./dist/docs/manager.js",
     "./docs/preview": {
       "types": "./dist/docs/preview.d.ts",
       "import": "./dist/docs/preview.mjs",
@@ -114,10 +115,14 @@
       "./src/docs/preset.ts",
       "./src/docs/mdx-react-shim.ts"
     ],
+    "entries": [
+      "./src/docs/manager.ts"
+    ],
     "managerEntries": [
       "./src/actions/manager.ts",
       "./src/backgrounds/manager.ts",
       "./src/controls/manager.ts",
+      "./src/docs/manager.ts",
       "./src/measure/manager.ts",
       "./src/outline/manager.ts",
       "./src/toolbars/manager.ts",

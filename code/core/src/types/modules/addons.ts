@@ -5,7 +5,7 @@ import type { TestProviderConfig, TestingModuleProgressReportProgress } from '..
 import type { RenderData as RouterData } from '../../router/types';
 import type { ThemeVars } from '../../theming/types';
 import type { API_SidebarOptions } from './api';
-import type { API_HashEntry, API_StatusState, API_StatusUpdate } from './api-stories';
+import type { API_HashEntry, API_StoryEntry } from './api-stories';
 import type {
   Args,
   ArgsStoryFn as ArgsStoryFnForFramework,
@@ -392,7 +392,7 @@ export interface Addon_BaseType {
   /** @unstable */
   paramKey?: string;
   /** @unstable */
-  disabled?: boolean;
+  disabled?: boolean | ((parameters: API_StoryEntry['parameters']) => boolean);
   /** @unstable */
   hidden?: boolean;
 }

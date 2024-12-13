@@ -1,4 +1,4 @@
-import { addons, useParameter } from 'storybook/internal/preview-api';
+import { addons } from 'storybook/internal/preview-api';
 import type { StoryContext } from 'storybook/internal/types';
 
 import type { ThemeParameters } from '../constants';
@@ -12,8 +12,8 @@ export function pluckThemeFromContext({ globals }: StoryContext): string {
   return globals[GLOBAL_KEY] || '';
 }
 
-export function useThemeParameters(): ThemeParameters {
-  return useParameter<ThemeParameters>(PARAM_KEY, DEFAULT_THEME_PARAMETERS) as ThemeParameters;
+export function useThemeParameters(context: StoryContext): ThemeParameters {
+  return context.parameters[PARAM_KEY] || DEFAULT_THEME_PARAMETERS;
 }
 
 export function initializeThemeState(themeNames: string[], defaultTheme: string) {

@@ -60,10 +60,10 @@ export function Description({ state, ...props }: DescriptionProps) {
     );
   } else if (state.progress?.finishedAt) {
     description = (
-      <RelativeTime
-        timestamp={new Date(state.progress.finishedAt)}
-        testCount={state.progress.numTotalTests}
-      />
+      <>
+        Ran {state.progress.numTotalTests} {state.progress.numTotalTests === 1 ? 'test' : 'tests'}{' '}
+        <RelativeTime timestamp={state.progress.finishedAt} />
+      </>
     );
   } else if (state.watching) {
     description = 'Watching for file changes';

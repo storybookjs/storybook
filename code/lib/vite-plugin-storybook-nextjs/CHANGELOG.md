@@ -1,3 +1,15 @@
+# v1.1.1 (Fri Dec 13 2024)
+
+#### 🐛 Bug Fix
+
+- Add Vite 6 support [#30](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/30) ([@yannbf](https://github.com/yannbf))
+
+#### Authors: 1
+
+- Yann Braga ([@yannbf](https://github.com/yannbf))
+
+---
+
 # v1.1.0 (Tue Nov 19 2024)
 
 #### 🚀 Enhancement

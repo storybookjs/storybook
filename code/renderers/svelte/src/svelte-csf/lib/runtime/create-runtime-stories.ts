@@ -4,7 +4,7 @@ import type { StoryObj } from '@storybook/svelte';
 import { mount, unmount, type Component } from 'svelte';
 
 import type { StoriesRepository } from '$lib/runtime/contexts/extractor.svelte';
-import type { Cmp, Meta } from '$lib/types';
+import type { Cmp, Meta } from '$lib/types.js';
 
 import StoriesExtractor from './StoriesExtractor.svelte';
 import StoryRenderer from './StoryRenderer.svelte';

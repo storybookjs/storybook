@@ -9,9 +9,9 @@ import { describe, it } from 'vitest';
 
 import { transformDefineMeta } from '.';
 
-import { getSvelteAST } from '$lib/parser/ast';
-import { extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes';
-import { extractCompiledASTNodes } from '$lib/parser/extract/compiled/nodes';
+import { getSvelteAST } from '$lib/parser/ast.js';
+import { extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
+import { extractCompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 

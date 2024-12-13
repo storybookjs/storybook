@@ -1,5 +1,5 @@
-import { getStringValueFromAttribute } from '$lib/parser/analyse/story/attributes';
-import type { SvelteAST } from '$lib/parser/ast';
+import { getStringValueFromAttribute } from '$lib/parser/analyse/story/attributes.js';
+import type { SvelteAST } from '$lib/parser/ast.js';
 
 interface Params {
   component: SvelteAST.Component;

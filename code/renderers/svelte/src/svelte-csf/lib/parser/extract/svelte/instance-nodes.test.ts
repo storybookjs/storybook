@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { extractInstanceNodes } from './instance-nodes';
-import { extractModuleNodes } from './module-nodes';
+import { extractInstanceNodes } from './instance-nodes.js';
+import { extractModuleNodes } from './module-nodes.js';
 
-import { getSvelteAST, type ESTreeAST } from '$lib/parser/ast';
+import { getSvelteAST, type ESTreeAST } from '$lib/parser/ast.js';
 
 describe(extractInstanceNodes.name, () => {
   it("extract 'setTemplateCall' correctly when used", async () => {

@@ -2,7 +2,7 @@ import url from 'node:url';
 
 import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
 
-import type { SvelteAST } from '$lib/parser/ast';
+import type { SvelteAST } from '$lib/parser/ast.js';
 
 /**
  * Adopted from: {@link https://github.com/storybookjs/storybook/blob/next/code/lib/core-events/src/errors/storybook-error.ts}

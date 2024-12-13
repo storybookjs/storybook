@@ -1,9 +1,9 @@
 import { describe, it } from 'vitest';
 
-import { extractDefineMetaPropertiesNodes } from './define-meta';
+import { extractDefineMetaPropertiesNodes } from './define-meta.js';
 
-import { getSvelteAST, type ESTreeAST } from '$lib/parser/ast';
-import { extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes';
+import { getSvelteAST, type ESTreeAST } from '$lib/parser/ast.js';
+import { extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
 
 describe(extractDefineMetaPropertiesNodes.name, () => {
   it('extracts correctly selected properties', async ({ expect }) => {

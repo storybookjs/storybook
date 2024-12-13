@@ -1,6 +1,6 @@
 import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
 
-import type { ESTreeAST } from '$lib/parser/ast';
+import type { ESTreeAST } from '$lib/parser/ast.js';
 
 /**
  * The export is defined in the `package.json` export map

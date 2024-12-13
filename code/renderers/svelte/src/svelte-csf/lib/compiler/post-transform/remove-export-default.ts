@@ -1,7 +1,7 @@
 import { print } from 'esrap';
 import type MagicString from 'magic-string';
 
-import type { CompiledASTNodes } from '$lib/parser/extract/compiled/nodes';
+import type { CompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
 
 interface Params {
   code: MagicString;

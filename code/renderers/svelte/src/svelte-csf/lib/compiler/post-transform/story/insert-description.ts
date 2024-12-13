@@ -9,13 +9,13 @@ import {
   getParametersPropertyValue,
   getDocsPropertyValue,
   getDescriptionPropertyValue,
-} from '$lib/compiler/post-transform/shared/description';
-import { createASTObjectExpression, createASTProperty } from '$lib/parser/ast';
+} from '$lib/compiler/post-transform/shared/description.js';
+import { createASTObjectExpression, createASTProperty } from '$lib/parser/ast.js';
 
-import type { ESTreeAST } from '$lib/parser/ast';
-import type { extractStoriesNodesFromExportDefaultFn } from '$lib/parser/extract/compiled/stories';
-import { getStoryPropsObjectExpression } from '$lib/parser/extract/compiled/story';
-import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes';
+import type { ESTreeAST } from '$lib/parser/ast.js';
+import type { extractStoriesNodesFromExportDefaultFn } from '$lib/parser/extract/compiled/stories.js';
+import { getStoryPropsObjectExpression } from '$lib/parser/extract/compiled/story.js';
+import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
 
 interface Params {
   nodes: {

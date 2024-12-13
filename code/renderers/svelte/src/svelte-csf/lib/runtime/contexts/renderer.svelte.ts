@@ -1,6 +1,6 @@
 import { getContext, hasContext, setContext } from 'svelte';
 
-import type { Cmp, StoryAnnotations, StoryContext } from '../../types';
+import type { Cmp, StoryAnnotations, StoryContext } from '../../types.js';
 
 const CONTEXT_KEY = 'storybook-story-renderer-context';
 

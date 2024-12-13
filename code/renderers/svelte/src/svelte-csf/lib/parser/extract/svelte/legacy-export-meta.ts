@@ -1,10 +1,10 @@
 import type { ObjectExpression, Property } from 'estree';
 
-import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes';
-import type { CompiledASTNodes } from '$lib/parser/extract/compiled/nodes';
+import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
+import type { CompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
 
-import { GetDefineMetaFirstArgumentError } from '$lib/utils/error/parser/extract/svelte';
-import type { Cmp, Meta } from '$lib/types';
+import { GetDefineMetaFirstArgumentError } from '$lib/utils/error/parser/extract/svelte.js';
+import type { Cmp, Meta } from '$lib/types.js';
 
 interface Options<Properties extends Array<keyof Meta<Cmp>>> {
   nodes: SvelteASTNodes | CompiledASTNodes;

@@ -1,9 +1,9 @@
-import type { ESTreeAST } from '$lib/parser/ast';
-import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes';
+import type { ESTreeAST } from '$lib/parser/ast.js';
+import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
 import {
   NoDestructuredDefineMetaCallError,
   NoMetaIdentifierFoundError,
-} from '$lib/utils/error/parser/analyse/define-meta';
+} from '$lib/utils/error/parser/analyse/define-meta.js';
 
 interface Params {
   node: SvelteASTNodes['defineMetaVariableDeclaration'];

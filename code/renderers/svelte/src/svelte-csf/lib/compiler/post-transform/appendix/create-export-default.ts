@@ -1,5 +1,5 @@
-import type { getMetaIdentifier } from '$lib/parser/analyse/define-meta/meta-identifier';
-import type { ESTreeAST } from '$lib/parser/ast';
+import type { getMetaIdentifier } from '$lib/parser/analyse/define-meta/meta-identifier.js';
+import type { ESTreeAST } from '$lib/parser/ast.js';
 
 interface Params {
   metaIdentifier: ReturnType<typeof getMetaIdentifier>;

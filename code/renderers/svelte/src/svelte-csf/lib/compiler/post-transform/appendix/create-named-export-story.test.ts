@@ -1,10 +1,10 @@
 import { print } from 'esrap';
 import { describe, it } from 'vitest';
 
-import { createNamedExportStory } from './create-named-export-story';
-import { createVariableFromRuntimeStoriesCall } from './create-variable-from-runtime-stories-call';
+import { createNamedExportStory } from './create-named-export-story.js';
+import { createVariableFromRuntimeStoriesCall } from './create-variable-from-runtime-stories-call.js';
 
-import type { ESTreeAST } from '$lib/parser/ast';
+import type { ESTreeAST } from '$lib/parser/ast.js';
 
 describe(createNamedExportStory.name, () => {
   it('correctly creates a variable with named exports order', ({ expect }) => {

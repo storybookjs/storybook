@@ -8,8 +8,8 @@ import {
   createASTProperty,
   type ESTreeAST,
   type SvelteAST,
-} from '$lib/parser/ast';
-import { InvalidTemplateAttribute } from '$lib/utils/error/legacy-api/index';
+} from '$lib/parser/ast.js';
+import { InvalidTemplateAttribute } from '$lib/utils/error/legacy-api/index.js';
 
 import type { State } from '..';
 

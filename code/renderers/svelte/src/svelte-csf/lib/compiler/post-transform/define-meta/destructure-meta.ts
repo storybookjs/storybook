@@ -1,5 +1,5 @@
-import type { CompiledASTNodes } from '$lib/parser/extract/compiled/nodes';
-import { NoDestructuredDefineMetaCallError } from '$lib/utils/error/parser/analyse/define-meta';
+import type { CompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
+import { NoDestructuredDefineMetaCallError } from '$lib/utils/error/parser/analyse/define-meta.js';
 
 interface Params {
   nodes: CompiledASTNodes;

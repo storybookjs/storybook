@@ -1,5 +1,5 @@
-import type { getStoriesIdentifiers } from '$lib/parser/analyse/story/attributes/identifiers';
-import type { ESTreeAST } from '$lib/parser/ast';
+import type { getStoriesIdentifiers } from '$lib/parser/analyse/story/attributes/identifiers.js';
+import type { ESTreeAST } from '$lib/parser/ast.js';
 
 interface Params {
   storyIdentifiers: ReturnType<typeof getStoriesIdentifiers>;

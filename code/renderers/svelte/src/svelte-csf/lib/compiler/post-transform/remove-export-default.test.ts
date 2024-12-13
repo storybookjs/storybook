@@ -6,10 +6,10 @@ import MagicString from 'magic-string';
 import { parseAst } from 'rollup/parseAst';
 import { describe, it } from 'vitest';
 
-import { removeExportDefault } from './remove-export-default';
+import { removeExportDefault } from './remove-export-default.js';
 
-import { extractCompiledASTNodes } from '$lib/parser/extract/compiled/nodes';
-import { StorybookSvelteCSFError } from '$lib/utils/error';
+import { extractCompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
+import { StorybookSvelteCSFError } from '$lib/utils/error.js';
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 

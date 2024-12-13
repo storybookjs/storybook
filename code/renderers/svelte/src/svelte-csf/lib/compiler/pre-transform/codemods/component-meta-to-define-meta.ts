@@ -3,7 +3,7 @@ import {
   createASTExpressionTag,
   type ESTreeAST,
   type SvelteAST,
-} from '$lib/parser/ast';
+} from '$lib/parser/ast.js';
 
 interface Params {
   component: SvelteAST.Component;

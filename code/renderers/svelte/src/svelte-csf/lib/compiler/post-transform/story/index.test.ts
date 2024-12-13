@@ -9,10 +9,10 @@ import { describe, it } from 'vitest';
 
 import { transformStory } from '.';
 
-import { getSvelteAST } from '$lib/parser/ast';
-import { extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes';
-import { extractCompiledASTNodes } from '$lib/parser/extract/compiled/nodes';
-import { extractStoriesNodesFromExportDefaultFn } from '$lib/parser/extract/compiled/stories';
+import { getSvelteAST } from '$lib/parser/ast.js';
+import { extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
+import { extractCompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
+import { extractStoriesNodesFromExportDefaultFn } from '$lib/parser/extract/compiled/stories.js';
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 

@@ -1,5 +1,5 @@
-import type { ESTreeAST } from '$lib/parser/ast';
-import { DefaultOrNamespaceImportUsedError } from '$lib/utils/error/parser/extract/svelte';
+import type { ESTreeAST } from '$lib/parser/ast.js';
+import { DefaultOrNamespaceImportUsedError } from '$lib/utils/error/parser/extract/svelte.js';
 
 interface Params {
   node: ESTreeAST.ImportDeclaration;

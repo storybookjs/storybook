@@ -1,4 +1,4 @@
-import type { SvelteAST } from '$lib/parser/ast';
+import type { SvelteAST } from '$lib/parser/ast.js';
 
 type Result = SvelteAST.SnippetBlock | undefined;
 

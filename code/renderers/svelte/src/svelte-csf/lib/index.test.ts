@@ -5,15 +5,15 @@ import { describe, expectTypeOf, it } from 'vitest';
 
 import StoryComponent from './runtime/Story.svelte';
 
-import { defineMeta, type Args, type StoryContext } from './index';
+import { defineMeta, type Args, type StoryContext } from './index.js';
 import type {
   Meta,
   StoryAnnotations,
   StoryContext as BaseStoryContext,
   SvelteRenderer,
-} from '$lib/types';
+} from '$lib/types.js';
 
-import Button from '../examples/components/Button.svelte';
+import Button from '../../examples/components/Button.svelte';
 
 describe(defineMeta.name, () => {
   it('works with provided meta entry "component" entry', () => {

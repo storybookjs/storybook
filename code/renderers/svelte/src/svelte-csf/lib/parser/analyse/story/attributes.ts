@@ -1,9 +1,9 @@
-import type { SvelteAST } from '$lib/parser/ast';
+import type { SvelteAST } from '$lib/parser/ast.js';
 import {
   AttributeNotArrayError,
   AttributeNotArrayOfStringsError,
   AttributeNotStringError,
-} from '$lib/utils/error/parser/analyse/story';
+} from '$lib/utils/error/parser/analyse/story.js';
 
 interface Params {
   node: SvelteAST.Attribute | undefined;

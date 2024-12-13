@@ -2,8 +2,8 @@ import { getContext, hasContext, setContext, type ComponentProps } from 'svelte'
 
 import type Story from '../Story.svelte';
 
-import type { Cmp } from '../../types';
-import { storyNameToExportName } from '../../utils/identifier-utils';
+import type { Cmp } from '../../types.js';
+import { storyNameToExportName } from '../../utils/identifier-utils.js';
 
 const CONTEXT_KEY = 'storybook-stories-extractor-context';
 

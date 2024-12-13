@@ -2,10 +2,10 @@ import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' }
 import { print } from 'svelte-ast-print';
 import { describe, it } from 'vitest';
 
-import { transformTemplateToSnippet } from './template-to-snippet';
+import { transformTemplateToSnippet } from './template-to-snippet.js';
 
-import type { SvelteAST } from '$lib/parser/ast';
-import { parseAndExtractSvelteNode } from '$lib/tests/extractor';
+import type { SvelteAST } from '$lib/parser/ast.js';
+import { parseAndExtractSvelteNode } from '../../../../../tests/extractor.js';
 
 describe(transformTemplateToSnippet.name, () => {
   it("covers a case without provided prop 'id'", async ({ expect }) => {

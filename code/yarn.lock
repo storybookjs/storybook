@@ -6449,6 +6449,7 @@ __metadata:
     "@vitest/browser": ^2.1.1
     "@vitest/runner": ^2.1.1
     storybook: "workspace:^"
+    vite: ^4.0.0 || ^5.0.0 || ^6.0.0
     vitest: ^2.1.1
   peerDependenciesMeta:
     "@vitest/browser":

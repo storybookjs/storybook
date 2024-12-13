@@ -24,6 +24,7 @@ import picocolors from 'picocolors';
 import sirv from 'sirv';
 import { convertPathToPattern } from 'tinyglobby';
 import { dedent } from 'ts-dedent';
+import * as vite from 'vite';
 
 import type { InternalOptions, UserOptions } from './types';
 
@@ -234,11 +235,10 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin> => {
             'storybook',
             'stories',
             'test',
-            // copying straight from https://github.com/vitejs/vite/blob/main/packages/vite/src/node/constants.ts#L60
-            // to avoid having to maintain Vite as a dependency just for this
-            'module',
-            'browser',
-            'development|production',
+            // In Vite 6+ we have to manually add defaultClientConditions when setting custom conditions
+            // In Vite 4/5 we should NOT add defaultClientConditions, they will already be there
+            //@ts-expect-error defaultClientConditions is a Vite 6 only export, but we're using Vite 4
+            ...(vite.defaultClientConditions ?? []),
           ],
         },
 

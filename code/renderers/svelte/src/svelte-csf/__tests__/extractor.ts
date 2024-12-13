@@ -1,7 +1,7 @@
 import dedent from 'dedent';
 import { type Context } from 'zimmerframe';
 
-import { getSvelteAST, type SvelteAST } from '#parser/ast';
+import { getSvelteAST, type SvelteAST } from '$lib/parser/ast';
 
 export async function extractSvelteNode<TNode extends SvelteAST.SvelteNode | SvelteAST.Script>(
   parsed: SvelteAST.SvelteNode | SvelteAST.Script,

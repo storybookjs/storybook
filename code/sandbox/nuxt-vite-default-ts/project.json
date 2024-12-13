@@ -1,0 +1,21 @@
+{
+  "name": "nuxt-vite/default-ts",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "implicitDependencies": [
+    "storybook",
+    "core",
+    "addon-essentials",
+    "addon-interactions",
+    "addon-links",
+    "addon-onboarding",
+    "blocks",
+    "vue3-vite"
+  ],
+  "targets": {
+    "sandbox": {},
+    "sb:dev": {},
+    "sb:build": {}
+  },
+  "tags": ["ci:normal", "ci:merged", "ci:daily"]
+}

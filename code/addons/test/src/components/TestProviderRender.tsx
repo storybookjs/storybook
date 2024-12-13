@@ -1,11 +1,12 @@
-import React, { type FC, useCallback, useRef, useState } from 'react';
+import React, { type ComponentProps, type FC, useCallback, useMemo, useRef, useState } from 'react';
 
-import { Button, ListItem } from 'storybook/internal/components';
+import { Button, ListItem, ProgressSpinner } from 'storybook/internal/components';
 import {
   TESTING_MODULE_CONFIG_CHANGE,
   type TestProviderConfig,
   type TestProviderState,
 } from 'storybook/internal/core-events';
+import { addons } from 'storybook/internal/manager-api';
 import type { API } from 'storybook/internal/manager-api';
 import { styled, useTheme } from 'storybook/internal/theming';
 
@@ -16,16 +17,21 @@ import {
   PlayHollowIcon,
   PointerHandIcon,
   ShieldIcon,
-  StopAltHollowIcon,
+  StopAltIcon,
 } from '@storybook/icons';
 
 import { isEqual } from 'es-toolkit';
 import { debounce } from 'es-toolkit/compat';
 
-import { type Config, type Details, TEST_PROVIDER_ID } from '../constants';
+import {
+  ADDON_ID as A11Y_ADDON_ID,
+  PANEL_ID as A11y_ADDON_PANEL_ID,
+} from '../../../a11y/src/constants';
+import { type Config, type Details, PANEL_ID } from '../constants';
+import { type TestStatus } from '../node/reporter';
 import { Description } from './Description';
-import { GlobalErrorModal } from './GlobalErrorModal';
 import { TestStatusIcon } from './TestStatusIcon';
+import { Title } from './Title';
 
 const Container = styled.div({
   display: 'flex',
@@ -36,24 +42,19 @@ const Heading = styled.div({
   display: 'flex',
   justifyContent: 'space-between',
   padding: '8px 2px',
-  gap: 6,
+  gap: 12,
 });
 
 const Info = styled.div({
   display: 'flex',
   flexDirection: 'column',
   marginLeft: 6,
+  minWidth: 0,
 });
-
-const Title = styled.div<{ crashed?: boolean }>(({ crashed, theme }) => ({
-  fontSize: theme.typography.size.s1,
-  fontWeight: crashed ? 'bold' : 'normal',
-  color: crashed ? theme.color.negativeText : theme.color.defaultText,
-}));
 
 const Actions = styled.div({
   display: 'flex',
-  gap: 6,
+  gap: 2,
 });
 
 const Extras = styled.div({
@@ -67,16 +68,45 @@ const Checkbox = styled.input({
   },
 });
 
-export const TestProviderRender: FC<{
-  api: API;
-  state: TestProviderConfig & TestProviderState<Details, Config>;
-}> = ({ state, api }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const theme = useTheme();
+const Progress = styled(ProgressSpinner)({
+  margin: 2,
+});
 
-  const title = state.crashed || state.failed ? 'Local tests failed' : 'Run local tests';
-  const errorMessage = state.error?.message;
+const StopIcon = styled(StopAltIcon)({
+  width: 10,
+});
+
+const ItemTitle = styled.span<{ enabled?: boolean }>(
+  ({ enabled, theme }) =>
+    !enabled && {
+      color: theme.textMutedColor,
+      '&:after': {
+        content: '" (disabled)"',
+      },
+    }
+);
+
+const statusOrder: TestStatus[] = ['failed', 'warning', 'pending', 'passed', 'skipped'];
+const statusMap: Record<TestStatus, ComponentProps<typeof TestStatusIcon>['status']> = {
+  failed: 'negative',
+  warning: 'warning',
+  passed: 'positive',
+  skipped: 'unknown',
+  pending: 'unknown',
+};
+
+export const TestProviderRender: FC<
+  {
+    api: API;
+    state: TestProviderConfig & TestProviderState<Details, Config>;
+    entryId?: string;
+  } & ComponentProps<typeof Container>
+> = ({ state, api, entryId, ...props }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const theme = useTheme();
+  const coverageSummary = state.details?.coverageSummary;
+
+  const isA11yAddon = addons.experimental_getRegisteredAddons().includes(A11Y_ADDON_ID);
 
   const [config, updateConfig] = useConfig(
     api,
@@ -84,14 +114,78 @@ export const TestProviderRender: FC<{
     state.config || { a11y: false, coverage: false }
   );
 
+  const a11yResults = useMemo(() => {
+    if (!isA11yAddon) {
+      return [];
+    }
+
+    return state.details?.testResults?.flatMap((result) =>
+      result.results
+        .filter(Boolean)
+        .filter((r) => !entryId || r.storyId === entryId || r.storyId?.startsWith(`${entryId}-`))
+        .map((r) => r.reports.find((report) => report.type === 'a11y'))
+    );
+  }, [isA11yAddon, state.details?.testResults, entryId]);
+
+  const a11yStatus = useMemo<'positive' | 'warning' | 'negative' | 'unknown'>(() => {
+    if (state.running) {
+      return 'unknown';
+    }
+
+    if (!isA11yAddon || config.a11y === false) {
+      return 'unknown';
+    }
+
+    if (!a11yResults) {
+      return 'unknown';
+    }
+
+    const failed = a11yResults.some((result) => result?.status === 'failed');
+    const warning = a11yResults.some((result) => result?.status === 'warning');
+
+    if (failed) {
+      return 'negative';
+    } else if (warning) {
+      return 'warning';
+    }
+
+    return 'positive';
+  }, [state.running, isA11yAddon, config.a11y, a11yResults]);
+
+  const a11yNotPassedAmount = a11yResults?.filter(
+    (result) => result?.status === 'failed' || result?.status === 'warning'
+  ).length;
+
+  const storyId = entryId?.includes('--') ? entryId : undefined;
+  const results = (state.details?.testResults || [])
+    .flatMap((test) => {
+      if (!entryId) {
+        return test.results;
+      }
+      return test.results.filter((result) =>
+        storyId ? result.storyId === storyId : result.storyId?.startsWith(`${entryId}-`)
+      );
+    })
+    .sort((a, b) => statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status));
+
+  const status = state.running
+    ? 'unknown'
+    : state.failed
+      ? 'failed'
+      : (results[0]?.status ?? 'unknown');
+
+  const openPanel = (id: string, panelId: string) => {
+    api.selectStory(id);
+    api.setSelectedPanel(panelId);
+    api.togglePanel(true);
+  };
+
   return (
-    <Container>
+    <Container {...props}>
       <Heading>
         <Info>
-          <Title crashed={state.crashed} id="testing-module-title">
-            {title}
-          </Title>
-          <Description errorMessage={errorMessage} setIsModalOpen={setIsModalOpen} state={state} />
+          <Title id="testing-module-title" state={state} />
+          <Description id="testing-module-description" state={state} />
         </Info>
 
         <Actions>
@@ -100,18 +194,19 @@ export const TestProviderRender: FC<{
             variant="ghost"
             padding="small"
             active={isEditing}
+            disabled={state.running && !isEditing}
             onClick={() => setIsEditing(!isEditing)}
           >
             <EditIcon />
           </Button>
-          {state.watchable && (
+          {state.watchable && !entryId && (
             <Button
               aria-label={`${state.watching ? 'Disable' : 'Enable'} watch mode for ${state.name}`}
               variant="ghost"
               padding="small"
               active={state.watching}
               onClick={() => api.setTestProviderWatchMode(state.id, !state.watching)}
-              disabled={state.crashed || state.running}
+              disabled={state.running || isEditing}
             >
               <EyeIcon />
             </Button>
@@ -122,19 +217,21 @@ export const TestProviderRender: FC<{
                 <Button
                   aria-label={`Stop ${state.name}`}
                   variant="ghost"
-                  padding="small"
+                  padding="none"
                   onClick={() => api.cancelTestProvider(state.id)}
                   disabled={state.cancelling}
                 >
-                  <StopAltHollowIcon />
+                  <Progress percentage={state.progress?.percentageCompleted}>
+                    <StopIcon />
+                  </Progress>
                 </Button>
               ) : (
                 <Button
                   aria-label={`Start ${state.name}`}
                   variant="ghost"
                   padding="small"
-                  onClick={() => api.runTestProvider(state.id)}
-                  disabled={state.crashed || state.running}
+                  onClick={() => api.runTestProvider(state.id, { entryId })}
+                  disabled={state.running || isEditing}
                 >
                   <PlayHollowIcon />
                 </Button>
@@ -154,61 +251,100 @@ export const TestProviderRender: FC<{
           />
           <ListItem
             as="label"
-            title="Coverage"
+            title={<ItemTitle enabled={config.coverage}>Coverage</ItemTitle>}
             icon={<ShieldIcon color={theme.textMutedColor} />}
             right={
               <Checkbox
                 type="checkbox"
-                disabled // TODO: Implement coverage
-                checked={config.coverage}
+                checked={state.watching ? false : config.coverage}
+                disabled={state.watching}
                 onChange={() => updateConfig({ coverage: !config.coverage })}
               />
             }
           />
-          <ListItem
-            as="label"
-            title="Accessibility"
-            icon={<AccessibilityIcon color={theme.textMutedColor} />}
-            right={
-              <Checkbox
-                type="checkbox"
-                disabled // TODO: Implement a11y
-                checked={config.a11y}
-                onChange={() => updateConfig({ a11y: !config.a11y })}
-              />
-            }
-          />
+          {isA11yAddon && (
+            <ListItem
+              as="label"
+              title={<ItemTitle enabled={config.a11y}>Accessibility</ItemTitle>}
+              icon={<AccessibilityIcon color={theme.textMutedColor} />}
+              right={
+                <Checkbox
+                  type="checkbox"
+                  checked={config.a11y}
+                  onChange={() => updateConfig({ a11y: !config.a11y })}
+                />
+              }
+            />
+          )}
         </Extras>
       ) : (
         <Extras>
           <ListItem
             title="Component tests"
-            icon={<TestStatusIcon status="positive" aria-label="status: passed" />}
+            onClick={
+              (status === 'failed' || status === 'warning') && results.length
+                ? () => {
+                    const firstNotPassed = results.find(
+                      (r) => r.status === 'failed' || r.status === 'warning'
+                    );
+                    openPanel(firstNotPassed.storyId, PANEL_ID);
+                  }
+                : null
+            }
+            icon={
+              state.crashed ? (
+                <TestStatusIcon status="critical" aria-label="status: crashed" />
+              ) : status === 'unknown' ? (
+                <TestStatusIcon status="unknown" aria-label="status: unknown" />
+              ) : (
+                <TestStatusIcon status={statusMap[status]} aria-label={`status: ${status}`} />
+              )
+            }
           />
-          <ListItem
-            title="Coverage"
-            icon={<TestStatusIcon percentage={60} status="warning" aria-label="status: warning" />}
-            right={`60%`}
-          />
-          <ListItem
-            title="Accessibility"
-            icon={<TestStatusIcon status="negative" aria-label="status: failed" />}
-            right={73}
-          />
+          {coverageSummary ? (
+            <ListItem
+              title={<ItemTitle enabled={config.coverage}>Coverage</ItemTitle>}
+              href={'/coverage/index.html'}
+              // @ts-expect-error ListItem doesn't include all anchor attributes in types, but it is an achor element
+              target="_blank"
+              icon={
+                <TestStatusIcon
+                  percentage={coverageSummary.percentage}
+                  status={coverageSummary.status}
+                  aria-label={`status: ${coverageSummary.status}`}
+                />
+              }
+              right={`${coverageSummary.percentage}%`}
+            />
+          ) : (
+            <ListItem
+              title={<ItemTitle enabled={config.coverage}>Coverage</ItemTitle>}
+              icon={<TestStatusIcon status="unknown" aria-label={`status: unknown`} />}
+            />
+          )}
+          {isA11yAddon && (
+            <ListItem
+              title={<ItemTitle enabled={config.a11y}>Accessibility</ItemTitle>}
+              onClick={
+                (a11yStatus === 'negative' || a11yStatus === 'warning') && a11yResults.length
+                  ? () => {
+                      const firstNotPassed = results.find((r) =>
+                        r.reports
+                          .filter((report) => report.type === 'a11y')
+                          .find(
+                            (report) => report.status === 'failed' || report.status === 'warning'
+                          )
+                      );
+                      openPanel(firstNotPassed.storyId, A11y_ADDON_PANEL_ID);
+                    }
+                  : null
+              }
+              icon={<TestStatusIcon status={a11yStatus} aria-label={`status: ${a11yStatus}`} />}
+              right={a11yNotPassedAmount || null}
+            />
+          )}
         </Extras>
       )}
-
-      <GlobalErrorModal
-        error={errorMessage}
-        open={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-        }}
-        onRerun={() => {
-          setIsModalOpen(false);
-          api.runTestProvider(TEST_PROVIDER_ID);
-        }}
-      />
     </Container>
   );
 };

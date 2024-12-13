@@ -63,7 +63,7 @@ const ProgressBar = styled.div(({ theme }) => ({
 const ProgressMessage = styled.div(({ theme }) => ({
   minHeight: '2em',
   fontSize: `${theme.typography.size.s1}px`,
-  color: theme.barTextColor,
+  color: theme.textMutedColor,
 }));
 
 const ErrorIcon = styled(LightningOffIcon)(({ theme }) => ({

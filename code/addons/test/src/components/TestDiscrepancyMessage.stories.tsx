@@ -23,9 +23,6 @@ export default {
   parameters: {
     layout: 'fullscreen',
   },
-  args: {
-    storyId: 'story-id',
-  },
   decorators: [
     (storyFn) => (
       <ManagerContext.Provider value={managerContext}>{storyFn()}</ManagerContext.Provider>

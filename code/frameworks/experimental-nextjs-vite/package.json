@@ -1,6 +1,6 @@
 {
   "name": "@storybook/experimental-nextjs-vite",
-  "version": "8.5.0-alpha.13",
+  "version": "8.5.0-alpha.21",
   "description": "Storybook for Next.js and Vite",
   "keywords": [
     "storybook",
@@ -97,6 +97,7 @@
   "dependencies": {
     "@storybook/builder-vite": "workspace:*",
     "@storybook/react": "workspace:*",
+    "@storybook/react-vite": "workspace:*",
     "@storybook/test": "workspace:*",
     "styled-jsx": "5.1.6",
     "vite-plugin-storybook-nextjs": "^1.1.0"

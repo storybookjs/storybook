@@ -1,4 +1,4 @@
-import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
+import type { Dispatch, MutableRefObject, RefObject, SetStateAction } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { global } from '@storybook/global';
@@ -8,26 +8,43 @@ import { useStorybookApi } from '@storybook/core/manager-api';
 
 import { matchesKeyCode, matchesModifiers } from '../../keybinding';
 import { cycle, isAncestor, scrollIntoView } from '../../utils/tree';
-import type { CombinedDataset, Highlight, Selection } from './types';
+import type { Highlight, Selection } from './types';
 
 const { document, window: globalWindow } = global;
 
 export interface HighlightedProps {
-  containerRef: MutableRefObject<HTMLElement>;
+  containerRef: RefObject<HTMLElement | null>;
   isLoading: boolean;
   isBrowsing: boolean;
-  dataset: CombinedDataset;
   selected: Selection;
 }
 
 const fromSelection = (selection: Selection): Highlight =>
   selection ? { itemId: selection.storyId, refId: selection.refId } : null;
 
+const scrollToSelector = (
+  selector: string,
+  options: {
+    containerRef?: RefObject<Element | null>;
+    center?: boolean;
+    attempts?: number;
+    delay?: number;
+  } = {},
+  _attempt = 1
+) => {
+  const { containerRef, center = false, attempts = 3, delay = 500 } = options;
+  const element = (containerRef ? containerRef.current : document)?.querySelector(selector);
+  if (element) {
+    scrollIntoView(element, center);
+  } else if (_attempt <= attempts) {
+    setTimeout(scrollToSelector, delay, selector, options, _attempt + 1);
+  }
+};
+
 export const useHighlighted = ({
   containerRef,
   isLoading,
   isBrowsing,
-  dataset,
   selected,
 }: HighlightedProps): [
   Highlight,
@@ -67,16 +84,12 @@ export const useHighlighted = ({
     const highlight = fromSelection(selected);
     updateHighlighted(highlight);
     if (highlight) {
-      const { itemId, refId } = highlight;
-      setTimeout(() => {
-        scrollIntoView(
-          // @ts-expect-error (non strict)
-          containerRef.current?.querySelector(`[data-item-id="${itemId}"][data-ref-id="${refId}"]`),
-          true // make sure it's clearly visible by centering it
-        );
-      }, 0);
+      scrollToSelector(`[data-item-id="${highlight.itemId}"][data-ref-id="${highlight.refId}"]`, {
+        containerRef,
+        center: true,
+      });
     }
-  }, [dataset, highlightedRef, containerRef, selected]);
+  }, [containerRef, selected, updateHighlighted]);
 
   // Highlight nodes up/down the tree using arrow keys
   useEffect(() => {
@@ -115,7 +128,7 @@ export const useHighlighted = ({
         }
 
         const highlightable = Array.from(
-          containerRef.current.querySelectorAll('[data-highlightable=true]')
+          containerRef.current?.querySelectorAll('[data-highlightable=true]') || []
         );
         const currentIndex = highlightable.findIndex(
           (el) =>

@@ -1,16 +1,25 @@
 import { existsSync } from 'node:fs';
 
-import type { TestProject, TestSpecification, Vitest, WorkspaceProject } from 'vitest/node';
+import type {
+  CoverageOptions,
+  ResolvedCoverageOptions,
+  TestProject,
+  TestSpecification,
+  Vitest,
+  WorkspaceProject,
+} from 'vitest/node';
 
-import type { Channel } from 'storybook/internal/channels';
+import { resolvePathInStorybookCache } from 'storybook/internal/common';
 import type { TestingModuleRunRequestPayload } from 'storybook/internal/core-events';
 
 import type { DocsIndexEntry, StoryIndex, StoryIndexEntry } from '@storybook/types';
 
-import path, { normalize } from 'pathe';
+import path, { dirname, join, normalize } from 'pathe';
 import slash from 'slash';
 
+import { COVERAGE_DIRECTORY, type Config } from '../constants';
 import { log } from '../logger';
+import type { StorybookCoverageReporterOptions } from './coverage-reporter';
 import { StorybookReporter } from './reporter';
 import type { TestManager } from './test-manager';
 
@@ -20,56 +29,104 @@ type TagsFilter = {
   skip: string[];
 };
 
+const packageDir = dirname(require.resolve('@storybook/experimental-addon-test/package.json'));
+
+// We have to tell Vitest that it runs as part of Storybook
+process.env.VITEST_STORYBOOK = 'true';
+
 export class VitestManager {
   vitest: Vitest | null = null;
 
   vitestStartupCounter = 0;
 
+  vitestRestartPromise: Promise<void> | null = null;
+
   storyCountForCurrentRun: number = 0;
 
-  constructor(
-    private channel: Channel,
-    private testManager: TestManager
-  ) {}
+  constructor(private testManager: TestManager) {}
 
-  async startVitest(watchMode = false) {
+  async startVitest({ coverage = false } = {}) {
     const { createVitest } = await import('vitest/node');
 
+    const storybookCoverageReporter: [string, StorybookCoverageReporterOptions] = [
+      join(packageDir, 'dist/node/coverage-reporter.js'),
+      {
+        testManager: this.testManager,
+        coverageOptions: this.vitest?.config?.coverage as ResolvedCoverageOptions<'v8'>,
+      },
+    ];
+    const coverageOptions = (
+      coverage
+        ? {
+            enabled: true,
+            clean: false,
+            cleanOnRerun: false,
+            reportOnFailure: true,
+            reporter: [['html', {}], storybookCoverageReporter],
+            reportsDirectory: resolvePathInStorybookCache(COVERAGE_DIRECTORY),
+          }
+        : { enabled: false }
+    ) as CoverageOptions;
+
     this.vitest = await createVitest('test', {
-      watch: watchMode,
+      watch: true,
       passWithNoTests: false,
-      changed: watchMode,
       // TODO:
       // Do we want to enable Vite's default reporter?
       // The output in the terminal might be too spamy and it might be better to
       // find a way to just show errors and warnings for example
       // Otherwise it might be hard for the user to discover Storybook related logs
       reporters: ['default', new StorybookReporter(this.testManager)],
-      // @ts-expect-error we just want to disable coverage, not specify a provider
-      coverage: {
-        enabled: false,
-      },
+      coverage: coverageOptions,
     });
 
     if (this.vitest) {
       this.vitest.onCancel(() => {
-        // TODO: handle cancelation
+        // TODO: handle cancellation
       });
     }
 
-    await this.vitest.init();
+    try {
+      await this.vitest.init();
+    } catch (e) {
+      const isV8 = e.message?.includes('@vitest/coverage-v8');
+      const isIstanbul = e.message?.includes('@vitest/coverage-istanbul');
 
-    if (watchMode) {
-      await this.setupWatchers();
+      if (e.message?.includes('Error: Failed to load url') && (isIstanbul || isV8)) {
+        const coveragePackage = isIstanbul ? 'coverage-istanbul' : 'coverage-v8';
+        e.message = `Please install the @vitest/${coveragePackage} package to run with coverage`;
+      }
+
+      this.testManager.reportFatalError('Failed to init Vitest', e);
     }
+
+    await this.setupWatchers();
+  }
+
+  async restartVitest({ coverage }: { coverage: boolean }) {
+    await this.vitestRestartPromise;
+    this.vitestRestartPromise = new Promise(async (resolve, reject) => {
+      try {
+        await this.vitest?.runningPromise;
+        await this.closeVitest();
+        await this.startVitest({ coverage });
+        resolve();
+      } catch (e) {
+        reject(e);
+      } finally {
+        this.vitestRestartPromise = null;
+      }
+    });
+    return this.vitestRestartPromise;
   }
 
   private updateLastChanged(filepath: string) {
     const projects = this.vitest!.getModuleProjects(filepath);
     projects.forEach(({ server, browser }) => {
-      const serverMods = server.moduleGraph.getModulesByFile(filepath);
-      serverMods?.forEach((mod) => server.moduleGraph.invalidateModule(mod));
-
+      if (server) {
+        const serverMods = server.moduleGraph.getModulesByFile(filepath);
+        serverMods?.forEach((mod) => server.moduleGraph.invalidateModule(mod));
+      }
       if (browser) {
         const browserMods = browser.vite.moduleGraph.getModulesByFile(filepath);
         browserMods?.forEach((mod) => browser.vite.moduleGraph.invalidateModule(mod));
@@ -110,10 +167,13 @@ export class VitestManager {
     return true;
   }
 
-  async runTests(requestPayload: TestingModuleRunRequestPayload) {
+  async runTests(requestPayload: TestingModuleRunRequestPayload<Config>) {
     if (!this.vitest) {
       await this.startVitest();
+    } else {
+      await this.vitestRestartPromise;
     }
+
     this.resetTestNamePattern();
 
     const stories = await this.fetchStories(requestPayload.indexUrl, requestPayload.storyIds);
@@ -242,7 +302,7 @@ export class VitestManager {
     if (triggerAffectedTests.length) {
       await this.vitest.cancelCurrentRun('keyboard-input');
       await this.vitest.runningPromise;
-      await this.vitest.runFiles(triggerAffectedTests, true);
+      await this.vitest.runFiles(triggerAffectedTests, false);
     }
   }
 
@@ -252,6 +312,11 @@ export class VitestManager {
     this.updateLastChanged(id);
     this.storyCountForCurrentRun = 0;
 
+    // when watch mode is disabled, don't trigger any tests (below)
+    // but still invalidate the cache for the changed file, which is handled above
+    if (!this.testManager.watchMode) {
+      return;
+    }
     await this.runAffectedTests(file);
   }
 

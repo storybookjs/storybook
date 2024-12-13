@@ -10,6 +10,8 @@ export const DOCUMENTATION_LINK = 'writing-tests/test-addon';
 export const DOCUMENTATION_DISCREPANCY_LINK = `${DOCUMENTATION_LINK}#what-happens-when-there-are-different-test-results-in-multiple-environments`;
 export const DOCUMENTATION_FATAL_ERROR_LINK = `${DOCUMENTATION_LINK}#what-happens-if-vitest-itself-has-an-error`;
 
+export const COVERAGE_DIRECTORY = 'coverage';
+
 export interface Config {
   coverage: boolean;
   a11y: boolean;
@@ -17,4 +19,8 @@ export interface Config {
 
 export type Details = {
   testResults: TestResult[];
+  coverageSummary?: {
+    status: 'positive' | 'warning' | 'negative' | 'unknown';
+    percentage: number;
+  };
 };

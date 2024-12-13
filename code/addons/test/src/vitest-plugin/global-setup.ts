@@ -5,8 +5,22 @@ import type { GlobalSetupContext } from 'vitest/node';
 
 import { logger } from 'storybook/internal/node-logger';
 
+import treeKill from 'tree-kill';
+
 let storybookProcess: ChildProcess | null = null;
 
+const getIsVitestStandaloneRun = () => {
+  try {
+    // @ts-expect-error Suppress TypeScript warning about wrong setting. Doesn't matter, because we don't use tsc for bundling.
+    return (import.meta.env || process?.env).STORYBOOK !== 'true';
+  } catch (e) {
+    return false;
+  }
+};
+
+const isVitestStandaloneRun = getIsVitestStandaloneRun();
+
+// TODO: Not run when executed via Storybook
 const checkStorybookRunning = async (storybookUrl: string): Promise<boolean> => {
   try {
     const response = await fetch(`${storybookUrl}/iframe.html`, { method: 'HEAD' });
@@ -47,23 +61,26 @@ const startStorybookIfNotRunning = async () => {
   }
 };
 
-const killProcess = (process: ChildProcess) => {
-  return new Promise((resolve, reject) => {
-    process.on('close', resolve);
-    process.on('error', reject);
-    process.kill();
-  });
-};
-
 export const setup = async ({ config }: GlobalSetupContext) => {
-  if (config.watch) {
+  if (config.watch && isVitestStandaloneRun) {
     await startStorybookIfNotRunning();
   }
 };
 
 export const teardown = async () => {
-  if (storybookProcess) {
-    logger.verbose('Stopping Storybook process');
-    await killProcess(storybookProcess);
+  if (!storybookProcess) {
+    return;
   }
+  logger.verbose('Stopping Storybook process');
+  await new Promise<void>((resolve, reject) => {
+    // Storybook starts multiple child processes, so we need to kill the whole tree
+    treeKill(storybookProcess.pid, 'SIGTERM', (error) => {
+      if (error) {
+        logger.error('Failed to stop Storybook process:');
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
 };

@@ -33,39 +33,23 @@ const Wrapper = styled.div(({ theme: { color, typography, background } }) => ({
 
 interface TestDiscrepancyMessageProps {
   browserTestStatus: CallStates;
-  storyId: StoryId;
-  testRunId: string;
 }
-export const TestDiscrepancyMessage = ({
-  browserTestStatus,
-  storyId,
-  testRunId,
-}: TestDiscrepancyMessageProps) => {
+
+export const TestDiscrepancyMessage = ({ browserTestStatus }: TestDiscrepancyMessageProps) => {
   const api = useStorybookApi();
   const docsUrl = api.getDocsUrl({
     subpath: DOCUMENTATION_DISCREPANCY_LINK,
     versioned: true,
     renderer: true,
   });
-  const message = `This component test passed in ${browserTestStatus === CallStates.DONE ? 'this browser' : 'CLI'}, but the tests failed in ${browserTestStatus === CallStates.ERROR ? 'this browser' : 'CLI'}.`;
-
-  useEffect(
-    () =>
-      api.emit(STORYBOOK_ADDON_TEST_CHANNEL, {
-        type: 'test-discrepancy',
-        payload: {
-          browserStatus: browserTestStatus === CallStates.DONE ? 'PASS' : 'FAIL',
-          cliStatus: browserTestStatus === CallStates.DONE ? 'FAIL' : 'PASS',
-          storyId,
-          testRunId,
-        },
-      }),
-    [api, browserTestStatus, storyId, testRunId]
-  );
+  const [passed, failed] =
+    browserTestStatus === CallStates.ERROR
+      ? ['the CLI', 'this browser']
+      : ['this browser', 'the CLI'];
 
   return (
     <Wrapper>
-      {message}{' '}
+      This component test passed in {passed}, but the tests failed in {failed}.{' '}
       <Link href={docsUrl} target="_blank" withArrow>
         Learn what could cause this
       </Link>

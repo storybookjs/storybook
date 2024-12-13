@@ -7,7 +7,7 @@ import { expect, fn, userEvent, within } from '@storybook/test';
 
 import dedent from 'ts-dedent';
 
-import { GlobalErrorModal } from './GlobalErrorModal';
+import { GlobalErrorContext, GlobalErrorModal } from './GlobalErrorModal';
 
 type Story = StoryObj<typeof meta>;
 
@@ -41,36 +41,32 @@ const meta = {
   ],
   args: {
     onRerun: fn(),
-    onClose: fn(),
-    open: false,
   },
 } satisfies Meta<typeof GlobalErrorModal>;
 
 export default meta;
 
 export const Default: Story = {
-  args: {
-    error: dedent`
-    ReferenceError: FAIL is not defined
-      at Constraint.execute (the-best-file.js:525:2)
-      at Constraint.recalculate (the-best-file.js:424:21)
-      at Planner.addPropagate (the-best-file.js:701:6)
-      at Constraint.satisfy (the-best-file.js:184:15)
-      at Planner.incrementalAdd (the-best-file.js:591:21)
-      at Constraint.addConstraint (the-best-file.js:162:10)
-      at Constraint.BinaryConstraint (the-best-file.js:346:7)
-      at Constraint.EqualityConstraint (the-best-file.js:515:38)
-      at chainTest (the-best-file.js:807:6)
-      at deltaBlue (the-best-file.js:879:2)`,
-  },
   render: (props) => {
-    const [isOpen, setOpen] = useState(false);
+    const [isModalOpen, setModalOpen] = useState(false);
+    const error = dedent`
+      ReferenceError: FAIL is not defined
+        at Constraint.execute (the-best-file.js:525:2)
+        at Constraint.recalculate (the-best-file.js:424:21)
+        at Planner.addPropagate (the-best-file.js:701:6)
+        at Constraint.satisfy (the-best-file.js:184:15)
+        at Planner.incrementalAdd (the-best-file.js:591:21)
+        at Constraint.addConstraint (the-best-file.js:162:10)
+        at Constraint.BinaryConstraint (the-best-file.js:346:7)
+        at Constraint.EqualityConstraint (the-best-file.js:515:38)
+        at chainTest (the-best-file.js:807:6)
+        at deltaBlue (the-best-file.js:879:2)`;
 
     return (
-      <>
-        <GlobalErrorModal {...props} open={isOpen} />
-        <button onClick={() => setOpen(true)}>Open modal</button>
-      </>
+      <GlobalErrorContext.Provider value={{ isModalOpen, setModalOpen, error }}>
+        <GlobalErrorModal {...props} />
+        <button onClick={() => setModalOpen(true)}>Open modal</button>
+      </GlobalErrorContext.Provider>
     );
   },
   play: async ({ canvasElement }) => {

@@ -32,7 +32,7 @@ export const withThemeFromJSXProvider = <TRenderer extends Renderer = any>({
 
   // eslint-disable-next-line react/display-name
   return (storyFn, context) => {
-    const { themeOverride } = useThemeParameters();
+    const { themeOverride } = useThemeParameters(context);
     const selected = pluckThemeFromContext(context);
 
     const theme = useMemo(() => {

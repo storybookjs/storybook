@@ -40,7 +40,7 @@ const Title = styled(({ active, loading, disabled, ...rest }: TitleProps) => <sp
   ({ disabled, theme }) =>
     disabled
       ? {
-          color: transparentize(0.7, theme.color.defaultText),
+          color: theme.textMutedColor,
         }
       : {}
 );

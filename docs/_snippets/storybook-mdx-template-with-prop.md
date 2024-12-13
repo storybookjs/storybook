@@ -1,3 +1,4 @@
+<!-- prettier-ignore -->
 ```mdx filename="DocumentationTemplate.mdx" renderer="common" language="mdx"
 import { Meta, Title, Primary, Controls, Stories } from '@storybook/blocks';
 
@@ -28,5 +29,4 @@ The component accepts the following inputs (props):
 Listed below are additional variations of the component.
 
 <Stories />
-
 ```

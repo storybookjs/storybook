@@ -5,7 +5,7 @@ import { join } from 'path';
 import { promisify } from 'util';
 
 import { now, saveBench } from '../bench/utils';
-import type { Task } from '../task';
+import type { Task, TaskKey } from '../task';
 
 const logger = console;
 
@@ -22,8 +22,24 @@ export const sandbox: Task = {
 
     return ['run-registry'];
   },
-  async ready({ sandboxDir }) {
-    return pathExists(sandboxDir);
+  async ready({ sandboxDir }, { task: selectedTask }) {
+    // If the selected task requires the sandbox to exist, we check it. Else we always assume it needs to be created
+    // This avoids issues where you want to overwrite a sandbox and it will stop because it already exists
+    const tasksAfterSandbox: TaskKey[] = [
+      'vitest-integration',
+      'test-runner',
+      'test-runner-dev',
+      'e2e-tests',
+      'e2e-tests-dev',
+      'smoke-test',
+      'dev',
+      'build',
+      'serve',
+      'chromatic',
+      'bench',
+    ];
+    const isSelectedTaskAfterSandboxCreation = tasksAfterSandbox.includes(selectedTask);
+    return isSelectedTaskAfterSandboxCreation && pathExists(sandboxDir);
   },
   async run(details, options) {
     if (options.link && details.template.inDevelopment) {
@@ -33,7 +49,7 @@ export const sandbox: Task = {
 
       options.link = false;
     }
-    if (await this.ready(details)) {
+    if (await this.ready(details, options)) {
       logger.info('🗑  Removing old sandbox dir');
       await remove(details.sandboxDir);
     }
@@ -74,7 +90,11 @@ export const sandbox: Task = {
       //   extraDeps.push('@testing-library/angular', '@analogjs/vitest-angular');
       // }
 
-      options.addon = [...options.addon, '@storybook/experimental-addon-test'];
+      options.addon = [
+        ...options.addon,
+        '@storybook/experimental-addon-test',
+        '@storybook/addon-a11y',
+      ];
     }
 
     let startTime = now();

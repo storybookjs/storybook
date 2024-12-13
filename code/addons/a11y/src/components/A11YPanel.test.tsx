@@ -1,153 +1,132 @@
 // @vitest-environment happy-dom
-import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 
 import React from 'react';
 
-import * as api from 'storybook/internal/manager-api';
 import { ThemeProvider, convert, themes } from 'storybook/internal/theming';
 
-import { EVENTS } from '../constants';
 import { A11YPanel } from './A11YPanel';
+import { type A11yContextStore, useA11yContext } from './A11yContext';
 
-vi.mock('storybook/internal/manager-api');
-
-global.ResizeObserver = require('resize-observer-polyfill');
-
-const mockedApi = vi.mocked(api);
-
-const axeResult = {
-  incomplete: [
-    {
-      id: 'color-contrast',
-      impact: 'serious',
-      tags: ['cat.color', 'wcag2aa', 'wcag143'],
-      description:
-        'Ensures the contrast between foreground and background colors meets WCAG 2 AA contrast ratio thresholds',
-      help: 'Elements must have sufficient color contrast',
-      helpUrl: 'https://dequeuniversity.com/rules/axe/3.2/color-contrast?application=axeAPI',
-      nodes: [],
-    },
-  ],
-  passes: [
-    {
-      id: 'aria-allowed-attr',
-      impact: null,
-      tags: ['cat.aria', 'wcag2a', 'wcag412'],
-      description: "Ensures ARIA attributes are allowed for an element's role",
-      help: 'Elements must only use allowed ARIA attributes',
-      helpUrl: 'https://dequeuniversity.com/rules/axe/3.2/aria-allowed-attr?application=axeAPI',
-      nodes: [],
-    },
-  ],
-  violations: [
-    {
-      id: 'color-contrast',
-      impact: 'serious',
-      tags: ['cat.color', 'wcag2aa', 'wcag143'],
-      description:
-        'Ensures the contrast between foreground and background colors meets WCAG 2 AA contrast ratio thresholds',
-      help: 'Elements must have sufficient color contrast',
-      helpUrl: 'https://dequeuniversity.com/rules/axe/3.2/color-contrast?application=axeAPI',
-      nodes: [],
-    },
-  ],
-};
-
-function ThemedA11YPanel() {
-  return (
-    <ThemeProvider theme={convert(themes.light)}>
-      <A11YPanel />
-    </ThemeProvider>
-  );
-}
+vi.mock('./A11yContext');
+const mockedUseA11yContext = vi.mocked(useA11yContext);
 
 describe('A11YPanel', () => {
-  beforeEach(() => {
-    mockedApi.useChannel.mockReset();
-    mockedApi.useParameter.mockReset();
-    mockedApi.useStorybookState.mockReset();
-    mockedApi.useAddonState.mockReset();
+  it('should render initializing state', () => {
+    mockedUseA11yContext.mockReturnValue({
+      results: { passes: [], incomplete: [], violations: [] },
+      status: 'initial',
+      handleManual: vi.fn(),
+      error: null,
+    } as Partial<A11yContextStore> as any);
 
-    mockedApi.useAddonState.mockImplementation((_, defaultState) => React.useState(defaultState));
-    mockedApi.useChannel.mockReturnValue(vi.fn());
-    mockedApi.useParameter.mockReturnValue({ manual: false });
-    const state: Partial<api.State> = { storyId: 'jest' };
-    // Lazy to mock entire state
-    mockedApi.useStorybookState.mockReturnValue(state as any);
-    mockedApi.useAddonState.mockImplementation(React.useState);
+    const element = render(<A11YPanel />);
+
+    expect(element.getByText('Initializing...')).toBeInTheDocument();
   });
 
-  afterEach(() => {
-    cleanup();
-  });
+  it('should render manual state', () => {
+    const handleManual = vi.fn();
+    mockedUseA11yContext.mockReturnValue({
+      results: { passes: [], incomplete: [], violations: [] },
+      status: 'manual',
+      handleManual,
+      error: null,
+    } as Partial<A11yContextStore> as any);
 
-  it('should render', () => {
-    const { container } = render(<A11YPanel />);
-    expect(container.firstChild).toBeTruthy();
-  });
-
-  it('should register event listener on mount', () => {
-    render(<A11YPanel />);
-    expect(mockedApi.useChannel).toHaveBeenCalledWith(
-      expect.objectContaining({
-        [EVENTS.RESULT]: expect.any(Function),
-        [EVENTS.ERROR]: expect.any(Function),
-      })
+    const component = render(
+      <ThemeProvider theme={convert(themes.light)}>
+        <A11YPanel />
+      </ThemeProvider>
     );
+
+    expect(component.getByText('Manually run the accessibility scan.')).toBeInTheDocument();
+    const runTestButton = component.getByText('Run test');
+    expect(runTestButton).toBeInTheDocument();
+
+    fireEvent.click(runTestButton);
+    expect(handleManual).toHaveBeenCalled();
   });
 
-  it('should handle "initial" status', () => {
-    const { getByText } = render(<A11YPanel />);
-    expect(getByText(/Initializing/)).toBeTruthy();
+  it('should render running state', () => {
+    mockedUseA11yContext.mockReturnValue({
+      results: { passes: [], incomplete: [], violations: [] },
+      status: 'running',
+      handleManual: vi.fn(),
+      error: null,
+    } as Partial<A11yContextStore> as any);
+
+    const component = render(
+      <ThemeProvider theme={convert(themes.light)}>
+        <A11YPanel />
+      </ThemeProvider>
+    );
+
+    expect(
+      component.getByText('Please wait while the accessibility scan is running ...')
+    ).toBeInTheDocument();
   });
 
-  it('should set running status on event', async () => {
-    const { getByText } = render(<ThemedA11YPanel />);
-    const useChannelArgs = mockedApi.useChannel.mock.calls[0][0];
-    act(() => useChannelArgs[EVENTS.RUNNING]());
-    await waitFor(() => {
-      expect(getByText(/Please wait while the accessibility scan is running/)).toBeTruthy();
-    });
-  });
-
-  // TODO: The tests below are skipped because of unknown issues with ThemeProvider
-  // which cause errors like TypeError: Cannot read properties of undefined (reading 'defaultText')
-  it.skip('should handle "manual" status', async () => {
-    mockedApi.useParameter.mockReturnValue({ manual: true });
-    const { getByText } = render(<ThemedA11YPanel />);
-    await waitFor(() => {
-      expect(getByText(/Manually run the accessibility scan/)).toBeTruthy();
-    });
-  });
-
-  it.skip('should handle "running" status', async () => {
-    const emit = vi.fn();
-    mockedApi.useChannel.mockReturnValue(emit);
-    mockedApi.useParameter.mockReturnValue({ manual: true });
-    const { getByRole, getByText } = render(<ThemedA11YPanel />);
-    await waitFor(() => {
-      const button = getByRole('button', { name: 'Run test' });
-      fireEvent.click(button);
-    });
-    await waitFor(() => {
-      expect(getByText(/Please wait while the accessibility scan is running/)).toBeTruthy();
-      expect(emit).toHaveBeenCalledWith(EVENTS.MANUAL, 'jest');
-    });
-  });
-
-  it.skip('should handle "ran" status', async () => {
-    const { getByText } = render(<ThemedA11YPanel />);
-    const useChannelArgs = mockedApi.useChannel.mock.calls[0][0];
-    act(() => useChannelArgs[EVENTS.RESULT](axeResult));
-    await waitFor(
-      () => {
-        expect(getByText(/Tests completed/)).toBeTruthy();
-        expect(getByText(/Violations/)).toBeTruthy();
-        expect(getByText(/Passes/)).toBeTruthy();
-        expect(getByText(/Incomplete/)).toBeTruthy();
+  it('should render ready state with results', () => {
+    const handleManual = vi.fn();
+    mockedUseA11yContext.mockReturnValue({
+      results: {
+        passes: [{ id: 'pass1' } as any],
+        incomplete: [{ id: 'incomplete1' } as any],
+        violations: [{ id: 'violation1', nodes: [] } as any],
       },
-      { timeout: 2000 }
+      status: 'ready',
+      tab: 0,
+      handleManual,
+      highlighted: [],
+      error: null,
+    } as Partial<A11yContextStore> as any);
+
+    const component = render(
+      <ThemeProvider theme={convert(themes.light)}>
+        <A11YPanel />
+      </ThemeProvider>
+    );
+
+    expect(component.getByText('1 Violations')).toBeInTheDocument();
+    expect(component.getByText('1 Passes')).toBeInTheDocument();
+    expect(component.getByText('1 Incomplete')).toBeInTheDocument();
+
+    const rerunTestsButton = component.getByText('Rerun tests');
+    expect(rerunTestsButton).toBeInTheDocument();
+
+    fireEvent.click(rerunTestsButton);
+    expect(handleManual).toHaveBeenCalled();
+  });
+
+  it('should render error state', () => {
+    mockedUseA11yContext.mockReturnValue({
+      results: { passes: [], incomplete: [], violations: [] },
+      status: 'error',
+      handleManual: vi.fn(),
+      error: 'Test error message',
+    } as Partial<A11yContextStore> as any);
+
+    const component = render(<A11YPanel />);
+
+    expect(component.container).toHaveTextContent('The accessibility scan encountered an error.');
+    expect(component.container).toHaveTextContent('Test error message');
+  });
+
+  it('should render error state with object error', () => {
+    mockedUseA11yContext.mockReturnValue({
+      results: { passes: [], incomplete: [], violations: [] },
+      status: 'error',
+      handleManual: vi.fn(),
+      error: { message: 'Test error object message' },
+    } as Partial<A11yContextStore> as any);
+
+    const component = render(<A11YPanel />);
+
+    expect(component.container).toHaveTextContent('The accessibility scan encountered an error.');
+    expect(component.container).toHaveTextContent(
+      JSON.stringify({ message: 'Test error object message' })
     );
   });
 });

@@ -1,7 +1,6 @@
 import { print } from 'esrap';
 import MagicString from 'magic-string';
 
-import { createExportDefaultMeta } from './appendix/create-export-default';
 import { createExportOrderVariable } from './appendix/create-export-order';
 import { createRuntimeStoriesImport } from './appendix/create-import';
 import { createVariableFromRuntimeStoriesCall } from './appendix/create-variable-from-runtime-stories-call';
@@ -53,11 +52,18 @@ export async function createAppendix(params: Params) {
     body: [
       createRuntimeStoriesImport(),
       variableFromRuntimeStoriesCall,
-      createExportDefaultMeta({ metaIdentifier, filename }),
+      createExportDefaultMeta(),
       createExportOrderVariable({ storyIdentifiers, filename }),
       ...storiesExports,
     ],
   });
 
   code.append('\n' + appendix.code);
+}
+
+function createExportDefaultMeta(): ESTreeAST.ExportDefaultDeclaration {
+  return {
+    type: 'ExportDefaultDeclaration',
+    declaration: createASTIdentifier('meta'),
+  };
 }

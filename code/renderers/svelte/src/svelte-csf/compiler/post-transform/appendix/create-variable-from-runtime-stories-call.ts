@@ -1,4 +1,3 @@
-import type { getMetaIdentifier } from '#parser/analyse/define-meta/meta-identifier';
 import { createASTIdentifier, type ESTreeAST } from '#parser/ast';
 
 interface Params {
@@ -9,7 +8,7 @@ interface Params {
 export function createVariableFromRuntimeStoriesCall(
   params: Params
 ): ESTreeAST.VariableDeclaration {
-  const { storiesFunctionDeclaration, metaIdentifier } = params;
+  const { storiesFunctionDeclaration } = params;
 
   return {
     type: 'VariableDeclaration',

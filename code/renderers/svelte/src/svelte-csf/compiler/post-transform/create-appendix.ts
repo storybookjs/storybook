@@ -6,10 +6,10 @@ import { createRuntimeStoriesImport } from './appendix/create-import';
 import { createVariableFromRuntimeStoriesCall } from './appendix/create-variable-from-runtime-stories-call';
 import { createNamedExportStory } from './appendix/create-named-export-story';
 
-import { getMetaIdentifier } from '#parser/analyse/define-meta/meta-identifier';
+import { createASTIdentifier, type ESTreeAST } from '#parser/ast';
+import { getStoriesIdentifiers } from '#parser/analyse/story/attributes/identifiers';
 import type { CompiledASTNodes } from '#parser/extract/compiled/nodes';
 import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
-import { getStoriesIdentifiers } from '#parser/analyse/story/attributes/identifiers';
 
 interface Params {
   code: MagicString;
@@ -23,19 +23,14 @@ interface Params {
 export async function createAppendix(params: Params) {
   const { code, nodes, filename } = params;
   const { compiled, svelte } = nodes;
-  const { defineMetaVariableDeclaration, storiesFunctionDeclaration } = compiled;
+  const { storiesFunctionDeclaration } = compiled;
 
   const storyIdentifiers = getStoriesIdentifiers({
     nodes: svelte,
     filename,
   });
-  const metaIdentifier = getMetaIdentifier({
-    node: defineMetaVariableDeclaration,
-    filename,
-  });
   const variableFromRuntimeStoriesCall = createVariableFromRuntimeStoriesCall({
     storiesFunctionDeclaration,
-    metaIdentifier,
     filename,
   });
   const storiesExports = storyIdentifiers.map(({ exportName }) =>

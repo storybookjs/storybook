@@ -58,26 +58,14 @@ export class NoDestructuredDefineMetaCallError extends StorybookSvelteCSFError {
   }
 }
 
-export class NoMetaIdentifierFoundError extends StorybookSvelteCSFError {
-  readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseDefineMeta;
-  readonly code = 3;
-  public documentation = true;
-
-  constructor(filename: StorybookSvelteCSFError['filename']) {
-    super({ filename });
-  }
-
-  template(): string {
-    return dedent`
-			Could not find 'meta' identifier in the compiled output of stories file: ${this.filepathURL}
-      This is most likely a bug in @storybook/addon-svelte-csf. Please open an issue on GitHub.
+      The current pattern type is: "${this.node.id.type}", and expected is "ObjectPattern".
     `;
   }
 }
 
 export class NoStringLiteralError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseDefineMeta;
-  readonly code = 4;
+  readonly code = 3;
   public documentation = true;
 
   readonly property: ESTreeAST.Property;
@@ -105,7 +93,7 @@ export class NoStringLiteralError extends StorybookSvelteCSFError {
 
 export class NoArrayExpressionError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseDefineMeta;
-  readonly code = 5;
+  readonly code = 4;
   public documentation = true;
 
   readonly property: ESTreeAST.Property;
@@ -133,7 +121,7 @@ export class NoArrayExpressionError extends StorybookSvelteCSFError {
 
 export class ArrayElementNotStringError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseDefineMeta;
-  readonly code = 6;
+  readonly code = 5;
   public documentation = true;
 
   readonly property: ESTreeAST.Property;

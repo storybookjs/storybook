@@ -7,10 +7,6 @@ describe(createVariableFromRuntimeStoriesCall.name, () => {
   it('creates a variable correctly', ({ expect }) => {
     const stringified = print(
       createVariableFromRuntimeStoriesCall({
-        metaIdentifier: {
-          type: 'Identifier',
-          name: 'meta',
-        },
         storiesFunctionDeclaration: {
           type: 'FunctionDeclaration',
           id: {

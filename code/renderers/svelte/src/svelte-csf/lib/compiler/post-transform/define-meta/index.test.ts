@@ -17,13 +17,13 @@ const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
 describe(transformDefineMeta.name, () => {
   it("transformed 'defineMeta' matches inlined snapshot", async ({ expect }) => {
-    const filename = path.resolve(__dirname, '../../../../tests/stories/Example.stories.svelte');
+    const filename = path.resolve(__dirname, '../../../../../tests/stories/Example.stories.svelte');
     const originalCode = fs.readFileSync(filename).toString();
     const compiledPreTransformCode = fs
       .readFileSync(
         path.resolve(
           __dirname,
-          '../../../../tests/__compiled__/pre-transform/Example.stories.dev.js'
+          '../../../../../tests/__compiled__/pre-transform/Example.stories.dev.js'
         )
       )
       .toString();

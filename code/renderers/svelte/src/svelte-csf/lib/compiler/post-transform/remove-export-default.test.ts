@@ -17,7 +17,7 @@ describe(removeExportDefault.name, () => {
   it('removes pre-transformed export default correctly', async ({ expect }) => {
     const compiledPreTransformCode = fs
       .readFileSync(
-        path.resolve(__dirname, '../../../tests/__compiled__/pre-transform/Example.stories.dev.js')
+        path.resolve(__dirname, '../../../../tests/__compiled__/pre-transform/Example.stories.dev.js')
       )
       .toString();
     const compiledASTNodes = await extractCompiledASTNodes({

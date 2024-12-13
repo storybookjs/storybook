@@ -30,7 +30,6 @@ export class InvalidComponentValueError extends StorybookSvelteCSFError {
   }
 }
 
-// TODO: Rename this error
 export class NoDestructuredDefineMetaCallError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseDefineMeta;
   readonly code = 2;

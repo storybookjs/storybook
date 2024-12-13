@@ -17,7 +17,7 @@ import Button from '../examples/components/Button.svelte';
 
 describe(defineMeta.name, () => {
   it('works with provided meta entry "component" entry', () => {
-    const { Story, meta } = defineMeta({
+    const { Story } = defineMeta({
       component: Button,
       args: {
         children: createRawSnippet(() => ({
@@ -37,7 +37,6 @@ describe(defineMeta.name, () => {
     });
 
     expectTypeOf(Story).toMatchTypeOf<typeof StoryComponent<typeof Button>>();
-    expectTypeOf(meta).toMatchTypeOf<Meta<typeof Button>>();
   });
 });
 
@@ -71,7 +70,7 @@ describe("type helper for snippets 'Args'", () => {
 
 describe("type helper for snippets 'StoryContext'", () => {
   it("infers the type of entry 'args' from 'defineMeta' correctly", () => {
-    const { Story, meta } = defineMeta({
+    const { Story } = defineMeta({
       component: Button,
       args: {
         children: createRawSnippet(() => ({
@@ -91,7 +90,6 @@ describe("type helper for snippets 'StoryContext'", () => {
     });
 
     expectTypeOf<StoryContext<typeof Story>>().toMatchTypeOf<BaseStoryContext<typeof Button>>();
-    expectTypeOf(meta).toMatchTypeOf<Meta<typeof Button>>();
   });
 });
 

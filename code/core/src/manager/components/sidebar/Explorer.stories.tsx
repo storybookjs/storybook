@@ -34,7 +34,7 @@ const simple: Record<string, RefType> = {
     url: 'iframe.html',
     previewInitialized: true,
     // @ts-expect-error (invalid input)
-    index: mockDataset.withRoot,
+    filteredIndex: mockDataset.withRoot,
   },
 };
 
@@ -47,7 +47,7 @@ const withRefs: Record<string, RefType> = {
     previewInitialized: true,
     type: 'auto-inject',
     // @ts-expect-error (invalid input)
-    index: mockDataset.noRoot,
+    filteredIndex: mockDataset.noRoot,
   },
   injected: {
     id: 'injected',
@@ -56,7 +56,7 @@ const withRefs: Record<string, RefType> = {
     previewInitialized: false,
     type: 'auto-inject',
     // @ts-expect-error (invalid input)
-    index: mockDataset.noRoot,
+    filteredIndex: mockDataset.noRoot,
   },
   unknown: {
     id: 'unknown',
@@ -65,7 +65,7 @@ const withRefs: Record<string, RefType> = {
     previewInitialized: true,
     type: 'unknown',
     // @ts-expect-error (invalid input)
-    index: mockDataset.noRoot,
+    filteredIndex: mockDataset.noRoot,
   },
   lazy: {
     id: 'lazy',
@@ -74,7 +74,7 @@ const withRefs: Record<string, RefType> = {
     previewInitialized: false,
     type: 'lazy',
     // @ts-expect-error (invalid input)
-    index: mockDataset.withRoot,
+    filteredIndex: mockDataset.withRoot,
   },
 };
 

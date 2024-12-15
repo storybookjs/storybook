@@ -484,7 +484,7 @@ async function run() {
       } catch (err) {
         invariant(err instanceof Error);
         logger.error(
-          `Error running task ${picocolors.bold(getTaskKey(task))} for ${picocolors.bgMagenta(picocolors.bold(details.key))}:`
+          `Error running task ${picocolors.bold(getTaskKey(task))} for ${picocolors.bgCyan(picocolors.white(details.key))}:`
         );
         logger.error(JSON.stringify(err, null, 2));
 

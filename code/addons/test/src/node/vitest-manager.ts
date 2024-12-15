@@ -14,7 +14,7 @@ import type { TestingModuleRunRequestPayload } from 'storybook/internal/core-eve
 
 import type { DocsIndexEntry, StoryIndex, StoryIndexEntry } from '@storybook/types';
 
-import path, { normalize } from 'pathe';
+import path, { dirname, join, normalize } from 'pathe';
 import slash from 'slash';
 
 import { COVERAGE_DIRECTORY, type Config } from '../constants';
@@ -28,6 +28,11 @@ type TagsFilter = {
   exclude: string[];
   skip: string[];
 };
+
+const packageDir = dirname(require.resolve('@storybook/experimental-addon-test/package.json'));
+
+// We have to tell Vitest that it runs as part of Storybook
+process.env.VITEST_STORYBOOK = 'true';
 
 export class VitestManager {
   vitest: Vitest | null = null;
@@ -44,7 +49,7 @@ export class VitestManager {
     const { createVitest } = await import('vitest/node');
 
     const storybookCoverageReporter: [string, StorybookCoverageReporterOptions] = [
-      '@storybook/experimental-addon-test/internal/coverage-reporter',
+      join(packageDir, 'dist/node/coverage-reporter.js'),
       {
         testManager: this.testManager,
         coverageOptions: this.vitest?.config?.coverage as ResolvedCoverageOptions<'v8'>,
@@ -63,31 +68,17 @@ export class VitestManager {
         : { enabled: false }
     ) as CoverageOptions;
 
-    this.vitest = await createVitest(
-      'test',
-      {
-        watch: true,
-        passWithNoTests: false,
-        // TODO:
-        // Do we want to enable Vite's default reporter?
-        // The output in the terminal might be too spamy and it might be better to
-        // find a way to just show errors and warnings for example
-        // Otherwise it might be hard for the user to discover Storybook related logs
-        reporters: ['default', new StorybookReporter(this.testManager)],
-        coverage: coverageOptions,
-      },
-      {
-        define: {
-          // polyfilling process.env.VITEST_STORYBOOK to 'true' in the browser
-          'process.env.VITEST_STORYBOOK': 'true',
-        },
-      }
-    );
-
-    this.vitest.configOverride.env = {
-      // We signal to the test runner that we are running it via Storybook
-      VITEST_STORYBOOK: 'true',
-    };
+    this.vitest = await createVitest('test', {
+      watch: true,
+      passWithNoTests: false,
+      // TODO:
+      // Do we want to enable Vite's default reporter?
+      // The output in the terminal might be too spamy and it might be better to
+      // find a way to just show errors and warnings for example
+      // Otherwise it might be hard for the user to discover Storybook related logs
+      reporters: ['default', new StorybookReporter(this.testManager)],
+      coverage: coverageOptions,
+    });
 
     if (this.vitest) {
       this.vitest.onCancel(() => {

@@ -10,6 +10,7 @@ import picocolors from 'picocolors';
 import invariant from 'tiny-invariant';
 
 import { build } from '../build';
+import { buildIndex as index } from '../buildIndex';
 import { dev } from '../dev';
 
 addToGlobalContext('cliVersion', versions.storybook);
@@ -121,6 +122,31 @@ command('build')
     });
 
     await build({
+      ...options,
+      packageJson: pkg,
+      test: !!options.test || process.env.SB_TESTBUILD === 'true',
+    }).catch(() => process.exit(1));
+  });
+
+command('index')
+  .option('-o, --output-file <file-name>', 'JSON file to output index')
+  .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
+  .option('--quiet', 'Suppress verbose build output')
+  .option('--loglevel <level>', 'Control level of logging during build')
+  .action(async (options) => {
+    process.env.NODE_ENV = process.env.NODE_ENV || 'production';
+    logger.setLevel(options.loglevel);
+    consoleLogger.log(picocolors.bold(`${pkg.name} v${pkg.version}\n`));
+
+    // The key is the field created in `options` variable for
+    // each command line argument. Value is the env variable.
+    getEnvConfig(options, {
+      staticDir: 'SBCONFIG_STATIC_DIR',
+      outputDir: 'SBCONFIG_OUTPUT_DIR',
+      configDir: 'SBCONFIG_CONFIG_DIR',
+    });
+
+    await index({
       ...options,
       packageJson: pkg,
       test: !!options.test || process.env.SB_TESTBUILD === 'true',

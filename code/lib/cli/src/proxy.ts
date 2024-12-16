@@ -4,7 +4,7 @@ import { spawn } from 'child_process';
 
 const args = process.argv.slice(2);
 
-if (['dev', 'build'].includes(args[0])) {
+if (['dev', 'build', 'index'].includes(args[0])) {
   require('@storybook/core/cli/bin');
 } else {
   const proxiedArgs =

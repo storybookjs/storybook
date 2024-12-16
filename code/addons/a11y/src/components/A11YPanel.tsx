@@ -133,7 +133,11 @@ export const A11YPanel: React.FC = () => {
             <>
               The accessibility scan encountered an error.
               <br />
-              {typeof error === 'string' ? error : JSON.stringify(error)}
+              {typeof error === 'string'
+                ? error
+                : error instanceof Error
+                  ? error.toString()
+                  : JSON.stringify(error)}
             </>
           )}
         </Centered>

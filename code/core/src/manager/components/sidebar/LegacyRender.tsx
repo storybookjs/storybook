@@ -1,8 +1,8 @@
 import React from 'react';
 
-import { Button } from '@storybook/core/components';
+import { Button, ProgressSpinner } from '@storybook/core/components';
 import { styled } from '@storybook/core/theming';
-import { EyeIcon, PlayHollowIcon, StopAltHollowIcon } from '@storybook/icons';
+import { EyeIcon, PlayHollowIcon, StopAltIcon } from '@storybook/icons';
 
 import type { TestProviders } from '@storybook/core/core-events';
 import { useStorybookApi } from '@storybook/core/manager-api';
@@ -32,8 +32,16 @@ const TitleWrapper = styled.div<{ crashed?: boolean }>(({ crashed, theme }) => (
 
 const DescriptionWrapper = styled.div(({ theme }) => ({
   fontSize: theme.typography.size.s1,
-  color: theme.barTextColor,
+  color: theme.textMutedColor,
 }));
+
+const Progress = styled(ProgressSpinner)({
+  margin: 2,
+});
+
+const StopIcon = styled(StopAltIcon)({
+  width: 10,
+});
 
 export const LegacyRender = ({ ...state }: TestProviders[keyof TestProviders]) => {
   const Description = state.description!;
@@ -70,11 +78,18 @@ export const LegacyRender = ({ ...state }: TestProviders[keyof TestProviders]) =
               <Button
                 aria-label={`Stop ${name}`}
                 variant="ghost"
-                padding="small"
+                padding="none"
                 onClick={() => api.cancelTestProvider(state.id)}
                 disabled={state.cancelling}
               >
-                <StopAltHollowIcon />
+                <Progress
+                  percentage={
+                    state.progress?.percentageCompleted ??
+                    (state.details as any)?.buildProgressPercentage
+                  }
+                >
+                  <StopIcon />
+                </Progress>
               </Button>
             ) : (
               <Button

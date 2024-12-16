@@ -67,17 +67,17 @@ If you need to dismiss an accessibility rule or modify its settings across all s
 
 #### Component-level a11y configuration
 
-<IfRenderer renderer="svelte">
+<If renderer="svelte">
 
-  You can also customize your own set of rules for all stories of a component. If you're using Svelte CSF with the native templating syntax, you can update the `defineMeta` function or the default export of the CSF story and provide the required configuration:
+  You can also customize your own set of rules for all stories of a component. If you're using Svelte CSF with the native templating syntax, you can update the `defineMeta` function. If you're using regular CSF, you can update the default export of the story file.
 
-</IfRenderer>
+</If>
 
-<IfRenderer renderer={['angular', 'vue', 'web-components', 'ember', 'html', 'react', 'preact', 'qwik', 'solid']}>
+<If notRenderer={['svelte']}>
 
-  You can also customize your own set of rules for all stories of a component. Update your story's default export and add parameters and globals with the required configuration:
+  You can also customize your own set of rules for all stories of a component. Update the story file's default export and add parameters and globals with the required configuration:
 
-</IfRenderer>
+</If>
 
 {/* prettier-ignore-start */}
 
@@ -97,17 +97,17 @@ Customize the a11y ruleset at the story level by updating your story to include 
 
 #### Turn off automated a11y tests
 
-<IfRenderer renderer="svelte">
+<If renderer="svelte">
 
-  If you are using Svelte CSF, you can turn off automated accessibility testing for stories or components by adding globals to your story or adjusting the defineMeta function with the required configuration. With a regular CSF story, you can add the following to your story's export or component's default export:
+  If you are using Svelte CSF, you can turn off automated accessibility testing for stories or components by adding globals to your story or adjusting the `defineMeta` function with the required configuration. With a regular CSF story, you can add the following to your story's export or component's default export:
   
-</IfRenderer>
+</If>
 
-<IfRenderer renderer={['angular', 'vue', 'web-components', 'ember', 'html', 'react', 'preact', 'qwik', 'solid']}>
+<If notRenderer={['svelte']}>
 
-  Disable automated accessibility testing for stories or components by adding the following globals to your story’s export or component’s default export respectively:
+  Disable automated accessibility testing for stories or components by adding the following globals to your story’s export or component’s default export:
 
-</IfRenderer>
+</If>
 
 
 {/* prettier-ignore-start */}
@@ -120,15 +120,48 @@ Customize the a11y ruleset at the story level by updating your story to include 
 
 ## Test addon integration
 
-The accessibility addon provides seamless integration with Storybook's [test addon](./test-addon.mdx), enabling you to run automated accessibility checks for all your tests in the background while you run component tests. If there are any violations, the test will fail, and you will see the results in the sidebar without any additional setup.
+The accessibility addon provides seamless integration with the [Test addon](./test-addon.mdx), enabling you to run automated accessibility checks for all your tests in the background while you run component tests. If there are any violations, the test will fail, and you will see the results in the sidebar without any additional setup.
 
-{/* TODO: add asset of the changed UI here */}
+![Screenshot of the accessibility test results in the Storybook UI](../_assets/writing-tests/addon-a11y-with-addon-test.png)
 
 ### Manual upgrade
 
-If you enabled the addon and you're manually upgrading to Storybook 8.5 or later, you'll need to adjust your existing configuration (i.e., `.storybook/vitest.config.ts`) to enable the integration as follows:
+If you enabled the addon and you're manually upgrading to Storybook 8.5 or later, you'll need to adjust your existing configuration (i.e., `.storybook/vitest.setup.ts`) to enable the integration as follows:
 
 <CodeSnippets path="storybook-addon-a11y-test-setup.md" />
+
+### Configure accessibility tests with the test addon
+
+Like the Test addon, the accessibility addon also supports [tags](../writing-stories/tags.mdx) to filter the tests you want to run. By default, the addon applies the `a11ytest` tag to all stories. If you need to exclude a story from being accessibility tested, you can remove that tag by applying the `!a11ytest` tag to the story. This also works at the project (in `.storybook/preview.js|ts`) or component level (default export in the story file).
+
+You can use tags to progressively work toward a more accessible UI by enabling accessibility tests for a subset of stories and gradually increasing the coverage. For example, a typical workflow might look like this:
+
+1. Run accessibility tests for your entire project.
+1. Find that many stories have accessibility issues (and maybe feel a bit overwhelmed!).
+1. Temporarily exclude all stories from accessibility tests.
+
+   ```ts title=".storybook/preview.ts"
+   // Replace your-renderer with the renderer you are using (e.g., react, vue3)
+   import { Preview } from '@storybook/your-renderer';
+   
+   const preview: Preview = {
+     // ...
+     // 👇 Temporarily remove the a11ytest tag from all stories
+     tags: ['!a11ytest'],
+   };
+  
+   export default preview;
+   ```
+
+1. Pick a good starting point (we recommend something like Button, for its simplicity and likelihood of being used within other components) and re-include it in the accessibility tests.
+
+   {/* prettier-ignore-start */}
+
+   <CodeSnippets path="addon-a11y-meta-tag.md" />
+
+   {/* prettier-ignore-end */}
+
+1. Pick another component and repeat the process until you've covered all your components and you're an accessibility hero!
 
 ### Override accessibility violation levels
 
@@ -140,23 +173,7 @@ By default, when the accessibility addon runs with the test addon enabled, it in
 
 {/* prettier-ignore-end */}
 
-In the example above, we configured all the `minor` or `moderate` accessibility violations to be considered warnings. All other levels (i.e., `serious` or `critical`) will continue to be considered errors, fail the test, and report the results accordingly in the Storybook UI or Vitest.
-
-### Configure accessibility tests with the test addon
-
-If you want to run accessibility tests only for a subset of your stories, you can use the [tags](../writing-stories/tags.mdx) mechanism to filter the tests you want to run with the test addon. For example, to turn off accessibility tests for a specific story, add the `!a11ytest` tag to the story's meta or directly to the story's `tags` configuration option. For example:
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="storybook-test-addon-disable-tests.md" />
-
-{/* prettier-ignore-end */}
-
-<Callout variant="info">
-
-  Tags can be applied at the project, component (meta), or story levels. Read our [documentation](../writing-stories/tags.mdx) for more information on configuring tags. 
- 
-</Callout>
+In the example above, we configured all the `minor` or `moderate` accessibility violations to be considered warnings. All other levels (i.e., `serious` or `critical`) will continue to be considered errors, fail the test, and report the results accordingly in the Storybook UI or CLI output.
 
 </If>
 

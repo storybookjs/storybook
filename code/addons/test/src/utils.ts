@@ -1,6 +1,5 @@
 import { type StorybookTheme, useTheme } from 'storybook/internal/theming';
-
-import type { StorybookConfig } from '@storybook/types';
+import type { StorybookConfig } from 'storybook/internal/types';
 
 import Filter from 'ansi-to-html';
 import stripAnsi from 'strip-ansi';

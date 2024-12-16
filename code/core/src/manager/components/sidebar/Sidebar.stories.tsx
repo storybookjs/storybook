@@ -111,7 +111,7 @@ const refs: Record<string, RefType> = {
     title: 'This is a ref',
     url: 'https://example.com',
     type: 'lazy',
-    index,
+    filteredIndex: index,
     previewInitialized: true,
   },
 };
@@ -123,7 +123,7 @@ const refsError = {
   optimized: {
     ...refs.optimized,
     // @ts-expect-error (non strict)
-    index: undefined as IndexHash,
+    filteredIndex: undefined as IndexHash,
     indexError,
   },
 };
@@ -132,7 +132,7 @@ const refsEmpty = {
   optimized: {
     ...refs.optimized,
     // type: 'auto-inject',
-    index: {} as IndexHash,
+    filteredIndex: {} as IndexHash,
   },
 };
 

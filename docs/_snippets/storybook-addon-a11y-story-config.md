@@ -28,7 +28,13 @@ export const ExampleStory: Story = {
           },
         ],
       },
+      // Axe's options parameter
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -60,7 +66,13 @@ export const ExampleStory = {
           },
         ],
       },
+      // Axe's options parameter
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -97,7 +109,13 @@ export const ExampleStory: Story = {
           },
         ],
       },
+      // Axe's options parameter
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -134,7 +152,13 @@ export const ExampleStory: Story = {
           },
         ],
       },
+      // Axe's options parameter
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -241,6 +265,11 @@ export const ExampleStory = {
         ],
       },
       options: {},
+    },
+  }}
+  globals={{
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   }}
@@ -277,7 +306,13 @@ export const ExampleStory: Story = {
           },
         ],
       },
+      // Axe's options parameter
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -315,6 +350,11 @@ export const ExampleStory: Story = {
         ],
       },
       options: {},
+    },
+  }}
+  globals={{
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   }}
@@ -351,7 +391,13 @@ export const ExampleStory: Story = {
           },
         ],
       },
+      // Axe's options parameter
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -383,7 +429,13 @@ export const ExampleStory = {
           },
         ],
       },
+      // Axe's options parameter
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -420,7 +472,13 @@ export const ExampleStory = {
           },
         ],
       },
+      // Axe's options parameter
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -457,7 +515,13 @@ export const ExampleStory = {
           },
         ],
       },
+      // Axe's options parameter
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -487,7 +551,13 @@ export const ExampleStory = {
           },
         ],
       },
+      // Axe's options parameter
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -522,7 +592,13 @@ export const ExampleStory: Story = {
           },
         ],
       },
+      // Axe's options parameter
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },

@@ -342,6 +342,7 @@ export const transformStoryIndexToStoriesHash = (
     .reduce(addItem, orphanHash);
 };
 
+/** Now we need to patch in the existing prepared stories */
 export const addPreparedStories = (newHash: API_IndexHash, oldHash?: API_IndexHash) => {
   if (!oldHash) {
     return newHash;

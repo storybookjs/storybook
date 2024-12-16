@@ -17,6 +17,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - name: Set node version
         uses: actions/setup-node@v4
         with:

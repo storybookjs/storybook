@@ -28,7 +28,7 @@ const statusMap: Record<TestStatus, API_StatusValue> = {
 addons.register(ADDON_ID, (api) => {
   const storybookBuilder = (globalThis as any).STORYBOOK_BUILDER || '';
   if (storybookBuilder.includes('vite')) {
-    const openAddonPanel = () => {
+    const openTestsPanel = () => {
       api.setSelectedPanel(PANEL_ID);
       api.togglePanel(true);
     };
@@ -94,9 +94,9 @@ addons.register(ADDON_ID, (api) => {
                           ? rest.failureMessages.join('\n')
                           : '',
                       data: { testRunId },
-                      onClick: openAddonPanel,
+                      onClick: openTestsPanel,
                       sidebarContextMenu: false,
-                    } as API_StatusObject,
+                    } satisfies API_StatusObject,
                   ])
               )
             )
@@ -108,12 +108,12 @@ addons.register(ADDON_ID, (api) => {
               update.details.testResults.flatMap((testResult) =>
                 testResult.results
                   .filter(({ storyId }) => storyId)
-                  .map(({ storyId, status, testRunId, reports, ...rest }) => {
+                  .map(({ storyId, testRunId, reports }) => {
                     const a11yReport = reports.find((r: any) => r.type === 'a11y');
                     return [
                       storyId,
                       a11yReport
-                        ? {
+                        ? ({
                             title: 'Accessibility tests',
                             description: '',
                             status: statusMap[a11yReport.status],
@@ -123,9 +123,9 @@ addons.register(ADDON_ID, (api) => {
                               api.togglePanel(true);
                             },
                             sidebarContextMenu: false,
-                          }
+                          } satisfies API_StatusObject)
                         : null,
-                    ] as const;
+                    ];
                   })
               )
             )

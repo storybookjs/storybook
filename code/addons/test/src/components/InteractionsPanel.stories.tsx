@@ -58,7 +58,6 @@ const meta = {
     endRef: null,
     // prop for the AddonPanel used as wrapper of Panel
     active: true,
-    storyId: 'story-id',
   },
 } as Meta<typeof InteractionsPanel>;
 

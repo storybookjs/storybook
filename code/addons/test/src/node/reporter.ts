@@ -27,7 +27,7 @@ export type TestResultResult =
       reports: Report[];
     }
   | {
-      status: Extract<TestStatus, 'failed'>;
+      status: Extract<TestStatus, 'failed' | 'warning'>;
       storyId: string;
       duration: number;
       testRunId: string;
@@ -39,7 +39,7 @@ export type TestResult = {
   results: TestResultResult[];
   startTime: number;
   endTime: number;
-  status: Extract<TestStatus, 'passed' | 'failed'>;
+  status: Extract<TestStatus, 'passed' | 'failed' | 'warning'>;
   message?: string;
 };
 
@@ -165,6 +165,11 @@ export class StorybookReporter implements Reporter {
         numTotalTests,
         startedAt: this.start,
         finishedAt,
+        percentageCompleted: finishedAt
+          ? 100
+          : numTotalTests
+            ? ((numPassedTests + numFailedTests) / numTotalTests) * 100
+            : 0,
       } as TestingModuleProgressReportProgress,
       details: {
         testResults,

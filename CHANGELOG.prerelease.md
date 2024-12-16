@@ -1,3 +1,12 @@
+## 8.5.0-alpha.23
+
+- Addon A11y: Add conditional rendering for a11y violation number in Testing Module - [#30073](https://github.com/storybookjs/storybook/pull/30073), thanks @valentinpalkovic!
+- Addon A11y: Remove warnings API - [#30049](https://github.com/storybookjs/storybook/pull/30049), thanks @kasperpeulen!
+- Addon A11y: Show errors of axe properly - [#30050](https://github.com/storybookjs/storybook/pull/30050), thanks @kasperpeulen!
+- Automigration: Improve setup file transformation and version range handling for a11y migration - [#30060](https://github.com/storybookjs/storybook/pull/30060), thanks @valentinpalkovic!
+- Next.js: Support v15.1.1 - [#30068](https://github.com/storybookjs/storybook/pull/30068), thanks @valentinpalkovic!
+- Telemetry: Add metadata distinguishing "apps" from "design systems" - [#30070](https://github.com/storybookjs/storybook/pull/30070), thanks @tmeasday!
+
 ## 8.5.0-alpha.22
 
 - Addon Docs: Dynamically import rehype - [#29544](https://github.com/storybookjs/storybook/pull/29544), thanks @valentinpalkovic!

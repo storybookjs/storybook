@@ -11,7 +11,7 @@ The `@storybook/core` package is the core of Storybook. It is responsible for th
 - static assets used by the browser
 - utilities for CSF, MDX & Docs
 
-## Private package
+## Private packages
 
 This package is not intended to be used by anyone but storybook internally.
 

@@ -13,7 +13,7 @@ import type {
   SvelteRenderer,
 } from '$lib/types.js';
 
-import Button from '../../examples/components/Button.svelte';
+import Button from '../examples/components/Button.svelte';
 
 describe(defineMeta.name, () => {
   it('works with provided meta entry "component" entry', () => {

@@ -4,7 +4,7 @@ import { describe, it } from 'vitest';
 import { transformLegacyStory } from './legacy-story.js';
 
 import type { SvelteAST } from '$lib/parser/ast.js';
-import { parseAndExtractSvelteNode } from '../../../../../tests/extractor.js';
+import { parseAndExtractSvelteNode } from '../../../../tests/extractor.js';
 
 describe(transformLegacyStory.name, () => {
   it("it moves 'autodocs' prop to 'tags' correctly", async ({ expect }) => {

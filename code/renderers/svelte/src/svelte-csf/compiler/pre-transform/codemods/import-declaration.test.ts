@@ -4,7 +4,7 @@ import { describe, it } from 'vitest';
 import { transformImportDeclaration } from './import-declaration.js';
 
 import type { ESTreeAST } from '$lib/parser/ast.js';
-import { parseAndExtractSvelteNode } from '../../../../../tests/extractor.js';
+import { parseAndExtractSvelteNode } from '../../../../tests/extractor.js';
 
 describe(transformImportDeclaration.name, () => {
   it("removes legacy components and add 'defineMeta'", async ({ expect }) => {

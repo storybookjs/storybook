@@ -5,7 +5,7 @@ import { describe, it } from 'vitest';
 import { transformExportMetaToDefineMeta } from './export-const-to-define-meta.js';
 
 import type { ESTreeAST } from '$lib/parser/ast.js';
-import { parseAndExtractSvelteNode } from '../../../../../tests/extractor.js';
+import { parseAndExtractSvelteNode } from '../../../../tests/extractor.js';
 
 describe(transformExportMetaToDefineMeta.name, () => {
   it('works with advanced example', async ({ expect }) => {

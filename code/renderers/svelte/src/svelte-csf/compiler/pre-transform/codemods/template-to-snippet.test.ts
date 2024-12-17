@@ -5,7 +5,7 @@ import { describe, it } from 'vitest';
 import { transformTemplateToSnippet } from './template-to-snippet.js';
 
 import type { SvelteAST } from '$lib/parser/ast.js';
-import { parseAndExtractSvelteNode } from '../../../../../tests/extractor.js';
+import { parseAndExtractSvelteNode } from '../../../../tests/extractor.js';
 
 describe(transformTemplateToSnippet.name, () => {
   it("covers a case without provided prop 'id'", async ({ expect }) => {

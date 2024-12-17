@@ -4,7 +4,7 @@ import { describe, expectTypeOf, it } from 'vitest';
 
 import type { Meta, SvelteRenderer, ComponentAnnotations } from '$lib/types.js';
 
-import Button from '../../examples/components/Button.svelte';
+import Button from '../examples/components/Button.svelte';
 
 describe('Meta', () => {
   it(`works correctly when no 'meta.component' entry provided`, () => {

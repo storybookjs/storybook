@@ -63,6 +63,20 @@ describe('prepareStory', () => {
       expect(tags).toEqual(['component-1', 'component-2', 'story']);
     });
 
+    it('component tags work if story are do not have tags', () => {
+      const { tags } = prepareStory(
+        { id, name, tags: [], moduleExport },
+        {
+          id,
+          title,
+          tags: ['component-1', 'component-2'],
+        },
+        { render }
+      );
+
+      expect(tags).toEqual(['component-1', 'component-2', 'story']);
+    });
+
     it('sets a value even if annotations do not have tags', () => {
       const { tags } = prepareStory({ id, name, moduleExport }, { id, title }, { render });
 

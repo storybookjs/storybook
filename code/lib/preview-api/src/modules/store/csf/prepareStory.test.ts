@@ -63,7 +63,7 @@ describe('prepareStory', () => {
       expect(tags).toEqual(['component-1', 'component-2', 'story']);
     });
 
-    it('component tags work if story are do not have tags', () => {
+    it('component tags work if story do not have tags', () => {
       const { tags } = prepareStory(
         { id, name, tags: [], moduleExport },
         {

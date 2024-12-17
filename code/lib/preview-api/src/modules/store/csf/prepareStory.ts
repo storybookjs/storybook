@@ -148,7 +148,7 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
   const tags = [];
 
   if (storyAnnotations?.tags?.length) {
-    tags.push(...storyAnnotations?.tags);
+    tags.push(...storyAnnotations.tags);
   } else if (componentAnnotations.tags?.length) {
     tags.push(...componentAnnotations.tags);
   }

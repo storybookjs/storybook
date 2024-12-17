@@ -141,7 +141,8 @@ describe('addonA11yAddonTest', () => {
       `;
       vi.mocked(readFileSync).mockReturnValue(source);
 
-      const transformedCode = transformSetupFile(setupFile);
+      const s = readFileSync(setupFile, 'utf8');
+      const transformedCode = transformSetupFile(s);
       expect(transformedCode).toMatchInlineSnapshot(`
         "import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
         import { beforeAll } from 'vitest';
@@ -169,7 +170,35 @@ describe('addonA11yAddonTest', () => {
       `;
       vi.mocked(readFileSync).mockReturnValue(source);
 
-      const transformedCode = transformSetupFile(setupFile);
+      const s = readFileSync(setupFile, 'utf8');
+      const transformedCode = transformSetupFile(s);
+      expect(transformedCode).toMatchInlineSnapshot(`
+        "import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
+        import { beforeAll } from 'vitest';
+        import { setProjectAnnotations } from 'storybook';
+        import * as projectAnnotations from './preview';
+
+        const project = setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);
+
+        beforeAll(project.beforeAll);"
+      `);
+    });
+
+    it('should transform setup file correctly - project annotation is not an array', () => {
+      const setupFile = '/path/to/vitest.setup.ts';
+      const source = dedent`
+        import { beforeAll } from 'vitest';
+        import { setProjectAnnotations } from 'storybook';
+        import * as projectAnnotations from './preview';
+
+        const project = setProjectAnnotations(projectAnnotations);
+
+        beforeAll(project.beforeAll);
+      `;
+      vi.mocked(readFileSync).mockReturnValue(source);
+
+      const s = readFileSync(setupFile, 'utf8');
+      const transformedCode = transformSetupFile(s);
       expect(transformedCode).toMatchInlineSnapshot(`
         "import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
         import { beforeAll } from 'vitest';

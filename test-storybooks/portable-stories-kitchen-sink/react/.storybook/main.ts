@@ -12,9 +12,21 @@ const config: StorybookConfig = {
     options: {},
   },
   core: {
-    disableWhatsNewNotifications: true
+    disableWhatsNewNotifications: true,
   },
-  previewHead: (head = '') => `${head}
+  viteFinal: (config) => ({
+    ...config,
+    optimizeDeps: {
+      ...config.optimizeDeps,
+      include: [
+        ...(config.optimizeDeps?.include || []),
+        "react-dom/test-utils",
+        "@storybook/react/**",
+        "@storybook/experimental-addon-test/preview",
+      ],
+    },
+  }),
+  previewHead: (head = "") => `${head}
   <style>
     body {
       border: 1px solid red;

@@ -1,3 +1,4 @@
+/* eslint-disable local-rules/no-uncategorized-errors */
 import { toId } from '@storybook/csf';
 
 import type { Expect, Page } from '@playwright/test';
@@ -61,6 +62,7 @@ export class SbPage {
     await this.expect(selected).toHaveAttribute('data-selected', 'true');
 
     await this.previewRoot();
+    await this.waitUntilLoaded();
   }
 
   async navigateToUnattachedDocs(title: string, name = 'docs') {
@@ -80,7 +82,25 @@ export class SbPage {
     const selected = storyLink;
     await this.expect(selected).toHaveAttribute('data-selected', 'true');
 
-    await this.previewRoot();
+    await this.waitForStoryLoaded();
+  }
+
+  async waitForStoryLoaded() {
+    try {
+      const root = this.previewRoot();
+      // Wait until there is at least one child (a story element) in the preview iframe
+      await root.locator(':scope > *').first().waitFor({
+        state: 'attached',
+        timeout: 10000,
+      });
+    } catch (error: any) {
+      if (error.name === 'TimeoutError') {
+        throw new Error(
+          'The Storybook iframe did not have children within the specified timeout. Did the story load correctly?'
+        );
+      }
+      throw error;
+    }
   }
 
   async waitUntilLoaded() {
@@ -112,6 +132,8 @@ export class SbPage {
     const storyLoadingPage = root.locator('.sb-preparing-story');
     await docsLoadingPage.waitFor({ state: 'hidden' });
     await storyLoadingPage.waitFor({ state: 'hidden' });
+
+    await this.waitForStoryLoaded();
   }
 
   previewIframe() {
@@ -142,6 +164,30 @@ export class SbPage {
 
   getCanvasBodyElement() {
     return this.previewIframe().locator('body');
+  }
+
+  // utility to try and decrease flake
+  async retryTimes(
+    fn: () => Promise<void>,
+    options?: {
+      retries?: number;
+      delay?: number;
+    }
+  ): Promise<void> {
+    let attempts = 0;
+    const { retries = 3, delay = 0 } = options || {};
+    while (attempts < retries) {
+      try {
+        await fn();
+        return;
+      } catch (error) {
+        attempts++;
+        if (attempts === retries) {
+          throw error;
+        }
+        await new Promise<void>((resolve) => setTimeout(resolve, delay));
+      }
+    }
   }
 }
 

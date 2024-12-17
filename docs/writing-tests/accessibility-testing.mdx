@@ -100,7 +100,7 @@ Customize the a11y ruleset at the story level by updating your story to include 
 <If renderer="svelte">
 
   If you are using Svelte CSF, you can turn off automated accessibility testing for stories or components by adding globals to your story or adjusting the `defineMeta` function with the required configuration. With a regular CSF story, you can add the following to your story's export or component's default export:
-  
+
 </If>
 
 <If notRenderer={['svelte']}>
@@ -143,13 +143,13 @@ You can use tags to progressively work toward a more accessible UI by enabling a
    ```ts title=".storybook/preview.ts"
    // Replace your-renderer with the renderer you are using (e.g., react, vue3)
    import { Preview } from '@storybook/your-renderer';
-   
+
    const preview: Preview = {
      // ...
      // 👇 Temporarily remove the a11ytest tag from all stories
      tags: ['!a11ytest'],
    };
-  
+
    export default preview;
    ```
 
@@ -162,18 +162,6 @@ You can use tags to progressively work toward a more accessible UI by enabling a
    {/* prettier-ignore-end */}
 
 1. Pick another component and repeat the process until you've covered all your components and you're an accessibility hero!
-
-### Override accessibility violation levels
-
-By default, when the accessibility addon runs with the test addon enabled, it interprets all violations as errors. This means that if a story has a minor accessibility violation, the test will fail. However, you can override this behavior by setting the `warnings` parameter in the `a11y` configuration object to define an array of impact levels that should be considered warnings.
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="storybook-addon-a11y-test-override-warning-levels.md" />
-
-{/* prettier-ignore-end */}
-
-In the example above, we configured all the `minor` or `moderate` accessibility violations to be considered warnings. All other levels (i.e., `serious` or `critical`) will continue to be considered errors, fail the test, and report the results accordingly in the Storybook UI or CLI output.
 
 </If>
 

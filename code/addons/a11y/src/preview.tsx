@@ -21,7 +21,6 @@ export const experimental_afterEach: AfterEach<any> = async ({
 }) => {
   const a11yParameter: A11yParameters | undefined = parameters.a11y;
   const a11yGlobals = globals.a11y;
-  const warnings = a11yParameter?.warnings ?? [];
 
   const shouldRunEnvironmentIndependent =
     a11yParameter?.manual !== true &&
@@ -38,15 +37,11 @@ export const experimental_afterEach: AfterEach<any> = async ({
       if (result) {
         const hasViolations = (result?.violations.length ?? 0) > 0;
 
-        const hasErrors = result?.violations.some(
-          (violation) => !warnings.includes(violation.impact!)
-        );
-
         reporting.addReport({
           type: 'a11y',
           version: 1,
           result: result,
-          status: hasErrors ? 'failed' : hasViolations ? 'warning' : 'passed',
+          status: hasViolations ? 'failed' : 'passed',
         });
 
         /**
@@ -58,7 +53,7 @@ export const experimental_afterEach: AfterEach<any> = async ({
          *   implement proper try catch handling.
          */
         if (getIsVitestStandaloneRun()) {
-          if (hasErrors) {
+          if (hasViolations) {
             // @ts-expect-error - todo - fix type extension of expect from @storybook/test
             expect(result).toHaveNoViolations();
           }

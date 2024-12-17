@@ -25,7 +25,7 @@ Coverage is included in the Test addon and, when enabled, will be calculated whe
 
 ![Screenshot of test module, expanded, showing coverage toggle](../_assets/writing-tests/addon-test-module-edit-coverage.png)
 
-Before coverage can be calculated, you may be prompted to install a support package corresponding to your [coverage provider](#coverage-provider):
+Before coverage can be calculated, you may need to install a support package corresponding to your [coverage provider](#coverage-provider):
 
 
 {/* prettier-ignore-start */}
@@ -192,7 +192,7 @@ When calculating coverage in the Storybook UI, the following options are always 
 
 #### Excluding stories from the coverage report
 
-Until Vitest 2.2.0 is released, the generated coverage report will include the stories files themselves. This is misleading and they should be excluded. To do this, you can add the following to your Vitest config:
+Until Vitest 3.0.0 is released, the generated coverage report will include the stories files themselves and output from your built Storybook application. This is misleading and they should be excluded. To do this, you can add the following to your Vitest config:
 
 ```ts title="vitest.config.ts"
 import { coverageConfigDefaults, defineConfig } from 'vitest/config';
@@ -205,7 +205,9 @@ export default defineConfig({
       exclude: [
          ...coverageConfigDefaults.exclude,
          // This pattern must align with the `stories` property of your `.storybook/main.ts` config
-         '**/*.stories.*', '**/*.story.*', '**/stories.*', '**/story.*'
+         '**/*.stories.*',
+         // This pattern must align with the output directory of `storybook build`
+         'storybook-static/**',
        ], 
     }
   }

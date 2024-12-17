@@ -114,6 +114,8 @@ export const TestProviderRender: FC<
     state.config || { a11y: false, coverage: false }
   );
 
+  const isStoryEntry = entryId?.includes('--') ?? false;
+
   const a11yResults = useMemo(() => {
     if (!isA11yAddon) {
       return [];
@@ -156,7 +158,7 @@ export const TestProviderRender: FC<
     (result) => result?.status === 'failed' || result?.status === 'warning'
   ).length;
 
-  const storyId = entryId?.includes('--') ? entryId : undefined;
+  const storyId = isStoryEntry ? entryId : undefined;
   const results = (state.details?.testResults || [])
     .flatMap((test) => {
       if (!entryId) {
@@ -314,7 +316,7 @@ export const TestProviderRender: FC<
                   aria-label={`status: ${coverageSummary.status}`}
                 />
               }
-              right={`${coverageSummary.percentage}%`}
+              right={coverageSummary.percentage ? `${coverageSummary.percentage}%` : null}
             />
           ) : (
             <ListItem
@@ -340,7 +342,7 @@ export const TestProviderRender: FC<
                   : null
               }
               icon={<TestStatusIcon status={a11yStatus} aria-label={`status: ${a11yStatus}`} />}
-              right={a11yNotPassedAmount || null}
+              right={isStoryEntry ? null : a11yNotPassedAmount || null}
             />
           )}
         </Extras>

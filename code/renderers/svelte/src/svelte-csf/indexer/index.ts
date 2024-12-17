@@ -1,15 +1,15 @@
 import type { IndexInput, Indexer } from '@storybook/types';
 
-import { parseForIndexer } from '#indexer/parser';
+import { parseForIndexer } from '$lib/indexer/parser.js';
 import {
   GetDefineMetaFirstArgumentError,
   IndexerParseError,
   MissingModuleTagError,
   NoStoryComponentDestructuredError,
-} from '#utils/error/parser/extract/svelte';
-import { LegacyTemplateNotEnabledError } from '#utils/error/legacy-api/index';
-import { NoDestructuredDefineMetaCallError } from '#utils/error/parser/analyse/define-meta';
-import { isStorybookSvelteCSFError } from '#utils/error';
+} from '$lib/utils/error/parser/extract/svelte.js';
+import { LegacyTemplateNotEnabledError } from '$lib/utils/error/legacy-api/index.js';
+import { NoDestructuredDefineMetaCallError } from '$lib/utils/error/parser/analyse/define-meta.js';
+import { isStorybookSvelteCSFError } from '$lib/utils/error.js';
 
 export const createIndexer = (legacyTemplate: boolean): Indexer => ({
   test: /\.svelte$/,

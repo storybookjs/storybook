@@ -1,9 +1,9 @@
 import { print } from 'esrap';
 import { describe, it } from 'vitest';
 
-import { createExportDefaultMeta } from './create-export-default';
+import { createExportDefaultMeta } from './create-export-default.js';
 
-import type { ESTreeAST } from '#parser/ast';
+import type { ESTreeAST } from '$lib/parser/ast.js';
 
 describe(createExportDefaultMeta.name, () => {
   it('creates a new export default correctly', ({ expect }) => {

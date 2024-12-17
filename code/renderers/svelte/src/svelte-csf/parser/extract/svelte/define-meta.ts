@@ -1,9 +1,9 @@
-import type { ESTreeAST } from '#parser/ast';
-import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
-import type { CompiledASTNodes } from '#parser/extract/compiled/nodes';
+import type { ESTreeAST } from '$lib/parser/ast.js';
+import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
+import type { CompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
 
-import { GetDefineMetaFirstArgumentError } from '#utils/error/parser/extract/svelte';
-import type { Cmp, Meta } from '#types';
+import { GetDefineMetaFirstArgumentError } from '$lib/utils/error/parser/extract/svelte.js';
+import type { Cmp, Meta } from '$lib/types.js';
 
 interface Options<Properties extends Array<keyof Meta<Cmp>>> {
   nodes: SvelteASTNodes | CompiledASTNodes;

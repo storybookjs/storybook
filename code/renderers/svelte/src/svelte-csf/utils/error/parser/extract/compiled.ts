@@ -1,7 +1,7 @@
 import dedent from 'dedent';
 
-import { StorybookSvelteCSFError } from '#utils/error';
-import type { extractStoriesNodesFromExportDefaultFn } from '#parser/extract/compiled/stories';
+import { StorybookSvelteCSFError } from '$lib/utils/error.js';
+import type { extractStoriesNodesFromExportDefaultFn } from '$lib/parser/extract/compiled/stories.js';
 
 export class MissingImportedDefineMetaError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractCompiled;

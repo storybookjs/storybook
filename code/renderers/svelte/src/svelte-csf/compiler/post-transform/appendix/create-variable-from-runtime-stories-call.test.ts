@@ -1,7 +1,7 @@
 import { print } from 'esrap';
 import { describe, it } from 'vitest';
 
-import { createVariableFromRuntimeStoriesCall } from './create-variable-from-runtime-stories-call';
+import { createVariableFromRuntimeStoriesCall } from './create-variable-from-runtime-stories-call.js';
 
 describe(createVariableFromRuntimeStoriesCall.name, () => {
   it('creates a variable correctly', ({ expect }) => {

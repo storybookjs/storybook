@@ -1,9 +1,9 @@
 import type { Visitors } from 'zimmerframe';
 
-import type { extractModuleNodes } from './module-nodes';
-import type { extractInstanceNodes } from './instance-nodes';
+import type { extractModuleNodes } from './module-nodes.js';
+import type { extractInstanceNodes } from './instance-nodes.js';
 
-import type { SvelteAST } from '#parser/ast';
+import type { SvelteAST } from '$lib/parser/ast.js';
 
 interface Result {
   storyComponents: Array<{

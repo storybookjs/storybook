@@ -1,4 +1,4 @@
-import type { ESTreeAST } from '#parser/ast';
+import type { ESTreeAST } from '$lib/parser/ast.js';
 
 /**
  * Codemod to transform AST node of `export const meta` export named declaration to `defineMeta` variable declaration.

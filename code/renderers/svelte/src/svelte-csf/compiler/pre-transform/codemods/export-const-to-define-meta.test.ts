@@ -2,10 +2,10 @@ import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' }
 import { print } from 'svelte-ast-print';
 import { describe, it } from 'vitest';
 
-import { transformExportMetaToDefineMeta } from './export-const-to-define-meta';
+import { transformExportMetaToDefineMeta } from './export-const-to-define-meta.js';
 
-import type { ESTreeAST } from '#parser/ast';
-import { parseAndExtractSvelteNode } from '#tests/extractor';
+import type { ESTreeAST } from '$lib/parser/ast.js';
+import { parseAndExtractSvelteNode } from '../../../../tests/extractor.js';
 
 describe(transformExportMetaToDefineMeta.name, () => {
   it('works with advanced example', async ({ expect }) => {

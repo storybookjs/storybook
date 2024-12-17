@@ -1,16 +1,16 @@
 import { print } from 'esrap';
 import MagicString from 'magic-string';
 
-import { createExportDefaultMeta } from './appendix/create-export-default';
-import { createExportOrderVariable } from './appendix/create-export-order';
-import { createRuntimeStoriesImport } from './appendix/create-import';
-import { createVariableFromRuntimeStoriesCall } from './appendix/create-variable-from-runtime-stories-call';
-import { createNamedExportStory } from './appendix/create-named-export-story';
+import { createExportDefaultMeta } from './appendix/create-export-default.js';
+import { createExportOrderVariable } from './appendix/create-export-order.js';
+import { createRuntimeStoriesImport } from './appendix/create-import.js';
+import { createVariableFromRuntimeStoriesCall } from './appendix/create-variable-from-runtime-stories-call.js';
+import { createNamedExportStory } from './appendix/create-named-export-story.js';
 
-import { getMetaIdentifier } from '#parser/analyse/define-meta/meta-identifier';
-import type { CompiledASTNodes } from '#parser/extract/compiled/nodes';
-import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
-import { getStoriesIdentifiers } from '#parser/analyse/story/attributes/identifiers';
+import { getMetaIdentifier } from '$lib/parser/analyse/define-meta/meta-identifier.js';
+import type { CompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
+import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
+import { getStoriesIdentifiers } from '$lib/parser/analyse/story/attributes/identifiers.js';
 
 interface Params {
   code: MagicString;

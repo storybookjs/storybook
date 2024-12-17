@@ -1,7 +1,7 @@
-import type { ESTreeAST } from '#parser/ast';
-import { extractDefineMetaPropertiesNodes } from '#parser/extract/svelte/define-meta';
-import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
-import { InvalidComponentValueError } from '#utils/error/parser/analyse/define-meta';
+import type { ESTreeAST } from '$lib/parser/ast.js';
+import { extractDefineMetaPropertiesNodes } from '$lib/parser/extract/svelte/define-meta.js';
+import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
+import { InvalidComponentValueError } from '$lib/utils/error/parser/analyse/define-meta.js';
 
 interface Params {
   nodes: SvelteASTNodes;

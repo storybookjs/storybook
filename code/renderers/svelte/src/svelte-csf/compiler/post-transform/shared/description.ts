@@ -1,9 +1,9 @@
 import { logger } from '@storybook/node-logger';
 import dedent from 'dedent';
 
-import type { ESTreeAST, SvelteAST } from '#parser/ast';
+import type { ESTreeAST, SvelteAST } from '$lib/parser/ast.js';
 
-import { createASTObjectExpression } from '#parser/ast';
+import { createASTObjectExpression } from '$lib/parser/ast.js';
 
 interface FindPropertyOptions {
   name: string;

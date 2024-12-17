@@ -2,7 +2,7 @@ import type { StoryContext } from '@storybook/types';
 import { createRawSnippet, type Component } from 'svelte';
 import { describe, expectTypeOf, it } from 'vitest';
 
-import type { Meta, SvelteRenderer, ComponentAnnotations } from '#types';
+import type { Meta, SvelteRenderer, ComponentAnnotations } from '$lib/types.js';
 
 import Button from '../examples/components/Button.svelte';
 

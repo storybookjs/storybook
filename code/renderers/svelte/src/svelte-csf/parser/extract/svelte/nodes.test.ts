@@ -1,8 +1,8 @@
 import { describe, it } from 'vitest';
 
-import { extractSvelteASTNodes } from './nodes';
+import { extractSvelteASTNodes } from './nodes.js';
 
-import { getSvelteAST } from '#parser/ast';
+import { getSvelteAST } from '$lib/parser/ast.js';
 
 describe(extractSvelteASTNodes.name, () => {
   it('works with a simple example', ({ expect }) => {

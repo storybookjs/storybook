@@ -1,8 +1,8 @@
 import type { Visitors } from 'zimmerframe';
 
-import type { extractModuleNodes } from './module-nodes';
+import type { extractModuleNodes } from './module-nodes.js';
 
-import type { ESTreeAST, SvelteAST } from '#parser/ast';
+import type { ESTreeAST, SvelteAST } from '$lib/parser/ast.js';
 
 interface Result {
   setTemplateCall: ESTreeAST.CallExpression | undefined;

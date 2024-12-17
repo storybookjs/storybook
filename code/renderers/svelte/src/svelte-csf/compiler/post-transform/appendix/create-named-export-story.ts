@@ -1,6 +1,6 @@
-import type { createVariableFromRuntimeStoriesCall } from './create-variable-from-runtime-stories-call';
+import type { createVariableFromRuntimeStoriesCall } from './create-variable-from-runtime-stories-call.js';
 
-import type { ESTreeAST } from '#parser/ast';
+import type { ESTreeAST } from '$lib/parser/ast.js';
 
 interface Params {
   exportName: string;

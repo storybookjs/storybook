@@ -1,11 +1,11 @@
 import { describe, it } from 'vitest';
 
-import { getArrayOfStringsValueFromAttribute, getStringValueFromAttribute } from './attributes';
+import { getArrayOfStringsValueFromAttribute, getStringValueFromAttribute } from './attributes.js';
 
-import { getSvelteAST } from '#parser/ast';
-import { extractSvelteASTNodes } from '#parser/extract/svelte/nodes';
-import { extractStoryAttributesNodes } from '#parser/extract/svelte/story/attributes';
-import { StorybookSvelteCSFError } from '#utils/error';
+import { getSvelteAST } from '$lib/parser/ast.js';
+import { extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
+import { extractStoryAttributesNodes } from '$lib/parser/extract/svelte/story/attributes.js';
+import { StorybookSvelteCSFError } from '$lib/utils/error.js';
 
 describe(getStringValueFromAttribute.name, () => {
   it("throws error when a `<Story />` 'name' attribute value is not a string", async ({

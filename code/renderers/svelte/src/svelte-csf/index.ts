@@ -12,7 +12,7 @@ import type {
   StoryContext as BaseStoryContext,
   StoryAnnotations,
   Cmp,
-} from './types';
+} from './types.js';
 
 export function defineMeta<const TCmp extends Cmp>(meta: MetaType<TCmp>) {
   return {

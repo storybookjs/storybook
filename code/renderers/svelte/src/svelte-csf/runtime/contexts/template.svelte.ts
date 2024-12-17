@@ -2,7 +2,7 @@ import { getContext, hasContext, setContext, type ComponentProps } from 'svelte'
 
 import type Story from '../Story.svelte';
 
-import type { Cmp } from '../../types';
+import type { Cmp } from '../../types.js';
 
 const CONTEXT_KEYS = 'storybook-stories-template-snippet-context';
 

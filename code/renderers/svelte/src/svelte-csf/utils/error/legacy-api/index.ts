@@ -36,8 +36,9 @@ export class LegacyTemplateNotEnabledError extends StorybookSvelteCSFError {
   readonly code = 2;
   public documentation = true;
 
-  constructor(filename?: string) {
+  constructor(filename?: string, options?: ConstructorParameters<typeof Error>[1]) {
     super({ filename });
+    this.cause = options?.cause;
   }
 
   template(): string {

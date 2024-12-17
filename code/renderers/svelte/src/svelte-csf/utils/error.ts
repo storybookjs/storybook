@@ -10,6 +10,7 @@ import type { SvelteAST } from '$lib/parser/ast.js';
  * and modified for this addon needs.
  */
 export abstract class StorybookSvelteCSFError extends Error {
+  public static isStorybookCSFSvelteError = true;
   public static packageName = pkg.name;
   public static packageVersion = pkg.version;
 
@@ -80,7 +81,7 @@ export abstract class StorybookSvelteCSFError extends Error {
    * Generates the error message along with additional documentation link (if applicable).
    */
   get message() {
-    if(this.customMessage) {
+    if (this.customMessage) {
       return this.customMessage;
     }
 
@@ -115,15 +116,18 @@ export abstract class StorybookSvelteCSFError extends Error {
    */
   readonly component?: SvelteAST.Component;
 
-  constructor({
-    filename,
-    component: component,
-  }: {
-    filename?: StorybookSvelteCSFError['filename'];
-    component?: StorybookSvelteCSFError['component'];
-  }) {
+  constructor(
+    {
+      filename,
+      component: component,
+    }: {
+      filename?: StorybookSvelteCSFError['filename'];
+      component?: StorybookSvelteCSFError['component'];
+    },
+    options?: ConstructorParameters<typeof Error>[1]
+  ) {
     super();
-
+    this.cause = options?.cause;
     this.filename = filename;
     this.component = component;
   }
@@ -177,4 +181,12 @@ export abstract class StorybookSvelteCSFError extends Error {
   public get quickStoryRawCodeIdentifier() {
     return `<Story name="${this.storyNameFromAttribute}" />`;
   }
+}
+
+// WARN: We can't use `instanceof StorybookSvelteCSFError`, because is an _abstract_ class
+export function isStorybookSvelteCSFError(error: unknown): error is StorybookSvelteCSFError {
+  return Boolean(
+    (Object.getPrototypeOf(error)?.constructor as typeof StorybookSvelteCSFError)
+      ?.isStorybookCSFSvelteError
+  );
 }

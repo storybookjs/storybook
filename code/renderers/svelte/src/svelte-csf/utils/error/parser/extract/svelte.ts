@@ -218,8 +218,8 @@ export class IndexerParseError extends StorybookSvelteCSFError {
   readonly code = 9;
   public documentation = true;
 
-  constructor() {
-    super({});
+  constructor(options?: ConstructorParameters<typeof Error>[1]) {
+    super({}, options);
   }
 
   template() {

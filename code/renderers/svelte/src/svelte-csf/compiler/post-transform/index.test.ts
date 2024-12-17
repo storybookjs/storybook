@@ -16,11 +16,11 @@ const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
 describe(transformStoriesCode.name, () => {
   it('transformed code matches inlined snapshot', async ({ expect }) => {
-    const filename = path.resolve(__dirname, '../../../../tests/stories/Example.stories.svelte');
+    const filename = path.resolve(__dirname, '../../../tests/stories/Example.stories.svelte');
     const originalCode = fs.readFileSync(filename).toString();
     const compiledPreTransformCode = fs
       .readFileSync(
-        path.resolve(__dirname, '../../../../tests/__compiled__/pre-transform/Example.stories.dev.js')
+        path.resolve(__dirname, '../../../tests/__compiled__/pre-transform/Example.stories.dev.js')
       )
       .toString();
     const svelteAST = getSvelteAST({ code: originalCode, filename });

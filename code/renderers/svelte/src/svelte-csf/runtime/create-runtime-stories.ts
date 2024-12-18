@@ -1,5 +1,4 @@
 /* eslint-env browser */
-import { logger } from '@storybook/client-logger';
 import type { StoryObj } from '@storybook/svelte';
 import { mount, unmount, type Component } from 'svelte';
 
@@ -42,7 +41,7 @@ export const createRuntimeStories = (Stories: Component, meta: Meta<Cmp>) => {
 
     unmount(context);
   } catch (e: any) {
-    logger.error(`Error in mounting stories ${e.toString()}`, e);
+    console.error(`Error in mounting stories ${e.toString()}`, e);
   }
 
   const stories: Record<string, StoryObj<typeof StoryRenderer>> = {};

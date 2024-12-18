@@ -51,3 +51,13 @@
 <Story name="Square" source args={{ rounded: false }}>
   {'Test'}
 </Story>
+
+<Story
+  name="TemplateLiterals"
+  source={`
+    <LegacyStory rounded={false} />
+  `}
+  args={{ rounded: false }}
+>
+  {'Test'}
+</Story>

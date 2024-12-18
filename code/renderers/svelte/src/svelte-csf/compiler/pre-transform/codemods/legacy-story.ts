@@ -222,8 +222,14 @@ function getSourceValue(attribute: SvelteAST.Attribute): string | undefined {
     return;
   }
 
-  if (!Array.isArray(value) && value.expression.type === 'Literal') {
-    return value.expression.value as string;
+  if (!Array.isArray(value)) {
+    if (value.expression.type === 'Literal' && typeof value.expression.value === 'string') {
+      return value.expression.value;
+    }
+
+    if (value.expression.type === 'TemplateLiteral') {
+      return value.expression.quasis.map((q) => q.value.cooked).join('');
+    }
   }
 
   if (value[0].type === 'Text') {

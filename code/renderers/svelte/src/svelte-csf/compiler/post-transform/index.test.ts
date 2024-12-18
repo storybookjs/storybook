@@ -69,7 +69,7 @@ describe(transformStoriesCode.name, () => {
        * * _Italic_,
        * * \`Code\`.
        */
-      const { Story, meta } = defineMeta({
+      const meta = {
       	title: 'Example',
       	component: Example,
       	tags: ['autodocs'],
@@ -85,7 +85,8 @@ describe(transformStoriesCode.name, () => {
       			}
       		}
       	}
-      });
+      };
+      const { Story } = defineMeta(meta);
 
       function Example_stories($$anchor, $$props) {
         $.check_target(new.target);

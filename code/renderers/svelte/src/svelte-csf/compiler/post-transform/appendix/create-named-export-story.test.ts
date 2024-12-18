@@ -12,10 +12,6 @@ describe(createNamedExportStory.name, () => {
       createNamedExportStory({
         exportName: 'Default',
         node: createVariableFromRuntimeStoriesCall({
-          metaIdentifier: {
-            type: 'Identifier',
-            name: 'meta',
-          },
           storiesFunctionDeclaration: {
             type: 'FunctionDeclaration',
             id: {

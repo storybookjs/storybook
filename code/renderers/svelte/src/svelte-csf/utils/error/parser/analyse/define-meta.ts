@@ -35,17 +35,17 @@ export class NoDestructuredDefineMetaCallError extends StorybookSvelteCSFError {
   readonly code = 2;
   public documentation = true;
 
-  public defineMetaVariableDeclarator: ESTreeAST.VariableDeclarator;
+  public node: ESTreeAST.VariableDeclarator;
 
   constructor({
     filename,
     defineMetaVariableDeclarator,
   }: {
     filename: StorybookSvelteCSFError['filename'];
-    defineMetaVariableDeclarator: NoDestructuredDefineMetaCallError['defineMetaVariableDeclarator'];
+    defineMetaVariableDeclarator: NoDestructuredDefineMetaCallError['node'];
   }) {
     super({ filename });
-    this.defineMetaVariableDeclarator = defineMetaVariableDeclarator;
+    this.node = defineMetaVariableDeclarator;
   }
 
   template(): string {
@@ -53,31 +53,14 @@ export class NoDestructuredDefineMetaCallError extends StorybookSvelteCSFError {
       The return value of the 'defineMeta' call was not destructured to { Story }.
       The issue occurred in Stories file: ${this.filepathURL}
 
-      The current pattern type is: "${this.defineMetaVariableDeclarator.id.type}", and expected is "ObjectPattern".
-    `;
-  }
-}
-
-export class NoMetaIdentifierFoundError extends StorybookSvelteCSFError {
-  readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseDefineMeta;
-  readonly code = 3;
-  public documentation = true;
-
-  constructor(filename: StorybookSvelteCSFError['filename']) {
-    super({ filename });
-  }
-
-  template(): string {
-    return dedent`
-			Could not find 'meta' identifier in the compiled output of stories file: ${this.filepathURL}
-      This is most likely a bug in @storybook/addon-svelte-csf. Please open an issue on GitHub.
+      The current pattern type is: "${this.node.id.type}", and expected is "ObjectPattern".
     `;
   }
 }
 
 export class NoStringLiteralError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseDefineMeta;
-  readonly code = 4;
+  readonly code = 3;
   public documentation = true;
 
   readonly property: ESTreeAST.Property;
@@ -105,7 +88,7 @@ export class NoStringLiteralError extends StorybookSvelteCSFError {
 
 export class NoArrayExpressionError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseDefineMeta;
-  readonly code = 5;
+  readonly code = 4;
   public documentation = true;
 
   readonly property: ESTreeAST.Property;
@@ -133,7 +116,7 @@ export class NoArrayExpressionError extends StorybookSvelteCSFError {
 
 export class ArrayElementNotStringError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseDefineMeta;
-  readonly code = 6;
+  readonly code = 5;
   public documentation = true;
 
   readonly property: ESTreeAST.Property;

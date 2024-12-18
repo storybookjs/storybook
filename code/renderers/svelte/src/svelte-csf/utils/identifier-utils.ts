@@ -54,3 +54,23 @@ export const isValidVariableName = (str: string) => {
 
   return true;
 };
+
+/**
+ * Function to convert a non valid string template name to a valid identifier preventing
+ * clashing with other templates with similar names.
+ *
+ * Stolen with 🧡 from the svelte codebase by @paoloricciuti
+ *
+ * @param str the template name
+ * @returns a hash based on the content of the initial string which is a valid identifier
+ */
+export function hashTemplateName(str: string) {
+  if (isValidVariableName(str)) return str;
+
+  str = str.replace(/\r/g, '');
+  let hash = 5381;
+  let i = str.length;
+
+  while (i--) hash = ((hash << 5) - hash) ^ str.charCodeAt(i);
+  return `template_${(hash >>> 0).toString(36)}`;
+}

@@ -7246,6 +7246,7 @@ __metadata:
     ts-dedent: "npm:^2.2.0"
     typescript: "npm:^5.3.2"
     vite: "npm:^4.0.0"
+    vite-plugin-svelte-docgen: "https://pkg.pr.new/svelte-docgen/svelte-docgen/vite-plugin-svelte-docgen@14"
   peerDependencies:
     "@sveltejs/vite-plugin-svelte": ^2.0.0 || ^3.0.0 || ^4.0.0 || ^5.0.0
     storybook: "workspace:^"
@@ -7485,6 +7486,20 @@ __metadata:
     storybook: "workspace:^"
   languageName: unknown
   linkType: soft
+
+"@svelte-docgen/extractor@https://pkg.pr.new/svelte-docgen/svelte-docgen/@svelte-docgen/extractor@f15b7265e7356aec575d48782f695f9db5579c28":
+  version: 0.1.1
+  resolution: "@svelte-docgen/extractor@https://pkg.pr.new/svelte-docgen/svelte-docgen/@svelte-docgen/extractor@f15b7265e7356aec575d48782f695f9db5579c28"
+  dependencies:
+    "@types/estree": "npm:^1.0.6"
+    svelte2tsx: "npm:^0.7.26"
+    zimmerframe: "npm:^1.1.2"
+  peerDependencies:
+    svelte: ^5.3.0
+    typescript: ^5.7.0
+  checksum: 10c0/13a6fa311b8a3635048bb60025f69b86a7be4da65b8bf9fc6770163a92d521cc225aca73790de5938f45bed42182dda79c842280dab34c8e1e72597e7661dc19
+  languageName: node
+  linkType: hard
 
 "@sveltejs/vite-plugin-svelte-inspector@npm:^3.0.0-next.0||^3.0.0":
   version: 3.0.0
@@ -8020,6 +8035,13 @@ __metadata:
   version: 0.0.51
   resolution: "@types/estree@npm:0.0.51"
   checksum: 10c0/a70c60d5e634e752fcd45b58c9c046ef22ad59ede4bc93ad5193c7e3b736ebd6bcd788ade59d9c3b7da6eeb0939235f011d4c59bb4fc04d8c346b76035099dd1
+  languageName: node
+  linkType: hard
+
+"@types/estree@npm:^1.0.6":
+  version: 1.0.6
+  resolution: "@types/estree@npm:1.0.6"
+  checksum: 10c0/cdfd751f6f9065442cd40957c07fd80361c962869aa853c1c2fd03e101af8b9389d8ff4955a43a6fcfa223dd387a089937f95be0f3eec21ca527039fd2d9859a
   languageName: node
   linkType: hard
 
@@ -8872,6 +8894,13 @@ __metadata:
   version: 7.18.0
   resolution: "@typescript-eslint/types@npm:7.18.0"
   checksum: 10c0/eb7371ac55ca77db8e59ba0310b41a74523f17e06f485a0ef819491bc3dd8909bb930120ff7d30aaf54e888167e0005aa1337011f3663dc90fb19203ce478054
+  languageName: node
+  linkType: hard
+
+"@typescript-eslint/types@npm:^8.2.0":
+  version: 8.18.1
+  resolution: "@typescript-eslint/types@npm:8.18.1"
+  checksum: 10c0/0a2ca5f7cdebcc844b6bc1e5afc5d83b563f55917d20e3fea3a17ed39c54b003178e26b5ec535113f45c93c569b46628d9a67defa70c01cbdfa801573fed69a2
   languageName: node
   linkType: hard
 
@@ -15150,6 +15179,16 @@ __metadata:
     "@jridgewell/sourcemap-codec": "npm:^1.4.15"
     "@types/estree": "npm:^1.0.1"
   checksum: 10c0/a3a0b665c034f604a162b910346309c64c42635c5d2e8704a27afcdf4e6d4c529e05475d1875d6b3e0d550f8470986116414097230ab3a7c565b85091ca5e177
+  languageName: node
+  linkType: hard
+
+"esrap@npm:^1.2.3":
+  version: 1.3.1
+  resolution: "esrap@npm:1.3.1"
+  dependencies:
+    "@jridgewell/sourcemap-codec": "npm:^1.4.15"
+    "@typescript-eslint/types": "npm:^8.2.0"
+  checksum: 10c0/00656c5b0b4036332344cc2aad11c6207e72ec30071abc6e6a33799da0efcde7879e28045a00347418b544ca23ceca7d86dc4fb1687fde86090ad134f7574dd4
   languageName: node
   linkType: hard
 
@@ -27235,6 +27274,19 @@ __metadata:
   languageName: node
   linkType: hard
 
+"svelte-docgen@https://pkg.pr.new/svelte-docgen/svelte-docgen/svelte-docgen@f15b7265e7356aec575d48782f695f9db5579c28":
+  version: 0.2.0
+  resolution: "svelte-docgen@https://pkg.pr.new/svelte-docgen/svelte-docgen/svelte-docgen@f15b7265e7356aec575d48782f695f9db5579c28"
+  dependencies:
+    "@svelte-docgen/extractor": "https://pkg.pr.new/svelte-docgen/svelte-docgen/@svelte-docgen/extractor@f15b7265e7356aec575d48782f695f9db5579c28"
+    valibot: "npm:1.0.0-beta.9"
+  peerDependencies:
+    svelte: ^5.3.0
+    typescript: ^5.7.0
+  checksum: 10c0/04c4de8618de227ee93d56ffb04c6b712e2272dbbd0e58248468eef2c39a3ee7164ae8e20ae73899ae0e0bcf3a3bf874b4ba0cd869ba886d079e1859bb565e42
+  languageName: node
+  linkType: hard
+
 "svelte-hmr@npm:^0.14.2":
   version: 0.14.12
   resolution: "svelte-hmr@npm:0.14.12"
@@ -27313,6 +27365,19 @@ __metadata:
     svelte: ^3.55 || ^4.0.0-next.0 || ^4.0 || ^5.0.0-next.0
     typescript: ^4.9.4 || ^5.0.0
   checksum: 10c0/a6df2873e551d116bae8b4664b1838a52c6aa50ad50e30e41611e8bf390c525ceb97b53d034f2e0030a640e157e1f88ac33d52b6e4abb54861b3fc120aae82f7
+  languageName: node
+  linkType: hard
+
+"svelte2tsx@npm:^0.7.26":
+  version: 0.7.31
+  resolution: "svelte2tsx@npm:0.7.31"
+  dependencies:
+    dedent-js: "npm:^1.0.1"
+    pascal-case: "npm:^3.1.1"
+  peerDependencies:
+    svelte: ^3.55 || ^4.0.0-next.0 || ^4.0 || ^5.0.0-next.0
+    typescript: ^4.9.4 || ^5.0.0
+  checksum: 10c0/0649afd2b701ee927ffc52084c48e50e7ff6a3b6c776e58b47677ebf37758ac8291aa651b4c10611ca947c676c3a73588b87d04b130814361afc8b4c4767e1dc
   languageName: node
   linkType: hard
 
@@ -28959,6 +29024,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"valibot@npm:1.0.0-beta.9":
+  version: 1.0.0-beta.9
+  resolution: "valibot@npm:1.0.0-beta.9"
+  peerDependencies:
+    typescript: ">=5"
+  peerDependenciesMeta:
+    typescript:
+      optional: true
+  checksum: 10c0/ecd20ec024f5f05985002b385f624d9218c839a54c23f3dbf3e193161207c049859d99069b257334756b3a07e2734e93456061600dd1101aec121828df3ab286
+  languageName: node
+  linkType: hard
+
 "validate-npm-package-license@npm:^3.0.4":
   version: 3.0.4
   resolution: "validate-npm-package-license@npm:3.0.4"
@@ -29129,6 +29206,21 @@ __metadata:
     sharp:
       optional: true
   checksum: 10c0/02761e1074e62a46b30fc5e13b1c7a3bf6047a5736ac17de8e33376a6cff2b1118a48a95d195ddfd37b1e7a55f6eb3385677da9b4d713189c2b68b9f9843906d
+  languageName: node
+  linkType: hard
+
+"vite-plugin-svelte-docgen@https://pkg.pr.new/svelte-docgen/svelte-docgen/vite-plugin-svelte-docgen@14":
+  version: 0.1.0
+  resolution: "vite-plugin-svelte-docgen@https://pkg.pr.new/svelte-docgen/svelte-docgen/vite-plugin-svelte-docgen@14"
+  dependencies:
+    esrap: "npm:^1.2.3"
+    svelte-docgen: "https://pkg.pr.new/svelte-docgen/svelte-docgen/svelte-docgen@f15b7265e7356aec575d48782f695f9db5579c28"
+    zimmerframe: "npm:^1.1.2"
+  peerDependencies:
+    svelte: ^5.3.0
+    typescript: ^5.7.0
+    vite: ^6.0.0
+  checksum: 10c0/8d7f07f3df73fc913bff7b0df3de7265419095afd49c03f16241d4ba412217a05d84462395927cf5df3402a632e74eb0749f008ffc39305230f135ad6e8e7f8c
   languageName: node
   linkType: hard
 

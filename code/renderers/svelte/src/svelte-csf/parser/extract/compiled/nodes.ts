@@ -2,15 +2,15 @@ import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' }
 import type { ProgramNode } from 'rollup';
 import type { Visitors } from 'zimmerframe';
 
-import type { ESTreeAST } from '#parser/ast';
+import type { ESTreeAST } from '$lib/parser/ast.js';
 import {
   MissingDefineMetaVariableDeclarationError,
   MissingImportedDefineMetaError,
   NoExportDefaultError,
   NoStoriesFunctionDeclarationError,
   NoStoryIdentifierFoundError,
-} from '#utils/error/parser/extract/compiled';
-import { DefaultOrNamespaceImportUsedError } from '#utils/error/parser/extract/svelte';
+} from '$lib/utils/error/parser/extract/compiled.js';
+import { DefaultOrNamespaceImportUsedError } from '$lib/utils/error/parser/extract/svelte.js';
 
 /**
  * Important AST nodes from the compiled output of a single `*.stories.svelte` file.

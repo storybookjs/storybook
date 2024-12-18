@@ -2,11 +2,11 @@ import { print } from 'esrap';
 import type MagicString from 'magic-string';
 
 import { replaceDefineMetaArgument } from './replace-argument';
-import { insertDefineMetaJSDocCommentAsDescription } from './insert-description';
+import { insertDefineMetaJSDocCommentAsDescription } from './insert-description.js';
 
-import { createASTIdentifier, type ESTreeAST } from '../../../parser/ast';
-import type { CompiledASTNodes } from '../../../parser/extract/compiled/nodes';
-import type { SvelteASTNodes } from '../../../parser/extract/svelte/nodes';
+import { createASTIdentifier, type ESTreeAST } from '$lib/parser/ast.js';
+import type { CompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
+import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
 
 interface Params {
   code: MagicString;

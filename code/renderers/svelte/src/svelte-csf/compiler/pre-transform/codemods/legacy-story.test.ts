@@ -1,10 +1,10 @@
 import { print } from 'svelte-ast-print';
 import { describe, it } from 'vitest';
 
-import { transformLegacyStory } from './legacy-story';
+import { transformLegacyStory } from './legacy-story.js';
 
-import type { SvelteAST } from '#parser/ast';
-import { parseAndExtractSvelteNode } from '#tests/extractor';
+import type { SvelteAST } from '$lib/parser/ast.js';
+import { parseAndExtractSvelteNode } from '../../../../tests/extractor.js';
 
 describe(transformLegacyStory.name, () => {
   it("it moves 'autodocs' prop to 'tags' correctly", async ({ expect }) => {
@@ -280,9 +280,7 @@ describe(transformLegacyStory.name, () => {
     `);
   });
 
-  it("leaves existing Story parameters untouched", async ({
-    expect,
-  }) => {
+  it('leaves existing Story parameters untouched', async ({ expect }) => {
     const code = `
       <script context="module">
         import { Story } from "@storybook/addon-svelte-csf";
@@ -329,6 +327,41 @@ describe(transformLegacyStory.name, () => {
       			updated: true
       		}
       	}
+      }}>
+      	<h1>{"Test"}</h1>
+      </Story>"
+    `);
+  });
+
+  it('legacy `source` prop with template literal value is supported _(moved to parameters)_', async ({
+    expect,
+  }) => {
+    const code = `
+      <script context="module">
+        import { Story } from "@storybook/addon-svelte-csf";
+      </script>
+
+      <Story
+        name="Default"
+        source={\`
+          <Foo bar />
+        \`}
+      >
+        <h1>{"Test"}</h1>
+      </Story>
+    `;
+    const component = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
+
+    expect(
+      print(
+        transformLegacyStory({
+          component,
+          state: { componentIdentifierName: {} },
+        })
+      )
+    ).toMatchInlineSnapshot(`
+      "<Story name="Default" parameters={{
+      	docs: { source: { code: "\\n    <Foo bar />\\n  " } }
       }}>
       	<h1>{"Test"}</h1>
       </Story>"

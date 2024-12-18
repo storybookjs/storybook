@@ -1,8 +1,8 @@
 import dedent from 'dedent';
 
-import type { SvelteAST } from '#parser/ast';
-import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
-import { StorybookSvelteCSFError } from '#utils/error';
+import type { SvelteAST } from '$lib/parser/ast.js';
+import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
+import { StorybookSvelteCSFError } from '$lib/utils/error.js';
 
 const BASE_INITIAL_SNIPPET = dedent`
 <script module>
@@ -218,8 +218,8 @@ export class IndexerParseError extends StorybookSvelteCSFError {
   readonly code = 9;
   public documentation = true;
 
-  constructor() {
-    super({});
+  constructor(options?: ConstructorParameters<typeof Error>[1]) {
+    super({}, options);
   }
 
   template() {

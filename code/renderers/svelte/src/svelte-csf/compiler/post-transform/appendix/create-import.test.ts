@@ -1,7 +1,7 @@
 import { print } from 'esrap';
 import { describe, it } from 'vitest';
 
-import { createRuntimeStoriesImport } from './create-import';
+import { createRuntimeStoriesImport } from './create-import.js';
 
 describe(createRuntimeStoriesImport.name, () => {
   it('creates import correctly', ({ expect }) => {

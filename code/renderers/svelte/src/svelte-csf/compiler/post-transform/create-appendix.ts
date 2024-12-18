@@ -1,15 +1,15 @@
 import { print } from 'esrap';
 import MagicString from 'magic-string';
 
-import { createExportOrderVariable } from './appendix/create-export-order';
-import { createRuntimeStoriesImport } from './appendix/create-import';
-import { createVariableFromRuntimeStoriesCall } from './appendix/create-variable-from-runtime-stories-call';
-import { createNamedExportStory } from './appendix/create-named-export-story';
+import { createExportOrderVariable } from './appendix/create-export-order.js';
+import { createRuntimeStoriesImport } from './appendix/create-import.js';
+import { createVariableFromRuntimeStoriesCall } from './appendix/create-variable-from-runtime-stories-call.js';
+import { createNamedExportStory } from './appendix/create-named-export-story.js';
 
-import { createASTIdentifier, type ESTreeAST } from '../../parser/ast';
-import { getStoriesIdentifiers } from '../../parser/analyse/story/attributes/identifiers';
-import type { CompiledASTNodes } from '../../parser/extract/compiled/nodes';
-import type { SvelteASTNodes } from '../../parser/extract/svelte/nodes';
+import { createASTIdentifier, type ESTreeAST } from '$lib/parser/ast.js';
+import { getStoriesIdentifiers } from '$lib/parser/analyse/story/attributes/identifiers.js';
+import type { CompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
+import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
 
 interface Params {
   code: MagicString;

@@ -1,4 +1,4 @@
-import { createASTIdentifier, type ESTreeAST } from '#parser/ast';
+import { createASTIdentifier, type ESTreeAST } from '$lib/parser/ast.js';
 
 interface Params {
   storiesFunctionDeclaration: ESTreeAST.FunctionDeclaration;

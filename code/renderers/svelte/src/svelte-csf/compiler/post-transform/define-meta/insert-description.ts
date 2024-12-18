@@ -8,11 +8,11 @@ import {
   getDescriptionPropertyValue,
   getDocsPropertyValue,
   getParametersPropertyValue,
-} from '#compiler/post-transform/shared/description';
-import { createASTObjectExpression, createASTProperty, type ESTreeAST } from '#parser/ast';
-import type { SvelteASTNodes } from '#parser/extract/svelte/nodes';
-import type { CompiledASTNodes } from '#parser/extract/compiled/nodes';
-import { getDefineMetaFirstArgumentObjectExpression } from '#parser/extract/svelte/define-meta';
+} from '$lib/compiler/post-transform/shared/description.js';
+import { createASTObjectExpression, createASTProperty, type ESTreeAST } from '$lib/parser/ast.js';
+import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
+import type { CompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
+import { getDefineMetaFirstArgumentObjectExpression } from '$lib/parser/extract/svelte/define-meta.js';
 
 interface Params {
   nodes: {

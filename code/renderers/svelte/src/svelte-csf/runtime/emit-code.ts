@@ -6,7 +6,7 @@ import type { ComponentProps } from 'svelte';
 
 import type Story from './Story.svelte';
 
-import type { Cmp, StoryContext } from '../types';
+import type { Cmp, StoryContext } from '../types.js';
 
 type Params = {
   args: ComponentProps<Story<Cmp>>['args'];

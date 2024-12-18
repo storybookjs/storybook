@@ -5,13 +5,13 @@ import { describe, expectTypeOf, it } from 'vitest';
 
 import StoryComponent from './runtime/Story.svelte';
 
-import { defineMeta, type Args, type StoryContext } from './index';
+import { defineMeta, type Args, type StoryContext } from './index.js';
 import type {
   Meta,
   StoryAnnotations,
   StoryContext as BaseStoryContext,
   SvelteRenderer,
-} from '#types';
+} from '$lib/types.js';
 
 import Button from '../examples/components/Button.svelte';
 

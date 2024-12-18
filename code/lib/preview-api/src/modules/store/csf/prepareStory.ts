@@ -145,7 +145,10 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
   // anything at render time. The assumption is that as we don't load all the stories at once, this
   // will have a limited cost. If this proves misguided, we can refactor it.
 
-  const tags = [...(storyAnnotations?.tags || componentAnnotations.tags || []), 'story'];
+  const tags = [
+    ...(storyAnnotations?.tags?.length ? storyAnnotations.tags : componentAnnotations.tags || []),
+    'story',
+  ];
 
   const parameters: Parameters = combineParameters(
     projectAnnotations.parameters,

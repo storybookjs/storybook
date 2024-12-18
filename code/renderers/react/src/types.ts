@@ -1,4 +1,4 @@
-import type { ComponentType } from 'react';
+import type { ComponentType, JSX } from 'react';
 
 import type { Canvas, WebRenderer } from 'storybook/internal/types';
 

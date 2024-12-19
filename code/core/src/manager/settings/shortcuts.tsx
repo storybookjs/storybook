@@ -21,80 +21,54 @@ const Header = styled.header(({ theme }) => ({
   display: 'flex',
 }));
 
-// Grid
-export const HeaderItem = styled.div(({ theme }) => ({
-  fontWeight: theme.typography.weight.bold,
-}));
-
-export const GridHeaderRow = styled.div({
-  alignSelf: 'flex-end',
-  display: 'grid',
-  margin: '10px 0',
-  gridTemplateColumns: '1fr 1fr 12px',
-  '& > *:last-of-type': {
-    gridColumn: '2 / 2',
-    justifySelf: 'flex-end',
-    gridRow: '1',
-  },
-});
-
-export const Row = styled.div(({ theme }) => ({
-  padding: '6px 0',
-  borderTop: `1px solid ${theme.appBorderColor}`,
-  display: 'grid',
-  gridTemplateColumns: '1fr 1fr 0px',
-}));
-
-export const GridWrapper = styled.div({
+const GridWrapper = styled.div({
   display: 'grid',
   gridTemplateColumns: '1fr',
   gridAutoRows: 'minmax(auto, auto)',
   marginBottom: 20,
 });
 
-// Form
-export const Description = styled.div({
+const Row = styled.div(({ theme }) => ({
+  padding: '6px 0',
+  borderTop: `1px solid ${theme.appBorderColor}`,
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr 0px',
+}));
+
+const Description = styled.div({
   alignSelf: 'center',
 });
 
 export type ValidationStates = 'valid' | 'error' | 'warn';
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore-error (this only errors during compilation for production)
-export const TextInput: FC<ComponentProps<typeof Form.Input> & { valid: ValidationStates }> =
-  styled(Form.Input)<{ valid: ValidationStates }>(
-    ({ valid, theme }) =>
-      valid === 'error'
-        ? {
-            animation: `${theme.animation.jiggle} 700ms ease-out`,
-          }
-        : {},
-    {
-      display: 'flex',
-      width: 80,
-      flexDirection: 'column',
-      justifySelf: 'flex-end',
-      paddingLeft: 4,
-      paddingRight: 4,
-      textAlign: 'center',
-    }
-  );
+const TextInput: FC<ComponentProps<typeof Form.Input> & { valid: ValidationStates }> = styled(
+  Form.Input
+)<{ valid: ValidationStates }>(
+  ({ valid, theme }) => ({
+    ...(valid === 'error' ? { animation: `${theme.animation.jiggle} 700ms ease-out` } : {}),
+  }),
+  {
+    display: 'flex',
+    width: 80,
+    flexDirection: 'column',
+    justifySelf: 'flex-end',
+    paddingLeft: 4,
+    paddingRight: 4,
+    textAlign: 'center',
+  }
+);
 
-export const Fade = keyframes`
-0%,100% { opacity: 0; }
+const Fade = keyframes`
+  0%,100% { opacity: 0; }
   50% { opacity: 1; }
 `;
 
 const SuccessIcon = styled(CheckIcon)<{ valid: string }>(
-  ({ valid, theme }) =>
-    valid === 'valid'
-      ? {
-          color: theme.color.positive,
-          animation: `${Fade} 2s ease forwards`,
-        }
-      : {
-          opacity: 0,
-        },
+  ({ valid, theme }) => ({
+    ...(valid === 'valid'
+      ? { color: theme.color.positive, animation: `${Fade} 2s ease forwards` }
+      : { opacity: 0 }),
+  }),
   {
     alignSelf: 'center',
     display: 'flex',
@@ -134,12 +108,10 @@ const shortcutLabels = {
 
 export type Feature = keyof typeof shortcutLabels;
 
-// Shortcuts that cannot be configured
 const fixedShortcuts = ['escape'];
 
 function toShortcutState(shortcutKeys: ShortcutsScreenProps['shortcutKeys']) {
   return Object.entries(shortcutKeys).reduce(
-    // @ts-expect-error (non strict)
     (acc, [feature, shortcut]: [Feature, string]) =>
       fixedShortcuts.includes(feature) ? acc : { ...acc, [feature]: { shortcut, error: false } },
     {} as Record<Feature, any>
@@ -165,20 +137,14 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
   constructor(props: ShortcutsScreenProps) {
     super(props);
     this.state = {
-      // @ts-expect-error (non strict)
       activeFeature: undefined,
-      // @ts-expect-error (non strict)
       successField: undefined,
-      // The initial shortcutKeys that come from props are the defaults/what was saved
-      // As the user interacts with the page, the state stores the temporary, unsaved shortcuts
-      // This object also includes the error attached to each shortcut
-      // @ts-expect-error (non strict)
       shortcutKeys: toShortcutState(props.shortcutKeys),
       addonsShortcutLabels: props.addonsShortcutLabels,
     };
   }
 
-  onKeyDown = (e: KeyboardEvent) => {
+  handleKeyPress = (e: KeyboardEvent) => {
     const { activeFeature, shortcutKeys } = this.state;
 
     if (e.key === 'Backspace') {
@@ -187,12 +153,10 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
 
     const shortcut = eventToShortcut(e);
 
-    // Keypress is not a potential shortcut
     if (!shortcut) {
       return false;
     }
 
-    // Check we don't match any other shortcuts
     const error = !!Object.entries(shortcutKeys).find(
       ([feature, { shortcut: existingShortcut }]) =>
         feature !== activeFeature &&
@@ -200,28 +164,24 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
         shortcutMatchesShortcut(shortcut, existingShortcut)
     );
 
-    return this.setState({
-      shortcutKeys: { ...shortcutKeys, [activeFeature]: { shortcut, error } },
-    });
+    this.setState({ shortcutKeys: { ...shortcutKeys, [activeFeature]: { shortcut, error } } });
   };
 
-  onFocus = (focusedInput: Feature) => () => {
+  handleFocus = (focusedInput: Feature) => () => {
     const { shortcutKeys } = this.state;
 
     this.setState({
       activeFeature: focusedInput,
-      shortcutKeys: {
-        ...shortcutKeys,
-        [focusedInput]: { shortcut: null, error: false },
-      },
+      shortcutKeys: { ...shortcutKeys, [focusedInput]: { shortcut: null, error: false } },
     });
   };
 
-  onBlur = async () => {
+  handleBlur = async () => {
     const { shortcutKeys, activeFeature } = this.state;
 
     if (shortcutKeys[activeFeature]) {
       const { shortcut, error } = shortcutKeys[activeFeature];
+
       if (!shortcut || error) {
         return this.restoreDefault();
       }
@@ -232,7 +192,6 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
 
   saveShortcut = async () => {
     const { activeFeature, shortcutKeys } = this.state;
-
     const { setShortcut } = this.props;
     await setShortcut(activeFeature, shortcutKeys[activeFeature].shortcut);
     this.setState({ successField: activeFeature });
@@ -240,19 +199,15 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
 
   restoreDefaults = async () => {
     const { restoreAllDefaultShortcuts } = this.props;
-
     const defaultShortcuts = await restoreAllDefaultShortcuts();
-    // @ts-expect-error (non strict)
-    return this.setState({ shortcutKeys: toShortcutState(defaultShortcuts) });
+    this.setState({ shortcutKeys: toShortcutState(defaultShortcuts) });
   };
 
   restoreDefault = async () => {
     const { activeFeature, shortcutKeys } = this.state;
-
     const { restoreDefaultShortcut } = this.props;
-
     const defaultShortcut = await restoreDefaultShortcut(activeFeature);
-    return this.setState({
+    this.setState({
       shortcutKeys: {
         ...shortcutKeys,
         ...toShortcutState({ [activeFeature]: defaultShortcut } as Record<Feature, any>),
@@ -260,56 +215,33 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
     });
   };
 
-  displaySuccessMessage = (activeElement: Feature) => {
-    const { successField, shortcutKeys } = this.state;
-    return activeElement === successField && shortcutKeys[activeElement].error === false
-      ? 'valid'
-      : undefined;
-  };
-
-  displayError = (activeElement: Feature): ValidationStates => {
-    const { activeFeature, shortcutKeys } = this.state;
-    // @ts-expect-error (non strict)
-    return activeElement === activeFeature && shortcutKeys[activeElement].error === true
-      ? 'error'
-      : undefined;
-  };
-
   renderKeyInput = () => {
     const { shortcutKeys, addonsShortcutLabels } = this.state;
-    // @ts-expect-error (non strict)
-    const arr = Object.entries(shortcutKeys).map(([feature, { shortcut }]: [Feature, any]) => (
-      <Row key={feature}>
-        {/* @ts-expect-error (non strict) */}
-        <Description>{shortcutLabels[feature] || addonsShortcutLabels[feature]}</Description>
 
+    return Object.entries(shortcutKeys).map(([feature, { shortcut }]: [Feature, any]) => (
+      <Row key={feature}>
+        <Description>{shortcutLabels[feature] || addonsShortcutLabels[feature]}</Description>
         <TextInput
           spellCheck="false"
           valid={this.displayError(feature)}
-          className="modalInput"
-          onBlur={this.onBlur}
-          onFocus={this.onFocus(feature)}
-          // @ts-expect-error (Converted from ts-ignore)
-          onKeyDown={this.onKeyDown}
+          onBlur={this.handleBlur}
+          onFocus={this.handleFocus(feature)}
+          onKeyDown={this.handleKeyPress}
           value={shortcut ? shortcutToHumanString(shortcut) : ''}
           placeholder="Type keys"
           readOnly
         />
-
-        {/* @ts-expect-error (non strict) */}
         <SuccessIcon valid={this.displaySuccessMessage(feature)} />
       </Row>
     ));
-
-    return arr;
   };
 
   renderKeyForm = () => (
     <GridWrapper>
-      <GridHeaderRow>
-        <HeaderItem>Commands</HeaderItem>
-        <HeaderItem>Shortcut</HeaderItem>
-      </GridHeaderRow>
+      <div>
+        <Header>Commands</Header>
+        <Header>Shortcut</Header>
+      </div>
       {this.renderKeyInput()}
     </GridWrapper>
   );
@@ -319,7 +251,6 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
     return (
       <Container>
         <Header>Keyboard shortcuts</Header>
-
         {layout}
         <Button
           variant="outline"
@@ -329,7 +260,6 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
         >
           Restore defaults
         </Button>
-
         <SettingsFooter />
       </Container>
     );

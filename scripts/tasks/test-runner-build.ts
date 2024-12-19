@@ -18,6 +18,7 @@ export const testRunnerBuild: Task & { port: number } = {
       '--maxWorkers=2',
       '--failOnConsole',
       '--index-json',
+      '--excludeTags="no-test-runner"',
     ];
 
     await exec(

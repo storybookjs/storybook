@@ -132,6 +132,7 @@ const config: StorybookConfig = {
   features: {
     viewportStoryGlobals: true,
     backgroundsStoryGlobals: true,
+    developmentModeForBuild: true,
   },
   viteFinal: async (viteConfig, { configType }) => {
     const { mergeConfig } = await import('vite');

@@ -2,6 +2,8 @@ import { dirname, join } from 'node:path';
 
 import type { PresetProperty } from 'storybook/internal/types';
 
+import { WebpackDefinePlugin } from '@storybook/builder-webpack5';
+
 import type { StorybookConfig } from './types';
 
 const getAbsolutePath = <I extends string>(input: I): I =>
@@ -31,5 +33,12 @@ export const webpack: StorybookConfig['webpack'] = async (config) => {
     ...config.resolve?.alias,
     '@storybook/react': getAbsolutePath('@storybook/react'),
   };
+  config.plugins = [
+    // @ts-expect-error TODO
+    ...config.plugins,
+    new WebpackDefinePlugin({
+      NODE_ENV: JSON.stringify('development'),
+    }),
+  ];
   return config;
 };

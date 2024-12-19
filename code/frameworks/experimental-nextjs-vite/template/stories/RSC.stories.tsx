@@ -13,6 +13,7 @@ export default {
       rsc: true,
     },
   },
+  tags: ['no-test-runner'],
 } as Meta<typeof RSC>;
 
 type Story = StoryObj<typeof RSC>;

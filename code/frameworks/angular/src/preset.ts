@@ -6,15 +6,10 @@ const getAbsolutePath = <I extends string>(input: I): I =>
   dirname(require.resolve(join(input, 'package.json'))) as any;
 
 export const addons: PresetProperty<'addons'> = [
-  getAbsolutePath('@storybook/preset-angular-webpack'),
+  require.resolve('./server/framework-preset-angular-cli'),
+  require.resolve('./server/framework-preset-angular-ivy'),
+  require.resolve('./server/framework-preset-angular-docs'),
 ];
-
-export const typescript: PresetProperty<'typescript'> = async (config) => {
-  return {
-    ...config,
-    skipCompiler: true,
-  };
-};
 
 export const core: PresetProperty<'core'> = async (config, options) => {
   const framework = await options.presets.apply('framework');
@@ -25,6 +20,12 @@ export const core: PresetProperty<'core'> = async (config, options) => {
       name: getAbsolutePath('@storybook/builder-webpack5'),
       options: typeof framework === 'string' ? {} : framework.options.builder || {},
     },
-    renderer: getAbsolutePath('@storybook/angular-renderer'),
+  };
+};
+
+export const typescript: PresetProperty<'typescript'> = async (config) => {
+  return {
+    ...config,
+    skipCompiler: true,
   };
 };

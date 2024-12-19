@@ -139,7 +139,6 @@
     "@storybook/preact": "workspace:*",
     "@storybook/preact-vite": "workspace:*",
     "@storybook/preact-webpack5": "workspace:*",
-    "@storybook/preset-angular-webpack": "workspace:*",
     "@storybook/preset-create-react-app": "workspace:*",
     "@storybook/preset-html-webpack": "workspace:*",
     "@storybook/preset-preact-webpack": "workspace:*",

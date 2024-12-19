@@ -5945,7 +5945,6 @@ __metadata:
     "@storybook/core-webpack": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/manager-api": "workspace:*"
-    "@storybook/preset-angular-webpack": "workspace:*"
     "@storybook/preview-api": "workspace:*"
     "@storybook/theming": "workspace:*"
     "@types/cross-spawn": "npm:^6.0.2"
@@ -6819,68 +6818,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/preset-angular-webpack@workspace:*, @storybook/preset-angular-webpack@workspace:presets/angular-webpack":
-  version: 0.0.0-use.local
-  resolution: "@storybook/preset-angular-webpack@workspace:presets/angular-webpack"
-  dependencies:
-    "@analogjs/vite-plugin-angular": "npm:^0.2.24"
-    "@angular-devkit/architect": "npm:^0.1703.0"
-    "@angular-devkit/build-angular": "npm:^17.3.0"
-    "@angular-devkit/core": "npm:^17.3.0"
-    "@angular/animations": "npm:^17.3.0"
-    "@angular/cli": "npm:^17.3.0"
-    "@angular/common": "npm:^17.3.0"
-    "@angular/compiler": "npm:^17.3.0"
-    "@angular/compiler-cli": "npm:^17.3.0"
-    "@angular/core": "npm:^17.3.0"
-    "@angular/forms": "npm:^17.3.0"
-    "@angular/platform-browser": "npm:^17.3.0"
-    "@angular/platform-browser-dynamic": "npm:^17.3.0"
-    "@storybook/components": "workspace:*"
-    "@storybook/core-webpack": "workspace:*"
-    "@storybook/global": "npm:^5.0.0"
-    "@storybook/manager-api": "workspace:*"
-    "@storybook/preset-angular-webpack": "workspace:*"
-    "@storybook/preview-api": "workspace:*"
-    "@storybook/theming": "workspace:*"
-    "@types/cross-spawn": "npm:^6.0.2"
-    "@types/node": "npm:^22.0.0"
-    "@types/react": "npm:^18.0.37"
-    "@types/react-dom": "npm:^18.0.11"
-    "@types/semver": "npm:^7.3.4"
-    "@types/tmp": "npm:^0.2.3"
-    "@types/webpack-env": "npm:^1.18.0"
-    cross-spawn: "npm:^7.0.3"
-    fd-package-json: "npm:^1.2.0"
-    find-up: "npm:^5.0.0"
-    semver: "npm:^7.3.7"
-    telejson: "npm:^7.2.0"
-    tmp: "npm:^0.2.1"
-    ts-dedent: "npm:^2.0.0"
-    tsconfig-paths-webpack-plugin: "npm:^4.0.1"
-    typescript: "npm:^5.3.2"
-    util-deprecate: "npm:^1.0.2"
-    webpack: "npm:5"
-    zone.js: "npm:^0.14.2"
-  peerDependencies:
-    "@angular-devkit/architect": ">=0.1500.0 < 0.2000.0"
-    "@angular-devkit/build-angular": ">=15.0.0 < 20.0.0"
-    "@angular-devkit/core": ">=15.0.0 < 20.0.0"
-    "@angular/cli": ">=15.0.0 < 20.0.0"
-    "@angular/common": ">=15.0.0 < 20.0.0"
-    "@angular/compiler": ">=15.0.0 < 20.0.0"
-    "@angular/compiler-cli": ">=15.0.0 < 20.0.0"
-    "@angular/core": ">=15.0.0 < 20.0.0"
-    "@angular/forms": ">=15.0.0 < 20.0.0"
-    "@angular/platform-browser": ">=15.0.0 < 20.0.0"
-    "@angular/platform-browser-dynamic": ">=15.0.0 < 20.0.0"
-    rxjs: ^6.0.0 || ^7.4.0
-    storybook: "workspace:^"
-    typescript: ^4.0.0 || ^5.0.0
-    zone.js: ">= 0.11.1 < 1.0.0"
-  languageName: unknown
-  linkType: soft
-
 "@storybook/preset-create-react-app@workspace:*, @storybook/preset-create-react-app@workspace:presets/create-react-app":
   version: 0.0.0-use.local
   resolution: "@storybook/preset-create-react-app@workspace:presets/create-react-app"
@@ -7222,7 +7159,6 @@ __metadata:
     "@storybook/preact": "workspace:*"
     "@storybook/preact-vite": "workspace:*"
     "@storybook/preact-webpack5": "workspace:*"
-    "@storybook/preset-angular-webpack": "workspace:*"
     "@storybook/preset-create-react-app": "workspace:*"
     "@storybook/preset-html-webpack": "workspace:*"
     "@storybook/preset-preact-webpack": "workspace:*"

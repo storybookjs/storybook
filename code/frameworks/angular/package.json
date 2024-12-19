@@ -31,6 +31,21 @@
       "types": "./dist/preset.d.ts",
       "require": "./dist/preset.js"
     },
+    "./dist/server/framework-preset-angular-cli": {
+      "types": "./dist/server/framework-preset-angular-cli.d.ts",
+      "import": "./dist/server/framework-preset-angular-cli.mjs",
+      "require": "./dist/server/framework-preset-angular-cli.js"
+    },
+    "./dist/server/framework-preset-angular-docs": {
+      "types": "./dist/server/framework-preset-angular-docs.d.ts",
+      "import": "./dist/server/framework-preset-angular-docs.mjs",
+      "require": "./dist/server/framework-preset-angular-docs.js"
+    },
+    "./dist/server/framework-preset-angular-ivy": {
+      "types": "./dist/server/framework-preset-angular-ivy.d.ts",
+      "import": "./dist/server/framework-preset-angular-ivy.mjs",
+      "require": "./dist/server/framework-preset-angular-ivy.js"
+    },
     "./builders/builder.json": "./src/builders/builders.json",
     "./package.json": "./package.json"
   },
@@ -47,8 +62,8 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
+    "check": "node ../../../scripts/node_modules/.bin/tsc",
+    "prep": "rimraf dist && jiti ../../../scripts/prepare/tsc.ts"
   },
   "dependencies": {
     "@storybook/angular-renderer": "workspace:*",
@@ -57,7 +72,6 @@
     "@storybook/core-webpack": "workspace:*",
     "@storybook/global": "^5.0.0",
     "@storybook/manager-api": "workspace:*",
-    "@storybook/preset-angular-webpack": "workspace:*",
     "@storybook/preview-api": "workspace:*",
     "@storybook/theming": "workspace:*",
     "@types/node": "^22.0.0",
@@ -130,9 +144,13 @@
       "./src/index.ts",
       "./src/preset.ts",
       "./src/builders/build-storybook/index.ts",
-      "./src/builders/start-storybook/index.ts"
+      "./src/builders/start-storybook/index.ts",
+      "./src/server/framework-preset-angular-cli.ts",
+      "./src/server/framework-preset-angular-docs.ts",
+      "./src/server/framework-preset-angular-ivy.ts"
     ],
     "post": "./scripts/postbuild.js",
+    "tsConfig": "tsconfig.build.json",
     "platform": "node"
   },
   "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"

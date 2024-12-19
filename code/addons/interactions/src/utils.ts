@@ -30,6 +30,7 @@ export function createAnsiToHtmlFilter(theme: StorybookTheme) {
   return new Filter({
     fg: theme.color.defaultText,
     bg: theme.background.content,
+    escapeXML: true,
   });
 }
 

@@ -59,7 +59,7 @@ export const removeArgtypesRegex: Fix<{ argTypesRegex: NodePath; previewConfigPa
        
       Then, refer to our docs to migrate your play functions to Storybook 8: 
       ${picocolors.yellow(
-        'https://storybook.js.org/docs/8.0/essentials/actions#via-storybooktest-fn-spy-function'
+        'https://storybook.js.org/docs/essentials/actions#via-storybooktest-fn-spy-function'
       )}
     `;
   },

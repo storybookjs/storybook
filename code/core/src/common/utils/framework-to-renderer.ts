@@ -32,6 +32,7 @@ export const frameworkToRenderer: Record<
   html: 'html',
   preact: 'preact',
   'react-native': 'react-native',
+  'react-native-web-vite': 'react',
   react: 'react',
   server: 'server',
   svelte: 'svelte',

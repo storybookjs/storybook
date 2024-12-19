@@ -4,6 +4,7 @@ import { IconSymbols } from './IconSymbols';
 
 const meta = {
   component: IconSymbols,
+  title: 'Sidebar/IconSymbols',
 } satisfies Meta<typeof IconSymbols>;
 
 export default meta;

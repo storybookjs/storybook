@@ -191,3 +191,45 @@ export const WithCustomIcon = {
     ],
   },
 } satisfies Story;
+
+export const WithGroups = {
+  args: {
+    links: [
+      [
+        {
+          id: '1',
+          title: 'Link 1',
+          center: 'This is an addition description',
+          href: 'http://google.com',
+          onClick: onLinkClick,
+        },
+      ],
+      [
+        {
+          id: '1',
+          title: 'Link 1',
+          center: 'This is an addition description',
+          icon: <LinkIcon />,
+          href: 'http://google.com',
+          onClick: onLinkClick,
+        },
+        {
+          id: '2',
+          title: 'Link 2',
+          center: 'This is an addition description',
+          href: 'http://google.com',
+          onClick: onLinkClick,
+        },
+      ],
+      [
+        {
+          id: '2',
+          title: 'Link 2',
+          center: 'This is an addition description',
+          href: 'http://google.com',
+          onClick: onLinkClick,
+        },
+      ],
+    ],
+  },
+} satisfies Story;

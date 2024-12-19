@@ -33,7 +33,7 @@ Storybook has the concept of [presets](../addons/writing-presets.mdx), which are
 
 It's helpful to understand Storybook's package structure before adding a framework preset. Each framework typically exposes two executables in its `package.json`:
 
-```json
+```json title="package.json"
 {
   "bin": {
     "storybook": "./bin/index.js",
@@ -94,7 +94,7 @@ Consider the following React story:
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story-with-sample.md" usesCsf3 csf2Path="api/new-frameworks#snippet-button-story-with-sample" />
+<CodeSnippets path="button-story-with-sample.md" />
 
 {/* prettier-ignore-end */}
 
@@ -106,7 +106,7 @@ Consider the following hypothetical example:
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="button-story-hypothetical-example.md" usesCsf3 csf2Path="api/new-frameworks#snippet-button-story-hypothetical-example" />
+<CodeSnippets path="button-story-hypothetical-example.md" />
 
 {/* prettier-ignore-end */}
 

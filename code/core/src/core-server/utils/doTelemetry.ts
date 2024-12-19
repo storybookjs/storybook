@@ -1,16 +1,17 @@
 import { getPrecedingUpgrade, telemetry } from '@storybook/core/telemetry';
 import type { CoreConfig, Options } from '@storybook/core/types';
 
+import type Polka from 'polka';
 import invariant from 'tiny-invariant';
 
 import { sendTelemetryError } from '../withTelemetry';
 import type { StoryIndexGenerator } from './StoryIndexGenerator';
 import { useStorybookMetadata } from './metadata';
-import { router } from './router';
 import { summarizeIndex } from './summarizeIndex';
 import { versionStatus } from './versionStatus';
 
 export async function doTelemetry(
+  app: Polka.Polka,
   core: CoreConfig,
   initializedStoryIndexGenerator: Promise<StoryIndexGenerator | undefined>,
   options: Options
@@ -52,6 +53,6 @@ export async function doTelemetry(
   }
 
   if (!core?.disableProjectJson) {
-    useStorybookMetadata(router, options.configDir);
+    useStorybookMetadata(app, options.configDir);
   }
 }

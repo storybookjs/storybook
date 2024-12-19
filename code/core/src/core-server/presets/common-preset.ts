@@ -25,6 +25,15 @@ import { logger } from '@storybook/core/node-logger';
 
 import { dedent } from 'ts-dedent';
 
+import {
+  TESTING_MODULE_CRASH_REPORT,
+  TESTING_MODULE_PROGRESS_REPORT,
+  TESTING_MODULE_WATCH_MODE_REQUEST,
+  type TestingModuleCrashReportPayload,
+  type TestingModuleProgressReportPayload,
+  type TestingModuleWatchModeRequestPayload,
+} from '../../core-events';
+import { cleanPaths, sanitizeError } from '../../telemetry/sanitize';
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
 import { initFileSearchChannel } from '../server-channel/file-search-channel';
 import { defaultStaticDirs } from '../utils/constants';
@@ -58,39 +67,37 @@ export const favicon = async (
     ? staticDirsValue.map((dir) => (typeof dir === 'string' ? dir : `${dir.from}:${dir.to}`))
     : [];
 
-  if (statics && statics.length > 0) {
-    const lists = await Promise.all(
-      statics.map(async (dir) => {
-        const results = [];
-        const normalizedDir =
-          staticDirsValue && !isAbsolute(dir)
-            ? getDirectoryFromWorkingDir({
-                configDir: options.configDir,
-                workingDir: process.cwd(),
-                directory: dir,
-              })
-            : dir;
+  if (statics.length > 0) {
+    const lists = statics.map((dir) => {
+      const results = [];
+      const normalizedDir =
+        staticDirsValue && !isAbsolute(dir)
+          ? getDirectoryFromWorkingDir({
+              configDir: options.configDir,
+              workingDir: process.cwd(),
+              directory: dir,
+            })
+          : dir;
 
-        const { staticPath, targetEndpoint } = await parseStaticDir(normalizedDir);
+      const { staticPath, targetEndpoint } = parseStaticDir(normalizedDir);
 
-        if (targetEndpoint === '/') {
-          const url = 'favicon.svg';
-          const path = join(staticPath, url);
-          if (existsSync(path)) {
-            results.push(path);
-          }
+      if (targetEndpoint === '/') {
+        const url = 'favicon.svg';
+        const path = join(staticPath, url);
+        if (existsSync(path)) {
+          results.push(path);
         }
-        if (targetEndpoint === '/') {
-          const url = 'favicon.ico';
-          const path = join(staticPath, url);
-          if (existsSync(path)) {
-            results.push(path);
-          }
+      }
+      if (targetEndpoint === '/') {
+        const url = 'favicon.ico';
+        const path = join(staticPath, url);
+        if (existsSync(path)) {
+          results.push(path);
         }
+      }
 
-        return results;
-      })
-    );
+      return results;
+    });
     const flatlist = lists.reduce((l1, l2) => l1.concat(l2), []);
 
     if (flatlist.length > 1) {
@@ -279,6 +286,57 @@ export const experimental_serverChannel = async (
 
   initFileSearchChannel(channel, options, coreOptions);
   initCreateNewStoryChannel(channel, options, coreOptions);
+
+  if (!options.disableTelemetry) {
+    channel.on(
+      TESTING_MODULE_WATCH_MODE_REQUEST,
+      async (request: TestingModuleWatchModeRequestPayload) => {
+        await telemetry('testing-module-watch-mode', {
+          provider: request.providerId,
+          watchMode: request.watchMode,
+        });
+      }
+    );
+
+    channel.on(
+      TESTING_MODULE_PROGRESS_REPORT,
+      async (payload: TestingModuleProgressReportPayload) => {
+        const status = 'status' in payload ? payload.status : undefined;
+        const progress = 'progress' in payload ? payload.progress : undefined;
+        const error = 'error' in payload ? payload.error : undefined;
+
+        if ((status === 'success' || status === 'cancelled') && progress?.finishedAt) {
+          await telemetry('testing-module-completed-report', {
+            provider: payload.providerId,
+            duration: progress?.finishedAt - progress?.startedAt,
+            numTotalTests: progress?.numTotalTests,
+            numFailedTests: progress?.numFailedTests,
+            numPassedTests: progress?.numPassedTests,
+            status,
+          });
+        }
+
+        if (status === 'failed') {
+          await telemetry('testing-module-completed-report', {
+            provider: payload.providerId,
+            status: 'failed',
+            ...(options.enableCrashReports && {
+              error: error && sanitizeError(error),
+            }),
+          });
+        }
+      }
+    );
+
+    channel.on(TESTING_MODULE_CRASH_REPORT, async (payload: TestingModuleCrashReportPayload) => {
+      await telemetry('testing-module-crash-report', {
+        provider: payload.providerId,
+        ...(options.enableCrashReports && {
+          error: cleanPaths(payload.error.message),
+        }),
+      });
+    });
+  }
 
   return channel;
 };

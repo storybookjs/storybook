@@ -7,8 +7,8 @@ const amountOfVCPUs = 8;
 
 const parallel = `--parallel=${process.env.CI ? amountOfVCPUs - 1 : maxConcurrentTasks}`;
 
-const linkCommand = `nx affected -t check ${parallel}`;
-const nolinkCommand = `nx affected -t check -c production ${parallel}`;
+const linkCommand = `npx nx affected -t check ${parallel}`;
+const nolinkCommand = `npx nx affected -t check -c production ${parallel}`;
 
 export const check: Task = {
   description: 'Typecheck the source code of the monorepo',

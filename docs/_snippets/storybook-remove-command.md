@@ -9,4 +9,3 @@ pnpm dlx storybook@latest remove @storybook/addon-a11y
 ```shell renderer="common" language="js" packageManager="yarn"
 yarn dlx storybook@latest remove @storybook/addon-a11y
 ```
-

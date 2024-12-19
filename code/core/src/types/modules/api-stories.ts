@@ -7,6 +7,7 @@ export interface API_BaseEntry {
   id: StoryId;
   depth: number;
   name: string;
+  tags: Tag[];
   refId?: string;
   renderLabel?: (item: API_BaseEntry, api: any) => any;
 }
@@ -34,7 +35,6 @@ export interface API_DocsEntry extends API_BaseEntry {
   parent: StoryId;
   title: ComponentTitle;
   importPath: Path;
-  tags: Tag[];
   prepared: boolean;
   parameters?: {
     [parameterName: string]: any;
@@ -46,7 +46,6 @@ export interface API_StoryEntry extends API_BaseEntry {
   parent: StoryId;
   title: ComponentTitle;
   importPath: Path;
-  tags: Tag[];
   prepared: boolean;
   parameters?: {
     [parameterName: string]: any;
@@ -125,6 +124,7 @@ export interface API_StatusObject {
   description: string;
   data?: any;
   onClick?: () => void;
+  sidebarContextMenu?: boolean;
 }
 
 export type API_StatusState = Record<StoryId, Record<string, API_StatusObject>>;

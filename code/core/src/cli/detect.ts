@@ -130,6 +130,8 @@ export async function detectBuilder(packageManager: JsPackageManager, projectTyp
 
   // Fallback to Vite or Webpack based on project type
   switch (projectType) {
+    case ProjectType.REACT_NATIVE_WEB:
+      return CoreBuilder.Vite;
     case ProjectType.REACT_SCRIPTS:
     case ProjectType.ANGULAR:
     case ProjectType.REACT_NATIVE: // technically react native doesn't use webpack, we just want to set something

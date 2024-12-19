@@ -2,8 +2,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 
-import type { CommonOptions } from 'execa';
-import { execaCommand, execaCommandSync } from 'execa';
+// eslint-disable-next-line depend/ban-dependencies
+import { type CommonOptions, execaCommand, execaCommandSync } from 'execa';
 import picocolors from 'picocolors';
 import { gt, satisfies } from 'semver';
 import invariant from 'tiny-invariant';
@@ -16,7 +16,7 @@ import type { InstallationMetadata } from './types';
 
 const logger = console;
 
-export type PackageManagerName = 'npm' | 'yarn1' | 'yarn2' | 'pnpm';
+export type PackageManagerName = 'npm' | 'yarn1' | 'yarn2' | 'pnpm' | 'bun';
 
 type StorybookPackage = keyof typeof storybookPackagesVersions;
 
@@ -49,6 +49,8 @@ export abstract class JsPackageManager {
   public abstract getRunStorybookCommand(): string;
 
   public abstract getRunCommand(command: string): string;
+
+  public abstract getRemoteRunCommand(): string;
 
   public readonly cwd?: string;
 

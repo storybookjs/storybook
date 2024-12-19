@@ -13,9 +13,9 @@ Storybook can be set up for both single-project and multi-project Angular worksp
 
 ## How can I opt-out of Angular Ivy?
 
-In case you are having trouble with Angular Ivy you can deactivate it in your `main.js`:
+In case you are having trouble with Angular Ivy you can deactivate it in your `main.js|ts`:
 
-```javascript
+```js title=".storybook/main.js|ts"
 export default {
   stories: [
     /* ... */
@@ -36,7 +36,7 @@ export default {
 
 In case you postinstall ngcc, you can disable it:
 
-```javascript
+```js title=".storybook/main.js|ts"
 export default {
   stories: [
     /* ... */
@@ -71,9 +71,9 @@ npm test -- --coverage --collectCoverageFrom='["src/**/*.{js,jsx}","!src/**/stor
 
 ## How do I setup Storybook to share Webpack configuration with Next.js?
 
-You can generally reuse Webpack rules by placing them in a file that is `require()`-ed from both your `next.config.js` and your `.storybook/main.js` files. For example:
+You can generally reuse Webpack rules by placing them in a file that is `require()`-ed from both your `next.config.js` and your `.storybook/main.js|ts` files. For example:
 
-```js
+```js title=".storybook/main.js|ts"
 export default {
   webpackFinal: async (baseConfig) => {
     const nextConfig = require('/path/to/next.config.js');
@@ -105,9 +105,9 @@ To fix this, you can wrap the package name inside your Storybook configuration f
 
 If your installed React Version equals or is higher than 18.0.0, the new React Root API is automatically used and the newest React [concurrent features](https://reactjs.org/docs/concurrent-mode-intro.html) can be used.
 
-You can opt-out from the new React Root API by setting the following property in your `.storybook/main.js` file:
+You can opt-out from the new React Root API by setting the following property in your `.storybook/main.js|ts` file:
 
-```js
+```js title=".storybook/main.js|ts"
 export default {
   framework: {
     name: '@storybook/react-webpack5',
@@ -134,11 +134,9 @@ A common error is that an addon tries to access the "channel", but the channel i
 
 ## Why aren't Controls visible in the Canvas panel but visible in Docs?
 
-If you're adding Storybook's dependencies manually, make sure you include the [`@storybook/addon-controls`](https://www.npmjs.com/package/@storybook/addon-controls) dependency in your project and reference it in your `.storybook/main.js` as follows:
+If you're adding Storybook's dependencies manually, make sure you include the [`@storybook/addon-controls`](https://www.npmjs.com/package/@storybook/addon-controls) dependency in your project and reference it in your `.storybook/main.js|ts` as follows:
 
-```js
-// .storybook/main.js
-
+```js title=".storybook/main.js|ts"
 export default {
   addons: ['@storybook/addon-controls'],
 };
@@ -160,9 +158,7 @@ If you're in a [Storybook composition](./sharing/storybook-composition.mdx) scen
 
 Introduce a single `.mdx` docs page (addon-essentials or addon-docs required), that serves as an Introduction page, like so:
 
-```mdx
-{/* Introduction.mdx */}
-
+```mdx title="Introduction.mdx"
 # Welcome
 
 Some description here
@@ -170,8 +166,7 @@ Some description here
 
 And then refer to it in your Storybook config file:
 
-```ts
-// .storybook/main.js
+```ts title=".storybook/main.js|ts"
 const config = {
   // define at least one local story/page here
   stories: ['../Introduction.mdx'],
@@ -301,7 +296,7 @@ We're only covering versions 5.3 and 5.0 as they were important milestones for S
 |                  | CLI options                                     | [See current documentation](./api/cli-options.mdx)                                                   | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.3/docs/src/pages/configurations/cli-options)                                                                                                                                   | [See versioned documentation](https://github.com/storybookjs/storybook/tree/release/5.0/docs/src/pages/configurations/cli-options)                       |
 
 <Callout variant="info">
-  If you have stories written with the older `storiesOf` format, it was removed in Storybook 8.0 and is no longer maintained. We recommend that you migrate your stories to CSF. See the [migration guide](./migration-guide/index.mdx#storiesof-to-csf) for more information. However, if you need, you can still access the old `storiesOf` [documentation](https://github.com/storybookjs/storybook/blob/release/5.3/docs/src/pages/formats/storiesof-api/index.md) for reference.
+  If you have stories written with the older `storiesOf` format, it was removed in Storybook 8.0 and is no longer maintained. We recommend that you migrate your stories to CSF. See the [migration guide](./migration-guide/index.mdx#major-breaking-changes) for more information. However, if you need, you can still access the old `storiesOf` [documentation](https://github.com/storybookjs/storybook/blob/release/5.3/docs/src/pages/formats/storiesof-api/index.md) for reference.
 </Callout>
 
 ## What icons are available for my toolbar or my addon?
@@ -345,7 +340,7 @@ Writing documentation with MDX can be troublesome, especially regarding how your
 
 {/* prettier-ignore-start */}
 
-```mdx
+```mdx title="Example.mdx"
 <style>{`
   .class1 {
     ...
@@ -363,7 +358,7 @@ But this will work:
 
 {/* prettier-ignore-start */}
 
-```mdx
+```mdx title="Example.mdx"
 <style>
   {`
     .class1 {
@@ -385,9 +380,7 @@ See the following [issue](https://github.com/mdx-js/mdx/issues/1945) for more in
 
 If you're working with Vue 3, you'll need to install [`@vue/apollo-composable`](https://www.npmjs.com/package/@vue/apollo-composable). With Svelte, you'll need to install [`@rollup/plugin-replace`](https://www.npmjs.com/package/@rollup/plugin-replace) and update your `rollup.config` file to the following:
 
-```js
-// rollup.config
-
+```js title="rollup.config.js"
 // Boilerplate imports
 
 import replace from '@rollup/plugin-replace';
@@ -424,10 +417,6 @@ Yes, check the [addon's examples](https://github.com/mswjs/msw-storybook-addon/t
 
 No, currently, the MSW addon only has support for GraphQL queries. If you're interested in including this feature, open an issue in the [MSW addon repository](https://github.com/mswjs/msw-storybook-addon) and follow up with the maintainer.
 
-## How can my code detect if it is running in Storybook?
-
-You can do this by checking for the `IS_STORYBOOK` global variable, which will equal `true` when running in Storybook. The environment variable `process.env.STORYBOOK` is also set to `true`.
-
 ## Why are my stories not showing up correctly when using certain characters?
 
 Storybook allows you to use most characters while naming your stories. Still, specific characters (e.g., `#`) can lead to issues when Storybook generates the internal identifier for the story, leading to collisions and incorrectly outputting the correct story. We recommend using such characters sparsely.
@@ -444,9 +433,7 @@ If you are using `argTypes.defaultValue` to fix the above, you no longer need to
 
 Additionally, suppose you were using `argTypes.defaultValue` or relying on inference to set a default value for an arg. In that case, you should define the arg's value at the component level instead:
 
-```js
-// MyComponent.stories.js
-
+```js title="MyComponent.stories.js"
 export default {
   component: MyComponent,
   args: {
@@ -458,9 +445,7 @@ export default {
 
 For Storybook's Docs, you can manually configure the displayed value by configuring the `table.defaultValue` setting:
 
-```js
-// MyComponent.stories.js
-
+```js title="MyComponent.stories.js"
 export default {
   component: MyComponent,
   argTypes: {

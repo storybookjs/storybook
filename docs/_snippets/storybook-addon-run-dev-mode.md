@@ -9,4 +9,3 @@ pnpm run start
 ```sh renderer="common" language="js" packageManager="yarn"
 yarn start
 ```
-

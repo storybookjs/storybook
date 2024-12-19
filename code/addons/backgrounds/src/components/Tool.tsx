@@ -124,7 +124,7 @@ const Pure = memo(function PureTool(props: PureProps) {
                       onHide();
                     },
                   })),
-                ]}
+                ].flat()}
               />
             );
           }}

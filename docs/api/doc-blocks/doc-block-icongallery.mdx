@@ -11,12 +11,14 @@ The `IconGallery` block enables you to easily document React icon components ass
 
 ![Screenshot of IconGallery and IconItem blocks](../../_assets/api/doc-block-icongallery.png)
 
+## Documenting icons
+
+To document a set of icons, use the `IconGallery` block to display them in a grid. Each icon is wrapped in an `IconItem` block, enabling you to specify its properties, such as the name and the icon itself.
+
 {/* prettier-ignore-start */}
 
-```md
-{/* Iconography.mdx */}
-
-import { Meta, Title, IconGallery, IconItem } from '@storybook/blocks';
+```md title="Iconography.mdx"
+import { Meta, IconGallery, IconItem } from '@storybook/blocks';
 
 import { Icon as IconExample } from './Icon';
 
@@ -55,6 +57,31 @@ import { Icon as IconExample } from './Icon';
   <IconItem name="graphline">
     <IconExample name="graphline" />
   </IconItem>
+</IconGallery>
+```
+
+{/* prettier-ignore-end */}
+
+### Automate icon documentation
+
+If you're working on a project that contains a large number of icons that you want to document, you can extend the `IconGallery` block, wrap `IconItem` in a loop, and iterate over the icons you want to document, including their properties. For example:
+
+{/* prettier-ignore-start */}
+
+```md title="Iconography.mdx"
+import { Meta, IconGallery, IconItem } from '@storybook/blocks';
+
+import { Icon as IconExample } from './Icon';
+import * as icons from './icons';
+
+# Iconography
+
+<IconGallery>
+  {Object.keys(icons).map((icon) => (
+    <IconItem name={icon}>
+      <IconExample icon={icon} />
+    </IconItem>
+  ))}
 </IconGallery>
 ```
 

@@ -1,5 +1,6 @@
 import { join, relative } from 'node:path';
 
+// eslint-disable-next-line depend/ban-dependencies
 import fg from 'fast-glob';
 import type { KnipConfig } from 'knip';
 import { match } from 'minimatch';

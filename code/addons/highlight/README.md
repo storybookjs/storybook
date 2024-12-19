@@ -8,7 +8,7 @@ Use it to call attention to particular parts of the story. Or use it to enhance 
 
 ## Usage
 
-This addon requires Storybook 6.5 or later. Highlight is part of [essentials](https://storybook.js.org/docs/react/essentials) and so is installed in all new Storybooks by default. If you need to add it to your Storybook, you can run the following command:
+This addon requires Storybook 6.5 or later. Highlight is part of [essentials](https://storybook.js.org/docs/essentials) and so is installed in all new Storybooks by default. If you need to add it to your Storybook, you can run the following command:
 
 yarn:
 

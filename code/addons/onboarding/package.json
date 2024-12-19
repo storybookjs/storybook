@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-onboarding",
-  "version": "8.4.0-alpha.3",
+  "version": "8.5.0-beta.3",
   "description": "Storybook Addon Onboarding - Introduces a new onboarding experience",
   "keywords": [
     "storybook-addons",
@@ -44,12 +44,10 @@
     "check": "jiti ../../../scripts/prepare/check.ts",
     "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
-  "dependencies": {
-    "react-confetti": "^6.1.0"
-  },
   "devDependencies": {
+    "@neoconfetti/react": "^1.0.0",
     "@radix-ui/react-dialog": "^1.0.5",
-    "@storybook/icons": "^1.2.10",
+    "@storybook/icons": "^1.2.12",
     "@storybook/react": "workspace:*",
     "framer-motion": "^11.0.3",
     "react": "^18.2.0",

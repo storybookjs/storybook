@@ -4,6 +4,7 @@ export const ITEMS = new InjectionToken<string[]>('TokenComponent.Items');
 export const DEFAULT_NAME = new InjectionToken<string>('TokenComponent.DefaultName');
 
 @Component({
+  standalone: false,
   selector: 'storybook-simple-token-component',
   template: `
     <h3>{{ name }}</h3>

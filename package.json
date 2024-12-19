@@ -15,7 +15,7 @@
     "upload-bench": "cd scripts; yarn upload-bench",
     "vite-ecosystem-ci:before-test": "node ./scripts/vite-ecosystem-ci/before-test.js && cd ./sandbox/react-vite-default-ts && yarn install",
     "vite-ecosystem-ci:build": "yarn task --task sandbox --template react-vite/default-ts --start-from=install",
-    "vite-ecosystem-ci:test": "yarn task --task test-runner-dev --template react-vite/default-ts --start-from=dev"
+    "vite-ecosystem-ci:test": "yarn task --task test-runner-dev --template react-vite/default-ts --start-from=dev && yarn task --task test-runner --template react-vite/default-ts --start-from=build"
   },
   "packageManager": "yarn@4.4.0+sha512.91d93b445d9284e7ed52931369bc89a663414e5582d00eea45c67ddc459a2582919eece27c412d6ffd1bd0793ff35399381cb229326b961798ce4f4cc60ddfdb"
 }

@@ -9,32 +9,32 @@ const templateName = process.env.STORYBOOK_TEMPLATE_NAME;
 test.describe('Svelte', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(storybookUrl);
-    await new SbPage(page).waitUntilLoaded();
+    await new SbPage(page, expect).waitUntilLoaded();
   });
 
   test.skip(!templateName?.includes('svelte'), 'Only run these tests on Svelte');
 
   test('JS story has auto-generated args table', async ({ page }) => {
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
 
-    await sbPage.navigateToStory('stories/renderers/svelte/js-docs', 'docs');
+    await sbPage.navigateToStory('stories/renderers/svelte/docs-jsdoc', 'docs');
     const root = sbPage.previewRoot();
     const argsTable = root.locator('.docblock-argstable');
-    await expect(argsTable).toContainText('Rounds the button');
+    await expect(argsTable).toContainText('Union of literal strings');
   });
 
   test('TS story has auto-generated args table', async ({ page }) => {
     test.skip(!templateName?.endsWith('ts') || false, 'Only test TS story in TS templates');
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
 
-    await sbPage.navigateToStory('stories/renderers/svelte/ts-docs', 'docs');
+    await sbPage.navigateToStory('stories/renderers/svelte/docs-ts', 'docs');
     const root = sbPage.previewRoot();
     const argsTable = root.locator('.docblock-argstable');
-    await expect(argsTable).toContainText('Rounds the button');
+    await expect(argsTable).toContainText('Union of literal strings');
   });
 
   test('Decorators are excluded from generated source code', async ({ page }) => {
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
 
     await sbPage.navigateToStory('stories/renderers/svelte/slot-decorators', 'docs');
     const root = sbPage.previewRoot();
@@ -46,7 +46,7 @@ test.describe('Svelte', () => {
   });
 
   test('Decorators runs only once', async ({ page }) => {
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     const lines: string[] = [];
     page.on('console', (msg) => {
       const text = msg.text();
@@ -63,7 +63,7 @@ test.describe('Svelte', () => {
     test.skip(!templateName?.includes('svelte-kit'), 'Only run this test on SvelteKit');
 
     test('Links are logged in Actions panel', async ({ page }) => {
-      const sbPage = new SbPage(page);
+      const sbPage = new SbPage(page, expect);
 
       await sbPage.navigateToStory('stories/sveltekit/modules/hrefs', 'default-actions');
       const root = sbPage.previewRoot();
@@ -83,7 +83,7 @@ test.describe('Svelte', () => {
     });
 
     test('goto are logged in Actions panel', async ({ page }) => {
-      const sbPage = new SbPage(page);
+      const sbPage = new SbPage(page, expect);
 
       await sbPage.navigateToStory('stories/sveltekit/modules/navigation', 'default-actions');
       const root = sbPage.previewRoot();

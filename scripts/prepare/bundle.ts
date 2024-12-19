@@ -3,6 +3,7 @@ import { dirname, join, parse, posix, relative, resolve, sep } from 'node:path';
 
 import type { Metafile } from 'esbuild';
 import aliasPlugin from 'esbuild-plugin-alias';
+// eslint-disable-next-line depend/ban-dependencies
 import * as fs from 'fs-extra';
 import slash from 'slash';
 import { glob } from 'tinyglobby';

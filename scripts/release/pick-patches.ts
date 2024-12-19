@@ -1,5 +1,6 @@
 import { setOutput } from '@actions/core';
 import { program } from 'commander';
+// eslint-disable-next-line depend/ban-dependencies
 import ora from 'ora';
 import picocolors from 'picocolors';
 import invariant from 'tiny-invariant';

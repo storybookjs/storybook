@@ -53,7 +53,11 @@ const getCaptionForLocale = (locale: string) => {
   }
 };
 
-export const CSF2StoryWithLocale: CSF2Story<StoryWithLocaleComponent> = (args, { globals }) => ({
+// @ts-expect-error -- incompatibility with Svelte 5 types and CSF
+export const CSF2StoryWithLocale: CSF2Story<typeof StoryWithLocaleComponent> = (
+  args,
+  { globals }
+) => ({
   Component: StoryWithLocaleComponent,
   props: {
     ...args,
@@ -113,10 +117,11 @@ export const CSF3ButtonWithRender: StoryObj<CustomRenderComponent> = {
   }),
 };
 
-export const CSF3InputFieldFilled: StoryObj<InputFilledStoryComponent> = {
-  render: () => ({
-    Component: InputFilledStoryComponent,
-  }),
+export const CSF3InputFieldFilled: StoryObj<typeof InputFilledStoryComponent> = {
+  render: () =>
+    ({
+      Component: InputFilledStoryComponent,
+    }) as any,
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
     await step('Step label', async () => {
@@ -128,10 +133,10 @@ export const CSF3InputFieldFilled: StoryObj<InputFilledStoryComponent> = {
 };
 
 const mockFn = fn();
-export const LoaderStory: StoryObj<LoaderStoryComponent> = {
+export const LoaderStory: StoryObj<typeof LoaderStoryComponent> = {
   args: {
     mockFn,
-  },
+  } as any,
   loaders: [
     async () => {
       mockFn.mockReturnValueOnce('mockFn return value');
@@ -140,13 +145,14 @@ export const LoaderStory: StoryObj<LoaderStoryComponent> = {
       };
     },
   ],
-  render: (args, { loaded }) => ({
-    Component: LoaderStoryComponent,
-    props: {
-      ...args,
-      loaded,
-    },
-  }),
+  render: (args, { loaded }) =>
+    ({
+      Component: LoaderStoryComponent,
+      props: {
+        ...args,
+        loaded,
+      },
+    }) as any,
   play: async () => {
     expect(mockFn).toHaveBeenCalledWith('render');
   },

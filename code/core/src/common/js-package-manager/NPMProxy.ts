@@ -28,8 +28,8 @@ type NpmDependencies = {
 export type NpmListOutput = {
   dependencies: NpmDependencies;
 };
+const NPM_ERROR_REGEX = /npm (ERR!|error) (code|errno) (\w+)/i;
 
-const NPM_ERROR_REGEX = /npm ERR! code (\w+)/;
 const NPM_ERROR_CODES = {
   E401: 'Authentication failed or is required.',
   E403: 'Access to the resource is forbidden.',
@@ -81,8 +81,8 @@ export class NPMProxy extends JsPackageManager {
     return `npm run ${command}`;
   }
 
-  async getNpmVersion(): Promise<string> {
-    return this.executeCommand({ command: 'npm', args: ['--version'] });
+  getRemoteRunCommand(): string {
+    return 'npx';
   }
 
   public async getPackageJSON(
@@ -316,7 +316,7 @@ export class NPMProxy extends JsPackageManager {
     const match = logs.match(NPM_ERROR_REGEX);
 
     if (match) {
-      const errorCode = match[1] as keyof typeof NPM_ERROR_CODES;
+      const errorCode = match[3] as keyof typeof NPM_ERROR_CODES;
       if (errorCode) {
         finalMessage = `${finalMessage} ${errorCode}`;
       }

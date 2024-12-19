@@ -14,8 +14,7 @@ Code executed in the preview file (`.storybook/preview.js|ts`) runs for every st
 <If notRenderer={['angular', 'vue']}>
   Here's an example of how you might use the preview file to initialize a library that must run before your components render:
 
-  ```ts
-  // .storybook/preview.ts
+  ```ts title=".storybook/preview.ts"
   // Replace your-renderer with the renderer you are using (e.g., react, vue3)
   import { Preview } from '@storybook/your-renderer';
 

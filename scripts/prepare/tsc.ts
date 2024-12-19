@@ -1,3 +1,4 @@
+// eslint-disable-next-line depend/ban-dependencies
 import { emptyDir, move, readJson } from 'fs-extra';
 import { join } from 'path';
 import { glob } from 'tinyglobby';

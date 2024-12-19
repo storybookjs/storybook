@@ -58,4 +58,3 @@ const meta: Meta<typeof MyComponent> = {
 
 export default meta;
 ```
-

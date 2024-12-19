@@ -1,9 +1,10 @@
-import express from 'express';
+import { json } from '@polka/parse';
+import polka from 'polka';
 
 const PORT = process.env.PORT || 6007;
 
-const server = express();
-server.use(express.json());
+const server = polka();
+server.use(json());
 
 const events: Record<string, unknown>[] = [];
 server.post('/event-log', (req, res) => {
@@ -14,7 +15,7 @@ server.post('/event-log', (req, res) => {
 
 server.get('/event-log', (_req, res) => {
   console.log(`Sending ${events.length} events`);
-  res.json(events);
+  res.end(JSON.stringify(events));
 });
 
 server.listen(PORT, () => {

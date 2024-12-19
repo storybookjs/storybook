@@ -15,6 +15,7 @@ const projectJson = (name: string, framework: string, tags: string[]) => ({
     'test',
     'essentials',
     'interactions',
+    'experimental-addon-test',
     'links',
     'onboarding',
     'blocks',

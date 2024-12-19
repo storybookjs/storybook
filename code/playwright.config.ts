@@ -3,6 +3,10 @@ import { defineConfig, devices } from '@playwright/test';
 /** Read environment variables from file. https://github.com/motdotla/dotenv */
 // require('dotenv').config();
 
+// Comment this out and fill in the values to run E2E tests locally using the Playwright extension easily
+// process.env.STORYBOOK_URL = 'http://localhost:6006';
+// process.env.STORYBOOK_TEMPLATE_NAME = 'react-vite/default-ts';
+
 /** See https://playwright.dev/docs/test-configuration. */
 export default defineConfig({
   testDir: './e2e-tests',

@@ -143,7 +143,7 @@ export const webpack5CompilerSetup = {
       In the next step, Storybook will ask you to choose a compiler to automatically set it up for you.\n
       After the migration, you can switch Webpack5 compilers by swapping the addon in your project.
       You can find more information here: ${picocolors.yellow(
-        'https://storybook.js.org/docs/8.0/builders/webpack#compiler-support'
+        'https://storybook.js.org/docs/builders/webpack#compiler-support'
       )}
       `);
     } else {
@@ -153,7 +153,7 @@ export const webpack5CompilerSetup = {
       In the next step, Storybook will install @storybook/addon-webpack5-compiler-swc and will add it to your addons list in your Storybook config.\n
       After the migration, you can switch Webpack5 compilers by swapping the addon in your project.
       You can find more information here: ${picocolors.yellow(
-        'https://storybook.js.org/docs/8.0/builders/webpack#compiler-support'
+        'https://storybook.js.org/docs/builders/webpack#compiler-support'
       )}
       `);
     }

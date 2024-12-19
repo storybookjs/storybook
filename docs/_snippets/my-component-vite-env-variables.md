@@ -1,3 +1,38 @@
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="ExampleStory"
+  args={{
+    propertyA: import.meta.env.STORYBOOK_DATA_KEY,
+    propertyB: import.meta.env.VITE_CUSTOM_VAR,
+  }}
+/>
+```
+
+```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+import MyComponent from './MyComponent.svelte';
+
+export default {
+  component: MyComponent,
+};
+
+export const ExampleStory = {
+  args: {
+    propertyA: import.meta.env.STORYBOOK_DATA_KEY,
+    propertyB: import.meta.env.VITE_CUSTOM_VAR,
+  },
+};
+```
+
 ```js filename="MyComponent.stories.js|jsx" renderer="common" language="js"
 import { MyComponent } from './MyComponent';
 
@@ -6,6 +41,46 @@ export default {
 };
 
 export const ExampleStory = {
+  args: {
+    propertyA: import.meta.env.STORYBOOK_DATA_KEY,
+    propertyB: import.meta.env.VITE_CUSTOM_VAR,
+  },
+};
+```
+
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="ExampleStory"
+  args={{
+    propertyA: import.meta.env.STORYBOOK_DATA_KEY,
+    propertyB: import.meta.env.VITE_CUSTOM_VAR,
+  }}
+/>
+```
+
+```tsx filename="MyComponent.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
+import type { Meta, StoryObj } from '@storybook/svelte';
+
+import MyComponent from './MyComponent.svelte';
+
+const meta = {
+  component: MyComponent,
+} satisfies Meta<typeof MyComponent>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const ExampleStory: Story = {
   args: {
     propertyA: import.meta.env.STORYBOOK_DATA_KEY,
     propertyB: import.meta.env.VITE_CUSTOM_VAR,
@@ -25,6 +100,46 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
+
+export const ExampleStory: Story = {
+  args: {
+    propertyA: import.meta.env.STORYBOOK_DATA_KEY,
+    propertyB: import.meta.env.VITE_CUSTOM_VAR,
+  },
+};
+```
+
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="ExampleStory"
+  args={{
+    propertyA: import.meta.env.STORYBOOK_DATA_KEY,
+    propertyB: import.meta.env.VITE_CUSTOM_VAR,
+  }}
+/>
+```
+
+```tsx filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+import type { Meta, StoryObj } from '@storybook/svelte';
+
+import MyComponent from './MyComponent.svelte';
+
+const meta: Meta<typeof MyComponent> = {
+  component: MyComponent,
+};
+
+export default meta;
+type Story = StoryObj<typeof MyComponent>;
 
 export const ExampleStory: Story = {
   args: {
@@ -85,4 +200,3 @@ export const ExampleStory: Story = {
   },
 };
 ```
-

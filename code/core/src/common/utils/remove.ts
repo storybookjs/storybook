@@ -19,13 +19,13 @@ const logger = console;
  */
 export async function removeAddon(
   addon: string,
-  options: { packageManager?: PackageManagerName } = {}
+  options: { packageManager?: PackageManagerName; cwd?: string; configDir?: string } = {}
 ) {
   const { packageManager: pkgMgr } = options;
 
-  const packageManager = JsPackageManagerFactory.getPackageManager({ force: pkgMgr });
+  const packageManager = JsPackageManagerFactory.getPackageManager({ force: pkgMgr }, options.cwd);
   const packageJson = await packageManager.retrievePackageJson();
-  const { mainConfig, configDir } = getStorybookInfo(packageJson);
+  const { mainConfig, configDir, ...rest } = getStorybookInfo(packageJson, options.configDir);
 
   if (typeof configDir === 'undefined') {
     throw new Error(dedent`

@@ -5,8 +5,6 @@ import { Button, Spaced } from 'storybook/internal/components';
 import { styled } from 'storybook/internal/theming';
 import type { DocsContextProps, ModuleExport } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import * as ButtonStories from '../examples/Button.stories';
 import { Preview, PreviewSkeleton } from './Preview';
 import * as sourceStories from './Source.stories';
@@ -251,7 +249,7 @@ export const WithAdditionalActions = (
       {
         title: 'Open on GitHub',
         onClick: () => {
-          global.location.href =
+          globalThis.location.href =
             'https://github.com/storybookjs/storybook/blob/next/code/lib/blocks/src/components/Preview.stories.tsx#L165-L186';
         },
       },

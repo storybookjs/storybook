@@ -58,6 +58,10 @@ export async function generatePackageJsonFile(entries: ReturnType<typeof getEntr
     '*': {
       '*': ['./dist/index.d.ts'],
       ...entries.reduce<Record<string, string[]>>((acc, entry) => {
+        if (!entry.dts) {
+          return acc;
+        }
+
         let main = slash(relative(cwd, entry.file).replace('src', 'dist'));
         if (main === './dist/index.ts' || main === './dist/index.tsx') {
           main = '.';

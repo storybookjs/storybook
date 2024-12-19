@@ -39,6 +39,7 @@ const ScrollAreaScrollbar = styled(ScrollAreaPrimitive.Scrollbar)<{
   background: 'transparent',
   transition: 'all 0.2s ease-out',
   borderRadius: 'var(--scrollbar-size)',
+  zIndex: 1,
 
   '&[data-orientation="vertical"]': {
     width: 'var(--scrollbar-size)',

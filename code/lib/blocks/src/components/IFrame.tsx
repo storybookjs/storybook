@@ -1,8 +1,6 @@
 import React, { Component } from 'react';
 
-import { global } from '@storybook/global';
-
-const { window: globalWindow } = global;
+const { window: globalWindow } = globalThis;
 
 interface IFrameProps {
   id: string;

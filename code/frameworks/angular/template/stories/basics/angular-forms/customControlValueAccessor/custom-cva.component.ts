@@ -4,6 +4,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 const NOOP = () => {};
 
 @Component({
+  standalone: false,
   selector: 'storybook-custom-cva-component',
   template: ` <div>{{ value }}</div>
 <input type="text" [(ngModel)]="value" /> `,

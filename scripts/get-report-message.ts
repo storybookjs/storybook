@@ -1,4 +1,6 @@
+// eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
+// eslint-disable-next-line depend/ban-dependencies
 import { readJson } from 'fs-extra';
 import { join } from 'path';
 

@@ -107,7 +107,6 @@ ${template}`;
  * Checks if the source code generation should be skipped for the given Story context. Will be true
  * if one of the following is true:
  *
- * - View mode is not "docs"
  * - Story is no arg story
  * - Story has set custom source code via parameters.docs.source.code
  * - Story has set source type to "code" via parameters.docs.source.type
@@ -120,13 +119,10 @@ export const shouldSkipSourceCodeGeneration = (context: StoryContext): boolean =
   }
 
   const isArgsStory = context?.parameters.__isArgsStory;
-  const isDocsViewMode = context?.viewMode === 'docs';
 
   // never render if the user is forcing the block to render code, or
   // if the user provides code, or if it's not an args story.
-  return (
-    !isDocsViewMode || !isArgsStory || sourceParams?.code || sourceParams?.type === SourceType.CODE
-  );
+  return !isArgsStory || sourceParams?.code || sourceParams?.type === SourceType.CODE;
 };
 
 /**

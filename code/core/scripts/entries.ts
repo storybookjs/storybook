@@ -9,6 +9,9 @@ export const getEntries = (cwd: string) => {
     define('src/node-logger/index.ts', ['node'], true),
     define('src/client-logger/index.ts', ['browser', 'node'], true),
 
+    define('src/theming/index.ts', ['browser', 'node'], true, ['react']),
+    define('src/theming/create.ts', ['browser', 'node'], true, ['react']),
+
     define('src/core-server/index.ts', ['node'], true),
     define('src/core-server/presets/common-preset.ts', ['node'], false),
     define('src/core-server/presets/common-manager.ts', ['browser'], false),
@@ -35,8 +38,6 @@ export const getEntries = (cwd: string) => {
       ['react', 'react-dom'],
       ['prettier'] // the syntax highlighter uses prettier/standalone to format the code
     ),
-    define('src/theming/index.ts', ['browser', 'node'], true, ['react']),
-    define('src/theming/create.ts', ['browser', 'node'], true, ['react']),
     define('src/docs-tools/index.ts', ['browser', 'node'], true),
 
     define('src/manager/globals-module-info.ts', ['node'], true),

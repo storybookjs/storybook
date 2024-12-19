@@ -1,13 +1,18 @@
+/* eslint-disable local-rules/no-uncategorized-errors */
 import { toId } from '@storybook/csf';
 
-import type { Page } from '@playwright/test';
-import { expect } from '@playwright/test';
+import type { Expect, Page } from '@playwright/test';
+
+import { allTemplates } from '../lib/cli-storybook/src/sandbox-templates';
 
 export class SbPage {
   readonly page: Page;
 
-  constructor(page: Page) {
+  readonly expect: Expect;
+
+  constructor(page: Page, expect: Expect) {
     this.page = page;
+    this.expect = expect;
   }
 
   async openComponent(title: string, hasRoot = true) {
@@ -17,7 +22,7 @@ export class SbPage {
 
       const parentLink = this.page.locator(`#${parentId}`);
 
-      await expect(parentLink).toBeVisible();
+      await this.expect(parentLink).toBeVisible();
       if ((await parentLink.getAttribute('aria-expanded')) === 'false') {
         await parentLink.click();
       }
@@ -54,9 +59,10 @@ export class SbPage {
     );
 
     const selected = storyLink;
-    await expect(selected).toHaveAttribute('data-selected', 'true');
+    await this.expect(selected).toHaveAttribute('data-selected', 'true');
 
     await this.previewRoot();
+    await this.waitUntilLoaded();
   }
 
   async navigateToUnattachedDocs(title: string, name = 'docs') {
@@ -74,9 +80,27 @@ export class SbPage {
     );
 
     const selected = storyLink;
-    await expect(selected).toHaveAttribute('data-selected', 'true');
+    await this.expect(selected).toHaveAttribute('data-selected', 'true');
 
-    await this.previewRoot();
+    await this.waitForStoryLoaded();
+  }
+
+  async waitForStoryLoaded() {
+    try {
+      const root = this.previewRoot();
+      // Wait until there is at least one child (a story element) in the preview iframe
+      await root.locator(':scope > *').first().waitFor({
+        state: 'attached',
+        timeout: 10000,
+      });
+    } catch (error: any) {
+      if (error.name === 'TimeoutError') {
+        throw new Error(
+          'The Storybook iframe did not have children within the specified timeout. Did the story load correctly?'
+        );
+      }
+      throw error;
+    }
   }
 
   async waitUntilLoaded() {
@@ -108,6 +132,8 @@ export class SbPage {
     const storyLoadingPage = root.locator('.sb-preparing-story');
     await docsLoadingPage.waitFor({ state: 'hidden' });
     await storyLoadingPage.waitFor({ state: 'hidden' });
+
+    await this.waitForStoryLoaded();
   }
 
   previewIframe() {
@@ -120,7 +146,7 @@ export class SbPage {
   }
 
   panelContent() {
-    return this.page.locator('#storybook-panel-root #panel-tab-content');
+    return this.page.locator('#storybook-panel-root #panel-tab-content > div:not([hidden])');
   }
 
   async viewAddonPanel(name: string) {
@@ -139,4 +165,34 @@ export class SbPage {
   getCanvasBodyElement() {
     return this.previewIframe().locator('body');
   }
+
+  // utility to try and decrease flake
+  async retryTimes(
+    fn: () => Promise<void>,
+    options?: {
+      retries?: number;
+      delay?: number;
+    }
+  ): Promise<void> {
+    let attempts = 0;
+    const { retries = 3, delay = 0 } = options || {};
+    while (attempts < retries) {
+      try {
+        await fn();
+        return;
+      } catch (error) {
+        attempts++;
+        if (attempts === retries) {
+          throw error;
+        }
+        await new Promise<void>((resolve) => setTimeout(resolve, delay));
+      }
+    }
+  }
 }
+
+const templateName: keyof typeof allTemplates = process.env.STORYBOOK_TEMPLATE_NAME || ('' as any);
+
+const templates = allTemplates;
+export const hasVitestIntegration =
+  !templates[templateName]?.skipTasks?.includes('vitest-integration');

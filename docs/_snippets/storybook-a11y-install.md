@@ -9,4 +9,3 @@ pnpm add --save-dev @storybook/addon-a11y
 ```shell renderer="common" language="js" packageManager="yarn"
 yarn add --dev @storybook/addon-a11y
 ```
-

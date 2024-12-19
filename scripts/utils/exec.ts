@@ -1,5 +1,5 @@
-import type { ExecaChildProcess, Options } from 'execa';
-import { execa } from 'execa';
+// eslint-disable-next-line depend/ban-dependencies
+import { type ExecaChildProcess, type Options, execa } from 'execa';
 import picocolors from 'picocolors';
 
 const logger = console;

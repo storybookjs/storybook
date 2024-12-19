@@ -1,3 +1,4 @@
+// eslint-disable-next-line depend/ban-dependencies
 import { ensureDir, readJSON, readdir, writeJSON } from 'fs-extra';
 import { join } from 'path';
 import type { Page } from 'playwright-core';

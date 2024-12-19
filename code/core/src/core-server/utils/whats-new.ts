@@ -1,7 +1,8 @@
+/* eslint-disable no-underscore-dangle */
 import { writeFile } from 'node:fs/promises';
 
 import type { Channel } from '@storybook/core/channels';
-import { findConfigFile } from '@storybook/core/common';
+import { findConfigFile, loadMainConfig } from '@storybook/core/common';
 import { telemetry } from '@storybook/core/telemetry';
 import type { CoreConfig, Options } from '@storybook/core/types';
 
@@ -58,15 +59,9 @@ export function initializeWhatsNew(
         throw response;
       })) as WhatsNewResponse;
 
-      const configFileName = findConfigFile('main', options.configDir);
-      if (!configFileName) {
-        throw new Error(`unable to find storybook main file in ${options.configDir}`);
-      }
-      const main = await readConfig(configFileName);
-      const disableWhatsNewNotifications = main.getFieldValue([
-        'core',
-        'disableWhatsNewNotifications',
-      ]);
+      const main = await loadMainConfig({ configDir: options.configDir, noCache: true });
+      const disableWhatsNewNotifications =
+        (main.core as CoreConfig)?.disableWhatsNewNotifications === true;
 
       const cache: WhatsNewCache = (await options.cache.get(WHATS_NEW_CACHE)) ?? {};
       const data = {
@@ -91,8 +86,14 @@ export function initializeWhatsNew(
       const isTelemetryEnabled = coreOptions.disableTelemetry !== true;
       try {
         const mainPath = findConfigFile('main', options.configDir);
-        invariant(mainPath, `unable to find storybook main file in ${options.configDir}`);
+        invariant(mainPath, `unable to find Storybook main file in ${options.configDir}`);
         const main = await readConfig(mainPath);
+        if (!main._exportsObject) {
+          // eslint-disable-next-line local-rules/no-uncategorized-errors
+          throw new Error(
+            `Unable to parse Storybook main file while trying to read 'core' property`
+          );
+        }
         main.setFieldValue(['core', 'disableWhatsNewNotifications'], disableWhatsNewNotifications);
         await writeFile(mainPath, printConfig(main).code);
         if (isTelemetryEnabled) {

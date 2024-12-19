@@ -2,7 +2,7 @@
 import { defineConfig, mergeConfig } from 'vitest/config';
 import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';
 // 👇 If you're using Next.js, apply this framework plugin as well
-// import { storybookNextjsPlugin } from '@storybook/experimental-nextjs-vite/vite-plugin';
+// import { storybookNextJsPlugin } from '@storybook/experimental-nextjs-vite/vite-plugin';
 
 import viteConfig from './vite.config';
 
@@ -15,11 +15,9 @@ export default mergeConfig(
         // The --ci flag will skip prompts and not open a browser
         storybookScript: 'yarn storybook --ci',
       }),
-      // storybookNextjsPlugin(),
+      // storybookNextJsPlugin(),
     ],
     test: {
-      // Glob pattern to find story files
-      include: ['src/**/*.stories.?(m)[jt]s?(x)'],
       // Enable browser mode
       browser: {
         enabled: true,
@@ -28,10 +26,6 @@ export default mergeConfig(
         provider: 'playwright',
         headless: true,
       },
-      // Speed up tests and better match how they run in Storybook itself
-      // https://vitest.dev/config/#isolate
-      // Consider removing this if you have flaky tests
-      isolate: false,
       setupFiles: ['./.storybook/vitest.setup.ts'],
     },
   })
@@ -57,8 +51,6 @@ export default mergeConfig(
       storybookVuePlugin(),
     ],
     test: {
-      // Glob pattern to find story files
-      include: ['src/**/*.stories.?(m)[jt]s?(x)'],
       // Enable browser mode
       browser: {
         enabled: true,
@@ -67,10 +59,6 @@ export default mergeConfig(
         provider: 'playwright',
         headless: true,
       },
-      // Speed up tests and better match how they run in Storybook itself
-      // https://vitest.dev/config/#isolate
-      // Consider removing this if you have flaky tests
-      isolate: false,
       setupFiles: ['./.storybook/vitest.setup.ts'],
     },
   })
@@ -97,8 +85,6 @@ export default mergeConfig(
       // storybookSveltekitPlugin(),
     ],
     test: {
-      // Glob pattern to find story files
-      include: ['src/**/*.stories.?(m)[jt]s?(x)'],
       // Enable browser mode
       browser: {
         enabled: true,
@@ -107,10 +93,6 @@ export default mergeConfig(
         provider: 'playwright',
         headless: true,
       },
-      // Speed up tests and better match how they run in Storybook itself
-      // https://vitest.dev/config/#isolate
-      // Consider removing this if you have flaky tests
-      isolate: false,
       setupFiles: ['./.storybook/vitest.setup.ts'],
     },
   })

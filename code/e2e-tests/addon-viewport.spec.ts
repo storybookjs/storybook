@@ -8,11 +8,11 @@ const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 test.describe('addon-viewport', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(storybookUrl);
-    await new SbPage(page).waitUntilLoaded();
+    await new SbPage(page, expect).waitUntilLoaded();
   });
 
   test('should have viewport button in the toolbar', async ({ page }) => {
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
 
     // Click on viewport button and select small mobile
     await sbPage.navigateToStory('example/button', 'primary');
@@ -23,7 +23,7 @@ test.describe('addon-viewport', () => {
   });
 
   test('iframe width should be changed when a mobile viewport is selected', async ({ page }) => {
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
 
     // Click on viewport button and select small mobile
     await sbPage.navigateToStory('example/button', 'primary');
@@ -43,7 +43,7 @@ test.describe('addon-viewport', () => {
   });
 
   test('viewport should be editable when a default viewport is set', async ({ page }) => {
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
 
     // Story parameters/selected is set to small mobile
     await sbPage.navigateToStory('addons/viewport/parameters', 'selected');

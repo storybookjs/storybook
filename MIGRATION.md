@@ -1,5 +1,10 @@
 <h1>Migration</h1>
 
+- [From version 8.4.x to 8.5.x](#from-version-84x-to-85x)
+  - [Added source code panel to docs](#added-source-code-panel-to-docs)
+  - [Addon-a11y: Component test integration](#addon-a11y-component-test-integration)
+  - [Addon-a11y: Deprecated `parameters.a11y.manual`](#addon-a11y-deprecated-parametersa11ymanual)
+  - [Indexing behavior of @storybook/experimental-addon-test is changed](#indexing-behavior-of-storybookexperimental-addon-test-is-changed)
 - [From version 8.2.x to 8.3.x](#from-version-82x-to-83x)
   - [Removed `experimental_SIDEBAR_BOTTOM` and deprecated `experimental_SIDEBAR_TOP` addon types](#removed-experimental_sidebar_bottom-and-deprecated-experimental_sidebar_top-addon-types)
   - [New parameters format for addon backgrounds](#new-parameters-format-for-addon-backgrounds)
@@ -167,6 +172,7 @@
     - [Angular: Drop support for calling Storybook directly](#angular-drop-support-for-calling-storybook-directly)
     - [Angular: Application providers and ModuleWithProviders](#angular-application-providers-and-modulewithproviders)
     - [Angular: Removed legacy renderer](#angular-removed-legacy-renderer)
+    - [Angular: Initializer functions](#angular-initializer-functions)
     - [Next.js: use the `@storybook/nextjs` framework](#nextjs-use-the-storybooknextjs-framework)
     - [SvelteKit: needs the `@storybook/sveltekit` framework](#sveltekit-needs-the-storybooksveltekit-framework)
     - [Vue3: replaced app export with setup](#vue3-replaced-app-export-with-setup)
@@ -418,6 +424,54 @@
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
+## From version 8.4.x to 8.5.x
+
+### Added source code panel to docs
+
+Starting in 8.5, Storybook Docs (`@storybook/addon-docs`) automatically adds a new addon panel to stories that displays a source snippet beneath each story. This works similarly to the existing [source snippet doc block](https://storybook.js.org/docs/writing-docs/doc-blocks#source), but in the story view. It is intended to replace the [Storysource addon](https://storybook.js.org/addons/@storybook/addon-storysource).
+
+If you wish to disable this panel globally, add the following line to your `.storybook/preview.js` project configuration. You can also selectively disable/enable at the story level.
+
+```js
+export default {
+  parameters: {
+    docs: {
+      codePanel: false,
+    },
+  },
+};
+```
+
+### Addon-a11y: Component test integration
+
+In Storybook 8.4, we introduced the [Test addon](https://storybook.js.org/docs/writing-tests/test-addon) (`@storybook/experimental-addon-test`). Powered by Vitest under the hood, this addon lets you watch, run, and debug your component tests directly in Storybook.
+
+In Storybook 8.5, we revamped the [Accessibility addon](https://storybook.js.org/docs/writing-tests/accessibility-testing) (`@storybook/addon-a11y`) to integrate it with the component tests feature. This means you can now extend your component tests to include accessibility tests.
+
+If you upgrade to Storybook 8.5 via `npx storybook@latest upgrade`, the Accessibility addon will be automatically configured to work with the component tests. However, if you're upgrading manually and you have the Test addon installed, adjust your configuration as follows:
+
+```diff
+// .storybook/vitest.setup.ts
+...
++import * as a11yAddonAnnotations from '@storybook/addon-a11y/preview';
+
+const annotations = setProjectAnnotations([
+  previewAnnotations,
++ a11yAddonAnnotations,
+]);
+
+// Run Storybook's beforeAll hook
+beforeAll(annotations.beforeAll);
+```
+
+### Addon-a11y: Deprecated `parameters.a11y.manual`
+
+We have deprecated `parameters.a11y.manual` in 8.5. Please use `globals.a11y.manual` instead.
+
+### Indexing behavior of @storybook/experimental-addon-test is changed
+
+The Storybook test addon used to index stories based on the `test.include` field in the Vitest config file. This caused indexing issues with Storybook, because stories could have been indexed by Storybook and not Vitest, and vice versa. Starting in Storybook 8.5.0-alpha.18, we changed the indexing behavior so that it always uses the globs defined in the `stories` field in `.storybook/main.js` for a more consistent experience. It is now discouraged to use `test.include`, please remove it.
+
 ## From version 8.2.x to 8.3.x
 
 ### Removed `experimental_SIDEBAR_BOTTOM` and deprecated `experimental_SIDEBAR_TOP` addon types
@@ -430,7 +484,7 @@ These APIs allowed addons to render arbitrary content in the Storybook sidebar. 
 
 > [!NOTE]
 > You need to set the feature flag `backgroundsStoryGlobals` to `true` in your `.storybook/main.ts` to use the new format and set the value with `globals`.
-> 
+>
 > See here how to set feature flags: https://storybook.js.org/docs/api/main-config/main-config-features
 
 The `addon-backgrounds` addon now uses a new format for configuring its list of selectable backgrounds.
@@ -476,7 +530,7 @@ This locks that story to the `twitter` background, it cannot be changed by the a
 
 > [!NOTE]
 > You need to set the feature flag `viewportStoryGlobals` to `true` in your `.storybook/main.ts` to use the new format and set the value with `globals`.
-> 
+>
 > See here how to set feature flags: https://storybook.js.org/docs/api/main-config/main-config-features
 
 The `addon-viewport` addon now uses a new format for configuring its list of selectable viewports.
@@ -2578,6 +2632,15 @@ Please visit https://angular.io/guide/standalone-components#configuring-dependen
 #### Angular: Removed legacy renderer
 
 The `parameters.angularLegacyRendering` option is removed. You cannot use the old legacy renderer anymore.
+
+#### Angular: Initializer functions
+
+Initializer functions using the `APP_INITIALIZER` dependency injection token only run when the component renders. To ensure an initializer function is always executed, you can adjust your `.storybook/preview.ts` and invoke it directly.
+
+```js
+myCustomInitializer();
+export default preview;
+```
 
 #### Next.js: use the `@storybook/nextjs` framework
 

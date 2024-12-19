@@ -137,4 +137,5 @@ export const ErrorStory: Story = {
   parameters: {
     chromatic: { disable: true },
   },
+  tags: ['!test', '!vitest'],
 };

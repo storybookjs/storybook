@@ -13,6 +13,7 @@ const MODAL_HEIGHT = 418;
 const ModalStyled = styled(Modal)(() => ({
   boxShadow: 'none',
   background: 'transparent',
+  overflow: 'visible',
 }));
 
 const ModalChild = styled.div<{ height?: number }>(({ theme, height }) => ({

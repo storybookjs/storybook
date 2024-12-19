@@ -1,6 +1,7 @@
 import { Component, Input } from '@angular/core';
 
 @Component({
+  standalone: false,
   selector: 'storybook-pre',
   template: `<pre data-testid="pre" [ngStyle]="style">{{ finalText }}</pre>`,
 })

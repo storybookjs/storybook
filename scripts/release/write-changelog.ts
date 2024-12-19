@@ -1,6 +1,7 @@
 import { join } from 'node:path';
 
 import { program } from 'commander';
+// eslint-disable-next-line depend/ban-dependencies
 import { readFile, writeFile, writeJson } from 'fs-extra';
 import picocolors from 'picocolors';
 import semver from 'semver';

@@ -9,6 +9,8 @@ import { STORIES_COLLAPSE_ALL } from '@storybook/core/core-events';
 import type { API, State } from '@storybook/core/manager-api';
 import { shortcutToHumanString } from '@storybook/core/manager-api';
 
+import type { Link } from '../../components/components/tooltip/TooltipLinkList';
+
 const focusableUIElements = {
   storySearchField: 'storybook-explorer-searchfield',
   storyListMenu: 'storybook-explorer-menu',
@@ -58,8 +60,7 @@ export const useMenu = (
   isPanelShown: boolean,
   isNavShown: boolean,
   enableShortcuts: boolean
-) => {
-  const theme = useTheme();
+): Link[][] => {
   const shortcutKeys = api.getShortcutKeys();
 
   const about = useMemo(
@@ -105,11 +106,8 @@ export const useMenu = (
       title: 'Keyboard shortcuts',
       onClick: () => api.changeSettingsTab('shortcuts'),
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.shortcutsPage} /> : null,
-      style: {
-        borderBottom: `4px solid ${theme.appBorderColor}`,
-      },
     }),
-    [api, enableShortcuts, shortcutKeys.shortcutsPage, theme.appBorderColor]
+    [api, enableShortcuts, shortcutKeys.shortcutsPage]
   );
 
   const sidebarToggle = useMemo(
@@ -244,24 +242,29 @@ export const useMenu = (
   }, [api, enableShortcuts, shortcutKeys]);
 
   return useMemo(
-    () => [
-      about,
-      ...(state.whatsNewData?.status === 'SUCCESS' ? [whatsNew] : []),
-      documentation,
-      shortcuts,
-      sidebarToggle,
-      toolbarToogle,
-      addonsToggle,
-      addonsOrientationToggle,
-      fullscreenToggle,
-      searchToggle,
-      up,
-      down,
-      prev,
-      next,
-      collapse,
-      ...getAddonsShortcuts(),
-    ],
+    () =>
+      [
+        [
+          about,
+          ...(state.whatsNewData?.status === 'SUCCESS' ? [whatsNew] : []),
+          documentation,
+          shortcuts,
+        ],
+        [
+          sidebarToggle,
+          toolbarToogle,
+          addonsToggle,
+          addonsOrientationToggle,
+          fullscreenToggle,
+          searchToggle,
+          up,
+          down,
+          prev,
+          next,
+          collapse,
+        ],
+        getAddonsShortcuts(),
+      ] satisfies Link[][],
     [
       about,
       state,

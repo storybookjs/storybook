@@ -3,6 +3,7 @@ import { relative } from 'node:path';
 import { getProjectRoot } from '@storybook/core/common';
 
 import { execSync } from 'child_process';
+import slash from 'slash';
 
 import { oneWayHash } from './one-way-hash';
 
@@ -16,7 +17,18 @@ export function normalizeGitUrl(rawUrl: string) {
   // Now strip off scheme
   const urlWithoutScheme = urlWithoutUser.replace(/^.*\/\//, '');
 
-  return urlWithoutScheme.replace(':', '/');
+  // Ensure the URL ends in `.git`
+  const urlWithExtension = urlWithoutScheme.endsWith('.git')
+    ? urlWithoutScheme
+    : `${urlWithoutScheme}.git`;
+
+  return urlWithExtension.replace(':', '/');
+}
+
+// we use a combination of remoteUrl and working directory
+// to separate multiple storybooks from the same project (e.g. monorepo)
+export function unhashedProjectId(remoteUrl: string, projectRootPath: string) {
+  return `${normalizeGitUrl(remoteUrl)}${slash(projectRootPath)}`;
 }
 
 let anonymousProjectId: string;
@@ -25,7 +37,6 @@ export const getAnonymousProjectId = () => {
     return anonymousProjectId;
   }
 
-  let unhashedProjectId;
   try {
     const projectRoot = getProjectRoot();
 
@@ -36,11 +47,7 @@ export const getAnonymousProjectId = () => {
       stdio: `pipe`,
     });
 
-    // we use a combination of remoteUrl and working directory
-    // to separate multiple storybooks from the same project (e.g. monorepo)
-    unhashedProjectId = `${normalizeGitUrl(String(originBuffer))}${projectRootPath}`;
-
-    anonymousProjectId = oneWayHash(unhashedProjectId);
+    anonymousProjectId = oneWayHash(unhashedProjectId(String(originBuffer), projectRootPath));
   } catch (_) {
     //
   }

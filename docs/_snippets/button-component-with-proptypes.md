@@ -69,7 +69,7 @@ export const Button: React.FC<ButtonProps> = ({ isDisabled = false, content = ''
 };
 ```
 
-```html filename="Button.svelte" renderer="svelte" language="js"
+```svelte filename="Button.svelte" renderer="svelte" language="js"
 <script>
   /**
    * A Button Component
@@ -92,9 +92,7 @@ export const Button: React.FC<ButtonProps> = ({ isDisabled = false, content = ''
 <button type="button" {disabled}>{content}</button>
 ```
 
-```html renderer="vue" language="js" tabTitle="3"
-{/* Button.vue */}
-
+```html filename="Button.vue" renderer="vue" language="js"
 <template>
   <button type="button" :disabled="isDisabled">{{ label }}</button>
 </template>
@@ -136,9 +134,7 @@ export const Button: React.FC<ButtonProps> = ({ isDisabled = false, content = ''
 </script>
 ```
 
-```html renderer="vue" language="ts" tabTitle="3"
-{/* Button.vue */}
-
+```html filename="Button.vue" renderer="vue" language="ts"
 <template>
   <button type="button" :disabled="isDisabled">{{ label }}</button>
 </template>
@@ -230,4 +226,3 @@ export class CustomButton extends LitElement {
   }
 }
 ```
-

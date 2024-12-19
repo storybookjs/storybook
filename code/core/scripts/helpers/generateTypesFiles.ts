@@ -3,6 +3,7 @@ import { join, relative } from 'node:path';
 import { spawn } from '../../../../scripts/prepare/tools';
 import { limit, picocolors, process } from '../../../../scripts/prepare/tools';
 import type { getEntries } from '../entries';
+import { modifyThemeTypes } from './modifyThemeTypes';
 
 export async function generateTypesFiles(
   entries: ReturnType<typeof getEntries>,
@@ -70,6 +71,11 @@ export async function generateTypesFiles(
             process.exit(dtsProcess.exitCode || 1);
           } else {
             console.log('Generated types for', picocolors.cyan(relative(cwd, dtsEntries[index])));
+
+            if (dtsEntries[index].includes('src/theming/index')) {
+              console.log('Modifying theme types');
+              await modifyThemeTypes();
+            }
           }
         });
       })

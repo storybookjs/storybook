@@ -2,7 +2,9 @@
 // without having to build dts files for all packages in the monorepo.
 // It is not implemented yet for angular, svelte and vue.
 import { program } from 'commander';
+// eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
+// eslint-disable-next-line depend/ban-dependencies
 import { readJSON } from 'fs-extra';
 import { resolve } from 'path';
 import picocolors from 'picocolors';

@@ -7,7 +7,7 @@ export default {
 ```
 
 ```ts filename=".storybook/main.ts" renderer="svelte" language="ts"
-import { StorybookConfig } from '@storybook/nextjs';
+import { StorybookConfig } from '@storybook/sveltekit';
 
 const config: StorybookConfig = {
   // ...
@@ -17,4 +17,3 @@ const config: StorybookConfig = {
 
 export default config;
 ```
-

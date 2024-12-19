@@ -5,8 +5,6 @@ import { ActionBar, Zoom } from 'storybook/internal/components';
 import type { ActionItem } from 'storybook/internal/components';
 import { styled } from 'storybook/internal/theming';
 
-import { global } from '@storybook/global';
-
 import { darken } from 'polished';
 
 import type { SourceProps } from '.';
@@ -204,7 +202,7 @@ export const Preview: FC<PreviewProps> = ({
   );
   const actionItems = [...defaultActionItems, ...additionalActionItems];
 
-  const { window: globalWindow } = global;
+  const { window: globalWindow } = globalThis;
 
   const copyToClipboard = useCallback(async (text: string) => {
     const { createCopyToClipboardFunction } = await import('storybook/internal/components');

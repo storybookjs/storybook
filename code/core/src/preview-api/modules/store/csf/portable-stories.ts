@@ -26,6 +26,7 @@ import { MountMustBeDestructuredError } from '@storybook/core/preview-errors';
 import { dedent } from 'ts-dedent';
 
 import { HooksContext } from '../../../addons';
+import { ReporterAPI } from '../reporter-api';
 import { composeConfigs } from './composeConfigs';
 import { getValuesFromArgTypes } from './getValuesFromArgTypes';
 import { normalizeComponentAnnotations } from './normalizeComponentAnnotations';
@@ -61,11 +62,8 @@ function extractAnnotation<TRenderer extends Renderer = Renderer>(
   // import * as annotations from '.storybook/preview'
   // import annotations from '.storybook/preview'
   // in both cases: 1 - the file has a default export; 2 - named exports only
-  // support imports such as
-  // import * as annotations from '.storybook/preview'
-  // import annotations from '.storybook/preview'
-  // in both cases: 1 - the file has a default export; 2 - named exports only
-  return 'default' in annotation ? annotation.default : annotation;
+  // also support when the file has both annotations coming from default and named exports
+  return composeConfigs([annotation]);
 }
 
 export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
@@ -139,18 +137,22 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
   );
 
   const globalsFromGlobalTypes = getValuesFromArgTypes(normalizedProjectAnnotations.globalTypes);
+  const globals = {
+    // TODO: remove loading from globalTypes in 9.0
+    ...globalsFromGlobalTypes,
+    ...normalizedProjectAnnotations.initialGlobals,
+    ...story.storyGlobals,
+  };
+
+  const reporting = new ReporterAPI();
 
   const initializeContext = () => {
     const context: StoryContext<TRenderer> = prepareContext({
       hooks: new HooksContext(),
-      globals: {
-        // TODO: remove loading from globalTypes in 9.0
-        ...globalsFromGlobalTypes,
-        ...normalizedProjectAnnotations.initialGlobals,
-        ...story.storyGlobals,
-      },
+      globals,
       args: { ...story.initialArgs },
       viewMode: 'story',
+      reporting,
       loaded: {},
       abortSignal: new AbortController().signal,
       step: (label, play) => story.runStep(label, play, context),
@@ -251,11 +253,13 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
 
         loadedContext = context;
       },
+      globals,
       args: story.initialArgs as Partial<TArgs>,
       parameters: story.parameters as Parameters,
       argTypes: story.argTypes as StrictArgTypes<TArgs>,
       play: playFunction!,
       run,
+      reporting,
       tags: story.tags,
     }
   );
@@ -406,4 +410,6 @@ async function runStory<TRenderer extends Renderer>(
     }
     await playFunction(context);
   }
+
+  await story.applyAfterEach(context);
 }

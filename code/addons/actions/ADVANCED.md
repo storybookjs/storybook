@@ -1,6 +1,6 @@
 ## Advanced/Legacy Actions usage
 
-For basic usage, see the [documentation](https://storybook.js.org/docs/react/essentials/actions).
+For basic usage, see the [documentation](https://storybook.js.org/docs/essentials/actions).
 
 This document describes the pre-6.0 usage of the addon, and as such is no longer recommended (although it will be supported until at least 7.0).
 

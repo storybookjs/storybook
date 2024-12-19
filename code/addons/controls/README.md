@@ -2,19 +2,19 @@
 
 [Storybook](https://storybook.js.org) Controls gives you a graphical UI to interact with a component's arguments dynamically, without needing to code. It creates an addon panel next to your component examples ("stories"), so you can edit them live.
 
-[Framework Support](https://storybook.js.org/docs/react/api/frameworks-feature-support)
+[Framework Support](https://storybook.js.org/docs/configure/integration/frameworks-feature-support)
 
 ![Screenshot](https://raw.githubusercontent.com/storybookjs/storybook/next/code/addons/controls/docs/media/addon-controls-hero.gif)
 
 ## Installation
 
-Controls is part of [essentials](https://storybook.js.org/docs/react/essentials) and so is installed in all new Storybooks by default. If you need to add it to your Storybook, you can run:
+Controls is part of [essentials](https://storybook.js.org/docs/essentials) and so is installed in all new Storybooks by default. If you need to add it to your Storybook, you can run:
 
 ```sh
 npm i -D @storybook/addon-controls
 ```
 
-Then, add following content to [`.storybook/main.js`](https://storybook.js.org/docs/react/configure/#configure-your-storybook-project):
+Then, add following content to [`.storybook/main.js`](https://storybook.js.org/docs/configure#configure-your-storybook-project):
 
 ```js
 export default {
@@ -24,7 +24,7 @@ export default {
 
 ## Usage
 
-The usage is documented in the [documentation](https://storybook.js.org/docs/react/essentials/controls).
+The usage is documented in the [documentation](https://storybook.js.org/docs/essentials/controls).
 
 ## FAQs
 
@@ -92,7 +92,7 @@ export const Reflow = () => {
 };
 ```
 
-And again, as above, this can be rewritten using [fully custom args](https://storybook.js.org/docs/react/essentials/controls#fully-custom-args):
+And again, as above, this can be rewritten using [fully custom args](https://storybook.js.org/docs/essentials/controls#fully-custom-args):
 
 ```jsx
 export const Reflow = ({ count, label, ...args }) => (
@@ -123,7 +123,7 @@ Reflow.argTypes = {
 
 There are a few known cases where controls can't be auto-generated:
 
-- You're using a framework for which automatic generation [isn't supported](https://storybook.js.org/docs/react/api/frameworks-feature-support)
+- You're using a framework for which automatic generation [isn't supported](https://storybook.js.org/docs/configure/integration/frameworks-feature-support)
 - You're trying to generate controls for a component defined in an external library
 
 With a little manual work you can still use controls in such cases. Consider the following example:
@@ -147,7 +147,7 @@ Basic.args = {
 };
 ```
 
-The `argTypes` annotation (which can also be applied to individual stories if needed), gives Storybook the hints it needs to generate controls in these unsupported cases. See [control annotations](https://storybook.js.org/docs/react/essentials/controls#annotation) for a full list of control types.
+The `argTypes` annotation (which can also be applied to individual stories if needed), gives Storybook the hints it needs to generate controls in these unsupported cases. See [control annotations](https://storybook.js.org/docs/essentials/controls#annotation) for a full list of control types.
 
 It's also possible that your Storybook is misconfigured. If you think this might be the case, please search through Storybook's [Github issues](https://github.com/storybookjs/storybook/issues), and file a new issue if you don't find one that matches your use case.
 
@@ -172,7 +172,7 @@ CustomControls.argTypes = {
 };
 ```
 
-Like [story parameters](https://storybook.js.org/docs/react/writing-stories/parameters), `args` and `argTypes` annotations are hierarchically merged, so story-level annotations overwrite component-level annotations.
+Like [story parameters](https://storybook.js.org/docs/writing-stories/parameters), `args` and `argTypes` annotations are hierarchically merged, so story-level annotations overwrite component-level annotations.
 
 ### How do controls work with MDX?
 

@@ -41,7 +41,7 @@ import {
   STORY_CHANGED,
 } from '@storybook/core/core-events';
 
-import { mergeWith } from 'es-toolkit';
+import { isEqual } from 'es-toolkit';
 
 import { createContext } from './context';
 import getInitialState from './initial-state';
@@ -50,6 +50,7 @@ import { noArrayMerge } from './lib/merge';
 import type { ModuleFn } from './lib/types';
 import * as addons from './modules/addons';
 import * as channel from './modules/channel';
+import * as testProviders from './modules/experimental_testmodule';
 import * as globals from './modules/globals';
 import * as layout from './modules/layout';
 import * as notifications from './modules/notifications';
@@ -79,6 +80,7 @@ export type State = layout.SubState &
   stories.SubState &
   refs.SubState &
   notifications.SubState &
+  testProviders.SubState &
   version.SubState &
   url.SubState &
   shortcuts.SubState &
@@ -98,6 +100,7 @@ export type API = addons.SubAPI &
   globals.SubAPI &
   layout.SubAPI &
   notifications.SubAPI &
+  testProviders.SubAPI &
   shortcuts.SubAPI &
   settings.SubAPI &
   version.SubAPI &
@@ -178,6 +181,7 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
       addons,
       layout,
       notifications,
+      testProviders,
       settings,
       shortcuts,
       stories,
@@ -215,16 +219,9 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
   }
 
   shouldComponentUpdate(nextProps: ManagerProviderProps, nextState: State): boolean {
-    const prevState = this.state;
     const prevProps = this.props;
-
-    if (prevState !== nextState) {
-      return true;
-    }
-    if (prevProps.path !== nextProps.path) {
-      return true;
-    }
-    return false;
+    const prevState = this.state;
+    return prevProps.path !== nextProps.path || !isEqual(prevState, nextState);
   }
 
   initModules = () => {

@@ -40,4 +40,3 @@ export default create({
   inputBorderRadius: 2,
 });
 ```
-

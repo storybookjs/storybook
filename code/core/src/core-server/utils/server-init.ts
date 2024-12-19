@@ -2,21 +2,17 @@ import { readFile } from 'node:fs/promises';
 
 import { logger } from '@storybook/core/node-logger';
 
-import type { Express } from 'express';
 import http from 'http';
 import https from 'https';
 
-export async function getServer(
-  app: Express,
-  options: {
-    https?: boolean;
-    sslCert?: string;
-    sslKey?: string;
-    sslCa?: string[];
-  }
-) {
+export async function getServer(options: {
+  https?: boolean;
+  sslCert?: string;
+  sslKey?: string;
+  sslCa?: string[];
+}) {
   if (!options.https) {
-    return http.createServer(app);
+    return http.createServer();
   }
 
   if (!options.sslCert) {
@@ -35,5 +31,5 @@ export async function getServer(
     key: await readFile(options.sslKey, { encoding: 'utf8' }),
   };
 
-  return https.createServer(sslOptions, app);
+  return https.createServer(sslOptions);
 }

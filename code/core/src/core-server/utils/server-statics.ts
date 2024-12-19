@@ -2,58 +2,56 @@ import { existsSync } from 'node:fs';
 import { basename, isAbsolute, posix, resolve, sep, win32 } from 'node:path';
 
 import { getDirectoryFromWorkingDir } from '@storybook/core/common';
-import type { Options } from '@storybook/core/types';
+import type { Options, StorybookConfigRaw } from '@storybook/core/types';
 
 import { logger } from '@storybook/core/node-logger';
 
-import type { Router } from 'express';
-import express from 'express';
 import picocolors from 'picocolors';
+import type Polka from 'polka';
+import sirv from 'sirv';
 import { dedent } from 'ts-dedent';
 
-export async function useStatics(router: Router, options: Options) {
+export async function useStatics(app: Polka.Polka, options: Options): Promise<void> {
   const staticDirs = (await options.presets.apply('staticDirs')) ?? [];
   const faviconPath = await options.presets.apply<string>('favicon');
 
-  const statics = [
-    ...staticDirs.map((dir) => (typeof dir === 'string' ? dir : `${dir.from}:${dir.to}`)),
-  ];
+  staticDirs.map((dir) => {
+    try {
+      const { staticDir, staticPath, targetEndpoint } = mapStaticDir(dir, options.configDir);
 
-  if (statics && statics.length > 0) {
-    await Promise.all(
-      statics.map(async (dir) => {
-        try {
-          const normalizedDir =
-            staticDirs && !isAbsolute(dir)
-              ? getDirectoryFromWorkingDir({
-                  configDir: options.configDir,
-                  workingDir: process.cwd(),
-                  directory: dir,
-                })
-              : dir;
-          const { staticDir, staticPath, targetEndpoint } = await parseStaticDir(normalizedDir);
+      // Don't log for the internal static dir
+      if (!targetEndpoint.startsWith('/sb-')) {
+        logger.info(
+          `=> Serving static files from ${picocolors.cyan(staticDir)} at ${picocolors.cyan(targetEndpoint)}`
+        );
+      }
 
-          // Don't log for the internal static dir
-          if (!targetEndpoint.startsWith('/sb-')) {
-            logger.info(
-              `=> Serving static files from ${picocolors.cyan(staticDir)} at ${picocolors.cyan(targetEndpoint)}`
-            );
-          }
+      app.use(
+        targetEndpoint,
+        sirv(staticPath, {
+          dev: true,
+          etag: true,
+          extensions: [],
+        })
+      );
+    } catch (e) {
+      if (e instanceof Error) {
+        logger.warn(e.message);
+      }
+    }
+  });
 
-          router.use(targetEndpoint, express.static(staticPath, { index: false }));
-        } catch (e) {
-          if (e instanceof Error) {
-            logger.warn(e.message);
-          }
-        }
-      })
-    );
-  }
-
-  router.get(`/${basename(faviconPath)}`, (req, res) => res.sendFile(faviconPath));
+  app.get(
+    `/${basename(faviconPath)}`,
+    sirv(faviconPath, {
+      dev: true,
+      etag: true,
+      extensions: [],
+    })
+  );
 }
 
-export const parseStaticDir = async (arg: string) => {
+export const parseStaticDir = (arg: string) => {
   // Split on last index of ':', for Windows compatibility (e.g. 'C:\some\dir:\foo')
   const lastColonIndex = arg.lastIndexOf(':');
   const isWindowsAbsolute = win32.isAbsolute(arg);
@@ -79,4 +77,16 @@ export const parseStaticDir = async (arg: string) => {
   }
 
   return { staticDir, staticPath, targetDir, targetEndpoint };
+};
+
+export const mapStaticDir = (
+  staticDir: NonNullable<StorybookConfigRaw['staticDirs']>[number],
+  configDir: string
+) => {
+  const specifier = typeof staticDir === 'string' ? staticDir : `${staticDir.from}:${staticDir.to}`;
+  const normalizedDir = isAbsolute(specifier)
+    ? specifier
+    : getDirectoryFromWorkingDir({ configDir, workingDir: process.cwd(), directory: specifier });
+
+  return parseStaticDir(normalizedDir);
 };

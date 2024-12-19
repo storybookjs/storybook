@@ -8,7 +8,8 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { execa, execaCommand } from 'execa';
+// eslint-disable-next-line depend/ban-dependencies
+import { execaCommand } from 'execa';
 
 const filename = fileURLToPath(import.meta.url);
 // eslint-disable-next-line no-underscore-dangle, @typescript-eslint/naming-convention

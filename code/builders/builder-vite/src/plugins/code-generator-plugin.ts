@@ -50,7 +50,7 @@ export function codeGeneratorPlugin(options: Options): Plugin {
     },
     config(config, { command }) {
       // If we are building the static distribution, add iframe.html as an entry.
-      // In development mode, it's not an entry - instead, we use an express middleware
+      // In development mode, it's not an entry - instead, we use a middleware
       // to serve iframe.html. The reason is that Vite's dev server (at the time of writing)
       // does not support virtual files as entry points.
       if (command === 'build') {

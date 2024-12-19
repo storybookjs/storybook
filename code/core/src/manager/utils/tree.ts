@@ -85,10 +85,14 @@ export const scrollIntoView = (element: Element, center = false) => {
     return;
   }
   const { top, bottom } = element.getBoundingClientRect();
-  const isInView =
-    top >= 0 && bottom <= (globalWindow.innerHeight || document.documentElement.clientHeight);
-
-  if (!isInView) {
+  if (!top || !bottom) {
+    return;
+  }
+  const bottomOffset =
+    document?.querySelector('#sidebar-bottom-wrapper')?.getBoundingClientRect().top ||
+    globalWindow.innerHeight ||
+    document.documentElement.clientHeight;
+  if (bottom > bottomOffset) {
     element.scrollIntoView({ block: center ? 'center' : 'nearest' });
   }
 };

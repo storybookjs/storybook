@@ -11,6 +11,7 @@ import {
   Provider,
   ɵReflectionCapabilities as ReflectionCapabilities,
   importProvidersFrom,
+  VERSION,
 } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import {
@@ -176,15 +177,20 @@ export class PropertyExtractor implements NgModuleMetadata {
     const isDeclarable = isComponent || isDirective || isPipe;
 
     // Check if the hierarchically lowest Component or Directive decorator (the only relevant for importing dependencies) is standalone.
-    const isStandalone = !!(
+
+    let isStandalone =
       (isComponent || isDirective) &&
       [...decorators]
         .reverse() // reflectionCapabilities returns decorators in a hierarchically top-down order
         .find(
           (d) =>
             this.isDecoratorInstanceOf(d, 'Component') || this.isDecoratorInstanceOf(d, 'Directive')
-        )?.standalone
-    );
+        )?.standalone;
+
+    //Starting in Angular 19 the default (in case it's undefined) value for standalone is true
+    if (isStandalone === undefined) {
+      isStandalone = !!(VERSION.major && Number(VERSION.major) >= 19);
+    }
 
     return { isDeclarable, isStandalone };
   };

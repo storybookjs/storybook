@@ -3,6 +3,11 @@ import { beforeAll, vi, expect as vitestExpect } from 'vitest';
 import { setProjectAnnotations } from '@storybook/react';
 import { userEvent as storybookEvent, expect as storybookExpect } from '@storybook/test';
 
+// eslint-disable-next-line import/namespace
+import * as testAnnotations from '@storybook/experimental-addon-test/preview';
+
+import * as a11yAddonAnnotations from '@storybook/addon-a11y/preview';
+
 import * as coreAnnotations from '../addons/toolbars/template/stories/preview';
 import * as componentAnnotations from '../core/template/stories/preview';
 // register global components used in many stories
@@ -12,11 +17,11 @@ import * as projectAnnotations from './preview';
 vi.spyOn(console, 'warn').mockImplementation((...args) => console.log(...args));
 
 const annotations = setProjectAnnotations([
-  // @ts-expect-error check type errors later
+  a11yAddonAnnotations,
   projectAnnotations,
-  // @ts-expect-error check type errors later
   componentAnnotations,
   coreAnnotations,
+  testAnnotations,
   {
     // experiment with injecting Vitest's interactivity API over our userEvent while tests run in browser mode
     // https://vitest.dev/guide/browser/interactivity-api.html

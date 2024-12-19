@@ -286,7 +286,48 @@ export const FilledForm: Story = {
 };
 ```
 
-```js filename="LoginForm.stories.js" renderer="svelte" language="js"
+```svelte filename="LoginForm.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { expect, userEvent, within } from '@storybook/test';
+
+  import LoginForm from './LoginForm.svelte';
+
+  const { Story } = defineMeta({
+    component: LoginForm,
+  });
+</script>
+
+<Story name="EmptyForm" />
+
+<!--
+  See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+  to learn more about using the canvasElement to query the DOM
+-->
+<Story
+  name="FilledForm"
+  play={async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // 👇 Simulate interactions with the component
+    await userEvent.type(canvas.getByTestId('email'), 'email@provider.com');
+
+    await userEvent.type(canvas.getByTestId('password'), 'a-random-password');
+
+    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    await userEvent.click(canvas.getByRole('button'));
+
+    // 👇 Assert DOM structure
+    await expect(
+      canvas.getByText(
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
+    ).toBeInTheDocument();
+  }}
+/>
+```
+
+```js filename="LoginForm.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import { expect, userEvent, within } from '@storybook/test';
 
 import LoginForm from './LoginForm.svelte';
@@ -323,7 +364,48 @@ export const FilledForm = {
 };
 ```
 
-```ts filename="LoginForm.stories.ts" renderer="svelte" language="ts-4-9"
+```svelte filename="LoginForm.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { expect, userEvent, within } from '@storybook/test';
+
+  import LoginForm from './LoginForm.svelte';
+
+  const { Story } = defineMeta({
+    component: LoginForm,
+  });
+</script>
+
+<Story name="EmptyForm" />
+
+<!--
+  See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+  to learn more about using the canvasElement to query the DOM
+-->
+<Story
+  name="FilledForm"
+  play={async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // 👇 Simulate interactions with the component
+    await userEvent.type(canvas.getByTestId('email'), 'email@provider.com');
+
+    await userEvent.type(canvas.getByTestId('password'), 'a-random-password');
+
+    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    await userEvent.click(canvas.getByRole('button'));
+
+    // 👇 Assert DOM structure
+    await expect(
+      canvas.getByText(
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
+    ).toBeInTheDocument();
+  }}
+/>
+```
+
+```ts filename="LoginForm.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 import { expect, userEvent, within } from '@storybook/test';
 
@@ -364,7 +446,49 @@ export const FilledForm: Story = {
 };
 ```
 
-```ts filename="LoginForm.stories.ts" renderer="svelte" language="ts"
+```svelte filename="LoginForm.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { expect, userEvent, within } from '@storybook/test';
+
+  import LoginForm from './LoginForm.svelte';
+
+  const { Story } = defineMeta({
+    component: LoginForm,
+  });
+
+</script>
+
+<Story name="EmptyForm" />
+
+<!--
+  See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+  to learn more about using the canvasElement to query the DOM
+-->
+<Story
+  name="FilledForm"
+  play={async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    // 👇 Simulate interactions with the component
+    await userEvent.type(canvas.getByTestId('email'), 'email@provider.com');
+
+    await userEvent.type(canvas.getByTestId('password'), 'a-random-password');
+
+    // See https://storybook.js.org/docs/essentials/actions#automatically-matching-args to learn how to setup logging in the Actions panel
+    await userEvent.click(canvas.getByRole('button'));
+
+    // 👇 Assert DOM structure
+    await expect(
+      canvas.getByText(
+        'Everything is perfect. Your account is ready and we should probably get you started!'
+      )
+    ).toBeInTheDocument();
+  }}
+/>
+```
+
+```ts filename="LoginForm.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 import { expect, userEvent, within } from '@storybook/test';
 
@@ -626,4 +750,3 @@ export const FilledForm: Story = {
   },
 };
 ```
-

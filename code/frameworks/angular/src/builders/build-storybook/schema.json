@@ -51,7 +51,7 @@
     },
     "docs": {
       "type": "boolean",
-      "description": "Starts Storybook in documentation mode. Learn more about it : https://storybook.js.org/docs/react/writing-docs/build-documentation#preview-storybooks-documentation.",
+      "description": "Starts Storybook in documentation mode. Learn more about it : https://storybook.js.org/docs/writing-docs/build-documentation#preview-storybooks-documentation.",
       "default": false
     },
     "test": {
@@ -75,6 +75,11 @@
     "webpackStatsJson": {
       "type": ["boolean", "string"],
       "description": "Write Webpack Stats JSON to disk",
+      "default": false
+    },
+    "statsJson": {
+      "type": ["boolean", "string"],
+      "description": "Write stats JSON to disk",
       "default": false
     },
     "previewUrl": {

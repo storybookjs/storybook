@@ -4,7 +4,7 @@ import { INITIAL_VIEWPORTS } from '@storybook/addon-viewport';
 export default {
   parameters: {
     viewport: {
-      viewports: INITIAL_VIEWPORTS,
+      options: INITIAL_VIEWPORTS,
     },
   },
   initialGlobals: {
@@ -20,7 +20,7 @@ import { Preview } from '@storybook/your-renderer';
 const preview: Preview = {
   parameters: {
     viewport: {
-      viewports: INITIAL_VIEWPORTS,
+      options: INITIAL_VIEWPORTS,
     },
   },
   initialGlobals: {

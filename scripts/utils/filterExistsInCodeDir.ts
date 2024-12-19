@@ -1,5 +1,6 @@
 import { join, resolve } from 'node:path';
 
+// eslint-disable-next-line depend/ban-dependencies
 import { pathExists } from 'fs-extra';
 
 import { CODE_DIRECTORY } from './constants';

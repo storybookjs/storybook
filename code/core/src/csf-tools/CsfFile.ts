@@ -174,7 +174,7 @@ export class NoMetaError extends Error {
     super(dedent`
       CSF: ${message} ${formatLocation(ast, fileName)}
 
-      More info: https://storybook.js.org/docs/react/writing-stories#default-export
+      More info: https://storybook.js.org/docs/writing-stories#default-export
     `);
     this.name = this.constructor.name;
   }

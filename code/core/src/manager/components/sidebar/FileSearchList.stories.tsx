@@ -5,6 +5,7 @@ import { FileSearchList } from './FileSearchList';
 
 const meta = {
   component: FileSearchList,
+  title: 'Sidebar/FileSearchList',
   args: {
     onNewStory: fn(),
   },

@@ -8,11 +8,11 @@ const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 test.describe('addon-toolbars', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(storybookUrl);
-    await new SbPage(page).waitUntilLoaded();
+    await new SbPage(page, expect).waitUntilLoaded();
   });
 
   test('should have locale button in the toolbar', async ({ page }) => {
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
 
     // Click on viewport button and select spanish
     await sbPage.navigateToStory('addons/toolbars/globals', 'basic');
@@ -25,7 +25,7 @@ test.describe('addon-toolbars', () => {
   test('locale button should be disabled for story that overrides locale global', async ({
     page,
   }) => {
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
 
     // Click on viewport button and select spanish
     await sbPage.navigateToStory('addons/toolbars/globals', 'override-locale');

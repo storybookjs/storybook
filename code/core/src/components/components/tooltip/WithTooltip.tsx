@@ -121,7 +121,7 @@ const WithTooltipPure = ({
     }
   );
 
-  const tooltipComponent = (
+  const tooltipComponent = isVisible ? (
     <Tooltip
       placement={state?.placement}
       ref={setTooltipRef}
@@ -133,7 +133,7 @@ const WithTooltipPure = ({
       {/* @ts-expect-error (non strict) */}
       {typeof tooltip === 'function' ? tooltip({ onHide: () => onVisibleChange(false) }) : tooltip}
     </Tooltip>
-  );
+  ) : null;
 
   return (
     <>

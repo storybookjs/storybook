@@ -12,6 +12,7 @@ export default defineConfig({
         'playwright.config.ts',
         'vitest-setup.ts',
         'vitest.helpers.ts',
+        '**/*.stories.*',
       ],
     },
   },

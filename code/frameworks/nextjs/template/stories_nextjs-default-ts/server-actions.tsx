@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 export async function accessRoute() {
-  const user = cookies().get('user');
+  const user = (await cookies()).get('user');
 
   if (!user) {
     redirect('/');
@@ -16,13 +16,13 @@ export async function accessRoute() {
 }
 
 export async function logout() {
-  cookies().delete('user');
+  (await cookies()).delete('user');
   revalidatePath('/');
   redirect('/');
 }
 
 export async function login() {
-  cookies().set('user', 'storybookjs');
+  (await cookies()).set('user', 'storybookjs');
   revalidatePath('/');
   redirect('/');
 }

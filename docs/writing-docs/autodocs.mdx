@@ -96,7 +96,7 @@ You can also use MDX to generate the documentation template. This is useful in n
 
 {/* prettier-ignore-end */}
 
-Then you can use it in your `.storybook/preview.js` or an individual story file by importing it:
+Then you can use it in your `.storybook/preview.js|ts` or an individual story file by importing it:
 
 {/* prettier-ignore-start */}
 
@@ -112,7 +112,7 @@ Then you can use it in your `.storybook/preview.js` or an individual story file 
 
 ### Generate a table of contents
 
-Storybook's auto-generated documentation pages can be quite long and difficult to navigate. To help with this, you can enable the table of contents feature to provide a quick overview of the documentation page and allow users to jump to a specific section. To enable it, extend your Storybook UI configuration file (i.e., `.storybook/preview.js`) and provide a `docs` [parameter](../writing-stories/parameters.mdx#global-parameters) with a `toc` property.
+Storybook's auto-generated documentation pages can be quite long and difficult to navigate. To help with this, you can enable the table of contents feature to provide a quick overview of the documentation page and allow users to jump to a specific section. To enable it, extend your Storybook UI configuration file (i.e., `.storybook/preview.js|ts`) and provide a `docs` [parameter](../writing-stories/parameters.mdx#global-parameters) with a `toc` property.
 
 {/* prettier-ignore-start */}
 
@@ -169,7 +169,7 @@ Autodocs allows you to document your "main" component, defined by the `component
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="list-story-with-subcomponents.md" usesCsf3 csf2Path="writing-stories/stories-for-multiple-components#snippet-list-story-with-subcomponents" />
+<CodeSnippets path="list-story-with-subcomponents.md" />
 
 {/* prettier-ignore-end */}
 
@@ -181,7 +181,7 @@ If you want to organize your documentation differently for component groups, we 
 
 ### Customize the Docs Container
 
-The Docs Container is the component that wraps up the documentation page. It's responsible for rendering the documentation page in Storybook's UI. You can customize it by creating your own component and updating your Storybook UI configuration file (i.e., `.storybook/preview.js`) to reference it.
+The Docs Container is the component that wraps up the documentation page. It's responsible for rendering the documentation page in Storybook's UI. You can customize it by creating your own component and updating your Storybook UI configuration file (i.e., `.storybook/preview.js|ts`) to reference it.
 
 {/* prettier-ignore-start */}
 
@@ -191,7 +191,7 @@ The Docs Container is the component that wraps up the documentation page. It's r
 
 ### Override the default theme
 
-By default, Storybook provides two themes for the UI: `light` and `dark`. If you need to customize the theme used by the documentation to match the existing one, you can update your Storybook UI configuration file (i.e., `.storybook/preview.js`) and apply it.
+By default, Storybook provides two themes for the UI: `light` and `dark`. If you need to customize the theme used by the documentation to match the existing one, you can update your Storybook UI configuration file (i.e., `.storybook/preview.js|ts`) and apply it.
 
 {/* prettier-ignore-start */}
 

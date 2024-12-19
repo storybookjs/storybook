@@ -188,6 +188,28 @@ describe(transformLegacyStory.name, () => {
     ).toMatchInlineSnapshot(`"<Story name="Default" children={someTemplate} />"`);
   });
 
+  it("transforms 'template' prop to 'children' and text expression becomes expression tag with identifier to snippet (case with invalid identifier)", async ({
+    expect,
+  }) => {
+    const code = `
+      <script context="module">
+        import { Story } from "@storybook/addon-svelte-csf";
+      </script>
+
+      <Story name="Default" template="some template with non valid idenitifier" />
+    `;
+    const component = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
+
+    expect(
+      print(
+        transformLegacyStory({
+          component,
+          state: { componentIdentifierName: {} },
+        })
+      )
+    ).toMatchInlineSnapshot(`"<Story name="Default" children={template_c0gseq} />"`);
+  });
+
   it("when directive 'let:args' is used then it wraps Story fragment with 'children' snippet block", async ({
     expect,
   }) => {

@@ -44,8 +44,6 @@ interface InteractionsPanelProps {
   onScrollToEnd?: () => void;
   hasResultMismatch?: boolean;
   browserTestStatus?: CallStates;
-  storyId: StoryId;
-  testRunId: string;
 }
 
 const Container = styled.div(({ theme }) => ({
@@ -105,20 +103,12 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
     endRef,
     hasResultMismatch,
     browserTestStatus,
-    storyId,
-    testRunId,
   }) {
     const filter = useAnsiToHtmlFilter();
 
     return (
       <Container>
-        {hasResultMismatch && (
-          <TestDiscrepancyMessage
-            browserTestStatus={browserTestStatus}
-            storyId={storyId}
-            testRunId={testRunId}
-          />
-        )}
+        {hasResultMismatch && <TestDiscrepancyMessage browserTestStatus={browserTestStatus} />}
         {(interactions.length > 0 || hasException) && (
           <Subnav
             controls={controls}

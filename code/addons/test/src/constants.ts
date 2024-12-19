@@ -19,6 +19,7 @@ export interface Config {
 
 export type Details = {
   testResults: TestResult[];
+  config: Config;
   coverageSummary?: {
     status: 'positive' | 'warning' | 'negative' | 'unknown';
     percentage: number;

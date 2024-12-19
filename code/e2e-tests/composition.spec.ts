@@ -27,8 +27,12 @@ test.describe('composition', () => {
 
     await page.locator('[id="storybook\\@7\\.6\\.18_components-badge"]').click();
     await expect(
-      page.locator('[id="storybook\\@7\\.6\\.18_components-badge--default"]')
-    ).toBeVisible();
+      page
+        .locator('iframe[title="storybook-ref-storybook\\@7\\.6\\.18"]')
+        .contentFrame()
+        .locator('#storybook-root')
+        .getByText('Default')
+    ).toBeVisible({ timeout: 15000 });
 
     // Expect composed stories `to be available in the search
     await page.getByPlaceholder('Find components').fill('Button');

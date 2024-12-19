@@ -1,7 +1,7 @@
-import React, { Fragment, useEffect, useRef, useState } from 'react';
+import React, { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { styled } from '@storybook/core/theming';
-import { type API_FilterFunction, type API_StatusValue } from '@storybook/core/types';
+import { type API_FilterFunction } from '@storybook/core/types';
 
 import {
   TESTING_MODULE_CRASH_REPORT,
@@ -119,7 +119,8 @@ export const SidebarBottomBase = ({
     api.experimental_setFilter('sidebar-bottom-filter', filter);
   }, [api, hasWarnings, hasErrors, warningsActive, errorsActive]);
 
-  useEffect(() => {
+  // Register listeners before the first render
+  useLayoutEffect(() => {
     const onCrashReport = ({ providerId, ...details }: TestingModuleCrashReportPayload) => {
       api.updateTestProviderState(providerId, {
         error: { name: 'Crashed!', message: details.error.message },

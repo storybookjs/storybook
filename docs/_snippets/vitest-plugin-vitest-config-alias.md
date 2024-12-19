@@ -17,6 +17,8 @@ export default {
 ```
 
 ```js filename="vitest.config.ts" renderer="common" tabTitle="After"
+import { defineConfig } from 'vitest/config';
+
 export default defineConfig({
   // ...
   resolve: {

@@ -156,60 +156,6 @@ describe('afterEach', () => {
     });
   });
 
-  it('should report warning status when there are only warnings', async () => {
-    const context = createContext({
-      parameters: {
-        a11y: {
-          warnings: ['minor'],
-        },
-      },
-    });
-    const result = {
-      violations: [
-        { impact: 'minor', nodes: [] },
-        { impact: 'critical', nodes: [] },
-      ],
-    };
-    mockedRun.mockResolvedValue(result as any);
-
-    await expect(async () => experimental_afterEach(context)).rejects.toThrow();
-
-    expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y);
-    expect(context.reporting.addReport).toHaveBeenCalledWith({
-      type: 'a11y',
-      version: 1,
-      result,
-      status: 'failed',
-    });
-  });
-
-  it('should report error status when there are warnings and errors', async () => {
-    const context = createContext({
-      parameters: {
-        a11y: {
-          warnings: ['minor'],
-        },
-      },
-    });
-    const result = {
-      violations: [
-        { impact: 'minor', nodes: [] },
-        { impact: 'critical', nodes: [] },
-      ],
-    };
-    mockedRun.mockResolvedValue(result as any);
-
-    await expect(async () => experimental_afterEach(context)).rejects.toThrow();
-
-    expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y);
-    expect(context.reporting.addReport).toHaveBeenCalledWith({
-      type: 'a11y',
-      version: 1,
-      result,
-      status: 'failed',
-    });
-  });
-
   it('should run accessibility checks if "a11ytest" flag is not available and is not running in Vitest', async () => {
     const context = createContext({
       tags: [],

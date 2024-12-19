@@ -1,9 +1,7 @@
-import type {
-  CompatibleString,
-  StorybookConfig as StorybookConfigBase,
-} from 'storybook/internal/types';
+import type { CompatibleString } from 'storybook/internal/types';
 
-import type { BuilderOptions, StorybookConfigVite } from '@storybook/builder-vite';
+import type { BuilderOptions } from '@storybook/builder-vite';
+import type { StorybookConfig as StorybookConfigReactVite } from '@storybook/react-vite';
 
 type FrameworkName = CompatibleString<'@storybook/experimental-nextjs-vite'>;
 type BuilderName = CompatibleString<'@storybook/builder-vite'>;
@@ -21,7 +19,7 @@ type StorybookConfigFramework = {
         name: FrameworkName;
         options: FrameworkOptions;
       };
-  core?: StorybookConfigBase['core'] & {
+  core?: StorybookConfigReactVite['core'] & {
     builder?:
       | BuilderName
       | {
@@ -32,9 +30,5 @@ type StorybookConfigFramework = {
 };
 
 /** The interface for Storybook configuration in `main.ts` files. */
-export type StorybookConfig = Omit<
-  StorybookConfigBase,
-  keyof StorybookConfigVite | keyof StorybookConfigFramework
-> &
-  StorybookConfigVite &
-  StorybookConfigFramework & {};
+export type StorybookConfig = Omit<StorybookConfigReactVite, keyof StorybookConfigFramework> &
+  StorybookConfigFramework;

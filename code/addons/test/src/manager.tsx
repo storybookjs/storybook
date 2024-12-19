@@ -73,64 +73,75 @@ addons.register(ADDON_ID, (api) => {
       },
 
       stateUpdater: (state, update) => {
-        if (!update.details?.testResults) {
-          return;
+        const updated = {
+          ...state,
+          ...update,
+          details: { ...state.details, ...update.details },
+        };
+
+        if ((!state.running && update.running) || (!state.watching && update.watching)) {
+          // Clear coverage data when starting test run or enabling watch mode
+          delete updated.details.coverageSummary;
         }
 
-        (async () => {
-          await api.experimental_updateStatus(
-            TEST_PROVIDER_ID,
-            Object.fromEntries(
-              update.details.testResults.flatMap((testResult) =>
-                testResult.results
-                  .filter(({ storyId }) => storyId)
-                  .map(({ storyId, status, testRunId, ...rest }) => [
-                    storyId,
-                    {
-                      title: 'Component tests',
-                      status: statusMap[status],
-                      description:
-                        'failureMessages' in rest && rest.failureMessages
-                          ? rest.failureMessages.join('\n')
-                          : '',
-                      data: { testRunId },
-                      onClick: openTestsPanel,
-                      sidebarContextMenu: false,
-                    } satisfies API_StatusObject,
-                  ])
-              )
-            )
-          );
-
-          await api.experimental_updateStatus(
-            'storybook/addon-a11y/test-provider',
-            Object.fromEntries(
-              update.details.testResults.flatMap((testResult) =>
-                testResult.results
-                  .filter(({ storyId }) => storyId)
-                  .map(({ storyId, testRunId, reports }) => {
-                    const a11yReport = reports.find((r: any) => r.type === 'a11y');
-                    return [
+        if (update.details?.testResults) {
+          (async () => {
+            await api.experimental_updateStatus(
+              TEST_PROVIDER_ID,
+              Object.fromEntries(
+                update.details.testResults.flatMap((testResult) =>
+                  testResult.results
+                    .filter(({ storyId }) => storyId)
+                    .map(({ storyId, status, testRunId, ...rest }) => [
                       storyId,
-                      a11yReport
-                        ? ({
-                            title: 'Accessibility tests',
-                            description: '',
-                            status: statusMap[a11yReport.status],
-                            data: { testRunId },
-                            onClick: () => {
-                              api.setSelectedPanel('storybook/a11y/panel');
-                              api.togglePanel(true);
-                            },
-                            sidebarContextMenu: false,
-                          } satisfies API_StatusObject)
-                        : null,
-                    ];
-                  })
+                      {
+                        title: 'Component tests',
+                        status: statusMap[status],
+                        description:
+                          'failureMessages' in rest && rest.failureMessages
+                            ? rest.failureMessages.join('\n')
+                            : '',
+                        data: { testRunId },
+                        onClick: openTestsPanel,
+                        sidebarContextMenu: false,
+                      } satisfies API_StatusObject,
+                    ])
+                )
               )
-            )
-          );
-        })();
+            );
+
+            await api.experimental_updateStatus(
+              'storybook/addon-a11y/test-provider',
+              Object.fromEntries(
+                update.details.testResults.flatMap((testResult) =>
+                  testResult.results
+                    .filter(({ storyId }) => storyId)
+                    .map(({ storyId, testRunId, reports }) => {
+                      const a11yReport = reports.find((r: any) => r.type === 'a11y');
+                      return [
+                        storyId,
+                        a11yReport
+                          ? ({
+                              title: 'Accessibility tests',
+                              description: '',
+                              status: statusMap[a11yReport.status],
+                              data: { testRunId },
+                              onClick: () => {
+                                api.setSelectedPanel('storybook/a11y/panel');
+                                api.togglePanel(true);
+                              },
+                              sidebarContextMenu: false,
+                            } satisfies API_StatusObject)
+                          : null,
+                      ];
+                    })
+                )
+              )
+            );
+          })();
+        }
+
+        return updated;
       },
     } as Addon_TestProviderType<Details, Config>);
   }

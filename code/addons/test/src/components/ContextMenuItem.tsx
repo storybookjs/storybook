@@ -67,7 +67,7 @@ export const ContextMenuItem: FC<{
             padding="small"
             disabled={state.crashed || isDisabled}
           >
-            <Icon fill={theme.barTextColor} />
+            <Icon fill={theme.textMutedColor} />
           </Button>
         }
       />

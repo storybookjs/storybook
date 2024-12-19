@@ -3,7 +3,7 @@ import { styled } from '@storybook/core/theming';
 import type { API_StatusValue } from '@storybook/types';
 
 import type { Theme } from '@emotion/react';
-import { transparentize } from 'polished';
+import { darken, lighten, transparentize } from 'polished';
 
 const withStatusColor = ({ theme, status }: { theme: Theme; status: API_StatusValue }) => {
   const defaultColor =
@@ -43,6 +43,19 @@ export const StatusButton = styled(IconButton)<{
 
     '&:hover': {
       color: theme.color.secondary,
+      background:
+        theme.base === 'dark'
+          ? darken(0.3, theme.color.secondary)
+          : lighten(0.4, theme.color.secondary),
+    },
+
+    '[data-selected="true"] &': {
+      background: theme.color.secondary,
+      boxShadow: `0 0 5px 5px ${theme.color.secondary}`,
+
+      '&:hover': {
+        background: lighten(0.1, theme.color.secondary),
+      },
     },
 
     '&:focus': {

@@ -12,8 +12,8 @@
     "playwright-ct": "playwright test -c playwright-ct.config.ts",
     "playwright-e2e": "playwright test -c playwright-e2e.config.ts",
     "preview": "vite preview",
-    "storybook": "storybook dev -p 6006",
-    "vitest": "echo 'not running'"
+    "storybook": "NODE_OPTIONS=\"--preserve-symlinks --preserve-symlinks-main\" storybook dev -p 6006",
+    "vitest": "SKIP_FAIL_ON_PURPOSE=true vitest run"
   },
   "resolutions": {
     "@playwright/test": "1.48.1",
@@ -110,6 +110,8 @@
     "@typescript-eslint/parser": "^6.21.0",
     "@vitejs/plugin-react": "^4.2.1",
     "@vitest/browser": "^2.1.3",
+    "@vitest/coverage-v8": "^2.1.3",
+    "@vitest/ui": "^2.1.3",
     "cypress": "^13.6.4",
     "eslint": "^8.56.0",
     "eslint-plugin-react-hooks": "^4.6.0",

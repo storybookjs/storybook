@@ -45,8 +45,6 @@ function getSelectedParams(currentTree: FlightRouterState, params: Params = {}):
     }
 
     // Ensure catchAll and optional catchall are turned into an array
-
-    // Ensure catchAll and optional catchall are turned into an array
     const isCatchAll = isDynamicParameter && (segment[2] === 'c' || segment[2] === 'oc');
 
     if (isCatchAll) {
@@ -82,6 +80,16 @@ export const AppRouterProvider: React.FC<React.PropsWithChildren<AppRouterProvid
     return getSelectedParams(tree);
   }, [tree]);
 
+  const newLazyCacheNode = {
+    lazyData: null,
+    rsc: null,
+    prefetchRsc: null,
+    head: null,
+    prefetchHead: null,
+    parallelRoutes: new Map(),
+    loading: null,
+  };
+
   // https://github.com/vercel/next.js/blob/canary/packages/next/src/client/components/app-router.tsx#L436
   return (
     <PathParamsContext.Provider value={pathParams}>
@@ -106,10 +114,18 @@ export const AppRouterProvider: React.FC<React.PropsWithChildren<AppRouterProvid
             <AppRouterContext.Provider value={getRouter()}>
               <LayoutRouterContext.Provider
                 value={{
+                  // TODO Remove when dropping Next.js < v15.1.1
                   childNodes: new Map(),
-                  loading: null,
                   tree,
+                  // TODO END
+
+                  // START Next.js v15.2 support
+                  // @ts-expect-error Only available in Next.js >= v15.1.1
+                  parentTree: tree,
+                  parentCacheNode: newLazyCacheNode,
+                  // END
                   url: pathname,
+                  loading: null,
                 }}
               >
                 {children}

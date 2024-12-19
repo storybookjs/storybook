@@ -5,9 +5,6 @@ import type { DocsOptions, Options, PresetProperty } from 'storybook/internal/ty
 
 import type { CsfPluginOptions } from '@storybook/csf-plugin';
 
-import rehypeExternalLinks from 'rehype-external-links';
-import rehypeSlug from 'rehype-slug';
-
 import type { CompileOptions } from './compiler';
 
 /**
@@ -41,6 +38,9 @@ async function webpack(
   const { module = {} } = webpackConfig;
 
   const { csfPluginOptions = {}, mdxPluginOptions = {} } = options;
+
+  const rehypeSlug = (await import('rehype-slug')).default;
+  const rehypeExternalLinks = (await import('rehype-external-links')).default;
 
   const mdxLoaderOptions: CompileOptions = await options.presets.apply('mdxLoaderOptions', {
     ...mdxPluginOptions,
@@ -174,6 +174,9 @@ export const addons: PresetProperty<'addons'> = [
 export const viteFinal = async (config: any, options: Options) => {
   const { plugins = [] } = config;
   const { mdxPlugin } = await import('./plugins/mdx-plugin');
+
+  const rehypeSlug = (await import('rehype-slug')).default;
+  const rehypeExternalLinks = (await import('rehype-external-links')).default;
 
   // Use the resolvedReact preset to alias react and react-dom to either the users version or the version shipped with addon-docs
   const { react, reactDom, mdx } = await getResolvedReact(options);

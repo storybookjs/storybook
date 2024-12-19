@@ -32,7 +32,7 @@ const TitleWrapper = styled.div<{ crashed?: boolean }>(({ crashed, theme }) => (
 
 const DescriptionWrapper = styled.div(({ theme }) => ({
   fontSize: theme.typography.size.s1,
-  color: theme.barTextColor,
+  color: theme.textMutedColor,
 }));
 
 const Progress = styled(ProgressSpinner)({

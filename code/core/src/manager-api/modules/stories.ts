@@ -568,41 +568,61 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     // The story index we receive on fetchStoryIndex is not, but all the prepared fields are optional
     // so we can cast one to the other easily enough
     setIndex: async (input) => {
-      const { index: oldHash, status, filters } = store.getState();
-      const newHash = transformStoryIndexToStoriesHash(input, {
+      const { filteredIndex: oldFilteredHash, index: oldHash, status, filters } = store.getState();
+      const newFilteredHash = transformStoryIndexToStoriesHash(input, {
         provider,
         docsOptions,
         status,
         filters,
       });
+      const newHash = transformStoryIndexToStoriesHash(input, {
+        provider,
+        docsOptions,
+        status,
+        filters: {},
+      });
 
-      // Now we need to patch in the existing prepared stories
-      const output = addPreparedStories(newHash, oldHash);
-
-      await store.setState({ internal_index: input, index: output, indexError: undefined });
+      await store.setState({
+        internal_index: input,
+        filteredIndex: addPreparedStories(newFilteredHash, oldFilteredHash),
+        index: addPreparedStories(newHash, oldHash),
+        indexError: undefined,
+      });
     },
+    // FIXME: is there a bug where filtered stories get added back in on updateStory???
     updateStory: async (
       storyId: StoryId,
       update: StoryUpdate,
       ref?: API_ComposedRef
     ): Promise<void> => {
       if (!ref) {
-        const { index } = store.getState();
-        if (!index) {
-          return;
+        const { index, filteredIndex } = store.getState();
+        if (index) {
+          index[storyId] = {
+            ...index[storyId],
+            ...update,
+          } as API_StoryEntry;
         }
-        index[storyId] = {
-          ...index[storyId],
-          ...update,
-        } as API_StoryEntry;
-        await store.setState({ index });
+        if (filteredIndex) {
+          filteredIndex[storyId] = {
+            ...filteredIndex[storyId],
+            ...update,
+          } as API_StoryEntry;
+        }
+        if (index || filteredIndex) {
+          await store.setState({ index, filteredIndex });
+        }
       } else {
-        const { id: refId, index }: any = ref;
+        const { id: refId, index, filteredIndex }: any = ref;
         index[storyId] = {
           ...index[storyId],
           ...update,
         } as API_StoryEntry;
-        await fullAPI.updateRef(refId, { index });
+        filteredIndex[storyId] = {
+          ...filteredIndex[storyId],
+          ...update,
+        } as API_StoryEntry;
+        await fullAPI.updateRef(refId, { index, filteredIndex });
       }
     },
     updateDocs: async (
@@ -611,22 +631,33 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       ref?: API_ComposedRef
     ): Promise<void> => {
       if (!ref) {
-        const { index } = store.getState();
-        if (!index) {
-          return;
+        const { index, filteredIndex } = store.getState();
+        if (index) {
+          index[docsId] = {
+            ...index[docsId],
+            ...update,
+          } as API_DocsEntry;
         }
-        index[docsId] = {
-          ...index[docsId],
-          ...update,
-        } as API_DocsEntry;
-        await store.setState({ index });
+        if (filteredIndex) {
+          filteredIndex[docsId] = {
+            ...filteredIndex[docsId],
+            ...update,
+          } as API_DocsEntry;
+        }
+        if (index || filteredIndex) {
+          await store.setState({ index, filteredIndex });
+        }
       } else {
-        const { id: refId, index }: any = ref;
+        const { id: refId, index, filteredIndex }: any = ref;
         index[docsId] = {
           ...index[docsId],
           ...update,
         } as API_DocsEntry;
-        await fullAPI.updateRef(refId, { index });
+        filteredIndex[docsId] = {
+          ...filteredIndex[docsId],
+          ...update,
+        } as API_DocsEntry;
+        await fullAPI.updateRef(refId, { index, filteredIndex });
       }
     },
     setPreviewInitialized: async (ref) => {

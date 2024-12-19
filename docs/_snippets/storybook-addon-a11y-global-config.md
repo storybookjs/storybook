@@ -20,6 +20,10 @@ export default {
       },
       // Axe's options parameter
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
       // Optional flag to prevent the automatic check
       manual: true,
     },
@@ -52,6 +56,10 @@ const preview: Preview = {
       },
       // Axe's options parameter
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
       // Optional flag to prevent the automatic check
       manual: true,
     },

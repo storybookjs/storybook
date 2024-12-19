@@ -18,9 +18,11 @@ import { VitestManager } from './vitest-manager';
 export class TestManager {
   vitestManager: VitestManager;
 
-  watchMode = false;
-
-  coverage = false;
+  config = {
+    watchMode: false,
+    coverage: false,
+    a11y: false,
+  };
 
   constructor(
     private channel: Channel,
@@ -44,23 +46,22 @@ export class TestManager {
       return;
     }
 
+    const previousConfig = this.config;
+
+    this.config = {
+      ...this.config,
+      ...payload.config,
+    } satisfies Config;
+
     process.env.VITEST_STORYBOOK_CONFIG = JSON.stringify(payload.config);
 
-    if (this.coverage !== payload.config.coverage) {
-      this.coverage = payload.config.coverage;
+    if (previousConfig.coverage !== payload.config.coverage) {
       try {
         await this.vitestManager.restartVitest({
-          coverage: this.coverage,
+          coverage: this.config.coverage,
         });
       } catch (e) {
-        const isV8 = e.message?.includes('@vitest/coverage-v8');
-        const isIstanbul = e.message?.includes('@vitest/coverage-istanbul');
-
-        if (e.message?.includes('Error: Failed to load url') && (isIstanbul || isV8)) {
-          const coveragePackage = isIstanbul ? 'coverage-istanbul' : 'coverage-v8';
-          e.message = `Please install the @vitest/${coveragePackage} package to run with coverage`;
-        }
-        this.reportFatalError('Failed to change coverage mode', e);
+        this.reportFatalError('Failed to change coverage configuration', e);
       }
     }
   }
@@ -69,7 +70,7 @@ export class TestManager {
     if (payload.providerId !== TEST_PROVIDER_ID) {
       return;
     }
-    this.watchMode = payload.watchMode;
+    this.config.watchMode = payload.watchMode;
 
     if (payload.config) {
       this.handleConfigChange({
@@ -78,14 +79,14 @@ export class TestManager {
       });
     }
 
-    if (this.coverage) {
+    if (this.config.coverage) {
       try {
         if (payload.watchMode) {
           // if watch mode is toggled on and coverage is already enabled, restart vitest without coverage to automatically disable it
           await this.vitestManager.restartVitest({ coverage: false });
         } else {
           // if watch mode is toggled off and coverage is already enabled, restart vitest with coverage to automatically re-enable it
-          await this.vitestManager.restartVitest({ coverage: this.coverage });
+          await this.vitestManager.restartVitest({ coverage: this.config.coverage });
         }
       } catch (e) {
         this.reportFatalError('Failed to change watch mode while coverage was enabled', e);
@@ -111,7 +112,7 @@ export class TestManager {
         as a coverage report for a subset of stories is not useful.
       */
       const temporarilyDisableCoverage =
-        this.coverage && !this.watchMode && (payload.storyIds ?? []).length > 0;
+        this.config.coverage && !this.config.watchMode && (payload.storyIds ?? []).length > 0;
       if (temporarilyDisableCoverage) {
         await this.vitestManager.restartVitest({
           coverage: false,
@@ -124,7 +125,7 @@ export class TestManager {
 
       if (temporarilyDisableCoverage) {
         // Re-enable coverage if it was temporarily disabled because of a subset of stories was run
-        await this.vitestManager.restartVitest({ coverage: this.coverage });
+        await this.vitestManager.restartVitest({ coverage: this.config.coverage });
       }
     } catch (e) {
       this.reportFatalError('Failed to run tests', e);

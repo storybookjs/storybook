@@ -809,12 +809,7 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
   const previewConfig = await readConfig({ cwd: sandboxDir, fileName: 'preview' });
 
   if (template.expected.builder.includes('vite')) {
-    previewConfig.setFieldValue(['tags'], ['vitest']);
-    // TODO: Remove this once the starter components + test stories have proper accessibility
-    previewConfig.setFieldValue(
-      ['parameters', 'a11y', 'warnings'],
-      ['minor', 'moderate', 'serious', 'critical']
-    );
+    previewConfig.setFieldValue(['tags'], ['vitest', '!a11ytest']);
   }
 
   await writeConfig(previewConfig);

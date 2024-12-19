@@ -358,9 +358,6 @@ export const parameters = {
       opacity: 0.4,
     },
   },
-  a11y: {
-    warnings: ['minor', 'moderate', 'serious', 'critical'],
-  },
 };
 
-export const tags = ['test', 'vitest'];
+export const tags = ['test', 'vitest', '!a11ytest'];

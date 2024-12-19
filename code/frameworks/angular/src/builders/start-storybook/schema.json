@@ -139,6 +139,11 @@
       "description": "Write Webpack Stats JSON to disk",
       "default": false
     },
+    "statsJson": {
+      "type": ["boolean", "string"],
+      "description": "Write stats JSON to disk",
+      "default": false
+    },
     "previewUrl": {
       "type": "string",
       "description": "Disables the default storybook preview and lets you use your own"

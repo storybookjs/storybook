@@ -60,7 +60,7 @@ export const AddonPanel = React.memo<{
     return (
       <Tabs
         absolute={absolute}
-        {...(selectedPanel ? { selected: selectedPanel } : {})}
+        {...(selectedPanel && panels[selectedPanel] ? { selected: selectedPanel } : {})}
         menuName="Addons"
         actions={actions}
         showToolsWhenEmpty

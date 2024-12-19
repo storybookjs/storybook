@@ -6,8 +6,6 @@ export interface Setup {
   options: RunOptions;
 }
 
-type Impact = NonNullable<ImpactValue>;
-
 export interface A11yParameters {
   element?: ElementContext;
   config?: Spec;
@@ -15,5 +13,4 @@ export interface A11yParameters {
   /** @deprecated Use globals.a11y.manual instead */
   manual?: boolean;
   disable?: boolean;
-  warnings?: Impact[];
 }

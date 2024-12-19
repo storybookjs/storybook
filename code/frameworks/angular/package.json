@@ -20,6 +20,20 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "node": "./dist/index.js",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./preset": {
+      "types": "./dist/preset.d.ts",
+      "require": "./dist/preset.js"
+    },
+    "./builders/builder.json": "./src/builders/builders.json",
+    "./package.json": "./package.json"
+  },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -33,15 +47,17 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node ../../../scripts/node_modules/.bin/tsc",
-    "prep": "rimraf dist && jiti ../../../scripts/prepare/tsc.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
+    "@storybook/angular-renderer": "workspace:*",
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/components": "workspace:*",
     "@storybook/core-webpack": "workspace:*",
     "@storybook/global": "^5.0.0",
     "@storybook/manager-api": "workspace:*",
+    "@storybook/preset-angular-webpack": "workspace:*",
     "@storybook/preview-api": "workspace:*",
     "@storybook/theming": "workspace:*",
     "@types/node": "^22.0.0",
@@ -110,8 +126,14 @@
   },
   "builders": "dist/builders/builders.json",
   "bundler": {
+    "entries": [
+      "./src/index.ts",
+      "./src/preset.ts",
+      "./src/builders/build-storybook/index.ts",
+      "./src/builders/start-storybook/index.ts"
+    ],
     "post": "./scripts/postbuild.js",
-    "tsConfig": "tsconfig.build.json"
+    "platform": "node"
   },
   "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

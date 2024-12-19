@@ -235,7 +235,7 @@ export class StorybookReporter implements Reporter {
         ...report,
       });
     } else if (hasTestSuiteFailures || hasUnhandledErrors) {
-      const isMultipleSuiteFailures = testSuiteFailures.length === 1;
+      const isMultipleTestSuiteFailures = testSuiteFailures.length === 1;
       const isMultipleDeduplicatedTestSuitesFailures = deduplicatedTestSuiteFailures.size > 1;
       const isMultipleUnhandledErrors = unhandledErrors?.length > 1;
 
@@ -243,7 +243,7 @@ export class StorybookReporter implements Reporter {
 
       if (hasTestSuiteFailures && hasUnhandledErrors) {
         error = {
-          name: `${testSuiteFailures.length} component test${isMultipleSuiteFailures ? 's' : ''} failed, due to ${deduplicatedTestSuiteFailures.size} runtime error${isMultipleDeduplicatedTestSuitesFailures ? 's' : ''} as well as ${unhandledErrors.length} unhandled error${isMultipleUnhandledErrors ? 's' : ''}`,
+          name: `${testSuiteFailures.length} component test${isMultipleTestSuiteFailures ? 's' : ''} failed, due to ${deduplicatedTestSuiteFailures.size} runtime error${isMultipleDeduplicatedTestSuitesFailures ? 's' : ''} as well as ${unhandledErrors.length} unhandled error${isMultipleUnhandledErrors ? 's' : ''}`,
           message: [
             ...Array.from(deduplicatedTestSuiteFailures),
             ...unhandledErrors.map(
@@ -253,7 +253,7 @@ export class StorybookReporter implements Reporter {
         };
       } else if (hasTestSuiteFailures) {
         error = {
-          name: `${testSuiteFailures.length} component test${isMultipleSuiteFailures ? 's' : ''} failed, due to ${deduplicatedTestSuiteFailures.size} runtime error${isMultipleDeduplicatedTestSuitesFailures ? 's' : ''}`,
+          name: `${testSuiteFailures.length} component test${isMultipleTestSuiteFailures ? 's' : ''} failed, due to ${deduplicatedTestSuiteFailures.size} runtime error${isMultipleDeduplicatedTestSuitesFailures ? 's' : ''}`,
           message: Array.from(deduplicatedTestSuiteFailures).join('\n----------\n'),
         };
       } else {

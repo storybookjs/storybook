@@ -504,7 +504,6 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
               ...defaultExclude,
               // TODO: investigate TypeError: Cannot read properties of null (reading 'useContext')
               "**/*argtypes*",
-              ${template.expected.renderer === '@storybook/svelte' ? '"**/*.stories.svelte",' : ''}
             ],
             /**
              * TODO: Either fix or acknowledge limitation of:

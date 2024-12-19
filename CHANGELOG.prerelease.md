@@ -1,3 +1,7 @@
+## 8.5.0-beta.4
+
+- Core: Prevent infinite rerendering caused by comparison by reference - [#30081](https://github.com/storybookjs/storybook/pull/30081), thanks @ghengeveld!
+
 ## 8.5.0-beta.3
 
 - Addon A11y: Fix skipped status handling in Testing Module - [#30077](https://github.com/storybookjs/storybook/pull/30077), thanks @valentinpalkovic!

@@ -311,7 +311,8 @@
   ],
   "scripts": {
     "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
+    "prep": "jiti ../../../scripts/prepare/bundle.ts",
+    "sb": "node ./bin/index.js"
   },
   "dependencies": {
     "@storybook/core": "workspace:*"

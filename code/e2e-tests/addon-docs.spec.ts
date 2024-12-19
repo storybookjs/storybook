@@ -191,7 +191,7 @@ test.describe('addon-docs', () => {
 
   test('should resolve react to the correct version', async ({ page }) => {
     test.skip(
-      templateName?.includes('nextjs'),
+      templateName?.includes('nextjs') || templateName?.includes('nuxt'),
       'TODO: remove this once sandboxes are synced (SOON!!)'
     );
     // Arrange - Navigate to MDX docs

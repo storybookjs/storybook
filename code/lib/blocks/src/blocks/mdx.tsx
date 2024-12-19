@@ -156,14 +156,17 @@ const OcticonHeaders = SUPPORTED_MDX_HEADERS.reduce(
   {}
 );
 
-const OcticonAnchor = styled.a(() => ({
-  float: 'left',
-  lineHeight: 'inherit',
-  paddingRight: '10px',
-  marginLeft: '-24px',
-  // Allow the theme's text color to override the default link color.
-  color: 'inherit',
-}));
+const OcticonAnchor = styled.a(
+  () =>
+    ({
+      float: 'left',
+      lineHeight: 'inherit',
+      paddingRight: '10px',
+      marginLeft: '-24px',
+      // Allow the theme's text color to override the default link color.
+      color: 'inherit',
+    }) as const
+);
 
 interface HeaderWithOcticonAnchorProps {
   as: string;

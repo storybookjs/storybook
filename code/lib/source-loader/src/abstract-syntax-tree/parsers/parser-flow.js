@@ -1,4 +1,4 @@
-import parseFlow from 'prettier/plugins/flow';
+import * as parseFlow from 'prettier/plugins/flow';
 
 function parse(source) {
   return parseFlow.parsers.flow.parse(source);

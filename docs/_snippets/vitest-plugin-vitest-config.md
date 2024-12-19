@@ -11,6 +11,8 @@ export default mergeConfig(
   defineConfig({
     plugins: [
       storybookTest({
+        // The location of your Storybook config, main.js|ts
+        configDir: './.storybook',
         // This should match your package.json script to run Storybook
         // The --ci flag will skip prompts and not open a browser
         storybookScript: 'yarn storybook --ci',
@@ -44,6 +46,8 @@ export default mergeConfig(
   defineConfig({
     plugins: [
       storybookTest({
+        // The location of your Storybook config, main.js|ts
+        configDir: './.storybook',
         // This should match your package.json script to run Storybook
         // The --ci flag will skip prompts and not open a browser
         storybookScript: 'yarn storybook --ci',
@@ -78,6 +82,8 @@ export default mergeConfig(
   defineConfig({
     plugins: [
       storybookTest({
+        // The location of your Storybook config, main.js|ts
+        configDir: './.storybook',
         // This should match your package.json script to run Storybook
         // The --ci flag will skip prompts and not open a browser
         storybookScript: 'yarn storybook --ci',

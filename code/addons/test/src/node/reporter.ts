@@ -212,18 +212,21 @@ export class StorybookReporter implements Reporter {
   async onFinished() {
     const unhandledErrors = this.ctx.state.getUnhandledErrors();
 
-    const isCancelled = this.ctx.isCancelling;
     const report = await this.getProgressReport(Date.now());
 
     const testSuiteFailures = report.details.testResults.filter(
       (t) => t.status === 'failed' && t.results.length === 0
     );
 
-    const reducedTestSuiteFailures = new Set<string>();
+    const deduplicatedTestSuiteFailures = new Set<string>();
 
     testSuiteFailures.forEach((t) => {
-      reducedTestSuiteFailures.add(t.message);
+      deduplicatedTestSuiteFailures.add(t.message);
     });
+
+    const isCancelled = this.ctx.isCancelling;
+    const hasTestSuiteFailures = deduplicatedTestSuiteFailures.size > 0;
+    const hasUnhandledErrors = unhandledErrors.length > 0;
 
     if (isCancelled) {
       this.sendReport({
@@ -231,22 +234,36 @@ export class StorybookReporter implements Reporter {
         status: 'cancelled',
         ...report,
       });
-    } else if (reducedTestSuiteFailures.size > 0 || unhandledErrors.length > 0) {
-      const error =
-        reducedTestSuiteFailures.size > 0
-          ? {
-              name: `${reducedTestSuiteFailures.size} component ${reducedTestSuiteFailures.size === 1 ? 'test' : 'tests'} failed`,
-              message: Array.from(reducedTestSuiteFailures).reduce(
-                (acc, curr) => `${acc}\n${curr}`,
-                ''
-              ),
-            }
-          : {
-              name: `${unhandledErrors.length} unhandled error${unhandledErrors?.length > 1 ? 's' : ''}`,
-              message: unhandledErrors
-                .map((e, index) => `[${index}]: ${(e as any).stack || (e as any).message}`)
-                .join('\n----------\n'),
-            };
+    } else if (hasTestSuiteFailures || hasUnhandledErrors) {
+      const isMultipleSuiteFailures = testSuiteFailures.length === 1;
+      const isMultipleDeduplicatedTestSuitesFailures = deduplicatedTestSuiteFailures.size > 1;
+      const isMultipleUnhandledErrors = unhandledErrors?.length > 1;
+
+      let error: { name: string; message: string };
+
+      if (hasTestSuiteFailures && hasUnhandledErrors) {
+        error = {
+          name: `${testSuiteFailures.length} component test${isMultipleSuiteFailures ? 's' : ''} failed, due to ${deduplicatedTestSuiteFailures.size} runtime error${isMultipleDeduplicatedTestSuitesFailures ? 's' : ''} as well as ${unhandledErrors.length} unhandled error${isMultipleUnhandledErrors ? 's' : ''}`,
+          message: [
+            ...Array.from(deduplicatedTestSuiteFailures),
+            ...unhandledErrors.map(
+              (e, index) => `[${index}]: ${(e as any).stack || (e as any).message}`
+            ),
+          ].join('\n----------\n'),
+        };
+      } else if (hasTestSuiteFailures) {
+        error = {
+          name: `${testSuiteFailures.length} component test${isMultipleSuiteFailures ? 's' : ''} failed, due to ${deduplicatedTestSuiteFailures.size} runtime error${isMultipleDeduplicatedTestSuitesFailures ? 's' : ''}`,
+          message: Array.from(deduplicatedTestSuiteFailures).join('\n----------\n'),
+        };
+      } else {
+        error = {
+          name: `${unhandledErrors.length} unhandled error${isMultipleUnhandledErrors ? 's' : ''}`,
+          message: unhandledErrors
+            .map((e, index) => `[${index}]: ${(e as any).stack || (e as any).message}`)
+            .join('\n----------\n'),
+        };
+      }
 
       this.sendReport({
         providerId: TEST_PROVIDER_ID,

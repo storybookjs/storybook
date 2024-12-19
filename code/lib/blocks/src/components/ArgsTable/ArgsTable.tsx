@@ -5,7 +5,7 @@ import { once } from 'storybook/internal/client-logger';
 import { IconButton, Link, ResetWrapper } from 'storybook/internal/components';
 import { styled } from 'storybook/internal/theming';
 
-import { includeConditionalArg } from '@storybook/csf';
+import { type InputType, includeConditionalArg } from '@storybook/csf';
 import { DocumentIcon, UndoIcon } from '@storybook/icons';
 
 import { pickBy } from 'es-toolkit/compat';
@@ -16,7 +16,7 @@ import { ArgRow } from './ArgRow';
 import { Empty } from './Empty';
 import { SectionRow } from './SectionRow';
 import { Skeleton } from './Skeleton';
-import type { ArgType, ArgTypes, Args, Globals } from './types';
+import type { Args, Globals } from './types';
 
 export const TableWrapper = styled.table<{
   compact?: boolean;
@@ -167,7 +167,7 @@ export const TableWrapper = styled.table<{
   },
 }));
 
-const StyledIconButton = styled(IconButton as any)(({ theme }) => ({
+const StyledIconButton = styled(IconButton as any)(() => ({
   margin: '-4px -12px -4px 0',
 }));
 
@@ -182,12 +182,18 @@ export enum ArgsTableError {
 }
 
 export type SortType = 'alpha' | 'requiredFirst' | 'none';
-type SortFn = (a: ArgType, b: ArgType) => number;
+type SortFn = (a: InputType, b: InputType) => number;
 
 const sortFns: Record<SortType, SortFn | null> = {
-  alpha: (a: ArgType, b: ArgType) => a.name.localeCompare(b.name),
-  requiredFirst: (a: ArgType, b: ArgType) =>
-    Number(!!b.type?.required) - Number(!!a.type?.required) || a.name.localeCompare(b.name),
+  alpha: (a: InputType, b: InputType) => a.name.localeCompare(b.name),
+  requiredFirst: (a: InputType, b: InputType) => {
+    const bType = b.type;
+    const aType = a.type;
+    const isBTypeRequired = !!(typeof bType !== 'string' && bType.required);
+    const isATypeRequired = !!(typeof aType !== 'string' && aType.required);
+
+    return Number(isBTypeRequired) - Number(isATypeRequired) || a.name.localeCompare(b.name);
+  },
   none: undefined,
 };
 
@@ -202,7 +208,9 @@ export interface ArgsTableOptionProps {
   sort?: SortType;
 }
 interface ArgsTableDataProps {
-  rows: ArgTypes;
+  rows: {
+    [key: string]: InputType;
+  };
   args?: Args;
   globals?: Globals;
 }
@@ -218,7 +226,7 @@ export interface ArgsTableLoadingProps {
 export type ArgsTableProps = ArgsTableOptionProps &
   (ArgsTableDataProps | ArgsTableErrorProps | ArgsTableLoadingProps);
 
-type Rows = ArgType[];
+type Rows = InputType[];
 type Subsection = Rows;
 type Section = {
   ungrouped: Rows;
@@ -230,7 +238,7 @@ type Sections = {
   sections: Record<string, Section>;
 };
 
-const groupRows = (rows: ArgType, sort: SortType) => {
+const groupRows = (rows: { [key: string]: InputType }, sort: SortType) => {
   const sections: Sections = { ungrouped: [], ungroupedSubsections: {}, sections: {} };
 
   if (!rows) {
@@ -298,7 +306,7 @@ const groupRows = (rows: ArgType, sort: SortType) => {
  * preview in `prepareStory`, and that exception will be bubbled up into the UI in a red screen.
  * Nevertheless, we log the error here just in case.
  */
-const safeIncludeConditionalArg = (row: ArgType, args: Args, globals: Globals) => {
+const safeIncludeConditionalArg = (row: InputType, args: Args, globals: Globals) => {
   try {
     return includeConditionalArg(row, args, globals);
   } catch (err) {

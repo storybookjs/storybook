@@ -316,13 +316,14 @@ export class VitestManager {
     const id = slash(file);
     this.vitest?.logger.clearHighlightCache(id);
     this.updateLastChanged(id);
-    this.storyCountForCurrentRun = 0;
 
     // when watch mode is disabled, don't trigger any tests (below)
     // but still invalidate the cache for the changed file, which is handled above
     if (!this.testManager.config.watchMode) {
       return;
     }
+
+    this.storyCountForCurrentRun = 0;
     await this.runAffectedTests(file);
   }
 

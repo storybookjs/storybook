@@ -1450,7 +1450,7 @@ __metadata:
     ejs: "npm:^3.1.10"
     ejs-lint: "npm:^2.0.0"
     es-toolkit: "npm:^1.22.0"
-    esbuild: "npm:^0.24.0"
+    esbuild: "npm:0.24.0"
     esbuild-plugin-alias: "npm:^0.2.1"
     eslint: "npm:^8.57.0"
     eslint-config-airbnb-typescript: "npm:^18.0.0"
@@ -5143,7 +5143,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"esbuild@npm:^0.24.0":
+"esbuild@npm:0.24.0":
   version: 0.24.0
   resolution: "esbuild@npm:0.24.0"
   dependencies:

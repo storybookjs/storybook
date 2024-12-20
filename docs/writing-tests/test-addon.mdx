@@ -96,7 +96,9 @@ Some Storybook frameworks require additional setup to enable the framework's fea
     viteConfig,
     defineConfig({
       plugins: [
-        storybookTest(),
+        storybookTest({
+          // ...
+        }),
         storybookNextJsPlugin(), // 👈 Apply the framework plugin here
       ],
       // ...
@@ -119,7 +121,9 @@ Some Storybook frameworks require additional setup to enable the framework's fea
     viteConfig,
     defineConfig({
       plugins: [
-        storybookTest(),
+        storybookTest({
+          // ...
+        }),
         storybookVuePlugin(), // 👈 Apply the framework plugin here
       ],
       // ...
@@ -142,7 +146,9 @@ Some Storybook frameworks require additional setup to enable the framework's fea
     viteConfig,
     defineConfig({
       plugins: [
-        storybookTest(),
+        storybookTest({
+          // ...
+        }),
         storybookSveltekitPlugin(), // 👈 Apply the framework plugin here
       ],
       // ...
@@ -313,6 +319,7 @@ export default defineWorkspace([
     {
       plugins: [
         storybookTest({
+          // ...
           storybookScript: 'yarn storybook --ci',
           storybookUrl: process.env.SB_URL
         }),
@@ -427,17 +434,9 @@ If your stories use assets in the public directory and you're not using the defa
 
 ### How do I apply custom Vite configuration?
 
-If you have custom operations defined in [`viteFinal`](../api/main-config/main-config-vite-final.mdx) in your `.storybook/main.js|ts` file, you will need to translate those into the Vitest configuration. This is because the plugin does not use the Storybook Vite configuration.
+Your Storybook project's Vite configuration (in [`viteFinal`](../api/main-config/main-config-vite-final.mdx) in your `.storybook/main.js|ts` file) is automatically applied to your Vitest configuration, with one exception: the plugins.
 
-For example, to recreate an alias in Storybook's Vite configuration, you would need to apply that alias in the Vitest configuration:
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="vitest-plugin-vitest-config-alias.md" />
-
-{/* prettier-ignore-end */}
-
-The above example places the Vite configuration in a Vitest configuration file. You can also place it in a Vitest workspace file, if that is how your project is configured.
+If you are running any plugins in `viteFinal`, you will likely also need to run those in the Vitest configuration.
 
 ### How do I isolate Storybook tests from others?
 

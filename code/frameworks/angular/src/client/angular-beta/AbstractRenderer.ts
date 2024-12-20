@@ -152,7 +152,7 @@ export abstract class AbstractRenderer {
    * https://github.com/storybookjs/storybook/issues/29132
    *
    * This method filters accents from a given raw id. For example, this method converts
-   * 'Example/Button with an "é" accent' into 'Example/Button with an "e" accent'
+   * 'Example/Button with an "é" accent' into 'Example/Button with an "e" accent'.
    *
    * @memberof AbstractRenderer
    * @protected

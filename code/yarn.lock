@@ -7125,7 +7125,7 @@ __metadata:
     cross-env: "npm:^7.0.3"
     danger: "npm:^12.3.3"
     es-toolkit: "npm:^1.22.0"
-    esbuild: "npm:^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || 0.24.0"
+    esbuild: "npm:^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0"
     esbuild-loader: "npm:^4.2.0"
     esbuild-plugin-alias: "npm:^0.2.1"
     eslint: "npm:8.57.1"
@@ -14518,7 +14518,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"esbuild@npm:0.24.0":
+"esbuild@npm:^0.24.0":
   version: 0.24.0
   resolution: "esbuild@npm:0.24.0"
   dependencies:

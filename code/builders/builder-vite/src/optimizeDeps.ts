@@ -87,6 +87,7 @@ const INCLUDE_CANDIDATES = [
   'react-textarea-autosize',
   'react',
   'react/jsx-runtime',
+  'react-dom/test-utils',
   'refractor/core',
   'refractor/lang/bash.js',
   'refractor/lang/css.js',
@@ -109,6 +110,17 @@ const INCLUDE_CANDIDATES = [
   'util-deprecate',
   'vue',
   'warning',
+  'storybook/internal/preview/runtime',
+  '@storybook/react/dist/entry-preview.mjs',
+  '@storybook/react/dist/entry-preview-docs.mjs',
+  '@storybook/addon-essentials/actions/preview',
+  '@storybook/addon-essentials/docs/preview',
+  '@storybook/addon-essentials/backgrounds/preview',
+  '@storybook/addon-essentials/viewport/preview',
+  '@storybook/addon-essentials/measure/preview',
+  '@storybook/addon-essentials/outline/preview',
+  '@storybook/addon-essentials/highlight/preview',
+  '@storybook/addon-interactions/preview',
 ];
 
 /**

@@ -152,3 +152,7 @@ export const staticDirs: PresetPropertyFn<'staticDirs'> = async (values = [], op
     ...values,
   ];
 };
+
+export const viteFinal: PresetProperty<'viteFinal'> = async () => {
+  // todo add optimize deps here
+};

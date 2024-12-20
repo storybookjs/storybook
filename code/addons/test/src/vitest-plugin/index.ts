@@ -25,6 +25,8 @@ import sirv from 'sirv';
 import { convertPathToPattern } from 'tinyglobby';
 import { dedent } from 'ts-dedent';
 
+// ! relative import to avoid dependending on the Vite builder
+import { getOptimizeDeps } from '../../../../builders/builder-vite/src/optimizeDeps';
 import type { InternalOptions, UserOptions } from './types';
 
 const WORKING_DIR = process.cwd();

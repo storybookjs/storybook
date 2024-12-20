@@ -96,7 +96,9 @@ export abstract class AbstractRenderer {
 
     const analyzedMetadata = new PropertyExtractor(storyFnAngular.moduleMetadata, component);
 
-    const storyUid = targetDOMNode.getAttribute(STORY_UID_ATTRIBUTE);
+    const storyUid = this.generateStoryUIdFromRawStoryUid(
+      targetDOMNode.getAttribute(STORY_UID_ATTRIBUTE)
+    );
     const componentSelector = storyUid !== null ? `${targetSelector}[${storyUid}]` : targetSelector;
     if (storyUid !== null) {
       const element = targetDOMNode.querySelector(targetSelector);

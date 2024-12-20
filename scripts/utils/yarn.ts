@@ -121,6 +121,8 @@ export const configureYarn2ForVerdaccio = async ({
     command.push(
       `yarn config set logFilters --json '[ { "code": "YN0013", "level": "discard" } ]'`
     );
+  } else if (key.includes('nuxt')) {
+    // Nothing to do for Nuxt
   } else {
     // Discard all YN0013 - FETCH_NOT_CACHED messages
     // Error on YN0060 - INCOMPATIBLE_PEER_DEPENDENCY

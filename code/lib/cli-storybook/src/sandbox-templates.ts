@@ -400,6 +400,16 @@ const baseTemplates = {
     },
     skipTasks: ['e2e-tests-dev', 'bench'],
   },
+  'nuxt-vite/default-ts': {
+    name: 'Nuxt v3 (Vite | TypeScript)',
+    script: 'npx nuxi init --packageManager yarn --gitInit false {{beforeDir}}',
+    expected: {
+      framework: '@storybook-vue/nuxt',
+      renderer: '@storybook/vue3',
+      builder: '@storybook/builder-vite',
+    },
+    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
+  },
   'html-webpack/default': {
     name: 'HTML Latest (Webpack | JavaScript)',
     script: 'yarn create webpack5-html {{beforeDir}}',
@@ -809,6 +819,7 @@ export const normal: TemplateKey[] = [
   'react-vite/default-ts',
   'angular-cli/default-ts',
   'vue3-vite/default-ts',
+  'nuxt-vite/default-ts',
   'lit-vite/default-ts',
   'svelte-vite/default-ts',
   'svelte-kit/skeleton-ts',

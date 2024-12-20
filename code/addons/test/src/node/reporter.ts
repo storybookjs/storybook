@@ -236,7 +236,7 @@ export class StorybookReporter implements Reporter {
         ...report,
       });
     } else if (hasTestSuiteFailures || hasUnhandledErrors) {
-      const isMultipleTestSuiteFailures = testSuiteFailures.length === 1;
+      const isMultipleTestSuiteFailures = testSuiteFailures.length > 1;
       const isMultipleDeduplicatedTestSuitesFailures = deduplicatedTestSuiteFailures.size > 1;
       const isMultipleUnhandledErrors = unhandledErrors?.length > 1;
 

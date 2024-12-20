@@ -8,6 +8,7 @@ export type EventType =
   | 'boot'
   | 'dev'
   | 'build'
+  | 'index'
   | 'upgrade'
   | 'init'
   | 'scaffolded-empty'

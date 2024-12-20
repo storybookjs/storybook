@@ -67,28 +67,25 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
   const { pluginReactOptions = {} } =
     await options.presets.apply<FrameworkOptions>('frameworkOptions');
 
-  const reactConfig = await reactViteFinal(config, options);
+  const { plugins = [], ...reactConfigWithoutPlugins } = await reactViteFinal(config, options);
 
-  const { plugins = [] } = reactConfig;
-
-  plugins.unshift(
-    tsconfigPaths(),
-    flowPlugin({
-      exclude: [/node_modules\/(?!react-native|@react-native)/],
-    }),
-    react({
-      babel: {
-        babelrc: false,
-        configFile: false,
-      },
-      jsxRuntime: 'automatic',
-      ...pluginReactOptions,
-    })
-  );
-
-  plugins.push(reactNativeWeb());
-
-  return mergeConfig(reactConfig, {
+  return mergeConfig(reactConfigWithoutPlugins, {
+    plugins: [
+      tsconfigPaths(),
+      flowPlugin({
+        exclude: [/node_modules\/(?!react-native|@react-native)/],
+      }),
+      react({
+        babel: {
+          babelrc: false,
+          configFile: false,
+        },
+        jsxRuntime: 'automatic',
+        ...pluginReactOptions,
+      }),
+      ...plugins,
+      reactNativeWeb(),
+    ],
     optimizeDeps: {
       esbuildOptions: {
         plugins: [esbuildFlowPlugin(new RegExp(/\.(flow|jsx?)$/), (_path: string) => 'jsx')],

@@ -150,7 +150,10 @@ const baseTemplates = {
     },
     modifications: {
       mainConfig: {
-        features: { experimentalRSC: true },
+        features: {
+          experimentalRSC: true,
+          developmentModeForBuild: true,
+        },
       },
       extraDependencies: ['server-only', 'prop-types'],
     },
@@ -167,7 +170,10 @@ const baseTemplates = {
     },
     modifications: {
       mainConfig: {
-        features: { experimentalRSC: true },
+        features: {
+          experimentalRSC: true,
+          developmentModeForBuild: true,
+        },
       },
       extraDependencies: ['server-only', 'prop-types'],
     },
@@ -184,7 +190,10 @@ const baseTemplates = {
     },
     modifications: {
       mainConfig: {
-        features: { experimentalRSC: true },
+        features: {
+          experimentalRSC: true,
+          developmentModeForBuild: true,
+        },
       },
       extraDependencies: ['server-only', 'prop-types'],
     },
@@ -200,10 +209,13 @@ const baseTemplates = {
       builder: '@storybook/builder-webpack5',
     },
     modifications: {
-      extraDependencies: ['server-only', 'prop-types'],
       mainConfig: {
-        features: { experimentalRSC: true },
+        features: {
+          experimentalRSC: true,
+          developmentModeForBuild: true,
+        },
       },
+      extraDependencies: ['server-only', 'prop-types'],
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
@@ -219,7 +231,10 @@ const baseTemplates = {
     modifications: {
       mainConfig: {
         framework: '@storybook/experimental-nextjs-vite',
-        features: { experimentalRSC: true },
+        features: {
+          experimentalRSC: true,
+          developmentModeForBuild: true,
+        },
       },
       extraDependencies: [
         'server-only',
@@ -242,7 +257,10 @@ const baseTemplates = {
     modifications: {
       mainConfig: {
         framework: '@storybook/experimental-nextjs-vite',
-        features: { experimentalRSC: true },
+        features: {
+          experimentalRSC: true,
+          developmentModeForBuild: true,
+        },
       },
       extraDependencies: [
         'server-only',
@@ -263,6 +281,11 @@ const baseTemplates = {
     },
     modifications: {
       extraDependencies: ['prop-types'],
+      mainConfig: {
+        features: {
+          developmentModeForBuild: true,
+        },
+      },
     },
     skipTasks: ['e2e-tests-dev', 'bench'],
   },
@@ -276,6 +299,11 @@ const baseTemplates = {
     },
     modifications: {
       extraDependencies: ['prop-types'],
+      mainConfig: {
+        features: {
+          developmentModeForBuild: true,
+        },
+      },
     },
     skipTasks: ['bench'],
   },
@@ -302,6 +330,11 @@ const baseTemplates = {
     },
     modifications: {
       extraDependencies: ['prop-types'],
+      mainConfig: {
+        features: {
+          developmentModeForBuild: true,
+        },
+      },
     },
     skipTasks: ['e2e-tests-dev', 'bench'],
   },

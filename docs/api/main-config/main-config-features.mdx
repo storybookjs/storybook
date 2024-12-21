@@ -15,6 +15,7 @@ Type:
   backgroundsStoryGlobals?: boolean;
   legacyDecoratorFileOrder?: boolean;
   viewportStoryGlobals?: boolean;
+  developmentModeForBuild?: boolean;
 }
 ```
 
@@ -67,5 +68,17 @@ Configures the [Viewports addon](../../essentials/viewport.mdx) to opt-in to the
 {/* prettier-ignore-start */}
 
 <CodeSnippets path="main-config-features-viewport-story-globals.md" />
+
+{/* prettier-ignore-end */}
+
+## `developmentModeForBuild`
+
+Type: `boolean`
+
+Set `NODE_ENV` to `'development'` in built Storybooks for better testing and debugging capabilities.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="main-config-features-development-mode-for-build.md" />
 
 {/* prettier-ignore-end */}

@@ -4,8 +4,6 @@ import { readFile } from 'node:fs/promises';
 import { NoStatsForViteDevError } from 'storybook/internal/server-errors';
 import type { Middleware, Options } from 'storybook/internal/types';
 
-import sirv from 'sirv';
-import { corePath } from 'storybook/core-path';
 import type { ViteDevServer } from 'vite';
 
 import { build as viteBuild } from './build';

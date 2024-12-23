@@ -100,6 +100,7 @@ const INCLUDE_CANDIDATES = [
   'refractor/lang/typescript.js',
   'refractor/lang/yaml.js',
   'regenerator-runtime/runtime.js',
+  'semver', // TODO: Remove once https://github.com/npm/node-semver/issues/712 is fixed
   'slash',
   'store2',
   'synchronous-promise',

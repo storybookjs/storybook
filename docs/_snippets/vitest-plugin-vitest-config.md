@@ -1,8 +1,6 @@
 ```ts filename="vitest.config.ts" renderer="react"
 import { defineConfig, mergeConfig } from 'vitest/config';
 import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';
-// 👇 If you're using Next.js, apply this framework plugin as well
-// import { storybookNextJsPlugin } from '@storybook/experimental-nextjs-vite/vite-plugin';
 
 import viteConfig from './vite.config';
 
@@ -15,7 +13,6 @@ export default mergeConfig(
         // The --ci flag will skip prompts and not open a browser
         storybookScript: 'yarn storybook --ci',
       }),
-      // storybookNextJsPlugin(),
     ],
     test: {
       // Enable browser mode
@@ -68,8 +65,6 @@ export default mergeConfig(
 ```ts filename="vitest.config.ts" renderer="svelte"
 import { defineConfig, mergeConfig } from 'vitest/config';
 import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';
-// 👇 If you're using Sveltekit, apply this framework plugin as well
-// import { storybookSveltekitPlugin } from '@storybook/sveltekit/vite-plugin';
 
 import viteConfig from './vite.config';
 
@@ -82,7 +77,6 @@ export default mergeConfig(
         // The --ci flag will skip prompts and not open a browser
         storybookScript: 'yarn storybook --ci',
       }),
-      // storybookSveltekitPlugin(),
     ],
     test: {
       // Enable browser mode

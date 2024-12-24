@@ -1,11 +1,11 @@
 ```js filename=".storybook/preview.js" renderer="common" language="js"
 export default {
   // ...rest of preview
-  /**
-   * 👇 All stories in your project will have these tags applied:
-   *    - autodocs
-   *    - dev (implicit default)
-   *    - test (implicit default)
+  /*
+   * All stories in your project will have these tags applied:
+   * - autodocs
+   * - dev (implicit default)
+   * - test (implicit default)
    */
   tags: ['autodocs'],
 };
@@ -17,15 +17,14 @@ import type { Preview } from '@storybook/your-renderer';
 
 const preview: Preview = {
   // ...rest of preview
-  /**
-   * 👇 All stories in your project will have these tags applied:
-   *    - autodocs
-   *    - dev (implicit default)
-   *    - test (implicit default)
+  /*
+   * All stories in your project will have these tags applied:
+   * - autodocs
+   * - dev (implicit default)
+   * - test (implicit default)
    */
   tags: ['autodocs'],
 };
 
 export default preview;
 ```
-

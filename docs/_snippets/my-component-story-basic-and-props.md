@@ -125,7 +125,27 @@ export const WithProp: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="svelte" language="js"
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<Story name="Basic">
+  <MyComponent />
+</Story>
+
+<Story name="WithProp">
+  <MyComponent prop="value" />
+</Story>
+```
+
+```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import MyComponent from './MyComponent.svelte';
 
 export default {
@@ -149,12 +169,15 @@ export const WithProp = {
 };
 ```
 
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* MyComponent.stories.svelte */}
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
 
-<script>
-  import { Meta, Story } from '@storybook/addon-svelte-csf';
   import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
 </script>
 
 <Story name="Basic">
@@ -166,7 +189,7 @@ export const WithProp = {
 </Story>
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts-4-9"
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
 import MyComponent from './MyComponent.svelte';
@@ -195,7 +218,27 @@ export const WithProp: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts"
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<Story name="Basic">
+  <MyComponent />
+</Story>
+
+<Story name="WithProp">
+  <MyComponent prop="value" />
+</Story>
+```
+
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
 import MyComponent from './MyComponent.svelte';
@@ -333,4 +376,3 @@ export const WithProp: Story = {
   render: () => html`<my-component prop="value" />`,
 };
 ```
-

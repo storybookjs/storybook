@@ -1,16 +1,23 @@
-import * as fs from 'fs-extra';
-import path, { dirname, join, relative } from 'path';
-import type { Options } from 'tsup';
-import type { PackageJson } from 'type-fest';
-import { build } from 'tsup';
-import aliasPlugin from 'esbuild-plugin-alias';
-import { dedent } from 'ts-dedent';
-import slash from 'slash';
-import { exec } from '../utils/exec';
+import { writeFile } from 'node:fs/promises';
+import { builtinModules } from 'node:module';
 
-import { globalPackages as globalPreviewPackages } from '../../code/core/src/preview/globals/globals';
-import { globalPackages as globalManagerPackages } from '../../code/core/src/manager/globals/globals';
+import type { Metafile } from 'esbuild';
+import aliasPlugin from 'esbuild-plugin-alias';
+// eslint-disable-next-line depend/ban-dependencies
+import * as fs from 'fs-extra';
+// eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';
+import { dirname, join, parse, posix, relative, sep } from 'path';
+import slash from 'slash';
+import { dedent } from 'ts-dedent';
+import type { Options } from 'tsup';
+import { build } from 'tsup';
+import type { PackageJson } from 'type-fest';
+
+import { globalPackages as globalManagerPackages } from '../../code/core/src/manager/globals/globals';
+import { globalPackages as globalPreviewPackages } from '../../code/core/src/preview/globals/globals';
+import { exec } from '../utils/exec';
+import { esbuild } from './tools';
 
 /* TYPES */
 
@@ -32,6 +39,14 @@ type DtsConfigSection = Pick<Options, 'dts' | 'tsconfig'>;
 
 /* MAIN */
 
+const OUT_DIR = join(process.cwd(), 'dist');
+
+export const nodeInternals = [
+  'module',
+  'node:module',
+  ...builtinModules.flatMap((m: string) => [m, `node:${m}`]),
+];
+
 const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   const {
     name,
@@ -50,22 +65,33 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   } = (await fs.readJson(join(cwd, 'package.json'))) as PackageJsonWithBundlerConfig;
 
   if (pre) {
-    await exec(`bun ${pre}`, { cwd });
+    await exec(`jiti ${pre}`, { cwd });
   }
+
+  const metafilesDir = join(
+    __dirname,
+    '..',
+    '..',
+    'code',
+    'bench',
+    'esbuild-metafiles',
+    name.replace('@storybook/', '')
+  );
 
   const reset = hasFlag(flags, 'reset');
   const watch = hasFlag(flags, 'watch');
   const optimized = hasFlag(flags, 'optimized');
 
   if (reset) {
-    await fs.emptyDir(join(process.cwd(), 'dist'));
+    await fs.emptyDir(OUT_DIR);
+    await fs.emptyDir(metafilesDir);
   }
 
-  const tasks: Promise<any>[] = [];
+  const tasks: (() => Promise<any>)[] = [];
 
-  const outDir = join(process.cwd(), 'dist');
   const commonOptions: Options = {
-    outDir,
+    outDir: OUT_DIR,
+    metafile: true,
     silent: true,
     treeshake: true,
     shims: false,
@@ -109,37 +135,42 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
       optimized,
     });
 
-    tasks.push(
-      build({
-        ...commonOptions,
-        ...(optimized ? dtsConfig : {}),
-        ...browserOptions,
-        entry: exportEntries,
-        external: [...commonExternals, ...globalManagerPackages, ...globalPreviewPackages],
-      }),
-      build({
-        ...commonOptions,
-        ...(optimized ? dtsConfig : {}),
-        entry: exportEntries,
-        format: ['cjs'],
-        target: browserOptions.target,
-        platform: 'neutral',
-        external: [...commonExternals, ...globalManagerPackages, ...globalPreviewPackages],
-        esbuildOptions: (options) => {
-          options.platform = 'neutral';
-          Object.assign(options, getESBuildOptions(optimized));
-        },
-      })
-    );
+    tasks.push(async () => {
+      await Promise.all([
+        build({
+          ...commonOptions,
+          ...(optimized ? dtsConfig : {}),
+          ...browserOptions,
+          entry: exportEntries,
+          external: [...commonExternals, ...globalManagerPackages, ...globalPreviewPackages],
+        }),
+        build({
+          ...commonOptions,
+          ...(optimized ? dtsConfig : {}),
+          entry: exportEntries,
+          format: ['cjs'],
+          target: browserOptions.target,
+          platform: 'neutral',
+          external: [...commonExternals, ...globalManagerPackages, ...globalPreviewPackages],
+          esbuildOptions: (options) => {
+            options.platform = 'neutral';
+            Object.assign(options, getESBuildOptions(optimized));
+          },
+        }),
+      ]);
+      if (!watch) {
+        await readMetafiles({ formats: ['esm', 'cjs'] });
+      }
+    });
 
     if (tsConfigExists && !optimized) {
-      tasks.push(...exportEntries.map(generateDTSMapperFile));
+      tasks.push(...exportEntries.map((entry) => () => generateDTSMapperFile(entry)));
     }
   }
 
   if (managerEntries.length > 0) {
-    tasks.push(
-      build({
+    tasks.push(async () => {
+      await build({
         ...commonOptions,
         ...browserOptions,
         entry: managerEntries.map((e: string) => slash(join(cwd, e))),
@@ -147,8 +178,11 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
           js: '.js',
         }),
         external: [...commonExternals, ...globalManagerPackages],
-      })
-    );
+      });
+      if (!watch) {
+        await readMetafiles({ formats: ['esm'] });
+      }
+    });
   }
 
   if (previewEntries.length > 0) {
@@ -157,42 +191,85 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
       entries: previewEntries,
       optimized,
     });
-    tasks.push(
-      build({
+    tasks.push(async () => {
+      await build({
         ...commonOptions,
         ...(optimized ? dtsConfig : {}),
         ...browserOptions,
         format: ['esm', 'cjs'],
         entry: previewEntries.map((e: string) => slash(join(cwd, e))),
         external: [...commonExternals, ...globalPreviewPackages],
-      })
-    );
+      });
+      if (!watch) {
+        await readMetafiles({ formats: ['esm', 'cjs'] });
+      }
+    });
 
     if (tsConfigExists && !optimized) {
-      tasks.push(...previewEntries.map(generateDTSMapperFile));
+      tasks.push(...previewEntries.map((entry) => () => generateDTSMapperFile(entry)));
     }
   }
 
   if (nodeEntries.length > 0) {
-    tasks.push(
-      build({
-        ...commonOptions,
-        entry: nodeEntries.map((e: string) => slash(join(cwd, e))),
-        format: ['cjs'],
-        target: 'node18',
-        platform: 'node',
-        external: commonExternals,
-        esbuildOptions: (c) => {
-          c.platform = 'node';
-          Object.assign(c, getESBuildOptions(optimized));
-        },
-      })
-    );
+    const { dtsConfig, tsConfigExists } = await getDTSConfigs({
+      formats: ['esm'],
+      entries: nodeEntries,
+      optimized,
+    });
+    tasks.push(async () => {
+      await Promise.all([
+        build({
+          ...commonOptions,
+          entry: nodeEntries.map((e: string) => slash(join(cwd, e))),
+          format: ['cjs'],
+          target: 'node18',
+          platform: 'node',
+          external: commonExternals,
+          esbuildOptions: (c) => {
+            c.platform = 'node';
+            Object.assign(c, getESBuildOptions(optimized));
+          },
+        }),
+        build({
+          ...commonOptions,
+          ...(optimized ? dtsConfig : {}),
+          entry: nodeEntries.map((e: string) => slash(join(cwd, e))),
+          format: ['esm'],
+          target: 'node18',
+          platform: 'neutral',
+          banner: {
+            js: dedent`
+              import ESM_COMPAT_Module from "node:module";
+              import { fileURLToPath as ESM_COMPAT_fileURLToPath } from 'node:url';
+              import { dirname as ESM_COMPAT_dirname } from 'node:path';
+              const __filename = ESM_COMPAT_fileURLToPath(import.meta.url);
+              const __dirname = ESM_COMPAT_dirname(__filename);
+              const require = ESM_COMPAT_Module.createRequire(import.meta.url);
+            `,
+          },
+          external: [...commonExternals, ...nodeInternals],
+          esbuildOptions: (c) => {
+            c.mainFields = ['main', 'module', 'node'];
+            c.conditions = ['node', 'module', 'import', 'require'];
+            c.platform = 'neutral';
+            Object.assign(c, getESBuildOptions(optimized));
+          },
+        }),
+      ]);
+      if (!watch) {
+        await readMetafiles({ formats: ['esm', 'cjs'] });
+      }
+    });
+
+    if (tsConfigExists && !optimized) {
+      tasks.push(...nodeEntries.map((entry) => () => generateDTSMapperFile(entry)));
+    }
   }
 
-  await Promise.all(tasks);
-
-  const dtsFiles = await glob(outDir + '/**/*.d.ts');
+  for (const task of tasks) {
+    await task();
+  }
+  const dtsFiles = await glob(OUT_DIR + '/**/*.d.ts');
   await Promise.all(
     dtsFiles.map(async (file) => {
       const content = await fs.readFile(file, 'utf-8');
@@ -203,8 +280,12 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
     })
   );
 
+  if (!watch) {
+    await saveMetafiles({ metafilesDir });
+  }
+
   if (post) {
-    await exec(`bun ${post}`, { cwd }, { debug: true });
+    await exec(`jiti ${post}`, { cwd }, { debug: true });
   }
 
   console.log('done');
@@ -250,11 +331,11 @@ function getESBuildOptions(optimized: boolean) {
 }
 
 async function generateDTSMapperFile(file: string) {
-  const { name: entryName, dir } = path.parse(file);
+  const { name: entryName, dir } = parse(file);
 
   const pathName = join(process.cwd(), dir.replace('./src', 'dist'), `${entryName}.d.ts`);
   const srcName = join(process.cwd(), file);
-  const rel = relative(dirname(pathName), dirname(srcName)).split(path.sep).join(path.posix.sep);
+  const rel = relative(dirname(pathName), dirname(srcName)).split(sep).join(posix.sep);
 
   await fs.ensureFile(pathName);
   await fs.writeFile(
@@ -264,6 +345,34 @@ async function generateDTSMapperFile(file: string) {
       export * from '${rel}/${entryName}';
     `,
     { encoding: 'utf-8' }
+  );
+}
+
+const metafile: Metafile = {
+  inputs: {},
+  outputs: {},
+};
+
+async function readMetafiles({ formats }: { formats: Formats[] }) {
+  await Promise.all(
+    formats.map(async (format) => {
+      const fromFilename = `metafile-${format}.json`;
+      const currentMetafile = await fs.readJson(join(OUT_DIR, fromFilename));
+      metafile.inputs = { ...metafile.inputs, ...currentMetafile.inputs };
+      metafile.outputs = { ...metafile.outputs, ...currentMetafile.outputs };
+
+      await fs.rm(join(OUT_DIR, fromFilename));
+    })
+  );
+}
+
+async function saveMetafiles({ metafilesDir }: { metafilesDir: string }) {
+  await fs.ensureDir(metafilesDir);
+
+  await writeFile(join(metafilesDir, 'metafile.json'), JSON.stringify(metafile, null, 2));
+  await writeFile(
+    join(metafilesDir, 'metafile.txt'),
+    await esbuild.analyzeMetafile(metafile, { color: false, verbose: false })
   );
 }
 

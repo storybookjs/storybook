@@ -47,7 +47,7 @@ Now when you run Storybook, the Interactions addon will be enabled.
 
 ![Storybook Interactions installed and registered](../_assets/essentials/addon-interactions-installed-registered.png)
 
-## Write an interaction test
+## Write a component test
 
 Interactions run as part of the `play` function of your stories. We rely on Testing Library to do the heavy lifting.
 
@@ -55,7 +55,7 @@ Make sure to import the Storybook wrappers for Vitest and Testing Library via `@
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="storybook-interactions-play-function.md" usesCsf3 csf2Path="essentials/interactions#snippet-storybook-interactions-play-function" />
+<CodeSnippets path="storybook-interactions-play-function.md" />
 
 {/* prettier-ignore-end */}
 
@@ -68,17 +68,3 @@ Any `args` that have been marked as an Action, either using the [argTypes annota
 <Callout variant="info">
   To mock functions in your Storybook stories for reliable and isolated component testing, use the named `fn` import from `@storybook/test`.
 </Callout>
-
-## API
-
-### Parameters
-
-This addon contributes the following [parameters](../writing-stories/parameters.mdx) to Storybook, under the `interactions` namespace:
-
-#### `disable`
-
-Type: `boolean`
-
-Disable this addon's behavior. If you wish to disable this addon for the entire Storybook, you should do so when registering `addon-essentials`. See the [essential addon's docs](../essentials/index.mdx#disabling-addons) for more information.
-
-This parameter is most useful to allow overriding at more specific levels. For example, if this parameter is set to `true` at the project level, it could then be re-enabled by setting it to `false` at the meta (component) or story level.

@@ -1,12 +1,15 @@
-import type { WriteStream } from 'fs-extra';
-import { move, remove, writeFile, readFile, createWriteStream, mkdirSync } from 'fs-extra';
+import type { WriteStream } from 'node:fs';
+import { createWriteStream, mkdirSync } from 'node:fs';
+import { readFile, realpath, rename, rm, writeFile } from 'node:fs/promises';
+import os from 'node:os';
 import { join } from 'node:path';
-import { rendererPackages } from './get-storybook-info';
+
+import { type MergeExclusive } from 'type-fest';
+import uniqueString from 'unique-string';
+
 import type { JsPackageManager } from '../js-package-manager';
 import versions from '../versions';
-import uniqueString from 'unique-string';
-import os from 'node:os';
-import { realpath } from 'node:fs/promises';
+import { rendererPackages } from './get-storybook-info';
 
 const tempDir = () => realpath(os.tmpdir());
 
@@ -14,31 +17,29 @@ const getPath = async (prefix = '') => join(await tempDir(), prefix + uniqueStri
 
 export async function temporaryDirectory({ prefix = '' } = {}) {
   const directory = await getPath(prefix);
-  await mkdirSync(directory);
+  mkdirSync(directory);
   return directory;
 }
-
-import { type MergeExclusive } from 'type-fest';
 
 export type FileOptions = MergeExclusive<
   {
     /**
-	File extension.
-
-	Mutually exclusive with the `name` option.
-
-	_You usually won't need this option. Specify it only when actually needed._
-	*/
+     * File extension.
+     *
+     * Mutually exclusive with the `name` option.
+     *
+     * _You usually won't need this option. Specify it only when actually needed._
+     */
     readonly extension?: string;
   },
   {
     /**
-	Filename.
-
-	Mutually exclusive with the `extension` option.
-
-	_You usually won't need this option. Specify it only when actually needed._
-	*/
+     * Filename.
+     *
+     * Mutually exclusive with the `extension` option.
+     *
+     * _You usually won't need this option. Specify it only when actually needed._
+     */
     readonly name?: string;
   }
 >;
@@ -66,10 +67,10 @@ export function parseList(str: string): string[] {
 }
 
 /**
- * Given a package manager, returns the coerced version of Storybook.
- * It tries to find renderer packages in the project and returns the coerced version of the first one found.
- * Example:
- * If @storybook/react version 8.0.0-alpha.14 is installed, it returns the coerced version 8.0.0
+ * Given a package manager, returns the coerced version of Storybook. It tries to find renderer
+ * packages in the project and returns the coerced version of the first one found. Example: If
+ *
+ * @storybook/react version 8.0.0-alpha.14 is installed, it returns the coerced version 8.0.0
  */
 export async function getCoercedStorybookVersion(packageManager: JsPackageManager) {
   const packages = (
@@ -95,37 +96,38 @@ export function getEnvConfig(program: Record<string, any>, configEnv: Record<str
 }
 
 /**
- * Given a file name, creates an object with utilities to manage a log file.
- * It creates a temporary log file which you can manage with the returned functions.
- * You can then decide whether to move the log file to the users project, or remove it.
+ * Given a file name, creates an object with utilities to manage a log file. It creates a temporary
+ * log file which you can manage with the returned functions. You can then decide whether to move
+ * the log file to the users project, or remove it.
  *
  * @example
- * ```
- *  const { logStream, moveLogFile, removeLogFile, clearLogFile, readLogFile } = await createLogStream('my-log-file.log');
  *
- *  // SCENARIO 1:
- *  // you can write custom messages to generate a log file
- *  logStream.write('my log message');
- *  await moveLogFile();
+ * ```ts
+ * const { logStream, moveLogFile, removeLogFile, clearLogFile, readLogFile } =
+ *   await createLogStream('my-log-file.log');
  *
- *  // SCENARIO 2:
- *  // or you can pass it to stdio and capture the output of that command
- *  try {
- *    await this.executeCommand({
- *      command: 'pnpm',
- *      args: ['info', packageName, ...args],
- *      // do not output to the user, and send stdio and stderr to log file
- *      stdio: ['ignore', logStream, logStream]
- *    });
- *  } catch (err) {
- *    // do something with the log file content
- *    const output = await readLogFile();
- *    // move the log file to the users project
- *    await moveLogFile();
- *  }
- *  // success, no need to keep the log file
- *  await removeLogFile();
+ * // SCENARIO 1:
+ * // you can write custom messages to generate a log file
+ * logStream.write('my log message');
+ * await moveLogFile();
  *
+ * // SCENARIO 2:
+ * // or you can pass it to stdio and capture the output of that command
+ * try {
+ *   await this.executeCommand({
+ *     command: 'pnpm',
+ *     args: ['info', packageName, ...args],
+ *     // do not output to the user, and send stdio and stderr to log file
+ *     stdio: ['ignore', logStream, logStream],
+ *   });
+ * } catch (err) {
+ *   // do something with the log file content
+ *   const output = await readLogFile();
+ *   // move the log file to the users project
+ *   await moveLogFile();
+ * }
+ * // success, no need to keep the log file
+ * await removeLogFile();
  * ```
  */
 export const createLogStream = async (
@@ -144,12 +146,10 @@ export const createLogStream = async (
 
   return new Promise((resolve, reject) => {
     logStream.once('open', () => {
-      const moveLogFile = async () => move(temporaryLogPath, finalLogPath, { overwrite: true });
+      const moveLogFile = async () => rename(temporaryLogPath, finalLogPath);
       const clearLogFile = async () => writeFile(temporaryLogPath, '');
-      const removeLogFile = async () => remove(temporaryLogPath);
-      const readLogFile = async () => {
-        return readFile(temporaryLogPath, 'utf8');
-      };
+      const removeLogFile = async () => rm(temporaryLogPath, { recursive: true, force: true });
+      const readLogFile = async () => readFile(temporaryLogPath, { encoding: 'utf8' });
       resolve({ logStream, moveLogFile, clearLogFile, removeLogFile, readLogFile });
     });
     logStream.once('error', reject);

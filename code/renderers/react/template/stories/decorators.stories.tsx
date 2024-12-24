@@ -1,6 +1,7 @@
 import type { FC } from 'react';
-import React, { useContext, createContext } from 'react';
-import type { StoryObj, Meta } from '@storybook/react';
+import React, { createContext, useContext } from 'react';
+
+import type { Meta, StoryObj } from '@storybook/react';
 
 const Component: FC = () => <p>Story</p>;
 
@@ -42,7 +43,10 @@ export const Context: StoryObj<typeof Component> = {
   ],
   render: function Render(args, context) {
     const value = useContext(TestContext);
-    if (!value) throw new Error('TestContext not set, decorator did not run!');
+
+    if (!value) {
+      throw new Error('TestContext not set, decorator did not run!');
+    }
     return <p>Story</p>;
   },
 };

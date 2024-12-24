@@ -1,8 +1,9 @@
-import program from 'commander';
+import { versions } from 'storybook/internal/common';
+import { addToGlobalContext } from 'storybook/internal/telemetry';
+
+import { program } from 'commander';
 import { findPackageSync } from 'fd-package-json';
 import invariant from 'tiny-invariant';
-import { addToGlobalContext } from 'storybook/internal/telemetry';
-import { versions } from 'storybook/internal/common';
 
 import type { CommandOptions } from '../generators/types';
 import { initiate } from '../initiate';
@@ -24,7 +25,10 @@ program
   .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
   .option('-f --force', 'Force add Storybook')
   .option('-s --skip-install', 'Skip installing deps')
-  .option('--package-manager <npm|pnpm|yarn1|yarn2>', 'Force package manager for installing deps')
+  .option(
+    '--package-manager <npm|pnpm|yarn1|yarn2|bun>',
+    'Force package manager for installing deps'
+  )
   .option('--use-pnp', 'Enable pnp mode for Yarn 2+')
   .option('-p --parser <babel | babylon | flow | ts | tsx>', 'jscodeshift parser')
   .option('-t --type <type>', 'Add Storybook for a specific project type')

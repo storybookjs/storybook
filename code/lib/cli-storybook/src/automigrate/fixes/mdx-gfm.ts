@@ -1,10 +1,13 @@
-import { dedent } from 'ts-dedent';
-import { join } from 'path';
-import slash from 'slash';
+import { join } from 'node:path';
+
+import { getStorybookVersionSpecifier } from 'storybook/internal/cli';
 import { commonGlobOptions } from 'storybook/internal/common';
+
+import slash from 'slash';
+import { dedent } from 'ts-dedent';
+
 import { updateMainConfig } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
-import { getStorybookVersionSpecifier } from 'storybook/internal/cli';
 
 const logger = console;
 
@@ -12,8 +15,6 @@ interface Options {
   value?: boolean;
 }
 
-/**
- */
 export const mdxgfm: Fix<Options> = {
   id: 'github-flavored-markdown-mdx',
 
@@ -46,6 +47,7 @@ export const mdxgfm: Fix<Options> = {
       }
 
       // Dynamically import globby because it is a pure ESM module
+      // eslint-disable-next-line depend/ban-dependencies
       const { globby } = await import('globby');
 
       const files = await globby(pattern, commonGlobOptions(pattern));

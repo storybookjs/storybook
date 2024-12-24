@@ -1,6 +1,6 @@
 import React, { Suspense, lazy } from 'react';
-
 import type { ComponentProps } from 'react';
+
 import type ReactSyntaxHighlighter from './syntaxhighlighter';
 
 let languages: Parameters<typeof ReactSyntaxHighlighter.registerLanguage>[] = [];
@@ -16,7 +16,9 @@ const LazySyntaxHighlighter = lazy(async () => {
     languages = [];
   }
 
-  if (Comp === null) Comp = SyntaxHighlighter;
+  if (Comp === null) {
+    Comp = SyntaxHighlighter;
+  }
 
   return {
     default: (props: ComponentProps<typeof SyntaxHighlighter>) => <SyntaxHighlighter {...props} />,

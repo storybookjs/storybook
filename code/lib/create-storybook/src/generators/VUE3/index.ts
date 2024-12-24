@@ -1,4 +1,5 @@
 import { CoreBuilder } from 'storybook/internal/cli';
+
 import { baseGenerator } from '../baseGenerator';
 import type { Generator } from '../types';
 

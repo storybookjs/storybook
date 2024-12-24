@@ -1,9 +1,10 @@
-import { global } from '@storybook/global';
-import { useEffect, makeDecorator } from 'storybook/internal/preview-api';
+import { makeDecorator, useEffect } from 'storybook/internal/preview-api';
 import type { PartialStoryFn, Renderer } from 'storybook/internal/types';
-import { actions } from './runtime/actions';
+
+import { global } from '@storybook/global';
 
 import { PARAM_KEY } from './constants';
+import { actions } from './runtime/actions';
 
 const { document, Element } = global;
 

@@ -1,9 +1,12 @@
 import { expect, test, vi } from 'vitest';
-import { autoblock } from './index';
+
 import { JsPackageManagerFactory } from 'storybook/internal/common';
-import { createBlocker } from './types';
 import { logger as loggerRaw } from 'storybook/internal/node-logger';
+
 import stripAnsi from 'strip-ansi';
+
+import { autoblock } from './index';
+import { createBlocker } from './types';
 
 vi.mock('node:fs/promises', async (importOriginal) => ({
   ...(await importOriginal<any>()),

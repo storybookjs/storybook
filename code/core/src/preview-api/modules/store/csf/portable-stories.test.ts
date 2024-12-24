@@ -1,15 +1,16 @@
 // @vitest-environment node
-import { describe, expect, vi, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
 import type {
   ComponentAnnotations as Meta,
-  StoryAnnotationsOrFn as Story,
   Store_CSFExports,
+  StoryAnnotationsOrFn as Story,
 } from '@storybook/core/types';
+import type { ProjectAnnotations } from '@storybook/csf';
 
-import { composeStory, composeStories, setProjectAnnotations } from './portable-stories';
 import * as defaultExportAnnotations from './__mocks__/defaultExportAnnotations.mockfile';
 import * as namedExportAnnotations from './__mocks__/namedExportAnnotations.mockfile';
-import type { ProjectAnnotations } from '@storybook/csf';
+import { composeStories, composeStory, setProjectAnnotations } from './portable-stories';
 
 type StoriesModule = Store_CSFExports & Record<string, any>;
 
@@ -74,6 +75,25 @@ describe('composeStory', () => {
     const composedStory = composeStory(Story, meta);
     expect(composedStory.parameters.fromAnnotations.asObjectImport).toEqual(true);
     expect(composedStory.parameters.fromAnnotations.asDefaultImport).toEqual(true);
+  });
+
+  it('should compose project annotations when used in named and default exports from the same module', () => {
+    setProjectAnnotations([
+      {
+        initialGlobals: { namedExportAnnotation: true },
+        default: {
+          parameters: { defaultExportAnnotation: true },
+        },
+      },
+    ]);
+
+    const Story: Story = {
+      render: () => {},
+    };
+
+    const composedStory = composeStory(Story, meta);
+    expect(composedStory.parameters.defaultExportAnnotation).toEqual(true);
+    expect(composedStory.globals.namedExportAnnotation).toEqual(true);
   });
 
   it('should return story with composed annotations from story, meta and project', () => {

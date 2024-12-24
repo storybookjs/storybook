@@ -1,10 +1,13 @@
-import { dedent } from 'ts-dedent';
-import type { Fix } from '../types';
-import findUp from 'find-up';
-import { getFrameworkPackageName } from '../helpers/mainConfigFile';
+import { join } from 'node:path';
+
 import { frameworkToRenderer } from 'storybook/internal/cli';
 import { frameworkPackages } from 'storybook/internal/common';
-import path from 'path';
+
+import findUp from 'find-up';
+import { dedent } from 'ts-dedent';
+
+import { getFrameworkPackageName } from '../helpers/mainConfigFile';
+import type { Fix } from '../types';
 
 interface ViteConfigFileRunOptions {
   plugins: string[];
@@ -21,7 +24,7 @@ export const viteConfigFile = {
   async check({ mainConfig, packageManager, mainConfigPath }) {
     let isViteConfigFileFound = !!(await findUp(
       ['vite.config.js', 'vite.config.mjs', 'vite.config.cjs', 'vite.config.ts', 'vite.config.mts'],
-      { cwd: mainConfigPath ? path.join(mainConfigPath, '..') : process.cwd() }
+      { cwd: mainConfigPath ? join(mainConfigPath, '..') : process.cwd() }
     ));
 
     const rendererToVitePluginMap: Record<string, string> = {
@@ -94,6 +97,7 @@ export const viteConfigFile = {
     return null;
   },
 
+  // TODO: This is a temporary fix to prevent a 500 error when running the migration and the user clicks the link in the prompt to preview the docs. We'll probably need to account for future releases.
   prompt({ existed, plugins }) {
     if (existed) {
       return dedent`
@@ -105,7 +109,7 @@ export const viteConfigFile = {
         If you already have these plugins, you can ignore this message.
 
         You can find more information on how to do this here:
-        https://storybook.js.org/docs/8.0/migration-guide/#missing-viteconfigjs-file
+        https://storybook.js.org/docs/8.0/migration-guide#missing-viteconfigjs-file
 
         This change was necessary to support newer versions of Vite.
       `;
@@ -115,7 +119,7 @@ export const viteConfigFile = {
       Please add a vite.config.js file to your project root.
 
       You can find more information on how to do this here:
-      https://storybook.js.org/docs/8.0/migration-guide/#missing-viteconfigjs-file
+      https://storybook.js.org/docs/8.0/migration-guide#missing-viteconfigjs-file
 
       This change was necessary to support newer versions of Vite.
     `;

@@ -1,4 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
 import type { Renderer, StoryAnnotationsOrFn } from '@storybook/core/types';
 
 import { normalizeStory } from './normalizeStory';
@@ -55,6 +56,7 @@ describe('normalizeStory', () => {
           "args": {},
           "beforeEach": [],
           "decorators": [],
+          "experimental_afterEach": [],
           "globals": {},
           "id": "title--story-export",
           "loaders": [],
@@ -126,6 +128,7 @@ describe('normalizeStory', () => {
             "args": {},
             "beforeEach": [],
             "decorators": [],
+            "experimental_afterEach": [],
             "globals": {},
             "id": "title--story-export",
             "loaders": [],
@@ -166,6 +169,7 @@ describe('normalizeStory', () => {
             "decorators": [
               [Function],
             ],
+            "experimental_afterEach": [],
             "globals": {},
             "id": "title--story-export",
             "loaders": [
@@ -224,6 +228,7 @@ describe('normalizeStory', () => {
               [Function],
               [Function],
             ],
+            "experimental_afterEach": [],
             "globals": {},
             "id": "title--story-export",
             "loaders": [

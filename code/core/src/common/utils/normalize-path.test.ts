@@ -1,5 +1,6 @@
-import { normalizePath } from './normalize-path';
 import { describe, expect, it } from 'vitest';
+
+import { normalizePath } from './normalize-path';
 
 describe('normalize-path', () => {
   it('should normalize paths', () => {

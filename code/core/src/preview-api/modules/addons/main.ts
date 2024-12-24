@@ -1,6 +1,6 @@
+import type { Channel } from '@storybook/core/channels';
 import { global } from '@storybook/global';
 
-import type { Channel } from '@storybook/core/channels';
 import { mockChannel } from './storybook-channel-mock';
 
 export class AddonStore {

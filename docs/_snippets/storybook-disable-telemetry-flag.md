@@ -9,4 +9,3 @@ pnpm run storybook --disable-telemetry
 ```shell renderer="common" language="js" packageManager="yarn"
 yarn storybook --disable-telemetry
 ```
-

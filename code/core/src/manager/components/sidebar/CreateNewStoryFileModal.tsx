@@ -1,5 +1,7 @@
 import React, { useCallback, useDeferredValue, useEffect, useRef, useState } from 'react';
+
 import { CheckIcon } from '@storybook/icons';
+
 import type {
   ArgTypesRequestPayload,
   ArgTypesResponsePayload,
@@ -28,8 +30,8 @@ import { addons, experimental_requestResponse, useStorybookApi } from '@storyboo
 
 import { useDebounce } from '../../hooks/useDebounce';
 import type { NewStoryPayload, SearchResult } from './FileSearchList';
-import { extractSeededRequiredArgs, trySelectNewStory } from './FileSearchModal.utils';
 import { FileSearchModal } from './FileSearchModal';
+import { extractSeededRequiredArgs, trySelectNewStory } from './FileSearchModal.utils';
 
 interface CreateNewStoryFileModalProps {
   open: boolean;
@@ -38,7 +40,9 @@ interface CreateNewStoryFileModalProps {
 
 const stringifyArgs = (args: Record<string, any>) =>
   JSON.stringify(args, (_, value) => {
-    if (typeof value === 'function') return '__sb_empty_function_arg__';
+    if (typeof value === 'function') {
+      return '__sb_empty_function_arg__';
+    }
     return value;
   });
 

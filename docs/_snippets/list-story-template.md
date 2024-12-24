@@ -352,7 +352,7 @@ export const OneItem = {
 };
 ```
 
-```js filename="List.stories.js" renderer="vue" language="js" tabTitle="3"
+```js filename="List.stories.js" renderer="vue" language="js"
 import List from './List.vue';
 import ListItem from './ListItem.vue';
 
@@ -403,7 +403,7 @@ export const OneItem = {
 };
 ```
 
-```ts filename="List.stories.ts" renderer="vue" language="ts-4-9" tabTitle="3"
+```ts filename="List.stories.ts" renderer="vue" language="ts-4-9"
 import type { Meta, StoryObj } from '@storybook/vue3';
 
 import List from './List.vue';
@@ -459,7 +459,7 @@ export const OneItem: Story = {
 };
 ```
 
-```ts filename="List.stories.ts" renderer="vue" language="ts" tabTitle="3"
+```ts filename="List.stories.ts" renderer="vue" language="ts"
 import type { Meta, StoryObj } from '@storybook/vue3';
 
 import List from './List.vue';
@@ -598,4 +598,3 @@ export const OneItem: Story = {
   },
 };
 ```
-

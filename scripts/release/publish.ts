@@ -1,12 +1,16 @@
-import chalk from 'chalk';
-import path from 'path';
-import program from 'commander';
-import semver from 'semver';
-import { z } from 'zod';
-import { readJson } from 'fs-extra';
-import dedent from 'ts-dedent';
-import pRetry from 'p-retry';
+import { join } from 'node:path';
+
+import { program } from 'commander';
+// eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
+// eslint-disable-next-line depend/ban-dependencies
+import { readJson } from 'fs-extra';
+import pRetry from 'p-retry';
+import picocolors from 'picocolors';
+import semver from 'semver';
+import dedent from 'ts-dedent';
+import { z } from 'zod';
+
 import { esMain } from '../utils/esmain';
 
 program
@@ -36,8 +40,8 @@ type Options = {
   dryRun?: boolean;
 };
 
-const CODE_DIR_PATH = path.join(__dirname, '..', '..', 'code');
-const CODE_PACKAGE_JSON_PATH = path.join(CODE_DIR_PATH, 'package.json');
+const CODE_DIR_PATH = join(__dirname, '..', '..', 'code');
+const CODE_PACKAGE_JSON_PATH = join(CODE_DIR_PATH, 'package.json');
 
 const validateOptions = (options: { [key: string]: any }): options is Options => {
   optionsSchema.parse(options);
@@ -49,7 +53,7 @@ const getCurrentVersion = async (verbose?: boolean) => {
     console.log(`📐 Reading current version of Storybook...`);
   }
   const { version } = await readJson(CODE_PACKAGE_JSON_PATH);
-  console.log(`📐 Current version of Storybook is ${chalk.green(version)}`);
+  console.log(`📐 Current version of Storybook is ${picocolors.green(version)}`);
   return version;
 };
 
@@ -62,13 +66,13 @@ const isCurrentVersionPublished = async ({
   currentVersion: string;
   verbose?: boolean;
 }) => {
-  const prettyPackage = `${chalk.blue(packageName)}@${chalk.green(currentVersion)}`;
+  const prettyPackage = `${picocolors.blue(packageName)}@${picocolors.green(currentVersion)}`;
   console.log(`⛅ Checking if ${prettyPackage} is published...`);
 
   if (verbose) {
     console.log(`Fetching from npm:`);
     console.log(
-      `https://registry.npmjs.org/${chalk.blue(packageName)}/${chalk.green(currentVersion)}`
+      `https://registry.npmjs.org/${picocolors.blue(packageName)}/${picocolors.green(currentVersion)}`
     );
   }
   const response = await fetch(`https://registry.npmjs.org/${packageName}/${currentVersion}`);
@@ -131,15 +135,16 @@ const publishAllPackages = async ({
   }
   if (dryRun) {
     console.log(`📦 Dry run, skipping publish. Would have executed:
-    ${chalk.blue(command)}`);
+    ${picocolors.blue(command)}`);
     return;
   }
 
   /**
-   * 'yarn npm publish' will fail if just one package fails to publish.
-   * But it will continue through with all the other packages, and --tolerate-republish makes it okay to publish the same version again.
-   * So we can safely retry the whole publishing process if it fails.
-   * It's not uncommon for the registry to fail often, which Yarn catches by checking the registry after a package has been published.
+   * 'yarn npm publish' will fail if just one package fails to publish. But it will continue through
+   * with all the other packages, and --tolerate-republish makes it okay to publish the same version
+   * again. So we can safely retry the whole publishing process if it fails. It's not uncommon for
+   * the registry to fail often, which Yarn catches by checking the registry after a package has
+   * been published.
    */
   await pRetry(
     () =>
@@ -152,7 +157,7 @@ const publishAllPackages = async ({
       retries: 4,
       onFailedAttempt: (error) =>
         console.log(
-          chalk.yellow(
+          picocolors.yellow(
             dedent`❗One or more packages failed to publish, retrying...
             This was attempt number ${error.attemptNumber}, there are ${error.retriesLeft} retries left. 🤞`
           )
@@ -177,15 +182,15 @@ export const run = async (options: unknown) => {
   });
   if (isAlreadyPublished) {
     throw new Error(
-      `⛔ Current version (${chalk.green(currentVersion)}) is already published, aborting.`
+      `⛔ Current version (${picocolors.green(currentVersion)}) is already published, aborting.`
     );
   }
   await buildAllPackages();
   await publishAllPackages({ tag, verbose, dryRun });
 
   console.log(
-    `✅ Published all packages with version ${chalk.green(currentVersion)}${
-      tag ? ` at tag ${chalk.blue(tag)}` : ''
+    `✅ Published all packages with version ${picocolors.green(currentVersion)}${
+      tag ? ` at tag ${picocolors.blue(tag)}` : ''
     }`
   );
 };

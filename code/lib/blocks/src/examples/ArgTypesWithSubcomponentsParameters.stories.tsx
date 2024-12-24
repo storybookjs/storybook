@@ -1,9 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react';
+
 import { ArgTypesParameters, SubcomponentA, SubcomponentB } from './ArgTypesParameters';
 
-/**
- * Reference stories to be used by the ArgTypes stories
- */
+/** Reference stories to be used by the ArgTypes stories */
 const meta = {
   title: 'examples/Stories for the ArgTypes Block with Subcomponents',
   component: ArgTypesParameters,

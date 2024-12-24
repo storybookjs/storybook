@@ -1,4 +1,5 @@
 import React from 'react';
+
 import AnsiToHtml from 'ansi-to-html';
 import { dedent } from 'ts-dedent';
 
@@ -45,6 +46,8 @@ export default {
   args: {
     id: 'sb-errordisplay',
   },
+  // This story cannot be properly tested in portable stories as it depends on an element that only exists in Storybook's preview HTML
+  tags: ['!vitest'],
 };
 
 export const MyError = {

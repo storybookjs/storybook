@@ -21,10 +21,22 @@ const allFalse = { alt: false, ctrl: false, meta: false, shift: false };
 
 export const matchesModifiers = (modifiers: Modifiers | false, event: KeyboardEvent) => {
   const { alt, ctrl, meta, shift } = modifiers === false ? allFalse : modifiers;
-  if (typeof alt === 'boolean' && alt !== event.altKey) return false;
-  if (typeof ctrl === 'boolean' && ctrl !== event.ctrlKey) return false;
-  if (typeof meta === 'boolean' && meta !== event.metaKey) return false;
-  if (typeof shift === 'boolean' && shift !== event.shiftKey) return false;
+
+  if (typeof alt === 'boolean' && alt !== event.altKey) {
+    return false;
+  }
+
+  if (typeof ctrl === 'boolean' && ctrl !== event.ctrlKey) {
+    return false;
+  }
+
+  if (typeof meta === 'boolean' && meta !== event.metaKey) {
+    return false;
+  }
+
+  if (typeof shift === 'boolean' && shift !== event.shiftKey) {
+    return false;
+  }
   return true;
 };
 

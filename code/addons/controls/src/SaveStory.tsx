@@ -1,3 +1,5 @@
+import React from 'react';
+
 import {
   Bar as BaseBar,
   Button,
@@ -7,9 +9,9 @@ import {
   TooltipNote,
   WithTooltip,
 } from 'storybook/internal/components';
-import { AddIcon, CheckIcon, UndoIcon } from '@storybook/icons';
 import { keyframes, styled } from 'storybook/internal/theming';
-import React from 'react';
+
+import { AddIcon, CheckIcon, UndoIcon } from '@storybook/icons';
 
 const slideIn = keyframes({
   from: { transform: 'translateY(40px)' },
@@ -103,7 +105,9 @@ export const SaveStory = ({ saveStory, createStory, resetArgs }: SaveStoryProps)
   const [errorMessage, setErrorMessage] = React.useState(null);
 
   const onSaveStory = async () => {
-    if (saving) return;
+    if (saving) {
+      return;
+    }
     setSaving(true);
     await saveStory().catch(() => {});
     setSaving(false);
@@ -123,7 +127,10 @@ export const SaveStory = ({ saveStory, createStory, resetArgs }: SaveStoryProps)
   };
   const onSubmitForm = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (saving) return;
+
+    if (saving) {
+      return;
+    }
     try {
       setErrorMessage(null);
       setSaving(true);

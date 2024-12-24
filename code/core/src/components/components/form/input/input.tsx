@@ -1,14 +1,15 @@
 import type { HTMLProps, SelectHTMLAttributes } from 'react';
 import React, { forwardRef } from 'react';
+
 import type { CSSObject, StorybookTheme } from '@storybook/core/theming';
 import { styled } from '@storybook/core/theming';
 
 import TextareaAutoResize from 'react-textarea-autosize';
 
 /**
- * these types are copied from `react-textarea-autosize`.
- * I copied them because of https://github.com/storybookjs/storybook/issues/18734
- * Maybe there's some bug in `tsup` or `react-textarea-autosize`?
+ * These types are copied from `react-textarea-autosize`. I copied them because of
+ * https://github.com/storybookjs/storybook/issues/18734 Maybe there's some bug in `tsup` or
+ * `react-textarea-autosize`?
  */
 type TextareaPropsRaw = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 type Style = Omit<NonNullable<TextareaPropsRaw['style']>, 'maxHeight' | 'minHeight'> & {

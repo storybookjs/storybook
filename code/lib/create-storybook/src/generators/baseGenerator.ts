@@ -1,19 +1,23 @@
-import path, { dirname } from 'path';
-import fse from 'fs-extra';
-import { dedent } from 'ts-dedent';
-import ora from 'ora';
-import invariant from 'tiny-invariant';
-import type { JsPackageManager } from 'storybook/internal/common';
-import { getPackageDetails, versions as packageVersions } from 'storybook/internal/common';
-import type { SupportedFrameworks } from 'storybook/internal/types';
-import type { NpmOptions } from 'storybook/internal/cli';
-import type { SupportedRenderers, Builder } from 'storybook/internal/cli';
+import { mkdir } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+
+import type { Builder, NpmOptions } from 'storybook/internal/cli';
 import { SupportedLanguage, externalFrameworks } from 'storybook/internal/cli';
 import { copyTemplateFiles } from 'storybook/internal/cli';
-import { configureMain, configurePreview } from './configure';
-import type { FrameworkOptions, GeneratorOptions } from './types';
 import { configureEslintPlugin, extractEslintInfo } from 'storybook/internal/cli';
 import { detectBuilder } from 'storybook/internal/cli';
+import type { JsPackageManager } from 'storybook/internal/common';
+import { getPackageDetails, versions as packageVersions } from 'storybook/internal/common';
+import type { SupportedRenderers } from 'storybook/internal/types';
+import type { SupportedFrameworks } from 'storybook/internal/types';
+
+// eslint-disable-next-line depend/ban-dependencies
+import ora from 'ora';
+import invariant from 'tiny-invariant';
+import { dedent } from 'ts-dedent';
+
+import { configureMain, configurePreview } from './configure';
+import type { FrameworkOptions, GeneratorOptions } from './types';
 
 const logger = console;
 
@@ -23,6 +27,7 @@ const defaultOptions: FrameworkOptions = {
   staticDir: undefined,
   addScripts: true,
   addMainFile: true,
+  addPreviewFile: true,
   addComponents: true,
   webpackCompiler: () => undefined,
   extraMain: undefined,
@@ -30,6 +35,7 @@ const defaultOptions: FrameworkOptions = {
   extensions: undefined,
   componentsDestinationPath: undefined,
   storybookConfigFolder: '.storybook',
+  installFrameworkPackages: true,
 };
 
 const getBuilderDetails = (builder: string) => {
@@ -78,19 +84,18 @@ const getFrameworkPackage = (framework: string | undefined, renderer: string, bu
     );
   }
 
-  if (externalFramework.frameworks !== undefined) {
-    return externalFramework.frameworks.find((item) =>
-      item.match(new RegExp(`-${storybookBuilder}`))
-    );
-  }
-
-  return externalFramework.packageName;
+  return (
+    externalFramework.frameworks?.find((item) => item.match(new RegExp(`-${storybookBuilder}`))) ??
+    externalFramework.packageName
+  );
 };
 
 const getRendererPackage = (framework: string | undefined, renderer: string) => {
   const externalFramework = getExternalFramework(framework);
-  if (externalFramework !== undefined)
+
+  if (externalFramework !== undefined) {
     return externalFramework.renderer || externalFramework.packageName;
+  }
 
   return `@storybook/${renderer}`;
 };
@@ -111,6 +116,7 @@ const getFrameworkDetails = (
   framework?: string;
   renderer?: string;
   rendererId: SupportedRenderers;
+  frameworkPackage?: string;
 } => {
   const frameworkPackage = getFrameworkPackage(framework, renderer, builder);
   invariant(frameworkPackage, 'Missing framework package.');
@@ -138,6 +144,7 @@ const getFrameworkDetails = (
     return {
       packages: [rendererPackage, frameworkPackage],
       framework: frameworkPackagePath,
+      frameworkPackage,
       rendererId: renderer,
       type: 'framework',
     };
@@ -163,8 +170,18 @@ const stripVersions = (addons: string[]) => addons.map((addon) => getPackageDeta
 const hasInteractiveStories = (rendererId: SupportedRenderers) =>
   ['react', 'angular', 'preact', 'svelte', 'vue3', 'html', 'solid', 'qwik'].includes(rendererId);
 
-const hasFrameworkTemplates = (framework?: SupportedFrameworks) =>
-  framework ? ['angular', 'nextjs'].includes(framework) : false;
+const hasFrameworkTemplates = (framework?: SupportedFrameworks) => {
+  if (!framework) {
+    return false;
+  }
+  // Nuxt has framework templates, but for sandboxes we create them from the Vue3 renderer
+  // As the Nuxt framework templates are not compatible with the stories we need for CI.
+  // See: https://github.com/storybookjs/storybook/pull/28607#issuecomment-2467903327
+  if (framework === 'nuxt') {
+    return process.env.IN_STORYBOOK_SANDBOX !== 'true';
+  }
+  return ['angular', 'nextjs', 'react-native-web-vite'].includes(framework);
+};
 
 export async function baseGenerator(
   packageManager: JsPackageManager,
@@ -187,6 +204,7 @@ export async function baseGenerator(
     rendererId,
     framework: frameworkInclude,
     builder: builderInclude,
+    frameworkPackage,
   } = getFrameworkDetails(
     renderer,
     builder,
@@ -202,12 +220,14 @@ export async function baseGenerator(
     staticDir,
     addScripts,
     addMainFile,
+    addPreviewFile,
     addComponents,
     extraMain,
     extensions,
     storybookConfigFolder,
     componentsDestinationPath,
     webpackCompiler,
+    installFrameworkPackages,
   } = {
     ...defaultOptions,
     ...options,
@@ -223,11 +243,7 @@ export async function baseGenerator(
         })
       : extraAddonPackages;
 
-  extraAddonsToInstall.push(
-    '@storybook/addon-links',
-    '@storybook/addon-essentials',
-    '@chromatic-com/storybook@^1'
-  );
+  extraAddonsToInstall.push('@storybook/addon-essentials', '@chromatic-com/storybook@^3');
 
   // added to main.js
   const addons = [
@@ -242,12 +258,7 @@ export async function baseGenerator(
     ...extraAddonsToInstall,
   ].filter(Boolean);
 
-  // TODO: migrate template stories in solid and qwik to use @storybook/test
-  if (['solid', 'qwik'].includes(rendererId)) {
-    addonPackages.push('@storybook/testing-library');
-  } else {
-    addonPackages.push('@storybook/test');
-  }
+  addonPackages.push('@storybook/test');
 
   if (hasInteractiveStories(rendererId)) {
     addons.push('@storybook/addon-interactions');
@@ -281,7 +292,7 @@ export async function baseGenerator(
   const allPackages = [
     'storybook',
     getExternalFramework(rendererId) ? undefined : `@storybook/${rendererId}`,
-    ...frameworkPackages,
+    ...(installFrameworkPackages ? frameworkPackages : []),
     ...addonPackages,
     ...(extraPackagesToInstall || []),
   ].filter(Boolean);
@@ -323,7 +334,9 @@ export async function baseGenerator(
     addDependenciesSpinner.succeed();
   }
 
-  await fse.ensureDir(`./${storybookConfigFolder}`);
+  if (addMainFile || addPreviewFile) {
+    await mkdir(`./${storybookConfigFolder}`, { recursive: true });
+  }
 
   if (addMainFile) {
     const prefixes = shouldApplyRequireWrapperOnPackageNames
@@ -333,14 +346,14 @@ export async function baseGenerator(
             ? dedent`/**
             * This function is used to resolve the absolute path of a package.
             * It is needed in projects that use Yarn PnP or are set up within a monorepo.
-            */ 
+            */
             function getAbsolutePath(value) {
               return dirname(require.resolve(join(value, 'package.json')))
             }`
             : dedent`/**
           * This function is used to resolve the absolute path of a package.
           * It is needed in projects that use Yarn PnP or are set up within a monorepo.
-          */ 
+          */
           function getAbsolutePath(value: string): any {
             return dirname(require.resolve(join(value, 'package.json')))
           }`,
@@ -352,6 +365,7 @@ export async function baseGenerator(
         name: frameworkInclude,
         options: options.framework || {},
       },
+      frameworkPackage,
       prefixes,
       storybookConfigFolder,
       addons: shouldApplyRequireWrapperOnPackageNames
@@ -359,7 +373,7 @@ export async function baseGenerator(
         : addons,
       extensions,
       language,
-      ...(staticDir ? { staticDirs: [path.join('..', staticDir)] } : null),
+      ...(staticDir ? { staticDirs: [join('..', staticDir)] } : null),
       ...extraMain,
       ...(type !== 'framework'
         ? {
@@ -371,12 +385,14 @@ export async function baseGenerator(
     });
   }
 
-  await configurePreview({
-    frameworkPreviewParts,
-    storybookConfigFolder: storybookConfigFolder as string,
-    language,
-    rendererId,
-  });
+  if (addPreviewFile) {
+    await configurePreview({
+      frameworkPreviewParts,
+      storybookConfigFolder: storybookConfigFolder as string,
+      language,
+      rendererId,
+    });
+  }
 
   if (addScripts) {
     await packageManager.addStorybookCommandInScripts({
@@ -394,7 +410,7 @@ export async function baseGenerator(
       packageManager,
       language,
       destination: componentsDestinationPath,
-      commonAssetsDir: path.join(getCliDir(), 'rendererAssets', 'common'),
+      commonAssetsDir: join(getCliDir(), 'rendererAssets', 'common'),
     });
   }
 }

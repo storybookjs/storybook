@@ -1,28 +1,30 @@
-import * as path from 'path';
-import type {
-  ConfigEnv,
-  InlineConfig as ViteInlineConfig,
-  PluginOption,
-  UserConfig as ViteConfig,
-  InlineConfig,
-} from 'vite';
+import { resolve } from 'node:path';
+
 import {
-  isPreservingSymlinks,
-  getFrameworkName,
   getBuilderOptions,
+  getFrameworkName,
+  isPreservingSymlinks,
   resolvePathInStorybookCache,
 } from 'storybook/internal/common';
 import { globalsNameReferenceMap } from 'storybook/internal/preview/globals';
 import type { Options } from 'storybook/internal/types';
+
+import type {
+  ConfigEnv,
+  InlineConfig,
+  PluginOption,
+  UserConfig as ViteConfig,
+  InlineConfig as ViteInlineConfig,
+} from 'vite';
+
 import {
   codeGeneratorPlugin,
   csfPlugin,
-  injectExportOrderPlugin,
-  stripStoryHMRBoundary,
   externalGlobalsPlugin,
+  injectExportOrderPlugin,
   pluginWebpackStats,
+  stripStoryHMRBoundary,
 } from './plugins';
-
 import type { BuilderOptions } from './types';
 
 export type PluginConfigType = 'build' | 'development';
@@ -45,27 +47,29 @@ export async function commonConfig(
   _type: PluginConfigType
 ): Promise<ViteInlineConfig> {
   const configEnv = _type === 'development' ? configEnvServe : configEnvBuild;
-  const { loadConfigFromFile, mergeConfig } = await import('vite');
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore this property only exists in Vite 6
+  const { loadConfigFromFile, mergeConfig, defaultClientConditions = [] } = await import('vite');
 
   const { viteConfigPath } = await getBuilderOptions<BuilderOptions>(options);
 
-  const projectRoot = path.resolve(options.configDir, '..');
+  options.projectRoot = options.projectRoot || resolve(options.configDir, '..');
 
   // I destructure away the `build` property from the user's config object
   // I do this because I can contain config that breaks storybook, such as we had in a lit project.
   // If the user needs to configure the `build` they need to do so in the viteFinal function in main.js.
   const { config: { build: buildProperty = undefined, ...userConfig } = {} } =
-    (await loadConfigFromFile(configEnv, viteConfigPath, projectRoot)) ?? {};
+    (await loadConfigFromFile(configEnv, viteConfigPath, options.projectRoot)) ?? {};
 
   const sbConfig: InlineConfig = {
     configFile: false,
     cacheDir: resolvePathInStorybookCache('sb-vite', options.cacheKey),
-    root: projectRoot,
+    root: options.projectRoot,
     // Allow storybook deployed as subfolder.  See https://github.com/storybookjs/builder-vite/issues/238
     base: './',
     plugins: await pluginConfig(options),
     resolve: {
-      conditions: ['storybook', 'stories', 'test'],
+      conditions: ['storybook', 'stories', 'test', ...defaultClientConditions],
       preserveSymlinks: isPreservingSymlinks(),
       alias: {
         assert: require.resolve('browser-assert'),
@@ -116,12 +120,6 @@ export async function pluginConfig(options: Options) {
     await externalGlobalsPlugin(externals),
     pluginWebpackStats({ workingDir: process.cwd() }),
   ] as PluginOption[];
-
-  // TODO: framework doesn't exist, should move into framework when/if built
-  if (frameworkName === '@storybook/glimmerx-vite') {
-    const plugin = require('vite-plugin-glimmerx/index.cjs');
-    plugins.push(plugin.default());
-  }
 
   return plugins;
 }

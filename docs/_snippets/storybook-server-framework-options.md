@@ -8,4 +8,3 @@ export default {
   frameworkPresets: [require.resolve('./framework-preset-my-framework.js')],
 };
 ```
-

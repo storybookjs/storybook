@@ -1,13 +1,14 @@
-import path from 'path';
-// eslint-disable-next-line @typescript-eslint/no-restricted-imports
-import { mergeConfig } from 'vite';
+import { join } from 'node:path';
+
 import type { StorybookConfig } from '../frameworks/react-vite';
 
-const componentsPath = path.join(__dirname, '../core/src/components');
-const managerApiPath = path.join(__dirname, '../core/src/manager-api');
+const componentsPath = join(__dirname, '../core/src/components');
+const managerApiPath = join(__dirname, '../core/src/manager-api');
+const imageContextPath = join(__dirname, '..//frameworks/nextjs/src/image-context.ts');
 
 const config: StorybookConfig = {
   stories: [
+    './*.stories.@(js|jsx|ts|tsx)',
     {
       directory: '../core/template/stories',
       titlePrefix: 'core',
@@ -80,18 +81,25 @@ const config: StorybookConfig = {
       directory: '../addons/interactions/src',
       titlePrefix: 'addons/interactions',
     },
-    // {
-    //   directory: '../addons/interactions/template/stories',
-    //   titlePrefix: 'addons/interactions',
-    // },
+    {
+      directory: '../addons/interactions/template/stories',
+      titlePrefix: 'addons/interactions/tests',
+    },
+    {
+      directory: '../addons/test/src/components',
+      titlePrefix: 'addons/test',
+    },
+    {
+      directory: '../addons/test/template/stories',
+      titlePrefix: 'addons/test',
+    },
   ],
   addons: [
-    '@storybook/addon-links',
     '@storybook/addon-themes',
     '@storybook/addon-essentials',
-    '@storybook/addon-interactions',
     '@storybook/addon-storysource',
     '@storybook/addon-designs',
+    '@storybook/experimental-addon-test',
     '@storybook/addon-a11y',
     '@chromatic-com/storybook',
   ],
@@ -125,9 +133,12 @@ const config: StorybookConfig = {
   features: {
     viewportStoryGlobals: true,
     backgroundsStoryGlobals: true,
+    developmentModeForBuild: true,
   },
-  viteFinal: (viteConfig, { configType }) =>
-    mergeConfig(viteConfig, {
+  viteFinal: async (viteConfig, { configType }) => {
+    const { mergeConfig } = await import('vite');
+
+    return mergeConfig(viteConfig, {
       resolve: {
         alias: {
           ...(configType === 'DEVELOPMENT'
@@ -136,16 +147,21 @@ const config: StorybookConfig = {
                 'storybook/internal/components': componentsPath,
                 '@storybook/manager-api': managerApiPath,
                 'storybook/internal/manager-api': managerApiPath,
+                'sb-original/image-context': imageContextPath,
               }
             : {}),
         },
       },
-      optimizeDeps: { force: true },
+      optimizeDeps: {
+        force: true,
+        include: ['@storybook/blocks'],
+      },
       build: {
         // disable sourcemaps in CI to not run out of memory
         sourcemap: process.env.CI !== 'true',
       },
-    }),
+    } satisfies typeof viteConfig);
+  },
   // logLevel: 'debug',
 };
 

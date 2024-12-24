@@ -1,22 +1,22 @@
-import React, { useState, memo, Fragment, useCallback } from 'react';
+import React, { Fragment, memo, useCallback, useState } from 'react';
 
+import { IconButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
 import { useGlobals, useParameter } from 'storybook/internal/manager-api';
-import { IconButton, WithTooltip, TooltipLinkList } from 'storybook/internal/components';
 
 import { CircleIcon, GridIcon, PhotoIcon, RefreshIcon } from '@storybook/icons';
+
 import { PARAM_KEY as KEY } from '../constants';
+import { DEFAULT_BACKGROUNDS } from '../defaults';
 import type { Background, BackgroundMap, Config, GlobalStateUpdate } from '../types';
 
 type Link = Parameters<typeof TooltipLinkList>['0']['links'][0];
-
-const emptyBackgroundMap: BackgroundMap = {};
 
 export const BackgroundTool = memo(function BackgroundSelector() {
   const config = useParameter<Config>(KEY);
   const [globals, updateGlobals, storyGlobals] = useGlobals();
   const [isTooltipVisible, setIsTooltipVisible] = useState(false);
 
-  const { options = emptyBackgroundMap, disable = true } = config || {};
+  const { options = DEFAULT_BACKGROUNDS, disable = true } = config || {};
   if (disable) {
     return null;
   }
@@ -124,7 +124,7 @@ const Pure = memo(function PureTool(props: PureProps) {
                       onHide();
                     },
                   })),
-                ]}
+                ].flat()}
               />
             );
           }}

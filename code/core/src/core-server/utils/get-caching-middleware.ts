@@ -1,8 +1,8 @@
-import type { RequestHandler } from 'express';
+import type { Middleware } from '../../types';
 
-export function getCachingMiddleware(): RequestHandler {
+export function getCachingMiddleware(): Middleware {
   return (req, res, next) => {
-    res.header('Cache-Control', 'no-store');
+    res.setHeader('Cache-Control', 'no-store');
     next();
   };
 }

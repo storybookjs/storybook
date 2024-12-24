@@ -45,4 +45,3 @@ test('renders primary button with overridden props', async ({ mount }) => {
   await expect(component.getByRole('button')).toHaveClass(/storybook-button--primary/);
 });
 ```
-

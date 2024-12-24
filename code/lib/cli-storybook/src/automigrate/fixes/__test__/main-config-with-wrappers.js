@@ -1,7 +1,6 @@
-import path from 'path';
+import { dirname, join } from 'node:path';
 
-const wrapForPnp = (packageName) =>
-  path.dirname(require.resolve(path.join(packageName, 'package.json')));
+const wrapForPnp = (packageName) => dirname(require.resolve(join(packageName, 'package.json')));
 
 const config = {
   stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],

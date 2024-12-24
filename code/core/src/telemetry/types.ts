@@ -1,4 +1,5 @@
 import type { StorybookConfig, TypescriptOptions } from '@storybook/core/types';
+
 import type { PM } from 'detect-package-manager';
 
 import type { MonorepoType } from './get-monorepo-type';
@@ -19,7 +20,10 @@ export type EventType =
   | 'remove'
   | 'save-story'
   | 'create-new-story-file'
-  | 'create-new-story-file-search';
+  | 'create-new-story-file-search'
+  | 'testing-module-watch-mode'
+  | 'testing-module-completed-report'
+  | 'testing-module-crash-report';
 
 export interface Dependency {
   version: string | undefined;
@@ -55,6 +59,7 @@ export type StorybookMetadata = {
     version: string;
   };
   testPackages?: Record<string, string | undefined>;
+  hasRouterPackage?: boolean;
   hasStorybookEslint?: boolean;
   hasStaticDirs?: boolean;
   hasCustomWebpack?: boolean;
@@ -64,6 +69,8 @@ export type StorybookMetadata = {
   preview?: {
     usesGlobals?: boolean;
   };
+  portableStoriesFileCount?: number;
+  applicationFileCount?: number;
 };
 
 export interface Payload {

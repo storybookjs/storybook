@@ -1,5 +1,7 @@
-import type { BuiltInParserName } from 'prettier';
 import type { ReactNode } from 'react';
+
+import type { BuiltInParserName } from 'prettier';
+
 import type { supportedLanguages } from './syntaxhighlighter';
 
 export interface SyntaxHighlighterRendererProps {

@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import type { DocsOptions } from './core-common';
-import type { Args, ArgTypes, Parameters, ComponentTitle, StoryId, Path, Tag } from './csf';
+import type { ArgTypes, Args, ComponentTitle, Parameters, Path, StoryId, Tag } from './csf';
 import type { IndexEntry } from './indexer';
 
 export interface API_BaseEntry {
   id: StoryId;
   depth: number;
   name: string;
+  tags: Tag[];
   refId?: string;
   renderLabel?: (item: API_BaseEntry, api: any) => any;
 }
@@ -34,7 +35,6 @@ export interface API_DocsEntry extends API_BaseEntry {
   parent: StoryId;
   title: ComponentTitle;
   importPath: Path;
-  tags: Tag[];
   prepared: boolean;
   parameters?: {
     [parameterName: string]: any;
@@ -46,7 +46,6 @@ export interface API_StoryEntry extends API_BaseEntry {
   parent: StoryId;
   title: ComponentTitle;
   importPath: Path;
-  tags: Tag[];
   prepared: boolean;
   parameters?: {
     [parameterName: string]: any;
@@ -65,10 +64,9 @@ export type API_HashEntry =
   | API_StoryEntry;
 
 /**
- * The `IndexHash` is our manager-side representation of the `StoryIndex`.
- * We create entries in the hash not only for each story or docs entry, but
- * also for each "group" of the component (split on '/'), as that's how things
- * are manipulated in the manager (i.e. in the sidebar)
+ * The `IndexHash` is our manager-side representation of the `StoryIndex`. We create entries in the
+ * hash not only for each story or docs entry, but also for each "group" of the component (split on
+ * '/'), as that's how things are manipulated in the manager (i.e. in the sidebar)
  */
 export interface API_IndexHash {
   [id: string]: API_HashEntry;
@@ -125,6 +123,8 @@ export interface API_StatusObject {
   title: string;
   description: string;
   data?: any;
+  onClick?: () => void;
+  sidebarContextMenu?: boolean;
 }
 
 export type API_StatusState = Record<StoryId, Record<string, API_StatusObject>>;

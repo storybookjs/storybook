@@ -1,6 +1,9 @@
-import * as path from 'path';
-import type { InlineConfig as ViteInlineConfig, UserConfig } from 'vite';
+import { relative } from 'node:path';
+
 import type { Options } from 'storybook/internal/types';
+
+import type { UserConfig, InlineConfig as ViteInlineConfig } from 'vite';
+
 import { listStories } from './list-stories';
 
 // It ensures that vite converts cjs deps into esm without vite having to find them during startup and then having to log a message about them and restart
@@ -10,16 +13,58 @@ const INCLUDE_CANDIDATES = [
   '@emotion/core',
   '@emotion/is-prop-valid',
   '@emotion/styled',
+  '@storybook/addon-a11y/preview',
+  '@storybook/addon-backgrounds/preview',
+  '@storybook/addon-designs/blocks',
+  '@storybook/addon-docs/preview',
+  '@storybook/addon-essentials/actions/preview',
+  '@storybook/addon-essentials/actions/preview',
+  '@storybook/addon-essentials/backgrounds/preview',
+  '@storybook/addon-essentials/docs/preview',
+  '@storybook/addon-essentials/highlight/preview',
+  '@storybook/addon-essentials/measure/preview',
+  '@storybook/addon-essentials/outline/preview',
+  '@storybook/addon-essentials/viewport/preview',
+  '@storybook/addon-highlight/preview',
+  '@storybook/addon-links/preview',
+  '@storybook/addon-measure/preview',
+  '@storybook/addon-outline/preview',
+  '@storybook/addon-themes',
+  '@storybook/addon-themes/preview',
+  '@storybook/addon-viewport',
+  '@storybook/addon-viewport/preview',
+  '@storybook/blocks',
+  '@storybook/components',
+  '@storybook/experimental-addon-test/preview',
+  '@storybook/experimental-nextjs-vite/dist/preview.mjs',
+  '@storybook/html',
+  '@storybook/html/dist/entry-preview-docs.mjs',
+  '@storybook/html/dist/entry-preview.mjs',
+  '@storybook/preact',
+  '@storybook/preact/dist/entry-preview-docs.mjs',
+  '@storybook/preact/dist/entry-preview.mjs',
   '@storybook/react > acorn-jsx',
   '@storybook/react',
+  '@storybook/react/dist/entry-preview-docs.mjs',
+  '@storybook/react/dist/entry-preview-rsc.mjs',
+  '@storybook/react/dist/entry-preview.mjs',
   '@storybook/svelte',
+  '@storybook/svelte/dist/entry-preview-docs.mjs',
+  '@storybook/svelte/dist/entry-preview.mjs',
+  '@storybook/theming',
   '@storybook/vue3',
+  '@storybook/vue3/dist/entry-preview-docs.mjs',
+  '@storybook/vue3/dist/entry-preview.mjs',
+  '@storybook/web-components',
+  '@storybook/web-components/dist/entry-preview-docs.mjs',
+  '@storybook/web-components/dist/entry-preview.mjs',
   'acorn-jsx',
   'acorn-walk',
   'acorn',
   'airbnb-js-shims',
   'ansi-to-html',
   'axe-core',
+  'chromatic/isChromatic',
   'color-convert',
   'deep-object-diff',
   'doctrine',
@@ -29,6 +74,7 @@ const INCLUDE_CANDIDATES = [
   'fast-deep-equal',
   'html-tags',
   'isobject',
+  'jsdoc-type-pratt-parser', // TODO: Remove this once it's converted to ESM: https://github.com/jsdoc-type-pratt-parser/jsdoc-type-pratt-parser/issues/173
   'loader-utils',
   'lodash/camelCase.js',
   'lodash/camelCase',
@@ -69,6 +115,8 @@ const INCLUDE_CANDIDATES = [
   'lodash/upperFirst.js',
   'lodash/upperFirst',
   'memoizerific',
+  'mockdate',
+  'msw-storybook-addon',
   'overlayscrollbars',
   'polished',
   'prettier/parser-babel',
@@ -96,8 +144,11 @@ const INCLUDE_CANDIDATES = [
   'refractor/lang/typescript.js',
   'refractor/lang/yaml.js',
   'regenerator-runtime/runtime.js',
+  'sb-original/default-loader',
+  'sb-original/image-context',
   'slash',
   'store2',
+  'storybook/internal/preview/runtime',
   'synchronous-promise',
   'telejson',
   'ts-dedent',
@@ -108,7 +159,8 @@ const INCLUDE_CANDIDATES = [
 ];
 
 /**
- * Helper function which allows us to `filter` with an async predicate.  Uses Promise.all for performance.
+ * Helper function which allows us to `filter` with an async predicate. Uses Promise.all for
+ * performance.
  */
 const asyncFilter = async (arr: string[], predicate: (val: string) => Promise<boolean>) =>
   Promise.all(arr.map(predicate)).then((results) => arr.filter((_v, index) => results[index]));
@@ -119,7 +171,7 @@ export async function getOptimizeDeps(config: ViteInlineConfig, options: Options
   const { root = process.cwd() } = config;
   const { normalizePath, resolveConfig } = await import('vite');
   const absoluteStories = await listStories(options);
-  const stories = absoluteStories.map((storyPath) => normalizePath(path.relative(root, storyPath)));
+  const stories = absoluteStories.map((storyPath) => normalizePath(relative(root, storyPath)));
   // TODO: check if resolveConfig takes a lot of time, possible optimizations here
   const resolvedConfig = await resolveConfig(config, 'serve', 'development');
 

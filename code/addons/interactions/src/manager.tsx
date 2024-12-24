@@ -1,9 +1,11 @@
 import React, { useCallback } from 'react';
-import type { Combo } from 'storybook/internal/manager-api';
-import { addons, Consumer, types, useAddonState } from 'storybook/internal/manager-api';
+
 import { AddonPanel, Badge, Spaced } from 'storybook/internal/components';
-import { ADDON_ID, PANEL_ID } from './constants';
+import type { Combo } from 'storybook/internal/manager-api';
+import { Consumer, addons, types, useAddonState } from 'storybook/internal/manager-api';
+
 import { Panel } from './Panel';
+import { ADDON_ID, PANEL_ID } from './constants';
 
 function Title() {
   const [addonState = {}] = useAddonState(ADDON_ID);

@@ -103,4 +103,3 @@ type Story = StoryObj;
 // This is the only named export in the file, and it matches the component name
 export const Button: Story = {};
 ```
-

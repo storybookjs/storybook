@@ -1,21 +1,24 @@
-import * as fs from 'fs';
-import { findUpSync } from 'find-up';
-import semver from 'semver';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+import type { JsPackageManager, PackageJsonWithMaybeDeps } from '@storybook/core/common';
+import { HandledError, commandLog } from '@storybook/core/common';
+
 import { logger } from '@storybook/core/node-logger';
 
-import { resolve } from 'node:path';
+import { findUpSync } from 'find-up';
 import prompts from 'prompts';
+import semver from 'semver';
+
+import { isNxProject } from './helpers';
 import type { TemplateConfiguration, TemplateMatcher } from './project_types';
 import {
-  ProjectType,
-  supportedTemplates,
-  SupportedLanguage,
-  unsupportedTemplate,
   CoreBuilder,
+  ProjectType,
+  SupportedLanguage,
+  supportedTemplates,
+  unsupportedTemplate,
 } from './project_types';
-import { isNxProject } from './helpers';
-import type { JsPackageManager, PackageJsonWithMaybeDeps } from '@storybook/core/common';
-import { commandLog, HandledError } from '@storybook/core/common';
 
 const viteConfigFiles = ['vite.config.ts', 'vite.config.js', 'vite.config.mjs'];
 const webpackConfigFiles = ['webpack.config.js'];
@@ -87,7 +90,7 @@ const getFrameworkPreset = (
   }
 
   if (Array.isArray(files) && files.length > 0) {
-    matcher.files = files.map((name) => fs.existsSync(name));
+    matcher.files = files.map((name) => existsSync(name));
   }
 
   return matcherFunction(matcher) ? preset : null;
@@ -104,8 +107,8 @@ export function detectFrameworkPreset(
 }
 
 /**
- * Attempts to detect which builder to use, by searching for a vite config file or webpack installation.
- * If neither are found it will choose the default builder based on the project type.
+ * Attempts to detect which builder to use, by searching for a vite config file or webpack
+ * installation. If neither are found it will choose the default builder based on the project type.
  *
  * @returns CoreBuilder
  */
@@ -120,19 +123,27 @@ export async function detectBuilder(packageManager: JsPackageManager, projectTyp
   }
 
   // REWORK
-  if (webpackConfig || (dependencies.webpack && dependencies.vite !== undefined)) {
+  if (
+    webpackConfig ||
+    ((dependencies.webpack || dependencies['@nuxt/webpack-builder']) &&
+      dependencies.vite !== undefined)
+  ) {
     commandLog('Detected webpack project. Setting builder to webpack')();
     return CoreBuilder.Webpack5;
   }
 
   // Fallback to Vite or Webpack based on project type
   switch (projectType) {
+    case ProjectType.REACT_NATIVE_WEB:
+      return CoreBuilder.Vite;
     case ProjectType.REACT_SCRIPTS:
     case ProjectType.ANGULAR:
     case ProjectType.REACT_NATIVE: // technically react native doesn't use webpack, we just want to set something
     case ProjectType.NEXTJS:
     case ProjectType.EMBER:
       return CoreBuilder.Webpack5;
+    case ProjectType.NUXT:
+      return CoreBuilder.Vite;
     default:
       const { builder } = await prompts(
         {
@@ -157,7 +168,7 @@ export async function detectBuilder(packageManager: JsPackageManager, projectTyp
 }
 
 export function isStorybookInstantiated(configDir = resolve(process.cwd(), '.storybook')) {
-  return fs.existsSync(configDir);
+  return existsSync(configDir);
 }
 
 export async function detectPnp() {
@@ -167,7 +178,7 @@ export async function detectPnp() {
 export async function detectLanguage(packageManager: JsPackageManager) {
   let language = SupportedLanguage.JAVASCRIPT;
 
-  if (fs.existsSync('jsconfig.json')) {
+  if (existsSync('jsconfig.json')) {
     return language;
   }
 
@@ -201,6 +212,13 @@ export async function detectLanguage(packageManager: JsPackageManager) {
       language = SupportedLanguage.TYPESCRIPT_3_8;
     } else if (semver.lt(typescriptVersion, '3.8.0')) {
       logger.warn('Detected TypeScript < 3.8, populating with JavaScript examples');
+    }
+  } else {
+    // No direct dependency on TypeScript, but could be a transitive dependency
+    // This is eg the case for Nuxt projects, which support a recent version of TypeScript
+    // Check for tsconfig.json (https://www.typescriptlang.org/docs/handbook/tsconfig-json.html)
+    if (existsSync('tsconfig.json')) {
+      language = SupportedLanguage.TYPESCRIPT_4_9;
     }
   }
 

@@ -1,5 +1,8 @@
 import React from 'react';
+
 import { global } from '@storybook/global';
+import { StorybookIcon } from '@storybook/icons';
+
 import type { WhatsNewCache, WhatsNewData } from '@storybook/core/core-events';
 import {
   REQUEST_WHATS_NEW_DATA,
@@ -7,8 +10,8 @@ import {
   SET_WHATS_NEW_CACHE,
   TOGGLE_WHATS_NEW_NOTIFICATIONS,
 } from '@storybook/core/core-events';
+
 import type { ModuleFn } from '../lib/types';
-import { StorybookIcon } from '@storybook/icons';
 
 export type SubState = {
   whatsNewData?: WhatsNewData;

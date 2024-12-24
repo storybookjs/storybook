@@ -1,5 +1,6 @@
-import { global as globalThis } from '@storybook/global';
 import type { DecoratorFunction } from 'storybook/internal/types';
+
+import { global as globalThis } from '@storybook/global';
 
 const greetingForLocale = (locale: string) => {
   switch (locale) {

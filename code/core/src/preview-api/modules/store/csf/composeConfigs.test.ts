@@ -1,4 +1,5 @@
-import { describe, beforeEach, afterEach, it, expect, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { global } from '@storybook/global';
 
 import { composeConfigs } from './composeConfigs';
@@ -24,6 +25,7 @@ describe('composeConfigs', () => {
       loaders: [],
       beforeAll: expect.any(Function),
       beforeEach: [],
+      experimental_afterEach: [],
       runStep: expect.any(Function),
       tags: [],
     });
@@ -52,6 +54,7 @@ describe('composeConfigs', () => {
       loaders: [],
       beforeAll: expect.any(Function),
       beforeEach: [],
+      experimental_afterEach: [],
       runStep: expect.any(Function),
       tags: [],
     });
@@ -84,6 +87,7 @@ describe('composeConfigs', () => {
       loaders: [],
       beforeAll: expect.any(Function),
       beforeEach: [],
+      experimental_afterEach: [],
       runStep: expect.any(Function),
       tags: [],
     });
@@ -122,6 +126,7 @@ describe('composeConfigs', () => {
       loaders: [],
       beforeAll: expect.any(Function),
       beforeEach: [],
+      experimental_afterEach: [],
       runStep: expect.any(Function),
       tags: [],
     });
@@ -163,6 +168,7 @@ describe('composeConfigs', () => {
       loaders: [],
       beforeAll: expect.any(Function),
       beforeEach: [],
+      experimental_afterEach: [],
       runStep: expect.any(Function),
       tags: [],
     });
@@ -195,6 +201,7 @@ describe('composeConfigs', () => {
       loaders: ['1', '2', '3', '4'],
       beforeAll: expect.any(Function),
       beforeEach: [],
+      experimental_afterEach: [],
       runStep: expect.any(Function),
       tags: [],
     });
@@ -227,6 +234,7 @@ describe('composeConfigs', () => {
       loaders: ['1', '2', '3'],
       beforeAll: expect.any(Function),
       beforeEach: [],
+      experimental_afterEach: [],
       runStep: expect.any(Function),
       tags: [],
     });
@@ -255,6 +263,7 @@ describe('composeConfigs', () => {
       loaders: [],
       beforeAll: expect.any(Function),
       beforeEach: [],
+      experimental_afterEach: [],
       runStep: expect.any(Function),
       tags: [],
     });
@@ -284,6 +293,7 @@ describe('composeConfigs', () => {
       loaders: [],
       beforeAll: expect.any(Function),
       beforeEach: [],
+      experimental_afterEach: [],
       runStep: expect.any(Function),
       tags: [],
     });
@@ -316,6 +326,7 @@ describe('composeConfigs', () => {
       loaders: [],
       beforeAll: expect.any(Function),
       beforeEach: [],
+      experimental_afterEach: [],
       render: 'render-2',
       renderToCanvas: 'renderToCanvas-2',
       applyDecorators: 'applyDecorators-2',

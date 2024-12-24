@@ -9,7 +9,7 @@ const createJestConfig = nextJest({
 /** @type {import('jest').Config} */
 const customJestConfig = {
   coverageProvider: 'v8',
-  testEnvironment: 'jsdom',
+  testEnvironment: '@happy-dom/jest-environment',
   // Add more setup options before each test is run
   setupFilesAfterEnv: ['./jest.setup.ts'],
   moduleNameMapper: {

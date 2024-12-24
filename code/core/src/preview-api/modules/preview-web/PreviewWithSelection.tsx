@@ -1,4 +1,8 @@
-import invariant from 'tiny-invariant';
+import type { DocsIndexEntry, StoryIndex } from '@storybook/core/types';
+import type { Args, Globals, Renderer, StoryId, ViewMode } from '@storybook/core/types';
+import type { ModuleImportFn, ProjectAnnotations } from '@storybook/core/types';
+
+import { logger } from '@storybook/core/client-logger';
 import {
   CURRENT_STORY_WAS_SET,
   DOCS_PREPARED,
@@ -16,27 +20,24 @@ import {
   STORY_UNCHANGED,
   UPDATE_QUERY_PARAMS,
 } from '@storybook/core/core-events';
-import { logger } from '@storybook/core/client-logger';
-
 import {
   CalledPreviewMethodBeforeInitializationError,
   EmptyIndexError,
   MdxFileWithNoCsfReferencesError,
   NoStoryMatchError,
 } from '@storybook/core/preview-errors';
+
+import invariant from 'tiny-invariant';
+
+import type { StorySpecifier } from '../store/StoryIndexStore';
 import type { MaybePromise } from './Preview';
 import { Preview } from './Preview';
-
-import { PREPARE_ABORTED } from './render/Render';
-import { StoryRender } from './render/StoryRender';
-import { CsfDocsRender } from './render/CsfDocsRender';
-import { MdxDocsRender } from './render/MdxDocsRender';
 import type { Selection, SelectionStore } from './SelectionStore';
 import type { View } from './View';
-import type { StorySpecifier } from '../store/StoryIndexStore';
-import type { DocsIndexEntry, StoryIndex } from '@storybook/core/types';
-import type { Args, Globals, Renderer, StoryId, ViewMode } from '@storybook/core/types';
-import type { ModuleImportFn, ProjectAnnotations } from '@storybook/core/types';
+import { CsfDocsRender } from './render/CsfDocsRender';
+import { MdxDocsRender } from './render/MdxDocsRender';
+import { PREPARE_ABORTED } from './render/Render';
+import { StoryRender } from './render/StoryRender';
 
 const globalWindow = globalThis;
 
@@ -108,8 +109,9 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   }
 
   async setInitialGlobals() {
-    if (!this.storyStoreValue)
+    if (!this.storyStoreValue) {
       throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'setInitialGlobals' });
+    }
 
     const { globals } = this.selectionStore.selectionSpecifier || {};
     if (globals) {
@@ -127,10 +129,14 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
 
   // Use the selection specifier to choose a story, then render it
   async selectSpecifiedStory() {
-    if (!this.storyStoreValue)
+    if (!this.storyStoreValue) {
       throw new CalledPreviewMethodBeforeInitializationError({
         methodName: 'selectSpecifiedStory',
       });
+    }
+
+    // If the story has been selected during initialization - if `SET_CURRENT_STORY` is
+    // emitted while we are loading the preview, we don't need to do any selection now.
 
     // If the story has been selected during initialization - if `SET_CURRENT_STORY` is
     // emitted while we are loading the preview, we don't need to do any selection now.
@@ -214,8 +220,9 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
 
   async onSetCurrentStory(selection: { storyId: StoryId; viewMode?: ViewMode }) {
     /**
-     * At the end of the initialization promise we will read the current story from the selection store,
-     * so make sure we've updated it with the new selection or we'll lose track of it at the end of init.
+     * At the end of the initialization promise we will read the current story from the selection
+     * store, so make sure we've updated it with the new selection or we'll lose track of it at the
+     * end of init.
      */
     this.selectionStore.setSelection({ viewMode: 'story', ...selection });
 
@@ -250,10 +257,10 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
 
     if (this.storyStoreValue) {
       /**
-       * It's possible that we're trying to preload a story in a ref we haven't loaded the iframe for yet.
-       * Because of the way the targeting works, if we can't find the targeted iframe,
-       * we'll use the currently active iframe which can cause the event to be targeted
-       * to the wrong iframe, causing an error if the storyId does not exists there.
+       * It's possible that we're trying to preload a story in a ref we haven't loaded the iframe
+       * for yet. Because of the way the targeting works, if we can't find the targeted iframe,
+       * we'll use the currently active iframe which can cause the event to be targeted to the wrong
+       * iframe, causing an error if the storyId does not exists there.
        */
       await Promise.allSettled(ids.map((id) => this.storyStoreValue?.loadEntry(id)));
     }
@@ -268,20 +275,28 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   //     in which case we render the docsPage for that story
   protected async renderSelection({ persistedArgs }: { persistedArgs?: Args } = {}) {
     const { renderToCanvas } = this;
-    if (!this.storyStoreValue || !renderToCanvas)
+
+    if (!this.storyStoreValue || !renderToCanvas) {
       throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'renderSelection' });
+    }
 
     const { selection } = this.selectionStore;
     // Protected function, shouldn't be possible
-    // eslint-disable-next-line local-rules/no-uncategorized-errors
-    if (!selection) throw new Error('Cannot call renderSelection as no selection was made');
+
+    // Protected function, shouldn't be possible
+
+    if (!selection) {
+      throw new Error('Cannot call renderSelection as no selection was made');
+    }
 
     const { storyId } = selection;
     let entry;
     try {
       entry = await this.storyStoreValue.storyIdToEntry(storyId);
     } catch (err) {
-      if (this.currentRender) await this.teardownRender(this.currentRender);
+      if (this.currentRender) {
+        await this.teardownRender(this.currentRender);
+      }
       this.renderStoryLoadingException(storyId, err as Error);
       return;
     }
@@ -343,8 +358,13 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     try {
       await render.prepare();
     } catch (err) {
-      if (lastRender) await this.teardownRender(lastRender);
-      if (err !== PREPARE_ABORTED) this.renderStoryLoadingException(storyId, err as Error);
+      if (lastRender) {
+        await this.teardownRender(lastRender);
+      }
+
+      if (err !== PREPARE_ABORTED) {
+        this.renderStoryLoadingException(storyId, err as Error);
+      }
       return;
     }
 
@@ -371,7 +391,14 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
 
     // Wait for the previous render to leave the page. NOTE: this will wait to ensure anything async
     // is properly aborted, which (in some cases) can lead to the whole screen being refreshed.
-    if (lastRender) await this.teardownRender(lastRender, { viewModeChanged });
+
+    // Wait for the previous render to leave the page. NOTE: this will wait to ensure anything async
+    // is properly aborted, which (in some cases) can lead to the whole screen being refreshed.
+    if (lastRender) {
+      await this.teardownRender(lastRender, { viewModeChanged });
+    }
+
+    // If we are rendering something new (as opposed to re-rendering the same or first story), emit
 
     // If we are rendering something new (as opposed to re-rendering the same or first story), emit
     if (lastSelection && (storyIdChanged || viewModeChanged)) {
@@ -416,7 +443,9 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
       });
 
       if (isCsfDocsRender(render) || render.entry.tags?.includes(ATTACHED_MDX_TAG)) {
-        if (!render.csfFiles) throw new MdxFileWithNoCsfReferencesError({ storyId });
+        if (!render.csfFiles) {
+          throw new MdxFileWithNoCsfReferencesError({ storyId });
+        }
         ({ parameters } = this.storyStoreValue.preparedMetaFromCSFFile({
           csfFile: render.csfFiles[0],
         }));

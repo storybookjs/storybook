@@ -387,4 +387,3 @@ export const MockedError: Story = {
   },
 };
 ```
-

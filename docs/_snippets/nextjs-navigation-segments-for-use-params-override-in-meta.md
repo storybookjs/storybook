@@ -60,4 +60,3 @@ const meta: Meta<typeof NavigationBasedComponent> = {
 };
 export default meta;
 ```
-

@@ -1,12 +1,9 @@
 {
   "rules": {
     "no-undef": "off",
-    "@typescript-eslint/ban-types": "off",
     "react/prop-types": "off",
     "react/react-in-jsx-scope": "off",
-    "import/extensions": "off",
-    "import/no-unresolved": "off",
-    "import/no-extraneous-dependencies": "off"
+    "import/extensions": "off"
   },
   "overrides": [
     {

@@ -21,8 +21,8 @@ The instrumentation makes sure you can debug those methods in the [addon-interac
 
 ```ts
 // Button.stories.ts
+import { expect, fn, userEvent, within } from '@storybook/test';
 import { Button } from './Button';
-import { within, userEvent, expect, fn } from '@storybook/test';
 
 export default {
   component: Button,

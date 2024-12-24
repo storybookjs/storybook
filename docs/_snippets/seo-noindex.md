@@ -1,6 +1,3 @@
-```html renderer="common" language="ts" tabTitle="html"
-{/* .storybook/manager-head.html */}
-
+```html filename=".storybook/manager-head.html" renderer="common" language="js"
 <meta name="robots" content="noindex" />
 ```
-

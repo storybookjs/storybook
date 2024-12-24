@@ -1,6 +1,6 @@
-import { global as globalThis } from '@storybook/global';
 import type { PartialStoryFn, PlayFunctionContext, StoryContext } from '@storybook/core/types';
-import { within, expect } from '@storybook/test';
+import { global as globalThis } from '@storybook/global';
+import { expect, within } from '@storybook/test';
 
 export default {
   component: globalThis.Components.Pre,
@@ -44,6 +44,7 @@ export const Events = {
     await channel.emit('updateGlobals', { globals: { foo: 'fooValue' } });
     await within(canvasElement).findByText('fooValue');
   },
+  tags: ['!vitest'],
 };
 
 export const Overrides1 = {

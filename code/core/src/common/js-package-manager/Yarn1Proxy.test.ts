@@ -1,5 +1,7 @@
-import { describe, beforeEach, it, expect, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { dedent } from 'ts-dedent';
+
 import { Yarn1Proxy } from './Yarn1Proxy';
 
 describe('Yarn 1 Proxy', () => {

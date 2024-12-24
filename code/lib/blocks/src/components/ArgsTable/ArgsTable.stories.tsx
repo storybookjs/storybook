@@ -1,9 +1,13 @@
 import React from 'react';
-import { action } from '@storybook/addon-actions';
+
 import { styled } from 'storybook/internal/theming';
+
 import type { Meta, StoryObj } from '@storybook/react';
-import { ArgsTable, ArgsTableError } from './ArgsTable';
+
+import { action } from '@storybook/addon-actions';
+
 import * as ArgRow from './ArgRow.stories';
+import { ArgsTable, ArgsTableError } from './ArgsTable';
 
 const meta = {
   component: ArgsTable,
@@ -86,10 +90,14 @@ export const SectionsAndSubsections = {
 export const SubsectionsOnly = {
   args: {
     rows: {
-      a: { ...stringType, table: { ...stringType.table, ...componentSubsection } },
+      a: { ...stringType, key: 'stringA', table: { ...stringType.table, ...componentSubsection } },
       b: { ...numberType, table: { ...stringType.table, ...componentSubsection } },
-      c: { ...stringType, table: { ...stringType.table, ...componentSubsection } },
-      d: { ...stringType, table: { ...stringType.table, ...htmlElementSubsection } },
+      c: { ...stringType, key: 'stringB', table: { ...stringType.table, ...componentSubsection } },
+      d: {
+        ...stringType,
+        key: 'stringC',
+        table: { ...stringType.table, ...htmlElementSubsection },
+      },
     },
   },
 };
@@ -102,14 +110,14 @@ export const AllControls = {
       color: ArgRow.Color.args.row,
       date: ArgRow.Date.args.row,
       string: ArgRow.String.args.row,
-      number: ArgRow.Number.args.row,
-      range: ArgRow.Number.args.row,
-      radio: ArgRow.Radio.args.row,
-      inlineRadio: ArgRow.InlineRadio.args.row,
-      check: ArgRow.Check.args.row,
-      inlineCheck: ArgRow.InlineCheck.args.row,
-      select: ArgRow.Select.args.row,
-      multiSelect: ArgRow.MultiSelect.args.row,
+      number: { ...ArgRow.Number.args.row, key: 'number' },
+      range: { ...ArgRow.Number.args.row, key: 'range' },
+      radio: { ...ArgRow.Radio.args.row, key: 'radio' },
+      inlineRadio: { ...ArgRow.InlineRadio.args.row, key: 'inlineRadio' },
+      check: { ...ArgRow.Check.args.row, key: 'check' },
+      inlineCheck: { ...ArgRow.InlineCheck.args.row, key: 'inlineCheck' },
+      select: { ...ArgRow.Select.args.row, key: 'select' },
+      multiSelect: { ...ArgRow.MultiSelect.args.row, key: 'multiSelect' },
       object: ArgRow.ObjectOf.args.row,
       func: ArgRow.Func.args.row,
     },

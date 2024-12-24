@@ -9,13 +9,22 @@ export function mountDestructured<TRenderer extends Renderer>(
 }
 export function getUsedProps(fn: Function) {
   const match = fn.toString().match(/[^(]*\(([^)]*)/);
-  if (!match) return [];
+
+  if (!match) {
+    return [];
+  }
 
   const args = splitByComma(match[1]);
-  if (!args.length) return [];
+
+  if (!args.length) {
+    return [];
+  }
 
   const first = args[0];
-  if (!(first.startsWith('{') && first.endsWith('}'))) return [];
+
+  if (!(first.startsWith('{') && first.endsWith('}'))) {
+    return [];
+  }
 
   const props = splitByComma(first.slice(1, -1).replace(/\s/g, '')).map((prop) => {
     return prop.replace(/:.*|=.*/g, '');
@@ -35,11 +44,17 @@ function splitByComma(s: string) {
       stack.pop();
     } else if (!stack.length && s[i] === ',') {
       const token = s.substring(start, i).trim();
-      if (token) result.push(token);
+
+      if (token) {
+        result.push(token);
+      }
       start = i + 1;
     }
   }
   const lastToken = s.substring(start).trim();
-  if (lastToken) result.push(lastToken);
+
+  if (lastToken) {
+    result.push(lastToken);
+  }
   return result;
 }

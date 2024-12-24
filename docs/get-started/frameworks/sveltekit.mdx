@@ -1,7 +1,7 @@
 ---
 title: Storybook for SvelteKit
 sidebar:
-  order: 5
+  order: 6
   title: SvelteKit
 ---
 
@@ -12,7 +12,7 @@ Storybook for SvelteKit is a [framework](../../contribute/framework.mdx) that ma
 * 🔗 Automatic link handling
 * 💫 and more!
 
-<If notRenderer={'svelte'}>
+<If notRenderer="svelte">
   <Callout variant="info">
     Storybook for SvelteKit is only supported in [Svelte](?renderer=svelte) projects.
   </Callout>
@@ -20,7 +20,7 @@ Storybook for SvelteKit is a [framework](../../contribute/framework.mdx) that ma
   {/* End non-supported renderers */}
 </If>
 
-<If renderer={'svelte'}>
+<If renderer="svelte">
   ## Requirements
 
   * SvelteKit ≥ 1.0
@@ -87,10 +87,10 @@ Storybook for SvelteKit is a [framework](../../contribute/framework.mdx) that ma
   | Module                                                                             | Status                 | Note                                                                                                                                    |
   | ---------------------------------------------------------------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
   | [`$app/environment`](https://kit.svelte.dev/docs/modules#$app-environment)         | ✅ Supported           | `version` is always empty in Storybook.                                                                                                 |
-  | [`$app/forms`](https://kit.svelte.dev/docs/modules#$app-forms)                     | ⚠️ **Experimental**    | See [How to mock](#how-to-mock).                                                                                                         |
-  | [`$app/navigation`](https://kit.svelte.dev/docs/modules#$app-navigation)           | ⚠️ **Experimental**    | See [How to mock](#how-to-mock).                                                                                                         |
+  | [`$app/forms`](https://kit.svelte.dev/docs/modules#$app-forms)                     | ⚠️ **Experimental**     | See [How to mock](#how-to-mock).                                                                                                        |
+  | [`$app/navigation`](https://kit.svelte.dev/docs/modules#$app-navigation)           | ⚠️ **Experimental**     | See [How to mock](#how-to-mock).                                                                                                        |
   | [`$app/paths`](https://kit.svelte.dev/docs/modules#$app-paths)                     | ✅ Supported           | Requires SvelteKit 1.4.0 or newer.                                                                                                      |
-  | [`$app/stores`](https://kit.svelte.dev/docs/modules#$app-stores)                   | ⚠️ **Experimental**    | See [How to mock](#how-to-mock).                                                                                                         |
+  | [`$app/stores`](https://kit.svelte.dev/docs/modules#$app-stores)                   | ⚠️ **Experimental**     | See [How to mock](#how-to-mock).                                                                                                        |
   | [`$env/dynamic/public`](https://kit.svelte.dev/docs/modules#$env-dynamic-public)   | 🚧 Partially supported | Only supported in development mode. Storybook is built as a static app with no server-side API, so it cannot dynamically serve content. |
   | [`$env/static/public`](https://kit.svelte.dev/docs/modules#$env-static-public)     | ✅ Supported           |                                                                                                                                         |
   | [`$lib`](https://kit.svelte.dev/docs/modules#$lib)                                 | ✅ Supported           |                                                                                                                                         |
@@ -103,8 +103,7 @@ Storybook for SvelteKit is a [framework](../../contribute/framework.mdx) that ma
 
   To mock a SvelteKit import you can define it within `parameters.sveltekit_experimental`:
 
-  ```ts
-  // MyComponent.stories.svelte
+  ```ts title="MyComponent.stories.js|ts"
   export const MyStory = {
     parameters: {
       sveltekit_experimental: {
@@ -130,12 +129,11 @@ Storybook for SvelteKit is a [framework](../../contribute/framework.mdx) that ma
 
   ### Mocking links
 
-  The default link-handling behavior (e.g. when clicking an `<a href="..." />` element) is to log an action to the [Actions panel](../../essentials/actions.mdx).
+  The default link-handling behavior (e.g., when clicking an `<a href="..." />` element) is to log an action to the [Actions panel](../../essentials/actions.mdx).
 
-  You can override this by assigning an object to `parameters.sveltekit_experimental.hrefs`, where the keys are strings representing an href and the values define your mock. For example:
+  You can override this by assigning an object to `parameters.sveltekit_experimental.hrefs`, where the keys are strings representing an href, and the values define your mock. For example:
 
-  ```ts
-  // MyComponent.stories.svelte
+  ```ts title="MyComponent.stories.js|ts"
   export const MyStory = {
     parameters: {
       sveltekit_experimental: {
@@ -159,7 +157,15 @@ Storybook for SvelteKit is a [framework](../../contribute/framework.mdx) that ma
 
   ## Writing native Svelte stories
 
-  Storybook provides a Svelte addon maintained by the community, enabling you to write stories for your Svelte components using the template syntax. You'll need to take some additional steps to enable this feature.
+  Storybook provides a Svelte [addon](https://storybook.js.org/addons/@storybook/addon-svelte-csf) maintained by the community, enabling you to write stories for your Svelte components using the template syntax. 
+  
+  <Callout variant="info">
+      The community actively maintains the Svelte CSF addon but still lacks some features currently available in the official Storybook Svelte framework support. For more information, see the [addon's documentation](https://github.com/storybookjs/addon-svelte-csf).
+  </Callout>
+
+  ### Setup
+
+  If you initialized your project with the Sveltekit framework, the addon has already been installed and configured for you. However, if you're [migrating](#automatic-migration) from a previous version, you'll need to take additional steps to enable this feature.
 
   Run the following command to install the addon.
 
@@ -170,8 +176,100 @@ Storybook for SvelteKit is a [framework](../../contribute/framework.mdx) that ma
   {/* prettier-ignore-end */}
 
   <Callout variant="info">
-    The community actively maintains the Svelte CSF addon but still lacks some features currently available in the official Storybook Svelte framework support. For more information, see [the addon's documentation](https://github.com/storybookjs/addon-svelte-csf).
+  
+    The CLI's [`add`](../../api/cli-options.mdx#add) command automates the addon's installation and setup. To install it manually, see our [documentation](../addons/install-addons.mdx#manual-installation) on how to install addons.
+  
   </Callout>
+
+  Update your Storybook configuration file (i.e., `.storybook/main.js|ts`) to enable support for this format.
+  
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="main-config-svelte-csf-register.md" />
+
+  {/* prettier-ignore-end */}
+
+  ### Configure
+ 
+  By default, the Svelte [addon](https://storybook.js.org/addons/@storybook/addon-svelte-csf) addon offers zero-config support for Storybook's SvelteKit framework. However, you can extend your Storybook configuration file (i.e., `.storybook/main.js|ts`) and provide additional addon options. Listed below are the available options and examples of how to use them.
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="svelte-csf-addon-options.md" />
+
+  {/* prettier-ignore-end */}
+
+  | Options          | Description |
+  | ---------------- | ------------------------------------------------------------------------------------------------------------------ |
+  | `legacyTemplate` | Enables support for the `Template` component for backward compatibility. <br/> `options: { legacyTemplate: true }` |
+  
+  <Callout variant="info">
+
+    Enabling the `legacyTemplate` option can introduce a performance overhead and should be used cautiously. For more information, refer to the [addon's documentation](https://github.com/storybookjs/addon-svelte-csf/blob/next/README.md#legacy-api).
+  
+  </Callout>
+
+  ### Upgrade to Svelte CSF addon v5
+
+  With the Svelte 5 release, Storybook's Svelte CSF addon has been updated to support the new features. This guide will help you migrate to the latest version of the addon. Below is an overview of the major changes in version 5.0 and the steps needed to upgrade your project.
+
+  #### Simplified story API
+  
+  If you are using the `Meta` component or the `meta` named export to define the story's metadata (e.g., [parameters](../../writing-stories/parameters.mdx)), you'll need to update your stories to use the new `defineMeta` function. This function returns an object with the required information, including a `Story` component that you must use to define your component stories.
+  
+  {/* prettier-ignore-start */ }
+
+  <CodeSnippets path="svelte-csf-story-migration.md" />
+
+  {/* prettier-ignore-end */}
+
+  #### Story templates
+ 
+  If you used the `Template` component to control how the component renders in the Storybook, this feature was replaced with built-in children support in the `Story` component, enabling you to compose components and define the UI structure directly in the story.
+  
+  {/* prettier-ignore-start */ }
+
+  <CodeSnippets path="svelte-csf-story-custom-children.md" />
+
+  {/* prettier-ignore-end */}
+
+  <Callout variant="info">
+
+    If you need support for the `Template` component, the addon provides a feature flag for backward compatibility. For more information, see the [configuration options](#configure).
+  
+  </Callout>
+
+  #### Story slots to snippets
+  
+  With Svelte's slot deprecation and the introduction of reusable [`snippets`](https://svelte.dev/docs/svelte/v5-migration-guide#Snippets-instead-of-slots), the addon also introduced support for this feature allowing you to extend the `Story` component and provide a custom snippet to provide dynamic content to your stories. This feature extends the built-in `children` support in the `Story` component, allowing you to create dynamic stories without losing reactivity.
+
+  ```svelte title="MyComponent.stories.svelte"
+  <script>
+    import { defineMeta } from '@storybook/addon-svelte-csf';
+    
+    import MyComponent from './MyComponent.svelte';
+
+    const { Story } = defineMeta({
+      component: MyComponent,
+    });
+  </script>
+
+  <Story name="Default" args={{ exampleProperty: true }}>
+    {#snippet children(args)}
+      <MyComponent {...args}>Reactive component</MyComponent>
+    {/snippet}
+  </Story>
+  ```
+
+  #### Tags support
+
+  If you enabled automatic documentation generation with the `autodocs` story property, you must replace it with [`tags`](../../writing-stories/tags.mdx). This property allows you to categorize and filter stories based on specific criteria and generate documentation based on the tags applied to the stories.
+  
+  {/* prettier-ignore-start */ }
+
+  <CodeSnippets path="svelte-csf-addon-tags.md" />
+
+  {/* prettier-ignore-end */}
 
   ## API
 
@@ -267,20 +365,11 @@ Storybook for SvelteKit is a [framework](../../contribute/framework.mdx) that ma
 
   You can pass an options object for additional configuration if needed:
 
-  ```js
-  // .storybook/main.js
-  import * as path from 'path';
+  {/* prettier-ignore-start */ }
 
-  export default {
-    // ...
-    framework: {
-      name: '@storybook/sveltekit',
-      options: {
-        // ...
-      },
-    },
-  };
-  ```
+  <CodeSnippets path="sveltekit-framework-options.md" />
+
+  {/* prettier-ignore-end */}
 
   The available options are:
 

@@ -1,16 +1,20 @@
 // @vitest-environment happy-dom
 
 /* eslint-disable import/namespace */
+import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import React from 'react';
-import { vi, it, expect, afterEach, describe } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+
+import type { Meta } from '@storybook/react';
+
 import { addons } from '@storybook/preview-api';
 
 import * as addonActionsPreview from '@storybook/addon-actions/preview';
-import type { Meta } from '@storybook/react';
+
 import { expectTypeOf } from 'expect-type';
 
-import { setProjectAnnotations, composeStories, composeStory } from '..';
+import { composeStories, composeStory, setProjectAnnotations } from '..';
 import type { Button } from './Button';
 import * as stories from './Button.stories';
 
@@ -192,10 +196,15 @@ describe('Legacy Portable Stories API', () => {
   const testCases = Object.values(composeStories(stories)).map(
     (Story) => [Story.storyName, Story] as [string, typeof Story]
   );
+
   it.each(testCases)('Renders %s story', async (_storyName, Story) => {
     cleanup();
 
-    if (_storyName === 'CSF2StoryWithLocale' || _storyName === 'MountInPlayFunction') {
+    if (
+      _storyName === 'CSF2StoryWithLocale' ||
+      _storyName === 'MountInPlayFunction' ||
+      _storyName === 'MountInPlayFunctionThrow'
+    ) {
       return;
     }
 
@@ -203,7 +212,14 @@ describe('Legacy Portable Stories API', () => {
 
     const { baseElement } = await render(<Story />);
 
+    globalThis.IS_REACT_ACT_ENVIRONMENT = false;
     await Story.play?.();
+    globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+
     expect(baseElement).toMatchSnapshot();
   });
 });
+
+declare const globalThis: {
+  IS_REACT_ACT_ENVIRONMENT?: boolean;
+};

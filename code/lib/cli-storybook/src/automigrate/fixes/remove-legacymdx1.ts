@@ -1,9 +1,9 @@
-import { dedent } from 'ts-dedent';
-
 import { writeConfig } from 'storybook/internal/csf-tools';
 
-import type { Fix } from '../types';
+import { dedent } from 'ts-dedent';
+
 import { updateMainConfig } from '../helpers/mainConfigFile';
+import type { Fix } from '../types';
 
 const logger = console;
 
@@ -31,6 +31,7 @@ export const removeLegacyMDX1: Fix<RemoveLegacyMDX1Options> = {
     return null;
   },
 
+  // TODO: This is a temporary fix to prevent a 500 error when running the migration and the user clicks the link in the prompt to preview the docs. We'll probably need to account for future releases.
   prompt({}) {
     return dedent`
       You have features.legacyMdx1 in your Storybook main config file. This feature has been removed. Shall we remove it from your Storybook main config file?

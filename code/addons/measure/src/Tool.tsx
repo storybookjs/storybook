@@ -1,8 +1,11 @@
 import React, { useCallback, useEffect } from 'react';
-import { useGlobals, useStorybookApi } from 'storybook/internal/manager-api';
+
 import { IconButton } from 'storybook/internal/components';
+import { useGlobals, useStorybookApi } from 'storybook/internal/manager-api';
+
 import { RulerIcon } from '@storybook/icons';
-import { TOOL_ID, ADDON_ID } from './constants';
+
+import { ADDON_ID, TOOL_ID } from './constants';
 
 export const Tool = () => {
   const [globals, updateGlobals] = useGlobals();

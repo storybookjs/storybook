@@ -149,22 +149,6 @@ export const Text = {
 };
 ```
 
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* Button.stories.svelte */}
-
-<script>
-  import { Meta, Story } from '@storybook/addon-svelte-csf';
-
-  import { action } from '@storybook/addon-actions';
-
-  import Button from './Button.svelte';
-</script>
-
-<meta title="Button" component="{Button}" />
-
-<Story name="Text"> <Button text="Hello" on:click={action('clicked')}/> </Story>
-```
-
 ```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9"
 import type { Meta, StoryObj } from '@storybook/svelte';
 import { action } from '@storybook/addon-actions';
@@ -216,7 +200,7 @@ export const Text: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="3"
+```js filename="Button.stories.js" renderer="vue" language="js"
 import Button from './Button.vue';
 
 import { action } from '@storybook/addon-actions';
@@ -238,7 +222,7 @@ export const Text = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts-4-9" tabTitle="3"
+```ts filename="Button.stories.ts" renderer="vue" language="ts-4-9"
 import type { Meta, StoryObj } from '@storybook/vue3';
 
 import Button from './Button.vue';
@@ -265,7 +249,7 @@ export const Text: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="3"
+```ts filename="Button.stories.ts" renderer="vue" language="ts"
 import type { Meta, StoryObj } from '@storybook/vue3';
 
 import Button from './Button.vue';
@@ -323,4 +307,3 @@ export const Text: Story = {
   render: () => html`<custom-button label="Hello" @click=${action('clicked')}></custom-button>`,
 };
 ```
-

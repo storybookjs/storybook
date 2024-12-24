@@ -1,17 +1,18 @@
 // @vitest-environment happy-dom
-
 /// <reference types="@testing-library/jest-dom" />;
-import { it, expect, vi, describe, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/svelte';
+import { cleanup, render, screen } from '@testing-library/svelte';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
 // import '@testing-library/svelte/vitest';
 import { expectTypeOf } from 'expect-type';
+
 import type { Meta } from '../..';
+import { composeStories, composeStory, setProjectAnnotations } from '../../portable-stories';
 import * as stories from './Button.stories';
 // import type Button from './Button.svelte';
 import type Button from './Button.svelte';
-import { composeStories, composeStory, setProjectAnnotations } from '../../portable-stories';
 
-setProjectAnnotations({ testingLibraryRender: render });
+setProjectAnnotations([]);
 
 // example with composeStories, returns an object with all stories composed with args/decorators
 const { CSF3Primary, LoaderStory } = composeStories(stories);
@@ -82,7 +83,6 @@ describe('projectAnnotations', () => {
         globalTypes: {
           locale: { defaultValue: 'en' },
         },
-        testingLibraryRender: render,
       },
     ]);
     const WithEnglishText = composeStory(stories.CSF2StoryWithLocale, stories.default);
@@ -155,9 +155,9 @@ describe('ComposeStories types', () => {
       ...stories,
 
       /**
-       * Types of property 'argTypes' are incompatible.
-       * Type '{ backgroundColor: { control: string; }; size: { control: { type: string; }; options: string[]; }; }'
-       * has no properties in common with type 'Partial<ArgTypes<ComponentType>>'.
+       * Types of property 'argTypes' are incompatible. Type '{ backgroundColor: { control: string;
+       * }; size: { control: { type: string; }; options: string[]; }; }' has no properties in common
+       * with type 'Partial<ArgTypes<ComponentType>>'.
        */
       // @ts-expect-error fix this later
       default: stories.default satisfies Meta<typeof Button>,
@@ -170,7 +170,9 @@ const testCases = Object.values(composeStories(stories)).map(
   (Story) => [Story.storyName, Story] as [string, typeof Story]
 );
 it.each(testCases)('Renders %s story', async (_storyName, Story) => {
-  if (_storyName === 'CSF2StoryWithLocale') return;
+  if (_storyName === 'CSF2StoryWithLocale') {
+    return;
+  }
   await Story.run();
   expect(document.body).toMatchSnapshot();
 });

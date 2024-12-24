@@ -1,16 +1,17 @@
-import { SET_GLOBALS, UPDATE_GLOBALS, GLOBALS_UPDATED } from '@storybook/core/core-events';
-import { logger } from '@storybook/core/client-logger';
-import { dequal as deepEqual } from 'dequal';
 import type {
-  SetGlobalsPayload,
-  Globals,
   GlobalTypes,
+  Globals,
   GlobalsUpdatedPayload,
+  SetGlobalsPayload,
 } from '@storybook/core/types';
 
-import type { ModuleFn } from '../lib/types';
+import { logger } from '@storybook/core/client-logger';
+import { GLOBALS_UPDATED, SET_GLOBALS, UPDATE_GLOBALS } from '@storybook/core/core-events';
+
+import { dequal as deepEqual } from 'dequal';
 
 import { getEventMetadata } from '../lib/events';
+import type { ModuleFn } from '../lib/types';
 
 export interface SubState {
   globals?: Globals;
@@ -22,25 +23,29 @@ export interface SubState {
 export interface SubAPI {
   /**
    * Returns the current globals, which is the user globals overlaid with the story globals
+   *
    * @returns {Globals} The current globals.
    */
   getGlobals: () => Globals;
   /**
    * Returns the current globals, as set by the user (a story may have override values)
+   *
    * @returns {Globals} The current user globals.
    */
   getUserGlobals: () => Globals /**
-  /**
-   * Returns the current globals, as set by the story
+   * /** Returns the current globals, as set by the story
+   *
    * @returns {Globals} The current story globals.
    */;
   getStoryGlobals: () => Globals /**
    * Returns the globalTypes, as defined at the project level.
+   *
    * @returns {GlobalTypes} The globalTypes.
    */;
   getGlobalTypes: () => GlobalTypes;
   /**
    * Updates the current globals with the provided new globals.
+   *
    * @param {Globals} newGlobals - The new globals to update with.
    * @returns {void}
    */

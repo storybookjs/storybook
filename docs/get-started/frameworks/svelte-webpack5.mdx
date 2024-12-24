@@ -1,13 +1,13 @@
 ---
 title: Storybook for Svelte & Webpack
 sidebar:
-  order: 7
+  order: 8
   title: Svelte & Webpack
 ---
 
 Storybook for Svelte & Webpack is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for applications using [Svelte](https://svelte.dev/) built with [Webpack](https://webpack.js.org/).
 
-<If notRenderer={'svelte'}>
+<If notRenderer="svelte">
   <Callout variant="info">
     Storybook for Svelte & Webpack is only supported in [Svelte](?renderer=svelte) projects.
   </Callout>
@@ -15,7 +15,7 @@ Storybook for Svelte & Webpack is a [framework](../../contribute/framework.mdx) 
   {/* End non-supported renderers */}
 </If>
 
-<If renderer={'svelte'}>
+<If renderer="svelte">
   ## Requirements
 
   * Svelte ≥ 4.0
@@ -86,42 +86,17 @@ Storybook for Svelte & Webpack is a [framework](../../contribute/framework.mdx) 
 
   {/* prettier-ignore-end */}
 
-  ## Writing native Svelte stories
-
-  Storybook provides a Svelte addon maintained by the community, enabling you to write stories for your Svelte components using the template syntax. You'll need to take some additional steps to enable this feature.
-
-  Run the following command to install the addon.
-
-  {/* prettier-ignore-start */}
-
-  <CodeSnippets path="svelte-csf-addon-install.md" />
-
-  {/* prettier-ignore-end */}
-
-  <Callout variant="info">
-    The community actively maintains the Svelte CSF addon but still lacks some features currently available in the official Storybook Svelte framework support. For more information, see [the addon's documentation](https://github.com/storybookjs/addon-svelte-csf).
-  </Callout>
-
   ## API
 
   ### Options
 
   You can pass an options object for additional configuration if needed:
 
-  ```js
-  // .storybook/main.js
-  import * as path from 'path';
+    {/* prettier-ignore-start */ }
 
-  export default {
-    // ...
-    framework: {
-      name: '@storybook/svelte-webpack5',
-      options: {
-        // ...
-      },
-    },
-  };
-  ```
+  <CodeSnippets path="svelte-webpack-framework-options.md" />
+
+  {/* prettier-ignore-end */}
 
   The available options are:
 
@@ -130,6 +105,12 @@ Storybook for Svelte & Webpack is a [framework](../../contribute/framework.mdx) 
   Type: `Record<string, any>`
 
   Configure options for the [framework's builder](../../api/main-config/main-config-framework.mdx#optionsbuilder). For this framework, available options can be found in the [Webpack builder docs](../../builders/webpack.mdx).
+
+  ## Troubleshooting
+
+  ### Svelte CSF addon compatibility
+
+  In version 5 of the Svelte CSF [addon](https://storybook.js.org/addons/@storybook/addon-svelte-csf), support for Webpack was removed to align with Svelte's ecosystem. If you're using this framework and you want to write stories using Svelte's native templating syntax with the Svelte CSF addon, we encourage you to downgrade to version 4 of the addon.
 
   {/* End supported renderers */}
 </If>

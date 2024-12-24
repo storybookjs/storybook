@@ -7,28 +7,29 @@ import { formatPropInTemplate } from './angular-beta/ComputesTemplateFromCompone
  */
 export interface ArgsToTemplateOptions<T> {
   /**
-   * An array of keys to specifically include in the output.
-   * If provided, only the keys from this array will be included in the output,
-   * irrespective of the `exclude` option. Undefined values will still be excluded from the output.
+   * An array of keys to specifically include in the output. If provided, only the keys from this
+   * array will be included in the output, irrespective of the `exclude` option. Undefined values
+   * will still be excluded from the output.
    */
   include?: Array<T>;
   /**
-   * An array of keys to specifically exclude from the output.
-   * If provided, these keys will be omitted from the output. This option is
-   * ignored if the `include` option is also provided
+   * An array of keys to specifically exclude from the output. If provided, these keys will be
+   * omitted from the output. This option is ignored if the `include` option is also provided
    */
   exclude?: Array<T>;
 }
 
 /**
- * Converts an object of arguments to a string of property and event bindings and excludes undefined values.
- * Why? Because Angular treats undefined values in property bindings as an actual value
- * and does not apply the default value of the property as soon as the binding is set.
- * This feels counter-intuitive and is a common source of bugs in stories.
+ * Converts an object of arguments to a string of property and event bindings and excludes undefined
+ * values. Why? Because Angular treats undefined values in property bindings as an actual value and
+ * does not apply the default value of the property as soon as the binding is set. This feels
+ * counter-intuitive and is a common source of bugs in stories.
+ *
  * @example
+ *
  * ```ts
  * // component.ts
- *ㅤ@Component({ selector: 'example' })
+ * ㅤ@Component({ selector: 'example' })
  *  export class ExampleComponent {
  *   ㅤ@Input() input1: string = 'Default Input1';
  *   ㅤ@Input() input2: string = 'Default Input2';
@@ -52,7 +53,7 @@ export interface ArgsToTemplateOptions<T> {
  *    input1: 'Input 1',
  *    click: { action: 'clicked' },
  *  },
- *};
+ * };
  * ```
  */
 export function argsToTemplate<A extends Record<string, any>>(

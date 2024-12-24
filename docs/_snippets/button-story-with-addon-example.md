@@ -213,7 +213,31 @@ export const Basic: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    /* 👇 The title prop is optional.
+     * See https://storybook.js.org/docs/configure/#configure-story-loading
+     * to learn how to generate automatic titles
+    */
+    title: 'Button',
+    component: Button,
+    parameters: {
+      myAddon: {
+        data: 'This data is passed to the addon',
+      },
+    },
+  });
+</script>
+
+<Story name="Basic"/>
+```
+
+```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import Button from './Button.svelte';
 
 export default {
@@ -234,24 +258,31 @@ export default {
 export const Basic = {};
 ```
 
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* Button.stories.svelte */}
-
-<script>
-  import { Meta, Template, Story } from '@storybook/addon-svelte-csf';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
 
   import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    /* 👇 The title prop is optional.
+     * See https://storybook.js.org/docs/configure/#configure-story-loading
+     * to learn how to generate automatic titles
+    */
+    title: 'Button',
+    component: Button,
+    parameters: {
+      myAddon: {
+        data: 'This data is passed to the addon',
+      },
+    },
+  });
 </script>
 
-<Meta title="Button" component={Button} parameters={{ myAddon: { data: 'this data is passed to the
-addon', }, }} />
-
-<template let:args>
-  <button {...args} />
-</template>
+<Story name="Basic"/>
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9"
+```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
 import Button from './Button.svelte';
@@ -277,7 +308,31 @@ type Story = StoryObj<typeof meta>;
 export const Basic: Story = {};
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    /* 👇 The title prop is optional.
+     * See https://storybook.js.org/docs/configure/#configure-story-loading
+     * to learn how to generate automatic titles
+    */
+    title: 'Button',
+    component: Button,
+    parameters: {
+      myAddon: {
+        data: 'This data is passed to the addon',
+      },
+    },
+  });
+</script>
+
+<Story name="Basic"/>
+```
+
+```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
 import Button from './Button.svelte';
@@ -453,4 +508,3 @@ export const Basic: Story = {
   render: () => html`<custom-button label="Hello"></custom-button>`,
 };
 ```
-

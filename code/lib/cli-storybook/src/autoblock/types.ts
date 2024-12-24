@@ -10,9 +10,7 @@ export interface AutoblockOptions {
 }
 
 export interface Blocker<T> {
-  /**
-   * A unique string to identify the blocker with.
-   */
+  /** A unique string to identify the blocker with. */
   id: string;
   /**
    * Check if the blocker should block.
@@ -23,8 +21,9 @@ export interface Blocker<T> {
   check: (options: AutoblockOptions) => Promise<T | false>;
   /**
    * Format a message to be printed to the log-file.
+   *
    * @param context
-   * @param data returned from the check method.
+   * @param data Returned from the check method.
    * @returns The string to print to the log-file.
    */
   log: (options: AutoblockOptions, data: T) => string;

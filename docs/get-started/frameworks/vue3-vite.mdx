@@ -1,7 +1,7 @@
 ---
 title: Storybook for Vue & Vite
 sidebar:
-  order: 8
+  order: 9
   title: Vue & Vite
 ---
 
@@ -12,7 +12,7 @@ Storybook for Vue & Vite is a [framework](../../contribute/framework.mdx) that m
 * 🧠 Comprehensive docgen
 * 💫 and more!
 
-<If notRenderer={'vue'}>
+<If notRenderer="vue">
   <Callout variant="info">
     Storybook for Vue & Vite is only supported in [Vue](?renderer=vue) projects.
   </Callout>
@@ -20,7 +20,7 @@ Storybook for Vue & Vite is a [framework](../../contribute/framework.mdx) that m
   {/* End non-supported renderers */}
 </If>
 
-<If renderer={'vue'}>
+<If renderer="vue">
   ## Requirements
 
   * Vue ≥ 3
@@ -75,37 +75,33 @@ Storybook for Vue & Vite is a [framework](../../contribute/framework.mdx) that m
 
   ## Extending the Vue application
 
-  Storybook creates a [Vue 3 application](https://vuejs.org/api/application.html#application-api) for your component preview. When using global custom components (`app.component`), directives (`app.directive`), extensions (`app.use`), or other application methods, you will need to configure those in the `./storybook/preview.js` file.
+  Storybook creates a [Vue 3 application](https://vuejs.org/api/application.html#application-api) for your component preview. When using global custom components (`app.component`), directives (`app.directive`), extensions (`app.use`), or other application methods, you will need to configure those in the `./storybook/preview.js|ts` file.
 
-  Therefore, Storybook provides you with a `setup` function exported from this package, which receives as a callback your Storybook instance, which you can interact with and add your custom configuration.
+  Therefore, Storybook provides you with a `setup` function exported from this package. This function receives your Storybook instance as a callback, which you can interact with and add your custom configuration.
 
-  ```js
-  // .storybook/preview.js
+  ```js title=".storybook/preview.js|ts"
   import { setup } from '@storybook/vue3';
 
   setup((app) => {
     app.use(MyPlugin);
     app.component('my-component', MyComponent);
     app.mixin({
-      /* My mixin */
+      // My mixin
     });
   });
-
-  // Rest of the file...
   ```
 
   ## Using `vue-component-meta`
 
   <Callout variant="info">
-    `vue-component-meta` is only available in Storybook ≥ 8. It is currently opt-in, but will become the default in a future version of Storybook.
+    `vue-component-meta` is only available in Storybook ≥ 8. It is currently an opt-in, but it will become the default in a future version of Storybook.
   </Callout>
 
   [`vue-component-meta`](https://github.com/vuejs/language-tools/tree/master/packages/component-meta) is a tool maintained by the Vue team that extracts metadata from Vue components. Storybook can use it to generate the [controls](../../essentials/controls.mdx) for your stories and documentation. It's a more full-featured alternative to `vue-docgen-api` and is recommended for most projects.
 
   If you want to use `vue-component-meta`, you can configure it in your `.storybook/main.js|ts` file:
 
-  ```ts
-  // .storybook/main.ts
+  ```ts title=".storybook/main.ts"
   import type { StorybookConfig } from '@storybook/vue3-vite';
 
   const config: StorybookConfig = {
@@ -124,16 +120,15 @@ Storybook for Vue & Vite is a [framework](../../contribute/framework.mdx) that m
 
   ### Support for multiple component types
 
-  `vue-component-meta` supports all types of Vue components (including SFC, functional, composition / options API components) from `.vue`, `.ts`, `.tsx`, `.js`, and `.jsx` files.
+  `vue-component-meta` supports all types of Vue components (including SFC, functional, composition/options API components) from `.vue`, `.ts`, `.tsx`, `.js`, and `.jsx` files.
 
   It also supports both default and named component exports.
 
   ### Prop description and JSDoc tag annotations
 
-  To provide a description for a prop, including tags, you can use JSDoc comments in your component's props definition:
+  To describe a prop, including tags, you can use JSDoc comments in your component's props definition:
 
-  ```html
-  {/* YourComponent.vue */}
+  ```html title="YourComponent.vue"
   <script setup lang="ts">
     interface MyComponentProps {
       /** The name of the user */
@@ -160,8 +155,7 @@ Storybook for Vue & Vite is a [framework](../../contribute/framework.mdx) that m
 
   To provide a type for an emitted event, you can use TypeScript types (including JSDoc comments) in your component's `defineEmits` call:
 
-  ```html
-  {/* YourComponent.vue */}
+  ```html title="YourComponent.vue"
   <script setup lang="ts">
     type MyChangeEvent = 'change';
 
@@ -186,8 +180,7 @@ Storybook for Vue & Vite is a [framework](../../contribute/framework.mdx) that m
 
   The slot types are automatically extracted from your component definition and displayed in the controls panel.
 
-  ```html
-  {/* YourComponent.vue */}
+  ```html title="YourComponent.vue"
   <template>
     <slot :num="123"></slot>
     <br />
@@ -201,7 +194,7 @@ Storybook for Vue & Vite is a [framework](../../contribute/framework.mdx) that m
   <script setup lang="ts"></script>
   ```
 
-  If you use `defineSlots`, you can provide a description for each slot using JSDoc comments in your component's slots definition:
+  If you use `defineSlots`, you can describe each slot using JSDoc comments in your component's slots definition:
 
   ```ts
   defineSlots<{
@@ -222,10 +215,9 @@ Storybook for Vue & Vite is a [framework](../../contribute/framework.mdx) that m
 
   ### Exposed properties and methods
 
-  The properties and methods exposed by your component are automatically extracted and displayed in the controls panel.
+  The properties and methods exposed by your component are automatically extracted and displayed in the [Controls](../../essentials/controls.mdx) panel.
 
-  ```html
-  {/* YourComponent.vue */}
+  ```html title="YourComponent.vue"
   <script setup lang="ts">
     import { ref } from 'vue';
 
@@ -247,10 +239,9 @@ Storybook for Vue & Vite is a [framework](../../contribute/framework.mdx) that m
 
   ### Override the default configuration
 
-  If you're working with a project that relies on [`tsconfig references`](https://www.typescriptlang.org/docs/handbook/project-references.html) to link to other existing configuration files (e.g. `tsconfig.app.json`, `tsconfig.node.json`), we recommend that you update your [`.storybook/main.js|ts`](../../configure/index.mdx) configuration file and add the following:
+  If you're working with a project that relies on [`tsconfig references`](https://www.typescriptlang.org/docs/handbook/project-references.html) to link to other existing configuration files (e.g., `tsconfig.app.json`, `tsconfig.node.json`), we recommend that you update your [`.storybook/main.js|ts`](../../configure/index.mdx) configuration file and add the following:
 
-  ```ts
-  // .storybook/main.ts
+  ```ts title=".storybook/main.ts"
   import type { StorybookConfig } from '@storybook/vue3-vite';
 
   const config: StorybookConfig = {
@@ -269,7 +260,7 @@ Storybook for Vue & Vite is a [framework](../../contribute/framework.mdx) that m
   ```
 
   <Callout variant="info">
-    This is not a limitation of Storybook, but instead how `vue-component-meta` works. For more information, refer to the appropriate [GitHub issue](https://github.com/vuejs/language-tools/issues/3896).
+    This is not a limitation of Storybook, but how `vue-component-meta` works. For more information, refer to the appropriate [GitHub issue](https://github.com/vuejs/language-tools/issues/3896).
   </Callout>
 
   Otherwise, you might face missing component types/descriptions or unresolvable import aliases like `@/some/import`.
@@ -292,21 +283,11 @@ Storybook for Vue & Vite is a [framework](../../contribute/framework.mdx) that m
 
   You can pass an options object for additional configuration if needed:
 
-  ```ts
-  // .storybook/main.ts
-  import type { StorybookConfig } from '@storybook/vue3-vite';
+  {/* prettier-ignore-start */}
 
-  const config: StorybookConfig = {
-    framework: {
-      name: '@storybook/vue3-vite',
-      options: {
-        docgen: 'vue-component-meta',
-      },
-    },
-  };
+  <CodeSnippets path="vue-vite-framework-options.md" />
 
-  export default config;
-  ```
+  {/* prettier-ignore-end */}
 
   #### `builder`
 

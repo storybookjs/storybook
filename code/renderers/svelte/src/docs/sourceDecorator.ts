@@ -1,6 +1,7 @@
 /* eslint-disable no-underscore-dangle */
-import { addons, useEffect } from 'storybook/internal/preview-api';
 import { deprecate } from 'storybook/internal/client-logger';
+import { SNIPPET_RENDERED, SourceType } from 'storybook/internal/docs-tools';
+import { addons, useEffect } from 'storybook/internal/preview-api';
 import type {
   ArgTypes,
   Args,
@@ -9,8 +10,8 @@ import type {
   StoryContext,
 } from 'storybook/internal/types';
 
-import { SourceType, SNIPPET_RENDERED } from 'storybook/internal/docs-tools';
 import type { SvelteComponentDoc } from 'sveltedoc-parser';
+
 import type { SvelteRenderer, SvelteStoryResult } from '../types';
 
 /**
@@ -138,12 +139,12 @@ export function generateSvelteSource(
 /**
  * Check if the story component is a wrapper to the real component.
  *
- * A component can be annotated with @wrapper to indicate that
- * it's just a wrapper for the real tested component. If it's the case
- * then the code generated references the real component, not the wrapper.
+ * A component can be annotated with `@wrapper` to indicate that it's just a wrapper for the real
+ * tested component. If it's the case then the code generated references the real component, not the
+ * wrapper.
  *
- * moreover, a wrapper can annotate a property with @slot : this property
- * is then assumed to be an alias to the default slot.
+ * Moreover, a wrapper can annotate a property with `@slot` : this property is then assumed to be an
+ * alias to the default slot.
  *
  * @param component Component
  */
@@ -171,8 +172,9 @@ function getWrapperProperties(
 
 /**
  * Svelte source decorator.
+ *
  * @param storyFn Fn
- * @param context  StoryContext
+ * @param context StoryContext
  */
 export const sourceDecorator: DecoratorFunction<SvelteRenderer> = (storyFn, context) => {
   const channel = addons.getChannel();

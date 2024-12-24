@@ -1,6 +1,8 @@
-import { pathExists, readFile } from 'fs-extra';
-import { logger } from '@storybook/core/node-logger';
-import { telemetry } from '@storybook/core/telemetry';
+import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import { dirname, isAbsolute, join } from 'node:path';
+
+import type { Channel } from '@storybook/core/channels';
 import {
   getDirectoryFromWorkingDir,
   getPreviewBodyTemplate,
@@ -8,24 +10,36 @@ import {
   loadEnvs,
   removeAddon as removeAddonBase,
 } from '@storybook/core/common';
+import { telemetry } from '@storybook/core/telemetry';
 import type {
   CLIOptions,
   CoreConfig,
   Indexer,
   Options,
-  PresetPropertyFn,
   PresetProperty,
+  PresetPropertyFn,
 } from '@storybook/core/types';
+
 import { readCsf } from '@storybook/core/csf-tools';
-import { join, dirname, isAbsolute } from 'node:path';
+import { logger } from '@storybook/core/node-logger';
+
 import { dedent } from 'ts-dedent';
-import type { Channel } from '@storybook/core/channels';
-import { parseStaticDir } from '../utils/server-statics';
-import { defaultStaticDirs } from '../utils/constants';
-import { initializeWhatsNew, type OptionsWithRequiredCache } from '../utils/whats-new';
-import { initializeSaveStory } from '../utils/save-story/save-story';
-import { initFileSearchChannel } from '../server-channel/file-search-channel';
+
+import {
+  TESTING_MODULE_CRASH_REPORT,
+  TESTING_MODULE_PROGRESS_REPORT,
+  TESTING_MODULE_WATCH_MODE_REQUEST,
+  type TestingModuleCrashReportPayload,
+  type TestingModuleProgressReportPayload,
+  type TestingModuleWatchModeRequestPayload,
+} from '../../core-events';
+import { cleanPaths, sanitizeError } from '../../telemetry/sanitize';
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
+import { initFileSearchChannel } from '../server-channel/file-search-channel';
+import { defaultStaticDirs } from '../utils/constants';
+import { initializeSaveStory } from '../utils/save-story/save-story';
+import { parseStaticDir } from '../utils/server-statics';
+import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new';
 
 const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);
@@ -53,39 +67,37 @@ export const favicon = async (
     ? staticDirsValue.map((dir) => (typeof dir === 'string' ? dir : `${dir.from}:${dir.to}`))
     : [];
 
-  if (statics && statics.length > 0) {
-    const lists = await Promise.all(
-      statics.map(async (dir) => {
-        const results = [];
-        const normalizedDir =
-          staticDirsValue && !isAbsolute(dir)
-            ? getDirectoryFromWorkingDir({
-                configDir: options.configDir,
-                workingDir: process.cwd(),
-                directory: dir,
-              })
-            : dir;
+  if (statics.length > 0) {
+    const lists = statics.map((dir) => {
+      const results = [];
+      const normalizedDir =
+        staticDirsValue && !isAbsolute(dir)
+          ? getDirectoryFromWorkingDir({
+              configDir: options.configDir,
+              workingDir: process.cwd(),
+              directory: dir,
+            })
+          : dir;
 
-        const { staticPath, targetEndpoint } = await parseStaticDir(normalizedDir);
+      const { staticPath, targetEndpoint } = parseStaticDir(normalizedDir);
 
-        if (targetEndpoint === '/') {
-          const url = 'favicon.svg';
-          const path = join(staticPath, url);
-          if (await pathExists(path)) {
-            results.push(path);
-          }
+      if (targetEndpoint === '/') {
+        const url = 'favicon.svg';
+        const path = join(staticPath, url);
+        if (existsSync(path)) {
+          results.push(path);
         }
-        if (targetEndpoint === '/') {
-          const url = 'favicon.ico';
-          const path = join(staticPath, url);
-          if (await pathExists(path)) {
-            results.push(path);
-          }
+      }
+      if (targetEndpoint === '/') {
+        const url = 'favicon.ico';
+        const path = join(staticPath, url);
+        if (existsSync(path)) {
+          results.push(path);
         }
+      }
 
-        return results;
-      })
-    );
+      return results;
+    });
     const flatlist = lists.reduce((l1, l2) => l1.concat(l2), []);
 
     if (flatlist.length > 1) {
@@ -137,7 +149,7 @@ export const babel = async (_: unknown, options: Options) => {
 };
 
 export const title = (previous: string, options: Options) =>
-  previous || options.packageJson.name || false;
+  previous || options.packageJson?.name || false;
 
 export const logLevel = (previous: any, options: Options) => previous || options.loglevel || 'info';
 
@@ -197,10 +209,10 @@ export const experimental_serverAPI = (extension: Record<string, Function>, opti
 };
 
 /**
- * If for some reason this config is not applied, the reason is that
- * likely there is an addon that does `export core = () => ({ someConfig })`,
- * instead of `export core = (existing) => ({ ...existing, someConfig })`,
- * just overwriting everything and not merging with the existing values.
+ * If for some reason this config is not applied, the reason is that likely there is an addon that
+ * does `export core = () => ({ someConfig })`, instead of `export core = (existing) => ({
+ * ...existing, someConfig })`, just overwriting everything and not merging with the existing
+ * values.
  */
 export const core = async (existing: CoreConfig, options: Options): Promise<CoreConfig> => ({
   ...existing,
@@ -252,8 +264,8 @@ export const docs: PresetProperty<'docs'> = (docsOptions, { docs: docsMode }: CL
 
 export const managerHead = async (_: any, options: Options) => {
   const location = join(options.configDir, 'manager-head.html');
-  if (await pathExists(location)) {
-    const contents = readFile(location, 'utf-8');
+  if (existsSync(location)) {
+    const contents = readFile(location, { encoding: 'utf8' });
     const interpolations = options.presets.apply<Record<string, string>>('env');
 
     return interpolate(await contents, await interpolations);
@@ -275,14 +287,65 @@ export const experimental_serverChannel = async (
   initFileSearchChannel(channel, options, coreOptions);
   initCreateNewStoryChannel(channel, options, coreOptions);
 
+  if (!options.disableTelemetry) {
+    channel.on(
+      TESTING_MODULE_WATCH_MODE_REQUEST,
+      async (request: TestingModuleWatchModeRequestPayload) => {
+        await telemetry('testing-module-watch-mode', {
+          provider: request.providerId,
+          watchMode: request.watchMode,
+        });
+      }
+    );
+
+    channel.on(
+      TESTING_MODULE_PROGRESS_REPORT,
+      async (payload: TestingModuleProgressReportPayload) => {
+        const status = 'status' in payload ? payload.status : undefined;
+        const progress = 'progress' in payload ? payload.progress : undefined;
+        const error = 'error' in payload ? payload.error : undefined;
+
+        if ((status === 'success' || status === 'cancelled') && progress?.finishedAt) {
+          await telemetry('testing-module-completed-report', {
+            provider: payload.providerId,
+            duration: progress?.finishedAt - progress?.startedAt,
+            numTotalTests: progress?.numTotalTests,
+            numFailedTests: progress?.numFailedTests,
+            numPassedTests: progress?.numPassedTests,
+            status,
+          });
+        }
+
+        if (status === 'failed') {
+          await telemetry('testing-module-completed-report', {
+            provider: payload.providerId,
+            status: 'failed',
+            ...(options.enableCrashReports && {
+              error: error && sanitizeError(error),
+            }),
+          });
+        }
+      }
+    );
+
+    channel.on(TESTING_MODULE_CRASH_REPORT, async (payload: TestingModuleCrashReportPayload) => {
+      await telemetry('testing-module-crash-report', {
+        provider: payload.providerId,
+        ...(options.enableCrashReports && {
+          error: cleanPaths(payload.error.message),
+        }),
+      });
+    });
+  }
+
   return channel;
 };
 
 /**
- * Try to resolve react and react-dom from the root node_modules of the project
- * addon-docs uses this to alias react and react-dom to the project's version when possible
- * If the user doesn't have an explicit dependency on react this will return the existing values
- * Which will be the versions shipped with addon-docs
+ * Try to resolve react and react-dom from the root node_modules of the project addon-docs uses this
+ * to alias react and react-dom to the project's version when possible If the user doesn't have an
+ * explicit dependency on react this will return the existing values Which will be the versions
+ * shipped with addon-docs
  */
 export const resolvedReact = async (existing: any) => {
   try {
@@ -296,9 +359,7 @@ export const resolvedReact = async (existing: any) => {
   }
 };
 
-/**
- * Set up `dev-only`, `docs-only`, `test-only` tags out of the box
- */
+/** Set up `dev-only`, `docs-only`, `test-only` tags out of the box */
 export const tags = async (existing: any) => {
   return {
     ...existing,

@@ -1,20 +1,23 @@
 import type {
-  Renderer,
   ArgTypes,
   LegacyStoryAnnotationsOrFn,
+  Renderer,
   StoryAnnotations,
   StoryFn,
   StoryId,
 } from '@storybook/core/types';
-import { storyNameFromExport, toId } from '@storybook/csf';
-import { dedent } from 'ts-dedent';
-import { logger, deprecate } from '@storybook/core/client-logger';
-import { normalizeInputTypes } from './normalizeInputTypes';
-import { normalizeArrays } from './normalizeArrays';
 import type {
   NormalizedComponentAnnotations,
   NormalizedStoryAnnotations,
 } from '@storybook/core/types';
+import { storyNameFromExport, toId } from '@storybook/csf';
+
+import { deprecate, logger } from '@storybook/core/client-logger';
+
+import { dedent } from 'ts-dedent';
+
+import { normalizeArrays } from './normalizeArrays';
+import { normalizeInputTypes } from './normalizeInputTypes';
 
 const deprecatedStoryAnnotation = dedent`
 CSF .story annotations deprecated; annotate story functions directly:
@@ -57,6 +60,11 @@ export function normalizeStory<TRenderer extends Renderer>(
     ...normalizeArrays(storyObject.beforeEach),
     ...normalizeArrays(story?.beforeEach),
   ];
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  const experimental_afterEach = [
+    ...normalizeArrays(storyObject.experimental_afterEach),
+    ...normalizeArrays(story?.experimental_afterEach),
+  ];
   const { render, play, tags = [], globals = {} } = storyObject;
 
   // eslint-disable-next-line no-underscore-dangle
@@ -72,6 +80,7 @@ export function normalizeStory<TRenderer extends Renderer>(
     argTypes: normalizeInputTypes(argTypes),
     loaders,
     beforeEach,
+    experimental_afterEach,
     globals,
     ...(render && { render }),
     ...(userStoryFn && { userStoryFn }),

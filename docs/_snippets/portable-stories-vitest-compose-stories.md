@@ -1,6 +1,7 @@
 ```tsx filename="Button.test.tsx" renderer="react" language="ts"
 import { test, expect } from 'vitest';
 import { screen } from '@testing-library/react';
+// 👉 Using Next.js? Import from @storybook/nextjs instead
 import { composeStories } from '@storybook/react';
 
 // Import all stories and the component annotations from the stories file

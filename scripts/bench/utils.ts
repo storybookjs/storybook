@@ -1,6 +1,8 @@
+// eslint-disable-next-line depend/ban-dependencies
+import { ensureDir, readJSON, readdir, writeJSON } from 'fs-extra';
 import { join } from 'path';
-import { ensureDir, writeJSON, readJSON, readdir } from 'fs-extra';
 import type { Page } from 'playwright-core';
+
 import type { BenchResults } from './types';
 
 export const now = () => new Date().getTime();
@@ -34,9 +36,8 @@ export const loadBench = async (options: SaveBenchOptions): Promise<Partial<Benc
 
 export async function getPreviewPage(page: Page) {
   /**
-   * Fix flakiness in preview iframe retrieval
-   * Sometimes the iframe is not yet available when we try to access it,
-   * even after waiting for the readyState to be complete.
+   * Fix flakiness in preview iframe retrieval Sometimes the iframe is not yet available when we try
+   * to access it, even after waiting for the readyState to be complete.
    *
    * This loop will keep trying to access the iframe until it's available.
    */

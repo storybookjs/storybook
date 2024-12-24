@@ -1,8 +1,10 @@
-import fse from 'fs-extra';
-import path from 'path';
-import { dedent } from 'ts-dedent';
+import { stat, writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+
+import { SupportedLanguage, externalFrameworks } from 'storybook/internal/cli';
 import { logger } from 'storybook/internal/node-logger';
-import { externalFrameworks, SupportedLanguage } from 'storybook/internal/cli';
+
+import { dedent } from 'ts-dedent';
 
 interface ConfigureMainOptions {
   addons: string[];
@@ -11,14 +13,14 @@ interface ConfigureMainOptions {
   storybookConfigFolder: string;
   language: SupportedLanguage;
   prefixes: string[];
+  frameworkPackage: string;
   /**
    * Extra values for main.js
    *
-   * In order to provide non-serializable data like functions, you can use
-   * { value: '%%yourFunctionCall()%%' }
+   * In order to provide non-serializable data like functions, you can use `{ value:
+   * '%%yourFunctionCall()%%' }`
    *
-   * '%% and %%' will be replaced.
-   *
+   * `%%` and `%%` will be replaced.
    */
   [key: string]: any;
 }
@@ -34,11 +36,17 @@ interface ConfigurePreviewOptions {
   rendererId: string;
 }
 
+const pathExists = async (path: string) => {
+  return stat(path)
+    .then(() => true)
+    .catch(() => false);
+};
+
 /**
- * We need to clean up the paths in case of pnp
- * input: "path.dirname(require.resolve(path.join('@storybook/react-webpack5', 'package.json')))"
- * output: "@storybook/react-webpack5"
- * */
+ * We need to clean up the paths in case of pnp input:
+ * `path.dirname(require.resolve(path.join('@storybook/react-webpack5', 'package.json')))` output:
+ * `@storybook/react-webpack5`
+ */
 const sanitizeFramework = (framework: string) => {
   // extract either @storybook/<framework> or storybook-<framework>
   const matches = framework.match(/(@storybook\/\w+(?:-\w+)*)|(storybook-(\w+(?:-\w+)*))/g);
@@ -54,11 +62,12 @@ export async function configureMain({
   extensions = ['js', 'jsx', 'mjs', 'ts', 'tsx'],
   storybookConfigFolder,
   language,
+  frameworkPackage,
   prefixes = [],
   ...custom
 }: ConfigureMainOptions) {
-  const srcPath = path.resolve(storybookConfigFolder, '../src');
-  const prefix = (await fse.pathExists(srcPath)) ? '../src' : '../stories';
+  const srcPath = resolve(storybookConfigFolder, '../src');
+  const prefix = (await pathExists(srcPath)) ? '../src' : '../stories';
   const config = {
     stories: [`${prefix}/**/*.mdx`, `${prefix}/**/*.stories.@(${extensions.join('|')})`],
     addons,
@@ -70,8 +79,6 @@ export async function configureMain({
 
   let mainConfigTemplate = dedent`<<import>><<prefix>>const config<<type>> = <<mainContents>>;
     export default config;`;
-
-  const frameworkPackage = sanitizeFramework(custom.framework?.name);
 
   if (!frameworkPackage) {
     mainConfigTemplate = mainConfigTemplate.replace('<<import>>', '').replace('<<type>>', '');
@@ -86,7 +93,7 @@ export async function configureMain({
   const finalPrefixes = [...prefixes];
 
   if (custom.framework?.name.includes('path.dirname(')) {
-    imports.push(`import path from 'path';`);
+    imports.push(`import path from 'node:path';`);
   }
 
   if (isTypescript) {
@@ -113,7 +120,7 @@ export async function configureMain({
     logger.verbose(`Failed to prettify ${mainPath}`);
   }
 
-  await fse.writeFile(mainPath, mainJsContents, { encoding: 'utf8' });
+  await writeFile(mainPath, mainJsContents, { encoding: 'utf8' });
 }
 
 export async function configurePreview(options: ConfigurePreviewOptions) {
@@ -133,7 +140,7 @@ export async function configurePreview(options: ConfigurePreviewOptions) {
   const previewPath = `./${options.storybookConfigFolder}/preview.${isTypescript ? 'ts' : 'js'}`;
 
   // If the framework template included a preview then we have nothing to do
-  if (await fse.pathExists(previewPath)) {
+  if (await pathExists(previewPath)) {
     return;
   }
 
@@ -176,5 +183,5 @@ export async function configurePreview(options: ConfigurePreviewOptions) {
     logger.verbose(`Failed to prettify ${previewPath}`);
   }
 
-  await fse.writeFile(previewPath, preview, { encoding: 'utf8' });
+  await writeFile(previewPath, preview, { encoding: 'utf8' });
 }

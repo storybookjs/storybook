@@ -1,18 +1,25 @@
+import type { NormalizedStoriesSpecifier } from '@storybook/core/types';
+
+import { once } from '@storybook/core/client-logger';
+
 import slash from 'slash';
 import { dedent } from 'ts-dedent';
-import { once } from '@storybook/core/client-logger';
-import type { NormalizedStoriesSpecifier } from '@storybook/core/types';
 
 // FIXME: types duplicated type from `core-common', to be
 // removed when we remove v6 back-compat.
 
 // deal with files like "atoms/button/{button,index}.stories.js"
 const sanitize = (parts: string[]) => {
-  if (parts.length === 0) return parts;
+  if (parts.length === 0) {
+    return parts;
+  }
 
   const last = parts[parts.length - 1];
   const lastStripped = last?.replace(/(?:[.](?:story|stories))?([.][^.]+)$/i, '');
-  if (parts.length === 1) return [lastStripped];
+
+  if (parts.length === 1) {
+    return [lastStripped];
+  }
 
   const nextToLast = parts[parts.length - 2];
   if (lastStripped && nextToLast && lastStripped.toLowerCase() === nextToLast.toLowerCase()) {
@@ -26,11 +33,11 @@ const sanitize = (parts: string[]) => {
 };
 
 /**
- * Combines path parts together, without duplicating separators (slashes).  Used instead of `path.join`
- * because this code runs in the browser.
+ * Combines path parts together, without duplicating separators (slashes). Used instead of
+ * `path.join` because this code runs in the browser.
  *
- * @param paths array of paths to join together.
- * @returns joined path string, with single '/' between parts
+ * @param paths Array of paths to join together.
+ * @returns Joined path string, with single '/' between parts
  */
 function pathJoin(paths: string[]): string {
   return paths
@@ -83,7 +90,10 @@ export const userOrAutoTitle = (
 ) => {
   for (let i = 0; i < storiesEntries.length; i += 1) {
     const title = userOrAutoTitleFromSpecifier(fileName, storiesEntries[i], userTitle);
-    if (title) return title;
+
+    if (title) {
+      return title;
+    }
   }
 
   return userTitle || undefined;

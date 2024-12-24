@@ -1,5 +1,5 @@
+import { Parameters, StoryFnAngularReturnType } from '../types';
 import { AbstractRenderer } from './AbstractRenderer';
-import { StoryFnAngularReturnType, Parameters } from '../types';
 
 export class CanvasRenderer extends AbstractRenderer {
   public async render(options: {

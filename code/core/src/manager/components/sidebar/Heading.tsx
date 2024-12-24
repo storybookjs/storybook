@@ -1,9 +1,10 @@
-import type { FC, ComponentProps } from 'react';
+import type { ComponentProps, FC } from 'react';
 import React from 'react';
-import { styled } from '@storybook/core/theming';
-import { Button } from '@storybook/core/components';
 
+import { Button } from '@storybook/core/components';
+import { styled } from '@storybook/core/theming';
 import type { Addon_SidebarTopType } from '@storybook/core/types';
+
 import { Brand } from './Brand';
 import type { MenuList, SidebarMenuProps } from './Menu';
 import { SidebarMenu } from './Menu';

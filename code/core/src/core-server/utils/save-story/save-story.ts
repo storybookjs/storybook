@@ -1,6 +1,13 @@
 /* eslint-disable no-underscore-dangle */
-import fs from 'node:fs/promises';
+import { writeFile } from 'node:fs/promises';
+import { basename, join } from 'node:path';
+
 import type { Channel } from '@storybook/core/channels';
+import { formatFileContent } from '@storybook/core/common';
+import { isExampleStoryId, telemetry } from '@storybook/core/telemetry';
+import type { CoreConfig, Options } from '@storybook/core/types';
+import { storyNameFromExport, toId } from '@storybook/csf';
+
 import type {
   RequestData,
   ResponseData,
@@ -12,16 +19,11 @@ import {
   SAVE_STORY_RESPONSE,
   STORY_RENDERED,
 } from '@storybook/core/core-events';
-import { storyNameFromExport, toId } from '@storybook/csf';
 import { printCsf, readCsf } from '@storybook/core/csf-tools';
 import { logger } from '@storybook/core/node-logger';
-import type { CoreConfig, Options } from '@storybook/core/types';
-import { telemetry } from '@storybook/core/telemetry';
 
-import { basename, join } from 'node:path';
-import { updateArgsInCsfFile } from './update-args-in-csf-file';
 import { duplicateStoryWithNewName } from './duplicate-story-with-new-name';
-import { formatFileContent } from '@storybook/core/common';
+import { updateArgsInCsfFile } from './update-args-in-csf-file';
 import { SaveStoryError } from './utils';
 
 const parseArgs = (args: string): Record<string, any> =>
@@ -101,7 +103,7 @@ export function initializeSaveStory(channel: Channel, options: Options, coreConf
           channel.on(STORY_RENDERED, resolve);
           setTimeout(() => resolve(channel.off(STORY_RENDERED, resolve)), 3000);
         }),
-        fs.writeFile(sourceFilePath, code),
+        writeFile(sourceFilePath, code),
       ]);
 
       channel.emit(SAVE_STORY_RESPONSE, {
@@ -120,7 +122,9 @@ export function initializeSaveStory(channel: Channel, options: Options, coreConf
         error: null,
       } satisfies ResponseData<SaveStoryResponsePayload>);
 
-      if (!coreConfig.disableTelemetry) {
+      // don't take credit for save-from-controls actions against CLI example stories
+      const isCLIExample = isExampleStoryId(newStoryId ?? csfId);
+      if (!coreConfig.disableTelemetry && !isCLIExample) {
         await telemetry('save-story', {
           action: name ? 'createStory' : 'updateStory',
           success: true,

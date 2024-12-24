@@ -14,26 +14,32 @@ export interface MakeDecoratorOptions {
 }
 
 /**
- * Creates a Storybook decorator function that can be used to wrap stories with additional functionality.
- *
- * @param {MakeDecoratorOptions} options - The options for the decorator.
- * @param {string} options.name - The name of the decorator.
- * @param {string} options.parameterName - The name of the parameter that will be used to pass options to the decorator.
- * @param {Addon_StoryWrapper} options.wrapper - The function that will be used to wrap the story.
- * @param {boolean} [options.skipIfNoParametersOrOptions=false] - Whether to skip the decorator if no options or parameters are provided.
- * @returns {MakeDecoratorResult} A function that can be used as a Storybook decorator.
+ * Creates a Storybook decorator function that can be used to wrap stories with additional
+ * functionality.
  *
  * @example
+ *
+ * ```jsx
  * const myDecorator = makeDecorator({
  *   name: 'My Decorator',
  *   parameterName: 'myDecorator',
  *   wrapper: (storyFn, context, { options }) => {
  *     const { myOption } = options;
- *     return <div style={{ backgroundColor: myOption }}>{storyFn()}</div>;
+ *     <div style={{ backgroundColor: myOption }}>{storyFn()}</div>;
  *   },
  * });
  *
  * export const decorators = [myDecorator];
+ * ```
+ *
+ * @param {MakeDecoratorOptions} options - The options for the decorator.
+ * @param {string} options.name - The name of the decorator.
+ * @param {string} options.parameterName - The name of the parameter that will be used to pass
+ *   options to the decorator.
+ * @param {Addon_StoryWrapper} options.wrapper - The function that will be used to wrap the story.
+ * @param {boolean} [options.skipIfNoParametersOrOptions=false] - Whether to skip the decorator if
+ *   no options or parameters are provided. Default is `false`
+ * @returns {MakeDecoratorResult} A function that can be used as a Storybook decorator.
  */
 export const makeDecorator = ({
   name,

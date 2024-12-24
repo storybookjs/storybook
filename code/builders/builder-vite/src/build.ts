@@ -1,13 +1,14 @@
-import type { Options } from 'storybook/internal/types';
 import { logger } from 'storybook/internal/node-logger';
-import { dedent } from 'ts-dedent';
+import type { Options } from 'storybook/internal/types';
 
-import { commonConfig } from './vite-config';
+import { dedent } from 'ts-dedent';
+import type { InlineConfig } from 'vite';
+
 import { sanitizeEnvVars } from './envs';
 import type { WebpackStatsPlugin } from './plugins';
-import type { InlineConfig } from 'vite';
 import { hasVitePlugins } from './utils/has-vite-plugins';
 import { withoutVitePlugins } from './utils/without-vite-plugins';
+import { commonConfig } from './vite-config';
 
 function findPlugin(config: InlineConfig, name: string) {
   return config.plugins?.find((p) => p && 'name' in p && p.name === name);
@@ -23,11 +24,7 @@ export async function build(options: Options) {
       outDir: options.outputDir,
       emptyOutDir: false, // do not clean before running Vite build - Storybook has already added assets in there!
       rollupOptions: {
-        external: [
-          // Do not try to bundle the Storybook runtime, it is copied into the output dir after the build.
-          './sb-preview/runtime.js',
-          /\.\/sb-common-assets\/.*\.woff2/,
-        ],
+        external: [/\.\/sb-common-assets\/.*\.woff2/],
       },
       ...(options.test
         ? {
@@ -38,9 +35,22 @@ export async function build(options: Options) {
           }
         : {}),
     },
-  }).build;
+  } as InlineConfig).build;
 
-  const finalConfig = await presets.apply('viteFinal', config, options);
+  const finalConfig = (await presets.apply('viteFinal', config, options)) as InlineConfig;
+
+  if (options.features?.developmentModeForBuild) {
+    finalConfig.plugins?.push({
+      name: 'storybook:define-env',
+      config: () => {
+        return {
+          define: {
+            'process.env.NODE_ENV': JSON.stringify('development'),
+          },
+        };
+      },
+    });
+  }
 
   const turbosnapPluginName = 'rollup-plugin-turbosnap';
   const hasTurbosnapPlugin =

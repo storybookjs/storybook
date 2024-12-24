@@ -1,20 +1,22 @@
-import { describe, beforeEach, it, expect, vi } from 'vitest';
-import { EventEmitter } from 'events';
-import {
-  SET_STORIES,
-  SET_GLOBALS,
-  UPDATE_GLOBALS,
-  GLOBALS_UPDATED,
-} from '@storybook/core/core-events';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { GlobalsUpdatedPayload, SetGlobalsPayload } from '@storybook/core/types';
 
 import { logger as _logger } from '@storybook/core/client-logger';
-import type { API } from '../root';
-import type { SubAPI } from '../modules/globals';
-import { init as initModule } from '../modules/globals';
-import type { ModuleArgs } from '../lib/types';
+import {
+  GLOBALS_UPDATED,
+  SET_GLOBALS,
+  SET_STORIES,
+  UPDATE_GLOBALS,
+} from '@storybook/core/core-events';
+
+import { EventEmitter } from 'events';
 
 import { getEventMetadata as _getEventData } from '../lib/events';
-import type { GlobalsUpdatedPayload, SetGlobalsPayload } from '@storybook/core/types';
+import type { ModuleArgs } from '../lib/types';
+import type { SubAPI } from '../modules/globals';
+import { init as initModule } from '../modules/globals';
+import type { API } from '../root';
 
 const getEventMetadata = vi.mocked(_getEventData, true);
 const logger = vi.mocked(_logger, true);

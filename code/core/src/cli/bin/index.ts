@@ -1,15 +1,16 @@
-import program from 'commander';
-import chalk from 'chalk';
-import leven from 'leven';
-import { findPackageSync } from 'fd-package-json';
-import invariant from 'tiny-invariant';
+import { getEnvConfig, parseList, versions } from '@storybook/core/common';
+import { addToGlobalContext } from '@storybook/core/telemetry';
 
 import { logger } from '@storybook/core/node-logger';
-import { addToGlobalContext } from '@storybook/core/telemetry';
-import { parseList, getEnvConfig, versions } from '@storybook/core/common';
 
-import { dev } from '../dev';
+import { program } from 'commander';
+import { findPackageSync } from 'fd-package-json';
+import leven from 'leven';
+import picocolors from 'picocolors';
+import invariant from 'tiny-invariant';
+
 import { build } from '../build';
+import { dev } from '../dev';
 
 addToGlobalContext('cliVersion', versions.storybook);
 
@@ -68,8 +69,8 @@ command('dev')
     'URL path to be appended when visiting Storybook for the first time'
   )
   .action(async (options) => {
-    logger.setLevel(program.loglevel);
-    consoleLogger.log(chalk.bold(`${pkg.name} v${pkg.version}`) + chalk.reset('\n'));
+    logger.setLevel(options.loglevel);
+    consoleLogger.log(picocolors.bold(`${pkg.name} v${pkg.version}`) + picocolors.reset('\n'));
 
     // The key is the field created in `options` variable for
     // each command line argument. Value is the env variable.
@@ -108,8 +109,8 @@ command('build')
   .option('--test', 'Build stories optimized for testing purposes.')
   .action(async (options) => {
     process.env.NODE_ENV = process.env.NODE_ENV || 'production';
-    logger.setLevel(program.loglevel);
-    consoleLogger.log(chalk.bold(`${pkg.name} v${pkg.version}\n`));
+    logger.setLevel(options.loglevel);
+    consoleLogger.log(picocolors.bold(`${pkg.name} v${pkg.version}\n`));
 
     // The key is the field created in `options` variable for
     // each command line argument. Value is the env variable.
@@ -131,8 +132,7 @@ program.on('command:*', ([invalidCmd]) => {
     ' Invalid command: %s.\n See --help for a list of available commands.',
     invalidCmd
   );
-  // eslint-disable-next-line no-underscore-dangle
-  const availableCommands = program.commands.map((cmd) => cmd._name);
+  const availableCommands = program.commands.map((cmd) => cmd.name());
   const suggestion = availableCommands.find((cmd) => leven(cmd, invalidCmd) < 3);
   if (suggestion) {
     consoleLogger.info(`\n Did you mean ${suggestion}?`);

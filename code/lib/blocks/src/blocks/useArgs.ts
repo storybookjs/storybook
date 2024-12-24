@@ -1,17 +1,21 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { Args, DocsContextProps, PreparedStory } from 'storybook/internal/types';
+
 import {
+  RESET_STORY_ARGS,
   STORY_ARGS_UPDATED,
   UPDATE_STORY_ARGS,
-  RESET_STORY_ARGS,
 } from 'storybook/internal/core-events';
+import type { Args, DocsContextProps, PreparedStory } from 'storybook/internal/types';
 
 export const useArgs = (
   story: PreparedStory,
   context: DocsContextProps
 ): [Args, (args: Args) => void, (argNames?: string[]) => void] => {
   const result = useArgsIfDefined(story, context);
-  if (!result) throw new Error('No result when story was defined');
+
+  if (!result) {
+    throw new Error('No result when story was defined');
+  }
   return result;
 };
 

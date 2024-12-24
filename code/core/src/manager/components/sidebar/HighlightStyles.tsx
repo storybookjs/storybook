@@ -1,7 +1,10 @@
-import { transparentize } from 'polished';
 import type { FC } from 'react';
 import React from 'react';
+
 import { Global } from '@storybook/core/theming';
+
+import { transparentize } from 'polished';
+
 import type { Highlight } from './types';
 
 // @ts-expect-error (non strict)

@@ -1,9 +1,10 @@
-import chalk from 'chalk';
-import { dedent } from 'ts-dedent';
+import picocolors from 'picocolors';
 import semver from 'semver';
-import type { Fix } from '../types';
+import { dedent } from 'ts-dedent';
+
 import { checkWebpack5Builder } from '../helpers/checkWebpack5Builder';
 import { updateMainConfig } from '../helpers/mainConfigFile';
+import type { Fix } from '../types';
 
 const logger = console;
 
@@ -15,8 +16,7 @@ interface Webpack5RunOptions {
 /**
  * Is the user using webpack5 in their project?
  *
- * If the user is using a version of SB >= 6.3,
- * prompt them to upgrade to webpack5.
+ * If the user is using a version of SB >= 6.3, prompt them to upgrade to webpack5.
  *
  * - Add manager-webpack5 builder-webpack5 as dev dependencies
  * - Add core.builder = 'webpack5' to main.js
@@ -34,25 +34,26 @@ export const webpack5 = {
       !webpackVersion ||
       semver.lt(webpackVersion, '5.0.0') ||
       semver.gte(webpackVersion, '6.0.0')
-    )
+    ) {
       return null;
+    }
 
     const builderInfo = await checkWebpack5Builder({ mainConfig, storybookVersion });
     return builderInfo ? { webpackVersion, ...builderInfo } : null;
   },
 
   prompt({ webpackVersion }) {
-    const webpackFormatted = chalk.cyan(`webpack ${webpackVersion}`);
+    const webpackFormatted = picocolors.cyan(`webpack ${webpackVersion}`);
 
     return dedent`
       We've detected you're running ${webpackFormatted}.
       Your Storybook's main.js files specifies webpack4, which is incompatible.
       
-      To run Storybook in webpack5-mode, we can install Storybook's ${chalk.cyan(
+      To run Storybook in webpack5-mode, we can install Storybook's ${picocolors.cyan(
         '@storybook/builder-webpack5'
       )} for you.
 
-      More info: ${chalk.yellow(
+      More info: ${picocolors.yellow(
         'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#webpack-5-manager-build'
       )}
     `;

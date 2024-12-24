@@ -1,20 +1,20 @@
 import type { FC } from 'react';
 import React, { Fragment, useEffect, useRef, useState } from 'react';
-import { Helmet } from 'react-helmet-async';
-import { global } from '@storybook/global';
-
-import { Consumer, type Combo, merge, addons, types } from '@storybook/core/manager-api';
-import type { Addon_BaseType, Addon_WrapperType } from '@storybook/core/types';
-import { PREVIEW_BUILDER_PROGRESS, SET_CURRENT_STORY } from '@storybook/core/core-events';
 
 import { Loader } from '@storybook/core/components';
+import type { Addon_BaseType, Addon_WrapperType } from '@storybook/core/types';
+import { global } from '@storybook/global';
 
-import * as S from './utils/components';
-import { ZoomProvider, ZoomConsumer } from './tools/zoom';
-import { ApplyWrappers } from './Wrappers';
-import { ToolbarComp } from './Toolbar';
+import { PREVIEW_BUILDER_PROGRESS, SET_CURRENT_STORY } from '@storybook/core/core-events';
+import { type Combo, Consumer, addons, merge, types } from '@storybook/core/manager-api';
+
+import { Helmet } from 'react-helmet-async';
+
 import { FramesRenderer } from './FramesRenderer';
-
+import { ToolbarComp } from './Toolbar';
+import { ApplyWrappers } from './Wrappers';
+import { ZoomConsumer, ZoomProvider } from './tools/zoom';
+import * as S from './utils/components';
 import type { PreviewProps } from './utils/types';
 
 const canvasMapper = ({ state, api }: Combo) => ({
@@ -202,7 +202,7 @@ export function filterTabs(panels: Addon_BaseType[], parameters?: Record<string,
 
   if (previewTabs || parametersTabs) {
     // deep merge global and local settings
-    const tabs = merge(previewTabs, parametersTabs);
+    const tabs = merge(previewTabs || {}, parametersTabs || {});
     const arrTabs = Object.keys(tabs).map((key, index) => ({
       index,
       ...(typeof tabs[key] === 'string' ? { title: tabs[key] } : tabs[key]),

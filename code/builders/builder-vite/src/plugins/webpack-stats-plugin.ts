@@ -1,9 +1,16 @@
 // This plugin is a direct port of https://github.com/IanVS/vite-plugin-turbosnap
+import { relative } from 'node:path';
 
 import type { BuilderStats } from 'storybook/internal/types';
-import path from 'path';
+
 import slash from 'slash';
 import type { Plugin } from 'vite';
+
+import {
+  SB_VIRTUAL_FILES,
+  getOriginalVirtualModuleId,
+  getResolvedVirtualModuleId,
+} from '../virtual-file-names';
 
 /*
  * Reason, Module are copied from chromatic types
@@ -24,21 +31,27 @@ type WebpackStatsPluginOptions = {
 };
 
 /**
- * Strips off query params added by rollup/vite to ids, to make paths compatible for comparison with git.
+ * Strips off query params added by rollup/vite to ids, to make paths compatible for comparison with
+ * git.
  */
 function stripQueryParams(filePath: string): string {
   return filePath.split('?')[0];
 }
 
-/**
- * We only care about user code, not node_modules, vite files, or (most) virtual files.
- */
+/** We only care about user code, not node_modules, vite files, or (most) virtual files. */
 function isUserCode(moduleName: string) {
+  if (!moduleName) {
+    return false;
+  }
+
+  // keep Storybook's virtual files because they import the story files, so they are essential to the module graph
+  if (Object.values(SB_VIRTUAL_FILES).includes(getOriginalVirtualModuleId(moduleName))) {
+    return true;
+  }
+
   return Boolean(
-    moduleName &&
-      !moduleName.startsWith('vite/') &&
-      !moduleName.startsWith('\x00') &&
-      !moduleName.startsWith('\u0000') &&
+    !moduleName.startsWith('vite/') &&
+      !moduleName.startsWith('\0') &&
       moduleName !== 'react/jsx-runtime' &&
       !moduleName.match(/node_modules\//)
   );
@@ -47,32 +60,34 @@ function isUserCode(moduleName: string) {
 export type WebpackStatsPlugin = Plugin & { storybookGetStats: () => BuilderStats };
 
 export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): WebpackStatsPlugin {
-  /**
-   * Convert an absolute path name to a path relative to the vite root, with a starting `./`
-   */
+  /** Convert an absolute path name to a path relative to the vite root, with a starting `./` */
   function normalize(filename: string) {
     // Do not try to resolve virtual files
     if (filename.startsWith('/virtual:')) {
       return filename;
     }
+    // ! Maintain backwards compatibility with the old virtual file names
+    // ! to ensure that the stats file doesn't change between the versions
+    // ! Turbosnap is also only compatible with the old virtual file names
+    // ! the old virtual file names did not start with the obligatory \0 character
+    if (Object.values(SB_VIRTUAL_FILES).includes(getOriginalVirtualModuleId(filename))) {
+      return getOriginalVirtualModuleId(filename);
+    }
+
     // Otherwise, we need them in the format `./path/to/file.js`.
     else {
-      const relativePath = path.relative(workingDir, stripQueryParams(filename));
+      const relativePath = relative(workingDir, stripQueryParams(filename));
       // This seems hacky, got to be a better way to add a `./` to the start of a path.
       return `./${slash(relativePath)}`;
     }
   }
 
-  /**
-   * Helper to create Reason objects out of a list of string paths
-   */
+  /** Helper to create Reason objects out of a list of string paths */
   function createReasons(importers?: readonly string[]): Reason[] {
     return (importers || []).map((i) => ({ moduleName: normalize(i) }));
   }
 
-  /**
-   * Helper function to build a `Module` given a filename and list of files that import it
-   */
+  /** Helper function to build a `Module` given a filename and list of files that import it */
   function createStatsMapModule(filename: string, importers?: readonly string[]): Module {
     return {
       id: filename,
@@ -88,25 +103,27 @@ export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): W
     // We want this to run after the vite build plugins (https://vitejs.dev/guide/api-plugin.html#plugin-ordering)
     enforce: 'post',
     moduleParsed: function (mod) {
-      if (isUserCode(mod.id)) {
-        mod.importedIds
-          .concat(mod.dynamicallyImportedIds)
-          .filter((name) => isUserCode(name))
-          .forEach((depIdUnsafe) => {
-            const depId = normalize(depIdUnsafe);
-            if (statsMap.has(depId)) {
-              const m = statsMap.get(depId);
-              if (m) {
-                m.reasons = (m.reasons ?? [])
-                  .concat(createReasons([mod.id]))
-                  .filter((r) => r.moduleName !== depId);
-                statsMap.set(depId, m);
-              }
-            } else {
-              statsMap.set(depId, createStatsMapModule(depId, [mod.id]));
-            }
-          });
+      if (!isUserCode(mod.id)) {
+        return;
       }
+      mod.importedIds
+        .concat(mod.dynamicallyImportedIds)
+        .filter((name) => isUserCode(name))
+        .forEach((depIdUnsafe) => {
+          const depId = normalize(depIdUnsafe);
+          if (!statsMap.has(depId)) {
+            statsMap.set(depId, createStatsMapModule(depId, [mod.id]));
+            return;
+          }
+          const m = statsMap.get(depId);
+          if (!m) {
+            return;
+          }
+          m.reasons = (m.reasons ?? [])
+            .concat(createReasons([mod.id]))
+            .filter((r) => r.moduleName !== depId);
+          statsMap.set(depId, m);
+        });
     },
 
     storybookGetStats() {

@@ -1,13 +1,14 @@
 import { useEffect } from 'storybook/internal/preview-api';
 import type {
   Renderer,
-  PartialStoryFn as StoryFunction,
   StoryContext,
+  PartialStoryFn as StoryFunction,
 } from 'storybook/internal/types';
 
 import { PARAM_KEY as KEY } from './constants';
-import { clearStyles, addBackgroundStyle, isReduceMotionEnabled, addGridStyle } from './utils';
+import { DEFAULT_BACKGROUNDS } from './defaults';
 import type { Config, GridConfig } from './types';
+import { addBackgroundStyle, addGridStyle, clearStyles, isReduceMotionEnabled } from './utils';
 
 const defaultGrid: GridConfig = {
   cellSize: 100,
@@ -25,7 +26,11 @@ export const withBackgroundAndGrid = (
   context: StoryContext<Renderer>
 ) => {
   const { globals, parameters, viewMode, id } = context;
-  const { options = {}, disable, grid = defaultGrid } = (parameters[KEY] || {}) as Config;
+  const {
+    options = DEFAULT_BACKGROUNDS,
+    disable,
+    grid = defaultGrid,
+  } = (parameters[KEY] || {}) as Config;
   const data = globals[KEY] || {};
   const backgroundName: string | undefined = data.value;
 

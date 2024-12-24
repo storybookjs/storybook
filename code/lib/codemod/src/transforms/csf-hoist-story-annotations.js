@@ -8,24 +8,24 @@ const getContainingStatement = (n) => {
 /**
  * Hoist CSF .story annotations
  *
- * For example:
+ * @example
  *
- * ```
+ * ```jsx
  * export const Basic = () => <Button />
  * Basic.story = {
  *   name: 'foo',
- *   parameters: { ... },
- *   decorators = [ ... ],
+ *   parameters: {  },
+ *   decorators = [  ],
  * };
  * ```
  *
  * Becomes:
  *
  * ```
- * export const Basic = () => <Button />
+ * export const Basic = () => <Button />;
  * Basic.storyName = 'foo';
- * Basic.parameters = { ... };
- * Basic.decorators = [ ... ];
+ * Basic.parameters = {};
+ * Basic.decorators = [];
  * ```
  */
 export default function transformer(file, api) {

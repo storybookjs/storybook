@@ -1,6 +1,8 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
-import { UncaughtManagerError } from '@storybook/core/manager-errors';
 import { global } from '@storybook/global';
+
+import { UncaughtManagerError } from '@storybook/core/manager-errors';
+
 import type { BrowserInfo } from 'browser-dtector';
 import BrowserDetector from 'browser-dtector';
 

@@ -19,6 +19,7 @@
   - [5. Make Manual Changes](#5-make-manual-changes)
   - [6. Merge](#6-merge)
   - [7. See the "Publish" Workflow Finish](#7-see-the-publish-workflow-finish)
+- [Releasing changes to older minor versions](#releasing-changes-to-older-minor-versions)
 - [Releasing Locally in an Emergency 🚨](#releasing-locally-in-an-emergency-)
 - [Canary Releases](#canary-releases)
   - [With GitHub UI](#with-github-ui)
@@ -329,6 +330,59 @@ When the pull request was frozen, a CI run was triggered on the branch. If it's 
 Merging the pull request will trigger [the publish workflow](https://github.com/storybookjs/storybook/actions/workflows/publish.yml), which does the final version bumping and publishing. As a Releaser, you're responsible for this to finish successfully, so you should watch it until the end. If it fails, it will notify in Discord, so you can monitor that instead if you want to.
 
 Done! 🚀
+
+## Releasing changes to older minor versions
+
+If you need to release a change to an older minor version that is not the latest, you have to do it manually, locally. The process is described below, with an example of releasing a new `v8.3.7` in a situation where `8.4.0` is currently the latest version.
+
+1. Checkout the _existing_ tag that matches the latest minor release you want to bump, and create a new branch from it. In this case, we want to do:
+    1. `git fetch --all --tags`
+    2. `git checkout tags/v8.3.6 -b patch-8-3-7`
+2. Make the changes you need to, most likely cherry-picking commits from the fix you need to back-port.
+3. Run `yarn install` in `scripts` and `code`
+4. Build all packages in `code` with `yarn task --task compile --no-link`
+5. Commit and push your changes.
+6. Trigger _daily_ CI manually on your branch:
+    1. Open [CircleCI](https://app.circleci.com/pipelines/github/storybookjs/storybook) and click "Trigger Pipeline" on the top right corner of the page.
+    2. Set the following configuration options:
+        - Pipeline: _"storybook default"_
+        - Config Source: _"storybook"_
+        - Branch: Your branch, eg. `patch-8-3-7`
+    3. Add a parameter, with _"name"_ `workflow`, _"value"_ `daily`
+7. Wait for CI to finish successfully.
+8. Bump all package versions:
+    1. `cd scripts`
+    2. `yarn release:version --release-type patch`
+9.  Commit with `git commit -m "Bump version from <CURRENT_VERSION> to <NEXT_VERSION> MANUALLY"`
+10. Add a new entry to `CHANGELOG.md`, describing your changes
+11. Commit with `git commit -m "Update CHANGELOG.md with <NEXT_VERSION> MANUALLY"`
+12. Ensure you have the correct write permissions for all the Storybook npm packages. You need to be an admin of the _storybook_ org, and the packages that are not in the org. The simplest way to check this is to ensure you can see the _"Settings"_ tab in the following packages:
+    1.  [`@storybook/react-vite`](https://www.npmjs.com/package/@storybook/react-vite/access)
+    2.  [`storybook`](https://www.npmjs.com/package/storybook/access)
+    3.  [`sb`](https://www.npmjs.com/package/sb/access)
+    4.  [`create-storybook`](https://www.npmjs.com/package/create-storybook/access)
+13. Get your npm access token or generate a new one at https://www.npmjs.com/settings/your-username/tokens. Remember to give it access to the `storybook` org and the packages not in the org, as listed above.
+14. Publish all packages with `YARN_NPM_AUTH_TOKEN=<NPM_TOKEN> yarn release:publish --tag tag-for-publishing-older-releases --verbose`
+    - It goes through all packages and publishes them. If any number of packages fails to publish, it will retry 5 times, skipping those that have already been published.
+15. Confirm the new version has been released on npm with the tag `tag-for-publishing-older-releases`:
+    1. [`@storybook/react-vite`](https://www.npmjs.com/package/@storybook/react-vite?activeTab=versions)
+    2. [`storybook`](https://www.npmjs.com/package/storybook?activeTab=versions)
+    3. [`sb`](https://www.npmjs.com/package/sb?activeTab=versions)
+    4. [`create-storybook`](https://www.npmjs.com/package/create-storybook?activeTab=versions)
+16. Push
+17. Manually create a GitHub Release at https://github.com/storybookjs/storybook/releases/new with:
+    1.  Create new tag: `v<VERSION>` (e.g., `v8.3.7`)
+    2.  Target: your branch (e.g., `patch-8-3-7`)
+    3.  Previous tag: `v<PREVIOUS_VERSION>` (e.g., `v8.3.6`)
+    4.  Title: `v<VERSION>` (e.g., `v8.3.7`)
+    5.  Description: The content you added to `CHANGELOG.md`
+    6.  Untick _"Set as the latest release"_
+18. Cherry-pick your changelog changes into `next`, so they are actually visible 
+    1.  Checkout the `next` branch
+    2.  Cherry-pick the commit you created with your changelog modifications
+    3.  Push
+
+Done. 🎉
 
 ## Releasing Locally in an Emergency 🚨
 

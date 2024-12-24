@@ -2,7 +2,7 @@
   "rows": [
     {
       "defaultValue": null,
-      "description": "simple description.",
+      "description": "Simple description.",
       "name": "case1",
       "required": false,
       "sbType": {
@@ -15,9 +15,7 @@
     },
     {
       "defaultValue": null,
-      "description": "multi
-lines
-description",
+      "description": "Multi lines description",
       "name": "case2",
       "required": false,
       "sbType": {
@@ -30,7 +28,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "*description* **with** `formatting`",
+      "description": "_description_ **with** `formatting`",
       "name": "case3",
       "required": false,
       "sbType": {
@@ -43,7 +41,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "simple description and dummy JSDoc tag.",
+      "description": "Simple description and dummy JSDoc tag.",
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -91,7 +89,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "simple description with a @.",
+      "description": "Simple description with a @.",
       "name": "case6",
       "required": false,
       "sbType": {
@@ -117,7 +115,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "func with a simple description.",
+      "description": "Func with a simple description.",
       "name": "case8",
       "required": false,
       "sbType": {
@@ -154,7 +152,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "param with name",
+      "description": "Param with name",
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -178,7 +176,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "param with name & type",
+      "description": "Param with name & type",
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -202,7 +200,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "param with name, type & description",
+      "description": "Param with name, type & description",
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -226,7 +224,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "param with type",
+      "description": "Param with type",
       "name": "case13",
       "required": false,
       "sbType": {
@@ -239,7 +237,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "param with type & description",
+      "description": "Param with type & description",
       "name": "case14",
       "required": false,
       "sbType": {
@@ -252,7 +250,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "param with name & description",
+      "description": "Param with name & description",
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -276,7 +274,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "autofix event-",
+      "description": "Autofix event-",
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -300,7 +298,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "autofix event.",
+      "description": "Autofix event.",
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -331,7 +329,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "with an empty param.",
+      "description": "With an empty param.",
       "name": "case18",
       "required": false,
       "sbType": {
@@ -344,7 +342,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "with multiple empty params.",
+      "description": "With multiple empty params.",
       "name": "case19",
       "required": false,
       "sbType": {
@@ -357,7 +355,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "with arg alias.",
+      "description": "With arg alias.",
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -381,7 +379,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "with argument alias.",
+      "description": "With argument alias.",
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -405,7 +403,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "with multiple params.",
+      "description": "With multiple params.",
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -437,7 +435,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "with an empty returns",
+      "description": "With an empty returns",
       "name": "case23",
       "required": false,
       "sbType": {
@@ -450,7 +448,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "with a returns with a type",
+      "description": "With a returns with a type",
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -476,7 +474,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "with a returns with a type & description",
+      "description": "With a returns with a type & description",
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -502,7 +500,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "single param and a returns",
+      "description": "Single param and a returns",
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -533,7 +531,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "multiple params and a returns",
+      "description": "Multiple params and a returns",
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -568,7 +566,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "multiple returns",
+      "description": "Multiple returns",
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -594,7 +592,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "param with unsupported JSDoc tags",
+      "description": "Param with unsupported JSDoc tags",
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -618,7 +616,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "param record type",
+      "description": "Param record type",
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -637,12 +635,12 @@ description",
       },
       "type": {
         "detail": undefined,
-        "summary": "(myType: ({a: number, b: string}))",
+        "summary": "(myType: ({a: number; b: string}))",
       },
     },
     {
       "defaultValue": null,
-      "description": "param array type",
+      "description": "Param array type",
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -666,7 +664,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "param union type",
+      "description": "Param union type",
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -685,12 +683,12 @@ description",
       },
       "type": {
         "detail": undefined,
-        "summary": "(myType: (number|boolean))",
+        "summary": "(myType: number|boolean)",
       },
     },
     {
       "defaultValue": null,
-      "description": "param any type",
+      "description": "Param any type",
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -714,7 +712,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "param repeatable type",
+      "description": "Param repeatable type",
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -738,7 +736,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "optional param",
+      "description": "Optional param",
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -762,7 +760,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "optional param",
+      "description": "Optional param",
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -786,7 +784,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "dot in param name",
+      "description": "Dot in param name",
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -810,7 +808,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "returns record type",
+      "description": "Returns record type",
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -848,7 +846,7 @@ description",
               },
             ],
             "meta": {
-              "separator": "comma",
+              "separator": "semicolon",
             },
             "type": "JsdocTypeObject",
           },
@@ -861,12 +859,12 @@ description",
       },
       "type": {
         "detail": undefined,
-        "summary": "() => ({a: number, b: string})",
+        "summary": "() => ({a: number; b: string})",
       },
     },
     {
       "defaultValue": null,
-      "description": "returns array type",
+      "description": "Returns array type",
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -905,7 +903,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "returns union type",
+      "description": "Returns union type",
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -914,20 +912,17 @@ description",
           "description": null,
           "getTypeName": [Function],
           "type": {
-            "element": {
-              "elements": [
-                {
-                  "type": "JsdocTypeName",
-                  "value": "number",
-                },
-                {
-                  "type": "JsdocTypeName",
-                  "value": "boolean",
-                },
-              ],
-              "type": "JsdocTypeUnion",
-            },
-            "type": "JsdocTypeParenthesis",
+            "elements": [
+              {
+                "type": "JsdocTypeName",
+                "value": "number",
+              },
+              {
+                "type": "JsdocTypeName",
+                "value": "boolean",
+              },
+            ],
+            "type": "JsdocTypeUnion",
           },
         },
       },
@@ -938,12 +933,12 @@ description",
       },
       "type": {
         "detail": undefined,
-        "summary": "() => (number|boolean)",
+        "summary": "() => number|boolean",
       },
     },
     {
       "defaultValue": null,
-      "description": "returns any type",
+      "description": "Returns any type",
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -952,7 +947,8 @@ description",
           "description": null,
           "getTypeName": [Function],
           "type": {
-            "type": "JsdocTypeAny",
+            "type": "JsdocTypeName",
+            "value": "any",
           },
         },
       },
@@ -968,7 +964,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "returns primitive",
+      "description": "Returns primitive",
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -994,7 +990,7 @@ description",
     },
     {
       "defaultValue": null,
-      "description": "returns void",
+      "description": "Returns void",
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,

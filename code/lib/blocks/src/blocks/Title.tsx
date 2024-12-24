@@ -1,20 +1,20 @@
-import type { ComponentTitle } from 'storybook/internal/types';
 import type { FunctionComponent, ReactNode } from 'react';
 import React from 'react';
+
+import type { ComponentTitle } from 'storybook/internal/types';
+
 import { Title as PureTitle } from '../components';
 import type { Of } from './useOf';
 import { useOf } from './useOf';
 
 interface TitleProps {
   /**
-   * Specify where to get the title from. Must be a CSF file's default export.
-   * If not specified, the title will be read from children, or extracted from the meta of the attached CSF file.
+   * Specify where to get the title from. Must be a CSF file's default export. If not specified, the
+   * title will be read from children, or extracted from the meta of the attached CSF file.
    */
   of?: Of;
 
-  /**
-   * Specify content to display as the title.
-   */
+  /** Specify content to display as the title. */
   children?: ReactNode;
 }
 

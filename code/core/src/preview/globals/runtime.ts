@@ -1,11 +1,11 @@
+import * as CHANNELS from '@storybook/core/channels';
+import * as TYPES from '@storybook/core/types';
 import * as GLOBAL from '@storybook/global';
 
-import * as CHANNELS from '@storybook/core/channels';
 import * as CLIENT_LOGGER from '@storybook/core/client-logger';
 import * as CORE_EVENTS from '@storybook/core/core-events';
-import * as CORE_EVENTS_PREVIEW_ERRORS from '@storybook/core/preview-errors';
 import * as PREVIEW_API from '@storybook/core/preview-api';
-import * as TYPES from '@storybook/core/types';
+import * as CORE_EVENTS_PREVIEW_ERRORS from '@storybook/core/preview-errors';
 
 import type { globalsNameReferenceMap } from './globals';
 

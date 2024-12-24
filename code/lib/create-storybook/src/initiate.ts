@@ -1,42 +1,46 @@
-import { appendFile, readFile } from 'fs/promises';
-import findUp from 'find-up';
-import chalk from 'chalk';
-import prompts from 'prompts';
-import { telemetry } from 'storybook/internal/telemetry';
-import { withTelemetry } from 'storybook/internal/core-server';
-import { NxProjectDetectedError } from 'storybook/internal/server-errors';
+import { appendFile, readFile } from 'node:fs/promises';
+
+import type { Builder, NpmOptions } from 'storybook/internal/cli';
+import { ProjectType, installableProjectTypes } from 'storybook/internal/cli';
+import { detect, detectLanguage, detectPnp, isStorybookInstantiated } from 'storybook/internal/cli';
 import {
-  versions,
   HandledError,
   JsPackageManagerFactory,
   commandLog,
-  paddedLog,
   getProjectRoot,
+  paddedLog,
+  versions,
 } from 'storybook/internal/common';
 import type { JsPackageManager } from 'storybook/internal/common';
+import { withTelemetry } from 'storybook/internal/core-server';
+import { NxProjectDetectedError } from 'storybook/internal/server-errors';
+import { telemetry } from 'storybook/internal/telemetry';
 
-import { dedent } from 'ts-dedent';
 import boxen from 'boxen';
+import findUp from 'find-up';
+import picocolors from 'picocolors';
+import prompts from 'prompts';
 import { lt, prerelease } from 'semver';
-import type { Builder, NpmOptions } from 'storybook/internal/cli';
-import { installableProjectTypes, ProjectType } from 'storybook/internal/cli';
-import { detect, isStorybookInstantiated, detectLanguage, detectPnp } from 'storybook/internal/cli';
+import { dedent } from 'ts-dedent';
+
 import angularGenerator from './generators/ANGULAR';
 import emberGenerator from './generators/EMBER';
+import htmlGenerator from './generators/HTML';
+import nextjsGenerator from './generators/NEXTJS';
+import nuxtGenerator from './generators/NUXT';
+import preactGenerator from './generators/PREACT';
+import qwikGenerator from './generators/QWIK';
 import reactGenerator from './generators/REACT';
 import reactNativeGenerator from './generators/REACT_NATIVE';
+import reactNativeWebGenerator from './generators/REACT_NATIVE_WEB';
 import reactScriptsGenerator from './generators/REACT_SCRIPTS';
-import nextjsGenerator from './generators/NEXTJS';
-import vue3Generator from './generators/VUE3';
-import webpackReactGenerator from './generators/WEBPACK_REACT';
-import htmlGenerator from './generators/HTML';
-import webComponentsGenerator from './generators/WEB-COMPONENTS';
-import preactGenerator from './generators/PREACT';
-import svelteGenerator from './generators/SVELTE';
-import qwikGenerator from './generators/QWIK';
-import svelteKitGenerator from './generators/SVELTEKIT';
-import solidGenerator from './generators/SOLID';
 import serverGenerator from './generators/SERVER';
+import solidGenerator from './generators/SOLID';
+import svelteGenerator from './generators/SVELTE';
+import svelteKitGenerator from './generators/SVELTEKIT';
+import vue3Generator from './generators/VUE3';
+import webComponentsGenerator from './generators/WEB-COMPONENTS';
+import webpackReactGenerator from './generators/WEBPACK_REACT';
 import type { CommandOptions, GeneratorOptions } from './generators/types';
 import { currentDirectoryIsEmpty, scaffoldNewProject } from './scaffold-new-project';
 
@@ -82,6 +86,12 @@ const installStorybook = async <Project extends ProjectType>(
         );
       }
 
+      case ProjectType.REACT_NATIVE_WEB: {
+        return reactNativeWebGenerator(packageManager, npmOptions, generatorOptions).then(
+          commandLog('Adding Storybook support to your "React Native" app')
+        );
+      }
+
       case ProjectType.QWIK: {
         return qwikGenerator(packageManager, npmOptions, generatorOptions).then(
           commandLog('Adding Storybook support to your "Qwik" app')
@@ -106,6 +116,11 @@ const installStorybook = async <Project extends ProjectType>(
       case ProjectType.VUE3:
         return vue3Generator(packageManager, npmOptions, generatorOptions).then(
           commandLog('Adding Storybook support to your "Vue 3" app')
+        );
+
+      case ProjectType.NUXT:
+        return nuxtGenerator(packageManager, npmOptions, generatorOptions).then(
+          commandLog('Adding Storybook support to your "Nuxt" app')
         );
 
       case ProjectType.ANGULAR:
@@ -169,7 +184,7 @@ const installStorybook = async <Project extends ProjectType>(
       default:
         paddedLog(`We couldn't detect your project type. (code: ${projectType})`);
         paddedLog(
-          'You can specify a project type explicitly via `storybook init --type <type>`, see our docs on how to configure Storybook for your framework: https://storybook.js.org/docs/react/get-started/install'
+          'You can specify a project type explicitly via `storybook init --type <type>`, see our docs on how to configure Storybook for your framework: https://storybook.js.org/docs/get-started/install'
         );
 
         // Add a new line for the clear visibility.
@@ -183,7 +198,7 @@ const installStorybook = async <Project extends ProjectType>(
     return await runGenerator();
   } catch (err: any) {
     if (err?.message !== 'Canceled by the user' && err?.stack) {
-      logger.error(`\n     ${chalk.red(err.stack)}`);
+      logger.error(`\n     ${picocolors.red(err.stack)}`);
     }
     throw new HandledError(err);
   }
@@ -248,15 +263,15 @@ export async function doInitiate(options: CommandOptions): Promise<
   const borderColor = isOutdated ? '#FC521F' : '#F1618C';
 
   const messages = {
-    welcome: `Adding Storybook version ${chalk.bold(currentVersion)} to your project..`,
-    notLatest: chalk.red(dedent`
-      This version is behind the latest release, which is: ${chalk.bold(latestVersion)}!
+    welcome: `Adding Storybook version ${picocolors.bold(currentVersion)} to your project..`,
+    notLatest: picocolors.red(dedent`
+      This version is behind the latest release, which is: ${picocolors.bold(latestVersion)}!
       You likely ran the init command through npx, which can use a locally cached version, to get the latest please run:
-      ${chalk.bold('npx storybook@latest init')}
+      ${picocolors.bold('npx storybook@latest init')}
       
       You may want to CTRL+C to stop, and run with the latest version instead.
     `),
-    prelease: chalk.yellow('This is a pre-release version.'),
+    prelease: picocolors.yellow('This is a pre-release version.'),
   };
 
   logger.log(
@@ -346,22 +361,25 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   if (projectType === ProjectType.REACT_NATIVE) {
     logger.log(dedent`
-      ${chalk.yellow('NOTE: installation is not 100% automated.')}
+      ${picocolors.yellow('NOTE: installation is not 100% automated.')}
 
       To run Storybook, you will need to:
 
       1. Replace the contents of your app entry with the following
       
-      ${chalk.inverse(' ' + "export {default} from './.storybook';" + ' ')}
+      ${picocolors.inverse(' ' + "export {default} from './.storybook';" + ' ')}
       
-      2. Enable transformer.unstable_allowRequireContext in your metro config
+      2. Wrap your metro config with the withStorybook enhancer function like this: 
       
-      For a more detailed guide go to:
-      ${chalk.cyan('https://github.com/storybookjs/react-native#existing-project')}
+      ${picocolors.inverse(' ' + "const withStorybook = require('@storybook/react-native/metro/withStorybook');" + ' ')}
+      ${picocolors.inverse(' ' + 'module.exports = withStorybook(defaultConfig);' + ' ')}
+
+      For more details go to:
+      ${picocolors.cyan('https://github.com/storybookjs/react-native#getting-started')}
       
       Then to run your Storybook, type:
 
-      ${chalk.inverse(' ' + packageManager.getRunCommand('start') + ' ')}
+      ${picocolors.inverse(' ' + packageManager.getRunCommand('start') + ' ')}
 
     `);
 
@@ -373,7 +391,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   if (foundGitIgnoreFile && foundGitIgnoreFile.includes(rootDirectory)) {
     const contents = await readFile(foundGitIgnoreFile, 'utf-8');
     if (!contents.includes('*storybook.log')) {
-      await appendFile(foundGitIgnoreFile, '\n*storybook.log');
+      await appendFile(foundGitIgnoreFile, '\n*storybook.log\n');
     }
   }
 
@@ -386,12 +404,14 @@ export async function doInitiate(options: CommandOptions): Promise<
     boxen(
       dedent`
           Storybook was successfully installed in your project! 🎉
-          To run Storybook manually, run ${chalk.yellow(
-            chalk.bold(storybookCommand)
+          To run Storybook manually, run ${picocolors.yellow(
+            picocolors.bold(storybookCommand)
           )}. CTRL+C to stop.
           
-          Wanna know more about Storybook? Check out ${chalk.cyan('https://storybook.js.org/')}
-          Having trouble or want to chat? Join us at ${chalk.cyan('https://discord.gg/storybook/')}
+          Wanna know more about Storybook? Check out ${picocolors.cyan('https://storybook.js.org/')}
+          Having trouble or want to chat? Join us at ${picocolors.cyan(
+            'https://discord.gg/storybook/'
+          )}
         `,
       { borderStyle: 'round', padding: 1, borderColor: '#F1618C' }
     )

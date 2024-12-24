@@ -1,6 +1,12 @@
-import type { CoreConfig, Options } from '@storybook/core/types';
+import { existsSync } from 'node:fs';
+import { writeFile } from 'node:fs/promises';
+import { relative } from 'node:path';
+
 import type { Channel } from '@storybook/core/channels';
+import { getStoryId } from '@storybook/core/common';
 import { telemetry } from '@storybook/core/telemetry';
+import type { CoreConfig, Options } from '@storybook/core/types';
+
 import type {
   CreateNewStoryErrorPayload,
   CreateNewStoryRequestPayload,
@@ -12,20 +18,15 @@ import {
   CREATE_NEW_STORYFILE_REQUEST,
   CREATE_NEW_STORYFILE_RESPONSE,
 } from '@storybook/core/core-events';
-import { writeFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+
 import { getNewStoryFile } from '../utils/get-new-story-file';
-import { getStoryId } from '../utils/get-story-id';
-import path from 'node:path';
 
 export function initCreateNewStoryChannel(
   channel: Channel,
   options: Options,
   coreOptions: CoreConfig
 ) {
-  /**
-   * Listens for events to create a new storyfile
-   */
+  /** Listens for events to create a new storyfile */
   channel.on(
     CREATE_NEW_STORYFILE_REQUEST,
     async (data: RequestData<CreateNewStoryRequestPayload>) => {
@@ -35,7 +36,7 @@ export function initCreateNewStoryChannel(
           options
         );
 
-        const relativeStoryFilePath = path.relative(process.cwd(), storyFilePath);
+        const relativeStoryFilePath = relative(process.cwd(), storyFilePath);
 
         const { storyId, kind } = await getStoryId({ storyFilePath, exportedStoryName }, options);
 
@@ -67,7 +68,7 @@ export function initCreateNewStoryChannel(
           id: data.id,
           payload: {
             storyId,
-            storyFilePath: path.relative(process.cwd(), storyFilePath),
+            storyFilePath: relative(process.cwd(), storyFilePath),
             exportedStoryName,
           },
           error: null,

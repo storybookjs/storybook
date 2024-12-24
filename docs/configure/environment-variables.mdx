@@ -40,7 +40,7 @@ You can also access these variables in your custom `<head>`/`<body>` using the s
   If using the environment variables as attributes or values in JavaScript, you may need to add quotes, as the value will be inserted directly, for example: `<link rel="stylesheet" href="%STORYBOOK_STYLE_URL%" />`.
 </Callout>
 
-### Using .env files
+## Using .env files
 
 You can also use `.env` files to change Storybook's behavior in different modes. For example, if you add a `.env` file to your project with the following:
 
@@ -57,7 +57,7 @@ Then you can access this environment variable anywhere, even within your stories
 {/* prettier-ignore-end */}
 
 <IfRenderer renderer={['html', 'react', 'qwik', 'preact','svelte', 'solid', 'vue', 'web-components' ]}>
-  #### With Vite
+  ### With Vite
 
   Out of the box, Storybook provides a [Vite builder](../builders/vite.mdx), which does not output Node.js globals like `process.env`. To access environment variables in Storybook (e.g., `STORYBOOK_`, `VITE_`), you can use `import.meta.env`. For example:
 
@@ -76,7 +76,7 @@ You can also pass these environment variables when you are [building your Storyb
 
 Then they'll be hardcoded to the static version of your Storybook.
 
-### Using Storybook configuration
+## Using Storybook configuration
 
 Additionally, you can extend your Storybook configuration file (i.e., [`.storybook/main.js|.ts`](../configure/index.mdx#configure-story-rendering)) and provide a configuration field that you can use to define specific variables (e.g., API URLs). For example:
 
@@ -90,11 +90,11 @@ When Storybook loads, it will enable you to access them in your stories similar 
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="my-component-env-var-config.md" usesCsf3 csf2Path="configure/environment-variables#snippet-my-component-env-var-config" />
+<CodeSnippets path="my-component-env-var-config.md" />
 
 {/* prettier-ignore-end */}
 
-### Using environment variables to choose the browser
+## Using environment variables to choose the browser
 
 Storybook allows you to choose the browser you want to preview your stories. Either through a `.env` file entry or directly in your `storybook` script.
 

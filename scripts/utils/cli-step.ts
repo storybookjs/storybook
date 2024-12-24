@@ -1,7 +1,8 @@
 import { createRequire } from 'module';
+
+import { exec } from './exec';
 import type { OptionSpecifier, OptionValues } from './options';
 import { createOptions, getCommand } from './options';
-import { exec } from './exec';
 
 const require = createRequire(import.meta.url);
 const cliExecutable = require.resolve('../../code/lib/cli/bin/index.cjs');
@@ -46,7 +47,9 @@ export const steps = {
     description: 'Adding addon',
     icon: '+',
     hasArgument: true,
-    options: createOptions({}),
+    options: createOptions({
+      yes: { type: 'boolean' },
+    }),
   },
   link: {
     command: 'link',
@@ -82,8 +85,9 @@ export async function executeCLIStep<TOptions extends OptionSpecifier>(
     debug: boolean;
   }
 ) {
-  if (cliStep.hasArgument && !options.argument)
+  if (cliStep.hasArgument && !options.argument) {
     throw new Error(`Argument required for ${cliStep.command} command.`);
+  }
 
   const cliCommand = cliStep.command;
 

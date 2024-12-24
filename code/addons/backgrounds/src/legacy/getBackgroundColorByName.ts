@@ -1,5 +1,7 @@
-import { dedent } from 'ts-dedent';
 import { logger } from 'storybook/internal/client-logger';
+
+import { dedent } from 'ts-dedent';
+
 import type { Background } from '../types';
 
 export const getBackgroundColorByName = (

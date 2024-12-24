@@ -1,14 +1,16 @@
 /* eslint-disable react/destructuring-assignment */
-import type { Parameters, Renderer, StrictArgTypes } from '@storybook/csf';
-import type { ModuleExports } from 'storybook/internal/types';
 import type { FC } from 'react';
-import type { PropDescriptor } from 'storybook/internal/preview-api';
-import { filterArgTypes } from 'storybook/internal/preview-api';
-import type { ArgTypesExtractor } from 'storybook/internal/docs-tools';
 import React from 'react';
 
+import type { ArgTypesExtractor } from 'storybook/internal/docs-tools';
+import type { PropDescriptor } from 'storybook/internal/preview-api';
+import { filterArgTypes } from 'storybook/internal/preview-api';
+import type { ModuleExports } from 'storybook/internal/types';
+
+import type { Parameters, Renderer, StrictArgTypes } from '@storybook/csf';
+
 import type { SortType } from '../components';
-import { ArgsTable as PureArgsTable, ArgsTableError, TabbedArgsTable } from '../components';
+import { ArgsTableError, ArgsTable as PureArgsTable, TabbedArgsTable } from '../components';
 import { useOf } from './useOf';
 import { getComponentName } from './utils';
 

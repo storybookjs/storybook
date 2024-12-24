@@ -1,8 +1,10 @@
 import type { FunctionComponent } from 'react';
 import React from 'react';
-import { transparentize } from 'polished';
-import { styled } from 'storybook/internal/theming';
+
 import { ResetWrapper } from 'storybook/internal/components';
+import { styled } from 'storybook/internal/theming';
+
+import { transparentize } from 'polished';
 
 import { getBlockBackgroundStyle } from './BlockBackgroundStyles';
 
@@ -183,8 +185,8 @@ function renderSwatchSpecimen(colors: Colors) {
 }
 
 /**
- * A single color row your styleguide showing title, subtitle and one or more colors, used
- * as a child of `ColorPalette`.
+ * A single color row your styleguide showing title, subtitle and one or more colors, used as a
+ * child of `ColorPalette`.
  */
 export const ColorItem: FunctionComponent<ColorItemProps> = ({ title, subtitle, colors }) => {
   return (
@@ -203,8 +205,8 @@ interface ColorPaletteProps {
 }
 
 /**
- * Styleguide documentation for colors, including names, captions, and color swatches,
- * all specified as `ColorItem` children of this wrapper component.
+ * Styleguide documentation for colors, including names, captions, and color swatches, all specified
+ * as `ColorItem` children of this wrapper component.
  */
 export const ColorPalette: FunctionComponent<ColorPaletteProps> = ({ children, ...props }) => (
   <ResetWrapper>

@@ -1,11 +1,13 @@
 // @vitest-environment happy-dom
-
 /// <reference types="@testing-library/jest-dom" />;
-import { describe, it, expect } from 'vitest';
-import React from 'react';
-import { render, fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ThemeProvider, themes, convert } from 'storybook/internal/theming';
+import { describe, expect, it } from 'vitest';
+
+import React from 'react';
+
+import { ThemeProvider, convert, themes } from 'storybook/internal/theming';
+
 import { VisionSimulator, baseList } from './VisionSimulator';
 
 const getOptionByNameAndPercentage = (option: string, percentage?: number) =>

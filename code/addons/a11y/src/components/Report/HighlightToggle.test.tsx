@@ -1,11 +1,13 @@
 // @vitest-environment happy-dom
+import { cleanup, fireEvent, render } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { describe, it, expect, afterEach, vi } from 'vitest';
 import React from 'react';
-import { render, fireEvent, cleanup } from '@testing-library/react';
+
 import type { NodeResult } from 'axe-core';
+
+import { A11yContext, type A11yContextStore } from '../A11yContext';
 import HighlightToggle from './HighlightToggle';
-import { A11yContext } from '../A11yContext';
 
 const nodeResult = (target: string): NodeResult => ({
   html: '',
@@ -15,13 +17,17 @@ const nodeResult = (target: string): NodeResult => ({
   none: [],
 });
 
-const defaultProviderValue = {
+const defaultProviderValue: A11yContextStore = {
   results: {
     passes: [],
     incomplete: [],
     violations: [],
   },
-  setResults: vi.fn(),
+  status: 'initial',
+  discrepancy: null,
+  error: null,
+  setStatus: vi.fn(),
+  handleManual: vi.fn(),
   highlighted: [],
   toggleHighlight: vi.fn(),
   clearHighlights: vi.fn(),

@@ -1,15 +1,18 @@
-import { global } from '@storybook/global';
-import cloneDeep from 'lodash/cloneDeep.js';
-import type { ComponentProps, SyntheticEvent, FC, FocusEvent } from 'react';
-import React, { useCallback, useMemo, useState, useEffect, useRef } from 'react';
-import { styled, useTheme, type Theme } from 'storybook/internal/theming';
-import { Form, IconButton, Button } from 'storybook/internal/components';
-import { AddIcon, EyeCloseIcon, EyeIcon, SubtractIcon } from '@storybook/icons';
-import { JsonTree } from './react-editable-json-tree';
-import { getControlId, getControlSetterButtonId } from './helpers';
-import type { ControlProps, ObjectValue, ObjectConfig } from './types';
+import type { ComponentProps, FC, FocusEvent, SyntheticEvent } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-const { window: globalWindow } = global;
+import { Button, Form, IconButton } from 'storybook/internal/components';
+import { type Theme, styled, useTheme } from 'storybook/internal/theming';
+
+import { AddIcon, EyeCloseIcon, EyeIcon, SubtractIcon } from '@storybook/icons';
+
+import { cloneDeep } from 'es-toolkit/compat';
+
+import { getControlId, getControlSetterButtonId } from './helpers';
+import { JsonTree } from './react-editable-json-tree';
+import type { ControlProps, ObjectConfig, ObjectValue } from './types';
+
+const { window: globalWindow } = globalThis;
 
 type JsonTreeProps = ComponentProps<typeof JsonTree>;
 

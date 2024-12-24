@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
+import { describe, expect, it } from 'vitest';
 
-import { describe, it, expect } from 'vitest';
-import { getHighestStatus, getGroupStatus } from './status';
 import { mockDataset } from '../components/sidebar/mockdata';
+import { getGroupStatus, getHighestStatus } from './status';
 
 describe('getHighestStatus', () => {
   it('default value', () => {

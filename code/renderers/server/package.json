@@ -1,6 +1,6 @@
 {
   "name": "@storybook/server",
-  "version": "8.3.0-alpha.3",
+  "version": "8.5.0-beta.5",
   "description": "Storybook Server renderer",
   "keywords": [
     "storybook"
@@ -22,7 +22,6 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
@@ -42,18 +41,16 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/components": "workspace:^",
-    "@storybook/csf": "^0.1.11",
+    "@storybook/components": "workspace:*",
+    "@storybook/csf": "0.1.12",
     "@storybook/global": "^5.0.0",
-    "@storybook/manager-api": "workspace:^",
-    "@storybook/preview-api": "workspace:^",
-    "@storybook/theming": "workspace:^",
-    "@types/fs-extra": "^11.0.1",
-    "fs-extra": "^11.1.0",
+    "@storybook/manager-api": "workspace:*",
+    "@storybook/preview-api": "workspace:*",
+    "@storybook/theming": "workspace:*",
     "ts-dedent": "^2.0.0",
     "yaml": "^2.3.1"
   },

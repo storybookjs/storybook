@@ -1,8 +1,9 @@
-import type { PropDef, ExtractedProp } from 'storybook/internal/docs-tools';
-import { createType } from './createType';
+import type { ExtractedProp, PropDef } from 'storybook/internal/docs-tools';
+
 import { createDefaultValue, createDefaultValueFromRawDefaultProp } from '../lib/defaultValues';
-import { keepOriginalDefinitionOrder } from './sortProps';
+import { createType } from './createType';
 import { rawDefaultPropTypeResolvers } from './rawDefaultPropResolvers';
+import { keepOriginalDefinitionOrder } from './sortProps';
 
 type Component = any;
 

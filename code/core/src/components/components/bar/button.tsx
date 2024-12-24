@@ -2,13 +2,14 @@ import type {
   AnchorHTMLAttributes,
   ButtonHTMLAttributes,
   DetailedHTMLProps,
-  ForwardedRef,
   ForwardRefExoticComponent,
+  ForwardedRef,
   ReactElement,
   RefAttributes,
 } from 'react';
 import React, { forwardRef } from 'react';
-import { styled, isPropValid } from '@storybook/core/theming';
+
+import { isPropValid, styled } from '@storybook/core/theming';
 
 interface ButtonProps
   extends DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement> {
@@ -145,10 +146,7 @@ const IconButtonSkeletonWrapper = styled.div(() => ({
   height: 28,
 }));
 
-/**
- * @deprecated
- * This component will be removed in Storybook 9.0
- * */
+/** @deprecated This component will be removed in Storybook 9.0 */
 export const IconButtonSkeleton = () => (
   <IconButtonSkeletonWrapper>
     <IconPlaceholder />

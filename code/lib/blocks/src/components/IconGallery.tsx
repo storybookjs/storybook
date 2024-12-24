@@ -1,7 +1,8 @@
 import type { FunctionComponent } from 'react';
 import React from 'react';
-import { styled } from 'storybook/internal/theming';
+
 import { ResetWrapper } from 'storybook/internal/components';
+import { styled } from 'storybook/internal/theming';
 
 import { getBlockBackgroundStyle } from './BlockBackgroundStyles';
 
@@ -49,9 +50,7 @@ interface IconItemProps {
   children?: React.ReactNode;
 }
 
-/**
- * An individual icon with a caption and an example (passed as `children`).
- */
+/** An individual icon with a caption and an example (passed as `children`). */
 export const IconItem: FunctionComponent<IconItemProps> = ({ name, children }) => (
   <Item>
     <ItemSpecimen>{children}</ItemSpecimen>
@@ -63,9 +62,7 @@ interface IconGalleryProps {
   children?: React.ReactNode;
 }
 
-/**
- * Show a grid of icons, as specified by `IconItem`.
- */
+/** Show a grid of icons, as specified by `IconItem`. */
 export const IconGallery: FunctionComponent<IconGalleryProps> = ({ children, ...props }) => (
   <ResetWrapper>
     <List {...props} className="docblock-icongallery sb-unstyled">

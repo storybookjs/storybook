@@ -9,10 +9,10 @@ import React, {
   useMemo,
   useRef,
 } from 'react';
-import mergeWith from 'lodash/mergeWith.js';
+
+import type { Listener } from '@storybook/core/channels';
+import type { RouterData } from '@storybook/core/router';
 import type {
-  Args,
-  ArgTypes,
   API_ComponentEntry,
   API_ComposedRef,
   API_DocsEntry,
@@ -26,49 +26,44 @@ import type {
   API_RootEntry,
   API_StateMerger,
   API_StoryEntry,
+  ArgTypes,
+  Args,
+  Globals,
   Parameters,
   StoryId,
-  Globals,
 } from '@storybook/core/types';
 
+import { deprecate } from '@storybook/core/client-logger';
 import {
-  STORY_CHANGED,
+  SET_STORIES,
   SHARED_STATE_CHANGED,
   SHARED_STATE_SET,
-  SET_STORIES,
+  STORY_CHANGED,
 } from '@storybook/core/core-events';
-import type { RouterData } from '@storybook/core/router';
-import type { Listener } from '@storybook/core/channels';
-import { deprecate } from '@storybook/core/client-logger';
+
+import { isEqual } from 'es-toolkit';
 
 import { createContext } from './context';
-import type { Options } from './store';
-import Store from './store';
 import getInitialState from './initial-state';
-
-import * as provider from './modules/provider';
-
+import { types } from './lib/addons';
+import { noArrayMerge } from './lib/merge';
+import type { ModuleFn } from './lib/types';
 import * as addons from './modules/addons';
-
 import * as channel from './modules/channel';
-
-import * as notifications from './modules/notifications';
-import * as settings from './modules/settings';
-
-import * as stories from './modules/stories';
-
-import * as refs from './modules/refs';
+import * as testProviders from './modules/experimental_testmodule';
+import * as globals from './modules/globals';
 import * as layout from './modules/layout';
+import * as notifications from './modules/notifications';
+import * as provider from './modules/provider';
+import * as refs from './modules/refs';
+import * as settings from './modules/settings';
 import * as shortcuts from './modules/shortcuts';
-
+import * as stories from './modules/stories';
 import * as url from './modules/url';
 import * as version from './modules/versions';
 import * as whatsnew from './modules/whatsnew';
-
-import * as globals from './modules/globals';
-import type { ModuleFn } from './lib/types';
-
-import { types } from './lib/addons';
+import type { Options } from './store';
+import Store from './store';
 
 export * from './lib/request-response';
 export * from './lib/shortcut';
@@ -85,6 +80,7 @@ export type State = layout.SubState &
   stories.SubState &
   refs.SubState &
   notifications.SubState &
+  testProviders.SubState &
   version.SubState &
   url.SubState &
   shortcuts.SubState &
@@ -104,6 +100,7 @@ export type API = addons.SubAPI &
   globals.SubAPI &
   layout.SubAPI &
   notifications.SubAPI &
+  testProviders.SubAPI &
   shortcuts.SubAPI &
   settings.SubAPI &
   version.SubAPI &
@@ -112,17 +109,11 @@ export type API = addons.SubAPI &
   Other;
 
 interface DeprecatedState {
-  /**
-   * @deprecated use index
-   */
+  /** @deprecated Use index */
   storiesHash: API_IndexHash;
-  /**
-   * @deprecated use previewInitialized
-   */
+  /** @deprecated Use previewInitialized */
   storiesConfigured: boolean;
-  /**
-   * @deprecated use indexError
-   */
+  /** @deprecated Use indexError */
   storiesFailed?: Error;
 }
 
@@ -142,12 +133,7 @@ export type ManagerProviderProps = RouterData &
 
 // This is duplicated from @storybook/preview-api for the reasons mentioned in lib-addons/types.js
 export const combineParameters = (...parameterSets: Parameters[]) =>
-  mergeWith({}, ...parameterSets, (objValue: any, srcValue: any) => {
-    // Treat arrays as scalars:
-    if (Array.isArray(srcValue)) return srcValue;
-
-    return undefined;
-  });
+  noArrayMerge({}, ...parameterSets);
 
 class ManagerProvider extends Component<ManagerProviderProps, State> {
   api: API = {} as API;
@@ -195,6 +181,7 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
       addons,
       layout,
       notifications,
+      testProviders,
       settings,
       shortcuts,
       stories,
@@ -232,16 +219,9 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
   }
 
   shouldComponentUpdate(nextProps: ManagerProviderProps, nextState: State): boolean {
-    const prevState = this.state;
     const prevProps = this.props;
-
-    if (prevState !== nextState) {
-      return true;
-    }
-    if (prevProps.path !== nextProps.path) {
-      return true;
-    }
-    return false;
+    const prevState = this.state;
+    return prevProps.path !== nextProps.path || !isEqual(prevState, nextState);
   }
 
   initModules = () => {
@@ -344,7 +324,7 @@ export function useStorybookApi(): API {
 }
 
 export type {
-  /** @deprecated now IndexHash */
+  /** @deprecated Now IndexHash */
   API_IndexHash as StoriesHash,
   API_IndexHash as IndexHash,
   API_RootEntry as RootEntry,

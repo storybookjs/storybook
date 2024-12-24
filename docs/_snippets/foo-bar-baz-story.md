@@ -74,4 +74,3 @@ type Story = StoryObj<typeof Foo>;
 
 export const Baz: Story = {};
 ```
-

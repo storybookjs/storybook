@@ -78,4 +78,3 @@ export async function generateIframeScriptCode(options: ExtendedOptions) {
   return code;
 }
 ```
-

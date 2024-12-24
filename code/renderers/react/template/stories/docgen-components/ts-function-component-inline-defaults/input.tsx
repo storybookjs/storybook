@@ -12,9 +12,7 @@ enum GlobalNames {
 }
 
 interface PropsWriterProps {
-  /**
-   * Description
-   */
+  /** Description */
   numberRequired: number;
   numberOptional?: number;
   stringRequired: string;
@@ -38,9 +36,7 @@ interface PropsWriterProps {
   enumGlobalName?: GlobalNames;
 }
 
-/**
- * A component that renders its props
- */
+/** A component that renders its props */
 export const PropsWriter: React.FC<PropsWriterProps> = ({
   numberOptional = 1,
   stringOptional = 'stringOptional',

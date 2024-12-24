@@ -240,4 +240,3 @@ export const ResetHighlight: Story = {
   ],
 };
 ```
-

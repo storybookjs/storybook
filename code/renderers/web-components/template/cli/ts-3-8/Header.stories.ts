@@ -1,5 +1,7 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
 import { fn } from '@storybook/test';
+
+import type { Meta, StoryObj } from '@storybook/web-components';
+
 import type { HeaderProps } from './Header';
 import { Header } from './Header';
 

@@ -1,8 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`storiesof-to-csf transforms correctly using "export-names.input.js" data 1`] = `
-"/* eslint-disable import/no-extraneous-dependencies */
-import React from 'react';
+"import React from 'react';
 import FlexCenter from './FlexCenter';
 import { specs, urls } from './LiveView.stories';
 import { ignoredRegions } from './IgnoredRegions.stories';

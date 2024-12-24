@@ -1,6 +1,8 @@
-import { extractComponentProps, hasDocgen } from 'storybook/internal/docs-tools';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi, vitest } from 'vitest';
+
+import { extractComponentProps, hasDocgen } from 'storybook/internal/docs-tools';
+
 import { extractArgTypes } from './extractArgTypes';
 import {
   mockExtractComponentEventsReturn,

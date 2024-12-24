@@ -1,10 +1,11 @@
-import type { FC, ComponentProps } from 'react';
+import type { ComponentProps, FC } from 'react';
 import React, { useContext } from 'react';
+
 import type {
-  Renderer,
   ModuleExport,
   ModuleExports,
   PreparedStory,
+  Renderer,
   StoryId,
 } from 'storybook/internal/types';
 
@@ -15,9 +16,7 @@ import { useStory } from './useStory';
 
 type PureStoryProps = ComponentProps<typeof PureStory>;
 
-/**
- * Props to reference another story
- */
+/** Props to reference another story */
 type StoryRefProps = {
   /**
    * Pass the export defining a story to render that story
@@ -38,32 +37,22 @@ type StoryRefProps = {
    * import { Story } from '@storybook/blocks';
    * import * as ButtonStories from './Button.stories';
    *
-   * <Story of={ButtonStories.Primary} meta={ButtonStories} />
+   * <Story of={ButtonStories.Primary} meta={ButtonStories} />;
    * ```
    */
   meta?: ModuleExports;
 };
 
 type StoryParameters = {
-  /**
-   * Render the story inline or in an iframe
-   */
+  /** Render the story inline or in an iframe */
   inline?: boolean;
-  /**
-   * When rendering in an iframe (`inline={false}`), set the story height
-   */
+  /** When rendering in an iframe (`inline={false}`), set the story height */
   height?: string;
-  /**
-   * Whether to run the story's play function
-   */
+  /** Whether to run the story's play function */
   autoplay?: boolean;
-  /**
-   * Internal prop to control if a story re-renders on args updates
-   */
+  /** Internal prop to control if a story re-renders on args updates */
   __forceInitialArgs?: boolean;
-  /**
-   * Internal prop if this story is the primary story
-   */
+  /** Internal prop if this story is the primary story */
   __primary?: boolean;
 };
 
@@ -75,7 +64,9 @@ export const getStoryId = (props: StoryProps, context: DocsContextProps): StoryI
     throw new Error('Unexpected `of={undefined}`, did you mistype a CSF file reference?');
   }
 
-  if (meta) context.referenceMeta(meta, false);
+  if (meta) {
+    context.referenceMeta(meta, false);
+  }
   const resolved = context.resolveOf(of || 'story', ['story']);
   return resolved.story.id;
 };

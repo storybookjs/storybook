@@ -1,10 +1,11 @@
+import dirSize from 'fast-folder-size';
+// eslint-disable-next-line depend/ban-dependencies
 import { pathExists, remove } from 'fs-extra';
-
 import { join } from 'path';
 import { promisify } from 'util';
-import dirSize from 'fast-folder-size';
-import type { Task } from '../task';
+
 import { now, saveBench } from '../bench/utils';
+import type { Task, TaskKey } from '../task';
 
 const logger = console;
 
@@ -21,8 +22,24 @@ export const sandbox: Task = {
 
     return ['run-registry'];
   },
-  async ready({ sandboxDir }) {
-    return pathExists(sandboxDir);
+  async ready({ sandboxDir }, { task: selectedTask }) {
+    // If the selected task requires the sandbox to exist, we check it. Else we always assume it needs to be created
+    // This avoids issues where you want to overwrite a sandbox and it will stop because it already exists
+    const tasksAfterSandbox: TaskKey[] = [
+      'vitest-integration',
+      'test-runner',
+      'test-runner-dev',
+      'e2e-tests',
+      'e2e-tests-dev',
+      'smoke-test',
+      'dev',
+      'build',
+      'serve',
+      'chromatic',
+      'bench',
+    ];
+    const isSelectedTaskAfterSandboxCreation = tasksAfterSandbox.includes(selectedTask);
+    return isSelectedTaskAfterSandboxCreation && pathExists(sandboxDir);
   },
   async run(details, options) {
     if (options.link && details.template.inDevelopment) {
@@ -32,15 +49,53 @@ export const sandbox: Task = {
 
       options.link = false;
     }
-    if (await this.ready(details)) {
+    if (await this.ready(details, options)) {
       logger.info('🗑  Removing old sandbox dir');
       await remove(details.sandboxDir);
     }
 
-    const { create, install, addStories, extendMain, init, addExtraDependencies, setImportMap } =
-      // @ts-expect-error esbuild for some reason exports a default object
-      // eslint-disable-next-line import/extensions
-      (await import('./sandbox-parts.ts')).default;
+    const {
+      create,
+      install,
+      addStories,
+      extendMain,
+      extendPreview,
+      init,
+      addExtraDependencies,
+      setImportMap,
+      setupVitest,
+    } = await import('./sandbox-parts');
+
+    const extraDeps = [
+      ...(details.template.modifications?.extraDependencies ?? []),
+      // The storybook package forwards some CLI commands to @storybook/cli with npx.
+      // Adding the dep makes sure that even npx will use the linked workspace version.
+      '@storybook/cli',
+    ];
+
+    const shouldAddVitestIntegration = !details.template.skipTasks?.includes('vitest-integration');
+
+    if (shouldAddVitestIntegration) {
+      extraDeps.push('happy-dom', 'vitest', 'playwright', '@vitest/browser');
+
+      if (details.template.expected.framework.includes('nextjs')) {
+        extraDeps.push('@storybook/experimental-nextjs-vite', 'jsdom');
+      }
+
+      // if (details.template.expected.renderer === '@storybook/svelte') {
+      //   extraDeps.push(`@testing-library/svelte`);
+      // }
+      //
+      // if (details.template.expected.framework === '@storybook/angular') {
+      //   extraDeps.push('@testing-library/angular', '@analogjs/vitest-angular');
+      // }
+
+      options.addon = [
+        ...options.addon,
+        '@storybook/experimental-addon-test',
+        '@storybook/addon-a11y',
+      ];
+    }
 
     let startTime = now();
     await create(details, options);
@@ -75,14 +130,20 @@ export const sandbox: Task = {
       await addStories(details, options);
     }
 
+    if (shouldAddVitestIntegration) {
+      await setupVitest(details, options);
+    }
+
     await addExtraDependencies({
       cwd: details.sandboxDir,
       debug: options.debug,
       dryRun: options.dryRun,
-      extraDeps: details.template.modifications?.extraDependencies,
+      extraDeps,
     });
 
     await extendMain(details, options);
+
+    await extendPreview(details, options);
 
     await setImportMap(details.sandboxDir);
 

@@ -31,4 +31,3 @@ export const SkipStory: Story = {
   tags: ['skip-test'],
 };
 ```
-

@@ -1,13 +1,13 @@
 import type {
-  Renderer,
+  BeforeAll,
+  Canvas,
+  CleanupCallback,
   ProjectAnnotations as CsfProjectAnnotations,
   DecoratorFunction,
-  LoaderFunction,
-  CleanupCallback,
-  StepRunner,
-  Canvas,
   Globals,
-  BeforeAll,
+  LoaderFunction,
+  Renderer,
+  StepRunner,
 } from '@storybook/csf';
 
 import type {
@@ -109,6 +109,7 @@ export type PreparedStory<TRenderer extends Renderer = Renderer> =
     unboundStoryFn: LegacyStoryFn<TRenderer>;
     applyLoaders: (context: StoryContext<TRenderer>) => Promise<StoryContext<TRenderer>['loaded']>;
     applyBeforeEach: (context: StoryContext<TRenderer>) => Promise<CleanupCallback[]>;
+    applyAfterEach: (context: StoryContext<TRenderer>) => Promise<void>;
     playFunction?: (context: StoryContext<TRenderer>) => Promise<void> | void;
     runStep: StepRunner<TRenderer>;
     mount: (context: StoryContext<TRenderer>) => () => Promise<Canvas>;

@@ -1,12 +1,12 @@
-import { useMemo, useEffect } from 'storybook/internal/preview-api';
+import { useEffect, useMemo } from 'storybook/internal/preview-api';
 import type {
   Renderer,
-  PartialStoryFn as StoryFunction,
   StoryContext,
+  PartialStoryFn as StoryFunction,
 } from 'storybook/internal/types';
 
 import { PARAM_KEY as BACKGROUNDS_PARAM_KEY } from '../constants';
-import { clearStyles, addBackgroundStyle, isReduceMotionEnabled } from '../utils';
+import { addBackgroundStyle, clearStyles, isReduceMotionEnabled } from '../utils';
 import { getBackgroundColorByName } from './getBackgroundColorByName';
 
 export const withBackground = (

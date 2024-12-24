@@ -1,21 +1,21 @@
-import { global } from '@storybook/global';
-import { dedent } from 'ts-dedent';
 import type {
   API_ComposedRef,
   API_ComposedRefUpdate,
+  API_IndexHash,
   API_Refs,
   API_SetRefData,
-  SetStoriesStoryData,
-  API_IndexHash,
   API_StoryMapper,
+  SetStoriesStoryData,
   StoryIndex,
 } from '@storybook/core/types';
+import { global } from '@storybook/global';
+
+import { dedent } from 'ts-dedent';
 
 import {
   transformSetStoriesStoryDataToPreparedStoryIndex,
   transformStoryIndexToStoriesHash,
 } from '../lib/stories';
-
 import type { ModuleFn } from '../lib/types';
 
 const { location, fetch } = global;
@@ -27,12 +27,14 @@ export interface SubState {
 export interface SubAPI {
   /**
    * Finds a composed ref by its source.
+   *
    * @param {string} source - The source/URL of the composed ref.
    * @returns {API_ComposedRef} - The composed ref object.
    */
   findRef: (source: string) => API_ComposedRef;
   /**
    * Sets a composed ref by its ID and data.
+   *
    * @param {string} id - The ID of the composed ref.
    * @param {API_SetRefData} data - The data to set for the composed ref.
    * @param {boolean} [ready] - Whether the composed ref is ready.
@@ -40,29 +42,34 @@ export interface SubAPI {
   setRef: (id: string, data: API_SetRefData, ready?: boolean) => void;
   /**
    * Updates a composed ref by its ID and update object.
+   *
    * @param {string} id - The ID of the composed ref.
    * @param {API_ComposedRefUpdate} ref - The update object for the composed ref.
    */
   updateRef: (id: string, ref: API_ComposedRefUpdate) => Promise<void>;
   /**
    * Gets all composed refs.
+   *
    * @returns {API_Refs} - The composed refs object.
    */
   getRefs: () => API_Refs;
   /**
    * Checks if a composed ref is valid.
+   *
    * @param {API_SetRefData} ref - The composed ref to check.
    * @returns {Promise<void>} - A promise that resolves when the check is complete.
    */
   checkRef: (ref: API_SetRefData) => Promise<void>;
   /**
    * Changes the version of a composed ref by its ID and URL.
+   *
    * @param {string} id - The ID of the composed ref.
    * @param {string} url - The new URL for the composed ref.
    */
   changeRefVersion: (id: string, url: string) => Promise<void>;
   /**
    * Changes the state of a composed ref by its ID and previewInitialized flag.
+   *
    * @param {string} id - The ID of the composed ref.
    * @param {boolean} previewInitialized - The new previewInitialized flag for the composed ref.
    */
@@ -100,7 +107,9 @@ const addRefIds = (input: API_IndexHash, ref: API_ComposedRef): API_IndexHash =>
 async function handleRequest(
   request: Response | Promise<Response | boolean> | boolean
 ): Promise<API_SetRefData> {
-  if (!request) return {};
+  if (!request) {
+    return {};
+  }
 
   try {
     const response = await request;
@@ -170,7 +179,15 @@ export const init: ModuleFn<SubAPI, SubState> = (
     },
     changeRefVersion: async (id, url) => {
       const { versions, title } = api.getRefs()[id];
-      const ref: API_SetRefData = { id, url, versions, title, index: {}, expanded: true };
+      const ref: API_SetRefData = {
+        id,
+        url,
+        versions,
+        title,
+        index: {},
+        filteredIndex: {},
+        expanded: true,
+      };
 
       await api.setRef(id, { ...ref, type: 'unknown' }, false);
       await api.checkRef(ref);
@@ -283,6 +300,7 @@ export const init: ModuleFn<SubAPI, SubState> = (
       // eslint-disable-next-line @typescript-eslint/naming-convention
       let internal_index: StoryIndex | undefined;
       let index: API_IndexHash | undefined;
+      let filteredIndex: API_IndexHash | undefined;
       const { filters } = store.getState();
       const { storyMapper = defaultStoryMapper } = provider.getConfig();
       const ref = api.getRefs()[id];
@@ -295,10 +313,17 @@ export const init: ModuleFn<SubAPI, SubState> = (
           : storyIndex;
 
         // @ts-expect-error (could be undefined)
-        index = transformStoryIndexToStoriesHash(storyIndex, {
+        filteredIndex = transformStoryIndexToStoriesHash(storyIndex, {
           provider,
           docsOptions,
           filters,
+          status: {},
+        });
+        // @ts-expect-error (could be undefined)
+        index = transformStoryIndexToStoriesHash(storyIndex, {
+          provider,
+          docsOptions,
+          filters: {},
           status: {},
         });
       }
@@ -306,8 +331,10 @@ export const init: ModuleFn<SubAPI, SubState> = (
       if (index) {
         index = addRefIds(index, ref);
       }
-
-      await api.updateRef(id, { ...ref, ...rest, index, internal_index });
+      if (filteredIndex) {
+        filteredIndex = addRefIds(filteredIndex, ref);
+      }
+      await api.updateRef(id, { ...ref, ...rest, index, filteredIndex, internal_index });
     },
 
     updateRef: async (id, data) => {

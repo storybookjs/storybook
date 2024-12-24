@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { fn, fireEvent, findByText, expect } from '@storybook/test';
+import { expect, findByText, fireEvent, fn } from '@storybook/test';
 
 import { FileSearchList } from './FileSearchList';
 
 const meta = {
   component: FileSearchList,
+  title: 'Sidebar/FileSearchList',
   args: {
     onNewStory: fn(),
   },

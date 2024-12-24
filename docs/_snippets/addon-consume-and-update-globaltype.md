@@ -38,4 +38,3 @@ const ExampleToolbar = () => {
   );
 };
 ```
-

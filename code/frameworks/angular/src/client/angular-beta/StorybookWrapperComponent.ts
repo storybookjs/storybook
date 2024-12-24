@@ -31,9 +31,7 @@ const getNonInputsOutputsProps = (
   return Object.keys(props).filter((k) => ![...inputs, ...outputs].includes(k));
 };
 
-/**
- * Wraps the story template into a component
- */
+/** Wraps the story template into a component */
 export const createStorybookWrapperComponent = ({
   selector,
   template,

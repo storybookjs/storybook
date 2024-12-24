@@ -1,11 +1,15 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import { once } from 'storybook/internal/client-logger';
-import { instrument } from '@storybook/instrumenter';
 import * as domTestingLibrary from '@testing-library/dom';
-import _userEvent from '@testing-library/user-event';
-import dedent from 'ts-dedent';
 import type { FireFunction, FireObject } from '@testing-library/dom/types/events';
+import _userEvent from '@testing-library/user-event';
+
+import { once } from 'storybook/internal/client-logger';
+
+import { instrument } from '@storybook/instrumenter';
+
+import dedent from 'ts-dedent';
 import type { Writable } from 'type-fest';
+
 import type { Promisify, PromisifyObject } from './utils';
 
 type TestingLibraryDom = typeof domTestingLibrary;
@@ -24,7 +28,7 @@ testingLibrary.screen = new Proxy(testingLibrary.screen, {
   get(target, prop, receiver) {
     once.warn(dedent`
           You are using Testing Library's \`screen\` object. Use \`within(canvasElement)\` instead.
-          More info: https://storybook.js.org/docs/react/essentials/interactions
+          More info: https://storybook.js.org/docs/essentials/interactions
         `);
     return Reflect.get(target, prop, receiver);
   },

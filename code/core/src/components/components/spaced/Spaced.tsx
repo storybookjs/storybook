@@ -1,5 +1,6 @@
 import React from 'react';
-import { styled, ignoreSsrWarning } from '@storybook/core/theming';
+
+import { ignoreSsrWarning, styled } from '@storybook/core/theming';
 
 const toNumber = (input: any) => (typeof input === 'number' ? input : Number(input));
 

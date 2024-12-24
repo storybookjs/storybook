@@ -1,4 +1,5 @@
 import { Meta, StoryObj } from '@storybook/angular';
+
 import { StyledComponent } from './styled.component';
 
 const meta: Meta = {

@@ -6,6 +6,7 @@
  */
 export const getComponentVariableName = async (name: string) => {
   const camelCase = await import('camelcase');
+
   const camelCased = camelCase.default(name.replace(/^[^a-zA-Z_$]*/, ''), { pascalCase: true });
   const sanitized = camelCased.replace(/[^a-zA-Z_$]+/, '');
   return sanitized;

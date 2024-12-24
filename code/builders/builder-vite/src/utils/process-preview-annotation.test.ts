@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { processPreviewAnnotation } from './process-preview-annotation';
+import { describe, expect, it } from 'vitest';
+
 import { onlyWindows, skipWindows } from '../../../../vitest.helpers';
+import { processPreviewAnnotation } from './process-preview-annotation';
 
 describe('processPreviewAnnotation()', () => {
   it('should pull the `bare` value from an object', () => {

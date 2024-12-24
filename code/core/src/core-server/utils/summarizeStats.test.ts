@@ -1,4 +1,5 @@
-import { it, expect } from 'vitest';
+import { expect, it } from 'vitest';
+
 import { summarizeStats } from './summarizeStats';
 
 it('should summarize stats', () => {

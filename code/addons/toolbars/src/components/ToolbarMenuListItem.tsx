@@ -1,6 +1,8 @@
 import React from 'react';
+
 import type { TooltipLinkListLink } from 'storybook/internal/components';
 import { Icons } from 'storybook/internal/components';
+
 import type { ToolbarItem } from '../types';
 
 export type ToolbarMenuListItemProps = {
@@ -19,7 +21,9 @@ export const ToolbarMenuListItem = ({
   disabled,
   currentValue,
 }: ToolbarMenuListItemProps) => {
-  const Icon = icon && <Icons style={{ opacity: 1 }} icon={icon} />;
+  const Icon = icon && (
+    <Icons style={{ opacity: 1 }} icon={icon} __suppressDeprecationWarning={true} />
+  );
 
   const Item: TooltipLinkListLink = {
     id: value ?? '_reset',

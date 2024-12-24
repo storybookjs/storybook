@@ -1,0 +1,291 @@
+---
+title: 'Component tests'
+sidebar:
+  order: 1
+  title: Component tests
+---
+
+As you build more complex UIs like pages, components become responsible for more than just rendering the UI. They fetch data and manage state. Component tests allow you to verify these functional aspects of UIs.
+
+In a nutshell, you start by supplying the appropriate props for the initial state of a component. Then simulate user behavior such as clicks and form entries. Finally, check whether the UI and component state update correctly.
+
+In Storybook, this familiar workflow happens in your browser. That makes it easier to debug failures because you're running tests in the same environment as you develop components: the browser.
+
+<Video src="../_assets/writing-tests/component-interaction-testing.mp4" />
+
+## How does component testing in Storybook work?
+
+You start by writing a [**story**](../writing-stories/index.mdx) to set up the component's initial state. Then simulate user behavior using the **play** function. Finally, use the **test-runner** to confirm that the component renders correctly and that your component tests with the **play** function pass. The test runner can run via the command line or in CI.
+
+* The [`play`](../writing-stories/play-function.mdx) function is a small snippet of code that runs after a story finishes rendering. You can use this to test user workflows.
+* The test is written using Storybook-instrumented versions of [Vitest](https://vitest.dev/) and [Testing Library](https://testing-library.com/) coming from the [`@storybook/test`](https://npmjs.com/package/@storybook/test) package.
+* [`@storybook/addon-interactions`](https://storybook.js.org/addons/@storybook/addon-interactions/) visualizes the test in Storybook and provides a playback interface for convenient browser-based debugging.
+* [`@storybook/test-runner`](https://github.com/storybookjs/test-runner) is a standalone utility—powered by [Jest](https://jestjs.io/) and [Playwright](https://playwright.dev/)—that executes all of your interactions tests and catches broken stories.
+    * The experimental [Vitest plugin](./vitest-plugin.mdx) is also available, which transforms your stories into Vitest tests and runs them in a browser.
+
+## Set up the interactions addon
+
+To enable the full component testing experience with Storybook, you'll need to take additional steps to set it up properly. We recommend you go through the [test runner documentation](./test-runner.mdx) before proceeding with the rest of the required configuration.
+
+Run the following command to install the interactions addon and related dependencies.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-addon-interactions-addon-full-install.md" />
+
+{/* prettier-ignore-end */}
+
+Update your Storybook configuration (in `.storybook/main.js|ts`) to include the interactions addon.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-interactions-addon-registration.md" />
+
+{/* prettier-ignore-end */}
+
+## Write a component test
+
+The test itself is defined inside a `play` function connected to a story. Here's an example of how to set up a component test with Storybook and the `play` function:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="login-form-with-play-function.md" />
+
+{/* prettier-ignore-end */}
+
+Once the story loads in the UI, it simulates the user's behavior and verifies the underlying logic.
+
+<Video src="../_assets/writing-tests/addon-interaction-example-optimized.mp4" />
+
+### Run code before the component gets rendered
+
+<If notRenderer="angular">
+
+You can execute code before rendering by using the `mount` function in the `play` method.
+
+Here's an example of using the [`mockdate`](https://github.com/boblauer/MockDate) package to mock the [`Date`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date), a useful way to make your story render in a consistent state.
+
+<CodeSnippets path="mount-basic.md" />
+
+<Callout variant="warning">
+  There are two requirements to use the `mount` function:
+
+  1. You *must* destructure the mount property from the `context` (the argument passed to your play function). This makes sure that Storybook does not start rendering the story before the play function begins.
+  2. Your Storybook framework or builder must be configured to transpile to ES2017 or newer. This is because destructuring statements and async/await usages are otherwise transpiled away, which prevents Storybook from recognizing your usage of `mount`.
+</Callout>
+
+<If renderer={['react', 'vue', 'svelte']}>
+
+#### Create mock data before rendering
+
+You can also use `mount` to create mock data that you want to pass to the component. To do so, first create your data in the play function and then call the `mount` function with a component configured with that data. In this example, we create a mock `note` and pass its `id` to the Page component, which we call `mount` with.
+
+<CodeSnippets path="mount-advanced.md" />
+
+<Callout variant="info">
+  When you call `mount()` with no arguments, the component is rendered using the story’s render function, whether the [implicit default](../api/csf.mdx#default-render-functions) or the [explicit custom definition](../api/csf.mdx#custom-render-functions).
+
+  When you mount a specific component inside the `mount` function like in the example above, the story’s render function will be ignored. This is why you must forward the `args` to the component.
+</Callout>
+
+</If>
+
+</If>
+
+<If renderer="angular">
+
+You can execute code before running test by defining an asynchronous `beforeEach` function for the story.
+
+Additionally, if you return a cleanup function from the `beforeEach` function, it will run **after** the test is run, when the story is remounted or navigated away from.
+
+<Callout variant="info">
+Generally, you should reset component and module state in the [preview file's `beforeEach` function](#reset-state-for-all-tests), to ensure it applies to your entire project. However, if a story's needs are particularly unique, you can use the returned cleanup function in the story's `beforeEach` to reset the state as needed.
+</Callout>
+
+Here's an example of using the [`mockdate`](https://github.com/boblauer/MockDate) package to mock the [`Date`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date), a useful way to make your story render in a consistent state.
+
+```ts filename="Page.stories.ts"
+import MockDate from 'mockdate';
+
+// ...rest of story file
+
+export const ChristmasUI = {
+  // 👇 Set the value of Date for this story
+  async beforeEach() {
+    MockDate.set('2024-12-25');
+
+    // 👇 Reset the Date after this test runs
+    return () => {
+      MockDate.reset();
+    };
+  }
+  async play({ canvasElement }) {
+    // ... This will run with the mocked Date
+  },
+};
+```
+
+</If>
+
+### Run code before each story in a file
+
+Sometimes you might need to run the same code before each story in a file. For instance, you might need to set up the initial state of the component or modules. You can do this by adding an asynchronous `beforeEach` function to the component meta.
+
+You can return a cleanup function from the `beforeEach` function, which will run **after** each story, when the story is remounted or navigated away from.
+
+<Callout variant="info">
+Generally, you should reset component and module state in the [preview file's `beforeAll` or `beforeEach` functions](#reset-state-for-all-tests), to ensure it applies to your entire project. However, if a component's needs are particularly unique, you can use the returned cleanup function in the component meta `beforeEach` to reset the state as needed.
+</Callout>
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="before-each-in-meta-mock-date.md" />
+
+{/* prettier-ignore-end */}
+
+### Set up or reset state for all tests
+
+When you [alter a component's state](#run-code-before-the-component-gets-rendered), it's important to reset that state before rendering another story to maintain isolation between tests. 
+
+There are two options for resetting state, `beforeAll` and `beforeEach`.
+
+#### `beforeAll`
+
+The `beforeAll` function in the preview file (`.storybook/preview.js|ts`) will run once before any stories in the project and will _not_ re-run between stories. Beyond its initial run when kicking off a test run, it will not run again unless the preview file is updated. This is a good place to bootstrap your project or run any setup that your entire project depends on, as in the example below.
+
+You can return a cleanup function from the `beforeAll` function, which will run before re-running the `beforeAll` function or during the teardown process in the test runner.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="before-all-in-preview.md" />
+
+{/* prettier-ignore-end */}
+
+{/* prettier-ignore-start */}
+
+#### `beforeEach`
+
+Unlike `beforeAll`, which runs only once, the `beforeEach` function in the preview file (`.storybook/preview.js|ts`) will run before each story in the project. This is best used for resetting state or modules that are used by all or most of your stories. In the example below, we use it to reset the mocked Date.
+
+You can return a cleanup function from the `beforeEach` function, which will run **after** each story, when the story is remounted or navigated away from.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="before-each-in-preview.md" />
+
+{/* prettier-ignore-end */}
+
+<Callout variant="info">
+  It is *not* necessary to restore `fn()` mocks, as Storybook will already do that automatically before rendering a story. See the [`parameters.test.restoreMocks` API](../api/parameters.mdx#restoremocks) for more information.
+</Callout>
+
+### API for user-events
+
+Under the hood, Storybook’s `@storybook/test` package provides Testing Library’s [`user-events`](https://testing-library.com/docs/user-event/intro/) APIs. If you’re familiar with [Testing Library](https://testing-library.com/), you should be at home in Storybook.
+
+Below is an abridged API for user-event. For more, check out the [official user-event docs](https://testing-library.com/docs/user-event/utility/).
+
+| User events       | Description                                                                                                                                              |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `clear`           | Selects the text inside inputs, or textareas and deletes it <br />`userEvent.clear(await within(canvasElement).getByRole('myinput'));`                    |
+| `click`           | Clicks the element, calling a click() function <br />`userEvent.click(await within(canvasElement).getByText('mycheckbox'));`                              |
+| `dblClick`        | Clicks the element twice <br />`userEvent.dblClick(await within(canvasElement).getByText('mycheckbox'));`                                                 |
+| `deselectOptions` | Removes the selection from a specific option of a select element <br />`userEvent.deselectOptions(await within(canvasElement).getByRole('listbox'),'1');` |
+| `hover`           | Hovers an element <br />`userEvent.hover(await within(canvasElement).getByTestId('example-test'));`                                                       |
+| `keyboard`        | Simulates the keyboard events <br />`userEvent.keyboard(‘foo’);`                                                                                          |
+| `selectOptions`   | Selects the specified option, or options of a select element <br />`userEvent.selectOptions(await within(canvasElement).getByRole('listbox'),['1','2']);` |
+| `type`            | Writes text inside inputs, or textareas <br />`userEvent.type(await within(canvasElement).getByRole('my-input'),'Some text');`                            |
+| `unhover`         | Unhovers out of element <br />`userEvent.unhover(await within(canvasElement).getByLabelText(/Example/i));`                                                |
+
+### Assert tests with Vitest's APIs
+
+Storybook’s `@storybook/test` also provides APIs from [Vitest](https://vitest.dev/), such as [`expect`](https://vitest.dev/api/expect.html#expect) and [`vi.fn`](https://vitest.dev/api/vi.html#vi-fn). These APIs improve your testing experience, helping you assert whether a function has been called, if an element exists in the DOM, and much more. If you are used to `expect` from testing packages such as [Jest](https://jestjs.io/) or [Vitest](https://vitest.dev/), you can write component tests in much the same way.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-interactions-play-function.md" />
+
+{/* prettier-ignore-end */}
+
+### Group interactions with the `step` function
+
+For complex flows, it can be worthwhile to group sets of related interactions together using the `step` function. This allows you to provide a custom label that describes a set of interactions:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-interactions-step-function.md" />
+
+{/* prettier-ignore-end */}
+
+This will show your interactions nested in a collapsible group:
+
+![Component testing with labeled steps](../_assets/writing-tests/storybook-addon-interactions-steps.png)
+
+### Mocked modules
+
+If your component depends on modules that are imported into the component file, you can mock those modules to control and assert on their behavior. This is detailed in the [mocking modules](../writing-stories/mocking-data-and-modules/mocking-modules.mdx) guide.
+
+You can then import the mocked module (which has all of the helpful methods of a [Vitest mocked function](https://vitest.dev/api/mock.html)) into your story and use it to assert on the behavior of your component:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="storybook-test-fn-mock-spy.md" />
+
+{/* prettier-ignore-end */}
+
+### Interactive debugger
+
+If you check your interactions panel, you'll see the step-by-step flow. It also offers a handy set of UI controls to pause, resume, rewind, and step through each interaction.
+
+<Video src="../_assets/writing-tests/addon-interactions-playback-controls-optimized.mp4" />
+
+### Permalinks for reproductions
+
+The `play` function is executed after the story is rendered. If there’s an error, it’ll be shown in the interaction addon panel to help with debugging.
+
+Since Storybook is a webapp, anyone with the URL can reproduce the error with the same detailed information without any additional environment configuration or tooling required.
+
+![Component testing with an error](../_assets/writing-tests/storybook-addon-interactions-error-optimized.png)
+
+Streamline component testing further by automatically [publishing Storybook](../sharing/publish-storybook.mdx) in pull requests. That gives teams a universal reference point to test and debug stories.
+
+## Execute tests with the test-runner
+
+Storybook only runs the component test when you're viewing a story. Therefore, you'd have to go through each story to run all your checks. As your Storybook grows, it becomes unrealistic to review each change manually. Storybook [test-runner](https://github.com/storybookjs/test-runner) automates the process by running all tests for you. To execute the test-runner, open a new terminal window and run the following command:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="test-runner-execute.md" />
+
+{/* prettier-ignore-end */}
+
+![Component test with test runner](../_assets/writing-tests/storybook-interaction-test-runner-loginform-optimized.png)
+
+<Callout variant="info" icon="💡">
+  If you need, you can provide additional flags to the test-runner. Read the [documentation](./test-runner.mdx#cli-options) to learn more.
+</Callout>
+
+## Automate
+
+Once you're ready to push your code into a pull request, you'll want to automatically run all your checks using a Continuous Integration (CI) service before merging it. Read our [documentation](./test-runner.mdx#set-up-ci-to-run-tests) for a detailed guide on setting up a CI environment to run tests.
+
+## Troubleshooting
+
+#### What’s the difference between component tests and visual tests?
+
+Component tests can be expensive to maintain when applied wholesale to every component. We recommend combining them with other methods like visual testing for comprehensive coverage with less maintenance work.
+
+#### What's the difference between component tests and using Jest + Testing Library alone?
+
+Component tests integrate Jest and Testing Library into Storybook. The biggest benefit is the ability to view the component you're testing in a real browser. That helps you debug visually, instead of getting a dump of the (fake) DOM in the command line or hitting the limitations of how JSDOM mocks browser functionality. It's also more convenient to keep stories and tests together in one file than having them spread across files.
+
+**Learn about other UI tests**
+
+* Component tests for user behavior simulation
+* [Visual tests](./visual-testing.mdx) for appearance
+* [Accessibility tests](./accessibility-testing.mdx) for accessibility
+* [Snapshot tests](./snapshot-testing/snapshot-testing.mdx) for rendering errors and warnings
+* [Test runner](./test-runner.mdx) to automate test execution
+* [Test coverage](./test-coverage.mdx) for measuring code coverage
+* [End-to-end tests](./import-stories-in-tests/stories-in-end-to-end-tests.mdx) for simulating real user scenarios
+* [Unit tests](./import-stories-in-tests/stories-in-unit-tests.mdx) for functionality

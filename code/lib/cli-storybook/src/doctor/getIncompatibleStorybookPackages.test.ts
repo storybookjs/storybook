@@ -1,13 +1,15 @@
-import { describe, it, expect, vi } from 'vitest';
-import type { AnalysedPackage } from './getIncompatibleStorybookPackages';
-import {
-  getIncompatibleStorybookPackages,
-  getIncompatiblePackagesSummary,
-  checkPackageCompatibility,
-} from './getIncompatibleStorybookPackages';
+import { describe, expect, it, vi } from 'vitest';
+
 import type { JsPackageManager } from 'storybook/internal/common';
 
-vi.mock('chalk', () => {
+import type { AnalysedPackage } from './getIncompatibleStorybookPackages';
+import {
+  checkPackageCompatibility,
+  getIncompatiblePackagesSummary,
+  getIncompatibleStorybookPackages,
+} from './getIncompatibleStorybookPackages';
+
+vi.mock('picocolors', () => {
   return {
     default: {
       yellow: (str: string) => str,

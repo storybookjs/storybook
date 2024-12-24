@@ -1,12 +1,17 @@
 import type { FC, SyntheticEvent } from 'react';
 import React, { useCallback, useEffect, useRef } from 'react';
-import { type State } from '@storybook/core/manager-api';
-import { Link } from '@storybook/core/router';
-import { keyframes, styled, useTheme } from '@storybook/core/theming';
+
 import type { IconsProps } from '@storybook/core/components';
 import { IconButton, Icons } from '@storybook/core/components';
-import { transparentize } from 'polished';
+import { Link } from '@storybook/core/router';
+import { keyframes, styled, useTheme } from '@storybook/core/theming';
 import { CloseAltIcon } from '@storybook/icons';
+
+import { type State } from '@storybook/core/manager-api';
+
+import { transparentize } from 'polished';
+
+import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
 
 const slideIn = keyframes({
   '0%': {
@@ -32,17 +37,21 @@ const Notification = styled.div<{ duration?: number }>(
   ({ theme }) => ({
     position: 'relative',
     display: 'flex',
-    padding: 15,
-    width: 280,
-    borderRadius: 4,
+    border: `1px solid ${theme.appBorderColor}`,
+    padding: '12px 6px 12px 12px',
+    borderRadius: theme.appBorderRadius + 1,
     alignItems: 'center',
 
     animation: `${slideIn} 500ms`,
     background: theme.base === 'light' ? 'hsla(203, 50%, 20%, .97)' : 'hsla(203, 30%, 95%, .97)',
-    boxShadow: `0 2px 5px 0 rgba(0,0,0,0.05), 0 5px 15px 0 rgba(0,0,0,0.1)`,
+    boxShadow: `0 2px 5px 0 rgba(0, 0, 0, 0.05), 0 5px 15px 0 rgba(0, 0, 0, 0.1)`,
     color: theme.color.inverseText,
     textDecoration: 'none',
     overflow: 'hidden',
+
+    [MEDIA_DESKTOP_BREAKPOINT]: {
+      boxShadow: `0 1px 2px 0 rgba(0, 0, 0, 0.05), 0px -5px 20px 10px ${theme.background.app}`,
+    },
   }),
   ({ duration, theme }) =>
     duration && {
@@ -104,9 +113,8 @@ const NotificationTextWrapper = styled.div(({ theme }) => ({
 
 const Headline = styled.div<{ hasIcon: boolean }>(({ theme, hasIcon }) => ({
   height: '100%',
-  width: hasIcon ? 205 : 230,
   alignItems: 'center',
-  whiteSpace: 'nowrap',
+  whiteSpace: 'balance',
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   fontSize: theme.typography.size.s1,
@@ -119,6 +127,7 @@ const SubHeadline = styled.div(({ theme }) => ({
   fontSize: theme.typography.size.s1 - 1,
   lineHeight: '14px',
   marginTop: 2,
+  whiteSpace: 'balance',
 }));
 
 const ItemContent: FC<Pick<State['notifications'][0], 'icon' | 'content'>> = ({
@@ -151,6 +160,7 @@ const ItemContent: FC<Pick<State['notifications'][0], 'icon' | 'content'>> = ({
 };
 
 const DismissButtonWrapper = styled(IconButton)(({ theme }) => ({
+  width: 28,
   alignSelf: 'center',
   marginTop: 0,
   color: theme.base === 'light' ? 'rgba(255,255,255,0.7)' : ' #999999',
@@ -178,18 +188,25 @@ export const NotificationItemSpacer = styled.div({
 const NotificationItem: FC<{
   notification: State['notifications'][0];
   onDismissNotification: (id: string) => void;
+  zIndex?: number;
 }> = ({
   notification: { content, duration, link, onClear, onClick, id, icon },
   onDismissNotification,
+  zIndex,
 }) => {
   const onTimeout = useCallback(() => {
     onDismissNotification(id);
-    if (onClear) onClear({ dismissed: false, timeout: true });
-  }, [onDismissNotification, onClear]);
+
+    if (onClear) {
+      onClear({ dismissed: false, timeout: true });
+    }
+  }, [id, onDismissNotification, onClear]);
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    if (!duration) return;
+    if (!duration) {
+      return;
+    }
     timer.current = setTimeout(onTimeout, duration);
     // @ts-expect-error (non strict)
     return () => clearTimeout(timer.current);
@@ -199,12 +216,15 @@ const NotificationItem: FC<{
     // @ts-expect-error (non strict)
     clearTimeout(timer.current);
     onDismissNotification(id);
-    if (onClear) onClear({ dismissed: true, timeout: false });
-  }, [onDismissNotification, onClear]);
+
+    if (onClear) {
+      onClear({ dismissed: true, timeout: false });
+    }
+  }, [id, onDismissNotification, onClear]);
 
   if (link) {
     return (
-      <NotificationLink to={link} duration={duration}>
+      <NotificationLink to={link} duration={duration} style={{ zIndex }}>
         <ItemContent icon={icon} content={content} />
         <DismissNotificationItem onDismiss={onDismiss} />
       </NotificationLink>
@@ -213,7 +233,11 @@ const NotificationItem: FC<{
 
   if (onClick) {
     return (
-      <NotificationButton duration={duration} onClick={() => onClick({ onDismiss })}>
+      <NotificationButton
+        duration={duration}
+        onClick={() => onClick({ onDismiss })}
+        style={{ zIndex }}
+      >
         <ItemContent icon={icon} content={content} />
         <DismissNotificationItem onDismiss={onDismiss} />
       </NotificationButton>
@@ -221,7 +245,7 @@ const NotificationItem: FC<{
   }
 
   return (
-    <Notification duration={duration}>
+    <Notification duration={duration} style={{ zIndex }}>
       <ItemContent icon={icon} content={content} />
       <DismissNotificationItem onDismiss={onDismiss} />
     </Notification>

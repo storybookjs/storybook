@@ -1,7 +1,9 @@
 import { frameworkPackages } from 'storybook/internal/common';
-import type { Preset, StorybookConfigRaw } from 'storybook/internal/types';
-import findUp from 'find-up';
 import type { JsPackageManager } from 'storybook/internal/common';
+import type { Preset, StorybookConfigRaw } from 'storybook/internal/types';
+
+import findUp from 'find-up';
+
 import { getBuilderPackageName, getFrameworkPackageName } from './mainConfigFile';
 
 const logger = console;
@@ -75,14 +77,14 @@ export const detectBuilderInfo = async ({
   const builderPackageName = getBuilderPackageName(mainConfig);
   const frameworkPackageName = getFrameworkPackageName(mainConfig) as string;
 
-  let builderOptions = typeof builder !== 'string' ? builder?.options ?? {} : {};
+  let builderOptions = typeof builder !== 'string' ? (builder?.options ?? {}) : {};
 
   if (builderPackageName) {
     builderOrFrameworkName = builderPackageName;
   } else if (framework) {
     if (Object.keys(frameworkPackages).includes(frameworkPackageName)) {
       builderOrFrameworkName = frameworkPackageName;
-      builderOptions = typeof framework === 'object' ? framework.options?.builder ?? {} : {};
+      builderOptions = typeof framework === 'object' ? (framework.options?.builder ?? {}) : {};
     }
   }
 

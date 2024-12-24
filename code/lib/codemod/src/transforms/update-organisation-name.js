@@ -28,19 +28,25 @@ export default function transformer(file, api) {
 
   /**
    * Checks whether the node value matches a Storybook package
-   * @param {string} the import declaration node
-   * @returns {string} whether the node value matches a Storybook package
+   *
+   * @param {string} the Import declaration node
+   * @returns {string} Whether the node value matches a Storybook package
    */
   const getMatch = (oldpart) => packageNamesKeys.find((newpart) => oldpart.match(newpart));
 
   /**
-   * Returns the name of the Storybook packages with the organisation name,
-   * replacing the old `@kadira/` prefix.
-   * @param {string} oldPackageName the name of the old package
-   * @return {string} the new package name
+   * Returns the name of the Storybook packages with the organisation name, replacing the old
+   * `@kadira/` prefix.
+   *
    * @example
+   *
+   * ```ts
    * // returns '@storybook/storybook'
-   * getNewPackageName('@kadira/storybook')
+   * getNewPackageName('@kadira/storybook');
+   * ```
+   *
+   * @param {string} oldPackageName The name of the old package
+   * @returns {string} The new package name
    */
   const getNewPackageName = (oldPackageName) => {
     const match = getMatch(oldPackageName);
@@ -53,9 +59,10 @@ export default function transformer(file, api) {
   };
 
   /**
-   * updatePackageName - updates the source name of the Storybook packages
-   * @param {ImportDeclaration} declaration the import declaration
-   * @returns {ImportDeclaration.Node} the import declaration node
+   * UpdatePackageName - updates the source name of the Storybook packages
+   *
+   * @param {ImportDeclaration} declaration The import declaration
+   * @returns {ImportDeclaration.Node} The import declaration node
    */
   const updatePackageName = (declaration) => {
     declaration.node.source.value = getNewPackageName(declaration.node.source.value);

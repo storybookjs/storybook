@@ -1,6 +1,8 @@
-import { describe, afterEach, it, expect, vi } from 'vitest';
-import type { StorybookConfig } from 'storybook/internal/types';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import type { JsPackageManager } from 'storybook/internal/common';
+import type { StorybookConfig } from 'storybook/internal/types';
+
 import { vue3 } from './vue3';
 
 const checkVue3 = async ({

@@ -60,7 +60,8 @@ export async function wrapManagerEntries(entrypoints: string[], uniqueId?: strin
         const directory = dirname(location);
         await mkdir(directory, { recursive: true });
       }
-      await writeFile(location, `import '${slash(entry)}';`);
+
+      await writeFile(location, `import '${slash(entry).replaceAll(/'/g, "\\'")}';`);
 
       return location;
     })

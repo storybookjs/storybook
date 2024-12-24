@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 export const RelativeTime = ({ timestamp }: { timestamp?: number }) => {
-  const [timeAgo, setTimeAgo] = useState(null);
+  const [timeAgo, setTimeAgo] = useState<number | null>(null);
 
   useEffect(() => {
     if (timestamp) {

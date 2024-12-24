@@ -74,13 +74,15 @@ export const teardown = async () => {
   logger.verbose('Stopping Storybook process');
   await new Promise<void>((resolve, reject) => {
     // Storybook starts multiple child processes, so we need to kill the whole tree
-    treeKill(storybookProcess.pid, 'SIGTERM', (error) => {
-      if (error) {
-        logger.error('Failed to stop Storybook process:');
-        reject(error);
-        return;
-      }
-      resolve();
-    });
+    if (storybookProcess?.pid) {
+      treeKill(storybookProcess.pid, 'SIGTERM', (error) => {
+        if (error) {
+          logger.error('Failed to stop Storybook process:');
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    }
   });
 };

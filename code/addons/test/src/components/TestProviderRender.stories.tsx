@@ -43,7 +43,7 @@ const baseState: TestProviderState<Details, Config> = {
   cancellable: true,
   cancelling: false,
   crashed: false,
-  error: null,
+  error: undefined,
   failed: false,
   running: false,
   watching: false,

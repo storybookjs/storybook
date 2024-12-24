@@ -193,6 +193,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin> => {
               }
             : {}),
 
+          // @ts-expect-error: TODO
           browser: {
             ...inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test?.browser,
             commands: {
@@ -266,9 +267,11 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin> => {
 
       // alert the user of problems
       if (
-        inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test.include?.length > 0
+        (inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test?.include?.length ??
+          0) > 0
       ) {
         // remove the user's existing include, because we're replacing it with our own heuristic based on main.ts#stories
+        // @ts-expect-error: Ignore
         inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test.include = [];
         console.log(
           picocolors.yellow(dedent`
@@ -285,19 +288,21 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin> => {
       return config;
     },
     async configureServer(server) {
-      for (const staticDir of staticDirs) {
-        try {
-          const { staticPath, targetEndpoint } = mapStaticDir(staticDir, directories.configDir);
-          server.middlewares.use(
-            targetEndpoint,
-            sirv(staticPath, {
-              dev: true,
-              etag: true,
-              extensions: [],
-            })
-          );
-        } catch (e) {
-          console.warn(e);
+      if (staticDirs) {
+        for (const staticDir of staticDirs) {
+          try {
+            const { staticPath, targetEndpoint } = mapStaticDir(staticDir, directories.configDir);
+            server.middlewares.use(
+              targetEndpoint,
+              sirv(staticPath, {
+                dev: true,
+                etag: true,
+                extensions: [],
+              })
+            );
+          } catch (e) {
+            console.warn(e);
+          }
         }
       }
     },

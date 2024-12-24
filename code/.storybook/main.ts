@@ -4,6 +4,7 @@ import type { StorybookConfig } from '../frameworks/react-vite';
 
 const componentsPath = join(__dirname, '../core/src/components');
 const managerApiPath = join(__dirname, '../core/src/manager-api');
+const imageContextPath = join(__dirname, '..//frameworks/nextjs/src/image-context.ts');
 
 const config: StorybookConfig = {
   stories: [
@@ -146,6 +147,7 @@ const config: StorybookConfig = {
                 'storybook/internal/components': componentsPath,
                 '@storybook/manager-api': managerApiPath,
                 'storybook/internal/manager-api': managerApiPath,
+                'sb-original/image-context': imageContextPath,
               }
             : {}),
         },

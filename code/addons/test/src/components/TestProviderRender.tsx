@@ -162,7 +162,7 @@ export const TestProviderRender: FC<
     : undefined;
 
   const a11ySkippedAmount =
-    state.running || !state?.details.config?.a11y || !state.config.a11y
+    state.running || !state?.details.config?.a11y || !state.config?.a11y
       ? null
       : a11yResults?.filter((result) => !result).length;
 
@@ -304,9 +304,11 @@ export const TestProviderRender: FC<
                     const firstNotPassed = results.find(
                       (r) => r.status === 'failed' || r.status === 'warning'
                     );
-                    openPanel(firstNotPassed.storyId, PANEL_ID);
+                    if (firstNotPassed) {
+                      openPanel(firstNotPassed.storyId, PANEL_ID);
+                    }
                   }
-                : null
+                : undefined
             }
             icon={
               state.crashed ? (
@@ -359,9 +361,11 @@ export const TestProviderRender: FC<
                             (report) => report.status === 'failed' || report.status === 'warning'
                           )
                       );
-                      openPanel(firstNotPassed.storyId, A11y_ADDON_PANEL_ID);
+                      if (firstNotPassed) {
+                        openPanel(firstNotPassed.storyId, A11y_ADDON_PANEL_ID);
+                      }
                     }
-                  : null
+                  : undefined
               }
               icon={<TestStatusIcon status={a11yStatus} aria-label={`status: ${a11yStatus}`} />}
               right={isStoryEntry ? null : a11yNotPassedAmount || null}

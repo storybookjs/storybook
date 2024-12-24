@@ -38,6 +38,7 @@ addons.register(ADDON_ID, (api) => {
       runnable: true,
       watchable: true,
       name: 'Component tests',
+      // @ts-expect-error: TODO: Fix types
       render: (state) => {
         const [isModalOpen, setModalOpen] = useState(false);
         return (
@@ -55,6 +56,7 @@ addons.register(ADDON_ID, (api) => {
         );
       },
 
+      // @ts-expect-error: TODO: Fix types
       sidebarContextMenu: ({ context, state }) => {
         if (context.type === 'docs') {
           return null;
@@ -72,6 +74,7 @@ addons.register(ADDON_ID, (api) => {
         );
       },
 
+      // @ts-expect-error: TODO: Fix types
       stateUpdater: (state, update) => {
         const updated = {
           ...state,
@@ -89,6 +92,7 @@ addons.register(ADDON_ID, (api) => {
             await api.experimental_updateStatus(
               TEST_PROVIDER_ID,
               Object.fromEntries(
+                // @ts-expect-error: TODO: Fix types
                 update.details.testResults.flatMap((testResult) =>
                   testResult.results
                     .filter(({ storyId }) => storyId)
@@ -113,6 +117,7 @@ addons.register(ADDON_ID, (api) => {
             await api.experimental_updateStatus(
               'storybook/addon-a11y/test-provider',
               Object.fromEntries(
+                // @ts-expect-error: TODO: Fix types
                 update.details.testResults.flatMap((testResult) =>
                   testResult.results
                     .filter(({ storyId }) => storyId)
@@ -143,7 +148,7 @@ addons.register(ADDON_ID, (api) => {
 
         return updated;
       },
-    } as Addon_TestProviderType<Details, Config>);
+    } satisfies Omit<Addon_TestProviderType<Details, Config>, 'id'>);
   }
 
   const filter = ({ state }: Combo) => {
@@ -158,7 +163,7 @@ addons.register(ADDON_ID, (api) => {
     match: ({ viewMode }) => viewMode === 'story',
     render: ({ active }) => {
       return (
-        <AddonPanel active={active}>
+        <AddonPanel active={!!active}>
           <Consumer filter={filter}>{({ storyId }) => <Panel storyId={storyId} />}</Consumer>
         </AddonPanel>
       );

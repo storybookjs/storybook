@@ -22,10 +22,11 @@ const vitest = vi.hoisted(() => ({
   configOverride: {
     actualTestNamePattern: undefined,
     get testNamePattern() {
-      return this.actualTestNamePattern;
+      return this.actualTestNamePattern!;
     },
     set testNamePattern(value: string) {
       setTestNamePattern(value);
+      // @ts-expect-error Ignore for testing
       this.actualTestNamePattern = value;
     },
   },

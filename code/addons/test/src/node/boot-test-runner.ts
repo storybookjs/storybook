@@ -24,7 +24,7 @@ const MAX_START_TIME = 30000;
 const vitestModulePath = join(__dirname, 'node', 'vitest.mjs');
 
 // Events that were triggered before Vitest was ready are queued up and resent once it's ready
-const eventQueue: { type: string; args: any[] }[] = [];
+const eventQueue: { type: string; args?: any[] }[] = [];
 
 let child: null | ChildProcess;
 let ready = false;
@@ -87,7 +87,7 @@ const bootTestRunner = async (channel: Channel) => {
         if (result.type === 'ready') {
           // Resend events that triggered (during) the boot sequence, now that Vitest is ready
           while (eventQueue.length) {
-            const { type, args } = eventQueue.shift();
+            const { type, args } = eventQueue.shift()!;
             child?.send({ type, args, from: 'server' });
           }
 

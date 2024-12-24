@@ -7,7 +7,13 @@ import dedent from 'ts-dedent';
 import { getAddonNames } from '../helpers/mainConfigFile';
 import { addonA11yAddonTest, transformSetupFile } from './addon-a11y-addon-test';
 
-vi.mock('../helpers/mainConfigFile');
+vi.mock('../helpers/mainConfigFile', async (importOriginal) => {
+  const mod = (await importOriginal()) as any;
+  return {
+    ...mod,
+    getAddonNames: vi.fn(),
+  };
+});
 
 // mock fs.existsSync
 vi.mock('fs', async (importOriginal) => {
@@ -46,6 +52,20 @@ describe('addonA11yAddonTest', () => {
       expect(result).toBeNull();
     });
 
+    it('should return null if provided framework is not supported', async () => {
+      vi.mocked(getAddonNames).mockReturnValue([
+        '@storybook/addon-a11y',
+        '@storybook/experimental-addon-test',
+      ]);
+      const result = await addonA11yAddonTest.check({
+        mainConfig: {
+          framework: '@storybook/angular',
+        },
+        configDir: '',
+      } as any);
+      expect(result).toBeNull();
+    });
+
     it('should return setupFile and transformedSetupCode if vitest.setup file exists', async () => {
       vi.mocked(getAddonNames).mockReturnValue([
         '@storybook/addon-a11y',
@@ -54,7 +74,12 @@ describe('addonA11yAddonTest', () => {
       vi.mocked(existsSync).mockReturnValue(true);
       vi.mocked(readFileSync).mockReturnValue('const annotations = setProjectAnnotations([]);');
 
-      const result = await addonA11yAddonTest.check({ mainConfig, configDir } as any);
+      const result = await addonA11yAddonTest.check({
+        mainConfig: {
+          framework: '@storybook/react-vite',
+        },
+        configDir,
+      } as any);
       expect(result).toEqual({
         setupFile: path.join(configDir, 'vitest.setup.js'),
         transformedSetupCode: expect.any(String),
@@ -71,7 +96,12 @@ describe('addonA11yAddonTest', () => {
         throw new Error('Test error');
       });
 
-      const result = await addonA11yAddonTest.check({ mainConfig, configDir } as any);
+      const result = await addonA11yAddonTest.check({
+        mainConfig: {
+          framework: '@storybook/sveltekit',
+        },
+        configDir,
+      } as any);
       expect(result).toEqual({
         setupFile: path.join(configDir, 'vitest.setup.js'),
         transformedSetupCode: null,

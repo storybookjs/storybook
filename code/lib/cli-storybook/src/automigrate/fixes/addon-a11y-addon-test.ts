@@ -1,10 +1,17 @@
+import { rendererPackages } from 'storybook/internal/common';
+
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import * as jscodeshift from 'jscodeshift';
 import path from 'path';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import { getAddonNames } from '../helpers/mainConfigFile';
+// Relative path import to avoid dependency to @storybook/test
+import {
+  SUPPORTED_FRAMEWORKS,
+  SUPPORTED_RENDERERS,
+} from '../../../../../addons/test/src/constants';
+import { getAddonNames, getFrameworkPackageName, getRendererName } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
 
 export const vitestFileExtensions = ['.js', '.ts', '.cts', '.mts', '.cjs', '.mjs'] as const;
@@ -35,10 +42,22 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
   async check({ mainConfig, configDir }) {
     const addons = getAddonNames(mainConfig);
 
+    const frameworkPackageName = getFrameworkPackageName(mainConfig);
+    const rendererPackageName = getRendererName(mainConfig);
+
     const hasA11yAddon = !!addons.find((addon) => addon.includes('@storybook/addon-a11y'));
     const hasTestAddon = !!addons.find((addon) =>
       addon.includes('@storybook/experimental-addon-test')
     );
+
+    if (
+      !SUPPORTED_FRAMEWORKS.find((framework) => frameworkPackageName?.includes(framework)) &&
+      !SUPPORTED_RENDERERS.find((renderer) =>
+        rendererPackageName?.includes(rendererPackages[renderer])
+      )
+    ) {
+      return null;
+    }
 
     if (!hasA11yAddon || !hasTestAddon || !configDir) {
       return null;

@@ -12,6 +12,13 @@ export const DOCUMENTATION_FATAL_ERROR_LINK = `${DOCUMENTATION_LINK}#what-happen
 
 export const COVERAGE_DIRECTORY = 'coverage';
 
+export const SUPPORTED_FRAMEWORKS = [
+  '@storybook/nextjs',
+  '@storybook/experimental-nextjs-vite',
+  '@storybook/sveltekit',
+];
+
+export const SUPPORTED_RENDERERS = ['@storybook/react', '@storybook/svelte', '@storybook/vue3'];
 export interface Config {
   coverage: boolean;
   a11y: boolean;

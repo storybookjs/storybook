@@ -18,4 +18,3 @@ export const Example = {
   },
 } satisfies Story;
 ```
-

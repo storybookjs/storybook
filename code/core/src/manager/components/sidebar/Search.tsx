@@ -1,28 +1,30 @@
-import { useStorybookApi, shortcutToHumanString } from '@storybook/core/manager-api';
+import React, { type ReactNode, useCallback, useRef, useState } from 'react';
+
+import { IconButton } from '@storybook/core/components';
 import { styled } from '@storybook/core/theming';
+import { global } from '@storybook/global';
+import { CloseIcon, SearchIcon } from '@storybook/icons';
+
+import { shortcutToHumanString, useStorybookApi } from '@storybook/core/manager-api';
+
 import type { DownshiftState, StateChangeOptions } from 'downshift';
 import Downshift from 'downshift';
 import type { FuseOptions } from 'fuse.js';
 import Fuse from 'fuse.js';
-import { global } from '@storybook/global';
-import React, { useRef, useState, useCallback } from 'react';
-import { CloseIcon, PlusIcon, SearchIcon } from '@storybook/icons';
-import { IconButton, TooltipNote, WithTooltip } from '@storybook/core/components';
+
+import { getGroupStatus, getHighestStatus } from '../../utils/status';
+import { scrollIntoView, searchItem } from '../../utils/tree';
+import { useLayout } from '../layout/LayoutProvider';
 import { DEFAULT_REF_ID } from './Sidebar';
 import type {
   CombinedDataset,
-  SearchItem,
-  SearchResult,
   DownshiftItem,
   SearchChildrenFn,
+  SearchItem,
+  SearchResult,
   Selection,
 } from './types';
-import { isSearchResult, isExpandType } from './types';
-
-import { scrollIntoView, searchItem } from '../../utils/tree';
-import { getGroupStatus, getHighestStatus } from '../../utils/status';
-import { useLayout } from '../layout/LayoutProvider';
-import { CreateNewStoryFileModal } from './CreateNewStoryFileModal';
+import { isExpandType, isSearchResult } from './types';
 
 const { document } = global;
 
@@ -51,10 +53,6 @@ const SearchBar = styled.div({
   columnGap: 6,
 });
 
-const TooltipNoteWrapper = styled(TooltipNote)({
-  margin: 0,
-});
-
 const ScreenReaderLabel = styled.label({
   position: 'absolute',
   left: -10000,
@@ -64,49 +62,47 @@ const ScreenReaderLabel = styled.label({
   overflow: 'hidden',
 });
 
-const CreateNewStoryButton = styled(IconButton)(({ theme }) => ({
-  color: theme.color.mediumdark,
+const SearchField = styled.div(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  padding: 2,
+  flexGrow: 1,
+  height: 32,
+  width: '100%',
+  boxShadow: `${theme.button.border} 0 0 0 1px inset`,
+  borderRadius: theme.appBorderRadius + 2,
+
+  '&:has(input:focus), &:has(input:active)': {
+    boxShadow: `${theme.color.secondary} 0 0 0 1px inset`,
+    background: theme.background.app,
+  },
 }));
 
-const SearchIconWrapper = styled.div(({ theme }) => ({
-  position: 'absolute',
-  top: 0,
-  left: 8,
-  zIndex: 1,
-  pointerEvents: 'none',
+const IconWrapper = styled.div(({ theme, onClick }) => ({
+  cursor: onClick ? 'pointer' : 'default',
+  flex: '0 0 28px',
+  height: '100%',
+  pointerEvents: onClick ? 'auto' : 'none',
   color: theme.textMutedColor,
   display: 'flex',
   alignItems: 'center',
-  height: '100%',
+  justifyContent: 'center',
 }));
-
-const SearchField = styled.div({
-  display: 'flex',
-  flexDirection: 'column',
-  flexGrow: 1,
-  position: 'relative',
-});
 
 const Input = styled.input(({ theme }) => ({
   appearance: 'none',
   height: 28,
-  paddingLeft: 28,
-  paddingRight: 28,
+  width: '100%',
+  padding: 0,
   border: 0,
-  boxShadow: `${theme.button.border} 0 0 0 1px inset`,
   background: 'transparent',
-  borderRadius: 4,
   fontSize: `${theme.typography.size.s1 + 1}px`,
   fontFamily: 'inherit',
   transition: 'all 150ms',
   color: theme.color.defaultText,
-  width: '100%',
+  outline: 0,
 
-  '&:focus, &:active': {
-    outline: 0,
-    borderColor: theme.color.secondary,
-    background: theme.background.app,
-  },
   '&::placeholder': {
     color: theme.textMutedColor,
     opacity: 1,
@@ -130,11 +126,9 @@ const Input = styled.input(({ theme }) => ({
 }));
 
 const FocusKey = styled.code(({ theme }) => ({
-  position: 'absolute',
-  top: 6,
-  right: 9,
+  margin: 5,
+  marginTop: 6,
   height: 16,
-  zIndex: 1,
   lineHeight: '16px',
   textAlign: 'center',
   fontSize: '11px',
@@ -144,28 +138,20 @@ const FocusKey = styled.code(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   gap: 4,
+  flexShrink: 0,
 }));
 
 const FocusKeyCmd = styled.span({
   fontSize: '14px',
 });
 
-const ClearIcon = styled.div(({ theme }) => ({
-  position: 'absolute',
-  top: 0,
-  right: 8,
-  zIndex: 1,
-  color: theme.textMutedColor,
-  cursor: 'pointer',
+const Actions = styled.div({
   display: 'flex',
   alignItems: 'center',
-  height: '100%',
-}));
+  gap: 2,
+});
 
 const FocusContainer = styled.div({ outline: 0 });
-
-const isDevelopment = global.CONFIG_TYPE === 'DEVELOPMENT';
-const isRendererReact = global.STORYBOOK_RENDERER === 'react';
 
 export const Search = React.memo<{
   children: SearchChildrenFn;
@@ -173,21 +159,22 @@ export const Search = React.memo<{
   enableShortcuts?: boolean;
   getLastViewed: () => Selection[];
   initialQuery?: string;
-  showCreateStoryButton?: boolean;
+  searchBarContent?: ReactNode;
+  searchFieldContent?: ReactNode;
 }>(function Search({
   children,
   dataset,
   enableShortcuts = true,
   getLastViewed,
   initialQuery = '',
-  showCreateStoryButton = isDevelopment && isRendererReact,
+  searchBarContent,
+  searchFieldContent,
 }) {
   const api = useStorybookApi();
   const inputRef = useRef<HTMLInputElement>(null);
   const [inputPlaceholder, setPlaceholder] = useState('Find components');
   const [allComponents, showAllComponents] = useState(false);
   const searchShortcut = api ? shortcutToHumanString(api.getShortcutKeys().search) : '/';
-  const [isFileSearchModalOpen, setIsFileSearchModalOpen] = useState(false);
 
   const makeFuse = useCallback(() => {
     const list = dataset.entries.reduce<SearchItem[]>((acc, [refId, { index, status }]) => {
@@ -216,7 +203,10 @@ export const Search = React.memo<{
   const getResults = useCallback(
     (input: string) => {
       const fuse = makeFuse();
-      if (!input) return [];
+
+      if (!input) {
+        return [];
+      }
 
       let results: DownshiftItem[] = [];
       const resultIds: Set<string> = new Set();
@@ -225,8 +215,9 @@ export const Search = React.memo<{
           !(item.type === 'component' || item.type === 'docs' || item.type === 'story') ||
           // @ts-expect-error (non strict)
           resultIds.has(item.parent)
-        )
+        ) {
           return false;
+        }
         resultIds.add(item.id);
         return true;
       });
@@ -399,9 +390,9 @@ export const Search = React.memo<{
                 {...getRootProps({ refKey: '' }, { suppressRefError: true })}
                 className="search-field"
               >
-                <SearchIconWrapper>
+                <IconWrapper>
                   <SearchIcon />
-                </SearchIconWrapper>
+                </IconWrapper>
                 <Input {...inputProps} />
                 {!isMobile && enableShortcuts && !isOpen && (
                   <FocusKey>
@@ -414,34 +405,16 @@ export const Search = React.memo<{
                     )}
                   </FocusKey>
                 )}
-                {isOpen && (
-                  <ClearIcon onClick={() => clearSelection()}>
-                    <CloseIcon />
-                  </ClearIcon>
-                )}
+                <Actions>
+                  {isOpen && (
+                    <IconButton onClick={() => clearSelection()}>
+                      <CloseIcon />
+                    </IconButton>
+                  )}
+                  {searchFieldContent}
+                </Actions>
               </SearchField>
-              {showCreateStoryButton && (
-                <>
-                  <WithTooltip
-                    trigger="hover"
-                    hasChrome={false}
-                    tooltip={<TooltipNoteWrapper note="Create a new story" />}
-                  >
-                    <CreateNewStoryButton
-                      onClick={() => {
-                        setIsFileSearchModalOpen(true);
-                      }}
-                      variant="outline"
-                    >
-                      <PlusIcon />
-                    </CreateNewStoryButton>
-                  </WithTooltip>
-                  <CreateNewStoryFileModal
-                    open={isFileSearchModalOpen}
-                    onOpenChange={setIsFileSearchModalOpen}
-                  />
-                </>
-              )}
+              {searchBarContent}
             </SearchBar>
             <FocusContainer tabIndex={0} id="storybook-explorer-menu">
               {children({

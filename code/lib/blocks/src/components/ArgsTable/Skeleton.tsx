@@ -1,6 +1,7 @@
-import { styled } from 'storybook/internal/theming';
 import type { FC } from 'react';
 import React from 'react';
+
+import { styled } from 'storybook/internal/theming';
 
 const Row = styled.div(({ theme }) => ({
   display: 'flex',

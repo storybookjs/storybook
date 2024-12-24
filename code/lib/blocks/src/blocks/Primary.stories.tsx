@@ -1,11 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { Primary } from './Primary';
+
 import * as DefaultButtonStories from '../examples/Button.stories';
 import * as StoriesParametersStories from '../examples/StoriesParameters.stories';
+import { Primary } from './Primary';
 
 const meta = {
   component: Primary,
   parameters: {
+    layout: 'fullscreen',
     // workaround for https://github.com/storybookjs/storybook/issues/20505
     docs: { source: { type: 'code' } },
     docsStyles: true,

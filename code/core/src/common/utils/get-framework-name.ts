@@ -1,11 +1,11 @@
-import { dedent } from 'ts-dedent';
-import { frameworkPackages } from './get-storybook-info';
-import { normalizePath } from './normalize-path';
 import type { Options } from '@storybook/core/types';
 
-/**
- * Framework can be a string or an object.  This utility always returns the string name.
- */
+import { dedent } from 'ts-dedent';
+
+import { frameworkPackages } from './get-storybook-info';
+import { normalizePath } from './normalize-path';
+
+/** Framework can be a string or an object. This utility always returns the string name. */
 export async function getFrameworkName(options: Options) {
   const framework = await options.presets.apply('framework', '', options);
 
@@ -21,11 +21,15 @@ export async function getFrameworkName(options: Options) {
 }
 
 /**
- * Extracts the proper framework name from the given framework field.
- * The framework field can be the framework package name or a path to the framework package.
+ * Extracts the proper framework name from the given framework field. The framework field can be the
+ * framework package name or a path to the framework package.
+ *
  * @example
- * extractProperFrameworkName('/path/to/@storybook/angular') // => '@storybook/angular'
- * extractProperFrameworkName('@third-party/framework') // => '@third-party/framework'
+ *
+ * ```ts
+ * ExtractProperFrameworkName('/path/to/@storybook/angular'); // => '@storybook/angular'
+ * extractProperFrameworkName('@third-party/framework'); // => '@third-party/framework'
+ * ```
  */
 export const extractProperFrameworkName = (framework: string) => {
   const normalizedPath = normalizePath(framework);

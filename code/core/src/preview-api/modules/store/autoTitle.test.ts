@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import { normalizeStoriesEntry } from '@storybook/core/common';
 
 import { userOrAutoTitleFromSpecifier as userOrAuto } from './autoTitle';

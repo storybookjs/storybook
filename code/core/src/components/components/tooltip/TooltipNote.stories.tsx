@@ -1,6 +1,7 @@
 import React from 'react';
-import { WithTooltip } from './WithTooltip';
+
 import { TooltipNote } from './TooltipNote';
+import { WithTooltip } from './WithTooltip';
 
 export default {
   component: TooltipNote,

@@ -1,4 +1,5 @@
-import { describe, beforeEach, it, expect, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { NPMProxy } from './NPMProxy';
 
 // mock createLogStream
@@ -30,21 +31,6 @@ describe('NPM Proxy', () => {
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({ command: 'npm', args: ['init', '-y'] })
-      );
-    });
-  });
-
-  describe('setRegistryUrl', () => {
-    it('should run `npm config set registry https://foo.bar`', async () => {
-      const executeCommandSpy = vi.spyOn(npmProxy, 'executeCommand').mockResolvedValueOnce('');
-
-      await npmProxy.setRegistryURL('https://foo.bar');
-
-      expect(executeCommandSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          command: 'npm',
-          args: ['config', 'set', 'registry', 'https://foo.bar'],
-        })
       );
     });
   });
@@ -442,7 +428,7 @@ describe('NPM Proxy', () => {
 
   describe('parseErrors', () => {
     it('should parse npm errors', () => {
-      const NPM_RESOLVE_ERROR_SAMPLE = `
+      const NPM_LEGACY_RESOLVE_ERROR_SAMPLE = `
         npm ERR!
         npm ERR! code ERESOLVE
         npm ERR! ERESOLVE unable to resolve dependency tree
@@ -451,6 +437,17 @@ describe('NPM Proxy', () => {
         npm ERR! Found: react@undefined
         npm ERR! node_modules/react
         npm ERR!   react@"30" from the root project
+        `;
+
+      const NPM_RESOLVE_ERROR_SAMPLE = `
+        npm error
+        npm error code ERESOLVE
+        npm error ERESOLVE unable to resolve dependency tree
+        npm error 
+        npm error While resolving: before-storybook@1.0.0
+        npm error Found: react@undefined
+        npm error node_modules/react
+        npm error   react@"30" from the root project
         `;
 
       const NPM_TIMEOUT_ERROR_SAMPLE = `
@@ -465,6 +462,9 @@ describe('NPM Proxy', () => {
           npm ERR! network This is a problem related to network connectivity.
       `;
 
+      expect(npmProxy.parseErrorFromLogs(NPM_LEGACY_RESOLVE_ERROR_SAMPLE)).toEqual(
+        'NPM error ERESOLVE - Dependency resolution error.'
+      );
       expect(npmProxy.parseErrorFromLogs(NPM_RESOLVE_ERROR_SAMPLE)).toEqual(
         'NPM error ERESOLVE - Dependency resolution error.'
       );

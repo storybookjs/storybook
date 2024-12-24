@@ -1,12 +1,14 @@
-import { describe, it, expect, vi } from 'vitest';
-import { once } from '@storybook/core/client-logger';
+import { describe, expect, it, vi } from 'vitest';
+
 import type { SBType } from '@storybook/core/types';
 
+import { once } from '@storybook/core/client-logger';
+
 import {
+  UNTARGETED,
   combineArgs,
   groupArgsByTarget,
   mapArgsToTypes,
-  UNTARGETED,
   validateOptions,
 } from './args';
 

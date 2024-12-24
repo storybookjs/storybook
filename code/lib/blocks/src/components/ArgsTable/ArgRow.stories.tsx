@@ -1,11 +1,14 @@
 import React from 'react';
+
 import { ResetWrapper } from 'storybook/internal/components';
+
 import { ArgRow } from './ArgRow';
 import { TableWrapper } from './ArgsTable';
 
 export default {
   component: ArgRow,
   title: 'Components/ArgsTable/ArgRow',
+
   decorators: [
     (getStory: any) => (
       <ResetWrapper>

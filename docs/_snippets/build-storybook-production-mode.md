@@ -16,4 +16,3 @@ pnpm run build-storybook
 ```shell renderer="common" language="js" packageManager="yarn"
 yarn build-storybook
 ```
-

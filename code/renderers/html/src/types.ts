@@ -1,9 +1,9 @@
+import type { SourceType } from 'storybook/internal/docs-tools';
 import type {
   ArgsStoryFn,
   StoryContext as DefaultStoryContext,
   WebRenderer,
 } from 'storybook/internal/types';
-import type { SourceType } from 'storybook/internal/docs-tools';
 
 export type { RenderContext } from 'storybook/internal/types';
 

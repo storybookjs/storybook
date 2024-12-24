@@ -1,44 +1,46 @@
+// eslint-disable-next-line depend/ban-dependencies
+import { outputFile, pathExists, readFile } from 'fs-extra';
 import type { TestCase } from 'junit-xml';
 import { getJunitXml } from 'junit-xml';
-import { outputFile, readFile, pathExists } from 'fs-extra';
 import { join, resolve } from 'path';
+import picocolors from 'picocolors';
 import { prompt } from 'prompts';
-import { dedent } from 'ts-dedent';
-
 import invariant from 'tiny-invariant';
-import { CODE_DIRECTORY, JUNIT_DIRECTORY, SANDBOX_DIRECTORY } from './utils/constants';
-import type { OptionValues } from './utils/options';
-import { createOptions, getCommand, getOptionsOrPrompt } from './utils/options';
-import { install } from './tasks/install';
-import { compile } from './tasks/compile';
-import { check } from './tasks/check';
-import { publish } from './tasks/publish';
-import { runRegistryTask } from './tasks/run-registry';
-import { generate } from './tasks/generate';
-import { sandbox } from './tasks/sandbox';
-import { syncDocs } from './tasks/sync-docs';
-import { dev } from './tasks/dev';
-import { smokeTest } from './tasks/smoke-test';
-import { build } from './tasks/build';
-import { serve } from './tasks/serve';
-import { testRunnerBuild } from './tasks/test-runner-build';
-import { testRunnerDev } from './tasks/test-runner-dev';
-import { chromatic } from './tasks/chromatic';
-import { e2eTestsBuild } from './tasks/e2e-tests-build';
-import { e2eTestsDev } from './tasks/e2e-tests-dev';
-import { bench } from './tasks/bench';
+import { dedent } from 'ts-dedent';
 
 import {
   allTemplates as TEMPLATES,
-  type TemplateKey,
   type Template,
-} from '../code/lib/cli/src/sandbox-templates';
-
+  type TemplateKey,
+} from '../code/lib/cli-storybook/src/sandbox-templates';
 import { version } from '../code/package.json';
+import { bench } from './tasks/bench';
+import { build } from './tasks/build';
+import { check } from './tasks/check';
+import { chromatic } from './tasks/chromatic';
+import { compile } from './tasks/compile';
+import { dev } from './tasks/dev';
+import { e2eTestsBuild } from './tasks/e2e-tests-build';
+import { e2eTestsDev } from './tasks/e2e-tests-dev';
+import { generate } from './tasks/generate';
+import { install } from './tasks/install';
+import { publish } from './tasks/publish';
+import { runRegistryTask } from './tasks/run-registry';
+import { sandbox } from './tasks/sandbox';
+import { serve } from './tasks/serve';
+import { smokeTest } from './tasks/smoke-test';
+import { syncDocs } from './tasks/sync-docs';
+import { testRunnerBuild } from './tasks/test-runner-build';
+import { testRunnerDev } from './tasks/test-runner-dev';
+import { vitestTests } from './tasks/vitest-test';
+import { CODE_DIRECTORY, JUNIT_DIRECTORY, SANDBOX_DIRECTORY } from './utils/constants';
+import { findMostMatchText } from './utils/diff';
+import type { OptionValues } from './utils/options';
+import { createOptions, getCommand, getOptionsOrPrompt } from './utils/options';
 
 const sandboxDir = process.env.SANDBOX_ROOT || SANDBOX_DIRECTORY;
 
-export const extraAddons = ['a11y', 'storysource'];
+export const extraAddons = ['@storybook/addon-a11y', '@storybook/addon-storysource'];
 
 export type Path = string;
 export type TemplateDetails = {
@@ -54,36 +56,26 @@ export type TemplateDetails = {
 type MaybePromise<T> = T | Promise<T>;
 
 export type Task = {
-  /**
-   * A description of the task for a prompt
-   */
+  /** A description of the task for a prompt */
   description: string;
   /**
    * Does this task represent a service for another task?
    *
-   * Unlink other tasks, if a service is not ready, it doesn't mean the subsequent tasks
-   * must be out of date. As such, services will never be reset back to, although they
-   * will be started if dependent tasks are.
+   * Unlink other tasks, if a service is not ready, it doesn't mean the subsequent tasks must be out
+   * of date. As such, services will never be reset back to, although they will be started if
+   * dependent tasks are.
    */
   service?: boolean;
-  /**
-   * Which tasks must be ready before this task can run
-   */
+  /** Which tasks must be ready before this task can run */
   dependsOn?: TaskKey[] | ((details: TemplateDetails, options: PassedOptionValues) => TaskKey[]);
-  /**
-   * Is this task already "ready", and potentially not required?
-   */
+  /** Is this task already "ready", and potentially not required? */
   ready: (details: TemplateDetails, options?: PassedOptionValues) => MaybePromise<boolean>;
-  /**
-   * Run the task
-   */
+  /** Run the task */
   run: (
     details: TemplateDetails,
     options: PassedOptionValues
   ) => MaybePromise<void | AbortController>;
-  /**
-   * Does this task handle its own junit results?
-   */
+  /** Does this task handle its own junit results? */
   junit?: boolean;
 };
 
@@ -109,8 +101,9 @@ export const tasks = {
   'e2e-tests': e2eTestsBuild,
   'e2e-tests-dev': e2eTestsDev,
   bench,
+  'vitest-integration': vitestTests,
 };
-type TaskKey = keyof typeof tasks;
+export type TaskKey = keyof typeof tasks;
 
 function isSandboxTask(taskKey: TaskKey) {
   return !['install', 'compile', 'publish', 'run-registry', 'check', 'sync-docs'].includes(taskKey);
@@ -188,7 +181,7 @@ export const options = createOptions({
   },
 });
 
-type PassedOptionValues = Omit<OptionValues<typeof options>, 'task' | 'startFrom' | 'junit'>;
+export type PassedOptionValues = Omit<OptionValues<typeof options>, 'startFrom' | 'junit'>;
 
 const logger = console;
 
@@ -230,11 +223,7 @@ function getTaskKey(task: Task): TaskKey {
   return (Object.entries(tasks) as [TaskKey, Task][]).find(([_, t]) => t === task)[0];
 }
 
-/**
- *
- * Get a list of tasks that need to be (possibly) run, in order, to
- * be able to run `finalTask`.
- */
+/** Get a list of tasks that need to be (possibly) run, in order, to be able to run `finalTask`. */
 function getTaskList(finalTask: Task, details: TemplateDetails, optionValues: PassedOptionValues) {
   const taskDeps = new Map<Task, Task[]>();
   // Which tasks depend on a given task
@@ -242,7 +231,9 @@ function getTaskList(finalTask: Task, details: TemplateDetails, optionValues: Pa
 
   const addTask = (task: Task, dependent?: Task) => {
     if (tasksThatDepend.has(task)) {
-      if (!dependent) throw new Error('Unexpected task without dependent seen a second time');
+      if (!dependent) {
+        throw new Error('Unexpected task without dependent seen a second time');
+      }
       tasksThatDepend.set(task, tasksThatDepend.get(task).concat(dependent));
       return;
     }
@@ -268,14 +259,20 @@ function getTaskList(finalTask: Task, details: TemplateDetails, optionValues: Pa
 
   while (taskDeps.size !== sortedTasks.length) {
     const task = tasksWithoutDependencies.pop();
-    if (!task) throw new Error('Topological sort failed, is there a cyclic task dependency?');
+
+    if (!task) {
+      throw new Error('Topological sort failed, is there a cyclic task dependency?');
+    }
 
     sortedTasks.unshift(task);
     taskDeps.get(task).forEach((depTask) => {
       const remainingTasksThatDepend = tasksThatDepend
         .get(depTask)
         .filter((t) => !sortedTasks.includes(t));
-      if (remainingTasksThatDepend.length === 0) tasksWithoutDependencies.push(depTask);
+
+      if (remainingTasksThatDepend.length === 0) {
+        tasksWithoutDependencies.push(depTask);
+      }
     });
   }
 
@@ -321,7 +318,9 @@ async function runTask(task: Task, details: TemplateDetails, optionValues: Passe
     }
     const controller = await task.run(details, updatedOptions);
 
-    if (junitFilename && !task.junit) await writeJunitXml(getTaskKey(task), details.key, startTime);
+    if (junitFilename && !task.junit) {
+      await writeJunitXml(getTaskKey(task), details.key, startTime);
+    }
 
     return controller;
   } catch (err) {
@@ -350,7 +349,21 @@ async function run() {
 
   const allOptionValues = await getOptionsOrPrompt('yarn task', options);
 
-  const { task: taskKey, startFrom, junit, ...optionValues } = allOptionValues;
+  const { junit, startFrom, ...optionValues } = allOptionValues;
+  const taskKey = optionValues.task;
+
+  if (!(taskKey in tasks)) {
+    const matchText = findMostMatchText(Object.keys(tasks), taskKey);
+
+    if (matchText) {
+      console.log(
+        `${picocolors.red('Error')}: ${picocolors.cyan(
+          taskKey
+        )} is not a valid task name, Did you mean ${picocolors.cyan(matchText)}?`
+      );
+    }
+    process.exit(1);
+  }
 
   const finalTask = tasks[taskKey];
   const { template: templateKey } = optionValues;
@@ -366,7 +379,6 @@ async function run() {
     builtSandboxDir: templateKey && join(templateSandboxDir, 'storybook-static'),
     junitFilename: junit && getJunitFilename(taskKey),
   };
-
   const { sortedTasks, tasksThatDepend } = getTaskList(finalTask, details, optionValues);
   const sortedTasksReady = await Promise.all(
     sortedTasks.map((t) => t.ready(details, optionValues))
@@ -392,7 +404,12 @@ async function run() {
   function setUnready(task: Task) {
     // If the task is a service we don't need to set it unready but we still need to do so for
     // it's dependencies
-    if (!task.service) statuses.set(task, 'unready');
+
+    // If the task is a service we don't need to set it unready but we still need to do so for
+    // it's dependencies
+    if (!task.service) {
+      statuses.set(task, 'unready');
+    }
     tasksThatDepend
       .get(task)
       .filter((t) => !t.service)
@@ -405,9 +422,13 @@ async function run() {
   if (startFrom === 'auto') {
     // Don't reset anything!
   } else if (startFrom === 'never') {
-    if (!firstUnready) throw new Error(`Task ${taskKey} is ready`);
-    if (firstUnready !== finalTask)
+    if (!firstUnready) {
+      throw new Error(`Task ${taskKey} is ready`);
+    }
+
+    if (firstUnready !== finalTask) {
       throw new Error(`Task ${getTaskKey(firstUnready)} was not ready`);
+    }
   } else if (startFrom) {
     // set to reset back to a specific task
     if (firstUnready && sortedTasks.indexOf(tasks[startFrom]) > sortedTasks.indexOf(firstUnready)) {
@@ -470,30 +491,35 @@ async function run() {
           // Always debug the final task so we can see it's output fully
           debug: task === finalTask ? true : optionValues.debug,
         });
-        if (controller) controllers.push(controller);
+
+        if (controller) {
+          controllers.push(controller);
+        }
       } catch (err) {
         invariant(err instanceof Error);
-        logger.error(`Error running task ${getTaskKey(task)}:`);
+        logger.error(
+          `Error running task ${picocolors.bold(getTaskKey(task))} for ${picocolors.bgCyan(picocolors.white(details.key))}:`
+        );
         logger.error(JSON.stringify(err, null, 2));
 
         if (process.env.CI) {
-          logger.error(
-            dedent`
-              To reproduce this error locally, run:
+          const separator = '\n--------------------------------------------\n';
+          const reproduceMessage = dedent`
+            To reproduce this error locally, run:
 
-              ${getCommand('yarn task', options, {
+            ${picocolors.bold(
+              getCommand('yarn task', options, {
                 ...allOptionValues,
                 link: true,
                 startFrom: 'auto',
-              })}
-              
-              Note this uses locally linking which in rare cases behaves differently to CI. For a closer match, run:
-              
-              ${getCommand('yarn task', options, {
-                ...allOptionValues,
-                startFrom: 'auto',
-              })}`
-          );
+              })
+            )}
+            
+            Note this uses locally linking which in rare cases behaves differently to CI.
+            For a closer match, add ${picocolors.bold('--no-link')} to the command above.
+          `;
+
+          err.message += `\n${separator}${reproduceMessage}${separator}\n`;
         }
 
         controllers.forEach((controller) => {
@@ -521,12 +547,10 @@ process.on('exit', () => {
   });
 });
 
-if (require.main === module) {
-  run()
-    .then((status) => process.exit(status))
-    .catch((err) => {
-      logger.error();
-      logger.error(err);
-      process.exit(1);
-    });
-}
+run()
+  .then((status) => process.exit(status))
+  .catch((err) => {
+    logger.error();
+    logger.error(err);
+    process.exit(1);
+  });

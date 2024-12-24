@@ -15,6 +15,6 @@ function Component() {
 
 export default {
   component: Component,
-};
+} as Meta<typeof Component>;
 
 export const Default = {};

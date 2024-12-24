@@ -11,7 +11,7 @@ test('onclick handler is called', () => {
   const Primary = composeStory(PrimaryStory, meta);
 
   const onClickSpy = jest.fn();
-  await Primary.play({ args: { ...Primary.args, onClick: onClickSpy } });
+  await Primary.run({ args: { ...Primary.args, onClick: onClickSpy } });
 
   const buttonElement = screen.getByRole('button');
   buttonElement.click();
@@ -31,7 +31,7 @@ test('onclick handler is called', () => {
   const Primary = composeStory(PrimaryStory, meta);
 
   const onClickSpy = jest.fn();
-  await Primary.play({ args: { ...Primary.args, onClick: onClickSpy } });
+  await Primary.run({ args: { ...Primary.args, onClick: onClickSpy } });
 
   const buttonElement = screen.getByRole('button');
   buttonElement.click();

@@ -1,4 +1,5 @@
-import { it, vi, expect, beforeEach } from 'vitest';
+import { beforeEach, expect, it, vi } from 'vitest';
+
 import { fn, onMockCall, spyOn } from './spy';
 
 const vitestSpy = vi.fn();

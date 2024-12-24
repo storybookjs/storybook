@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react';
+
 import type { Canvas, WebRenderer } from 'storybook/internal/types';
 
 export type { RenderContext, StoryContext } from 'storybook/internal/types';

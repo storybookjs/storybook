@@ -1,9 +1,11 @@
+import { dirname, join } from 'node:path';
+
+import { getProjectRoot } from 'storybook/internal/common';
+
+import { validateLocalFontFunctionCall } from 'next/dist/compiled/@next/font/dist/local/validate-local-font-function-call';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-expect-error
 import loaderUtils from 'next/dist/compiled/loader-utils3';
-import { getProjectRoot } from 'storybook/internal/common';
-import { validateLocalFontFunctionCall } from 'next/dist/compiled/@next/font/dist/local/validate-local-font-function-call';
-import path from 'path';
 
 import type { LoaderOptions } from '../types';
 
@@ -18,8 +20,8 @@ export async function getFontFaceDeclarations(
 
   // Parent folder relative to the root context
   const parentFolder = swcMode
-    ? path.dirname(path.join(getProjectRoot(), options.filename)).replace(rootContext, '')
-    : path.dirname(options.filename).replace(rootContext, '');
+    ? dirname(join(getProjectRoot(), options.filename)).replace(rootContext, '')
+    : dirname(options.filename).replace(rootContext, '');
 
   const {
     weight,
@@ -41,7 +43,7 @@ export async function getFontFaceDeclarations(
 
   const getFontFaceCSS = () => {
     if (typeof localFontSrc === 'string') {
-      const localFontPath = path.join(parentFolder, localFontSrc).replaceAll('\\', '/');
+      const localFontPath = join(parentFolder, localFontSrc).replaceAll('\\', '/');
 
       return `@font-face {
           font-family: ${id};
@@ -51,7 +53,7 @@ export async function getFontFaceDeclarations(
     }
     return localFontSrc
       .map((font) => {
-        const localFontPath = path.join(parentFolder, font.path).replaceAll('\\', '/');
+        const localFontPath = join(parentFolder, font.path).replaceAll('\\', '/');
 
         return `@font-face {
           font-family: ${id};

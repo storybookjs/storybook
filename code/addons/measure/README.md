@@ -12,7 +12,7 @@ Storybook addon for inspecting layouts and visualizing the box model.
 
 ## Usage
 
-This addon requires Storybook 6.3 or later. Measure is part of [essentials](https://storybook.js.org/docs/react/essentials) and so is installed in all new Storybooks by default. If you need to add it to your Storybook, you can run:
+This addon requires Storybook 6.3 or later. Measure is part of [essentials](https://storybook.js.org/docs/essentials) and so is installed in all new Storybooks by default. If you need to add it to your Storybook, you can run:
 
 ```sh
 npm i -D @storybook/addon-measure

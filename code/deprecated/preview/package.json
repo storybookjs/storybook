@@ -1,6 +1,6 @@
 {
   "name": "@storybook/preview",
-  "version": "8.3.0-alpha.1",
+  "version": "8.5.0-beta.5",
   "description": "",
   "keywords": [
     "storybook"
@@ -20,6 +20,14 @@
   },
   "license": "MIT",
   "sideEffects": false,
+  "type": "module",
+  "exports": {
+    "./globals": {
+      "type": "./globals.d.ts",
+      "import": "./globals.js",
+      "require": "./globals.cjs"
+    }
+  },
   "files": [
     "README.md",
     "*.js",
@@ -28,7 +36,7 @@
     "*.d.ts"
   ],
   "peerDependencies": {
-    "storybook": "workspace:^"
+    "storybook": "^8.2.0 || ^8.3.0-0 || ^8.4.0-0 || ^8.5.0-0 || ^8.6.0-0"
   },
   "publishConfig": {
     "access": "public"

@@ -1,13 +1,12 @@
 /* eslint-disable react/no-direct-mutation-state */
 
 /* eslint-disable react/sort-comp */
-
 import type { ReactElement } from 'react';
-import React, { cloneElement, Component } from 'react';
-import * as inputUsageTypes from './types/inputUsageTypes';
+import React, { Component, cloneElement } from 'react';
 
 import * as dataTypes from './types/dataTypes';
 import * as deltaTypes from './types/deltaTypes';
+import * as inputUsageTypes from './types/inputUsageTypes';
 import { getObjectType, isComponentWillChange } from './utils/objectTypes';
 
 interface JsonAddValueState {
@@ -49,7 +48,9 @@ export class JsonAddValue extends Component<JsonAddValueProps, JsonAddValueState
   }
 
   onKeydown(event: KeyboardEvent) {
-    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) return;
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) {
+      return;
+    }
     if (event.code === 'Enter' || event.key === 'Enter') {
       event.preventDefault();
       this.onSubmit();
@@ -543,7 +544,9 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
   }
 
   onKeydown(event: KeyboardEvent) {
-    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) return;
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) {
+      return;
+    }
     if (event.code === 'Enter' || event.key === 'Enter') {
       event.preventDefault();
       this.handleEdit();
@@ -557,7 +560,10 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
   handleEdit() {
     const { handleUpdateValue, originalValue, logger, onSubmitValueParser, keyPath } = this.props;
     const { inputRef, name, deep } = this.state;
-    if (!inputRef) return;
+
+    if (!inputRef) {
+      return;
+    }
 
     const newValue = onSubmitValueParser(true, keyPath, deep, name, inputRef.value);
 
@@ -1438,7 +1444,9 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
   }
 
   onKeydown(event: KeyboardEvent) {
-    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) return;
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) {
+      return;
+    }
     if (event.code === 'Enter' || event.key === 'Enter') {
       event.preventDefault();
       this.handleEdit();
@@ -1452,7 +1460,10 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
   handleEdit() {
     const { handleUpdateValue, originalValue, logger, onSubmitValueParser, keyPath } = this.props;
     const { inputRef, name, deep } = this.state;
-    if (!inputRef) return;
+
+    if (!inputRef) {
+      return;
+    }
 
     const newValue = onSubmitValueParser(true, keyPath, deep, name, inputRef.value);
 

@@ -1,6 +1,7 @@
 import type { CSSObject } from '@storybook/core/theming';
 import { styled } from '@storybook/core/theming';
-import { withReset, codeCommon } from '../lib/common';
+
+import { codeCommon, withReset } from '../lib/common';
 
 export const LI = styled.li(withReset, ({ theme }) => ({
   fontSize: theme.typography.size.s2,

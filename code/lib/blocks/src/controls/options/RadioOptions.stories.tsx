@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { fn } from '@storybook/test';
+
 import { OptionsControl } from './Options';
 
 const arrayOptions = ['Bat', 'Cat', 'Rat'];

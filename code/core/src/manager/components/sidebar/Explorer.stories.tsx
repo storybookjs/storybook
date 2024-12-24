@@ -1,15 +1,16 @@
 import React from 'react';
 
 import { Explorer } from './Explorer';
+import { IconSymbols } from './IconSymbols';
+import * as RefStories from './Refs.stories';
 import { mockDataset } from './mockdata';
 import type { RefType } from './types';
-import * as RefStories from './Refs.stories';
-import { IconSymbols } from './IconSymbols';
 
 export default {
   component: Explorer,
   title: 'Sidebar/Explorer',
-  parameters: { layout: 'fullscreen', theme: 'side-by-side' },
+  globals: { sb_theme: 'side-by-side' },
+  parameters: { layout: 'fullscreen' },
   decorators: [
     RefStories.default.decorators[0],
     (storyFn: any) => (
@@ -33,7 +34,7 @@ const simple: Record<string, RefType> = {
     url: 'iframe.html',
     previewInitialized: true,
     // @ts-expect-error (invalid input)
-    index: mockDataset.withRoot,
+    filteredIndex: mockDataset.withRoot,
   },
 };
 
@@ -46,7 +47,7 @@ const withRefs: Record<string, RefType> = {
     previewInitialized: true,
     type: 'auto-inject',
     // @ts-expect-error (invalid input)
-    index: mockDataset.noRoot,
+    filteredIndex: mockDataset.noRoot,
   },
   injected: {
     id: 'injected',
@@ -55,7 +56,7 @@ const withRefs: Record<string, RefType> = {
     previewInitialized: false,
     type: 'auto-inject',
     // @ts-expect-error (invalid input)
-    index: mockDataset.noRoot,
+    filteredIndex: mockDataset.noRoot,
   },
   unknown: {
     id: 'unknown',
@@ -64,7 +65,7 @@ const withRefs: Record<string, RefType> = {
     previewInitialized: true,
     type: 'unknown',
     // @ts-expect-error (invalid input)
-    index: mockDataset.noRoot,
+    filteredIndex: mockDataset.noRoot,
   },
   lazy: {
     id: 'lazy',
@@ -73,7 +74,7 @@ const withRefs: Record<string, RefType> = {
     previewInitialized: false,
     type: 'lazy',
     // @ts-expect-error (invalid input)
-    index: mockDataset.withRoot,
+    filteredIndex: mockDataset.withRoot,
   },
 };
 

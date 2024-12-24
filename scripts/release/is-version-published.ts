@@ -1,6 +1,7 @@
-import chalk from 'chalk';
-import program from 'commander';
 import { setOutput } from '@actions/core';
+import { program } from 'commander';
+import picocolors from 'picocolors';
+
 import { esMain } from '../utils/esmain';
 import { getCurrentVersion } from './get-current-version';
 
@@ -18,12 +19,14 @@ const isVersionPublished = async ({
   version: string;
   verbose?: boolean;
 }) => {
-  const prettyPackage = `${chalk.blue(packageName)}@${chalk.green(version)}`;
+  const prettyPackage = `${picocolors.blue(packageName)}@${picocolors.green(version)}`;
   console.log(`⛅ Checking if ${prettyPackage} is published...`);
 
   if (verbose) {
     console.log(`Fetching from npm:`);
-    console.log(`https://registry.npmjs.org/${chalk.blue(packageName)}/${chalk.green(version)}`);
+    console.log(
+      `https://registry.npmjs.org/${picocolors.blue(packageName)}/${picocolors.green(version)}`
+    );
   }
   const response = await fetch(`https://registry.npmjs.org/${packageName}/${version}`);
   if (response.status === 404) {

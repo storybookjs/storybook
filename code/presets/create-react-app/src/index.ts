@@ -1,13 +1,15 @@
-import { join, relative, dirname } from 'path';
-import type { Configuration, RuleSetRule, WebpackPluginInstance } from 'webpack';
+import { dirname, join, relative } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
+
 import PnpWebpackPlugin from 'pnp-webpack-plugin';
-import { mergePlugins } from './helpers/mergePlugins';
-import { getReactScriptsPath } from './helpers/getReactScriptsPath';
-import { processCraConfig } from './helpers/processCraConfig';
+import type { Configuration, RuleSetRule, WebpackPluginInstance } from 'webpack';
+
 import { checkPresets } from './helpers/checkPresets';
 import { getModulePath } from './helpers/getModulePath';
+import { getReactScriptsPath } from './helpers/getReactScriptsPath';
+import { mergePlugins } from './helpers/mergePlugins';
+import { processCraConfig } from './helpers/processCraConfig';
 import type { PluginOptions } from './types';
 
 const CWD = process.cwd();

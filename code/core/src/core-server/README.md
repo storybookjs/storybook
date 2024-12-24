@@ -6,8 +6,8 @@ It contains:
 
 - CLI arg parsing
 - Storybook UI "manager" webpack configuration
-- `start-storybook` dev server
-- `build-storybook` static builder
+- `storybook dev` dev server
+- `storybook build` static builder
 - presets handling
 
 The "preview" (aka iframe) side is implemented in pluggable builders:

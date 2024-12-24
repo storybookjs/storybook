@@ -1,18 +1,20 @@
 import {
-  composeStory as originalComposeStory,
   composeStories as originalComposeStories,
+  composeStory as originalComposeStory,
   setProjectAnnotations as originalSetProjectAnnotations,
+  setDefaultProjectAnnotations,
 } from 'storybook/internal/preview-api';
 import type {
   Args,
+  ComposedStoryFn,
   NamedOrDefaultProjectAnnotations,
+  NormalizedProjectAnnotations,
   ProjectAnnotations,
-  StoryAnnotationsOrFn,
   Store_CSFExports,
   StoriesWithPartialProps,
-  ComposedStoryFn,
+  StoryAnnotationsOrFn,
 } from 'storybook/internal/types';
-import { TestingLibraryMustBeConfiguredError } from 'storybook/internal/preview-errors';
+
 import { h } from 'vue';
 
 import * as defaultProjectAnnotations from './entry-preview';
@@ -27,49 +29,62 @@ type MapToJSXAble<T> = {
   [K in keyof T]: JSXAble<T[K]>;
 };
 
-/** Function that sets the globalConfig of your Storybook. The global config is the preview module of your .storybook folder.
+/**
+ * Function that sets the globalConfig of your Storybook. The global config is the preview module of
+ * your .storybook folder.
  *
- * It should be run a single time, so that your global config (e.g. decorators) is applied to your stories when using `composeStories` or `composeStory`.
+ * It should be run a single time, so that your global config (e.g. decorators) is applied to your
+ * stories when using `composeStories` or `composeStory`.
  *
  * Example:
- *```jsx
- * // setup.js (for jest)
+ *
+ * ```jsx
+ * // setup-file.js
  * import { setProjectAnnotations } from '@storybook/vue3';
  * import projectAnnotations from './.storybook/preview';
  *
  * setProjectAnnotations(projectAnnotations);
- *```
+ * ```
  *
- * @param projectAnnotations - e.g. (import projectAnnotations from '../.storybook/preview')
+ * @param projectAnnotations - E.g. (import projectAnnotations from '../.storybook/preview')
  */
 export function setProjectAnnotations(
   projectAnnotations:
-    | NamedOrDefaultProjectAnnotations<VueRenderer>
-    | NamedOrDefaultProjectAnnotations<VueRenderer>[]
-): ProjectAnnotations<VueRenderer> {
-  return originalSetProjectAnnotations<VueRenderer>(projectAnnotations);
+    | NamedOrDefaultProjectAnnotations<any>
+    | NamedOrDefaultProjectAnnotations<any>[]
+): NormalizedProjectAnnotations<VueRenderer> {
+  setDefaultProjectAnnotations(vueProjectAnnotations);
+  return originalSetProjectAnnotations(
+    projectAnnotations
+  ) as NormalizedProjectAnnotations<VueRenderer>;
 }
 
 // This will not be necessary once we have auto preset loading
 export const vueProjectAnnotations: ProjectAnnotations<VueRenderer> = {
   ...defaultProjectAnnotations,
-  renderToCanvas: ({ storyFn, storyContext: { testingLibraryRender: render, canvasElement } }) => {
-    if (render == null) throw new TestingLibraryMustBeConfiguredError();
-    const { unmount } = render(storyFn(), { baseElement: canvasElement });
+  renderToCanvas: (renderContext, canvasElement) => {
+    if (renderContext.storyContext.testingLibraryRender == null) {
+      return defaultProjectAnnotations.renderToCanvas(renderContext, canvasElement);
+    }
+    const {
+      storyFn,
+      storyContext: { testingLibraryRender: render },
+    } = renderContext;
+    const { unmount } = render(storyFn(), { container: canvasElement });
     return unmount;
   },
 };
 
 /**
  * Function that will receive a story along with meta (e.g. a default export from a .stories file)
- * and optionally projectAnnotations e.g. (import * from '../.storybook/preview)
- * and will return a composed component that has all args/parameters/decorators/etc combined and applied to it.
- *
+ * and optionally projectAnnotations e.g. (import * from '../.storybook/preview) and will return a
+ * composed component that has all args/parameters/decorators/etc combined and applied to it.
  *
  * It's very useful for reusing a story in scenarios outside of Storybook like unit testing.
  *
  * Example:
- *```jsx
+ *
+ * ```jsx
  * import { render } from '@testing-library/vue';
  * import { composeStory } from '@storybook/vue3';
  * import Meta, { Primary as PrimaryStory } from './Button.stories';
@@ -77,15 +92,16 @@ export const vueProjectAnnotations: ProjectAnnotations<VueRenderer> = {
  * const Primary = composeStory(PrimaryStory, Meta);
  *
  * test('renders primary button with Hello World', () => {
- *   const { getByText } = render(Primary, { props: { label: "Hello world" } });
+ *   const { getByText } = render(Primary, { props: { label: 'Hello world' } });
  *   expect(getByText(/Hello world/i)).not.toBeNull();
  * });
- *```
+ * ```
  *
  * @param story
- * @param componentAnnotations - e.g. (import Meta from './Button.stories')
- * @param [projectAnnotations] - e.g. (import * as projectAnnotations from '../.storybook/preview') this can be applied automatically if you use `setProjectAnnotations` in your setup files.
- * @param [exportsName] - in case your story does not contain a name and you want it to have a name.
+ * @param componentAnnotations - E.g. (import Meta from './Button.stories')
+ * @param [projectAnnotations] - E.g. (import * as projectAnnotations from '../.storybook/preview')
+ *   this can be applied automatically if you use `setProjectAnnotations` in your setup files.
+ * @param [exportsName] - In case your story does not contain a name and you want it to have a name.
  */
 export function composeStory<TArgs extends Args = Args>(
   story: StoryAnnotationsOrFn<VueRenderer, TArgs>,
@@ -112,14 +128,15 @@ export function composeStory<TArgs extends Args = Args>(
 
 /**
  * Function that will receive a stories import (e.g. `import * as stories from './Button.stories'`)
- * and optionally projectAnnotations (e.g. `import * from '../.storybook/preview`)
- * and will return an object containing all the stories passed, but now as a composed component that has all args/parameters/decorators/etc combined and applied to it.
- *
+ * and optionally projectAnnotations (e.g. `import * from '../.storybook/preview`) and will return
+ * an object containing all the stories passed, but now as a composed component that has all
+ * args/parameters/decorators/etc combined and applied to it.
  *
  * It's very useful for reusing stories in scenarios outside of Storybook like unit testing.
  *
  * Example:
- *```jsx
+ *
+ * ```jsx
  * import { render } from '@testing-library/vue';
  * import { composeStories } from '@storybook/vue3';
  * import * as stories from './Button.stories';
@@ -127,13 +144,14 @@ export function composeStory<TArgs extends Args = Args>(
  * const { Primary, Secondary } = composeStories(stories);
  *
  * test('renders primary button with Hello World', () => {
- *   const { getByText } = render(Primary, { props: { label: "Hello world" } });
+ *   const { getByText } = render(Primary, { props: { label: 'Hello world' } });
  *   expect(getByText(/Hello world/i)).not.toBeNull();
  * });
- *```
+ * ```
  *
- * @param csfExports - e.g. (import * as stories from './Button.stories')
- * @param [projectAnnotations] - e.g. (import * as projectAnnotations from '../.storybook/preview') this can be applied automatically if you use `setProjectAnnotations` in your setup files.
+ * @param csfExports - E.g. (import * as stories from './Button.stories')
+ * @param [projectAnnotations] - E.g. (import * as projectAnnotations from '../.storybook/preview')
+ *   this can be applied automatically if you use `setProjectAnnotations` in your setup files.
  */
 export function composeStories<TModule extends Store_CSFExports<VueRenderer, any>>(
   csfExports: TModule,

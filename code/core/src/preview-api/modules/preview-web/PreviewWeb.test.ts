@@ -1,15 +1,19 @@
 // @vitest-environment happy-dom
-import { describe, beforeEach, afterEach, it, expect, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { ModuleImportFn, ProjectAnnotations, Renderer } from '@storybook/core/types';
 import { global } from '@storybook/global';
-import merge from 'lodash/merge.js';
+
+import { logger } from '@storybook/core/client-logger';
 import {
   CONFIG_ERROR,
   CURRENT_STORY_WAS_SET,
+  DOCS_PREPARED,
   DOCS_RENDERED,
   FORCE_REMOUNT,
   FORCE_RE_RENDER,
   GLOBALS_UPDATED,
+  PLAY_FUNCTION_THREW_EXCEPTION,
   PREVIEW_KEYDOWN,
   RESET_STORY_ARGS,
   SET_CURRENT_STORY,
@@ -22,36 +26,34 @@ import {
   STORY_RENDERED,
   STORY_SPECIFIED,
   STORY_THREW_EXCEPTION,
-  PLAY_FUNCTION_THREW_EXCEPTION,
   STORY_UNCHANGED,
   UPDATE_GLOBALS,
   UPDATE_STORY_ARGS,
-  DOCS_PREPARED,
 } from '@storybook/core/core-events';
-import { logger } from '@storybook/core/client-logger';
-import type { Renderer, ModuleImportFn, ProjectAnnotations } from '@storybook/core/types';
-import { addons } from '../addons';
 
+import { merge, toMerged } from 'es-toolkit';
+
+import { addons } from '../addons';
+import type { StoryStore } from '../store';
 import { PreviewWeb } from './PreviewWeb';
 import {
   componentOneExports,
   componentTwoExports,
-  importFn,
-  projectAnnotations,
-  getProjectAnnotations,
-  storyIndex,
-  emitter,
-  mockChannel,
-  waitForEvents,
-  waitForRender,
-  waitForQuiescence,
-  waitForRenderPhase,
   docsRenderer,
-  unattachedDocsExports,
+  emitter,
+  getProjectAnnotations,
+  importFn,
+  mockChannel,
+  projectAnnotations,
+  storyIndex,
   teardownrenderToCanvas,
+  unattachedDocsExports,
+  waitForEvents,
+  waitForQuiescence,
+  waitForRender,
+  waitForRenderPhase,
 } from './PreviewWeb.mockdata';
 import { WebView } from './WebView';
-import type { StoryStore } from '../store';
 
 const { history, document } = global;
 
@@ -162,11 +164,16 @@ describe('PreviewWeb', () => {
 
       const preview = await createAndRenderPreview();
 
-      expect((preview.storyStore as StoryStore<Renderer>)!.globals.get()).toEqual({ a: 'c' });
+      expect((preview.storyStore as StoryStore<Renderer>)!.userGlobals.get()).toEqual({ a: 'c' });
     });
 
     it('emits the SET_GLOBALS event', async () => {
       await createAndRenderPreview();
+
+      expect(mockChannel.emit.mock.calls[0][1]).toMatchObject({
+        globals: { a: 'b' },
+        globalTypes: {},
+      });
 
       expect(mockChannel.emit).toHaveBeenCalledWith(SET_GLOBALS, {
         globals: { a: 'b' },
@@ -227,7 +234,7 @@ describe('PreviewWeb', () => {
       });
       await preview.ready();
 
-      expect((preview.storyStore as StoryStore<Renderer>)!.globals.get()).toEqual({ a: 'b' });
+      expect((preview.storyStore as StoryStore<Renderer>)!.userGlobals.get()).toEqual({ a: 'b' });
     });
   });
 
@@ -301,7 +308,7 @@ describe('PreviewWeb', () => {
         expect(mockChannel.emit).toHaveBeenCalledWith(STORY_MISSING, 'component-one--missing');
 
         mockChannel.emit.mockClear();
-        const newComponentOneExports = merge({}, componentOneExports, {
+        const newComponentOneExports = toMerged(componentOneExports, {
           d: { args: { foo: 'd' }, play: vi.fn() },
         });
         const newImportFn = vi.fn(async (path) => {
@@ -355,7 +362,7 @@ describe('PreviewWeb', () => {
           });
           await waitForSetCurrentStory();
 
-          const newComponentOneExports = merge({}, componentOneExports, {
+          const newComponentOneExports = toMerged(componentOneExports, {
             d: { args: { foo: 'd' }, play: vi.fn() },
           });
           const newImportFn = vi.fn(async (path) => {
@@ -425,6 +432,43 @@ describe('PreviewWeb', () => {
             one: { name: 'one', type: { name: 'string' }, mapping: { 1: 'mapped-1' } },
           },
           args: { foo: 'a', one: 1 },
+        });
+      });
+
+      it('emits GLOBALS_UPDATED with initial global values', async () => {
+        document.location.search = '?id=component-one--a';
+        await createAndRenderPreview();
+
+        await waitForEvents([GLOBALS_UPDATED]);
+        expect(mockChannel.emit).toHaveBeenCalledWith(GLOBALS_UPDATED, {
+          initialGlobals: { a: 'b' },
+          userGlobals: { a: 'b' },
+          storyGlobals: {},
+          globals: { a: 'b' },
+        });
+      });
+
+      describe('if the story sets globals', () => {
+        it('emits GLOBALS_UPDATED with overridden storyGlobals', async () => {
+          document.location.search = '?id=component-one--a';
+          const newImportFn = vi.fn(async (path) => {
+            if (path === './src/ComponentOne.stories.js') {
+              return {
+                ...componentOneExports,
+                a: { ...componentOneExports.a, globals: { a: 'c' } },
+              };
+            }
+            return importFn(path);
+          });
+          await createAndRenderPreview({ importFn: newImportFn });
+
+          await waitForEvents([GLOBALS_UPDATED]);
+          expect(mockChannel.emit).toHaveBeenCalledWith(GLOBALS_UPDATED, {
+            initialGlobals: { a: 'b' },
+            userGlobals: { a: 'b' },
+            storyGlobals: { a: 'c' },
+            globals: { a: 'c' },
+          });
         });
       });
 
@@ -772,8 +816,64 @@ describe('PreviewWeb', () => {
 
       await waitForEvents([GLOBALS_UPDATED]);
       expect(mockChannel.emit).toHaveBeenCalledWith(GLOBALS_UPDATED, {
-        globals: { a: 'c' },
         initialGlobals: { a: 'b' },
+        userGlobals: { a: 'c' },
+        storyGlobals: {},
+        globals: { a: 'c' },
+      });
+    });
+
+    describe('if the story sets globals', () => {
+      const newImportFn = vi.fn(async (path) => {
+        if (path === './src/ComponentOne.stories.js') {
+          return {
+            ...componentOneExports,
+            a: { ...componentOneExports.a, globals: { a: 'c' } },
+          };
+        }
+        return importFn(path);
+      });
+
+      const newGetProjectAnnotations = vi.fn(
+        () => ({ ...projectAnnotations, initialGlobals: { a: 'b', c: 'd' } }) as any
+      );
+
+      it('allows changes to globals the story did not set', async () => {
+        document.location.search = '?id=component-one--a';
+        await createAndRenderPreview({
+          importFn: newImportFn,
+          getProjectAnnotations: newGetProjectAnnotations,
+        });
+
+        mockChannel.emit.mockClear();
+        emitter.emit(UPDATE_GLOBALS, { globals: { c: 'e' } });
+
+        await waitForEvents([GLOBALS_UPDATED]);
+        expect(mockChannel.emit).toHaveBeenCalledWith(GLOBALS_UPDATED, {
+          initialGlobals: { a: 'b', c: 'd' },
+          userGlobals: { a: 'b', c: 'e' },
+          storyGlobals: { a: 'c' },
+          globals: { a: 'c', c: 'e' },
+        });
+      });
+
+      it('does not allow changes to globals the story sets', async () => {
+        document.location.search = '?id=component-one--a';
+        await createAndRenderPreview({
+          importFn: newImportFn,
+          getProjectAnnotations: newGetProjectAnnotations,
+        });
+
+        mockChannel.emit.mockClear();
+        emitter.emit(UPDATE_GLOBALS, { globals: { a: 'e' } });
+
+        await waitForEvents([GLOBALS_UPDATED]);
+        expect(mockChannel.emit).toHaveBeenCalledWith(GLOBALS_UPDATED, {
+          initialGlobals: { a: 'b', c: 'd' },
+          userGlobals: { a: 'e', c: 'd' },
+          storyGlobals: { a: 'c' },
+          globals: { a: 'c', c: 'd' },
+        });
       });
     });
 
@@ -783,7 +883,7 @@ describe('PreviewWeb', () => {
 
       emitter.emit(UPDATE_GLOBALS, { globals: { foo: 'bar' } });
 
-      expect((preview.storyStore as StoryStore<Renderer>)!.globals.get()).toEqual({ a: 'b' });
+      expect((preview.storyStore as StoryStore<Renderer>)!.userGlobals.get()).toEqual({ a: 'b' });
     });
 
     it('passes globals in context to renderToCanvas', async () => {
@@ -1951,6 +2051,57 @@ describe('PreviewWeb', () => {
         });
       });
 
+      it('emits GLOBALS_UPDATED with initial global values', async () => {
+        document.location.search = '?id=component-one--a';
+        await createAndRenderPreview();
+
+        mockChannel.emit.mockClear();
+        emitter.emit(SET_CURRENT_STORY, {
+          storyId: 'component-one--b',
+          viewMode: 'story',
+        });
+        await waitForSetCurrentStory();
+
+        await waitForEvents([GLOBALS_UPDATED]);
+        expect(mockChannel.emit).toHaveBeenCalledWith(GLOBALS_UPDATED, {
+          initialGlobals: { a: 'b' },
+          userGlobals: { a: 'b' },
+          storyGlobals: {},
+          globals: { a: 'b' },
+        });
+      });
+
+      describe('if the story sets globals', () => {
+        it('emits GLOBALS_UPDATED with overridden storyGlobals', async () => {
+          document.location.search = '?id=component-one--a';
+          const newImportFn = vi.fn(async (path) => {
+            if (path === './src/ComponentOne.stories.js') {
+              return {
+                ...componentOneExports,
+                b: { ...componentOneExports.b, globals: { a: 'c' } },
+              };
+            }
+            return importFn(path);
+          });
+
+          await createAndRenderPreview({ importFn: newImportFn });
+          mockChannel.emit.mockClear();
+          emitter.emit(SET_CURRENT_STORY, {
+            storyId: 'component-one--b',
+            viewMode: 'story',
+          });
+          await waitForSetCurrentStory();
+
+          await waitForEvents([GLOBALS_UPDATED]);
+          expect(mockChannel.emit).toHaveBeenCalledWith(GLOBALS_UPDATED, {
+            initialGlobals: { a: 'b' },
+            userGlobals: { a: 'b' },
+            storyGlobals: { a: 'c' },
+            globals: { a: 'c' },
+          });
+        });
+      });
+
       it('applies loaders with story context', async () => {
         document.location.search = '?id=component-one--a';
         await createAndRenderPreview();
@@ -2776,7 +2927,7 @@ describe('PreviewWeb', () => {
     });
 
     describe('when the current story changes', () => {
-      const newComponentOneExports = merge({}, componentOneExports, {
+      const newComponentOneExports = toMerged(componentOneExports, {
         a: { args: { foo: 'edited' } },
       });
       const newImportFn = vi.fn(async (path) => {
@@ -3131,7 +3282,7 @@ describe('PreviewWeb', () => {
       afterEach(() => {
         vi.useRealTimers();
       });
-      const newComponentOneExports = merge({}, componentOneExports, {
+      const newComponentOneExports = toMerged(componentOneExports, {
         a: { args: { bar: 'edited' }, argTypes: { bar: { type: { name: 'string' } } } },
       });
       const newImportFn = vi.fn(async (path) => {
@@ -3350,7 +3501,7 @@ describe('PreviewWeb', () => {
         preview.onGetProjectAnnotationsChanged({ getProjectAnnotations });
         await waitForRender();
 
-        expect((preview.storyStore as StoryStore<Renderer>)!.globals.get()).toEqual({ a: 'c' });
+        expect((preview.storyStore as StoryStore<Renderer>)!.userGlobals.get()).toEqual({ a: 'c' });
       });
     });
 
@@ -3399,7 +3550,9 @@ describe('PreviewWeb', () => {
       preview.onGetProjectAnnotationsChanged({ getProjectAnnotations: newGetProjectAnnotations });
       await waitForRender();
 
-      expect((preview.storyStore as StoryStore<Renderer>)!.globals.get()).toEqual({ a: 'edited' });
+      expect((preview.storyStore as StoryStore<Renderer>)!.userGlobals.get()).toEqual({
+        a: 'edited',
+      });
     });
 
     it('emits SET_GLOBALS with new values', async () => {
@@ -3657,6 +3810,7 @@ describe('PreviewWeb', () => {
               "fileName": "./src/ComponentOne.stories.js",
             },
             "story": "A",
+            "storyGlobals": {},
             "subcomponents": undefined,
             "tags": [
               "dev",
@@ -3707,6 +3861,7 @@ describe('PreviewWeb', () => {
               "fileName": "./src/ComponentOne.stories.js",
             },
             "story": "B",
+            "storyGlobals": {},
             "subcomponents": undefined,
             "tags": [
               "dev",
@@ -3735,6 +3890,7 @@ describe('PreviewWeb', () => {
             },
             "playFunction": undefined,
             "story": "E",
+            "storyGlobals": {},
             "subcomponents": undefined,
             "tags": [
               "dev",
@@ -3773,6 +3929,7 @@ describe('PreviewWeb', () => {
             },
             "playFunction": undefined,
             "story": "C",
+            "storyGlobals": {},
             "subcomponents": undefined,
             "tags": [
               "dev",

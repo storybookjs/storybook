@@ -2,7 +2,7 @@
 
 This addon is used to show stories source in the addon panel.
 
-[Framework Support](https://storybook.js.org/docs/react/api/frameworks-feature-support)
+[Framework Support](https://storybook.js.org/docs/configure/integration/frameworks-feature-support)
 
 ![Storysource Demo](https://raw.githubusercontent.com/storybookjs/storybook/next/code/addons/storysource/docs/demo.gif)
 
@@ -56,7 +56,7 @@ To customize the `source-loader`, pass `loaderOptions`. Valid configurations are
 
 ## Theming
 
-Storysource will automatically use the light or dark syntax theme based on your storybook theme. See [Theming Storybook](https://storybook.js.org/docs/react/configure/theming) for more information.
+Storysource will automatically use the light or dark syntax theme based on your storybook theme. See [Theming Storybook](https://storybook.js.org/docs/configure/user-interface/theming) for more information.
 
 ![Storysource Light/Dark Themes](https://raw.githubusercontent.com/storybookjs/storybook/next/code/addons/storysource/docs/theming-light-dark.png)
 

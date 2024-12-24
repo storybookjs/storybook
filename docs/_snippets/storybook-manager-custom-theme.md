@@ -6,4 +6,3 @@ addons.setConfig({
   theme: yourTheme,
 });
 ```
-

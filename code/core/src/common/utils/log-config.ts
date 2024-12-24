@@ -1,6 +1,6 @@
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 
 export function logConfig(caption: unknown, config: unknown) {
-  console.log(chalk.cyan(caption));
+  console.log(picocolors.cyan(String(caption)));
   console.dir(config, { depth: null });
 }

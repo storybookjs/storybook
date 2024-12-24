@@ -1,4 +1,4 @@
-import type { ElementContext, Spec, RunOptions } from 'axe-core';
+import type { ElementContext, ImpactValue, RunOptions, Spec } from 'axe-core';
 
 export interface Setup {
   element?: ElementContext;
@@ -10,5 +10,7 @@ export interface A11yParameters {
   element?: ElementContext;
   config?: Spec;
   options?: RunOptions;
+  /** @deprecated Use globals.a11y.manual instead */
   manual?: boolean;
+  disable?: boolean;
 }

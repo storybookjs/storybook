@@ -1,11 +1,11 @@
-import { global } from '@storybook/global';
-import semver from 'semver';
-import memoize from 'memoizerific';
-
 import type { API_UnknownEntries, API_Version, API_Versions } from '@storybook/core/types';
-import { version as currentVersion } from '../version';
+import { global } from '@storybook/global';
+
+import memoize from 'memoizerific';
+import semver from 'semver';
 
 import type { ModuleFn } from '../lib/types';
+import { version as currentVersion } from '../version';
 
 const { VERSIONCHECK } = global;
 
@@ -104,8 +104,10 @@ export const init: ModuleFn = ({ store }) => {
         }
       }
 
-      if (subpath) {
-        url += `${subpath}/`;
+      const [cleanedSubpath, hash] = subpath?.split('#') || [];
+
+      if (cleanedSubpath) {
+        url += `${cleanedSubpath}/`;
       }
 
       if (renderer && typeof global.STORYBOOK_RENDERER !== 'undefined') {
@@ -114,6 +116,10 @@ export const init: ModuleFn = ({ store }) => {
         if (rendererName) {
           url += `?renderer=${normalizeRendererName(rendererName)}`;
         }
+      }
+
+      if (hash) {
+        url += `#${hash}`;
       }
 
       return url;

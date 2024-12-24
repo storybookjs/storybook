@@ -1,6 +1,7 @@
-import path from 'node:path';
-import type { Options } from '@storybook/core/types';
+import { sep } from 'node:path';
+
 import { extractProperRendererNameFromFramework, getFrameworkName } from '@storybook/core/common';
+import type { Options } from '@storybook/core/types';
 
 interface PropertyObject {
   name: string;
@@ -18,7 +19,7 @@ export const pluckNameFromConfigProperty = (property: Property) => {
 };
 
 // For replacing Windows backslashes with forward slashes
-const normalizePath = (packagePath: string) => packagePath.replaceAll(path.sep, '/');
+const normalizePath = (packagePath: string) => packagePath.replaceAll(sep, '/');
 
 export const pluckStorybookPackageFromPath = (packagePath: string) =>
   normalizePath(packagePath).match(/(@storybook\/.*)$/)?.[1];

@@ -1,5 +1,5 @@
-import type { API_ProviderData } from '@storybook/core/types';
 import type { RouterData } from '@storybook/core/router';
+import type { API_ProviderData } from '@storybook/core/types';
 
 import type { API, State } from '../root';
 import type Store from '../store';

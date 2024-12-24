@@ -1,17 +1,19 @@
 // @vitest-environment happy-dom
-
 /// <reference types="@testing-library/jest-dom" />;
-import { it, expect, vi, describe } from 'vitest';
 import { render, screen } from '@testing-library/vue';
+import { describe, expect, it, vi } from 'vitest';
+
 import { addons } from 'storybook/internal/preview-api';
-import { expectTypeOf } from 'expect-type';
+
 import type { Meta } from '@storybook/vue3';
 
+import { expectTypeOf } from 'expect-type';
+
+import { composeStories, composeStory, setProjectAnnotations } from '../../portable-stories';
 import * as stories from './Button.stories';
 import type Button from './Button.vue';
-import { composeStories, composeStory, setProjectAnnotations } from '../../portable-stories';
 
-setProjectAnnotations({ testingLibraryRender: render });
+setProjectAnnotations([]);
 
 // example with composeStories, returns an object with all stories composed with args/decorators
 const { CSF3Primary, LoaderStory } = composeStories(stories);
@@ -52,7 +54,7 @@ describe('renders', () => {
     expect(getByTestId('spy-data').textContent).toEqual('mockFn return value');
     expect(getByTestId('loaded-data').textContent).toEqual('loaded data');
     // spy assertions happen in the play function and should work
-    await LoaderStory.play!();
+    await LoaderStory.run!();
   });
 });
 
@@ -60,7 +62,6 @@ describe('projectAnnotations', () => {
   it('renders with default projectAnnotations', () => {
     setProjectAnnotations([
       {
-        testingLibraryRender: render,
         parameters: { injected: true },
         globalTypes: {
           locale: { defaultValue: 'en' },
@@ -103,7 +104,7 @@ describe('CSF3', () => {
   it('renders with play function', async () => {
     const CSF3InputFieldFilled = composeStory(stories.CSF3InputFieldFilled, stories.default);
 
-    await CSF3InputFieldFilled.play();
+    await CSF3InputFieldFilled.run();
 
     const input = screen.getByTestId('input') as HTMLInputElement;
     expect(input.value).toEqual('Hello world!');
@@ -144,8 +145,10 @@ describe('ComposeStories types', () => {
 // Batch snapshot testing
 const testCases = Object.values(composeStories(stories)).map((Story) => [Story.storyName, Story]);
 it.each(testCases)('Renders %s story', async (_storyName, Story) => {
-  if (typeof Story === 'string' || _storyName === 'CSF2StoryWithLocale') return;
-  await Story.play();
+  if (typeof Story === 'string' || _storyName === 'CSF2StoryWithLocale') {
+    return;
+  }
+  await Story.run();
   await new Promise((resolve) => setTimeout(resolve, 0));
   expect(document.body).toMatchSnapshot();
 });

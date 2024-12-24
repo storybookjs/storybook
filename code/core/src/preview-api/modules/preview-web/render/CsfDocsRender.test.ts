@@ -1,11 +1,12 @@
-import { it, expect, vi } from 'vitest';
-import { Channel } from '@storybook/core/channels';
-import type { Renderer, DocsIndexEntry, RenderContextCallbacks } from '@storybook/core/types';
-import type { StoryStore } from '../../store';
-import { PREPARE_ABORTED } from './Render';
+import { expect, it, vi } from 'vitest';
 
-import { CsfDocsRender } from './CsfDocsRender';
+import { Channel } from '@storybook/core/channels';
+import type { DocsIndexEntry, RenderContextCallbacks, Renderer } from '@storybook/core/types';
+
+import type { StoryStore } from '../../store';
 import { csfFileParts } from '../docs-context/test-utils';
+import { CsfDocsRender } from './CsfDocsRender';
+import { PREPARE_ABORTED } from './Render';
 
 const entry = {
   type: 'docs',

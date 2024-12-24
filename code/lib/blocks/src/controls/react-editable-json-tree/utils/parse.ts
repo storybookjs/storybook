@@ -1,7 +1,8 @@
 /**
  * Parse.
+ *
  * @param string {String} string to parse
- * @returns {*}
+ * @returns {any}
  */
 export function parse(string: string) {
   let result = string;

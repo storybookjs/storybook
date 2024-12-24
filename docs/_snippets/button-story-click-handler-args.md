@@ -245,7 +245,7 @@ export const Text: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="3"
+```js filename="Button.stories.js" renderer="vue" language="js"
 import Button from './Button.vue';
 
 import { action } from '@storybook/addon-actions';
@@ -271,7 +271,7 @@ export const Text = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts-4-9" tabTitle="3"
+```ts filename="Button.stories.ts" renderer="vue" language="ts-4-9"
 import type { Meta, StoryObj } from '@storybook/vue3';
 
 import Button from './Button.vue';
@@ -302,7 +302,7 @@ export const Primary: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="3"
+```ts filename="Button.stories.ts" renderer="vue" language="ts"
 import type { Meta, StoryObj } from '@storybook/vue3';
 
 import Button from './Button.vue';
@@ -374,4 +374,3 @@ export const Text: Story = {
   },
 };
 ```
-

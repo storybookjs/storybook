@@ -1,17 +1,19 @@
 import type {
-  Renderer,
   ArgTypes,
-  ProjectAnnotations,
   NormalizedProjectAnnotations,
+  ProjectAnnotations,
+  Renderer,
 } from '@storybook/core/types';
+
 import { deprecate } from '@storybook/core/client-logger';
+
 import { dedent } from 'ts-dedent';
 
 import { inferArgTypes } from '../inferArgTypes';
 import { inferControls } from '../inferControls';
-import { normalizeInputTypes } from './normalizeInputTypes';
-import { normalizeArrays } from './normalizeArrays';
 import { combineParameters } from '../parameters';
+import { normalizeArrays } from './normalizeArrays';
+import { normalizeInputTypes } from './normalizeInputTypes';
 
 // TODO(kasperpeulen) Consolidate this function with composeConfigs
 // As composeConfigs is the real normalizer, and always run before normalizeProjectAnnotations
@@ -24,6 +26,7 @@ export function normalizeProjectAnnotations<TRenderer extends Renderer>({
   decorators,
   loaders,
   beforeEach,
+  experimental_afterEach,
   globals,
   initialGlobals,
   ...annotations
@@ -42,6 +45,7 @@ export function normalizeProjectAnnotations<TRenderer extends Renderer>({
     decorators: normalizeArrays(decorators),
     loaders: normalizeArrays(loaders),
     beforeEach: normalizeArrays(beforeEach),
+    experimental_afterEach: normalizeArrays(experimental_afterEach),
     argTypesEnhancers: [
       ...(argTypesEnhancers || []),
       inferArgTypes,

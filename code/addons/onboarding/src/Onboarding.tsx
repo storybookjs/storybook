@@ -1,16 +1,17 @@
+import React, { useCallback, useEffect, useState } from 'react';
+
 import { SyntaxHighlighter } from 'storybook/internal/components';
 import { SAVE_STORY_RESPONSE } from 'storybook/internal/core-events';
 import { type API } from 'storybook/internal/manager-api';
 import { ThemeProvider, convert, styled, themes } from 'storybook/internal/theming';
-import React, { useCallback, useEffect, useState } from 'react';
+
 import type { Step } from 'react-joyride';
 
-import { GuidedTour } from './features/GuidedTour/GuidedTour';
 import { Confetti } from './components/Confetti/Confetti';
+import { HighlightElement } from './components/HighlightElement/HighlightElement';
 import type { STORYBOOK_ADDON_ONBOARDING_STEPS } from './constants';
 import { STORYBOOK_ADDON_ONBOARDING_CHANNEL } from './constants';
-
-import { HighlightElement } from './components/HighlightElement/HighlightElement';
+import { GuidedTour } from './features/GuidedTour/GuidedTour';
 import { SplashScreen } from './features/SplashScreen/SplashScreen';
 
 const SpanHighlight = styled.span(({ theme }) => ({
@@ -75,6 +76,7 @@ export default function Onboarding({ api }: { api: API }) {
   const [createNewStoryForm, setCreateNewStoryForm] = useState<HTMLElement | null>();
   const [createdStory, setCreatedStory] = useState<{
     newStoryName: string;
+    newStoryExportName: string;
     sourceFileContent: string;
     sourceFileName: string;
   } | null>();
@@ -83,7 +85,10 @@ export default function Onboarding({ api }: { api: API }) {
     (storyId: string) => {
       try {
         const { id, refId } = api.getCurrentStoryData() || {};
-        if (id !== storyId || refId !== undefined) api.selectStory(storyId);
+
+        if (id !== storyId || refId !== undefined) {
+          api.selectStory(storyId);
+        }
       } catch (e) {}
     },
     [api]
@@ -130,17 +135,30 @@ export default function Onboarding({ api }: { api: API }) {
 
   useEffect(() => {
     setStep((current) => {
-      if (['1:Intro', '5:StoryCreated', '6:FinishedOnboarding'].includes(current)) return current;
-      if (createNewStoryForm) return '4:CreateStory';
-      if (saveFromControls) return '3:SaveFromControls';
-      if (primaryControl) return '2:Controls';
+      if (['1:Intro', '5:StoryCreated', '6:FinishedOnboarding'].includes(current)) {
+        return current;
+      }
+
+      if (createNewStoryForm) {
+        return '4:CreateStory';
+      }
+
+      if (saveFromControls) {
+        return '3:SaveFromControls';
+      }
+
+      if (primaryControl) {
+        return '2:Controls';
+      }
       return '1:Intro';
     });
   }, [createNewStoryForm, primaryControl, saveFromControls]);
 
   useEffect(() => {
     return api.on(SAVE_STORY_RESPONSE, ({ payload, success }) => {
-      if (!success || !payload?.newStoryName) return;
+      if (!success || !payload?.newStoryName) {
+        return;
+      }
       setCreatedStory(payload);
       setShowConfetti(true);
       setStep('5:StoryCreated');
@@ -158,8 +176,8 @@ export default function Onboarding({ api }: { api: API }) {
   }
 
   const source = createdStory?.sourceFileContent;
-  const startIndex = source?.lastIndexOf(`export const ${createdStory?.newStoryName}`);
-  const snippet = source?.slice(startIndex);
+  const startIndex = source?.lastIndexOf(`export const ${createdStory?.newStoryExportName}`);
+  const snippet = source?.slice(startIndex).trim();
   const startingLineNumber = source?.slice(0, startIndex).split('\n').length;
 
   const steps: StepDefinition[] = [
@@ -250,17 +268,7 @@ export default function Onboarding({ api }: { api: API }) {
 
   return (
     <ThemeProvider theme={theme}>
-      {showConfetti && (
-        <Confetti
-          numberOfPieces={800}
-          recycle={false}
-          tweenDuration={20000}
-          onConfettiComplete={(confetti) => {
-            confetti?.reset();
-            setShowConfetti(false);
-          }}
-        />
-      )}
+      {showConfetti && <Confetti />}
       {step === '1:Intro' ? (
         <SplashScreen onDismiss={() => setStep('2:Controls')} />
       ) : (

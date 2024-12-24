@@ -11,10 +11,10 @@ export default meta;
 type Story = StoryObj<MyComponent>;
 
 export const NonA11yStory: Story = {
-  parameters: {
+  globals: {
     a11y: {
-      // This option disables all a11y checks on this story
-      disabled: true,
+      // This option disables all automatic a11y checks on this story
+      manual: true,
     },
   },
 };
@@ -28,10 +28,10 @@ export default {
 };
 
 export const NonA11yStory = {
-  parameters: {
+  globals: {
     a11y: {
-      // This option disables all a11y checks on this story
-      disable: true,
+      // This option disables all automatic a11y checks on this story
+      manual: true,
     },
   },
 };
@@ -50,10 +50,10 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const NonA11yStory: Story = {
-  parameters: {
+  globals: {
     a11y: {
-      // This option disables all a11y checks on this story
-      disable: true,
+      // This option disables all automatic a11y checks on this story
+      manual: true,
     },
   },
 };
@@ -72,16 +72,38 @@ export default meta;
 type Story = StoryObj<typeof MyComponent>;
 
 export const NonA11yStory: Story = {
-  parameters: {
+  globals: {
     a11y: {
-      // This option disables all a11y checks on this story
-      disable: true,
+      // This option disables all automatic a11y checks on this story
+      manual: true,
     },
   },
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="svelte" language="js"
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="NonA11yStory"
+  globals={{
+    a11y: {
+      // This option disables all automatic a11y checks on this story
+      manual: true,
+    },
+  }}
+/>
+```
+
+```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import MyComponent from './MyComponent.svelte';
 
 export default {
@@ -89,16 +111,38 @@ export default {
 };
 
 export const NonA11yStory = {
-  parameters: {
+  globals: {
     a11y: {
-      // This option disables all a11y checks on this story
-      disable: true,
+      // This option disables all automatic a11y checks on this story
+      manual: true,
     },
   },
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts-4-9"
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="NonA11yStory"
+  globals={{
+    a11y: {
+      // This option disables all automatic a11y checks on this story
+      manual: true,
+    },
+  }}
+/>
+```
+
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
 import MyComponent from './MyComponent.svelte';
@@ -111,16 +155,38 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const NonA11yStory: Story = {
-  parameters: {
+  globals: {
     a11y: {
-      // This option disables all a11y checks on this story
-      disable: true,
+      // This option disables all automatic a11y checks on this story
+      manual: true,
     },
   },
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts"
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="NonA11yStory"
+  globals={{
+    a11y: {
+      // This option disables all automatic a11y checks on this story
+      manual: true,
+    },
+  }}
+/>
+```
+
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
 import type { Meta, StoryObj } from '@storybook/svelte';
 
 import MyComponent from './MyComponent.svelte';
@@ -133,10 +199,10 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const NonA11yStory: Story = {
-  parameters: {
+  globals: {
     a11y: {
-      // This option disables all a11y checks on this story
-      disable: true,
+      // This option disables all automatic a11y checks on this story
+      manual: true,
     },
   },
 };
@@ -150,10 +216,10 @@ export default {
 };
 
 export const NonA11yStory = {
-  parameters: {
+  globals: {
     a11y: {
-      // This option disables all a11y checks on this story
-      disable: true,
+      // This option disables all automatic a11y checks on this story
+      manual: true,
     },
   },
 };
@@ -172,10 +238,10 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const NonA11yStory: Story = {
-  parameters: {
+  globals: {
     a11y: {
-      // This option disables all a11y checks on this story
-      disable: true,
+      // This option disables all automatic a11y checks on this story
+      manual: true,
     },
   },
 };
@@ -194,10 +260,10 @@ export default meta;
 type Story = StoryObj<typeof MyComponent>;
 
 export const NonA11yStory: Story = {
-  parameters: {
+  globals: {
     a11y: {
-      // This option disables all a11y checks on this story
-      disable: true,
+      // This option disables all automatic a11y checks on this story
+      manual: true,
     },
   },
 };
@@ -209,10 +275,10 @@ export default {
 };
 
 export const ExampleStory = {
-  parameters: {
+  globals: {
     a11y: {
-      // This option disables all a11y checks on this story
-      disable: true,
+      // This option disables all automatic a11y checks on this story
+      manual: true,
     },
   },
 };
@@ -229,12 +295,11 @@ export default meta;
 type Story = StoryObj;
 
 export const ExampleStory: Story = {
-  parameters: {
+  globals: {
     a11y: {
-      // This option disables all a11y checks on this story
-      disable: true,
+      // This option disables all automatic a11y checks on this story
+      manual: true,
     },
   },
 };
 ```
-

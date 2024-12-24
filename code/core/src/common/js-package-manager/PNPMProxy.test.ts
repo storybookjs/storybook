@@ -1,4 +1,5 @@
-import { describe, beforeEach, it, expect, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { PNPMProxy } from './PNPMProxy';
 
 describe('PNPM Proxy', () => {
@@ -20,21 +21,6 @@ describe('PNPM Proxy', () => {
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({ command: 'pnpm', args: ['init'] })
-      );
-    });
-  });
-
-  describe('setRegistryUrl', () => {
-    it('should run `npm config set registry https://foo.bar`', async () => {
-      const executeCommandSpy = vi.spyOn(pnpmProxy, 'executeCommand').mockResolvedValueOnce('');
-
-      await pnpmProxy.setRegistryURL('https://foo.bar');
-
-      expect(executeCommandSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          command: 'npm',
-          args: ['config', 'set', 'registry', 'https://foo.bar'],
-        })
       );
     });
   });

@@ -1,10 +1,11 @@
 /**
- * Source: https://github.com/vercel/next.js/blob/canary/packages/next/src/build/babel/plugins/next-page-config.ts
+ * Source:
+ * https://github.com/vercel/next.js/blob/canary/packages/next/src/build/babel/plugins/next-page-config.ts
  */
 import type { NodePath, PluginObj, PluginPass, Visitor } from '@babel/core';
 import { types as BabelTypes } from '@babel/core';
-import type { PageConfig } from 'next/types';
 import { STRING_LITERAL_DROP_BUNDLE } from 'next/constants';
+import type { PageConfig } from 'next/types';
 
 const CONFIG_KEY = 'config';
 

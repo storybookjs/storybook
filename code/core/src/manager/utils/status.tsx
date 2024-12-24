@@ -1,11 +1,12 @@
-import React from 'react';
 import type { ReactElement } from 'react';
-import type { API_HashEntry, API_StatusState, API_StatusValue } from '@storybook/core/types';
+import React from 'react';
 
 import { styled } from '@storybook/core/theming';
-
-import { getDescendantIds } from './tree';
+import type { API_HashEntry, API_StatusState, API_StatusValue } from '@storybook/core/types';
 import { CircleIcon } from '@storybook/icons';
+
+import { UseSymbol } from '../components/sidebar/IconSymbols';
+import { getDescendantIds } from './tree';
 
 const SmallIcons = styled(CircleIcon)({
   // specificity hack
@@ -25,9 +26,24 @@ export const statusPriority: API_StatusValue[] = ['unknown', 'pending', 'success
 export const statusMapping: Record<API_StatusValue, [ReactElement | null, string | null]> = {
   unknown: [null, null],
   pending: [<LoadingIcons key="icon" />, 'currentColor'],
-  success: [<SmallIcons key="icon" style={{ color: 'green' }} />, 'currentColor'],
-  warn: [<SmallIcons key="icon" style={{ color: 'orange' }} />, '#A15C20'],
-  error: [<SmallIcons key="icon" style={{ color: 'red' }} />, 'brown'],
+  success: [
+    <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
+      <UseSymbol type="success" />
+    </svg>,
+    'currentColor',
+  ],
+  warn: [
+    <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
+      <UseSymbol type="warning" />
+    </svg>,
+    '#A15C20',
+  ],
+  error: [
+    <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
+      <UseSymbol type="error" />
+    </svg>,
+    'brown',
+  ],
 };
 
 export const getHighestStatus = (statuses: API_StatusValue[]): API_StatusValue => {

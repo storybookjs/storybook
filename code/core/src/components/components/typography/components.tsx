@@ -1,20 +1,22 @@
 import type {
-  HTMLAttributes,
-  DetailedHTMLProps,
   AnchorHTMLAttributes,
   BlockquoteHTMLAttributes,
+  DetailedHTMLProps,
+  HTMLAttributes,
   ImgHTMLAttributes,
-  TableHTMLAttributes,
   LiHTMLAttributes,
   OlHTMLAttributes,
+  TableHTMLAttributes,
 } from 'react';
 import React from 'react';
+
 import { nameSpaceClassNames } from './DocumentFormatting';
+import { ResetWrapper } from './ResetWrapper';
 import { A } from './elements/A';
 import { Blockquote } from './elements/Blockquote';
 import { Code } from './elements/Code';
-import { Div } from './elements/Div';
 import { DL } from './elements/DL';
+import { Div } from './elements/Div';
 import { H1 } from './elements/H1';
 import { H2 } from './elements/H2';
 import { H3 } from './elements/H3';
@@ -28,10 +30,9 @@ import { OL } from './elements/OL';
 import { P } from './elements/P';
 import { Pre } from './elements/Pre';
 import { Span } from './elements/Span';
-import { Table } from './elements/Table';
 import { TT } from './elements/TT';
+import { Table } from './elements/Table';
 import { UL } from './elements/UL';
-import { ResetWrapper } from './ResetWrapper';
 
 export const components = {
   h1: (props: DetailedHTMLProps<HTMLAttributes<HTMLHeadingElement>, HTMLHeadingElement>) => (

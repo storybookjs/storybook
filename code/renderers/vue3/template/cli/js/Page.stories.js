@@ -1,4 +1,5 @@
-import { within, userEvent, expect } from '@storybook/test';
+import { expect, userEvent, within } from '@storybook/test';
+
 import MyPage from './Page.vue';
 
 export default {

@@ -8,7 +8,7 @@ import Meta, { ValidForm as ValidFormStory } from './LoginForm.stories';
 const ValidForm = composeStory(ValidFormStory, Meta);
 
 test('Validates form', async () => {
-  await ValidForm.play();
+  await ValidForm.run();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',
@@ -31,7 +31,7 @@ import Meta, { ValidForm as ValidFormStory } from './LoginForm.stories';
 const ValidForm = composeStory(ValidFormStory, Meta);
 
 test('Validates form', async () => {
-  await ValidForm.play();
+  await ValidForm.run();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',
@@ -44,7 +44,7 @@ test('Validates form', async () => {
 });
 ```
 
-```js filename="tests/Form.test.js" renderer="vue" language="js" tabTitle="3"
+```js filename="tests/Form.test.js" renderer="vue" language="js"
 import { fireEvent, screen } from '@testing-library/vue';
 
 import { composeStory } from '@storybook/vue3';
@@ -54,7 +54,7 @@ import Meta, { ValidForm as ValidFormStory } from './LoginForm.stories';
 const ValidForm = composeStory(ValidFormStory, Meta);
 
 test('Validates form', async () => {
-  await ValidForm.play();
+  await ValidForm.run();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',
@@ -67,7 +67,7 @@ test('Validates form', async () => {
 });
 ```
 
-```ts filename="tests/Form.test.ts" renderer="vue" language="ts" tabTitle="3"
+```ts filename="tests/Form.test.ts" renderer="vue" language="ts"
 import { fireEvent, screen } from '@testing-library/vue';
 
 import { composeStory } from '@storybook/vue3';
@@ -77,7 +77,7 @@ import Meta, { ValidForm as ValidFormStory } from './LoginForm.stories';
 const ValidForm = composeStory(ValidFormStory, Meta);
 
 test('Validates form', async () => {
-  await ValidForm.play();
+  await ValidForm.run();
 
   const buttonElement = screen.getByRole('button', {
     name: 'Submit',

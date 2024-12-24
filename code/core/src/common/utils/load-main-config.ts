@@ -1,9 +1,12 @@
-import path, { relative } from 'node:path';
+import { readFile } from 'node:fs/promises';
+import { relative, resolve } from 'node:path';
+
+import type { StorybookConfig } from '@storybook/core/types';
+
+import { MainFileESMOnlyImportError, MainFileEvaluationError } from '@storybook/core/server-errors';
+
 import { serverRequire, serverResolve } from './interpret-require';
 import { validateConfigurationFiles } from './validate-configuration-files';
-import { readFile } from 'fs/promises';
-import { MainFileESMOnlyImportError, MainFileEvaluationError } from '@storybook/core/server-errors';
-import type { StorybookConfig } from '@storybook/core/types';
 
 export async function loadMainConfig({
   configDir = '.storybook',
@@ -14,7 +17,7 @@ export async function loadMainConfig({
 }): Promise<StorybookConfig> {
   await validateConfigurationFiles(configDir);
 
-  const mainJsPath = serverResolve(path.resolve(configDir, 'main')) as string;
+  const mainJsPath = serverResolve(resolve(configDir, 'main')) as string;
 
   if (noCache && mainJsPath && require.cache[mainJsPath]) {
     delete require.cache[mainJsPath];

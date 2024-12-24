@@ -1,8 +1,11 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { ManagerContext } from '@storybook/core/manager-api';
 import React from 'react';
-import { UpgradeBlock } from './UpgradeBlock';
+
+import type { Meta, StoryObj } from '@storybook/react';
 import { fn } from '@storybook/test';
+
+import { ManagerContext } from '@storybook/core/manager-api';
+
+import { UpgradeBlock } from './UpgradeBlock';
 
 const meta = {
   component: UpgradeBlock,

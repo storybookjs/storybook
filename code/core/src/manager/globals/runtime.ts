@@ -2,18 +2,18 @@ import * as REACT from 'react';
 import * as REACT_DOM from 'react-dom';
 import * as REACT_DOM_CLIENT from 'react-dom/client';
 
-import * as COMPONENTS from '@storybook/core/components';
-import * as ICONS from '@storybook/icons';
-import * as MANAGER_API from '@storybook/core/manager-api';
-
 import * as CHANNELS from '@storybook/core/channels';
-import * as EVENTS from '@storybook/core/core-events';
-import * as EVENTS_MANAGER_ERRORS from '@storybook/core/manager-errors';
+import * as COMPONENTS from '@storybook/core/components';
 import * as ROUTER from '@storybook/core/router';
 import * as THEMING from '@storybook/core/theming';
 import * as THEMINGCREATE from '@storybook/core/theming/create';
 import * as TYPES from '@storybook/core/types';
+import * as ICONS from '@storybook/icons';
+
 import * as CLIENT_LOGGER from '@storybook/core/client-logger';
+import * as EVENTS from '@storybook/core/core-events';
+import * as MANAGER_API from '@storybook/core/manager-api';
+import * as EVENTS_MANAGER_ERRORS from '@storybook/core/manager-errors';
 
 import type { globalsNameReferenceMap } from './globals';
 

@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { global } from '@storybook/global';
+
 import { simulatePageLoad } from './simulate-pageload';
 
 const { document } = global;

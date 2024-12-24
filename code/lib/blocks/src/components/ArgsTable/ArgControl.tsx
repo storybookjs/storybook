@@ -1,7 +1,8 @@
 import type { FC } from 'react';
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import { Link } from 'storybook/internal/components';
+
 import {
   BooleanControl,
   ColorControl,
@@ -13,7 +14,7 @@ import {
   RangeControl,
   TextControl,
 } from '../../controls';
-import type { Args, ArgType } from './types';
+import type { ArgType, Args } from './types';
 
 export interface ArgControlProps {
   row: ArgType;
@@ -50,7 +51,9 @@ export const ArgControl: FC<ArgControlProps> = ({ row, arg, updateArgs, isHovere
   const [boxedValue, setBoxedValue] = useState({ value: arg });
 
   useEffect(() => {
-    if (!isFocused) setBoxedValue({ value: arg });
+    if (!isFocused) {
+      setBoxedValue({ value: arg });
+    }
   }, [isFocused, arg]);
 
   const onChange = useCallback(
@@ -68,11 +71,7 @@ export const ArgControl: FC<ArgControlProps> = ({ row, arg, updateArgs, isHovere
   if (!control || control.disable) {
     const canBeSetup = control?.disable !== true && row?.type?.name !== 'function';
     return isHovered && canBeSetup ? (
-      <Link
-        href="https://storybook.js.org/docs/react/essentials/controls"
-        target="_blank"
-        withArrow
-      >
+      <Link href="https://storybook.js.org/docs/essentials/controls" target="_blank" withArrow>
         Setup controls
       </Link>
     ) : (

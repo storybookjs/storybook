@@ -1,17 +1,18 @@
 /* eslint-disable @typescript-eslint/no-shadow */
+import { join } from 'node:path';
 
-import { describe, beforeEach, it, expect, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import path from 'node:path';
 import { normalizeStoriesEntry } from '@storybook/core/common';
 import type { NormalizedStoriesSpecifier, StoryIndexEntry } from '@storybook/core/types';
-import { readCsf, getStorySortParameter } from '@storybook/core/csf-tools';
 import { toId } from '@storybook/csf';
+
+import { getStorySortParameter, readCsf } from '@storybook/core/csf-tools';
 import { logger, once } from '@storybook/core/node-logger';
 
+import { csfIndexer } from '../presets/common-preset';
 import type { StoryIndexGeneratorOptions } from './StoryIndexGenerator';
 import { StoryIndexGenerator } from './StoryIndexGenerator';
-import { csfIndexer } from '../presets/common-preset';
 
 vi.mock('@storybook/csf', async (importOriginal) => {
   const csf = await importOriginal<typeof import('@storybook/csf')>();
@@ -37,8 +38,8 @@ const readCsfMock = vi.mocked(readCsf);
 const getStorySortParameterMock = vi.mocked(getStorySortParameter);
 
 const options: StoryIndexGeneratorOptions = {
-  configDir: path.join(__dirname, '__mockdata__'),
-  workingDir: path.join(__dirname, '__mockdata__'),
+  configDir: join(__dirname, '__mockdata__'),
+  workingDir: join(__dirname, '__mockdata__'),
   indexers: [csfIndexer],
   docs: { defaultName: 'docs', autodocs: false },
 };
@@ -68,7 +69,8 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([specifier], options);
         await generator.initialize();
 
-        expect(await generator.getIndex()).toMatchInlineSnapshot(`
+        const { storyIndex, stats } = await generator.getIndexAndStats();
+        expect(storyIndex).toMatchInlineSnapshot(`
           {
             "entries": {
               "a--story-one": {
@@ -89,6 +91,19 @@ describe('StoryIndexGenerator', () => {
             "v": 5,
           }
         `);
+
+        expect(stats).toMatchInlineSnapshot(`
+          {
+            "beforeEach": 0,
+            "globals": 0,
+            "loaders": 0,
+            "moduleMock": 0,
+            "mount": 0,
+            "play": 0,
+            "render": 0,
+            "storyFn": 0,
+          }
+        `);
       });
     });
     describe('single file .story specifier', () => {
@@ -101,7 +116,8 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([specifier], options);
         await generator.initialize();
 
-        expect(await generator.getIndex()).toMatchInlineSnapshot(`
+        const { storyIndex } = await generator.getIndexAndStats();
+        expect(storyIndex).toMatchInlineSnapshot(`
           {
             "entries": {
               "f--story-one": {
@@ -133,7 +149,8 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([specifier], options);
         await generator.initialize();
 
-        expect(await generator.getIndex()).toMatchInlineSnapshot(`
+        const { storyIndex } = await generator.getIndexAndStats();
+        expect(storyIndex).toMatchInlineSnapshot(`
           {
             "entries": {
               "stories--story-one": {
@@ -165,7 +182,8 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([specifier], options);
         await generator.initialize();
 
-        expect(await generator.getIndex()).toMatchInlineSnapshot(`
+        const { storyIndex } = await generator.getIndexAndStats();
+        expect(storyIndex).toMatchInlineSnapshot(`
           {
             "entries": {
               "componentpath-extension--story-one": {
@@ -245,7 +263,8 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([specifier], options);
         await generator.initialize();
 
-        expect(await generator.getIndex()).toMatchInlineSnapshot(`
+        const { storyIndex, stats } = await generator.getIndexAndStats();
+        expect(storyIndex).toMatchInlineSnapshot(`
           {
             "entries": {
               "a--story-one": {
@@ -336,6 +355,68 @@ describe('StoryIndexGenerator', () => {
                 "title": "first-nested/deeply/F",
                 "type": "story",
               },
+              "first-nested-deeply-features--with-csf-1": {
+                "componentPath": undefined,
+                "id": "first-nested-deeply-features--with-csf-1",
+                "importPath": "./src/first-nested/deeply/Features.stories.jsx",
+                "name": "With CSF 1",
+                "tags": [
+                  "dev",
+                  "test",
+                ],
+                "title": "first-nested/deeply/Features",
+                "type": "story",
+              },
+              "first-nested-deeply-features--with-play": {
+                "componentPath": undefined,
+                "id": "first-nested-deeply-features--with-play",
+                "importPath": "./src/first-nested/deeply/Features.stories.jsx",
+                "name": "With Play",
+                "tags": [
+                  "dev",
+                  "test",
+                  "play-fn",
+                ],
+                "title": "first-nested/deeply/Features",
+                "type": "story",
+              },
+              "first-nested-deeply-features--with-render": {
+                "componentPath": undefined,
+                "id": "first-nested-deeply-features--with-render",
+                "importPath": "./src/first-nested/deeply/Features.stories.jsx",
+                "name": "With Render",
+                "tags": [
+                  "dev",
+                  "test",
+                ],
+                "title": "first-nested/deeply/Features",
+                "type": "story",
+              },
+              "first-nested-deeply-features--with-story-fn": {
+                "componentPath": undefined,
+                "id": "first-nested-deeply-features--with-story-fn",
+                "importPath": "./src/first-nested/deeply/Features.stories.jsx",
+                "name": "With Story Fn",
+                "tags": [
+                  "dev",
+                  "test",
+                ],
+                "title": "first-nested/deeply/Features",
+                "type": "story",
+              },
+              "first-nested-deeply-features--with-test": {
+                "componentPath": undefined,
+                "id": "first-nested-deeply-features--with-test",
+                "importPath": "./src/first-nested/deeply/Features.stories.jsx",
+                "name": "With Test",
+                "tags": [
+                  "dev",
+                  "test",
+                  "play-fn",
+                ],
+                "title": "first-nested/deeply/Features",
+                "type": "story",
+              },
               "h--story-one": {
                 "componentPath": undefined,
                 "id": "h--story-one",
@@ -378,6 +459,19 @@ describe('StoryIndexGenerator', () => {
             "v": 5,
           }
         `);
+
+        expect(stats).toMatchInlineSnapshot(`
+          {
+            "beforeEach": 1,
+            "globals": 0,
+            "loaders": 1,
+            "moduleMock": 0,
+            "mount": 1,
+            "play": 2,
+            "render": 1,
+            "storyFn": 1,
+          }
+        `);
       });
     });
 
@@ -395,7 +489,8 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([specifier], autodocsOptions);
         await generator.initialize();
 
-        expect(await generator.getIndex()).toMatchInlineSnapshot(`
+        const { storyIndex, stats } = await generator.getIndexAndStats();
+        expect(storyIndex).toMatchInlineSnapshot(`
           {
             "entries": {
               "a--story-one": {
@@ -512,6 +607,68 @@ describe('StoryIndexGenerator', () => {
                 "title": "first-nested/deeply/F",
                 "type": "story",
               },
+              "first-nested-deeply-features--with-csf-1": {
+                "componentPath": undefined,
+                "id": "first-nested-deeply-features--with-csf-1",
+                "importPath": "./src/first-nested/deeply/Features.stories.jsx",
+                "name": "With CSF 1",
+                "tags": [
+                  "dev",
+                  "test",
+                ],
+                "title": "first-nested/deeply/Features",
+                "type": "story",
+              },
+              "first-nested-deeply-features--with-play": {
+                "componentPath": undefined,
+                "id": "first-nested-deeply-features--with-play",
+                "importPath": "./src/first-nested/deeply/Features.stories.jsx",
+                "name": "With Play",
+                "tags": [
+                  "dev",
+                  "test",
+                  "play-fn",
+                ],
+                "title": "first-nested/deeply/Features",
+                "type": "story",
+              },
+              "first-nested-deeply-features--with-render": {
+                "componentPath": undefined,
+                "id": "first-nested-deeply-features--with-render",
+                "importPath": "./src/first-nested/deeply/Features.stories.jsx",
+                "name": "With Render",
+                "tags": [
+                  "dev",
+                  "test",
+                ],
+                "title": "first-nested/deeply/Features",
+                "type": "story",
+              },
+              "first-nested-deeply-features--with-story-fn": {
+                "componentPath": undefined,
+                "id": "first-nested-deeply-features--with-story-fn",
+                "importPath": "./src/first-nested/deeply/Features.stories.jsx",
+                "name": "With Story Fn",
+                "tags": [
+                  "dev",
+                  "test",
+                ],
+                "title": "first-nested/deeply/Features",
+                "type": "story",
+              },
+              "first-nested-deeply-features--with-test": {
+                "componentPath": undefined,
+                "id": "first-nested-deeply-features--with-test",
+                "importPath": "./src/first-nested/deeply/Features.stories.jsx",
+                "name": "With Test",
+                "tags": [
+                  "dev",
+                  "test",
+                  "play-fn",
+                ],
+                "title": "first-nested/deeply/Features",
+                "type": "story",
+              },
               "h--docs": {
                 "id": "h--docs",
                 "importPath": "./src/H.stories.mjs",
@@ -567,6 +724,19 @@ describe('StoryIndexGenerator', () => {
             "v": 5,
           }
         `);
+
+        expect(stats).toMatchInlineSnapshot(`
+          {
+            "beforeEach": 1,
+            "globals": 0,
+            "loaders": 1,
+            "moduleMock": 0,
+            "mount": 1,
+            "play": 2,
+            "render": 1,
+            "storyFn": 1,
+          }
+        `);
       });
 
       const autodocsTrueOptions = {
@@ -603,6 +773,12 @@ describe('StoryIndexGenerator', () => {
             "componentpath-package--story-one",
             "first-nested-deeply-f--docs",
             "first-nested-deeply-f--story-one",
+            "first-nested-deeply-features--docs",
+            "first-nested-deeply-features--with-play",
+            "first-nested-deeply-features--with-story-fn",
+            "first-nested-deeply-features--with-render",
+            "first-nested-deeply-features--with-test",
+            "first-nested-deeply-features--with-csf-1",
             "nested-button--docs",
             "nested-button--story-one",
             "second-nested-g--docs",
@@ -639,6 +815,12 @@ describe('StoryIndexGenerator', () => {
             "componentpath-package--story-one",
             "first-nested-deeply-f--docs",
             "first-nested-deeply-f--story-one",
+            "first-nested-deeply-features--docs",
+            "first-nested-deeply-features--with-play",
+            "first-nested-deeply-features--with-story-fn",
+            "first-nested-deeply-features--with-render",
+            "first-nested-deeply-features--with-test",
+            "first-nested-deeply-features--with-csf-1",
             "nested-button--docs",
             "nested-button--story-one",
             "second-nested-g--docs",
@@ -730,7 +912,8 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([csfSpecifier, docsSpecifier], autodocsOptions);
         await generator.initialize();
 
-        expect(await generator.getIndex()).toMatchInlineSnapshot(`
+        const { storyIndex } = await generator.getIndexAndStats();
+        expect(storyIndex).toMatchInlineSnapshot(`
           {
             "entries": {
               "b--docs": {
@@ -794,7 +977,8 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([csfSpecifier, docsSpecifier], autodocsOptions);
         await generator.initialize();
 
-        expect(await generator.getIndex()).toMatchInlineSnapshot(`
+        const { storyIndex } = await generator.getIndexAndStats();
+        expect(storyIndex).toMatchInlineSnapshot(`
           {
             "entries": {
               "b--docs": {
@@ -862,7 +1046,8 @@ describe('StoryIndexGenerator', () => {
         );
         await generator.initialize();
 
-        expect(await generator.getIndex()).toMatchInlineSnapshot(`
+        const { storyIndex } = await generator.getIndexAndStats();
+        expect(storyIndex).toMatchInlineSnapshot(`
           {
             "entries": {
               "a--docs": {
@@ -919,7 +1104,8 @@ describe('StoryIndexGenerator', () => {
         generator.getProjectTags = () => ['dev', 'test', 'autodocs'];
         await generator.initialize();
 
-        expect(await generator.getIndex()).toMatchInlineSnapshot(`
+        const { storyIndex } = await generator.getIndexAndStats();
+        expect(storyIndex).toMatchInlineSnapshot(`
           {
             "entries": {
               "a--docs": {
@@ -970,7 +1156,8 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([specifier], autodocsOptions);
         await generator.initialize();
 
-        expect(await generator.getIndex()).toMatchInlineSnapshot(`
+        const { storyIndex } = await generator.getIndexAndStats();
+        expect(storyIndex).toMatchInlineSnapshot(`
           {
             "entries": {
               "duplicate-a--docs": {
@@ -1030,7 +1217,8 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([csfSpecifier], autodocsOptions);
         await generator.initialize();
 
-        expect(await generator.getIndex()).toMatchInlineSnapshot(`
+        const { storyIndex } = await generator.getIndexAndStats();
+        expect(storyIndex).toMatchInlineSnapshot(`
           {
             "entries": {},
             "v": 5,
@@ -1047,7 +1235,8 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([csfSpecifier], autodocsOptions);
         await generator.initialize();
 
-        expect(await generator.getIndex()).toMatchInlineSnapshot(`
+        const { storyIndex } = await generator.getIndexAndStats();
+        expect(storyIndex).toMatchInlineSnapshot(`
           {
             "entries": {
               "my-component-a--docs": {
@@ -1088,7 +1277,8 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([storiesSpecifier, docsSpecifier], options);
         await generator.initialize();
 
-        expect(await generator.getIndex()).toMatchInlineSnapshot(`
+        const { storyIndex } = await generator.getIndexAndStats();
+        expect(storyIndex).toMatchInlineSnapshot(`
           {
             "entries": {
               "a--metaof": {
@@ -1222,7 +1412,8 @@ describe('StoryIndexGenerator', () => {
         });
         await generator.initialize();
 
-        expect(await generator.getIndex()).toMatchInlineSnapshot(`
+        const { storyIndex } = await generator.getIndexAndStats();
+        expect(storyIndex).toMatchInlineSnapshot(`
           {
             "entries": {
               "a--metaof": {
@@ -1328,7 +1519,8 @@ describe('StoryIndexGenerator', () => {
           options
         );
         await generator.initialize();
-        expect(await generator.getIndex()).toMatchInlineSnapshot(`
+        const { storyIndex } = await generator.getIndexAndStats();
+        expect(storyIndex).toMatchInlineSnapshot(`
           {
             "entries": {
               "a--story-one": {
@@ -1395,7 +1587,8 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([csfSpecifier, docsSpecifier], options);
         await generator.initialize();
 
-        expect(await generator.getIndex()).toMatchInlineSnapshot(`
+        const { storyIndex } = await generator.getIndexAndStats();
+        expect(storyIndex).toMatchInlineSnapshot(`
           {
             "entries": {
               "my-component-b--docs": {
@@ -1603,6 +1796,11 @@ describe('StoryIndexGenerator', () => {
           "componentpath-noextension--story-one",
           "componentpath-package--story-one",
           "first-nested-deeply-f--story-one",
+          "first-nested-deeply-features--with-play",
+          "first-nested-deeply-features--with-story-fn",
+          "first-nested-deeply-features--with-render",
+          "first-nested-deeply-features--with-test",
+          "first-nested-deeply-features--with-csf-1",
         ]
       `);
     });
@@ -1621,7 +1819,7 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([specifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(readCsfMock).toHaveBeenCalledTimes(10);
+        expect(readCsfMock).toHaveBeenCalledTimes(11);
 
         readCsfMock.mockClear();
         await generator.getIndex();
@@ -1679,7 +1877,7 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([specifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(readCsfMock).toHaveBeenCalledTimes(10);
+        expect(readCsfMock).toHaveBeenCalledTimes(11);
 
         generator.invalidate(specifier, './src/B.stories.ts', false);
 
@@ -1764,7 +1962,7 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([specifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(readCsfMock).toHaveBeenCalledTimes(10);
+        expect(readCsfMock).toHaveBeenCalledTimes(11);
 
         generator.invalidate(specifier, './src/B.stories.ts', true);
 
@@ -1803,7 +2001,7 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([specifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(readCsfMock).toHaveBeenCalledTimes(10);
+        expect(readCsfMock).toHaveBeenCalledTimes(11);
 
         generator.invalidate(specifier, './src/B.stories.ts', true);
 

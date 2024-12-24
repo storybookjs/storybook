@@ -1,10 +1,11 @@
-import type { FC, ChangeEvent } from 'react';
+import type { ChangeEvent, FC } from 'react';
 import React, { useCallback, useState } from 'react';
-import { styled } from 'storybook/internal/theming';
-import { Button, Form } from 'storybook/internal/components';
-import { getControlId, getControlSetterButtonId } from './helpers';
 
-import type { ControlProps, TextValue, TextConfig } from './types';
+import { Button, Form } from 'storybook/internal/components';
+import { styled } from 'storybook/internal/theming';
+
+import { getControlId, getControlSetterButtonId } from './helpers';
+import type { ControlProps, TextConfig, TextValue } from './types';
 
 export type TextProps = ControlProps<TextValue | undefined> & TextConfig;
 

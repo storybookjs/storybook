@@ -1,7 +1,10 @@
-import prettier from 'prettier';
-import { logger } from '@storybook/core/node-logger';
 import { storyNameFromExport } from '@storybook/csf';
-import { sanitizeName, jscodeshiftToPrettierParser } from '../lib/utils';
+
+import { logger } from '@storybook/core/node-logger';
+
+import prettier from 'prettier';
+
+import { jscodeshiftToPrettierParser, sanitizeName } from '../lib/utils';
 
 /**
  * Convert a legacy story API to component story format
@@ -23,6 +26,7 @@ import { sanitizeName, jscodeshiftToPrettierParser } from '../lib/utils';
  * export const story = () => <Button label="The Button" />;
  *
  * NOTES: only support chained storiesOf() calls
+ * ```
  */
 export default async function transformer(file, api, options) {
   const LITERAL = ['ts', 'tsx'].includes(options.parser) ? 'StringLiteral' : 'Literal';

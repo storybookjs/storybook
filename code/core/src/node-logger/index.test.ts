@@ -1,5 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
 import npmlog from 'npmlog';
+
 import { logger } from '.';
 
 globalThis.console = { log: vi.fn() } as any;

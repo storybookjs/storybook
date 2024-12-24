@@ -341,11 +341,149 @@ Some example usages of custom indexers include:
 <details>
   <summary>Generating stories with an alternative API</summary>
 
-  You can use a custom indexer and builder plugin to create your API to define stories extending the CSF format. To learn more, see the following [proof of concept](https://stackblitz.com/edit/github-h2rgfk?file=README.mdx) to set up a custom indexer to generate stories dynamically. It contains everything needed to support such a feature, including the indexer, a Vite plugin, and a Webpack loader.
+  You can use a custom indexer and builder plugin to create your API to define stories extending the CSF format. To learn more, see the following [proof of concept](https://stackblitz.com/edit/github-h2rgfk?file=README.md) to set up a custom indexer to generate stories dynamically. It contains everything needed to support such a feature, including the indexer, a Vite plugin, and a Webpack loader.
 </details>
 
 <details>
   <summary>Defining stories in non-JavaScript language</summary>
 
   Custom indexers can be used for an advanced purpose: defining stories in any language, including template languages, and converting the files to CSF. To see examples of this in action, you can refer to [`@storybook/addon-svelte-csf`](https://github.com/storybookjs/addon-svelte-csf) for Svelte template syntax and [`storybook-vue-addon`](https://github.com/tobiasdiez/storybook-vue-addon) for Vue template syntax.
+</details>
+
+
+<details>
+  <summary>Adding sidebar links from a URL collection</summary>
+
+  The indexer API is flexible enough to let you process arbitrary content, so long as your framework tooling can transform the exports in that content into actual stories it can run. This advanced example demonstrates how you can create a custom indexer to process a collection of URLs, extract the title and URL from each page, and render them as sidebar links in the UI. Implemented with Svelte, it can be adapted to any framework.
+
+  Start by creating the URL collection file (i.e., `src/MyLinks.url.js`) with a list of URLs listed as named exports. The indexer will use the export name as the story title and the value as the unique identifier.
+
+  ```js title="MyLinks.url.js"
+  export default {};
+
+  export const DesignTokens = 'https://www.designtokens.org/';
+  export const CobaltUI = 'https://cobalt-ui.pages.dev/';
+  export const MiseEnMode = 'https://mode.place/';
+  export const IndexerAPI = 'https://github.com/storybookjs/storybook/discussions/23176';
+  ```
+
+  Adjust your Vite configuration file to include a custom plugin complementing the indexer. This will allow Storybook to process and import the URL collection file as stories.
+
+  ```ts title="vite.config.ts"
+  import * as acorn from 'acorn';
+  import * as walk from 'acorn-walk';
+  import { defineConfig, type Plugin } from 'vite';
+  import { svelte } from '@sveltejs/vite-plugin-svelte';
+
+  function StorybookUrlLinksPlugin(): Plugin {
+    return {
+      name: 'storybook-url-links',
+      async transform(code: string, id: string) {
+        if (id.endsWith('.url.js')) {
+          const ast = acorn.parse(code, {
+            ecmaVersion: 2020,
+            sourceType: 'module',
+          });
+
+          const namedExports: string[] = [];
+          let defaultExport = 'export default {};';
+
+          walk.simple(ast, {
+            // Extracts the named exports, those represent our stories, and for each of them, we'll return a valid Svelte component.
+            ExportNamedDeclaration(node: acorn.ExportNamedDeclaration) {
+              if (
+                node.declaration &&
+                node.declaration.type === 'VariableDeclaration'
+              ) {
+                node.declaration.declarations.forEach((declaration) => {
+                  if ('name' in declaration.id) {
+                    namedExports.push(declaration.id.name);
+                  }
+                });
+              }
+            },
+            // Preserve our default export.
+            ExportDefaultDeclaration(node: acorn.ExportDefaultDeclaration) {
+              defaultExport = code.slice(node.start, node.end);
+            },
+          });
+
+          return {
+            code: `
+              import RedirectBack from '../../.storybook/components/RedirectBack.svelte';
+              ${namedExports
+                .map(
+                  (name) =>
+                    `export const ${name} = () => new RedirectBack();`
+                )
+                .join('\n')}
+              ${defaultExport}
+            `,
+            map: null,
+          };
+        }
+      },
+    };
+  }
+
+  export default defineConfig({
+    plugins: [StorybookUrlLinksPlugin(), svelte()],
+  })
+  ```
+
+  Update your Storybook configuration (i.e., `.storybook/main.js|ts`) to include the custom indexer.
+
+  ```ts title=".storybook/main.js|ts"
+  import type { StorybookConfig } from '@storybook/svelte-vite';
+  import type { Indexer } from '@storybook/types';
+
+  const urlIndexer: Indexer = {
+    test: /\.url\.js$/,
+    createIndex: async (fileName, { makeTitle }) => {
+      const fileData = await import(fileName);
+
+      return Object.entries(fileData)
+        .filter(([key]) => key != 'default')
+        .map(([name, url]) => {
+          return {
+            type: 'docs',
+            importPath: fileName,
+            exportName: name,
+            title: makeTitle(name)
+              .replace(/([a-z])([A-Z])/g, '$1 $2')
+              .trim(),
+            __id: `url--${name}--${encodeURIComponent(url as string)}`,
+            tags: ['!autodocs', 'url']
+          };
+        });
+    }
+  };
+
+  const config: StorybookConfig = {
+    stories: ['../src/**/*.stories.@(js|ts|svelte)', '../src/**/*.url.js'],
+    framework: {
+      name: '@storybook/svelte-vite',
+      options: {},
+    },
+    experimental_indexers: async (existingIndexers) => [urlIndexer, ...existingIndexers]
+  };
+  export default config;
+  ```
+
+  Add a Storybook UI configuration file (i.e., `.storybook/manager.js|ts`) to render the indexed URLs as sidebar links in the UI:
+
+  ```ts title=".storybook/manager.ts"
+  import { addons } from '@storybook/manager-api';
+
+  import SidebarLabelWrapper from './components/SidebarLabelWrapper.tsx';
+
+  addons.setConfig({
+      sidebar: {
+        renderLabel: (item) => SidebarLabelWrapper({ item }),
+      },
+  });
+  ```
+
+  This example's code and live demo are available on [StackBlitz](https://stackblitz.com/~/github.com/Sidnioulz/storybook-sidebar-urls).
+
 </details>

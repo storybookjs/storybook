@@ -1,11 +1,13 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import React from 'react';
+
 import { LinkIcon } from '@storybook/icons';
-import { Button } from './Button';
+import type { Meta, StoryObj } from '@storybook/react';
+
 import { Form } from '../form';
+import { Button } from './Button';
 
 const meta: Meta<typeof Button> = {
-  title: 'Button/Deprecated',
+  title: 'Button (Deprecated)',
   component: Button,
   tags: ['autodocs'],
 };

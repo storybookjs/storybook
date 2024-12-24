@@ -1,5 +1,5 @@
-import { global as globalThis } from '@storybook/global';
 import type { StoryContext } from 'storybook/internal/types';
+
 import { dedent } from 'ts-dedent';
 
 export default {

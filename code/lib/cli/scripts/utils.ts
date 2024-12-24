@@ -1,8 +1,14 @@
-import { writeFile, ensureFile } from 'fs-extra';
+import { existsSync } from 'node:fs';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { dirname } from 'node:path';
+
 import { dedent } from 'ts-dedent';
 
 export const write = async (location: string, data: string) => {
-  await ensureFile(location);
+  if (!existsSync(location)) {
+    const directory = dirname(location);
+    await mkdir(directory, { recursive: true });
+  }
   return writeFile(location, data);
 };
 

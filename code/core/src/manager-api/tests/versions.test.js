@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { global } from '@storybook/global';
 
 import { init as initVersions } from '../modules/versions';

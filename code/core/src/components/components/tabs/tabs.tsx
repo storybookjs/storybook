@@ -1,14 +1,15 @@
 import type { FC, PropsWithChildren, ReactElement, ReactNode, SyntheticEvent } from 'react';
-import React, { useMemo, Component, memo } from 'react';
+import React, { Component, memo, useMemo } from 'react';
+
 import { styled } from '@storybook/core/theming';
+import type { Addon_RenderOptions } from '@storybook/core/types';
 import { sanitize } from '@storybook/csf';
 
-import type { Addon_RenderOptions } from '@storybook/core/types';
-import { TabButton } from '../bar/button';
 import { FlexBar } from '../bar/bar';
-import { childrenToList, VisuallyHidden } from './tabs.helpers';
-import { useList } from './tabs.hooks';
+import { TabButton } from '../bar/button';
 import { EmptyTabContent } from './EmptyTabContent';
+import { VisuallyHidden, childrenToList } from './tabs.helpers';
+import { useList } from './tabs.hooks';
 
 const ignoreSsrWarning =
   '/* emotion-disable-server-rendering-unsafe-selector-warning-please-do-not-use-this-the-warning-exists-for-a-reason */';

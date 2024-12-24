@@ -27,8 +27,4 @@ describe('<Button />', () => {
     cy.mount(<CSF3Primary>bar</CSF3Primary>);
     cy.get('button').should('contain.text', 'bar');
   });
-
-  it('renders modal story', () => {
-    cy.mount(<Modal />);
-  });
 });

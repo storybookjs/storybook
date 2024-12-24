@@ -1,10 +1,13 @@
 import React, { Component } from 'react';
-import { Tabs, IconButton, Link, EmptyTabContent } from '@storybook/core/components';
+
+import { EmptyTabContent, IconButton, Link, Tabs } from '@storybook/core/components';
+import { styled } from '@storybook/core/theming';
+import type { Addon_BaseType } from '@storybook/core/types';
+import { BottomBarIcon, CloseIcon, DocumentIcon, SidebarAltIcon } from '@storybook/icons';
+
 import type { State } from '@storybook/core/manager-api';
 import { shortcutToHumanString } from '@storybook/core/manager-api';
-import type { Addon_BaseType } from '@storybook/core/types';
-import { styled } from '@storybook/core/theming';
-import { BottomBarIcon, CloseIcon, DocumentIcon, SidebarAltIcon } from '@storybook/icons';
+
 import { useLayout } from '../layout/LayoutProvider';
 
 export interface SafeTabProps {
@@ -57,7 +60,7 @@ export const AddonPanel = React.memo<{
     return (
       <Tabs
         absolute={absolute}
-        {...(selectedPanel ? { selected: selectedPanel } : {})}
+        {...(selectedPanel && panels[selectedPanel] ? { selected: selectedPanel } : {})}
         menuName="Addons"
         actions={actions}
         showToolsWhenEmpty

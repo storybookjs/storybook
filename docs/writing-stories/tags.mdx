@@ -51,6 +51,21 @@ To remove a tag from a story, prefix it with `!`. For example:
 
 Tags can be removed for all stories in your project (in `.storybook/preview.js|ts`), all stories for a component (in the CSF file meta), or a single story (as above).
 
+## Filtering by custom tags
+
+Custom tags enable a flexible layer of categorization on top of Storybook's sidebar hierarchy. In the example above, we created an `experimental` tag to indicate that a story is not yet stable.
+
+You can create custom tags for any purpose. Sample uses might include:
+- Status, such as `experimental`, `new`, `stable`, or `deprecated`
+- User persona, such as `admin`, `user`, or `developer`
+- Component/code ownership
+
+Custom tags are useful because they show up as filters in Storybook's sidebar. Selecting a tag in the filter causes the sidebar to only show stories with that tag. Selecting multiple tags shows stories that contain any of those tags.
+
+![Filtering by custom tag](../_assets/writing-stories/custom-tag-filter.png)
+
+Filtering by tags is a powerful way to focus on a subset of stories, especially in large Storybook projects. You can also narrow your stories by tag and then search within that subset.
+
 ## Recipes
 
 ### Docs-only stories

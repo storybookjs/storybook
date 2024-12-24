@@ -1,13 +1,14 @@
-import { global } from '@storybook/global';
 import type { FC } from 'react';
-import React, { useState, useCallback, Fragment } from 'react';
+import React, { Fragment, useCallback, useState } from 'react';
 
-import { WithTooltip, Spaced, Button, Link, ErrorFormatter } from '@storybook/core/components';
-import { logger } from '@storybook/core/client-logger';
+import { Button, ErrorFormatter, Link, Spaced, WithTooltip } from '@storybook/core/components';
 import { styled } from '@storybook/core/theming';
-
+import { global } from '@storybook/global';
 import { ChevronDownIcon, LockIcon, SyncIcon } from '@storybook/icons';
-import { Loader, Contained } from './Loader';
+
+import { logger } from '@storybook/core/client-logger';
+
+import { Contained, Loader } from './Loader';
 
 const { window: globalWindow } = global;
 

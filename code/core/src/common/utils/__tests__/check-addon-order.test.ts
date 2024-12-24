@@ -1,10 +1,13 @@
-import { afterEach, it, expect, vi, describe } from 'vitest';
-import { logger } from '@storybook/core/node-logger';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import type {
   CoreCommon_AddonEntry,
   CoreCommon_AddonInfo,
   CoreCommon_OptionsEntry,
 } from '@storybook/core/types';
+
+import { logger } from '@storybook/core/node-logger';
+
 import { checkAddonOrder } from '../check-addon-order';
 
 const configFile = './main.js';
@@ -22,7 +25,9 @@ const essentialAddons = [
 
 const pkgName = (entry: CoreCommon_AddonEntry): string => {
   if (typeof entry === 'string') {
-    if (entry.includes('node_modules')) return entry;
+    if (entry.includes('node_modules')) {
+      return entry;
+    }
     return `@storybook/addon-${entry}`;
   }
   return (entry as CoreCommon_OptionsEntry).name;

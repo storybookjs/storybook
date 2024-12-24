@@ -1,11 +1,13 @@
 import type {
-  Renderer,
+  BeforeAll,
+  Canvas,
+  CleanupCallback,
   ProjectAnnotations as CsfProjectAnnotations,
   DecoratorFunction,
+  Globals,
   LoaderFunction,
-  CleanupCallback,
+  Renderer,
   StepRunner,
-  Canvas,
 } from '@storybook/csf';
 
 import type {
@@ -57,13 +59,14 @@ export type NamedOrDefaultProjectAnnotations<TRenderer extends Renderer = Render
 
 export type NormalizedProjectAnnotations<TRenderer extends Renderer = Renderer> = Omit<
   ProjectAnnotations<TRenderer>,
-  'decorators' | 'loaders' | 'runStep'
+  'decorators' | 'loaders' | 'runStep' | 'beforeAll'
 > & {
   argTypes?: StrictArgTypes;
   globalTypes?: StrictGlobalTypes;
   decorators?: DecoratorFunction<TRenderer>[];
   loaders?: LoaderFunction<TRenderer>[];
   runStep: StepRunner<TRenderer>;
+  beforeAll: BeforeAll;
 };
 
 export type NormalizedComponentAnnotations<TRenderer extends Renderer = Renderer> = Omit<
@@ -106,12 +109,14 @@ export type PreparedStory<TRenderer extends Renderer = Renderer> =
     unboundStoryFn: LegacyStoryFn<TRenderer>;
     applyLoaders: (context: StoryContext<TRenderer>) => Promise<StoryContext<TRenderer>['loaded']>;
     applyBeforeEach: (context: StoryContext<TRenderer>) => Promise<CleanupCallback[]>;
+    applyAfterEach: (context: StoryContext<TRenderer>) => Promise<void>;
     playFunction?: (context: StoryContext<TRenderer>) => Promise<void> | void;
     runStep: StepRunner<TRenderer>;
     mount: (context: StoryContext<TRenderer>) => () => Promise<Canvas>;
     testingLibraryRender?: (...args: never[]) => unknown;
     renderToCanvas?: ProjectAnnotations<TRenderer>['renderToCanvas'];
     usesMount: boolean;
+    storyGlobals: Globals;
   };
 
 export type PreparedMeta<TRenderer extends Renderer = Renderer> = Omit<

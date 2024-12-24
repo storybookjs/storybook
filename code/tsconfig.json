@@ -16,6 +16,7 @@
     "noUnusedLocals": false,
     "skipLibCheck": true,
     "strict": true,
+    "noEmit": true,
     "strictBindCallApply": true,
     "target": "ES2020"
   },

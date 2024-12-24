@@ -1,8 +1,10 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
+
 import { useGlobals, useStorybookApi } from 'storybook/internal/manager-api';
+
+import type { ToolbarMenuProps } from '../types';
 import { createCycleValueArray } from '../utils/create-cycle-value-array';
 import { registerShortcuts } from '../utils/register-shortcuts';
-import type { ToolbarMenuProps } from '../types';
 
 export type WithKeyboardCycleProps = {
   cycleValues?: string[];

@@ -358,42 +358,103 @@ export const ManyItems: Story = {
 };
 ```
 
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* List.stories.svelte */}
-
-<script>
-  import { Meta, Template, Story } from '@storybook/addon-svelte-csf';
+```svelte filename="List.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
 
   import List from './List.svelte';
-
   import ListItem from './ListItem.svelte';
+
+  const { Story } = defineMeta({
+    component: List,
+  });
 </script>
 
-<meta title="List" component="{List}" />
+<Story name="Empty" />
 
-<template let:args id="Empty">
-  <List {...args} />
-</template>
+<Story name="One Item">
+  {#snippet children(args)}
+    <List {...args} >
+      <ListItem />
+    </List>
+  {/snippet}
+</Story>
 
-<template let:args id="OneItem">
-  <List {...args}>
-    <ListItem />
-  </List>
-</template>
+<Story name="Many Items">
+  {#snippet children(args)}
+    <List {...args} >
+      <ListItem />
+      <ListItem />
+      <ListItem />
+    </List>
+  {/snippet}
+</Story>
+```
 
-<template let:args id="ManyItems">
-  <List {...args}>
-    <ListItem />
-    <ListItem />
-    <ListItem />
-  </List>
-</template>
+```svelte filename="List.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
 
-<Story name="Empty" template="Empty" />
+  import List from './List.svelte';
+  import ListItem from './ListItem.svelte';
 
-<Story name="OneItem" template="OneItem" />
+  const { Story } = defineMeta({
+    component: List,
+  });
+</script>
 
-<Story name="MultipleItems" template="ManyItems" />
+<Story name="Empty" />
+
+<Story name="One Item">
+  {#snippet children(args)}
+    <List {...args} >
+      <ListItem />
+    </List>
+  {/snippet}
+</Story>
+
+<Story name="Many Items">
+  {#snippet children(args)}
+    <List {...args} >
+      <ListItem />
+      <ListItem />
+      <ListItem />
+    </List>
+  {/snippet}
+</Story>
+```
+
+```svelte filename="List.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import List from './List.svelte';
+  import ListItem from './ListItem.svelte';
+
+  const { Story } = defineMeta({
+    component: List,
+  });
+</script>
+
+<Story name="Empty" />
+
+<Story name="One Item">
+  {#snippet children(args)}
+    <List {...args} >
+      <ListItem />
+    </List>
+  {/snippet}
+</Story>
+
+<Story name="Many Items">
+  {#snippet children(args)}
+    <List {...args} >
+      <ListItem />
+      <ListItem />
+      <ListItem />
+    </List>
+  {/snippet}
+</Story>
 ```
 
 ```js filename="List.stories.js" renderer="vue" language="js"
@@ -599,4 +660,3 @@ export const ManyItems: Story = {
   `,
 };
 ```
-

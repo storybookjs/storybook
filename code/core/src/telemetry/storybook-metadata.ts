@@ -1,20 +1,27 @@
-import { findPackage } from 'fd-package-json';
-import { detect, getNpmVersion } from 'detect-package-manager';
+import { dirname } from 'node:path';
+
 import {
-  loadMainConfig,
-  getStorybookInfo,
-  getStorybookConfiguration,
   getProjectRoot,
+  getStorybookConfiguration,
+  getStorybookInfo,
+  loadMainConfig,
 } from '@storybook/core/common';
-import type { StorybookConfig, PackageJson } from '@storybook/core/types';
+import type { PackageJson, StorybookConfig } from '@storybook/core/types';
+
 import { readConfig } from '@storybook/core/csf-tools';
 
-import type { StorybookMetadata, Dependency, StorybookAddon } from './types';
-import { getActualPackageVersion, getActualPackageVersions } from './package-json';
-import { getMonorepoType } from './get-monorepo-type';
-import { cleanPaths } from './sanitize';
-import { getFrameworkInfo } from './get-framework-info';
+import { detect, getNpmVersion } from 'detect-package-manager';
+import { findPackage, findPackagePath } from 'fd-package-json';
+
+import { getApplicationFileCount } from './get-application-file-count';
 import { getChromaticVersionSpecifier } from './get-chromatic-version';
+import { getFrameworkInfo } from './get-framework-info';
+import { getHasRouterPackage } from './get-has-router-package';
+import { getMonorepoType } from './get-monorepo-type';
+import { getPortableStoriesFileCount } from './get-portable-stories-usage';
+import { getActualPackageVersion, getActualPackageVersions } from './package-json';
+import { cleanPaths } from './sanitize';
+import type { Dependency, StorybookAddon, StorybookMetadata } from './types';
 
 export const metaFrameworks = {
   next: 'Next',
@@ -38,9 +45,11 @@ export const sanitizeAddonName = (name: string) => {
 // Analyze a combination of information from main.js and package.json
 // to provide telemetry over a Storybook project
 export const computeStorybookMetadata = async ({
+  packageJsonPath,
   packageJson,
   mainConfig,
 }: {
+  packageJsonPath: string;
   packageJson: PackageJson;
   mainConfig: StorybookConfig & Record<string, any>;
 }): Promise<StorybookMetadata> => {
@@ -96,6 +105,8 @@ export const computeStorybookMetadata = async ({
       testPackageDeps.map(async (dep) => [dep, (await getActualPackageVersion(dep))?.version])
     )
   );
+
+  metadata.hasRouterPackage = getHasRouterPackage(packageJson);
 
   const monorepoType = getMonorepoType();
   if (monorepoType) {
@@ -205,10 +216,14 @@ export const computeStorybookMetadata = async ({
   }
 
   const storybookVersion = storybookPackages[storybookInfo.frameworkPackage]?.version;
+  const portableStoriesFileCount = await getPortableStoriesFileCount();
+  const applicationFileCount = await getApplicationFileCount(dirname(packageJsonPath));
 
   return {
     ...metadata,
     ...frameworkInfo,
+    portableStoriesFileCount,
+    applicationFileCount,
     storybookVersion,
     storybookVersionSpecifier: storybookInfo.version,
     language,
@@ -218,13 +233,29 @@ export const computeStorybookMetadata = async ({
   };
 };
 
+async function getPackageJsonDetails() {
+  const packageJsonPath = await findPackagePath(process.cwd());
+  if (packageJsonPath) {
+    return {
+      packageJsonPath,
+      packageJson: (await findPackage(packageJsonPath)) || {},
+    };
+  }
+
+  // If we don't find a `package.json`, we assume it "would have" been in the current working directory
+  return {
+    packageJsonPath: process.cwd(),
+    packageJson: {},
+  };
+}
+
 let cachedMetadata: StorybookMetadata;
 export const getStorybookMetadata = async (_configDir?: string) => {
   if (cachedMetadata) {
     return cachedMetadata;
   }
 
-  const packageJson = (await findPackage(process.cwd())) || {};
+  const { packageJson, packageJsonPath } = await getPackageJsonDetails();
   // TODO: improve the way configDir is extracted, as a "storybook" script might not be present
   // Scenarios:
   // 1. user changed it to something else e.g. "storybook:dev"
@@ -238,6 +269,6 @@ export const getStorybookMetadata = async (_configDir?: string) => {
       ) as string)) ??
     '.storybook';
   const mainConfig = await loadMainConfig({ configDir });
-  cachedMetadata = await computeStorybookMetadata({ mainConfig, packageJson });
+  cachedMetadata = await computeStorybookMetadata({ mainConfig, packageJson, packageJsonPath });
   return cachedMetadata;
 };

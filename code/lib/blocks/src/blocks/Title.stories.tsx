@@ -1,11 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { Title } from './Title';
+
 import * as DefaultButtonStories from '../examples/Button.stories';
+import { Title } from './Title';
 
 const meta: Meta<typeof Title> = {
   component: Title,
   title: 'Blocks/Title',
   parameters: {
+    layout: 'fullscreen',
     controls: {
       include: [],
       hideNoControlsWarning: true,

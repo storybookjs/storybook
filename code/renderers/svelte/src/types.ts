@@ -3,6 +3,7 @@ import type {
   StoryContext as StoryContextBase,
   WebRenderer,
 } from 'storybook/internal/types';
+
 import type { ComponentConstructorOptions, ComponentEvents, SvelteComponent } from 'svelte';
 
 export type StoryContext = StoryContextBase<SvelteRenderer>;

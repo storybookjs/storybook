@@ -1,30 +1,25 @@
 import type { ComponentProps, FC } from 'react';
 import React, { useContext } from 'react';
-import type { StoryId, PreparedStory, ModuleExport, Args } from 'storybook/internal/types';
+
 import { SourceType } from 'storybook/internal/docs-tools';
+import type { Args, ModuleExport, PreparedStory, StoryId } from 'storybook/internal/types';
 
 import type { SourceCodeProps } from '../components/Source';
 import { Source as PureSource, SourceError } from '../components/Source';
 import type { DocsContextProps } from './DocsContext';
 import { DocsContext } from './DocsContext';
 import type { SourceContextProps, SourceItem } from './SourceContainer';
-import { UNKNOWN_ARGS_HASH, argsHash, SourceContext } from './SourceContainer';
+import { SourceContext, UNKNOWN_ARGS_HASH, argsHash } from './SourceContainer';
 
 type SourceParameters = SourceCodeProps & {
-  /**
-   * Where to read the source code from, see `SourceType`
-   */
+  /** Where to read the source code from, see `SourceType` */
   type?: SourceType;
-  /**
-   * Transform the detected source for display
-   */
+  /** Transform the detected source for display */
   transform?: (
     code: string,
     storyContext: ReturnType<DocsContextProps['getStoryContext']>
   ) => string;
-  /**
-   * Internal: set by our CSF loader (`enrichCsf` in `@storybook/csf-tools`).
-   */
+  /** Internal: set by our CSF loader (`enrichCsf` in `@storybook/csf-tools`). */
   originalSource?: string;
 };
 
@@ -36,14 +31,12 @@ export type SourceProps = SourceParameters & {
    * import { Source } from '@storybook/blocks';
    * import * as ButtonStories from './Button.stories';
    *
-   * <Source of={ButtonStories.Primary} />
+   * <Source of={ButtonStories.Primary} />;
    * ```
    */
   of?: ModuleExport;
 
-  /**
-   * Internal prop to control if a story re-renders on args updates
-   */
+  /** Internal prop to control if a story re-renders on args updates */
   __forceInitialArgs?: boolean;
 };
 
@@ -166,9 +159,8 @@ export const useSourceProps = (
 };
 
 /**
- * Story source doc block renders source code if provided,
- * or the source for a story if `storyId` is provided, or
- * the source for the current story if nothing is provided.
+ * Story source doc block renders source code if provided, or the source for a story if `storyId` is
+ * provided, or the source for the current story if nothing is provided.
  */
 export const Source: FC<SourceProps> = (props) => {
   const sourceContext = useContext(SourceContext);

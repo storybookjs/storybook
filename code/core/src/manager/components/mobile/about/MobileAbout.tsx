@@ -1,12 +1,15 @@
 import type { FC } from 'react';
 import React, { useRef } from 'react';
-import { Transition, type TransitionStatus } from 'react-transition-group';
-import { styled } from '@storybook/core/theming';
+
 import { Link } from '@storybook/core/components';
+import { styled } from '@storybook/core/theming';
 import { ArrowLeftIcon, GithubIcon, ShareAltIcon, StorybookIcon } from '@storybook/icons';
-import { UpgradeBlock } from '../../upgrade/UpgradeBlock';
+
+import { Transition, type TransitionStatus } from 'react-transition-group';
+
 import { MOBILE_TRANSITION_DURATION } from '../../../constants';
 import { useLayout } from '../../layout/LayoutProvider';
+import { UpgradeBlock } from '../../upgrade/UpgradeBlock';
 
 export const MobileAbout: FC = () => {
   const { isMobileAboutOpen, setMobileAboutOpen } = useLayout();

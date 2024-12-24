@@ -20,9 +20,9 @@ export default {
         },
       },
     },
-    theme: 'light',
     chromatic: { viewports: [700] },
   },
+  globals: { sb_theme: 'light' },
 };
 
 const style: CSSProperties = {
@@ -50,7 +50,7 @@ export const WorkingDocs = () => (
     active
     id="iframe"
     title="Missing"
-    src="/iframe.html?id=components-colorpalette--docs"
+    src="/iframe.html?id=brand-colorpalette--docs"
     allowFullScreen
     style={style}
     scale={1.0}
@@ -60,17 +60,23 @@ WorkingStory.parameters = {
   chromatic: { disable: true },
 };
 
-export const MissingStory = () => (
-  <IFrame
-    active
-    id="iframe"
-    title="Missing"
-    src="/iframe.html?id=missing"
-    allowFullScreen
-    style={style}
-    scale={1.0}
-  />
-);
+export const MissingStory = {
+  render: () => (
+    <IFrame
+      active
+      id="iframe"
+      title="Missing"
+      src="/iframe.html?id=missing"
+      allowFullScreen
+      style={style}
+      scale={1.0}
+    />
+  ),
+  parameters: {
+    // Raise the threshold to ignore monospace font inconsistencies
+    chromatic: { diffThreshold: 0.65 },
+  },
+};
 
 export const PreparingStory = () => (
   <IFrame

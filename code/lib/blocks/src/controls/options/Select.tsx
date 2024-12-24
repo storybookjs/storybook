@@ -1,14 +1,15 @@
-import type { FC, ChangeEvent } from 'react';
+import type { ChangeEvent, FC } from 'react';
 import React from 'react';
+
+import { logger } from 'storybook/internal/client-logger';
 import { styled } from 'storybook/internal/theming';
 import type { CSSObject } from 'storybook/internal/theming';
-import { logger } from 'storybook/internal/client-logger';
 
-import type { ControlProps, OptionsSelection, NormalizedOptionsConfig } from '../types';
-
-import { selectedKey, selectedKeys, selectedValues } from './helpers';
-import { getControlId } from '../helpers';
 import { ChevronSmallDownIcon } from '@storybook/icons';
+
+import { getControlId } from '../helpers';
+import type { ControlProps, NormalizedOptionsConfig, OptionsSelection } from '../types';
+import { selectedKey, selectedKeys, selectedValues } from './helpers';
 
 const styleResets: CSSObject = {
   // resets

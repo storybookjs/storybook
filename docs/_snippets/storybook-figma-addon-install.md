@@ -1,12 +1,11 @@
 ```shell renderer="common" language="js" packageManager="npm"
-npm install --save-dev @storybook/addon-designs
+npx storybook@latest add @storybook/addon-designs
 ```
 
 ```shell renderer="common" language="js" packageManager="pnpm"
-pnpm add --save-dev @storybook/addon-designs
+pnpm dlx storybook@latest add @storybook/addon-designs
 ```
 
 ```shell renderer="common" language="js" packageManager="yarn"
-yarn add --dev @storybook/addon-designs
+yarn dlx storybook@latest add @storybook/addon-designs
 ```
-

@@ -1,4 +1,5 @@
-import type { Args, Renderer, ArgsEnhancer } from 'storybook/internal/types';
+import type { Args, ArgsEnhancer, Renderer } from 'storybook/internal/types';
+
 import { action } from './runtime/action';
 
 // interface ActionsParameter {
@@ -10,8 +11,8 @@ const isInInitialArgs = (name: string, initialArgs: Args) =>
   typeof initialArgs[name] === 'undefined' && !(name in initialArgs);
 
 /**
- * Automatically add action args for argTypes whose name
- * matches a regex, such as `^on.*` for react-style `onClick` etc.
+ * Automatically add action args for argTypes whose name matches a regex, such as `^on.*` for
+ * react-style `onClick` etc.
  */
 
 export const inferActionsFromArgTypesRegex: ArgsEnhancer<Renderer> = (context) => {
@@ -38,9 +39,7 @@ export const inferActionsFromArgTypesRegex: ArgsEnhancer<Renderer> = (context) =
   }, {} as Args);
 };
 
-/**
- * Add action args for list of strings.
- */
+/** Add action args for list of strings. */
 export const addActionsFromArgTypes: ArgsEnhancer<Renderer> = (context) => {
   const {
     initialArgs,

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { getTypeScriptTemplateForNewStoryFile } from './typescript';
 
 describe('typescript', () => {

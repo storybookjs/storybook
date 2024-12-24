@@ -1,17 +1,11 @@
 import React, { forwardRef } from 'react';
 
 interface ButtonProps {
-  /**
-   * Sets the button size.
-   */
+  /** Sets the button size. */
   variant?: 'small' | 'large';
-  /**
-   * Disables the button.
-   */
+  /** Disables the button. */
   disabled?: boolean;
-  /**
-   * Content of the button.
-   */
+  /** Content of the button. */
   children: React.ReactNode;
 }
 

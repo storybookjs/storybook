@@ -1,9 +1,10 @@
-import { global } from '@storybook/global';
-import qs from 'qs';
-
-import { parseArgsParam } from './parseArgsParam';
-import type { SelectionSpecifier, SelectionStore, Selection } from './SelectionStore';
 import type { ViewMode } from '@storybook/core/types';
+import { global } from '@storybook/global';
+
+import { parse, stringify } from 'picoquery';
+
+import type { Selection, SelectionSpecifier, SelectionStore } from './SelectionStore';
+import { parseArgsParam } from './parseArgsParam';
 
 const { history, document } = global;
 
@@ -20,24 +21,22 @@ const getQueryString = ({
   extraParams,
 }: {
   selection?: Selection;
-  extraParams?: qs.ParsedQs;
+  extraParams?: Record<PropertyKey, unknown>;
 }) => {
-  const search = typeof document !== 'undefined' ? document.location.search : '';
-  const { path, selectedKind, selectedStory, ...rest } = qs.parse(search, {
-    ignoreQueryPrefix: true,
+  const search = document?.location.search.slice(1);
+  const { path, selectedKind, selectedStory, ...rest } = parse(search);
+  const queryStr = stringify({
+    ...rest,
+    ...extraParams,
+    ...(selection && { id: selection.storyId, viewMode: selection.viewMode }),
   });
-  return qs.stringify(
-    {
-      ...rest,
-      ...extraParams,
-      ...(selection && { id: selection.storyId, viewMode: selection.viewMode }),
-    },
-    { encode: false, addQueryPrefix: true }
-  );
+  return `?${queryStr}`;
 };
 
 export const setPath = (selection?: Selection) => {
-  if (!selection) return;
+  if (!selection) {
+    return;
+  }
   const query = getQueryString({ selection });
   const { hash = '' } = document.location;
   document.title = selection.storyId;
@@ -45,10 +44,10 @@ export const setPath = (selection?: Selection) => {
 };
 
 type ValueOf<T> = T[keyof T];
-const isObject = (val: Record<string, any>) =>
+const isObject = (val: Record<string, any>): val is object =>
   val != null && typeof val === 'object' && Array.isArray(val) === false;
 
-const getFirstString = (v: ValueOf<qs.ParsedQs>): string | void => {
+const getFirstString = (v: ValueOf<Record<PropertyKey, unknown>>): string | void => {
   if (v === undefined) {
     return undefined;
   }
@@ -58,15 +57,18 @@ const getFirstString = (v: ValueOf<qs.ParsedQs>): string | void => {
   if (Array.isArray(v)) {
     return getFirstString(v[0]);
   }
-  if (isObject(v)) {
-    return getFirstString(Object.values(v).filter(Boolean) as string[]);
+  if (isObject(v as Record<PropertyKey, unknown>)) {
+    return getFirstString(
+      Object.values(v as Record<PropertyKey, unknown>).filter(Boolean) as string[]
+    );
   }
   return undefined;
 };
 
 export const getSelectionSpecifierFromPath: () => SelectionSpecifier | null = () => {
   if (typeof document !== 'undefined') {
-    const query = qs.parse(document.location.search, { ignoreQueryPrefix: true });
+    const queryStr = document.location.search.slice(1);
+    const query = parse(queryStr);
     const args = typeof query.args === 'string' ? parseArgsParam(query.args) : undefined;
     const globals = typeof query.globals === 'string' ? parseArgsParam(query.globals) : undefined;
 
@@ -100,7 +102,7 @@ export class UrlStore implements SelectionStore {
     setPath(this.selection);
   }
 
-  setQueryParams(queryParams: qs.ParsedQs) {
+  setQueryParams(queryParams: Record<PropertyKey, unknown>) {
     const query = getQueryString({ extraParams: queryParams });
     const { hash = '' } = document.location;
     history.replaceState({}, '', `${document.location.pathname}${query}${hash}`);

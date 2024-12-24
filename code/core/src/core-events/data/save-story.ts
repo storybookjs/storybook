@@ -9,7 +9,9 @@ export interface SaveStoryResponsePayload {
   csfId: string;
   newStoryId?: string;
   newStoryName?: string;
+  newStoryExportName?: string;
   sourceFileContent?: string;
   sourceFileName?: string;
   sourceStoryName?: string;
+  sourceStoryExportName?: string;
 }

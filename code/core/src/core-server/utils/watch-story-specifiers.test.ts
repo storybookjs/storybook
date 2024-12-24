@@ -1,6 +1,9 @@
-import { describe, afterEach, it, expect, vi } from 'vitest';
+import { join } from 'node:path';
+
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import { normalizeStoriesEntry } from '@storybook/core/common';
-import path from 'node:path';
+
 import Watchpack from 'watchpack';
 
 import { watchStorySpecifiers } from './watch-story-specifiers';
@@ -8,12 +11,12 @@ import { watchStorySpecifiers } from './watch-story-specifiers';
 vi.mock('watchpack');
 
 describe('watchStorySpecifiers', () => {
-  const workingDir = path.join(__dirname, '__mockdata__');
+  const workingDir = join(__dirname, '__mockdata__');
   const options = {
-    configDir: path.join(workingDir, '.storybook'),
+    configDir: join(workingDir, '.storybook'),
     workingDir,
   };
-  const abspath = (filename: string) => path.join(workingDir, filename);
+  const abspath = (filename: string) => join(workingDir, filename);
 
   let close: () => void;
   afterEach(() => close?.());

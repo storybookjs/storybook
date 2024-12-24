@@ -1,20 +1,22 @@
 import React from 'react';
-import type { Meta, ReactRenderer, StoryObj } from '@storybook/react';
-import { within } from '@storybook/test';
-import type { PlayFunctionContext } from '@storybook/csf';
-import type { WebRenderer, ModuleExport } from 'storybook/internal/types';
+
+import type { Channel } from 'storybook/internal/channels';
 import {
   RESET_STORY_ARGS,
   STORY_ARGS_UPDATED,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
 import type { PreviewWeb } from 'storybook/internal/preview-api';
-import type { Channel } from 'storybook/internal/channels';
+import type { ModuleExport, WebRenderer } from 'storybook/internal/types';
 
-import type { StoryProps } from './Story';
-import { Story as StoryComponent, StorySkeleton } from './Story';
+import type { PlayFunctionContext } from '@storybook/csf';
+import type { Meta, ReactRenderer, StoryObj } from '@storybook/react';
+import { within } from '@storybook/test';
+
 import type { DocsContextProps } from '../blocks';
 import * as ButtonStories from '../examples/Button.stories';
+import type { StoryProps } from './Story';
+import { Story as StoryComponent, StorySkeleton } from './Story';
 
 // eslint-disable-next-line no-underscore-dangle
 const preview = (window as any).__STORYBOOK_PREVIEW__ as PreviewWeb<ReactRenderer>;
@@ -29,8 +31,10 @@ const meta: Meta<ExtendedStoryProps> = {
   // @ts-expect-error getting too complex with props
   component: StoryComponent,
   parameters: {
+    layout: 'fullscreen',
     relativeCsfPaths: ['../examples/Button.stories'],
   },
+  globals: { sb_theme: 'light' },
   args: {
     height: '100px',
     primary: false,
@@ -48,7 +52,10 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Loading = () => <StorySkeleton />;
+export const Loading = {
+  globals: { sb_theme: 'side-by-side' },
+  render: () => <StorySkeleton />,
+};
 
 export const Inline: Story = {
   args: {

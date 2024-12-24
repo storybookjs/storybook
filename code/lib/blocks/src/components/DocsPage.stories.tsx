@@ -1,14 +1,16 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 import React from 'react';
+
 import { Global, css } from 'storybook/internal/theming';
-import { Source, ArgsTable } from '.';
-import { Title, Subtitle, DocsPageWrapper } from './DocsPage';
+
+import { ArgsTable, Source } from '.';
 import { Markdown as MarkdownComponent } from '../blocks/Markdown';
-import * as Preview from './Preview.stories';
-import * as argsTable from './ArgsTable/ArgsTable.stories';
-import * as source from './Source.stories';
 import * as markdown from '../blocks/Markdown.stories';
 import { Unstyled } from '../blocks/Unstyled';
+import * as argsTable from './ArgsTable/ArgsTable.stories';
+import { DocsPageWrapper, Subtitle, Title } from './DocsPage';
+import * as Preview from './Preview.stories';
+import * as source from './Source.stories';
 
 export default {
   component: DocsPageWrapper,

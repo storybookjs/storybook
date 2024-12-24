@@ -1,13 +1,14 @@
 import type { Channel } from '@storybook/core/channels';
-import type { Renderer, StoryContext, StoryId, StoryName, Parameters } from './csf';
+
+import type { Parameters, Renderer, StoryContext, StoryId, StoryName } from './csf';
 import type {
+  CSFFile,
   ModuleExport,
   ModuleExports,
-  CSFFile,
-  PreparedStory,
   NormalizedProjectAnnotations,
-  RenderContext,
   PreparedMeta,
+  PreparedStory,
+  RenderContext,
 } from './story';
 
 export type RenderContextCallbacks<TRenderer extends Renderer> = Pick<
@@ -26,9 +27,9 @@ export type ResolvedModuleExportType = 'component' | 'meta' | 'story';
  * What do we know about an of={} call?
  *
  * Technically, the type names aren't super accurate:
- *   - meta === `CSFFile`
- *   - story === `PreparedStory`
- * But these shorthands capture the idea of what is being talked about
+ *
+ * - Meta === `CSFFile`
+ * - Story === `PreparedStory` But these shorthands capture the idea of what is being talked about
  */
 export type ResolvedModuleExportFromType<
   TType extends ResolvedModuleExportType,
@@ -53,14 +54,14 @@ export type ResolvedModuleExport<TRenderer extends Renderer = Renderer> = {
 
 export interface DocsContextProps<TRenderer extends Renderer = Renderer> {
   /**
-   * Register a CSF file that this docs entry uses.
-   * Used by the `<Meta of={} />` block to attach, and the `<Story meta={} />` bloc to reference
+   * Register a CSF file that this docs entry uses. Used by the `<Meta of={} />` block to attach,
+   * and the `<Story meta={} />` bloc to reference
    */
   referenceMeta: (metaExports: ModuleExports, attach: boolean) => void;
 
   /**
-   * Find a component, meta or story object from the direct export(s) from the CSF file.
-   * This is the API that drives the `of={}` syntax.
+   * Find a component, meta or story object from the direct export(s) from the CSF file. This is the
+   * API that drives the `of={}` syntax.
    */
   resolveOf<TType extends ResolvedModuleExportType>(
     moduleExportOrType: ModuleExport | TType,
@@ -68,40 +69,29 @@ export interface DocsContextProps<TRenderer extends Renderer = Renderer> {
   ): ResolvedModuleExportFromType<TType, TRenderer>;
 
   /**
-   * Find a story's id from the name of the story.
-   * This is primarily used by the `<Story name={} /> block.
-   * Note that the story must be part of the primary CSF file of the docs entry.
+   * Find a story's id from the name of the story. This is primarily used by the `<Story name={} />
+   * block. Note that the story must be part of the primary CSF file of the docs entry.
    */
   storyIdByName: (storyName: StoryName) => StoryId;
   /**
-   * Syncronously find a story by id (if the id is not provided, this will look up the primary
-   * story in the CSF file, if such a file exists).
+   * Syncronously find a story by id (if the id is not provided, this will look up the primary story
+   * in the CSF file, if such a file exists).
    */
   storyById: (id?: StoryId) => PreparedStory<TRenderer>;
-  /**
-   * Syncronously find all stories of the component referenced by the CSF file.
-   */
+  /** Syncronously find all stories of the component referenced by the CSF file. */
   componentStories: () => PreparedStory<TRenderer>[];
 
-  /**
-   * Syncronously find all stories by CSF file.
-   */
+  /** Syncronously find all stories by CSF file. */
   componentStoriesFromCSFFile: (csfFile: CSFFile<TRenderer>) => PreparedStory<TRenderer>[];
 
-  /**
-   * Get the story context of the referenced story.
-   */
+  /** Get the story context of the referenced story. */
   getStoryContext: (
     story: PreparedStory<TRenderer>
   ) => Omit<StoryContext<TRenderer>, 'abortSignal' | 'canvasElement' | 'step' | 'context'>;
-  /**
-   * Asyncronously load an arbitrary story by id.
-   */
+  /** Asyncronously load an arbitrary story by id. */
   loadStory: (id: StoryId) => Promise<PreparedStory<TRenderer>>;
 
-  /**
-   * Render a story to a given HTML element and keep it up to date across context changes
-   */
+  /** Render a story to a given HTML element and keep it up to date across context changes */
   renderStoryToElement: (
     story: PreparedStory<TRenderer>,
     element: HTMLElement,
@@ -109,14 +99,10 @@ export interface DocsContextProps<TRenderer extends Renderer = Renderer> {
     options: StoryRenderOptions
   ) => () => Promise<void>;
 
-  /**
-   * Storybook channel -- use for low level event watching/emitting
-   */
+  /** Storybook channel -- use for low level event watching/emitting */
   channel: Channel;
 
-  /**
-   * Project annotations -- can be read to get the project's global annotations
-   */
+  /** Project annotations -- can be read to get the project's global annotations */
   projectAnnotations: NormalizedProjectAnnotations<TRenderer>;
 }
 

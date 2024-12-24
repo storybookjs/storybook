@@ -1,13 +1,13 @@
-import type { FC, ChangeEvent } from 'react';
+import type { ChangeEvent, FC } from 'react';
 import React, { useMemo } from 'react';
 
 import { styled } from 'storybook/internal/theming';
-import { lighten, darken, rgba } from 'polished';
-import { getControlId } from './helpers';
 
-import type { ControlProps, NumberValue, RangeConfig } from './types';
+import { darken, lighten, rgba } from 'polished';
 
 import { parse } from './Number';
+import { getControlId } from './helpers';
+import type { ControlProps, NumberValue, RangeConfig } from './types';
 
 type RangeProps = ControlProps<NumberValue | null> & RangeConfig;
 

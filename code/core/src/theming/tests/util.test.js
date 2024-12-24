@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
+import { describe, expect, it, vi } from 'vitest';
 
-import { describe, it, expect, vi } from 'vitest';
-import { lightenColor as lighten, darkenColor as darken, getPreferredColorScheme } from '../utils';
+import { darkenColor as darken, getPreferredColorScheme, lightenColor as lighten } from '../utils';
 
 describe('utils', () => {
   it('should apply polished when valid arguments are passed', () => {

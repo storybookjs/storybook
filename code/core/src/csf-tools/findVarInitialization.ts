@@ -1,6 +1,6 @@
-import * as t from '@babel/types';
+import { types as t } from '@storybook/core/babel';
 
-export const findVarInitialization = (identifier: string, program: t.Program) => {
+export const findVarInitialization = (identifier: string, program: t.Program): t.Expression => {
   let init: t.Expression = null as any;
   let declarations: t.VariableDeclarator[] = null as any;
   program.body.find((node: t.Node) => {

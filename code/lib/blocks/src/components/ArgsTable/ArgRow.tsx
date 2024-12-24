@@ -1,16 +1,18 @@
 import type { FC } from 'react';
 import React, { useState } from 'react';
-import Markdown from 'markdown-to-jsx';
-import { transparentize } from 'polished';
+
+import { codeCommon } from 'storybook/internal/components';
 import type { CSSObject } from 'storybook/internal/theming';
 import { styled } from 'storybook/internal/theming';
-import { codeCommon } from 'storybook/internal/components';
-import type { ArgType, Args, TableAnnotation } from './types';
-import { ArgJsDoc } from './ArgJsDoc';
-import { ArgValue } from './ArgValue';
+
+import Markdown from 'markdown-to-jsx';
+import { transparentize } from 'polished';
 
 import type { ArgControlProps } from './ArgControl';
 import { ArgControl } from './ArgControl';
+import { ArgJsDoc } from './ArgJsDoc';
+import { ArgValue } from './ArgValue';
+import type { ArgType, Args, TableAnnotation } from './types';
 
 interface ArgRowProps {
   row: ArgType;
@@ -77,7 +79,9 @@ const StyledTd = styled.td<{ expandable: boolean }>(({ theme, expandable }) => (
 }));
 
 const toSummary = (value: any) => {
-  if (!value) return value;
+  if (!value) {
+    return value;
+  }
   const val = typeof value === 'string' ? value : value.name;
   return { summary: val };
 };

@@ -1,5 +1,7 @@
-import { dedent } from 'ts-dedent';
 import { readConfig, writeConfig } from '@storybook/core/csf-tools';
+
+import { dedent } from 'ts-dedent';
+
 import type { PackageManagerName } from '../js-package-manager';
 import { JsPackageManagerFactory } from '../js-package-manager';
 import { getStorybookInfo } from './get-storybook-info';
@@ -9,18 +11,21 @@ const logger = console;
 /**
  * Remove the given addon package and remove it from main.js
  *
- * Usage:
- * - sb remove @storybook/addon-links
+ * @example
+ *
+ * ```sh
+ * sb remove @storybook/addon-links
+ * ```
  */
 export async function removeAddon(
   addon: string,
-  options: { packageManager?: PackageManagerName } = {}
+  options: { packageManager?: PackageManagerName; cwd?: string; configDir?: string } = {}
 ) {
   const { packageManager: pkgMgr } = options;
 
-  const packageManager = JsPackageManagerFactory.getPackageManager({ force: pkgMgr });
+  const packageManager = JsPackageManagerFactory.getPackageManager({ force: pkgMgr }, options.cwd);
   const packageJson = await packageManager.retrievePackageJson();
-  const { mainConfig, configDir } = getStorybookInfo(packageJson);
+  const { mainConfig, configDir, ...rest } = getStorybookInfo(packageJson, options.configDir);
 
   if (typeof configDir === 'undefined') {
     throw new Error(dedent`

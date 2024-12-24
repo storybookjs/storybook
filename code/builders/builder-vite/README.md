@@ -117,7 +117,9 @@ The function should return the updated Vite configuration.
 Configure your `.storybook/main.ts` to use TypeScript:
 
 ```typescript
-import type { StorybookConfig } from '@storybook/react-vite'; // (or whatever framework you are using)
+import type { StorybookConfig } from '@storybook/react-vite';
+
+// (or whatever framework you are using)
 
 const config: StorybookConfig = {
   // other storybook options...,

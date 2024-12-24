@@ -1,11 +1,11 @@
-import type { ModuleExports, ProjectAnnotations } from '@storybook/core/types';
+import type { ModuleExports, NormalizedProjectAnnotations } from '@storybook/core/types';
 import type { Renderer } from '@storybook/core/types';
 import { global } from '@storybook/global';
 
 import { combineParameters } from '../parameters';
-import { composeStepRunners } from './stepRunners';
-import { normalizeArrays } from './normalizeArrays';
 import { composeBeforeAllHooks } from './beforeAll';
+import { normalizeArrays } from './normalizeArrays';
+import { composeStepRunners } from './stepRunners';
 
 export function getField<TFieldType = any>(
   moduleExportList: ModuleExports[],
@@ -41,7 +41,7 @@ export function getSingletonField<TFieldType = any>(
 
 export function composeConfigs<TRenderer extends Renderer>(
   moduleExportList: ModuleExports[]
-): ProjectAnnotations<TRenderer> {
+): NormalizedProjectAnnotations<TRenderer> {
   const allArgTypeEnhancers = getArrayField(moduleExportList, 'argTypesEnhancers');
   const stepRunners = getField(moduleExportList, 'runStep');
   const beforeAllHooks = getArrayField(moduleExportList, 'beforeAll');
@@ -64,6 +64,7 @@ export function composeConfigs<TRenderer extends Renderer>(
     loaders: getArrayField(moduleExportList, 'loaders'),
     beforeAll: composeBeforeAllHooks(beforeAllHooks),
     beforeEach: getArrayField(moduleExportList, 'beforeEach'),
+    experimental_afterEach: getArrayField(moduleExportList, 'experimental_afterEach'),
     render: getSingletonField(moduleExportList, 'render'),
     renderToCanvas: getSingletonField(moduleExportList, 'renderToCanvas'),
     renderToDOM: getSingletonField(moduleExportList, 'renderToDOM'), // deprecated

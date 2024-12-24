@@ -1,4 +1,5 @@
-import { extname } from 'path';
+import { extname } from 'node:path';
+
 import resolve from 'resolve';
 
 export class ReactDocgenResolveError extends Error {

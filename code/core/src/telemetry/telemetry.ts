@@ -1,13 +1,14 @@
 /// <reference types="node" />
+import * as os from 'node:os';
 
-import * as os from 'os';
-import { nanoid } from 'nanoid';
 import retry from 'fetch-retry';
-import type { Options, TelemetryData } from './types';
+import { nanoid } from 'nanoid';
+
 import { getAnonymousProjectId } from './anonymous-id';
 import { set as saveToCache } from './event-cache';
-import { getSessionId } from './session-id';
 import { fetch } from './fetch';
+import { getSessionId } from './session-id';
+import type { Options, TelemetryData } from './types';
 
 const retryingFetch = retry(fetch);
 

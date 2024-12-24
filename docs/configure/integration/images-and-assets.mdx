@@ -7,7 +7,7 @@ sidebar:
 
 Components often rely on images, videos, fonts, and other assets to render as the user expects. There are many ways to use these assets in your story files.
 
-### Import assets into stories
+## Import assets into stories
 
 You can import any media assets by importing (or requiring) them. It works out of the box with our default config. But, if you are using a custom webpack config, you’ll need to add the [file loader](https://webpack.js.org/loaders/) to handle the required files.
 
@@ -15,11 +15,11 @@ Afterward, you can use any asset in your stories:
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="component-story-static-asset-with-import.md" usesCsf3 csf2Path="configure/images-and-assets#snippet-component-story-static-asset-with-import" />
+<CodeSnippets path="component-story-static-asset-with-import.md" />
 
 {/* prettier-ignore-end */}
 
-### Serving static files via Storybook Configuration
+## Serving static files via Storybook Configuration
 
 We recommend serving static files via Storybook to ensure that your components always have the assets they need to load. We recommend this technique for assets that your components often use, like logos, fonts, and icons.
 
@@ -35,7 +35,7 @@ Here `../public` is your static directory. Now use it in a component or story li
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="component-story-static-asset-without-import.md" usesCsf3 csf2Path="configure/images-and-assets#snippet-component-story-static-asset-without-import" />
+<CodeSnippets path="component-story-static-asset-without-import.md" />
 
 {/* prettier-ignore-end */}
 
@@ -55,17 +55,17 @@ Or even use a configuration object to define the directories:
 
 {/* prettier-ignore-end */}
 
-### Reference assets from a CDN
+## Reference assets from a CDN
 
 Upload your files to an online CDN and reference them. In this example, we’re using a placeholder image service.
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="component-story-static-asset-cdn.md" usesCsf3 csf2Path="configure/images-and-assets#snippet-component-story-static-asset-cdn" />
+<CodeSnippets path="component-story-static-asset-cdn.md" />
 
 {/* prettier-ignore-end */}
 
-### Absolute versus relative paths
+## Absolute versus relative paths
 
 Sometimes, you may want to deploy your Storybook into a subpath, like `https://example.com/storybook`.
 
@@ -75,7 +75,7 @@ If you load static content via importing, this is automatic, and you do not have
 
 Suppose you are serving assets in a [static directory](#serving-static-files-via-storybook-configuration) along with your Storybook. In that case, you need to use relative paths to load images or use the base element.
 
-### Referencing Fonts in Stories
+## Referencing Fonts in Stories
 
 After configuring Storybook to serve assets from your static folder, you can reference those assets in Storybook. For example, you can reference and apply a custom font to your stories. To do this, create a [`preview-head.html`](../story-rendering.mdx) file inside the configuration directory (i.e., `.storybook`) and add a `<link />` tag to reference your font.
 

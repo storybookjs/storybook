@@ -1,14 +1,13 @@
 import defaultOptions from './default-options';
-import getParser from './parsers';
-
 import {
   generateSourceWithDecorators,
   generateSourceWithoutDecorators,
-  generateStorySource,
-  generateStoriesLocationsMap,
   generateSourcesInExportedParameters,
   generateSourcesInStoryParameters,
+  generateStoriesLocationsMap,
+  generateStorySource,
 } from './generate-helpers';
+import getParser from './parsers';
 
 function extendOptions(source, comments, filepath, options) {
   return {

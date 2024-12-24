@@ -1,10 +1,12 @@
 // @TODO: use addon-interactions and remove the rule disable above
 import React from 'react';
-import type { Meta, StoryObj, StoryFn } from '@storybook/react';
+
 import { ThemeProvider, useTheme } from '@storybook/core/theming';
 import type { Theme } from '@storybook/core/theming';
-import { action } from '@storybook/addon-actions';
+import type { Meta, StoryFn, StoryObj } from '@storybook/react';
 import { screen } from '@storybook/test';
+
+import { action } from '@storybook/addon-actions';
 
 import { Heading } from './Heading';
 
@@ -15,15 +17,18 @@ export default {
   title: 'Sidebar/Heading',
   excludeStories: /.*Data$/,
   parameters: { layout: 'fullscreen' },
+  globals: { sb_theme: 'side-by-side' },
   decorators: [
     (storyFn) => <div style={{ padding: '0 20px', maxWidth: '230px' }}>{storyFn()}</div>,
   ],
 } as Meta<typeof Heading>;
 
 const menuItems = [
-  { title: 'Menu Item 1', onClick: action('onActivateMenuItem'), id: '1' },
-  { title: 'Menu Item 2', onClick: action('onActivateMenuItem'), id: '2' },
-  { title: 'Menu Item 3', onClick: action('onActivateMenuItem'), id: '3' },
+  [
+    { title: 'Menu Item 1', onClick: action('onActivateMenuItem'), id: '1' },
+    { title: 'Menu Item 2', onClick: action('onActivateMenuItem'), id: '2' },
+    { title: 'Menu Item 3', onClick: action('onActivateMenuItem'), id: '3' },
+  ],
 ];
 
 export const MenuHighlighted: Story = () => (
@@ -229,6 +234,7 @@ export const SkipToCanvasLinkFocused: StoryObj<typeof Heading> = {
     extra: [],
     isLoading: false,
   },
+  globals: { sb_theme: 'light' },
   parameters: { layout: 'padded', chromatic: { delay: 300 } },
   play: () => {
     // focus each instance for chromatic/storybook's stacked theme

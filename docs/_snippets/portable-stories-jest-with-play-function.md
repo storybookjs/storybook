@@ -9,7 +9,7 @@ const { Primary } = composeStories(stories);
 
 test('renders and executes the play function', async () => {
   // Mount story and run interactions
-  await Primary.play();
+  await Primary.run();
 });
 ```
 
@@ -23,6 +23,6 @@ const { Primary } = composeStories(stories);
 
 test('renders and executes the play function', async () => {
   // Mount story and run interactions
-  await Primary.play();
+  await Primary.run();
 });
 ```

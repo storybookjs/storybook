@@ -1,10 +1,12 @@
 import type { FC } from 'react';
 import React from 'react';
-import type { State } from '@storybook/core/manager-api';
+
 import { styled } from '@storybook/core/theming';
-import type { CSSObject } from '@storybook/core/theming';
+
+import type { State } from '@storybook/core/manager-api';
+
+import { useLayout } from '../layout/LayoutProvider';
 import NotificationItem from './NotificationItem';
-import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
 
 interface NotificationListProps {
   notifications: State['notifications'];
@@ -15,35 +17,36 @@ export const NotificationList: FC<NotificationListProps> = ({
   notifications,
   clearNotification,
 }) => {
+  const { isMobile } = useLayout();
   return (
-    <List>
+    <List isMobile={isMobile}>
       {notifications &&
-        notifications.map((notification) => (
+        notifications.map((notification, index) => (
           <NotificationItem
             key={notification.id}
             onDismissNotification={(id: string) => clearNotification(id)}
             notification={notification}
+            zIndex={notifications.length - index}
           />
         ))}
     </List>
   );
 };
 
-const List = styled.div<{ placement?: CSSObject }>({
-  zIndex: 200,
-  position: 'fixed',
-  left: 20,
-  bottom: 60,
-
-  [MEDIA_DESKTOP_BREAKPOINT]: {
-    bottom: 20,
+const List = styled.div<{ isMobile?: boolean }>(
+  {
+    zIndex: 200,
+    '> * + *': {
+      marginTop: 12,
+    },
+    '&:empty': {
+      display: 'none',
+    },
   },
-
-  '> * + *': {
-    marginTop: 10,
-  },
-
-  '&:empty': {
-    display: 'none',
-  },
-});
+  ({ isMobile }) =>
+    isMobile && {
+      position: 'fixed',
+      bottom: 40,
+      margin: 20,
+    }
+);

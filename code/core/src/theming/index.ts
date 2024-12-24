@@ -1,7 +1,7 @@
 /// <reference path="../typings.d.ts" />
 /// <reference path="./emotionAugmentation.d.ts" />
-
 import type { FunctionInterpolation, Interpolation } from '@emotion/react';
+
 import type { StorybookTheme } from './types';
 
 export { default as styled } from '@emotion/styled';

@@ -3,6 +3,7 @@ import './header.css';
 
 /**
  * Header component
+ *
  * @param {object} props
  * @param {object} [props.user]
  * @param {string} props.user.name

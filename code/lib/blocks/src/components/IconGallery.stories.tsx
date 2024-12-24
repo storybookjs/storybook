@@ -1,6 +1,8 @@
 import React from 'react';
-import { IconItem, IconGallery } from './IconGallery';
+
 import { AddIcon, FaceHappyIcon, HomeIcon, SubtractIcon } from '@storybook/icons';
+
+import { IconGallery, IconItem } from './IconGallery';
 
 export default {
   component: IconGallery,

@@ -1,39 +1,48 @@
-import path from 'node:path';
-import chalk from 'chalk';
-import fs from 'fs-extra';
+/* eslint-disable no-underscore-dangle */
+import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
+
+import { commonGlobOptions, normalizeStoryPath } from '@storybook/core/common';
+import type {
+  DocsIndexEntry,
+  DocsOptions,
+  IndexEntry,
+  IndexInputStats,
+  Indexer,
+  NormalizedStoriesSpecifier,
+  Path,
+  StoryIndex,
+  StoryIndexEntry,
+  StorybookConfigRaw,
+  Tag,
+} from '@storybook/core/types';
+import { combineTags, storyNameFromExport, toId } from '@storybook/csf';
+
+import { getStorySortParameter, loadConfig } from '@storybook/core/csf-tools';
+import { logger, once } from '@storybook/core/node-logger';
+import { sortStoriesV7, userOrAutoTitleFromSpecifier } from '@storybook/core/preview-api';
+
+import { findUp } from 'find-up';
+import picocolors from 'picocolors';
 import slash from 'slash';
 import invariant from 'tiny-invariant';
-import * as TsconfigPaths from 'tsconfig-paths';
-import { findUp } from 'find-up';
-
-import type {
-  IndexEntry,
-  StoryIndexEntry,
-  DocsIndexEntry,
-  NormalizedStoriesSpecifier,
-  DocsOptions,
-  Path,
-  Tag,
-  StoryIndex,
-  Indexer,
-  StorybookConfigRaw,
-} from '@storybook/core/types';
-import { userOrAutoTitleFromSpecifier, sortStoriesV7 } from '@storybook/core/preview-api';
-import { commonGlobOptions, normalizeStoryPath } from '@storybook/core/common';
-import { logger, once } from '@storybook/core/node-logger';
-import { getStorySortParameter, loadConfig } from '@storybook/core/csf-tools';
-import { storyNameFromExport, toId, combineTags } from '@storybook/csf';
 import { dedent } from 'ts-dedent';
-import { autoName } from './autoName';
+import * as TsconfigPaths from 'tsconfig-paths';
+
 import { IndexingError, MultipleIndexingError } from './IndexingError';
+import { autoName } from './autoName';
+import { type IndexStatsSummary, addStats } from './summarizeStats';
 
 // Extended type to keep track of the csf meta id so we know the component id when referencing docs in `extractDocs`
-type StoryIndexEntryWithMetaId = StoryIndexEntry & { metaId?: string };
+type StoryIndexEntryWithExtra = StoryIndexEntry & {
+  extra: { metaId?: string; stats: IndexInputStats };
+};
 /** A .mdx file will produce a docs entry */
 type DocsCacheEntry = DocsIndexEntry;
-/** A *.stories.* file will produce a list of stories and possibly a docs entry */
+/** A `_.stories._` file will produce a list of stories and possibly a docs entry */
 type StoriesCacheEntry = {
-  entries: (StoryIndexEntryWithMetaId | DocsIndexEntry)[];
+  entries: (StoryIndexEntryWithExtra | DocsIndexEntry)[];
   dependents: Path[];
   type: 'stories';
 };
@@ -64,34 +73,30 @@ export function isMdxEntry({ tags }: DocsIndexEntry) {
 
 const makeAbsolute = (otherImport: Path, normalizedPath: Path, workingDir: Path) =>
   otherImport.startsWith('.')
-    ? slash(
-        path.resolve(
-          workingDir,
-          normalizeStoryPath(path.join(path.dirname(normalizedPath), otherImport))
-        )
-      )
+    ? slash(resolve(workingDir, normalizeStoryPath(join(dirname(normalizedPath), otherImport))))
     : otherImport;
 
 /**
- * The StoryIndexGenerator extracts stories and docs entries for each file matching
- * (one or more) stories "specifiers", as defined in main.js.
+ * The StoryIndexGenerator extracts stories and docs entries for each file matching (one or more)
+ * stories "specifiers", as defined in main.js.
  *
  * The output is a set of entries (see above for the types).
  *
  * Each file is treated as a stories or a (modern) docs file.
  *
  * A stories file is indexed by an indexer (passed in), which produces a list of stories.
- *   - If the stories have the `parameters.docsOnly` setting, they are disregarded.
- *   - If the stories have autodocs enabled, a docs entry is added pointing to the story file.
+ *
+ * - If the stories have the `parameters.docsOnly` setting, they are disregarded.
+ * - If the stories have `autodocs` enabled, a docs entry is added pointing to the story file.
  *
  * A (modern) docs (.mdx) file is indexed, a docs entry is added.
  *
- * In the preview, a docs entry with the `autodocs` tag will be rendered
- * as a CSF file that exports an MDX template on the `docs.page` parameter, whereas
- * other docs entries are rendered as MDX files directly.
+ * In the preview, a docs entry with the `autodocs` tag will be rendered as a CSF file that exports
+ * an MDX template on the `docs.page` parameter, whereas other docs entries are rendered as MDX
+ * files directly.
  *
- * The entries are "uniq"-ed and sorted. Stories entries are preferred to docs entries and
- * MDX docs entries are preferred to CSF templates (with warnings).
+ * The entries are "uniq"-ed and sorted. Stories entries are preferred to docs entries and MDX docs
+ * entries are preferred to CSF templates (with warnings).
  */
 export class StoryIndexGenerator {
   // An internal cache mapping specifiers to a set of path=><set of stories>
@@ -102,6 +107,9 @@ export class StoryIndexGenerator {
   //  - any file changes, including deletions
   //  - the preview changes [not yet implemented]
   private lastIndex?: StoryIndex | null;
+
+  // Cache the last value stats calculation, mirroring lastIndex
+  private lastStats?: IndexStatsSummary;
 
   // Same as the above but for the error case
   private lastError?: Error | null;
@@ -119,9 +127,10 @@ export class StoryIndexGenerator {
       this.specifiers.map(async (specifier) => {
         const pathToSubIndex = {} as SpecifierStoriesCache;
 
-        const fullGlob = slash(path.join(specifier.directory, specifier.files));
+        const fullGlob = slash(join(specifier.directory, specifier.files));
 
         // Dynamically import globby because it is a pure ESM module
+        // eslint-disable-next-line depend/ban-dependencies
         const { globby } = await import('globby');
 
         const files = await globby(fullGlob, {
@@ -132,16 +141,16 @@ export class StoryIndexGenerator {
 
         if (files.length === 0) {
           once.warn(
-            `No story files found for the specified pattern: ${chalk.blue(
-              path.join(specifier.directory, specifier.files)
+            `No story files found for the specified pattern: ${picocolors.blue(
+              join(specifier.directory, specifier.files)
             )}`
           );
         }
 
         files.sort().forEach((absolutePath: Path) => {
-          const ext = path.extname(absolutePath);
+          const ext = extname(absolutePath);
           if (ext === '.storyshot') {
-            const relativePath = path.relative(this.options.workingDir, absolutePath);
+            const relativePath = relative(this.options.workingDir, absolutePath);
             logger.info(`Skipping ${ext} file ${relativePath}`);
             return;
           }
@@ -166,9 +175,7 @@ export class StoryIndexGenerator {
     await this.ensureExtracted({ projectTags });
   }
 
-  /**
-   * Run the updater function over all the empty cache entries
-   */
+  /** Run the updater function over all the empty cache entries */
   async updateExtracted(
     updater: (
       specifier: NormalizedStoriesSpecifier,
@@ -188,15 +195,14 @@ export class StoryIndexGenerator {
         );
         return Promise.all(
           Object.keys(entry).map(async (absolutePath) => {
-            if (entry[absolutePath] && !overwrite) return;
+            if (entry[absolutePath] && !overwrite) {
+              return;
+            }
 
             try {
               entry[absolutePath] = await updater(specifier, absolutePath, entry[absolutePath]);
             } catch (err) {
-              const relativePath = `.${path.sep}${path.relative(
-                this.options.workingDir,
-                absolutePath
-              )}`;
+              const relativePath = `.${sep}${relative(this.options.workingDir, absolutePath)}`;
 
               entry[absolutePath] = {
                 type: 'error',
@@ -221,7 +227,7 @@ export class StoryIndexGenerator {
     projectTags,
   }: {
     projectTags?: Tag[];
-  }): Promise<(IndexEntry | ErrorEntry)[]> {
+  }): Promise<{ entries: (IndexEntry | ErrorEntry)[]; stats: IndexStatsSummary }> {
     // First process all the story files. Then, in a second pass,
     // process the docs files. The reason for this is that the docs
     // files may use the `<Meta of={XStories} />` syntax, which requires
@@ -236,7 +242,8 @@ export class StoryIndexGenerator {
       this.extractDocs(specifier, absolutePath, projectTags)
     );
 
-    return this.specifiers.flatMap((specifier) => {
+    const statsSummary = {} as IndexStatsSummary;
+    const entries = this.specifiers.flatMap((specifier) => {
       const cache = this.specifierToCache.get(specifier);
       invariant(
         cache,
@@ -245,29 +252,50 @@ export class StoryIndexGenerator {
         )}`
       );
       return Object.values(cache).flatMap((entry): (IndexEntry | ErrorEntry)[] => {
-        if (!entry) return [];
-        if (entry.type === 'docs') return [entry];
-        if (entry.type === 'error') return [entry];
+        if (!entry) {
+          return [];
+        }
+
+        if (entry.type === 'docs') {
+          return [entry];
+        }
+
+        if (entry.type === 'error') {
+          return [entry];
+        }
 
         return entry.entries.map((item) => {
-          if (item.type === 'docs') return item;
-          // Drop the meta id as it isn't part of the index, we just used it for record keeping in `extractDocs`
-          const { metaId, ...existing } = item;
+          if (item.type === 'docs') {
+            return item;
+          }
+
+          addStats(item.extra.stats, statsSummary);
+
+          // Drop extra data used for internal bookkeeping
+          const { extra, ...existing } = item;
           return existing;
         });
       });
     });
+
+    return { entries, stats: statsSummary };
   }
 
   findDependencies(absoluteImports: Path[]) {
     return [...this.specifierToCache.values()].flatMap((cache: SpecifierStoriesCache) =>
       Object.entries(cache)
         .filter(([fileName, cacheEntry]) => {
-          // We are only interested in stories cache entries (and assume they've been processed already)
-          // If we found a match in the cache that's still null or not a stories file,
-          // it is a docs file and it isn't a dependency / storiesImport.
-          // See https://github.com/storybookjs/storybook/issues/20958
-          if (!cacheEntry || cacheEntry.type !== 'stories') return false;
+          /**
+           * We are only interested in stories cache entries (and assume they've been processed
+           * already) If we found a match in the cache that's still null or not a stories file, it
+           * is a docs file and it isn't a dependency / storiesImport.
+           *
+           * @see
+           * https://github.com/storybookjs/storybook/issues/20958
+           */
+          if (!cacheEntry || cacheEntry.type !== 'stories') {
+            return false;
+          }
 
           return !!absoluteImports.find((storyImport) =>
             fileName.match(
@@ -280,11 +308,10 @@ export class StoryIndexGenerator {
   }
 
   /**
-   * Try to find the component path from a raw import string and return it in
-   * the same format as `importPath`. Respect tsconfig paths if available.
+   * Try to find the component path from a raw import string and return it in the same format as
+   * `importPath`. Respect tsconfig paths if available.
    *
-   * If no such file exists, assume that the import is from a package and
-   * return the raw path.
+   * If no such file exists, assume that the import is from a package and return the raw
    */
   resolveComponentPath(
     rawComponentPath: Path,
@@ -296,12 +323,12 @@ export class StoryIndexGenerator {
       rawPath = matchPath(rawPath) ?? rawPath;
     }
 
-    const absoluteComponentPath = path.resolve(path.dirname(absolutePath), rawPath);
+    const absoluteComponentPath = resolve(dirname(absolutePath), rawPath);
     const existing = ['', '.js', '.ts', '.jsx', '.tsx', '.mjs', '.mts']
       .map((ext) => `${absoluteComponentPath}${ext}`)
-      .find((candidate) => fs.existsSync(candidate));
+      .find((candidate) => existsSync(candidate));
     if (existing) {
-      const relativePath = path.relative(this.options.workingDir, existing);
+      const relativePath = relative(this.options.workingDir, existing);
       return slash(normalizeStoryPath(relativePath));
     }
 
@@ -313,7 +340,7 @@ export class StoryIndexGenerator {
     absolutePath: Path,
     projectTags: Tag[] = []
   ): Promise<StoriesCacheEntry | DocsCacheEntry> {
-    const relativePath = path.relative(this.options.workingDir, absolutePath);
+    const relativePath = relative(this.options.workingDir, absolutePath);
     const importPath = slash(normalizeStoryPath(relativePath));
     const defaultMakeTitle = (userTitle?: string) => {
       const title = userOrAutoTitleFromSpecifier(importPath, specifier, userTitle);
@@ -340,7 +367,7 @@ export class StoryIndexGenerator {
       ]);
     }
 
-    const entries: ((StoryIndexEntryWithMetaId | DocsCacheEntry) & { tags: Tag[] })[] =
+    const entries: ((StoryIndexEntryWithExtra | DocsCacheEntry) & { tags: Tag[] })[] =
       indexInputs.map((input) => {
         const name = input.name ?? storyNameFromExport(input.exportName);
         const componentPath =
@@ -348,14 +375,16 @@ export class StoryIndexGenerator {
           this.resolveComponentPath(input.rawComponentPath, absolutePath, matchPath);
         const title = input.title ?? defaultMakeTitle();
 
-        // eslint-disable-next-line no-underscore-dangle
         const id = input.__id ?? toId(input.metaId ?? title, storyNameFromExport(input.exportName));
         const tags = combineTags(...projectTags, ...(input.tags ?? []));
 
         return {
           type: 'story',
           id,
-          metaId: input.metaId,
+          extra: {
+            metaId: input.metaId,
+            stats: input.__stats ?? {},
+          },
           name,
           title,
           importPath,
@@ -400,18 +429,20 @@ export class StoryIndexGenerator {
     absolutePath: Path,
     projectTags: Tag[] = []
   ) {
-    const relativePath = path.relative(this.options.workingDir, absolutePath);
+    const relativePath = relative(this.options.workingDir, absolutePath);
     try {
       const normalizedPath = normalizeStoryPath(relativePath);
       const importPath = slash(normalizedPath);
 
-      const content = await fs.readFile(absolutePath, 'utf8');
+      const content = await readFile(absolutePath, { encoding: 'utf8' });
 
       const { analyze } = await import('@storybook/docs-mdx');
       const result = await analyze(content);
 
       // Templates are not indexed
-      if (result.isTemplate) return false;
+      if (result.isTemplate) {
+        return false;
+      }
 
       const absoluteImports = (result.imports as string[]).map((p) =>
         makeAbsolute(p, normalizedPath, this.options.workingDir)
@@ -428,17 +459,17 @@ export class StoryIndexGenerator {
 
       // Also, if `result.of` is set, it means that we're using the `<Meta of={XStories} />` syntax,
       // so find the `title` defined the file that `meta` points to.
-      let csfEntry: StoryIndexEntryWithMetaId | undefined;
+      let csfEntry: StoryIndexEntryWithExtra | undefined;
       if (result.of) {
         const absoluteOf = makeAbsolute(result.of, normalizedPath, this.options.workingDir);
         dependencies.forEach((dep) => {
           if (dep.entries.length > 0) {
-            const first = dep.entries.find((e) => e.type !== 'docs') as StoryIndexEntryWithMetaId;
+            const first = dep.entries.find((e) => e.type !== 'docs') as StoryIndexEntryWithExtra;
 
             if (
-              path
-                .normalize(path.resolve(this.options.workingDir, first.importPath))
-                .startsWith(path.normalize(absoluteOf))
+              normalize(resolve(this.options.workingDir, first.importPath)).startsWith(
+                normalize(absoluteOf)
+              )
             ) {
               csfEntry = first;
             }
@@ -475,7 +506,7 @@ export class StoryIndexGenerator {
         result.name ||
         (csfEntry ? autoName(importPath, csfEntry.importPath, defaultName) : defaultName);
 
-      const id = toId(csfEntry?.metaId || title, name);
+      const id = toId(csfEntry?.extra.metaId || title, name);
 
       const tags = combineTags(
         ...projectTags,
@@ -497,7 +528,7 @@ export class StoryIndexGenerator {
     } catch (err) {
       if (err && (err as { source: any }).source?.match(/mdast-util-mdx-jsx/g)) {
         logger.warn(
-          `💡 This seems to be an MDX2 syntax error. Please refer to the MDX section in the following resource for assistance on how to fix this: ${chalk.yellow(
+          `💡 This seems to be an MDX2 syntax error. Please refer to the MDX section in the following resource for assistance on how to fix this: ${picocolors.yellow(
             'https://storybook.js.org/migration-guides/7.0'
           )}`
         );
@@ -524,11 +555,12 @@ export class StoryIndexGenerator {
     const changeDocsName = 'Use `<Meta of={} name="Other Name">` to distinguish them.';
 
     // This shouldn't be possible, but double check and use for typing
-    if (worseEntry.type === 'story')
+    if (worseEntry.type === 'story') {
       throw new IndexingError(`Duplicate stories with id: ${firstEntry.id}`, [
         firstEntry.importPath,
         secondEntry.importPath,
       ]);
+    }
 
     if (betterEntry.type === 'story') {
       const worseDescriptor = isMdxEntry(worseEntry)
@@ -558,11 +590,12 @@ export class StoryIndexGenerator {
       if (
         worseEntry.tags?.includes(AUTODOCS_TAG) &&
         !(this.options.docs.autodocs === true || projectTags?.includes(AUTODOCS_TAG))
-      )
+      ) {
         throw new IndexingError(
           `You created a component docs page for '${worseEntry.title}', but also tagged the CSF file with '${AUTODOCS_TAG}'. This is probably a mistake.`,
           [betterEntry.importPath, worseEntry.importPath]
         );
+      }
 
       // Otherwise the existing entry is created by project-level autodocs which is allowed to be overridden.
     } else {
@@ -598,21 +631,31 @@ export class StoryIndexGenerator {
   }
 
   async getIndex() {
-    if (this.lastIndex) return this.lastIndex;
-    if (this.lastError) throw this.lastError;
+    return (await this.getIndexAndStats()).storyIndex;
+  }
+
+  async getIndexAndStats(): Promise<{ storyIndex: StoryIndex; stats: IndexStatsSummary }> {
+    if (this.lastIndex && this.lastStats) {
+      return { storyIndex: this.lastIndex, stats: this.lastStats };
+    }
+
+    if (this.lastError) {
+      throw this.lastError;
+    }
 
     const previewCode = await this.getPreviewCode();
     const projectTags = this.getProjectTags(previewCode);
 
     // Extract any entries that are currently missing
     // Pull out each file's stories into a list of stories, to be composed and sorted
-    const storiesList = await this.ensureExtracted({ projectTags });
+    const { entries: storiesList, stats } = await this.ensureExtracted({ projectTags });
 
     try {
       const errorEntries = storiesList.filter((entry) => entry.type === 'error');
 
-      if (errorEntries.length)
+      if (errorEntries.length) {
         throw new MultipleIndexingError(errorEntries.map((entry) => (entry as ErrorEntry).err));
+      }
 
       const duplicateErrors: IndexingError[] = [];
       const indexEntries: StoryIndex['entries'] = {};
@@ -625,22 +668,28 @@ export class StoryIndexGenerator {
             indexEntries[entry.id] = entry;
           }
         } catch (err) {
-          if (err instanceof IndexingError) duplicateErrors.push(err);
+          if (err instanceof IndexingError) {
+            duplicateErrors.push(err);
+          }
         }
       });
-      if (duplicateErrors.length) throw new MultipleIndexingError(duplicateErrors);
+
+      if (duplicateErrors.length) {
+        throw new MultipleIndexingError(duplicateErrors);
+      }
 
       const sorted = await this.sortStories(
         indexEntries,
         previewCode && getStorySortParameter(previewCode)
       );
 
+      this.lastStats = stats;
       this.lastIndex = {
         v: 5,
         entries: sorted,
       };
 
-      return this.lastIndex;
+      return { storyIndex: this.lastIndex, stats: this.lastStats };
     } catch (err) {
       this.lastError = err == null || err instanceof Error ? err : undefined;
       invariant(this.lastError);
@@ -660,7 +709,7 @@ export class StoryIndexGenerator {
   }
 
   invalidate(specifier: NormalizedStoriesSpecifier, importPath: Path, removed: boolean) {
-    const absolutePath = slash(path.resolve(this.options.workingDir, importPath));
+    const absolutePath = slash(resolve(this.options.workingDir, importPath));
     const cache = this.specifierToCache.get(specifier);
     invariant(
       cache,
@@ -688,7 +737,7 @@ export class StoryIndexGenerator {
     if (removed) {
       if (cacheEntry && cacheEntry.type === 'docs') {
         const absoluteImports = cacheEntry.storiesImports.map((p) =>
-          path.resolve(this.options.workingDir, p)
+          resolve(this.options.workingDir, p)
         );
         const dependencies = this.findDependencies(absoluteImports);
         dependencies.forEach((dep) =>
@@ -705,10 +754,10 @@ export class StoryIndexGenerator {
 
   async getPreviewCode() {
     const previewFile = ['js', 'jsx', 'ts', 'tsx', 'mjs', 'cjs', 'mts']
-      .map((ext) => path.join(this.options.configDir, `preview.${ext}`))
-      .find((fname) => fs.existsSync(fname));
+      .map((ext) => join(this.options.configDir, `preview.${ext}`))
+      .find((fname) => existsSync(fname));
 
-    return previewFile && (await fs.readFile(previewFile, 'utf-8')).toString();
+    return previewFile && (await readFile(previewFile, { encoding: 'utf8' })).toString();
   }
 
   getProjectTags(previewCode?: string) {

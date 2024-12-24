@@ -117,4 +117,3 @@ export const Default: Story = {
   },
 };
 ```
-

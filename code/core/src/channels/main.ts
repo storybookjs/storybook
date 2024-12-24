@@ -1,11 +1,11 @@
 import type {
   ChannelArgs,
   ChannelArgsMulti,
-  EventsKeyValue,
-  ChannelTransport,
   ChannelArgsSingle,
-  Listener,
   ChannelEvent,
+  ChannelTransport,
+  EventsKeyValue,
+  Listener,
 } from './types';
 
 const isMulti = (args: ChannelArgs): args is ChannelArgsMulti => {

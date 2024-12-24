@@ -9,4 +9,3 @@ pnpm run test-storybook --eject
 ```sh renderer="common" language="js" packageManager="yarn"
 yarn test-storybook --eject
 ```
-

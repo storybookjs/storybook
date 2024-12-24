@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/angular';
-import { within, userEvent, expect } from '@storybook/test';
+import { expect, userEvent, within } from '@storybook/test';
 
 import { PageComponent } from './page.component';
 

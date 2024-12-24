@@ -13,7 +13,7 @@ describe(options.suite, () => {
       stories.forEach(({ name, story }) => {
         // ...Previously existing code
         testFn(name, async () => {
-          await story.play();
+          await story.run();
           // Ensures a consistent snapshot by waiting for the component to render by adding a delay of 1 ms before taking the snapshot.
           await new Promise((resolve) => setTimeout(resolve, 1));
 
@@ -21,7 +21,7 @@ describe(options.suite, () => {
           const snapshotPath = path.join(
             storyDir,
             options.snapshotsDirName,
-            `${componentName}${options.snapshotExtension}`
+            `${componentName}${options.snapshotExtension}`,
           );
           expect(document.body.firstChild).toMatchSpecificSnapshot(snapshotPath);
         });

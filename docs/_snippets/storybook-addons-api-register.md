@@ -4,4 +4,3 @@ import { addons } from '@storybook/preview-api';
 // Register the addon with a unique name.
 addons.register('my-organisation/my-addon', (api) => {});
 ```
-

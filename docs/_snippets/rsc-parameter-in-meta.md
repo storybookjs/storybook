@@ -36,4 +36,3 @@ const meta: Meta<typeof MyServerComponent> = {
 };
 export default meta;
 ```
-

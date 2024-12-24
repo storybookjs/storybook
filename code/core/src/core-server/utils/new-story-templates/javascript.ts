@@ -1,4 +1,5 @@
 import { dedent } from 'ts-dedent';
+
 import { getComponentVariableName } from '../get-component-variable-name';
 
 interface JavaScriptTemplateData {

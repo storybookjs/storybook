@@ -1,4 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
 import { init as initNotifications } from '../modules/notifications';
 
 describe('notifications API', () => {

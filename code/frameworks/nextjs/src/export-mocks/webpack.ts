@@ -1,5 +1,7 @@
-import { dirname, join } from 'path';
+import { dirname, join } from 'node:path';
+
 import type { Configuration as WebpackConfig } from 'webpack';
+
 import { getCompatibilityAliases } from '../compatibility/compatibility-map';
 
 const mapping = {
@@ -21,14 +23,14 @@ export const getPackageAliases = ({ useESM = false }: { useESM?: boolean } = {})
   const packageLocation = dirname(require.resolve('@storybook/nextjs/package.json'));
 
   const getFullPath = (path: string) =>
-    join(packageLocation, path.replace('@storybook/nextjs', ''));
+    path.startsWith('next') ? path : join(packageLocation, path.replace('@storybook/nextjs', ''));
 
   const aliases = Object.fromEntries(
     Object.entries(mapping).map(([originalPath, aliasedPath]) => [
       originalPath,
       // Use paths for both next/xyz and @storybook/nextjs/xyz imports
       // to make sure they all serve the MJS/CJS version of the file
-      getFullPath(`${aliasedPath}.${extension}`),
+      typeof aliasedPath === 'string' ? getFullPath(`${aliasedPath}.${extension}`) : aliasedPath,
     ])
   );
 

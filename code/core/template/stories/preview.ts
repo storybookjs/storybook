@@ -30,16 +30,18 @@ export const parameters = {
 
 export const loaders = [async () => ({ projectValue: 2 })];
 
-export const decorators = [
-  (storyFn: PartialStoryFn, context: StoryContext) => {
-    if (context.parameters.useProjectDecorator)
-      return storyFn({ args: { ...context.args, text: `project ${context.args.text}` } });
-    return storyFn();
-  },
-];
+const testProjectDecorator = (storyFn: PartialStoryFn, context: StoryContext) => {
+  if (context.parameters.useProjectDecorator) {
+    return storyFn({ args: { ...context.args, text: `project ${context.args.text}` } });
+  }
+  return storyFn();
+};
+
+export const decorators = [testProjectDecorator];
 
 export const initialGlobals = {
   foo: 'fooValue',
+  baz: 'bazValue',
 };
 
 export const globalTypes = {

@@ -1,11 +1,26 @@
-import { Type } from '@angular/core';
 import { ArgTypes } from 'storybook/internal/types';
+
+import { Type } from '@angular/core';
+
 import { ICollection } from '../types';
 import {
   ComponentInputsOutputs,
   getComponentDecoratorMetadata,
   getComponentInputsOutputs,
 } from './utils/NgComponentAnalyzer';
+
+/**
+ * Check if the name matches the criteria for a valid identifier. A valid identifier can only
+ * contain letters, digits, underscores, or dollar signs. It cannot start with a digit.
+ */
+const isValidIdentifier = (name: string): boolean => /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name);
+
+/**
+ * Returns the property name, if it can be accessed with dot notation. If not, it returns
+ * `this['propertyName']`.
+ */
+export const formatPropInTemplate = (propertyName: string) =>
+  isValidIdentifier(propertyName) ? propertyName : `this['${propertyName}']`;
 
 const separateInputsOutputsAttributes = (
   ngComponentInputsOutputs: ComponentInputsOutputs,
@@ -27,6 +42,7 @@ const separateInputsOutputsAttributes = (
 
 /**
  * Converts a component into a template with inputs/outputs present in initial props
+ *
  * @param component
  * @param initialProps
  * @param innerTemplate
@@ -50,10 +66,12 @@ export const computesTemplateFromComponent = (
   );
 
   const templateInputs =
-    initialInputs.length > 0 ? ` ${initialInputs.map((i) => `[${i}]="${i}"`).join(' ')}` : '';
+    initialInputs.length > 0
+      ? ` ${initialInputs.map((i) => `[${i}]="${formatPropInTemplate(i)}"`).join(' ')}`
+      : '';
   const templateOutputs =
     initialOutputs.length > 0
-      ? ` ${initialOutputs.map((i) => `(${i})="${i}($event)"`).join(' ')}`
+      ? ` ${initialOutputs.map((i) => `(${i})="${formatPropInTemplate(i)}($event)"`).join(' ')}`
       : '';
 
   return buildTemplate(
@@ -63,6 +81,20 @@ export const computesTemplateFromComponent = (
     templateOutputs
   );
 };
+
+/** Stringify an object with a placholder in the circular references. */
+function stringifyCircular(obj: any) {
+  const seen = new Set();
+  return JSON.stringify(obj, (key, value) => {
+    if (typeof value === 'object' && value !== null) {
+      if (seen.has(value)) {
+        return '[Circular]';
+      }
+      seen.add(value);
+    }
+    return value;
+  });
+}
 
 const createAngularInputProperty = ({
   propertyName,
@@ -79,7 +111,7 @@ const createAngularInputProperty = ({
       templateValue = `'${value}'`;
       break;
     case 'object':
-      templateValue = JSON.stringify(value)
+      templateValue = stringifyCircular(value)
         .replace(/'/g, '\u2019')
         .replace(/\\"/g, '\u201D')
         .replace(/"([^-"]+)":/g, '$1: ')
@@ -98,6 +130,7 @@ const createAngularInputProperty = ({
 
 /**
  * Converts a component into a template with inputs/outputs present in initial props
+ *
  * @param component
  * @param initialProps
  * @param innerTemplate
@@ -137,7 +170,7 @@ export const computesTemplateSourceFromComponent = (
       : '';
   const templateOutputs =
     initialOutputs.length > 0
-      ? ` ${initialOutputs.map((i) => `(${i})="${i}($event)"`).join(' ')}`
+      ? ` ${initialOutputs.map((i) => `(${i})="${formatPropInTemplate(i)}($event)"`).join(' ')}`
       : '';
 
   return buildTemplate(ngComponentMetadata.selector, '', templateInputs, templateOutputs);

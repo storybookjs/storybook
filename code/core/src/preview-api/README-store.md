@@ -78,7 +78,9 @@ Note that arg values are passed directly to a story -- you should only store the
 Both `@storybook/preview-api` and `@storybook/manager-api` export a `useArgs()` hook that you can use to access args in decorators or addon panels. The API is as follows:
 
 ```js
-import { useArgs } from '@storybook/preview-api'; // or '@storybook/manager-api'
+import { useArgs } from '@storybook/preview-api';
+
+// or '@storybook/manager-api'
 
 // `args` is the args of the currently rendered story
 // `updateArgs` will update its args. You can pass a subset of the args; other args will not be changed.
@@ -110,7 +112,9 @@ To set initial values of globals, `export const globals = {...}` from `preview.j
 Similar to args, globals are synchronized to the manager and can be accessed via the `useGlobals` hook.
 
 ```js
-import { useGlobals } from '@storybook/preview-api'; // or '@storybook/manager-api'
+import { useGlobals } from '@storybook/preview-api';
+
+// or '@storybook/manager-api'
 
 const [globals, updateGlobals] = useGlobals();
 ```

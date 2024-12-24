@@ -1,22 +1,21 @@
 import { defineConfig, devices } from '@playwright/test';
 
-/**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
- */
+/** Read environment variables from file. https://github.com/motdotla/dotenv */
 // require('dotenv').config();
 
-/**
- * See https://playwright.dev/docs/test-configuration.
- */
+// Comment this out and fill in the values to run E2E tests locally using the Playwright extension easily
+// process.env.STORYBOOK_URL = 'http://localhost:6006';
+// process.env.STORYBOOK_TEMPLATE_NAME = 'react-vite/default-ts';
+
+/** See https://playwright.dev/docs/test-configuration. */
 export default defineConfig({
   testDir: './e2e-tests',
   /* Maximum time one test can run for. */
   timeout: 30 * 1000,
   expect: {
     /**
-     * Maximum time expect() should wait for the condition to be met.
-     * For example in `await expect(locator).toHaveText();`
+     * Maximum time expect() should wait for the condition to be met. For example in `await
+     * expect(locator).toHaveText();`
      */
     timeout: 5000,
   },
@@ -67,12 +66,12 @@ export default defineConfig({
       },
     },
 
-    {
-      name: 'webkit',
-      use: {
-        ...devices['Desktop Safari'],
-      },
-    },
+    // {
+    //   name: 'webkit',
+    //   use: {
+    //     ...devices['Desktop Safari'],
+    //   },
+    // },
 
     /* Test against mobile viewports. */
     // {

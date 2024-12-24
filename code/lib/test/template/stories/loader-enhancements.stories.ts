@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention,storybook/prefer-pascal-case */
-import { expect, within, userEvent as globalUserEvent } from '@storybook/test';
+import { expect, userEvent as globalUserEvent, within } from '@storybook/test';
 
 const meta = {
   component: globalThis.Components.Button,
@@ -12,7 +12,7 @@ export default meta;
 export const canvas_is_equal_to_within_canvas_element = {
   async play({ canvas, canvasElement }) {
     const oldCanvas = within(canvasElement);
-    await expect(canvas satisfies typeof oldCanvas).toEqual(oldCanvas);
+    await expect(Object.keys(canvas)).toEqual(Object.keys(oldCanvas));
   },
 };
 

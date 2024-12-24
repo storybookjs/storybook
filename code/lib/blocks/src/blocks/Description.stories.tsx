@@ -1,15 +1,18 @@
 import React from 'react';
+
 import type { Meta, StoryObj } from '@storybook/react';
-import { Description } from './Description';
+
 import { Button as ButtonComponent } from '../examples/Button';
 import * as DefaultButtonStories from '../examples/Button.stories';
-import * as ButtonStoriesWithMetaDescriptionAsParameter from '../examples/ButtonWithMetaDescriptionAsParameter.stories';
-import * as ButtonStoriesWithMetaDescriptionAsComment from '../examples/ButtonWithMetaDescriptionAsComment.stories';
 import * as ButtonStoriesWithMetaDescriptionAsBoth from '../examples/ButtonWithMetaDescriptionAsBoth.stories';
+import * as ButtonStoriesWithMetaDescriptionAsComment from '../examples/ButtonWithMetaDescriptionAsComment.stories';
+import * as ButtonStoriesWithMetaDescriptionAsParameter from '../examples/ButtonWithMetaDescriptionAsParameter.stories';
+import { Description } from './Description';
 
 const meta: Meta<typeof Description> = {
   component: Description,
   parameters: {
+    layout: 'fullscreen',
     controls: {
       include: [],
     },
@@ -121,7 +124,7 @@ export const OfUndefinedAttached: Story = {
     relativeCsfPaths: ['../examples/Button.stories'],
     attached: true,
   },
-  decorators: [(s) => (window?.navigator.userAgent.match(/StorybookTestRunner/) ? <div /> : s())],
+  tags: ['!test'],
 };
 export const OfStringComponentAttached: Story = {
   name: 'Of "component" Attached',

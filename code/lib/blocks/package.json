@@ -54,7 +54,7 @@
     "@types/color-convert": "^2.0.0",
     "color-convert": "^2.0.1",
     "es-toolkit": "^1.22.0",
-    "markdown-to-jsx": "^7.4.5",
+    "markdown-to-jsx": "^7.7.2",
     "memoizerific": "^1.11.3",
     "polished": "^4.2.2",
     "react-colorful": "^5.1.2",

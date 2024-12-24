@@ -1,6 +1,12 @@
 import React, { type ComponentProps, type FC, useCallback, useMemo, useRef, useState } from 'react';
 
-import { Button, ListItem, ProgressSpinner } from 'storybook/internal/components';
+import {
+  Button,
+  ListItem,
+  ProgressSpinner,
+  TooltipNote,
+  WithTooltip,
+} from 'storybook/internal/components';
 import {
   TESTING_MODULE_CONFIG_CHANGE,
   type TestProviderConfig,
@@ -31,7 +37,6 @@ import { type Config, type Details, PANEL_ID } from '../constants';
 import { type TestStatus } from '../node/reporter';
 import { Description } from './Description';
 import { TestStatusIcon } from './TestStatusIcon';
-import { Title } from './Title';
 
 const Container = styled.div({
   display: 'flex',
@@ -51,6 +56,12 @@ const Info = styled.div({
   marginLeft: 6,
   minWidth: 0,
 });
+
+const Title = styled.div<{ crashed?: boolean }>(({ crashed, theme }) => ({
+  fontSize: theme.typography.size.s1,
+  fontWeight: crashed ? 'bold' : 'normal',
+  color: crashed ? theme.color.negativeText : theme.color.defaultText,
+}));
 
 const Actions = styled.div({
   display: 'flex',
@@ -92,7 +103,7 @@ const statusMap: Record<TestStatus, ComponentProps<typeof TestStatusIcon>['statu
   warning: 'warning',
   passed: 'positive',
   skipped: 'unknown',
-  pending: 'unknown',
+  pending: 'pending',
 };
 
 export const TestProviderRender: FC<
@@ -185,11 +196,7 @@ export const TestProviderRender: FC<
     })
     .sort((a, b) => statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status));
 
-  const status = state.running
-    ? 'unknown'
-    : state.failed
-      ? 'failed'
-      : (results[0]?.status ?? 'unknown');
+  const status = results[0]?.status ?? (state.running ? 'pending' : 'unknown');
 
   const openPanel = (id: string, panelId: string) => {
     api.selectStory(id);
@@ -201,57 +208,90 @@ export const TestProviderRender: FC<
     <Container {...props}>
       <Heading>
         <Info>
-          <Title id="testing-module-title" state={state} />
-          <Description id="testing-module-description" state={state} />
+          <Title id="testing-module-title" crashed={state.crashed}>
+            {state.crashed ? 'Local tests failed' : 'Run local tests'}
+          </Title>
+          <Description
+            id="testing-module-description"
+            state={state}
+            entryId={entryId}
+            results={results}
+          />
         </Info>
 
         <Actions>
-          <Button
-            aria-label={`${isEditing ? 'Close' : 'Open'} settings for ${state.name}`}
-            variant="ghost"
-            padding="small"
-            active={isEditing}
-            disabled={state.running && !isEditing}
-            onClick={() => setIsEditing(!isEditing)}
-          >
-            <EditIcon />
-          </Button>
-          {state.watchable && !entryId && (
-            <Button
-              aria-label={`${state.watching ? 'Disable' : 'Enable'} watch mode for ${state.name}`}
-              variant="ghost"
-              padding="small"
-              active={state.watching}
-              onClick={() => api.setTestProviderWatchMode(state.id, !state.watching)}
-              disabled={state.running || isEditing}
+          {!entryId && (
+            <WithTooltip
+              hasChrome={false}
+              trigger="hover"
+              tooltip={<TooltipNote note={`${isEditing ? 'Hide' : 'Show'} settings`} />}
             >
-              <EyeIcon />
-            </Button>
+              <Button
+                aria-label={`${isEditing ? 'Hide' : 'Show'} settings`}
+                variant="ghost"
+                padding="small"
+                active={isEditing}
+                disabled={state.running && !isEditing}
+                onClick={() => setIsEditing(!isEditing)}
+              >
+                <EditIcon />
+              </Button>
+            </WithTooltip>
+          )}
+          {!entryId && state.watchable && (
+            <WithTooltip
+              hasChrome={false}
+              trigger="hover"
+              tooltip={<TooltipNote note={`${state.watching ? 'Disable' : 'Enable'} watch mode`} />}
+            >
+              <Button
+                aria-label={`${state.watching ? 'Disable' : 'Enable'} watch mode`}
+                variant="ghost"
+                padding="small"
+                active={state.watching}
+                onClick={() => api.setTestProviderWatchMode(state.id, !state.watching)}
+                disabled={state.running || isEditing}
+              >
+                <EyeIcon />
+              </Button>
+            </WithTooltip>
           )}
           {state.runnable && (
             <>
               {state.running && state.cancellable ? (
-                <Button
-                  aria-label={`Stop ${state.name}`}
-                  variant="ghost"
-                  padding="none"
-                  onClick={() => api.cancelTestProvider(state.id)}
-                  disabled={state.cancelling}
+                <WithTooltip
+                  hasChrome={false}
+                  trigger="hover"
+                  tooltip={<TooltipNote note="Stop test run" />}
                 >
-                  <Progress percentage={state.progress?.percentageCompleted}>
-                    <StopIcon />
-                  </Progress>
-                </Button>
+                  <Button
+                    aria-label="Stop test run"
+                    variant="ghost"
+                    padding="none"
+                    onClick={() => api.cancelTestProvider(state.id)}
+                    disabled={state.cancelling}
+                  >
+                    <Progress percentage={state.progress?.percentageCompleted}>
+                      <StopIcon />
+                    </Progress>
+                  </Button>
+                </WithTooltip>
               ) : (
-                <Button
-                  aria-label={`Start ${state.name}`}
-                  variant="ghost"
-                  padding="small"
-                  onClick={() => api.runTestProvider(state.id, { entryId })}
-                  disabled={state.running || isEditing}
+                <WithTooltip
+                  hasChrome={false}
+                  trigger="hover"
+                  tooltip={<TooltipNote note="Start test run" />}
                 >
-                  <PlayHollowIcon />
-                </Button>
+                  <Button
+                    aria-label="Start test run"
+                    variant="ghost"
+                    padding="small"
+                    onClick={() => api.runTestProvider(state.id, { entryId })}
+                    disabled={state.running || isEditing}
+                  >
+                    <PlayHollowIcon />
+                  </Button>
+                </WithTooltip>
               )}
             </>
           )}
@@ -266,19 +306,6 @@ export const TestProviderRender: FC<
             icon={<PointerHandIcon color={theme.textMutedColor} />}
             right={<Checkbox type="checkbox" checked disabled />}
           />
-          <ListItem
-            as="label"
-            title={<ItemTitle enabled={config.coverage}>Coverage</ItemTitle>}
-            icon={<ShieldIcon color={theme.textMutedColor} />}
-            right={
-              <Checkbox
-                type="checkbox"
-                checked={state.watching ? false : config.coverage}
-                disabled={state.watching}
-                onChange={() => updateConfig({ coverage: !config.coverage })}
-              />
-            }
-          />
           {isA11yAddon && (
             <ListItem
               as="label"
@@ -289,6 +316,21 @@ export const TestProviderRender: FC<
                   type="checkbox"
                   checked={config.a11y}
                   onChange={() => updateConfig({ a11y: !config.a11y })}
+                />
+              }
+            />
+          )}
+          {!entryId && (
+            <ListItem
+              as="label"
+              title={<ItemTitle enabled={config.coverage}>Coverage</ItemTitle>}
+              icon={<ShieldIcon color={theme.textMutedColor} />}
+              right={
+                <Checkbox
+                  type="checkbox"
+                  checked={state.watching ? false : config.coverage}
+                  disabled={state.watching}
+                  onChange={() => updateConfig({ coverage: !config.coverage })}
                 />
               }
             />
@@ -320,34 +362,6 @@ export const TestProviderRender: FC<
               )
             }
           />
-          {coverageSummary ? (
-            <ListItem
-              title={<ItemTitle enabled={config.coverage}>Coverage</ItemTitle>}
-              href={'/coverage/index.html'}
-              // @ts-expect-error ListItem doesn't include all anchor attributes in types, but it is an achor element
-              target="_blank"
-              aria-label="Open coverage report"
-              icon={
-                <TestStatusIcon
-                  percentage={coverageSummary.percentage}
-                  status={coverageSummary.status}
-                  aria-label={`status: ${coverageSummary.status}`}
-                />
-              }
-              right={
-                coverageSummary.percentage ? (
-                  <span aria-label={`${coverageSummary.percentage} percent coverage`}>
-                    {coverageSummary.percentage} %
-                  </span>
-                ) : null
-              }
-            />
-          ) : (
-            <ListItem
-              title={<ItemTitle enabled={config.coverage}>Coverage</ItemTitle>}
-              icon={<TestStatusIcon status="unknown" aria-label={`status: unknown`} />}
-            />
-          )}
           {isA11yAddon && (
             <ListItem
               title={<ItemTitle enabled={config.a11y}>Accessibility {a11ySkippedLabel}</ItemTitle>}
@@ -370,6 +384,38 @@ export const TestProviderRender: FC<
               icon={<TestStatusIcon status={a11yStatus} aria-label={`status: ${a11yStatus}`} />}
               right={isStoryEntry ? null : a11yNotPassedAmount || null}
             />
+          )}
+          {!entryId && (
+            <>
+              {coverageSummary ? (
+                <ListItem
+                  title={<ItemTitle enabled={config.coverage}>Coverage</ItemTitle>}
+                  href={'/coverage/index.html'}
+                  // @ts-expect-error ListItem doesn't include all anchor attributes in types, but it is an achor element
+                  target="_blank"
+                  aria-label="Open coverage report"
+                  icon={
+                    <TestStatusIcon
+                      percentage={coverageSummary.percentage}
+                      status={coverageSummary.status}
+                      aria-label={`status: ${coverageSummary.status}`}
+                    />
+                  }
+                  right={
+                    coverageSummary.percentage ? (
+                      <span aria-label={`${coverageSummary.percentage} percent coverage`}>
+                        {coverageSummary.percentage} %
+                      </span>
+                    ) : null
+                  }
+                />
+              ) : (
+                <ListItem
+                  title={<ItemTitle enabled={config.coverage}>Coverage</ItemTitle>}
+                  icon={<TestStatusIcon status="unknown" aria-label={`status: unknown`} />}
+                />
+              )}
+            </>
           )}
         </Extras>
       )}

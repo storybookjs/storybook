@@ -218,12 +218,12 @@ const map =
 
 async function getContent(input: PresetConfig) {
   if (input.type === 'virtual') {
-    const { _type, _name, ...rest } = input;
+    const { type, name, ...rest } = input;
     return rest;
   }
   const src = input.name ? input.name : input;
-  const jiti = createJiti(import.meta.url);
-  return await jiti.import(src, { default: true })
+  const jiti = createJiti(import.meta.url || pathToFileURL(__filename).href);
+  return await jiti.import(src);
 }
 
 export async function loadPreset(

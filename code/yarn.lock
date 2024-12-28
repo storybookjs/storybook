@@ -6258,7 +6258,7 @@ __metadata:
     get-npm-tarball-url: "npm:^2.0.3"
     glob: "npm:^10.0.0"
     globby: "npm:^14.0.1"
-    jiti: "npm:^1.21.6"
+    jiti: "npm:^2.4.2"
     js-yaml: "npm:^4.1.0"
     jsdoc-type-pratt-parser: "npm:^4.0.0"
     lazy-universal-dotenv: "npm:^4.0.0"
@@ -18808,12 +18808,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jiti@npm:^1.20.0, jiti@npm:^1.21.6":
+"jiti@npm:^1.20.0":
   version: 1.21.6
   resolution: "jiti@npm:1.21.6"
   bin:
     jiti: bin/jiti.js
   checksum: 10c0/05b9ed58cd30d0c3ccd3c98209339e74f50abd9a17e716f65db46b6a35812103f6bde6e134be7124d01745586bca8cc5dae1d0d952267c3ebe55171949c32e56
+  languageName: node
+  linkType: hard
+
+"jiti@npm:^2.4.2":
+  version: 2.4.2
+  resolution: "jiti@npm:2.4.2"
+  bin:
+    jiti: lib/jiti-cli.mjs
+  checksum: 10c0/4ceac133a08c8faff7eac84aabb917e85e8257f5ad659e843004ce76e981c457c390a220881748ac67ba1b940b9b729b30fb85cbaf6e7989f04b6002c94da331
   languageName: node
   linkType: hard
 

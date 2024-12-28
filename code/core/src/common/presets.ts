@@ -1,4 +1,7 @@
-import { join, parse } from 'node:path';
+import { isAbsolute, join, parse, resolve } from 'pathe'
+
+import { pathToFileURL } from 'node:url'
+import { createJiti } from 'jiti'
 
 import type {
   BuilderOptions,
@@ -17,7 +20,6 @@ import { CriticalPresetLoadError } from '@storybook/core/server-errors';
 
 import { dedent } from 'ts-dedent';
 
-import { interopRequireDefault } from './utils/interpret-require';
 import { loadCustomPresets } from './utils/load-custom-presets';
 import { safeResolve, safeResolveFrom } from './utils/safeResolve';
 import { stripAbsNodeModulesPath } from './utils/strip-abs-node-modules-path';
@@ -214,14 +216,14 @@ const map =
     };
   };
 
-async function getContent(input: any) {
+async function getContent(input: PresetConfig) {
   if (input.type === 'virtual') {
-    const { type, name, ...rest } = input;
+    const { _type, _name, ...rest } = input;
     return rest;
   }
-  const name = input.name ? input.name : input;
-
-  return interopRequireDefault(name);
+  const src = input.name ? input.name : input;
+  const jiti = createJiti(import.meta.url);
+  return await jiti.import(src, { default: true })
 }
 
 export async function loadPreset(

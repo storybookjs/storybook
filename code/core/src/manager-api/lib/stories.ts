@@ -192,11 +192,17 @@ export const transformStoryIndexToStoriesHash = (
   const entryValues = Object.values(index.entries).filter((entry: any) => {
     let result = true;
 
+    // All stories with a failing status should always show up, regardless of the applied filters
+    const storyStatus = status[entry.id];
+    if (Object.values(storyStatus ?? {}).some(({ status: s }) => s === 'error')) {
+      return result;
+    }
+
     Object.values(filters).forEach((filter: any) => {
       if (result === false) {
         return;
       }
-      result = filter({ ...entry, status: status[entry.id] });
+      result = filter({ ...entry, status: storyStatus });
     });
 
     return result;
@@ -342,6 +348,7 @@ export const transformStoryIndexToStoriesHash = (
     .reduce(addItem, orphanHash);
 };
 
+/** Now we need to patch in the existing prepared stories */
 export const addPreparedStories = (newHash: API_IndexHash, oldHash?: API_IndexHash) => {
   if (!oldHash) {
     return newHash;

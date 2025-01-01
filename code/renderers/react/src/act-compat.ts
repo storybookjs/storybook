@@ -40,15 +40,15 @@ function withGlobalActEnvironment(actImplementation: (callback: () => void) => P
         return result;
       });
       if (callbackNeedsToBeAwaited) {
-        const thenable: Promise<any> = actResult;
+        const thenable = actResult;
         return {
           then: (resolve: (param: any) => void, reject: (param: any) => void) => {
             thenable.then(
-              (returnValue) => {
+              (returnValue: any) => {
                 setReactActEnvironment(previousActEnvironment);
                 resolve(returnValue);
               },
-              (error) => {
+              (error: any) => {
                 setReactActEnvironment(previousActEnvironment);
                 reject(error);
               }
@@ -68,4 +68,7 @@ function withGlobalActEnvironment(actImplementation: (callback: () => void) => P
   };
 }
 
-export const act = withGlobalActEnvironment(reactAct);
+export const act =
+  process.env.NODE_ENV === 'production'
+    ? (cb: (...args: any[]) => any) => cb()
+    : withGlobalActEnvironment(reactAct);

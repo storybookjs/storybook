@@ -380,6 +380,8 @@ export interface StorybookConfigRaw {
     viewportStoryGlobals?: boolean;
     /** Use globals & globalTypes for configuring the backgrounds addon */
     backgroundsStoryGlobals?: boolean;
+    /** Set NODE_ENV to development in built Storybooks for better testability and debuggability */
+    developmentModeForBuild?: boolean;
   };
 
   build?: TestBuildConfig;

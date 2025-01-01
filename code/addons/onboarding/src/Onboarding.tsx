@@ -268,17 +268,7 @@ export default function Onboarding({ api }: { api: API }) {
 
   return (
     <ThemeProvider theme={theme}>
-      {showConfetti && (
-        <Confetti
-          numberOfPieces={800}
-          recycle={false}
-          tweenDuration={20000}
-          onConfettiComplete={(confetti) => {
-            confetti?.reset();
-            setShowConfetti(false);
-          }}
-        />
-      )}
+      {showConfetti && <Confetti />}
       {step === '1:Intro' ? (
         <SplashScreen onDismiss={() => setStep('2:Controls')} />
       ) : (

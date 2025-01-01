@@ -74,10 +74,10 @@ export const MatcherResult = ({
       {lines.flatMap((line: string, index: number) => {
         if (line.startsWith('expect(')) {
           const received = getParams(line, 7);
-          const remainderIndex = received && 7 + received.length;
+          const remainderIndex = received ? 7 + received.length : 0;
           const matcher = received && line.slice(remainderIndex).match(/\.(to|last|nth)[A-Z]\w+\(/);
           if (matcher) {
-            const expectedIndex = remainderIndex + matcher.index + matcher[0].length;
+            const expectedIndex = remainderIndex + (matcher.index ?? 0) + matcher[0].length;
             const expected = getParams(line, expectedIndex);
             if (expected) {
               return [

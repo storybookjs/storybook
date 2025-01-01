@@ -117,6 +117,11 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         clean: false,
         ...(dtsBuild === 'esm' ? dtsConfig : {}),
         platform: platform || 'browser',
+        define: {
+          // tsup replaces 'process.env.NODE_ENV' during build time. We don't want to do this. Instead, the builders (vite/webpack) should replace it
+          // Then, the variable can be set accordingly in dev/build mode
+          'process.env.NODE_ENV': 'process.env.NODE_ENV',
+        },
         esbuildPlugins:
           platform === 'node'
             ? []

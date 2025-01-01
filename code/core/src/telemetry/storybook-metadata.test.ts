@@ -12,6 +12,8 @@ const packageJsonMock: PackageJson = {
   version: 'x.x.x',
 };
 
+const packageJsonPath = process.cwd();
+
 const mainJsMock: StorybookConfig = {
   stories: [],
 };
@@ -126,6 +128,7 @@ describe('storybook-metadata', () => {
       it('should parse pnp paths for known frameworks', async () => {
         const unixResult = await computeStorybookMetadata({
           packageJson: packageJsonMock,
+          packageJsonPath,
           mainConfig: {
             ...mainJsMock,
             framework: {
@@ -144,6 +147,7 @@ describe('storybook-metadata', () => {
 
         const windowsResult = await computeStorybookMetadata({
           packageJson: packageJsonMock,
+          packageJsonPath,
           mainConfig: {
             ...mainJsMock,
             framework: {
@@ -164,6 +168,7 @@ describe('storybook-metadata', () => {
       it('should parse pnp paths for unknown frameworks', async () => {
         const unixResult = await computeStorybookMetadata({
           packageJson: packageJsonMock,
+          packageJsonPath,
           mainConfig: {
             ...mainJsMock,
             framework: {
@@ -178,6 +183,7 @@ describe('storybook-metadata', () => {
 
         const windowsResult = await computeStorybookMetadata({
           packageJson: packageJsonMock,
+          packageJsonPath,
           mainConfig: {
             ...mainJsMock,
             framework: {
@@ -198,6 +204,7 @@ describe('storybook-metadata', () => {
 
         const unixResult = await computeStorybookMetadata({
           packageJson: packageJsonMock,
+          packageJsonPath,
           mainConfig: {
             ...mainJsMock,
             framework: {
@@ -215,6 +222,7 @@ describe('storybook-metadata', () => {
         cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue('C:\\Users\\foo\\my-project');
         const windowsResult = await computeStorybookMetadata({
           packageJson: packageJsonMock,
+          packageJsonPath,
           mainConfig: {
             ...mainJsMock,
             framework: {
@@ -232,6 +240,7 @@ describe('storybook-metadata', () => {
     it('should return frameworkOptions from mainjs', async () => {
       const reactResult = await computeStorybookMetadata({
         packageJson: packageJsonMock,
+        packageJsonPath,
         mainConfig: {
           ...mainJsMock,
           framework: {
@@ -250,6 +259,7 @@ describe('storybook-metadata', () => {
 
       const angularResult = await computeStorybookMetadata({
         packageJson: packageJsonMock,
+        packageJsonPath,
         mainConfig: {
           ...mainJsMock,
           framework: {
@@ -279,6 +289,7 @@ describe('storybook-metadata', () => {
             'storybook-addon-deprecated': 'x.x.z',
           },
         } as PackageJson,
+        packageJsonPath,
         mainConfig: {
           ...mainJsMock,
           addons: [
@@ -319,6 +330,7 @@ describe('storybook-metadata', () => {
 
       const result = await computeStorybookMetadata({
         packageJson: packageJsonMock,
+        packageJsonPath,
         mainConfig: {
           ...mainJsMock,
           features,
@@ -332,6 +344,7 @@ describe('storybook-metadata', () => {
       expect(
         await computeStorybookMetadata({
           packageJson: packageJsonMock,
+          packageJsonPath,
           mainConfig: {
             ...mainJsMock,
             framework: '@storybook/react-vite',
@@ -347,6 +360,7 @@ describe('storybook-metadata', () => {
     it('should return the number of refs', async () => {
       const res = await computeStorybookMetadata({
         packageJson: packageJsonMock,
+        packageJsonPath,
         mainConfig: {
           ...mainJsMock,
           refs: {
@@ -361,6 +375,7 @@ describe('storybook-metadata', () => {
     it('only reports addon options for addon-essentials', async () => {
       const res = await computeStorybookMetadata({
         packageJson: packageJsonMock,
+        packageJsonPath,
         mainConfig: {
           ...mainJsMock,
           addons: [
@@ -395,6 +410,7 @@ describe('storybook-metadata', () => {
               [metaFramework]: 'x.x.x',
             },
           } as PackageJson,
+          packageJsonPath,
           mainConfig: mainJsMock,
         });
         expect(res.metaFramework).toEqual({

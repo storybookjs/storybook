@@ -65,6 +65,7 @@ test.describe('preview-api', () => {
 
     const root = sbPage.previewRoot();
 
+    await sbPage.viewAddonPanel('Controls');
     const labelControl = sbPage.page.locator('#control-label');
 
     await expect(root.getByText('Loaded. Click me')).toBeVisible();

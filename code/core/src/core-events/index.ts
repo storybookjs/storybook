@@ -32,6 +32,7 @@ enum events {
   STORY_CHANGED = 'storyChanged',
   STORY_UNCHANGED = 'storyUnchanged',
   STORY_RENDERED = 'storyRendered',
+  STORY_FINISHED = 'storyFinished',
   STORY_MISSING = 'storyMissing',
   STORY_ERRORED = 'storyErrored',
   STORY_THREW_EXCEPTION = 'storyThrewException',
@@ -142,6 +143,7 @@ export const {
   STORY_PREPARED,
   STORY_RENDER_PHASE_CHANGED,
   STORY_RENDERED,
+  STORY_FINISHED,
   STORY_SPECIFIED,
   STORY_THREW_EXCEPTION,
   STORY_UNCHANGED,
@@ -174,3 +176,4 @@ export * from './data/request-response';
 export * from './data/save-story';
 export * from './data/whats-new';
 export * from './data/testing-module';
+export * from './data/phases';

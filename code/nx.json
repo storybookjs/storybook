@@ -3,6 +3,7 @@
   "extends": "nx/presets/npm.json",
   "nxCloudAccessToken": "NGVmYTkxMmItYzY3OS00MjkxLTk1ZDktZDFmYTFmNmVlNGY4fHJlYWQ=",
   "defaultBase": "next",
+  "useLegacyCache": true,
   "parallel": 8,
   "plugins": [
     {

@@ -8,7 +8,7 @@ import type { TestManager } from './test-manager';
 
 export type StorybookCoverageReporterOptions = {
   testManager: TestManager;
-  coverageOptions: ResolvedCoverageOptions<'v8'>;
+  coverageOptions: ResolvedCoverageOptions<'v8'> | undefined;
 };
 
 export default class StorybookCoverageReporter extends ReportBase implements Partial<Visitor> {
@@ -32,7 +32,7 @@ export default class StorybookCoverageReporter extends ReportBase implements Par
 
     // Fallback to Vitest's default watermarks https://vitest.dev/config/#coverage-watermarks
     const [lowWatermark = 50, highWatermark = 80] =
-      this.#coverageOptions.watermarks?.statements ?? [];
+      this.#coverageOptions?.watermarks?.statements ?? [];
 
     const coverageDetails: Details['coverageSummary'] = {
       percentage,

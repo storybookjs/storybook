@@ -27,7 +27,7 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
       // is actually the stories hash. We should fix this up and make it consistent.
       // eslint-disable-next-line @typescript-eslint/naming-convention
       internal_index,
-      index,
+      filteredIndex: index,
       status,
       indexError,
       previewInitialized,

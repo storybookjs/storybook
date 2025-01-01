@@ -11,7 +11,7 @@ import { darken, lighten, rgba, transparentize } from 'polished';
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   asChild?: boolean;
   size?: 'small' | 'medium';
-  padding?: 'small' | 'medium';
+  padding?: 'small' | 'medium' | 'none';
   variant?: 'outline' | 'solid' | 'ghost';
   onClick?: (event: SyntheticEvent) => void;
   disabled?: boolean;
@@ -159,18 +159,18 @@ const StyledButton = styled('button', {
   justifyContent: 'center',
   overflow: 'hidden',
   padding: (() => {
+    if (padding === 'none') {
+      return 0;
+    }
     if (padding === 'small' && size === 'small') {
       return '0 7px';
     }
-
     if (padding === 'small' && size === 'medium') {
       return '0 9px';
     }
-
     if (size === 'small') {
       return '0 10px';
     }
-
     if (size === 'medium') {
       return '0 12px';
     }

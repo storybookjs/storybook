@@ -13,6 +13,7 @@ interface ConfigureMainOptions {
   storybookConfigFolder: string;
   language: SupportedLanguage;
   prefixes: string[];
+  frameworkPackage: string;
   /**
    * Extra values for main.js
    *
@@ -61,6 +62,7 @@ export async function configureMain({
   extensions = ['js', 'jsx', 'mjs', 'ts', 'tsx'],
   storybookConfigFolder,
   language,
+  frameworkPackage,
   prefixes = [],
   ...custom
 }: ConfigureMainOptions) {
@@ -77,8 +79,6 @@ export async function configureMain({
 
   let mainConfigTemplate = dedent`<<import>><<prefix>>const config<<type>> = <<mainContents>>;
     export default config;`;
-
-  const frameworkPackage = sanitizeFramework(custom.framework?.name);
 
   if (!frameworkPackage) {
     mainConfigTemplate = mainConfigTemplate.replace('<<import>>', '').replace('<<type>>', '');

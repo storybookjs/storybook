@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createVitest } from 'vitest/node';
+import { createVitest as actualCreateVitest } from 'vitest/node';
 
 import { Channel, type ChannelTransport } from '@storybook/core/channels';
 import type { StoryIndex } from '@storybook/types';
@@ -22,10 +22,11 @@ const vitest = vi.hoisted(() => ({
   configOverride: {
     actualTestNamePattern: undefined,
     get testNamePattern() {
-      return this.actualTestNamePattern;
+      return this.actualTestNamePattern!;
     },
     set testNamePattern(value: string) {
       setTestNamePattern(value);
+      // @ts-expect-error Ignore for testing
       this.actualTestNamePattern = value;
     },
   },
@@ -34,6 +35,7 @@ const vitest = vi.hoisted(() => ({
 vi.mock('vitest/node', () => ({
   createVitest: vi.fn(() => Promise.resolve(vitest)),
 }));
+const createVitest = vi.mocked(actualCreateVitest);
 
 const transport = { setHandler: vi.fn(), send: vi.fn() } satisfies ChannelTransport;
 const mockChannel = new Channel({ transport });
@@ -104,12 +106,12 @@ describe('TestManager', () => {
 
   it('should handle watch mode request', async () => {
     const testManager = await TestManager.start(mockChannel, options);
-    expect(testManager.watchMode).toBe(false);
+    expect(testManager.config.watchMode).toBe(false);
     expect(createVitest).toHaveBeenCalledTimes(1);
 
     await testManager.handleWatchModeRequest({ providerId: TEST_PROVIDER_ID, watchMode: true });
-    expect(testManager.watchMode).toBe(true);
-    expect(createVitest).toHaveBeenCalledTimes(2);
+    expect(testManager.config.watchMode).toBe(true);
+    expect(createVitest).toHaveBeenCalledTimes(1); // shouldn't restart vitest
   });
 
   it('should handle run request', async () => {
@@ -144,5 +146,58 @@ describe('TestManager', () => {
     });
     expect(setTestNamePattern).toHaveBeenCalledWith(/^One$/);
     expect(vitest.runFiles).toHaveBeenCalledWith(tests.slice(0, 1), true);
+  });
+
+  it('should handle coverage toggling', async () => {
+    const testManager = await TestManager.start(mockChannel, options);
+    expect(testManager.config.coverage).toBe(false);
+    expect(createVitest).toHaveBeenCalledTimes(1);
+    createVitest.mockClear();
+
+    await testManager.handleConfigChange({
+      providerId: TEST_PROVIDER_ID,
+      config: { coverage: true, a11y: false },
+    });
+    expect(testManager.config.coverage).toBe(true);
+    expect(createVitest).toHaveBeenCalledTimes(1);
+    createVitest.mockClear();
+
+    await testManager.handleConfigChange({
+      providerId: TEST_PROVIDER_ID,
+      config: { coverage: false, a11y: false },
+    });
+    expect(testManager.config.coverage).toBe(false);
+    expect(createVitest).toHaveBeenCalledTimes(1);
+  });
+
+  it('should temporarily disable coverage on focused tests', async () => {
+    vitest.globTestSpecs.mockImplementation(() => tests);
+    const testManager = await TestManager.start(mockChannel, options);
+    expect(testManager.config.coverage).toBe(false);
+    expect(createVitest).toHaveBeenCalledTimes(1);
+
+    await testManager.handleConfigChange({
+      providerId: TEST_PROVIDER_ID,
+      config: { coverage: true, a11y: false },
+    });
+    expect(testManager.config.coverage).toBe(true);
+    expect(createVitest).toHaveBeenCalledTimes(2);
+
+    await testManager.handleRunRequest({
+      providerId: TEST_PROVIDER_ID,
+      indexUrl: 'http://localhost:6006/index.json',
+      storyIds: ['button--primary', 'button--secondary'],
+    });
+    // expect vitest to be restarted twice, without and with coverage
+    expect(createVitest).toHaveBeenCalledTimes(4);
+    expect(vitest.runFiles).toHaveBeenCalledWith([], true);
+
+    await testManager.handleRunRequest({
+      providerId: TEST_PROVIDER_ID,
+      indexUrl: 'http://localhost:6006/index.json',
+    });
+    // don't expect vitest to be restarted, as we're running all tests
+    expect(createVitest).toHaveBeenCalledTimes(4);
+    expect(vitest.runFiles).toHaveBeenCalledWith(tests, true);
   });
 });

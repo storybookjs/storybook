@@ -70,7 +70,7 @@ const NoResults = styled.div(({ theme }) => ({
   lineHeight: `18px`,
   color: theme.color.defaultText,
   small: {
-    color: theme.barTextColor,
+    color: theme.textMutedColor,
     fontSize: `${theme.typography.size.s1}px`,
   },
 }));

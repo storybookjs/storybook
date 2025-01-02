@@ -27,7 +27,7 @@ export type TestResultResult =
       reports: Report[];
     }
   | {
-      status: Extract<TestStatus, 'failed'>;
+      status: Extract<TestStatus, 'failed' | 'warning'>;
       storyId: string;
       duration: number;
       testRunId: string;
@@ -39,7 +39,7 @@ export type TestResult = {
   results: TestResultResult[];
   startTime: number;
   endTime: number;
-  status: Extract<TestStatus, 'passed' | 'failed'>;
+  status: Extract<TestStatus, 'passed' | 'failed' | 'warning'>;
   message?: string;
 };
 
@@ -165,9 +165,15 @@ export class StorybookReporter implements Reporter {
         numTotalTests,
         startedAt: this.start,
         finishedAt,
+        percentageCompleted: finishedAt
+          ? 100
+          : numTotalTests
+            ? ((numPassedTests + numFailedTests) / numTotalTests) * 100
+            : 0,
       } as TestingModuleProgressReportProgress,
       details: {
         testResults,
+        config: this.testManager.config,
       },
     };
   }
@@ -214,7 +220,7 @@ export class StorybookReporter implements Reporter {
       (t) => t.status === 'failed' && t.results.length === 0
     );
 
-    const reducedTestSuiteFailures = new Set<string>();
+    const reducedTestSuiteFailures = new Set<string | undefined>();
 
     testSuiteFailures.forEach((t) => {
       reducedTestSuiteFailures.add(t.message);
@@ -234,7 +240,7 @@ export class StorybookReporter implements Reporter {
               message: Array.from(reducedTestSuiteFailures).reduce(
                 (acc, curr) => `${acc}\n${curr}`,
                 ''
-              ),
+              )!,
             }
           : {
               name: `${unhandledErrors.length} unhandled error${unhandledErrors?.length > 1 ? 's' : ''}`,

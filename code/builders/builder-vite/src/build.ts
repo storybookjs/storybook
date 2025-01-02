@@ -35,9 +35,22 @@ export async function build(options: Options) {
           }
         : {}),
     },
-  }).build;
+  } as InlineConfig).build;
 
-  const finalConfig = await presets.apply('viteFinal', config, options);
+  const finalConfig = (await presets.apply('viteFinal', config, options)) as InlineConfig;
+
+  if (options.features?.developmentModeForBuild) {
+    finalConfig.plugins?.push({
+      name: 'storybook:define-env',
+      config: () => {
+        return {
+          define: {
+            'process.env.NODE_ENV': JSON.stringify('development'),
+          },
+        };
+      },
+    });
+  }
 
   const turbosnapPluginName = 'rollup-plugin-turbosnap';
   const hasTurbosnapPlugin =

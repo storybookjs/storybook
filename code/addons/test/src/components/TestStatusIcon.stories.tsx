@@ -16,6 +16,12 @@ export const Unknown: Story = {
   },
 };
 
+export const Pending: Story = {
+  args: {
+    status: 'pending',
+  },
+};
+
 export const Positive: Story = {
   args: {
     status: 'positive',

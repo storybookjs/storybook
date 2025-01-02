@@ -23,7 +23,7 @@ const MethodCallWrapper = styled.div(() => ({
 
 const RowContainer = styled('div', {
   shouldForwardProp: (prop) => !['call', 'pausedAt'].includes(prop.toString()),
-})<{ call: Call; pausedAt: Call['id'] }>(
+})<{ call: Call; pausedAt: Call['id'] | undefined }>(
   ({ theme, call }) => ({
     position: 'relative',
     display: 'flex',
@@ -117,6 +117,9 @@ const RowMessage = styled('div')(({ theme }) => ({
 
 export const Exception = ({ exception }: { exception: Call['exception'] }) => {
   const filter = useAnsiToHtmlFilter();
+  if (!exception) {
+    return null;
+  }
   if (isJestError(exception)) {
     return <MatcherResult {...exception} />;
   }
@@ -187,7 +190,7 @@ export const Interaction = ({
           </MethodCallWrapper>
         </RowLabel>
         <RowActions>
-          {childCallIds?.length > 0 && (
+          {(childCallIds?.length ?? 0) > 0 && (
             <WithTooltip
               hasChrome={false}
               tooltip={<Note note={`${isCollapsed ? 'Show' : 'Hide'} interactions`} />}

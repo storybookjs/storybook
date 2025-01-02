@@ -1,6 +1,8 @@
 <h1>Migration</h1>
 
 - [From version 8.4.x to 8.5.x](#from-version-84x-to-85x)
+  - [Introducing features.developmentModeForBuild](#introducing-featuresdevelopmentmodeforbuild)
+  - [Added source code panel to docs](#added-source-code-panel-to-docs)
   - [Addon-a11y: Component test integration](#addon-a11y-component-test-integration)
   - [Addon-a11y: Deprecated `parameters.a11y.manual`](#addon-a11y-deprecated-parametersa11ymanual)
   - [Indexing behavior of @storybook/experimental-addon-test is changed](#indexing-behavior-of-storybookexperimental-addon-test-is-changed)
@@ -109,17 +111,17 @@
     - [Tab addons cannot manually route, Tool addons can filter their visibility via tabId](#tab-addons-cannot-manually-route-tool-addons-can-filter-their-visibility-via-tabid)
     - [Removed `config` preset](#removed-config-preset-1)
 - [From version 7.5.0 to 7.6.0](#from-version-750-to-760)
-    - [CommonJS with Vite is deprecated](#commonjs-with-vite-is-deprecated)
-    - [Using implicit actions during rendering is deprecated](#using-implicit-actions-during-rendering-is-deprecated)
-    - [typescript.skipBabel deprecated](#typescriptskipbabel-deprecated)
-    - [Primary doc block accepts of prop](#primary-doc-block-accepts-of-prop)
-    - [Addons no longer need a peer dependency on React](#addons-no-longer-need-a-peer-dependency-on-react)
+  - [CommonJS with Vite is deprecated](#commonjs-with-vite-is-deprecated)
+  - [Using implicit actions during rendering is deprecated](#using-implicit-actions-during-rendering-is-deprecated)
+  - [typescript.skipBabel deprecated](#typescriptskipbabel-deprecated)
+  - [Primary doc block accepts of prop](#primary-doc-block-accepts-of-prop)
+  - [Addons no longer need a peer dependency on React](#addons-no-longer-need-a-peer-dependency-on-react)
 - [From version 7.4.0 to 7.5.0](#from-version-740-to-750)
-    - [`storyStoreV6` and `storiesOf` is deprecated](#storystorev6-and-storiesof-is-deprecated)
-    - [`storyIndexers` is replaced with `experimental_indexers`](#storyindexers-is-replaced-with-experimental_indexers)
+  - [`storyStoreV6` and `storiesOf` is deprecated](#storystorev6-and-storiesof-is-deprecated)
+  - [`storyIndexers` is replaced with `experimental_indexers`](#storyindexers-is-replaced-with-experimental_indexers)
 - [From version 7.0.0 to 7.2.0](#from-version-700-to-720)
-    - [Addon API is more type-strict](#addon-api-is-more-type-strict)
-    - [Addon-controls hideNoControlsWarning parameter is deprecated](#addon-controls-hidenocontrolswarning-parameter-is-deprecated)
+  - [Addon API is more type-strict](#addon-api-is-more-type-strict)
+  - [Addon-controls hideNoControlsWarning parameter is deprecated](#addon-controls-hidenocontrolswarning-parameter-is-deprecated)
 - [From version 6.5.x to 7.0.0](#from-version-65x-to-700)
   - [7.0 breaking changes](#70-breaking-changes)
     - [Dropped support for Node 15 and below](#dropped-support-for-node-15-and-below)
@@ -145,7 +147,7 @@
     - [Deploying build artifacts](#deploying-build-artifacts)
       - [Dropped support for file URLs](#dropped-support-for-file-urls)
       - [Serving with nginx](#serving-with-nginx)
-      - [Ignore story files from node\_modules](#ignore-story-files-from-node_modules)
+      - [Ignore story files from node_modules](#ignore-story-files-from-node_modules)
   - [7.0 Core changes](#70-core-changes)
     - [7.0 feature flags removed](#70-feature-flags-removed)
     - [Story context is prepared before for supporting fine grained updates](#story-context-is-prepared-before-for-supporting-fine-grained-updates)
@@ -159,7 +161,7 @@
     - [Addon-interactions: Interactions debugger is now default](#addon-interactions-interactions-debugger-is-now-default)
   - [7.0 Vite changes](#70-vite-changes)
     - [Vite builder uses Vite config automatically](#vite-builder-uses-vite-config-automatically)
-    - [Vite cache moved to node\_modules/.cache/.vite-storybook](#vite-cache-moved-to-node_modulescachevite-storybook)
+    - [Vite cache moved to node_modules/.cache/.vite-storybook](#vite-cache-moved-to-node_modulescachevite-storybook)
   - [7.0 Webpack changes](#70-webpack-changes)
     - [Webpack4 support discontinued](#webpack4-support-discontinued)
     - [Babel mode v7 exclusively](#babel-mode-v7-exclusively)
@@ -210,7 +212,7 @@
     - [Dropped addon-docs manual babel configuration](#dropped-addon-docs-manual-babel-configuration)
     - [Dropped addon-docs manual configuration](#dropped-addon-docs-manual-configuration)
     - [Autoplay in docs](#autoplay-in-docs)
-    - [Removed STORYBOOK\_REACT\_CLASSES global](#removed-storybook_react_classes-global)
+    - [Removed STORYBOOK_REACT_CLASSES global](#removed-storybook_react_classes-global)
   - [7.0 Deprecations and default changes](#70-deprecations-and-default-changes)
     - [storyStoreV7 enabled by default](#storystorev7-enabled-by-default)
     - [`Story` type deprecated](#story-type-deprecated)
@@ -425,14 +427,47 @@
 
 ## From version 8.4.x to 8.5.x
 
+### Introducing features.developmentModeForBuild
+
+As part of our ongoing efforts to improve the testability and debuggability of Storybook, we are introducing a new feature flag: `developmentModeForBuild`. This feature flag allows you to set `process.env.NODE_ENV` to `development` in built Storybooks, enabling development-related optimizations that are typically disabled in production builds.
+
+In development mode, React and other libraries often include additional checks and warnings that help catch potential issues early. These checks are usually stripped out in production builds to optimize performance. However, when running tests or debugging issues in a built Storybook, having these additional checks can be incredibly valuable. One such feature is React's `act`, which ensures that all updates related to a test are processed and applied before making assertions. `act` is crucial for reliable and predictable test results, but it only works correctly when `NODE_ENV` is set to `development`.
+
+```js
+// main.js
+export default {
+  features: {
+    developmentModeForBuild: true,
+  },
+};
+```
+
+### Added source code panel to docs
+
+Starting in 8.5, Storybook Docs (`@storybook/addon-docs`) automatically adds a new addon panel to stories that displays a source snippet beneath each story. This works similarly to the existing [source snippet doc block](https://storybook.js.org/docs/writing-docs/doc-blocks#source), but in the story view. It is intended to replace the [Storysource addon](https://storybook.js.org/addons/@storybook/addon-storysource).
+
+If you wish to disable this panel globally, add the following line to your `.storybook/preview.js` project configuration. You can also selectively disable/enable at the story level.
+
+```js
+export default {
+  parameters: {
+    docs: {
+      codePanel: false,
+    },
+  },
+};
+```
+
 ### Addon-a11y: Component test integration
 
-In Storybook 8.4, we introduced a new addon called [addon test](https://storybook.js.org/docs/writing-tests/test-addon). Powered by Vitest under the hood, this addon lets you watch, run, and debug your component tests directly in Storybook.
+In Storybook 8.4, we introduced the [Test addon](https://storybook.js.org/docs/writing-tests/test-addon) (`@storybook/experimental-addon-test`). Powered by Vitest under the hood, this addon lets you watch, run, and debug your component tests directly in Storybook.
 
-In Storybook 8.5, we revamped the Accessibility addon (`@storybook/addon-a11y`) to integrate it with the component tests feature. This means you can now extend your component tests to include accessibility tests. If you upgrade to Storybook 8.5 via `npx storybook@latest upgrade`, the Accessibility addon will be automatically configured to work with the component tests. However, if you're upgrading manually and you have the [addon test](https://storybook.js.org/docs/writing-tests/test-addon) installed, adjust your configuration as follows:
+In Storybook 8.5, we revamped the [Accessibility addon](https://storybook.js.org/docs/writing-tests/accessibility-testing) (`@storybook/addon-a11y`) to integrate it with the component tests feature. This means you can now extend your component tests to include accessibility tests.
+
+If you upgrade to Storybook 8.5 via `npx storybook@latest upgrade`, the Accessibility addon will be automatically configured to work with the component tests. However, if you're upgrading manually and you have the Test addon installed, adjust your configuration as follows:
 
 ```diff
-// .storybook/vitest.config.ts
+// .storybook/vitest.setup.ts
 ...
 +import * as a11yAddonAnnotations from '@storybook/addon-a11y/preview';
 

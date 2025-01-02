@@ -1,10 +1,17 @@
+import { rendererPackages } from 'storybook/internal/common';
+
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import * as jscodeshift from 'jscodeshift';
 import path from 'path';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import { getAddonNames } from '../helpers/mainConfigFile';
+// Relative path import to avoid dependency to @storybook/test
+import {
+  SUPPORTED_FRAMEWORKS,
+  SUPPORTED_RENDERERS,
+} from '../../../../../addons/test/src/constants';
+import { getAddonNames, getFrameworkPackageName, getRendererName } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
 
 export const vitestFileExtensions = ['.js', '.ts', '.cts', '.mts', '.cjs', '.mjs'] as const;
@@ -22,8 +29,7 @@ interface AddonA11yAddonTestOptions {
  */
 export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
   id: 'addonA11yAddonTest',
-  // TODO: Change to the correct version after testing
-  versionRange: ['<8.5.0', '*'],
+  versionRange: ['<8.5.0', '>=8.5.0'],
 
   promptType(result) {
     if (result.setupFile === null) {
@@ -36,10 +42,22 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
   async check({ mainConfig, configDir }) {
     const addons = getAddonNames(mainConfig);
 
+    const frameworkPackageName = getFrameworkPackageName(mainConfig);
+    const rendererPackageName = getRendererName(mainConfig);
+
     const hasA11yAddon = !!addons.find((addon) => addon.includes('@storybook/addon-a11y'));
     const hasTestAddon = !!addons.find((addon) =>
       addon.includes('@storybook/experimental-addon-test')
     );
+
+    if (
+      !SUPPORTED_FRAMEWORKS.find((framework) => frameworkPackageName?.includes(framework)) &&
+      !SUPPORTED_RENDERERS.find((renderer) =>
+        rendererPackageName?.includes(rendererPackages[renderer])
+      )
+    ) {
+      return null;
+    }
 
     if (!hasA11yAddon || !hasTestAddon || !configDir) {
       return null;
@@ -53,7 +71,11 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
 
     try {
       if (vitestSetupFile) {
-        const transformedSetupCode = transformSetupFile(vitestSetupFile);
+        const source = readFileSync(vitestSetupFile, 'utf8');
+        if (source.includes('@storybook/addon-a11y')) {
+          return null;
+        }
+        const transformedSetupCode = transformSetupFile(source);
         return {
           setupFile: vitestSetupFile,
           transformedSetupCode,
@@ -124,8 +146,7 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
   },
 };
 
-export function transformSetupFile(setupFile: string) {
-  const source = readFileSync(setupFile, 'utf8');
+export function transformSetupFile(source: string) {
   const j = jscodeshift.withParser('ts');
 
   const root = j(source);
@@ -148,9 +169,14 @@ export function transformSetupFile(setupFile: string) {
     throw new Error('Could not find setProjectAnnotations call in vitest.setup file');
   }
 
-  // Add a11yAddonAnnotations to the annotations array
-  setProjectAnnotationsCall.find(j.ArrayExpression).forEach((p) => {
-    p.value.elements.unshift(j.identifier('a11yAddonAnnotations'));
+  // Add a11yAddonAnnotations to the annotations array or create a new array if argument is a string
+  setProjectAnnotationsCall.forEach((p) => {
+    if (p.value.arguments.length === 1 && p.value.arguments[0].type === 'ArrayExpression') {
+      p.value.arguments[0].elements.unshift(j.identifier('a11yAddonAnnotations'));
+    } else if (p.value.arguments.length === 1 && p.value.arguments[0].type === 'Identifier') {
+      const arg = p.value.arguments[0];
+      p.value.arguments[0] = j.arrayExpression([j.identifier('a11yAddonAnnotations'), arg]);
+    }
   });
 
   // Add the import declaration at the top

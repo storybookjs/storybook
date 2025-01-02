@@ -28,7 +28,17 @@ export const ExampleStory: Story = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -60,7 +70,17 @@ export const ExampleStory = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -97,7 +117,17 @@ export const ExampleStory: Story = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -134,7 +164,17 @@ export const ExampleStory: Story = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -171,7 +211,17 @@ export const ExampleStory: Story = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+      */
       options: {},
+    },
+  }}
+  globals={{
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   }}
@@ -203,7 +253,17 @@ export const ExampleStory = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -240,7 +300,17 @@ export const ExampleStory = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+      */
       options: {},
+    },
+  }}
+  globals={{
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   }}
@@ -277,7 +347,17 @@ export const ExampleStory: Story = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -314,7 +394,17 @@ export const ExampleStory: Story = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+      */
       options: {},
+    },
+  }}
+  globals={{
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   }}
@@ -351,7 +441,17 @@ export const ExampleStory: Story = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -383,7 +483,17 @@ export const ExampleStory = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -420,7 +530,17 @@ export const ExampleStory = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -457,7 +577,17 @@ export const ExampleStory = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -487,7 +617,17 @@ export const ExampleStory = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },
@@ -522,7 +662,17 @@ export const ExampleStory: Story = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
+      // Optional flag to prevent the automatic check
       manual: true,
     },
   },

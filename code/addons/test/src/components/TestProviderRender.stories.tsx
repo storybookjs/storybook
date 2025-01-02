@@ -43,7 +43,7 @@ const baseState: TestProviderState<Details, Config> = {
   cancellable: true,
   cancelling: false,
   crashed: false,
-  error: null,
+  error: undefined,
   failed: false,
   running: false,
   watching: false,
@@ -52,6 +52,10 @@ const baseState: TestProviderState<Details, Config> = {
     coverage: false,
   },
   details: {
+    config: {
+      a11y: false,
+      coverage: false,
+    },
     testResults: [
       {
         endTime: 0,
@@ -141,6 +145,10 @@ export const WithCoverageNegative: Story = {
       ...config,
       ...baseState,
       details: {
+        config: {
+          a11y: false,
+          coverage: true,
+        },
         testResults: [],
         coverageSummary: {
           percentage: 20,
@@ -162,6 +170,10 @@ export const WithCoverageWarning: Story = {
       ...baseState,
       details: {
         testResults: [],
+        config: {
+          a11y: false,
+          coverage: true,
+        },
         coverageSummary: {
           percentage: 50,
           status: 'warning',
@@ -182,6 +194,10 @@ export const WithCoveragePositive: Story = {
       ...baseState,
       details: {
         testResults: [],
+        config: {
+          a11y: false,
+          coverage: true,
+        },
         coverageSummary: {
           percentage: 80,
           status: 'positive',
@@ -206,6 +222,10 @@ export const Editing: Story = {
       },
       details: {
         testResults: [],
+        config: {
+          a11y: false,
+          coverage: false,
+        },
       },
     },
   },
@@ -213,7 +233,7 @@ export const Editing: Story = {
   play: async ({ canvasElement }) => {
     const screen = within(canvasElement);
 
-    screen.getByLabelText(/Open settings/).click();
+    screen.getByLabelText(/Show settings/).click();
   },
 };
 
@@ -229,6 +249,10 @@ export const EditingAndWatching: Story = {
       },
       details: {
         testResults: [],
+        config: {
+          a11y: true,
+          coverage: true, // should be automatically disabled in the UI
+        },
       },
     },
   },

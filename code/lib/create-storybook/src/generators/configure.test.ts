@@ -26,6 +26,7 @@ describe('configureMain', () => {
       framework: {
         name: '@storybook/react-vite',
       },
+      frameworkPackage: '@storybook/react-vite',
     });
 
     const { calls } = vi.mocked(fsp.writeFile).mock;
@@ -55,6 +56,7 @@ describe('configureMain', () => {
       framework: {
         name: '@storybook/react-vite',
       },
+      frameworkPackage: '@storybook/react-vite',
     });
 
     const { calls } = vi.mocked(fsp.writeFile).mock;
@@ -89,6 +91,7 @@ describe('configureMain', () => {
       framework: {
         name: "%%path.dirname(require.resolve(path.join('@storybook/react-webpack5', 'package.json')))%%",
       },
+      frameworkPackage: '@storybook/react-webpack5',
     });
 
     const { calls } = vi.mocked(fsp.writeFile).mock;

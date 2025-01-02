@@ -5,7 +5,7 @@
     "module": "Preserve",
     "moduleResolution": "Bundler",
     "types": ["vitest"],
-    "strict": false
+    "strict": true
   },
   "include": ["src/**/*", "./typings.d.ts"]
 }

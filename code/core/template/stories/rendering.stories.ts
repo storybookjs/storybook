@@ -42,6 +42,38 @@ export const ForceRemount = {
   tags: ['!test', '!vitest'],
 };
 
+let loadedLabel = 'Initial';
+
+/**
+ * This story demonstrates what happens when rendering (loaders) have side effects, and can possibly
+ * interleave with each other Triggering multiple force remounts quickly should only result in a
+ * single remount in the end and the label should be 'Loaded. Click Me' at the end. If loaders are
+ * interleaving it would result in a label of 'Error: Interleaved loaders. Click Me' Similarly,
+ * changing args rapidly should only cause one rerender at a time, producing the same result.
+ */
+export const SlowLoader = {
+  parameters: {
+    chromatic: { disable: true },
+  },
+  loaders: [
+    async () => {
+      loadedLabel = 'Loading...';
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      loadedLabel = loadedLabel === 'Loading...' ? 'Loaded.' : 'Error: Interleaved loaders.';
+      return { label: loadedLabel };
+    },
+  ],
+  decorators: [
+    (storyFn: any, context: any) =>
+      storyFn({
+        args: {
+          ...context.args,
+          label: `${context.loaded.label} ${context.args.label}`,
+        },
+      }),
+  ],
+};
+
 export const ChangeArgs = {
   play: async ({ canvasElement, id }: PlayFunctionContext<any>) => {
     const channel = globalThis.__STORYBOOK_ADDONS_CHANNEL__;
@@ -73,36 +105,4 @@ export const ChangeArgs = {
     await within(canvasElement).findByText(/New Text/);
     await expect(button).toHaveFocus();
   },
-};
-
-let loadedLabel = 'Initial';
-
-/**
- * This story demonstrates what happens when rendering (loaders) have side effects, and can possibly
- * interleave with each other Triggering multiple force remounts quickly should only result in a
- * single remount in the end and the label should be 'Loaded. Click Me' at the end. If loaders are
- * interleaving it would result in a label of 'Error: Interleaved loaders. Click Me' Similarly,
- * changing args rapidly should only cause one rerender at a time, producing the same result.
- */
-export const SlowLoader = {
-  parameters: {
-    chromatic: { disable: true },
-  },
-  loaders: [
-    async () => {
-      loadedLabel = 'Loading...';
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      loadedLabel = loadedLabel === 'Loading...' ? 'Loaded.' : 'Error: Interleaved loaders.';
-      return { label: loadedLabel };
-    },
-  ],
-  decorators: [
-    (storyFn: any, context: any) =>
-      storyFn({
-        args: {
-          ...context.args,
-          label: `${context.loaded.label} ${context.args.label}`,
-        },
-      }),
-  ],
 };

@@ -765,10 +765,15 @@ describe('stories API', () => {
         source: '',
         sourceLocation: '',
         type: '',
-        ref: { id: 'refId', index: { 'a--1': { args: { a: 'b' } } } } as any,
+        ref: {
+          id: 'refId',
+          index: { 'a--1': { args: { a: 'b' } } },
+          filteredIndex: { 'a--1': { args: { a: 'b' } } },
+        } as any,
       });
       provider.channel.emit(STORY_ARGS_UPDATED, { storyId: 'a--1', args: { foo: 'bar' } });
       expect(fullAPI.updateRef).toHaveBeenCalledWith('refId', {
+        filteredIndex: { 'a--1': { args: { foo: 'bar' } } },
         index: { 'a--1': { args: { foo: 'bar' } } },
       });
     });
@@ -1539,6 +1544,7 @@ describe('stories API', () => {
         })
       );
     });
+
     it('updates state', async () => {
       const moduleArgs = createMockModuleArgs({});
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
@@ -1565,9 +1571,9 @@ describe('stories API', () => {
       await api.setIndex({ v: 5, entries: navigationEntries });
       await api.experimental_setFilter('myCustomFilter', (item: any) => item.id.startsWith('a'));
 
-      const { index } = store.getState();
+      const { filteredIndex } = store.getState();
 
-      expect(index).toMatchInlineSnapshot(`
+      expect(filteredIndex).toMatchInlineSnapshot(`
         {
           "a": {
             "children": [
@@ -1624,7 +1630,7 @@ describe('stories API', () => {
       );
 
       // empty, because there are no stories with status
-      expect(store.getState().index).toMatchInlineSnapshot('{}');
+      expect(store.getState().filteredIndex).toMatchInlineSnapshot('{}');
 
       // setting status should update the index
       await api.experimental_updateStatus('a-addon-id', {
@@ -1636,7 +1642,7 @@ describe('stories API', () => {
         'a--2': { status: 'success', title: 'a addon title', description: '' },
       });
 
-      expect(store.getState().index).toMatchInlineSnapshot(`
+      expect(store.getState().filteredIndex).toMatchInlineSnapshot(`
         {
           "a": {
             "children": [
@@ -1676,9 +1682,9 @@ describe('stories API', () => {
 
       await api.setIndex({ v: 5, entries: navigationEntries });
 
-      const { index } = store.getState();
+      const { filteredIndex } = store.getState();
 
-      expect(index).toMatchInlineSnapshot(`
+      expect(filteredIndex).toMatchInlineSnapshot(`
         {
           "a": {
             "children": [

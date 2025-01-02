@@ -7,10 +7,10 @@ import { BrowserIcon, MobileIcon, TabletIcon } from '@storybook/icons';
 
 import type { Viewport, ViewportMap } from './types';
 
-export const ActiveViewportSize = styled.div(() => ({
+export const ActiveViewportSize = styled.div({
   display: 'inline-flex',
   alignItems: 'center',
-}));
+});
 
 export const ActiveViewportLabel = styled.div(({ theme }) => ({
   display: 'inline-block',

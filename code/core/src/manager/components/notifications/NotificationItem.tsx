@@ -93,7 +93,7 @@ const NotificationWithInteractiveStates = styled(Notification)({
 const NotificationButton = NotificationWithInteractiveStates.withComponent('div');
 const NotificationLink = NotificationWithInteractiveStates.withComponent(Link);
 
-const NotificationIconWrapper = styled.div(() => ({
+const NotificationIconWrapper = styled.div({
   display: 'flex',
   marginRight: 10,
   alignItems: 'center',
@@ -102,7 +102,7 @@ const NotificationIconWrapper = styled.div(() => ({
     width: 16,
     height: 16,
   },
-}));
+});
 
 const NotificationTextWrapper = styled.div(({ theme }) => ({
   width: '100%',

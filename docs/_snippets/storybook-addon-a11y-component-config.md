@@ -23,7 +23,16 @@ const meta: Meta<MyComponent> = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
       manual: true,
     },
   },
@@ -58,7 +67,16 @@ export default meta;
             },
           ],
         },
-        options: {},
+        /*
+         * Axe's options parameter
+         * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+         * to learn more about the available options.
+        */
+        options: {}
+      },
+    },
+    globals: {
+      a11y: {
         manual: true,
       },
     },
@@ -89,7 +107,16 @@ export default {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
       manual: true,
     },
   },
@@ -119,7 +146,16 @@ export default {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
       manual: true,
     },
   },
@@ -152,7 +188,16 @@ export default {
             },
           ],
         },
+        /*
+         * Axe's options parameter
+         * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+         * to learn more about the available options.
+        */
         options: {},
+      },
+    },
+    globals: {
+      a11y: {
         manual: true,
       },
     },
@@ -185,7 +230,16 @@ const meta = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
       manual: true,
     },
   },
@@ -220,7 +274,16 @@ const meta = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
       manual: true,
     },
   },
@@ -255,7 +318,16 @@ export default meta;
             },
           ],
         },
+        /*
+         * Axe's options parameter
+         * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+         * to learn more about the available options.
+        */
         options: {},
+      },
+    },
+    globals: {
+      a11y: {
         manual: true,
       },
     },
@@ -288,7 +360,16 @@ const meta: Meta<typeof MyComponent> = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
       manual: true,
     },
   },
@@ -323,7 +404,16 @@ const meta: Meta<typeof MyComponent> = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
       manual: true,
     },
   },
@@ -353,7 +443,16 @@ export default {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
       manual: true,
     },
   },
@@ -383,7 +482,16 @@ const meta: Meta = {
           },
         ],
       },
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
+    },
+  },
+  globals: {
+    a11y: {
       manual: true,
     },
   },

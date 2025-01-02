@@ -1,3 +1,4 @@
+<!-- prettier-ignore -->
 ```mdx filename="Page.mdx" renderer="common" language="mdx"
 import { Canvas, Meta, Story } from '@storybook/blocks';
 
@@ -36,6 +37,7 @@ List items are used to group related content in a list. They must be nested with
 <Story of={ListItemStories.Starter} meta={ListItemStories} />
 ```
 
+<!-- prettier-ignore -->
 ```mdx filename="Page.mdx" renderer="svelte" language="mdx" tabTitle="Svelte CSF"
 import { Canvas, Meta, Story } from '@storybook/blocks';
 
@@ -74,6 +76,7 @@ List items are used to group related content in a list. They must be nested with
 <Story of={ListItemStories.Starter} meta={ListItemStories} />
 ```
 
+<!-- prettier-ignore -->
 ```mdx filename="Page.mdx" renderer="svelte" language="mdx" tabTitle="CSF"
 import { Canvas, Meta, Story } from '@storybook/blocks';
 

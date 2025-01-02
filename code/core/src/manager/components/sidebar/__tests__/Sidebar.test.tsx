@@ -50,6 +50,7 @@ const generateStories = ({ title, refId }: { title: string; refId?: string }): A
       name: root,
       children: [componentId],
       startCollapsed: false,
+      tags: [],
     },
     {
       type: 'component',

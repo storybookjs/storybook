@@ -12,4 +12,3 @@ export default {
 
 // Your stories
 ```
-

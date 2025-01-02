@@ -2,6 +2,7 @@ import type { ComponentProps, FC, SyntheticEvent } from 'react';
 import React, { useMemo, useState } from 'react';
 
 import { TooltipLinkList, WithTooltip } from '@storybook/core/components';
+import { styled } from '@storybook/core/theming';
 import { type API_HashEntry, Addon_TypesEnum } from '@storybook/core/types';
 import { EllipsisIcon } from '@storybook/icons';
 
@@ -12,7 +13,22 @@ import type { API } from '@storybook/core/manager-api';
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
 import { StatusButton } from './StatusButton';
 import type { ExcludesNull } from './Tree';
-import { ContextMenu } from './Tree';
+
+const empty = {
+  onMouseEnter: () => {},
+  node: null,
+};
+
+const PositionedWithTooltip = styled(WithTooltip)({
+  position: 'absolute',
+  right: 0,
+  zIndex: 1,
+});
+
+const FloatingStatusButton = styled(StatusButton)({
+  background: 'var(--tree-node-background-hover)',
+  boxShadow: '0 0 5px 5px var(--tree-node-background-hover)',
+});
 
 export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) => {
   const [hoverCount, setHoverCount] = useState(0);
@@ -34,7 +50,7 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
   }, []);
 
   /**
-   * Calculate the providerLinks whenever the user mouses over the container. We use an incrementer,
+   * Calculate the providerLinks whenever the user mouses over the container. We use an incrementor,
    * instead of a simple boolean to ensure that the links are recalculated
    */
   const providerLinks = useMemo(() => {
@@ -51,10 +67,15 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
   const isRendered = providerLinks.length > 0 || links.length > 0;
 
   return useMemo(() => {
+    // Never show the SidebarContextMenu in production
+    if (globalThis.CONFIG_TYPE !== 'DEVELOPMENT') {
+      return empty;
+    }
+
     return {
       onMouseEnter: handlers.onMouseEnter,
       node: isRendered ? (
-        <WithTooltip
+        <PositionedWithTooltip
           data-displayed={isOpen ? 'on' : 'off'}
           closeOnOutsideClick
           placement="bottom-end"
@@ -66,14 +87,12 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
               setIsOpen(true);
             }
           }}
-          tooltip={({ onHide }) => (
-            <LiveContextMenu context={context} links={links} onClick={onHide} />
-          )}
+          tooltip={<LiveContextMenu context={context} links={links} />}
         >
-          <StatusButton type="button" status={'pending'}>
+          <FloatingStatusButton type="button" status={'pending'}>
             <EllipsisIcon />
-          </StatusButton>
-        </WithTooltip>
+          </FloatingStatusButton>
+        </PositionedWithTooltip>
       ) : null,
     };
   }, [context, handlers, isOpen, isRendered, links]);

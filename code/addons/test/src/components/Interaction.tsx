@@ -23,7 +23,7 @@ const MethodCallWrapper = styled.div(() => ({
 
 const RowContainer = styled('div', {
   shouldForwardProp: (prop) => !['call', 'pausedAt'].includes(prop.toString()),
-})<{ call: Call; pausedAt: Call['id'] }>(
+})<{ call: Call; pausedAt: Call['id'] | undefined }>(
   ({ theme, call }) => ({
     position: 'relative',
     display: 'flex',
@@ -37,7 +37,7 @@ const RowContainer = styled('div', {
           ? transparentize(0.93, theme.color.negative)
           : theme.background.warning,
     }),
-    paddingLeft: call.ancestors.length * 20,
+    paddingLeft: (call.ancestors?.length ?? 0) * 20,
   }),
   ({ theme, call, pausedAt }) =>
     pausedAt === call.id && {
@@ -117,6 +117,9 @@ const RowMessage = styled('div')(({ theme }) => ({
 
 export const Exception = ({ exception }: { exception: Call['exception'] }) => {
   const filter = useAnsiToHtmlFilter();
+  if (!exception) {
+    return null;
+  }
   if (isJestError(exception)) {
     return <MatcherResult {...exception} />;
   }
@@ -164,7 +167,7 @@ export const Interaction = ({
   pausedAt?: Call['id'];
 }) => {
   const [isHovered, setIsHovered] = React.useState(false);
-  const isInteractive = !controlStates.goto || !call.interceptable || !!call.ancestors.length;
+  const isInteractive = !controlStates.goto || !call.interceptable || !!call.ancestors?.length;
 
   if (isHidden) {
     return null;
@@ -187,7 +190,7 @@ export const Interaction = ({
           </MethodCallWrapper>
         </RowLabel>
         <RowActions>
-          {childCallIds?.length > 0 && (
+          {(childCallIds?.length ?? 0) > 0 && (
             <WithTooltip
               hasChrome={false}
               tooltip={<Note note={`${isCollapsed ? 'Show' : 'Hide'} interactions`} />}

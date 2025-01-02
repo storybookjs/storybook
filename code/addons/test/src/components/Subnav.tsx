@@ -41,7 +41,7 @@ const StyledSubnav = styled.nav(({ theme }) => ({
   paddingLeft: 15,
 }));
 
-export interface SubnavProps {
+interface SubnavProps {
   controls: Controls;
   controlStates: ControlStates;
   status: Call['status'];
@@ -64,7 +64,7 @@ const Note = styled(TooltipNote)(({ theme }) => ({
   fontFamily: theme.typography.fonts.base,
 }));
 
-export const StyledIconButton = styled(IconButton as any)(({ theme }) => ({
+const StyledIconButton = styled(IconButton)(({ theme }) => ({
   color: theme.textMutedColor,
   margin: '0 3px',
 }));
@@ -109,7 +109,7 @@ const RerunButton = styled(StyledIconButton)<
 >(({ theme, animating, disabled }) => ({
   opacity: disabled ? 0.5 : 1,
   svg: {
-    animation: animating && `${theme.animation.rotate360} 200ms ease-out`,
+    animation: animating ? `${theme.animation.rotate360} 200ms ease-out` : undefined,
   },
 }));
 

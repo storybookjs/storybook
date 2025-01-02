@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { styled } from '@storybook/core/theming';
 import { type API_FilterFunction } from '@storybook/core/types';
@@ -6,7 +6,6 @@ import { type API_FilterFunction } from '@storybook/core/types';
 import {
   TESTING_MODULE_CRASH_REPORT,
   TESTING_MODULE_PROGRESS_REPORT,
-  type TestProviderState,
   type TestingModuleCrashReportPayload,
   type TestingModuleProgressReportPayload,
 } from '@storybook/core/core-events';
@@ -24,18 +23,6 @@ import { TestingModule } from './TestingModule';
 const SIDEBAR_BOTTOM_SPACER_ID = 'sidebar-bottom-spacer';
 // This ID is used by some integrators to target the (fixed position) sidebar bottom element so it should remain stable.
 const SIDEBAR_BOTTOM_WRAPPER_ID = 'sidebar-bottom-wrapper';
-
-const STORAGE_KEY = '@storybook/manager/test-providers';
-
-const initialTestProviderState: TestProviderState = {
-  details: {} as { [key: string]: any },
-  cancellable: false,
-  cancelling: false,
-  running: false,
-  watching: false,
-  failed: false,
-  crashed: false,
-};
 
 const filterNone: API_FilterFunction = () => true;
 const filterWarn: API_FilterFunction = ({ status = {} }) =>
@@ -60,17 +47,23 @@ const getFilter = (warningsActive = false, errorsActive = false) => {
   return filterNone;
 };
 
+const Spacer = styled.div({
+  pointerEvents: 'none',
+});
+
 const Content = styled.div(({ theme }) => ({
   position: 'absolute',
   bottom: 0,
   left: 0,
   right: 0,
-  padding: 12,
+  padding: '12px 0',
+  margin: '0 12px',
   display: 'flex',
   flexDirection: 'column',
   gap: 12,
   color: theme.color.defaultText,
   fontSize: theme.typography.size.s1,
+  overflow: 'hidden',
 
   '&:empty': {
     display: 'none',
@@ -112,15 +105,13 @@ export const SidebarBottomBase = ({
   const hasErrors = errors.length > 0;
 
   useEffect(() => {
-    const spacer = spacerRef.current;
-    const wrapper = wrapperRef.current;
-    if (spacer && wrapper) {
+    if (spacerRef.current && wrapperRef.current) {
       const resizeObserver = new ResizeObserver(() => {
-        if (spacer && wrapper) {
-          spacer.style.height = `${wrapper.clientHeight}px`;
+        if (spacerRef.current && wrapperRef.current) {
+          spacerRef.current.style.height = `${wrapperRef.current.scrollHeight}px`;
         }
       });
-      resizeObserver.observe(wrapper);
+      resizeObserver.observe(wrapperRef.current);
       return () => resizeObserver.disconnect();
     }
   }, []);
@@ -130,29 +121,28 @@ export const SidebarBottomBase = ({
     api.experimental_setFilter('sidebar-bottom-filter', filter);
   }, [api, hasWarnings, hasErrors, warningsActive, errorsActive]);
 
-  useEffect(() => {
+  // Register listeners before the first render
+  useLayoutEffect(() => {
     const onCrashReport = ({ providerId, ...details }: TestingModuleCrashReportPayload) => {
       api.updateTestProviderState(providerId, {
-        details,
+        error: { name: 'Crashed!', message: details.error.message },
         running: false,
         crashed: true,
         watching: false,
       });
     };
 
-    const onProgressReport = ({ providerId, ...result }: TestingModuleProgressReportPayload) => {
-      if (result.status === 'failed') {
-        api.updateTestProviderState(providerId, { ...result, running: false, failed: true });
-      } else {
-        const update = { ...result, running: result.status === 'pending' };
-        api.updateTestProviderState(providerId, update);
-
-        const { mapStatusUpdate, ...state } = testProviders[providerId];
-        const statusUpdate = mapStatusUpdate?.({ ...state, ...update });
-        if (statusUpdate) {
-          api.experimental_updateStatus(providerId, statusUpdate);
-        }
-      }
+    const onProgressReport = async ({
+      providerId,
+      ...result
+    }: TestingModuleProgressReportPayload) => {
+      const statusResult = 'status' in result ? result.status : undefined;
+      api.updateTestProviderState(
+        providerId,
+        statusResult === 'failed'
+          ? { ...result, running: false, failed: true }
+          : { ...result, running: statusResult === 'pending' }
+      );
     };
 
     api.on(TESTING_MODULE_CRASH_REPORT, onCrashReport);
@@ -170,7 +160,8 @@ export const SidebarBottomBase = ({
   }
 
   return (
-    <div id={SIDEBAR_BOTTOM_SPACER_ID} ref={spacerRef}>
+    <Fragment>
+      <Spacer id={SIDEBAR_BOTTOM_SPACER_ID} ref={spacerRef}></Spacer>
       <Content id={SIDEBAR_BOTTOM_WRAPPER_ID} ref={wrapperRef}>
         <NotificationList notifications={notifications} clearNotification={api.clearNotification} />
         {isDevelopment && (
@@ -187,13 +178,14 @@ export const SidebarBottomBase = ({
           />
         )}
       </Content>
-    </div>
+    </Fragment>
   );
 };
 
 export const SidebarBottom = ({ isDevelopment }: { isDevelopment?: boolean }) => {
   const api = useStorybookApi();
   const { notifications, status } = useStorybookState();
+
   return (
     <SidebarBottomBase
       api={api}

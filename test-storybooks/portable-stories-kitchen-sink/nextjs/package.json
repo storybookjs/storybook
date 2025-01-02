@@ -84,6 +84,7 @@
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@happy-dom/jest-environment": "^15.11.7",
     "@jest/globals": "^29.7.0",
     "@storybook/addon-actions": "^8.0.0",
     "@storybook/addon-essentials": "^8.0.0",
@@ -101,7 +102,6 @@
     "eslint": "^8.56.0",
     "eslint-plugin-storybook": "^0.6.15",
     "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0",
     "storybook": "^8.0.0",
     "typescript": "^5.2.2"
   },

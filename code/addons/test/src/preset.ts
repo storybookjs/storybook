@@ -1,19 +1,26 @@
 import { readFileSync } from 'node:fs';
+import { mkdir } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';
-import { checkAddonOrder, getFrameworkName, serverRequire } from 'storybook/internal/common';
 import {
+  checkAddonOrder,
+  getFrameworkName,
+  resolvePathInStorybookCache,
+  serverRequire,
+} from 'storybook/internal/common';
+import {
+  TESTING_MODULE_CONFIG_CHANGE,
   TESTING_MODULE_RUN_REQUEST,
   TESTING_MODULE_WATCH_MODE_REQUEST,
 } from 'storybook/internal/core-events';
 import { oneWayHash, telemetry } from 'storybook/internal/telemetry';
-import type { Options, PresetProperty, StoryId } from 'storybook/internal/types';
+import type { Options, PresetProperty, PresetPropertyFn, StoryId } from 'storybook/internal/types';
 
 import { isAbsolute, join } from 'pathe';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import { STORYBOOK_ADDON_TEST_CHANNEL } from './constants';
+import { COVERAGE_DIRECTORY, STORYBOOK_ADDON_TEST_CHANNEL, TEST_PROVIDER_ID } from './constants';
 import { log } from './logger';
 import { runTestRunner } from './node/boot-test-runner';
 
@@ -64,7 +71,9 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
   const execute =
     (eventName: string) =>
     (...args: any[]) => {
-      runTestRunner(channel, eventName, args);
+      if (args[0]?.providerId === TEST_PROVIDER_ID) {
+        runTestRunner(channel, eventName, args);
+      }
     };
 
   channel.on(TESTING_MODULE_RUN_REQUEST, execute(TESTING_MODULE_RUN_REQUEST));
@@ -73,6 +82,7 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       execute(TESTING_MODULE_WATCH_MODE_REQUEST)(payload);
     }
   });
+  channel.on(TESTING_MODULE_CONFIG_CHANGE, execute(TESTING_MODULE_CONFIG_CHANGE));
 
   if (!core.disableTelemetry) {
     const packageJsonPath = require.resolve('@storybook/experimental-addon-test/package.json');
@@ -125,4 +135,20 @@ export const managerEntries: PresetProperty<'managerEntries'> = async (entry = [
 
   // for whatever reason seems like the return type of managerEntries is not correct (it expects never instead of string[])
   return entry as never;
+};
+
+export const staticDirs: PresetPropertyFn<'staticDirs'> = async (values = [], options) => {
+  if (options.configType === 'PRODUCTION') {
+    return values;
+  }
+
+  const coverageDirectory = resolvePathInStorybookCache(COVERAGE_DIRECTORY);
+  await mkdir(coverageDirectory, { recursive: true });
+  return [
+    {
+      from: coverageDirectory,
+      to: '/coverage',
+    },
+    ...values,
+  ];
 };

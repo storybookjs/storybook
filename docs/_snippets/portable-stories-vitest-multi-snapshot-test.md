@@ -18,7 +18,7 @@ describe(options.suite, () => {
           const snapshotPath = path.join(
             storyDir,
             options.snapshotsDirName,
-            `${componentName}${options.snapshotExtension}`
+            `${componentName}${options.snapshotExtension}`,
           );
           expect(document.body.firstChild).toMatchFileSnapshot(snapshotPath);
         });

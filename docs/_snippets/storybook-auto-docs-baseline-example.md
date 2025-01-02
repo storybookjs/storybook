@@ -1,3 +1,4 @@
+<!-- prettier-ignore -->
 ```mdx filename="Button.mdx" renderer="common" language="mdx" tabTitle="custom-title"
 import { Meta, Controls } from '@storybook/blocks';
 
@@ -22,6 +23,7 @@ Button has the following properties:
 <Controls />
 ```
 
+<!-- prettier-ignore -->
 ```mdx filename="Button.mdx" renderer="common" language="mdx" tabTitle="of-prop"
 import { Meta, Controls } from '@storybook/blocks';
 

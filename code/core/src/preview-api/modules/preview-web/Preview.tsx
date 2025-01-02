@@ -390,11 +390,6 @@ export class Preview<TRenderer extends Renderer> {
     // That's because below in `renderStoryToElement` we have also bound to this event and will
     // render the story in the same tick.
     // However, we can do that safely as the current story is available in `this.storyRenders`
-
-    // NOTE: we have to be careful here and avoid await-ing when updating a rendered's args.
-    // That's because below in `renderStoryToElement` we have also bound to this event and will
-    // render the story in the same tick.
-    // However, we can do that safely as the current story is available in `this.storyRenders`
     const render = this.storyRenders.find((r) => r.id === storyId);
     const story = render?.story || (await this.storyStoreValue.loadStory({ storyId }));
 

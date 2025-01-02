@@ -40,7 +40,7 @@ const Title = styled(({ active, loading, disabled, ...rest }: TitleProps) => <sp
   ({ disabled, theme }) =>
     disabled
       ? {
-          color: transparentize(0.7, theme.color.defaultText),
+          color: theme.textMutedColor,
         }
       : {}
 );
@@ -148,6 +148,15 @@ const Item = styled.div<ItemProps>(
       },
       '&:hover svg': {
         opacity: 1,
+      },
+    },
+  ({ theme, as }) =>
+    as === 'label' && {
+      '&:has(input:not(:disabled))': {
+        cursor: 'pointer',
+        '&:hover': {
+          background: theme.background.hoverable,
+        },
       },
     },
   ({ disabled }) => disabled && { cursor: 'not-allowed' }

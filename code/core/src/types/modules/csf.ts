@@ -3,6 +3,7 @@ import type { ViewMode as ViewModeBase } from '@storybook/csf';
 import type { Addon_OptionsParameter } from './addons';
 
 export type {
+  AfterEach,
   AnnotatedStoryFn,
   Args,
   ArgsEnhancer,
@@ -11,6 +12,7 @@ export type {
   ArgTypes,
   ArgTypesEnhancer,
   BaseAnnotations,
+  BeforeEach,
   Canvas,
   ComponentAnnotations,
   ComponentId,

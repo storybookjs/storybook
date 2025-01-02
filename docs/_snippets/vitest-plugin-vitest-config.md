@@ -11,6 +11,8 @@ export default mergeConfig(
   defineConfig({
     plugins: [
       storybookTest({
+        // The location of your Storybook config, main.js|ts
+        configDir: './.storybook',
         // This should match your package.json script to run Storybook
         // The --ci flag will skip prompts and not open a browser
         storybookScript: 'yarn storybook --ci',
@@ -18,8 +20,6 @@ export default mergeConfig(
       // storybookNextJsPlugin(),
     ],
     test: {
-      // Glob pattern to find story files
-      include: ['src/**/*.stories.?(m)[jt]s?(x)'],
       // Enable browser mode
       browser: {
         enabled: true,
@@ -28,10 +28,6 @@ export default mergeConfig(
         provider: 'playwright',
         headless: true,
       },
-      // Speed up tests and better match how they run in Storybook itself
-      // https://vitest.dev/config/#isolate
-      // Consider removing this if you have flaky tests
-      isolate: false,
       setupFiles: ['./.storybook/vitest.setup.ts'],
     },
   })
@@ -50,6 +46,8 @@ export default mergeConfig(
   defineConfig({
     plugins: [
       storybookTest({
+        // The location of your Storybook config, main.js|ts
+        configDir: './.storybook',
         // This should match your package.json script to run Storybook
         // The --ci flag will skip prompts and not open a browser
         storybookScript: 'yarn storybook --ci',
@@ -57,8 +55,6 @@ export default mergeConfig(
       storybookVuePlugin(),
     ],
     test: {
-      // Glob pattern to find story files
-      include: ['src/**/*.stories.?(m)[jt]s?(x)'],
       // Enable browser mode
       browser: {
         enabled: true,
@@ -67,10 +63,6 @@ export default mergeConfig(
         provider: 'playwright',
         headless: true,
       },
-      // Speed up tests and better match how they run in Storybook itself
-      // https://vitest.dev/config/#isolate
-      // Consider removing this if you have flaky tests
-      isolate: false,
       setupFiles: ['./.storybook/vitest.setup.ts'],
     },
   })
@@ -90,6 +82,8 @@ export default mergeConfig(
   defineConfig({
     plugins: [
       storybookTest({
+        // The location of your Storybook config, main.js|ts
+        configDir: './.storybook',
         // This should match your package.json script to run Storybook
         // The --ci flag will skip prompts and not open a browser
         storybookScript: 'yarn storybook --ci',
@@ -97,8 +91,6 @@ export default mergeConfig(
       // storybookSveltekitPlugin(),
     ],
     test: {
-      // Glob pattern to find story files
-      include: ['src/**/*.stories.?(m)[jt]s?(x)'],
       // Enable browser mode
       browser: {
         enabled: true,
@@ -107,10 +99,6 @@ export default mergeConfig(
         provider: 'playwright',
         headless: true,
       },
-      // Speed up tests and better match how they run in Storybook itself
-      // https://vitest.dev/config/#isolate
-      // Consider removing this if you have flaky tests
-      isolate: false,
       setupFiles: ['./.storybook/vitest.setup.ts'],
     },
   })

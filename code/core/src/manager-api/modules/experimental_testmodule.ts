@@ -2,12 +2,14 @@ import { Addon_TypesEnum, type StoryId } from '@storybook/core/types';
 
 import {
   TESTING_MODULE_CANCEL_TEST_RUN_REQUEST,
+  TESTING_MODULE_RUN_ALL_REQUEST,
   TESTING_MODULE_RUN_REQUEST,
   TESTING_MODULE_WATCH_MODE_REQUEST,
   type TestProviderId,
   type TestProviderState,
   type TestProviders,
   type TestingModuleRunRequestPayload,
+  type TestingModuleWatchModeRequestPayload,
 } from '@storybook/core/core-events';
 
 import invariant from 'tiny-invariant';
@@ -49,13 +51,18 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, fullAPI }) => {
   const api: SubAPI = {
     getTestProviderState(id) {
       const { testProviders } = store.getState();
-
       return testProviders?.[id];
     },
     updateTestProviderState(id, update) {
       return store.setState(
         ({ testProviders }) => {
-          return { testProviders: { ...testProviders, [id]: { ...testProviders[id], ...update } } };
+          const currentState = testProviders[id];
+          const updatedState = currentState.stateUpdater?.(currentState, update) ?? {
+            ...currentState,
+            ...update,
+            details: { ...currentState.details, ...update.details },
+          };
+          return { testProviders: { ...testProviders, [id]: updatedState } };
         },
         { persistence: 'session' }
       );
@@ -63,7 +70,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, fullAPI }) => {
     clearTestProviderState(id) {
       const update = {
         cancelling: false,
-        running: true,
+        running: false,
         failed: false,
         crashed: false,
         progress: undefined,
@@ -79,14 +86,29 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, fullAPI }) => {
       const index = store.getState().index;
       invariant(index, 'The index is currently unavailable');
 
+      api.updateTestProviderState(id, {
+        running: true,
+        failed: false,
+        crashed: false,
+        progress: undefined,
+      });
+
+      const provider = store.getState().testProviders[id];
+
       const indexUrl = new URL('index.json', window.location.href).toString();
 
       if (!options?.entryId) {
         const payload: TestingModuleRunRequestPayload = {
           providerId: id,
           indexUrl,
+          config: provider.config,
         };
+
         fullAPI.emit(TESTING_MODULE_RUN_REQUEST, payload);
+
+        // For backwards compatibility:
+        fullAPI.emit(TESTING_MODULE_RUN_ALL_REQUEST, { providerId: id });
+
         return () => api.cancelTestProvider(id);
       }
 
@@ -107,13 +129,19 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, fullAPI }) => {
         providerId: id,
         indexUrl,
         storyIds: findStories(options.entryId),
+        config: provider.config,
       };
       fullAPI.emit(TESTING_MODULE_RUN_REQUEST, payload);
       return () => api.cancelTestProvider(id);
     },
     setTestProviderWatchMode(id, watchMode) {
       api.updateTestProviderState(id, { watching: watchMode });
-      fullAPI.emit(TESTING_MODULE_WATCH_MODE_REQUEST, { providerId: id, watchMode });
+      const config = store.getState().testProviders[id].config;
+      fullAPI.emit(TESTING_MODULE_WATCH_MODE_REQUEST, {
+        providerId: id,
+        watchMode,
+        config,
+      } as TestingModuleWatchModeRequestPayload);
     },
     cancelTestProvider(id) {
       api.updateTestProviderState(id, { cancelling: true });
@@ -130,6 +158,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, fullAPI }) => {
             ...config,
             ...initialTestProviderState,
             ...(state?.testProviders?.[id] || {}),
+            running: false,
           } as TestProviders[0],
         ]
       )

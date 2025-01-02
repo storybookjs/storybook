@@ -24,9 +24,10 @@ import type {
   StoryEntry,
 } from '@storybook/core/manager-api';
 
-import { transparentize } from 'polished';
+import { darken, lighten } from 'polished';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
+import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
 import { getGroupStatus, getHighestStatus, statusMapping } from '../../utils/status';
 import {
   createId,
@@ -66,7 +67,7 @@ const CollapseButton = styled.button(({ theme }) => ({
 
   '&:hover, &:focus': {
     outline: 'none',
-    background: transparentize(0.93, theme.color.secondary),
+    background: 'var(--tree-node-background-hover)',
   },
 }));
 
@@ -74,14 +75,24 @@ export const LeafNodeStyleWrapper = styled.div(({ theme }) => ({
   position: 'relative',
   display: 'flex',
   justifyContent: 'space-between',
-  alignItems: 'center',
+  alignItems: 'flex-start',
   color: theme.color.defaultText,
   background: 'transparent',
   minHeight: 28,
   borderRadius: 4,
+  overflow: 'hidden',
+  '--tree-node-background-hover': theme.background.content,
+
+  [MEDIA_DESKTOP_BREAKPOINT]: {
+    '--tree-node-background-hover': theme.background.app,
+  },
 
   '&:hover, &:focus': {
-    background: transparentize(0.93, theme.color.secondary),
+    '--tree-node-background-hover':
+      theme.base === 'dark'
+        ? darken(0.35, theme.color.secondary)
+        : lighten(0.45, theme.color.secondary),
+    background: 'var(--tree-node-background-hover)',
     outline: 'none',
   },
 
@@ -94,11 +105,11 @@ export const LeafNodeStyleWrapper = styled.div(({ theme }) => ({
   },
 
   '& [data-displayed="on"] + *': {
-    display: 'none',
+    visibility: 'hidden',
   },
 
   '&:hover [data-displayed="off"] + *': {
-    display: 'none',
+    visibility: 'hidden',
   },
 
   '&[data-selected="true"]': {
@@ -107,7 +118,8 @@ export const LeafNodeStyleWrapper = styled.div(({ theme }) => ({
     fontWeight: theme.typography.weight.bold,
 
     '&&:hover, &&:focus': {
-      background: theme.color.secondary,
+      '--tree-node-background-hover': theme.color.secondary,
+      background: 'var(--tree-node-background-hover)',
     },
     svg: { color: theme.color.lightest },
   },
@@ -216,6 +228,7 @@ const Node = React.memo<NodeProps>(function Node({
   const statusLinks = useMemo<Link[]>(() => {
     if (item.type === 'story' || item.type === 'docs') {
       return Object.entries(status || {})
+        .filter(([, value]) => value.sidebarContextMenu !== false)
         .sort((a, b) => statusOrder.indexOf(a[1].status) - statusOrder.indexOf(b[1].status))
         .map(([addonId, value]) => ({
           id: addonId,
@@ -272,7 +285,10 @@ const Node = React.memo<NodeProps>(function Node({
   ]);
 
   const id = createId(item.id, refId);
-  const contextMenu = useContextMenu(item, statusLinks, api);
+  const contextMenu =
+    refId === 'storybook_internal'
+      ? useContextMenu(item, statusLinks, api)
+      : { node: null, onMouseEnter: () => {} };
 
   if (item.type === 'story' || item.type === 'docs') {
     const LeafNode = item.type === 'docs' ? DocumentNode : StoryNode;

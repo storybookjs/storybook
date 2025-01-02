@@ -9,4 +9,3 @@ pnpm add --save-dev chromatic
 ```shell renderer="common" language="js" packageManager="yarn"
 yarn add --dev chromatic
 ```
-

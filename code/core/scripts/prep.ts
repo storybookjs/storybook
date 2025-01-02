@@ -59,7 +59,7 @@ async function run() {
   console.log(isWatch ? 'Watching...' : 'Bundling...');
 
   const files = measure(generateSourceFiles);
-  const packageJson = measure(() => generatePackageJsonFile(entries));
+  const packageJson = measure(() => generatePackageJsonFile(entries.concat(bundles)));
   const dist = files.then(() => measure(generateDistFiles));
   const types = files.then(() =>
     measure(async () => {

@@ -21,7 +21,9 @@ export const ToolbarMenuListItem = ({
   disabled,
   currentValue,
 }: ToolbarMenuListItemProps) => {
-  const Icon = icon && <Icons style={{ opacity: 1 }} icon={icon} />;
+  const Icon = icon && (
+    <Icons style={{ opacity: 1 }} icon={icon} __suppressDeprecationWarning={true} />
+  );
 
   const Item: TooltipLinkListLink = {
     id: value ?? '_reset',

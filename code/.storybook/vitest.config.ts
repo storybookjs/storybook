@@ -34,20 +34,13 @@ export default mergeConfig(
     ],
     test: {
       name: 'storybook-ui',
-      include: [
-        '../addons/**/*.{story,stories}.?(c|m)[jt]s?(x)',
-        // '../core/template/stories/**/*.{story,stories}.?(c|m)[jt]s?(x)',
-        '../core/src/manager/**/*.{story,stories}.?(c|m)[jt]s?(x)',
-        '../core/src/preview-api/**/*.{story,stories}.?(c|m)[jt]s?(x)',
-        '../core/src/components/{brand,components}/**/*.{story,stories}.?(c|m)[jt]s?(x)',
-      ],
       exclude: [
         ...defaultExclude,
         '../node_modules/**',
         '**/__mockdata__/**',
         '../**/__mockdata__/**',
-        // expected to fail in Vitest because of fetching /iframe.html to cause ECONNREFUSED
-        '**/Zoom.stories.tsx',
+        '**/Zoom.stories.tsx', // expected to fail in Vitest because of fetching /iframe.html to cause ECONNREFUSED
+        '**/lib/blocks/src/**', // won't work because of https://github.com/storybookjs/storybook/issues/29783
       ],
       // TODO: bring this back once portable stories support @storybook/core/preview-api hooks
       // @ts-expect-error this type does not exist but the property does!

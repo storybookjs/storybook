@@ -142,52 +142,55 @@ const stringToArgs = (value: string) => {
   return [x, y, z, a].map(Number);
 };
 
-const parseValue = (value: string): ParsedColor | undefined => {
-  if (!value) {
-    return undefined;
-  }
-  let valid = true;
+const parseRgb = (value: string): ParsedColor | undefined => {
+  if (!RGB_REGEXP.test(value)) return undefined;
+  
+  const [r, g, b, a] = stringToArgs(value);
+  const [h, s, l] = convert.rgb.hsl([r, g, b]) || [0, 0, 0];
+  
+  return {
+    valid: true,
+    value,
+    keyword: convert.rgb.keyword([r, g, b]),
+    colorSpace: ColorSpace.RGB,
+    [ColorSpace.RGB]: value,
+    [ColorSpace.HSL]: `hsla(${h}, ${s}%, ${l}%, ${a})`,
+    [ColorSpace.HEX]: `#${convert.rgb.hex([r, g, b]).toLowerCase()}`,
+  };
+};
 
-  if (RGB_REGEXP.test(value)) {
-    const [r, g, b, a] = stringToArgs(value);
-    const [h, s, l] = convert.rgb.hsl([r, g, b]) || [0, 0, 0];
-    return {
-      valid,
-      value,
-      keyword: convert.rgb.keyword([r, g, b]),
-      colorSpace: ColorSpace.RGB,
-      [ColorSpace.RGB]: value,
-      [ColorSpace.HSL]: `hsla(${h}, ${s}%, ${l}%, ${a})`,
-      [ColorSpace.HEX]: `#${convert.rgb.hex([r, g, b]).toLowerCase()}`,
-    };
-  }
+const parseHsl = (value: string): ParsedColor | undefined => {
+  if (!HSL_REGEXP.test(value)) return undefined;
+  
+  const [h, s, l, a] = stringToArgs(value);
+  const [r, g, b] = convert.hsl.rgb([h, s, l]) || [0, 0, 0];
+  
+  return {
+    valid: true,
+    value,
+    keyword: convert.hsl.keyword([h, s, l]),
+    colorSpace: ColorSpace.HSL,
+    [ColorSpace.RGB]: `rgba(${r}, ${g}, ${b}, ${a})`,
+    [ColorSpace.HSL]: value,
+    [ColorSpace.HEX]: `#${convert.hsl.hex([h, s, l]).toLowerCase()}`,
+  };
+};
 
-  if (HSL_REGEXP.test(value)) {
-    const [h, s, l, a] = stringToArgs(value);
-    const [r, g, b] = convert.hsl.rgb([h, s, l]) || [0, 0, 0];
-    return {
-      valid,
-      value,
-      keyword: convert.hsl.keyword([h, s, l]),
-      colorSpace: ColorSpace.HSL,
-      [ColorSpace.RGB]: `rgba(${r}, ${g}, ${b}, ${a})`,
-      [ColorSpace.HSL]: value,
-      [ColorSpace.HEX]: `#${convert.hsl.hex([h, s, l]).toLowerCase()}`,
-    };
-  }
-
+const parseHexOrKeyword = (value: string): ParsedColor | undefined => {
   const plain = value.replace('#', '');
+  // Try interpreting as keyword or hex
   const rgb = convert.keyword.rgb(plain as any) || convert.hex.rgb(plain);
   const hsl = convert.rgb.hsl(rgb);
 
   let mapped = value;
-
   if (/[^#a-f0-9]/i.test(value)) {
+    // Possibly a keyword
     mapped = plain;
   } else if (HEX_REGEXP.test(value)) {
     mapped = `#${plain}`;
   }
 
+  let valid = true;
   if (mapped.startsWith('#')) {
     valid = HEX_REGEXP.test(mapped);
   } else {
@@ -207,6 +210,21 @@ const parseValue = (value: string): ParsedColor | undefined => {
     [ColorSpace.HSL]: `hsla(${hsl[0]}, ${hsl[1]}%, ${hsl[2]}%, 1)`,
     [ColorSpace.HEX]: mapped,
   };
+};
+
+const parseValue = (value: string): ParsedColor | undefined => {
+  if (!value) return undefined;
+
+  // Try RGB
+  const rgbColor = parseRgb(value);
+  if (rgbColor) return rgbColor;
+
+  // Try HSL
+  const hslColor = parseHsl(value);
+  if (hslColor) return hslColor;
+
+  // Try HEX/Keyword
+  return parseHexOrKeyword(value);
 };
 
 const getRealValue = (value: string, color: ParsedColor, colorSpace: ColorSpace) => {
@@ -279,15 +297,14 @@ const useColorInput = (
   );
 
   const cycleColorSpace = useCallback(() => {
-    let next = COLOR_SPACES.indexOf(colorSpace) + 1;
-
-    if (next >= COLOR_SPACES.length) {
-      next = 0;
-    }
-    setColorSpace(COLOR_SPACES[next]);
-    const update = color?.[COLOR_SPACES[next]] || '';
-    setValue(update);
-    onChange(update);
+    const currentIndex = COLOR_SPACES.indexOf(colorSpace);
+    const nextIndex = (currentIndex + 1) % COLOR_SPACES.length;
+    const nextSpace = COLOR_SPACES[nextIndex];
+  
+    setColorSpace(nextSpace);
+    const updatedValue = color?.[nextSpace] || '';
+    setValue(updatedValue);
+    onChange(updatedValue);
   }, [color, colorSpace, onChange]);
 
   return { value, realValue, updateValue, color, colorSpace, cycleColorSpace };

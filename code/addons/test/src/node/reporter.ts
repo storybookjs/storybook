@@ -16,7 +16,7 @@ import { throttle } from 'es-toolkit';
 import { TEST_PROVIDER_ID } from '../constants';
 import type { TestManager } from './test-manager';
 
-export type TestStatus = 'passed' | 'failed' | 'warning' | 'pending' | 'skipped';
+export type TestStatus = 'passed' | 'failed' | 'warning' | 'pending' | 'skipped' | 'unknown';
 
 export type TestResultResult =
   | {
@@ -27,7 +27,7 @@ export type TestResultResult =
       reports: Report[];
     }
   | {
-      status: Extract<TestStatus, 'failed' | 'warning'>;
+      status: Extract<TestStatus, 'failed' | 'warning'> | undefined;
       storyId: string;
       duration: number;
       testRunId: string;

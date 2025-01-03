@@ -3,7 +3,10 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
 
-import { commonGlobOptions, normalizeStoryPath } from '@storybook/core/common';
+import { commonGlobOptions, normalizeStoryPath } from 'storybook/internal/common';
+import { getStorySortParameter, loadConfig } from 'storybook/internal/csf-tools';
+import { logger, once } from 'storybook/internal/node-logger';
+import { sortStoriesV7, userOrAutoTitleFromSpecifier } from 'storybook/internal/preview-api';
 import type {
   DocsIndexEntry,
   DocsOptions,
@@ -16,12 +19,9 @@ import type {
   StoryIndexEntry,
   StorybookConfigRaw,
   Tag,
-} from '@storybook/core/types';
-import { combineTags, storyNameFromExport, toId } from '@storybook/csf';
+} from 'storybook/internal/types';
 
-import { getStorySortParameter, loadConfig } from '@storybook/core/csf-tools';
-import { logger, once } from '@storybook/core/node-logger';
-import { sortStoriesV7, userOrAutoTitleFromSpecifier } from '@storybook/core/preview-api';
+import { combineTags, storyNameFromExport, toId } from '@storybook/csf';
 
 import { findUp } from 'find-up';
 import picocolors from 'picocolors';

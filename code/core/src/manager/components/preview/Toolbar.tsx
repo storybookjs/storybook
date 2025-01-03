@@ -1,10 +1,6 @@
 import React, { Fragment } from 'react';
 
-import { IconButton, Separator, TabBar, TabButton } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
-import { type Addon_BaseType, Addon_TypesEnum } from '@storybook/core/types';
-import { CloseIcon, ExpandIcon } from '@storybook/icons';
-
+import { IconButton, Separator, TabBar, TabButton } from 'storybook/internal/components';
 import {
   type API,
   type Combo,
@@ -15,7 +11,11 @@ import {
   merge,
   shortcutToHumanString,
   types,
-} from '@storybook/core/manager-api';
+} from 'storybook/internal/manager-api';
+import { styled } from 'storybook/internal/theming';
+import { type Addon_BaseType, Addon_TypesEnum } from 'storybook/internal/types';
+
+import { CloseIcon, ExpandIcon } from '@storybook/icons';
 
 import { useLayout } from '../layout/LayoutProvider';
 import { addonsTool } from './tools/addons';

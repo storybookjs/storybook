@@ -1,9 +1,10 @@
 import type { ComponentProps, FC } from 'react';
 import React, { useState } from 'react';
 
-import type { Button } from '@storybook/core/components';
-import { IconButton, TooltipLinkList, WithTooltip } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
+import { IconButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
+import type { Button } from 'storybook/internal/components';
+import { styled } from 'storybook/internal/theming';
+
 import { CloseIcon, CogIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';

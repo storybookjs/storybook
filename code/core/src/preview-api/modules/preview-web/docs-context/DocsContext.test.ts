@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { Channel } from '@storybook/core/channels';
-import type { CSFFile, Renderer } from '@storybook/core/types';
+import { Channel } from 'storybook/internal/channels';
+import type { CSFFile, Renderer } from 'storybook/internal/types';
 
 import type { StoryStore } from '../../store';
 import { DocsContext } from './DocsContext';

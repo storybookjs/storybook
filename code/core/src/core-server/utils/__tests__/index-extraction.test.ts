@@ -2,13 +2,13 @@ import { join } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { normalizeStoriesEntry } from '@storybook/core/common';
-import type { NormalizedStoriesSpecifier } from '@storybook/core/types';
+import { normalizeStoriesEntry } from 'storybook/internal/common';
+import type { NormalizedStoriesSpecifier } from 'storybook/internal/types';
 
 import type { StoryIndexGeneratorOptions } from '../StoryIndexGenerator';
 import { AUTODOCS_TAG, StoryIndexGenerator } from '../StoryIndexGenerator';
 
-vi.mock('@storybook/core/node-logger');
+vi.mock('storybook/internal/node-logger');
 
 const options: StoryIndexGeneratorOptions = {
   configDir: join(__dirname, '..', '__mockdata__'),

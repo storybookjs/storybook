@@ -1,14 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { DecoratorFunction, StoryContext } from '@storybook/core/types';
-
 import {
   FORCE_RE_RENDER,
   RESET_STORY_ARGS,
   STORY_RENDERED,
   UPDATE_GLOBALS,
   UPDATE_STORY_ARGS,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/core-events';
+import type { DecoratorFunction, StoryContext } from 'storybook/internal/types';
 
 import {
   HooksContext,
@@ -28,7 +27,7 @@ import {
 } from '../addons';
 import { defaultDecorateStory } from './decorators';
 
-vi.mock('@storybook/core/client-logger', () => ({
+vi.mock('storybook/internal/client-logger', () => ({
   logger: { warn: vi.fn(), log: vi.fn() },
 }));
 

@@ -1,4 +1,4 @@
-import { parser, types as t } from '@storybook/core/babel';
+import { parser, types as t } from 'storybook/internal/babel';
 
 export function valueToAST<T>(literal: T): any {
   if (literal === null) {

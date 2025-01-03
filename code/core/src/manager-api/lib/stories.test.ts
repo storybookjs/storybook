@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { API_PreparedStoryIndex, StoryIndexV2, StoryIndexV3 } from '@storybook/core/types';
+import type { API_PreparedStoryIndex, StoryIndexV2, StoryIndexV3 } from 'storybook/internal/types';
 
 import type { State } from '../root';
 import { mockEntries } from '../tests/mockStoriesEntries';

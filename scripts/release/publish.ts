@@ -177,7 +177,7 @@ export const run = async (options: unknown) => {
   const currentVersion = await getCurrentVersion(verbose);
   const isAlreadyPublished = await isCurrentVersionPublished({
     currentVersion,
-    packageName: '@storybook/core',
+    packageName: 'storybook',
     verbose,
   });
   if (isAlreadyPublished) {

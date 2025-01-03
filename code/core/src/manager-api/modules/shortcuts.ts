@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { global } from '@storybook/global';
-
 import {
   FORCE_REMOUNT,
   PREVIEW_KEYDOWN,
   STORIES_COLLAPSE_ALL,
   STORIES_EXPAND_ALL,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/core-events';
+
+import { global } from '@storybook/global';
 
 import type { KeyboardEventLike } from '../lib/shortcut';
 import { eventToShortcut, shortcutMatchesShortcut } from '../lib/shortcut';

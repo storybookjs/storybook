@@ -1,11 +1,11 @@
-import { versions } from '@storybook/core/common';
+import { versions } from 'storybook/internal/common';
 
 import { spawn } from 'child_process';
 
 const args = process.argv.slice(2);
 
 if (['dev', 'build'].includes(args[0])) {
-  require('@storybook/core/cli/bin');
+  require('storybook/internal/cli/bin');
 } else {
   const proxiedArgs =
     args[0] === 'init'

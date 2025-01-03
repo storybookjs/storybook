@@ -2,25 +2,25 @@
 import { writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 
-import type { Channel } from '@storybook/core/channels';
-import { formatFileContent } from '@storybook/core/common';
-import { isExampleStoryId, telemetry } from '@storybook/core/telemetry';
-import type { CoreConfig, Options } from '@storybook/core/types';
-import { storyNameFromExport, toId } from '@storybook/csf';
-
+import type { Channel } from 'storybook/internal/channels';
+import { formatFileContent } from 'storybook/internal/common';
 import type {
   RequestData,
   ResponseData,
   SaveStoryRequestPayload,
   SaveStoryResponsePayload,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/core-events';
 import {
   SAVE_STORY_REQUEST,
   SAVE_STORY_RESPONSE,
   STORY_RENDERED,
-} from '@storybook/core/core-events';
-import { printCsf, readCsf } from '@storybook/core/csf-tools';
-import { logger } from '@storybook/core/node-logger';
+} from 'storybook/internal/core-events';
+import { printCsf, readCsf } from 'storybook/internal/csf-tools';
+import { logger } from 'storybook/internal/node-logger';
+import { isExampleStoryId, telemetry } from 'storybook/internal/telemetry';
+import type { CoreConfig, Options } from 'storybook/internal/types';
+
+import { storyNameFromExport, toId } from '@storybook/csf';
 
 import { duplicateStoryWithNewName } from './duplicate-story-with-new-name';
 import { updateArgsInCsfFile } from './update-args-in-csf-file';

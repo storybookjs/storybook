@@ -672,7 +672,7 @@ export const addStories: Task['run'] = async (
   if (isCoreRenderer) {
     // Add stories for lib/preview-api (and addons below). NOTE: these stories will be in the
     // template-stories folder and *not* processed by the framework build config (instead by esbuild-loader)
-    await linkPackageStories(await workspacePath('core package', '@storybook/core'), {
+    await linkPackageStories(await workspacePath('core package', 'storybook'), {
       mainConfig,
       cwd,
       disableDocs,

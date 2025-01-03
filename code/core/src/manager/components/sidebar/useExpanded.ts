@@ -1,11 +1,11 @@
 import type { Dispatch, MutableRefObject, Reducer } from 'react';
 import { useCallback, useEffect, useReducer } from 'react';
 
-import { global } from '@storybook/global';
+import { STORIES_COLLAPSE_ALL, STORIES_EXPAND_ALL } from 'storybook/internal/core-events';
+import type { StoriesHash } from 'storybook/internal/manager-api';
+import { useStorybookApi } from 'storybook/internal/manager-api';
 
-import { STORIES_COLLAPSE_ALL, STORIES_EXPAND_ALL } from '@storybook/core/core-events';
-import type { StoriesHash } from '@storybook/core/manager-api';
-import { useStorybookApi } from '@storybook/core/manager-api';
+import { global } from '@storybook/global';
 
 import { throttle } from 'es-toolkit';
 

@@ -33,7 +33,6 @@ export const disallowList = [
   Object.keys(frameworkPackages),
   'storybook',
   '@storybook/instrumenter',
-  '@storybook/core',
   '@storybook/core-server',
   '@storybook/manager',
   '@storybook/preview',

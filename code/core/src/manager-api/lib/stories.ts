@@ -18,7 +18,8 @@ import type {
   StoryIndexV2,
   StoryIndexV3,
   Tag,
-} from '@storybook/core/types';
+} from 'storybook/internal/types';
+
 import { sanitize } from '@storybook/csf';
 
 import { countBy, mapValues } from 'es-toolkit';

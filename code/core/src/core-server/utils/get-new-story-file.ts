@@ -6,10 +6,9 @@ import {
   getFrameworkName,
   getProjectRoot,
   rendererPackages,
-} from '@storybook/core/common';
-import type { Options } from '@storybook/core/types';
-
-import type { CreateNewStoryRequestPayload } from '@storybook/core/core-events';
+} from 'storybook/internal/common';
+import type { CreateNewStoryRequestPayload } from 'storybook/internal/core-events';
+import type { Options } from 'storybook/internal/types';
 
 import { getJavaScriptTemplateForNewStoryFile } from './new-story-templates/javascript';
 import { getTypeScriptTemplateForNewStoryFile } from './new-story-templates/typescript';

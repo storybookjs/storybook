@@ -1,7 +1,6 @@
-import { cache } from '@storybook/core/common';
-import type { VersionCheck } from '@storybook/core/types';
-
-import { colors } from '@storybook/core/node-logger';
+import { cache } from 'storybook/internal/common';
+import { colors } from 'storybook/internal/node-logger';
+import type { VersionCheck } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
 import semver from 'semver';

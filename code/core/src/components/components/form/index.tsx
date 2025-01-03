@@ -1,4 +1,4 @@
-import { styled } from '@storybook/core/theming';
+import { styled } from 'storybook/internal/theming';
 
 import { Button } from '../Button/Button';
 import { Field } from './field/field';

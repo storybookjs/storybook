@@ -1,10 +1,10 @@
 import type { MouseEvent } from 'react';
 import React, { useCallback, useEffect, useState } from 'react';
 
-import { styled } from '@storybook/core/theming';
-import { global } from '@storybook/global';
+import { logger } from 'storybook/internal/client-logger';
+import { styled } from 'storybook/internal/theming';
 
-import { logger } from '@storybook/core/client-logger';
+import { global } from '@storybook/global';
 
 import memoize from 'memoizerific';
 // @ts-expect-error (Converted from ts-ignore)

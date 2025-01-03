@@ -1,8 +1,7 @@
-import { cache } from '@storybook/core/common';
-import type { CLIOptions } from '@storybook/core/types';
-
-import { buildDevStandalone, withTelemetry } from '@storybook/core/core-server';
-import { logger, instance as npmLog } from '@storybook/core/node-logger';
+import { cache } from 'storybook/internal/common';
+import { buildDevStandalone, withTelemetry } from 'storybook/internal/core-server';
+import { logger, instance as npmLog } from 'storybook/internal/node-logger';
+import type { CLIOptions } from 'storybook/internal/types';
 
 import { findPackage } from 'fd-package-json';
 import invariant from 'tiny-invariant';

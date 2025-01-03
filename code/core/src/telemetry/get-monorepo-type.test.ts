@@ -8,9 +8,9 @@ import { getMonorepoType, monorepoConfigs } from './get-monorepo-type';
 
 vi.mock('node:fs', async () => import('../../../__mocks__/fs'));
 
-vi.mock('@storybook/core/common', async (importOriginal) => {
+vi.mock('storybook/internal/common', async (importOriginal) => {
   return {
-    ...(await importOriginal<typeof import('@storybook/core/common')>()),
+    ...(await importOriginal<typeof import('storybook/internal/common')>()),
     getProjectRoot: () => 'root',
   };
 });

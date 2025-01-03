@@ -1,12 +1,12 @@
 import React, { Component } from 'react';
 
-import { EmptyTabContent, IconButton, Link, Tabs } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
-import type { Addon_BaseType } from '@storybook/core/types';
-import { BottomBarIcon, CloseIcon, DocumentIcon, SidebarAltIcon } from '@storybook/icons';
+import { EmptyTabContent, IconButton, Link, Tabs } from 'storybook/internal/components';
+import type { State } from 'storybook/internal/manager-api';
+import { shortcutToHumanString } from 'storybook/internal/manager-api';
+import { styled } from 'storybook/internal/theming';
+import type { Addon_BaseType } from 'storybook/internal/types';
 
-import type { State } from '@storybook/core/manager-api';
-import { shortcutToHumanString } from '@storybook/core/manager-api';
+import { BottomBarIcon, CloseIcon, DocumentIcon, SidebarAltIcon } from '@storybook/icons';
 
 import { useLayout } from '../layout/LayoutProvider';
 

@@ -1,11 +1,11 @@
 import React, { type ReactNode, useCallback, useRef, useState } from 'react';
 
-import { IconButton } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
+import { IconButton } from 'storybook/internal/components';
+import { shortcutToHumanString, useStorybookApi } from 'storybook/internal/manager-api';
+import { styled } from 'storybook/internal/theming';
+
 import { global } from '@storybook/global';
 import { CloseIcon, SearchIcon } from '@storybook/icons';
-
-import { shortcutToHumanString, useStorybookApi } from '@storybook/core/manager-api';
 
 import type { DownshiftState, StateChangeOptions } from 'downshift';
 import Downshift from 'downshift';

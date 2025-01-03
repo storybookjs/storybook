@@ -1,3 +1,4 @@
+import { deprecate, logger } from 'storybook/internal/client-logger';
 import type {
   ArgTypes,
   LegacyStoryAnnotationsOrFn,
@@ -5,14 +6,13 @@ import type {
   StoryAnnotations,
   StoryFn,
   StoryId,
-} from '@storybook/core/types';
+} from 'storybook/internal/types';
 import type {
   NormalizedComponentAnnotations,
   NormalizedStoryAnnotations,
-} from '@storybook/core/types';
-import { storyNameFromExport, toId } from '@storybook/csf';
+} from 'storybook/internal/types';
 
-import { deprecate, logger } from '@storybook/core/client-logger';
+import { storyNameFromExport, toId } from '@storybook/csf';
 
 import { dedent } from 'ts-dedent';
 

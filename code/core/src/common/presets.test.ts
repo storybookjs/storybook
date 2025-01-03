@@ -2,7 +2,7 @@ import { normalize } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { logger } from '@storybook/core/node-logger';
+import { logger } from 'storybook/internal/node-logger';
 
 import mockRequire from 'mock-require';
 
@@ -19,7 +19,7 @@ function mockPreset(name: string, mockPresetObject: any) {
   mockRequire(name, mockPresetObject);
 }
 
-vi.mock('@storybook/core/node-logger', () => ({
+vi.mock('storybook/internal/node-logger', () => ({
   logger: {
     info: vi.fn(),
     warn: vi.fn(),

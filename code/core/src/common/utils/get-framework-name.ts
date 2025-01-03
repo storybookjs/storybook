@@ -1,4 +1,4 @@
-import type { Options } from '@storybook/core/types';
+import type { Options } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 

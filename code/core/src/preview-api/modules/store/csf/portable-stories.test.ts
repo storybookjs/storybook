@@ -5,7 +5,8 @@ import type {
   ComponentAnnotations as Meta,
   Store_CSFExports,
   StoryAnnotationsOrFn as Story,
-} from '@storybook/core/types';
+} from 'storybook/internal/types';
+
 import type { ProjectAnnotations } from '@storybook/csf';
 
 import * as defaultExportAnnotations from './__mocks__/defaultExportAnnotations.mockfile';

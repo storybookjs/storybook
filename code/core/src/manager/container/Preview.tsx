@@ -1,12 +1,12 @@
 import type { ComponentProps } from 'react';
 import React from 'react';
 
-import type { Addon_BaseType, Addon_Collection, Addon_WrapperType } from '@storybook/core/types';
-import { Addon_TypesEnum } from '@storybook/core/types';
-import { global } from '@storybook/global';
+import type { State, StoriesHash } from 'storybook/internal/manager-api';
+import { Consumer } from 'storybook/internal/manager-api';
+import type { Addon_BaseType, Addon_Collection, Addon_WrapperType } from 'storybook/internal/types';
+import { Addon_TypesEnum } from 'storybook/internal/types';
 
-import type { State, StoriesHash } from '@storybook/core/manager-api';
-import { Consumer } from '@storybook/core/manager-api';
+import { global } from '@storybook/global';
 
 import memoizerific from 'memoizerific';
 

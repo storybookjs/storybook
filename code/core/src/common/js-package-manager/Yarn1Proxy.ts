@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { FindPackageVersionsError } from '@storybook/core/server-errors';
+import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
 import { findUp } from 'find-up';
 import { dedent } from 'ts-dedent';

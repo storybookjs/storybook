@@ -1,6 +1,7 @@
 import React from 'react';
 
-import { LocationProvider } from '@storybook/core/router';
+import { LocationProvider } from 'storybook/internal/router';
+
 import {
   AccessibilityIcon as AccessibilityIconIcon,
   BookIcon as BookIconIcon,

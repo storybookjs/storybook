@@ -38,18 +38,18 @@ module.exports = {
           });
         }
 
-        if (node.source.value.startsWith('storybook/internal/') && isInCore) {
-          const newPath = node.source.value
-            .replace('storybook/internal', '@storybook/core')
-            .replace('/src', '');
-          context.report({
-            node: node,
-            message: `Cannot import from storybook/internal in this package. Use @storybook/core instead.`,
-            fix: (fixer) => {
-              return fixer.replaceText(node.source, `'${newPath}'`);
-            },
-          });
-        }
+        // if (node.source.value.startsWith('storybook/internal/') && isInCore) {
+        //   const newPath = node.source.value
+        //     .replace('storybook/internal', '@storybook/core')
+        //     .replace('/src', '');
+        //   context.report({
+        //     node: node,
+        //     message: `Cannot import from storybook/internal in this package. Use @storybook/core instead.`,
+        //     fix: (fixer) => {
+        //       return fixer.replaceText(node.source, `'${newPath}'`);
+        //     },
+        //   });
+        // }
       },
     };
   },

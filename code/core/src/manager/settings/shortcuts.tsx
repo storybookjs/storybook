@@ -1,15 +1,15 @@
 import type { ComponentProps, FC } from 'react';
 import React, { Component } from 'react';
 
-import { Button, Form } from '@storybook/core/components';
-import { keyframes, styled } from '@storybook/core/theming';
-import { CheckIcon } from '@storybook/icons';
-
+import { Button, Form } from 'storybook/internal/components';
 import {
   eventToShortcut,
   shortcutMatchesShortcut,
   shortcutToHumanString,
-} from '@storybook/core/manager-api';
+} from 'storybook/internal/manager-api';
+import { keyframes, styled } from 'storybook/internal/theming';
+
+import { CheckIcon } from '@storybook/icons';
 
 import SettingsFooter from './SettingsFooter';
 

@@ -7,7 +7,7 @@
     "jsx": "react",
     "moduleResolution": "bundler",
     "target": "es2022",
-    "module": "ES2022",
+    "module": "Preserve",
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,

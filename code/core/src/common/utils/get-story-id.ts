@@ -1,10 +1,10 @@
 import { relative } from 'node:path';
 
-import { normalizeStories, normalizeStoryPath } from '@storybook/core/common';
-import type { Options, StoriesEntry } from '@storybook/core/types';
-import { sanitize, storyNameFromExport, toId } from '@storybook/csf';
+import { normalizeStories, normalizeStoryPath } from 'storybook/internal/common';
+import { userOrAutoTitleFromSpecifier } from 'storybook/internal/preview-api';
+import type { Options, StoriesEntry } from 'storybook/internal/types';
 
-import { userOrAutoTitleFromSpecifier } from '@storybook/core/preview-api';
+import { sanitize, storyNameFromExport, toId } from '@storybook/csf';
 
 import { dedent } from 'ts-dedent';
 

@@ -1,6 +1,6 @@
 /// <reference path="./typings.d.ts" />
 
-export { getPreviewHeadTemplate, getPreviewBodyTemplate } from '@storybook/core/common';
+export { getPreviewHeadTemplate, getPreviewBodyTemplate } from 'storybook/internal/common';
 
 export * from './build-static';
 export * from './build-dev';

@@ -1,6 +1,6 @@
-import { global } from '@storybook/global';
+import { logger } from 'storybook/internal/client-logger';
 
-import { logger } from '@storybook/core/client-logger';
+import { global } from '@storybook/global';
 
 import { darken, lighten, rgba } from 'polished';
 

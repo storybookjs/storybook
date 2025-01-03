@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createVitest as actualCreateVitest } from 'vitest/node';
 
-import { Channel, type ChannelTransport } from '@storybook/core/channels';
-import type { StoryIndex } from '@storybook/types';
+import { Channel, type ChannelTransport } from 'storybook/internal/channels';
+import type { StoryIndex } from 'storybook/internal/types';
 
 import path from 'pathe';
 

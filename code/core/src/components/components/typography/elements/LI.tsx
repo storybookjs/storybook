@@ -1,5 +1,5 @@
-import type { CSSObject } from '@storybook/core/theming';
-import { styled } from '@storybook/core/theming';
+import type { CSSObject } from 'storybook/internal/theming';
+import { styled } from 'storybook/internal/theming';
 
 import { codeCommon, withReset } from '../lib/common';
 

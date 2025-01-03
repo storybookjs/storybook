@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle */
-import type { PartialStoryFn, StoryContext } from '@storybook/core/types';
+import type { PartialStoryFn, StoryContext } from 'storybook/internal/types';
 
 declare global {
   interface Window {

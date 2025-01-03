@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { Addon_StoryContext } from '@storybook/core/types';
+import type { Addon_StoryContext } from 'storybook/internal/types';
 
 import { makeDecorator } from './make-decorator';
 

@@ -1,9 +1,10 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
 
 /* eslint-disable no-underscore-dangle */
-import { types as t } from '@storybook/core/babel';
-import { getStoryTitle } from '@storybook/core/common';
-import type { StoriesEntry, Tag } from '@storybook/core/types';
+import { types as t } from 'storybook/internal/babel';
+import { getStoryTitle } from 'storybook/internal/common';
+import type { StoriesEntry, Tag } from 'storybook/internal/types';
+
 import { combineTags } from '@storybook/csf';
 
 import { dedent } from 'ts-dedent';

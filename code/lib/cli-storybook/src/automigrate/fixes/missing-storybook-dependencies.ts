@@ -1,8 +1,7 @@
 import { readFile } from 'node:fs/promises';
 
 import { getStorybookVersionSpecifier } from 'storybook/internal/cli';
-
-import type { InstallationMetadata, JsPackageManager } from '@storybook/core/common';
+import type { InstallationMetadata, JsPackageManager } from 'storybook/internal/common';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
@@ -129,6 +128,7 @@ export const missingStorybookDependencies: Fix<MissingStorybookDependenciesOptio
       `✅ Installing the following packages as devDependencies: ${Object.keys(packageUsage)}`
     );
     if (!dryRun) {
+      console.log(packageManager.retrievePackageJson());
       const dependenciesToInstall = Object.keys(packageUsage);
       const versionToInstall = getStorybookVersionSpecifier(
         await packageManager.retrievePackageJson()

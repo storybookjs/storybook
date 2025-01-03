@@ -1,6 +1,7 @@
 import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 
-import { styled } from '@storybook/core/theming';
+import { styled } from 'storybook/internal/theming';
+
 import { sanitize } from '@storybook/csf';
 
 import useResizeObserver from 'use-resize-observer';

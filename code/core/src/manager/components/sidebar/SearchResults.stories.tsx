@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { StoriesHash } from '@storybook/core/manager-api';
+import type { StoriesHash } from 'storybook/internal/manager-api';
 
 import { searchItem } from '../../utils/tree';
 import { IconSymbols } from './IconSymbols';

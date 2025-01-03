@@ -2,7 +2,7 @@ import { join } from 'node:path';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { normalizeStoriesEntry } from '@storybook/core/common';
+import { normalizeStoriesEntry } from 'storybook/internal/common';
 
 import Watchpack from 'watchpack';
 

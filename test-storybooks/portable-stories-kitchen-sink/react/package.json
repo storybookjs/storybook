@@ -40,7 +40,7 @@
     "@storybook/builder-webpack5": "portal:../../../code/builders/builder-webpack5",
     "@storybook/codemod": "portal:../../../code/lib/codemod",
     "@storybook/components": "file:../../../code/deprecated/components",
-    "@storybook/core": "portal:../../../code/core",
+    "storybook": "portal:../../../code/core",
     "@storybook/core-webpack": "portal:../../../code/lib/core-webpack",
     "@storybook/csf-plugin": "portal:../../../code/lib/csf-plugin",
     "@storybook/ember": "portal:../../../code/frameworks/ember",
@@ -80,8 +80,7 @@
     "@storybook/web-components": "portal:../../../code/renderers/web-components",
     "@storybook/web-components-vite": "portal:../../../code/frameworks/web-components-vite",
     "@storybook/web-components-webpack5": "portal:../../../code/frameworks/web-components-webpack5",
-    "playwright": "1.48.1",
-    "storybook": "portal:../../../code/lib/cli"
+    "playwright": "1.48.1"
   },
   "dependencies": {
     "react": "^18.2.0",

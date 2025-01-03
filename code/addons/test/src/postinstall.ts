@@ -289,8 +289,7 @@ export default async function postInstall(options: PostinstallOptions) {
     args: ['playwright', 'install', 'chromium', '--with-deps'],
   });
 
-  const fileExtension =
-    allDeps['typescript'] || (await findFile('tsconfig', ['.json'])) ? 'ts' : 'js';
+  const fileExtension = allDeps.typescript || (await findFile('tsconfig', ['.json'])) ? 'ts' : 'js';
 
   const vitestSetupFile = resolve(options.configDir, `vitest.setup.${fileExtension}`);
   if (existsSync(vitestSetupFile)) {
@@ -542,7 +541,7 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
   const presets = await loadAllPresets({
     corePresets: [join(frameworkName, 'preset')],
     overridePresets: [
-      require.resolve('@storybook/core/core-server/presets/common-override-preset'),
+      require.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     configDir,
     packageJson,

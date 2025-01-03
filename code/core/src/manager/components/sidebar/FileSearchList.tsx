@@ -1,13 +1,13 @@
 import React, { memo, useCallback, useMemo, useState } from 'react';
 
-import { TooltipNote, WithTooltip } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
-import { ChevronDownIcon, ChevronRightIcon, ComponentIcon } from '@storybook/icons';
-
+import { TooltipNote, WithTooltip } from 'storybook/internal/components';
 import type {
   CreateNewStoryRequestPayload,
   FileComponentSearchResponsePayload,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/core-events';
+import { styled } from 'storybook/internal/theming';
+
+import { ChevronDownIcon, ChevronRightIcon, ComponentIcon } from '@storybook/icons';
 
 import type { VirtualItem } from '@tanstack/react-virtual';
 import { useVirtualizer } from '@tanstack/react-virtual';

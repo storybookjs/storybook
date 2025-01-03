@@ -1,10 +1,9 @@
 import { cp, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, parse } from 'node:path';
 
-import { stringifyProcessEnvs } from '@storybook/core/common';
-
-import { globalsModuleInfoMap } from '@storybook/core/manager/globals-module-info';
-import { logger } from '@storybook/core/node-logger';
+import { stringifyProcessEnvs } from 'storybook/internal/common';
+import { globalsModuleInfoMap } from 'storybook/internal/manager/globals-module-info';
+import { logger } from 'storybook/internal/node-logger';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import { pnpPlugin } from '@yarnpkg/esbuild-plugin-pnp';
@@ -160,11 +159,7 @@ const starter: StarterFunction = async function* starterGeneratorFn({
 
   yield;
 
-  const coreDirOrigin = join(
-    dirname(require.resolve('@storybook/core/package.json')),
-    'dist',
-    'manager'
-  );
+  const coreDirOrigin = join(dirname(require.resolve('storybook/package.json')), 'dist', 'manager');
 
   router.use(
     '/sb-addons',
@@ -259,11 +254,7 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
   yield;
 
   const addonsDir = config.outdir;
-  const coreDirOrigin = join(
-    dirname(require.resolve('@storybook/core/package.json')),
-    'dist',
-    'manager'
-  );
+  const coreDirOrigin = join(dirname(require.resolve('storybook/package.json')), 'dist', 'manager');
   const coreDirTarget = join(options.outputDir, `sb-manager`);
 
   // TODO: this doesn't watch, we should change this to use the esbuild watch API: https://esbuild.github.io/api/#watch

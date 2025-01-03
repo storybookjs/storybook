@@ -1,4 +1,5 @@
-import type { API_UnknownEntries, API_Version, API_Versions } from '@storybook/core/types';
+import type { API_UnknownEntries, API_Version, API_Versions } from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
 
 import memoize from 'memoizerific';

@@ -1,8 +1,8 @@
 import { type Dirent, lstatSync, readdirSync } from 'node:fs';
 import { basename, join, relative, resolve } from 'node:path';
 
-import { commonGlobOptions } from '@storybook/core/common';
-import type { NormalizedStoriesSpecifier, Path } from '@storybook/core/types';
+import { commonGlobOptions } from 'storybook/internal/common';
+import type { NormalizedStoriesSpecifier, Path } from 'storybook/internal/types';
 
 import slash from 'slash';
 import Watchpack from 'watchpack';

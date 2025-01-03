@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { JsPackageManager } from '@storybook/core/common';
+import type { JsPackageManager } from 'storybook/internal/common';
 
 import { getAddonSvelteCsfVersion } from './index';
 

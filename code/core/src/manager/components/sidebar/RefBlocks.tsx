@@ -1,12 +1,12 @@
 import type { FC } from 'react';
 import React, { Fragment, useCallback, useState } from 'react';
 
-import { Button, ErrorFormatter, Link, Spaced, WithTooltip } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
+import { logger } from 'storybook/internal/client-logger';
+import { Button, ErrorFormatter, Link, Spaced, WithTooltip } from 'storybook/internal/components';
+import { styled } from 'storybook/internal/theming';
+
 import { global } from '@storybook/global';
 import { ChevronDownIcon, LockIcon, SyncIcon } from '@storybook/icons';
-
-import { logger } from '@storybook/core/client-logger';
 
 import { Contained, Loader } from './Loader';
 

@@ -1,12 +1,12 @@
 import type { FC } from 'react';
 import React, { Fragment, useEffect, useRef, useState } from 'react';
 
-import { Loader } from '@storybook/core/components';
-import type { Addon_BaseType, Addon_WrapperType } from '@storybook/core/types';
-import { global } from '@storybook/global';
+import { Loader } from 'storybook/internal/components';
+import { PREVIEW_BUILDER_PROGRESS, SET_CURRENT_STORY } from 'storybook/internal/core-events';
+import { type Combo, Consumer, addons, merge, types } from 'storybook/internal/manager-api';
+import type { Addon_BaseType, Addon_WrapperType } from 'storybook/internal/types';
 
-import { PREVIEW_BUILDER_PROGRESS, SET_CURRENT_STORY } from '@storybook/core/core-events';
-import { type Combo, Consumer, addons, merge, types } from '@storybook/core/manager-api';
+import { global } from '@storybook/global';
 
 import { Helmet } from 'react-helmet-async';
 

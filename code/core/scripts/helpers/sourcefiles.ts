@@ -82,6 +82,7 @@ async function generateFrameworksFile(prettierConfig: prettier.Options | null): 
 
 const localAlias = {
   '@storybook/core': join(__dirname, '..', '..', 'src'),
+  'storybook/internal': join(__dirname, '..', '..', 'src'),
   storybook: join(__dirname, '..', '..', 'src'),
 };
 async function generateExportsFile(prettierConfig: prettier.Options | null): Promise<void> {

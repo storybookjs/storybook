@@ -10,7 +10,7 @@ import {
   recast,
   types as t,
   traverse,
-} from '@storybook/core/babel';
+} from 'storybook/internal/babel';
 import type {
   ComponentAnnotations,
   IndexInput,
@@ -18,7 +18,8 @@ import type {
   IndexedCSFFile,
   StoryAnnotations,
   Tag,
-} from '@storybook/core/types';
+} from 'storybook/internal/types';
+
 import { isExportStory, storyNameFromExport, toId } from '@storybook/csf';
 
 import { dedent } from 'ts-dedent';

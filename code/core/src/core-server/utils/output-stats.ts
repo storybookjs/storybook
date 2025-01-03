@@ -1,9 +1,8 @@
 import { createWriteStream } from 'node:fs';
 import { join } from 'node:path';
 
-import type { Stats } from '@storybook/core/types';
-
-import { logger } from '@storybook/core/node-logger';
+import { logger } from 'storybook/internal/node-logger';
+import type { Stats } from 'storybook/internal/types';
 
 import { stringifyStream } from '@discoveryjs/json-ext';
 import picocolors from 'picocolors';

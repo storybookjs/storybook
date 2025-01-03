@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react';
 import React, { Children } from 'react';
 
-import { styled } from '@storybook/core/theming';
+import { styled } from 'storybook/internal/theming';
 
 import { SyntaxHighlighter } from '../../syntaxhighlighter/syntaxhighlighter';
 import type { SupportedLanguage } from '../../syntaxhighlighter/syntaxhighlighter-types';

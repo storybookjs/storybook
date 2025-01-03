@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { ArgsStore } from './ArgsStore';
 
-vi.mock('@storybook/core/client-logger');
+vi.mock('storybook/internal/client-logger');
 
 const stringType = { type: { name: 'string' } };
 const booleanType = { type: { name: 'boolean' } };

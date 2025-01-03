@@ -1,8 +1,8 @@
 import type { SyntheticEvent } from 'react';
 
-import { global } from '@storybook/global';
+import type { HashEntry, IndexHash } from 'storybook/internal/manager-api';
 
-import type { HashEntry, IndexHash } from '@storybook/core/manager-api';
+import { global } from '@storybook/global';
 
 import memoize from 'memoizerific';
 

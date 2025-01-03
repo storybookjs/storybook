@@ -1,4 +1,4 @@
-import { once } from '@storybook/core/client-logger';
+import { once } from 'storybook/internal/client-logger';
 
 import { isEqual as deepEqual, isPlainObject } from 'es-toolkit';
 import memoize from 'memoizerific';

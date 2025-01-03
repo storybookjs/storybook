@@ -36,7 +36,7 @@
     "@storybook/client-logger": "file:../../code/lib/client-logger",
     "@storybook/codemod": "file:../../code/lib/codemod",
     "@storybook/components": "file:../../code/deprecated/components",
-    "@storybook/core": "file:../../code/core",
+    "storybook": "file:../../code/core",
     "@storybook/core-webpack": "file:../../code/lib/core-webpack",
     "@storybook/csf-plugin": "file:../../code/lib/csf-plugin",
     "@storybook/ember": "file:../../code/frameworks/ember",
@@ -74,8 +74,7 @@
     "@storybook/vue3-webpack5": "file:../../code/frameworks/vue3-webpack5",
     "@storybook/web-components": "file:../../code/renderers/web-components",
     "@storybook/web-components-vite": "file:../../code/frameworks/web-components-vite",
-    "@storybook/web-components-webpack5": "file:../../code/frameworks/web-components-webpack5",
-    "storybook": "file:../../code/lib/cli"
+    "@storybook/web-components-webpack5": "file:../../code/frameworks/web-components-webpack5"
   },
   "dependencies": {
     "ember-named-blocks-polyfill": "^0.2.3",

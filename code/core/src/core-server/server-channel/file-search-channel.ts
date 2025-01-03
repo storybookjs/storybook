@@ -1,25 +1,24 @@
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
-import type { Channel } from '@storybook/core/channels';
+import type { Channel } from 'storybook/internal/channels';
 import {
   extractProperRendererNameFromFramework,
   getFrameworkName,
   getProjectRoot,
-} from '@storybook/core/common';
-import { telemetry } from '@storybook/core/telemetry';
-import type { CoreConfig, Options, SupportedRenderers } from '@storybook/core/types';
-
+} from 'storybook/internal/common';
 import type {
   FileComponentSearchRequestPayload,
   FileComponentSearchResponsePayload,
   RequestData,
   ResponseData,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/core-events';
 import {
   FILE_COMPONENT_SEARCH_REQUEST,
   FILE_COMPONENT_SEARCH_RESPONSE,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/core-events';
+import { telemetry } from 'storybook/internal/telemetry';
+import type { CoreConfig, Options, SupportedRenderers } from 'storybook/internal/types';
 
 import { doesStoryFileExist, getStoryMetadata } from '../utils/get-new-story-file';
 import { getParser } from '../utils/parser';

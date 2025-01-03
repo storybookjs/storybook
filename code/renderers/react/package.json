@@ -73,7 +73,7 @@
     "@storybook/test": "workspace:*",
     "@types/babel-plugin-react-docgen": "^4",
     "@types/escodegen": "^0.0.6",
-    "@types/estree": "^0.0.51",
+    "@types/estree": "^1.0.6",
     "@types/node": "^22.0.0",
     "@types/semver": "^7.3.4",
     "acorn": "^7.4.1",

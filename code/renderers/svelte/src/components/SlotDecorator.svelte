@@ -42,9 +42,9 @@
 </script>
 
 {#if decorator}
-  <svelte:component this={decorator.Component} {...decorator.props} bind:this={decoratorInstance}>
-    <svelte:component this={Component} {...propsWithoutDocgenEvents} bind:this={instance} />
-  </svelte:component>
+  <decorator.Component {...decorator.props} bind:this={decoratorInstance}>
+    <Component {...propsWithoutDocgenEvents} bind:this={instance} />
+  </decorator.Component>
 {:else}
-  <svelte:component this={Component} {...propsWithoutDocgenEvents} bind:this={instance} />
+  <Component {...propsWithoutDocgenEvents} bind:this={instance} />
 {/if}

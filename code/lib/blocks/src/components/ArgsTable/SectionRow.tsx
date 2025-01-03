@@ -74,9 +74,9 @@ const Subsection = styled.td(({ theme }) => ({
   background: theme.background.app,
 }));
 
-const StyledTd = styled.td(() => ({
+const StyledTd = styled.td({
   position: 'relative',
-}));
+});
 
 const StyledTr = styled.tr(({ theme }) => ({
   '&:hover > td': {
@@ -86,7 +86,7 @@ const StyledTr = styled.tr(({ theme }) => ({
   },
 }));
 
-const ClickIntercept = styled.button(() => ({
+const ClickIntercept = styled.button({
   // reset button style
   background: 'none',
   border: 'none',
@@ -103,7 +103,7 @@ const ClickIntercept = styled.button(() => ({
   width: '100%',
   color: 'transparent',
   cursor: 'row-resize !important',
-}));
+});
 
 export const SectionRow: FC<SectionRowProps> = ({
   level = 'section',

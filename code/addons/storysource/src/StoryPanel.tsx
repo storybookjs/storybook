@@ -12,7 +12,7 @@ import { styled } from 'storybook/internal/theming';
 import type { LocationsMap, SourceBlock } from '@storybook/source-loader';
 
 // @ts-expect-error Typedefs don't currently expose `createElement` even though it exists
-import { createElement as createSyntaxHighlighterElement } from 'react-syntax-highlighter';
+import { createElement as createSyntaxHighlighterElement } from 'react-syntax-highlighter/dist/esm/index';
 import invariant from 'tiny-invariant';
 
 const StyledStoryLink = styled(Link)<{ to: string; key: string }>(({ theme }) => ({

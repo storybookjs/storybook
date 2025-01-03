@@ -96,7 +96,7 @@
     "@vitest/coverage-v8": "^2.1.3",
     "ansi-regex": "^6.0.1",
     "browser-assert": "^1.2.1",
-    "chromatic": "^11.5.5",
+    "chromatic": "^11.20.2",
     "codecov": "^3.8.1",
     "commander": "^12.1.0",
     "cross-env": "^7.0.3",

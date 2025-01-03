@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import { AddonPanel, type SyntaxHighlighterFormatTypes } from 'storybook/internal/components';
 import { ADDON_ID, PANEL_ID, PARAM_KEY, SNIPPET_RENDERED } from 'storybook/internal/docs-tools';
-import { addons, types, useAddonState, useChannel } from 'storybook/internal/manager-api';
+import { addons, types, useChannel, useParameter } from 'storybook/internal/manager-api';
+import { ignoreSsrWarning, styled } from 'storybook/internal/theming';
 
-import { Source } from '@storybook/blocks';
+import { Source, type SourceParameters } from '@storybook/blocks';
 
 addons.register(ADDON_ID, (api) => {
   addons.add(PANEL_ID, {
@@ -33,13 +34,14 @@ addons.register(ADDON_ID, (api) => {
     },
     match: ({ viewMode }) => viewMode === 'story',
     render: ({ active }) => {
-      const [codeSnippet, setSourceCode] = useAddonState<{
-        source: string;
-        format: SyntaxHighlighterFormatTypes;
-      }>(ADDON_ID, {
-        source: '',
-        format: 'html',
+      const parameter = useParameter(PARAM_KEY, {
+        source: { code: '' } as SourceParameters,
       });
+
+      const [codeSnippet, setSourceCode] = useState<{
+        source?: string;
+        format?: SyntaxHighlighterFormatTypes;
+      }>({});
 
       useChannel({
         [SNIPPET_RENDERED]: ({ source, format }) => {
@@ -49,9 +51,25 @@ addons.register(ADDON_ID, (api) => {
 
       return (
         <AddonPanel active={!!active}>
-          <Source code={codeSnippet.source} format={codeSnippet.format} dark />
+          <SourceStyles>
+            <Source
+              {...parameter.source}
+              code={parameter.source.code || codeSnippet.source}
+              format={parameter.source.format || codeSnippet.format}
+              dark
+            />
+          </SourceStyles>
         </AddonPanel>
       );
     },
   });
 });
+
+const SourceStyles = styled.div(() => ({
+  height: '100%',
+  [`> :first-child${ignoreSsrWarning}`]: {
+    margin: 0,
+    height: '100%',
+    boxShadow: 'none',
+  },
+}));

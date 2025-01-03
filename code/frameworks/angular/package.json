@@ -33,7 +33,7 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node ../../../scripts/node_modules/.bin/tsc",
+    "check": "yarn run -T tsc",
     "prep": "rimraf dist && jiti ../../../scripts/prepare/tsc.ts"
   },
   "dependencies": {

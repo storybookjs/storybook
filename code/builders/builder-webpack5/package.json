@@ -64,7 +64,6 @@
   },
   "dependencies": {
     "@storybook/core-webpack": "workspace:*",
-    "@types/node": "^22.0.0",
     "@types/semver": "^7.3.4",
     "browser-assert": "^1.2.1",
     "case-sensitive-paths-webpack-plugin": "^2.4.0",
@@ -90,6 +89,7 @@
     "webpack-virtual-modules": "^0.6.0"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "@types/pretty-hrtime": "^1.0.0",
     "@types/terser-webpack-plugin": "^5.2.0",
     "@types/webpack-hot-middleware": "^2.25.6",

@@ -67,7 +67,6 @@
     "@storybook/core-webpack": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/react-docgen-typescript-plugin": "1.0.6--canary.9.0c3f3b7.0",
-    "@types/node": "^22.0.0",
     "@types/semver": "^7.3.4",
     "find-up": "^5.0.0",
     "magic-string": "^0.30.5",
@@ -78,6 +77,7 @@
     "webpack": "5"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "typescript": "^5.3.2"
   },
   "peerDependencies": {

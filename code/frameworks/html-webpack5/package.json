@@ -50,10 +50,10 @@
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/global": "^5.0.0",
     "@storybook/html": "workspace:*",
-    "@storybook/preset-html-webpack": "workspace:*",
-    "@types/node": "^22.0.0"
+    "@storybook/preset-html-webpack": "workspace:*"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "typescript": "^5.3.2"
   },
   "peerDependencies": {

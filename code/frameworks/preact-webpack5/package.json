@@ -49,10 +49,10 @@
   "dependencies": {
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/preact": "workspace:*",
-    "@storybook/preset-preact-webpack": "workspace:*",
-    "@types/node": "^22.0.0"
+    "@storybook/preset-preact-webpack": "workspace:*"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "preact": "^10.5.13",
     "typescript": "^5.3.2"
   },

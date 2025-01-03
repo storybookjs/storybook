@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-
 /* eslint-disable no-underscore-dangle */
-
 /**
  * Source:
  * https://github.com/vercel/next.js/blob/canary/packages/next/src/build/babel/plugins/react-loadable-plugin.ts

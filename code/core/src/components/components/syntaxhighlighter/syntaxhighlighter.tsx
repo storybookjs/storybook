@@ -1,4 +1,4 @@
-import type { MouseEvent } from 'react';
+import type { Component, MouseEvent, ReactNode } from 'react';
 import React, { useCallback, useEffect, useState } from 'react';
 
 import { styled } from '@storybook/core/theming';
@@ -12,7 +12,6 @@ import { createElement } from 'react-syntax-highlighter/dist/esm/index';
 import bash from 'react-syntax-highlighter/dist/esm/languages/prism/bash';
 import css from 'react-syntax-highlighter/dist/esm/languages/prism/css';
 import graphql from 'react-syntax-highlighter/dist/esm/languages/prism/graphql';
-// @ts-expect-error (Converted from ts-ignore)
 import jsExtras from 'react-syntax-highlighter/dist/esm/languages/prism/js-extras';
 import json from 'react-syntax-highlighter/dist/esm/languages/prism/json';
 import jsx from 'react-syntax-highlighter/dist/esm/languages/prism/jsx';
@@ -26,11 +25,7 @@ import ReactSyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism-ligh
 import { ActionBar } from '../ActionBar/ActionBar';
 import type { ScrollAreaProps } from '../ScrollArea/ScrollArea';
 import { ScrollArea } from '../ScrollArea/ScrollArea';
-import type {
-  SyntaxHighlighterProps,
-  SyntaxHighlighterRenderer,
-  SyntaxHighlighterRendererProps,
-} from './syntaxhighlighter-types';
+import type { SyntaxHighlighterProps, SyntaxHighlighterRenderer } from './syntaxhighlighter-types';
 
 const { navigator, document, window: globalWindow } = global;
 
@@ -47,6 +42,9 @@ export const supportedLanguages = {
   typescript,
   graphql,
 };
+
+const ReactSyntaxHighlighterComponent =
+  ReactSyntaxHighlighter as typeof Component<SyntaxHighlighterProps>;
 
 Object.entries(supportedLanguages).forEach(([key, val]) => {
   ReactSyntaxHighlighter.registerLanguage(key, val);
@@ -185,8 +183,10 @@ const wrapRenderer = (
     return renderer;
   }
   if (renderer) {
-    return ({ rows, ...rest }: SyntaxHighlighterRendererProps) =>
+    const wrapped: SyntaxHighlighterRenderer = ({ rows, ...rest }) =>
       renderer({ rows: rows.map((row) => processLineNumber(row)), ...rest });
+
+    return wrapped;
   }
   return defaultRenderer;
 };
@@ -208,7 +208,7 @@ export const SyntaxHighlighter = ({
   className = undefined,
   showLineNumbers = false,
   ...rest
-}: SyntaxHighlighterProps) => {
+}: SyntaxHighlighterProps): ReactNode => {
   if (typeof children !== 'string' || !children.trim()) {
     return null;
   }
@@ -247,20 +247,20 @@ export const SyntaxHighlighter = ({
       className={className}
     >
       <Scroller>
-        <ReactSyntaxHighlighter
+        <ReactSyntaxHighlighterComponent
           padded={padded || bordered}
           language={language}
           showLineNumbers={showLineNumbers}
-          showInlineLineNumbers={showLineNumbers}
+          // showInlineLineNumbers={showLineNumbers}
           useInlineStyles={false}
-          PreTag={Pre}
-          CodeTag={Code}
-          lineNumberContainerStyle={{}}
+          // PreTag={Pre}
+          // CodeTag={Code}
+          // lineNumberContainerStyle={{}}
           {...rest}
           renderer={renderer}
         >
           {highlightableCode}
-        </ReactSyntaxHighlighter>
+        </ReactSyntaxHighlighterComponent>
       </Scroller>
 
       {copyable ? (

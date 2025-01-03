@@ -1,5 +1,4 @@
 /* eslint-disable no-underscore-dangle */
-
 /* eslint-disable @typescript-eslint/naming-convention */
 import type {
   Args,

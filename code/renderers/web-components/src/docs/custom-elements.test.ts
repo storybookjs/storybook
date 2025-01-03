@@ -1,5 +1,4 @@
 // @vitest-environment happy-dom
-
 /* eslint-disable no-underscore-dangle */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 

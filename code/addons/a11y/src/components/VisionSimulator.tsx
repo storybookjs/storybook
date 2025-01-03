@@ -42,13 +42,13 @@ const getFilter = (filterName: string) => {
   return `url('#${filterName}')`;
 };
 
-const Hidden = styled.div(() => ({
+const Hidden = styled.div({
   '&, & svg': {
     position: 'absolute',
     width: 0,
     height: 0,
   },
-}));
+});
 
 const ColorIcon = styled.span<{ filter: string }>(
   {

@@ -100,6 +100,7 @@ export const AppRouterProvider: React.FC<React.PropsWithChildren<AppRouterProvid
               changeByServerResponse() {
                 // NOOP
               },
+              // @ts-expect-error (sometimes not available)
               buildId: 'storybook',
               tree,
               focusAndScrollRef: {

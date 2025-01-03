@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-
 /* eslint-disable no-underscore-dangle */
 import { afterEach, vi } from 'vitest';
 import type { RunnerTask } from 'vitest';

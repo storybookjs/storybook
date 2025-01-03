@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-loop-func */
-
 /**
  * Source:
  * https://github.com/vercel/next.js/blob/canary/packages/next/src/build/babel/plugins/next-ssg-transform.ts

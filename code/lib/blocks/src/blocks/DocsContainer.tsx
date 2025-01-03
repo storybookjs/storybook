@@ -57,7 +57,15 @@ export const DocsContainer: FC<PropsWithChildren<DocsContainerProps>> = ({
       <SourceContainer channel={context.channel}>
         <ThemeProvider theme={ensureTheme(theme)}>
           <DocsPageWrapper
-            toc={toc ? <TableOfContents className="sbdocs sbdocs-toc--custom" {...toc} /> : null}
+            toc={
+              toc ? (
+                <TableOfContents
+                  className="sbdocs sbdocs-toc--custom"
+                  channel={context.channel}
+                  {...toc}
+                />
+              ) : null
+            }
           >
             {children}
           </DocsPageWrapper>

@@ -12,10 +12,11 @@ import {
   type TestProviderConfig,
   type TestProviderState,
 } from 'storybook/internal/core-events';
-import { addons } from 'storybook/internal/manager-api';
+import { addons, useStorybookState } from 'storybook/internal/manager-api';
 import type { API } from 'storybook/internal/manager-api';
 import { styled, useTheme } from 'storybook/internal/theming';
 
+import type { Tag } from '@storybook/csf';
 import {
   AccessibilityIcon,
   EditIcon,
@@ -106,23 +107,49 @@ const statusMap: Record<TestStatus, ComponentProps<typeof TestStatusIcon>['statu
   pending: 'pending',
 };
 
-export const TestProviderRender: FC<
-  {
-    api: API;
-    state: TestProviderConfig & TestProviderState<Details, Config>;
-    entryId?: string;
-  } & ComponentProps<typeof Container>
-> = ({ state, api, entryId, ...props }) => {
+type TestProviderRenderProps = {
+  api: API;
+  state: TestProviderConfig & TestProviderState<Details, Config>;
+  entryId?: string;
+} & ComponentProps<typeof Container>;
+
+export const TestProviderRender: FC<TestProviderRenderProps> = ({
+  state,
+  api,
+  entryId,
+  ...props
+}) => {
   const [isEditing, setIsEditing] = useState(false);
   const theme = useTheme();
   const coverageSummary = state.details?.coverageSummary;
+  const storybookState = useStorybookState();
 
   const isA11yAddon = addons.experimental_getRegisteredAddons().includes(A11Y_ADDON_ID);
+
+  const isA11yAddonInitiallyChecked = useMemo(() => {
+    const internalIndex = storybookState.internal_index;
+    if (!internalIndex || !isA11yAddon) {
+      return false;
+    }
+
+    const allTags = Object.values(internalIndex.entries).reduce((acc, entry) => {
+      entry.tags?.forEach((tag: Tag) => {
+        acc.add(tag);
+      });
+      return acc;
+    }, new Set<Tag>());
+
+    if (allTags.has('a11ytest')) {
+      return true;
+    }
+
+    return false;
+  }, [isA11yAddon, storybookState.internal_index]);
 
   const [config, updateConfig] = useConfig(
     api,
     state.id,
-    state.config || { a11y: false, coverage: false }
+    state.config || { a11y: isA11yAddonInitiallyChecked, coverage: false }
   );
 
   const isStoryEntry = entryId?.includes('--') ?? false;
@@ -425,14 +452,25 @@ export const TestProviderRender: FC<
 };
 
 function useConfig(api: API, providerId: string, initialConfig: Config) {
-  const [currentConfig, setConfig] = useState<Config>(initialConfig);
+  const updateTestProviderState = useCallback(
+    (config: Config) => {
+      api.updateTestProviderState(providerId, { config });
+      api.emit(TESTING_MODULE_CONFIG_CHANGE, { providerId, config });
+    },
+    [api, providerId]
+  );
+
+  const [currentConfig, setConfig] = useState<Config>(() => {
+    updateTestProviderState(initialConfig);
+    return initialConfig;
+  });
+
   const lastConfig = useRef(initialConfig);
 
   const saveConfig = useCallback(
     debounce((config: Config) => {
       if (!isEqual(config, lastConfig.current)) {
-        api.updateTestProviderState(providerId, { config });
-        api.emit(TESTING_MODULE_CONFIG_CHANGE, { providerId, config });
+        updateTestProviderState(config);
         lastConfig.current = config;
       }
     }, 500),

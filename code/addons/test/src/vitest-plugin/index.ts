@@ -200,15 +200,24 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin> => {
               getInitialGlobals: () => {
                 const envConfig = JSON.parse(process.env.VITEST_STORYBOOK_CONFIG ?? '{}');
 
-                const isA11yEnabled = process.env.VITEST_STORYBOOK
+                const shouldRunA11yTests = process.env.VITEST_STORYBOOK
                   ? (envConfig.a11y ?? false)
                   : true;
 
                 return {
                   a11y: {
-                    manual: !isA11yEnabled,
+                    manual: !shouldRunA11yTests,
                   },
                 };
+              },
+              getTags: () => {
+                const envConfig = JSON.parse(process.env.VITEST_STORYBOOK_CONFIG ?? '{}');
+
+                const shouldSetTag = process.env.VITEST_STORYBOOK
+                  ? (envConfig.a11y ?? false)
+                  : false;
+
+                return shouldSetTag ? ['a11ytest'] : [];
               },
             },
             // if there is a test.browser config AND test.browser.screenshotFailures is not explicitly set, we set it to false

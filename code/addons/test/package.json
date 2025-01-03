@@ -99,7 +99,7 @@
     "ansi-to-html": "^0.7.2",
     "boxen": "^8.0.1",
     "es-toolkit": "^1.22.0",
-    "execa": "^8.0.1",
+    "execa": "^9.5.2",
     "find-up": "^7.0.0",
     "formik": "^2.2.9",
     "istanbul-lib-report": "^3.0.1",

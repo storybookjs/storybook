@@ -316,19 +316,12 @@ export default async function postInstall(options: PostinstallOptions) {
     existsSync
   );
 
-  const a11yAddon = info.addons.find((addon) => addon.includes(addonA11yName));
-
   const imports = [
     `import { beforeAll } from 'vitest';`,
     `import { setProjectAnnotations } from '${annotationsImport}';`,
   ];
 
   const projectAnnotations = [];
-
-  if (a11yAddon) {
-    imports.push(`import * as a11yAddonAnnotations from '@storybook/addon-a11y/preview';`);
-    projectAnnotations.push('a11yAddonAnnotations');
-  }
 
   if (previewExists) {
     imports.push(`import * as projectAnnotations from './preview';`);
@@ -347,6 +340,27 @@ export default async function postInstall(options: PostinstallOptions) {
       beforeAll(project.beforeAll);
     `
   );
+
+  const a11yAddon = info.addons.find((addon) => addon.includes(addonA11yName));
+
+  if (a11yAddon) {
+    try {
+      logger.plain(`${step} Setting up ${addonA11yName} for @storybook/experimental-addon-test:`);
+      await $({
+        stdio: 'inherit',
+      })`storybook automigrate addonA11yAddonTest ${options.yes ? '--yes' : ''}`;
+    } catch (e) {
+      printError(
+        '🚨 Oh no!',
+        dedent`
+        We have detected that you have ${addonA11yName} installed but could not automatically set it up for @storybook/experimental-addon-test.
+
+        Please refer to the documentation to complete the setup manually:
+        ${picocolors.cyan(`https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration`)}
+      `
+      );
+    }
+  }
 
   // Check for existing Vitest workspace. We can't extend it so manual setup is required.
   const vitestWorkspaceFile = await findFile('vitest.workspace');

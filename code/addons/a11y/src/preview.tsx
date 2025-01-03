@@ -85,6 +85,3 @@ export const initialGlobals = {
     manual: false,
   },
 };
-
-// A11Y_TEST_TAG constant in ./constants.ts. Has to be statically analyzable.
-export const tags = ['a11ytest'];

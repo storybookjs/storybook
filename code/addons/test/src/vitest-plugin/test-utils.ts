@@ -13,10 +13,11 @@ import { setViewport } from './viewports';
 declare module '@vitest/browser/context' {
   interface BrowserCommands {
     getInitialGlobals: () => Promise<Record<string, any>>;
+    getTags: () => Promise<string[] | undefined>;
   }
 }
 
-const { getInitialGlobals } = server.commands;
+const { getInitialGlobals, getTags } = server.commands;
 
 export const testStory = (
   exportName: string,
@@ -28,7 +29,7 @@ export const testStory = (
     const composedStory = composeStory(
       story,
       meta,
-      { initialGlobals: (await getInitialGlobals?.()) ?? {} },
+      { initialGlobals: (await getInitialGlobals?.()) ?? {}, tags: await getTags?.() },
       undefined,
       exportName
     );

@@ -6227,7 +6227,7 @@ __metadata:
     ansi-to-html: "npm:^0.7.2"
     boxen: "npm:^8.0.1"
     es-toolkit: "npm:^1.22.0"
-    execa: "npm:^8.0.1"
+    execa: "npm:^9.5.2"
     find-up: "npm:^7.0.0"
     formik: "npm:^2.2.9"
     istanbul-lib-report: "npm:^3.0.1"

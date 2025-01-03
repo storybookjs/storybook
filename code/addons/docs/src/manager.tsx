@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 import { AddonPanel, type SyntaxHighlighterFormatTypes } from 'storybook/internal/components';
 import { ADDON_ID, PANEL_ID, PARAM_KEY, SNIPPET_RENDERED } from 'storybook/internal/docs-tools';
@@ -38,7 +38,7 @@ addons.register(ADDON_ID, (api) => {
         source: { code: '' } as SourceParameters,
       });
 
-      const [codeSnippet, setSourceCode] = useState<{
+      const [codeSnippet, setSourceCode] = React.useState<{
         source?: string;
         format?: SyntaxHighlighterFormatTypes;
       }>({});

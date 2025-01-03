@@ -103,9 +103,9 @@ describe('success', () => {
     const names = Object.keys(parsed._stories);
     const nodes = names.map((name) => CSF.getStoryExport(name));
 
-    nodes.forEach((node) => {
-      expect(() => updateArgsInCsfFile(node, newArgs)).rejects.toThrowError();
-    });
+    for (const node of nodes) {
+      await expect(() => updateArgsInCsfFile(node, newArgs)).rejects.toThrowError();
+    }
   });
   test('CSF Variances', async () => {
     const newArgs = { bordered: true, initial: 'test1' };

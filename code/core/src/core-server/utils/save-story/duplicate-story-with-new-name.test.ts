@@ -83,9 +83,9 @@ describe('success', () => {
     const parsed = CSF.parse();
     const names = Object.keys(parsed._stories);
 
-    names.forEach((name) => {
-      expect(() => duplicateStoryWithNewName(parsed, name, name + 'Duplicated')).toThrow();
-    });
+    for (const name of names) {
+      await expect(() => duplicateStoryWithNewName(parsed, name, name + 'Duplicated')).toThrow();
+    }
   });
   test('Typescript Constructs', async () => {
     const before = await format(await readFile(FILES.typescriptConstructs, 'utf-8'), {

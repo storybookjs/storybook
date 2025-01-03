@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
 /* eslint-disable no-underscore-dangle */
-import { type RunnerTask, type TaskContext, type TaskMeta, type TestContext } from 'vitest';
+import { type RunnerTask, type TaskMeta, type TestContext } from 'vitest';
 
 import { type Report, composeStory } from 'storybook/internal/preview-api';
 import type { ComponentAnnotations, ComposedStoryFn } from 'storybook/internal/types';
@@ -25,7 +25,7 @@ export const testStory = (
   meta: ComponentAnnotations,
   skipTags: string[]
 ) => {
-  return async (context: TestContext & TaskContext & { story: ComposedStoryFn }) => {
+  return async (context: TestContext & { story: ComposedStoryFn }) => {
     const composedStory = composeStory(
       story,
       meta,

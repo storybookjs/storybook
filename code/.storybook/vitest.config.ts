@@ -24,7 +24,7 @@ export default mergeConfig(
     plugins: [
       import('@storybook/experimental-addon-test/vitest-plugin').then(({ storybookTest }) =>
         storybookTest({
-          configDir: process.cwd(),
+          configDir: __dirname,
           tags: {
             include: ['vitest'],
           },
@@ -47,10 +47,14 @@ export default mergeConfig(
       testNamePattern: /^(?!.*(UseState)).*$/,
       browser: {
         enabled: true,
-        name: 'chromium',
         provider: 'playwright',
         headless: true,
         screenshotFailures: false,
+        instances: [
+          {
+            browser: 'chromium',
+          },
+        ],
       },
       setupFiles: ['./storybook.setup.ts'],
       environment: 'happy-dom',

@@ -19,6 +19,13 @@ const vitest = vi.hoisted(() => ({
   cancelCurrentRun: vi.fn(),
   globTestSpecs: vi.fn(),
   getModuleProjects: vi.fn(() => []),
+  setGlobalTestNamePattern: vi.fn(),
+  vite: {
+    moduleGraph: {
+      getModulesByFile: () => [],
+      invalidateModule: vi.fn(),
+    },
+  },
   configOverride: {
     actualTestNamePattern: undefined,
     get testNamePattern() {
@@ -32,7 +39,8 @@ const vitest = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('vitest/node', () => ({
+vi.mock('vitest/node', async (importOriginal) => ({
+  ...(await importOriginal()),
   createVitest: vi.fn(() => Promise.resolve(vitest)),
 }));
 const createVitest = vi.mocked(actualCreateVitest);

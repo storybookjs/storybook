@@ -23,6 +23,7 @@ const statusMap: Record<TestStatus, API_StatusValue> = {
   pending: 'pending',
   warning: 'warn',
   skipped: 'unknown',
+  unknown: 'unknown',
 };
 
 addons.register(ADDON_ID, (api) => {
@@ -100,7 +101,7 @@ addons.register(ADDON_ID, (api) => {
                       storyId,
                       {
                         title: 'Component tests',
-                        status: statusMap[status],
+                        status: status ? statusMap[status] : 'unknown',
                         description:
                           'failureMessages' in rest && rest.failureMessages
                             ? rest.failureMessages.join('\n')

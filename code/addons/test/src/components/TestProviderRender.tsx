@@ -97,12 +97,13 @@ const ItemTitle = styled.span<{ enabled?: boolean }>(
     }
 );
 
-const statusOrder: TestStatus[] = ['failed', 'warning', 'pending', 'passed', 'skipped'];
+const statusOrder: TestStatus[] = ['failed', 'warning', 'pending', 'passed', 'skipped', 'unknown'];
 const statusMap: Record<TestStatus, ComponentProps<typeof TestStatusIcon>['status']> = {
   failed: 'negative',
   warning: 'warning',
   passed: 'positive',
   skipped: 'unknown',
+  unknown: 'unknown',
   pending: 'pending',
 };
 
@@ -194,7 +195,11 @@ export const TestProviderRender: FC<
         storyId ? result.storyId === storyId : result.storyId?.startsWith(`${entryId}-`)
       );
     })
-    .sort((a, b) => statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status));
+    .sort(
+      (a, b) =>
+        statusOrder.indexOf(a.status || state.running ? 'pending' : 'unknown') -
+        statusOrder.indexOf(b.status || state.running ? 'pending' : 'unknown')
+    );
 
   const status = results[0]?.status ?? (state.running ? 'pending' : 'unknown');
 

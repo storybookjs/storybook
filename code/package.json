@@ -85,7 +85,10 @@
     "@vitest/expect@npm:2.0.5": "patch:@vitest/expect@npm%3A2.0.5#~/.yarn/patches/@vitest-expect-npm-2.0.5-8933466cce.patch",
     "esbuild": "^0.24.0",
     "playwright": "1.48.1",
+    "vite": "^4.0.4",
     "playwright-core": "1.48.1",
+    "@types/react": "^18.0.37",
+    "@types/react-dom": "^18.0.11",
     "serialize-javascript": "^3.1.0",
     "type-fest": "~2.19"
   },

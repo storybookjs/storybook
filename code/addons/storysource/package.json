@@ -52,7 +52,7 @@
   },
   "devDependencies": {
     "@types/react": "^18.0.37",
-    "@types/react-syntax-highlighter": "11.0.5",
+    "@types/react-syntax-highlighter": "^15.5.13",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-syntax-highlighter": "^15.5.0",

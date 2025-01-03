@@ -1,7 +1,6 @@
 // THIS IS A PATCH over the original code from Next 14.0.0
 // we use our own patch because we need to remove tracing from the original code
 // which is not possible otherwise
-
 /*
 Copyright (c) 2017 The swc Project Developers
 Permission is hereby granted, free of charge, to any

@@ -1,5 +1,4 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
-
 /* eslint-disable no-underscore-dangle */
 import { types as t } from '@storybook/core/babel';
 import { getStoryTitle } from '@storybook/core/common';

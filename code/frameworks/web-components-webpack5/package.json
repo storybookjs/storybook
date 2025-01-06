@@ -51,10 +51,10 @@
   },
   "dependencies": {
     "@storybook/builder-webpack5": "workspace:*",
-    "@storybook/web-components": "workspace:*",
-    "@types/node": "^22.0.0"
+    "@storybook/web-components": "workspace:*"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "lit": "2.3.1",
     "typescript": "^5.3.2"
   },

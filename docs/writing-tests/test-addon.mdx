@@ -41,6 +41,8 @@ Before installing, make sure your project meets the following requirements:
 - A Storybook framework that uses Vite (e.g. [`vue3-vite`](../get-started/frameworks/vue3-vite.mdx), [`react-vite`](../get-started/frameworks/react-vite.mdx), ['sveltekit`](../get-started/frameworks/sveltekit.mdx), etc.), or the [Storybook Next.js framework with Vite](../get-started/frameworks/nextjs.mdx#with-vite)
 - Vitest ≥ 2.1
     - If you're not yet using Vitest, it will be installed and configured for you when you install the addon
+- (optional) MSW ≥ 2.0
+    - If MSW is installed, it must be v2.0.0 or later to not conflict with Vitest's dependency
 
 <If renderer="react">
   <Callout variant="info" icon="ℹ️">
@@ -96,7 +98,9 @@ Some Storybook frameworks require additional setup to enable the framework's fea
     viteConfig,
     defineConfig({
       plugins: [
-        storybookTest(),
+        storybookTest({
+          // ...
+        }),
         storybookNextJsPlugin(), // 👈 Apply the framework plugin here
       ],
       // ...
@@ -119,7 +123,9 @@ Some Storybook frameworks require additional setup to enable the framework's fea
     viteConfig,
     defineConfig({
       plugins: [
-        storybookTest(),
+        storybookTest({
+          // ...
+        }),
         storybookVuePlugin(), // 👈 Apply the framework plugin here
       ],
       // ...
@@ -142,7 +148,9 @@ Some Storybook frameworks require additional setup to enable the framework's fea
     viteConfig,
     defineConfig({
       plugins: [
-        storybookTest(),
+        storybookTest({
+          // ...
+        }),
         storybookSveltekitPlugin(), // 👈 Apply the framework plugin here
       ],
       // ...
@@ -313,6 +321,7 @@ export default defineWorkspace([
     {
       plugins: [
         storybookTest({
+          // ...
           storybookScript: 'yarn storybook --ci',
           storybookUrl: process.env.SB_URL
         }),
@@ -427,17 +436,9 @@ If your stories use assets in the public directory and you're not using the defa
 
 ### How do I apply custom Vite configuration?
 
-If you have custom operations defined in [`viteFinal`](../api/main-config/main-config-vite-final.mdx) in your `.storybook/main.js|ts` file, you will need to translate those into the Vitest configuration. This is because the plugin does not use the Storybook Vite configuration.
+Your Storybook project's Vite configuration (in [`viteFinal`](../api/main-config/main-config-vite-final.mdx) in your `.storybook/main.js|ts` file) is automatically applied to your Vitest configuration, with one exception: the plugins.
 
-For example, to recreate an alias in Storybook's Vite configuration, you would need to apply that alias in the Vitest configuration:
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="vitest-plugin-vitest-config-alias.md" />
-
-{/* prettier-ignore-end */}
-
-The above example places the Vite configuration in a Vitest configuration file. You can also place it in a Vitest workspace file, if that is how your project is configured.
+If you are running any plugins in `viteFinal`, you will likely also need to run those in the Vitest configuration.
 
 ### How do I isolate Storybook tests from others?
 

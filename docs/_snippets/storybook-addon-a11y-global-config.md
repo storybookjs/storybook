@@ -18,7 +18,11 @@ export default {
           },
         ],
       },
-      // Axe's options parameter
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
     },
   },
@@ -54,7 +58,11 @@ const preview: Preview = {
           },
         ],
       },
-      // Axe's options parameter
+      /*
+       * Axe's options parameter
+       * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
+       * to learn more about the available options.
+       */
       options: {},
     },
   },

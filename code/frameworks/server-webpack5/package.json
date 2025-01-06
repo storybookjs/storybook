@@ -49,10 +49,10 @@
   "dependencies": {
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/preset-server-webpack": "workspace:*",
-    "@storybook/server": "workspace:*",
-    "@types/node": "^22.0.0"
+    "@storybook/server": "workspace:*"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "typescript": "^5.3.2"
   },
   "peerDependencies": {

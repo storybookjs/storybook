@@ -49,10 +49,10 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/core-webpack": "workspace:*",
-    "@types/node": "^22.0.0"
+    "@storybook/core-webpack": "workspace:*"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "preact": "^10.5.13",
     "typescript": "^5.3.2"
   },

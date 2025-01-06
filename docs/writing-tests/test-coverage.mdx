@@ -34,6 +34,29 @@ Before coverage can be calculated, you may need to install a support package cor
 
 {/* prettier-ignore-end */}
 
+Additionally (until Vitest 3.0.0 is released), the generated coverage report will include the stories files themselves and output from your built Storybook application. This is misleading and they should be excluded. To do this, you can add the following to your Vitest config:
+
+```ts title="vitest.config.ts"
+import { coverageConfigDefaults, defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  // ...
+  test: {
+    coverage: {
+      // 👇 Add this
+      exclude: [
+         ...coverageConfigDefaults.exclude,
+         '**/.storybook/**',
+         // 👇 This pattern must align with the `stories` property of your `.storybook/main.ts` config
+         '**/*.stories.*',
+         // 👇 This pattern must align with the output directory of `storybook build`
+         '**/storybook-static/**',
+       ], 
+    }
+  }
+})
+```
+
 ### Usage
 
 Because coverage is built into the Test addon, you can use it everywhere you run your tests.
@@ -187,32 +210,6 @@ When calculating coverage in the Storybook UI, the following options are always 
 - `reportOnFailure`
 - `reporter`
 - `reportsDirectory`
-
-### Troubleshooting
-
-#### Excluding stories from the coverage report
-
-Until Vitest 3.0.0 is released, the generated coverage report will include the stories files themselves and output from your built Storybook application. This is misleading and they should be excluded. To do this, you can add the following to your Vitest config:
-
-```ts title="vitest.config.ts"
-import { coverageConfigDefaults, defineConfig } from 'vitest/config';
-
-export default defineConfig({
-  // ...
-  test: {
-    coverage: {
-      // 👇 Add this
-      exclude: [
-         ...coverageConfigDefaults.exclude,
-         // This pattern must align with the `stories` property of your `.storybook/main.ts` config
-         '**/*.stories.*',
-         // This pattern must align with the output directory of `storybook build`
-         'storybook-static/**',
-       ], 
-    }
-  }
-})
-```
 
 </If>
 

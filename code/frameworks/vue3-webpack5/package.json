@@ -49,10 +49,10 @@
   "dependencies": {
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/preset-vue3-webpack": "workspace:*",
-    "@storybook/vue3": "workspace:*",
-    "@types/node": "^22.0.0"
+    "@storybook/vue3": "workspace:*"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "@vue/compiler-sfc": "3.0.0",
     "typescript": "^5.3.2",
     "vue": "3.0.0"

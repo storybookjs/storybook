@@ -44,10 +44,10 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@types/node": "^22.0.0",
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "slash": "^5.1.0",
     "typescript": "^5.3.2",
     "webpack": "5"

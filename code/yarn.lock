@@ -6122,6 +6122,7 @@ __metadata:
     "@types/react-transition-group": "npm:^4"
     "@types/semver": "npm:^7.5.8"
     "@types/ws": "npm:^8"
+    "@webcontainer/api": "npm:1.5.1-internal.6"
     "@yarnpkg/esbuild-plugin-pnp": "npm:^3.0.0-rc.10"
     "@yarnpkg/fslib": "npm:2.10.3"
     "@yarnpkg/libzip": "npm:2.3.0"
@@ -9742,6 +9743,13 @@ __metadata:
     "@webassemblyjs/ast": "npm:1.11.6"
     "@xtuc/long": "npm:4.2.2"
   checksum: 10c0/916b90fa3a8aadd95ca41c21d4316d0a7582cf6d0dcf6d9db86ab0de823914df513919fba60ac1edd227ff00e93a66b927b15cbddd36b69d8a34c8815752633c
+  languageName: node
+  linkType: hard
+
+"@webcontainer/api@npm:1.5.1-internal.6":
+  version: 1.5.1-internal.6
+  resolution: "@webcontainer/api@npm:1.5.1-internal.6"
+  checksum: 10c0/72e55e1af4d631dd56b8692e2ddc6b4ba1835f375e76a291810b0ea844251b4b9c35aec6756ec7bd82eff665f329b0407237d885cf83a6c40577178b48609b76
   languageName: node
   linkType: hard
 

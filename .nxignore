@@ -5,3 +5,13 @@ storybook-static
 tsconfig.tsbuildinfo
 coverage
 fixtures
+test-storybooks
+bench
+.yarn
+docs
+scripts
+__mocks__
+.circleci
+.github
+.vscode
+.yarn

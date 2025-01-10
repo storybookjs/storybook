@@ -25,6 +25,7 @@
       "renderers/*"
     ]
   },
+  "type": "module",
   "scripts": {
     "affected:test": "nx show projects --affected -t test | xargs -I # echo --project # | xargs yarn test:watch",
     "await-serve-storybooks": "wait-on http://localhost:8001",

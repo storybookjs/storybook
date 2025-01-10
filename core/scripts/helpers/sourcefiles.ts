@@ -9,7 +9,7 @@ import { temporaryFile } from '../../src/common/utils/cli';
 
 GlobalRegistrator.register({ url: 'http://localhost:3000', width: 1920, height: 1080 });
 
-// read code/frameworks subfolders and generate a list of available frameworks
+// read frameworks subfolders and generate a list of available frameworks
 // save this list into ./core/src/types/frameworks.ts and export it as a union type.
 // The name of the type is `SupportedFrameworks`. Add additionally 'qwik' and `solid` to that list.
 export const generateSourceFiles = async () => {

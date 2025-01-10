@@ -17,10 +17,6 @@ env:
   YARN_ENABLE_IMMUTABLE_INSTALLS: "false"
   CLEANUP_SANDBOX_NODE_MODULES: "true"
 
-defaults:
-  run:
-    working-directory: ./code
-
 jobs:
   generate-next:
     name: Generate to next

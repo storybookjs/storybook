@@ -6,7 +6,7 @@ const logger = console;
 
 export const checkDependencies = async () => {
   const scriptsPath = join(__dirname, '..');
-  const codePath = join(__dirname, '..', '..', 'code');
+  const codePath = join(__dirname, '..', '..');
 
   const tasks: Array<any> = [];
 

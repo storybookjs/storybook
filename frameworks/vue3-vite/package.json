@@ -12,7 +12,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/storybookjs/storybook.git",
-    "directory": "code/frameworks/vue3-vite"
+    "directory": "frameworks/vue3-vite"
   },
   "funding": {
     "type": "opencollective",

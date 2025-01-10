@@ -12,7 +12,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/storybookjs/storybook.git",
-    "directory": "code/lib/codemod"
+    "directory": "lib/codemod"
   },
   "funding": {
     "type": "opencollective",

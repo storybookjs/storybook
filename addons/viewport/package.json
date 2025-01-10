@@ -15,7 +15,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/storybookjs/storybook.git",
-    "directory": "code/addons/viewport"
+    "directory": "addons/viewport"
   },
   "funding": {
     "type": "opencollective",

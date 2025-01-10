@@ -31,7 +31,7 @@ program
   )
   .option(
     '-D, --deferred',
-    'Do not bump versions everywhere, instead set it in code/package.json#deferredNextVersion'
+    'Do not bump versions everywhere, instead set it in package.json#deferredNextVersion'
   )
   .option('-A, --apply', 'Apply a deferred version bump')
   .option('-V, --verbose', 'Enable verbose logging', false);
@@ -68,7 +68,7 @@ const optionsSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message:
-          '--apply cannot be combined with --exact or --release-type, as it will always read from code/package.json#deferredNextVersion',
+          '--apply cannot be combined with --exact or --release-type, as it will always read from package.json#deferredNextVersion',
       });
     }
     if (!hasApply && ((hasExact && hasReleaseType) || (!hasExact && !hasReleaseType))) {
@@ -184,7 +184,7 @@ const bumpAllPackageJsons = async ({
 const bumpDeferred = async (nextVersion: string) => {
   console.log(
     `⏳ Setting a ${picocolors.cyan('deferred')} version bump with ${picocolors.blue(
-      'code/package.json#deferredNextVersion'
+      'package.json#deferredNextVersion'
     )} = ${picocolors.yellow(nextVersion)}...`
   );
   const codePkgJson = await readJson(CODE_PACKAGE_JSON_PATH);
@@ -206,7 +206,7 @@ const bumpDeferred = async (nextVersion: string) => {
 const applyDeferredVersionBump = async () => {
   console.log(
     `⏩ Applying previously deferred version bump set at ${picocolors.blue(
-      'code/package.json#deferredNextVersion'
+      'package.json#deferredNextVersion'
     )}...`
   );
   const codePkgJson = await readJson(CODE_PACKAGE_JSON_PATH);
@@ -215,7 +215,7 @@ const applyDeferredVersionBump = async () => {
 
   if (!deferredNextVersion) {
     throw new Error(
-      "The 'deferredNextVersion' property in code/package.json is unset. This is necessary to apply a deferred version bump"
+      "The 'deferredNextVersion' property in package.json is unset. This is necessary to apply a deferred version bump"
     );
   }
 
@@ -225,7 +225,7 @@ const applyDeferredVersionBump = async () => {
   console.log(
     `✅ Extracted and removed deferred version ${picocolors.green(
       deferredNextVersion
-    )} from ${picocolors.blue('code/package.json#deferredNextVersion')}`
+    )} from ${picocolors.blue('package.json#deferredNextVersion')}`
   );
 
   return deferredNextVersion;

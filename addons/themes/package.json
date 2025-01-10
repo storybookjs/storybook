@@ -18,7 +18,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/storybookjs/storybook.git",
-    "directory": "code/addons/themes"
+    "directory": "addons/themes"
   },
   "funding": {
     "type": "opencollective",

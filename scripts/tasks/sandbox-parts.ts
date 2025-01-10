@@ -190,7 +190,7 @@ export const init: Task['run'] = async (
   }
 };
 
-// Ensure that sandboxes can refer to story files defined in `code/`.
+// Ensure that sandboxes can refer to story files defined in `./`.
 // Most WP-based build systems will not compile files outside of the project root or 'src/` or
 // similar. Plus they aren't guaranteed to handle TS files. So we need to patch in esbuild
 // loader for such files. NOTE this isn't necessary for Vite, as far as we know.

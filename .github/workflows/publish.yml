@@ -52,10 +52,9 @@ jobs:
         with:
           path: |
             ~/.yarn/berry/cache
-          key: yarn-v1-${{ hashFiles('scripts/yarn.lock') }}-${{ hashFiles('code/yarn.lock') }}
+          key: yarn-v1-${{ hashFiles('yarn.lock') }}
           restore-keys: |
-            yarn-v1-${{ hashFiles('scripts/yarn.lock') }}-${{ hashFiles('code/yarn.lock') }}
-            yarn-v1-${{ hashFiles('scripts/yarn.lock') }}
+            yarn-v1-${{ hashFiles('yarn.lock') }}
             yarn-v1
 
       - name: Install script dependencies
@@ -100,7 +99,7 @@ jobs:
         id: is-prerelease
         run: yarn release:is-prerelease ${{ steps.version.outputs.current-version }} --verbose
 
-      - name: Install code dependencies
+      - name: Install dependencies
         if: steps.publish-needed.outputs.published == 'false'
         working-directory: .
         run: yarn task --task=install --start-from=install

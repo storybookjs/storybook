@@ -99,7 +99,7 @@ const startVerdaccio = async () => {
 };
 
 const currentVersion = async () => {
-  const { version } = await readJSON(join(__dirname, '..', 'code', 'package.json'));
+  const { version } = await readJSON(join(__dirname, '..', 'package.json'));
   return version;
 };
 
@@ -136,7 +136,7 @@ const publish = async (packages: { name: string; location: string }[], url: stri
 
             const tarballFilename = `${name.replace('@', '').replace('/', '-')}.tgz`;
             const command = `cd ${resolvePath(
-              '../code',
+              '..',
               location
             )} && yarn pack --out=${PACKS_DIRECTORY}/${tarballFilename} && cd ${PACKS_DIRECTORY} && npm publish ./${tarballFilename} --registry ${url} --force --ignore-scripts`;
             exec(command, (e) => {

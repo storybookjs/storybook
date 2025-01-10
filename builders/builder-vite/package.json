@@ -9,7 +9,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/storybookjs/storybook.git",
-    "directory": "code/builders/builder-vite"
+    "directory": "builders/builder-vite"
   },
   "funding": {
     "type": "opencollective",

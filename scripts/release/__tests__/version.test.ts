@@ -140,7 +140,7 @@ describe('Version', () => {
       [ZodError: [
   {
     "code": "custom",
-    "message": "--apply cannot be combined with --exact or --release-type, as it will always read from code/package.json#deferredNextVersion",
+    "message": "--apply cannot be combined with --exact or --release-type, as it will always read from package.json#deferredNextVersion",
     "path": []
   }
 ]]
@@ -159,7 +159,7 @@ describe('Version', () => {
       [ZodError: [
   {
     "code": "custom",
-    "message": "--apply cannot be combined with --exact or --release-type, as it will always read from code/package.json#deferredNextVersion",
+    "message": "--apply cannot be combined with --exact or --release-type, as it will always read from package.json#deferredNextVersion",
     "path": []
   }
 ]]
@@ -191,7 +191,7 @@ describe('Version', () => {
     });
 
     await expect(version({ apply: true })).rejects.toThrowErrorMatchingInlineSnapshot(
-      `[Error: The 'deferredNextVersion' property in code/package.json is unset. This is necessary to apply a deferred version bump]`
+      `[Error: The 'deferredNextVersion' property in package.json is unset. This is necessary to apply a deferred version bump]`
     );
 
     expect(fsExtra.writeJson).not.toHaveBeenCalled();

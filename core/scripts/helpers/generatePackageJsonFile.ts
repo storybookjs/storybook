@@ -13,7 +13,7 @@ export async function generatePackageJsonFile(entries: ReturnType<typeof getEntr
   const pkgJson = JSON.parse(await readFile(location, { encoding: 'utf8' }));
 
   /**
-   * Re-create the `exports` field in `code/core/package.json` This way we only need to update the
+   * Re-create the `exports` field in `core/package.json` This way we only need to update the
    * `./scripts/entries.ts` file to ensure all things we create actually exist and are mapped to the
    * correct path.
    */
@@ -49,7 +49,7 @@ export async function generatePackageJsonFile(entries: ReturnType<typeof getEntr
   pkgJson.exports['./package.json'] = './package.json';
 
   /**
-   * Add the `typesVersion` field to `code/core/package.json`, to make typescript respect and find
+   * Add the `typesVersion` field to `core/package.json`, to make typescript respect and find
    * the correct type annotation files, even when not configured with `"moduleResolution":
    * "Bundler"` If we even decide to only support `"moduleResolution": "Bundler"`, we should be able
    * to remove this part, but that would be a breaking change.

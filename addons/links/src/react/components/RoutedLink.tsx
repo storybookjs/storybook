@@ -1,6 +1,6 @@
 import React from 'react';
 
-// NOTE: this is a copy of `code/ui/components/src/navigation/RoutedLink.tsx`.
+// NOTE: this is a copy of `core/src/components/navigation/RoutedLink.tsx`.
 // It's duplicated here because that copy has an explicit dependency on
 // React 16.3+, which breaks older versions of React running in the preview.
 // The proper DRY solution is to create a new package that doesn't depend

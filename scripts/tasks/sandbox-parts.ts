@@ -19,13 +19,13 @@ import { join, relative, resolve, sep } from 'path';
 import slash from 'slash';
 import dedent from 'ts-dedent';
 
-import { babelParse } from '../../code/core/src/babel/babelParse';
-import { detectLanguage } from '../../code/core/src/cli/detect';
-import { SupportedLanguage } from '../../code/core/src/cli/project_types';
-import { JsPackageManagerFactory, versions as storybookPackages } from '../../code/core/src/common';
-import type { ConfigFile } from '../../code/core/src/csf-tools';
-import { writeConfig } from '../../code/core/src/csf-tools';
-import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
+import { babelParse } from '../../core/src/babel/babelParse';
+import { detectLanguage } from '../../core/src/cli/detect';
+import { SupportedLanguage } from '../../core/src/cli/project_types';
+import { JsPackageManagerFactory, versions as storybookPackages } from '../../core/src/common';
+import type { ConfigFile } from '../../core/src/csf-tools';
+import { writeConfig } from '../../core/src/csf-tools';
+import type { TemplateKey } from '../../lib/cli-storybook/src/sandbox-templates';
 import type { PassedOptionValues, Task, TemplateDetails } from '../task';
 import { executeCLIStep, steps } from '../utils/cli-step';
 import { CODE_DIRECTORY, REPROS_DIRECTORY } from '../utils/constants';
@@ -197,7 +197,7 @@ export const init: Task['run'] = async (
 function addEsbuildLoaderToStories(mainConfig: ConfigFile) {
   // NOTE: the test regexp here will apply whether the path is symlink-preserved or otherwise
   const require = createRequire(import.meta.url);
-  const esbuildLoaderPath = require.resolve('../../code/node_modules/esbuild-loader');
+  const esbuildLoaderPath = require.resolve('../../node_modules/esbuild-loader');
   const webpackFinalCode = `
   (config) => ({
     ...config,
@@ -340,7 +340,7 @@ async function linkPackageStories(
   const storiesFolderName = variant ? getStoriesFolderWithVariant(variant) : 'stories';
   const source = join(CODE_DIRECTORY, packageDir, 'template', storiesFolderName);
   // By default we link `stories` directories
-  //   e.g '../../../code/lib/preview-api/template/stories' to 'template-stories/lib/preview-api'
+  //   e.g '../../../lib/preview-api/template/stories' to 'template-stories/lib/preview-api'
   // if the directory <code>/lib/preview-api/template/stories exists
   //
   // The files must be linked in the cwd, in order to ensure that any dependencies they

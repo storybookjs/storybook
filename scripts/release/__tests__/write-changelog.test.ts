@@ -7,11 +7,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as fsExtraImp from 'fs-extra';
 import { dedent } from 'ts-dedent';
 
-import type * as MockedFSToExtra from '../../../code/__mocks__/fs-extra';
+import type * as MockedFSToExtra from '../../../__mocks__/fs-extra';
 import * as changesUtils_ from '../utils/get-changes';
 import { run as writeChangelog } from '../write-changelog';
 
-vi.mock('fs-extra', async () => import('../../../code/__mocks__/fs-extra'));
+vi.mock('fs-extra', async () => import('../../../__mocks__/fs-extra'));
 vi.mock('../utils/get-changes');
 
 const changesUtils = vi.mocked(changesUtils_);

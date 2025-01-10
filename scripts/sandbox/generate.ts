@@ -11,11 +11,11 @@ import { join, relative } from 'path';
 import prettyTime from 'pretty-hrtime';
 import { dedent } from 'ts-dedent';
 
-import type { JsPackageManager } from '../../code/core/src/common/js-package-manager';
-import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager/JsPackageManagerFactory';
-import { temporaryDirectory } from '../../code/core/src/common/utils/cli';
-import storybookVersions from '../../code/core/src/common/versions';
-import { allTemplates as sandboxTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates';
+import type { JsPackageManager } from '../../core/src/common/js-package-manager';
+import { JsPackageManagerFactory } from '../../core/src/common/js-package-manager/JsPackageManagerFactory';
+import { temporaryDirectory } from '../../core/src/common/utils/cli';
+import storybookVersions from '../../core/src/common/versions';
+import { allTemplates as sandboxTemplates } from '../../lib/cli-storybook/src/sandbox-templates';
 import {
   AFTER_DIR_NAME,
   BEFORE_DIR_NAME,
@@ -41,7 +41,7 @@ const sbInit = async (
   flags?: string[],
   debug?: boolean
 ) => {
-  const sbCliBinaryPath = join(__dirname, `../../code/lib/create-storybook/bin/index.cjs`);
+  const sbCliBinaryPath = join(__dirname, `../../lib/create-storybook/bin/index.cjs`);
   console.log(`🎁 Installing Storybook`);
   const env = { STORYBOOK_DISABLE_TELEMETRY: 'true', ...envVars };
   const fullFlags = ['--yes', ...(flags || [])];

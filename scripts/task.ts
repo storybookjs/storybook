@@ -12,8 +12,8 @@ import {
   allTemplates as TEMPLATES,
   type Template,
   type TemplateKey,
-} from '../code/lib/cli-storybook/src/sandbox-templates';
-import { version } from '../code/package.json';
+} from '../lib/cli-storybook/src/sandbox-templates';
+import { version } from '../package.json';
 import { bench } from './tasks/bench';
 import { build } from './tasks/build';
 import { check } from './tasks/check';

@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import * as templates from '../code/lib/cli-storybook/src/sandbox-templates';
+import * as templates from '../lib/cli-storybook/src/sandbox-templates';
 
 // @ts-expect-error somehow TS thinks there is a default export
 const { allTemplates, merged, daily, normal } = (templates.default ||
@@ -32,7 +32,7 @@ const projectJson = (name: string, framework: string, tags: string[]) => ({
 });
 Object.entries(allTemplates).forEach(([key, value]) => {
   const p = key.replaceAll('/', '-');
-  const full = join(process.cwd(), '../code/sandbox', p, 'project.json');
+  const full = join(process.cwd(), '../sandbox', p, 'project.json');
 
   console.log(full);
   const framework = value.expected.framework.replace('@storybook/', '');

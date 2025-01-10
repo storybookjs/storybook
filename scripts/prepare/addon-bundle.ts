@@ -14,8 +14,8 @@ import type { Options } from 'tsup';
 import { build } from 'tsup';
 import type { PackageJson } from 'type-fest';
 
-import { globalPackages as globalManagerPackages } from '../../code/core/src/manager/globals/globals';
-import { globalPackages as globalPreviewPackages } from '../../code/core/src/preview/globals/globals';
+import { globalPackages as globalManagerPackages } from '../../core/src/manager/globals/globals';
+import { globalPackages as globalPreviewPackages } from '../../core/src/preview/globals/globals';
 import { exec } from '../utils/exec';
 import { esbuild } from './tools';
 

@@ -12,7 +12,7 @@ import {
   type Template as TTemplate,
   allTemplates,
   templatesByCadence,
-} from '../code/lib/cli-storybook/src/sandbox-templates';
+} from '../lib/cli-storybook/src/sandbox-templates';
 import { SANDBOX_DIRECTORY } from './utils/constants';
 import { esMain } from './utils/esmain';
 

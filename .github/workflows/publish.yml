@@ -70,8 +70,8 @@ jobs:
       - name: Apply deferred version bump and commit
         working-directory: .
         run: |
-          CURRENT_VERSION=$(cat ./code/package.json | jq '.version')
-          DEFERRED_NEXT_VERSION=$(cat ./code/package.json | jq '.deferredNextVersion')
+          CURRENT_VERSION=$(cat ./package.json | jq '.version')
+          DEFERRED_NEXT_VERSION=$(cat ./package.json | jq '.deferredNextVersion')
 
           if [[ "$DEFERRED_NEXT_VERSION" == "null" ]]; then
               echo "No deferred version set, not bumping versions"

@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { pathExists, readJSON, writeJSON } from 'fs-extra';
 
 // TODO -- should we generate this file a second time outside of CLI?
-import storybookVersions from '../../code/core/src/common/versions';
+import storybookVersions from '../../core/src/common/versions';
 import type { TemplateKey } from '../get-template';
 import { exec } from './exec';
 import touch from './touch';
@@ -29,7 +29,7 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
   packageJson.resolutions = {
     ...packageJson.resolutions,
     ...storybookVersions,
-    // this is for our CI test, ensure we use the same version as docker image, it should match version specified in `./code/package.json` and `.circleci/config.yml`
+    // this is for our CI test, ensure we use the same version as docker image, it should match version specified in `./package.json` and `.circleci/config.yml`
     '@swc/core': '1.5.7',
     playwright: '1.48.1',
     'playwright-core': '1.48.1',

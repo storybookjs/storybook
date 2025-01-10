@@ -1,3 +1,5 @@
+vite.config.*.timestamp*
+
 node_modules
 *.log
 .idea
@@ -12,20 +14,18 @@ test-results
 /repros
 /sandbox
 /bench
-/code/bench
 .verdaccio-cache
 .next
 /.npmrc
 
 # Yarn stuff
-/**/.yarn/*
-!/**/.yarn/releases
-!/**/.yarn/plugins
-!/**/.yarn/sdks
-!/**/.yarn/versions
-!/**/.yarn/patches
+/.yarn/*
+!/.yarn/releases
+!/.yarn/plugins
+!/.yarn/sdks
+!/.yarn/versions
+!/.yarn/patches
 /**/.pnp.*
-!/node_modules
 
 # test-storybooks
 test-storybooks/ember-cli/ember-output
@@ -38,7 +38,7 @@ npm-shrinkwrap.json
 coverage/
 *.lerna_backup
 /**/LICENSE
-code/docs/public
+docs/public
 package-lock.json
 storybook-static
 .jest-test-results.json
@@ -47,19 +47,19 @@ storybook-static
 /addons/docs/common/config-*
 tsconfig.tsbuildinfo
 
-code/test-results/
-code/playwright-results/
-code/playwright-report/
-code/playwright/.cache/
-code/bench-results/
+test-results/
+playwright-results/
+playwright-report/
+playwright/.cache/
+bench-results/
 
 /packs
-code/.nx/cache
-code/.nx/workspace-data
-code/.vite-inspect
+.nx/cache
+.nx/workspace-data
+.vite-inspect
 .nx/cache
 .nx/workspace-data
 !**/fixtures/**/yarn.lock
-code/core/report
+core/report
 
 *storybook.log

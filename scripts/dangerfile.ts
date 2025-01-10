@@ -11,7 +11,7 @@ const intersection = require('lodash/intersection.js');
 // eslint-disable-next-line depend/ban-dependencies
 const isEmpty = require('lodash/isEmpty.js');
 
-const pkg = require('../code/package.json');
+const pkg = require('../package.json');
 const prLogConfig = pkg['pr-log'];
 
 const Versions = {

@@ -8,13 +8,13 @@ import { execaCommand } from 'execa';
 // eslint-disable-next-line depend/ban-dependencies
 import * as fsExtraImp from 'fs-extra';
 
-import type * as MockedFSToExtra from '../../../code/__mocks__/fs-extra';
+import type * as MockedFSToExtra from '../../../__mocks__/fs-extra';
 import { run as version } from '../version';
 
-vi.mock('fs-extra', async () => import('../../../code/__mocks__/fs-extra'));
+vi.mock('fs-extra', async () => import('../../../__mocks__/fs-extra'));
 const fsExtra = fsExtraImp as unknown as typeof MockedFSToExtra;
 
-vi.mock('../../../code/core/src/common/src/versions', () => ({
+vi.mock('../../../core/src/common/src/versions', () => ({
   '@storybook/addon-a11y': '7.1.0-alpha.29',
 }));
 

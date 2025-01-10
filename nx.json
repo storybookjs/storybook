@@ -43,10 +43,15 @@
       "inputs": [
         "production",
         "^production",
-        "{workspaceRoot}/../scripts/prepare/{bundle,addon-bundle,esm-bundle}.ts"
+        "{workspaceRoot}/./scripts/prepare/{bundle,addon-bundle,esm-bundle}.ts"
       ],
-      "dependsOn": ["^build"],
-      "outputs": ["{projectRoot}/dist", "{workspaceRoot}/bench/esbuild-metafiles/{projectName}"],
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "{projectRoot}/dist",
+        "{workspaceRoot}/bench/esbuild-metafiles/{projectName}"
+      ],
       "cache": true
     },
     "test": {
@@ -55,7 +60,9 @@
         "cwd": "{workspaceRoot}",
         "command": "yarn vitest watch --project={projectName}"
       },
-      "dependsOn": ["build"],
+      "dependsOn": [
+        "build"
+      ],
       "inputs": [
         "default",
         "^production",
@@ -67,8 +74,14 @@
       "configurations": {
         "production": {}
       },
-      "inputs": ["default", "^production", "{workspaceRoot}/../scripts/prepare/check.ts"],
-      "dependsOn": ["build"],
+      "inputs": [
+        "default",
+        "^production",
+        "{workspaceRoot}/./scripts/prepare/check.ts"
+      ],
+      "dependsOn": [
+        "build"
+      ],
       "cache": true
     },
     "lint": {
@@ -78,8 +91,13 @@
         "command": "yarn lint:js:cmd {projectRoot}",
         "args": "--quiet"
       },
-      "dependsOn": ["build"],
-      "inputs": ["default", "{workspaceRoot}/{.eslintignore,.eslintrc.js}"],
+      "dependsOn": [
+        "build"
+      ],
+      "inputs": [
+        "default",
+        "{workspaceRoot}/{.eslintignore,.eslintrc.js}"
+      ],
       "cache": true
     },
     "sandbox": {
@@ -89,12 +107,16 @@
           "runtime": "storybook --version"
         }
       ],
-      "outputs": ["{workspaceRoot}/../{projectRoot}"],
+      "outputs": [
+        "{workspaceRoot}/../{projectRoot}"
+      ],
       "options": {
         "cwd": "{workspaceRoot}",
         "command": "yarn task sandbox -s sandbox --template={projectName}"
       },
-      "dependsOn": ["^build"],
+      "dependsOn": [
+        "^build"
+      ],
       "cache": true
     },
     "sb:dev": {
@@ -104,7 +126,9 @@
         "command": "yarn storybook",
         "args": "--ci"
       },
-      "dependsOn": ["sandbox"]
+      "dependsOn": [
+        "sandbox"
+      ]
     },
     "sb:build": {
       "executor": "nx:run-commands",
@@ -112,10 +136,16 @@
         "cwd": "{workspaceRoot}/../{projectRoot}",
         "command": "yarn build-storybook"
       },
-      "inputs": ["^production"],
-      "outputs": ["{workspaceRoot}/../{projectRoot}/storybook-static"],
+      "inputs": [
+        "^production"
+      ],
+      "outputs": [
+        "{workspaceRoot}/../{projectRoot}/storybook-static"
+      ],
       "cache": true,
-      "dependsOn": ["sandbox"]
+      "dependsOn": [
+        "sandbox"
+      ]
     },
     "sb:serve": {
       "executor": "nx:run-commands",
@@ -124,12 +154,19 @@
         "command": "yarn http-server ../{projectRoot}/storybook-static",
         "args": "--port 8001"
       },
-      "dependsOn": ["sb:build"]
+      "dependsOn": [
+        "sb:build"
+      ]
     }
   },
   "namedInputs": {
-    "default": ["{projectRoot}/**/*", "sharedGlobals"],
-    "sharedGlobals": ["{workspaceRoot}/tsconfig.json"],
+    "default": [
+      "{projectRoot}/**/*",
+      "sharedGlobals"
+    ],
+    "sharedGlobals": [
+      "{workspaceRoot}/tsconfig.json"
+    ],
     "production": [
       "default",
       "!{projectRoot}/src/**/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",

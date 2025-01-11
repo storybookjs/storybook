@@ -1,5 +1,4 @@
 import { BuilderContext } from '@angular-devkit/architect';
-import { LoggerApi } from '@angular-devkit/core/src/logger';
 import { take } from 'rxjs/operators';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -15,7 +14,7 @@ vi.mock('storybook/internal/common', () => ({
   },
 }));
 
-const builderContextLoggerMock: LoggerApi = {
+const builderContextLoggerMock: BuilderContext['logger'] = {
   createChild: vi.fn(),
   log: vi.fn(),
   debug: vi.fn(),

@@ -7,7 +7,7 @@ import { CallStates } from '@storybook/instrumenter';
 import type { Meta, StoryObj } from '@storybook/react';
 import { expect, fn, userEvent, waitFor, within } from '@storybook/test';
 
-import { isChromatic } from '../../../../../.storybook/isChromatic';
+import { isChromatic } from '../../../../.storybook/isChromatic';
 import { getCalls, getInteractions } from '../mocks';
 import { InteractionsPanel } from './InteractionsPanel';
 import SubnavStories from './Subnav.stories';

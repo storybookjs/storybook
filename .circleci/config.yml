@@ -107,7 +107,7 @@ commands:
 jobs:
   pretty-docs:
     executor:
-      class: medium
+      class: xlarge
       name: sb_node_22_classic
     steps:
       - git-shallow-clone/checkout_advanced:

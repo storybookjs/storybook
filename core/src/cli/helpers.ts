@@ -1,6 +1,6 @@
 import { cpSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { cp, readFile, writeFile } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 
 import {
   frameworkToRenderer as CoreFrameworkToRenderer,
@@ -11,7 +11,7 @@ import {
 import { versions as storybookMonorepoPackages } from '@storybook/core/common';
 import type { SupportedFrameworks, SupportedRenderers } from '@storybook/core/types';
 
-import { findUpSync } from 'find-up';
+import { findUp, findUpSync } from 'find-up';
 import picocolors from 'picocolors';
 import { coerce, major, satisfies } from 'semver';
 import stripJsonComments from 'strip-json-comments';
@@ -312,7 +312,19 @@ export function getStorybookVersionSpecifier(packageJson: PackageJsonWithDepsAnd
 }
 
 export async function isNxProject() {
-  return findUpSync('nx.json');
+  const found = await findUp('nx.json');
+  if (!found) {
+    return false;
+  }
+
+  const text = await readFile(join(dirname(found), 'package.json'), 'utf8');
+  const packageJson = JSON.parse(text);
+
+  if (packageJson.name === '@storybook/root') {
+    return false;
+  }
+
+  return true;
 }
 
 export function coerceSemver(version: string) {

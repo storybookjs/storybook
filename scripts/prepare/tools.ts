@@ -43,6 +43,8 @@ export const dts = async (entry: string, externals: string[], tsconfig: string) 
           declaration: true,
           noEmit: false,
           emitDeclarationOnly: true,
+          module: ts.ModuleKind.ESNext,
+          moduleResolution: ts.ModuleResolutionKind.Bundler,
           noEmitOnError: true,
           checkJs: false,
           declarationMap: false,

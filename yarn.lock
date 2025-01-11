@@ -7309,7 +7309,6 @@ __metadata:
     "@storybook/react": "workspace:*"
     "@storybook/react-vite": "workspace:*"
     "@storybook/react-webpack5": "workspace:*"
-    "@storybook/scripts": "workspace:*"
     "@storybook/server": "workspace:*"
     "@storybook/server-webpack5": "workspace:*"
     "@storybook/source-loader": "workspace:*"
@@ -7496,12 +7495,6 @@ __metadata:
   resolution: "@storybook/router@workspace:deprecated/router"
   peerDependencies:
     storybook: ^8.2.0 || ^8.3.0-0 || ^8.4.0-0 || ^8.5.0-0 || ^8.6.0-0
-  languageName: unknown
-  linkType: soft
-
-"@storybook/scripts@workspace:*, @storybook/scripts@workspace:scripts":
-  version: 0.0.0-use.local
-  resolution: "@storybook/scripts@workspace:scripts"
   languageName: unknown
   linkType: soft
 

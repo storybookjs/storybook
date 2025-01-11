@@ -15,14 +15,13 @@
   "workspaces": {
     "packages": [
       "./core",
-      "./scripts",
-      "addons/*",
-      "frameworks/*",
-      "lib/*",
-      "deprecated/*",
-      "builders/*",
-      "presets/*",
-      "renderers/*"
+      "./addons/*",
+      "./frameworks/*",
+      "./lib/*",
+      "./deprecated/*",
+      "./builders/*",
+      "./presets/*",
+      "./renderers/*"
     ]
   },
   "type": "module",
@@ -181,7 +180,6 @@
     "@storybook/react": "workspace:*",
     "@storybook/react-vite": "workspace:*",
     "@storybook/react-webpack5": "workspace:*",
-    "@storybook/scripts": "workspace:*",
     "@storybook/server": "workspace:*",
     "@storybook/server-webpack5": "workspace:*",
     "@storybook/source-loader": "workspace:*",

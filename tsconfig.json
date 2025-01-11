@@ -10,15 +10,15 @@
     "isolatedModules": true,
     "jsx": "react",
     "lib": ["dom", "dom.iterable", "esnext"],
-    "module": "CommonJS",
-    "moduleResolution": "Node",
+    "module": "Preserve",
+    "moduleResolution": "bundler",
     "noImplicitAny": true,
     "noUnusedLocals": false,
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
     "strictBindCallApply": true,
-    "target": "ES2020"
+    "target": "ES2022"
   },
   "exclude": ["dist", "**/dist", "node_modules", "**/node_modules"]
 }

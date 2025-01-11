@@ -163,19 +163,7 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - node_modules
-            - addons
-            - scripts
-            - bench
-            - examples
-            - frameworks
-            - deprecated
-            - lib
-            - core
-            - builders
-            - renderers
-            - presets
-            - .verdaccio-cache
+            - .
   lint:
     executor:
       class: large
@@ -186,8 +174,11 @@ jobs:
       - attach_workspace:
           at: .
       - run:
-          name: Lint
-          command: yarn lint
+          name: Lint JS
+          command: yarn lint:js
+      - run:
+          name: Lint MD
+          command: yarn lint:md
       - report-workflow-on-failure
       - cancel-workflow-on-failure
   knip:

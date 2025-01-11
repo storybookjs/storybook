@@ -1,3 +1,5 @@
+import { join } from 'node:path';
+
 import { program } from 'commander';
 // eslint-disable-next-line depend/ban-dependencies
 import { pathExists, readFile } from 'fs-extra';
@@ -91,7 +93,7 @@ type TaskKey = keyof typeof tasksMap;
 
 const tasks = Object.keys(tasksMap) as TaskKey[];
 
-const CONFIG_YML_FILE = '../.circleci/config.yml';
+const CONFIG_YML_FILE = join(__dirname, '../.circleci/config.yml');
 
 async function checkParallelism(cadence?: Cadence, scriptName?: TaskKey) {
   const configYml = await readFile(CONFIG_YML_FILE, 'utf-8');

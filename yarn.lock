@@ -31238,26 +31238,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@npm:^3.8.3":
-  version: 3.9.10
-  resolution: "typescript@npm:3.9.10"
-  bin:
-    tsc: bin/tsc
-    tsserver: bin/tsserver
-  checksum: 10c0/863cc06070fa18a0f9c6a83265fb4922a8b51bf6f2c6760fb0b73865305ce617ea4bc6477381f9f4b7c3a8cb4a455b054f5469e6e41307733fe6a2bd9aae82f8
-  languageName: node
-  linkType: hard
-
-"typescript@npm:^5.3.2, typescript@npm:~5.6.2":
-  version: 5.6.3
-  resolution: "typescript@npm:5.6.3"
-  bin:
-    tsc: bin/tsc
-    tsserver: bin/tsserver
-  checksum: 10c0/44f61d3fb15c35359bc60399cb8127c30bae554cd555b8e2b46d68fa79d680354b83320ad419ff1b81a0bdf324197b29affe6cc28988cd6a74d4ac60c94f9799
-  languageName: node
-  linkType: hard
-
 "typescript@patch:typescript@npm%3A5.4.5#optional!builtin<compat/typescript>":
   version: 5.4.5
   resolution: "typescript@patch:typescript@npm%3A5.4.5#optional!builtin<compat/typescript>::version=5.4.5&hash=5adc0c"
@@ -31265,26 +31245,6 @@ __metadata:
     tsc: bin/tsc
     tsserver: bin/tsserver
   checksum: 10c0/db2ad2a16ca829f50427eeb1da155e7a45e598eec7b086d8b4e8ba44e5a235f758e606d681c66992230d3fc3b8995865e5fd0b22a2c95486d0b3200f83072ec9
-  languageName: node
-  linkType: hard
-
-"typescript@patch:typescript@npm%3A^3.8.3#optional!builtin<compat/typescript>":
-  version: 3.9.10
-  resolution: "typescript@patch:typescript@npm%3A3.9.10#optional!builtin<compat/typescript>::version=3.9.10&hash=3bd3d3"
-  bin:
-    tsc: bin/tsc
-    tsserver: bin/tsserver
-  checksum: 10c0/9041fb3886e7d6a560f985227b8c941d17a750f2edccb5f9b3a15a2480574654d9be803ad4a14aabcc2f2553c4d272a25fd698a7c42692f03f66b009fb46883c
-  languageName: node
-  linkType: hard
-
-"typescript@patch:typescript@npm%3A^5.3.2#optional!builtin<compat/typescript>, typescript@patch:typescript@npm%3A~5.6.2#optional!builtin<compat/typescript>":
-  version: 5.6.3
-  resolution: "typescript@patch:typescript@npm%3A5.6.3#optional!builtin<compat/typescript>::version=5.6.3&hash=b45daf"
-  bin:
-    tsc: bin/tsc
-    tsserver: bin/tsserver
-  checksum: 10c0/ac8307bb06bbfd08ae7137da740769b7d8c3ee5943188743bb622c621f8ad61d244767480f90fbd840277fbf152d8932aa20c33f867dea1bb5e79b187ca1a92f
   languageName: node
   linkType: hard
 

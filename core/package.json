@@ -271,7 +271,6 @@
   ],
   "scripts": {
     "check": "jiti ./scripts/check.ts",
-    "j": "jiti",
     "prep": "jiti ./scripts/prep.ts"
   },
   "dependencies": {

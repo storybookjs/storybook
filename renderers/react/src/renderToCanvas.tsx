@@ -45,6 +45,23 @@ class ErrorBoundary extends ReactComponent<{
 
 const Wrapper = FRAMEWORK_OPTIONS?.strictMode ? StrictMode : Fragment;
 
+const actQueue: (() => Promise<void>)[] = [];
+let isActing = false;
+
+const processActQueue = async () => {
+  if (isActing || actQueue.length === 0) {
+    return;
+  }
+
+  isActing = true;
+  const actTask = actQueue.shift();
+  if (actTask) {
+    await actTask();
+  }
+  isActing = false;
+  processActQueue();
+};
+
 export async function renderToCanvas(
   {
     storyContext,
@@ -81,8 +98,18 @@ export async function renderToCanvas(
     unmountElement(canvasElement);
   }
 
-  await act(async () => {
-    await renderElement(element, canvasElement, storyContext?.parameters?.react?.rootOptions);
+  await new Promise<void>(async (resolve, reject) => {
+    actQueue.push(async () => {
+      try {
+        await act(async () => {
+          await renderElement(element, canvasElement, storyContext?.parameters?.react?.rootOptions);
+        });
+        resolve();
+      } catch (e) {
+        reject(e);
+      }
+    });
+    processActQueue();
   });
 
   return async () => {

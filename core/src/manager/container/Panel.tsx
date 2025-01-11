@@ -16,7 +16,7 @@ const createPanelActions = memoize(1)((api) => ({
   togglePosition: () => api.togglePanelPosition(),
 }));
 
-const getPanels = (api: API) => {
+const getPanels = memoize(1)((api: API) => {
   const allPanels = api.getElements(Addon_TypesEnum.PANEL);
   const story = api.getCurrentStoryData();
 
@@ -42,7 +42,7 @@ const getPanels = (api: API) => {
   });
 
   return filteredPanels;
-};
+});
 
 const mapper = ({ state, api }: Combo) => ({
   panels: getPanels(api),

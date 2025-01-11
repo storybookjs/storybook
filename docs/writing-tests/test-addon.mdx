@@ -434,12 +434,6 @@ If the URLs are not working when running tests in CI, you should ensure the Stor
 
 If your stories use assets in the public directory and you're not using the default public directory location (`public`), you need to adjust the Vitest configuration to include the public directory. You can do this by providing the [`publicDir` option in the Vitest configuration file](https://vitejs.dev/config/shared-options.html#publicdir).
 
-### How do I apply custom Vite configuration?
-
-Your Storybook project's Vite configuration (in [`viteFinal`](../api/main-config/main-config-vite-final.mdx) in your `.storybook/main.js|ts` file) is automatically applied to your Vitest configuration, with one exception: the plugins.
-
-If you are running any plugins in `viteFinal`, you will likely also need to run those in the Vitest configuration.
-
 ### How do I isolate Storybook tests from others?
 
 Some projects might contain a `test` property in their Vite configuration. Because the Vitest configuration used by this plugin extends that Vite config, the `test` properties are merged. This lack of isolation can cause issues with your Storybook tests.

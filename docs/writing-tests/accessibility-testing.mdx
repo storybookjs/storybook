@@ -132,7 +132,7 @@ If you enabled the addon and you're manually upgrading to Storybook 8.5 or later
 
 ### Configure accessibility tests with the test addon
 
-Like the Test addon, the accessibility addon also supports [tags](../writing-stories/tags.mdx) to filter the tests you want to run. By default, the addon applies the `a11ytest` tag to all stories. If you need to exclude a story from being accessibility tested, you can remove that tag by applying the `!a11ytest` tag to the story. This also works at the project (in `.storybook/preview.js|ts`) or component level (default export in the story file).
+Like the Test addon, the accessibility addon also supports [tags](../writing-stories/tags.mdx) to filter the tests you want to run. By default, the addon applies the `a11y-test` tag to all stories. If you need to exclude a story from being accessibility tested, you can remove that tag by applying the `!a11y-test` tag to the story. This also works at the project (in `.storybook/preview.js|ts`) or component level (default export in the story file).
 
 You can use tags to progressively work toward a more accessible UI by enabling accessibility tests for a subset of stories and gradually increasing the coverage. For example, a typical workflow might look like this:
 
@@ -146,8 +146,8 @@ You can use tags to progressively work toward a more accessible UI by enabling a
 
    const preview: Preview = {
      // ...
-     // 👇 Temporarily remove the a11ytest tag from all stories
-     tags: ['!a11ytest'],
+     // 👇 Temporarily remove the a11y-test tag from all stories
+     tags: ['!a11y-test'],
    };
 
    export default preview;

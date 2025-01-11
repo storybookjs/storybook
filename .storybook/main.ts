@@ -4,11 +4,11 @@ import type { StorybookConfig } from '../frameworks/react-vite';
 
 const componentsPath = join(__dirname, '../core/src/components');
 const managerApiPath = join(__dirname, '../core/src/manager-api');
-const imageContextPath = join(__dirname, '..//frameworks/nextjs/src/image-context.ts');
+const imageContextPath = join(__dirname, '../frameworks/nextjs/src/image-context.ts');
 
 const config: StorybookConfig = {
   stories: [
-    './*.stories.@(js|jsx|ts|tsx)',
+    // './*.stories.@(js|jsx|ts|tsx)',
     {
       directory: '../core/template/stories',
       titlePrefix: 'core',

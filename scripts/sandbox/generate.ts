@@ -78,7 +78,7 @@ const withLocalRegistry = async ({
     await runCommand(`npm config set registry ${prevUrl}`, { cwd, env }, debug);
 
     if (error) {
-      throw error;
+      throw error as Error;
     }
   }
 };

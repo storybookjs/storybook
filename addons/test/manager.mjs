@@ -1,1 +1,1 @@
-import './dist/manager';
+import './dist/manager.js';

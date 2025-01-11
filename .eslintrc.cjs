@@ -57,14 +57,9 @@ module.exports = {
   },
   overrides: [
     {
-      files: ['*.mjs'],
-      rules: {
-        'import/extensions': ['error', 'always'],
-      },
-    },
-    {
       files: [
         '*.cjs',
+        '*.mjs',
         '*.js',
         '*.jsx',
         '*.json',
@@ -76,7 +71,6 @@ module.exports = {
         project: null,
       },
       rules: {
-        // '@typescript-eslint/no-var-requires': 'off',
         '@typescript-eslint/dot-notation': 'off',
         '@typescript-eslint/no-implied-eval': 'off',
         '@typescript-eslint/no-throw-literal': 'off',
@@ -97,18 +91,6 @@ module.exports = {
       rules: {
         '@typescript-eslint/no-useless-constructor': 'off',
         '@typescript-eslint/dot-notation': 'off',
-      },
-    },
-    {
-      files: ['*.js', '*.jsx', '*.json', '*.html', '**/.storybook/*.ts', '**/.storybook/*.tsx'],
-      parserOptions: {
-        project: null,
-      },
-      rules: {
-        '@typescript-eslint/dot-notation': 'off',
-        '@typescript-eslint/no-implied-eval': 'off',
-        '@typescript-eslint/no-throw-literal': 'off',
-        '@typescript-eslint/return-await': 'off',
       },
     },
     {

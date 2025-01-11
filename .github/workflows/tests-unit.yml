@@ -25,7 +25,7 @@ jobs:
           node-version-file: '.nvmrc'
 
       - name: install
-        run: yarn install --frozen-lockfile
+        run: yarn install --immutable
 
       - name: compile
         run: yarn task --task compile --start-from=auto

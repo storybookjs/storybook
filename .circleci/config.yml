@@ -118,7 +118,7 @@ jobs:
             - prettydocs-cache-v7--{{ checksum "yarn.lock" }}
       - run:
           name: Install
-          command: yarn install
+          command: yarn install --immutable
       - save_cache:
           name: Save Yarn cache
           key: prettydocs-cache-v7--{{ checksum "yarn.lock" }}
@@ -262,7 +262,7 @@ jobs:
           workflow-name: << pipeline.parameters.workflow >>
       - run:
           name: install
-          command: yarn install
+          command: yarn install --immutable
       - run:
           name: Compile
           command: |

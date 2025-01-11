@@ -11,7 +11,7 @@ import { dedent } from 'ts-dedent';
 import { makePackageManager } from '../helpers/testing-helpers';
 import { eslintPlugin } from './eslint-plugin';
 
-vi.mock('node:fs/promises', async () => import('../../../../../../__mocks__/fs/promises'));
+vi.mock('node:fs/promises', async () => import('../../../../../__mocks__/fs/promises'));
 vi.mock('fs');
 
 const checkEslint = async ({
@@ -23,7 +23,7 @@ const checkEslint = async ({
   hasEslint?: boolean;
   eslintExtension?: string;
 }) => {
-  vi.mocked<typeof import('../../../../../../__mocks__/fs/promises')>(fsp as any).__setMockFiles({
+  vi.mocked<typeof import('../../../../../__mocks__/fs/promises')>(fsp as any).__setMockFiles({
     [`.eslintrc.${eslintExtension}`]: !hasEslint
       ? null
       : dedent(`

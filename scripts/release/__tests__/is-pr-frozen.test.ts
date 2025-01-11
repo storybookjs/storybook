@@ -8,7 +8,7 @@ import * as fsExtraImp from 'fs-extra';
 import * as simpleGitImp from 'simple-git';
 
 import type * as MockedFSExtra from '../../../__mocks__/fs-extra';
-import type * as MockedSimpleGit from '../../__mocks__/simple-git';
+import type * as MockedSimpleGit from '../../../__mocks__/simple-git';
 import { CODE_DIRECTORY } from '../../utils/constants';
 import { run as isPrFrozen } from '../is-pr-frozen';
 import type { PullRequestInfo } from '../utils/get-github-info';

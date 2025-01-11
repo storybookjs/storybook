@@ -141,6 +141,10 @@ jobs:
       - run:
           name: Compile
           command: |
+            yarn install --immutable
+      - run:
+          name: Compile
+          command: |
             yarn task --task compile --start-from=auto --no-link --debug
             git diff --exit-code
             yarn dedupe --check

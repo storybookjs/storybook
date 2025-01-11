@@ -22,9 +22,12 @@ jobs:
       - name: Set node version
         uses: actions/setup-node@v4
         with:
-          node-version-file: ".nvmrc"
+          node-version-file: '.nvmrc'
 
-      - name: install and compile
+      - name: install
+        run: yarn install --frozen-lockfile
+
+      - name: compile
         run: yarn task --task compile --start-from=auto
 
       - name: Install Playwright Dependencies

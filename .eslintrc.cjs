@@ -1,30 +1,30 @@
-
-
-
 module.exports = {
   root: true,
   extends: [
     //
     '@storybook/eslint-config-storybook',
     'plugin:storybook/recommended',
-    'plugin:depend/recommended'
+    'plugin:depend/recommended',
   ],
-  
+
   parserOptions: {
     tsconfigRootDir: __dirname,
     project: ['./tsconfig.json'],
   },
   plugins: ['local-rules'],
   rules: {
-      // remove as shared eslint has jest rules removed
-  '@typescript-eslint/ban-ts-comment': 'error',
-  '@typescript-eslint/consistent-type-imports': ['error', { disallowTypeAnnotations: false }],
-  'no-use-before-define': 'off',
-  'eslint-comments/disable-enable-pair': ['error', { allowWholeFile: true }],
-  "depend/ban-dependencies": ["error", {
-    "modules": ["lodash", "chalk", "qs", "handlebars", "fs-extra"]
-  }],
-
+    // remove as shared eslint has jest rules removed
+    '@typescript-eslint/ban-ts-comment': 'error',
+    '@typescript-eslint/consistent-type-imports': ['error', { disallowTypeAnnotations: false }],
+    'no-use-before-define': 'off',
+    'eslint-comments/disable-enable-pair': ['error', { allowWholeFile: true }],
+    'depend/ban-dependencies': [
+      'error',
+      {
+        modules: ['lodash', 'chalk', 'qs', 'handlebars', 'fs-extra'],
+      },
+    ],
+    'import/extensions': 'off',
     'import/no-extraneous-dependencies': [
       'error',
       { devDependencies: true, peerDependencies: true },
@@ -64,6 +64,7 @@ module.exports = {
     },
     {
       files: [
+        '*.cjs',
         '*.js',
         '*.jsx',
         '*.json',
@@ -82,7 +83,7 @@ module.exports = {
         '@typescript-eslint/return-await': 'off',
       },
     },
-  
+
     {
       files: ['**/templates/virtualModuleModernEntry.js'],
       rules: {

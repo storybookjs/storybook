@@ -8,7 +8,7 @@ fixtures
 test-storybooks
 bench
 .yarn
-docs
+/docs
 scripts
 __mocks__
 .circleci

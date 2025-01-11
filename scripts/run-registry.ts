@@ -74,6 +74,7 @@ const startVerdaccio = async () => {
       const config = {
         ...parseConfigFile(join(__dirname, 'verdaccio.yaml')),
         self_path: cache,
+        logs: { level: 'warn' },
       };
 
       // @ts-expect-error (verdaccio's interface is wrong)
@@ -136,7 +137,6 @@ const publish = async (packages: { name: string; location: string }[], url: stri
 
             const tarballFilename = `${name.replace('@', '').replace('/', '-')}.tgz`;
             const command = `cd ${resolvePath(
-              '..',
               location
             )} && yarn pack --out=${PACKS_DIRECTORY}/${tarballFilename} && cd ${PACKS_DIRECTORY} && npm publish ./${tarballFilename} --registry ${url} --force --ignore-scripts`;
             exec(command, (e) => {

@@ -1,7 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { sortPackageJson } from '../../../scripts/node_modules/sort-package-json';
+import { sortPackageJson } from 'sort-package-json';
+
 import { generateMapperContent, mapCoreExportToSelf, write } from './utils';
 
 /**

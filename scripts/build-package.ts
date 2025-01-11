@@ -163,7 +163,7 @@ async function run() {
       return;
     }
 
-    const cwd = resolve(__dirname, '..', 'code', v.location);
+    const cwd = resolve(__dirname, '..', v.location);
     const sub = execaCommand(
       `${command}${watchMode ? ' --watch' : ''}${prodMode ? ' --optimized' : ''}`,
       {

@@ -7359,6 +7359,7 @@ __metadata:
     "@vitest/coverage-v8": "npm:^2.1.3"
     ansi-regex: "npm:^6.0.1"
     browser-assert: "npm:^1.2.1"
+    browser-process: "npm:^0.0.1"
     chromatic: "npm:^11.5.5"
     codecov: "npm:^3.8.1"
     commander: "npm:^12.1.0"
@@ -12295,6 +12296,13 @@ __metadata:
   version: 1.0.0
   resolution: "browser-process-hrtime@npm:1.0.0"
   checksum: 10c0/65da78e51e9d7fa5909147f269c54c65ae2e03d1cf797cc3cfbbe49f475578b8160ce4a76c36c1a2ffbff26c74f937d73096c508057491ddf1a6dfd11143f72d
+  languageName: node
+  linkType: hard
+
+"browser-process@npm:^0.0.1":
+  version: 0.0.1
+  resolution: "browser-process@npm:0.0.1"
+  checksum: 10c0/dd9a2c67eac6b0a53117ad0547b873480f0b0f6f6a41d1d08f0ef0daa61dc222f67a94c0edb06522d32b0b68495b014a59677580cdffb05feab7f2b5435168bd
   languageName: node
   linkType: hard
 

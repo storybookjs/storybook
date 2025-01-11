@@ -1,9 +1,10 @@
 import { existsSync } from 'node:fs';
 import { basename, isAbsolute, posix, resolve, sep, win32 } from 'node:path';
 
-import { getDirectoryFromWorkingDir } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
-import type { Options, StorybookConfigRaw } from 'storybook/internal/types';
+import { getDirectoryFromWorkingDir } from '@storybook/core/common';
+import type { Options, StorybookConfigRaw } from '@storybook/core/types';
+
+import { logger } from '@storybook/core/node-logger';
 
 import picocolors from 'picocolors';
 import type { Polka } from 'polka';

@@ -19,19 +19,16 @@ export async function generateTypesFiles(
     // by trial and error, 3 seems to be the sweet spot between perf and consistency
     const limited = limit(10);
     let processes: ReturnType<typeof spawn>[] = [];
+    const jitiPath = require.resolve(join(__dirname, '../../../node_modules/.bin/jiti'));
 
     await Promise.all(
       dtsEntries.map(async (fileName, index) => {
         return limited(async () => {
           const getDtsProcess = () =>
-            spawn(
-              join(__dirname, '../../node_modules/.bin/jiti'),
-              ['./scripts/dts.ts', index.toString()],
-              {
-                cwd,
-                stdio: ['ignore', 'pipe', 'inherit'],
-              }
-            );
+            spawn(jitiPath, ['./scripts/dts.ts', index.toString()], {
+              cwd,
+              stdio: ['ignore', 'pipe', 'inherit'],
+            });
           let timer: ReturnType<typeof setTimeout> | undefined;
           const dtsProcess = getDtsProcess();
           processes.push(dtsProcess);

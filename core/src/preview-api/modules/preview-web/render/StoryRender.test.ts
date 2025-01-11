@@ -1,10 +1,10 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { STORY_FINISHED } from 'storybook/internal/core-events';
-
 import { Channel } from '@storybook/core/channels';
 import type { PreparedStory, Renderer, StoryContext, StoryIndexEntry } from '@storybook/core/types';
+
+import { STORY_FINISHED } from '@storybook/core/core-events';
 
 import { ReporterAPI, type StoryStore } from '../../store';
 import { PREPARE_ABORTED } from './Render';

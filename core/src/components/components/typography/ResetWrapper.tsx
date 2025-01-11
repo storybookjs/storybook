@@ -1,3 +1,4 @@
+import type { StorybookTheme as StorybookThemeOriginal } from '@storybook/core/theming';
 import { styled } from '@storybook/core/theming';
 
 import { withReset } from './lib/common';
@@ -10,3 +11,5 @@ import { withReset } from './lib/common';
  */
 
 export const ResetWrapper = styled.div(withReset);
+export type StorybookTheme = StorybookThemeOriginal;
+export type Theme = StorybookThemeOriginal;

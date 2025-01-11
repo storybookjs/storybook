@@ -1,8 +1,9 @@
 import { writeFile } from 'node:fs/promises';
 import { basename } from 'node:path';
 
-import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
-import type { NormalizedStoriesSpecifier, StoryIndex } from 'storybook/internal/types';
+import type { NormalizedStoriesSpecifier, StoryIndex } from '@storybook/core/types';
+
+import { STORY_INDEX_INVALIDATED } from '@storybook/core/core-events';
 
 import { debounce } from 'es-toolkit/compat';
 import type { Polka } from 'polka';

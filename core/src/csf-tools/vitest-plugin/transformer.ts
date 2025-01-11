@@ -30,7 +30,7 @@ const isValidTest = (storyTags: string[], tagsFilter: TagsFilter) => {
 };
 /**
  * TODO: the functionality in this file can be moved back to the vitest plugin itself It can use
- * `storybook/internal/babel` for all it's babel needs, without duplicating babel embedding in our
+ * `@storybook/core/babel` for all it's babel needs, without duplicating babel embedding in our
  * bundles.
  */
 

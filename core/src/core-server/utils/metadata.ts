@@ -1,6 +1,6 @@
 import { writeFile } from 'node:fs/promises';
 
-import { getStorybookMetadata } from 'storybook/internal/telemetry';
+import { getStorybookMetadata } from '@storybook/core/telemetry';
 
 import type { Polka } from 'polka';
 

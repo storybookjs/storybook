@@ -139,7 +139,7 @@ jobs:
           keys:
             - build-cache-v4--{{ checksum "yarn.lock" }}
       - run:
-          name: Compile
+          name: Install
           command: |
             yarn install --immutable
       - run:

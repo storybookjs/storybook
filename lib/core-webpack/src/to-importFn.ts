@@ -1,5 +1,5 @@
-import { globToRegexp } from 'storybook/internal/common';
-import type { NormalizedStoriesSpecifier } from 'storybook/internal/types';
+import { globToRegexp } from '@storybook/core/common';
+import type { NormalizedStoriesSpecifier } from '@storybook/core/types';
 
 import { dedent } from 'ts-dedent';
 

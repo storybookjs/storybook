@@ -49,10 +49,10 @@ export async function generatePackageJsonFile(entries: ReturnType<typeof getEntr
   pkgJson.exports['./package.json'] = './package.json';
 
   /**
-   * Add the `typesVersion` field to `core/package.json`, to make typescript respect and find
-   * the correct type annotation files, even when not configured with `"moduleResolution":
-   * "Bundler"` If we even decide to only support `"moduleResolution": "Bundler"`, we should be able
-   * to remove this part, but that would be a breaking change.
+   * Add the `typesVersion` field to `core/package.json`, to make typescript respect and find the
+   * correct type annotation files, even when not configured with `"moduleResolution": "Bundler"` If
+   * we even decide to only support `"moduleResolution": "Bundler"`, we should be able to remove
+   * this part, but that would be a breaking change.
    */
   pkgJson.typesVersions = {
     '*': {

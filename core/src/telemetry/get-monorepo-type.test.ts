@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { getMonorepoType, monorepoConfigs } from './get-monorepo-type';
 
-vi.mock('node:fs', async () => import('../../../../__mocks__/fs'));
+vi.mock('node:fs', async () => import('../../../__mocks__/fs'));
 
 vi.mock('@storybook/core/common', async (importOriginal) => {
   return {
@@ -24,7 +24,7 @@ const checkMonorepoType = ({ monorepoConfigFile, isYarnWorkspace = false }: any)
     mockFiles[join('root', monorepoConfigFile)] = '{}';
   }
 
-  vi.mocked<typeof import('../../../../__mocks__/fs')>(fs as any).__setMockFiles(mockFiles);
+  vi.mocked<typeof import('../../../__mocks__/fs')>(fs as any).__setMockFiles(mockFiles);
 
   return getMonorepoType();
 };

@@ -24,7 +24,7 @@ const mdx = (text: string) =>
   [...text.replace(fencedCodeBlockMatcher, '').matchAll(importMatcher)].join('\n');
 
 const baseConfig = {
-  ignoreWorkspaces: ['renderers/svelte'], // ignored: Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: No "exports" main defined in code/node_modules/@sveltejs/vite-plugin-svelte/package.json
+  ignoreWorkspaces: ['renderers/svelte'], // ignored: Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: No "exports" main defined in node_modules/@sveltejs/vite-plugin-svelte/package.json
 
   // storybook itself configured (only) in root
   storybook: { entry: ['**/*.@(mdx|stories.@(mdx|js|jsx|mjs|ts|tsx))'] },
@@ -69,7 +69,7 @@ const baseConfig = {
 
 // Adds package.json#bundler.entries etc. to each workspace config `entry: []`
 export const addBundlerEntries = async (config: KnipConfig) => {
-  const baseDir = join(__dirname, '../code');
+  const baseDir = join(__dirname, '..');
   const rootManifest = await import(join(baseDir, 'package.json'));
   const workspaceDirs = await fg(rootManifest.workspaces.packages, {
     cwd: baseDir,

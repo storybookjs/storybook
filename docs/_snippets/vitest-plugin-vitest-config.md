@@ -35,7 +35,7 @@ export default mergeConfig(
       },
       setupFiles: ['./.storybook/vitest.setup.ts'],
     },
-  })
+  }),
 );
 ```
 
@@ -75,7 +75,7 @@ export default mergeConfig(
       },
       setupFiles: ['./.storybook/vitest.setup.ts'],
     },
-  })
+  }),
 );
 ```
 
@@ -116,6 +116,6 @@ export default mergeConfig(
       },
       setupFiles: ['./.storybook/vitest.setup.ts'],
     },
-  })
+  }),
 );
 ```

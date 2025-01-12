@@ -8,7 +8,7 @@ import picocolors from 'picocolors';
 import { x } from 'tinyexec';
 import dedent from 'ts-dedent';
 
-import versions from '../../code/core/src/common/versions';
+import versions from '../../core/src/common/versions';
 import { maxConcurrentTasks } from '../utils/concurrency';
 import { esMain } from '../utils/esmain';
 

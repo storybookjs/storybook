@@ -7,7 +7,7 @@ import { composeStories, composeStory } from '@storybook/svelte';
 describe('<Button()', () => {
   it('renders primary button', async () => {
     // TODO figure out the following issue ReferenceError: $state is not defined
-    // at createSvelte5Props (http://localhost:5173/__cypress/src/@fs/storybook/code/renderers/svelte/dist/createSvelte5Props.svelte.js:11:17)
+    // at createSvelte5Props (http://localhost:5173/__cypress/src/@fs/storybook/renderers/svelte/dist/createSvelte5Props.svelte.js:11:17)
     const Primary = composeStory(stories.CSF3Primary, stories.default);
     cy.mount(CSF3Primary)
     cy.get('button').should('contain.text', 'foo');

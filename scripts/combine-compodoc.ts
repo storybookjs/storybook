@@ -9,7 +9,7 @@ import { lstat, readFile, realpath, writeFile } from 'fs-extra';
 import { globSync } from 'glob';
 import { join, resolve } from 'path';
 
-import { temporaryDirectory } from '../code/core/src/common/utils/cli';
+import { temporaryDirectory } from '../core/src/common/utils/cli';
 import { esMain } from './utils/esmain';
 
 const logger = console;

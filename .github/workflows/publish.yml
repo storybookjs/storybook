@@ -45,17 +45,16 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: ".nvmrc"
+          node-version-file: '.nvmrc'
 
       - name: Cache dependencies
         uses: actions/cache@v4
         with:
           path: |
             ~/.yarn/berry/cache
-          key: yarn-v1-${{ hashFiles('scripts/yarn.lock') }}-${{ hashFiles('code/yarn.lock') }}
+          key: yarn-v1-${{ hashFiles('yarn.lock') }}
           restore-keys: |
-            yarn-v1-${{ hashFiles('scripts/yarn.lock') }}-${{ hashFiles('code/yarn.lock') }}
-            yarn-v1-${{ hashFiles('scripts/yarn.lock') }}
+            yarn-v1-${{ hashFiles('yarn.lock') }}
             yarn-v1
 
       - name: Install script dependencies
@@ -70,16 +69,14 @@ jobs:
       - name: Apply deferred version bump and commit
         working-directory: .
         run: |
-          CURRENT_VERSION=$(cat ./code/package.json | jq '.version')
-          DEFERRED_NEXT_VERSION=$(cat ./code/package.json | jq '.deferredNextVersion')
+          CURRENT_VERSION=$(cat ./package.json | jq '.version')
+          DEFERRED_NEXT_VERSION=$(cat ./package.json | jq '.deferredNextVersion')
 
           if [[ "$DEFERRED_NEXT_VERSION" == "null" ]]; then
               echo "No deferred version set, not bumping versions"
               exit 0
           fi
-          cd scripts
           yarn release:version --apply --verbose
-          cd ..
 
           git config --global user.name "storybook-bot"
           git config --global user.email "32066757+storybook-bot@users.noreply.github.com"
@@ -100,7 +97,7 @@ jobs:
         id: is-prerelease
         run: yarn release:is-prerelease ${{ steps.version.outputs.current-version }} --verbose
 
-      - name: Install code dependencies
+      - name: Install dependencies
         if: steps.publish-needed.outputs.published == 'false'
         working-directory: .
         run: yarn task --task=install --start-from=install
@@ -194,4 +191,4 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
         uses: Ilshidur/action-discord@master
         with:
-          args: "The GitHub Action for publishing version ${{ steps.version.outputs.current-version }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          args: 'The GitHub Action for publishing version ${{ steps.version.outputs.current-version }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'

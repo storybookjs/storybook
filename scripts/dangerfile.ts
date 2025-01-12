@@ -1,4 +1,4 @@
-/* eslint-disable import/no-extraneous-dependencies, import/extensions */
+/* eslint-disable import/no-extraneous-dependencies */
 import { execSync } from 'child_process';
 import { danger, fail } from 'danger';
 
@@ -11,7 +11,7 @@ const intersection = require('lodash/intersection.js');
 // eslint-disable-next-line depend/ban-dependencies
 const isEmpty = require('lodash/isEmpty.js');
 
-const pkg = require('../code/package.json');
+const pkg = require('../package.json');
 const prLogConfig = pkg['pr-log'];
 
 const Versions = {

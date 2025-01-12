@@ -65,10 +65,9 @@ jobs:
         with:
           path: |
             ~/.yarn/berry/cache
-          key: yarn-v1-${{ hashFiles('scripts/yarn.lock') }}-${{ hashFiles('code/yarn.lock') }}
+          key: yarn-v1-${{ hashFiles('yarn.lock') }}
           restore-keys: |
-            yarn-v1-${{ hashFiles('scripts/yarn.lock') }}-${{ hashFiles('code/yarn.lock') }}
-            yarn-v1-${{ hashFiles('scripts/yarn.lock') }}
+            yarn-v1-${{ hashFiles('yarn.lock') }}
             yarn-v1
 
       - name: Install dependencies
@@ -76,14 +75,12 @@ jobs:
 
       - name: Set version
         id: version
-        working-directory: scripts
         run: |
           yarn release:version --exact 0.0.0-pr-${{ inputs.pr }}-sha-${{ steps.info.outputs.shortSha }} --verbose
 
       - name: Publish v${{ steps.version.outputs.next-version }}
         env:
           YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        working-directory: scripts
         run: yarn release:publish --tag canary --verbose
 
       - name: Replace Pull Request Body

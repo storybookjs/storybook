@@ -124,11 +124,11 @@ export function insertStoryHTMLCommentAsDescription(params: Params) {
   );
 
   if (compiled.type === 'CallExpression') {
-    compiled.arguments[1] === storyPropsObjectExpression;
+    compiled.arguments[1] = storyPropsObjectExpression;
   } else if (
     compiled.type === 'ExpressionStatement' &&
     compiled.expression.type === 'CallExpression'
   ) {
-    compiled.expression.arguments[1] === storyPropsObjectExpression;
+    compiled.expression.arguments[1] = storyPropsObjectExpression;
   }
 }

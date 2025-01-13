@@ -1,5 +1,3 @@
-import { logger } from '@storybook/node-logger';
-
 import {
   findASTPropertyIndex,
   findPropertyDescriptionIndex,
@@ -103,7 +101,7 @@ export function insertDefineMetaJSDocCommentAsDescription(params: Params): void 
       }),
     }) !== -1
   ) {
-    logger.warn(
+    console.warn(
       `Svelte CSF:
         Description was already set in parameters.docs.description.component,
         ignoring JSDoc comment above defineMeta() in:

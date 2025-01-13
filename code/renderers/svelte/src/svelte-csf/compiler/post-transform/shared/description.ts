@@ -1,4 +1,3 @@
-import { logger } from '@storybook/node-logger';
 import dedent from 'dedent';
 
 import type { ESTreeAST, SvelteAST } from '$lib/parser/ast.js';
@@ -81,7 +80,7 @@ export const getParametersPropertyValue = (
   }
 
   if (property.value.type !== 'ObjectExpression') {
-    logger.warn(dedent`
+    console.warn(dedent`
       Svelte CSF:
         Could not access 'parameters' of ${component ? "Story's prop" : 'defineMeta'}}.
         Expected value to be an object expression.
@@ -124,7 +123,7 @@ export const getDocsPropertyValue = (options: Omit<FindPropertyOptions, 'name'>)
   const { value } = property;
 
   if (value.type !== 'ObjectExpression') {
-    logger.warn(dedent`
+    console.warn(dedent`
       Svelte CSF:
         Could not access 'parameters.docs' of ${component ? "Story's prop" : 'defineMeta'}}.
         Expected value to be an object expression.
@@ -160,7 +159,7 @@ export const getDescriptionPropertyValue = (options: Omit<FindPropertyOptions, '
   const { value } = property;
 
   if (value.type !== 'ObjectExpression') {
-    logger.warn(dedent`
+    console.warn(dedent`
       Svelte CSF:
         Could not access 'parameters.docs.description' of ${component ? "Story's prop" : 'defineMeta'}}.
         Expected value to be an object expression.

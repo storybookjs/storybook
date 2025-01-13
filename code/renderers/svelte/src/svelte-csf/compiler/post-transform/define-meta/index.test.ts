@@ -51,6 +51,8 @@ describe(transformDefineMeta.name, () => {
       ast: parseAst(code.toString()),
     });
 
-    expect(print(defineMetaVariableDeclaration).code).toMatchInlineSnapshot(`"const { Story } = defineMeta(meta);"`);
+    expect(print(defineMetaVariableDeclaration).code).toMatchInlineSnapshot(
+      `"const { Story } = defineMeta(meta);"`
+    );
   });
 });

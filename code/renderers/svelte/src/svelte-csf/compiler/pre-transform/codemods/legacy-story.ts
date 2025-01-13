@@ -10,7 +10,7 @@ import {
 import { InvalidTemplateAttribute } from '$lib/utils/error/legacy-api/index.js';
 
 import { hashTemplateName } from '$lib/utils/identifier-utils.js';
-import type { State } from '..';
+import type { State } from '../index.js';
 
 interface Params {
   component: SvelteAST.Component;

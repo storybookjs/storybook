@@ -50,4 +50,4 @@ export {
 };
 
 // TODO: Remove in next major release
-export * from './legacy-types.d';
+export type * from './legacy-types.d.ts';

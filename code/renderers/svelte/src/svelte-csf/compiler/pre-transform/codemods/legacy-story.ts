@@ -9,7 +9,7 @@ import {
 } from '$lib/parser/ast.js';
 import { InvalidTemplateAttribute } from '$lib/utils/error/legacy-api/index.js';
 
-import { hashTemplateName } from '$lib/utils/identifier-utils';
+import { hashTemplateName } from '$lib/utils/identifier-utils.js';
 import type { State } from '..';
 
 interface Params {

@@ -15,11 +15,20 @@ export const enrichCsfStory = (
   options?: EnrichCsfOptions
 ) => {
   const storyExport = csfSource.getStoryExport(key);
+  const isCsfFactory =
+    t.isCallExpression(storyExport) &&
+    t.isMemberExpression(storyExport.callee) &&
+    t.isIdentifier(storyExport.callee.object) &&
+    storyExport.callee.object.name === 'meta';
   const source = !options?.disableSource && extractSource(storyExport);
   const description =
     !options?.disableDescription && extractDescription(csfSource._storyStatements[key]);
   const parameters = [];
-  const originalParameters = t.memberExpression(t.identifier(key), t.identifier('parameters'));
+  // in csf1/2/3 we use Story.parameters, in csf4 we use Story.annotations.parameters
+  const baseStoryObject = isCsfFactory
+    ? t.memberExpression(t.identifier(key), t.identifier('annotations'))
+    : t.identifier(key);
+  const originalParameters = t.memberExpression(baseStoryObject, t.identifier('parameters'));
   parameters.push(t.spreadElement(originalParameters));
   const optionalDocs = t.optionalMemberExpression(
     originalParameters,

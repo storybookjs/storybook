@@ -70,96 +70,7 @@ For some project setups, the `add` command may be unable to automate the addon a
 1. Configure Vitest to use [browser mode](https://vitest.dev/guide/browser/).
 1. Install the addon, `@storybook/experimental-addon-test`, in your project and [register it in your Storybook configuration](http://storybook.js.org/docs/addons/install-addons#manual-installation).
 1. Create a test setup file, `.storybook/vitest.setup.ts`. You can use the [example setup file](#example-vitest-setup) as a guide.
-1. Adjust your Vitest configuration to include the plugin(s) and reference the setup file. You can use the [example configuration files](#example-configuration-files) as a guide.
-
-#### Framework plugins
-
-Some Storybook frameworks require additional setup to enable the framework's features to work with Vitest. Each of those frameworks exports a Vite plugin that you can use to configure your project correctly:
-
-<If renderer="react">
-  If you're using Next.js, first install the `@storybook/experimental-nextjs-vite` package:
-
-  {/* prettier-ignore-start */}
-
-  <CodeSnippets path="nextjs-vite-install.md" />
-
-  {/* prettier-ignore-end */}
-  
-  Then apply the plugin from `@storybook/experimental-nextjs-vite/vite-plugin`:
-
-  ```js title="vitest.config.ts"
-  import { defineConfig, mergeConfig } from 'vitest/config';
-  import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';
-  import { storybookNextJsPlugin } from '@storybook/experimental-nextjs-vite/vite-plugin';
-
-  import viteConfig from './vite.config';
-
-  export default mergeConfig(
-    viteConfig,
-    defineConfig({
-      plugins: [
-        storybookTest({
-          // ...
-        }),
-        storybookNextJsPlugin(), // 👈 Apply the framework plugin here
-      ],
-      // ...
-    })
-  );
-  ```
-</If>
-
-<If renderer="vue">
-  Vue projects should apply the plugin from `@storybook/vue3-vite/vite-plugin`:
-
-  ```js title="vitest.config.ts"
-  import { defineConfig, mergeConfig } from 'vitest/config';
-  import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';
-  import { storybookVuePlugin } from '@storybook/vue3-vite/vite-plugin';
-
-  import viteConfig from './vite.config'
-
-  export default mergeConfig(
-    viteConfig,
-    defineConfig({
-      plugins: [
-        storybookTest({
-          // ...
-        }),
-        storybookVuePlugin(), // 👈 Apply the framework plugin here
-      ],
-      // ...
-    })
-  );
-  ```
-</If>
-
-<If renderer="svelte">
-  If you're using SvelteKit, apply the plugin from `@storybook/sveltekit/vite-plugin`:
-
-  ```js title="vitest.config.ts"
-  import { defineConfig, mergeConfig } from 'vitest/config';
-  import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';
-  import { storybookSveltekitPlugin } from '@storybook/sveltekit/vite-plugin';
-
-  import viteConfig from './vite.config';
-
-  export default mergeConfig(
-    viteConfig,
-    defineConfig({
-      plugins: [
-        storybookTest({
-          // ...
-        }),
-        storybookSveltekitPlugin(), // 👈 Apply the framework plugin here
-      ],
-      // ...
-    })
-  );
-  ```
-</If>
-
-The above example uses the framework's plugin in a Vitest configuration file. You can also use it in a Vitest workspace file, if that is how your project is configured.
+1. Adjust your Vitest configuration to include the plugin and reference the setup file. You can use the [example configuration files](#example-configuration-files) as a guide.
 
 ### Example configuration files
 
@@ -433,12 +344,6 @@ If the URLs are not working when running tests in CI, you should ensure the Stor
 ### How do I ensure my tests can find assets in the public directory?
 
 If your stories use assets in the public directory and you're not using the default public directory location (`public`), you need to adjust the Vitest configuration to include the public directory. You can do this by providing the [`publicDir` option in the Vitest configuration file](https://vitejs.dev/config/shared-options.html#publicdir).
-
-### How do I apply custom Vite configuration?
-
-Your Storybook project's Vite configuration (in [`viteFinal`](../api/main-config/main-config-vite-final.mdx) in your `.storybook/main.js|ts` file) is automatically applied to your Vitest configuration, with one exception: the plugins.
-
-If you are running any plugins in `viteFinal`, you will likely also need to run those in the Vitest configuration.
 
 ### How do I isolate Storybook tests from others?
 

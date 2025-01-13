@@ -4,13 +4,13 @@ export default {
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   async webpackFinal(config) {
-    storybookBaseConfig.module?.rules?.push({
+    config.module?.rules?.push({
       test: /\.(graphql|gql)$/,
       include: [path.resolve('./lib/emails')],
       exclude: /node_modules/,
       loader: 'graphql-tag/loader',
     });
-    storybookBaseConfig.module?.rules?.push({
+    config.module?.rules?.push({
       test: /\.(graphql|gql)$/,
       include: [path.resolve('./lib/schema')],
       exclude: /node_modules/,
@@ -23,6 +23,8 @@ export default {
 ```
 
 ```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="With Vite"
+import graphql from 'vite-plugin-graphql-loader';
+
 export default {
   // Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite)
   framework: '@storybook/your-framework',
@@ -44,13 +46,13 @@ const config: StorybookConfig = {
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   async webpackFinal(config) {
-    storybookBaseConfig.module?.rules?.push({
+    config.module?.rules?.push({
       test: /\.(graphql|gql)$/,
       include: [path.resolve('./lib/emails')],
       exclude: /node_modules/,
       loader: 'graphql-tag/loader',
     });
-    storybookBaseConfig.module?.rules?.push({
+    config.module?.rules?.push({
       test: /\.(graphql|gql)$/,
       include: [path.resolve('./lib/schema')],
       exclude: /node_modules/,
@@ -67,6 +69,7 @@ export default config;
 ```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="With Vite"
 // Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite)
 import type { StorybookConfig } from '@storybook/your-framework';
+import graphql from 'vite-plugin-graphql-loader';
 
 const config: StorybookConfig = {
   framework: '@storybook/your-framework',

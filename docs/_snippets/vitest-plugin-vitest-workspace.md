@@ -1,8 +1,11 @@
 ```ts filename="vitest.workspace.ts" renderer="react"
 import { defineWorkspace } from 'vitest/config';
 import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';
-// 👇 If you're using Next.js, apply this framework plugin as well
-// import { storybookNextJsPlugin } from '@storybook/experimental-nextjs-vite/vite-plugin';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const dirname =
+  typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 
 export default defineWorkspace([
   // This is the path to your existing Vitest config file
@@ -13,12 +16,11 @@ export default defineWorkspace([
     plugins: [
       storybookTest({
         // The location of your Storybook config, main.js|ts
-        configDir: './.storybook',
+        configDir: path.join(dirname, '.storybook'),
         // This should match your package.json script to run Storybook
         // The --ci flag will skip prompts and not open a browser
         storybookScript: 'yarn storybook --ci',
       }),
-      // storybookNextJsPlugin(),
     ],
     test: {
       name: 'storybook',
@@ -39,9 +41,13 @@ export default defineWorkspace([
 ```ts filename="vitest.config.ts" renderer="vue"
 import { defineConfig, mergeConfig } from 'vitest/config';
 import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';
-import { storybookVuePlugin } from '@storybook/vue3-vite/vite-plugin';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import viteConfig from './vite.config';
+
+const dirname =
+  typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 
 export default defineWorkspace([
   // This is the path to your existing Vitest config file
@@ -52,12 +58,11 @@ export default defineWorkspace([
     plugins: [
       storybookTest({
         // The location of your Storybook config, main.js|ts
-        configDir: './.storybook',
+        configDir: path.join(dirname, '.storybook'),
         // This should match your package.json script to run Storybook
         // The --ci flag will skip prompts and not open a browser
         storybookScript: 'yarn storybook --ci',
       }),
-      storybookVuePlugin(),
     ],
     test: {
       name: 'storybook',
@@ -78,10 +83,13 @@ export default defineWorkspace([
 ```ts filename="vitest.config.ts" renderer="svelte"
 import { defineConfig, mergeConfig } from 'vitest/config';
 import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';
-// 👇 If you're using Sveltekit, apply this framework plugin as well
-// import { storybookSveltekitPlugin } from '@storybook/sveltekit/vite-plugin';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import viteConfig from './vite.config';
+
+const dirname =
+  typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 
 export default defineWorkspace([
   // This is the path to your existing Vitest config file
@@ -92,12 +100,11 @@ export default defineWorkspace([
     plugins: [
       storybookTest({
         // The location of your Storybook config, main.js|ts
-        configDir: './.storybook',
+        configDir: path.join(dirname, '.storybook'),
         // This should match your package.json script to run Storybook
         // The --ci flag will skip prompts and not open a browser
         storybookScript: 'yarn storybook --ci',
       }),
-      // storybookSveltekitPlugin(),
     ],
     test: {
       name: 'storybook',

@@ -1,5 +1,7 @@
-import { rendererPackages } from 'storybook/internal/common';
+import { formatFileContent, rendererPackages } from 'storybook/internal/common';
+import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 
+import { type ArrayExpression } from '@babel/types';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import * as jscodeshift from 'jscodeshift';
 import path from 'path';
@@ -14,25 +16,39 @@ import {
 import { getAddonNames, getFrameworkPackageName, getRendererName } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
 
-export const vitestFileExtensions = ['.js', '.ts', '.cts', '.mts', '.cjs', '.mjs'] as const;
+export const fileExtensions = [
+  '.js',
+  '.ts',
+  '.cts',
+  '.mts',
+  '.cjs',
+  '.mjs',
+  '.jsx',
+  '.tsx',
+] as const;
 
 interface AddonA11yAddonTestOptions {
   setupFile: string | null;
+  previewFile: string | null;
   transformedSetupCode: string | null;
+  transformedPreviewCode: string | null;
+  skipVitestSetupTransformation: boolean;
+  skipPreviewTransformation: boolean;
 }
 
 /**
  * If addon-a11y and experimental-addon-test are already installed, we need to update
- * `.storybook/vitest.setup.<ts|js>` to set up project annotations from addon-a11y. If we can't find
- * `.storybook/vitest.setup.<ts|js>`, we need to set up a notification to the user to manually
- * update the file.
+ *
+ * - `.storybook/vitest.setup.<ts|js>` to set up project annotations from addon-a11y.
+ * - `.storybook/preview.<ts|js>` to set up tags.
+ * - If we can't transform the files automatically, we'll prompt the user to do it manually.
  */
 export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
   id: 'addonA11yAddonTest',
   versionRange: ['<8.5.0', '>=8.5.0'],
 
   promptType(result) {
-    if (result.setupFile === null) {
+    if (result.setupFile === null && result.previewFile === null) {
       return 'manual';
     }
 
@@ -63,86 +79,152 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
       return null;
     }
 
-    // get `${configDir}/vitest.setup.<ts|js>` absolute file path
     const vitestSetupFile =
-      vitestFileExtensions
+      fileExtensions
         .map((ext) => path.join(configDir, `vitest.setup${ext}`))
         .find((filePath) => existsSync(filePath)) ?? null;
 
-    try {
-      if (vitestSetupFile) {
-        const source = readFileSync(vitestSetupFile, 'utf8');
-        if (source.includes('@storybook/addon-a11y')) {
-          return null;
-        }
-        const transformedSetupCode = transformSetupFile(source);
-        return {
-          setupFile: vitestSetupFile,
-          transformedSetupCode,
-        };
-      } else {
-        return {
-          setupFile: null,
-          transformedSetupCode: null,
-        };
+    const previewFile =
+      fileExtensions
+        .map((ext) => path.join(configDir, `preview${ext}`))
+        .find((filePath) => existsSync(filePath)) ?? null;
+
+    let skipVitestSetupTransformation = false;
+    let skipPreviewTransformation = false;
+
+    if (vitestSetupFile && previewFile) {
+      const vitestSetupSource = readFileSync(vitestSetupFile, 'utf8');
+      const previewSetupSource = readFileSync(previewFile, 'utf8');
+
+      skipVitestSetupTransformation = vitestSetupSource.includes('@storybook/addon-a11y');
+      skipPreviewTransformation = previewSetupSource.includes('a11y-test');
+
+      if (skipVitestSetupTransformation && skipPreviewTransformation) {
+        return null;
       }
-    } catch (e) {
-      return {
-        setupFile: vitestSetupFile,
-        transformedSetupCode: null,
-      };
     }
+
+    const getTransformedSetupCode = () => {
+      if (!vitestSetupFile || skipVitestSetupTransformation) {
+        return null;
+      }
+
+      try {
+        const vitestSetupSource = readFileSync(vitestSetupFile, 'utf8');
+        return transformSetupFile(vitestSetupSource);
+      } catch (e) {
+        return null;
+      }
+    };
+
+    const getTransformedPreviewCode = async () => {
+      if (!previewFile || skipPreviewTransformation) {
+        return null;
+      }
+
+      try {
+        const previewSetupSource = readFileSync(previewFile, 'utf8');
+        return await transformPreviewFile(previewSetupSource, previewFile);
+      } catch (e) {
+        return null;
+      }
+    };
+
+    return {
+      setupFile: vitestSetupFile,
+      previewFile: previewFile,
+      transformedSetupCode: getTransformedSetupCode(),
+      transformedPreviewCode: await getTransformedPreviewCode(),
+      skipVitestSetupTransformation,
+      skipPreviewTransformation,
+    };
   },
 
-  prompt({ setupFile, transformedSetupCode }) {
+  prompt({
+    setupFile,
+    previewFile,
+    transformedSetupCode,
+    transformedPreviewCode,
+    skipPreviewTransformation,
+    skipVitestSetupTransformation,
+  }) {
     const introduction = dedent`
       We have detected that you have ${picocolors.magenta(`@storybook/addon-a11y`)} and ${picocolors.magenta(`@storybook/experimental-addon-test`)} installed.
 
-      ${picocolors.magenta(`@storybook/addon-a11y`)} integrates now with ${picocolors.magenta(`@storybook/experimental-addon-test`)} to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
+      ${picocolors.magenta(`@storybook/addon-a11y`)} now integrates with ${picocolors.magenta(`@storybook/experimental-addon-test`)} to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
     `;
 
-    if (setupFile === null || transformedSetupCode === null) {
-      return dedent`
-      ${introduction}
+    const prompt = [introduction];
 
-      We couldn't find or automatically update your ${picocolors.cyan(`.storybook/vitest.setup.<ts|js>`)} in your project to smoothly set up project annotations from ${picocolors.magenta(`@storybook/addon-a11y`)}. 
-      Please manually update your ${picocolors.cyan(`vitest.setup.ts`)} file to include the following:
+    let counter = 1;
 
-      ${picocolors.gray('...')}   
-      ${picocolors.green('+ import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";')}
+    if (!skipVitestSetupTransformation) {
+      if (transformedSetupCode === null) {
+        prompt.push(dedent`
+          ${counter++}) We couldn't find or automatically update ${picocolors.cyan(`.storybook/vitest.setup.<ts|js>`)} in your project to smoothly set up project annotations from ${picocolors.magenta(`@storybook/addon-a11y`)}. 
+          Please manually update your ${picocolors.cyan(`vitest.setup.ts`)} file to include the following:
 
-      ${picocolors.gray('const annotations = setProjectAnnotations([')}
-      ${picocolors.gray('  ...')}
-      ${picocolors.green('+ a11yAddonAnnotations,')}
-      ${picocolors.gray(']);')}
+          ${picocolors.gray('...')}   
+          ${picocolors.green('+ import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";')}
 
-      ${picocolors.gray('beforeAll(annotations.beforeAll);')}
+          ${picocolors.gray('const annotations = setProjectAnnotations([')}
+          ${picocolors.gray('  ...')}
+          ${picocolors.green('+ a11yAddonAnnotations,')}
+          ${picocolors.gray(']);')}
 
-      For more information, please refer to the addon test documentation: 
-      ${picocolors.cyan('https://storybook.js.org/docs/writing-tests/addon-test')}
-      `;
+          ${picocolors.gray('beforeAll(annotations.beforeAll);')}
+        `);
+      } else {
+        const fileExtensionSetupFile = path.extname(setupFile!);
+
+        prompt.push(
+          dedent`${counter++}) We have to update your ${picocolors.cyan(`.storybook/vitest.setup${fileExtensionSetupFile}`)} file to set up project annotations from ${picocolors.magenta(`@storybook/addon-a11y`)}.`
+        );
+      }
     }
 
-    const fileExtension = path.extname(setupFile);
+    if (!skipPreviewTransformation) {
+      if (transformedPreviewCode === null) {
+        prompt.push(dedent`
+          ${counter++}) We couldn't find or automatically update your ${picocolors.cyan(`.storybook/preview.<ts|js>`)} in your project to smoothly set up tags from ${picocolors.magenta(`@storybook/addon-a11y`)}. 
+          Please manually update your ${picocolors.cyan(`.storybook/preview.<ts|js>`)} file to include the following:
 
-    return dedent`
-      We have detected that you have ${picocolors.magenta(`@storybook/addon-a11y`)} and ${picocolors.magenta(`@storybook/experimental-addon-test`)} installed.
+          ${picocolors.gray('export default {')}
+          ${picocolors.gray('...')}
+          ${picocolors.green('+ tags: ["a11y-test"],')}
+          ${picocolors.gray('}')}
+        `);
+      } else {
+        const fileExtensionPreviewFile = path.extname(previewFile!);
 
-      ${picocolors.magenta(`@storybook/addon-a11y`)} integrates now with ${picocolors.magenta(`@storybook/experimental-addon-test`)} to provide automatic accessibility checks for your stories, powered by Axe and Vitest.
+        prompt.push(
+          dedent`
+            ${counter++}) We have to update your ${picocolors.cyan(`.storybook/preview${fileExtensionPreviewFile}`)} file to set up tags from ${picocolors.magenta(`@storybook/addon-a11y`)}.
+          `
+        );
+      }
+    }
 
-      In order for these checks to be enabled we have to update your ${picocolors.cyan(`.storybook/vitest.setup${fileExtension}`)} file.
-    `;
+    if (transformedPreviewCode === null || transformedSetupCode === null) {
+      prompt.push(dedent`
+        For more information, please refer to the accessibility addon documentation: 
+        ${picocolors.cyan('https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration')}
+      `);
+    }
+
+    return prompt.join('\n\n');
   },
 
   async run({ result }) {
-    const { setupFile, transformedSetupCode } = result;
+    const { setupFile, transformedSetupCode, transformedPreviewCode, previewFile } = result;
 
-    if (!setupFile || !transformedSetupCode) {
-      return;
+    if (transformedSetupCode && setupFile) {
+      writeFileSync(setupFile, transformedSetupCode, 'utf8');
     }
 
-    // Write the transformed code back to the file
-    writeFileSync(setupFile, transformedSetupCode, 'utf8');
+    if (transformedPreviewCode && previewFile) {
+      writeFileSync(previewFile, transformedPreviewCode, 'utf8');
+    }
   },
 };
 
@@ -183,4 +265,61 @@ export function transformSetupFile(source: string) {
   root.get().node.program.body.unshift(importDeclaration);
 
   return root.toSource();
+}
+
+export async function transformPreviewFile(source: string, filePath: string) {
+  const previewConfig = loadConfig(source).parse();
+  const tags = previewConfig.getFieldNode(['tags']);
+  const tagsNode = previewConfig.getFieldNode(['tags']) as ArrayExpression;
+  const tagsValue = previewConfig.getFieldValue(['tags']) ?? [];
+
+  if (tags && tagsValue && (tagsValue.includes('a11y-test') || tagsValue.includes('!a11y-test'))) {
+    return source;
+  }
+
+  if (tagsNode) {
+    const tagsElementsLength = (tagsNode as ArrayExpression).elements.length;
+    const lastTagElement = tagsNode.elements[tagsElementsLength - 1];
+
+    if (lastTagElement) {
+      // t.addComment(lastTagElement, 'trailing', ", 'a11y-test'");
+      // @ts-expect-error The commented line above would be the proper way of how to add a trailing comment but it is not supported by recast.
+      // https://github.com/benjamn/recast/issues/572
+      lastTagElement.comments = [
+        {
+          type: 'CommentBlock',
+          leading: false,
+          trailing: true,
+          value: ', "a11y-test"',
+        },
+      ];
+      previewConfig.setFieldNode(['tags'], tagsNode);
+    }
+  } else {
+    // t.addComment(newTagsNode, 'inner', 'a11y-test');
+    // The commented line above would be the proper way of how to add a trailing comment but innercomments are not supported by recast.
+    // https://github.com/benjamn/recast/issues/1417
+    // This case will be handled later by parsing the source code and editing it later.
+    previewConfig.setFieldValue(['tags'], ['a11y-test']);
+  }
+
+  const formattedPreviewConfig = formatConfig(previewConfig);
+  const lines = formattedPreviewConfig.split('\n');
+
+  // Find the line with the "tags" property
+  const tagsLineIndex = lines.findIndex((line) => line.includes('tags: ['));
+  if (tagsLineIndex === -1) {
+    return formattedPreviewConfig;
+  }
+
+  // Determine the indentation level of the "tags" property
+  lines[tagsLineIndex] = lines[tagsLineIndex].replace("['a11y-test']", "[/*'a11y-test'*/]");
+  lines[tagsLineIndex] = lines[tagsLineIndex].replace('["a11y-test"]', '[/*"a11y-test"*/]');
+  const indentation = lines[tagsLineIndex]?.match(/^\s*/)?.[0];
+
+  // Add the comment with the same indentation level
+  const comment = `${indentation}// The \`a11y-test\` tag controls whether accessibility tests are run as part of a standalone Vitest test run\n${indentation}// For more information please visit: https://storybook.js.org/docs/writing-tests/accessibility-testing#configure-accessibility-tests-with-the-test-addon`;
+  lines.splice(tagsLineIndex, 0, comment);
+
+  return formatFileContent(filePath, lines.join('\n'));
 }

@@ -12,25 +12,19 @@ addons.register(ADDON_ID, (api) => {
     type: types.PANEL,
     paramKey: PARAM_KEY,
     /**
-     * This code panel can be disabled by the user by adding this parameter:
+     * This code panel can be enabled by adding this parameter:
      *
      * @example
      *
      * ```ts
      *  parameters: {
      *    docs: {
-     *      codePanel: false,
+     *      codePanel: true,
      *    },
      *  },
      * ```
      */
-    disabled: (parameters) => {
-      return (
-        !!parameters &&
-        typeof parameters[PARAM_KEY] === 'object' &&
-        parameters[PARAM_KEY].codePanel === false
-      );
-    },
+    disabled: (parameters) => !parameters?.docs?.codePanel,
     match: ({ viewMode }) => viewMode === 'story',
     render: ({ active }) => {
       const [codeSnippet, setSourceCode] = useAddonState<{

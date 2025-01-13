@@ -7,9 +7,9 @@ const meta: Meta<typeof Button> = {
   component: Button,
   /*
    * Enable accessibility checks for all stories in this component
-   * This is only necessary if you have set the `!a11ytest` tag in your preview file, otherwise `a11ytest` is enabled by default
+   * This is only necessary if you have set the `!a11y-test` tag in your preview file, otherwise `a11y-test` is enabled by default
    */
-  tags: ['a11ytest'],
+  tags: ['a11y-test'],
 };
 
 export default meta;
@@ -24,7 +24,7 @@ export const Accessible: Story = {
 
 export const Inaccessible: Story = {
   // Turn off accessibility tests for this story using the tag's configuration option
-  tags: ['!a11ytest'],
+  tags: ['!a11y-test'],
   args: {
     ...Accessible.args,
     backgroundColor: 'red',
@@ -39,9 +39,9 @@ export default {
   component: Button,
   /*
    * Enable accessibility checks for all stories in this component
-   * This is only necessary if you have set the `!a11ytest` tag in your preview file, otherwise `a11ytest` is enabled by default
+   * This is only necessary if you have set the `!a11y-test` tag in your preview file, otherwise `a11y-test` is enabled by default
    */
-  tags: ['a11ytest'],
+  tags: ['a11y-test'],
 };
 
 export const Accessible = {
@@ -53,7 +53,7 @@ export const Accessible = {
 
 export const Inaccessible = {
   // Turn off accessibility tests for this story using the tag's configuration option
-  tags: ['!a11ytest'],
+  tags: ['!a11y-test'],
   args: {
     ...Accessible.args,
     backgroundColor: 'red',
@@ -70,9 +70,9 @@ const meta = {
   component: Button,
   /*
    * Enable accessibility checks for all stories in this component
-   * This is only necessary if you have set the `!a11ytest` tag in your preview file, otherwise `a11ytest` is enabled by default
+   * This is only necessary if you have set the `!a11y-test` tag in your preview file, otherwise `a11y-test` is enabled by default
    */
-  tags: ['a11ytest'],
+  tags: ['a11y-test'],
 } satisfies Meta<typeof Button>;
 
 export default meta;
@@ -87,7 +87,7 @@ export const Accessible: Story = {
 
 export const Inaccessible: Story = {
   // Turn off accessibility tests for this story using the tag's configuration option
-  tags: ['!a11ytest'],
+  tags: ['!a11y-test'],
   args: {
     ...Accessible.args,
     backgroundColor: 'red',
@@ -103,11 +103,11 @@ export const Inaccessible: Story = {
 
   /*
   * Enable accessibility checks for all stories in this component
-  * This is only necessary if you have set the `!a11ytest` tag in your preview file, otherwise `a11ytest` is enabled by default
+  * This is only necessary if you have set the `!a11y-test` tag in your preview file, otherwise `a11y-test` is enabled by default
   */
   const { Story } = defineMeta({
     component: Button,
-    tags: ['a11ytest'],
+    tags: ['a11y-test'],
   });
 
   const AccessibleArgs = {
@@ -121,7 +121,7 @@ export const Inaccessible: Story = {
 <!-- Turn off accessibility tests for this story using the tag's configuration option -->
 <Story
   name="Inaccessible"
-  tags={['!a11ytest']}
+  tags={['!a11y-test']}
   args={{
     ...AccessibleArgs,
     backgroundColor: 'red',
@@ -136,9 +136,9 @@ export default {
   component: Button,
   /*
    * Enable accessibility checks for all stories in this component
-   * This is only necessary if you have set the `!a11ytest` tag in your preview file, otherwise `a11ytest` is enabled by default
+   * This is only necessary if you have set the `!a11y-test` tag in your preview file, otherwise `a11y-test` is enabled by default
    */
-  tags: ['a11ytest'],
+  tags: ['a11y-test'],
 };
 
 export const Accessible = {
@@ -150,7 +150,7 @@ export const Accessible = {
 
 export const Inaccessible = {
   // Turn off accessibility tests for this story using the tag's configuration option
-  tags: ['!a11ytest'],
+  tags: ['!a11y-test'],
   args: {
     ...Accessible.args,
     backgroundColor: 'red',
@@ -166,11 +166,11 @@ export const Inaccessible = {
 
   /*
   * Enable accessibility checks for all stories in this component
-  * This is only necessary if you have set the `!a11ytest` tag in your preview file, otherwise `a11ytest` is enabled by default
+  * This is only necessary if you have set the `!a11y-test` tag in your preview file, otherwise `a11y-test` is enabled by default
   */
   const { Story } = defineMeta({
     component: Button,
-    tags: ['a11ytest'],
+    tags: ['a11y-test'],
   });
 
   const AccessibleArgs = {
@@ -184,7 +184,7 @@ export const Inaccessible = {
 <!-- Turn off accessibility tests for this story using the tag's configuration option -->
 <Story
   name="Inaccessible"
-  tags={['!a11ytest']}
+  tags={['!a11y-test']}
   args={{
     ...AccessibleArgs,
     backgroundColor: 'red',
@@ -201,9 +201,9 @@ const meta = {
   component: Button,
   /*
    * Enable accessibility checks for all stories in this component
-   * This is only necessary if you have set the `!a11ytest` tag in your preview file, otherwise `a11ytest` is enabled by default
+   * This is only necessary if you have set the `!a11y-test` tag in your preview file, otherwise `a11y-test` is enabled by default
    */
-  tags: ['a11ytest'],
+  tags: ['a11y-test'],
 } satisfies Meta<typeof Button>;
 
 export default meta;
@@ -218,7 +218,7 @@ export const Accessible: Story = {
 
 export const Inaccessible: Story = {
   // Turn off accessibility tests for this story using the tag's configuration option
-  tags: ['!a11ytest'],
+  tags: ['!a11y-test'],
   args: {
     ...Accessible.args,
     backgroundColor: 'red',
@@ -234,11 +234,11 @@ export const Inaccessible: Story = {
 
   /*
   * Enable accessibility checks for all stories in this component
-  * This is only necessary if you have set the `!a11ytest` tag in your preview file, otherwise `a11ytest` is enabled by default
+  * This is only necessary if you have set the `!a11y-test` tag in your preview file, otherwise `a11y-test` is enabled by default
   */
   const { Story } = defineMeta({
     component: Button,
-    tags: ['a11ytest'],
+    tags: ['a11y-test'],
   });
 
   const AccessibleArgs = {
@@ -252,7 +252,7 @@ export const Inaccessible: Story = {
 <!-- Turn off accessibility tests for this story using the tag's configuration option -->
 <Story
   name="Inaccessible"
-  tags={['!a11ytest']}
+  tags={['!a11y-test']}
   args={{
     ...AccessibleArgs,
     backgroundColor: 'red',
@@ -269,9 +269,9 @@ const meta: Meta<typeof Button> = {
   component: Button,
   /*
    * Enable accessibility checks for all stories in this component
-   * This is only necessary if you have set the `!a11ytest` tag in your preview file, otherwise `a11ytest` is enabled by default
+   * This is only necessary if you have set the `!a11y-test` tag in your preview file, otherwise `a11y-test` is enabled by default
    */
-  tags: ['a11ytest'],
+  tags: ['a11y-test'],
 };
 
 export default meta;
@@ -286,7 +286,7 @@ export const Accessible: Story = {
 
 export const Inaccessible: Story = {
   // Turn off accessibility tests for this story using the tag's configuration option
-  tags: ['!a11ytest'],
+  tags: ['!a11y-test'],
   args: {
     ...Accessible.args,
     backgroundColor: 'red',
@@ -301,9 +301,9 @@ export default {
   component: Button,
   /*
    * Enable accessibility checks for all stories in this component
-   * This is only necessary if you have set the `!a11ytest` tag in your preview file, otherwise `a11ytest` is enabled by default
+   * This is only necessary if you have set the `!a11y-test` tag in your preview file, otherwise `a11y-test` is enabled by default
    */
-  tags: ['a11ytest'],
+  tags: ['a11y-test'],
 };
 
 export const Accessible = {
@@ -315,7 +315,7 @@ export const Accessible = {
 
 export const Inaccessible = {
   // Turn off accessibility tests for this story using the tag's configuration option
-  tags: ['!a11ytest'],
+  tags: ['!a11y-test'],
   args: {
     ...Accessible.args,
     backgroundColor: 'red',
@@ -332,9 +332,9 @@ const meta = {
   component: Button,
   /*
    * Enable accessibility checks for all stories in this component
-   * This is only necessary if you have set the `!a11ytest` tag in your preview file, otherwise `a11ytest` is enabled by default
+   * This is only necessary if you have set the `!a11y-test` tag in your preview file, otherwise `a11y-test` is enabled by default
    */
-  tags: ['a11ytest'],
+  tags: ['a11y-test'],
 } satisfies Meta<typeof Button>;
 
 export default meta;
@@ -349,7 +349,7 @@ export const Accessible: Story = {
 
 export const Inaccessible: Story = {
   // Turn off accessibility tests for this story using the tag's configuration option
-  tags: ['!a11ytest'],
+  tags: ['!a11y-test'],
   args: {
     ...Accessible.args,
     backgroundColor: 'red',
@@ -366,9 +366,9 @@ const meta: Meta<typeof Button> = {
   component: Button,
   /*
    * Enable accessibility checks for all stories in this component
-   * This is only necessary if you have set the `!a11ytest` tag in your preview file, otherwise `a11ytest` is enabled by default
+   * This is only necessary if you have set the `!a11y-test` tag in your preview file, otherwise `a11y-test` is enabled by default
    */
-  tags: ['a11ytest'],
+  tags: ['a11y-test'],
 };
 
 export default meta;
@@ -383,7 +383,7 @@ export const Accessible: Story = {
 
 export const Inaccessible: Story = {
   // Turn off accessibility tests for this story using the tag's configuration option
-  tags: ['!a11ytest'],
+  tags: ['!a11y-test'],
   args: {
     ...Accessible.args,
     backgroundColor: 'red',

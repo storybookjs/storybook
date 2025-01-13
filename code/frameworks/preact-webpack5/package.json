@@ -1,6 +1,6 @@
 {
   "name": "@storybook/preact-webpack5",
-  "version": "8.5.0-beta.7",
+  "version": "8.5.0-beta.9",
   "description": "Storybook for Preact: Develop Preact Component in isolation.",
   "keywords": [
     "storybook"
@@ -49,10 +49,10 @@
   "dependencies": {
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/preact": "workspace:*",
-    "@storybook/preset-preact-webpack": "workspace:*",
-    "@types/node": "^22.0.0"
+    "@storybook/preset-preact-webpack": "workspace:*"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "preact": "^10.5.13",
     "typescript": "^5.3.2"
   },

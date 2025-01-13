@@ -132,13 +132,19 @@ If you enabled the addon and you're manually upgrading to Storybook 8.5 or later
 
 ### Configure accessibility tests with the test addon
 
-Like the Test addon, the accessibility addon also supports [tags](../writing-stories/tags.mdx) to filter the tests you want to run. By default, the addon applies the `a11ytest` tag to all stories. If you need to exclude a story from being accessibility tested, you can remove that tag by applying the `!a11ytest` tag to the story. This also works at the project (in `.storybook/preview.js|ts`) or component level (default export in the story file).
+Like the Test addon, the accessibility addon also supports [tags](../writing-stories/tags.mdx) to filter the tests you want to run. A story will be accessibility tested if it has the `a11y-test` tag, which can be applied at the project (in `.storybook/preview.js|ts`), component (default export in the story file), or individual story level. To exclude a story from being accessibility tested, apply the `!a11y-test` tag.
+
+<Callout variant="info">
+
+The `ally-test` tag behavior is slightly different when tests are run in the CLI (or CI) vs. the Storybook UI. In the CLI, only stories tagged with `a11y-test` will be tested. In the Storybook UI, all stories will be tested unless they are explicitly excluded by tagging them with `!a11y-test`.
+
+This allows for a workflow where a known set of stories is tested in CI, while still allowing developers to test all stories in the Storybook UI locally.
+
+</Callout>
 
 You can use tags to progressively work toward a more accessible UI by enabling accessibility tests for a subset of stories and gradually increasing the coverage. For example, a typical workflow might look like this:
 
 1. Run accessibility tests for your entire project.
-1. Find that many stories have accessibility issues (and maybe feel a bit overwhelmed!).
-1. Temporarily exclude all stories from accessibility tests.
 
    ```ts title=".storybook/preview.ts"
    // Replace your-renderer with the renderer you are using (e.g., react, vue3)
@@ -146,18 +152,27 @@ You can use tags to progressively work toward a more accessible UI by enabling a
 
    const preview: Preview = {
      // ...
-     // 👇 Temporarily remove the a11ytest tag from all stories
-     tags: ['!a11ytest'],
+     // 👇 Apply the a11y-test tag to all components
+     tags: ['a11y-test'],
    };
 
    export default preview;
    ```
 
+1. You will likely find that many components have accessibility issues (and maybe feel a bit overwhelmed!).
+1. Take note of the components which have accessibility issues and temporarily exclude them from testing by applying the `!a11y-test` tag. This leaves a record of the components which need attention.
+
+   {/* prettier-ignore-start */}
+
+   <CodeSnippets path="addon-a11y-meta-tag-exclude.md" />
+
+   {/* prettier-ignore-end */}
+
 1. Pick a good starting point (we recommend something like Button, for its simplicity and likelihood of being used within other components) and re-include it in the accessibility tests.
 
    {/* prettier-ignore-start */}
 
-   <CodeSnippets path="addon-a11y-meta-tag.md" />
+   <CodeSnippets path="addon-a11y-meta-tag-reinclude.md" />
 
    {/* prettier-ignore-end */}
 

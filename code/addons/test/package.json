@@ -1,6 +1,6 @@
 {
   "name": "@storybook/experimental-addon-test",
-  "version": "8.5.0-beta.7",
+  "version": "8.5.0-beta.9",
   "description": "Integrate Vitest with Storybook",
   "keywords": [
     "storybook-addons",
@@ -68,6 +68,7 @@
   "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
+    "!dist/dummy.*",
     "README.md",
     "*.mjs",
     "*.js",
@@ -151,11 +152,41 @@
     ],
     "nodeEntries": [
       "./src/preset.ts",
-      "./src/vitest-plugin/index.ts",
-      "./src/vitest-plugin/global-setup.ts",
       "./src/postinstall.ts",
-      "./src/node/vitest.ts",
-      "./src/node/coverage-reporter.ts"
+      {
+        "file": "./src/dummy.ts",
+        "formats": [
+          "esm"
+        ]
+      },
+      {
+        "file": "./src/node/vitest.ts",
+        "formats": [
+          "esm",
+          "cjs"
+        ]
+      },
+      {
+        "file": "./src/node/coverage-reporter.ts",
+        "formats": [
+          "esm",
+          "cjs"
+        ]
+      },
+      {
+        "file": "./src/vitest-plugin/index.ts",
+        "formats": [
+          "cjs",
+          "esm"
+        ]
+      },
+      {
+        "file": "./src/vitest-plugin/global-setup.ts",
+        "formats": [
+          "cjs",
+          "esm"
+        ]
+      }
     ]
   },
   "storybook": {

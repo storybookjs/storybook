@@ -149,7 +149,7 @@ describe('enrichCsf', () => {
         };
       `);
     });
-    it('csf4', () => {
+    it('csf factories', () => {
       expect(
         enrich(
           dedent`

@@ -24,7 +24,7 @@ export const enrichCsfStory = (
   const description =
     !options?.disableDescription && extractDescription(csfSource._storyStatements[key]);
   const parameters = [];
-  // in csf1/2/3 we use Story.parameters, in csf4 we use Story.annotations.parameters
+  // in csf 1/2/3 use Story.parameters; CSF factories use Story.annotations.parameters
   const baseStoryObject = isCsfFactory
     ? t.memberExpression(t.identifier(key), t.identifier('annotations'))
     : t.identifier(key);

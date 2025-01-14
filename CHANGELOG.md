@@ -1,3 +1,6 @@
+## 8.5.0
+
+
 ## 8.4.7
 
 - Telemetry: Improve anonymous id calculation - [#29736](https://github.com/storybookjs/storybook/pull/29736), thanks @tmeasday!

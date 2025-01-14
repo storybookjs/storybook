@@ -1,3 +1,8 @@
+## 8.5.0
+
+- CLI: Update a11y-test comment with experimental caveat - [#30258](https://github.com/storybookjs/storybook/pull/30258), thanks @shilman!
+- Manager API: Fix infinite render-loop caused by `useSharedState` - [#30259](https://github.com/storybookjs/storybook/pull/30259), thanks @JReinhold!
+
 ## 8.4.7
 
 - Telemetry: Improve anonymous id calculation - [#29736](https://github.com/storybookjs/storybook/pull/29736), thanks @tmeasday!

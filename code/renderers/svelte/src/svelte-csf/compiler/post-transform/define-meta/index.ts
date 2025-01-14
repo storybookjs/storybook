@@ -1,7 +1,7 @@
 import { print } from 'esrap';
 import type MagicString from 'magic-string';
 
-import { replaceDefineMetaArgument } from './replace-argument';
+import { replaceDefineMetaArgument } from './replace-argument.js';
 import { insertDefineMetaJSDocCommentAsDescription } from './insert-description.js';
 
 import { createASTIdentifier, type ESTreeAST } from '$lib/parser/ast.js';

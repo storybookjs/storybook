@@ -53,7 +53,7 @@ export function useStoriesExtractor<TCmp extends Cmp>() {
       CONTEXT_KEY,
       buildContext<TCmp>({
         isExtracting: false,
-        register: () => { },
+        register: () => {},
       })
     );
   }

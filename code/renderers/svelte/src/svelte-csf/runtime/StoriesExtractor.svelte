@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Component } from 'svelte';
 
-  import type { Cmp } from '$lib/types';
+  import type { Cmp } from '$lib/types.js';
 
   import {
     type StoriesRepository,

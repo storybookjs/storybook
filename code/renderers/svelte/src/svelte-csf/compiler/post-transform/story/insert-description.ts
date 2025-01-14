@@ -1,4 +1,3 @@
-import { logger } from '@storybook/node-logger';
 import dedent from 'dedent';
 
 import {
@@ -99,7 +98,7 @@ export function insertStoryHTMLCommentAsDescription(params: Params) {
       (p) => p.type === 'Property' && p.key.type === 'Literal' && p.key.value === 'name'
     ) as ESTreeAST.Property;
     const name = (propertyName.value as ESTreeAST.Literal).value;
-    logger.warn(
+    console.warn(
       dedent`
         Svelte CSF:
           Description was already set in parameters.docs.description.story
@@ -124,11 +123,11 @@ export function insertStoryHTMLCommentAsDescription(params: Params) {
   );
 
   if (compiled.type === 'CallExpression') {
-    compiled.arguments[1] === storyPropsObjectExpression;
+    compiled.arguments[1] = storyPropsObjectExpression;
   } else if (
     compiled.type === 'ExpressionStatement' &&
     compiled.expression.type === 'CallExpression'
   ) {
-    compiled.expression.arguments[1] === storyPropsObjectExpression;
+    compiled.expression.arguments[1] = storyPropsObjectExpression;
   }
 }

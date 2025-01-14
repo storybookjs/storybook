@@ -7,7 +7,7 @@ import MagicString from 'magic-string';
 import { parseAst } from 'rollup/parseAst';
 import { describe, it } from 'vitest';
 
-import { transformStory } from '.';
+import { transformStory } from './index.js';
 
 import { getSvelteAST } from '$lib/parser/ast.js';
 import { extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';

@@ -10,7 +10,7 @@ Vite pre-transform hook does codemod where this component gets transformed into 
 -->
 
 <script lang="ts">
-  import type { Slots, StoryProps } from '../legacy-types.d';
+  import type { Slots, StoryProps } from '../legacy-types.d.ts';
 
   type $$Props = StoryProps;
   type $$Slots = Slots;

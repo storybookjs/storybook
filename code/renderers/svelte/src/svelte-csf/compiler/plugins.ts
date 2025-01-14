@@ -73,8 +73,8 @@ export async function transformPlugin(): Promise<Plugin> {
       return {
         optimizeDeps: {
           include: ['@storybook/addon-svelte-csf/internal/create-runtime-stories'],
-        }
-      }
+        },
+      };
     },
     async transform(compiledCode, id) {
       if (!filter(id)) return undefined;

@@ -1,6 +1,6 @@
 import { getStringValueFromAttribute } from '$lib/parser/analyse/story/attributes.js';
 import type { SvelteAST } from '$lib/parser/ast.js';
-import { hashTemplateName } from '$lib/utils/identifier-utils';
+import { hashTemplateName } from '$lib/utils/identifier-utils.js';
 
 interface Params {
   component: SvelteAST.Component;

@@ -1,4 +1,4 @@
-```js filename=".storybook/preview.js" renderer="common" language="js"
+```js filename=".storybook/preview.js" renderer="common" language="js" tabTitle="CSF 3"
 export default {
   // ...rest of preview
   /*
@@ -11,7 +11,7 @@ export default {
 };
 ```
 
-```ts filename=".storybook/preview.ts" renderer="common" language="ts"
+```ts filename=".storybook/preview.ts" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-renderer with the renderer you are using (e.g., react, vue3)
 import type { Preview } from '@storybook/your-renderer';
 
@@ -27,4 +27,40 @@ const preview: Preview = {
 };
 
 export default preview;
+```
+
+```ts filename=".storybook/preview.js|ts" renderer="react" language="ts" tabTitle="CSF 4 (experimental)"
+import { defineConfig } from '@storybook/react';
+
+const config defineConfig({
+  // ...rest of preview
+  /*
+   * All stories in your project will have these tags applied:
+   * - autodocs
+   * - dev (implicit default)
+   * - test (implicit default)
+   */
+  tags: ['autodocs'],
+});
+
+export default config;
+```
+
+<!-- js & ts-4-9 (when applicable) still needed while providing both CSF 3 & 4 -->
+
+```js filename=".storybook/preview.js|ts" renderer="react" language="js" tabTitle="CSF 4 (experimental)"
+import { defineConfig } from '@storybook/react';
+
+const config defineConfig({
+  // ...rest of preview
+  /*
+   * All stories in your project will have these tags applied:
+   * - autodocs
+   * - dev (implicit default)
+   * - test (implicit default)
+   */
+  tags: ['autodocs'],
+});
+
+export default config;
 ```

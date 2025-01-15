@@ -1,27 +1,24 @@
 /* eslint-disable no-underscore-dangle */
-import { isValidPreviewPath, loadCsf } from '@storybook/core/csf-tools';
+import { types as t, traverse } from '@storybook/core/babel';
 
-import type { BabelFile } from '@babel/core';
+import { isValidPreviewPath, loadCsf, printCsf } from '@storybook/core/csf-tools';
+
 import * as babel from '@babel/core';
-import {
-  isIdentifier,
-  isImportDeclaration,
-  isImportSpecifier,
-  isObjectExpression,
-  isTSAsExpression,
-  isTSSatisfiesExpression,
-  isVariableDeclaration,
-} from '@babel/types';
 import type { FileInfo } from 'jscodeshift';
+import prettier from 'prettier';
+
+const logger = console;
 
 export default async function transform(info: FileInfo) {
   const csf = loadCsf(info.source, { makeTitle: (title) => title });
   const fileNode = csf._ast;
-  // @ts-expect-error File is not yet exposed, see https://github.com/babel/babel/issues/11350#issuecomment-644118606
-  const file: BabelFile = new babel.File(
-    { filename: info.path },
-    { code: info.source, ast: fileNode }
-  );
+
+  try {
+    csf.parse();
+  } catch (err) {
+    logger.log(`Error ${err}, skipping`);
+    return info.source;
+  }
 
   const metaVariableName = 'meta';
 
@@ -34,10 +31,10 @@ export default async function transform(info: FileInfo) {
   let foundConfigImport = false;
 
   programNode.body.forEach((node) => {
-    if (isImportDeclaration(node) && isValidPreviewPath(node.source.value)) {
+    if (t.isImportDeclaration(node) && isValidPreviewPath(node.source.value)) {
       const hasConfigSpecifier = node.specifiers.some(
         (specifier) =>
-          isImportSpecifier(specifier) && isIdentifier(specifier.imported, { name: 'config' })
+          t.isImportSpecifier(specifier) && t.isIdentifier(specifier.imported, { name: 'config' })
       );
 
       if (!hasConfigSpecifier) {
@@ -53,110 +50,93 @@ export default async function transform(info: FileInfo) {
     }
   });
 
-  let hasMeta = false;
+  const hasMeta = !!csf._meta;
 
-  file.path.traverse({
-    // Meta export
-    ExportDefaultDeclaration: (path) => {
-      hasMeta = true;
-      const declaration = path.node.declaration;
+  Object.entries(csf._storyExports).forEach(([key, decl]) => {
+    const id = decl.id;
+    const declarator = decl as babel.types.VariableDeclarator;
+    let init = t.isVariableDeclarator(declarator) ? declarator.init : undefined;
 
-      /**
-       * Transform inline default export: `export default { title: 'A' };`
-       *
-       * Into a meta call: `const meta = config.meta({ title: 'A' });`
-       */
-      if (isObjectExpression(declaration)) {
-        const metaVariable = babel.types.variableDeclaration('const', [
-          babel.types.variableDeclarator(
+    if (t.isIdentifier(id) && init) {
+      if (t.isTSSatisfiesExpression(init) || t.isTSAsExpression(init)) {
+        init = init.expression;
+      }
+
+      if (t.isObjectExpression(init)) {
+        const typeAnnotation = id.typeAnnotation;
+        // Remove type annotation as it's now inferred
+        if (typeAnnotation) {
+          id.typeAnnotation = null;
+        }
+
+        // Wrap the object in `meta.story()`
+        declarator.init = babel.types.callExpression(
+          babel.types.memberExpression(
             babel.types.identifier(metaVariableName),
-            babel.types.callExpression(
-              babel.types.memberExpression(
-                babel.types.identifier('config'),
-                babel.types.identifier('meta')
-              ),
-              [declaration]
-            )
+            babel.types.identifier('story')
           ),
-        ]);
-
-        path.replaceWith(metaVariable);
-      } else if (isIdentifier(declaration)) {
-        /**
-         * Transform const declared metas:
-         *
-         * `const meta = {}; export default meta;`
-         *
-         * Into a meta call:
-         *
-         * `const meta = config.meta({ title: 'A' });`
-         */
-        const binding = path.scope.getBinding(declaration.name);
-        if (binding && binding.path.isVariableDeclarator()) {
-          const originalName = declaration.name;
-
-          // Always rename the meta variable to 'meta'
-          binding.path.node.id = babel.types.identifier(metaVariableName);
-
-          let init = binding.path.node.init;
-          if (isTSSatisfiesExpression(init) || isTSAsExpression(init)) {
-            init = init.expression;
-          }
-          if (isObjectExpression(init)) {
-            binding.path.node.init = babel.types.callExpression(
-              babel.types.memberExpression(
-                babel.types.identifier('config'),
-                babel.types.identifier('meta')
-              ),
-              [init]
-            );
-          }
-
-          // Update all references to the original name
-          path.scope.rename(originalName, metaVariableName);
-        }
-
-        // Remove the default export, it's not needed anymore
-        path.remove();
+          [init]
+        );
       }
-    },
-    // Story export
-    ExportNamedDeclaration: (path) => {
-      const declaration = path.node.declaration;
-
-      if (!declaration || !isVariableDeclaration(declaration) || !hasMeta) {
-        return;
-      }
-
-      declaration.declarations.forEach((decl) => {
-        const id = decl.id;
-        let init = decl.init;
-
-        if (isIdentifier(id) && init) {
-          if (isTSSatisfiesExpression(init) || isTSAsExpression(init)) {
-            init = init.expression;
-          }
-
-          if (isObjectExpression(init)) {
-            const typeAnnotation = id.typeAnnotation;
-            // Remove type annotation as it's now inferred
-            if (typeAnnotation) {
-              id.typeAnnotation = null;
-            }
-
-            // Wrap the object in `meta.story()`
-            decl.init = babel.types.callExpression(
-              babel.types.memberExpression(
-                babel.types.identifier(metaVariableName),
-                babel.types.identifier('story')
-              ),
-              [init]
-            );
-          }
-        }
-      });
-    },
+    }
   });
+
+  // modify meta
+  if (csf._metaPath) {
+    const declaration = csf._metaPath.node.declaration;
+    if (t.isObjectExpression(declaration)) {
+      const metaVariable = babel.types.variableDeclaration('const', [
+        babel.types.variableDeclarator(
+          babel.types.identifier(metaVariableName),
+          babel.types.callExpression(
+            babel.types.memberExpression(
+              babel.types.identifier('config'),
+              babel.types.identifier('meta')
+            ),
+            [declaration]
+          )
+        ),
+      ]);
+      csf._metaPath.replaceWith(metaVariable);
+    } else if (t.isIdentifier(declaration)) {
+      /**
+       * Transform const declared metas:
+       *
+       * `const meta = {}; export default meta;`
+       *
+       * Into a meta call:
+       *
+       * `const meta = config.meta({ title: 'A' });`
+       */
+      const binding = csf._metaPath.scope.getBinding(declaration.name);
+      if (binding && binding.path.isVariableDeclarator()) {
+        const originalName = declaration.name;
+
+        // Always rename the meta variable to 'meta'
+        binding.path.node.id = babel.types.identifier(metaVariableName);
+
+        let init = binding.path.node.init;
+        if (t.isTSSatisfiesExpression(init) || t.isTSAsExpression(init)) {
+          init = init.expression;
+        }
+        if (t.isObjectExpression(init)) {
+          binding.path.node.init = babel.types.callExpression(
+            babel.types.memberExpression(
+              babel.types.identifier('config'),
+              babel.types.identifier('meta')
+            ),
+            [init]
+          );
+        }
+
+        // Update all references to the original name
+        csf._metaPath.scope.rename(originalName, metaVariableName);
+      }
+
+      // Remove the default export, it's not needed anymore
+      csf._metaPath.remove();
+    }
+  }
 
   if (hasMeta && !foundConfigImport) {
     const configImport = babel.types.importDeclaration(
@@ -171,9 +151,71 @@ export default async function transform(info: FileInfo) {
     programNode.body.unshift(configImport);
   }
 
-  // Generate the transformed code
-  const { code } = babel.transformFromAstSync(fileNode, info.source, {
-    parserOpts: { sourceType: 'module' },
+  function isSpecifierUsed(name: string) {
+    let isUsed = false;
+
+    // Traverse the AST and check for usage of the name
+    traverse(programNode, {
+      Identifier(path) {
+        if (path.node.name === name) {
+          isUsed = true;
+          // Stop traversal early if we've found a match
+          path.stop();
+        }
+      },
+    });
+
+    return isUsed;
+  }
+
+  // Remove type imports – now inferred – from @storybook/* packages
+  const disallowlist = [
+    'Story',
+    'StoryFn',
+    'StoryObj',
+    'Meta',
+    'MetaObj',
+    'ComponentStory',
+    'ComponentMeta',
+  ];
+
+  programNode.body = programNode.body.filter((node) => {
+    if (t.isImportDeclaration(node)) {
+      const { source, specifiers } = node;
+
+      if (source.value.startsWith('@storybook/')) {
+        const allowedSpecifiers = specifiers.filter((specifier) => {
+          if (t.isImportSpecifier(specifier) && t.isIdentifier(specifier.imported)) {
+            return !disallowlist.includes(specifier.imported.name);
+          }
+          // Retain non-specifier imports (e.g., namespace imports)
+          return true;
+        });
+
+        // Remove the entire import if no specifiers are left
+        if (allowedSpecifiers.length > 0) {
+          node.specifiers = allowedSpecifiers;
+          return true;
+        }
+
+        // Remove the import if no specifiers remain
+        return false;
+      }
+    }
+
+    // Retain all other nodes
+    return true;
   });
-  return code;
+
+  let output = printCsf(csf).code;
+
+  try {
+    output = await prettier.format(output, {
+      ...(await prettier.resolveConfig(info.path)),
+      filepath: info.path,
+    });
+  } catch (e) {
+    logger.log(`Failed applying prettier to ${info.path}.`);
+  }
+  return output;
 }

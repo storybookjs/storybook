@@ -4,6 +4,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import {
   BabelFileClass,
   type GeneratorOptions,
+  type NodePath,
   type RecastOptions,
   babelParse,
   generate,
@@ -255,9 +256,13 @@ export class CsfFile {
 
   _storyExports: Record<string, t.VariableDeclarator | t.FunctionDeclaration> = {};
 
+  _storyPaths: Record<string, NodePath<t.ExportNamedDeclaration>> = {};
+
   _metaStatement: t.Statement | undefined;
 
   _metaNode: t.Expression | undefined;
+
+  _metaPath: NodePath<t.ExportDefaultDeclaration> | undefined;
 
   _metaVariableName: string | undefined;
 
@@ -466,10 +471,13 @@ export class CsfFile {
               self._options.fileName
             );
           }
+
+          self._metaPath = path;
         },
       },
       ExportNamedDeclaration: {
-        enter({ node, parent }) {
+        enter(path) {
+          const { node, parent } = path;
           let declarations;
           if (t.isVariableDeclaration(node.declaration)) {
             declarations = node.declaration.declarations.filter((d) => t.isVariableDeclarator(d));
@@ -487,6 +495,7 @@ export class CsfFile {
                   return;
                 }
                 self._storyExports[exportName] = decl;
+                self._storyPaths[exportName] = path;
                 self._storyStatements[exportName] = node;
                 let name = storyNameFromExport(exportName);
                 if (self._storyAnnotations[exportName]) {
@@ -611,6 +620,7 @@ export class CsfFile {
                 } else {
                   self._storyAnnotations[exportName] = {};
                   self._storyStatements[exportName] = decl;
+                  self._storyPaths[exportName] = path;
                   self._stories[exportName] = {
                     id: 'FIXME',
                     name: exportName,

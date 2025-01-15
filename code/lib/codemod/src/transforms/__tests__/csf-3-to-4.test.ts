@@ -21,10 +21,9 @@ describe('csf-3-to-4', () => {
           export default meta;
         `)
       ).resolves.toMatchInlineSnapshot(`
-        import { config } from "#.storybook/preview";
-        const meta = config.meta({
-          title: 'Component'
-        });
+        import { config } from '#.storybook/preview';
+
+        const meta = config.meta({ title: 'Component' });
       `);
     });
 
@@ -34,9 +33,10 @@ describe('csf-3-to-4', () => {
           export default { title: 'Component' };
         `)
       ).resolves.toMatchInlineSnapshot(`
-        import { config } from "#.storybook/preview";
+        import { config } from '#.storybook/preview';
+
         const meta = config.meta({
-          title: 'Component'
+          title: 'Component',
         });
       `);
     });
@@ -48,10 +48,9 @@ describe('csf-3-to-4', () => {
           export default componentMeta;
         `)
       ).resolves.toMatchInlineSnapshot(`
-        import { config } from "#.storybook/preview";
-        const meta = config.meta({
-          title: 'Component'
-        });
+        import { config } from '#.storybook/preview';
+
+        const meta = config.meta({ title: 'Component' });
       `);
     });
 
@@ -66,15 +65,12 @@ describe('csf-3-to-4', () => {
           };
         `)
       ).resolves.toMatchInlineSnapshot(`
-        import { config } from "#.storybook/preview";
-        const meta = config.meta({
-          title: 'Component'
-        });
+        import { config } from '#.storybook/preview';
+
+        const meta = config.meta({ title: 'Component' });
         export const A = meta.story({
-          args: {
-            primary: true
-          },
-          render: args => <Component {...args} />
+          args: { primary: true },
+          render: (args) => <Component {...args} />,
         });
       `);
     });
@@ -91,15 +87,12 @@ describe('csf-3-to-4', () => {
           };
         `)
       ).resolves.toMatchInlineSnapshot(`
-        import { decorators, config } from "#.storybook/preview";
-        const meta = config.meta({
-          title: 'Component'
-        });
+        import { config, decorators } from '#.storybook/preview';
+
+        const meta = config.meta({ title: 'Component' });
         export const A = meta.story({
-          args: {
-            primary: true
-          },
-          render: args => <Component {...args} />
+          args: { primary: true },
+          render: (args) => <Component {...args} />,
         });
       `);
     });
@@ -119,17 +112,14 @@ describe('csf-3-to-4', () => {
     `;
     it('meta satisfies syntax', async () => {
       await expect(transform(metaSatisfies)).resolves.toMatchInlineSnapshot(`
-        import { config } from "#.storybook/preview";
-        import { Meta, StoryObj as CSF3 } from '@storybook/react';
+        import { config } from '#.storybook/preview';
+
         import { ComponentProps } from './Component';
-        const meta = config.meta({
-          title: 'Component',
-          component: Component
-        });
+
+        const meta = config.meta({ title: 'Component', component: Component });
+
         export const A = meta.story({
-          args: {
-            primary: true
-          }
+          args: { primary: true },
         });
       `);
     });
@@ -147,17 +137,14 @@ describe('csf-3-to-4', () => {
     `;
     it('meta as syntax', async () => {
       await expect(transform(metaAs)).resolves.toMatchInlineSnapshot(`
-        import { config } from "#.storybook/preview";
-        import { Meta, StoryObj as CSF3 } from '@storybook/react';
+        import { config } from '#.storybook/preview';
+
         import { ComponentProps } from './Component';
-        const meta = config.meta({
-          title: 'Component',
-          component: Component
-        });
+
+        const meta = config.meta({ title: 'Component', component: Component });
+
         export const A = meta.story({
-          args: {
-            primary: true
-          }
+          args: { primary: true },
         });
       `);
     });
@@ -175,17 +162,14 @@ describe('csf-3-to-4', () => {
     `;
     it('story satisfies syntax', async () => {
       await expect(transform(storySatisfies)).resolves.toMatchInlineSnapshot(`
-        import { config } from "#.storybook/preview";
-        import { Meta, StoryObj as CSF3 } from '@storybook/react';
+        import { config } from '#.storybook/preview';
+
         import { ComponentProps } from './Component';
-        const meta = config.meta({
-          title: 'Component',
-          component: Component
-        });
+
+        const meta = config.meta({ title: 'Component', component: Component });
+
         export const A = meta.story({
-          args: {
-            primary: true
-          }
+          args: { primary: true },
         });
       `);
     });
@@ -203,17 +187,14 @@ describe('csf-3-to-4', () => {
     `;
     it('story as syntax', async () => {
       await expect(transform(storyAs)).resolves.toMatchInlineSnapshot(`
-        import { config } from "#.storybook/preview";
-        import { Meta, StoryObj as CSF3 } from '@storybook/react';
+        import { config } from '#.storybook/preview';
+
         import { ComponentProps } from './Component';
-        const meta = config.meta({
-          title: 'Component',
-          component: Component
-        });
+
+        const meta = config.meta({ title: 'Component', component: Component });
+
         export const A = meta.story({
-          args: {
-            primary: true
-          }
+          args: { primary: true },
         });
       `);
     });

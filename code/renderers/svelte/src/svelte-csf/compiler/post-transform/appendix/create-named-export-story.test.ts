@@ -11,20 +11,22 @@ describe(createNamedExportStory.name, () => {
     const stringified = print(
       createNamedExportStory({
         exportName: 'Default',
-        node: createVariableFromRuntimeStoriesCall({
-          storiesFunctionDeclaration: {
-            type: 'FunctionDeclaration',
-            id: {
-              type: 'Identifier',
-              name: 'Example_stories',
+        nodes: {
+          variable: createVariableFromRuntimeStoriesCall({
+            storiesFunctionDeclaration: {
+              type: 'FunctionDeclaration',
+              id: {
+                type: 'Identifier',
+                name: 'Example_stories',
+              },
+              body: {
+                type: 'BlockStatement',
+                body: [],
+              },
+              params: [],
             },
-            body: {
-              type: 'BlockStatement',
-              body: [],
-            },
-            params: [],
-          },
-        }),
+          }),
+        },
       }) as unknown as ESTreeAST.Program
     ).code;
 

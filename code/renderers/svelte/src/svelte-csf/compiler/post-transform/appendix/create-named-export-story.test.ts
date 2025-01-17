@@ -30,6 +30,6 @@ describe(createNamedExportStory.name, () => {
       }) as unknown as ESTreeAST.Program
     ).code;
 
-    expect(stringified).toMatchInlineSnapshot(`"export const Default = __stories["Default"];"`);
+    expect(stringified).toMatchInlineSnapshot(`"export const Default = { ...__stories["Default"], tags: [] };"`);
   });
 });

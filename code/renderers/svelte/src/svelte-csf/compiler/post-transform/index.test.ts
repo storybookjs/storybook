@@ -239,10 +239,10 @@ describe(transformStoriesCode.name, () => {
       	"WithoutTemplate"
       ];
 
-      export const Default = __stories["Default"];
-      export const Rounded = __stories["Rounded"];
-      export const Square = __stories["Square"];
-      export const WithoutTemplate = __stories["WithoutTemplate"];"
+      export const Default = { ...__stories["Default"], tags: [] };
+      export const Rounded = { ...__stories["Rounded"], tags: [] };
+      export const Square = { ...__stories["Square"], tags: [] };
+      export const WithoutTemplate = { ...__stories["WithoutTemplate"], tags: [] };"
     `
     );
   });

@@ -30,9 +30,9 @@ export default preview;
 ```
 
 ```ts filename=".storybook/preview.js|ts" renderer="react" language="ts" tabTitle="CSF 4 (experimental)"
-import { defineConfig } from '@storybook/react';
+import { definePreview } from '@storybook/react-vite/browser';
 
-const config defineConfig({
+const config definePreview({
   // ...rest of preview
   /*
    * All stories in your project will have these tags applied:
@@ -49,9 +49,9 @@ export default config;
 <!-- js & ts-4-9 (when applicable) still needed while providing both CSF 3 & 4 -->
 
 ```js filename=".storybook/preview.js|ts" renderer="react" language="js" tabTitle="CSF 4 (experimental)"
-import { defineConfig } from '@storybook/react';
+import { definePreview } from '@storybook/react-vite/browser';
 
-const config defineConfig({
+const config definePreview({
   // ...rest of preview
   /*
    * All stories in your project will have these tags applied:

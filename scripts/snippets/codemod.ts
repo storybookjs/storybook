@@ -71,7 +71,7 @@ export async function runSnippetCodemod({
       files.map((file) =>
         limit(async () => {
           try {
-            const source = await fs.readFile(file, 'utf-8');
+            let source = await fs.readFile(file, 'utf-8');
             const snippets = extractSnippets(source);
             if (snippets.length === 0) {
               unmodifiedCount++;
@@ -96,25 +96,52 @@ export async function runSnippetCodemod({
             const getSource = (snippet: SnippetInfo) =>
               `\n\`\`\`${formatAttributes(snippet.attributes)}\n${snippet.source}\n\`\`\`\n`;
 
+            const allSnippets = [targetSnippet, ...counterpartSnippets];
+            const previousTabTitle = 'CSF 3';
+            const newTabTitle = 'CSF 4 (experimental)';
+            if (!dryRun) {
+              // replace attributes of the original snippets with CSF 3
+              await allSnippets.forEach(async (snippet) => {
+                source = source.replace(
+                  formatAttributes(snippet.attributes),
+                  formatAttributes({ ...snippet.attributes, tabTitle: previousTabTitle })
+                );
+                await fs.writeFile(file, source, 'utf-8');
+              });
+            }
+
+            // clone the snippets and apply codemod, then append them to the bottom
             try {
               let appendedContent = '';
-              if (counterpartSnippets.length > 0) {
-                appendedContent +=
-                  '\n<!-- js & ts-4-9 (when applicable) still needed while providing both CSF 3 & 4 -->\n';
-              }
+              for (const snippet of allSnippets) {
+                if (snippet !== targetSnippet) {
+                  appendedContent +=
+                    '\n<!-- js & ts-4-9 (when applicable) still needed while providing both CSF 3 & 4 -->\n';
+                }
 
-              for (const snippet of [targetSnippet, ...counterpartSnippets]) {
                 const newSnippet = { ...snippet };
-                newSnippet.attributes.tabTitle = 'CSF 4 (experimental)';
-                appendedContent += getSource({
+
+                let transformedSource = getSource({
                   ...newSnippet,
                   attributes: {
                     ...newSnippet.attributes,
                     renderer: 'react',
-                    tabTitle: 'CSF 4 (experimental)',
+                    tabTitle: newTabTitle,
                   },
                   source: await transform(newSnippet),
                 });
+
+                if (newSnippet.path.includes('.stories')) {
+                  transformedSource = transformedSource
+                    .replace(/\/\/ Replace your-renderer with .*\n/, '')
+                    .replace(/\/\/ Replace your-framework with .*\n/, '');
+                } else {
+                  transformedSource = transformedSource.replace(
+                    /Replace your-framework with .*\n/,
+                    'Replace your-framework with the framework you are using (e.g., react-vite, nextjs, experimental-nextjs-vite)\n'
+                  );
+                }
+                appendedContent += transformedSource;
               }
 
               const updatedSource = source + appendedContent;
@@ -123,7 +150,7 @@ export async function runSnippetCodemod({
                 await fs.writeFile(file, updatedSource, 'utf-8');
               } else {
                 logger.log(
-                  `Dry run: would have modified ${picocolors.yellow(file)} with \n` +
+                  `Dry run: would have modified ${picocolors.yellow(file)} with new snippets \n` +
                     picocolors.green(appendedContent)
                 );
               }
